@@ -1,0 +1,38 @@
+name: 'build tools setup action'
+inputs:
+  github-token:
+    description: 'GITHUB_TOKEN'
+    required: true
+    default: ''
+  os:
+    description: 'os'
+    required: true
+    default: ''
+  arch:
+    description: 'arch'
+    required: false
+    default: ''
+runs:
+  using: "composite"
+  steps:
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v2
+      with:
+        repo-token: ${{ inputs.github-token }}
+
+    - name: install dependencies
+      shell: bash
+      if: inputs.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y pkg-config libfreetype6-dev libfontconfig1-dev
+
+    - name: install cross
+      shell: bash
+      if: inputs.os == 'ubuntu-latest' && inputs.arch
+      run: |
+        curl -L https://github.com/cross-rs/cross/releases/download/v0.2.5/cross-x86_64-unknown-linux-gnu.tar.gz > cross.tar.gz
+        tar -xzf cross.tar.gz
+        cp cross /usr/local/bin
+        cp cross-util /usr/local/bin
+        rm cross.tar.gz
