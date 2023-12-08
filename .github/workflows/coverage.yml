@@ -50,5 +50,4 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: src/lcov.info
-          flags: rust
           fail_ci_if_error: true

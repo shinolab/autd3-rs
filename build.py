@@ -223,7 +223,7 @@ def rust_test(args):
     config = Config(args)
 
     with working_dir("."):
-        subprocess.run(config.cargo_test_command()).check_returncode()
+        subprocess.run(config.cargo_test_command(args.features)).check_returncode()
 
 
 def rust_run(args):
@@ -336,6 +336,7 @@ if __name__ == "__main__":
         parser_test = subparsers.add_parser("test", help="see `test -h`")
         parser_test.add_argument("--all", action="store_true", help="test all crates")
         parser_test.add_argument("--release", action="store_true", help="release build")
+        parser_test.add_argument("--features", help="additional features", default=None)
         parser_test.set_defaults(handler=rust_test)
 
         # run

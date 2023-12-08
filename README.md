@@ -19,11 +19,11 @@ This cross-platform library supports Windows, macOS, and Linux (including Single
 
 > [!WARNING]  
 > From v17.0.0, the software is completely incompatible with v2.x and v3.x firmware.
-> Before using this library, write the latest firmware in `firmware`. For more information, please see [README](./firmware/README.md).
+> Before using this library, write the latest firmware in `firmware`. For more information, please see [autd3-firmware/README](https://github.com/s5suzuki/autd3-firmware).
 
 ## Example
 
-* See [examples](./src/examples)
+* See [examples](./examples)
 
     * If you are using Linux/macOS, you may need to run as root.
 

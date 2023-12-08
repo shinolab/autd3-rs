@@ -55,8 +55,8 @@ jobs:
       - name: Test src on ${{ matrix.os }}
         if: needs.check-src.outputs.status
         run: |
-          python3 build.py build --release --all
-          python3 build.py test --release --all
+          python3 build.py build --all
+          python3 build.py test --all
         shell: bash
 
 
@@ -89,7 +89,7 @@ jobs:
       - name: Test src for unity on ${{ matrix.os }}
         if: needs.check-src.outputs.status
         run: |
-          python3 build.py unity test
+          python3 build.py test --all --features "single_float use_meter"
         shell: bash
 
   build-linux-arm32-src:
