@@ -48,7 +48,6 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ${{ matrix.os }}
-          shaderc: false
 
       - name: Test src on ${{ matrix.os }}
         if: needs.check-src.outputs.status
@@ -80,7 +79,6 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ${{ matrix.os }}
-          shaderc: false
 
       - name: Test src for unity on ${{ matrix.os }}
         if: needs.check-src.outputs.status
@@ -151,7 +149,6 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ubuntu-latest
-          shaderc: false
 
       - name: Rust cache
         if: needs.check-src.outputs.status
