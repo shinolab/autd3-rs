@@ -4,7 +4,7 @@
  * Created Date: 29/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/12/2023
+ * Last Modified: 13/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -33,6 +33,7 @@ pub use modulation::{Modulation, ModulationProperty};
 pub use reads_fpga_info::ConfigureReadsFPGAInfo;
 pub use silencer::Silencer;
 pub use stm::{FocusSTM, GainSTM, STMProps};
+#[allow(deprecated)]
 pub use stop::Stop;
 pub use synchronize::Synchronize;
 pub use with_timeout::{DatagramT, DatagramWithTimeout};

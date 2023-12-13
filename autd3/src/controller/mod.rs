@@ -18,7 +18,7 @@ use std::{collections::HashMap, hash::Hash, time::Duration};
 
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
-    datagram::{Clear, Datagram, Stop, Synchronize},
+    datagram::{Clear, Datagram, Synchronize},
     firmware_version::FirmwareInfo,
     fpga::FPGAInfo,
     geometry::{Device, Geometry},
@@ -155,7 +155,12 @@ impl<L: Link> Controller<L> {
         for dev in self.geometry.iter_mut() {
             dev.enable = true;
         }
-        let res = self.send(Stop::new()).await?;
+        let res = self
+            .send((
+                autd3_driver::datagram::Silencer::default(),
+                crate::gain::Null::default(),
+            ))
+            .await?;
         let res = res & self.send(Clear::new()).await?;
         self.link.close().await?;
         Ok(res)

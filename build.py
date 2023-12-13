@@ -107,10 +107,10 @@ class Config:
         features = "remote"
         if self._all:
             command.append("--all")
+            command.append("--exclude")
+            command.append("examples")
         command.append("--features")
         command.append(features)
-        command.append("--exclude")
-        command.append("examples")
         return command
 
     def is_windows(self):
