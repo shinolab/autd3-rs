@@ -19,7 +19,6 @@ jobs:
       - name: publish to carate.io
         run: |
           git submodule update --init --recursive
-          cd src
           cd autd3-driver
           cargo publish --no-verify --dry-run
           cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true
