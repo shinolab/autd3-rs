@@ -4,7 +4,7 @@
  * Created Date: 27/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 27/10/2023
+ * Last Modified: 13/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -19,8 +19,7 @@ pub mod modulation;
 pub mod prelude;
 
 pub use autd3_derive as derive;
-
-pub use controller::Controller;
+pub use autd3_driver as driver;
 
 #[cfg(test)]
 mod tests {
