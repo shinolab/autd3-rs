@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/12/2023
+ * Last Modified: 13/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -27,8 +27,8 @@ use autd3_driver::{
 
 use crate::error::{AUTDError, ReadFirmwareInfoState};
 
-use builder::ControllerBuilder;
-use group::GroupGuard;
+pub use builder::ControllerBuilder;
+pub use group::GroupGuard;
 
 use crate::link::nop::Nop;
 

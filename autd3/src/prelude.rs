@@ -4,7 +4,7 @@
  * Created Date: 27/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 08/12/2023
+ * Last Modified: 12/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -37,7 +37,10 @@ pub use autd3_driver::{
     error::AUTDInternalError,
     fpga::FPGA_CLK_FREQ,
     geometry::*,
-    link::Link,
+    link::{Link, LinkBuilder},
     operation::{ControlPoint, GainSTMMode},
     timer_strategy::TimerStrategy,
 };
+
+#[cfg(feature = "sync")]
+pub use autd3_driver::link::{LinkSync, LinkSyncBuilder};
