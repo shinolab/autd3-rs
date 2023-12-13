@@ -1,3 +1,8 @@
+# 19.0.1
+
+- `Stop` is now deprecated
+  - Users should send `Silencer` and `gain::Null` manually instead of `Stop`
+
 # 19.0.0
 
 - Update firmware to v4.1.0

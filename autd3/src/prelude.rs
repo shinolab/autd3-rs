@@ -4,7 +4,7 @@
  * Created Date: 27/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 12/12/2023
+ * Last Modified: 13/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -31,7 +31,7 @@ pub use autd3_driver::{
     datagram::{
         Clear, ConfigureDebugOutputIdx, ConfigureForceFan, ConfigureModDelay,
         ConfigureReadsFPGAInfo, DatagramT, FocusSTM, GainSTM, Modulation, ModulationProperty,
-        Silencer, Stop, Synchronize,
+        Silencer, Synchronize,
     },
     defined::{float, METER, MILLIMETER, PI},
     error::AUTDInternalError,
@@ -44,3 +44,6 @@ pub use autd3_driver::{
 
 #[cfg(feature = "sync")]
 pub use autd3_driver::link::{LinkSync, LinkSyncBuilder};
+
+#[allow(deprecated)]
+pub use autd3_driver::datagram::Stop;
