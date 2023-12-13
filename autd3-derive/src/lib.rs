@@ -4,7 +4,7 @@
  * Created Date: 28/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 14/11/2023
+ * Last Modified: 13/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -21,16 +21,16 @@ pub fn modulation_derive(input: TokenStream) -> TokenStream {
 
     let freq_div_no_change = if let syn::Data::Struct(syn::DataStruct { fields, .. }) = input.data {
         fields.iter().any(|field| {
-            let is_freq_div = field
+            let is_config = field
                 .ident
                 .as_ref()
-                .map(|ident| ident == "freq_div")
+                .map(|ident| ident == "config")
                 .unwrap_or(false);
             let no_change = field
                 .attrs
                 .iter()
                 .any(|attr| matches!(&attr.meta, Meta::Path(path) if path.is_ident("no_change")));
-            is_freq_div && no_change
+            is_config && no_change
         })
     } else {
         false
