@@ -16,6 +16,8 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ubuntu-latest
+      - name: Check semver
+        uses: obi1kenobi/cargo-semver-checks-action@v2
       - name: publish to carate.io
         run: |
           git submodule update --init --recursive
