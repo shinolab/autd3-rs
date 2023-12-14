@@ -4,7 +4,7 @@
  * Created Date: 06/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/12/2023
+ * Last Modified: 14/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -86,17 +86,6 @@ impl FPGAEmulator {
         let addr = (addr & 0x3FFF) as usize;
         match select {
             BRAM_SELECT_CONTROLLER => self.controller_bram[addr],
-            BRAM_SELECT_MOD => {
-                let offset = self.controller_bram[ADDR_MOD_ADDR_OFFSET];
-                let addr = (offset as usize) << 14 | addr;
-                self.modulator_bram[addr]
-            }
-            BRAM_SELECT_NORMAL => self.normal_op_bram[addr],
-            BRAM_SELECT_STM => {
-                let offset = self.controller_bram[ADDR_STM_ADDR_OFFSET];
-                let addr = (offset as usize) << 14 | addr;
-                self.stm_op_bram[addr]
-            }
             _ => unreachable!(),
         }
     }
@@ -215,7 +204,7 @@ impl FPGAEmulator {
             m.push(((b >> 8) & 0x00FF) as u8);
         });
         if cycle % 2 != 0 {
-            let b = self.modulator_bram[(cycle + 1) >> 1];
+            let b = self.modulator_bram[cycle >> 1];
             m.push((b & 0x00FF) as u8);
         }
         m
@@ -284,21 +273,21 @@ impl FPGAEmulator {
         let mut x = (self.stm_op_bram[8 * idx + 1] as u32) << 16 & 0x30000;
         x |= self.stm_op_bram[8 * idx] as u32;
         let x = if (x & 0x20000) != 0 {
-            -131072 + (x & 0x1FFFF) as i32
+            (x | 0xFFFC0000) as i32
         } else {
             x as i32
         };
         let mut y = (self.stm_op_bram[8 * idx + 2] as u32) << 14 & 0x3C000;
         y |= self.stm_op_bram[8 * idx + 1] as u32 >> 2;
         let y = if (y & 0x20000) != 0 {
-            -131072 + (y & 0x1FFFF) as i32
+            (y | 0xFFFC0000) as i32
         } else {
             y as i32
         };
         let mut z = (self.stm_op_bram[8 * idx + 3] as u32) << 12 & 0x3F000;
         z |= self.stm_op_bram[8 * idx + 2] as u32 >> 4;
         let z = if (z & 0x20000) != 0 {
-            -131072 + (z & 0x1FFFF) as i32
+            (z | 0xFFFC0000) as i32
         } else {
             z as i32
         };
@@ -323,6 +312,10 @@ impl FPGAEmulator {
         let b = b as float / 255.0;
         ((a * b).asin() / PI * 512.0).round() as u16
     }
+
+    pub fn local_tr_pos(&self) -> &[u64] {
+        &self.tr_pos
+    }
 }
 
 #[cfg(test)]
@@ -344,13 +337,51 @@ mod tests {
 
     #[test]
     fn test_to_pulse_width() {
-        for a in 0x00..0xFF {
-            for b in 0x00..0xFF {
+        for a in 0x00..=0xFF {
+            for b in 0x00..=0xFF {
                 assert_eq!(
                     to_pulse_width_actual(a, b),
                     FPGAEmulator::to_pulse_width(a, b)
                 );
             }
         }
+    }
+
+    #[test]
+    #[should_panic]
+    fn read_panic() {
+        let fpga = FPGAEmulator::new(249);
+        let addr = BRAM_SELECT_MOD << 14;
+        fpga.read(addr);
+    }
+
+    #[test]
+    fn modulation() {
+        let mut fpga = FPGAEmulator::new(249);
+        fpga.modulator_bram[0] = 0x1234;
+        fpga.modulator_bram[1] = 0x5678;
+        fpga.controller_bram[ADDR_MOD_CYCLE] = 3 - 1;
+        assert_eq!(3, fpga.modulation_cycle());
+        assert_eq!(0x34, fpga.modulation_at(0));
+        assert_eq!(0x12, fpga.modulation_at(1));
+        assert_eq!(0x78, fpga.modulation_at(2));
+        let m = fpga.modulation();
+        assert_eq!(m.len(), 3);
+        assert_eq!(0x34, m[0]);
+        assert_eq!(0x12, m[1]);
+        assert_eq!(0x78, m[2]);
+    }
+
+    #[test]
+    fn is_outputting() {
+        let mut fpga = FPGAEmulator::new(249);
+        assert!(!fpga.is_outputting());
+
+        fpga.normal_op_bram[0] = 0xFFFF;
+        assert!(!fpga.is_outputting());
+
+        fpga.modulator_bram[0] = 0xFFFF;
+        fpga.controller_bram[ADDR_MOD_CYCLE] = 2 - 1;
+        assert!(fpga.is_outputting());
     }
 }

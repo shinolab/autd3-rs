@@ -1,19 +1,19 @@
 [package]
 name = "autd3-link-simulator"
-version = "19.0.0"
+version = "19.0.1"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 
 license = "MIT"
 description = "Link for autd-simulator"
-repository = "https://github.com/shinolab/autd3"
+repository = "https://github.com/shinolab/autd3-rs"
 readme = "README.md"
 keywords = ["autd"]
 
 [dependencies]
-autd3-protobuf = { path = "../autd3-protobuf", version = "19.0.0" }
-autd3-driver = { path = "../autd3-driver", version = "19.0.0" }
-autd3-derive = { path = "../autd3-derive", version = "19.0.0" }
+autd3-protobuf = { path = "../autd3-protobuf", version = "19.0.1" }
+autd3-driver = { path = "../autd3-driver", version = "19.0.1" }
+autd3-derive = { path = "../autd3-derive", version = "19.0.1" }
 thiserror = "1.0.30"
 tonic = "0.10.0"
 async-trait = "0.1.74"

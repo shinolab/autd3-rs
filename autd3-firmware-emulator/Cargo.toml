@@ -1,16 +1,20 @@
 [package]
 name = "autd3-firmware-emulator"
-version = "19.0.0"
+version = "19.0.1"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 
 license = "MIT"
 description = "AUTD3 firmware emulator"
-repository = "https://github.com/shinolab/autd3"
+repository = "https://github.com/shinolab/autd3-rs"
 readme = "README.md"
 keywords = ["autd"]
 
 [dependencies]
-autd3-driver = { path = "../autd3-driver", version = "19.0.0" }
+autd3-driver = { path = "../autd3-driver", version = "19.0.1" }
 num-integer = "0.1.45"
 thiserror = "1.0.40"
+
+[dev-dependencies]
+autd3-derive = { path = "../autd3-derive", version = "19.0.1" }
+rand = "0.8.5"

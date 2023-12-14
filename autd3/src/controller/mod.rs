@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/12/2023
+ * Last Modified: 13/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -18,7 +18,7 @@ use std::{collections::HashMap, hash::Hash, time::Duration};
 
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
-    datagram::{Clear, Datagram, Stop, Synchronize},
+    datagram::{Clear, Datagram, Synchronize},
     firmware_version::FirmwareInfo,
     fpga::FPGAInfo,
     geometry::{Device, Geometry},
@@ -27,8 +27,8 @@ use autd3_driver::{
 
 use crate::error::{AUTDError, ReadFirmwareInfoState};
 
-use builder::ControllerBuilder;
-use group::GroupGuard;
+pub use builder::ControllerBuilder;
+pub use group::GroupGuard;
 
 use crate::link::nop::Nop;
 
@@ -155,7 +155,12 @@ impl<L: Link> Controller<L> {
         for dev in self.geometry.iter_mut() {
             dev.enable = true;
         }
-        let res = self.send(Stop::new()).await?;
+        let res = self
+            .send((
+                autd3_driver::datagram::Silencer::default(),
+                crate::gain::Null::default(),
+            ))
+            .await?;
         let res = res & self.send(Clear::new()).await?;
         self.link.close().await?;
         Ok(res)
