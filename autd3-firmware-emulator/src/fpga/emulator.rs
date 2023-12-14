@@ -312,6 +312,10 @@ impl FPGAEmulator {
         let b = b as float / 255.0;
         ((a * b).asin() / PI * 512.0).round() as u16
     }
+
+    pub fn local_tr_pos(&self) -> &[u64] {
+        &self.tr_pos
+    }
 }
 
 #[cfg(test)]

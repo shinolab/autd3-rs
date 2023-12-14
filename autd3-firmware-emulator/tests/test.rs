@@ -19,6 +19,7 @@ use autd3_driver::{
     common::EmitIntensity,
     cpu::TxDatagram,
     datagram::*,
+    defined::{METER, MILLIMETER},
     derive::prelude::*,
     firmware_version::{LATEST_VERSION_NUM_MAJOR, LATEST_VERSION_NUM_MINOR},
     fpga::{
@@ -350,9 +351,9 @@ fn send_focus_stm() {
     let foci: Vec<_> = (0..FOCUS_STM_BUF_SIZE_MAX)
         .map(|_| {
             ControlPoint::new(Vector3::new(
-                rng.gen_range(-100.0..100.0),
-                rng.gen_range(-100.0..100.0),
-                rng.gen_range(-100.0..100.0),
+                rng.gen_range(-100.0 * MILLIMETER..100.0 * MILLIMETER),
+                rng.gen_range(-100.0 * MILLIMETER..100.0 * MILLIMETER),
+                rng.gen_range(-100.0 * MILLIMETER..100.0 * MILLIMETER),
             ))
             .with_intensity(rng.gen::<u8>())
         })
@@ -385,7 +386,7 @@ fn send_focus_stm() {
     assert_eq!(cpu.fpga().stm_frequency_division(), freq_div);
     assert_eq!(
         cpu.fpga().sound_speed(),
-        (geometry[0].sound_speed * 1024.0 / 1000.0).round() as _
+        (geometry[0].sound_speed / METER * 1024.0).round() as _
     );
     foci.iter().enumerate().for_each(|(focus_idx, focus)| {
         cpu.fpga()
@@ -393,12 +394,10 @@ fn send_focus_stm() {
             .iter()
             .enumerate()
             .for_each(|(tr_idx, &(intensity, phase))| {
-                let tx =
-                    (geometry[0][tr_idx].position().x / FOCUS_STM_FIXED_NUM_UNIT).floor() as i32;
-                let ty =
-                    (geometry[0][tr_idx].position().y / FOCUS_STM_FIXED_NUM_UNIT).floor() as i32;
-                let tz =
-                    (geometry[0][tr_idx].position().z / FOCUS_STM_FIXED_NUM_UNIT).floor() as i32;
+                let tr = cpu.fpga().local_tr_pos()[tr_idx];
+                let tx = ((tr >> 16) & 0xFFFF) as i32;
+                let ty = (tr & 0xFFFF) as i16 as i32;
+                let tz = 0;
                 let fx = (focus.point().x / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
                 let fy = (focus.point().y / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
                 let fz = (focus.point().z / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
@@ -412,9 +411,9 @@ fn send_focus_stm() {
     let foci: Vec<_> = (0..2)
         .map(|_| {
             ControlPoint::new(Vector3::new(
-                rng.gen_range(-100.0..100.0),
-                rng.gen_range(-100.0..100.0),
-                rng.gen_range(100.0..200.0),
+                rng.gen_range(-100.0 * MILLIMETER..100.0 * MILLIMETER),
+                rng.gen_range(-100.0 * MILLIMETER..100.0 * MILLIMETER),
+                rng.gen_range(-100.0 * MILLIMETER..100.0 * MILLIMETER),
             ))
             .with_intensity(rng.gen::<u8>())
         })
@@ -442,7 +441,7 @@ fn send_focus_stm() {
     assert_eq!(cpu.fpga().stm_frequency_division(), freq_div);
     assert_eq!(
         cpu.fpga().sound_speed(),
-        (geometry[0].sound_speed * 1024.0 / 1000.0).round() as _
+        (geometry[0].sound_speed / METER * 1024.0).round() as _
     );
 }
 
