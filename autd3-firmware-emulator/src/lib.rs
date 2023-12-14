@@ -12,6 +12,8 @@
  */
 
 pub mod cpu;
+#[allow(deprecated)]
+pub mod error;
 pub mod fpga;
 
 pub use cpu::emulator::CPUEmulator;
