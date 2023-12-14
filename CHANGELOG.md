@@ -1,3 +1,7 @@
+# 19.0.2
+
+- Fix [#3](https://github.com/shinolab/autd3-rs/issues/3): Cannot build with sync feature
+
 # 19.0.1
 
 - Update firmware to v4.1.2
