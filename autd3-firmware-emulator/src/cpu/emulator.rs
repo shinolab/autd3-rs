@@ -4,7 +4,7 @@
  * Created Date: 06/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/12/2023
+ * Last Modified: 14/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -58,6 +58,14 @@ impl CPUEmulator {
 
     pub fn num_transducers(&self) -> usize {
         self.num_transducers
+    }
+
+    pub fn synchronized(&self) -> bool {
+        self.synchronized
+    }
+
+    pub fn reads_fpga_info(&self) -> bool {
+        self.read_fpga_info
     }
 
     pub fn ack(&self) -> u8 {
@@ -138,7 +146,7 @@ impl CPUEmulator {
     fn write_mod(&mut self, data: &[u8]) {
         let flag = data[1];
 
-        let write = ((data[3] as u16) << 8) | data[2] as u16;
+        let write = ((data[3] as u32) << 8) | data[2] as u32;
         let data = if (flag & MODULATION_FLAG_BEGIN) == MODULATION_FLAG_BEGIN {
             self.mod_cycle = 0;
             self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_MOD_ADDR_OFFSET, 0);
@@ -160,14 +168,14 @@ impl CPUEmulator {
         let page_capacity =
             (self.mod_cycle & !MOD_BUF_PAGE_SIZE_MASK) + MOD_BUF_PAGE_SIZE - self.mod_cycle;
 
-        if write as u32 <= page_capacity {
+        if write < page_capacity {
             self.bram_cpy(
                 BRAM_SELECT_MOD,
                 ((self.mod_cycle & MOD_BUF_PAGE_SIZE_MASK) >> 1) as u16,
                 data,
                 ((write + 1) >> 1) as usize,
             );
-            self.mod_cycle += write as u32;
+            self.mod_cycle += write;
         } else {
             self.bram_cpy(
                 BRAM_SELECT_MOD,
@@ -176,7 +184,7 @@ impl CPUEmulator {
                 (page_capacity >> 1) as usize,
             );
             self.mod_cycle += page_capacity;
-            let data = unsafe { data.add(page_capacity as _) };
+            let data = unsafe { data.add((page_capacity >> 1) as _) };
             self.bram_write(
                 BRAM_SELECT_CONTROLLER,
                 BRAM_ADDR_MOD_ADDR_OFFSET,
@@ -186,9 +194,9 @@ impl CPUEmulator {
                 BRAM_SELECT_MOD,
                 ((self.mod_cycle & MOD_BUF_PAGE_SIZE_MASK) >> 1) as _,
                 data,
-                ((write as u32 - page_capacity + 1) >> 1) as _,
+                ((write - page_capacity + 1) >> 1) as _,
             );
-            self.mod_cycle += write as u32 - page_capacity;
+            self.mod_cycle += write - page_capacity;
         }
 
         if (flag & MODULATION_FLAG_END) == MODULATION_FLAG_END {
@@ -300,7 +308,7 @@ impl CPUEmulator {
         let page_capacity = (self.stm_cycle & !POINT_STM_BUF_PAGE_SIZE_MASK)
             + POINT_STM_BUF_PAGE_SIZE
             - self.stm_cycle;
-        if size <= page_capacity {
+        if size < page_capacity {
             let mut dst = ((self.stm_cycle & POINT_STM_BUF_PAGE_SIZE_MASK) << 3) as u16;
             (0..size as usize).for_each(|_| unsafe {
                 self.bram_write(BRAM_SELECT_STM, dst, src.read());
@@ -590,7 +598,6 @@ impl CPUEmulator {
 
     fn handle_payload(&mut self, tag: u8, data: &[u8]) {
         match tag {
-            TAG_NONE => {}
             TAG_CLEAR => self.clear(),
             TAG_SYNC => self.synchronize(),
             TAG_FIRM_INFO => match data[1] {
@@ -615,10 +622,9 @@ impl CPUEmulator {
                     self.read_fpga_info = self.read_fpga_info_store;
                 }
                 _ => {
-                    unimplemented!("Unsupported firmware info type")
+                    unreachable!("Unsupported firmware info type")
                 }
             },
-            TAG_UPDATE_FLAGS => (),
             TAG_MODULATION => self.write_mod(data),
             TAG_MODULATION_DELAY => self.write_mod_delay(&data[2..]),
             TAG_SILENCER => self.config_silencer(data),
@@ -663,5 +669,26 @@ impl CPUEmulator {
             self.rx_data = self.read_fpga_info() as _;
         }
         self.ack = header.msg_id;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use rand::Rng;
+
+    #[test]
+    fn cpu_idx() {
+        let mut rng = rand::thread_rng();
+        let idx = rng.gen();
+        let cpu = CPUEmulator::new(idx, 249);
+        assert_eq!(cpu.idx(), idx);
+    }
+
+    #[test]
+    fn num_transducers() {
+        let cpu = CPUEmulator::new(0, 249);
+        assert_eq!(cpu.num_transducers(), 249);
     }
 }

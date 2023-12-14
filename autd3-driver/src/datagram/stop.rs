@@ -4,7 +4,7 @@
  * Created Date: 29/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 21/11/2023
+ * Last Modified: 13/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -20,14 +20,20 @@ use crate::{
 
 /// Datagram to stop output
 #[derive(Default)]
+#[deprecated(
+    since = "19.0.1",
+    note = "Users should manually send Silencer and gain::Null."
+)]
 pub struct Stop {}
 
+#[allow(deprecated)]
 impl Stop {
     pub const fn new() -> Self {
         Self {}
     }
 }
 
+#[allow(deprecated)]
 impl Datagram for Stop {
     type O1 = ConfigSilencerOp;
     type O2 = StopOp;
@@ -42,6 +48,8 @@ impl Datagram for Stop {
 
 #[cfg(test)]
 mod tests {
+    #![allow(deprecated)]
+
     use super::*;
 
     #[test]

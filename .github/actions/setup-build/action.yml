@@ -16,7 +16,6 @@ runs:
   using: "composite"
   steps:
     - name: Setup Python
-      if: needs.check-src.outputs.status
       uses: actions/setup-python@v4
       with:
         python-version: "3.12"

@@ -107,59 +107,10 @@ class Config:
         features = "remote"
         if self._all:
             command.append("--all")
-        command.append("--features")
-        command.append(features)
-        command.append("--exclude")
-        command.append("examples")
-        return command
-
-    def cargo_test_command(self, additional_features=None):
-        command = self.cargo_command_base("test")
-        features = "test-utilities remote"
-        if additional_features is not None:
-            features += " " + additional_features
-        if self._all:
-            command.append("--all")
-        command.append("--features")
-        command.append(features)
-        if not self.is_pcap_available():
             command.append("--exclude")
-            command.append("autd3-link-soem")
-        return command
-
-    def cargo_example_build_command(self):
-        command = self.cargo_command_base("build")
-        command.append("--bins")
-        features = "soem twincat"
-        if self._all:
-            features += " simulator remote_soem remote_twincat"
+            command.append("examples")
         command.append("--features")
         command.append(features)
-        return command
-
-    def cargo_clippy_command(self):
-        command = self.cargo_build_command()
-        command[1] = "clippy"
-        command.append("--")
-        command.append("-D")
-        command.append("warnings")
-        return command
-
-    def cargo_cov_command(self):
-        features = "remote test-utilities"
-        command = [
-            "cargo",
-            "+nightly",
-            "llvm-cov",
-            "--features",
-            features,
-            "--workspace",
-            "--lcov",
-            "--output-path",
-            "lcov.info",
-        ]
-        if self.release:
-            command.append("--release")
         return command
 
     def is_windows(self):
@@ -209,21 +160,45 @@ def rust_build(args):
     if not config.no_examples:
         info("Building examples...")
         with working_dir("./examples"):
-            subprocess.run(config.cargo_example_build_command()).check_returncode()
+            command = config.cargo_command_base("build")
+            command.append("--bins")
+            features = "soem twincat"
+            if config._all:
+                features += " simulator remote_soem remote_twincat"
+            command.append("--features")
+            command.append(features)
+            subprocess.run(command).check_returncode()
 
 
 def rust_lint(args):
     config = Config(args)
 
     with working_dir("."):
-        subprocess.run(config.cargo_clippy_command()).check_returncode()
+        command = config.cargo_build_command()
+        command[1] = "clippy"
+        command.append("--")
+        command.append("-D")
+        command.append("warnings")
+        subprocess.run(command).check_returncode()
 
 
 def rust_test(args):
     config = Config(args)
 
     with working_dir("."):
-        subprocess.run(config.cargo_test_command(args.features)).check_returncode()
+        command = config.cargo_command_base("test")
+        features = "test-utilities remote"
+        if args.features is not None:
+            features += " " + args.features
+        if config._all:
+            command.append("--all")
+        command.append("--features")
+        command.append(features)
+        if not config.is_pcap_available():
+            command.append("--exclude")
+            command.append("autd3-link-soem")
+
+        subprocess.run(command).check_returncode()
 
 
 def rust_run(args):
@@ -275,7 +250,40 @@ def rust_coverage(args):
     config = Config(args)
 
     with working_dir("."):
-        subprocess.run(config.cargo_cov_command()).check_returncode()
+        features = "remote test-utilities"
+        command = [
+            "cargo",
+            "+nightly",
+            "llvm-cov",
+            "--features",
+            features,
+            "--workspace",
+        ]
+        if args.format == "lcov":
+            command.extend(
+                [
+                    "--lcov",
+                    "--output-path",
+                    "lcov.info",
+                ]
+            )
+        elif args.format == "html":
+            command.extend(
+                [
+                    "--html",
+                ]
+            )
+            if args.open:
+                command.append("--open")
+        elif args.format == "text":
+            command.extend(
+                [
+                    "--text",
+                ]
+            )
+        if config.release:
+            command.append("--release")
+        subprocess.run(command).check_returncode()
 
 
 def util_update_ver(args):
@@ -352,6 +360,10 @@ if __name__ == "__main__":
         # coverage
         parser_cov = subparsers.add_parser("cov", help="see `cov -h`")
         parser_cov.add_argument("--release", action="store_true", help="release build")
+        parser_cov.add_argument(
+            "--format", help="output format (lcov|html|text)", default="lcov"
+        )
+        parser_cov.add_argument("--open", action="store_true", help="open")
         parser_cov.set_defaults(handler=rust_coverage)
 
         # util

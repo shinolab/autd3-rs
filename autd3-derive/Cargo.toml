@@ -1,12 +1,12 @@
 [package]
 name = "autd3-derive"
-version = "19.0.0"
+version = "19.0.1"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 
 license = "MIT"
 description = "Wav Modulation for AUTD."
-repository = "https://github.com/shinolab/autd3"
+repository = "https://github.com/shinolab/autd3-rs"
 readme = "README.md"
 keywords = ["autd"]
 
