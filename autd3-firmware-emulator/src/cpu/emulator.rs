@@ -175,7 +175,7 @@ impl CPUEmulator {
                 data,
                 ((write + 1) >> 1) as usize,
             );
-            self.mod_cycle += write as u32;
+            self.mod_cycle += write;
         } else {
             self.bram_cpy(
                 BRAM_SELECT_MOD,
@@ -194,9 +194,9 @@ impl CPUEmulator {
                 BRAM_SELECT_MOD,
                 ((self.mod_cycle & MOD_BUF_PAGE_SIZE_MASK) >> 1) as _,
                 data,
-                ((write as u32 - page_capacity + 1) >> 1) as _,
+                ((write - page_capacity + 1) >> 1) as _,
             );
-            self.mod_cycle += write as u32 - page_capacity;
+            self.mod_cycle += write - page_capacity;
         }
 
         if (flag & MODULATION_FLAG_END) == MODULATION_FLAG_END {
