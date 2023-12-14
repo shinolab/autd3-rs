@@ -3,6 +3,7 @@
 - `Stop` is now deprecated
   - Users should send `Silencer` and `gain::Null` manually instead of `Stop`
 - Fix [#1](https://github.com/shinolab/autd3-rs/issues/1): modulation::Static::with_sampling_config should be omitted
+- Fix [#2](https://github.com/shinolab/autd3-rs/issues/2): FocusSTM with points size of 65536 always return STMStartIndexOutOfRange when start_idx is set
 
 # 19.0.0
 
