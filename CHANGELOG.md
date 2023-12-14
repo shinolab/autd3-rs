@@ -1,3 +1,7 @@
+# 19.0.1
+
+- Fix [#2](https://github.com/shinolab/autd3-rs/issues/2): FocusSTM with points size of 65536 always return STMStartIndexOutOfRange when start_idx is set
+
 # 19.0.0
 
 - Update firmware to v4.1.0
