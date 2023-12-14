@@ -4,7 +4,7 @@
  * Created Date: 06/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 27/11/2023
+ * Last Modified: 14/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -169,13 +169,13 @@ impl Operation for FocusSTMOp {
         }
 
         match self.start_idx {
-            Some(idx) if idx >= self.points.len() as u16 => {
+            Some(idx) if idx as usize >= self.points.len() => {
                 return Err(AUTDInternalError::STMStartIndexOutOfRange)
             }
             _ => {}
         }
         match self.finish_idx {
-            Some(idx) if idx >= self.points.len() as u16 => {
+            Some(idx) if idx as usize >= self.points.len() => {
                 return Err(AUTDInternalError::STMFinishIndexOutOfRange)
             }
             _ => {}
