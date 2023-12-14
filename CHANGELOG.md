@@ -1,3 +1,8 @@
+# 19.1.0
+
+- Fix [#3](https://github.com/shinolab/autd3-rs/issues/3): Cannot build with sync feature
+- Fix [#4](https://github.com/shinolab/autd3-rs/issues/4): autd3-driver@19.0.1 doesn't follow semver
+
 # 19.0.1
 
 - Update firmware to v4.1.2
