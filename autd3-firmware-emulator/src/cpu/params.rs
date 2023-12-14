@@ -4,7 +4,7 @@
  * Created Date: 07/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/12/2023
+ * Last Modified: 14/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -12,7 +12,7 @@
  */
 
 pub const CPU_VERSION_MAJOR: u16 = 0x8C;
-pub const CPU_VERSION_MINOR: u16 = 0x00;
+pub const CPU_VERSION_MINOR: u16 = 0x02;
 
 pub const BRAM_SELECT_CONTROLLER: u8 = 0x0;
 pub const BRAM_SELECT_MOD: u8 = 0x1;
@@ -53,11 +53,9 @@ pub const GAIN_STM_BUF_PAGE_SIZE_WIDTH: u32 = 6;
 pub const GAIN_STM_BUF_PAGE_SIZE: u32 = 1 << GAIN_STM_BUF_PAGE_SIZE_WIDTH;
 pub const GAIN_STM_BUF_PAGE_SIZE_MASK: u32 = GAIN_STM_BUF_PAGE_SIZE - 1;
 
-pub const TAG_NONE: u8 = 0x00;
 pub const TAG_CLEAR: u8 = 0x01;
 pub const TAG_SYNC: u8 = 0x02;
 pub const TAG_FIRM_INFO: u8 = 0x03;
-pub const TAG_UPDATE_FLAGS: u8 = 0x04;
 pub const TAG_MODULATION: u8 = 0x10;
 pub const TAG_MODULATION_DELAY: u8 = 0x11;
 pub const TAG_SILENCER: u8 = 0x20;
