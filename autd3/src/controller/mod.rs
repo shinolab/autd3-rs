@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 13/12/2023
+ * Last Modified: 14/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -311,7 +311,10 @@ impl<L: Link> Controller<L> {
         for dev in self.geometry.iter_mut() {
             dev.enable = true;
         }
-        let res = self.send(Stop::new())?;
+        let res = self.send((
+            autd3_driver::datagram::Silencer::default(),
+            crate::gain::Null::default(),
+        ))?;
         let res = res & self.send(Clear::new())?;
         self.link.close()?;
         Ok(res)
