@@ -1,5 +1,6 @@
 # 19.0.1
 
+- Update firmware to v4.1.2
 - `Stop` is now deprecated
   - Users should send `Silencer` and `gain::Null` manually instead of `Stop`
 - Fix [#1](https://github.com/shinolab/autd3-rs/issues/1): modulation::Static::with_sampling_config should be omitted
