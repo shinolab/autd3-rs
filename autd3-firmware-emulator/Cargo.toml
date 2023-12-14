@@ -14,3 +14,7 @@ keywords = ["autd"]
 autd3-driver = { path = "../autd3-driver", version = "19.0.0" }
 num-integer = "0.1.45"
 thiserror = "1.0.40"
+
+[dev-dependencies]
+autd3-derive = { path = "../autd3-derive", version = "19.0.0" }
+rand = "0.8.5"
