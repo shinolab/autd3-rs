@@ -1,3 +1,7 @@
+# 19.1.1
+
+- Fix `T4010A1_AMPLITUDE` value
+
 # 19.1.0
 
 - Fix [#3](https://github.com/shinolab/autd3-rs/issues/3): Cannot build with sync feature
