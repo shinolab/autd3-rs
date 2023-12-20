@@ -339,12 +339,12 @@ impl FPGAEmulator {
                 match (date.time() - Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap().time())
                     .num_nanoseconds()
                 {
-                    Some(n) if n < 0 => return Err(AUTDFirmwareEmulatorError::InvalidDateTime),
-                    Some(n) => return Ok(n as _),
-                    None => return Err(AUTDFirmwareEmulatorError::InvalidDateTime),
+                    Some(n) if n < 0 => Err(AUTDFirmwareEmulatorError::InvalidDateTime),
+                    Some(n) => Ok(n as _),
+                    None => Err(AUTDFirmwareEmulatorError::InvalidDateTime),
                 }
             }
-            _ => return Err(AUTDFirmwareEmulatorError::InvalidDateTime),
+            _ => Err(AUTDFirmwareEmulatorError::InvalidDateTime),
         }
     }
 
