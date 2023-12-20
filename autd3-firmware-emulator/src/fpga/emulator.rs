@@ -4,7 +4,7 @@
  * Created Date: 06/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 14/12/2023
+ * Last Modified: 20/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -13,8 +13,11 @@
 
 use autd3_driver::defined::{float, PI};
 
+use crate::error::AUTDFirmwareEmulatorError;
+
 use super::params::*;
 
+use chrono::{Local, LocalResult, TimeZone, Utc};
 use num_integer::Roots;
 
 pub struct FPGAEmulator {
@@ -315,6 +318,46 @@ impl FPGAEmulator {
 
     pub fn local_tr_pos(&self) -> &[u64] {
         &self.tr_pos
+    }
+
+    pub fn ec_time_now() -> u64 {
+        (Local::now().time() - Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap().time())
+            .num_nanoseconds()
+            .unwrap() as _
+    }
+
+    pub fn ec_time_with_utc_ymdhms(
+        year: i32,
+        month: u32,
+        day: u32,
+        hour: u32,
+        min: u32,
+        sec: u32,
+    ) -> Result<u64, AUTDFirmwareEmulatorError> {
+        match Utc.with_ymd_and_hms(year, month, day, hour, min, sec) {
+            LocalResult::Single(date) => {
+                match (date.time() - Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap().time())
+                    .num_nanoseconds()
+                {
+                    Some(n) if n < 0 => return Err(AUTDFirmwareEmulatorError::InvalidDateTime),
+                    Some(n) => return Ok(n as _),
+                    None => return Err(AUTDFirmwareEmulatorError::InvalidDateTime),
+                }
+            }
+            _ => return Err(AUTDFirmwareEmulatorError::InvalidDateTime),
+        }
+    }
+
+    pub const fn systime(ec_time: u64) -> u64 {
+        ((ec_time as u128 * autd3_driver::fpga::FPGA_CLK_FREQ as u128) / 1000000000) as _
+    }
+
+    pub fn stm_idx_from_systime(&self, systime: u64) -> usize {
+        (systime / self.stm_frequency_division() as u64) as usize % self.stm_cycle()
+    }
+
+    pub fn mod_idx_from_systime(&self, systime: u64) -> usize {
+        (systime / self.modulation_frequency_division() as u64) as usize % self.modulation_cycle()
     }
 }
 

@@ -12,6 +12,7 @@ keywords = ["autd"]
 
 [dependencies]
 autd3-driver = { path = "../autd3-driver", version = "19.1.1" }
+chrono = "0.4.31"
 num-integer = "0.1.45"
 thiserror = "1.0.40"
 

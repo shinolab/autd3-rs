@@ -1,6 +1,7 @@
 # 19.1.1
 
 - Fix `T4010A1_AMPLITUDE` value
+- Add calculation of index of Modulation and STM from system time in firmware-emulator
 
 # 19.1.0
 
