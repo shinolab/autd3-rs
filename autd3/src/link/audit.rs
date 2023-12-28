@@ -4,7 +4,7 @@
  * Created Date: 14/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 27/11/2023
+ * Last Modified: 28/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -174,6 +174,7 @@ impl LinkSync for Audit {
         tx: &TxDatagram,
         rx: &mut [RxMessage],
         timeout: Option<Duration>,
+        ignore_ack: bool,
     ) -> Result<bool, AUTDInternalError> {
         let timeout = timeout.unwrap_or(self.timeout);
         self.last_timeout = timeout;
@@ -183,7 +184,7 @@ impl LinkSync for Audit {
         if timeout.is_zero() {
             return self.receive(rx);
         }
-        self.wait_msg_processed(tx, rx, timeout)
+        self.wait_msg_processed(tx, rx, timeout, ignore_ack)
     }
 
     fn is_open(&self) -> bool {

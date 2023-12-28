@@ -4,7 +4,7 @@
  * Created Date: 28/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 13/12/2023
+ * Last Modified: 28/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -158,16 +158,18 @@ pub fn link_derive(input: TokenStream) -> TokenStream {
                 tx: &autd3_driver::cpu::TxDatagram,
                 rx: &mut [autd3_driver::cpu::RxMessage],
                 timeout: Option<std::time::Duration>,
+                ignore_ack: bool,
             ) -> Result<bool, autd3_driver::error::AUTDInternalError> {
-                <Self as autd3_driver::link::LinkSync>::send_receive(self, tx, rx, timeout)
+                <Self as autd3_driver::link::LinkSync>::send_receive(self, tx, rx, timeout, ignore_ack)
             }
             async fn wait_msg_processed(
                 &mut self,
                 tx: &autd3_driver::cpu::TxDatagram,
                 rx: &mut [autd3_driver::cpu::RxMessage],
                 timeout: std::time::Duration,
+                ignore_ack: bool,
             ) -> Result<bool, autd3_driver::error::AUTDInternalError> {
-                <Self as autd3_driver::link::LinkSync>::wait_msg_processed(self, tx, rx, timeout)
+                <Self as autd3_driver::link::LinkSync>::wait_msg_processed(self, tx, rx, timeout, ignore_ack)
             }
         }
 
@@ -237,18 +239,20 @@ pub fn link_sync_derive(input: TokenStream) -> TokenStream {
                 tx: &autd3_driver::cpu::TxDatagram,
                 rx: &mut [autd3_driver::cpu::RxMessage],
                 timeout: Option<std::time::Duration>,
+                ignore_ack: bool,
             ) -> Result<bool, autd3_driver::error::AUTDInternalError> {
                 self.runtime
-                    .block_on(self.inner.send_receive(tx, rx, timeout))
+                    .block_on(self.inner.send_receive(tx, rx, timeout, ignore_ack))
             }
             fn wait_msg_processed(
                 &mut self,
                 tx: &autd3_driver::cpu::TxDatagram,
                 rx: &mut [autd3_driver::cpu::RxMessage],
                 timeout: std::time::Duration,
+                ignore_ack: bool,
             ) -> Result<bool, autd3_driver::error::AUTDInternalError> {
                 self.runtime
-                    .block_on(self.inner.wait_msg_processed(tx, rx, timeout))
+                    .block_on(self.inner.wait_msg_processed(tx, rx, timeout, ignore_ack))
             }
         }
 
