@@ -4,7 +4,7 @@
  * Created Date: 27/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/12/2023
+ * Last Modified: 28/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -41,6 +41,7 @@ pub trait Link: Send + Sync {
         tx: &TxDatagram,
         rx: &mut [RxMessage],
         timeout: Option<Duration>,
+        ignore_ack: bool,
     ) -> Result<bool, AUTDInternalError> {
         let timeout = timeout.unwrap_or(self.timeout());
         if !self.send(tx).await? {
@@ -49,7 +50,7 @@ pub trait Link: Send + Sync {
         if timeout.is_zero() {
             return self.receive(rx).await;
         }
-        self.wait_msg_processed(tx, rx, timeout).await
+        self.wait_msg_processed(tx, rx, timeout, ignore_ack).await
     }
 
     /// Wait until message is processed
@@ -58,10 +59,16 @@ pub trait Link: Send + Sync {
         tx: &TxDatagram,
         rx: &mut [RxMessage],
         timeout: Duration,
+        ignore_ack: bool,
     ) -> Result<bool, AUTDInternalError> {
         let start = std::time::Instant::now();
         let _ = self.receive(rx).await?;
-        if tx.headers().zip(rx.iter()).all(|(h, r)| h.msg_id == r.ack) {
+        if tx.headers().zip(rx.iter()).fold(Ok(true), |acc, (h, r)| {
+            if !ignore_ack && r.ack & 0x80 != 0 {
+                return Err(AUTDInternalError::firmware_err(r.ack));
+            }
+            Ok(acc? && h.msg_id == r.ack)
+        })? {
             return Ok(true);
         }
         loop {
@@ -72,7 +79,12 @@ pub trait Link: Send + Sync {
             if !self.receive(rx).await? {
                 continue;
             }
-            if tx.headers().zip(rx.iter()).all(|(h, r)| h.msg_id == r.ack) {
+            if tx.headers().zip(rx.iter()).fold(Ok(true), |acc, (h, r)| {
+                if !ignore_ack && r.ack & 0x80 != 0 {
+                    return Err(AUTDInternalError::firmware_err(r.ack));
+                }
+                Ok(acc? && h.msg_id == r.ack)
+            })? {
                 return Ok(true);
             }
         }
@@ -94,6 +106,7 @@ pub trait LinkSync {
         tx: &TxDatagram,
         rx: &mut [RxMessage],
         timeout: Option<Duration>,
+        ignore_ack: bool,
     ) -> Result<bool, AUTDInternalError> {
         let timeout = timeout.unwrap_or(self.timeout());
         if !self.send(tx)? {
@@ -102,17 +115,24 @@ pub trait LinkSync {
         if timeout.is_zero() {
             return self.receive(rx);
         }
-        self.wait_msg_processed(tx, rx, timeout)
+        self.wait_msg_processed(tx, rx, timeout, ignore_ack)
     }
     fn wait_msg_processed(
         &mut self,
         tx: &TxDatagram,
         rx: &mut [RxMessage],
         timeout: Duration,
+        ignore_ack: bool,
     ) -> Result<bool, AUTDInternalError> {
         let start = std::time::Instant::now();
         let _ = self.receive(rx)?;
-        if tx.headers().zip(rx.iter()).all(|(h, r)| h.msg_id == r.ack) {
+
+        if tx.headers().zip(rx.iter()).fold(Ok(true), |acc, (h, r)| {
+            if !ignore_ack && r.ack & 0x80 != 0 {
+                return Err(AUTDInternalError::firmware_err(r.ack));
+            }
+            Ok(acc? && h.msg_id == r.ack)
+        })? {
             return Ok(true);
         }
         loop {
@@ -123,7 +143,12 @@ pub trait LinkSync {
             if !self.receive(rx)? {
                 continue;
             }
-            if tx.headers().zip(rx.iter()).all(|(h, r)| h.msg_id == r.ack) {
+            if tx.headers().zip(rx.iter()).fold(Ok(true), |acc, (h, r)| {
+                if !ignore_ack && r.ack & 0x80 != 0 {
+                    return Err(AUTDInternalError::firmware_err(r.ack));
+                }
+                Ok(acc? && h.msg_id == r.ack)
+            })? {
                 return Ok(true);
             }
         }
@@ -179,8 +204,9 @@ impl LinkSync for Box<dyn LinkSync> {
         tx: &TxDatagram,
         rx: &mut [RxMessage],
         timeout: Option<Duration>,
+        ignore_ack: bool,
     ) -> Result<bool, AUTDInternalError> {
-        self.as_mut().send_receive(tx, rx, timeout)
+        self.as_mut().send_receive(tx, rx, timeout, ignore_ack)
     }
 
     #[cfg_attr(coverage_nightly, coverage(off))]
@@ -189,8 +215,10 @@ impl LinkSync for Box<dyn LinkSync> {
         tx: &TxDatagram,
         rx: &mut [RxMessage],
         timeout: Duration,
+        ignore_ack: bool,
     ) -> Result<bool, AUTDInternalError> {
-        self.as_mut().wait_msg_processed(tx, rx, timeout)
+        self.as_mut()
+            .wait_msg_processed(tx, rx, timeout, ignore_ack)
     }
 }
 
@@ -276,21 +304,24 @@ mod tests {
 
         let tx = TxDatagram::new(0);
         let mut rx = Vec::new();
-        assert_eq!(link.send_receive(&tx, &mut rx, None).await, Ok(true));
+        assert_eq!(link.send_receive(&tx, &mut rx, None, false).await, Ok(true));
 
         link.is_open = false;
         assert_eq!(
-            link.send_receive(&tx, &mut rx, None).await,
+            link.send_receive(&tx, &mut rx, None, false).await,
             Err(AUTDInternalError::LinkClosed)
         );
 
         link.is_open = true;
         link.down = true;
-        assert_eq!(link.send_receive(&tx, &mut rx, None).await, Ok(false));
+        assert_eq!(
+            link.send_receive(&tx, &mut rx, None, false).await,
+            Ok(false)
+        );
 
         link.down = false;
         assert_eq!(
-            link.send_receive(&tx, &mut rx, Some(Duration::from_millis(1)))
+            link.send_receive(&tx, &mut rx, Some(Duration::from_millis(1)), false)
                 .await,
             Ok(true)
         );
@@ -310,7 +341,7 @@ mod tests {
         tx.header_mut(0).msg_id = 2;
         let mut rx = vec![RxMessage { ack: 0, data: 0 }];
         assert_eq!(
-            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10))
+            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10), false)
                 .await,
             Ok(true)
         );
@@ -318,7 +349,7 @@ mod tests {
         link.recv_cnt = 0;
         link.is_open = false;
         assert_eq!(
-            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10))
+            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10), false)
                 .await,
             Err(AUTDInternalError::LinkClosed)
         );
@@ -327,7 +358,7 @@ mod tests {
         link.is_open = true;
         link.down = true;
         assert_eq!(
-            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10))
+            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10), false)
                 .await,
             Ok(false)
         );
@@ -336,7 +367,7 @@ mod tests {
         link.recv_cnt = 0;
         tx.header_mut(0).msg_id = 20;
         assert_eq!(
-            link.wait_msg_processed(&tx, &mut rx, Duration::from_secs(10))
+            link.wait_msg_processed(&tx, &mut rx, Duration::from_secs(10), false)
                 .await,
             Err(AUTDInternalError::LinkError("too many".to_owned()))
         );
@@ -423,21 +454,21 @@ mod tests {
 
         let tx = TxDatagram::new(0);
         let mut rx = Vec::new();
-        assert_eq!(link.send_receive(&tx, &mut rx, None), Ok(true));
+        assert_eq!(link.send_receive(&tx, &mut rx, None, false), Ok(true));
 
         link.is_open = false;
         assert_eq!(
-            link.send_receive(&tx, &mut rx, None),
+            link.send_receive(&tx, &mut rx, None, false),
             Err(AUTDInternalError::LinkClosed)
         );
 
         link.is_open = true;
         link.down = true;
-        assert_eq!(link.send_receive(&tx, &mut rx, None), Ok(false));
+        assert_eq!(link.send_receive(&tx, &mut rx, None, false), Ok(false));
 
         link.down = false;
         assert_eq!(
-            link.send_receive(&tx, &mut rx, Some(Duration::from_millis(1))),
+            link.send_receive(&tx, &mut rx, Some(Duration::from_millis(1)), false),
             Ok(true)
         );
     }
@@ -457,14 +488,14 @@ mod tests {
         tx.header_mut(0).msg_id = 2;
         let mut rx = vec![RxMessage { ack: 0, data: 0 }];
         assert_eq!(
-            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10)),
+            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10), false),
             Ok(true)
         );
 
         link.recv_cnt = 0;
         link.is_open = false;
         assert_eq!(
-            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10)),
+            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10), false),
             Err(AUTDInternalError::LinkClosed)
         );
 
@@ -472,7 +503,7 @@ mod tests {
         link.is_open = true;
         link.down = true;
         assert_eq!(
-            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10)),
+            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10), false),
             Ok(false)
         );
 
@@ -480,7 +511,7 @@ mod tests {
         link.recv_cnt = 0;
         tx.header_mut(0).msg_id = 20;
         assert_eq!(
-            link.wait_msg_processed(&tx, &mut rx, Duration::from_secs(10)),
+            link.wait_msg_processed(&tx, &mut rx, Duration::from_secs(10), false),
             Err(AUTDInternalError::LinkError("too many".to_owned()))
         );
     }

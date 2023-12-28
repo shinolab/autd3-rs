@@ -4,7 +4,7 @@
  * Created Date: 29/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 26/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -18,7 +18,7 @@ use colored::*;
 use std::io::{self, Write};
 
 pub async fn holo<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
-    autd.send(Silencer::default()).await?;
+    autd.send(ConfigureSilencer::default()).await?;
 
     let m = Sine::new(150.);
 
