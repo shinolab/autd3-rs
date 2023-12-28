@@ -4,7 +4,7 @@
  * Created Date: 27/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 26/12/2023
+ * Last Modified: 28/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -84,7 +84,7 @@ pub async fn run<L: Link>(mut autd: Controller<L>) -> anyhow::Result<()> {
         io::stdin().read_line(&mut _s)?;
 
         if !autd
-            .send((ConfigureSilencer::default(), Null::default()))
+            .send((Null::default(), ConfigureSilencer::default()))
             .await?
         {
             eprintln!("Failed to stop");
