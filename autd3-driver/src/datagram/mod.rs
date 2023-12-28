@@ -20,7 +20,6 @@ mod modulation;
 mod reads_fpga_info;
 mod silencer;
 mod stm;
-mod stop;
 mod synchronize;
 mod with_timeout;
 
@@ -33,8 +32,6 @@ pub use modulation::{Modulation, ModulationProperty};
 pub use reads_fpga_info::ConfigureReadsFPGAInfo;
 pub use silencer::ConfigureSilencer;
 pub use stm::{FocusSTM, GainSTM, STMProps};
-#[allow(deprecated)]
-pub use stop::Stop;
 pub use synchronize::Synchronize;
 pub use with_timeout::{DatagramT, DatagramWithTimeout};
 
