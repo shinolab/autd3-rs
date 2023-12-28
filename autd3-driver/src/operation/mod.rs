@@ -4,7 +4,7 @@
  * Created Date: 08/01/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/12/2023
+ * Last Modified: 26/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -133,7 +133,11 @@ impl OperationHandler {
                 (_, 0) => Self::pack_dev(op1, dev, tx),
                 _ => {
                     let hedaer = tx.header_mut(dev.idx());
-                    hedaer.msg_id = hedaer.msg_id.wrapping_add(1);
+                    hedaer.msg_id = if hedaer.msg_id == 0x7F {
+                        0
+                    } else {
+                        hedaer.msg_id + 1
+                    };
                     hedaer.slot_2_offset = 0;
 
                     let t = tx.payload_mut(dev.idx());
@@ -161,7 +165,11 @@ impl OperationHandler {
         tx: &mut TxDatagram,
     ) -> Result<(), AUTDInternalError> {
         let hedaer = tx.header_mut(dev.idx());
-        hedaer.msg_id = hedaer.msg_id.wrapping_add(1);
+        hedaer.msg_id = if hedaer.msg_id == 0x7F {
+            0
+        } else {
+            hedaer.msg_id + 1
+        };
         hedaer.slot_2_offset = 0;
 
         op.pack(dev, tx.payload_mut(dev.idx()))?;
