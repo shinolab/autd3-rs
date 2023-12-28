@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 26/12/2023
+ * Last Modified: 28/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -43,6 +43,7 @@ pub struct Controller<L: Link> {
     pub geometry: Geometry,
     tx_buf: TxDatagram,
     rx_buf: Vec<RxMessage>,
+    ignore_ack: bool,
 }
 
 impl Controller<Nop> {
@@ -83,9 +84,11 @@ impl<L: Link> Controller<L> {
             geometry,
             tx_buf,
             rx_buf: vec![RxMessage { data: 0, ack: 0 }; num_devices],
+            ignore_ack: true,
         };
         cnt.send(Clear::new()).await?;
         cnt.send(Synchronize::new()).await?;
+        cnt.ignore_ack = false;
         Ok(cnt)
     }
 }
@@ -101,9 +104,11 @@ impl<L: Link> Controller<L> {
             geometry,
             tx_buf,
             rx_buf: vec![RxMessage { data: 0, ack: 0 }; num_devices],
+            ignore_ack: true,
         };
         cnt.send(Clear::new())?;
         cnt.send(Synchronize::new())?;
+        cnt.ignore_ack = false;
         Ok(cnt)
     }
 }
@@ -132,7 +137,7 @@ impl<L: Link> Controller<L> {
 
             if !self
                 .link
-                .send_receive(&self.tx_buf, &mut self.rx_buf, timeout)
+                .send_receive(&self.tx_buf, &mut self.rx_buf, timeout, self.ignore_ack)
                 .await?
             {
                 return Ok(false);
@@ -182,7 +187,7 @@ impl<L: Link> Controller<L> {
             ($op:expr, $null_op:expr, $link:expr, $geometry:expr, $tx_buf:expr, $rx_buf:expr ) => {
                 OperationHandler::pack($op, $null_op, $geometry, $tx_buf)?;
                 if !$link
-                    .send_receive($tx_buf, $rx_buf, Some(Duration::from_millis(200)))
+                    .send_receive($tx_buf, $rx_buf, Some(Duration::from_millis(200)), false)
                     .await?
                 {
                     return Err(AUTDError::ReadFirmwareInfoFailed(ReadFirmwareInfoState(
@@ -290,7 +295,7 @@ impl<L: Link> Controller<L> {
 
             if !self
                 .link
-                .send_receive(&self.tx_buf, &mut self.rx_buf, timeout)?
+                .send_receive(&self.tx_buf, &mut self.rx_buf, timeout, self.ignore_ack)?
             {
                 return Ok(false);
             }
