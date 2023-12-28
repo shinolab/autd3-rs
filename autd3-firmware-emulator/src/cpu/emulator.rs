@@ -4,7 +4,7 @@
  * Created Date: 06/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 14/12/2023
+ * Last Modified: 27/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -20,6 +20,7 @@ use super::params::*;
 pub struct CPUEmulator {
     idx: usize,
     ack: u8,
+    last_msg_id: u8,
     rx_data: u8,
     read_fpga_info: bool,
     read_fpga_info_store: bool,
@@ -30,6 +31,11 @@ pub struct CPUEmulator {
     synchronized: bool,
     num_transducers: usize,
     fpga_flags_internal: u16,
+    mod_freq_div: u32,
+    stm_freq_div: u32,
+    silencer_strict_mode: bool,
+    min_freq_div_intensity: u32,
+    min_freq_div_phase: u32,
 }
 
 impl CPUEmulator {
@@ -37,6 +43,7 @@ impl CPUEmulator {
         let mut s = Self {
             idx: id,
             ack: 0x00,
+            last_msg_id: 0x00,
             rx_data: 0x00,
             read_fpga_info: false,
             read_fpga_info_store: false,
@@ -47,6 +54,11 @@ impl CPUEmulator {
             synchronized: false,
             num_transducers,
             fpga_flags_internal: 0x0000,
+            mod_freq_div: 5120,
+            stm_freq_div: 0xFFFFFFFF,
+            silencer_strict_mode: true,
+            min_freq_div_intensity: 5120,
+            min_freq_div_phase: 20480,
         };
         s.init();
         s
@@ -102,6 +114,10 @@ impl CPUEmulator {
     pub fn should_update(&self) -> bool {
         self.read_fpga_info
     }
+
+    pub fn silencer_strict_mode(&self) -> bool {
+        self.silencer_strict_mode
+    }
 }
 
 impl CPUEmulator {
@@ -143,7 +159,7 @@ impl CPUEmulator {
         // Do nothing to sync
     }
 
-    fn write_mod(&mut self, data: &[u8]) {
+    fn write_mod(&mut self, data: &[u8]) -> u8 {
         let flag = data[1];
 
         let write = ((data[3] as u32) << 8) | data[2] as u32;
@@ -154,6 +170,11 @@ impl CPUEmulator {
                 | ((data[6] as u32) << 16)
                 | ((data[5] as u32) << 8)
                 | data[4] as u32;
+            if self.silencer_strict_mode & (freq_div < self.min_freq_div_intensity) {
+                return ERR_FREQ_DIV_TOO_SMALL;
+            }
+            self.mod_freq_div = freq_div;
+
             self.bram_cpy(
                 BRAM_SELECT_CONTROLLER,
                 BRAM_ADDR_MOD_FREQ_DIV_0,
@@ -206,21 +227,54 @@ impl CPUEmulator {
                 (self.mod_cycle.max(1) - 1) as _,
             );
         }
+
+        return ERR_NONE;
     }
 
-    fn config_silencer(&mut self, data: &[u8]) {
-        let step_intensity = ((data[3] as u16) << 8) | data[2] as u16;
-        let step_phase = ((data[5] as u16) << 8) | data[4] as u16;
-        self.bram_write(
-            BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_SILENT_STEP_INTENSITY,
-            step_intensity,
-        );
-        self.bram_write(
-            BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_SILENT_STEP_PHASE,
-            step_phase,
-        );
+    fn config_silencer(&mut self, data: &[u8]) -> u8 {
+        let value_intensity = ((data[3] as u16) << 8) | data[2] as u16;
+        let value_phase = ((data[5] as u16) << 8) | data[4] as u16;
+        let flags = ((data[7] as u16) << 8) | data[6] as u16;
+
+        if (flags & SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS) != 0 {
+            self.silencer_strict_mode = (flags & SILENCER_CTL_FLAG_STRICT_MODE) != 0;
+            self.min_freq_div_intensity = (value_intensity as u32) << 9;
+            self.min_freq_div_phase = (value_phase as u32) << 9;
+            if self.silencer_strict_mode {
+                if self.mod_freq_div < self.min_freq_div_intensity {
+                    return ERR_COMPLETION_STEPS_TOO_LARGE;
+                }
+                if (self.stm_freq_div < self.min_freq_div_intensity)
+                    || (self.stm_freq_div < self.min_freq_div_phase)
+                {
+                    return ERR_COMPLETION_STEPS_TOO_LARGE;
+                }
+            }
+            self.bram_write(
+                BRAM_SELECT_CONTROLLER,
+                BRAM_ADDR_SILENCER_COMPLETION_STEPS_INTENSITY,
+                value_intensity,
+            );
+            self.bram_write(
+                BRAM_SELECT_CONTROLLER,
+                BRAM_ADDR_SILENCER_COMPLETION_STEPS_PHASE,
+                value_phase,
+            );
+        } else {
+            self.bram_write(
+                BRAM_SELECT_CONTROLLER,
+                BRAM_ADDR_SILENCER_UPDATE_RATE_INTENSITY,
+                value_intensity,
+            );
+            self.bram_write(
+                BRAM_SELECT_CONTROLLER,
+                BRAM_ADDR_SILENCER_UPDATE_RATE_PHASE,
+                value_phase,
+            );
+        }
+        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_SILENCER_CTL_FLAG, flags);
+
+        return ERR_NONE;
     }
 
     fn config_debug(&mut self, data: &[u8]) {
@@ -254,7 +308,7 @@ impl CPUEmulator {
             .for_each(|i| self.bram_write(BRAM_SELECT_NORMAL, i as _, data[i]));
     }
 
-    fn write_focus_stm(&mut self, data: &[u8]) {
+    fn write_focus_stm(&mut self, data: &[u8]) -> u8 {
         let flag = data[1];
 
         let size = (data[3] as u32) << 8 | data[2] as u32;
@@ -266,6 +320,14 @@ impl CPUEmulator {
                 | ((data[6] as u32) << 16)
                 | ((data[5] as u32) << 8)
                 | data[4] as u32;
+            if self.silencer_strict_mode {
+                if (freq_div < self.min_freq_div_intensity) || (freq_div < self.min_freq_div_phase)
+                {
+                    return ERR_FREQ_DIV_TOO_SMALL;
+                }
+            }
+            self.stm_freq_div = freq_div;
+
             let sound_speed = ((data[11] as u32) << 24)
                 | ((data[10] as u32) << 16)
                 | ((data[9] as u32) << 8)
@@ -381,9 +443,11 @@ impl CPUEmulator {
                 (self.stm_cycle.max(1) - 1) as _,
             );
         }
+
+        return ERR_NONE;
     }
 
-    fn write_gain_stm(&mut self, data: &[u8]) {
+    fn write_gain_stm(&mut self, data: &[u8]) -> u8 {
         let flag = data[1];
 
         let send = (flag >> 6) + 1;
@@ -397,6 +461,13 @@ impl CPUEmulator {
                 | ((data[6] as u32) << 16)
                 | ((data[5] as u32) << 8)
                 | data[4] as u32;
+            if self.silencer_strict_mode {
+                if (freq_div < self.min_freq_div_intensity) || (freq_div < self.min_freq_div_phase)
+                {
+                    return ERR_FREQ_DIV_TOO_SMALL;
+                }
+            }
+            self.stm_freq_div = freq_div;
             self.bram_cpy(
                 BRAM_SELECT_CONTROLLER,
                 BRAM_ADDR_STM_FREQ_DIV_0,
@@ -518,6 +589,8 @@ impl CPUEmulator {
                 (self.stm_cycle.max(1) - 1) as _,
             );
         }
+
+        return ERR_NONE;
     }
 
     fn get_cpu_version(&self) -> u16 {
@@ -553,7 +626,8 @@ impl CPUEmulator {
     }
 
     fn clear(&mut self) {
-        let freq_div_4k = 5120;
+        self.mod_freq_div = 5120;
+        self.stm_freq_div = 0xFFFFFFFF;
 
         self.read_fpga_info = false;
 
@@ -564,8 +638,34 @@ impl CPUEmulator {
             self.fpga_flags_internal,
         );
 
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_SILENT_STEP_INTENSITY, 256);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_SILENT_STEP_PHASE, 256);
+        self.bram_write(
+            BRAM_SELECT_CONTROLLER,
+            BRAM_ADDR_SILENCER_UPDATE_RATE_INTENSITY,
+            256,
+        );
+        self.bram_write(
+            BRAM_SELECT_CONTROLLER,
+            BRAM_ADDR_SILENCER_UPDATE_RATE_PHASE,
+            256,
+        );
+        self.bram_write(
+            BRAM_SELECT_CONTROLLER,
+            BRAM_ADDR_SILENCER_CTL_FLAG,
+            SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS,
+        );
+        self.bram_write(
+            BRAM_SELECT_CONTROLLER,
+            BRAM_ADDR_SILENCER_COMPLETION_STEPS_INTENSITY,
+            10,
+        );
+        self.bram_write(
+            BRAM_SELECT_CONTROLLER,
+            BRAM_ADDR_SILENCER_COMPLETION_STEPS_PHASE,
+            40,
+        );
+        self.silencer_strict_mode = true;
+        self.min_freq_div_intensity = 10 << 9;
+        self.min_freq_div_phase = 40 << 9;
 
         self.stm_cycle = 0;
 
@@ -578,7 +678,7 @@ impl CPUEmulator {
         self.bram_cpy(
             BRAM_SELECT_CONTROLLER,
             BRAM_ADDR_MOD_FREQ_DIV_0,
-            &freq_div_4k as *const _ as _,
+            &self.mod_freq_div as *const _ as _,
             std::mem::size_of::<u32>() >> 1,
         );
         self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_MOD_ADDR_OFFSET, 0x0000);
@@ -596,47 +696,69 @@ impl CPUEmulator {
         self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_OUT_IDX, 0xFF);
     }
 
-    fn handle_payload(&mut self, tag: u8, data: &[u8]) {
+    fn handle_payload(&mut self, tag: u8, data: &[u8]) -> u8 {
         match tag {
-            TAG_CLEAR => self.clear(),
-            TAG_SYNC => self.synchronize(),
-            TAG_FIRM_INFO => match data[1] {
-                INFO_TYPE_CPU_VERSION_MAJOR => {
-                    self.read_fpga_info_store = self.read_fpga_info;
-                    self.read_fpga_info = false;
-                    self.rx_data = (self.get_cpu_version() & 0xFF) as _;
-                }
-                INFO_TYPE_CPU_VERSION_MINOR => {
-                    self.rx_data = (self.get_cpu_version_minor() & 0xFF) as _;
-                }
-                INFO_TYPE_FPGA_VERSION_MAJOR => {
-                    self.rx_data = (self.get_fpga_version() & 0xFF) as _;
-                }
-                INFO_TYPE_FPGA_VERSION_MINOR => {
-                    self.rx_data = (self.get_fpga_version_minor() & 0xFF) as _;
-                }
-                INFO_TYPE_FPGA_FUNCTIONS => {
-                    self.rx_data = ((self.get_fpga_version() >> 8) & 0xFF) as _;
-                }
-                INFO_TYPE_CLEAR => {
-                    self.read_fpga_info = self.read_fpga_info_store;
-                }
-                _ => {
-                    unreachable!("Unsupported firmware info type")
-                }
-            },
+            TAG_CLEAR => {
+                self.clear();
+                ERR_NONE
+            }
+            TAG_SYNC => {
+                self.synchronize();
+                ERR_NONE
+            }
+            TAG_FIRM_INFO => {
+                match data[1] {
+                    INFO_TYPE_CPU_VERSION_MAJOR => {
+                        self.read_fpga_info_store = self.read_fpga_info;
+                        self.read_fpga_info = false;
+                        self.rx_data = (self.get_cpu_version() & 0xFF) as _;
+                    }
+                    INFO_TYPE_CPU_VERSION_MINOR => {
+                        self.rx_data = (self.get_cpu_version_minor() & 0xFF) as _;
+                    }
+                    INFO_TYPE_FPGA_VERSION_MAJOR => {
+                        self.rx_data = (self.get_fpga_version() & 0xFF) as _;
+                    }
+                    INFO_TYPE_FPGA_VERSION_MINOR => {
+                        self.rx_data = (self.get_fpga_version_minor() & 0xFF) as _;
+                    }
+                    INFO_TYPE_FPGA_FUNCTIONS => {
+                        self.rx_data = ((self.get_fpga_version() >> 8) & 0xFF) as _;
+                    }
+                    INFO_TYPE_CLEAR => {
+                        self.read_fpga_info = self.read_fpga_info_store;
+                    }
+                    _ => {
+                        unreachable!("Unsupported firmware info type")
+                    }
+                };
+                ERR_NONE
+            }
             TAG_MODULATION => self.write_mod(data),
-            TAG_MODULATION_DELAY => self.write_mod_delay(&data[2..]),
+            TAG_MODULATION_DELAY => {
+                self.write_mod_delay(&data[2..]);
+                ERR_NONE
+            }
             TAG_SILENCER => self.config_silencer(data),
-            TAG_GAIN => self.write_gain(data),
+            TAG_GAIN => {
+                self.write_gain(data);
+                ERR_NONE
+            }
             TAG_FOCUS_STM => self.write_focus_stm(data),
             TAG_GAIN_STM => self.write_gain_stm(data),
-            TAG_FORCE_FAN => self.configure_force_fan(&data[2..]),
-            TAG_READS_FPGA_INFO => self.configure_reads_fpga_info(&data[2..]),
-            TAG_DEBUG => self.config_debug(&data[2..]),
-            _ => {
-                unimplemented!("Unsupported tag")
+            TAG_FORCE_FAN => {
+                self.configure_force_fan(&data[2..]);
+                ERR_NONE
             }
+            TAG_READS_FPGA_INFO => {
+                self.configure_reads_fpga_info(&data[2..]);
+                ERR_NONE
+            }
+            TAG_DEBUG => {
+                self.config_debug(&data[2..]);
+                ERR_NONE
+            }
+            _ => ERR_NOT_SUPPORTED_TAG,
         }
     }
 
@@ -646,17 +768,37 @@ impl CPUEmulator {
         if self.ack == header.msg_id {
             return;
         }
+        self.last_msg_id = header.msg_id;
 
-        self.handle_payload(
+        if (header.msg_id & 0x80) != 0 {
+            if self.read_fpga_info {
+                self.rx_data = self.read_fpga_info() as _;
+            }
+            self.ack = ERR_INVALID_MSG_ID;
+        }
+
+        self.ack = self.handle_payload(
             data[std::mem::size_of::<Header>()],
             &data[std::mem::size_of::<Header>()..],
         );
+        if self.ack != ERR_NONE {
+            if self.read_fpga_info {
+                self.rx_data = self.read_fpga_info() as _;
+            }
+            return;
+        }
 
         if header.slot_2_offset != 0 {
-            self.handle_payload(
+            self.ack = self.handle_payload(
                 data[std::mem::size_of::<Header>() + header.slot_2_offset as usize],
                 &data[std::mem::size_of::<Header>() + header.slot_2_offset as usize..],
-            )
+            );
+            if self.ack != ERR_NONE {
+                if self.read_fpga_info {
+                    self.rx_data = self.read_fpga_info() as _;
+                }
+                return;
+            }
         }
 
         self.bram_write(
