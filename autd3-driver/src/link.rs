@@ -4,7 +4,7 @@
  * Created Date: 27/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/12/2023
+ * Last Modified: 28/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -61,7 +61,12 @@ pub trait Link: Send + Sync {
     ) -> Result<bool, AUTDInternalError> {
         let start = std::time::Instant::now();
         let _ = self.receive(rx).await?;
-        if tx.headers().zip(rx.iter()).all(|(h, r)| h.msg_id == r.ack) {
+        if tx.headers().zip(rx.iter()).fold(Ok(true), |acc, (h, r)| {
+            if r.ack & 0x80 != 0 {
+                return Err(AUTDInternalError::firmware_err(r.ack));
+            }
+            Ok(acc? && h.msg_id == r.ack)
+        })? {
             return Ok(true);
         }
         loop {
@@ -72,7 +77,12 @@ pub trait Link: Send + Sync {
             if !self.receive(rx).await? {
                 continue;
             }
-            if tx.headers().zip(rx.iter()).all(|(h, r)| h.msg_id == r.ack) {
+            if tx.headers().zip(rx.iter()).fold(Ok(true), |acc, (h, r)| {
+                if r.ack & 0x80 != 0 {
+                    return Err(AUTDInternalError::firmware_err(r.ack));
+                }
+                Ok(acc? && h.msg_id == r.ack)
+            })? {
                 return Ok(true);
             }
         }
@@ -112,7 +122,13 @@ pub trait LinkSync {
     ) -> Result<bool, AUTDInternalError> {
         let start = std::time::Instant::now();
         let _ = self.receive(rx)?;
-        if tx.headers().zip(rx.iter()).all(|(h, r)| h.msg_id == r.ack) {
+
+        if tx.headers().zip(rx.iter()).fold(Ok(true), |acc, (h, r)| {
+            if r.ack & 0x80 != 0 {
+                return Err(AUTDInternalError::firmware_err(r.ack));
+            }
+            Ok(acc? && h.msg_id == r.ack)
+        })? {
             return Ok(true);
         }
         loop {
@@ -123,7 +139,12 @@ pub trait LinkSync {
             if !self.receive(rx)? {
                 continue;
             }
-            if tx.headers().zip(rx.iter()).all(|(h, r)| h.msg_id == r.ack) {
+            if tx.headers().zip(rx.iter()).fold(Ok(true), |acc, (h, r)| {
+                if r.ack & 0x80 != 0 {
+                    return Err(AUTDInternalError::firmware_err(r.ack));
+                }
+                Ok(acc? && h.msg_id == r.ack)
+            })? {
                 return Ok(true);
             }
         }
