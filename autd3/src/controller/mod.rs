@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 14/12/2023
+ * Last Modified: 26/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -157,7 +157,7 @@ impl<L: Link> Controller<L> {
         }
         let res = self
             .send((
-                autd3_driver::datagram::Silencer::default(),
+                autd3_driver::datagram::ConfigureSilencer::default(),
                 crate::gain::Null::default(),
             ))
             .await?;
