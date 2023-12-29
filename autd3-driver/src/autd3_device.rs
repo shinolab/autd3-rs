@@ -4,7 +4,7 @@
  * Created Date: 06/12/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 01/12/2023
+ * Last Modified: 29/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -71,6 +71,9 @@ impl AUTD3 {
             Ok(v) => v,
             Err(_) => return true,
         };
+        if 17 < x || 14 < y {
+            return true;
+        }
 
         y == 1 && (x == 1 || x == 2 || x == 16)
     }
@@ -430,6 +433,12 @@ mod tests {
         assert!(!AUTD3::is_missing_transducer(15, 13));
         assert!(!AUTD3::is_missing_transducer(16, 13));
         assert!(!AUTD3::is_missing_transducer(17, 13));
+
+        for x in 18..=255 {
+            for y in 14..=255 {
+                assert!(AUTD3::is_missing_transducer(x, y));
+            }
+        }
 
         assert!(!AUTD3::is_missing_transducer(0i8, 0i8));
         assert!(!AUTD3::is_missing_transducer(0i16, 0i16));
