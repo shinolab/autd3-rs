@@ -4,7 +4,7 @@
  * Created Date: 27/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 28/12/2023
+ * Last Modified: 29/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -63,11 +63,11 @@ pub trait Link: Send + Sync {
     ) -> Result<bool, AUTDInternalError> {
         let start = std::time::Instant::now();
         let _ = self.receive(rx).await?;
-        if tx.headers().zip(rx.iter()).fold(Ok(true), |acc, (h, r)| {
+        if tx.headers().zip(rx.iter()).try_fold(true, |acc, (h, r)| {
             if !ignore_ack && r.ack & 0x80 != 0 {
                 return Err(AUTDInternalError::firmware_err(r.ack));
             }
-            Ok(acc? && h.msg_id == r.ack)
+            Ok(acc && h.msg_id == r.ack)
         })? {
             return Ok(true);
         }
@@ -79,11 +79,11 @@ pub trait Link: Send + Sync {
             if !self.receive(rx).await? {
                 continue;
             }
-            if tx.headers().zip(rx.iter()).fold(Ok(true), |acc, (h, r)| {
+            if tx.headers().zip(rx.iter()).try_fold(true, |acc, (h, r)| {
                 if !ignore_ack && r.ack & 0x80 != 0 {
                     return Err(AUTDInternalError::firmware_err(r.ack));
                 }
-                Ok(acc? && h.msg_id == r.ack)
+                Ok(acc && h.msg_id == r.ack)
             })? {
                 return Ok(true);
             }
@@ -127,11 +127,11 @@ pub trait LinkSync {
         let start = std::time::Instant::now();
         let _ = self.receive(rx)?;
 
-        if tx.headers().zip(rx.iter()).fold(Ok(true), |acc, (h, r)| {
+        if tx.headers().zip(rx.iter()).try_fold(true, |acc, (h, r)| {
             if !ignore_ack && r.ack & 0x80 != 0 {
                 return Err(AUTDInternalError::firmware_err(r.ack));
             }
-            Ok(acc? && h.msg_id == r.ack)
+            Ok(acc && h.msg_id == r.ack)
         })? {
             return Ok(true);
         }
@@ -143,11 +143,11 @@ pub trait LinkSync {
             if !self.receive(rx)? {
                 continue;
             }
-            if tx.headers().zip(rx.iter()).fold(Ok(true), |acc, (h, r)| {
+            if tx.headers().zip(rx.iter()).try_fold(true, |acc, (h, r)| {
                 if !ignore_ack && r.ack & 0x80 != 0 {
                     return Err(AUTDInternalError::firmware_err(r.ack));
                 }
-                Ok(acc? && h.msg_id == r.ack)
+                Ok(acc && h.msg_id == r.ack)
             })? {
                 return Ok(true);
             }
