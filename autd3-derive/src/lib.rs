@@ -4,7 +4,7 @@
  * Created Date: 28/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 28/12/2023
+ * Last Modified: 29/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -81,6 +81,10 @@ pub fn modulation_derive(input: TokenStream) -> TokenStream {
             fn operation(self) -> Result<(Self::O1, Self::O2), autd3_driver::error::AUTDInternalError> {
                 let freq_div = self.config.frequency_division();
                 Ok((Self::O1::new(self.calc()?, freq_div), Self::O2::default()))
+            }
+
+            fn timeout(&self) -> Option<std::time::Duration> {
+                Some(std::time::Duration::from_millis(200))
             }
         }
     };
