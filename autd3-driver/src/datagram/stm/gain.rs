@@ -4,7 +4,7 @@
  * Created Date: 04/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 01/12/2023
+ * Last Modified: 29/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -194,6 +194,10 @@ impl<G: Gain> Datagram for GainSTM<G> {
             Self::O1::new(gains, mode, freq_div, props.start_idx, props.finish_idx),
             Self::O2::default(),
         ))
+    }
+
+    fn timeout(&self) -> Option<std::time::Duration> {
+        Some(std::time::Duration::from_millis(200))
     }
 }
 
