@@ -4,7 +4,7 @@
  * Created Date: 06/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 27/12/2023
+ * Last Modified: 29/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -228,7 +228,7 @@ impl CPUEmulator {
             );
         }
 
-        return ERR_NONE;
+        ERR_NONE
     }
 
     fn config_silencer(&mut self, data: &[u8]) -> u8 {
@@ -274,7 +274,7 @@ impl CPUEmulator {
         }
         self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_SILENCER_CTL_FLAG, flags);
 
-        return ERR_NONE;
+        ERR_NONE
     }
 
     fn config_debug(&mut self, data: &[u8]) {
@@ -320,11 +320,11 @@ impl CPUEmulator {
                 | ((data[6] as u32) << 16)
                 | ((data[5] as u32) << 8)
                 | data[4] as u32;
-            if self.silencer_strict_mode {
-                if (freq_div < self.min_freq_div_intensity) || (freq_div < self.min_freq_div_phase)
-                {
-                    return ERR_FREQ_DIV_TOO_SMALL;
-                }
+            if self.silencer_strict_mode
+                && ((freq_div < self.min_freq_div_intensity)
+                    || (freq_div < self.min_freq_div_phase))
+            {
+                return ERR_FREQ_DIV_TOO_SMALL;
             }
             self.stm_freq_div = freq_div;
 
@@ -444,7 +444,7 @@ impl CPUEmulator {
             );
         }
 
-        return ERR_NONE;
+        ERR_NONE
     }
 
     fn write_gain_stm(&mut self, data: &[u8]) -> u8 {
@@ -461,11 +461,11 @@ impl CPUEmulator {
                 | ((data[6] as u32) << 16)
                 | ((data[5] as u32) << 8)
                 | data[4] as u32;
-            if self.silencer_strict_mode {
-                if (freq_div < self.min_freq_div_intensity) || (freq_div < self.min_freq_div_phase)
-                {
-                    return ERR_FREQ_DIV_TOO_SMALL;
-                }
+            if self.silencer_strict_mode
+                && ((freq_div < self.min_freq_div_intensity)
+                    || (freq_div < self.min_freq_div_phase))
+            {
+                return ERR_FREQ_DIV_TOO_SMALL;
             }
             self.stm_freq_div = freq_div;
             self.bram_cpy(
@@ -590,7 +590,7 @@ impl CPUEmulator {
             );
         }
 
-        return ERR_NONE;
+        ERR_NONE
     }
 
     fn get_cpu_version(&self) -> u16 {
