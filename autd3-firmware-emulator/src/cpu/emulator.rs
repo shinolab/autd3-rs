@@ -4,7 +4,7 @@
  * Created Date: 06/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 29/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -15,27 +15,27 @@ use autd3_driver::cpu::{Header, TxDatagram};
 
 use crate::fpga::emulator::FPGAEmulator;
 
-use super::params::*;
+use super::{operation::*, params::*};
 
 pub struct CPUEmulator {
-    idx: usize,
-    ack: u8,
-    last_msg_id: u8,
-    rx_data: u8,
-    read_fpga_info: bool,
-    read_fpga_info_store: bool,
-    mod_cycle: u32,
-    stm_cycle: u32,
-    gain_stm_mode: u16,
-    fpga: FPGAEmulator,
-    synchronized: bool,
-    num_transducers: usize,
-    fpga_flags_internal: u16,
-    mod_freq_div: u32,
-    stm_freq_div: u32,
-    silencer_strict_mode: bool,
-    min_freq_div_intensity: u32,
-    min_freq_div_phase: u32,
+    pub(crate) idx: usize,
+    pub(crate) ack: u8,
+    pub(crate) last_msg_id: u8,
+    pub(crate) rx_data: u8,
+    pub(crate) read_fpga_info: bool,
+    pub(crate) read_fpga_info_store: bool,
+    pub(crate) mod_cycle: u32,
+    pub(crate) stm_cycle: u32,
+    pub(crate) gain_stm_mode: u16,
+    pub(crate) fpga: FPGAEmulator,
+    pub(crate) synchronized: bool,
+    pub(crate) num_transducers: usize,
+    pub(crate) fpga_flags_internal: u16,
+    pub(crate) mod_freq_div: u32,
+    pub(crate) stm_freq_div: u32,
+    pub(crate) silencer_strict_mode: bool,
+    pub(crate) min_freq_div_intensity: u32,
+    pub(crate) min_freq_div_phase: u32,
 }
 
 impl CPUEmulator {
@@ -102,7 +102,7 @@ impl CPUEmulator {
 
     pub fn init(&mut self) {
         self.fpga.init();
-        self.clear();
+        self.clear(&[]);
     }
 
     pub fn update(&mut self) {
@@ -121,21 +121,25 @@ impl CPUEmulator {
 }
 
 impl CPUEmulator {
+    pub(crate) fn cast<T>(data: &[u8]) -> &T {
+        unsafe { &*(data.as_ptr() as *const T) }
+    }
+
     fn get_addr(select: u8, addr: u16) -> u16 {
         ((select as u16 & 0x0003) << 14) | (addr & 0x3FFF)
     }
 
-    fn bram_read(&self, select: u8, addr: u16) -> u16 {
+    pub(crate) fn bram_read(&self, select: u8, addr: u16) -> u16 {
         let addr = Self::get_addr(select, addr);
         self.fpga.read(addr)
     }
 
-    fn bram_write(&mut self, select: u8, addr: u16, data: u16) {
+    pub(crate) fn bram_write(&mut self, select: u8, addr: u16, data: u16) {
         let addr = Self::get_addr(select, addr);
         self.fpga.write(addr, data)
     }
 
-    fn bram_cpy(&mut self, select: u8, addr_base: u16, data: *const u16, size: usize) {
+    pub(crate) fn bram_cpy(&mut self, select: u8, addr_base: u16, data: *const u16, size: usize) {
         let mut addr = Self::get_addr(select, addr_base);
         let mut src = data;
         (0..size).for_each(|_| unsafe {
@@ -145,7 +149,7 @@ impl CPUEmulator {
         })
     }
 
-    fn bram_set(&mut self, select: u8, addr_base: u16, value: u16, size: usize) {
+    pub(crate) fn bram_set(&mut self, select: u8, addr_base: u16, value: u16, size: usize) {
         let mut addr = Self::get_addr(select, addr_base);
         (0..size).for_each(|_| {
             self.fpga.write(addr, value);
@@ -153,612 +157,27 @@ impl CPUEmulator {
         })
     }
 
-    fn synchronize(&mut self) {
-        self.synchronized = true;
-
-        // Do nothing to sync
-    }
-
-    fn write_mod(&mut self, data: &[u8]) -> u8 {
-        let flag = data[1];
-
-        let write = ((data[3] as u32) << 8) | data[2] as u32;
-        let data = if (flag & MODULATION_FLAG_BEGIN) == MODULATION_FLAG_BEGIN {
-            self.mod_cycle = 0;
-            self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_MOD_ADDR_OFFSET, 0);
-            let freq_div = ((data[7] as u32) << 24)
-                | ((data[6] as u32) << 16)
-                | ((data[5] as u32) << 8)
-                | data[4] as u32;
-            if self.silencer_strict_mode & (freq_div < self.min_freq_div_intensity) {
-                return ERR_FREQ_DIV_TOO_SMALL;
-            }
-            self.mod_freq_div = freq_div;
-
-            self.bram_cpy(
-                BRAM_SELECT_CONTROLLER,
-                BRAM_ADDR_MOD_FREQ_DIV_0,
-                &freq_div as *const _ as _,
-                std::mem::size_of::<u32>() >> 1,
-            );
-            data[8..].as_ptr() as *const u16
-        } else {
-            data[4..].as_ptr() as *const u16
-        };
-
-        let page_capacity =
-            (self.mod_cycle & !MOD_BUF_PAGE_SIZE_MASK) + MOD_BUF_PAGE_SIZE - self.mod_cycle;
-
-        if write < page_capacity {
-            self.bram_cpy(
-                BRAM_SELECT_MOD,
-                ((self.mod_cycle & MOD_BUF_PAGE_SIZE_MASK) >> 1) as u16,
-                data,
-                ((write + 1) >> 1) as usize,
-            );
-            self.mod_cycle += write;
-        } else {
-            self.bram_cpy(
-                BRAM_SELECT_MOD,
-                ((self.mod_cycle & MOD_BUF_PAGE_SIZE_MASK) >> 1) as u16,
-                data,
-                (page_capacity >> 1) as usize,
-            );
-            self.mod_cycle += page_capacity;
-            let data = unsafe { data.add((page_capacity >> 1) as _) };
-            self.bram_write(
-                BRAM_SELECT_CONTROLLER,
-                BRAM_ADDR_MOD_ADDR_OFFSET,
-                ((self.mod_cycle & !MOD_BUF_PAGE_SIZE_MASK) >> MOD_BUF_PAGE_SIZE_WIDTH) as u16,
-            );
-            self.bram_cpy(
-                BRAM_SELECT_MOD,
-                ((self.mod_cycle & MOD_BUF_PAGE_SIZE_MASK) >> 1) as _,
-                data,
-                ((write - page_capacity + 1) >> 1) as _,
-            );
-            self.mod_cycle += write - page_capacity;
-        }
-
-        if (flag & MODULATION_FLAG_END) == MODULATION_FLAG_END {
-            self.bram_write(
-                BRAM_SELECT_CONTROLLER,
-                BRAM_ADDR_MOD_CYCLE,
-                (self.mod_cycle.max(1) - 1) as _,
-            );
-        }
-
-        ERR_NONE
-    }
-
-    fn config_silencer(&mut self, data: &[u8]) -> u8 {
-        let value_intensity = ((data[3] as u16) << 8) | data[2] as u16;
-        let value_phase = ((data[5] as u16) << 8) | data[4] as u16;
-        let flags = ((data[7] as u16) << 8) | data[6] as u16;
-
-        if (flags & SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS) != 0 {
-            self.silencer_strict_mode = (flags & SILENCER_CTL_FLAG_STRICT_MODE) != 0;
-            self.min_freq_div_intensity = (value_intensity as u32) << 9;
-            self.min_freq_div_phase = (value_phase as u32) << 9;
-            if self.silencer_strict_mode {
-                if self.mod_freq_div < self.min_freq_div_intensity {
-                    return ERR_COMPLETION_STEPS_TOO_LARGE;
-                }
-                if (self.stm_freq_div < self.min_freq_div_intensity)
-                    || (self.stm_freq_div < self.min_freq_div_phase)
-                {
-                    return ERR_COMPLETION_STEPS_TOO_LARGE;
-                }
-            }
-            self.bram_write(
-                BRAM_SELECT_CONTROLLER,
-                BRAM_ADDR_SILENCER_COMPLETION_STEPS_INTENSITY,
-                value_intensity,
-            );
-            self.bram_write(
-                BRAM_SELECT_CONTROLLER,
-                BRAM_ADDR_SILENCER_COMPLETION_STEPS_PHASE,
-                value_phase,
-            );
-        } else {
-            self.bram_write(
-                BRAM_SELECT_CONTROLLER,
-                BRAM_ADDR_SILENCER_UPDATE_RATE_INTENSITY,
-                value_intensity,
-            );
-            self.bram_write(
-                BRAM_SELECT_CONTROLLER,
-                BRAM_ADDR_SILENCER_UPDATE_RATE_PHASE,
-                value_phase,
-            );
-        }
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_SILENCER_CTL_FLAG, flags);
-
-        ERR_NONE
-    }
-
-    fn config_debug(&mut self, data: &[u8]) {
-        self.bram_write(
-            BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_DEBUG_OUT_IDX,
-            data[0] as u16,
-        );
-    }
-
-    fn write_mod_delay(&mut self, data: &[u8]) {
-        let delays = unsafe {
-            std::slice::from_raw_parts(data.as_ptr() as *const u16, self.num_transducers)
-        };
-        self.bram_cpy(
-            BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_MOD_DELAY_BASE,
-            delays.as_ptr(),
-            delays.len(),
-        );
-    }
-
-    fn write_gain(&mut self, data: &[u8]) {
-        self.fpga_flags_internal &= !CTL_FLAG_OP_MODE;
-
-        let data = unsafe {
-            std::slice::from_raw_parts(data[2..].as_ptr() as *const u16, (data.len() - 2) >> 1)
-        };
-
-        (0..self.num_transducers)
-            .for_each(|i| self.bram_write(BRAM_SELECT_NORMAL, i as _, data[i]));
-    }
-
-    fn write_focus_stm(&mut self, data: &[u8]) -> u8 {
-        let flag = data[1];
-
-        let size = (data[3] as u32) << 8 | data[2] as u32;
-
-        let mut src = if (flag & FOCUS_STM_FLAG_BEGIN) == FOCUS_STM_FLAG_BEGIN {
-            self.stm_cycle = 0;
-            self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_ADDR_OFFSET, 0);
-            let freq_div = ((data[7] as u32) << 24)
-                | ((data[6] as u32) << 16)
-                | ((data[5] as u32) << 8)
-                | data[4] as u32;
-            if self.silencer_strict_mode
-                && ((freq_div < self.min_freq_div_intensity)
-                    || (freq_div < self.min_freq_div_phase))
-            {
-                return ERR_FREQ_DIV_TOO_SMALL;
-            }
-            self.stm_freq_div = freq_div;
-
-            let sound_speed = ((data[11] as u32) << 24)
-                | ((data[10] as u32) << 16)
-                | ((data[9] as u32) << 8)
-                | data[8] as u32;
-            let start_idx = ((data[13] as u16) << 8) | data[12] as u16;
-            let finish_idx = ((data[15] as u16) << 8) | data[14] as u16;
-
-            self.bram_cpy(
-                BRAM_SELECT_CONTROLLER,
-                BRAM_ADDR_STM_FREQ_DIV_0,
-                &freq_div as *const _ as _,
-                std::mem::size_of::<u32>() >> 1,
-            );
-            self.bram_cpy(
-                BRAM_SELECT_CONTROLLER,
-                BRAM_ADDR_SOUND_SPEED_0,
-                &sound_speed as *const _ as _,
-                std::mem::size_of::<u32>() >> 1,
-            );
-
-            self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_START_IDX, start_idx);
-            self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_FINISH_IDX, finish_idx);
-
-            if (flag & FOCUS_STM_FLAG_USE_START_IDX) == FOCUS_STM_FLAG_USE_START_IDX {
-                self.fpga_flags_internal |= CTL_FLAG_USE_STM_START_IDX;
-            } else {
-                self.fpga_flags_internal &= !CTL_FLAG_USE_STM_START_IDX;
-            }
-            if (flag & FOCUS_STM_FLAG_USE_FINISH_IDX) == FOCUS_STM_FLAG_USE_FINISH_IDX {
-                self.fpga_flags_internal |= CTL_FLAG_USE_STM_FINISH_IDX;
-            } else {
-                self.fpga_flags_internal &= !CTL_FLAG_USE_STM_FINISH_IDX;
-            }
-
-            unsafe { data.as_ptr().add(16) as *const u16 }
-        } else {
-            unsafe { data.as_ptr().add(4) as *const u16 }
-        };
-
-        let page_capacity = (self.stm_cycle & !POINT_STM_BUF_PAGE_SIZE_MASK)
-            + POINT_STM_BUF_PAGE_SIZE
-            - self.stm_cycle;
-        if size < page_capacity {
-            let mut dst = ((self.stm_cycle & POINT_STM_BUF_PAGE_SIZE_MASK) << 3) as u16;
-            (0..size as usize).for_each(|_| unsafe {
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                dst += 4;
-            });
-            self.stm_cycle += size;
-        } else {
-            let mut dst = ((self.stm_cycle & POINT_STM_BUF_PAGE_SIZE_MASK) << 3) as u16;
-            (0..page_capacity as usize).for_each(|_| unsafe {
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                dst += 4;
-            });
-            self.stm_cycle += page_capacity;
-
-            self.bram_write(
-                BRAM_SELECT_CONTROLLER,
-                BRAM_ADDR_STM_ADDR_OFFSET,
-                ((self.stm_cycle & !POINT_STM_BUF_PAGE_SIZE_MASK) >> POINT_STM_BUF_PAGE_SIZE_WIDTH)
-                    as _,
-            );
-
-            let mut dst = ((self.stm_cycle & POINT_STM_BUF_PAGE_SIZE_MASK) << 3) as u16;
-            let cnt = size - page_capacity;
-            (0..cnt as usize).for_each(|_| unsafe {
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                dst += 4;
-            });
-            self.stm_cycle += size - page_capacity;
-        }
-
-        if (flag & FOCUS_STM_FLAG_END) == FOCUS_STM_FLAG_END {
-            self.fpga_flags_internal |= CTL_FLAG_OP_MODE;
-            self.fpga_flags_internal &= !CTL_REG_STM_GAIN_MODE;
-            self.bram_write(
-                BRAM_SELECT_CONTROLLER,
-                BRAM_ADDR_STM_CYCLE,
-                (self.stm_cycle.max(1) - 1) as _,
-            );
-        }
-
-        ERR_NONE
-    }
-
-    fn write_gain_stm(&mut self, data: &[u8]) -> u8 {
-        let flag = data[1];
-
-        let send = (flag >> 6) + 1;
-        let src_base = if (flag & GAIN_STM_FLAG_BEGIN) == GAIN_STM_FLAG_BEGIN {
-            self.stm_cycle = 0;
-            self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_ADDR_OFFSET, 0);
-
-            self.gain_stm_mode = (data[3] as u16) << 8 | data[2] as u16;
-
-            let freq_div = ((data[7] as u32) << 24)
-                | ((data[6] as u32) << 16)
-                | ((data[5] as u32) << 8)
-                | data[4] as u32;
-            if self.silencer_strict_mode
-                && ((freq_div < self.min_freq_div_intensity)
-                    || (freq_div < self.min_freq_div_phase))
-            {
-                return ERR_FREQ_DIV_TOO_SMALL;
-            }
-            self.stm_freq_div = freq_div;
-            self.bram_cpy(
-                BRAM_SELECT_CONTROLLER,
-                BRAM_ADDR_STM_FREQ_DIV_0,
-                &freq_div as *const _ as _,
-                std::mem::size_of::<u32>() >> 1,
-            );
-
-            let start_idx = ((data[9] as u16) << 8) | data[8] as u16;
-            let finish_idx = ((data[11] as u16) << 8) | data[10] as u16;
-
-            self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_START_IDX, start_idx);
-            self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_FINISH_IDX, finish_idx);
-
-            if (flag & GAIN_STM_FLAG_USE_START_IDX) == GAIN_STM_FLAG_USE_START_IDX {
-                self.fpga_flags_internal |= CTL_FLAG_USE_STM_START_IDX;
-            } else {
-                self.fpga_flags_internal &= !CTL_FLAG_USE_STM_START_IDX;
-            }
-            if (flag & GAIN_STM_FLAG_USE_FINISH_IDX) == GAIN_STM_FLAG_USE_FINISH_IDX {
-                self.fpga_flags_internal |= CTL_FLAG_USE_STM_FINISH_IDX;
-            } else {
-                self.fpga_flags_internal &= !CTL_FLAG_USE_STM_FINISH_IDX;
-            }
-
-            unsafe { data.as_ptr().add(12) as *const u16 }
-        } else {
-            unsafe { data.as_ptr().add(2) as *const u16 }
-        };
-
-        let mut src = src_base;
-        let mut dst = ((self.stm_cycle & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8) as u16;
-
-        if self.gain_stm_mode == GAIN_STM_MODE_INTENSITY_PHASE_FULL {
-            self.stm_cycle += 1;
-            (0..self.num_transducers).for_each(|_| unsafe {
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-            });
-        } else if self.gain_stm_mode == GAIN_STM_MODE_PHASE_FULL {
-            (0..self.num_transducers).for_each(|_| unsafe {
-                self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (src.read() & 0x00FF));
-                dst += 1;
-                src = src.add(1);
-            });
-            self.stm_cycle += 1;
-
-            if send > 1 {
-                let mut src = src_base;
-                let mut dst = ((self.stm_cycle & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8) as u16;
-                (0..self.num_transducers).for_each(|_| unsafe {
-                    self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | ((src.read() >> 8) & 0x00FF));
-                    dst += 1;
-                    src = src.add(1);
-                });
-                self.stm_cycle += 1;
-            }
-        } else if self.gain_stm_mode == GAIN_STM_MODE_PHASE_HALF {
-            (0..self.num_transducers).for_each(|_| unsafe {
-                let phase = src.read() & 0x000F;
-                self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (phase << 4) | phase);
-                dst += 1;
-                src = src.add(1);
-            });
-            self.stm_cycle += 1;
-
-            if send > 1 {
-                let mut src = src_base;
-                let mut dst = ((self.stm_cycle & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8) as u16;
-                (0..self.num_transducers).for_each(|_| unsafe {
-                    let phase = (src.read() >> 4) & 0x000F;
-                    self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (phase << 4) | phase);
-                    dst += 1;
-                    src = src.add(1);
-                });
-                self.stm_cycle += 1;
-            }
-
-            if send > 2 {
-                let mut src = src_base;
-                let mut dst = ((self.stm_cycle & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8) as u16;
-                (0..self.num_transducers).for_each(|_| unsafe {
-                    let phase = (src.read() >> 8) & 0x000F;
-                    self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (phase << 4) | phase);
-                    dst += 1;
-                    src = src.add(1);
-                });
-                self.stm_cycle += 1;
-            }
-
-            if send > 3 {
-                let mut src = src_base;
-                let mut dst = ((self.stm_cycle & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8) as u16;
-                (0..self.num_transducers).for_each(|_| unsafe {
-                    let phase = (src.read() >> 12) & 0x000F;
-                    self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (phase << 4) | phase);
-                    dst += 1;
-                    src = src.add(1);
-                });
-                self.stm_cycle += 1;
-            }
-        }
-
-        if self.stm_cycle & GAIN_STM_BUF_PAGE_SIZE_MASK == 0 {
-            self.bram_write(
-                BRAM_SELECT_CONTROLLER,
-                BRAM_ADDR_STM_ADDR_OFFSET,
-                ((self.stm_cycle & !GAIN_STM_BUF_PAGE_SIZE_MASK) >> GAIN_STM_BUF_PAGE_SIZE_WIDTH)
-                    as _,
-            );
-        }
-
-        if (flag & GAIN_STM_FLAG_END) == GAIN_STM_FLAG_END {
-            self.fpga_flags_internal |= CTL_FLAG_OP_MODE;
-            self.fpga_flags_internal |= CTL_REG_STM_GAIN_MODE;
-            self.bram_write(
-                BRAM_SELECT_CONTROLLER,
-                BRAM_ADDR_STM_CYCLE,
-                (self.stm_cycle.max(1) - 1) as _,
-            );
-        }
-
-        ERR_NONE
-    }
-
-    fn get_cpu_version(&self) -> u16 {
-        CPU_VERSION_MAJOR
-    }
-
-    fn get_cpu_version_minor(&self) -> u16 {
-        CPU_VERSION_MINOR
-    }
-
-    fn get_fpga_version(&self) -> u16 {
-        self.bram_read(BRAM_SELECT_CONTROLLER, BRAM_ADDR_VERSION_NUM)
-    }
-
-    fn get_fpga_version_minor(&self) -> u16 {
-        self.bram_read(BRAM_SELECT_CONTROLLER, BRAM_ADDR_VERSION_NUM_MINOR)
-    }
-
     fn read_fpga_info(&self) -> u16 {
         self.bram_read(BRAM_SELECT_CONTROLLER, BRAM_ADDR_FPGA_INFO)
     }
 
-    fn configure_force_fan(&mut self, data: &[u8]) {
-        if data[0] != 0x00 {
-            self.fpga_flags_internal |= CTL_FLAG_FORCE_FAN;
-        } else {
-            self.fpga_flags_internal &= !CTL_FLAG_FORCE_FAN;
-        }
-    }
-
-    fn configure_reads_fpga_info(&mut self, data: &[u8]) {
-        self.read_fpga_info = data[0] != 0x00;
-    }
-
-    fn clear(&mut self) {
-        self.mod_freq_div = 5120;
-        self.stm_freq_div = 0xFFFFFFFF;
-
-        self.read_fpga_info = false;
-
-        self.fpga_flags_internal = 0x0000;
-        self.bram_write(
-            BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_CTL_REG,
-            self.fpga_flags_internal,
-        );
-
-        self.bram_write(
-            BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_SILENCER_UPDATE_RATE_INTENSITY,
-            256,
-        );
-        self.bram_write(
-            BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_SILENCER_UPDATE_RATE_PHASE,
-            256,
-        );
-        self.bram_write(
-            BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_SILENCER_CTL_FLAG,
-            SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS,
-        );
-        self.bram_write(
-            BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_SILENCER_COMPLETION_STEPS_INTENSITY,
-            10,
-        );
-        self.bram_write(
-            BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_SILENCER_COMPLETION_STEPS_PHASE,
-            40,
-        );
-        self.silencer_strict_mode = true;
-        self.min_freq_div_intensity = 10 << 9;
-        self.min_freq_div_phase = 40 << 9;
-
-        self.stm_cycle = 0;
-
-        self.mod_cycle = 2;
-        self.bram_write(
-            BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_MOD_CYCLE,
-            (self.mod_cycle.max(1) - 1) as _,
-        );
-        self.bram_cpy(
-            BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_MOD_FREQ_DIV_0,
-            &self.mod_freq_div as *const _ as _,
-            std::mem::size_of::<u32>() >> 1,
-        );
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_MOD_ADDR_OFFSET, 0x0000);
-        self.bram_write(BRAM_SELECT_MOD, 0, 0xFFFF);
-
-        self.bram_set(BRAM_SELECT_NORMAL, 0, 0x0000, self.num_transducers << 1);
-
-        self.bram_set(
-            BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_MOD_DELAY_BASE,
-            0x0000,
-            self.num_transducers,
-        );
-
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_OUT_IDX, 0xFF);
-    }
-
-    fn handle_payload(&mut self, tag: u8, data: &[u8]) -> u8 {
-        match tag {
-            TAG_CLEAR => {
-                self.clear();
-                ERR_NONE
+    fn handle_payload(&mut self, data: &[u8]) -> u8 {
+        unsafe {
+            match data[0] {
+                TAG_CLEAR => self.clear(data),
+                TAG_SYNC => self.synchronize(data),
+                TAG_FIRM_INFO => self.firm_info(data),
+                TAG_MODULATION => self.write_mod(data),
+                TAG_MODULATION_DELAY => self.write_mod_delay(data),
+                TAG_SILENCER => self.config_silencer(data),
+                TAG_GAIN => self.write_gain(data),
+                TAG_FOCUS_STM => self.write_focus_stm(data),
+                TAG_GAIN_STM => self.write_gain_stm(data),
+                TAG_FORCE_FAN => self.configure_force_fan(data),
+                TAG_READS_FPGA_INFO => self.configure_reads_fpga_info(data),
+                TAG_DEBUG => self.config_debug(data),
+                _ => ERR_NOT_SUPPORTED_TAG,
             }
-            TAG_SYNC => {
-                self.synchronize();
-                ERR_NONE
-            }
-            TAG_FIRM_INFO => {
-                match data[1] {
-                    INFO_TYPE_CPU_VERSION_MAJOR => {
-                        self.read_fpga_info_store = self.read_fpga_info;
-                        self.read_fpga_info = false;
-                        self.rx_data = (self.get_cpu_version() & 0xFF) as _;
-                    }
-                    INFO_TYPE_CPU_VERSION_MINOR => {
-                        self.rx_data = (self.get_cpu_version_minor() & 0xFF) as _;
-                    }
-                    INFO_TYPE_FPGA_VERSION_MAJOR => {
-                        self.rx_data = (self.get_fpga_version() & 0xFF) as _;
-                    }
-                    INFO_TYPE_FPGA_VERSION_MINOR => {
-                        self.rx_data = (self.get_fpga_version_minor() & 0xFF) as _;
-                    }
-                    INFO_TYPE_FPGA_FUNCTIONS => {
-                        self.rx_data = ((self.get_fpga_version() >> 8) & 0xFF) as _;
-                    }
-                    INFO_TYPE_CLEAR => {
-                        self.read_fpga_info = self.read_fpga_info_store;
-                    }
-                    _ => {
-                        unreachable!("Unsupported firmware info type")
-                    }
-                };
-                ERR_NONE
-            }
-            TAG_MODULATION => self.write_mod(data),
-            TAG_MODULATION_DELAY => {
-                self.write_mod_delay(&data[2..]);
-                ERR_NONE
-            }
-            TAG_SILENCER => self.config_silencer(data),
-            TAG_GAIN => {
-                self.write_gain(data);
-                ERR_NONE
-            }
-            TAG_FOCUS_STM => self.write_focus_stm(data),
-            TAG_GAIN_STM => self.write_gain_stm(data),
-            TAG_FORCE_FAN => {
-                self.configure_force_fan(&data[2..]);
-                ERR_NONE
-            }
-            TAG_READS_FPGA_INFO => {
-                self.configure_reads_fpga_info(&data[2..]);
-                ERR_NONE
-            }
-            TAG_DEBUG => {
-                self.config_debug(&data[2..]);
-                ERR_NONE
-            }
-            _ => ERR_NOT_SUPPORTED_TAG,
         }
     }
 
@@ -777,10 +196,7 @@ impl CPUEmulator {
             self.ack = ERR_INVALID_MSG_ID;
         }
 
-        self.ack = self.handle_payload(
-            data[std::mem::size_of::<Header>()],
-            &data[std::mem::size_of::<Header>()..],
-        );
+        self.ack = self.handle_payload(&data[std::mem::size_of::<Header>()..]);
         if self.ack != ERR_NONE {
             if self.read_fpga_info {
                 self.rx_data = self.read_fpga_info() as _;
@@ -790,7 +206,6 @@ impl CPUEmulator {
 
         if header.slot_2_offset != 0 {
             self.ack = self.handle_payload(
-                data[std::mem::size_of::<Header>() + header.slot_2_offset as usize],
                 &data[std::mem::size_of::<Header>() + header.slot_2_offset as usize..],
             );
             if self.ack != ERR_NONE {
