@@ -4,7 +4,7 @@
  * Created Date: 08/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -14,11 +14,20 @@
 use std::collections::HashMap;
 
 use crate::{
-    common::Drive, datagram::Gain, derive::prelude::GainFilter, fpga::FPGADrive, geometry::Device,
-    operation::TypeTag,
+    common::Drive,
+    datagram::Gain,
+    derive::prelude::GainFilter,
+    fpga::FPGADrive,
+    geometry::Device,
+    operation::{cast, TypeTag},
 };
 
 use super::Operation;
+
+#[repr(C, align(2))]
+struct GainT {
+    tag: TypeTag,
+}
 
 pub struct GainOp<G: Gain> {
     gain: G,
@@ -47,7 +56,7 @@ impl<G: Gain> Operation for GainOp<G> {
     }
 
     fn required_size(&self, device: &Device) -> usize {
-        2 + device.num_transducers() * std::mem::size_of::<u16>()
+        std::mem::size_of::<GainT>() + device.num_transducers() * std::mem::size_of::<u16>()
     }
 
     fn pack(
@@ -58,18 +67,22 @@ impl<G: Gain> Operation for GainOp<G> {
         assert_eq!(self.remains[&device.idx()], 1);
 
         let d = &self.drives[&device.idx()];
-        assert!(tx.len() >= 2 + d.len() * std::mem::size_of::<FPGADrive>());
+        assert!(
+            tx.len() >= std::mem::size_of::<GainT>() + d.len() * std::mem::size_of::<FPGADrive>()
+        );
 
-        tx[0] = TypeTag::Gain as u8;
-        tx[1] = 0x01; // For v3 firmware compatibility
+        let dd = cast::<GainT>(tx);
+        dd.tag = TypeTag::Gain;
 
         unsafe {
-            let dst =
-                std::slice::from_raw_parts_mut(tx[2..].as_mut_ptr() as *mut FPGADrive, d.len());
+            let dst = std::slice::from_raw_parts_mut(
+                tx[std::mem::size_of::<GainT>()..].as_mut_ptr() as *mut FPGADrive,
+                d.len(),
+            );
             dst.iter_mut().zip(d.iter()).for_each(|(d, s)| d.set(s));
         }
 
-        Ok(2 + d.len() * std::mem::size_of::<FPGADrive>())
+        Ok(std::mem::size_of::<GainT>() + d.len() * std::mem::size_of::<FPGADrive>())
     }
 
     fn commit(&mut self, device: &Device) {

@@ -4,7 +4,7 @@
  * Created Date: 27/12/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 27/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -16,8 +16,17 @@ use std::collections::HashMap;
 use crate::{
     error::AUTDInternalError,
     geometry::{Device, Geometry},
-    operation::{Operation, TypeTag},
+    operation::{cast, Operation, TypeTag},
 };
+
+#[repr(C)]
+struct ConfigSilencerFixedUpdateRate {
+    tag: TypeTag,
+    _pad: u8,
+    value_intensity: u16,
+    value_phase: u16,
+    flag: u16,
+}
 
 pub struct ConfigSilencerFixedUpdateRateOp {
     remains: HashMap<usize, usize>,
@@ -38,18 +47,18 @@ impl ConfigSilencerFixedUpdateRateOp {
 impl Operation for ConfigSilencerFixedUpdateRateOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert_eq!(self.remains[&device.idx()], 1);
-        tx[0] = TypeTag::Silencer as u8;
-        tx[2] = (self.value_intensity & 0xFF) as u8;
-        tx[3] = (self.value_intensity >> 8) as u8;
-        tx[4] = (self.value_phase & 0xFF) as u8;
-        tx[5] = (self.value_phase >> 8) as u8;
-        tx[6] = 0;
-        tx[7] = 0;
-        Ok(8)
+
+        let d = cast::<ConfigSilencerFixedUpdateRate>(tx);
+        d.tag = TypeTag::Silencer;
+        d.value_intensity = self.value_intensity;
+        d.value_phase = self.value_phase;
+        d.flag = 0;
+
+        Ok(std::mem::size_of::<ConfigSilencerFixedUpdateRate>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        8
+        std::mem::size_of::<ConfigSilencerFixedUpdateRate>()
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {

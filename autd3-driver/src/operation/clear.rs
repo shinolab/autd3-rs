@@ -4,7 +4,7 @@
  * Created Date: 08/01/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/11/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -16,8 +16,13 @@ use std::collections::HashMap;
 use crate::{
     error::AUTDInternalError,
     geometry::{Device, Geometry},
-    operation::{Operation, TypeTag},
+    operation::{cast, Operation, TypeTag},
 };
+
+#[repr(C, align(2))]
+struct Clear {
+    tag: TypeTag,
+}
 
 #[derive(Default)]
 pub struct ClearOp {
@@ -27,12 +32,15 @@ pub struct ClearOp {
 impl Operation for ClearOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert_eq!(self.remains[&device.idx()], 1);
-        tx[0] = TypeTag::Clear as u8;
-        Ok(2)
+
+        let d = cast::<Clear>(tx);
+        d.tag = TypeTag::Clear;
+
+        Ok(std::mem::size_of::<Clear>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        2
+        std::mem::size_of::<Clear>()
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {

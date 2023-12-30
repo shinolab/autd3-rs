@@ -4,7 +4,7 @@
  * Created Date: 11/11/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -24,7 +24,7 @@ impl EmitIntensity {
     pub const MIN: EmitIntensity = EmitIntensity { value: 0 };
     pub const DEFAULT_CORRECTED_ALPHA: float = 0.803;
 
-    pub fn new(value: u8) -> Self {
+    pub const fn new(value: u8) -> Self {
         Self { value }
     }
 
@@ -38,7 +38,7 @@ impl EmitIntensity {
         }
     }
 
-    pub fn value(&self) -> u8 {
+    pub const fn value(&self) -> u8 {
         self.value
     }
 }

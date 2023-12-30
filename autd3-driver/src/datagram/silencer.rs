@@ -4,7 +4,7 @@
  * Created Date: 01/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 28/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -123,20 +123,20 @@ impl Default for ConfigureSilencer<FixedCompletionSteps> {
 
 impl ConfigureSilencer<FixedCompletionSteps> {
     /// Set strict mode
-    pub fn with_strict_mode(mut self, strict_mode: bool) -> Self {
+    pub const fn with_strict_mode(mut self, strict_mode: bool) -> Self {
         self.internal.strict_mode = strict_mode;
         self
     }
 
-    pub fn completion_steps_intensity(&self) -> u16 {
+    pub const fn completion_steps_intensity(&self) -> u16 {
         self.internal.steps_intensity
     }
 
-    pub fn completion_steps_phase(&self) -> u16 {
+    pub const fn completion_steps_phase(&self) -> u16 {
         self.internal.steps_phase
     }
 
-    pub fn strict_mode(&self) -> bool {
+    pub const fn strict_mode(&self) -> bool {
         self.internal.strict_mode
     }
 }
