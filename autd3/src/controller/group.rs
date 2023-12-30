@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 28/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -68,17 +68,24 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
         Ok(self)
     }
 
-    #[cfg(not(feature = "sync"))]
-    pub async fn send(mut self) -> Result<bool, AUTDInternalError> {
-        let enable_flags_store = self
-            .cnt
+    fn push_enable_flags(&self) -> Vec<bool> {
+        self.cnt
             .geometry
             .iter()
             .map(|dev| dev.enable)
-            .collect::<Vec<_>>();
+            .collect::<Vec<_>>()
+    }
 
-        let enable_flags_map: HashMap<K, Vec<bool>> = self
-            .op
+    fn pop_enable_flags(&mut self, enable_flags_store: Vec<bool>) {
+        self.cnt
+            .geometry
+            .iter_mut()
+            .zip(enable_flags_store.iter())
+            .for_each(|(dev, &enable)| dev.enable = enable);
+    }
+
+    fn get_enable_flags_map(&self) -> HashMap<K, Vec<bool>> {
+        self.op
             .keys()
             .map(|k| {
                 (
@@ -99,7 +106,13 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
                         .collect(),
                 )
             })
-            .collect();
+            .collect()
+    }
+
+    #[cfg(not(feature = "sync"))]
+    pub async fn send(mut self) -> Result<bool, AUTDInternalError> {
+        let enable_flags_store = self.push_enable_flags();
+        let enable_flags_map = self.get_enable_flags_map();
 
         self.op.iter_mut().try_for_each(|(k, (op1, op2))| {
             self.cnt.geometry.iter_mut().for_each(|dev| {
@@ -107,7 +120,6 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
             });
             OperationHandler::init(op1, op2, &self.cnt.geometry)
         })?;
-
         let r = loop {
             let start = std::time::Instant::now();
             self.op.iter_mut().try_for_each(|(k, (op1, op2))| {
@@ -143,47 +155,15 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
             }
         };
 
-        self.cnt
-            .geometry
-            .iter_mut()
-            .zip(enable_flags_store.iter())
-            .for_each(|(dev, &enable)| dev.enable = enable);
+        self.pop_enable_flags(enable_flags_store);
 
         Ok(r)
     }
 
     #[cfg(feature = "sync")]
     pub fn send(mut self) -> Result<bool, AUTDInternalError> {
-        let enable_flags_store = self
-            .cnt
-            .geometry
-            .iter()
-            .map(|dev| dev.enable)
-            .collect::<Vec<_>>();
-
-        let enable_flags_map: HashMap<K, Vec<bool>> = self
-            .op
-            .keys()
-            .map(|k| {
-                (
-                    k.clone(),
-                    self.cnt
-                        .geometry
-                        .iter()
-                        .map(|dev| {
-                            if !dev.enable {
-                                return false;
-                            }
-                            if let Some(kk) = (self.f)(dev) {
-                                kk == *k
-                            } else {
-                                false
-                            }
-                        })
-                        .collect(),
-                )
-            })
-            .collect();
+        let enable_flags_store = self.push_enable_flags();
+        let enable_flags_map = self.get_enable_flags_map();
 
         self.op.iter_mut().try_for_each(|(k, (op1, op2))| {
             self.cnt.geometry.iter_mut().for_each(|dev| {
@@ -191,7 +171,6 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
             });
             OperationHandler::init(op1, op2, &self.cnt.geometry)
         })?;
-
         let r = loop {
             let start = std::time::Instant::now();
             self.op.iter_mut().try_for_each(|(k, (op1, op2))| {
@@ -221,11 +200,7 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
             }
         };
 
-        self.cnt
-            .geometry
-            .iter_mut()
-            .zip(enable_flags_store.iter())
-            .for_each(|(dev, &enable)| dev.enable = enable);
+        self.pop_enable_flags(enable_flags_store);
 
         Ok(r)
     }

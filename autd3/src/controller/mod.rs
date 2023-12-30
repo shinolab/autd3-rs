@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 29/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -18,7 +18,7 @@ use std::{collections::HashMap, hash::Hash, time::Duration};
 
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
-    datagram::{Clear, Datagram, Synchronize},
+    datagram::{Clear, Datagram},
     firmware_version::FirmwareInfo,
     fpga::FPGAInfo,
     geometry::{Device, Geometry},
@@ -70,46 +70,6 @@ impl<L: Link> Controller<L> {
             timeout: None,
             op: HashMap::new(),
         }
-    }
-}
-
-#[cfg(not(feature = "sync"))]
-impl<L: Link> Controller<L> {
-    #[doc(hidden)]
-    pub async fn open_impl(geometry: Geometry, link: L) -> Result<Controller<L>, AUTDError> {
-        let num_devices = geometry.num_devices();
-        let tx_buf = TxDatagram::new(num_devices);
-        let mut cnt = Controller {
-            link,
-            geometry,
-            tx_buf,
-            rx_buf: vec![RxMessage { data: 0, ack: 0 }; num_devices],
-            ignore_ack: true,
-        };
-        cnt.send(Clear::new()).await?;
-        cnt.send(Synchronize::new()).await?;
-        cnt.ignore_ack = false;
-        Ok(cnt)
-    }
-}
-
-#[cfg(feature = "sync")]
-impl<L: Link> Controller<L> {
-    #[doc(hidden)]
-    pub fn open_impl(geometry: Geometry, link: L) -> Result<Controller<L>, AUTDError> {
-        let num_devices = geometry.num_devices();
-        let tx_buf = TxDatagram::new(num_devices);
-        let mut cnt = Controller {
-            link,
-            geometry,
-            tx_buf,
-            rx_buf: vec![RxMessage { data: 0, ack: 0 }; num_devices],
-            ignore_ack: true,
-        };
-        cnt.send(Clear::new())?;
-        cnt.send(Synchronize::new())?;
-        cnt.ignore_ack = false;
-        Ok(cnt)
     }
 }
 

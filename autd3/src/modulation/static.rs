@@ -4,7 +4,7 @@
  * Created Date: 30/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 29/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -26,10 +26,7 @@ pub struct Static {
 impl Static {
     /// constructor
     pub fn new() -> Self {
-        Self {
-            intensity: EmitIntensity::MAX,
-            config: SamplingConfiguration::from_frequency_division(0xFFFFFFFF).unwrap(),
-        }
+        Self::with_intensity(EmitIntensity::MAX)
     }
 
     /// set emission intensity
@@ -38,10 +35,10 @@ impl Static {
     ///
     /// * `intensity` - normalized emission intensity of the ultrasound (from 0 to 1)
     ///
-    pub fn with_intensity<A: Into<EmitIntensity>>(self, intensity: A) -> Self {
+    pub fn with_intensity<A: Into<EmitIntensity>>(intensity: A) -> Self {
         Self {
             intensity: intensity.into(),
-            ..self
+            config: SamplingConfiguration::from_frequency_division(0xFFFFFFFF).unwrap(),
         }
     }
 
@@ -88,7 +85,7 @@ mod tests {
 
     #[test]
     fn test_static_with_intensity() {
-        let m = Static::new().with_intensity(0x1F);
+        let m = Static::with_intensity(0x1F);
         assert_eq!(m.intensity, EmitIntensity::new(0x1F));
         assert_eq!(
             m.calc().unwrap(),
