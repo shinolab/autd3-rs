@@ -12,6 +12,10 @@ inputs:
     description: 'arch'
     required: false
     default: ''
+  toolchain:
+    description: 'toolchain'
+    required: false
+    default: 'stable'
 runs:
   using: "composite"
   steps:
@@ -19,6 +23,11 @@ runs:
       uses: actions/setup-python@v4
       with:
         python-version: "3.12"
+      
+    - name: Setup Rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        toolchain: ${{ inputs.toolchain }}
 
     - name: Install Protoc
       uses: arduino/setup-protoc@v2

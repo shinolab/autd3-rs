@@ -37,10 +37,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-        
-      - name: Rust cache
-        if: needs.check-src.outputs.status
-        uses: swatinem/rust-cache@v2
 
       - name: Setup
         if: needs.check-src.outputs.status
@@ -48,6 +44,10 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ${{ matrix.os }}
+        
+      - name: Rust cache
+        if: needs.check-src.outputs.status
+        uses: swatinem/rust-cache@v2
 
       - name: Test src on ${{ matrix.os }}
         if: needs.check-src.outputs.status
@@ -69,16 +69,16 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         
-      - name: Rust cache
-        if: needs.check-src.outputs.status
-        uses: swatinem/rust-cache@v2
-
       - name: Setup
         if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ${{ matrix.os }}
+
+      - name: Rust cache
+        if: needs.check-src.outputs.status
+        uses: swatinem/rust-cache@v2
 
       - name: Test src for unity on ${{ matrix.os }}
         if: needs.check-src.outputs.status
