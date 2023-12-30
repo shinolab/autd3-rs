@@ -4,7 +4,7 @@
  * Created Date: 06/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 21/11/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -29,7 +29,7 @@ impl ControlPoint {
     ///
     /// * `point` - focal point
     ///
-    pub fn new(point: Vector3) -> Self {
+    pub const fn new(point: Vector3) -> Self {
         Self {
             point,
             intensity: EmitIntensity::MAX,
@@ -50,11 +50,11 @@ impl ControlPoint {
         }
     }
 
-    pub fn point(&self) -> &Vector3 {
+    pub const fn point(&self) -> &Vector3 {
         &self.point
     }
 
-    pub fn intensity(&self) -> EmitIntensity {
+    pub const fn intensity(&self) -> EmitIntensity {
         self.intensity
     }
 }

@@ -4,7 +4,7 @@
  * Created Date: 04/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 07/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -27,8 +27,7 @@ pub struct Device {
 }
 
 impl Device {
-    #[doc(hidden)]
-    pub fn new(idx: usize, transducers: Vec<Transducer>) -> Self {
+    pub(crate) fn new(idx: usize, transducers: Vec<Transducer>) -> Self {
         let inv = Matrix3::from_columns(&[
             transducers[0].x_direction(),
             transducers[0].y_direction(),
@@ -45,7 +44,7 @@ impl Device {
         }
     }
 
-    pub fn idx(&self) -> usize {
+    pub const fn idx(&self) -> usize {
         self.idx
     }
 

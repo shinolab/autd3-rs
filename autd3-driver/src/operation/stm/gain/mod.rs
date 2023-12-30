@@ -4,7 +4,7 @@
  * Created Date: 06/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -22,6 +22,7 @@ use crate::{
     fpga::{FPGADrive, GAIN_STM_BUF_SIZE_MAX},
     geometry::Device,
     operation::{
+        cast,
         stm::gain::reduced_phase::{PhaseFull, PhaseHalf},
         TypeTag,
     },
@@ -30,6 +31,22 @@ use crate::{
 pub use gain_stm_mode::GainSTMMode;
 
 use self::gain_stm_control_flags::GainSTMControlFlags;
+
+#[repr(C)]
+struct GainSTMHead {
+    tag: TypeTag,
+    flag: GainSTMControlFlags,
+    mode: GainSTMMode,
+    freq_div: u32,
+    start_idx: u16,
+    finish_idx: u16,
+}
+
+#[repr(C)]
+struct GainSTMSubseq {
+    tag: TypeTag,
+    flag: GainSTMControlFlags,
+}
 
 pub struct GainSTMOp<G: Gain> {
     gains: Vec<G>,
@@ -103,16 +120,10 @@ impl<G: Gain> Operation for GainSTMOp<G> {
 
     fn required_size(&self, device: &Device) -> usize {
         if self.sent[&device.idx()] == 0 {
-            std::mem::size_of::<TypeTag>()
-                 + std::mem::size_of::<GainSTMControlFlags>()
-                 + std::mem::size_of::<GainSTMMode>()
-                 + std::mem::size_of::<u32>() // freq_div
-                 + std::mem::size_of::<u16>() // start idx
-                 + std::mem::size_of::<u16>() // finish idx
-                 + device.num_transducers() * std::mem::size_of::<FPGADrive>()
+            std::mem::size_of::<GainSTMHead>()
+                + device.num_transducers() * std::mem::size_of::<FPGADrive>()
         } else {
-            std::mem::size_of::<TypeTag>()
-                + std::mem::size_of::<GainSTMControlFlags>()
+            std::mem::size_of::<GainSTMSubseq>()
                 + device.num_transducers() * std::mem::size_of::<FPGADrive>()
         }
     }
@@ -124,46 +135,14 @@ impl<G: Gain> Operation for GainSTMOp<G> {
     ) -> Result<usize, crate::derive::prelude::AUTDInternalError> {
         assert!(self.remains[&device.idx()] > 0);
 
-        tx[0] = TypeTag::GainSTM as u8;
-
         let sent = self.sent[&device.idx()];
-        let mut offset =
-            std::mem::size_of::<TypeTag>() + std::mem::size_of::<GainSTMControlFlags>();
-        if sent == 0 {
-            offset += std::mem::size_of::<GainSTMMode>()
-         + std::mem::size_of::<u32>() // freq_div
-         + std::mem::size_of::<u16>() // start idx
-         + std::mem::size_of::<u16>(); // finish idx
-        }
+
+        let offset = if sent == 0 {
+            std::mem::size_of::<GainSTMHead>()
+        } else {
+            std::mem::size_of::<GainSTMSubseq>()
+        };
         assert!(tx.len() >= offset + device.num_transducers() * std::mem::size_of::<FPGADrive>());
-
-        let mut f = GainSTMControlFlags::LEGACY; // For v3 firmware compatibility
-        f.set(GainSTMControlFlags::STM_BEGIN, sent == 0);
-
-        if sent == 0 {
-            let mode = self.mode as u16;
-            tx[2] = (mode & 0xFF) as u8;
-            tx[3] = (mode >> 8) as u8;
-
-            let freq_div = self.freq_div;
-            tx[4] = (freq_div & 0xFF) as u8;
-            tx[5] = ((freq_div >> 8) & 0xFF) as u8;
-            tx[6] = ((freq_div >> 16) & 0xFF) as u8;
-            tx[7] = ((freq_div >> 24) & 0xFF) as u8;
-
-            f.set(GainSTMControlFlags::USE_START_IDX, self.start_idx.is_some());
-            let start_idx = self.start_idx.unwrap_or(0);
-            tx[8] = (start_idx & 0xFF) as u8;
-            tx[9] = (start_idx >> 8) as u8;
-
-            f.set(
-                GainSTMControlFlags::USE_FINISH_IDX,
-                self.finish_idx.is_some(),
-            );
-            let finish_idx = self.finish_idx.unwrap_or(0);
-            tx[10] = (finish_idx & 0xFF) as u8;
-            tx[11] = (finish_idx >> 8) as u8;
-        }
 
         let mut send = 0;
         match self.mode {
@@ -245,26 +224,58 @@ impl<G: Gain> Operation for GainSTMOp<G> {
                 }
             }
         }
-        f.set(
-            GainSTMControlFlags::STM_END,
-            sent + send == self.drives.len(),
-        );
+
+        if sent == 0 {
+            let d = cast::<GainSTMHead>(tx);
+            d.tag = TypeTag::GainSTM;
+            d.flag = GainSTMControlFlags::STM_BEGIN;
+            d.flag.set(
+                GainSTMControlFlags::STM_END,
+                sent + send == self.drives.len(),
+            );
+            d.flag
+                .set(GainSTMControlFlags::USE_START_IDX, self.start_idx.is_some());
+            d.flag.set(
+                GainSTMControlFlags::USE_FINISH_IDX,
+                self.finish_idx.is_some(),
+            );
+            d.flag.set(
+                GainSTMControlFlags::SEND_BIT0,
+                ((send as u8 - 1) & 0x01) != 0,
+            );
+            d.flag.set(
+                GainSTMControlFlags::SEND_BIT1,
+                ((send as u8 - 1) & 0x02) != 0,
+            );
+            d.mode = self.mode;
+            d.freq_div = self.freq_div;
+            d.start_idx = self.start_idx.unwrap_or(0);
+            d.finish_idx = self.finish_idx.unwrap_or(0);
+        } else {
+            let d = cast::<GainSTMSubseq>(tx);
+            d.tag = TypeTag::GainSTM;
+            d.flag = GainSTMControlFlags::NONE;
+            d.flag.set(
+                GainSTMControlFlags::STM_END,
+                sent + send == self.drives.len(),
+            );
+            d.flag.set(
+                GainSTMControlFlags::SEND_BIT0,
+                ((send as u8 - 1) & 0x01) != 0,
+            );
+            d.flag.set(
+                GainSTMControlFlags::SEND_BIT1,
+                ((send as u8 - 1) & 0x02) != 0,
+            );
+        }
 
         self.sent.insert(device.idx(), sent + send);
 
-        tx[1] = f.bits() | ((send as u8 - 1) & 0x03) << 6;
-
         if sent == 0 {
-            Ok(std::mem::size_of::<TypeTag>()
-         + std::mem::size_of::<GainSTMControlFlags>()
-         + std::mem::size_of::<GainSTMMode>()
-         +  std::mem::size_of::<u32>() // freq_div
-         + std::mem::size_of::<u16>() // start idx
-         + std::mem::size_of::<u16>() // finish idx
-         +device.num_transducers() * std::mem::size_of::<FPGADrive>())
+            Ok(std::mem::size_of::<GainSTMHead>()
+                + device.num_transducers() * std::mem::size_of::<FPGADrive>())
         } else {
-            Ok(std::mem::size_of::<TypeTag>()
-                + std::mem::size_of::<GainSTMControlFlags>()
+            Ok(std::mem::size_of::<GainSTMSubseq>()
                 + device.num_transducers() * std::mem::size_of::<FPGADrive>())
         }
     }

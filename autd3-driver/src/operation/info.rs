@@ -4,7 +4,7 @@
  * Created Date: 08/01/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/11/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -19,6 +19,8 @@ use crate::{
     operation::{Operation, TypeTag},
 };
 
+use super::cast;
+
 // #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[repr(u8)]
 pub enum FirmwareInfoType {
@@ -30,6 +32,12 @@ pub enum FirmwareInfoType {
     Clear = 0x06,
 }
 
+#[repr(C, align(2))]
+struct FirmInfo {
+    tag: TypeTag,
+    ty: FirmwareInfoType,
+}
+
 #[derive(Default)]
 pub struct FirmInfoOp {
     remains: HashMap<usize, usize>,
@@ -37,34 +45,23 @@ pub struct FirmInfoOp {
 
 impl Operation for FirmInfoOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        tx[0] = TypeTag::FirmwareInfo as u8;
-        match self.remains[&device.idx()] {
-            6 => {
-                tx[1] = FirmwareInfoType::CPUVersionMajor as u8;
-            }
-            5 => {
-                tx[1] = FirmwareInfoType::CPUVersionMinor as u8;
-            }
-            4 => {
-                tx[1] = FirmwareInfoType::FPGAVersionMajor as u8;
-            }
-            3 => {
-                tx[1] = FirmwareInfoType::FPGAVersionMinor as u8;
-            }
-            2 => {
-                tx[1] = FirmwareInfoType::FPGAFunctions as u8;
-            }
-            1 => {
-                tx[1] = FirmwareInfoType::Clear as u8;
-            }
+        let d = cast::<FirmInfo>(tx);
+        d.tag = TypeTag::FirmwareInfo;
+        d.ty = match self.remains[&device.idx()] {
+            6 => FirmwareInfoType::CPUVersionMajor,
+            5 => FirmwareInfoType::CPUVersionMinor,
+            4 => FirmwareInfoType::FPGAVersionMajor,
+            3 => FirmwareInfoType::FPGAVersionMinor,
+            2 => FirmwareInfoType::FPGAFunctions,
+            1 => FirmwareInfoType::Clear,
             _ => unreachable!(),
-        }
+        };
 
-        Ok(2)
+        Ok(std::mem::size_of::<FirmInfo>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        2
+        std::mem::size_of::<FirmInfo>()
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
