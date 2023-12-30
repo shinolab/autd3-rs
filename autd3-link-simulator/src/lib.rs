@@ -4,7 +4,7 @@
  * Created Date: 09/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/11/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -44,7 +44,6 @@ pub struct SimulatorBuilder {
     timeout: Duration,
 }
 
-#[async_trait::async_trait]
 impl LinkBuilder for SimulatorBuilder {
     type L = Simulator;
 
@@ -114,7 +113,6 @@ impl Simulator {
     }
 }
 
-#[async_trait::async_trait]
 impl Link for Simulator {
     async fn close(&mut self) -> Result<(), AUTDInternalError> {
         if !self.is_open {

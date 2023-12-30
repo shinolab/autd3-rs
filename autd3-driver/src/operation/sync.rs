@@ -4,7 +4,7 @@
  * Created Date: 08/01/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 09/11/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -16,8 +16,13 @@ use std::collections::HashMap;
 use crate::{
     error::AUTDInternalError,
     geometry::{Device, Geometry},
-    operation::{Operation, TypeTag},
+    operation::{cast, Operation, TypeTag},
 };
+
+#[repr(C, align(2))]
+struct Sync {
+    tag: TypeTag,
+}
 
 #[derive(Default)]
 pub struct SyncOp {
@@ -28,23 +33,16 @@ impl Operation for SyncOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert_eq!(self.remains[&device.idx()], 1);
 
-        assert!(tx.len() >= 2 + device.num_transducers() * std::mem::size_of::<u16>());
+        assert!(tx.len() >= std::mem::size_of::<Sync>());
 
-        tx[0] = TypeTag::Sync as u8;
+        let d = cast::<Sync>(tx);
+        d.tag = TypeTag::Sync;
 
-        unsafe {
-            let dst = std::slice::from_raw_parts_mut(
-                tx[2..].as_mut_ptr() as *mut u16,
-                device.num_transducers(),
-            );
-            dst.fill(0x1000); // for v3 firmware compatibility
-        }
-
-        Ok(2 + device.num_transducers() * std::mem::size_of::<u16>())
+        Ok(std::mem::size_of::<Sync>())
     }
 
-    fn required_size(&self, device: &Device) -> usize {
-        2 + device.num_transducers() * std::mem::size_of::<u16>()
+    fn required_size(&self, _: &Device) -> usize {
+        std::mem::size_of::<Sync>()
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
@@ -74,31 +72,22 @@ mod tests {
     fn sync_op() {
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
 
-        let mut tx =
-            vec![0x00u8; (2 + NUM_TRANS_IN_UNIT * std::mem::size_of::<u16>()) * NUM_DEVICE];
+        let mut tx = vec![0x00u8; 2 * NUM_DEVICE];
 
         let mut op = SyncOp::default();
 
         assert!(op.init(&geometry).is_ok());
 
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                op.required_size(dev),
-                2 + NUM_TRANS_IN_UNIT * std::mem::size_of::<u16>()
-            )
-        });
+        geometry
+            .devices()
+            .for_each(|dev| assert_eq!(op.required_size(dev), 2));
 
         geometry
             .devices()
             .for_each(|dev| assert_eq!(op.remains(dev), 1));
 
         geometry.devices().for_each(|dev| {
-            assert!(op
-                .pack(
-                    dev,
-                    &mut tx[dev.idx() * (2 + NUM_TRANS_IN_UNIT * std::mem::size_of::<u16>())..]
-                )
-                .is_ok());
+            assert!(op.pack(dev, &mut tx[dev.idx() * 2..]).is_ok());
             op.commit(dev);
         });
 
@@ -107,18 +96,7 @@ mod tests {
             .for_each(|dev| assert_eq!(op.remains(dev), 0));
 
         geometry.devices().for_each(|dev| {
-            assert_eq!(
-                tx[dev.idx() * (2 + NUM_TRANS_IN_UNIT * std::mem::size_of::<u16>())],
-                TypeTag::Sync as u8
-            );
-            tx.chunks(2)
-                .skip((1 + NUM_TRANS_IN_UNIT) * dev.idx())
-                .skip(1)
-                .take(NUM_TRANS_IN_UNIT)
-                .for_each(|d| {
-                    assert_eq!(d[0], 0x00);
-                    assert_eq!(d[1], 0x10);
-                })
+            assert_eq!(tx[dev.idx() * 2], TypeTag::Sync as u8);
         });
     }
 }

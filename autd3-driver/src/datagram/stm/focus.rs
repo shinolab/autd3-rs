@@ -4,7 +4,7 @@
  * Created Date: 04/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 01/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -38,8 +38,8 @@ impl FocusSTM {
     ///
     /// * `freq` - Frequency of STM. The frequency closest to `freq` from the possible frequencies is set.
     ///
-    pub fn new(freq: float) -> Self {
-        Self::from_props(STMProps::new(freq))
+    pub fn from_freq(freq: float) -> Self {
+        Self::from_props(STMProps::from_freq(freq))
     }
 
     /// constructor
@@ -67,7 +67,7 @@ impl FocusSTM {
     /// # Arguments
     ///
     /// * `props` - STMProps
-    pub fn from_props(props: STMProps) -> Self {
+    pub const fn from_props(props: STMProps) -> Self {
         Self {
             control_points: Vec::new(),
             props,
@@ -121,11 +121,11 @@ impl FocusSTM {
         }
     }
 
-    pub fn start_idx(&self) -> Option<u16> {
+    pub const fn start_idx(&self) -> Option<u16> {
         self.props.start_idx()
     }
 
-    pub fn finish_idx(&self) -> Option<u16> {
+    pub const fn finish_idx(&self) -> Option<u16> {
         self.props.finish_idx()
     }
 
@@ -144,21 +144,36 @@ impl FocusSTM {
     }
 }
 
+impl std::ops::Index<usize> for FocusSTM {
+    type Output = ControlPoint;
+
+    fn index(&self, idx: usize) -> &Self::Output {
+        &self.control_points[idx]
+    }
+}
+
+impl std::ops::IndexMut<usize> for FocusSTM {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.control_points[index]
+    }
+}
+
 impl Datagram for FocusSTM {
     type O1 = crate::operation::FocusSTMOp;
     type O2 = crate::operation::NullOp;
 
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        let freq_div = self
-            .props
-            .sampling_config(self.control_points.len())?
-            .frequency_division();
+        let freq_div = self.sampling_config().frequency_division();
         let start_idx = self.props.start_idx;
         let finish_idx = self.props.finish_idx;
         Ok((
             Self::O1::new(self.control_points, freq_div, start_idx, finish_idx),
             Self::O2::default(),
         ))
+    }
+
+    fn timeout(&self) -> Option<std::time::Duration> {
+        Some(std::time::Duration::from_millis(200))
     }
 }
 
@@ -172,7 +187,7 @@ mod tests {
 
     #[test]
     fn new() {
-        let stm = FocusSTM::new(1.)
+        let stm = FocusSTM::from_freq(1.)
             .add_foci_from_iter((0..10).map(|_| Vector3::zeros()))
             .unwrap();
 
@@ -210,31 +225,31 @@ mod tests {
 
     #[test]
     fn start_idx() {
-        let stm = FocusSTM::new(1.);
+        let stm = FocusSTM::from_freq(1.);
         assert_eq!(stm.start_idx(), None);
 
-        let stm = FocusSTM::new(1.).with_start_idx(Some(0));
+        let stm = FocusSTM::from_freq(1.).with_start_idx(Some(0));
         assert_eq!(stm.start_idx(), Some(0));
 
-        let stm = FocusSTM::new(1.).with_start_idx(None);
+        let stm = FocusSTM::from_freq(1.).with_start_idx(None);
         assert_eq!(stm.start_idx(), None);
     }
 
     #[test]
     fn finish_idx() {
-        let stm = FocusSTM::new(1.);
+        let stm = FocusSTM::from_freq(1.);
         assert_eq!(stm.finish_idx(), None);
 
-        let stm = FocusSTM::new(1.).with_finish_idx(Some(0));
+        let stm = FocusSTM::from_freq(1.).with_finish_idx(Some(0));
         assert_eq!(stm.finish_idx(), Some(0));
 
-        let stm = FocusSTM::new(1.).with_finish_idx(None);
+        let stm = FocusSTM::from_freq(1.).with_finish_idx(None);
         assert_eq!(stm.finish_idx(), None);
     }
 
     #[test]
     fn add_focus() {
-        let stm = FocusSTM::new(1.0)
+        let stm = FocusSTM::from_freq(1.0)
             .add_focus(Vector3::new(1., 2., 3.))
             .unwrap()
             .add_focus((Vector3::new(4., 5., 6.), 1))
@@ -256,7 +271,7 @@ mod tests {
 
     #[test]
     fn add_foci() {
-        let stm = FocusSTM::new(1.0)
+        let stm = FocusSTM::from_freq(1.0)
             .add_foci_from_iter([Vector3::new(1., 2., 3.)])
             .unwrap()
             .add_foci_from_iter([(Vector3::new(4., 5., 6.), 1)])
@@ -278,7 +293,7 @@ mod tests {
 
     #[test]
     fn clear() {
-        let mut stm = FocusSTM::new(1.0)
+        let mut stm = FocusSTM::from_freq(1.0)
             .add_focus(Vector3::new(1., 2., 3.))
             .unwrap()
             .add_focus((Vector3::new(4., 5., 6.), 1))
@@ -302,7 +317,7 @@ mod tests {
 
     #[test]
     fn focu_stm_operation() {
-        let stm = FocusSTM::new(1.0)
+        let stm = FocusSTM::from_freq(1.0)
             .add_focus(Vector3::new(1., 2., 3.))
             .unwrap()
             .add_focus((Vector3::new(4., 5., 6.), 1))

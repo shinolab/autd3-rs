@@ -4,7 +4,7 @@
  * Created Date: 21/05/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/11/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -42,7 +42,6 @@ impl RemoteSOEMBuilder {
     }
 }
 
-#[async_trait::async_trait]
 impl LinkBuilder for RemoteSOEMBuilder {
     type L = RemoteSOEM;
 
@@ -69,7 +68,6 @@ impl RemoteSOEM {
     }
 }
 
-#[async_trait::async_trait]
 impl Link for RemoteSOEM {
     async fn close(&mut self) -> Result<(), AUTDInternalError> {
         self.is_open = false;
