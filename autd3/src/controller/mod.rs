@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 28/12/2023
+ * Last Modified: 29/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -160,10 +160,11 @@ impl<L: Link> Controller<L> {
         for dev in self.geometry.iter_mut() {
             dev.enable = true;
         }
+        self.ignore_ack = true;
         let res = self
             .send((
-                autd3_driver::datagram::ConfigureSilencer::default(),
                 crate::gain::Null::default(),
+                autd3_driver::datagram::ConfigureSilencer::default(),
             ))
             .await?;
         let res = res & self.send(Clear::new()).await?;
@@ -418,5 +419,23 @@ impl<L: Link> Controller<L> {
     pub fn fpga_info(&mut self) -> Result<Vec<FPGAInfo>, AUTDError> {
         self.link.receive(&mut self.rx_buf)?;
         Ok(self.rx_buf.iter().map(FPGAInfo::from).collect())
+    }
+}
+
+#[cfg(not(feature = "sync"))]
+impl<L: Link> Drop for Controller<L> {
+    fn drop(&mut self) {
+        tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current().block_on(async {
+                let _ = self.close().await;
+            });
+        });
+    }
+}
+
+#[cfg(feature = "sync")]
+impl<L: Link> Drop for Controller<L> {
+    fn drop(&mut self) {
+        let _ = self.close();
     }
 }

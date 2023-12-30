@@ -4,12 +4,14 @@
  * Created Date: 30/06/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 01/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
  *
  */
+
+use autd3_driver::geometry::IntoDevice;
 
 use crate::pb::*;
 
@@ -57,16 +59,9 @@ impl ToMessage for autd3_driver::geometry::Geometry {
         Self::Message {
             devices: self
                 .iter()
-                .map(|dev| geometry::Device {
-                    idx: dev.idx() as _,
-                    transducers: dev
-                        .iter()
-                        .map(|t| geometry::Transducer {
-                            idx: t.idx() as _,
-                            pos: Some(t.position().to_msg()),
-                            rot: Some(t.rotation().to_msg()),
-                        })
-                        .collect(),
+                .map(|dev| geometry::Autd3 {
+                    pos: Some(dev[0].position().to_msg()),
+                    rot: Some(dev[0].rotation().to_msg()),
                     sound_speed: dev.sound_speed as _,
                     attenuation: dev.attenuation as _,
                 })
@@ -82,16 +77,9 @@ impl ToMessage for &[autd3_driver::geometry::Device] {
         Self::Message {
             devices: self
                 .iter()
-                .map(|dev| geometry::Device {
-                    idx: dev.idx() as _,
-                    transducers: dev
-                        .iter()
-                        .map(|t| geometry::Transducer {
-                            idx: t.idx() as _,
-                            pos: Some(t.position().to_msg()),
-                            rot: Some(t.rotation().to_msg()),
-                        })
-                        .collect(),
+                .map(|dev| geometry::Autd3 {
+                    pos: Some(dev[0].position().to_msg()),
+                    rot: Some(dev[0].rotation().to_msg()),
                     sound_speed: dev.sound_speed as _,
                     attenuation: dev.attenuation as _,
                 })
@@ -161,25 +149,18 @@ impl FromMessage<Geometry> for autd3_driver::geometry::Geometry {
         let devices = msg
             .devices
             .iter()
-            .map(|dev| {
-                let mut device = autd3_driver::geometry::Device::new(
-                    dev.idx as usize,
-                    dev.transducers
-                        .iter()
-                        .map(|tr| {
-                            autd3_driver::geometry::Transducer::new(
-                                tr.idx as _,
-                                autd3_driver::geometry::Vector3::from_msg(tr.pos.as_ref().unwrap()),
-                                autd3_driver::geometry::UnitQuaternion::from_msg(
-                                    tr.rot.as_ref().unwrap(),
-                                ),
-                            )
-                        })
-                        .collect(),
-                );
-                device.sound_speed = dev.sound_speed as _;
-                device.attenuation = dev.attenuation as _;
-                device
+            .enumerate()
+            .map(|(i, dev)| {
+                let mut dev = autd3_driver::autd3_device::AUTD3::new(
+                    autd3_driver::geometry::Vector3::from_msg(dev.pos.as_ref().unwrap()),
+                )
+                .with_rotation(autd3_driver::geometry::UnitQuaternion::from_msg(
+                    dev.rot.as_ref().unwrap(),
+                ))
+                .into_device(i);
+                dev.sound_speed = dev.sound_speed as _;
+                dev.attenuation = dev.attenuation as _;
+                dev
             })
             .collect();
         Self::new(devices)

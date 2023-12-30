@@ -4,7 +4,7 @@
  * Created Date: 02/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 28/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -109,7 +109,7 @@ pub enum AUTDInternalError {
 }
 
 impl AUTDInternalError {
-    pub fn firmware_err(ack: u8) -> Self {
+    pub const fn firmware_err(ack: u8) -> Self {
         match ack {
             0x80 => AUTDInternalError::NotSupportedTag,
             0x81 => AUTDInternalError::InvalidMessageID,

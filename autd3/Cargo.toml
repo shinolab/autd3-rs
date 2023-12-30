@@ -17,12 +17,11 @@ autd3-firmware-emulator = { path = "../autd3-firmware-emulator", version = "19.2
 num = "0.4.0"
 thiserror = "1.0.31"
 bitvec = "1.0.1"
-async-trait = "0.1.74"
-tokio = { version = "1.34.0", features = ["rt-multi-thread"], optional = true }
+tokio = { version = "1.34.0", features = ["rt-multi-thread"] }
 
 [features]
 default = []
-sync = ["tokio"]
+sync = []
 single_float = ["autd3-driver/single_float"]
 use_meter = ["autd3-driver/use_meter"]
 

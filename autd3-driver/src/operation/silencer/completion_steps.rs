@@ -4,7 +4,7 @@
  * Created Date: 27/12/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 27/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -17,8 +17,16 @@ use super::{SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS, SILENCER_CTL_FLAG_STRICT_M
 use crate::{
     error::AUTDInternalError,
     geometry::{Device, Geometry},
-    operation::{Operation, TypeTag},
+    operation::{cast, Operation, TypeTag},
 };
+
+#[repr(C, align(2))]
+struct ConfigSilencerFixedCompletionSteps {
+    tag: TypeTag,
+    value_intensity: u16,
+    value_phase: u16,
+    flag: u16,
+}
 
 pub struct ConfigSilencerFixedCompletionStepsOp {
     remains: HashMap<usize, usize>,
@@ -41,23 +49,21 @@ impl ConfigSilencerFixedCompletionStepsOp {
 impl Operation for ConfigSilencerFixedCompletionStepsOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert_eq!(self.remains[&device.idx()], 1);
-        tx[0] = TypeTag::Silencer as u8;
-        tx[2] = (self.value_intensity & 0xFF) as u8;
-        tx[3] = (self.value_intensity >> 8) as u8;
-        tx[4] = (self.value_phase & 0xFF) as u8;
-        tx[5] = (self.value_phase >> 8) as u8;
 
-        let mut flag: u16 = SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS;
+        let d = cast::<ConfigSilencerFixedCompletionSteps>(tx);
+        d.tag = TypeTag::Silencer;
+        d.value_intensity = self.value_intensity;
+        d.value_phase = self.value_phase;
+        d.flag = SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS;
         if self.strict_mode {
-            flag |= SILENCER_CTL_FLAG_STRICT_MODE;
+            d.flag |= SILENCER_CTL_FLAG_STRICT_MODE;
         }
-        tx[6] = (flag & 0xFF) as u8;
-        tx[7] = (flag >> 8) as u8;
-        Ok(8)
+
+        Ok(std::mem::size_of::<ConfigSilencerFixedCompletionSteps>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        8
+        std::mem::size_of::<ConfigSilencerFixedCompletionSteps>()
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {

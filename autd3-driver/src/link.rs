@@ -4,14 +4,13 @@
  * Created Date: 27/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 28/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
  *
  */
 
-use async_trait::async_trait;
 use std::time::Duration;
 
 use crate::{
@@ -21,14 +20,19 @@ use crate::{
 };
 
 /// Link is a interface to the AUTD device
-#[async_trait]
 pub trait Link: Send + Sync {
     /// Close link
-    async fn close(&mut self) -> Result<(), AUTDInternalError>;
+    fn close(&mut self) -> impl std::future::Future<Output = Result<(), AUTDInternalError>> + Send;
     /// Send data to devices
-    async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError>;
+    fn send(
+        &mut self,
+        tx: &TxDatagram,
+    ) -> impl std::future::Future<Output = Result<bool, AUTDInternalError>> + Send;
     /// Receive data from devices
-    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError>;
+    fn receive(
+        &mut self,
+        rx: &mut [RxMessage],
+    ) -> impl std::future::Future<Output = Result<bool, AUTDInternalError>> + Send;
     /// Check if link is open
     #[must_use]
     fn is_open(&self) -> bool;
@@ -36,56 +40,60 @@ pub trait Link: Send + Sync {
     #[must_use]
     fn timeout(&self) -> Duration;
     /// Send and receive data
-    async fn send_receive(
+    fn send_receive(
         &mut self,
         tx: &TxDatagram,
         rx: &mut [RxMessage],
         timeout: Option<Duration>,
         ignore_ack: bool,
-    ) -> Result<bool, AUTDInternalError> {
-        let timeout = timeout.unwrap_or(self.timeout());
-        if !self.send(tx).await? {
-            return Ok(false);
+    ) -> impl std::future::Future<Output = Result<bool, AUTDInternalError>> + Send {
+        async move {
+            let timeout = timeout.unwrap_or(self.timeout());
+            if !self.send(tx).await? {
+                return Ok(false);
+            }
+            if timeout.is_zero() {
+                return self.receive(rx).await;
+            }
+            self.wait_msg_processed(tx, rx, timeout, ignore_ack).await
         }
-        if timeout.is_zero() {
-            return self.receive(rx).await;
-        }
-        self.wait_msg_processed(tx, rx, timeout, ignore_ack).await
     }
 
     /// Wait until message is processed
-    async fn wait_msg_processed(
+    fn wait_msg_processed(
         &mut self,
         tx: &TxDatagram,
         rx: &mut [RxMessage],
         timeout: Duration,
         ignore_ack: bool,
-    ) -> Result<bool, AUTDInternalError> {
-        let start = std::time::Instant::now();
-        let _ = self.receive(rx).await?;
-        if tx.headers().zip(rx.iter()).fold(Ok(true), |acc, (h, r)| {
-            if !ignore_ack && r.ack & 0x80 != 0 {
-                return Err(AUTDInternalError::firmware_err(r.ack));
-            }
-            Ok(acc? && h.msg_id == r.ack)
-        })? {
-            return Ok(true);
-        }
-        loop {
-            if start.elapsed() > timeout {
-                return Ok(false);
-            }
-            std::thread::sleep(std::time::Duration::from_millis(1));
-            if !self.receive(rx).await? {
-                continue;
-            }
-            if tx.headers().zip(rx.iter()).fold(Ok(true), |acc, (h, r)| {
+    ) -> impl std::future::Future<Output = Result<bool, AUTDInternalError>> + Send {
+        async move {
+            let start = std::time::Instant::now();
+            let _ = self.receive(rx).await?;
+            if tx.headers().zip(rx.iter()).try_fold(true, |acc, (h, r)| {
                 if !ignore_ack && r.ack & 0x80 != 0 {
                     return Err(AUTDInternalError::firmware_err(r.ack));
                 }
-                Ok(acc? && h.msg_id == r.ack)
+                Ok(acc && h.msg_id == r.ack)
             })? {
                 return Ok(true);
+            }
+            loop {
+                if start.elapsed() > timeout {
+                    return Ok(false);
+                }
+                std::thread::sleep(std::time::Duration::from_millis(1));
+                if !self.receive(rx).await? {
+                    continue;
+                }
+                if tx.headers().zip(rx.iter()).try_fold(true, |acc, (h, r)| {
+                    if !ignore_ack && r.ack & 0x80 != 0 {
+                        return Err(AUTDInternalError::firmware_err(r.ack));
+                    }
+                    Ok(acc && h.msg_id == r.ack)
+                })? {
+                    return Ok(true);
+                }
             }
         }
     }
@@ -127,11 +135,11 @@ pub trait LinkSync {
         let start = std::time::Instant::now();
         let _ = self.receive(rx)?;
 
-        if tx.headers().zip(rx.iter()).fold(Ok(true), |acc, (h, r)| {
+        if tx.headers().zip(rx.iter()).try_fold(true, |acc, (h, r)| {
             if !ignore_ack && r.ack & 0x80 != 0 {
                 return Err(AUTDInternalError::firmware_err(r.ack));
             }
-            Ok(acc? && h.msg_id == r.ack)
+            Ok(acc && h.msg_id == r.ack)
         })? {
             return Ok(true);
         }
@@ -143,11 +151,11 @@ pub trait LinkSync {
             if !self.receive(rx)? {
                 continue;
             }
-            if tx.headers().zip(rx.iter()).fold(Ok(true), |acc, (h, r)| {
+            if tx.headers().zip(rx.iter()).try_fold(true, |acc, (h, r)| {
                 if !ignore_ack && r.ack & 0x80 != 0 {
                     return Err(AUTDInternalError::firmware_err(r.ack));
                 }
-                Ok(acc? && h.msg_id == r.ack)
+                Ok(acc && h.msg_id == r.ack)
             })? {
                 return Ok(true);
             }
@@ -155,12 +163,14 @@ pub trait LinkSync {
     }
 }
 
-#[async_trait]
 pub trait LinkBuilder {
     type L: Link;
 
     /// Open link
-    async fn open(self, geometry: &Geometry) -> Result<Self::L, AUTDInternalError>;
+    fn open(
+        self,
+        geometry: &Geometry,
+    ) -> impl std::future::Future<Output = Result<Self::L, AUTDInternalError>> + Send;
 }
 
 #[cfg(feature = "sync")]
@@ -234,7 +244,6 @@ mod tests {
         pub down: bool,
     }
 
-    #[async_trait]
     impl Link for MockLink {
         async fn close(&mut self) -> Result<(), AUTDInternalError> {
             self.is_open = false;
