@@ -19,10 +19,9 @@ use crate::{
     operation::{cast, Operation, TypeTag},
 };
 
-#[repr(C)]
+#[repr(C, align(2))]
 struct ConfigSilencerFixedUpdateRate {
     tag: TypeTag,
-    _pad: u8,
     value_intensity: u16,
     value_phase: u16,
     flag: u16,
