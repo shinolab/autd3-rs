@@ -4,14 +4,18 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 01/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
  *
  */
 
-use autd3_driver::geometry::{Device, Geometry, IntoDevice};
+use autd3_driver::{
+    cpu::{RxMessage, TxDatagram},
+    datagram::{Clear, Synchronize},
+    geometry::{Device, Geometry, IntoDevice},
+};
 
 use super::Controller;
 use crate::error::AUTDError;
@@ -44,11 +48,6 @@ impl ControllerBuilder {
         self,
         link_builder: B,
     ) -> Result<Controller<B::L>, AUTDError> {
-        use autd3_driver::{
-            cpu::{RxMessage, TxDatagram},
-            datagram::{Clear, Synchronize},
-        };
-
         let geometry = Geometry::new(self.devices);
         let link = link_builder.open(&geometry).await?;
 

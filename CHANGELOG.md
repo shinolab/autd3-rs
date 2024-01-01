@@ -1,3 +1,7 @@
+# 20.0.1
+
+- Fix for `sync` feature
+
 # 20.0.0
 
 - Update firmware to v5.0.0
