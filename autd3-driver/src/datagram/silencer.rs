@@ -4,7 +4,7 @@
  * Created Date: 01/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 01/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -40,6 +40,9 @@ pub struct FixedUpdateRate {
 pub struct ConfigureSilencer<T> {
     internal: T,
 }
+
+pub type ConfigureSilencerFixedCompletionSteps = ConfigureSilencer<FixedCompletionSteps>;
+pub type ConfigureSilencerFixedUpdateRate = ConfigureSilencer<FixedUpdateRate>;
 
 impl ConfigureSilencer<()> {
     /// constructor
