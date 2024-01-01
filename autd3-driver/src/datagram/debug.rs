@@ -4,7 +4,7 @@
  * Created Date: 21/11/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -22,7 +22,7 @@ pub struct ConfigureDebugOutputIdx<F: Fn(&Device) -> Option<&Transducer>> {
 
 impl<F: Fn(&Device) -> Option<&Transducer>> ConfigureDebugOutputIdx<F> {
     /// constructor
-    pub fn new(f: F) -> Self {
+    pub const fn new(f: F) -> Self {
         Self { f }
     }
 }

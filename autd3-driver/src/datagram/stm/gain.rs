@@ -4,7 +4,7 @@
  * Created Date: 04/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 01/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -39,8 +39,8 @@ impl<G: Gain> GainSTM<G> {
     ///
     /// * `freq` - Frequency of STM. The frequency closest to `freq` from the possible frequencies is set.
     ///
-    pub fn new(freq: float) -> Self {
-        Self::from_props_mode(STMProps::new(freq), GainSTMMode::PhaseIntensityFull)
+    pub fn from_freq(freq: float) -> Self {
+        Self::from_props_mode(STMProps::from_freq(freq), GainSTMMode::PhaseIntensityFull)
     }
 
     /// constructor
@@ -85,11 +85,11 @@ impl<G: Gain> GainSTM<G> {
         }
     }
 
-    pub fn start_idx(&self) -> Option<u16> {
+    pub const fn start_idx(&self) -> Option<u16> {
         self.props.start_idx()
     }
 
-    pub fn finish_idx(&self) -> Option<u16> {
+    pub const fn finish_idx(&self) -> Option<u16> {
         self.props.finish_idx()
     }
 
@@ -110,7 +110,7 @@ impl<G: Gain> GainSTM<G> {
         Self { mode, ..self }
     }
 
-    pub fn mode(&self) -> GainSTMMode {
+    pub const fn mode(&self) -> GainSTMMode {
         self.mode
     }
 
@@ -137,7 +137,7 @@ impl<G: Gain> GainSTM<G> {
     ///
     /// * `props` - STMProps
     /// * `mode` - GainSTMMode
-    pub fn from_props_mode(props: STMProps, mode: GainSTMMode) -> Self {
+    pub const fn from_props_mode(props: STMProps, mode: GainSTMMode) -> Self {
         Self {
             gains: Vec::new(),
             mode,
@@ -156,6 +156,20 @@ impl<G: Gain> GainSTM<G> {
     /// removed [Gain]s
     pub fn clear(&mut self) -> Vec<G> {
         std::mem::take(&mut self.gains)
+    }
+}
+
+impl<G: Gain> std::ops::Index<usize> for GainSTM<G> {
+    type Output = G;
+
+    fn index(&self, idx: usize) -> &Self::Output {
+        &self.gains[idx]
+    }
+}
+
+impl<G: Gain> std::ops::IndexMut<usize> for GainSTM<G> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.gains[index]
     }
 }
 
@@ -195,6 +209,10 @@ impl<G: Gain> Datagram for GainSTM<G> {
             Self::O2::default(),
         ))
     }
+
+    fn timeout(&self) -> Option<std::time::Duration> {
+        Some(std::time::Duration::from_millis(200))
+    }
 }
 
 #[cfg(test)]
@@ -212,7 +230,7 @@ mod tests {
 
     #[test]
     fn new() {
-        let stm = GainSTM::<NullGain>::new(1.)
+        let stm = GainSTM::<NullGain>::from_freq(1.)
             .add_gains_from_iter((0..10).map(|_| NullGain {}))
             .unwrap();
 
@@ -250,7 +268,7 @@ mod tests {
 
     #[test]
     fn with_mode() {
-        let stm = GainSTM::<NullGain>::new(1.0);
+        let stm = GainSTM::<NullGain>::from_freq(1.0);
         assert_eq!(stm.mode(), GainSTMMode::PhaseIntensityFull);
 
         let stm = stm.with_mode(GainSTMMode::PhaseFull);
@@ -284,7 +302,7 @@ mod tests {
 
     #[test]
     fn test_get() {
-        let stm = GainSTM::<Box<dyn Gain>>::new(1.0)
+        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.0)
             .add_gain(Box::new(NullGain {}))
             .unwrap()
             .add_gain(Box::new(NullGain2 {}))
@@ -302,7 +320,7 @@ mod tests {
 
     #[test]
     fn test_clear() {
-        let mut stm = GainSTM::<Box<dyn Gain>>::new(1.0)
+        let mut stm = GainSTM::<Box<dyn Gain>>::from_freq(1.0)
             .add_gain(Box::new(NullGain {}))
             .unwrap()
             .add_gain(Box::new(NullGain2 {}))
@@ -316,31 +334,31 @@ mod tests {
 
     #[test]
     fn start_idx() {
-        let stm = GainSTM::<Box<dyn Gain>>::new(1.);
+        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.);
         assert_eq!(stm.start_idx(), None);
 
-        let stm = GainSTM::<Box<dyn Gain>>::new(1.).with_start_idx(Some(0));
+        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.).with_start_idx(Some(0));
         assert_eq!(stm.start_idx(), Some(0));
 
-        let stm = GainSTM::<Box<dyn Gain>>::new(1.).with_start_idx(None);
+        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.).with_start_idx(None);
         assert_eq!(stm.start_idx(), None);
     }
 
     #[test]
     fn finish_idx() {
-        let stm = GainSTM::<Box<dyn Gain>>::new(1.);
+        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.);
         assert_eq!(stm.finish_idx(), None);
 
-        let stm = GainSTM::<Box<dyn Gain>>::new(1.).with_finish_idx(Some(0));
+        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.).with_finish_idx(Some(0));
         assert_eq!(stm.finish_idx(), Some(0));
 
-        let stm = GainSTM::<Box<dyn Gain>>::new(1.).with_finish_idx(None);
+        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.).with_finish_idx(None);
         assert_eq!(stm.finish_idx(), None);
     }
 
     #[test]
     fn gain_stm_operation() {
-        let stm = GainSTM::<Box<dyn Gain>>::new(1.)
+        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.)
             .add_gain(Box::new(NullGain {}))
             .unwrap()
             .add_gain(Box::new(NullGain2 {}))

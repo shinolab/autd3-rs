@@ -4,7 +4,7 @@
  * Created Date: 02/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 21/11/2023
+ * Last Modified: 27/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -29,9 +29,10 @@ pub const FOCUS_STM_FIXED_NUM_WIDTH: usize = 18;
 pub const FOCUS_STM_FIXED_NUM_UPPER: i32 = (1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1;
 pub const FOCUS_STM_FIXED_NUM_LOWER: i32 = -(1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1));
 
-pub const SILENCER_STEP_MIN: u16 = 1;
-pub const SILENCER_STEP_MAX: u16 = 0xFFFF;
-pub const SILENCER_STEP_DEFAULT: u16 = 256;
+pub const SILENCER_VALUE_MIN: u16 = 1;
+pub const SILENCER_VALUE_MAX: u16 = 0xFFFF;
+pub const SILENCER_STEPS_INTENSITY_DEFAULT: u16 = 10;
+pub const SILENCER_STEPS_PHASE_DEFAULT: u16 = 40;
 
 pub const SAMPLING_FREQ_DIV_MIN: u32 = 512;
 pub const SAMPLING_FREQ_DIV_MAX: u32 = u32::MAX;

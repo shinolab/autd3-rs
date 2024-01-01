@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 14/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -18,7 +18,7 @@ use std::{collections::HashMap, hash::Hash, time::Duration};
 
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
-    datagram::{Clear, Datagram, Synchronize},
+    datagram::{Clear, Datagram},
     firmware_version::FirmwareInfo,
     fpga::FPGAInfo,
     geometry::{Device, Geometry},
@@ -43,6 +43,7 @@ pub struct Controller<L: Link> {
     pub geometry: Geometry,
     tx_buf: TxDatagram,
     rx_buf: Vec<RxMessage>,
+    ignore_ack: bool,
 }
 
 impl Controller<Nop> {
@@ -74,42 +75,6 @@ impl<L: Link> Controller<L> {
 
 #[cfg(not(feature = "sync"))]
 impl<L: Link> Controller<L> {
-    #[doc(hidden)]
-    pub async fn open_impl(geometry: Geometry, link: L) -> Result<Controller<L>, AUTDError> {
-        let num_devices = geometry.num_devices();
-        let tx_buf = TxDatagram::new(num_devices);
-        let mut cnt = Controller {
-            link,
-            geometry,
-            tx_buf,
-            rx_buf: vec![RxMessage { data: 0, ack: 0 }; num_devices],
-        };
-        cnt.send(Clear::new()).await?;
-        cnt.send(Synchronize::new()).await?;
-        Ok(cnt)
-    }
-}
-
-#[cfg(feature = "sync")]
-impl<L: Link> Controller<L> {
-    #[doc(hidden)]
-    pub fn open_impl(geometry: Geometry, link: L) -> Result<Controller<L>, AUTDError> {
-        let num_devices = geometry.num_devices();
-        let tx_buf = TxDatagram::new(num_devices);
-        let mut cnt = Controller {
-            link,
-            geometry,
-            tx_buf,
-            rx_buf: vec![RxMessage { data: 0, ack: 0 }; num_devices],
-        };
-        cnt.send(Clear::new())?;
-        cnt.send(Synchronize::new())?;
-        Ok(cnt)
-    }
-}
-
-#[cfg(not(feature = "sync"))]
-impl<L: Link> Controller<L> {
     /// Send data to the devices
     ///
     /// # Arguments
@@ -132,7 +97,7 @@ impl<L: Link> Controller<L> {
 
             if !self
                 .link
-                .send_receive(&self.tx_buf, &mut self.rx_buf, timeout)
+                .send_receive(&self.tx_buf, &mut self.rx_buf, timeout, self.ignore_ack)
                 .await?
             {
                 return Ok(false);
@@ -155,10 +120,11 @@ impl<L: Link> Controller<L> {
         for dev in self.geometry.iter_mut() {
             dev.enable = true;
         }
+        self.ignore_ack = true;
         let res = self
             .send((
-                autd3_driver::datagram::Silencer::default(),
                 crate::gain::Null::default(),
+                autd3_driver::datagram::ConfigureSilencer::default(),
             ))
             .await?;
         let res = res & self.send(Clear::new()).await?;
@@ -182,7 +148,7 @@ impl<L: Link> Controller<L> {
             ($op:expr, $null_op:expr, $link:expr, $geometry:expr, $tx_buf:expr, $rx_buf:expr ) => {
                 OperationHandler::pack($op, $null_op, $geometry, $tx_buf)?;
                 if !$link
-                    .send_receive($tx_buf, $rx_buf, Some(Duration::from_millis(200)))
+                    .send_receive($tx_buf, $rx_buf, Some(Duration::from_millis(200)), false)
                     .await?
                 {
                     return Err(AUTDError::ReadFirmwareInfoFailed(ReadFirmwareInfoState(
@@ -290,7 +256,7 @@ impl<L: Link> Controller<L> {
 
             if !self
                 .link
-                .send_receive(&self.tx_buf, &mut self.rx_buf, timeout)?
+                .send_receive(&self.tx_buf, &mut self.rx_buf, timeout, self.ignore_ack)?
             {
                 return Ok(false);
             }
@@ -413,5 +379,23 @@ impl<L: Link> Controller<L> {
     pub fn fpga_info(&mut self) -> Result<Vec<FPGAInfo>, AUTDError> {
         self.link.receive(&mut self.rx_buf)?;
         Ok(self.rx_buf.iter().map(FPGAInfo::from).collect())
+    }
+}
+
+#[cfg(not(feature = "sync"))]
+impl<L: Link> Drop for Controller<L> {
+    fn drop(&mut self) {
+        tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current().block_on(async {
+                let _ = self.close().await;
+            });
+        });
+    }
+}
+
+#[cfg(feature = "sync")]
+impl<L: Link> Drop for Controller<L> {
+    fn drop(&mut self) {
+        let _ = self.close();
     }
 }

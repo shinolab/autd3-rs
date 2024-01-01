@@ -4,7 +4,7 @@
  * Created Date: 13/12/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 14/12/2023
+ * Last Modified: 01/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -193,16 +193,7 @@ fn send_mod() {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
 
     let mut tx = TxDatagram::new(1);
-    // let m: Vec<_> = (0..65536).map(|_| EmitIntensity::new(rng.gen())).collect();
-    let m: Vec<_> = (0..65536)
-        .map(|i| {
-            if i == 32768 {
-                EmitIntensity::MAX
-            } else {
-                EmitIntensity::MIN
-            }
-        })
-        .collect();
+    let m: Vec<_> = (0..65536).map(|_| EmitIntensity::new(rng.gen())).collect();
     let freq_div = rng.gen_range(SAMPLING_FREQ_DIV_MIN..=SAMPLING_FREQ_DIV_MAX);
     let mut op = ModulationOp::new(m.clone(), freq_div);
     let mut op_null = NullOp::default();
@@ -253,7 +244,7 @@ fn send_mod_delay() {
 }
 
 #[test]
-fn send_silencer() {
+fn send_silencer_fixed_update_rate() {
     let mut rng = rand::thread_rng();
 
     let geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
@@ -261,20 +252,88 @@ fn send_silencer() {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
 
     let mut tx = TxDatagram::new(1);
-    let step_intensity = rng.gen_range(1..=u16::MAX);
-    let step_phase = rng.gen_range(1..=u16::MAX);
-    let (mut op, mut op_null) = Silencer::new(step_intensity, step_phase)
-        .unwrap()
-        .operation()
-        .unwrap();
+    let update_rate_intensity = rng.gen_range(1..=u16::MAX);
+    let update_rate_phase = rng.gen_range(1..=u16::MAX);
+    let (mut op, mut op_null) =
+        ConfigureSilencer::fixed_update_rate(update_rate_intensity, update_rate_phase)
+            .unwrap()
+            .operation()
+            .unwrap();
 
     OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
     OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
 
     cpu.send(&tx);
     assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
-    assert_eq!(cpu.fpga().silencer_step_intensity(), step_intensity);
-    assert_eq!(cpu.fpga().silencer_step_phase(), step_phase);
+    assert_eq!(
+        cpu.fpga().silencer_update_rate_intensity(),
+        update_rate_intensity
+    );
+    assert_eq!(cpu.fpga().silencer_update_rate_phase(), update_rate_phase);
+    assert!(!cpu.fpga().silencer_fixed_completion_steps_mode());
+}
+
+#[test]
+fn send_silencer_fixed_completion_steps() {
+    let mut rng = rand::thread_rng();
+
+    let geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+
+    let mut tx = TxDatagram::new(1);
+    let steps_intensity = rng.gen_range(1..=10);
+    let steps_phase = rng.gen_range(1..=u16::MAX);
+    let (mut op, mut op_null) =
+        ConfigureSilencer::fixed_completion_steps(steps_intensity, steps_phase)
+            .unwrap()
+            .operation()
+            .unwrap();
+
+    OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
+    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
+
+    cpu.send(&tx);
+    assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
+    assert_eq!(
+        cpu.fpga().silencer_completion_steps_intensity(),
+        steps_intensity
+    );
+    assert_eq!(cpu.fpga().silencer_completion_steps_phase(), steps_phase);
+    assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
+    assert!(cpu.silencer_strict_mode());
+}
+
+#[test]
+fn send_silencer_fixed_completion_steps_permissive() {
+    let mut rng = rand::thread_rng();
+
+    let geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+
+    let mut tx = TxDatagram::new(1);
+    let steps_intensity = rng.gen_range(1..=u16::MAX);
+    let steps_phase = rng.gen_range(1..=u16::MAX);
+    let (mut op, mut op_null) =
+        ConfigureSilencer::fixed_completion_steps(steps_intensity, steps_phase)
+            .unwrap()
+            .with_strict_mode(false)
+            .operation()
+            .unwrap();
+
+    OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
+    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
+
+    cpu.send(&tx);
+    assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
+    assert_eq!(
+        cpu.fpga().silencer_completion_steps_intensity(),
+        steps_intensity
+    );
+    assert_eq!(cpu.fpga().silencer_completion_steps_phase(), steps_phase);
+    assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
+    assert!(!cpu.silencer_strict_mode());
 }
 
 #[derive(Gain)]
@@ -861,7 +920,6 @@ fn send_debug_output_idx() {
 }
 
 #[test]
-#[should_panic(expected = "not implemented: Unsupported tag")]
 fn send_invalid_tag() {
     let geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
 
@@ -872,6 +930,10 @@ fn send_invalid_tag() {
     tx.payload_mut(0)[0] = 0xFF;
 
     cpu.send(&tx);
+    assert_eq!(
+        cpu.ack(),
+        autd3_firmware_emulator::cpu::params::ERR_NOT_SUPPORTED_TAG
+    );
 }
 
 #[test]

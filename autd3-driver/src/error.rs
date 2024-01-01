@@ -4,7 +4,7 @@
  * Created Date: 02/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 07/12/2023
+ * Last Modified: 01/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -25,11 +25,18 @@ pub enum AUTDInternalError {
     ModulationSizeOutOfRange(usize),
 
     #[error(
-        "Silencer step ({0}) is out of range ([{}, {}])",
-        SILENCER_STEP_MIN,
-        SILENCER_STEP_MAX
+        "Silencer update rate ({0}) is out of range ([{}, {}])",
+        SILENCER_VALUE_MIN,
+        SILENCER_VALUE_MAX
     )]
-    SilencerStepOutOfRange(u16),
+    SilencerUpdateRateOutOfRange(u16),
+
+    #[error(
+        "Silencer completion steps ({0}) is out of range ([{}, {}])",
+        SILENCER_VALUE_MIN,
+        SILENCER_VALUE_MAX
+    )]
+    SilencerCompletionStepsOutOfRange(u16),
 
     #[error("Sampling frequency division ({0}) is out of range ([{1}, {2}])")]
     SamplingFreqDivOutOfRange(u32, u32, u32),
@@ -90,6 +97,33 @@ pub enum AUTDInternalError {
     #[cfg(target_os = "windows")]
     #[error("{0}")]
     WindowsError(#[from] windows::core::Error),
+
+    #[error("Not supported tag")]
+    NotSupportedTag,
+    #[error("Invalid message ID")]
+    InvalidMessageID,
+    #[error("Frequency division is too small")]
+    FrequencyDivisionTooSmall,
+    #[error("Completion steps is too large")]
+    CompletionStepsTooLarge,
+    #[error("Invalid info type")]
+    InvalidInfoType,
+    #[error("Invalid GainSTM mode")]
+    InvalidGainSTMMode,
+}
+
+impl AUTDInternalError {
+    pub const fn firmware_err(ack: u8) -> Self {
+        match ack {
+            0x80 => AUTDInternalError::NotSupportedTag,
+            0x81 => AUTDInternalError::InvalidMessageID,
+            0x82 => AUTDInternalError::FrequencyDivisionTooSmall,
+            0x83 => AUTDInternalError::CompletionStepsTooLarge,
+            0x84 => AUTDInternalError::InvalidInfoType,
+            0x85 => AUTDInternalError::InvalidGainSTMMode,
+            _ => unreachable!(),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -221,18 +255,33 @@ mod tests {
     }
 
     #[test]
-    fn silencer_out_of_range() {
-        let err = AUTDInternalError::SilencerStepOutOfRange(1);
+    fn silencer_update_rate_out_of_range() {
+        let err = AUTDInternalError::SilencerUpdateRateOutOfRange(1);
         assert!(err.source().is_none());
         assert_eq!(
             format!("{}", err),
-            "Silencer step (1) is out of range ([1, 65535])"
+            "Silencer update rate (1) is out of range ([1, 65535])"
         );
-        assert_eq!(format!("{:?}", err), "SilencerStepOutOfRange(1)");
+        assert_eq!(format!("{:?}", err), "SilencerUpdateRateOutOfRange(1)");
 
-        let err = AUTDInternalError::SilencerStepOutOfRange(1);
-        assert_eq!(err, AUTDInternalError::SilencerStepOutOfRange(1));
-        assert_ne!(err, AUTDInternalError::SilencerStepOutOfRange(2));
+        let err = AUTDInternalError::SilencerUpdateRateOutOfRange(1);
+        assert_eq!(err, AUTDInternalError::SilencerUpdateRateOutOfRange(1));
+        assert_ne!(err, AUTDInternalError::SilencerUpdateRateOutOfRange(2));
+    }
+
+    #[test]
+    fn silencer_completion_steps_out_of_range() {
+        let err = AUTDInternalError::SilencerCompletionStepsOutOfRange(1);
+        assert!(err.source().is_none());
+        assert_eq!(
+            format!("{}", err),
+            "Silencer completion steps (1) is out of range ([1, 65535])"
+        );
+        assert_eq!(format!("{:?}", err), "SilencerCompletionStepsOutOfRange(1)");
+
+        let err = AUTDInternalError::SilencerCompletionStepsOutOfRange(1);
+        assert_eq!(err, AUTDInternalError::SilencerCompletionStepsOutOfRange(1));
+        assert_ne!(err, AUTDInternalError::SilencerCompletionStepsOutOfRange(2));
     }
 
     #[test]
@@ -341,6 +390,38 @@ mod tests {
 
         let err = AUTDInternalError::TimerDeleteFailed;
         assert_eq!(err, AUTDInternalError::TimerDeleteFailed);
+    }
+
+    #[test]
+    fn not_supported_tag() {
+        let err = AUTDInternalError::firmware_err(0x80);
+        assert!(err.source().is_none());
+        assert_eq!(format!("{}", err), "Not supported tag");
+        assert_eq!(format!("{:?}", err), "NotSupportedTag");
+    }
+
+    #[test]
+    fn invalid_msg_id() {
+        let err = AUTDInternalError::firmware_err(0x81);
+        assert!(err.source().is_none());
+        assert_eq!(format!("{}", err), "Invalid message ID");
+        assert_eq!(format!("{:?}", err), "InvalidMessageID");
+    }
+
+    #[test]
+    fn freq_div_too_small() {
+        let err = AUTDInternalError::firmware_err(0x82);
+        assert!(err.source().is_none());
+        assert_eq!(format!("{}", err), "Frequency division is too small");
+        assert_eq!(format!("{:?}", err), "FrequencyDivisionTooSmall");
+    }
+
+    #[test]
+    fn completion_steps_too_large() {
+        let err = AUTDInternalError::firmware_err(0x83);
+        assert!(err.source().is_none());
+        assert_eq!(format!("{}", err), "Completion steps is too large");
+        assert_eq!(format!("{:?}", err), "CompletionStepsTooLarge");
     }
 
     #[test]

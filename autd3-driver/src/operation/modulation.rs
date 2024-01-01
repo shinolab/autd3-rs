@@ -4,7 +4,7 @@
  * Created Date: 08/01/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 27/11/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -18,7 +18,7 @@ use crate::{
     error::AUTDInternalError,
     fpga::MOD_BUF_SIZE_MAX,
     geometry::{Device, Geometry},
-    operation::{Operation, TypeTag},
+    operation::{cast, Operation, TypeTag},
 };
 
 #[derive(Clone, Copy)]
@@ -57,6 +57,21 @@ impl fmt::Display for ModulationControlFlags {
     }
 }
 
+#[repr(C, align(2))]
+struct ModulationHead {
+    tag: TypeTag,
+    flag: ModulationControlFlags,
+    size: u16,
+    freq_div: u32,
+}
+
+#[repr(C, align(2))]
+struct ModulationSubseq {
+    tag: TypeTag,
+    flag: ModulationControlFlags,
+    size: u16,
+}
+
 pub struct ModulationOp {
     buf: Vec<EmitIntensity>,
     freq_div: u32,
@@ -79,33 +94,36 @@ impl Operation for ModulationOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert!(self.remains[&device.idx()] > 0);
 
-        tx[0] = TypeTag::Modulation as u8;
-
         let sent = self.sent[&device.idx()];
-        let mut offset = 4;
-        if sent == 0 {
-            offset += 4;
-        }
+
+        let offset = if sent == 0 {
+            std::mem::size_of::<ModulationHead>()
+        } else {
+            std::mem::size_of::<ModulationSubseq>()
+        };
+
         let mod_size = (self.buf.len() - sent).min(tx.len() - offset);
         assert!(mod_size > 0);
 
-        let mut f = ModulationControlFlags::NONE;
-        f.set(ModulationControlFlags::MOD_BEGIN, sent == 0);
-        f.set(
-            ModulationControlFlags::MOD_END,
-            sent + mod_size == self.buf.len(),
-        );
-        tx[1] = f.bits();
-
-        tx[2] = (mod_size & 0xFF) as u8;
-        tx[3] = (mod_size >> 8) as u8;
-
         if sent == 0 {
-            let freq_div = self.freq_div;
-            tx[4] = (freq_div & 0xFF) as u8;
-            tx[5] = ((freq_div >> 8) & 0xFF) as u8;
-            tx[6] = ((freq_div >> 16) & 0xFF) as u8;
-            tx[7] = ((freq_div >> 24) & 0xFF) as u8;
+            let d = cast::<ModulationHead>(tx);
+            d.tag = TypeTag::Modulation;
+            d.flag = ModulationControlFlags::MOD_BEGIN;
+            d.flag.set(
+                ModulationControlFlags::MOD_END,
+                sent + mod_size == self.buf.len(),
+            );
+            d.size = mod_size as u16;
+            d.freq_div = self.freq_div;
+        } else {
+            let d = cast::<ModulationSubseq>(tx);
+            d.tag = TypeTag::Modulation;
+            d.flag = ModulationControlFlags::NONE;
+            d.flag.set(
+                ModulationControlFlags::MOD_END,
+                sent + mod_size == self.buf.len(),
+            );
+            d.size = mod_size as u16;
         }
 
         unsafe {
@@ -118,24 +136,17 @@ impl Operation for ModulationOp {
 
         self.sent.insert(device.idx(), sent + mod_size);
         if sent == 0 {
-            Ok(2 + std::mem::size_of::<u16>() + std::mem::size_of::<u32>() + mod_size)
+            Ok(std::mem::size_of::<ModulationHead>() + mod_size)
         } else {
-            Ok(2 + std::mem::size_of::<u16>() + mod_size)
+            Ok(std::mem::size_of::<ModulationSubseq>() + mod_size)
         }
     }
 
     fn required_size(&self, device: &Device) -> usize {
         if self.sent[&device.idx()] == 0 {
-            std::mem::size_of::<TypeTag>()
-                + std::mem::size_of::<ModulationControlFlags>()
-                + std::mem::size_of::<u16>() // size
-                + std::mem::size_of::<u32>() // freq_div
-                + 1
+            std::mem::size_of::<ModulationHead>() + 1
         } else {
-            std::mem::size_of::<TypeTag>()
-                + std::mem::size_of::<ModulationControlFlags>()
-                + std::mem::size_of::<u16>() // size
-                + 1
+            std::mem::size_of::<ModulationSubseq>() + 1
         }
     }
 

@@ -4,15 +4,15 @@
  * Created Date: 07/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 14/12/2023
+ * Last Modified: 27/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
  *
  */
 
-pub const VERSION_NUM_MAJOR: u8 = 0x8C;
-pub const VERSION_NUM_MINOR: u8 = 0x02;
+pub const VERSION_NUM_MAJOR: u8 = 0x8D;
+pub const VERSION_NUM_MINOR: u8 = 0x00;
 
 pub const BRAM_SELECT_CONTROLLER: u16 = 0x0;
 pub const BRAM_SELECT_MOD: u16 = 0x1;
@@ -33,8 +33,11 @@ pub const ADDR_MOD_FREQ_DIV_0: usize = 0x0022;
 pub const ADDR_MOD_FREQ_DIV_1: usize = 0x0023;
 pub const ADDR_VERSION_NUM: usize = 0x0030;
 pub const ADDR_VERSION_NUM_MINOR: usize = 0x0031;
-pub const ADDR_SILENT_STEP_INTENSITY: usize = 0x0040;
-pub const ADDR_SILENT_STEP_PHASE: usize = 0x0041;
+pub const ADDR_SILENCER_UPDATE_RATE_INTENSITY: usize = 0x0040;
+pub const ADDR_SILENCER_UPDATE_RATE_PHASE: usize = 0x0041;
+pub const ADDR_SILENCER_CTL_FLAG: usize = 0x0042;
+pub const ADDR_SILENCER_COMPLETION_STEPS_INTENSITY: usize = 0x0043;
+pub const ADDR_SILENCER_COMPLETION_STEPS_PHASE: usize = 0x0044;
 pub const ADDR_STM_ADDR_OFFSET: usize = 0x0050;
 pub const ADDR_STM_CYCLE: usize = 0x0051;
 pub const ADDR_STM_FREQ_DIV_0: usize = 0x0052;
@@ -52,6 +55,8 @@ pub const CTL_REG_STM_GAIN_MODE_BIT: u16 = 10;
 pub const CTL_FLAG_USE_STM_FINISH_IDX_BIT: u16 = 11;
 pub const CTL_FLAG_USE_STM_START_IDX_BIT: u16 = 12;
 pub const CTL_REG_FORCE_FAN_EX_BIT: u16 = 13;
+
+pub const SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS_BIT: u16 = 0;
 
 pub const ENABLED_EMULATOR_BIT: u8 = 0x80;
 pub const ENABLED_FEATURES_BITS: u8 = ENABLED_EMULATOR_BIT;
