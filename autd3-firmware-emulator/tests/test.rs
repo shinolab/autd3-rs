@@ -4,7 +4,7 @@
  * Created Date: 13/12/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 27/12/2023
+ * Last Modified: 01/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -193,16 +193,7 @@ fn send_mod() {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
 
     let mut tx = TxDatagram::new(1);
-    // let m: Vec<_> = (0..65536).map(|_| EmitIntensity::new(rng.gen())).collect();
-    let m: Vec<_> = (0..65536)
-        .map(|i| {
-            if i == 32768 {
-                EmitIntensity::MAX
-            } else {
-                EmitIntensity::MIN
-            }
-        })
-        .collect();
+    let m: Vec<_> = (0..65536).map(|_| EmitIntensity::new(rng.gen())).collect();
     let freq_div = rng.gen_range(SAMPLING_FREQ_DIV_MIN..=SAMPLING_FREQ_DIV_MAX);
     let mut op = ModulationOp::new(m.clone(), freq_div);
     let mut op_null = NullOp::default();
