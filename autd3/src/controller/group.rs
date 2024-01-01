@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 01/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -180,11 +180,12 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
                 OperationHandler::pack(op1, op2, &self.cnt.geometry, &mut self.cnt.tx_buf)
             })?;
 
-            if !self
-                .cnt
-                .link
-                .send_receive(&self.cnt.tx_buf, &mut self.cnt.rx_buf, self.timeout)?
-            {
+            if !self.cnt.link.send_receive(
+                &self.cnt.tx_buf,
+                &mut self.cnt.rx_buf,
+                self.timeout,
+                self.cnt.ignore_ack,
+            )? {
                 break false;
             }
             if self.op.iter_mut().all(|(k, (op1, op2))| {

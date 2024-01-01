@@ -56,6 +56,36 @@ jobs:
           python3 build.py test --all
         shell: bash
 
+  build-src-for-capi:
+    needs: check-src
+    name: build-src-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup
+        if: needs.check-src.outputs.status
+        uses: ./.github/actions/setup-build
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          os: ${{ matrix.os }}
+        
+      - name: Rust cache
+        if: needs.check-src.outputs.status
+        uses: swatinem/rust-cache@v2
+
+      - name: Test src on ${{ matrix.os }}
+        if: needs.check-src.outputs.status
+        run: |
+          python3 build.py build --all --features "sync"
+          python3 build.py test --all --features "sync"
+        shell: bash
+
 
   test-src-for-unity:
     needs: check-src

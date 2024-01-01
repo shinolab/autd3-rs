@@ -102,9 +102,11 @@ class Config:
             command.append("--release")
         return command
 
-    def cargo_build_command(self):
+    def cargo_build_command(self, additional_features: Optional[str] = None):
         command = self.cargo_command_base("build")
         features = "remote"
+        if additional_features is not None:
+            features += " " + additional_features
         if self._all:
             command.append("--all")
             command.append("--exclude")
@@ -155,7 +157,7 @@ def rust_build(args):
     config = Config(args)
 
     with working_dir("."):
-        subprocess.run(config.cargo_build_command()).check_returncode()
+        subprocess.run(config.cargo_build_command(args.features)).check_returncode()
 
     if not config.no_examples:
         info("Building examples...")
@@ -174,7 +176,7 @@ def rust_lint(args):
     config = Config(args)
 
     with working_dir("."):
-        command = config.cargo_build_command()
+        command = config.cargo_build_command(args.features)
         command[1] = "clippy"
         command.append("--")
         command.append("-D")
@@ -332,12 +334,16 @@ if __name__ == "__main__":
         parser_build.add_argument(
             "--no-examples", action="store_true", help="skip building examples"
         )
+        parser_build.add_argument(
+            "--features", help="additional features", default=None
+        )
         parser_build.set_defaults(handler=rust_build)
 
         # lint
         parser_lint = subparsers.add_parser("lint", help="see `lint -h`")
         parser_lint.add_argument("--all", action="store_true", help="lint all crates")
         parser_lint.add_argument("--release", action="store_true", help="release build")
+        parser_lint.add_argument("--features", help="additional features", default=None)
         parser_lint.set_defaults(handler=rust_lint)
 
         # test
