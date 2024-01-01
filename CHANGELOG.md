@@ -1,5 +1,7 @@
-# 19.2.0
+# 20.0.0
 
+- Update firmware to v5.0.0
+  - Add fixed completion steps algorithm of Silencer  
 - Fix `T4010A1_AMPLITUDE` value
 - Add calculation of index of Modulation and STM from system time in firmware-emulator
 
