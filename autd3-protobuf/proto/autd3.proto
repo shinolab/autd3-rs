@@ -4,7 +4,7 @@
  * Created Date: 26/06/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 22/11/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -29,18 +29,13 @@ message CloseRequest {}
 message CloseResponse { bool success = 1; }
 
 message Geometry {
-  message Transducer {
-    uint32 idx = 1;
-    Vector3 pos = 2;
-    Quaternion rot = 3;
+  message AUTD3 {
+    Vector3 pos = 1;
+    Quaternion rot = 2;
+    float sound_speed = 3;
+    float attenuation = 4;
   }
-  message Device {
-    uint32 idx = 1;
-    float sound_speed = 2;
-    float attenuation = 3;
-    repeated Transducer transducers = 4;
-  }
-  repeated Device devices = 1;
+  repeated AUTD3 devices = 1;
 }
 
 message GeometryResponse {}

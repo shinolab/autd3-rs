@@ -4,7 +4,7 @@
  * Created Date: 04/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 07/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -38,7 +38,7 @@ pub struct Geometry {
 
 impl Geometry {
     #[doc(hidden)]
-    pub fn new(devices: Vec<Device>) -> Geometry {
+    pub const fn new(devices: Vec<Device>) -> Geometry {
         Self { devices }
     }
 

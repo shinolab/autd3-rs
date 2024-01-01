@@ -4,7 +4,7 @@
  * Created Date: 08/01/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -22,7 +22,6 @@ mod null;
 mod reads_fpga_info;
 mod silencer;
 pub mod stm;
-mod stop;
 mod sync;
 
 pub use clear::*;
@@ -36,11 +35,10 @@ pub use null::*;
 pub use reads_fpga_info::*;
 pub use silencer::*;
 pub use stm::*;
-pub use stop::*;
 pub use sync::*;
 
 use crate::{
-    cpu::TxDatagram,
+    cpu::{TxDatagram, MSG_ID_MAX},
     error::AUTDInternalError,
     geometry::{Device, Geometry},
 };
@@ -60,6 +58,10 @@ pub enum TypeTag {
     ForceFan = 0x60,
     ReadsFPGAInfo = 0x61,
     Debug = 0xF0,
+}
+
+fn cast<T>(tx: &mut [u8]) -> &mut T {
+    unsafe { (tx[0..].as_mut_ptr() as *mut T).as_mut().unwrap() }
 }
 
 pub trait Operation {
@@ -133,7 +135,11 @@ impl OperationHandler {
                 (_, 0) => Self::pack_dev(op1, dev, tx),
                 _ => {
                     let hedaer = tx.header_mut(dev.idx());
-                    hedaer.msg_id = hedaer.msg_id.wrapping_add(1);
+                    hedaer.msg_id = if hedaer.msg_id == MSG_ID_MAX {
+                        0
+                    } else {
+                        hedaer.msg_id + 1
+                    };
                     hedaer.slot_2_offset = 0;
 
                     let t = tx.payload_mut(dev.idx());
@@ -161,7 +167,11 @@ impl OperationHandler {
         tx: &mut TxDatagram,
     ) -> Result<(), AUTDInternalError> {
         let hedaer = tx.header_mut(dev.idx());
-        hedaer.msg_id = hedaer.msg_id.wrapping_add(1);
+        hedaer.msg_id = if hedaer.msg_id == 0x7F {
+            0
+        } else {
+            hedaer.msg_id + 1
+        };
         hedaer.slot_2_offset = 0;
 
         op.pack(dev, tx.payload_mut(dev.idx()))?;

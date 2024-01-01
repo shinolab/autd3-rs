@@ -4,7 +4,7 @@
  * Created Date: 06/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 14/12/2023
+ * Last Modified: 28/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -13,8 +13,11 @@
 
 use autd3_driver::defined::{float, PI};
 
+use crate::error::AUTDFirmwareEmulatorError;
+
 use super::params::*;
 
+use chrono::{Local, LocalResult, TimeZone, Utc};
 use num_integer::Roots;
 
 pub struct FPGAEmulator {
@@ -131,12 +134,26 @@ impl FPGAEmulator {
         (self.controller_bram[ADDR_CTL_REG] & (1 << CTL_REG_STM_GAIN_MODE_BIT)) != 0
     }
 
-    pub fn silencer_step_intensity(&self) -> u16 {
-        self.controller_bram[ADDR_SILENT_STEP_INTENSITY]
+    pub fn silencer_update_rate_intensity(&self) -> u16 {
+        self.controller_bram[ADDR_SILENCER_UPDATE_RATE_INTENSITY]
     }
 
-    pub fn silencer_step_phase(&self) -> u16 {
-        self.controller_bram[ADDR_SILENT_STEP_PHASE]
+    pub fn silencer_update_rate_phase(&self) -> u16 {
+        self.controller_bram[ADDR_SILENCER_UPDATE_RATE_PHASE]
+    }
+
+    pub fn silencer_completion_steps_intensity(&self) -> u16 {
+        self.controller_bram[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY]
+    }
+
+    pub fn silencer_completion_steps_phase(&self) -> u16 {
+        self.controller_bram[ADDR_SILENCER_COMPLETION_STEPS_PHASE]
+    }
+
+    pub fn silencer_fixed_completion_steps_mode(&self) -> bool {
+        self.controller_bram[ADDR_SILENCER_CTL_FLAG]
+            & (1 << SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS_BIT)
+            != 0
     }
 
     pub fn mod_delays(&self) -> Vec<u16> {
@@ -316,11 +333,56 @@ impl FPGAEmulator {
     pub fn local_tr_pos(&self) -> &[u64] {
         &self.tr_pos
     }
+
+    pub fn ec_time_now() -> u64 {
+        (Local::now()
+            .signed_duration_since(Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).single().unwrap()))
+        .num_nanoseconds()
+        .unwrap() as _
+    }
+
+    pub fn ec_time_with_utc_ymdhms(
+        year: i32,
+        month: u32,
+        day: u32,
+        hour: u32,
+        min: u32,
+        sec: u32,
+    ) -> Result<u64, AUTDFirmwareEmulatorError> {
+        match Utc.with_ymd_and_hms(year, month, day, hour, min, sec) {
+            LocalResult::Single(date) => match (date
+                .signed_duration_since(Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).single().unwrap()))
+            .num_nanoseconds()
+            {
+                Some(n) if n < 0 => Err(AUTDFirmwareEmulatorError::InvalidDateTime),
+                Some(n) => Ok(n as _),
+                None => Err(AUTDFirmwareEmulatorError::InvalidDateTime),
+            },
+            _ => Err(AUTDFirmwareEmulatorError::InvalidDateTime),
+        }
+    }
+
+    pub const fn systime(ec_time: u64) -> u64 {
+        ((ec_time as u128 * autd3_driver::fpga::FPGA_CLK_FREQ as u128) / 1000000000) as _
+    }
+
+    pub fn stm_idx_from_systime(&self, systime: u64) -> usize {
+        (systime / self.stm_frequency_division() as u64) as usize % self.stm_cycle()
+    }
+
+    pub fn mod_idx_from_systime(&self, systime: u64) -> usize {
+        (systime / self.modulation_frequency_division() as u64) as usize % self.modulation_cycle()
+    }
 }
 
 #[cfg(test)]
 
 mod tests {
+    use crate::cpu::params::{
+        BRAM_ADDR_MOD_CYCLE, BRAM_ADDR_MOD_FREQ_DIV_0, BRAM_ADDR_STM_CYCLE,
+        BRAM_ADDR_STM_FREQ_DIV_0,
+    };
+
     use super::*;
 
     static ASIN_TABLE: &[u8; 65536] = include_bytes!("asin.dat");
@@ -383,5 +445,105 @@ mod tests {
         fpga.modulator_bram[0] = 0xFFFF;
         fpga.controller_bram[ADDR_MOD_CYCLE] = 2 - 1;
         assert!(fpga.is_outputting());
+    }
+
+    #[test]
+    fn ec_time_now() {
+        let t = FPGAEmulator::ec_time_now();
+        assert!(t > 0);
+    }
+
+    #[test]
+    fn ec_time_with_utc_ymdhms() {
+        let t = FPGAEmulator::ec_time_with_utc_ymdhms(2000, 1, 1, 0, 0, 0);
+        assert!(t.is_ok());
+        assert_eq!(t.unwrap(), 0);
+
+        let t = FPGAEmulator::ec_time_with_utc_ymdhms(2000, 1, 1, 0, 0, 1);
+        assert!(t.is_ok());
+        assert_eq!(t.unwrap(), 1000000000);
+
+        let t = FPGAEmulator::ec_time_with_utc_ymdhms(2001, 1, 1, 0, 0, 0);
+        assert!(t.is_ok());
+        assert_eq!(t.unwrap(), 31622400000000000);
+
+        let t = FPGAEmulator::ec_time_with_utc_ymdhms(2000, 13, 1, 0, 0, 0);
+        assert!(t.is_err());
+
+        let t = FPGAEmulator::ec_time_with_utc_ymdhms(1999, 1, 1, 0, 0, 0);
+        assert!(t.is_err());
+    }
+
+    #[test]
+    fn systime() {
+        let t = FPGAEmulator::systime(1000_000_000);
+        assert_eq!(t, 20480000);
+
+        let t = FPGAEmulator::systime(2000_000_000);
+        assert_eq!(t, 40960000);
+    }
+
+    #[test]
+    fn stm_idx_from_systime() {
+        let stm_cycle = 10;
+        let freq_div = 512;
+
+        let mut fpga = FPGAEmulator::new(249);
+        {
+            let addr =
+                ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14) | (BRAM_ADDR_STM_CYCLE & 0x3FFF);
+            fpga.write(addr, (stm_cycle - 1) as u16);
+            assert_eq!(fpga.stm_cycle(), stm_cycle);
+        }
+        {
+            let addr = ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14)
+                | (BRAM_ADDR_STM_FREQ_DIV_0 & 0x3FFF);
+            fpga.write(addr, freq_div as u16);
+            assert_eq!(fpga.stm_frequency_division(), freq_div);
+        }
+
+        assert_eq!(fpga.stm_idx_from_systime(FPGAEmulator::systime(0)), 0);
+        assert_eq!(fpga.stm_idx_from_systime(FPGAEmulator::systime(24_999)), 0);
+        assert_eq!(fpga.stm_idx_from_systime(FPGAEmulator::systime(25_000)), 1);
+        assert_eq!(
+            fpga.stm_idx_from_systime(FPGAEmulator::systime(25_000 * 9)),
+            9
+        );
+        assert_eq!(
+            fpga.stm_idx_from_systime(FPGAEmulator::systime(25_000 * 10)),
+            0
+        );
+    }
+
+    #[test]
+    fn mod_idx_from_systime() {
+        let mod_cycle = 10;
+        let freq_div = 512;
+
+        let mut fpga = FPGAEmulator::new(249);
+        {
+            let addr =
+                ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14) | (BRAM_ADDR_MOD_CYCLE & 0x3FFF);
+            fpga.write(addr, (mod_cycle - 1) as u16);
+            assert_eq!(fpga.modulation_cycle(), mod_cycle);
+        }
+        {
+            let addr = ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14)
+                | (BRAM_ADDR_MOD_FREQ_DIV_0 & 0x3FFF);
+            fpga.write(addr, freq_div as u16);
+            assert_eq!(fpga.modulation_frequency_division(), freq_div);
+        }
+
+        assert_eq!(fpga.mod_idx_from_systime(FPGAEmulator::systime(0)), 0);
+        assert_eq!(fpga.mod_idx_from_systime(FPGAEmulator::systime(24_999)), 0);
+        assert_eq!(fpga.mod_idx_from_systime(FPGAEmulator::systime(25_000)), 1);
+        assert_eq!(
+            fpga.mod_idx_from_systime(FPGAEmulator::systime(25_000 * 9)),
+            9
+        );
+        assert_eq!(
+            fpga.mod_idx_from_systime(FPGAEmulator::systime(25_000 * 10)),
+            0
+        );
     }
 }

@@ -4,7 +4,7 @@
  * Created Date: 28/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 13/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -82,6 +82,10 @@ pub fn modulation_derive(input: TokenStream) -> TokenStream {
                 let freq_div = self.config.frequency_division();
                 Ok((Self::O1::new(self.calc()?, freq_div), Self::O2::default()))
             }
+
+            fn timeout(&self) -> Option<std::time::Duration> {
+                Some(std::time::Duration::from_millis(200))
+            }
         }
     };
     gen.into()
@@ -136,7 +140,6 @@ pub fn link_derive(input: TokenStream) -> TokenStream {
     let type_params_impl = generics.type_params();
 
     let gen = quote! {
-        #[async_trait::async_trait]
         impl <#(#type_params_impl,)*>  autd3_driver::link::Link for #name #ty_generics_impl #where_clause_impl{
             async fn close(&mut self) -> Result<(), autd3_driver::error::AUTDInternalError> {
                 <Self as autd3_driver::link::LinkSync>::close(self)
@@ -158,20 +161,21 @@ pub fn link_derive(input: TokenStream) -> TokenStream {
                 tx: &autd3_driver::cpu::TxDatagram,
                 rx: &mut [autd3_driver::cpu::RxMessage],
                 timeout: Option<std::time::Duration>,
+                ignore_ack: bool,
             ) -> Result<bool, autd3_driver::error::AUTDInternalError> {
-                <Self as autd3_driver::link::LinkSync>::send_receive(self, tx, rx, timeout)
+                <Self as autd3_driver::link::LinkSync>::send_receive(self, tx, rx, timeout, ignore_ack)
             }
             async fn wait_msg_processed(
                 &mut self,
                 tx: &autd3_driver::cpu::TxDatagram,
                 rx: &mut [autd3_driver::cpu::RxMessage],
                 timeout: std::time::Duration,
+                ignore_ack: bool,
             ) -> Result<bool, autd3_driver::error::AUTDInternalError> {
-                <Self as autd3_driver::link::LinkSync>::wait_msg_processed(self, tx, rx, timeout)
+                <Self as autd3_driver::link::LinkSync>::wait_msg_processed(self, tx, rx, timeout, ignore_ack)
             }
         }
 
-        #[async_trait::async_trait]
         impl<#(#type_params_open,)*> autd3_driver::link::LinkBuilder for #name_builder #ty_generics_open #where_clause_open {
             type L = #name #ty_generics_open;
 
@@ -237,18 +241,20 @@ pub fn link_sync_derive(input: TokenStream) -> TokenStream {
                 tx: &autd3_driver::cpu::TxDatagram,
                 rx: &mut [autd3_driver::cpu::RxMessage],
                 timeout: Option<std::time::Duration>,
+                ignore_ack: bool,
             ) -> Result<bool, autd3_driver::error::AUTDInternalError> {
                 self.runtime
-                    .block_on(self.inner.send_receive(tx, rx, timeout))
+                    .block_on(self.inner.send_receive(tx, rx, timeout, ignore_ack))
             }
             fn wait_msg_processed(
                 &mut self,
                 tx: &autd3_driver::cpu::TxDatagram,
                 rx: &mut [autd3_driver::cpu::RxMessage],
                 timeout: std::time::Duration,
+                ignore_ack: bool,
             ) -> Result<bool, autd3_driver::error::AUTDInternalError> {
                 self.runtime
-                    .block_on(self.inner.wait_msg_processed(tx, rx, timeout))
+                    .block_on(self.inner.wait_msg_processed(tx, rx, timeout, ignore_ack))
             }
         }
 

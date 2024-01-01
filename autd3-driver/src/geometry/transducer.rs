@@ -4,7 +4,7 @@
  * Created Date: 04/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -26,7 +26,7 @@ pub struct Transducer {
 
 impl Transducer {
     /// Create transducer
-    pub const fn new(idx: usize, pos: Vector3, rot: UnitQuaternion) -> Self {
+    pub(crate) const fn new(idx: usize, pos: Vector3, rot: UnitQuaternion) -> Self {
         assert!(idx < 256);
         Self {
             idx: idx as u8,

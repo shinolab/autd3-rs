@@ -4,7 +4,7 @@
  * Created Date: 24/05/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 26/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -69,7 +69,7 @@ impl Modulation for Burst {
 }
 
 pub async fn custom<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
-    autd.send(Silencer::disable()).await?;
+    autd.send(ConfigureSilencer::disable()).await?;
 
     let g = MyUniform::new();
     let m = Burst::new();

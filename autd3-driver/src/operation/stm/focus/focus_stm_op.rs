@@ -4,7 +4,7 @@
  * Created Date: 06/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 14/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -18,10 +18,28 @@ use crate::{
     error::AUTDInternalError,
     fpga::{STMFocus, FOCUS_STM_BUF_SIZE_MAX},
     geometry::{Device, Geometry},
-    operation::{Operation, TypeTag},
+    operation::{cast, Operation, TypeTag},
 };
 
 use super::{ControlPoint, FocusSTMControlFlags};
+
+#[repr(C)]
+struct FocusSTMHead {
+    tag: TypeTag,
+    flag: FocusSTMControlFlags,
+    send_num: u16,
+    freq_div: u32,
+    sound_speed: u32,
+    start_idx: u16,
+    finish_idx: u16,
+}
+
+#[repr(C)]
+struct FocusSTMSubseq {
+    tag: TypeTag,
+    flag: FocusSTMControlFlags,
+    send_num: u16,
+}
 
 pub struct FocusSTMOp {
     remains: HashMap<usize, usize>,
@@ -54,63 +72,50 @@ impl Operation for FocusSTMOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert!(self.remains[&device.idx()] > 0);
 
-        tx[0] = TypeTag::FocusSTM as u8;
-
         let sent = self.sent[&device.idx()];
-        let mut offset = std::mem::size_of::<TypeTag>()
-            + std::mem::size_of::<FocusSTMControlFlags>()
-            + std::mem::size_of::<u16>(); // size
-        if sent == 0 {
-            offset += std::mem::size_of::<u32>() // freq_div
-            + std::mem::size_of::<u32>() // sound_speed
-            + std::mem::size_of::<u16>() // start idx
-            + std::mem::size_of::<u16>(); // finish idx
-        }
+
+        let offset = if sent == 0 {
+            std::mem::size_of::<FocusSTMHead>()
+        } else {
+            std::mem::size_of::<FocusSTMSubseq>()
+        };
+
         let send_bytes =
             ((self.points.len() - sent) * std::mem::size_of::<STMFocus>()).min(tx.len() - offset);
         let send_num = send_bytes / std::mem::size_of::<STMFocus>();
         assert!(send_num > 0);
 
-        let mut f = FocusSTMControlFlags::NONE;
-        f.set(FocusSTMControlFlags::STM_BEGIN, sent == 0);
-        f.set(
-            FocusSTMControlFlags::STM_END,
-            sent + send_num == self.points.len(),
-        );
-
-        tx[2] = (send_num & 0xFF) as u8;
-        tx[3] = (send_num >> 8) as u8;
-
         if sent == 0 {
-            let freq_div = self.freq_div;
-            tx[4] = (freq_div & 0xFF) as u8;
-            tx[5] = ((freq_div >> 8) & 0xFF) as u8;
-            tx[6] = ((freq_div >> 16) & 0xFF) as u8;
-            tx[7] = ((freq_div >> 24) & 0xFF) as u8;
-
-            let sound_speed = (device.sound_speed / METER * 1024.0).round() as u32;
-            tx[8] = (sound_speed & 0xFF) as u8;
-            tx[9] = ((sound_speed >> 8) & 0xFF) as u8;
-            tx[10] = ((sound_speed >> 16) & 0xFF) as u8;
-            tx[11] = ((sound_speed >> 24) & 0xFF) as u8;
-
-            let start_idx = self.start_idx.unwrap_or(0);
-            tx[12] = (start_idx & 0xFF) as u8;
-            tx[13] = (start_idx >> 8) as u8;
-            f.set(
+            let d = cast::<FocusSTMHead>(tx);
+            d.tag = TypeTag::FocusSTM;
+            d.flag = FocusSTMControlFlags::STM_BEGIN;
+            d.flag.set(
+                FocusSTMControlFlags::STM_END,
+                sent + send_num == self.points.len(),
+            );
+            d.flag.set(
                 FocusSTMControlFlags::USE_START_IDX,
                 self.start_idx.is_some(),
             );
-
-            let finish_idx = self.finish_idx.unwrap_or(0);
-            tx[14] = (finish_idx & 0xFF) as u8;
-            tx[15] = (finish_idx >> 8) as u8;
-            f.set(
+            d.flag.set(
                 FocusSTMControlFlags::USE_FINISH_IDX,
                 self.finish_idx.is_some(),
             );
+            d.send_num = send_num as u16;
+            d.freq_div = self.freq_div;
+            d.sound_speed = (device.sound_speed / METER * 1024.0).round() as u32;
+            d.start_idx = self.start_idx.unwrap_or(0);
+            d.finish_idx = self.finish_idx.unwrap_or(0);
+        } else {
+            let d = cast::<FocusSTMSubseq>(tx);
+            d.tag = TypeTag::FocusSTM;
+            d.flag = FocusSTMControlFlags::NONE;
+            d.flag.set(
+                FocusSTMControlFlags::STM_END,
+                sent + send_num == self.points.len(),
+            );
+            d.send_num = send_num as u16;
         }
-        tx[1] = f.bits();
 
         unsafe {
             let dst = std::slice::from_raw_parts_mut(
@@ -127,37 +132,17 @@ impl Operation for FocusSTMOp {
 
         self.sent.insert(device.idx(), sent + send_num);
         if sent == 0 {
-            Ok(std::mem::size_of::<TypeTag>()
-            + std::mem::size_of::<FocusSTMControlFlags>()
-            + std::mem::size_of::<u16>() // size
-            + std::mem::size_of::<u32>() // freq_div
-            + std::mem::size_of::<u32>() // sound_speed
-            + std::mem::size_of::<u16>() // start idx
-            + std::mem::size_of::<u16>() // finish idx
-            + std::mem::size_of::<STMFocus>() * send_num)
+            Ok(std::mem::size_of::<FocusSTMHead>() + std::mem::size_of::<STMFocus>() * send_num)
         } else {
-            Ok(std::mem::size_of::<TypeTag>()
-            + std::mem::size_of::<FocusSTMControlFlags>()
-            + std::mem::size_of::<u16>() // size
-            + std::mem::size_of::<STMFocus>() * send_num)
+            Ok(std::mem::size_of::<FocusSTMSubseq>() + std::mem::size_of::<STMFocus>() * send_num)
         }
     }
 
     fn required_size(&self, device: &Device) -> usize {
         if self.sent[&device.idx()] == 0 {
-            std::mem::size_of::<TypeTag>()
-                + std::mem::size_of::<FocusSTMControlFlags>()
-                + std::mem::size_of::<u16>() // size
-                + std::mem::size_of::<u32>() // freq_div
-                + std::mem::size_of::<u32>() // sound_speed
-                + std::mem::size_of::<u16>() // start idx
-                + std::mem::size_of::<u16>() // finish idx
-                + std::mem::size_of::<STMFocus>()
+            std::mem::size_of::<FocusSTMHead>() + std::mem::size_of::<STMFocus>()
         } else {
-            std::mem::size_of::<TypeTag>()
-                + std::mem::size_of::<FocusSTMControlFlags>()
-                + std::mem::size_of::<u16>() // size
-                + std::mem::size_of::<STMFocus>()
+            std::mem::size_of::<FocusSTMSubseq>() + std::mem::size_of::<STMFocus>()
         }
     }
 

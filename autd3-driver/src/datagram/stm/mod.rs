@@ -4,7 +4,7 @@
  * Created Date: 04/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 30/12/2023
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -71,7 +71,7 @@ pub struct STMProps {
 }
 
 impl STMProps {
-    pub fn new(freq: float) -> Self {
+    pub fn from_freq(freq: float) -> Self {
         Self {
             sampling: STMSamplingConfiguration::Frequency(freq),
             start_idx: None,
@@ -95,25 +95,25 @@ impl STMProps {
         }
     }
 
-    pub fn with_start_idx(self, idx: Option<u16>) -> Self {
+    pub const fn with_start_idx(self, idx: Option<u16>) -> Self {
         Self {
             start_idx: idx,
             ..self
         }
     }
 
-    pub fn with_finish_idx(self, idx: Option<u16>) -> Self {
+    pub const fn with_finish_idx(self, idx: Option<u16>) -> Self {
         Self {
             finish_idx: idx,
             ..self
         }
     }
 
-    pub fn start_idx(&self) -> Option<u16> {
+    pub const fn start_idx(&self) -> Option<u16> {
         self.start_idx
     }
 
-    pub fn finish_idx(&self) -> Option<u16> {
+    pub const fn finish_idx(&self) -> Option<u16> {
         self.finish_idx
     }
 
