@@ -4,7 +4,7 @@
  * Created Date: 02/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 01/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -106,6 +106,10 @@ pub enum AUTDInternalError {
     FrequencyDivisionTooSmall,
     #[error("Completion steps is too large")]
     CompletionStepsTooLarge,
+    #[error("Invalid info type")]
+    InvalidInfoType,
+    #[error("Invalid GainSTM mode")]
+    InvalidGainSTMMode,
 }
 
 impl AUTDInternalError {
@@ -115,6 +119,8 @@ impl AUTDInternalError {
             0x81 => AUTDInternalError::InvalidMessageID,
             0x82 => AUTDInternalError::FrequencyDivisionTooSmall,
             0x83 => AUTDInternalError::CompletionStepsTooLarge,
+            0x84 => AUTDInternalError::InvalidInfoType,
+            0x85 => AUTDInternalError::InvalidGainSTMMode,
             _ => unreachable!(),
         }
     }
