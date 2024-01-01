@@ -4,7 +4,7 @@
  * Created Date: 29/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 26/12/2023
+ * Last Modified: 01/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -30,7 +30,9 @@ pub use gain::{Gain, GainAsAny, GainFilter};
 pub use mod_delay::ConfigureModDelay;
 pub use modulation::{Modulation, ModulationProperty};
 pub use reads_fpga_info::ConfigureReadsFPGAInfo;
-pub use silencer::ConfigureSilencer;
+pub use silencer::{
+    ConfigureSilencer, ConfigureSilencerFixedCompletionSteps, ConfigureSilencerFixedUpdateRate,
+};
 pub use stm::{FocusSTM, GainSTM, STMProps};
 pub use synchronize::Synchronize;
 pub use with_timeout::{DatagramT, DatagramWithTimeout};
