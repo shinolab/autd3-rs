@@ -4,7 +4,7 @@
  * Created Date: 04/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 01/12/2023
+ * Last Modified: 09/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -14,7 +14,7 @@
 pub mod directivity;
 
 use crate::{
-    defined::{float, Complex},
+    defined::{float, Complex, PI, T4010A1_AMPLITUDE},
     geometry::{Transducer, Vector3},
 };
 
@@ -37,7 +37,9 @@ pub fn propagate<D: Directivity>(
 ) -> Complex {
     let diff = target_pos - tr.position();
     let dist = diff.norm();
-    let r = D::directivity_from_tr(tr, &diff) * (-dist * attenuation).exp() / dist;
+    let r = T4010A1_AMPLITUDE / (4. * PI) / dist
+        * D::directivity_from_tr(tr, &diff)
+        * (-dist * attenuation).exp();
     let phase = -tr.wavenumber(sound_speed) * dist;
     Complex::new(r * phase.cos(), r * phase.sin())
 }
@@ -64,7 +66,7 @@ mod tests {
 
         let tr = crate::geometry::Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
 
-        let atten = rng.gen_range(0.0..1.0);
+        let atten = rng.gen_range(0.0..1e-6);
         let c = rng.gen_range(300e3..400e3);
         let target = Vector3::new(
             rng.gen_range(-100.0..100.0),
@@ -74,8 +76,10 @@ mod tests {
 
         let expect = {
             let dist = target.norm();
-            let r =
-                TestDirectivity::directivity_from_tr(&tr, &target) * (-dist * atten).exp() / dist;
+            let r = T4010A1_AMPLITUDE
+                * TestDirectivity::directivity_from_tr(&tr, &target)
+                * (-dist * atten).exp()
+                / (4. * PI * dist);
             let phase = -tr.wavenumber(c) * dist;
             Complex::new(r * phase.cos(), r * phase.sin())
         };
