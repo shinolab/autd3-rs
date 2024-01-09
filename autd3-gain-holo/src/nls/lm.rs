@@ -57,7 +57,7 @@ impl<B: LinAlgBackend> LM<B> {
             k_max: 5,
             initial: vec![],
             backend,
-            constraint: EmissionConstraint::Normalize,
+            constraint: EmissionConstraint::DontCare,
         }
     }
 

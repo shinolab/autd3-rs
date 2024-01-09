@@ -42,7 +42,7 @@ impl<B: LinAlgBackend + 'static> Naive<B> {
             foci: vec![],
             amps: vec![],
             backend,
-            constraint: EmissionConstraint::Normalize,
+            constraint: EmissionConstraint::DontCare,
         }
     }
 }

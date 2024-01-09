@@ -46,7 +46,7 @@ impl<B: LinAlgBackend + 'static> GSPAT<B> {
             amps: vec![],
             repeat: 100,
             backend,
-            constraint: EmissionConstraint::Normalize,
+            constraint: EmissionConstraint::DontCare,
         }
     }
 
