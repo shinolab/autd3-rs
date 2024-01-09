@@ -4,7 +4,7 @@
  * Created Date: 05/12/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 19/12/2023
+ * Last Modified: 09/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -42,4 +42,4 @@ pub type Complex = nalgebra::Complex<float>;
 
 pub const ABSOLUTE_THRESHOLD_OF_HEARING: float = 20e-6;
 
-pub const T4010A1_AMPLITUDE: float = 21.9295017696 * 200.0 * MILLIMETER; // [Pa*mm]
+pub const T4010A1_AMPLITUDE: float = 275.574246625 * 200.0 * MILLIMETER; // [Pa*mm]
