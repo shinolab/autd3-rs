@@ -1,4 +1,4 @@
-# 20.0.2
+# 20.0.3
 
 - Fix [#5](https://github.com/shinolab/autd3-rs/issues/5): missing 1/4π factor in propagate
 
