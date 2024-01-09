@@ -52,7 +52,7 @@ impl<B: LinAlgBackend + 'static> SDP<B> {
             lambda: 0.9,
             repeat: 100,
             backend,
-            constraint: EmissionConstraint::Normalize,
+            constraint: EmissionConstraint::DontCare,
         }
     }
 
