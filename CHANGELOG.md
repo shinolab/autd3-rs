@@ -1,6 +1,7 @@
 # 20.0.3
 
 - Fix [#5](https://github.com/shinolab/autd3-rs/issues/5): missing 1/4π factor in propagate
+- Fix [#6](https://github.com/shinolab/autd3-rs/issues/6): Output of autd3_gain_holo::GS is invalid
 
 # 20.0.1
 
