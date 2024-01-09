@@ -4,7 +4,7 @@
  * Created Date: 03/06/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 09/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -19,7 +19,7 @@ use autd3_derive::Gain;
 use autd3_driver::{
     acoustics::{directivity::Sphere, propagate},
     common::{EmitIntensity, Phase},
-    defined::{PI, T4010A1_AMPLITUDE},
+    defined::PI,
     derive::prelude::*,
     geometry::{Geometry, Vector3},
 };
@@ -63,7 +63,7 @@ impl Greedy {
         res: &mut [Complex],
     ) {
         res.iter_mut().zip(foci.iter()).for_each(|(r, f)| {
-            *r = propagate::<Sphere>(trans, attenuation, sound_speed, f) * T4010A1_AMPLITUDE;
+            *r = propagate::<Sphere>(trans, attenuation, sound_speed, f);
         });
     }
 

@@ -4,7 +4,7 @@
  * Created Date: 29/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 09/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -20,7 +20,7 @@ use autd3_derive::Gain;
 
 use autd3_driver::{
     common::{EmitIntensity, Phase},
-    defined::{PI, T4010A1_AMPLITUDE},
+    defined::PI,
     derive::prelude::*,
     geometry::{Geometry, Vector3},
 };
@@ -172,28 +172,26 @@ impl<B: LinAlgBackend> Gain for LM<B> {
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        let mut g = self
+        let g = self
             .backend
             .generate_propagation_matrix(geometry, &self.foci, &filter)?;
-        self.backend
-            .scale_assign_cm(Complex::new(T4010A1_AMPLITUDE, 0.), &mut g)?;
 
-        let m = self.backend.cols_c(&g)?;
-        let n = self.foci.len();
+        let n = self.backend.cols_c(&g)?;
+        let m = self.foci.len();
 
-        let n_param = n + m;
+        let n_param = m + n;
 
         let bhb = {
             let mut bhb = self.backend.alloc_zeros_cm(n_param, n_param)?;
 
             let mut amps = self.backend.from_slice_cv(self.amps_as_slice())?;
 
-            let mut p = self.backend.alloc_cm(n, n)?;
+            let mut p = self.backend.alloc_cm(m, m)?;
             self.backend
                 .scale_assign_cv(Complex::new(-1., 0.), &mut amps)?;
             self.backend.create_diagonal_c(&amps, &mut p)?;
 
-            let mut b = self.backend.alloc_cm(n, n_param)?;
+            let mut b = self.backend.alloc_cm(m, n_param)?;
             self.backend.concat_col_cm(&g, &p, &mut b)?;
 
             self.backend.gemm_c(
