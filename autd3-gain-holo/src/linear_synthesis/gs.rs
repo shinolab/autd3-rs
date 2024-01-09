@@ -83,6 +83,7 @@ impl<B: LinAlgBackend> Gain for GS<B> {
         let amps = self.backend.from_slice_cv(self.amps_as_slice())?;
         let mut p = self.backend.alloc_zeros_cv(m)?;
         for _ in 0..self.repeat {
+            self.backend.scaled_to_assign_cv(&q0, &mut q)?;
             self.backend.gemv_c(
                 Trans::NoTrans,
                 Complex::new(1., 0.),
@@ -101,8 +102,6 @@ impl<B: LinAlgBackend> Gain for GS<B> {
                 Complex::new(0., 0.),
                 &mut q,
             )?;
-
-            self.backend.scaled_to_assign_cv(&q0, &mut q)?;
         }
 
         generate_result(
