@@ -4,7 +4,7 @@
  * Created Date: 29/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 26/12/2023
+ * Last Modified: 09/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -40,7 +40,7 @@ pub async fn holo<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
 
     let backend = NalgebraBackend::new()?;
 
-    let target_amp = 5e3 * autd.geometry.num_devices() as float * Pascal;
+    let target_amp = 2.5e3 * autd.geometry.num_devices() as float * Pascal;
     match s.trim().parse::<usize>() {
         Ok(0) => {
             let g = SDP::new(backend)

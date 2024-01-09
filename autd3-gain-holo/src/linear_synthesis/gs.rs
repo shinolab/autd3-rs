@@ -4,7 +4,7 @@
  * Created Date: 29/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 23/11/2023
+ * Last Modified: 09/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -20,7 +20,6 @@ use crate::{
 use autd3_derive::Gain;
 
 use autd3_driver::{
-    defined::T4010A1_AMPLITUDE,
     derive::prelude::*,
     geometry::{Geometry, Vector3},
 };
@@ -70,19 +69,19 @@ impl<B: LinAlgBackend> Gain for GS<B> {
             .backend
             .generate_propagation_matrix(geometry, &self.foci, &filter)?;
 
-        let m = self.backend.cols_c(&g)?;
-        let n = self.foci.len();
-        let ones = vec![T4010A1_AMPLITUDE; m];
+        let m = self.foci.len();
+        let n = self.backend.cols_c(&g)?;
+        let ones = vec![1.; n];
 
-        let mut b = self.backend.alloc_cm(m, n)?;
-        self.backend.gen_back_prop(m, n, &g, &mut b)?;
+        let mut b = self.backend.alloc_cm(n, m)?;
+        self.backend.gen_back_prop(n, m, &g, &mut b)?;
 
         let mut q = self.backend.from_slice_cv(&ones)?;
 
         let q0 = self.backend.from_slice_cv(&ones)?;
 
         let amps = self.backend.from_slice_cv(self.amps_as_slice())?;
-        let mut p = self.backend.alloc_zeros_cv(n)?;
+        let mut p = self.backend.alloc_zeros_cv(m)?;
         for _ in 0..self.repeat {
             self.backend.gemv_c(
                 Trans::NoTrans,
@@ -105,9 +104,6 @@ impl<B: LinAlgBackend> Gain for GS<B> {
 
             self.backend.scaled_to_assign_cv(&q0, &mut q)?;
         }
-
-        self.backend
-            .scale_assign_cv(Complex::new(1. / T4010A1_AMPLITUDE, 0.0), &mut q)?;
 
         generate_result(
             geometry,
