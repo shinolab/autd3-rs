@@ -4,7 +4,7 @@
  * Created Date: 29/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -17,9 +17,12 @@ use crate::{
     common::{Drive, EmitIntensity, Phase},
     error::AUTDInternalError,
     geometry::{Device, Geometry, Transducer},
+    operation::{GainOp, NullOp},
 };
 
 use bitvec::prelude::*;
+
+use super::Datagram;
 
 pub enum GainFilter<'a> {
     All,
@@ -91,6 +94,15 @@ impl<'a> Gain for Box<dyn Gain + 'a> {
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
         self.as_ref().calc(geometry, filter)
+    }
+}
+
+impl Datagram for Box<dyn Gain> {
+    type O1 = GainOp<Self>;
+    type O2 = NullOp;
+
+    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+        Ok((Self::O1::new(self), Self::O2::default()))
     }
 }
 
