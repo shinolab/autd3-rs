@@ -64,10 +64,7 @@ pub trait Gain: GainAsAny {
                                     if filter[tr.idx()] {
                                         f(dev, tr)
                                     } else {
-                                        Drive {
-                                            phase: Phase::new(0),
-                                            intensity: EmitIntensity::MIN,
-                                        }
+                                        Drive::null()
                                     }
                                 })
                                 .collect(),

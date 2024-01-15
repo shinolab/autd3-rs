@@ -4,7 +4,7 @@
  * Created Date: 09/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -16,7 +16,6 @@ use std::collections::HashMap;
 use autd3_derive::Gain;
 
 use autd3_driver::{
-    common::EmitIntensity,
     derive::prelude::*,
     geometry::{Device, Geometry},
 };
@@ -41,14 +40,7 @@ impl<F: Fn(&Device, &Transducer) -> Option<Drive> + Sync + 'static> Gain for Tra
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
         Ok(Self::transform(geometry, filter, |dev, tr| {
-            if let Some(d) = (self.f)(dev, tr) {
-                d
-            } else {
-                Drive {
-                    phase: Phase::new(0),
-                    intensity: EmitIntensity::MIN,
-                }
-            }
+            (self.f)(dev, tr).unwrap_or(Drive::null())
         }))
     }
 }

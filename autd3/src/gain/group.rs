@@ -19,7 +19,6 @@ use std::{
 use bitvec::prelude::*;
 
 use autd3_driver::{
-    common::EmitIntensity,
     derive::prelude::*,
     geometry::{Device, Geometry},
 };
@@ -210,10 +209,7 @@ impl<
                                     ));
                                 })
                             } else {
-                                Ok(Drive {
-                                    intensity: EmitIntensity::MIN,
-                                    phase: Phase::new(0),
-                                })
+                                Ok(Drive::null())
                             }
                         })
                         .collect::<Result<Vec<_>, _>>()?,
