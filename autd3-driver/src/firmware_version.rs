@@ -4,7 +4,7 @@
  * Created Date: 27/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 26/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -14,7 +14,7 @@
 use std::fmt;
 
 pub const LATEST_VERSION_NUM_MAJOR: u8 = 0x8D;
-pub const LATEST_VERSION_NUM_MINOR: u8 = 0x00;
+pub const LATEST_VERSION_NUM_MINOR: u8 = 0x01;
 
 const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
 
@@ -295,7 +295,7 @@ mod tests {
 
     #[test]
     fn latest_firmware_version() {
-        assert_eq!("v5.0.0", FirmwareInfo::latest_version());
+        assert_eq!("v5.0.1", FirmwareInfo::latest_version());
     }
 
     #[test]
