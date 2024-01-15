@@ -145,7 +145,7 @@ impl RemoteTwinCATBuilder {
 }
 
 impl RemoteTwinCAT {
-    pub const fn builder<S: Into<String>>(server_ams_net_id: S) -> RemoteTwinCATBuilder {
+    pub fn builder<S: Into<String>>(server_ams_net_id: S) -> RemoteTwinCATBuilder {
         RemoteTwinCATBuilder {
             server_ams_net_id: server_ams_net_id.into(),
             server_ip: None,

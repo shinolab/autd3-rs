@@ -15,6 +15,7 @@ use autd3_derive::Link;
 use crossbeam_channel::{bounded, Receiver, Sender, TrySendError};
 use std::{
     ffi::c_void,
+    ptr::addr_of_mut,
     sync::{
         atomic::{AtomicBool, AtomicI32, Ordering},
         Arc, Mutex,
@@ -353,7 +354,7 @@ impl LinkSyncBuilder for SOEMBuilder {
                 SyncMode::DC => (),
                 SyncMode::FreeRun => {
                     (1..=ec_slavecount as u16).for_each(|i| {
-                        dc_config(&mut ecx_context as *mut _, i);
+                        dc_config(addr_of_mut!(ecx_context) as *mut _, i);
                     });
                 }
             }
