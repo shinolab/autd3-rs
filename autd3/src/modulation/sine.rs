@@ -4,7 +4,7 @@
  * Created Date: 28/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 08/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -38,13 +38,13 @@ impl Sine {
     ///
     /// * `freq` - Frequency of the sine wave [Hz]
     ///
-    pub fn new(freq: float) -> Self {
+    pub const fn new(freq: float) -> Self {
         Self {
             freq,
             intensity: EmitIntensity::MAX,
             phase: 0.0,
-            offset: EmitIntensity::MAX / 2,
-            config: SamplingConfiguration::from_frequency(4e3).unwrap(),
+            offset: EmitIntensity::new(127),
+            config: SamplingConfiguration::FREQ_4K_HZ,
             mode: SamplingMode::ExactFrequency,
         }
     }
@@ -81,7 +81,7 @@ impl Sine {
     ///
     /// * `phase` - Phase of the wave
     ///
-    pub fn with_phase(self, phase: float) -> Self {
+    pub const fn with_phase(self, phase: float) -> Self {
         Self { phase, ..self }
     }
 
@@ -91,23 +91,23 @@ impl Sine {
     ///
     /// * `mode` - Sampling mode
     ///
-    pub fn with_mode(self, mode: SamplingMode) -> Self {
+    pub const fn with_mode(self, mode: SamplingMode) -> Self {
         Self { mode, ..self }
     }
 
-    pub fn freq(&self) -> float {
+    pub const fn freq(&self) -> float {
         self.freq
     }
 
-    pub fn intensity(&self) -> EmitIntensity {
+    pub const fn intensity(&self) -> EmitIntensity {
         self.intensity
     }
 
-    pub fn offset(&self) -> EmitIntensity {
+    pub const fn offset(&self) -> EmitIntensity {
         self.offset
     }
 
-    pub fn phase(&self) -> float {
+    pub const fn phase(&self) -> float {
         self.phase
     }
 }

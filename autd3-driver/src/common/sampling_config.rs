@@ -4,7 +4,7 @@
  * Created Date: 14/11/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -31,6 +31,9 @@ impl SamplingConfiguration {
         (1000000000. / Self::BASE_FREQUENCY * SAMPLING_FREQ_DIV_MIN as float) as u128;
     pub const PERIOD_MAX: u128 =
         (1000000000. / Self::BASE_FREQUENCY * SAMPLING_FREQ_DIV_MAX as float) as u128;
+
+    pub const DISABLE: Self = Self { div: 0xFFFFFFFF };
+    pub const FREQ_4K_HZ: Self = Self { div: 5120 };
 
     pub fn from_frequency_division(div: u32) -> Result<Self, AUTDInternalError> {
         if !(SAMPLING_FREQ_DIV_MIN..=SAMPLING_FREQ_DIV_MAX).contains(&div) {
