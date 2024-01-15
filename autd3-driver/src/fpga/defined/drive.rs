@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -52,10 +52,7 @@ mod tests {
         let mut d = [0x00u8; 2];
 
         unsafe {
-            let s = Drive {
-                phase: Phase::from_rad(0.0),
-                intensity: EmitIntensity::MIN,
-            };
+            let s = Drive::null();
             (*(&mut d as *mut _ as *mut FPGADrive)).set(&s);
             assert_eq!(d[0], 0x00);
             assert_eq!(d[1], 0x00);

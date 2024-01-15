@@ -4,7 +4,7 @@
  * Created Date: 01/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -13,7 +13,7 @@
 
 use std::collections::HashMap;
 
-use autd3_driver::{common::EmitIntensity, derive::prelude::*, geometry::Geometry};
+use autd3_driver::{derive::prelude::*, geometry::Geometry};
 
 use autd3_derive::Gain;
 
@@ -34,10 +34,7 @@ impl Gain for Null {
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |_, _| Drive {
-            phase: Phase::new(0),
-            intensity: EmitIntensity::MIN,
-        }))
+        Ok(Self::transform(geometry, filter, |_, _| Drive::null()))
     }
 }
 

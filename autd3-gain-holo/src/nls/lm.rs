@@ -4,7 +4,7 @@
  * Created Date: 29/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 09/01/2024
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -346,15 +346,7 @@ impl<B: LinAlgBackend> Gain for LM<B> {
                                 .collect(),
                         )
                     } else {
-                        (
-                            dev.idx(),
-                            dev.iter()
-                                .map(|_| Drive {
-                                    phase: Phase::new(0),
-                                    intensity: EmitIntensity::MIN,
-                                })
-                                .collect(),
-                        )
+                        (dev.idx(), dev.iter().map(|_| Drive::null()).collect())
                     }
                 })
                 .collect()),
