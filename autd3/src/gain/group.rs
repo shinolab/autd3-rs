@@ -4,14 +4,17 @@
  * Created Date: 18/08/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
  *
  */
 
-use std::{collections::HashMap, hash::Hash};
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    hash::Hash,
+};
 
 use bitvec::prelude::*;
 
@@ -126,32 +129,31 @@ impl<
     > Group<K, G, F>
 {
     fn get_filters(&self, geometry: &Geometry) -> HashMap<K, HashMap<usize, BitVec<usize, Lsb0>>> {
-        let mut filters = HashMap::new();
+        let mut filters: HashMap<K, HashMap<usize, BitVec<usize, Lsb0>>> = HashMap::new();
         geometry.devices().for_each(|dev| {
             dev.iter().for_each(|tr| {
                 if let Some(key) = (self.f)(dev, tr) {
-                    if !filters.contains_key(&key) {
-                        let mut filter = BitVec::<usize, Lsb0>::new();
-                        filter.resize(dev.num_transducers(), false);
-                        let filter: HashMap<usize, BitVec<usize, Lsb0>> =
-                            [(dev.idx(), filter)].into();
-                        filters.insert(key.clone(), filter);
-                    }
-                    filters
-                        .get_mut(&key)
-                        .unwrap()
-                        .entry(dev.idx())
-                        .or_insert_with(|| {
+                    match filters.get_mut(&key) {
+                        Some(v) => match v.entry(dev.idx()) {
+                            Entry::Occupied(mut e) => {
+                                e.get_mut().set(tr.idx(), true);
+                            }
+                            Entry::Vacant(e) => {
+                                let mut filter = BitVec::<usize, Lsb0>::new();
+                                filter.resize(dev.num_transducers(), false);
+                                filter.set(tr.idx(), true);
+                                e.insert(filter);
+                            }
+                        },
+                        None => {
                             let mut filter = BitVec::<usize, Lsb0>::new();
                             filter.resize(dev.num_transducers(), false);
-                            filter
-                        });
-                    filters
-                        .get_mut(&key)
-                        .unwrap()
-                        .get_mut(&dev.idx())
-                        .unwrap()
-                        .set(tr.idx(), true);
+                            filter.set(tr.idx(), true);
+                            let filter: HashMap<usize, BitVec<usize, Lsb0>> =
+                                [(dev.idx(), filter)].into();
+                            filters.insert(key.clone(), filter);
+                        }
+                    }
                 }
             })
         });
@@ -172,47 +174,50 @@ impl<
         _filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
         let filters = self.get_filters(geometry);
-
         let drives_cache = self
             .gain_map
             .iter()
             .map(|(k, g)| {
-                let k = k.clone();
-                let filter = if let Some(f) = filters.get(&k) {
-                    f
-                } else {
-                    return Err(AUTDInternalError::GainError("Unknown group key".to_owned()));
-                };
-                let d = g.calc(geometry, GainFilter::Filter(filter))?;
-                Ok((k, d))
+                Ok((
+                    k.clone(),
+                    g.calc(
+                        geometry,
+                        GainFilter::Filter(if let Some(f) = filters.get(&k) {
+                            f
+                        } else {
+                            return Err(AUTDInternalError::GainError(
+                                "Unknown group key".to_owned(),
+                            ));
+                        }),
+                    )?,
+                ))
             })
             .collect::<Result<HashMap<_, HashMap<usize, Vec<Drive>>>, _>>()?;
 
         geometry
             .devices()
             .map(|dev| {
-                let mut d: Vec<Drive> = Vec::with_capacity(dev.num_transducers());
-                unsafe {
-                    d.set_len(dev.num_transducers());
-                }
-                for tr in dev.iter() {
-                    if let Some(key) = (self.f)(dev, tr) {
-                        let g = if let Some(g) = drives_cache.get(&key) {
-                            g
-                        } else {
-                            return Err(AUTDInternalError::GainError(
-                                "Unspecified group key".to_owned(),
-                            ));
-                        };
-                        d[tr.idx()] = g[&dev.idx()][tr.idx()];
-                    } else {
-                        d[tr.idx()] = Drive {
-                            intensity: EmitIntensity::MIN,
-                            phase: Phase::new(0),
-                        }
-                    }
-                }
-                Ok((dev.idx(), d))
+                Ok((
+                    dev.idx(),
+                    dev.iter()
+                        .map(|tr| {
+                            if let Some(key) = (self.f)(dev, tr) {
+                                Ok(if let Some(g) = drives_cache.get(&key) {
+                                    g[&dev.idx()][tr.idx()]
+                                } else {
+                                    return Err(AUTDInternalError::GainError(
+                                        "Unspecified group key".to_owned(),
+                                    ));
+                                })
+                            } else {
+                                Ok(Drive {
+                                    intensity: EmitIntensity::MIN,
+                                    phase: Phase::new(0),
+                                })
+                            }
+                        })
+                        .collect::<Result<Vec<_>, _>>()?,
+                ))
             })
             .collect()
     }
