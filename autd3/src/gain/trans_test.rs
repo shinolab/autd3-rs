@@ -28,7 +28,7 @@ pub struct TransducerTest<F: Fn(&Device, &Transducer) -> Option<Drive> + Sync + 
 
 impl<F: Fn(&Device, &Transducer) -> Option<Drive> + Sync + 'static> TransducerTest<F> {
     /// constructor
-    pub fn new(f: F) -> Self {
+    pub const fn new(f: F) -> Self {
         Self { f }
     }
 }

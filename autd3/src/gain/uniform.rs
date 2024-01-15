@@ -4,7 +4,7 @@
  * Created Date: 18/08/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -46,6 +46,14 @@ impl Uniform {
     ///
     pub fn with_phase(self, phase: Phase) -> Self {
         Self { phase, ..self }
+    }
+
+    pub const fn intensity(&self) -> EmitIntensity {
+        self.intensity
+    }
+
+    pub const fn phase(&self) -> Phase {
+        self.phase
     }
 }
 

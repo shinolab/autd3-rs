@@ -4,7 +4,7 @@
  * Created Date: 02/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -39,7 +39,7 @@ impl Bessel {
     /// * `dir` - Direction of the beam
     /// * `theta` - Angle between the conical wavefront of the beam and the plane normal to `dir`
     ///
-    pub fn new(pos: Vector3, dir: Vector3, theta: float) -> Self {
+    pub const fn new(pos: Vector3, dir: Vector3, theta: float) -> Self {
         Self {
             pos,
             dir,
@@ -61,19 +61,19 @@ impl Bessel {
         }
     }
 
-    pub fn intensity(&self) -> EmitIntensity {
+    pub const fn intensity(&self) -> EmitIntensity {
         self.intensity
     }
 
-    pub fn pos(&self) -> Vector3 {
+    pub const fn pos(&self) -> Vector3 {
         self.pos
     }
 
-    pub fn dir(&self) -> Vector3 {
+    pub const fn dir(&self) -> Vector3 {
         self.dir
     }
 
-    pub fn theta(&self) -> float {
+    pub const fn theta(&self) -> float {
         self.theta
     }
 }

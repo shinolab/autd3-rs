@@ -4,7 +4,7 @@
  * Created Date: 28/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 21/11/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -35,7 +35,7 @@ impl Focus {
     ///
     /// * `pos` - position of the focal point
     ///
-    pub fn new(pos: Vector3) -> Self {
+    pub const fn new(pos: Vector3) -> Self {
         Self {
             pos,
             intensity: EmitIntensity::MAX,
@@ -55,11 +55,11 @@ impl Focus {
         }
     }
 
-    pub fn intensity(&self) -> EmitIntensity {
+    pub const fn intensity(&self) -> EmitIntensity {
         self.intensity
     }
 
-    pub fn pos(&self) -> Vector3 {
+    pub const fn pos(&self) -> Vector3 {
         self.pos
     }
 }
