@@ -4,7 +4,7 @@
  * Created Date: 04/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -71,7 +71,7 @@ pub struct STMProps {
 }
 
 impl STMProps {
-    pub fn from_freq(freq: float) -> Self {
+    pub const fn from_freq(freq: float) -> Self {
         Self {
             sampling: STMSamplingConfiguration::Frequency(freq),
             start_idx: None,
@@ -79,7 +79,7 @@ impl STMProps {
         }
     }
 
-    pub fn from_period(period: std::time::Duration) -> Self {
+    pub const fn from_period(period: std::time::Duration) -> Self {
         Self {
             sampling: STMSamplingConfiguration::Period(period),
             start_idx: None,
@@ -87,7 +87,7 @@ impl STMProps {
         }
     }
 
-    pub fn from_sampling_config(sampling: SamplingConfiguration) -> Self {
+    pub const fn from_sampling_config(sampling: SamplingConfiguration) -> Self {
         Self {
             sampling: STMSamplingConfiguration::SamplingConfiguration(sampling),
             start_idx: None,

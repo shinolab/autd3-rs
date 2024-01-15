@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 01/01/2024
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -48,12 +48,12 @@ pub struct Controller<L: Link> {
 
 impl Controller<Nop> {
     /// Create Controller builder
-    pub fn builder() -> ControllerBuilder {
+    pub const fn builder() -> ControllerBuilder {
         ControllerBuilder::new()
     }
 
     /// Create Controller builder
-    pub fn builder_with() -> ControllerBuilder {
+    pub const fn builder_with() -> ControllerBuilder {
         ControllerBuilder::new()
     }
 }
@@ -106,7 +106,7 @@ impl<L: Link> Controller<L> {
                 break;
             }
             if start.elapsed() < std::time::Duration::from_millis(1) {
-                std::thread::sleep(Duration::from_millis(1));
+                tokio::time::sleep(Duration::from_millis(1)).await;
             }
         }
         Ok(true)

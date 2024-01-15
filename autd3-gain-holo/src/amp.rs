@@ -4,7 +4,7 @@
  * Created Date: 22/11/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 07/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -24,7 +24,7 @@ pub struct Amplitude {
 }
 
 impl Amplitude {
-    pub fn as_pascal(&self) -> float {
+    pub const fn as_pascal(&self) -> float {
         self.value
     }
 

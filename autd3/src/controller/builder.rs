@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 01/01/2024
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -32,7 +32,7 @@ impl Default for ControllerBuilder {
 }
 
 impl ControllerBuilder {
-    pub(crate) fn new() -> ControllerBuilder {
+    pub(crate) const fn new() -> ControllerBuilder {
         Self { devices: vec![] }
     }
 
