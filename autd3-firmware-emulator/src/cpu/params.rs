@@ -4,7 +4,7 @@
  * Created Date: 07/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -12,7 +12,7 @@
  */
 
 pub const CPU_VERSION_MAJOR: u16 = 0x8D;
-pub const CPU_VERSION_MINOR: u16 = 0x00;
+pub const CPU_VERSION_MINOR: u16 = 0x01;
 
 pub const BRAM_SELECT_CONTROLLER: u8 = 0x0;
 pub const BRAM_SELECT_MOD: u8 = 0x1;
