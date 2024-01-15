@@ -19,7 +19,7 @@ use crate::{
 use autd3_derive::Gain;
 
 use autd3_driver::{
-    common::{EmitIntensity, Phase},
+    common::Phase,
     defined::PI,
     derive::prelude::*,
     geometry::{Geometry, Vector3},

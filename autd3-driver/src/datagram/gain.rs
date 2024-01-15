@@ -14,7 +14,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    common::{Drive, EmitIntensity, Phase},
+    common::Drive,
     error::AUTDInternalError,
     geometry::{Device, Geometry, Transducer},
     operation::{GainOp, NullOp},

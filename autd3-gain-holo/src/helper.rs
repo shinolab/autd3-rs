@@ -14,11 +14,7 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    common::{Drive, EmitIntensity},
-    datagram::GainFilter,
-    defined::PI,
-    error::AUTDInternalError,
-    geometry::Geometry,
+    common::Drive, datagram::GainFilter, defined::PI, error::AUTDInternalError, geometry::Geometry,
 };
 use nalgebra::ComplexField;
 
