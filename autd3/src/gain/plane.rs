@@ -4,7 +4,7 @@
  * Created Date: 05/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -34,7 +34,7 @@ impl Plane {
     ///
     /// * `dir` - direction of the plane wave
     ///
-    pub fn new(dir: Vector3) -> Self {
+    pub const fn new(dir: Vector3) -> Self {
         Self {
             dir,
             intensity: EmitIntensity::MAX,
@@ -54,11 +54,11 @@ impl Plane {
         }
     }
 
-    pub fn intensity(&self) -> EmitIntensity {
+    pub const fn intensity(&self) -> EmitIntensity {
         self.intensity
     }
 
-    pub fn dir(&self) -> Vector3 {
+    pub const fn dir(&self) -> Vector3 {
         self.dir
     }
 }

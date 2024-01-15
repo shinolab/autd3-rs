@@ -23,7 +23,7 @@ pub struct Null {}
 
 impl Null {
     /// constructor
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {}
     }
 }
