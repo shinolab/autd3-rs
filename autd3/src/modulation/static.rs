@@ -4,7 +4,7 @@
  * Created Date: 30/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -25,8 +25,11 @@ pub struct Static {
 
 impl Static {
     /// constructor
-    pub fn new() -> Self {
-        Self::with_intensity(EmitIntensity::MAX)
+    pub const fn new() -> Self {
+        Self {
+            intensity: EmitIntensity::MAX,
+            config: SamplingConfiguration::DISABLE,
+        }
     }
 
     /// set emission intensity
@@ -38,7 +41,7 @@ impl Static {
     pub fn with_intensity<A: Into<EmitIntensity>>(intensity: A) -> Self {
         Self {
             intensity: intensity.into(),
-            config: SamplingConfiguration::from_frequency_division(0xFFFFFFFF).unwrap(),
+            config: SamplingConfiguration::DISABLE,
         }
     }
 
