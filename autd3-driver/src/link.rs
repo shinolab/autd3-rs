@@ -4,7 +4,7 @@
  * Created Date: 27/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -82,7 +82,7 @@ pub trait Link: Send + Sync {
                 if start.elapsed() > timeout {
                     return Ok(false);
                 }
-                std::thread::sleep(std::time::Duration::from_millis(1));
+                tokio::time::sleep(std::time::Duration::from_millis(1)).await;
                 if !self.receive(rx).await? {
                     continue;
                 }
