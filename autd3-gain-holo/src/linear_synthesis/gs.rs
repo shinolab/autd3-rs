@@ -4,7 +4,7 @@
  * Created Date: 29/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 09/01/2024
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -40,7 +40,7 @@ pub struct GS<B: LinAlgBackend + 'static> {
 impl_holo!(B, GS<B>);
 
 impl<B: LinAlgBackend + 'static> GS<B> {
-    pub fn new(backend: Rc<B>) -> Self {
+    pub const fn new(backend: Rc<B>) -> Self {
         Self {
             foci: vec![],
             amps: vec![],
@@ -54,7 +54,7 @@ impl<B: LinAlgBackend + 'static> GS<B> {
         Self { repeat, ..self }
     }
 
-    pub fn repeat(&self) -> usize {
+    pub const fn repeat(&self) -> usize {
         self.repeat
     }
 }

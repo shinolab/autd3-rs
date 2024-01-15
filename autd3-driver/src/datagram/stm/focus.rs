@@ -4,7 +4,7 @@
  * Created Date: 04/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -38,7 +38,7 @@ impl FocusSTM {
     ///
     /// * `freq` - Frequency of STM. The frequency closest to `freq` from the possible frequencies is set.
     ///
-    pub fn from_freq(freq: float) -> Self {
+    pub const fn from_freq(freq: float) -> Self {
         Self::from_props(STMProps::from_freq(freq))
     }
 
@@ -48,7 +48,7 @@ impl FocusSTM {
     ///
     /// * `period` - Period. The period closest to `period` from the possible periods is set.
     ///
-    pub fn from_period(period: std::time::Duration) -> Self {
+    pub const fn from_period(period: std::time::Duration) -> Self {
         Self::from_props(STMProps::from_period(period))
     }
 
@@ -58,7 +58,7 @@ impl FocusSTM {
     ///
     /// * `config` - Sampling configuration
     ///
-    pub fn from_sampling_config(config: SamplingConfiguration) -> Self {
+    pub const fn from_sampling_config(config: SamplingConfiguration) -> Self {
         Self::from_props(STMProps::from_sampling_config(config))
     }
 

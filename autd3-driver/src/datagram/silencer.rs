@@ -4,7 +4,7 @@
  * Created Date: 01/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 01/01/2024
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -145,11 +145,11 @@ impl ConfigureSilencer<FixedCompletionSteps> {
 }
 
 impl ConfigureSilencer<FixedUpdateRate> {
-    pub fn update_rate_intensity(&self) -> u16 {
+    pub const fn update_rate_intensity(&self) -> u16 {
         self.internal.update_rate_intensity
     }
 
-    pub fn update_rate_phase(&self) -> u16 {
+    pub const fn update_rate_phase(&self) -> u16 {
         self.internal.update_rate_phase
     }
 }

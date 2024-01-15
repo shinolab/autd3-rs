@@ -4,7 +4,7 @@
  * Created Date: 06/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -64,31 +64,31 @@ impl CPUEmulator {
         s
     }
 
-    pub fn idx(&self) -> usize {
+    pub const fn idx(&self) -> usize {
         self.idx
     }
 
-    pub fn num_transducers(&self) -> usize {
+    pub const fn num_transducers(&self) -> usize {
         self.num_transducers
     }
 
-    pub fn synchronized(&self) -> bool {
+    pub const fn synchronized(&self) -> bool {
         self.synchronized
     }
 
-    pub fn reads_fpga_info(&self) -> bool {
+    pub const fn reads_fpga_info(&self) -> bool {
         self.read_fpga_info
     }
 
-    pub fn ack(&self) -> u8 {
+    pub const fn ack(&self) -> u8 {
         self.ack
     }
 
-    pub fn rx_data(&self) -> u8 {
+    pub const fn rx_data(&self) -> u8 {
         self.rx_data
     }
 
-    pub fn fpga(&self) -> &FPGAEmulator {
+    pub const fn fpga(&self) -> &FPGAEmulator {
         &self.fpga
     }
 
@@ -111,21 +111,21 @@ impl CPUEmulator {
         }
     }
 
-    pub fn should_update(&self) -> bool {
+    pub const fn should_update(&self) -> bool {
         self.read_fpga_info
     }
 
-    pub fn silencer_strict_mode(&self) -> bool {
+    pub const fn silencer_strict_mode(&self) -> bool {
         self.silencer_strict_mode
     }
 }
 
 impl CPUEmulator {
-    pub(crate) fn cast<T>(data: &[u8]) -> &T {
+    pub(crate) const fn cast<T>(data: &[u8]) -> &T {
         unsafe { &*(data.as_ptr() as *const T) }
     }
 
-    fn get_addr(select: u8, addr: u16) -> u16 {
+    const fn get_addr(select: u8, addr: u16) -> u16 {
         ((select as u16 & 0x0003) << 14) | (addr & 0x3FFF)
     }
 

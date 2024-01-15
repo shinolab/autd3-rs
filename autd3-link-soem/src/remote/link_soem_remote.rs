@@ -4,7 +4,7 @@
  * Created Date: 21/05/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -60,7 +60,7 @@ impl LinkBuilder for RemoteSOEMBuilder {
 }
 
 impl RemoteSOEM {
-    pub fn builder(addr: SocketAddr) -> RemoteSOEMBuilder {
+    pub const fn builder(addr: SocketAddr) -> RemoteSOEMBuilder {
         RemoteSOEMBuilder {
             addr,
             timeout: Duration::from_millis(200),

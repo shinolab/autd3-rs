@@ -4,7 +4,7 @@
  * Created Date: 27/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 09/11/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -108,7 +108,7 @@ impl LinkSyncBuilder for TwinCATBuilder {
 }
 
 impl TwinCAT {
-    pub fn builder() -> TwinCATBuilder {
+    pub const fn builder() -> TwinCATBuilder {
         TwinCATBuilder {
             timeout: Duration::ZERO,
         }

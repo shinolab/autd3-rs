@@ -4,7 +4,7 @@
  * Created Date: 27/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 09/11/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -145,7 +145,7 @@ impl RemoteTwinCATBuilder {
 }
 
 impl RemoteTwinCAT {
-    pub fn builder<S: Into<String>>(server_ams_net_id: S) -> RemoteTwinCATBuilder {
+    pub const fn builder<S: Into<String>>(server_ams_net_id: S) -> RemoteTwinCATBuilder {
         RemoteTwinCATBuilder {
             server_ams_net_id: server_ams_net_id.into(),
             server_ip: None,

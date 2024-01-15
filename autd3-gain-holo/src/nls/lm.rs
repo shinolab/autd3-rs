@@ -47,7 +47,7 @@ pub struct LM<B: LinAlgBackend + 'static> {
 impl_holo!(B, LM<B>);
 
 impl<B: LinAlgBackend> LM<B> {
-    pub fn new(backend: Rc<B>) -> Self {
+    pub const fn new(backend: Rc<B>) -> Self {
         Self {
             foci: vec![],
             amps: vec![],
@@ -81,19 +81,19 @@ impl<B: LinAlgBackend> LM<B> {
         Self { initial, ..self }
     }
 
-    pub fn eps_1(&self) -> float {
+    pub const fn eps_1(&self) -> float {
         self.eps_1
     }
 
-    pub fn eps_2(&self) -> float {
+    pub const fn eps_2(&self) -> float {
         self.eps_2
     }
 
-    pub fn tau(&self) -> float {
+    pub const fn tau(&self) -> float {
         self.tau
     }
 
-    pub fn k_max(&self) -> usize {
+    pub const fn k_max(&self) -> usize {
         self.k_max
     }
 

@@ -4,7 +4,7 @@
  * Created Date: 14/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 28/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -73,7 +73,7 @@ impl LinkSyncBuilder for AuditBuilder {
 }
 
 impl Audit {
-    pub fn builder() -> AuditBuilder {
+    pub const fn builder() -> AuditBuilder {
         AuditBuilder {
             timeout: Duration::ZERO,
         }

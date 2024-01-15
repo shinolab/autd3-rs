@@ -4,7 +4,7 @@
  * Created Date: 03/06/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 09/01/2024
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -42,7 +42,7 @@ pub struct Greedy {
 impl_holo!(Greedy);
 
 impl Greedy {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             foci: vec![],
             amps: vec![],
@@ -67,7 +67,7 @@ impl Greedy {
         });
     }
 
-    pub fn phase_div(&self) -> usize {
+    pub const fn phase_div(&self) -> usize {
         self.phase_div
     }
 }

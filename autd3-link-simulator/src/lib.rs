@@ -4,7 +4,7 @@
  * Created Date: 09/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -104,7 +104,7 @@ impl SimulatorBuilder {
 }
 
 impl Simulator {
-    pub fn builder(port: u16) -> SimulatorBuilder {
+    pub const fn builder(port: u16) -> SimulatorBuilder {
         SimulatorBuilder {
             addr: Either::V4(Ipv4Addr::LOCALHOST),
             port,
