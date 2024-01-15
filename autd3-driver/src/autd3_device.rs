@@ -4,7 +4,7 @@
  * Created Date: 06/12/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 29/12/2023
+ * Last Modified: 15/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -60,18 +60,18 @@ impl AUTD3 {
 
     fn is_missing_transducer<T1, T2>(x: T1, y: T2) -> bool
     where
-        T1: TryInto<u8> + PartialEq<T1>,
-        T2: TryInto<u8> + PartialEq<T2>,
+        T1: TryInto<u8>,
+        T2: TryInto<u8>,
     {
-        let x = match x.try_into() {
+        let x: u8 = match x.try_into() {
             Ok(v) => v,
             Err(_) => return true,
         };
-        let y = match y.try_into() {
+        let y: u8 = match y.try_into() {
             Ok(v) => v,
             Err(_) => return true,
         };
-        if 17 < x || 14 < y {
+        if Self::NUM_TRANS_X as u8 <= x || Self::NUM_TRANS_Y as u8 <= y {
             return true;
         }
 
@@ -435,6 +435,11 @@ mod tests {
         assert!(!AUTD3::is_missing_transducer(17, 13));
 
         for x in 18..=255 {
+            for y in 0..=255 {
+                assert!(AUTD3::is_missing_transducer(x, y));
+            }
+        }
+        for x in 0..=255 {
             for y in 14..=255 {
                 assert!(AUTD3::is_missing_transducer(x, y));
             }
