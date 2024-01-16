@@ -4,7 +4,7 @@
  * Created Date: 05/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -94,7 +94,11 @@ mod tests {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
 
         let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();
-        let p = Plane::new(d).calc(&geometry, GainFilter::All).unwrap();
+        let g = Plane::new(d);
+        assert_eq!(g.dir(), d);
+        assert_eq!(g.intensity(), EmitIntensity::MAX);
+
+        let p = g.calc(&geometry, GainFilter::All).unwrap();
         assert_eq!(p.len(), 1);
         assert_eq!(p[&0].len(), geometry.num_transducers());
         p[&0]
@@ -107,10 +111,10 @@ mod tests {
         });
 
         let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();
-        let p = Plane::new(d)
-            .with_intensity(0x1F)
-            .calc(&geometry, GainFilter::All)
-            .unwrap();
+        let g = Plane::new(d).with_intensity(0x1F);
+        assert_eq!(g.dir(), d);
+        assert_eq!(g.intensity(), EmitIntensity::new(0x1F));
+        let p = g.calc(&geometry, GainFilter::All).unwrap();
         assert_eq!(p.len(), 1);
         assert_eq!(p[&0].len(), geometry.num_transducers());
         p[&0]
@@ -121,5 +125,15 @@ mod tests {
                 d.dot(tr.position()) * tr.wavenumber(geometry[0].sound_speed) * Rad;
             assert_eq!(p.phase, expected_phase);
         });
+    }
+
+    #[test]
+    fn test_plane_derive() {
+        let gain = Plane::new(Vector3::zeros());
+        let gain2 = gain.clone();
+        assert_eq!(gain.dir(), gain2.dir());
+        assert_eq!(gain.intensity(), gain2.intensity());
+        let _ = gain.calc(&Geometry::new(vec![]), GainFilter::All).unwrap();
+        let _ = gain.operation();
     }
 }

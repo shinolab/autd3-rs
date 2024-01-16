@@ -4,7 +4,7 @@
  * Created Date: 09/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -21,19 +21,19 @@ use autd3_driver::{
 };
 
 /// Gain to drive only specified transducers
-#[derive(Gain, Default, Clone)]
-pub struct TransducerTest<F: Fn(&Device, &Transducer) -> Option<Drive> + Sync + 'static> {
+#[derive(Gain)]
+pub struct TransducerTest<F: Fn(&Device, &Transducer) -> Option<Drive> + 'static> {
     f: F,
 }
 
-impl<F: Fn(&Device, &Transducer) -> Option<Drive> + Sync + 'static> TransducerTest<F> {
+impl<F: Fn(&Device, &Transducer) -> Option<Drive> + 'static> TransducerTest<F> {
     /// constructor
     pub const fn new(f: F) -> Self {
         Self { f }
     }
 }
 
-impl<F: Fn(&Device, &Transducer) -> Option<Drive> + Sync + 'static> Gain for TransducerTest<F> {
+impl<F: Fn(&Device, &Transducer) -> Option<Drive> + 'static> Gain for TransducerTest<F> {
     fn calc(
         &self,
         geometry: &Geometry,
@@ -86,5 +86,13 @@ mod tests {
                 assert_eq!(drive.intensity.value(), 0);
             }
         });
+    }
+
+    #[test]
+    fn test_transtest_derive() {
+        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let gain = TransducerTest::new(|_, _| None);
+        let _ = gain.calc(&geometry, GainFilter::All).unwrap();
+        let _ = gain.operation();
     }
 }

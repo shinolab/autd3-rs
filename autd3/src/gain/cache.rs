@@ -11,6 +11,7 @@
  *
  */
 
+use autd3_derive::Gain;
 use autd3_driver::{derive::prelude::*, geometry::Geometry};
 
 use std::{
@@ -20,23 +21,24 @@ use std::{
 };
 
 /// Gain to cache the result of calculation
-pub struct Cache<G: Gain> {
-    gain: G,
+#[derive(Gain)]
+pub struct Cache<G: Gain + 'static> {
+    gain: Rc<G>,
     cache: Rc<RefCell<HashMap<usize, Vec<Drive>>>>,
 }
 
-pub trait IntoCache<G: Gain> {
+pub trait IntoCache<G: Gain + 'static> {
     /// Cache the result of calculation
     fn with_cache(self) -> Cache<G>;
 }
 
-impl<G: Gain> IntoCache<G> for G {
+impl<G: Gain + 'static> IntoCache<G> for G {
     fn with_cache(self) -> Cache<G> {
         Cache::new(self)
     }
 }
 
-impl<G: Gain + Clone> Clone for Cache<G> {
+impl<G: Gain + Clone + 'static> Clone for Cache<G> {
     fn clone(&self) -> Self {
         Self {
             gain: self.gain.clone(),
@@ -45,11 +47,11 @@ impl<G: Gain + Clone> Clone for Cache<G> {
     }
 }
 
-impl<G: Gain> Cache<G> {
+impl<G: Gain + 'static> Cache<G> {
     /// constructor
     fn new(gain: G) -> Self {
         Self {
-            gain,
+            gain: Rc::new(gain),
             cache: Rc::new(Default::default()),
         }
     }
@@ -71,20 +73,25 @@ impl<G: Gain> Cache<G> {
     }
 
     /// get cached drives
+    ///
+    /// Note that the cached data is created after at least one call to `calc`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use autd3::prelude::*;
+    /// # use autd3_driver::derive::prelude::GainFilter;
+    /// # use autd3_driver::datagram::Gain;
+    /// # let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+    ///
+    /// let g = Null::new().with_cache();
+    /// assert!(g.drives().is_empty());
+    /// let _ = g.calc(&geometry, GainFilter::All).unwrap();
+    /// assert!(!g.drives().is_empty());
+    ///
+    /// ```
     pub fn drives(&self) -> Ref<'_, HashMap<usize, Vec<autd3_driver::common::Drive>>> {
         self.cache.borrow()
-    }
-}
-
-impl<G: Gain + 'static> autd3_driver::datagram::Datagram for Cache<G>
-where
-    autd3_driver::operation::GainOp<Self>: autd3_driver::operation::Operation,
-{
-    type O1 = autd3_driver::operation::GainOp<Self>;
-    type O2 = autd3_driver::operation::NullOp;
-
-    fn operation(self) -> Result<(Self::O1, Self::O2), autd3_driver::error::AUTDInternalError> {
-        Ok((Self::O1::new(self), Self::O2::default()))
     }
 }
 
@@ -111,11 +118,10 @@ mod tests {
         geometry::{IntoDevice, Vector3},
     };
 
-    use super::*;
-
-    use crate::prelude::Plane;
-
-    use autd3_derive::Gain;
+    use super::{
+        super::{Null, Plane},
+        *,
+    };
 
     #[test]
     fn test_cache() {
@@ -128,11 +134,26 @@ mod tests {
             assert_eq!(drive.phase.value(), 0);
             assert_eq!(drive.intensity.value(), 0xFF);
         });
+        gain.drives().iter().for_each(|(k, v)| {
+            assert_eq!(k, &0);
+            v.iter().for_each(|drive| {
+                assert_eq!(drive.phase.value(), 0);
+                assert_eq!(drive.intensity.value(), 0xFF);
+            });
+        });
     }
 
-    #[derive(Gain)]
     struct TestGain {
         pub calc_cnt: Arc<AtomicUsize>,
+    }
+
+    impl Clone for TestGain {
+        #[cfg_attr(coverage_nightly, coverage(off))]
+        fn clone(&self) -> Self {
+            Self {
+                calc_cnt: self.calc_cnt.clone(),
+            }
+        }
     }
 
     impl Gain for TestGain {
@@ -162,7 +183,33 @@ mod tests {
         assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
         let _ = gain.calc(&geometry, GainFilter::All).unwrap();
         assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn test_cache_clone() {
+        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+
+        let calc_cnt = Arc::new(AtomicUsize::new(0));
+
+        let gain = TestGain {
+            calc_cnt: calc_cnt.clone(),
+        }
+        .with_cache();
+
+        let g2 = gain.clone();
+        assert_eq!(calc_cnt.load(Ordering::Relaxed), 0);
+
+        let _ = g2.calc(&geometry, GainFilter::All).unwrap();
+        assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
         let _ = gain.calc(&geometry, GainFilter::All).unwrap();
         assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
+        let _ = g2.calc(&geometry, GainFilter::All).unwrap();
+        assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn test_cache_derive() {
+        let g = Null::default().with_cache();
+        let _ = g.operation();
     }
 }
