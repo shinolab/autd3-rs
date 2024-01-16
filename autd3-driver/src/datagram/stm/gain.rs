@@ -167,12 +167,6 @@ impl<G: Gain> std::ops::Index<usize> for GainSTM<G> {
     }
 }
 
-impl<G: Gain> std::ops::IndexMut<usize> for GainSTM<G> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.gains[index]
-    }
-}
-
 impl<G: Gain> Datagram for GainSTM<G> {
     type O1 = crate::operation::GainSTMOp<G>;
     type O2 = crate::operation::NullOp;

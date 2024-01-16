@@ -4,7 +4,7 @@
  * Created Date: 04/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -149,12 +149,6 @@ impl std::ops::Index<usize> for FocusSTM {
 
     fn index(&self, idx: usize) -> &Self::Output {
         &self.control_points[idx]
-    }
-}
-
-impl std::ops::IndexMut<usize> for FocusSTM {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.control_points[index]
     }
 }
 
