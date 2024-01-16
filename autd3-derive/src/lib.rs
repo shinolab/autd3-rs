@@ -103,9 +103,27 @@ fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
     let linetimes = generics.lifetimes();
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let type_params = generics.type_params();
+    let where_clause = match where_clause {
+        Some(where_clause) => {
+            let where_predicate_punctuated_list = where_clause
+                .predicates
+                .iter()
+                .map(|where_predicate| match where_predicate {
+                    syn::WherePredicate::Type(_) => {
+                        quote! { #where_predicate }
+                    }
+                    _ => quote! {},
+                })
+                .collect::<Vec<_>>();
+            quote! { where GainOp<Self>: Operation, #(#where_predicate_punctuated_list),* }
+        }
+        None => {
+            quote! { where GainOp<Self>: Operation }
+        }
+    };
+
     let gen = quote! {
         impl <#(#linetimes,)* #(#type_params,)*> Datagram for #name #ty_generics #where_clause
-            where GainOp<Self>: Operation
         {
             type O1 = GainOp<Self>;
             type O2 = NullOp;

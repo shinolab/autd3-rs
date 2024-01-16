@@ -25,21 +25,27 @@ use autd3_driver::{
 };
 
 #[derive(Gain)]
-pub struct Group<K: Hash + Eq + Clone + 'static, F: Fn(&Device, &Transducer) -> Option<K> + 'static>
+pub struct Group<K, F>
+where
+    K: Hash + Eq + Clone + 'static,
+    F: Fn(&Device, &Transducer) -> Option<K> + 'static,
 {
     f: F,
     gain_map: HashMap<K, Box<dyn Gain>>,
 }
 
-impl<K: Hash + Eq + Clone + 'static, F: Fn(&Device, &Transducer) -> Option<K> + 'static>
-    Group<K, F>
+impl<K, F> Group<K, F>
+where
+    K: Hash + Eq + Clone + 'static,
+    F: Fn(&Device, &Transducer) -> Option<K> + 'static,
 {
     /// Group by transducer
     ///
     /// # Arguments
+    ///
     /// `f` - function to get key from transducer (currentry, transducer type annotation is required)
     ///
-    /// # Exintensityles
+    /// # Example
     ///
     /// ```
     /// # use autd3::prelude::*;
@@ -58,11 +64,7 @@ impl<K: Hash + Eq + Clone + 'static, F: Fn(&Device, &Transducer) -> Option<K> + 
             gain_map: HashMap::new(),
         }
     }
-}
 
-impl<K: Hash + Eq + Clone + 'static, F: Fn(&Device, &Transducer) -> Option<K> + 'static>
-    Group<K, F>
-{
     /// set gain
     ///
     /// # Arguments
@@ -74,11 +76,7 @@ impl<K: Hash + Eq + Clone + 'static, F: Fn(&Device, &Transducer) -> Option<K> + 
         self.gain_map.insert(key, Box::new(gain));
         self
     }
-}
 
-impl<K: Hash + Eq + Clone + 'static, F: Fn(&Device, &Transducer) -> Option<K> + 'static>
-    Group<K, F>
-{
     fn get_filters(&self, geometry: &Geometry) -> HashMap<K, HashMap<usize, BitVec<usize, Lsb0>>> {
         let mut filters: HashMap<K, HashMap<usize, BitVec<usize, Lsb0>>> = HashMap::new();
         geometry.devices().for_each(|dev| {
@@ -112,10 +110,11 @@ impl<K: Hash + Eq + Clone + 'static, F: Fn(&Device, &Transducer) -> Option<K> + 
     }
 }
 
-impl<K: Hash + Eq + Clone + 'static, F: Fn(&Device, &Transducer) -> Option<K> + 'static> Gain
-    for Group<K, F>
+impl<K, F> Gain for Group<K, F>
+where
+    K: Hash + Eq + Clone + 'static,
+    F: Fn(&Device, &Transducer) -> Option<K> + 'static,
 {
-    #[allow(clippy::uninit_vec)]
     fn calc(
         &self,
         geometry: &Geometry,
@@ -140,8 +139,7 @@ impl<K: Hash + Eq + Clone + 'static, F: Fn(&Device, &Transducer) -> Option<K> + 
                     )?,
                 ))
             })
-            .collect::<Result<HashMap<_, HashMap<usize, Vec<Drive>>>, _>>()?;
-
+            .collect::<Result<HashMap<_, _>, _>>()?;
         geometry
             .devices()
             .map(|dev| {
@@ -172,7 +170,7 @@ impl<K: Hash + Eq + Clone + 'static, F: Fn(&Device, &Transducer) -> Option<K> + 
 mod tests {
     use autd3_driver::{
         autd3_device::AUTD3,
-        geometry::{IntoDevice, Transducer, Vector3},
+        geometry::{IntoDevice, Vector3},
     };
 
     use super::*;
@@ -188,7 +186,7 @@ mod tests {
             AUTD3::new(Vector3::zeros()).into_device(3),
         ]);
 
-        let gain = Group::new(|dev, tr: &Transducer| match (dev.idx(), tr.idx()) {
+        let gain = Group::new(|dev, tr| match (dev.idx(), tr.idx()) {
             (0, 0..=99) => Some("null"),
             (0, 100..=199) => Some("plane"),
             (1, 200..) => Some("plane2"),
@@ -243,20 +241,17 @@ mod tests {
             AUTD3::new(Vector3::zeros()).into_device(1),
         ]);
 
-        let gain = Group::new(|_dev, tr: &Transducer| match tr.idx() {
+        let gain = Group::new(|_dev, tr| match tr.idx() {
             0..=99 => Some("plane"),
             100..=199 => Some("null"),
             _ => None,
         })
         .set("plane2", Plane::new(Vector3::zeros()));
 
-        match gain.calc(&geometry, GainFilter::All) {
-            Ok(_) => panic!("Should be error"),
-            Err(e) => assert_eq!(
-                e,
-                AUTDInternalError::GainError("Unknown group key".to_owned())
-            ),
-        }
+        assert_eq!(
+            gain.calc(&geometry, GainFilter::All).unwrap_err(),
+            AUTDInternalError::GainError("Unknown group key".to_owned())
+        );
     }
 
     #[test]
@@ -266,19 +261,24 @@ mod tests {
             AUTD3::new(Vector3::zeros()).into_device(1),
         ]);
 
-        let gain = Group::new(|_dev, tr: &Transducer| match tr.idx() {
+        let gain = Group::new(|_dev, tr| match tr.idx() {
             0..=99 => Some("plane"),
             100..=199 => Some("null"),
             _ => None,
         })
         .set("plane", Plane::new(Vector3::zeros()));
 
-        match gain.calc(&geometry, GainFilter::All) {
-            Ok(_) => panic!("Should be error"),
-            Err(e) => assert_eq!(
-                e,
-                AUTDInternalError::GainError("Unspecified group key".to_owned())
-            ),
-        }
+        assert_eq!(
+            gain.calc(&geometry, GainFilter::All).unwrap_err(),
+            AUTDInternalError::GainError("Unspecified group key".to_owned())
+        );
+    }
+
+    #[test]
+    fn test_group_derive() {
+        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let gain = Group::new(|_, _| -> Option<()> { None });
+        let _ = gain.calc(&geometry, GainFilter::All);
+        let _ = gain.operation();
     }
 }
