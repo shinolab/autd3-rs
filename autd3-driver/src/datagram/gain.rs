@@ -87,6 +87,7 @@ impl Datagram for Box<dyn Gain> {
     type O1 = GainOp<Self>;
     type O2 = NullOp;
 
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         Ok((Self::O1::new(self), Self::O2::default()))
     }
