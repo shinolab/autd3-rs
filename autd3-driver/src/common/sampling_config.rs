@@ -4,7 +4,7 @@
  * Created Date: 14/11/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -13,7 +13,7 @@
 
 pub use crate::defined::float;
 use crate::{
-    derive::prelude::AUTDInternalError,
+    error::AUTDInternalError,
     fpga::{FPGA_CLK_FREQ, SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
 };
 

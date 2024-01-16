@@ -4,7 +4,7 @@
  * Created Date: 08/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -15,10 +15,10 @@ use std::collections::HashMap;
 
 use crate::{
     common::Drive,
-    datagram::Gain,
-    derive::prelude::GainFilter,
+    datagram::{Gain, GainFilter},
+    error::AUTDInternalError,
     fpga::FPGADrive,
-    geometry::Device,
+    geometry::{Device, Geometry},
     operation::{cast, TypeTag},
 };
 
@@ -46,10 +46,7 @@ impl<G: Gain> GainOp<G> {
 }
 
 impl<G: Gain> Operation for GainOp<G> {
-    fn init(
-        &mut self,
-        geometry: &crate::derive::prelude::Geometry,
-    ) -> Result<(), crate::derive::prelude::AUTDInternalError> {
+    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
         self.drives = self.gain.calc(geometry, GainFilter::All)?;
         self.remains = geometry.devices().map(|device| (device.idx(), 1)).collect();
         Ok(())
@@ -59,11 +56,7 @@ impl<G: Gain> Operation for GainOp<G> {
         std::mem::size_of::<GainT>() + device.num_transducers() * std::mem::size_of::<u16>()
     }
 
-    fn pack(
-        &mut self,
-        device: &Device,
-        tx: &mut [u8],
-    ) -> Result<usize, crate::derive::prelude::AUTDInternalError> {
+    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert_eq!(self.remains[&device.idx()], 1);
 
         let d = &self.drives[&device.idx()];
@@ -102,7 +95,6 @@ mod tests {
     use super::*;
     use crate::{
         common::{EmitIntensity, Phase},
-        derive::prelude::{AUTDInternalError, Drive, GainOp, Operation},
         geometry::tests::create_geometry,
         operation::tests::{ErrGain, TestGain},
     };

@@ -4,7 +4,7 @@
  * Created Date: 27/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -15,8 +15,8 @@ use std::time::Duration;
 
 use crate::{
     cpu::{RxMessage, TxDatagram},
-    derive::prelude::Geometry,
     error::AUTDInternalError,
+    geometry::Geometry,
 };
 
 /// Link is a interface to the AUTD device

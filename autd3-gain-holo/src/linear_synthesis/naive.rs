@@ -4,7 +4,7 @@
  * Created Date: 28/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -19,11 +19,9 @@ use crate::{
 };
 
 use autd3_driver::{
-    derive::prelude::*,
+    derive::*,
     geometry::{Geometry, Vector3},
 };
-
-use autd3_derive::Gain;
 
 /// Gain to produce multiple foci with naive linear synthesis
 #[derive(Gain)]

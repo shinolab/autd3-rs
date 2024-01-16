@@ -29,16 +29,18 @@ pub mod osal_timer;
 pub mod sync_mode;
 pub mod timer_strategy;
 
+#[cfg(feature = "derive")]
 pub mod derive {
-    pub mod prelude {
-        pub use crate::{
-            common::{Drive, EmitIntensity, Phase, Rad, SamplingConfiguration},
-            datagram::{Datagram, Gain, GainFilter, Modulation, ModulationProperty},
-            defined::float,
-            error::AUTDInternalError,
-            fpga::{FPGA_CLK_FREQ, SAMPLING_FREQ_DIV_MIN},
-            geometry::{Geometry, Transducer},
-            operation::{GainOp, ModulationOp, NullOp, Operation},
-        };
-    }
+    pub use crate::{
+        common::{Drive, EmitIntensity, Phase, Rad, SamplingConfiguration},
+        datagram::{Datagram, Gain, GainFilter, Modulation, ModulationProperty},
+        defined::float,
+        error::AUTDInternalError,
+        fpga::{FPGA_CLK_FREQ, SAMPLING_FREQ_DIV_MIN},
+        geometry::{Geometry, Transducer},
+        operation::{GainOp, ModulationOp, NullOp, Operation},
+    };
+    #[cfg(feature = "sync")]
+    pub use autd3_derive::LinkSync;
+    pub use autd3_derive::{Gain, Link, Modulation};
 }

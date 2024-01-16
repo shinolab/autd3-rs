@@ -11,8 +11,7 @@
  *
  */
 
-use autd3_derive::Modulation;
-use autd3_driver::{common::EmitIntensity, derive::prelude::*};
+use autd3_driver::{common::EmitIntensity, derive::*};
 
 /// Modulation to transform modulation data
 #[derive(Modulation)]

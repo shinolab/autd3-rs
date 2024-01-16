@@ -15,8 +15,7 @@ use std::ops::Deref;
 
 use super::sine::Sine;
 
-use autd3_derive::Modulation;
-use autd3_driver::{common::EmitIntensity, derive::prelude::*};
+use autd3_driver::{common::EmitIntensity, derive::*};
 
 use num::integer::lcm;
 

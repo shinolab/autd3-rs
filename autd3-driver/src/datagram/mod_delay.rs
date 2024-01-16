@@ -4,14 +4,18 @@
  * Created Date: 29/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
  *
  */
 
-use crate::{datagram::*, derive::prelude::Transducer, error::AUTDInternalError, geometry::Device};
+use crate::{
+    datagram::*,
+    error::AUTDInternalError,
+    geometry::{Device, Transducer},
+};
 
 /// Datagram to set modulation delay
 pub struct ConfigureModDelay<F: Fn(&Device, &Transducer) -> u16> {

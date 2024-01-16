@@ -4,14 +4,14 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 21/11/2023
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
  *
  */
 
-use crate::{common::EmitIntensity, defined::float, derive::prelude::AUTDInternalError};
+use crate::{common::EmitIntensity, defined::float, error::AUTDInternalError};
 
 use super::{FOCUS_STM_FIXED_NUM_LOWER, FOCUS_STM_FIXED_NUM_UNIT, FOCUS_STM_FIXED_NUM_UPPER};
 

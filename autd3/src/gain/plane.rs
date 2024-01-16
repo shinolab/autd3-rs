@@ -13,11 +13,9 @@
 
 use std::collections::HashMap;
 
-use autd3_derive::Gain;
-
 use autd3_driver::{
     common::EmitIntensity,
-    derive::prelude::*,
+    derive::*,
     geometry::{Geometry, Vector3},
 };
 /// Gain to produce a plane wave

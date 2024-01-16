@@ -4,7 +4,7 @@
  * Created Date: 21/11/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -13,7 +13,11 @@
 
 use std::time::Duration;
 
-use crate::{datagram::*, derive::prelude::Transducer, error::AUTDInternalError, geometry::Device};
+use crate::{
+    datagram::*,
+    error::AUTDInternalError,
+    geometry::{Device, Transducer},
+};
 
 /// Datagram for configure debug_output_idx
 pub struct ConfigureDebugOutputIdx<F: Fn(&Device) -> Option<&Transducer>> {

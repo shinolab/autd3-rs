@@ -13,9 +13,7 @@
 
 use std::collections::HashMap;
 
-use autd3_driver::{derive::prelude::*, geometry::Geometry};
-
-use autd3_derive::Gain;
+use autd3_driver::{derive::*, geometry::Geometry};
 
 /// Gain to output nothing
 #[derive(Gain, Default, Clone, Copy)]
