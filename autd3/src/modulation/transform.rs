@@ -4,7 +4,7 @@
  * Created Date: 15/06/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -59,7 +59,7 @@ mod tests {
     #[test]
     fn test_transform_impl() {
         let m = Sine::new(100.);
-        let m_transformed = m.with_transform(|_, x| EmitIntensity::new(x.value() / 2));
+        let m_transformed = m.with_transform(|_, x| x / 2);
 
         let vec = m.calc().unwrap();
         let vec_transformed = m_transformed.calc().unwrap();
@@ -67,5 +67,7 @@ mod tests {
         for (&x, &y) in vec.iter().zip(&vec_transformed) {
             assert_eq!(y.value(), x.value() / 2);
         }
+
+        assert_eq!(m.sampling_config(), m_transformed.sampling_config());
     }
 }

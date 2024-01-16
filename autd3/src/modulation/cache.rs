@@ -4,7 +4,7 @@
  * Created Date: 10/05/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 01/12/2023
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -14,12 +14,12 @@
 use autd3_derive::Modulation;
 use autd3_driver::{common::EmitIntensity, derive::prelude::*};
 
-use std::ops::Deref;
+use std::{ops::Deref, sync::Arc};
 
 /// Modulation to cache the result of calculation
 #[derive(Modulation)]
 pub struct Cache {
-    cache: Vec<EmitIntensity>,
+    cache: Arc<[EmitIntensity]>,
     #[no_change]
     config: SamplingConfiguration,
 }
@@ -49,7 +49,7 @@ impl Cache {
     pub fn new<M: Modulation>(modulation: M) -> Result<Self, AUTDInternalError> {
         let config = modulation.sampling_config();
         Ok(Self {
-            cache: modulation.calc()?,
+            cache: Arc::from(modulation.calc()?),
             config,
         })
     }
@@ -62,7 +62,7 @@ impl Cache {
 
 impl Modulation for Cache {
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        Ok(self.cache.clone())
+        Ok(self.cache.to_vec())
     }
 }
 
@@ -90,9 +90,13 @@ mod tests {
     #[test]
     fn test_cache() {
         let m = Static::new().with_cache().unwrap();
+        assert_eq!(m.sampling_config(), Static::new().sampling_config());
 
         for d in m.calc().unwrap() {
-            assert_eq!(d.value(), 0xFF);
+            assert_eq!(d, EmitIntensity::MAX);
+        }
+        for d in m.iter() {
+            assert_eq!(d, &EmitIntensity::MAX);
         }
     }
 
@@ -115,8 +119,7 @@ mod tests {
 
         let modulation = TestModulation {
             calc_cnt: calc_cnt.clone(),
-            config: SamplingConfiguration::from_period(std::time::Duration::from_micros(250))
-                .unwrap(),
+            config: SamplingConfiguration::FREQ_4K_HZ,
         }
         .with_cache()
         .unwrap();
@@ -124,9 +127,27 @@ mod tests {
 
         let _ = modulation.calc().unwrap();
         assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn test_cache_calc_clone() {
+        let calc_cnt = Arc::new(AtomicUsize::new(0));
+
+        let modulation = TestModulation {
+            calc_cnt: calc_cnt.clone(),
+            config: SamplingConfiguration::FREQ_4K_HZ,
+        }
+        .with_cache()
+        .unwrap();
+        assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
+
         let _ = modulation.calc().unwrap();
         assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
-        let _ = modulation.calc().unwrap();
+
+        let m2 = modulation.clone();
+        let _ = m2.calc().unwrap();
         assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
+
+        assert_eq!(modulation.buffer(), m2.buffer());
     }
 }

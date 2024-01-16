@@ -4,7 +4,7 @@
  * Created Date: 28/07/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -159,7 +159,19 @@ mod tests {
         let f3_buf = f3.calc().unwrap();
         let f4_buf = f4.calc().unwrap();
 
-        let f = (f0 + f1).add_component(f2).add_components_from_iter([f3]) + f4;
+        let mut f = (f0 + f1).add_component(f2).add_components_from_iter([f3]) + f4;
+
+        assert_eq!(f.sampling_config(), SamplingConfiguration::FREQ_4K_HZ);
+        assert_eq!(f[0].freq(), 50.0);
+        assert_eq!(f[0].phase(), PI / 2.0);
+        assert_eq!(f[1].freq(), 100.0);
+        assert_eq!(f[1].phase(), PI / 3.0);
+        assert_eq!(f[2].freq(), 150.0);
+        assert_eq!(f[2].phase(), PI / 4.0);
+        assert_eq!(f[3].freq(), 200.0);
+        assert_eq!(f[3].phase(), 0.0);
+        assert_eq!(f[4].freq(), 250.0);
+        assert_eq!(f[4].phase(), 0.0);
 
         let buf = f.calc().unwrap();
 
@@ -174,5 +186,31 @@ mod tests {
                     / 5) as u8
             );
         }
+
+        let f4 = Sine::new(300.);
+        f[4] = f4;
+
+        let f4_buf = f4.calc().unwrap();
+        let buf = f.calc().unwrap();
+        for i in 0..buf.len() {
+            assert_eq!(
+                buf[i].value(),
+                ((f0_buf[i % f0_buf.len()].value() as usize
+                    + f1_buf[i % f1_buf.len()].value() as usize
+                    + f2_buf[i % f2_buf.len()].value() as usize
+                    + f3_buf[i % f3_buf.len()].value() as usize
+                    + f4_buf[i % f4_buf.len()].value() as usize)
+                    / 5) as u8
+            );
+        }
+    }
+
+    #[test]
+    fn test_fourier_clone() {
+        let f = Fourier::new(Sine::new(50.).with_phase(PI / 2.0));
+        let f2 = f.clone();
+
+        assert_eq!(f.sampling_config(), f2.sampling_config());
+        assert_eq!(f[0].freq(), f2[0].freq());
     }
 }

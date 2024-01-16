@@ -4,7 +4,7 @@
  * Created Date: 28/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -162,7 +162,7 @@ mod tests {
             45, 69, 97,
         ];
         let m = Sine::new(150.);
-        assert_approx_eq::assert_approx_eq!(m.sampling_config().frequency(), 4e3);
+        assert_eq!(m.sampling_config(), SamplingConfiguration::FREQ_4K_HZ);
         assert_eq!(expect.len(), m.calc().unwrap().len());
         expect
             .into_iter()
@@ -173,13 +173,24 @@ mod tests {
     }
 
     #[test]
+    fn test_sine_clone() {
+        let m = Sine::new(150.);
+        let m2 = m.clone();
+        assert_eq!(m.sampling_config(), m2.sampling_config());
+        assert_eq!(m.freq(), m2.freq());
+        assert_eq!(m.intensity(), m2.intensity());
+        assert_eq!(m.offset(), m2.offset());
+        assert_eq!(m.phase(), m2.phase());
+    }
+
+    #[test]
     fn test_sine_with_size_opt() {
         let expect = [
             127, 156, 184, 209, 229, 244, 252, 254, 249, 237, 219, 197, 170, 142, 112, 84, 57, 35,
             17, 5, 0, 2, 10, 25, 45, 70, 98,
         ];
         let m = Sine::new(150.).with_mode(SamplingMode::SizeOptimized);
-        assert_approx_eq::assert_approx_eq!(m.sampling_config().frequency(), 4e3);
+        assert_eq!(m.sampling_config(), SamplingConfiguration::FREQ_4K_HZ);
         assert_eq!(expect.len(), m.calc().unwrap().len());
         expect
             .into_iter()
