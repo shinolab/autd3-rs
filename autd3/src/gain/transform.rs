@@ -13,13 +13,15 @@
 
 use std::collections::HashMap;
 
+use autd3_derive::Gain;
 use autd3_driver::{
     derive::prelude::*,
     geometry::{Device, Geometry},
 };
 
 /// Gain to transform gain data
-pub struct Transform<G: Gain, F: Fn(&Device, &Transducer, &Drive) -> Drive> {
+#[derive(Gain)]
+pub struct Transform<G: Gain + 'static, F: Fn(&Device, &Transducer, &Drive) -> Drive + 'static> {
     gain: G,
     f: F,
 }
@@ -40,19 +42,6 @@ impl<G: Gain> IntoTransform<G> for G {
     }
 }
 
-impl<G: Gain + 'static, F: Fn(&Device, &Transducer, &Drive) -> Drive + 'static>
-    autd3_driver::datagram::Datagram for Transform<G, F>
-where
-    autd3_driver::operation::GainOp<Self>: autd3_driver::operation::Operation,
-{
-    type O1 = autd3_driver::operation::GainOp<Self>;
-    type O2 = autd3_driver::operation::NullOp;
-
-    fn operation(self) -> Result<(Self::O1, Self::O2), autd3_driver::error::AUTDInternalError> {
-        Ok((Self::O1::new(self), Self::O2::default()))
-    }
-}
-
 impl<G: Gain + 'static, F: Fn(&Device, &Transducer, &Drive) -> Drive + 'static> Gain
     for Transform<G, F>
 {
@@ -61,12 +50,60 @@ impl<G: Gain + 'static, F: Fn(&Device, &Transducer, &Drive) -> Drive + 'static> 
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        let mut g = self.gain.calc(geometry, filter)?;
-        g.iter_mut().for_each(|(&dev_idx, d)| {
-            d.iter_mut().enumerate().for_each(|(i, d)| {
-                *d = (self.f)(&geometry[dev_idx], &geometry[dev_idx][i], d);
-            });
+        Ok(self
+            .gain
+            .calc(geometry, filter)?
+            .iter()
+            .map(|(&k, v)| {
+                (
+                    k,
+                    v.iter()
+                        .enumerate()
+                        .map(|(i, d)| (self.f)(&geometry[k], &geometry[k][i], d))
+                        .collect::<Vec<_>>(),
+                )
+            })
+            .collect())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::Uniform;
+    use super::*;
+    use autd3_driver::{
+        autd3_device::AUTD3,
+        geometry::{IntoDevice, Vector3},
+    };
+
+    #[test]
+    fn test_gain_transform() {
+        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+
+        let gain = Uniform::new(0x01).with_transform(|_, _, d| Drive {
+            phase: Phase::new(0x80),
+            intensity: d.intensity + EmitIntensity::new(0x80),
         });
-        Ok(g)
+
+        gain.calc(&geometry, GainFilter::All)
+            .unwrap()
+            .iter()
+            .for_each(|(_, drive)| {
+                drive.iter().for_each(|d| {
+                    assert_eq!(d.phase, Phase::new(0x80));
+                    assert_eq!(d.intensity, EmitIntensity::new(0x81));
+                })
+            });
+    }
+
+    #[test]
+    fn test_gain_transform_derive() {
+        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let gain = Uniform::new(0x01).with_transform(|_, _, d| Drive {
+            phase: Phase::new(0x80),
+            intensity: d.intensity + EmitIntensity::new(0x80),
+        });
+        let _ = gain.calc(&geometry, GainFilter::All).unwrap();
+        let _ = gain.operation();
     }
 }

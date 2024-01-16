@@ -4,7 +4,7 @@
  * Created Date: 28/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -77,5 +77,48 @@ impl Gain for Focus {
                 intensity: self.intensity,
             }
         }))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::random_vector3;
+
+    use super::*;
+    use autd3_driver::{
+        autd3_device::AUTD3,
+        geometry::{IntoDevice, Vector3},
+    };
+
+    #[test]
+    fn test_focus() {
+        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+
+        let f = random_vector3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
+
+        let g = Focus::new(f);
+        assert_eq!(g.pos(), f);
+        assert_eq!(g.intensity(), EmitIntensity::MAX);
+
+        let d = g.calc(&geometry, GainFilter::All).unwrap();
+        d[&0].iter().for_each(|drive| {
+            assert_eq!(drive.intensity, EmitIntensity::MAX);
+        });
+
+        let g = g.with_intensity(0x1F);
+        assert_eq!(g.intensity(), EmitIntensity::new(0x1F));
+        let d = g.calc(&geometry, GainFilter::All).unwrap();
+        d[&0].iter().for_each(|drive| {
+            assert_eq!(drive.intensity, EmitIntensity::new(0x1F));
+        });
+    }
+
+    #[test]
+    fn test_focus_derive() {
+        let gain = Focus::new(Vector3::zeros());
+        let gain2 = gain.clone();
+        assert_eq!(gain.pos(), gain2.pos());
+        assert_eq!(gain.intensity(), gain2.intensity());
+        let _ = gain.operation();
     }
 }

@@ -18,17 +18,22 @@ use std::{
 
 use bitvec::prelude::*;
 
+use autd3_derive::Gain;
 use autd3_driver::{
     derive::prelude::*,
     geometry::{Device, Geometry},
 };
 
-pub struct Group<K: Hash + Eq + Clone, G: Gain, F: Fn(&Device, &Transducer) -> Option<K>> {
+#[derive(Gain)]
+pub struct Group<K: Hash + Eq + Clone + 'static, F: Fn(&Device, &Transducer) -> Option<K> + 'static>
+{
     f: F,
-    gain_map: HashMap<K, G>,
+    gain_map: HashMap<K, Box<dyn Gain>>,
 }
 
-impl<K: Hash + Eq + Clone, F: Fn(&Device, &Transducer) -> Option<K>> Group<K, Box<dyn Gain>, F> {
+impl<K: Hash + Eq + Clone + 'static, F: Fn(&Device, &Transducer) -> Option<K> + 'static>
+    Group<K, F>
+{
     /// Group by transducer
     ///
     /// # Arguments
@@ -47,7 +52,7 @@ impl<K: Hash + Eq + Clone, F: Fn(&Device, &Transducer) -> Option<K>> Group<K, Bo
     ///             .set("null", Null::new())
     ///             .set("focus", Focus::new(Vector3::new(0.0, 0.0, 150.0)));
     /// ```
-    pub fn new(f: F) -> Group<K, Box<dyn Gain>, F> {
+    pub fn new(f: F) -> Group<K, F> {
         Group {
             f,
             gain_map: HashMap::new(),
@@ -55,15 +60,8 @@ impl<K: Hash + Eq + Clone, F: Fn(&Device, &Transducer) -> Option<K>> Group<K, Bo
     }
 }
 
-impl<K: Hash + Eq + Clone, G: Gain, F: Fn(&Device, &Transducer) -> Option<K>> Group<K, G, F> {
-    /// get gain map which maps device id to gain
-    pub fn gain_map(&self) -> &HashMap<K, G> {
-        &self.gain_map
-    }
-}
-
-impl<'a, K: Hash + Eq + Clone, F: Fn(&Device, &Transducer) -> Option<K>>
-    Group<K, Box<dyn Gain + 'a>, F>
+impl<K: Hash + Eq + Clone + 'static, F: Fn(&Device, &Transducer) -> Option<K> + 'static>
+    Group<K, F>
 {
     /// set gain
     ///
@@ -72,31 +70,14 @@ impl<'a, K: Hash + Eq + Clone, F: Fn(&Device, &Transducer) -> Option<K>>
     /// * `key` - key
     /// * `gain` - Gain
     ///
-    pub fn set<G: Gain + 'a>(mut self, key: K, gain: G) -> Self {
+    pub fn set<G: Gain + 'static>(mut self, key: K, gain: G) -> Self {
         self.gain_map.insert(key, Box::new(gain));
         self
     }
 }
 
-impl<
-        K: Hash + Eq + Clone + 'static,
-        G: Gain + 'static,
-        F: Fn(&Device, &Transducer) -> Option<K> + 'static,
-    > autd3_driver::datagram::Datagram for Group<K, G, F>
-{
-    type O1 = autd3_driver::operation::GainOp<Self>;
-    type O2 = autd3_driver::operation::NullOp;
-
-    fn operation(self) -> Result<(Self::O1, Self::O2), autd3_driver::error::AUTDInternalError> {
-        Ok((Self::O1::new(self), Self::O2::default()))
-    }
-}
-
-impl<
-        K: Hash + Eq + Clone + 'static,
-        G: Gain + 'static,
-        F: Fn(&Device, &Transducer) -> Option<K> + 'static,
-    > Group<K, G, F>
+impl<K: Hash + Eq + Clone + 'static, F: Fn(&Device, &Transducer) -> Option<K> + 'static>
+    Group<K, F>
 {
     fn get_filters(&self, geometry: &Geometry) -> HashMap<K, HashMap<usize, BitVec<usize, Lsb0>>> {
         let mut filters: HashMap<K, HashMap<usize, BitVec<usize, Lsb0>>> = HashMap::new();
@@ -131,11 +112,8 @@ impl<
     }
 }
 
-impl<
-        K: Hash + Eq + Clone + 'static,
-        G: Gain + 'static,
-        F: Fn(&Device, &Transducer) -> Option<K> + 'static,
-    > Gain for Group<K, G, F>
+impl<K: Hash + Eq + Clone + 'static, F: Fn(&Device, &Transducer) -> Option<K> + 'static> Gain
+    for Group<K, F>
 {
     #[allow(clippy::uninit_vec)]
     fn calc(
@@ -199,7 +177,7 @@ mod tests {
 
     use super::*;
 
-    use crate::gain::{Focus, Null, Plane};
+    use crate::gain::{Null, Plane};
 
     #[test]
     fn test_group() {

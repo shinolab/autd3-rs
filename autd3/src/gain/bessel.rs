@@ -4,7 +4,7 @@
  * Created Date: 02/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -123,9 +123,12 @@ mod tests {
         let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();
         let mut rng = rand::thread_rng();
         let theta = rng.gen_range(-PI..PI);
-        let b = Bessel::new(f, d, theta)
-            .calc(&geometry, GainFilter::All)
-            .unwrap();
+        let g = Bessel::new(f, d, theta);
+        assert_eq!(g.pos(), f);
+        assert_eq!(g.dir(), d);
+        assert_eq!(g.theta(), theta);
+        assert_eq!(g.intensity(), EmitIntensity::MAX);
+        let b = g.calc(&geometry, GainFilter::All).unwrap();
         assert_eq!(b.len(), 1);
         assert_eq!(b[&0].len(), geometry.num_transducers());
         b[&0]
@@ -152,10 +155,12 @@ mod tests {
         let f = random_vector3(-500.0..500.0, -500.0..500.0, 50.0..500.0);
         let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();
         let theta = rng.gen_range(-PI..PI);
-        let b = Bessel::new(f, d, theta)
-            .with_intensity(0x1F)
-            .calc(&geometry, GainFilter::All)
-            .unwrap();
+        let g = Bessel::new(f, d, theta).with_intensity(0x1F);
+        assert_eq!(g.pos(), f);
+        assert_eq!(g.dir(), d);
+        assert_eq!(g.theta(), theta);
+        assert_eq!(g.intensity(), EmitIntensity::new(0x1F));
+        let b = g.calc(&geometry, GainFilter::All).unwrap();
         assert_eq!(b.len(), 1);
         assert_eq!(b[&0].len(), geometry.num_transducers());
         b[&0]
@@ -178,5 +183,16 @@ mod tests {
             };
             assert_eq!(b.phase, expected_phase);
         });
+    }
+
+    #[test]
+    fn test_bessel_derive() {
+        let g = Bessel::new(Vector3::zeros(), Vector3::zeros(), 0.);
+        let g2 = g.clone();
+        assert_eq!(g.pos(), g2.pos());
+        assert_eq!(g.dir(), g2.dir());
+        assert_eq!(g.theta(), g2.theta());
+        assert_eq!(g.intensity(), g2.intensity());
+        let _ = g.operation();
     }
 }

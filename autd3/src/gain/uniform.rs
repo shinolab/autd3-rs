@@ -4,7 +4,7 @@
  * Created Date: 18/08/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -29,7 +29,7 @@ impl Uniform {
     ///
     /// # Arguments
     ///
-    /// * `intensity` - normalized intensity (from 0 to 1)
+    /// * `intensity` - Emission intensity
     ///
     pub fn new<A: Into<EmitIntensity>>(intensity: A) -> Self {
         Self {
@@ -72,7 +72,6 @@ impl Gain for Uniform {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
     use autd3_driver::{
         autd3_device::AUTD3,
@@ -84,6 +83,8 @@ mod tests {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
 
         let gain = Uniform::new(0x1F);
+        assert_eq!(gain.intensity(), EmitIntensity::new(0x1F));
+        assert_eq!(gain.phase(), Phase::new(0));
 
         let d = gain.calc(&geometry, GainFilter::All).unwrap();
         d[&0].iter().for_each(|drive| {
@@ -92,11 +93,23 @@ mod tests {
         });
 
         let gain = gain.with_phase(Phase::new(1));
+        assert_eq!(gain.intensity(), EmitIntensity::new(0x1F));
+        assert_eq!(gain.phase(), Phase::new(1));
 
         let d = gain.calc(&geometry, GainFilter::All).unwrap();
         d[&0].iter().for_each(|drive| {
             assert_eq!(drive.phase.value(), 1);
             assert_eq!(drive.intensity.value(), 0x1F);
         });
+    }
+
+    #[test]
+    fn test_uniform_derive() {
+        let gain = Uniform::new(0x1F);
+        let gain2 = gain.clone();
+        assert_eq!(gain.intensity(), gain2.intensity());
+        assert_eq!(gain.phase(), gain2.phase());
+
+        let _ = gain.operation();
     }
 }
