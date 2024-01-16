@@ -100,8 +100,6 @@ mod tests {
 
     use super::*;
 
-    use autd3_derive::Modulation;
-
     #[test]
     fn test_cache() {
         let m = Static::new().with_cache();
@@ -118,10 +116,26 @@ mod tests {
         }
     }
 
-    #[derive(Modulation, Clone)]
     struct TestModulation {
         pub calc_cnt: Arc<AtomicUsize>,
         pub config: SamplingConfiguration,
+    }
+
+    impl Clone for TestModulation {
+        #[cfg_attr(coverage_nightly, coverage(off))]
+        fn clone(&self) -> Self {
+            Self {
+                calc_cnt: self.calc_cnt.clone(),
+                config: self.config,
+            }
+        }
+    }
+
+    impl ModulationProperty for TestModulation {
+        #[cfg_attr(coverage_nightly, coverage(off))]
+        fn sampling_config(&self) -> SamplingConfiguration {
+            self.config
+        }
     }
 
     impl Modulation for TestModulation {
