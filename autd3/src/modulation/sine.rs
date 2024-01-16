@@ -32,7 +32,7 @@ pub struct Sine {
 impl Sine {
     /// constructor
     ///
-    /// The sine wave is defined as `intensity / 2 * sin(2π * freq * t + phase) + offset`, where `t` is time, and `amp = EmitIntensity::MAX`, `phase = 0`, `offset = EmitIntensity::MAX/2` by default.
+    /// The sine wave is defined as `intensity / 2 * sin(2π * freq * t + phase) + offset`, where `t` is time, and `intensity = EmitIntensity::MAX`, `phase = 0`, `offset = EmitIntensity::MAX/2` by default.
     ///
     /// # Arguments
     ///

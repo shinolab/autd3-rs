@@ -14,7 +14,7 @@
 use autd3_derive::Modulation;
 use autd3_driver::{common::EmitIntensity, derive::prelude::*};
 
-/// Modulation for modulating radiation pressure
+/// Modulation for modulating radiation pressure instead of amplitude
 #[derive(Modulation)]
 pub struct RadiationPressure<M: Modulation> {
     m: M,
