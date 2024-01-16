@@ -147,9 +147,9 @@ mod tests {
 
     #[test]
     fn test_fourier() {
-        let f0 = Sine::new(50.).with_phase(PI / 2.0);
-        let f1 = Sine::new(100.).with_phase(PI / 3.0);
-        let f2 = Sine::new(150.).with_phase(PI / 4.0);
+        let f0 = Sine::new(50.).with_phase(PI / 2.0 * Rad);
+        let f1 = Sine::new(100.).with_phase(PI / 3.0 * Rad);
+        let f2 = Sine::new(150.).with_phase(PI / 4.0 * Rad);
         let f3 = Sine::new(200.);
         let f4 = Sine::new(250.);
 
@@ -163,15 +163,15 @@ mod tests {
 
         assert_eq!(f.sampling_config(), SamplingConfiguration::FREQ_4K_HZ);
         assert_eq!(f[0].freq(), 50.0);
-        assert_eq!(f[0].phase(), PI / 2.0);
+        assert_eq!(f[0].phase(), PI / 2.0 * Rad);
         assert_eq!(f[1].freq(), 100.0);
-        assert_eq!(f[1].phase(), PI / 3.0);
+        assert_eq!(f[1].phase(), PI / 3.0 * Rad);
         assert_eq!(f[2].freq(), 150.0);
-        assert_eq!(f[2].phase(), PI / 4.0);
+        assert_eq!(f[2].phase(), PI / 4.0 * Rad);
         assert_eq!(f[3].freq(), 200.0);
-        assert_eq!(f[3].phase(), 0.0);
+        assert_eq!(f[3].phase(), 0.0 * Rad);
         assert_eq!(f[4].freq(), 250.0);
-        assert_eq!(f[4].phase(), 0.0);
+        assert_eq!(f[4].phase(), 0.0 * Rad);
 
         let buf = f.calc().unwrap();
 
@@ -207,7 +207,7 @@ mod tests {
 
     #[test]
     fn test_fourier_clone() {
-        let f = Fourier::new(Sine::new(50.).with_phase(PI / 2.0));
+        let f = Fourier::new(Sine::new(50.).with_phase(PI / 2.0 * Rad));
         let f2 = f.clone();
 
         assert_eq!(f.sampling_config(), f2.sampling_config());
