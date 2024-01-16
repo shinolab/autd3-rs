@@ -4,7 +4,7 @@
  * Created Date: 14/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -13,7 +13,7 @@
 
 use super::{EmitIntensity, Phase};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Drive {
     /// Phase of ultrasound
     pub phase: Phase,
@@ -44,5 +44,10 @@ mod tests {
         let dc = Clone::clone(&d);
         assert_eq!(d.phase, dc.phase);
         assert_eq!(d.intensity, dc.intensity);
+
+        assert_eq!(
+            format!("{:?}", d),
+            "Drive { phase: Phase { value: 1 }, intensity: EmitIntensity { value: 1 } }"
+        );
     }
 }
