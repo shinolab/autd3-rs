@@ -36,7 +36,7 @@ impl Static {
     ///
     /// # Arguments
     ///
-    /// * `intensity` - normalized emission intensity of the ultrasound (from 0 to 1)
+    /// * `intensity` - Emission intensity
     ///
     pub fn with_intensity<A: Into<EmitIntensity>>(intensity: A) -> Self {
         Self {

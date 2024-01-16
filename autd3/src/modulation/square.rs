@@ -47,11 +47,11 @@ impl Square {
         }
     }
 
-    /// set low level amplitude
+    /// set low level intensity
     ///
     /// # Arguments
     ///
-    /// * `low` - low level amplitude (from 0 to 1)
+    /// * `low` - low level emmission intensity
     ///
     pub fn with_low<A: Into<EmitIntensity>>(self, low: A) -> Self {
         Self {
@@ -60,11 +60,11 @@ impl Square {
         }
     }
 
-    /// set high level amplitude
+    /// set high level intensity
     ///
     /// # Arguments
     ///
-    /// * `high` - high level amplitude (from 0 to 1)
+    /// * `high` - high level emmission intensity
     ///     
     pub fn with_high<A: Into<EmitIntensity>>(self, high: A) -> Self {
         Self {
@@ -73,11 +73,12 @@ impl Square {
         }
     }
 
-    /// set duty ratio which is defined as `Th / (Th + Tl)`, where `Th` is high level duration, and `Tl` is low level duration.
+    /// set duty ratio
+    /// The duty ration is defined as `Th / (Th + Tl)`, where `Th` is high level duration, and `Tl` is low level duration.
     ///
     /// # Arguments
     ///     
-    /// * `duty` - duty ratio
+    /// * `duty` - duty ratio (must be in [0, 1])
     ///
     pub const fn with_duty(self, duty: float) -> Self {
         Self { duty, ..self }
