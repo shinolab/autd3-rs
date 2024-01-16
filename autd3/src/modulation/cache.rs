@@ -14,63 +14,78 @@
 use autd3_derive::Modulation;
 use autd3_driver::{common::EmitIntensity, derive::prelude::*};
 
-use std::{ops::Deref, sync::Arc};
+use std::{
+    cell::{Ref, RefCell},
+    rc::Rc,
+};
 
 /// Modulation to cache the result of calculation
 #[derive(Modulation)]
-pub struct Cache {
-    cache: Arc<[EmitIntensity]>,
+pub struct Cache<M: Modulation> {
+    m: Rc<M>,
+    cache: Rc<RefCell<Vec<EmitIntensity>>>,
     #[no_change]
     config: SamplingConfiguration,
 }
 
 pub trait IntoCache<M: Modulation> {
     /// Cache the result of calculation
-    fn with_cache(self) -> Result<Cache, AUTDInternalError>;
+    fn with_cache(self) -> Cache<M>;
 }
 
 impl<M: Modulation> IntoCache<M> for M {
-    fn with_cache(self) -> Result<Cache, AUTDInternalError> {
+    fn with_cache(self) -> Cache<M> {
         Cache::new(self)
     }
 }
 
-impl Clone for Cache {
+impl<M: Modulation + Clone> Clone for Cache<M> {
     fn clone(&self) -> Self {
         Self {
+            m: self.m.clone(),
             cache: self.cache.clone(),
             config: self.config,
         }
     }
 }
 
-impl Cache {
+impl<M: Modulation> Cache<M> {
     /// constructor
-    pub fn new<M: Modulation>(modulation: M) -> Result<Self, AUTDInternalError> {
-        let config = modulation.sampling_config();
-        Ok(Self {
-            cache: Arc::from(modulation.calc()?),
+    pub fn new(m: M) -> Self {
+        let config = m.sampling_config();
+        Self {
+            m: Rc::new(m),
+            cache: Rc::new(Default::default()),
             config,
-        })
+        }
     }
 
     /// get cached modulation data
-    pub fn buffer(&self) -> &[EmitIntensity] {
-        &self.cache
+    ///
+    /// Note that the cached data is created after at least one call to `calc`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use autd3::prelude::*;
+    ///
+    /// let m = Static::new().with_cache();
+    /// assert!(m.buffer().is_empty());
+    /// let _ = m.calc().unwrap();
+    /// assert!(!m.buffer().is_empty());
+    ///
+    /// ```
+    pub fn buffer(&self) -> Ref<'_, Vec<EmitIntensity>> {
+        self.cache.borrow()
     }
 }
 
-impl Modulation for Cache {
+impl<M: Modulation> Modulation for Cache<M> {
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        Ok(self.cache.to_vec())
-    }
-}
-
-impl Deref for Cache {
-    type Target = [EmitIntensity];
-
-    fn deref(&self) -> &Self::Target {
-        &self.cache
+        if self.cache.borrow().is_empty() {
+            *self.cache.borrow_mut() = self.m.calc()?;
+        }
+        Ok(self.cache.borrow().clone())
     }
 }
 
@@ -89,18 +104,21 @@ mod tests {
 
     #[test]
     fn test_cache() {
-        let m = Static::new().with_cache().unwrap();
+        let m = Static::new().with_cache();
         assert_eq!(m.sampling_config(), Static::new().sampling_config());
 
+        assert!(m.buffer().is_empty());
         for d in m.calc().unwrap() {
             assert_eq!(d, EmitIntensity::MAX);
         }
-        for d in m.iter() {
+
+        assert!(!m.buffer().is_empty());
+        for d in m.buffer().iter() {
             assert_eq!(d, &EmitIntensity::MAX);
         }
     }
 
-    #[derive(Modulation)]
+    #[derive(Modulation, Clone)]
     struct TestModulation {
         pub calc_cnt: Arc<AtomicUsize>,
         pub config: SamplingConfiguration,
@@ -121,8 +139,10 @@ mod tests {
             calc_cnt: calc_cnt.clone(),
             config: SamplingConfiguration::FREQ_4K_HZ,
         }
-        .with_cache()
-        .unwrap();
+        .with_cache();
+        assert_eq!(calc_cnt.load(Ordering::Relaxed), 0);
+
+        let _ = modulation.calc().unwrap();
         assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
 
         let _ = modulation.calc().unwrap();
@@ -137,17 +157,13 @@ mod tests {
             calc_cnt: calc_cnt.clone(),
             config: SamplingConfiguration::FREQ_4K_HZ,
         }
-        .with_cache()
-        .unwrap();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
-
-        let _ = modulation.calc().unwrap();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
+        .with_cache();
+        assert_eq!(calc_cnt.load(Ordering::Relaxed), 0);
 
         let m2 = modulation.clone();
         let _ = m2.calc().unwrap();
         assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
 
-        assert_eq!(modulation.buffer(), m2.buffer());
+        assert_eq!(modulation.buffer().to_vec(), m2.buffer().to_vec());
     }
 }
