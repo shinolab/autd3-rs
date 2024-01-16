@@ -23,7 +23,7 @@ use super::sampling_mode::SamplingMode;
 pub struct Sine {
     freq: float,
     intensity: EmitIntensity,
-    phase: float,
+    phase: Phase,
     offset: EmitIntensity,
     config: SamplingConfiguration,
     mode: SamplingMode,
@@ -42,7 +42,7 @@ impl Sine {
         Self {
             freq,
             intensity: EmitIntensity::MAX,
-            phase: 0.0,
+            phase: Phase::new(0),
             offset: EmitIntensity::new(127),
             config: SamplingConfiguration::FREQ_4K_HZ,
             mode: SamplingMode::ExactFrequency,
@@ -81,7 +81,7 @@ impl Sine {
     ///
     /// * `phase` - Phase of the wave
     ///
-    pub const fn with_phase(self, phase: float) -> Self {
+    pub const fn with_phase(self, phase: Phase) -> Self {
         Self { phase, ..self }
     }
 
@@ -107,7 +107,7 @@ impl Sine {
         self.offset
     }
 
-    pub const fn phase(&self) -> float {
+    pub const fn phase(&self) -> Phase {
         self.phase
     }
 }
@@ -139,7 +139,7 @@ impl Modulation for Sine {
             .map(|i| {
                 EmitIntensity::new(
                     (((self.intensity / 2).value() as float
-                        * (2.0 * PI * (rep * i) as float / n as float + self.phase).sin())
+                        * (2.0 * PI * (rep * i) as float / n as float + self.phase.radian()).sin())
                     .round()
                         + self.offset.value() as float) as u8,
                 )
@@ -206,7 +206,7 @@ mod tests {
         assert_eq!(m.freq(), 100.);
         assert_eq!(m.intensity(), EmitIntensity::MAX);
         assert_eq!(m.offset(), EmitIntensity::MAX / 2);
-        assert_eq!(m.phase(), 0.0);
+        assert_eq!(m.phase(), Phase::new(0));
         let vec = m.calc().unwrap();
         assert!(!vec.is_empty());
         assert!(vec
@@ -252,8 +252,8 @@ mod tests {
 
     #[test]
     fn test_sine_with_phase() {
-        let m = Sine::new(100.).with_phase(PI / 4.0);
-        assert_eq!(m.phase, PI / 4.0);
+        let m = Sine::new(100.).with_phase(PI / 4.0 * Rad);
+        assert_eq!(m.phase, PI / 4.0 * Rad);
 
         let vec = m.calc().unwrap();
         assert!(!vec.is_empty());
