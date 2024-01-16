@@ -4,7 +4,7 @@
  * Created Date: 28/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -165,7 +165,7 @@ mod tests {
             255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
         let m = Square::new(150.);
-        assert_approx_eq::assert_approx_eq!(m.sampling_config().frequency(), 4e3);
+        assert_eq!(m.sampling_config(), SamplingConfiguration::FREQ_4K_HZ);
         assert_eq!(expect.len(), m.calc().unwrap().len());
         expect
             .into_iter()
@@ -173,6 +173,13 @@ mod tests {
             .for_each(|(e, a)| {
                 assert_eq!(e, a.value());
             });
+    }
+
+    #[test]
+    fn test_square_clone() {
+        let m = Square::new(150.);
+        let m2 = m.clone();
+        assert_eq!(m.sampling_config(), m2.sampling_config());
     }
 
     #[test]
@@ -230,11 +237,13 @@ mod tests {
     #[test]
     fn test_square_with_duty() {
         let m = Square::new(150.).with_duty(0.0);
+        assert_eq!(m.duty(), 0.0);
         m.calc().unwrap().iter().for_each(|a| {
             assert_eq!(a.value(), 0x00);
         });
 
         let m = Square::new(150.).with_duty(1.0);
+        assert_eq!(m.duty(), 1.0);
         m.calc().unwrap().iter().for_each(|a| {
             assert_eq!(a.value(), 0xFF);
         });

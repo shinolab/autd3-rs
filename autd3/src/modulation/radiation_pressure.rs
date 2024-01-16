@@ -4,7 +4,7 @@
  * Created Date: 10/07/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 21/11/2023
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -44,5 +44,30 @@ impl<M: Modulation> Modulation for RadiationPressure<M> {
             .iter()
             .map(|&v| EmitIntensity::new(((v.value() as float / 255.).sqrt() * 255.).round() as u8))
             .collect())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::modulation::Sine;
+
+    use super::*;
+
+    #[test]
+    fn test_radiation_impl() {
+        let m = Sine::new(100.);
+        let m_transformed = m.with_radiation_pressure();
+
+        let vec = m.calc().unwrap();
+        let vec_transformed = m_transformed.calc().unwrap();
+
+        for (&x, &y) in vec.iter().zip(&vec_transformed) {
+            assert_eq!(
+                y.value(),
+                ((x.value() as float / 255.).sqrt() * 255.).round() as u8
+            );
+        }
+
+        assert_eq!(m.sampling_config(), m_transformed.sampling_config());
     }
 }
