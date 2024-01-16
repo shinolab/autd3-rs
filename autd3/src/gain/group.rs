@@ -78,24 +78,6 @@ impl<'a, K: Hash + Eq + Clone, F: Fn(&Device, &Transducer) -> Option<K>>
     }
 }
 
-impl<K: Hash + Eq + Clone, F: Fn(&Device, &Transducer) -> Option<K>> Group<K, Box<dyn Gain>, F> {
-    /// get Gain of specified key
-    ///
-    /// # Arguments
-    ///
-    /// * `key` - key
-    ///
-    /// # Returns
-    ///
-    /// * Gain of specified key if exists and the type is matched, otherwise None
-    ///
-    pub fn get<G: Gain + 'static>(&self, key: K) -> Option<&G> {
-        self.gain_map
-            .get(&key)
-            .and_then(|g| g.as_ref().as_any().downcast_ref::<G>())
-    }
-}
-
 impl<
         K: Hash + Eq + Clone + 'static,
         G: Gain + 'static,
@@ -107,17 +89,6 @@ impl<
 
     fn operation(self) -> Result<(Self::O1, Self::O2), autd3_driver::error::AUTDInternalError> {
         Ok((Self::O1::new(self), Self::O2::default()))
-    }
-}
-
-impl<
-        K: Hash + Eq + Clone + 'static,
-        G: Gain + 'static,
-        F: Fn(&Device, &Transducer) -> Option<K> + 'static,
-    > GainAsAny for Group<K, G, F>
-{
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
     }
 }
 
@@ -331,39 +302,5 @@ mod tests {
                 AUTDInternalError::GainError("Unspecified group key".to_owned())
             ),
         }
-    }
-
-    #[test]
-    fn test_get() {
-        let gain: Group<_, _, _> = Group::new(|dev, _tr| match dev.idx() {
-            0 => Some("null"),
-            1 => Some("plane"),
-            2 | 3 => Some("plane2"),
-            _ => None,
-        })
-        .set("null", Null::new())
-        .set("plane", Plane::new(Vector3::zeros()))
-        .set("plane2", Plane::new(Vector3::zeros()).with_intensity(0x1F));
-
-        assert!(gain.get::<Null>("null").is_some());
-        assert!(gain.get::<Focus>("null").is_none());
-
-        assert!(gain.get::<Plane>("plane").is_some());
-        assert!(gain.get::<Null>("plane").is_none());
-        assert_eq!(
-            gain.get::<Plane>("plane").unwrap().intensity().value(),
-            0xFF
-        );
-
-        assert!(gain.get::<Plane>("plane2").is_some());
-        assert!(gain.get::<Null>("plane2").is_none());
-        assert_eq!(
-            gain.get::<Plane>("plane2").unwrap().intensity().value(),
-            0x1F
-        );
-
-        assert!(gain.get::<Null>("focus").is_none());
-        assert!(gain.get::<Focus>("focus").is_none());
-        assert!(gain.get::<Plane>("focus").is_none());
     }
 }

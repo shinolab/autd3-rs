@@ -4,7 +4,7 @@
  * Created Date: 29/08/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -33,7 +33,7 @@ pub mod derive {
     pub mod prelude {
         pub use crate::{
             common::{Drive, EmitIntensity, Phase, Rad, SamplingConfiguration},
-            datagram::{Datagram, Gain, GainAsAny, GainFilter, Modulation, ModulationProperty},
+            datagram::{Datagram, Gain, GainFilter, Modulation, ModulationProperty},
             defined::float,
             error::AUTDInternalError,
             fpga::{FPGA_CLK_FREQ, SAMPLING_FREQ_DIV_MIN},
