@@ -4,7 +4,7 @@
  * Created Date: 08/01/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -188,7 +188,7 @@ pub mod tests {
     use crate::{
         common::{EmitIntensity, Phase},
         cpu::{Header, EC_OUTPUT_FRAME_SIZE},
-        derive::prelude::{Drive, Gain, GainAsAny, GainFilter},
+        derive::prelude::{Drive, Gain, GainFilter},
         geometry::{Transducer, UnitQuaternion, Vector3},
     };
 
@@ -197,13 +197,6 @@ pub mod tests {
     #[derive(Clone)]
     pub struct TestGain {
         pub data: HashMap<usize, Vec<Drive>>,
-    }
-
-    impl GainAsAny for TestGain {
-        #[cfg_attr(coverage_nightly, coverage(off))]
-        fn as_any(&self) -> &dyn std::any::Any {
-            self
-        }
     }
 
     impl Gain for TestGain {
@@ -224,13 +217,6 @@ pub mod tests {
         #[cfg_attr(coverage_nightly, coverage(off))]
         fn clone(&self) -> Self {
             *self
-        }
-    }
-
-    impl GainAsAny for NullGain {
-        #[cfg_attr(coverage_nightly, coverage(off))]
-        fn as_any(&self) -> &dyn std::any::Any {
-            self
         }
     }
 
@@ -255,13 +241,6 @@ pub mod tests {
         #[cfg_attr(coverage_nightly, coverage(off))]
         fn clone(&self) -> Self {
             *self
-        }
-    }
-
-    impl GainAsAny for ErrGain {
-        #[cfg_attr(coverage_nightly, coverage(off))]
-        fn as_any(&self) -> &dyn std::any::Any {
-            self
         }
     }
 

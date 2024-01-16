@@ -4,7 +4,7 @@
  * Created Date: 28/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -101,17 +101,9 @@ fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let generics = &ast.generics;
     let linetimes = generics.lifetimes();
-    let type_params_for_any = generics.type_params();
-    let linetimes_for_any = generics.lifetimes();
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let type_params = generics.type_params();
     let gen = quote! {
-        impl <#(#linetimes_for_any,)* #(#type_params_for_any,)*> GainAsAny for #name #ty_generics #where_clause {
-            fn as_any(&self) -> &dyn std::any::Any {
-                self
-            }
-        }
-
         impl <#(#linetimes,)* #(#type_params,)*> Datagram for #name #ty_generics #where_clause
             where GainOp<Self>: Operation
         {

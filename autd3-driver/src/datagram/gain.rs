@@ -4,7 +4,7 @@
  * Created Date: 29/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -29,12 +29,8 @@ pub enum GainFilter<'a> {
     Filter(&'a HashMap<usize, BitVec<usize, Lsb0>>),
 }
 
-pub trait GainAsAny {
-    fn as_any(&self) -> &dyn std::any::Any;
-}
-
 /// Gain controls amplitude and phase of each transducer.
-pub trait Gain: GainAsAny {
+pub trait Gain {
     fn calc(
         &self,
         geometry: &Geometry,
@@ -76,13 +72,6 @@ pub trait Gain: GainAsAny {
     }
 }
 
-impl<'a> GainAsAny for Box<dyn Gain + 'a> {
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn as_any(&self) -> &dyn std::any::Any {
-        self.as_ref().as_any()
-    }
-}
-
 impl<'a> Gain for Box<dyn Gain + 'a> {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn calc(
@@ -108,12 +97,6 @@ mod tests {
     use super::*;
 
     use crate::{geometry::tests::create_geometry, operation::tests::NullGain};
-
-    #[test]
-    fn test_gain_as_any() {
-        let g = NullGain {};
-        assert!(g.as_any().is::<NullGain>());
-    }
 
     #[test]
     fn test_gain_transform_all() {

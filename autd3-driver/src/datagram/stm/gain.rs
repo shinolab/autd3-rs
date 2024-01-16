@@ -4,7 +4,7 @@
  * Created Date: 04/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -173,25 +173,6 @@ impl<G: Gain> std::ops::IndexMut<usize> for GainSTM<G> {
     }
 }
 
-impl GainSTM<Box<dyn Gain>> {
-    /// get Gain of specified index
-    ///
-    /// # Arguments
-    ///
-    /// * `idx` - index
-    ///
-    /// # Returns
-    ///
-    /// * Gain of specified index if the type is matched, otherwise None
-    ///
-    pub fn get<G: Gain + 'static>(&self, idx: usize) -> Option<&G> {
-        if idx >= self.gains.len() {
-            return None;
-        }
-        self.gains[idx].as_ref().as_any().downcast_ref::<G>()
-    }
-}
-
 impl<G: Gain> Datagram for GainSTM<G> {
     type O1 = crate::operation::GainSTMOp<G>;
     type O2 = crate::operation::NullOp;
@@ -223,7 +204,7 @@ mod tests {
 
     use crate::{
         common::Drive,
-        datagram::{Gain, GainAsAny},
+        datagram::Gain,
         derive::prelude::Geometry,
         operation::{tests::NullGain, GainSTMOp, NullOp},
     };
@@ -283,12 +264,6 @@ mod tests {
 
     struct NullGain2 {}
 
-    impl GainAsAny for NullGain2 {
-        fn as_any(&self) -> &dyn std::any::Any {
-            self
-        }
-    }
-
     impl Gain for NullGain2 {
         #[cfg_attr(coverage_nightly, coverage(off))]
         fn calc(
@@ -298,24 +273,6 @@ mod tests {
         ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
             unimplemented!()
         }
-    }
-
-    #[test]
-    fn test_get() {
-        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.0)
-            .add_gain(Box::new(NullGain {}))
-            .unwrap()
-            .add_gain(Box::new(NullGain2 {}))
-            .unwrap();
-
-        assert!(stm.get::<NullGain>(0).is_some());
-        assert!(stm.get::<NullGain2>(0).is_none());
-
-        assert!(stm.get::<NullGain2>(1).is_some());
-        assert!(stm.get::<NullGain>(1).is_none());
-
-        assert!(stm.get::<NullGain>(2).is_none());
-        assert!(stm.get::<NullGain2>(2).is_none());
     }
 
     #[test]

@@ -4,7 +4,7 @@
  * Created Date: 10/05/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -85,12 +85,6 @@ where
 
     fn operation(self) -> Result<(Self::O1, Self::O2), autd3_driver::error::AUTDInternalError> {
         Ok((Self::O1::new(self), Self::O2::default()))
-    }
-}
-
-impl<G: Gain + 'static> autd3_driver::datagram::GainAsAny for Cache<G> {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
     }
 }
 
