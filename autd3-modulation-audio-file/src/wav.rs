@@ -4,15 +4,14 @@
  * Created Date: 15/06/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 01/12/2023
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
  *
  */
 
-use autd3_derive::Modulation;
-use autd3_driver::{common::EmitIntensity, derive::prelude::*};
+use autd3_driver::{common::EmitIntensity, derive::*};
 use hound::SampleFormat;
 
 use std::path::Path;

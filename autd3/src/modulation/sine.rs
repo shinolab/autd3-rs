@@ -11,8 +11,7 @@
  *
  */
 
-use autd3_derive::Modulation;
-use autd3_driver::{common::EmitIntensity, defined::PI, derive::prelude::*};
+use autd3_driver::{common::EmitIntensity, defined::PI, derive::*};
 
 use num::integer::gcd;
 

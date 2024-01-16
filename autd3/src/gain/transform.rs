@@ -13,9 +13,8 @@
 
 use std::collections::HashMap;
 
-use autd3_derive::Gain;
 use autd3_driver::{
-    derive::prelude::*,
+    derive::*,
     geometry::{Device, Geometry},
 };
 

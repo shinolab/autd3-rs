@@ -15,11 +15,9 @@ use std::collections::HashMap;
 
 use autd3_driver::{
     common::EmitIntensity,
-    derive::prelude::*,
+    derive::*,
     geometry::{Geometry, Vector3},
 };
-
-use autd3_derive::Gain;
 
 /// Gain to produce a focal point
 #[derive(Gain, Clone, Copy)]

@@ -4,7 +4,7 @@
  * Created Date: 03/06/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -14,13 +14,12 @@
 use std::collections::HashMap;
 
 use crate::{constraint::EmissionConstraint, impl_holo, Amplitude, Complex};
-use autd3_derive::Gain;
 
 use autd3_driver::{
     acoustics::{directivity::Sphere, propagate},
     common::{EmitIntensity, Phase},
     defined::PI,
-    derive::prelude::*,
+    derive::*,
     geometry::{Geometry, Vector3},
 };
 

@@ -20,7 +20,6 @@ pub mod link;
 pub mod modulation;
 pub mod prelude;
 
-pub use autd3_derive as derive;
 pub use autd3_driver as driver;
 
 pub use controller::Controller;

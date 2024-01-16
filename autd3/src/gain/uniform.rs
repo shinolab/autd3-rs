@@ -13,9 +13,7 @@
 
 use std::collections::HashMap;
 
-use autd3_derive::Gain;
-
-use autd3_driver::{common::EmitIntensity, derive::prelude::*, geometry::Geometry};
+use autd3_driver::{common::EmitIntensity, derive::*, geometry::Geometry};
 
 /// Gain with uniform emission intensity and phase
 #[derive(Gain, Clone, Copy)]

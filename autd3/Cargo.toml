@@ -11,8 +11,7 @@ readme = "README.md"
 keywords = ["autd"]
 
 [dependencies]
-autd3-driver = { path = "../autd3-driver", version = "20.0.3", features = ["sync"] }
-autd3-derive = { path = "../autd3-derive", version = "20.0.3" }
+autd3-driver = { path = "../autd3-driver", version = "20.0.3", features = ["derive", "sync"] }
 autd3-firmware-emulator = { path = "../autd3-firmware-emulator", version = "20.0.3" }
 num = "0.4.0"
 thiserror = "1.0.31"

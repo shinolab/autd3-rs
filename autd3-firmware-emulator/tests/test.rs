@@ -4,7 +4,7 @@
  * Created Date: 13/12/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 01/01/2024
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -13,14 +13,13 @@
 
 use std::collections::HashMap;
 
-use autd3_derive::Gain;
 use autd3_driver::{
     autd3_device::AUTD3,
     common::EmitIntensity,
     cpu::TxDatagram,
     datagram::*,
     defined::{METER, MILLIMETER},
-    derive::prelude::*,
+    derive::*,
     firmware_version::{LATEST_VERSION_NUM_MAJOR, LATEST_VERSION_NUM_MINOR},
     fpga::{
         FOCUS_STM_BUF_SIZE_MAX, FOCUS_STM_FIXED_NUM_UNIT, GAIN_STM_BUF_SIZE_MAX,

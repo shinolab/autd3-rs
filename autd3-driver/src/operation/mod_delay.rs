@@ -4,7 +4,7 @@
  * Created Date: 08/01/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -14,9 +14,8 @@
 use std::collections::HashMap;
 
 use crate::{
-    derive::prelude::Transducer,
     error::AUTDInternalError,
-    geometry::{Device, Geometry},
+    geometry::{Device, Geometry, Transducer},
     operation::{cast, Operation, TypeTag},
 };
 

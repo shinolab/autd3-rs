@@ -4,7 +4,7 @@
  * Created Date: 24/05/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 26/12/2023
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -17,7 +17,7 @@ use autd3::{
     derive::{Gain, Modulation},
     prelude::*,
 };
-use autd3_driver::derive::prelude::*;
+use autd3_driver::derive::*;
 
 #[derive(Gain, Clone, Copy)]
 pub struct MyUniform {}

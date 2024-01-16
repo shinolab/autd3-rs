@@ -186,9 +186,9 @@ pub mod tests {
     use std::collections::HashMap;
 
     use crate::{
-        common::{EmitIntensity, Phase},
+        common::{Drive, EmitIntensity, Phase},
         cpu::{Header, EC_OUTPUT_FRAME_SIZE},
-        derive::prelude::{Drive, Gain, GainFilter},
+        datagram::{Gain, GainFilter},
         geometry::{Transducer, UnitQuaternion, Vector3},
     };
 

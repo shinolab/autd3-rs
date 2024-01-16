@@ -199,7 +199,7 @@ mod tests {
     use crate::{
         common::Drive,
         datagram::Gain,
-        derive::prelude::Geometry,
+        geometry::Geometry,
         operation::{tests::NullGain, GainSTMOp, NullOp},
     };
 

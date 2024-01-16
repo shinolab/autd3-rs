@@ -4,7 +4,7 @@
  * Created Date: 06/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 16/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -18,13 +18,15 @@ mod reduced_phase;
 use std::collections::HashMap;
 
 use crate::{
-    derive::prelude::{AUTDInternalError, Drive, Gain, GainFilter, Operation},
+    common::Drive,
+    datagram::{Gain, GainFilter},
+    error::AUTDInternalError,
     fpga::{FPGADrive, GAIN_STM_BUF_SIZE_MAX},
-    geometry::Device,
+    geometry::{Device, Geometry},
     operation::{
         cast,
         stm::gain::reduced_phase::{PhaseFull, PhaseHalf},
-        TypeTag,
+        Operation, TypeTag,
     },
 };
 
@@ -81,10 +83,7 @@ impl<G: Gain> GainSTMOp<G> {
 }
 
 impl<G: Gain> Operation for GainSTMOp<G> {
-    fn init(
-        &mut self,
-        geometry: &crate::derive::prelude::Geometry,
-    ) -> Result<(), crate::derive::prelude::AUTDInternalError> {
+    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
         self.drives = self
             .gains
             .iter()
@@ -128,11 +127,7 @@ impl<G: Gain> Operation for GainSTMOp<G> {
         }
     }
 
-    fn pack(
-        &mut self,
-        device: &Device,
-        tx: &mut [u8],
-    ) -> Result<usize, crate::derive::prelude::AUTDInternalError> {
+    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert!(self.remains[&device.idx()] > 0);
 
         let sent = self.sent[&device.idx()];
@@ -297,7 +292,6 @@ mod tests {
     use super::*;
     use crate::{
         common::{EmitIntensity, Phase},
-        derive::prelude::Operation,
         fpga::{GAIN_STM_BUF_SIZE_MAX, SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
         geometry::tests::create_geometry,
         operation::{
