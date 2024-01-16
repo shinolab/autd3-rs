@@ -253,14 +253,14 @@ mod tests {
 
         assert_eq!(stm.foci().len(), 3);
 
-        assert_eq!(stm.foci()[0].point(), &Vector3::new(1., 2., 3.));
-        assert_eq!(stm.foci()[0].intensity().value(), 0xFF);
+        assert_eq!(stm[0].point(), &Vector3::new(1., 2., 3.));
+        assert_eq!(stm[0].intensity().value(), 0xFF);
 
-        assert_eq!(stm.foci()[1].point(), &Vector3::new(4., 5., 6.));
-        assert_eq!(stm.foci()[1].intensity().value(), 0x01);
+        assert_eq!(stm[1].point(), &Vector3::new(4., 5., 6.));
+        assert_eq!(stm[1].intensity().value(), 0x01);
 
-        assert_eq!(stm.foci()[2].point(), &Vector3::new(7., 8., 9.));
-        assert_eq!(stm.foci()[2].intensity().value(), 0x02);
+        assert_eq!(stm[2].point(), &Vector3::new(7., 8., 9.));
+        assert_eq!(stm[2].intensity().value(), 0x02);
     }
 
     #[test]
@@ -319,7 +319,9 @@ mod tests {
             .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2))
             .unwrap();
 
-        let r = <FocusSTM as Datagram>::operation(stm);
+        assert_eq!(stm.timeout(), Some(std::time::Duration::from_millis(200)));
+
+        let r = stm.operation();
         assert!(r.is_ok());
         let _: (FocusSTMOp, NullOp) = r.unwrap();
     }

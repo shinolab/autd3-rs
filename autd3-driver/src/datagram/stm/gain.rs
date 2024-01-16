@@ -308,12 +308,20 @@ mod tests {
     }
 
     #[test]
+    fn gain_stm_indexer() {
+        let stm = GainSTM::from_freq(1.).add_gain(NullGain {}).unwrap();
+        let _: &NullGain = &stm[0];
+    }
+
+    #[test]
     fn gain_stm_operation() {
         let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.)
             .add_gain(Box::new(NullGain {}))
             .unwrap()
             .add_gain(Box::new(NullGain2 {}))
             .unwrap();
+
+        assert_eq!(stm.timeout(), Some(std::time::Duration::from_millis(200)));
 
         let r = stm.operation();
         assert!(r.is_ok());
