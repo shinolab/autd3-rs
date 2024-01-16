@@ -79,7 +79,6 @@ impl<G: Gain + 'static> Cache<G> {
     ///
     /// ```
     /// use autd3::prelude::*;
-    /// # use autd3_driver::derive::prelude::GainFilter;
     /// # use autd3_driver::datagram::Gain;
     /// # let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
     ///

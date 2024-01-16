@@ -48,7 +48,7 @@ where
     ///
     /// ```
     /// # use autd3::prelude::*;
-    /// # let gain : autd3::gain::Group<_, _, _> =
+    /// # let gain : autd3::gain::Group<_, _> =
     /// Group::new(|dev, tr| match tr.idx() {
     ///                 0..=100 => Some("null"),
     ///                 101.. => Some("focus"),
