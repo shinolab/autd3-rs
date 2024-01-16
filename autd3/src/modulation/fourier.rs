@@ -11,7 +11,7 @@
  *
  */
 
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 use super::sine::Sine;
 
@@ -93,12 +93,6 @@ impl Deref for Fourier {
     }
 }
 
-impl DerefMut for Fourier {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.components
-    }
-}
-
 impl std::ops::Add<Sine> for Fourier {
     type Output = Self;
 
@@ -159,7 +153,7 @@ mod tests {
         let f3_buf = f3.calc().unwrap();
         let f4_buf = f4.calc().unwrap();
 
-        let mut f = (f0 + f1).add_component(f2).add_components_from_iter([f3]) + f4;
+        let f = (f0 + f1).add_component(f2).add_components_from_iter([f3]) + f4;
 
         assert_eq!(f.sampling_config(), SamplingConfiguration::FREQ_4K_HZ);
         assert_eq!(f[0].freq(), 50.0);
@@ -175,23 +169,6 @@ mod tests {
 
         let buf = f.calc().unwrap();
 
-        for i in 0..buf.len() {
-            assert_eq!(
-                buf[i].value(),
-                ((f0_buf[i % f0_buf.len()].value() as usize
-                    + f1_buf[i % f1_buf.len()].value() as usize
-                    + f2_buf[i % f2_buf.len()].value() as usize
-                    + f3_buf[i % f3_buf.len()].value() as usize
-                    + f4_buf[i % f4_buf.len()].value() as usize)
-                    / 5) as u8
-            );
-        }
-
-        let f4 = Sine::new(300.);
-        f[4] = f4;
-
-        let f4_buf = f4.calc().unwrap();
-        let buf = f.calc().unwrap();
         for i in 0..buf.len() {
             assert_eq!(
                 buf[i].value(),
