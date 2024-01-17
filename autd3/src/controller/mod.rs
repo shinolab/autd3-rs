@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -235,11 +235,15 @@ impl<L: Link> Controller<L> {
     ///
     /// # Returns
     ///
-    /// * `Ok(Vec<FPGAInfo>)` - List of FPGA information
+    /// * `Ok(Some(Vec<FPGAInfo>))` - List of FPGA information i the latest data is fetched
+    /// * `Ok(None)` - If failure to fetch the latest data
     ///
-    pub async fn fpga_info(&mut self) -> Result<Vec<FPGAInfo>, AUTDError> {
-        self.link.receive(&mut self.rx_buf).await?;
-        Ok(self.rx_buf.iter().map(FPGAInfo::from).collect())
+    pub async fn fpga_info(&mut self) -> Result<Option<Vec<FPGAInfo>>, AUTDError> {
+        if self.link.receive(&mut self.rx_buf).await? {
+            Ok(Some(self.rx_buf.iter().map(FPGAInfo::from).collect()))
+        } else {
+            Ok(None)
+        }
     }
 }
 
@@ -376,9 +380,12 @@ impl<L: Link> Controller<L> {
             .collect())
     }
 
-    pub fn fpga_info(&mut self) -> Result<Vec<FPGAInfo>, AUTDError> {
-        self.link.receive(&mut self.rx_buf)?;
-        Ok(self.rx_buf.iter().map(FPGAInfo::from).collect())
+    pub fn fpga_info(&mut self) -> Result<Option<Vec<FPGAInfo>>, AUTDError> {
+        if self.link.receive(&mut self.rx_buf)? {
+            Ok(Some(self.rx_buf.iter().map(FPGAInfo::from).collect()))
+        } else {
+            Ok(None)
+        }
     }
 }
 
