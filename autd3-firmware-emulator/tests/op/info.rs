@@ -33,7 +33,7 @@ fn send_firminfo() {
 
     // configure Reads FPGA Info
     {
-        assert!(!cpu.reads_fpga_info());
+        assert!(!cpu.reads_fpga_state());
 
         let (mut op, mut op_null) = ConfigureReadsFPGAState::new(|_| true).operation().unwrap();
 
@@ -42,7 +42,7 @@ fn send_firminfo() {
         OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
         cpu.send(&tx);
         assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
-        assert!(cpu.reads_fpga_info());
+        assert!(cpu.reads_fpga_state());
     }
 
     let mut op = FirmInfoOp::default();
@@ -54,35 +54,35 @@ fn send_firminfo() {
     cpu.send(&tx);
     assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
     assert_eq!(cpu.rx_data(), LATEST_VERSION_NUM_MAJOR);
-    assert!(!cpu.reads_fpga_info());
+    assert!(!cpu.reads_fpga_state());
 
     OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
     cpu.send(&tx);
     assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
     assert_eq!(cpu.rx_data(), LATEST_VERSION_NUM_MINOR);
-    assert!(!cpu.reads_fpga_info());
+    assert!(!cpu.reads_fpga_state());
 
     OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
     cpu.send(&tx);
     assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
     assert_eq!(cpu.rx_data(), LATEST_VERSION_NUM_MAJOR);
-    assert!(!cpu.reads_fpga_info());
+    assert!(!cpu.reads_fpga_state());
 
     OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
     cpu.send(&tx);
     assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
     assert_eq!(cpu.rx_data(), LATEST_VERSION_NUM_MINOR);
-    assert!(!cpu.reads_fpga_info());
+    assert!(!cpu.reads_fpga_state());
 
     OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
     cpu.send(&tx);
     assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
     assert_eq!(cpu.rx_data(), EMULATOR_BIT);
-    assert!(!cpu.reads_fpga_info());
+    assert!(!cpu.reads_fpga_state());
 
     OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
     cpu.send(&tx);
-    assert!(cpu.reads_fpga_info());
+    assert!(cpu.reads_fpga_state());
 }
 
 #[test]

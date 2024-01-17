@@ -26,7 +26,7 @@ pub const BRAM_SELECT_STM: u16 = 0x3;
 // pub const BRAM_SELECT_CONTROLLER_FILTER_PHASE: u16 = 0b100;
 
 pub const ADDR_CTL_REG: usize = 0x0000;
-pub const ADDR_FPGA_INFO: usize = 0x0001;
+pub const ADDR_FPGA_STATE: usize = 0x0001;
 pub const ADDR_MOD_ADDR_OFFSET: usize = 0x0020;
 pub const ADDR_MOD_CYCLE: usize = 0x0021;
 pub const ADDR_MOD_FREQ_DIV_0: usize = 0x0022;

@@ -32,7 +32,7 @@ async fn nop_test() {
         Err(AUTDError::Internal(AUTDInternalError::LinkClosed))
     );
     assert_eq!(
-        autd.fpga_info().await,
+        autd.fpga_state().await,
         Err(AUTDError::Internal(AUTDInternalError::LinkClosed))
     );
 }

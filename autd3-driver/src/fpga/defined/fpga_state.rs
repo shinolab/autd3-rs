@@ -1,5 +1,5 @@
 /*
- * File: fpga_info.rs
+ * File: fpga_state.rs
  * Project: defined
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
@@ -36,7 +36,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn fpga_info() {
+    fn fpga_state() {
         assert_eq!(size_of::<FPGAState>(), 1);
 
         let info = FPGAState { state: 0x00 };
@@ -49,7 +49,7 @@ mod tests {
     }
 
     #[test]
-    fn fpga_info_derive() {
+    fn fpga_state_derive() {
         let info = FPGAState { state: 0x00 };
         let info2 = info.clone();
 

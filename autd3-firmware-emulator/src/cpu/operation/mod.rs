@@ -4,7 +4,7 @@
  * Created Date: 30/12/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -21,7 +21,7 @@ pub const TAG_GAIN: u8 = 0x30;
 pub const TAG_FOCUS_STM: u8 = 0x40;
 pub const TAG_GAIN_STM: u8 = 0x50;
 pub const TAG_FORCE_FAN: u8 = 0x60;
-pub const TAG_READS_FPGA_INFO: u8 = 0x61;
+pub const TAG_READS_FPGA_STATE: u8 = 0x61;
 pub const TAG_DEBUG: u8 = 0xF0;
 
 mod clear;
@@ -31,7 +31,7 @@ mod gain;
 mod info;
 mod mod_delay;
 mod modulation;
-mod reads_fpga_info;
+mod reads_fpga_state;
 mod silecer;
 mod stm;
 mod sync;

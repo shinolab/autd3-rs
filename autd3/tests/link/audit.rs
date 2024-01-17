@@ -23,7 +23,7 @@ async fn audit_test() {
         .unwrap();
     assert_eq!(autd.link.timeout(), std::time::Duration::from_millis(100));
 
-    assert_eq!(autd.fpga_info().await, Ok(vec![None]));
+    assert_eq!(autd.fpga_state().await, Ok(vec![None]));
 
     assert_eq!(
         autd.send(ConfigureReadsFPGAState::new(|_| true)).await,
@@ -44,7 +44,7 @@ async fn audit_test() {
     assert_eq!(autd.link[0].idx(), 0);
 
     assert_eq!(
-        autd.fpga_info().await,
+        autd.fpga_state().await,
         Ok(vec![Option::<FPGAState>::from(&RxMessage {
             data: 0x80,
             ack: 0x00
@@ -55,7 +55,7 @@ async fn audit_test() {
         .assert_thermal_sensor();
     autd.link[0].update();
     assert_eq!(
-        autd.fpga_info().await,
+        autd.fpga_state().await,
         Ok(vec![Option::<FPGAState>::from(&RxMessage {
             data: 0x81,
             ack: 0x00
@@ -64,7 +64,7 @@ async fn audit_test() {
 
     autd.link.down();
     assert_eq!(autd.send(Static::new()).await, Ok(false));
-    assert_eq!(autd.fpga_info().await, Err(AUTDError::ReadFPGAStateFailed));
+    assert_eq!(autd.fpga_state().await, Err(AUTDError::ReadFPGAStateFailed));
     autd.link.up();
     assert_eq!(autd.send(Static::new()).await, Ok(true));
     autd.link.break_down();
@@ -75,7 +75,7 @@ async fn audit_test() {
         )))
     );
     assert_eq!(
-        autd.fpga_info().await,
+        autd.fpga_state().await,
         Err(AUTDError::Internal(AUTDInternalError::LinkError(
             "broken".to_string()
         )))
@@ -89,7 +89,7 @@ async fn audit_test() {
         Err(AUTDError::Internal(AUTDInternalError::LinkClosed))
     );
     assert_eq!(
-        autd.fpga_info().await,
+        autd.fpga_state().await,
         Err(AUTDError::Internal(AUTDInternalError::LinkClosed))
     );
 }

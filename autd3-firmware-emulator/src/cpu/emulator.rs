@@ -22,8 +22,8 @@ pub struct CPUEmulator {
     pub(crate) ack: u8,
     pub(crate) last_msg_id: u8,
     pub(crate) rx_data: u8,
-    pub(crate) read_fpga_info: bool,
-    pub(crate) read_fpga_info_store: bool,
+    pub(crate) read_fpga_state: bool,
+    pub(crate) read_fpga_state_store: bool,
     pub(crate) mod_cycle: u32,
     pub(crate) stm_cycle: u32,
     pub(crate) gain_stm_mode: u16,
@@ -45,8 +45,8 @@ impl CPUEmulator {
             ack: 0x00,
             last_msg_id: 0x00,
             rx_data: 0x00,
-            read_fpga_info: false,
-            read_fpga_info_store: false,
+            read_fpga_state: false,
+            read_fpga_state_store: false,
             mod_cycle: 0,
             stm_cycle: 0,
             gain_stm_mode: 0,
@@ -76,8 +76,8 @@ impl CPUEmulator {
         self.synchronized
     }
 
-    pub const fn reads_fpga_info(&self) -> bool {
-        self.read_fpga_info
+    pub const fn reads_fpga_state(&self) -> bool {
+        self.read_fpga_state
     }
 
     pub const fn ack(&self) -> u8 {
@@ -107,12 +107,12 @@ impl CPUEmulator {
 
     pub fn update(&mut self) {
         if self.should_update() {
-            self.read_fpga_info();
+            self.read_fpga_state();
         }
     }
 
     pub const fn should_update(&self) -> bool {
-        self.read_fpga_info
+        self.read_fpga_state
     }
 
     pub const fn silencer_strict_mode(&self) -> bool {
@@ -157,12 +157,12 @@ impl CPUEmulator {
         })
     }
 
-    fn read_fpga_info(&mut self) {
-        if self.read_fpga_info {
-            self.rx_data = READS_FPGA_INFO_ENABLED
-                | self.bram_read(BRAM_SELECT_CONTROLLER, BRAM_ADDR_FPGA_INFO) as u8;
+    fn read_fpga_state(&mut self) {
+        if self.read_fpga_state {
+            self.rx_data = READS_FPGA_STATE_ENABLED
+                | self.bram_read(BRAM_SELECT_CONTROLLER, BRAM_ADDR_FPGA_STATE) as u8;
         } else {
-            self.rx_data &= !READS_FPGA_INFO_ENABLED;
+            self.rx_data &= !READS_FPGA_STATE_ENABLED;
         }
     }
 
@@ -179,7 +179,7 @@ impl CPUEmulator {
                 TAG_FOCUS_STM => self.write_focus_stm(data),
                 TAG_GAIN_STM => self.write_gain_stm(data),
                 TAG_FORCE_FAN => self.configure_force_fan(data),
-                TAG_READS_FPGA_INFO => self.configure_reads_fpga_info(data),
+                TAG_READS_FPGA_STATE => self.configure_reads_fpga_state(data),
                 TAG_DEBUG => self.config_debug(data),
                 _ => ERR_NOT_SUPPORTED_TAG,
             }
@@ -194,7 +194,7 @@ impl CPUEmulator {
         }
         self.last_msg_id = header.msg_id;
 
-        self.read_fpga_info();
+        self.read_fpga_state();
 
         if (header.msg_id & 0x80) != 0 {
             self.ack = ERR_INVALID_MSG_ID;

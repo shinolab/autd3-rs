@@ -18,7 +18,7 @@ mod force_fan;
 mod gain;
 mod info;
 mod modulation;
-mod reads_fpga_info;
+mod reads_fpga_state;
 mod silener;
 mod stm;
 mod sync;

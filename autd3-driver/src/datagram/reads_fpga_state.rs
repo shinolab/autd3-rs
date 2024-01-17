@@ -13,7 +13,7 @@
 
 use crate::{datagram::*, error::AUTDInternalError, geometry::Device};
 
-/// Datagram for configure reads_fpga_info
+/// Datagram for configure reads_fpga_state
 pub struct ConfigureReadsFPGAState<F: Fn(&Device) -> bool> {
     f: F,
 }

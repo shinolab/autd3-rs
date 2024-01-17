@@ -4,7 +4,7 @@
  * Created Date: 06/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 28/12/2023
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -114,11 +114,11 @@ impl FPGAEmulator {
     }
 
     pub fn assert_thermal_sensor(&mut self) {
-        self.controller_bram[ADDR_FPGA_INFO] |= 0x0001;
+        self.controller_bram[ADDR_FPGA_STATE] |= 0x0001;
     }
 
     pub fn deassert_thermal_sensor(&mut self) {
-        self.controller_bram[ADDR_FPGA_INFO] &= !0x0001;
+        self.controller_bram[ADDR_FPGA_STATE] &= !0x0001;
     }
 
     pub fn is_force_fan(&self) -> bool {
