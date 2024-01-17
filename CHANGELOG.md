@@ -1,3 +1,8 @@
+# 21.0.0
+
+- Update firmware to v5.1.0
+- Refactor the whole codebase
+
 # 20.0.3
 
 - Fix [#5](https://github.com/shinolab/autd3-rs/issues/5): missing 1/4π factor in propagate
