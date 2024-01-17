@@ -4,7 +4,7 @@
  * Created Date: 28/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 22/11/2023
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -262,22 +262,12 @@ pub trait LinAlgBackend {
         a: &Self::VectorXc,
         b: &Self::VectorXc,
         c: &mut Self::VectorXc,
-    ) -> Result<(), HoloError> {
-        let mut tmp = self.clone_cv(a)?;
-        self.normalize_assign_cv(&mut tmp)?;
-        self.hadamard_product_cv(&tmp, b, c)?;
-        Ok(())
-    }
-
+    ) -> Result<(), HoloError>;
     fn scaled_to_assign_cv(
         &self,
         a: &Self::VectorXc,
         b: &mut Self::VectorXc,
-    ) -> Result<(), HoloError> {
-        self.normalize_assign_cv(b)?;
-        self.hadamard_product_assign_cv(a, b)?;
-        Ok(())
-    }
+    ) -> Result<(), HoloError>;
 
     fn gen_back_prop(
         &self,
@@ -285,33 +275,5 @@ pub trait LinAlgBackend {
         n: usize,
         transfer: &Self::MatrixXc,
         b: &mut Self::MatrixXc,
-    ) -> Result<(), HoloError> {
-        let mut tmp = self.alloc_zeros_cm(n, n)?;
-
-        self.gemm_c(
-            Trans::NoTrans,
-            Trans::ConjTrans,
-            Complex::new(1., 0.),
-            transfer,
-            transfer,
-            Complex::new(0., 0.),
-            &mut tmp,
-        )?;
-
-        let mut denominator = self.alloc_cv(n)?;
-        self.get_diagonal_c(&tmp, &mut denominator)?;
-        self.reciprocal_assign_c(&mut denominator)?;
-
-        self.create_diagonal_c(&denominator, &mut tmp)?;
-
-        self.gemm_c(
-            Trans::ConjTrans,
-            Trans::NoTrans,
-            Complex::new(1., 0.),
-            transfer,
-            &tmp,
-            Complex::new(0., 0.),
-            b,
-        )
-    }
+    ) -> Result<(), HoloError>;
 }

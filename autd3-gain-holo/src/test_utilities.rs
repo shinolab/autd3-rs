@@ -1,13 +1,13 @@
 /*
- * File: test_utils.rs
- * Project: test_utilities
- * Created Date: 09/08/2023
+ * File: test_utilities.rs
+ * Project: src
+ * Created Date: 14/01/2024
  * Author: Shun Suzuki
  * -----
- * Last Modified: 01/12/2023
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
+ * Copyright (c) 2024 Shun Suzuki. All rights reserved.
  *
  */
 
@@ -16,10 +16,15 @@ use std::rc::Rc;
 use nalgebra::ComplexField;
 use rand::Rng;
 
+use crate::{
+    Amplitude, Complex, HoloError, LinAlgBackend, MatrixXc, Pascal, Trans, VectorX, VectorXc,
+};
 use autd3_driver::{
     acoustics::{directivity::Sphere, propagate},
+    autd3_device::AUTD3,
     datagram::GainFilter,
-    defined::float,
+    defined::{float, PI},
+    geometry::{Geometry, IntoDevice, Vector3},
 };
 
 #[cfg(feature = "single_float")]
@@ -27,9 +32,35 @@ const EPS: float = 1e-3;
 #[cfg(not(feature = "single_float"))]
 const EPS: float = 1e-6;
 
-use crate::{Complex, HoloError, LinAlgBackend, MatrixXc, Trans, VectorX, VectorXc};
+fn generate_geometry(size: usize) -> Geometry {
+    Geometry::new(
+        (0..size)
+            .flat_map(|i| {
+                (0..size).map(move |j| {
+                    AUTD3::new(Vector3::new(
+                        i as float * AUTD3::DEVICE_WIDTH,
+                        j as float * AUTD3::DEVICE_HEIGHT,
+                        0.,
+                    ))
+                    .into_device(j + i * size)
+                })
+            })
+            .collect(),
+    )
+}
 
-use super::bench_utils::{gen_foci, generate_geometry};
+fn gen_foci(n: usize) -> impl Iterator<Item = (Vector3, Amplitude)> {
+    (0..n).map(move |i| {
+        (
+            Vector3::new(
+                90. + 10. * (2.0 * PI * i as float / n as float).cos(),
+                70. + 10. * (2.0 * PI * i as float / n as float).sin(),
+                150.,
+            ),
+            10e3 * Pascal,
+        )
+    })
+}
 
 pub struct LinAlgBackendTestHelper<const N: usize, B: LinAlgBackend> {
     backend: Rc<B>,

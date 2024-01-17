@@ -24,7 +24,8 @@ bitvec = { version = "1.0.1", optional = true }
 default = []
 single_float = ["autd3-driver/single_float"]
 use_meter = ["autd3-driver/use_meter"]
-test-utilities = ["criterion", "assert_approx_eq", "bitvec"]
+test-utilities = ["assert_approx_eq", "bitvec"]
+bench-utilities = ["criterion"]
 
 [[bench]]
 name = "holo"

@@ -4,7 +4,7 @@
  * Created Date: 28/07/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 23/11/2023
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -14,6 +14,7 @@
 use autd3_driver::{common::EmitIntensity, defined::float};
 
 /// Emission constraint
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EmissionConstraint {
     /// Do nothing (this is equivalent to `Clamp(EmitIntensity::MIN, EmitIntensity::MAX)`)
     DontCare,
@@ -41,5 +42,58 @@ impl EmissionConstraint {
                     .clamp(min.value() as float, max.value() as float) as u8,
             ),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_constraint_dont_care() {
+        let c = EmissionConstraint::DontCare;
+        assert_eq!(c.convert(0.0, 1.0), EmitIntensity::MIN);
+        assert_eq!(c.convert(0.5, 1.0), EmitIntensity::new(128));
+        assert_eq!(c.convert(1.0, 1.0), EmitIntensity::MAX);
+        assert_eq!(c.convert(1.5, 1.0), EmitIntensity::MAX);
+    }
+
+    #[test]
+    fn test_constraint_normalize() {
+        let c = EmissionConstraint::Normalize;
+        assert_eq!(c.convert(0.0, 1.0), EmitIntensity::MIN);
+        assert_eq!(c.convert(0.5, 1.0), EmitIntensity::new(128));
+        assert_eq!(c.convert(1.0, 2.0), EmitIntensity::new(128));
+        assert_eq!(c.convert(1.5, 2.0), EmitIntensity::new(191));
+    }
+
+    #[test]
+    fn test_constraint_uniform() {
+        let c = EmissionConstraint::Uniform(EmitIntensity::new(128));
+        assert_eq!(c.convert(0.0, 1.0), EmitIntensity::new(128));
+        assert_eq!(c.convert(0.5, 1.0), EmitIntensity::new(128));
+        assert_eq!(c.convert(1.0, 1.0), EmitIntensity::new(128));
+        assert_eq!(c.convert(1.5, 1.0), EmitIntensity::new(128));
+    }
+
+    #[test]
+    fn test_constraint_clamp() {
+        let c = EmissionConstraint::Clamp(EmitIntensity::new(64), EmitIntensity::new(192));
+        assert_eq!(c.convert(0.0, 1.0), EmitIntensity::new(64));
+        assert_eq!(c.convert(0.5, 1.0), EmitIntensity::new(128));
+        assert_eq!(c.convert(1.0, 1.0), EmitIntensity::new(192));
+        assert_eq!(c.convert(1.5, 1.0), EmitIntensity::new(192));
+    }
+
+    #[test]
+    fn test_constraint_derive() {
+        let c = EmissionConstraint::Clamp(EmitIntensity::new(64), EmitIntensity::new(192));
+        let c2 = c.clone();
+
+        assert_eq!(c, c2);
+        assert_eq!(
+            format!("{:?}", c),
+            "Clamp(EmitIntensity { value: 64 }, EmitIntensity { value: 192 })"
+        );
     }
 }

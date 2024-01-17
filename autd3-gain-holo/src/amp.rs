@@ -4,7 +4,7 @@
  * Created Date: 22/11/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -17,7 +17,7 @@ use autd3_driver::defined::{float, ABSOLUTE_THRESHOLD_OF_HEARING};
 pub struct dB;
 pub struct Pascal;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct Amplitude {
     // Amplitude in Pascal
     pub(crate) value: float,
@@ -61,6 +61,16 @@ impl std::ops::Mul<Amplitude> for float {
     }
 }
 
+impl std::ops::Mul<float> for Amplitude {
+    type Output = Amplitude;
+
+    fn mul(self, rhs: float) -> Self::Output {
+        Self::Output {
+            value: self.value * rhs,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -69,13 +79,32 @@ mod tests {
     fn test_db() {
         let amp = 121.5 * dB;
 
-        assert_approx_eq::assert_approx_eq!(amp.value, 23.77, 1e-3);
+        assert_approx_eq::assert_approx_eq!(amp.as_spl(), 121.5, 1e-3);
+        assert_approx_eq::assert_approx_eq!(amp.as_pascal(), 23.77, 1e-3);
     }
 
     #[test]
     fn test_pascal() {
-        let amp = 23.77004454874038 * Pascal;
+        let amp = 23.77 * Pascal;
 
-        assert_eq!(amp.value, 23.77004454874038);
+        assert_approx_eq::assert_approx_eq!(amp.as_pascal(), 23.77, 1e-3);
+        assert_approx_eq::assert_approx_eq!(amp.as_spl(), 121.5, 1e-3);
+
+        assert_approx_eq::assert_approx_eq!((2. * amp).as_pascal(), 2. * 23.77, 1e-3);
+        assert_approx_eq::assert_approx_eq!((amp * 2.).as_pascal(), 2. * 23.77, 1e-3);
+    }
+
+    #[test]
+    fn test_amp_derive() {
+        let amp = 23.77 * Pascal;
+        let amp2 = amp.clone();
+
+        assert_eq!(amp, amp2);
+        assert_eq!(format!("{:?}", amp), "Amplitude { value: 23.77 }");
+        assert!(!(amp < amp2));
+        assert!(!(amp > amp2));
+        assert!(amp <= amp2);
+        assert!(amp >= amp2);
+        assert!(amp <= 2.0 * amp);
     }
 }

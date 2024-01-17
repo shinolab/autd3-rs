@@ -4,12 +4,14 @@
  * Created Date: 28/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 22/11/2023
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
  *
  */
+
+#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 
 mod amp;
 mod backend;
@@ -22,6 +24,8 @@ mod linear_synthesis;
 mod matrix;
 mod nls;
 
+#[cfg(feature = "bench-utilities")]
+pub mod bench_utilities;
 #[cfg(feature = "test-utilities")]
 pub mod test_utilities;
 
