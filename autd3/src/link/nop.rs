@@ -4,7 +4,7 @@
  * Created Date: 06/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -25,13 +25,16 @@ use autd3_firmware_emulator::CPUEmulator;
 pub struct Nop {
     is_open: bool,
     cpus: Vec<CPUEmulator>,
+    timeout: std::time::Duration,
 }
 
-pub struct NopBuilder {}
+pub struct NopBuilder {
+    timeout: std::time::Duration,
+}
 
 impl NopBuilder {
-    pub fn with_timeout(self, _timeout: std::time::Duration) -> Self {
-        self
+    pub fn with_timeout(self, timeout: std::time::Duration) -> Self {
+        Self { timeout, ..self }
     }
 }
 
@@ -50,12 +53,14 @@ impl LinkSyncBuilder for NopBuilder {
                     cpu
                 })
                 .collect(),
+            timeout: self.timeout,
         })
     }
 }
 
 impl LinkSync for Nop {
     fn close(&mut self) -> Result<(), AUTDInternalError> {
+        self.is_open = false;
         Ok(())
     }
 
@@ -89,12 +94,14 @@ impl LinkSync for Nop {
     }
 
     fn timeout(&self) -> std::time::Duration {
-        std::time::Duration::ZERO
+        self.timeout
     }
 }
 
 impl Nop {
     pub const fn builder() -> NopBuilder {
-        NopBuilder {}
+        NopBuilder {
+            timeout: std::time::Duration::ZERO,
+        }
     }
 }

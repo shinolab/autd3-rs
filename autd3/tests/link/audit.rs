@@ -1,0 +1,78 @@
+/*
+ * File: audit.rs
+ * Project: link
+ * Created Date: 17/01/2024
+ * Author: Shun Suzuki
+ * -----
+ * Last Modified: 17/01/2024
+ * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
+ * -----
+ * Copyright (c) 2024 Shun Suzuki. All rights reserved.
+ *
+ */
+
+use autd3::{link::Audit, prelude::*};
+use autd3_driver::fpga::FPGAInfo;
+
+#[tokio::test]
+async fn audit_test() {
+    let mut autd = Controller::builder()
+        .add_device(AUTD3::new(Vector3::zeros()))
+        .open_with(Audit::builder().with_timeout(std::time::Duration::from_millis(100)))
+        .await
+        .unwrap();
+    assert_eq!(autd.link.timeout(), std::time::Duration::from_millis(100));
+    assert_eq!(
+        autd.send(ConfigureReadsFPGAInfo::new(|_| true)).await,
+        Ok(true)
+    );
+    assert_eq!(
+        autd.link.last_timeout(),
+        std::time::Duration::from_millis(100)
+    );
+    assert_eq!(
+        autd.send(Static::new().with_timeout(std::time::Duration::ZERO))
+            .await,
+        Ok(true)
+    );
+    assert_eq!(autd.link.last_timeout(), std::time::Duration::ZERO);
+
+    assert_eq!(autd.link.emulators()[0].idx(), 0);
+    assert_eq!(autd.link[0].idx(), 0);
+    autd.link.emulators_mut()[0]
+        .fpga_mut()
+        .assert_thermal_sensor();
+    autd.link[0].update();
+
+    assert_eq!(autd.fpga_info().await, Ok(Some(vec![FPGAInfo::new(1)])));
+    autd.link.down();
+    assert_eq!(autd.send(Static::new()).await, Ok(false));
+    assert_eq!(autd.fpga_info().await, Ok(None));
+    autd.link.up();
+    assert_eq!(autd.send(Static::new()).await, Ok(true));
+    autd.link.break_down();
+    assert_eq!(
+        autd.send(Static::new()).await,
+        Err(AUTDError::Internal(AUTDInternalError::LinkError(
+            "broken".to_string()
+        )))
+    );
+    assert_eq!(
+        autd.fpga_info().await,
+        Err(AUTDError::Internal(AUTDInternalError::LinkError(
+            "broken".to_string()
+        )))
+    );
+    autd.link.repair();
+    assert_eq!(autd.send(Static::new()).await, Ok(true));
+
+    assert_eq!(autd.close().await, Ok(true));
+    assert_eq!(
+        autd.send(Static::new()).await,
+        Err(AUTDError::Internal(AUTDInternalError::LinkClosed))
+    );
+    assert_eq!(
+        autd.fpga_info().await,
+        Err(AUTDError::Internal(AUTDInternalError::LinkClosed))
+    );
+}

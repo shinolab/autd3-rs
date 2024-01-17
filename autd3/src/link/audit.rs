@@ -4,7 +4,7 @@
  * Created Date: 14/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -130,7 +130,7 @@ impl LinkSync for Audit {
 
     fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
         if !self.is_open {
-            return Ok(false);
+            return Err(AUTDInternalError::LinkClosed);
         }
 
         if self.broken {
@@ -150,7 +150,7 @@ impl LinkSync for Audit {
 
     fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
         if !self.is_open {
-            return Ok(false);
+            return Err(AUTDInternalError::LinkClosed);
         }
 
         if self.broken {
