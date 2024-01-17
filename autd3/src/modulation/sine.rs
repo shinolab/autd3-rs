@@ -4,7 +4,7 @@
  * Created Date: 28/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -35,7 +35,7 @@ impl Sine {
     ///
     /// # Arguments
     ///
-    /// * `freq` - Frequency of the sine wave [Hz]
+    /// * `freq` - Frequency of the sine wave \[Hz\]
     ///
     pub const fn new(freq: float) -> Self {
         Self {

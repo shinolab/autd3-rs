@@ -4,7 +4,7 @@
  * Created Date: 04/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -24,7 +24,7 @@ use super::STMProps;
 ///
 /// GainSTM has following restrictions:
 /// - The maximum number of sampling [Gain] is 2048.
-/// - The sampling frequency is [crate::FPGA_CLK_FREQ]/N, where `N` is a 32-bit unsigned integer and must be at least [crate::SAMPLING_FREQ_DIV_MIN]
+/// - The sampling frequency is [crate::fpga::FPGA_CLK_FREQ]/N, where `N` is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN]
 ///
 pub struct GainSTM<G: Gain> {
     gains: Vec<G>,
@@ -60,7 +60,7 @@ impl<G: Gain> GainSTM<G> {
     ///
     /// # Arguments
     ///
-    /// * `freq_div` - Sampling frequency division of STM. The sampling frequency is [crate::FPGA_CLK_FREQ]/`freq_div`.
+    /// * `freq_div` - Sampling frequency division of STM. The sampling frequency is [crate::fpga::FPGA_CLK_FREQ]/`freq_div`.
     ///
     pub const fn from_sampling_config(config: SamplingConfiguration) -> Self {
         Self::from_props_mode(
