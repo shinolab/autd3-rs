@@ -44,6 +44,8 @@ pub enum AUTDError {
     GroupedOutOfRange(usize, usize),
     #[error("{0}")]
     ReadFirmwareInfoFailed(ReadFirmwareInfoState),
+    #[error("Read FPGA state failed")]
+    ReadFPGAStateFailed,
     #[error("{0}")]
     Internal(AUTDInternalError),
 }

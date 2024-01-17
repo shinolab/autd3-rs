@@ -12,7 +12,7 @@
  */
 
 use autd3::{link::Audit, prelude::*};
-use autd3_driver::fpga::FPGAInfo;
+use autd3_driver::{cpu::RxMessage, fpga::FPGAState};
 
 #[tokio::test]
 async fn audit_test() {
@@ -22,8 +22,11 @@ async fn audit_test() {
         .await
         .unwrap();
     assert_eq!(autd.link.timeout(), std::time::Duration::from_millis(100));
+
+    assert_eq!(autd.fpga_info().await, Ok(vec![None]));
+
     assert_eq!(
-        autd.send(ConfigureReadsFPGAInfo::new(|_| true)).await,
+        autd.send(ConfigureReadsFPGAState::new(|_| true)).await,
         Ok(true)
     );
     assert_eq!(
@@ -39,15 +42,29 @@ async fn audit_test() {
 
     assert_eq!(autd.link.emulators()[0].idx(), 0);
     assert_eq!(autd.link[0].idx(), 0);
+
+    assert_eq!(
+        autd.fpga_info().await,
+        Ok(vec![Option::<FPGAState>::from(&RxMessage {
+            data: 0x80,
+            ack: 0x00
+        })])
+    );
     autd.link.emulators_mut()[0]
         .fpga_mut()
         .assert_thermal_sensor();
     autd.link[0].update();
+    assert_eq!(
+        autd.fpga_info().await,
+        Ok(vec![Option::<FPGAState>::from(&RxMessage {
+            data: 0x81,
+            ack: 0x00
+        })])
+    );
 
-    assert_eq!(autd.fpga_info().await, Ok(Some(vec![FPGAInfo::new(1)])));
     autd.link.down();
     assert_eq!(autd.send(Static::new()).await, Ok(false));
-    assert_eq!(autd.fpga_info().await, Ok(None));
+    assert_eq!(autd.fpga_info().await, Err(AUTDError::ReadFPGAStateFailed));
     autd.link.up();
     assert_eq!(autd.send(Static::new()).await, Ok(true));
     autd.link.break_down();

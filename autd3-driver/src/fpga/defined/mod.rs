@@ -4,7 +4,7 @@
  * Created Date: 02/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 27/12/2023
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -14,11 +14,11 @@
 use crate::defined::{float, METER};
 
 mod drive;
-mod fpga_info;
+mod fpga_state;
 mod stm_focus;
 
 pub use drive::FPGADrive;
-pub use fpga_info::FPGAInfo;
+pub use fpga_state::FPGAState;
 pub use stm_focus::STMFocus;
 
 /// FPGA clock frequency

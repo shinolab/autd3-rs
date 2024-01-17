@@ -4,7 +4,7 @@
  * Created Date: 29/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -17,7 +17,7 @@ mod force_fan;
 mod gain;
 mod mod_delay;
 mod modulation;
-mod reads_fpga_info;
+mod reads_fpga_state;
 mod silencer;
 mod stm;
 mod synchronize;
@@ -29,7 +29,7 @@ pub use force_fan::ConfigureForceFan;
 pub use gain::{Gain, GainFilter};
 pub use mod_delay::ConfigureModDelay;
 pub use modulation::{Modulation, ModulationProperty};
-pub use reads_fpga_info::ConfigureReadsFPGAInfo;
+pub use reads_fpga_state::ConfigureReadsFPGAState;
 pub use silencer::{
     ConfigureSilencer, ConfigureSilencerFixedCompletionSteps, ConfigureSilencerFixedUpdateRate,
 };

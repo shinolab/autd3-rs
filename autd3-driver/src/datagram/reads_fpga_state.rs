@@ -1,10 +1,10 @@
 /*
- * File: reads_fpga_info.rs
+ * File: reads_fpga_state.rs
  * Project: datagram
  * Created Date: 06/12/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -14,19 +14,19 @@
 use crate::{datagram::*, error::AUTDInternalError, geometry::Device};
 
 /// Datagram for configure reads_fpga_info
-pub struct ConfigureReadsFPGAInfo<F: Fn(&Device) -> bool> {
+pub struct ConfigureReadsFPGAState<F: Fn(&Device) -> bool> {
     f: F,
 }
 
-impl<F: Fn(&Device) -> bool> ConfigureReadsFPGAInfo<F> {
+impl<F: Fn(&Device) -> bool> ConfigureReadsFPGAState<F> {
     /// constructor
     pub const fn new(f: F) -> Self {
         Self { f }
     }
 }
 
-impl<F: Fn(&Device) -> bool> Datagram for ConfigureReadsFPGAInfo<F> {
-    type O1 = crate::operation::ConfigureReadsFPGAInfoOp<F>;
+impl<F: Fn(&Device) -> bool> Datagram for ConfigureReadsFPGAState<F> {
+    type O1 = crate::operation::ConfigureReadsFPGAStateOp<F>;
     type O2 = crate::operation::NullOp;
 
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
@@ -45,7 +45,7 @@ mod tests {
 
     #[test]
     fn test_force_fan_operation() {
-        let datagram = ConfigureReadsFPGAInfo::new(f);
+        let datagram = ConfigureReadsFPGAState::new(f);
         let r = datagram.operation();
         assert!(r.is_ok());
         let _ = r.unwrap();

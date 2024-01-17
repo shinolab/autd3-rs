@@ -4,7 +4,7 @@
  * Created Date: 06/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -107,7 +107,7 @@ impl CPUEmulator {
 
     pub fn update(&mut self) {
         if self.should_update() {
-            self.rx_data = self.read_fpga_info() as _;
+            self.read_fpga_info();
         }
     }
 
@@ -157,8 +157,13 @@ impl CPUEmulator {
         })
     }
 
-    fn read_fpga_info(&self) -> u16 {
-        self.bram_read(BRAM_SELECT_CONTROLLER, BRAM_ADDR_FPGA_INFO)
+    fn read_fpga_info(&mut self) {
+        if self.read_fpga_info {
+            self.rx_data = READS_FPGA_INFO_ENABLED
+                | self.bram_read(BRAM_SELECT_CONTROLLER, BRAM_ADDR_FPGA_INFO) as u8;
+        } else {
+            self.rx_data &= !READS_FPGA_INFO_ENABLED;
+        }
     }
 
     fn handle_payload(&mut self, data: &[u8]) -> u8 {
@@ -189,18 +194,14 @@ impl CPUEmulator {
         }
         self.last_msg_id = header.msg_id;
 
+        self.read_fpga_info();
+
         if (header.msg_id & 0x80) != 0 {
-            if self.read_fpga_info {
-                self.rx_data = self.read_fpga_info() as _;
-            }
             self.ack = ERR_INVALID_MSG_ID;
         }
 
         self.ack = self.handle_payload(&data[std::mem::size_of::<Header>()..]);
         if self.ack != ERR_NONE {
-            if self.read_fpga_info {
-                self.rx_data = self.read_fpga_info() as _;
-            }
             return;
         }
 
@@ -209,9 +210,6 @@ impl CPUEmulator {
                 &data[std::mem::size_of::<Header>() + header.slot_2_offset as usize..],
             );
             if self.ack != ERR_NONE {
-                if self.read_fpga_info {
-                    self.rx_data = self.read_fpga_info() as _;
-                }
                 return;
             }
         }
@@ -222,9 +220,6 @@ impl CPUEmulator {
             self.fpga_flags_internal,
         );
 
-        if self.read_fpga_info {
-            self.rx_data = self.read_fpga_info() as _;
-        }
         self.ack = header.msg_id;
     }
 }

@@ -4,7 +4,7 @@
  * Created Date: 06/12/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -20,17 +20,17 @@ use crate::{
 };
 
 #[repr(C, align(2))]
-struct ConfigureReadsFPGAInfo {
+struct ConfigureReadsFPGAState {
     tag: TypeTag,
     value: bool,
 }
 
-pub struct ConfigureReadsFPGAInfoOp<F: Fn(&Device) -> bool> {
+pub struct ConfigureReadsFPGAStateOp<F: Fn(&Device) -> bool> {
     remains: HashMap<usize, usize>,
     f: F,
 }
 
-impl<F: Fn(&Device) -> bool> ConfigureReadsFPGAInfoOp<F> {
+impl<F: Fn(&Device) -> bool> ConfigureReadsFPGAStateOp<F> {
     pub fn new(f: F) -> Self {
         Self {
             remains: Default::default(),
@@ -39,19 +39,19 @@ impl<F: Fn(&Device) -> bool> ConfigureReadsFPGAInfoOp<F> {
     }
 }
 
-impl<F: Fn(&Device) -> bool> Operation for ConfigureReadsFPGAInfoOp<F> {
+impl<F: Fn(&Device) -> bool> Operation for ConfigureReadsFPGAStateOp<F> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert_eq!(self.remains[&device.idx()], 1);
 
-        let d = cast::<ConfigureReadsFPGAInfo>(tx);
-        d.tag = TypeTag::ReadsFPGAInfo;
+        let d = cast::<ConfigureReadsFPGAState>(tx);
+        d.tag = TypeTag::ReadsFPGAState;
         d.value = (self.f)(device);
 
-        Ok(std::mem::size_of::<ConfigureReadsFPGAInfo>())
+        Ok(std::mem::size_of::<ConfigureReadsFPGAState>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        std::mem::size_of::<ConfigureReadsFPGAInfo>()
+        std::mem::size_of::<ConfigureReadsFPGAState>()
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
@@ -82,7 +82,7 @@ mod tests {
 
         let mut tx = [0x00u8; 2 * NUM_DEVICE];
 
-        let mut op = ConfigureReadsFPGAInfoOp::new(|dev| dev.idx() == 0);
+        let mut op = ConfigureReadsFPGAStateOp::new(|dev| dev.idx() == 0);
 
         assert!(op.init(&geometry).is_ok());
 
@@ -104,7 +104,7 @@ mod tests {
             .for_each(|dev| assert_eq!(op.remains(dev), 0));
 
         geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * 2], TypeTag::ReadsFPGAInfo as u8);
+            assert_eq!(tx[dev.idx() * 2], TypeTag::ReadsFPGAState as u8);
             assert_eq!(
                 tx[dev.idx() * 2 + 1],
                 if dev.idx() == 0 { 0x01 } else { 0x00 }

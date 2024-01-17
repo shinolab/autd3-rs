@@ -4,15 +4,15 @@
  * Created Date: 07/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
  *
  */
 
-pub const VERSION_NUM_MAJOR: u8 = 0x8D;
-pub const VERSION_NUM_MINOR: u8 = 0x01;
+pub const VERSION_NUM_MAJOR: u8 = 0x8E;
+pub const VERSION_NUM_MINOR: u8 = 0x00;
 
 pub const BRAM_SELECT_CONTROLLER: u16 = 0x0;
 pub const BRAM_SELECT_MOD: u16 = 0x1;
