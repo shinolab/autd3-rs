@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 05/10/2023
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -15,6 +15,7 @@ use crate::cpu::RxMessage;
 
 /// FPGA information
 #[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FPGAInfo {
     info: u8,
 }
@@ -66,5 +67,14 @@ mod tests {
         let info = FPGAInfo::from(&rx);
         assert!(info.is_thermal_assert());
         assert_eq!(info.info(), 0x01);
+    }
+
+    #[test]
+    fn fpga_info_derive() {
+        let info = FPGAInfo::new(0x00);
+        let info2 = info.clone();
+
+        assert_eq!(info, info2);
+        assert_eq!(format!("{:?}", info), "FPGAInfo { info: 0 }");
     }
 }
