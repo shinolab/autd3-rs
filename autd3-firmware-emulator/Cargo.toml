@@ -18,4 +18,5 @@ thiserror = "1.0.40"
 
 [dev-dependencies]
 autd3-derive = { path = "../autd3-derive", version = "20.0.3" }
+memoffset = "0.9.0"
 rand = "0.8.5"
