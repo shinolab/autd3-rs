@@ -4,7 +4,7 @@
  * Created Date: 28/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -231,6 +231,57 @@ impl<B: LinAlgBackend> Gain for SDP<B> {
             self.backend.to_host_cv(q)?,
             &self.constraint,
             filter,
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{super::super::NalgebraBackend, super::super::Pascal, *};
+    use autd3_driver::{autd3_device::AUTD3, geometry::IntoDevice};
+
+    #[test]
+    fn test_sdp_all() {
+        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let backend = NalgebraBackend::new().unwrap();
+
+        let g = SDP::new(backend)
+            .with_alpha(0.1)
+            .with_lambda(0.9)
+            .with_repeat(10)
+            .add_focus(Vector3::new(10., 10., 100.), 5e3 * Pascal)
+            .add_foci_from_iter([(Vector3::new(10., 10., 100.), 5e3 * Pascal)]);
+
+        assert_eq!(g.alpha(), 0.1);
+        assert_eq!(g.lambda(), 0.9);
+        assert_eq!(g.repeat(), 10);
+        assert_eq!(g.constraint(), EmissionConstraint::DontCare);
+        assert!(g
+            .foci()
+            .all(|(&p, &a)| p == Vector3::new(10., 10., 100.) && a == 5e3 * Pascal));
+
+        let _ = g.calc(&geometry, GainFilter::All);
+        let _ = g.operation();
+    }
+
+    #[test]
+    fn test_sdp_filtered() {
+        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let backend = NalgebraBackend::new().unwrap();
+
+        let g = SDP::new(backend)
+            .add_focus(Vector3::new(10., 10., 100.), 5e3 * Pascal)
+            .add_foci_from_iter([(Vector3::new(-10., 10., 100.), 5e3 * Pascal)])
+            .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)));
+
+        let filter = geometry
+            .iter()
+            .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
+            .collect::<HashMap<_, _>>();
+        assert_eq!(
+            g.calc(&geometry, GainFilter::Filter(&filter))
+                .map(|res| res[&0].iter().filter(|&&d| d != Drive::null()).count()),
+            Ok(100),
         )
     }
 }

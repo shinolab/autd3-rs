@@ -4,7 +4,7 @@
  * Created Date: 07/06/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 01/12/2023
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -25,7 +25,6 @@ use autd3_driver::{
 use crate::{error::HoloError, Complex, LinAlgBackend, MatrixX, MatrixXc, VectorX, VectorXc};
 
 /// Backend using nalgebra
-#[derive(Default)]
 pub struct NalgebraBackend {}
 
 impl LinAlgBackend for NalgebraBackend {
@@ -618,7 +617,7 @@ impl LinAlgBackend for NalgebraBackend {
 mod tests {
     use super::*;
 
-    use crate::test_utilities::test_utils::*;
+    use crate::test_utilities::*;
 
     #[test]
     fn test_nalgebra_backend() {

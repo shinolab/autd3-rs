@@ -4,7 +4,7 @@
  * Created Date: 29/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -350,5 +350,69 @@ impl<B: LinAlgBackend> Gain for LM<B> {
                 })
                 .collect()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{super::super::NalgebraBackend, super::super::Pascal, *};
+    use autd3_driver::{autd3_device::AUTD3, geometry::IntoDevice};
+
+    #[test]
+    fn test_lm_all() {
+        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let backend = NalgebraBackend::new().unwrap();
+
+        let g = LM::new(backend)
+            .with_eps_1(1e-3)
+            .with_eps_2(1e-4)
+            .with_tau(1e-2)
+            .with_k_max(2)
+            .with_initial(vec![1.0])
+            .add_focus(Vector3::zeros(), 1. * Pascal)
+            .add_foci_from_iter([(Vector3::zeros(), 1. * Pascal)]);
+
+        assert_eq!(g.eps_1(), 1e-3);
+        assert_eq!(g.eps_2(), 1e-4);
+        assert_eq!(g.tau(), 1e-2);
+        assert_eq!(g.k_max(), 2);
+        assert_eq!(g.initial(), &[1.0]);
+        assert_eq!(g.constraint(), EmissionConstraint::DontCare);
+        assert!(g
+            .foci()
+            .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pascal));
+
+        let _ = g.calc(&geometry, GainFilter::All);
+        let _ = g.operation();
+    }
+
+    #[test]
+    fn test_lm_filtered() {
+        let geometry: Geometry = Geometry::new(vec![
+            AUTD3::new(Vector3::zeros()).into_device(0),
+            AUTD3::new(Vector3::zeros()).into_device(1),
+        ]);
+        let backend = NalgebraBackend::new().unwrap();
+
+        let g = LM::new(backend)
+            .add_focus(Vector3::new(10., 10., 100.), 5e3 * Pascal)
+            .add_foci_from_iter([(Vector3::new(-10., 10., 100.), 5e3 * Pascal)])
+            .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)));
+
+        let filter = geometry
+            .iter()
+            .take(1)
+            .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
+            .collect::<HashMap<_, _>>();
+        assert_eq!(
+            g.calc(&geometry, GainFilter::Filter(&filter))
+                .map(|res| res[&0].iter().filter(|&&d| d != Drive::null()).count()),
+            Ok(100),
+        );
+        assert_eq!(
+            g.calc(&geometry, GainFilter::Filter(&filter))
+                .map(|res| res[&1].iter().filter(|&&d| d != Drive::null()).count()),
+            Ok(0),
+        );
     }
 }
