@@ -4,7 +4,7 @@
  * Created Date: 29/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 01/12/2023
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -24,7 +24,7 @@ pub trait ModulationProperty {
 ///
 /// Modulation has following restrictions:
 /// * The buffer size is up to 65536.
-/// * The sampling rate is [crate::FPGA_CLK_FREQ]/N, where N is a 32-bit unsigned integer and must be at least [crate::SAMPLING_FREQ_DIV_MIN].
+/// * The sampling rate is [crate::fpga::FPGA_CLK_FREQ]/N, where N is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN].
 /// * Modulation automatically loops. It is not possible to control only one loop, etc.
 /// * The start/end timing of Modulation cannot be controlled.
 #[allow(clippy::len_without_is_empty)]

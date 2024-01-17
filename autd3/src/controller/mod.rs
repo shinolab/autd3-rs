@@ -231,14 +231,14 @@ impl<L: Link> Controller<L> {
             .collect())
     }
 
-    /// Get FPGA information
+    /// Get FPGA state
     ///
     /// # Returns
     ///
-    /// * `Ok(Vec<Option<FPGAState>>)` - List of FPGA state the latest data is fetched. If the reads FPGA state flag is not set, the value is None. See [ConfiguredReadsFPGAState].
+    /// * `Ok(Vec<Option<FPGAState>>)` - List of FPGA state the latest data is fetched. If the reads FPGA state flag is not set, the value is None. See [autd3_driver::datagram::ConfigureReadsFPGAState].
     /// * `Err(AUTDError::ReadFPGAStateFailed)` - If failure to fetch the latest data
     ///
-    pub async fn fpga_info(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDError> {
+    pub async fn fpga_state(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDError> {
         if self.link.receive(&mut self.rx_buf).await? {
             Ok(self.rx_buf.iter().map(Option::<FPGAState>::from).collect())
         } else {
@@ -380,7 +380,7 @@ impl<L: Link> Controller<L> {
             .collect())
     }
 
-    pub fn fpga_info(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDError> {
+    pub fn fpga_state(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDError> {
         if self.link.receive(&mut self.rx_buf).await? {
             Ok(self.rx_buf.iter().map(Option::<FPGAState>::from).collect())
         } else {
