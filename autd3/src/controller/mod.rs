@@ -20,7 +20,7 @@ use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
     datagram::{Clear, Datagram},
     firmware_version::FirmwareInfo,
-    fpga::FPGAInfo,
+    fpga::FPGAState,
     geometry::{Device, Geometry},
     operation::OperationHandler,
 };
@@ -235,14 +235,14 @@ impl<L: Link> Controller<L> {
     ///
     /// # Returns
     ///
-    /// * `Ok(Some(Vec<FPGAInfo>))` - List of FPGA information i the latest data is fetched
-    /// * `Ok(None)` - If failure to fetch the latest data
+    /// * `Ok(Vec<Option<FPGAState>>)` - List of FPGA state the latest data is fetched. If the reads FPGA state flag is not set, the value is None. See [ConfiguredReadsFPGAState].
+    /// * `Err(AUTDError::ReadFPGAStateFailed)` - If failure to fetch the latest data
     ///
-    pub async fn fpga_info(&mut self) -> Result<Option<Vec<FPGAInfo>>, AUTDError> {
+    pub async fn fpga_info(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDError> {
         if self.link.receive(&mut self.rx_buf).await? {
-            Ok(Some(self.rx_buf.iter().map(FPGAInfo::from).collect()))
+            Ok(self.rx_buf.iter().map(Option::<FPGAState>::from).collect())
         } else {
-            Ok(None)
+            Err(AUTDError::ReadFPGAStateFailed)
         }
     }
 }
@@ -380,11 +380,11 @@ impl<L: Link> Controller<L> {
             .collect())
     }
 
-    pub fn fpga_info(&mut self) -> Result<Option<Vec<FPGAInfo>>, AUTDError> {
-        if self.link.receive(&mut self.rx_buf)? {
-            Ok(Some(self.rx_buf.iter().map(FPGAInfo::from).collect()))
+    pub fn fpga_info(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDError> {
+        if self.link.receive(&mut self.rx_buf).await? {
+            Ok(self.rx_buf.iter().map(Option::<FPGAState>::from).collect())
         } else {
-            Ok(None)
+            Err(AUTDError::ReadFPGAStateFailed)
         }
     }
 }

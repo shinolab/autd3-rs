@@ -4,7 +4,7 @@
  * Created Date: 27/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -13,8 +13,8 @@
 
 use std::fmt;
 
-pub const LATEST_VERSION_NUM_MAJOR: u8 = 0x8D;
-pub const LATEST_VERSION_NUM_MINOR: u8 = 0x01;
+pub const LATEST_VERSION_NUM_MAJOR: u8 = 0x8E;
+pub const LATEST_VERSION_NUM_MINOR: u8 = 0x00;
 
 const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
 
@@ -83,7 +83,7 @@ impl FirmwareInfo {
                 version_number_major - 0x8B,
                 version_number_minor
             ),
-            0x8D..=0x8D => format!(
+            0x8D..=0x8E => format!(
                 "v5.{}.{}",
                 version_number_major - 0x8D,
                 version_number_minor
@@ -289,13 +289,17 @@ mod tests {
         assert_eq!("v5.0.0", info.fpga_version());
 
         let info = FirmwareInfo::new(0, 142, 0, 142, 0, 0);
-        assert_eq!("unknown (142)", info.cpu_version());
-        assert_eq!("unknown (142)", info.fpga_version());
+        assert_eq!("v5.1.0", info.cpu_version());
+        assert_eq!("v5.1.0", info.fpga_version());
+
+        let info = FirmwareInfo::new(0, 143, 0, 143, 0, 0);
+        assert_eq!("unknown (143)", info.cpu_version());
+        assert_eq!("unknown (143)", info.fpga_version());
     }
 
     #[test]
     fn latest_firmware_version() {
-        assert_eq!("v5.0.1", FirmwareInfo::latest_version());
+        assert_eq!("v5.1.0", FirmwareInfo::latest_version());
     }
 
     #[test]

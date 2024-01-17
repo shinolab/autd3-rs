@@ -4,7 +4,7 @@
  * Created Date: 24/05/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/12/2023
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -22,7 +22,7 @@ use std::{
 use autd3::prelude::*;
 
 pub async fn flag<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
-    autd.send(ConfigureReadsFPGAInfo::new(|_dev| true)).await?;
+    autd.send(ConfigureReadsFPGAState::new(|_dev| true)).await?;
 
     println!("press any key to force fan...");
     let mut _s = String::new();
@@ -57,7 +57,7 @@ pub async fn flag<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
 
     autd.send((
         ConfigureForceFan::new(|_dev| false),
-        ConfigureReadsFPGAInfo::new(|_dev| false),
+        ConfigureReadsFPGAState::new(|_dev| false),
     ))
     .await?;
 

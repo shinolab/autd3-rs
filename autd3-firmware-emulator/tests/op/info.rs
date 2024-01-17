@@ -35,7 +35,7 @@ fn send_firminfo() {
     {
         assert!(!cpu.reads_fpga_info());
 
-        let (mut op, mut op_null) = ConfigureReadsFPGAInfo::new(|_| true).operation().unwrap();
+        let (mut op, mut op_null) = ConfigureReadsFPGAState::new(|_| true).operation().unwrap();
 
         OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
 

@@ -30,7 +30,7 @@ fn send_reads_fpga_info() {
 
     assert!(!cpu.reads_fpga_info());
 
-    let (mut op, mut op_null) = ConfigureReadsFPGAInfo::new(|_| true).operation().unwrap();
+    let (mut op, mut op_null) = ConfigureReadsFPGAState::new(|_| true).operation().unwrap();
 
     OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
 
@@ -42,9 +42,9 @@ fn send_reads_fpga_info() {
 
     cpu.fpga_mut().assert_thermal_sensor();
     cpu.update();
-    assert_eq!(cpu.rx_data(), 0x01);
+    assert_eq!(cpu.rx_data(), 0x81);
 
     cpu.fpga_mut().deassert_thermal_sensor();
     cpu.update();
-    assert_eq!(cpu.rx_data(), 0x00);
+    assert_eq!(cpu.rx_data(), 0x80);
 }
