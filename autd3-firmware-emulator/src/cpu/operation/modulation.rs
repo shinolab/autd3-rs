@@ -4,7 +4,7 @@
  * Created Date: 30/12/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -117,5 +117,43 @@ impl CPUEmulator {
         }
 
         ERR_NONE
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn modulation_derive() {
+        assert_eq!(std::mem::size_of::<ModulationHead>(), 8);
+        assert_eq!(memoffset::offset_of!(ModulationHead, tag), 0);
+        assert_eq!(memoffset::offset_of!(ModulationHead, flag), 1);
+        assert_eq!(memoffset::offset_of!(ModulationHead, size), 2);
+        assert_eq!(memoffset::offset_of!(ModulationHead, freq_div), 4);
+
+        assert_eq!(std::mem::size_of::<ModulationSubseq>(), 4);
+        assert_eq!(memoffset::offset_of!(ModulationSubseq, tag), 0);
+        assert_eq!(memoffset::offset_of!(ModulationSubseq, flag), 1);
+        assert_eq!(memoffset::offset_of!(ModulationSubseq, size), 2);
+
+        assert_eq!(std::mem::size_of::<Modulation>(), 8);
+        assert_eq!(memoffset::offset_of_union!(Modulation, head), 0);
+        assert_eq!(memoffset::offset_of_union!(Modulation, subseq), 0);
+
+        let head = ModulationHead {
+            tag: 0,
+            flag: 0,
+            size: 0,
+            freq_div: 0,
+        };
+        let _ = head.clone();
+
+        let subseq = ModulationSubseq {
+            tag: 0,
+            flag: 0,
+            size: 0,
+        };
+        let _ = subseq.clone();
     }
 }
