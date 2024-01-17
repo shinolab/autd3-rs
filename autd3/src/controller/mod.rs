@@ -392,11 +392,15 @@ impl<L: Link> Controller<L> {
 #[cfg(not(feature = "sync"))]
 impl<L: Link> Drop for Controller<L> {
     fn drop(&mut self) {
-        tokio::task::block_in_place(|| {
-            tokio::runtime::Handle::current().block_on(async {
-                let _ = self.close().await;
-            });
-        });
+        match tokio::runtime::Handle::current().runtime_flavor() {
+            tokio::runtime::RuntimeFlavor::CurrentThread => {}
+            tokio::runtime::RuntimeFlavor::MultiThread => tokio::task::block_in_place(|| {
+                tokio::runtime::Handle::current().block_on(async {
+                    let _ = self.close().await;
+                });
+            }),
+            _ => unimplemented!(),
+        }
     }
 }
 
