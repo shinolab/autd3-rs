@@ -33,6 +33,7 @@ pub struct NopBuilder {
 }
 
 impl NopBuilder {
+    #[allow(clippy::needless_update)]
     pub fn with_timeout(self, timeout: std::time::Duration) -> Self {
         Self { timeout, ..self }
     }
