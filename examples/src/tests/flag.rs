@@ -43,7 +43,7 @@ pub async fn flag<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
     let prompts = ['-', '/', '|', '\\'];
     let mut idx = 0;
     while !fin.load(Ordering::Relaxed) {
-        let states = autd.fpga_info().await?;
+        let states = autd.fpga_state().await?;
         println!("{} FPGA Status...", prompts[idx / 1000 % prompts.len()]);
         idx += 1;
         states.iter().enumerate().for_each(|(i, state)| {

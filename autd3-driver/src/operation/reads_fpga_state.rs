@@ -1,5 +1,5 @@
 /*
- * File: reads_fpga_info.rs
+ * File: reads_fpga_state.rs
  * Project: operation
  * Created Date: 06/12/2023
  * Author: Shun Suzuki

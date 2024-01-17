@@ -1,5 +1,5 @@
 /*
- * File: reads_fpga_info.rs
+ * File: reads_fpga_state.rs
  * Project: operation
  * Created Date: 30/12/2023
  * Author: Shun Suzuki
@@ -20,10 +20,10 @@ struct ConfigureReadsFPGAState {
 }
 
 impl CPUEmulator {
-    pub(crate) fn configure_reads_fpga_info(&mut self, data: &[u8]) -> u8 {
+    pub(crate) fn configure_reads_fpga_state(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<ConfigureReadsFPGAState>(data);
 
-        self.read_fpga_info = d.value != 0x00;
+        self.read_fpga_state = d.value != 0x00;
 
         ERR_NONE
     }

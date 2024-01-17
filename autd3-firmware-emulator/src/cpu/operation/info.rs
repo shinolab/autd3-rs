@@ -4,7 +4,7 @@
  * Created Date: 30/12/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -54,8 +54,8 @@ impl CPUEmulator {
 
         match d.ty {
             INFO_TYPE_CPU_VERSION_MAJOR => {
-                self.read_fpga_info_store = self.read_fpga_info;
-                self.read_fpga_info = false;
+                self.read_fpga_state_store = self.read_fpga_state;
+                self.read_fpga_state = false;
                 self.rx_data = (self.get_cpu_version() & 0xFF) as _;
             }
             INFO_TYPE_CPU_VERSION_MINOR => {
@@ -71,7 +71,7 @@ impl CPUEmulator {
                 self.rx_data = ((self.get_fpga_version() >> 8) & 0xFF) as _;
             }
             INFO_TYPE_CLEAR => {
-                self.read_fpga_info = self.read_fpga_info_store;
+                self.read_fpga_state = self.read_fpga_state_store;
             }
             _ => {
                 unreachable!("Unsupported firmware info type")

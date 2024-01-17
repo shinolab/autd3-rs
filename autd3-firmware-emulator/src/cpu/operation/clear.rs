@@ -4,7 +4,7 @@
  * Created Date: 30/12/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 17/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -37,7 +37,7 @@ impl CPUEmulator {
         self.mod_freq_div = 5120;
         self.stm_freq_div = 0xFFFFFFFF;
 
-        self.read_fpga_info = false;
+        self.read_fpga_state = false;
 
         self.fpga_flags_internal = 0x0000;
         self.bram_write(
