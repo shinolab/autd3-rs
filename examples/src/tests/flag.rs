@@ -4,7 +4,7 @@
  * Created Date: 24/05/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 17/01/2024
+ * Last Modified: 18/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -46,9 +46,17 @@ pub async fn flag<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
         let states = autd.fpga_state().await?;
         println!("{} FPGA Status...", prompts[idx / 1000 % prompts.len()]);
         idx += 1;
-        states.iter().enumerate().for_each(|(i, state)| {
-            println!("\x1b[0K[{}]: thermo = {}", i, state.is_thermal_assert());
-        });
+        states
+            .iter()
+            .enumerate()
+            .for_each(|(i, state)| match state {
+                Some(state) => {
+                    println!("\x1b[0K[{}]: thermo = {}", i, state.is_thermal_assert())
+                }
+                None => {
+                    println!("\x1b[0K[{}]: -", i);
+                }
+            });
         print!("\x1b[{}A", states.len() + 1);
     }
     print!("\x1b[1F\x1b[0J");
