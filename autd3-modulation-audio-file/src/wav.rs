@@ -4,7 +4,7 @@
  * Created Date: 15/06/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -12,7 +12,7 @@
  */
 
 use autd3_driver::{common::EmitIntensity, derive::*};
-use hound::SampleFormat;
+use hound::{SampleFormat, WavSpec};
 
 use std::path::Path;
 
@@ -38,10 +38,12 @@ impl Wav {
     ///
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Self, AudioFileError> {
         let mut reader = hound::WavReader::open(path)?;
-        let channels = reader.spec().channels;
-        let sample_format = reader.spec().sample_format;
-        let sample_rate = reader.spec().sample_rate;
-        let bits_per_sample = reader.spec().bits_per_sample;
+        let WavSpec {
+            channels,
+            sample_format,
+            sample_rate,
+            bits_per_sample,
+        } = reader.spec();
         let raw_buffer = match (sample_format, bits_per_sample) {
             (SampleFormat::Int, 8) => reader
                 .samples::<i32>()
@@ -66,7 +68,7 @@ impl Wav {
             channels,
             sample_rate,
             raw_buffer,
-            config: SamplingConfiguration::from_frequency(4e3).unwrap(),
+            config: SamplingConfiguration::FREQ_4K_HZ,
         })
     }
 }
@@ -74,16 +76,14 @@ impl Wav {
 impl Modulation for Wav {
     #[allow(clippy::unnecessary_cast)]
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        let sample_rate = self.sampling_config().frequency() as u32;
-        let samples = wav_io::resample::linear(
+        Ok(wav_io::resample::linear(
             self.raw_buffer.clone(),
             self.channels,
             self.sample_rate,
-            sample_rate,
-        );
-        Ok(samples
-            .iter()
-            .map(|&d| EmitIntensity::new((d * 255.).round() as u8))
-            .collect())
+            self.sampling_config().frequency() as u32,
+        )
+        .iter()
+        .map(|&d| EmitIntensity::new((d * 255.).round() as u8))
+        .collect())
     }
 }
