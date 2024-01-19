@@ -4,7 +4,7 @@
  * Created Date: 06/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 17/01/2024
+ * Last Modified: 18/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -13,15 +13,13 @@
 
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
-    derive::*,
     error::AUTDInternalError,
     geometry::Geometry,
-    link::{LinkSync, LinkSyncBuilder},
+    link::{Link, LinkBuilder},
 };
 use autd3_firmware_emulator::CPUEmulator;
 
 /// Link to do nothing
-#[derive(Link)]
 pub struct Nop {
     is_open: bool,
     cpus: Vec<CPUEmulator>,
@@ -39,10 +37,11 @@ impl NopBuilder {
     }
 }
 
-impl LinkSyncBuilder for NopBuilder {
+#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+impl LinkBuilder for NopBuilder {
     type L = Nop;
 
-    fn open(self, geometry: &Geometry) -> Result<Self::L, AUTDInternalError> {
+    async fn open(self, geometry: &Geometry) -> Result<Self::L, AUTDInternalError> {
         Ok(Nop {
             is_open: true,
             cpus: geometry
@@ -59,13 +58,14 @@ impl LinkSyncBuilder for NopBuilder {
     }
 }
 
-impl LinkSync for Nop {
-    fn close(&mut self) -> Result<(), AUTDInternalError> {
+#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+impl Link for Nop {
+    async fn close(&mut self) -> Result<(), AUTDInternalError> {
         self.is_open = false;
         Ok(())
     }
 
-    fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
+    async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
         if !self.is_open {
             return Err(AUTDInternalError::LinkClosed);
         }
@@ -77,7 +77,7 @@ impl LinkSync for Nop {
         Ok(true)
     }
 
-    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
         if !self.is_open {
             return Err(AUTDInternalError::LinkClosed);
         }

@@ -4,14 +4,13 @@
  * Created Date: 27/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 18/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
  *
  */
 
-use autd3_derive::Link;
 use libloading as lib;
 
 use std::{ffi::c_void, time::Duration};
@@ -22,7 +21,7 @@ use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
     error::AUTDInternalError,
     geometry::Geometry,
-    link::{LinkSync, LinkSyncBuilder},
+    link::{Link, LinkBuilder},
 };
 
 #[repr(C)]
@@ -45,8 +44,6 @@ const INDEX_OFFSET_BASE_READ: u32 = 0x8000_0000;
 const PORT: u16 = 301;
 
 /// Link using TwinCAT3
-
-#[derive(Link)]
 pub struct TwinCAT {
     port: i32,
     send_addr: AmsAddr,
@@ -65,10 +62,11 @@ impl TwinCATBuilder {
     }
 }
 
-impl LinkSyncBuilder for TwinCATBuilder {
+#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+impl LinkBuilder for TwinCATBuilder {
     type L = TwinCAT;
 
-    fn open(self, _: &Geometry) -> Result<Self::L, AUTDInternalError> {
+    async fn open(self, _: &Geometry) -> Result<Self::L, AUTDInternalError> {
         let dll = match unsafe { lib::Library::new("TcAdsDll") } {
             Ok(dll) => dll,
             Err(_) => {
@@ -113,9 +111,7 @@ impl TwinCAT {
             timeout: Duration::ZERO,
         }
     }
-}
 
-impl TwinCAT {
     fn port_close(&self) -> lib::Symbol<unsafe extern "C" fn(i32) -> i32> {
         unsafe { self.dll.get(b"AdsPortCloseEx").unwrap() }
     }
@@ -136,8 +132,9 @@ impl TwinCAT {
     }
 }
 
-impl LinkSync for TwinCAT {
-    fn close(&mut self) -> Result<(), AUTDInternalError> {
+#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+impl Link for TwinCAT {
+    async fn close(&mut self) -> Result<(), AUTDInternalError> {
         unsafe {
             self.port_close()(self.port);
         }
@@ -145,7 +142,7 @@ impl LinkSync for TwinCAT {
         Ok(())
     }
 
-    fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
+    async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
         unsafe {
             let n_err = self.sync_write_req()(
                 self.port,
@@ -164,7 +161,7 @@ impl LinkSync for TwinCAT {
         }
     }
 
-    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
         let mut read_bytes: u32 = 0;
         unsafe {
             let n_err = self.sync_read_req()(

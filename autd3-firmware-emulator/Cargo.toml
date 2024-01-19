@@ -11,7 +11,7 @@ readme = "README.md"
 keywords = ["autd"]
 
 [dependencies]
-autd3-driver = { path = "../autd3-driver", version = "21.0.0" }
+autd3-driver = { path = "../autd3-driver", version = "21.0.0", default-features = false }
 chrono = "0.4.31"
 num-integer = "0.1.45"
 thiserror = "1.0.40"
@@ -20,3 +20,8 @@ thiserror = "1.0.40"
 autd3-derive = { path = "../autd3-derive", version = "21.0.0" }
 memoffset = "0.9.0"
 rand = "0.8.5"
+
+[features]
+default = ["rpitit"]
+rpitit = ["autd3-driver/rpitit"]
+async-trait = ["autd3-driver/async-trait"]

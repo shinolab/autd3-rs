@@ -4,7 +4,7 @@
  * Created Date: 14/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 17/01/2024
+ * Last Modified: 18/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -18,14 +18,12 @@ use std::{
 
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
-    derive::*,
     error::AUTDInternalError,
-    link::{LinkSync, LinkSyncBuilder},
+    link::{Link, LinkBuilder},
 };
 use autd3_firmware_emulator::CPUEmulator;
 
 /// Link for test
-#[derive(Link)]
 pub struct Audit {
     is_open: bool,
     timeout: Duration,
@@ -46,10 +44,11 @@ impl AuditBuilder {
     }
 }
 
-impl LinkSyncBuilder for AuditBuilder {
+#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+impl LinkBuilder for AuditBuilder {
     type L = Audit;
 
-    fn open(
+    async fn open(
         self,
         geometry: &autd3_driver::geometry::Geometry,
     ) -> Result<Self::L, AUTDInternalError> {
@@ -122,13 +121,14 @@ impl DerefMut for Audit {
     }
 }
 
-impl LinkSync for Audit {
-    fn close(&mut self) -> Result<(), AUTDInternalError> {
+#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+impl Link for Audit {
+    async fn close(&mut self) -> Result<(), AUTDInternalError> {
         self.is_open = false;
         Ok(())
     }
 
-    fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
+    async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
         if !self.is_open {
             return Err(AUTDInternalError::LinkClosed);
         }
@@ -148,7 +148,7 @@ impl LinkSync for Audit {
         Ok(true)
     }
 
-    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
         if !self.is_open {
             return Err(AUTDInternalError::LinkClosed);
         }
@@ -169,7 +169,7 @@ impl LinkSync for Audit {
         Ok(true)
     }
 
-    fn send_receive(
+    async fn send_receive(
         &mut self,
         tx: &TxDatagram,
         rx: &mut [RxMessage],
@@ -178,13 +178,13 @@ impl LinkSync for Audit {
     ) -> Result<bool, AUTDInternalError> {
         let timeout = timeout.unwrap_or(self.timeout);
         self.last_timeout = timeout;
-        if !self.send(tx)? {
+        if !self.send(tx).await? {
             return Ok(false);
         }
         if timeout.is_zero() {
-            return self.receive(rx);
+            return self.receive(rx).await;
         }
-        self.wait_msg_processed(tx, rx, timeout, ignore_ack)
+        self.wait_msg_processed(tx, rx, timeout, ignore_ack).await
     }
 
     fn is_open(&self) -> bool {
