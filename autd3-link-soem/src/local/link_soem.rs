@@ -4,14 +4,13 @@
  * Created Date: 27/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 18/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
  *
  */
 
-use autd3_derive::Link;
 use crossbeam_channel::{bounded, Receiver, Sender, TrySendError};
 use std::{
     ffi::c_void,
@@ -29,7 +28,7 @@ use time::ext::NumericalDuration;
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram, EC_CYCLE_TIME_BASE_NANO_SEC},
     error::AUTDInternalError,
-    link::{LinkSync, LinkSyncBuilder},
+    link::{Link, LinkBuilder},
     osal_timer::{Timer, TimerCallback},
     timer_strategy::TimerStrategy,
 };
@@ -67,7 +66,6 @@ type OnLostCallBack = Box<dyn Fn(&str) + Send + Sync>;
 type OnErrCallBack = Box<dyn Fn(&str) + Send + Sync>;
 
 /// Link using [SOEM](https://github.com/OpenEtherCATsociety/SOEM)
-#[derive(Link)]
 pub struct SOEM {
     ecatth_handle: Option<JoinHandle<Result<(), SOEMError>>>,
     timer_handle: Option<Box<Timer<SoemCallback>>>,
@@ -167,10 +165,11 @@ impl SOEMBuilder {
     }
 }
 
-impl LinkSyncBuilder for SOEMBuilder {
+#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+impl LinkBuilder for SOEMBuilder {
     type L = SOEM;
 
-    fn open(
+    async fn open(
         self,
         geometry: &autd3_driver::geometry::Geometry,
     ) -> Result<Self::L, AUTDInternalError> {
@@ -497,12 +496,13 @@ unsafe extern "C" fn dc_config(context: *mut ecx_contextt, slave: u16) -> i32 {
     0
 }
 
-impl LinkSync for SOEM {
-    fn close(&mut self) -> Result<(), AUTDInternalError> {
+#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+impl Link for SOEM {
+    async fn close(&mut self) -> Result<(), AUTDInternalError> {
         self.close_impl()
     }
 
-    fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
+    async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
         if !self.is_open() {
             return Err(AUTDInternalError::LinkClosed);
         }
@@ -514,7 +514,7 @@ impl LinkSync for SOEM {
         }
     }
 
-    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
         if !self.is_open() {
             return Err(AUTDInternalError::LinkClosed);
         }

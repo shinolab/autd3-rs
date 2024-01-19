@@ -18,6 +18,7 @@ nalgebra = { version = "0.32.3", default-features = false, features = ["std"] }
 bitvec = "1.0.1"
 tokio = { version = "1.34.0", features = ["time"] }
 autd3-derive = { path = "../autd3-derive", version = "21.0.0", optional = true }
+async-trait = { version = "0.1.77", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.52.0", features = ["Win32_Media_Multimedia", "Win32_System_Threading", "Win32_Foundation"] }
@@ -34,9 +35,10 @@ serde_json = "1.0.107"
 tokio = { version = "1.34.0", features = ["macros", "rt-multi-thread"] }
 
 [features]
-default = ["derive"]
+default = ["derive", "rpitit"]
 single_float = []
+async-trait = ["dep:async-trait"]
+rpitit = []
 use_meter = []
 serde = ["dep:serde"]
-sync = []
 derive = ["autd3-derive"]

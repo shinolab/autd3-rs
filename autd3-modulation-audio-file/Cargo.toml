@@ -12,11 +12,12 @@ keywords = ["autd"]
 
 [dependencies]
 hound = "3.5.0"
-autd3-driver = { path = "../autd3-driver", version = "21.0.0" }
-autd3-derive = { path = "../autd3-derive", version = "21.0.0" }
+autd3-driver = { path = "../autd3-driver", version = "21.0.0", default-features = false, features = ["derive"] }
 wav_io = "0.1.8"
 thiserror = "1.0.40"
 
 [features]
-default = []
+default = ["rpitit"]
 single_float = ["autd3-driver/single_float"]
+rpitit = ["autd3-driver/rpitit"]
+async-trait = ["autd3-driver/async-trait"]

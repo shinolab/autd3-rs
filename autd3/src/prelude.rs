@@ -4,7 +4,7 @@
  * Created Date: 27/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 17/01/2024
+ * Last Modified: 18/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -41,6 +41,3 @@ pub use autd3_driver::{
     operation::{ControlPoint, GainSTMMode},
     timer_strategy::TimerStrategy,
 };
-
-#[cfg(feature = "sync")]
-pub use autd3_driver::link::{LinkSync, LinkSyncBuilder};

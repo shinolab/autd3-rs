@@ -4,7 +4,7 @@
  * Created Date: 29/08/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 18/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -29,6 +29,9 @@ pub mod osal_timer;
 pub mod sync_mode;
 pub mod timer_strategy;
 
+#[cfg(feature = "async-trait")]
+pub use async_trait::async_trait;
+
 #[cfg(feature = "derive")]
 pub mod derive {
     pub use crate::{
@@ -40,7 +43,5 @@ pub mod derive {
         geometry::{Geometry, Transducer},
         operation::{GainOp, ModulationOp, NullOp, Operation},
     };
-    #[cfg(feature = "sync")]
-    pub use autd3_derive::LinkSync;
-    pub use autd3_derive::{Gain, Link, Modulation};
+    pub use autd3_derive::{Gain, Modulation};
 }

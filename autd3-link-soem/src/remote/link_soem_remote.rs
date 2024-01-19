@@ -4,7 +4,7 @@
  * Created Date: 21/05/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 18/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -13,7 +13,6 @@
 
 use std::{net::SocketAddr, time::Duration};
 
-use autd3_derive::LinkSync;
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
     error::AUTDInternalError,
@@ -23,7 +22,6 @@ use autd3_driver::{
 use autd3_protobuf::*;
 
 /// Link to connect to remote SOEMServer
-#[derive(LinkSync)]
 pub struct RemoteSOEM {
     client: ecat_client::EcatClient<tonic::transport::Channel>,
     timeout: Duration,
@@ -42,6 +40,7 @@ impl RemoteSOEMBuilder {
     }
 }
 
+#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
 impl LinkBuilder for RemoteSOEMBuilder {
     type L = RemoteSOEM;
 
@@ -68,6 +67,7 @@ impl RemoteSOEM {
     }
 }
 
+#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
 impl Link for RemoteSOEM {
     async fn close(&mut self) -> Result<(), AUTDInternalError> {
         self.is_open = false;
