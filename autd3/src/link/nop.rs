@@ -4,7 +4,7 @@
  * Created Date: 06/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 18/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -47,11 +47,7 @@ impl LinkBuilder for NopBuilder {
             cpus: geometry
                 .iter()
                 .enumerate()
-                .map(|(i, dev)| {
-                    let mut cpu = CPUEmulator::new(i, dev.num_transducers());
-                    cpu.init();
-                    cpu
-                })
+                .map(|(i, dev)| CPUEmulator::new(i, dev.num_transducers()))
                 .collect(),
             timeout: self.timeout,
         })

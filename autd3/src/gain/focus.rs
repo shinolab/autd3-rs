@@ -4,7 +4,7 @@
  * Created Date: 28/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -68,12 +68,9 @@ impl Gain for Focus {
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |dev, tr| {
-            let phase = tr.align_phase_at(self.pos, dev.sound_speed);
-            Drive {
-                phase,
-                intensity: self.intensity,
-            }
+        Ok(Self::transform(geometry, filter, |dev, tr| Drive {
+            phase: tr.align_phase_at(self.pos, dev.sound_speed),
+            intensity: self.intensity,
         }))
     }
 }

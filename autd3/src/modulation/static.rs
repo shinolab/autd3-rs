@@ -4,7 +4,7 @@
  * Created Date: 30/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -34,7 +34,7 @@ impl Static {
     ///
     /// # Arguments
     ///
-    /// * `intensity` - Emission intensity
+    /// * `intensity` - [EmitIntensity]
     ///
     pub fn with_intensity<A: Into<EmitIntensity>>(intensity: A) -> Self {
         Self {

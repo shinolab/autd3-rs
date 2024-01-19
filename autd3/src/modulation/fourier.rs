@@ -4,7 +4,7 @@
  * Created Date: 28/07/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -38,7 +38,7 @@ impl Fourier {
     /// Add a sine wave component
     ///
     /// # Arguments
-    /// - `sine` - `Sine` modulation
+    /// - `sine` - [Sine] modulation
     ///
     pub fn add_component(self, sine: Sine) -> Self {
         let Self {
@@ -58,7 +58,7 @@ impl Fourier {
     /// Add sine wave components from iterator
     ///
     /// # Arguments
-    /// - `iter` - Iterator of `Sine` modulation
+    /// - `iter` - Iterator of [Sine] modulation
     ///
     pub fn add_components_from_iter<M: Into<Sine>, T: IntoIterator<Item = M>>(
         self,
@@ -110,24 +110,24 @@ impl std::ops::Add<Sine> for Sine {
 
 impl Modulation for Fourier {
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        let n = self.components.len();
         let buffers = self
             .components
             .iter()
             .map(|c| c.calc())
             .collect::<Result<Vec<_>, _>>()?;
-        let len = buffers.iter().fold(1, |acc, x| lcm(acc, x.len()));
         Ok(buffers
             .iter()
-            .map(|b| b.iter().cycle().take(len).collect::<Vec<_>>())
-            .fold(vec![0usize; len], |acc, x| {
-                acc.iter()
-                    .zip(x.iter())
-                    .map(|(a, &b)| a + b.value() as usize)
-                    .collect::<Vec<_>>()
-            })
+            .fold(
+                vec![0usize; buffers.iter().fold(1, |acc, x| lcm(acc, x.len()))],
+                |acc, x| {
+                    acc.iter()
+                        .zip(x.iter().cycle())
+                        .map(|(a, &b)| a + b.value() as usize)
+                        .collect::<Vec<_>>()
+                },
+            )
             .iter()
-            .map(|x| EmitIntensity::new((x / n) as u8))
+            .map(|x| EmitIntensity::new((x / self.components.len()) as u8))
             .collect::<Vec<_>>())
     }
 }
@@ -168,7 +168,7 @@ mod tests {
 
         let buf = f.calc().unwrap();
 
-        for i in 0..buf.len() {
+        (0..buf.len()).for_each(|i| {
             assert_eq!(
                 buf[i].value(),
                 ((f0_buf[i % f0_buf.len()].value() as usize
@@ -178,7 +178,7 @@ mod tests {
                     + f4_buf[i % f4_buf.len()].value() as usize)
                     / 5) as u8
             );
-        }
+        });
     }
 
     #[test]

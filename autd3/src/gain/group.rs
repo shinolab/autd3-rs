@@ -4,7 +4,7 @@
  * Created Date: 18/08/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -94,12 +94,10 @@ where
                             }
                         },
                         None => {
-                            let mut filter = BitVec::<usize, Lsb0>::new();
-                            filter.resize(dev.num_transducers(), false);
+                            let mut filter =
+                                BitVec::<usize, Lsb0>::repeat(false, dev.num_transducers());
                             filter.set(tr.idx(), true);
-                            let filter: HashMap<usize, BitVec<usize, Lsb0>> =
-                                [(dev.idx(), filter)].into();
-                            filters.insert(key.clone(), filter);
+                            filters.insert(key.clone(), [(dev.idx(), filter)].into());
                         }
                     }
                 }

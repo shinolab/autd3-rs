@@ -4,7 +4,7 @@
  * Created Date: 31/07/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/11/2023
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -23,7 +23,7 @@ use crate::helper::generate_geometry;
 fn focus(c: &mut Criterion) {
     let mut group = c.benchmark_group("gain-calc-over-num-devices/focus");
 
-    for size in (1..).take(5) {
+    (1..).take(5).for_each(|size| {
         group.bench_with_input(
             BenchmarkId::new("", size * size),
             &generate_geometry(size),
@@ -39,14 +39,14 @@ fn focus(c: &mut Criterion) {
                 })
             },
         );
-    }
+    });
     group.finish();
 }
 
 fn focus_cached(c: &mut Criterion) {
     let mut group = c.benchmark_group("gain-calc-over-num-devices/focus-cached");
 
-    for size in (1..).take(5) {
+    (1..).take(5).for_each(|size| {
         let geometry = generate_geometry(size);
         let g = Focus::new(Vector3::new(
             black_box(90.),
@@ -63,14 +63,14 @@ fn focus_cached(c: &mut Criterion) {
                 })
             },
         );
-    }
+    });
     group.finish();
 }
 
 fn bessel(c: &mut Criterion) {
     let mut group = c.benchmark_group("gain-calc-over-num-devices/bessel");
 
-    for size in (1..).take(5) {
+    (1..).take(5).for_each(|size| {
         group.bench_with_input(
             BenchmarkId::new("", size * size),
             &generate_geometry(size),
@@ -86,14 +86,14 @@ fn bessel(c: &mut Criterion) {
                 })
             },
         );
-    }
+    });
     group.finish();
 }
 
 fn plane(c: &mut Criterion) {
     let mut group = c.benchmark_group("gain-calc-over-num-devices/plane");
 
-    for size in (1..).take(5) {
+    (1..).take(5).for_each(|size| {
         group.bench_with_input(
             BenchmarkId::new("", size * size),
             &generate_geometry(size),
@@ -105,7 +105,7 @@ fn plane(c: &mut Criterion) {
                 })
             },
         );
-    }
+    });
     group.finish();
 }
 

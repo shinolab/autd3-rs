@@ -14,7 +14,7 @@
 pub mod builder;
 mod group;
 
-use std::{collections::HashMap, hash::Hash, time::Duration};
+use std::{hash::Hash, time::Duration};
 
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
@@ -47,11 +47,6 @@ impl Controller<Nop> {
     pub const fn builder() -> ControllerBuilder {
         ControllerBuilder::new()
     }
-
-    /// Create Controller builder
-    pub const fn builder_with() -> ControllerBuilder {
-        ControllerBuilder::new()
-    }
 }
 
 impl<L: Link> Controller<L> {
@@ -60,12 +55,7 @@ impl<L: Link> Controller<L> {
         &mut self,
         f: F,
     ) -> GroupGuard<K, L, F> {
-        GroupGuard {
-            cnt: self,
-            f,
-            timeout: None,
-            op: HashMap::new(),
-        }
+        GroupGuard::new(self, f)
     }
 }
 
@@ -110,18 +100,16 @@ impl<L: Link> Controller<L> {
     // Close connection
     pub async fn close(&mut self) -> Result<bool, AUTDError> {
         if !self.link.is_open() {
-            return Ok(false);
+            return Ok(true);
         }
-        for dev in self.geometry.iter_mut() {
-            dev.enable = true;
-        }
+        self.geometry.iter_mut().for_each(|dev| dev.enable = true);
         let res = self
             .send((
                 crate::gain::Null::default(),
                 autd3_driver::datagram::ConfigureSilencer::default(),
             ))
-            .await?;
-        let res = res & self.send(Clear::new()).await?;
+            .await?
+            & self.send(Clear::new()).await?;
         self.link.close().await?;
         Ok(res)
     }
