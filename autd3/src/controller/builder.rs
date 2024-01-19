@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 18/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -13,7 +13,7 @@
 
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
-    datagram::{Clear, Synchronize},
+    datagram::{Clear, DatagramT, Synchronize},
     geometry::{Device, Geometry, IntoDevice},
 };
 
@@ -57,11 +57,12 @@ impl ControllerBuilder {
             geometry,
             tx_buf,
             rx_buf: vec![RxMessage { data: 0, ack: 0 }; num_devices],
-            ignore_ack: true,
         };
+        cnt.send(Clear::new().with_timeout(std::time::Duration::ZERO))
+            .await?;
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
         cnt.send(Clear::new()).await?;
         cnt.send(Synchronize::new()).await?;
-        cnt.ignore_ack = false;
         Ok(cnt)
     }
 }

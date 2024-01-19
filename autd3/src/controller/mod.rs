@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 18/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -40,7 +40,6 @@ pub struct Controller<L: Link> {
     pub geometry: Geometry,
     tx_buf: TxDatagram,
     rx_buf: Vec<RxMessage>,
-    ignore_ack: bool,
 }
 
 impl Controller<Nop> {
@@ -93,7 +92,7 @@ impl<L: Link> Controller<L> {
 
             if !self
                 .link
-                .send_receive(&self.tx_buf, &mut self.rx_buf, timeout, self.ignore_ack)
+                .send_receive(&self.tx_buf, &mut self.rx_buf, timeout)
                 .await?
             {
                 return Ok(false);
@@ -116,7 +115,6 @@ impl<L: Link> Controller<L> {
         for dev in self.geometry.iter_mut() {
             dev.enable = true;
         }
-        self.ignore_ack = true;
         let res = self
             .send((
                 crate::gain::Null::default(),
@@ -144,7 +142,7 @@ impl<L: Link> Controller<L> {
             ($op:expr, $null_op:expr, $link:expr, $geometry:expr, $tx_buf:expr, $rx_buf:expr ) => {
                 OperationHandler::pack($op, $null_op, $geometry, $tx_buf)?;
                 if !$link
-                    .send_receive($tx_buf, $rx_buf, Some(Duration::from_millis(200)), false)
+                    .send_receive($tx_buf, $rx_buf, Some(Duration::from_millis(200)))
                     .await?
                 {
                     return Err(AUTDError::ReadFirmwareInfoFailed(ReadFirmwareInfoState(

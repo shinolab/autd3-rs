@@ -4,7 +4,7 @@
  * Created Date: 27/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 18/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -162,7 +162,6 @@ mod internal {
             tx: &TxDatagram,
             rx: &mut [RxMessage],
             timeout: Option<Duration>,
-            ignore_ack: bool,
         ) -> impl std::future::Future<Output = Result<bool, AUTDInternalError>> {
             async move {
                 let timeout = timeout.unwrap_or(self.timeout());
@@ -172,7 +171,7 @@ mod internal {
                 if timeout.is_zero() {
                     return self.receive(rx).await;
                 }
-                self.wait_msg_processed(tx, rx, timeout, ignore_ack).await
+                self.wait_msg_processed(tx, rx, timeout).await
             }
         }
 
@@ -182,13 +181,12 @@ mod internal {
             tx: &TxDatagram,
             rx: &mut [RxMessage],
             timeout: Duration,
-            ignore_ack: bool,
         ) -> impl std::future::Future<Output = Result<bool, AUTDInternalError>> {
             async move {
                 let start = std::time::Instant::now();
                 let _ = self.receive(rx).await?;
                 if tx.headers().zip(rx.iter()).try_fold(true, |acc, (h, r)| {
-                    if !ignore_ack && r.ack & 0x80 != 0 {
+                    if r.ack & 0x80 != 0 {
                         return Err(AUTDInternalError::firmware_err(r.ack));
                     }
                     Ok(acc && h.msg_id == r.ack)
@@ -204,7 +202,7 @@ mod internal {
                         continue;
                     }
                     if tx.headers().zip(rx.iter()).try_fold(true, |acc, (h, r)| {
-                        if !ignore_ack && r.ack & 0x80 != 0 {
+                        if r.ack & 0x80 != 0 {
                             return Err(AUTDInternalError::firmware_err(r.ack));
                         }
                         Ok(acc && h.msg_id == r.ack)
@@ -318,24 +316,21 @@ mod tests {
 
         let tx = TxDatagram::new(0);
         let mut rx = Vec::new();
-        assert_eq!(link.send_receive(&tx, &mut rx, None, false).await, Ok(true));
+        assert_eq!(link.send_receive(&tx, &mut rx, None).await, Ok(true));
 
         link.is_open = false;
         assert_eq!(
-            link.send_receive(&tx, &mut rx, None, false).await,
+            link.send_receive(&tx, &mut rx, None).await,
             Err(AUTDInternalError::LinkClosed)
         );
 
         link.is_open = true;
         link.down = true;
-        assert_eq!(
-            link.send_receive(&tx, &mut rx, None, false).await,
-            Ok(false)
-        );
+        assert_eq!(link.send_receive(&tx, &mut rx, None).await, Ok(false));
 
         link.down = false;
         assert_eq!(
-            link.send_receive(&tx, &mut rx, Some(Duration::from_millis(1)), false)
+            link.send_receive(&tx, &mut rx, Some(Duration::from_millis(1)))
                 .await,
             Ok(true)
         );
@@ -355,7 +350,7 @@ mod tests {
         tx.header_mut(0).msg_id = 2;
         let mut rx = vec![RxMessage { ack: 0, data: 0 }];
         assert_eq!(
-            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10), false)
+            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10))
                 .await,
             Ok(true)
         );
@@ -363,7 +358,7 @@ mod tests {
         link.recv_cnt = 0;
         link.is_open = false;
         assert_eq!(
-            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10), false)
+            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10))
                 .await,
             Err(AUTDInternalError::LinkClosed)
         );
@@ -372,7 +367,7 @@ mod tests {
         link.is_open = true;
         link.down = true;
         assert_eq!(
-            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10), false)
+            link.wait_msg_processed(&tx, &mut rx, Duration::from_millis(10))
                 .await,
             Ok(false)
         );
@@ -381,7 +376,7 @@ mod tests {
         link.recv_cnt = 0;
         tx.header_mut(0).msg_id = 20;
         assert_eq!(
-            link.wait_msg_processed(&tx, &mut rx, Duration::from_secs(10), false)
+            link.wait_msg_processed(&tx, &mut rx, Duration::from_secs(10))
                 .await,
             Err(AUTDInternalError::LinkError("too many".to_owned()))
         );

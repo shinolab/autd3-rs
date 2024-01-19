@@ -4,7 +4,7 @@
  * Created Date: 14/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 18/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -174,7 +174,6 @@ impl Link for Audit {
         tx: &TxDatagram,
         rx: &mut [RxMessage],
         timeout: Option<Duration>,
-        ignore_ack: bool,
     ) -> Result<bool, AUTDInternalError> {
         let timeout = timeout.unwrap_or(self.timeout);
         self.last_timeout = timeout;
@@ -184,7 +183,7 @@ impl Link for Audit {
         if timeout.is_zero() {
             return self.receive(rx).await;
         }
-        self.wait_msg_processed(tx, rx, timeout, ignore_ack).await
+        self.wait_msg_processed(tx, rx, timeout).await
     }
 
     fn is_open(&self) -> bool {

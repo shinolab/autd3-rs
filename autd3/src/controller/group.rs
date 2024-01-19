@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 18/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -131,12 +131,7 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
             if !self
                 .cnt
                 .link
-                .send_receive(
-                    &self.cnt.tx_buf,
-                    &mut self.cnt.rx_buf,
-                    self.timeout,
-                    self.cnt.ignore_ack,
-                )
+                .send_receive(&self.cnt.tx_buf, &mut self.cnt.rx_buf, self.timeout)
                 .await?
             {
                 break false;
