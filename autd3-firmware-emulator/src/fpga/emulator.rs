@@ -4,7 +4,7 @@
  * Created Date: 06/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 17/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -399,14 +399,12 @@ mod tests {
 
     #[test]
     fn test_to_pulse_width() {
-        for a in 0x00..=0xFF {
-            for b in 0x00..=0xFF {
-                assert_eq!(
-                    to_pulse_width_actual(a, b),
-                    FPGAEmulator::to_pulse_width(a, b)
-                );
-            }
-        }
+        itertools::iproduct!(0x00..=0xFF, 0x00..=0xFF).for_each(|(a, b)| {
+            assert_eq!(
+                to_pulse_width_actual(a, b),
+                FPGAEmulator::to_pulse_width(a, b)
+            );
+        });
     }
 
     #[test]
