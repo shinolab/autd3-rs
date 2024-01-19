@@ -121,11 +121,13 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
                 OperationHandler::pack(op1, op2, &self.cnt.geometry, &mut self.cnt.tx_buf)
             })?;
 
-            if !self
-                .cnt
-                .link
-                .send_receive(&self.cnt.tx_buf, &mut self.cnt.rx_buf, self.timeout)
-                .await?
+            if !autd3_driver::link::send_receive(
+                &mut self.cnt.link,
+                &self.cnt.tx_buf,
+                &mut self.cnt.rx_buf,
+                self.timeout,
+            )
+            .await?
             {
                 break false;
             }

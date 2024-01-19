@@ -80,10 +80,13 @@ impl<L: Link> Controller<L> {
             let start = std::time::Instant::now();
             OperationHandler::pack(&mut op1, &mut op2, &self.geometry, &mut self.tx_buf)?;
 
-            if !self
-                .link
-                .send_receive(&self.tx_buf, &mut self.rx_buf, timeout)
-                .await?
+            if !autd3_driver::link::send_receive(
+                &mut self.link,
+                &self.tx_buf,
+                &mut self.rx_buf,
+                timeout,
+            )
+            .await?
             {
                 return Ok(false);
             }
@@ -129,9 +132,13 @@ impl<L: Link> Controller<L> {
         macro_rules! pack_and_send {
             ($op:expr, $null_op:expr, $link:expr, $geometry:expr, $tx_buf:expr, $rx_buf:expr ) => {
                 OperationHandler::pack($op, $null_op, $geometry, $tx_buf)?;
-                if !$link
-                    .send_receive($tx_buf, $rx_buf, Some(Duration::from_millis(200)))
-                    .await?
+                if !autd3_driver::link::send_receive(
+                    $link,
+                    $tx_buf,
+                    $rx_buf,
+                    Some(Duration::from_millis(200)),
+                )
+                .await?
                 {
                     return Err(AUTDError::ReadFirmwareInfoFailed(ReadFirmwareInfoState(
                         autd3_driver::cpu::check_if_msg_is_processed($tx_buf, $rx_buf),
