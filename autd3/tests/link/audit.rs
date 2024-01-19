@@ -23,18 +23,6 @@ async fn audit_test() {
         .unwrap();
     assert_eq!(autd.link.timeout(), std::time::Duration::from_millis(100));
 
-    assert_eq!(autd.send(Null::new()).await, Ok(true));
-    assert_eq!(
-        autd.link.last_timeout(),
-        std::time::Duration::from_millis(100)
-    );
-    assert_eq!(
-        autd.send(Static::new().with_timeout(std::time::Duration::ZERO))
-            .await,
-        Ok(true)
-    );
-    assert_eq!(autd.link.last_timeout(), std::time::Duration::ZERO);
-
     assert_eq!(autd.link.emulators()[0].idx(), 0);
     assert_eq!(autd.link[0].idx(), 0);
 

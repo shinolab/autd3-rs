@@ -27,7 +27,6 @@ use autd3_firmware_emulator::CPUEmulator;
 pub struct Audit {
     is_open: bool,
     timeout: Duration,
-    last_timeout: Duration,
     cpus: Vec<CPUEmulator>,
     down: bool,
     broken: bool,
@@ -55,7 +54,6 @@ impl LinkBuilder for AuditBuilder {
         Ok(Audit {
             is_open: true,
             timeout: self.timeout,
-            last_timeout: Duration::ZERO,
             cpus: geometry
                 .iter()
                 .enumerate()
@@ -76,10 +74,6 @@ impl Audit {
         AuditBuilder {
             timeout: Duration::ZERO,
         }
-    }
-
-    pub fn last_timeout(&self) -> Duration {
-        self.last_timeout
     }
 
     pub fn emulators(&self) -> &[CPUEmulator] {
@@ -167,23 +161,6 @@ impl Link for Audit {
         });
 
         Ok(true)
-    }
-
-    async fn send_receive(
-        &mut self,
-        tx: &TxDatagram,
-        rx: &mut [RxMessage],
-        timeout: Option<Duration>,
-    ) -> Result<bool, AUTDInternalError> {
-        let timeout = timeout.unwrap_or(self.timeout);
-        self.last_timeout = timeout;
-        if !self.send(tx).await? {
-            return Ok(false);
-        }
-        if timeout.is_zero() {
-            return self.receive(rx).await;
-        }
-        self.wait_msg_processed(tx, rx, timeout).await
     }
 
     fn is_open(&self) -> bool {
