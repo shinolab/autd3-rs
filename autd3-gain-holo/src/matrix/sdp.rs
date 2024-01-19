@@ -4,7 +4,7 @@
  * Created Date: 28/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 17/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -168,7 +168,7 @@ impl<B: LinAlgBackend> Gain for SDP<B> {
 
             let mut x = self.backend.alloc_zeros_cv(m)?;
             let mut Mc = self.backend.alloc_cv(m)?;
-            for _ in 0..self.repeat {
+            (0..self.repeat).try_for_each(|_| -> Result<(), AUTDInternalError> {
                 let i = rng.gen_range(0..m);
 
                 self.backend.get_col_c(&M, i, &mut Mc)?;
@@ -201,7 +201,8 @@ impl<B: LinAlgBackend> Gain for SDP<B> {
                     self.backend.set_row_c(&zeros, i, 0, i, &mut U)?;
                     self.backend.set_row_c(&zeros, i, i + 1, m, &mut U)?;
                 }
-            }
+                Ok(())
+            })?;
 
             self.backend.max_eigen_vector_c(U)?
         };
