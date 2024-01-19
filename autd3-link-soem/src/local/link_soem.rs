@@ -4,14 +4,14 @@
  * Created Date: 27/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 18/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
  *
  */
 
-use crossbeam_channel::{bounded, Receiver, Sender, TrySendError};
+use async_channel::{bounded, Receiver, SendError, Sender};
 use std::{
     ffi::c_void,
     ptr::addr_of_mut,
@@ -19,11 +19,11 @@ use std::{
         atomic::{AtomicBool, AtomicI32, Ordering},
         Arc, Mutex,
     },
-    thread::JoinHandle,
     time::Duration,
     usize,
 };
 use time::ext::NumericalDuration;
+use tokio::task::JoinHandle;
 
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram, EC_CYCLE_TIME_BASE_NANO_SEC},
@@ -286,11 +286,11 @@ impl LinkBuilder for SOEMBuilder {
 
             let (mut ecatth_handle, mut timer_handle) = match timer_strategy {
                 TimerStrategy::Sleep => (
-                    Some(std::thread::spawn({
+                    Some(tokio::task::spawn({
                         let is_open = is_open.clone();
                         let io_map = io_map.clone();
                         let wkc = wkc.clone();
-                        move || {
+                        async move {
                             SOEM::ecat_run::<StdSleep>(
                                 is_open,
                                 io_map,
@@ -298,16 +298,17 @@ impl LinkBuilder for SOEMBuilder {
                                 tx_receiver,
                                 ec_send_cycle,
                             )
+                            .await
                         }
                     })),
                     None,
                 ),
                 TimerStrategy::BusyWait => (
-                    Some(std::thread::spawn({
+                    Some(tokio::task::spawn({
                         let is_open = is_open.clone();
                         let io_map = io_map.clone();
                         let wkc = wkc.clone();
-                        move || {
+                        async move {
                             SOEM::ecat_run::<BusyWait>(
                                 is_open,
                                 io_map,
@@ -315,6 +316,7 @@ impl LinkBuilder for SOEMBuilder {
                                 tx_receiver,
                                 ec_send_cycle,
                             )
+                            .await
                         }
                     })),
                     None,
@@ -340,7 +342,7 @@ impl LinkBuilder for SOEMBuilder {
             if ec_slave[0].state != ec_state_EC_STATE_OPERATIONAL as u16 {
                 is_open.store(false, Ordering::Release);
                 if let Some(timer) = ecatth_handle.take() {
-                    let _ = timer.join();
+                    let _ = timer.await;
                 }
                 if let Some(timer) = timer_handle.take() {
                     timer.close()?;
@@ -358,12 +360,12 @@ impl LinkBuilder for SOEMBuilder {
                 }
             }
 
-            let ecat_check_th = Some(std::thread::spawn({
+            let ecat_check_th = Some(tokio::task::spawn({
                 let expected_wkc = (ec_group[0].outputsWKC * 2 + ec_group[0].inputsWKC) as i32;
                 let is_open = is_open.clone();
                 let on_lost = on_lost.take();
                 let on_err = on_err.take();
-                move || {
+                async move {
                     let error_handler = EcatErrorHandler { on_lost, on_err };
                     while is_open.load(Ordering::Acquire) {
                         if wkc.load(Ordering::Relaxed) < expected_wkc
@@ -371,7 +373,7 @@ impl LinkBuilder for SOEMBuilder {
                         {
                             error_handler.handle();
                         }
-                        std::thread::sleep(state_check_interval);
+                        tokio::time::sleep(state_check_interval).await;
                     }
                 }
             }));
@@ -410,48 +412,11 @@ impl SOEM {
         unsafe { ec_slavecount as usize }
     }
 
-    pub fn clear_iomap(&mut self) {
+    pub async fn clear_iomap(&mut self) {
         while !self.sender.is_empty() {
-            std::thread::sleep(std::time::Duration::from_millis(100));
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         }
         self.io_map.lock().unwrap().clear();
-    }
-
-    fn close_impl(&mut self) -> Result<(), AUTDInternalError> {
-        if !self.is_open() {
-            return Ok(());
-        }
-        self.is_open.store(false, Ordering::Release);
-
-        while !self.sender.is_empty() {
-            std::thread::sleep(self.ec_sync0_cycle);
-        }
-
-        if let Some(timer) = self.ecatth_handle.take() {
-            let _ = timer.join();
-        }
-        if let Some(timer) = self.timer_handle.take() {
-            timer.close()?;
-        }
-        if let Some(th) = self.ecat_check_th.take() {
-            let _ = th.join();
-        }
-
-        unsafe {
-            let cyc_time = *(ecx_context.userdata as *mut u32);
-            (1..=ec_slavecount as u16).for_each(|i| {
-                ec_dcsync0(i, 0, cyc_time, 0);
-            });
-
-            ec_slave[0].state = ec_state_EC_STATE_INIT as _;
-            ec_writestate(0);
-
-            ec_close();
-
-            let _ = Box::from_raw(ecx_context.userdata as *mut std::time::Duration);
-        }
-
-        Ok(())
     }
 }
 
@@ -499,7 +464,40 @@ unsafe extern "C" fn dc_config(context: *mut ecx_contextt, slave: u16) -> i32 {
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
 impl Link for SOEM {
     async fn close(&mut self) -> Result<(), AUTDInternalError> {
-        self.close_impl()
+        if !self.is_open() {
+            return Ok(());
+        }
+        self.is_open.store(false, Ordering::Release);
+
+        while !self.sender.is_empty() {
+            tokio::time::sleep(self.ec_sync0_cycle).await;
+        }
+
+        if let Some(timer) = self.ecatth_handle.take() {
+            let _ = timer.await;
+        }
+        if let Some(timer) = self.timer_handle.take() {
+            timer.close()?;
+        }
+        if let Some(th) = self.ecat_check_th.take() {
+            let _ = th.await;
+        }
+
+        unsafe {
+            let cyc_time = *(ecx_context.userdata as *mut u32);
+            (1..=ec_slavecount as u16).for_each(|i| {
+                ec_dcsync0(i, 0, cyc_time, 0);
+            });
+
+            ec_slave[0].state = ec_state_EC_STATE_INIT as _;
+            ec_writestate(0);
+
+            ec_close();
+
+            let _ = Box::from_raw(ecx_context.userdata as *mut std::time::Duration);
+        }
+
+        Ok(())
     }
 
     async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
@@ -507,9 +505,8 @@ impl Link for SOEM {
             return Err(AUTDInternalError::LinkClosed);
         }
 
-        match self.sender.try_send(tx.clone()) {
-            Err(TrySendError::Full(_)) => Ok(false),
-            Err(TrySendError::Disconnected(_)) => Err(AUTDInternalError::LinkClosed),
+        match self.sender.send(tx.clone()).await {
+            Err(SendError(..)) => Err(AUTDInternalError::LinkClosed),
             _ => Ok(true),
         }
     }
@@ -539,22 +536,31 @@ impl Link for SOEM {
 
 impl Drop for SOEM {
     fn drop(&mut self) {
-        let _ = self.close_impl();
+        match tokio::runtime::Handle::current().runtime_flavor() {
+            tokio::runtime::RuntimeFlavor::CurrentThread => {}
+            tokio::runtime::RuntimeFlavor::MultiThread => tokio::task::block_in_place(|| {
+                tokio::runtime::Handle::current().block_on(async {
+                    let _ = self.close().await;
+                });
+            }),
+            _ => unimplemented!(),
+        }
     }
 }
 
 trait Sleep {
-    fn sleep(duration: time::Duration);
+    async fn sleep(duration: time::Duration);
 }
 
 struct StdSleep {}
 
 impl Sleep for StdSleep {
-    fn sleep(duration: time::Duration) {
+    async fn sleep(duration: time::Duration) {
         if duration > time::Duration::ZERO {
-            std::thread::sleep(std::time::Duration::from_nanos(
+            tokio::time::sleep(std::time::Duration::from_nanos(
                 duration.whole_nanoseconds() as _,
-            ));
+            ))
+            .await;
         }
     }
 }
@@ -562,7 +568,7 @@ impl Sleep for StdSleep {
 struct BusyWait {}
 
 impl Sleep for BusyWait {
-    fn sleep(duration: time::Duration) {
+    async fn sleep(duration: time::Duration) {
         let expired = time::OffsetDateTime::now_utc() + duration;
         while time::OffsetDateTime::now_utc() < expired {
             std::hint::spin_loop();
@@ -573,7 +579,7 @@ impl Sleep for BusyWait {
 impl SOEM {
     #[allow(unused_variables)]
     #[allow(clippy::unnecessary_cast)]
-    fn ecat_run<S: Sleep>(
+    async fn ecat_run<S: Sleep>(
         is_open: Arc<AtomicBool>,
         io_map: Arc<Mutex<IOMap>>,
         wkc: Arc<AtomicI32>,
@@ -601,7 +607,6 @@ impl SOEM {
             let mut ts = {
                 let tp = time::OffsetDateTime::now_utc();
                 let tp_unix_ns = tp.unix_timestamp_nanos();
-
                 let cycle_ns = cycle.as_nanos() as i128;
                 let ts_unix_ns = (tp_unix_ns / cycle_ns + 1) * cycle_ns;
                 time::OffsetDateTime::from_unix_timestamp_nanos(ts_unix_ns).unwrap()
@@ -614,7 +619,7 @@ impl SOEM {
                 ts += cycle;
                 ts += toff;
 
-                S::sleep(ts - time::OffsetDateTime::now_utc());
+                S::sleep(ts - time::OffsetDateTime::now_utc()).await;
 
                 wkc.store(
                     ec_receive_processdata(EC_TIMEOUTRET as i32),
