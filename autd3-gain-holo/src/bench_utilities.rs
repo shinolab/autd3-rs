@@ -4,7 +4,7 @@
  * Created Date: 08/08/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 17/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -67,7 +67,7 @@ pub fn foci<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criterion) {
         .plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
 
     let backend = B::new().unwrap();
-    for size in (1..).take(3) {
+    (1..3).for_each(|size| {
         if ENABLE_NAIVE_BENCH {
             group.bench_with_input(
                 BenchmarkId::new("Naive", size * size),
@@ -152,7 +152,7 @@ pub fn foci<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criterion) {
                 },
             );
         }
-    }
+    });
     group.finish();
 }
 
@@ -163,91 +163,93 @@ pub fn devices<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criterion) {
         .plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
 
     let backend = B::new().unwrap();
-    for size in [2].into_iter().chain((2..6).map(|i| i * i)) {
-        if ENABLE_NAIVE_BENCH {
-            group.bench_with_input(
-                BenchmarkId::new("Naive", size),
-                &generate_geometry(N),
-                |b, geometry| {
-                    b.iter(|| {
-                        Naive::new(backend.clone())
-                            .add_foci_from_iter(gen_foci(size))
-                            .calc(geometry, GainFilter::All)
-                            .unwrap();
-                    })
-                },
-            );
-        }
-        if ENABLE_GS_BENCH {
-            group.bench_with_input(
-                BenchmarkId::new("GS", size),
-                &generate_geometry(N),
-                |b, geometry| {
-                    b.iter(|| {
-                        GS::new(backend.clone())
-                            .add_foci_from_iter(gen_foci(size))
-                            .calc(geometry, GainFilter::All)
-                            .unwrap();
-                    })
-                },
-            );
-        }
-        if ENABLE_GSPAT_BENCH {
-            group.bench_with_input(
-                BenchmarkId::new("GSPAT", size),
-                &generate_geometry(N),
-                |b, geometry| {
-                    b.iter(|| {
-                        GSPAT::new(backend.clone())
-                            .add_foci_from_iter(gen_foci(size))
-                            .calc(geometry, GainFilter::All)
-                            .unwrap();
-                    })
-                },
-            );
-        }
-        if ENABLE_SDP_BENCH {
-            group.bench_with_input(
-                BenchmarkId::new("SDP", size),
-                &generate_geometry(N),
-                |b, geometry| {
-                    b.iter(|| {
-                        SDP::new(backend.clone())
-                            .add_foci_from_iter(gen_foci(size))
-                            .calc(geometry, GainFilter::All)
-                            .unwrap();
-                    })
-                },
-            );
-        }
-        if ENABLE_LM_BENCH {
-            group.bench_with_input(
-                BenchmarkId::new("LM", size),
-                &generate_geometry(N),
-                |b, geometry| {
-                    b.iter(|| {
-                        LM::new(backend.clone())
-                            .add_foci_from_iter(gen_foci(size))
-                            .calc(geometry, GainFilter::All)
-                            .unwrap();
-                    })
-                },
-            );
-        }
-        if ENABLE_GREEDY_BENCH {
-            group.bench_with_input(
-                BenchmarkId::new("Greedy", size),
-                &generate_geometry(N),
-                |b, geometry| {
-                    b.iter(|| {
-                        Greedy::new()
-                            .add_foci_from_iter(gen_foci(size))
-                            .calc(geometry, GainFilter::All)
-                            .unwrap();
-                    })
-                },
-            );
-        }
-    }
+    [2].into_iter()
+        .chain((2..6).map(|i| i * i))
+        .for_each(|size| {
+            if ENABLE_NAIVE_BENCH {
+                group.bench_with_input(
+                    BenchmarkId::new("Naive", size),
+                    &generate_geometry(N),
+                    |b, geometry| {
+                        b.iter(|| {
+                            Naive::new(backend.clone())
+                                .add_foci_from_iter(gen_foci(size))
+                                .calc(geometry, GainFilter::All)
+                                .unwrap();
+                        })
+                    },
+                );
+            }
+            if ENABLE_GS_BENCH {
+                group.bench_with_input(
+                    BenchmarkId::new("GS", size),
+                    &generate_geometry(N),
+                    |b, geometry| {
+                        b.iter(|| {
+                            GS::new(backend.clone())
+                                .add_foci_from_iter(gen_foci(size))
+                                .calc(geometry, GainFilter::All)
+                                .unwrap();
+                        })
+                    },
+                );
+            }
+            if ENABLE_GSPAT_BENCH {
+                group.bench_with_input(
+                    BenchmarkId::new("GSPAT", size),
+                    &generate_geometry(N),
+                    |b, geometry| {
+                        b.iter(|| {
+                            GSPAT::new(backend.clone())
+                                .add_foci_from_iter(gen_foci(size))
+                                .calc(geometry, GainFilter::All)
+                                .unwrap();
+                        })
+                    },
+                );
+            }
+            if ENABLE_SDP_BENCH {
+                group.bench_with_input(
+                    BenchmarkId::new("SDP", size),
+                    &generate_geometry(N),
+                    |b, geometry| {
+                        b.iter(|| {
+                            SDP::new(backend.clone())
+                                .add_foci_from_iter(gen_foci(size))
+                                .calc(geometry, GainFilter::All)
+                                .unwrap();
+                        })
+                    },
+                );
+            }
+            if ENABLE_LM_BENCH {
+                group.bench_with_input(
+                    BenchmarkId::new("LM", size),
+                    &generate_geometry(N),
+                    |b, geometry| {
+                        b.iter(|| {
+                            LM::new(backend.clone())
+                                .add_foci_from_iter(gen_foci(size))
+                                .calc(geometry, GainFilter::All)
+                                .unwrap();
+                        })
+                    },
+                );
+            }
+            if ENABLE_GREEDY_BENCH {
+                group.bench_with_input(
+                    BenchmarkId::new("Greedy", size),
+                    &generate_geometry(N),
+                    |b, geometry| {
+                        b.iter(|| {
+                            Greedy::new()
+                                .add_foci_from_iter(gen_foci(size))
+                                .calc(geometry, GainFilter::All)
+                                .unwrap();
+                        })
+                    },
+                );
+            }
+        });
     group.finish();
 }

@@ -4,7 +4,7 @@
  * Created Date: 29/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 17/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -99,7 +99,7 @@ impl<B: LinAlgBackend> Gain for GSPAT<B> {
             Complex::new(0., 0.),
             &mut gamma,
         )?;
-        for _ in 0..self.repeat {
+        (0..self.repeat).try_for_each(|_| -> Result<(), AUTDInternalError> {
             self.backend.scaled_to_cv(&gamma, &amps, &mut p)?;
             self.backend.gemv_c(
                 Trans::NoTrans,
@@ -109,7 +109,8 @@ impl<B: LinAlgBackend> Gain for GSPAT<B> {
                 Complex::new(0., 0.),
                 &mut gamma,
             )?;
-        }
+            Ok(())
+        })?;
 
         self.backend.gemv_c(
             Trans::NoTrans,

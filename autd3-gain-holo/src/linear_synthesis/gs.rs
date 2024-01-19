@@ -4,7 +4,7 @@
  * Created Date: 29/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 17/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -81,7 +81,7 @@ impl<B: LinAlgBackend> Gain for GS<B> {
 
         let amps = self.backend.from_slice_cv(self.amps_as_slice())?;
         let mut p = self.backend.alloc_zeros_cv(m)?;
-        for _ in 0..self.repeat {
+        (0..self.repeat).try_for_each(|_| -> Result<(), AUTDInternalError> {
             self.backend.scaled_to_assign_cv(&q0, &mut q)?;
             self.backend.gemv_c(
                 Trans::NoTrans,
@@ -101,8 +101,8 @@ impl<B: LinAlgBackend> Gain for GS<B> {
                 Complex::new(0., 0.),
                 &mut q,
             )?;
-        }
-
+            Ok(())
+        })?;
         generate_result(
             geometry,
             self.backend.to_host_cv(q)?,

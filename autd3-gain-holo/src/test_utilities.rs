@@ -4,7 +4,7 @@
  * Created Date: 14/01/2024
  * Author: Shun Suzuki
  * -----
- * Last Modified: 17/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2024 Shun Suzuki. All rights reserved.
@@ -1921,9 +1921,9 @@ impl<const N: usize, B: LinAlgBackend> LinAlgBackendTestHelper<N, B> {
             .iter()
             .map(|dev| {
                 let mut filter = bitvec::prelude::BitVec::new();
-                for tr in dev.iter() {
+                dev.iter().for_each(|tr| {
                     filter.push(tr.idx() > dev.num_transducers() / 2);
-                }
+                });
                 (dev.idx(), filter)
             })
             .collect::<HashMap<_, _>>();

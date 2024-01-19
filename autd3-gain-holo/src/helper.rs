@@ -4,7 +4,7 @@
  * Created Date: 03/06/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 17/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -49,10 +49,10 @@ macro_rules! impl_holo {
             ) -> Self {
                 let mut foci = self.foci;
                 let mut amps = self.amps;
-                for (focus, amp) in iter {
+                iter.into_iter().for_each(|(focus, amp)| {
                     foci.push(focus);
                     amps.push(amp);
-                }
+                });
                 Self { foci, amps, ..self }
             }
 
@@ -100,10 +100,10 @@ macro_rules! impl_holo {
             ) -> Self {
                 let mut foci = self.foci;
                 let mut amps = self.amps;
-                for (focus, amp) in iter {
+                iter.into_iter().for_each(|(focus, amp)| {
                     foci.push(focus);
                     amps.push(amp);
-                }
+                });
                 Self { foci, amps, ..self }
             }
 
