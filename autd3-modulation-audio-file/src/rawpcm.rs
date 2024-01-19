@@ -4,7 +4,7 @@
  * Created Date: 15/06/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -46,13 +46,10 @@ impl RawPCM {
         let mut reader = BufReader::new(f);
         let mut raw_buffer = Vec::new();
         reader.read_to_end(&mut raw_buffer)?;
-
-        let raw_buffer = raw_buffer.iter().map(|&v| v as f32 / 255.).collect();
-
         Ok(Self {
             sample_rate,
-            raw_buffer,
-            config: SamplingConfiguration::from_frequency(4e3).unwrap(),
+            raw_buffer: raw_buffer.iter().map(|&v| v as f32 / 255.).collect(),
+            config: SamplingConfiguration::FREQ_4K_HZ,
         })
     }
 }
@@ -60,12 +57,14 @@ impl RawPCM {
 impl Modulation for RawPCM {
     #[allow(clippy::unnecessary_cast)]
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        let sample_rate = self.sampling_config().frequency() as u32;
-        let samples =
-            wav_io::resample::linear(self.raw_buffer.clone(), 1, self.sample_rate, sample_rate);
-        Ok(samples
-            .iter()
-            .map(|&d| EmitIntensity::new((d * 255.).round() as u8))
-            .collect())
+        Ok(wav_io::resample::linear(
+            self.raw_buffer.clone(),
+            1,
+            self.sample_rate,
+            self.sampling_config().frequency() as u32,
+        )
+        .iter()
+        .map(|&d| EmitIntensity::new((d * 255.).round() as u8))
+        .collect())
     }
 }
