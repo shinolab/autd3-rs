@@ -4,7 +4,7 @@
  * Created Date: 08/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -53,7 +53,7 @@ impl<G: Gain> Operation for GainOp<G> {
     }
 
     fn required_size(&self, device: &Device) -> usize {
-        std::mem::size_of::<GainT>() + device.num_transducers() * std::mem::size_of::<u16>()
+        std::mem::size_of::<GainT>() + device.num_transducers() * std::mem::size_of::<FPGADrive>()
     }
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
@@ -64,15 +64,16 @@ impl<G: Gain> Operation for GainOp<G> {
             tx.len() >= std::mem::size_of::<GainT>() + d.len() * std::mem::size_of::<FPGADrive>()
         );
 
-        let dd = cast::<GainT>(tx);
-        dd.tag = TypeTag::Gain;
+        cast::<GainT>(tx).tag = TypeTag::Gain;
 
         unsafe {
-            let dst = std::slice::from_raw_parts_mut(
+            std::slice::from_raw_parts_mut(
                 tx[std::mem::size_of::<GainT>()..].as_mut_ptr() as *mut FPGADrive,
                 d.len(),
-            );
-            dst.iter_mut().zip(d.iter()).for_each(|(d, s)| d.set(s));
+            )
+            .iter_mut()
+            .zip(d.iter())
+            .for_each(|(d, s)| d.set(s));
         }
 
         Ok(std::mem::size_of::<GainT>() + d.len() * std::mem::size_of::<FPGADrive>())
@@ -107,7 +108,7 @@ mod tests {
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
 
         let mut tx =
-            vec![0x00u8; (2 + NUM_TRANS_IN_UNIT * std::mem::size_of::<u16>()) * NUM_DEVICE];
+            vec![0x00u8; (2 + NUM_TRANS_IN_UNIT * std::mem::size_of::<FPGADrive>()) * NUM_DEVICE];
 
         let mut rng = rand::thread_rng();
         let data = geometry
@@ -144,7 +145,8 @@ mod tests {
             assert!(op
                 .pack(
                     dev,
-                    &mut tx[dev.idx() * (2 + NUM_TRANS_IN_UNIT * std::mem::size_of::<u16>())..]
+                    &mut tx
+                        [dev.idx() * (2 + NUM_TRANS_IN_UNIT * std::mem::size_of::<FPGADrive>())..]
                 )
                 .is_ok());
             op.commit(dev);
@@ -156,7 +158,7 @@ mod tests {
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
-                tx[dev.idx() * (2 + NUM_TRANS_IN_UNIT * std::mem::size_of::<u16>())],
+                tx[dev.idx() * (2 + NUM_TRANS_IN_UNIT * std::mem::size_of::<FPGADrive>())],
                 TypeTag::Gain as u8
             );
             tx.chunks(2)

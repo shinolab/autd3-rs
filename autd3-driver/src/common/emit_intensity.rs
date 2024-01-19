@@ -4,7 +4,7 @@
  * Created Date: 11/11/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -83,18 +83,16 @@ mod tests {
 
     #[test]
     fn test_new() {
-        for i in 0x00..=0xFF {
-            let intensity = EmitIntensity::new(i);
-            assert_eq!(intensity.value(), i);
-        }
+        (0x00..=0xFF).for_each(|i| {
+            assert_eq!(EmitIntensity::new(i).value(), i);
+        });
     }
 
     #[test]
     fn test_with_correction() {
-        for i in 0..=0xFF {
-            let intensity = EmitIntensity::with_correction(i);
+        (0x00..=0xFF).for_each(|i| {
             assert_eq!(
-                intensity.value(),
+                EmitIntensity::with_correction(i).value(),
                 ((i as float / 255.)
                     .powf(1. / EmitIntensity::DEFAULT_CORRECTED_ALPHA)
                     .asin()
@@ -102,7 +100,7 @@ mod tests {
                     * 510.0)
                     .round() as u8
             );
-        }
+        });
     }
 
     #[test]

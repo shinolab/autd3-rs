@@ -4,7 +4,7 @@
  * Created Date: 06/12/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -434,16 +434,12 @@ mod tests {
         assert!(!AUTD3::is_missing_transducer(16, 13));
         assert!(!AUTD3::is_missing_transducer(17, 13));
 
-        for x in 18..=255 {
-            for y in 0..=255 {
-                assert!(AUTD3::is_missing_transducer(x, y));
-            }
-        }
-        for x in 0..=255 {
-            for y in 14..=255 {
-                assert!(AUTD3::is_missing_transducer(x, y));
-            }
-        }
+        itertools::iproduct!(18..=255, 0..=255).for_each(|(x, y)| {
+            assert!(AUTD3::is_missing_transducer(x, y));
+        });
+        itertools::iproduct!(0..=255, 14..=255).for_each(|(x, y)| {
+            assert!(AUTD3::is_missing_transducer(x, y));
+        });
 
         assert!(!AUTD3::is_missing_transducer(0i8, 0i8));
         assert!(!AUTD3::is_missing_transducer(0i16, 0i16));

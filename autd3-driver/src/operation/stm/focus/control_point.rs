@@ -4,7 +4,7 @@
  * Created Date: 06/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -77,9 +77,9 @@ impl From<&Vector3> for ControlPoint {
     }
 }
 
-impl<I: Into<EmitIntensity> + Copy> From<&(Vector3, I)> for ControlPoint {
+impl<I: Into<EmitIntensity> + Clone> From<&(Vector3, I)> for ControlPoint {
     fn from((point, intensity): &(Vector3, I)) -> Self {
-        Self::new(*point).with_intensity(*intensity)
+        Self::new(*point).with_intensity(intensity.clone())
     }
 }
 

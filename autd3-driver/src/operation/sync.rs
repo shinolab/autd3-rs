@@ -4,7 +4,7 @@
  * Created Date: 08/01/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -35,8 +35,7 @@ impl Operation for SyncOp {
 
         assert!(tx.len() >= std::mem::size_of::<Sync>());
 
-        let d = cast::<Sync>(tx);
-        d.tag = TypeTag::Sync;
+        cast::<Sync>(tx).tag = TypeTag::Sync;
 
         Ok(std::mem::size_of::<Sync>())
     }

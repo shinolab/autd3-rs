@@ -4,7 +4,7 @@
  * Created Date: 06/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -144,32 +144,38 @@ impl<G: Gain> Operation for GainSTMOp<G> {
             GainSTMMode::PhaseIntensityFull => {
                 let d = &self.drives[sent][&device.idx()];
                 unsafe {
-                    let dst = std::slice::from_raw_parts_mut(
+                    std::slice::from_raw_parts_mut(
                         tx[offset..].as_mut_ptr() as *mut FPGADrive,
                         d.len(),
-                    );
-                    dst.iter_mut().zip(d.iter()).for_each(|(d, s)| d.set(s));
+                    )
+                    .iter_mut()
+                    .zip(d.iter())
+                    .for_each(|(d, s)| d.set(s));
                 }
                 send += 1;
             }
             GainSTMMode::PhaseFull => {
                 let d = &self.drives[sent][&device.idx()];
                 unsafe {
-                    let dst = std::slice::from_raw_parts_mut(
+                    std::slice::from_raw_parts_mut(
                         tx[offset..].as_mut_ptr() as *mut PhaseFull<0>,
                         d.len(),
-                    );
-                    dst.iter_mut().zip(d.iter()).for_each(|(d, s)| d.set(s));
+                    )
+                    .iter_mut()
+                    .zip(d.iter())
+                    .for_each(|(d, s)| d.set(s));
                 }
                 send += 1;
                 if self.drives.len() > sent + 1 {
                     let d = &self.drives[sent + 1][&device.idx()];
                     unsafe {
-                        let dst = std::slice::from_raw_parts_mut(
+                        std::slice::from_raw_parts_mut(
                             tx[offset..].as_mut_ptr() as *mut PhaseFull<1>,
                             d.len(),
-                        );
-                        dst.iter_mut().zip(d.iter()).for_each(|(d, s)| d.set(s));
+                        )
+                        .iter_mut()
+                        .zip(d.iter())
+                        .for_each(|(d, s)| d.set(s));
                     }
                     send += 1;
                 }
@@ -177,43 +183,51 @@ impl<G: Gain> Operation for GainSTMOp<G> {
             GainSTMMode::PhaseHalf => {
                 let d = &self.drives[sent][&device.idx()];
                 unsafe {
-                    let dst = std::slice::from_raw_parts_mut(
+                    std::slice::from_raw_parts_mut(
                         tx[offset..].as_mut_ptr() as *mut PhaseHalf<0>,
                         d.len(),
-                    );
-                    dst.iter_mut().zip(d.iter()).for_each(|(d, s)| d.set(s));
+                    )
+                    .iter_mut()
+                    .zip(d.iter())
+                    .for_each(|(d, s)| d.set(s));
                 }
                 send += 1;
                 if self.drives.len() > sent + 1 {
                     let d = &self.drives[sent + 1][&device.idx()];
                     unsafe {
-                        let dst = std::slice::from_raw_parts_mut(
+                        std::slice::from_raw_parts_mut(
                             tx[offset..].as_mut_ptr() as *mut PhaseHalf<1>,
                             d.len(),
-                        );
-                        dst.iter_mut().zip(d.iter()).for_each(|(d, s)| d.set(s));
+                        )
+                        .iter_mut()
+                        .zip(d.iter())
+                        .for_each(|(d, s)| d.set(s));
                     }
                     send += 1;
                 }
                 if self.drives.len() > sent + 2 {
                     let d = &self.drives[sent + 2][&device.idx()];
                     unsafe {
-                        let dst = std::slice::from_raw_parts_mut(
+                        std::slice::from_raw_parts_mut(
                             tx[offset..].as_mut_ptr() as *mut PhaseHalf<2>,
                             d.len(),
-                        );
-                        dst.iter_mut().zip(d.iter()).for_each(|(d, s)| d.set(s));
+                        )
+                        .iter_mut()
+                        .zip(d.iter())
+                        .for_each(|(d, s)| d.set(s));
                     }
                     send += 1;
                 }
                 if self.drives.len() > sent + 3 {
                     let d = &self.drives[sent + 3][&device.idx()];
                     unsafe {
-                        let dst = std::slice::from_raw_parts_mut(
+                        std::slice::from_raw_parts_mut(
                             tx[offset..].as_mut_ptr() as *mut PhaseHalf<3>,
                             d.len(),
-                        );
-                        dst.iter_mut().zip(d.iter()).for_each(|(d, s)| d.set(s));
+                        )
+                        .iter_mut()
+                        .zip(d.iter())
+                        .for_each(|(d, s)| d.set(s));
                     }
                     send += 1;
                 }

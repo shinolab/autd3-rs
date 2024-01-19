@@ -4,7 +4,7 @@
  * Created Date: 05/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -21,6 +21,14 @@ pub struct STMFocus {
 }
 
 impl STMFocus {
+    fn to_fixed_num(x: float) -> Result<i32, AUTDInternalError> {
+        let ix = (x / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
+        if !(FOCUS_STM_FIXED_NUM_LOWER..=FOCUS_STM_FIXED_NUM_UPPER).contains(&ix) {
+            return Err(AUTDInternalError::FocusSTMPointOutOfRange(x));
+        }
+        Ok(ix)
+    }
+
     pub fn set(
         &mut self,
         x: float,
@@ -28,15 +36,9 @@ impl STMFocus {
         z: float,
         intensity: EmitIntensity,
     ) -> Result<(), AUTDInternalError> {
-        let ix = (x / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
-        let iy = (y / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
-        let iz = (z / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
-        if !(FOCUS_STM_FIXED_NUM_LOWER..=FOCUS_STM_FIXED_NUM_UPPER).contains(&ix)
-            || !(FOCUS_STM_FIXED_NUM_LOWER..=FOCUS_STM_FIXED_NUM_UPPER).contains(&iy)
-            || !(FOCUS_STM_FIXED_NUM_LOWER..=FOCUS_STM_FIXED_NUM_UPPER).contains(&iz)
-        {
-            return Err(AUTDInternalError::FocusSTMPointOutOfRange(x, y, z));
-        }
+        let ix = Self::to_fixed_num(x)?;
+        let iy = Self::to_fixed_num(y)?;
+        let iz = Self::to_fixed_num(z)?;
         self.buf[0] = (ix & 0xFFFF) as u16;
         self.buf[1] = ((iy << 2) & 0xFFFC) as u16
             | ((ix >> 30) & 0x0002) as u16

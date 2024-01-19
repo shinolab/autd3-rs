@@ -4,7 +4,7 @@
  * Created Date: 06/11/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 02/12/2023
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -39,28 +39,24 @@ pub struct PhaseHalf<const N: usize> {
 
 impl PhaseHalf<0> {
     pub fn set(&mut self, d: &Drive) {
-        let phase = d.phase.value();
-        self.phase_01 = (self.phase_01 & 0xF0) | ((phase >> 4) & 0x0F);
+        self.phase_01 = (self.phase_01 & 0xF0) | ((d.phase.value() >> 4) & 0x0F);
     }
 }
 
 impl PhaseHalf<1> {
     pub fn set(&mut self, d: &Drive) {
-        let phase = d.phase.value();
-        self.phase_01 = (self.phase_01 & 0x0F) | (phase & 0xF0);
+        self.phase_01 = (self.phase_01 & 0x0F) | (d.phase.value() & 0xF0);
     }
 }
 
 impl PhaseHalf<2> {
     pub fn set(&mut self, d: &Drive) {
-        let phase = d.phase.value();
-        self.phase_23 = (self.phase_23 & 0xF0) | ((phase >> 4) & 0x0F);
+        self.phase_23 = (self.phase_23 & 0xF0) | ((d.phase.value() >> 4) & 0x0F);
     }
 }
 
 impl PhaseHalf<3> {
     pub fn set(&mut self, d: &Drive) {
-        let phase = d.phase.value();
-        self.phase_23 = (self.phase_23 & 0x0F) | (phase & 0xF0);
+        self.phase_23 = (self.phase_23 & 0x0F) | (d.phase.value() & 0xF0);
     }
 }

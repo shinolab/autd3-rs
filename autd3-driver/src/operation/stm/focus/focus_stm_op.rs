@@ -4,7 +4,7 @@
  * Created Date: 06/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -118,11 +118,8 @@ impl Operation for FocusSTMOp {
         }
 
         unsafe {
-            let dst = std::slice::from_raw_parts_mut(
-                tx[offset..].as_mut_ptr() as *mut STMFocus,
-                send_num,
-            );
-            dst.iter_mut()
+            std::slice::from_raw_parts_mut(tx[offset..].as_mut_ptr() as *mut STMFocus, send_num)
+                .iter_mut()
                 .zip(self.points.iter().skip(sent).take(send_num))
                 .try_for_each(|(d, p)| {
                     let lp = device.to_local(p.point());
@@ -152,7 +149,6 @@ impl Operation for FocusSTMOp {
                 self.points.len(),
             ));
         }
-
         match self.start_idx {
             Some(idx) if idx as usize >= self.points.len() => {
                 return Err(AUTDInternalError::STMStartIndexOutOfRange)
@@ -732,7 +728,7 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(
                 op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
-                Err(AUTDInternalError::FocusSTMPointOutOfRange(x, x, x))
+                Err(AUTDInternalError::FocusSTMPointOutOfRange(x))
             );
         });
     }

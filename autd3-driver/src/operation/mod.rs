@@ -4,7 +4,7 @@
  * Created Date: 08/01/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 17/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -61,7 +61,7 @@ pub enum TypeTag {
 }
 
 fn cast<T>(tx: &mut [u8]) -> &mut T {
-    unsafe { (tx[0..].as_mut_ptr() as *mut T).as_mut().unwrap() }
+    unsafe { (tx.as_mut_ptr() as *mut T).as_mut().unwrap() }
 }
 
 pub trait Operation {
@@ -131,33 +131,26 @@ impl OperationHandler {
             .devices()
             .map(|dev| match (op1.remains(dev), op2.remains(dev)) {
                 (0, 0) => unreachable!(),
-                (0, _) => Self::pack_dev(op2, dev, tx),
-                (_, 0) => Self::pack_dev(op1, dev, tx),
+                (0, _) => {
+                    Self::pack_dev(op2, dev, tx)?;
+                    Ok(())
+                }
+                (_, 0) => {
+                    Self::pack_dev(op1, dev, tx)?;
+                    Ok(())
+                }
                 _ => {
-                    let hedaer = tx.header_mut(dev.idx());
-                    hedaer.msg_id = if hedaer.msg_id == MSG_ID_MAX {
-                        0
-                    } else {
-                        hedaer.msg_id + 1
-                    };
-                    hedaer.slot_2_offset = 0;
-
+                    let op1_size = Self::pack_dev(op1, dev, tx)?;
                     let t = tx.payload_mut(dev.idx());
-                    assert!(t.len() >= op1.required_size(dev));
-                    let op1_size = op1.pack(dev, t)?;
-                    op1.commit(dev);
-
                     if t.len() - op1_size >= op2.required_size(dev) {
-                        tx.header_mut(dev.idx()).slot_2_offset = op1_size as u16;
-                        let t = tx.payload_mut(dev.idx());
                         op2.pack(dev, &mut t[op1_size..])?;
                         op2.commit(dev);
+                        tx.header_mut(dev.idx()).slot_2_offset = op1_size as u16;
                     }
-
                     Ok(())
                 }
             })
-            .collect::<Result<Vec<_>, _>>()?;
+            .collect::<Result<Vec<_>, AUTDInternalError>>()?;
         Ok(())
     }
 
@@ -165,19 +158,21 @@ impl OperationHandler {
         op: &mut O,
         dev: &Device,
         tx: &mut TxDatagram,
-    ) -> Result<(), AUTDInternalError> {
+    ) -> Result<usize, AUTDInternalError> {
         let hedaer = tx.header_mut(dev.idx());
-        hedaer.msg_id = if hedaer.msg_id == 0x7F {
+        hedaer.msg_id = if hedaer.msg_id == MSG_ID_MAX {
             0
         } else {
             hedaer.msg_id + 1
         };
         hedaer.slot_2_offset = 0;
 
-        op.pack(dev, tx.payload_mut(dev.idx()))?;
+        let t = tx.payload_mut(dev.idx());
+        assert!(t.len() >= op.required_size(dev));
+        let res = op.pack(dev, t)?;
         op.commit(dev);
 
-        Ok(())
+        Ok(res)
     }
 }
 

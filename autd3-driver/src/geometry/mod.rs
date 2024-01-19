@@ -4,7 +4,7 @@
  * Created Date: 04/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -349,9 +349,9 @@ pub mod tests {
         let device1 = Device::new(1, transducers);
 
         let geometry = Geometry::new(vec![device0, device1]);
-        for dev in &geometry {
+        geometry.into_iter().for_each(|dev| {
             let _ = dev.sound_speed;
-        }
+        });
     }
 
     #[test]
@@ -381,9 +381,8 @@ pub mod tests {
         let device1 = Device::new(1, transducers);
 
         let mut geometry = Geometry::new(vec![device0, device1]);
-
-        for dev in &mut geometry {
+        geometry.iter_mut().for_each(|dev| {
             dev.sound_speed = 0.;
-        }
+        });
     }
 }

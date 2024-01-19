@@ -4,7 +4,7 @@
  * Created Date: 29/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -35,6 +35,10 @@ impl<F: Fn(&Device, &Transducer) -> u16> Datagram for ConfigureModDelay<F> {
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         Ok((Self::O1::new(self.f), Self::O2::default()))
     }
+
+    fn timeout(&self) -> Option<Duration> {
+        Some(Duration::from_millis(200))
+    }
 }
 
 #[cfg(test)]
@@ -49,8 +53,7 @@ mod tests {
     #[test]
     fn test_mod_delay_timeout() {
         let delay = ConfigureModDelay::new(f);
-        let timeout = delay.timeout();
-        assert!(timeout.is_none());
+        assert_eq!(delay.timeout(), Some(Duration::from_millis(200)));
     }
 
     #[test]
