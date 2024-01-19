@@ -4,7 +4,7 @@
  * Created Date: 24/05/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 18/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -31,13 +31,14 @@ pub async fn flag<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
     autd.send(ConfigureForceFan::new(|_dev| true)).await?;
 
     let fin = Arc::new(AtomicBool::new(false));
-
-    let fin2 = fin.clone();
-    let fin_signal = tokio::spawn(async move {
-        println!("press any key to stop checking FPGA status...");
-        let mut _s = String::new();
-        async_std::io::stdin().read_line(&mut _s).await.unwrap();
-        fin2.store(true, Ordering::Relaxed);
+    println!("press any key to stop checking FPGA status...");
+    let fin_signal = tokio::spawn({
+        let fin = fin.clone();
+        async move {
+            let mut _s = String::new();
+            async_std::io::stdin().read_line(&mut _s).await.unwrap();
+            fin.store(true, Ordering::Relaxed);
+        }
     });
 
     let prompts = ['-', '/', '|', '\\'];
