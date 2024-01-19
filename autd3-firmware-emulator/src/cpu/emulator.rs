@@ -4,7 +4,7 @@
  * Created Date: 06/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 17/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -36,6 +36,7 @@ pub struct CPUEmulator {
     pub(crate) silencer_strict_mode: bool,
     pub(crate) min_freq_div_intensity: u32,
     pub(crate) min_freq_div_phase: u32,
+    pub(crate) is_rx_data_used: bool,
 }
 
 impl CPUEmulator {
@@ -59,6 +60,7 @@ impl CPUEmulator {
             silencer_strict_mode: true,
             min_freq_div_intensity: 5120,
             min_freq_div_phase: 20480,
+            is_rx_data_used: false,
         };
         s.init();
         s
@@ -158,6 +160,9 @@ impl CPUEmulator {
     }
 
     fn read_fpga_state(&mut self) {
+        if self.is_rx_data_used {
+            return;
+        }
         if self.read_fpga_state {
             self.rx_data = READS_FPGA_STATE_ENABLED
                 | self.bram_read(BRAM_SELECT_CONTROLLER, BRAM_ADDR_FPGA_STATE) as u8;

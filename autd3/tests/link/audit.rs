@@ -4,7 +4,7 @@
  * Created Date: 17/01/2024
  * Author: Shun Suzuki
  * -----
- * Last Modified: 17/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2024 Shun Suzuki. All rights reserved.
@@ -23,12 +23,7 @@ async fn audit_test() {
         .unwrap();
     assert_eq!(autd.link.timeout(), std::time::Duration::from_millis(100));
 
-    assert_eq!(autd.fpga_state().await, Ok(vec![None]));
-
-    assert_eq!(
-        autd.send(ConfigureReadsFPGAState::new(|_| true)).await,
-        Ok(true)
-    );
+    assert_eq!(autd.send(Null::new()).await, Ok(true));
     assert_eq!(
         autd.link.last_timeout(),
         std::time::Duration::from_millis(100)
@@ -43,6 +38,12 @@ async fn audit_test() {
     assert_eq!(autd.link.emulators()[0].idx(), 0);
     assert_eq!(autd.link[0].idx(), 0);
 
+    assert_eq!(autd.fpga_state().await, Ok(vec![None]));
+    assert_eq!(
+        autd.send(ConfigureReadsFPGAState::new(|_| true)).await,
+        Ok(true)
+    );
+    autd.link[0].update();
     assert_eq!(
         autd.fpga_state().await,
         Ok(vec![Option::<FPGAState>::from(&RxMessage {
