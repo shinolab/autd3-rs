@@ -34,20 +34,23 @@ pub struct GroupGuard<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Optio
 }
 
 impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<'a, K, L, F> {
-    pub fn set<D: Datagram>(mut self, k: K, d: D) -> Result<Self, AUTDInternalError>
+    pub(crate) fn new(cnt: &'a mut Controller<L>, f: F) -> Self {
+        Self {
+            cnt,
+            f,
+            timeout: None,
+            op: OpMap::new(),
+        }
+    }
+
+    pub fn set<D: Datagram>(self, k: K, d: D) -> Result<Self, AUTDInternalError>
     where
         D::O1: 'static,
         D::O2: 'static,
     {
-        self.timeout = match (self.timeout, d.timeout()) {
-            (None, None) => None,
-            (None, Some(t)) => Some(t),
-            (Some(t), None) => Some(t),
-            (Some(t1), Some(t2)) => Some(t1.max(t2)),
-        };
+        let timeout = d.timeout();
         let (op1, op2) = d.operation()?;
-        self.op.insert(k, (Box::new(op1), Box::new(op2)));
-        Ok(self)
+        self.set_boxed_op(k, Box::new(op1), Box::new(op2), timeout)
     }
 
     #[doc(hidden)]
@@ -60,8 +63,7 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
     ) -> Result<Self, AUTDInternalError> {
         self.timeout = match (self.timeout, timeout) {
             (None, None) => None,
-            (None, Some(t)) => Some(t),
-            (Some(t), None) => Some(t),
+            (None, Some(t)) | (Some(t), None) => Some(t),
             (Some(t1), Some(t2)) => Some(t1.max(t2)),
         };
         self.op.insert(k, (op1, op2));
@@ -93,16 +95,7 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
                     self.cnt
                         .geometry
                         .iter()
-                        .map(|dev| {
-                            if !dev.enable {
-                                return false;
-                            }
-                            if let Some(kk) = (self.f)(dev) {
-                                kk == *k
-                            } else {
-                                false
-                            }
-                        })
+                        .map(|dev| dev.enable && (self.f)(dev).map(|kk| &kk == k).unwrap_or(false))
                         .collect(),
                 )
             })

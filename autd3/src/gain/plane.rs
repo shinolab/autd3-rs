@@ -4,7 +4,7 @@
  * Created Date: 05/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -67,13 +67,9 @@ impl Gain for Plane {
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |dev, tr| {
-            let dist = self.dir.dot(tr.position());
-            let phase = dist * tr.wavenumber(dev.sound_speed) * Rad;
-            Drive {
-                phase,
-                intensity: self.intensity,
-            }
+        Ok(Self::transform(geometry, filter, |dev, tr| Drive {
+            phase: self.dir.dot(tr.position()) * tr.wavenumber(dev.sound_speed) * Rad,
+            intensity: self.intensity,
         }))
     }
 }

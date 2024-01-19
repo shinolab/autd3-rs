@@ -4,7 +4,7 @@
  * Created Date: 10/07/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -60,12 +60,12 @@ mod tests {
         let vec = m.calc().unwrap();
         let vec_transformed = m_transformed.calc().unwrap();
 
-        for (&x, &y) in vec.iter().zip(&vec_transformed) {
+        vec.iter().zip(&vec_transformed).for_each(|(&x, &y)| {
             assert_eq!(
                 y.value(),
                 ((x.value() as float / 255.).sqrt() * 255.).round() as u8
             );
-        }
+        });
 
         assert_eq!(m.sampling_config(), m_transformed.sampling_config());
     }

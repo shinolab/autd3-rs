@@ -4,7 +4,7 @@
  * Created Date: 28/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 17/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -50,7 +50,7 @@ impl Square {
     ///
     /// # Arguments
     ///
-    /// * `low` - low level emmission intensity
+    /// * `low` - low level [EmitIntensity]
     ///
     pub fn with_low<A: Into<EmitIntensity>>(self, low: A) -> Self {
         Self {
@@ -63,7 +63,7 @@ impl Square {
     ///
     /// # Arguments
     ///
-    /// * `high` - high level emmission intensity
+    /// * `high` - high level [EmitIntensity]
     ///     
     pub fn with_high<A: Into<EmitIntensity>>(self, high: A) -> Self {
         Self {
@@ -87,7 +87,7 @@ impl Square {
     ///
     /// # Arguments
     ///
-    /// * `mode` - Sampling mode
+    /// * `mode` - [SamplingMode]
     ///
     pub const fn with_mode(self, mode: SamplingMode) -> Self {
         Self { mode, ..self }
@@ -120,23 +120,25 @@ impl Modulation for Square {
 
         let (d, n) = match self.mode {
             SamplingMode::ExactFrequency => {
-                let sf = self.sampling_config().frequency() as usize;
+                if self.sampling_config().frequency().fract() != 0.0 {
+                    return Err(AUTDInternalError::ModulationError(
+                        "Sampling frequency must be integer".to_string(),
+                    ));
+                }
                 if self.freq.fract() != 0.0 {
                     return Err(AUTDInternalError::ModulationError(
                         "Frequency must be integer".to_string(),
                     ));
                 }
+                let sf = self.sampling_config().frequency() as usize;
                 let freq = (self.freq as usize).clamp(1, sf / 2);
                 let k = gcd(sf, freq);
-                let n = sf / k;
-                let d = freq / k;
-                (d, n)
+                (freq / k, sf / k)
             }
             SamplingMode::SizeOptimized => {
                 let sf = self.sampling_config().frequency();
                 let freq = self.freq.clamp(0., sf / 2.);
-                let n = (sf / freq).round() as usize;
-                (1, n)
+                (1, (sf / freq).round() as usize)
             }
         };
 

@@ -4,7 +4,7 @@
  * Created Date: 10/05/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -51,11 +51,10 @@ impl<M: Modulation + Clone> Clone for Cache<M> {
 impl<M: Modulation> Cache<M> {
     /// constructor
     pub fn new(m: M) -> Self {
-        let config = m.sampling_config();
         Self {
+            config: m.sampling_config(),
             m: Rc::new(m),
             cache: Rc::new(Default::default()),
-            config,
         }
     }
 
@@ -105,14 +104,14 @@ mod tests {
         assert_eq!(m.sampling_config(), Static::new().sampling_config());
 
         assert!(m.buffer().is_empty());
-        for d in m.calc().unwrap() {
+        m.calc().unwrap().iter().for_each(|&d| {
             assert_eq!(d, EmitIntensity::MAX);
-        }
+        });
 
         assert!(!m.buffer().is_empty());
-        for d in m.buffer().iter() {
-            assert_eq!(d, &EmitIntensity::MAX);
-        }
+        m.buffer().iter().for_each(|&d| {
+            assert_eq!(d, EmitIntensity::MAX);
+        });
     }
 
     struct TestModulation {

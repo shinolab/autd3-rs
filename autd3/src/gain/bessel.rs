@@ -4,7 +4,7 @@
  * Created Date: 02/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -82,17 +82,18 @@ impl Gain for Bessel {
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        let dir = self.dir.normalize();
-        let v = Vector3::new(dir.y, -dir.x, 0.);
-        let theta_v = v.norm().asin();
-        let rot = if let Some(v) = v.try_normalize(1.0e-6) {
-            UnitQuaternion::from_scaled_axis(v * -theta_v)
-        } else {
-            UnitQuaternion::identity()
+        let rot = {
+            let dir = self.dir.normalize();
+            let v = Vector3::new(dir.y, -dir.x, 0.);
+            let theta_v = v.norm().asin();
+            if let Some(v) = v.try_normalize(1.0e-6) {
+                UnitQuaternion::from_scaled_axis(v * -theta_v)
+            } else {
+                UnitQuaternion::identity()
+            }
         };
         Ok(Self::transform(geometry, filter, |dev, tr| {
-            let r = tr.position() - self.pos;
-            let r = rot * r;
+            let r = rot * (tr.position() - self.pos);
             let dist = self.theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - self.theta.cos() * r.z;
             let phase = dist * tr.wavenumber(dev.sound_speed) * Rad;
             Drive {
