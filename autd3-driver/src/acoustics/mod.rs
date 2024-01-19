@@ -4,7 +4,7 @@
  * Created Date: 04/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 09/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -24,7 +24,7 @@ use directivity::Directivity;
 ///
 /// # Arguments
 ///
-/// * `tr` - Source transducer
+/// * `tr` - Source [Transducer]
 /// * `attenuation` - Attenuation coefficient
 /// * `sound_speed` - Speed of sound
 /// * `target_pos` - Position of target
@@ -37,11 +37,12 @@ pub fn propagate<D: Directivity>(
 ) -> Complex {
     let diff = target_pos - tr.position();
     let dist = diff.norm();
-    let r = T4010A1_AMPLITUDE / (4. * PI) / dist
-        * D::directivity_from_tr(tr, &diff)
-        * (-dist * attenuation).exp();
-    let phase = -tr.wavenumber(sound_speed) * dist;
-    Complex::new(r * phase.cos(), r * phase.sin())
+    Complex::from_polar(
+        T4010A1_AMPLITUDE / (4. * PI) / dist
+            * D::directivity_from_tr(tr, &diff)
+            * (-dist * attenuation).exp(),
+        -tr.wavenumber(sound_speed) * dist,
+    )
 }
 
 #[cfg(test)]

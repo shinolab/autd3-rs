@@ -4,7 +4,7 @@
  * Created Date: 08/01/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -47,17 +47,16 @@ impl<F: Fn(&Device, &Transducer) -> u16> Operation for ConfigureModDelayOp<F> {
                     + device.num_transducers() * std::mem::size_of::<u16>()
         );
 
-        let d = cast::<ConfigureModDelay>(tx);
-        d.tag = TypeTag::ConfigureModDelay;
+        cast::<ConfigureModDelay>(tx).tag = TypeTag::ConfigureModDelay;
 
         unsafe {
-            let dst = std::slice::from_raw_parts_mut(
+            std::slice::from_raw_parts_mut(
                 tx[std::mem::size_of::<ConfigureModDelay>()..].as_mut_ptr() as *mut u16,
                 device.num_transducers(),
-            );
-            dst.iter_mut()
-                .zip(device.iter())
-                .for_each(|(d, s)| *d = (self.f)(device, s));
+            )
+            .iter_mut()
+            .zip(device.iter())
+            .for_each(|(d, s)| *d = (self.f)(device, s));
         }
 
         Ok(std::mem::size_of::<ConfigureModDelay>()

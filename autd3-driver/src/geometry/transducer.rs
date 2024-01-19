@@ -4,7 +4,7 @@
  * Created Date: 04/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -37,10 +37,8 @@ impl Transducer {
 
     /// Affine transformation
     pub fn affine(&mut self, t: Vector3, r: UnitQuaternion) {
-        let rot_mat: Matrix4 = From::from(r);
-        let trans_mat = rot_mat.append_translation(&t);
-        let homo = Vector4::new(self.pos[0], self.pos[1], self.pos[2], 1.0);
-        let new_pos = trans_mat * homo;
+        let new_pos = Matrix4::from(r).append_translation(&t)
+            * Vector4::new(self.pos[0], self.pos[1], self.pos[2], 1.0);
         self.pos = Vector3::new(new_pos[0], new_pos[1], new_pos[2]);
         self.rot = r * self.rot;
     }

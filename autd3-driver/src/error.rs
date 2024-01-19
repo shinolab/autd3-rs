@@ -4,7 +4,7 @@
  * Created Date: 02/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 01/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -61,11 +61,11 @@ pub enum AUTDInternalError {
     )]
     FocusSTMPointSizeOutOfRange(usize),
     #[error(
-        "Point ({0}, {1}, {2}) is out of range. Each parameter must be in [{}, {}].",
+        "Point coordinate ({0}) is out of range ([{}, {}])",
         FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER as float,
         FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_UPPER as float,
     )]
-    FocusSTMPointOutOfRange(float, float, float),
+    FocusSTMPointOutOfRange(float),
     #[error(
         "GainSTM size ({0}) is out of range ([{}, {}])",
         STM_BUF_SIZE_MIN,
@@ -210,33 +210,24 @@ mod tests {
 
     #[test]
     fn focus_stm_point_out_of_range() {
-        let err = AUTDInternalError::FocusSTMPointOutOfRange(1.0, 2.0, 3.0);
+        let err = AUTDInternalError::FocusSTMPointOutOfRange(1.0);
         assert!(err.source().is_none());
         if cfg!(feature = "use_meter") {
             assert_eq!(
                 format!("{}", err),
-                "Point (1, 2, 3) is out of range. Each parameter must be in [-3.2768, 3.276775]."
+                "Point coordinate (1) is out of range ([-3.2768, 3.276775])"
             );
         } else {
             assert_eq!(
                 format!("{}", err),
-                "Point (1, 2, 3) is out of range. Each parameter must be in [-3276.8, 3276.775]."
+                "Point coordinate (1) is out of range ([-3276.8, 3276.775])"
             );
         }
-        assert_eq!(
-            format!("{:?}", err),
-            "FocusSTMPointOutOfRange(1.0, 2.0, 3.0)"
-        );
+        assert_eq!(format!("{:?}", err), "FocusSTMPointOutOfRange(1.0)");
 
-        let err = AUTDInternalError::FocusSTMPointOutOfRange(1.0, 2.0, 3.0);
-        assert_eq!(
-            err,
-            AUTDInternalError::FocusSTMPointOutOfRange(1.0, 2.0, 3.0)
-        );
-        assert_ne!(
-            err,
-            AUTDInternalError::FocusSTMPointOutOfRange(1.0, 2.0, 4.0)
-        );
+        let err = AUTDInternalError::FocusSTMPointOutOfRange(1.0);
+        assert_eq!(err, AUTDInternalError::FocusSTMPointOutOfRange(1.0));
+        assert_ne!(err, AUTDInternalError::FocusSTMPointOutOfRange(2.0));
     }
 
     #[test]

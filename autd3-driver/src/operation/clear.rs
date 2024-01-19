@@ -4,7 +4,7 @@
  * Created Date: 08/01/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -33,8 +33,7 @@ impl Operation for ClearOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert_eq!(self.remains[&device.idx()], 1);
 
-        let d = cast::<Clear>(tx);
-        d.tag = TypeTag::Clear;
+        cast::<Clear>(tx).tag = TypeTag::Clear;
 
         Ok(std::mem::size_of::<Clear>())
     }

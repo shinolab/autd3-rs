@@ -4,7 +4,7 @@
  * Created Date: 08/01/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -193,12 +193,11 @@ mod tests {
         let mut op = FirmInfoOp::default();
 
         assert!(op.init(&geometry).is_ok());
-
-        for _ in 0..7 {
+        (0..7).for_each(|_| {
             geometry.devices().for_each(|dev| {
                 assert!(op.pack(dev, &mut tx[dev.idx() * 2..]).is_ok());
                 op.commit(dev);
             });
-        }
+        });
     }
 }

@@ -4,7 +4,7 @@
  * Created Date: 08/01/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/12/2023
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -151,7 +151,7 @@ impl Operation for ModulationOp {
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        if self.buf.len() < 2 || self.buf.len() > MOD_BUF_SIZE_MAX {
+        if !(2..=MOD_BUF_SIZE_MAX).contains(&self.buf.len()) {
             return Err(AUTDInternalError::ModulationSizeOutOfRange(self.buf.len()));
         }
 

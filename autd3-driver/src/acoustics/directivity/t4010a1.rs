@@ -4,7 +4,7 @@
  * Created Date: 04/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 30/11/2023
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -69,7 +69,6 @@ static DIR_COEF_D: &[float] = &[
 pub struct T4010A1 {}
 
 impl Directivity for T4010A1 {
-    #[allow(clippy::many_single_char_names)]
     fn directivity(theta_deg: float) -> float {
         let theta_deg = theta_deg.abs() % 180.0;
         let theta_deg = if theta_deg > 90.0 {
@@ -81,12 +80,9 @@ impl Directivity for T4010A1 {
         if i == 0 {
             1.0
         } else {
-            let a = DIR_COEF_A[i - 1];
-            let b = DIR_COEF_B[i - 1];
-            let c = DIR_COEF_C[i - 1];
-            let d = DIR_COEF_D[i - 1];
             let x = theta_deg - (i as float - 1.0) * 10.0;
-            ((d * x + c) * x + b) * x + a
+            ((DIR_COEF_D[i - 1] * x + DIR_COEF_C[i - 1]) * x + DIR_COEF_B[i - 1]) * x
+                + DIR_COEF_A[i - 1]
         }
     }
 }
