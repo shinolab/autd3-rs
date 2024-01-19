@@ -4,7 +4,7 @@
  * Created Date: 06/10/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/10/2023
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -64,9 +64,9 @@ impl EcStatus {
 
 impl std::fmt::Display for EcStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for (i, state) in self.states.iter().enumerate() {
+        self.states.iter().enumerate().try_for_each(|(i, state)| {
             writeln!(f, "Slave[{i}]: {state}")?;
-        }
-        Ok(())
+            Ok(())
+        })
     }
 }

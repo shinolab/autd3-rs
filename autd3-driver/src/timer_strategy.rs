@@ -4,7 +4,7 @@
  * Created Date: 08/05/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 15/11/2023
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -16,7 +16,7 @@
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(u8)]
 pub enum TimerStrategy {
-    /// Use `std::thread::sleep`
+    /// Use `tokio::time::sleep`
     Sleep = 0,
     /// Use busy wait
     BusyWait = 1,
