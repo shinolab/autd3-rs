@@ -1,6 +1,6 @@
 [package]
 name = "autd3-protobuf"
-version = "21.0.0"
+version = "21.0.0-alpha.0"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 
@@ -14,7 +14,7 @@ keywords = ["autd"]
 h2 = "0.4.0"
 prost = { version = "0.12.0" }
 tonic = { version = "0.10.0", default-features = false, features = ["prost", "codegen", "transport"] }
-autd3-driver = { path = "../autd3-driver", version = "21.0.0", default-features = false }
+autd3-driver = { path = "../autd3-driver", version = "21.0.0-alpha.0", default-features = false }
 thiserror = "1.0.40"
 
 [build-dependencies]
