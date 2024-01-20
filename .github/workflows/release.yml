@@ -21,6 +21,9 @@ jobs:
           git submodule update --init --recursive
       - name: Check semver
         uses: obi1kenobi/cargo-semver-checks-action@v2
+        with:
+          feature-group: default-features
+          features: default
       - name: publish to carate.io
         run: |
           cd autd3-driver
