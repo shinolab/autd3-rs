@@ -4,7 +4,7 @@
  * Created Date: 04/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 17/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -137,10 +137,8 @@ impl FocusSTM {
         self.props.period(self.control_points.len())
     }
 
-    pub fn sampling_config(&self) -> SamplingConfiguration {
-        self.props
-            .sampling_config(self.control_points.len())
-            .unwrap()
+    pub fn sampling_config(&self) -> Result<SamplingConfiguration, AUTDInternalError> {
+        self.props.sampling_config(self.control_points.len())
     }
 }
 
@@ -157,7 +155,7 @@ impl Datagram for FocusSTM {
     type O2 = crate::operation::NullOp;
 
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        let freq_div = self.sampling_config().frequency_division();
+        let freq_div = self.sampling_config()?.frequency_division();
         let start_idx = self.props.start_idx;
         let finish_idx = self.props.finish_idx;
         Ok((
@@ -186,7 +184,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(stm.frequency(), 1.);
-        assert_eq!(stm.sampling_config().frequency(), 1. * 10.);
+        assert_eq!(stm.sampling_config().unwrap().frequency(), 1. * 10.);
     }
 
     #[test]
@@ -197,7 +195,7 @@ mod tests {
 
         assert_eq!(stm.period(), std::time::Duration::from_micros(250));
         assert_eq!(
-            stm.sampling_config().period(),
+            stm.sampling_config().unwrap().period(),
             std::time::Duration::from_micros(25)
         );
     }
@@ -212,7 +210,7 @@ mod tests {
 
         assert_eq!(stm.period(), std::time::Duration::from_micros(250));
         assert_eq!(
-            stm.sampling_config().period(),
+            stm.sampling_config().unwrap().period(),
             std::time::Duration::from_micros(25)
         );
     }

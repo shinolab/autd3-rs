@@ -45,7 +45,7 @@ impl EcStatus {
                     .map(|slave| {
                         let c_status: &CStr =
                             CStr::from_ptr(ec_ALstatuscode2string(ec_slave[slave].ALstatuscode));
-                        let status: &str = c_status.to_str().unwrap();
+                        let status: &str = c_status.to_str().unwrap_or("Unknown status");
                         State {
                             status: status.to_string(),
                             ec_state: ec_slave[slave].state,

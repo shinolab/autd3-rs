@@ -4,7 +4,7 @@
  * Created Date: 27/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 08/10/2023
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -34,6 +34,8 @@ pub enum SOEMError {
     InvalidSendCycleTime,
     #[error("Invalid sync0 cycle time")]
     InvalidSync0CycleTime,
+    #[error("Invalid interface name: {0}")]
+    InvalidInterfaceName(String),
 
     #[cfg(target_os = "windows")]
     #[error("{0}")]

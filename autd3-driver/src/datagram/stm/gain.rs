@@ -4,7 +4,7 @@
  * Created Date: 04/09/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 17/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -101,8 +101,8 @@ impl<G: Gain> GainSTM<G> {
         self.props.period(self.gains.len())
     }
 
-    pub fn sampling_config(&self) -> SamplingConfiguration {
-        self.props.sampling_config(self.gains.len()).unwrap()
+    pub fn sampling_config(&self) -> Result<SamplingConfiguration, AUTDInternalError> {
+        self.props.sampling_config(self.gains.len())
     }
 
     /// Set the mode of GainSTM
@@ -172,10 +172,7 @@ impl<G: Gain> Datagram for GainSTM<G> {
     type O2 = crate::operation::NullOp;
 
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        let freq_div = self
-            .props
-            .sampling_config(self.gains.len())?
-            .frequency_division();
+        let freq_div = self.sampling_config()?.frequency_division();
         let Self {
             gains, mode, props, ..
         } = self;
@@ -210,7 +207,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(stm.frequency(), 1.);
-        assert_eq!(stm.sampling_config().frequency(), 1. * 10.);
+        assert_eq!(stm.sampling_config().unwrap().frequency(), 1. * 10.);
     }
 
     #[test]
@@ -221,7 +218,7 @@ mod tests {
 
         assert_eq!(stm.period(), std::time::Duration::from_micros(250));
         assert_eq!(
-            stm.sampling_config().period(),
+            stm.sampling_config().unwrap().period(),
             std::time::Duration::from_micros(25)
         );
     }
@@ -236,7 +233,7 @@ mod tests {
 
         assert_eq!(stm.period(), std::time::Duration::from_micros(250));
         assert_eq!(
-            stm.sampling_config().period(),
+            stm.sampling_config().unwrap().period(),
             std::time::Duration::from_micros(25)
         );
     }

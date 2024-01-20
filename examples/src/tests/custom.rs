@@ -4,7 +4,7 @@
  * Created Date: 24/05/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 16/01/2024
+ * Last Modified: 20/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -46,7 +46,7 @@ pub struct Burst {
 impl Burst {
     pub fn new() -> Self {
         Self {
-            config: SamplingConfiguration::from_frequency(4e3).unwrap(),
+            config: SamplingConfiguration::FREQ_4K_HZ,
         }
     }
 }

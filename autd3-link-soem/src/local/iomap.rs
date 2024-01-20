@@ -4,7 +4,7 @@
  * Created Date: 03/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 05/09/2023
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -27,8 +27,8 @@ impl IOMap {
         }
     }
 
-    pub fn data(&mut self) -> *mut u8 {
-        self.buf.as_mut_ptr()
+    pub fn data(&self) -> *const u8 {
+        self.buf.as_ptr()
     }
 
     pub fn input(&self) -> *const RxMessage {
@@ -41,7 +41,11 @@ impl IOMap {
 
     pub fn copy_from(&mut self, tx: &TxDatagram) {
         unsafe {
-            std::ptr::copy_nonoverlapping(tx.all_data().as_ptr(), self.data(), tx.all_data().len());
+            std::ptr::copy_nonoverlapping(
+                tx.all_data().as_ptr(),
+                self.buf.as_mut_ptr(),
+                tx.all_data().len(),
+            );
         }
     }
 

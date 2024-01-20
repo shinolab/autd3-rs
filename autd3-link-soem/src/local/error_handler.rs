@@ -4,7 +4,7 @@
  * Created Date: 03/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 06/10/2023
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -64,7 +64,7 @@ impl<Fl: Fn(&str), Fe: Fn(&str)> EcatErrorHandler<Fl, Fe> {
                             );
                             if slave.state == ec_state_EC_STATE_NONE as u16 {
                                 slave.islost = 1;
-                                writeln!(msg, "slave {i} lost").unwrap();
+                                let _ = writeln!(msg, "slave {i} lost");
                             }
                         }
                     }
