@@ -4,7 +4,7 @@
  * Created Date: 19/01/2024
  * Author: Shun Suzuki
  * -----
- * Last Modified: 19/01/2024
+ * Last Modified: 20/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2024 Shun Suzuki. All rights reserved.
@@ -28,7 +28,7 @@ impl ToMessage for autd3_driver::cpu::TxDatagram {
 }
 
 impl FromMessage<TxRawData> for autd3_driver::cpu::TxDatagram {
-    fn from_msg(msg: &TxRawData) -> Self {
+    fn from_msg(msg: &TxRawData) -> Option<Self> {
         let mut tx = autd3_driver::cpu::TxDatagram::new(msg.num_devices as usize);
         unsafe {
             std::ptr::copy_nonoverlapping(
@@ -37,6 +37,6 @@ impl FromMessage<TxRawData> for autd3_driver::cpu::TxDatagram {
                 msg.data.len(),
             );
         }
-        tx
+        Some(tx)
     }
 }

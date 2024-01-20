@@ -4,7 +4,7 @@
  * Created Date: 09/05/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 18/01/2024
+ * Last Modified: 20/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -147,14 +147,17 @@ impl Link for Simulator {
             return Err(AUTDInternalError::LinkClosed);
         }
 
-        let res = self
-            .client
-            .read_data(ReadRequest {})
-            .await
-            .map_err(AUTDProtoBufError::from)?;
-        let rx_ = Vec::<RxMessage>::from_msg(&res.into_inner());
-        if rx.len() == rx_.len() {
-            rx.copy_from_slice(&rx_);
+        if let Some(rx_) = Vec::<RxMessage>::from_msg(
+            &self
+                .client
+                .read_data(ReadRequest {})
+                .await
+                .map_err(AUTDProtoBufError::from)?
+                .into_inner(),
+        ) {
+            if rx.len() == rx_.len() {
+                rx.copy_from_slice(&rx_);
+            }
         }
 
         Ok(true)

@@ -4,7 +4,7 @@
  * Created Date: 19/01/2024
  * Author: Shun Suzuki
  * -----
- * Last Modified: 19/01/2024
+ * Last Modified: 20/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2024 Shun Suzuki. All rights reserved.
@@ -83,39 +83,44 @@ impl ToMessage for &[autd3_driver::geometry::Device] {
 
 impl FromMessage<Vector3> for autd3_driver::geometry::Vector3 {
     #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &Vector3) -> Self {
-        autd3_driver::geometry::Vector3::new(msg.x as _, msg.y as _, msg.z as _)
+    fn from_msg(msg: &Vector3) -> Option<Self> {
+        Some(autd3_driver::geometry::Vector3::new(
+            msg.x as _, msg.y as _, msg.z as _,
+        ))
     }
 }
 
 impl FromMessage<Quaternion> for autd3_driver::geometry::UnitQuaternion {
     #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &Quaternion) -> Self {
-        autd3_driver::geometry::UnitQuaternion::from_quaternion(
+    fn from_msg(msg: &Quaternion) -> Option<Self> {
+        Some(autd3_driver::geometry::UnitQuaternion::from_quaternion(
             autd3_driver::geometry::Quaternion::new(msg.w as _, msg.x as _, msg.y as _, msg.z as _),
-        )
+        ))
     }
 }
 
 impl FromMessage<Geometry> for autd3_driver::geometry::Geometry {
-    fn from_msg(msg: &Geometry) -> Self {
-        Self::new(
-            msg.devices
-                .iter()
-                .enumerate()
-                .map(|(i, dev)| {
-                    let mut dev = autd3_driver::autd3_device::AUTD3::new(
-                        autd3_driver::geometry::Vector3::from_msg(dev.pos.as_ref().unwrap()),
-                    )
-                    .with_rotation(autd3_driver::geometry::UnitQuaternion::from_msg(
-                        dev.rot.as_ref().unwrap(),
-                    ))
+    fn from_msg(msg: &Geometry) -> Option<Self> {
+        msg.devices
+            .iter()
+            .enumerate()
+            .map(|(i, dev_msg)| {
+                let pos = dev_msg
+                    .pos
+                    .as_ref()
+                    .map(|p| autd3_driver::geometry::Vector3::from_msg(&p))??;
+                let rot = dev_msg
+                    .rot
+                    .as_ref()
+                    .map(|r| autd3_driver::geometry::UnitQuaternion::from_msg(&r))??;
+                let mut dev = autd3_driver::autd3_device::AUTD3::new(pos)
+                    .with_rotation(rot)
                     .into_device(i);
-                    dev.sound_speed = dev.sound_speed as _;
-                    dev.attenuation = dev.attenuation as _;
-                    dev
-                })
-                .collect(),
-        )
+                dev.sound_speed = dev_msg.sound_speed as _;
+                dev.attenuation = dev_msg.attenuation as _;
+                Some(dev)
+            })
+            .collect::<Option<Vec<_>>>()
+            .map(|devices| Self::new(devices))
     }
 }

@@ -4,7 +4,7 @@
  * Created Date: 24/05/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 19/01/2024
+ * Last Modified: 20/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -26,7 +26,7 @@ pub async fn flag<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
 
     println!("press any key to force fan...");
     let mut _s = String::new();
-    io::stdin().read_line(&mut _s).unwrap();
+    async_std::io::stdin().read_line(&mut _s).await?;
 
     autd.send(ConfigureForceFan::new(|_dev| true)).await?;
 
@@ -36,7 +36,7 @@ pub async fn flag<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
         let fin = fin.clone();
         async move {
             let mut _s = String::new();
-            async_std::io::stdin().read_line(&mut _s).await.unwrap();
+            async_std::io::stdin().read_line(&mut _s).await?;
             fin.store(true, Ordering::Relaxed);
         }
     });

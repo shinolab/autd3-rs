@@ -4,7 +4,7 @@
  * Created Date: 19/01/2024
  * Author: Shun Suzuki
  * -----
- * Last Modified: 19/01/2024
+ * Last Modified: 20/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2024 Shun Suzuki. All rights reserved.
@@ -19,6 +19,9 @@ pub trait ToMessage {
     fn to_msg(&self) -> Self::Message;
 }
 
-pub trait FromMessage<T: prost::Message> {
-    fn from_msg(msg: &T) -> Self;
+pub trait FromMessage<T: prost::Message>
+where
+    Self: Sized,
+{
+    fn from_msg(msg: &T) -> Option<Self>;
 }

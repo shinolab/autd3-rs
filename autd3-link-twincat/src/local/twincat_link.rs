@@ -4,7 +4,7 @@
  * Created Date: 27/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 18/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -77,8 +77,14 @@ impl LinkBuilder for TwinCATBuilder {
         };
 
         let port = unsafe {
-            dll.get::<unsafe extern "C" fn() -> i32>(b"AdsPortOpenEx")
-                .unwrap()()
+            match dll.get::<unsafe extern "C" fn() -> i32>(b"AdsPortOpenEx") {
+                Ok(f) => f(),
+                Err(_) => {
+                    return Err(AUTDInternalError::LinkError(
+                        "AdsPortOpenEx not found".to_owned(),
+                    ))
+                }
+            }
         };
         if port == 0 {
             return Err(AdsError::OpenPort.into());
@@ -86,8 +92,15 @@ impl LinkBuilder for TwinCATBuilder {
 
         let mut ams_addr: AmsAddr = unsafe { std::mem::zeroed() };
         let n_err = unsafe {
-            dll.get::<unsafe extern "C" fn(i32, *mut AmsAddr) -> i32>(b"AdsGetLocalAddressEx")
-                .unwrap()(port, &mut ams_addr as *mut _)
+            match dll.get::<unsafe extern "C" fn(i32, *mut AmsAddr) -> i32>(b"AdsGetLocalAddressEx")
+            {
+                Ok(f) => f(port, &mut ams_addr as *mut _),
+                Err(_) => {
+                    return Err(AUTDInternalError::LinkError(
+                        "AdsGetLocalAddressEx not found".to_owned(),
+                    ))
+                }
+            }
         };
         if n_err != 0 {
             return Err(AdsError::GetLocalAddress(n_err).into());
@@ -111,32 +124,23 @@ impl TwinCAT {
             timeout: Duration::ZERO,
         }
     }
-
-    fn port_close(&self) -> lib::Symbol<unsafe extern "C" fn(i32) -> i32> {
-        unsafe { self.dll.get(b"AdsPortCloseEx").unwrap() }
-    }
-
-    fn sync_write_req(
-        &self,
-    ) -> lib::Symbol<unsafe extern "C" fn(i32, *const AmsAddr, u32, u32, u32, *const c_void) -> i32>
-    {
-        unsafe { self.dll.get(b"AdsSyncWriteReqEx").unwrap() }
-    }
-
-    fn sync_read_req(
-        &self,
-    ) -> lib::Symbol<
-        unsafe extern "C" fn(i32, *const AmsAddr, u32, u32, u32, *mut c_void, *mut u32) -> i32,
-    > {
-        unsafe { self.dll.get(b"AdsSyncReadReqEx2").unwrap() }
-    }
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
 impl Link for TwinCAT {
     async fn close(&mut self) -> Result<(), AUTDInternalError> {
         unsafe {
-            self.port_close()(self.port);
+            match self
+                .dll
+                .get::<unsafe extern "C" fn(i32) -> i32>(b"AdsPortCloseEx")
+            {
+                Ok(f) => f(self.port),
+                Err(_) => {
+                    return Err(AUTDInternalError::LinkError(
+                        "AdsPortCloseEx not found".to_owned(),
+                    ))
+                }
+            };
         }
         self.port = 0;
         Ok(())
@@ -144,14 +148,29 @@ impl Link for TwinCAT {
 
     async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
         unsafe {
-            let n_err = self.sync_write_req()(
-                self.port,
-                &self.send_addr as *const _,
-                INDEX_GROUP,
-                INDEX_OFFSET_BASE,
-                tx.all_data().len() as u32,
-                tx.all_data().as_ptr() as *const c_void,
-            );
+            let n_err = match self.dll.get::<unsafe extern "C" fn(
+                i32,
+                *const AmsAddr,
+                u32,
+                u32,
+                u32,
+                *const c_void,
+            ) -> i32>(b"AdsSyncWriteReqEx")
+            {
+                Ok(f) => f(
+                    self.port,
+                    &self.send_addr as *const _,
+                    INDEX_GROUP,
+                    INDEX_OFFSET_BASE,
+                    tx.all_data().len() as u32,
+                    tx.all_data().as_ptr() as *const c_void,
+                ),
+                Err(_) => {
+                    return Err(AUTDInternalError::LinkError(
+                        "AdsSyncWriteReqEx not found".to_owned(),
+                    ))
+                }
+            };
 
             if n_err > 0 {
                 Err(AdsError::SendData(n_err).into())
@@ -164,15 +183,31 @@ impl Link for TwinCAT {
     async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
         let mut read_bytes: u32 = 0;
         unsafe {
-            let n_err = self.sync_read_req()(
-                self.port,
-                &self.send_addr as *const _,
-                INDEX_GROUP,
-                INDEX_OFFSET_BASE_READ,
-                std::mem::size_of_val(rx) as _,
-                rx.as_mut_ptr() as *mut c_void,
-                &mut read_bytes as *mut u32,
-            );
+            let n_err = match self.dll.get::<unsafe extern "C" fn(
+                i32,
+                *const AmsAddr,
+                u32,
+                u32,
+                u32,
+                *mut c_void,
+                *mut u32,
+            ) -> i32>(b"AdsSyncReadReqEx2")
+            {
+                Ok(f) => f(
+                    self.port,
+                    &self.send_addr as *const _,
+                    INDEX_GROUP,
+                    INDEX_OFFSET_BASE_READ,
+                    std::mem::size_of_val(rx) as _,
+                    rx.as_mut_ptr() as *mut c_void,
+                    &mut read_bytes as *mut u32,
+                ),
+                Err(_) => {
+                    return Err(AUTDInternalError::LinkError(
+                        "AdsSyncReadReqEx2 not found".to_owned(),
+                    ))
+                }
+            };
 
             if n_err > 0 {
                 Err(AdsError::ReadData(n_err).into())

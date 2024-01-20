@@ -4,7 +4,7 @@
  * Created Date: 15/06/2023
  * Author: Shun Suzuki
  * -----
- * Last Modified: 19/01/2024
+ * Last Modified: 20/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2023 Shun Suzuki. All rights reserved.
@@ -44,22 +44,26 @@ impl Wav {
             sample_rate,
             bits_per_sample,
         } = reader.spec();
+        let raw_buffer = reader
+            .samples::<i32>()
+            .map(|i| i)
+            .collect::<Result<Vec<_>, _>>()?;
         let raw_buffer = match (sample_format, bits_per_sample) {
-            (SampleFormat::Int, 8) => reader
-                .samples::<i32>()
-                .map(|i| (i.unwrap() - std::i8::MIN as i32) as f32 / 255.)
+            (SampleFormat::Int, 8) => raw_buffer
+                .iter()
+                .map(|i| (i - std::i8::MIN as i32) as f32 / 255.)
                 .collect(),
-            (SampleFormat::Int, 16) => reader
-                .samples::<i32>()
-                .map(|i| (i.unwrap() - std::i16::MIN as i32) as f32 / 65535.)
+            (SampleFormat::Int, 16) => raw_buffer
+                .iter()
+                .map(|i| (i - std::i16::MIN as i32) as f32 / 65535.)
                 .collect(),
-            (SampleFormat::Int, 24) => reader
-                .samples::<i32>()
-                .map(|i| (i.unwrap() - 8388608i32) as f32 / 16777215.)
+            (SampleFormat::Int, 24) => raw_buffer
+                .iter()
+                .map(|i| (i - 8388608i32) as f32 / 16777215.)
                 .collect(),
-            (SampleFormat::Int, 32) => reader
-                .samples::<i32>()
-                .map(|i| (i.unwrap() as i64 - std::i32::MIN as i64) as f32 / 4294967295.)
+            (SampleFormat::Int, 32) => raw_buffer
+                .iter()
+                .map(|&i| (i as i64 - std::i32::MIN as i64) as f32 / 4294967295.)
                 .collect(),
             _ => return Err(AudioFileError::Wav(hound::Error::Unsupported)),
         };

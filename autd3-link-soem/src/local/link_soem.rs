@@ -56,7 +56,9 @@ impl TimerCallback for SoemCallback {
             );
 
             if let Ok(tx) = self.receiver.try_recv() {
-                self.io_map.lock().unwrap().copy_from(&tx);
+                if let Ok(mut io_map) = self.io_map.lock() {
+                    io_map.copy_from(&tx);
+                }
             }
         }
     }
@@ -204,14 +206,13 @@ impl LinkBuilder for SOEMBuilder {
                 } else {
                     ifname.clone()
                 };
+                let ifname_c = match std::ffi::CString::new(ifname.clone()) {
+                    Ok(ifname) => ifname,
+                    Err(_) => return Err(SOEMError::InvalidInterfaceName(ifname).into()),
+                };
 
-                let ifname = std::ffi::CString::new(ifname).unwrap();
-
-                if ec_init(ifname.as_ptr()) <= 0 {
-                    return Err(SOEMError::NoSocketConnection(
-                        ifname.to_str().unwrap().to_string(),
-                    )
-                    .into());
+                if ec_init(ifname_c.as_ptr()) <= 0 {
+                    return Err(SOEMError::NoSocketConnection(ifname).into());
                 }
 
                 let wc = ec_config_init(0);
@@ -265,8 +266,9 @@ impl LinkBuilder for SOEMBuilder {
                 wc as _
             };
 
-            let io_map = Arc::new(Mutex::new(IOMap::new(num_devices)));
-            ec_config_map(io_map.lock().unwrap().data() as *mut c_void);
+            let io_map = IOMap::new(num_devices);
+            ec_config_map(io_map.data() as *mut c_void);
+            let io_map = Arc::new(Mutex::new(io_map));
 
             ec_statecheck(0, ec_state_EC_STATE_SAFE_OP as u16, EC_TIMEOUTSTATE as i32);
             if ec_slave[0].state != ec_state_EC_STATE_SAFE_OP as u16 {
@@ -412,11 +414,14 @@ impl SOEM {
         unsafe { ec_slavecount as usize }
     }
 
-    pub async fn clear_iomap(&mut self) {
+    pub async fn clear_iomap(
+        &mut self,
+    ) -> Result<(), std::sync::PoisonError<std::sync::MutexGuard<'_, IOMap>>> {
         while !self.sender.is_empty() {
             tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         }
-        self.io_map.lock().unwrap().clear();
+        self.io_map.lock()?.clear();
+        Ok(())
     }
 }
 
@@ -424,7 +429,10 @@ fn lookup_autd() -> Result<String, SOEMError> {
     let adapters: EthernetAdapters = Default::default();
 
     if let Some(adapter) = adapters.into_iter().find(|adapter| unsafe {
-        let ifname = std::ffi::CString::new(adapter.name().to_owned()).unwrap();
+        let ifname = match std::ffi::CString::new(adapter.name().to_owned()) {
+            Ok(ifname) => ifname,
+            Err(_) => return false,
+        };
         if ec_init(ifname.as_ptr()) <= 0 {
             ec_close();
             return false;
@@ -435,16 +443,17 @@ fn lookup_autd() -> Result<String, SOEMError> {
             return false;
         }
         let found = (1..=wc).all(|i| {
-            let slave_name = String::from_utf8(
+            match String::from_utf8(
                 ec_slave[i as usize]
                     .name
                     .iter()
                     .take_while(|&&c| c != 0)
                     .map(|&c| c as u8)
                     .collect(),
-            )
-            .unwrap();
-            slave_name == "AUTD"
+            ) {
+                Ok(name) => name == "AUTD",
+                Err(_) => false,
+            }
         });
         ec_close();
         found
@@ -515,12 +524,11 @@ impl Link for SOEM {
         if !self.is_open() {
             return Err(AUTDInternalError::LinkClosed);
         }
-        unsafe {
-            std::ptr::copy_nonoverlapping(
-                self.io_map.lock().unwrap().input(),
-                rx.as_mut_ptr(),
-                rx.len(),
-            );
+        match self.io_map.lock() {
+            Ok(io_map) => unsafe {
+                std::ptr::copy_nonoverlapping(io_map.input(), rx.as_mut_ptr(), rx.len());
+            },
+            Err(_) => return Err(AUTDInternalError::LinkClosed),
         }
         Ok(true)
     }
@@ -587,6 +595,14 @@ impl SOEM {
         cycle: std::time::Duration,
     ) -> Result<(), SOEMError> {
         unsafe {
+            let mut ts = {
+                let tp = time::OffsetDateTime::now_utc();
+                let tp_unix_ns = tp.unix_timestamp_nanos();
+                let cycle_ns = cycle.as_nanos() as i128;
+                let ts_unix_ns = (tp_unix_ns / cycle_ns + 1) * cycle_ns;
+                time::OffsetDateTime::from_unix_timestamp_nanos(ts_unix_ns).unwrap()
+            };
+
             #[cfg(target_os = "windows")]
             let priority = {
                 let priority = windows::Win32::System::Threading::GetPriorityClass(
@@ -602,14 +618,6 @@ impl SOEM {
                 )?;
                 windows::Win32::Media::timeBeginPeriod(1);
                 priority
-            };
-
-            let mut ts = {
-                let tp = time::OffsetDateTime::now_utc();
-                let tp_unix_ns = tp.unix_timestamp_nanos();
-                let cycle_ns = cycle.as_nanos() as i128;
-                let ts_unix_ns = (tp_unix_ns / cycle_ns + 1) * cycle_ns;
-                time::OffsetDateTime::from_unix_timestamp_nanos(ts_unix_ns).unwrap()
             };
 
             let mut toff = time::Duration::ZERO;
@@ -629,7 +637,13 @@ impl SOEM {
                 toff = Self::ec_sync(ec_DCtime, cycle.as_nanos() as _, &mut integral);
 
                 if let Ok(tx) = receiver.try_recv() {
-                    io_map.lock().unwrap().copy_from(&tx);
+                    match io_map.lock() {
+                        Ok(mut io_map) => io_map.copy_from(&tx),
+                        Err(_) => {
+                            is_open.store(false, Ordering::Release);
+                            break;
+                        }
+                    }
                 }
                 ec_send_processdata();
             }

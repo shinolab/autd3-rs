@@ -4,7 +4,7 @@
  * Created Date: 27/05/2021
  * Author: Shun Suzuki
  * -----
- * Last Modified: 18/01/2024
+ * Last Modified: 19/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2021 Shun Suzuki. All rights reserved.
@@ -105,7 +105,10 @@ impl LinkBuilder for RemoteTwinCATBuilder {
             ],
         };
 
-        let ip = CString::new(ip).unwrap();
+        let ip = match CString::new(ip.clone()) {
+            Ok(ip) => ip,
+            Err(_) => return Err(AdsError::InvalidIp(ip).into()),
+        };
         let res = unsafe { AdsCAddRoute(net_id, ip.as_c_str().as_ptr()) };
         if res != 0 {
             return Err(AdsError::AmsAddRoute(res as _).into());
