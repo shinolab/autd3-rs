@@ -44,10 +44,7 @@ impl Wav {
             sample_rate,
             bits_per_sample,
         } = reader.spec();
-        let raw_buffer = reader
-            .samples::<i32>()
-            .map(|i| i)
-            .collect::<Result<Vec<_>, _>>()?;
+        let raw_buffer = reader.samples::<i32>().collect::<Result<Vec<_>, _>>()?;
         let raw_buffer = match (sample_format, bits_per_sample) {
             (SampleFormat::Int, 8) => raw_buffer
                 .iter()

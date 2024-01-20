@@ -108,11 +108,11 @@ impl FromMessage<Geometry> for autd3_driver::geometry::Geometry {
                 let pos = dev_msg
                     .pos
                     .as_ref()
-                    .map(|p| autd3_driver::geometry::Vector3::from_msg(&p))??;
+                    .map(autd3_driver::geometry::Vector3::from_msg)??;
                 let rot = dev_msg
                     .rot
                     .as_ref()
-                    .map(|r| autd3_driver::geometry::UnitQuaternion::from_msg(&r))??;
+                    .map(autd3_driver::geometry::UnitQuaternion::from_msg)??;
                 let mut dev = autd3_driver::autd3_device::AUTD3::new(pos)
                     .with_rotation(rot)
                     .into_device(i);
@@ -121,6 +121,6 @@ impl FromMessage<Geometry> for autd3_driver::geometry::Geometry {
                 Some(dev)
             })
             .collect::<Option<Vec<_>>>()
-            .map(|devices| Self::new(devices))
+            .map(Self::new)
     }
 }

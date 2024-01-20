@@ -4,7 +4,7 @@
  * Created Date: 27/04/2022
  * Author: Shun Suzuki
  * -----
- * Last Modified: 19/01/2024
+ * Last Modified: 20/01/2024
  * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
  * -----
  * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
@@ -50,15 +50,14 @@ impl EthernetAdapters {
         unsafe {
             let mut adapter = soem_bindings::ec_find_adapters();
             while !adapter.is_null() {
-                match CStr::from_ptr(((*adapter).name).as_ptr()).to_str() {
-                    Ok(name) => adapters.push(EthernetAdapter {
+                if let Ok(name) = CStr::from_ptr(((*adapter).name).as_ptr()).to_str() {
+                    adapters.push(EthernetAdapter {
                         desc: CStr::from_ptr(((*adapter).desc).as_ptr())
                             .to_str()
                             .unwrap_or("")
                             .to_string(),
                         name: name.to_string(),
-                    }),
-                    Err(_) => {}
+                    });
                 }
                 adapter = (*adapter).next;
             }
