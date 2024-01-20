@@ -21,5 +21,6 @@ thiserror = "1.0.40"
 tonic-build = "0.10.0"
 
 [features]
+default = ["rpitit"]
 rpitit = ["autd3-driver/rpitit"]
 async-trait = ["autd3-driver/async-trait"]
