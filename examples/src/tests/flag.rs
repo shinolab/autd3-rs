@@ -11,12 +11,9 @@
  *
  */
 
-use std::{
-    io,
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    },
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
 };
 
 use autd3::prelude::*;
@@ -38,6 +35,7 @@ pub async fn flag<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
             let mut _s = String::new();
             async_std::io::stdin().read_line(&mut _s).await?;
             fin.store(true, Ordering::Relaxed);
+            std::io::Result::Ok(())
         }
     });
 
@@ -62,7 +60,7 @@ pub async fn flag<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
     }
     print!("\x1b[1F\x1b[0J");
 
-    fin_signal.await?;
+    fin_signal.await??;
 
     autd.send((
         ConfigureForceFan::new(|_dev| false),
