@@ -21,23 +21,20 @@ jobs:
           git submodule update --init --recursive
       - name: Check semver
         uses: obi1kenobi/cargo-semver-checks-action@v2
-        with:
-          feature-group: default-features
-          features: default
       - name: publish to carate.io
         run: |
           cd autd3-driver
           cargo publish --no-verify --dry-run
           cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true
-          cd .. && sleep 60
+          cd .. && sleep 15
           cd autd3-derive
           cargo publish --no-verify --dry-run
           cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true
-          cd .. && sleep 60
+          cd .. && sleep 15
           cd autd3-firmware-emulator
           cargo publish --no-verify --dry-run
           cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true
-          cd .. && sleep 60
+          cd .. && sleep 15
           cd autd3
           cargo publish --no-verify --dry-run
           cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true
@@ -45,7 +42,7 @@ jobs:
           cd autd3-gain-holo
           cargo publish --no-verify --dry-run
           cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true
-          cd .. && sleep 60
+          cd .. && sleep 15
           cd autd3-protobuf
           cargo publish --no-verify --dry-run
           cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true
