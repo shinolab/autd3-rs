@@ -1,16 +1,3 @@
-/*
- * File: autd3_device.rs
- * Project: src
- * Created Date: 06/12/2022
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use crate::{
     defined::{float, MILLIMETER},
     geometry::{Device, IntoDevice, Matrix4, Transducer, UnitQuaternion, Vector3, Vector4},

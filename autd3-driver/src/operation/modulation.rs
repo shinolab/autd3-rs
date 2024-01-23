@@ -1,16 +1,3 @@
-/*
- * File: modulation.rs
- * Project: operation
- * Created Date: 08/01/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use std::{collections::HashMap, fmt};
 
 use crate::{

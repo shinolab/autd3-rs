@@ -1,16 +1,3 @@
-/*
- * File: lib.rs
- * Project: src
- * Created Date: 29/08/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 18/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 #![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 
 pub mod acoustics;

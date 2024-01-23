@@ -1,16 +1,3 @@
-/*
- * File: error.rs
- * Project: cpu
- * Created Date: 02/05/2022
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use thiserror::Error;
 
 use crate::{defined::float, fpga::*, operation::GainSTMMode};

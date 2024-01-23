@@ -1,16 +1,3 @@
-/*
- * File: stm_focus.rs
- * Project: defined
- * Created Date: 05/10/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use crate::{common::EmitIntensity, defined::float, error::AUTDInternalError};
 
 use super::{FOCUS_STM_FIXED_NUM_LOWER, FOCUS_STM_FIXED_NUM_UNIT, FOCUS_STM_FIXED_NUM_UPPER};

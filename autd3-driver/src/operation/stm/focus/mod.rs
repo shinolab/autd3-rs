@@ -1,16 +1,3 @@
-/*
- * File: mod.rs
- * Project: focus
- * Created Date: 06/10/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 17/10/2023
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 mod control_point;
 mod focus_stm_op;
 
