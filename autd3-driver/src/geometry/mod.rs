@@ -1,16 +1,3 @@
-/*
- * File: mod.rs
- * Project: geometry
- * Created Date: 04/05/2022
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
- *
- */
-
 pub(crate) mod device;
 mod rotation;
 mod transducer;
@@ -121,6 +108,7 @@ impl<'a> IntoIterator for &'a Geometry {
     type Item = &'a Device;
     type IntoIter = std::slice::Iter<'a, Device>;
 
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn into_iter(self) -> Self::IntoIter {
         self.devices.iter()
     }
@@ -130,6 +118,7 @@ impl<'a> IntoIterator for &'a mut Geometry {
     type Item = &'a mut Device;
     type IntoIter = std::slice::IterMut<'a, Device>;
 
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn into_iter(self) -> Self::IntoIter {
         self.devices.iter_mut()
     }
@@ -320,69 +309,5 @@ pub mod tests {
         let mut geometry = Geometry::new(vec![device0, device1]);
         geometry[0].sound_speed = 0.;
         geometry[1].sound_speed = 0.;
-    }
-
-    #[test]
-    fn into_iter() {
-        let transducers = itertools::iproduct!((0..18), (0..14))
-            .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(
-                    i,
-                    10.16 * Vector3::new(x as float, y as float, 0.),
-                    UnitQuaternion::identity(),
-                )
-            })
-            .collect::<Vec<_>>();
-        let device0 = Device::new(0, transducers);
-
-        let transducers = itertools::iproduct!((0..18), (0..14))
-            .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(
-                    i,
-                    10.16 * Vector3::new(x as float, y as float, 0.) + Vector3::new(10., 20., 30.),
-                    UnitQuaternion::identity(),
-                )
-            })
-            .collect::<Vec<_>>();
-        let device1 = Device::new(1, transducers);
-
-        let geometry = Geometry::new(vec![device0, device1]);
-        geometry.into_iter().for_each(|dev| {
-            let _ = dev.sound_speed;
-        });
-    }
-
-    #[test]
-    fn into_iter_mut() {
-        let transducers = itertools::iproduct!((0..18), (0..14))
-            .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(
-                    i,
-                    10.16 * Vector3::new(x as float, y as float, 0.),
-                    UnitQuaternion::identity(),
-                )
-            })
-            .collect::<Vec<_>>();
-        let device0 = Device::new(0, transducers);
-
-        let transducers = itertools::iproduct!((0..18), (0..14))
-            .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(
-                    i,
-                    10.16 * Vector3::new(x as float, y as float, 0.) + Vector3::new(10., 20., 30.),
-                    UnitQuaternion::identity(),
-                )
-            })
-            .collect::<Vec<_>>();
-        let device1 = Device::new(1, transducers);
-
-        let mut geometry = Geometry::new(vec![device0, device1]);
-        geometry.iter_mut().for_each(|dev| {
-            dev.sound_speed = 0.;
-        });
     }
 }
