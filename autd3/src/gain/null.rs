@@ -1,16 +1,3 @@
-/*
- * File: null.rs
- * Project: gain
- * Created Date: 01/05/2022
- * Author: Shun Suzuki
- * -----
- * Last Modified: 16/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use std::collections::HashMap;
 
 use autd3_driver::{derive::*, geometry::Geometry};

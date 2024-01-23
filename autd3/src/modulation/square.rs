@@ -1,16 +1,3 @@
-/*
- * File: sine.rs
- * Project: modulation
- * Created Date: 28/04/2022
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use autd3_driver::{common::EmitIntensity, derive::*};
 
 use num::integer::gcd;
@@ -108,6 +95,10 @@ impl Square {
     pub const fn freq(&self) -> float {
         self.freq
     }
+
+    pub const fn mode(&self) -> SamplingMode {
+        self.mode
+    }
 }
 
 impl Modulation for Square {
@@ -182,6 +173,11 @@ mod tests {
         let m = Square::new(150.);
         let m2 = m.clone();
         assert_eq!(m.sampling_config(), m2.sampling_config());
+        assert_eq!(m.freq(), m2.freq());
+        assert_eq!(m.high(), m2.high());
+        assert_eq!(m.low(), m2.low());
+        assert_eq!(m.duty(), m2.duty());
+        assert_eq!(m.mode(), m2.mode());
     }
 
     #[test]

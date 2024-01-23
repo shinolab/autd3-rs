@@ -1,16 +1,3 @@
-/*
- * File: transform.rs
- * Project: modulation
- * Created Date: 15/06/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use autd3_driver::{common::EmitIntensity, derive::*};
 
 /// Modulation to transform modulation data
