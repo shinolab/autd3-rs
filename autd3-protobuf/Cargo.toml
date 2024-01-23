@@ -1,6 +1,6 @@
 [package]
 name = "autd3-protobuf"
-version = "21.0.0-alpha.0"
+version = "21.0.0"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 
@@ -14,13 +14,20 @@ keywords = ["autd"]
 h2 = "0.4.0"
 prost = { version = "0.12.0" }
 tonic = { version = "0.10.0", default-features = false, features = ["prost", "codegen", "transport"] }
-autd3-driver = { path = "../autd3-driver", version = "21.0.0-alpha.0", default-features = false }
+autd3-driver = { path = "../autd3-driver", version = "21.0.0" }
+autd3 = { path = "../autd3", version = "21.0.0", optional = true }
+autd3-gain-holo = { path = "../autd3-gain-holo", version = "21.0.0", optional = true }
 thiserror = "1.0.40"
+tokio = { version = "1.35.1", features = ["sync"], optional = true }
 
 [build-dependencies]
 tonic-build = "0.10.0"
 
 [features]
-default = ["rpitit"]
-rpitit = ["autd3-driver/rpitit"]
+default = []
+lightweight = ["tokio", "autd3", "autd3-gain-holo", "autd3-driver/async-trait", "autd3/async-trait", "autd3-gain-holo/async-trait"]
 async-trait = ["autd3-driver/async-trait"]
+
+[dev-dependencies]
+assert_approx_eq = "1.1.0"
+rand = "0.8.5"

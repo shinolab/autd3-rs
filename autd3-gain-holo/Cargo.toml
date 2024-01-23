@@ -1,6 +1,6 @@
 [package]
 name = "autd3-gain-holo"
-version = "21.0.0-alpha.0"
+version = "21.0.0"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 
@@ -12,7 +12,7 @@ keywords = ["autd"]
 
 [dependencies]
 assert_approx_eq = { version = "1.1.0", optional = true }
-autd3-driver = { path = "../autd3-driver", version = "21.0.0-alpha.0", default-features = false, features = ["derive"] }
+autd3-driver = { path = "../autd3-driver", version = "21.0.0" }
 nalgebra = { version = "0.32.3", default-features = false, features = ["std"] }
 rand = "0.8.5"
 thiserror = "1.0.31"
@@ -20,12 +20,11 @@ criterion = { version = "0.5.1", features = ["html_reports"], optional = true }
 bitvec = { version = "1.0.1", optional = true }
 
 [features]
-default = ["rpitit"]
+default = []
 single_float = ["autd3-driver/single_float"]
 use_meter = ["autd3-driver/use_meter"]
 test-utilities = ["assert_approx_eq", "bitvec"]
 bench-utilities = ["criterion"]
-rpitit = ["autd3-driver/rpitit"]
 async-trait = ["autd3-driver/async-trait"]
 
 [[bench]]
