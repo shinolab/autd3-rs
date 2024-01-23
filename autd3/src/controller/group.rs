@@ -149,3 +149,73 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
         Ok(r)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use autd3_driver::{autd3_device::AUTD3, geometry::Vector3};
+
+    use crate::{
+        controller::Controller,
+        gain::{Null, Uniform},
+        link::audit::Audit,
+        modulation::{Sine, Static},
+    };
+
+    #[tokio::test]
+    async fn test_group() {
+        let mut autd = Controller::builder()
+            .add_device(AUTD3::new(Vector3::zeros()))
+            .add_device(AUTD3::new(Vector3::zeros()))
+            .open_with(Audit::builder())
+            .await
+            .unwrap();
+
+        autd.group(|dev| Some(dev.idx()))
+            .set(0, (Static::new(), Null::new()))
+            .unwrap()
+            .set(1, (Sine::new(150.0), Uniform::new(0x80)))
+            .unwrap()
+            .send()
+            .await
+            .unwrap();
+        {
+            let m = autd.link[0].fpga().modulation();
+            assert_eq!(2, m.len());
+            assert!(m.iter().all(|&d| d == 0xFF));
+            let v = autd.link[0].fpga().intensities_and_phases(0);
+            assert!(v.iter().all(|d| d.0 == 0 && d.1 == 0));
+        }
+        {
+            let m = autd.link[1].fpga().modulation();
+            assert_eq!(80, m.len());
+            let v = autd.link[1].fpga().intensities_and_phases(0);
+            assert!(v.iter().all(|d| d.0 == 0x80 && d.1 == 0));
+        }
+    }
+
+    #[tokio::test]
+    async fn test_group_only_for_enabled() {
+        let mut autd = Controller::builder()
+            .add_device(AUTD3::new(Vector3::zeros()))
+            .add_device(AUTD3::new(Vector3::zeros()))
+            .open_with(Audit::builder())
+            .await
+            .unwrap();
+
+        autd.geometry[0].enable = false;
+
+        let check = std::sync::Arc::new(std::sync::Mutex::new(vec![false; 2]));
+        autd.group(|dev| {
+            check.lock().unwrap()[dev.idx()] = true;
+            return Some(0);
+        })
+        .set(0, (Static::new(), Null::new()))
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+
+        assert!(!check.lock().unwrap()[0]);
+        assert!(check.lock().unwrap()[1]);
+    }
+}

@@ -18,6 +18,7 @@ use thiserror::Error;
 pub struct ReadFirmwareInfoState(pub Vec<bool>);
 
 impl std::fmt::Display for ReadFirmwareInfoState {
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -33,6 +34,7 @@ impl std::fmt::Display for ReadFirmwareInfoState {
 }
 
 impl std::fmt::Debug for ReadFirmwareInfoState {
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         <Self as std::fmt::Display>::fmt(self, f)
     }
