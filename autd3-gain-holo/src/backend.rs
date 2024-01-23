@@ -1,17 +1,4 @@
-/*
- * File: backend.rs
- * Project: src
- * Created Date: 28/05/2021
- * Author: Shun Suzuki
- * -----
- * Last Modified: 17/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2021 Shun Suzuki. All rights reserved.
- *
- */
-
-use std::rc::Rc;
+use std::sync::Arc;
 
 use autd3_driver::{
     datagram::GainFilter,
@@ -42,7 +29,7 @@ pub trait LinAlgBackend {
     type VectorXc;
     type VectorX;
 
-    fn new() -> Result<Rc<Self>, HoloError>;
+    fn new() -> Result<Arc<Self>, HoloError>;
 
     fn generate_propagation_matrix(
         &self,

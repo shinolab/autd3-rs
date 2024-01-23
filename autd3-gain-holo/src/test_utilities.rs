@@ -1,17 +1,4 @@
-/*
- * File: test_utilities.rs
- * Project: src
- * Created Date: 14/01/2024
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2024 Shun Suzuki. All rights reserved.
- *
- */
-
-use std::rc::Rc;
+use std::sync::Arc;
 
 use nalgebra::ComplexField;
 use rand::Rng;
@@ -63,7 +50,7 @@ fn gen_foci(n: usize) -> impl Iterator<Item = (Vector3, Amplitude)> {
 }
 
 pub struct LinAlgBackendTestHelper<const N: usize, B: LinAlgBackend> {
-    backend: Rc<B>,
+    backend: Arc<B>,
 }
 
 impl<const N: usize, B: LinAlgBackend> LinAlgBackendTestHelper<N, B> {

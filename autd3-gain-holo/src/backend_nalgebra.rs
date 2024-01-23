@@ -1,17 +1,4 @@
-/*
- * File: backend_nalgebra.rs
- * Project: src
- * Created Date: 07/06/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 17/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
-use std::rc::Rc;
+use std::sync::Arc;
 
 use nalgebra::ComplexField;
 
@@ -33,8 +20,8 @@ impl LinAlgBackend for NalgebraBackend {
     type VectorXc = VectorXc;
     type VectorX = VectorX;
 
-    fn new() -> Result<Rc<Self>, HoloError> {
-        Ok(Rc::new(Self {}))
+    fn new() -> Result<Arc<Self>, HoloError> {
+        Ok(Arc::new(Self {}))
     }
 
     fn generate_propagation_matrix(

@@ -1,17 +1,4 @@
-/*
- * File: naive.rs
- * Project: linear_synthesis
- * Created Date: 28/05/2021
- * Author: Shun Suzuki
- * -----
- * Last Modified: 17/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2021 Shun Suzuki. All rights reserved.
- *
- */
-
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     constraint::EmissionConstraint, helper::generate_result, impl_holo, Amplitude, Complex,
@@ -29,13 +16,13 @@ pub struct Naive<B: LinAlgBackend + 'static> {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,
     constraint: EmissionConstraint,
-    backend: Rc<B>,
+    backend: Arc<B>,
 }
 
 impl_holo!(B, Naive<B>);
 
 impl<B: LinAlgBackend + 'static> Naive<B> {
-    pub const fn new(backend: Rc<B>) -> Self {
+    pub const fn new(backend: Arc<B>) -> Self {
         Self {
             foci: vec![],
             amps: vec![],
