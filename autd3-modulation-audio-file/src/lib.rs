@@ -1,15 +1,4 @@
-/*
- * File: lib.rs
- * Project: src
- * Created Date: 10/05/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 15/06/2023
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
+#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 
 mod error;
 mod rawpcm;
