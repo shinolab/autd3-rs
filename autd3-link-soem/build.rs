@@ -1,16 +1,3 @@
-/*
- * File: build.rs
- * Project: autd3-link-soem
- * Created Date: 27/04/2022
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
- *
- */
-
 #[cfg(feature = "local")]
 macro_rules! add {
     ($path:expr, $p:ident, $work: expr) => {
