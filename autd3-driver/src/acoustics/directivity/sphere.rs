@@ -1,16 +1,3 @@
-/*
- * File: sphere.rs
- * Project: acoustics
- * Created Date: 04/10/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 01/12/2023
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use super::*;
 
 /// Directivity of spherical wave

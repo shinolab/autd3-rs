@@ -1,16 +1,3 @@
-/*
- * File: t4010a1.rs
- * Project: acoustics
- * Created Date: 04/10/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use super::*;
 
 #[allow(clippy::excessive_precision, clippy::unreadable_literal)]

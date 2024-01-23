@@ -1,16 +1,3 @@
-/*
- * File: windows.rs
- * Project: src
- * Created Date: 24/05/2021
- * Author: Shun Suzuki
- * -----
- * Last Modified: 18/10/2023
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2021 Hapis Lab. All rights reserved.
- *
- */
-
 use windows::Win32::{Foundation::*, Media::*, System::Threading::*};
 
 use crate::error::AUTDInternalError;

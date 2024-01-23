@@ -1,16 +1,3 @@
-/*
- * File: fpga_state.rs
- * Project: defined
- * Created Date: 05/10/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 17/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 /// FPGA state
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,16 +1,3 @@
-/*
- * File: linux.rs
- * Project: src
- * Created Date: 24/05/2021
- * Author: Shun Suzuki
- * -----
- * Last Modified: 06/10/2023
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2021 Hapis Lab. All rights reserved.
- *
- */
-
 use crate::error::AUTDInternalError;
 use libc::{
     c_int, c_void, clockid_t, itimerspec, sigaction, sigevent, siginfo_t, timespec, CLOCK_REALTIME,

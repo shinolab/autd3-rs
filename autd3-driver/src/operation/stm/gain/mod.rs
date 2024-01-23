@@ -1,16 +1,3 @@
-/*
- * File: mod.rs
- * Project: gain
- * Created Date: 06/10/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 mod gain_stm_control_flags;
 mod gain_stm_mode;
 mod reduced_phase;
