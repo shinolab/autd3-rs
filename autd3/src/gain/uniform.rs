@@ -1,16 +1,3 @@
-/*
- * File: uniform.rs
- * Project: gain
- * Created Date: 18/08/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 16/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use std::collections::HashMap;
 
 use autd3_driver::{common::EmitIntensity, derive::*, geometry::Geometry};

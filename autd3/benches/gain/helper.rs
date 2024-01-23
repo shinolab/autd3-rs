@@ -1,16 +1,3 @@
-/*
- * File: helper.rs
- * Project: benches
- * Created Date: 30/07/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 26/11/2023
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use autd3::prelude::*;
 use autd3_driver::geometry::IntoDevice;
 

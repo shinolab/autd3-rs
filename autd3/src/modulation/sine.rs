@@ -1,16 +1,3 @@
-/*
- * File: sine.rs
- * Project: modulation
- * Created Date: 28/04/2022
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use autd3_driver::{common::EmitIntensity, defined::PI, derive::*};
 
 use num::integer::gcd;
@@ -109,6 +96,10 @@ impl Sine {
     pub const fn phase(&self) -> Phase {
         self.phase
     }
+
+    pub const fn mode(&self) -> SamplingMode {
+        self.mode
+    }
 }
 
 impl Modulation for Sine {
@@ -182,6 +173,7 @@ mod tests {
         assert_eq!(m.intensity(), m2.intensity());
         assert_eq!(m.offset(), m2.offset());
         assert_eq!(m.phase(), m2.phase());
+        assert_eq!(m.mode(), m2.mode());
     }
 
     #[test]

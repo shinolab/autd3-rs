@@ -1,16 +1,3 @@
-/*
- * File: primitive.rs
- * Project: gain
- * Created Date: 31/07/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 mod helper;
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
