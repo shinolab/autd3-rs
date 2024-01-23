@@ -1,16 +1,3 @@
-/*
- * File: mod.rs
- * Project: soem_bindings
- * Created Date: 13/07/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 13/07/2023
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
