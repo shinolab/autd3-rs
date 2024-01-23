@@ -34,7 +34,7 @@ use rand::seq::SliceRandom;
 pub struct Greedy {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,
-    phase_div: usize,
+    phase_div: u8,
     constraint: EmissionConstraint,
 }
 
@@ -50,7 +50,7 @@ impl Greedy {
         }
     }
 
-    pub fn with_phase_div(self, phase_div: usize) -> Self {
+    pub fn with_phase_div(self, phase_div: u8) -> Self {
         Self { phase_div, ..self }
     }
 
@@ -66,7 +66,7 @@ impl Greedy {
         });
     }
 
-    pub const fn phase_div(&self) -> usize {
+    pub const fn phase_div(&self) -> u8 {
         self.phase_div
     }
 }
