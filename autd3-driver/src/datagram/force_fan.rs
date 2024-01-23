@@ -1,16 +1,3 @@
-/*
- * File: force_fan.rs
- * Project: datagram
- * Created Date: 06/12/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use crate::{datagram::*, error::AUTDInternalError, geometry::Device};
 
 /// Datagram for configure force fan
@@ -45,6 +32,14 @@ mod tests {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn f(dev: &Device) -> bool {
         dev.idx() == 0
+    }
+
+    #[test]
+    fn test_force_fan_operation_timeout() {
+        let datagram = ConfigureForceFan::new(f);
+        let timeout = datagram.timeout();
+        assert!(timeout.is_some());
+        assert!(timeout.unwrap() > Duration::ZERO);
     }
 
     #[test]
