@@ -1,17 +1,4 @@
-/*
- * File: rx_message.rs
- * Project: cpu
- * Created Date: 29/08/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 17/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
-use crate::fpga::FPGAState;
+use crate::{derive::AUTDInternalError, fpga::FPGAState};
 
 const READS_FPGA_STATE_ENABLED_BIT: u8 = 7;
 const READS_FPGA_STATE_ENABLED: u8 = 1 << READS_FPGA_STATE_ENABLED_BIT;
@@ -30,6 +17,15 @@ impl From<&RxMessage> for Option<FPGAState> {
         } else {
             None
         }
+    }
+}
+
+impl From<&RxMessage> for Result<(), AUTDInternalError> {
+    fn from(msg: &RxMessage) -> Self {
+        if msg.ack & 0x80 != 0 {
+            return Err(AUTDInternalError::firmware_err(msg.ack));
+        }
+        Ok(())
     }
 }
 
