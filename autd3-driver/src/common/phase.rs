@@ -54,6 +54,14 @@ impl std::ops::Mul<Rad> for float {
     }
 }
 
+impl std::ops::Add<Phase> for Phase {
+    type Output = Phase;
+
+    fn add(self, rhs: Phase) -> Self::Output {
+        Self::Output::new(self.value.wrapping_add(rhs.value))
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
