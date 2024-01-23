@@ -1,16 +1,3 @@
-/*
- * File: mod.rs
- * Project: controller
- * Created Date: 05/10/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 pub mod builder;
 mod group;
 
@@ -141,7 +128,7 @@ impl<L: Link> Controller<L> {
                 .await?
                 {
                     return Err(AUTDError::ReadFirmwareInfoFailed(ReadFirmwareInfoState(
-                        autd3_driver::cpu::check_if_msg_is_processed($tx_buf, $rx_buf),
+                        autd3_driver::cpu::check_if_msg_is_processed($tx_buf, $rx_buf).collect(),
                     )));
                 }
             };
@@ -238,6 +225,9 @@ impl<L: Link> Controller<L> {
 
 impl<L: Link> Drop for Controller<L> {
     fn drop(&mut self) {
+        if !self.link.is_open() {
+            return;
+        }
         match tokio::runtime::Handle::current().runtime_flavor() {
             tokio::runtime::RuntimeFlavor::CurrentThread => {}
             tokio::runtime::RuntimeFlavor::MultiThread => tokio::task::block_in_place(|| {
