@@ -1,16 +1,3 @@
-/*
- * File: mod.rs
- * Project: geometry
- * Created Date: 19/01/2024
- * Author: Shun Suzuki
- * -----
- * Last Modified: 20/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2024 Shun Suzuki. All rights reserved.
- *
- */
-
 use autd3_driver::geometry::IntoDevice;
 
 use crate::{
@@ -46,24 +33,6 @@ impl ToMessage for autd3_driver::geometry::Quaternion {
 }
 
 impl ToMessage for autd3_driver::geometry::Geometry {
-    type Message = Geometry;
-
-    fn to_msg(&self) -> Self::Message {
-        Self::Message {
-            devices: self
-                .iter()
-                .map(|dev| geometry::Autd3 {
-                    pos: Some(dev[0].position().to_msg()),
-                    rot: Some(dev[0].rotation().to_msg()),
-                    sound_speed: dev.sound_speed as _,
-                    attenuation: dev.attenuation as _,
-                })
-                .collect(),
-        }
-    }
-}
-
-impl ToMessage for &[autd3_driver::geometry::Device] {
     type Message = Geometry;
 
     fn to_msg(&self) -> Self::Message {
@@ -122,5 +91,70 @@ impl FromMessage<Geometry> for autd3_driver::geometry::Geometry {
             })
             .collect::<Option<Vec<_>>>()
             .map(Self::new)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use autd3_driver::{
+        autd3_device::AUTD3,
+        geometry::{Geometry, Quaternion, UnitQuaternion, Vector3},
+    };
+    use rand::Rng;
+
+    #[test]
+    fn test_vector3() {
+        let mut rng = rand::thread_rng();
+        let v = Vector3::new(rng.gen(), rng.gen(), rng.gen());
+        let msg = v.to_msg();
+        let v2 = Vector3::from_msg(&msg).unwrap();
+        assert_approx_eq::assert_approx_eq!(v.x, v2.x);
+        assert_approx_eq::assert_approx_eq!(v.y, v2.y);
+        assert_approx_eq::assert_approx_eq!(v.z, v2.z);
+    }
+
+    #[test]
+    fn test_quaternion() {
+        let mut rng = rand::thread_rng();
+        let q = UnitQuaternion::from_quaternion(Quaternion::new(
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+        ));
+        let msg = q.to_msg();
+        let q2 = UnitQuaternion::from_msg(&msg).unwrap();
+        assert_approx_eq::assert_approx_eq!(q.w, q2.w);
+        assert_approx_eq::assert_approx_eq!(q.i, q2.i);
+        assert_approx_eq::assert_approx_eq!(q.j, q2.j);
+        assert_approx_eq::assert_approx_eq!(q.k, q2.k);
+    }
+
+    #[test]
+    fn test_geometry() {
+        let mut rng = rand::thread_rng();
+        let mut dev = AUTD3::new(Vector3::new(rng.gen(), rng.gen(), rng.gen())).into_device(0);
+        dev.sound_speed = rng.gen();
+        dev.attenuation = rng.gen();
+        let geometry = Geometry::new(vec![dev]);
+        let msg = geometry.to_msg();
+        let geometry2 = Geometry::from_msg(&msg).unwrap();
+        geometry
+            .iter()
+            .zip(geometry2.iter())
+            .for_each(|(dev, dev2)| {
+                assert_approx_eq::assert_approx_eq!(dev.sound_speed, dev2.sound_speed);
+                assert_approx_eq::assert_approx_eq!(dev.attenuation, dev2.attenuation);
+                dev.iter().zip(dev2.iter()).for_each(|(t, t2)| {
+                    assert_approx_eq::assert_approx_eq!(t.position().x, t2.position().x);
+                    assert_approx_eq::assert_approx_eq!(t.position().y, t2.position().y);
+                    assert_approx_eq::assert_approx_eq!(t.position().z, t2.position().z);
+                    assert_approx_eq::assert_approx_eq!(t.rotation().w, t2.rotation().w);
+                    assert_approx_eq::assert_approx_eq!(t.rotation().i, t2.rotation().i);
+                    assert_approx_eq::assert_approx_eq!(t.rotation().j, t2.rotation().j);
+                    assert_approx_eq::assert_approx_eq!(t.rotation().k, t2.rotation().k);
+                });
+            });
     }
 }

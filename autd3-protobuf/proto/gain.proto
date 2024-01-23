@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package autd3;
+
+import "utils.proto";
+
+message Bessel {
+  EmitIntensity intensity = 1;
+  Vector3 pos = 2;
+  Vector3 dir = 3;
+  float theta = 4;
+}
+
+message Focus {
+  EmitIntensity intensity = 1;
+  Vector3 pos = 2;
+}
+
+message Null {}
+
+message Plane {
+  EmitIntensity intensity = 1;
+  Vector3 dir = 2;
+  Phase phase = 3;
+}
+
+message Uniform {
+  EmitIntensity intensity = 1;
+  Phase phase = 2;
+}
+
+message Amplitude {
+  float value = 1;
+}
+
+message Holo {
+  Vector3 pos = 1;
+  Amplitude amp = 2;
+}
+
+message DontCareConstraint {}
+message NormalizeConstraint {}
+message UniformConstraint { EmitIntensity value = 1; }
+message ClampConstraint {
+  EmitIntensity min = 1;
+  EmitIntensity max = 2;
+}
+message EmissionConstraint {
+  oneof constraint {
+    DontCareConstraint dont_care = 1;
+    NormalizeConstraint normalize = 2;
+    UniformConstraint uniform = 3;
+    ClampConstraint clamp = 4;
+  }
+}
+
+message SDP {
+  repeated Holo holo = 2;
+  float alpha = 3;
+  float lambda = 4;
+  uint64 repeat = 5;
+  EmissionConstraint constraint = 6;
+}
+
+message Naive {
+  repeated Holo holo = 2;
+  EmissionConstraint constraint = 3;
+}
+
+message GS {
+  repeated Holo holo = 2;
+  uint64 repeat = 3;
+  EmissionConstraint constraint = 4;
+}
+
+message GSPAT {
+  repeated Holo holo = 2;
+  uint64 repeat = 3;
+  EmissionConstraint constraint = 4;
+}
+
+message LM {
+  repeated Holo holo = 2;
+  float eps_1 = 3;
+  float eps_2 = 4;
+  float tau = 5;
+  uint64 k_max = 6;
+  repeated float initial = 7;
+  EmissionConstraint constraint = 8;
+}
+
+message Greedy {
+  repeated Holo holo = 1;
+  uint32 phase_div = 2;
+  EmissionConstraint constraint = 3;
+}
+
+message Gain {
+  oneof gain {
+    Bessel bessel = 1;
+    Focus focus = 2;
+    Null null = 3;
+    Plane plane = 4;
+    Uniform uniform = 5;
+    SDP sdp = 100;
+    Naive naive = 101;
+    GS gs = 102;
+    GSPAT gspat = 103;
+    LM lm = 104;
+    Greedy greedy = 105;
+  }
+}

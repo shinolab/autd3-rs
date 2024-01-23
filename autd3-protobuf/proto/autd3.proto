@@ -1,16 +1,3 @@
-/*
- * File: autd3.proto
- * Project: proto
- * Created Date: 26/06/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 30/12/2023
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 syntax = "proto3";
 
 package autd3;
@@ -27,16 +14,6 @@ message ReadRequest {}
 
 message CloseRequest {}
 message CloseResponse { bool success = 1; }
-
-message Geometry {
-  message AUTD3 {
-    Vector3 pos = 1;
-    Quaternion rot = 2;
-    float sound_speed = 3;
-    float attenuation = 4;
-  }
-  repeated AUTD3 devices = 1;
-}
 
 message GeometryResponse {}
 

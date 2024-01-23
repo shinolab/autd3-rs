@@ -1,17 +1,8 @@
-/*
- * File: mod.rs
- * Project: traits
- * Created Date: 19/01/2024
- * Author: Shun Suzuki
- * -----
- * Last Modified: 20/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2024 Shun Suzuki. All rights reserved.
- *
- */
-
+#[cfg(feature = "lightweight")]
+mod autd3;
 mod driver;
+#[cfg(feature = "lightweight")]
+mod holo;
 
 pub trait ToMessage {
     type Message: prost::Message;
