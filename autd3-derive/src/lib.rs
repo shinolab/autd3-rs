@@ -1,16 +1,3 @@
-/*
- * File: lib.rs
- * Project: src
- * Created Date: 28/04/2022
- * Author: Shun Suzuki
- * -----
- * Last Modified: 18/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, Meta};
