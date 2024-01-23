@@ -1,16 +1,3 @@
-/*
- * File: Cache.rs
- * Project: gain
- * Created Date: 10/05/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use autd3_driver::{common::EmitIntensity, derive::*};
 
 use std::{
@@ -25,6 +12,14 @@ pub struct Cache<M: Modulation> {
     cache: Rc<RefCell<Vec<EmitIntensity>>>,
     #[no_change]
     config: SamplingConfiguration,
+}
+
+impl<M: Modulation> std::ops::Deref for Cache<M> {
+    type Target = M;
+
+    fn deref(&self) -> &Self::Target {
+        &self.m
+    }
 }
 
 pub trait IntoCache<M: Modulation> {
@@ -102,6 +97,7 @@ mod tests {
     fn test_cache() {
         let m = Static::new().with_cache();
         assert_eq!(m.sampling_config(), Static::new().sampling_config());
+        assert_eq!(m.intensity(), Static::new().intensity());
 
         assert!(m.buffer().is_empty());
         m.calc().unwrap().iter().for_each(|&d| {

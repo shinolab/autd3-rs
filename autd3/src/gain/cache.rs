@@ -1,16 +1,3 @@
-/*
- * File: Cache.rs
- * Project: gain
- * Created Date: 10/05/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 16/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use autd3_driver::{derive::*, geometry::Geometry};
 
 use std::{
@@ -24,6 +11,14 @@ use std::{
 pub struct Cache<G: Gain + 'static> {
     gain: Rc<G>,
     cache: Rc<RefCell<HashMap<usize, Vec<Drive>>>>,
+}
+
+impl<G: Gain + 'static> std::ops::Deref for Cache<G> {
+    type Target = G;
+
+    fn deref(&self) -> &Self::Target {
+        &self.gain
+    }
 }
 
 pub trait IntoCache<G: Gain + 'static> {
@@ -126,6 +121,7 @@ mod tests {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
 
         let gain = Plane::new(Vector3::zeros()).with_cache();
+        assert_eq!(gain.phase(), Plane::new(Vector3::zeros()).phase());
 
         let d = gain.calc(&geometry, GainFilter::All).unwrap();
         d[&0].iter().for_each(|drive| {
