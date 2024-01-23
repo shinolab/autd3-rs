@@ -1,16 +1,3 @@
-/*
- * File: amp.rs
- * Project: src
- * Created Date: 22/11/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 17/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use autd3_driver::defined::{float, ABSOLUTE_THRESHOLD_OF_HEARING};
 
 #[allow(non_camel_case_types)]
