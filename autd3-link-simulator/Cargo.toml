@@ -1,6 +1,6 @@
 [package]
 name = "autd3-link-simulator"
-version = "21.0.0-alpha.0"
+version = "21.0.0"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 
@@ -11,13 +11,12 @@ readme = "README.md"
 keywords = ["autd"]
 
 [dependencies]
-autd3-protobuf = { path = "../autd3-protobuf", version = "21.0.0-alpha.0" }
-autd3-driver = { path = "../autd3-driver", version = "21.0.0-alpha.0", default-features = false }
+autd3-protobuf = { path = "../autd3-protobuf", version = "21.0.0" }
+autd3-driver = { path = "../autd3-driver", version = "21.0.0" }
 thiserror = "1.0.30"
 tonic = "0.10.0"
 
 [features]
-default = ["rpitit"]
+default = []
 single_float = ["autd3-driver/single_float"]
-rpitit = ["autd3-driver/rpitit", "autd3-protobuf/rpitit"]
 async-trait = ["autd3-driver/async-trait", "autd3-protobuf/async-trait"]
