@@ -1,16 +1,3 @@
-/*
- * File: modulation.rs
- * Project: operation
- * Created Date: 30/12/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 17/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use crate::{
     cpu::params::{
         BRAM_ADDR_MOD_ADDR_OFFSET, BRAM_ADDR_MOD_CYCLE, BRAM_ADDR_MOD_FREQ_DIV_0,

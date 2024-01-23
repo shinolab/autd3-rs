@@ -1,16 +1,3 @@
-/*
- * File: gain.rs
- * Project: stm
- * Created Date: 17/01/2024
- * Author: Shun Suzuki
- * -----
- * Last Modified: 17/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2024 Shun Suzuki. All rights reserved.
- *
- */
-
 use crate::{
     cpu::params::{
         BRAM_ADDR_STM_ADDR_OFFSET, BRAM_ADDR_STM_CYCLE, BRAM_ADDR_STM_FINISH_IDX,

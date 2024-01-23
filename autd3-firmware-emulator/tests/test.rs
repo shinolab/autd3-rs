@@ -1,16 +1,3 @@
-/*
- * File: test.rs
- * Project: tests
- * Created Date: 13/12/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 17/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use autd3_driver::{
     autd3_device::AUTD3,
     cpu::TxDatagram,
