@@ -1,16 +1,3 @@
-/*
- * File: flag.rs
- * Project: tests
- * Created Date: 24/05/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 20/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
