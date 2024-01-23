@@ -1,16 +1,3 @@
-/*
- * File: params.rs
- * Project: fpga
- * Created Date: 07/05/2022
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
- *
- */
-
 pub const VERSION_NUM_MAJOR: u8 = 0x8E;
 pub const VERSION_NUM_MINOR: u8 = 0x01;
 

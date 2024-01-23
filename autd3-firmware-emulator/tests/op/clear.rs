@@ -1,16 +1,3 @@
-/*
- * File: clear.rs
- * Project: op
- * Created Date: 17/01/2024
- * Author: Shun Suzuki
- * -----
- * Last Modified: 17/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2024 Shun Suzuki. All rights reserved.
- *
- */
-
 use autd3_driver::{
     autd3_device::AUTD3,
     cpu::TxDatagram,

@@ -1,16 +1,3 @@
-/*
- * File: mod.rs
- * Project: operation
- * Created Date: 30/12/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 17/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 pub const TAG_CLEAR: u8 = 0x01;
 pub const TAG_SYNC: u8 = 0x02;
 pub const TAG_FIRM_INFO: u8 = 0x03;

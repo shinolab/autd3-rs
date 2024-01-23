@@ -1,16 +1,3 @@
-/*
- * File: debug.rs
- * Project: operation
- * Created Date: 30/12/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 30/12/2023
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use crate::{
     cpu::params::{BRAM_ADDR_DEBUG_OUT_IDX, BRAM_SELECT_CONTROLLER, ERR_NONE},
     CPUEmulator,
