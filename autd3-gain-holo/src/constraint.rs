@@ -1,16 +1,3 @@
-/*
- * File: constraint.rs
- * Project: src
- * Created Date: 28/07/2022
- * Author: Shun Suzuki
- * -----
- * Last Modified: 17/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use autd3_driver::{common::EmitIntensity, defined::float};
 
 /// Emission constraint
