@@ -1,16 +1,3 @@
-/*
- * File: plane.rs
- * Project: gain
- * Created Date: 05/05/2022
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use std::collections::HashMap;
 
 use autd3_driver::{
@@ -23,6 +10,7 @@ use autd3_driver::{
 pub struct Plane {
     intensity: EmitIntensity,
     dir: Vector3,
+    phase: Phase,
 }
 
 impl Plane {
@@ -36,6 +24,7 @@ impl Plane {
         Self {
             dir,
             intensity: EmitIntensity::MAX,
+            phase: Phase::new(0),
         }
     }
 
@@ -52,12 +41,26 @@ impl Plane {
         }
     }
 
+    /// set phase
+    ///
+    /// # Arguments
+    ///
+    /// * `phase` - phase
+    ///
+    pub fn with_phase(self, phase: Phase) -> Self {
+        Self { phase, ..self }
+    }
+
     pub const fn intensity(&self) -> EmitIntensity {
         self.intensity
     }
 
     pub const fn dir(&self) -> Vector3 {
         self.dir
+    }
+
+    pub const fn phase(&self) -> Phase {
+        self.phase
     }
 }
 
@@ -68,7 +71,7 @@ impl Gain for Plane {
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
         Ok(Self::transform(geometry, filter, |dev, tr| Drive {
-            phase: self.dir.dot(tr.position()) * tr.wavenumber(dev.sound_speed) * Rad,
+            phase: self.dir.dot(tr.position()) * tr.wavenumber(dev.sound_speed) * Rad + self.phase,
             intensity: self.intensity,
         }))
     }
@@ -91,6 +94,7 @@ mod tests {
         let g = Plane::new(d);
         assert_eq!(g.dir(), d);
         assert_eq!(g.intensity(), EmitIntensity::MAX);
+        assert_eq!(g.phase(), Phase::new(0));
 
         let p = g.calc(&geometry, GainFilter::All).unwrap();
         assert_eq!(p.len(), 1);
@@ -105,9 +109,12 @@ mod tests {
         });
 
         let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();
-        let g = Plane::new(d).with_intensity(0x1F);
+        let g = Plane::new(d)
+            .with_intensity(0x1F)
+            .with_phase(Phase::new(0x2F));
         assert_eq!(g.dir(), d);
         assert_eq!(g.intensity(), EmitIntensity::new(0x1F));
+        assert_eq!(g.phase(), Phase::new(0x2F));
         let p = g.calc(&geometry, GainFilter::All).unwrap();
         assert_eq!(p.len(), 1);
         assert_eq!(p[&0].len(), geometry.num_transducers());
@@ -116,7 +123,8 @@ mod tests {
             .for_each(|p| assert_eq!(p.intensity.value(), 0x1F));
         p[&0].iter().zip(geometry[0].iter()).for_each(|(p, tr)| {
             let expected_phase =
-                d.dot(tr.position()) * tr.wavenumber(geometry[0].sound_speed) * Rad;
+                d.dot(tr.position()) * tr.wavenumber(geometry[0].sound_speed) * Rad
+                    + Phase::new(0x2F);
             assert_eq!(p.phase, expected_phase);
         });
     }
