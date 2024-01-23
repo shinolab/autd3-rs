@@ -1,29 +1,10 @@
-/*
- * File: link.rs
- * Project: src
- * Created Date: 27/04/2022
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use std::time::Duration;
 
 use crate::{
-    cpu::{RxMessage, TxDatagram},
+    cpu::{check_if_msg_is_processed, RxMessage, TxDatagram},
     error::AUTDInternalError,
     geometry::Geometry,
 };
-
-#[cfg(all(feature = "rpitit", feature = "async-trait"))]
-compile_error!("`rpitit` and `async-trait` features are mutually exclusive");
-
-#[cfg(not(any(feature = "rpitit", feature = "async-trait")))]
-compile_error!("`rpitit` or `async-trait` feature is required");
 
 #[cfg(feature = "async-trait")]
 mod internal {
@@ -78,7 +59,7 @@ mod internal {
     }
 }
 
-#[cfg(feature = "rpitit")]
+#[cfg(not(feature = "async-trait"))]
 mod internal {
     use super::*;
 
@@ -120,9 +101,9 @@ pub use internal::Link;
 #[cfg(feature = "async-trait")]
 pub use internal::LinkBuilder;
 
-#[cfg(feature = "rpitit")]
+#[cfg(not(feature = "async-trait"))]
 pub use internal::Link;
-#[cfg(feature = "rpitit")]
+#[cfg(not(feature = "async-trait"))]
 pub use internal::LinkBuilder;
 
 /// Send and receive data
@@ -150,32 +131,19 @@ pub async fn wait_msg_processed<L: Link>(
     timeout: Duration,
 ) -> Result<bool, AUTDInternalError> {
     let start = std::time::Instant::now();
-    let _ = link.receive(rx).await?;
-    if tx.headers().zip(rx.iter()).try_fold(true, |acc, (h, r)| {
-        if r.ack & 0x80 != 0 {
-            return Err(AUTDInternalError::firmware_err(r.ack));
-        }
-        Ok(acc && h.msg_id == r.ack)
-    })? {
-        return Ok(true);
-    }
     loop {
-        if start.elapsed() > timeout {
-            return Ok(false);
-        }
-        tokio::time::sleep(std::time::Duration::from_millis(1)).await;
-        if !link.receive(rx).await? {
-            continue;
-        }
-        if tx.headers().zip(rx.iter()).try_fold(true, |acc, (h, r)| {
-            if r.ack & 0x80 != 0 {
-                return Err(AUTDInternalError::firmware_err(r.ack));
-            }
-            Ok(acc && h.msg_id == r.ack)
-        })? {
+        if link.receive(rx).await? && check_if_msg_is_processed(tx, rx).all(std::convert::identity)
+        {
             return Ok(true);
         }
+        if start.elapsed() > timeout {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(1)).await;
     }
+    rx.iter()
+        .try_fold((), |_, r| Result::<(), AUTDInternalError>::from(r))
+        .map(|_| false)
 }
 
 #[cfg(test)]
