@@ -1,16 +1,3 @@
-/*
- * File: link_soem.rs
- * Project: src
- * Created Date: 27/04/2022
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2022-2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use async_channel::{bounded, Receiver, SendError, Sender};
 use std::{
     ffi::c_void,
@@ -23,7 +10,10 @@ use std::{
     usize,
 };
 use time::ext::NumericalDuration;
-use tokio::task::JoinHandle;
+use tokio::{
+    task::{spawn, JoinHandle},
+    time::sleep,
+};
 
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram, EC_CYCLE_TIME_BASE_NANO_SEC},
@@ -288,39 +278,33 @@ impl LinkBuilder for SOEMBuilder {
 
             let (mut ecatth_handle, mut timer_handle) = match timer_strategy {
                 TimerStrategy::Sleep => (
-                    Some(tokio::task::spawn({
+                    {
                         let is_open = is_open.clone();
                         let io_map = io_map.clone();
                         let wkc = wkc.clone();
-                        async move {
-                            SOEM::ecat_run::<StdSleep>(
-                                is_open,
-                                io_map,
-                                wkc,
-                                tx_receiver,
-                                ec_send_cycle,
-                            )
-                            .await
-                        }
-                    })),
+                        Some(spawn(SOEM::ecat_run::<StdSleep>(
+                            is_open,
+                            io_map,
+                            wkc,
+                            tx_receiver,
+                            ec_send_cycle,
+                        )))
+                    },
                     None,
                 ),
                 TimerStrategy::BusyWait => (
-                    Some(tokio::task::spawn({
+                    {
                         let is_open = is_open.clone();
                         let io_map = io_map.clone();
                         let wkc = wkc.clone();
-                        async move {
-                            SOEM::ecat_run::<BusyWait>(
-                                is_open,
-                                io_map,
-                                wkc,
-                                tx_receiver,
-                                ec_send_cycle,
-                            )
-                            .await
-                        }
-                    })),
+                        Some(spawn(SOEM::ecat_run::<BusyWait>(
+                            is_open,
+                            io_map,
+                            wkc,
+                            tx_receiver,
+                            ec_send_cycle,
+                        )))
+                    },
                     None,
                 ),
                 TimerStrategy::NativeTimer => (
@@ -362,12 +346,12 @@ impl LinkBuilder for SOEMBuilder {
                 }
             }
 
-            let ecat_check_th = Some(tokio::task::spawn({
+            let ecat_check_th = Some({
                 let expected_wkc = (ec_group[0].outputsWKC * 2 + ec_group[0].inputsWKC) as i32;
                 let is_open = is_open.clone();
                 let on_lost = on_lost.take();
                 let on_err = on_err.take();
-                async move {
+                spawn(async move {
                     let error_handler = EcatErrorHandler { on_lost, on_err };
                     while is_open.load(Ordering::Acquire) {
                         if wkc.load(Ordering::Relaxed) < expected_wkc
@@ -375,10 +359,10 @@ impl LinkBuilder for SOEMBuilder {
                         {
                             error_handler.handle();
                         }
-                        tokio::time::sleep(state_check_interval).await;
+                        sleep(state_check_interval).await;
                     }
-                }
-            }));
+                })
+            });
 
             Ok(Self::L {
                 ecatth_handle,
@@ -542,20 +526,6 @@ impl Link for SOEM {
     }
 }
 
-impl Drop for SOEM {
-    fn drop(&mut self) {
-        match tokio::runtime::Handle::current().runtime_flavor() {
-            tokio::runtime::RuntimeFlavor::CurrentThread => {}
-            tokio::runtime::RuntimeFlavor::MultiThread => tokio::task::block_in_place(|| {
-                tokio::runtime::Handle::current().block_on(async {
-                    let _ = self.close().await;
-                });
-            }),
-            _ => unimplemented!(),
-        }
-    }
-}
-
 trait Sleep {
     async fn sleep(duration: time::Duration);
 }
@@ -565,10 +535,10 @@ struct StdSleep {}
 impl Sleep for StdSleep {
     async fn sleep(duration: time::Duration) {
         if duration > time::Duration::ZERO {
-            tokio::time::sleep(std::time::Duration::from_nanos(
+            sleep(std::time::Duration::from_nanos(
                 duration.whole_nanoseconds() as _,
             ))
-            .await;
+            .await
         }
     }
 }
@@ -585,8 +555,6 @@ impl Sleep for BusyWait {
 }
 
 impl SOEM {
-    #[allow(unused_variables)]
-    #[allow(clippy::unnecessary_cast)]
     async fn ecat_run<S: Sleep>(
         is_open: Arc<AtomicBool>,
         io_map: Arc<Mutex<IOMap>>,
