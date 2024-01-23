@@ -1,16 +1,3 @@
-/*
- * File: group.rs
- * Project: tests
- * Created Date: 15/09/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 02/12/2023
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use autd3::prelude::*;
 
 pub async fn group_by_device<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {

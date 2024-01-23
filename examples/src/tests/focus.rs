@@ -1,16 +1,3 @@
-/*
- * File: focus.rs
- * Project: tests
- * Created Date: 28/05/2021
- * Author: Shun Suzuki
- * -----
- * Last Modified: 28/12/2023
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2021 Shun Suzuki. All rights reserved.
- *
- */
-
 use autd3::prelude::*;
 
 pub async fn focus<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {

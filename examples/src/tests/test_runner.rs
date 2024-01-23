@@ -1,16 +1,3 @@
-/*
- * File: test_runner.rs
- * Project: tests
- * Created Date: 27/09/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 28/12/2023
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use colored::*;
 use std::io::{self, Write};
 
