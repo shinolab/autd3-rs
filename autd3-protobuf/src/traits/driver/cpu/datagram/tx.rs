@@ -1,16 +1,3 @@
-/*
- * File: tx.rs
- * Project: datagram
- * Created Date: 19/01/2024
- * Author: Shun Suzuki
- * -----
- * Last Modified: 20/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2024 Shun Suzuki. All rights reserved.
- *
- */
-
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
@@ -38,5 +25,24 @@ impl FromMessage<TxRawData> for autd3_driver::cpu::TxDatagram {
             );
         }
         Some(tx)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::Rng;
+
+    #[test]
+    fn test_tx_datagram() {
+        let mut rng = rand::thread_rng();
+        let mut tx = autd3_driver::cpu::TxDatagram::new(10);
+        (0..10).for_each(|i| {
+            tx.header_mut(i).msg_id = rng.gen();
+            tx.header_mut(i).slot_2_offset = rng.gen();
+        });
+        let msg = tx.to_msg();
+        let tx2 = autd3_driver::cpu::TxDatagram::from_msg(&msg).unwrap();
+        assert_eq!(tx.all_data(), tx2.all_data());
     }
 }

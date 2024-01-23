@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package autd3;
+
+message ConfigureSilencerFixedUpdateRate {
+      uint32 value_intensity = 1;
+      uint32 value_phase = 2;
+}
+
+message ConfigureSilencerFixedCompletionSteps {
+      uint32 value_intensity = 1;
+      uint32 value_phase = 2;
+      bool strict_mode = 3;
+}
+
+message ConfigureSilencer {
+    oneof config {
+        ConfigureSilencerFixedUpdateRate fixed_update_rate = 1;
+        ConfigureSilencerFixedCompletionSteps fixed_completion_steps = 2;
+    }
+}

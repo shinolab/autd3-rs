@@ -1,16 +1,3 @@
-/*
- * File: error.rs
- * Project: src
- * Created Date: 30/06/2023
- * Author: Shun Suzuki
- * -----
- * Last Modified: 09/11/2023
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2023 Shun Suzuki. All rights reserved.
- *
- */
-
 use std::error::Error;
 
 use thiserror::Error;
@@ -32,27 +19,33 @@ pub enum AUTDProtoBufError {
     AUTDInternalError(autd3_driver::error::AUTDInternalError),
     #[error("This data is not supported.")]
     NotSupportedData,
+    #[error("Failed to parse data.")]
+    DataParseError,
 }
 
 impl From<autd3_driver::error::AUTDInternalError> for AUTDProtoBufError {
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn from(e: autd3_driver::error::AUTDInternalError) -> Self {
         AUTDProtoBufError::AUTDInternalError(e)
     }
 }
 
 impl From<tonic::Status> for AUTDProtoBufError {
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn from(e: tonic::Status) -> Self {
         AUTDProtoBufError::Status(e.to_string())
     }
 }
 
 impl<T> From<std::sync::mpsc::SendError<T>> for AUTDProtoBufError {
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn from(e: std::sync::mpsc::SendError<T>) -> Self {
         AUTDProtoBufError::SendError(e.to_string())
     }
 }
 
 impl From<tonic::transport::Error> for AUTDProtoBufError {
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn from(e: tonic::transport::Error) -> Self {
         match e.source() {
             Some(source) => AUTDProtoBufError::TransportError(source.to_string()),
@@ -62,11 +55,21 @@ impl From<tonic::transport::Error> for AUTDProtoBufError {
 }
 
 impl From<AUTDProtoBufError> for autd3_driver::error::AUTDInternalError {
+    #[cfg_attr(coverage_nightly, coverage(off))]
     fn from(e: AUTDProtoBufError) -> Self {
         autd3_driver::error::AUTDInternalError::LinkError(e.to_string())
     }
 }
 
+#[cfg(feature = "lightweight")]
+impl From<AUTDProtoBufError> for autd3::error::AUTDError {
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn from(e: AUTDProtoBufError) -> Self {
+        Self::Internal(e.into())
+    }
+}
+
+#[cfg_attr(coverage_nightly, coverage(off))]
 pub fn match_for_io_error(err_status: &Status) -> Option<&std::io::Error> {
     let mut err: &(dyn Error + 'static) = err_status;
     loop {
@@ -82,5 +85,17 @@ pub fn match_for_io_error(err_status: &Status) -> Option<&std::io::Error> {
             Some(err) => err,
             None => return None,
         };
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_protobuf_error() {
+        let e = AUTDProtoBufError::NotSupportedData;
+        assert_eq!(e.to_string(), "This data is not supported.");
+        assert_eq!(format!("{:?}", e), "NotSupportedData");
     }
 }

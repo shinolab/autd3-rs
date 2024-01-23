@@ -1,15 +1,7 @@
-/*
- * File: mod.rs
- * Project: driver
- * Created Date: 19/01/2024
- * Author: Shun Suzuki
- * -----
- * Last Modified: 19/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2024 Shun Suzuki. All rights reserved.
- *
- */
-
+mod common;
 mod cpu;
+#[cfg(feature = "lightweight")]
+mod datagram;
+#[cfg(feature = "lightweight")]
+mod firmware_version;
 mod geometry;

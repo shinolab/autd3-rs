@@ -1,16 +1,3 @@
-/*
- * File: rx.rs
- * Project: datagram
- * Created Date: 19/01/2024
- * Author: Shun Suzuki
- * -----
- * Last Modified: 20/01/2024
- * Modified By: Shun Suzuki (suzuki@hapis.k.u-tokyo.ac.jp)
- * -----
- * Copyright (c) 2024 Shun Suzuki. All rights reserved.
- *
- */
-
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
@@ -42,5 +29,30 @@ impl FromMessage<RxMessage> for Vec<autd3_driver::cpu::RxMessage> {
             std::ptr::copy_nonoverlapping(msg.data.as_ptr(), rx.as_mut_ptr() as _, msg.data.len());
         }
         Some(rx)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_rx_message() {
+        let mut rx = vec![autd3_driver::cpu::RxMessage { ack: 0, data: 0 }; 10];
+        rx[0].ack = 1;
+        rx[0].data = 2;
+        rx[1].ack = 3;
+        rx[1].data = 4;
+        let msg = rx.to_msg();
+        assert_eq!(
+            msg.data.len(),
+            10 * std::mem::size_of::<autd3_driver::cpu::RxMessage>()
+        );
+        let rx2 = Vec::<autd3_driver::cpu::RxMessage>::from_msg(&msg).unwrap();
+        assert_eq!(rx2.len(), 10);
+        assert_eq!(rx2[0].ack, 1);
+        assert_eq!(rx2[0].data, 2);
+        assert_eq!(rx2[1].ack, 3);
+        assert_eq!(rx2[1].data, 4);
     }
 }
