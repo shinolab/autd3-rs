@@ -3,7 +3,7 @@ use autd3_driver::{common::EmitIntensity, derive::*};
 use std::{
     fs::File,
     io::{BufReader, Read},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use crate::error::AudioFileError;
@@ -16,7 +16,7 @@ use crate::error::AudioFileError;
 #[derive(Modulation, Clone)]
 pub struct RawPCM {
     sample_rate: u32,
-    raw_buffer: Vec<f32>,
+    path: PathBuf,
     config: SamplingConfiguration,
 }
 
@@ -29,28 +29,32 @@ impl RawPCM {
     /// * `sample_rate` - Sampling frequency of the raw PCM file
     ///
     pub fn new<P: AsRef<Path>>(path: P, sample_rate: u32) -> Result<Self, AudioFileError> {
-        let f = File::open(path)?;
+        Ok(Self {
+            sample_rate,
+            path: path.as_ref().to_path_buf(),
+            config: SamplingConfiguration::FREQ_4K_HZ,
+        })
+    }
+
+    fn read_buf(&self) -> Result<Vec<f32>, AudioFileError> {
+        let f = File::open(&self.path)?;
         let mut reader = BufReader::new(f);
         let mut raw_buffer = Vec::new();
         reader.read_to_end(&mut raw_buffer)?;
-        Ok(Self {
-            sample_rate,
-            raw_buffer: raw_buffer.iter().map(|&v| v as f32 / 255.).collect(),
-            config: SamplingConfiguration::FREQ_4K_HZ,
-        })
+        Ok(raw_buffer.into_iter().map(f32::from).collect())
     }
 }
 
 impl Modulation for RawPCM {
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         Ok(wav_io::resample::linear(
-            self.raw_buffer.clone(),
+            self.read_buf()?,
             1,
             self.sample_rate,
             self.sampling_config().frequency() as u32,
         )
         .iter()
-        .map(|&d| EmitIntensity::new((d * 255.).round() as u8))
+        .map(|&d| EmitIntensity::new(d.round() as u8))
         .collect())
     }
 }
@@ -86,8 +90,8 @@ mod tests {
             ]
         );
 
-        let m = RawPCM::new("not_exists.dat", 4000);
-        assert!(m.is_err());
+        let m = RawPCM::new("not_exists.dat", 4000).unwrap();
+        assert!(m.calc().is_err());
     }
 
     #[test]

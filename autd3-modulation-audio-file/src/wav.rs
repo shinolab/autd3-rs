@@ -1,7 +1,7 @@
 use autd3_driver::{common::EmitIntensity, derive::*};
 use hound::{SampleFormat, WavSpec};
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::error::AudioFileError;
 
@@ -10,9 +10,7 @@ use crate::error::AudioFileError;
 /// The wav data is resampled to the sampling frequency of Modulation.
 #[derive(Modulation, Clone)]
 pub struct Wav {
-    channels: u16,
-    sample_rate: u32,
-    raw_buffer: Vec<f32>,
+    path: PathBuf,
     config: SamplingConfiguration,
 }
 
@@ -24,54 +22,60 @@ impl Wav {
     /// * `path` - Path to the wav file
     ///
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Self, AudioFileError> {
-        let mut reader = hound::WavReader::open(path)?;
-        let WavSpec {
-            channels,
-            sample_format,
-            sample_rate,
-            bits_per_sample,
-        } = reader.spec();
-        let raw_buffer = reader.samples::<i32>().collect::<Result<Vec<_>, _>>()?;
-        let raw_buffer = match (sample_format, bits_per_sample) {
-            (SampleFormat::Int, 8) => raw_buffer
-                .iter()
-                .map(|i| (i - std::i8::MIN as i32) as f32 / 255.)
-                .collect(),
-            (SampleFormat::Int, 16) => raw_buffer
-                .iter()
-                .map(|i| (i - std::i16::MIN as i32) as f32 / 65535.)
-                .collect(),
-            (SampleFormat::Int, 24) => raw_buffer
-                .iter()
-                .map(|i| (i + 8388608i32) as f32 / 16777215.)
-                .collect(),
-            (SampleFormat::Int, 32) => raw_buffer
-                .iter()
-                .map(|&i| (i as i64 - std::i32::MIN as i64) as f32 / 4294967295.)
-                .collect(),
-            _ => return Err(AudioFileError::Wav(hound::Error::Unsupported)),
-        };
-
         Ok(Self {
-            channels,
-            sample_rate,
-            raw_buffer,
+            path: path.as_ref().to_path_buf(),
             config: SamplingConfiguration::FREQ_4K_HZ,
         })
+    }
+
+    fn read_buf(&self) -> Result<(Vec<f32>, WavSpec), AudioFileError> {
+        let mut reader = hound::WavReader::open(&self.path)?;
+        let spec = reader.spec();
+        let raw_buffer = reader.samples::<i32>().collect::<Result<Vec<_>, _>>()?;
+        Ok((
+            match (spec.sample_format, spec.bits_per_sample) {
+                (SampleFormat::Int, 8) => raw_buffer
+                    .iter()
+                    .map(|i| (i - std::i8::MIN as i32) as f32)
+                    .collect(),
+                (SampleFormat::Int, 16) => raw_buffer
+                    .iter()
+                    .map(|i| (i - std::i16::MIN as i32) as f32 / 257.)
+                    .collect(),
+                (SampleFormat::Int, 24) => raw_buffer
+                    .iter()
+                    .map(|i| (i + 8388608i32) as f32 / 65793.)
+                    .collect(),
+                (SampleFormat::Int, 32) => raw_buffer
+                    .iter()
+                    .map(|&i| (i as i64 - std::i32::MIN as i64) as f32 / 16843009.)
+                    .collect(),
+                _ => return Err(AudioFileError::Wav(hound::Error::Unsupported)),
+            },
+            spec,
+        ))
     }
 }
 
 impl Modulation for Wav {
     #[allow(clippy::unnecessary_cast)]
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+        let (
+            raw_buffer,
+            WavSpec {
+                channels,
+                sample_rate,
+                ..
+            },
+        ) = self.read_buf()?;
         Ok(wav_io::resample::linear(
-            self.raw_buffer.clone(),
-            self.channels,
-            self.sample_rate,
+            raw_buffer,
+            channels,
+            sample_rate,
             self.sampling_config().frequency() as u32,
         )
         .iter()
-        .map(|&d| EmitIntensity::new((d * 255.).round() as u8))
+        .map(|&d| EmitIntensity::new(d.round() as u8))
         .collect())
     }
 }
@@ -217,8 +221,8 @@ mod tests {
             },
             &[0., 0., 0.],
         );
-        let m = Wav::new(&path);
-        assert!(m.is_err());
+        let m = Wav::new(&path).unwrap();
+        assert!(m.calc().is_err());
     }
 
     #[test]
