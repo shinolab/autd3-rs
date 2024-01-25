@@ -64,9 +64,9 @@ impl<L: Link> Controller<L> {
         let (mut op1, mut op2) = s.operation()?;
         OperationHandler::init(&mut op1, &mut op2, &self.geometry)?;
         loop {
-            let start = std::time::Instant::now();
             OperationHandler::pack(&mut op1, &mut op2, &self.geometry, &mut self.tx_buf)?;
 
+            let start = tokio::time::Instant::now();
             if !autd3_driver::link::send_receive(
                 &mut self.link,
                 &self.tx_buf,
@@ -80,9 +80,7 @@ impl<L: Link> Controller<L> {
             if OperationHandler::is_finished(&mut op1, &mut op2, &self.geometry) {
                 break;
             }
-            if start.elapsed() < std::time::Duration::from_millis(1) {
-                tokio::time::sleep(Duration::from_millis(1)).await;
-            }
+            tokio::time::sleep_until(start + Duration::from_millis(1)).await;
         }
         Ok(true)
     }
