@@ -4,4 +4,4 @@ This crate provides a Wav/RawPCM modulation.
 
 # Author
 
-Shun Suzuki, 2022-2023
+Shun Suzuki, 2022-2024
