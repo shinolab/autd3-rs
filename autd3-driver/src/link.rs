@@ -117,9 +117,6 @@ pub async fn send_receive<L: Link>(
     if !link.send(tx).await? {
         return Ok(false);
     }
-    if timeout.is_zero() {
-        return link.receive(rx).await;
-    }
     wait_msg_processed(link, tx, rx, timeout).await
 }
 
