@@ -100,7 +100,6 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
             OperationHandler::init(op1, op2, &self.cnt.geometry)
         })?;
         let r = loop {
-            let start = std::time::Instant::now();
             self.op.iter_mut().try_for_each(|(k, (op1, op2))| {
                 self.cnt.geometry.iter_mut().for_each(|dev| {
                     dev.enable = enable_flags_map[k][dev.idx()];
@@ -108,6 +107,7 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
                 OperationHandler::pack(op1, op2, &self.cnt.geometry, &mut self.cnt.tx_buf)
             })?;
 
+            let start = tokio::time::Instant::now();
             if !autd3_driver::link::send_receive(
                 &mut self.cnt.link,
                 &self.cnt.tx_buf,
@@ -126,9 +126,7 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
             }) {
                 break true;
             }
-            if start.elapsed() < Duration::from_millis(1) {
-                tokio::time::sleep(Duration::from_millis(1)).await;
-            }
+            tokio::time::sleep_until(start + Duration::from_millis(1)).await;
         };
 
         self.pop_enable_flags(enable_flags_store);
