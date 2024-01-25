@@ -15,4 +15,4 @@ SOEM has GPLv2 license with an exception, see [SOEM license file](https://github
 
 # Author
 
-Shun Suzuki, 2022-2023
+Shun Suzuki, 2022-2024
