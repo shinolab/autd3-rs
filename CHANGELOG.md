@@ -1,3 +1,9 @@
+# 21.0.1
+
+- bit improve `send` perf
+- make return value of `send` faithful to doc comment
+- move data loading inside `calc` fn of `Wav` and `RawPCM`
+
 # 21.0.0
 
 - Update firmware to v5.1.0
