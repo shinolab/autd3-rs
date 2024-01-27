@@ -22,6 +22,7 @@ impl Wav {
     /// * `path` - Path to the wav file
     ///
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Self, AudioFileError> {
+        // TODO: Remove Result when v22.0.0
         Ok(Self {
             path: path.as_ref().to_path_buf(),
             config: SamplingConfiguration::FREQ_4K_HZ,
