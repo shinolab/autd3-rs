@@ -1,3 +1,7 @@
+# 21.0.2
+
+- Fix [#7](https://github.com/shinolab/autd3-rs/issues/7): `on_lost` and `on_err` callback don't work
+
 # 21.0.1
 
 - bit improve `send` perf
