@@ -197,6 +197,8 @@ def rust_run(args):
         "twincat",
         "remote_twincat",
         "simulator",
+        "lightweight",
+        "lightweight_server",
     ]
 
     if args.target not in examples:
@@ -216,6 +218,10 @@ def rust_run(args):
             features = "remote_twincat"
         case "simulator":
             features = "simulator"
+        case "lightweight":
+            features = "lightweight"
+        case "lightweight_server":
+            features = "lightweight-server"
 
     with working_dir("./examples"):
         commands = ["cargo", "run"]
