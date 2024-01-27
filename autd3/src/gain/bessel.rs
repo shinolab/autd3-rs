@@ -13,6 +13,7 @@ pub struct Bessel {
     pos: Vector3,
     dir: Vector3,
     theta: float,
+    phase: Phase,
 }
 
 impl Bessel {
@@ -30,6 +31,7 @@ impl Bessel {
             dir,
             theta,
             intensity: EmitIntensity::MAX,
+            phase: Phase::new(0),
         }
     }
 
@@ -46,6 +48,16 @@ impl Bessel {
         }
     }
 
+    /// set phase
+    ///
+    /// # Arguments
+    ///
+    /// * `phase` - phase
+    ///
+    pub fn with_phase(self, phase: Phase) -> Self {
+        Self { phase, ..self }
+    }
+
     pub const fn intensity(&self) -> EmitIntensity {
         self.intensity
     }
@@ -60,6 +72,10 @@ impl Bessel {
 
     pub const fn theta(&self) -> float {
         self.theta
+    }
+
+    pub const fn phase(&self) -> Phase {
+        self.phase
     }
 }
 

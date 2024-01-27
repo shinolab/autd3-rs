@@ -2,6 +2,8 @@
 
 - Fix [#7](https://github.com/shinolab/autd3-rs/issues/7): `on_lost` and `on_err` callback don't work
 - Add `with_err_handler` to `autd3-link-soem::SOEM`
+  - `with_on_err` and `with_on_lost` are now deprecated
+- Add `phase` parameter to `gain::Focus` and `gain::Bessel`
 
 # 21.0.1
 
