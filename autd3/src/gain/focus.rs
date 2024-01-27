@@ -11,6 +11,7 @@ use autd3_driver::{
 pub struct Focus {
     intensity: EmitIntensity,
     pos: Vector3,
+    phase: Phase,
 }
 
 impl Focus {
@@ -24,6 +25,7 @@ impl Focus {
         Self {
             pos,
             intensity: EmitIntensity::MAX,
+            phase: Phase::new(0),
         }
     }
 
@@ -40,12 +42,26 @@ impl Focus {
         }
     }
 
+    /// set phase
+    ///
+    /// # Arguments
+    ///
+    /// * `phase` - phase
+    ///
+    pub fn with_phase(self, phase: Phase) -> Self {
+        Self { phase, ..self }
+    }
+
     pub const fn intensity(&self) -> EmitIntensity {
         self.intensity
     }
 
     pub const fn pos(&self) -> Vector3 {
         self.pos
+    }
+
+    pub const fn phase(&self) -> Phase {
+        self.phase
     }
 }
 
