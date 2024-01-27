@@ -70,9 +70,9 @@ impl<Fl: Fn(&str), Fe: Fn(&str), Fh: Fn(usize, Status)> EcatErrorHandler<Fl, Fe,
                             if let Some(f) = &self.err_handler {
                                 f(
                                     i,
-                                    Status::Error(format!(
-                                        "slave is in SAFE_OP + ERROR, attempting ack"
-                                    )),
+                                    Status::Error(
+                                        "slave is in SAFE_OP + ERROR, attempting ack".to_string(),
+                                    ),
                                 );
                             }
                             slave.state =
@@ -85,9 +85,9 @@ impl<Fl: Fn(&str), Fe: Fn(&str), Fh: Fn(usize, Status)> EcatErrorHandler<Fl, Fe,
                             if let Some(f) = &self.err_handler {
                                 f(
                                     i,
-                                    Status::StateChanged(format!(
-                                        "slave is in SAFE_OP, change to OPERATIONAL"
-                                    )),
+                                    Status::StateChanged(
+                                        "slave is in SAFE_OP, change to OPERATIONAL".to_string(),
+                                    ),
                                 );
                             }
                             slave.state = ec_state_EC_STATE_OPERATIONAL as _;
@@ -106,7 +106,7 @@ impl<Fl: Fn(&str), Fe: Fn(&str), Fh: Fn(usize, Status)> EcatErrorHandler<Fl, Fe,
                                 slave.islost = 1;
                                 let _ = writeln!(msg, "slave {i} lost");
                                 if let Some(f) = &self.err_handler {
-                                    f(i, Status::Lost(format!("slave is lost")));
+                                    f(i, Status::Lost("slave is lost".to_string()));
                                 }
                             }
                         }
