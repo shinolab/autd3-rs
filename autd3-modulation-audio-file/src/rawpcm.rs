@@ -29,6 +29,7 @@ impl RawPCM {
     /// * `sample_rate` - Sampling frequency of the raw PCM file
     ///
     pub fn new<P: AsRef<Path>>(path: P, sample_rate: u32) -> Result<Self, AudioFileError> {
+        // TODO: Remove Result when v22.0.0
         Ok(Self {
             sample_rate,
             path: path.as_ref().to_path_buf(),
