@@ -10,10 +10,8 @@ use std::{
     usize,
 };
 use time::ext::NumericalDuration;
-use tokio::{
-    task::{spawn, JoinHandle},
-    time::sleep,
-};
+
+use std::thread::{sleep, spawn, JoinHandle};
 
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram, EC_CYCLE_TIME_BASE_NANO_SEC},
@@ -54,8 +52,8 @@ impl TimerCallback for SoemCallback {
     }
 }
 
-type OnLostCallBack = Box<dyn Fn(&str) + Send + Sync>;
-type OnErrCallBack = Box<dyn Fn(&str) + Send + Sync>;
+type OnLostCallback = Box<dyn Fn(&str) + Send + Sync>;
+type OnErrCallback = Box<dyn Fn(&str) + Send + Sync>;
 
 /// Link using [SOEM](https://github.com/OpenEtherCATsociety/SOEM)
 pub struct SOEM {
@@ -78,8 +76,8 @@ pub struct SOEMBuilder {
     timeout: std::time::Duration,
     sync0_cycle: u64,
     send_cycle: u64,
-    on_lost: Option<OnLostCallBack>,
-    on_err: Option<OnErrCallBack>,
+    on_lost: Option<OnLostCallback>,
+    on_err: Option<OnErrCallback>,
 }
 
 impl SOEMBuilder {
@@ -282,13 +280,15 @@ impl LinkBuilder for SOEMBuilder {
                         let is_open = is_open.clone();
                         let io_map = io_map.clone();
                         let wkc = wkc.clone();
-                        Some(spawn(SOEM::ecat_run::<StdSleep>(
-                            is_open,
-                            io_map,
-                            wkc,
-                            tx_receiver,
-                            ec_send_cycle,
-                        )))
+                        Some(spawn(move || {
+                            SOEM::ecat_run::<StdSleep>(
+                                is_open,
+                                io_map,
+                                wkc,
+                                tx_receiver,
+                                ec_send_cycle,
+                            )
+                        }))
                     },
                     None,
                 ),
@@ -297,13 +297,15 @@ impl LinkBuilder for SOEMBuilder {
                         let is_open = is_open.clone();
                         let io_map = io_map.clone();
                         let wkc = wkc.clone();
-                        Some(spawn(SOEM::ecat_run::<BusyWait>(
-                            is_open,
-                            io_map,
-                            wkc,
-                            tx_receiver,
-                            ec_send_cycle,
-                        )))
+                        Some(spawn(move || {
+                            SOEM::ecat_run::<BusyWait>(
+                                is_open,
+                                io_map,
+                                wkc,
+                                tx_receiver,
+                                ec_send_cycle,
+                            )
+                        }))
                     },
                     None,
                 ),
@@ -328,7 +330,7 @@ impl LinkBuilder for SOEMBuilder {
             if ec_slave[0].state != ec_state_EC_STATE_OPERATIONAL as u16 {
                 is_open.store(false, Ordering::Release);
                 if let Some(timer) = ecatth_handle.take() {
-                    let _ = timer.await;
+                    let _ = timer.join();
                 }
                 if let Some(timer) = timer_handle.take() {
                     timer.close()?;
@@ -351,16 +353,15 @@ impl LinkBuilder for SOEMBuilder {
                 let is_open = is_open.clone();
                 let on_lost = on_lost.take();
                 let on_err = on_err.take();
-                spawn(async move {
-                    let error_handler = EcatErrorHandler { on_lost, on_err };
-                    while is_open.load(Ordering::Acquire) {
-                        if wkc.load(Ordering::Relaxed) < expected_wkc
-                            || ec_group[0].docheckstate != 0
-                        {
-                            error_handler.handle();
-                        }
-                        sleep(state_check_interval).await;
-                    }
+                spawn(move || {
+                    SOEM::ecat_state_check(
+                        is_open,
+                        on_lost,
+                        on_err,
+                        wkc,
+                        expected_wkc,
+                        state_check_interval,
+                    )
                 })
             });
 
@@ -467,13 +468,13 @@ impl Link for SOEM {
         }
 
         if let Some(timer) = self.ecatth_handle.take() {
-            let _ = timer.await;
+            let _ = timer.join();
         }
         if let Some(timer) = self.timer_handle.take() {
             timer.close()?;
         }
         if let Some(th) = self.ecat_check_th.take() {
-            let _ = th.await;
+            let _ = th.join();
         }
 
         unsafe {
@@ -527,18 +528,17 @@ impl Link for SOEM {
 }
 
 trait Sleep {
-    async fn sleep(duration: time::Duration);
+    fn sleep(duration: time::Duration);
 }
 
 struct StdSleep {}
 
 impl Sleep for StdSleep {
-    async fn sleep(duration: time::Duration) {
+    fn sleep(duration: time::Duration) {
         if duration > time::Duration::ZERO {
             sleep(std::time::Duration::from_nanos(
                 duration.whole_nanoseconds() as _,
             ))
-            .await
         }
     }
 }
@@ -546,7 +546,7 @@ impl Sleep for StdSleep {
 struct BusyWait {}
 
 impl Sleep for BusyWait {
-    async fn sleep(duration: time::Duration) {
+    fn sleep(duration: time::Duration) {
         let expired = time::OffsetDateTime::now_utc() + duration;
         while time::OffsetDateTime::now_utc() < expired {
             std::hint::spin_loop();
@@ -555,7 +555,26 @@ impl Sleep for BusyWait {
 }
 
 impl SOEM {
-    async fn ecat_run<S: Sleep>(
+    fn ecat_state_check(
+        is_open: Arc<AtomicBool>,
+        on_lost: Option<OnLostCallback>,
+        on_err: Option<OnErrCallback>,
+        wkc: Arc<AtomicI32>,
+        expected_wkc: i32,
+        state_check_interval: std::time::Duration,
+    ) {
+        unsafe {
+            let error_handler = EcatErrorHandler { on_lost, on_err };
+            while is_open.load(Ordering::Acquire) {
+                if wkc.load(Ordering::Relaxed) < expected_wkc || ec_group[0].docheckstate != 0 {
+                    error_handler.handle();
+                }
+                sleep(state_check_interval);
+            }
+        }
+    }
+
+    fn ecat_run<S: Sleep>(
         is_open: Arc<AtomicBool>,
         io_map: Arc<Mutex<IOMap>>,
         wkc: Arc<AtomicI32>,
@@ -595,7 +614,7 @@ impl SOEM {
                 ts += cycle;
                 ts += toff;
 
-                S::sleep(ts - time::OffsetDateTime::now_utc()).await;
+                S::sleep(ts - time::OffsetDateTime::now_utc());
 
                 wkc.store(
                     ec_receive_processdata(EC_TIMEOUTRET as i32),
