@@ -1,6 +1,6 @@
 [package]
 name = "autd3-driver"
-version = "21.0.1"
+version = "21.1.0"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 
@@ -17,7 +17,7 @@ thiserror = "1.0.31"
 nalgebra = { version = "0.32.3", default-features = false, features = ["std"] }
 bitvec = "1.0.1"
 tokio = { version = "1.34.0", features = ["time"] }
-autd3-derive = { path = "../autd3-derive", version = "21.0.1", optional = true }
+autd3-derive = { path = "../autd3-derive", version = "21.1.0", optional = true }
 async-trait = { version = "0.1.77", optional = true }
 num-complex = { version = "0.4.4", default-features = false, features = ["std"] }
 
