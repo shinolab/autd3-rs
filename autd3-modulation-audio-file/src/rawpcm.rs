@@ -28,13 +28,12 @@ impl RawPCM {
     /// * `path` - Path to the raw PCM file
     /// * `sample_rate` - Sampling frequency of the raw PCM file
     ///
-    pub fn new<P: AsRef<Path>>(path: P, sample_rate: u32) -> Result<Self, AudioFileError> {
-        // TODO: Remove Result when v22.0.0
-        Ok(Self {
+    pub fn new<P: AsRef<Path>>(path: P, sample_rate: u32) -> Self {
+        Self {
             sample_rate,
             path: path.as_ref().to_path_buf(),
             config: SamplingConfiguration::FREQ_4K_HZ,
-        })
+        }
     }
 
     fn read_buf(&self) -> Result<Vec<f32>, AudioFileError> {
@@ -80,8 +79,6 @@ mod tests {
         let path = Path::new(&home_dir).join("tmp").join("tmp.dat");
         create_dat(&path, &[0xFF, 0x7F, 0x00]);
         let m = RawPCM::new(&path, 4000);
-        assert!(m.is_ok());
-        let m = m.unwrap();
         assert_eq!(
             m.calc().unwrap(),
             vec![
@@ -91,7 +88,7 @@ mod tests {
             ]
         );
 
-        let m = RawPCM::new("not_exists.dat", 4000).unwrap();
+        let m = RawPCM::new("not_exists.dat", 4000);
         assert!(m.calc().is_err());
     }
 
@@ -100,7 +97,7 @@ mod tests {
         let home_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
         let path = Path::new(&home_dir).join("tmp").join("tmp2.dat");
         create_dat(&path, &[0xFF, 0xFF]);
-        let m = RawPCM::new(Path::new(&home_dir).join("tmp").join("tmp2.dat"), 4000).unwrap();
+        let m = RawPCM::new(Path::new(&home_dir).join("tmp").join("tmp2.dat"), 4000);
         let m2 = m.clone();
         assert_eq!(m.sampling_config(), m2.sampling_config());
     }
