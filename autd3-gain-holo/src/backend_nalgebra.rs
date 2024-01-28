@@ -50,7 +50,7 @@ impl LinAlgBackend for NalgebraBackend {
                     .devices()
                     .flat_map(|dev| {
                         dev.iter().filter_map(move |tr| {
-                            if let Some(filter) = filter.get(&dev.idx()) {
+                            filter.get(&dev.idx()).and_then(|filter| {
                                 if filter[tr.idx()] {
                                     Some(foci.iter().map(move |fp| {
                                         propagate::<Sphere>(
@@ -63,9 +63,7 @@ impl LinAlgBackend for NalgebraBackend {
                                 } else {
                                     None
                                 }
-                            } else {
-                                None
-                            }
+                            })
                         })
                     })
                     .flatten()

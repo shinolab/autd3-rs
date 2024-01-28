@@ -89,11 +89,10 @@ impl Gain for Bessel {
             let dir = self.dir.normalize();
             let v = Vector3::new(dir.y, -dir.x, 0.);
             let theta_v = v.norm().asin();
-            if let Some(v) = v.try_normalize(1.0e-6) {
-                UnitQuaternion::from_scaled_axis(v * -theta_v)
-            } else {
-                UnitQuaternion::identity()
-            }
+            v.try_normalize(1.0e-6)
+                .map_or_else(UnitQuaternion::identity, |v| {
+                    UnitQuaternion::from_scaled_axis(v * -theta_v)
+                })
         };
         Ok(Self::transform(geometry, filter, |dev, tr| {
             let r = rot * (tr.position() - self.pos);

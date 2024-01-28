@@ -13,7 +13,8 @@ impl std::fmt::Display for ReadFirmwareInfoState {
             self.0
                 .iter()
                 .enumerate()
-                .filter_map(|(i, b)| if *b { None } else { Some(i.to_string()) })
+                .filter(|(_, &b)| !b)
+                .map(|(i, _)| i.to_string())
                 .collect::<Vec<_>>()
                 .join(", ")
         )

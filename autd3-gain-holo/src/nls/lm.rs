@@ -315,25 +315,26 @@ impl<B: LinAlgBackend> Gain for LM<B> {
             GainFilter::Filter(filter) => Ok(geometry
                 .devices()
                 .map(|dev| {
-                    if let Some(filter) = filter.get(&dev.idx()) {
-                        (
-                            dev.idx(),
-                            dev.iter()
-                                .filter(|tr| filter[tr.idx()])
-                                .map(|_| {
-                                    let phase = Phase::from_rad(x[idx].rem_euclid(2.0 * PI));
-                                    let amp = self.constraint.convert(1.0, 1.0);
-                                    idx += 1;
-                                    Drive {
-                                        intensity: amp,
-                                        phase,
-                                    }
-                                })
-                                .collect(),
-                        )
-                    } else {
-                        (dev.idx(), dev.iter().map(|_| Drive::null()).collect())
-                    }
+                    filter.get(&dev.idx()).map_or_else(
+                        || (dev.idx(), dev.iter().map(|_| Drive::null()).collect()),
+                        |filter| {
+                            (
+                                dev.idx(),
+                                dev.iter()
+                                    .filter(|tr| filter[tr.idx()])
+                                    .map(|_| {
+                                        let phase = Phase::from_rad(x[idx].rem_euclid(2.0 * PI));
+                                        let amp = self.constraint.convert(1.0, 1.0);
+                                        idx += 1;
+                                        Drive {
+                                            intensity: amp,
+                                            phase,
+                                        }
+                                    })
+                                    .collect(),
+                            )
+                        },
+                    )
                 })
                 .collect()),
         }

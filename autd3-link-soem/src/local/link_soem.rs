@@ -71,40 +71,42 @@ impl SOEM {
 fn lookup_autd() -> Result<String, SOEMError> {
     let adapters: EthernetAdapters = Default::default();
 
-    if let Some(adapter) = adapters.into_iter().find(|adapter| unsafe {
-        let ifname = match std::ffi::CString::new(adapter.name().to_owned()) {
-            Ok(ifname) => ifname,
-            Err(_) => return false,
-        };
-        if ec_init(ifname.as_ptr()) <= 0 {
-            ec_close();
-            return false;
-        }
-        let wc = ec_config_init(0);
-        if wc <= 0 {
-            ec_close();
-            return false;
-        }
-        let found = (1..=wc).all(|i| {
-            match String::from_utf8(
-                ec_slave[i as usize]
-                    .name
-                    .iter()
-                    .take_while(|&&c| c != 0)
-                    .map(|&c| c as u8)
-                    .collect(),
-            ) {
-                Ok(name) => name == "AUTD",
-                Err(_) => false,
+    adapters
+        .into_iter()
+        .find(|adapter| unsafe {
+            let ifname = match std::ffi::CString::new(adapter.name().to_owned()) {
+                Ok(ifname) => ifname,
+                Err(_) => return false,
+            };
+            if ec_init(ifname.as_ptr()) <= 0 {
+                ec_close();
+                return false;
             }
-        });
-        ec_close();
-        found
-    }) {
-        Ok(adapter.name().to_owned())
-    } else {
-        Err(SOEMError::NoDeviceFound)
-    }
+            let wc = ec_config_init(0);
+            if wc <= 0 {
+                ec_close();
+                return false;
+            }
+            let found = (1..=wc).all(|i| {
+                match String::from_utf8(
+                    ec_slave[i as usize]
+                        .name
+                        .iter()
+                        .take_while(|&&c| c != 0)
+                        .map(|&c| c as u8)
+                        .collect(),
+                ) {
+                    Ok(name) => name == "AUTD",
+                    Err(_) => false,
+                }
+            });
+            ec_close();
+            found
+        })
+        .map_or_else(
+            || Err(SOEMError::NoDeviceFound),
+            |adapter| Ok(adapter.name().to_owned()),
+        )
 }
 
 unsafe extern "C" fn dc_config(context: *mut ecx_contextt, slave: u16) -> i32 {
