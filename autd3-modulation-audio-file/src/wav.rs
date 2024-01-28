@@ -21,12 +21,11 @@ impl Wav {
     ///
     /// * `path` - Path to the wav file
     ///
-    pub fn new<P: AsRef<Path>>(path: P) -> Result<Self, AudioFileError> {
-        // TODO: Remove Result when v22.0.0
-        Ok(Self {
+    pub fn new<P: AsRef<Path>>(path: P) -> Self {
+        Self {
             path: path.as_ref().to_path_buf(),
             config: SamplingConfiguration::FREQ_4K_HZ,
-        })
+        }
     }
 
     fn read_buf(&self) -> Result<(Vec<f32>, WavSpec), AudioFileError> {
@@ -115,8 +114,6 @@ mod tests {
             &[i8::MAX, 0, i8::MIN],
         );
         let m = Wav::new(&path);
-        assert!(m.is_ok());
-        let m = m.unwrap();
         assert_eq!(
             m.calc().unwrap(),
             vec![
@@ -142,8 +139,6 @@ mod tests {
             &[i16::MAX, 0, i16::MIN],
         );
         let m = Wav::new(&path);
-        assert!(m.is_ok());
-        let m = m.unwrap();
         assert_eq!(
             m.calc().unwrap(),
             vec![
@@ -169,8 +164,6 @@ mod tests {
             &[8388607, 0, -8388608],
         );
         let m = Wav::new(&path);
-        assert!(m.is_ok());
-        let m = m.unwrap();
         assert_eq!(
             m.calc().unwrap(),
             vec![
@@ -196,8 +189,6 @@ mod tests {
             &[i32::MAX, 0, i32::MIN],
         );
         let m = Wav::new(&path);
-        assert!(m.is_ok());
-        let m = m.unwrap();
         assert_eq!(
             m.calc().unwrap(),
             vec![
@@ -222,7 +213,7 @@ mod tests {
             },
             &[0., 0., 0.],
         );
-        let m = Wav::new(&path).unwrap();
+        let m = Wav::new(&path);
         assert!(m.calc().is_err());
     }
 
@@ -240,7 +231,7 @@ mod tests {
             },
             &[i8::MAX, 0, i8::MIN],
         );
-        let m = Wav::new(path).unwrap();
+        let m = Wav::new(path);
         let m2 = m.clone();
         assert_eq!(m.sampling_config(), m2.sampling_config());
     }

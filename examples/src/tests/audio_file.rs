@@ -7,12 +7,10 @@ pub async fn audio_file<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<boo
 
     let g = Focus::new(center);
     const WAV_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/resources/sin150.wav");
-    let m = autd3_modulation_audio_file::Wav::new(WAV_FILE)
-        .map_err(|e| AUTDError::Internal(e.into()))?;
+    let m = autd3_modulation_audio_file::Wav::new(WAV_FILE);
 
     // const WAV_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/resources/sin150.dat");
-    // let m = autd3_modulation_audio_file::RawPCM::new(WAV_FILE, 4000)
-    //     .map_err(|e| AUTDError::Internal(e.into()))?;
+    // let m = autd3_modulation_audio_file::RawPCM::new(WAV_FILE, 4000);
 
     autd.send((m, g)).await?;
 
