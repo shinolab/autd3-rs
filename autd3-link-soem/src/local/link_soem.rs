@@ -45,9 +45,6 @@ pub struct SOEM {
     io_map: Arc<Mutex<IOMap>>,
 }
 
-impl std::panic::UnwindSafe for SOEM {} // TODO: Remove this when v22.0.0
-impl std::panic::RefUnwindSafe for SOEM {} // TODO: Remove this when v22.0.0
-
 impl SOEM {
     pub const fn builder() -> SOEMBuilder {
         SOEMBuilder::new()
