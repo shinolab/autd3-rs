@@ -5,3 +5,5 @@ mod datagram;
 #[cfg(feature = "lightweight")]
 mod firmware_version;
 mod geometry;
+#[cfg(feature = "lightweight")]
+mod operation;

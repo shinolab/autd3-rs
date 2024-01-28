@@ -6,7 +6,7 @@ use crate::{
 impl ToMessage for Vec<autd3_driver::cpu::RxMessage> {
     type Message = RxMessage;
 
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         let mut data = vec![0; std::mem::size_of::<autd3_driver::cpu::RxMessage>() * self.len()];
         unsafe {
             std::ptr::copy_nonoverlapping(
@@ -43,7 +43,7 @@ mod tests {
         rx[0].data = 2;
         rx[1].ack = 3;
         rx[1].data = 4;
-        let msg = rx.to_msg();
+        let msg = rx.to_msg(None);
         assert_eq!(
             msg.data.len(),
             10 * std::mem::size_of::<autd3_driver::cpu::RxMessage>()
