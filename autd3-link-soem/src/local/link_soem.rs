@@ -213,8 +213,6 @@ impl SOEM {
             timeout,
             sync0_cycle,
             send_cycle,
-            mut on_lost,
-            mut on_err,
             mut err_handler,
         } = builder;
 
@@ -381,15 +379,9 @@ impl SOEM {
             let ecat_check_th = Some({
                 let expected_wkc = (ec_group[0].outputsWKC * 2 + ec_group[0].inputsWKC) as i32;
                 let is_open = is_open.clone();
-                let on_lost = on_lost.take();
-                let on_err = on_err.take();
                 let err_handler = err_handler.take();
                 std::thread::spawn(move || {
-                    let err_handler = EcatErrorHandler {
-                        on_lost,
-                        on_err,
-                        err_handler,
-                    };
+                    let err_handler = EcatErrorHandler { err_handler };
                     err_handler.run(is_open, wkc, expected_wkc, state_check_interval)
                 })
             });
