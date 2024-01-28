@@ -70,6 +70,17 @@ impl<'a> Gain for Box<dyn Gain + 'a> {
     }
 }
 
+impl<'a> Gain for Box<dyn Gain + Send + 'a> {
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn calc(
+        &self,
+        geometry: &Geometry,
+        filter: GainFilter,
+    ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
+        self.as_ref().calc(geometry, filter)
+    }
+}
+
 impl Datagram for Box<dyn Gain> {
     type O1 = GainOp<Self>;
     type O2 = NullOp;

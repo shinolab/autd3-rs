@@ -9,11 +9,13 @@ message Bessel {
   Vector3 pos = 2;
   Vector3 dir = 3;
   float theta = 4;
+  Phase phase = 5;
 }
 
 message Focus {
   EmitIntensity intensity = 1;
   Vector3 pos = 2;
+  Phase phase = 3;
 }
 
 message Null {}

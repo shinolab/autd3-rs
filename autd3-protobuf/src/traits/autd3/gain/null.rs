@@ -7,7 +7,7 @@ impl ToMessage for autd3::gain::Null {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Null(Null {})),
@@ -30,7 +30,7 @@ mod tests {
     #[test]
     fn test_bessel() {
         let g = autd3::gain::Null::new();
-        let msg = g.to_msg();
+        let msg = g.to_msg(None);
 
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {

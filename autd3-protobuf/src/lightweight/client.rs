@@ -7,6 +7,7 @@ use crate::traits::*;
 /// Client of AUTD with lightweight mode
 pub struct LightweightClient {
     client: crate::pb::ecat_light_client::EcatLightClient<tonic::transport::Channel>,
+    geometry: Geometry,
 }
 
 pub struct LightweightClientBuilder {
@@ -52,11 +53,14 @@ impl LightweightClient {
         let mut client =
             crate::pb::ecat_light_client::EcatLightClient::connect(format!("http://{}", addr))
                 .await?;
-        let res = client.config_geomety(geometry.to_msg()).await?.into_inner();
+        let res = client
+            .config_geomety(geometry.to_msg(None))
+            .await?
+            .into_inner();
         if !res.success {
             return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
         }
-        Ok(Self { client })
+        Ok(Self { client, geometry })
     }
 
     /// Get firmware information
@@ -102,7 +106,7 @@ impl LightweightClient {
     ) -> Result<bool, crate::error::AUTDProtoBufError> {
         let res = self
             .client
-            .send(tonic::Request::new(datagram.to_msg()))
+            .send(tonic::Request::new(datagram.to_msg(Some(&self.geometry))))
             .await?
             .into_inner();
         if res.err {

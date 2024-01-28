@@ -37,6 +37,13 @@ impl From<tonic::Status> for AUTDProtoBufError {
     }
 }
 
+impl From<AUTDProtoBufError> for tonic::Status {
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn from(e: AUTDProtoBufError) -> Self {
+        tonic::Status::internal(e.to_string())
+    }
+}
+
 impl<T> From<std::sync::mpsc::SendError<T>> for AUTDProtoBufError {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn from(e: std::sync::mpsc::SendError<T>) -> Self {
