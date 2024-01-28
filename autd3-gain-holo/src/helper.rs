@@ -143,26 +143,28 @@ pub fn generate_result(
         GainFilter::Filter(filter) => Ok(geometry
             .devices()
             .map(|dev| {
-                if let Some(filter) = filter.get(&dev.idx()) {
-                    (
-                        dev.idx(),
-                        dev.iter()
-                            .filter(|tr| filter[tr.idx()])
-                            .map(|_| {
-                                let phase =
-                                    autd3_driver::common::Phase::from_rad(q[idx].argument() + PI);
-                                let amp = constraint.convert(q[idx].abs(), max_coefficient);
-                                idx += 1;
-                                Drive {
-                                    intensity: amp,
-                                    phase,
-                                }
-                            })
-                            .collect(),
-                    )
-                } else {
-                    (dev.idx(), dev.iter().map(|_| Drive::null()).collect())
-                }
+                filter.get(&dev.idx()).map_or_else(
+                    || (dev.idx(), dev.iter().map(|_| Drive::null()).collect()),
+                    |filter| {
+                        (
+                            dev.idx(),
+                            dev.iter()
+                                .filter(|tr| filter[tr.idx()])
+                                .map(|_| {
+                                    let phase = autd3_driver::common::Phase::from_rad(
+                                        q[idx].argument() + PI,
+                                    );
+                                    let amp = constraint.convert(q[idx].abs(), max_coefficient);
+                                    idx += 1;
+                                    Drive {
+                                        intensity: amp,
+                                        phase,
+                                    }
+                                })
+                                .collect(),
+                        )
+                    },
+                )
             })
             .collect()),
     }

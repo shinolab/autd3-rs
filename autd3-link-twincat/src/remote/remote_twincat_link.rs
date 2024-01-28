@@ -55,11 +55,9 @@ impl LinkBuilder for RemoteTwinCATBuilder {
             return Err(AdsError::AmsNetIdParse.into());
         }
 
-        let ip = if let Some(server_ip) = server_ip.take() {
-            server_ip
-        } else {
-            octets[0..4].iter().map(|v| v.to_string()).join(".")
-        };
+        let ip = server_ip
+            .take()
+            .unwrap_or_else(|| octets[0..4].iter().map(|v| v.to_string()).join("."));
 
         if let Some(client_ams_net_id) = client_ams_net_id.take() {
             let local_octets = client_ams_net_id

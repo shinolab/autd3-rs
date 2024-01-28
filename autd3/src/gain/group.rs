@@ -105,25 +105,21 @@ where
         _filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
         let filters = self.get_filters(geometry);
-        let drives_cache = self
-            .gain_map
-            .iter()
-            .map(|(k, g)| {
-                Ok((
-                    k.clone(),
-                    g.calc(
-                        geometry,
-                        GainFilter::Filter(if let Some(f) = filters.get(k) {
-                            f
-                        } else {
-                            return Err(AUTDInternalError::GainError(
-                                "Unknown group key".to_owned(),
-                            ));
-                        }),
-                    )?,
-                ))
-            })
-            .collect::<Result<HashMap<_, _>, _>>()?;
+        let drives_cache =
+            self.gain_map
+                .iter()
+                .map(|(k, g)| {
+                    Ok((
+                        k.clone(),
+                        g.calc(
+                            geometry,
+                            GainFilter::Filter(filters.get(k).ok_or(
+                                AUTDInternalError::GainError("Unknown group key".to_owned()),
+                            )?),
+                        )?,
+                    ))
+                })
+                .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?;
         geometry
             .devices()
             .map(|dev| {
@@ -131,19 +127,19 @@ where
                     dev.idx(),
                     dev.iter()
                         .map(|tr| {
-                            if let Some(key) = (self.f)(dev, tr) {
-                                Ok(if let Some(g) = drives_cache.get(&key) {
-                                    g[&dev.idx()][tr.idx()]
-                                } else {
-                                    return Err(AUTDInternalError::GainError(
-                                        "Unspecified group key".to_owned(),
-                                    ));
-                                })
-                            } else {
-                                Ok(Drive::null())
-                            }
+                            (self.f)(dev, tr).map_or_else(
+                                || Ok(Drive::null()),
+                                |key| {
+                                    drives_cache
+                                        .get(&key)
+                                        .ok_or(AUTDInternalError::GainError(
+                                            "Unspecified group key".to_owned(),
+                                        ))
+                                        .map(|g| g[&dev.idx()][tr.idx()])
+                                },
+                            )
                         })
-                        .collect::<Result<Vec<_>, _>>()?,
+                        .collect::<Result<Vec<_>, AUTDInternalError>>()?,
                 ))
             })
             .collect()
