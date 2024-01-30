@@ -1,26 +1,20 @@
-use autd3_driver::{
-    autd3_device::AUTD3,
-    cpu::TxDatagram,
-    datagram::*,
-    geometry::{Geometry, IntoDevice, Vector3},
-    operation::OperationHandler,
-};
+use autd3_driver::{cpu::TxDatagram, datagram::*};
 use autd3_firmware_emulator::CPUEmulator;
 
+use crate::{create_geometry, send};
+
 #[test]
-fn send_sync() {
-    let geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-
+fn send_sync() -> anyhow::Result<()> {
+    let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let mut tx = TxDatagram::new(1);
-    let (mut op, mut op_null) = Synchronize::new().operation().unwrap();
-
-    OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
-    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
-
+    let (mut op, _) = Synchronize::new().operation()?;
     assert!(!cpu.synchronized());
-    cpu.send(&tx);
+
+    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+
     assert!(cpu.synchronized());
-    assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
+
+    Ok(())
 }

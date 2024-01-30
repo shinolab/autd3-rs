@@ -112,22 +112,25 @@ mod tests {
     use super::*;
 
     #[test]
+    fn modulation_memory_layout() {
+        assert_eq!(8, std::mem::size_of::<ModulationHead>());
+        assert_eq!(0, memoffset::offset_of!(ModulationHead, tag));
+        assert_eq!(1, memoffset::offset_of!(ModulationHead, flag));
+
+        assert_eq!(4, memoffset::offset_of!(ModulationHead, freq_div));
+
+        assert_eq!(4, std::mem::size_of::<ModulationSubseq>());
+        assert_eq!(0, memoffset::offset_of!(ModulationSubseq, tag));
+        assert_eq!(1, memoffset::offset_of!(ModulationSubseq, flag));
+        assert_eq!(2, memoffset::offset_of!(ModulationSubseq, size));
+
+        assert_eq!(8, std::mem::size_of::<Modulation>());
+        assert_eq!(0, memoffset::offset_of_union!(Modulation, head));
+        assert_eq!(0, memoffset::offset_of_union!(Modulation, subseq));
+    }
+
+    #[test]
     fn modulation_derive() {
-        assert_eq!(std::mem::size_of::<ModulationHead>(), 8);
-        assert_eq!(memoffset::offset_of!(ModulationHead, tag), 0);
-        assert_eq!(memoffset::offset_of!(ModulationHead, flag), 1);
-        assert_eq!(memoffset::offset_of!(ModulationHead, size), 2);
-        assert_eq!(memoffset::offset_of!(ModulationHead, freq_div), 4);
-
-        assert_eq!(std::mem::size_of::<ModulationSubseq>(), 4);
-        assert_eq!(memoffset::offset_of!(ModulationSubseq, tag), 0);
-        assert_eq!(memoffset::offset_of!(ModulationSubseq, flag), 1);
-        assert_eq!(memoffset::offset_of!(ModulationSubseq, size), 2);
-
-        assert_eq!(std::mem::size_of::<Modulation>(), 8);
-        assert_eq!(memoffset::offset_of_union!(Modulation, head), 0);
-        assert_eq!(memoffset::offset_of_union!(Modulation, subseq), 0);
-
         let head = ModulationHead {
             tag: 0,
             flag: 0,

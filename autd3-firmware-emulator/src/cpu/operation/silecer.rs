@@ -64,3 +64,17 @@ impl CPUEmulator {
         ERR_NONE
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn silencer_memory_layout() {
+        assert_eq!(8, std::mem::size_of::<ConfigSilencer>());
+        assert_eq!(0, memoffset::offset_of!(ConfigSilencer, tag));
+        assert_eq!(2, memoffset::offset_of!(ConfigSilencer, value_intensity));
+        assert_eq!(4, memoffset::offset_of!(ConfigSilencer, value_phase));
+        assert_eq!(6, memoffset::offset_of!(ConfigSilencer, flag));
+    }
+}

@@ -193,41 +193,32 @@ impl FPGAEmulator {
         self.controller_bram[ADDR_MOD_CYCLE] as usize + 1
     }
 
-    pub fn modulation_at(&self, idx: usize) -> u8 {
+    pub fn modulation_at(&self, idx: usize) -> EmitIntensity {
         let m = if idx % 2 == 0 {
             self.modulator_bram[idx >> 1] & 0xFF
         } else {
             self.modulator_bram[idx >> 1] >> 8
         };
-        m as u8
+        EmitIntensity::new(m as u8)
     }
 
     pub fn modulation(&self) -> Vec<EmitIntensity> {
-        let cycle = self.modulation_cycle();
-        let mut m = Vec::with_capacity(cycle);
-        (0..cycle >> 1).for_each(|i| {
-            let b = self.modulator_bram[i];
-            m.push(EmitIntensity::new((b & 0x00FF) as u8));
-            m.push(EmitIntensity::new(((b >> 8) & 0x00FF) as u8));
-        });
-        if cycle % 2 != 0 {
-            let b = self.modulator_bram[cycle >> 1];
-            m.push(EmitIntensity::new((b & 0x00FF) as u8));
-        }
-        m
+        (0..self.modulation_cycle())
+            .map(|i| self.modulation_at(i))
+            .collect()
     }
 
     pub fn is_outputting(&self) -> bool {
         if self.modulation().iter().all(|&m| m == EmitIntensity::MIN) {
             return false;
         }
-        if !self.is_stm_mode() {
-            return self
-                .gain_drives()
-                .iter()
-                .any(|&d| d.intensity != EmitIntensity::MIN);
+        if self.is_stm_mode() {
+            return true;
         }
-        true
+        return self
+            .gain_drives()
+            .iter()
+            .any(|&d| d.intensity != EmitIntensity::MIN);
     }
 
     pub fn debug_output_idx(&self) -> Option<u8> {
@@ -317,9 +308,9 @@ impl FPGAEmulator {
             .collect()
     }
 
-    pub fn to_pulse_width(a: u8, b: u8) -> u16 {
-        let a = a as float / 255.0;
-        let b = b as float / 255.0;
+    pub fn to_pulse_width(a: EmitIntensity, b: EmitIntensity) -> u16 {
+        let a = a.value() as float / 255.0;
+        let b = b.value() as float / 255.0;
         ((a * b).asin() / PI * 512.0).round() as u16
     }
 
@@ -395,7 +386,7 @@ mod tests {
         itertools::iproduct!(0x00..=0xFF, 0x00..=0xFF).for_each(|(a, b)| {
             assert_eq!(
                 to_pulse_width_actual(a, b),
-                FPGAEmulator::to_pulse_width(a, b)
+                FPGAEmulator::to_pulse_width(a.into(), b.into())
             );
         });
     }
@@ -415,14 +406,14 @@ mod tests {
         fpga.modulator_bram[1] = 0x5678;
         fpga.controller_bram[ADDR_MOD_CYCLE] = 3 - 1;
         assert_eq!(3, fpga.modulation_cycle());
-        assert_eq!(0x34, fpga.modulation_at(0));
-        assert_eq!(0x12, fpga.modulation_at(1));
-        assert_eq!(0x78, fpga.modulation_at(2));
+        assert_eq!(EmitIntensity::new(0x34), fpga.modulation_at(0));
+        assert_eq!(EmitIntensity::new(0x12), fpga.modulation_at(1));
+        assert_eq!(EmitIntensity::new(0x78), fpga.modulation_at(2));
         let m = fpga.modulation();
-        assert_eq!(m.len(), 3);
-        assert_eq!(0x34, m[0].value());
-        assert_eq!(0x12, m[1].value());
-        assert_eq!(0x78, m[2].value());
+        assert_eq!(3, m.len());
+        assert_eq!(EmitIntensity::new(0x34), m[0]);
+        assert_eq!(EmitIntensity::new(0x12), m[1]);
+        assert_eq!(EmitIntensity::new(0x78), m[2]);
     }
 
     #[test]
@@ -448,15 +439,15 @@ mod tests {
     fn ec_time_with_utc_ymdhms() {
         let t = FPGAEmulator::ec_time_with_utc_ymdhms(2000, 1, 1, 0, 0, 0);
         assert!(t.is_ok());
-        assert_eq!(t.unwrap(), 0);
+        assert_eq!(0, t.unwrap());
 
         let t = FPGAEmulator::ec_time_with_utc_ymdhms(2000, 1, 1, 0, 0, 1);
         assert!(t.is_ok());
-        assert_eq!(t.unwrap(), 1000000000);
+        assert_eq!(1000000000, t.unwrap());
 
         let t = FPGAEmulator::ec_time_with_utc_ymdhms(2001, 1, 1, 0, 0, 0);
         assert!(t.is_ok());
-        assert_eq!(t.unwrap(), 31622400000000000);
+        assert_eq!(31622400000000000, t.unwrap());
 
         let t = FPGAEmulator::ec_time_with_utc_ymdhms(2000, 13, 1, 0, 0, 0);
         assert!(t.is_err());
@@ -468,10 +459,10 @@ mod tests {
     #[test]
     fn systime() {
         let t = FPGAEmulator::systime(1000_000_000);
-        assert_eq!(t, 20480000);
+        assert_eq!(20480000, t);
 
         let t = FPGAEmulator::systime(2000_000_000);
-        assert_eq!(t, 40960000);
+        assert_eq!(40960000, t);
     }
 
     #[test]
@@ -484,25 +475,25 @@ mod tests {
             let addr =
                 ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14) | (BRAM_ADDR_STM_CYCLE & 0x3FFF);
             fpga.write(addr, (stm_cycle - 1) as u16);
-            assert_eq!(fpga.stm_cycle(), stm_cycle);
+            assert_eq!(stm_cycle, fpga.stm_cycle());
         }
         {
             let addr = ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14)
                 | (BRAM_ADDR_STM_FREQ_DIV_0 & 0x3FFF);
             fpga.write(addr, freq_div as u16);
-            assert_eq!(fpga.stm_frequency_division(), freq_div);
+            assert_eq!(freq_div, fpga.stm_frequency_division());
         }
 
-        assert_eq!(fpga.stm_idx_from_systime(FPGAEmulator::systime(0)), 0);
-        assert_eq!(fpga.stm_idx_from_systime(FPGAEmulator::systime(24_999)), 0);
-        assert_eq!(fpga.stm_idx_from_systime(FPGAEmulator::systime(25_000)), 1);
+        assert_eq!(0, fpga.stm_idx_from_systime(FPGAEmulator::systime(0)));
+        assert_eq!(0, fpga.stm_idx_from_systime(FPGAEmulator::systime(24_999)));
+        assert_eq!(1, fpga.stm_idx_from_systime(FPGAEmulator::systime(25_000)));
         assert_eq!(
-            fpga.stm_idx_from_systime(FPGAEmulator::systime(25_000 * 9)),
-            9
+            9,
+            fpga.stm_idx_from_systime(FPGAEmulator::systime(25_000 * 9))
         );
         assert_eq!(
-            fpga.stm_idx_from_systime(FPGAEmulator::systime(25_000 * 10)),
-            0
+            0,
+            fpga.stm_idx_from_systime(FPGAEmulator::systime(25_000 * 10))
         );
     }
 
@@ -516,25 +507,25 @@ mod tests {
             let addr =
                 ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14) | (BRAM_ADDR_MOD_CYCLE & 0x3FFF);
             fpga.write(addr, (mod_cycle - 1) as u16);
-            assert_eq!(fpga.modulation_cycle(), mod_cycle);
+            assert_eq!(mod_cycle, fpga.modulation_cycle());
         }
         {
             let addr = ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14)
                 | (BRAM_ADDR_MOD_FREQ_DIV_0 & 0x3FFF);
             fpga.write(addr, freq_div as u16);
-            assert_eq!(fpga.modulation_frequency_division(), freq_div);
+            assert_eq!(freq_div, fpga.modulation_frequency_division());
         }
 
-        assert_eq!(fpga.mod_idx_from_systime(FPGAEmulator::systime(0)), 0);
-        assert_eq!(fpga.mod_idx_from_systime(FPGAEmulator::systime(24_999)), 0);
-        assert_eq!(fpga.mod_idx_from_systime(FPGAEmulator::systime(25_000)), 1);
+        assert_eq!(0, fpga.mod_idx_from_systime(FPGAEmulator::systime(0)));
+        assert_eq!(0, fpga.mod_idx_from_systime(FPGAEmulator::systime(24_999)));
+        assert_eq!(1, fpga.mod_idx_from_systime(FPGAEmulator::systime(25_000)));
         assert_eq!(
-            fpga.mod_idx_from_systime(FPGAEmulator::systime(25_000 * 9)),
-            9
+            9,
+            fpga.mod_idx_from_systime(FPGAEmulator::systime(25_000 * 9))
         );
         assert_eq!(
-            fpga.mod_idx_from_systime(FPGAEmulator::systime(25_000 * 10)),
-            0
+            0,
+            fpga.mod_idx_from_systime(FPGAEmulator::systime(25_000 * 10))
         );
     }
 }
