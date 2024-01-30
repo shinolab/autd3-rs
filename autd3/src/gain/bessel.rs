@@ -97,7 +97,7 @@ impl Gain for Bessel {
         Ok(Self::transform(geometry, filter, |dev, tr| {
             let r = rot * (tr.position() - self.pos);
             let dist = self.theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - self.theta.cos() * r.z;
-            let phase = dist * tr.wavenumber(dev.sound_speed) * Rad;
+            let phase = dist * tr.wavenumber(dev.sound_speed) * Rad + self.phase;
             Drive {
                 phase,
                 intensity: self.intensity,
