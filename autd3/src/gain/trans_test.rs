@@ -34,50 +34,44 @@ impl<F: Fn(&Device, &Transducer) -> Option<Drive> + 'static> Gain for Transducer
 mod tests {
     use rand::Rng;
 
-    use autd3_driver::{
-        autd3_device::AUTD3,
-        geometry::{IntoDevice, Vector3},
-    };
+    use crate::tests::create_geometry;
 
     use super::*;
 
     #[test]
-    fn test_transducer_test() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-
+    fn test_transducer_test() -> anyhow::Result<()> {
         let mut rng = rand::thread_rng();
+
+        let geometry = create_geometry(1);
+
         let test_id = rng.gen_range(0..geometry.num_transducers());
-        let test_phase = Phase::new(rng.gen_range(0x00..=0xFF));
-        let test_intensity = EmitIntensity::new(rng.gen::<u8>());
+        let test_drive = Drive {
+            phase: Phase::new(rng.gen()),
+            intensity: EmitIntensity::new(rng.gen()),
+        };
         let transducer_test = TransducerTest::new(move |dev, tr| {
             if (dev.idx() == 0) && (tr.idx() == test_id) {
-                Some(Drive {
-                    phase: test_phase,
-                    intensity: test_intensity,
-                })
+                Some(test_drive)
             } else {
                 None
             }
         });
 
-        let drives = transducer_test.calc(&geometry, GainFilter::All).unwrap();
-
-        drives[&0].iter().enumerate().for_each(|(idx, drive)| {
+        let drives = transducer_test.calc(&geometry, GainFilter::All)?;
+        drives[&0].iter().enumerate().for_each(|(idx, &drive)| {
             if idx == test_id {
-                assert_eq!(drive.phase, test_phase);
-                assert_eq!(drive.intensity, test_intensity);
+                assert_eq!(test_drive, drive);
             } else {
-                assert_eq!(drive.phase.value(), 0);
-                assert_eq!(drive.intensity.value(), 0);
+                assert_eq!(Drive::null(), drive);
             }
         });
+
+        Ok(())
     }
 
     #[test]
     fn test_transtest_derive() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
         let gain = TransducerTest::new(|_, _| None);
-        let _ = gain.calc(&geometry, GainFilter::All).unwrap();
         let _ = gain.operation();
     }
 }

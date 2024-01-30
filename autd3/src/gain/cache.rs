@@ -7,7 +7,7 @@ use std::{
 };
 
 /// Gain to cache the result of calculation
-#[derive(Gain)]
+#[derive(Gain, Debug)]
 pub struct Cache<G: Gain + 'static> {
     gain: Rc<G>,
     cache: Rc<RefCell<HashMap<usize, Vec<Drive>>>>,
@@ -41,6 +41,12 @@ impl<G: Gain + Clone + 'static> Clone for Cache<G> {
     }
 }
 
+impl<G: Gain + PartialEq + 'static> PartialEq for Cache<G> {
+    fn eq(&self, other: &Self) -> bool {
+        self.gain == other.gain && self.cache == other.cache
+    }
+}
+
 impl<G: Gain + 'static> Cache<G> {
     /// constructor
     fn new(gain: G) -> Self {
@@ -56,12 +62,7 @@ impl<G: Gain + 'static> Cache<G> {
                 .devices()
                 .any(|dev| !self.cache.borrow().contains_key(&dev.idx()))
         {
-            self.gain
-                .calc(geometry, GainFilter::All)?
-                .iter()
-                .for_each(|(k, v)| {
-                    self.cache.borrow_mut().insert(*k, v.clone());
-                });
+            *self.cache.borrow_mut() = self.gain.calc(geometry, GainFilter::All)?;
         }
         Ok(())
     }
@@ -75,12 +76,14 @@ impl<G: Gain + 'static> Cache<G> {
     /// ```
     /// use autd3::prelude::*;
     /// # use autd3_driver::datagram::Gain;
+    /// # fn main() -> anyhow::Result<()>{
     /// # let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-    ///
     /// let g = Null::new().with_cache();
     /// assert!(g.drives().is_empty());
-    /// let _ = g.calc(&geometry, GainFilter::All).unwrap();
+    /// let _ = g.calc(&geometry, GainFilter::All)?;
     /// assert!(!g.drives().is_empty());
+    /// # Ok(())
+    /// # }
     ///
     /// ```
     pub fn drives(&self) -> Ref<'_, HashMap<usize, Vec<autd3_driver::common::Drive>>> {
@@ -106,10 +109,9 @@ mod tests {
         Arc,
     };
 
-    use autd3_driver::{
-        autd3_device::AUTD3,
-        geometry::{IntoDevice, Vector3},
-    };
+    use autd3_driver::geometry::Vector3;
+
+    use crate::tests::create_geometry;
 
     use super::{
         super::{Null, Plane},
@@ -117,37 +119,26 @@ mod tests {
     };
 
     #[test]
-    fn test_cache() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+    fn test_cache() -> anyhow::Result<()> {
+        let geometry = create_geometry(1);
 
-        let gain = Plane::new(Vector3::zeros()).with_cache();
-        assert_eq!(gain.phase(), Plane::new(Vector3::zeros()).phase());
+        let gain = Plane::new(Vector3::zeros());
+        let cache = gain.with_cache();
+        assert_eq!(gain.phase(), cache.phase());
 
-        let d = gain.calc(&geometry, GainFilter::All).unwrap();
-        d[&0].iter().for_each(|drive| {
-            assert_eq!(drive.phase.value(), 0);
-            assert_eq!(drive.intensity.value(), 0xFF);
-        });
-        gain.drives().iter().for_each(|(k, v)| {
-            assert_eq!(k, &0);
-            v.iter().for_each(|drive| {
-                assert_eq!(drive.phase.value(), 0);
-                assert_eq!(drive.intensity.value(), 0xFF);
-            });
-        });
+        assert!(cache.drives().is_empty());
+        assert_eq!(
+            gain.calc(&geometry, GainFilter::All)?,
+            cache.calc(&geometry, GainFilter::All)?
+        );
+        assert_eq!(gain.calc(&geometry, GainFilter::All)?, *cache.drives());
+
+        Ok(())
     }
 
+    #[derive(Clone)]
     struct TestGain {
         pub calc_cnt: Arc<AtomicUsize>,
-    }
-
-    impl Clone for TestGain {
-        #[cfg_attr(coverage_nightly, coverage(off))]
-        fn clone(&self) -> Self {
-            Self {
-                calc_cnt: self.calc_cnt.clone(),
-            }
-        }
     }
 
     impl Gain for TestGain {
@@ -162,48 +153,51 @@ mod tests {
     }
 
     #[test]
-    fn test_cache_calc_once() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+    fn test_cache_calc_once() -> anyhow::Result<()> {
+        let geometry = create_geometry(1);
 
         let calc_cnt = Arc::new(AtomicUsize::new(0));
-
         let gain = TestGain {
             calc_cnt: calc_cnt.clone(),
         }
         .with_cache();
 
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 0);
-        let _ = gain.calc(&geometry, GainFilter::All).unwrap();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
-        let _ = gain.calc(&geometry, GainFilter::All).unwrap();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
+        assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
+        let _ = gain.calc(&geometry, GainFilter::All)?;
+        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
+        let _ = gain.calc(&geometry, GainFilter::All)?;
+        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
+
+        Ok(())
     }
 
     #[test]
-    fn test_cache_clone() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+    fn test_cache_clone() -> anyhow::Result<()> {
+        let geometry = create_geometry(1);
 
         let calc_cnt = Arc::new(AtomicUsize::new(0));
-
         let gain = TestGain {
             calc_cnt: calc_cnt.clone(),
         }
         .with_cache();
 
         let g2 = gain.clone();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 0);
+        assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
-        let _ = g2.calc(&geometry, GainFilter::All).unwrap();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
-        let _ = gain.calc(&geometry, GainFilter::All).unwrap();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
-        let _ = g2.calc(&geometry, GainFilter::All).unwrap();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
+        let _ = g2.calc(&geometry, GainFilter::All)?;
+        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
+        let _ = gain.calc(&geometry, GainFilter::All)?;
+        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
+        let _ = g2.calc(&geometry, GainFilter::All)?;
+        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
+
+        Ok(())
     }
 
     #[test]
     fn test_cache_derive() {
         let g = Null::default().with_cache();
+        assert_eq!(g, g.clone());
         let _ = g.operation();
     }
 }
