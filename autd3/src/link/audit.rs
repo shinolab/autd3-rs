@@ -44,11 +44,7 @@ impl LinkBuilder for AuditBuilder {
             cpus: geometry
                 .iter()
                 .enumerate()
-                .map(|(i, dev)| {
-                    let mut cpu = CPUEmulator::new(i, dev.num_transducers());
-                    cpu.init();
-                    cpu
-                })
+                .map(|(i, dev)| CPUEmulator::new(i, dev.num_transducers()))
                 .collect(),
             down: false,
             broken: false,
