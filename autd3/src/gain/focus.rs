@@ -72,7 +72,7 @@ impl Gain for Focus {
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
         Ok(Self::transform(geometry, filter, |dev, tr| Drive {
-            phase: tr.align_phase_at(self.pos, dev.sound_speed),
+            phase: tr.align_phase_at(self.pos, dev.sound_speed) + self.phase,
             intensity: self.intensity,
         }))
     }
