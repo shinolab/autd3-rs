@@ -80,7 +80,7 @@ impl SOEMBuilder {
     ///
     /// If empty, this link will automatically find the network interface that is connected to AUTD3 devices.
     ///
-    pub fn with_ifname<S: Into<String>>(self, ifname: S) -> Self {
+    pub fn with_ifname(self, ifname: impl Into<String>) -> Self {
         Self {
             ifname: ifname.into(),
             ..self
@@ -96,9 +96,9 @@ impl SOEMBuilder {
     }
 
     /// Set callback function when error occurred
-    pub fn with_err_handler<F: 'static + Fn(usize, Status) + Send + Sync>(
+    pub fn with_err_handler(
         self,
-        err_handler: F,
+        err_handler: impl Fn(usize, Status) + Send + Sync + 'static,
     ) -> Self {
         Self {
             err_handler: Some(Box::new(err_handler)),

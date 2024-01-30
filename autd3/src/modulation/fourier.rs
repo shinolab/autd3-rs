@@ -47,10 +47,7 @@ impl Fourier {
     /// # Arguments
     /// - `iter` - Iterator of [Sine] modulation
     ///
-    pub fn add_components_from_iter<M: Into<Sine>, T: IntoIterator<Item = M>>(
-        self,
-        iter: T,
-    ) -> Self {
+    pub fn add_components_from_iter(self, iter: impl IntoIterator<Item = impl Into<Sine>>) -> Self {
         let Self {
             mut components,
             config,

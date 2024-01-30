@@ -39,7 +39,7 @@ impl Square {
     ///
     /// * `low` - low level [EmitIntensity]
     ///
-    pub fn with_low<A: Into<EmitIntensity>>(self, low: A) -> Self {
+    pub fn with_low(self, low: impl Into<EmitIntensity>) -> Self {
         Self {
             low: low.into(),
             ..self
@@ -52,7 +52,7 @@ impl Square {
     ///
     /// * `high` - high level [EmitIntensity]
     ///     
-    pub fn with_high<A: Into<EmitIntensity>>(self, high: A) -> Self {
+    pub fn with_high(self, high: impl Into<EmitIntensity>) -> Self {
         Self {
             high: high.into(),
             ..self

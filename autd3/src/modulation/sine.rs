@@ -41,7 +41,7 @@ impl Sine {
     ///
     /// * `intensity` - peek to peek intensity
     ///
-    pub fn with_intensity<A: Into<EmitIntensity>>(self, intensity: A) -> Self {
+    pub fn with_intensity(self, intensity: impl Into<EmitIntensity>) -> Self {
         Self {
             intensity: intensity.into(),
             ..self
@@ -54,7 +54,7 @@ impl Sine {
     ///
     /// * `offset` - Offset of the wave
     ///
-    pub fn with_offset<A: Into<EmitIntensity>>(self, offset: A) -> Self {
+    pub fn with_offset(self, offset: impl Into<EmitIntensity>) -> Self {
         Self {
             offset: offset.into(),
             ..self

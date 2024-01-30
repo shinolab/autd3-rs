@@ -59,7 +59,7 @@ impl<L: Link> Controller<L> {
     /// * `Ok(true)` - It is confirmed that the data has been successfully transmitted
     /// * `Ok(false)` - There are no errors, but it is unclear whether the data has been sent or not
     ///
-    pub async fn send<S: Datagram>(&mut self, s: S) -> Result<bool, AUTDError> {
+    pub async fn send(&mut self, s: impl Datagram) -> Result<bool, AUTDError> {
         let timeout = s.timeout();
 
         let (mut op1, mut op2) = s.operation()?;

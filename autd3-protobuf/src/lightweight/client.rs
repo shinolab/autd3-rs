@@ -26,7 +26,7 @@ impl LightweightClientBuilder {
     }
 
     /// Add device
-    pub fn add_device<D: IntoDevice>(mut self, dev: D) -> Self {
+    pub fn add_device(mut self, dev: impl IntoDevice) -> Self {
         self.devices.push(dev.into_device(self.devices.len()));
         self
     }
@@ -100,9 +100,9 @@ impl LightweightClient {
     /// * `Ok(true)` - It is confirmed that the data has been successfully transmitted
     /// * `Ok(false)` - There are no errors, but it is unclear whether the data has been sent reliably or not
     ///
-    pub async fn send<D: ToMessage<Message = crate::pb::DatagramLightweight>>(
+    pub async fn send(
         &mut self,
-        datagram: D,
+        datagram: impl ToMessage<Message = crate::pb::DatagramLightweight>,
     ) -> Result<bool, crate::error::AUTDProtoBufError> {
         let res = self
             .client

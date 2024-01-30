@@ -23,7 +23,7 @@ impl Static {
     ///
     /// * `intensity` - [EmitIntensity]
     ///
-    pub fn with_intensity<A: Into<EmitIntensity>>(intensity: A) -> Self {
+    pub fn with_intensity(intensity: impl Into<EmitIntensity>) -> Self {
         Self {
             intensity: intensity.into(),
             config: SamplingConfiguration::DISABLE,

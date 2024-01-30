@@ -16,7 +16,7 @@ impl Uniform {
     ///
     /// * `intensity` - Emission intensity
     ///
-    pub fn new<A: Into<EmitIntensity>>(intensity: A) -> Self {
+    pub fn new(intensity: impl Into<EmitIntensity>) -> Self {
         Self {
             intensity: intensity.into(),
             phase: Phase::new(0),

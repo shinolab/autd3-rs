@@ -115,13 +115,13 @@ impl LinkBuilder for RemoteTwinCATBuilder {
 
 impl RemoteTwinCATBuilder {
     /// Set server IP address
-    pub fn with_server_ip<S: Into<String>>(mut self, server_ip: S) -> Self {
+    pub fn with_server_ip(mut self, server_ip: impl Into<String>) -> Self {
         self.server_ip = Some(server_ip.into());
         self
     }
 
     /// Set client AMS Net ID
-    pub fn with_client_ams_net_id<S: Into<String>>(mut self, client_ams_net_id: S) -> Self {
+    pub fn with_client_ams_net_id(mut self, client_ams_net_id: impl Into<String>) -> Self {
         self.client_ams_net_id = Some(client_ams_net_id.into());
         self
     }
@@ -132,7 +132,7 @@ impl RemoteTwinCATBuilder {
 }
 
 impl RemoteTwinCAT {
-    pub fn builder<S: Into<String>>(server_ams_net_id: S) -> RemoteTwinCATBuilder {
+    pub fn builder(server_ams_net_id: impl Into<String>) -> RemoteTwinCATBuilder {
         RemoteTwinCATBuilder {
             server_ams_net_id: server_ams_net_id.into(),
             server_ip: None,

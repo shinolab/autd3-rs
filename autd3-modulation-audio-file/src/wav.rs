@@ -21,7 +21,7 @@ impl Wav {
     ///
     /// * `path` - Path to the wav file
     ///
-    pub fn new<P: AsRef<Path>>(path: P) -> Self {
+    pub fn new(path: impl AsRef<Path>) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),
             config: SamplingConfiguration::FREQ_4K_HZ,
@@ -84,10 +84,10 @@ impl Modulation for Wav {
 mod tests {
     use super::*;
 
-    fn create_wav<P: AsRef<Path>, S: hound::Sample + Clone + Copy>(
-        path: P,
+    fn create_wav(
+        path: impl AsRef<Path>,
         spec: hound::WavSpec,
-        data: &[S],
+        data: &[impl hound::Sample + Clone + Copy],
     ) {
         std::fs::create_dir_all(path.as_ref().parent().unwrap()).unwrap();
         if path.as_ref().exists() {

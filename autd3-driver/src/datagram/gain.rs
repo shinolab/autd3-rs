@@ -23,10 +23,10 @@ pub trait Gain {
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError>;
-    fn transform<F: Fn(&Device, &Transducer) -> Drive>(
+    fn transform(
         geometry: &Geometry,
         filter: GainFilter,
-        f: F,
+        f: impl Fn(&Device, &Transducer) -> Drive,
     ) -> HashMap<usize, Vec<Drive>>
     where
         Self: Sized,
