@@ -1,45 +1,39 @@
 use autd3_driver::{
-    autd3_device::AUTD3,
     common::EmitIntensity,
     cpu::TxDatagram,
-    fpga::{SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
-    geometry::{Geometry, IntoDevice, Vector3},
-    operation::{ModulationOp, NullOp, OperationHandler},
+    fpga::{
+        SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN, SILENCER_STEPS_INTENSITY_DEFAULT,
+        SILENCER_STEPS_PHASE_DEFAULT,
+    },
+    operation::ModulationOp,
 };
 use autd3_firmware_emulator::CPUEmulator;
 
 use rand::*;
 
+use crate::{create_geometry, send};
+
 #[test]
-fn send_mod() {
+fn send_mod() -> anyhow::Result<()> {
     let mut rng = rand::thread_rng();
 
-    let geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-
+    let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let mut tx = TxDatagram::new(1);
     let m: Vec<_> = (0..65536).map(|_| EmitIntensity::new(rng.gen())).collect();
-    let freq_div = rng.gen_range(SAMPLING_FREQ_DIV_MIN..=SAMPLING_FREQ_DIV_MAX);
+    let freq_div = rng.gen_range(
+        SAMPLING_FREQ_DIV_MIN
+            * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
+            ..=SAMPLING_FREQ_DIV_MAX,
+    );
     let mut op = ModulationOp::new(m.clone(), freq_div);
-    let mut op_null = NullOp::default();
 
-    OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
-    loop {
-        if OperationHandler::is_finished(&mut op, &mut op_null, &geometry) {
-            break;
-        }
-        OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
-        cpu.send(&tx);
-        assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
-    }
-    assert_eq!(cpu.fpga().modulation_cycle(), m.len());
-    cpu.fpga()
-        .modulation()
-        .iter()
-        .zip(m.iter())
-        .for_each(|(&a, b)| {
-            assert_eq!(a, b.value());
-        });
-    assert_eq!(cpu.fpga().modulation_frequency_division(), freq_div);
+    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+
+    assert_eq!(m.len(), cpu.fpga().modulation_cycle());
+    assert_eq!(freq_div, cpu.fpga().modulation_frequency_division());
+    assert_eq!(m, cpu.fpga().modulation());
+
+    Ok(())
 }

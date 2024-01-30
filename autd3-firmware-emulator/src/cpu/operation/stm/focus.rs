@@ -182,24 +182,27 @@ mod tests {
     use super::*;
 
     #[test]
+    fn focus_stm_memory_layout() {
+        assert_eq!(16, std::mem::size_of::<FocusSTMHead>());
+        assert_eq!(0, memoffset::offset_of!(FocusSTMHead, tag));
+        assert_eq!(1, memoffset::offset_of!(FocusSTMHead, flag));
+        assert_eq!(2, memoffset::offset_of!(FocusSTMHead, send_num));
+        assert_eq!(4, memoffset::offset_of!(FocusSTMHead, freq_div));
+        assert_eq!(8, memoffset::offset_of!(FocusSTMHead, sound_speed));
+        assert_eq!(12, memoffset::offset_of!(FocusSTMHead, start_idx));
+        assert_eq!(14, memoffset::offset_of!(FocusSTMHead, finish_idx));
+
+        assert_eq!(4, std::mem::size_of::<FocusSTMSubseq>());
+        assert_eq!(0, memoffset::offset_of!(FocusSTMSubseq, tag));
+        assert_eq!(1, memoffset::offset_of!(FocusSTMSubseq, flag));
+        assert_eq!(2, memoffset::offset_of!(FocusSTMSubseq, send_num));
+
+        assert_eq!(0, memoffset::offset_of_union!(FocusSTM, head));
+        assert_eq!(0, memoffset::offset_of_union!(FocusSTM, subseq));
+    }
+
+    #[test]
     fn focus_stm_derive() {
-        assert_eq!(std::mem::size_of::<FocusSTMHead>(), 16);
-        assert_eq!(memoffset::offset_of!(FocusSTMHead, tag), 0);
-        assert_eq!(memoffset::offset_of!(FocusSTMHead, flag), 1);
-        assert_eq!(memoffset::offset_of!(FocusSTMHead, send_num), 2);
-        assert_eq!(memoffset::offset_of!(FocusSTMHead, freq_div), 4);
-        assert_eq!(memoffset::offset_of!(FocusSTMHead, sound_speed), 8);
-        assert_eq!(memoffset::offset_of!(FocusSTMHead, start_idx), 12);
-        assert_eq!(memoffset::offset_of!(FocusSTMHead, finish_idx), 14);
-
-        assert_eq!(std::mem::size_of::<FocusSTMSubseq>(), 4);
-        assert_eq!(memoffset::offset_of!(FocusSTMSubseq, tag), 0);
-        assert_eq!(memoffset::offset_of!(FocusSTMSubseq, flag), 1);
-        assert_eq!(memoffset::offset_of!(FocusSTMSubseq, send_num), 2);
-
-        assert_eq!(memoffset::offset_of_union!(FocusSTM, head), 0);
-        assert_eq!(memoffset::offset_of_union!(FocusSTM, subseq), 0);
-
         let head = FocusSTMHead {
             tag: 0,
             flag: 0,

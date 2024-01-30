@@ -15,3 +15,15 @@ impl CPUEmulator {
         ERR_NONE
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn configure_reads_fpga_state_memory_layout() {
+        assert_eq!(2, std::mem::size_of::<ConfigureReadsFPGAState>());
+        assert_eq!(0, memoffset::offset_of!(ConfigureReadsFPGAState, tag));
+        assert_eq!(1, memoffset::offset_of!(ConfigureReadsFPGAState, value));
+    }
+}

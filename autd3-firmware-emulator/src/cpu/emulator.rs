@@ -227,12 +227,12 @@ mod tests {
         let mut rng = rand::thread_rng();
         let idx = rng.gen();
         let cpu = CPUEmulator::new(idx, 249);
-        assert_eq!(cpu.idx(), idx);
+        assert_eq!(idx, cpu.idx());
     }
 
     #[test]
     fn num_transducers() {
         let cpu = CPUEmulator::new(0, 249);
-        assert_eq!(cpu.num_transducers(), 249);
+        assert_eq!(249, cpu.num_transducers());
     }
 }

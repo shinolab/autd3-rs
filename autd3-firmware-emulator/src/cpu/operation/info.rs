@@ -69,3 +69,15 @@ impl CPUEmulator {
         ERR_NONE
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn firminfo_memory_layout() {
+        assert_eq!(2, std::mem::size_of::<FirmInfo>());
+        assert_eq!(0, memoffset::offset_of!(FirmInfo, tag));
+        assert_eq!(1, memoffset::offset_of!(FirmInfo, ty));
+    }
+}
