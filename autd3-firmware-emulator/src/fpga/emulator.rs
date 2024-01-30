@@ -1,4 +1,7 @@
-use autd3_driver::defined::{float, PI};
+use autd3_driver::{
+    defined::{float, PI},
+    derive::{Drive, EmitIntensity, Phase},
+};
 
 use crate::error::AUTDFirmwareEmulatorError;
 
@@ -199,41 +202,32 @@ impl FPGAEmulator {
         m as u8
     }
 
-    pub fn modulation(&self) -> Vec<u8> {
+    pub fn modulation(&self) -> Vec<EmitIntensity> {
         let cycle = self.modulation_cycle();
         let mut m = Vec::with_capacity(cycle);
         (0..cycle >> 1).for_each(|i| {
             let b = self.modulator_bram[i];
-            m.push((b & 0x00FF) as u8);
-            m.push(((b >> 8) & 0x00FF) as u8);
+            m.push(EmitIntensity::new((b & 0x00FF) as u8));
+            m.push(EmitIntensity::new(((b >> 8) & 0x00FF) as u8));
         });
         if cycle % 2 != 0 {
             let b = self.modulator_bram[cycle >> 1];
-            m.push((b & 0x00FF) as u8);
+            m.push(EmitIntensity::new((b & 0x00FF) as u8));
         }
         m
     }
 
     pub fn is_outputting(&self) -> bool {
-        if self.modulation().iter().all(|&m| m == 0) {
+        if self.modulation().iter().all(|&m| m == EmitIntensity::MIN) {
             return false;
         }
         if !self.is_stm_mode() {
-            return self.intensities_and_phases(0).iter().any(|&d| d.0 != 0);
+            return self
+                .gain_drives()
+                .iter()
+                .any(|&d| d.intensity != EmitIntensity::MIN);
         }
         true
-    }
-
-    pub fn intensities_and_phases(&self, idx: usize) -> Vec<(u8, u8)> {
-        if self.is_stm_mode() {
-            if self.is_stm_gain_mode() {
-                self.gain_stm_intensities_and_phases(idx)
-            } else {
-                self.focus_stm_intensities_and_phases(idx)
-            }
-        } else {
-            self.normal_intensities_and_phases()
-        }
     }
 
     pub fn debug_output_idx(&self) -> Option<u8> {
@@ -245,32 +239,42 @@ impl FPGAEmulator {
         }
     }
 
-    fn normal_intensities_and_phases(&self) -> Vec<(u8, u8)> {
+    pub fn drives(&self, idx: usize) -> Vec<Drive> {
+        if self.is_stm_mode() {
+            if self.is_stm_gain_mode() {
+                self.gain_stm_drives(idx)
+            } else {
+                self.focus_stm_drives(idx)
+            }
+        } else {
+            self.gain_drives()
+        }
+    }
+
+    pub fn gain_drives(&self) -> Vec<Drive> {
         self.normal_op_bram
             .iter()
             .take(self.num_transducers)
-            .map(|d| {
-                let intensity = (d >> 8) & 0xFF;
-                let phase = d & 0xFF;
-                (intensity as u8, phase as u8)
+            .map(|d| Drive {
+                intensity: EmitIntensity::new(((d >> 8) & 0xFF) as u8),
+                phase: Phase::new((d & 0xFF) as u8),
             })
             .collect()
     }
 
-    fn gain_stm_intensities_and_phases(&self, idx: usize) -> Vec<(u8, u8)> {
+    fn gain_stm_drives(&self, idx: usize) -> Vec<Drive> {
         self.stm_op_bram
             .iter()
             .skip(256 * idx)
             .take(self.num_transducers)
-            .map(|&d| {
-                let intensity = (d >> 8) & 0xFF;
-                let phase = d & 0xFF;
-                (intensity as u8, phase as u8)
+            .map(|&d| Drive {
+                intensity: EmitIntensity::new(((d >> 8) & 0xFF) as u8),
+                phase: Phase::new((d & 0xFF) as u8),
             })
             .collect()
     }
 
-    fn focus_stm_intensities_and_phases(&self, idx: usize) -> Vec<(u8, u8)> {
+    fn focus_stm_drives(&self, idx: usize) -> Vec<Drive> {
         let sound_speed = self.sound_speed() as u64;
         let intensity = self.stm_op_bram[8 * idx + 3] >> 6 & 0x00FF;
 
@@ -305,8 +309,10 @@ impl FPGAEmulator {
                     (x - tr_x) * (x - tr_x) + (y - tr_y) * (y - tr_y) + (z - tr_z) * (z - tr_z);
                 let dist = d2.sqrt() as u64;
                 let q = (dist << 18) / sound_speed;
-                let p = q & 0xFF;
-                (intensity as u8, p as u8)
+                Drive {
+                    intensity: EmitIntensity::new(intensity as u8),
+                    phase: Phase::new((q & 0xFF) as u8),
+                }
             })
             .collect()
     }
@@ -414,9 +420,9 @@ mod tests {
         assert_eq!(0x78, fpga.modulation_at(2));
         let m = fpga.modulation();
         assert_eq!(m.len(), 3);
-        assert_eq!(0x34, m[0]);
-        assert_eq!(0x12, m[1]);
-        assert_eq!(0x78, m[2]);
+        assert_eq!(0x34, m[0].value());
+        assert_eq!(0x12, m[1].value());
+        assert_eq!(0x78, m[2].value());
     }
 
     #[test]
