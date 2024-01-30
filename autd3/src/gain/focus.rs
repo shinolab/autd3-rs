@@ -7,7 +7,7 @@ use autd3_driver::{
 };
 
 /// Gain to produce a focal point
-#[derive(Gain, Clone, Copy)]
+#[derive(Gain, Clone, Copy, PartialEq, Debug)]
 pub struct Focus {
     intensity: EmitIntensity,
     pos: Vector3,
@@ -72,7 +72,7 @@ impl Gain for Focus {
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
         Ok(Self::transform(geometry, filter, |dev, tr| Drive {
-            phase: tr.align_phase_at(self.pos, dev.sound_speed),
+            phase: tr.align_phase_at(self.pos, dev.sound_speed) + self.phase,
             intensity: self.intensity,
         }))
     }
@@ -80,43 +80,63 @@ impl Gain for Focus {
 
 #[cfg(test)]
 mod tests {
-    use crate::tests::random_vector3;
+    use crate::tests::{create_geometry, random_vector3};
 
     use super::*;
-    use autd3_driver::{
-        autd3_device::AUTD3,
-        geometry::{IntoDevice, Vector3},
-    };
+    use autd3_driver::geometry::Vector3;
+    use rand::Rng;
+
+    fn focus_check(
+        g: Focus,
+        pos: Vector3,
+        intensity: EmitIntensity,
+        phase: Phase,
+        geometry: &Geometry,
+    ) -> anyhow::Result<()> {
+        assert_eq!(pos, g.pos());
+        assert_eq!(intensity, g.intensity());
+        assert_eq!(phase, g.phase());
+
+        let b = g.calc(geometry, GainFilter::All)?;
+        assert_eq!(geometry.num_devices(), b.len());
+        b.iter().for_each(|(&idx, d)| {
+            assert_eq!(d.len(), geometry[idx].num_transducers());
+            d.iter().zip(geometry[idx].iter()).for_each(|(d, tr)| {
+                let expected_phase = Phase::from_rad(
+                    (tr.position() - pos).norm() * tr.wavenumber(geometry[idx].sound_speed),
+                ) + phase;
+                assert_eq!(expected_phase, d.phase);
+                assert_eq!(intensity, d.intensity)
+            });
+        });
+
+        Ok(())
+    }
 
     #[test]
-    fn test_focus() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+    fn test_focus() -> anyhow::Result<()> {
+        let mut rng = rand::thread_rng();
+
+        let geometry = create_geometry(1);
 
         let f = random_vector3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
-
         let g = Focus::new(f);
-        assert_eq!(g.pos(), f);
-        assert_eq!(g.intensity(), EmitIntensity::MAX);
+        focus_check(g, f, EmitIntensity::MAX, Phase::new(0), &geometry)?;
 
-        let d = g.calc(&geometry, GainFilter::All).unwrap();
-        d[&0].iter().for_each(|drive| {
-            assert_eq!(drive.intensity, EmitIntensity::MAX);
-        });
+        let f = random_vector3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
+        let intensity = EmitIntensity::new(rng.gen());
+        let phase = Phase::new(rng.gen());
+        let g = Focus::new(f).with_intensity(intensity).with_phase(phase);
+        focus_check(g, f, intensity, phase, &geometry)?;
 
-        let g = g.with_intensity(0x1F);
-        assert_eq!(g.intensity(), EmitIntensity::new(0x1F));
-        let d = g.calc(&geometry, GainFilter::All).unwrap();
-        d[&0].iter().for_each(|drive| {
-            assert_eq!(drive.intensity, EmitIntensity::new(0x1F));
-        });
+        Ok(())
     }
 
     #[test]
     fn test_focus_derive() {
         let gain = Focus::new(Vector3::zeros());
         let gain2 = gain.clone();
-        assert_eq!(gain.pos(), gain2.pos());
-        assert_eq!(gain.intensity(), gain2.intensity());
+        assert_eq!(gain, gain2);
         let _ = gain.operation();
     }
 }

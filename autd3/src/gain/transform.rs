@@ -55,41 +55,38 @@ impl<G: Gain + 'static, F: Fn(&Device, &Transducer, &Drive) -> Drive + 'static> 
 
 #[cfg(test)]
 mod tests {
+    use crate::tests::create_geometry;
+
     use super::super::Uniform;
     use super::*;
-    use autd3_driver::{
-        autd3_device::AUTD3,
-        geometry::{IntoDevice, Vector3},
-    };
 
     #[test]
-    fn test_gain_transform() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+    fn test_gain_transform() -> anyhow::Result<()> {
+        let geometry = create_geometry(1);
 
         let gain = Uniform::new(0x01).with_transform(|_, _, d| Drive {
             phase: Phase::new(0x80),
             intensity: d.intensity + EmitIntensity::new(0x80),
         });
 
-        gain.calc(&geometry, GainFilter::All)
-            .unwrap()
+        gain.calc(&geometry, GainFilter::All)?
             .iter()
             .for_each(|(_, drive)| {
                 drive.iter().for_each(|d| {
-                    assert_eq!(d.phase, Phase::new(0x80));
-                    assert_eq!(d.intensity, EmitIntensity::new(0x81));
+                    assert_eq!(Phase::new(0x80), d.phase);
+                    assert_eq!(EmitIntensity::new(0x81), d.intensity);
                 })
             });
+
+        Ok(())
     }
 
     #[test]
     fn test_gain_transform_derive() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
         let gain = Uniform::new(0x01).with_transform(|_, _, d| Drive {
             phase: Phase::new(0x80),
             intensity: d.intensity + EmitIntensity::new(0x80),
         });
-        let _ = gain.calc(&geometry, GainFilter::All).unwrap();
         let _ = gain.operation();
     }
 }

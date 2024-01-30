@@ -7,7 +7,7 @@ use autd3_driver::{
 };
 
 /// Gain to produce a Bessel beam
-#[derive(Gain, Clone, Copy)]
+#[derive(Gain, Clone, Copy, PartialEq, Debug)]
 pub struct Bessel {
     intensity: EmitIntensity,
     pos: Vector3,
@@ -97,9 +97,8 @@ impl Gain for Bessel {
         Ok(Self::transform(geometry, filter, |dev, tr| {
             let r = rot * (tr.position() - self.pos);
             let dist = self.theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - self.theta.cos() * r.z;
-            let phase = dist * tr.wavenumber(dev.sound_speed) * Rad;
             Drive {
-                phase,
+                phase: dist * tr.wavenumber(dev.sound_speed) * Rad + self.phase,
                 intensity: self.intensity,
             }
         }))
@@ -110,80 +109,77 @@ impl Gain for Bessel {
 mod tests {
     use rand::Rng;
 
-    use autd3_driver::{autd3_device::AUTD3, defined::PI, geometry::IntoDevice};
+    use autd3_driver::defined::PI;
 
     use super::*;
 
-    use crate::tests::random_vector3;
+    use crate::tests::{create_geometry, random_vector3};
+
+    fn bessel_check(
+        g: Bessel,
+        pos: Vector3,
+        dir: Vector3,
+        theta: float,
+        intensity: EmitIntensity,
+        phase: Phase,
+        geometry: &Geometry,
+    ) -> anyhow::Result<()> {
+        assert_eq!(pos, g.pos());
+        assert_eq!(dir, g.dir());
+        assert_eq!(theta, g.theta());
+        assert_eq!(intensity, g.intensity());
+        assert_eq!(phase, g.phase());
+
+        let b = g.calc(geometry, GainFilter::All)?;
+        assert_eq!(geometry.num_devices(), b.len());
+        b.iter().for_each(|(&idx, d)| {
+            assert_eq!(geometry[idx].num_transducers(), d.len());
+            d.iter().zip(geometry[idx].iter()).for_each(|(d, tr)| {
+                let expected_phase = {
+                    let dir = dir.normalize();
+                    let v = Vector3::new(dir.y, -dir.x, 0.);
+                    let theta_v = v.norm().asin();
+                    let rot = if let Some(v) = v.try_normalize(1.0e-6) {
+                        UnitQuaternion::from_scaled_axis(v * -theta_v)
+                    } else {
+                        UnitQuaternion::identity()
+                    };
+                    let r = tr.position() - pos;
+                    let r = rot * r;
+                    let dist = theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - theta.cos() * r.z;
+                    dist * tr.wavenumber(geometry[0].sound_speed) * Rad + phase
+                };
+                assert_eq!(expected_phase, d.phase);
+                assert_eq!(intensity, d.intensity);
+            });
+        });
+
+        Ok(())
+    }
 
     #[test]
-    fn test_bessel() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+    fn test_bessel() -> anyhow::Result<()> {
+        let mut rng = rand::thread_rng();
+
+        let geometry = create_geometry(1);
 
         let f = random_vector3(-500.0..500.0, -500.0..500.0, 50.0..500.0);
         let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();
-        let mut rng = rand::thread_rng();
         let theta = rng.gen_range(-PI..PI);
         let g = Bessel::new(f, d, theta);
-        assert_eq!(g.pos(), f);
-        assert_eq!(g.dir(), d);
-        assert_eq!(g.theta(), theta);
-        assert_eq!(g.intensity(), EmitIntensity::MAX);
-        let b = g.calc(&geometry, GainFilter::All).unwrap();
-        assert_eq!(b.len(), 1);
-        assert_eq!(b[&0].len(), geometry.num_transducers());
-        b[&0]
-            .iter()
-            .for_each(|d| assert_eq!(d.intensity.value(), 0xFF));
-        b[&0].iter().zip(geometry[0].iter()).for_each(|(b, tr)| {
-            let expected_phase = {
-                let dir = d.normalize();
-                let v = Vector3::new(dir.y, -dir.x, 0.);
-                let theta_v = v.norm().asin();
-                let rot = if let Some(v) = v.try_normalize(1.0e-6) {
-                    UnitQuaternion::from_scaled_axis(v * -theta_v)
-                } else {
-                    UnitQuaternion::identity()
-                };
-                let r = tr.position() - f;
-                let r = rot * r;
-                let dist = theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - theta.cos() * r.z;
-                dist * tr.wavenumber(geometry[0].sound_speed) * Rad
-            };
-            assert_eq!(b.phase, expected_phase);
-        });
+        bessel_check(g, f, d, theta, EmitIntensity::MAX, Phase::new(0), &geometry)?;
 
         let f = random_vector3(-500.0..500.0, -500.0..500.0, 50.0..500.0);
         let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();
         let theta = rng.gen_range(-PI..PI);
-        let g = Bessel::new(f, d, theta).with_intensity(0x1F);
-        assert_eq!(g.pos(), f);
-        assert_eq!(g.dir(), d);
-        assert_eq!(g.theta(), theta);
-        assert_eq!(g.intensity(), EmitIntensity::new(0x1F));
-        let b = g.calc(&geometry, GainFilter::All).unwrap();
-        assert_eq!(b.len(), 1);
-        assert_eq!(b[&0].len(), geometry.num_transducers());
-        b[&0]
-            .iter()
-            .for_each(|b| assert_eq!(b.intensity.value(), 0x1F));
-        b[&0].iter().zip(geometry[0].iter()).for_each(|(b, tr)| {
-            let expected_phase = {
-                let dir = d.normalize();
-                let v = Vector3::new(dir.y, -dir.x, 0.);
-                let theta_v = v.norm().asin();
-                let rot = if let Some(v) = v.try_normalize(1.0e-6) {
-                    UnitQuaternion::from_scaled_axis(v * -theta_v)
-                } else {
-                    UnitQuaternion::identity()
-                };
-                let r = tr.position() - f;
-                let r = rot * r;
-                let dist = theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - theta.cos() * r.z;
-                dist * tr.wavenumber(geometry[0].sound_speed) * Rad
-            };
-            assert_eq!(b.phase, expected_phase);
-        });
+        let intensity = EmitIntensity::new(rng.gen());
+        let phase = Phase::new(rng.gen());
+        let g = Bessel::new(f, d, theta)
+            .with_intensity(intensity)
+            .with_phase(phase);
+        bessel_check(g, f, d, theta, intensity, phase, &geometry)?;
+
+        Ok(())
     }
 
     #[test]
@@ -194,6 +190,7 @@ mod tests {
         assert_eq!(g.dir(), g2.dir());
         assert_eq!(g.theta(), g2.theta());
         assert_eq!(g.intensity(), g2.intensity());
+        assert_eq!(g.phase(), g2.phase());
         let _ = g.operation();
     }
 }
