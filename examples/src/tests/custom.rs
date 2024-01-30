@@ -52,7 +52,7 @@ impl Modulation for Burst {
     }
 }
 
-pub async fn custom<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
+pub async fn custom(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     autd.send(ConfigureSilencer::disable()).await?;
 
     let g = MyUniform::new();

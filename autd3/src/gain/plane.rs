@@ -34,7 +34,7 @@ impl Plane {
     ///
     /// * `intensity` - emission intensity
     ///
-    pub fn with_intensity<A: Into<EmitIntensity>>(self, intensity: A) -> Self {
+    pub fn with_intensity(self, intensity: impl Into<EmitIntensity>) -> Self {
         Self {
             intensity: intensity.into(),
             ..self

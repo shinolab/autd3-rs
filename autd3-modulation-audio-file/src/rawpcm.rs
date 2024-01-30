@@ -28,7 +28,7 @@ impl RawPCM {
     /// * `path` - Path to the raw PCM file
     /// * `sample_rate` - Sampling frequency of the raw PCM file
     ///
-    pub fn new<P: AsRef<Path>>(path: P, sample_rate: u32) -> Self {
+    pub fn new(path: impl AsRef<Path>, sample_rate: u32) -> Self {
         Self {
             sample_rate,
             path: path.as_ref().to_path_buf(),
@@ -64,7 +64,7 @@ mod tests {
     use super::*;
     use std::io::Write;
 
-    fn create_dat<P: AsRef<Path>>(path: P, data: &[u8]) {
+    fn create_dat(path: impl AsRef<Path>, data: &[u8]) {
         std::fs::create_dir_all(path.as_ref().parent().unwrap()).unwrap();
         if path.as_ref().exists() {
             std::fs::remove_file(path.as_ref()).unwrap();

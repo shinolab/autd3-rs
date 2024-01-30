@@ -107,8 +107,8 @@ pub use internal::Link;
 pub use internal::LinkBuilder;
 
 /// Send and receive data
-pub async fn send_receive<L: Link>(
-    link: &mut L,
+pub async fn send_receive(
+    link: &mut impl Link,
     tx: &TxDatagram,
     rx: &mut [RxMessage],
     timeout: Option<Duration>,
@@ -121,8 +121,8 @@ pub async fn send_receive<L: Link>(
 }
 
 /// Wait until message is processed
-pub async fn wait_msg_processed<L: Link>(
-    link: &mut L,
+pub async fn wait_msg_processed(
+    link: &mut impl Link,
     tx: &TxDatagram,
     rx: &mut [RxMessage],
     timeout: Duration,

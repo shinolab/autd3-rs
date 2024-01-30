@@ -58,7 +58,7 @@ where
     /// * `key` - key
     /// * `gain` - Gain
     ///
-    pub fn set<G: Gain + 'static>(mut self, key: K, gain: G) -> Self {
+    pub fn set(mut self, key: K, gain: impl Gain + 'static) -> Self {
         self.gain_map.insert(key, Box::new(gain));
         self
     }

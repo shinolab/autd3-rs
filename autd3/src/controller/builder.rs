@@ -2,6 +2,7 @@ use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
     datagram::{Clear, Synchronize},
     geometry::{Device, Geometry, IntoDevice},
+    link::LinkBuilder,
 };
 
 use super::Controller;
@@ -18,13 +19,13 @@ impl ControllerBuilder {
     }
 
     /// Add device
-    pub fn add_device<D: IntoDevice>(mut self, dev: D) -> Self {
+    pub fn add_device(mut self, dev: impl IntoDevice) -> Self {
         self.devices.push(dev.into_device(self.devices.len()));
         self
     }
 
     /// Open controller
-    pub async fn open_with<B: autd3_driver::link::LinkBuilder>(
+    pub async fn open_with<B: LinkBuilder>(
         self,
         link_builder: B,
     ) -> Result<Controller<B::L>, AUTDError> {

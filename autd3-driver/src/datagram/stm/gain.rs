@@ -109,9 +109,9 @@ impl<G: Gain> GainSTM<G> {
     }
 
     /// Add boxed [Gain]s from iterator to GainSTM
-    pub fn add_gains_from_iter<I: IntoIterator<Item = G>>(
+    pub fn add_gains_from_iter(
         mut self,
-        iter: I,
+        iter: impl IntoIterator<Item = G>,
     ) -> Result<Self, AUTDInternalError> {
         self.gains.extend(iter);
         self.props.sampling_config(self.gains.len())?;

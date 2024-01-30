@@ -4,7 +4,7 @@ use autd3_gain_holo::*;
 use colored::*;
 use std::io::{self, Write};
 
-pub async fn holo<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
+pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     autd.send(ConfigureSilencer::default()).await?;
 
     let m = Sine::new(150.);

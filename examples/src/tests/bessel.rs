@@ -1,6 +1,6 @@
 use autd3::prelude::*;
 
-pub async fn bessel<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
+pub async fn bessel(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     autd.send(ConfigureSilencer::default()).await?;
 
     let center = autd.geometry.center();
