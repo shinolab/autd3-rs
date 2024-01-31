@@ -1,12 +1,17 @@
-use std::collections::HashMap;
-
-use autd3_driver::{
-    derive::*,
-    geometry::{Device, Geometry},
+pub use crate::{
+    common::Drive,
+    datagram::{Datagram, Gain, GainCache, GainFilter, IntoGainCache, Modulation},
+    error::AUTDInternalError,
+    geometry::{Device, Geometry, Transducer},
+    operation::{GainOp, NullOp, Operation},
 };
+pub use autd3_derive::Gain;
+
+use std::collections::HashMap;
 
 /// Gain to transform gain data
 #[derive(Gain)]
+#[no_gain_transform]
 pub struct Transform<G: Gain + 'static, F: Fn(&Device, &Transducer, &Drive) -> Drive + 'static> {
     gain: G,
     f: F,
@@ -22,9 +27,9 @@ pub trait IntoTransform<G: Gain> {
     fn with_transform<F: Fn(&Device, &Transducer, &Drive) -> Drive>(self, f: F) -> Transform<G, F>;
 }
 
-impl<G: Gain> IntoTransform<G> for G {
-    fn with_transform<F: Fn(&Device, &Transducer, &Drive) -> Drive>(self, f: F) -> Transform<G, F> {
-        Transform { gain: self, f }
+impl<G: Gain + 'static, F: Fn(&Device, &Transducer, &Drive) -> Drive> Transform<G, F> {
+    pub fn new(gain: G, f: F) -> Self {
+        Self { gain, f }
     }
 }
 
@@ -55,38 +60,31 @@ impl<G: Gain + 'static, F: Fn(&Device, &Transducer, &Drive) -> Drive + 'static> 
 
 #[cfg(test)]
 mod tests {
-    use crate::tests::create_geometry;
+    use super::{super::tests::TestGain, *};
 
-    use super::super::Uniform;
-    use super::*;
+    use crate::geometry::tests::create_geometry;
 
     #[test]
     fn test_gain_transform() -> anyhow::Result<()> {
-        let geometry = create_geometry(1);
+        let geometry = create_geometry(1, 249);
 
-        let gain = Uniform::new(0x01).with_transform(|_, _, d| Drive {
-            phase: Phase::new(0x80),
-            intensity: d.intensity + EmitIntensity::new(0x80),
-        });
+        let d = Drive::random();
+        let gain = TestGain { d: Drive::null() }.with_transform(move |_, _, _| d);
 
-        gain.calc(&geometry, GainFilter::All)?
-            .iter()
-            .for_each(|(_, drive)| {
-                drive.iter().for_each(|d| {
-                    assert_eq!(Phase::new(0x80), d.phase);
-                    assert_eq!(EmitIntensity::new(0x81), d.intensity);
-                })
-            });
+        assert_eq!(
+            geometry
+                .devices()
+                .map(|dev| (dev.idx(), vec![d; dev.num_transducers()]))
+                .collect::<HashMap<_, _>>(),
+            gain.calc(&geometry, GainFilter::All)?
+        );
 
         Ok(())
     }
 
     #[test]
     fn test_gain_transform_derive() {
-        let gain = Uniform::new(0x01).with_transform(|_, _, d| Drive {
-            phase: Phase::new(0x80),
-            intensity: d.intensity + EmitIntensity::new(0x80),
-        });
+        let gain = TestGain { d: Drive::null() }.with_transform(|_, _, _| Drive::null());
         let _ = gain.operation();
     }
 }

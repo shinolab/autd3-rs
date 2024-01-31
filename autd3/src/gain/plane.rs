@@ -6,7 +6,7 @@ use autd3_driver::{
     geometry::{Geometry, Vector3},
 };
 /// Gain to produce a plane wave
-#[derive(Gain, Clone, Copy, PartialEq, Debug)]
+#[derive(Gain, Clone, PartialEq, Debug)]
 pub struct Plane {
     intensity: EmitIntensity,
     dir: Vector3,

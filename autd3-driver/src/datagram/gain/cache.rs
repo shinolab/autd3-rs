@@ -1,4 +1,11 @@
-use autd3_driver::{derive::*, geometry::Geometry};
+pub use crate::{
+    common::Drive,
+    datagram::{Datagram, Gain, GainFilter, Modulation},
+    error::AUTDInternalError,
+    geometry::Geometry,
+    operation::{GainOp, NullOp, Operation},
+};
+pub use autd3_derive::Gain;
 
 use std::{
     cell::{Ref, RefCell},
@@ -8,6 +15,8 @@ use std::{
 
 /// Gain to cache the result of calculation
 #[derive(Gain, Debug)]
+#[no_gain_cache]
+#[no_gain_transform]
 pub struct Cache<G: Gain + 'static> {
     gain: Rc<G>,
     cache: Rc<RefCell<HashMap<usize, Vec<Drive>>>>,
@@ -24,12 +33,6 @@ impl<G: Gain + 'static> std::ops::Deref for Cache<G> {
 pub trait IntoCache<G: Gain + 'static> {
     /// Cache the result of calculation
     fn with_cache(self) -> Cache<G>;
-}
-
-impl<G: Gain + 'static> IntoCache<G> for G {
-    fn with_cache(self) -> Cache<G> {
-        Cache::new(self)
-    }
 }
 
 impl<G: Gain + Clone + 'static> Clone for Cache<G> {
@@ -49,7 +52,8 @@ impl<G: Gain + PartialEq + 'static> PartialEq for Cache<G> {
 
 impl<G: Gain + 'static> Cache<G> {
     /// constructor
-    fn new(gain: G) -> Self {
+    #[doc(hidden)]
+    pub fn new(gain: G) -> Self {
         Self {
             gain: Rc::new(gain),
             cache: Rc::new(Default::default()),
@@ -86,7 +90,7 @@ impl<G: Gain + 'static> Cache<G> {
     /// # }
     ///
     /// ```
-    pub fn drives(&self) -> Ref<'_, HashMap<usize, Vec<autd3_driver::common::Drive>>> {
+    pub fn drives(&self) -> Ref<'_, HashMap<usize, Vec<Drive>>> {
         self.cache.borrow()
     }
 }
@@ -104,27 +108,22 @@ impl<G: Gain + 'static> Gain for Cache<G> {
 
 #[cfg(test)]
 mod tests {
+    use super::{super::tests::TestGain, *};
+
     use std::sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
     };
 
-    use autd3_driver::geometry::Vector3;
-
-    use crate::tests::create_geometry;
-
-    use super::{
-        super::{Null, Plane},
-        *,
-    };
+    use crate::{derive::*, geometry::tests::create_geometry};
 
     #[test]
     fn test_cache() -> anyhow::Result<()> {
-        let geometry = create_geometry(1);
+        let geometry = create_geometry(1, 249);
 
-        let gain = Plane::new(Vector3::zeros());
-        let cache = gain.with_cache();
-        assert_eq!(gain.phase(), cache.phase());
+        let gain = TestGain { d: Drive::random() };
+        let cache = gain.clone().with_cache();
+        assert_eq!(gain.d, cache.d);
 
         assert!(cache.drives().is_empty());
         assert_eq!(
@@ -136,12 +135,12 @@ mod tests {
         Ok(())
     }
 
-    #[derive(Clone)]
-    struct TestGain {
+    #[derive(Gain, Clone)]
+    pub struct CacheTestGain {
         pub calc_cnt: Arc<AtomicUsize>,
     }
 
-    impl Gain for TestGain {
+    impl Gain for CacheTestGain {
         fn calc(
             &self,
             geometry: &Geometry,
@@ -154,10 +153,10 @@ mod tests {
 
     #[test]
     fn test_cache_calc_once() -> anyhow::Result<()> {
-        let geometry = create_geometry(1);
+        let geometry = create_geometry(1, 249);
 
         let calc_cnt = Arc::new(AtomicUsize::new(0));
-        let gain = TestGain {
+        let gain = CacheTestGain {
             calc_cnt: calc_cnt.clone(),
         }
         .with_cache();
@@ -173,10 +172,10 @@ mod tests {
 
     #[test]
     fn test_cache_clone() -> anyhow::Result<()> {
-        let geometry = create_geometry(1);
+        let geometry = create_geometry(1, 249);
 
         let calc_cnt = Arc::new(AtomicUsize::new(0));
-        let gain = TestGain {
+        let gain = CacheTestGain {
             calc_cnt: calc_cnt.clone(),
         }
         .with_cache();
@@ -196,7 +195,7 @@ mod tests {
 
     #[test]
     fn test_cache_derive() {
-        let g = Null::default().with_cache();
+        let g = TestGain { d: Drive::random() }.with_cache();
         assert_eq!(g, g.clone());
         let _ = g.operation();
     }

@@ -1,14 +1,21 @@
+pub use crate::{
+    common::Drive,
+    datagram::{
+        Datagram, Gain, GainCache, GainFilter, GainTransform, IntoGainCache, IntoGainTransform,
+        Modulation,
+    },
+    error::AUTDInternalError,
+    geometry::{Device, Geometry, Transducer},
+    operation::{GainOp, NullOp, Operation},
+};
+pub use autd3_derive::Gain;
+
 use std::{
     collections::{hash_map::Entry, HashMap},
     hash::Hash,
 };
 
 use bitvec::prelude::*;
-
-use autd3_driver::{
-    derive::*,
-    geometry::{Device, Geometry},
-};
 
 #[derive(Gain)]
 pub struct Group<K, F>
@@ -35,7 +42,7 @@ where
     ///
     /// ```
     /// # use autd3::prelude::*;
-    /// # let gain : autd3::gain::Group<_, _> =
+    /// # let gain : Group<_, _> =
     /// Group::new(|dev, tr| match tr.idx() {
     ///                 0..=100 => Some("null"),
     ///                 101.. => Some("focus"),
@@ -148,43 +155,36 @@ where
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::{
-        autd3_device::AUTD3,
-        geometry::{IntoDevice, Vector3},
-    };
+    use super::{super::tests::TestGain, *};
 
-    use super::*;
-
-    use crate::{
-        gain::{Null, Plane},
-        tests::create_geometry,
-    };
+    use crate::{geometry::tests::create_geometry, operation::tests::NullGain};
 
     #[test]
     fn test_group() -> anyhow::Result<()> {
-        let geometry = create_geometry(4);
+        let geometry = create_geometry(4, 249);
+
+        let g1 = TestGain { d: Drive::random() };
+        let g2 = TestGain { d: Drive::random() };
 
         let gain = Group::new(|dev, tr| match (dev.idx(), tr.idx()) {
             (0, 0..=99) => Some("null"),
-            (0, 100..=199) => Some("plane"),
-            (1, 200..) => Some("plane2"),
-            (3, _) => Some("plane"),
+            (0, 100..=199) => Some("test"),
+            (1, 200..) => Some("test2"),
+            (3, _) => Some("test"),
             _ => None,
         })
-        .set("null", Null::new())
-        .set("plane", Plane::new(Vector3::zeros()))
-        .set("plane2", Plane::new(Vector3::zeros()).with_intensity(0x1F));
+        .set("null", NullGain {})
+        .set("test", g1.clone())
+        .set("test2", g2.clone());
 
         let drives = gain.calc(&geometry, GainFilter::All)?;
         assert_eq!(4, drives.len());
-        assert!(drives.values().all(|d| d.len() == AUTD3::NUM_TRANS_IN_UNIT));
         drives[&0].iter().enumerate().for_each(|(i, &d)| match i {
             i if i <= 99 => {
                 assert_eq!(Drive::null(), d);
             }
             i if i <= 199 => {
-                assert_eq!(Phase::new(0), d.phase);
-                assert_eq!(EmitIntensity::MAX, d.intensity);
+                assert_eq!(g1.d, d);
             }
             _ => {
                 assert_eq!(Drive::null(), d);
@@ -195,16 +195,14 @@ mod tests {
                 assert_eq!(Drive::null(), d);
             }
             _ => {
-                assert_eq!(Phase::new(0), d.phase);
-                assert_eq!(EmitIntensity::new(0x1F), d.intensity);
+                assert_eq!(g2.d, d);
             }
         });
         drives[&2].iter().for_each(|&d| {
             assert_eq!(Drive::null(), d);
         });
-        drives[&3].iter().for_each(|d| {
-            assert_eq!(Phase::new(0), d.phase);
-            assert_eq!(EmitIntensity::MAX, d.intensity);
+        drives[&3].iter().for_each(|&d| {
+            assert_eq!(g1.d, d);
         });
 
         Ok(())
@@ -212,14 +210,14 @@ mod tests {
 
     #[test]
     fn test_group_unknown_key() {
-        let geometry = create_geometry(2);
+        let geometry = create_geometry(2, 249);
 
         let gain = Group::new(|_dev, tr| match tr.idx() {
-            0..=99 => Some("plane"),
+            0..=99 => Some("test"),
             100..=199 => Some("null"),
             _ => None,
         })
-        .set("plane2", Plane::new(Vector3::zeros()));
+        .set("test2", NullGain {});
 
         assert_eq!(
             Err(AUTDInternalError::GainError("Unknown group key".to_owned())),
@@ -229,14 +227,14 @@ mod tests {
 
     #[test]
     fn test_group_unspecified_key() {
-        let geometry = create_geometry(2);
+        let geometry = create_geometry(2, 249);
 
         let gain = Group::new(|_dev, tr| match tr.idx() {
-            0..=99 => Some("plane"),
+            0..=99 => Some("test"),
             100..=199 => Some("null"),
             _ => None,
         })
-        .set("plane", Plane::new(Vector3::zeros()));
+        .set("test", NullGain {});
 
         assert_eq!(
             Err(AUTDInternalError::GainError(
@@ -248,7 +246,7 @@ mod tests {
 
     #[test]
     fn test_group_derive() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let geometry = create_geometry(1, 249);
         let gain = Group::new(|_, _| -> Option<()> { None });
         let _ = gain.calc(&geometry, GainFilter::All);
         let _ = gain.operation();

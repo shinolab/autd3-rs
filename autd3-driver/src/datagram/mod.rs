@@ -13,7 +13,9 @@ mod with_timeout;
 pub use clear::Clear;
 pub use debug::ConfigureDebugOutputIdx;
 pub use force_fan::ConfigureForceFan;
-pub use gain::{Gain, GainFilter};
+pub use gain::{
+    Gain, GainCache, GainFilter, GainTransform, Group, IntoGainCache, IntoGainTransform,
+};
 pub use mod_delay::ConfigureModDelay;
 pub use modulation::{Modulation, ModulationProperty};
 pub use reads_fpga_state::ConfigureReadsFPGAState;

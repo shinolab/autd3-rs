@@ -1,3 +1,13 @@
+mod cache;
+mod group;
+mod transform;
+
+pub use cache::Cache as GainCache;
+pub use cache::IntoCache as IntoGainCache;
+pub use group::Group;
+pub use transform::IntoTransform as IntoGainTransform;
+pub use transform::Transform as GainTransform;
+
 use std::collections::HashMap;
 
 use crate::{
@@ -95,98 +105,85 @@ impl Datagram for Box<dyn Gain> {
 mod tests {
     use super::*;
 
-    use crate::{geometry::tests::create_geometry, operation::tests::NullGain};
+    use crate::{derive::*, geometry::tests::create_geometry};
 
-    #[test]
-    fn test_gain_transform_all() {
-        let geometry = create_geometry(2, 249);
-        let g = NullGain {}.calc(&geometry, GainFilter::All).unwrap();
+    #[derive(Gain, Clone, Copy, PartialEq, Debug)]
+    pub struct TestGain {
+        pub d: Drive,
+    }
 
-        assert_eq!(g.len(), 2);
-
-        assert!(g.contains_key(&0));
-
-        let d0 = g.get(&0).unwrap();
-        assert_eq!(d0.len(), 249);
-        d0.iter().for_each(|d| {
-            assert_eq!(d.intensity.value(), 0xFF);
-            assert_eq!(d.phase.value(), 2);
-        });
-
-        assert!(g.contains_key(&1));
-        let d1 = g.get(&1).unwrap();
-        assert_eq!(d1.len(), 249);
-        d1.iter().for_each(|d| {
-            assert_eq!(d.intensity.value(), 0xFF);
-            assert_eq!(d.phase.value(), 2);
-        });
+    impl Gain for TestGain {
+        fn calc(
+            &self,
+            geometry: &Geometry,
+            filter: GainFilter,
+        ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
+            Ok(Self::transform(geometry, filter, |_, _| self.d))
+        }
     }
 
     #[test]
-    fn test_gain_transform_all_enabled() {
+    fn test_gain_transform_all() -> anyhow::Result<()> {
+        let geometry = create_geometry(2, 249);
+
+        let d = Drive::random();
+        assert_eq!(
+            geometry
+                .devices()
+                .map(|dev| (dev.idx(), vec![d; dev.num_transducers()]))
+                .collect::<HashMap<_, _>>(),
+            TestGain { d }.calc(&geometry, GainFilter::All)?
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_gain_transform_all_enabled() -> anyhow::Result<()> {
         let mut geometry = create_geometry(2, 249);
         geometry[0].enable = false;
 
-        let g = NullGain {}.calc(&geometry, GainFilter::All).unwrap();
+        let d = Drive::random();
+        assert_eq!(
+            geometry
+                .devices()
+                .map(|dev| (dev.idx(), vec![d; dev.num_transducers()]))
+                .collect::<HashMap<_, _>>(),
+            TestGain { d }.calc(&geometry, GainFilter::All)?
+        );
 
-        assert_eq!(g.len(), 1);
-
-        assert!(!g.contains_key(&0));
-
-        assert!(g.contains_key(&1));
-        let d1 = g.get(&1).unwrap();
-        assert_eq!(d1.len(), 249);
-        d1.iter().for_each(|d| {
-            assert_eq!(d.intensity.value(), 0xFF);
-            assert_eq!(d.phase.value(), 2);
-        });
+        Ok(())
     }
 
     #[test]
-    fn test_gain_transform_filtered() {
+    fn test_gain_transform_filtered() -> anyhow::Result<()> {
         let geometry = create_geometry(3, 249);
+
         let filter = geometry
             .iter()
             .take(2)
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
-        let g = NullGain {}
-            .calc(&geometry, GainFilter::Filter(&filter))
-            .unwrap();
+        let d = Drive::random();
+        assert_eq!(
+            (0..2)
+                .map(|idx| (
+                    geometry[idx].idx(),
+                    (0..100)
+                        .map(|_| d)
+                        .chain((0..).map(|_| Drive::null()))
+                        .take(geometry[idx].num_transducers())
+                        .collect::<Vec<_>>()
+                ))
+                .collect::<HashMap<_, _>>(),
+            TestGain { d }.calc(&geometry, GainFilter::Filter(&filter))?
+        );
 
-        assert_eq!(g.len(), 2);
-
-        assert!(g.contains_key(&0));
-        let d0 = g.get(&0).unwrap();
-        assert_eq!(d0.len(), 249);
-        d0.iter().enumerate().for_each(|(i, d)| {
-            if i < 100 {
-                assert_eq!(d.intensity.value(), 0xFF);
-                assert_eq!(d.phase.value(), 2);
-            } else {
-                assert_eq!(d.intensity.value(), 0x00);
-                assert_eq!(d.phase.value(), 0);
-            }
-        });
-
-        assert!(g.contains_key(&1));
-        let d1 = g.get(&1).unwrap();
-        assert_eq!(d1.len(), 249);
-        d1.iter().enumerate().for_each(|(i, d)| {
-            if i < 100 {
-                assert_eq!(d.intensity.value(), 0xFF);
-                assert_eq!(d.phase.value(), 2);
-            } else {
-                assert_eq!(d.intensity.value(), 0x00);
-                assert_eq!(d.phase.value(), 0);
-            }
-        });
-
-        assert!(!g.contains_key(&2));
+        Ok(())
     }
 
     #[test]
-    fn test_gain_transform_filtered_enabled() {
+    fn test_gain_transform_filtered_enabled() -> anyhow::Result<()> {
         let mut geometry = create_geometry(2, 249);
         geometry[0].enable = false;
 
@@ -194,25 +191,23 @@ mod tests {
             .iter()
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
-        let g = NullGain {}
-            .calc(&geometry, GainFilter::Filter(&filter))
-            .unwrap();
+        let d = Drive::random();
 
-        assert_eq!(g.len(), 1);
+        assert_eq!(
+            geometry
+                .devices()
+                .map(|dev| (
+                    dev.idx(),
+                    (0..100)
+                        .map(|_| d)
+                        .chain((0..).map(|_| Drive::null()))
+                        .take(dev.num_transducers())
+                        .collect::<Vec<_>>()
+                ))
+                .collect::<HashMap<_, _>>(),
+            TestGain { d }.calc(&geometry, GainFilter::Filter(&filter))?
+        );
 
-        assert!(!g.contains_key(&0));
-
-        assert!(g.contains_key(&1));
-        let d1 = g.get(&1).unwrap();
-        assert_eq!(d1.len(), 249);
-        d1.iter().enumerate().for_each(|(i, d)| {
-            if i < 100 {
-                assert_eq!(d.intensity.value(), 0xFF);
-                assert_eq!(d.phase.value(), 2);
-            } else {
-                assert_eq!(d.intensity.value(), 0x00);
-                assert_eq!(d.phase.value(), 0);
-            }
-        });
+        Ok(())
     }
 }
