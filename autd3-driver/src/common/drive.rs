@@ -3,12 +3,24 @@ use super::{EmitIntensity, Phase};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Drive {
     /// Phase of ultrasound
-    pub phase: Phase,
+    phase: Phase,
     /// emission intensity
-    pub intensity: EmitIntensity,
+    intensity: EmitIntensity,
 }
 
 impl Drive {
+    pub const fn new(phase: Phase, intensity: EmitIntensity) -> Self {
+        Self { phase, intensity }
+    }
+
+    pub const fn phase(&self) -> Phase {
+        self.phase
+    }
+
+    pub const fn intensity(&self) -> EmitIntensity {
+        self.intensity
+    }
+
     pub const fn null() -> Self {
         Self {
             phase: Phase::new(0),
@@ -35,10 +47,7 @@ mod tests {
 
     #[test]
     fn drive() {
-        let d = Drive {
-            phase: Phase::new(1),
-            intensity: EmitIntensity::new(1),
-        };
+        let d = Drive::new(Phase::new(1), EmitIntensity::new(1));
 
         let dc = Clone::clone(&d);
         assert_eq!(d.phase, dc.phase);

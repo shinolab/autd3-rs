@@ -301,12 +301,9 @@ impl<B: LinAlgBackend> Gain for LM<B> {
                         dev.iter()
                             .map(|_| {
                                 let phase = Phase::from_rad(x[idx].rem_euclid(2.0 * PI));
-                                let amp = self.constraint.convert(1.0, 1.0);
+                                let intensity = self.constraint.convert(1.0, 1.0);
                                 idx += 1;
-                                Drive {
-                                    intensity: amp,
-                                    phase,
-                                }
+                                Drive::new(phase, intensity)
                             })
                             .collect(),
                     )
@@ -324,12 +321,9 @@ impl<B: LinAlgBackend> Gain for LM<B> {
                                     .filter(|tr| filter[tr.idx()])
                                     .map(|_| {
                                         let phase = Phase::from_rad(x[idx].rem_euclid(2.0 * PI));
-                                        let amp = self.constraint.convert(1.0, 1.0);
+                                        let intensity = self.constraint.convert(1.0, 1.0);
                                         idx += 1;
-                                        Drive {
-                                            intensity: amp,
-                                            phase,
-                                        }
+                                        Drive::new(phase, intensity)
                                     })
                                     .collect(),
                             )

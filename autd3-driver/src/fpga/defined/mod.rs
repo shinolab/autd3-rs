@@ -4,9 +4,10 @@ mod drive;
 mod fpga_state;
 mod stm_focus;
 
-pub use drive::FPGADrive;
+pub(crate) use drive::FPGADrive;
+pub(crate) use stm_focus::STMFocus;
+
 pub use fpga_state::FPGAState;
-pub use stm_focus::STMFocus;
 
 /// FPGA clock frequency
 pub const FPGA_CLK_FREQ: usize = 20480000;

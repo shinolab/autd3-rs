@@ -48,9 +48,8 @@ impl Gain for Uniform {
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |_, _| Drive {
-            phase: self.phase,
-            intensity: self.intensity,
+        Ok(Self::transform(geometry, filter, |_, _| {
+            Drive::new(self.phase, self.intensity)
         }))
     }
 }
@@ -76,8 +75,8 @@ mod tests {
         b.iter().for_each(|(&idx, d)| {
             assert_eq!(geometry[idx].num_transducers(), d.len());
             d.iter().for_each(|d| {
-                assert_eq!(phase, d.phase);
-                assert_eq!(intensity, d.intensity);
+                assert_eq!(phase, d.phase());
+                assert_eq!(intensity, d.intensity());
             });
         });
 

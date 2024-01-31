@@ -43,7 +43,7 @@ impl ControllerBuilder {
         let mut cnt = Controller {
             link: link_builder.open(&geometry).await?,
             tx_buf: TxDatagram::new(geometry.num_devices()),
-            rx_buf: vec![RxMessage { data: 0, ack: 0 }; geometry.num_devices()],
+            rx_buf: vec![RxMessage::new(0, 0); geometry.num_devices()],
             geometry,
         };
         cnt.send((Clear::new(), Synchronize::new()).with_timeout(timeout))

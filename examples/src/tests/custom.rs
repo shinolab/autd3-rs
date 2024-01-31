@@ -18,9 +18,8 @@ impl Gain for MyUniform {
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |_dev, _tr| Drive {
-            phase: Phase::new(0),
-            intensity: EmitIntensity::MAX,
+        Ok(Self::transform(geometry, filter, |_dev, _tr| {
+            Drive::new(Phase::new(0), EmitIntensity::MAX)
         }))
     }
 }

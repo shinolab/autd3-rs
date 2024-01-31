@@ -45,10 +45,7 @@ mod tests {
         let geometry = create_geometry(1);
 
         let test_id = rng.gen_range(0..geometry.num_transducers());
-        let test_drive = Drive {
-            phase: Phase::new(rng.gen()),
-            intensity: EmitIntensity::new(rng.gen()),
-        };
+        let test_drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
         let transducer_test = TransducerTest::new(move |dev, tr| {
             if (dev.idx() == 0) && (tr.idx() == test_id) {
                 Some(test_drive)

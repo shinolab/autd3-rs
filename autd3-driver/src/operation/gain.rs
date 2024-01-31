@@ -104,9 +104,11 @@ mod tests {
                 (
                     dev.idx(),
                     (0..dev.num_transducers())
-                        .map(|_| Drive {
-                            intensity: EmitIntensity::new(rng.gen_range(0..=0xFF)),
-                            phase: Phase::new(rng.gen_range(0x00..=0xFF)),
+                        .map(|_| {
+                            Drive::new(
+                                Phase::new(rng.gen_range(0x00..=0xFF)),
+                                EmitIntensity::new(rng.gen_range(0..=0xFF)),
+                            )
                         })
                         .collect(),
                 )
@@ -153,8 +155,8 @@ mod tests {
                 .skip(1)
                 .zip(gain.data[&dev.idx()].iter())
                 .for_each(|(d, g)| {
-                    assert_eq!(d[0], g.phase.value());
-                    assert_eq!(d[1], g.intensity.value());
+                    assert_eq!(d[0], g.phase().value());
+                    assert_eq!(d[1], g.intensity().value());
                 })
         });
     }

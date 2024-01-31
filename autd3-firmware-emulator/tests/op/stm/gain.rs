@@ -29,9 +29,8 @@ fn gen_random_buf(n: usize, geometry: &Geometry) -> Vec<HashMap<usize, Vec<Drive
                     (
                         dev.idx(),
                         dev.iter()
-                            .map(|_| Drive {
-                                phase: Phase::new(rng.gen()),
-                                intensity: EmitIntensity::new(rng.gen()),
+                            .map(|_| {
+                                Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()))
                             })
                             .collect(),
                     )
@@ -81,11 +80,10 @@ fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
     (0..bufs.len()).for_each(|gain_idx| {
         cpu.fpga()
             .drives(gain_idx)
-            .iter()
+            .into_iter()
             .enumerate()
             .for_each(|(i, drive)| {
-                assert_eq!(bufs[gain_idx][&0][i].intensity, drive.intensity);
-                assert_eq!(bufs[gain_idx][&0][i].phase, drive.phase);
+                assert_eq!(bufs[gain_idx][&0][i], drive);
             });
     });
 
@@ -147,9 +145,9 @@ fn send_gain_stm_phase_full(n: usize) -> anyhow::Result<()> {
             .drives(gain_idx)
             .iter()
             .enumerate()
-            .for_each(|(i, &drive)| {
-                assert_eq!(EmitIntensity::MAX, drive.intensity);
-                assert_eq!(bufs[gain_idx][&0][i].phase, drive.phase);
+            .for_each(|(i, drive)| {
+                assert_eq!(EmitIntensity::MAX, drive.intensity());
+                assert_eq!(bufs[gain_idx][&0][i].phase(), drive.phase());
             });
     });
 
@@ -190,10 +188,10 @@ fn send_gain_stm_phase_half(n: usize) -> anyhow::Result<()> {
             .iter()
             .enumerate()
             .for_each(|(i, &drive)| {
-                assert_eq!(EmitIntensity::MAX, drive.intensity);
+                assert_eq!(EmitIntensity::MAX, drive.intensity());
                 assert_eq!(
-                    bufs[gain_idx][&0][i].phase.value() >> 4,
-                    drive.phase.value() >> 4
+                    bufs[gain_idx][&0][i].phase().value() >> 4,
+                    drive.phase().value() >> 4
                 );
             });
     });

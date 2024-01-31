@@ -2,14 +2,14 @@ use std::ffi::{c_char, c_long, c_void};
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct AmsNetId {
-    pub b: [u8; 6],
+pub(crate) struct AmsNetId {
+    pub(crate) b: [u8; 6],
 }
 
 #[repr(C)]
-pub struct AmsAddr {
-    pub net_id: AmsNetId,
-    pub port: u16,
+pub(crate) struct AmsAddr {
+    pub(crate) net_id: AmsNetId,
+    pub(crate) port: u16,
 }
 
 const ERR_ADSERRS: c_long = 0x0700;
