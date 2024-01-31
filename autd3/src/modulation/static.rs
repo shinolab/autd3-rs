@@ -1,7 +1,7 @@
 use autd3_driver::{common::EmitIntensity, derive::*};
 
 /// Without modulation
-#[derive(Modulation, Clone, Copy, PartialEq, Debug)]
+#[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct Static {
     intensity: EmitIntensity,
     #[no_change]

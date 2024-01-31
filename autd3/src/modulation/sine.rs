@@ -5,7 +5,7 @@ use num::integer::gcd;
 use super::sampling_mode::SamplingMode;
 
 /// Sine wave modulation
-#[derive(Modulation, Clone, Copy, PartialEq, Debug)]
+#[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct Sine {
     freq: float,
     intensity: EmitIntensity,
