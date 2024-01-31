@@ -25,6 +25,8 @@ mod internal {
         /// Get timeout
         #[must_use]
         fn timeout(&self) -> Duration;
+        #[inline(always)]
+        fn trace(&mut self, _: &TxDatagram, _: &mut [RxMessage], _: Option<Duration>) {}
     }
 
     #[async_trait::async_trait]
@@ -56,6 +58,11 @@ mod internal {
         fn timeout(&self) -> Duration {
             self.as_ref().timeout()
         }
+
+        #[inline(always)]
+        fn trace(&mut self, tx: &TxDatagram, rx: &mut [RxMessage], timeout: Option<Duration>) {
+            self.as_mut().trace(tx, rx, timeout)
+        }
     }
 }
 
@@ -83,6 +90,8 @@ mod internal {
         /// Get timeout
         #[must_use]
         fn timeout(&self) -> Duration;
+        #[inline(always)]
+        fn trace(&mut self, _: &TxDatagram, _: &mut [RxMessage], _: Option<Duration>) {}
     }
 
     pub trait LinkBuilder {
@@ -113,6 +122,7 @@ pub async fn send_receive(
     rx: &mut [RxMessage],
     timeout: Option<Duration>,
 ) -> Result<bool, AUTDInternalError> {
+    link.trace(tx, rx, timeout);
     let timeout = timeout.unwrap_or(link.timeout());
     if !link.send(tx).await? {
         return Ok(false);
@@ -121,7 +131,7 @@ pub async fn send_receive(
 }
 
 /// Wait until message is processed
-pub async fn wait_msg_processed(
+async fn wait_msg_processed(
     link: &mut impl Link,
     tx: &TxDatagram,
     rx: &mut [RxMessage],
