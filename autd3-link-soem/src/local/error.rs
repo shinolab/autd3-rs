@@ -15,8 +15,6 @@ pub enum SOEMError {
     NotResponding(EcStatus),
     #[error("One ore more slaves did not reach safe operational state: {0}")]
     NotReachedSafeOp(u16),
-    #[error("Non-AUTD3 device detected: {0}")]
-    NotAUTD3Device(String),
     #[error("Invalid send cycle time")]
     InvalidSendCycleTime,
     #[error("Invalid sync0 cycle time")]

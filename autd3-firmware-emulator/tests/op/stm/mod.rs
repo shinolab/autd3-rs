@@ -1,2 +1,2 @@
-mod focus;
-mod gain;
+pub mod focus;
+pub mod gain;

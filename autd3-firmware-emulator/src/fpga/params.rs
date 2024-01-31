@@ -6,12 +6,6 @@ pub const BRAM_SELECT_MOD: u16 = 0x1;
 pub const BRAM_SELECT_NORMAL: u16 = 0x2;
 pub const BRAM_SELECT_STM: u16 = 0x3;
 
-// pub const BRAM_SELECT_CONTROLLER_MAIN: u16 = 0b000;
-// pub const BRAM_SELECT_CONTROLLER_CYCLE: u16 = 0b001;
-// pub const BRAM_SELECT_CONTROLLER_DELAY: u16 = 0b010;
-// pub const BRAM_SELECT_CONTROLLER_FILTER_DUTY: u16 = 0b011;
-// pub const BRAM_SELECT_CONTROLLER_FILTER_PHASE: u16 = 0b100;
-
 pub const ADDR_CTL_REG: usize = 0x0000;
 pub const ADDR_FPGA_STATE: usize = 0x0001;
 pub const ADDR_MOD_ADDR_OFFSET: usize = 0x0020;

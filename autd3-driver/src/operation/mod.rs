@@ -89,9 +89,9 @@ impl Operation for Box<dyn Operation> {
 pub struct OperationHandler {}
 
 impl OperationHandler {
-    pub fn is_finished<O1: Operation, O2: Operation>(
-        op1: &mut O1,
-        op2: &mut O2,
+    pub fn is_finished(
+        op1: &mut impl Operation,
+        op2: &mut impl Operation,
         geometry: &Geometry,
     ) -> bool {
         geometry
@@ -99,18 +99,18 @@ impl OperationHandler {
             .all(|dev| op1.remains(dev) == 0 && op2.remains(dev) == 0)
     }
 
-    pub fn init<O1: Operation, O2: Operation>(
-        op1: &mut O1,
-        op2: &mut O2,
+    pub fn init(
+        op1: &mut impl Operation,
+        op2: &mut impl Operation,
         geometry: &Geometry,
     ) -> Result<(), AUTDInternalError> {
         op1.init(geometry)?;
         op2.init(geometry)
     }
 
-    pub fn pack<O1: Operation, O2: Operation>(
-        op1: &mut O1,
-        op2: &mut O2,
+    pub fn pack(
+        op1: &mut impl Operation,
+        op2: &mut impl Operation,
         geometry: &Geometry,
         tx: &mut TxDatagram,
     ) -> Result<(), AUTDInternalError> {
@@ -141,8 +141,8 @@ impl OperationHandler {
         Ok(())
     }
 
-    fn pack_dev<O: Operation>(
-        op: &mut O,
+    fn pack_dev(
+        op: &mut impl Operation,
         dev: &Device,
         tx: &mut TxDatagram,
     ) -> Result<usize, AUTDInternalError> {
@@ -168,7 +168,7 @@ pub mod tests {
     use std::collections::HashMap;
 
     use crate::{
-        common::{Drive, EmitIntensity, Phase},
+        common::Drive,
         cpu::{Header, EC_OUTPUT_FRAME_SIZE},
         datagram::{Gain, GainFilter},
         geometry::{Transducer, UnitQuaternion, Vector3},
@@ -209,10 +209,7 @@ pub mod tests {
             geometry: &Geometry,
             filter: GainFilter,
         ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-            Ok(Self::transform(geometry, filter, |_, _| Drive {
-                intensity: EmitIntensity::MAX,
-                phase: Phase::new(2),
-            }))
+            Ok(Self::transform(geometry, filter, |_, _| Drive::null()))
         }
     }
 

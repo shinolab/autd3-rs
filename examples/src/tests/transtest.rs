@@ -1,6 +1,6 @@
 use autd3::prelude::*;
 
-pub async fn transtest<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
+pub async fn transtest(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     autd.send(ConfigureSilencer::disable()).await?;
 
     let m = Static::new();

@@ -6,8 +6,7 @@ use crate::{
 impl ToMessage for autd3_driver::datagram::ConfigureSilencerFixedUpdateRate {
     type Message = DatagramLightweight;
 
-    #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Silencer(
                 ConfigureSilencer {
@@ -26,7 +25,6 @@ impl ToMessage for autd3_driver::datagram::ConfigureSilencerFixedUpdateRate {
 impl FromMessage<ConfigureSilencerFixedUpdateRate>
     for autd3_driver::datagram::ConfigureSilencerFixedUpdateRate
 {
-    #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &ConfigureSilencerFixedUpdateRate) -> Option<Self> {
         autd3_driver::datagram::ConfigureSilencer::fixed_update_rate(
             msg.value_intensity as _,
@@ -39,8 +37,7 @@ impl FromMessage<ConfigureSilencerFixedUpdateRate>
 impl ToMessage for autd3_driver::datagram::ConfigureSilencerFixedCompletionSteps {
     type Message = DatagramLightweight;
 
-    #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Silencer(
                 ConfigureSilencer {
@@ -60,7 +57,6 @@ impl ToMessage for autd3_driver::datagram::ConfigureSilencerFixedCompletionSteps
 impl FromMessage<ConfigureSilencerFixedCompletionSteps>
     for autd3_driver::datagram::ConfigureSilencerFixedCompletionSteps
 {
-    #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &ConfigureSilencerFixedCompletionSteps) -> Option<Self> {
         Some(
             autd3_driver::datagram::ConfigureSilencer::fixed_completion_steps(
@@ -88,7 +84,7 @@ mod tests {
             rng.gen_range(SILENCER_VALUE_MIN..SILENCER_VALUE_MAX),
         )
         .unwrap();
-        let msg = c.to_msg();
+        let msg = c.to_msg(None);
 
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Silencer(ConfigureSilencer {
@@ -114,7 +110,7 @@ mod tests {
         )
         .unwrap()
         .with_strict_mode(false);
-        let msg = c.to_msg();
+        let msg = c.to_msg(None);
 
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Silencer(ConfigureSilencer {

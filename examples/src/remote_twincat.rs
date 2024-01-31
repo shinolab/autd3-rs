@@ -9,7 +9,7 @@ use autd3_link_twincat::RemoteTwinCAT;
 async fn main() -> Result<()> {
     let autd = Controller::builder()
         .add_device(AUTD3::new(Vector3::zeros()))
-        .open_with(RemoteTwinCAT::builder("0.0.0.0.0.0"))
+        .open(RemoteTwinCAT::builder("0.0.0.0.0.0"))
         .await?;
 
     tests::run(autd).await

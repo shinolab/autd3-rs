@@ -13,6 +13,14 @@ message DatagramLightweight {
     ConfigureSilencer silencer = 1;
     Modulation modulation = 2;
     Gain gain = 3;
+    Clear clear = 4;
+    Synchronize synchronize = 5;
+    ConfigureForceFan force_fan = 6;
+    ConfigureDebugOutputIdx debug = 7;
+    ConfigureReadsFPGAState reads_fpga_state = 8;
+    ConfigureModDelay mod_delay = 9;
+    FocusSTM focus_stm = 10;
+    GainSTM gain_stm = 11;
   }
 }
 

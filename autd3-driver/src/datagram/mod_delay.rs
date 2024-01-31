@@ -13,6 +13,10 @@ impl<F: Fn(&Device, &Transducer) -> u16> ConfigureModDelay<F> {
     pub const fn new(f: F) -> Self {
         Self { f }
     }
+
+    pub const fn f(&self) -> &F {
+        &self.f
+    }
 }
 
 impl<F: Fn(&Device, &Transducer) -> u16> Datagram for ConfigureModDelay<F> {

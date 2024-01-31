@@ -1,31 +1,27 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    autd3_device::AUTD3,
     common::EmitIntensity,
     cpu::TxDatagram,
     derive::*,
-    fpga::{GAIN_STM_BUF_SIZE_MAX, SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
-    geometry::{Geometry, IntoDevice, Vector3},
-    operation::{GainSTMMode, GainSTMOp, NullOp, OperationHandler},
+    fpga::{
+        GAIN_STM_BUF_SIZE_MAX, SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN,
+        SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
+    },
+    geometry::Geometry,
+    operation::{GainSTMMode, GainSTMOp},
 };
 use autd3_firmware_emulator::CPUEmulator;
 
 use rand::*;
 
+use crate::{create_geometry, send};
+
 use super::super::gain::TestGain;
 
-#[test]
-fn send_gain_stm_phase_intensity_full() {
+fn gen_random_buf(n: usize, geometry: &Geometry) -> Vec<HashMap<usize, Vec<Drive>>> {
     let mut rng = rand::thread_rng();
-
-    let geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-
-    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-
-    let mut tx = TxDatagram::new(1);
-
-    let bufs: Vec<HashMap<usize, Vec<Drive>>> = (0..GAIN_STM_BUF_SIZE_MAX)
+    (0..n)
         .map(|_| {
             geometry
                 .iter()
@@ -34,354 +30,183 @@ fn send_gain_stm_phase_intensity_full() {
                         dev.idx(),
                         dev.iter()
                             .map(|_| Drive {
-                                phase: Phase::new(rng.gen_range(0..=u8::MAX)),
-                                intensity: EmitIntensity::new(rng.gen_range(0..=u8::MAX)),
+                                phase: Phase::new(rng.gen()),
+                                intensity: EmitIntensity::new(rng.gen()),
                             })
                             .collect(),
                     )
                 })
                 .collect()
         })
-        .collect();
-    let gains: Vec<_> = bufs
-        .iter()
-        .map(|buf| TestGain { buf: buf.clone() })
-        .collect();
-    let freq_div = rng.gen_range(SAMPLING_FREQ_DIV_MIN..=SAMPLING_FREQ_DIV_MAX);
-    let start_idx = Some(rng.gen_range(0..gains.len() as u16));
-    let finish_idx = Some(rng.gen_range(0..gains.len() as u16));
-    let mut op = GainSTMOp::new(
-        gains,
-        GainSTMMode::PhaseIntensityFull,
-        freq_div,
-        start_idx,
-        finish_idx,
-    );
-    let mut op_null = NullOp::default();
-
-    assert!(!cpu.fpga().is_stm_mode());
-    assert!(!cpu.fpga().is_stm_gain_mode());
-    assert!(cpu.fpga().stm_start_idx().is_none());
-    assert!(cpu.fpga().stm_finish_idx().is_none());
-
-    OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
-    loop {
-        if OperationHandler::is_finished(&mut op, &mut op_null, &geometry) {
-            break;
-        }
-        OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
-        cpu.send(&tx);
-        assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
-    }
-    assert!(cpu.fpga().is_stm_mode());
-    assert!(cpu.fpga().is_stm_gain_mode());
-    assert_eq!(cpu.fpga().stm_start_idx(), start_idx);
-    assert_eq!(cpu.fpga().stm_finish_idx(), finish_idx);
-    assert_eq!(cpu.fpga().stm_cycle(), bufs.len());
-    assert_eq!(cpu.fpga().stm_frequency_division(), freq_div);
-    (0..bufs.len()).for_each(|gain_idx| {
-        cpu.fpga()
-            .intensities_and_phases(gain_idx)
-            .iter()
-            .enumerate()
-            .for_each(|(i, &(intensity, phase))| {
-                assert_eq!(intensity, bufs[gain_idx][&0][i].intensity.value());
-                assert_eq!(phase, bufs[gain_idx][&0][i].phase.value());
-            });
-    });
-
-    let bufs: Vec<HashMap<usize, Vec<Drive>>> = (0..2)
-        .map(|_| {
-            geometry
-                .iter()
-                .map(|dev| {
-                    (
-                        dev.idx(),
-                        dev.iter()
-                            .map(|_| Drive {
-                                phase: Phase::new(rng.gen_range(0..=u8::MAX)),
-                                intensity: EmitIntensity::new(rng.gen_range(0..=u8::MAX)),
-                            })
-                            .collect(),
-                    )
-                })
-                .collect()
-        })
-        .collect();
-    let gains: Vec<_> = bufs.into_iter().map(|buf| TestGain { buf }).collect();
-    let freq_div = rng.gen_range(SAMPLING_FREQ_DIV_MIN..=SAMPLING_FREQ_DIV_MAX);
-    let start_idx = None;
-    let finish_idx = None;
-    let mut op = GainSTMOp::new(
-        gains,
-        GainSTMMode::PhaseIntensityFull,
-        freq_div,
-        start_idx,
-        finish_idx,
-    );
-    let mut op_null = NullOp::default();
-
-    OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
-    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
-    cpu.send(&tx);
-    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
-    cpu.send(&tx);
-    assert!(OperationHandler::is_finished(
-        &mut op,
-        &mut op_null,
-        &geometry
-    ));
-    assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
-    assert!(cpu.fpga().is_stm_mode());
-    assert!(cpu.fpga().is_stm_gain_mode());
-    assert!(cpu.fpga().stm_start_idx().is_none());
-    assert!(cpu.fpga().stm_finish_idx().is_none());
-    assert_eq!(cpu.fpga().stm_cycle(), 2);
-    assert_eq!(cpu.fpga().stm_frequency_division(), freq_div);
+        .collect()
 }
 
 #[test]
-fn send_gain_stm_phase_full() {
+fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
     let mut rng = rand::thread_rng();
 
-    let geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-
+    let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let mut tx = TxDatagram::new(1);
-
-    let bufs: Vec<HashMap<usize, Vec<Drive>>> = (0..GAIN_STM_BUF_SIZE_MAX)
-        .map(|_| {
-            geometry
-                .iter()
-                .map(|dev| {
-                    (
-                        dev.idx(),
-                        dev.iter()
-                            .map(|_| Drive {
-                                phase: Phase::new(rng.gen_range(0..=u8::MAX)),
-                                intensity: EmitIntensity::new(rng.gen_range(0..=u8::MAX)),
-                            })
-                            .collect(),
-                    )
-                })
-                .collect()
-        })
-        .collect();
-    let gains: Vec<_> = bufs
-        .iter()
-        .map(|buf| TestGain { buf: buf.clone() })
-        .collect();
-    let freq_div = rng.gen_range(SAMPLING_FREQ_DIV_MIN..=SAMPLING_FREQ_DIV_MAX);
-    let start_idx = Some(rng.gen_range(0..gains.len() as u16));
-    let finish_idx = Some(rng.gen_range(0..gains.len() as u16));
-    let mut op = GainSTMOp::new(
-        gains,
-        GainSTMMode::PhaseFull,
-        freq_div,
-        start_idx,
-        finish_idx,
+    let bufs = gen_random_buf(GAIN_STM_BUF_SIZE_MAX, &geometry);
+    let freq_div = rng.gen_range(
+        SAMPLING_FREQ_DIV_MIN
+            * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
+            ..=SAMPLING_FREQ_DIV_MAX,
     );
-    let mut op_null = NullOp::default();
+    let mut op = GainSTMOp::new(
+        bufs.iter()
+            .map(|buf| TestGain { buf: buf.clone() })
+            .collect(),
+        GainSTMMode::PhaseIntensityFull,
+        freq_div,
+        None,
+        None,
+    );
 
     assert!(!cpu.fpga().is_stm_mode());
     assert!(!cpu.fpga().is_stm_gain_mode());
     assert!(cpu.fpga().stm_start_idx().is_none());
     assert!(cpu.fpga().stm_finish_idx().is_none());
 
-    OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
-    loop {
-        if OperationHandler::is_finished(&mut op, &mut op_null, &geometry) {
-            break;
-        }
-        OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
-        cpu.send(&tx);
-        assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
-    }
-    assert!(cpu.fpga().is_stm_mode());
-    assert!(cpu.fpga().is_stm_gain_mode());
-    assert_eq!(cpu.fpga().stm_start_idx(), start_idx);
-    assert_eq!(cpu.fpga().stm_finish_idx(), finish_idx);
-    assert_eq!(cpu.fpga().stm_cycle(), bufs.len());
-    assert_eq!(cpu.fpga().stm_frequency_division(), freq_div);
-    (0..bufs.len()).for_each(|gain_idx| {
-        cpu.fpga()
-            .intensities_and_phases(gain_idx)
-            .iter()
-            .enumerate()
-            .for_each(|(i, &(intensity, phase))| {
-                assert_eq!(intensity, 0xFF);
-                assert_eq!(phase, bufs[gain_idx][&0][i].phase.value());
-            });
-    });
+    send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
-    let bufs: Vec<HashMap<usize, Vec<Drive>>> = (0..2)
-        .map(|_| {
-            geometry
-                .iter()
-                .map(|dev| {
-                    (
-                        dev.idx(),
-                        dev.iter()
-                            .map(|_| Drive {
-                                phase: Phase::new(rng.gen_range(0..=u8::MAX)),
-                                intensity: EmitIntensity::new(rng.gen_range(0..=u8::MAX)),
-                            })
-                            .collect(),
-                    )
-                })
-                .collect()
-        })
-        .collect();
-    let gains: Vec<_> = bufs.into_iter().map(|buf| TestGain { buf }).collect();
-    let freq_div = rng.gen_range(SAMPLING_FREQ_DIV_MIN..=SAMPLING_FREQ_DIV_MAX);
-    let start_idx = None;
-    let finish_idx = None;
-    let mut op = GainSTMOp::new(
-        gains,
-        GainSTMMode::PhaseFull,
-        freq_div,
-        start_idx,
-        finish_idx,
-    );
-    let mut op_null = NullOp::default();
-
-    OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
-    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
-    cpu.send(&tx);
-    assert!(OperationHandler::is_finished(
-        &mut op,
-        &mut op_null,
-        &geometry
-    ));
-    assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
     assert!(cpu.fpga().is_stm_mode());
     assert!(cpu.fpga().is_stm_gain_mode());
     assert!(cpu.fpga().stm_start_idx().is_none());
     assert!(cpu.fpga().stm_finish_idx().is_none());
-    assert_eq!(cpu.fpga().stm_cycle(), 2);
-    assert_eq!(cpu.fpga().stm_frequency_division(), freq_div);
+    assert_eq!(bufs.len(), cpu.fpga().stm_cycle());
+    assert_eq!(freq_div, cpu.fpga().stm_frequency_division());
+    (0..bufs.len()).for_each(|gain_idx| {
+        cpu.fpga()
+            .drives(gain_idx)
+            .iter()
+            .enumerate()
+            .for_each(|(i, drive)| {
+                assert_eq!(bufs[gain_idx][&0][i].intensity, drive.intensity);
+                assert_eq!(bufs[gain_idx][&0][i].phase, drive.phase);
+            });
+    });
+
+    Ok(())
 }
 
 #[test]
-fn send_gain_stm_phase_half() {
+fn test_send_gain_stm_phase_intensity_full_with_idx() -> anyhow::Result<()> {
     let mut rng = rand::thread_rng();
 
-    let geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-
+    let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let mut tx = TxDatagram::new(1);
-
-    let bufs: Vec<HashMap<usize, Vec<Drive>>> = (0..GAIN_STM_BUF_SIZE_MAX)
-        .map(|_| {
-            geometry
-                .iter()
-                .map(|dev| {
-                    (
-                        dev.idx(),
-                        dev.iter()
-                            .map(|_| Drive {
-                                phase: Phase::new(rng.gen_range(0..=u8::MAX)),
-                                intensity: EmitIntensity::new(rng.gen_range(0..=u8::MAX)),
-                            })
-                            .collect(),
-                    )
-                })
-                .collect()
-        })
-        .collect();
-    let gains: Vec<_> = bufs
-        .iter()
-        .map(|buf| TestGain { buf: buf.clone() })
-        .collect();
-    let freq_div = rng.gen_range(SAMPLING_FREQ_DIV_MIN..=SAMPLING_FREQ_DIV_MAX);
-    let start_idx = Some(rng.gen_range(0..gains.len() as u16));
-    let finish_idx = Some(rng.gen_range(0..gains.len() as u16));
+    let bufs = gen_random_buf(2, &geometry);
+    let start_idx = Some(rng.gen_range(0..bufs.len() as u16));
+    let finish_idx = Some(rng.gen_range(0..bufs.len() as u16));
     let mut op = GainSTMOp::new(
-        gains,
-        GainSTMMode::PhaseHalf,
-        freq_div,
+        bufs.into_iter().map(|buf| TestGain { buf }).collect(),
+        GainSTMMode::PhaseIntensityFull,
+        SAMPLING_FREQ_DIV_MIN
+            * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
         start_idx,
         finish_idx,
     );
-    let mut op_null = NullOp::default();
 
-    assert!(!cpu.fpga().is_stm_mode());
-    assert!(!cpu.fpga().is_stm_gain_mode());
     assert!(cpu.fpga().stm_start_idx().is_none());
     assert!(cpu.fpga().stm_finish_idx().is_none());
 
-    OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
-    loop {
-        if OperationHandler::is_finished(&mut op, &mut op_null, &geometry) {
-            break;
-        }
-        OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
-        cpu.send(&tx);
-        assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
-    }
-    assert!(cpu.fpga().is_stm_mode());
-    assert!(cpu.fpga().is_stm_gain_mode());
-    assert_eq!(cpu.fpga().stm_start_idx(), start_idx);
-    assert_eq!(cpu.fpga().stm_finish_idx(), finish_idx);
-    assert_eq!(cpu.fpga().stm_cycle(), bufs.len());
-    assert_eq!(cpu.fpga().stm_frequency_division(), freq_div);
+    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+
+    assert_eq!(start_idx, cpu.fpga().stm_start_idx());
+    assert_eq!(finish_idx, cpu.fpga().stm_finish_idx());
+
+    Ok(())
+}
+
+fn send_gain_stm_phase_full(n: usize) -> anyhow::Result<()> {
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
+
+    let bufs = gen_random_buf(n, &geometry);
+    let mut op = GainSTMOp::new(
+        bufs.iter()
+            .map(|buf| TestGain { buf: buf.clone() })
+            .collect(),
+        GainSTMMode::PhaseFull,
+        SAMPLING_FREQ_DIV_MIN
+            * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
+        None,
+        None,
+    );
+
+    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+
     (0..bufs.len()).for_each(|gain_idx| {
         cpu.fpga()
-            .intensities_and_phases(gain_idx)
+            .drives(gain_idx)
             .iter()
             .enumerate()
-            .for_each(|(i, &(intensity, phase))| {
-                assert_eq!(intensity, 0xFF);
-                assert_eq!(phase >> 4, bufs[gain_idx][&0][i].phase.value() >> 4);
+            .for_each(|(i, &drive)| {
+                assert_eq!(EmitIntensity::MAX, drive.intensity);
+                assert_eq!(bufs[gain_idx][&0][i].phase, drive.phase);
             });
     });
 
-    let bufs: Vec<HashMap<usize, Vec<Drive>>> = (0..4)
-        .map(|_| {
-            geometry
-                .iter()
-                .map(|dev| {
-                    (
-                        dev.idx(),
-                        dev.iter()
-                            .map(|_| Drive {
-                                phase: Phase::new(rng.gen_range(0..=u8::MAX)),
-                                intensity: EmitIntensity::new(rng.gen_range(0..=u8::MAX)),
-                            })
-                            .collect(),
-                    )
-                })
-                .collect()
-        })
-        .collect();
-    let gains: Vec<_> = bufs.into_iter().map(|buf| TestGain { buf }).collect();
-    let freq_div = rng.gen_range(SAMPLING_FREQ_DIV_MIN..=SAMPLING_FREQ_DIV_MAX);
-    let start_idx = None;
-    let finish_idx = None;
-    let mut op = GainSTMOp::new(
-        gains,
-        GainSTMMode::PhaseHalf,
-        freq_div,
-        start_idx,
-        finish_idx,
-    );
-    let mut op_null = NullOp::default();
+    Ok(())
+}
 
-    OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
-    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
-    cpu.send(&tx);
-    assert!(OperationHandler::is_finished(
-        &mut op,
-        &mut op_null,
-        &geometry
-    ));
-    assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
-    assert!(cpu.fpga().is_stm_mode());
-    assert!(cpu.fpga().is_stm_gain_mode());
-    assert!(cpu.fpga().stm_start_idx().is_none());
-    assert!(cpu.fpga().stm_finish_idx().is_none());
-    assert_eq!(cpu.fpga().stm_cycle(), 4);
-    assert_eq!(cpu.fpga().stm_frequency_division(), freq_div);
+#[test]
+fn test_send_gain_stm_phase_full() -> anyhow::Result<()> {
+    send_gain_stm_phase_full(2)?;
+    send_gain_stm_phase_full(3)?;
+    send_gain_stm_phase_full(GAIN_STM_BUF_SIZE_MAX)?;
+    Ok(())
+}
+
+fn send_gain_stm_phase_half(n: usize) -> anyhow::Result<()> {
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
+
+    let bufs = gen_random_buf(n, &geometry);
+
+    let mut op = GainSTMOp::new(
+        bufs.iter()
+            .map(|buf| TestGain { buf: buf.clone() })
+            .collect(),
+        GainSTMMode::PhaseHalf,
+        SAMPLING_FREQ_DIV_MIN
+            * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
+        None,
+        None,
+    );
+
+    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+
+    (0..bufs.len()).for_each(|gain_idx| {
+        cpu.fpga()
+            .drives(gain_idx)
+            .iter()
+            .enumerate()
+            .for_each(|(i, &drive)| {
+                assert_eq!(EmitIntensity::MAX, drive.intensity);
+                assert_eq!(
+                    bufs[gain_idx][&0][i].phase.value() >> 4,
+                    drive.phase.value() >> 4
+                );
+            });
+    });
+
+    Ok(())
+}
+
+#[test]
+fn test_send_gain_stm_phase_half() -> anyhow::Result<()> {
+    send_gain_stm_phase_half(2)?;
+    send_gain_stm_phase_half(3)?;
+    send_gain_stm_phase_half(4)?;
+    send_gain_stm_phase_half(5)?;
+    send_gain_stm_phase_half(GAIN_STM_BUF_SIZE_MAX)?;
+    Ok(())
 }

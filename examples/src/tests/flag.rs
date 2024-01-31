@@ -5,7 +5,7 @@ use std::sync::{
 
 use autd3::prelude::*;
 
-pub async fn flag<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
+pub async fn flag(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     autd.send(ConfigureReadsFPGAState::new(|_dev| true)).await?;
 
     println!("press any key to force fan...");

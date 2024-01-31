@@ -16,17 +16,13 @@ pub enum Status {
     StateChanged(String),
 }
 
-pub type OnLostCallback = Box<dyn Fn(&str) + Send + Sync>;
-pub type OnErrCallback = Box<dyn Fn(&str) + Send + Sync>;
 pub type ErrHandler = Box<dyn Fn(usize, Status) + Send + Sync>;
 
-pub struct EcatErrorHandler<Fl: Fn(&str), Fe: Fn(&str), Fh: Fn(usize, Status)> {
-    pub(crate) on_lost: Option<Fl>,
-    pub(crate) on_err: Option<Fe>,
-    pub(crate) err_handler: Option<Fh>,
+pub struct EcatErrorHandler<F: Fn(usize, Status)> {
+    pub(crate) err_handler: Option<F>,
 }
 
-impl<Fl: Fn(&str), Fe: Fn(&str), Fh: Fn(usize, Status)> EcatErrorHandler<Fl, Fe, Fh> {
+impl<F: Fn(usize, Status)> EcatErrorHandler<F> {
     pub(crate) fn run(
         &self,
         is_open: Arc<AtomicBool>,
@@ -61,12 +57,6 @@ impl<Fl: Fn(&str), Fe: Fn(&str), Fh: Fn(usize, Status)> EcatErrorHandler<Fl, Fe,
                         if slave.state
                             == ec_state_EC_STATE_SAFE_OP as u16 + ec_state_EC_STATE_ERROR as u16
                         {
-                            if let Some(f) = &self.on_err {
-                                f(&format!(
-                                    "slave {} is in SAFE_OP + ERROR, attempting ack",
-                                    i
-                                ));
-                            }
                             if let Some(f) = &self.err_handler {
                                 f(
                                     i,
@@ -79,9 +69,6 @@ impl<Fl: Fn(&str), Fe: Fn(&str), Fh: Fn(usize, Status)> EcatErrorHandler<Fl, Fe,
                                 ec_state_EC_STATE_SAFE_OP as u16 + ec_state_EC_STATE_ACK as u16;
                             ec_writestate(i as _);
                         } else if slave.state == ec_state_EC_STATE_SAFE_OP as u16 {
-                            if let Some(f) = &self.on_err {
-                                f(&format!("slave {} is in SAFE_OP, change to OPERATIONAL", i));
-                            }
                             if let Some(f) = &self.err_handler {
                                 f(
                                     i,
@@ -126,18 +113,11 @@ impl<Fl: Fn(&str), Fe: Fn(&str), Fh: Fn(usize, Status)> EcatErrorHandler<Fl, Fe,
                 return true;
             }
 
-            if ec_slave
+            ec_slave
                 .iter()
                 .skip(1)
                 .take(ec_slavecount as usize)
-                .any(|slave| slave.islost != 0)
-            {
-                if let Some(f) = &self.on_lost {
-                    f(&msg);
-                }
-                return false;
-            }
-            true
+                .all(|slave| slave.islost == 0)
         }
     }
 }

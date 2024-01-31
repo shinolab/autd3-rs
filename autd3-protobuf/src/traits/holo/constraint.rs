@@ -9,7 +9,7 @@ impl ToMessage for autd3_gain_holo::EmissionConstraint {
     type Message = EmissionConstraint;
 
     #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         match self {
             autd3_gain_holo::EmissionConstraint::DontCare => Self::Message {
                 constraint: Some(emission_constraint::Constraint::DontCare(
@@ -24,14 +24,14 @@ impl ToMessage for autd3_gain_holo::EmissionConstraint {
             autd3_gain_holo::EmissionConstraint::Uniform(value) => Self::Message {
                 constraint: Some(emission_constraint::Constraint::Uniform(
                     UniformConstraint {
-                        value: Some(value.to_msg()),
+                        value: Some(value.to_msg(None)),
                     },
                 )),
             },
             autd3_gain_holo::EmissionConstraint::Clamp(min, max) => Self::Message {
                 constraint: Some(emission_constraint::Constraint::Clamp(ClampConstraint {
-                    min: Some(min.to_msg()),
-                    max: Some(max.to_msg()),
+                    min: Some(min.to_msg(None)),
+                    max: Some(max.to_msg(None)),
                 })),
             },
         }
@@ -72,7 +72,7 @@ mod tests {
     #[test]
     fn test_emission_constraint_dont_care() {
         let v = autd3_gain_holo::EmissionConstraint::DontCare;
-        let msg = v.to_msg();
+        let msg = v.to_msg(None);
         let v2 = autd3_gain_holo::EmissionConstraint::from_msg(&msg).unwrap();
         assert_eq!(v, v2);
     }
@@ -80,7 +80,7 @@ mod tests {
     #[test]
     fn test_emission_constraint_normalize() {
         let v = autd3_gain_holo::EmissionConstraint::Normalize;
-        let msg = v.to_msg();
+        let msg = v.to_msg(None);
         let v2 = autd3_gain_holo::EmissionConstraint::from_msg(&msg).unwrap();
         assert_eq!(v, v2);
     }
@@ -89,7 +89,7 @@ mod tests {
     fn test_emission_constraint_uniform() {
         let mut rng = rand::thread_rng();
         let v = autd3_gain_holo::EmissionConstraint::Uniform(EmitIntensity::new(rng.gen()));
-        let msg = v.to_msg();
+        let msg = v.to_msg(None);
         let v2 = autd3_gain_holo::EmissionConstraint::from_msg(&msg).unwrap();
         assert_eq!(v, v2);
     }
@@ -101,7 +101,7 @@ mod tests {
             EmitIntensity::new(rng.gen()),
             EmitIntensity::new(rng.gen()),
         );
-        let msg = v.to_msg();
+        let msg = v.to_msg(None);
         let v2 = autd3_gain_holo::EmissionConstraint::from_msg(&msg).unwrap();
         assert_eq!(v, v2);
     }

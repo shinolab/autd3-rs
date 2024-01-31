@@ -3,69 +3,105 @@ use autd3_driver::{
     cpu::TxDatagram,
     datagram::*,
     geometry::{Geometry, IntoDevice, Vector3},
-    operation::OperationHandler,
+    operation::{NullOp, Operation, OperationHandler},
 };
-use autd3_firmware_emulator::CPUEmulator;
+use autd3_firmware_emulator::{cpu::params::ERR_NOT_SUPPORTED_TAG, CPUEmulator};
 
 mod op;
 
+pub fn create_geometry(n: usize) -> Geometry {
+    Geometry::new(
+        (0..n)
+            .map(|i| AUTD3::new(Vector3::zeros()).into_device(i))
+            .collect(),
+    )
+}
+
+pub fn send_once(
+    cpu: &mut CPUEmulator,
+    op: &mut impl Operation,
+    geometry: &Geometry,
+    tx: &mut TxDatagram,
+) -> anyhow::Result<()> {
+    let mut op_null = NullOp::default();
+    OperationHandler::pack(op, &mut op_null, geometry, tx)?;
+    cpu.send(&tx);
+    assert_eq!(tx.headers().next().unwrap().msg_id, cpu.ack());
+    Ok(())
+}
+
+pub fn send(
+    cpu: &mut CPUEmulator,
+    op: &mut impl Operation,
+    geometry: &Geometry,
+    tx: &mut TxDatagram,
+) -> anyhow::Result<()> {
+    let mut op_null = NullOp::default();
+    OperationHandler::init(op, &mut op_null, geometry)?;
+    loop {
+        if OperationHandler::is_finished(op, &mut op_null, geometry) {
+            break;
+        }
+        send_once(cpu, op, geometry, tx)?;
+    }
+    Ok(())
+}
+
 #[test]
 fn send_invalid_tag() {
-    let geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-
+    let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let mut tx = TxDatagram::new(1);
     tx.header_mut(0).msg_id = 1;
     tx.payload_mut(0)[0] = 0xFF;
 
     cpu.send(&tx);
-    assert_eq!(
-        cpu.ack(),
-        autd3_firmware_emulator::cpu::params::ERR_NOT_SUPPORTED_TAG
-    );
+    assert_eq!(ERR_NOT_SUPPORTED_TAG, cpu.ack());
 }
 
 #[test]
-fn send_ingore_same_data() {
-    let geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-
+fn send_ingore_same_data() -> anyhow::Result<()> {
+    let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let mut tx = TxDatagram::new(1);
-    let (mut op, mut op_null) = Clear::new().operation().unwrap();
+    let (mut op, mut op_null) = Clear::new().operation()?;
 
-    OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
-    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
+    OperationHandler::init(&mut op, &mut op_null, &geometry)?;
+    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx)?;
 
     cpu.send(&tx);
     let msg_id = tx.headers().next().unwrap().msg_id;
     assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
 
-    let (mut op, mut op_null) = Synchronize::new().operation().unwrap();
-    OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
-    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
+    let (mut op, mut op_null) = Synchronize::new().operation()?;
+    OperationHandler::init(&mut op, &mut op_null, &geometry)?;
+    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx)?;
     tx.header_mut(0).msg_id = msg_id;
     assert!(!cpu.synchronized());
     cpu.send(&tx);
     assert!(!cpu.synchronized());
+
+    Ok(())
 }
 
 #[test]
-fn send_slot_2() {
-    let geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-
+fn send_slot_2() -> anyhow::Result<()> {
+    let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let mut tx = TxDatagram::new(1);
-    let (mut op_clear, _) = Clear::new().operation().unwrap();
-    let (mut op_sync, _) = Synchronize::new().operation().unwrap();
+    let (mut op_clear, _) = Clear::new().operation()?;
+    let (mut op_sync, _) = Synchronize::new().operation()?;
 
-    OperationHandler::init(&mut op_clear, &mut op_sync, &geometry).unwrap();
-    OperationHandler::pack(&mut op_clear, &mut op_sync, &geometry, &mut tx).unwrap();
+    OperationHandler::init(&mut op_clear, &mut op_sync, &geometry)?;
+    OperationHandler::pack(&mut op_clear, &mut op_sync, &geometry, &mut tx)?;
 
     assert!(!cpu.synchronized());
     cpu.send(&tx);
     assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
     assert!(cpu.synchronized());
+
+    Ok(())
 }

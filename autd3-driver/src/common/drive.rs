@@ -18,6 +18,18 @@ impl Drive {
 }
 
 #[cfg(test)]
+impl Drive {
+    pub fn random() -> Self {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        Self {
+            phase: Phase::new(rng.gen()),
+            intensity: EmitIntensity::new(rng.gen()),
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

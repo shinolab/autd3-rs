@@ -6,7 +6,7 @@ use crate::{
 impl ToMessage for autd3_driver::cpu::TxDatagram {
     type Message = TxRawData;
 
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             data: self.all_data().to_vec(),
             num_devices: self.num_devices() as _,
@@ -41,7 +41,7 @@ mod tests {
             tx.header_mut(i).msg_id = rng.gen();
             tx.header_mut(i).slot_2_offset = rng.gen();
         });
-        let msg = tx.to_msg();
+        let msg = tx.to_msg(None);
         let tx2 = autd3_driver::cpu::TxDatagram::from_msg(&msg).unwrap();
         assert_eq!(tx.all_data(), tx2.all_data());
     }

@@ -17,3 +17,15 @@ impl CPUEmulator {
         ERR_NONE
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn debug_out_idx_memory_layout() {
+        assert_eq!(2, std::mem::size_of::<DebugOutIdx>());
+        assert_eq!(0, memoffset::offset_of!(DebugOutIdx, tag));
+        assert_eq!(1, memoffset::offset_of!(DebugOutIdx, idx));
+    }
+}

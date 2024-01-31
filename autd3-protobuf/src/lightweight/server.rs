@@ -184,7 +184,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                             .with_rotation(*d[0].rotation()),
                     )
                 })
-                .open_with((self.link)())
+                .open((self.link)())
                 .await
             {
                 Ok(autd) => Some(autd),
@@ -261,6 +261,62 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                 }
                 Some(datagram_lightweight::Datagram::Modulation(ref msg)) => {
                     Self::send_modulation(autd, msg).await
+                }
+                Some(datagram_lightweight::Datagram::Clear(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::Clear::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                    )
+                    .await
+                }
+                Some(datagram_lightweight::Datagram::Synchronize(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::Synchronize::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                    )
+                    .await
+                }
+                Some(datagram_lightweight::Datagram::ForceFan(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::ConfigureForceFan::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                    )
+                    .await
+                }
+                Some(datagram_lightweight::Datagram::Debug(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::ConfigureDebugOutputIdx::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                    )
+                    .await
+                }
+                Some(datagram_lightweight::Datagram::ReadsFpgaState(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::ConfigureReadsFPGAState::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                    )
+                    .await
+                }
+                Some(datagram_lightweight::Datagram::ModDelay(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::ConfigureModDelay::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                    )
+                    .await
+                }
+                Some(datagram_lightweight::Datagram::FocusStm(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::FocusSTM::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                    )
+                    .await
+                }
+                Some(datagram_lightweight::Datagram::GainStm(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::GainSTM::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                    )
+                    .await
                 }
                 None => return Err(Status::invalid_argument("No datagram")),
             } {
