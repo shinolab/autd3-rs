@@ -1,3 +1,14 @@
+mod cache;
+mod radiation_pressure;
+mod transform;
+
+pub use cache::Cache as ModulationCache;
+pub use cache::IntoCache as IntoModulationCache;
+pub use radiation_pressure::IntoRadiationPressure;
+pub use radiation_pressure::RadiationPressure;
+pub use transform::IntoTransform as IntoModulationTransform;
+pub use transform::Transform as ModulationTransform;
+
 use crate::{
     common::{EmitIntensity, SamplingConfiguration},
     error::AUTDInternalError,
@@ -45,18 +56,15 @@ impl Modulation for Box<dyn Modulation> {
 mod tests {
     use super::*;
 
-    struct NullModulation {
+    use crate::derive::*;
+
+    #[derive(Modulation, Clone, PartialEq, Debug)]
+    pub struct TestModulation {
         pub buf: Vec<EmitIntensity>,
         pub config: SamplingConfiguration,
     }
 
-    impl ModulationProperty for NullModulation {
-        fn sampling_config(&self) -> SamplingConfiguration {
-            self.config
-        }
-    }
-
-    impl Modulation for NullModulation {
+    impl Modulation for TestModulation {
         fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
             Ok(self.buf.clone())
         }
@@ -64,33 +72,33 @@ mod tests {
 
     #[test]
     fn test_modulation_property() {
-        let m = NullModulation {
-            config: SamplingConfiguration::from_frequency_division(512).unwrap(),
+        let m = TestModulation {
+            config: SamplingConfiguration::FREQ_4K_HZ,
             buf: vec![],
         };
-        assert_eq!(m.sampling_config().frequency_division(), 512);
+        assert_eq!(m.sampling_config(), SamplingConfiguration::FREQ_4K_HZ);
     }
 
     #[test]
-    fn test_modulation_len() {
+    fn test_modulation_len() -> anyhow::Result<()> {
         assert_eq!(
-            NullModulation {
-                config: SamplingConfiguration::from_frequency_division(512).unwrap(),
+            TestModulation {
+                config: SamplingConfiguration::FREQ_4K_HZ,
                 buf: vec![],
             }
-            .len()
-            .unwrap(),
+            .len()?,
             0
         );
 
         assert_eq!(
-            NullModulation {
-                config: SamplingConfiguration::from_frequency_division(512).unwrap(),
-                buf: vec![EmitIntensity::new(0); 100],
+            TestModulation {
+                config: SamplingConfiguration::FREQ_4K_HZ,
+                buf: vec![EmitIntensity::MIN; 100],
             }
-            .len()
-            .unwrap(),
+            .len()?,
             100
         );
+
+        Ok(())
     }
 }

@@ -17,7 +17,10 @@ pub use gain::{
     Gain, GainCache, GainFilter, GainTransform, Group, IntoGainCache, IntoGainTransform,
 };
 pub use mod_delay::ConfigureModDelay;
-pub use modulation::{Modulation, ModulationProperty};
+pub use modulation::{
+    IntoModulationCache, IntoModulationTransform, IntoRadiationPressure, Modulation,
+    ModulationCache, ModulationProperty, ModulationTransform, RadiationPressure,
+};
 pub use reads_fpga_state::ConfigureReadsFPGAState;
 pub use silencer::{
     ConfigureSilencer, ConfigureSilencerFixedCompletionSteps, ConfigureSilencerFixedUpdateRate,

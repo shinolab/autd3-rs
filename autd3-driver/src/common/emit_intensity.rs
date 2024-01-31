@@ -69,6 +69,15 @@ impl std::ops::Sub<EmitIntensity> for EmitIntensity {
 }
 
 #[cfg(test)]
+impl EmitIntensity {
+    pub fn random() -> Self {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        Self::new(rng.gen())
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use std::{

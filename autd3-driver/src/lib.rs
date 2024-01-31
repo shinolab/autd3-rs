@@ -25,7 +25,8 @@ pub mod derive {
         common::{Drive, EmitIntensity, Phase, Rad, SamplingConfiguration},
         datagram::{
             Datagram, Gain, GainCache, GainFilter, GainTransform, IntoGainCache, IntoGainTransform,
-            Modulation, ModulationProperty,
+            IntoModulationCache, IntoModulationTransform, IntoRadiationPressure, Modulation,
+            ModulationCache, ModulationProperty, ModulationTransform, RadiationPressure,
         },
         defined::float,
         error::AUTDInternalError,
