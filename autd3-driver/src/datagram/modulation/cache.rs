@@ -1,4 +1,4 @@
-use autd3_driver::{common::EmitIntensity, derive::*};
+use crate::{common::EmitIntensity, derive::*};
 
 use std::{
     cell::{Ref, RefCell},
@@ -7,6 +7,9 @@ use std::{
 
 /// Modulation to cache the result of calculation
 #[derive(Modulation)]
+#[no_modulation_cache]
+#[no_radiation_pressure]
+#[no_modulation_transform]
 pub struct Cache<M: Modulation> {
     m: Rc<M>,
     cache: Rc<RefCell<Vec<EmitIntensity>>>,
@@ -25,12 +28,6 @@ impl<M: Modulation> std::ops::Deref for Cache<M> {
 pub trait IntoCache<M: Modulation> {
     /// Cache the result of calculation
     fn with_cache(self) -> Cache<M>;
-}
-
-impl<M: Modulation> IntoCache<M> for M {
-    fn with_cache(self) -> Cache<M> {
-        Cache::new(self)
-    }
 }
 
 impl<M: Modulation + Clone> Clone for Cache<M> {
@@ -62,10 +59,13 @@ impl<M: Modulation> Cache<M> {
     /// ```
     /// use autd3::prelude::*;
     ///
+    /// # fn main() -> anyhow::Result<()> {
     /// let m = Static::new().with_cache();
     /// assert!(m.buffer().is_empty());
-    /// let _ = m.calc().unwrap();
+    /// let _ = m.calc()?;
     /// assert!(!m.buffer().is_empty());
+    /// # Ok(())
+    /// # }
     ///
     /// ```
     pub fn buffer(&self) -> Ref<'_, Vec<EmitIntensity>> {
@@ -84,6 +84,8 @@ impl<M: Modulation> Modulation for Cache<M> {
 
 #[cfg(test)]
 mod tests {
+    use super::{super::tests::TestModulation, *};
+
     use std::{
         ops::Deref,
         sync::{
@@ -92,30 +94,31 @@ mod tests {
         },
     };
 
-    use crate::modulation::Static;
-
-    use super::*;
-
     #[test]
     fn test_cache() -> anyhow::Result<()> {
-        let m = Static::new().with_cache();
-        assert_eq!(m.deref(), &Static::new());
+        let m = TestModulation {
+            buf: vec![EmitIntensity::random(); 2],
+            config: SamplingConfiguration::FREQ_4K_HZ,
+        };
+        let cache = m.clone().with_cache();
+        assert_eq!(&m, cache.deref());
 
-        assert!(m.buffer().is_empty());
-        assert_eq!(Static::new().calc()?, m.calc()?);
+        assert!(cache.buffer().is_empty());
+        assert_eq!(m.calc()?, cache.calc()?);
 
-        assert!(!m.buffer().is_empty());
-        assert_eq!(Static::new().calc()?, *m.buffer());
+        assert!(!cache.buffer().is_empty());
+        assert_eq!(m.calc()?, *cache.buffer());
 
         Ok(())
     }
 
-    struct TestModulation {
+    #[derive(Modulation)]
+    struct TestCacheModulation {
         pub calc_cnt: Arc<AtomicUsize>,
         pub config: SamplingConfiguration,
     }
 
-    impl Clone for TestModulation {
+    impl Clone for TestCacheModulation {
         #[cfg_attr(coverage_nightly, coverage(off))]
         fn clone(&self) -> Self {
             Self {
@@ -125,14 +128,7 @@ mod tests {
         }
     }
 
-    impl ModulationProperty for TestModulation {
-        #[cfg_attr(coverage_nightly, coverage(off))]
-        fn sampling_config(&self) -> SamplingConfiguration {
-            self.config
-        }
-    }
-
-    impl Modulation for TestModulation {
+    impl Modulation for TestCacheModulation {
         fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
             Ok(vec![EmitIntensity::new(0); 2])
@@ -143,7 +139,7 @@ mod tests {
     fn test_cache_calc_once() {
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
-        let modulation = TestModulation {
+        let modulation = TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
             config: SamplingConfiguration::FREQ_4K_HZ,
         }
@@ -161,7 +157,7 @@ mod tests {
     fn test_cache_calc_clone() {
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
-        let modulation = TestModulation {
+        let modulation = TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
             config: SamplingConfiguration::FREQ_4K_HZ,
         }

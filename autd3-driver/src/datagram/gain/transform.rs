@@ -28,6 +28,7 @@ pub trait IntoTransform<G: Gain> {
 }
 
 impl<G: Gain + 'static, F: Fn(&Device, &Transducer, &Drive) -> Drive> Transform<G, F> {
+    #[doc(hidden)]
     pub fn new(gain: G, f: F) -> Self {
         Self { gain, f }
     }

@@ -1,12 +1,24 @@
-use autd3_driver::{common::EmitIntensity, derive::*};
+use crate::{common::EmitIntensity, derive::*};
 
 /// Modulation to transform modulation data
 #[derive(Modulation)]
+#[no_modulation_transform]
 pub struct Transform<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> {
     m: M,
     #[no_change]
     config: SamplingConfiguration,
     f: F,
+}
+
+impl<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> Transform<M, F> {
+    #[doc(hidden)]
+    pub fn new(m: M, f: F) -> Self {
+        Self {
+            config: m.sampling_config(),
+            m,
+            f,
+        }
+    }
 }
 
 pub trait IntoTransform<M: Modulation> {
@@ -34,16 +46,6 @@ pub trait IntoTransform<M: Modulation> {
     fn with_transform<F: Fn(usize, EmitIntensity) -> EmitIntensity>(self, f: F) -> Transform<M, F>;
 }
 
-impl<M: Modulation> IntoTransform<M> for M {
-    fn with_transform<F: Fn(usize, EmitIntensity) -> EmitIntensity>(self, f: F) -> Transform<M, F> {
-        Transform {
-            config: self.sampling_config(),
-            f,
-            m: self,
-        }
-    }
-}
-
 impl<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> Modulation for Transform<M, F> {
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         Ok(self
@@ -58,14 +60,15 @@ impl<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> Modulation for
 
 #[cfg(test)]
 mod tests {
-    use crate::modulation::Static;
-
-    use super::*;
+    use super::{super::tests::TestModulation, *};
 
     #[test]
     fn test_transform_impl() -> anyhow::Result<()> {
-        let m = Static::new();
-        let m_transformed = m.with_transform(|_, x| x / 2);
+        let m = TestModulation {
+            buf: vec![EmitIntensity::random(); 2],
+            config: SamplingConfiguration::FREQ_4K_HZ,
+        };
+        let m_transformed = m.clone().with_transform(|_, x| x / 2);
 
         assert_eq!(
             m.calc()?.iter().map(|x| x / 2).collect::<Vec<_>>(),
