@@ -20,3 +20,7 @@ thiserror = "1.0.40"
 default = []
 single_float = ["autd3-driver/single_float"]
 async-trait = ["autd3-driver/async-trait"]
+
+[dev-dependencies]
+anyhow = "1.0.79"
+tempfile = "3.9.0"

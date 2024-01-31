@@ -13,7 +13,7 @@ use crate::error::AudioFileError;
 /// The raw PCM data must be 8bit unsigned integer.
 ///
 /// The raw PCM data is resampled to the sampling frequency of Modulation.
-#[derive(Modulation, Clone)]
+#[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct RawPCM {
     sample_rate: u32,
     path: PathBuf,
@@ -64,20 +64,17 @@ mod tests {
     use super::*;
     use std::io::Write;
 
-    fn create_dat(path: impl AsRef<Path>, data: &[u8]) {
-        std::fs::create_dir_all(path.as_ref().parent().unwrap()).unwrap();
-        if path.as_ref().exists() {
-            std::fs::remove_file(path.as_ref()).unwrap();
-        }
-        let mut f = File::create(path).unwrap();
-        f.write_all(data).unwrap();
+    fn create_dat(path: impl AsRef<Path>, data: &[u8]) -> anyhow::Result<()> {
+        let mut f = File::create(path)?;
+        f.write_all(data)?;
+        Ok(())
     }
 
     #[test]
-    fn test_rawpcm_new() {
-        let home_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-        let path = Path::new(&home_dir).join("tmp").join("tmp.dat");
-        create_dat(&path, &[0xFF, 0x7F, 0x00]);
+    fn test_rawpcm_new() -> anyhow::Result<()> {
+        let dir = tempfile::tempdir()?;
+        let path = dir.path().join("tmp.dat");
+        create_dat(&path, &[0xFF, 0x7F, 0x00])?;
         let m = RawPCM::new(&path, 4000);
         assert_eq!(
             m.calc().unwrap(),
@@ -90,15 +87,17 @@ mod tests {
 
         let m = RawPCM::new("not_exists.dat", 4000);
         assert!(m.calc().is_err());
+
+        Ok(())
     }
 
     #[test]
-    fn test_rawpcm_clone() {
-        let home_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-        let path = Path::new(&home_dir).join("tmp").join("tmp2.dat");
-        create_dat(&path, &[0xFF, 0xFF]);
-        let m = RawPCM::new(Path::new(&home_dir).join("tmp").join("tmp2.dat"), 4000);
-        let m2 = m.clone();
-        assert_eq!(m.sampling_config(), m2.sampling_config());
+    fn test_rawpcm_clone() -> anyhow::Result<()> {
+        let dir = tempfile::tempdir()?;
+        let path = dir.path().join("tmp.dat");
+        create_dat(&path, &[0xFF, 0xFF])?;
+        let m = RawPCM::new(&path, 4000);
+        assert_eq!(m, m.clone());
+        Ok(())
     }
 }
