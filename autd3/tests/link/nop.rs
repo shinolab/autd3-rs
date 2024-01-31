@@ -4,7 +4,7 @@ use autd3::prelude::*;
 async fn nop_test() -> anyhow::Result<()> {
     let mut autd = Controller::builder()
         .add_device(AUTD3::new(Vector3::zeros()))
-        .open_with(Nop::builder().with_timeout(std::time::Duration::from_millis(100)))
+        .open(Nop::builder().with_timeout(std::time::Duration::from_millis(100)))
         .await?;
 
     assert_eq!(std::time::Duration::from_millis(100), autd.link.timeout());

@@ -1,6 +1,6 @@
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
-    datagram::{Clear, Synchronize},
+    datagram::{Clear, DatagramT, Synchronize},
     geometry::{Device, Geometry, IntoDevice},
     link::LinkBuilder,
 };
@@ -25,9 +25,19 @@ impl ControllerBuilder {
     }
 
     /// Open controller
-    pub async fn open_with<B: LinkBuilder>(
+    pub async fn open<B: LinkBuilder>(
         self,
         link_builder: B,
+    ) -> Result<Controller<B::L>, AUTDError> {
+        self.open_with_timeout(link_builder, std::time::Duration::from_millis(200))
+            .await
+    }
+
+    /// Open controller with timeout
+    pub async fn open_with_timeout<B: LinkBuilder>(
+        self,
+        link_builder: B,
+        timeout: std::time::Duration,
     ) -> Result<Controller<B::L>, AUTDError> {
         let geometry = Geometry::new(self.devices);
         let mut cnt = Controller {
@@ -36,8 +46,8 @@ impl ControllerBuilder {
             rx_buf: vec![RxMessage { data: 0, ack: 0 }; geometry.num_devices()],
             geometry,
         };
-        cnt.send(Clear::new()).await?;
-        cnt.send(Synchronize::new()).await?;
+        cnt.send((Clear::new(), Synchronize::new()).with_timeout(timeout))
+            .await?;
         Ok(cnt)
     }
 }

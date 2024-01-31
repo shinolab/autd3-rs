@@ -184,7 +184,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                             .with_rotation(*d[0].rotation()),
                     )
                 })
-                .open_with((self.link)())
+                .open((self.link)())
                 .await
             {
                 Ok(autd) => Some(autd),

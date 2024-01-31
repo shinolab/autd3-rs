@@ -241,7 +241,7 @@ mod tests {
             .fold(Controller::builder(), |acc, _i| {
                 acc.add_device(AUTD3::new(Vector3::zeros()))
             })
-            .open_with(Audit::builder())
+            .open(Audit::builder())
             .await?)
     }
 }
