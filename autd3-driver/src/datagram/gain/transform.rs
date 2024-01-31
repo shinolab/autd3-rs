@@ -12,7 +12,7 @@ use std::collections::HashMap;
 /// Gain to transform gain data
 #[derive(Gain)]
 #[no_gain_transform]
-pub struct Transform<G: Gain + 'static, F: Fn(&Device, &Transducer, &Drive) -> Drive + 'static> {
+pub struct Transform<G: Gain + 'static, F: Fn(&Device, &Transducer, Drive) -> Drive + 'static> {
     gain: G,
     f: F,
 }
@@ -24,17 +24,17 @@ pub trait IntoTransform<G: Gain> {
     ///
     /// * `f` - transform function. The first argument is the device, the second is transducer, and the third is the original drive data.
     ///
-    fn with_transform<F: Fn(&Device, &Transducer, &Drive) -> Drive>(self, f: F) -> Transform<G, F>;
+    fn with_transform<F: Fn(&Device, &Transducer, Drive) -> Drive>(self, f: F) -> Transform<G, F>;
 }
 
-impl<G: Gain + 'static, F: Fn(&Device, &Transducer, &Drive) -> Drive> Transform<G, F> {
+impl<G: Gain + 'static, F: Fn(&Device, &Transducer, Drive) -> Drive> Transform<G, F> {
     #[doc(hidden)]
     pub fn new(gain: G, f: F) -> Self {
         Self { gain, f }
     }
 }
 
-impl<G: Gain + 'static, F: Fn(&Device, &Transducer, &Drive) -> Drive + 'static> Gain
+impl<G: Gain + 'static, F: Fn(&Device, &Transducer, Drive) -> Drive + 'static> Gain
     for Transform<G, F>
 {
     fn calc(
@@ -45,11 +45,11 @@ impl<G: Gain + 'static, F: Fn(&Device, &Transducer, &Drive) -> Drive + 'static> 
         Ok(self
             .gain
             .calc(geometry, filter)?
-            .iter()
-            .map(|(&k, v)| {
+            .into_iter()
+            .map(|(k, v)| {
                 (
                     k,
-                    v.iter()
+                    v.into_iter()
                         .enumerate()
                         .map(|(i, d)| (self.f)(&geometry[k], &geometry[k][i], d))
                         .collect::<Vec<_>>(),
