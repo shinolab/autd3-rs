@@ -1,5 +1,6 @@
 # 22.0.0
 
+- Fix [#8](https://github.com/shinolab/autd3-rs/issues/8): `phase` parameter of `gain::Bessel` and `gain::Focus` have no effect
 - Extend supported data type of Lightweight mode
 - Add `ControllerBuilder::open_with_timeout`
   - Rename `ControllerBuilder::open_with` to `ControllerBuilder::open`
