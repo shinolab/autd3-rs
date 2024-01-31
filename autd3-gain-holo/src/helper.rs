@@ -129,12 +129,9 @@ pub fn generate_result(
                         .map(|_| {
                             let phase =
                                 autd3_driver::common::Phase::from_rad(q[idx].argument() + PI);
-                            let amp = constraint.convert(q[idx].abs(), max_coefficient);
+                            let intensity = constraint.convert(q[idx].abs(), max_coefficient);
                             idx += 1;
-                            Drive {
-                                intensity: amp,
-                                phase,
-                            }
+                            Drive::new(phase, intensity)
                         })
                         .collect(),
                 )
@@ -154,12 +151,10 @@ pub fn generate_result(
                                     let phase = autd3_driver::common::Phase::from_rad(
                                         q[idx].argument() + PI,
                                     );
-                                    let amp = constraint.convert(q[idx].abs(), max_coefficient);
+                                    let intensity =
+                                        constraint.convert(q[idx].abs(), max_coefficient);
                                     idx += 1;
-                                    Drive {
-                                        intensity: amp,
-                                        phase,
-                                    }
+                                    Drive::new(phase, intensity)
                                 })
                                 .collect(),
                         )

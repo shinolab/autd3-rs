@@ -73,8 +73,8 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
                 let fz = (focus.point().z / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
                 let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u64;
                 let q = (d << 18) / cpu.fpga().sound_speed() as u64;
-                assert_eq!(Phase::new((q & 0xFF) as u8), drive.phase);
-                assert_eq!(focus.intensity(), drive.intensity);
+                assert_eq!(Phase::new((q & 0xFF) as u8), drive.phase());
+                assert_eq!(focus.intensity(), drive.intensity());
             })
     });
     Ok(())

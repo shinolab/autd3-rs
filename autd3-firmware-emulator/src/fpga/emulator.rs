@@ -218,7 +218,7 @@ impl FPGAEmulator {
         return self
             .gain_drives()
             .iter()
-            .any(|&d| d.intensity != EmitIntensity::MIN);
+            .any(|&d| d.intensity() != EmitIntensity::MIN);
     }
 
     pub fn debug_output_idx(&self) -> Option<u8> {
@@ -246,9 +246,11 @@ impl FPGAEmulator {
         self.normal_op_bram
             .iter()
             .take(self.num_transducers)
-            .map(|d| Drive {
-                intensity: EmitIntensity::new(((d >> 8) & 0xFF) as u8),
-                phase: Phase::new((d & 0xFF) as u8),
+            .map(|d| {
+                Drive::new(
+                    Phase::new((d & 0xFF) as u8),
+                    EmitIntensity::new(((d >> 8) & 0xFF) as u8),
+                )
             })
             .collect()
     }
@@ -258,9 +260,11 @@ impl FPGAEmulator {
             .iter()
             .skip(256 * idx)
             .take(self.num_transducers)
-            .map(|&d| Drive {
-                intensity: EmitIntensity::new(((d >> 8) & 0xFF) as u8),
-                phase: Phase::new((d & 0xFF) as u8),
+            .map(|&d| {
+                Drive::new(
+                    Phase::new((d & 0xFF) as u8),
+                    EmitIntensity::new(((d >> 8) & 0xFF) as u8),
+                )
             })
             .collect()
     }
@@ -300,10 +304,10 @@ impl FPGAEmulator {
                     (x - tr_x) * (x - tr_x) + (y - tr_y) * (y - tr_y) + (z - tr_z) * (z - tr_z);
                 let dist = d2.sqrt() as u64;
                 let q = (dist << 18) / sound_speed;
-                Drive {
-                    intensity: EmitIntensity::new(intensity as u8),
-                    phase: Phase::new((q & 0xFF) as u8),
-                }
+                Drive::new(
+                    Phase::new((q & 0xFF) as u8),
+                    EmitIntensity::new(intensity as u8),
+                )
             })
             .collect()
     }

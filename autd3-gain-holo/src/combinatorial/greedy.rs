@@ -125,9 +125,10 @@ impl Gain for Greedy {
             cache.iter_mut().zip(tmp.iter()).for_each(|(c, a)| {
                 *c += a * phase;
             });
-            let r = &mut res.get_mut(&dev_idx).unwrap()[idx];
-            r.intensity = self.constraint.convert(1.0, 1.0);
-            r.phase = Phase::from_rad(phase.argument() + PI);
+            res.get_mut(&dev_idx).unwrap()[idx] = Drive::new(
+                Phase::from_rad(phase.argument() + PI),
+                self.constraint.convert(1.0, 1.0),
+            );
         });
         Ok(res)
     }

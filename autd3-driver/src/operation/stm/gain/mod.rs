@@ -323,9 +323,11 @@ mod tests {
                         (
                             dev.idx(),
                             (0..dev.num_transducers())
-                                .map(|_| Drive {
-                                    intensity: EmitIntensity::new(rng.gen_range(0..=0xFF)),
-                                    phase: Phase::new(rng.gen_range(0x00..=0xFF)),
+                                .map(|_| {
+                                    Drive::new(
+                                        Phase::new(rng.gen_range(0x00..=0xFF)),
+                                        EmitIntensity::new(rng.gen_range(0..=0xFF)),
+                                    )
                                 })
                                 .collect(),
                         )
@@ -408,8 +410,8 @@ mod tests {
                 .chunks(std::mem::size_of::<FPGADrive>())
                 .zip(gain_data[0][&dev.idx()].iter())
                 .for_each(|(d, g)| {
-                    assert_eq!(d[0], g.phase.value());
-                    assert_eq!(d[1], g.intensity.value());
+                    assert_eq!(d[0], g.phase().value());
+                    assert_eq!(d[1], g.intensity().value());
                 })
         });
 
@@ -444,8 +446,8 @@ mod tests {
                 .chunks(std::mem::size_of::<FPGADrive>())
                 .zip(gain_data[1][&dev.idx()].iter())
                 .for_each(|(d, g)| {
-                    assert_eq!(d[0], g.phase.value());
-                    assert_eq!(d[1], g.intensity.value());
+                    assert_eq!(d[0], g.phase().value());
+                    assert_eq!(d[1], g.intensity().value());
                 })
         });
 
@@ -480,8 +482,8 @@ mod tests {
                 .chunks(std::mem::size_of::<FPGADrive>())
                 .zip(gain_data[2][&dev.idx()].iter())
                 .for_each(|(d, g)| {
-                    assert_eq!(d[0], g.phase.value());
-                    assert_eq!(d[1], g.intensity.value());
+                    assert_eq!(d[0], g.phase().value());
+                    assert_eq!(d[1], g.intensity().value());
                 })
         });
     }
@@ -505,9 +507,11 @@ mod tests {
                         (
                             dev.idx(),
                             (0..dev.num_transducers())
-                                .map(|_| Drive {
-                                    intensity: EmitIntensity::new(rng.gen_range(0..=0xFF)),
-                                    phase: Phase::new(rng.gen_range(0x00..=0xFF)),
+                                .map(|_| {
+                                    Drive::new(
+                                        Phase::new(rng.gen_range(0x00..=0xFF)),
+                                        EmitIntensity::new(rng.gen_range(0..=0xFF)),
+                                    )
                                 })
                                 .collect(),
                         )
@@ -590,8 +594,8 @@ mod tests {
                 .zip(gain_data[0][&dev.idx()].iter())
                 .zip(gain_data[1][&dev.idx()].iter())
                 .for_each(|((d, g0), g1)| {
-                    assert_eq!(d[0], g0.phase.value());
-                    assert_eq!(d[1], g1.phase.value());
+                    assert_eq!(d[0], g0.phase().value());
+                    assert_eq!(d[1], g1.phase().value());
                 })
         });
 
@@ -627,8 +631,8 @@ mod tests {
                 .zip(gain_data[2][&dev.idx()].iter())
                 .zip(gain_data[3][&dev.idx()].iter())
                 .for_each(|((d, g0), g1)| {
-                    assert_eq!(d[0], g0.phase.value());
-                    assert_eq!(d[1], g1.phase.value());
+                    assert_eq!(d[0], g0.phase().value());
+                    assert_eq!(d[1], g1.phase().value());
                 })
         });
 
@@ -663,7 +667,7 @@ mod tests {
                 .chunks(std::mem::size_of::<FPGADrive>())
                 .zip(gain_data[4][&dev.idx()].iter())
                 .for_each(|(d, g)| {
-                    assert_eq!(d[0], g.phase.value());
+                    assert_eq!(d[0], g.phase().value());
                 })
         });
     }
@@ -687,9 +691,11 @@ mod tests {
                         (
                             dev.idx(),
                             (0..dev.num_transducers())
-                                .map(|_| Drive {
-                                    intensity: EmitIntensity::new(rng.gen_range(0..=0xFF)),
-                                    phase: Phase::new(rng.gen_range(0x00..=0xFF)),
+                                .map(|_| {
+                                    Drive::new(
+                                        Phase::new(rng.gen_range(0x00..=0xFF)),
+                                        EmitIntensity::new(rng.gen_range(0..=0xFF)),
+                                    )
                                 })
                                 .collect(),
                         )
@@ -774,10 +780,10 @@ mod tests {
                 .zip(gain_data[2][&dev.idx()].iter())
                 .zip(gain_data[3][&dev.idx()].iter())
                 .for_each(|((((d, g0), g1), g2), g3)| {
-                    assert_eq!(d[0] & 0x0F, g0.phase.value() >> 4);
-                    assert_eq!(d[0] >> 4, g1.phase.value() >> 4);
-                    assert_eq!(d[1] & 0x0F, g2.phase.value() >> 4);
-                    assert_eq!(d[1] >> 4, g3.phase.value() >> 4);
+                    assert_eq!(d[0] & 0x0F, g0.phase().value() >> 4);
+                    assert_eq!(d[0] >> 4, g1.phase().value() >> 4);
+                    assert_eq!(d[1] & 0x0F, g2.phase().value() >> 4);
+                    assert_eq!(d[1] >> 4, g3.phase().value() >> 4);
                 })
         });
 
@@ -815,10 +821,10 @@ mod tests {
                 .zip(gain_data[6][&dev.idx()].iter())
                 .zip(gain_data[7][&dev.idx()].iter())
                 .for_each(|((((d, g0), g1), g2), g3)| {
-                    assert_eq!(d[0] & 0x0F, g0.phase.value() >> 4);
-                    assert_eq!(d[0] >> 4, g1.phase.value() >> 4);
-                    assert_eq!(d[1] & 0x0F, g2.phase.value() >> 4);
-                    assert_eq!(d[1] >> 4, g3.phase.value() >> 4);
+                    assert_eq!(d[0] & 0x0F, g0.phase().value() >> 4);
+                    assert_eq!(d[0] >> 4, g1.phase().value() >> 4);
+                    assert_eq!(d[1] & 0x0F, g2.phase().value() >> 4);
+                    assert_eq!(d[1] >> 4, g3.phase().value() >> 4);
                 })
         });
 
@@ -853,7 +859,7 @@ mod tests {
                 .chunks(std::mem::size_of::<FPGADrive>())
                 .zip(gain_data[8][&dev.idx()].iter())
                 .for_each(|(d, g)| {
-                    assert_eq!(d[0] & 0x0F, g.phase.value() >> 4);
+                    assert_eq!(d[0] & 0x0F, g.phase().value() >> 4);
                 })
         });
     }
@@ -881,9 +887,11 @@ mod tests {
                         (
                             dev.idx(),
                             (0..dev.num_transducers())
-                                .map(|_| Drive {
-                                    intensity: EmitIntensity::new(rng.gen_range(0..=0xFF)),
-                                    phase: Phase::new(rng.gen_range(0x00..=0xFF)),
+                                .map(|_| {
+                                    Drive::new(
+                                        Phase::new(rng.gen_range(0x00..=0xFF)),
+                                        EmitIntensity::new(rng.gen_range(0..=0xFF)),
+                                    )
                                 })
                                 .collect(),
                         )

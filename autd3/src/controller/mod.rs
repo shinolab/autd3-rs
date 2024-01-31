@@ -130,7 +130,7 @@ impl<L: Link> Controller<L> {
             &mut self.tx_buf,
             &mut self.rx_buf
         );
-        let cpu_versions = self.rx_buf.iter().map(|rx| rx.data).collect::<Vec<_>>();
+        let cpu_versions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
         pack_and_send!(
             &mut op,
@@ -140,7 +140,7 @@ impl<L: Link> Controller<L> {
             &mut self.tx_buf,
             &mut self.rx_buf
         );
-        let cpu_versions_minor = self.rx_buf.iter().map(|rx| rx.data).collect::<Vec<_>>();
+        let cpu_versions_minor = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
         pack_and_send!(
             &mut op,
@@ -150,7 +150,7 @@ impl<L: Link> Controller<L> {
             &mut self.tx_buf,
             &mut self.rx_buf
         );
-        let fpga_versions = self.rx_buf.iter().map(|rx| rx.data).collect::<Vec<_>>();
+        let fpga_versions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
         pack_and_send!(
             &mut op,
@@ -160,7 +160,7 @@ impl<L: Link> Controller<L> {
             &mut self.tx_buf,
             &mut self.rx_buf
         );
-        let fpga_versions_minor = self.rx_buf.iter().map(|rx| rx.data).collect::<Vec<_>>();
+        let fpga_versions_minor = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
         pack_and_send!(
             &mut op,
@@ -170,7 +170,7 @@ impl<L: Link> Controller<L> {
             &mut self.tx_buf,
             &mut self.rx_buf
         );
-        let fpga_functions = self.rx_buf.iter().map(|rx| rx.data).collect::<Vec<_>>();
+        let fpga_functions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
         pack_and_send!(
             &mut op,

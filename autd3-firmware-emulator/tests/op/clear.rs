@@ -30,9 +30,8 @@ impl Gain for TestGain {
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<std::collections::HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |_, _| Drive {
-            phase: Phase::new(0xFF),
-            intensity: EmitIntensity::MAX,
+        Ok(Self::transform(geometry, filter, |_, _| {
+            Drive::new(Phase::new(0xFF), EmitIntensity::MAX)
         }))
     }
 }

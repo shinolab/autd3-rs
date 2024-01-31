@@ -39,10 +39,7 @@ fn send_gain() -> anyhow::Result<()> {
             (
                 dev.idx(),
                 dev.iter()
-                    .map(|_| Drive {
-                        phase: Phase::new(rng.gen()),
-                        intensity: EmitIntensity::new(rng.gen()),
-                    })
+                    .map(|_| Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen())))
                     .collect(),
             )
         })

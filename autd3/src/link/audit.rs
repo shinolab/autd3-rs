@@ -145,8 +145,7 @@ impl Link for Audit {
         }
 
         self.cpus.iter_mut().for_each(|cpu| {
-            rx[cpu.idx()].data = cpu.rx_data();
-            rx[cpu.idx()].ack = cpu.ack();
+            rx[cpu.idx()] = RxMessage::new(cpu.ack(), cpu.rx_data());
         });
 
         Ok(true)

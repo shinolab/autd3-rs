@@ -190,7 +190,8 @@ mod tests {
             }
 
             self.recv_cnt += 1;
-            rx.iter_mut().for_each(|r| r.ack = self.recv_cnt as u8);
+            rx.iter_mut()
+                .for_each(|r| *r = RxMessage::new(self.recv_cnt as u8, r.data()));
 
             Ok(!self.down)
         }
@@ -265,7 +266,7 @@ mod tests {
 
         let mut tx = TxDatagram::new(1);
         tx.header_mut(0).msg_id = 2;
-        let mut rx = vec![RxMessage { ack: 0, data: 0 }];
+        let mut rx = vec![RxMessage::new(0, 0)];
         assert_eq!(
             wait_msg_processed(&mut link, &tx, &mut rx, Duration::from_millis(10)).await,
             Ok(true)

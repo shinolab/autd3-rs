@@ -14,13 +14,13 @@ use autd3_driver::{
 #[repr(C)]
 #[derive(Copy, Clone)]
 struct AmsNetId {
-    pub b: [u8; 6],
+    b: [u8; 6],
 }
 
 #[repr(C)]
 struct AmsAddr {
-    pub net_id: AmsNetId,
-    pub port: u16,
+    net_id: AmsNetId,
+    port: u16,
 }
 
 use crate::error::AdsError;
