@@ -57,7 +57,7 @@ impl Fourier {
             acc.min(m.sampling_config().frequency_division())
         });
         let config = SamplingConfiguration::from_frequency_division(freq_div).unwrap();
-        components.extend(append.iter().map(|m| m.with_sampling_config(config)));
+        components.extend(append.into_iter().map(|m| m.with_sampling_config(config)));
         Self { components, config }
     }
 }

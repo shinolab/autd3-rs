@@ -5,7 +5,7 @@ use num::integer::gcd;
 use super::sampling_mode::SamplingMode;
 
 /// Square wave modulation
-#[derive(Modulation, Clone, Copy, PartialEq, Debug)]
+#[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct Square {
     freq: float,
     low: EmitIntensity,
@@ -157,7 +157,7 @@ mod tests {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255,
             255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
-        let m = Square::new(150.);
+        let m = Square::new(150.).with_cache();
         assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
         assert_eq!(
             expect
