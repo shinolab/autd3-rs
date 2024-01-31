@@ -23,11 +23,14 @@ pub use async_trait::async_trait;
 pub mod derive {
     pub use crate::{
         common::{Drive, EmitIntensity, Phase, Rad, SamplingConfiguration},
-        datagram::{Datagram, Gain, GainFilter, Modulation, ModulationProperty},
+        datagram::{
+            Datagram, Gain, GainCache, GainFilter, GainTransform, IntoGainCache, IntoGainTransform,
+            Modulation, ModulationProperty,
+        },
         defined::float,
         error::AUTDInternalError,
         fpga::{FPGA_CLK_FREQ, SAMPLING_FREQ_DIV_MIN},
-        geometry::{Geometry, Transducer},
+        geometry::{Device, Geometry, Transducer},
         operation::{GainOp, ModulationOp, NullOp, Operation},
     };
     pub use autd3_derive::{Gain, Modulation};

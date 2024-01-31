@@ -7,7 +7,7 @@ use autd3_driver::{
 };
 
 /// Gain to produce a focal point
-#[derive(Gain, Clone, Copy, PartialEq, Debug)]
+#[derive(Gain, Clone, PartialEq, Debug)]
 pub struct Focus {
     intensity: EmitIntensity,
     pos: Vector3,

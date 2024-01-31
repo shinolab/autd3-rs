@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use autd3_driver::{common::EmitIntensity, derive::*, geometry::Geometry};
 
 /// Gain with uniform emission intensity and phase
-#[derive(Gain, Clone, Copy, PartialEq, Debug)]
+#[derive(Gain, Clone, PartialEq, Debug)]
 pub struct Uniform {
     intensity: EmitIntensity,
     phase: Phase,

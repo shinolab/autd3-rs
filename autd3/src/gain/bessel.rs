@@ -7,7 +7,7 @@ use autd3_driver::{
 };
 
 /// Gain to produce a Bessel beam
-#[derive(Gain, Clone, Copy, PartialEq, Debug)]
+#[derive(Gain, Clone, PartialEq, Debug)]
 pub struct Bessel {
     intensity: EmitIntensity,
     pos: Vector3,

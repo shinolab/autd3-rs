@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use autd3_driver::{derive::*, geometry::Geometry};
 
 /// Gain to output nothing
-#[derive(Gain, Default, Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Gain, Default, Clone, PartialEq, Eq, Debug)]
 pub struct Null {}
 
 impl Null {

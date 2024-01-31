@@ -168,7 +168,7 @@ pub mod tests {
     use std::collections::HashMap;
 
     use crate::{
-        common::{Drive, EmitIntensity, Phase},
+        common::Drive,
         cpu::{Header, EC_OUTPUT_FRAME_SIZE},
         datagram::{Gain, GainFilter},
         geometry::{Transducer, UnitQuaternion, Vector3},
@@ -209,10 +209,7 @@ pub mod tests {
             geometry: &Geometry,
             filter: GainFilter,
         ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-            Ok(Self::transform(geometry, filter, |_, _| Drive {
-                intensity: EmitIntensity::MAX,
-                phase: Phase::new(2),
-            }))
+            Ok(Self::transform(geometry, filter, |_, _| Drive::null()))
         }
     }
 
