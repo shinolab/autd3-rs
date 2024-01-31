@@ -9,7 +9,7 @@ use autd3_link_soem::{Status, SOEM};
 async fn main() -> Result<()> {
     let autd = Controller::builder()
         .add_device(AUTD3::new(Vector3::zeros()))
-        .open_with(
+        .open(
             SOEM::builder().with_err_handler(|slave, status| match status {
                 Status::Error(msg) => eprintln!("Error [{}]: {}", slave, msg),
                 Status::Lost(msg) => {

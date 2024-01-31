@@ -9,7 +9,7 @@ use autd3_link_soem::RemoteSOEM;
 async fn main() -> Result<()> {
     let autd = Controller::builder()
         .add_device(AUTD3::new(Vector3::zeros()))
-        .open_with(RemoteSOEM::builder("127.0.0.1:8080".parse()?))
+        .open(RemoteSOEM::builder("127.0.0.1:8080".parse()?))
         .await?;
 
     tests::run(autd).await

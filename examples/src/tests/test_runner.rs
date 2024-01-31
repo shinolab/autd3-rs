@@ -9,11 +9,11 @@ use super::{
     transtest::*,
 };
 
-pub async fn run(mut autd: Controller<impl Link>) -> anyhow::Result<()> {
+pub async fn run<L: Link>(mut autd: Controller<L>) -> anyhow::Result<()> {
     type Test<L> = (
         &'static str,
         fn(
-            &'_ mut Controller<impl Link>,
+            &'_ mut Controller<L>,
         )
             -> std::pin::Pin<Box<dyn std::future::Future<Output = anyhow::Result<bool>> + '_>>,
     );
