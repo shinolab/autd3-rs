@@ -1,4 +1,14 @@
-# 21.0.2
+# 22.0.0
+
+- Extend supported data type of Lightweight mode
+- Add `ControllerBuilder::open_with_timeout`
+  - Rename `ControllerBuilder::open_with` to `ControllerBuilder::open`
+- Remove `with_cache` and `with_transform` from `Gain`
+- Remove `with_cache`, `with_transform`, and `with_radiation_pressure` from `Modulation`
+- Support 32-bit float Wav file in `Wav` modulation
+- Refactor the whole codebase
+
+# 21.1.0
 
 - Fix [#7](https://github.com/shinolab/autd3-rs/issues/7): `on_lost` and `on_err` callback don't work
 - Add `with_err_handler` to `autd3-link-soem::SOEM`
