@@ -58,22 +58,21 @@ impl<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> Modulation for
 
 #[cfg(test)]
 mod tests {
-    use crate::modulation::Sine;
+    use crate::modulation::Static;
 
     use super::*;
 
     #[test]
-    fn test_transform_impl() {
-        let m = Sine::new(100.);
+    fn test_transform_impl() -> anyhow::Result<()> {
+        let m = Static::new();
         let m_transformed = m.with_transform(|_, x| x / 2);
 
-        let vec = m.calc().unwrap();
-        let vec_transformed = m_transformed.calc().unwrap();
-
-        vec.iter().zip(&vec_transformed).for_each(|(&x, &y)| {
-            assert_eq!(y.value(), x.value() / 2);
-        });
-
+        assert_eq!(
+            m.calc()?.iter().map(|x| x / 2).collect::<Vec<_>>(),
+            m_transformed.calc()?
+        );
         assert_eq!(m.sampling_config(), m_transformed.sampling_config());
+
+        Ok(())
     }
 }

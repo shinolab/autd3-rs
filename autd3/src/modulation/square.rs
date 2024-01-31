@@ -5,7 +5,7 @@ use num::integer::gcd;
 use super::sampling_mode::SamplingMode;
 
 /// Square wave modulation
-#[derive(Modulation, Clone, Copy)]
+#[derive(Modulation, Clone, Copy, PartialEq, Debug)]
 pub struct Square {
     freq: float,
     low: EmitIntensity,
@@ -150,7 +150,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_square() {
+    fn test_square() -> anyhow::Result<()> {
         let expect = [
             255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0,
@@ -158,117 +158,109 @@ mod tests {
             255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
         let m = Square::new(150.);
-        assert_eq!(m.sampling_config(), SamplingConfiguration::FREQ_4K_HZ);
-        assert_eq!(expect.len(), m.calc().unwrap().len());
-        expect
-            .into_iter()
-            .zip(m.calc().unwrap().iter())
-            .for_each(|(e, a)| {
-                assert_eq!(e, a.value());
-            });
+        assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
+        assert_eq!(
+            expect
+                .into_iter()
+                .map(EmitIntensity::new)
+                .collect::<Vec<_>>(),
+            m.calc()?
+        );
+
+        Ok(())
     }
 
     #[test]
-    fn test_square_clone() {
-        let m = Square::new(150.);
-        let m2 = m.clone();
-        assert_eq!(m.sampling_config(), m2.sampling_config());
-        assert_eq!(m.freq(), m2.freq());
-        assert_eq!(m.high(), m2.high());
-        assert_eq!(m.low(), m2.low());
-        assert_eq!(m.duty(), m2.duty());
-        assert_eq!(m.mode(), m2.mode());
-    }
-
-    #[test]
-    fn test_square_with_size_opt() {
+    fn test_square_with_size_opt() -> anyhow::Result<()> {
         let expect = [
             255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0,
         ];
         let m = Square::new(150.).with_mode(SamplingMode::SizeOptimized);
-        assert_approx_eq::assert_approx_eq!(m.sampling_config().frequency(), 4e3);
-        assert_eq!(expect.len(), m.calc().unwrap().len());
-        expect
-            .into_iter()
-            .zip(m.calc().unwrap().iter())
-            .for_each(|(e, a)| {
-                assert_eq!(e, a.value());
-            });
+        assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
+        assert_eq!(
+            expect
+                .into_iter()
+                .map(EmitIntensity::new)
+                .collect::<Vec<_>>(),
+            m.calc()?
+        );
+
+        Ok(())
     }
 
     #[test]
     fn test_square_new() {
         let m = Square::new(100.);
-        assert_eq!(m.freq(), 100.);
-        assert_eq!(m.high(), EmitIntensity::MAX);
-        assert_eq!(m.low(), EmitIntensity::MIN);
-        let vec = m.calc().unwrap();
-        assert!(!vec.is_empty());
-        let m = Square::new(100.1);
+        assert_eq!(100., m.freq());
+        assert_eq!(EmitIntensity::MAX, m.high());
+        assert_eq!(EmitIntensity::MIN, m.low());
+        assert_eq!(SamplingMode::ExactFrequency, m.mode());
+
         assert_eq!(
-            m.calc(),
             Err(AUTDInternalError::ModulationError(
                 "Frequency must be integer".to_string()
-            ))
+            )),
+            Square::new(100.1).calc()
         );
-        let m = Square::new(100.1).with_mode(SamplingMode::SizeOptimized);
-        assert!(m.calc().is_ok());
+
+        assert!(Square::new(100.1)
+            .with_mode(SamplingMode::SizeOptimized)
+            .calc()
+            .is_ok());
     }
 
     #[test]
-    fn test_square_with_low() {
-        let m = Square::new(150.).with_low(EmitIntensity::new(0xFF));
-        m.calc().unwrap().iter().for_each(|a| {
-            assert_eq!(a.value(), 0xFF);
-        });
+    fn test_square_with_low() -> anyhow::Result<()> {
+        let m = Square::new(150.).with_low(EmitIntensity::MAX);
+        assert_eq!(EmitIntensity::MAX, m.low());
+        assert!(m.calc()?.iter().all(|&a| a == EmitIntensity::MAX));
+
+        Ok(())
     }
 
     #[test]
-    fn test_square_with_high() {
-        let m = Square::new(150.).with_high(EmitIntensity::new(0x00));
-        m.calc().unwrap().iter().for_each(|a| {
-            assert_eq!(a.value(), 0x00);
-        });
+    fn test_square_with_high() -> anyhow::Result<()> {
+        let m = Square::new(150.).with_high(EmitIntensity::MIN);
+        assert_eq!(EmitIntensity::MIN, m.high());
+        assert!(m.calc()?.iter().all(|&a| a == EmitIntensity::MIN));
+
+        Ok(())
     }
 
     #[test]
-    fn test_square_with_duty() {
+    fn test_square_with_duty() -> anyhow::Result<()> {
         let m = Square::new(150.).with_duty(0.0);
         assert_eq!(m.duty(), 0.0);
-        m.calc().unwrap().iter().for_each(|a| {
-            assert_eq!(a.value(), 0x00);
-        });
+        assert!(m.calc()?.iter().all(|&a| a == EmitIntensity::MIN));
 
         let m = Square::new(150.).with_duty(1.0);
         assert_eq!(m.duty(), 1.0);
-        m.calc().unwrap().iter().for_each(|a| {
-            assert_eq!(a.value(), 0xFF);
-        });
+        assert!(m.calc()?.iter().all(|&a| a == EmitIntensity::MAX));
+
+        Ok(())
     }
 
     #[test]
     fn test_square_with_duty_out_of_range() {
-        let m = Square::new(150.).with_duty(-0.1);
         assert_eq!(
-            m.calc(),
             Err(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string()
-            ))
+            )),
+            Square::new(150.).with_duty(-0.1).calc()
         );
 
-        let m = Square::new(150.).with_duty(0.0);
-        assert!(m.calc().is_ok());
-
-        let m = Square::new(150.).with_duty(1.0);
-        assert!(m.calc().is_ok());
-
-        let m = Square::new(150.).with_duty(1.1);
         assert_eq!(
-            m.calc(),
             Err(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string()
-            ))
+            )),
+            Square::new(150.).with_duty(1.1).calc()
         );
+    }
+
+    #[test]
+    fn test_square_derive() {
+        let m = Square::new(150.);
+        assert_eq!(m, m.clone());
     }
 }

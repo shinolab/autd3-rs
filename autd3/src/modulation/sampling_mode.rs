@@ -10,22 +10,16 @@ mod tests {
 
     #[test]
     fn test_sampling_mode_derive() {
-        let mode = SamplingMode::ExactFrequency;
-        assert_eq!(mode, SamplingMode::ExactFrequency);
-
-        let mode = SamplingMode::SizeOptimized;
-        assert_eq!(mode, SamplingMode::SizeOptimized);
-
-        let mode = SamplingMode::ExactFrequency;
-        assert_ne!(mode, SamplingMode::SizeOptimized);
+        assert_eq!(SamplingMode::ExactFrequency, SamplingMode::ExactFrequency);
+        assert_eq!(SamplingMode::SizeOptimized, SamplingMode::SizeOptimized);
+        assert_ne!(SamplingMode::ExactFrequency, SamplingMode::SizeOptimized);
 
         let mode = SamplingMode::SizeOptimized;
         let mode2 = mode;
         assert_eq!(mode, mode2);
 
         let mode = SamplingMode::SizeOptimized;
-        let mode2 = mode.clone();
-        assert_eq!(mode, mode2);
+        assert_eq!(mode, mode.clone());
 
         assert_eq!(
             format!("{:?}", SamplingMode::ExactFrequency),
