@@ -15,7 +15,7 @@ mod tests {
     fn freq_div_out_of_range() {
         let err = AUTDFirmwareEmulatorError::InvalidDateTime;
         assert!(err.source().is_none());
-        assert_eq!(format!("{}", err), "The input data is invalid.");
-        assert_eq!(format!("{:?}", err), "InvalidDateTime");
+        assert_eq!("The input data is invalid.", format!("{}", err));
+        assert_eq!("InvalidDateTime", format!("{:?}", err));
     }
 }

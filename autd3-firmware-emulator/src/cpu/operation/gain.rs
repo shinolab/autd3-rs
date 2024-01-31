@@ -27,3 +27,14 @@ impl CPUEmulator {
         ERR_NONE
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn gain_memory_layout() {
+        assert_eq!(2, std::mem::size_of::<Gain>());
+        assert_eq!(0, memoffset::offset_of!(Gain, tag));
+    }
+}

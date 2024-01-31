@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use autd3_driver::{common::EmitIntensity, derive::*, geometry::Geometry};
 
 /// Gain with uniform emission intensity and phase
-#[derive(Gain, Clone, Copy)]
+#[derive(Gain, Clone, PartialEq, Debug)]
 pub struct Uniform {
     intensity: EmitIntensity,
     phase: Phase,
@@ -16,7 +16,7 @@ impl Uniform {
     ///
     /// * `intensity` - Emission intensity
     ///
-    pub fn new<A: Into<EmitIntensity>>(intensity: A) -> Self {
+    pub fn new(intensity: impl Into<EmitIntensity>) -> Self {
         Self {
             intensity: intensity.into(),
             phase: Phase::new(0),
@@ -57,44 +57,56 @@ impl Gain for Uniform {
 
 #[cfg(test)]
 mod tests {
+    use crate::tests::create_geometry;
+
     use super::*;
-    use autd3_driver::{
-        autd3_device::AUTD3,
-        geometry::{IntoDevice, Vector3},
-    };
+    use rand::Rng;
+
+    fn uniform_check(
+        g: Uniform,
+        intensity: EmitIntensity,
+        phase: Phase,
+        geometry: &Geometry,
+    ) -> anyhow::Result<()> {
+        assert_eq!(intensity, g.intensity());
+        assert_eq!(phase, g.phase());
+
+        let b = g.calc(geometry, GainFilter::All)?;
+        assert_eq!(geometry.num_devices(), b.len());
+        b.iter().for_each(|(&idx, d)| {
+            assert_eq!(geometry[idx].num_transducers(), d.len());
+            d.iter().for_each(|d| {
+                assert_eq!(phase, d.phase);
+                assert_eq!(intensity, d.intensity);
+            });
+        });
+
+        Ok(())
+    }
 
     #[test]
-    fn test_uniform() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+    fn test_uniform() -> anyhow::Result<()> {
+        let mut rng = rand::thread_rng();
 
-        let gain = Uniform::new(0x1F);
-        assert_eq!(gain.intensity(), EmitIntensity::new(0x1F));
-        assert_eq!(gain.phase(), Phase::new(0));
+        let geometry = create_geometry(1);
 
-        let d = gain.calc(&geometry, GainFilter::All).unwrap();
-        d[&0].iter().for_each(|drive| {
-            assert_eq!(drive.phase.value(), 0);
-            assert_eq!(drive.intensity.value(), 0x1F);
-        });
+        let intensity = EmitIntensity::new(rng.gen());
+        let g = Uniform::new(intensity);
+        uniform_check(g, intensity, Phase::new(0), &geometry)?;
 
-        let gain = gain.with_phase(Phase::new(1));
-        assert_eq!(gain.intensity(), EmitIntensity::new(0x1F));
-        assert_eq!(gain.phase(), Phase::new(1));
+        let intensity = EmitIntensity::new(rng.gen());
+        let phase = Phase::new(rng.gen());
+        let g = Uniform::new(intensity).with_phase(phase);
+        uniform_check(g, intensity, phase, &geometry)?;
 
-        let d = gain.calc(&geometry, GainFilter::All).unwrap();
-        d[&0].iter().for_each(|drive| {
-            assert_eq!(drive.phase.value(), 1);
-            assert_eq!(drive.intensity.value(), 0x1F);
-        });
+        Ok(())
     }
 
     #[test]
     fn test_uniform_derive() {
         let gain = Uniform::new(0x1F);
         let gain2 = gain.clone();
-        assert_eq!(gain.intensity(), gain2.intensity());
-        assert_eq!(gain.phase(), gain2.phase());
-
+        assert_eq!(gain, gain2);
         let _ = gain.operation();
     }
 }

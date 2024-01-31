@@ -1,17 +1,14 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    autd3_device::AUTD3,
-    common::EmitIntensity,
-    cpu::TxDatagram,
-    datagram::*,
-    derive::*,
-    geometry::{Geometry, IntoDevice, Vector3},
-    operation::{GainOp, NullOp, OperationHandler},
+    common::EmitIntensity, cpu::TxDatagram, datagram::*, derive::*, geometry::Geometry,
+    operation::GainOp,
 };
 use autd3_firmware_emulator::CPUEmulator;
 
 use rand::*;
+
+use crate::{create_geometry, send};
 
 #[derive(Gain)]
 pub(crate) struct TestGain {
@@ -29,14 +26,12 @@ impl Gain for TestGain {
 }
 
 #[test]
-fn send_gain() {
+fn send_gain() -> anyhow::Result<()> {
     let mut rng = rand::thread_rng();
 
-    let geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-
+    let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-
-    let mut tx = TxDatagram::new(1);
+    let mut tx = TxDatagram::new(geometry.num_devices());
 
     let buf: HashMap<usize, Vec<Drive>> = geometry
         .iter()
@@ -45,8 +40,8 @@ fn send_gain() {
                 dev.idx(),
                 dev.iter()
                     .map(|_| Drive {
-                        phase: Phase::new(rng.gen_range(0..=u8::MAX)),
-                        intensity: EmitIntensity::new(rng.gen_range(0..=u8::MAX)),
+                        phase: Phase::new(rng.gen()),
+                        intensity: EmitIntensity::new(rng.gen()),
                     })
                     .collect(),
             )
@@ -54,21 +49,17 @@ fn send_gain() {
         .collect();
     let g = TestGain { buf: buf.clone() };
 
-    let mut op = GainOp::new(g);
-    let mut op_null = NullOp::default();
+    let (mut op, _) = g.operation()?;
 
-    OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
-    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
+    send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
-    cpu.send(&tx);
-    assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
     assert!(!cpu.fpga().is_stm_mode());
-    cpu.fpga()
-        .intensities_and_phases(0)
+    buf[&0]
         .iter()
-        .zip(buf[&0].iter())
-        .for_each(|(a, b)| {
-            assert_eq!(a.0, b.intensity.value());
-            assert_eq!(a.1, b.phase.value());
+        .zip(cpu.fpga().gain_drives())
+        .for_each(|(&a, b)| {
+            assert_eq!(a, b);
         });
+
+    Ok(())
 }

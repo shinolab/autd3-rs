@@ -10,6 +10,11 @@ impl<F: Fn(&Device) -> bool> ConfigureForceFan<F> {
     pub const fn new(f: F) -> Self {
         Self { f }
     }
+
+    /// Get the function
+    pub fn f(&self) -> &F {
+        &self.f
+    }
 }
 
 impl<F: Fn(&Device) -> bool> Datagram for ConfigureForceFan<F> {

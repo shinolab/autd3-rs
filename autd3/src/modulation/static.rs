@@ -1,7 +1,7 @@
 use autd3_driver::{common::EmitIntensity, derive::*};
 
 /// Without modulation
-#[derive(Modulation, Clone, Copy)]
+#[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct Static {
     intensity: EmitIntensity,
     #[no_change]
@@ -23,7 +23,7 @@ impl Static {
     ///
     /// * `intensity` - [EmitIntensity]
     ///
-    pub fn with_intensity<A: Into<EmitIntensity>>(intensity: A) -> Self {
+    pub fn with_intensity(intensity: impl Into<EmitIntensity>) -> Self {
         Self {
             intensity: intensity.into(),
             config: SamplingConfiguration::DISABLE,
@@ -52,45 +52,31 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_static_default() {
+    fn test_static_default() -> anyhow::Result<()> {
         let m = Static::default();
-        assert_eq!(m.intensity(), EmitIntensity::MAX);
-        assert_eq!(
-            m.calc().unwrap(),
-            vec![EmitIntensity::MAX, EmitIntensity::MAX]
-        );
+        assert_eq!(EmitIntensity::MAX, m.intensity());
+        assert_eq!(SamplingConfiguration::DISABLE, m.sampling_config());
+        assert_eq!(vec![EmitIntensity::MAX, EmitIntensity::MAX], m.calc()?);
+
+        Ok(())
     }
 
     #[test]
-    fn test_static_clone() {
-        let m = Static::default();
-        let m2 = m.clone();
-        assert_eq!(m.intensity(), m2.intensity());
-    }
-
-    #[test]
-    fn test_static_new() {
-        let m = Static::new();
-        assert_eq!(m.intensity(), EmitIntensity::MAX);
-        assert_eq!(
-            m.calc().unwrap(),
-            vec![EmitIntensity::MAX, EmitIntensity::MAX]
-        );
-    }
-
-    #[test]
-    fn test_static_with_intensity() {
+    fn test_static_with_intensity() -> anyhow::Result<()> {
         let m = Static::with_intensity(0x1F);
-        assert_eq!(m.intensity(), EmitIntensity::new(0x1F));
+        assert_eq!(EmitIntensity::new(0x1F), m.intensity());
+        assert_eq!(SamplingConfiguration::DISABLE, m.sampling_config());
         assert_eq!(
-            m.calc().unwrap(),
-            vec![EmitIntensity::new(0x1F), EmitIntensity::new(0x1F)]
+            vec![EmitIntensity::new(0x1F), EmitIntensity::new(0x1F)],
+            m.calc()?
         );
+
+        Ok(())
     }
 
     #[test]
-    fn test_static_sampl_config() {
-        let m = Static::new();
-        assert_eq!(m.sampling_config(), SamplingConfiguration::DISABLE);
+    fn test_static_derive() {
+        let m = Static::default();
+        assert_eq!(m, m.clone());
     }
 }

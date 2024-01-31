@@ -3,7 +3,7 @@ use std::{collections::HashMap, hash::Hash, time::Duration};
 use autd3_driver::{
     datagram::Datagram,
     error::AUTDInternalError,
-    geometry::Device,
+    geometry::{Device, Geometry},
     operation::{Operation, OperationHandler},
 };
 
@@ -89,21 +89,23 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
             .collect()
     }
 
+    fn set_enable_flag(geometry: &mut Geometry, k: &K, enable_flags: &HashMap<K, Vec<bool>>) {
+        geometry.iter_mut().for_each(|dev| {
+            dev.enable = enable_flags[k][dev.idx()];
+        });
+    }
+
     pub async fn send(mut self) -> Result<bool, AUTDInternalError> {
         let enable_flags_store = self.push_enable_flags();
         let enable_flags_map = self.get_enable_flags_map();
 
         self.op.iter_mut().try_for_each(|(k, (op1, op2))| {
-            self.cnt.geometry.iter_mut().for_each(|dev| {
-                dev.enable = enable_flags_map[k][dev.idx()];
-            });
+            Self::set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
             OperationHandler::init(op1, op2, &self.cnt.geometry)
         })?;
         let r = loop {
             self.op.iter_mut().try_for_each(|(k, (op1, op2))| {
-                self.cnt.geometry.iter_mut().for_each(|dev| {
-                    dev.enable = enable_flags_map[k][dev.idx()];
-                });
+                Self::set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
                 OperationHandler::pack(op1, op2, &self.cnt.geometry, &mut self.cnt.tx_buf)
             })?;
 
@@ -119,9 +121,7 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
                 break false;
             }
             if self.op.iter_mut().all(|(k, (op1, op2))| {
-                self.cnt.geometry.iter_mut().for_each(|dev| {
-                    dev.enable = enable_flags_map[k][dev.idx()];
-                });
+                Self::set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
                 OperationHandler::is_finished(op1, op2, &self.cnt.geometry)
             }) {
                 break true;
@@ -137,70 +137,56 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::{autd3_device::AUTD3, geometry::Vector3};
+    use autd3_driver::derive::{Gain, GainFilter, Modulation};
 
     use crate::{
-        controller::Controller,
+        controller::tests::create_controller,
         gain::{Null, Uniform},
-        link::audit::Audit,
         modulation::{Sine, Static},
     };
 
     #[tokio::test]
-    async fn test_group() {
-        let mut autd = Controller::builder()
-            .add_device(AUTD3::new(Vector3::zeros()))
-            .add_device(AUTD3::new(Vector3::zeros()))
-            .open_with(Audit::builder())
-            .await
-            .unwrap();
+    async fn test_group() -> anyhow::Result<()> {
+        let mut autd = create_controller(2).await?;
 
         autd.group(|dev| Some(dev.idx()))
-            .set(0, (Static::new(), Null::new()))
-            .unwrap()
-            .set(1, (Sine::new(150.0), Uniform::new(0x80)))
-            .unwrap()
+            .set(0, (Static::new(), Null::new()))?
+            .set(1, (Sine::new(150.), Uniform::new(0x80)))?
             .send()
-            .await
-            .unwrap();
-        {
-            let m = autd.link[0].fpga().modulation();
-            assert_eq!(2, m.len());
-            assert!(m.iter().all(|&d| d == 0xFF));
-            let v = autd.link[0].fpga().intensities_and_phases(0);
-            assert!(v.iter().all(|d| d.0 == 0 && d.1 == 0));
-        }
-        {
-            let m = autd.link[1].fpga().modulation();
-            assert_eq!(80, m.len());
-            let v = autd.link[1].fpga().intensities_and_phases(0);
-            assert!(v.iter().all(|d| d.0 == 0x80 && d.1 == 0));
-        }
+            .await?;
+
+        assert_eq!(Static::new().calc()?, autd.link[0].fpga().modulation());
+        assert_eq!(
+            Null::new().calc(&autd.geometry, GainFilter::All)?[&0],
+            autd.link[0].fpga().gain_drives()
+        );
+        assert_eq!(Sine::new(150.).calc()?, autd.link[1].fpga().modulation());
+        assert_eq!(
+            Uniform::new(0x80).calc(&autd.geometry, GainFilter::All)?[&1],
+            autd.link[1].fpga().gain_drives()
+        );
+
+        Ok(())
     }
 
     #[tokio::test]
-    async fn test_group_only_for_enabled() {
-        let mut autd = Controller::builder()
-            .add_device(AUTD3::new(Vector3::zeros()))
-            .add_device(AUTD3::new(Vector3::zeros()))
-            .open_with(Audit::builder())
-            .await
-            .unwrap();
+    async fn test_group_only_for_enabled() -> anyhow::Result<()> {
+        let mut autd = create_controller(2).await?;
 
         autd.geometry[0].enable = false;
 
-        let check = std::sync::Arc::new(std::sync::Mutex::new(vec![false; 2]));
+        let check = std::sync::Arc::new(std::sync::Mutex::new([false; 2]));
         autd.group(|dev| {
             check.lock().unwrap()[dev.idx()] = true;
             return Some(0);
         })
-        .set(0, (Static::new(), Null::new()))
-        .unwrap()
+        .set(0, (Static::new(), Null::new()))?
         .send()
-        .await
-        .unwrap();
+        .await?;
 
         assert!(!check.lock().unwrap()[0]);
         assert!(check.lock().unwrap()[1]);
+
+        Ok(())
     }
 }

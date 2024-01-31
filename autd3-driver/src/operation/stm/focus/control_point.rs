@@ -30,7 +30,7 @@ impl ControlPoint {
     /// * `point` - focal point
     /// * `intensity` - emission intensity
     ///
-    pub fn with_intensity<I: Into<EmitIntensity>>(self, intensity: I) -> Self {
+    pub fn with_intensity(self, intensity: impl Into<EmitIntensity>) -> Self {
         Self {
             intensity: intensity.into(),
             ..self

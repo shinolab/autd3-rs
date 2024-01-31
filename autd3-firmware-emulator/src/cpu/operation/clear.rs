@@ -93,3 +93,14 @@ impl CPUEmulator {
         ERR_NONE
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn clear_memory_layout() {
+        assert_eq!(2, std::mem::size_of::<Clear>());
+        assert_eq!(0, memoffset::offset_of!(Clear, tag));
+    }
+}

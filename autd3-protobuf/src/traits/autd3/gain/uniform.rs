@@ -7,12 +7,12 @@ impl ToMessage for autd3::gain::Uniform {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Uniform(Uniform {
-                    intensity: Some(self.intensity().to_msg()),
-                    phase: Some(self.phase().to_msg()),
+                    intensity: Some(self.intensity().to_msg(None)),
+                    phase: Some(self.phase().to_msg(None)),
                 })),
             })),
         }
@@ -43,7 +43,7 @@ mod tests {
 
         let g = autd3::gain::Uniform::new(EmitIntensity::new(rng.gen()))
             .with_phase(Phase::new(rng.gen()));
-        let msg = g.to_msg();
+        let msg = g.to_msg(None);
 
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {

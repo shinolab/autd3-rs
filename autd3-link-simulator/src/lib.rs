@@ -47,7 +47,7 @@ impl LinkBuilder for SimulatorBuilder {
         .await
         .map_err(|e| AUTDInternalError::from(AUTDProtoBufError::from(e)))?;
 
-        if client.config_geomety(geometry.to_msg()).await.is_err() {
+        if client.config_geomety(geometry.to_msg(None)).await.is_err() {
             return Err(
                 AUTDProtoBufError::SendError("Failed to initialize simulator".to_string()).into(),
             );
@@ -122,7 +122,7 @@ impl Link for Simulator {
 
         let res = self
             .client
-            .send_data(tx.to_msg())
+            .send_data(tx.to_msg(None))
             .await
             .map_err(AUTDProtoBufError::from)?;
 
@@ -164,7 +164,12 @@ impl Simulator {
         &mut self,
         geometry: &autd3_driver::geometry::Geometry,
     ) -> Result<(), AUTDInternalError> {
-        if self.client.update_geomety(geometry.to_msg()).await.is_err() {
+        if self
+            .client
+            .update_geomety(geometry.to_msg(None))
+            .await
+            .is_err()
+        {
             return Err(
                 AUTDProtoBufError::SendError("Failed to update geometry".to_string()).into(),
             );

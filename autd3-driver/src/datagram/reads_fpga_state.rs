@@ -10,6 +10,10 @@ impl<F: Fn(&Device) -> bool> ConfigureReadsFPGAState<F> {
     pub const fn new(f: F) -> Self {
         Self { f }
     }
+
+    pub const fn f(&self) -> &F {
+        &self.f
+    }
 }
 
 impl<F: Fn(&Device) -> bool> Datagram for ConfigureReadsFPGAState<F> {

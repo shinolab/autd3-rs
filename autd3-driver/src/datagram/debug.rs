@@ -16,6 +16,10 @@ impl<F: Fn(&Device) -> Option<&Transducer>> ConfigureDebugOutputIdx<F> {
     pub const fn new(f: F) -> Self {
         Self { f }
     }
+
+    pub fn f(&self) -> &F {
+        &self.f
+    }
 }
 
 impl<F: Fn(&Device) -> Option<&Transducer>> Datagram for ConfigureDebugOutputIdx<F> {

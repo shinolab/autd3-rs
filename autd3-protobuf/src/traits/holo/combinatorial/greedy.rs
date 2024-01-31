@@ -8,13 +8,13 @@ impl ToMessage for autd3_gain_holo::Greedy {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Greedy(Greedy {
                     holo: to_holo!(self),
                     phase_div: self.phase_div() as _,
-                    constraint: Some(self.constraint().to_msg()),
+                    constraint: Some(self.constraint().to_msg(None)),
                 })),
             })),
         }
@@ -66,7 +66,7 @@ mod tests {
                 Vector3::new(rng.gen(), rng.gen(), rng.gen()),
                 rng.gen::<autd3_driver::defined::float>() * autd3_gain_holo::Pascal,
             );
-        let msg = holo.to_msg();
+        let msg = holo.to_msg(None);
 
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {

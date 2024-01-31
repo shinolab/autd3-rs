@@ -44,6 +44,14 @@ impl std::ops::Div<u8> for EmitIntensity {
     }
 }
 
+impl std::ops::Div<u8> for &EmitIntensity {
+    type Output = EmitIntensity;
+
+    fn div(self, rhs: u8) -> Self::Output {
+        Self::Output::new(self.value / rhs)
+    }
+}
+
 impl std::ops::Add<EmitIntensity> for EmitIntensity {
     type Output = Self;
 
@@ -57,6 +65,15 @@ impl std::ops::Sub<EmitIntensity> for EmitIntensity {
 
     fn sub(self, rhs: EmitIntensity) -> Self::Output {
         Self::new(self.value - rhs.value)
+    }
+}
+
+#[cfg(test)]
+impl EmitIntensity {
+    pub fn random() -> Self {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        Self::new(rng.gen())
     }
 }
 

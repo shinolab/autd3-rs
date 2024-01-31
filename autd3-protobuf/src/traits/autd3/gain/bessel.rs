@@ -7,14 +7,15 @@ impl ToMessage for autd3::gain::Bessel {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Bessel(Bessel {
-                    intensity: Some(self.intensity().to_msg()),
-                    pos: Some(self.pos().to_msg()),
-                    dir: Some(self.dir().to_msg()),
+                    intensity: Some(self.intensity().to_msg(None)),
+                    pos: Some(self.pos().to_msg(None)),
+                    dir: Some(self.dir().to_msg(None)),
                     theta: self.theta() as _,
+                    phase: Some(self.phase().to_msg(None)),
                 })),
             })),
         }
@@ -32,7 +33,8 @@ impl FromMessage<Bessel> for autd3::gain::Bessel {
             )
             .with_intensity(autd3_driver::common::EmitIntensity::from_msg(
                 msg.intensity.as_ref()?,
-            )?),
+            )?)
+            .with_phase(autd3_driver::common::Phase::from_msg(msg.phase.as_ref()?)?),
         )
     }
 }
@@ -53,7 +55,7 @@ mod tests {
             rng.gen(),
         )
         .with_intensity(EmitIntensity::new(rng.gen()));
-        let msg = g.to_msg();
+        let msg = g.to_msg(None);
 
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {
