@@ -28,7 +28,7 @@ impl<M: Modulation> Modulation for RadiationPressure<M> {
             .m
             .calc()?
             .iter()
-            .map(|&v| EmitIntensity::new(((v.value() as float / 255.).sqrt() * 255.).round() as u8))
+            .map(|&v| (((v.value() as float / 255.).sqrt() * 255.).round() as u8).into())
             .collect())
     }
 }
@@ -40,20 +40,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_radiation_impl() {
+    fn test_radiation_impl() -> anyhow::Result<()> {
         let m = Sine::new(100.);
         let m_transformed = m.with_radiation_pressure();
 
-        let vec = m.calc().unwrap();
-        let vec_transformed = m_transformed.calc().unwrap();
-
-        vec.iter().zip(&vec_transformed).for_each(|(&x, &y)| {
-            assert_eq!(
-                y.value(),
-                ((x.value() as float / 255.).sqrt() * 255.).round() as u8
-            );
-        });
+        assert_eq!(
+            m.calc()?
+                .iter()
+                .map(|x| (((x.value() as float / 255.).sqrt() * 255.).round() as u8).into())
+                .collect::<Vec<EmitIntensity>>(),
+            m_transformed.calc()?
+        );
 
         assert_eq!(m.sampling_config(), m_transformed.sampling_config());
+
+        Ok(())
     }
 }

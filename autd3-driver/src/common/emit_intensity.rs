@@ -44,6 +44,14 @@ impl std::ops::Div<u8> for EmitIntensity {
     }
 }
 
+impl std::ops::Div<u8> for &EmitIntensity {
+    type Output = EmitIntensity;
+
+    fn div(self, rhs: u8) -> Self::Output {
+        Self::Output::new(self.value / rhs)
+    }
+}
+
 impl std::ops::Add<EmitIntensity> for EmitIntensity {
     type Output = Self;
 

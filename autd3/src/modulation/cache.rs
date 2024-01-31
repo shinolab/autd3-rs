@@ -84,9 +84,12 @@ impl<M: Modulation> Modulation for Cache<M> {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc,
+    use std::{
+        ops::Deref,
+        sync::{
+            atomic::{AtomicUsize, Ordering},
+            Arc,
+        },
     };
 
     use crate::modulation::Static;
@@ -94,20 +97,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_cache() {
+    fn test_cache() -> anyhow::Result<()> {
         let m = Static::new().with_cache();
-        assert_eq!(m.sampling_config(), Static::new().sampling_config());
-        assert_eq!(m.intensity(), Static::new().intensity());
+        assert_eq!(m.deref(), &Static::new());
 
         assert!(m.buffer().is_empty());
-        m.calc().unwrap().iter().for_each(|&d| {
-            assert_eq!(d, EmitIntensity::MAX);
-        });
+        assert_eq!(Static::new().calc()?, m.calc()?);
 
         assert!(!m.buffer().is_empty());
-        m.buffer().iter().for_each(|&d| {
-            assert_eq!(d, EmitIntensity::MAX);
-        });
+        assert_eq!(Static::new().calc()?, *m.buffer());
+
+        Ok(())
     }
 
     struct TestModulation {
@@ -148,13 +148,13 @@ mod tests {
             config: SamplingConfiguration::FREQ_4K_HZ,
         }
         .with_cache();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 0);
+        assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
-        let _ = modulation.calc().unwrap();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
+        let _ = modulation.calc();
+        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
 
-        let _ = modulation.calc().unwrap();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
+        let _ = modulation.calc();
+        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
     }
 
     #[test]
@@ -166,12 +166,12 @@ mod tests {
             config: SamplingConfiguration::FREQ_4K_HZ,
         }
         .with_cache();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 0);
+        assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
         let m2 = modulation.clone();
-        let _ = m2.calc().unwrap();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
+        let _ = m2.calc();
+        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
 
-        assert_eq!(modulation.buffer().to_vec(), m2.buffer().to_vec());
+        assert_eq!(*modulation.buffer(), *m2.buffer());
     }
 }

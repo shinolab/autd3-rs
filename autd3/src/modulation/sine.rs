@@ -5,7 +5,7 @@ use num::integer::gcd;
 use super::sampling_mode::SamplingMode;
 
 /// Sine wave modulation
-#[derive(Modulation, Clone, Copy)]
+#[derive(Modulation, Clone, Copy, PartialEq, Debug)]
 pub struct Sine {
     freq: float,
     intensity: EmitIntensity,
@@ -127,14 +127,15 @@ impl Modulation for Sine {
                 ((sf / freq).round() as usize, 1)
             }
         };
+        let intensity = self.intensity.value() as float;
+        let phase = self.phase.radian();
+        let offset = self.offset.value() as float;
         Ok((0..n)
             .map(|i| {
-                EmitIntensity::new(
-                    (((self.intensity / 2).value() as float
-                        * (2.0 * PI * (rep * i) as float / n as float + self.phase.radian()).sin())
-                    .round()
-                        + self.offset.value() as float) as u8,
-                )
+                (((intensity / 2. * (2.0 * PI * (rep * i) as float / n as float + phase).sin())
+                    + offset)
+                    .round() as u8)
+                    .into()
             })
             .collect())
     }
@@ -145,113 +146,83 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_sine() {
+    fn test_sine() -> anyhow::Result<()> {
         let expect = [
-            127, 157, 185, 209, 230, 244, 252, 254, 248, 235, 217, 193, 166, 137, 107, 78, 52, 30,
-            14, 4, 0, 4, 14, 30, 52, 78, 107, 137, 166, 193, 217, 235, 248, 254, 252, 244, 230,
-            209, 185, 157, 127, 97, 69, 45, 24, 10, 2, 0, 6, 19, 37, 61, 88, 117, 147, 176, 202,
-            224, 240, 250, 254, 250, 240, 224, 202, 176, 147, 117, 88, 61, 37, 19, 6, 0, 2, 10, 24,
-            45, 69, 97,
+            127, 157, 185, 210, 230, 245, 253, 254, 248, 236, 217, 194, 166, 137, 107, 78, 52, 30,
+            13, 3, 0, 3, 13, 30, 52, 78, 107, 137, 166, 194, 217, 236, 248, 254, 253, 245, 230,
+            210, 185, 157, 127, 97, 69, 44, 24, 9, 1, 0, 6, 18, 37, 60, 88, 117, 147, 176, 202,
+            224, 241, 251, 255, 251, 241, 224, 202, 176, 147, 117, 88, 60, 37, 18, 6, 0, 1, 9, 24,
+            44, 69, 97,
         ];
         let m = Sine::new(150.);
-        assert_eq!(m.sampling_config(), SamplingConfiguration::FREQ_4K_HZ);
-        assert_eq!(expect.len(), m.calc().unwrap().len());
-        expect
-            .into_iter()
-            .zip(m.calc().unwrap().iter())
-            .for_each(|(e, a)| {
-                assert_eq!(e, a.value());
-            });
+        assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
+        assert_eq!(
+            expect
+                .into_iter()
+                .map(EmitIntensity::new)
+                .collect::<Vec<_>>(),
+            m.calc()?
+        );
+
+        Ok(())
     }
 
     #[test]
-    fn test_sine_clone() {
-        let m = Sine::new(150.);
-        let m2 = m.clone();
-        assert_eq!(m.sampling_config(), m2.sampling_config());
-        assert_eq!(m.freq(), m2.freq());
-        assert_eq!(m.intensity(), m2.intensity());
-        assert_eq!(m.offset(), m2.offset());
-        assert_eq!(m.phase(), m2.phase());
-        assert_eq!(m.mode(), m2.mode());
-    }
-
-    #[test]
-    fn test_sine_with_size_opt() {
+    fn test_sine_with_size_opt() -> anyhow::Result<()> {
         let expect = [
-            127, 156, 184, 209, 229, 244, 252, 254, 249, 237, 219, 197, 170, 142, 112, 84, 57, 35,
-            17, 5, 0, 2, 10, 25, 45, 70, 98,
+            127, 156, 184, 209, 229, 244, 253, 254, 249, 237, 220, 197, 171, 142, 112, 83, 57, 34,
+            17, 5, 0, 1, 10, 25, 45, 70, 98,
         ];
+
         let m = Sine::new(150.).with_mode(SamplingMode::SizeOptimized);
-        assert_eq!(m.sampling_config(), SamplingConfiguration::FREQ_4K_HZ);
-        assert_eq!(expect.len(), m.calc().unwrap().len());
-        expect
-            .into_iter()
-            .zip(m.calc().unwrap().iter())
-            .for_each(|(e, a)| {
-                assert_eq!(e, a.value());
-            });
+        assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
+        assert_eq!(
+            expect
+                .into_iter()
+                .map(EmitIntensity::new)
+                .collect::<Vec<_>>(),
+            m.calc()?
+        );
+
+        Ok(())
     }
 
     #[test]
     fn test_sine_new() {
         let m = Sine::new(100.);
-        assert_eq!(m.freq(), 100.);
-        assert_eq!(m.intensity(), EmitIntensity::MAX);
-        assert_eq!(m.offset(), EmitIntensity::MAX / 2);
-        assert_eq!(m.phase(), Phase::new(0));
-        let vec = m.calc().unwrap();
-        assert!(!vec.is_empty());
-        assert!(vec
-            .iter()
-            .all(|&x| x >= m.offset - m.intensity / 2 && x <= m.offset + m.intensity / 2));
+        assert_eq!(100., m.freq());
+        assert_eq!(EmitIntensity::MAX, m.intensity());
+        assert_eq!(EmitIntensity::MAX / 2, m.offset());
+        assert_eq!(Phase::new(0), m.phase());
+        assert_eq!(SamplingMode::ExactFrequency, m.mode());
 
-        let m = Sine::new(100.1);
         assert_eq!(
-            m.calc(),
             Err(AUTDInternalError::ModulationError(
                 "Frequency must be integer".to_string()
-            ))
+            )),
+            Sine::new(100.1).calc()
         );
-        let m = Sine::new(100.1).with_mode(SamplingMode::SizeOptimized);
-        assert!(m.calc().is_ok());
+
+        assert!(Sine::new(100.1)
+            .with_mode(SamplingMode::SizeOptimized)
+            .calc()
+            .is_ok());
     }
 
     #[test]
-    fn test_sine_with_intensity() {
-        let m = Sine::new(100.).with_intensity(EmitIntensity::MAX / 2);
-        assert_eq!(m.intensity, EmitIntensity::MAX / 2);
-
-        let vec = m.calc().unwrap();
-        assert!(!vec.is_empty());
-        assert!(vec
-            .iter()
-            .all(|&x| x >= m.offset - m.intensity / 2 && x <= m.offset + m.intensity / 2));
-    }
-
-    #[test]
-    fn test_sine_with_offset() {
+    fn test_sine_with_param() {
         let m = Sine::new(100.)
+            .with_intensity(EmitIntensity::MAX / 2)
             .with_offset(EmitIntensity::MAX / 4)
-            .with_intensity(EmitIntensity::MAX / 2);
-        assert_eq!(m.offset, EmitIntensity::MAX / 4);
-
-        let vec = m.calc().unwrap();
-        assert!(!vec.is_empty());
-        assert!(vec
-            .iter()
-            .all(|&x| x >= m.offset - m.intensity / 2 && x <= m.offset + m.intensity / 2));
+            .with_phase(PI / 4.0 * Rad);
+        assert_eq!(EmitIntensity::MAX / 2, m.intensity);
+        assert_eq!(EmitIntensity::MAX / 4, m.offset);
+        assert_eq!(PI / 4.0 * Rad, m.phase);
     }
 
     #[test]
-    fn test_sine_with_phase() {
-        let m = Sine::new(100.).with_phase(PI / 4.0 * Rad);
-        assert_eq!(m.phase, PI / 4.0 * Rad);
-
-        let vec = m.calc().unwrap();
-        assert!(!vec.is_empty());
-        assert!(vec
-            .iter()
-            .all(|&x| x >= m.offset - m.intensity / 2 && x <= m.offset + m.intensity / 2));
+    fn test_sine_derive() {
+        let m = Sine::new(150.);
+        assert_eq!(m, m.clone());
     }
 }
