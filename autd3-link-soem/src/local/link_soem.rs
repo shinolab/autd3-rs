@@ -15,7 +15,6 @@ use time::ext::NumericalDuration;
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram, EC_CYCLE_TIME_BASE_NANO_SEC},
     error::AUTDInternalError,
-    geometry::Geometry,
     link::Link,
     osal_timer::Timer,
     sync_mode::SyncMode,
@@ -29,21 +28,23 @@ use crate::{
 };
 
 use super::{
-    error_handler::EcatErrorHandler,
+    error_handler::{EcatErrorHandler, ErrHandler},
     sleep::{BusyWait, Sleep, StdSleep},
     state::EcStatus,
 };
 
 /// Link using [SOEM](https://github.com/OpenEtherCATsociety/SOEM)
 pub struct SOEM {
-    ecatth_handle: Option<JoinHandle<Result<(), SOEMError>>>,
-    timer_handle: Option<Box<Timer<SoemCallback>>>,
-    ecat_check_th: Option<JoinHandle<()>>,
     timeout: Duration,
     sender: Sender<TxDatagram>,
     is_open: Arc<AtomicBool>,
     ec_sync0_cycle: Duration,
     io_map: Arc<Mutex<IOMap>>,
+    init_guard: Option<SOEMInitGuard>,
+    config_dc_guard: Option<SOEMDCConfigGuard>,
+    op_state_guard: Option<OpStateGuard>,
+    ecat_th_guard: Option<SOEMECatThreadGuard>,
+    ecat_check_th_guard: Option<SOEMEcatCheckThreadGuard>,
 }
 
 impl SOEM {
@@ -104,75 +105,361 @@ impl SOEM {
             ifname.clone()
         };
 
-        let num_devices = Self::init_ecat(ifname, geometry)?;
+        let init_guard = SOEMInitGuard::new(ifname)?;
 
-        match {
-            Self::configure_dc_dc(ec_sync0_cycle, sync_mode);
-
-            let io_map = IOMap::new(num_devices);
-            unsafe {
-                ec_config_map(io_map.data() as *mut c_void);
+        let wc = unsafe { ec_config_init(0) };
+        if wc <= 0 || (geometry.num_devices() != 0 && wc as usize != geometry.num_devices()) {
+            return Err(SOEMError::SlaveNotFound(wc as _, geometry.len() as _).into());
+        }
+        (1..=wc).try_for_each(|i| {
+            if Self::is_autd3(i) {
+                Ok(())
+            } else {
+                Err(SOEMError::NoDeviceFound)
             }
-            let io_map = Arc::new(Mutex::new(io_map));
+        })?;
+        let num_devices = wc as _;
 
-            Self::to_safe_op(num_devices)?;
+        let (tx_sender, tx_receiver) = bounded(buf_size);
+        let is_open = Arc::new(AtomicBool::new(true));
+        let io_map = Arc::new(Mutex::new(IOMap::new(num_devices)));
+        let mut result = Self {
+            timeout,
+            sender: tx_sender,
+            is_open,
+            ec_sync0_cycle,
+            io_map,
+            init_guard: Some(init_guard),
+            config_dc_guard: Some(SOEMDCConfigGuard::new(sync_mode)),
+            op_state_guard: None,
+            ecat_th_guard: None,
+            ecat_check_th_guard: None,
+        };
 
-            Self::to_op();
+        result
+            .config_dc_guard
+            .as_ref()
+            .unwrap()
+            .configure_dc_dc(ec_sync0_cycle);
 
-            let is_open = Arc::new(AtomicBool::new(true));
-            let wkc = Arc::new(AtomicI32::new(0));
-            let (tx_sender, mut ecatth_handle, mut timer_handle) = Self::start_send_th(
-                is_open.clone(),
-                wkc.clone(),
-                io_map.clone(),
-                buf_size,
-                timer_strategy,
-                ec_send_cycle,
-            )?;
+        unsafe {
+            ec_config_map(result.io_map.lock().unwrap().data() as *mut c_void);
+        }
 
-            if !Self::is_op_state() {
-                is_open.store(false, Ordering::Release);
-                if let Some(timer) = ecatth_handle.take() {
-                    let _ = timer.join();
-                }
-                if let Some(timer) = timer_handle.take() {
-                    timer.close()?;
-                }
-                return Err(SOEMError::NotResponding(EcStatus::new(num_devices)).into());
-            }
+        result.op_state_guard = Some(OpStateGuard::new());
+        OpStateGuard::to_safe_op(num_devices)?;
+        OpStateGuard::to_op();
 
-            Self::configure_dc_freerun(ec_sync0_cycle, sync_mode);
+        let wkc = Arc::new(AtomicI32::new(0));
+        result.ecat_th_guard = Some(SOEMECatThreadGuard::new(
+            result.is_open.clone(),
+            wkc.clone(),
+            result.io_map.clone(),
+            tx_receiver,
+            timer_strategy,
+            ec_send_cycle,
+        )?);
 
-            Ok(Self {
-                ecat_check_th: Some({
-                    let expected_wkc =
-                        unsafe { (ec_group[0].outputsWKC * 2 + ec_group[0].inputsWKC) as i32 };
-                    let is_open = is_open.clone();
-                    let err_handler = err_handler.take();
-                    std::thread::spawn(move || {
-                        let err_handler = EcatErrorHandler { err_handler };
-                        err_handler.run(is_open, wkc, expected_wkc, state_check_interval)
-                    })
-                }),
-                ecatth_handle,
-                timer_handle,
-                timeout,
-                sender: tx_sender,
-                is_open,
-                ec_sync0_cycle,
-                io_map,
-            })
-        } {
-            Ok(r) => Ok(r),
-            Err(e) => {
-                unsafe {
-                    ec_slave[0].state = ec_state_EC_STATE_INIT as u16;
-                    ec_writestate(0);
+        if !OpStateGuard::is_op_state() {
+            return Err(SOEMError::NotResponding(EcStatus::new(num_devices)).into());
+        }
+
+        result
+            .config_dc_guard
+            .as_ref()
+            .unwrap()
+            .configure_dc_freerun(ec_sync0_cycle);
+
+        result.ecat_check_th_guard = Some(SOEMEcatCheckThreadGuard::new(
+            result.is_open.clone(),
+            err_handler.take(),
+            wkc.clone(),
+            state_check_interval,
+        ));
+
+        Ok(result)
+    }
+
+    fn is_autd3(i: i32) -> bool {
+        unsafe {
+            String::from_utf8(
+                ec_slave[i as usize]
+                    .name
+                    .into_iter()
+                    .take_while(|&c| c != 0)
+                    .map(|c| c as u8)
+                    .collect(),
+            )
+            .map(|name| name == "AUTD")
+            .unwrap_or(false)
+        }
+    }
+
+    fn lookup_autd() -> Result<String, SOEMError> {
+        let adapters: EthernetAdapters = Default::default();
+
+        adapters
+            .into_iter()
+            .find(|adapter| unsafe {
+                let ifname = match std::ffi::CString::new(adapter.name().to_owned()) {
+                    Ok(ifname) => ifname,
+                    Err(_) => return false,
+                };
+                if ec_init(ifname.as_ptr()) <= 0 {
                     ec_close();
+                    return false;
                 }
-                Err(e)
+                let wc = ec_config_init(0);
+                if wc <= 0 {
+                    ec_close();
+                    return false;
+                }
+                let found = (1..=wc).all(Self::is_autd3);
+                ec_close();
+                found
+            })
+            .map_or_else(
+                || Err(SOEMError::NoDeviceFound),
+                |adapter| Ok(adapter.name().to_owned()),
+            )
+    }
+}
+
+#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+impl Link for SOEM {
+    async fn close(&mut self) -> Result<(), AUTDInternalError> {
+        if !self.is_open() {
+            return Ok(());
+        }
+        self.is_open.store(false, Ordering::Release);
+
+        while !self.sender.is_empty() {
+            tokio::time::sleep(self.ec_sync0_cycle).await;
+        }
+
+        let _ = self.ecat_th_guard.take();
+        let _ = self.ecat_check_th_guard.take();
+        let _ = self.config_dc_guard.take();
+        let _ = self.op_state_guard.take();
+        let _ = self.init_guard.take();
+
+        Ok(())
+    }
+
+    async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
+        if !self.is_open() {
+            return Err(AUTDInternalError::LinkClosed);
+        }
+
+        match self.sender.send(tx.clone()).await {
+            Err(SendError(..)) => Err(AUTDInternalError::LinkClosed),
+            _ => Ok(true),
+        }
+    }
+
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
+        if !self.is_open() {
+            return Err(AUTDInternalError::LinkClosed);
+        }
+        match self.io_map.lock() {
+            Ok(io_map) => unsafe {
+                std::ptr::copy_nonoverlapping(io_map.input(), rx.as_mut_ptr(), rx.len());
+            },
+            Err(_) => return Err(AUTDInternalError::LinkClosed),
+        }
+        Ok(true)
+    }
+
+    fn is_open(&self) -> bool {
+        self.is_open.load(Ordering::Acquire)
+    }
+
+    fn timeout(&self) -> Duration {
+        self.timeout
+    }
+}
+
+impl Drop for SOEM {
+    fn drop(&mut self) {
+        self.is_open.store(false, Ordering::Release);
+        let _ = self.ecat_th_guard.take();
+        let _ = self.ecat_check_th_guard.take();
+        let _ = self.config_dc_guard.take();
+        let _ = self.op_state_guard.take();
+        let _ = self.init_guard.take();
+    }
+}
+
+struct SOEMInitGuard;
+
+impl SOEMInitGuard {
+    fn new(ifname: String) -> Result<Self, SOEMError> {
+        let ifname_c = CString::new(ifname.as_str())
+            .map_err(|_| SOEMError::InvalidInterfaceName(ifname.clone()))?;
+        if unsafe { ec_init(ifname_c.as_ptr()) <= 0 } {
+            return Err(SOEMError::NoSocketConnection(ifname));
+        }
+        Ok(Self)
+    }
+}
+
+impl Drop for SOEMInitGuard {
+    fn drop(&mut self) {
+        unsafe {
+            ec_close();
+        }
+    }
+}
+
+struct SOEMDCConfigGuard {
+    sync_mode: SyncMode,
+}
+
+impl SOEMDCConfigGuard {
+    fn new(sync_mode: SyncMode) -> Self {
+        unsafe {
+            ecx_context.userdata = std::ptr::null_mut();
+        }
+        Self { sync_mode }
+    }
+
+    fn configure_dc_dc(&self, ec_sync0_cycle: Duration) {
+        unsafe {
+            if self.sync_mode == SyncMode::DC {
+                ecx_context.userdata = Box::into_raw(Box::new(ec_sync0_cycle)) as *mut c_void;
+                (1..=ec_slavecount as usize).for_each(|i| {
+                    ec_slave[i].PO2SOconfigx = Some(dc_config);
+                });
+            }
+            ec_configdc();
+        }
+    }
+
+    fn configure_dc_freerun(&self, ec_sync0_cycle: Duration) {
+        unsafe {
+            if self.sync_mode == SyncMode::FreeRun {
+                ecx_context.userdata = Box::into_raw(Box::new(ec_sync0_cycle)) as *mut c_void;
+                (1..=ec_slavecount as u16).for_each(|i| {
+                    dc_config(addr_of_mut!(ecx_context), i);
+                });
             }
         }
+    }
+}
+
+impl Drop for SOEMDCConfigGuard {
+    fn drop(&mut self) {
+        unsafe {
+            if ecx_context.userdata.is_null() {
+                return;
+            }
+            let cyc_time = Box::from_raw(ecx_context.userdata as *mut Duration);
+            ecx_context.userdata = std::ptr::null_mut();
+            (1..=ec_slavecount as u16).for_each(|i| {
+                ec_dcsync0(i, 0, cyc_time.as_nanos() as _, 0);
+            });
+        }
+    }
+}
+
+struct OpStateGuard;
+
+impl OpStateGuard {
+    fn new() -> Self {
+        Self
+    }
+
+    fn to_safe_op(num_devices: usize) -> Result<(), SOEMError> {
+        unsafe {
+            ec_statecheck(0, ec_state_EC_STATE_SAFE_OP as u16, EC_TIMEOUTSTATE as i32);
+            if ec_slave[0].state != ec_state_EC_STATE_SAFE_OP as u16 {
+                return Err(SOEMError::NotReachedSafeOp(ec_slave[0].state));
+            }
+            ec_readstate();
+            if ec_slave[0].state != ec_state_EC_STATE_SAFE_OP as u16 {
+                return Err(SOEMError::NotResponding(EcStatus::new(num_devices)));
+            }
+        }
+
+        Ok(())
+    }
+
+    fn to_op() {
+        unsafe {
+            ec_slave[0].state = ec_state_EC_STATE_OPERATIONAL as u16;
+            ec_writestate(0);
+        }
+    }
+
+    fn is_op_state() -> bool {
+        unsafe {
+            ec_statecheck(
+                0,
+                ec_state_EC_STATE_OPERATIONAL as u16,
+                5 * EC_TIMEOUTSTATE as i32,
+            );
+            ec_slave[0].state == ec_state_EC_STATE_OPERATIONAL as u16
+        }
+    }
+}
+
+impl Drop for OpStateGuard {
+    fn drop(&mut self) {
+        unsafe {
+            ec_slave[0].state = ec_state_EC_STATE_INIT as u16;
+            ec_writestate(0);
+        }
+    }
+}
+
+struct SOEMECatThreadGuard {
+    ecatth_handle: Option<JoinHandle<Result<(), SOEMError>>>,
+    timer_handle: Option<Box<Timer<SoemCallback>>>,
+}
+
+impl SOEMECatThreadGuard {
+    fn new(
+        is_open: Arc<AtomicBool>,
+        wkc: Arc<AtomicI32>,
+        io_map: Arc<Mutex<IOMap>>,
+        tx_receiver: Receiver<TxDatagram>,
+        timer_strategy: TimerStrategy,
+        ec_send_cycle: Duration,
+    ) -> Result<Self, AUTDInternalError> {
+        let (ecatth_handle, timer_handle) = match timer_strategy {
+            TimerStrategy::Sleep => (
+                {
+                    Some(std::thread::spawn(move || {
+                        Self::ecat_run::<StdSleep>(is_open, io_map, wkc, tx_receiver, ec_send_cycle)
+                    }))
+                },
+                None,
+            ),
+            TimerStrategy::BusyWait => (
+                {
+                    Some(std::thread::spawn(move || {
+                        Self::ecat_run::<BusyWait>(is_open, io_map, wkc, tx_receiver, ec_send_cycle)
+                    }))
+                },
+                None,
+            ),
+            TimerStrategy::NativeTimer => (
+                None,
+                Some(Timer::start(
+                    SoemCallback {
+                        wkc,
+                        receiver: tx_receiver,
+                        io_map,
+                    },
+                    ec_send_cycle,
+                )?),
+            ),
+        };
+
+        Ok(Self {
+            ecatth_handle,
+            timer_handle,
+        })
     }
 
     fn ecat_run<S: Sleep>(
@@ -261,251 +548,44 @@ impl SOEM {
         }
         (-(delta / 100) - (*integral / 20)).nanoseconds()
     }
-
-    fn is_autd3(i: i32) -> bool {
-        unsafe {
-            String::from_utf8(
-                ec_slave[i as usize]
-                    .name
-                    .into_iter()
-                    .take_while(|&c| c != 0)
-                    .map(|c| c as u8)
-                    .collect(),
-            )
-            .map(|name| name == "AUTD")
-            .unwrap_or(false)
-        }
-    }
-
-    fn lookup_autd() -> Result<String, SOEMError> {
-        let adapters: EthernetAdapters = Default::default();
-
-        adapters
-            .into_iter()
-            .find(|adapter| unsafe {
-                let ifname = match std::ffi::CString::new(adapter.name().to_owned()) {
-                    Ok(ifname) => ifname,
-                    Err(_) => return false,
-                };
-                if ec_init(ifname.as_ptr()) <= 0 {
-                    ec_close();
-                    return false;
-                }
-                let wc = ec_config_init(0);
-                if wc <= 0 {
-                    ec_close();
-                    return false;
-                }
-                let found = (1..=wc).all(Self::is_autd3);
-                ec_close();
-                found
-            })
-            .map_or_else(
-                || Err(SOEMError::NoDeviceFound),
-                |adapter| Ok(adapter.name().to_owned()),
-            )
-    }
-
-    fn configure_dc_dc(ec_sync0_cycle: Duration, sync_mode: SyncMode) {
-        unsafe {
-            if sync_mode == SyncMode::DC {
-                ecx_context.userdata = Box::into_raw(Box::new(ec_sync0_cycle)) as *mut c_void;
-                (1..=ec_slavecount as usize).for_each(|i| {
-                    ec_slave[i].PO2SOconfigx = Some(dc_config);
-                });
-            }
-            ec_configdc();
-        }
-    }
-
-    fn configure_dc_freerun(ec_sync0_cycle: Duration, sync_mode: SyncMode) {
-        unsafe {
-            if sync_mode == SyncMode::FreeRun {
-                ecx_context.userdata = Box::into_raw(Box::new(ec_sync0_cycle)) as *mut c_void;
-                (1..=ec_slavecount as u16).for_each(|i| {
-                    dc_config(addr_of_mut!(ecx_context), i);
-                });
-            }
-        }
-    }
-
-    fn init_ecat(ifname: String, geometry: &Geometry) -> Result<usize, SOEMError> {
-        let ifname_c = CString::new(ifname.as_str())
-            .map_err(|_| SOEMError::InvalidInterfaceName(ifname.clone()))?;
-
-        unsafe {
-            if ec_init(ifname_c.as_ptr()) <= 0 {
-                return Err(SOEMError::NoSocketConnection(ifname));
-            }
-
-            let wc = ec_config_init(0);
-            if wc <= 0 || (geometry.num_devices() != 0 && wc as usize != geometry.num_devices()) {
-                ec_close();
-                return Err(SOEMError::SlaveNotFound(wc as _, geometry.len() as _));
-            }
-
-            (1..=wc).try_for_each(|i| {
-                if Self::is_autd3(i) {
-                    Ok(())
-                } else {
-                    ec_close();
-                    Err(SOEMError::NoDeviceFound)
-                }
-            })?;
-
-            Ok(wc as _)
-        }
-    }
-
-    fn to_safe_op(num_devices: usize) -> Result<(), SOEMError> {
-        unsafe {
-            ec_statecheck(0, ec_state_EC_STATE_SAFE_OP as u16, EC_TIMEOUTSTATE as i32);
-            if ec_slave[0].state != ec_state_EC_STATE_SAFE_OP as u16 {
-                return Err(SOEMError::NotReachedSafeOp(ec_slave[0].state));
-            }
-            ec_readstate();
-            if ec_slave[0].state != ec_state_EC_STATE_SAFE_OP as u16 {
-                return Err(SOEMError::NotResponding(EcStatus::new(num_devices)));
-            }
-        }
-
-        Ok(())
-    }
-
-    #[allow(clippy::type_complexity)]
-    fn start_send_th(
-        is_open: Arc<AtomicBool>,
-        wkc: Arc<AtomicI32>,
-        io_map: Arc<Mutex<IOMap>>,
-        buf_size: usize,
-        timer_strategy: TimerStrategy,
-        ec_send_cycle: Duration,
-    ) -> Result<
-        (
-            Sender<TxDatagram>,
-            Option<JoinHandle<Result<(), SOEMError>>>,
-            Option<Box<Timer<SoemCallback>>>,
-        ),
-        AUTDInternalError,
-    > {
-        let (tx_sender, tx_receiver) = bounded(buf_size);
-        let (ecatth_handle, timer_handle) = match timer_strategy {
-            TimerStrategy::Sleep => (
-                {
-                    Some(std::thread::spawn(move || {
-                        Self::ecat_run::<StdSleep>(is_open, io_map, wkc, tx_receiver, ec_send_cycle)
-                    }))
-                },
-                None,
-            ),
-            TimerStrategy::BusyWait => (
-                {
-                    Some(std::thread::spawn(move || {
-                        Self::ecat_run::<BusyWait>(is_open, io_map, wkc, tx_receiver, ec_send_cycle)
-                    }))
-                },
-                None,
-            ),
-            TimerStrategy::NativeTimer => (
-                None,
-                Some(Timer::start(
-                    SoemCallback {
-                        wkc,
-                        receiver: tx_receiver,
-                        io_map,
-                    },
-                    ec_send_cycle,
-                )?),
-            ),
-        };
-
-        Ok((tx_sender, ecatth_handle, timer_handle))
-    }
-
-    fn to_op() {
-        unsafe {
-            ec_slave[0].state = ec_state_EC_STATE_OPERATIONAL as u16;
-            ec_writestate(0);
-        }
-    }
-
-    fn is_op_state() -> bool {
-        unsafe {
-            ec_statecheck(
-                0,
-                ec_state_EC_STATE_OPERATIONAL as u16,
-                5 * EC_TIMEOUTSTATE as i32,
-            );
-            ec_slave[0].state == ec_state_EC_STATE_OPERATIONAL as u16
-        }
-    }
 }
 
-#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
-impl Link for SOEM {
-    async fn close(&mut self) -> Result<(), AUTDInternalError> {
-        if !self.is_open() {
-            return Ok(());
-        }
-        self.is_open.store(false, Ordering::Release);
-
-        while !self.sender.is_empty() {
-            tokio::time::sleep(self.ec_sync0_cycle).await;
-        }
-
+impl Drop for SOEMECatThreadGuard {
+    fn drop(&mut self) {
         if let Some(timer) = self.ecatth_handle.take() {
             let _ = timer.join();
         }
         if let Some(timer) = self.timer_handle.take() {
-            timer.close()?;
+            let _ = timer.close();
         }
+    }
+}
+
+struct SOEMEcatCheckThreadGuard {
+    ecat_check_th: Option<JoinHandle<()>>,
+}
+
+impl SOEMEcatCheckThreadGuard {
+    fn new(
+        is_open: Arc<AtomicBool>,
+        err_handler: Option<ErrHandler>,
+        wkc: Arc<AtomicI32>,
+        state_check_interval: Duration,
+    ) -> Self {
+        let expected_wkc = unsafe { (ec_group[0].outputsWKC * 2 + ec_group[0].inputsWKC) as i32 };
+        Self {
+            ecat_check_th: Some(std::thread::spawn(move || {
+                let err_handler = EcatErrorHandler { err_handler };
+                err_handler.run(is_open, wkc, expected_wkc, state_check_interval)
+            })),
+        }
+    }
+}
+
+impl Drop for SOEMEcatCheckThreadGuard {
+    fn drop(&mut self) {
         if let Some(th) = self.ecat_check_th.take() {
             let _ = th.join();
         }
-
-        unsafe {
-            let cyc_time = Box::from_raw(ecx_context.userdata as *mut Duration);
-            (1..=ec_slavecount as u16).for_each(|i| {
-                ec_dcsync0(i, 0, cyc_time.as_nanos() as _, 0);
-            });
-
-            ec_slave[0].state = ec_state_EC_STATE_INIT as _;
-            ec_writestate(0);
-            ec_close();
-        }
-
-        Ok(())
-    }
-
-    async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
-        if !self.is_open() {
-            return Err(AUTDInternalError::LinkClosed);
-        }
-
-        match self.sender.send(tx.clone()).await {
-            Err(SendError(..)) => Err(AUTDInternalError::LinkClosed),
-            _ => Ok(true),
-        }
-    }
-
-    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
-        if !self.is_open() {
-            return Err(AUTDInternalError::LinkClosed);
-        }
-        match self.io_map.lock() {
-            Ok(io_map) => unsafe {
-                std::ptr::copy_nonoverlapping(io_map.input(), rx.as_mut_ptr(), rx.len());
-            },
-            Err(_) => return Err(AUTDInternalError::LinkClosed),
-        }
-        Ok(true)
-    }
-
-    fn is_open(&self) -> bool {
-        self.is_open.load(Ordering::Acquire)
-    }
-
-    fn timeout(&self) -> Duration {
-        self.timeout
     }
 }
