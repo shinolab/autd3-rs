@@ -30,7 +30,7 @@ runs:
         toolchain: ${{ inputs.toolchain }}
 
     - name: Install Protoc
-      uses: arduino/setup-protoc@v2
+      uses: arduino/setup-protoc@v3
       with:
         repo-token: ${{ inputs.github-token }}
 
