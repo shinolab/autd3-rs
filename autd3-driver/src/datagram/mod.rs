@@ -14,17 +14,18 @@ pub use clear::Clear;
 pub use debug::ConfigureDebugOutputIdx;
 pub use force_fan::ConfigureForceFan;
 pub use gain::{
-    Gain, GainCache, GainFilter, GainTransform, Group, IntoGainCache, IntoGainTransform,
+    ChangeGainSegment, Gain, GainCache, GainFilter, GainTransform, Group, IntoGainCache,
+    IntoGainTransform,
 };
 pub use modulation::{
-    IntoModulationCache, IntoModulationTransform, IntoRadiationPressure, Modulation,
-    ModulationCache, ModulationProperty, ModulationTransform, RadiationPressure,
+    ChangeModulationSegment, IntoModulationCache, IntoModulationTransform, IntoRadiationPressure,
+    Modulation, ModulationCache, ModulationProperty, ModulationTransform, RadiationPressure,
 };
 pub use reads_fpga_state::ConfigureReadsFPGAState;
 pub use silencer::{
     ConfigureSilencer, ConfigureSilencerFixedCompletionSteps, ConfigureSilencerFixedUpdateRate,
 };
-pub use stm::{FocusSTM, GainSTM, STMProps};
+pub use stm::{ChangeFocusSTMSegment, ChangeGainSTMSegment, FocusSTM, GainSTM, STMProps};
 pub use synchronize::Synchronize;
 pub use with_segment::{DatagramS, DatagramWithSegment, IntoDatagramWithSegment};
 pub use with_timeout::{DatagramWithTimeout, IntoDatagramWithTimeout};

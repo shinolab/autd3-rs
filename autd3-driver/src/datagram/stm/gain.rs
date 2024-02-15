@@ -182,6 +182,29 @@ impl<G: Gain> DatagramS for GainSTM<G> {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct ChangeGainSTMSegment {
+    segment: Segment,
+}
+
+impl ChangeGainSTMSegment {
+    pub const fn new(segment: Segment) -> Self {
+        Self { segment }
+    }
+}
+
+impl crate::datagram::Datagram for ChangeGainSTMSegment {
+    type O1 = crate::operation::GainSTMChangeSegmentOp;
+    type O2 = crate::operation::NullOp;
+
+    fn timeout(&self) -> Option<Duration> {
+        Some(Duration::from_millis(200))
+    }
+
+    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+        Ok((Self::O1::new(self.segment), Self::O2::default()))
+    }
+}
 
 #[cfg(test)]
 mod tests {
