@@ -2,7 +2,6 @@ mod clear;
 mod debug;
 mod force_fan;
 mod gain;
-mod mod_delay;
 mod modulation;
 mod reads_fpga_state;
 mod silencer;
@@ -16,7 +15,6 @@ pub use force_fan::ConfigureForceFan;
 pub use gain::{
     Gain, GainCache, GainFilter, GainTransform, Group, IntoGainCache, IntoGainTransform,
 };
-pub use mod_delay::ConfigureModDelay;
 pub use modulation::{
     IntoModulationCache, IntoModulationTransform, IntoRadiationPressure, Modulation,
     ModulationCache, ModulationProperty, ModulationTransform, RadiationPressure,
