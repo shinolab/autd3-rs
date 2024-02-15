@@ -9,6 +9,8 @@ pub use radiation_pressure::RadiationPressure;
 pub use transform::IntoTransform as IntoModulationTransform;
 pub use transform::Transform as ModulationTransform;
 
+use crate::common::LoopBehavior;
+use crate::cpu::Segment;
 use crate::{
     common::{EmitIntensity, SamplingConfiguration},
     error::AUTDInternalError,
@@ -16,6 +18,7 @@ use crate::{
 
 pub trait ModulationProperty {
     fn sampling_config(&self) -> SamplingConfiguration;
+    fn loop_behavior(&self) -> LoopBehavior;
 }
 
 /// Modulation controls the amplitude modulation data.
@@ -37,6 +40,11 @@ impl ModulationProperty for Box<dyn Modulation> {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn sampling_config(&self) -> SamplingConfiguration {
         self.as_ref().sampling_config()
+    }
+
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn loop_behavior(&self) -> LoopBehavior {
+        self.as_ref().loop_behavior()
     }
 }
 
@@ -62,6 +70,7 @@ mod tests {
     pub struct TestModulation {
         pub buf: Vec<EmitIntensity>,
         pub config: SamplingConfiguration,
+        pub loop_behavior: LoopBehavior,
     }
 
     impl Modulation for TestModulation {
@@ -75,6 +84,7 @@ mod tests {
         let m = TestModulation {
             config: SamplingConfiguration::FREQ_4K_HZ,
             buf: vec![],
+            loop_behavior: LoopBehavior::Infinite,
         };
         assert_eq!(m.sampling_config(), SamplingConfiguration::FREQ_4K_HZ);
     }
@@ -85,6 +95,7 @@ mod tests {
             TestModulation {
                 config: SamplingConfiguration::FREQ_4K_HZ,
                 buf: vec![],
+                loop_behavior: LoopBehavior::Infinite,
             }
             .len()?,
             0
@@ -94,6 +105,7 @@ mod tests {
             TestModulation {
                 config: SamplingConfiguration::FREQ_4K_HZ,
                 buf: vec![EmitIntensity::MIN; 100],
+                loop_behavior: LoopBehavior::Infinite,
             }
             .len()?,
             100

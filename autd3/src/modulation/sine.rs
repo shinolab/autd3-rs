@@ -13,6 +13,7 @@ pub struct Sine {
     offset: EmitIntensity,
     config: SamplingConfiguration,
     mode: SamplingMode,
+    loop_behavior: LoopBehavior,
 }
 
 impl Sine {
@@ -32,6 +33,7 @@ impl Sine {
             offset: EmitIntensity::new(127),
             config: SamplingConfiguration::FREQ_4K_HZ,
             mode: SamplingMode::ExactFrequency,
+            loop_behavior: LoopBehavior::Infinite,
         }
     }
 

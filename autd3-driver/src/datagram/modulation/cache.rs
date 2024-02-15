@@ -15,6 +15,7 @@ pub struct Cache<M: Modulation> {
     cache: Rc<RefCell<Vec<EmitIntensity>>>,
     #[no_change]
     config: SamplingConfiguration,
+    loop_behavior: LoopBehavior,
 }
 
 impl<M: Modulation> std::ops::Deref for Cache<M> {
@@ -36,6 +37,7 @@ impl<M: Modulation + Clone> Clone for Cache<M> {
             m: self.m.clone(),
             cache: self.cache.clone(),
             config: self.config,
+            loop_behavior: self.loop_behavior,
         }
     }
 }
@@ -45,6 +47,7 @@ impl<M: Modulation> Cache<M> {
     pub fn new(m: M) -> Self {
         Self {
             config: m.sampling_config(),
+            loop_behavior: m.loop_behavior(),
             m: Rc::new(m),
             cache: Rc::new(Default::default()),
         }
@@ -99,6 +102,7 @@ mod tests {
         let m = TestModulation {
             buf: vec![EmitIntensity::random(); 2],
             config: SamplingConfiguration::FREQ_4K_HZ,
+            loop_behavior: LoopBehavior::Infinite,
         };
         let cache = m.clone().with_cache();
         assert_eq!(&m, cache.deref());
@@ -116,6 +120,7 @@ mod tests {
     struct TestCacheModulation {
         pub calc_cnt: Arc<AtomicUsize>,
         pub config: SamplingConfiguration,
+        pub loop_behavior: LoopBehavior,
     }
 
     impl Clone for TestCacheModulation {
@@ -124,6 +129,7 @@ mod tests {
             Self {
                 calc_cnt: self.calc_cnt.clone(),
                 config: self.config,
+                loop_behavior: LoopBehavior::Infinite,
             }
         }
     }
@@ -142,6 +148,7 @@ mod tests {
         let modulation = TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
             config: SamplingConfiguration::FREQ_4K_HZ,
+            loop_behavior: LoopBehavior::Infinite,
         }
         .with_cache();
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
@@ -160,6 +167,7 @@ mod tests {
         let modulation = TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
             config: SamplingConfiguration::FREQ_4K_HZ,
+            loop_behavior: LoopBehavior::Infinite,
         }
         .with_cache();
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));

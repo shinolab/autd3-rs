@@ -18,6 +18,7 @@ pub struct RawPCM {
     sample_rate: u32,
     path: PathBuf,
     config: SamplingConfiguration,
+    loop_behavior: LoopBehavior,
 }
 
 impl RawPCM {
@@ -33,6 +34,7 @@ impl RawPCM {
             sample_rate,
             path: path.as_ref().to_path_buf(),
             config: SamplingConfiguration::FREQ_4K_HZ,
+            loop_behavior: LoopBehavior::Infinite,
         }
     }
 

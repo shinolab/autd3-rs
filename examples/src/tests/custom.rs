@@ -27,12 +27,14 @@ impl Gain for MyUniform {
 #[derive(Modulation, Clone, Copy)]
 pub struct Burst {
     config: SamplingConfiguration,
+    loop_behavior: LoopBehavior,
 }
 
 impl Burst {
     pub fn new() -> Self {
         Self {
             config: SamplingConfiguration::FREQ_4K_HZ,
+            loop_behavior: LoopBehavior::Infinite,
         }
     }
 }

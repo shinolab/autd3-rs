@@ -7,6 +7,7 @@ pub struct RadiationPressure<M: Modulation> {
     m: M,
     #[no_change]
     config: SamplingConfiguration,
+    loop_behavior: LoopBehavior,
 }
 
 impl<M: Modulation> RadiationPressure<M> {
@@ -14,6 +15,7 @@ impl<M: Modulation> RadiationPressure<M> {
     pub fn new(m: M) -> Self {
         Self {
             config: m.sampling_config(),
+            loop_behavior: m.loop_behavior(),
             m,
         }
     }
@@ -44,6 +46,7 @@ mod tests {
         let m = TestModulation {
             buf: vec![EmitIntensity::random(); 2],
             config: SamplingConfiguration::FREQ_4K_HZ,
+            loop_behavior: LoopBehavior::Infinite,
         };
         let m_transformed = m.clone().with_radiation_pressure();
 

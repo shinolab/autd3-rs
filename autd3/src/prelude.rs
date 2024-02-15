@@ -9,7 +9,7 @@ pub use crate::{
 pub use autd3_driver::{
     autd3_device::AUTD3,
     common::Rad as PhaseRad,
-    common::{Drive, EmitIntensity, Phase, SamplingConfiguration},
+    common::{Drive, EmitIntensity, LoopBehavior, Phase, SamplingConfiguration},
     datagram::{
         Clear, ConfigureDebugOutputIdx, ConfigureForceFan, ConfigureReadsFPGAState,
         ConfigureSilencer, DatagramT, FocusSTM, GainCache, GainFilter, GainSTM, GainTransform,
