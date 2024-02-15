@@ -93,13 +93,13 @@ pub fn modulation_derive(input: TokenStream) -> TokenStream {
     let type_params = generics.type_params();
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let datagram = quote! {
-        impl <#(#linetimes,)* #(#type_params,)* > Datagram for #name #ty_generics #where_clause {
+        impl <#(#linetimes,)* #(#type_params,)* > DatagramS for #name #ty_generics #where_clause {
             type O1 = ModulationOp;
             type O2 = NullOp;
 
-            fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+            fn operation_with_segment(self, segment: Segment, update_segment: bool) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
                 let freq_div = self.config.frequency_division();
-                Ok((Self::O1::new(self.calc()?, freq_div), Self::O2::default()))
+                Ok((Self::O1::new(self.calc()?, freq_div, self.loop_behavior, segment, update_segment), Self::O2::default()))
             }
 
             fn timeout(&self) -> Option<std::time::Duration> {
@@ -164,6 +164,8 @@ pub fn modulation_derive(input: TokenStream) -> TokenStream {
 
     let gen = quote! {
         #prop
+
+        #loop_behavior
 
         #freq_config
 
@@ -253,13 +255,13 @@ fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
     let type_params = generics.type_params();
     let where_clause = to_gain_where(where_clause);
     let gen = quote! {
-        impl <#(#linetimes,)* #(#type_params,)*> Datagram for #name #ty_generics #where_clause
+        impl <#(#linetimes,)* #(#type_params,)*> DatagramS for #name #ty_generics #where_clause
         {
             type O1 = GainOp<Self>;
             type O2 = NullOp;
 
-            fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-                Ok((Self::O1::new(self), Self::O2::default()))
+            fn operation_with_segment(self, segment: Segment, update_segment: bool) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+                Ok((Self::O1::new(segment, update_segment, self), Self::O2::default()))
             }
         }
 

@@ -1,6 +1,7 @@
 pub use crate::{
     common::Drive,
-    datagram::{Datagram, Gain, GainFilter, Modulation},
+    cpu::Segment,
+    datagram::{DatagramS, Gain, GainFilter, Modulation},
     error::AUTDInternalError,
     geometry::Geometry,
     operation::{GainOp, NullOp, Operation},
@@ -197,6 +198,6 @@ mod tests {
     fn test_cache_derive() {
         let g = TestGain { d: Drive::random() }.with_cache();
         assert_eq!(g, g.clone());
-        let _ = g.operation();
+        let _ = g.operation_with_segment(Segment::S0, true);
     }
 }

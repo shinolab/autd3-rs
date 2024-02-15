@@ -7,6 +7,7 @@ mod reads_fpga_state;
 mod silencer;
 mod stm;
 mod synchronize;
+mod with_segment;
 mod with_timeout;
 
 pub use clear::Clear;
@@ -25,6 +26,7 @@ pub use silencer::{
 };
 pub use stm::{FocusSTM, GainSTM, STMProps};
 pub use synchronize::Synchronize;
+pub use with_segment::{DatagramS, DatagramWithSegment, IntoDatagramWithSegment};
 pub use with_timeout::{DatagramWithTimeout, IntoDatagramWithTimeout};
 
 use std::time::Duration;

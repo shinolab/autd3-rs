@@ -9,7 +9,9 @@ pub use transform::IntoTransform as IntoGainTransform;
 pub use transform::Transform as GainTransform;
 
 use std::collections::HashMap;
+use std::time::Duration;
 
+use crate::cpu::Segment;
 use crate::{
     common::Drive,
     error::AUTDInternalError,
@@ -19,6 +21,7 @@ use crate::{
 
 use bitvec::prelude::*;
 
+use super::with_segment::DatagramS;
 use super::Datagram;
 
 pub enum GainFilter<'a> {
@@ -80,22 +83,22 @@ impl<'a> Gain for Box<dyn Gain + 'a> {
     }
 }
 
-impl<'a> Gain for Box<dyn Gain + Send + 'a> {
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn calc(
-        &self,
-        geometry: &Geometry,
-        filter: GainFilter,
-    ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        self.as_ref().calc(geometry, filter)
-    }
-}
-
-impl Datagram for Box<dyn Gain> {
+impl DatagramS for Box<dyn Gain> {
     type O1 = GainOp<Self>;
     type O2 = NullOp;
 
     #[cfg_attr(coverage_nightly, coverage(off))]
+    fn operation_with_segment(
+        self,
+        segment: Segment,
+        update_segment: bool,
+    ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+        Ok((
+            Self::O1::new(segment, update_segment, self),
+            Self::O2::default(),
+        ))
+    }
+}
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         Ok((Self::O1::new(self), Self::O2::default()))
     }

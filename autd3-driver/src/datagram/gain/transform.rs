@@ -1,6 +1,7 @@
 pub use crate::{
     common::Drive,
-    datagram::{Datagram, Gain, GainCache, GainFilter, IntoGainCache, Modulation},
+    cpu::Segment,
+    datagram::{DatagramS, Gain, GainCache, GainFilter, IntoGainCache, Modulation},
     error::AUTDInternalError,
     geometry::{Device, Geometry, Transducer},
     operation::{GainOp, NullOp, Operation},
@@ -63,7 +64,7 @@ impl<G: Gain + 'static, F: Fn(&Device, &Transducer, Drive) -> Drive + 'static> G
 mod tests {
     use super::{super::tests::TestGain, *};
 
-    use crate::geometry::tests::create_geometry;
+    use crate::{datagram::Datagram, geometry::tests::create_geometry};
 
     #[test]
     fn test_gain_transform() -> anyhow::Result<()> {
