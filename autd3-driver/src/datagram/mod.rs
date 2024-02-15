@@ -25,7 +25,7 @@ pub use silencer::{
 };
 pub use stm::{FocusSTM, GainSTM, STMProps};
 pub use synchronize::Synchronize;
-pub use with_timeout::{DatagramT, DatagramWithTimeout};
+pub use with_timeout::{DatagramWithTimeout, IntoDatagramWithTimeout};
 
 use std::time::Duration;
 
