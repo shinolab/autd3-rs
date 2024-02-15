@@ -2,6 +2,8 @@ mod cache;
 mod radiation_pressure;
 mod transform;
 
+use std::time::Duration;
+
 pub use cache::Cache as ModulationCache;
 pub use cache::IntoCache as IntoModulationCache;
 pub use radiation_pressure::IntoRadiationPressure;
@@ -15,6 +17,8 @@ use crate::{
     common::{EmitIntensity, SamplingConfiguration},
     error::AUTDInternalError,
 };
+
+use super::Datagram;
 
 pub trait ModulationProperty {
     fn sampling_config(&self) -> SamplingConfiguration;
@@ -57,6 +61,30 @@ impl Modulation for Box<dyn Modulation> {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn len(&self) -> Result<usize, AUTDInternalError> {
         self.as_ref().len()
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct ChangeModulationSegment {
+    segment: Segment,
+}
+
+impl ChangeModulationSegment {
+    pub const fn new(segment: Segment) -> Self {
+        Self { segment }
+    }
+}
+
+impl Datagram for ChangeModulationSegment {
+    type O1 = crate::operation::ModulationChangeSegmentOp;
+    type O2 = crate::operation::NullOp;
+
+    fn timeout(&self) -> Option<Duration> {
+        Some(Duration::from_millis(200))
+    }
+
+    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+        Ok((Self::O1::new(self.segment), Self::O2::default()))
     }
 }
 

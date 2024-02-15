@@ -99,8 +99,28 @@ impl DatagramS for Box<dyn Gain> {
         ))
     }
 }
+
+#[derive(Debug, Clone, Copy)]
+pub struct ChangeGainSegment {
+    segment: Segment,
+}
+
+impl ChangeGainSegment {
+    pub const fn new(segment: Segment) -> Self {
+        Self { segment }
+    }
+}
+
+impl Datagram for ChangeGainSegment {
+    type O1 = crate::operation::GainChangeSegmentOp;
+    type O2 = crate::operation::NullOp;
+
+    fn timeout(&self) -> Option<Duration> {
+        Some(Duration::from_millis(200))
+    }
+
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new(self), Self::O2::default()))
+        Ok((Self::O1::new(self.segment), Self::O2::default()))
     }
 }
 
