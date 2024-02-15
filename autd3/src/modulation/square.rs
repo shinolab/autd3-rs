@@ -13,6 +13,7 @@ pub struct Square {
     duty: float,
     config: SamplingConfiguration,
     mode: SamplingMode,
+    loop_behavior: LoopBehavior,
 }
 
 impl Square {
@@ -30,6 +31,7 @@ impl Square {
             duty: 0.5,
             config: SamplingConfiguration::FREQ_4K_HZ,
             mode: SamplingMode::ExactFrequency,
+            loop_behavior: LoopBehavior::Infinite,
         }
     }
 

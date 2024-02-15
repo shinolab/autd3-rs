@@ -6,6 +6,7 @@ pub struct Static {
     intensity: EmitIntensity,
     #[no_change]
     config: SamplingConfiguration,
+    loop_behavior: LoopBehavior,
 }
 
 impl Static {
@@ -14,6 +15,7 @@ impl Static {
         Self {
             intensity: EmitIntensity::MAX,
             config: SamplingConfiguration::DISABLE,
+            loop_behavior: LoopBehavior::Infinite,
         }
     }
 
@@ -27,6 +29,7 @@ impl Static {
         Self {
             intensity: intensity.into(),
             config: SamplingConfiguration::DISABLE,
+            loop_behavior: LoopBehavior::Infinite,
         }
     }
 

@@ -8,6 +8,7 @@ pub struct Transform<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity
     #[no_change]
     config: SamplingConfiguration,
     f: F,
+    loop_behavior: LoopBehavior,
 }
 
 impl<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> Transform<M, F> {
@@ -15,6 +16,7 @@ impl<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> Transform<M, F
     pub fn new(m: M, f: F) -> Self {
         Self {
             config: m.sampling_config(),
+            loop_behavior: m.loop_behavior(),
             m,
             f,
         }
@@ -67,6 +69,7 @@ mod tests {
         let m = TestModulation {
             buf: vec![EmitIntensity::random(); 2],
             config: SamplingConfiguration::FREQ_4K_HZ,
+            loop_behavior: LoopBehavior::Infinite,
         };
         let m_transformed = m.clone().with_transform(|_, x| x / 2);
 

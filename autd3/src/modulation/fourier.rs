@@ -12,6 +12,7 @@ pub struct Fourier {
     #[no_change]
     config: SamplingConfiguration,
     components: Vec<Sine>,
+    loop_behavior: LoopBehavior,
 }
 
 impl Fourier {
@@ -19,6 +20,7 @@ impl Fourier {
         Self {
             config: sine.sampling_config(),
             components: vec![sine],
+            loop_behavior: LoopBehavior::Infinite,
         }
     }
 
@@ -31,6 +33,7 @@ impl Fourier {
         let Self {
             mut components,
             config,
+            loop_behavior,
         } = self;
         let config = SamplingConfiguration::from_frequency_division(
             config
@@ -39,7 +42,11 @@ impl Fourier {
         )
         .unwrap();
         components.push(sine.with_sampling_config(config));
-        Self { components, config }
+        Self {
+            components,
+            config,
+            loop_behavior,
+        }
     }
 
     /// Add sine wave components from iterator
@@ -51,6 +58,7 @@ impl Fourier {
         let Self {
             mut components,
             config,
+            loop_behavior,
         } = self;
         let append = iter.into_iter().map(|m| m.into()).collect::<Vec<_>>();
         let freq_div = append.iter().fold(config.frequency_division(), |acc, m| {
@@ -58,7 +66,11 @@ impl Fourier {
         });
         let config = SamplingConfiguration::from_frequency_division(freq_div).unwrap();
         components.extend(append.into_iter().map(|m| m.with_sampling_config(config)));
-        Self { components, config }
+        Self {
+            components,
+            config,
+            loop_behavior,
+        }
     }
 }
 

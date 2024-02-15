@@ -59,10 +59,32 @@ pub fn modulation_derive(input: TokenStream) -> TokenStream {
 
     let linetimes = generics.lifetimes();
     let type_params = generics.type_params();
+    let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let loop_behavior = quote! {
+        impl <#(#linetimes,)* #(#type_params,)*> #name #ty_generics #where_clause {
+            /// Set loop behavior
+            ///
+            /// # Arguments
+            ///
+            /// * `loop_behavior` - Loop behavior
+            ///
+            #[allow(clippy::needless_update)]
+            pub fn with_loop_behavior(self, loop_behavior: LoopBehavior) -> Self {
+                Self {loop_behavior, ..self}
+            }
+        }
+    };
+
+    let linetimes = generics.lifetimes();
+    let type_params = generics.type_params();
     let prop = quote! {
         impl <#(#linetimes,)* #(#type_params,)*> ModulationProperty for #name #ty_generics #where_clause {
             fn sampling_config(&self) -> SamplingConfiguration {
                 self.config
+            }
+
+            fn loop_behavior(&self) -> LoopBehavior {
+                self.loop_behavior
             }
         }
     };
