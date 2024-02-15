@@ -35,10 +35,14 @@ pub enum TypeTag {
     Sync = 0x02,
     FirmwareInfo = 0x03,
     Modulation = 0x10,
+    ModulationChangeSegment = 0x11,
     Silencer = 0x20,
     Gain = 0x30,
+    GainChangeSegment = 0x31,
     FocusSTM = 0x40,
-    GainSTM = 0x50,
+    GainSTM = 0x41,
+    FocusSTMChangeSegment = 0x42,
+    GainSTMChangeSegment = 0x43,
     ForceFan = 0x60,
     ReadsFPGAState = 0x61,
     Debug = 0xF0,
@@ -164,16 +168,19 @@ impl OperationHandler {
 pub mod tests {
     use std::collections::HashMap;
 
+    use autd3_derive::Gain;
+
     use crate::{
         common::Drive,
         cpu::{Header, EC_OUTPUT_FRAME_SIZE},
         datagram::{Gain, GainFilter},
+        derive::*,
         geometry::{Transducer, UnitQuaternion, Vector3},
     };
 
     use super::*;
 
-    #[derive(Clone)]
+    #[derive(Gain, Clone)]
     pub struct TestGain {
         pub data: HashMap<usize, Vec<Drive>>,
     }
@@ -189,7 +196,7 @@ pub mod tests {
         }
     }
 
-    #[derive(Copy)]
+    #[derive(Gain, Copy)]
     pub struct NullGain {}
 
     impl Clone for NullGain {
@@ -210,8 +217,11 @@ pub mod tests {
         }
     }
 
-    #[derive(Copy)]
-    pub struct ErrGain {}
+    #[derive(Gain, Copy)]
+    pub struct ErrGain {
+        pub segment: Segment,
+        pub update_segment: bool,
+    }
 
     impl Clone for ErrGain {
         #[cfg_attr(coverage_nightly, coverage(off))]
