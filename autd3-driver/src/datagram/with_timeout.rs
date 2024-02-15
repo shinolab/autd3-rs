@@ -22,13 +22,13 @@ impl<D: Datagram> Datagram for DatagramWithTimeout<D> {
     }
 }
 
-pub trait DatagramT<D: Datagram> {
+pub trait IntoDatagramWithTimeout<D: Datagram> {
     /// Set timeout.
     /// This takes precedence over the timeout specified in Link.
     fn with_timeout(self, timeout: Duration) -> DatagramWithTimeout<D>;
 }
 
-impl<D: Datagram> DatagramT<D> for D {
+impl<D: Datagram> IntoDatagramWithTimeout<D> for D {
     fn with_timeout(self, timeout: Duration) -> DatagramWithTimeout<D> {
         DatagramWithTimeout {
             datagram: self,
