@@ -1,7 +1,8 @@
 pub use crate::{
     common::Drive,
+    cpu::Segment,
     datagram::{
-        Datagram, Gain, GainCache, GainFilter, GainTransform, IntoGainCache, IntoGainTransform,
+        DatagramS, Gain, GainCache, GainFilter, GainTransform, IntoGainCache, IntoGainTransform,
         Modulation,
     },
     error::AUTDInternalError,
@@ -157,7 +158,7 @@ where
 mod tests {
     use super::{super::tests::TestGain, *};
 
-    use crate::{geometry::tests::create_geometry, operation::tests::NullGain};
+    use crate::{datagram::Datagram, geometry::tests::create_geometry, operation::tests::NullGain};
 
     #[test]
     fn test_group() -> anyhow::Result<()> {
