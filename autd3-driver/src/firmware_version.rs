@@ -1,7 +1,7 @@
 use std::fmt;
 
-pub const LATEST_VERSION_NUM_MAJOR: u8 = 0x8E;
-pub const LATEST_VERSION_NUM_MINOR: u8 = 0x01;
+pub const LATEST_VERSION_NUM_MAJOR: u8 = 0x8F;
+pub const LATEST_VERSION_NUM_MINOR: u8 = 0x00;
 
 const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
 
@@ -73,6 +73,11 @@ impl FirmwareInfo {
             0x8D..=0x8E => format!(
                 "v5.{}.{}",
                 version_number_major - 0x8D,
+                version_number_minor
+            ),
+            0x8F..=0x8F => format!(
+                "v6.{}.{}",
+                version_number_major - 0x8F,
                 version_number_minor
             ),
             _ => format!("unknown ({version_number_major})"),
@@ -280,13 +285,17 @@ mod tests {
         assert_eq!("v5.1.0", info.fpga_version());
 
         let info = FirmwareInfo::new(0, 143, 0, 143, 0, 0);
-        assert_eq!("unknown (143)", info.cpu_version());
-        assert_eq!("unknown (143)", info.fpga_version());
+        assert_eq!("v6.0.0", info.cpu_version());
+        assert_eq!("v6.0.0", info.fpga_version());
+
+        let info = FirmwareInfo::new(0, 144, 0, 144, 0, 0);
+        assert_eq!("unknown (144)", info.cpu_version());
+        assert_eq!("unknown (144)", info.fpga_version());
     }
 
     #[test]
     fn latest_firmware_version() {
-        assert_eq!("v5.1.1", FirmwareInfo::latest_version());
+        assert_eq!("v6.0.0", FirmwareInfo::latest_version());
     }
 
     #[test]
