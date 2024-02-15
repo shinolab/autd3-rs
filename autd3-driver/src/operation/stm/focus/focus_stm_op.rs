@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
 use crate::{
+    common::LoopBehavior,
+    cpu::Segment,
     defined::METER,
     error::AUTDInternalError,
     fpga::{STMFocus, FOCUS_STM_BUF_SIZE_MAX},
@@ -14,18 +16,24 @@ use super::{ControlPoint, FocusSTMControlFlags};
 struct FocusSTMHead {
     tag: TypeTag,
     flag: FocusSTMControlFlags,
-    send_num: u16,
+    send_num: u8,
+    segment: u8,
     freq_div: u32,
     sound_speed: u32,
-    start_idx: u16,
-    finish_idx: u16,
+    rep: u32,
 }
 
-#[repr(C)]
+#[repr(C, align(2))]
 struct FocusSTMSubseq {
     tag: TypeTag,
     flag: FocusSTMControlFlags,
-    send_num: u16,
+    send_num: u8,
+}
+
+#[repr(C, align(2))]
+struct FocusSTMUpdate {
+    tag: TypeTag,
+    segment: u8,
 }
 
 pub struct FocusSTMOp {
@@ -33,24 +41,27 @@ pub struct FocusSTMOp {
     sent: HashMap<usize, usize>,
     points: Vec<ControlPoint>,
     freq_div: u32,
-    start_idx: Option<u16>,
-    finish_idx: Option<u16>,
+    loop_behavior: LoopBehavior,
+    segment: Segment,
+    update_segment: bool,
 }
 
 impl FocusSTMOp {
     pub fn new(
         points: Vec<ControlPoint>,
         freq_div: u32,
-        start_idx: Option<u16>,
-        finish_idx: Option<u16>,
+        loop_behavior: LoopBehavior,
+        segment: Segment,
+        update_segment: bool,
     ) -> Self {
         Self {
             points,
             remains: Default::default(),
             sent: Default::default(),
             freq_div,
-            start_idx,
-            finish_idx,
+            loop_behavior,
+            segment,
+            update_segment,
         }
     }
 }
@@ -75,33 +86,24 @@ impl Operation for FocusSTMOp {
         if sent == 0 {
             let d = cast::<FocusSTMHead>(tx);
             d.tag = TypeTag::FocusSTM;
-            d.flag = FocusSTMControlFlags::STM_BEGIN;
-            d.flag.set(
-                FocusSTMControlFlags::STM_END,
-                sent + send_num == self.points.len(),
-            );
-            d.flag.set(
-                FocusSTMControlFlags::USE_START_IDX,
-                self.start_idx.is_some(),
-            );
-            d.flag.set(
-                FocusSTMControlFlags::USE_FINISH_IDX,
-                self.finish_idx.is_some(),
-            );
-            d.send_num = send_num as u16;
+            d.flag = FocusSTMControlFlags::BEGIN;
+            d.segment = self.segment as u8;
+            d.send_num = send_num as u8;
             d.freq_div = self.freq_div;
             d.sound_speed = (device.sound_speed / METER * 1024.0).round() as u32;
-            d.start_idx = self.start_idx.unwrap_or(0);
-            d.finish_idx = self.finish_idx.unwrap_or(0);
+            d.rep = self.loop_behavior.to_rep();
         } else {
             let d = cast::<FocusSTMSubseq>(tx);
             d.tag = TypeTag::FocusSTM;
             d.flag = FocusSTMControlFlags::NONE;
-            d.flag.set(
-                FocusSTMControlFlags::STM_END,
-                sent + send_num == self.points.len(),
-            );
-            d.send_num = send_num as u16;
+            d.send_num = send_num as u8;
+        }
+
+        if sent + send_num == self.points.len() {
+            let d = cast::<FocusSTMSubseq>(tx);
+            d.flag.set(FocusSTMControlFlags::END, true);
+            d.flag
+                .set(FocusSTMControlFlags::UPDATE, self.update_segment);
         }
 
         unsafe {
@@ -136,18 +138,6 @@ impl Operation for FocusSTMOp {
                 self.points.len(),
             ));
         }
-        match self.start_idx {
-            Some(idx) if idx as usize >= self.points.len() => {
-                return Err(AUTDInternalError::STMStartIndexOutOfRange)
-            }
-            _ => {}
-        }
-        match self.finish_idx {
-            Some(idx) if idx as usize >= self.points.len() => {
-                return Err(AUTDInternalError::STMFinishIndexOutOfRange)
-            }
-            _ => {}
-        }
 
         self.remains = geometry
             .devices()
@@ -168,8 +158,53 @@ impl Operation for FocusSTMOp {
     }
 }
 
+pub struct FocusSTMChangeSegmentOp {
+    segment: Segment,
+    remains: HashMap<usize, usize>,
+}
+
+impl FocusSTMChangeSegmentOp {
+    pub fn new(segment: Segment) -> Self {
+        Self {
+            segment,
+            remains: HashMap::new(),
+        }
+    }
+}
+
+impl Operation for FocusSTMChangeSegmentOp {
+    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+        assert_eq!(self.remains[&device.idx()], 1);
+
+        let d = cast::<FocusSTMUpdate>(tx);
+        d.tag = TypeTag::FocusSTMChangeSegment;
+        d.segment = self.segment as u8;
+
+        Ok(std::mem::size_of::<FocusSTMUpdate>())
+    }
+
+    fn required_size(&self, _: &Device) -> usize {
+        std::mem::size_of::<FocusSTMUpdate>()
+    }
+
+    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
+        self.remains = geometry.devices().map(|device| (device.idx(), 1)).collect();
+        Ok(())
+    }
+
+    fn remains(&self, device: &Device) -> usize {
+        self.remains[&device.idx()]
+    }
+
+    fn commit(&mut self, device: &Device) {
+        self.remains.insert(device.idx(), 0);
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::{mem::size_of, num::NonZeroU32};
+
     use rand::prelude::*;
 
     use super::*;
@@ -188,7 +223,8 @@ mod tests {
     #[test]
     fn focus_stm_op() {
         const FOCUS_STM_SIZE: usize = 100;
-        const FRAME_SIZE: usize = 16 + 8 * FOCUS_STM_SIZE;
+        const FRAME_SIZE: usize =
+            size_of::<FocusSTMHead>() + size_of::<STMFocus>() * FOCUS_STM_SIZE;
 
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
 
@@ -206,15 +242,20 @@ mod tests {
                 .with_intensity(rng.gen::<u8>())
             })
             .collect();
+        let loop_behavior = LoopBehavior::Infinite;
+        let segment = Segment::S0;
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
 
-        let mut op = FocusSTMOp::new(points.clone(), freq_div, None, None);
+        let mut op = FocusSTMOp::new(points.clone(), freq_div, loop_behavior, segment, true);
 
         assert!(op.init(&geometry).is_ok());
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 16 + 8));
+        geometry.devices().for_each(|dev| {
+            assert_eq!(
+                op.required_size(dev),
+                size_of::<FocusSTMHead>() + size_of::<STMFocus>()
+            )
+        });
 
         geometry
             .devices()
@@ -235,20 +276,11 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::FocusSTM as u8);
             let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_ne!(flag & FocusSTMControlFlags::STM_BEGIN.bits(), 0x00);
-            assert_ne!(flag & FocusSTMControlFlags::STM_END.bits(), 0x00);
-            assert_eq!(flag & FocusSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_eq!(flag & FocusSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
-
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 2],
-                (FOCUS_STM_SIZE & 0xFF) as u8
-            );
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 3],
-                ((FOCUS_STM_SIZE >> 8) & 0xFF) as u8
-            );
-
+            assert_ne!(flag & FocusSTMControlFlags::BEGIN.bits(), 0x00);
+            assert_ne!(flag & FocusSTMControlFlags::END.bits(), 0x00);
+            assert_ne!(flag & FocusSTMControlFlags::UPDATE.bits(), 0x00);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 2], FOCUS_STM_SIZE as u8);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 3], segment as u8);
             assert_eq!(tx[dev.idx() * FRAME_SIZE + 4], (freq_div & 0xFF) as u8);
             assert_eq!(
                 tx[dev.idx() * FRAME_SIZE + 5],
@@ -277,14 +309,13 @@ mod tests {
                 tx[dev.idx() * FRAME_SIZE + 11],
                 ((sound_speed >> 24) & 0xFF) as u8
             );
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 12], 0xFF);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 13], 0xFF);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 14], 0xFF);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 15], 0xFF);
 
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 12], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 13], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 14], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 15], 0x00);
-
-            tx[FRAME_SIZE * dev.idx() + 16..]
-                .chunks(std::mem::size_of::<STMFocus>())
+            tx[FRAME_SIZE * dev.idx() + size_of::<FocusSTMHead>()..]
+                .chunks(size_of::<STMFocus>())
                 .zip(points.iter())
                 .for_each(|(d, p)| {
                     let mut f = STMFocus { buf: [0x0000; 4] };
@@ -304,9 +335,10 @@ mod tests {
 
     #[test]
     fn focus_stm_op_div() {
-        const FRAME_SIZE: usize = 30;
-        const FOCUS_STM_SIZE: usize = (FRAME_SIZE - 16) / std::mem::size_of::<STMFocus>()
-            + (FRAME_SIZE - 4) / std::mem::size_of::<STMFocus>() * 2;
+        const FRAME_SIZE: usize = 32;
+        const FOCUS_STM_SIZE: usize = (FRAME_SIZE - size_of::<FocusSTMHead>())
+            / size_of::<STMFocus>()
+            + (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / size_of::<STMFocus>() * 2;
 
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
 
@@ -325,14 +357,22 @@ mod tests {
             })
             .collect();
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
-        let mut op = FocusSTMOp::new(points.clone(), freq_div, None, None);
+        let loop_behavior = LoopBehavior::Finite(
+            NonZeroU32::new(rng.gen_range(0x0000001..=0xFFFFFFFF)).unwrap_or(NonZeroU32::MIN),
+        );
+        let rep = loop_behavior.to_rep();
+        let segment = Segment::S1;
+        let mut op = FocusSTMOp::new(points.clone(), freq_div, loop_behavior, segment, false);
 
         assert!(op.init(&geometry).is_ok());
 
         // First frame
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 16 + 8));
+        geometry.devices().for_each(|dev| {
+            assert_eq!(
+                op.required_size(dev),
+                size_of::<FocusSTMHead>() + size_of::<STMFocus>()
+            )
+        });
 
         geometry
             .devices()
@@ -344,9 +384,9 @@ mod tests {
                     dev,
                     &mut tx[dev.idx() * FRAME_SIZE..(dev.idx() + 1) * FRAME_SIZE]
                 ),
-                Ok(16
-                    + (FRAME_SIZE - 16) / std::mem::size_of::<STMFocus>()
-                        * std::mem::size_of::<STMFocus>())
+                Ok(size_of::<FocusSTMHead>()
+                    + (FRAME_SIZE - size_of::<FocusSTMHead>()) / size_of::<STMFocus>()
+                        * size_of::<STMFocus>())
             );
             op.commit(dev);
         });
@@ -354,27 +394,21 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(
                 op.remains(dev),
-                (FRAME_SIZE - 4) / std::mem::size_of::<STMFocus>() * 2
+                (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>() * 2
             )
         });
 
         geometry.devices().for_each(|dev| {
             assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::FocusSTM as u8);
             let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_ne!(flag & FocusSTMControlFlags::STM_BEGIN.bits(), 0x00);
-            assert_eq!(flag & FocusSTMControlFlags::STM_END.bits(), 0x00);
-            assert_eq!(flag & FocusSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_eq!(flag & FocusSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
-
+            assert_ne!(flag & FocusSTMControlFlags::BEGIN.bits(), 0x00);
+            assert_eq!(flag & FocusSTMControlFlags::END.bits(), 0x00);
+            assert_eq!(flag & FocusSTMControlFlags::UPDATE.bits(), 0x00);
             assert_eq!(
                 tx[dev.idx() * FRAME_SIZE + 2],
-                (((FRAME_SIZE - 16) / std::mem::size_of::<STMFocus>()) & 0xFF) as u8
+                ((FRAME_SIZE - size_of::<FocusSTMHead>()) / std::mem::size_of::<STMFocus>()) as u8
             );
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 3],
-                ((((FRAME_SIZE - 16) / std::mem::size_of::<STMFocus>()) >> 8) & 0xFF) as u8
-            );
-
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 3], segment as u8);
             assert_eq!(tx[dev.idx() * FRAME_SIZE + 4], (freq_div & 0xFF) as u8);
             assert_eq!(
                 tx[dev.idx() * FRAME_SIZE + 5],
@@ -403,18 +437,17 @@ mod tests {
                 tx[dev.idx() * FRAME_SIZE + 11],
                 ((sound_speed >> 24) & 0xFF) as u8
             );
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 12], (rep & 0xFF) as u8);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 13], ((rep >> 8) & 0xFF) as u8);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 14], ((rep >> 16) & 0xFF) as u8);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 15], ((rep >> 24) & 0xFF) as u8);
 
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 12], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 13], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 14], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 15], 0x00);
-
-            tx[FRAME_SIZE * dev.idx() + 16..FRAME_SIZE * (dev.idx() + 1)]
-                .chunks(std::mem::size_of::<STMFocus>())
+            tx[FRAME_SIZE * dev.idx() + size_of::<FocusSTMHead>()..FRAME_SIZE * (dev.idx() + 1)]
+                .chunks(size_of::<STMFocus>())
                 .zip(
                     points
                         .iter()
-                        .take((FRAME_SIZE - 16) / std::mem::size_of::<STMFocus>()),
+                        .take((FRAME_SIZE - size_of::<FocusSTMHead>()) / size_of::<STMFocus>()),
                 )
                 .for_each(|(d, p)| {
                     let mut f = STMFocus { buf: [0x0000; 4] };
@@ -432,9 +465,12 @@ mod tests {
         });
 
         // Second frame
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 4 + std::mem::size_of::<STMFocus>()));
+        geometry.devices().for_each(|dev| {
+            assert_eq!(
+                op.required_size(dev),
+                size_of::<FocusSTMSubseq>() + std::mem::size_of::<STMFocus>()
+            )
+        });
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
@@ -442,8 +478,9 @@ mod tests {
                     dev,
                     &mut tx[dev.idx() * FRAME_SIZE..(dev.idx() + 1) * FRAME_SIZE]
                 ),
-                Ok(4 + (FRAME_SIZE - 4) / std::mem::size_of::<STMFocus>()
-                    * std::mem::size_of::<STMFocus>())
+                Ok(size_of::<FocusSTMSubseq>()
+                    + (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>()
+                        * std::mem::size_of::<STMFocus>())
             );
             op.commit(dev);
         });
@@ -451,34 +488,28 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(
                 op.remains(dev),
-                (FRAME_SIZE - 4) / std::mem::size_of::<STMFocus>()
+                (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>()
             )
         });
 
         geometry.devices().for_each(|dev| {
             assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::FocusSTM as u8);
             let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_eq!(flag & FocusSTMControlFlags::STM_BEGIN.bits(), 0x00);
-            assert_eq!(flag & FocusSTMControlFlags::STM_END.bits(), 0x00);
-            assert_eq!(flag & FocusSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_eq!(flag & FocusSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
-
+            assert_eq!(flag & FocusSTMControlFlags::BEGIN.bits(), 0x00);
+            assert_eq!(flag & FocusSTMControlFlags::END.bits(), 0x00);
+            assert_eq!(flag & FocusSTMControlFlags::UPDATE.bits(), 0x00);
             assert_eq!(
                 tx[dev.idx() * FRAME_SIZE + 2],
-                (((FRAME_SIZE - 4) / std::mem::size_of::<STMFocus>()) & 0xFF) as u8
+                ((FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>())
+                    as u8
             );
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 3],
-                ((((FRAME_SIZE - 4) / std::mem::size_of::<STMFocus>()) >> 8) & 0xFF) as u8
-            );
-
-            tx[FRAME_SIZE * dev.idx() + 4..FRAME_SIZE * (dev.idx() + 1)]
-                .chunks(std::mem::size_of::<STMFocus>())
+            tx[FRAME_SIZE * dev.idx() + size_of::<FocusSTMSubseq>()..FRAME_SIZE * (dev.idx() + 1)]
+                .chunks(size_of::<STMFocus>())
                 .zip(
                     points
                         .iter()
-                        .skip((FRAME_SIZE - 16) / std::mem::size_of::<STMFocus>())
-                        .take((FRAME_SIZE - 4) / std::mem::size_of::<STMFocus>()),
+                        .skip((FRAME_SIZE - size_of::<FocusSTMHead>()) / size_of::<STMFocus>())
+                        .take((FRAME_SIZE - size_of::<FocusSTMSubseq>()) / size_of::<STMFocus>()),
                 )
                 .for_each(|(d, p)| {
                     let mut f = STMFocus { buf: [0x0000; 4] };
@@ -496,9 +527,12 @@ mod tests {
         });
 
         // Final frame
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 4 + std::mem::size_of::<STMFocus>()));
+        geometry.devices().for_each(|dev| {
+            assert_eq!(
+                op.required_size(dev),
+                size_of::<FocusSTMSubseq>() + std::mem::size_of::<STMFocus>()
+            )
+        });
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
@@ -506,8 +540,9 @@ mod tests {
                     dev,
                     &mut tx[dev.idx() * FRAME_SIZE..(dev.idx() + 1) * FRAME_SIZE]
                 ),
-                Ok(4 + (FRAME_SIZE - 4) / std::mem::size_of::<STMFocus>()
-                    * std::mem::size_of::<STMFocus>())
+                Ok(size_of::<FocusSTMSubseq>()
+                    + (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>()
+                        * std::mem::size_of::<STMFocus>())
             );
             op.commit(dev);
         });
@@ -519,30 +554,25 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::FocusSTM as u8);
             let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_eq!(flag & FocusSTMControlFlags::STM_BEGIN.bits(), 0x00);
-            assert_ne!(flag & FocusSTMControlFlags::STM_END.bits(), 0x00);
-            assert_eq!(flag & FocusSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_eq!(flag & FocusSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
-
+            assert_eq!(flag & FocusSTMControlFlags::BEGIN.bits(), 0x00);
+            assert_ne!(flag & FocusSTMControlFlags::END.bits(), 0x00);
+            assert_eq!(flag & FocusSTMControlFlags::UPDATE.bits(), 0x00);
             assert_eq!(
                 tx[dev.idx() * FRAME_SIZE + 2],
-                (((FRAME_SIZE - 4) / std::mem::size_of::<STMFocus>()) & 0xFF) as u8
+                ((FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>())
+                    as u8
             );
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 3],
-                ((((FRAME_SIZE - 4) / std::mem::size_of::<STMFocus>()) >> 8) & 0xFF) as u8
-            );
-
-            tx[FRAME_SIZE * dev.idx() + 4..FRAME_SIZE * (dev.idx() + 1)]
-                .chunks(std::mem::size_of::<STMFocus>())
+            tx[FRAME_SIZE * dev.idx() + size_of::<FocusSTMSubseq>()..FRAME_SIZE * (dev.idx() + 1)]
+                .chunks(size_of::<STMFocus>())
                 .zip(
                     points
                         .iter()
                         .skip(
-                            (FRAME_SIZE - 16) / std::mem::size_of::<STMFocus>()
-                                + (FRAME_SIZE - 4) / std::mem::size_of::<STMFocus>(),
+                            (FRAME_SIZE - size_of::<FocusSTMHead>()) / size_of::<STMFocus>()
+                                + (FRAME_SIZE - size_of::<FocusSTMSubseq>())
+                                    / size_of::<STMFocus>(),
                         )
-                        .take((FRAME_SIZE - 4) / std::mem::size_of::<STMFocus>()),
+                        .take((FRAME_SIZE - size_of::<FocusSTMSubseq>()) / size_of::<STMFocus>()),
                 )
                 .for_each(|(d, p)| {
                     let mut f = STMFocus { buf: [0x0000; 4] };
@@ -561,121 +591,20 @@ mod tests {
     }
 
     #[test]
-    fn focus_stm_op_idx() {
-        const FOCUS_STM_SIZE: usize = 100;
-        const FRAME_SIZE: usize = 16 + 8 * FOCUS_STM_SIZE;
-
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
-
-        let mut tx = vec![0x00u8; FRAME_SIZE * NUM_DEVICE];
-
-        let mut rng = rand::thread_rng();
-
-        let start_idx = rng.gen_range(0..FOCUS_STM_SIZE as u16);
-        let finish_idx = rng.gen_range(0..FOCUS_STM_SIZE as u16);
-
-        let points: Vec<ControlPoint> = (0..FOCUS_STM_SIZE)
-            .map(|_| ControlPoint::new(Vector3::zeros()))
-            .collect();
-
-        let mut op = FocusSTMOp::new(
-            points.clone(),
-            SAMPLING_FREQ_DIV_MIN,
-            Some(start_idx),
-            Some(finish_idx),
-        );
-
-        assert!(op.init(&geometry).is_ok());
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
-                Ok(FRAME_SIZE)
-            );
-            op.commit(dev);
-        });
-
-        geometry.devices().for_each(|dev| {
-            let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_ne!(flag & FocusSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_ne!(flag & FocusSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
-
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 12], (start_idx & 0xFF) as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 13], (start_idx >> 8) as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 14], (finish_idx & 0xFF) as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 15], (finish_idx >> 8) as u8);
-        });
-
-        let mut op = FocusSTMOp::new(points.clone(), SAMPLING_FREQ_DIV_MIN, Some(start_idx), None);
-
-        assert!(op.init(&geometry).is_ok());
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
-                Ok(FRAME_SIZE)
-            );
-            op.commit(dev);
-        });
-
-        geometry.devices().for_each(|dev| {
-            let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_ne!(flag & FocusSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_eq!(flag & FocusSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
-
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 12], (start_idx & 0xFF) as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 13], (start_idx >> 8) as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 14], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 15], 0x00);
-        });
-
-        let mut op = FocusSTMOp::new(
-            points.clone(),
-            SAMPLING_FREQ_DIV_MIN,
-            None,
-            Some(finish_idx),
-        );
-
-        assert!(op.init(&geometry).is_ok());
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
-                Ok(FRAME_SIZE)
-            );
-            op.commit(dev);
-        });
-
-        geometry.devices().for_each(|dev| {
-            let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_eq!(flag & FocusSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_ne!(flag & FocusSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
-
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 12], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 13], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 14], (finish_idx & 0xFF) as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 15], (finish_idx >> 8) as u8);
-        });
-    }
-
-    #[test]
     fn focus_stm_op_buffer_out_of_range() {
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
 
         let test = |n: usize| {
-            let mut rng = rand::thread_rng();
-
             let points: Vec<ControlPoint> = (0..n)
-                .map(|_| {
-                    ControlPoint::new(Vector3::new(
-                        rng.gen_range(-500.0 * MILLIMETER..500.0 * MILLIMETER),
-                        rng.gen_range(-500.0 * MILLIMETER..500.0 * MILLIMETER),
-                        rng.gen_range(0.0 * MILLIMETER..500.0 * MILLIMETER),
-                    ))
-                    .with_intensity(rng.gen::<u8>())
-                })
+                .map(|_| ControlPoint::new(Vector3::zeros()))
                 .collect();
-            let mut op = FocusSTMOp::new(points, SAMPLING_FREQ_DIV_MIN, None, None);
+            let mut op = FocusSTMOp::new(
+                points,
+                SAMPLING_FREQ_DIV_MIN,
+                LoopBehavior::Infinite,
+                Segment::S0,
+                true,
+            );
             op.init(&geometry)
         };
 
@@ -708,7 +637,13 @@ mod tests {
             .collect();
         let freq_div: u32 = SAMPLING_FREQ_DIV_MIN;
 
-        let mut op = FocusSTMOp::new(points.clone(), freq_div, None, None);
+        let mut op = FocusSTMOp::new(
+            points.clone(),
+            freq_div,
+            LoopBehavior::Infinite,
+            Segment::S0,
+            true,
+        );
 
         assert!(op.init(&geometry).is_ok());
 
@@ -718,43 +653,5 @@ mod tests {
                 Err(AUTDInternalError::FocusSTMPointOutOfRange(x))
             );
         });
-    }
-
-    #[test]
-    fn focus_stm_op_stm_idx_out_of_range() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
-
-        let test = |n: usize, start_idx: Option<u16>, finish_idx: Option<u16>| {
-            let mut rng = rand::thread_rng();
-
-            let points: Vec<ControlPoint> = (0..n)
-                .map(|_| {
-                    ControlPoint::new(Vector3::new(
-                        rng.gen_range(-500.0 * MILLIMETER..500.0 * MILLIMETER),
-                        rng.gen_range(-500.0 * MILLIMETER..500.0 * MILLIMETER),
-                        rng.gen_range(0.0 * MILLIMETER..500.0 * MILLIMETER),
-                    ))
-                    .with_intensity(rng.gen::<u8>())
-                })
-                .collect();
-
-            let mut op =
-                FocusSTMOp::new(points.clone(), SAMPLING_FREQ_DIV_MIN, start_idx, finish_idx);
-            op.init(&geometry)
-        };
-
-        assert_eq!(test(10, Some(0), Some(0)), Ok(()));
-        assert_eq!(test(10, Some(9), Some(0)), Ok(()));
-        assert_eq!(
-            test(10, Some(10), Some(0)),
-            Err(AUTDInternalError::STMStartIndexOutOfRange)
-        );
-
-        assert_eq!(test(10, Some(0), Some(0)), Ok(()));
-        assert_eq!(test(10, Some(0), Some(9)), Ok(()));
-        assert_eq!(
-            test(10, Some(0), Some(10)),
-            Err(AUTDInternalError::STMFinishIndexOutOfRange)
-        );
     }
 }
