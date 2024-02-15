@@ -37,10 +37,6 @@ pub enum AUTDInternalError {
     #[error("STM period ({1} ns, size={0}) is out of range ([{2}, {3}])")]
     STMPeriodOutOfRange(usize, u128, usize, usize),
 
-    #[error("STM index is out of range")]
-    STMStartIndexOutOfRange,
-    #[error("STM finish is out of range")]
-    STMFinishIndexOutOfRange,
     #[error(
         "FocusSTM size ({0}) is out of range ([{}, {}])",
         STM_BUF_SIZE_MIN,
@@ -97,6 +93,12 @@ pub enum AUTDInternalError {
     InvalidInfoType,
     #[error("Invalid GainSTM mode")]
     InvalidGainSTMMode,
+    #[error("Unknown firmware error: {0}")]
+    UnknownFirmwareError(u8),
+    #[error("Invalid segment")]
+    InvalidSegment,
+    #[error("Invalid mode")]
+    InvalidMode,
 }
 
 impl AUTDInternalError {
@@ -108,7 +110,9 @@ impl AUTDInternalError {
             0x83 => AUTDInternalError::CompletionStepsTooLarge,
             0x84 => AUTDInternalError::InvalidInfoType,
             0x85 => AUTDInternalError::InvalidGainSTMMode,
-            _ => unreachable!(),
+            0x86 => AUTDInternalError::InvalidSegment,
+            0x87 => AUTDInternalError::InvalidMode,
+            _ => AUTDInternalError::UnknownFirmwareError(ack),
         }
     }
 }
@@ -159,28 +163,6 @@ mod tests {
     }
 
     #[test]
-    fn stm_start_index_out_of_range() {
-        let err = AUTDInternalError::STMStartIndexOutOfRange;
-        assert!(err.source().is_none());
-        assert_eq!(format!("{}", err), "STM index is out of range");
-        assert_eq!(format!("{:?}", err), "STMStartIndexOutOfRange");
-
-        let err = AUTDInternalError::STMStartIndexOutOfRange;
-        assert_eq!(err, AUTDInternalError::STMStartIndexOutOfRange);
-    }
-
-    #[test]
-    fn stm_finish_index_out_of_range() {
-        let err = AUTDInternalError::STMFinishIndexOutOfRange;
-        assert!(err.source().is_none());
-        assert_eq!(format!("{}", err), "STM finish is out of range");
-        assert_eq!(format!("{:?}", err), "STMFinishIndexOutOfRange");
-
-        let err = AUTDInternalError::STMFinishIndexOutOfRange;
-        assert_eq!(err, AUTDInternalError::STMFinishIndexOutOfRange);
-    }
-
-    #[test]
     fn focus_stm_point_size_out_of_range() {
         let err = AUTDInternalError::FocusSTMPointSizeOutOfRange(1);
         assert!(err.source().is_none());
@@ -223,7 +205,7 @@ mod tests {
         assert!(err.source().is_none());
         assert_eq!(
             format!("{}", err),
-            "GainSTM size (1) is out of range ([2, 2048])"
+            "GainSTM size (1) is out of range ([2, 1024])"
         );
         assert_eq!(format!("{:?}", err), "GainSTMSizeOutOfRange(1)");
 
