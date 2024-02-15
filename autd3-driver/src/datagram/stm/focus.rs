@@ -1,5 +1,11 @@
+use std::time::Duration;
+
 use crate::{
-    common::SamplingConfiguration, datagram::Datagram, defined::float, error::AUTDInternalError,
+    common::{LoopBehavior, SamplingConfiguration},
+    cpu::Segment,
+    defined::float,
+    derive::DatagramS,
+    error::AUTDInternalError,
     operation::ControlPoint,
 };
 
@@ -10,7 +16,7 @@ use super::STMProps;
 /// The sampling timing is determined by hardware, thus the sampling time is precise.
 ///
 /// FocusSTM has following restrictions:
-/// - The maximum number of sampling points is 65536.
+/// - The maximum number of sampling points is [crate::fpga::FOCUS_STM_BUF_SIZE_MAX].
 /// - The sampling frequency is [crate::fpga::FPGA_CLK_FREQ]/N, where `N` is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN]
 ///
 pub struct FocusSTM {
@@ -92,28 +98,16 @@ impl FocusSTM {
         &self.control_points
     }
 
-    /// Set the start index of STM
-    pub fn with_start_idx(self, idx: Option<u16>) -> Self {
+    /// Set loop behavior
+    pub fn with_loop_behavior(self, loop_behavior: LoopBehavior) -> Self {
         Self {
-            props: self.props.with_start_idx(idx),
+            props: self.props.with_loop_behavior(loop_behavior),
             ..self
         }
     }
 
-    /// Set the finish index of STM
-    pub fn with_finish_idx(self, idx: Option<u16>) -> Self {
-        Self {
-            props: self.props.with_finish_idx(idx),
-            ..self
-        }
-    }
-
-    pub const fn start_idx(&self) -> Option<u16> {
-        self.props.start_idx()
-    }
-
-    pub const fn finish_idx(&self) -> Option<u16> {
-        self.props.finish_idx()
+    pub const fn loop_behavior(&self) -> LoopBehavior {
+        self.props.loop_behavior()
     }
 
     pub fn frequency(&self) -> float {
@@ -137,16 +131,25 @@ impl std::ops::Index<usize> for FocusSTM {
     }
 }
 
-impl Datagram for FocusSTM {
+impl DatagramS for FocusSTM {
     type O1 = crate::operation::FocusSTMOp;
     type O2 = crate::operation::NullOp;
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn operation_with_segment(
+        self,
+        segment: crate::cpu::Segment,
+        update_segment: bool,
+    ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         let freq_div = self.sampling_config()?.frequency_division();
-        let start_idx = self.props.start_idx;
-        let finish_idx = self.props.finish_idx;
+        let loop_behavior = self.loop_behavior();
         Ok((
-            Self::O1::new(self.control_points, freq_div, start_idx, finish_idx),
+            Self::O1::new(
+                self.control_points,
+                freq_div,
+                loop_behavior,
+                segment,
+                update_segment,
+            ),
             Self::O2::default(),
         ))
     }
@@ -160,6 +163,7 @@ impl Datagram for FocusSTM {
 mod tests {
     use super::*;
     use crate::{
+        cpu::Segment,
         geometry::Vector3,
         operation::{FocusSTMOp, NullOp},
     };
@@ -200,30 +204,6 @@ mod tests {
             stm.sampling_config().unwrap().period(),
             std::time::Duration::from_micros(25)
         );
-    }
-
-    #[test]
-    fn start_idx() {
-        let stm = FocusSTM::from_freq(1.);
-        assert_eq!(stm.start_idx(), None);
-
-        let stm = FocusSTM::from_freq(1.).with_start_idx(Some(0));
-        assert_eq!(stm.start_idx(), Some(0));
-
-        let stm = FocusSTM::from_freq(1.).with_start_idx(None);
-        assert_eq!(stm.start_idx(), None);
-    }
-
-    #[test]
-    fn finish_idx() {
-        let stm = FocusSTM::from_freq(1.);
-        assert_eq!(stm.finish_idx(), None);
-
-        let stm = FocusSTM::from_freq(1.).with_finish_idx(Some(0));
-        assert_eq!(stm.finish_idx(), Some(0));
-
-        let stm = FocusSTM::from_freq(1.).with_finish_idx(None);
-        assert_eq!(stm.finish_idx(), None);
     }
 
     #[test]
@@ -306,7 +286,7 @@ mod tests {
 
         assert_eq!(stm.timeout(), Some(std::time::Duration::from_millis(200)));
 
-        let r = stm.operation();
+        let r = stm.operation_with_segment(Segment::S0, true);
         assert!(r.is_ok());
         let _: (FocusSTMOp, NullOp) = r.unwrap();
     }

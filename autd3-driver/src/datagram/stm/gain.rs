@@ -1,5 +1,11 @@
+use std::time::Duration;
+
 use crate::{
-    common::SamplingConfiguration, datagram::*, defined::float, error::AUTDInternalError,
+    common::{LoopBehavior, SamplingConfiguration},
+    cpu::Segment,
+    datagram::{DatagramS, Gain},
+    defined::float,
+    error::AUTDInternalError,
     operation::GainSTMMode,
 };
 
@@ -10,7 +16,7 @@ use super::STMProps;
 /// The sampling timing is determined by hardware, thus the sampling time is precise.
 ///
 /// GainSTM has following restrictions:
-/// - The maximum number of sampling [Gain] is 2048.
+/// - The maximum number of sampling [Gain] is [crate::fpga::GAIN_STM_BUF_SIZE_MAX].
 /// - The sampling frequency is [crate::fpga::FPGA_CLK_FREQ]/N, where `N` is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN]
 ///
 pub struct GainSTM<G: Gain> {
@@ -56,28 +62,16 @@ impl<G: Gain> GainSTM<G> {
         )
     }
 
-    /// Set the start index of STM
-    pub fn with_start_idx(self, idx: Option<u16>) -> Self {
+    /// Set loop behavior
+    pub fn with_loop_behavior(self, loop_behavior: LoopBehavior) -> Self {
         Self {
-            props: self.props.with_start_idx(idx),
+            props: self.props.with_loop_behavior(loop_behavior),
             ..self
         }
     }
 
-    /// Set the finish index of STM
-    pub fn with_finish_idx(self, idx: Option<u16>) -> Self {
-        Self {
-            props: self.props.with_finish_idx(idx),
-            ..self
-        }
-    }
-
-    pub const fn start_idx(&self) -> Option<u16> {
-        self.props.start_idx()
-    }
-
-    pub const fn finish_idx(&self) -> Option<u16> {
-        self.props.finish_idx()
+    pub const fn loop_behavior(&self) -> LoopBehavior {
+        self.props.loop_behavior()
     }
 
     pub fn frequency(&self) -> float {
@@ -154,17 +148,31 @@ impl<G: Gain> std::ops::Index<usize> for GainSTM<G> {
     }
 }
 
-impl<G: Gain> Datagram for GainSTM<G> {
+impl<G: Gain> DatagramS for GainSTM<G> {
     type O1 = crate::operation::GainSTMOp<G>;
     type O2 = crate::operation::NullOp;
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn operation_with_segment(
+        self,
+        segment: crate::cpu::Segment,
+        update_segment: bool,
+    ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         let freq_div = self.sampling_config()?.frequency_division();
         let Self {
-            gains, mode, props, ..
+            gains,
+            mode,
+            props: STMProps { loop_behavior, .. },
+            ..
         } = self;
         Ok((
-            Self::O1::new(gains, mode, freq_div, props.start_idx, props.finish_idx),
+            Self::O1::new(
+                gains,
+                mode,
+                freq_div,
+                loop_behavior,
+                segment,
+                update_segment,
+            ),
             Self::O2::default(),
         ))
     }
@@ -174,15 +182,19 @@ impl<G: Gain> Datagram for GainSTM<G> {
     }
 }
 
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
+
+    use autd3_derive::Gain;
 
     use super::*;
 
     use crate::{
         common::Drive,
         datagram::Gain,
+        derive::*,
         geometry::Geometry,
         operation::{tests::NullGain, GainSTMOp, NullOp},
     };
@@ -240,6 +252,7 @@ mod tests {
         assert_eq!(stm.mode(), GainSTMMode::PhaseIntensityFull);
     }
 
+    #[derive(Gain)]
     struct NullGain2 {}
 
     impl Gain for NullGain2 {
@@ -268,30 +281,6 @@ mod tests {
     }
 
     #[test]
-    fn start_idx() {
-        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.);
-        assert_eq!(stm.start_idx(), None);
-
-        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.).with_start_idx(Some(0));
-        assert_eq!(stm.start_idx(), Some(0));
-
-        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.).with_start_idx(None);
-        assert_eq!(stm.start_idx(), None);
-    }
-
-    #[test]
-    fn finish_idx() {
-        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.);
-        assert_eq!(stm.finish_idx(), None);
-
-        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.).with_finish_idx(Some(0));
-        assert_eq!(stm.finish_idx(), Some(0));
-
-        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.).with_finish_idx(None);
-        assert_eq!(stm.finish_idx(), None);
-    }
-
-    #[test]
     fn gain_stm_indexer() {
         let stm = GainSTM::from_freq(1.).add_gain(NullGain {}).unwrap();
         let _: &NullGain = &stm[0];
@@ -307,7 +296,7 @@ mod tests {
 
         assert_eq!(stm.timeout(), Some(std::time::Duration::from_millis(200)));
 
-        let r = stm.operation();
+        let r = stm.operation_with_segment(Segment::S0, true);
         assert!(r.is_ok());
         let _: (GainSTMOp<Box<dyn Gain>>, NullOp) = r.unwrap();
     }
