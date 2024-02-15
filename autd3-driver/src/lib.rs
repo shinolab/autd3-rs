@@ -22,11 +22,13 @@ pub use async_trait::async_trait;
 #[cfg(feature = "derive")]
 pub mod derive {
     pub use crate::{
-        common::{Drive, EmitIntensity, Phase, Rad, SamplingConfiguration},
+        common::{Drive, EmitIntensity, LoopBehavior, Phase, Rad, SamplingConfiguration},
+        cpu::Segment,
         datagram::{
-            Datagram, Gain, GainCache, GainFilter, GainTransform, IntoGainCache, IntoGainTransform,
-            IntoModulationCache, IntoModulationTransform, IntoRadiationPressure, Modulation,
-            ModulationCache, ModulationProperty, ModulationTransform, RadiationPressure,
+            DatagramS, Gain, GainCache, GainFilter, GainTransform, IntoGainCache,
+            IntoGainTransform, IntoModulationCache, IntoModulationTransform, IntoRadiationPressure,
+            Modulation, ModulationCache, ModulationProperty, ModulationTransform,
+            RadiationPressure,
         },
         defined::float,
         error::AUTDInternalError,
