@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    common::Drive,
-    cpu::Segment,
+    common::{Drive, Segment},
     datagram::{Gain, GainFilter},
     error::AUTDInternalError,
     fpga::FPGADrive,

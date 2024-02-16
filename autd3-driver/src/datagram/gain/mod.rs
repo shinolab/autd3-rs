@@ -11,9 +11,8 @@ pub use transform::Transform as GainTransform;
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::cpu::Segment;
 use crate::{
-    common::Drive,
+    common::{Drive, Segment},
     error::AUTDInternalError,
     geometry::{Device, Geometry, Transducer},
     operation::{GainOp, NullOp},
@@ -73,6 +72,17 @@ pub trait Gain {
 }
 
 impl<'a> Gain for Box<dyn Gain + 'a> {
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn calc(
+        &self,
+        geometry: &Geometry,
+        filter: GainFilter,
+    ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
+        self.as_ref().calc(geometry, filter)
+    }
+}
+
+impl<'a> Gain for Box<dyn Gain + Send + 'a> {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn calc(
         &self,
