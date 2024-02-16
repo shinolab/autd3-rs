@@ -11,6 +11,10 @@ impl LoopBehavior {
             LoopBehavior::Finite(n) => n.get() - 1,
         }
     }
+
+    pub fn once() -> Self {
+        LoopBehavior::Finite(std::num::NonZeroU32::new(1).unwrap())
+    }
 }
 
 #[cfg(test)]
