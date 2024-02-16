@@ -97,6 +97,8 @@ pub enum AUTDInternalError {
     UnknownFirmwareError(u8),
     #[error("Invalid segment")]
     InvalidSegment,
+    #[error("Invalid segment transition")]
+    InvalidSegmentTransition,
     #[error("Invalid mode")]
     InvalidMode,
 }
@@ -112,6 +114,7 @@ impl AUTDInternalError {
             0x85 => AUTDInternalError::InvalidGainSTMMode,
             0x86 => AUTDInternalError::InvalidSegment,
             0x87 => AUTDInternalError::InvalidMode,
+            0x88 => AUTDInternalError::InvalidSegmentTransition,
             _ => AUTDInternalError::UnknownFirmwareError(ack),
         }
     }
