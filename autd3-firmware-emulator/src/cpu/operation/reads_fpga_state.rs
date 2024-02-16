@@ -1,4 +1,4 @@
-use crate::{cpu::params::ERR_NONE, CPUEmulator};
+use crate::{cpu::params::*, CPUEmulator};
 
 #[repr(C, align(2))]
 struct ConfigureReadsFPGAState {
@@ -12,7 +12,7 @@ impl CPUEmulator {
 
         self.read_fpga_state = d.value != 0x00;
 
-        ERR_NONE
+        NO_ERR
     }
 }
 

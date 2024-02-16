@@ -49,6 +49,8 @@ fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let bufs = gen_random_buf(GAIN_STM_BUF_SIZE_MAX, &geometry);
+    let loop_behavior = LoopBehavior::Infinite;
+    let segment = Segment::S0;
     let freq_div = rng.gen_range(
         SAMPLING_FREQ_DIV_MIN
             * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
@@ -60,26 +62,21 @@ fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
             .collect(),
         GainSTMMode::PhaseIntensityFull,
         freq_div,
-        None,
-        None,
+        loop_behavior,
+        segment,
+        true,
     );
-
-    assert!(!cpu.fpga().is_stm_mode());
-    assert!(!cpu.fpga().is_stm_gain_mode());
-    assert!(cpu.fpga().stm_start_idx().is_none());
-    assert!(cpu.fpga().stm_finish_idx().is_none());
 
     send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
-    assert!(cpu.fpga().is_stm_mode());
-    assert!(cpu.fpga().is_stm_gain_mode());
-    assert!(cpu.fpga().stm_start_idx().is_none());
-    assert!(cpu.fpga().stm_finish_idx().is_none());
-    assert_eq!(bufs.len(), cpu.fpga().stm_cycle());
-    assert_eq!(freq_div, cpu.fpga().stm_frequency_division());
+    assert!(cpu.fpga().is_stm_gain_mode(segment));
+    assert_eq!(segment, cpu.fpga().current_stm_segment());
+    assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
+    assert_eq!(bufs.len(), cpu.fpga().stm_cycle(segment));
+    assert_eq!(freq_div, cpu.fpga().stm_frequency_division(segment));
     (0..bufs.len()).for_each(|gain_idx| {
         cpu.fpga()
-            .drives(gain_idx)
+            .drives(segment, gain_idx)
             .into_iter()
             .enumerate()
             .for_each(|(i, drive)| {
@@ -90,43 +87,14 @@ fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[test]
-fn test_send_gain_stm_phase_intensity_full_with_idx() -> anyhow::Result<()> {
-    let mut rng = rand::thread_rng();
-
-    let geometry = create_geometry(1);
-    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
-
-    let bufs = gen_random_buf(2, &geometry);
-    let start_idx = Some(rng.gen_range(0..bufs.len() as u16));
-    let finish_idx = Some(rng.gen_range(0..bufs.len() as u16));
-    let mut op = GainSTMOp::new(
-        bufs.into_iter().map(|buf| TestGain { buf }).collect(),
-        GainSTMMode::PhaseIntensityFull,
-        SAMPLING_FREQ_DIV_MIN
-            * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
-        start_idx,
-        finish_idx,
-    );
-
-    assert!(cpu.fpga().stm_start_idx().is_none());
-    assert!(cpu.fpga().stm_finish_idx().is_none());
-
-    send(&mut cpu, &mut op, &geometry, &mut tx)?;
-
-    assert_eq!(start_idx, cpu.fpga().stm_start_idx());
-    assert_eq!(finish_idx, cpu.fpga().stm_finish_idx());
-
-    Ok(())
-}
-
 fn send_gain_stm_phase_full(n: usize) -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let bufs = gen_random_buf(n, &geometry);
+    let loop_behavior = LoopBehavior::Infinite;
+    let segment = Segment::S1;
     let mut op = GainSTMOp::new(
         bufs.iter()
             .map(|buf| TestGain { buf: buf.clone() })
@@ -134,21 +102,24 @@ fn send_gain_stm_phase_full(n: usize) -> anyhow::Result<()> {
         GainSTMMode::PhaseFull,
         SAMPLING_FREQ_DIV_MIN
             * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
-        None,
-        None,
+        loop_behavior,
+        segment,
+        true,
     );
 
     send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
     (0..bufs.len()).for_each(|gain_idx| {
         cpu.fpga()
-            .drives(gain_idx)
+            .drives(segment, gain_idx)
             .iter()
             .enumerate()
             .for_each(|(i, drive)| {
                 assert_eq!(EmitIntensity::MAX, drive.intensity());
                 assert_eq!(bufs[gain_idx][&0][i].phase(), drive.phase());
             });
+        assert_eq!(segment, cpu.fpga().current_stm_segment());
+        assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
     });
 
     Ok(())
@@ -169,6 +140,8 @@ fn send_gain_stm_phase_half(n: usize) -> anyhow::Result<()> {
 
     let bufs = gen_random_buf(n, &geometry);
 
+    let loop_behavior = LoopBehavior::Infinite;
+    let segment = Segment::S1;
     let mut op = GainSTMOp::new(
         bufs.iter()
             .map(|buf| TestGain { buf: buf.clone() })
@@ -176,15 +149,16 @@ fn send_gain_stm_phase_half(n: usize) -> anyhow::Result<()> {
         GainSTMMode::PhaseHalf,
         SAMPLING_FREQ_DIV_MIN
             * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
-        None,
-        None,
+        loop_behavior,
+        segment,
+        true,
     );
 
     send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
     (0..bufs.len()).for_each(|gain_idx| {
         cpu.fpga()
-            .drives(gain_idx)
+            .drives(segment, gain_idx)
             .iter()
             .enumerate()
             .for_each(|(i, &drive)| {
@@ -194,6 +168,8 @@ fn send_gain_stm_phase_half(n: usize) -> anyhow::Result<()> {
                     drive.phase().value() >> 4
                 );
             });
+        assert_eq!(segment, cpu.fpga().current_stm_segment());
+        assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
     });
 
     Ok(())

@@ -1,4 +1,4 @@
-use crate::{cpu::params::ERR_NONE, CPUEmulator};
+use crate::{cpu::params::*, CPUEmulator};
 
 #[repr(C, align(2))]
 struct Sync {
@@ -13,7 +13,7 @@ impl CPUEmulator {
 
         // Do nothing to sync
 
-        ERR_NONE
+        NO_ERR
     }
 }
 

@@ -1,7 +1,4 @@
-use crate::{
-    cpu::params::{CTL_FLAG_FORCE_FAN, ERR_NONE},
-    CPUEmulator,
-};
+use crate::{cpu::params::*, CPUEmulator};
 
 #[repr(C, align(2))]
 struct ConfigureForceFan {
@@ -18,7 +15,7 @@ impl CPUEmulator {
             self.fpga_flags_internal &= !CTL_FLAG_FORCE_FAN;
         }
 
-        ERR_NONE
+        NO_ERR
     }
 }
 
