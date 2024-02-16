@@ -193,6 +193,7 @@ def rust_test(args):
 def rust_run(args):
     examples = [
         "soem",
+        "firmware_test",
         "remote_soem",
         "twincat",
         "remote_twincat",
@@ -208,7 +209,7 @@ def rust_run(args):
 
     features = None
     match args.target:
-        case "soem":
+        case "soem" | "firmware_test":
             features = "soem"
         case "remote_soem":
             features = "remote_soem"
