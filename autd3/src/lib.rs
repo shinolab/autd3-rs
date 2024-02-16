@@ -8,6 +8,7 @@ pub mod modulation;
 pub mod prelude;
 
 pub use autd3_driver as driver;
+pub use autd3_driver::derive;
 
 pub use controller::Controller;
 

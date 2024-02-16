@@ -11,6 +11,7 @@ pub use autd3_driver::{
     common::Rad as PhaseRad,
     common::{Drive, EmitIntensity, LoopBehavior, Phase, SamplingConfiguration, Segment},
     datagram::{
+        ChangeFocusSTMSegment, ChangeGainSTMSegment, ChangeGainSegment, ChangeModulationSegment,
         Clear, ConfigureDebugOutputIdx, ConfigureForceFan, ConfigureReadsFPGAState,
         ConfigureSilencer, FocusSTM, GainCache, GainFilter, GainSTM, GainTransform, Group,
         IntoDatagramWithSegment, IntoDatagramWithTimeout, IntoGainCache, IntoGainTransform,
