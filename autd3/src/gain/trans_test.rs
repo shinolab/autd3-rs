@@ -69,6 +69,6 @@ mod tests {
     #[test]
     fn test_transtest_derive() {
         let gain = TransducerTest::new(|_, _| None);
-        let _ = gain.operation();
+        let _ = gain.operation_with_segment(Segment::S0, true);
     }
 }

@@ -121,7 +121,7 @@ mod tests {
             .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pascal));
 
         let _ = g.calc(&geometry, GainFilter::All);
-        let _ = g.operation();
+        let _ = g.operation_with_segment(Segment::S0, true);
     }
 
     #[test]

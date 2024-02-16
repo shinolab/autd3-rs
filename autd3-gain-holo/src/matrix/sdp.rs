@@ -249,7 +249,7 @@ mod tests {
             .all(|(&p, &a)| p == Vector3::new(10., 10., 100.) && a == 5e3 * Pascal));
 
         let _ = g.calc(&geometry, GainFilter::All);
-        let _ = g.operation();
+        let _ = g.operation_with_segment(Segment::S0, true);
     }
 
     #[test]

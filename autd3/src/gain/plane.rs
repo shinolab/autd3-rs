@@ -138,6 +138,6 @@ mod tests {
         let gain = Plane::new(Vector3::zeros());
         let gain2 = gain.clone();
         assert_eq!(gain, gain2);
-        let _ = gain.operation();
+        let _ = gain.operation_with_segment(Segment::S0, true);
     }
 }

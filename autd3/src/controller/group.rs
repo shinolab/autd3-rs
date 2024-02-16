@@ -137,7 +137,7 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::derive::{Gain, GainFilter, Modulation};
+    use autd3_driver::derive::{Gain, GainFilter, Modulation, Segment};
 
     use crate::{
         controller::tests::create_controller,
@@ -155,15 +155,21 @@ mod tests {
             .send()
             .await?;
 
-        assert_eq!(Static::new().calc()?, autd.link[0].fpga().modulation());
+        assert_eq!(
+            Static::new().calc()?,
+            autd.link[0].fpga().modulation(Segment::S0)
+        );
         assert_eq!(
             Null::new().calc(&autd.geometry, GainFilter::All)?[&0],
-            autd.link[0].fpga().gain_drives()
+            autd.link[0].fpga().drives(Segment::S0, 0)
         );
-        assert_eq!(Sine::new(150.).calc()?, autd.link[1].fpga().modulation());
+        assert_eq!(
+            Sine::new(150.).calc()?,
+            autd.link[1].fpga().modulation(Segment::S0)
+        );
         assert_eq!(
             Uniform::new(0x80).calc(&autd.geometry, GainFilter::All)?[&1],
-            autd.link[1].fpga().gain_drives()
+            autd.link[1].fpga().drives(Segment::S0, 0)
         );
 
         Ok(())
