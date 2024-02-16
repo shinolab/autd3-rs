@@ -76,9 +76,9 @@ impl FPGAEmulator {
     }
 
     pub(crate) fn init(&mut self) {
-        self.controller_bram[ADDR_VERSION_NUM_MAJOR as usize] =
+        self.controller_bram[ADDR_VERSION_NUM_MAJOR] =
             (ENABLED_FEATURES_BITS as u16) << 8 | VERSION_NUM as u16;
-        self.controller_bram[ADDR_VERSION_NUM_MINOR as usize] = VERSION_NUM_MINOR as u16;
+        self.controller_bram[ADDR_VERSION_NUM_MINOR] = VERSION_NUM_MINOR as u16;
     }
 
     pub(crate) fn read(&self, addr: u16) -> u16 {
