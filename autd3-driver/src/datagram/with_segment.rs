@@ -87,6 +87,16 @@ impl<D: DatagramS> IntoDatagramWithSegment<D> for D {
     }
 }
 
+impl<D: DatagramS + Clone> Clone for DatagramWithSegment<D> {
+    fn clone(&self) -> Self {
+        Self {
+            datagram: self.datagram.clone(),
+            segment: self.segment,
+            update_segment: self.update_segment,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::operation::{ClearOp, NullOp};
