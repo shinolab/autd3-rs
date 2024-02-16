@@ -11,10 +11,8 @@ pub use radiation_pressure::RadiationPressure;
 pub use transform::IntoTransform as IntoModulationTransform;
 pub use transform::Transform as ModulationTransform;
 
-use crate::common::LoopBehavior;
-use crate::cpu::Segment;
 use crate::{
-    common::{EmitIntensity, SamplingConfiguration},
+    common::{EmitIntensity, LoopBehavior, SamplingConfiguration, Segment},
     error::AUTDInternalError,
 };
 

@@ -5,8 +5,7 @@ mod reduced_phase;
 use std::collections::HashMap;
 
 use crate::{
-    common::{Drive, LoopBehavior},
-    cpu::Segment,
+    common::{Drive, LoopBehavior, Segment},
     datagram::{Gain, GainFilter},
     error::AUTDInternalError,
     fpga::{FPGADrive, GAIN_STM_BUF_SIZE_MAX},

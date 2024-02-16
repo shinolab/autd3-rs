@@ -1,6 +1,5 @@
 pub use crate::{
-    common::Drive,
-    cpu::Segment,
+    common::{Drive, Segment},
     datagram::{DatagramS, Gain, GainFilter, Modulation},
     error::AUTDInternalError,
     geometry::Geometry,

@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    common::LoopBehavior,
-    cpu::Segment,
+    common::{LoopBehavior, Segment},
     defined::METER,
     error::AUTDInternalError,
     fpga::{STMFocus, FOCUS_STM_BUF_SIZE_MAX},

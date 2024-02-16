@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use super::Datagram;
-use crate::cpu::Segment;
+use crate::common::Segment;
 use crate::error::AUTDInternalError;
 use crate::operation::Operation;
 

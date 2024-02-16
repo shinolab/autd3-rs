@@ -1,8 +1,7 @@
 use std::time::Duration;
 
 use crate::{
-    common::{LoopBehavior, SamplingConfiguration},
-    cpu::Segment,
+    common::{LoopBehavior, SamplingConfiguration, Segment},
     defined::float,
     derive::DatagramS,
     error::AUTDInternalError,
@@ -137,7 +136,7 @@ impl DatagramS for FocusSTM {
 
     fn operation_with_segment(
         self,
-        segment: crate::cpu::Segment,
+        segment: crate::common::Segment,
         update_segment: bool,
     ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         let freq_div = self.sampling_config()?.frequency_division();
@@ -187,7 +186,7 @@ impl crate::datagram::Datagram for ChangeFocusSTMSegment {
 mod tests {
     use super::*;
     use crate::{
-        cpu::Segment,
+        common::Segment,
         geometry::Vector3,
         operation::{FocusSTMOp, NullOp},
     };

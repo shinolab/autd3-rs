@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use crate::{
+    common::Segment,
     common::{LoopBehavior, SamplingConfiguration},
-    cpu::Segment,
     datagram::{DatagramS, Gain},
     defined::float,
     error::AUTDInternalError,
@@ -154,7 +154,7 @@ impl<G: Gain> DatagramS for GainSTM<G> {
 
     fn operation_with_segment(
         self,
-        segment: crate::cpu::Segment,
+        segment: crate::common::Segment,
         update_segment: bool,
     ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         let freq_div = self.sampling_config()?.frequency_division();

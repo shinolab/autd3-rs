@@ -1,8 +1,7 @@
 use std::{collections::HashMap, fmt};
 
 use crate::{
-    common::{EmitIntensity, LoopBehavior},
-    cpu::Segment,
+    common::{EmitIntensity, LoopBehavior, Segment},
     error::AUTDInternalError,
     fpga::MOD_BUF_SIZE_MAX,
     geometry::{Device, Geometry},
