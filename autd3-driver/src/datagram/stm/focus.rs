@@ -167,6 +167,10 @@ impl ChangeFocusSTMSegment {
     pub const fn new(segment: Segment) -> Self {
         Self { segment }
     }
+
+    pub const fn segment(&self) -> Segment {
+        self.segment
+    }
 }
 
 impl crate::datagram::Datagram for ChangeFocusSTMSegment {

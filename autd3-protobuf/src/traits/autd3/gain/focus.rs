@@ -15,6 +15,27 @@ impl ToMessage for autd3::gain::Focus {
                     pos: Some(self.pos().to_msg(None)),
                     phase: Some(self.phase().to_msg(None)),
                 })),
+                segment: Segment::S0 as _,
+                update_segment: true,
+            })),
+        }
+    }
+}
+
+impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Focus> {
+    type Message = DatagramLightweight;
+
+    #[allow(clippy::unnecessary_cast)]
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+        Self::Message {
+            datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
+                gain: Some(gain::Gain::Focus(Focus {
+                    intensity: Some(self.intensity().to_msg(None)),
+                    pos: Some(self.pos().to_msg(None)),
+                    phase: Some(self.phase().to_msg(None)),
+                })),
+                segment: self.segment() as _,
+                update_segment: self.update_segment(),
             })),
         }
     }

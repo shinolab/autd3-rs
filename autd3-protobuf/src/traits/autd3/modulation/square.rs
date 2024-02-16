@@ -20,6 +20,30 @@ impl ToMessage for autd3::modulation::Square {
                     duty: self.duty() as _,
                     mode: SamplingMode::from(self.mode()).into(),
                 })),
+                segment: Segment::S0 as _,
+                update_segment: true,
+            })),
+        }
+    }
+}
+
+impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::modulation::Square> {
+    type Message = DatagramLightweight;
+
+    #[allow(clippy::unnecessary_cast)]
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+        Self::Message {
+            datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
+                modulation: Some(modulation::Modulation::Square(Square {
+                    config: Some(self.sampling_config().to_msg(None)),
+                    freq: self.freq() as _,
+                    high: Some(self.high().to_msg(None)),
+                    low: Some(self.low().to_msg(None)),
+                    duty: self.duty() as _,
+                    mode: SamplingMode::from(self.mode()).into(),
+                })),
+                segment: self.segment() as _,
+                update_segment: self.update_segment(),
             })),
         }
     }

@@ -11,6 +11,23 @@ impl ToMessage for autd3::gain::Null {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Null(Null {})),
+                segment: Segment::S0 as _,
+                update_segment: true,
+            })),
+        }
+    }
+}
+
+impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Null> {
+    type Message = DatagramLightweight;
+
+    #[allow(clippy::unnecessary_cast)]
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+        Self::Message {
+            datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
+                gain: Some(gain::Gain::Null(Null {})),
+                segment: self.segment() as _,
+                update_segment: self.update_segment(),
             })),
         }
     }
