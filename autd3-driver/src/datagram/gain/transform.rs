@@ -83,9 +83,14 @@ mod tests {
         Ok(())
     }
 
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn f(_dev: &Device, _tr: &Transducer, _d: Drive) -> Drive {
+        Drive::null()
+    }
+
     #[test]
     fn test_gain_transform_derive() {
-        let gain = TestGain { d: Drive::null() }.with_transform(|_, _, _| Drive::null());
+        let gain = TestGain { d: Drive::null() }.with_transform(f);
         let _ = gain.operation();
     }
 }

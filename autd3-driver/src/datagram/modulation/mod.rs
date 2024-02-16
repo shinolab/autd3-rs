@@ -114,7 +114,8 @@ mod tests {
             buf: vec![],
             loop_behavior: LoopBehavior::Infinite,
         };
-        assert_eq!(m.sampling_config(), SamplingConfiguration::FREQ_4K_HZ);
+        assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
+        assert_eq!(LoopBehavior::Infinite, m.loop_behavior());
     }
 
     #[test]
@@ -139,6 +140,15 @@ mod tests {
             100
         );
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_change_mod_segment() -> anyhow::Result<()> {
+        let d = ChangeModulationSegment::new(Segment::S0);
+        assert_eq!(Segment::S0, d.segment());
+        assert_eq!(Some(Duration::from_millis(200)), d.timeout());
+        let _ = d.operation()?;
         Ok(())
     }
 }

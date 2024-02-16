@@ -7,6 +7,12 @@ struct Gain {
     flag: u16,
 }
 
+#[repr(C, align(2))]
+struct GainUpdate {
+    tag: u8,
+    segment: u8,
+}
+
 impl CPUEmulator {
     pub(crate) unsafe fn write_gain(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<Gain>(data);
@@ -52,6 +58,24 @@ impl CPUEmulator {
                 segment as _,
             );
         }
+
+        NO_ERR
+    }
+
+    pub(crate) unsafe fn change_gain_segment(&mut self, data: &[u8]) -> u8 {
+        let d = Self::cast::<GainUpdate>(data);
+
+        if self.stm_mode[d.segment as usize] != STM_MODE_GAIN
+            || self.stm_cycle[d.segment as usize] != 1
+        {
+            return ERR_INVALID_SEGMENT_TRANSITION;
+        }
+
+        self.bram_write(
+            BRAM_SELECT_CONTROLLER,
+            BRAM_ADDR_STM_REQ_RD_SEGMENT,
+            d.segment as _,
+        );
 
         NO_ERR
     }

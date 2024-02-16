@@ -42,13 +42,13 @@ impl CPUEmulator {
         let send = (d.subseq.flag >> 6) + 1;
 
         let src_base = if (d.subseq.flag & GAIN_STM_FLAG_BEGIN) == GAIN_STM_FLAG_BEGIN {
-            self.stm_cycle = 0;
-
             self.gain_stm_mode = d.head.mode;
 
             let rep = d.head.rep;
             let segment = d.head.segment;
             let freq_div = d.head.freq_div;
+
+            self.stm_cycle[segment as usize] = 0;
 
             if self.silencer_strict_mode
                 && ((freq_div < self.min_freq_div_intensity)
@@ -102,10 +102,11 @@ impl CPUEmulator {
         };
 
         let mut src = src_base;
-        let mut dst = ((self.stm_cycle & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8) as u16;
+        let mut dst =
+            ((self.stm_cycle[self.stm_segment as usize] & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8) as u16;
 
         if self.gain_stm_mode == GAIN_STM_MODE_INTENSITY_PHASE_FULL {
-            self.stm_cycle += 1;
+            self.stm_cycle[self.stm_segment as usize] += 1;
             (0..self.num_transducers).for_each(|_| unsafe {
                 self.bram_write(BRAM_SELECT_STM, dst, src.read());
                 dst += 1;
@@ -117,17 +118,19 @@ impl CPUEmulator {
                 dst += 1;
                 src = src.add(1);
             });
-            self.stm_cycle += 1;
+            self.stm_cycle[self.stm_segment as usize] += 1;
 
             if send > 1 {
                 let mut src = src_base;
-                let mut dst = ((self.stm_cycle & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8) as u16;
+                let mut dst = ((self.stm_cycle[self.stm_segment as usize]
+                    & GAIN_STM_BUF_PAGE_SIZE_MASK)
+                    << 8) as u16;
                 (0..self.num_transducers).for_each(|_| unsafe {
                     self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | ((src.read() >> 8) & 0x00FF));
                     dst += 1;
                     src = src.add(1);
                 });
-                self.stm_cycle += 1;
+                self.stm_cycle[self.stm_segment as usize] += 1;
             }
         } else if self.gain_stm_mode == GAIN_STM_MODE_PHASE_HALF {
             (0..self.num_transducers).for_each(|_| unsafe {
@@ -136,66 +139,73 @@ impl CPUEmulator {
                 dst += 1;
                 src = src.add(1);
             });
-            self.stm_cycle += 1;
+            self.stm_cycle[self.stm_segment as usize] += 1;
 
             if send > 1 {
                 let mut src = src_base;
-                let mut dst = ((self.stm_cycle & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8) as u16;
+                let mut dst = ((self.stm_cycle[self.stm_segment as usize]
+                    & GAIN_STM_BUF_PAGE_SIZE_MASK)
+                    << 8) as u16;
                 (0..self.num_transducers).for_each(|_| unsafe {
                     let phase = (src.read() >> 4) & 0x000F;
                     self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (phase << 4) | phase);
                     dst += 1;
                     src = src.add(1);
                 });
-                self.stm_cycle += 1;
+                self.stm_cycle[self.stm_segment as usize] += 1;
             }
 
             if send > 2 {
                 let mut src = src_base;
-                let mut dst = ((self.stm_cycle & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8) as u16;
+                let mut dst = ((self.stm_cycle[self.stm_segment as usize]
+                    & GAIN_STM_BUF_PAGE_SIZE_MASK)
+                    << 8) as u16;
                 (0..self.num_transducers).for_each(|_| unsafe {
                     let phase = (src.read() >> 8) & 0x000F;
                     self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (phase << 4) | phase);
                     dst += 1;
                     src = src.add(1);
                 });
-                self.stm_cycle += 1;
+                self.stm_cycle[self.stm_segment as usize] += 1;
             }
 
             if send > 3 {
                 let mut src = src_base;
-                let mut dst = ((self.stm_cycle & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8) as u16;
+                let mut dst = ((self.stm_cycle[self.stm_segment as usize]
+                    & GAIN_STM_BUF_PAGE_SIZE_MASK)
+                    << 8) as u16;
                 (0..self.num_transducers).for_each(|_| unsafe {
                     let phase = (src.read() >> 12) & 0x000F;
                     self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (phase << 4) | phase);
                     dst += 1;
                     src = src.add(1);
                 });
-                self.stm_cycle += 1;
+                self.stm_cycle[self.stm_segment as usize] += 1;
             }
         }
 
-        if self.stm_cycle & GAIN_STM_BUF_PAGE_SIZE_MASK == 0 {
+        if self.stm_cycle[self.stm_segment as usize] & GAIN_STM_BUF_PAGE_SIZE_MASK == 0 {
             self.change_stm_wr_page(
-                ((self.stm_cycle & !GAIN_STM_BUF_PAGE_SIZE_MASK) >> GAIN_STM_BUF_PAGE_SIZE_WIDTH)
-                    as _,
+                ((self.stm_cycle[self.stm_segment as usize] & !GAIN_STM_BUF_PAGE_SIZE_MASK)
+                    >> GAIN_STM_BUF_PAGE_SIZE_WIDTH) as _,
             );
         }
 
         if (d.subseq.flag & GAIN_STM_FLAG_END) == GAIN_STM_FLAG_END {
+            self.stm_mode[self.stm_segment as usize] = STM_MODE_GAIN;
             match self.stm_segment {
                 0 => {
                     self.bram_write(
                         BRAM_SELECT_CONTROLLER,
                         BRAM_ADDR_STM_CYCLE_0,
-                        (self.stm_cycle.max(1) - 1) as _,
+                        (self.stm_cycle[self.stm_segment as usize].max(1) - 1) as _,
                     );
                 }
                 1 => {
                     self.bram_write(
                         BRAM_SELECT_CONTROLLER,
                         BRAM_ADDR_STM_CYCLE_1,
-                        (self.stm_cycle.max(1) - 1) as _,
+                        (self.stm_cycle[self.stm_segment as usize].max(1) - 1) as _,
                     );
                 }
                 _ => unreachable!(),
@@ -215,6 +225,12 @@ impl CPUEmulator {
 
     pub(crate) unsafe fn change_gain_stm_segment(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<GainSTMUpdate>(data);
+
+        if self.stm_mode[d.segment as usize] != STM_MODE_GAIN
+            || self.stm_cycle[d.segment as usize] == 1
+        {
+            return ERR_INVALID_SEGMENT_TRANSITION;
+        }
 
         self.bram_write(
             BRAM_SELECT_CONTROLLER,

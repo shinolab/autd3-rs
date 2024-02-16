@@ -66,9 +66,14 @@ mod tests {
         Ok(())
     }
 
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn f(_dev: &Device, _tr: &Transducer) -> Option<Drive> {
+        None
+    }
+
     #[test]
     fn test_transtest_derive() {
-        let gain = TransducerTest::new(|_, _| None);
+        let gain = TransducerTest::new(f);
         let _ = gain.operation_with_segment(Segment::S0, true);
     }
 }

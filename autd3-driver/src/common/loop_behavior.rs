@@ -12,3 +12,18 @@ impl LoopBehavior {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_loop_behavior() {
+        let d = LoopBehavior::Infinite;
+
+        let dc = Clone::clone(&d);
+        assert_eq!(d, dc);
+
+        assert_eq!(format!("{:?}", d), "Infinite");
+    }
+}

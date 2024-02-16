@@ -2,10 +2,14 @@ use autd3_driver::{
     autd3_device::AUTD3,
     cpu::TxDatagram,
     datagram::*,
+    error::AUTDInternalError,
     geometry::{Geometry, IntoDevice, Vector3},
     operation::{NullOp, Operation, OperationHandler},
 };
-use autd3_firmware_emulator::{cpu::params::ERR_NOT_SUPPORTED_TAG, CPUEmulator};
+use autd3_firmware_emulator::{
+    cpu::params::{ERR_BIT, ERR_NOT_SUPPORTED_TAG},
+    CPUEmulator,
+};
 
 mod op;
 
@@ -22,10 +26,13 @@ pub fn send_once(
     op: &mut impl Operation,
     geometry: &Geometry,
     tx: &mut TxDatagram,
-) -> anyhow::Result<()> {
+) -> Result<(), AUTDInternalError> {
     let mut op_null = NullOp::default();
     OperationHandler::pack(op, &mut op_null, geometry, tx)?;
     cpu.send(&tx);
+    if (cpu.ack() & ERR_BIT) == ERR_BIT {
+        return Err(AUTDInternalError::firmware_err(cpu.ack()));
+    }
     assert_eq!(tx.headers().next().unwrap().msg_id, cpu.ack());
     Ok(())
 }
@@ -35,7 +42,7 @@ pub fn send(
     op: &mut impl Operation,
     geometry: &Geometry,
     tx: &mut TxDatagram,
-) -> anyhow::Result<()> {
+) -> Result<(), AUTDInternalError> {
     let mut op_null = NullOp::default();
     OperationHandler::init(op, &mut op_null, geometry)?;
     loop {

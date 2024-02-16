@@ -51,10 +51,15 @@ mod tests {
 
         let info = FPGAState { state: 0x00 };
         assert!(!info.is_thermal_assert());
+        assert_eq!(Segment::S0, info.current_mod_segment());
+        assert_eq!(Segment::S0, info.current_stm_segment());
+        assert_eq!(Segment::S0, info.current_gain_segment());
         assert_eq!(info.state(), 0x00);
 
         let info = FPGAState { state: 0x01 };
         assert!(info.is_thermal_assert());
+        assert_eq!(Segment::S0, info.current_stm_segment());
+        assert_eq!(Segment::S0, info.current_gain_segment());
         assert_eq!(info.state(), 0x01);
     }
 

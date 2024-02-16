@@ -17,6 +17,7 @@ impl<F: Fn(&Device) -> Option<&Transducer>> ConfigureDebugOutputIdx<F> {
         Self { f }
     }
 
+    #[cfg_attr(coverage_nightly, coverage(off))]
     pub fn f(&self) -> &F {
         &self.f
     }

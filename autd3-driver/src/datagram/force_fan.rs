@@ -12,6 +12,7 @@ impl<F: Fn(&Device) -> bool> ConfigureForceFan<F> {
     }
 
     /// Get the function
+    #[cfg_attr(coverage_nightly, coverage(off))]
     pub fn f(&self) -> &F {
         &self.f
     }
