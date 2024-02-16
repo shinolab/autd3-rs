@@ -10,6 +10,7 @@ use crate::{
     error::AUTDInternalError,
 };
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum STMSamplingConfiguration {
     Frequency(float),
     Period(std::time::Duration),
@@ -55,6 +56,7 @@ impl STMSamplingConfiguration {
 }
 
 #[doc(hidden)]
+#[derive(Clone, Copy)]
 pub struct STMProps {
     sampling: STMSamplingConfiguration,
     loop_behavior: LoopBehavior,
