@@ -27,6 +27,7 @@ pub struct CPUEmulator {
     pub(crate) min_freq_div_intensity: u32,
     pub(crate) min_freq_div_phase: u32,
     pub(crate) is_rx_data_used: bool,
+    pub(crate) pwe_write: u32,
 }
 
 impl CPUEmulator {
@@ -54,6 +55,7 @@ impl CPUEmulator {
             min_freq_div_intensity: 5120,
             min_freq_div_phase: 20480,
             is_rx_data_used: false,
+            pwe_write: 0,
         };
         s.init();
         s
@@ -183,6 +185,7 @@ impl CPUEmulator {
                 TAG_GAIN_STM => self.write_gain_stm(data),
                 TAG_FORCE_FAN => self.configure_force_fan(data),
                 TAG_READS_FPGA_STATE => self.configure_reads_fpga_state(data),
+                TAG_CONFIG_PULSE_WIDTH_ENCODER => self.config_pwe(data),
                 TAG_DEBUG => self.config_debug(data),
                 _ => ERR_NOT_SUPPORTED_TAG,
             }

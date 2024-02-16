@@ -5,6 +5,7 @@ pub mod gain;
 mod info;
 mod modulation;
 mod null;
+mod pulse_width_encoder;
 mod reads_fpga_state;
 mod silencer;
 pub mod stm;
@@ -17,6 +18,7 @@ pub use gain::*;
 pub use info::*;
 pub use modulation::*;
 pub use null::*;
+pub use pulse_width_encoder::*;
 pub use reads_fpga_state::*;
 pub use silencer::*;
 pub use stm::*;
@@ -45,6 +47,7 @@ pub enum TypeTag {
     GainSTMChangeSegment = 0x43,
     ForceFan = 0x60,
     ReadsFPGAState = 0x61,
+    ConfigPulseWidthEncoder = 0x70,
     Debug = 0xF0,
 }
 

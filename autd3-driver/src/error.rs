@@ -59,6 +59,9 @@ pub enum AUTDInternalError {
     #[error("GainSTMMode ({0:?}) is not supported")]
     GainSTMModeNotSupported(GainSTMMode),
 
+    #[error("Invalid pulse width encoder table size ({0})")]
+    InvalidPulseWidthEncoderTableSize(usize),
+
     #[error("{0}")]
     ModulationError(String),
     #[error("{0}")]
@@ -101,6 +104,10 @@ pub enum AUTDInternalError {
     InvalidSegmentTransition,
     #[error("Invalid mode")]
     InvalidMode,
+    #[error("Invalid pulse width encoder data size")]
+    InvalidPulseWidthEncoderDataSize,
+    #[error("Incomplete pulse width encoder table data")]
+    IncompletePulseWidthEncoderData,
 }
 
 impl AUTDInternalError {
@@ -115,6 +122,8 @@ impl AUTDInternalError {
             0x86 => AUTDInternalError::InvalidSegment,
             0x87 => AUTDInternalError::InvalidMode,
             0x88 => AUTDInternalError::InvalidSegmentTransition,
+            0x89 => AUTDInternalError::InvalidPulseWidthEncoderDataSize,
+            0x8A => AUTDInternalError::IncompletePulseWidthEncoderData,
             _ => AUTDInternalError::UnknownFirmwareError(ack),
         }
     }

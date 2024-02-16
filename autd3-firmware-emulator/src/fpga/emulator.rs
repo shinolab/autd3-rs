@@ -296,13 +296,22 @@ impl FPGAEmulator {
             return false;
         }
         let cur_stm_segment = self.current_stm_segment();
-        dbg!(self.stm_cycle(cur_stm_segment));
-        dbg!(self.is_stm_gain_mode(cur_stm_segment));
         (0..self.stm_cycle(cur_stm_segment)).any(|i| {
             self.drives(cur_stm_segment, i)
                 .iter()
                 .any(|&d| d.intensity() != EmitIntensity::MIN)
         })
+    }
+
+    pub fn pulse_width_encoder_full_width_start(&self) -> u16 {
+        self.controller_bram[ADDR_PULSE_WIDTH_ENCODER_FULL_WIDTH_START]
+    }
+
+    pub fn pulse_width_encoder_table(&self) -> Vec<u8> {
+        self.duty_table_bram
+            .iter()
+            .flat_map(|&d| vec![(d & 0xFF) as u8, (d >> 8) as u8])
+            .collect()
     }
 
     pub fn debug_output_idx(&self) -> Option<u8> {
