@@ -126,6 +126,7 @@ pub const GAIN_STM_MODE_PHASE_HALF: u8 = 2;
 
 pub const NO_ERR: u8 = 0x00;
 pub const ERR_BIT: u8 = 0x80;
+#[allow(clippy::identity_op)]
 pub const ERR_NOT_SUPPORTED_TAG: u8 = ERR_BIT | 0x00;
 pub const ERR_INVALID_MSG_ID: u8 = ERR_BIT | 0x01;
 pub const ERR_FREQ_DIV_TOO_SMALL: u8 = ERR_BIT | 0x02;
