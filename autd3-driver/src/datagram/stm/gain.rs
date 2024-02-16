@@ -186,8 +186,8 @@ impl<G: Gain + Clone> Clone for GainSTM<G> {
     fn clone(&self) -> Self {
         Self {
             gains: self.gains.clone(),
-            mode: self.mode.clone(),
-            props: self.props.clone(),
+            mode: self.mode,
+            props: self.props,
         }
     }
 }
