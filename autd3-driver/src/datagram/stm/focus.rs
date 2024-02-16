@@ -18,6 +18,7 @@ use super::STMProps;
 /// - The maximum number of sampling points is [crate::fpga::FOCUS_STM_BUF_SIZE_MAX].
 /// - The sampling frequency is [crate::fpga::FPGA_CLK_FREQ]/N, where `N` is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN]
 ///
+#[derive(Clone)]
 pub struct FocusSTM {
     control_points: Vec<ControlPoint>,
     props: STMProps,

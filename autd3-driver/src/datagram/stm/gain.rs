@@ -182,6 +182,16 @@ impl<G: Gain> DatagramS for GainSTM<G> {
     }
 }
 
+impl<G: Gain + Clone> Clone for GainSTM<G> {
+    fn clone(&self) -> Self {
+        Self {
+            gains: self.gains.clone(),
+            mode: self.mode.clone(),
+            props: self.props.clone(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct ChangeGainSTMSegment {
     segment: Segment,
