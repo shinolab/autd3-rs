@@ -106,6 +106,6 @@ mod tests {
         let gain = Uniform::new(0x1F);
         let gain2 = gain.clone();
         assert_eq!(gain, gain2);
-        let _ = gain.operation();
+        let _ = gain.operation_with_segment(Segment::S0, true);
     }
 }

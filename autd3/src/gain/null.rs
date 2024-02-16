@@ -49,6 +49,6 @@ mod tests {
     fn test_null_derive() {
         let gain = Null::default();
         let _ = gain.clone();
-        let _ = gain.operation();
+        let _ = gain.operation_with_segment(Segment::S0, true);
     }
 }

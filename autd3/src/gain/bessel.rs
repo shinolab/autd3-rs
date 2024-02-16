@@ -191,6 +191,6 @@ mod tests {
         assert_eq!(g.theta(), g2.theta());
         assert_eq!(g.intensity(), g2.intensity());
         assert_eq!(g.phase(), g2.phase());
-        let _ = g.operation();
+        let _ = g.operation_with_segment(Segment::S0, true);
     }
 }
