@@ -13,6 +13,7 @@ use crate::{create_geometry, op::stm::focus::gen_random_foci, send};
 #[derive(Modulation)]
 struct TestMod {
     config: SamplingConfiguration,
+    loop_behavior: LoopBehavior,
 }
 
 impl Modulation for TestMod {
@@ -55,6 +56,7 @@ fn send_clear() -> anyhow::Result<()> {
 
         let (mut op, _) = TestMod {
             config: SamplingConfiguration::from_frequency_division(10000)?,
+            loop_behavior: LoopBehavior::Infinite,
         }
         .operation()?;
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
@@ -66,8 +68,9 @@ fn send_clear() -> anyhow::Result<()> {
             gen_random_foci(2),
             SAMPLING_FREQ_DIV_MIN
                 * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
-            None,
-            None,
+            LoopBehavior::Infinite,
+            Segment::S0,
+            true,
         );
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
     }
@@ -89,14 +92,43 @@ fn send_clear() -> anyhow::Result<()> {
     );
     assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
 
-    assert_eq!(2, cpu.fpga().modulation_cycle());
-    assert_eq!(5120, cpu.fpga().modulation_frequency_division());
-    assert_eq!(vec![EmitIntensity::MAX; 2], cpu.fpga().modulation());
+    assert_eq!(2, cpu.fpga().modulation_cycle(Segment::S0));
+    assert_eq!(2, cpu.fpga().modulation_cycle(Segment::S1));
+    assert_eq!(5120, cpu.fpga().modulation_frequency_division(Segment::S0));
+    assert_eq!(5120, cpu.fpga().modulation_frequency_division(Segment::S1));
+    assert_eq!(
+        LoopBehavior::Infinite,
+        cpu.fpga().modulation_loop_behavior(Segment::S0)
+    );
+    assert_eq!(
+        LoopBehavior::Infinite,
+        cpu.fpga().modulation_loop_behavior(Segment::S1)
+    );
+    assert_eq!(
+        vec![EmitIntensity::MAX; 2],
+        cpu.fpga().modulation(Segment::S0)
+    );
+    assert_eq!(
+        vec![EmitIntensity::MAX; 2],
+        cpu.fpga().modulation(Segment::S1)
+    );
 
-    assert!(!cpu.fpga().is_stm_gain_mode());
-    assert_eq!(vec![Drive::null(); 249], cpu.fpga().gain_drives());
-
-    assert_eq!(vec![0x0000; 249], cpu.fpga().mod_delays());
+    assert!(cpu.fpga().is_stm_gain_mode(Segment::S0));
+    assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
+    assert_eq!(vec![Drive::null(); 249], cpu.fpga().drives(Segment::S0, 0));
+    assert_eq!(vec![Drive::null(); 249], cpu.fpga().drives(Segment::S1, 0));
+    assert_eq!(1, cpu.fpga().stm_cycle(Segment::S0));
+    assert_eq!(1, cpu.fpga().stm_cycle(Segment::S1));
+    assert_eq!(0xFFFFFFFF, cpu.fpga().stm_frequency_division(Segment::S0));
+    assert_eq!(0xFFFFFFFF, cpu.fpga().stm_frequency_division(Segment::S1));
+    assert_eq!(
+        LoopBehavior::Infinite,
+        cpu.fpga().stm_loop_behavior(Segment::S0)
+    );
+    assert_eq!(
+        LoopBehavior::Infinite,
+        cpu.fpga().stm_loop_behavior(Segment::S1)
+    );
 
     assert!(cpu.fpga().debug_output_idx().is_none());
 

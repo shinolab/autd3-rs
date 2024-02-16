@@ -1,6 +1,5 @@
 mod clear;
 mod debug;
-mod delay;
 mod force_fan;
 mod gain;
 mod info;

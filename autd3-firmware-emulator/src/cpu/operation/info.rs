@@ -1,10 +1,4 @@
-use crate::{
-    cpu::params::{
-        BRAM_ADDR_VERSION_NUM, BRAM_ADDR_VERSION_NUM_MINOR, BRAM_SELECT_CONTROLLER,
-        CPU_VERSION_MAJOR, CPU_VERSION_MINOR, ERR_NONE,
-    },
-    CPUEmulator,
-};
+use crate::{cpu::params::*, CPUEmulator};
 
 const INFO_TYPE_CPU_VERSION_MAJOR: u8 = 0x01;
 const INFO_TYPE_CPU_VERSION_MINOR: u8 = 0x02;
@@ -29,7 +23,7 @@ impl CPUEmulator {
     }
 
     fn get_fpga_version(&self) -> u16 {
-        self.bram_read(BRAM_SELECT_CONTROLLER, BRAM_ADDR_VERSION_NUM)
+        self.bram_read(BRAM_SELECT_CONTROLLER, BRAM_ADDR_VERSION_NUM_MAJOR)
     }
 
     fn get_fpga_version_minor(&self) -> u16 {
@@ -66,7 +60,7 @@ impl CPUEmulator {
                 unreachable!("Unsupported firmware info type")
             }
         };
-        ERR_NONE
+        NO_ERR
     }
 }
 

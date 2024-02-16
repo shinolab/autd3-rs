@@ -1,6 +1,9 @@
+use std::num::NonZeroU32;
+
 use autd3_driver::{
+    common::LoopBehavior,
     defined::{float, PI},
-    derive::{Drive, EmitIntensity, Phase},
+    derive::{Drive, EmitIntensity, Phase, Segment},
 };
 
 use crate::error::AUTDFirmwareEmulatorError;
@@ -12,9 +15,11 @@ use num_integer::Roots;
 
 pub struct FPGAEmulator {
     controller_bram: Vec<u16>,
-    modulator_bram: Vec<u16>,
-    normal_op_bram: Vec<u16>,
-    stm_op_bram: Vec<u16>,
+    modulator_bram_0: Vec<u16>,
+    modulator_bram_1: Vec<u16>,
+    stm_bram_0: Vec<u16>,
+    stm_bram_1: Vec<u16>,
+    duty_table_bram: Vec<u16>,
     num_transducers: usize,
     tr_pos: Vec<u64>,
 }
@@ -22,10 +27,12 @@ pub struct FPGAEmulator {
 impl FPGAEmulator {
     pub(crate) fn new(num_transducers: usize) -> Self {
         Self {
-            controller_bram: vec![0x0000; 1280],
-            modulator_bram: vec![0x0000; 32768],
-            normal_op_bram: vec![0x0000; 512],
-            stm_op_bram: vec![0x0000; 524288],
+            controller_bram: vec![0x0000; 256],
+            modulator_bram_0: vec![0x0000; 32768 / std::mem::size_of::<u16>()],
+            modulator_bram_1: vec![0x0000; 32768 / std::mem::size_of::<u16>()],
+            duty_table_bram: vec![0x0000; 65536 / std::mem::size_of::<u16>()],
+            stm_bram_0: vec![0x0000; 1024 * 256],
+            stm_bram_1: vec![0x0000; 1024 * 256],
             num_transducers,
             tr_pos: vec![
                 0x00000000, 0x01960000, 0x032c0000, 0x04c30000, 0x06590000, 0x07ef0000, 0x09860000,
@@ -69,13 +76,13 @@ impl FPGAEmulator {
     }
 
     pub(crate) fn init(&mut self) {
-        self.controller_bram[ADDR_VERSION_NUM] =
-            (ENABLED_FEATURES_BITS as u16) << 8 | VERSION_NUM_MAJOR as u16;
-        self.controller_bram[ADDR_VERSION_NUM_MINOR] = VERSION_NUM_MINOR as u16;
+        self.controller_bram[ADDR_VERSION_NUM_MAJOR as usize] =
+            (ENABLED_FEATURES_BITS as u16) << 8 | VERSION_NUM as u16;
+        self.controller_bram[ADDR_VERSION_NUM_MINOR as usize] = VERSION_NUM_MINOR as u16;
     }
 
     pub(crate) fn read(&self, addr: u16) -> u16 {
-        let select = (addr >> 14) & 0x0003;
+        let select = ((addr >> 14) & 0x0003) as u8;
         let addr = (addr & 0x3FFF) as usize;
         match select {
             BRAM_SELECT_CONTROLLER => self.controller_bram[addr],
@@ -84,21 +91,32 @@ impl FPGAEmulator {
     }
 
     pub(crate) fn write(&mut self, addr: u16, data: u16) {
-        let select = (addr >> 14) & 0x0003;
+        let select = ((addr >> 14) & 0x0003) as u8;
         let addr = (addr & 0x3FFF) as usize;
         match select {
             BRAM_SELECT_CONTROLLER => self.controller_bram[addr] = data,
-            BRAM_SELECT_MOD => {
-                let offset = self.controller_bram[ADDR_MOD_ADDR_OFFSET];
-                let addr = (offset as usize) << 14 | addr;
-                self.modulator_bram[addr] = data;
+            BRAM_SELECT_MOD => match self.controller_bram[ADDR_MOD_MEM_WR_SEGMENT] {
+                0 => self.modulator_bram_0[addr] = data,
+                1 => self.modulator_bram_1[addr] = data,
+                _ => unreachable!(),
+            },
+            BRAM_SELECT_DUTY_TABLE => {
+                self.duty_table_bram[((self.controller_bram[ADDR_PULSE_WIDTH_ENCODER_TABLE_WR_PAGE]
+                    as usize)
+                    << 14)
+                    | addr] = data;
             }
-            BRAM_SELECT_NORMAL => self.normal_op_bram[addr] = data,
-            BRAM_SELECT_STM => {
-                let offset = self.controller_bram[ADDR_STM_ADDR_OFFSET];
-                let addr = (offset as usize) << 14 | addr;
-                self.stm_op_bram[addr] = data
-            }
+            BRAM_SELECT_STM => match self.controller_bram[ADDR_STM_MEM_WR_SEGMENT] {
+                0 => {
+                    self.stm_bram_0
+                        [(self.controller_bram[ADDR_STM_MEM_WR_PAGE] as usize) << 14 | addr] = data
+                }
+                1 => {
+                    self.stm_bram_1
+                        [(self.controller_bram[ADDR_STM_MEM_WR_PAGE] as usize) << 14 | addr] = data
+                }
+                _ => unreachable!(),
+            },
             _ => unreachable!(),
         }
     }
@@ -112,16 +130,14 @@ impl FPGAEmulator {
     }
 
     pub fn is_force_fan(&self) -> bool {
-        (self.controller_bram[ADDR_CTL_REG] & (1 << CTL_REG_FORCE_FAN_BIT)) != 0
-            || (self.controller_bram[ADDR_CTL_REG] & (1 << CTL_REG_FORCE_FAN_EX_BIT)) != 0
+        (self.controller_bram[ADDR_CTL_FLAG] & (1 << CTL_FLAG_FORCE_FAN_BIT)) != 0
     }
 
-    pub fn is_stm_mode(&self) -> bool {
-        (self.controller_bram[ADDR_CTL_REG] & (1 << CTL_REG_OP_MODE_BIT)) != 0
-    }
-
-    pub fn is_stm_gain_mode(&self) -> bool {
-        (self.controller_bram[ADDR_CTL_REG] & (1 << CTL_REG_STM_GAIN_MODE_BIT)) != 0
+    pub fn is_stm_gain_mode(&self, segment: Segment) -> bool {
+        match segment {
+            Segment::S0 => self.controller_bram[ADDR_STM_MODE_0] == STM_MODE_GAIN,
+            Segment::S1 => self.controller_bram[ADDR_STM_MODE_1] == STM_MODE_GAIN,
+        }
     }
 
     pub fn silencer_update_rate_intensity(&self) -> u16 {
@@ -141,88 +157,156 @@ impl FPGAEmulator {
     }
 
     pub fn silencer_fixed_completion_steps_mode(&self) -> bool {
-        self.controller_bram[ADDR_SILENCER_CTL_FLAG]
-            & (1 << SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS_BIT)
-            != 0
+        self.controller_bram[ADDR_SILENCER_MODE] == SILNCER_MODE_FIXED_COMPLETION_STEPS
     }
 
-    pub fn mod_delays(&self) -> Vec<u16> {
-        self.controller_bram[ADDR_MOD_DELAY_BASE..]
-            .iter()
-            .take(self.num_transducers)
-            .copied()
-            .collect()
-    }
-
-    pub fn stm_frequency_division(&self) -> u32 {
-        ((self.controller_bram[ADDR_STM_FREQ_DIV_1] as u32) << 16) & 0xFFFF0000
-            | self.controller_bram[ADDR_STM_FREQ_DIV_0] as u32 & 0x0000FFFF
-    }
-
-    pub fn stm_cycle(&self) -> usize {
-        self.controller_bram[ADDR_STM_CYCLE] as usize + 1
-    }
-
-    pub fn sound_speed(&self) -> u32 {
-        ((self.controller_bram[ADDR_SOUND_SPEED_1] as u32) << 16) & 0xFFFF0000
-            | self.controller_bram[ADDR_SOUND_SPEED_0] as u32 & 0x0000FFFF
-    }
-
-    pub fn stm_start_idx(&self) -> Option<u16> {
-        if self.controller_bram[ADDR_CTL_REG] & (1 << CTL_FLAG_USE_STM_START_IDX_BIT) != 0 {
-            Some(self.controller_bram[ADDR_STM_START_IDX])
-        } else {
-            None
+    pub fn stm_frequency_division(&self, segment: Segment) -> u32 {
+        match segment {
+            Segment::S0 => {
+                ((self.controller_bram[ADDR_STM_FREQ_DIV_0_1] as u32) << 16) & 0xFFFF0000
+                    | self.controller_bram[ADDR_STM_FREQ_DIV_0_0] as u32 & 0x0000FFFF
+            }
+            Segment::S1 => {
+                ((self.controller_bram[ADDR_STM_FREQ_DIV_1_1] as u32) << 16) & 0xFFFF0000
+                    | self.controller_bram[ADDR_STM_FREQ_DIV_1_0] as u32 & 0x0000FFFF
+            }
         }
     }
 
-    pub fn stm_finish_idx(&self) -> Option<u16> {
-        if self.controller_bram[ADDR_CTL_REG] & (1 << CTL_FLAG_USE_STM_FINISH_IDX_BIT) != 0 {
-            Some(self.controller_bram[ADDR_STM_FINISH_IDX])
-        } else {
-            None
+    pub fn stm_cycle(&self, segment: Segment) -> usize {
+        match segment {
+            Segment::S0 => self.controller_bram[ADDR_STM_CYCLE_0] as usize + 1,
+            Segment::S1 => self.controller_bram[ADDR_STM_CYCLE_1] as usize + 1,
         }
     }
 
-    pub fn modulation_frequency_division(&self) -> u32 {
-        ((self.controller_bram[ADDR_MOD_FREQ_DIV_1] as u32) << 16) & 0xFFFF0000
-            | self.controller_bram[ADDR_MOD_FREQ_DIV_0] as u32 & 0x0000FFFF
+    pub fn sound_speed(&self, segment: Segment) -> u32 {
+        match segment {
+            Segment::S0 => {
+                ((self.controller_bram[ADDR_STM_SOUND_SPEED_0_1] as u32) << 16) & 0xFFFF0000
+                    | self.controller_bram[ADDR_STM_SOUND_SPEED_0_0] as u32 & 0x0000FFFF
+            }
+            Segment::S1 => {
+                ((self.controller_bram[ADDR_STM_SOUND_SPEED_1_1] as u32) << 16) & 0xFFFF0000
+                    | self.controller_bram[ADDR_STM_SOUND_SPEED_1_0] as u32 & 0x0000FFFF
+            }
+        }
     }
 
-    pub fn modulation_cycle(&self) -> usize {
-        self.controller_bram[ADDR_MOD_CYCLE] as usize + 1
+    pub fn stm_loop_behavior(&self, segment: Segment) -> LoopBehavior {
+        let rep = match segment {
+            Segment::S0 => {
+                ((self.controller_bram[ADDR_STM_REP_0_1] as u32) << 16) & 0xFFFF0000
+                    | self.controller_bram[ADDR_STM_REP_0_0] as u32 & 0x0000FFFF
+            }
+            Segment::S1 => {
+                ((self.controller_bram[ADDR_STM_REP_1_1] as u32) << 16) & 0xFFFF0000
+                    | self.controller_bram[ADDR_STM_REP_1_0] as u32 & 0x0000FFFF
+            }
+        };
+        unsafe {
+            match rep {
+                0xFFFFFFFF => LoopBehavior::Infinite,
+                v => LoopBehavior::Finite(NonZeroU32::new_unchecked(v + 1)),
+            }
+        }
     }
 
-    pub fn modulation_at(&self, idx: usize) -> EmitIntensity {
+    pub fn modulation_frequency_division(&self, segment: Segment) -> u32 {
+        match segment {
+            Segment::S0 => {
+                ((self.controller_bram[ADDR_MOD_FREQ_DIV_0_1] as u32) << 16) & 0xFFFF0000
+                    | self.controller_bram[ADDR_MOD_FREQ_DIV_0_0] as u32 & 0x0000FFFF
+            }
+            Segment::S1 => {
+                ((self.controller_bram[ADDR_MOD_FREQ_DIV_1_1] as u32) << 16) & 0xFFFF0000
+                    | self.controller_bram[ADDR_MOD_FREQ_DIV_1_0] as u32 & 0x0000FFFF
+            }
+        }
+    }
+
+    pub fn modulation_cycle(&self, segment: Segment) -> usize {
+        match segment {
+            Segment::S0 => self.controller_bram[ADDR_MOD_CYCLE_0] as usize + 1,
+            Segment::S1 => self.controller_bram[ADDR_MOD_CYCLE_1] as usize + 1,
+        }
+    }
+
+    pub fn modulation_loop_behavior(&self, segment: Segment) -> LoopBehavior {
+        let rep = match segment {
+            Segment::S0 => {
+                ((self.controller_bram[ADDR_MOD_REP_0_1] as u32) << 16) & 0xFFFF0000
+                    | self.controller_bram[ADDR_MOD_REP_0_0] as u32 & 0x0000FFFF
+            }
+            Segment::S1 => {
+                ((self.controller_bram[ADDR_MOD_REP_1_1] as u32) << 16) & 0xFFFF0000
+                    | self.controller_bram[ADDR_MOD_REP_1_0] as u32 & 0x0000FFFF
+            }
+        };
+        unsafe {
+            match rep {
+                0xFFFFFFFF => LoopBehavior::Infinite,
+                v => LoopBehavior::Finite(NonZeroU32::new_unchecked(v + 1)),
+            }
+        }
+    }
+
+    pub fn modulation_at(&self, segment: Segment, idx: usize) -> EmitIntensity {
+        let bram = match segment {
+            Segment::S0 => &self.modulator_bram_0,
+            Segment::S1 => &self.modulator_bram_1,
+        };
         let m = if idx % 2 == 0 {
-            self.modulator_bram[idx >> 1] & 0xFF
+            bram[idx >> 1] & 0xFF
         } else {
-            self.modulator_bram[idx >> 1] >> 8
+            bram[idx >> 1] >> 8
         };
         EmitIntensity::new(m as u8)
     }
 
-    pub fn modulation(&self) -> Vec<EmitIntensity> {
-        (0..self.modulation_cycle())
-            .map(|i| self.modulation_at(i))
+    pub fn modulation(&self, segment: Segment) -> Vec<EmitIntensity> {
+        (0..self.modulation_cycle(segment))
+            .map(|i| self.modulation_at(segment, i))
             .collect()
     }
 
+    pub fn current_mod_segment(&self) -> Segment {
+        match self.controller_bram[ADDR_MOD_REQ_RD_SEGMENT] {
+            0 => Segment::S0,
+            1 => Segment::S1,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn current_stm_segment(&self) -> Segment {
+        match self.controller_bram[ADDR_STM_REQ_RD_SEGMENT] {
+            0 => Segment::S0,
+            1 => Segment::S1,
+            _ => unreachable!(),
+        }
+    }
+
     pub fn is_outputting(&self) -> bool {
-        if self.modulation().iter().all(|&m| m == EmitIntensity::MIN) {
+        let cur_mod_segment = self.current_mod_segment();
+        if self
+            .modulation(cur_mod_segment)
+            .iter()
+            .all(|&m| m == EmitIntensity::MIN)
+        {
             return false;
         }
-        if self.is_stm_mode() {
-            return true;
-        }
-        return self
-            .gain_drives()
-            .iter()
-            .any(|&d| d.intensity() != EmitIntensity::MIN);
+        let cur_stm_segment = self.current_stm_segment();
+        dbg!(self.stm_cycle(cur_stm_segment));
+        dbg!(self.is_stm_gain_mode(cur_stm_segment));
+        (0..self.stm_cycle(cur_stm_segment)).any(|i| {
+            self.drives(cur_stm_segment, i)
+                .iter()
+                .any(|&d| d.intensity() != EmitIntensity::MIN)
+        })
     }
 
     pub fn debug_output_idx(&self) -> Option<u8> {
-        let idx = self.controller_bram[BRAM_ADDR_DEBUG_OUT_IDX];
+        let idx = self.controller_bram[ADDR_DEBUG_OUT_IDX];
         if idx == 0xFF {
             None
         } else {
@@ -230,34 +314,20 @@ impl FPGAEmulator {
         }
     }
 
-    pub fn drives(&self, idx: usize) -> Vec<Drive> {
-        if self.is_stm_mode() {
-            if self.is_stm_gain_mode() {
-                self.gain_stm_drives(idx)
-            } else {
-                self.focus_stm_drives(idx)
-            }
+    pub fn drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {
+        if self.is_stm_gain_mode(segment) {
+            self.gain_stm_drives(segment, idx)
         } else {
-            self.gain_drives()
+            self.focus_stm_drives(segment, idx)
         }
     }
 
-    pub fn gain_drives(&self) -> Vec<Drive> {
-        self.normal_op_bram
-            .iter()
-            .take(self.num_transducers)
-            .map(|d| {
-                Drive::new(
-                    Phase::new((d & 0xFF) as u8),
-                    EmitIntensity::new(((d >> 8) & 0xFF) as u8),
-                )
-            })
-            .collect()
-    }
-
-    fn gain_stm_drives(&self, idx: usize) -> Vec<Drive> {
-        self.stm_op_bram
-            .iter()
+    fn gain_stm_drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {
+        let bram = match segment {
+            Segment::S0 => &self.stm_bram_0,
+            Segment::S1 => &self.stm_bram_1,
+        };
+        bram.iter()
             .skip(256 * idx)
             .take(self.num_transducers)
             .map(|&d| {
@@ -269,26 +339,31 @@ impl FPGAEmulator {
             .collect()
     }
 
-    fn focus_stm_drives(&self, idx: usize) -> Vec<Drive> {
-        let sound_speed = self.sound_speed() as u64;
-        let intensity = self.stm_op_bram[8 * idx + 3] >> 6 & 0x00FF;
+    fn focus_stm_drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {
+        let bram = match segment {
+            Segment::S0 => &self.stm_bram_0,
+            Segment::S1 => &self.stm_bram_1,
+        };
+        let sound_speed = self.sound_speed(segment);
 
-        let mut x = (self.stm_op_bram[8 * idx + 1] as u32) << 16 & 0x30000;
-        x |= self.stm_op_bram[8 * idx] as u32;
+        let intensity = bram[4 * idx + 3] >> 6 & 0x00FF;
+
+        let mut x = (bram[4 * idx + 1] as u32) << 16 & 0x30000;
+        x |= bram[4 * idx] as u32;
         let x = if (x & 0x20000) != 0 {
             (x | 0xFFFC0000) as i32
         } else {
             x as i32
         };
-        let mut y = (self.stm_op_bram[8 * idx + 2] as u32) << 14 & 0x3C000;
-        y |= self.stm_op_bram[8 * idx + 1] as u32 >> 2;
+        let mut y = (bram[4 * idx + 2] as u32) << 14 & 0x3C000;
+        y |= bram[4 * idx + 1] as u32 >> 2;
         let y = if (y & 0x20000) != 0 {
             (y | 0xFFFC0000) as i32
         } else {
             y as i32
         };
-        let mut z = (self.stm_op_bram[8 * idx + 3] as u32) << 12 & 0x3F000;
-        z |= self.stm_op_bram[8 * idx + 2] as u32 >> 4;
+        let mut z = (bram[4 * idx + 3] as u32) << 12 & 0x3F000;
+        z |= bram[4 * idx + 2] as u32 >> 4;
         let z = if (z & 0x20000) != 0 {
             (z | 0xFFFC0000) as i32
         } else {
@@ -303,7 +378,7 @@ impl FPGAEmulator {
                 let d2 =
                     (x - tr_x) * (x - tr_x) + (y - tr_y) * (y - tr_y) + (z - tr_z) * (z - tr_z);
                 let dist = d2.sqrt() as u64;
-                let q = (dist << 18) / sound_speed;
+                let q = (dist << 18) / sound_speed as u64;
                 Drive::new(
                     Phase::new((q & 0xFF) as u8),
                     EmitIntensity::new(intensity as u8),
@@ -354,23 +429,19 @@ impl FPGAEmulator {
         ((ec_time as u128 * autd3_driver::fpga::FPGA_CLK_FREQ as u128) / 1000000000) as _
     }
 
-    pub fn stm_idx_from_systime(&self, systime: u64) -> usize {
-        (systime / self.stm_frequency_division() as u64) as usize % self.stm_cycle()
+    pub fn stm_idx_from_systime(&self, segment: Segment, systime: u64) -> usize {
+        (systime / self.stm_frequency_division(segment) as u64) as usize % self.stm_cycle(segment)
     }
 
-    pub fn mod_idx_from_systime(&self, systime: u64) -> usize {
-        (systime / self.modulation_frequency_division() as u64) as usize % self.modulation_cycle()
+    pub fn mod_idx_from_systime(&self, segment: Segment, systime: u64) -> usize {
+        (systime / self.modulation_frequency_division(segment) as u64) as usize
+            % self.modulation_cycle(segment)
     }
 }
 
 #[cfg(test)]
 
 mod tests {
-    use crate::cpu::params::{
-        BRAM_ADDR_MOD_CYCLE, BRAM_ADDR_MOD_FREQ_DIV_0, BRAM_ADDR_STM_CYCLE,
-        BRAM_ADDR_STM_FREQ_DIV_0,
-    };
-
     use super::*;
 
     static ASIN_TABLE: &[u8; 65536] = include_bytes!("asin.dat");
@@ -399,21 +470,21 @@ mod tests {
     #[should_panic]
     fn read_panic() {
         let fpga = FPGAEmulator::new(249);
-        let addr = BRAM_SELECT_MOD << 14;
-        fpga.read(addr);
+        let addr = (BRAM_SELECT_MOD as u16) << 14;
+        fpga.read(addr as _);
     }
 
     #[test]
     fn modulation() {
         let mut fpga = FPGAEmulator::new(249);
-        fpga.modulator_bram[0] = 0x1234;
-        fpga.modulator_bram[1] = 0x5678;
-        fpga.controller_bram[ADDR_MOD_CYCLE] = 3 - 1;
-        assert_eq!(3, fpga.modulation_cycle());
-        assert_eq!(EmitIntensity::new(0x34), fpga.modulation_at(0));
-        assert_eq!(EmitIntensity::new(0x12), fpga.modulation_at(1));
-        assert_eq!(EmitIntensity::new(0x78), fpga.modulation_at(2));
-        let m = fpga.modulation();
+        fpga.modulator_bram_0[0] = 0x1234;
+        fpga.modulator_bram_0[1] = 0x5678;
+        fpga.controller_bram[ADDR_MOD_CYCLE_0] = 3 - 1;
+        assert_eq!(3, fpga.modulation_cycle(Segment::S0));
+        assert_eq!(EmitIntensity::new(0x34), fpga.modulation_at(Segment::S0, 0));
+        assert_eq!(EmitIntensity::new(0x12), fpga.modulation_at(Segment::S0, 1));
+        assert_eq!(EmitIntensity::new(0x78), fpga.modulation_at(Segment::S0, 2));
+        let m = fpga.modulation(Segment::S0);
         assert_eq!(3, m.len());
         assert_eq!(EmitIntensity::new(0x34), m[0]);
         assert_eq!(EmitIntensity::new(0x12), m[1]);
@@ -423,13 +494,15 @@ mod tests {
     #[test]
     fn is_outputting() {
         let mut fpga = FPGAEmulator::new(249);
+        fpga.controller_bram[ADDR_STM_MODE_0] = STM_MODE_GAIN;
+
         assert!(!fpga.is_outputting());
 
-        fpga.normal_op_bram[0] = 0xFFFF;
+        fpga.stm_bram_0[0] = 0xFFFF;
         assert!(!fpga.is_outputting());
 
-        fpga.modulator_bram[0] = 0xFFFF;
-        fpga.controller_bram[ADDR_MOD_CYCLE] = 2 - 1;
+        fpga.modulator_bram_0[0] = 0xFFFF;
+        fpga.controller_bram[ADDR_MOD_CYCLE_0] = 2 - 1;
         assert!(fpga.is_outputting());
     }
 
@@ -476,28 +549,37 @@ mod tests {
 
         let mut fpga = FPGAEmulator::new(249);
         {
-            let addr =
-                ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14) | (BRAM_ADDR_STM_CYCLE & 0x3FFF);
+            let addr = ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14)
+                | (ADDR_STM_CYCLE_0 as u16 & 0x3FFF);
             fpga.write(addr, (stm_cycle - 1) as u16);
-            assert_eq!(stm_cycle, fpga.stm_cycle());
+            assert_eq!(stm_cycle, fpga.stm_cycle(Segment::S0));
         }
         {
             let addr = ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14)
-                | (BRAM_ADDR_STM_FREQ_DIV_0 & 0x3FFF);
+                | (ADDR_STM_FREQ_DIV_0_0 as u16 & 0x3FFF);
             fpga.write(addr, freq_div as u16);
-            assert_eq!(freq_div, fpga.stm_frequency_division());
+            assert_eq!(freq_div, fpga.stm_frequency_division(Segment::S0));
         }
 
-        assert_eq!(0, fpga.stm_idx_from_systime(FPGAEmulator::systime(0)));
-        assert_eq!(0, fpga.stm_idx_from_systime(FPGAEmulator::systime(24_999)));
-        assert_eq!(1, fpga.stm_idx_from_systime(FPGAEmulator::systime(25_000)));
         assert_eq!(
-            9,
-            fpga.stm_idx_from_systime(FPGAEmulator::systime(25_000 * 9))
+            0,
+            fpga.stm_idx_from_systime(Segment::S0, FPGAEmulator::systime(0))
         );
         assert_eq!(
             0,
-            fpga.stm_idx_from_systime(FPGAEmulator::systime(25_000 * 10))
+            fpga.stm_idx_from_systime(Segment::S0, FPGAEmulator::systime(24_999))
+        );
+        assert_eq!(
+            1,
+            fpga.stm_idx_from_systime(Segment::S0, FPGAEmulator::systime(25_000))
+        );
+        assert_eq!(
+            9,
+            fpga.stm_idx_from_systime(Segment::S0, FPGAEmulator::systime(25_000 * 9))
+        );
+        assert_eq!(
+            0,
+            fpga.stm_idx_from_systime(Segment::S0, FPGAEmulator::systime(25_000 * 10))
         );
     }
 
@@ -508,28 +590,37 @@ mod tests {
 
         let mut fpga = FPGAEmulator::new(249);
         {
-            let addr =
-                ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14) | (BRAM_ADDR_MOD_CYCLE & 0x3FFF);
+            let addr = ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14)
+                | (ADDR_MOD_CYCLE_0 as u16 & 0x3FFF);
             fpga.write(addr, (mod_cycle - 1) as u16);
-            assert_eq!(mod_cycle, fpga.modulation_cycle());
+            assert_eq!(mod_cycle, fpga.modulation_cycle(Segment::S0));
         }
         {
             let addr = ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14)
-                | (BRAM_ADDR_MOD_FREQ_DIV_0 & 0x3FFF);
+                | (ADDR_MOD_FREQ_DIV_0_0 as u16 & 0x3FFF);
             fpga.write(addr, freq_div as u16);
-            assert_eq!(freq_div, fpga.modulation_frequency_division());
+            assert_eq!(freq_div, fpga.modulation_frequency_division(Segment::S0));
         }
 
-        assert_eq!(0, fpga.mod_idx_from_systime(FPGAEmulator::systime(0)));
-        assert_eq!(0, fpga.mod_idx_from_systime(FPGAEmulator::systime(24_999)));
-        assert_eq!(1, fpga.mod_idx_from_systime(FPGAEmulator::systime(25_000)));
         assert_eq!(
-            9,
-            fpga.mod_idx_from_systime(FPGAEmulator::systime(25_000 * 9))
+            0,
+            fpga.mod_idx_from_systime(Segment::S0, FPGAEmulator::systime(0))
         );
         assert_eq!(
             0,
-            fpga.mod_idx_from_systime(FPGAEmulator::systime(25_000 * 10))
+            fpga.mod_idx_from_systime(Segment::S0, FPGAEmulator::systime(24_999))
+        );
+        assert_eq!(
+            1,
+            fpga.mod_idx_from_systime(Segment::S0, FPGAEmulator::systime(25_000))
+        );
+        assert_eq!(
+            9,
+            fpga.mod_idx_from_systime(Segment::S0, FPGAEmulator::systime(25_000 * 9))
+        );
+        assert_eq!(
+            0,
+            fpga.mod_idx_from_systime(Segment::S0, FPGAEmulator::systime(25_000 * 10))
         );
     }
 }
