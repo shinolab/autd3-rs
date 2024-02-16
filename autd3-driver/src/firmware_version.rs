@@ -1,10 +1,6 @@
 use std::fmt;
 
-pub const LATEST_VERSION_NUM_MAJOR: u8 = 0x8F;
-pub const LATEST_VERSION_NUM_MINOR: u8 = 0x00;
-
-const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
-
+#[derive(Debug, Clone, Copy)]
 /// Firmware information
 pub struct FirmwareInfo {
     idx: usize,
@@ -16,6 +12,11 @@ pub struct FirmwareInfo {
 }
 
 impl FirmwareInfo {
+    pub const LATEST_VERSION_NUM_MAJOR: u8 = 0x8F;
+    pub const LATEST_VERSION_NUM_MINOR: u8 = 0x00;
+
+    const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
+
     #[doc(hidden)]
     pub const fn new(
         idx: usize,
@@ -47,7 +48,7 @@ impl FirmwareInfo {
     }
 
     pub const fn is_emulator(&self) -> bool {
-        (self.fpga_function_bits & ENABLED_EMULATOR_BIT) == ENABLED_EMULATOR_BIT
+        (self.fpga_function_bits & Self::ENABLED_EMULATOR_BIT) == Self::ENABLED_EMULATOR_BIT
     }
 
     fn firmware_version_map(version_number_major: u8, version_number_minor: u8) -> String {
@@ -85,7 +86,10 @@ impl FirmwareInfo {
     }
 
     pub fn latest_version() -> String {
-        Self::firmware_version_map(LATEST_VERSION_NUM_MAJOR, LATEST_VERSION_NUM_MINOR)
+        Self::firmware_version_map(
+            Self::LATEST_VERSION_NUM_MAJOR,
+            Self::LATEST_VERSION_NUM_MINOR,
+        )
     }
 
     pub const fn cpu_version_number_major(&self) -> u8 {
@@ -300,7 +304,7 @@ mod tests {
 
     #[test]
     fn is_emulator() {
-        assert!(FirmwareInfo::new(0, 0, 0, 0, 0, ENABLED_EMULATOR_BIT).is_emulator());
+        assert!(FirmwareInfo::new(0, 0, 0, 0, 0, FirmwareInfo::ENABLED_EMULATOR_BIT).is_emulator());
         assert!(!FirmwareInfo::new(0, 0, 0, 0, 0, 0).is_emulator());
     }
 
@@ -319,7 +323,7 @@ mod tests {
         let info = FirmwareInfo::new(0, 1, 2, 3, 4, 0);
         assert_eq!(format!("{}", info), "0: CPU = v0.4, FPGA = v0.6");
 
-        let info = FirmwareInfo::new(0, 1, 2, 3, 4, ENABLED_EMULATOR_BIT);
+        let info = FirmwareInfo::new(0, 1, 2, 3, 4, FirmwareInfo::ENABLED_EMULATOR_BIT);
         assert_eq!(format!("{}", info), "0: CPU = v0.4, FPGA = v0.6 [Emulator]");
     }
 }
