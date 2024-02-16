@@ -97,6 +97,7 @@ pub const TAG_FOCUS_STM_CHANGE_SEGMENT: u8 = 0x42;
 pub const TAG_GAIN_STM_CHANGE_SEGMENT: u8 = 0x43;
 pub const TAG_FORCE_FAN: u8 = 0x60;
 pub const TAG_READS_FPGA_STATE: u8 = 0x61;
+pub const TAG_CONFIG_PULSE_WIDTH_ENCODER: u8 = 0x70;
 pub const TAG_DEBUG: u8 = 0xF0;
 
 pub const INFO_TYPE_CPU_VERSION_MAJOR: u8 = 0x01;
@@ -124,6 +125,9 @@ pub const GAIN_STM_MODE_INTENSITY_PHASE_FULL: u8 = 0;
 pub const GAIN_STM_MODE_PHASE_FULL: u8 = 1;
 pub const GAIN_STM_MODE_PHASE_HALF: u8 = 2;
 
+pub const PULSE_WIDTH_ENCODER_FLAG_BEGIN: u8 = 1 << 0;
+pub const PULSE_WIDTH_ENCODER_FLAG_END: u8 = 1 << 1;
+
 pub const NO_ERR: u8 = 0x00;
 pub const ERR_BIT: u8 = 0x80;
 #[allow(clippy::identity_op)]
@@ -136,3 +140,5 @@ pub const ERR_INVALID_GAIN_STM_MODE: u8 = ERR_BIT | 0x05;
 pub const ERR_INVALID_SEGMENT: u8 = ERR_BIT | 0x06;
 pub const ERR_INVALID_MODE: u8 = ERR_BIT | 0x07;
 pub const ERR_INVALID_SEGMENT_TRANSITION: u8 = ERR_BIT | 0x08;
+pub const ERR_INVALID_PWE_DATA_SIZE: u8 = ERR_BIT | 0x09;
+pub const ERR_PWE_INCOMPLETE_DATA: u8 = ERR_BIT | 0x0A;

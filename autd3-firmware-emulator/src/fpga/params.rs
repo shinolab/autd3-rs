@@ -57,7 +57,7 @@ pub const ADDR_STM_SOUND_SPEED_0_1: usize = 0x61;
 pub const ADDR_STM_SOUND_SPEED_1_0: usize = 0x62;
 pub const ADDR_STM_SOUND_SPEED_1_1: usize = 0x63;
 pub const ADDR_PULSE_WIDTH_ENCODER_TABLE_WR_PAGE: usize = 0xE0;
-// pub const ADDR_PULSE_WIDTH_ENCODER_FULL_WIDTH_START: usize = 0xE1;
+pub const ADDR_PULSE_WIDTH_ENCODER_FULL_WIDTH_START: usize = 0xE1;
 pub const ADDR_DEBUG_OUT_IDX: usize = 0xF0;
 
 // pub const CTL_FLAG_MOD_SET_BIT: u8 = 0;
