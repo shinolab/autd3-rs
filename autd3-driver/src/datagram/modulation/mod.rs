@@ -28,8 +28,6 @@ pub trait ModulationProperty {
 /// Modulation has following restrictions:
 /// * The buffer size is up to 65536.
 /// * The sampling rate is [crate::fpga::FPGA_CLK_FREQ]/N, where N is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN].
-/// * Modulation automatically loops. It is not possible to control only one loop, etc.
-/// * The start/end timing of Modulation cannot be controlled.
 #[allow(clippy::len_without_is_empty)]
 pub trait Modulation: ModulationProperty {
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError>;

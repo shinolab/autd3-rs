@@ -8,7 +8,7 @@ use autd3_driver::{
 use super::Controller;
 use crate::error::AUTDError;
 
-/// Builder for `Controller`
+/// Builder for [crate::controller::Controller]
 pub struct ControllerBuilder {
     devices: Vec<Device>,
 }
