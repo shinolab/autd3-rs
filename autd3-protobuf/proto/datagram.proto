@@ -39,18 +39,12 @@ message ConfigureDebugOutputIdx {
     repeated int32 value = 1;
 }
 
-message ConfigureModDelay {
-    message Delay{
-        repeated uint32 value = 1;
-    }
-    repeated Delay value = 1;
-}
-
 message GainSTM {
     uint32 freq_div = 1;
-    int32 start_idx = 2;
-    int32 finish_idx = 3;
-    repeated Gain gains = 4;
+    LoopBehavior loop_behavior = 2;
+    Segment segment = 3;
+    bool update_segment = 4;
+    repeated Gain gains = 5;
 }
 
 message FocusSTM {
@@ -59,7 +53,24 @@ message FocusSTM {
         Vector3 pos = 2;
     }
     uint32 freq_div = 1;
-    int32 start_idx = 2;
-    int32 finish_idx = 3;
-    repeated ControlPoint points = 4;
+    LoopBehavior loop_behavior = 2;
+    Segment segment = 3;
+    bool update_segment = 4;
+    repeated ControlPoint points = 5;
+}
+
+message ChangeGainSegment {
+    Segment segment = 1;
+}
+
+message ChangeFocusSTMSegment {
+    Segment segment = 1;
+}
+
+message ChangeGainSTMSegment {
+    Segment segment = 1;
+}
+
+message ChangeModulationSegment {
+    Segment segment = 1;
 }

@@ -8,8 +8,26 @@ use crate::operation::Operation;
 /// Datagram with target segment
 pub struct DatagramWithSegment<D: DatagramS> {
     datagram: D,
-    pub(crate) segment: Segment,
-    pub(crate) update_segment: bool,
+    segment: Segment,
+    update_segment: bool,
+}
+
+impl<D: DatagramS> DatagramWithSegment<D> {
+    pub const fn segment(&self) -> Segment {
+        self.segment
+    }
+
+    pub const fn update_segment(&self) -> bool {
+        self.update_segment
+    }
+}
+
+impl<D: DatagramS> std::ops::Deref for DatagramWithSegment<D> {
+    type Target = D;
+
+    fn deref(&self) -> &Self::Target {
+        &self.datagram
+    }
 }
 
 impl<D: DatagramS> Datagram for DatagramWithSegment<D> {
@@ -56,5 +74,15 @@ impl<D: DatagramS> Datagram for D {
 
 pub trait IntoDatagramWithSegment<D: DatagramS> {
     /// Set segment
-    fn with_segment(self, segment: Segment, update: bool) -> DatagramWithSegment<D>;
+    fn with_segment(self, segment: Segment, update_segment: bool) -> DatagramWithSegment<D>;
+}
+
+impl<D: DatagramS> IntoDatagramWithSegment<D> for D {
+    fn with_segment(self, segment: Segment, update_segment: bool) -> DatagramWithSegment<D> {
+        DatagramWithSegment {
+            datagram: self,
+            segment,
+            update_segment,
+        }
+    }
 }

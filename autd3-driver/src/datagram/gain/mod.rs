@@ -119,6 +119,10 @@ impl ChangeGainSegment {
     pub const fn new(segment: Segment) -> Self {
         Self { segment }
     }
+
+    pub const fn segment(&self) -> Segment {
+        self.segment
+    }
 }
 
 impl Datagram for ChangeGainSegment {
