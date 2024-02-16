@@ -9,9 +9,6 @@ impl CPUEmulator {
     pub(crate) unsafe fn clear(&mut self, data: &[u8]) -> u8 {
         let _d = Self::cast::<Clear>(data);
 
-        self.mod_freq_div = [5120, 5120];
-        self.stm_freq_div = [0xFFFFFFFF, 0xFFFFFFFF];
-
         self.read_fpga_state = false;
 
         self.fpga_flags_internal = 0x0000;
@@ -45,8 +42,7 @@ impl CPUEmulator {
         self.min_freq_div_intensity = 10 << 9;
         self.min_freq_div_phase = 40 << 9;
 
-        self.stm_cycle = 0;
-
+        self.mod_freq_div = [5120, 5120];
         self.mod_cycle = 2;
         self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_MOD_REQ_RD_SEGMENT, 0);
         self.bram_write(
@@ -80,6 +76,9 @@ impl CPUEmulator {
         self.change_mod_wr_segment(1);
         self.bram_write(BRAM_SELECT_MOD, 0, 0xFFFF);
 
+        self.stm_cycle = [1, 1];
+        self.stm_mode = [STM_MODE_GAIN, STM_MODE_GAIN];
+        self.stm_freq_div = [0xFFFFFFFF, 0xFFFFFFFF];
         self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_MODE_0, STM_MODE_GAIN);
         self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_MODE_1, STM_MODE_GAIN);
         self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_REQ_RD_SEGMENT, 0);

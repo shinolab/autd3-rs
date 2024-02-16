@@ -247,4 +247,14 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn test_change_gain_segment() -> anyhow::Result<()> {
+        let d = ChangeGainSegment::new(Segment::S0);
+        assert_eq!(Segment::S0, d.segment());
+        assert_eq!(Some(Duration::from_millis(200)), d.timeout());
+        let _ = d.operation()?;
+
+        Ok(())
+    }
 }

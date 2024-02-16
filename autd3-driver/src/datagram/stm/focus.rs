@@ -188,6 +188,8 @@ impl crate::datagram::Datagram for ChangeFocusSTMSegment {
 
 #[cfg(test)]
 mod tests {
+    use std::num::NonZeroU32;
+
     use super::*;
     use crate::{
         common::Segment,
@@ -278,6 +280,18 @@ mod tests {
     }
 
     #[test]
+    fn with_loop_behavior() {
+        let stm = FocusSTM::from_freq(1.0);
+        assert_eq!(LoopBehavior::Infinite, stm.loop_behavior());
+
+        let stm = stm.with_loop_behavior(LoopBehavior::Finite(NonZeroU32::new(10).unwrap()));
+        assert_eq!(
+            LoopBehavior::Finite(NonZeroU32::new(10).unwrap()),
+            stm.loop_behavior()
+        );
+    }
+
+    #[test]
     fn clear() {
         let mut stm = FocusSTM::from_freq(1.0)
             .add_focus(Vector3::new(1., 2., 3.))
@@ -316,5 +330,15 @@ mod tests {
         let r = stm.operation_with_segment(Segment::S0, true);
         assert!(r.is_ok());
         let _: (FocusSTMOp, NullOp) = r.unwrap();
+    }
+
+    #[test]
+    fn test_change_focus_stm_segment() -> anyhow::Result<()> {
+        use crate::datagram::Datagram;
+        let d = ChangeFocusSTMSegment::new(Segment::S0);
+        assert_eq!(Segment::S0, d.segment());
+        assert_eq!(Some(Duration::from_millis(200)), d.timeout());
+        let _ = d.operation()?;
+        Ok(())
     }
 }

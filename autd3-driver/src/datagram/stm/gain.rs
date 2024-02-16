@@ -212,7 +212,7 @@ impl crate::datagram::Datagram for ChangeGainSTMSegment {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::{collections::HashMap, num::NonZeroU32};
 
     use autd3_derive::Gain;
 
@@ -308,6 +308,18 @@ mod tests {
     }
 
     #[test]
+    fn with_loop_behavior() {
+        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.0);
+        assert_eq!(LoopBehavior::Infinite, stm.loop_behavior());
+
+        let stm = stm.with_loop_behavior(LoopBehavior::Finite(NonZeroU32::new(10).unwrap()));
+        assert_eq!(
+            LoopBehavior::Finite(NonZeroU32::new(10).unwrap()),
+            stm.loop_behavior()
+        );
+    }
+
+    #[test]
     fn gain_stm_indexer() {
         let stm = GainSTM::from_freq(1.).add_gain(NullGain {}).unwrap();
         let _: &NullGain = &stm[0];
@@ -326,5 +338,15 @@ mod tests {
         let r = stm.operation_with_segment(Segment::S0, true);
         assert!(r.is_ok());
         let _: (GainSTMOp<Box<dyn Gain>>, NullOp) = r.unwrap();
+    }
+
+    #[test]
+    fn test_change_gain_stm_segment() -> anyhow::Result<()> {
+        use crate::datagram::Datagram;
+        let d = ChangeGainSTMSegment::new(Segment::S0);
+        assert_eq!(Segment::S0, d.segment());
+        assert_eq!(Some(Duration::from_millis(200)), d.timeout());
+        let _ = d.operation()?;
+        Ok(())
     }
 }

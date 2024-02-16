@@ -5,8 +5,8 @@ use autd3_driver::{
     cpu::TxDatagram,
     datagram::*,
     derive::*,
-    geometry::Geometry,
-    operation::{GainChangeSegmentOp, GainOp},
+    geometry::{Geometry, Vector3},
+    operation::{ControlPoint, FocusSTMOp, GainChangeSegmentOp, GainOp, GainSTMMode, GainSTMOp},
 };
 use autd3_firmware_emulator::CPUEmulator;
 
@@ -111,6 +111,69 @@ fn send_gain() -> anyhow::Result<()> {
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
         assert_eq!(Segment::S1, cpu.fpga().current_stm_segment());
+    }
+
+    Ok(())
+}
+
+#[test]
+fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
+
+    // segment 0: FocusSTM
+    {
+        let freq_div = 0xFFFFFFFF;
+        let foci = (0..2)
+            .map(|_| ControlPoint::new(Vector3::zeros()))
+            .collect();
+        let loop_behaviour = LoopBehavior::Infinite;
+        let segment = Segment::S0;
+        let mut op = FocusSTMOp::new(foci, freq_div, loop_behaviour, segment, true);
+
+        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    }
+
+    // segment 1: GainSTM
+    {
+        let bufs: Vec<HashMap<usize, Vec<Drive>>> = (0..2)
+            .map(|_| {
+                geometry
+                    .iter()
+                    .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
+                    .collect()
+            })
+            .collect();
+        let loop_behavior = LoopBehavior::Infinite;
+        let segment = Segment::S1;
+        let freq_div = 0xFFFFFFFF;
+        let mut op = GainSTMOp::new(
+            bufs.iter()
+                .map(|buf| TestGain { buf: buf.clone() })
+                .collect(),
+            GainSTMMode::PhaseIntensityFull,
+            freq_div,
+            loop_behavior,
+            segment,
+            true,
+        );
+
+        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    }
+
+    {
+        let mut op = GainChangeSegmentOp::new(Segment::S0);
+        assert_eq!(
+            Err(AUTDInternalError::InvalidSegmentTransition),
+            send(&mut cpu, &mut op, &geometry, &mut tx)
+        );
+
+        let mut op = GainChangeSegmentOp::new(Segment::S1);
+        assert_eq!(
+            Err(AUTDInternalError::InvalidSegmentTransition),
+            send(&mut cpu, &mut op, &geometry, &mut tx)
+        );
     }
 
     Ok(())

@@ -1,20 +1,23 @@
+use std::collections::HashMap;
+
 use autd3_driver::{
     cpu::TxDatagram,
     defined::{METER, MILLIMETER},
-    derive::{LoopBehavior, Phase, Segment},
+    derive::{DatagramS, Drive, LoopBehavior, Phase, Segment},
+    error::AUTDInternalError,
     fpga::{
         FOCUS_STM_BUF_SIZE_MAX, FOCUS_STM_FIXED_NUM_UNIT, SAMPLING_FREQ_DIV_MAX,
         SAMPLING_FREQ_DIV_MIN, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
     },
     geometry::Vector3,
-    operation::{ControlPoint, FocusSTMOp},
+    operation::{ControlPoint, FocusSTMChangeSegmentOp, FocusSTMOp, GainSTMMode, GainSTMOp},
 };
 use autd3_firmware_emulator::CPUEmulator;
 
 use num_integer::Roots;
 use rand::*;
 
-use crate::{create_geometry, send};
+use crate::{create_geometry, op::gain::TestGain, send};
 
 pub fn gen_random_foci(num: usize) -> Vec<ControlPoint> {
     let mut rng = rand::thread_rng();
@@ -78,5 +81,68 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
                 assert_eq!(focus.intensity(), drive.intensity());
             })
     });
+    Ok(())
+}
+
+#[test]
+fn send_focus_stm_invalid_segment_transition() -> anyhow::Result<()> {
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
+
+    // segment 0: Gain
+    {
+        let buf: HashMap<usize, Vec<Drive>> = geometry
+            .iter()
+            .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
+            .collect();
+        let g = TestGain { buf: buf.clone() };
+
+        let (mut op, _) = g.operation_with_segment(Segment::S0, true)?;
+
+        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    }
+
+    // segment 1: GainSTM
+    {
+        let bufs: Vec<HashMap<usize, Vec<Drive>>> = (0..2)
+            .map(|_| {
+                geometry
+                    .iter()
+                    .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
+                    .collect()
+            })
+            .collect();
+        let loop_behavior = LoopBehavior::Infinite;
+        let segment = Segment::S1;
+        let freq_div = 0xFFFFFFFF;
+        let mut op = GainSTMOp::new(
+            bufs.iter()
+                .map(|buf| TestGain { buf: buf.clone() })
+                .collect(),
+            GainSTMMode::PhaseIntensityFull,
+            freq_div,
+            loop_behavior,
+            segment,
+            true,
+        );
+
+        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    }
+
+    {
+        let mut op = FocusSTMChangeSegmentOp::new(Segment::S0);
+        assert_eq!(
+            Err(AUTDInternalError::InvalidSegmentTransition),
+            send(&mut cpu, &mut op, &geometry, &mut tx)
+        );
+
+        let mut op = FocusSTMChangeSegmentOp::new(Segment::S1);
+        assert_eq!(
+            Err(AUTDInternalError::InvalidSegmentTransition),
+            send(&mut cpu, &mut op, &geometry, &mut tx)
+        );
+    }
+
     Ok(())
 }

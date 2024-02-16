@@ -12,7 +12,8 @@ pub struct CPUEmulator {
     pub(crate) read_fpga_state: bool,
     pub(crate) read_fpga_state_store: bool,
     pub(crate) mod_cycle: u32,
-    pub(crate) stm_cycle: u32,
+    pub(crate) stm_cycle: [u32; 2],
+    pub(crate) stm_mode: [u16; 2],
     pub(crate) gain_stm_mode: u8,
     pub(crate) fpga: FPGAEmulator,
     pub(crate) synchronized: bool,
@@ -38,7 +39,8 @@ impl CPUEmulator {
             read_fpga_state: false,
             read_fpga_state_store: false,
             mod_cycle: 0,
-            stm_cycle: 0,
+            stm_cycle: [1, 1],
+            stm_mode: [STM_MODE_GAIN, STM_MODE_GAIN],
             gain_stm_mode: 0,
             fpga: FPGAEmulator::new(num_transducers),
             synchronized: false,
@@ -174,9 +176,8 @@ impl CPUEmulator {
                 TAG_MODULATION_CHANGE_SEGMENT => self.change_mod_segment(data),
                 TAG_SILENCER => self.config_silencer(data),
                 TAG_GAIN => self.write_gain(data),
-                TAG_GAIN_CHANGE_SEGMENT | TAG_GAIN_STM_CHANGE_SEGMENT => {
-                    self.change_gain_stm_segment(data)
-                }
+                TAG_GAIN_CHANGE_SEGMENT => self.change_gain_segment(data),
+                TAG_GAIN_STM_CHANGE_SEGMENT => self.change_gain_stm_segment(data),
                 TAG_FOCUS_STM => self.write_focus_stm(data),
                 TAG_FOCUS_STM_CHANGE_SEGMENT => self.change_focus_stm_segment(data),
                 TAG_GAIN_STM => self.write_gain_stm(data),

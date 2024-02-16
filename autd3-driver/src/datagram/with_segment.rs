@@ -86,3 +86,35 @@ impl<D: DatagramS> IntoDatagramWithSegment<D> for D {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::operation::{ClearOp, NullOp};
+
+    use super::*;
+
+    struct TestDatagram {}
+    impl DatagramS for TestDatagram {
+        type O1 = ClearOp;
+        type O2 = NullOp;
+
+        fn operation_with_segment(
+            self,
+            _segment: Segment,
+            _update_segment: bool,
+        ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+            Ok((Self::O1::default(), Self::O2::default()))
+        }
+    }
+
+    #[test]
+    fn test_datagram_with_segment() {
+        let d: DatagramWithSegment<TestDatagram> = TestDatagram {}.with_segment(Segment::S0, true);
+
+        let timeout = <DatagramWithSegment<TestDatagram> as Datagram>::timeout(&d);
+        assert!(timeout.is_none());
+
+        let _: (ClearOp, NullOp) =
+            <DatagramWithSegment<TestDatagram> as Datagram>::operation(d).unwrap();
+    }
+}
