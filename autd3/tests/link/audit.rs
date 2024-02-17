@@ -20,7 +20,7 @@ async fn audit_test() -> anyhow::Result<()> {
     assert!(autd.send(ConfigureReadsFPGAState::new(|_| true)).await?);
     autd.link[0].update();
     assert_eq!(
-        vec![Option::<FPGAState>::from(&RxMessage::new(0x00, 0x80))],
+        vec![Option::<FPGAState>::from(&RxMessage::new(0x00, 0x88))],
         autd.fpga_state().await?
     );
     autd.link.emulators_mut()[0]
@@ -28,7 +28,7 @@ async fn audit_test() -> anyhow::Result<()> {
         .assert_thermal_sensor();
     autd.link[0].update();
     assert_eq!(
-        vec![Option::<FPGAState>::from(&RxMessage::new(0x00, 0x81))],
+        vec![Option::<FPGAState>::from(&RxMessage::new(0x00, 0x89))],
         autd.fpga_state().await?
     );
 
