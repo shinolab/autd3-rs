@@ -122,11 +122,27 @@ impl FPGAEmulator {
     }
 
     pub fn assert_thermal_sensor(&mut self) {
-        self.controller_bram[ADDR_FPGA_STATE] |= 0x0001;
+        self.controller_bram[ADDR_FPGA_STATE] |= 1 << 0;
     }
 
     pub fn deassert_thermal_sensor(&mut self) {
-        self.controller_bram[ADDR_FPGA_STATE] &= !0x0001;
+        self.controller_bram[ADDR_FPGA_STATE] &= !(1 << 0);
+    }
+
+    pub fn update(&mut self) {
+        match self.current_mod_segment() {
+            Segment::S0 => self.controller_bram[ADDR_FPGA_STATE] &= !(1 << 1),
+            Segment::S1 => self.controller_bram[ADDR_FPGA_STATE] |= 1 << 1,
+        }
+        match self.current_stm_segment() {
+            Segment::S0 => self.controller_bram[ADDR_FPGA_STATE] &= !(1 << 2),
+            Segment::S1 => self.controller_bram[ADDR_FPGA_STATE] |= 1 << 2,
+        }
+        if self.stm_cycle(self.current_stm_segment()) == 1 {
+            self.controller_bram[ADDR_FPGA_STATE] |= 1 << 3;
+        } else {
+            self.controller_bram[ADDR_FPGA_STATE] &= !(1 << 3);
+        }
     }
 
     pub fn is_force_fan(&self) -> bool {

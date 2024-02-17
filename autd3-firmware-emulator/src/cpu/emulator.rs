@@ -106,6 +106,7 @@ impl CPUEmulator {
 
     pub fn update(&mut self) {
         if self.should_update() {
+            self.fpga.update();
             self.read_fpga_state();
         }
     }

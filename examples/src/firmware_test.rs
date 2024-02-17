@@ -58,9 +58,9 @@ async fn main() -> Result<()> {
     autd.fpga_state().await?.iter().for_each(|state| {
         assert!(state.is_some());
         let state = state.unwrap();
-        assert_eq!(Segment::S0, state.current_gain_segment());
         assert_eq!(Segment::S0, state.current_mod_segment());
-        assert_eq!(Segment::S0, state.current_stm_segment());
+        assert_eq!(Some(Segment::S0), state.current_gain_segment());
+        assert_eq!(None, state.current_stm_segment());
     });
 
     // Gain Chcek
@@ -80,9 +80,9 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S1, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S1, state.current_stm_segment());
+            assert_eq!(Some(Segment::S1), state.current_gain_segment());
+            assert_eq!(None, state.current_stm_segment());
         });
 
         autd.send(ChangeGainSegment::new(Segment::S0)).await?;
@@ -90,9 +90,9 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S0, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S0, state.current_stm_segment());
+            assert_eq!(Some(Segment::S0), state.current_gain_segment());
+            assert_eq!(None, state.current_stm_segment());
         });
 
         autd.send(Null::new().with_segment(Segment::S1, false))
@@ -101,9 +101,9 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S0, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S0, state.current_stm_segment());
+            assert_eq!(Some(Segment::S0), state.current_gain_segment());
+            assert_eq!(None, state.current_stm_segment());
         });
 
         autd.send(ChangeGainSegment::new(Segment::S1)).await?;
@@ -111,9 +111,9 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S1, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S1, state.current_stm_segment());
+            assert_eq!(Some(Segment::S1), state.current_gain_segment());
+            assert_eq!(None, state.current_stm_segment());
         });
 
         assert_eq!(
@@ -155,9 +155,9 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S0, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S0, state.current_stm_segment());
+            assert_eq!(Some(Segment::S0), state.current_gain_segment());
+            assert_eq!(None, state.current_stm_segment());
         });
 
         autd.send(Static::new().with_segment(Segment::S1, true))
@@ -166,9 +166,9 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S0, state.current_gain_segment());
             assert_eq!(Segment::S1, state.current_mod_segment());
-            assert_eq!(Segment::S0, state.current_stm_segment());
+            assert_eq!(Some(Segment::S0), state.current_gain_segment());
+            assert_eq!(None, state.current_stm_segment());
         });
 
         autd.send(ChangeModulationSegment::new(Segment::S0)).await?;
@@ -176,9 +176,9 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S0, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S0, state.current_stm_segment());
+            assert_eq!(Some(Segment::S0), state.current_gain_segment());
+            assert_eq!(None, state.current_stm_segment());
         });
 
         autd.send(Static::with_intensity(0).with_segment(Segment::S1, false))
@@ -187,9 +187,9 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S0, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S0, state.current_stm_segment());
+            assert_eq!(Some(Segment::S0), state.current_gain_segment());
+            assert_eq!(None, state.current_stm_segment());
         });
 
         autd.send(ChangeModulationSegment::new(Segment::S1)).await?;
@@ -197,9 +197,9 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S0, state.current_gain_segment());
             assert_eq!(Segment::S1, state.current_mod_segment());
-            assert_eq!(Segment::S0, state.current_stm_segment());
+            assert_eq!(Some(Segment::S0), state.current_gain_segment());
+            assert_eq!(None, state.current_stm_segment());
         });
 
         #[derive(Modulation, Clone, Copy)]
@@ -247,9 +247,9 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S0, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S0, state.current_stm_segment());
+            assert_eq!(Some(Segment::S0), state.current_gain_segment());
+            assert_eq!(None, state.current_stm_segment());
         });
 
         autd.send(Sawtooth::reverse().with_segment(Segment::S1, true))
@@ -260,9 +260,9 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S0, state.current_gain_segment());
             assert_eq!(Segment::S1, state.current_mod_segment());
-            assert_eq!(Segment::S0, state.current_stm_segment());
+            assert_eq!(Some(Segment::S0), state.current_gain_segment());
+            assert_eq!(None, state.current_stm_segment());
         });
     }
 
@@ -289,9 +289,9 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S0, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S0, state.current_stm_segment());
+            assert_eq!(None, state.current_gain_segment());
+            assert_eq!(Some(Segment::S0), state.current_stm_segment());
         });
 
         let stm = FocusSTM::from_freq(1.).add_foci_from_iter(gen_foci())?;
@@ -300,9 +300,9 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S1, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S1, state.current_stm_segment());
+            assert_eq!(None, state.current_gain_segment());
+            assert_eq!(Some(Segment::S1), state.current_stm_segment());
         });
 
         autd.send(ChangeFocusSTMSegment::new(Segment::S0)).await?;
@@ -310,9 +310,9 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S0, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S0, state.current_stm_segment());
+            assert_eq!(None, state.current_gain_segment());
+            assert_eq!(Some(Segment::S0), state.current_stm_segment());
         });
 
         let mut foci = gen_foci().rev().collect::<Vec<_>>();
@@ -326,18 +326,18 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S0, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S0, state.current_stm_segment());
+            assert_eq!(None, state.current_gain_segment());
+            assert_eq!(Some(Segment::S0), state.current_stm_segment());
         });
         autd.send(ChangeFocusSTMSegment::new(Segment::S1)).await?;
         print_msg_and_wait_for_key("");
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S1, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S1, state.current_stm_segment());
+            assert_eq!(None, state.current_gain_segment());
+            assert_eq!(Some(Segment::S1), state.current_stm_segment());
         });
 
         assert_eq!(
@@ -389,9 +389,9 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S0, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S0, state.current_stm_segment());
+            assert_eq!(None, state.current_gain_segment());
+            assert_eq!(Some(Segment::S0), state.current_stm_segment());
         });
 
         let stm = GainSTM::from_freq(1.).add_gains_from_iter(gen_foci())?;
@@ -400,9 +400,9 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S1, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S1, state.current_stm_segment());
+            assert_eq!(None, state.current_gain_segment());
+            assert_eq!(Some(Segment::S1), state.current_stm_segment());
         });
 
         autd.send(ChangeGainSTMSegment::new(Segment::S0)).await?;
@@ -410,9 +410,9 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S0, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S0, state.current_stm_segment());
+            assert_eq!(None, state.current_gain_segment());
+            assert_eq!(Some(Segment::S0), state.current_stm_segment());
         });
 
         let mut foci = gen_foci().rev().collect::<Vec<_>>();
@@ -426,18 +426,18 @@ async fn main() -> Result<()> {
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S0, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S0, state.current_stm_segment());
+            assert_eq!(None, state.current_gain_segment());
+            assert_eq!(Some(Segment::S0), state.current_stm_segment());
         });
         autd.send(ChangeGainSTMSegment::new(Segment::S1)).await?;
         print_msg_and_wait_for_key("");
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
-            assert_eq!(Segment::S1, state.current_gain_segment());
             assert_eq!(Segment::S0, state.current_mod_segment());
-            assert_eq!(Segment::S1, state.current_stm_segment());
+            assert_eq!(None, state.current_gain_segment());
+            assert_eq!(Some(Segment::S1), state.current_stm_segment());
         });
 
         assert_eq!(
