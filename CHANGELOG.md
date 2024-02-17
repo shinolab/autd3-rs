@@ -1,5 +1,12 @@
 # 22.0.0
 
+- Update firmware to v6.0.0
+  - Support segment control
+  - Support pulse width encoder control
+  - Remove Modulation delay configuration
+- Add `with_segment` to `Gain`, `Modulation`, `FocusSTM`, and `GainSTM`
+- Add `with_loop_behavior` to `Modulation`, `FocusSTM`, and `GainSTM`
+  - Remove `with_start_idx` and `with_finish_idx` from `FocusSTM` and `GainSTM`
 - Fix [#8](https://github.com/shinolab/autd3-rs/issues/8): `phase` parameter of `gain::Bessel` and `gain::Focus` have no effect
 - Extend supported data type of Lightweight mode
 - Add `ControllerBuilder::open_with_timeout`
