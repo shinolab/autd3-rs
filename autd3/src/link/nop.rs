@@ -66,6 +66,7 @@ impl Link for Nop {
         }
 
         self.cpus.iter_mut().for_each(|cpu| {
+            cpu.update();
             rx[cpu.idx()] = RxMessage::new(cpu.ack(), cpu.rx_data());
         });
 
