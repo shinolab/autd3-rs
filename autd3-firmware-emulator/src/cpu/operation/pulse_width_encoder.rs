@@ -93,10 +93,10 @@ impl CPUEmulator {
             self.pwe_write += size - page_capacity;
         }
 
-        if (d.subseq.flag & PULSE_WIDTH_ENCODER_FLAG_END) == PULSE_WIDTH_ENCODER_FLAG_END {
-            if self.pwe_write != 65536 {
-                return ERR_PWE_INCOMPLETE_DATA;
-            }
+        if ((d.subseq.flag & PULSE_WIDTH_ENCODER_FLAG_END) == PULSE_WIDTH_ENCODER_FLAG_END)
+            && self.pwe_write != 65536
+        {
+            return ERR_PWE_INCOMPLETE_DATA;
         }
 
         NO_ERR
