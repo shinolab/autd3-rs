@@ -46,7 +46,6 @@ def working_dir(path):
 
 class Config:
     _platform: str
-    _all: bool
     release: bool
     target: Optional[str]
     no_examples: bool
@@ -58,7 +57,6 @@ class Config:
             err(f'platform "{platform.system()}" is not supported.')
             sys.exit(-1)
 
-        self._all = hasattr(args, "all") and args.all
         self.release = hasattr(args, "release") and args.release
         self.no_examples = hasattr(args, "no_examples") and args.no_examples
 
@@ -94,10 +92,6 @@ class Config:
         features = "remote"
         if additional_features is not None:
             features += " " + additional_features
-        if self._all:
-            command.append("--all")
-            command.append("--exclude")
-            command.append("examples")
         command.append("--features")
         command.append(features)
         return command
@@ -151,9 +145,7 @@ def rust_build(args):
         with working_dir("./examples"):
             command = config.cargo_command_base("build")
             command.append("--bins")
-            features = "soem twincat"
-            if config._all:
-                features += " simulator remote_soem remote_twincat"
+            features = "soem twincat simulator remote_soem remote_twincat"
             command.append("--features")
             command.append(features)
             subprocess.run(command).check_returncode()
@@ -179,8 +171,6 @@ def rust_test(args):
         features = "test-utilities remote"
         if args.features is not None:
             features += " " + args.features
-        if config._all:
-            command.append("--all")
         command.append("--features")
         command.append(features)
         if not config.is_pcap_available():
@@ -318,7 +308,6 @@ if __name__ == "__main__":
 
         # build
         parser_build = subparsers.add_parser("build", help="see `build -h`")
-        parser_build.add_argument("--all", action="store_true", help="build all crates")
         parser_build.add_argument(
             "--release", action="store_true", help="release build"
         )
@@ -335,14 +324,12 @@ if __name__ == "__main__":
 
         # lint
         parser_lint = subparsers.add_parser("lint", help="see `lint -h`")
-        parser_lint.add_argument("--all", action="store_true", help="lint all crates")
         parser_lint.add_argument("--release", action="store_true", help="release build")
         parser_lint.add_argument("--features", help="additional features", default=None)
         parser_lint.set_defaults(handler=rust_lint)
 
         # test
         parser_test = subparsers.add_parser("test", help="see `test -h`")
-        parser_test.add_argument("--all", action="store_true", help="test all crates")
         parser_test.add_argument("--release", action="store_true", help="release build")
         parser_test.add_argument("--features", help="additional features", default=None)
         parser_test.set_defaults(handler=rust_test)
