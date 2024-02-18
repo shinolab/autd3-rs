@@ -6,6 +6,7 @@ pub struct Static {
     intensity: EmitIntensity,
     #[no_change]
     config: SamplingConfiguration,
+    #[no_change]
     loop_behavior: LoopBehavior,
 }
 
