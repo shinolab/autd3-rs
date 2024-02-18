@@ -14,7 +14,7 @@ keywords = ["autd"]
 autd3-protobuf = { path = "../autd3-protobuf", version = "22.0.0-rc.1" }
 autd3-driver = { path = "../autd3-driver", version = "22.0.0-rc.1" }
 thiserror = "1.0.30"
-tonic = "0.10.0"
+tonic = "0.11.0"
 
 [features]
 default = []
