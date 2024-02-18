@@ -11,12 +11,15 @@ pub use radiation_pressure::RadiationPressure;
 pub use transform::IntoTransform as IntoModulationTransform;
 pub use transform::Transform as ModulationTransform;
 
+use crate::operation::ModulationOp;
+use crate::operation::NullOp;
 use crate::{
     common::{EmitIntensity, LoopBehavior, SamplingConfiguration, Segment},
     error::AUTDInternalError,
 };
 
 use super::Datagram;
+use super::DatagramS;
 
 pub trait ModulationProperty {
     fn sampling_config(&self) -> SamplingConfiguration;
@@ -57,6 +60,30 @@ impl Modulation for Box<dyn Modulation> {
     #[cfg_attr(coverage_nightly, coverage(off))]
     fn len(&self) -> Result<usize, AUTDInternalError> {
         self.as_ref().len()
+    }
+}
+
+impl DatagramS for Box<dyn Modulation> {
+    type O1 = ModulationOp;
+    type O2 = NullOp;
+
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    fn operation_with_segment(
+        self,
+        segment: Segment,
+        update_segment: bool,
+    ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+        let freq_div = self.sampling_config().frequency_division();
+        Ok((
+            Self::O1::new(
+                self.calc()?,
+                freq_div,
+                self.loop_behavior(),
+                segment,
+                update_segment,
+            ),
+            Self::O2::default(),
+        ))
     }
 }
 
