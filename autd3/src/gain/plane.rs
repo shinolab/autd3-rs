@@ -10,7 +10,7 @@ use autd3_driver::{
 pub struct Plane {
     intensity: EmitIntensity,
     dir: Vector3,
-    phase: Phase,
+    phase_offset: Phase,
 }
 
 impl Plane {
@@ -24,7 +24,7 @@ impl Plane {
         Self {
             dir,
             intensity: EmitIntensity::MAX,
-            phase: Phase::new(0),
+            phase_offset: Phase::new(0),
         }
     }
 
@@ -41,14 +41,17 @@ impl Plane {
         }
     }
 
-    /// set phase
+    /// set phase_offset
     ///
     /// # Arguments
     ///
-    /// * `phase` - phase
+    /// * `phase_offset` - phase_offset
     ///
-    pub fn with_phase(self, phase: Phase) -> Self {
-        Self { phase, ..self }
+    pub fn with_phase_offset(self, phase_offset: Phase) -> Self {
+        Self {
+            phase_offset,
+            ..self
+        }
     }
 
     pub const fn intensity(&self) -> EmitIntensity {
@@ -59,8 +62,8 @@ impl Plane {
         self.dir
     }
 
-    pub const fn phase(&self) -> Phase {
-        self.phase
+    pub const fn phase_offset(&self) -> Phase {
+        self.phase_offset
     }
 }
 
@@ -72,7 +75,8 @@ impl Gain for Plane {
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
         Ok(Self::transform(geometry, filter, |dev, tr| {
             Drive::new(
-                self.dir.dot(tr.position()) * tr.wavenumber(dev.sound_speed) * Rad + self.phase,
+                self.dir.dot(tr.position()) * tr.wavenumber(dev.sound_speed) * Rad
+                    + self.phase_offset,
                 self.intensity,
             )
         }))
@@ -91,12 +95,12 @@ mod tests {
         g: Plane,
         dir: Vector3,
         intensity: EmitIntensity,
-        phase: Phase,
+        phase_offset: Phase,
         geometry: &Geometry,
     ) -> anyhow::Result<()> {
         assert_eq!(dir, g.dir());
         assert_eq!(intensity, g.intensity());
-        assert_eq!(phase, g.phase());
+        assert_eq!(phase_offset, g.phase_offset());
 
         let d = g.calc(geometry, GainFilter::All)?;
         assert_eq!(geometry.num_devices(), d.len());
@@ -105,7 +109,7 @@ mod tests {
             d.iter().zip(geometry[idx].iter()).for_each(|(d, tr)| {
                 let expected_phase = Phase::from_rad(
                     dir.dot(tr.position()) * tr.wavenumber(geometry[idx].sound_speed),
-                ) + phase;
+                ) + phase_offset;
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity());
             });
@@ -126,9 +130,11 @@ mod tests {
 
         let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();
         let intensity = EmitIntensity::new(rng.gen());
-        let phase = Phase::new(rng.gen());
-        let g = Plane::new(d).with_intensity(intensity).with_phase(phase);
-        plane_check(g, d, intensity, phase, &geometry)?;
+        let phase_offset = Phase::new(rng.gen());
+        let g = Plane::new(d)
+            .with_intensity(intensity)
+            .with_phase_offset(phase_offset);
+        plane_check(g, d, intensity, phase_offset, &geometry)?;
 
         Ok(())
     }
