@@ -15,7 +15,7 @@ impl ToMessage for autd3::gain::Bessel {
                     pos: Some(self.pos().to_msg(None)),
                     dir: Some(self.dir().to_msg(None)),
                     theta: self.theta() as _,
-                    phase: Some(self.phase().to_msg(None)),
+                    phase_offset: Some(self.phase_offset().to_msg(None)),
                 })),
                 segment: Segment::S0 as _,
                 update_segment: true,
@@ -36,7 +36,7 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Bess
                     pos: Some(self.pos().to_msg(None)),
                     dir: Some(self.dir().to_msg(None)),
                     theta: self.theta() as _,
-                    phase: Some(self.phase().to_msg(None)),
+                    phase_offset: Some(self.phase_offset().to_msg(None)),
                 })),
                 segment: self.segment() as _,
                 update_segment: self.update_segment(),
@@ -57,7 +57,9 @@ impl FromMessage<Bessel> for autd3::gain::Bessel {
             .with_intensity(autd3_driver::common::EmitIntensity::from_msg(
                 msg.intensity.as_ref()?,
             )?)
-            .with_phase(autd3_driver::common::Phase::from_msg(msg.phase.as_ref()?)?),
+            .with_phase_offset(autd3_driver::common::Phase::from_msg(
+                msg.phase_offset.as_ref()?,
+            )?),
         )
     }
 }
