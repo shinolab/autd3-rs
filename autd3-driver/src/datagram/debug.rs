@@ -1,8 +1,5 @@
-use std::time::Duration;
-
 use crate::{
     datagram::*,
-    error::AUTDInternalError,
     geometry::{Device, Transducer},
 };
 

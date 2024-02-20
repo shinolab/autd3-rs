@@ -1,5 +1,4 @@
 use std::fmt;
-use std::vec::Vec;
 
 use crate::local::soem_bindings;
 

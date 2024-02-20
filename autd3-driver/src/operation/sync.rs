@@ -58,7 +58,7 @@ mod tests {
     fn sync_op() {
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
 
-        let mut tx = vec![0x00u8; 2 * NUM_DEVICE];
+        let mut tx = [0x00u8; 2 * NUM_DEVICE];
 
         let mut op = SyncOp::default();
 

@@ -184,7 +184,7 @@ mod tests {
         let check = std::sync::Arc::new(std::sync::Mutex::new([false; 2]));
         autd.group(|dev| {
             check.lock().unwrap()[dev.idx()] = true;
-            return Some(0);
+            Some(0)
         })
         .set(0, (Static::new(), Null::new()))?
         .send()

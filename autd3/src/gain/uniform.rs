@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use autd3_driver::{common::EmitIntensity, derive::*, geometry::Geometry};
+use autd3_driver::derive::*;
 
 /// Gain with uniform emission intensity and phase
 #[derive(Gain, Clone, PartialEq, Debug)]

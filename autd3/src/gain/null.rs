@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use autd3_driver::{derive::*, geometry::Geometry};
+use autd3_driver::derive::*;
 
 /// Gain to output nothing
 #[derive(Gain, Default, Clone, PartialEq, Eq, Debug)]

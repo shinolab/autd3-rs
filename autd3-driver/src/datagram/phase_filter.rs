@@ -1,10 +1,7 @@
-use std::time::Duration;
-
 use crate::{
     common::Phase,
     datagram::*,
     derive::{Device, Transducer},
-    error::AUTDInternalError,
 };
 
 #[derive(Debug, Clone, Copy)]

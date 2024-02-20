@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    common::EmitIntensity,
     derive::*,
-    geometry::{Geometry, UnitQuaternion, Vector3},
+    geometry::{UnitQuaternion, Vector3},
 };
 
 /// Gain to produce a Bessel beam

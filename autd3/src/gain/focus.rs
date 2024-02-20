@@ -1,10 +1,6 @@
 use std::collections::HashMap;
 
-use autd3_driver::{
-    common::EmitIntensity,
-    derive::*,
-    geometry::{Geometry, Vector3},
-};
+use autd3_driver::{derive::*, geometry::Vector3};
 
 /// Gain to produce a focal point
 #[derive(Gain, Clone, PartialEq, Debug)]
@@ -88,7 +84,6 @@ mod tests {
     use crate::tests::{create_geometry, random_vector3};
 
     use super::*;
-    use autd3_driver::geometry::Vector3;
     use rand::Rng;
 
     fn focus_check(

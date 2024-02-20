@@ -174,8 +174,8 @@ mod tests {
             _ => None,
         })
         .set("null", NullGain {})
-        .set("test", g1.clone())
-        .set("test2", g2.clone());
+        .set("test", g1)
+        .set("test2", g2);
 
         let drives = gain.calc(&geometry, GainFilter::All)?;
         assert_eq!(4, drives.len());

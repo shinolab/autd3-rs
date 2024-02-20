@@ -122,7 +122,7 @@ mod tests {
         let geometry = create_geometry(1, 249);
 
         let gain = TestGain { d: Drive::random() };
-        let cache = gain.clone().with_cache();
+        let cache = gain.with_cache();
         assert_eq!(gain.d, cache.d);
 
         assert!(cache.drives().is_empty());

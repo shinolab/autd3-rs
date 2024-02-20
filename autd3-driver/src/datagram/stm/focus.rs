@@ -193,7 +193,6 @@ mod tests {
 
     use super::*;
     use crate::{
-        common::Segment,
         geometry::Vector3,
         operation::{FocusSTMOp, NullOp},
     };

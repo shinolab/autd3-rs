@@ -78,10 +78,7 @@ impl SamplingConfiguration {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{
-        collections::hash_map::DefaultHasher,
-        hash::{Hash, Hasher},
-    };
+    
 
     #[test]
     fn test_from_frequency_division() {
@@ -188,13 +185,5 @@ mod tests {
         let config2 = SamplingConfiguration::from_frequency_division(513).unwrap();
         assert!(config1 < config2);
         assert_eq!(config1.min(config2), config1);
-    }
-
-    #[test]
-    fn hash() {
-        let config = SamplingConfiguration::from_frequency_division(512).unwrap();
-        let mut s = DefaultHasher::new();
-        assert_eq!(config.hash(&mut s), 512.hash(&mut s));
-        s.finish();
     }
 }

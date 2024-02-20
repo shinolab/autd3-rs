@@ -229,11 +229,8 @@ mod tests {
     use super::*;
 
     use crate::{
-        common::Drive,
-        datagram::Gain,
         derive::*,
-        geometry::Geometry,
-        operation::{tests::NullGain, GainSTMOp, NullOp},
+        operation::{tests::NullGain, GainSTMOp},
     };
 
     #[test]

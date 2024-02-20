@@ -177,11 +177,9 @@ pub mod tests {
     use autd3_derive::Gain;
 
     use crate::{
-        common::Drive,
         cpu::{Header, EC_OUTPUT_FRAME_SIZE},
-        datagram::{Gain, GainFilter},
         derive::*,
-        geometry::{Transducer, UnitQuaternion, Vector3},
+        geometry::{UnitQuaternion, Vector3},
     };
 
     use super::*;
