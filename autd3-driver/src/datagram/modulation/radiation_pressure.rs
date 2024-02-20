@@ -3,6 +3,7 @@ use crate::{common::EmitIntensity, derive::*};
 /// Modulation for modulating radiation pressure instead of amplitude
 #[derive(Modulation)]
 #[no_radiation_pressure]
+#[no_modulation_transform]
 pub struct RadiationPressure<M: Modulation> {
     m: M,
     #[no_change]
