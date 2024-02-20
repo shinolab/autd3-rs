@@ -11,7 +11,7 @@ use autd3_driver::{
 pub struct Focus {
     intensity: EmitIntensity,
     pos: Vector3,
-    phase: Phase,
+    phase_offset: Phase,
 }
 
 impl Focus {
@@ -25,7 +25,7 @@ impl Focus {
         Self {
             pos,
             intensity: EmitIntensity::MAX,
-            phase: Phase::new(0),
+            phase_offset: Phase::new(0),
         }
     }
 
@@ -46,10 +46,13 @@ impl Focus {
     ///
     /// # Arguments
     ///
-    /// * `phase` - phase
+    /// * `phase_offset` - phase_offset
     ///
-    pub fn with_phase(self, phase: Phase) -> Self {
-        Self { phase, ..self }
+    pub fn with_phase_offset(self, phase_offset: Phase) -> Self {
+        Self {
+            phase_offset,
+            ..self
+        }
     }
 
     pub const fn intensity(&self) -> EmitIntensity {
@@ -60,8 +63,8 @@ impl Focus {
         self.pos
     }
 
-    pub const fn phase(&self) -> Phase {
-        self.phase
+    pub const fn phase_offset(&self) -> Phase {
+        self.phase_offset
     }
 }
 
@@ -73,7 +76,7 @@ impl Gain for Focus {
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
         Ok(Self::transform(geometry, filter, |dev, tr| {
             Drive::new(
-                tr.align_phase_at(self.pos, dev.sound_speed) + self.phase,
+                tr.align_phase_at(self.pos, dev.sound_speed) + self.phase_offset,
                 self.intensity,
             )
         }))
@@ -92,12 +95,12 @@ mod tests {
         g: Focus,
         pos: Vector3,
         intensity: EmitIntensity,
-        phase: Phase,
+        phase_offset: Phase,
         geometry: &Geometry,
     ) -> anyhow::Result<()> {
         assert_eq!(pos, g.pos());
         assert_eq!(intensity, g.intensity());
-        assert_eq!(phase, g.phase());
+        assert_eq!(phase_offset, g.phase_offset());
 
         let b = g.calc(geometry, GainFilter::All)?;
         assert_eq!(geometry.num_devices(), b.len());
@@ -106,7 +109,7 @@ mod tests {
             d.iter().zip(geometry[idx].iter()).for_each(|(d, tr)| {
                 let expected_phase = Phase::from_rad(
                     (tr.position() - pos).norm() * tr.wavenumber(geometry[idx].sound_speed),
-                ) + phase;
+                ) + phase_offset;
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity())
             });
@@ -127,9 +130,11 @@ mod tests {
 
         let f = random_vector3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
         let intensity = EmitIntensity::new(rng.gen());
-        let phase = Phase::new(rng.gen());
-        let g = Focus::new(f).with_intensity(intensity).with_phase(phase);
-        focus_check(g, f, intensity, phase, &geometry)?;
+        let phase_offset = Phase::new(rng.gen());
+        let g = Focus::new(f)
+            .with_intensity(intensity)
+            .with_phase_offset(phase_offset);
+        focus_check(g, f, intensity, phase_offset, &geometry)?;
 
         Ok(())
     }

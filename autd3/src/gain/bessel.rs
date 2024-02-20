@@ -13,7 +13,7 @@ pub struct Bessel {
     pos: Vector3,
     dir: Vector3,
     theta: float,
-    phase: Phase,
+    phase_offset: Phase,
 }
 
 impl Bessel {
@@ -31,7 +31,7 @@ impl Bessel {
             dir,
             theta,
             intensity: EmitIntensity::MAX,
-            phase: Phase::new(0),
+            phase_offset: Phase::new(0),
         }
     }
 
@@ -48,14 +48,17 @@ impl Bessel {
         }
     }
 
-    /// set phase
+    /// set phase_offset
     ///
     /// # Arguments
     ///
-    /// * `phase` - phase
+    /// * `phase_offset` - phase_offset
     ///
-    pub fn with_phase(self, phase: Phase) -> Self {
-        Self { phase, ..self }
+    pub fn with_phase_offset(self, phase_offset: Phase) -> Self {
+        Self {
+            phase_offset,
+            ..self
+        }
     }
 
     pub const fn intensity(&self) -> EmitIntensity {
@@ -74,8 +77,8 @@ impl Bessel {
         self.theta
     }
 
-    pub const fn phase(&self) -> Phase {
-        self.phase
+    pub const fn phase_offset(&self) -> Phase {
+        self.phase_offset
     }
 }
 
@@ -98,7 +101,7 @@ impl Gain for Bessel {
             let r = rot * (tr.position() - self.pos);
             let dist = self.theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - self.theta.cos() * r.z;
             Drive::new(
-                dist * tr.wavenumber(dev.sound_speed) * Rad + self.phase,
+                dist * tr.wavenumber(dev.sound_speed) * Rad + self.phase_offset,
                 self.intensity,
             )
         }))
@@ -121,14 +124,14 @@ mod tests {
         dir: Vector3,
         theta: float,
         intensity: EmitIntensity,
-        phase: Phase,
+        phase_offset: Phase,
         geometry: &Geometry,
     ) -> anyhow::Result<()> {
         assert_eq!(pos, g.pos());
         assert_eq!(dir, g.dir());
         assert_eq!(theta, g.theta());
         assert_eq!(intensity, g.intensity());
-        assert_eq!(phase, g.phase());
+        assert_eq!(phase_offset, g.phase_offset());
 
         let b = g.calc(geometry, GainFilter::All)?;
         assert_eq!(geometry.num_devices(), b.len());
@@ -147,7 +150,7 @@ mod tests {
                     let r = tr.position() - pos;
                     let r = rot * r;
                     let dist = theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - theta.cos() * r.z;
-                    dist * tr.wavenumber(geometry[0].sound_speed) * Rad + phase
+                    dist * tr.wavenumber(geometry[0].sound_speed) * Rad + phase_offset
                 };
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity());
@@ -173,11 +176,11 @@ mod tests {
         let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();
         let theta = rng.gen_range(-PI..PI);
         let intensity = EmitIntensity::new(rng.gen());
-        let phase = Phase::new(rng.gen());
+        let phase_offset = Phase::new(rng.gen());
         let g = Bessel::new(f, d, theta)
             .with_intensity(intensity)
-            .with_phase(phase);
-        bessel_check(g, f, d, theta, intensity, phase, &geometry)?;
+            .with_phase_offset(phase_offset);
+        bessel_check(g, f, d, theta, intensity, phase_offset, &geometry)?;
 
         Ok(())
     }
@@ -190,7 +193,7 @@ mod tests {
         assert_eq!(g.dir(), g2.dir());
         assert_eq!(g.theta(), g2.theta());
         assert_eq!(g.intensity(), g2.intensity());
-        assert_eq!(g.phase(), g2.phase());
+        assert_eq!(g.phase_offset(), g2.phase_offset());
         let _ = g.operation_with_segment(Segment::S0, true);
     }
 }
