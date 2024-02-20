@@ -4,6 +4,7 @@ mod force_fan;
 mod gain;
 mod info;
 mod modulation;
+mod phase_filter;
 mod pulse_width_encoder;
 mod reads_fpga_state;
 mod silener;

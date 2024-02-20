@@ -6,6 +6,9 @@ pub const BRAM_SELECT_MOD: u8 = 0x1;
 pub const BRAM_SELECT_DUTY_TABLE: u8 = 0x2;
 pub const BRAM_SELECT_STM: u8 = 0x3;
 
+pub const BRAM_CNT_SEL_MAIN: usize = 0x00;
+pub const BRAM_CNT_SEL_FILTER: usize = 0x01;
+
 // pub const STM_MODE_FOCUS: u16 = 0x0;
 pub const STM_MODE_GAIN: u16 = 0x1;
 

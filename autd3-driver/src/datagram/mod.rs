@@ -3,6 +3,7 @@ mod debug;
 mod force_fan;
 mod gain;
 mod modulation;
+mod phase_filter;
 mod reads_fpga_state;
 mod silencer;
 mod stm;
@@ -21,6 +22,7 @@ pub use modulation::{
     ChangeModulationSegment, IntoModulationCache, IntoModulationTransform, IntoRadiationPressure,
     Modulation, ModulationCache, ModulationProperty, ModulationTransform, RadiationPressure,
 };
+pub use phase_filter::ConfigurePhaseFilter;
 pub use reads_fpga_state::ConfigureReadsFPGAState;
 pub use silencer::{
     ConfigureSilencer, ConfigureSilencerFixedCompletionSteps, ConfigureSilencerFixedUpdateRate,
