@@ -20,6 +20,7 @@ pub struct FPGAEmulator {
     stm_bram_0: Vec<u16>,
     stm_bram_1: Vec<u16>,
     duty_table_bram: Vec<u16>,
+    phase_filter_bram: Vec<u16>,
     num_transducers: usize,
     tr_pos: Vec<u64>,
 }
@@ -31,6 +32,7 @@ impl FPGAEmulator {
             modulator_bram_0: vec![0x0000; 32768 / std::mem::size_of::<u16>()],
             modulator_bram_1: vec![0x0000; 32768 / std::mem::size_of::<u16>()],
             duty_table_bram: vec![0x0000; 65536 / std::mem::size_of::<u16>()],
+            phase_filter_bram: vec![0x0000; 256 / std::mem::size_of::<u16>()],
             stm_bram_0: vec![0x0000; 1024 * 256],
             stm_bram_1: vec![0x0000; 1024 * 256],
             num_transducers,
@@ -94,7 +96,11 @@ impl FPGAEmulator {
         let select = ((addr >> 14) & 0x0003) as u8;
         let addr = (addr & 0x3FFF) as usize;
         match select {
-            BRAM_SELECT_CONTROLLER => self.controller_bram[addr] = data,
+            BRAM_SELECT_CONTROLLER => match addr >> 8 {
+                BRAM_CNT_SEL_MAIN => self.controller_bram[addr] = data,
+                BRAM_CNT_SEL_FILTER => self.phase_filter_bram[addr & 0xFF] = data,
+                _ => unreachable!(),
+            },
             BRAM_SELECT_MOD => match self.controller_bram[ADDR_MOD_MEM_WR_SEGMENT] {
                 0 => self.modulator_bram_0[addr] = data,
                 1 => self.modulator_bram_1[addr] = data,
@@ -327,6 +333,21 @@ impl FPGAEmulator {
         self.duty_table_bram
             .iter()
             .flat_map(|&d| vec![(d & 0xFF) as u8, (d >> 8) as u8])
+            .collect()
+    }
+
+    fn phase_at(&self, idx: usize) -> Phase {
+        let m = if idx % 2 == 0 {
+            self.phase_filter_bram[idx >> 1] & 0xFF
+        } else {
+            self.phase_filter_bram[idx >> 1] >> 8
+        };
+        Phase::new(m as u8)
+    }
+
+    pub fn phase_filter(&self) -> Vec<Phase> {
+        (0..self.num_transducers)
+            .map(|i| self.phase_at(i))
             .collect()
     }
 

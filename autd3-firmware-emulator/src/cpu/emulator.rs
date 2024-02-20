@@ -187,6 +187,7 @@ impl CPUEmulator {
                 TAG_FORCE_FAN => self.configure_force_fan(data),
                 TAG_READS_FPGA_STATE => self.configure_reads_fpga_state(data),
                 TAG_CONFIG_PULSE_WIDTH_ENCODER => self.config_pwe(data),
+                TAG_PHASE_FILTER => self.write_phase_filter(data),
                 TAG_DEBUG => self.config_debug(data),
                 _ => ERR_NOT_SUPPORTED_TAG,
             }

@@ -8,6 +8,9 @@ pub const BRAM_SELECT_MOD: u8 = 0x1;
 pub const BRAM_SELECT_DUTY_TABLE: u8 = 0x2;
 pub const BRAM_SELECT_STM: u8 = 0x3;
 
+pub const BRAM_CNT_SEL_MAIN: u8 = 0x00;
+pub const BRAM_CNT_SEL_FILTER: u8 = 0x01;
+
 pub const BRAM_ADDR_CTL_FLAG: u16 = 0x00;
 pub const BRAM_ADDR_FPGA_STATE: u16 = 0x01;
 pub const BRAM_ADDR_ECAT_SYNC_TIME_0: u16 = 0x11;
@@ -98,6 +101,7 @@ pub const TAG_GAIN_STM_CHANGE_SEGMENT: u8 = 0x43;
 pub const TAG_FORCE_FAN: u8 = 0x60;
 pub const TAG_READS_FPGA_STATE: u8 = 0x61;
 pub const TAG_CONFIG_PULSE_WIDTH_ENCODER: u8 = 0x70;
+pub const TAG_PHASE_FILTER: u8 = 0x80;
 pub const TAG_DEBUG: u8 = 0xF0;
 
 pub const INFO_TYPE_CPU_VERSION_MAJOR: u8 = 0x01;
