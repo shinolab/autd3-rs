@@ -1122,7 +1122,7 @@ pub struct Bessel {
     #[prost(float, tag = "4")]
     pub theta: f32,
     #[prost(message, optional, tag = "5")]
-    pub phase: ::core::option::Option<Phase>,
+    pub phase_offset: ::core::option::Option<Phase>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1132,7 +1132,7 @@ pub struct Focus {
     #[prost(message, optional, tag = "2")]
     pub pos: ::core::option::Option<Vector3>,
     #[prost(message, optional, tag = "3")]
-    pub phase: ::core::option::Option<Phase>,
+    pub phase_offset: ::core::option::Option<Phase>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1145,7 +1145,7 @@ pub struct Plane {
     #[prost(message, optional, tag = "2")]
     pub dir: ::core::option::Option<Vector3>,
     #[prost(message, optional, tag = "3")]
-    pub phase: ::core::option::Option<Phase>,
+    pub phase_offset: ::core::option::Option<Phase>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
