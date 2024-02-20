@@ -1,4 +1,4 @@
-use crate::{common::EmitIntensity, derive::*};
+use crate::derive::*;
 
 /// Modulation to transform modulation data
 #[derive(Modulation)]

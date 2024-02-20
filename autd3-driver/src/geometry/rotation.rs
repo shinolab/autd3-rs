@@ -69,7 +69,7 @@ mod tests {
     #[test]
     fn angle_clone() {
         let a = 90.0 * Deg;
-        let b = a.clone();
+        let b = a;
         assert_eq!(a.to_radians(), b.to_radians());
     }
 

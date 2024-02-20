@@ -128,10 +128,7 @@ pub trait IntoDevice {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::{
-        defined::{MILLIMETER, PI},
-        geometry::Transducer,
-    };
+    use crate::defined::{MILLIMETER, PI};
 
     use super::*;
 

@@ -1,4 +1,4 @@
-use autd3_driver::{common::EmitIntensity, derive::*};
+use autd3_driver::derive::*;
 use hound::SampleFormat;
 
 use std::path::{Path, PathBuf};
@@ -98,7 +98,7 @@ mod tests {
         data: &[impl hound::Sample + Clone + Copy],
     ) -> anyhow::Result<()> {
         let mut writer = hound::WavWriter::create(path, spec)?;
-        data.into_iter().try_for_each(|&s| writer.write_sample(s))?;
+        data.iter().try_for_each(|&s| writer.write_sample(s))?;
         writer.finalize()?;
         Ok(())
     }

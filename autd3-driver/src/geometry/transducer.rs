@@ -80,7 +80,6 @@ impl Transducer {
 
 #[cfg(test)]
 mod tests {
-    use crate::defined::PI;
     use assert_approx_eq::assert_approx_eq;
 
     use super::*;

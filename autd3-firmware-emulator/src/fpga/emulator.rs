@@ -581,10 +581,10 @@ mod tests {
 
     #[test]
     fn systime() {
-        let t = FPGAEmulator::systime(1000_000_000);
+        let t = FPGAEmulator::systime(1_000_000_000);
         assert_eq!(20480000, t);
 
-        let t = FPGAEmulator::systime(2000_000_000);
+        let t = FPGAEmulator::systime(2_000_000_000);
         assert_eq!(40960000, t);
     }
 

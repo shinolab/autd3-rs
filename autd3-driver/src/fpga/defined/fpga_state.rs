@@ -85,7 +85,7 @@ mod tests {
     #[test]
     fn fpga_state_derive() {
         let info = FPGAState { state: 0x00 };
-        let info2 = info.clone();
+        let info2 = info;
 
         assert_eq!(info, info2);
         assert_eq!(format!("{:?}", info), "FPGAState { state: 0 }");

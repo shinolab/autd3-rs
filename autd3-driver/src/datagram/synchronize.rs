@@ -1,6 +1,4 @@
-use std::time::Duration;
-
-use crate::{datagram::*, error::AUTDInternalError};
+use crate::datagram::*;
 
 /// Datagram to synchronize devices
 #[derive(Default)]

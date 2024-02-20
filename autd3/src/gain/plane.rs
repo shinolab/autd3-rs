@@ -1,10 +1,7 @@
 use std::collections::HashMap;
 
-use autd3_driver::{
-    common::EmitIntensity,
-    derive::*,
-    geometry::{Geometry, Vector3},
-};
+use autd3_driver::{derive::*, geometry::Vector3};
+
 /// Gain to produce a plane wave
 #[derive(Gain, Clone, PartialEq, Debug)]
 pub struct Plane {

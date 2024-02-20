@@ -1,6 +1,4 @@
-use std::time::Duration;
-
-use crate::{datagram::*, error::AUTDInternalError};
+use crate::datagram::*;
 
 /// Datagram for clear all data in devices
 #[derive(Default)]

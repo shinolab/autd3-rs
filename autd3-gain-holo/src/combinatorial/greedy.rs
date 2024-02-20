@@ -4,10 +4,9 @@ use crate::{constraint::EmissionConstraint, impl_holo, Amplitude, Complex};
 
 use autd3_driver::{
     acoustics::{directivity::Sphere, propagate},
-    common::{EmitIntensity, Phase},
     defined::PI,
     derive::*,
-    geometry::{Geometry, Vector3},
+    geometry::Vector3,
 };
 
 use nalgebra::ComplexField;

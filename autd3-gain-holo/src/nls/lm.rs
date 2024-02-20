@@ -4,12 +4,7 @@ use crate::{
     constraint::EmissionConstraint, impl_holo, Amplitude, Complex, HoloError, LinAlgBackend, Trans,
 };
 
-use autd3_driver::{
-    common::Phase,
-    defined::PI,
-    derive::*,
-    geometry::{Geometry, Vector3},
-};
+use autd3_driver::{defined::PI, derive::*, geometry::Vector3};
 
 /// Gain to produce multiple foci with Levenberg-Marquardt algorithm
 ///

@@ -5,10 +5,7 @@ use crate::{
     LinAlgBackend, Trans,
 };
 
-use autd3_driver::{
-    derive::*,
-    geometry::{Geometry, Vector3},
-};
+use autd3_driver::{derive::*, geometry::Vector3};
 
 /// Gain to produce multiple foci with GS-PAT algorithm
 ///

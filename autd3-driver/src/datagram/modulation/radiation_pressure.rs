@@ -1,4 +1,4 @@
-use crate::{common::EmitIntensity, derive::*};
+use crate::derive::*;
 
 /// Modulation for modulating radiation pressure instead of amplitude
 #[derive(Modulation)]

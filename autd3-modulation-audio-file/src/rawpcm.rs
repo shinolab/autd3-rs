@@ -1,4 +1,4 @@
-use autd3_driver::{common::EmitIntensity, derive::*};
+use autd3_driver::derive::*;
 
 use std::{
     fs::File,

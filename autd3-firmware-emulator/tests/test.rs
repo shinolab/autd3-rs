@@ -29,7 +29,7 @@ pub fn send_once(
 ) -> Result<(), AUTDInternalError> {
     let mut op_null = NullOp::default();
     OperationHandler::pack(op, &mut op_null, geometry, tx)?;
-    cpu.send(&tx);
+    cpu.send(tx);
     if (cpu.ack() & ERR_BIT) == ERR_BIT {
         return Err(AUTDInternalError::firmware_err(cpu.ack()));
     }

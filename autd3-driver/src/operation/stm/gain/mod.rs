@@ -319,12 +319,9 @@ mod tests {
     use super::*;
     use crate::{
         common::{EmitIntensity, Phase},
-        fpga::{GAIN_STM_BUF_SIZE_MAX, SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
+        fpga::{SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
         geometry::tests::create_geometry,
-        operation::{
-            stm::gain::GainSTMOp,
-            tests::{NullGain, TestGain},
-        },
+        operation::tests::{NullGain, TestGain},
     };
 
     const NUM_TRANS_IN_UNIT: usize = 249;

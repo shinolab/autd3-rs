@@ -1,4 +1,4 @@
-use crate::{common::EmitIntensity, derive::*};
+use crate::derive::*;
 
 use std::{
     cell::{Ref, RefCell},

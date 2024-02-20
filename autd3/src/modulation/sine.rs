@@ -1,4 +1,4 @@
-use autd3_driver::{common::EmitIntensity, defined::PI, derive::*};
+use autd3_driver::{defined::PI, derive::*};
 
 use num::integer::gcd;
 
