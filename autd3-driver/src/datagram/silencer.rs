@@ -1,8 +1,5 @@
-use std::time::Duration;
-
 use crate::{
     datagram::*,
-    error::AUTDInternalError,
     fpga::{
         SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, SILENCER_VALUE_MAX,
         SILENCER_VALUE_MIN,

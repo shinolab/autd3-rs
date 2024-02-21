@@ -1,6 +1,7 @@
 use crate::{error::*, pb::*, traits::*};
 
 use autd3::error::AUTDError;
+use autd3_driver::datagram::IntoDatagramWithSegment;
 use tokio::sync::RwLock;
 use tonic::{Request, Response, Status};
 
@@ -31,20 +32,45 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
             Some(modulation::Modulation::Static(msg)) => {
                 autd.send(
                     autd3::prelude::Static::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?,
+                        .ok_or(AUTDProtoBufError::DataParseError)?
+                        .with_segment(
+                            autd3_driver::common::Segment::from(
+                                Segment::try_from(modulation.segment)
+                                    .ok()
+                                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                            ),
+                            modulation.update_segment,
+                        ),
                 )
                 .await?
             }
             Some(modulation::Modulation::Sine(msg)) => {
                 autd.send(
-                    autd3::prelude::Sine::from_msg(msg).ok_or(AUTDProtoBufError::DataParseError)?,
+                    autd3::prelude::Sine::from_msg(msg)
+                        .ok_or(AUTDProtoBufError::DataParseError)?
+                        .with_segment(
+                            autd3_driver::common::Segment::from(
+                                Segment::try_from(modulation.segment)
+                                    .ok()
+                                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                            ),
+                            modulation.update_segment,
+                        ),
                 )
                 .await?
             }
             Some(modulation::Modulation::Square(msg)) => {
                 autd.send(
                     autd3::prelude::Square::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?,
+                        .ok_or(AUTDProtoBufError::DataParseError)?
+                        .with_segment(
+                            autd3_driver::common::Segment::from(
+                                Segment::try_from(modulation.segment)
+                                    .ok()
+                                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                            ),
+                            modulation.update_segment,
+                        ),
                 )
                 .await?
             }
@@ -80,73 +106,165 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
             Some(gain::Gain::Focus(msg)) => {
                 autd.send(
                     autd3::prelude::Focus::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?,
+                        .ok_or(AUTDProtoBufError::DataParseError)?
+                        .with_segment(
+                            autd3_driver::common::Segment::from(
+                                Segment::try_from(gain.segment)
+                                    .ok()
+                                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                            ),
+                            gain.update_segment,
+                        ),
                 )
                 .await?
             }
             Some(gain::Gain::Bessel(msg)) => {
                 autd.send(
                     autd3::prelude::Bessel::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?,
+                        .ok_or(AUTDProtoBufError::DataParseError)?
+                        .with_segment(
+                            autd3_driver::common::Segment::from(
+                                Segment::try_from(gain.segment)
+                                    .ok()
+                                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                            ),
+                            gain.update_segment,
+                        ),
                 )
                 .await?
             }
             Some(gain::Gain::Null(msg)) => {
                 autd.send(
-                    autd3::prelude::Null::from_msg(msg).ok_or(AUTDProtoBufError::DataParseError)?,
+                    autd3::prelude::Null::from_msg(msg)
+                        .ok_or(AUTDProtoBufError::DataParseError)?
+                        .with_segment(
+                            autd3_driver::common::Segment::from(
+                                Segment::try_from(gain.segment)
+                                    .ok()
+                                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                            ),
+                            gain.update_segment,
+                        ),
                 )
                 .await?
             }
             Some(gain::Gain::Plane(msg)) => {
                 autd.send(
                     autd3::prelude::Plane::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?,
+                        .ok_or(AUTDProtoBufError::DataParseError)?
+                        .with_segment(
+                            autd3_driver::common::Segment::from(
+                                Segment::try_from(gain.segment)
+                                    .ok()
+                                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                            ),
+                            gain.update_segment,
+                        ),
                 )
                 .await?
             }
             Some(gain::Gain::Uniform(msg)) => {
                 autd.send(
                     autd3::prelude::Uniform::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?,
+                        .ok_or(AUTDProtoBufError::DataParseError)?
+                        .with_segment(
+                            autd3_driver::common::Segment::from(
+                                Segment::try_from(gain.segment)
+                                    .ok()
+                                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                            ),
+                            gain.update_segment,
+                        ),
                 )
                 .await?
             }
             Some(gain::Gain::Sdp(msg)) => {
                 autd.send(
-                    autd3_gain_holo::SDP::from_msg(msg).ok_or(AUTDProtoBufError::DataParseError)?,
+                    autd3_gain_holo::SDP::from_msg(msg)
+                        .ok_or(AUTDProtoBufError::DataParseError)?
+                        .with_segment(
+                            autd3_driver::common::Segment::from(
+                                Segment::try_from(gain.segment)
+                                    .ok()
+                                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                            ),
+                            gain.update_segment,
+                        ),
                 )
                 .await?
             }
             Some(gain::Gain::Naive(msg)) => {
                 autd.send(
                     autd3_gain_holo::Naive::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?,
+                        .ok_or(AUTDProtoBufError::DataParseError)?
+                        .with_segment(
+                            autd3_driver::common::Segment::from(
+                                Segment::try_from(gain.segment)
+                                    .ok()
+                                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                            ),
+                            gain.update_segment,
+                        ),
                 )
                 .await?
             }
             Some(gain::Gain::Gs(msg)) => {
                 autd.send(
-                    autd3_gain_holo::GS::from_msg(msg).ok_or(AUTDProtoBufError::DataParseError)?,
+                    autd3_gain_holo::GS::from_msg(msg)
+                        .ok_or(AUTDProtoBufError::DataParseError)?
+                        .with_segment(
+                            autd3_driver::common::Segment::from(
+                                Segment::try_from(gain.segment)
+                                    .ok()
+                                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                            ),
+                            gain.update_segment,
+                        ),
                 )
                 .await?
             }
             Some(gain::Gain::Gspat(msg)) => {
                 autd.send(
                     autd3_gain_holo::GSPAT::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?,
+                        .ok_or(AUTDProtoBufError::DataParseError)?
+                        .with_segment(
+                            autd3_driver::common::Segment::from(
+                                Segment::try_from(gain.segment)
+                                    .ok()
+                                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                            ),
+                            gain.update_segment,
+                        ),
                 )
                 .await?
             }
             Some(gain::Gain::Lm(msg)) => {
                 autd.send(
-                    autd3_gain_holo::LM::from_msg(msg).ok_or(AUTDProtoBufError::DataParseError)?,
+                    autd3_gain_holo::LM::from_msg(msg)
+                        .ok_or(AUTDProtoBufError::DataParseError)?
+                        .with_segment(
+                            autd3_driver::common::Segment::from(
+                                Segment::try_from(gain.segment)
+                                    .ok()
+                                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                            ),
+                            gain.update_segment,
+                        ),
                 )
                 .await?
             }
             Some(gain::Gain::Greedy(msg)) => {
                 autd.send(
                     autd3_gain_holo::Greedy::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?,
+                        .ok_or(AUTDProtoBufError::DataParseError)?
+                        .with_segment(
+                            autd3_driver::common::Segment::from(
+                                Segment::try_from(gain.segment)
+                                    .ok()
+                                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                            ),
+                            gain.update_segment,
+                        ),
                 )
                 .await?
             }
@@ -184,7 +302,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                             .with_rotation(*d[0].rotation()),
                     )
                 })
-                .open_with((self.link)())
+                .open((self.link)())
                 .await
             {
                 Ok(autd) => Some(autd),
@@ -261,6 +379,99 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                 }
                 Some(datagram_lightweight::Datagram::Modulation(ref msg)) => {
                     Self::send_modulation(autd, msg).await
+                }
+                Some(datagram_lightweight::Datagram::Clear(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::Clear::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                    )
+                    .await
+                }
+                Some(datagram_lightweight::Datagram::Synchronize(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::Synchronize::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                    )
+                    .await
+                }
+                Some(datagram_lightweight::Datagram::ForceFan(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::ConfigureForceFan::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                    )
+                    .await
+                }
+                Some(datagram_lightweight::Datagram::Debug(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::ConfigureDebugOutputIdx::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                    )
+                    .await
+                }
+                Some(datagram_lightweight::Datagram::ReadsFpgaState(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::ConfigureReadsFPGAState::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                    )
+                    .await
+                }
+                Some(datagram_lightweight::Datagram::FocusStm(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::FocusSTM::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?
+                            .with_segment(
+                                autd3_driver::common::Segment::from(
+                                    Segment::try_from(msg.segment)
+                                        .ok()
+                                        .ok_or(AUTDProtoBufError::DataParseError)?,
+                                ),
+                                msg.update_segment,
+                            ),
+                    )
+                    .await
+                }
+                Some(datagram_lightweight::Datagram::GainStm(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::GainSTM::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?
+                            .with_segment(
+                                autd3_driver::common::Segment::from(
+                                    Segment::try_from(msg.segment)
+                                        .ok()
+                                        .ok_or(AUTDProtoBufError::DataParseError)?,
+                                ),
+                                msg.update_segment,
+                            ),
+                    )
+                    .await
+                }
+                Some(datagram_lightweight::Datagram::ChangeGainSegment(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::ChangeGainSegment::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                    )
+                    .await
+                }
+                Some(datagram_lightweight::Datagram::ChangeGainStmSegment(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::ChangeGainSTMSegment::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                    )
+                    .await
+                }
+                Some(datagram_lightweight::Datagram::ChangeFocusStmSegment(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::ChangeFocusSTMSegment::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                    )
+                    .await
+                }
+                Some(datagram_lightweight::Datagram::ChangeModulationSegment(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::ChangeModulationSegment::from_msg(msg)
+                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                    )
+                    .await
                 }
                 None => return Err(Status::invalid_argument("No datagram")),
             } {

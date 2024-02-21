@@ -14,6 +14,7 @@ use autd3_firmware_emulator::CPUEmulator;
 pub struct Audit {
     is_open: bool,
     timeout: Duration,
+    last_timeout: Option<Duration>,
     cpus: Vec<CPUEmulator>,
     down: bool,
     broken: bool,
@@ -41,14 +42,11 @@ impl LinkBuilder for AuditBuilder {
         Ok(Audit {
             is_open: true,
             timeout: self.timeout,
+            last_timeout: None,
             cpus: geometry
                 .iter()
                 .enumerate()
-                .map(|(i, dev)| {
-                    let mut cpu = CPUEmulator::new(i, dev.num_transducers());
-                    cpu.init();
-                    cpu
-                })
+                .map(|(i, dev)| CPUEmulator::new(i, dev.num_transducers()))
                 .collect(),
             down: false,
             broken: false,
@@ -61,6 +59,10 @@ impl Audit {
         AuditBuilder {
             timeout: Duration::ZERO,
         }
+    }
+
+    pub const fn last_timeout(&self) -> Option<Duration> {
+        self.last_timeout
     }
 
     pub fn emulators(&self) -> &[CPUEmulator] {
@@ -143,8 +145,8 @@ impl Link for Audit {
         }
 
         self.cpus.iter_mut().for_each(|cpu| {
-            rx[cpu.idx()].data = cpu.rx_data();
-            rx[cpu.idx()].ack = cpu.ack();
+            cpu.update();
+            rx[cpu.idx()] = RxMessage::new(cpu.ack(), cpu.rx_data());
         });
 
         Ok(true)
@@ -156,5 +158,9 @@ impl Link for Audit {
 
     fn timeout(&self) -> Duration {
         self.timeout
+    }
+
+    fn trace(&mut self, _: &TxDatagram, _: &mut [RxMessage], timeout: Option<Duration>) {
+        self.last_timeout = timeout;
     }
 }

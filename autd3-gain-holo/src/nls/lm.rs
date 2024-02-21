@@ -4,12 +4,7 @@ use crate::{
     constraint::EmissionConstraint, impl_holo, Amplitude, Complex, HoloError, LinAlgBackend, Trans,
 };
 
-use autd3_driver::{
-    common::Phase,
-    defined::PI,
-    derive::*,
-    geometry::{Geometry, Vector3},
-};
+use autd3_driver::{defined::PI, derive::*, geometry::Vector3};
 
 /// Gain to produce multiple foci with Levenberg-Marquardt algorithm
 ///
@@ -301,12 +296,9 @@ impl<B: LinAlgBackend> Gain for LM<B> {
                         dev.iter()
                             .map(|_| {
                                 let phase = Phase::from_rad(x[idx].rem_euclid(2.0 * PI));
-                                let amp = self.constraint.convert(1.0, 1.0);
+                                let intensity = self.constraint.convert(1.0, 1.0);
                                 idx += 1;
-                                Drive {
-                                    intensity: amp,
-                                    phase,
-                                }
+                                Drive::new(phase, intensity)
                             })
                             .collect(),
                     )
@@ -324,12 +316,9 @@ impl<B: LinAlgBackend> Gain for LM<B> {
                                     .filter(|tr| filter[tr.idx()])
                                     .map(|_| {
                                         let phase = Phase::from_rad(x[idx].rem_euclid(2.0 * PI));
-                                        let amp = self.constraint.convert(1.0, 1.0);
+                                        let intensity = self.constraint.convert(1.0, 1.0);
                                         idx += 1;
-                                        Drive {
-                                            intensity: amp,
-                                            phase,
-                                        }
+                                        Drive::new(phase, intensity)
                                     })
                                     .collect(),
                             )
@@ -371,7 +360,7 @@ mod tests {
             .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pascal));
 
         let _ = g.calc(&geometry, GainFilter::All);
-        let _ = g.operation();
+        let _ = g.operation_with_segment(Segment::S0, true);
     }
 
     #[test]

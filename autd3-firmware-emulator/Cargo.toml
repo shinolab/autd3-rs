@@ -1,6 +1,6 @@
 [package]
 name = "autd3-firmware-emulator"
-version = "21.1.0"
+version = "22.0.0-rc.3"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 
@@ -11,13 +11,14 @@ readme = "README.md"
 keywords = ["autd"]
 
 [dependencies]
-autd3-driver = { path = "../autd3-driver", version = "21.1.0" }
+autd3-driver = { path = "../autd3-driver", version = "22.0.0-rc.3" }
 chrono = "0.4.31"
 num-integer = "0.1.45"
 thiserror = "1.0.40"
 
 [dev-dependencies]
-autd3-derive = { path = "../autd3-derive", version = "21.1.0" }
+anyhow = "1.0.79"
+autd3-derive = { path = "../autd3-derive", version = "22.0.0-rc.3" }
 itertools = "0.12.0"
 memoffset = "0.9.0"
 rand = "0.8.5"

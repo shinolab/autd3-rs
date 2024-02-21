@@ -1,6 +1,6 @@
 [package]
 name = "examples"
-version = "21.1.0"
+version = "22.0.0-rc.3"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 license = "MIT"
@@ -40,6 +40,11 @@ name = "lightweight_server"
 path = "src/lightweight_server.rs"
 required-features = ["lightweight-server"]
 
+[[bin]]
+name = "firmware_test"
+path = "src/firmware_test.rs"
+required-features = ["soem"]
+
 [dependencies]
 anyhow = "1.0.72"
 autd3 = { path = "../autd3" }
@@ -54,8 +59,7 @@ colored = "2.0.0"
 tokio = { version = "1.34.0", features = ["macros", "rt-multi-thread"] }
 async-std = "1.12.0"
 ctrlc-async = { version = "3.2.2", optional = true }
-tonic = { version = "0.10.0", optional = true }
-
+tonic = { version = "0.11.0", optional = true }
 
 [features]
 default = []

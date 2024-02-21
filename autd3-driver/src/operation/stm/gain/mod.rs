@@ -5,7 +5,7 @@ mod reduced_phase;
 use std::collections::HashMap;
 
 use crate::{
-    common::Drive,
+    common::{Drive, LoopBehavior, Segment},
     datagram::{Gain, GainFilter},
     error::AUTDInternalError,
     fpga::{FPGADrive, GAIN_STM_BUF_SIZE_MAX},
@@ -26,15 +26,21 @@ struct GainSTMHead {
     tag: TypeTag,
     flag: GainSTMControlFlags,
     mode: GainSTMMode,
+    segment: u8,
     freq_div: u32,
-    start_idx: u16,
-    finish_idx: u16,
+    rep: u32,
 }
 
 #[repr(C)]
 struct GainSTMSubseq {
     tag: TypeTag,
     flag: GainSTMControlFlags,
+}
+
+#[repr(C)]
+struct GainSTMUpdate {
+    tag: TypeTag,
+    segment: u8,
 }
 
 pub struct GainSTMOp<G: Gain> {
@@ -44,8 +50,9 @@ pub struct GainSTMOp<G: Gain> {
     sent: HashMap<usize, usize>,
     mode: GainSTMMode,
     freq_div: u32,
-    start_idx: Option<u16>,
-    finish_idx: Option<u16>,
+    loop_behavior: LoopBehavior,
+    segment: Segment,
+    update_segment: bool,
 }
 
 impl<G: Gain> GainSTMOp<G> {
@@ -53,8 +60,9 @@ impl<G: Gain> GainSTMOp<G> {
         gains: Vec<G>,
         mode: GainSTMMode,
         freq_div: u32,
-        start_idx: Option<u16>,
-        finish_idx: Option<u16>,
+        loop_behavior: LoopBehavior,
+        segment: Segment,
+        update_segment: bool,
     ) -> Self {
         Self {
             gains,
@@ -63,8 +71,9 @@ impl<G: Gain> GainSTMOp<G> {
             sent: Default::default(),
             mode,
             freq_div,
-            start_idx,
-            finish_idx,
+            loop_behavior,
+            segment,
+            update_segment,
         }
     }
 }
@@ -76,19 +85,6 @@ impl<G: Gain> Operation for GainSTMOp<G> {
             .iter()
             .map(|g| g.calc(geometry, GainFilter::All))
             .collect::<Result<_, _>>()?;
-
-        match self.start_idx {
-            Some(idx) if idx >= self.gains.len() as u16 => {
-                return Err(AUTDInternalError::STMStartIndexOutOfRange)
-            }
-            _ => {}
-        }
-        match self.finish_idx {
-            Some(idx) if idx >= self.gains.len() as u16 => {
-                return Err(AUTDInternalError::STMFinishIndexOutOfRange)
-            }
-            _ => {}
-        }
 
         if !(2..=GAIN_STM_BUF_SIZE_MAX).contains(&self.drives.len()) {
             return Err(AUTDInternalError::GainSTMSizeOutOfRange(self.drives.len()));
@@ -224,45 +220,30 @@ impl<G: Gain> Operation for GainSTMOp<G> {
         if sent == 0 {
             let d = cast::<GainSTMHead>(tx);
             d.tag = TypeTag::GainSTM;
-            d.flag = GainSTMControlFlags::STM_BEGIN;
-            d.flag.set(
-                GainSTMControlFlags::STM_END,
-                sent + send == self.drives.len(),
-            );
-            d.flag
-                .set(GainSTMControlFlags::USE_START_IDX, self.start_idx.is_some());
-            d.flag.set(
-                GainSTMControlFlags::USE_FINISH_IDX,
-                self.finish_idx.is_some(),
-            );
-            d.flag.set(
-                GainSTMControlFlags::SEND_BIT0,
-                ((send as u8 - 1) & 0x01) != 0,
-            );
-            d.flag.set(
-                GainSTMControlFlags::SEND_BIT1,
-                ((send as u8 - 1) & 0x02) != 0,
-            );
+            d.flag = GainSTMControlFlags::BEGIN;
             d.mode = self.mode;
+            d.segment = self.segment as u8;
             d.freq_div = self.freq_div;
-            d.start_idx = self.start_idx.unwrap_or(0);
-            d.finish_idx = self.finish_idx.unwrap_or(0);
+            d.rep = self.loop_behavior.to_rep();
         } else {
             let d = cast::<GainSTMSubseq>(tx);
             d.tag = TypeTag::GainSTM;
             d.flag = GainSTMControlFlags::NONE;
-            d.flag.set(
-                GainSTMControlFlags::STM_END,
-                sent + send == self.drives.len(),
-            );
-            d.flag.set(
-                GainSTMControlFlags::SEND_BIT0,
-                ((send as u8 - 1) & 0x01) != 0,
-            );
-            d.flag.set(
-                GainSTMControlFlags::SEND_BIT1,
-                ((send as u8 - 1) & 0x02) != 0,
-            );
+        }
+
+        let d = cast::<GainSTMSubseq>(tx);
+        d.flag.set(
+            GainSTMControlFlags::SEND_BIT0,
+            ((send as u8 - 1) & 0x01) != 0,
+        );
+        d.flag.set(
+            GainSTMControlFlags::SEND_BIT1,
+            ((send as u8 - 1) & 0x02) != 0,
+        );
+
+        if sent + send == self.drives.len() {
+            d.flag.set(GainSTMControlFlags::END, true);
+            d.flag.set(GainSTMControlFlags::UPDATE, self.update_segment);
         }
 
         self.sent.insert(device.idx(), sent + send);
@@ -286,19 +267,61 @@ impl<G: Gain> Operation for GainSTMOp<G> {
     }
 }
 
+pub struct GainSTMChangeSegmentOp {
+    segment: Segment,
+    remains: HashMap<usize, usize>,
+}
+
+impl GainSTMChangeSegmentOp {
+    pub fn new(segment: Segment) -> Self {
+        Self {
+            segment,
+            remains: HashMap::new(),
+        }
+    }
+}
+
+impl Operation for GainSTMChangeSegmentOp {
+    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+        assert_eq!(self.remains[&device.idx()], 1);
+
+        let d = cast::<GainSTMUpdate>(tx);
+        d.tag = TypeTag::GainSTMChangeSegment;
+        d.segment = self.segment as u8;
+
+        Ok(std::mem::size_of::<GainSTMUpdate>())
+    }
+
+    fn required_size(&self, _: &Device) -> usize {
+        std::mem::size_of::<GainSTMUpdate>()
+    }
+
+    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
+        self.remains = geometry.devices().map(|device| (device.idx(), 1)).collect();
+        Ok(())
+    }
+
+    fn remains(&self, device: &Device) -> usize {
+        self.remains[&device.idx()]
+    }
+
+    fn commit(&mut self, device: &Device) {
+        self.remains.insert(device.idx(), 0);
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::num::NonZeroU32;
+
     use rand::prelude::*;
 
     use super::*;
     use crate::{
         common::{EmitIntensity, Phase},
-        fpga::{GAIN_STM_BUF_SIZE_MAX, SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
+        fpga::{SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
         geometry::tests::create_geometry,
-        operation::{
-            stm::gain::GainSTMOp,
-            tests::{NullGain, TestGain},
-        },
+        operation::tests::{NullGain, TestGain},
     };
 
     const NUM_TRANS_IN_UNIT: usize = 249;
@@ -307,7 +330,7 @@ mod tests {
     #[test]
     fn gain_stm_phase_intensity_full_op() {
         const GAIN_STM_SIZE: usize = 3;
-        const FRAME_SIZE: usize = 12 + NUM_TRANS_IN_UNIT * 2;
+        const FRAME_SIZE: usize = std::mem::size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
 
@@ -323,9 +346,11 @@ mod tests {
                         (
                             dev.idx(),
                             (0..dev.num_transducers())
-                                .map(|_| Drive {
-                                    intensity: EmitIntensity::new(rng.gen_range(0..=0xFF)),
-                                    phase: Phase::new(rng.gen_range(0x00..=0xFF)),
+                                .map(|_| {
+                                    Drive::new(
+                                        Phase::new(rng.gen_range(0x00..=0xFF)),
+                                        EmitIntensity::new(rng.gen_range(0..=0xFF)),
+                                    )
                                 })
                                 .collect(),
                         )
@@ -340,15 +365,27 @@ mod tests {
             .collect();
 
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
-        let mut op =
-            GainSTMOp::<_>::new(gains, GainSTMMode::PhaseIntensityFull, freq_div, None, None);
+        let loop_behavior = LoopBehavior::Infinite;
+        let segment = Segment::S0;
+
+        let mut op = GainSTMOp::<_>::new(
+            gains,
+            GainSTMMode::PhaseIntensityFull,
+            freq_div,
+            loop_behavior,
+            segment,
+            true,
+        );
 
         assert!(op.init(&geometry).is_ok());
 
         // First frame
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 12 + NUM_TRANS_IN_UNIT * 2));
+        geometry.devices().for_each(|dev| {
+            assert_eq!(
+                op.required_size(dev),
+                std::mem::size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2
+            )
+        });
 
         geometry
             .devices()
@@ -357,7 +394,7 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(
                 op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
-                Ok(12 + NUM_TRANS_IN_UNIT * 2)
+                Ok(std::mem::size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2)
             );
             op.commit(dev);
         });
@@ -369,22 +406,15 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::GainSTM as u8);
             let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_ne!(flag & GainSTMControlFlags::STM_BEGIN.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::STM_END.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
-
+            assert_ne!(flag & GainSTMControlFlags::BEGIN.bits(), 0x00);
+            assert_eq!(flag & GainSTMControlFlags::END.bits(), 0x00);
+            assert_eq!(flag & GainSTMControlFlags::UPDATE.bits(), 0x00);
             assert_eq!(tx[dev.idx() * FRAME_SIZE + 1] >> 6, 0);
-
             assert_eq!(
                 tx[dev.idx() * FRAME_SIZE + 2],
-                ((GainSTMMode::PhaseIntensityFull as u16) & 0xFF) as u8
+                GainSTMMode::PhaseIntensityFull as u8
             );
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 3],
-                ((GainSTMMode::PhaseIntensityFull as u16) >> 8) as u8
-            );
-
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 3], segment as u8);
             assert_eq!(tx[dev.idx() * FRAME_SIZE + 4], (freq_div & 0xFF) as u8);
             assert_eq!(
                 tx[dev.idx() * FRAME_SIZE + 5],
@@ -398,30 +428,32 @@ mod tests {
                 tx[dev.idx() * FRAME_SIZE + 7],
                 ((freq_div >> 24) & 0xFF) as u8
             );
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 8], 0xFF);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 9], 0xFF);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 10], 0xFF);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 11], 0xFF);
 
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 8], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 9], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 10], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 11], 0x00);
-
-            tx[FRAME_SIZE * dev.idx() + 12..]
+            tx[FRAME_SIZE * dev.idx() + std::mem::size_of::<GainSTMHead>()..]
                 .chunks(std::mem::size_of::<FPGADrive>())
                 .zip(gain_data[0][&dev.idx()].iter())
                 .for_each(|(d, g)| {
-                    assert_eq!(d[0], g.phase.value());
-                    assert_eq!(d[1], g.intensity.value());
+                    assert_eq!(d[0], g.phase().value());
+                    assert_eq!(d[1], g.intensity().value());
                 })
         });
 
         // Second frame
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 2 + NUM_TRANS_IN_UNIT * 2));
+        geometry.devices().for_each(|dev| {
+            assert_eq!(
+                op.required_size(dev),
+                std::mem::size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2
+            )
+        });
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
                 op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
-                Ok(2 + NUM_TRANS_IN_UNIT * 2)
+                Ok(std::mem::size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2)
             );
             op.commit(dev);
         });
@@ -433,10 +465,9 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::GainSTM as u8);
             let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_eq!(flag & GainSTMControlFlags::STM_BEGIN.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::STM_END.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
+            assert_eq!(flag & GainSTMControlFlags::BEGIN.bits(), 0x00);
+            assert_eq!(flag & GainSTMControlFlags::END.bits(), 0x00);
+            assert_eq!(flag & GainSTMControlFlags::UPDATE.bits(), 0x00);
 
             assert_eq!(tx[dev.idx() * FRAME_SIZE + 1] >> 6, 0);
 
@@ -444,20 +475,23 @@ mod tests {
                 .chunks(std::mem::size_of::<FPGADrive>())
                 .zip(gain_data[1][&dev.idx()].iter())
                 .for_each(|(d, g)| {
-                    assert_eq!(d[0], g.phase.value());
-                    assert_eq!(d[1], g.intensity.value());
+                    assert_eq!(d[0], g.phase().value());
+                    assert_eq!(d[1], g.intensity().value());
                 })
         });
 
         // Final frame
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 2 + NUM_TRANS_IN_UNIT * 2));
+        geometry.devices().for_each(|dev| {
+            assert_eq!(
+                op.required_size(dev),
+                std::mem::size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2
+            )
+        });
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
                 op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
-                Ok(2 + NUM_TRANS_IN_UNIT * 2)
+                Ok(std::mem::size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2)
             );
             op.commit(dev);
         });
@@ -469,19 +503,18 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::GainSTM as u8);
             let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_eq!(flag & GainSTMControlFlags::STM_BEGIN.bits(), 0x00);
-            assert_ne!(flag & GainSTMControlFlags::STM_END.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
+            assert_eq!(flag & GainSTMControlFlags::BEGIN.bits(), 0x00);
+            assert_ne!(flag & GainSTMControlFlags::END.bits(), 0x00);
+            assert_ne!(flag & GainSTMControlFlags::UPDATE.bits(), 0x00);
 
             assert_eq!(tx[dev.idx() * FRAME_SIZE + 1] >> 6, 0);
 
-            tx[FRAME_SIZE * dev.idx() + 2..]
+            tx[FRAME_SIZE * dev.idx() + std::mem::size_of::<GainSTMSubseq>()..]
                 .chunks(std::mem::size_of::<FPGADrive>())
                 .zip(gain_data[2][&dev.idx()].iter())
                 .for_each(|(d, g)| {
-                    assert_eq!(d[0], g.phase.value());
-                    assert_eq!(d[1], g.intensity.value());
+                    assert_eq!(d[0], g.phase().value());
+                    assert_eq!(d[1], g.intensity().value());
                 })
         });
     }
@@ -489,7 +522,7 @@ mod tests {
     #[test]
     fn gain_stm_phase_full_op() {
         const GAIN_STM_SIZE: usize = 5;
-        const FRAME_SIZE: usize = 12 + NUM_TRANS_IN_UNIT * 2;
+        const FRAME_SIZE: usize = std::mem::size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
 
@@ -505,9 +538,11 @@ mod tests {
                         (
                             dev.idx(),
                             (0..dev.num_transducers())
-                                .map(|_| Drive {
-                                    intensity: EmitIntensity::new(rng.gen_range(0..=0xFF)),
-                                    phase: Phase::new(rng.gen_range(0x00..=0xFF)),
+                                .map(|_| {
+                                    Drive::new(
+                                        Phase::new(rng.gen_range(0x00..=0xFF)),
+                                        EmitIntensity::new(rng.gen_range(0..=0xFF)),
+                                    )
                                 })
                                 .collect(),
                         )
@@ -522,7 +557,19 @@ mod tests {
             .collect();
 
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
-        let mut op = GainSTMOp::<_>::new(gains, GainSTMMode::PhaseFull, freq_div, None, None);
+        let loop_behavior = LoopBehavior::Finite(
+            NonZeroU32::new(rng.gen_range(0x0000001..=0xFFFFFFFF)).unwrap_or(NonZeroU32::MIN),
+        );
+        let rep = loop_behavior.to_rep();
+        let segment = Segment::S1;
+        let mut op = GainSTMOp::<_>::new(
+            gains,
+            GainSTMMode::PhaseFull,
+            freq_div,
+            loop_behavior,
+            segment,
+            false,
+        );
 
         assert!(op.init(&geometry).is_ok());
 
@@ -531,14 +578,17 @@ mod tests {
             .for_each(|dev| assert_eq!(op.remains(dev), GAIN_STM_SIZE));
 
         // First frame
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 12 + NUM_TRANS_IN_UNIT * 2));
+        geometry.devices().for_each(|dev| {
+            assert_eq!(
+                op.required_size(dev),
+                std::mem::size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2
+            )
+        });
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
                 op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
-                Ok(12 + NUM_TRANS_IN_UNIT * 2)
+                Ok(std::mem::size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2)
             );
             op.commit(dev);
         });
@@ -550,22 +600,12 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::GainSTM as u8);
             let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_ne!(flag & GainSTMControlFlags::STM_BEGIN.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::STM_END.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
-
+            assert_ne!(flag & GainSTMControlFlags::BEGIN.bits(), 0x00);
+            assert_eq!(flag & GainSTMControlFlags::END.bits(), 0x00);
+            assert_eq!(flag & GainSTMControlFlags::UPDATE.bits(), 0x00);
             assert_eq!(tx[dev.idx() * FRAME_SIZE + 1] >> 6, 1);
-
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 2],
-                ((GainSTMMode::PhaseFull as u16) & 0xFF) as u8
-            );
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 3],
-                ((GainSTMMode::PhaseFull as u16) >> 8) as u8
-            );
-
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 2], GainSTMMode::PhaseFull as u8);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 3], segment as u8);
             assert_eq!(tx[dev.idx() * FRAME_SIZE + 4], (freq_div & 0xFF) as u8);
             assert_eq!(
                 tx[dev.idx() * FRAME_SIZE + 5],
@@ -579,31 +619,33 @@ mod tests {
                 tx[dev.idx() * FRAME_SIZE + 7],
                 ((freq_div >> 24) & 0xFF) as u8
             );
-
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 8], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 9], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 10], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 11], 0x00);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 8], (rep & 0xFF) as u8);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 9], ((rep >> 8) & 0xFF) as u8);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 10], ((rep >> 16) & 0xFF) as u8);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 11], ((rep >> 24) & 0xFF) as u8);
 
             tx[FRAME_SIZE * dev.idx() + 12..]
                 .chunks(std::mem::size_of::<FPGADrive>())
                 .zip(gain_data[0][&dev.idx()].iter())
                 .zip(gain_data[1][&dev.idx()].iter())
                 .for_each(|((d, g0), g1)| {
-                    assert_eq!(d[0], g0.phase.value());
-                    assert_eq!(d[1], g1.phase.value());
+                    assert_eq!(d[0], g0.phase().value());
+                    assert_eq!(d[1], g1.phase().value());
                 })
         });
 
         // Second frame
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 2 + NUM_TRANS_IN_UNIT * 2));
+        geometry.devices().for_each(|dev| {
+            assert_eq!(
+                op.required_size(dev),
+                std::mem::size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2
+            )
+        });
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
                 op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
-                Ok(2 + NUM_TRANS_IN_UNIT * 2)
+                Ok(std::mem::size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2)
             );
             op.commit(dev);
         });
@@ -615,32 +657,32 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::GainSTM as u8);
             let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_eq!(flag & GainSTMControlFlags::STM_BEGIN.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::STM_END.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
-
+            assert_eq!(flag & GainSTMControlFlags::BEGIN.bits(), 0x00);
+            assert_eq!(flag & GainSTMControlFlags::END.bits(), 0x00);
+            assert_eq!(flag & GainSTMControlFlags::UPDATE.bits(), 0x00);
             assert_eq!(tx[dev.idx() * FRAME_SIZE + 1] >> 6, 1);
-
-            tx[FRAME_SIZE * dev.idx() + 2..]
+            tx[FRAME_SIZE * dev.idx() + std::mem::size_of::<GainSTMSubseq>()..]
                 .chunks(std::mem::size_of::<FPGADrive>())
                 .zip(gain_data[2][&dev.idx()].iter())
                 .zip(gain_data[3][&dev.idx()].iter())
                 .for_each(|((d, g0), g1)| {
-                    assert_eq!(d[0], g0.phase.value());
-                    assert_eq!(d[1], g1.phase.value());
+                    assert_eq!(d[0], g0.phase().value());
+                    assert_eq!(d[1], g1.phase().value());
                 })
         });
 
         // Final frame
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 2 + NUM_TRANS_IN_UNIT * 2));
+        geometry.devices().for_each(|dev| {
+            assert_eq!(
+                op.required_size(dev),
+                std::mem::size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2
+            )
+        });
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
                 op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
-                Ok(2 + NUM_TRANS_IN_UNIT * 2)
+                Ok(std::mem::size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2)
             );
             op.commit(dev);
         });
@@ -652,18 +694,15 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::GainSTM as u8);
             let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_eq!(flag & GainSTMControlFlags::STM_BEGIN.bits(), 0x00);
-            assert_ne!(flag & GainSTMControlFlags::STM_END.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
-
+            assert_eq!(flag & GainSTMControlFlags::BEGIN.bits(), 0x00);
+            assert_ne!(flag & GainSTMControlFlags::END.bits(), 0x00);
+            assert_eq!(flag & GainSTMControlFlags::UPDATE.bits(), 0x00);
             assert_eq!(tx[dev.idx() * FRAME_SIZE + 1] >> 6, 0);
-
-            tx[FRAME_SIZE * dev.idx() + 2..]
+            tx[FRAME_SIZE * dev.idx() + std::mem::size_of::<GainSTMSubseq>()..]
                 .chunks(std::mem::size_of::<FPGADrive>())
                 .zip(gain_data[4][&dev.idx()].iter())
                 .for_each(|(d, g)| {
-                    assert_eq!(d[0], g.phase.value());
+                    assert_eq!(d[0], g.phase().value());
                 })
         });
     }
@@ -671,7 +710,7 @@ mod tests {
     #[test]
     fn gain_stm_phase_half_op() {
         const GAIN_STM_SIZE: usize = 11;
-        const FRAME_SIZE: usize = 12 + NUM_TRANS_IN_UNIT * 2;
+        const FRAME_SIZE: usize = std::mem::size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
 
@@ -687,9 +726,11 @@ mod tests {
                         (
                             dev.idx(),
                             (0..dev.num_transducers())
-                                .map(|_| Drive {
-                                    intensity: EmitIntensity::new(rng.gen_range(0..=0xFF)),
-                                    phase: Phase::new(rng.gen_range(0x00..=0xFF)),
+                                .map(|_| {
+                                    Drive::new(
+                                        Phase::new(rng.gen_range(0x00..=0xFF)),
+                                        EmitIntensity::new(rng.gen_range(0..=0xFF)),
+                                    )
                                 })
                                 .collect(),
                         )
@@ -704,7 +745,19 @@ mod tests {
             .collect();
 
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
-        let mut op = GainSTMOp::<_>::new(gains, GainSTMMode::PhaseHalf, freq_div, None, None);
+        let loop_behavior = LoopBehavior::Finite(
+            NonZeroU32::new(rng.gen_range(0x0000001..=0xFFFFFFFF)).unwrap_or(NonZeroU32::MIN),
+        );
+        let rep = loop_behavior.to_rep();
+        let segment = Segment::S0;
+        let mut op = GainSTMOp::<_>::new(
+            gains,
+            GainSTMMode::PhaseHalf,
+            freq_div,
+            loop_behavior,
+            segment,
+            true,
+        );
 
         assert!(op.init(&geometry).is_ok());
 
@@ -713,14 +766,17 @@ mod tests {
             .for_each(|dev| assert_eq!(op.remains(dev), GAIN_STM_SIZE));
 
         // First frame
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 12 + NUM_TRANS_IN_UNIT * 2));
+        geometry.devices().for_each(|dev| {
+            assert_eq!(
+                op.required_size(dev),
+                std::mem::size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2
+            )
+        });
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
                 op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
-                Ok(12 + NUM_TRANS_IN_UNIT * 2)
+                Ok(std::mem::size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2)
             );
             op.commit(dev);
         });
@@ -732,22 +788,12 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::GainSTM as u8);
             let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_ne!(flag & GainSTMControlFlags::STM_BEGIN.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::STM_END.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
-
+            assert_ne!(flag & GainSTMControlFlags::BEGIN.bits(), 0x00);
+            assert_eq!(flag & GainSTMControlFlags::END.bits(), 0x00);
+            assert_eq!(flag & GainSTMControlFlags::UPDATE.bits(), 0x00);
             assert_eq!(tx[dev.idx() * FRAME_SIZE + 1] >> 6, 3);
-
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 2],
-                ((GainSTMMode::PhaseHalf as u16) & 0xFF) as u8
-            );
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 3],
-                ((GainSTMMode::PhaseHalf as u16) >> 8) as u8
-            );
-
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 2], GainSTMMode::PhaseHalf as u8);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 3], segment as u8);
             assert_eq!(tx[dev.idx() * FRAME_SIZE + 4], (freq_div & 0xFF) as u8);
             assert_eq!(
                 tx[dev.idx() * FRAME_SIZE + 5],
@@ -761,35 +807,37 @@ mod tests {
                 tx[dev.idx() * FRAME_SIZE + 7],
                 ((freq_div >> 24) & 0xFF) as u8
             );
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 8], (rep & 0xFF) as u8);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 9], ((rep >> 8) & 0xFF) as u8);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 10], ((rep >> 16) & 0xFF) as u8);
+            assert_eq!(tx[dev.idx() * FRAME_SIZE + 11], ((rep >> 24) & 0xFF) as u8);
 
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 8], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 9], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 10], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 11], 0x00);
-
-            tx[FRAME_SIZE * dev.idx() + 12..]
+            tx[FRAME_SIZE * dev.idx() + std::mem::size_of::<GainSTMHead>()..]
                 .chunks(std::mem::size_of::<FPGADrive>())
                 .zip(gain_data[0][&dev.idx()].iter())
                 .zip(gain_data[1][&dev.idx()].iter())
                 .zip(gain_data[2][&dev.idx()].iter())
                 .zip(gain_data[3][&dev.idx()].iter())
                 .for_each(|((((d, g0), g1), g2), g3)| {
-                    assert_eq!(d[0] & 0x0F, g0.phase.value() >> 4);
-                    assert_eq!(d[0] >> 4, g1.phase.value() >> 4);
-                    assert_eq!(d[1] & 0x0F, g2.phase.value() >> 4);
-                    assert_eq!(d[1] >> 4, g3.phase.value() >> 4);
+                    assert_eq!(d[0] & 0x0F, g0.phase().value() >> 4);
+                    assert_eq!(d[0] >> 4, g1.phase().value() >> 4);
+                    assert_eq!(d[1] & 0x0F, g2.phase().value() >> 4);
+                    assert_eq!(d[1] >> 4, g3.phase().value() >> 4);
                 })
         });
 
         // Second frame
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 2 + NUM_TRANS_IN_UNIT * 2));
+        geometry.devices().for_each(|dev| {
+            assert_eq!(
+                op.required_size(dev),
+                std::mem::size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2
+            )
+        });
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
                 op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
-                Ok(2 + NUM_TRANS_IN_UNIT * 2)
+                Ok(std::mem::size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2)
             );
             op.commit(dev);
         });
@@ -801,36 +849,36 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::GainSTM as u8);
             let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_eq!(flag & GainSTMControlFlags::STM_BEGIN.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::STM_END.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
-
+            assert_eq!(flag & GainSTMControlFlags::BEGIN.bits(), 0x00);
+            assert_eq!(flag & GainSTMControlFlags::END.bits(), 0x00);
+            assert_eq!(flag & GainSTMControlFlags::UPDATE.bits(), 0x00);
             assert_eq!(tx[dev.idx() * FRAME_SIZE + 1] >> 6, 3);
-
-            tx[FRAME_SIZE * dev.idx() + 2..]
+            tx[FRAME_SIZE * dev.idx() + std::mem::size_of::<GainSTMSubseq>()..]
                 .chunks(std::mem::size_of::<FPGADrive>())
                 .zip(gain_data[4][&dev.idx()].iter())
                 .zip(gain_data[5][&dev.idx()].iter())
                 .zip(gain_data[6][&dev.idx()].iter())
                 .zip(gain_data[7][&dev.idx()].iter())
                 .for_each(|((((d, g0), g1), g2), g3)| {
-                    assert_eq!(d[0] & 0x0F, g0.phase.value() >> 4);
-                    assert_eq!(d[0] >> 4, g1.phase.value() >> 4);
-                    assert_eq!(d[1] & 0x0F, g2.phase.value() >> 4);
-                    assert_eq!(d[1] >> 4, g3.phase.value() >> 4);
+                    assert_eq!(d[0] & 0x0F, g0.phase().value() >> 4);
+                    assert_eq!(d[0] >> 4, g1.phase().value() >> 4);
+                    assert_eq!(d[1] & 0x0F, g2.phase().value() >> 4);
+                    assert_eq!(d[1] >> 4, g3.phase().value() >> 4);
                 })
         });
 
         // Final frame
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 2 + NUM_TRANS_IN_UNIT * 2));
+        geometry.devices().for_each(|dev| {
+            assert_eq!(
+                op.required_size(dev),
+                std::mem::size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2
+            )
+        });
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
                 op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
-                Ok(2 + NUM_TRANS_IN_UNIT * 2)
+                Ok(std::mem::size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2)
             );
             op.commit(dev);
         });
@@ -842,143 +890,16 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::GainSTM as u8);
             let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_eq!(flag & GainSTMControlFlags::STM_BEGIN.bits(), 0x00);
-            assert_ne!(flag & GainSTMControlFlags::STM_END.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
-
+            assert_eq!(flag & GainSTMControlFlags::BEGIN.bits(), 0x00);
+            assert_ne!(flag & GainSTMControlFlags::END.bits(), 0x00);
+            assert_ne!(flag & GainSTMControlFlags::UPDATE.bits(), 0x00);
             assert_eq!(tx[dev.idx() * FRAME_SIZE + 1] >> 6, 2);
-
-            tx[FRAME_SIZE * dev.idx() + 2..]
+            tx[FRAME_SIZE * dev.idx() + std::mem::size_of::<GainSTMSubseq>()..]
                 .chunks(std::mem::size_of::<FPGADrive>())
                 .zip(gain_data[8][&dev.idx()].iter())
                 .for_each(|(d, g)| {
-                    assert_eq!(d[0] & 0x0F, g.phase.value() >> 4);
+                    assert_eq!(d[0] & 0x0F, g.phase().value() >> 4);
                 })
-        });
-    }
-
-    #[test]
-    fn gain_stm_op_idx() {
-        const FRAME_SIZE: usize = 12 + NUM_TRANS_IN_UNIT * 2;
-
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
-
-        let mut tx = vec![0x00u8; FRAME_SIZE * NUM_DEVICE];
-
-        let mut rng = rand::thread_rng();
-
-        let start_idx = rng.gen_range(0..2_u16);
-        let finish_idx = rng.gen_range(0..2_u16);
-
-        let mut rng = rand::thread_rng();
-
-        let gain_data: Vec<HashMap<usize, Vec<Drive>>> = (0..2)
-            .map(|_| {
-                geometry
-                    .devices()
-                    .map(|dev| {
-                        (
-                            dev.idx(),
-                            (0..dev.num_transducers())
-                                .map(|_| Drive {
-                                    intensity: EmitIntensity::new(rng.gen_range(0..=0xFF)),
-                                    phase: Phase::new(rng.gen_range(0x00..=0xFF)),
-                                })
-                                .collect(),
-                        )
-                    })
-                    .collect()
-            })
-            .collect();
-        let gains: Vec<TestGain> = (0..2)
-            .map(|i| TestGain {
-                data: gain_data[i].clone(),
-            })
-            .collect();
-
-        let mut op = GainSTMOp::<_>::new(
-            gains.clone(),
-            GainSTMMode::PhaseIntensityFull,
-            SAMPLING_FREQ_DIV_MIN,
-            Some(start_idx),
-            Some(finish_idx),
-        );
-        assert!(op.init(&geometry).is_ok());
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
-                Ok(FRAME_SIZE)
-            );
-            op.commit(dev);
-        });
-
-        geometry.devices().for_each(|dev| {
-            let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_ne!(flag & GainSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_ne!(flag & GainSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
-
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 8], (start_idx & 0xFF) as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 9], (start_idx >> 8) as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 10], (finish_idx & 0xFF) as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 11], (finish_idx >> 8) as u8);
-        });
-
-        let mut op = GainSTMOp::<_>::new(
-            gains.clone(),
-            GainSTMMode::PhaseIntensityFull,
-            SAMPLING_FREQ_DIV_MIN,
-            Some(start_idx),
-            None,
-        );
-        assert!(op.init(&geometry).is_ok());
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
-                Ok(FRAME_SIZE)
-            );
-            op.commit(dev);
-        });
-
-        geometry.devices().for_each(|dev| {
-            let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_ne!(flag & GainSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_eq!(flag & GainSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
-
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 8], (start_idx & 0xFF) as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 9], (start_idx >> 8) as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 10], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 11], 0x00);
-        });
-
-        let mut op = GainSTMOp::<_>::new(
-            gains.clone(),
-            GainSTMMode::PhaseIntensityFull,
-            SAMPLING_FREQ_DIV_MIN,
-            None,
-            Some(finish_idx),
-        );
-        assert!(op.init(&geometry).is_ok());
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
-                Ok(FRAME_SIZE)
-            );
-            op.commit(dev);
-        });
-
-        geometry.devices().for_each(|dev| {
-            let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_eq!(flag & GainSTMControlFlags::USE_START_IDX.bits(), 0x00);
-            assert_ne!(flag & GainSTMControlFlags::USE_FINISH_IDX.bits(), 0x00);
-
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 8], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 9], 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 10], (finish_idx & 0xFF) as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 11], (finish_idx >> 8) as u8);
         });
     }
 
@@ -993,8 +914,9 @@ mod tests {
                 gains,
                 GainSTMMode::PhaseIntensityFull,
                 SAMPLING_FREQ_DIV_MIN,
-                None,
-                None,
+                LoopBehavior::Infinite,
+                Segment::S0,
+                true,
             );
             op.init(&geometry)
         };
@@ -1007,36 +929,6 @@ mod tests {
             Err(AUTDInternalError::GainSTMSizeOutOfRange(
                 GAIN_STM_BUF_SIZE_MAX + 1
             ))
-        );
-    }
-
-    #[test]
-    fn gain_stm_op_stm_idx_out_of_range() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
-
-        let test = |n: usize, start_idx: Option<u16>, finish_idx: Option<u16>| {
-            let mut op = GainSTMOp::new(
-                (0..n).map(|_| NullGain {}).collect(),
-                GainSTMMode::PhaseIntensityFull,
-                SAMPLING_FREQ_DIV_MIN,
-                start_idx,
-                finish_idx,
-            );
-            op.init(&geometry)
-        };
-
-        assert_eq!(test(10, Some(0), Some(0)), Ok(()));
-        assert_eq!(test(10, Some(9), Some(0)), Ok(()));
-        assert_eq!(
-            test(10, Some(10), Some(0)),
-            Err(AUTDInternalError::STMStartIndexOutOfRange)
-        );
-
-        assert_eq!(test(10, Some(0), Some(0)), Ok(()));
-        assert_eq!(test(10, Some(0), Some(9)), Ok(()));
-        assert_eq!(
-            test(10, Some(0), Some(10)),
-            Err(AUTDInternalError::STMFinishIndexOutOfRange)
         );
     }
 }

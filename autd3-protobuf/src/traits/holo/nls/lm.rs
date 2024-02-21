@@ -10,7 +10,7 @@ impl ToMessage for autd3_gain_holo::LM<NalgebraBackend> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Lm(Lm {
@@ -20,8 +20,35 @@ impl ToMessage for autd3_gain_holo::LM<NalgebraBackend> {
                     tau: self.tau() as _,
                     k_max: self.k_max() as _,
                     initial: self.initial().iter().map(|&v| v as _).collect(),
-                    constraint: Some(self.constraint().to_msg()),
+                    constraint: Some(self.constraint().to_msg(None)),
                 })),
+                segment: Segment::S0 as _,
+                update_segment: true,
+            })),
+        }
+    }
+}
+
+impl ToMessage
+    for autd3_driver::datagram::DatagramWithSegment<autd3_gain_holo::LM<NalgebraBackend>>
+{
+    type Message = DatagramLightweight;
+
+    #[allow(clippy::unnecessary_cast)]
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+        Self::Message {
+            datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
+                gain: Some(gain::Gain::Lm(Lm {
+                    holo: to_holo!(self),
+                    eps_1: self.eps_1() as _,
+                    eps_2: self.eps_2() as _,
+                    tau: self.tau() as _,
+                    k_max: self.k_max() as _,
+                    initial: self.initial().iter().map(|&v| v as _).collect(),
+                    constraint: Some(self.constraint().to_msg(None)),
+                })),
+                segment: self.segment() as _,
+                update_segment: self.update_segment(),
             })),
         }
     }
@@ -80,7 +107,7 @@ mod tests {
                 Vector3::new(rng.gen(), rng.gen(), rng.gen()),
                 rng.gen::<autd3_driver::defined::float>() * autd3_gain_holo::Pascal,
             );
-        let msg = holo.to_msg();
+        let msg = holo.to_msg(None);
 
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {

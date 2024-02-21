@@ -1,6 +1,6 @@
 use autd3::prelude::*;
 
-pub async fn plane<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
+pub async fn plane(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     autd.send(ConfigureSilencer::default()).await?;
 
     let dir = Vector3::z();

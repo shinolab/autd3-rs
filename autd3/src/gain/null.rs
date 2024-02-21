@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use autd3_driver::{derive::*, geometry::Geometry};
+use autd3_driver::derive::*;
 
 /// Gain to output nothing
-#[derive(Gain, Default, Clone, Copy)]
+#[derive(Gain, Default, Clone, PartialEq, Eq, Debug)]
 pub struct Null {}
 
 impl Null {
@@ -25,33 +25,30 @@ impl Gain for Null {
 
 #[cfg(test)]
 mod tests {
-
-    use autd3_driver::{
-        autd3_device::AUTD3,
-        geometry::{IntoDevice, Vector3},
-    };
+    use crate::tests::create_geometry;
 
     use super::*;
 
     #[test]
-    fn test_null() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+    fn test_null() -> anyhow::Result<()> {
+        let geometry = create_geometry(1);
 
-        let null_gain = Null::new();
-
-        let drives = null_gain.calc(&geometry, GainFilter::All).unwrap();
-        assert_eq!(drives.len(), 1);
-        assert_eq!(drives[&0].len(), geometry.num_transducers());
-        drives[&0].iter().for_each(|d| {
-            assert_eq!(d.intensity.value(), 0);
-            assert_eq!(d.phase.value(), 0);
+        let d = Null::new().calc(&geometry, GainFilter::All)?;
+        assert_eq!(geometry.num_devices(), d.len());
+        d.iter().for_each(|(&idx, d)| {
+            assert_eq!(geometry[idx].num_transducers(), d.len());
+            d.iter().for_each(|&d| {
+                assert_eq!(Drive::null(), d);
+            })
         });
+
+        Ok(())
     }
 
     #[test]
     fn test_null_derive() {
         let gain = Null::default();
         let _ = gain.clone();
-        let _ = gain.operation();
+        let _ = gain.operation_with_segment(Segment::S0, true);
     }
 }

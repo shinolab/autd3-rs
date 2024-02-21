@@ -1,14 +1,21 @@
+pub use crate::{
+    common::{Drive, Segment},
+    datagram::{
+        DatagramS, Gain, GainCache, GainFilter, GainTransform, IntoGainCache, IntoGainTransform,
+        Modulation,
+    },
+    error::AUTDInternalError,
+    geometry::{Device, Geometry, Transducer},
+    operation::{GainOp, NullOp, Operation},
+};
+pub use autd3_derive::Gain;
+
 use std::{
     collections::{hash_map::Entry, HashMap},
     hash::Hash,
 };
 
 use bitvec::prelude::*;
-
-use autd3_driver::{
-    derive::*,
-    geometry::{Device, Geometry},
-};
 
 #[derive(Gain)]
 pub struct Group<K, F>
@@ -35,7 +42,7 @@ where
     ///
     /// ```
     /// # use autd3::prelude::*;
-    /// # let gain : autd3::gain::Group<_, _> =
+    /// # let gain : Group<_, _> =
     /// Group::new(|dev, tr| match tr.idx() {
     ///                 0..=100 => Some("null"),
     ///                 101.. => Some("focus"),
@@ -58,7 +65,7 @@ where
     /// * `key` - key
     /// * `gain` - Gain
     ///
-    pub fn set<G: Gain + 'static>(mut self, key: K, gain: G) -> Self {
+    pub fn set(mut self, key: K, gain: impl Gain + 'static) -> Self {
         self.gain_map.insert(key, Box::new(gain));
         self
     }
@@ -74,8 +81,8 @@ where
                                 e.get_mut().set(tr.idx(), true);
                             }
                             Entry::Vacant(e) => {
-                                let mut filter = BitVec::<usize, Lsb0>::new();
-                                filter.resize(dev.num_transducers(), false);
+                                let mut filter =
+                                    BitVec::<usize, Lsb0>::repeat(false, dev.num_transducers());
                                 filter.set(tr.idx(), true);
                                 e.insert(filter);
                             }
@@ -148,115 +155,98 @@ where
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::{
-        autd3_device::AUTD3,
-        geometry::{IntoDevice, Vector3},
-    };
+    use super::{super::tests::TestGain, *};
 
-    use super::*;
-
-    use crate::gain::{Null, Plane};
+    use crate::{datagram::Datagram, geometry::tests::create_geometry, operation::tests::NullGain};
 
     #[test]
-    fn test_group() {
-        let geometry: Geometry = Geometry::new(vec![
-            AUTD3::new(Vector3::zeros()).into_device(0),
-            AUTD3::new(Vector3::zeros()).into_device(1),
-            AUTD3::new(Vector3::zeros()).into_device(2),
-            AUTD3::new(Vector3::zeros()).into_device(3),
-        ]);
+    fn test_group() -> anyhow::Result<()> {
+        let geometry = create_geometry(4, 249);
+
+        let g1 = TestGain { d: Drive::random() };
+        let g2 = TestGain { d: Drive::random() };
 
         let gain = Group::new(|dev, tr| match (dev.idx(), tr.idx()) {
             (0, 0..=99) => Some("null"),
-            (0, 100..=199) => Some("plane"),
-            (1, 200..) => Some("plane2"),
+            (0, 100..=199) => Some("test"),
+            (1, 200..) => Some("test2"),
+            (3, _) => Some("test"),
             _ => None,
         })
-        .set("null", Null::new())
-        .set("plane", Plane::new(Vector3::zeros()))
-        .set("plane2", Plane::new(Vector3::zeros()).with_intensity(0x1F));
+        .set("null", NullGain {})
+        .set("test", g1)
+        .set("test2", g2);
 
-        let drives = gain.calc(&geometry, GainFilter::All).unwrap();
-        assert_eq!(drives.len(), 4);
-        assert!(drives.values().all(|d| d.len() == AUTD3::NUM_TRANS_IN_UNIT));
-
-        drives[&0].iter().enumerate().for_each(|(i, d)| match i {
+        let drives = gain.calc(&geometry, GainFilter::All)?;
+        assert_eq!(4, drives.len());
+        drives[&0].iter().enumerate().for_each(|(i, &d)| match i {
             i if i <= 99 => {
-                assert_eq!(d.phase.value(), 0);
-                assert_eq!(d.intensity.value(), 0);
+                assert_eq!(Drive::null(), d);
             }
             i if i <= 199 => {
-                assert_eq!(d.phase.value(), 0);
-                assert_eq!(d.intensity.value(), 0xFF);
+                assert_eq!(g1.d, d);
             }
             _ => {
-                assert_eq!(d.phase.value(), 0);
-                assert_eq!(d.intensity.value(), 0);
+                assert_eq!(Drive::null(), d);
             }
         });
-        drives[&1].iter().enumerate().for_each(|(i, d)| match i {
+        drives[&1].iter().enumerate().for_each(|(i, &d)| match i {
             i if i <= 199 => {
-                assert_eq!(d.phase.value(), 0);
-                assert_eq!(d.intensity.value(), 0);
+                assert_eq!(Drive::null(), d);
             }
             _ => {
-                assert_eq!(d.phase.value(), 0);
-                assert_eq!(d.intensity.value(), 0x1F);
+                assert_eq!(g2.d, d);
             }
         });
-        drives[&2].iter().for_each(|d| {
-            assert_eq!(d.phase.value(), 0);
-            assert_eq!(d.intensity.value(), 0);
+        drives[&2].iter().for_each(|&d| {
+            assert_eq!(Drive::null(), d);
         });
-        drives[&3].iter().for_each(|d| {
-            assert_eq!(d.phase.value(), 0);
-            assert_eq!(d.intensity.value(), 0);
+        drives[&3].iter().for_each(|&d| {
+            assert_eq!(g1.d, d);
         });
+
+        Ok(())
     }
 
     #[test]
     fn test_group_unknown_key() {
-        let geometry: Geometry = Geometry::new(vec![
-            AUTD3::new(Vector3::zeros()).into_device(0),
-            AUTD3::new(Vector3::zeros()).into_device(1),
-        ]);
+        let geometry = create_geometry(2, 249);
 
         let gain = Group::new(|_dev, tr| match tr.idx() {
-            0..=99 => Some("plane"),
+            0..=99 => Some("test"),
             100..=199 => Some("null"),
             _ => None,
         })
-        .set("plane2", Plane::new(Vector3::zeros()));
+        .set("test2", NullGain {});
 
         assert_eq!(
-            gain.calc(&geometry, GainFilter::All).unwrap_err(),
-            AUTDInternalError::GainError("Unknown group key".to_owned())
+            Err(AUTDInternalError::GainError("Unknown group key".to_owned())),
+            gain.calc(&geometry, GainFilter::All)
         );
     }
 
     #[test]
     fn test_group_unspecified_key() {
-        let geometry: Geometry = Geometry::new(vec![
-            AUTD3::new(Vector3::zeros()).into_device(0),
-            AUTD3::new(Vector3::zeros()).into_device(1),
-        ]);
+        let geometry = create_geometry(2, 249);
 
         let gain = Group::new(|_dev, tr| match tr.idx() {
-            0..=99 => Some("plane"),
+            0..=99 => Some("test"),
             100..=199 => Some("null"),
             _ => None,
         })
-        .set("plane", Plane::new(Vector3::zeros()));
+        .set("test", NullGain {});
 
         assert_eq!(
-            gain.calc(&geometry, GainFilter::All).unwrap_err(),
-            AUTDInternalError::GainError("Unspecified group key".to_owned())
+            Err(AUTDInternalError::GainError(
+                "Unspecified group key".to_owned()
+            )),
+            gain.calc(&geometry, GainFilter::All)
         );
     }
 
     #[test]
     fn test_group_derive() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let geometry = create_geometry(1, 249);
         let gain = Group::new(|_, _| -> Option<()> { None });
         let _ = gain.calc(&geometry, GainFilter::All);
         let _ = gain.operation();

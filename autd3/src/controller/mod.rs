@@ -1,25 +1,26 @@
-pub mod builder;
+mod builder;
 mod group;
 
 use std::{hash::Hash, time::Duration};
 
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
-    datagram::{Clear, Datagram},
+    datagram::{Clear, ConfigureSilencer, Datagram},
     firmware_version::FirmwareInfo,
     fpga::FPGAState,
     geometry::{Device, Geometry},
+    link::{send_receive, Link},
     operation::OperationHandler,
 };
 
-use crate::error::{AUTDError, ReadFirmwareInfoState};
+use crate::{
+    error::{AUTDError, ReadFirmwareInfoState},
+    gain::Null,
+    link::nop::Nop,
+};
 
 pub use builder::ControllerBuilder;
 pub use group::GroupGuard;
-
-use crate::link::nop::Nop;
-
-use autd3_driver::link::Link;
 
 /// Controller for AUTD
 pub struct Controller<L: Link> {
@@ -58,7 +59,7 @@ impl<L: Link> Controller<L> {
     /// * `Ok(true)` - It is confirmed that the data has been successfully transmitted
     /// * `Ok(false)` - There are no errors, but it is unclear whether the data has been sent or not
     ///
-    pub async fn send<S: Datagram>(&mut self, s: S) -> Result<bool, AUTDError> {
+    pub async fn send(&mut self, s: impl Datagram) -> Result<bool, AUTDError> {
         let timeout = s.timeout();
 
         let (mut op1, mut op2) = s.operation()?;
@@ -67,22 +68,14 @@ impl<L: Link> Controller<L> {
             OperationHandler::pack(&mut op1, &mut op2, &self.geometry, &mut self.tx_buf)?;
 
             let start = tokio::time::Instant::now();
-            if !autd3_driver::link::send_receive(
-                &mut self.link,
-                &self.tx_buf,
-                &mut self.rx_buf,
-                timeout,
-            )
-            .await?
-            {
+            if !send_receive(&mut self.link, &self.tx_buf, &mut self.rx_buf, timeout).await? {
                 return Ok(false);
             }
             if OperationHandler::is_finished(&mut op1, &mut op2, &self.geometry) {
-                break;
+                return Ok(true);
             }
             tokio::time::sleep_until(start + Duration::from_millis(1)).await;
         }
-        Ok(true)
     }
 
     // Close connection
@@ -92,10 +85,7 @@ impl<L: Link> Controller<L> {
         }
         self.geometry.iter_mut().for_each(|dev| dev.enable = true);
         let res = self
-            .send((
-                crate::gain::Null::default(),
-                autd3_driver::datagram::ConfigureSilencer::default(),
-            ))
+            .send((Null::default(), ConfigureSilencer::default()))
             .await?
             & self.send(Clear::new()).await?;
         self.link.close().await?;
@@ -140,7 +130,7 @@ impl<L: Link> Controller<L> {
             &mut self.tx_buf,
             &mut self.rx_buf
         );
-        let cpu_versions = self.rx_buf.iter().map(|rx| rx.data).collect::<Vec<_>>();
+        let cpu_versions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
         pack_and_send!(
             &mut op,
@@ -150,7 +140,7 @@ impl<L: Link> Controller<L> {
             &mut self.tx_buf,
             &mut self.rx_buf
         );
-        let cpu_versions_minor = self.rx_buf.iter().map(|rx| rx.data).collect::<Vec<_>>();
+        let cpu_versions_minor = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
         pack_and_send!(
             &mut op,
@@ -160,7 +150,7 @@ impl<L: Link> Controller<L> {
             &mut self.tx_buf,
             &mut self.rx_buf
         );
-        let fpga_versions = self.rx_buf.iter().map(|rx| rx.data).collect::<Vec<_>>();
+        let fpga_versions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
         pack_and_send!(
             &mut op,
@@ -170,7 +160,7 @@ impl<L: Link> Controller<L> {
             &mut self.tx_buf,
             &mut self.rx_buf
         );
-        let fpga_versions_minor = self.rx_buf.iter().map(|rx| rx.data).collect::<Vec<_>>();
+        let fpga_versions_minor = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
         pack_and_send!(
             &mut op,
@@ -180,7 +170,7 @@ impl<L: Link> Controller<L> {
             &mut self.tx_buf,
             &mut self.rx_buf
         );
-        let fpga_functions = self.rx_buf.iter().map(|rx| rx.data).collect::<Vec<_>>();
+        let fpga_functions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
         pack_and_send!(
             &mut op,
@@ -235,5 +225,23 @@ impl<L: Link> Drop for Controller<L> {
             }),
             _ => unimplemented!(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use autd3_driver::{autd3_device::AUTD3, geometry::Vector3};
+
+    use crate::link::Audit;
+
+    use super::*;
+
+    pub async fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit>> {
+        Ok((0..dev_num)
+            .fold(Controller::builder(), |acc, _i| {
+                acc.add_device(AUTD3::new(Vector3::zeros()))
+            })
+            .open(Audit::builder())
+            .await?)
     }
 }

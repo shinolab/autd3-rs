@@ -44,6 +44,14 @@ impl std::ops::Div<u8> for EmitIntensity {
     }
 }
 
+impl std::ops::Div<u8> for &EmitIntensity {
+    type Output = EmitIntensity;
+
+    fn div(self, rhs: u8) -> Self::Output {
+        Self::Output::new(self.value / rhs)
+    }
+}
+
 impl std::ops::Add<EmitIntensity> for EmitIntensity {
     type Output = Self;
 
@@ -61,12 +69,18 @@ impl std::ops::Sub<EmitIntensity> for EmitIntensity {
 }
 
 #[cfg(test)]
+impl EmitIntensity {
+    pub fn random() -> Self {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        Self::new(rng.gen())
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
-    use std::{
-        collections::hash_map::DefaultHasher,
-        hash::{Hash, Hasher},
-    };
+    
 
     #[test]
     fn test_new() {
@@ -128,13 +142,5 @@ mod tests {
         let intensity2 = EmitIntensity::new(1);
         assert!(intensity1 < intensity2);
         assert_eq!(intensity1.min(intensity2), intensity1);
-    }
-
-    #[test]
-    fn hash() {
-        let intensity = EmitIntensity::new(0);
-        let mut s = DefaultHasher::new();
-        assert_eq!(intensity.hash(&mut s), 0.hash(&mut s));
-        s.finish();
     }
 }

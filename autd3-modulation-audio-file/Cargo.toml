@@ -1,6 +1,6 @@
 [package]
 name = "autd3-modulation-audio-file"
-version = "21.1.0"
+version = "22.0.0-rc.3"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 
@@ -12,7 +12,7 @@ keywords = ["autd"]
 
 [dependencies]
 hound = "3.5.0"
-autd3-driver = { path = "../autd3-driver", version = "21.1.0" }
+autd3-driver = { path = "../autd3-driver", version = "22.0.0-rc.3" }
 wav_io = "0.1.8"
 thiserror = "1.0.40"
 
@@ -20,3 +20,7 @@ thiserror = "1.0.40"
 default = []
 single_float = ["autd3-driver/single_float"]
 async-trait = ["autd3-driver/async-trait"]
+
+[dev-dependencies]
+anyhow = "1.0.79"
+tempfile = "3.9.0"

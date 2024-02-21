@@ -75,7 +75,7 @@ mod tests {
     #[test]
     fn test_constraint_derive() {
         let c = EmissionConstraint::Clamp(EmitIntensity::new(64), EmitIntensity::new(192));
-        let c2 = c.clone();
+        let c2 = c;
 
         assert_eq!(c, c2);
         assert_eq!(

@@ -9,17 +9,41 @@ impl ToMessage for autd3::modulation::Sine {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::Sine(Sine {
-                    config: Some(self.sampling_config().to_msg()),
+                    config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq() as _,
-                    intensity: Some(self.intensity().to_msg()),
-                    offset: Some(self.offset().to_msg()),
-                    phase: Some(self.phase().to_msg()),
+                    intensity: Some(self.intensity().to_msg(None)),
+                    offset: Some(self.offset().to_msg(None)),
+                    phase: Some(self.phase().to_msg(None)),
                     mode: SamplingMode::from(self.mode()).into(),
                 })),
+                segment: Segment::S0 as _,
+                update_segment: true,
+            })),
+        }
+    }
+}
+
+impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::modulation::Sine> {
+    type Message = DatagramLightweight;
+
+    #[allow(clippy::unnecessary_cast)]
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+        Self::Message {
+            datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
+                modulation: Some(modulation::Modulation::Sine(Sine {
+                    config: Some(self.sampling_config().to_msg(None)),
+                    freq: self.freq() as _,
+                    intensity: Some(self.intensity().to_msg(None)),
+                    offset: Some(self.offset().to_msg(None)),
+                    phase: Some(self.phase().to_msg(None)),
+                    mode: SamplingMode::from(self.mode()).into(),
+                })),
+                segment: self.segment() as _,
+                update_segment: self.update_segment(),
             })),
         }
     }
@@ -62,7 +86,7 @@ mod tests {
             .with_offset(EmitIntensity::new(rng.gen()))
             .with_phase(Phase::new(rng.gen()))
             .with_mode(autd3::modulation::SamplingMode::SizeOptimized);
-        let msg = m.to_msg();
+        let msg = m.to_msg(None);
 
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Modulation(Modulation {

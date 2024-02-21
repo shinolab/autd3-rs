@@ -10,7 +10,7 @@ async fn main() -> Result<()> {
     let autd = Controller::builder()
         .add_device(AUTD3::new(Vector3::zeros()))
         .add_device(AUTD3::new(Vector3::new(AUTD3::DEVICE_WIDTH, 0.0, 0.0)))
-        .open_with(Simulator::builder(8080))
+        .open(Simulator::builder(8080))
         .await?;
 
     tests::run(autd).await

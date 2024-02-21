@@ -3,11 +3,25 @@ use crate::{derive::AUTDInternalError, fpga::FPGAState};
 const READS_FPGA_STATE_ENABLED_BIT: u8 = 7;
 const READS_FPGA_STATE_ENABLED: u8 = 1 << READS_FPGA_STATE_ENABLED_BIT;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(C)]
 pub struct RxMessage {
-    pub data: u8,
-    pub ack: u8,
+    data: u8,
+    ack: u8,
+}
+
+impl RxMessage {
+    pub const fn new(ack: u8, data: u8) -> Self {
+        Self { ack, data }
+    }
+
+    pub const fn ack(&self) -> u8 {
+        self.ack
+    }
+
+    pub const fn data(&self) -> u8 {
+        self.data
+    }
 }
 
 impl From<&RxMessage> for Option<FPGAState> {

@@ -29,18 +29,6 @@ runs:
       with:
         toolchain: ${{ inputs.toolchain }}
 
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v2
-      with:
-        repo-token: ${{ inputs.github-token }}
-
-    - name: install dependencies
-      shell: bash
-      if: inputs.os == 'ubuntu-latest'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y pkg-config libfreetype6-dev libfontconfig1-dev
-
     - name: install cross
       shell: bash
       if: inputs.os == 'ubuntu-latest' && inputs.arch

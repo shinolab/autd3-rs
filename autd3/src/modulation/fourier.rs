@@ -2,16 +2,17 @@ use std::ops::Deref;
 
 use super::sine::Sine;
 
-use autd3_driver::{common::EmitIntensity, derive::*};
+use autd3_driver::derive::*;
 
 use num::integer::lcm;
 
 /// Multi-frequency sine wave modulation
-#[derive(Modulation, Clone)]
+#[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct Fourier {
     #[no_change]
     config: SamplingConfiguration,
     components: Vec<Sine>,
+    loop_behavior: LoopBehavior,
 }
 
 impl Fourier {
@@ -19,6 +20,7 @@ impl Fourier {
         Self {
             config: sine.sampling_config(),
             components: vec![sine],
+            loop_behavior: LoopBehavior::Infinite,
         }
     }
 
@@ -31,6 +33,7 @@ impl Fourier {
         let Self {
             mut components,
             config,
+            loop_behavior,
         } = self;
         let config = SamplingConfiguration::from_frequency_division(
             config
@@ -39,7 +42,11 @@ impl Fourier {
         )
         .unwrap();
         components.push(sine.with_sampling_config(config));
-        Self { components, config }
+        Self {
+            components,
+            config,
+            loop_behavior,
+        }
     }
 
     /// Add sine wave components from iterator
@@ -47,21 +54,23 @@ impl Fourier {
     /// # Arguments
     /// - `iter` - Iterator of [Sine] modulation
     ///
-    pub fn add_components_from_iter<M: Into<Sine>, T: IntoIterator<Item = M>>(
-        self,
-        iter: T,
-    ) -> Self {
+    pub fn add_components_from_iter(self, iter: impl IntoIterator<Item = impl Into<Sine>>) -> Self {
         let Self {
             mut components,
             config,
+            loop_behavior,
         } = self;
         let append = iter.into_iter().map(|m| m.into()).collect::<Vec<_>>();
         let freq_div = append.iter().fold(config.frequency_division(), |acc, m| {
             acc.min(m.sampling_config().frequency_division())
         });
         let config = SamplingConfiguration::from_frequency_division(freq_div).unwrap();
-        components.extend(append.iter().map(|m| m.with_sampling_config(config)));
-        Self { components, config }
+        components.extend(append.into_iter().map(|m| m.with_sampling_config(config)));
+        Self {
+            components,
+            config,
+            loop_behavior,
+        }
     }
 }
 
@@ -114,7 +123,7 @@ impl Modulation for Fourier {
                 },
             )
             .iter()
-            .map(|x| EmitIntensity::new((x / self.components.len()) as u8))
+            .map(|x| ((x / self.components.len()) as u8).into())
             .collect::<Vec<_>>())
     }
 }
@@ -126,18 +135,18 @@ mod tests {
     use autd3_driver::defined::PI;
 
     #[test]
-    fn test_fourier() {
+    fn test_fourier() -> anyhow::Result<()> {
         let f0 = Sine::new(50.).with_phase(PI / 2.0 * Rad);
         let f1 = Sine::new(100.).with_phase(PI / 3.0 * Rad);
         let f2 = Sine::new(150.).with_phase(PI / 4.0 * Rad);
         let f3 = Sine::new(200.);
         let f4 = Sine::new(250.);
 
-        let f0_buf = f0.calc().unwrap();
-        let f1_buf = f1.calc().unwrap();
-        let f2_buf = f2.calc().unwrap();
-        let f3_buf = f3.calc().unwrap();
-        let f4_buf = f4.calc().unwrap();
+        let f0_buf = f0.calc()?;
+        let f1_buf = f1.calc()?;
+        let f2_buf = f2.calc()?;
+        let f3_buf = f3.calc()?;
+        let f4_buf = f4.calc()?;
 
         let f = (f0 + f1).add_component(f2).add_components_from_iter([f3]) + f4;
 
@@ -153,7 +162,7 @@ mod tests {
         assert_eq!(f[4].freq(), 250.0);
         assert_eq!(f[4].phase(), 0.0 * Rad);
 
-        let buf = f.calc().unwrap();
+        let buf = f.calc()?;
 
         (0..buf.len()).for_each(|i| {
             assert_eq!(
@@ -166,14 +175,13 @@ mod tests {
                     / 5) as u8
             );
         });
+
+        Ok(())
     }
 
     #[test]
-    fn test_fourier_clone() {
+    fn test_fourier_derive() {
         let f = Fourier::new(Sine::new(50.).with_phase(PI / 2.0 * Rad));
-        let f2 = f.clone();
-
-        assert_eq!(f.sampling_config(), f2.sampling_config());
-        assert_eq!(f[0].freq(), f2[0].freq());
+        assert_eq!(f, f.clone());
     }
 }

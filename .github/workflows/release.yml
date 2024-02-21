@@ -19,6 +19,10 @@ jobs:
       - name: Update submodules
         run: |
           git submodule update --init --recursive
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ inputs.github-token }}
       - name: Check semver
         uses: obi1kenobi/cargo-semver-checks-action@v2
       - name: publish to carate.io

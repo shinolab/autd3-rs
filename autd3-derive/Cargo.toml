@@ -1,6 +1,6 @@
 [package]
 name = "autd3-derive"
-version = "21.1.0"
+version = "22.0.0-rc.3"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 
@@ -16,6 +16,7 @@ keywords = ["autd"]
 proc-macro = true
 
 [dependencies]
+proc-macro2 = "1.0.78"
 quote = "1.0.18"
 syn = "2.0.3"
 

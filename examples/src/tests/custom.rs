@@ -18,9 +18,8 @@ impl Gain for MyUniform {
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |_dev, _tr| Drive {
-            phase: Phase::new(0),
-            intensity: EmitIntensity::MAX,
+        Ok(Self::transform(geometry, filter, |_dev, _tr| {
+            Drive::new(Phase::new(0), EmitIntensity::MAX)
         }))
     }
 }
@@ -28,12 +27,14 @@ impl Gain for MyUniform {
 #[derive(Modulation, Clone, Copy)]
 pub struct Burst {
     config: SamplingConfiguration,
+    loop_behavior: LoopBehavior,
 }
 
 impl Burst {
     pub fn new() -> Self {
         Self {
             config: SamplingConfiguration::FREQ_4K_HZ,
+            loop_behavior: LoopBehavior::Infinite,
         }
     }
 }
@@ -52,7 +53,7 @@ impl Modulation for Burst {
     }
 }
 
-pub async fn custom<L: Link>(autd: &mut Controller<L>) -> anyhow::Result<bool> {
+pub async fn custom(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     autd.send(ConfigureSilencer::disable()).await?;
 
     let g = MyUniform::new();

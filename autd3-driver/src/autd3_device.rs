@@ -38,18 +38,14 @@ impl AUTD3 {
         }
     }
 
-    pub fn with_rotation<Q: Into<UnitQuaternion>>(self, rotation: Q) -> Self {
+    pub fn with_rotation(self, rotation: impl Into<UnitQuaternion>) -> Self {
         Self {
             rotation: rotation.into(),
             ..self
         }
     }
 
-    fn is_missing_transducer<T1, T2>(x: T1, y: T2) -> bool
-    where
-        T1: TryInto<u8>,
-        T2: TryInto<u8>,
-    {
+    fn is_missing_transducer(x: impl TryInto<u8>, y: impl TryInto<u8>) -> bool {
         let x: u8 = match x.try_into() {
             Ok(v) => v,
             Err(_) => return true,

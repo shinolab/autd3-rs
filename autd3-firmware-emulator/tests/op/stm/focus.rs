@@ -1,31 +1,27 @@
+use std::collections::HashMap;
+
 use autd3_driver::{
-    autd3_device::AUTD3,
     cpu::TxDatagram,
     defined::{METER, MILLIMETER},
+    derive::{DatagramS, Drive, LoopBehavior, Phase, Segment},
+    error::AUTDInternalError,
     fpga::{
         FOCUS_STM_BUF_SIZE_MAX, FOCUS_STM_FIXED_NUM_UNIT, SAMPLING_FREQ_DIV_MAX,
-        SAMPLING_FREQ_DIV_MIN,
+        SAMPLING_FREQ_DIV_MIN, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
     },
-    geometry::{Geometry, IntoDevice, Vector3},
-    operation::{ControlPoint, FocusSTMOp, NullOp, OperationHandler},
+    geometry::Vector3,
+    operation::{ControlPoint, FocusSTMChangeSegmentOp, FocusSTMOp, GainSTMMode, GainSTMOp},
 };
 use autd3_firmware_emulator::CPUEmulator;
 
 use num_integer::Roots;
 use rand::*;
 
-#[test]
-fn send_focus_stm() {
+use crate::{create_geometry, op::gain::TestGain, send};
+
+pub fn gen_random_foci(num: usize) -> Vec<ControlPoint> {
     let mut rng = rand::thread_rng();
-
-    let geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-
-    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-
-    let mut tx = TxDatagram::new(1);
-
-    let freq_div = rng.gen_range(SAMPLING_FREQ_DIV_MIN..=SAMPLING_FREQ_DIV_MAX);
-    let foci: Vec<_> = (0..FOCUS_STM_BUF_SIZE_MAX)
+    (0..num)
         .map(|_| {
             ControlPoint::new(Vector3::new(
                 rng.gen_range(-100.0 * MILLIMETER..100.0 * MILLIMETER),
@@ -34,43 +30,44 @@ fn send_focus_stm() {
             ))
             .with_intensity(rng.gen::<u8>())
         })
-        .collect();
-    let start_idx = Some(rng.gen_range(0..foci.len()) as u16);
-    let finish_idx = Some(rng.gen_range(0..foci.len()) as u16);
-    let mut op = FocusSTMOp::new(foci.clone(), freq_div, start_idx, finish_idx);
-    let mut op_null = NullOp::default();
+        .collect()
+}
 
-    assert!(!cpu.fpga().is_stm_mode());
-    assert!(!cpu.fpga().is_stm_gain_mode());
-    assert!(cpu.fpga().stm_start_idx().is_none());
-    assert!(cpu.fpga().stm_finish_idx().is_none());
+#[test]
+fn test_send_focus_stm() -> anyhow::Result<()> {
+    let mut rng = rand::thread_rng();
 
-    OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
-    loop {
-        if OperationHandler::is_finished(&mut op, &mut op_null, &geometry) {
-            break;
-        }
-        OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
-        cpu.send(&tx);
-        assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
-    }
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
 
-    assert!(cpu.fpga().is_stm_mode());
-    assert!(!cpu.fpga().is_stm_gain_mode());
-    assert_eq!(cpu.fpga().stm_start_idx(), start_idx);
-    assert_eq!(cpu.fpga().stm_finish_idx(), finish_idx);
-    assert_eq!(cpu.fpga().stm_cycle(), foci.len());
-    assert_eq!(cpu.fpga().stm_frequency_division(), freq_div);
+    let freq_div = rng.gen_range(
+        SAMPLING_FREQ_DIV_MIN
+            * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
+            ..=SAMPLING_FREQ_DIV_MAX,
+    );
+    let foci = gen_random_foci(FOCUS_STM_BUF_SIZE_MAX);
+    let loop_behaviour = LoopBehavior::Infinite;
+    let segment = Segment::S0;
+    let mut op = FocusSTMOp::new(foci.clone(), freq_div, loop_behaviour, segment, true);
+
+    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+
+    assert!(!cpu.fpga().is_stm_gain_mode(Segment::S0));
+    assert_eq!(segment, cpu.fpga().current_stm_segment());
+    assert_eq!(loop_behaviour, cpu.fpga().stm_loop_behavior(Segment::S0));
+    assert_eq!(foci.len(), cpu.fpga().stm_cycle(Segment::S0));
+    assert_eq!(freq_div, cpu.fpga().stm_frequency_division(Segment::S0));
     assert_eq!(
-        cpu.fpga().sound_speed(),
-        (geometry[0].sound_speed / METER * 1024.0).round() as _
+        (geometry[0].sound_speed / METER * 1024.0).round() as u32,
+        cpu.fpga().sound_speed(Segment::S0)
     );
     foci.iter().enumerate().for_each(|(focus_idx, focus)| {
         cpu.fpga()
-            .intensities_and_phases(focus_idx)
+            .drives(Segment::S0, focus_idx)
             .iter()
             .enumerate()
-            .for_each(|(tr_idx, &(intensity, phase))| {
+            .for_each(|(tr_idx, &drive)| {
                 let tr = cpu.fpga().local_tr_pos()[tr_idx];
                 let tx = ((tr >> 16) & 0xFFFF) as i32;
                 let ty = (tr & 0xFFFF) as i16 as i32;
@@ -79,45 +76,73 @@ fn send_focus_stm() {
                 let fy = (focus.point().y / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
                 let fz = (focus.point().z / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
                 let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u64;
-                let q = (d << 18) / cpu.fpga().sound_speed() as u64;
-                assert_eq!(phase, (q & 0xFF) as u8);
-                assert_eq!(intensity, focus.intensity().value());
+                let q = (d << 18) / cpu.fpga().sound_speed(Segment::S0) as u64;
+                assert_eq!(Phase::new((q & 0xFF) as u8), drive.phase());
+                assert_eq!(focus.intensity(), drive.intensity());
             })
     });
+    Ok(())
+}
 
-    let foci: Vec<_> = (0..2)
-        .map(|_| {
-            ControlPoint::new(Vector3::new(
-                rng.gen_range(-100.0 * MILLIMETER..100.0 * MILLIMETER),
-                rng.gen_range(-100.0 * MILLIMETER..100.0 * MILLIMETER),
-                rng.gen_range(-100.0 * MILLIMETER..100.0 * MILLIMETER),
-            ))
-            .with_intensity(rng.gen::<u8>())
-        })
-        .collect();
-    let start_idx = None;
-    let finish_idx = None;
-    let mut op = FocusSTMOp::new(foci.clone(), freq_div, start_idx, finish_idx);
-    let mut op_null = NullOp::default();
+#[test]
+fn send_focus_stm_invalid_segment_transition() -> anyhow::Result<()> {
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
 
-    OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
-    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
-    cpu.send(&tx);
-    assert!(OperationHandler::is_finished(
-        &mut op,
-        &mut op_null,
-        &geometry
-    ));
-    assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
+    // segment 0: Gain
+    {
+        let buf: HashMap<usize, Vec<Drive>> = geometry
+            .iter()
+            .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
+            .collect();
+        let g = TestGain { buf: buf.clone() };
 
-    assert!(cpu.fpga().is_stm_mode());
-    assert!(!cpu.fpga().is_stm_gain_mode());
-    assert!(cpu.fpga().stm_start_idx().is_none());
-    assert!(cpu.fpga().stm_finish_idx().is_none());
-    assert_eq!(cpu.fpga().stm_cycle(), foci.len());
-    assert_eq!(cpu.fpga().stm_frequency_division(), freq_div);
-    assert_eq!(
-        cpu.fpga().sound_speed(),
-        (geometry[0].sound_speed / METER * 1024.0).round() as _
-    );
+        let (mut op, _) = g.operation_with_segment(Segment::S0, true)?;
+
+        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    }
+
+    // segment 1: GainSTM
+    {
+        let bufs: Vec<HashMap<usize, Vec<Drive>>> = (0..2)
+            .map(|_| {
+                geometry
+                    .iter()
+                    .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
+                    .collect()
+            })
+            .collect();
+        let loop_behavior = LoopBehavior::Infinite;
+        let segment = Segment::S1;
+        let freq_div = 0xFFFFFFFF;
+        let mut op = GainSTMOp::new(
+            bufs.iter()
+                .map(|buf| TestGain { buf: buf.clone() })
+                .collect(),
+            GainSTMMode::PhaseIntensityFull,
+            freq_div,
+            loop_behavior,
+            segment,
+            true,
+        );
+
+        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    }
+
+    {
+        let mut op = FocusSTMChangeSegmentOp::new(Segment::S0);
+        assert_eq!(
+            Err(AUTDInternalError::InvalidSegmentTransition),
+            send(&mut cpu, &mut op, &geometry, &mut tx)
+        );
+
+        let mut op = FocusSTMChangeSegmentOp::new(Segment::S1);
+        assert_eq!(
+            Err(AUTDInternalError::InvalidSegmentTransition),
+            send(&mut cpu, &mut op, &geometry, &mut tx)
+        );
+    }
+
+    Ok(())
 }

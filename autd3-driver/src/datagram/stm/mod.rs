@@ -1,11 +1,16 @@
 mod focus;
 mod gain;
 
-pub use focus::FocusSTM;
-pub use gain::GainSTM;
+pub use focus::{ChangeFocusSTMSegment, FocusSTM};
+pub use gain::{ChangeGainSTMSegment, GainSTM};
 
-use crate::{common::SamplingConfiguration, defined::float, error::AUTDInternalError};
+use crate::{
+    common::{LoopBehavior, SamplingConfiguration},
+    defined::float,
+    error::AUTDInternalError,
+};
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum STMSamplingConfiguration {
     Frequency(float),
     Period(std::time::Duration),
@@ -51,57 +56,43 @@ impl STMSamplingConfiguration {
 }
 
 #[doc(hidden)]
+#[derive(Clone, Copy)]
 pub struct STMProps {
     sampling: STMSamplingConfiguration,
-    start_idx: Option<u16>,
-    finish_idx: Option<u16>,
+    loop_behavior: LoopBehavior,
 }
 
 impl STMProps {
     pub const fn from_freq(freq: float) -> Self {
         Self {
             sampling: STMSamplingConfiguration::Frequency(freq),
-            start_idx: None,
-            finish_idx: None,
+            loop_behavior: LoopBehavior::Infinite,
         }
     }
 
     pub const fn from_period(period: std::time::Duration) -> Self {
         Self {
             sampling: STMSamplingConfiguration::Period(period),
-            start_idx: None,
-            finish_idx: None,
+            loop_behavior: LoopBehavior::Infinite,
         }
     }
 
     pub const fn from_sampling_config(sampling: SamplingConfiguration) -> Self {
         Self {
             sampling: STMSamplingConfiguration::SamplingConfiguration(sampling),
-            start_idx: None,
-            finish_idx: None,
+            loop_behavior: LoopBehavior::Infinite,
         }
     }
 
-    pub const fn with_start_idx(self, idx: Option<u16>) -> Self {
+    pub const fn with_loop_behavior(self, loop_behavior: LoopBehavior) -> Self {
         Self {
-            start_idx: idx,
+            loop_behavior,
             ..self
         }
     }
 
-    pub const fn with_finish_idx(self, idx: Option<u16>) -> Self {
-        Self {
-            finish_idx: idx,
-            ..self
-        }
-    }
-
-    pub const fn start_idx(&self) -> Option<u16> {
-        self.start_idx
-    }
-
-    pub const fn finish_idx(&self) -> Option<u16> {
-        self.finish_idx
+    pub const fn loop_behavior(&self) -> LoopBehavior {
+        self.loop_behavior
     }
 
     pub fn freq(&self, size: usize) -> float {

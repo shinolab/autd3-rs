@@ -3,9 +3,10 @@ mod debug;
 mod force_fan;
 pub mod gain;
 mod info;
-mod mod_delay;
 mod modulation;
 mod null;
+mod phase_filter;
+mod pulse_width_encoder;
 mod reads_fpga_state;
 mod silencer;
 pub mod stm;
@@ -16,9 +17,10 @@ pub use debug::*;
 pub use force_fan::*;
 pub use gain::*;
 pub use info::*;
-pub use mod_delay::*;
 pub use modulation::*;
 pub use null::*;
+pub use phase_filter::*;
+pub use pulse_width_encoder::*;
 pub use reads_fpga_state::*;
 pub use silencer::*;
 pub use stm::*;
@@ -37,13 +39,18 @@ pub enum TypeTag {
     Sync = 0x02,
     FirmwareInfo = 0x03,
     Modulation = 0x10,
-    ConfigureModDelay = 0x11,
+    ModulationChangeSegment = 0x11,
     Silencer = 0x20,
     Gain = 0x30,
+    GainChangeSegment = 0x31,
     FocusSTM = 0x40,
-    GainSTM = 0x50,
+    GainSTM = 0x41,
+    FocusSTMChangeSegment = 0x42,
+    GainSTMChangeSegment = 0x43,
     ForceFan = 0x60,
     ReadsFPGAState = 0x61,
+    ConfigPulseWidthEncoder = 0x70,
+    PhaseFilter = 0x80,
     Debug = 0xF0,
 }
 
@@ -89,9 +96,9 @@ impl Operation for Box<dyn Operation> {
 pub struct OperationHandler {}
 
 impl OperationHandler {
-    pub fn is_finished<O1: Operation, O2: Operation>(
-        op1: &mut O1,
-        op2: &mut O2,
+    pub fn is_finished(
+        op1: &mut impl Operation,
+        op2: &mut impl Operation,
         geometry: &Geometry,
     ) -> bool {
         geometry
@@ -99,18 +106,18 @@ impl OperationHandler {
             .all(|dev| op1.remains(dev) == 0 && op2.remains(dev) == 0)
     }
 
-    pub fn init<O1: Operation, O2: Operation>(
-        op1: &mut O1,
-        op2: &mut O2,
+    pub fn init(
+        op1: &mut impl Operation,
+        op2: &mut impl Operation,
         geometry: &Geometry,
     ) -> Result<(), AUTDInternalError> {
         op1.init(geometry)?;
         op2.init(geometry)
     }
 
-    pub fn pack<O1: Operation, O2: Operation>(
-        op1: &mut O1,
-        op2: &mut O2,
+    pub fn pack(
+        op1: &mut impl Operation,
+        op2: &mut impl Operation,
         geometry: &Geometry,
         tx: &mut TxDatagram,
     ) -> Result<(), AUTDInternalError> {
@@ -141,8 +148,8 @@ impl OperationHandler {
         Ok(())
     }
 
-    fn pack_dev<O: Operation>(
-        op: &mut O,
+    fn pack_dev(
+        op: &mut impl Operation,
         dev: &Device,
         tx: &mut TxDatagram,
     ) -> Result<usize, AUTDInternalError> {
@@ -167,16 +174,17 @@ impl OperationHandler {
 pub mod tests {
     use std::collections::HashMap;
 
+    use autd3_derive::Gain;
+
     use crate::{
-        common::{Drive, EmitIntensity, Phase},
         cpu::{Header, EC_OUTPUT_FRAME_SIZE},
-        datagram::{Gain, GainFilter},
-        geometry::{Transducer, UnitQuaternion, Vector3},
+        derive::*,
+        geometry::{UnitQuaternion, Vector3},
     };
 
     use super::*;
 
-    #[derive(Clone)]
+    #[derive(Gain, Clone)]
     pub struct TestGain {
         pub data: HashMap<usize, Vec<Drive>>,
     }
@@ -192,7 +200,7 @@ pub mod tests {
         }
     }
 
-    #[derive(Copy)]
+    #[derive(Gain, Copy)]
     pub struct NullGain {}
 
     impl Clone for NullGain {
@@ -209,15 +217,15 @@ pub mod tests {
             geometry: &Geometry,
             filter: GainFilter,
         ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-            Ok(Self::transform(geometry, filter, |_, _| Drive {
-                intensity: EmitIntensity::MAX,
-                phase: Phase::new(2),
-            }))
+            Ok(Self::transform(geometry, filter, |_, _| Drive::null()))
         }
     }
 
-    #[derive(Copy)]
-    pub struct ErrGain {}
+    #[derive(Gain, Copy)]
+    pub struct ErrGain {
+        pub segment: Segment,
+        pub update_segment: bool,
+    }
 
     impl Clone for ErrGain {
         #[cfg_attr(coverage_nightly, coverage(off))]

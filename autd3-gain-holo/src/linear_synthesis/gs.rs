@@ -5,10 +5,7 @@ use crate::{
     LinAlgBackend, Trans,
 };
 
-use autd3_driver::{
-    derive::*,
-    geometry::{Geometry, Vector3},
-};
+use autd3_driver::{derive::*, geometry::Vector3};
 
 /// Gain to produce multiple foci with GS algorithm
 ///
@@ -121,7 +118,7 @@ mod tests {
             .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pascal));
 
         let _ = g.calc(&geometry, GainFilter::All);
-        let _ = g.operation();
+        let _ = g.operation_with_segment(Segment::S0, true);
     }
 
     #[test]

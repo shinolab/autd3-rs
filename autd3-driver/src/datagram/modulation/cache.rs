@@ -1,4 +1,4 @@
-use autd3_driver::{common::EmitIntensity, derive::*};
+use crate::derive::*;
 
 use std::{
     cell::{Ref, RefCell},
@@ -7,11 +7,15 @@ use std::{
 
 /// Modulation to cache the result of calculation
 #[derive(Modulation)]
+#[no_modulation_cache]
+#[no_radiation_pressure]
+#[no_modulation_transform]
 pub struct Cache<M: Modulation> {
     m: Rc<M>,
     cache: Rc<RefCell<Vec<EmitIntensity>>>,
     #[no_change]
     config: SamplingConfiguration,
+    loop_behavior: LoopBehavior,
 }
 
 impl<M: Modulation> std::ops::Deref for Cache<M> {
@@ -27,18 +31,13 @@ pub trait IntoCache<M: Modulation> {
     fn with_cache(self) -> Cache<M>;
 }
 
-impl<M: Modulation> IntoCache<M> for M {
-    fn with_cache(self) -> Cache<M> {
-        Cache::new(self)
-    }
-}
-
 impl<M: Modulation + Clone> Clone for Cache<M> {
     fn clone(&self) -> Self {
         Self {
             m: self.m.clone(),
             cache: self.cache.clone(),
             config: self.config,
+            loop_behavior: self.loop_behavior,
         }
     }
 }
@@ -48,6 +47,7 @@ impl<M: Modulation> Cache<M> {
     pub fn new(m: M) -> Self {
         Self {
             config: m.sampling_config(),
+            loop_behavior: m.loop_behavior(),
             m: Rc::new(m),
             cache: Rc::new(Default::default()),
         }
@@ -62,10 +62,13 @@ impl<M: Modulation> Cache<M> {
     /// ```
     /// use autd3::prelude::*;
     ///
+    /// # fn main() -> anyhow::Result<()> {
     /// let m = Static::new().with_cache();
     /// assert!(m.buffer().is_empty());
-    /// let _ = m.calc().unwrap();
+    /// let _ = m.calc()?;
     /// assert!(!m.buffer().is_empty());
+    /// # Ok(())
+    /// # }
     ///
     /// ```
     pub fn buffer(&self) -> Ref<'_, Vec<EmitIntensity>> {
@@ -84,55 +87,54 @@ impl<M: Modulation> Modulation for Cache<M> {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc,
+    use super::{super::tests::TestModulation, *};
+
+    use std::{
+        ops::Deref,
+        sync::{
+            atomic::{AtomicUsize, Ordering},
+            Arc,
+        },
     };
 
-    use crate::modulation::Static;
-
-    use super::*;
-
     #[test]
-    fn test_cache() {
-        let m = Static::new().with_cache();
-        assert_eq!(m.sampling_config(), Static::new().sampling_config());
-        assert_eq!(m.intensity(), Static::new().intensity());
+    fn test_cache() -> anyhow::Result<()> {
+        let m = TestModulation {
+            buf: vec![EmitIntensity::random(); 2],
+            config: SamplingConfiguration::FREQ_4K_HZ,
+            loop_behavior: LoopBehavior::Infinite,
+        };
+        let cache = m.clone().with_cache();
+        assert_eq!(&m, cache.deref());
 
-        assert!(m.buffer().is_empty());
-        m.calc().unwrap().iter().for_each(|&d| {
-            assert_eq!(d, EmitIntensity::MAX);
-        });
+        assert!(cache.buffer().is_empty());
+        assert_eq!(m.calc()?, cache.calc()?);
 
-        assert!(!m.buffer().is_empty());
-        m.buffer().iter().for_each(|&d| {
-            assert_eq!(d, EmitIntensity::MAX);
-        });
+        assert!(!cache.buffer().is_empty());
+        assert_eq!(m.calc()?, *cache.buffer());
+
+        Ok(())
     }
 
-    struct TestModulation {
+    #[derive(Modulation)]
+    struct TestCacheModulation {
         pub calc_cnt: Arc<AtomicUsize>,
         pub config: SamplingConfiguration,
+        pub loop_behavior: LoopBehavior,
     }
 
-    impl Clone for TestModulation {
+    impl Clone for TestCacheModulation {
         #[cfg_attr(coverage_nightly, coverage(off))]
         fn clone(&self) -> Self {
             Self {
                 calc_cnt: self.calc_cnt.clone(),
                 config: self.config,
+                loop_behavior: LoopBehavior::Infinite,
             }
         }
     }
 
-    impl ModulationProperty for TestModulation {
-        #[cfg_attr(coverage_nightly, coverage(off))]
-        fn sampling_config(&self) -> SamplingConfiguration {
-            self.config
-        }
-    }
-
-    impl Modulation for TestModulation {
+    impl Modulation for TestCacheModulation {
         fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
             Ok(vec![EmitIntensity::new(0); 2])
@@ -143,35 +145,37 @@ mod tests {
     fn test_cache_calc_once() {
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
-        let modulation = TestModulation {
+        let modulation = TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
             config: SamplingConfiguration::FREQ_4K_HZ,
+            loop_behavior: LoopBehavior::Infinite,
         }
         .with_cache();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 0);
+        assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
-        let _ = modulation.calc().unwrap();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
+        let _ = modulation.calc();
+        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
 
-        let _ = modulation.calc().unwrap();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
+        let _ = modulation.calc();
+        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
     }
 
     #[test]
     fn test_cache_calc_clone() {
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
-        let modulation = TestModulation {
+        let modulation = TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
             config: SamplingConfiguration::FREQ_4K_HZ,
+            loop_behavior: LoopBehavior::Infinite,
         }
         .with_cache();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 0);
+        assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
         let m2 = modulation.clone();
-        let _ = m2.calc().unwrap();
-        assert_eq!(calc_cnt.load(Ordering::Relaxed), 1);
+        let _ = m2.calc();
+        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
 
-        assert_eq!(modulation.buffer().to_vec(), m2.buffer().to_vec());
+        assert_eq!(*modulation.buffer(), *m2.buffer());
     }
 }

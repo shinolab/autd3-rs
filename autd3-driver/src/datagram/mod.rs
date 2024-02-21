@@ -2,27 +2,35 @@ mod clear;
 mod debug;
 mod force_fan;
 mod gain;
-mod mod_delay;
 mod modulation;
+mod phase_filter;
 mod reads_fpga_state;
 mod silencer;
 mod stm;
 mod synchronize;
+mod with_segment;
 mod with_timeout;
 
 pub use clear::Clear;
 pub use debug::ConfigureDebugOutputIdx;
 pub use force_fan::ConfigureForceFan;
-pub use gain::{Gain, GainFilter};
-pub use mod_delay::ConfigureModDelay;
-pub use modulation::{Modulation, ModulationProperty};
+pub use gain::{
+    ChangeGainSegment, Gain, GainCache, GainFilter, GainTransform, Group, IntoGainCache,
+    IntoGainTransform,
+};
+pub use modulation::{
+    ChangeModulationSegment, IntoModulationCache, IntoModulationTransform, IntoRadiationPressure,
+    Modulation, ModulationCache, ModulationProperty, ModulationTransform, RadiationPressure,
+};
+pub use phase_filter::ConfigurePhaseFilter;
 pub use reads_fpga_state::ConfigureReadsFPGAState;
 pub use silencer::{
     ConfigureSilencer, ConfigureSilencerFixedCompletionSteps, ConfigureSilencerFixedUpdateRate,
 };
-pub use stm::{FocusSTM, GainSTM, STMProps};
+pub use stm::{ChangeFocusSTMSegment, ChangeGainSTMSegment, FocusSTM, GainSTM, STMProps};
 pub use synchronize::Synchronize;
-pub use with_timeout::{DatagramT, DatagramWithTimeout};
+pub use with_segment::{DatagramS, DatagramWithSegment, IntoDatagramWithSegment};
+pub use with_timeout::{DatagramWithTimeout, IntoDatagramWithTimeout};
 
 use std::time::Duration;
 
@@ -52,6 +60,15 @@ where
         let (o1, _) = self.0.operation()?;
         let (o2, _) = self.1.operation()?;
         Ok((o1, o2))
+    }
+
+    fn timeout(&self) -> Option<Duration> {
+        match (self.0.timeout(), self.1.timeout()) {
+            (Some(t1), Some(t2)) => Some(t1.max(t2)),
+            (Some(t1), None) => Some(t1),
+            (None, Some(t2)) => Some(t2),
+            (None, None) => None,
+        }
     }
 }
 

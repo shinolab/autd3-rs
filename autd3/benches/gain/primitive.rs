@@ -3,7 +3,7 @@ mod helper;
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 use autd3::prelude::*;
-use autd3_driver::datagram::{Gain, GainFilter};
+use autd3_driver::datagram::Gain;
 
 use crate::helper::generate_geometry;
 

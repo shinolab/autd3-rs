@@ -53,12 +53,11 @@ impl std::ops::Add<Phase> for Phase {
 mod tests {
 
     use super::*;
-    use crate::defined::PI;
 
     #[test]
     fn phase_clone() {
         let a = PI * Rad;
-        let b = a.clone();
+        let b = a;
         assert_eq!(a.value, b.value);
     }
 

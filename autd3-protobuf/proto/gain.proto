@@ -9,11 +9,13 @@ message Bessel {
   Vector3 pos = 2;
   Vector3 dir = 3;
   float theta = 4;
+  Phase phase_offset = 5;
 }
 
 message Focus {
   EmitIntensity intensity = 1;
   Vector3 pos = 2;
+  Phase phase_offset = 3;
 }
 
 message Null {}
@@ -21,7 +23,7 @@ message Null {}
 message Plane {
   EmitIntensity intensity = 1;
   Vector3 dir = 2;
-  Phase phase = 3;
+  Phase phase_offset = 3;
 }
 
 message Uniform {
@@ -109,4 +111,6 @@ message Gain {
     LM lm = 104;
     Greedy greedy = 105;
   }
+  Segment segment = 1001;
+  bool update_segment = 1002;
 }

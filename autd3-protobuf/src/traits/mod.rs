@@ -7,7 +7,7 @@ mod holo;
 pub trait ToMessage {
     type Message: prost::Message;
 
-    fn to_msg(&self) -> Self::Message;
+    fn to_msg(&self, geometry: Option<&autd3_driver::geometry::Geometry>) -> Self::Message;
 }
 
 pub trait FromMessage<T: prost::Message>

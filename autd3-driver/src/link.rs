@@ -25,6 +25,8 @@ mod internal {
         /// Get timeout
         #[must_use]
         fn timeout(&self) -> Duration;
+        #[inline(always)]
+        fn trace(&mut self, _: &TxDatagram, _: &mut [RxMessage], _: Option<Duration>) {}
     }
 
     #[async_trait::async_trait]
@@ -56,6 +58,11 @@ mod internal {
         fn timeout(&self) -> Duration {
             self.as_ref().timeout()
         }
+
+        #[inline(always)]
+        fn trace(&mut self, tx: &TxDatagram, rx: &mut [RxMessage], timeout: Option<Duration>) {
+            self.as_mut().trace(tx, rx, timeout)
+        }
     }
 }
 
@@ -83,6 +90,8 @@ mod internal {
         /// Get timeout
         #[must_use]
         fn timeout(&self) -> Duration;
+        #[inline(always)]
+        fn trace(&mut self, _: &TxDatagram, _: &mut [RxMessage], _: Option<Duration>) {}
     }
 
     pub trait LinkBuilder {
@@ -107,12 +116,13 @@ pub use internal::Link;
 pub use internal::LinkBuilder;
 
 /// Send and receive data
-pub async fn send_receive<L: Link>(
-    link: &mut L,
+pub async fn send_receive(
+    link: &mut impl Link,
     tx: &TxDatagram,
     rx: &mut [RxMessage],
     timeout: Option<Duration>,
 ) -> Result<bool, AUTDInternalError> {
+    link.trace(tx, rx, timeout);
     let timeout = timeout.unwrap_or(link.timeout());
     if !link.send(tx).await? {
         return Ok(false);
@@ -121,8 +131,8 @@ pub async fn send_receive<L: Link>(
 }
 
 /// Wait until message is processed
-pub async fn wait_msg_processed<L: Link>(
-    link: &mut L,
+async fn wait_msg_processed(
+    link: &mut impl Link,
     tx: &TxDatagram,
     rx: &mut [RxMessage],
     timeout: Duration,
@@ -180,7 +190,8 @@ mod tests {
             }
 
             self.recv_cnt += 1;
-            rx.iter_mut().for_each(|r| r.ack = self.recv_cnt as u8);
+            rx.iter_mut()
+                .for_each(|r| *r = RxMessage::new(self.recv_cnt as u8, r.data()));
 
             Ok(!self.down)
         }
@@ -255,7 +266,7 @@ mod tests {
 
         let mut tx = TxDatagram::new(1);
         tx.header_mut(0).msg_id = 2;
-        let mut rx = vec![RxMessage { ack: 0, data: 0 }];
+        let mut rx = vec![RxMessage::new(0, 0)];
         assert_eq!(
             wait_msg_processed(&mut link, &tx, &mut rx, Duration::from_millis(10)).await,
             Ok(true)

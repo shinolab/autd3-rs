@@ -4,10 +4,9 @@ use crate::{constraint::EmissionConstraint, impl_holo, Amplitude, Complex};
 
 use autd3_driver::{
     acoustics::{directivity::Sphere, propagate},
-    common::{EmitIntensity, Phase},
     defined::PI,
     derive::*,
-    geometry::{Geometry, Vector3},
+    geometry::Vector3,
 };
 
 use nalgebra::ComplexField;
@@ -125,9 +124,10 @@ impl Gain for Greedy {
             cache.iter_mut().zip(tmp.iter()).for_each(|(c, a)| {
                 *c += a * phase;
             });
-            let r = &mut res.get_mut(&dev_idx).unwrap()[idx];
-            r.intensity = self.constraint.convert(1.0, 1.0);
-            r.phase = Phase::from_rad(phase.argument() + PI);
+            res.get_mut(&dev_idx).unwrap()[idx] = Drive::new(
+                Phase::from_rad(phase.argument() + PI),
+                self.constraint.convert(1.0, 1.0),
+            );
         });
         Ok(res)
     }
@@ -163,7 +163,7 @@ mod tests {
             .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pascal));
 
         let _ = g.calc(&geometry, GainFilter::All);
-        let _ = g.operation();
+        let _ = g.operation_with_segment(Segment::S0, true);
     }
 
     #[test]

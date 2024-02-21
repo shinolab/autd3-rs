@@ -7,12 +7,31 @@ impl ToMessage for autd3::modulation::Static {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::Static(Static {
-                    intensity: Some(self.intensity().to_msg()),
+                    intensity: Some(self.intensity().to_msg(None)),
                 })),
+                segment: Segment::S0 as _,
+                update_segment: true,
+            })),
+        }
+    }
+}
+
+impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::modulation::Static> {
+    type Message = DatagramLightweight;
+
+    #[allow(clippy::unnecessary_cast)]
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+        Self::Message {
+            datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
+                modulation: Some(modulation::Modulation::Static(Static {
+                    intensity: Some(self.intensity().to_msg(None)),
+                })),
+                segment: self.segment() as _,
+                update_segment: self.update_segment(),
             })),
         }
     }
@@ -38,7 +57,7 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let m = autd3::modulation::Static::with_intensity(EmitIntensity::new(rng.gen()));
-        let msg = m.to_msg();
+        let msg = m.to_msg(None);
 
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Modulation(Modulation {

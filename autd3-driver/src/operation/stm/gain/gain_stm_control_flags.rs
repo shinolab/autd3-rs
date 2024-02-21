@@ -6,30 +6,26 @@ pub struct GainSTMControlFlags(u8);
 
 bitflags::bitflags! {
     impl GainSTMControlFlags : u8 {
-        const NONE            = 0;
-        const STM_BEGIN       = 1 << 2;
-        const STM_END         = 1 << 3;
-        const USE_START_IDX   = 1 << 4;
-        const USE_FINISH_IDX  = 1 << 5;
-        const SEND_BIT0       = 1 << 6;
-        const SEND_BIT1       = 1 << 7;
+        const NONE       = 0;
+        const BEGIN      = 1 << 2;
+        const END        = 1 << 3;
+        const UPDATE     = 1 << 4;
+        const SEND_BIT0  = 1 << 6;
+        const SEND_BIT1  = 1 << 7;
     }
 }
 
 impl fmt::Display for GainSTMControlFlags {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut flags = Vec::new();
-        if self.contains(GainSTMControlFlags::STM_BEGIN) {
-            flags.push("STM_BEGIN")
+        if self.contains(GainSTMControlFlags::BEGIN) {
+            flags.push("BEGIN")
         }
-        if self.contains(GainSTMControlFlags::STM_END) {
-            flags.push("STM_END")
+        if self.contains(GainSTMControlFlags::END) {
+            flags.push("END")
         }
-        if self.contains(GainSTMControlFlags::USE_START_IDX) {
-            flags.push("USE_START_IDX")
-        }
-        if self.contains(GainSTMControlFlags::USE_FINISH_IDX) {
-            flags.push("USE_FINISH_IDX")
+        if self.contains(GainSTMControlFlags::UPDATE) {
+            flags.push("UPDATE")
         }
         if self.is_empty() {
             flags.push("NONE")
@@ -54,7 +50,7 @@ mod tests {
     fn gain_stm_controll_flag() {
         assert_eq!(std::mem::size_of::<GainSTMControlFlags>(), 1);
 
-        let flags = GainSTMControlFlags::STM_BEGIN | GainSTMControlFlags::USE_START_IDX;
+        let flags = GainSTMControlFlags::BEGIN;
 
         let flagsc = Clone::clone(&flags);
         assert_eq!(flagsc.bits(), flags.bits());
@@ -63,26 +59,16 @@ mod tests {
     #[test]
     fn gain_stm_controll_flag_fmt() {
         assert_eq!(format!("{}", GainSTMControlFlags::NONE), "NONE");
-        assert_eq!(format!("{}", GainSTMControlFlags::STM_BEGIN), "STM_BEGIN");
-        assert_eq!(format!("{}", GainSTMControlFlags::STM_END), "STM_END");
-        assert_eq!(
-            format!("{}", GainSTMControlFlags::USE_START_IDX),
-            "USE_START_IDX"
-        );
-        assert_eq!(
-            format!("{}", GainSTMControlFlags::USE_FINISH_IDX),
-            "USE_FINISH_IDX"
-        );
+        assert_eq!(format!("{}", GainSTMControlFlags::BEGIN), "BEGIN");
+        assert_eq!(format!("{}", GainSTMControlFlags::END), "END");
+        assert_eq!(format!("{}", GainSTMControlFlags::UPDATE), "UPDATE");
 
         assert_eq!(
             format!(
                 "{}",
-                GainSTMControlFlags::STM_BEGIN
-                    | GainSTMControlFlags::STM_END
-                    | GainSTMControlFlags::USE_START_IDX
-                    | GainSTMControlFlags::USE_FINISH_IDX
+                GainSTMControlFlags::BEGIN | GainSTMControlFlags::END | GainSTMControlFlags::UPDATE
             ),
-            "STM_BEGIN | STM_END | USE_START_IDX | USE_FINISH_IDX"
+            "BEGIN | END | UPDATE"
         );
     }
 }
