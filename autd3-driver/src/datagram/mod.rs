@@ -61,6 +61,15 @@ where
         let (o2, _) = self.1.operation()?;
         Ok((o1, o2))
     }
+
+    fn timeout(&self) -> Option<Duration> {
+        match (self.0.timeout(), self.1.timeout()) {
+            (Some(t1), Some(t2)) => Some(t1.max(t2)),
+            (Some(t1), None) => Some(t1),
+            (None, Some(t2)) => Some(t2),
+            (None, None) => None,
+        }
+    }
 }
 
 #[cfg(test)]
