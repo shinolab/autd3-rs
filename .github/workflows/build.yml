@@ -52,8 +52,8 @@ jobs:
       - name: Test src on ${{ matrix.os }}
         if: needs.check-src.outputs.status
         run: |
-          python3 build.py build --all
-          python3 build.py test --all
+          python3 build.py build
+          python3 build.py test
         shell: bash
 
   test-src-for-unity:
@@ -82,7 +82,7 @@ jobs:
       - name: Test src for unity on ${{ matrix.os }}
         if: needs.check-src.outputs.status
         run: |
-          python3 build.py test --all --features "single_float use_meter"
+          python3 build.py test --features "single_float use_meter"
         shell: bash
 
   build-linux-arm32-src:
@@ -109,7 +109,7 @@ jobs:
       - name: Test src on ${{ matrix.os }}
         if: needs.check-src.outputs.status
         run: |
-          python3 build.py build --all --arch arm32 --no-examples
+          python3 build.py build --arch arm32 --no-examples
 
   build-linux-aarch64-src:
     needs: check-src
@@ -134,7 +134,7 @@ jobs:
       - name: Test src on ${{ matrix.os }}
         if: needs.check-src.outputs.status
         run: |
-          python3 build.py build --all --arch arm32 --no-examples
+          python3 build.py build --arch arm32 --no-examples
 
   lint-src:
     needs: check-src
@@ -156,4 +156,4 @@ jobs:
       - name: lint src
         if: needs.check-src.outputs.status
         run: |
-          python3 build.py lint --all
+          python3 build.py lint

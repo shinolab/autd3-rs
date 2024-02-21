@@ -1,4 +1,4 @@
-use crate::{datagram::*, error::AUTDInternalError, geometry::Device};
+use crate::{datagram::*, geometry::Device};
 
 /// Datagram for configure reads_fpga_state
 pub struct ConfigureReadsFPGAState<F: Fn(&Device) -> bool> {
@@ -9,6 +9,11 @@ impl<F: Fn(&Device) -> bool> ConfigureReadsFPGAState<F> {
     /// constructor
     pub const fn new(f: F) -> Self {
         Self { f }
+    }
+
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    pub const fn f(&self) -> &F {
+        &self.f
     }
 }
 

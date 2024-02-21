@@ -7,13 +7,35 @@ impl ToMessage for autd3::gain::Focus {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Focus(Focus {
-                    intensity: Some(self.intensity().to_msg()),
-                    pos: Some(self.pos().to_msg()),
+                    intensity: Some(self.intensity().to_msg(None)),
+                    pos: Some(self.pos().to_msg(None)),
+                    phase_offset: Some(self.phase_offset().to_msg(None)),
                 })),
+                segment: Segment::S0 as _,
+                update_segment: true,
+            })),
+        }
+    }
+}
+
+impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Focus> {
+    type Message = DatagramLightweight;
+
+    #[allow(clippy::unnecessary_cast)]
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+        Self::Message {
+            datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
+                gain: Some(gain::Gain::Focus(Focus {
+                    intensity: Some(self.intensity().to_msg(None)),
+                    pos: Some(self.pos().to_msg(None)),
+                    phase_offset: Some(self.phase_offset().to_msg(None)),
+                })),
+                segment: self.segment() as _,
+                update_segment: self.update_segment(),
             })),
         }
     }
@@ -28,6 +50,9 @@ impl FromMessage<Focus> for autd3::gain::Focus {
             )?)
             .with_intensity(autd3_driver::common::EmitIntensity::from_msg(
                 msg.intensity.as_ref()?,
+            )?)
+            .with_phase_offset(autd3_driver::common::Phase::from_msg(
+                msg.phase_offset.as_ref()?,
             )?),
         )
     }
@@ -45,7 +70,7 @@ mod tests {
 
         let g = autd3::gain::Focus::new(Vector3::new(rng.gen(), rng.gen(), rng.gen()))
             .with_intensity(EmitIntensity::new(rng.gen()));
-        let msg = g.to_msg();
+        let msg = g.to_msg(None);
 
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {

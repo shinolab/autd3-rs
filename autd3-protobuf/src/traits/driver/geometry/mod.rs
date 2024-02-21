@@ -9,7 +9,7 @@ impl ToMessage for autd3_driver::geometry::Vector3 {
     type Message = Vector3;
 
     #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             x: self.x as _,
             y: self.y as _,
@@ -22,7 +22,7 @@ impl ToMessage for autd3_driver::geometry::Quaternion {
     type Message = Quaternion;
 
     #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             w: self.w as _,
             x: self.coords.x as _,
@@ -35,13 +35,13 @@ impl ToMessage for autd3_driver::geometry::Quaternion {
 impl ToMessage for autd3_driver::geometry::Geometry {
     type Message = Geometry;
 
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             devices: self
                 .iter()
                 .map(|dev| geometry::Autd3 {
-                    pos: Some(dev[0].position().to_msg()),
-                    rot: Some(dev[0].rotation().to_msg()),
+                    pos: Some(dev[0].position().to_msg(None)),
+                    rot: Some(dev[0].rotation().to_msg(None)),
                     sound_speed: dev.sound_speed as _,
                     attenuation: dev.attenuation as _,
                 })
@@ -107,7 +107,7 @@ mod tests {
     fn test_vector3() {
         let mut rng = rand::thread_rng();
         let v = Vector3::new(rng.gen(), rng.gen(), rng.gen());
-        let msg = v.to_msg();
+        let msg = v.to_msg(None);
         let v2 = Vector3::from_msg(&msg).unwrap();
         assert_approx_eq::assert_approx_eq!(v.x, v2.x);
         assert_approx_eq::assert_approx_eq!(v.y, v2.y);
@@ -123,7 +123,7 @@ mod tests {
             rng.gen(),
             rng.gen(),
         ));
-        let msg = q.to_msg();
+        let msg = q.to_msg(None);
         let q2 = UnitQuaternion::from_msg(&msg).unwrap();
         assert_approx_eq::assert_approx_eq!(q.w, q2.w);
         assert_approx_eq::assert_approx_eq!(q.i, q2.i);
@@ -138,7 +138,7 @@ mod tests {
         dev.sound_speed = rng.gen();
         dev.attenuation = rng.gen();
         let geometry = Geometry::new(vec![dev]);
-        let msg = geometry.to_msg();
+        let msg = geometry.to_msg(None);
         let geometry2 = Geometry::from_msg(&msg).unwrap();
         geometry
             .iter()

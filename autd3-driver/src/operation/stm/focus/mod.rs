@@ -2,7 +2,7 @@ mod control_point;
 mod focus_stm_op;
 
 pub use control_point::ControlPoint;
-pub use focus_stm_op::FocusSTMOp;
+pub use focus_stm_op::{FocusSTMChangeSegmentOp, FocusSTMOp};
 
 use std::fmt;
 
@@ -13,27 +13,23 @@ pub struct FocusSTMControlFlags(u8);
 bitflags::bitflags! {
     impl FocusSTMControlFlags : u8 {
         const NONE            = 0;
-        const STM_BEGIN       = 1 << 0;
-        const STM_END         = 1 << 1;
-        const USE_START_IDX   = 1 << 2;
-        const USE_FINISH_IDX  = 1 << 3;
+        const BEGIN       = 1 << 0;
+        const END         = 1 << 1;
+        const UPDATE          = 1 << 2;
     }
 }
 
 impl fmt::Display for FocusSTMControlFlags {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut flags = Vec::new();
-        if self.contains(FocusSTMControlFlags::STM_BEGIN) {
-            flags.push("STM_BEGIN")
+        if self.contains(FocusSTMControlFlags::BEGIN) {
+            flags.push("BEGIN")
         }
-        if self.contains(FocusSTMControlFlags::STM_END) {
-            flags.push("STM_END")
+        if self.contains(FocusSTMControlFlags::END) {
+            flags.push("END")
         }
-        if self.contains(FocusSTMControlFlags::USE_START_IDX) {
-            flags.push("USE_START_IDX")
-        }
-        if self.contains(FocusSTMControlFlags::USE_FINISH_IDX) {
-            flags.push("USE_FINISH_IDX")
+        if self.contains(FocusSTMControlFlags::UPDATE) {
+            flags.push("UPDATE")
         }
         if self.is_empty() {
             flags.push("NONE")
@@ -58,38 +54,29 @@ mod tests {
     fn focus_stm_controll_flag() {
         assert_eq!(std::mem::size_of::<FocusSTMControlFlags>(), 1);
 
-        let flags = FocusSTMControlFlags::STM_BEGIN | FocusSTMControlFlags::STM_END;
+        let flags = FocusSTMControlFlags::BEGIN | FocusSTMControlFlags::END;
 
         let flagsc = Clone::clone(&flags);
-        assert!(flagsc.contains(FocusSTMControlFlags::STM_BEGIN));
-        assert!(flagsc.contains(FocusSTMControlFlags::STM_END));
-        assert!(!flagsc.contains(FocusSTMControlFlags::USE_START_IDX));
-        assert!(!flagsc.contains(FocusSTMControlFlags::USE_FINISH_IDX));
+        assert!(flagsc.contains(FocusSTMControlFlags::BEGIN));
+        assert!(flagsc.contains(FocusSTMControlFlags::END));
+        assert!(!flagsc.contains(FocusSTMControlFlags::UPDATE));
     }
 
     #[test]
     fn focus_stm_controll_flag_fmt() {
         assert_eq!(format!("{}", FocusSTMControlFlags::NONE), "NONE");
-        assert_eq!(format!("{}", FocusSTMControlFlags::STM_BEGIN), "STM_BEGIN");
-        assert_eq!(format!("{}", FocusSTMControlFlags::STM_END), "STM_END");
-        assert_eq!(
-            format!("{}", FocusSTMControlFlags::USE_START_IDX),
-            "USE_START_IDX"
-        );
-        assert_eq!(
-            format!("{}", FocusSTMControlFlags::USE_FINISH_IDX),
-            "USE_FINISH_IDX"
-        );
+        assert_eq!(format!("{}", FocusSTMControlFlags::BEGIN), "BEGIN");
+        assert_eq!(format!("{}", FocusSTMControlFlags::END), "END");
+        assert_eq!(format!("{}", FocusSTMControlFlags::UPDATE), "UPDATE");
 
         assert_eq!(
             format!(
                 "{}",
-                FocusSTMControlFlags::STM_BEGIN
-                    | FocusSTMControlFlags::STM_END
-                    | FocusSTMControlFlags::USE_START_IDX
-                    | FocusSTMControlFlags::USE_FINISH_IDX
+                FocusSTMControlFlags::BEGIN
+                    | FocusSTMControlFlags::END
+                    | FocusSTMControlFlags::UPDATE
             ),
-            "STM_BEGIN | STM_END | USE_START_IDX | USE_FINISH_IDX"
+            "BEGIN | END | UPDATE"
         );
     }
 }

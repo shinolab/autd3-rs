@@ -10,7 +10,7 @@ impl ToMessage for autd3_gain_holo::SDP<NalgebraBackend> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Sdp(Sdp {
@@ -18,8 +18,33 @@ impl ToMessage for autd3_gain_holo::SDP<NalgebraBackend> {
                     alpha: self.alpha() as _,
                     lambda: self.lambda() as _,
                     repeat: self.repeat() as _,
-                    constraint: Some(self.constraint().to_msg()),
+                    constraint: Some(self.constraint().to_msg(None)),
                 })),
+                segment: Segment::S0 as _,
+                update_segment: true,
+            })),
+        }
+    }
+}
+
+impl ToMessage
+    for autd3_driver::datagram::DatagramWithSegment<autd3_gain_holo::SDP<NalgebraBackend>>
+{
+    type Message = DatagramLightweight;
+
+    #[allow(clippy::unnecessary_cast)]
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+        Self::Message {
+            datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
+                gain: Some(gain::Gain::Sdp(Sdp {
+                    holo: to_holo!(self),
+                    alpha: self.alpha() as _,
+                    lambda: self.lambda() as _,
+                    repeat: self.repeat() as _,
+                    constraint: Some(self.constraint().to_msg(None)),
+                })),
+                segment: self.segment() as _,
+                update_segment: self.update_segment(),
             })),
         }
     }
@@ -74,7 +99,7 @@ mod tests {
                 Vector3::new(rng.gen(), rng.gen(), rng.gen()),
                 rng.gen::<autd3_driver::defined::float>() * autd3_gain_holo::Pascal,
             );
-        let msg = holo.to_msg();
+        let msg = holo.to_msg(None);
 
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {

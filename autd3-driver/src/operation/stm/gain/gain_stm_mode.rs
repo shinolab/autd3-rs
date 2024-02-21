@@ -1,4 +1,4 @@
-#[repr(u16)]
+#[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GainSTMMode {
     PhaseIntensityFull = 0,
@@ -12,7 +12,7 @@ mod tests {
 
     #[test]
     fn gain_stm_mode() {
-        assert_eq!(std::mem::size_of::<GainSTMMode>(), 2);
+        assert_eq!(std::mem::size_of::<GainSTMMode>(), 1);
 
         assert_eq!(GainSTMMode::PhaseIntensityFull as u16, 0);
         assert_eq!(GainSTMMode::PhaseFull as u16, 1);

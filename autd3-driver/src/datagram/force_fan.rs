@@ -1,4 +1,4 @@
-use crate::{datagram::*, error::AUTDInternalError, geometry::Device};
+use crate::{datagram::*, geometry::Device};
 
 /// Datagram for configure force fan
 pub struct ConfigureForceFan<F: Fn(&Device) -> bool> {
@@ -9,6 +9,12 @@ impl<F: Fn(&Device) -> bool> ConfigureForceFan<F> {
     /// constructor
     pub const fn new(f: F) -> Self {
         Self { f }
+    }
+
+    /// Get the function
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    pub fn f(&self) -> &F {
+        &self.f
     }
 }
 

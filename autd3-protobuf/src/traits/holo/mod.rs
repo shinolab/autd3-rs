@@ -11,8 +11,8 @@ macro_rules! to_holo {
         $self
             .foci()
             .map(|(p, a)| Holo {
-                pos: Some(p.to_msg()),
-                amp: Some(a.to_msg()),
+                pos: Some(p.to_msg(None)),
+                amp: Some(a.to_msg(None)),
             })
             .collect()
     };

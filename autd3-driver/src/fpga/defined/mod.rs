@@ -4,9 +4,10 @@ mod drive;
 mod fpga_state;
 mod stm_focus;
 
-pub use drive::FPGADrive;
+pub(crate) use drive::FPGADrive;
+pub(crate) use stm_focus::STMFocus;
+
 pub use fpga_state::FPGAState;
-pub use stm_focus::STMFocus;
 
 /// FPGA clock frequency
 pub const FPGA_CLK_FREQ: usize = 20480000;
@@ -25,8 +26,8 @@ pub const SAMPLING_FREQ_DIV_MIN: u32 = 512;
 pub const SAMPLING_FREQ_DIV_MAX: u32 = u32::MAX;
 
 pub const MOD_BUF_SIZE_MIN: usize = 2;
-pub const MOD_BUF_SIZE_MAX: usize = 65536;
+pub const MOD_BUF_SIZE_MAX: usize = 32768;
 
 pub const STM_BUF_SIZE_MIN: usize = 2;
 pub const FOCUS_STM_BUF_SIZE_MAX: usize = 65536;
-pub const GAIN_STM_BUF_SIZE_MAX: usize = 2048;
+pub const GAIN_STM_BUF_SIZE_MAX: usize = 1024;

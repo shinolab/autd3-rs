@@ -7,10 +7,7 @@ use crate::{
     LinAlgBackend, Trans,
 };
 
-use autd3_driver::{
-    derive::*,
-    geometry::{Geometry, Vector3},
-};
+use autd3_driver::{derive::*, geometry::Vector3};
 
 /// Gain to produce multiple foci by solving Semi-Denfinite Programming
 ///
@@ -249,7 +246,7 @@ mod tests {
             .all(|(&p, &a)| p == Vector3::new(10., 10., 100.) && a == 5e3 * Pascal));
 
         let _ = g.calc(&geometry, GainFilter::All);
-        let _ = g.operation();
+        let _ = g.operation_with_segment(Segment::S0, true);
     }
 
     #[test]

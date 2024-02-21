@@ -2,7 +2,7 @@ use autd3_driver::cpu::{Header, TxDatagram};
 
 use crate::fpga::emulator::FPGAEmulator;
 
-use super::{operation::*, params::*};
+use super::params::*;
 
 pub struct CPUEmulator {
     pub(crate) idx: usize,
@@ -12,18 +12,22 @@ pub struct CPUEmulator {
     pub(crate) read_fpga_state: bool,
     pub(crate) read_fpga_state_store: bool,
     pub(crate) mod_cycle: u32,
-    pub(crate) stm_cycle: u32,
-    pub(crate) gain_stm_mode: u16,
+    pub(crate) stm_cycle: [u32; 2],
+    pub(crate) stm_mode: [u16; 2],
+    pub(crate) gain_stm_mode: u8,
     pub(crate) fpga: FPGAEmulator,
     pub(crate) synchronized: bool,
     pub(crate) num_transducers: usize,
     pub(crate) fpga_flags_internal: u16,
-    pub(crate) mod_freq_div: u32,
-    pub(crate) stm_freq_div: u32,
+    pub(crate) mod_freq_div: [u32; 2],
+    pub(crate) mod_segment: u8,
+    pub(crate) stm_freq_div: [u32; 2],
+    pub(crate) stm_segment: u8,
     pub(crate) silencer_strict_mode: bool,
     pub(crate) min_freq_div_intensity: u32,
     pub(crate) min_freq_div_phase: u32,
     pub(crate) is_rx_data_used: bool,
+    pub(crate) pwe_write: u32,
 }
 
 impl CPUEmulator {
@@ -36,18 +40,22 @@ impl CPUEmulator {
             read_fpga_state: false,
             read_fpga_state_store: false,
             mod_cycle: 0,
-            stm_cycle: 0,
+            stm_cycle: [1, 1],
+            stm_mode: [STM_MODE_GAIN, STM_MODE_GAIN],
             gain_stm_mode: 0,
             fpga: FPGAEmulator::new(num_transducers),
             synchronized: false,
             num_transducers,
             fpga_flags_internal: 0x0000,
-            mod_freq_div: 5120,
-            stm_freq_div: 0xFFFFFFFF,
+            mod_freq_div: [5120, 5120],
+            mod_segment: 0,
+            stm_freq_div: [0xFFFFFFFF, 0xFFFFFFFF],
+            stm_segment: 0,
             silencer_strict_mode: true,
             min_freq_div_intensity: 5120,
             min_freq_div_phase: 20480,
             is_rx_data_used: false,
+            pwe_write: 0,
         };
         s.init();
         s
@@ -91,11 +99,14 @@ impl CPUEmulator {
 
     pub fn init(&mut self) {
         self.fpga.init();
-        self.clear(&[]);
+        unsafe {
+            self.clear(&[]);
+        }
     }
 
     pub fn update(&mut self) {
         if self.should_update() {
+            self.fpga.update();
             self.read_fpga_state();
         }
     }
@@ -165,13 +176,18 @@ impl CPUEmulator {
                 TAG_SYNC => self.synchronize(data),
                 TAG_FIRM_INFO => self.firm_info(data),
                 TAG_MODULATION => self.write_mod(data),
-                TAG_MODULATION_DELAY => self.write_mod_delay(data),
+                TAG_MODULATION_CHANGE_SEGMENT => self.change_mod_segment(data),
                 TAG_SILENCER => self.config_silencer(data),
                 TAG_GAIN => self.write_gain(data),
+                TAG_GAIN_CHANGE_SEGMENT => self.change_gain_segment(data),
+                TAG_GAIN_STM_CHANGE_SEGMENT => self.change_gain_stm_segment(data),
                 TAG_FOCUS_STM => self.write_focus_stm(data),
+                TAG_FOCUS_STM_CHANGE_SEGMENT => self.change_focus_stm_segment(data),
                 TAG_GAIN_STM => self.write_gain_stm(data),
                 TAG_FORCE_FAN => self.configure_force_fan(data),
                 TAG_READS_FPGA_STATE => self.configure_reads_fpga_state(data),
+                TAG_CONFIG_PULSE_WIDTH_ENCODER => self.config_pwe(data),
+                TAG_PHASE_FILTER => self.write_phase_filter(data),
                 TAG_DEBUG => self.config_debug(data),
                 _ => ERR_NOT_SUPPORTED_TAG,
             }
@@ -193,7 +209,7 @@ impl CPUEmulator {
         }
 
         self.ack = self.handle_payload(&data[std::mem::size_of::<Header>()..]);
-        if self.ack != ERR_NONE {
+        if (self.ack & ERR_BIT) != 0 {
             return;
         }
 
@@ -201,14 +217,14 @@ impl CPUEmulator {
             self.ack = self.handle_payload(
                 &data[std::mem::size_of::<Header>() + header.slot_2_offset as usize..],
             );
-            if self.ack != ERR_NONE {
+            if (self.ack & ERR_BIT) != 0 {
                 return;
             }
         }
 
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_CTL_REG,
+            BRAM_ADDR_CTL_FLAG,
             self.fpga_flags_internal,
         );
 
@@ -227,12 +243,12 @@ mod tests {
         let mut rng = rand::thread_rng();
         let idx = rng.gen();
         let cpu = CPUEmulator::new(idx, 249);
-        assert_eq!(cpu.idx(), idx);
+        assert_eq!(idx, cpu.idx());
     }
 
     #[test]
     fn num_transducers() {
         let cpu = CPUEmulator::new(0, 249);
-        assert_eq!(cpu.num_transducers(), 249);
+        assert_eq!(249, cpu.num_transducers());
     }
 }

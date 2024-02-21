@@ -1,5 +1,4 @@
 use autd3::prelude::*;
-use autd3_driver::geometry::IntoDevice;
 
 pub fn generate_geometry(size: usize) -> Geometry {
     Geometry::new(

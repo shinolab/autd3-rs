@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{
     local::{
-        error_handler::{ErrHandler, OnErrCallback, OnLostCallback, Status},
+        error_handler::{ErrHandler, Status},
         SyncMode,
     },
     SOEM,
@@ -19,8 +19,6 @@ pub struct SOEMBuilder {
     pub(crate) timeout: std::time::Duration,
     pub(crate) sync0_cycle: u64,
     pub(crate) send_cycle: u64,
-    pub(crate) on_lost: Option<OnLostCallback>,
-    pub(crate) on_err: Option<OnErrCallback>,
     pub(crate) err_handler: Option<ErrHandler>,
 }
 
@@ -38,8 +36,6 @@ impl SOEMBuilder {
             sync_mode: SyncMode::FreeRun,
             ifname: String::new(),
             state_check_interval: Duration::from_millis(100),
-            on_lost: None,
-            on_err: None,
             timeout: Duration::from_millis(20),
             sync0_cycle: 2,
             send_cycle: 2,
@@ -84,7 +80,7 @@ impl SOEMBuilder {
     ///
     /// If empty, this link will automatically find the network interface that is connected to AUTD3 devices.
     ///
-    pub fn with_ifname<S: Into<String>>(self, ifname: S) -> Self {
+    pub fn with_ifname(self, ifname: impl Into<String>) -> Self {
         Self {
             ifname: ifname.into(),
             ..self
@@ -99,28 +95,10 @@ impl SOEMBuilder {
         }
     }
 
-    /// Set callback function when the link is lost
-    #[deprecated(since = "21.0.2", note = "Use with_err_handler instead")]
-    pub fn with_on_lost<F: 'static + Fn(&str) + Send + Sync>(self, on_lost: F) -> Self {
-        Self {
-            on_lost: Some(Box::new(on_lost)),
-            ..self
-        }
-    }
-
     /// Set callback function when error occurred
-    #[deprecated(since = "21.0.2", note = "Use with_err_handler instead")]
-    pub fn with_on_err<F: 'static + Fn(&str) + Send + Sync>(self, on_err: F) -> Self {
-        Self {
-            on_err: Some(Box::new(on_err)),
-            ..self
-        }
-    }
-
-    /// Set callback function when error occurred
-    pub fn with_err_handler<F: 'static + Fn(usize, Status) + Send + Sync>(
+    pub fn with_err_handler(
         self,
-        err_handler: F,
+        err_handler: impl Fn(usize, Status) + Send + Sync + 'static,
     ) -> Self {
         Self {
             err_handler: Some(Box::new(err_handler)),

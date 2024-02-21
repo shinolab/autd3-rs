@@ -1,8 +1,5 @@
-use std::time::Duration;
-
 use crate::{
     datagram::*,
-    error::AUTDInternalError,
     geometry::{Device, Transducer},
 };
 
@@ -15,6 +12,11 @@ impl<F: Fn(&Device) -> Option<&Transducer>> ConfigureDebugOutputIdx<F> {
     /// constructor
     pub const fn new(f: F) -> Self {
         Self { f }
+    }
+
+    #[cfg_attr(coverage_nightly, coverage(off))]
+    pub fn f(&self) -> &F {
+        &self.f
     }
 }
 

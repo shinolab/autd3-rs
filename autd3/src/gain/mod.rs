@@ -1,20 +1,13 @@
 mod bessel;
-mod cache;
 mod focus;
-mod group;
 mod null;
 mod plane;
 mod trans_test;
-mod transform;
 mod uniform;
 
 pub use bessel::Bessel;
-pub use cache::Cache as GainCache;
-pub use cache::IntoCache;
 pub use focus::Focus;
-pub use group::Group;
 pub use null::Null;
 pub use plane::Plane;
 pub use trans_test::TransducerTest;
-pub use transform::IntoTransform;
 pub use uniform::Uniform;

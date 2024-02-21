@@ -1,9 +1,8 @@
 [package]
 name = "autd3-driver"
-version = "21.1.0"
+version = "22.0.0-rc.3"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
-
 license = "MIT"
 description = "AUTD3 driver"
 repository = "https://github.com/shinolab/autd3-rs"
@@ -17,7 +16,7 @@ thiserror = "1.0.31"
 nalgebra = { version = "0.32.3", default-features = false, features = ["std"] }
 bitvec = "1.0.1"
 tokio = { version = "1.34.0", features = ["time"] }
-autd3-derive = { path = "../autd3-derive", version = "21.1.0", optional = true }
+autd3-derive = { path = "../autd3-derive", version = "22.0.0-rc.3" }
 async-trait = { version = "0.1.77", optional = true }
 num-complex = { version = "0.4.4", default-features = false, features = ["std"] }
 
@@ -34,6 +33,8 @@ itertools = "0.12.0"
 memoffset = "0.9.0"
 serde_json = "1.0.107"
 tokio = { version = "1.34.0", features = ["macros", "rt-multi-thread"] }
+autd3 = { path = "../autd3", version = "22.0.0-rc.3" }
+anyhow = "1.0.79"
 
 [features]
 default = ["derive"]
@@ -41,4 +42,4 @@ single_float = []
 async-trait = ["dep:async-trait"]
 use_meter = []
 serde = ["dep:serde"]
-derive = ["autd3-derive"]
+derive = []

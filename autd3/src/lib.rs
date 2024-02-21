@@ -8,12 +8,17 @@ pub mod modulation;
 pub mod prelude;
 
 pub use autd3_driver as driver;
+pub use autd3_driver::derive;
 
 pub use controller::Controller;
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::{defined::float, geometry::Vector3};
+    use autd3_driver::{
+        autd3_device::AUTD3,
+        defined::float,
+        geometry::{Geometry, IntoDevice, Vector3},
+    };
 
     pub fn random_vector3(
         range_x: std::ops::Range<float>,
@@ -26,6 +31,14 @@ mod tests {
             rng.gen_range(range_x),
             rng.gen_range(range_y),
             rng.gen_range(range_z),
+        )
+    }
+
+    pub fn create_geometry(n: usize) -> Geometry {
+        Geometry::new(
+            (0..n)
+                .map(|i| AUTD3::new(Vector3::zeros()).into_device(i))
+                .collect(),
         )
     }
 }

@@ -72,7 +72,7 @@ impl Link for RemoteSOEM {
 
         Ok(self
             .client
-            .send_data(tx.to_msg())
+            .send_data(tx.to_msg(None))
             .await
             .map_err(AUTDProtoBufError::from)?
             .into_inner()

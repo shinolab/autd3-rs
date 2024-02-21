@@ -1,4 +1,26 @@
-# 21.0.2
+# 22.0.0
+
+- Update firmware to v6.0.0
+  - Support segment control
+  - Support pulse width encoder control
+  - Remove Modulation delay configuration
+  - Add phase additive filter
+- Remove `ConfigureModDelay`
+- Add `ConfigurePhaseFilter`
+- Add `with_segment` to `Gain`, `Modulation`, `FocusSTM`, and `GainSTM`
+- Add `with_loop_behavior` to `Modulation`, `FocusSTM`, and `GainSTM`
+  - Remove `with_start_idx` and `with_finish_idx` from `FocusSTM` and `GainSTM`
+- Fix [#8](https://github.com/shinolab/autd3-rs/issues/8): `phase` parameter of `gain::Bessel` and `gain::Focus` have no effect
+  - Rename `phase` parameter of `gain::Bessel`, `gain::Focus`, and `gain::Plane` to `phase_offset`
+- Extend supported data type of Lightweight mode
+- Add `ControllerBuilder::open_with_timeout`
+  - Rename `ControllerBuilder::open_with` to `ControllerBuilder::open`
+- Remove `with_cache` and `with_transform` from some `Gain`s
+- Remove `with_cache`, `with_transform`, and `with_radiation_pressure` from some `Modulation`s
+- Support 32-bit float Wav file in `Wav` modulation
+- Refactor the whole codebase
+
+# 21.1.0
 
 - Fix [#7](https://github.com/shinolab/autd3-rs/issues/7): `on_lost` and `on_err` callback don't work
 - Add `with_err_handler` to `autd3-link-soem::SOEM`

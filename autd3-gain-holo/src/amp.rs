@@ -80,18 +80,4 @@ mod tests {
         assert_approx_eq::assert_approx_eq!((2. * amp).as_pascal(), 2. * 23.77, 1e-3);
         assert_approx_eq::assert_approx_eq!((amp * 2.).as_pascal(), 2. * 23.77, 1e-3);
     }
-
-    #[test]
-    fn test_amp_derive() {
-        let amp = 23.77 * Pascal;
-        let amp2 = amp.clone();
-
-        assert_eq!(amp, amp2);
-        assert_eq!(format!("{:?}", amp), "Amplitude { value: 23.77 }");
-        assert!(!(amp < amp2));
-        assert!(!(amp > amp2));
-        assert!(amp <= amp2);
-        assert!(amp >= amp2);
-        assert!(amp <= 2.0 * amp);
-    }
 }

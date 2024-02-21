@@ -6,7 +6,7 @@ use crate::{
 impl ToMessage for autd3_driver::common::SamplingConfiguration {
     type Message = SamplingConfiguration;
 
-    fn to_msg(&self) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             freq_div: self.frequency_division(),
         }
@@ -35,7 +35,7 @@ mod tests {
             rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX),
         )
         .unwrap();
-        let msg = v.to_msg();
+        let msg = v.to_msg(None);
         let v2 = SamplingConfiguration::from_msg(&msg).unwrap();
         assert_eq!(v, v2);
     }

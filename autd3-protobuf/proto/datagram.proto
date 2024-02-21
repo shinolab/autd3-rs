@@ -2,6 +2,11 @@ syntax = "proto3";
 
 package autd3;
 
+import "gain.proto";
+import "utils.proto";
+
+message Clear {}
+
 message ConfigureSilencerFixedUpdateRate {
       uint32 value_intensity = 1;
       uint32 value_phase = 2;
@@ -18,4 +23,54 @@ message ConfigureSilencer {
         ConfigureSilencerFixedUpdateRate fixed_update_rate = 1;
         ConfigureSilencerFixedCompletionSteps fixed_completion_steps = 2;
     }
+}
+
+message Synchronize {}
+
+message ConfigureForceFan {
+    repeated bool value = 1;
+}
+
+message ConfigureReadsFPGAState {
+    repeated bool value = 1;
+}
+
+message ConfigureDebugOutputIdx {
+    repeated int32 value = 1;
+}
+
+message GainSTM {
+    uint32 freq_div = 1;
+    LoopBehavior loop_behavior = 2;
+    Segment segment = 3;
+    bool update_segment = 4;
+    repeated Gain gains = 5;
+}
+
+message FocusSTM {
+    message ControlPoint {
+        EmitIntensity intensity = 1;
+        Vector3 pos = 2;
+    }
+    uint32 freq_div = 1;
+    LoopBehavior loop_behavior = 2;
+    Segment segment = 3;
+    bool update_segment = 4;
+    repeated ControlPoint points = 5;
+}
+
+message ChangeGainSegment {
+    Segment segment = 1;
+}
+
+message ChangeFocusSTMSegment {
+    Segment segment = 1;
+}
+
+message ChangeGainSTMSegment {
+    Segment segment = 1;
+}
+
+message ChangeModulationSegment {
+    Segment segment = 1;
 }
