@@ -12,7 +12,7 @@ fn print_msg_and_wait_for_key(msg: &str) {
 #[tokio::main]
 async fn main() -> Result<()> {
     print_msg_and_wait_for_key(
-        "Make sure you have two devices connected that have the latest firmware.\nAlso check that an oscilloscope is connected to GPIO[0] and GPIO[1] of each device.",
+        "Make sure you have two devices connected that have the latest firmware.\nAlso check that an oscilloscope is connected to GPIO[0] and GPIO[1] of each device.\nAnd check if outputs of GPIO[0] pins are NOT synchronized each other.",
     );
 
     let mut autd = Controller::builder()
@@ -29,6 +29,8 @@ async fn main() -> Result<()> {
             }),
         )
         .await?;
+
+    print_msg_and_wait_for_key("Check if outputs of GPIO[0] pins are now synchronized.");
 
     let firmware_infos = autd.firmware_infos().await?;
     assert_eq!(2, firmware_infos.len());
@@ -465,6 +467,114 @@ async fn main() -> Result<()> {
             autd.send(ChangeGainSegment::new(Segment::S1)).await
         );
     }
+
+    // clear
+    {
+        autd.send(Clear::new()).await?;
+        autd.send(ConfigureReadsFPGAState::new(|_| true)).await?;
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+        autd.fpga_state().await?.iter().for_each(|state| {
+            assert!(state.is_some());
+            let state = state.unwrap();
+            assert_eq!(Segment::S0, state.current_mod_segment());
+            assert_eq!(Some(Segment::S0), state.current_gain_segment());
+            assert_eq!(None, state.current_stm_segment());
+        });
+        assert_eq!(
+            Err(AUTDError::Internal(
+                AUTDInternalError::InvalidSegmentTransition
+            )),
+            autd.send(ChangeFocusSTMSegment::new(Segment::S0)).await
+        );
+        assert_eq!(
+            Err(AUTDError::Internal(
+                AUTDInternalError::InvalidSegmentTransition
+            )),
+            autd.send(ChangeFocusSTMSegment::new(Segment::S1)).await
+        );
+        assert_eq!(
+            Err(AUTDError::Internal(
+                AUTDInternalError::InvalidSegmentTransition
+            )),
+            autd.send(ChangeGainSTMSegment::new(Segment::S0)).await
+        );
+        assert_eq!(
+            Err(AUTDError::Internal(
+                AUTDInternalError::InvalidSegmentTransition
+            )),
+            autd.send(ChangeGainSTMSegment::new(Segment::S1)).await
+        );
+    }
+
+    // Phase filter
+    {
+        autd.send(ConfigurePhaseFilter::additive(|dev, tr| {
+            tr.align_phase_at(
+                dev.center() + Vector3::new(0.0, 0.0, 150.0 * MILLIMETER),
+                dev.sound_speed,
+            )
+        }))
+        .await?;
+        autd.send((
+            Sine::new(150.0),
+            Uniform::new(0xFF).with_phase(Phase::new(0)),
+        ))
+        .await?;
+        print_msg_and_wait_for_key(
+            "Check that the focal points are generated 150mm directly above the center of each device by your hands."
+        );
+
+        autd.send(ConfigurePhaseFilter::additive(|_dev, _tr| Phase::new(0)))
+            .await?;
+        autd.send(Static::new()).await?;
+    }
+
+    // Debug output index
+    {
+        autd.send(TransducerTest::new(|dev, tr| match (dev.idx(), tr.idx()) {
+            (0, 0) => Some(Drive::new(Phase::new(0), EmitIntensity::new(0xFF))),
+            (0, 248) => Some(Drive::new(Phase::new(0x80), EmitIntensity::new(0x80))),
+            (1, 0) => Some(Drive::new(Phase::new(0x80), EmitIntensity::new(0xFF))),
+            (1, 248) => Some(Drive::new(Phase::new(0), EmitIntensity::new(0x80))),
+            _ => None,
+        }))
+        .await?;
+        print_msg_and_wait_for_key("Check that there are no outputs of GPIO[2] pins.");
+
+        autd.send(ConfigureDebugOutputIdx::new(|dev| match dev.idx() {
+            0 => Some(&dev[0]),
+            1 => Some(&dev[0]),
+            _ => None,
+        }))
+        .await?;
+        print_msg_and_wait_for_key("Check that a 40kHz square wave with a duty ratio of 50% are output to the GPIO[2] pins and that the phase is shifted by half a cycle.");
+
+        autd.send(ConfigureDebugOutputIdx::new(|dev| match dev.idx() {
+            0 => Some(&dev[248]),
+            1 => Some(&dev[248]),
+            _ => None,
+        }))
+        .await?;
+        print_msg_and_wait_for_key("Check that a 40kHz square wave with a duty ratio of about 17% are output to the GPIO[2] pins and that the phase is shifted by half a cycle.");
+
+        autd.send(ConfigureDebugOutputIdx::new(|dev| match dev.idx() {
+            0 => Some(&dev[0]),
+            1 => Some(&dev[248]),
+            _ => None,
+        }))
+        .await?;
+        print_msg_and_wait_for_key("Check that a 40 kHz square wave are output on the GPIO[2] pins and that their phase are aligned.");
+
+        autd.send(ConfigureDebugOutputIdx::new(|dev| match dev.idx() {
+            0 => Some(&dev[1]),
+            1 => Some(&dev[2]),
+            _ => None,
+        }))
+        .await?;
+        print_msg_and_wait_for_key("Check that there are no outputs of GPIO[2] pins.");
+    }
+
+    autd.close().await?;
 
     println!("Ok!");
     Ok(())
