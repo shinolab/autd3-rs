@@ -85,6 +85,10 @@ impl DatagramS for Box<dyn Modulation> {
             Self::O2::default(),
         ))
     }
+
+    fn timeout(&self) -> Option<Duration> {
+        Some(Duration::from_millis(200))
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
