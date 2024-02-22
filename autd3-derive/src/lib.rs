@@ -35,23 +35,6 @@ pub fn modulation_derive(input: TokenStream) -> TokenStream {
             false
         };
 
-    let loop_behavior_no_change =
-        if let syn::Data::Struct(syn::DataStruct { fields, .. }) = input.data {
-            fields.iter().any(|field| {
-                let is_config = field
-                    .ident
-                    .as_ref()
-                    .map(|ident| ident == "loop_behavior")
-                    .unwrap_or(false);
-                let no_change = field.attrs.iter().any(
-                    |attr| matches!(&attr.meta, Meta::Path(path) if path.is_ident("no_change")),
-                );
-                is_config && no_change
-            })
-        } else {
-            false
-        };
-
     let linetimes = generics.lifetimes();
     let type_params = generics.type_params();
     let (_, ty_generics, where_clause) = generics.split_for_impl();
@@ -77,10 +60,7 @@ pub fn modulation_derive(input: TokenStream) -> TokenStream {
     let linetimes = generics.lifetimes();
     let type_params = generics.type_params();
     let (_, ty_generics, where_clause) = generics.split_for_impl();
-    let loop_behavior = if loop_behavior_no_change {
-        quote! {}
-    } else {
-        quote! {
+    let loop_behavior = quote! {
             impl <#(#linetimes,)* #(#type_params,)*> #name #ty_generics #where_clause {
                 /// Set loop behavior
                 ///
@@ -93,7 +73,6 @@ pub fn modulation_derive(input: TokenStream) -> TokenStream {
                     Self {loop_behavior, ..self}
                 }
             }
-        }
     };
 
     let linetimes = generics.lifetimes();

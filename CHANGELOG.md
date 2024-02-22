@@ -1,3 +1,7 @@
+# 22.0.1
+
+- Add `with_loop_behavior` to `Static`
+
 # 22.0.0
 
 - Update firmware to v6.0.0
