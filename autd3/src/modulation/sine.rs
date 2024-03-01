@@ -5,14 +5,19 @@ use num::integer::gcd;
 use super::sampling_mode::SamplingMode;
 
 /// Sine wave modulation
-#[derive(Modulation, Clone, PartialEq, Debug)]
+#[derive(Modulation, Clone, PartialEq, Debug, Builder)]
 pub struct Sine {
+    #[get]
     freq: float,
+    #[getset]
     intensity: EmitIntensity,
+    #[getset]
     phase: Phase,
+    #[getset]
     offset: EmitIntensity,
-    config: SamplingConfiguration,
+    #[getset]
     mode: SamplingMode,
+    config: SamplingConfiguration,
     loop_behavior: LoopBehavior,
 }
 
@@ -35,72 +40,6 @@ impl Sine {
             mode: SamplingMode::ExactFrequency,
             loop_behavior: LoopBehavior::Infinite,
         }
-    }
-
-    /// set intensity
-    ///
-    /// # Arguments
-    ///
-    /// * `intensity` - peek to peek intensity
-    ///
-    pub fn with_intensity(self, intensity: impl Into<EmitIntensity>) -> Self {
-        Self {
-            intensity: intensity.into(),
-            ..self
-        }
-    }
-
-    /// set offset
-    ///
-    /// # Arguments
-    ///
-    /// * `offset` - Offset of the wave
-    ///
-    pub fn with_offset(self, offset: impl Into<EmitIntensity>) -> Self {
-        Self {
-            offset: offset.into(),
-            ..self
-        }
-    }
-
-    /// set phase
-    ///
-    /// # Arguments
-    ///
-    /// * `phase` - Phase of the wave
-    ///
-    pub const fn with_phase(self, phase: Phase) -> Self {
-        Self { phase, ..self }
-    }
-
-    /// set sampling mode
-    ///
-    /// # Arguments
-    ///
-    /// * `mode` - [SamplingMode]
-    ///
-    pub const fn with_mode(self, mode: SamplingMode) -> Self {
-        Self { mode, ..self }
-    }
-
-    pub const fn freq(&self) -> float {
-        self.freq
-    }
-
-    pub const fn intensity(&self) -> EmitIntensity {
-        self.intensity
-    }
-
-    pub const fn offset(&self) -> EmitIntensity {
-        self.offset
-    }
-
-    pub const fn phase(&self) -> Phase {
-        self.phase
-    }
-
-    pub const fn mode(&self) -> SamplingMode {
-        self.mode
     }
 }
 

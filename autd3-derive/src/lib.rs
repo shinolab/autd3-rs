@@ -1,3 +1,4 @@
+mod builder;
 mod gain;
 mod modulation;
 
@@ -21,4 +22,10 @@ pub fn gain_derive(input: TokenStream) -> TokenStream {
 pub fn modulation_derive(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
     modulation::impl_mod_macro(ast)
+}
+
+#[proc_macro_derive(Builder, attributes(get, set, getset))]
+pub fn builder_derive(input: TokenStream) -> TokenStream {
+    let ast = syn::parse(input).unwrap();
+    builder::impl_builder_macro(ast)
 }

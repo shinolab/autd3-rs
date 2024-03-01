@@ -6,12 +6,17 @@ use autd3_driver::{
 };
 
 /// Gain to produce a Bessel beam
-#[derive(Gain, Clone, PartialEq, Debug)]
+#[derive(Gain, Clone, PartialEq, Debug, Builder)]
 pub struct Bessel {
-    intensity: EmitIntensity,
+    #[get]
     pos: Vector3,
+    #[get]
     dir: Vector3,
+    #[get]
     theta: float,
+    #[getset]
+    intensity: EmitIntensity,
+    #[getset]
     phase_offset: Phase,
 }
 
@@ -32,52 +37,6 @@ impl Bessel {
             intensity: EmitIntensity::MAX,
             phase_offset: Phase::new(0),
         }
-    }
-
-    /// set emission intensity
-    ///
-    /// # Arguments
-    ///
-    /// * `intensity` - emission intensity
-    ///
-    pub fn with_intensity(self, intensity: impl Into<EmitIntensity>) -> Self {
-        Self {
-            intensity: intensity.into(),
-            ..self
-        }
-    }
-
-    /// set phase_offset
-    ///
-    /// # Arguments
-    ///
-    /// * `phase_offset` - phase_offset
-    ///
-    pub fn with_phase_offset(self, phase_offset: Phase) -> Self {
-        Self {
-            phase_offset,
-            ..self
-        }
-    }
-
-    pub const fn intensity(&self) -> EmitIntensity {
-        self.intensity
-    }
-
-    pub const fn pos(&self) -> Vector3 {
-        self.pos
-    }
-
-    pub const fn dir(&self) -> Vector3 {
-        self.dir
-    }
-
-    pub const fn theta(&self) -> float {
-        self.theta
-    }
-
-    pub const fn phase_offset(&self) -> Phase {
-        self.phase_offset
     }
 }
 

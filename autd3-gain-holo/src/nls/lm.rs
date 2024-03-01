@@ -12,14 +12,19 @@ use autd3_driver::{defined::PI, derive::*, geometry::Vector3};
 /// * Levenberg, Kenneth. "A method for the solution of certain non-linear problems in least squares." Quarterly of applied mathematics 2.2 (1944): 164-168.
 /// * Marquardt, Donald W. "An algorithm for least-squares estimation of nonlinear parameters." Journal of the society for Industrial and Applied Mathematics 11.2 (1963): 431-441.
 /// * K.Madsen, H.Nielsen, and O.Tingleff, “Methods for non-linear least squares problems (2nd ed.),” 2004.
-#[derive(Gain)]
+#[derive(Gain, Builder)]
 pub struct LM<B: LinAlgBackend + 'static> {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,
+    #[getset]
     eps_1: float,
+    #[getset]
     eps_2: float,
+    #[getset]
     tau: float,
+    #[getset]
     k_max: usize,
+    #[set]
     initial: Vec<float>,
     constraint: EmissionConstraint,
     backend: Arc<B>,
@@ -40,42 +45,6 @@ impl<B: LinAlgBackend> LM<B> {
             backend,
             constraint: EmissionConstraint::DontCare,
         }
-    }
-
-    pub fn with_eps_1(self, eps_1: float) -> Self {
-        Self { eps_1, ..self }
-    }
-
-    pub fn with_eps_2(self, eps_2: float) -> Self {
-        Self { eps_2, ..self }
-    }
-
-    pub fn with_tau(self, tau: float) -> Self {
-        Self { tau, ..self }
-    }
-
-    pub fn with_k_max(self, k_max: usize) -> Self {
-        Self { k_max, ..self }
-    }
-
-    pub fn with_initial(self, initial: Vec<float>) -> Self {
-        Self { initial, ..self }
-    }
-
-    pub const fn eps_1(&self) -> float {
-        self.eps_1
-    }
-
-    pub const fn eps_2(&self) -> float {
-        self.eps_2
-    }
-
-    pub const fn tau(&self) -> float {
-        self.tau
-    }
-
-    pub const fn k_max(&self) -> usize {
-        self.k_max
     }
 
     pub fn initial(&self) -> &[float] {

@@ -11,10 +11,11 @@ use autd3_driver::{derive::*, geometry::Vector3};
 ///
 /// Reference
 /// * Plasencia, Diego Martinez, et al. "GS-PAT: high-speed multi-point sound-fields for phased arrays of transducers." ACM Transactions on Graphics (TOG) 39.4 (2020): 138-1.
-#[derive(Gain)]
+#[derive(Gain, Builder)]
 pub struct GSPAT<B: LinAlgBackend + 'static> {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,
+    #[getset]
     repeat: usize,
     constraint: EmissionConstraint,
     backend: Arc<B>,
@@ -31,14 +32,6 @@ impl<B: LinAlgBackend + 'static> GSPAT<B> {
             backend,
             constraint: EmissionConstraint::DontCare,
         }
-    }
-
-    pub fn with_repeat(self, repeat: usize) -> Self {
-        Self { repeat, ..self }
-    }
-
-    pub const fn repeat(&self) -> usize {
-        self.repeat
     }
 }
 

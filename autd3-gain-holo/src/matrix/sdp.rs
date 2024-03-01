@@ -13,12 +13,15 @@ use autd3_driver::{derive::*, geometry::Vector3};
 ///
 /// Reference
 /// * Inoue, Seki, Yasutoshi Makino, and Hiroyuki Shinoda. "Active touch perception produced by airborne ultrasonic haptic hologram." 2015 IEEE World Haptics Conference (WHC). IEEE, 2015.
-#[derive(Gain)]
+#[derive(Gain, Builder)]
 pub struct SDP<B: LinAlgBackend + 'static> {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,
+    #[getset]
     alpha: float,
+    #[getset]
     lambda: float,
+    #[getset]
     repeat: usize,
     constraint: EmissionConstraint,
     backend: Arc<B>,
@@ -37,30 +40,6 @@ impl<B: LinAlgBackend + 'static> SDP<B> {
             backend,
             constraint: EmissionConstraint::DontCare,
         }
-    }
-
-    pub fn with_alpha(self, alpha: float) -> Self {
-        Self { alpha, ..self }
-    }
-
-    pub fn with_lambda(self, lambda: float) -> Self {
-        Self { lambda, ..self }
-    }
-
-    pub fn with_repeat(self, repeat: usize) -> Self {
-        Self { repeat, ..self }
-    }
-
-    pub const fn alpha(&self) -> float {
-        self.alpha
-    }
-
-    pub const fn lambda(&self) -> float {
-        self.lambda
-    }
-
-    pub const fn repeat(&self) -> usize {
-        self.repeat
     }
 }
 

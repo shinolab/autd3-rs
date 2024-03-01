@@ -3,10 +3,13 @@ use std::collections::HashMap;
 use autd3_driver::{derive::*, geometry::Vector3};
 
 /// Gain to produce a plane wave
-#[derive(Gain, Clone, PartialEq, Debug)]
+#[derive(Gain, Clone, PartialEq, Debug, Builder)]
 pub struct Plane {
-    intensity: EmitIntensity,
+    #[get]
     dir: Vector3,
+    #[getset]
+    intensity: EmitIntensity,
+    #[getset]
     phase_offset: Phase,
 }
 
@@ -23,44 +26,6 @@ impl Plane {
             intensity: EmitIntensity::MAX,
             phase_offset: Phase::new(0),
         }
-    }
-
-    /// set emission intensity
-    ///
-    /// # Arguments
-    ///
-    /// * `intensity` - emission intensity
-    ///
-    pub fn with_intensity(self, intensity: impl Into<EmitIntensity>) -> Self {
-        Self {
-            intensity: intensity.into(),
-            ..self
-        }
-    }
-
-    /// set phase_offset
-    ///
-    /// # Arguments
-    ///
-    /// * `phase_offset` - phase_offset
-    ///
-    pub fn with_phase_offset(self, phase_offset: Phase) -> Self {
-        Self {
-            phase_offset,
-            ..self
-        }
-    }
-
-    pub const fn intensity(&self) -> EmitIntensity {
-        self.intensity
-    }
-
-    pub const fn dir(&self) -> Vector3 {
-        self.dir
-    }
-
-    pub const fn phase_offset(&self) -> Phase {
-        self.phase_offset
     }
 }
 
