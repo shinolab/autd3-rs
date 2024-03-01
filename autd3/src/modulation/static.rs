@@ -1,8 +1,9 @@
 use autd3_driver::derive::*;
 
 /// Without modulation
-#[derive(Modulation, Clone, PartialEq, Debug)]
+#[derive(Modulation, Clone, PartialEq, Debug, Builder)]
 pub struct Static {
+    #[get]
     intensity: EmitIntensity,
     #[no_change]
     config: SamplingConfiguration,
@@ -31,10 +32,6 @@ impl Static {
             config: SamplingConfiguration::DISABLE,
             loop_behavior: LoopBehavior::Infinite,
         }
-    }
-
-    pub fn intensity(&self) -> EmitIntensity {
-        self.intensity
     }
 }
 

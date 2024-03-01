@@ -11,10 +11,11 @@ use autd3_driver::{derive::*, geometry::Vector3};
 ///
 /// Reference
 /// * Marzo, Asier, and Bruce W. Drinkwater. "Holographic acoustic tweezers." Proceedings of the National Academy of Sciences 116.1 (2019): 84-89.
-#[derive(Gain)]
+#[derive(Gain, Builder)]
 pub struct GS<B: LinAlgBackend + 'static> {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,
+    #[getset]
     repeat: usize,
     constraint: EmissionConstraint,
     backend: Arc<B>,
@@ -31,14 +32,6 @@ impl<B: LinAlgBackend + 'static> GS<B> {
             backend,
             constraint: EmissionConstraint::DontCare,
         }
-    }
-
-    pub fn with_repeat(self, repeat: usize) -> Self {
-        Self { repeat, ..self }
-    }
-
-    pub const fn repeat(&self) -> usize {
-        self.repeat
     }
 }
 

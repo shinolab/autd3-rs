@@ -5,14 +5,19 @@ use num::integer::gcd;
 use super::sampling_mode::SamplingMode;
 
 /// Square wave modulation
-#[derive(Modulation, Clone, PartialEq, Debug)]
+#[derive(Modulation, Clone, PartialEq, Debug, Builder)]
 pub struct Square {
+    #[get]
     freq: float,
+    #[getset]
     low: EmitIntensity,
+    #[getset]
     high: EmitIntensity,
+    #[getset]
     duty: float,
-    config: SamplingConfiguration,
+    #[getset]
     mode: SamplingMode,
+    config: SamplingConfiguration,
     loop_behavior: LoopBehavior,
 }
 
@@ -33,73 +38,6 @@ impl Square {
             mode: SamplingMode::ExactFrequency,
             loop_behavior: LoopBehavior::Infinite,
         }
-    }
-
-    /// set low level intensity
-    ///
-    /// # Arguments
-    ///
-    /// * `low` - low level [EmitIntensity]
-    ///
-    pub fn with_low(self, low: impl Into<EmitIntensity>) -> Self {
-        Self {
-            low: low.into(),
-            ..self
-        }
-    }
-
-    /// set high level intensity
-    ///
-    /// # Arguments
-    ///
-    /// * `high` - high level [EmitIntensity]
-    ///     
-    pub fn with_high(self, high: impl Into<EmitIntensity>) -> Self {
-        Self {
-            high: high.into(),
-            ..self
-        }
-    }
-
-    /// set duty ratio
-    /// The duty ration is defined as `Th / (Th + Tl)`, where `Th` is high level duration, and `Tl` is low level duration.
-    ///
-    /// # Arguments
-    ///     
-    /// * `duty` - duty ratio (must be in [0, 1])
-    ///
-    pub const fn with_duty(self, duty: float) -> Self {
-        Self { duty, ..self }
-    }
-
-    /// set sampling mode
-    ///
-    /// # Arguments
-    ///
-    /// * `mode` - [SamplingMode]
-    ///
-    pub const fn with_mode(self, mode: SamplingMode) -> Self {
-        Self { mode, ..self }
-    }
-
-    pub const fn duty(&self) -> float {
-        self.duty
-    }
-
-    pub const fn low(&self) -> EmitIntensity {
-        self.low
-    }
-
-    pub const fn high(&self) -> EmitIntensity {
-        self.high
-    }
-
-    pub const fn freq(&self) -> float {
-        self.freq
-    }
-
-    pub const fn mode(&self) -> SamplingMode {
-        self.mode
     }
 }
 

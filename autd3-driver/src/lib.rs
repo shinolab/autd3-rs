@@ -35,5 +35,5 @@ pub mod derive {
         geometry::{Device, Geometry, Transducer},
         operation::{GainOp, ModulationOp, NullOp, Operation},
     };
-    pub use autd3_derive::{Gain, Modulation};
+    pub use autd3_derive::{Builder, Gain, Modulation};
 }
