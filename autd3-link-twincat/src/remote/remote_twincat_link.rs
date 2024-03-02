@@ -7,6 +7,7 @@ use itertools::Itertools;
 
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
+    derive::*,
     error::AUTDInternalError,
     geometry::Geometry,
     link::{Link, LinkBuilder},
@@ -26,10 +27,15 @@ pub struct RemoteTwinCAT {
     timeout: Duration,
 }
 
+#[derive(Builder)]
 pub struct RemoteTwinCATBuilder {
+    #[get]
     server_ams_net_id: String,
-    server_ip: Option<String>,
-    client_ams_net_id: Option<String>,
+    #[getset]
+    server_ip: String,
+    #[getset]
+    client_ams_net_id: String,
+    #[getset]
     timeout: Duration,
 }
 
@@ -40,8 +46,8 @@ impl LinkBuilder for RemoteTwinCATBuilder {
     async fn open(self, _: &Geometry) -> Result<Self::L, AUTDInternalError> {
         let RemoteTwinCATBuilder {
             server_ams_net_id,
-            mut server_ip,
-            mut client_ams_net_id,
+            server_ip,
+            client_ams_net_id,
             timeout,
         } = self;
 
@@ -55,11 +61,13 @@ impl LinkBuilder for RemoteTwinCATBuilder {
             return Err(AdsError::AmsNetIdParse.into());
         }
 
-        let ip = server_ip
-            .take()
-            .unwrap_or_else(|| octets[0..4].iter().map(|v| v.to_string()).join("."));
+        let ip = if server_ip.is_empty() {
+            octets[0..4].iter().map(|v| v.to_string()).join(".")
+        } else {
+            server_ip
+        };
 
-        if let Some(client_ams_net_id) = client_ams_net_id.take() {
+        if !client_ams_net_id.is_empty() {
             let local_octets = client_ams_net_id
                 .split('.')
                 .map(|octet| octet.parse::<u8>())
@@ -113,30 +121,12 @@ impl LinkBuilder for RemoteTwinCATBuilder {
     }
 }
 
-impl RemoteTwinCATBuilder {
-    /// Set server IP address
-    pub fn with_server_ip(mut self, server_ip: impl Into<String>) -> Self {
-        self.server_ip = Some(server_ip.into());
-        self
-    }
-
-    /// Set client AMS Net ID
-    pub fn with_client_ams_net_id(mut self, client_ams_net_id: impl Into<String>) -> Self {
-        self.client_ams_net_id = Some(client_ams_net_id.into());
-        self
-    }
-
-    pub fn with_timeout(self, timeout: Duration) -> Self {
-        Self { timeout, ..self }
-    }
-}
-
 impl RemoteTwinCAT {
     pub fn builder(server_ams_net_id: impl Into<String>) -> RemoteTwinCATBuilder {
         RemoteTwinCATBuilder {
             server_ams_net_id: server_ams_net_id.into(),
-            server_ip: None,
-            client_ams_net_id: None,
+            server_ip: String::new(),
+            client_ams_net_id: String::new(),
             timeout: Duration::from_millis(200),
         }
     }

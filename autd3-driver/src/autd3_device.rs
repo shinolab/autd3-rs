@@ -1,11 +1,15 @@
 use crate::{
     defined::{float, MILLIMETER},
+    derive::*,
     geometry::{Device, IntoDevice, Matrix4, Transducer, UnitQuaternion, Vector3, Vector4},
 };
 
 /// AUTD3 device
+#[derive(Clone, Copy, Debug, Builder)]
 pub struct AUTD3 {
+    #[get]
     position: Vector3,
+    #[getset]
     rotation: UnitQuaternion,
 }
 
@@ -35,13 +39,6 @@ impl AUTD3 {
         Self {
             position,
             rotation: UnitQuaternion::identity(),
-        }
-    }
-
-    pub fn with_rotation(self, rotation: impl Into<UnitQuaternion>) -> Self {
-        Self {
-            rotation: rotation.into(),
-            ..self
         }
     }
 

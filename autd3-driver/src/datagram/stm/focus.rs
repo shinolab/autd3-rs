@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::{
     common::{LoopBehavior, SamplingConfiguration, Segment},
     defined::float,
-    derive::DatagramS,
+    derive::*,
     error::AUTDInternalError,
     operation::ControlPoint,
 };
@@ -18,9 +18,10 @@ use super::STMProps;
 /// - The maximum number of sampling points is [crate::fpga::FOCUS_STM_BUF_SIZE_MAX].
 /// - The sampling frequency is [crate::fpga::FPGA_CLK_FREQ]/N, where `N` is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN]
 ///
-#[derive(Clone)]
+#[derive(Clone, Builder)]
 pub struct FocusSTM {
     control_points: Vec<ControlPoint>,
+    #[getset(loop_behavior: LoopBehavior)]
     props: STMProps,
 }
 
@@ -96,18 +97,6 @@ impl FocusSTM {
     /// Get [ControlPoint]s
     pub fn foci(&self) -> &[ControlPoint] {
         &self.control_points
-    }
-
-    /// Set loop behavior
-    pub fn with_loop_behavior(self, loop_behavior: LoopBehavior) -> Self {
-        Self {
-            props: self.props.with_loop_behavior(loop_behavior),
-            ..self
-        }
-    }
-
-    pub const fn loop_behavior(&self) -> LoopBehavior {
-        self.props.loop_behavior()
     }
 
     pub fn frequency(&self) -> float {
@@ -280,7 +269,7 @@ mod tests {
     }
 
     #[test]
-    fn with_loop_behavior() {
+    fn test_with_loop_behavior() {
         let stm = FocusSTM::from_freq(1.0);
         assert_eq!(LoopBehavior::Infinite, stm.loop_behavior());
 

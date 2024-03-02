@@ -1,36 +1,80 @@
 use proc_macro::TokenStream;
-use quote::{format_ident, quote};
+use proc_macro2::Span;
+use quote::{format_ident, quote, ToTokens};
 use syn::Meta;
 
 fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let name = &input.ident;
     let generics = &input.generics;
 
-    let getter_fileds = if let syn::Data::Struct(syn::DataStruct { fields, .. }) =
-        input.data.clone()
-    {
-        fields
+    let getter_fileds =
+        if let syn::Data::Struct(syn::DataStruct { fields, .. }) = input.data.clone() {
+            fields
                 .iter()
                 .filter_map(|field| {
-                    if field.attrs.iter().any(
-                        |attr| matches!(&attr.meta, Meta::Path(path) if path.is_ident("get") || path.is_ident("getset")),
-                    ) {
+                    if field.attrs.iter().any(|attr| match &attr.meta {
+                        Meta::Path(path) if path.is_ident("get") || path.is_ident("getset") => true,
+                        Meta::List(list)
+                            if list.path.is_ident("get") || list.path.is_ident("getset") =>
+                        {
+                            true
+                        }
+                        _ => false,
+                    }) {
                         Some(field.clone())
                     } else {
                         None
                     }
                 })
                 .collect()
-    } else {
-        vec![]
-    };
+        } else {
+            vec![]
+        };
 
     let getters = getter_fileds.iter().map(|field| {
         let ident = field.ident.as_ref().unwrap();
-        let ty = &field.ty;
-        quote! {
-            pub const fn #ident(&self) -> #ty {
-                self.#ident
+        let attr = field
+            .attrs
+            .iter()
+            .find(|attr| match &attr.meta {
+                Meta::Path(path) if path.is_ident("get") || path.is_ident("getset") => true,
+                Meta::List(list) if list.path.is_ident("get") || list.path.is_ident("getset") => {
+                    true
+                }
+                _ => false,
+            })
+            .unwrap();
+        if let Ok(syn::FnArg::Typed(typed)) = attr.parse_args::<syn::FnArg>() {
+            let name = typed.pat;
+            let ty = typed.ty;
+            quote! {
+                pub fn #name(&self) -> #ty {
+                    self.#ident.#name
+                }
+            }
+        } else {
+            let ty = &field.ty;
+            match ty {
+                syn::Type::Path(path) if path.path.is_ident("String") => quote! {
+                    pub fn #ident(&self) -> &str {
+                        &self.#ident
+                    }
+                },
+                syn::Type::Path(path) if path.path.is_ident("Vector3") => quote! {
+                    pub fn #ident(&self) -> &Vector3 {
+                        &self.#ident
+                    }
+                },
+                syn::Type::Path(path) if path.path.is_ident("UnitQuaternion") => quote! {
+                    pub fn #ident(&self) -> &UnitQuaternion {
+                        &self.#ident
+                    }
+                },
+                _ => quote! {
+                    pub const fn #ident(&self) -> #ty {
+                        self.#ident
+                    }
+                },
             }
         }
     });
@@ -49,42 +93,89 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let name = &input.ident;
     let generics = &input.generics;
 
-    let setter_fileds = if let syn::Data::Struct(syn::DataStruct { fields, .. }) =
-        input.data.clone()
-    {
-        fields
+    let setter_fileds =
+        if let syn::Data::Struct(syn::DataStruct { fields, .. }) = input.data.clone() {
+            fields
                 .iter()
                 .filter_map(|field| {
-                    if field.attrs.iter().any(
-                        |attr| matches!(&attr.meta, Meta::Path(path) if path.is_ident("set") || path.is_ident("getset")),
-                    ) {
+                    if field.attrs.iter().any(|attr| match &attr.meta {
+                        Meta::Path(path) if path.is_ident("set") || path.is_ident("getset") => true,
+                        Meta::List(list)
+                            if list.path.is_ident("set") || list.path.is_ident("getset") =>
+                        {
+                            true
+                        }
+                        _ => false,
+                    }) {
                         Some(field.clone())
                     } else {
                         None
                     }
                 })
                 .collect()
-    } else {
-        vec![]
-    };
+        } else {
+            vec![]
+        };
 
     let setters = setter_fileds.iter().map(|field| {
         let ident = field.ident.as_ref().unwrap();
-        let ty = &field.ty;
-        let name = format_ident!("with_{}", ident);
-        match ty {
-            syn::Type::Path(path) if path.path.is_ident("EmitIntensity") => quote! {
-                pub fn #name(mut self, value: impl Into<EmitIntensity>) -> Self {
-                    self.#ident = value.into();
-                    self
+        let attr = field
+            .attrs
+            .iter()
+            .find(|attr| match &attr.meta {
+                Meta::Path(path) if path.is_ident("set") || path.is_ident("getset") => true,
+                Meta::List(list) if list.path.is_ident("set") || list.path.is_ident("getset") => {
+                    true
                 }
-            },
-            _ => quote! {
+                _ => false,
+            })
+            .unwrap();
+        if let Ok(syn::FnArg::Typed(typed)) = attr.parse_args::<syn::FnArg>() {
+            let filed =
+                syn::Ident::new(&typed.pat.to_token_stream().to_string(), Span::call_site());
+            let name = format_ident!("with_{}", filed);
+            let ty = typed.ty;
+            quote! {
                 pub fn #name(mut self, value: #ty) -> Self {
-                    self.#ident = value;
+                    self.#ident.#filed = value;
                     self
                 }
-            },
+            }
+        } else {
+            let ty = &field.ty;
+            let name = format_ident!("with_{}", ident);
+            match ty {
+                syn::Type::Path(path) if path.path.is_ident("EmitIntensity") => quote! {
+                    pub fn #name(mut self, value: impl Into<EmitIntensity>) -> Self {
+                        self.#ident = value.into();
+                        self
+                    }
+                },
+                syn::Type::Path(path) if path.path.is_ident("UnitQuaternion") => quote! {
+                    pub fn #name(mut self, value: impl Into<UnitQuaternion>) -> Self {
+                        self.#ident = value.into();
+                        self
+                    }
+                },
+                syn::Type::Path(path) if path.path.is_ident("String") => quote! {
+                    pub fn #name(mut self, value: impl Into<String>) -> Self {
+                        self.#ident = value.into();
+                        self
+                    }
+                },
+                syn::Type::Path(path) if path.path.is_ident("IpAddr") => quote! {
+                    pub fn #name(mut self, value: impl Into<IpAddr>) -> Self {
+                        self.#ident = value.into();
+                        self
+                    }
+                },
+                _ => quote! {
+                    pub fn #name(mut self, value: #ty) -> Self {
+                        self.#ident = value;
+                        self
+                    }
+                },
+            }
         }
     });
 

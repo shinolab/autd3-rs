@@ -1,11 +1,13 @@
-use crate::{common::EmitIntensity, geometry::Vector3};
+use crate::{common::EmitIntensity, derive::*, geometry::Vector3};
 
 /// Control point for FocusSTM
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Builder)]
 pub struct ControlPoint {
     /// Focal point
+    #[getset]
     point: Vector3,
     /// Emission intensity
+    #[getset]
     intensity: EmitIntensity,
 }
 
@@ -21,28 +23,6 @@ impl ControlPoint {
             point,
             intensity: EmitIntensity::MAX,
         }
-    }
-
-    /// constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `point` - focal point
-    /// * `intensity` - emission intensity
-    ///
-    pub fn with_intensity(self, intensity: impl Into<EmitIntensity>) -> Self {
-        Self {
-            intensity: intensity.into(),
-            ..self
-        }
-    }
-
-    pub const fn point(&self) -> &Vector3 {
-        &self.point
-    }
-
-    pub const fn intensity(&self) -> EmitIntensity {
-        self.intensity
     }
 }
 

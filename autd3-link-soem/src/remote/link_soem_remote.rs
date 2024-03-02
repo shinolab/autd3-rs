@@ -2,6 +2,7 @@ use std::{net::SocketAddr, time::Duration};
 
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
+    derive::*,
     error::AUTDInternalError,
     link::{Link, LinkBuilder},
 };
@@ -15,16 +16,11 @@ pub struct RemoteSOEM {
     is_open: bool,
 }
 
+#[derive(Builder)]
 pub struct RemoteSOEMBuilder {
     addr: SocketAddr,
+    #[getset]
     timeout: Duration,
-}
-
-impl RemoteSOEMBuilder {
-    /// Set timeout
-    pub fn with_timeout(self, timeout: Duration) -> Self {
-        Self { timeout, ..self }
-    }
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
