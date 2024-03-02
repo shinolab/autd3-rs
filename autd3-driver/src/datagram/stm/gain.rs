@@ -21,6 +21,7 @@ use super::STMProps;
 /// - The sampling frequency is [crate::fpga::FPGA_CLK_FREQ]/N, where `N` is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN]
 ///
 #[derive(Builder)]
+#[no_const]
 pub struct GainSTM<G: Gain> {
     gains: Vec<G>,
     #[getset(loop_behavior: LoopBehavior)]

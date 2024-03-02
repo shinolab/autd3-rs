@@ -13,6 +13,7 @@ use autd3_driver::{defined::PI, derive::*, geometry::Vector3};
 /// * Marquardt, Donald W. "An algorithm for least-squares estimation of nonlinear parameters." Journal of the society for Industrial and Applied Mathematics 11.2 (1963): 431-441.
 /// * K.Madsen, H.Nielsen, and O.Tingleff, “Methods for non-linear least squares problems (2nd ed.),” 2004.
 #[derive(Gain, Builder)]
+#[no_const]
 pub struct LM<B: LinAlgBackend + 'static> {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,

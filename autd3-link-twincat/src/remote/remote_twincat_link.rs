@@ -28,6 +28,7 @@ pub struct RemoteTwinCAT {
 }
 
 #[derive(Builder)]
+#[no_const]
 pub struct RemoteTwinCATBuilder {
     #[get]
     server_ams_net_id: String,

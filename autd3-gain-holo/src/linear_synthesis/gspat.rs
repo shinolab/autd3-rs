@@ -12,6 +12,7 @@ use autd3_driver::{derive::*, geometry::Vector3};
 /// Reference
 /// * Plasencia, Diego Martinez, et al. "GS-PAT: high-speed multi-point sound-fields for phased arrays of transducers." ACM Transactions on Graphics (TOG) 39.4 (2020): 138-1.
 #[derive(Gain, Builder)]
+#[no_const]
 pub struct GSPAT<B: LinAlgBackend + 'static> {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,

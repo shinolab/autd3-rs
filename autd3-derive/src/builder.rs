@@ -48,7 +48,7 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
             let name = typed.pat;
             let ty = typed.ty;
             quote! {
-                pub fn #name(&self) -> #ty {
+                pub const fn #name(&self) -> #ty {
                     self.#ident.#name
                 }
             }
@@ -61,12 +61,12 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                     }
                 },
                 syn::Type::Path(path) if path.path.is_ident("Vector3") => quote! {
-                    pub fn #ident(&self) -> &Vector3 {
+                    pub const fn #ident(&self) -> &Vector3 {
                         &self.#ident
                     }
                 },
                 syn::Type::Path(path) if path.path.is_ident("UnitQuaternion") => quote! {
-                    pub fn #ident(&self) -> &UnitQuaternion {
+                    pub const fn #ident(&self) -> &UnitQuaternion {
                         &self.#ident
                     }
                 },
@@ -90,8 +90,15 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
 }
 
 fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
+    let attrs = &input.attrs;
     let name = &input.ident;
     let generics = &input.generics;
+
+    let const_qua = if attrs.iter().any(|attr| attr.path().is_ident("no_const")) {
+        quote! {}
+    } else {
+        quote! {const}
+    };
 
     let setter_fileds =
         if let syn::Data::Struct(syn::DataStruct { fields, .. }) = input.data.clone() {
@@ -170,9 +177,12 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                     }
                 },
                 _ => quote! {
-                    pub fn #name(mut self, value: #ty) -> Self {
-                        self.#ident = value;
-                        self
+                    #[allow(clippy::needless_update)]
+                    pub #const_qua fn #name(self, #ident: #ty) -> Self {
+                        Self {
+                            #ident,
+                            ..self
+                        }
                     }
                 },
             }
