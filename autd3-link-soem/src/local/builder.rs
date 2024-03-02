@@ -13,6 +13,7 @@ use autd3_driver::{
 };
 
 #[derive(Builder)]
+#[no_const]
 pub struct SOEMBuilder {
     #[getset]
     pub(crate) buf_size: usize,

@@ -14,6 +14,7 @@ use autd3_driver::{derive::*, geometry::Vector3};
 /// Reference
 /// * Inoue, Seki, Yasutoshi Makino, and Hiroyuki Shinoda. "Active touch perception produced by airborne ultrasonic haptic hologram." 2015 IEEE World Haptics Conference (WHC). IEEE, 2015.
 #[derive(Gain, Builder)]
+#[no_const]
 pub struct SDP<B: LinAlgBackend + 'static> {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,

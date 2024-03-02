@@ -24,7 +24,7 @@ pub struct SimulatorBuilder {
     #[get]
     port: u16,
     #[getset]
-    addr: IpAddr,
+    server_ip: IpAddr,
     #[getset]
     timeout: Duration,
 }
@@ -39,7 +39,7 @@ impl LinkBuilder for SimulatorBuilder {
     ) -> Result<Self::L, AUTDInternalError> {
         let mut client = simulator_client::SimulatorClient::connect(format!(
             "http://{}",
-            SocketAddr::new(self.addr, self.port)
+            SocketAddr::new(self.server_ip, self.port)
         ))
         .await
         .map_err(|e| AUTDInternalError::from(AUTDProtoBufError::from(e)))?;
@@ -63,7 +63,7 @@ impl SimulatorBuilder {
     #[deprecated(note = "Please use `with_server_ip` instead")]
     pub fn with_server_ipv4(self, ipv4: Ipv4Addr) -> Self {
         Self {
-            addr: IpAddr::V4(ipv4),
+            server_ip: IpAddr::V4(ipv4),
             ..self
         }
     }
@@ -72,7 +72,7 @@ impl SimulatorBuilder {
     #[deprecated(note = "Please use `with_server_ip` instead")]
     pub fn with_server_ipv6(self, ipv6: Ipv6Addr) -> Self {
         Self {
-            addr: IpAddr::V6(ipv6),
+            server_ip: IpAddr::V6(ipv6),
             ..self
         }
     }
@@ -81,7 +81,7 @@ impl SimulatorBuilder {
 impl Simulator {
     pub const fn builder(port: u16) -> SimulatorBuilder {
         SimulatorBuilder {
-            addr: IpAddr::V4(Ipv4Addr::LOCALHOST),
+            server_ip: IpAddr::V4(Ipv4Addr::LOCALHOST),
             port,
             timeout: Duration::from_millis(200),
         }
