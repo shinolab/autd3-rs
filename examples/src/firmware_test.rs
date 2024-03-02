@@ -418,7 +418,7 @@ async fn main() -> Result<()> {
         });
 
         let mut foci = gen_foci().rev().collect::<Vec<_>>();
-        foci[point_num - 1] = Focus::new(foci[point_num - 1].pos()).with_intensity(0x00);
+        foci[point_num - 1] = Focus::new(*foci[point_num - 1].pos()).with_intensity(0x00);
         let stm = GainSTM::from_freq(0.5)
             .with_loop_behavior(LoopBehavior::once())
             .add_gains_from_iter(foci)?

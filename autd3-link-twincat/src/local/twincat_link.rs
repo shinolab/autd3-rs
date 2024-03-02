@@ -6,6 +6,7 @@ use lib::Library;
 
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
+    derive::*,
     error::AUTDInternalError,
     geometry::Geometry,
     link::{Link, LinkBuilder},
@@ -38,15 +39,10 @@ pub struct TwinCAT {
     dll: Library,
 }
 
+#[derive(Builder)]
 pub struct TwinCATBuilder {
+    #[getset]
     timeout: Duration,
-}
-
-impl TwinCATBuilder {
-    /// Set timeout
-    pub fn with_timeout(self, timeout: Duration) -> Self {
-        Self { timeout }
-    }
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]

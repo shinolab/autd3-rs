@@ -59,7 +59,7 @@ impl STMSamplingConfiguration {
 #[derive(Clone, Copy)]
 pub struct STMProps {
     sampling: STMSamplingConfiguration,
-    loop_behavior: LoopBehavior,
+    pub(crate) loop_behavior: LoopBehavior,
 }
 
 impl STMProps {
@@ -82,17 +82,6 @@ impl STMProps {
             sampling: STMSamplingConfiguration::SamplingConfiguration(sampling),
             loop_behavior: LoopBehavior::Infinite,
         }
-    }
-
-    pub const fn with_loop_behavior(self, loop_behavior: LoopBehavior) -> Self {
-        Self {
-            loop_behavior,
-            ..self
-        }
-    }
-
-    pub const fn loop_behavior(&self) -> LoopBehavior {
-        self.loop_behavior
     }
 
     pub fn freq(&self, size: usize) -> float {

@@ -8,16 +8,27 @@ use crate::{
     SOEM,
 };
 
-use autd3_driver::{error::AUTDInternalError, link::LinkBuilder, timer_strategy::TimerStrategy};
+use autd3_driver::{
+    derive::*, error::AUTDInternalError, link::LinkBuilder, timer_strategy::TimerStrategy,
+};
 
+#[derive(Builder)]
 pub struct SOEMBuilder {
+    #[getset]
     pub(crate) buf_size: usize,
+    #[getset]
     pub(crate) timer_strategy: TimerStrategy,
+    #[getset]
     pub(crate) sync_mode: SyncMode,
+    #[getset]
     pub(crate) ifname: String,
+    #[getset]
     pub(crate) state_check_interval: std::time::Duration,
+    #[getset]
     pub(crate) timeout: std::time::Duration,
+    #[getset]
     pub(crate) sync0_cycle: u64,
+    #[getset]
     pub(crate) send_cycle: u64,
     pub(crate) err_handler: Option<ErrHandler>,
 }
@@ -43,58 +54,6 @@ impl SOEMBuilder {
         }
     }
 
-    /// Set sync0 cycle (the unit is 500us)
-    pub fn with_sync0_cycle(self, sync0_cycle: u64) -> Self {
-        Self {
-            sync0_cycle,
-            ..self
-        }
-    }
-
-    /// Set send cycle (the unit is 500us)
-    pub fn with_send_cycle(self, send_cycle: u64) -> Self {
-        Self { send_cycle, ..self }
-    }
-
-    /// Set send buffer size
-    pub fn with_buf_size(self, buf_size: usize) -> Self {
-        Self { buf_size, ..self }
-    }
-
-    /// Set timer strategy
-    pub fn with_timer_strategy(self, timer_strategy: TimerStrategy) -> Self {
-        Self {
-            timer_strategy,
-            ..self
-        }
-    }
-
-    /// Set sync mode
-    ///
-    /// See [Beckhoff's site](https://infosys.beckhoff.com/content/1033/ethercatsystem/2469122443.html) for more details.
-    pub fn with_sync_mode(self, sync_mode: SyncMode) -> Self {
-        Self { sync_mode, ..self }
-    }
-
-    /// Set network interface name
-    ///
-    /// If empty, this link will automatically find the network interface that is connected to AUTD3 devices.
-    ///
-    pub fn with_ifname(self, ifname: impl Into<String>) -> Self {
-        Self {
-            ifname: ifname.into(),
-            ..self
-        }
-    }
-
-    /// Set state check interval
-    pub fn with_state_check_interval(self, state_check_interval: Duration) -> Self {
-        Self {
-            state_check_interval,
-            ..self
-        }
-    }
-
     /// Set callback function when error occurred
     pub fn with_err_handler(
         self,
@@ -104,11 +63,6 @@ impl SOEMBuilder {
             err_handler: Some(Box::new(err_handler)),
             ..self
         }
-    }
-
-    /// Set timeout
-    pub fn with_timeout(self, timeout: Duration) -> Self {
-        Self { timeout, ..self }
     }
 }
 

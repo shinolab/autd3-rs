@@ -1,5 +1,6 @@
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
+    derive::*,
     error::AUTDInternalError,
     geometry::Geometry,
     link::{Link, LinkBuilder},
@@ -13,15 +14,10 @@ pub struct Nop {
     timeout: std::time::Duration,
 }
 
+#[derive(Builder)]
 pub struct NopBuilder {
+    #[getset]
     timeout: std::time::Duration,
-}
-
-impl NopBuilder {
-    #[allow(clippy::needless_update)]
-    pub fn with_timeout(self, timeout: std::time::Duration) -> Self {
-        Self { timeout, ..self }
-    }
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]

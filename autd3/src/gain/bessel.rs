@@ -85,8 +85,8 @@ mod tests {
         phase_offset: Phase,
         geometry: &Geometry,
     ) -> anyhow::Result<()> {
-        assert_eq!(pos, g.pos());
-        assert_eq!(dir, g.dir());
+        assert_eq!(&pos, g.pos());
+        assert_eq!(&dir, g.dir());
         assert_eq!(theta, g.theta());
         assert_eq!(intensity, g.intensity());
         assert_eq!(phase_offset, g.phase_offset());

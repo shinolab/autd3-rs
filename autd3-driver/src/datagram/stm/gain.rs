@@ -5,6 +5,7 @@ use crate::{
     common::{LoopBehavior, SamplingConfiguration},
     datagram::{DatagramS, Gain},
     defined::float,
+    derive::*,
     error::AUTDInternalError,
     operation::GainSTMMode,
 };
@@ -19,10 +20,13 @@ use super::STMProps;
 /// - The maximum number of sampling [Gain] is [crate::fpga::GAIN_STM_BUF_SIZE_MAX].
 /// - The sampling frequency is [crate::fpga::FPGA_CLK_FREQ]/N, where `N` is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN]
 ///
+#[derive(Builder)]
 pub struct GainSTM<G: Gain> {
     gains: Vec<G>,
-    mode: GainSTMMode,
+    #[getset(loop_behavior: LoopBehavior)]
     props: STMProps,
+    #[getset]
+    mode: GainSTMMode,
 }
 
 impl<G: Gain> GainSTM<G> {
@@ -62,18 +66,6 @@ impl<G: Gain> GainSTM<G> {
         )
     }
 
-    /// Set loop behavior
-    pub fn with_loop_behavior(self, loop_behavior: LoopBehavior) -> Self {
-        Self {
-            props: self.props.with_loop_behavior(loop_behavior),
-            ..self
-        }
-    }
-
-    pub const fn loop_behavior(&self) -> LoopBehavior {
-        self.props.loop_behavior()
-    }
-
     pub fn frequency(&self) -> float {
         self.props.freq(self.gains.len())
     }
@@ -84,15 +76,6 @@ impl<G: Gain> GainSTM<G> {
 
     pub fn sampling_config(&self) -> Result<SamplingConfiguration, AUTDInternalError> {
         self.props.sampling_config(self.gains.len())
-    }
-
-    /// Set the mode of GainSTM
-    pub fn with_mode(self, mode: GainSTMMode) -> Self {
-        Self { mode, ..self }
-    }
-
-    pub const fn mode(&self) -> GainSTMMode {
-        self.mode
     }
 
     /// Add a [Gain] to GainSTM
@@ -272,7 +255,7 @@ mod tests {
     }
 
     #[test]
-    fn with_mode() {
+    fn test_with_mode() {
         let stm = GainSTM::<NullGain>::from_freq(1.0);
         assert_eq!(stm.mode(), GainSTMMode::PhaseIntensityFull);
 
@@ -315,7 +298,7 @@ mod tests {
     }
 
     #[test]
-    fn with_loop_behavior() {
+    fn test_with_loop_behavior() {
         let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.0);
         assert_eq!(LoopBehavior::Infinite, stm.loop_behavior());
 

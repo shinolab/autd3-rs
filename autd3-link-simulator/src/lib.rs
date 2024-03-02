@@ -1,20 +1,16 @@
 use autd3_protobuf::*;
 
 use std::{
-    net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6},
+    net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr},
     time::Duration,
 };
 
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
+    derive::*,
     error::AUTDInternalError,
     link::{Link, LinkBuilder},
 };
-
-enum Either {
-    V4(Ipv4Addr),
-    V6(Ipv6Addr),
-}
 
 /// Link for Simulator
 pub struct Simulator {
@@ -23,9 +19,13 @@ pub struct Simulator {
     is_open: bool,
 }
 
+#[derive(Builder)]
 pub struct SimulatorBuilder {
-    addr: Either,
+    #[get]
     port: u16,
+    #[getset]
+    addr: IpAddr,
+    #[getset]
     timeout: Duration,
 }
 
@@ -39,10 +39,7 @@ impl LinkBuilder for SimulatorBuilder {
     ) -> Result<Self::L, AUTDInternalError> {
         let mut client = simulator_client::SimulatorClient::connect(format!(
             "http://{}",
-            match self.addr {
-                Either::V4(ip) => SocketAddr::V4(SocketAddrV4::new(ip, self.port)),
-                Either::V6(ip) => SocketAddr::V6(SocketAddrV6::new(ip, self.port, 0, 0)),
-            }
+            SocketAddr::new(self.addr, self.port)
         ))
         .await
         .map_err(|e| AUTDInternalError::from(AUTDProtoBufError::from(e)))?;
@@ -63,36 +60,28 @@ impl LinkBuilder for SimulatorBuilder {
 
 impl SimulatorBuilder {
     /// Set server IP address
-    pub fn with_server_ip(self, ipv4: Ipv4Addr) -> Self {
-        self.with_server_ipv4(ipv4)
-    }
-
-    /// Set server IP address
+    #[deprecated(note = "Please use `with_server_ip` instead")]
     pub fn with_server_ipv4(self, ipv4: Ipv4Addr) -> Self {
         Self {
-            addr: Either::V4(ipv4),
+            addr: IpAddr::V4(ipv4),
             ..self
         }
     }
 
     /// Set server IP address
+    #[deprecated(note = "Please use `with_server_ip` instead")]
     pub fn with_server_ipv6(self, ipv6: Ipv6Addr) -> Self {
         Self {
-            addr: Either::V6(ipv6),
+            addr: IpAddr::V6(ipv6),
             ..self
         }
-    }
-
-    /// Set timeout
-    pub fn with_timeout(self, timeout: Duration) -> Self {
-        Self { timeout, ..self }
     }
 }
 
 impl Simulator {
     pub const fn builder(port: u16) -> SimulatorBuilder {
         SimulatorBuilder {
-            addr: Either::V4(Ipv4Addr::LOCALHOST),
+            addr: IpAddr::V4(Ipv4Addr::LOCALHOST),
             port,
             timeout: Duration::from_millis(200),
         }

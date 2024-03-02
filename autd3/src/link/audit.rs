@@ -5,6 +5,7 @@ use std::{
 
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
+    derive::*,
     error::AUTDInternalError,
     link::{Link, LinkBuilder},
 };
@@ -20,15 +21,10 @@ pub struct Audit {
     broken: bool,
 }
 
+#[derive(Builder)]
 pub struct AuditBuilder {
+    #[getset]
     timeout: Duration,
-}
-
-impl AuditBuilder {
-    /// set timeout
-    pub fn with_timeout(self, timeout: Duration) -> Self {
-        Self { timeout }
-    }
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
