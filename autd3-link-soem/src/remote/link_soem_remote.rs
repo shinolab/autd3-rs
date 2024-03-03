@@ -3,7 +3,6 @@ use std::{net::SocketAddr, time::Duration};
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
     derive::*,
-    error::AUTDInternalError,
     link::{Link, LinkBuilder},
 };
 

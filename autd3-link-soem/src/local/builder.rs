@@ -8,9 +8,7 @@ use crate::{
     SOEM,
 };
 
-use autd3_driver::{
-    derive::*, error::AUTDInternalError, link::LinkBuilder, timer_strategy::TimerStrategy,
-};
+use autd3_driver::{derive::*, link::LinkBuilder, timer_strategy::TimerStrategy};
 
 #[derive(Builder)]
 #[no_const]

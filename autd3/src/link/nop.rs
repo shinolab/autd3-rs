@@ -1,8 +1,6 @@
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
     derive::*,
-    error::AUTDInternalError,
-    geometry::Geometry,
     link::{Link, LinkBuilder},
 };
 use autd3_firmware_emulator::CPUEmulator;
