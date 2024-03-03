@@ -8,8 +8,6 @@ use itertools::Itertools;
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
     derive::*,
-    error::AUTDInternalError,
-    geometry::Geometry,
     link::{Link, LinkBuilder},
 };
 

@@ -6,7 +6,6 @@ use std::{
 use autd3_driver::{
     cpu::{RxMessage, TxDatagram},
     derive::*,
-    error::AUTDInternalError,
     link::{Link, LinkBuilder},
 };
 use autd3_firmware_emulator::CPUEmulator;

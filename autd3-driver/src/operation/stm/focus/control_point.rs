@@ -1,4 +1,4 @@
-use crate::{common::EmitIntensity, derive::*, geometry::Vector3};
+use crate::{derive::*, geometry::Vector3};
 
 /// Control point for FocusSTM
 #[derive(Clone, Copy, Builder)]

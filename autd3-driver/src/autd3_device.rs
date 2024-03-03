@@ -1,7 +1,7 @@
 use crate::{
-    defined::{float, MILLIMETER},
+    defined::MILLIMETER,
     derive::*,
-    geometry::{Device, IntoDevice, Matrix4, Transducer, UnitQuaternion, Vector3, Vector4},
+    geometry::{IntoDevice, Matrix4, UnitQuaternion, Vector3, Vector4},
 };
 
 /// AUTD3 device

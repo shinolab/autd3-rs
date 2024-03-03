@@ -1,14 +1,6 @@
 use std::time::Duration;
 
-use crate::{
-    common::Segment,
-    common::{LoopBehavior, SamplingConfiguration},
-    datagram::{DatagramS, Gain},
-    defined::float,
-    derive::*,
-    error::AUTDInternalError,
-    operation::GainSTMMode,
-};
+use crate::{derive::*, operation::GainSTMMode};
 
 use super::STMProps;
 
@@ -212,10 +204,7 @@ mod tests {
 
     use super::*;
 
-    use crate::{
-        derive::*,
-        operation::{tests::NullGain, GainSTMOp},
-    };
+    use crate::operation::{tests::NullGain, GainSTMOp};
 
     #[test]
     fn new() {

@@ -1,12 +1,6 @@
 use std::time::Duration;
 
-use crate::{
-    common::{LoopBehavior, SamplingConfiguration, Segment},
-    defined::float,
-    derive::*,
-    error::AUTDInternalError,
-    operation::ControlPoint,
-};
+use crate::{derive::*, operation::ControlPoint};
 
 use super::STMProps;
 
@@ -181,10 +175,7 @@ mod tests {
     use std::num::NonZeroU32;
 
     use super::*;
-    use crate::{
-        geometry::Vector3,
-        operation::{FocusSTMOp, NullOp},
-    };
+    use crate::{geometry::Vector3, operation::FocusSTMOp};
 
     #[test]
     fn new() {
