@@ -245,6 +245,8 @@ def rust_coverage(args):
             "--features",
             features,
             "--workspace",
+            "--ignore-filename-regex",
+            "pb.rs|soem_bindings",
         ]
         if args.format == "lcov":
             command.extend(
