@@ -27,6 +27,10 @@ mod tests {
 
         let dc = Clone::clone(&d);
         assert_eq!(d, dc);
+        assert_eq!(
+            LoopBehavior::once(),
+            LoopBehavior::Finite(std::num::NonZeroU32::new(1).unwrap())
+        );
 
         assert_eq!(format!("{:?}", d), "Infinite");
     }
