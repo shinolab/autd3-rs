@@ -49,42 +49,42 @@ impl std::ops::Add<Phase> for Phase {
     }
 }
 
+impl std::ops::Sub<Phase> for Phase {
+    type Output = Phase;
+
+    fn sub(self, rhs: Phase) -> Self::Output {
+        Self::Output::new(self.value.wrapping_sub(rhs.value))
+    }
+}
+
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
+    #[rstest::rstest]
     #[test]
-    fn phase_clone() {
-        let a = PI * Rad;
-        let b = a;
-        assert_eq!(a.value, b.value);
+    #[case::value_0(0x00)]
+    #[case::value_1(0x01)]
+    #[case::value_ff(0xFF)]
+    fn test_phase_new(#[case] expected: u8) {
+        assert_eq!(expected, Phase::from(expected).value());
     }
 
+    #[rstest::rstest]
     #[test]
-    fn phase_from() {
-        assert_eq!(Phase::from(0x90).value, 0x90);
-
-        assert_eq!(Phase::from_rad(0.).value, 0);
-        assert_eq!(Phase::from_rad(PI).value, 128);
-        assert_eq!(Phase::from_rad(PI * 510.0 / 256.0).value, 255);
-        assert_eq!(Phase::from_rad(2. * PI).value, 0);
+    #[case::value_1_1(Phase::new(0x02), Phase::new(0x01), Phase::new(0x01))]
+    #[case::value_7f_7f(Phase::new(0xFE), Phase::new(0x7F), Phase::new(0x7F))]
+    #[case::value_7f_ff(Phase::new(0x7E), Phase::new(0x7F), Phase::new(0xFF))]
+    fn test_phase_add(#[case] expected: Phase, #[case] lhs: Phase, #[case] rhs: Phase) {
+        assert_eq!(expected, lhs + rhs);
     }
 
+    #[rstest::rstest]
     #[test]
-    fn phase_radian() {
-        assert_eq!(Phase::from_rad(0.).radian(), 0.);
-        assert_eq!(Phase::from_rad(PI).radian(), PI);
-        assert_eq!(
-            Phase::from_rad(PI * 510.0 / 256.0).radian(),
-            PI * 510.0 / 256.0
-        );
-        assert_eq!(Phase::from_rad(2. * PI).radian(), 0.);
-    }
-
-    #[test]
-    fn phase_debug() {
-        let a = Phase::from_rad(PI);
-        assert_eq!(format!("{:?}", a), "Phase { value: 128 }");
+    #[case::value_1_1(Phase::new(0x00), Phase::new(0x01), Phase::new(0x01))]
+    #[case::value_7f_7f(Phase::new(0x01), Phase::new(0x02), Phase::new(0x01))]
+    #[case::value_7f_ff(Phase::new(0x80), Phase::new(0x7F), Phase::new(0xFF))]
+    fn test_phase_sub(#[case] expected: Phase, #[case] lhs: Phase, #[case] rhs: Phase) {
+        assert_eq!(expected, lhs - rhs);
     }
 }

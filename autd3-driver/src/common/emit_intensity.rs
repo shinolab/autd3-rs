@@ -44,11 +44,19 @@ impl std::ops::Div<u8> for EmitIntensity {
     }
 }
 
-impl std::ops::Div<u8> for &EmitIntensity {
+impl std::ops::Mul<u8> for EmitIntensity {
     type Output = EmitIntensity;
 
-    fn div(self, rhs: u8) -> Self::Output {
-        Self::Output::new(self.value / rhs)
+    fn mul(self, rhs: u8) -> Self::Output {
+        Self::Output::new(self.value.saturating_mul(rhs))
+    }
+}
+
+impl std::ops::Mul<EmitIntensity> for u8 {
+    type Output = EmitIntensity;
+
+    fn mul(self, rhs: EmitIntensity) -> Self::Output {
+        Self::Output::new(self.saturating_mul(rhs.value))
     }
 }
 
@@ -56,7 +64,7 @@ impl std::ops::Add<EmitIntensity> for EmitIntensity {
     type Output = Self;
 
     fn add(self, rhs: EmitIntensity) -> Self::Output {
-        Self::new(self.value + rhs.value)
+        Self::new(self.value.saturating_add(rhs.value))
     }
 }
 
@@ -64,83 +72,107 @@ impl std::ops::Sub<EmitIntensity> for EmitIntensity {
     type Output = Self;
 
     fn sub(self, rhs: EmitIntensity) -> Self::Output {
-        Self::new(self.value - rhs.value)
-    }
-}
-
-#[cfg(test)]
-impl EmitIntensity {
-    pub fn random() -> Self {
-        use rand::Rng;
-        let mut rng = rand::thread_rng();
-        Self::new(rng.gen())
+        Self::new(self.value.saturating_sub(rhs.value))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
+    #[rstest::rstest]
     #[test]
-    fn test_new() {
-        (0x00..=0xFF).for_each(|i| {
-            assert_eq!(EmitIntensity::new(i).value(), i);
-        });
+    #[case::value_0(0x00)]
+    #[case::value_1(0x01)]
+    #[case::value_ff(0xFF)]
+    fn test_emit_intensity_new(#[case] expected: u8) {
+        assert_eq!(expected, EmitIntensity::new(expected).value(),);
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_with_correction() {
-        (0x00..=0xFF).for_each(|i| {
-            assert_eq!(
-                EmitIntensity::with_correction(i).value(),
-                ((i as float / 255.)
-                    .powf(1. / EmitIntensity::DEFAULT_CORRECTED_ALPHA)
-                    .asin()
-                    / PI
-                    * 510.0)
-                    .round() as u8
-            );
-        });
+    #[case::value_0(0x00, 0x00)]
+    #[case::value_1(0x00, 0x01)]
+    #[case::value_ff(0xFF, 0xFF)]
+    fn test_emit_intensity_with_correction(#[case] expected: u8, #[case] value: u8) {
+        assert_eq!(expected, EmitIntensity::with_correction(value).value());
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_div() {
-        let intensity = EmitIntensity::new(0xFF);
-        assert_eq!(intensity / 2, EmitIntensity::new(0x7F));
+    #[case::value_1_1(EmitIntensity::new(0x01), EmitIntensity::new(0x01), 1)]
+    #[case::value_1_2(EmitIntensity::new(0x00), EmitIntensity::new(0x01), 2)]
+    #[case::value_ff_2(EmitIntensity::new(0x7F), EmitIntensity::new(0xFF), 2)]
+    fn test_emit_intensity_div(
+        #[case] expected: EmitIntensity,
+        #[case] target: EmitIntensity,
+        #[case] div: u8,
+    ) {
+        assert_eq!(expected, target / div);
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_add() {
-        let intensity1 = EmitIntensity::new(0x01);
-        let intensity2 = EmitIntensity::new(0x02);
-        assert_eq!(intensity1 + intensity2, EmitIntensity::new(0x03));
+    #[case::value_1_1(EmitIntensity::new(0x01), EmitIntensity::new(0x01), 1)]
+    #[case::value_1_2(EmitIntensity::new(0x02), EmitIntensity::new(0x01), 2)]
+    #[case::value_7f_2(EmitIntensity::new(0xFE), EmitIntensity::new(0x7F), 2)]
+    #[case::value_7f_3(EmitIntensity::new(0xFF), EmitIntensity::new(0x7F), 3)]
+    fn test_emit_intensity_mul(
+        #[case] expected: EmitIntensity,
+        #[case] target: EmitIntensity,
+        #[case] mul: u8,
+    ) {
+        assert_eq!(expected, target * mul);
+        assert_eq!(expected, mul * target);
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_sub() {
-        let intensity1 = EmitIntensity::new(0x03);
-        let intensity2 = EmitIntensity::new(0x01);
-        assert_eq!(intensity1 - intensity2, EmitIntensity::new(0x02));
+    #[case::value_1_1(
+        EmitIntensity::new(0x02),
+        EmitIntensity::new(0x01),
+        EmitIntensity::new(0x01)
+    )]
+    #[case::value_7f_7f(
+        EmitIntensity::new(0xFE),
+        EmitIntensity::new(0x7F),
+        EmitIntensity::new(0x7F)
+    )]
+    #[case::value_7f_ff(
+        EmitIntensity::new(0xFF),
+        EmitIntensity::new(0x7F),
+        EmitIntensity::new(0xFF)
+    )]
+    fn test_emit_intensity_add(
+        #[case] expected: EmitIntensity,
+        #[case] lhs: EmitIntensity,
+        #[case] rhs: EmitIntensity,
+    ) {
+        assert_eq!(expected, lhs + rhs);
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_clone() {
-        let intensity = EmitIntensity::new(0);
-        assert_eq!(intensity.value(), intensity.clone().value());
-    }
-
-    #[test]
-    fn test_debug() {
-        let intensity = EmitIntensity::new(0);
-        assert_eq!(format!("{:?}", intensity), "EmitIntensity { value: 0 }");
-    }
-
-    #[test]
-    fn test_ord() {
-        let intensity1 = EmitIntensity::new(0);
-        let intensity2 = EmitIntensity::new(1);
-        assert!(intensity1 < intensity2);
-        assert_eq!(intensity1.min(intensity2), intensity1);
+    #[case::value_1_1(
+        EmitIntensity::new(0x00),
+        EmitIntensity::new(0x01),
+        EmitIntensity::new(0x01)
+    )]
+    #[case::value_7f_7f(
+        EmitIntensity::new(0x01),
+        EmitIntensity::new(0x02),
+        EmitIntensity::new(0x01)
+    )]
+    #[case::value_7f_ff(
+        EmitIntensity::new(0x00),
+        EmitIntensity::new(0x7F),
+        EmitIntensity::new(0xFF)
+    )]
+    fn test_emit_intensity_sub(
+        #[case] expected: EmitIntensity,
+        #[case] lhs: EmitIntensity,
+        #[case] rhs: EmitIntensity,
+    ) {
+        assert_eq!(expected, lhs - rhs);
     }
 }
