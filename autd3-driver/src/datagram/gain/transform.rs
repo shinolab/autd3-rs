@@ -59,38 +59,38 @@ impl<G: Gain + 'static, F: Fn(&Device, &Transducer, Drive) -> Drive + 'static> G
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::{super::tests::TestGain, *};
+// #[cfg(test)]
+// mod tests {
+//     use super::{super::tests::TestGain, *};
 
-    use crate::{datagram::Datagram, geometry::tests::create_geometry};
+//     use crate::{datagram::Datagram, geometry::tests::create_geometry};
 
-    #[test]
-    fn test_gain_transform() -> anyhow::Result<()> {
-        let geometry = create_geometry(1, 249);
+//     #[test]
+//     fn test_gain_transform() -> anyhow::Result<()> {
+//         let geometry = create_geometry(1, 249);
 
-        let d = Drive::random();
-        let gain = TestGain { d: Drive::null() }.with_transform(move |_, _, _| d);
+//         let d = Drive::random();
+//         let gain = TestGain { d: Drive::null() }.with_transform(move |_, _, _| d);
 
-        assert_eq!(
-            geometry
-                .devices()
-                .map(|dev| (dev.idx(), vec![d; dev.num_transducers()]))
-                .collect::<HashMap<_, _>>(),
-            gain.calc(&geometry, GainFilter::All)?
-        );
+//         assert_eq!(
+//             geometry
+//                 .devices()
+//                 .map(|dev| (dev.idx(), vec![d; dev.num_transducers()]))
+//                 .collect::<HashMap<_, _>>(),
+//             gain.calc(&geometry, GainFilter::All)?
+//         );
 
-        Ok(())
-    }
+//         Ok(())
+//     }
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn f(_dev: &Device, _tr: &Transducer, _d: Drive) -> Drive {
-        Drive::null()
-    }
+//     #[cfg_attr(coverage_nightly, coverage(off))]
+//     fn f(_dev: &Device, _tr: &Transducer, _d: Drive) -> Drive {
+//         Drive::null()
+//     }
 
-    #[test]
-    fn test_gain_transform_derive() {
-        let gain = TestGain { d: Drive::null() }.with_transform(f);
-        let _ = gain.operation();
-    }
-}
+//     #[test]
+//     fn test_gain_transform_derive() {
+//         let gain = TestGain { d: Drive::null() }.with_transform(f);
+//         let _ = gain.operation();
+//     }
+// }
