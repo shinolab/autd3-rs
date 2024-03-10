@@ -29,6 +29,13 @@ impl Drive {
     }
 }
 
+#[cfg(any(test, feature = "rand"))]
+impl rand::distributions::Distribution<Drive> for rand::distributions::Standard {
+    fn sample<R: rand::prelude::Rng + ?Sized>(&self, rng: &mut R) -> Drive {
+        Drive::new(rng.gen(), rng.gen())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
