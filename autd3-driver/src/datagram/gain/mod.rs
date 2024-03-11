@@ -1,10 +1,12 @@
 mod cache;
 mod group;
+mod segment;
 mod transform;
 
 pub use cache::Cache as GainCache;
 pub use cache::IntoCache as IntoGainCache;
 pub use group::Group;
+pub use segment::ChangeGainSegment;
 pub use transform::IntoTransform as IntoGainTransform;
 pub use transform::Transform as GainTransform;
 
@@ -21,7 +23,6 @@ use crate::{
 use bitvec::prelude::*;
 
 use super::with_segment::DatagramS;
-use super::Datagram;
 
 pub enum GainFilter<'a> {
     All,
@@ -114,151 +115,113 @@ impl DatagramS for Box<dyn Gain> {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct ChangeGainSegment {
-    segment: Segment,
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::{derive::*, geometry::tests::create_geometry};
+
+    #[derive(Gain, Clone, Copy, PartialEq, Debug)]
+    pub struct TestGain<F: Fn(&Device, &Transducer) -> Drive + 'static> {
+        pub f: F,
+    }
+
+    impl TestGain<Box<dyn Fn(&Device, &Transducer) -> Drive>> {
+        pub fn null() -> Self {
+            Self {
+                f: Box::new(|_, _| Drive::null()),
+            }
+        }
+    }
+
+    impl<F: Fn(&Device, &Transducer) -> Drive + 'static> Gain for TestGain<F> {
+        fn calc(
+            &self,
+            geometry: &Geometry,
+            filter: GainFilter,
+        ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
+            Ok(Self::transform(geometry, filter, &self.f))
+        }
+    }
+
+    const NUM_TRANSDUCERS: usize = 2;
+
+    #[rstest::fixture]
+    fn geometry() -> Geometry {
+        create_geometry(2, NUM_TRANSDUCERS)
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(
+        [true, true],
+        [
+            (0, vec![Drive::new(Phase::new(0x01), EmitIntensity::new(0x01)); NUM_TRANSDUCERS]),
+            (1, vec![Drive::new(Phase::new(0x02), EmitIntensity::new(0x02)); NUM_TRANSDUCERS])
+        ].into_iter().collect())]
+    #[case::enabled(
+        [true, false],
+        [
+            (0, vec![Drive::new(Phase::new(0x01), EmitIntensity::new(0x01)); NUM_TRANSDUCERS]),
+        ].into_iter().collect())]
+    fn test_gain_transform_all(
+        #[case] enabled: [bool; 2],
+        #[case] expect: HashMap<usize, Vec<Drive>>,
+        mut geometry: Geometry,
+    ) {
+        geometry
+            .iter_mut()
+            .zip(enabled.iter())
+            .for_each(|(dev, &e)| dev.enable = e);
+        assert_eq!(
+            Ok(expect),
+            TestGain {
+                f: |dev, _| Drive::new(
+                    Phase::new(dev.idx() as u8 + 1),
+                    EmitIntensity::new(dev.idx() as u8 + 1)
+                )
+            }
+            .calc(&geometry, GainFilter::All)
+        );
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(
+        [true, true],
+        [
+            (0, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x01), EmitIntensity::new(0x01))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
+            (1, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x02), EmitIntensity::new(0x02))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect())
+        ].into_iter().collect(), [
+            (0, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
+            (1, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
+        ].iter().cloned().collect())]
+    #[case::enabled(
+        [false, true],
+        [
+            (1, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x02), EmitIntensity::new(0x02))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect())
+        ].into_iter().collect(),[
+            (1, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
+        ].iter().cloned().collect())]
+    fn test_gain_transform_filtered(
+        #[case] enabled: [bool; 2],
+        #[case] expect: HashMap<usize, Vec<Drive>>,
+        #[case] filter: HashMap<usize, BitVec<usize, Lsb0>>,
+        mut geometry: Geometry,
+    ) {
+        geometry
+            .iter_mut()
+            .zip(enabled.iter())
+            .for_each(|(dev, &e)| dev.enable = e);
+        assert_eq!(
+            Ok(expect),
+            TestGain {
+                f: |dev, _| Drive::new(
+                    Phase::new(dev.idx() as u8 + 1),
+                    EmitIntensity::new(dev.idx() as u8 + 1)
+                )
+            }
+            .calc(&geometry, GainFilter::Filter(&filter))
+        );
+    }
 }
-
-impl ChangeGainSegment {
-    pub const fn new(segment: Segment) -> Self {
-        Self { segment }
-    }
-
-    pub const fn segment(&self) -> Segment {
-        self.segment
-    }
-}
-
-impl Datagram for ChangeGainSegment {
-    type O1 = crate::operation::GainChangeSegmentOp;
-    type O2 = crate::operation::NullOp;
-
-    fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
-    }
-
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new(self.segment), Self::O2::default()))
-    }
-}
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-
-//     use crate::{derive::*, geometry::tests::create_geometry};
-
-//     #[derive(Gain, Clone, Copy, PartialEq, Debug)]
-//     pub struct TestGain {
-//         pub d: Drive,
-//     }
-
-//     impl Gain for TestGain {
-//         fn calc(
-//             &self,
-//             geometry: &Geometry,
-//             filter: GainFilter,
-//         ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-//             Ok(Self::transform(geometry, filter, |_, _| self.d))
-//         }
-//     }
-
-//     #[test]
-//     fn test_gain_transform_all() -> anyhow::Result<()> {
-//         let geometry = create_geometry(2, 249);
-
-//         let d = Drive::random();
-//         assert_eq!(
-//             geometry
-//                 .devices()
-//                 .map(|dev| (dev.idx(), vec![d; dev.num_transducers()]))
-//                 .collect::<HashMap<_, _>>(),
-//             TestGain { d }.calc(&geometry, GainFilter::All)?
-//         );
-
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn test_gain_transform_all_enabled() -> anyhow::Result<()> {
-//         let mut geometry = create_geometry(2, 249);
-//         geometry[0].enable = false;
-
-//         let d = Drive::random();
-//         assert_eq!(
-//             geometry
-//                 .devices()
-//                 .map(|dev| (dev.idx(), vec![d; dev.num_transducers()]))
-//                 .collect::<HashMap<_, _>>(),
-//             TestGain { d }.calc(&geometry, GainFilter::All)?
-//         );
-
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn test_gain_transform_filtered() -> anyhow::Result<()> {
-//         let geometry = create_geometry(3, 249);
-
-//         let filter = geometry
-//             .iter()
-//             .take(2)
-//             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
-//             .collect::<HashMap<_, _>>();
-//         let d = Drive::random();
-//         assert_eq!(
-//             (0..2)
-//                 .map(|idx| (
-//                     geometry[idx].idx(),
-//                     (0..100)
-//                         .map(|_| d)
-//                         .chain((0..).map(|_| Drive::null()))
-//                         .take(geometry[idx].num_transducers())
-//                         .collect::<Vec<_>>()
-//                 ))
-//                 .collect::<HashMap<_, _>>(),
-//             TestGain { d }.calc(&geometry, GainFilter::Filter(&filter))?
-//         );
-
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn test_gain_transform_filtered_enabled() -> anyhow::Result<()> {
-//         let mut geometry = create_geometry(2, 249);
-//         geometry[0].enable = false;
-
-//         let filter = geometry
-//             .iter()
-//             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
-//             .collect::<HashMap<_, _>>();
-//         let d = Drive::random();
-
-//         assert_eq!(
-//             geometry
-//                 .devices()
-//                 .map(|dev| (
-//                     dev.idx(),
-//                     (0..100)
-//                         .map(|_| d)
-//                         .chain((0..).map(|_| Drive::null()))
-//                         .take(dev.num_transducers())
-//                         .collect::<Vec<_>>()
-//                 ))
-//                 .collect::<HashMap<_, _>>(),
-//             TestGain { d }.calc(&geometry, GainFilter::Filter(&filter))?
-//         );
-
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn test_change_gain_segment() -> anyhow::Result<()> {
-//         let d = ChangeGainSegment::new(Segment::S0);
-//         assert_eq!(Segment::S0, d.segment());
-//         assert_eq!(Some(Duration::from_millis(200)), d.timeout());
-//         let _ = d.operation()?;
-
-//         Ok(())
-//     }
-// }
