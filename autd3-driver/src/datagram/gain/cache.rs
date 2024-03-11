@@ -106,97 +106,88 @@ impl<G: Gain + 'static> Gain for Cache<G> {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::{super::tests::TestGain, *};
+#[cfg(test)]
+mod tests {
+    use super::{super::tests::TestGain, *};
 
-//     use std::sync::{
-//         atomic::{AtomicUsize, Ordering},
-//         Arc,
-//     };
+    use rand::Rng;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
 
-//     use crate::{derive::*, geometry::tests::create_geometry};
+    use crate::{derive::*, geometry::tests::create_geometry};
 
-//     #[test]
-//     fn test_cache() -> anyhow::Result<()> {
-//         let geometry = create_geometry(1, 249);
+    #[test]
+    fn test_cache() -> anyhow::Result<()> {
+        let geometry = create_geometry(1, 249);
 
-//         let gain = TestGain { d: Drive::random() };
-//         let cache = gain.with_cache();
-//         assert_eq!(gain.d, cache.d);
+        let mut rng = rand::thread_rng();
+        let d: Drive = rng.gen();
+        let gain = TestGain { f: move |_, _| d };
+        let cache = gain.with_cache();
 
-//         assert!(cache.drives().is_empty());
-//         assert_eq!(
-//             gain.calc(&geometry, GainFilter::All)?,
-//             cache.calc(&geometry, GainFilter::All)?
-//         );
-//         assert_eq!(gain.calc(&geometry, GainFilter::All)?, *cache.drives());
+        assert!(cache.drives().is_empty());
+        assert_eq!(
+            gain.calc(&geometry, GainFilter::All)?,
+            cache.calc(&geometry, GainFilter::All)?
+        );
+        assert_eq!(gain.calc(&geometry, GainFilter::All)?, *cache.drives());
 
-//         Ok(())
-//     }
+        Ok(())
+    }
 
-//     #[derive(Gain, Clone)]
-//     pub struct CacheTestGain {
-//         pub calc_cnt: Arc<AtomicUsize>,
-//     }
+    #[derive(Gain, Clone)]
+    pub struct CacheTestGain {
+        pub calc_cnt: Arc<AtomicUsize>,
+    }
 
-//     impl Gain for CacheTestGain {
-//         fn calc(
-//             &self,
-//             geometry: &Geometry,
-//             filter: GainFilter,
-//         ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-//             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
-//             Ok(Self::transform(geometry, filter, |_, _| Drive::null()))
-//         }
-//     }
+    impl Gain for CacheTestGain {
+        fn calc(
+            &self,
+            geometry: &Geometry,
+            filter: GainFilter,
+        ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
+            self.calc_cnt.fetch_add(1, Ordering::Relaxed);
+            Ok(Self::transform(geometry, filter, |_, _| Drive::null()))
+        }
+    }
 
-//     #[test]
-//     fn test_cache_calc_once() -> anyhow::Result<()> {
-//         let geometry = create_geometry(1, 249);
+    #[test]
+    fn test_cache_calc_once() {
+        let geometry = create_geometry(1, 249);
 
-//         let calc_cnt = Arc::new(AtomicUsize::new(0));
-//         let gain = CacheTestGain {
-//             calc_cnt: calc_cnt.clone(),
-//         }
-//         .with_cache();
+        let calc_cnt = Arc::new(AtomicUsize::new(0));
+        let gain = CacheTestGain {
+            calc_cnt: calc_cnt.clone(),
+        }
+        .with_cache();
 
-//         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
-//         let _ = gain.calc(&geometry, GainFilter::All)?;
-//         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
-//         let _ = gain.calc(&geometry, GainFilter::All)?;
-//         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
+        assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
+        let _ = gain.calc(&geometry, GainFilter::All);
+        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
+        let _ = gain.calc(&geometry, GainFilter::All);
+        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
+    }
 
-//         Ok(())
-//     }
+    #[test]
+    fn test_cache_clone() {
+        let geometry = create_geometry(1, 249);
 
-//     #[test]
-//     fn test_cache_clone() -> anyhow::Result<()> {
-//         let geometry = create_geometry(1, 249);
+        let calc_cnt = Arc::new(AtomicUsize::new(0));
+        let gain = CacheTestGain {
+            calc_cnt: calc_cnt.clone(),
+        }
+        .with_cache();
 
-//         let calc_cnt = Arc::new(AtomicUsize::new(0));
-//         let gain = CacheTestGain {
-//             calc_cnt: calc_cnt.clone(),
-//         }
-//         .with_cache();
+        let g2 = gain.clone();
+        assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
-//         let g2 = gain.clone();
-//         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
-
-//         let _ = g2.calc(&geometry, GainFilter::All)?;
-//         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
-//         let _ = gain.calc(&geometry, GainFilter::All)?;
-//         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
-//         let _ = g2.calc(&geometry, GainFilter::All)?;
-//         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
-
-//         Ok(())
-//     }
-
-//     #[test]
-//     fn test_cache_derive() {
-//         let g = TestGain { d: Drive::random() }.with_cache();
-//         assert_eq!(g, g.clone());
-//         let _ = g.operation_with_segment(Segment::S0, true);
-//     }
-// }
+        let _ = g2.calc(&geometry, GainFilter::All);
+        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
+        let _ = gain.calc(&geometry, GainFilter::All);
+        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
+        let _ = g2.calc(&geometry, GainFilter::All);
+        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
+    }
+}

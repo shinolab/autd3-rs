@@ -59,38 +59,31 @@ impl<G: Gain + 'static, F: Fn(&Device, &Transducer, Drive) -> Drive + 'static> G
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::{super::tests::TestGain, *};
+#[cfg(test)]
+mod tests {
+    use rand::Rng;
 
-//     use crate::{datagram::Datagram, geometry::tests::create_geometry};
+    use super::{super::tests::TestGain, *};
 
-//     #[test]
-//     fn test_gain_transform() -> anyhow::Result<()> {
-//         let geometry = create_geometry(1, 249);
+    use crate::geometry::tests::create_geometry;
 
-//         let d = Drive::random();
-//         let gain = TestGain { d: Drive::null() }.with_transform(move |_, _, _| d);
+    #[test]
+    fn test_gain_transform() -> anyhow::Result<()> {
+        let geometry = create_geometry(1, 249);
 
-//         assert_eq!(
-//             geometry
-//                 .devices()
-//                 .map(|dev| (dev.idx(), vec![d; dev.num_transducers()]))
-//                 .collect::<HashMap<_, _>>(),
-//             gain.calc(&geometry, GainFilter::All)?
-//         );
+        let mut rng = rand::thread_rng();
+        let d: Drive = rng.gen();
 
-//         Ok(())
-//     }
+        let gain = TestGain::null().with_transform(move |_, _, _| d);
 
-//     #[cfg_attr(coverage_nightly, coverage(off))]
-//     fn f(_dev: &Device, _tr: &Transducer, _d: Drive) -> Drive {
-//         Drive::null()
-//     }
+        assert_eq!(
+            geometry
+                .devices()
+                .map(|dev| (dev.idx(), vec![d; dev.num_transducers()]))
+                .collect::<HashMap<_, _>>(),
+            gain.calc(&geometry, GainFilter::All)?
+        );
 
-//     #[test]
-//     fn test_gain_transform_derive() {
-//         let gain = TestGain { d: Drive::null() }.with_transform(f);
-//         let _ = gain.operation();
-//     }
-// }
+        Ok(())
+    }
+}
