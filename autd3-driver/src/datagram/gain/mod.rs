@@ -108,10 +108,6 @@ impl DatagramS for Box<dyn Gain> {
             Self::O2::default(),
         ))
     }
-
-    fn timeout(&self) -> Option<Duration> {
-        Some(std::time::Duration::from_millis(200))
-    }
 }
 
 #[derive(Debug, Clone, Copy)]
