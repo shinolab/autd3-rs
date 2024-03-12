@@ -1,5 +1,6 @@
 mod cache;
 mod radiation_pressure;
+mod segment;
 mod transform;
 
 use std::time::Duration;
@@ -8,6 +9,7 @@ pub use cache::Cache as ModulationCache;
 pub use cache::IntoCache as IntoModulationCache;
 pub use radiation_pressure::IntoRadiationPressure;
 pub use radiation_pressure::RadiationPressure;
+pub use segment::ChangeModulationSegment;
 pub use transform::IntoTransform as IntoModulationTransform;
 pub use transform::Transform as ModulationTransform;
 
@@ -91,34 +93,6 @@ impl DatagramS for Box<dyn Modulation> {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct ChangeModulationSegment {
-    segment: Segment,
-}
-
-impl ChangeModulationSegment {
-    pub const fn new(segment: Segment) -> Self {
-        Self { segment }
-    }
-
-    pub const fn segment(&self) -> Segment {
-        self.segment
-    }
-}
-
-impl Datagram for ChangeModulationSegment {
-    type O1 = crate::operation::ModulationChangeSegmentOp;
-    type O2 = crate::operation::NullOp;
-
-    fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
-    }
-
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new(self.segment), Self::O2::default()))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -138,48 +112,50 @@ mod tests {
         }
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_modulation_property() {
-        let m = TestModulation {
-            config: SamplingConfiguration::FREQ_4K_HZ,
-            buf: vec![],
-            loop_behavior: LoopBehavior::Infinite,
-        };
-        assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
-        assert_eq!(LoopBehavior::Infinite, m.loop_behavior());
-    }
-
-    #[test]
-    fn test_modulation_len() -> anyhow::Result<()> {
+    #[case(SamplingConfiguration::FREQ_4K_HZ)]
+    fn test_modulation_property_sampling_config(#[case] config: SamplingConfiguration) {
         assert_eq!(
+            config,
             TestModulation {
-                config: SamplingConfiguration::FREQ_4K_HZ,
+                config,
                 buf: vec![],
                 loop_behavior: LoopBehavior::Infinite,
             }
-            .len()?,
-            0
+            .sampling_config()
         );
-
-        assert_eq!(
-            TestModulation {
-                config: SamplingConfiguration::FREQ_4K_HZ,
-                buf: vec![EmitIntensity::MIN; 100],
-                loop_behavior: LoopBehavior::Infinite,
-            }
-            .len()?,
-            100
-        );
-
-        Ok(())
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_change_mod_segment() -> anyhow::Result<()> {
-        let d = ChangeModulationSegment::new(Segment::S0);
-        assert_eq!(Segment::S0, d.segment());
-        assert_eq!(Some(Duration::from_millis(200)), d.timeout());
-        let _ = d.operation()?;
-        Ok(())
+    #[case::infinite(LoopBehavior::Infinite)]
+    #[case::once(LoopBehavior::once())]
+    fn test_modulation_property_loop_behavior(#[case] loop_behavior: LoopBehavior) {
+        assert_eq!(
+            loop_behavior,
+            TestModulation {
+                config: SamplingConfiguration::FREQ_4K_HZ,
+                buf: vec![],
+                loop_behavior,
+            }
+            .loop_behavior()
+        );
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case::n0(0)]
+    #[case::n100(100)]
+    fn test_modulation_len(#[case] len: usize) {
+        assert_eq!(
+            Ok(len),
+            TestModulation {
+                config: SamplingConfiguration::FREQ_4K_HZ,
+                buf: vec![EmitIntensity::MIN; len],
+                loop_behavior: LoopBehavior::Infinite,
+            }
+            .len()
+        );
     }
 }
