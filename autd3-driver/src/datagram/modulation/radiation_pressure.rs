@@ -38,28 +38,49 @@ impl<M: Modulation> Modulation for RadiationPressure<M> {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::{super::tests::TestModulation, *};
+#[cfg(test)]
+mod tests {
+    use rand::Rng;
 
-//     #[test]
-//     fn test_radiation_impl() -> anyhow::Result<()> {
-//         let m = TestModulation {
-//             buf: vec![EmitIntensity::random(); 2],
-//             config: SamplingConfiguration::FREQ_4K_HZ,
-//             loop_behavior: LoopBehavior::Infinite,
-//         };
-//         let m_transformed = m.clone().with_radiation_pressure();
+    use super::{super::tests::TestModulation, *};
 
-//         assert_eq!(
-//             m.calc()?
-//                 .iter()
-//                 .map(|x| (((x.value() as float / 255.).sqrt() * 255.).round() as u8).into())
-//                 .collect::<Vec<EmitIntensity>>(),
-//             m_transformed.calc()?
-//         );
-//         assert_eq!(m.sampling_config(), m_transformed.sampling_config());
+    #[rstest::rstest]
+    #[test]
+    #[case::freq_4k(SamplingConfiguration::FREQ_4K_HZ)]
+    #[case::disable(SamplingConfiguration::DISABLE)]
+    fn test_radiation_sampling_config(#[case] config: SamplingConfiguration) {
+        assert_eq!(
+            config,
+            TestModulation {
+                buf: vec![EmitIntensity::MIN; 2],
+                config,
+                loop_behavior: LoopBehavior::Infinite,
+            }
+            .with_radiation_pressure()
+            .sampling_config()
+        );
+    }
 
-//         Ok(())
-//     }
-// }
+    #[test]
+    fn test_radiation() {
+        let mut rng = rand::thread_rng();
+
+        let buf = vec![rng.gen(), rng.gen()];
+        assert_eq!(
+            Ok(buf
+                .iter()
+                .map(
+                    |x: &EmitIntensity| (((x.value() as float / 255.).sqrt() * 255.).round() as u8)
+                        .into()
+                )
+                .collect::<Vec<EmitIntensity>>()),
+            TestModulation {
+                buf: buf.clone(),
+                config: SamplingConfiguration::FREQ_4K_HZ,
+                loop_behavior: LoopBehavior::Infinite,
+            }
+            .with_radiation_pressure()
+            .calc()
+        );
+    }
+}
