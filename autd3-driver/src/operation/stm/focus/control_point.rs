@@ -1,7 +1,7 @@
 use crate::{derive::*, geometry::Vector3};
 
 /// Control point for FocusSTM
-#[derive(Clone, Copy, Builder)]
+#[derive(Clone, Copy, Builder, PartialEq, Debug)]
 pub struct ControlPoint {
     /// Focal point
     #[getset]
