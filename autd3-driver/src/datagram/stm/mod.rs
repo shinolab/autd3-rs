@@ -1,8 +1,10 @@
 mod focus;
 mod gain;
+mod segment;
 
-pub use focus::{ChangeFocusSTMSegment, FocusSTM};
+pub use focus::FocusSTM;
 pub use gain::{ChangeGainSTMSegment, GainSTM};
+pub use segment::ChangeFocusSTMSegment;
 
 use crate::{
     common::{LoopBehavior, SamplingConfiguration},
