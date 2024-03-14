@@ -3,8 +3,8 @@ mod gain;
 mod segment;
 
 pub use focus::FocusSTM;
-pub use gain::{ChangeGainSTMSegment, GainSTM};
-pub use segment::ChangeFocusSTMSegment;
+pub use gain::GainSTM;
+pub use segment::{ChangeFocusSTMSegment, ChangeGainSTMSegment};
 
 use crate::{
     common::{LoopBehavior, SamplingConfiguration},
