@@ -29,6 +29,35 @@ impl crate::datagram::Datagram for ChangeFocusSTMSegment {
         Ok((Self::O1::new(self.segment), Self::O2::default()))
     }
 }
+
+#[derive(Debug, Clone, Copy)]
+pub struct ChangeGainSTMSegment {
+    segment: Segment,
+}
+
+impl ChangeGainSTMSegment {
+    pub const fn new(segment: Segment) -> Self {
+        Self { segment }
+    }
+
+    pub const fn segment(&self) -> Segment {
+        self.segment
+    }
+}
+
+impl crate::datagram::Datagram for ChangeGainSTMSegment {
+    type O1 = crate::operation::GainSTMChangeSegmentOp;
+    type O2 = crate::operation::NullOp;
+
+    fn timeout(&self) -> Option<Duration> {
+        Some(Duration::from_millis(200))
+    }
+
+    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+        Ok((Self::O1::new(self.segment), Self::O2::default()))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -37,6 +66,16 @@ mod tests {
     fn test_change_focus_stm_segment() -> anyhow::Result<()> {
         use crate::datagram::Datagram;
         let d = ChangeFocusSTMSegment::new(Segment::S0);
+        assert_eq!(Segment::S0, d.segment());
+        assert_eq!(Some(Duration::from_millis(200)), d.timeout());
+        let _ = d.operation()?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_change_gain_stm_segment() -> anyhow::Result<()> {
+        use crate::datagram::Datagram;
+        let d = ChangeGainSTMSegment::new(Segment::S0);
         assert_eq!(Segment::S0, d.segment());
         assert_eq!(Some(Duration::from_millis(200)), d.timeout());
         let _ = d.operation()?;

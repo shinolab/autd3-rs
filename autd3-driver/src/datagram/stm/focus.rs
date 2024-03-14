@@ -142,7 +142,7 @@ impl DatagramS for FocusSTM {
 
 #[cfg(test)]
 mod tests {
-    use std::{num::NonZeroU32, time::Duration};
+    use std::time::Duration;
 
     use super::*;
     use crate::{geometry::Vector3, operation::FocusSTMOp};
@@ -236,7 +236,7 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case::infinite(LoopBehavior::Infinite)]
-    #[case::finite(LoopBehavior::Finite(NonZeroU32::new(0x12345678).unwrap()))]
+    #[case::finite(LoopBehavior::once())]
     fn test_with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
             loop_behavior,
@@ -277,7 +277,7 @@ mod tests {
     }
 
     #[test]
-    fn focu_stm_operation() -> anyhow::Result<()> {
+    fn test_operation() -> anyhow::Result<()> {
         let stm = FocusSTM::from_freq(1.0)
             .add_focus(Vector3::new(1., 2., 3.))?
             .add_focus((Vector3::new(4., 5., 6.), 1))?
