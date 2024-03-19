@@ -37,7 +37,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_change_mod_segment() -> anyhow::Result<()> {
+    fn test() -> anyhow::Result<()> {
         let d = ChangeModulationSegment::new(Segment::S0);
         assert_eq!(Segment::S0, d.segment());
         assert_eq!(Some(Duration::from_millis(200)), d.timeout());

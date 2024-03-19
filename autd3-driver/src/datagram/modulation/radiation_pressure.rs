@@ -48,7 +48,7 @@ mod tests {
     #[test]
     #[case::freq_4k(SamplingConfiguration::FREQ_4K_HZ)]
     #[case::disable(SamplingConfiguration::DISABLE)]
-    fn test_radiation_sampling_config(#[case] config: SamplingConfiguration) {
+    fn test_sampling_config(#[case] config: SamplingConfiguration) {
         assert_eq!(
             config,
             TestModulation {
@@ -62,7 +62,7 @@ mod tests {
     }
 
     #[test]
-    fn test_radiation() {
+    fn test() {
         let mut rng = rand::thread_rng();
 
         let buf = vec![rng.gen(), rng.gen()];

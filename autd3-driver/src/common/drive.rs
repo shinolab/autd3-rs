@@ -54,7 +54,7 @@ mod tests {
         EmitIntensity::new(0xFF),
         Drive::new(Phase::new(0), EmitIntensity::new(0xFF))
     )]
-    fn test_drive_intensity(#[case] expected: EmitIntensity, #[case] target: Drive) {
+    fn test_intensity(#[case] expected: EmitIntensity, #[case] target: Drive) {
         assert_eq!(expected, target.intensity(),);
     }
 
@@ -66,12 +66,12 @@ mod tests {
         Phase::new(0xFF),
         Drive::new(Phase::new(0xFF), EmitIntensity::new(0x00))
     )]
-    fn test_drive_phase(#[case] expected: Phase, #[case] target: Drive) {
+    fn test_phase(#[case] expected: Phase, #[case] target: Drive) {
         assert_eq!(expected, target.phase(),);
     }
 
     #[test]
-    fn test_drive_null() {
+    fn test_null() {
         assert_eq!(
             Drive::new(Phase::new(0), EmitIntensity::new(0x00)),
             Drive::null()

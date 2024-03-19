@@ -99,7 +99,7 @@ mod tests {
     };
 
     #[test]
-    fn test_cache() -> anyhow::Result<()> {
+    fn test() -> anyhow::Result<()> {
         let mut rng = rand::thread_rng();
 
         let m = TestModulation {
@@ -145,7 +145,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cache_calc_once() {
+    fn test_calc_once() {
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
         let modulation = TestCacheModulation {
@@ -164,7 +164,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cache_calc_clone() {
+    fn test_calc_clone() {
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
         let modulation = TestCacheModulation {

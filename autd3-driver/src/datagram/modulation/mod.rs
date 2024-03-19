@@ -115,7 +115,7 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(SamplingConfiguration::FREQ_4K_HZ)]
-    fn test_modulation_property_sampling_config(#[case] config: SamplingConfiguration) {
+    fn test_sampling_config(#[case] config: SamplingConfiguration) {
         assert_eq!(
             config,
             TestModulation {
@@ -131,7 +131,7 @@ mod tests {
     #[test]
     #[case::infinite(LoopBehavior::Infinite)]
     #[case::once(LoopBehavior::once())]
-    fn test_modulation_property_loop_behavior(#[case] loop_behavior: LoopBehavior) {
+    fn test_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
             loop_behavior,
             TestModulation {
@@ -147,7 +147,7 @@ mod tests {
     #[test]
     #[case::n0(0)]
     #[case::n100(100)]
-    fn test_modulation_len(#[case] len: usize) {
+    fn test_len(#[case] len: usize) {
         assert_eq!(
             Ok(len),
             TestModulation {

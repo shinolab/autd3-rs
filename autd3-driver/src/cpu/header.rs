@@ -16,7 +16,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_header_size() {
+    fn test_size() {
         assert_eq!(4, size_of::<Header>());
         assert_eq!(0, offset_of!(Header, msg_id));
         assert_eq!(2, offset_of!(Header, slot_2_offset));

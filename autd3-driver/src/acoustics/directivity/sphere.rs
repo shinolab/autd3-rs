@@ -22,7 +22,7 @@ mod tests {
     use rand::prelude::*;
 
     #[test]
-    fn test_directivity_sphere() {
+    fn test_directivity() {
         let mut rng = rand::thread_rng();
         assert_eq!(1.0, Sphere::directivity(rng.gen()));
     }

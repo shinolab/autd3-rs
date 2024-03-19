@@ -119,7 +119,7 @@ mod tests {
     use crate::{derive::*, geometry::tests::create_geometry};
 
     #[test]
-    fn test_cache() -> anyhow::Result<()> {
+    fn test() -> anyhow::Result<()> {
         let geometry = create_geometry(1, 249);
 
         let mut rng = rand::thread_rng();
@@ -154,7 +154,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cache_calc_once() {
+    fn test_calc_once() {
         let geometry = create_geometry(1, 249);
 
         let calc_cnt = Arc::new(AtomicUsize::new(0));
@@ -171,7 +171,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cache_clone() {
+    fn test_clone() {
         let geometry = create_geometry(1, 249);
 
         let calc_cnt = Arc::new(AtomicUsize::new(0));
