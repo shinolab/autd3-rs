@@ -92,7 +92,7 @@ mod tests {
     #[case::value_0(0x00)]
     #[case::value_1(0x01)]
     #[case::value_ff(0xFF)]
-    fn test_emit_intensity_new(#[case] expected: u8) {
+    fn test_new(#[case] expected: u8) {
         assert_eq!(expected, EmitIntensity::new(expected).value(),);
     }
 
@@ -101,7 +101,7 @@ mod tests {
     #[case::value_0(0x00, 0x00)]
     #[case::value_1(0x00, 0x01)]
     #[case::value_ff(0xFF, 0xFF)]
-    fn test_emit_intensity_with_correction(#[case] expected: u8, #[case] value: u8) {
+    fn test_with_correction(#[case] expected: u8, #[case] value: u8) {
         assert_eq!(expected, EmitIntensity::with_correction(value).value());
     }
 
@@ -110,11 +110,7 @@ mod tests {
     #[case::value_1_1(EmitIntensity::new(0x01), EmitIntensity::new(0x01), 1)]
     #[case::value_1_2(EmitIntensity::new(0x00), EmitIntensity::new(0x01), 2)]
     #[case::value_ff_2(EmitIntensity::new(0x7F), EmitIntensity::new(0xFF), 2)]
-    fn test_emit_intensity_div(
-        #[case] expected: EmitIntensity,
-        #[case] target: EmitIntensity,
-        #[case] div: u8,
-    ) {
+    fn test_div(#[case] expected: EmitIntensity, #[case] target: EmitIntensity, #[case] div: u8) {
         assert_eq!(expected, target / div);
     }
 
@@ -124,11 +120,7 @@ mod tests {
     #[case::value_1_2(EmitIntensity::new(0x02), EmitIntensity::new(0x01), 2)]
     #[case::value_7f_2(EmitIntensity::new(0xFE), EmitIntensity::new(0x7F), 2)]
     #[case::value_7f_3(EmitIntensity::new(0xFF), EmitIntensity::new(0x7F), 3)]
-    fn test_emit_intensity_mul(
-        #[case] expected: EmitIntensity,
-        #[case] target: EmitIntensity,
-        #[case] mul: u8,
-    ) {
+    fn test_mul(#[case] expected: EmitIntensity, #[case] target: EmitIntensity, #[case] mul: u8) {
         assert_eq!(expected, target * mul);
         assert_eq!(expected, mul * target);
     }
@@ -150,7 +142,7 @@ mod tests {
         EmitIntensity::new(0x7F),
         EmitIntensity::new(0xFF)
     )]
-    fn test_emit_intensity_add(
+    fn test_add(
         #[case] expected: EmitIntensity,
         #[case] lhs: EmitIntensity,
         #[case] rhs: EmitIntensity,
@@ -175,7 +167,7 @@ mod tests {
         EmitIntensity::new(0x7F),
         EmitIntensity::new(0xFF)
     )]
-    fn test_emit_intensity_sub(
+    fn test_sub(
         #[case] expected: EmitIntensity,
         #[case] lhs: EmitIntensity,
         #[case] rhs: EmitIntensity,

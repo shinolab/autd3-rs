@@ -164,7 +164,7 @@ mod tests {
         [
             (0, vec![Drive::new(Phase::new(0x01), EmitIntensity::new(0x01)); NUM_TRANSDUCERS]),
         ].into_iter().collect())]
-    fn test_gain_transform_all(
+    fn test_transform_all(
         #[case] enabled: [bool; 2],
         #[case] expect: HashMap<usize, Vec<Drive>>,
         mut geometry: Geometry,
@@ -203,7 +203,7 @@ mod tests {
         ].into_iter().collect(),[
             (1, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
         ].iter().cloned().collect())]
-    fn test_gain_transform_filtered(
+    fn test_transform_filtered(
         #[case] enabled: [bool; 2],
         #[case] expect: HashMap<usize, Vec<Drive>>,
         #[case] filter: HashMap<usize, BitVec<usize, Lsb0>>,

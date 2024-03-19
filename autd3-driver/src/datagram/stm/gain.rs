@@ -193,7 +193,7 @@ mod tests {
     #[case(Duration::from_micros(125), 2)]
     #[case(Duration::from_micros(250), 10)]
     #[case(Duration::from_micros(500), 10)]
-    fn from_period(#[case] period: Duration, #[case] n: usize) -> anyhow::Result<()> {
+    fn test_from_period(#[case] period: Duration, #[case] n: usize) -> anyhow::Result<()> {
         let stm = GainSTM::from_period(period).add_gains_from_iter((0..n).map(|_| NullGain {}))?;
         assert_eq!(period, stm.period());
         assert_eq!(period / n as u32, stm.sampling_config()?.period());
@@ -204,7 +204,7 @@ mod tests {
     #[test]
     #[case(SamplingConfiguration::DISABLE, 2)]
     #[case(SamplingConfiguration::FREQ_4K_HZ, 10)]
-    fn from_sampling_config(
+    fn test_from_sampling_config(
         #[case] config: SamplingConfiguration,
         #[case] n: usize,
     ) -> anyhow::Result<()> {

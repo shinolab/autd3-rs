@@ -30,7 +30,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_clear_timeout() {
+    fn test_timeout() {
         let clear = Clear::new();
         let timeout = <Clear as Datagram>::timeout(&clear);
         assert!(timeout.is_some());
@@ -38,7 +38,7 @@ mod tests {
     }
 
     #[test]
-    fn test_clear_operation() {
+    fn test_operation() {
         let clear = Clear::default();
         let r = <Clear as Datagram>::operation(clear);
         assert!(r.is_ok());

@@ -111,14 +111,14 @@ mod tests {
     }
 
     #[test]
-    fn test_datagram_tuple() {
+    fn test_tuple() {
         let d = (TestDatagram1 { err: false }, TestDatagram2 { err: false });
         let _: (ClearOp, NullOp) =
             <(TestDatagram1, TestDatagram2) as Datagram>::operation(d).unwrap();
     }
 
     #[test]
-    fn test_datagram_tuple_err() {
+    fn test_err() {
         let d1 = (TestDatagram1 { err: true }, TestDatagram2 { err: false });
         let r = <(TestDatagram1, TestDatagram2) as Datagram>::operation(d1);
         assert!(r.is_err());

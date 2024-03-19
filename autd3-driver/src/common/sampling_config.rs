@@ -102,7 +102,7 @@ mod tests {
         )),
         SAMPLING_FREQ_DIV_MIN - 1
     )]
-    fn test_sampling_frequency_from_frequency_division(
+    fn test_from_frequency_division(
         #[case] expected: Result<SamplingConfiguration, AUTDInternalError>,
         #[case] freq_div: u32,
     ) {
@@ -142,7 +142,7 @@ mod tests {
         )),
         SamplingConfiguration::FREQ_MAX + 0.1
     )]
-    fn test_sampling_frequency_from_frequency(
+    fn test_from_frequency(
         #[case] expected: Result<SamplingConfiguration, AUTDInternalError>,
         #[case] freq: float,
     ) {
@@ -179,7 +179,7 @@ mod tests {
         )),
         SamplingConfiguration::PERIOD_MAX + 1
     )]
-    fn test_sampling_frequency_from_period(
+    fn test_from_period(
         #[case] expected: Result<SamplingConfiguration, AUTDInternalError>,
         #[case] period: u128,
     ) {

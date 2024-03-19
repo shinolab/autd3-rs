@@ -162,7 +162,7 @@ mod tests {
     use crate::{geometry::tests::create_geometry, operation::tests::NullGain};
 
     #[test]
-    fn test_group() -> anyhow::Result<()> {
+    fn test() -> anyhow::Result<()> {
         let geometry = create_geometry(4, 249);
 
         let mut rng = rand::thread_rng();
@@ -216,7 +216,7 @@ mod tests {
     }
 
     #[test]
-    fn test_group_unknown_key() {
+    fn test_unknown_key() {
         let geometry = create_geometry(2, 249);
 
         let gain = Group::new(|_dev, tr| match tr.idx() {
@@ -233,7 +233,7 @@ mod tests {
     }
 
     #[test]
-    fn test_group_unspecified_key() {
+    fn test_unspecified_key() {
         let geometry = create_geometry(2, 249);
 
         let gain = Group::new(|_dev, tr| match tr.idx() {

@@ -73,7 +73,7 @@ mod tests {
     #[case::value_0(0x00)]
     #[case::value_1(0x01)]
     #[case::value_ff(0xFF)]
-    fn test_phase_new(#[case] expected: u8) {
+    fn test_new(#[case] expected: u8) {
         assert_eq!(expected, Phase::from(expected).value());
     }
 
@@ -82,7 +82,7 @@ mod tests {
     #[case::value_1_1(Phase::new(0x02), Phase::new(0x01), Phase::new(0x01))]
     #[case::value_7f_7f(Phase::new(0xFE), Phase::new(0x7F), Phase::new(0x7F))]
     #[case::value_7f_ff(Phase::new(0x7E), Phase::new(0x7F), Phase::new(0xFF))]
-    fn test_phase_add(#[case] expected: Phase, #[case] lhs: Phase, #[case] rhs: Phase) {
+    fn test_add(#[case] expected: Phase, #[case] lhs: Phase, #[case] rhs: Phase) {
         assert_eq!(expected, lhs + rhs);
     }
 
@@ -91,7 +91,7 @@ mod tests {
     #[case::value_1_1(Phase::new(0x00), Phase::new(0x01), Phase::new(0x01))]
     #[case::value_7f_7f(Phase::new(0x01), Phase::new(0x02), Phase::new(0x01))]
     #[case::value_7f_ff(Phase::new(0x80), Phase::new(0x7F), Phase::new(0xFF))]
-    fn test_phase_sub(#[case] expected: Phase, #[case] lhs: Phase, #[case] rhs: Phase) {
+    fn test_sub(#[case] expected: Phase, #[case] lhs: Phase, #[case] rhs: Phase) {
         assert_eq!(expected, lhs - rhs);
     }
 }

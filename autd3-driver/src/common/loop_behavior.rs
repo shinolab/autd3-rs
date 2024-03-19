@@ -28,7 +28,7 @@ mod tests {
     #[case::infinite(0xFFFFFFFF, LoopBehavior::Infinite)]
     #[case::finite(0x12345677, LoopBehavior::Finite(NonZeroU32::new(0x12345678).unwrap()))]
     #[case::once(0x00000000, LoopBehavior::once())]
-    fn test_loop_behavior(#[case] expected: u32, #[case] target: LoopBehavior) {
+    fn test(#[case] expected: u32, #[case] target: LoopBehavior) {
         assert_eq!(expected, target.to_rep());
     }
 }

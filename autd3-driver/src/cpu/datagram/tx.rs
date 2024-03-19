@@ -92,13 +92,13 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_tx_datagram_num_devices(tx: TxDatagram) {
+    fn test_num_devices(tx: TxDatagram) {
         assert_eq!(2, tx.num_devices());
     }
 
     #[rstest::rstest]
     #[test]
-    fn test_tx_datagram_all_data(tx: TxDatagram) {
+    fn test_all_data(tx: TxDatagram) {
         assert_eq!(2 * EC_OUTPUT_FRAME_SIZE, tx.all_data().len());
     }
 
@@ -106,7 +106,7 @@ mod tests {
     #[test]
     #[case::device_0((0..EC_OUTPUT_FRAME_SIZE).map(|i| i as u8).collect_vec(), 0)]
     #[case::device_1((EC_OUTPUT_FRAME_SIZE..2*EC_OUTPUT_FRAME_SIZE).map(|i| i as u8).collect_vec(), 1)]
-    fn test_tx_datagram_data(#[case] expect: Vec<u8>, #[case] dev: usize, tx: TxDatagram) {
+    fn test_data(#[case] expect: Vec<u8>, #[case] dev: usize, tx: TxDatagram) {
         assert_eq!(expect, tx.data(dev));
     }
 }

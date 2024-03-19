@@ -68,7 +68,7 @@ mod tests {
     use crate::geometry::tests::create_geometry;
 
     #[test]
-    fn test_gain_transform() -> anyhow::Result<()> {
+    fn test() -> anyhow::Result<()> {
         let geometry = create_geometry(1, 249);
 
         let mut rng = rand::thread_rng();

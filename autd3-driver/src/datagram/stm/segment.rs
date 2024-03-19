@@ -63,7 +63,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_change_focus_stm_segment() -> anyhow::Result<()> {
+    fn test_focus_stm() -> anyhow::Result<()> {
         use crate::datagram::Datagram;
         let d = ChangeFocusSTMSegment::new(Segment::S0);
         assert_eq!(Segment::S0, d.segment());
@@ -73,7 +73,7 @@ mod tests {
     }
 
     #[test]
-    fn test_change_gain_stm_segment() -> anyhow::Result<()> {
+    fn test_gain_stm() -> anyhow::Result<()> {
         use crate::datagram::Datagram;
         let d = ChangeGainSTMSegment::new(Segment::S0);
         assert_eq!(Segment::S0, d.segment());
