@@ -5,6 +5,7 @@ use crate::{
     defined::{float, PI, ULTRASOUND_FREQUENCY},
 };
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct Transducer {
     idx: u8,
     pos: Vector3,
@@ -92,17 +93,17 @@ mod tests {
         };
     }
 
+    #[rstest::rstest]
     #[test]
-    fn idx() {
-        let tr = Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
-        assert_eq!(0, tr.idx());
-
-        let tr = Transducer::new(1, Vector3::zeros(), UnitQuaternion::identity());
-        assert_eq!(1, tr.idx());
+    #[case(0)]
+    #[case(1)]
+    fn test_idx(#[case] idx: usize) {
+        let tr = Transducer::new(idx, Vector3::zeros(), UnitQuaternion::identity());
+        assert_eq!(idx, tr.idx());
     }
 
     #[test]
-    fn affine() {
+    fn test_affine() {
         let mut tr = Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
 
         let t = Vector3::new(40., 50., 60.);
@@ -122,37 +123,32 @@ mod tests {
         assert_vec3_approx_eq!(expect_pos, tr.position());
     }
 
+    #[rstest::rstest]
     #[test]
-    fn wavelength() {
+    #[case(340e3)]
+    #[case(400e3)]
+    fn test_wavelength(#[case] c: float) {
         let tr = Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
-        let c = 340e3;
         assert_approx_eq!(c / ULTRASOUND_FREQUENCY, tr.wavelength(c));
     }
 
+    #[rstest::rstest]
     #[test]
-    fn wavenumber() {
+    #[case(340e3)]
+    #[case(400e3)]
+    fn test_wavenumber(#[case] c: float) {
         let tr = Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
-        let c = 340e3;
         assert_approx_eq!(2. * PI * ULTRASOUND_FREQUENCY / c, tr.wavenumber(c));
     }
 
+    #[rstest::rstest]
     #[test]
-    fn align_phase_at() {
+    #[case(0, Vector3::zeros())]
+    #[case(0, Vector3::new(8.5, 0., 0.))]
+    #[case(0, Vector3::new(-8.5, 0., 0.))]
+    #[case(128, Vector3::new(8.5/2., 0., 0.))]
+    fn test_align_phase_at(#[case] expected: u8, #[case] pos: Vector3) {
         let tr = Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
-
-        let c = 340e3;
-        let wavelength = tr.wavelength(c);
-
-        let p = Vector3::zeros();
-        assert_eq!(0, tr.align_phase_at(p, c).value());
-
-        let p = Vector3::new(wavelength, 0., 0.);
-        assert_eq!(0, tr.align_phase_at(p, c).value());
-
-        let p = Vector3::new(0., -wavelength, 0.);
-        assert_eq!(0, tr.align_phase_at(p, c).value());
-
-        let p = Vector3::new(0., 0., wavelength / 2.);
-        assert_eq!(128, tr.align_phase_at(p, c).value());
+        assert_eq!(expected, tr.align_phase_at(pos, 340e3).value());
     }
 }
