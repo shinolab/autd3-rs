@@ -207,7 +207,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn close() {
+    async fn test_close() {
         let mut link = MockLink {
             is_open: true,
             timeout: Duration::from_millis(0),
