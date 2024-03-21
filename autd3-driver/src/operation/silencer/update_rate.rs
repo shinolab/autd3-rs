@@ -72,7 +72,7 @@ mod tests {
     const NUM_DEVICE: usize = 10;
 
     #[test]
-    fn silencer_op_fixed_update_rate() {
+    fn test() {
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
 
         let mut tx = [0x00u8; 8 * NUM_DEVICE];

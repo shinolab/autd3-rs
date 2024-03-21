@@ -286,7 +286,7 @@ pub mod tests {
     }
 
     #[test]
-    fn op_handler_test() {
+    fn test() {
         let geometry = Geometry::new(vec![Device::new(
             0,
             vec![Transducer::new(
@@ -365,7 +365,7 @@ pub mod tests {
     }
 
     #[test]
-    fn op_handler_pack_first() {
+    fn test_first() {
         let geometry = Geometry::new(vec![Device::new(
             0,
             vec![Transducer::new(
@@ -415,7 +415,7 @@ pub mod tests {
     }
 
     #[test]
-    fn op_handler_pack_second() {
+    fn test_second() {
         let geometry = Geometry::new(vec![Device::new(
             0,
             vec![Transducer::new(
@@ -465,7 +465,7 @@ pub mod tests {
     }
 
     #[test]
-    fn op_handler_broken_init() {
+    fn test_init() {
         let geometry = Geometry::new(vec![Device::new(
             0,
             vec![Transducer::new(
@@ -512,7 +512,7 @@ pub mod tests {
     }
 
     #[test]
-    fn op_handler_broken_pack() {
+    fn test_broken_pack() {
         let geometry = Geometry::new(vec![Device::new(
             0,
             vec![Transducer::new(
@@ -582,7 +582,7 @@ pub mod tests {
 
     #[test]
     #[should_panic]
-    fn op_handler_pack_finished() {
+    fn test_finished() {
         let geometry = Geometry::new(vec![Device::new(
             0,
             vec![Transducer::new(
