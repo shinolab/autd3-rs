@@ -19,50 +19,27 @@ mod tests {
     use std::mem::size_of;
 
     use super::*;
-    use crate::{
-        common::{EmitIntensity, Phase},
-        defined::PI,
-    };
+    use crate::common::{EmitIntensity, Phase};
 
     #[test]
-    fn drive() {
-        assert_eq!(size_of::<FPGADrive>(), 2);
+    fn test_size() {
+        assert_eq!(2, size_of::<FPGADrive>());
+        assert_eq!(0, memoffset::offset_of!(FPGADrive, phase));
+        assert_eq!(1, memoffset::offset_of!(FPGADrive, intensity));
+    }
 
-        let d = FPGADrive {
-            phase: 0x01,
-            intensity: 0x02,
+    #[rstest::rstest]
+    #[test]
+    #[case(Phase::new(0x00), EmitIntensity::new(0x00))]
+    #[case(Phase::new(0x80), EmitIntensity::new(0xFF))]
+    #[case(Phase::new(0xFF), EmitIntensity::new(0x80))]
+    fn test_set(#[case] phase: Phase, #[case] intensity: EmitIntensity) {
+        let mut d = FPGADrive {
+            phase: 0,
+            intensity: 0,
         };
-        let dc = Clone::clone(&d);
-        assert_eq!(d.phase, dc.phase);
-        assert_eq!(d.intensity, dc.intensity);
-
-        let mut d = [0x00u8; 2];
-
-        unsafe {
-            let s = Drive::null();
-            (*(&mut d as *mut _ as *mut FPGADrive)).set(&s);
-            assert_eq!(d[0], 0x00);
-            assert_eq!(d[1], 0x00);
-
-            let s = Drive::new(Phase::from_rad(PI), EmitIntensity::new(84));
-            (*(&mut d as *mut _ as *mut FPGADrive)).set(&s);
-            assert_eq!(d[0], 128);
-            assert_eq!(d[1], 84);
-
-            let s = Drive::new(Phase::from_rad(2.0 * PI), EmitIntensity::MAX);
-            (*(&mut d as *mut _ as *mut FPGADrive)).set(&s);
-            assert_eq!(d[0], 0x00);
-            assert_eq!(d[1], 0xFF);
-
-            let s = Drive::new(Phase::from_rad(3.0 * PI), EmitIntensity::MAX);
-            (*(&mut d as *mut _ as *mut FPGADrive)).set(&s);
-            assert_eq!(d[0], 128);
-            assert_eq!(d[1], 0xFF);
-
-            let s = Drive::new(Phase::from_rad(-PI), EmitIntensity::MIN);
-            (*(&mut d as *mut _ as *mut FPGADrive)).set(&s);
-            assert_eq!(d[0], 128);
-            assert_eq!(d[1], 0);
-        }
+        d.set(&Drive::new(phase, intensity));
+        assert_eq!(phase.value(), d.phase);
+        assert_eq!(intensity.value(), d.intensity);
     }
 }

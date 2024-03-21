@@ -45,36 +45,15 @@ impl From<&RxMessage> for Result<(), AUTDInternalError> {
 
 #[cfg(test)]
 mod tests {
+    use memoffset::offset_of;
     use std::mem::size_of;
 
     use super::*;
 
     #[test]
-    fn rx_message() {
-        assert_eq!(size_of::<RxMessage>(), 2);
-    }
-
-    #[test]
-    fn rx_message_clone() {
-        let msg = RxMessage {
-            ack: 0x01,
-            data: 0x02,
-        };
-        let msg2 = msg;
-
-        assert_eq!(msg.ack, msg2.ack);
-        assert_eq!(msg.data, msg2.data);
-    }
-
-    #[test]
-    fn rx_message_copy() {
-        let msg = RxMessage {
-            ack: 0x01,
-            data: 0x02,
-        };
-        let msg2 = msg;
-
-        assert_eq!(msg.ack, msg2.ack);
-        assert_eq!(msg.data, msg2.data);
+    fn test_message_size() {
+        assert_eq!(2, size_of::<RxMessage>());
+        assert_eq!(0, offset_of!(RxMessage, data));
+        assert_eq!(1, offset_of!(RxMessage, ack));
     }
 }

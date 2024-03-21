@@ -207,7 +207,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn close() {
+    async fn test_close() {
         let mut link = MockLink {
             is_open: true,
             timeout: Duration::from_millis(0),
@@ -265,7 +265,7 @@ mod tests {
         };
 
         let mut tx = TxDatagram::new(1);
-        tx.header_mut(0).msg_id = 2;
+        tx[0].header.msg_id = 2;
         let mut rx = vec![RxMessage::new(0, 0)];
         assert_eq!(
             wait_msg_processed(&mut link, &tx, &mut rx, Duration::from_millis(10)).await,
@@ -289,7 +289,7 @@ mod tests {
 
         link.down = false;
         link.recv_cnt = 0;
-        tx.header_mut(0).msg_id = 20;
+        tx[0].header.msg_id = 20;
         assert_eq!(
             wait_msg_processed(&mut link, &tx, &mut rx, Duration::from_secs(10)).await,
             Err(AUTDInternalError::LinkError("too many".to_owned()))

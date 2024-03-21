@@ -182,7 +182,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_silencer_update_rate() {
+    fn test_update_rate() {
         let silencer = ConfigureSilencer::fixed_update_rate(10, 20).unwrap();
         assert_eq!(silencer.update_rate_intensity(), 10);
         assert_eq!(silencer.update_rate_phase(), 20);
@@ -209,7 +209,7 @@ mod tests {
     }
 
     #[test]
-    fn test_silencer_completion_steps() {
+    fn test_completion_steps() {
         let silencer = ConfigureSilencer::fixed_completion_steps(10, 20).unwrap();
         assert_eq!(silencer.completion_steps_intensity(), 10);
         assert_eq!(silencer.completion_steps_phase(), 20);
@@ -236,41 +236,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fixed_update_rate_debug() {
-        let silencer = FixedUpdateRate {
-            update_rate_intensity: 10,
-            update_rate_phase: 20,
-        };
-        assert_eq!(
-            format!("{:?}", silencer),
-            "FixedUpdateRate { update_rate_intensity: 10, update_rate_phase: 20 }"
-        );
-    }
-
-    #[test]
-    fn test_fixed_completion_steps_debug() {
-        let silencer = FixedCompletionSteps {
-            steps_intensity: 10,
-            steps_phase: 20,
-            strict_mode: true,
-        };
-        assert_eq!(
-            format!("{:?}", silencer),
-            "FixedCompletionSteps { steps_intensity: 10, steps_phase: 20, strict_mode: true }"
-        );
-    }
-
-    #[test]
-    fn test_silencer_debug() {
-        let silencer = ConfigureSilencer::fixed_update_rate(10, 20).unwrap();
-        assert_eq!(
-            format!("{:?}", silencer),
-            "ConfigureSilencer { internal: FixedUpdateRate { update_rate_intensity: 10, update_rate_phase: 20 } }"
-        );
-    }
-
-    #[test]
-    fn test_silencer_disable() {
+    fn test_disable() {
         let silencer = ConfigureSilencer::disable();
         assert_eq!(silencer.completion_steps_intensity(), 1);
         assert_eq!(silencer.completion_steps_phase(), 1);
@@ -278,7 +244,7 @@ mod tests {
     }
 
     #[test]
-    fn test_silencer_default() {
+    fn test_default() {
         let silencer = ConfigureSilencer::default();
         assert_eq!(
             silencer.completion_steps_intensity(),
@@ -292,7 +258,7 @@ mod tests {
     }
 
     #[test]
-    fn test_silencer_timeout() {
+    fn test_timeout() {
         let silencer = ConfigureSilencer::fixed_update_rate(1, 2).unwrap();
         let timeout = silencer.timeout();
         assert!(timeout.is_some());
@@ -305,7 +271,7 @@ mod tests {
     }
 
     #[test]
-    fn test_silencer_operation() {
+    fn test_operation() {
         let silencer = ConfigureSilencer::fixed_update_rate(1, 2).unwrap();
         let r = silencer.operation();
         assert!(r.is_ok());

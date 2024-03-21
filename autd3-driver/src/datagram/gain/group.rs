@@ -155,16 +155,23 @@ where
 
 #[cfg(test)]
 mod tests {
+    use rand::Rng;
+
     use super::{super::tests::TestGain, *};
 
-    use crate::{datagram::Datagram, geometry::tests::create_geometry, operation::tests::NullGain};
+    use crate::{geometry::tests::create_geometry, operation::tests::NullGain};
 
     #[test]
-    fn test_group() -> anyhow::Result<()> {
+    fn test() -> anyhow::Result<()> {
         let geometry = create_geometry(4, 249);
 
-        let g1 = TestGain { d: Drive::random() };
-        let g2 = TestGain { d: Drive::random() };
+        let mut rng = rand::thread_rng();
+
+        let d1: Drive = rng.gen();
+        let d2: Drive = rng.gen();
+
+        let g1 = TestGain { f: move |_, _| d1 };
+        let g2 = TestGain { f: move |_, _| d2 };
 
         let gain = Group::new(|dev, tr| match (dev.idx(), tr.idx()) {
             (0, 0..=99) => Some("null"),
@@ -184,7 +191,7 @@ mod tests {
                 assert_eq!(Drive::null(), d);
             }
             i if i <= 199 => {
-                assert_eq!(g1.d, d);
+                assert_eq!(d1, d);
             }
             _ => {
                 assert_eq!(Drive::null(), d);
@@ -195,21 +202,21 @@ mod tests {
                 assert_eq!(Drive::null(), d);
             }
             _ => {
-                assert_eq!(g2.d, d);
+                assert_eq!(d2, d);
             }
         });
         drives[&2].iter().for_each(|&d| {
             assert_eq!(Drive::null(), d);
         });
         drives[&3].iter().for_each(|&d| {
-            assert_eq!(g1.d, d);
+            assert_eq!(d1, d);
         });
 
         Ok(())
     }
 
     #[test]
-    fn test_group_unknown_key() {
+    fn test_unknown_key() {
         let geometry = create_geometry(2, 249);
 
         let gain = Group::new(|_dev, tr| match tr.idx() {
@@ -226,7 +233,7 @@ mod tests {
     }
 
     #[test]
-    fn test_group_unspecified_key() {
+    fn test_unspecified_key() {
         let geometry = create_geometry(2, 249);
 
         let gain = Group::new(|_dev, tr| match tr.idx() {
@@ -242,13 +249,5 @@ mod tests {
             )),
             gain.calc(&geometry, GainFilter::All)
         );
-    }
-
-    #[test]
-    fn test_group_derive() {
-        let geometry = create_geometry(1, 249);
-        let gain = Group::new(|_, _| -> Option<()> { None });
-        let _ = gain.calc(&geometry, GainFilter::All);
-        let _ = gain.operation();
     }
 }

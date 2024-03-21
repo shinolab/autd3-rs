@@ -54,56 +54,37 @@ impl From<EulerAngle> for UnitQuaternion {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
     use crate::defined::PI;
 
-    macro_rules! assert_approx_eq_vec3 {
-        ($a:expr, $b:expr $(,)?) => {
-            assert_approx_eq::assert_approx_eq!($a.x, $b.x);
-            assert_approx_eq::assert_approx_eq!($a.y, $b.y);
-            assert_approx_eq::assert_approx_eq!($a.z, $b.z);
+    macro_rules! assert_approx_eq_quat {
+        ($a:expr, $b:expr) => {
+            assert_approx_eq::assert_approx_eq!($a.w, $b.w, 1e-3);
+            assert_approx_eq::assert_approx_eq!($a.i, $b.i, 1e-3);
+            assert_approx_eq::assert_approx_eq!($a.j, $b.j, 1e-3);
+            assert_approx_eq::assert_approx_eq!($a.k, $b.k, 1e-3);
         };
     }
 
+    #[rstest::rstest]
     #[test]
-    fn angle_clone() {
-        let a = 90.0 * Deg;
-        let b = a;
-        assert_eq!(a.to_radians(), b.to_radians());
+    #[case(0., 0. * Deg)]
+    #[case(PI / 2., 90. * Deg)]
+    #[case(0., 0. * Rad)]
+    #[case(PI / 2., PI / 2. * Rad)]
+    fn test_to_radians(#[case] expected: float, #[case] angle: Angle) {
+        assert_approx_eq::assert_approx_eq!(expected, angle.to_radians());
     }
 
+    #[rstest::rstest]
     #[test]
-    fn to_radians() {
-        assert_approx_eq::assert_approx_eq!((90.0 * Deg).to_radians(), PI / 2.0);
-        assert_approx_eq::assert_approx_eq!((PI / 2.0 * Rad).to_radians(), PI / 2.0);
-    }
-
-    #[test]
-    fn test_rotation() {
-        let rot: UnitQuaternion = EulerAngle::ZYZ(90.0 * Deg, 0.0 * Deg, 0.0 * Deg).into();
-        assert_approx_eq_vec3!(rot.transform_vector(&Vector3::x()), Vector3::y());
-        assert_approx_eq_vec3!(rot.transform_vector(&Vector3::y()), -Vector3::x());
-        assert_approx_eq_vec3!(rot.transform_vector(&Vector3::z()), Vector3::z());
-
-        let rot: UnitQuaternion = EulerAngle::ZYZ(0.0 * Deg, 90.0 * Deg, 0.0 * Deg).into();
-        assert_approx_eq_vec3!(rot.transform_vector(&Vector3::x()), -Vector3::z());
-        assert_approx_eq_vec3!(rot.transform_vector(&Vector3::y()), Vector3::y());
-        assert_approx_eq_vec3!(rot.transform_vector(&Vector3::z()), Vector3::x());
-
-        let rot: UnitQuaternion = EulerAngle::ZYZ(0.0 * Deg, 0.0 * Deg, 90.0 * Deg).into();
-        assert_approx_eq_vec3!(rot.transform_vector(&Vector3::x()), Vector3::y());
-        assert_approx_eq_vec3!(rot.transform_vector(&Vector3::y()), -Vector3::x());
-        assert_approx_eq_vec3!(rot.transform_vector(&Vector3::z()), Vector3::z());
-
-        let rot: UnitQuaternion = EulerAngle::ZYZ(0.0 * Deg, 90.0 * Deg, 90.0 * Deg).into();
-        assert_approx_eq_vec3!(rot.transform_vector(&Vector3::x()), Vector3::y());
-        assert_approx_eq_vec3!(rot.transform_vector(&Vector3::y()), Vector3::z());
-        assert_approx_eq_vec3!(rot.transform_vector(&Vector3::z()), Vector3::x());
-
-        let rot: UnitQuaternion = EulerAngle::ZYZ(90.0 * Deg, 90.0 * Deg, 0.0 * Deg).into();
-        assert_approx_eq_vec3!(rot.transform_vector(&Vector3::x()), -Vector3::z());
-        assert_approx_eq_vec3!(rot.transform_vector(&Vector3::y()), -Vector3::x());
-        assert_approx_eq_vec3!(rot.transform_vector(&Vector3::z()), Vector3::y());
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZYZ(90. * Deg, 0. * Deg, 0. * Deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::ZYZ(0. * Deg, 90. * Deg, 0. * Deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZYZ(0. * Deg, 0. * Deg, 90. * Deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZYZ(0. * Deg, 90. * Deg, 90. * Deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::ZYZ(90. * Deg, 90. * Deg, 0. * Deg))]
+    fn test_rotation(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
+        let angle: UnitQuaternion = angle.into();
+        assert_approx_eq_quat!(expected, angle);
     }
 }

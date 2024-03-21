@@ -61,16 +61,20 @@ impl<G: Gain + 'static, F: Fn(&Device, &Transducer, Drive) -> Drive + 'static> G
 
 #[cfg(test)]
 mod tests {
+    use rand::Rng;
+
     use super::{super::tests::TestGain, *};
 
-    use crate::{datagram::Datagram, geometry::tests::create_geometry};
+    use crate::geometry::tests::create_geometry;
 
     #[test]
-    fn test_gain_transform() -> anyhow::Result<()> {
+    fn test() -> anyhow::Result<()> {
         let geometry = create_geometry(1, 249);
 
-        let d = Drive::random();
-        let gain = TestGain { d: Drive::null() }.with_transform(move |_, _, _| d);
+        let mut rng = rand::thread_rng();
+        let d: Drive = rng.gen();
+
+        let gain = TestGain::null().with_transform(move |_, _, _| d);
 
         assert_eq!(
             geometry
@@ -81,16 +85,5 @@ mod tests {
         );
 
         Ok(())
-    }
-
-    #[cfg_attr(coverage_nightly, coverage(off))]
-    fn f(_dev: &Device, _tr: &Transducer, _d: Drive) -> Drive {
-        Drive::null()
-    }
-
-    #[test]
-    fn test_gain_transform_derive() {
-        let gain = TestGain { d: Drive::null() }.with_transform(f);
-        let _ = gain.operation();
     }
 }

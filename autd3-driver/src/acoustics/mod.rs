@@ -48,32 +48,66 @@ mod tests {
         };
     }
 
-    #[test]
-    fn propagate() {
+    #[rstest::fixture]
+    fn tr() -> Transducer {
         let mut rng = rand::thread_rng();
+        Transducer::new(
+            0,
+            Vector3::new(
+                rng.gen_range(-100.0..100.0),
+                rng.gen_range(-100.0..100.0),
+                rng.gen_range(-100.0..100.0),
+            ),
+            UnitQuaternion::from_axis_angle(
+                &Vector3::x_axis(),
+                rng.gen_range::<float, _>(-180.0..180.0).to_radians(),
+            ) * UnitQuaternion::from_axis_angle(
+                &Vector3::y_axis(),
+                rng.gen_range::<float, _>(-180.0..180.0).to_radians(),
+            ) * UnitQuaternion::from_axis_angle(
+                &Vector3::z_axis(),
+                rng.gen_range::<float, _>(-180.0..180.0).to_radians(),
+            ),
+        )
+    }
 
-        let tr = crate::geometry::Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
-
-        let atten = rng.gen_range(0.0..1e-6);
-        let c = rng.gen_range(300e3..400e3);
-        let target = Vector3::new(
+    #[rstest::fixture]
+    fn target() -> Vector3 {
+        let mut rng = rand::thread_rng();
+        Vector3::new(
             rng.gen_range(-100.0..100.0),
             rng.gen_range(-100.0..100.0),
             rng.gen_range(-100.0..100.0),
-        );
+        )
+    }
 
-        let expect = {
-            let dist = target.norm();
-            let r = T4010A1_AMPLITUDE
-                * TestDirectivity::directivity_from_tr(&tr, &target)
-                * (-dist * atten).exp()
-                / (4. * PI * dist);
-            let phase = -tr.wavenumber(c) * dist;
-            Complex::new(r * phase.cos(), r * phase.sin())
-        };
+    #[rstest::fixture]
+    fn attenuation() -> float {
+        let mut rng = rand::thread_rng();
+        rng.gen_range(0.0..1e-6)
+    }
+
+    #[rstest::fixture]
+    fn sound_speed() -> float {
+        let mut rng = rand::thread_rng();
+        rng.gen_range(300e3..400e3)
+    }
+
+    #[rstest::rstest]
+    #[test]
+    fn test_propagate(tr: Transducer, target: Vector3, attenuation: float, sound_speed: float) {
         assert_complex_approx_eq!(
-            expect,
-            super::propagate::<TestDirectivity>(&tr, atten, c, &target)
+            {
+                let diff = target - tr.position();
+                let dist = diff.norm();
+                let r = T4010A1_AMPLITUDE
+                    * TestDirectivity::directivity_from_tr(&tr, &diff)
+                    * (-dist * attenuation).exp()
+                    / (4. * PI * dist);
+                let phase = -tr.wavenumber(sound_speed) * dist;
+                Complex::new(r * phase.cos(), r * phase.sin())
+            },
+            super::propagate::<TestDirectivity>(&tr, attenuation, sound_speed, &target)
         );
     }
 }

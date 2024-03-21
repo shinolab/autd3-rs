@@ -2,9 +2,18 @@ use crate::{common::EmitIntensity, defined::float, error::AUTDInternalError};
 
 use super::{FOCUS_STM_FIXED_NUM_LOWER, FOCUS_STM_FIXED_NUM_UNIT, FOCUS_STM_FIXED_NUM_UPPER};
 
-#[repr(C)]
+#[bitfield_struct::bitfield(u64)]
 pub struct STMFocus {
-    pub(crate) buf: [u16; 4],
+    #[bits(18)]
+    pub(crate) x: i32,
+    #[bits(18)]
+    pub(crate) y: i32,
+    #[bits(18)]
+    pub(crate) z: i32,
+    #[bits(8)]
+    pub(crate) intensity: u8,
+    #[bits(2)]
+    __: u8,
 }
 
 impl STMFocus {
@@ -23,19 +32,10 @@ impl STMFocus {
         z: float,
         intensity: EmitIntensity,
     ) -> Result<(), AUTDInternalError> {
-        let ix = Self::to_fixed_num(x)?;
-        let iy = Self::to_fixed_num(y)?;
-        let iz = Self::to_fixed_num(z)?;
-        self.buf[0] = (ix & 0xFFFF) as u16;
-        self.buf[1] = ((iy << 2) & 0xFFFC) as u16
-            | ((ix >> 30) & 0x0002) as u16
-            | ((ix >> 16) & 0x0001) as u16;
-        self.buf[2] = ((iz << 4) & 0xFFF0) as u16
-            | ((iy >> 28) & 0x0008) as u16
-            | ((iy >> 14) & 0x0007) as u16;
-        self.buf[3] = (((intensity.value() as u16) << 6) & 0x3FC0)
-            | ((iz >> 26) & 0x0020) as u16
-            | ((iz >> 12) & 0x001F) as u16;
+        self.set_x(Self::to_fixed_num(x)?);
+        self.set_y(Self::to_fixed_num(y)?);
+        self.set_z(Self::to_fixed_num(z)?);
+        self.set_intensity(intensity.value());
         Ok(())
     }
 }
@@ -47,83 +47,68 @@ mod tests {
     use super::*;
 
     #[test]
-    fn stm_focus() {
-        let mut p = STMFocus { buf: [0; 4] };
+    fn test_size() {
+        assert_eq!(8, std::mem::size_of::<STMFocus>());
+    }
 
-        let x = FOCUS_STM_FIXED_NUM_UNIT;
-        let y = 2. * FOCUS_STM_FIXED_NUM_UNIT;
-        let z = 3. * FOCUS_STM_FIXED_NUM_UNIT;
-        let intensity = EmitIntensity::new(4);
+    #[test]
+    fn test_bitfield() {
+        let mut d: u64 = 0;
+        unsafe {
+            (*(&mut d as *mut _ as *mut STMFocus))
+                .set_x(0b11111111111111_111111111111111111u32 as i32);
+            assert_eq!(0b111111111111111111, d);
+            (*(&mut d as *mut _ as *mut STMFocus)).set_y(0b010101010101010101);
+            assert_eq!(0b010101010101010101_111111111111111111, d);
+            (*(&mut d as *mut _ as *mut STMFocus))
+                .set_z(0b11111111111111_101010101010101010u32 as i32);
+            assert_eq!(
+                0b101010101010101010_010101010101010101_111111111111111111,
+                d
+            );
+            (*(&mut d as *mut _ as *mut STMFocus)).set_intensity(0xFF);
+            assert_eq!(
+                0b11111111_101010101010101010_010101010101010101_111111111111111111,
+                d
+            );
+        }
+    }
 
-        assert!(p.set(x, y, z, intensity).is_ok());
-
+    #[rstest::rstest]
+    #[test]
+    #[case(Ok(1), 1)]
+    #[case(Ok(-1), -1)]
+    #[case(Ok((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1), (1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1)]
+    #[case(Ok(-(1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1))), -(1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)))]
+    #[case(Err(AUTDInternalError::FocusSTMPointOutOfRange(3276.8)), (1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1 + 1)]
+    #[case(Err(AUTDInternalError::FocusSTMPointOutOfRange(-3276.8250000000003)), -(1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1)]
+    fn test_to_fixed_num(#[case] expected: Result<i32, AUTDInternalError>, #[case] input: i32) {
         assert_eq!(
-            (p.buf[0] as u32) & ((1 << FOCUS_STM_FIXED_NUM_WIDTH) - 1),
-            1
+            expected,
+            STMFocus::to_fixed_num(input as float * FOCUS_STM_FIXED_NUM_UNIT)
         );
-        assert_eq!(
-            ((p.buf[1] >> 2) as u32) & ((1 << FOCUS_STM_FIXED_NUM_WIDTH) - 1),
-            2
-        );
-        assert_eq!(
-            ((p.buf[2] >> 4) as u32) & ((1 << FOCUS_STM_FIXED_NUM_WIDTH) - 1),
-            3
-        );
-        assert_eq!((p.buf[3] >> 6) & 0xFF, 4);
+    }
 
-        let x = -FOCUS_STM_FIXED_NUM_UNIT;
-        let y = -2. * FOCUS_STM_FIXED_NUM_UNIT;
-        let z = -3. * FOCUS_STM_FIXED_NUM_UNIT;
-        let intensity = EmitIntensity::new(0xFF);
-
-        assert!(p.set(x, y, z, intensity).is_ok());
-
-        assert_eq!(p.buf[0], 0xFFFF);
-        assert_eq!(p.buf[1] & 0b01, 0b01);
-        assert_eq!(p.buf[1] & 0b10, 0b10);
-
-        assert_eq!(p.buf[1] & 0b1111111111111100, 0b1111111111111000);
-        assert_eq!(p.buf[2] & 0b0111, 0b0111);
-        assert_eq!(p.buf[2] & 0b1000, 0b1000);
-
-        assert_eq!(p.buf[2] & 0b1111111111110000, 0b1111111111010000);
-        assert_eq!(p.buf[3] & 0b011111, 0b011111);
-        assert_eq!(p.buf[3] & 0b100000, 0b100000);
-
-        assert_eq!((p.buf[3] >> 6) & 0xFF, 0xFF);
-
-        let x = FOCUS_STM_FIXED_NUM_UNIT * ((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as float;
-        let y = FOCUS_STM_FIXED_NUM_UNIT * ((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as float;
-        let z = FOCUS_STM_FIXED_NUM_UNIT * ((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as float;
-        let intensity = EmitIntensity::new(0);
-
-        assert!(p.set(x, y, z, intensity).is_ok());
-
+    #[rstest::rstest]
+    #[test]
+    #[case(1., 2., 3., 0x04)]
+    #[case(-1., -2., -3., 0xFF)]
+    #[case(((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as float, ((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as float, ((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as float, 0x01)]
+    #[case(-(((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as float),-(((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as float),-(((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as float), 0x02)]
+    fn test_stm_focus(#[case] x: float, #[case] y: float, #[case] z: float, #[case] intensity: u8) {
+        let mut p = STMFocus::new();
         assert!(p
-            .set(x + FOCUS_STM_FIXED_NUM_UNIT, y, z, intensity)
-            .is_err());
-        assert!(p
-            .set(x, y + FOCUS_STM_FIXED_NUM_UNIT, z, intensity)
-            .is_err());
-        assert!(p
-            .set(x, y, z + FOCUS_STM_FIXED_NUM_UNIT, intensity)
-            .is_err());
+            .set(
+                x * FOCUS_STM_FIXED_NUM_UNIT,
+                y * FOCUS_STM_FIXED_NUM_UNIT,
+                z * FOCUS_STM_FIXED_NUM_UNIT,
+                EmitIntensity::new(intensity)
+            )
+            .is_ok());
 
-        let x = -FOCUS_STM_FIXED_NUM_UNIT * (1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) as float;
-        let y = -FOCUS_STM_FIXED_NUM_UNIT * (1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) as float;
-        let z = -FOCUS_STM_FIXED_NUM_UNIT * (1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) as float;
-        let intensity = EmitIntensity::new(0);
-
-        assert!(p.set(x, y, z, intensity).is_ok());
-
-        assert!(p
-            .set(x - FOCUS_STM_FIXED_NUM_UNIT, y, z, intensity)
-            .is_err());
-        assert!(p
-            .set(x, y - FOCUS_STM_FIXED_NUM_UNIT, z, intensity)
-            .is_err());
-        assert!(p
-            .set(x, y, z - FOCUS_STM_FIXED_NUM_UNIT, intensity)
-            .is_err());
+        assert_eq!(x as i32, p.x());
+        assert_eq!(y as i32, p.y());
+        assert_eq!(z as i32, p.z());
+        assert_eq!(intensity, p.intensity());
     }
 }

@@ -54,7 +54,7 @@ mod tests {
     }
 
     #[test]
-    fn test_datagram_with_timeout() {
+    fn test_timeout() {
         let d: DatagramWithTimeout<TestDatagram> =
             TestDatagram {}.with_timeout(Duration::from_millis(100));
 
