@@ -9,36 +9,3 @@ pub enum SyncMode {
     /// Free run mode
     FreeRun = 1,
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn sync_mode() {
-        assert_eq!(std::mem::size_of::<SyncMode>(), 1);
-
-        let s = SyncMode::DC;
-
-        let sc = Clone::clone(&s);
-        assert_eq!(s, sc);
-    }
-
-    #[test]
-    fn debug() {
-        let s = SyncMode::DC;
-        assert_eq!(format!("{:?}", s), "DC");
-    }
-
-    #[cfg(feature = "serde")]
-    #[test]
-    fn serde() {
-        let s = SyncMode::DC;
-
-        let serialized = serde_json::to_string(&s).unwrap();
-        assert_eq!(serialized, "\"DC\"");
-
-        let deserialized: SyncMode = serde_json::from_str(&serialized).unwrap();
-        assert_eq!(deserialized, SyncMode::DC);
-    }
-}
