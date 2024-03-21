@@ -240,7 +240,6 @@ def rust_coverage(args):
         features = "remote test-utilities"
         command = [
             "cargo",
-            "+nightly",
             "llvm-cov",
             "--features",
             features,
