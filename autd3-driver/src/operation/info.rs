@@ -75,7 +75,7 @@ mod tests {
     const NUM_DEVICE: usize = 10;
 
     #[test]
-    fn info_op() {
+    fn test() {
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
 
         let mut tx = [0x00u8; 2 * NUM_DEVICE];
@@ -173,7 +173,7 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn info_op_panic() {
+    fn test_panic() {
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
         let mut tx = [0x00u8; 2 * NUM_DEVICE];
 
