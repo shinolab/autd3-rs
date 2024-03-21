@@ -1,38 +1,20 @@
 use std::collections::HashMap;
 
+use super::GainControlFlags;
 use crate::{
     common::{Drive, Segment},
     datagram::{Gain, GainFilter},
     error::AUTDInternalError,
     fpga::FPGADrive,
     geometry::{Device, Geometry},
-    operation::{cast, TypeTag},
+    operation::{cast, Operation, TypeTag},
 };
-
-use super::Operation;
-
-#[derive(Clone, Copy)]
-#[repr(C)]
-pub struct GainControlFlags(u16);
-
-bitflags::bitflags! {
-    impl GainControlFlags : u16 {
-        const NONE           = 0;
-        const UPDATE_SEGMENT = 1 << 0;
-    }
-}
 
 #[repr(C, align(2))]
 struct GainT {
     tag: TypeTag,
     segment: u8,
     flag: GainControlFlags,
-}
-
-#[repr(C, align(2))]
-struct GainUpdate {
-    tag: TypeTag,
-    segment: u8,
 }
 
 pub struct GainOp<G: Gain> {
@@ -104,49 +86,6 @@ impl<G: Gain> Operation for GainOp<G> {
     }
 }
 
-pub struct GainChangeSegmentOp {
-    segment: Segment,
-    remains: HashMap<usize, usize>,
-}
-
-impl GainChangeSegmentOp {
-    pub fn new(segment: Segment) -> Self {
-        Self {
-            segment,
-            remains: HashMap::new(),
-        }
-    }
-}
-
-impl Operation for GainChangeSegmentOp {
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        assert_eq!(self.remains[&device.idx()], 1);
-
-        let d = cast::<GainUpdate>(tx);
-        d.tag = TypeTag::GainChangeSegment;
-        d.segment = self.segment as u8;
-
-        Ok(std::mem::size_of::<GainUpdate>())
-    }
-
-    fn required_size(&self, _: &Device) -> usize {
-        std::mem::size_of::<GainUpdate>()
-    }
-
-    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains = geometry.devices().map(|device| (device.idx(), 1)).collect();
-        Ok(())
-    }
-
-    fn remains(&self, device: &Device) -> usize {
-        self.remains[&device.idx()]
-    }
-
-    fn commit(&mut self, device: &Device) {
-        self.remains.insert(device.idx(), 0);
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use rand::prelude::*;
@@ -162,7 +101,7 @@ mod tests {
     const NUM_DEVICE: usize = 10;
 
     #[test]
-    fn gain_op() {
+    fn test() {
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
 
         let mut tx = vec![
@@ -246,7 +185,7 @@ mod tests {
     }
 
     #[test]
-    fn error_gain() {
+    fn test_error() {
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
 
         let gain = ErrGain {

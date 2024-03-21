@@ -89,6 +89,7 @@ impl<M: Modulation> Modulation for Cache<M> {
 mod tests {
     use super::{super::tests::TestModulation, *};
 
+    use rand::Rng;
     use std::{
         ops::Deref,
         sync::{
@@ -98,9 +99,11 @@ mod tests {
     };
 
     #[test]
-    fn test_cache() -> anyhow::Result<()> {
+    fn test() -> anyhow::Result<()> {
+        let mut rng = rand::thread_rng();
+
         let m = TestModulation {
-            buf: vec![EmitIntensity::random(); 2],
+            buf: vec![rng.gen(), rng.gen()],
             config: SamplingConfiguration::FREQ_4K_HZ,
             loop_behavior: LoopBehavior::Infinite,
         };
@@ -142,7 +145,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cache_calc_once() {
+    fn test_calc_once() {
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
         let modulation = TestCacheModulation {
@@ -161,7 +164,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cache_calc_clone() {
+    fn test_calc_clone() {
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
         let modulation = TestCacheModulation {

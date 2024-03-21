@@ -135,11 +135,11 @@ impl OperationHandler {
                 }
                 _ => {
                     let op1_size = Self::pack_dev(op1, dev, tx)?;
-                    let t = tx.payload_mut(dev.idx());
+                    let t = &mut tx[dev.idx()].payload;
                     if t.len() - op1_size >= op2.required_size(dev) {
                         op2.pack(dev, &mut t[op1_size..])?;
                         op2.commit(dev);
-                        tx.header_mut(dev.idx()).slot_2_offset = op1_size as u16;
+                        tx[dev.idx()].header.slot_2_offset = op1_size as u16;
                     }
                     Ok(())
                 }
@@ -153,15 +153,15 @@ impl OperationHandler {
         dev: &Device,
         tx: &mut TxDatagram,
     ) -> Result<usize, AUTDInternalError> {
-        let hedaer = tx.header_mut(dev.idx());
-        hedaer.msg_id = if hedaer.msg_id == MSG_ID_MAX {
+        let header = &mut tx[dev.idx()].header;
+        header.msg_id = if header.msg_id == MSG_ID_MAX {
             0
         } else {
-            hedaer.msg_id + 1
+            header.msg_id + 1
         };
-        hedaer.slot_2_offset = 0;
+        header.slot_2_offset = 0;
 
-        let t = tx.payload_mut(dev.idx());
+        let t = &mut tx[dev.idx()].payload;
         assert!(t.len() >= op.required_size(dev));
         let res = op.pack(dev, t)?;
         op.commit(dev);
@@ -286,7 +286,7 @@ pub mod tests {
     }
 
     #[test]
-    fn op_handler_test() {
+    fn test() {
         let geometry = Geometry::new(vec![Device::new(
             0,
             vec![Transducer::new(
@@ -365,7 +365,7 @@ pub mod tests {
     }
 
     #[test]
-    fn op_handler_pack_first() {
+    fn test_first() {
         let geometry = Geometry::new(vec![Device::new(
             0,
             vec![Transducer::new(
@@ -415,7 +415,7 @@ pub mod tests {
     }
 
     #[test]
-    fn op_handler_pack_second() {
+    fn test_second() {
         let geometry = Geometry::new(vec![Device::new(
             0,
             vec![Transducer::new(
@@ -465,7 +465,7 @@ pub mod tests {
     }
 
     #[test]
-    fn op_handler_broken_init() {
+    fn test_init() {
         let geometry = Geometry::new(vec![Device::new(
             0,
             vec![Transducer::new(
@@ -512,7 +512,7 @@ pub mod tests {
     }
 
     #[test]
-    fn op_handler_broken_pack() {
+    fn test_broken_pack() {
         let geometry = Geometry::new(vec![Device::new(
             0,
             vec![Transducer::new(
@@ -582,7 +582,7 @@ pub mod tests {
 
     #[test]
     #[should_panic]
-    fn op_handler_pack_finished() {
+    fn test_finished() {
         let geometry = Geometry::new(vec![Device::new(
             0,
             vec![Transducer::new(

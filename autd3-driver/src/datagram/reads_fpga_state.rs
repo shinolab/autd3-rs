@@ -40,7 +40,7 @@ mod tests {
     }
 
     #[test]
-    fn test_force_fan_operation() {
+    fn test() {
         let datagram = ConfigureReadsFPGAState::new(f);
         let r = datagram.operation();
         assert!(r.is_ok());

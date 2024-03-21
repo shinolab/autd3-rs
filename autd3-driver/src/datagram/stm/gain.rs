@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use crate::{derive::*, operation::GainSTMMode};
 
 use super::STMProps;
@@ -168,37 +166,9 @@ impl<G: Gain + Clone> Clone for GainSTM<G> {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct ChangeGainSTMSegment {
-    segment: Segment,
-}
-
-impl ChangeGainSTMSegment {
-    pub const fn new(segment: Segment) -> Self {
-        Self { segment }
-    }
-
-    pub const fn segment(&self) -> Segment {
-        self.segment
-    }
-}
-
-impl crate::datagram::Datagram for ChangeGainSTMSegment {
-    type O1 = crate::operation::GainSTMChangeSegmentOp;
-    type O2 = crate::operation::NullOp;
-
-    fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
-    }
-
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new(self.segment), Self::O2::default()))
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, num::NonZeroU32};
+    use std::{collections::HashMap, time::Duration};
 
     use autd3_derive::Gain;
 
@@ -206,57 +176,65 @@ mod tests {
 
     use crate::operation::{tests::NullGain, GainSTMOp};
 
+    #[rstest::rstest]
     #[test]
-    fn new() {
-        let stm = GainSTM::<NullGain>::from_freq(1.)
-            .add_gains_from_iter((0..10).map(|_| NullGain {}))
-            .unwrap();
-
-        assert_eq!(stm.frequency(), 1.);
-        assert_eq!(stm.sampling_config().unwrap().frequency(), 1. * 10.);
+    #[case(0.5, 2)]
+    #[case(1.0, 10)]
+    #[case(2.0, 10)]
+    fn test_from_requency(#[case] freq: float, #[case] n: usize) -> anyhow::Result<()> {
+        let stm = GainSTM::from_freq(freq).add_gains_from_iter((0..n).map(|_| NullGain {}))?;
+        assert_eq!(freq, stm.frequency());
+        assert_eq!(freq * n as float, stm.sampling_config()?.frequency());
+        Ok(())
     }
 
+    #[rstest::rstest]
     #[test]
-    fn from_period() {
-        let stm = GainSTM::<NullGain>::from_period(std::time::Duration::from_micros(250))
-            .add_gains_from_iter((0..10).map(|_| NullGain {}))
-            .unwrap();
+    #[case(Duration::from_micros(125), 2)]
+    #[case(Duration::from_micros(250), 10)]
+    #[case(Duration::from_micros(500), 10)]
+    fn test_from_period(#[case] period: Duration, #[case] n: usize) -> anyhow::Result<()> {
+        let stm = GainSTM::from_period(period).add_gains_from_iter((0..n).map(|_| NullGain {}))?;
+        assert_eq!(period, stm.period());
+        assert_eq!(period / n as u32, stm.sampling_config()?.period());
+        Ok(())
+    }
 
-        assert_eq!(stm.period(), std::time::Duration::from_micros(250));
+    #[rstest::rstest]
+    #[test]
+    #[case(SamplingConfiguration::DISABLE, 2)]
+    #[case(SamplingConfiguration::FREQ_4K_HZ, 10)]
+    fn test_from_sampling_config(
+        #[case] config: SamplingConfiguration,
+        #[case] n: usize,
+    ) -> anyhow::Result<()> {
         assert_eq!(
-            stm.sampling_config().unwrap().period(),
-            std::time::Duration::from_micros(25)
+            config,
+            GainSTM::from_sampling_config(config)
+                .add_gains_from_iter((0..n).map(|_| NullGain {}))?
+                .sampling_config()?
+        );
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case::phase_intensity_full(GainSTMMode::PhaseIntensityFull)]
+    #[case::phase_full(GainSTMMode::PhaseFull)]
+    #[case::phase_half(GainSTMMode::PhaseHalf)]
+    fn test_with_mode(#[case] mode: GainSTMMode) {
+        assert_eq!(
+            mode,
+            GainSTM::<NullGain>::from_freq(1.0).with_mode(mode).mode()
         );
     }
 
     #[test]
-    fn from_sampling_config() {
-        let stm = GainSTM::<NullGain>::from_sampling_config(
-            SamplingConfiguration::from_period(std::time::Duration::from_micros(25)).unwrap(),
-        )
-        .add_gains_from_iter((0..10).map(|_| NullGain {}))
-        .unwrap();
-
-        assert_eq!(stm.period(), std::time::Duration::from_micros(250));
+    fn test_with_mode_default() {
         assert_eq!(
-            stm.sampling_config().unwrap().period(),
-            std::time::Duration::from_micros(25)
+            GainSTMMode::PhaseIntensityFull,
+            GainSTM::<NullGain>::from_freq(1.0).mode()
         );
-    }
-
-    #[test]
-    fn test_with_mode() {
-        let stm = GainSTM::<NullGain>::from_freq(1.0);
-        assert_eq!(stm.mode(), GainSTMMode::PhaseIntensityFull);
-
-        let stm = stm.with_mode(GainSTMMode::PhaseFull);
-        assert_eq!(stm.mode(), GainSTMMode::PhaseFull);
-
-        let stm = stm.with_mode(GainSTMMode::PhaseHalf);
-        assert_eq!(stm.mode(), GainSTMMode::PhaseHalf);
-
-        let stm = stm.with_mode(GainSTMMode::PhaseIntensityFull);
-        assert_eq!(stm.mode(), GainSTMMode::PhaseIntensityFull);
     }
 
     #[derive(Gain)]
@@ -274,39 +252,38 @@ mod tests {
     }
 
     #[test]
-    fn test_clear() {
+    fn test_clear() -> anyhow::Result<()> {
         let mut stm = GainSTM::<Box<dyn Gain>>::from_freq(1.0)
-            .add_gain(Box::new(NullGain {}))
-            .unwrap()
-            .add_gain(Box::new(NullGain2 {}))
-            .unwrap();
-
+            .add_gain(Box::new(NullGain {}))?
+            .add_gain(Box::new(NullGain2 {}))?;
+        assert_eq!(stm.gains().len(), 2);
         let gains = stm.clear();
-
         assert_eq!(stm.gains().len(), 0);
         assert_eq!(gains.len(), 2);
+        Ok(())
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_with_loop_behavior() {
-        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.0);
-        assert_eq!(LoopBehavior::Infinite, stm.loop_behavior());
-
-        let stm = stm.with_loop_behavior(LoopBehavior::Finite(NonZeroU32::new(10).unwrap()));
+    #[case::infinite(LoopBehavior::Infinite)]
+    #[case::finite(LoopBehavior::once())]
+    fn test_with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
-            LoopBehavior::Finite(NonZeroU32::new(10).unwrap()),
-            stm.loop_behavior()
+            loop_behavior,
+            GainSTM::<Box<dyn Gain>>::from_freq(1.0)
+                .with_loop_behavior(loop_behavior)
+                .loop_behavior()
         );
     }
 
     #[test]
-    fn gain_stm_indexer() {
+    fn test_indexer() {
         let stm = GainSTM::from_freq(1.).add_gain(NullGain {}).unwrap();
         let _: &NullGain = &stm[0];
     }
 
     #[test]
-    fn gain_stm_operation() {
+    fn test_operation() {
         let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.)
             .add_gain(Box::new(NullGain {}))
             .unwrap()
@@ -318,15 +295,5 @@ mod tests {
         let r = stm.operation_with_segment(Segment::S0, true);
         assert!(r.is_ok());
         let _: (GainSTMOp<Box<dyn Gain>>, NullOp) = r.unwrap();
-    }
-
-    #[test]
-    fn test_change_gain_stm_segment() -> anyhow::Result<()> {
-        use crate::datagram::Datagram;
-        let d = ChangeGainSTMSegment::new(Segment::S0);
-        assert_eq!(Segment::S0, d.segment());
-        assert_eq!(Some(Duration::from_millis(200)), d.timeout());
-        let _ = d.operation()?;
-        Ok(())
     }
 }

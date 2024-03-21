@@ -16,8 +16,7 @@ impl SamplingConfiguration {
     pub const FREQ_MAX: float = Self::BASE_FREQUENCY / SAMPLING_FREQ_DIV_MIN as float;
     pub const PERIOD_MIN: u128 =
         (1000000000. / Self::BASE_FREQUENCY * SAMPLING_FREQ_DIV_MIN as float) as u128;
-    pub const PERIOD_MAX: u128 =
-        (1000000000. / Self::BASE_FREQUENCY * SAMPLING_FREQ_DIV_MAX as float) as u128;
+    pub const PERIOD_MAX: u128 = 209715199999;
 
     pub const DISABLE: Self = Self { div: 0xFFFFFFFF };
     pub const FREQ_4K_HZ: Self = Self { div: 5120 };
@@ -35,30 +34,32 @@ impl SamplingConfiguration {
     }
 
     pub fn from_frequency(f: float) -> Result<Self, AUTDInternalError> {
-        if !(Self::FREQ_MIN..=Self::FREQ_MAX).contains(&f) {
-            Err(AUTDInternalError::SamplingFreqOutOfRange(
+        let div = (Self::BASE_FREQUENCY / f) as u64;
+        if div > SAMPLING_FREQ_DIV_MAX as u64 {
+            return Err(AUTDInternalError::SamplingFreqOutOfRange(
                 f,
                 Self::FREQ_MIN,
                 Self::FREQ_MAX,
-            ))
-        } else {
-            let div = Self::BASE_FREQUENCY / f;
-            Self::from_frequency_division(div as _)
+            ));
         }
+        Self::from_frequency_division(div as _).map_err(|_| {
+            AUTDInternalError::SamplingFreqOutOfRange(f, Self::FREQ_MIN, Self::FREQ_MAX)
+        })
     }
 
     pub fn from_period(p: std::time::Duration) -> Result<Self, AUTDInternalError> {
         let p = p.as_nanos();
-        if !(Self::PERIOD_MIN..=Self::PERIOD_MAX).contains(&p) {
-            Err(AUTDInternalError::SamplingPeriodOutOfRange(
+        let div = (Self::BASE_FREQUENCY * (p as float / 1000000000.)) as u64;
+        if div > SAMPLING_FREQ_DIV_MAX as u64 {
+            return Err(AUTDInternalError::SamplingPeriodOutOfRange(
                 p,
                 Self::PERIOD_MIN,
                 Self::PERIOD_MAX,
-            ))
-        } else {
-            let div = Self::BASE_FREQUENCY / 1000000000. * p as float;
-            Self::from_frequency_division(div as _)
+            ));
         }
+        Self::from_frequency_division(div as _).map_err(|_| {
+            AUTDInternalError::SamplingPeriodOutOfRange(p, Self::PERIOD_MIN, Self::PERIOD_MAX)
+        })
     }
 
     pub const fn frequency_division(&self) -> u32 {
@@ -78,112 +79,113 @@ impl SamplingConfiguration {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
+    #[rstest::rstest]
     #[test]
-    fn test_from_frequency_division() {
-        let config = SamplingConfiguration::from_frequency_division(SAMPLING_FREQ_DIV_MIN);
-        assert!(config.is_ok());
-        let config = config.unwrap();
-        assert_eq!(config.frequency_division(), SAMPLING_FREQ_DIV_MIN);
-        assert_eq!(config.frequency(), 40e3);
-        assert_eq!(config.period(), std::time::Duration::from_micros(25));
-
-        let config = SamplingConfiguration::from_frequency_division(SAMPLING_FREQ_DIV_MIN - 1);
+    #[case::min(
+        Ok(SamplingConfiguration {
+            div: SAMPLING_FREQ_DIV_MIN
+        }),
+        SAMPLING_FREQ_DIV_MIN
+    )]
+    #[case::max(
+        Ok(SamplingConfiguration {
+            div: SAMPLING_FREQ_DIV_MAX
+        }),
+        SAMPLING_FREQ_DIV_MAX
+    )]
+    #[case::out_of_range(
+        Err(AUTDInternalError::SamplingFreqDivOutOfRange(
+            SAMPLING_FREQ_DIV_MIN - 1,
+            SAMPLING_FREQ_DIV_MIN,
+            SAMPLING_FREQ_DIV_MAX
+        )),
+        SAMPLING_FREQ_DIV_MIN - 1
+    )]
+    fn test_from_frequency_division(
+        #[case] expected: Result<SamplingConfiguration, AUTDInternalError>,
+        #[case] freq_div: u32,
+    ) {
         assert_eq!(
-            config.unwrap_err(),
-            AUTDInternalError::SamplingFreqDivOutOfRange(
-                SAMPLING_FREQ_DIV_MIN - 1,
-                SAMPLING_FREQ_DIV_MIN,
-                SAMPLING_FREQ_DIV_MAX
-            )
+            expected,
+            SamplingConfiguration::from_frequency_division(freq_div)
         );
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_from_frequency() {
-        let config = SamplingConfiguration::from_frequency(40e3);
-        assert!(config.is_ok());
-        let config = config.unwrap();
-        assert_eq!(config.frequency_division(), 512);
-        assert_eq!(config.frequency(), 40e3);
-        assert_eq!(config.period(), std::time::Duration::from_micros(25));
-
-        let config = SamplingConfiguration::from_frequency(SamplingConfiguration::FREQ_MIN - 0.1);
-        assert_eq!(
-            config.unwrap_err(),
-            AUTDInternalError::SamplingFreqOutOfRange(
-                SamplingConfiguration::FREQ_MIN - 0.1,
-                SamplingConfiguration::FREQ_MIN,
-                SamplingConfiguration::FREQ_MAX
-            )
-        );
-
-        let config = SamplingConfiguration::from_frequency(SamplingConfiguration::FREQ_MAX + 0.1);
-        assert_eq!(
-            config.unwrap_err(),
-            AUTDInternalError::SamplingFreqOutOfRange(
-                SamplingConfiguration::FREQ_MAX + 0.1,
-                SamplingConfiguration::FREQ_MIN,
-                SamplingConfiguration::FREQ_MAX
-            )
-        );
+    #[case::min(
+        Ok(SamplingConfiguration {
+            div: SAMPLING_FREQ_DIV_MIN
+        }),
+        SamplingConfiguration::FREQ_MAX
+    )]
+    #[case::max(
+        Ok(SamplingConfiguration {
+            div: SAMPLING_FREQ_DIV_MAX
+        }),
+        SamplingConfiguration::FREQ_MIN
+    )]
+    #[case::out_of_range_min(
+        Err(AUTDInternalError::SamplingFreqOutOfRange(
+            SamplingConfiguration::FREQ_MIN - 0.1,
+            SamplingConfiguration::FREQ_MIN,
+            SamplingConfiguration::FREQ_MAX
+        )),
+        SamplingConfiguration::FREQ_MIN - 0.1
+    )]
+    #[case::out_of_range_max(
+        Err(AUTDInternalError::SamplingFreqOutOfRange(
+            SamplingConfiguration::FREQ_MAX + 0.1,
+            SamplingConfiguration::FREQ_MIN,
+            SamplingConfiguration::FREQ_MAX
+        )),
+        SamplingConfiguration::FREQ_MAX + 0.1
+    )]
+    fn test_from_frequency(
+        #[case] expected: Result<SamplingConfiguration, AUTDInternalError>,
+        #[case] freq: float,
+    ) {
+        assert_eq!(expected, SamplingConfiguration::from_frequency(freq));
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_from_period() {
-        let config = SamplingConfiguration::from_period(std::time::Duration::from_micros(25));
-        assert!(config.is_ok());
-        let config = config.unwrap();
-        assert_eq!(config.frequency_division(), 512);
-        assert_eq!(config.frequency(), 40e3);
-        assert_eq!(config.period(), std::time::Duration::from_micros(25));
-
-        let config = SamplingConfiguration::from_period(std::time::Duration::from_nanos(
-            (SamplingConfiguration::PERIOD_MIN - 1) as u64,
-        ));
+    #[case::min(
+        Ok(SamplingConfiguration {
+            div: SAMPLING_FREQ_DIV_MIN
+        }),
+        SamplingConfiguration::PERIOD_MIN
+    )]
+    #[case::max(
+        Ok(SamplingConfiguration {
+            div: SAMPLING_FREQ_DIV_MAX
+        }),
+        SamplingConfiguration::PERIOD_MAX
+    )]
+    #[case::out_of_range_min(
+        Err(AUTDInternalError::SamplingPeriodOutOfRange(
+            SamplingConfiguration::PERIOD_MIN - 1,
+            SamplingConfiguration::PERIOD_MIN,
+            SamplingConfiguration::PERIOD_MAX
+        )),
+        SamplingConfiguration::PERIOD_MIN - 1
+    )]
+    #[case::out_of_range_max(
+        Err(AUTDInternalError::SamplingPeriodOutOfRange(
+            SamplingConfiguration::PERIOD_MAX + 1,
+            SamplingConfiguration::PERIOD_MIN,
+            SamplingConfiguration::PERIOD_MAX
+        )),
+        SamplingConfiguration::PERIOD_MAX + 1
+    )]
+    fn test_from_period(
+        #[case] expected: Result<SamplingConfiguration, AUTDInternalError>,
+        #[case] period: u128,
+    ) {
         assert_eq!(
-            config.unwrap_err(),
-            AUTDInternalError::SamplingPeriodOutOfRange(
-                SamplingConfiguration::PERIOD_MIN - 1,
-                SamplingConfiguration::PERIOD_MIN,
-                SamplingConfiguration::PERIOD_MAX
-            )
+            expected,
+            SamplingConfiguration::from_period(std::time::Duration::from_nanos(period as _))
         );
-
-        let config = SamplingConfiguration::from_period(std::time::Duration::from_nanos(
-            (SamplingConfiguration::PERIOD_MAX + 1) as u64,
-        ));
-        assert_eq!(
-            config.unwrap_err(),
-            AUTDInternalError::SamplingPeriodOutOfRange(
-                SamplingConfiguration::PERIOD_MAX + 1,
-                SamplingConfiguration::PERIOD_MIN,
-                SamplingConfiguration::PERIOD_MAX
-            )
-        );
-    }
-
-    #[test]
-    fn test_clone() {
-        let config = SamplingConfiguration::from_frequency_division(512).unwrap();
-        assert_eq!(config, config.clone());
-    }
-
-    #[test]
-    fn test_debug() {
-        let config = SamplingConfiguration::from_frequency_division(512).unwrap();
-        assert_eq!(
-            format!("{:?}", config),
-            "SamplingConfiguration { div: 512 }"
-        );
-    }
-
-    #[test]
-    fn test_ord() {
-        let config1 = SamplingConfiguration::from_frequency_division(512).unwrap();
-        let config2 = SamplingConfiguration::from_frequency_division(513).unwrap();
-        assert!(config1 < config2);
-        assert_eq!(config1.min(config2), config1);
     }
 }

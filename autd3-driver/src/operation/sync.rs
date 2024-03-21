@@ -55,7 +55,7 @@ mod tests {
     const NUM_DEVICE: usize = 10;
 
     #[test]
-    fn sync_op() {
+    fn test() {
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
 
         let mut tx = [0x00u8; 2 * NUM_DEVICE];

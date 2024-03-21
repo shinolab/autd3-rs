@@ -62,23 +62,42 @@ impl<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> Modulation for
 
 #[cfg(test)]
 mod tests {
+    use rand::Rng;
+
     use super::{super::tests::TestModulation, *};
 
+    #[rstest::rstest]
     #[test]
-    fn test_transform_impl() -> anyhow::Result<()> {
-        let m = TestModulation {
-            buf: vec![EmitIntensity::random(); 2],
-            config: SamplingConfiguration::FREQ_4K_HZ,
-            loop_behavior: LoopBehavior::Infinite,
-        };
-        let m_transformed = m.clone().with_transform(|_, x| x / 2);
+    #[case::freq_4k(SamplingConfiguration::FREQ_4K_HZ)]
+    #[case::disable(SamplingConfiguration::DISABLE)]
+    fn test_sampling_config(#[case] config: SamplingConfiguration) {
+        assert_eq!(
+            config,
+            TestModulation {
+                buf: vec![EmitIntensity::MIN; 2],
+                config,
+                loop_behavior: LoopBehavior::Infinite,
+            }
+            .with_transform(|_, x| x)
+            .sampling_config()
+        );
+    }
+
+    #[test]
+    fn test() {
+        let mut rng = rand::thread_rng();
+
+        let buf = vec![rng.gen(), rng.gen()];
 
         assert_eq!(
-            m.calc()?.iter().map(|x| x / 2).collect::<Vec<_>>(),
-            m_transformed.calc()?
+            Ok(buf.iter().map(|&x| x / 2).collect::<Vec<_>>()),
+            TestModulation {
+                buf: buf.clone(),
+                config: SamplingConfiguration::FREQ_4K_HZ,
+                loop_behavior: LoopBehavior::Infinite,
+            }
+            .with_transform(|_, x| x / 2)
+            .calc()
         );
-        assert_eq!(m.sampling_config(), m_transformed.sampling_config());
-
-        Ok(())
     }
 }

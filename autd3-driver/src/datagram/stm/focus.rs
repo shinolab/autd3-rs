@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use crate::{derive::*, operation::ControlPoint};
 
 use super::STMProps;
@@ -142,183 +140,154 @@ impl DatagramS for FocusSTM {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct ChangeFocusSTMSegment {
-    segment: Segment,
-}
-
-impl ChangeFocusSTMSegment {
-    pub const fn new(segment: Segment) -> Self {
-        Self { segment }
-    }
-
-    pub const fn segment(&self) -> Segment {
-        self.segment
-    }
-}
-
-impl crate::datagram::Datagram for ChangeFocusSTMSegment {
-    type O1 = crate::operation::FocusSTMChangeSegmentOp;
-    type O2 = crate::operation::NullOp;
-
-    fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
-    }
-
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new(self.segment), Self::O2::default()))
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use std::num::NonZeroU32;
+    use std::time::Duration;
 
     use super::*;
     use crate::{geometry::Vector3, operation::FocusSTMOp};
 
+    #[rstest::rstest]
     #[test]
-    fn new() {
-        let stm = FocusSTM::from_freq(1.)
-            .add_foci_from_iter((0..10).map(|_| Vector3::zeros()))
-            .unwrap();
+    #[case(0.5, 2)]
+    #[case(1.0, 10)]
+    #[case(2.0, 10)]
+    fn test_from_requency(#[case] freq: float, #[case] n: usize) -> anyhow::Result<()> {
+        let stm = FocusSTM::from_freq(freq).add_foci_from_iter((0..n).map(|_| Vector3::zeros()))?;
+        assert_eq!(freq, stm.frequency());
+        assert_eq!(freq * n as float, stm.sampling_config()?.frequency());
+        Ok(())
+    }
 
-        assert_eq!(stm.frequency(), 1.);
-        assert_eq!(stm.sampling_config().unwrap().frequency(), 1. * 10.);
+    #[rstest::rstest]
+    #[test]
+    #[case(Duration::from_micros(125), 2)]
+    #[case(Duration::from_micros(250), 10)]
+    #[case(Duration::from_micros(500), 10)]
+    fn test_from_period(#[case] period: Duration, #[case] n: usize) -> anyhow::Result<()> {
+        let stm =
+            FocusSTM::from_period(period).add_foci_from_iter((0..n).map(|_| Vector3::zeros()))?;
+        assert_eq!(period, stm.period());
+        assert_eq!(period / n as u32, stm.sampling_config()?.period());
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(SamplingConfiguration::DISABLE, 2)]
+    #[case(SamplingConfiguration::FREQ_4K_HZ, 10)]
+    fn test_from_sampling_config(
+        #[case] config: SamplingConfiguration,
+        #[case] n: usize,
+    ) -> anyhow::Result<()> {
+        assert_eq!(
+            config,
+            FocusSTM::from_sampling_config(config)
+                .add_foci_from_iter((0..n).map(|_| Vector3::zeros()))?
+                .sampling_config()?
+        );
+        Ok(())
     }
 
     #[test]
-    fn from_period() {
-        let stm = FocusSTM::from_period(std::time::Duration::from_micros(250))
-            .add_foci_from_iter((0..10).map(|_| Vector3::zeros()))
-            .unwrap();
-
-        assert_eq!(stm.period(), std::time::Duration::from_micros(250));
+    fn test_add_focus() -> anyhow::Result<()> {
+        let stm = FocusSTM::from_freq(1.0)
+            .add_focus(Vector3::new(1., 2., 3.))?
+            .add_focus((Vector3::new(4., 5., 6.), 1))?
+            .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2))?;
+        assert_eq!(stm.foci().len(), 3);
         assert_eq!(
-            stm.sampling_config().unwrap().period(),
-            std::time::Duration::from_micros(25)
+            stm[0],
+            ControlPoint::new(Vector3::new(1., 2., 3.)).with_intensity(0xFF)
+        );
+        assert_eq!(
+            stm[1],
+            ControlPoint::new(Vector3::new(4., 5., 6.)).with_intensity(0x01)
+        );
+        assert_eq!(
+            stm[2],
+            ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(0x02)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_add_foci() -> anyhow::Result<()> {
+        let stm = FocusSTM::from_freq(1.0)
+            .add_foci_from_iter([Vector3::new(1., 2., 3.)])?
+            .add_foci_from_iter([(Vector3::new(4., 5., 6.), 1)])?
+            .add_foci_from_iter([ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2)])?;
+        assert_eq!(stm.foci().len(), 3);
+        assert_eq!(
+            stm[0],
+            ControlPoint::new(Vector3::new(1., 2., 3.)).with_intensity(0xFF)
+        );
+        assert_eq!(
+            stm[1],
+            ControlPoint::new(Vector3::new(4., 5., 6.)).with_intensity(0x01)
+        );
+        assert_eq!(
+            stm[2],
+            ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(0x02)
+        );
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case::infinite(LoopBehavior::Infinite)]
+    #[case::finite(LoopBehavior::once())]
+    fn test_with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
+        assert_eq!(
+            loop_behavior,
+            FocusSTM::from_freq(1.0)
+                .with_loop_behavior(loop_behavior)
+                .loop_behavior()
         );
     }
 
     #[test]
-    fn from_sampling_config() {
-        let stm = FocusSTM::from_sampling_config(
-            SamplingConfiguration::from_period(std::time::Duration::from_micros(25)).unwrap(),
-        )
-        .add_foci_from_iter((0..10).map(|_| Vector3::zeros()))
-        .unwrap();
-
-        assert_eq!(stm.period(), std::time::Duration::from_micros(250));
-        assert_eq!(
-            stm.sampling_config().unwrap().period(),
-            std::time::Duration::from_micros(25)
-        );
-    }
-
-    #[test]
-    fn add_focus() {
-        let stm = FocusSTM::from_freq(1.0)
-            .add_focus(Vector3::new(1., 2., 3.))
-            .unwrap()
-            .add_focus((Vector3::new(4., 5., 6.), 1))
-            .unwrap()
-            .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2))
-            .unwrap();
-
-        assert_eq!(stm.foci().len(), 3);
-
-        assert_eq!(stm[0].point(), &Vector3::new(1., 2., 3.));
-        assert_eq!(stm[0].intensity().value(), 0xFF);
-
-        assert_eq!(stm[1].point(), &Vector3::new(4., 5., 6.));
-        assert_eq!(stm[1].intensity().value(), 0x01);
-
-        assert_eq!(stm[2].point(), &Vector3::new(7., 8., 9.));
-        assert_eq!(stm[2].intensity().value(), 0x02);
-    }
-
-    #[test]
-    fn add_foci() {
-        let stm = FocusSTM::from_freq(1.0)
-            .add_foci_from_iter([Vector3::new(1., 2., 3.)])
-            .unwrap()
-            .add_foci_from_iter([(Vector3::new(4., 5., 6.), 1)])
-            .unwrap()
-            .add_foci_from_iter([ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2)])
-            .unwrap();
-
-        assert_eq!(stm.foci().len(), 3);
-
-        assert_eq!(stm.foci()[0].point(), &Vector3::new(1., 2., 3.));
-        assert_eq!(stm.foci()[0].intensity().value(), 0xFF);
-
-        assert_eq!(stm.foci()[1].point(), &Vector3::new(4., 5., 6.));
-        assert_eq!(stm.foci()[1].intensity().value(), 0x01);
-
-        assert_eq!(stm.foci()[2].point(), &Vector3::new(7., 8., 9.));
-        assert_eq!(stm.foci()[2].intensity().value(), 0x02);
-    }
-
-    #[test]
-    fn test_with_loop_behavior() {
+    fn test_with_loop_behavior_deafault() {
         let stm = FocusSTM::from_freq(1.0);
         assert_eq!(LoopBehavior::Infinite, stm.loop_behavior());
-
-        let stm = stm.with_loop_behavior(LoopBehavior::Finite(NonZeroU32::new(10).unwrap()));
-        assert_eq!(
-            LoopBehavior::Finite(NonZeroU32::new(10).unwrap()),
-            stm.loop_behavior()
-        );
     }
 
     #[test]
-    fn clear() {
+    fn test_clear() -> anyhow::Result<()> {
         let mut stm = FocusSTM::from_freq(1.0)
-            .add_focus(Vector3::new(1., 2., 3.))
-            .unwrap()
-            .add_focus((Vector3::new(4., 5., 6.), 1))
-            .unwrap()
-            .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2))
-            .unwrap();
-
+            .add_focus(Vector3::new(1., 2., 3.))?
+            .add_focus((Vector3::new(4., 5., 6.), 1))?
+            .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2))?;
         let foci = stm.clear();
-
         assert_eq!(stm.foci().len(), 0);
-
         assert_eq!(foci.len(), 3);
-
-        assert_eq!(foci[0].point(), &Vector3::new(1., 2., 3.));
-        assert_eq!(foci[0].intensity().value(), 0xFF);
-        assert_eq!(foci[1].point(), &Vector3::new(4., 5., 6.));
-        assert_eq!(foci[1].intensity().value(), 0x01);
-        assert_eq!(foci[2].point(), &Vector3::new(7., 8., 9.));
-        assert_eq!(foci[2].intensity().value(), 0x02);
+        assert_eq!(
+            foci[0],
+            ControlPoint::new(Vector3::new(1., 2., 3.)).with_intensity(0xFF)
+        );
+        assert_eq!(
+            foci[1],
+            ControlPoint::new(Vector3::new(4., 5., 6.)).with_intensity(0x01)
+        );
+        assert_eq!(
+            foci[2],
+            ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(0x02)
+        );
+        Ok(())
     }
 
     #[test]
-    fn focu_stm_operation() {
+    fn test_operation() -> anyhow::Result<()> {
         let stm = FocusSTM::from_freq(1.0)
-            .add_focus(Vector3::new(1., 2., 3.))
-            .unwrap()
-            .add_focus((Vector3::new(4., 5., 6.), 1))
-            .unwrap()
-            .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2))
-            .unwrap();
+            .add_focus(Vector3::new(1., 2., 3.))?
+            .add_focus((Vector3::new(4., 5., 6.), 1))?
+            .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2))?;
 
-        assert_eq!(stm.timeout(), Some(std::time::Duration::from_millis(200)));
+        assert_eq!(stm.timeout(), Some(Duration::from_millis(200)));
 
         let r = stm.operation_with_segment(Segment::S0, true);
         assert!(r.is_ok());
         let _: (FocusSTMOp, NullOp) = r.unwrap();
-    }
-
-    #[test]
-    fn test_change_focus_stm_segment() -> anyhow::Result<()> {
-        use crate::datagram::Datagram;
-        let d = ChangeFocusSTMSegment::new(Segment::S0);
-        assert_eq!(Segment::S0, d.segment());
-        assert_eq!(Some(Duration::from_millis(200)), d.timeout());
-        let _ = d.operation()?;
         Ok(())
     }
 }

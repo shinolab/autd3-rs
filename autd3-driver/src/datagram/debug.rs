@@ -43,7 +43,7 @@ mod tests {
     }
 
     #[test]
-    fn test_debug_output_idx_timeout() {
+    fn test_timeout() {
         let debug_output_idx = ConfigureDebugOutputIdx::new(f);
         let timeout = debug_output_idx.timeout();
         assert!(timeout.is_some());
@@ -51,7 +51,7 @@ mod tests {
     }
 
     #[test]
-    fn test_debug_output_idx_operation() {
+    fn test_operation() {
         let debug_output_idx = ConfigureDebugOutputIdx::new(f);
         let r = debug_output_idx.operation();
         assert!(r.is_ok());

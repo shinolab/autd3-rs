@@ -33,7 +33,7 @@ pub fn send_once(
     if (cpu.ack() & ERR_BIT) == ERR_BIT {
         return Err(AUTDInternalError::firmware_err(cpu.ack()));
     }
-    assert_eq!(tx.headers().next().unwrap().msg_id, cpu.ack());
+    assert_eq!(tx[0].header.msg_id, cpu.ack());
     Ok(())
 }
 
@@ -60,8 +60,8 @@ fn send_invalid_tag() {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    tx.header_mut(0).msg_id = 1;
-    tx.payload_mut(0)[0] = 0xFF;
+    tx[0].header.msg_id = 1;
+    tx[0].payload[0] = 0xFF;
 
     cpu.send(&tx);
     assert_eq!(ERR_NOT_SUPPORTED_TAG, cpu.ack());
@@ -79,13 +79,13 @@ fn send_ingore_same_data() -> anyhow::Result<()> {
     OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx)?;
 
     cpu.send(&tx);
-    let msg_id = tx.headers().next().unwrap().msg_id;
-    assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
+    let msg_id = tx[0].header.msg_id;
+    assert_eq!(cpu.ack(), tx[0].header.msg_id);
 
     let (mut op, mut op_null) = Synchronize::new().operation()?;
     OperationHandler::init(&mut op, &mut op_null, &geometry)?;
     OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx)?;
-    tx.header_mut(0).msg_id = msg_id;
+    tx[0].header.msg_id = msg_id;
     assert!(!cpu.synchronized());
     cpu.send(&tx);
     assert!(!cpu.synchronized());
@@ -107,7 +107,7 @@ fn send_slot_2() -> anyhow::Result<()> {
 
     assert!(!cpu.synchronized());
     cpu.send(&tx);
-    assert_eq!(cpu.ack(), tx.headers().next().unwrap().msg_id);
+    assert_eq!(cpu.ack(), tx[0].header.msg_id);
     assert!(cpu.synchronized());
 
     Ok(())

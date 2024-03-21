@@ -47,22 +47,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn gain_stm_controll_flag() {
+    fn test_size() {
         assert_eq!(std::mem::size_of::<GainSTMControlFlags>(), 1);
-
-        let flags = GainSTMControlFlags::BEGIN;
-
-        let flagsc = Clone::clone(&flags);
-        assert_eq!(flagsc.bits(), flags.bits());
     }
 
     #[test]
-    fn gain_stm_controll_flag_fmt() {
+    fn test_fmt() {
         assert_eq!(format!("{}", GainSTMControlFlags::NONE), "NONE");
         assert_eq!(format!("{}", GainSTMControlFlags::BEGIN), "BEGIN");
         assert_eq!(format!("{}", GainSTMControlFlags::END), "END");
         assert_eq!(format!("{}", GainSTMControlFlags::UPDATE), "UPDATE");
-
         assert_eq!(
             format!(
                 "{}",

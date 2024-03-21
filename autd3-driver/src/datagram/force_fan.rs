@@ -41,7 +41,7 @@ mod tests {
     }
 
     #[test]
-    fn test_force_fan_operation_timeout() {
+    fn test_timeout() {
         let datagram = ConfigureForceFan::new(f);
         let timeout = datagram.timeout();
         assert!(timeout.is_some());
@@ -49,7 +49,7 @@ mod tests {
     }
 
     #[test]
-    fn test_force_fan_operation() {
+    fn test_operation() {
         let datagram = ConfigureForceFan::new(f);
         let r = datagram.operation();
         assert!(r.is_ok());

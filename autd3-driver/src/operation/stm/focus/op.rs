@@ -29,12 +29,6 @@ struct FocusSTMSubseq {
     send_num: u8,
 }
 
-#[repr(C, align(2))]
-struct FocusSTMUpdate {
-    tag: TypeTag,
-    segment: u8,
-}
-
 pub struct FocusSTMOp {
     remains: HashMap<usize, usize>,
     sent: HashMap<usize, usize>,
@@ -157,49 +151,6 @@ impl Operation for FocusSTMOp {
     }
 }
 
-pub struct FocusSTMChangeSegmentOp {
-    segment: Segment,
-    remains: HashMap<usize, usize>,
-}
-
-impl FocusSTMChangeSegmentOp {
-    pub fn new(segment: Segment) -> Self {
-        Self {
-            segment,
-            remains: HashMap::new(),
-        }
-    }
-}
-
-impl Operation for FocusSTMChangeSegmentOp {
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        assert_eq!(self.remains[&device.idx()], 1);
-
-        let d = cast::<FocusSTMUpdate>(tx);
-        d.tag = TypeTag::FocusSTMChangeSegment;
-        d.segment = self.segment as u8;
-
-        Ok(std::mem::size_of::<FocusSTMUpdate>())
-    }
-
-    fn required_size(&self, _: &Device) -> usize {
-        std::mem::size_of::<FocusSTMUpdate>()
-    }
-
-    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains = geometry.devices().map(|device| (device.idx(), 1)).collect();
-        Ok(())
-    }
-
-    fn remains(&self, device: &Device) -> usize {
-        self.remains[&device.idx()]
-    }
-
-    fn commit(&mut self, device: &Device) {
-        self.remains.insert(device.idx(), 0);
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::{mem::size_of, num::NonZeroU32};
@@ -220,7 +171,7 @@ mod tests {
     const NUM_DEVICE: usize = 10;
 
     #[test]
-    fn focus_stm_op() {
+    fn test() {
         const FOCUS_STM_SIZE: usize = 100;
         const FRAME_SIZE: usize =
             size_of::<FocusSTMHead>() + size_of::<STMFocus>() * FOCUS_STM_SIZE;
@@ -317,23 +268,29 @@ mod tests {
                 .chunks(size_of::<STMFocus>())
                 .zip(points.iter())
                 .for_each(|(d, p)| {
-                    let mut f = STMFocus { buf: [0x0000; 4] };
-                    f.set(p.point().x, p.point().y, p.point().z, p.intensity())
-                        .unwrap();
-                    assert_eq!(d[0], (f.buf[0] & 0xFF) as u8);
-                    assert_eq!(d[1], ((f.buf[0] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[2], (f.buf[1] & 0xFF) as u8);
-                    assert_eq!(d[3], ((f.buf[1] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[4], (f.buf[2] & 0xFF) as u8);
-                    assert_eq!(d[5], ((f.buf[2] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[6], (f.buf[3] & 0xFF) as u8);
-                    assert_eq!(d[7], ((f.buf[3] >> 8) & 0xFF) as u8);
+                    let mut buf = [0x0000u16; 4];
+                    unsafe {
+                        let _ = (*(&mut buf as *mut _ as *mut STMFocus)).set(
+                            p.point().x,
+                            p.point().y,
+                            p.point().z,
+                            p.intensity(),
+                        );
+                    }
+                    assert_eq!(d[0], (buf[0] & 0xFF) as u8);
+                    assert_eq!(d[1], ((buf[0] >> 8) & 0xFF) as u8);
+                    assert_eq!(d[2], (buf[1] & 0xFF) as u8);
+                    assert_eq!(d[3], ((buf[1] >> 8) & 0xFF) as u8);
+                    assert_eq!(d[4], (buf[2] & 0xFF) as u8);
+                    assert_eq!(d[5], ((buf[2] >> 8) & 0xFF) as u8);
+                    assert_eq!(d[6], (buf[3] & 0xFF) as u8);
+                    assert_eq!(d[7] & 0x3F, ((buf[3] >> 8) & 0xFF) as u8);
                 })
         });
     }
 
     #[test]
-    fn focus_stm_op_div() {
+    fn test_div() {
         const FRAME_SIZE: usize = 32;
         const FOCUS_STM_SIZE: usize = (FRAME_SIZE - size_of::<FocusSTMHead>())
             / size_of::<STMFocus>()
@@ -449,17 +406,23 @@ mod tests {
                         .take((FRAME_SIZE - size_of::<FocusSTMHead>()) / size_of::<STMFocus>()),
                 )
                 .for_each(|(d, p)| {
-                    let mut f = STMFocus { buf: [0x0000; 4] };
-                    f.set(p.point().x, p.point().y, p.point().z, p.intensity())
-                        .unwrap();
-                    assert_eq!(d[0], (f.buf[0] & 0xFF) as u8);
-                    assert_eq!(d[1], ((f.buf[0] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[2], (f.buf[1] & 0xFF) as u8);
-                    assert_eq!(d[3], ((f.buf[1] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[4], (f.buf[2] & 0xFF) as u8);
-                    assert_eq!(d[5], ((f.buf[2] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[6], (f.buf[3] & 0xFF) as u8);
-                    assert_eq!(d[7], ((f.buf[3] >> 8) & 0xFF) as u8);
+                    let mut buf = [0x0000u16; 4];
+                    unsafe {
+                        let _ = (*(&mut buf as *mut _ as *mut STMFocus)).set(
+                            p.point().x,
+                            p.point().y,
+                            p.point().z,
+                            p.intensity(),
+                        );
+                    }
+                    assert_eq!(d[0], (buf[0] & 0xFF) as u8);
+                    assert_eq!(d[1], ((buf[0] >> 8) & 0xFF) as u8);
+                    assert_eq!(d[2], (buf[1] & 0xFF) as u8);
+                    assert_eq!(d[3], ((buf[1] >> 8) & 0xFF) as u8);
+                    assert_eq!(d[4], (buf[2] & 0xFF) as u8);
+                    assert_eq!(d[5], ((buf[2] >> 8) & 0xFF) as u8);
+                    assert_eq!(d[6], (buf[3] & 0xFF) as u8);
+                    assert_eq!(d[7] & 0x3F, ((buf[3] >> 8) & 0xFF) as u8);
                 })
         });
 
@@ -511,17 +474,23 @@ mod tests {
                         .take((FRAME_SIZE - size_of::<FocusSTMSubseq>()) / size_of::<STMFocus>()),
                 )
                 .for_each(|(d, p)| {
-                    let mut f = STMFocus { buf: [0x0000; 4] };
-                    f.set(p.point().x, p.point().y, p.point().z, p.intensity())
-                        .unwrap();
-                    assert_eq!(d[0], (f.buf[0] & 0xFF) as u8);
-                    assert_eq!(d[1], ((f.buf[0] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[2], (f.buf[1] & 0xFF) as u8);
-                    assert_eq!(d[3], ((f.buf[1] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[4], (f.buf[2] & 0xFF) as u8);
-                    assert_eq!(d[5], ((f.buf[2] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[6], (f.buf[3] & 0xFF) as u8);
-                    assert_eq!(d[7], ((f.buf[3] >> 8) & 0xFF) as u8);
+                    let mut buf = [0x0000u16; 4];
+                    unsafe {
+                        let _ = (*(&mut buf as *mut _ as *mut STMFocus)).set(
+                            p.point().x,
+                            p.point().y,
+                            p.point().z,
+                            p.intensity(),
+                        );
+                    }
+                    assert_eq!(d[0], (buf[0] & 0xFF) as u8);
+                    assert_eq!(d[1], ((buf[0] >> 8) & 0xFF) as u8);
+                    assert_eq!(d[2], (buf[1] & 0xFF) as u8);
+                    assert_eq!(d[3], ((buf[1] >> 8) & 0xFF) as u8);
+                    assert_eq!(d[4], (buf[2] & 0xFF) as u8);
+                    assert_eq!(d[5], ((buf[2] >> 8) & 0xFF) as u8);
+                    assert_eq!(d[6], (buf[3] & 0xFF) as u8);
+                    assert_eq!(d[7] & 0x3F, ((buf[3] >> 8) & 0xFF) as u8);
                 })
         });
 
@@ -574,23 +543,29 @@ mod tests {
                         .take((FRAME_SIZE - size_of::<FocusSTMSubseq>()) / size_of::<STMFocus>()),
                 )
                 .for_each(|(d, p)| {
-                    let mut f = STMFocus { buf: [0x0000; 4] };
-                    f.set(p.point().x, p.point().y, p.point().z, p.intensity())
-                        .unwrap();
-                    assert_eq!(d[0], (f.buf[0] & 0xFF) as u8);
-                    assert_eq!(d[1], ((f.buf[0] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[2], (f.buf[1] & 0xFF) as u8);
-                    assert_eq!(d[3], ((f.buf[1] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[4], (f.buf[2] & 0xFF) as u8);
-                    assert_eq!(d[5], ((f.buf[2] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[6], (f.buf[3] & 0xFF) as u8);
-                    assert_eq!(d[7], ((f.buf[3] >> 8) & 0xFF) as u8);
+                    let mut buf = [0x0000u16; 4];
+                    unsafe {
+                        let _ = (*(&mut buf as *mut _ as *mut STMFocus)).set(
+                            p.point().x,
+                            p.point().y,
+                            p.point().z,
+                            p.intensity(),
+                        );
+                    }
+                    assert_eq!(d[0], (buf[0] & 0xFF) as u8);
+                    assert_eq!(d[1], ((buf[0] >> 8) & 0xFF) as u8);
+                    assert_eq!(d[2], (buf[1] & 0xFF) as u8);
+                    assert_eq!(d[3], ((buf[1] >> 8) & 0xFF) as u8);
+                    assert_eq!(d[4], (buf[2] & 0xFF) as u8);
+                    assert_eq!(d[5], ((buf[2] >> 8) & 0xFF) as u8);
+                    assert_eq!(d[6], (buf[3] & 0xFF) as u8);
+                    assert_eq!(d[7] & 0x3F, ((buf[3] >> 8) & 0xFF) as u8);
                 })
         });
     }
 
     #[test]
-    fn focus_stm_op_buffer_out_of_range() {
+    fn test_buffer_out_of_range() {
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
 
         let test = |n: usize| {
@@ -622,7 +597,7 @@ mod tests {
     }
 
     #[test]
-    fn focus_stm_op_point_out_of_range() {
+    fn test_point_out_of_range() {
         const FOCUS_STM_SIZE: usize = 100;
         const FRAME_SIZE: usize = 16 + 8 * FOCUS_STM_SIZE;
 

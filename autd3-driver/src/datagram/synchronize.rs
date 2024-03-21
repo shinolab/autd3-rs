@@ -28,7 +28,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_sync_timeout() {
+    fn test_timeout() {
         let stop = Synchronize::new();
         let timeout = <Synchronize as Datagram>::timeout(&stop);
         assert!(timeout.is_some());
@@ -36,7 +36,7 @@ mod tests {
     }
 
     #[test]
-    fn test_sync_operation() {
+    fn test_operation() {
         let stop = Synchronize::default();
         let r = <Synchronize as Datagram>::operation(stop);
         assert!(r.is_ok());

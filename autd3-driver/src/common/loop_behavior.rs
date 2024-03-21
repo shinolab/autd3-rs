@@ -19,15 +19,16 @@ impl LoopBehavior {
 
 #[cfg(test)]
 mod tests {
+    use std::num::NonZeroU32;
+
     use super::*;
 
+    #[rstest::rstest]
     #[test]
-    fn test_loop_behavior() {
-        let d = LoopBehavior::Infinite;
-
-        let dc = Clone::clone(&d);
-        assert_eq!(d, dc);
-
-        assert_eq!(format!("{:?}", d), "Infinite");
+    #[case::infinite(0xFFFFFFFF, LoopBehavior::Infinite)]
+    #[case::finite(0x12345677, LoopBehavior::Finite(NonZeroU32::new(0x12345678).unwrap()))]
+    #[case::once(0x00000000, LoopBehavior::once())]
+    fn test(#[case] expected: u32, #[case] target: LoopBehavior) {
+        assert_eq!(expected, target.to_rep());
     }
 }

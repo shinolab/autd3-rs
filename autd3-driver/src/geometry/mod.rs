@@ -155,159 +155,137 @@ pub mod tests {
         )
     }
 
+    #[rstest::rstest]
     #[test]
-    fn geometry_num_devices() {
-        let geometry = Geometry::new(vec![create_device(0, 249)]);
-        assert_eq!(geometry.num_devices(), 1);
+    #[case(1, vec![create_device(0, 249)])]
+    #[case(2, vec![create_device(0, 249), create_device(0, 249)])]
+    fn test_num_devices(#[case] expected: usize, #[case] devices: Vec<Device>) {
+        assert_eq!(expected, Geometry::new(devices).num_devices());
+    }
 
-        let geometry = Geometry::new(vec![create_device(0, 249), create_device(0, 249)]);
-        assert_eq!(geometry.num_devices(), 2);
+    #[rstest::rstest]
+    #[test]
+    #[case(249, vec![create_device(0, 249)])]
+    #[case(498, vec![create_device(0, 249), create_device(0, 249)])]
+    fn test_num_transducers(#[case] expected: usize, #[case] devices: Vec<Device>) {
+        assert_eq!(expected, Geometry::new(devices).num_transducers());
     }
 
     #[test]
-    fn geometry_num_transducers() {
-        let geometry = Geometry::new(vec![create_device(0, 249)]);
-        assert_eq!(geometry.num_transducers(), 249);
-
-        let geometry = Geometry::new(vec![create_device(0, 249), create_device(0, 249)]);
-        assert_eq!(geometry.num_transducers(), 249 * 2);
+    fn test_center() {
+        let geometry = Geometry::new(vec![
+            Device::new(
+                0,
+                itertools::iproduct!((0..18), (0..14))
+                    .enumerate()
+                    .map(|(i, (y, x))| {
+                        Transducer::new(
+                            i,
+                            10.16 * Vector3::new(x as float, y as float, 0.),
+                            UnitQuaternion::identity(),
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            Device::new(
+                1,
+                itertools::iproduct!((0..18), (0..14))
+                    .enumerate()
+                    .map(|(i, (y, x))| {
+                        Transducer::new(
+                            i,
+                            10.16 * Vector3::new(x as float, y as float, 0.)
+                                + Vector3::new(10., 20., 30.),
+                            UnitQuaternion::identity(),
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+        ]);
+        let expect = geometry.iter().map(|dev| dev.center()).sum::<Vector3>()
+            / geometry.num_devices() as float;
+        assert_approx_eq_vec3!(expect, geometry.center());
     }
 
+    #[rstest::rstest]
     #[test]
-    fn center() {
-        let transducers = itertools::iproduct!((0..18), (0..14))
-            .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(
-                    i,
-                    10.16 * Vector3::new(x as float, y as float, 0.),
-                    UnitQuaternion::identity(),
-                )
-            })
-            .collect::<Vec<_>>();
-        let device0 = Device::new(0, transducers);
-
-        let transducers = itertools::iproduct!((0..18), (0..14))
-            .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(
-                    i,
-                    10.16 * Vector3::new(x as float, y as float, 0.) + Vector3::new(10., 20., 30.),
-                    UnitQuaternion::identity(),
-                )
-            })
-            .collect::<Vec<_>>();
-        let device1 = Device::new(1, transducers);
-
-        let geometry = Geometry::new(vec![device0, device1]);
-
-        let expect = geometry.iter().map(|dev| dev.center()).sum::<Vector3>() / 2.0;
-
-        assert_approx_eq_vec3!(geometry.center(), expect);
-    }
-
-    #[test]
-    fn set_sound_speed() {
-        let transducers = itertools::iproduct!((0..18), (0..14))
-            .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(
-                    i,
-                    10.16 * Vector3::new(x as float, y as float, 0.),
-                    UnitQuaternion::identity(),
-                )
-            })
-            .collect::<Vec<_>>();
-        let device0 = Device::new(0, transducers);
-
-        let transducers = itertools::iproduct!((0..18), (0..14))
-            .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(
-                    i,
-                    10.16 * Vector3::new(x as float, y as float, 0.) + Vector3::new(10., 20., 30.),
-                    UnitQuaternion::identity(),
-                )
-            })
-            .collect::<Vec<_>>();
-        let device1 = Device::new(1, transducers);
-
-        let mut geometry = Geometry::new(vec![device0, device1]);
-
-        geometry.set_sound_speed_from_temp(15.);
+    #[case(340.29527186788846e3, 15.)]
+    #[case(343.23498846612807e3, 20.)]
+    #[case(349.0401521469255e3, 30.)]
+    fn test_set_sound_speed_from_temp(#[case] expected: float, #[case] temp: float) {
+        let mut geometry = Geometry::new(vec![
+            Device::new(
+                0,
+                itertools::iproduct!((0..18), (0..14))
+                    .enumerate()
+                    .map(|(i, (y, x))| {
+                        Transducer::new(
+                            i,
+                            10.16 * Vector3::new(x as float, y as float, 0.),
+                            UnitQuaternion::identity(),
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            Device::new(
+                1,
+                itertools::iproduct!((0..18), (0..14))
+                    .enumerate()
+                    .map(|(i, (y, x))| {
+                        Transducer::new(
+                            i,
+                            10.16 * Vector3::new(x as float, y as float, 0.)
+                                + Vector3::new(10., 20., 30.),
+                            UnitQuaternion::identity(),
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+        ]);
+        geometry.set_sound_speed_from_temp(temp);
         geometry.iter().for_each(|dev| {
-            assert_approx_eq::assert_approx_eq!(
-                dev.sound_speed,
-                340.29527186788846e3 * MILLIMETER,
-                1e-3
-            );
+            assert_approx_eq::assert_approx_eq!(expected * MILLIMETER, dev.sound_speed, 1e-3);
         });
+    }
 
-        geometry.set_sound_speed(340e3 * MILLIMETER);
+    #[rstest::rstest]
+    #[test]
+    #[case(340.29527186788846e3)]
+    #[case(343.23498846612807e3)]
+    #[case(349.0401521469255e3)]
+    fn test_set_sound_speed(#[case] temp: float) {
+        let mut geometry = Geometry::new(vec![
+            Device::new(
+                0,
+                itertools::iproduct!((0..18), (0..14))
+                    .enumerate()
+                    .map(|(i, (y, x))| {
+                        Transducer::new(
+                            i,
+                            10.16 * Vector3::new(x as float, y as float, 0.),
+                            UnitQuaternion::identity(),
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            Device::new(
+                1,
+                itertools::iproduct!((0..18), (0..14))
+                    .enumerate()
+                    .map(|(i, (y, x))| {
+                        Transducer::new(
+                            i,
+                            10.16 * Vector3::new(x as float, y as float, 0.)
+                                + Vector3::new(10., 20., 30.),
+                            UnitQuaternion::identity(),
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+        ]);
+        geometry.set_sound_speed(temp * MILLIMETER);
         geometry.iter().for_each(|dev| {
-            assert_eq!(dev.sound_speed, 340e3 * MILLIMETER);
+            assert_eq!(dev.sound_speed, temp * MILLIMETER);
         });
-    }
-
-    #[test]
-    fn deref() {
-        let transducers = itertools::iproduct!((0..18), (0..14))
-            .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(
-                    i,
-                    10.16 * Vector3::new(x as float, y as float, 0.),
-                    UnitQuaternion::identity(),
-                )
-            })
-            .collect::<Vec<_>>();
-        let device0 = Device::new(0, transducers);
-
-        let transducers = itertools::iproduct!((0..18), (0..14))
-            .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(
-                    i,
-                    10.16 * Vector3::new(x as float, y as float, 0.) + Vector3::new(10., 20., 30.),
-                    UnitQuaternion::identity(),
-                )
-            })
-            .collect::<Vec<_>>();
-        let device1 = Device::new(1, transducers);
-
-        let geometry = Geometry::new(vec![device0, device1]);
-        let _ = geometry[0].sound_speed;
-        let _ = geometry[1].sound_speed;
-    }
-
-    #[test]
-    fn deref_mut() {
-        let transducers = itertools::iproduct!((0..18), (0..14))
-            .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(
-                    i,
-                    10.16 * Vector3::new(x as float, y as float, 0.),
-                    UnitQuaternion::identity(),
-                )
-            })
-            .collect::<Vec<_>>();
-        let device0 = Device::new(0, transducers);
-
-        let transducers = itertools::iproduct!((0..18), (0..14))
-            .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(
-                    i,
-                    10.16 * Vector3::new(x as float, y as float, 0.) + Vector3::new(10., 20., 30.),
-                    UnitQuaternion::identity(),
-                )
-            })
-            .collect::<Vec<_>>();
-        let device1 = Device::new(1, transducers);
-
-        let mut geometry = Geometry::new(vec![device0, device1]);
-        geometry[0].sound_speed = 0.;
-        geometry[1].sound_speed = 0.;
     }
 }

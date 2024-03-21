@@ -118,7 +118,7 @@ mod tests {
     }
 
     #[test]
-    fn test_datagram_with_segment() {
+    fn test() {
         let d: DatagramWithSegment<TestDatagram> = TestDatagram {}.with_segment(Segment::S0, true);
 
         let timeout = <DatagramWithSegment<TestDatagram> as Datagram>::timeout(&d);

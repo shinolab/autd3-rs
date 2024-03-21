@@ -67,6 +67,6 @@ fn send_firminfo_should_panic() {
     OperationHandler::init(&mut op, &mut op_null, &geometry).unwrap();
 
     OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx).unwrap();
-    tx.payload_mut(0)[1] = 7;
+    tx[0].payload[1] = 7;
     cpu.send(&tx);
 }

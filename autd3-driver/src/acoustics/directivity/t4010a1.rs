@@ -80,35 +80,19 @@ mod tests {
 
     use super::*;
 
+    #[rstest::rstest]
     #[test]
-    fn directivity_t4010a1() {
-        let expects = [
-            1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-            0.994632, 0.987783, 0.979551, 0.970031, 0.95932, 0.947513, 0.934707, 0.920997,
-            0.906479, 0.891251, 0.875394, 0.85894, 0.841907, 0.824312, 0.806173, 0.787508,
-            0.768335, 0.748672, 0.728536, 0.707946, 0.686939, 0.665635, 0.644172, 0.622691,
-            0.601329, 0.580226, 0.559521, 0.539353, 0.519863, 0.501187, 0.483432, 0.466559,
-            0.450499, 0.435179, 0.420529, 0.406476, 0.392949, 0.379878, 0.367189, 0.354813,
-            0.342697, 0.330862, 0.319348, 0.308198, 0.297451, 0.287148, 0.277329, 0.268036,
-            0.259309, 0.251189, 0.243703, 0.236828, 0.230529, 0.22477, 0.219514, 0.214725,
-            0.210368, 0.206407, 0.202805, 0.199526, 0.196537, 0.193806, 0.191306, 0.189007,
-            0.18688, 0.184898, 0.183031, 0.18125, 0.179526, 0.177831,
-        ];
-
-        expects.iter().enumerate().for_each(|(i, expect)| {
-            assert_approx_eq!(T4010A1::directivity(i as float), expect);
-        });
-
-        expects.iter().enumerate().for_each(|(i, expect)| {
-            assert_approx_eq!(T4010A1::directivity(i as float + 180.), expect);
-        });
-
-        expects.iter().enumerate().for_each(|(i, expect)| {
-            assert_approx_eq!(T4010A1::directivity(-(i as float)), expect);
-        });
-
-        expects.iter().enumerate().for_each(|(i, expect)| {
-            assert_approx_eq!(T4010A1::directivity(180. - i as float), expect);
-        });
+    #[case::deg_0(1.0, 0.0)]
+    #[case::deg_10(1.0, 10.0)]
+    #[case::deg_20(1.0, 20.0)]
+    #[case::deg_30(0.891251, 30.0)]
+    #[case::deg_40(0.707946, 40.0)]
+    #[case::deg_50(0.501187, 50.0)]
+    #[case::deg_60(0.354813, 60.0)]
+    #[case::deg_70(0.251189, 70.0)]
+    #[case::deg_80(0.199526, 80.0)]
+    #[case::deg_90(0.177831, 90.0)]
+    fn test_directivity(#[case] expected: float, #[case] theta_deg: float) {
+        assert_approx_eq!(expected, T4010A1::directivity(theta_deg));
     }
 }

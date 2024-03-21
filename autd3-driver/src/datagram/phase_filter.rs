@@ -44,7 +44,7 @@ mod tests {
     }
 
     #[test]
-    fn test_phase_filter() {
+    fn test() {
         let datagram = ConfigurePhaseFilter::additive(f);
         assert_eq!(Some(Duration::from_millis(200)), datagram.timeout());
         let r = datagram.operation();
