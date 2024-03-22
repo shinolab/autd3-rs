@@ -18,3 +18,5 @@ Cargo.lock
 lcov.info
 
 .vscode
+coverage/
+*.profraw

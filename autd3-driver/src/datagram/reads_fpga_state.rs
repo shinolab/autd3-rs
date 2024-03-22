@@ -11,10 +11,11 @@ impl<F: Fn(&Device) -> bool> ConfigureReadsFPGAState<F> {
         Self { f }
     }
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     pub const fn f(&self) -> &F {
         &self.f
     }
+    // GRCOV_EXCL_STOP
 }
 
 impl<F: Fn(&Device) -> bool> Datagram for ConfigureReadsFPGAState<F> {
@@ -34,10 +35,11 @@ impl<F: Fn(&Device) -> bool> Datagram for ConfigureReadsFPGAState<F> {
 mod tests {
     use super::*;
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     fn f(dev: &Device) -> bool {
         dev.idx() == 0
     }
+    // GRCOV_EXCL_STOP
 
     #[test]
     fn test() {

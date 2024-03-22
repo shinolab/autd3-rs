@@ -5,6 +5,10 @@ on:
     branches:
       - 'develop'
 
+env:
+  RUSTFLAGS: "-Cinstrument-coverage"
+  LLVM_PROFILE_FILE: "target/coverage/%p-%m.profraw"
+
 jobs:
   check-src:
     runs-on: ubuntu-latest
@@ -37,8 +41,10 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ubuntu-latest
 
-      - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Add components
+        run: rustup component add llvm-tools
+      - name: Install grcov
+        run: cargo install grcov
 
       - name: Generate code coverage for rust
         run: |
@@ -48,5 +54,5 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: lcov.info
+          files: coverage/lcov
           fail_ci_if_error: true

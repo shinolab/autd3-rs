@@ -104,11 +104,11 @@ impl DerefMut for Geometry {
     }
 }
 
+// GRCOV_EXCL_START
 impl<'a> IntoIterator for &'a Geometry {
     type Item = &'a Device;
     type IntoIter = std::slice::Iter<'a, Device>;
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn into_iter(self) -> Self::IntoIter {
         self.devices.iter()
     }
@@ -118,11 +118,11 @@ impl<'a> IntoIterator for &'a mut Geometry {
     type Item = &'a mut Device;
     type IntoIter = std::slice::IterMut<'a, Device>;
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn into_iter(self) -> Self::IntoIter {
         self.devices.iter_mut()
     }
 }
+// GRCOV_EXCL_STOP
 
 #[cfg(test)]
 pub mod tests {

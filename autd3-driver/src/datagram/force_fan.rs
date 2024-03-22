@@ -12,10 +12,11 @@ impl<F: Fn(&Device) -> bool> ConfigureForceFan<F> {
     }
 
     /// Get the function
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     pub fn f(&self) -> &F {
         &self.f
     }
+    // GRCOV_EXCL_STOP
 }
 
 impl<F: Fn(&Device) -> bool> Datagram for ConfigureForceFan<F> {
@@ -35,10 +36,11 @@ impl<F: Fn(&Device) -> bool> Datagram for ConfigureForceFan<F> {
 mod tests {
     use super::*;
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     fn f(dev: &Device) -> bool {
         dev.idx() == 0
     }
+    // GRCOV_EXCL_STOP
 
     #[test]
     fn test_timeout() {

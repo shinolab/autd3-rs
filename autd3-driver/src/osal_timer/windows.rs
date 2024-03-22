@@ -19,7 +19,7 @@ impl NativeTimerWrapper {
         }
     }
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     pub fn start<P>(
         &mut self,
         cb: WAITORTIMERCALLBACK,
@@ -50,8 +50,9 @@ impl NativeTimerWrapper {
             Ok(true)
         }
     }
+    // GRCOV_EXCL_STOP
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     pub fn close(&mut self) -> Result<(), AUTDInternalError> {
         unsafe {
             if !self.h_timer.is_invalid() {
@@ -70,6 +71,7 @@ impl NativeTimerWrapper {
         }
         Ok(())
     }
+    // GRCOV_EXCL_STOP
 }
 
 impl Drop for NativeTimerWrapper {

@@ -5,7 +5,7 @@ use thiserror::Error;
 pub struct ReadFirmwareInfoState(pub Vec<bool>);
 
 impl std::fmt::Display for ReadFirmwareInfoState {
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -19,13 +19,15 @@ impl std::fmt::Display for ReadFirmwareInfoState {
                 .join(", ")
         )
     }
+    // GRCOV_EXCL_STOP
 }
 
 impl std::fmt::Debug for ReadFirmwareInfoState {
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         <Self as std::fmt::Display>::fmt(self, f)
     }
+    // GRCOV_EXCL_STOP
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -41,8 +43,9 @@ pub enum AUTDError {
 }
 
 impl From<AUTDInternalError> for AUTDError {
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     fn from(e: AUTDInternalError) -> Self {
         AUTDError::Internal(e)
     }
+    // GRCOV_EXCL_STOP
 }

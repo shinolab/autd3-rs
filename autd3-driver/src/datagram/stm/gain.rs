@@ -241,7 +241,7 @@ mod tests {
     struct NullGain2 {}
 
     impl Gain for NullGain2 {
-        #[cfg_attr(coverage_nightly, coverage(off))]
+        // GRCOV_EXCL_START
         fn calc(
             &self,
             _: &Geometry,
@@ -249,6 +249,7 @@ mod tests {
         ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
             unimplemented!()
         }
+        // GRCOV_EXCL_STOP
     }
 
     #[test]

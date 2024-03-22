@@ -41,25 +41,22 @@ pub trait Modulation: ModulationProperty {
     }
 }
 
+// GRCOV_EXCL_START
 impl ModulationProperty for Box<dyn Modulation> {
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn sampling_config(&self) -> SamplingConfiguration {
         self.as_ref().sampling_config()
     }
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn loop_behavior(&self) -> LoopBehavior {
         self.as_ref().loop_behavior()
     }
 }
 
 impl Modulation for Box<dyn Modulation> {
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         self.as_ref().calc()
     }
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn len(&self) -> Result<usize, AUTDInternalError> {
         self.as_ref().len()
     }
@@ -69,7 +66,6 @@ impl DatagramS for Box<dyn Modulation> {
     type O1 = ModulationOp;
     type O2 = NullOp;
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn operation_with_segment(
         self,
         segment: Segment,
@@ -92,6 +88,7 @@ impl DatagramS for Box<dyn Modulation> {
         Some(Duration::from_millis(200))
     }
 }
+// GRCOV_EXCL_STOP
 
 #[cfg(test)]
 mod tests {

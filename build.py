@@ -34,6 +34,29 @@ def info(msg: str):
     print("\033[92mINFO\033[0m: " + msg)
 
 
+def rm_f(path):
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
+
+
+def glob_norm(path, recursive):
+    return [os.path.normpath(p) for p in glob.glob(path, recursive=recursive)]
+
+
+def rm_glob_f(path, exclude=None, recursive=True):
+    if exclude is not None:
+        for f in list(
+            set(glob_norm(path, recursive=recursive))
+            - set(glob_norm(exclude, recursive=recursive))
+        ):
+            rm_f(f)
+    else:
+        for f in glob.glob(path, recursive=recursive):
+            rm_f(f)
+
+
 @contextlib.contextmanager
 def working_dir(path):
     cwd = os.getcwd()
@@ -42,6 +65,18 @@ def working_dir(path):
         yield
     finally:
         os.chdir(cwd)
+
+
+@contextlib.contextmanager
+def with_env(**kwargs):
+    env = os.environ.copy()
+    for key, value in kwargs.items():
+        os.environ[key] = value
+    try:
+        yield
+    finally:
+        os.environ.clear()
+        os.environ.update(env)
 
 
 class Config:
@@ -234,44 +269,50 @@ def rust_clear(_):
 
 
 def rust_coverage(args):
-    config = Config(args)
-
     with working_dir("."):
-        features = "remote test-utilities"
-        command = [
-            "cargo",
-            "llvm-cov",
-            "--features",
-            features,
-            "--workspace",
-            "--ignore-filename-regex",
-            "pb.rs|soem_bindings",
-        ]
-        if args.format == "lcov":
-            command.extend(
-                [
-                    "--lcov",
-                    "--output-path",
-                    "lcov.info",
-                ]
-            )
-        elif args.format == "html":
-            command.extend(
-                [
-                    "--html",
-                ]
-            )
-            if args.open:
-                command.append("--open")
-        elif args.format == "text":
-            command.extend(
-                [
-                    "--text",
-                ]
-            )
-        if config.release:
-            command.append("--release")
-        subprocess.run(command).check_returncode()
+        with with_env(
+            RUSTFLAGS="-C instrument-coverage",
+            LLVM_PROFILE_FILE="%m-%p.profraw",
+        ):
+            features = "remote test-utilities"
+            command = [
+                "cargo",
+                "build",
+                "--features",
+                features,
+                "--workspace",
+            ]
+            subprocess.run(command).check_returncode()
+            command[1] = "test"
+            subprocess.run(command).check_returncode()
+
+            command = [
+                "grcov",
+                ".",
+                "-s",
+                ".",
+                "--binary-path",
+                "./target/debug",
+                "--llvm",
+                "--branch",
+                "--ignore-not-existing",
+                "-o",
+                "./coverage",
+                "-t",
+                args.format,
+                "--excl-line",
+                r"^\s*((debug_)?assert(_eq|_ne)?!|#\[derive\()",
+                "--ignore",
+                "**/pb.rs",
+                "--ignore",
+                "**/soem_bindings/*",
+                "--excl-start",
+                "GRCOV_EXCL_START",
+                "--excl-stop",
+                "GRCOV_EXCL_STOP",
+            ]
+            subprocess.run(command).check_returncode()
+            rm_glob_f("**/*.profraw")
 
 
 def util_update_ver(args):
@@ -348,7 +389,6 @@ if __name__ == "__main__":
 
         # coverage
         parser_cov = subparsers.add_parser("cov", help="see `cov -h`")
-        parser_cov.add_argument("--release", action="store_true", help="release build")
         parser_cov.add_argument(
             "--format", help="output format (lcov|html|text)", default="lcov"
         )
