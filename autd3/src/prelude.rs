@@ -19,7 +19,7 @@ pub use autd3_driver::{
         Modulation, ModulationCache, ModulationProperty, ModulationTransform, RadiationPressure,
         Synchronize,
     },
-    defined::{float, METER, MILLIMETER, PI},
+    defined::{METER, MILLIMETER, PI},
     error::AUTDInternalError,
     fpga::FPGA_CLK_FREQ,
     geometry::*,

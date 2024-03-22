@@ -3,7 +3,7 @@ use criterion::{black_box, AxisScale, BenchmarkId, Criterion, PlotConfiguration}
 use autd3_driver::{
     autd3_device::AUTD3,
     datagram::{Gain, GainFilter},
-    defined::{float, PI},
+    defined::{f64, PI},
     geometry::{Geometry, IntoDevice, Vector3},
 };
 
@@ -23,8 +23,8 @@ pub fn generate_geometry(size: usize) -> Geometry {
             .flat_map(|i| {
                 (0..size).map(move |j| {
                     AUTD3::new(Vector3::new(
-                        i as float * AUTD3::DEVICE_WIDTH,
-                        j as float * AUTD3::DEVICE_HEIGHT,
+                        i as f64 * AUTD3::DEVICE_WIDTH,
+                        j as f64 * AUTD3::DEVICE_HEIGHT,
                         0.,
                     ))
                     .into_device(j + i * size)
@@ -38,8 +38,8 @@ pub fn gen_foci(n: usize) -> impl Iterator<Item = (Vector3, Amplitude)> {
     (0..n).map(move |i| {
         (
             Vector3::new(
-                black_box(90. + 10. * (2.0 * PI * i as float / n as float).cos()),
-                black_box(70. + 10. * (2.0 * PI * i as float / n as float).sin()),
+                black_box(90. + 10. * (2.0 * PI * i as f64 / n as f64).cos()),
+                black_box(70. + 10. * (2.0 * PI * i as f64 / n as f64).sin()),
                 black_box(150.),
             ),
             10e3 * Pascal,

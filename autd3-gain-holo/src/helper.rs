@@ -56,9 +56,9 @@ macro_rules! impl_holo {
                 self.constraint
             }
 
-            fn amps_as_slice(&self) -> &[float] {
+            fn amps_as_slice(&self) -> &[f64] {
                 unsafe {
-                    std::slice::from_raw_parts(self.amps.as_ptr() as *const float, self.amps.len())
+                    std::slice::from_raw_parts(self.amps.as_ptr() as *const f64, self.amps.len())
                 }
             }
         }

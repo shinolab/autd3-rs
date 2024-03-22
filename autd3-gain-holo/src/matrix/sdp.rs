@@ -19,9 +19,9 @@ pub struct SDP<B: LinAlgBackend + 'static> {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,
     #[getset]
-    alpha: float,
+    alpha: f64,
     #[getset]
-    lambda: float,
+    lambda: f64,
     #[getset]
     repeat: usize,
     constraint: EmissionConstraint,

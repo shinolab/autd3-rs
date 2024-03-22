@@ -8,23 +8,22 @@ pub use segment::{ChangeFocusSTMSegment, ChangeGainSTMSegment};
 
 use crate::{
     common::{LoopBehavior, SamplingConfiguration},
-    defined::float,
     error::AUTDInternalError,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum STMSamplingConfiguration {
-    Frequency(float),
+    Frequency(f64),
     Period(std::time::Duration),
     SamplingConfiguration(SamplingConfiguration),
 }
 
 impl STMSamplingConfiguration {
-    pub fn frequency(&self, size: usize) -> float {
+    pub fn frequency(&self, size: usize) -> f64 {
         match self {
             Self::Frequency(f) => *f,
-            Self::Period(p) => 1000000000. / p.as_nanos() as float,
-            Self::SamplingConfiguration(s) => s.frequency() / size as float,
+            Self::Period(p) => 1000000000. / p.as_nanos() as f64,
+            Self::SamplingConfiguration(s) => s.frequency() / size as f64,
         }
     }
 
@@ -39,10 +38,10 @@ impl STMSamplingConfiguration {
     pub fn sampling(&self, size: usize) -> Result<SamplingConfiguration, AUTDInternalError> {
         match self {
             Self::Frequency(f) => {
-                let min = SamplingConfiguration::FREQ_MIN / size as float;
-                let max = SamplingConfiguration::FREQ_MAX / size as float;
-                SamplingConfiguration::from_frequency(f * size as float)
-                    .map_err(|_| AUTDInternalError::STMFreqOutOfRange(size, *f, min, max))
+                let min = SamplingConfiguration::FREQ_MIN / size as f64;
+                let max = SamplingConfiguration::FREQ_MAX / size as f64;
+                SamplingConfiguration::from_frequency(f * size as f64)
+                    .map_err(|_| AUTDInternalError::STMFreqOutOfRange(size, *f as _, min, max))
             }
             Self::Period(p) => {
                 let min = SamplingConfiguration::PERIOD_MIN as usize / size;
@@ -65,7 +64,7 @@ pub struct STMProps {
 }
 
 impl STMProps {
-    pub const fn from_freq(freq: float) -> Self {
+    pub const fn from_freq(freq: f64) -> Self {
         Self {
             sampling: STMSamplingConfiguration::Frequency(freq),
             loop_behavior: LoopBehavior::Infinite,
@@ -86,7 +85,7 @@ impl STMProps {
         }
     }
 
-    pub fn freq(&self, size: usize) -> float {
+    pub fn freq(&self, size: usize) -> f64 {
         self.sampling.frequency(size)
     }
 

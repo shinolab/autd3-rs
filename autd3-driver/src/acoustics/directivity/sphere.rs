@@ -4,11 +4,11 @@ use super::*;
 pub struct Sphere {}
 
 impl Directivity for Sphere {
-    fn directivity(_: float) -> float {
+    fn directivity(_: f64) -> f64 {
         1.
     }
 
-    fn directivity_from_tr(_: &Transducer, _: &Vector3) -> float {
+    fn directivity_from_tr(_: &Transducer, _: &Vector3) -> f64 {
         1.
     }
 }
@@ -48,7 +48,7 @@ mod tests {
     #[case::dir_y(1., Vector3::y())]
     #[case::dir_z(1., Vector3::z())]
     fn test_directivity_sphere_from_tr(
-        #[case] expected: float,
+        #[case] expected: f64,
         #[case] target: Vector3,
         tr: Transducer,
     ) {

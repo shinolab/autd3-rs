@@ -1,4 +1,4 @@
-use crate::defined::{float, METER};
+use crate::defined::METER;
 
 mod drive;
 mod fpga_state;
@@ -12,7 +12,7 @@ pub use fpga_state::FPGAState;
 /// FPGA clock frequency
 pub const FPGA_CLK_FREQ: usize = 20480000;
 
-pub const FOCUS_STM_FIXED_NUM_UNIT: float = 0.025e-3 * METER;
+pub const FOCUS_STM_FIXED_NUM_UNIT: f64 = 0.025e-3 * METER;
 pub const FOCUS_STM_FIXED_NUM_WIDTH: usize = 18;
 pub const FOCUS_STM_FIXED_NUM_UPPER: i32 = (1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1;
 pub const FOCUS_STM_FIXED_NUM_LOWER: i32 = -(1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1));

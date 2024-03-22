@@ -1,4 +1,3 @@
-pub use crate::defined::float;
 use crate::{
     error::AUTDInternalError,
     fpga::{FPGA_CLK_FREQ, SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
@@ -10,12 +9,12 @@ pub struct SamplingConfiguration {
 }
 
 impl SamplingConfiguration {
-    pub const BASE_FREQUENCY: float = FPGA_CLK_FREQ as _;
+    pub const BASE_FREQUENCY: f64 = FPGA_CLK_FREQ as _;
 
-    pub const FREQ_MIN: float = Self::BASE_FREQUENCY / SAMPLING_FREQ_DIV_MAX as float;
-    pub const FREQ_MAX: float = Self::BASE_FREQUENCY / SAMPLING_FREQ_DIV_MIN as float;
+    pub const FREQ_MIN: f64 = Self::BASE_FREQUENCY / SAMPLING_FREQ_DIV_MAX as f64;
+    pub const FREQ_MAX: f64 = Self::BASE_FREQUENCY / SAMPLING_FREQ_DIV_MIN as f64;
     pub const PERIOD_MIN: u128 =
-        (1000000000. / Self::BASE_FREQUENCY * SAMPLING_FREQ_DIV_MIN as float) as u128;
+        (1000000000. / Self::BASE_FREQUENCY * SAMPLING_FREQ_DIV_MIN as f64) as u128;
     pub const PERIOD_MAX: u128 = 209715199999;
 
     pub const DISABLE: Self = Self { div: 0xFFFFFFFF };
@@ -33,23 +32,23 @@ impl SamplingConfiguration {
         }
     }
 
-    pub fn from_frequency(f: float) -> Result<Self, AUTDInternalError> {
-        let div = (Self::BASE_FREQUENCY / f) as u64;
+    pub fn from_frequency(f: f64) -> Result<Self, AUTDInternalError> {
+        let div = (Self::BASE_FREQUENCY / f as f64) as u64;
         if div > SAMPLING_FREQ_DIV_MAX as u64 {
             return Err(AUTDInternalError::SamplingFreqOutOfRange(
-                f,
+                f as _,
                 Self::FREQ_MIN,
                 Self::FREQ_MAX,
             ));
         }
         Self::from_frequency_division(div as _).map_err(|_| {
-            AUTDInternalError::SamplingFreqOutOfRange(f, Self::FREQ_MIN, Self::FREQ_MAX)
+            AUTDInternalError::SamplingFreqOutOfRange(f as _, Self::FREQ_MIN, Self::FREQ_MAX)
         })
     }
 
     pub fn from_period(p: std::time::Duration) -> Result<Self, AUTDInternalError> {
         let p = p.as_nanos();
-        let div = (Self::BASE_FREQUENCY * (p as float / 1000000000.)) as u64;
+        let div = (Self::BASE_FREQUENCY * (p as f64 / 1000000000.)) as u64;
         if div > SAMPLING_FREQ_DIV_MAX as u64 {
             return Err(AUTDInternalError::SamplingPeriodOutOfRange(
                 p,
@@ -66,12 +65,12 @@ impl SamplingConfiguration {
         self.div
     }
 
-    pub fn frequency(&self) -> float {
-        Self::BASE_FREQUENCY / self.div as float
+    pub fn frequency(&self) -> f64 {
+        (Self::BASE_FREQUENCY / self.div as f64) as _
     }
 
     pub fn period(&self) -> std::time::Duration {
-        let p = 1000000000. / Self::BASE_FREQUENCY * self.div as float;
+        let p = 1000000000. / Self::BASE_FREQUENCY * self.div as f64;
         std::time::Duration::from_nanos(p as _)
     }
 }
@@ -144,7 +143,7 @@ mod tests {
     )]
     fn test_from_frequency(
         #[case] expected: Result<SamplingConfiguration, AUTDInternalError>,
-        #[case] freq: float,
+        #[case] freq: f64,
     ) {
         assert_eq!(expected, SamplingConfiguration::from_frequency(freq));
     }

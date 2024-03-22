@@ -57,7 +57,7 @@ impl FromMessage<Greedy> for autd3_gain_holo::Greedy {
                         .map(|h| {
                             Some((
                                 autd3_driver::geometry::Vector3::from_msg(h.pos.as_ref()?)?,
-                                h.amp.as_ref()?.value as autd3_driver::defined::float
+                                h.amp.as_ref()?.value as autd3_driver::defined::f64
                                     * autd3_gain_holo::Pascal,
                             ))
                         })
@@ -81,11 +81,11 @@ mod tests {
             .with_phase_div(rng.gen())
             .add_focus(
                 Vector3::new(rng.gen(), rng.gen(), rng.gen()),
-                rng.gen::<autd3_driver::defined::float>() * autd3_gain_holo::Pascal,
+                rng.gen::<autd3_driver::defined::f64>() * autd3_gain_holo::Pascal,
             )
             .add_focus(
                 Vector3::new(rng.gen(), rng.gen(), rng.gen()),
-                rng.gen::<autd3_driver::defined::float>() * autd3_gain_holo::Pascal,
+                rng.gen::<autd3_driver::defined::f64>() * autd3_gain_holo::Pascal,
             );
         let msg = holo.to_msg(None);
 

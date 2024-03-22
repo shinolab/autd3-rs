@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use crate::defined::{float, METER};
+use crate::defined::METER;
 
 use super::{Matrix3, Transducer, UnitQuaternion, Vector3};
 
@@ -8,8 +8,8 @@ pub struct Device {
     idx: usize,
     transducers: Vec<Transducer>,
     pub enable: bool,
-    pub sound_speed: float,
-    pub attenuation: float,
+    pub sound_speed: f64,
+    pub attenuation: f64,
     inv: Matrix3,
 }
 
@@ -46,7 +46,7 @@ impl Device {
             .iter()
             .map(|tr| tr.position())
             .sum::<Vector3>()
-            / self.transducers.len() as float
+            / self.transducers.len() as f64
     }
 
     pub fn to_local(&self, p: &Vector3) -> Vector3 {
@@ -87,7 +87,7 @@ impl Device {
     ///
     /// * `temp` - Temperature in Celsius
     ///
-    pub fn set_sound_speed_from_temp(&mut self, temp: float) {
+    pub fn set_sound_speed_from_temp(&mut self, temp: f64) {
         self.set_sound_speed_from_temp_with(temp, 1.4, 8.314_463, 28.9647e-3);
     }
 
@@ -100,7 +100,7 @@ impl Device {
     /// * `r` - Gas constant
     /// * `m` - Molar mass
     ///
-    pub fn set_sound_speed_from_temp_with(&mut self, temp: float, k: float, r: float, m: float) {
+    pub fn set_sound_speed_from_temp_with(&mut self, temp: f64, k: f64, r: f64, m: f64) {
         self.sound_speed = (k * r * (273.15 + temp) / m).sqrt() * METER;
     }
 }
@@ -183,13 +183,13 @@ pub mod tests {
             .map(|(i, (y, x))| {
                 Transducer::new(
                     i,
-                    10.16 * Vector3::new(x as float, y as float, 0.),
+                    10.16 * Vector3::new(x as f64, y as f64, 0.),
                     UnitQuaternion::identity(),
                 )
             })
             .collect::<Vec<_>>();
         let expected =
-            transducers.iter().map(|t| t.position()).sum::<Vector3>() / transducers.len() as float;
+            transducers.iter().map(|t| t.position()).sum::<Vector3>() / transducers.len() as f64;
         let device = Device::new(0, transducers);
         assert_approx_eq_vec3!(expected, device.center());
     }
@@ -233,7 +233,7 @@ pub mod tests {
                 .map(|(i, (y, x))| {
                     Transducer::new(
                         i,
-                        origin + 10.16 * Vector3::new(x as float, y as float, 0.),
+                        origin + 10.16 * Vector3::new(x as f64, y as f64, 0.),
                         quat,
                     )
                 })
@@ -252,7 +252,7 @@ pub mod tests {
             .map(|(i, (y, x))| {
                 Transducer::new(
                     i,
-                    origin + 10.16 * Vector3::new(x as float, y as float, 0.),
+                    origin + 10.16 * Vector3::new(x as f64, y as f64, 0.),
                     UnitQuaternion::identity(),
                 )
             })
@@ -264,7 +264,7 @@ pub mod tests {
         device.translate_to(t);
 
         itertools::iproduct!((0..18), (0..14))
-            .map(|(y, x)| 10.16 * Vector3::new(x as float, y as float, 0.) + t)
+            .map(|(y, x)| 10.16 * Vector3::new(x as f64, y as f64, 0.) + t)
             .zip(device.iter())
             .for_each(|(expect, tr)| {
                 assert_approx_eq_vec3!(expect, tr.position());
@@ -281,7 +281,7 @@ pub mod tests {
                     .map(|(i, (y, x))| {
                         Transducer::new(
                             i,
-                            10.16 * Vector3::new(x as float, y as float, 0.),
+                            10.16 * Vector3::new(x as f64, y as f64, 0.),
                             UnitQuaternion::identity(),
                         )
                     })
@@ -310,7 +310,7 @@ pub mod tests {
             assert_approx_eq_vec3!(expect_z, tr.z_direction());
         });
         itertools::iproduct!((0..18), (0..14))
-            .map(|(y, x)| 10.16 * Vector3::new(-y as float, x as float, 0.))
+            .map(|(y, x)| 10.16 * Vector3::new(-y as f64, x as f64, 0.))
             .zip(device.iter())
             .for_each(|(expect, tr)| {
                 assert_approx_eq_vec3!(expect, tr.position());
@@ -327,7 +327,7 @@ pub mod tests {
             .map(|(i, (y, x))| {
                 Transducer::new(
                     i,
-                    origin + 10.16 * Vector3::new(x as float, y as float, 0.),
+                    origin + 10.16 * Vector3::new(x as f64, y as f64, 0.),
                     UnitQuaternion::identity(),
                 )
             })
@@ -352,7 +352,7 @@ pub mod tests {
             .map(|(i, (y, x))| {
                 Transducer::new(
                     i,
-                    10.16 * Vector3::new(x as float, y as float, 0.),
+                    10.16 * Vector3::new(x as f64, y as f64, 0.),
                     UnitQuaternion::identity(),
                 )
             })
@@ -374,7 +374,7 @@ pub mod tests {
             assert_approx_eq_vec3!(expect_z, tr.z_direction());
         });
         itertools::iproduct!((0..18), (0..14))
-            .map(|(y, x)| 10.16 * Vector3::new(-y as float, x as float, 0.))
+            .map(|(y, x)| 10.16 * Vector3::new(-y as f64, x as f64, 0.))
             .zip(device.iter())
             .for_each(|(expect, tr)| {
                 assert_approx_eq_vec3!(expect, tr.position());
@@ -388,7 +388,7 @@ pub mod tests {
             .map(|(i, (y, x))| {
                 Transducer::new(
                     i,
-                    10.16 * Vector3::new(x as float, y as float, 0.),
+                    10.16 * Vector3::new(x as f64, y as f64, 0.),
                     UnitQuaternion::identity(),
                 )
             })
@@ -413,7 +413,7 @@ pub mod tests {
         });
 
         itertools::iproduct!((0..18), (0..14))
-            .map(|(y, x)| 10.16 * Vector3::new(-y as float, x as float, 0.) + t)
+            .map(|(y, x)| 10.16 * Vector3::new(-y as f64, x as f64, 0.) + t)
             .zip(device.iter())
             .for_each(|(expect, tr)| {
                 assert_approx_eq_vec3!(expect, tr.position());
@@ -425,7 +425,7 @@ pub mod tests {
     #[case(340.29527186788846e3, 15.)]
     #[case(343.23498846612807e3, 20.)]
     #[case(349.0401521469255e3, 30.)]
-    fn test_set_sound_speed_from_temp(#[case] expected: float, #[case] temp: float) {
+    fn test_set_sound_speed_from_temp(#[case] expected: f64, #[case] temp: f64) {
         let mut device = create_device(0, 249);
         device.set_sound_speed_from_temp(temp);
         assert_approx_eq::assert_approx_eq!(expected * MILLIMETER, device.sound_speed, 1e-3);

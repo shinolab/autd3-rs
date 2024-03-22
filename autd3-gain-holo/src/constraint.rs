@@ -1,4 +1,4 @@
-use autd3_driver::{common::EmitIntensity, defined::float};
+use autd3_driver::common::EmitIntensity;
 
 /// Emission constraint
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -14,7 +14,7 @@ pub enum EmissionConstraint {
 }
 
 impl EmissionConstraint {
-    pub fn convert(&self, value: float, max_value: float) -> EmitIntensity {
+    pub fn convert(&self, value: f64, max_value: f64) -> EmitIntensity {
         match self {
             EmissionConstraint::DontCare => {
                 EmitIntensity::new((value * 255.).round().clamp(0., 255.) as u8)
@@ -26,7 +26,7 @@ impl EmissionConstraint {
             EmissionConstraint::Clamp(min, max) => EmitIntensity::new(
                 (value * 255.)
                     .round()
-                    .clamp(min.value() as float, max.value() as float) as u8,
+                    .clamp(min.value() as f64, max.value() as f64) as u8,
             ),
         }
     }

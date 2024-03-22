@@ -1,4 +1,4 @@
-use crate::defined::{float, PI};
+use crate::defined::PI;
 
 pub struct Rad;
 
@@ -12,7 +12,7 @@ impl Phase {
         Self { value }
     }
 
-    pub fn from_rad(phase: float) -> Self {
+    pub fn from_rad(phase: f64) -> Self {
         Self {
             value: (((phase / (2.0 * PI) * 256.0).round() as i32) & 0xFF) as _,
         }
@@ -22,8 +22,8 @@ impl Phase {
         self.value
     }
 
-    pub fn radian(&self) -> float {
-        self.value as float / 256.0 * 2.0 * PI
+    pub fn radian(&self) -> f64 {
+        self.value as f64 / 256.0 * 2.0 * PI
     }
 }
 
@@ -33,7 +33,7 @@ impl From<u8> for Phase {
     }
 }
 
-impl std::ops::Mul<Rad> for float {
+impl std::ops::Mul<Rad> for f64 {
     type Output = Phase;
 
     fn mul(self, _rhs: Rad) -> Self::Output {

@@ -1,7 +1,7 @@
 use super::*;
 
 #[allow(clippy::excessive_precision, clippy::unreadable_literal)]
-static DIR_COEF_A: &[float] = &[
+static DIR_COEF_A: &[f64] = &[
     1.0,
     1.0,
     1.0,
@@ -14,7 +14,7 @@ static DIR_COEF_A: &[float] = &[
 ];
 
 #[allow(clippy::excessive_precision, clippy::unreadable_literal)]
-static DIR_COEF_B: &[float] = &[
+static DIR_COEF_B: &[f64] = &[
     0.,
     0.,
     -0.00459648054721,
@@ -27,7 +27,7 @@ static DIR_COEF_B: &[float] = &[
 ];
 
 #[allow(clippy::excessive_precision, clippy::unreadable_literal)]
-static DIR_COEF_C: &[float] = &[
+static DIR_COEF_C: &[f64] = &[
     0.,
     0.,
     -0.000787968093807,
@@ -40,7 +40,7 @@ static DIR_COEF_C: &[float] = &[
 ];
 
 #[allow(clippy::excessive_precision, clippy::unreadable_literal)]
-static DIR_COEF_D: &[float] = &[
+static DIR_COEF_D: &[f64] = &[
     0.,
     0.,
     1.60125528528e-05,
@@ -56,7 +56,7 @@ static DIR_COEF_D: &[float] = &[
 pub struct T4010A1 {}
 
 impl Directivity for T4010A1 {
-    fn directivity(theta_deg: float) -> float {
+    fn directivity(theta_deg: f64) -> f64 {
         let theta_deg = theta_deg.abs() % 180.0;
         let theta_deg = if theta_deg > 90.0 {
             180.0 - theta_deg
@@ -67,7 +67,7 @@ impl Directivity for T4010A1 {
         if i == 0 {
             1.0
         } else {
-            let x = theta_deg - (i as float - 1.0) * 10.0;
+            let x = theta_deg - (i as f64 - 1.0) * 10.0;
             ((DIR_COEF_D[i - 1] * x + DIR_COEF_C[i - 1]) * x + DIR_COEF_B[i - 1]) * x
                 + DIR_COEF_A[i - 1]
         }
@@ -92,7 +92,7 @@ mod tests {
     #[case::deg_70(0.251189, 70.0)]
     #[case::deg_80(0.199526, 80.0)]
     #[case::deg_90(0.177831, 90.0)]
-    fn test_directivity(#[case] expected: float, #[case] theta_deg: float) {
+    fn test_directivity(#[case] expected: f64, #[case] theta_deg: f64) {
         assert_approx_eq!(expected, T4010A1::directivity(theta_deg));
     }
 }

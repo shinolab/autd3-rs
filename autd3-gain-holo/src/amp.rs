@@ -1,4 +1,4 @@
-use autd3_driver::defined::{float, ABSOLUTE_THRESHOLD_OF_HEARING};
+use autd3_driver::defined::ABSOLUTE_THRESHOLD_OF_HEARING;
 
 #[allow(non_camel_case_types)]
 pub struct dB;
@@ -7,30 +7,30 @@ pub struct Pascal;
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct Amplitude {
     // Amplitude in Pascal
-    pub(crate) value: float,
+    pub(crate) value: f64,
 }
 
 impl Amplitude {
-    pub const fn as_pascal(&self) -> float {
+    pub const fn as_pascal(&self) -> f64 {
         self.value
     }
 
-    pub fn as_spl(&self) -> float {
-        20.0 * float::log10(self.value / ABSOLUTE_THRESHOLD_OF_HEARING)
+    pub fn as_spl(&self) -> f64 {
+        20.0 * f64::log10(self.value / ABSOLUTE_THRESHOLD_OF_HEARING)
     }
 }
 
-impl std::ops::Mul<dB> for float {
+impl std::ops::Mul<dB> for f64 {
     type Output = Amplitude;
 
     fn mul(self, _rhs: dB) -> Self::Output {
         Self::Output {
-            value: ABSOLUTE_THRESHOLD_OF_HEARING * float::powf(10.0, self / 20.0),
+            value: ABSOLUTE_THRESHOLD_OF_HEARING * f64::powf(10.0, self / 20.0),
         }
     }
 }
 
-impl std::ops::Mul<Pascal> for float {
+impl std::ops::Mul<Pascal> for f64 {
     type Output = Amplitude;
 
     fn mul(self, _rhs: Pascal) -> Self::Output {
@@ -38,7 +38,7 @@ impl std::ops::Mul<Pascal> for float {
     }
 }
 
-impl std::ops::Mul<Amplitude> for float {
+impl std::ops::Mul<Amplitude> for f64 {
     type Output = Amplitude;
 
     fn mul(self, rhs: Amplitude) -> Self::Output {
@@ -48,10 +48,10 @@ impl std::ops::Mul<Amplitude> for float {
     }
 }
 
-impl std::ops::Mul<float> for Amplitude {
+impl std::ops::Mul<f64> for Amplitude {
     type Output = Amplitude;
 
-    fn mul(self, rhs: float) -> Self::Output {
+    fn mul(self, rhs: f64) -> Self::Output {
         Self::Output {
             value: self.value * rhs,
         }
