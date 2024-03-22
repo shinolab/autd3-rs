@@ -66,32 +66,29 @@ pub trait Operation {
     fn remains(&self, device: &Device) -> usize;
 }
 
+// GRCOV_EXCL_START
 impl Operation for Box<dyn Operation> {
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
         self.as_mut().init(geometry)
     }
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn required_size(&self, device: &Device) -> usize {
         self.as_ref().required_size(device)
     }
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         self.as_mut().pack(device, tx)
     }
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn commit(&mut self, device: &Device) {
         self.as_mut().commit(device)
     }
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn remains(&self, device: &Device) -> usize {
         self.as_ref().remains(device)
     }
 }
+// GRCOV_EXCL_STOP
 
 pub struct OperationHandler {}
 
@@ -190,7 +187,7 @@ pub mod tests {
     }
 
     impl Gain for TestGain {
-        #[cfg_attr(coverage_nightly, coverage(off))]
+        // GRCOV_EXCL_START
         fn calc(
             &self,
             _geometry: &Geometry,
@@ -198,20 +195,22 @@ pub mod tests {
         ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
             Ok(self.data.clone())
         }
+        // GRCOV_EXCL_STOP
     }
 
     #[derive(Gain, Copy)]
     pub struct NullGain {}
 
     impl Clone for NullGain {
-        #[cfg_attr(coverage_nightly, coverage(off))]
+        // GRCOV_EXCL_START
         fn clone(&self) -> Self {
             *self
         }
+        // GRCOV_EXCL_STOP
     }
 
     impl Gain for NullGain {
-        #[cfg_attr(coverage_nightly, coverage(off))]
+        // GRCOV_EXCL_START
         fn calc(
             &self,
             geometry: &Geometry,
@@ -219,6 +218,7 @@ pub mod tests {
         ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
             Ok(Self::transform(geometry, filter, |_, _| Drive::null()))
         }
+        // GRCOV_EXCL_STOP
     }
 
     #[derive(Gain, Copy)]
@@ -228,14 +228,15 @@ pub mod tests {
     }
 
     impl Clone for ErrGain {
-        #[cfg_attr(coverage_nightly, coverage(off))]
+        // GRCOV_EXCL_START
         fn clone(&self) -> Self {
             *self
         }
+        // GRCOV_EXCL_STOP
     }
 
     impl Gain for ErrGain {
-        #[cfg_attr(coverage_nightly, coverage(off))]
+        // GRCOV_EXCL_START
         fn calc(
             &self,
             _geometry: &Geometry,
@@ -243,6 +244,7 @@ pub mod tests {
         ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
             Err(AUTDInternalError::GainError("test".to_owned()))
         }
+        // GRCOV_EXCL_STOP
     }
 
     struct OperationMock {

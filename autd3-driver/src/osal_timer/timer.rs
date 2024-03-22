@@ -19,7 +19,7 @@ pub struct Timer<F: TimerCallback> {
 }
 
 impl<F: TimerCallback> Timer<F> {
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     pub fn start(cb: F, period: std::time::Duration) -> Result<Box<Self>, AUTDInternalError> {
         let mut timer = Box::new(Self {
             lock: AtomicBool::new(false),
@@ -32,12 +32,14 @@ impl<F: TimerCallback> Timer<F> {
             .start(Some(Self::rt_thread), period, ptr)?;
         Ok(timer)
     }
+    // GRCOV_EXCL_STOP
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     pub fn close(mut self) -> Result<F, AUTDInternalError> {
         self.native_timer.close()?;
         Ok(self.cb)
     }
+    // GRCOV_EXCL_STOP
 
     #[cfg(target_os = "windows")]
     unsafe extern "system" fn rt_thread(

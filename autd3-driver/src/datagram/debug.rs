@@ -14,10 +14,11 @@ impl<F: Fn(&Device) -> Option<&Transducer>> ConfigureDebugOutputIdx<F> {
         Self { f }
     }
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     pub fn f(&self) -> &F {
         &self.f
     }
+    // GRCOV_EXCL_STOP
 }
 
 impl<F: Fn(&Device) -> Option<&Transducer>> Datagram for ConfigureDebugOutputIdx<F> {
@@ -37,10 +38,11 @@ impl<F: Fn(&Device) -> Option<&Transducer>> Datagram for ConfigureDebugOutputIdx
 mod tests {
     use super::*;
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     fn f(dev: &Device) -> Option<&Transducer> {
         Some(&dev[0])
     }
+    // GRCOV_EXCL_STOP
 
     #[test]
     fn test_timeout() {

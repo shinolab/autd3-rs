@@ -8,10 +8,11 @@ use crate::{
 pub struct NullOp {}
 
 impl Operation for NullOp {
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     fn pack(&mut self, _: &Device, _: &mut [u8]) -> Result<usize, AUTDInternalError> {
         unreachable!()
     }
+    // GRCOV_EXCL_STOP
 
     fn required_size(&self, _: &Device) -> usize {
         0
@@ -25,10 +26,11 @@ impl Operation for NullOp {
         0
     }
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     fn commit(&mut self, _: &Device) {
         unreachable!()
     }
+    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]

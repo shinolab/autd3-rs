@@ -23,36 +23,32 @@ pub enum AUTDProtoBufError {
     DataParseError,
 }
 
+// GRCOV_EXCL_START
 impl From<autd3_driver::error::AUTDInternalError> for AUTDProtoBufError {
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn from(e: autd3_driver::error::AUTDInternalError) -> Self {
         AUTDProtoBufError::AUTDInternalError(e)
     }
 }
 
 impl From<tonic::Status> for AUTDProtoBufError {
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn from(e: tonic::Status) -> Self {
         AUTDProtoBufError::Status(e.to_string())
     }
 }
 
 impl From<AUTDProtoBufError> for tonic::Status {
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn from(e: AUTDProtoBufError) -> Self {
         tonic::Status::internal(e.to_string())
     }
 }
 
 impl<T> From<std::sync::mpsc::SendError<T>> for AUTDProtoBufError {
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn from(e: std::sync::mpsc::SendError<T>) -> Self {
         AUTDProtoBufError::SendError(e.to_string())
     }
 }
 
 impl From<tonic::transport::Error> for AUTDProtoBufError {
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn from(e: tonic::transport::Error) -> Self {
         match e.source() {
             Some(source) => AUTDProtoBufError::TransportError(source.to_string()),
@@ -62,7 +58,6 @@ impl From<tonic::transport::Error> for AUTDProtoBufError {
 }
 
 impl From<AUTDProtoBufError> for autd3_driver::error::AUTDInternalError {
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn from(e: AUTDProtoBufError) -> Self {
         autd3_driver::error::AUTDInternalError::LinkError(e.to_string())
     }
@@ -70,13 +65,11 @@ impl From<AUTDProtoBufError> for autd3_driver::error::AUTDInternalError {
 
 #[cfg(feature = "lightweight")]
 impl From<AUTDProtoBufError> for autd3::error::AUTDError {
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn from(e: AUTDProtoBufError) -> Self {
         Self::Internal(e.into())
     }
 }
 
-#[cfg_attr(coverage_nightly, coverage(off))]
 pub fn match_for_io_error(err_status: &Status) -> Option<&std::io::Error> {
     let mut err: &(dyn Error + 'static) = err_status;
     loop {
@@ -94,6 +87,7 @@ pub fn match_for_io_error(err_status: &Status) -> Option<&std::io::Error> {
         };
     }
 }
+// GRCOV_EXCL_STOP
 
 #[cfg(test)]
 mod tests {

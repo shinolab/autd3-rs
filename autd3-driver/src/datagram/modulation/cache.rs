@@ -127,7 +127,7 @@ mod tests {
     }
 
     impl Clone for TestCacheModulation {
-        #[cfg_attr(coverage_nightly, coverage(off))]
+        // GRCOV_EXCL_START
         fn clone(&self) -> Self {
             Self {
                 calc_cnt: self.calc_cnt.clone(),
@@ -135,6 +135,7 @@ mod tests {
                 loop_behavior: LoopBehavior::Infinite,
             }
         }
+        // GRCOV_EXCL_STOP
     }
 
     impl Modulation for TestCacheModulation {

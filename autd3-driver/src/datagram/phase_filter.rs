@@ -15,10 +15,11 @@ impl<F: Fn(&Device, &Transducer) -> Phase> ConfigurePhaseFilter<F> {
         Self { f }
     }
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     pub const fn f(&self) -> &F {
         &self.f
     }
+    // GRCOV_EXCL_STOP
 }
 
 impl<F: Fn(&Device, &Transducer) -> Phase> Datagram for ConfigurePhaseFilter<F> {
@@ -38,10 +39,11 @@ impl<F: Fn(&Device, &Transducer) -> Phase> Datagram for ConfigurePhaseFilter<F> 
 mod tests {
     use super::*;
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     fn f(_: &Device, _: &Transducer) -> Phase {
         Phase::new(0)
     }
+    // GRCOV_EXCL_STOP
 
     #[test]
     fn test() {

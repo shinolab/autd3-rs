@@ -71,8 +71,8 @@ pub trait Gain {
     }
 }
 
+// GRCOV_EXCL_START
 impl<'a> Gain for Box<dyn Gain + 'a> {
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn calc(
         &self,
         geometry: &Geometry,
@@ -83,7 +83,6 @@ impl<'a> Gain for Box<dyn Gain + 'a> {
 }
 
 impl<'a> Gain for Box<dyn Gain + Send + 'a> {
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn calc(
         &self,
         geometry: &Geometry,
@@ -97,7 +96,6 @@ impl DatagramS for Box<dyn Gain> {
     type O1 = GainOp<Self>;
     type O2 = NullOp;
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn operation_with_segment(
         self,
         segment: Segment,
@@ -109,6 +107,7 @@ impl DatagramS for Box<dyn Gain> {
         ))
     }
 }
+// GRCOV_EXCL_STOP
 
 #[cfg(test)]
 mod tests {

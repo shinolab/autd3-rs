@@ -63,10 +63,11 @@ mod tests {
         Ok(())
     }
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
+    // GRCOV_EXCL_START
     fn f(_dev: &Device, _tr: &Transducer) -> Option<Drive> {
         None
     }
+    // GRCOV_EXCL_STOP
 
     #[test]
     fn test_transtest_derive() {

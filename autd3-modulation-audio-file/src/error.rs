@@ -9,26 +9,25 @@ pub enum AudioFileError {
     Wav(hound::Error),
 }
 
+// GRCOV_EXCL_START
 impl From<std::io::Error> for AudioFileError {
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn from(e: std::io::Error) -> Self {
         AudioFileError::Io(e)
     }
 }
 
 impl From<hound::Error> for AudioFileError {
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn from(e: hound::Error) -> Self {
         AudioFileError::Wav(e)
     }
 }
 
 impl From<AudioFileError> for AUTDInternalError {
-    #[cfg_attr(coverage_nightly, coverage(off))]
     fn from(value: AudioFileError) -> Self {
         AUTDInternalError::ModulationError(value.to_string())
     }
 }
+// GRCOV_EXCL_STOP
 
 #[cfg(test)]
 mod tests {

@@ -196,10 +196,11 @@ mod tests {
             Ok(!self.down)
         }
 
-        #[cfg_attr(coverage_nightly, coverage(off))]
+        // GRCOV_EXCL_START
         fn is_open(&self) -> bool {
             self.is_open
         }
+        // GRCOV_EXCL_STOP
 
         fn timeout(&self) -> Duration {
             self.timeout
