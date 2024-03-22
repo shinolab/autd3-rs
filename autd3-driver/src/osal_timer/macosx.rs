@@ -1,6 +1,5 @@
 use crate::error::AUTDInternalError;
 use libc::{c_char, c_long, c_ulong, c_void, uintptr_t};
-use std::ffi::CString;
 
 #[allow(non_camel_case_types)]
 type dispatch_object_t = *const c_void;
@@ -62,7 +61,7 @@ impl NativeTimerWrapper {
         lp_param: *mut P,
     ) -> Result<bool, AUTDInternalError> {
         unsafe {
-            let timer_queue_str = CString::new("timerQueue").unwrap();
+            let timer_queue_str = c"timerQueue";
             let queue = dispatch_queue_create(timer_queue_str.as_ptr(), 0);
             let timer = dispatch_source_create(
                 &_dispatch_source_type_timer as *const _ as dispatch_source_type_t,
