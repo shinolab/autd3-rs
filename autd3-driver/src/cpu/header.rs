@@ -10,7 +10,7 @@ pub struct Header {
 
 #[cfg(test)]
 mod tests {
-    use memoffset::offset_of;
+    use std::mem::offset_of;
     use std::mem::size_of;
 
     use super::*;

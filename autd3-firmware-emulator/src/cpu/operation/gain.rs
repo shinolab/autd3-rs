@@ -88,8 +88,8 @@ mod tests {
     #[test]
     fn gain_memory_layout() {
         assert_eq!(4, std::mem::size_of::<Gain>());
-        assert_eq!(0, memoffset::offset_of!(Gain, tag));
-        assert_eq!(1, memoffset::offset_of!(Gain, segment));
-        assert_eq!(2, memoffset::offset_of!(Gain, flag));
+        assert_eq!(0, std::mem::offset_of!(Gain, tag));
+        assert_eq!(1, std::mem::offset_of!(Gain, segment));
+        assert_eq!(2, std::mem::offset_of!(Gain, flag));
     }
 }

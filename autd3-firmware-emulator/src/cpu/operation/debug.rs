@@ -22,7 +22,7 @@ mod tests {
     #[test]
     fn debug_out_idx_memory_layout() {
         assert_eq!(2, std::mem::size_of::<DebugOutIdx>());
-        assert_eq!(0, memoffset::offset_of!(DebugOutIdx, tag));
-        assert_eq!(1, memoffset::offset_of!(DebugOutIdx, idx));
+        assert_eq!(0, std::mem::offset_of!(DebugOutIdx, tag));
+        assert_eq!(1, std::mem::offset_of!(DebugOutIdx, idx));
     }
 }
