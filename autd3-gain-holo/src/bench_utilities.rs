@@ -3,7 +3,7 @@ use criterion::{black_box, AxisScale, BenchmarkId, Criterion, PlotConfiguration}
 use autd3_driver::{
     autd3_device::AUTD3,
     datagram::{Gain, GainFilter},
-    defined::{f64, PI},
+    defined::PI,
     geometry::{Geometry, IntoDevice, Vector3},
 };
 
