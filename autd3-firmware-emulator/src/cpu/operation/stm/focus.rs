@@ -242,24 +242,24 @@ mod tests {
     #[test]
     fn focus_stm_memory_layout() {
         assert_eq!(16, std::mem::size_of::<FocusSTMHead>());
-        assert_eq!(0, memoffset::offset_of!(FocusSTMHead, tag));
-        assert_eq!(1, memoffset::offset_of!(FocusSTMHead, flag));
-        assert_eq!(2, memoffset::offset_of!(FocusSTMHead, send_num));
-        assert_eq!(3, memoffset::offset_of!(FocusSTMHead, segment));
-        assert_eq!(4, memoffset::offset_of!(FocusSTMHead, freq_div));
-        assert_eq!(8, memoffset::offset_of!(FocusSTMHead, sound_speed));
-        assert_eq!(12, memoffset::offset_of!(FocusSTMHead, rep));
+        assert_eq!(0, std::mem::offset_of!(FocusSTMHead, tag));
+        assert_eq!(1, std::mem::offset_of!(FocusSTMHead, flag));
+        assert_eq!(2, std::mem::offset_of!(FocusSTMHead, send_num));
+        assert_eq!(3, std::mem::offset_of!(FocusSTMHead, segment));
+        assert_eq!(4, std::mem::offset_of!(FocusSTMHead, freq_div));
+        assert_eq!(8, std::mem::offset_of!(FocusSTMHead, sound_speed));
+        assert_eq!(12, std::mem::offset_of!(FocusSTMHead, rep));
 
         assert_eq!(4, std::mem::size_of::<FocusSTMSubseq>());
-        assert_eq!(0, memoffset::offset_of!(FocusSTMSubseq, tag));
-        assert_eq!(1, memoffset::offset_of!(FocusSTMSubseq, flag));
-        assert_eq!(2, memoffset::offset_of!(FocusSTMSubseq, send_num));
+        assert_eq!(0, std::mem::offset_of!(FocusSTMSubseq, tag));
+        assert_eq!(1, std::mem::offset_of!(FocusSTMSubseq, flag));
+        assert_eq!(2, std::mem::offset_of!(FocusSTMSubseq, send_num));
 
-        assert_eq!(0, memoffset::offset_of_union!(FocusSTM, head));
-        assert_eq!(0, memoffset::offset_of_union!(FocusSTM, subseq));
+        assert_eq!(0, std::mem::offset_of!(FocusSTM, head));
+        assert_eq!(0, std::mem::offset_of!(FocusSTM, subseq));
 
         assert_eq!(2, std::mem::size_of::<FocusSTMUpdate>());
-        assert_eq!(0, memoffset::offset_of!(FocusSTMUpdate, tag));
-        assert_eq!(1, memoffset::offset_of!(FocusSTMUpdate, segment));
+        assert_eq!(0, std::mem::offset_of!(FocusSTMUpdate, tag));
+        assert_eq!(1, std::mem::offset_of!(FocusSTMUpdate, segment));
     }
 }

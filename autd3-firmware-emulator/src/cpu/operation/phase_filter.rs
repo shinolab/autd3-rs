@@ -33,6 +33,6 @@ mod tests {
     #[test]
     fn phase_filter_memory_layout() {
         assert_eq!(2, std::mem::size_of::<PhaseFilter>());
-        assert_eq!(0, memoffset::offset_of!(PhaseFilter, tag));
+        assert_eq!(0, std::mem::offset_of!(PhaseFilter, tag));
     }
 }

@@ -24,8 +24,8 @@ mod tests {
     #[test]
     fn test_size() {
         assert_eq!(2, size_of::<FPGADrive>());
-        assert_eq!(0, memoffset::offset_of!(FPGADrive, phase));
-        assert_eq!(1, memoffset::offset_of!(FPGADrive, intensity));
+        assert_eq!(0, std::mem::offset_of!(FPGADrive, phase));
+        assert_eq!(1, std::mem::offset_of!(FPGADrive, intensity));
     }
 
     #[rstest::rstest]

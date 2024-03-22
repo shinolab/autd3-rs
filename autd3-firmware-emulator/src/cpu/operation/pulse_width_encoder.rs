@@ -110,16 +110,16 @@ mod tests {
     #[test]
     fn pwe_memory_layout() {
         assert_eq!(6, std::mem::size_of::<PWEHead>());
-        assert_eq!(0, memoffset::offset_of!(PWEHead, tag));
-        assert_eq!(2, memoffset::offset_of!(PWEHead, size));
-        assert_eq!(4, memoffset::offset_of!(PWEHead, full_width_start));
+        assert_eq!(0, std::mem::offset_of!(PWEHead, tag));
+        assert_eq!(2, std::mem::offset_of!(PWEHead, size));
+        assert_eq!(4, std::mem::offset_of!(PWEHead, full_width_start));
 
         assert_eq!(4, std::mem::size_of::<PWESubseq>());
-        assert_eq!(0, memoffset::offset_of!(PWESubseq, tag));
-        assert_eq!(2, memoffset::offset_of!(PWESubseq, size));
+        assert_eq!(0, std::mem::offset_of!(PWESubseq, tag));
+        assert_eq!(2, std::mem::offset_of!(PWESubseq, size));
 
         assert_eq!(6, std::mem::size_of::<PWE>());
-        assert_eq!(0, memoffset::offset_of_union!(PWE, head));
-        assert_eq!(0, memoffset::offset_of_union!(PWE, subseq));
+        assert_eq!(0, std::mem::offset_of!(PWE, head));
+        assert_eq!(0, std::mem::offset_of!(PWE, subseq));
     }
 }

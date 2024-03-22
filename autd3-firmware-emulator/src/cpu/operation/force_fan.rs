@@ -26,7 +26,7 @@ mod tests {
     #[test]
     fn configure_force_fan_memory_layout() {
         assert_eq!(2, std::mem::size_of::<ConfigureForceFan>());
-        assert_eq!(0, memoffset::offset_of!(ConfigureForceFan, tag));
-        assert_eq!(1, memoffset::offset_of!(ConfigureForceFan, value));
+        assert_eq!(0, std::mem::offset_of!(ConfigureForceFan, tag));
+        assert_eq!(1, std::mem::offset_of!(ConfigureForceFan, value));
     }
 }

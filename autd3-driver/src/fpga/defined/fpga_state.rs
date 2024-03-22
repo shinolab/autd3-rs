@@ -73,7 +73,7 @@ mod tests {
     #[test]
     fn test_size() {
         assert_eq!(1, size_of::<FPGAState>());
-        assert_eq!(0, memoffset::offset_of!(FPGAState, state));
+        assert_eq!(0, std::mem::offset_of!(FPGAState, state));
     }
 
     #[rstest::rstest]

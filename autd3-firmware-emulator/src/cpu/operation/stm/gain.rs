@@ -249,22 +249,22 @@ mod tests {
     #[test]
     fn gain_stm_memory_layout() {
         assert_eq!(12, std::mem::size_of::<GainSTMHead>());
-        assert_eq!(0, memoffset::offset_of!(GainSTMHead, tag));
-        assert_eq!(1, memoffset::offset_of!(GainSTMHead, flag));
-        assert_eq!(2, memoffset::offset_of!(GainSTMHead, mode));
-        assert_eq!(3, memoffset::offset_of!(GainSTMHead, segment));
-        assert_eq!(4, memoffset::offset_of!(GainSTMHead, freq_div));
-        assert_eq!(8, memoffset::offset_of!(GainSTMHead, rep));
+        assert_eq!(0, std::mem::offset_of!(GainSTMHead, tag));
+        assert_eq!(1, std::mem::offset_of!(GainSTMHead, flag));
+        assert_eq!(2, std::mem::offset_of!(GainSTMHead, mode));
+        assert_eq!(3, std::mem::offset_of!(GainSTMHead, segment));
+        assert_eq!(4, std::mem::offset_of!(GainSTMHead, freq_div));
+        assert_eq!(8, std::mem::offset_of!(GainSTMHead, rep));
 
         assert_eq!(2, std::mem::size_of::<GainSTMSubseq>());
-        assert_eq!(0, memoffset::offset_of!(GainSTMSubseq, tag));
-        assert_eq!(1, memoffset::offset_of!(GainSTMSubseq, flag));
+        assert_eq!(0, std::mem::offset_of!(GainSTMSubseq, tag));
+        assert_eq!(1, std::mem::offset_of!(GainSTMSubseq, flag));
 
-        assert_eq!(0, memoffset::offset_of_union!(GainSTM, head));
-        assert_eq!(0, memoffset::offset_of_union!(GainSTM, subseq));
+        assert_eq!(0, std::mem::offset_of!(GainSTM, head));
+        assert_eq!(0, std::mem::offset_of!(GainSTM, subseq));
 
         assert_eq!(2, std::mem::size_of::<GainSTMUpdate>());
-        assert_eq!(0, memoffset::offset_of!(GainSTMUpdate, tag));
-        assert_eq!(1, memoffset::offset_of!(GainSTMUpdate, segment));
+        assert_eq!(0, std::mem::offset_of!(GainSTMUpdate, tag));
+        assert_eq!(1, std::mem::offset_of!(GainSTMUpdate, segment));
     }
 }
