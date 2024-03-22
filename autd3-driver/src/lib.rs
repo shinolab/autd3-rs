@@ -29,7 +29,6 @@ pub mod derive {
             Modulation, ModulationCache, ModulationProperty, ModulationTransform,
             RadiationPressure,
         },
-        defined::float,
         error::AUTDInternalError,
         fpga::{FPGA_CLK_FREQ, SAMPLING_FREQ_DIV_MIN},
         geometry::{Device, Geometry, Transducer},

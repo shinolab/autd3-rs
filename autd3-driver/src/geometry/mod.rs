@@ -2,16 +2,14 @@ pub(crate) mod device;
 mod rotation;
 mod transducer;
 
-use crate::defined::float;
-
-pub type Vector3 = nalgebra::Vector3<float>;
-pub type UnitVector3 = nalgebra::UnitVector3<float>;
-pub type Vector4 = nalgebra::Vector4<float>;
-pub type Quaternion = nalgebra::Quaternion<float>;
-pub type UnitQuaternion = nalgebra::UnitQuaternion<float>;
-pub type Matrix3 = nalgebra::Matrix3<float>;
-pub type Matrix4 = nalgebra::Matrix4<float>;
-pub type Affine = nalgebra::Affine3<float>;
+pub type Vector3 = nalgebra::Vector3<f64>;
+pub type UnitVector3 = nalgebra::UnitVector3<f64>;
+pub type Vector4 = nalgebra::Vector4<f64>;
+pub type Quaternion = nalgebra::Quaternion<f64>;
+pub type UnitQuaternion = nalgebra::UnitQuaternion<f64>;
+pub type Matrix3 = nalgebra::Matrix3<f64>;
+pub type Matrix4 = nalgebra::Matrix4<f64>;
+pub type Affine = nalgebra::Affine3<f64>;
 
 pub use device::*;
 pub use rotation::*;
@@ -41,7 +39,7 @@ impl Geometry {
 
     /// Get center position of all devices
     pub fn center(&self) -> Vector3 {
-        self.devices.iter().map(|d| d.center()).sum::<Vector3>() / self.devices.len() as float
+        self.devices.iter().map(|d| d.center()).sum::<Vector3>() / self.devices.len() as f64
     }
 
     /// Enumerate enabled devices
@@ -60,7 +58,7 @@ impl Geometry {
     ///
     /// * `c` - Speed of sound
     ///
-    pub fn set_sound_speed(&mut self, c: float) {
+    pub fn set_sound_speed(&mut self, c: f64) {
         self.devices_mut().for_each(|dev| dev.sound_speed = c);
     }
 
@@ -71,7 +69,7 @@ impl Geometry {
     ///
     /// * `temp` - Temperature in Celsius
     ///
-    pub fn set_sound_speed_from_temp(&mut self, temp: float) {
+    pub fn set_sound_speed_from_temp(&mut self, temp: f64) {
         self.set_sound_speed_from_temp_with(temp, 1.4, 8.314_463, 28.9647e-3);
     }
 
@@ -84,7 +82,7 @@ impl Geometry {
     /// * `r` - Gas constant
     /// * `m` - Molar mass
     ///
-    pub fn set_sound_speed_from_temp_with(&mut self, temp: float, k: float, r: float, m: float) {
+    pub fn set_sound_speed_from_temp_with(&mut self, temp: f64, k: f64, r: f64, m: f64) {
         self.devices_mut()
             .for_each(|dev| dev.set_sound_speed_from_temp_with(temp, k, r, m));
     }
@@ -181,7 +179,7 @@ pub mod tests {
                     .map(|(i, (y, x))| {
                         Transducer::new(
                             i,
-                            10.16 * Vector3::new(x as float, y as float, 0.),
+                            10.16 * Vector3::new(x as f64, y as f64, 0.),
                             UnitQuaternion::identity(),
                         )
                     })
@@ -194,7 +192,7 @@ pub mod tests {
                     .map(|(i, (y, x))| {
                         Transducer::new(
                             i,
-                            10.16 * Vector3::new(x as float, y as float, 0.)
+                            10.16 * Vector3::new(x as f64, y as f64, 0.)
                                 + Vector3::new(10., 20., 30.),
                             UnitQuaternion::identity(),
                         )
@@ -203,7 +201,7 @@ pub mod tests {
             ),
         ]);
         let expect = geometry.iter().map(|dev| dev.center()).sum::<Vector3>()
-            / geometry.num_devices() as float;
+            / geometry.num_devices() as f64;
         assert_approx_eq_vec3!(expect, geometry.center());
     }
 
@@ -212,7 +210,7 @@ pub mod tests {
     #[case(340.29527186788846e3, 15.)]
     #[case(343.23498846612807e3, 20.)]
     #[case(349.0401521469255e3, 30.)]
-    fn test_set_sound_speed_from_temp(#[case] expected: float, #[case] temp: float) {
+    fn test_set_sound_speed_from_temp(#[case] expected: f64, #[case] temp: f64) {
         let mut geometry = Geometry::new(vec![
             Device::new(
                 0,
@@ -221,7 +219,7 @@ pub mod tests {
                     .map(|(i, (y, x))| {
                         Transducer::new(
                             i,
-                            10.16 * Vector3::new(x as float, y as float, 0.),
+                            10.16 * Vector3::new(x as f64, y as f64, 0.),
                             UnitQuaternion::identity(),
                         )
                     })
@@ -234,7 +232,7 @@ pub mod tests {
                     .map(|(i, (y, x))| {
                         Transducer::new(
                             i,
-                            10.16 * Vector3::new(x as float, y as float, 0.)
+                            10.16 * Vector3::new(x as f64, y as f64, 0.)
                                 + Vector3::new(10., 20., 30.),
                             UnitQuaternion::identity(),
                         )
@@ -253,7 +251,7 @@ pub mod tests {
     #[case(340.29527186788846e3)]
     #[case(343.23498846612807e3)]
     #[case(349.0401521469255e3)]
-    fn test_set_sound_speed(#[case] temp: float) {
+    fn test_set_sound_speed(#[case] temp: f64) {
         let mut geometry = Geometry::new(vec![
             Device::new(
                 0,
@@ -262,7 +260,7 @@ pub mod tests {
                     .map(|(i, (y, x))| {
                         Transducer::new(
                             i,
-                            10.16 * Vector3::new(x as float, y as float, 0.),
+                            10.16 * Vector3::new(x as f64, y as f64, 0.),
                             UnitQuaternion::identity(),
                         )
                     })
@@ -275,7 +273,7 @@ pub mod tests {
                     .map(|(i, (y, x))| {
                         Transducer::new(
                             i,
-                            10.16 * Vector3::new(x as float, y as float, 0.)
+                            10.16 * Vector3::new(x as f64, y as f64, 0.)
                                 + Vector3::new(10., 20., 30.),
                             UnitQuaternion::identity(),
                         )

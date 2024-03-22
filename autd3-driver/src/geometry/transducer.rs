@@ -2,7 +2,7 @@ use super::{Matrix4, Quaternion, UnitQuaternion, Vector3, Vector4};
 
 use crate::{
     common::Phase,
-    defined::{float, PI, ULTRASOUND_FREQUENCY},
+    defined::{PI, ULTRASOUND_FREQUENCY},
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -32,7 +32,7 @@ impl Transducer {
     }
 
     /// Calculate the phase of the transducer to align the phase at the specified position
-    pub fn align_phase_at(&self, pos: Vector3, sound_speed: float) -> Phase {
+    pub fn align_phase_at(&self, pos: Vector3, sound_speed: f64) -> Phase {
         Phase::from_rad((pos - self.position()).norm() * self.wavenumber(sound_speed))
     }
 
@@ -70,11 +70,11 @@ impl Transducer {
     }
 
     /// Get the wavelength of the transducer
-    pub fn wavelength(&self, sound_speed: float) -> float {
+    pub fn wavelength(&self, sound_speed: f64) -> f64 {
         sound_speed / ULTRASOUND_FREQUENCY
     }
     /// Get the wavenumber of the transducer
-    pub fn wavenumber(&self, sound_speed: float) -> float {
+    pub fn wavenumber(&self, sound_speed: f64) -> f64 {
         2.0 * PI * ULTRASOUND_FREQUENCY / sound_speed
     }
 }
@@ -127,7 +127,7 @@ mod tests {
     #[test]
     #[case(340e3)]
     #[case(400e3)]
-    fn test_wavelength(#[case] c: float) {
+    fn test_wavelength(#[case] c: f64) {
         let tr = Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
         assert_approx_eq!(c / ULTRASOUND_FREQUENCY, tr.wavelength(c));
     }
@@ -136,7 +136,7 @@ mod tests {
     #[test]
     #[case(340e3)]
     #[case(400e3)]
-    fn test_wavenumber(#[case] c: float) {
+    fn test_wavenumber(#[case] c: f64) {
         let tr = Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
         assert_approx_eq!(2. * PI * ULTRASOUND_FREQUENCY / c, tr.wavenumber(c));
     }

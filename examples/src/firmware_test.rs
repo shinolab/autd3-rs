@@ -277,7 +277,7 @@ async fn main() -> Result<()> {
         let radius = 30.0 * MILLIMETER;
         let gen_foci = || {
             (0..point_num).map(|i| {
-                let theta = 2.0 * PI * i as float / point_num as float;
+                let theta = 2.0 * PI * i as f64 / point_num as f64;
                 let p = radius * Vector3::new(theta.cos(), theta.sin(), 0.0);
                 ControlPoint::new(center + p).with_intensity(0xFF)
             })
@@ -377,7 +377,7 @@ async fn main() -> Result<()> {
         let radius = 30.0 * MILLIMETER;
         let gen_foci = || {
             (0..point_num).map(|i| {
-                let theta = 2.0 * PI * i as float / point_num as float;
+                let theta = 2.0 * PI * i as f64 / point_num as f64;
                 let p = radius * Vector3::new(theta.cos(), theta.sin(), 0.0);
                 Focus::new(center + p).with_intensity(0xFF)
             })

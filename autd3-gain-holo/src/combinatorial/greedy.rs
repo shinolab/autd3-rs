@@ -40,8 +40,8 @@ impl Greedy {
 
     fn transfer_foci(
         trans: &Transducer,
-        sound_speed: float,
-        attenuation: float,
+        sound_speed: f64,
+        attenuation: f64,
         foci: &[Vector3],
         res: &mut [Complex],
     ) {
@@ -58,7 +58,7 @@ impl Gain for Greedy {
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
         let phase_candidates = (0..self.phase_div)
-            .map(|i| Complex::new(0., 2.0 * PI * i as float / self.phase_div as float).exp())
+            .map(|i| Complex::new(0., 2.0 * PI * i as f64 / self.phase_div as f64).exp())
             .collect::<Vec<_>>();
 
         let indices = {
@@ -102,7 +102,7 @@ impl Gain for Greedy {
                 &mut tmp,
             );
             let (min_idx, _) = phase_candidates.iter().enumerate().fold(
-                (0usize, float::INFINITY),
+                (0usize, f64::INFINITY),
                 |acc, (idx, &phase)| {
                     let v = cache.iter().enumerate().fold(0., |acc, (j, c)| {
                         acc + (self.amps[j].value - (tmp[j] * phase + c).abs()).abs()

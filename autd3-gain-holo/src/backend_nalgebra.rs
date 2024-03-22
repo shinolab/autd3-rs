@@ -5,7 +5,6 @@ use nalgebra::ComplexField;
 use autd3_driver::{
     acoustics::{directivity::Sphere, propagate},
     datagram::GainFilter,
-    defined::float,
     geometry::Geometry,
 };
 
@@ -101,7 +100,7 @@ impl LinAlgBackend for NalgebraBackend {
         Ok(Self::VectorXc::zeros(size))
     }
 
-    fn from_slice_v(&self, v: &[float]) -> Result<Self::VectorX, HoloError> {
+    fn from_slice_v(&self, v: &[f64]) -> Result<Self::VectorX, HoloError> {
         Ok(Self::VectorX::from_row_slice(v))
     }
 
@@ -109,7 +108,7 @@ impl LinAlgBackend for NalgebraBackend {
         &self,
         rows: usize,
         cols: usize,
-        v: &[float],
+        v: &[f64],
     ) -> Result<Self::MatrixX, HoloError> {
         Ok(Self::MatrixX::from_iterator(rows, cols, v.iter().copied()))
     }
@@ -203,7 +202,7 @@ impl LinAlgBackend for NalgebraBackend {
         Ok(())
     }
 
-    fn scale_assign_v(&self, a: float, b: &mut Self::VectorX) -> Result<(), HoloError> {
+    fn scale_assign_v(&self, a: f64, b: &mut Self::VectorX) -> Result<(), HoloError> {
         *b *= a;
         Ok(())
     }
@@ -276,7 +275,7 @@ impl LinAlgBackend for NalgebraBackend {
                     .rows(i, 1)
                     .iter()
                     .map(|x| x.norm_sqr())
-                    .sum::<float>();
+                    .sum::<f64>();
             (0..m).for_each(|j| {
                 b[(j, i)] = transfer[(i, j)].conj() * x;
             })
@@ -289,14 +288,14 @@ impl LinAlgBackend for NalgebraBackend {
         Ok(eig.eigenvectors.column(eig.eigenvalues.imax()).into())
     }
 
-    fn from_slice_cv(&self, real: &[float]) -> Result<Self::VectorXc, HoloError> {
+    fn from_slice_cv(&self, real: &[f64]) -> Result<Self::VectorXc, HoloError> {
         Ok(Self::VectorXc::from_iterator(
             real.len(),
             real.iter().map(|&r| Complex::new(r, 0.)),
         ))
     }
 
-    fn from_slice2_cv(&self, r: &[float], i: &[float]) -> Result<Self::VectorXc, HoloError> {
+    fn from_slice2_cv(&self, r: &[f64], i: &[f64]) -> Result<Self::VectorXc, HoloError> {
         Ok(Self::VectorXc::from_iterator(
             r.len(),
             r.iter().zip(i.iter()).map(|(&r, &i)| Complex::new(r, i)),
@@ -307,8 +306,8 @@ impl LinAlgBackend for NalgebraBackend {
         &self,
         rows: usize,
         cols: usize,
-        r: &[float],
-        i: &[float],
+        r: &[f64],
+        i: &[f64],
     ) -> Result<Self::MatrixXc, HoloError> {
         Ok(Self::MatrixXc::from_iterator(
             rows,
@@ -317,7 +316,7 @@ impl LinAlgBackend for NalgebraBackend {
         ))
     }
 
-    fn pow_assign_v(&self, a: float, v: &mut Self::VectorX) -> Result<(), HoloError> {
+    fn pow_assign_v(&self, a: f64, v: &mut Self::VectorX) -> Result<(), HoloError> {
         v.apply(|v| *v = v.powf(a));
         Ok(())
     }
@@ -414,7 +413,7 @@ impl LinAlgBackend for NalgebraBackend {
     fn pseudo_inverse_svd(
         &self,
         a: Self::MatrixXc,
-        alpha: float,
+        alpha: f64,
         _u: &mut Self::MatrixXc,
         _s: &mut Self::MatrixXc,
         _vt: &mut Self::MatrixXc,
@@ -441,7 +440,7 @@ impl LinAlgBackend for NalgebraBackend {
         Ok(v)
     }
 
-    fn copy_from_slice_v(&self, v: &[float], dst: &mut Self::VectorX) -> Result<(), HoloError> {
+    fn copy_from_slice_v(&self, v: &[f64], dst: &mut Self::VectorX) -> Result<(), HoloError> {
         dst.view_mut((0, 0), (v.len(), 1)).copy_from_slice(v);
         Ok(())
     }
@@ -494,7 +493,7 @@ impl LinAlgBackend for NalgebraBackend {
         Ok(())
     }
 
-    fn max_v(&self, m: &Self::VectorX) -> Result<float, HoloError> {
+    fn max_v(&self, m: &Self::VectorX) -> Result<f64, HoloError> {
         Ok(m.max())
     }
 
@@ -508,26 +507,16 @@ impl LinAlgBackend for NalgebraBackend {
         Ok(())
     }
 
-    fn dot(&self, x: &Self::VectorX, y: &Self::VectorX) -> Result<float, HoloError> {
+    fn dot(&self, x: &Self::VectorX, y: &Self::VectorX) -> Result<f64, HoloError> {
         Ok(x.dot(y))
     }
 
-    fn add_v(
-        &self,
-        alpha: float,
-        a: &Self::VectorX,
-        b: &mut Self::VectorX,
-    ) -> Result<(), HoloError> {
+    fn add_v(&self, alpha: f64, a: &Self::VectorX, b: &mut Self::VectorX) -> Result<(), HoloError> {
         *b += alpha * a;
         Ok(())
     }
 
-    fn add_m(
-        &self,
-        alpha: float,
-        a: &Self::MatrixX,
-        b: &mut Self::MatrixX,
-    ) -> Result<(), HoloError> {
+    fn add_m(&self, alpha: f64, a: &Self::MatrixX, b: &mut Self::MatrixX) -> Result<(), HoloError> {
         *b += alpha * a;
         Ok(())
     }

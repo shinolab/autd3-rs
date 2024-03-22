@@ -207,7 +207,7 @@ mod tests {
     }
 
     #[test]
-    fn test_wav_new_float() -> anyhow::Result<()> {
+    fn test_wav_new_f64() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("tmp.wav");
         create_wav(

@@ -1,4 +1,4 @@
-use crate::{common::EmitIntensity, defined::float, error::AUTDInternalError};
+use crate::{common::EmitIntensity, error::AUTDInternalError};
 
 use super::{FOCUS_STM_FIXED_NUM_LOWER, FOCUS_STM_FIXED_NUM_UNIT, FOCUS_STM_FIXED_NUM_UPPER};
 
@@ -17,7 +17,7 @@ pub struct STMFocus {
 }
 
 impl STMFocus {
-    fn to_fixed_num(x: float) -> Result<i32, AUTDInternalError> {
+    fn to_fixed_num(x: f64) -> Result<i32, AUTDInternalError> {
         let ix = (x / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
         if !(FOCUS_STM_FIXED_NUM_LOWER..=FOCUS_STM_FIXED_NUM_UPPER).contains(&ix) {
             return Err(AUTDInternalError::FocusSTMPointOutOfRange(x));
@@ -27,9 +27,9 @@ impl STMFocus {
 
     pub fn set(
         &mut self,
-        x: float,
-        y: float,
-        z: float,
+        x: f64,
+        y: f64,
+        z: f64,
         intensity: EmitIntensity,
     ) -> Result<(), AUTDInternalError> {
         self.set_x(Self::to_fixed_num(x)?);
@@ -80,12 +80,14 @@ mod tests {
     #[case(Ok(-1), -1)]
     #[case(Ok((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1), (1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1)]
     #[case(Ok(-(1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1))), -(1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)))]
-    #[case(Err(AUTDInternalError::FocusSTMPointOutOfRange(3276.8)), (1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1 + 1)]
-    #[case(Err(AUTDInternalError::FocusSTMPointOutOfRange(-3276.8250000000003)), -(1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1)]
+    #[cfg_attr(not(feature="use_meter"), case(Err(AUTDInternalError::FocusSTMPointOutOfRange(3276.8)), (1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1 + 1))]
+    #[cfg_attr(not(feature="use_meter"), case(Err(AUTDInternalError::FocusSTMPointOutOfRange(-3276.8250000000003)), -(1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1))]
+    #[cfg_attr(feature="use_meter", case(Err(AUTDInternalError::FocusSTMPointOutOfRange(3.2768)), (1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1 + 1))]
+    #[cfg_attr(feature="use_meter", case(Err(AUTDInternalError::FocusSTMPointOutOfRange(-3.276825)), -(1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1))]
     fn test_to_fixed_num(#[case] expected: Result<i32, AUTDInternalError>, #[case] input: i32) {
         assert_eq!(
             expected,
-            STMFocus::to_fixed_num(input as float * FOCUS_STM_FIXED_NUM_UNIT)
+            STMFocus::to_fixed_num(input as f64 * FOCUS_STM_FIXED_NUM_UNIT)
         );
     }
 
@@ -93,9 +95,9 @@ mod tests {
     #[test]
     #[case(1., 2., 3., 0x04)]
     #[case(-1., -2., -3., 0xFF)]
-    #[case(((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as float, ((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as float, ((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as float, 0x01)]
-    #[case(-(((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as float),-(((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as float),-(((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as float), 0x02)]
-    fn test_stm_focus(#[case] x: float, #[case] y: float, #[case] z: float, #[case] intensity: u8) {
+    #[case(((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as f64, ((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as f64, ((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as f64, 0x01)]
+    #[case(-(((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as f64),-(((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as f64),-(((1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1) as f64), 0x02)]
+    fn test_stm_focus(#[case] x: f64, #[case] y: f64, #[case] z: f64, #[case] intensity: u8) {
         let mut p = STMFocus::new();
         assert!(p
             .set(

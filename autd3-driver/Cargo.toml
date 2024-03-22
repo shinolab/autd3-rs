@@ -40,7 +40,6 @@ rstest = "0.18.2"
 
 [features]
 default = ["derive", "rand"]
-single_float = []
 async-trait = ["dep:async-trait"]
 use_meter = []
 serde = ["dep:serde"]

@@ -18,7 +18,6 @@ thiserror = "1.0.40"
 
 [features]
 default = []
-single_float = ["autd3-driver/single_float"]
 async-trait = ["autd3-driver/async-trait"]
 
 [dev-dependencies]

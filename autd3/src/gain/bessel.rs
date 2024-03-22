@@ -13,7 +13,7 @@ pub struct Bessel {
     #[get]
     dir: Vector3,
     #[get]
-    theta: float,
+    theta: f64,
     #[getset]
     intensity: EmitIntensity,
     #[getset]
@@ -29,7 +29,7 @@ impl Bessel {
     /// * `dir` - Direction of the beam
     /// * `theta` - Angle between the conical wavefront of the beam and the plane normal to `dir`
     ///
-    pub const fn new(pos: Vector3, dir: Vector3, theta: float) -> Self {
+    pub const fn new(pos: Vector3, dir: Vector3, theta: f64) -> Self {
         Self {
             pos,
             dir,
@@ -80,7 +80,7 @@ mod tests {
         g: Bessel,
         pos: Vector3,
         dir: Vector3,
-        theta: float,
+        theta: f64,
         intensity: EmitIntensity,
         phase_offset: Phase,
         geometry: &Geometry,

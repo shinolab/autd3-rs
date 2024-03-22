@@ -33,7 +33,7 @@ impl<M: Modulation> Modulation for RadiationPressure<M> {
             .m
             .calc()?
             .iter()
-            .map(|v| (((v.value() as float / 255.).sqrt() * 255.).round() as u8).into())
+            .map(|v| (((v.value() as f64 / 255.).sqrt() * 255.).round() as u8).into())
             .collect())
     }
 }
@@ -70,7 +70,7 @@ mod tests {
             Ok(buf
                 .iter()
                 .map(
-                    |x: &EmitIntensity| (((x.value() as float / 255.).sqrt() * 255.).round() as u8)
+                    |x: &EmitIntensity| (((x.value() as f64 / 255.).sqrt() * 255.).round() as u8)
                         .into()
                 )
                 .collect::<Vec<EmitIntensity>>()),

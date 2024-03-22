@@ -1,18 +1,15 @@
 mod sphere;
 mod t4010a1;
 
-use crate::{
-    defined::float,
-    geometry::{Transducer, Vector3},
-};
+use crate::geometry::{Transducer, Vector3};
 
 pub use sphere::Sphere;
 pub use t4010a1::T4010A1;
 
 /// Directivity
 pub trait Directivity: Send + Sync {
-    fn directivity(theta_deg: float) -> float;
-    fn directivity_from_tr(tr: &Transducer, target: &Vector3) -> float {
+    fn directivity(theta_deg: f64) -> f64;
+    fn directivity_from_tr(tr: &Transducer, target: &Vector3) -> f64 {
         let dir = tr.z_direction();
         Self::directivity(
             (dir.cross(target).norm())
@@ -31,7 +28,7 @@ pub mod tests {
     pub struct TestDirectivity {}
 
     impl Directivity for TestDirectivity {
-        fn directivity(t: float) -> float {
+        fn directivity(t: f64) -> f64 {
             t
         }
     }
@@ -46,7 +43,7 @@ pub mod tests {
     #[case::dir_x(90., Vector3::x())]
     #[case::dir_y(90., Vector3::y())]
     #[case::dir_z(0., Vector3::z())]
-    fn test_directivity_from_tr(#[case] expected: float, #[case] target: Vector3, tr: Transducer) {
+    fn test_directivity_from_tr(#[case] expected: f64, #[case] target: Vector3, tr: Transducer) {
         assert_approx_eq::assert_approx_eq!(
             expected,
             TestDirectivity::directivity_from_tr(&tr, &target)

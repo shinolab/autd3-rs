@@ -82,7 +82,7 @@ jobs:
       - name: Test src for unity on ${{ matrix.os }}
         if: needs.check-src.outputs.status
         run: |
-          python3 build.py test --features "single_float use_meter"
+          python3 build.py test --features "use_meter"
         shell: bash
 
   build-linux-arm32-src:

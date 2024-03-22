@@ -159,7 +159,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        defined::{float, MILLIMETER},
+        defined::MILLIMETER,
         fpga::{
             FOCUS_STM_FIXED_NUM_UNIT, FOCUS_STM_FIXED_NUM_WIDTH, SAMPLING_FREQ_DIV_MAX,
             SAMPLING_FREQ_DIV_MIN,
@@ -605,7 +605,7 @@ mod tests {
 
         let mut tx = vec![0x00u8; FRAME_SIZE * NUM_DEVICE];
 
-        let x = FOCUS_STM_FIXED_NUM_UNIT * (1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) as float;
+        let x = FOCUS_STM_FIXED_NUM_UNIT * (1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) as f64;
         let points: Vec<ControlPoint> = (0..FOCUS_STM_SIZE)
             .map(|_| ControlPoint::new(Vector3::new(x, x, x)).with_intensity(0))
             .collect();

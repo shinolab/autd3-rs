@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::{defined::float, fpga::*, operation::GainSTMMode};
+use crate::{fpga::*, operation::GainSTMMode};
 
 #[derive(Error, Debug, PartialEq)]
 pub enum AUTDInternalError {
@@ -28,12 +28,12 @@ pub enum AUTDInternalError {
     #[error("Sampling frequency division ({0}) is out of range ([{1}, {2}])")]
     SamplingFreqDivOutOfRange(u32, u32, u32),
     #[error("Sampling frequency ({0}) is out of range ([{1}, {2}])")]
-    SamplingFreqOutOfRange(float, float, float),
+    SamplingFreqOutOfRange(f64, f64, f64),
     #[error("Sampling period ({0} ns) is out of range ([{1}, {2}])")]
     SamplingPeriodOutOfRange(u128, u128, u128),
 
     #[error("STM frequency ({1} Hz, size={0}) is out of range ([{2}, {3}])")]
-    STMFreqOutOfRange(usize, float, float, float),
+    STMFreqOutOfRange(usize, f64, f64, f64),
     #[error("STM period ({1} ns, size={0}) is out of range ([{2}, {3}])")]
     STMPeriodOutOfRange(usize, u128, usize, usize),
 
@@ -45,10 +45,10 @@ pub enum AUTDInternalError {
     FocusSTMPointSizeOutOfRange(usize),
     #[error(
         "Point coordinate ({0}) is out of range ([{}, {}])",
-        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER as float,
-        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_UPPER as float,
+        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER as f64,
+        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_UPPER as f64,
     )]
-    FocusSTMPointOutOfRange(float),
+    FocusSTMPointOutOfRange(f64),
     #[error(
         "GainSTM size ({0}) is out of range ([{}, {}])",
         STM_BUF_SIZE_MIN,

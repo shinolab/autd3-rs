@@ -8,13 +8,13 @@ use super::sampling_mode::SamplingMode;
 #[derive(Modulation, Clone, PartialEq, Debug, Builder)]
 pub struct Square {
     #[get]
-    freq: float,
+    freq: f64,
     #[getset]
     low: EmitIntensity,
     #[getset]
     high: EmitIntensity,
     #[getset]
-    duty: float,
+    duty: f64,
     #[getset]
     mode: SamplingMode,
     config: SamplingConfiguration,
@@ -28,7 +28,7 @@ impl Square {
     ///
     /// * `freq` - Frequency of the square wave \[Hz\]
     ///
-    pub const fn new(freq: float) -> Self {
+    pub const fn new(freq: f64) -> Self {
         Self {
             freq,
             low: EmitIntensity::MIN,
@@ -76,7 +76,7 @@ impl Modulation for Square {
         Ok((0..d)
             .map(|i| (n + i) / d)
             .flat_map(|size| {
-                let n_high = (size as float * self.duty) as usize;
+                let n_high = (size as f64 * self.duty) as usize;
                 vec![self.high; n_high]
                     .into_iter()
                     .chain(vec![self.low; size - n_high])

@@ -24,7 +24,7 @@ impl FocusSTM {
     ///
     /// * `freq` - Frequency of STM. The frequency closest to `freq` from the possible frequencies is set.
     ///
-    pub const fn from_freq(freq: float) -> Self {
+    pub const fn from_freq(freq: f64) -> Self {
         Self::from_props(STMProps::from_freq(freq))
     }
 
@@ -91,7 +91,7 @@ impl FocusSTM {
         &self.control_points
     }
 
-    pub fn frequency(&self) -> float {
+    pub fn frequency(&self) -> f64 {
         self.props.freq(self.control_points.len())
     }
 
@@ -152,10 +152,10 @@ mod tests {
     #[case(0.5, 2)]
     #[case(1.0, 10)]
     #[case(2.0, 10)]
-    fn test_from_requency(#[case] freq: float, #[case] n: usize) -> anyhow::Result<()> {
+    fn test_from_requency(#[case] freq: f64, #[case] n: usize) -> anyhow::Result<()> {
         let stm = FocusSTM::from_freq(freq).add_foci_from_iter((0..n).map(|_| Vector3::zeros()))?;
         assert_eq!(freq, stm.frequency());
-        assert_eq!(freq * n as float, stm.sampling_config()?.frequency());
+        assert_eq!(freq * n as f64, stm.sampling_config()?.frequency());
         Ok(())
     }
 

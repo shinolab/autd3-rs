@@ -18,15 +18,15 @@ pub struct LM<B: LinAlgBackend + 'static> {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,
     #[getset]
-    eps_1: float,
+    eps_1: f64,
     #[getset]
-    eps_2: float,
+    eps_2: f64,
     #[getset]
-    tau: float,
+    tau: f64,
     #[getset]
     k_max: usize,
     #[set]
-    initial: Vec<float>,
+    initial: Vec<f64>,
     constraint: EmissionConstraint,
     backend: Arc<B>,
 }
@@ -48,7 +48,7 @@ impl<B: LinAlgBackend> LM<B> {
         }
     }
 
-    pub fn initial(&self) -> &[float] {
+    pub fn initial(&self) -> &[f64] {
         &self.initial
     }
 }
@@ -100,7 +100,7 @@ impl<B: LinAlgBackend> LM<B> {
         bhb: &B::MatrixXc,
         tmp: &mut B::VectorXc,
         t: &mut B::VectorXc,
-    ) -> Result<float, HoloError> {
+    ) -> Result<f64, HoloError> {
         self.backend.make_complex2_v(zero, x, t)?;
         self.backend.exp_assign_cv(t)?;
         self.backend.gemv_c(
@@ -246,7 +246,7 @@ impl<B: LinAlgBackend> Gain for LM<B> {
                     &mut g,
                 )?;
 
-                mu *= float::max(1. / 3., float::powi(1. - (2. * rho - 1.), 3));
+                mu *= f64::max(1. / 3., f64::powi(1. - (2. * rho - 1.), 3));
                 nu = 2.;
             } else {
                 mu *= nu;

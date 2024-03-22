@@ -8,7 +8,7 @@ use super::sampling_mode::SamplingMode;
 #[derive(Modulation, Clone, PartialEq, Debug, Builder)]
 pub struct Sine {
     #[get]
-    freq: float,
+    freq: f64,
     #[getset]
     intensity: EmitIntensity,
     #[getset]
@@ -30,7 +30,7 @@ impl Sine {
     ///
     /// * `freq` - Frequency of the sine wave \[Hz\]
     ///
-    pub const fn new(freq: float) -> Self {
+    pub const fn new(freq: f64) -> Self {
         Self {
             freq,
             intensity: EmitIntensity::MAX,
@@ -68,12 +68,12 @@ impl Modulation for Sine {
                 ((sf / freq).round() as usize, 1)
             }
         };
-        let intensity = self.intensity.value() as float;
+        let intensity = self.intensity.value() as f64;
         let phase = self.phase.radian();
-        let offset = self.offset.value() as float;
+        let offset = self.offset.value() as f64;
         Ok((0..n)
             .map(|i| {
-                (((intensity / 2. * (2.0 * PI * (rep * i) as float / n as float + phase).sin())
+                (((intensity / 2. * (2.0 * PI * (rep * i) as f64 / n as f64 + phase).sin())
                     + offset)
                     .round() as u8)
                     .into()

@@ -21,13 +21,13 @@ impl AUTD3 {
     /// Number of transducer in y-axis of AUTD3 device
     pub const NUM_TRANS_Y: usize = 14;
     /// Spacing between transducers in mm
-    pub const TRANS_SPACING_MM: float = 10.16;
+    pub const TRANS_SPACING_MM: f64 = 10.16;
     /// Spacing between transducers
-    pub const TRANS_SPACING: float = Self::TRANS_SPACING_MM * MILLIMETER;
+    pub const TRANS_SPACING: f64 = Self::TRANS_SPACING_MM * MILLIMETER;
     /// Device width including substrate
-    pub const DEVICE_WIDTH: float = 192.0 * MILLIMETER;
+    pub const DEVICE_WIDTH: f64 = 192.0 * MILLIMETER;
     /// Device height including substrate
-    pub const DEVICE_HEIGHT: float = 151.4 * MILLIMETER;
+    pub const DEVICE_HEIGHT: f64 = 151.4 * MILLIMETER;
 
     /// Constructor
     ///
@@ -103,8 +103,8 @@ impl IntoDevice for AUTD3 {
                 .filter(|&(x, y)| !Self::is_missing_transducer(x, y))
                 .map(|(x, y)| {
                     Vector4::new(
-                        x as float * Self::TRANS_SPACING,
-                        y as float * Self::TRANS_SPACING,
+                        x as f64 * Self::TRANS_SPACING,
+                        y as f64 * Self::TRANS_SPACING,
                         0.,
                         1.,
                     )

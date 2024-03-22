@@ -1,5 +1,3 @@
-use crate::defined::float;
-
 use super::{UnitQuaternion, Vector3};
 
 pub struct Deg;
@@ -7,12 +5,12 @@ pub struct Rad;
 
 #[derive(Clone, Copy)]
 pub enum Angle {
-    Deg(float),
-    Rad(float),
+    Deg(f64),
+    Rad(f64),
 }
 
 impl Angle {
-    fn to_radians(self) -> float {
+    fn to_radians(self) -> f64 {
         match self {
             Self::Deg(a) => a.to_radians(),
             Self::Rad(a) => a,
@@ -20,7 +18,7 @@ impl Angle {
     }
 }
 
-impl std::ops::Mul<Deg> for float {
+impl std::ops::Mul<Deg> for f64 {
     type Output = Angle;
 
     fn mul(self, _rhs: Deg) -> Self::Output {
@@ -28,7 +26,7 @@ impl std::ops::Mul<Deg> for float {
     }
 }
 
-impl std::ops::Mul<Rad> for float {
+impl std::ops::Mul<Rad> for f64 {
     type Output = Angle;
 
     fn mul(self, _rhs: Rad) -> Self::Output {
@@ -72,7 +70,7 @@ mod tests {
     #[case(PI / 2., 90. * Deg)]
     #[case(0., 0. * Rad)]
     #[case(PI / 2., PI / 2. * Rad)]
-    fn test_to_radians(#[case] expected: float, #[case] angle: Angle) {
+    fn test_to_radians(#[case] expected: f64, #[case] angle: Angle) {
         assert_approx_eq::assert_approx_eq!(expected, angle.to_radians());
     }
 

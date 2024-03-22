@@ -16,14 +16,13 @@ pub use controller::Controller;
 mod tests {
     use autd3_driver::{
         autd3_device::AUTD3,
-        defined::float,
         geometry::{Geometry, IntoDevice, Vector3},
     };
 
     pub fn random_vector3(
-        range_x: std::ops::Range<float>,
-        range_y: std::ops::Range<float>,
-        range_z: std::ops::Range<float>,
+        range_x: std::ops::Range<f64>,
+        range_y: std::ops::Range<f64>,
+        range_z: std::ops::Range<f64>,
     ) -> Vector3 {
         use rand::Rng;
         let mut rng = rand::thread_rng();

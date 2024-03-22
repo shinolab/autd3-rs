@@ -1,7 +1,7 @@
 pub mod directivity;
 
 use crate::{
-    defined::{float, Complex, PI, T4010A1_AMPLITUDE},
+    defined::{Complex, PI, T4010A1_AMPLITUDE},
     geometry::{Transducer, Vector3},
 };
 
@@ -18,8 +18,8 @@ use directivity::Directivity;
 ///
 pub fn propagate<D: Directivity>(
     tr: &Transducer,
-    attenuation: float,
-    sound_speed: float,
+    attenuation: f64,
+    sound_speed: f64,
     target_pos: &Vector3,
 ) -> Complex {
     let diff = target_pos - tr.position();
@@ -38,13 +38,13 @@ mod tests {
 
     use rand::Rng;
 
-    use crate::geometry::UnitQuaternion;
+    use crate::{defined::MILLIMETER, geometry::UnitQuaternion};
     use directivity::tests::TestDirectivity;
 
     macro_rules! assert_complex_approx_eq {
         ($a:expr, $b:expr) => {
-            assert_approx_eq::assert_approx_eq!($a.re, $b.re);
-            assert_approx_eq::assert_approx_eq!($a.im, $b.im);
+            assert_approx_eq::assert_approx_eq!($a.re, $b.re, 1e-6 / MILLIMETER);
+            assert_approx_eq::assert_approx_eq!($a.im, $b.im, 1e-6 / MILLIMETER);
         };
     }
 
@@ -60,13 +60,13 @@ mod tests {
             ),
             UnitQuaternion::from_axis_angle(
                 &Vector3::x_axis(),
-                rng.gen_range::<float, _>(-180.0..180.0).to_radians(),
+                rng.gen_range::<f64, _>(-180.0..180.0).to_radians(),
             ) * UnitQuaternion::from_axis_angle(
                 &Vector3::y_axis(),
-                rng.gen_range::<float, _>(-180.0..180.0).to_radians(),
+                rng.gen_range::<f64, _>(-180.0..180.0).to_radians(),
             ) * UnitQuaternion::from_axis_angle(
                 &Vector3::z_axis(),
-                rng.gen_range::<float, _>(-180.0..180.0).to_radians(),
+                rng.gen_range::<f64, _>(-180.0..180.0).to_radians(),
             ),
         )
     }
@@ -82,20 +82,20 @@ mod tests {
     }
 
     #[rstest::fixture]
-    fn attenuation() -> float {
+    fn attenuation() -> f64 {
         let mut rng = rand::thread_rng();
         rng.gen_range(0.0..1e-6)
     }
 
     #[rstest::fixture]
-    fn sound_speed() -> float {
+    fn sound_speed() -> f64 {
         let mut rng = rand::thread_rng();
         rng.gen_range(300e3..400e3)
     }
 
     #[rstest::rstest]
     #[test]
-    fn test_propagate(tr: Transducer, target: Vector3, attenuation: float, sound_speed: float) {
+    fn test_propagate(tr: Transducer, target: Vector3, attenuation: f64, sound_speed: f64) {
         assert_complex_approx_eq!(
             {
                 let diff = target - tr.position();

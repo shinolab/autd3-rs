@@ -2,7 +2,7 @@ use std::num::NonZeroU32;
 
 use autd3_driver::{
     common::LoopBehavior,
-    defined::{float, PI},
+    defined::PI,
     derive::{Drive, EmitIntensity, Phase, Segment},
 };
 
@@ -434,8 +434,8 @@ impl FPGAEmulator {
     }
 
     pub fn to_pulse_width(a: EmitIntensity, b: EmitIntensity) -> u16 {
-        let a = a.value() as float / 255.0;
-        let b = b.value() as float / 255.0;
+        let a = a.value() as f64 / 255.0;
+        let b = b.value() as f64 / 255.0;
         ((a * b).asin() / PI * 512.0).round() as u16
     }
 

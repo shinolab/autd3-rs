@@ -1,4 +1,4 @@
-use crate::defined::{float, PI};
+use crate::defined::PI;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
@@ -9,7 +9,7 @@ pub struct EmitIntensity {
 impl EmitIntensity {
     pub const MAX: EmitIntensity = EmitIntensity { value: 255 };
     pub const MIN: EmitIntensity = EmitIntensity { value: 0 };
-    pub const DEFAULT_CORRECTED_ALPHA: float = 0.803;
+    pub const DEFAULT_CORRECTED_ALPHA: f64 = 0.803;
 
     pub const fn new(value: u8) -> Self {
         Self { value }
@@ -19,9 +19,9 @@ impl EmitIntensity {
         Self::with_correction_alpha(value, Self::DEFAULT_CORRECTED_ALPHA)
     }
 
-    pub fn with_correction_alpha(value: u8, alpha: float) -> Self {
+    pub fn with_correction_alpha(value: u8, alpha: f64) -> Self {
         Self {
-            value: ((value as float / 255.).powf(1. / alpha).asin() / PI * 510.0).round() as u8,
+            value: ((value as f64 / 255.).powf(1. / alpha).asin() / PI * 510.0).round() as u8,
         }
     }
 
