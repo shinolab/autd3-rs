@@ -1,9 +1,5 @@
 use super::sampling_config::STMSamplingConfiguration;
-use crate::{
-    common::{LoopBehavior, SamplingConfiguration},
-    derive::*,
-    error::AUTDInternalError,
-};
+use crate::derive::*;
 
 #[doc(hidden)]
 #[derive(Clone, Copy, Builder)]
