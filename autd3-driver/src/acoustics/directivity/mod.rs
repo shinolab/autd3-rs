@@ -42,7 +42,8 @@ pub mod tests {
     #[test]
     #[case::dir_x(90., Vector3::x())]
     #[case::dir_y(90., Vector3::y())]
-    #[case::dir_z(0., Vector3::z())]
+    #[cfg_attr(not(feature = "left_handed"), case::dir_z(0., Vector3::z()))]
+    #[cfg_attr(feature = "left_handed", case::dir_z(0., -Vector3::z()))]
     fn test_directivity_from_tr(#[case] expected: f64, #[case] target: Vector3, tr: Transducer) {
         assert_approx_eq::assert_approx_eq!(
             expected,
