@@ -59,9 +59,18 @@ impl Transducer {
     pub fn y_direction(&self) -> Vector3 {
         Self::get_direction(Vector3::y(), self.rotation())
     }
-    /// Get the z-direction (axial direction) of the transducer
+    /// Get the z-direction of the transducer
     pub fn z_direction(&self) -> Vector3 {
         Self::get_direction(Vector3::z(), self.rotation())
+    }
+
+    /// Get the axial direction of the transducer
+    pub fn axial_direction(&self) -> Vector3 {
+        if cfg!(feature = "left_handed") {
+            -self.z_direction()
+        } else {
+            self.z_direction()
+        }
     }
 
     /// Get the local transducer index

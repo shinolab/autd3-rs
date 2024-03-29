@@ -1,3 +1,7 @@
+# 22.0.4
+
+- Add `left_handed` feature
+
 # 22.0.1
 
 - Add `with_loop_behavior` to `Static`
