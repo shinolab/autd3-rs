@@ -10,7 +10,7 @@ pub use t4010a1::T4010A1;
 pub trait Directivity: Send + Sync {
     fn directivity(theta_deg: f64) -> f64;
     fn directivity_from_tr(tr: &Transducer, target: &Vector3) -> f64 {
-        let dir = tr.z_direction();
+        let dir = tr.axial_direction();
         Self::directivity(
             (dir.cross(target).norm())
                 .atan2(dir.dot(target))

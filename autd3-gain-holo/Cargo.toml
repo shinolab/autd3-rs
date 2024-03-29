@@ -21,7 +21,6 @@ bitvec = { version = "1.0.1", optional = true }
 
 [features]
 default = []
-use_meter = ["autd3-driver/use_meter"]
 test-utilities = ["assert_approx_eq", "bitvec"]
 bench-utilities = ["criterion"]
 async-trait = ["autd3-driver/async-trait"]

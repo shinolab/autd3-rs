@@ -42,6 +42,7 @@ rstest = "0.18.2"
 default = ["derive", "rand"]
 async-trait = ["dep:async-trait"]
 use_meter = []
+left_handed = []
 serde = ["dep:serde"]
 derive = []
 rand = ["dep:rand"]
