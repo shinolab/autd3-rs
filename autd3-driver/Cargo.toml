@@ -1,6 +1,6 @@
 [package]
 name = "autd3-driver"
-version = "22.0.3"
+version = "22.0.4"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 license = "MIT"
@@ -16,7 +16,7 @@ thiserror = { workspace = true }
 nalgebra = { workspace = true, features = ["std"] }
 bitvec = { workspace = true }
 tokio = { workspace = true, features = ["time"] }
-autd3-derive = { path = "../autd3-derive", version = "22.0.3" }
+autd3-derive = { path = "../autd3-derive", version = "22.0.4" }
 async-trait = { workspace = true, optional = true }
 num-complex = { workspace = true, features = ["std"] }
 rand = { workspace = true, optional = true }
@@ -34,7 +34,7 @@ assert_approx_eq = { workspace = true }
 itertools = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
-autd3 = { path = "../autd3", version = "22.0.3" }
+autd3 = { path = "../autd3", version = "22.0.4" }
 anyhow = { workspace = true }
 rstest = { workspace = true }
 
