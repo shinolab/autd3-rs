@@ -13,8 +13,8 @@ keywords = ["autd"]
 [dependencies]
 autd3-protobuf = { path = "../autd3-protobuf", version = "22.0.3" }
 autd3-driver = { path = "../autd3-driver", version = "22.0.3" }
-thiserror = "1.0.30"
-tonic = "0.11.0"
+thiserror = { workspace = true }
+tonic = { workspace = true }
 
 [features]
 default = []

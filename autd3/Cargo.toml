@@ -13,22 +13,22 @@ keywords = ["autd"]
 [dependencies]
 autd3-driver = { path = "../autd3-driver", version = "22.0.3" }
 autd3-firmware-emulator = { path = "../autd3-firmware-emulator", version = "22.0.3", default-features = false }
-num = "0.4.0"
-thiserror = "1.0.31"
-bitvec = "1.0.1"
-tokio = { version = "1.34.0", features = ["rt-multi-thread"] }
+num = { workspace = true }
+thiserror = { workspace = true }
+bitvec = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread"] }
 
 [features]
 default = []
 async-trait = ["autd3-driver/async-trait"]
 
 [dev-dependencies]
-assert_approx_eq = "1.1.0"
-rand = "0.8.5"
-criterion = { version = "0.5.1", features = ["html_reports"] }
-itertools = "0.12.0"
-tokio = { version = "1.34.0", features = ["macros", "rt-multi-thread"] }
-anyhow = "1.0.79"
+assert_approx_eq = { workspace = true }
+rand = { workspace = true }
+criterion = { workspace = true, features = ["html_reports"] }
+itertools = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+anyhow = { workspace = true }
 
 [[bench]]
 name = "gain"

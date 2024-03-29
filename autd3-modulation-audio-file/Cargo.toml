@@ -11,15 +11,15 @@ readme = "README.md"
 keywords = ["autd"]
 
 [dependencies]
-hound = "3.5.0"
+hound = { workspace = true }
 autd3-driver = { path = "../autd3-driver", version = "22.0.3" }
-wav_io = "0.1.8"
-thiserror = "1.0.40"
+wav_io = { workspace = true }
+thiserror = { workspace = true }
 
 [features]
 default = []
 async-trait = ["autd3-driver/async-trait"]
 
 [dev-dependencies]
-anyhow = "1.0.79"
-tempfile = "3.9.0"
+anyhow = { workspace = true }
+tempfile = { workspace = true }

@@ -11,17 +11,17 @@ readme = "README.md"
 keywords = ["autd"]
 
 [dependencies]
-h2 = "0.4.0"
-prost = { version = "0.12.0" }
-tonic = { version = "0.11.0", default-features = false, features = ["prost", "codegen", "transport"] }
+h2 = { workspace = true }
+prost = { workspace = true }
+tonic = { workspace = true, features = ["prost", "codegen", "transport"] }
 autd3-driver = { path = "../autd3-driver", version = "22.0.3" }
 autd3 = { path = "../autd3", version = "22.0.3", optional = true }
 autd3-gain-holo = { path = "../autd3-gain-holo", version = "22.0.3", optional = true }
-thiserror = "1.0.40"
-tokio = { version = "1.35.1", features = ["sync"], optional = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["sync"], optional = true }
 
 [build-dependencies]
-tonic-build = { version = "0.11.0", optional = true }
+tonic-build = { workspace = true, optional = true }
 
 [features]
 default = []
@@ -30,5 +30,5 @@ lightweight = ["tokio", "autd3", "autd3-gain-holo", "autd3-driver/async-trait", 
 async-trait = ["autd3-driver/async-trait"]
 
 [dev-dependencies]
-assert_approx_eq = "1.1.0"
-rand = "0.8.5"
+assert_approx_eq = { workspace = true }
+rand = { workspace = true }
