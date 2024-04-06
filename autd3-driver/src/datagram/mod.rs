@@ -12,7 +12,9 @@ mod with_segment;
 mod with_timeout;
 
 pub use clear::Clear;
+#[allow(deprecated)]
 pub use debug::ConfigureDebugOutputIdx;
+pub use debug::ConfigureDebugSettings;
 pub use force_fan::ConfigureForceFan;
 pub use gain::{
     ChangeGainSegment, Gain, GainCache, GainFilter, GainTransform, Group, IntoGainCache,
