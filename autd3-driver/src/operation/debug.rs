@@ -7,17 +7,36 @@ use crate::{
 };
 
 #[repr(C, align(2))]
-struct DebugOutIdx {
+struct DebugSetting {
     tag: TypeTag,
-    idx: u8,
+    __pad: u8,
+    ty: [u8; 4],
+    value: [u16; 4],
 }
 
-pub struct DebugOutIdxOp<F: Fn(&Device) -> Option<&Transducer>> {
+#[non_exhaustive]
+pub enum DebugType<'a> {
+    None,
+    BaseSignal,
+    PwmOut(&'a Transducer),
+}
+
+impl From<&DebugType<'_>> for u8 {
+    fn from(ty: &DebugType) -> u8 {
+        match ty {
+            DebugType::None => 0,
+            DebugType::BaseSignal => 1,
+            DebugType::PwmOut(_) => 2,
+        }
+    }
+}
+
+pub struct DebugSettingOp<F: Fn(&Device) -> [DebugType; 4]> {
     remains: HashMap<usize, usize>,
     f: F,
 }
 
-impl<F: Fn(&Device) -> Option<&Transducer>> DebugOutIdxOp<F> {
+impl<F: Fn(&Device) -> [DebugType; 4]> DebugSettingOp<F> {
     pub fn new(f: F) -> Self {
         Self {
             remains: Default::default(),
@@ -26,19 +45,26 @@ impl<F: Fn(&Device) -> Option<&Transducer>> DebugOutIdxOp<F> {
     }
 }
 
-impl<F: Fn(&Device) -> Option<&Transducer>> Operation for DebugOutIdxOp<F> {
+impl<F: Fn(&Device) -> [DebugType; 4]> Operation for DebugSettingOp<F> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert_eq!(self.remains[&device.idx()], 1);
 
-        let d = cast::<DebugOutIdx>(tx);
+        let d = cast::<DebugSetting>(tx);
         d.tag = TypeTag::Debug;
-        d.idx = (self.f)(device).map(|tr| tr.idx() as u8).unwrap_or(0xFF);
+        let types = (self.f)(device);
+        for (i, ty) in types.iter().enumerate() {
+            d.ty[i] = ty.into();
+            d.value[i] = match ty {
+                DebugType::None | DebugType::BaseSignal => 0,
+                DebugType::PwmOut(tr) => tr.idx() as _,
+            }
+        }
 
-        Ok(std::mem::size_of::<DebugOutIdx>())
+        Ok(std::mem::size_of::<DebugSetting>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        std::mem::size_of::<DebugOutIdx>()
+        std::mem::size_of::<DebugSetting>()
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
@@ -55,44 +81,66 @@ impl<F: Fn(&Device) -> Option<&Transducer>> Operation for DebugOutIdxOp<F> {
     }
 }
 
-#[cfg(test)]
-mod tests {
+mod old {
+    #![allow(deprecated)]
     use super::*;
-    use crate::geometry::tests::create_geometry;
 
-    const NUM_TRANS_IN_UNIT: usize = 249;
-    const NUM_DEVICE: usize = 10;
+    #[deprecated(note = "Use DebugSettingOp instead", since = "22.1.0")]
+    pub struct DebugOutIdxOp<F: Fn(&Device) -> Option<&Transducer>> {
+        remains: HashMap<usize, usize>,
+        f: F,
+    }
 
-    #[test]
-    fn test() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
+    impl<F: Fn(&Device) -> Option<&Transducer>> DebugOutIdxOp<F> {
+        pub fn new(f: F) -> Self {
+            Self {
+                remains: Default::default(),
+                f,
+            }
+        }
+    }
 
-        let mut tx = [0x00u8; 2 * NUM_DEVICE];
+    impl<F: Fn(&Device) -> Option<&Transducer>> Operation for DebugOutIdxOp<F> {
+        fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+            assert_eq!(self.remains[&device.idx()], 1);
 
-        let mut op = DebugOutIdxOp::new(|dev| Some(&dev[10]));
+            let d = cast::<DebugSetting>(tx);
+            d.tag = TypeTag::Debug;
 
-        assert!(op.init(&geometry).is_ok());
+            d.ty[0] = (&DebugType::BaseSignal).into();
+            d.value[0] = 0;
+            d.ty[1] = if let Some(tr) = (self.f)(device) {
+                (&DebugType::PwmOut(tr)).into()
+            } else {
+                (&DebugType::None).into()
+            };
+            d.value[1] = (self.f)(device).map(|tr| tr.idx() as u16).unwrap_or(0);
+            d.ty[2] = (&DebugType::None).into();
+            d.value[2] = 0;
+            d.ty[3] = (&DebugType::None).into();
+            d.value[3] = 0;
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 2));
+            Ok(std::mem::size_of::<DebugSetting>())
+        }
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), 1));
+        fn required_size(&self, _: &Device) -> usize {
+            std::mem::size_of::<DebugSetting>()
+        }
 
-        geometry.devices().for_each(|dev| {
-            assert!(op.pack(dev, &mut tx[dev.idx() * 2..]).is_ok());
-            op.commit(dev);
-        });
+        fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
+            self.remains = geometry.devices().map(|device| (device.idx(), 1)).collect();
+            Ok(())
+        }
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), 0));
+        fn remains(&self, device: &Device) -> usize {
+            self.remains[&device.idx()]
+        }
 
-        geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * 2], TypeTag::Debug as u8);
-            assert_eq!(tx[dev.idx() * 2 + 1], 10);
-        });
+        fn commit(&mut self, device: &Device) {
+            self.remains.insert(device.idx(), 0);
+        }
     }
 }
+
+#[allow(deprecated)]
+pub use old::DebugOutIdxOp;

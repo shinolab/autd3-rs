@@ -12,7 +12,7 @@ pub use autd3_driver::{
     common::{Drive, EmitIntensity, LoopBehavior, Phase, SamplingConfiguration, Segment},
     datagram::{
         ChangeFocusSTMSegment, ChangeGainSTMSegment, ChangeGainSegment, ChangeModulationSegment,
-        Clear, ConfigureDebugOutputIdx, ConfigureForceFan, ConfigurePhaseFilter,
+        Clear, ConfigureDebugSettings, ConfigureForceFan, ConfigurePhaseFilter,
         ConfigureReadsFPGAState, ConfigureSilencer, FocusSTM, GainCache, GainFilter, GainSTM,
         GainTransform, Group, IntoDatagramWithSegment, IntoDatagramWithTimeout, IntoGainCache,
         IntoGainTransform, IntoModulationCache, IntoModulationTransform, IntoRadiationPressure,
@@ -24,6 +24,9 @@ pub use autd3_driver::{
     fpga::FPGA_CLK_FREQ,
     geometry::*,
     link::{Link, LinkBuilder},
-    operation::{ControlPoint, GainSTMMode},
+    operation::{ControlPoint, DebugType, GainSTMMode},
     timer_strategy::TimerStrategy,
 };
+
+#[allow(deprecated)]
+pub use autd3_driver::datagram::ConfigureDebugOutputIdx;
