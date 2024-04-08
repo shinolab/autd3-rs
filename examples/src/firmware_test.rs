@@ -12,7 +12,7 @@ fn print_msg_and_wait_for_key(msg: &str) {
 #[tokio::main]
 async fn main() -> Result<()> {
     print_msg_and_wait_for_key(
-        "Make sure you have two devices connected that have the latest firmware.\nAlso check that an oscilloscope is connected to GPIO[0] and GPIO[1] of each device.\nAnd check if outputs of GPIO[0] pins are NOT synchronized each other.",
+        "Make sure you have two devices connected that have the latest firmware.\nAlso check that an oscilloscope is connected to GPIO pins of each device.\nAnd check if outputs of GPIO pins are low.",
     );
 
     let mut autd = Controller::builder()
@@ -30,7 +30,16 @@ async fn main() -> Result<()> {
         )
         .await?;
 
-    print_msg_and_wait_for_key("Check if outputs of GPIO[0] pins are now synchronized.");
+    autd.send(ConfigureDebugSettings::new(|_dev| {
+        [
+            DebugType::BaseSignal,
+            DebugType::BaseSignal,
+            DebugType::BaseSignal,
+            DebugType::BaseSignal,
+        ]
+    }))
+    .await?;
+    print_msg_and_wait_for_key("Check if outputs of GPIO pins are synchronized.");
 
     let firmware_infos = autd.firmware_infos().await?;
     assert_eq!(2, firmware_infos.len());
