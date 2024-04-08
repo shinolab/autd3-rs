@@ -15,6 +15,7 @@ struct DebugSetting {
 }
 
 #[non_exhaustive]
+#[derive(Clone)]
 pub enum DebugType<'a> {
     None,
     BaseSignal,

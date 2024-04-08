@@ -351,13 +351,22 @@ impl FPGAEmulator {
             .collect()
     }
 
-    pub fn debug_output_idx(&self) -> Option<u8> {
-        let idx = self.controller_bram[ADDR_DEBUG_OUT_IDX];
-        if idx == 0xFF {
-            None
-        } else {
-            Some(idx as u8)
-        }
+    pub fn debug_types(&self) -> [u8; 4] {
+        [
+            self.controller_bram[BRAM_ADDR_DEBUG_TYPE_0] as _,
+            self.controller_bram[BRAM_ADDR_DEBUG_TYPE_1] as _,
+            self.controller_bram[BRAM_ADDR_DEBUG_TYPE_2] as _,
+            self.controller_bram[BRAM_ADDR_DEBUG_TYPE_3] as _,
+        ]
+    }
+
+    pub fn debug_values(&self) -> [u16; 4] {
+        [
+            self.controller_bram[BRAM_ADDR_DEBUG_VALUE_0],
+            self.controller_bram[BRAM_ADDR_DEBUG_VALUE_1],
+            self.controller_bram[BRAM_ADDR_DEBUG_VALUE_2],
+            self.controller_bram[BRAM_ADDR_DEBUG_VALUE_3],
+        ]
     }
 
     pub fn drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {

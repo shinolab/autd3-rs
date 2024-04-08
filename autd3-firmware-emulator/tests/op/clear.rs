@@ -130,7 +130,8 @@ fn send_clear() -> anyhow::Result<()> {
         cpu.fpga().stm_loop_behavior(Segment::S1)
     );
 
-    assert!(cpu.fpga().debug_output_idx().is_none());
+    assert_eq!([0, 0, 0, 0], cpu.fpga().debug_types());
+    assert_eq!([0, 0, 0, 0], cpu.fpga().debug_values());
 
     Ok(())
 }

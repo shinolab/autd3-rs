@@ -1,4 +1,4 @@
-pub const VERSION_NUM: u8 = 0x8F;
+pub const VERSION_NUM: u8 = 0x90;
 pub const VERSION_NUM_MINOR: u8 = 0x00;
 
 pub const BRAM_SELECT_CONTROLLER: u8 = 0x0;
@@ -61,7 +61,14 @@ pub const ADDR_STM_SOUND_SPEED_1_0: usize = 0x62;
 pub const ADDR_STM_SOUND_SPEED_1_1: usize = 0x63;
 pub const ADDR_PULSE_WIDTH_ENCODER_TABLE_WR_PAGE: usize = 0xE0;
 pub const ADDR_PULSE_WIDTH_ENCODER_FULL_WIDTH_START: usize = 0xE1;
-pub const ADDR_DEBUG_OUT_IDX: usize = 0xF0;
+pub const BRAM_ADDR_DEBUG_TYPE_0: usize = 0xF0;
+pub const BRAM_ADDR_DEBUG_VALUE_0: usize = 0xF1;
+pub const BRAM_ADDR_DEBUG_TYPE_1: usize = 0xF2;
+pub const BRAM_ADDR_DEBUG_VALUE_1: usize = 0xF3;
+pub const BRAM_ADDR_DEBUG_TYPE_2: usize = 0xF4;
+pub const BRAM_ADDR_DEBUG_VALUE_2: usize = 0xF5;
+pub const BRAM_ADDR_DEBUG_TYPE_3: usize = 0xF6;
+pub const BRAM_ADDR_DEBUG_VALUE_3: usize = 0xF7;
 
 // pub const CTL_FLAG_MOD_SET_BIT: u8 = 0;
 // pub const CTL_FLAG_STM_SET_BIT: u8 = 1;

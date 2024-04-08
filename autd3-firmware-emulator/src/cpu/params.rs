@@ -1,4 +1,4 @@
-pub const CPU_VERSION_MAJOR: u16 = 0x8F;
+pub const CPU_VERSION_MAJOR: u16 = 0x90;
 pub const CPU_VERSION_MINOR: u16 = 0x00;
 
 pub const TRANS_NUM: usize = 249;
@@ -57,7 +57,14 @@ pub const BRAM_ADDR_STM_SOUND_SPEED_1_0: u16 = 0x62;
 pub const BRAM_ADDR_STM_SOUND_SPEED_1_1: u16 = 0x63;
 pub const BRAM_ADDR_PULSE_WIDTH_ENCODER_TABLE_WR_PAGE: u16 = 0xE0;
 pub const BRAM_ADDR_PULSE_WIDTH_ENCODER_FULL_WIDTH_START: u16 = 0xE1;
-pub const BRAM_ADDR_DEBUG_OUT_IDX: u16 = 0xF0;
+pub const BRAM_ADDR_DEBUG_TYPE_0: u16 = 0xF0;
+pub const BRAM_ADDR_DEBUG_VALUE_0: u16 = 0xF1;
+pub const BRAM_ADDR_DEBUG_TYPE_1: u16 = 0xF2;
+pub const BRAM_ADDR_DEBUG_VALUE_1: u16 = 0xF3;
+pub const BRAM_ADDR_DEBUG_TYPE_2: u16 = 0xF4;
+pub const BRAM_ADDR_DEBUG_VALUE_2: u16 = 0xF5;
+pub const BRAM_ADDR_DEBUG_TYPE_3: u16 = 0xF6;
+pub const BRAM_ADDR_DEBUG_VALUE_3: u16 = 0xF7;
 
 pub const CTL_FLAG_MOD_SET_BIT: u16 = 0;
 pub const CTL_FLAG_STM_SET_BIT: u16 = 1;

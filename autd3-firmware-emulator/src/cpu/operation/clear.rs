@@ -99,7 +99,14 @@ impl CPUEmulator {
         self.change_stm_wr_page(0);
         self.bram_set(BRAM_SELECT_STM, 0, 0x0000, TRANS_NUM << 1);
 
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_OUT_IDX, 0xFF);
+        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_TYPE_0, 0x00);
+        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_TYPE_1, 0x00);
+        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_TYPE_2, 0x00);
+        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_TYPE_3, 0x00);
+        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_VALUE_0, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_VALUE_1, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_VALUE_2, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_VALUE_3, 0x0000);
 
         NO_ERR
     }
