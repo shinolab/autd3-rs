@@ -65,6 +65,8 @@ pub const BRAM_ADDR_DEBUG_TYPE_2: u16 = 0xF4;
 pub const BRAM_ADDR_DEBUG_VALUE_2: u16 = 0xF5;
 pub const BRAM_ADDR_DEBUG_TYPE_3: u16 = 0xF6;
 pub const BRAM_ADDR_DEBUG_VALUE_3: u16 = 0xF7;
+#[deprecated(note = "DO NOT USE", since = "22.1.0")]
+pub const BRAM_ADDR_DEBUG_OUT_IDX: u16 = 0xF0;
 
 pub const CTL_FLAG_MOD_SET_BIT: u16 = 0;
 pub const CTL_FLAG_STM_SET_BIT: u16 = 1;
