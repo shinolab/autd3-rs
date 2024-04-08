@@ -12,7 +12,7 @@ pub struct FirmwareInfo {
 }
 
 impl FirmwareInfo {
-    pub const LATEST_VERSION_NUM_MAJOR: u8 = 0x8F;
+    pub const LATEST_VERSION_NUM_MAJOR: u8 = 0x90;
     pub const LATEST_VERSION_NUM_MINOR: u8 = 0x00;
 
     const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
@@ -76,7 +76,7 @@ impl FirmwareInfo {
                 version_number_major - 0x8D,
                 version_number_minor
             ),
-            0x8F..=0x8F => format!(
+            0x8F..=0x90 => format!(
                 "v6.{}.{}",
                 version_number_major - 0x8F,
                 version_number_minor
@@ -293,13 +293,17 @@ mod tests {
         assert_eq!("v6.0.0", info.fpga_version());
 
         let info = FirmwareInfo::new(0, 144, 0, 144, 0, 0);
-        assert_eq!("unknown (144)", info.cpu_version());
-        assert_eq!("unknown (144)", info.fpga_version());
+        assert_eq!("v6.1.0", info.cpu_version());
+        assert_eq!("v6.1.0", info.fpga_version());
+
+        let info = FirmwareInfo::new(0, 145, 0, 145, 0, 0);
+        assert_eq!("unknown (145)", info.cpu_version());
+        assert_eq!("unknown (145)", info.fpga_version());
     }
 
     #[test]
     fn latest_firmware_version() {
-        assert_eq!("v6.0.0", FirmwareInfo::latest_version());
+        assert_eq!("v6.1.0", FirmwareInfo::latest_version());
     }
 
     #[test]
