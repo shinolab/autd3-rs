@@ -134,171 +134,52 @@ impl fmt::Display for FirmwareInfo {
 mod tests {
     use super::*;
 
+    #[rstest::rstest]
     #[test]
-    fn firmware_version() {
-        let info = FirmwareInfo::new(0, 0, 0, 0, 0, 0);
-        assert_eq!("older than v0.4", info.cpu_version());
-        assert_eq!("older than v0.4", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 1, 0, 1, 0, 0);
-        assert_eq!("v0.4", info.cpu_version());
-        assert_eq!("v0.4", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 2, 0, 2, 0, 0);
-        assert_eq!("v0.5", info.cpu_version());
-        assert_eq!("v0.5", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 3, 0, 3, 0, 0);
-        assert_eq!("v0.6", info.cpu_version());
-        assert_eq!("v0.6", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 4, 0, 4, 0, 0);
-        assert_eq!("v0.7", info.cpu_version());
-        assert_eq!("v0.7", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 5, 0, 5, 0, 0);
-        assert_eq!("v0.8", info.cpu_version());
-        assert_eq!("v0.8", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 6, 0, 6, 0, 0);
-        assert_eq!("v0.9", info.cpu_version());
-        assert_eq!("v0.9", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 7, 0, 7, 0, 0);
-        assert_eq!("unknown (7)", info.cpu_version());
-        assert_eq!("unknown (7)", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 8, 0, 8, 0, 0);
-        assert_eq!("unknown (8)", info.cpu_version());
-        assert_eq!("unknown (8)", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 9, 0, 9, 0, 0);
-        assert_eq!("unknown (9)", info.cpu_version());
-        assert_eq!("unknown (9)", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 10, 0, 10, 0, 0);
-        assert_eq!("v1.0", info.cpu_version());
-        assert_eq!("v1.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 11, 0, 11, 0, 0);
-        assert_eq!("v1.1", info.cpu_version());
-        assert_eq!("v1.1", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 12, 0, 12, 0, 0);
-        assert_eq!("v1.2", info.cpu_version());
-        assert_eq!("v1.2", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 13, 0, 13, 0, 0);
-        assert_eq!("v1.3", info.cpu_version());
-        assert_eq!("v1.3", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 14, 0, 14, 0, 0);
-        assert_eq!("v1.4", info.cpu_version());
-        assert_eq!("v1.4", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 15, 0, 15, 0, 0);
-        assert_eq!("v1.5", info.cpu_version());
-        assert_eq!("v1.5", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 16, 0, 16, 0, 0);
-        assert_eq!("v1.6", info.cpu_version());
-        assert_eq!("v1.6", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 17, 0, 17, 0, 0);
-        assert_eq!("v1.7", info.cpu_version());
-        assert_eq!("v1.7", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 18, 0, 18, 0, 0);
-        assert_eq!("v1.8", info.cpu_version());
-        assert_eq!("v1.8", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 19, 0, 19, 0, 0);
-        assert_eq!("v1.9", info.cpu_version());
-        assert_eq!("v1.9", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 20, 0, 20, 0, 0);
-        assert_eq!("v1.10", info.cpu_version());
-        assert_eq!("v1.10", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 21, 0, 21, 0, 0);
-        assert_eq!("v1.11", info.cpu_version());
-        assert_eq!("v1.11", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 128, 0, 128, 0, 0);
-        assert_eq!("v2.0.0", info.cpu_version());
-        assert_eq!("v2.0.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 129, 0, 129, 0, 0);
-        assert_eq!("v2.1.0", info.cpu_version());
-        assert_eq!("v2.1.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 130, 0, 130, 0, 0);
-        assert_eq!("v2.2.0", info.cpu_version());
-        assert_eq!("v2.2.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 131, 0, 131, 0, 0);
-        assert_eq!("v2.3.0", info.cpu_version());
-        assert_eq!("v2.3.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 132, 0, 132, 0, 0);
-        assert_eq!("v2.4.0", info.cpu_version());
-        assert_eq!("v2.4.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 133, 0, 133, 0, 0);
-        assert_eq!("v2.5.0", info.cpu_version());
-        assert_eq!("v2.5.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 134, 0, 134, 0, 0);
-        assert_eq!("v2.6.0", info.cpu_version());
-        assert_eq!("v2.6.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 135, 0, 135, 0, 0);
-        assert_eq!("v2.7.0", info.cpu_version());
-        assert_eq!("v2.7.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 136, 0, 136, 0, 0);
-        assert_eq!("v2.8.0", info.cpu_version());
-        assert_eq!("v2.8.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 136, 1, 136, 1, 0);
-        assert_eq!("v2.8.1", info.cpu_version());
-        assert_eq!("v2.8.1", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 137, 0, 137, 0, 0);
-        assert_eq!("v2.9.0", info.cpu_version());
-        assert_eq!("v2.9.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 138, 0, 138, 0, 0);
-        assert_eq!("v3.0.0", info.cpu_version());
-        assert_eq!("v3.0.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 139, 0, 139, 0, 0);
-        assert_eq!("v4.0.0", info.cpu_version());
-        assert_eq!("v4.0.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 140, 0, 140, 0, 0);
-        assert_eq!("v4.1.0", info.cpu_version());
-        assert_eq!("v4.1.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 141, 0, 141, 0, 0);
-        assert_eq!("v5.0.0", info.cpu_version());
-        assert_eq!("v5.0.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 142, 0, 142, 0, 0);
-        assert_eq!("v5.1.0", info.cpu_version());
-        assert_eq!("v5.1.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 143, 0, 143, 0, 0);
-        assert_eq!("v6.0.0", info.cpu_version());
-        assert_eq!("v6.0.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 144, 0, 144, 0, 0);
-        assert_eq!("v6.1.0", info.cpu_version());
-        assert_eq!("v6.1.0", info.fpga_version());
-
-        let info = FirmwareInfo::new(0, 145, 0, 145, 0, 0);
-        assert_eq!("unknown (145)", info.cpu_version());
-        assert_eq!("unknown (145)", info.fpga_version());
+    #[case("older than v0.4", 0)]
+    #[case("v0.4", 1)]
+    #[case("v0.5", 2)]
+    #[case("v0.6", 3)]
+    #[case("v0.7", 4)]
+    #[case("v0.8", 5)]
+    #[case("v0.9", 6)]
+    #[case("unknown (7)", 7)]
+    #[case("unknown (8)", 8)]
+    #[case("unknown (9)", 9)]
+    #[case("v1.0", 10)]
+    #[case("v1.1", 11)]
+    #[case("v1.2", 12)]
+    #[case("v1.3", 13)]
+    #[case("v1.4", 14)]
+    #[case("v1.5", 15)]
+    #[case("v1.6", 16)]
+    #[case("v1.7", 17)]
+    #[case("v1.8", 18)]
+    #[case("v1.9", 19)]
+    #[case("v1.10", 20)]
+    #[case("v1.11", 21)]
+    #[case("v2.0.0", 128)]
+    #[case("v2.1.0", 129)]
+    #[case("v2.2.0", 130)]
+    #[case("v2.3.0", 131)]
+    #[case("v2.4.0", 132)]
+    #[case("v2.5.0", 133)]
+    #[case("v2.6.0", 134)]
+    #[case("v2.7.0", 135)]
+    #[case("v2.8.0", 136)]
+    #[case("v2.9.0", 137)]
+    #[case("v3.0.0", 138)]
+    #[case("v4.0.0", 139)]
+    #[case("v4.1.0", 140)]
+    #[case("v5.0.0", 141)]
+    #[case("v5.1.0", 142)]
+    #[case("v6.0.0", 143)]
+    #[case("v6.1.0", 144)]
+    #[case("unknown (145)", 145)]
+    fn firmware_version(#[case] expected: &str, #[case] version: u8) {
+        let info = FirmwareInfo::new(0, version, 0, version, 0, 0);
+        assert_eq!(expected, info.cpu_version());
+        assert_eq!(expected, info.fpga_version());
     }
 
     #[test]
