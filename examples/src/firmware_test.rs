@@ -33,13 +33,13 @@ async fn main() -> Result<()> {
     autd.send(ConfigureDebugSettings::new(|_dev| {
         [
             DebugType::BaseSignal,
-            DebugType::BaseSignal,
-            DebugType::BaseSignal,
-            DebugType::BaseSignal,
+            DebugType::None,
+            DebugType::None,
+            DebugType::None,
         ]
     }))
     .await?;
-    print_msg_and_wait_for_key("Check if outputs of GPIO pins are synchronized.");
+    print_msg_and_wait_for_key("Check if outputs of GPIO[0] are synchronized.");
 
     let firmware_infos = autd.firmware_infos().await?;
     assert_eq!(2, firmware_infos.len());
@@ -548,39 +548,99 @@ async fn main() -> Result<()> {
             _ => None,
         }))
         .await?;
-        print_msg_and_wait_for_key("Check that there are no outputs of GPIO[2] pins.");
+        print_msg_and_wait_for_key("Check that there are no outputs of GPIO[1] pins.");
 
-        autd.send(ConfigureDebugOutputIdx::new(|dev| match dev.idx() {
-            0 => Some(&dev[0]),
-            1 => Some(&dev[0]),
-            _ => None,
+        autd.send(ConfigureDebugSettings::new(|dev| match dev.idx() {
+            0 => [
+                DebugType::BaseSignal,
+                DebugType::PwmOut(&dev[0]),
+                DebugType::None,
+                DebugType::None,
+            ],
+            1 => [
+                DebugType::BaseSignal,
+                DebugType::PwmOut(&dev[0]),
+                DebugType::None,
+                DebugType::None,
+            ],
+            _ => [
+                DebugType::None,
+                DebugType::None,
+                DebugType::None,
+                DebugType::None,
+            ],
         }))
         .await?;
-        print_msg_and_wait_for_key("Check that a 40kHz square wave with a duty ratio of 50% are output to the GPIO[2] pins and that the phase is shifted by half a cycle.");
+        print_msg_and_wait_for_key("Check that a 40kHz square wave with a duty ratio of 50% are output to the GPIO[1] pins and that the phase is shifted by half a cycle.");
 
-        autd.send(ConfigureDebugOutputIdx::new(|dev| match dev.idx() {
-            0 => Some(&dev[248]),
-            1 => Some(&dev[248]),
-            _ => None,
+        autd.send(ConfigureDebugSettings::new(|dev| match dev.idx() {
+            0 => [
+                DebugType::BaseSignal,
+                DebugType::PwmOut(&dev[248]),
+                DebugType::None,
+                DebugType::None,
+            ],
+            1 => [
+                DebugType::BaseSignal,
+                DebugType::PwmOut(&dev[248]),
+                DebugType::None,
+                DebugType::None,
+            ],
+            _ => [
+                DebugType::None,
+                DebugType::None,
+                DebugType::None,
+                DebugType::None,
+            ],
         }))
         .await?;
-        print_msg_and_wait_for_key("Check that a 40kHz square wave with a duty ratio of about 17% are output to the GPIO[2] pins and that the phase is shifted by half a cycle.");
+        print_msg_and_wait_for_key("Check that a 40kHz square wave with a duty ratio of about 17% are output to the GPIO[1] pins and that the phase is shifted by half a cycle.");
 
-        autd.send(ConfigureDebugOutputIdx::new(|dev| match dev.idx() {
-            0 => Some(&dev[0]),
-            1 => Some(&dev[248]),
-            _ => None,
+        autd.send(ConfigureDebugSettings::new(|dev| match dev.idx() {
+            0 => [
+                DebugType::BaseSignal,
+                DebugType::PwmOut(&dev[0]),
+                DebugType::None,
+                DebugType::None,
+            ],
+            1 => [
+                DebugType::BaseSignal,
+                DebugType::PwmOut(&dev[248]),
+                DebugType::None,
+                DebugType::None,
+            ],
+            _ => [
+                DebugType::None,
+                DebugType::None,
+                DebugType::None,
+                DebugType::None,
+            ],
         }))
         .await?;
-        print_msg_and_wait_for_key("Check that a 40 kHz square wave are output on the GPIO[2] pins and that their phase are aligned.");
+        print_msg_and_wait_for_key("Check that a 40 kHz square wave are output on the GPIO[1] pins and that their phase are aligned.");
 
-        autd.send(ConfigureDebugOutputIdx::new(|dev| match dev.idx() {
-            0 => Some(&dev[1]),
-            1 => Some(&dev[2]),
-            _ => None,
+        autd.send(ConfigureDebugSettings::new(|dev| match dev.idx() {
+            0 => [
+                DebugType::BaseSignal,
+                DebugType::PwmOut(&dev[1]),
+                DebugType::None,
+                DebugType::None,
+            ],
+            1 => [
+                DebugType::BaseSignal,
+                DebugType::PwmOut(&dev[2]),
+                DebugType::None,
+                DebugType::None,
+            ],
+            _ => [
+                DebugType::None,
+                DebugType::None,
+                DebugType::None,
+                DebugType::None,
+            ],
         }))
         .await?;
-        print_msg_and_wait_for_key("Check that there are no outputs of GPIO[2] pins.");
+        print_msg_and_wait_for_key("Check that there are no outputs of GPIO[1] pins.");
     }
 
     autd.close().await?;
