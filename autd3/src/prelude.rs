@@ -27,6 +27,3 @@ pub use autd3_driver::{
     operation::{ControlPoint, DebugType, GainSTMMode},
     timer_strategy::TimerStrategy,
 };
-
-#[allow(deprecated)]
-pub use autd3_driver::datagram::ConfigureDebugOutputIdx;

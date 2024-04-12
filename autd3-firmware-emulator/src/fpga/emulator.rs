@@ -369,15 +369,6 @@ impl FPGAEmulator {
         ]
     }
 
-    #[deprecated(note = "Use `debug_types and debug_values` instead", since = "22.1.0")]
-    pub fn debug_output_idx(&self) -> Option<u8> {
-        if self.debug_types()[1] == 0xE0 {
-            Some(self.debug_values()[1] as u8)
-        } else {
-            None
-        }
-    }
-
     pub fn drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {
         if self.is_stm_gain_mode(segment) {
             self.gain_stm_drives(segment, idx)

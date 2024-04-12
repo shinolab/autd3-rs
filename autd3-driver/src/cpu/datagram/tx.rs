@@ -63,26 +63,6 @@ impl TxDatagram {
             std::slice::from_raw_parts(&self.data[i] as *const _ as *const u8, EC_OUTPUT_FRAME_SIZE)
         }
     }
-
-    #[deprecated(note = "use indexer and accsess header directly", since = "22.0.2")]
-    pub fn headers(&self) -> impl Iterator<Item = &Header> {
-        (0..self.num_devices).map(|i| &self[i].header)
-    }
-
-    #[deprecated(note = "use indexer and accsess header directly", since = "22.0.2")]
-    pub fn header_mut(&mut self, i: usize) -> &mut Header {
-        &mut self[i].header
-    }
-
-    #[deprecated(note = "use indexer and accsess payload directly", since = "22.0.2")]
-    pub fn payload_mut(&mut self, i: usize) -> &mut [u8] {
-        &mut self.data[i].payload
-    }
-
-    #[deprecated(note = "use indexer and accsess payload directly", since = "22.0.2")]
-    pub fn payloads(&self) -> impl Iterator<Item = &[u8]> {
-        (0..self.num_devices).map(|i| &self[i].payload[..])
-    }
 }
 
 impl std::ops::Deref for TxDatagram {

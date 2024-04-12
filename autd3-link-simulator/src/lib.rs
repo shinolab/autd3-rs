@@ -57,26 +57,6 @@ impl LinkBuilder for SimulatorBuilder {
     }
 }
 
-impl SimulatorBuilder {
-    /// Set server IP address
-    #[deprecated(note = "Please use `with_server_ip` instead")]
-    pub fn with_server_ipv4(self, ipv4: Ipv4Addr) -> Self {
-        Self {
-            server_ip: IpAddr::V4(ipv4),
-            ..self
-        }
-    }
-
-    /// Set server IP address
-    #[deprecated(note = "Please use `with_server_ip` instead")]
-    pub fn with_server_ipv6(self, ipv6: Ipv6Addr) -> Self {
-        Self {
-            server_ip: IpAddr::V6(ipv6),
-            ..self
-        }
-    }
-}
-
 impl Simulator {
     pub const fn builder(port: u16) -> SimulatorBuilder {
         SimulatorBuilder {
