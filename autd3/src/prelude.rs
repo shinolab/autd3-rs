@@ -8,8 +8,6 @@ pub use crate::{
 
 pub use autd3_driver::{
     autd3_device::AUTD3,
-    common::Rad as PhaseRad,
-    common::{Drive, EmitIntensity, LoopBehavior, Phase, SamplingConfiguration, Segment},
     datagram::{
         ChangeFocusSTMSegment, ChangeGainSTMSegment, ChangeGainSegment, ChangeModulationSegment,
         Clear, ConfigureDebugSettings, ConfigureForceFan, ConfigurePhaseFilter,
@@ -21,9 +19,11 @@ pub use autd3_driver::{
     },
     defined::{METER, MILLIMETER, PI},
     error::AUTDInternalError,
-    fpga::FPGA_CLK_FREQ,
+    fpga::Rad as PhaseRad,
+    fpga::{DebugType, TransitionMode, FPGA_CLK_FREQ},
+    fpga::{Drive, EmitIntensity, LoopBehavior, Phase, SamplingConfiguration, Segment},
     geometry::*,
     link::{Link, LinkBuilder},
-    operation::{ControlPoint, DebugType, GainSTMMode},
+    operation::{ControlPoint, GainSTMMode},
     timer_strategy::TimerStrategy,
 };
