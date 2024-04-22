@@ -70,16 +70,20 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let type_params = generics.type_params();
     let where_clause = to_gain_where(where_clause);
-    let gen = quote! {
+    let datagram = quote! {
         impl <#(#linetimes,)* #(#type_params,)*> DatagramS for #name #ty_generics #where_clause
         {
             type O1 = GainOp<Self>;
             type O2 = NullOp;
 
-            fn operation_with_segment(self, segment: Segment, update_segment: bool) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+            fn operation_with_segment(self, segment: Segment, _transition_mode: TransitionMode, update_segment: bool) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
                 Ok((Self::O1::new(segment, update_segment, self), Self::O2::default()))
             }
         }
+    };
+
+    let gen = quote! {
+        #datagram
 
         #cache
 
