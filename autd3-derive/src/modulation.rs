@@ -86,15 +86,22 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
             type O1 = ModulationOp;
             type O2 = NullOp;
 
-            fn operation_with_segment(self, segment: Segment, update_segment: bool) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+            fn operation_with_segment(self, segment: Segment, transition_mode: TransitionMode, update_segment: bool) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
                 let freq_div = self.config.frequency_division();
-                Ok((Self::O1::new(self.calc()?, freq_div, self.loop_behavior, segment, update_segment), Self::O2::default()))
+                Ok((Self::O1::new(self.calc()?, freq_div, self.loop_behavior, segment, transition_mode, update_segment), Self::O2::default()))
             }
 
             fn timeout(&self) -> Option<std::time::Duration> {
                 Some(std::time::Duration::from_millis(200))
             }
         }
+    };
+
+    let linetimes = generics.lifetimes();
+    let type_params = generics.type_params();
+    let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let datagram_t = quote! {
+        impl <#(#linetimes,)* #(#type_params,)* > DatagramT for #name #ty_generics #where_clause {}
     };
 
     let linetimes = generics.lifetimes();
@@ -159,6 +166,8 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
         #freq_config
 
         #datagram
+
+        #datagram_t
 
         #transform
 
