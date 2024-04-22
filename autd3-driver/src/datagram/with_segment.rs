@@ -1,14 +1,16 @@
 use std::time::Duration;
 
 use super::Datagram;
-use crate::common::Segment;
 use crate::error::AUTDInternalError;
+use crate::fpga::Segment;
+use crate::fpga::TransitionMode;
 use crate::operation::Operation;
 
 /// Datagram with target segment
 pub struct DatagramWithSegment<D: DatagramS> {
     datagram: D,
     segment: Segment,
+    transition_mode: TransitionMode,
     update_segment: bool,
 }
 
@@ -19,6 +21,19 @@ impl<D: DatagramS> DatagramWithSegment<D> {
 
     pub const fn update_segment(&self) -> bool {
         self.update_segment
+    }
+}
+
+impl<D: DatagramS + DatagramT> DatagramWithSegment<D> {
+    pub const fn transition_mode(&self) -> TransitionMode {
+        self.transition_mode
+    }
+
+    pub fn with_transition_mode(self, transition_mode: TransitionMode) -> Self {
+        Self {
+            transition_mode,
+            ..self
+        }
     }
 }
 
@@ -35,8 +50,11 @@ impl<D: DatagramS> Datagram for DatagramWithSegment<D> {
     type O2 = D::O2;
 
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        self.datagram
-            .operation_with_segment(self.segment, self.update_segment)
+        self.datagram.operation_with_segment(
+            self.segment,
+            self.transition_mode,
+            self.update_segment,
+        )
     }
 
     fn timeout(&self) -> Option<Duration> {
@@ -51,6 +69,7 @@ pub trait DatagramS {
     fn operation_with_segment(
         self,
         segment: Segment,
+        transition_mode: TransitionMode,
         update_segment: bool,
     ) -> Result<(Self::O1, Self::O2), AUTDInternalError>;
 
@@ -59,12 +78,19 @@ pub trait DatagramS {
     }
 }
 
+pub trait DatagramT {}
+
 impl<D: DatagramS> Datagram for D {
     type O1 = D::O1;
     type O2 = D::O2;
 
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        <Self as DatagramS>::operation_with_segment(self, Segment::S0, true)
+        <Self as DatagramS>::operation_with_segment(
+            self,
+            Segment::S0,
+            TransitionMode::SyncIdx,
+            true,
+        )
     }
 
     fn timeout(&self) -> Option<Duration> {
@@ -82,6 +108,7 @@ impl<D: DatagramS> IntoDatagramWithSegment<D> for D {
         DatagramWithSegment {
             datagram: self,
             segment,
+            transition_mode: TransitionMode::SyncIdx,
             update_segment,
         }
     }
@@ -92,6 +119,7 @@ impl<D: DatagramS + Clone> Clone for DatagramWithSegment<D> {
         Self {
             datagram: self.datagram.clone(),
             segment: self.segment,
+            transition_mode: TransitionMode::SyncIdx,
             update_segment: self.update_segment,
         }
     }
@@ -111,6 +139,7 @@ mod tests {
         fn operation_with_segment(
             self,
             _segment: Segment,
+            _transition_mode: TransitionMode,
             _update_segment: bool,
         ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
             Ok((Self::O1::default(), Self::O2::default()))

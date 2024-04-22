@@ -98,8 +98,6 @@ pub enum AUTDInternalError {
     InvalidGainSTMMode,
     #[error("Unknown firmware error: {0}")]
     UnknownFirmwareError(u8),
-    #[error("Invalid segment")]
-    InvalidSegment,
     #[error("Invalid segment transition")]
     InvalidSegmentTransition,
     #[error("Invalid mode")]
@@ -108,6 +106,8 @@ pub enum AUTDInternalError {
     InvalidPulseWidthEncoderDataSize,
     #[error("Incomplete pulse width encoder table data")]
     IncompletePulseWidthEncoderData,
+    #[error("Miss transition time")]
+    MissTransitionTime,
 }
 
 impl AUTDInternalError {
@@ -119,11 +119,11 @@ impl AUTDInternalError {
             0x83 => AUTDInternalError::CompletionStepsTooLarge,
             0x84 => AUTDInternalError::InvalidInfoType,
             0x85 => AUTDInternalError::InvalidGainSTMMode,
-            0x86 => AUTDInternalError::InvalidSegment,
             0x87 => AUTDInternalError::InvalidMode,
             0x88 => AUTDInternalError::InvalidSegmentTransition,
             0x89 => AUTDInternalError::InvalidPulseWidthEncoderDataSize,
             0x8A => AUTDInternalError::IncompletePulseWidthEncoderData,
+            0x8B => AUTDInternalError::MissTransitionTime,
             _ => AUTDInternalError::UnknownFirmwareError(ack),
         }
     }

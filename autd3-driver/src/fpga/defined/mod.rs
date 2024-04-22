@@ -1,13 +1,29 @@
 use crate::defined::METER;
 
+mod debug_type;
 mod drive;
+mod emit_intensity;
+mod fpga_drive;
 mod fpga_state;
+mod loop_behavior;
+mod phase;
+mod sampling_config;
+mod segment;
 mod stm_focus;
+mod transition_mode;
 
-pub(crate) use drive::FPGADrive;
+pub(crate) use fpga_drive::FPGADrive;
 pub(crate) use stm_focus::STMFocus;
 
+pub use debug_type::DebugType;
+pub use drive::Drive;
+pub use emit_intensity::EmitIntensity;
 pub use fpga_state::FPGAState;
+pub use loop_behavior::LoopBehavior;
+pub use phase::{Phase, Rad};
+pub use sampling_config::SamplingConfiguration;
+pub use segment::Segment;
+pub use transition_mode::TransitionMode;
 
 /// FPGA clock frequency
 pub const FPGA_CLK_FREQ: usize = 20480000;

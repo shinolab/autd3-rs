@@ -7,9 +7,10 @@ pub struct GainSTMControlFlags(u8);
 bitflags::bitflags! {
     impl GainSTMControlFlags : u8 {
         const NONE       = 0;
-        const BEGIN      = 1 << 2;
-        const END        = 1 << 3;
-        const UPDATE     = 1 << 4;
+        const BEGIN      = 1 << 0;
+        const END        = 1 << 1;
+        const UPDATE     = 1 << 2;
+        const SEGMENT    = 1 << 3;
         const SEND_BIT0  = 1 << 6;
         const SEND_BIT1  = 1 << 7;
     }

@@ -2,7 +2,6 @@
 
 pub mod acoustics;
 pub mod autd3_device;
-pub mod common;
 pub mod cpu;
 pub mod datagram;
 pub mod defined;
@@ -22,15 +21,17 @@ pub use async_trait::async_trait;
 #[cfg(feature = "derive")]
 pub mod derive {
     pub use crate::{
-        common::{Drive, EmitIntensity, LoopBehavior, Phase, Rad, SamplingConfiguration, Segment},
         datagram::{
-            DatagramS, Gain, GainCache, GainFilter, GainTransform, IntoGainCache,
+            DatagramS, DatagramT, Gain, GainCache, GainFilter, GainTransform, IntoGainCache,
             IntoGainTransform, IntoModulationCache, IntoModulationTransform, IntoRadiationPressure,
             Modulation, ModulationCache, ModulationProperty, ModulationTransform,
             RadiationPressure,
         },
         error::AUTDInternalError,
-        fpga::{FPGA_CLK_FREQ, SAMPLING_FREQ_DIV_MIN},
+        fpga::{
+            Drive, EmitIntensity, LoopBehavior, Phase, Rad, SamplingConfiguration, Segment,
+            TransitionMode, FPGA_CLK_FREQ, SAMPLING_FREQ_DIV_MIN,
+        },
         geometry::{Device, Geometry, Transducer},
         operation::{GainOp, ModulationOp, NullOp, Operation},
     };

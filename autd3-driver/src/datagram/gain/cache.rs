@@ -1,7 +1,7 @@
 pub use crate::{
-    common::{Drive, Segment},
-    datagram::{DatagramS, Gain, GainFilter, Modulation},
+    derive::*,
     error::AUTDInternalError,
+    fpga::{Drive, Segment},
     geometry::Geometry,
     operation::{GainOp, NullOp, Operation},
 };

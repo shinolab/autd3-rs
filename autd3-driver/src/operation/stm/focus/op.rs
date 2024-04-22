@@ -1,25 +1,26 @@
 use std::collections::HashMap;
 
 use crate::{
-    common::{LoopBehavior, Segment},
     defined::METER,
     error::AUTDInternalError,
-    fpga::{STMFocus, FOCUS_STM_BUF_SIZE_MAX},
+    fpga::{LoopBehavior, Segment},
+    fpga::{STMFocus, TransitionMode, FOCUS_STM_BUF_SIZE_MAX},
     geometry::{Device, Geometry},
     operation::{cast, Operation, TypeTag},
 };
 
 use super::{ControlPoint, FocusSTMControlFlags};
 
-#[repr(C)]
+#[repr(C, align(2))]
 struct FocusSTMHead {
     tag: TypeTag,
     flag: FocusSTMControlFlags,
     send_num: u8,
-    segment: u8,
+    transition_mode: u8,
     freq_div: u32,
     sound_speed: u32,
     rep: u32,
+    transition_value: u64,
 }
 
 #[repr(C, align(2))]
@@ -36,6 +37,7 @@ pub struct FocusSTMOp {
     freq_div: u32,
     loop_behavior: LoopBehavior,
     segment: Segment,
+    transition_mode: TransitionMode,
     update_segment: bool,
 }
 
@@ -45,6 +47,7 @@ impl FocusSTMOp {
         freq_div: u32,
         loop_behavior: LoopBehavior,
         segment: Segment,
+        transition_mode: TransitionMode,
         update_segment: bool,
     ) -> Self {
         Self {
@@ -54,6 +57,7 @@ impl FocusSTMOp {
             freq_div,
             loop_behavior,
             segment,
+            transition_mode,
             update_segment,
         }
     }
@@ -80,7 +84,10 @@ impl Operation for FocusSTMOp {
             let d = cast::<FocusSTMHead>(tx);
             d.tag = TypeTag::FocusSTM;
             d.flag = FocusSTMControlFlags::BEGIN;
-            d.segment = self.segment as u8;
+            d.flag
+                .set(FocusSTMControlFlags::SEGMENT, self.segment == Segment::S1);
+            d.transition_mode = self.transition_mode.mode();
+            d.transition_value = self.transition_mode.value();
             d.send_num = send_num as u8;
             d.freq_div = self.freq_div;
             d.sound_speed = (device.sound_speed / METER * 1024.0).round() as u32;
@@ -153,7 +160,10 @@ impl Operation for FocusSTMOp {
 
 #[cfg(test)]
 mod tests {
-    use std::{mem::size_of, num::NonZeroU32};
+    use std::{
+        mem::{offset_of, size_of},
+        num::NonZeroU32,
+    };
 
     use rand::prelude::*;
 
@@ -165,6 +175,7 @@ mod tests {
             SAMPLING_FREQ_DIV_MIN,
         },
         geometry::{tests::create_geometry, Vector3},
+        operation::tests::parse_tx_as,
     };
 
     const NUM_TRANS_IN_UNIT: usize = 249;
@@ -193,10 +204,23 @@ mod tests {
             })
             .collect();
         let loop_behavior = LoopBehavior::Infinite;
+        let rep = loop_behavior.to_rep();
         let segment = Segment::S0;
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
+        let transition_value = 0x0123456789ABCDEF;
+        let transition_mode = TransitionMode::SysTime(
+            time::macros::datetime!(2000-01-01 0:00 UTC)
+                + std::time::Duration::from_nanos(transition_value),
+        );
 
-        let mut op = FocusSTMOp::new(points.clone(), freq_div, loop_behavior, segment, true);
+        let mut op = FocusSTMOp::new(
+            points.clone(),
+            freq_div,
+            loop_behavior,
+            segment,
+            transition_mode,
+            true,
+        );
 
         assert!(op.init(&geometry).is_ok());
 
@@ -224,46 +248,45 @@ mod tests {
             .for_each(|dev| assert_eq!(op.remains(dev), 0));
 
         geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::FocusSTM as u8);
-            let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_ne!(flag & FocusSTMControlFlags::BEGIN.bits(), 0x00);
-            assert_ne!(flag & FocusSTMControlFlags::END.bits(), 0x00);
-            assert_ne!(flag & FocusSTMControlFlags::UPDATE.bits(), 0x00);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 2], FOCUS_STM_SIZE as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 3], segment as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 4], (freq_div & 0xFF) as u8);
+            assert_eq!(TypeTag::FocusSTM as u8, tx[dev.idx() * FRAME_SIZE]);
             assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 5],
-                ((freq_div >> 8) & 0xFF) as u8
+                (FocusSTMControlFlags::BEGIN
+                    | FocusSTMControlFlags::END
+                    | FocusSTMControlFlags::UPDATE)
+                    .bits(),
+                tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, flag)]
             );
             assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 6],
-                ((freq_div >> 16) & 0xFF) as u8
+                FOCUS_STM_SIZE as u8,
+                tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, send_num)]
             );
             assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 7],
-                ((freq_div >> 24) & 0xFF) as u8
+                freq_div,
+                parse_tx_as::<u32>(
+                    &tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, freq_div)..]
+                )
             );
-
             let sound_speed = (dev.sound_speed / METER * 1024.0).round() as u32;
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 8], (sound_speed & 0xFF) as u8);
             assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 9],
-                ((sound_speed >> 8) & 0xFF) as u8
+                sound_speed,
+                parse_tx_as::<u32>(
+                    &tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, sound_speed)..]
+                )
             );
             assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 10],
-                ((sound_speed >> 16) & 0xFF) as u8
+                rep,
+                parse_tx_as::<u32>(&tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, rep)..])
             );
             assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 11],
-                ((sound_speed >> 24) & 0xFF) as u8
+                transition_mode.mode(),
+                tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, transition_mode)]
             );
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 12], 0xFF);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 13], 0xFF);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 14], 0xFF);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 15], 0xFF);
-
+            assert_eq!(
+                transition_value,
+                parse_tx_as::<u64>(
+                    &tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, transition_value)..]
+                )
+            );
             tx[FRAME_SIZE * dev.idx() + size_of::<FocusSTMHead>()..]
                 .chunks(size_of::<STMFocus>())
                 .zip(points.iter())
@@ -318,113 +341,111 @@ mod tests {
         );
         let rep = loop_behavior.to_rep();
         let segment = Segment::S1;
-        let mut op = FocusSTMOp::new(points.clone(), freq_div, loop_behavior, segment, false);
+        let mut op = FocusSTMOp::new(
+            points.clone(),
+            freq_div,
+            loop_behavior,
+            segment,
+            TransitionMode::SyncIdx,
+            false,
+        );
 
         assert!(op.init(&geometry).is_ok());
 
         // First frame
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                op.required_size(dev),
-                size_of::<FocusSTMHead>() + size_of::<STMFocus>()
-            )
-        });
-
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), FOCUS_STM_SIZE));
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                op.pack(
-                    dev,
-                    &mut tx[dev.idx() * FRAME_SIZE..(dev.idx() + 1) * FRAME_SIZE]
-                ),
-                Ok(size_of::<FocusSTMHead>()
-                    + (FRAME_SIZE - size_of::<FocusSTMHead>()) / size_of::<STMFocus>()
-                        * size_of::<STMFocus>())
-            );
-            op.commit(dev);
-        });
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                op.remains(dev),
-                (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>() * 2
-            )
-        });
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::FocusSTM as u8);
-            let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_ne!(flag & FocusSTMControlFlags::BEGIN.bits(), 0x00);
-            assert_eq!(flag & FocusSTMControlFlags::END.bits(), 0x00);
-            assert_eq!(flag & FocusSTMControlFlags::UPDATE.bits(), 0x00);
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 2],
-                ((FRAME_SIZE - size_of::<FocusSTMHead>()) / std::mem::size_of::<STMFocus>()) as u8
-            );
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 3], segment as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 4], (freq_div & 0xFF) as u8);
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 5],
-                ((freq_div >> 8) & 0xFF) as u8
-            );
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 6],
-                ((freq_div >> 16) & 0xFF) as u8
-            );
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 7],
-                ((freq_div >> 24) & 0xFF) as u8
-            );
-
-            let sound_speed = (dev.sound_speed / METER * 1024.0).round() as u32;
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 8], (sound_speed & 0xFF) as u8);
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 9],
-                ((sound_speed >> 8) & 0xFF) as u8
-            );
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 10],
-                ((sound_speed >> 16) & 0xFF) as u8
-            );
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 11],
-                ((sound_speed >> 24) & 0xFF) as u8
-            );
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 12], (rep & 0xFF) as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 13], ((rep >> 8) & 0xFF) as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 14], ((rep >> 16) & 0xFF) as u8);
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 15], ((rep >> 24) & 0xFF) as u8);
-
-            tx[FRAME_SIZE * dev.idx() + size_of::<FocusSTMHead>()..FRAME_SIZE * (dev.idx() + 1)]
-                .chunks(size_of::<STMFocus>())
-                .zip(
-                    points
-                        .iter()
-                        .take((FRAME_SIZE - size_of::<FocusSTMHead>()) / size_of::<STMFocus>()),
+        {
+            geometry.devices().for_each(|dev| {
+                assert_eq!(
+                    op.required_size(dev),
+                    size_of::<FocusSTMHead>() + size_of::<STMFocus>()
                 )
-                .for_each(|(d, p)| {
-                    let mut buf = [0x0000u16; 4];
-                    unsafe {
-                        let _ = (*(&mut buf as *mut _ as *mut STMFocus)).set(
-                            p.point().x,
-                            p.point().y,
-                            p.point().z,
-                            p.intensity(),
-                        );
-                    }
-                    assert_eq!(d[0], (buf[0] & 0xFF) as u8);
-                    assert_eq!(d[1], ((buf[0] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[2], (buf[1] & 0xFF) as u8);
-                    assert_eq!(d[3], ((buf[1] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[4], (buf[2] & 0xFF) as u8);
-                    assert_eq!(d[5], ((buf[2] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[6], (buf[3] & 0xFF) as u8);
-                    assert_eq!(d[7] & 0x3F, ((buf[3] >> 8) & 0xFF) as u8);
-                })
-        });
+            });
+
+            geometry
+                .devices()
+                .for_each(|dev| assert_eq!(op.remains(dev), FOCUS_STM_SIZE));
+
+            geometry.devices().for_each(|dev| {
+                assert_eq!(
+                    op.pack(
+                        dev,
+                        &mut tx[dev.idx() * FRAME_SIZE..(dev.idx() + 1) * FRAME_SIZE]
+                    ),
+                    Ok(size_of::<FocusSTMHead>()
+                        + (FRAME_SIZE - size_of::<FocusSTMHead>()) / size_of::<STMFocus>()
+                            * size_of::<STMFocus>())
+                );
+                op.commit(dev);
+            });
+
+            geometry.devices().for_each(|dev| {
+                assert_eq!(
+                    op.remains(dev),
+                    (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>()
+                        * 2
+                )
+            });
+
+            geometry.devices().for_each(|dev| {
+                assert_eq!(TypeTag::FocusSTM as u8, tx[dev.idx() * FRAME_SIZE]);
+                assert_eq!(
+                    (FocusSTMControlFlags::BEGIN | FocusSTMControlFlags::SEGMENT).bits(),
+                    tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, flag)]
+                );
+                assert_eq!(
+                    ((FRAME_SIZE - size_of::<FocusSTMHead>()) / std::mem::size_of::<STMFocus>())
+                        as u8,
+                    tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, send_num)],
+                );
+                assert_eq!(tx[dev.idx() * FRAME_SIZE + 4], (freq_div & 0xFF) as u8);
+                assert_eq!(
+                    freq_div,
+                    parse_tx_as::<u32>(
+                        &tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, freq_div)..]
+                    )
+                );
+                let sound_speed = (dev.sound_speed / METER * 1024.0).round() as u32;
+                assert_eq!(
+                    sound_speed,
+                    parse_tx_as::<u32>(
+                        &tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, sound_speed)..]
+                    )
+                );
+                assert_eq!(
+                    rep,
+                    parse_tx_as::<u32>(
+                        &tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, rep)..]
+                    )
+                );
+
+                tx[FRAME_SIZE * dev.idx() + size_of::<FocusSTMHead>()..FRAME_SIZE * (dev.idx() + 1)]
+                    .chunks(size_of::<STMFocus>())
+                    .zip(
+                        points
+                            .iter()
+                            .take((FRAME_SIZE - size_of::<FocusSTMHead>()) / size_of::<STMFocus>()),
+                    )
+                    .for_each(|(d, p)| {
+                        let mut buf = [0x0000u16; 4];
+                        unsafe {
+                            let _ = (*(&mut buf as *mut _ as *mut STMFocus)).set(
+                                p.point().x,
+                                p.point().y,
+                                p.point().z,
+                                p.intensity(),
+                            );
+                        }
+                        assert_eq!(d[0], (buf[0] & 0xFF) as u8);
+                        assert_eq!(d[1], ((buf[0] >> 8) & 0xFF) as u8);
+                        assert_eq!(d[2], (buf[1] & 0xFF) as u8);
+                        assert_eq!(d[3], ((buf[1] >> 8) & 0xFF) as u8);
+                        assert_eq!(d[4], (buf[2] & 0xFF) as u8);
+                        assert_eq!(d[5], ((buf[2] >> 8) & 0xFF) as u8);
+                        assert_eq!(d[6], (buf[3] & 0xFF) as u8);
+                        assert_eq!(d[7] & 0x3F, ((buf[3] >> 8) & 0xFF) as u8);
+                    })
+            });
+        }
 
         // Second frame
         geometry.devices().for_each(|dev| {
@@ -455,15 +476,15 @@ mod tests {
         });
 
         geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::FocusSTM as u8);
-            let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_eq!(flag & FocusSTMControlFlags::BEGIN.bits(), 0x00);
-            assert_eq!(flag & FocusSTMControlFlags::END.bits(), 0x00);
-            assert_eq!(flag & FocusSTMControlFlags::UPDATE.bits(), 0x00);
+            assert_eq!(TypeTag::FocusSTM as u8, tx[dev.idx() * FRAME_SIZE]);
             assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 2],
+                FocusSTMControlFlags::NONE.bits(),
+                tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, flag)]
+            );
+            assert_eq!(
                 ((FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>())
-                    as u8
+                    as u8,
+                tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, send_num)],
             );
             tx[FRAME_SIZE * dev.idx() + size_of::<FocusSTMSubseq>()..FRAME_SIZE * (dev.idx() + 1)]
                 .chunks(size_of::<STMFocus>())
@@ -495,73 +516,79 @@ mod tests {
         });
 
         // Final frame
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                op.required_size(dev),
-                size_of::<FocusSTMSubseq>() + std::mem::size_of::<STMFocus>()
-            )
-        });
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                op.pack(
-                    dev,
-                    &mut tx[dev.idx() * FRAME_SIZE..(dev.idx() + 1) * FRAME_SIZE]
-                ),
-                Ok(size_of::<FocusSTMSubseq>()
-                    + (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>()
-                        * std::mem::size_of::<STMFocus>())
-            );
-            op.commit(dev);
-        });
-
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), 0));
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::FocusSTM as u8);
-            let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_eq!(flag & FocusSTMControlFlags::BEGIN.bits(), 0x00);
-            assert_ne!(flag & FocusSTMControlFlags::END.bits(), 0x00);
-            assert_eq!(flag & FocusSTMControlFlags::UPDATE.bits(), 0x00);
-            assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 2],
-                ((FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>())
-                    as u8
-            );
-            tx[FRAME_SIZE * dev.idx() + size_of::<FocusSTMSubseq>()..FRAME_SIZE * (dev.idx() + 1)]
-                .chunks(size_of::<STMFocus>())
-                .zip(
-                    points
-                        .iter()
-                        .skip(
-                            (FRAME_SIZE - size_of::<FocusSTMHead>()) / size_of::<STMFocus>()
-                                + (FRAME_SIZE - size_of::<FocusSTMSubseq>())
-                                    / size_of::<STMFocus>(),
-                        )
-                        .take((FRAME_SIZE - size_of::<FocusSTMSubseq>()) / size_of::<STMFocus>()),
+        {
+            geometry.devices().for_each(|dev| {
+                assert_eq!(
+                    op.required_size(dev),
+                    size_of::<FocusSTMSubseq>() + std::mem::size_of::<STMFocus>()
                 )
-                .for_each(|(d, p)| {
-                    let mut buf = [0x0000u16; 4];
-                    unsafe {
-                        let _ = (*(&mut buf as *mut _ as *mut STMFocus)).set(
-                            p.point().x,
-                            p.point().y,
-                            p.point().z,
-                            p.intensity(),
-                        );
-                    }
-                    assert_eq!(d[0], (buf[0] & 0xFF) as u8);
-                    assert_eq!(d[1], ((buf[0] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[2], (buf[1] & 0xFF) as u8);
-                    assert_eq!(d[3], ((buf[1] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[4], (buf[2] & 0xFF) as u8);
-                    assert_eq!(d[5], ((buf[2] >> 8) & 0xFF) as u8);
-                    assert_eq!(d[6], (buf[3] & 0xFF) as u8);
-                    assert_eq!(d[7] & 0x3F, ((buf[3] >> 8) & 0xFF) as u8);
-                })
-        });
+            });
+
+            geometry.devices().for_each(|dev| {
+                assert_eq!(
+                    op.pack(
+                        dev,
+                        &mut tx[dev.idx() * FRAME_SIZE..(dev.idx() + 1) * FRAME_SIZE]
+                    ),
+                    Ok(size_of::<FocusSTMSubseq>()
+                        + (FRAME_SIZE - size_of::<FocusSTMSubseq>())
+                            / std::mem::size_of::<STMFocus>()
+                            * std::mem::size_of::<STMFocus>())
+                );
+                op.commit(dev);
+            });
+
+            geometry
+                .devices()
+                .for_each(|dev| assert_eq!(op.remains(dev), 0));
+
+            geometry.devices().for_each(|dev| {
+                assert_eq!(TypeTag::FocusSTM as u8, tx[dev.idx() * FRAME_SIZE]);
+                assert_eq!(
+                    FocusSTMControlFlags::END.bits(),
+                    tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, flag)]
+                );
+                assert_eq!(
+                    ((FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>())
+                        as u8,
+                    tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, send_num)],
+                );
+                tx[FRAME_SIZE * dev.idx() + size_of::<FocusSTMSubseq>()
+                    ..FRAME_SIZE * (dev.idx() + 1)]
+                    .chunks(size_of::<STMFocus>())
+                    .zip(
+                        points
+                            .iter()
+                            .skip(
+                                (FRAME_SIZE - size_of::<FocusSTMHead>()) / size_of::<STMFocus>()
+                                    + (FRAME_SIZE - size_of::<FocusSTMSubseq>())
+                                        / size_of::<STMFocus>(),
+                            )
+                            .take(
+                                (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / size_of::<STMFocus>(),
+                            ),
+                    )
+                    .for_each(|(d, p)| {
+                        let mut buf = [0x0000u16; 4];
+                        unsafe {
+                            let _ = (*(&mut buf as *mut _ as *mut STMFocus)).set(
+                                p.point().x,
+                                p.point().y,
+                                p.point().z,
+                                p.intensity(),
+                            );
+                        }
+                        assert_eq!(d[0], (buf[0] & 0xFF) as u8);
+                        assert_eq!(d[1], ((buf[0] >> 8) & 0xFF) as u8);
+                        assert_eq!(d[2], (buf[1] & 0xFF) as u8);
+                        assert_eq!(d[3], ((buf[1] >> 8) & 0xFF) as u8);
+                        assert_eq!(d[4], (buf[2] & 0xFF) as u8);
+                        assert_eq!(d[5], ((buf[2] >> 8) & 0xFF) as u8);
+                        assert_eq!(d[6], (buf[3] & 0xFF) as u8);
+                        assert_eq!(d[7] & 0x3F, ((buf[3] >> 8) & 0xFF) as u8);
+                    })
+            });
+        }
     }
 
     #[test]
@@ -577,6 +604,7 @@ mod tests {
                 SAMPLING_FREQ_DIV_MIN,
                 LoopBehavior::Infinite,
                 Segment::S0,
+                TransitionMode::SyncIdx,
                 true,
             );
             op.init(&geometry)
@@ -616,6 +644,7 @@ mod tests {
             freq_div,
             LoopBehavior::Infinite,
             Segment::S0,
+            TransitionMode::SyncIdx,
             true,
         );
 

@@ -1,7 +1,7 @@
 use crate::{
-    common::Phase,
     datagram::*,
     derive::{Device, Transducer},
+    fpga::Phase,
 };
 
 #[derive(Debug, Clone, Copy)]

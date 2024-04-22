@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{common::Segment, derive::AUTDInternalError};
+use crate::{derive::AUTDInternalError, fpga::Segment};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ChangeFocusSTMSegment {

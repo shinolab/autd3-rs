@@ -1,45 +1,80 @@
-use crate::common::Drive;
+use super::{EmitIntensity, Phase};
 
-#[derive(Clone, Copy)]
-#[repr(C)]
-pub(crate) struct FPGADrive {
-    phase: u8,
-    intensity: u8,
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Drive {
+    /// Phase of ultrasound
+    phase: Phase,
+    /// emission intensity
+    intensity: EmitIntensity,
 }
 
-impl FPGADrive {
-    pub fn set(&mut self, d: &Drive) {
-        self.intensity = d.intensity().value();
-        self.phase = d.phase().value();
+impl Drive {
+    pub const fn new(phase: Phase, intensity: EmitIntensity) -> Self {
+        Self { phase, intensity }
+    }
+
+    pub const fn phase(&self) -> Phase {
+        self.phase
+    }
+
+    pub const fn intensity(&self) -> EmitIntensity {
+        self.intensity
+    }
+
+    pub const fn null() -> Self {
+        Self {
+            phase: Phase::new(0),
+            intensity: EmitIntensity::MIN,
+        }
+    }
+}
+
+#[cfg(any(test, feature = "rand"))]
+impl rand::distributions::Distribution<Drive> for rand::distributions::Standard {
+    fn sample<R: rand::prelude::Rng + ?Sized>(&self, rng: &mut R) -> Drive {
+        Drive::new(rng.gen(), rng.gen())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::mem::size_of;
-
     use super::*;
-    use crate::common::{EmitIntensity, Phase};
 
+    #[rstest::rstest]
     #[test]
-    fn test_size() {
-        assert_eq!(2, size_of::<FPGADrive>());
-        assert_eq!(0, std::mem::offset_of!(FPGADrive, phase));
-        assert_eq!(1, std::mem::offset_of!(FPGADrive, intensity));
+    #[case::value_0(
+        EmitIntensity::new(0x00),
+        Drive::new(Phase::new(0), EmitIntensity::new(0x00))
+    )]
+    #[case::value_1(
+        EmitIntensity::new(0x01),
+        Drive::new(Phase::new(0), EmitIntensity::new(0x01))
+    )]
+    #[case::value_ff(
+        EmitIntensity::new(0xFF),
+        Drive::new(Phase::new(0), EmitIntensity::new(0xFF))
+    )]
+    fn test_intensity(#[case] expected: EmitIntensity, #[case] target: Drive) {
+        assert_eq!(expected, target.intensity(),);
     }
 
     #[rstest::rstest]
     #[test]
-    #[case(Phase::new(0x00), EmitIntensity::new(0x00))]
-    #[case(Phase::new(0x80), EmitIntensity::new(0xFF))]
-    #[case(Phase::new(0xFF), EmitIntensity::new(0x80))]
-    fn test_set(#[case] phase: Phase, #[case] intensity: EmitIntensity) {
-        let mut d = FPGADrive {
-            phase: 0,
-            intensity: 0,
-        };
-        d.set(&Drive::new(phase, intensity));
-        assert_eq!(phase.value(), d.phase);
-        assert_eq!(intensity.value(), d.intensity);
+    #[case::value_0(Phase::new(0), Drive::new(Phase::new(0), EmitIntensity::new(0x00)))]
+    #[case::value_1(Phase::new(1), Drive::new(Phase::new(1), EmitIntensity::new(0x00)))]
+    #[case::value_ff(
+        Phase::new(0xFF),
+        Drive::new(Phase::new(0xFF), EmitIntensity::new(0x00))
+    )]
+    fn test_phase(#[case] expected: Phase, #[case] target: Drive) {
+        assert_eq!(expected, target.phase(),);
+    }
+
+    #[test]
+    fn test_null() {
+        assert_eq!(
+            Drive::new(Phase::new(0), EmitIntensity::new(0x00)),
+            Drive::null()
+        );
     }
 }

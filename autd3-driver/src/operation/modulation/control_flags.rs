@@ -1,26 +1,27 @@
 use std::fmt;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
 pub struct ModulationControlFlags(u8);
 
 bitflags::bitflags! {
     impl ModulationControlFlags : u8 {
         const NONE           = 0;
-        const MOD_BEGIN      = 1 << 0;
-        const MOD_END        = 1 << 1;
+        const BEGIN          = 1 << 0;
+        const END            = 1 << 1;
         const UPDATE_SEGMENT = 1 << 2;
+        const SEGMENT        = 1 << 3;
     }
 }
 
 impl fmt::Display for ModulationControlFlags {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut flags = Vec::new();
-        if self.contains(ModulationControlFlags::MOD_BEGIN) {
-            flags.push("MOD_BEGIN")
+        if self.contains(ModulationControlFlags::BEGIN) {
+            flags.push("BEGIN")
         }
-        if self.contains(ModulationControlFlags::MOD_END) {
-            flags.push("MOD_END")
+        if self.contains(ModulationControlFlags::END) {
+            flags.push("END")
         }
         if self.is_empty() {
             flags.push("NONE")
@@ -49,17 +50,14 @@ mod tests {
     #[test]
     fn test_fmt() {
         assert_eq!(format!("{}", ModulationControlFlags::NONE), "NONE");
-        assert_eq!(
-            format!("{}", ModulationControlFlags::MOD_BEGIN),
-            "MOD_BEGIN"
-        );
-        assert_eq!(format!("{}", ModulationControlFlags::MOD_END), "MOD_END");
+        assert_eq!(format!("{}", ModulationControlFlags::BEGIN), "BEGIN");
+        assert_eq!(format!("{}", ModulationControlFlags::END), "END");
         assert_eq!(
             format!(
                 "{}",
-                ModulationControlFlags::MOD_BEGIN | ModulationControlFlags::MOD_END
+                ModulationControlFlags::BEGIN | ModulationControlFlags::END
             ),
-            "MOD_BEGIN | MOD_END"
+            "BEGIN | END"
         );
     }
 }

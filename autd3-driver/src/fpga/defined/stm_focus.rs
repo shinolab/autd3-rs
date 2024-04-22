@@ -1,4 +1,4 @@
-use crate::{common::EmitIntensity, error::AUTDInternalError};
+use crate::{error::AUTDInternalError, fpga::EmitIntensity};
 
 use super::{FOCUS_STM_FIXED_NUM_LOWER, FOCUS_STM_FIXED_NUM_UNIT, FOCUS_STM_FIXED_NUM_UPPER};
 

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crate::{
-    common::Segment,
     error::AUTDInternalError,
+    fpga::Segment,
     geometry::{Device, Geometry},
     operation::{cast, Operation, TypeTag},
 };

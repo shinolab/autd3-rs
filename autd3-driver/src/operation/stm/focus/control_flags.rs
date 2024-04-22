@@ -6,10 +6,11 @@ pub struct FocusSTMControlFlags(u8);
 
 bitflags::bitflags! {
     impl FocusSTMControlFlags : u8 {
-        const NONE            = 0;
-        const BEGIN       = 1 << 0;
-        const END         = 1 << 1;
-        const UPDATE          = 1 << 2;
+        const NONE    = 0;
+        const BEGIN   = 1 << 0;
+        const END     = 1 << 1;
+        const UPDATE  = 1 << 2;
+        const SEGMENT = 1 << 3;
     }
 }
 
