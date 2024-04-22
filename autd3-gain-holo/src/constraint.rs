@@ -1,4 +1,4 @@
-use autd3_driver::common::EmitIntensity;
+use autd3_driver::fpga::EmitIntensity;
 
 /// Emission constraint
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
