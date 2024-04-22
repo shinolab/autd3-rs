@@ -15,6 +15,7 @@ bitflags = { workspace = true }
 thiserror = { workspace = true }
 nalgebra = { workspace = true, features = ["std"] }
 bitvec = { workspace = true }
+time = { workspace = true, features = ["std", "macros"] }
 tokio = { workspace = true, features = ["time"] }
 autd3-derive = { path = "../autd3-derive", version = "23.0.0" }
 async-trait = { workspace = true, optional = true }

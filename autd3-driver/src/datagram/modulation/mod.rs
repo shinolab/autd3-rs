@@ -13,15 +13,15 @@ pub use segment::ChangeModulationSegment;
 pub use transform::IntoTransform as IntoModulationTransform;
 pub use transform::Transform as ModulationTransform;
 
+use crate::fpga::TransitionMode;
 use crate::operation::ModulationOp;
 use crate::operation::NullOp;
 use crate::{
-    common::{EmitIntensity, LoopBehavior, SamplingConfiguration, Segment},
     error::AUTDInternalError,
+    fpga::{EmitIntensity, LoopBehavior, SamplingConfiguration, Segment},
 };
 
-use super::Datagram;
-use super::DatagramS;
+use super::{Datagram, DatagramS, DatagramT};
 
 pub trait ModulationProperty {
     fn sampling_config(&self) -> SamplingConfiguration;
@@ -69,6 +69,7 @@ impl DatagramS for Box<dyn Modulation> {
     fn operation_with_segment(
         self,
         segment: Segment,
+        transition_mode: TransitionMode,
         update_segment: bool,
     ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         let freq_div = self.sampling_config().frequency_division();
@@ -78,6 +79,7 @@ impl DatagramS for Box<dyn Modulation> {
                 freq_div,
                 self.loop_behavior(),
                 segment,
+                transition_mode,
                 update_segment,
             ),
             Self::O2::default(),
@@ -88,6 +90,8 @@ impl DatagramS for Box<dyn Modulation> {
         Some(Duration::from_millis(200))
     }
 }
+
+impl DatagramT for Box<dyn Modulation> {}
 // GRCOV_EXCL_STOP
 
 #[cfg(test)]

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crate::{
-    common::Segment,
     error::AUTDInternalError,
+    fpga::Segment,
     geometry::{Device, Geometry},
     operation::{cast, Operation, TypeTag},
 };
@@ -11,6 +11,9 @@ use crate::{
 struct ModulationUpdate {
     tag: TypeTag,
     segment: u8,
+    transition_mode: u8,
+    __padding: [u8; 5],
+    transition_value: u64,
 }
 
 pub struct ModulationChangeSegmentOp {

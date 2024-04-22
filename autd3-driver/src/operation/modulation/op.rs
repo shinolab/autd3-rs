@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use crate::{
-    common::{EmitIntensity, LoopBehavior, Segment},
     error::AUTDInternalError,
-    fpga::MOD_BUF_SIZE_MAX,
+    fpga::{EmitIntensity, LoopBehavior, Segment},
+    fpga::{TransitionMode, MOD_BUF_SIZE_MAX},
     geometry::{Device, Geometry},
     operation::{cast, Operation, TypeTag},
 };
@@ -15,9 +15,11 @@ struct ModulationHead {
     tag: TypeTag,
     flag: ModulationControlFlags,
     size: u16,
+    transition_mode: u8,
+    __pad: [u8; 3],
     freq_div: u32,
     rep: u32,
-    segment: u32,
+    transition_value: u64,
 }
 
 #[repr(C, align(2))]
@@ -34,6 +36,7 @@ pub struct ModulationOp {
     sent: HashMap<usize, usize>,
     loop_behavior: LoopBehavior,
     segment: Segment,
+    transition_mode: TransitionMode,
     update_segment: bool,
 }
 
@@ -43,6 +46,7 @@ impl ModulationOp {
         freq_div: u32,
         loop_behavior: LoopBehavior,
         segment: Segment,
+        transition_mode: TransitionMode,
         update_segment: bool,
     ) -> Self {
         Self {
@@ -52,6 +56,7 @@ impl ModulationOp {
             sent: HashMap::new(),
             loop_behavior,
             segment,
+            transition_mode,
             update_segment,
         }
     }
@@ -75,11 +80,14 @@ impl Operation for ModulationOp {
         if sent == 0 {
             let d = cast::<ModulationHead>(tx);
             d.tag = TypeTag::Modulation;
-            d.flag = ModulationControlFlags::MOD_BEGIN;
+            d.flag = ModulationControlFlags::BEGIN;
+            d.flag
+                .set(ModulationControlFlags::SEGMENT, self.segment == Segment::S1);
+            d.transition_mode = self.transition_mode.mode();
+            d.transition_value = self.transition_mode.value();
             d.size = mod_size as u16;
             d.freq_div = self.freq_div;
             d.rep = self.loop_behavior.to_rep();
-            d.segment = self.segment as u32;
         } else {
             let d = cast::<ModulationSubseq>(tx);
             d.tag = TypeTag::Modulation;
@@ -89,7 +97,7 @@ impl Operation for ModulationOp {
 
         if sent + mod_size == self.buf.len() {
             let d = cast::<ModulationSubseq>(tx);
-            d.flag.set(ModulationControlFlags::MOD_END, true);
+            d.flag.set(ModulationControlFlags::END, true);
             d.flag
                 .set(ModulationControlFlags::UPDATE_SEGMENT, self.update_segment);
         }
@@ -144,12 +152,15 @@ impl Operation for ModulationOp {
 
 #[cfg(test)]
 mod tests {
+    use std::mem::offset_of;
+
     use rand::prelude::*;
 
     use super::*;
     use crate::{
         fpga::{SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
         geometry::tests::create_geometry,
+        operation::tests::parse_tx_as,
     };
 
     const NUM_TRANS_IN_UNIT: usize = 249;
@@ -172,8 +183,19 @@ mod tests {
         let loop_behavior = LoopBehavior::Infinite;
         let segment = Segment::S0;
         let rep = loop_behavior.to_rep();
+        let transition_mode = TransitionMode::SysTime(
+            time::macros::datetime!(2000-01-01 0:00 UTC)
+                + std::time::Duration::from_nanos(0x0123456789ABCDEF),
+        );
 
-        let mut op = ModulationOp::new(buf.clone(), freq_div, loop_behavior, segment, true);
+        let mut op = ModulationOp::new(
+            buf.clone(),
+            freq_div,
+            loop_behavior,
+            segment,
+            transition_mode,
+            true,
+        );
 
         assert!(op.init(&geometry).is_ok());
 
@@ -205,71 +227,50 @@ mod tests {
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)],
-                TypeTag::Modulation as u8
-            );
-            let flag = tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE) + 1];
-            assert_ne!(flag & ModulationControlFlags::MOD_BEGIN.bits(), 0x00);
-            assert_ne!(flag & ModulationControlFlags::MOD_END.bits(), 0x00);
-
-            assert_eq!(
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE) + 2],
-                (MOD_SIZE & 0xFF) as u8
+                TypeTag::Modulation as u8,
+                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)
+                    + offset_of!(ModulationHead, tag)],
             );
             assert_eq!(
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE) + 3],
-                ((MOD_SIZE >> 8) & 0xFF) as u8
-            );
-
-            assert_eq!(
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE) + 4],
-                (freq_div & 0xFF) as u8
-            );
-            assert_eq!(
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE) + 5],
-                ((freq_div >> 8) & 0xFF) as u8
+                (ModulationControlFlags::BEGIN
+                    | ModulationControlFlags::END
+                    | ModulationControlFlags::UPDATE_SEGMENT)
+                    .bits(),
+                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)
+                    + offset_of!(ModulationHead, flag)]
             );
             assert_eq!(
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE) + 6],
-                ((freq_div >> 16) & 0xFF) as u8
+                MOD_SIZE as u16,
+                parse_tx_as::<u16>(
+                    &tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)
+                        + offset_of!(ModulationHead, size)..]
+                )
             );
             assert_eq!(
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE) + 7],
-                ((freq_div >> 24) & 0xFF) as u8
-            );
-
-            assert_eq!(
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE) + 8],
-                (rep & 0xFF) as u8
+                freq_div,
+                parse_tx_as::<u32>(
+                    &tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)
+                        + offset_of!(ModulationHead, freq_div)..]
+                )
             );
             assert_eq!(
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE) + 9],
-                ((rep >> 8) & 0xFF) as u8
+                rep,
+                parse_tx_as::<u32>(
+                    &tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)
+                        + offset_of!(ModulationHead, rep)..]
+                )
             );
             assert_eq!(
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE) + 10],
-                ((rep >> 16) & 0xFF) as u8
+                transition_mode.mode(),
+                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)
+                    + offset_of!(ModulationHead, transition_mode)]
             );
             assert_eq!(
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE) + 11],
-                ((rep >> 24) & 0xFF) as u8
-            );
-
-            assert_eq!(
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE) + 12],
-                segment as u8
-            );
-            assert_eq!(
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE) + 13],
-                0x00
-            );
-            assert_eq!(
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE) + 14],
-                0x00
-            );
-            assert_eq!(
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE) + 15],
-                0x00
+                transition_mode.value(),
+                parse_tx_as::<u64>(
+                    &tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)
+                        + offset_of!(ModulationHead, transition_value)..]
+                )
             );
 
             tx.iter()
@@ -303,6 +304,7 @@ mod tests {
             SAMPLING_FREQ_DIV_MIN,
             LoopBehavior::Infinite,
             Segment::S0,
+            TransitionMode::SyncIdx,
             true,
         );
 
@@ -339,18 +341,18 @@ mod tests {
         });
 
         geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::Modulation as u8);
-            let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_ne!(flag & ModulationControlFlags::MOD_BEGIN.bits(), 0x00);
-            assert_eq!(flag & ModulationControlFlags::MOD_END.bits(), 0x00);
-
-            let mod_size = FRAME_SIZE - std::mem::size_of::<ModulationHead>();
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 2], (mod_size & 0xFF) as u8);
+            assert_eq!(TypeTag::Modulation as u8, tx[dev.idx() * FRAME_SIZE]);
             assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 3],
-                ((mod_size >> 8) & 0xFF) as u8
+                ModulationControlFlags::BEGIN.bits(),
+                tx[dev.idx() * FRAME_SIZE + offset_of!(ModulationHead, flag)]
             );
-
+            let mod_size = FRAME_SIZE - std::mem::size_of::<ModulationHead>();
+            assert_eq!(
+                mod_size as u16,
+                parse_tx_as::<u16>(
+                    &tx[dev.idx() * FRAME_SIZE + offset_of!(ModulationHead, size)..]
+                )
+            );
             tx.iter()
                 .skip(FRAME_SIZE * dev.idx())
                 .skip(std::mem::size_of::<ModulationHead>())
@@ -389,18 +391,18 @@ mod tests {
         });
 
         geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::Modulation as u8);
-            let flag = tx[dev.idx() * FRAME_SIZE];
-            assert_eq!(flag & ModulationControlFlags::MOD_BEGIN.bits(), 0x00);
-            assert_eq!(flag & ModulationControlFlags::MOD_END.bits(), 0x00);
-
-            let mod_size = FRAME_SIZE - std::mem::size_of::<ModulationSubseq>();
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 2], (mod_size & 0xFF) as u8);
+            assert_eq!(TypeTag::Modulation as u8, tx[dev.idx() * FRAME_SIZE]);
             assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 3],
-                ((mod_size >> 8) & 0xFF) as u8
+                ModulationControlFlags::NONE.bits(),
+                tx[dev.idx() * FRAME_SIZE + offset_of!(ModulationHead, flag)]
             );
-
+            let mod_size = FRAME_SIZE - std::mem::size_of::<ModulationSubseq>();
+            assert_eq!(
+                mod_size as u16,
+                parse_tx_as::<u16>(
+                    &tx[dev.idx() * FRAME_SIZE + offset_of!(ModulationHead, size)..]
+                )
+            );
             tx.iter()
                 .skip(FRAME_SIZE * dev.idx())
                 .skip(std::mem::size_of::<ModulationSubseq>())
@@ -438,18 +440,18 @@ mod tests {
             .for_each(|dev| assert_eq!(op.remains(dev), 0));
 
         geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * FRAME_SIZE], TypeTag::Modulation as u8);
-            let flag = tx[dev.idx() * FRAME_SIZE + 1];
-            assert_eq!(flag & ModulationControlFlags::MOD_BEGIN.bits(), 0x00);
-            assert_ne!(flag & ModulationControlFlags::MOD_END.bits(), 0x00);
-
-            let mod_size = FRAME_SIZE - std::mem::size_of::<ModulationSubseq>();
-            assert_eq!(tx[dev.idx() * FRAME_SIZE + 2], (mod_size & 0xFF) as u8);
+            assert_eq!(TypeTag::Modulation as u8, tx[dev.idx() * FRAME_SIZE]);
             assert_eq!(
-                tx[dev.idx() * FRAME_SIZE + 3],
-                ((mod_size >> 8) & 0xFF) as u8
+                (ModulationControlFlags::UPDATE_SEGMENT | ModulationControlFlags::END).bits(),
+                tx[dev.idx() * FRAME_SIZE + offset_of!(ModulationHead, flag)]
             );
-
+            let mod_size = FRAME_SIZE - std::mem::size_of::<ModulationSubseq>();
+            assert_eq!(
+                mod_size as u16,
+                parse_tx_as::<u16>(
+                    &tx[dev.idx() * FRAME_SIZE + offset_of!(ModulationHead, size)..]
+                )
+            );
             tx.iter()
                 .skip(FRAME_SIZE * dev.idx())
                 .skip(std::mem::size_of::<ModulationSubseq>())
@@ -482,6 +484,7 @@ mod tests {
                 freq_div,
                 LoopBehavior::Infinite,
                 Segment::S0,
+                TransitionMode::SyncIdx,
                 true,
             );
 

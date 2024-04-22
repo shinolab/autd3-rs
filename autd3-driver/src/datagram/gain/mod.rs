@@ -12,9 +12,10 @@ pub use transform::Transform as GainTransform;
 
 use std::collections::HashMap;
 
+use crate::fpga::TransitionMode;
 use crate::{
-    common::{Drive, Segment},
     error::AUTDInternalError,
+    fpga::{Drive, Segment},
     geometry::{Device, Geometry, Transducer},
     operation::{GainOp, NullOp},
 };
@@ -99,6 +100,7 @@ impl DatagramS for Box<dyn Gain> {
     fn operation_with_segment(
         self,
         segment: Segment,
+        _transition_mode: TransitionMode,
         update_segment: bool,
     ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         Ok((

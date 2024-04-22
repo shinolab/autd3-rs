@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{common::Segment, error::AUTDInternalError};
+use crate::{error::AUTDInternalError, fpga::Segment};
 
 use super::Datagram;
 

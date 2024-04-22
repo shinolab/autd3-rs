@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use crate::{
-    common::Phase,
     derive::Transducer,
     error::AUTDInternalError,
+    fpga::Phase,
     geometry::{Device, Geometry},
     operation::{cast, Operation, TypeTag},
 };

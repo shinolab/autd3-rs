@@ -1,4 +1,4 @@
-use crate::common::Segment;
+use crate::fpga::Segment;
 
 const THERMAL_ASSERT_BIT: u8 = 1 << 0;
 const CURRENT_MOD_SEGMENT_BIT: u8 = 1 << 1;

@@ -1,4 +1,4 @@
-use crate::{datagram::*, geometry::Device, operation::DebugType};
+use crate::{datagram::*, fpga::DebugType, geometry::Device};
 
 /// Datagram for configure debug_output_idx
 pub struct ConfigureDebugSettings<F: Fn(&Device) -> [DebugType; 4]> {

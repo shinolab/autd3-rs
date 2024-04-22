@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use super::GainControlFlags;
 use crate::{
-    common::{Drive, Segment},
     datagram::{Gain, GainFilter},
     error::AUTDInternalError,
     fpga::FPGADrive,
+    fpga::{Drive, Segment},
     geometry::{Device, Geometry},
     operation::{cast, Operation, TypeTag},
 };
@@ -92,7 +92,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        common::{EmitIntensity, Phase},
+        fpga::{EmitIntensity, Phase},
         geometry::tests::create_geometry,
         operation::tests::{ErrGain, TestGain},
     };

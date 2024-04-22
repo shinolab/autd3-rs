@@ -1,4 +1,4 @@
-use crate::{common::SamplingConfiguration, error::AUTDInternalError};
+use crate::{error::AUTDInternalError, fpga::SamplingConfiguration};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum STMSamplingConfiguration {

@@ -1,4 +1,4 @@
-use crate::common::Drive;
+use crate::fpga::Drive;
 
 #[repr(C)]
 pub(crate) struct PhaseFull<const N: usize> {

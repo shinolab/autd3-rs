@@ -1,4 +1,8 @@
-use crate::{derive::*, operation::GainSTMMode};
+use crate::{
+    derive::*,
+    fpga::{Segment, TransitionMode},
+    operation::GainSTMMode,
+};
 
 use super::STMProps;
 
@@ -128,7 +132,8 @@ impl<G: Gain> DatagramS for GainSTM<G> {
 
     fn operation_with_segment(
         self,
-        segment: crate::common::Segment,
+        segment: Segment,
+        transition_mode: TransitionMode,
         update_segment: bool,
     ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         let freq_div = self.sampling_config()?.frequency_division();
@@ -145,6 +150,7 @@ impl<G: Gain> DatagramS for GainSTM<G> {
                 freq_div,
                 loop_behavior,
                 segment,
+                transition_mode,
                 update_segment,
             ),
             Self::O2::default(),
@@ -155,6 +161,8 @@ impl<G: Gain> DatagramS for GainSTM<G> {
         Some(std::time::Duration::from_millis(200))
     }
 }
+
+impl<G: Gain> DatagramT for GainSTM<G> {}
 
 impl<G: Gain + Clone> Clone for GainSTM<G> {
     fn clone(&self) -> Self {
@@ -293,7 +301,7 @@ mod tests {
 
         assert_eq!(stm.timeout(), Some(std::time::Duration::from_millis(200)));
 
-        let r = stm.operation_with_segment(Segment::S0, true);
+        let r = stm.operation_with_segment(Segment::S0, TransitionMode::SyncIdx, true);
         assert!(r.is_ok());
         let _: (GainSTMOp<Box<dyn Gain>>, NullOp) = r.unwrap();
     }
