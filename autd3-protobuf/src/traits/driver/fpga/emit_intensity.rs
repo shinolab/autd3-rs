@@ -3,7 +3,7 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3_driver::common::EmitIntensity {
+impl ToMessage for autd3_driver::fpga::EmitIntensity {
     type Message = EmitIntensity;
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
@@ -13,9 +13,9 @@ impl ToMessage for autd3_driver::common::EmitIntensity {
     }
 }
 
-impl FromMessage<EmitIntensity> for autd3_driver::common::EmitIntensity {
+impl FromMessage<EmitIntensity> for autd3_driver::fpga::EmitIntensity {
     fn from_msg(msg: &EmitIntensity) -> Option<Self> {
-        Some(autd3_driver::common::EmitIntensity::new(msg.value as _))
+        Some(autd3_driver::fpga::EmitIntensity::new(msg.value as _))
     }
 }
 

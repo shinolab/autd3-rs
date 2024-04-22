@@ -16,7 +16,6 @@ message DatagramLightweight {
     Clear clear = 4;
     Synchronize synchronize = 5;
     ConfigureForceFan force_fan = 6;
-    ConfigureDebugOutputIdx debug = 7;
     ConfigureReadsFPGAState reads_fpga_state = 8;
     FocusSTM focus_stm = 10;
     GainSTM gain_stm = 11;

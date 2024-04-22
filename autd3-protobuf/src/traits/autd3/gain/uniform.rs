@@ -43,10 +43,10 @@ impl FromMessage<Uniform> for autd3::gain::Uniform {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &Uniform) -> Option<Self> {
         Some(
-            Self::new(autd3_driver::common::EmitIntensity::from_msg(
+            Self::new(autd3_driver::fpga::EmitIntensity::from_msg(
                 msg.intensity.as_ref()?,
             )?)
-            .with_phase(autd3_driver::common::Phase::from_msg(msg.phase.as_ref()?)?),
+            .with_phase(autd3_driver::fpga::Phase::from_msg(msg.phase.as_ref()?)?),
         )
     }
 }
@@ -54,7 +54,7 @@ impl FromMessage<Uniform> for autd3::gain::Uniform {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::common::{EmitIntensity, Phase};
+    use autd3_driver::fpga::{EmitIntensity, Phase};
     use rand::Rng;
 
     #[test]

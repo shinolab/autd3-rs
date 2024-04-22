@@ -39,7 +39,7 @@ impl FromMessage<FocusStm> for autd3_driver::datagram::FocusSTM {
         autd3_driver::datagram::FocusSTM::from_sampling_config(
             SamplingConfiguration::from_frequency_division(msg.freq_div).ok()?,
         )
-        .with_loop_behavior(autd3_driver::common::LoopBehavior::from_msg(
+        .with_loop_behavior(autd3_driver::fpga::LoopBehavior::from_msg(
             msg.loop_behavior.as_ref()?,
         )?)
         .add_foci_from_iter(
@@ -64,7 +64,7 @@ impl ToMessage for autd3_driver::datagram::ChangeFocusSTMSegment {
 impl FromMessage<ChangeFocusStmSegment> for autd3_driver::datagram::ChangeFocusSTMSegment {
     fn from_msg(msg: &ChangeFocusStmSegment) -> Option<Self> {
         Some(autd3_driver::datagram::ChangeFocusSTMSegment::new(
-            autd3_driver::common::Segment::from(Segment::try_from(msg.segment).ok()?),
+            autd3_driver::fpga::Segment::from(Segment::try_from(msg.segment).ok()?),
         ))
     }
 }

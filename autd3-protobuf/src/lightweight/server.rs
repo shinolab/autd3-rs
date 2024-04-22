@@ -34,7 +34,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     autd3::prelude::Static::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
-                            autd3_driver::common::Segment::from(
+                            autd3_driver::fpga::Segment::from(
                                 Segment::try_from(modulation.segment)
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
@@ -49,7 +49,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     autd3::prelude::Sine::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
-                            autd3_driver::common::Segment::from(
+                            autd3_driver::fpga::Segment::from(
                                 Segment::try_from(modulation.segment)
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
@@ -64,7 +64,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     autd3::prelude::Square::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
-                            autd3_driver::common::Segment::from(
+                            autd3_driver::fpga::Segment::from(
                                 Segment::try_from(modulation.segment)
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
@@ -108,7 +108,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     autd3::prelude::Focus::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
-                            autd3_driver::common::Segment::from(
+                            autd3_driver::fpga::Segment::from(
                                 Segment::try_from(gain.segment)
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
@@ -123,7 +123,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     autd3::prelude::Bessel::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
-                            autd3_driver::common::Segment::from(
+                            autd3_driver::fpga::Segment::from(
                                 Segment::try_from(gain.segment)
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
@@ -138,7 +138,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     autd3::prelude::Null::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
-                            autd3_driver::common::Segment::from(
+                            autd3_driver::fpga::Segment::from(
                                 Segment::try_from(gain.segment)
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
@@ -153,7 +153,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     autd3::prelude::Plane::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
-                            autd3_driver::common::Segment::from(
+                            autd3_driver::fpga::Segment::from(
                                 Segment::try_from(gain.segment)
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
@@ -168,7 +168,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     autd3::prelude::Uniform::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
-                            autd3_driver::common::Segment::from(
+                            autd3_driver::fpga::Segment::from(
                                 Segment::try_from(gain.segment)
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
@@ -183,7 +183,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     autd3_gain_holo::SDP::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
-                            autd3_driver::common::Segment::from(
+                            autd3_driver::fpga::Segment::from(
                                 Segment::try_from(gain.segment)
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
@@ -198,7 +198,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     autd3_gain_holo::Naive::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
-                            autd3_driver::common::Segment::from(
+                            autd3_driver::fpga::Segment::from(
                                 Segment::try_from(gain.segment)
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
@@ -213,7 +213,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     autd3_gain_holo::GS::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
-                            autd3_driver::common::Segment::from(
+                            autd3_driver::fpga::Segment::from(
                                 Segment::try_from(gain.segment)
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
@@ -228,7 +228,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     autd3_gain_holo::GSPAT::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
-                            autd3_driver::common::Segment::from(
+                            autd3_driver::fpga::Segment::from(
                                 Segment::try_from(gain.segment)
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
@@ -243,7 +243,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     autd3_gain_holo::LM::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
-                            autd3_driver::common::Segment::from(
+                            autd3_driver::fpga::Segment::from(
                                 Segment::try_from(gain.segment)
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
@@ -258,7 +258,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     autd3_gain_holo::Greedy::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
-                            autd3_driver::common::Segment::from(
+                            autd3_driver::fpga::Segment::from(
                                 Segment::try_from(gain.segment)
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
@@ -401,13 +401,6 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     )
                     .await
                 }
-                Some(datagram_lightweight::Datagram::Debug(ref msg)) => {
-                    autd.send(
-                        autd3_driver::datagram::ConfigureDebugOutputIdx::from_msg(msg)
-                            .ok_or(AUTDProtoBufError::DataParseError)?,
-                    )
-                    .await
-                }
                 Some(datagram_lightweight::Datagram::ReadsFpgaState(ref msg)) => {
                     autd.send(
                         autd3_driver::datagram::ConfigureReadsFPGAState::from_msg(msg)
@@ -420,7 +413,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                         autd3_driver::datagram::FocusSTM::from_msg(msg)
                             .ok_or(AUTDProtoBufError::DataParseError)?
                             .with_segment(
-                                autd3_driver::common::Segment::from(
+                                autd3_driver::fpga::Segment::from(
                                     Segment::try_from(msg.segment)
                                         .ok()
                                         .ok_or(AUTDProtoBufError::DataParseError)?,
@@ -435,7 +428,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                         autd3_driver::datagram::GainSTM::from_msg(msg)
                             .ok_or(AUTDProtoBufError::DataParseError)?
                             .with_segment(
-                                autd3_driver::common::Segment::from(
+                                autd3_driver::fpga::Segment::from(
                                     Segment::try_from(msg.segment)
                                         .ok()
                                         .ok_or(AUTDProtoBufError::DataParseError)?,

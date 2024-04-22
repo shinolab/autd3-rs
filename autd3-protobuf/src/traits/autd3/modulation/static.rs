@@ -41,7 +41,7 @@ impl FromMessage<Static> for autd3::modulation::Static {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &Static) -> Option<Self> {
         Some(Self::with_intensity(
-            autd3_driver::common::EmitIntensity::from_msg(msg.intensity.as_ref()?)?,
+            autd3_driver::fpga::EmitIntensity::from_msg(msg.intensity.as_ref()?)?,
         ))
     }
 }
@@ -49,7 +49,7 @@ impl FromMessage<Static> for autd3::modulation::Static {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::common::EmitIntensity;
+    use autd3_driver::fpga::EmitIntensity;
     use rand::Rng;
 
     #[test]

@@ -35,10 +35,6 @@ message ConfigureReadsFPGAState {
     repeated bool value = 1;
 }
 
-message ConfigureDebugOutputIdx {
-    repeated int32 value = 1;
-}
-
 message GainSTM {
     uint32 freq_div = 1;
     LoopBehavior loop_behavior = 2;
