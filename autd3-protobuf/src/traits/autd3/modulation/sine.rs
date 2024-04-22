@@ -54,14 +54,14 @@ impl FromMessage<Sine> for autd3::modulation::Sine {
     fn from_msg(msg: &Sine) -> Option<Self> {
         Some(
             Self::new(msg.freq as _)
-                .with_intensity(autd3_driver::common::EmitIntensity::from_msg(
+                .with_intensity(autd3_driver::fpga::EmitIntensity::from_msg(
                     msg.intensity.as_ref()?,
                 )?)
-                .with_offset(autd3_driver::common::EmitIntensity::from_msg(
+                .with_offset(autd3_driver::fpga::EmitIntensity::from_msg(
                     msg.offset.as_ref()?,
                 )?)
-                .with_phase(autd3_driver::common::Phase::from_msg(msg.phase.as_ref()?)?)
-                .with_sampling_config(autd3_driver::common::SamplingConfiguration::from_msg(
+                .with_phase(autd3_driver::fpga::Phase::from_msg(msg.phase.as_ref()?)?)
+                .with_sampling_config(autd3_driver::fpga::SamplingConfiguration::from_msg(
                     msg.config.as_ref()?,
                 )?)
                 .with_mode(autd3::modulation::SamplingMode::from(
@@ -74,7 +74,7 @@ impl FromMessage<Sine> for autd3::modulation::Sine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::common::{EmitIntensity, Phase};
+    use autd3_driver::fpga::{EmitIntensity, Phase};
     use rand::Rng;
 
     #[test]

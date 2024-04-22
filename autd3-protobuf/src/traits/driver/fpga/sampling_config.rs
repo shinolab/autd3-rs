@@ -3,7 +3,7 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3_driver::common::SamplingConfiguration {
+impl ToMessage for autd3_driver::fpga::SamplingConfiguration {
     type Message = SamplingConfiguration;
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
@@ -13,9 +13,9 @@ impl ToMessage for autd3_driver::common::SamplingConfiguration {
     }
 }
 
-impl FromMessage<SamplingConfiguration> for autd3_driver::common::SamplingConfiguration {
+impl FromMessage<SamplingConfiguration> for autd3_driver::fpga::SamplingConfiguration {
     fn from_msg(msg: &SamplingConfiguration) -> Option<Self> {
-        autd3_driver::common::SamplingConfiguration::from_frequency_division(msg.freq_div).ok()
+        autd3_driver::fpga::SamplingConfiguration::from_frequency_division(msg.freq_div).ok()
     }
 }
 

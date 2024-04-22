@@ -16,7 +16,7 @@ impl ToMessage for autd3_driver::datagram::ChangeModulationSegment {
 impl FromMessage<ChangeModulationSegment> for autd3_driver::datagram::ChangeModulationSegment {
     fn from_msg(msg: &ChangeModulationSegment) -> Option<Self> {
         Some(autd3_driver::datagram::ChangeModulationSegment::new(
-            autd3_driver::common::Segment::from(Segment::try_from(msg.segment).ok()?),
+            autd3_driver::fpga::Segment::from(Segment::try_from(msg.segment).ok()?),
         ))
     }
 }
