@@ -80,6 +80,9 @@ pub enum AUTDInternalError {
     #[error("Failed to delete timer")]
     TimerDeleteFailed,
 
+    #[error("The input data is invalid.")]
+    InvalidDateTime,
+
     #[cfg(target_os = "windows")]
     #[error("{0}")]
     WindowsError(#[from] windows::core::Error),
