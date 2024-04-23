@@ -45,7 +45,7 @@ impl FromMessage<FocusStm> for autd3_driver::datagram::FocusSTM {
         .add_foci_from_iter(
             msg.points
                 .iter()
-                .filter_map(autd3_driver::operation::stm::ControlPoint::from_msg),
+                .filter_map(autd3_driver::firmware::operation::stm::ControlPoint::from_msg),
         )
         .ok()
     }
