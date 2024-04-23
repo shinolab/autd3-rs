@@ -60,7 +60,6 @@ fn main() {
         } else {
             println!("cargo:rustc-link-search={home_dir}\\Lib\\x64");
         }
-        println!("cargo:rustc-link-lib=Packet");
         println!("cargo:rustc-link-lib=wpcap");
     }
     #[cfg(target_os = "macos")]
