@@ -13,13 +13,11 @@ pub struct TxMessage {
 #[derive(Clone)]
 pub struct TxDatagram {
     data: Vec<TxMessage>,
-    num_devices: usize,
 }
 
 impl TxDatagram {
     pub fn new(num_devices: usize) -> Self {
         Self {
-            num_devices,
             data: vec![
                 TxMessage {
                     header: Header {
@@ -34,10 +32,8 @@ impl TxDatagram {
         }
     }
 
-    pub const fn num_devices(&self) -> usize {
-        self.num_devices
-        // TODO@23.0.0: remove const and replace with this
-        // self.data.len()
+    pub fn num_devices(&self) -> usize {
+        self.data.len()
     }
 
     pub fn all_data(&self) -> &[u8] {
