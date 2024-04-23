@@ -20,6 +20,7 @@ pub use autd3_driver::{
     defined::{METER, MILLIMETER, PI},
     error::AUTDInternalError,
     firmware::{
+        firmware_version::FirmwareInfo,
         fpga::{
             DebugType, Drive, EmitIntensity, LoopBehavior, Phase, Rad as PhaseRad,
             SamplingConfiguration, Segment, TransitionMode, FPGA_CLK_FREQ,

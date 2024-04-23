@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use autd3::{derive::*, driver::firmware_version::FirmwareInfo, prelude::*};
+use autd3::{derive::*, prelude::*};
 use autd3_link_soem::{Status, SOEM};
 
 fn print_msg_and_wait_for_key(msg: &str) {
