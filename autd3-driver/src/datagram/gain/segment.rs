@@ -20,8 +20,8 @@ impl ChangeGainSegment {
 }
 
 impl Datagram for ChangeGainSegment {
-    type O1 = crate::operation::GainChangeSegmentOp;
-    type O2 = crate::operation::NullOp;
+    type O1 = crate::firmware::operation::GainChangeSegmentOp;
+    type O2 = crate::firmware::operation::NullOp;
 
     fn timeout(&self) -> Option<Duration> {
         Some(Duration::from_millis(200))

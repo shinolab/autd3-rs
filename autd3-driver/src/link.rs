@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use crate::{
-    cpu::{check_if_msg_is_processed, RxMessage, TxDatagram},
     error::AUTDInternalError,
+    firmware::cpu::{check_if_msg_is_processed, RxMessage, TxDatagram},
     geometry::Geometry,
 };
 

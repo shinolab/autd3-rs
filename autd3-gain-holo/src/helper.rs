@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    datagram::GainFilter, defined::PI, error::AUTDInternalError, fpga::Drive, geometry::Geometry,
+    datagram::GainFilter, defined::PI, error::AUTDInternalError, firmware::fpga::Drive,
+    geometry::Geometry,
 };
 use nalgebra::ComplexField;
 
@@ -127,7 +128,9 @@ pub fn generate_result(
                     dev.idx(),
                     dev.iter()
                         .map(|_| {
-                            let phase = autd3_driver::fpga::Phase::from_rad(q[idx].argument() + PI);
+                            let phase = autd3_driver::firmware::fpga::Phase::from_rad(
+                                q[idx].argument() + PI,
+                            );
                             let intensity = constraint.convert(q[idx].abs(), max_coefficient);
                             idx += 1;
                             Drive::new(phase, intensity)
@@ -147,8 +150,9 @@ pub fn generate_result(
                             dev.iter()
                                 .filter(|tr| filter[tr.idx()])
                                 .map(|_| {
-                                    let phase =
-                                        autd3_driver::fpga::Phase::from_rad(q[idx].argument() + PI);
+                                    let phase = autd3_driver::firmware::fpga::Phase::from_rad(
+                                        q[idx].argument() + PI,
+                                    );
                                     let intensity =
                                         constraint.convert(q[idx].abs(), max_coefficient);
                                     idx += 1;

@@ -1,7 +1,7 @@
 use crate::{
     derive::*,
-    fpga::{Segment, TransitionMode},
-    operation::GainSTMMode,
+    firmware::fpga::{Segment, TransitionMode},
+    firmware::operation::GainSTMMode,
 };
 
 use super::STMProps;
@@ -127,8 +127,8 @@ impl<G: Gain> std::ops::Index<usize> for GainSTM<G> {
 }
 
 impl<G: Gain> DatagramS for GainSTM<G> {
-    type O1 = crate::operation::GainSTMOp<G>;
-    type O2 = crate::operation::NullOp;
+    type O1 = crate::firmware::operation::GainSTMOp<G>;
+    type O2 = crate::firmware::operation::NullOp;
 
     fn operation_with_segment(
         self,
@@ -182,7 +182,7 @@ mod tests {
 
     use super::*;
 
-    use crate::operation::{tests::NullGain, GainSTMOp};
+    use crate::firmware::operation::{tests::NullGain, GainSTMOp};
 
     #[rstest::rstest]
     #[test]

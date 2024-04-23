@@ -1,6 +1,6 @@
 use autd3_driver::{
-    cpu::{RxMessage, TxDatagram},
     derive::*,
+    firmware::cpu::{RxMessage, TxDatagram},
     link::{Link, LinkBuilder},
 };
 use autd3_firmware_emulator::CPUEmulator;

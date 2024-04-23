@@ -48,10 +48,10 @@ impl FromMessage<Focus> for autd3::gain::Focus {
             Self::new(autd3_driver::geometry::Vector3::from_msg(
                 msg.pos.as_ref()?,
             )?)
-            .with_intensity(autd3_driver::fpga::EmitIntensity::from_msg(
+            .with_intensity(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
                 msg.intensity.as_ref()?,
             )?)
-            .with_phase_offset(autd3_driver::fpga::Phase::from_msg(
+            .with_phase_offset(autd3_driver::firmware::fpga::Phase::from_msg(
                 msg.phase_offset.as_ref()?,
             )?),
         )

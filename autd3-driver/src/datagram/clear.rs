@@ -11,8 +11,8 @@ impl Clear {
 }
 
 impl Datagram for Clear {
-    type O1 = crate::operation::ClearOp;
-    type O2 = crate::operation::NullOp;
+    type O1 = crate::firmware::operation::ClearOp;
+    type O2 = crate::firmware::operation::NullOp;
 
     fn timeout(&self) -> Option<Duration> {
         Some(Duration::from_millis(200))
@@ -25,7 +25,7 @@ impl Datagram for Clear {
 
 #[cfg(test)]
 mod tests {
-    use crate::operation::{ClearOp, NullOp};
+    use crate::firmware::operation::{ClearOp, NullOp};
 
     use super::*;
 

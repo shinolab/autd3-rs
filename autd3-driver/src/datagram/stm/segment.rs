@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{
     derive::AUTDInternalError,
-    fpga::{Segment, TransitionMode},
+    firmware::fpga::{Segment, TransitionMode},
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -36,8 +36,8 @@ impl ChangeFocusSTMSegment {
 }
 
 impl crate::datagram::Datagram for ChangeFocusSTMSegment {
-    type O1 = crate::operation::FocusSTMChangeSegmentOp;
-    type O2 = crate::operation::NullOp;
+    type O1 = crate::firmware::operation::FocusSTMChangeSegmentOp;
+    type O2 = crate::firmware::operation::NullOp;
 
     fn timeout(&self) -> Option<Duration> {
         Some(Duration::from_millis(200))
@@ -82,8 +82,8 @@ impl ChangeGainSTMSegment {
 }
 
 impl crate::datagram::Datagram for ChangeGainSTMSegment {
-    type O1 = crate::operation::GainSTMChangeSegmentOp;
-    type O2 = crate::operation::NullOp;
+    type O1 = crate::firmware::operation::GainSTMChangeSegmentOp;
+    type O2 = crate::firmware::operation::NullOp;
 
     fn timeout(&self) -> Option<Duration> {
         Some(Duration::from_millis(200))

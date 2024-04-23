@@ -4,13 +4,15 @@ mod group;
 use std::{hash::Hash, time::Duration};
 
 use autd3_driver::{
-    cpu::{RxMessage, TxDatagram},
     datagram::{Clear, ConfigureSilencer, Datagram},
-    firmware_version::FirmwareInfo,
-    fpga::FPGAState,
+    firmware::{
+        cpu::{RxMessage, TxDatagram},
+        firmware_version::FirmwareInfo,
+        fpga::FPGAState,
+        operation::OperationHandler,
+    },
     geometry::{Device, Geometry},
     link::{send_receive, Link},
-    operation::OperationHandler,
 };
 
 use crate::{
@@ -99,8 +101,8 @@ impl<L: Link> Controller<L> {
     /// * `Ok(Vec<FirmwareInfo>)` - List of firmware information
     ///
     pub async fn firmware_infos(&mut self) -> Result<Vec<FirmwareInfo>, AUTDError> {
-        let mut op = autd3_driver::operation::FirmInfoOp::default();
-        let mut null_op = autd3_driver::operation::NullOp::default();
+        let mut op = autd3_driver::firmware::operation::FirmInfoOp::default();
+        let mut null_op = autd3_driver::firmware::operation::NullOp::default();
 
         OperationHandler::init(&mut op, &mut null_op, &self.geometry)?;
 
@@ -116,7 +118,8 @@ impl<L: Link> Controller<L> {
                 .await?
                 {
                     return Err(AUTDError::ReadFirmwareInfoFailed(ReadFirmwareInfoState(
-                        autd3_driver::cpu::check_if_msg_is_processed($tx_buf, $rx_buf).collect(),
+                        autd3_driver::firmware::cpu::check_if_msg_is_processed($tx_buf, $rx_buf)
+                            .collect(),
                     )));
                 }
             };

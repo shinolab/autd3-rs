@@ -1,6 +1,6 @@
 use autd3_driver::{
-    cpu::{RxMessage, TxDatagram},
     datagram::{Clear, IntoDatagramWithTimeout, Synchronize},
+    firmware::cpu::{RxMessage, TxDatagram},
     geometry::{Device, Geometry, IntoDevice},
     link::LinkBuilder,
 };

@@ -12,25 +12,26 @@ use std::{
 use async_channel::{bounded, Receiver, SendError, Sender};
 use time::ext::NumericalDuration;
 
-use autd3_driver::{
-    cpu::{RxMessage, TxDatagram, EC_CYCLE_TIME_BASE_NANO_SEC},
-    error::AUTDInternalError,
-    link::Link,
-    osal_timer::Timer,
-    sync_mode::SyncMode,
-    timer_strategy::TimerStrategy,
-};
-
 pub use crate::local::builder::SOEMBuilder;
-use crate::{
-    local::{error::SOEMError, iomap::IOMap, sleep::SoemCallback, soem_bindings::*},
-    EthernetAdapters,
+
+use autd3_driver::{
+    error::AUTDInternalError,
+    ethercat::{SyncMode, EC_CYCLE_TIME_BASE_NANO_SEC},
+    firmware::cpu::{RxMessage, TxDatagram},
+    link::Link,
 };
 
 use super::{
+    error::SOEMError,
     error_handler::{EcatErrorHandler, ErrHandler},
+    ethernet_adapters::EthernetAdapters,
+    iomap::IOMap,
+    osal_timer::Timer,
+    sleep::SoemCallback,
     sleep::{BusyWait, Sleep, StdSleep},
+    soem_bindings::*,
     state::EcStatus,
+    TimerStrategy,
 };
 
 /// Link using [SOEM](https://github.com/OpenEtherCATsociety/SOEM)

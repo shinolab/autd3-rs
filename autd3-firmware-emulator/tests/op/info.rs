@@ -1,8 +1,10 @@
 use autd3_driver::{
-    cpu::TxDatagram,
     datagram::*,
-    firmware_version::FirmwareInfo,
-    operation::{FirmInfoOp, NullOp, OperationHandler},
+    firmware::{
+        cpu::TxDatagram,
+        firmware_version::FirmwareInfo,
+        operation::{FirmInfoOp, NullOp, OperationHandler},
+    },
 };
 use autd3_firmware_emulator::CPUEmulator;
 

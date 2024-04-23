@@ -1,10 +1,10 @@
 use std::num::NonZeroU32;
 
 use autd3_driver::{
-    cpu::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     defined::PI,
     derive::{Drive, EmitIntensity, Phase, Segment},
-    fpga::{LoopBehavior, TransitionMode},
+    ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
+    firmware::fpga::{LoopBehavior, TransitionMode},
 };
 
 use super::params::*;
@@ -463,8 +463,8 @@ impl FPGAEmulator {
     }
 
     const fn fpga_sys_time(dc_sys_time: DcSysTime) -> u64 {
-        ((dc_sys_time.sys_time() as u128 * autd3_driver::fpga::FPGA_CLK_FREQ as u128) / 1000000000)
-            as _
+        ((dc_sys_time.sys_time() as u128 * autd3_driver::firmware::fpga::FPGA_CLK_FREQ as u128)
+            / 1000000000) as _
     }
 
     pub fn stm_idx_from_systime(&self, segment: Segment, systime: DcSysTime) -> usize {

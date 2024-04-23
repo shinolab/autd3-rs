@@ -1,7 +1,7 @@
 use crate::{
     datagram::*,
     derive::{Device, Transducer},
-    fpga::Phase,
+    firmware::fpga::Phase,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -23,8 +23,8 @@ impl<F: Fn(&Device, &Transducer) -> Phase> ConfigurePhaseFilter<F> {
 }
 
 impl<F: Fn(&Device, &Transducer) -> Phase> Datagram for ConfigurePhaseFilter<F> {
-    type O1 = crate::operation::ConfigurePhaseFilterOp<F>;
-    type O2 = crate::operation::NullOp;
+    type O1 = crate::firmware::operation::ConfigurePhaseFilterOp<F>;
+    type O2 = crate::firmware::operation::NullOp;
 
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         Ok((Self::O1::new(self.f), Self::O2::default()))

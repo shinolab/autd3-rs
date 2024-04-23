@@ -72,7 +72,7 @@ impl FromMessage<ConfigureSilencerFixedCompletionSteps>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::fpga::{SILENCER_VALUE_MAX, SILENCER_VALUE_MIN};
+    use autd3_driver::firmware::fpga::{SILENCER_VALUE_MAX, SILENCER_VALUE_MIN};
     use rand::Rng;
 
     #[test]

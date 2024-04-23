@@ -1,10 +1,12 @@
 use autd3_driver::{
     autd3_device::AUTD3,
-    cpu::TxDatagram,
     datagram::*,
     error::AUTDInternalError,
+    firmware::{
+        cpu::TxDatagram,
+        operation::{NullOp, Operation, OperationHandler},
+    },
     geometry::{Geometry, IntoDevice, Vector3},
-    operation::{NullOp, Operation, OperationHandler},
 };
 use autd3_firmware_emulator::{
     cpu::params::{ERR_BIT, ERR_NOT_SUPPORTED_TAG},

@@ -1,6 +1,6 @@
 use crate::pb::*;
 
-impl From<Segment> for autd3_driver::fpga::Segment {
+impl From<Segment> for autd3_driver::firmware::fpga::Segment {
     fn from(value: Segment) -> Self {
         match value {
             Segment::S0 => Self::S0,
@@ -9,11 +9,11 @@ impl From<Segment> for autd3_driver::fpga::Segment {
     }
 }
 
-impl From<autd3_driver::fpga::Segment> for Segment {
-    fn from(value: autd3_driver::fpga::Segment) -> Self {
+impl From<autd3_driver::firmware::fpga::Segment> for Segment {
+    fn from(value: autd3_driver::firmware::fpga::Segment) -> Self {
         match value {
-            autd3_driver::fpga::Segment::S0 => Self::S0,
-            autd3_driver::fpga::Segment::S1 => Self::S1,
+            autd3_driver::firmware::fpga::Segment::S0 => Self::S0,
+            autd3_driver::firmware::fpga::Segment::S1 => Self::S1,
         }
     }
 }

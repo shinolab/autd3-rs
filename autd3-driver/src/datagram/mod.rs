@@ -34,7 +34,7 @@ pub use with_timeout::{DatagramWithTimeout, IntoDatagramWithTimeout};
 
 use std::time::Duration;
 
-use crate::{error::AUTDInternalError, operation::Operation};
+use crate::{error::AUTDInternalError, firmware::operation::Operation};
 
 /// Datagram to be sent to devices
 pub trait Datagram {
@@ -50,8 +50,8 @@ pub trait Datagram {
 
 impl<D1, D2> Datagram for (D1, D2)
 where
-    D1: Datagram<O2 = crate::operation::NullOp>,
-    D2: Datagram<O2 = crate::operation::NullOp>,
+    D1: Datagram<O2 = crate::firmware::operation::NullOp>,
+    D2: Datagram<O2 = crate::firmware::operation::NullOp>,
 {
     type O1 = D1::O1;
     type O2 = D2::O1;
@@ -74,7 +74,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::operation::{ClearOp, NullOp};
+    use crate::firmware::operation::{ClearOp, NullOp};
 
     use super::*;
 

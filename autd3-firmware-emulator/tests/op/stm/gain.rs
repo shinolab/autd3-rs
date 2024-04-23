@@ -1,15 +1,17 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    cpu::TxDatagram,
     datagram::Datagram,
     derive::*,
-    fpga::{
-        GAIN_STM_BUF_SIZE_MAX, SAMPLING_FREQ_DIV_MAX, SILENCER_STEPS_INTENSITY_DEFAULT,
-        SILENCER_STEPS_PHASE_DEFAULT,
+    firmware::{
+        cpu::TxDatagram,
+        fpga::{
+            GAIN_STM_BUF_SIZE_MAX, SAMPLING_FREQ_DIV_MAX, SILENCER_STEPS_INTENSITY_DEFAULT,
+            SILENCER_STEPS_PHASE_DEFAULT,
+        },
+        operation::{ControlPoint, FocusSTMOp, GainSTMChangeSegmentOp, GainSTMMode, GainSTMOp},
     },
     geometry::Vector3,
-    operation::{ControlPoint, FocusSTMOp, GainSTMChangeSegmentOp, GainSTMMode, GainSTMOp},
 };
 use autd3_firmware_emulator::CPUEmulator;
 

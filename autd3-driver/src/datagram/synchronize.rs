@@ -11,8 +11,8 @@ impl Synchronize {
 }
 
 impl Datagram for Synchronize {
-    type O1 = crate::operation::SyncOp;
-    type O2 = crate::operation::NullOp;
+    type O1 = crate::firmware::operation::SyncOp;
+    type O2 = crate::firmware::operation::NullOp;
 
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         Ok((Default::default(), Default::default()))
@@ -40,6 +40,9 @@ mod tests {
         let stop = Synchronize::default();
         let r = <Synchronize as Datagram>::operation(stop);
         assert!(r.is_ok());
-        let _: (crate::operation::SyncOp, crate::operation::NullOp) = r.unwrap();
+        let _: (
+            crate::firmware::operation::SyncOp,
+            crate::firmware::operation::NullOp,
+        ) = r.unwrap();
     }
 }

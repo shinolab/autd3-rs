@@ -1,9 +1,9 @@
 pub use crate::{
     derive::*,
     error::AUTDInternalError,
-    fpga::{Drive, Segment},
+    firmware::fpga::{Drive, Segment},
+    firmware::operation::{GainOp, NullOp, Operation},
     geometry::{Device, Geometry, Transducer},
-    operation::{GainOp, NullOp, Operation},
 };
 pub use autd3_derive::Gain;
 
@@ -156,7 +156,7 @@ mod tests {
 
     use super::{super::tests::TestGain, *};
 
-    use crate::{geometry::tests::create_geometry, operation::tests::NullGain};
+    use crate::{firmware::operation::tests::NullGain, geometry::tests::create_geometry};
 
     #[test]
     fn test() -> anyhow::Result<()> {

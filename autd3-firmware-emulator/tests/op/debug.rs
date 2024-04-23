@@ -1,4 +1,7 @@
-use autd3_driver::{cpu::TxDatagram, datagram::*, fpga::DebugType};
+use autd3_driver::{
+    datagram::*,
+    firmware::{cpu::TxDatagram, fpga::DebugType},
+};
 use autd3_firmware_emulator::CPUEmulator;
 
 use crate::{create_geometry, send};

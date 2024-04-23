@@ -1,10 +1,13 @@
 use std::time::Duration;
 
 use super::Datagram;
-use crate::error::AUTDInternalError;
-use crate::fpga::Segment;
-use crate::fpga::TransitionMode;
-use crate::operation::Operation;
+use crate::{
+    error::AUTDInternalError,
+    firmware::{
+        fpga::{Segment, TransitionMode},
+        operation::Operation,
+    },
+};
 
 /// Datagram with target segment
 pub struct DatagramWithSegment<D: DatagramS> {
@@ -127,7 +130,7 @@ impl<D: DatagramS + Clone> Clone for DatagramWithSegment<D> {
 
 #[cfg(test)]
 mod tests {
-    use crate::operation::{ClearOp, NullOp};
+    use crate::firmware::operation::{ClearOp, NullOp};
 
     use super::*;
 

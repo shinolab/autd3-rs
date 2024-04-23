@@ -1,4 +1,7 @@
-use autd3_driver::{cpu::TxDatagram, derive::Phase, operation::ConfigurePhaseFilterOp};
+use autd3_driver::{
+    derive::Phase,
+    firmware::{cpu::TxDatagram, operation::ConfigurePhaseFilterOp},
+};
 use autd3_firmware_emulator::CPUEmulator;
 
 use rand::*;

@@ -2,18 +2,13 @@
 
 pub mod acoustics;
 pub mod autd3_device;
-pub mod cpu;
 pub mod datagram;
 pub mod defined;
 pub mod error;
-pub mod firmware_version;
-pub mod fpga;
+pub mod ethercat;
+pub mod firmware;
 pub mod geometry;
 pub mod link;
-pub mod operation;
-pub mod osal_timer;
-pub mod sync_mode;
-pub mod timer_strategy;
 
 #[cfg(feature = "async-trait")]
 pub use async_trait::async_trait;
@@ -28,12 +23,14 @@ pub mod derive {
             RadiationPressure,
         },
         error::AUTDInternalError,
-        fpga::{
-            Drive, EmitIntensity, LoopBehavior, Phase, Rad, SamplingConfiguration, Segment,
-            TransitionMode, FPGA_CLK_FREQ, SAMPLING_FREQ_DIV_MIN,
+        firmware::{
+            fpga::{
+                Drive, EmitIntensity, LoopBehavior, Phase, Rad, SamplingConfiguration, Segment,
+                TransitionMode, FPGA_CLK_FREQ, SAMPLING_FREQ_DIV_MIN,
+            },
+            operation::{GainOp, ModulationOp, NullOp, Operation},
         },
         geometry::{Device, Geometry, Transducer},
-        operation::{GainOp, ModulationOp, NullOp, Operation},
     };
     pub use autd3_derive::{Builder, Gain, Modulation};
 }
