@@ -1,19 +1,37 @@
 use std::time::Duration;
 
-use crate::{derive::AUTDInternalError, fpga::Segment};
+use crate::{
+    derive::AUTDInternalError,
+    fpga::{Segment, TransitionMode},
+};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ChangeFocusSTMSegment {
     segment: Segment,
+    transition_mode: TransitionMode,
 }
 
 impl ChangeFocusSTMSegment {
-    pub const fn new(segment: Segment) -> Self {
-        Self { segment }
+    pub fn new(segment: Segment) -> Self {
+        Self {
+            segment,
+            transition_mode: TransitionMode::default(),
+        }
+    }
+
+    pub const fn with_transition_mode(self, transition_mode: TransitionMode) -> Self {
+        Self {
+            transition_mode,
+            ..self
+        }
     }
 
     pub const fn segment(&self) -> Segment {
         self.segment
+    }
+
+    pub const fn transition_mode(&self) -> TransitionMode {
+        self.transition_mode
     }
 }
 
@@ -26,22 +44,40 @@ impl crate::datagram::Datagram for ChangeFocusSTMSegment {
     }
 
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new(self.segment), Self::O2::default()))
+        Ok((
+            Self::O1::new(self.segment, self.transition_mode),
+            Self::O2::default(),
+        ))
     }
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct ChangeGainSTMSegment {
     segment: Segment,
+    transition_mode: TransitionMode,
 }
 
 impl ChangeGainSTMSegment {
-    pub const fn new(segment: Segment) -> Self {
-        Self { segment }
+    pub fn new(segment: Segment) -> Self {
+        Self {
+            segment,
+            transition_mode: TransitionMode::default(),
+        }
+    }
+
+    pub const fn with_transition_mode(self, transition_mode: TransitionMode) -> Self {
+        Self {
+            transition_mode,
+            ..self
+        }
     }
 
     pub const fn segment(&self) -> Segment {
         self.segment
+    }
+
+    pub const fn transition_mode(&self) -> TransitionMode {
+        self.transition_mode
     }
 }
 
@@ -54,7 +90,10 @@ impl crate::datagram::Datagram for ChangeGainSTMSegment {
     }
 
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new(self.segment), Self::O2::default()))
+        Ok((
+            Self::O1::new(self.segment, self.transition_mode),
+            Self::O2::default(),
+        ))
     }
 }
 

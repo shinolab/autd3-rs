@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     error::AUTDInternalError,
-    fpga::Segment,
+    fpga::{Segment, TransitionMode},
     geometry::{Device, Geometry},
     operation::{cast, Operation, TypeTag},
 };
@@ -11,17 +11,22 @@ use crate::{
 struct GainSTMUpdate {
     tag: TypeTag,
     segment: u8,
+    transition_mode: u8,
+    __padding: [u8; 5],
+    transition_value: u64,
 }
 
 pub struct GainSTMChangeSegmentOp {
     segment: Segment,
+    transition_mode: TransitionMode,
     remains: HashMap<usize, usize>,
 }
 
 impl GainSTMChangeSegmentOp {
-    pub fn new(segment: Segment) -> Self {
+    pub fn new(segment: Segment, transition_mode: TransitionMode) -> Self {
         Self {
             segment,
+            transition_mode,
             remains: HashMap::new(),
         }
     }
@@ -31,9 +36,13 @@ impl Operation for GainSTMChangeSegmentOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert_eq!(self.remains[&device.idx()], 1);
 
-        let d = cast::<GainSTMUpdate>(tx);
-        d.tag = TypeTag::GainSTMChangeSegment;
-        d.segment = self.segment as u8;
+        *cast::<GainSTMUpdate>(tx) = GainSTMUpdate {
+            tag: TypeTag::GainSTMChangeSegment,
+            segment: self.segment as u8,
+            transition_mode: self.transition_mode.mode(),
+            __padding: [0; 5],
+            transition_value: self.transition_mode.value(),
+        };
 
         Ok(std::mem::size_of::<GainSTMUpdate>())
     }
