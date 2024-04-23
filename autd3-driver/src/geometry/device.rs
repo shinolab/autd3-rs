@@ -105,6 +105,19 @@ impl Device {
     }
 }
 
+#[cfg(feature = "variable_frequency")]
+impl Device {
+    pub fn set_frequency(&mut self, frequency: f64) {
+        self.transducers
+            .iter_mut()
+            .for_each(|tr| tr.set_frequency(frequency));
+    }
+
+    pub fn frequency(&self) -> f64 {
+        self.transducers[0].frequency()
+    }
+}
+
 impl Deref for Device {
     type Target = [Transducer];
 

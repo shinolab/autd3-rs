@@ -12,7 +12,10 @@ pub use unit::*;
 
 pub const MILLIMETER: f64 = METER / 1000.0;
 
-pub const ULTRASOUND_FREQUENCY: f64 = 40e3;
+pub const FREQUENCY_40K: f64 = 40e3;
+
+#[cfg(not(feature = "variable_frequency"))]
+pub const ULTRASOUND_FREQUENCY: f64 = FREQUENCY_40K;
 
 pub type Complex = nalgebra::Complex<f64>;
 

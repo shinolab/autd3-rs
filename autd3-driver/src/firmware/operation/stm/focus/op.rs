@@ -62,6 +62,17 @@ impl FocusSTMOp {
             update_segment,
         }
     }
+
+    #[cfg(feature = "variable_frequency")]
+    fn convert_sound_speed(device: &Device) -> u32 {
+        (device.sound_speed / METER * 1024.0 * crate::defined::FREQUENCY_40K / device.frequency())
+            .round() as u32
+    }
+
+    #[cfg(not(feature = "variable_frequency"))]
+    fn convert_sound_speed(device: &Device) -> u32 {
+        (device.sound_speed / METER * 1024.0).round() as u32
+    }
 }
 
 impl Operation for FocusSTMOp {
@@ -94,7 +105,7 @@ impl Operation for FocusSTMOp {
                 transition_value: self.transition_mode.value(),
                 send_num: send_num as u8,
                 freq_div: self.freq_div,
-                sound_speed: (device.sound_speed / METER * 1024.0).round() as u32,
+                sound_speed: Self::convert_sound_speed(device),
                 rep: self.loop_behavior.to_rep(),
             };
         } else {
