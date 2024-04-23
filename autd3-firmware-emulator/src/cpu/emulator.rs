@@ -1,4 +1,4 @@
-use autd3_driver::cpu::{Header, TxDatagram};
+use autd3_driver::cpu::{DcSysTime, Header, TxDatagram};
 
 use crate::fpga::emulator::FPGAEmulator;
 
@@ -14,6 +14,10 @@ pub struct CPUEmulator {
     pub(crate) mod_cycle: u32,
     pub(crate) stm_cycle: [u32; 2],
     pub(crate) stm_mode: [u16; 2],
+    pub(crate) stm_transition_mode: u8,
+    pub(crate) stm_transition_value: u64,
+    pub(crate) mod_transition_mode: u8,
+    pub(crate) mod_transition_value: u64,
     pub(crate) gain_stm_mode: u8,
     pub(crate) fpga: FPGAEmulator,
     pub(crate) synchronized: bool,
@@ -28,6 +32,7 @@ pub struct CPUEmulator {
     pub(crate) min_freq_div_phase: u32,
     pub(crate) is_rx_data_used: bool,
     pub(crate) pwe_write: u32,
+    pub(crate) dc_sys_time: DcSysTime,
 }
 
 impl CPUEmulator {
@@ -43,6 +48,10 @@ impl CPUEmulator {
             stm_cycle: [1, 1],
             stm_mode: [STM_MODE_GAIN, STM_MODE_GAIN],
             gain_stm_mode: 0,
+            stm_transition_mode: TRANSITION_MODE_SYNC_IDX,
+            stm_transition_value: 0,
+            mod_transition_mode: TRANSITION_MODE_SYNC_IDX,
+            mod_transition_value: 0,
             fpga: FPGAEmulator::new(num_transducers),
             synchronized: false,
             num_transducers,
@@ -56,6 +65,7 @@ impl CPUEmulator {
             min_freq_div_phase: 20480,
             is_rx_data_used: false,
             pwe_write: 0,
+            dc_sys_time: DcSysTime::now(),
         };
         s.init();
         s
@@ -111,6 +121,14 @@ impl CPUEmulator {
         }
     }
 
+    pub fn set_dc_sys_time(&mut self, dc_sys_time: DcSysTime) {
+        self.dc_sys_time = dc_sys_time;
+    }
+
+    pub fn dc_sys_time(&self) -> DcSysTime {
+        self.dc_sys_time
+    }
+
     pub const fn should_update(&self) -> bool {
         self.read_fpga_state
     }
@@ -162,10 +180,10 @@ impl CPUEmulator {
             return;
         }
         if self.read_fpga_state {
-            self.rx_data = READS_FPGA_STATE_ENABLED
-                | self.bram_read(BRAM_SELECT_CONTROLLER, BRAM_ADDR_FPGA_STATE) as u8;
+            self.rx_data = FPGA_STATE_READS_FPGA_STATE_ENABLED
+                | self.bram_read(BRAM_SELECT_CONTROLLER, ADDR_FPGA_STATE) as u8;
         } else {
-            self.rx_data &= !READS_FPGA_STATE_ENABLED;
+            self.rx_data &= !FPGA_STATE_READS_FPGA_STATE_ENABLED;
         }
     }
 
@@ -224,7 +242,7 @@ impl CPUEmulator {
 
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_CTL_FLAG,
+            ADDR_CTL_FLAG,
             self.fpga_flags_internal,
         );
 

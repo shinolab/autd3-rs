@@ -12,15 +12,17 @@ keywords = ["autd"]
 
 [dependencies]
 autd3-driver = { path = "../autd3-driver", version = "23.0.0" }
-chrono = { workspace = true }
+time = { workspace = true, features = ["std"] }
 num-integer = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
+time = { workspace = true, features = ["std", "macros"] }
 autd3-derive = { path = "../autd3-derive", version = "23.0.0" }
 itertools = { workspace = true }
 rand = { workspace = true }
+rstest = { workspace = true }
 
 [features]
 default = []

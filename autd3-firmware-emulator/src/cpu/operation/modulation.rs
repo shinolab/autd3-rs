@@ -6,9 +6,11 @@ struct ModulationHead {
     tag: u8,
     flag: u8,
     size: u16,
+    transition_mode: u8,
+    __pad: [u8; 3],
     freq_div: u32,
     rep: u32,
-    segment: u32,
+    transition_value: u64,
 }
 
 #[repr(C, align(2))]
@@ -30,15 +32,35 @@ union Modulation {
 struct ModulationUpdate {
     tag: u8,
     segment: u8,
+    transition_mode: u8,
+    __pad: [u8; 5],
+    transition_value: u64,
 }
 
 impl CPUEmulator {
-    pub(crate) unsafe fn change_mod_wr_segment(&mut self, segment: u16) {
+    pub(crate) unsafe fn mod_segment_update(&mut self, segment: u8, mode: u8, value: u64) -> u8 {
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_MOD_MEM_WR_SEGMENT,
-            segment,
+            ADDR_MOD_REQ_RD_SEGMENT,
+            segment as _,
         );
+        if (mode == TRANSITION_MODE_SYS_TIME)
+            && (value < self.dc_sys_time.sys_time() + SYS_TIME_TRANSITION_MARGIN)
+        {
+            return ERR_MISS_TRANSITION_TIME;
+        }
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_TRANSITION_MODE, mode as _);
+        self.bram_cpy(
+            BRAM_SELECT_CONTROLLER,
+            ADDR_MOD_TRANSITION_VALUE_0,
+            &value as *const u64 as _,
+            std::mem::size_of::<u64>() >> 1,
+        );
+        NO_ERR
+    }
+
+    pub(crate) unsafe fn change_mod_wr_segment(&mut self, segment: u16) {
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_MEM_WR_SEGMENT, segment);
     }
 
     pub(crate) unsafe fn write_mod(&mut self, data: &[u8]) -> u8 {
@@ -50,25 +72,31 @@ impl CPUEmulator {
             self.mod_cycle = 0;
 
             let freq_div = d.head.freq_div;
-            let segment = d.head.segment;
+            let segment = if (d.head.flag & GAIN_STM_FLAG_SEGMENT) != 0 {
+                1
+            } else {
+                0
+            };
             let rep = d.head.rep;
 
             if self.silencer_strict_mode & (freq_div < self.min_freq_div_intensity) {
                 return ERR_FREQ_DIV_TOO_SMALL;
             }
             self.mod_freq_div[segment as usize] = freq_div;
+            self.mod_transition_mode = d.head.transition_mode;
+            self.mod_transition_value = d.head.transition_value;
 
             match segment {
                 0 => {
                     self.bram_cpy(
                         BRAM_SELECT_CONTROLLER,
-                        BRAM_ADDR_MOD_FREQ_DIV_0_0,
+                        ADDR_MOD_FREQ_DIV0_0,
                         &freq_div as *const _ as _,
                         std::mem::size_of::<u32>() >> 1,
                     );
                     self.bram_cpy(
                         BRAM_SELECT_CONTROLLER,
-                        BRAM_ADDR_MOD_REP_0_0,
+                        ADDR_MOD_REP0_0,
                         &rep as *const _ as _,
                         std::mem::size_of::<u32>() >> 1,
                     );
@@ -76,18 +104,18 @@ impl CPUEmulator {
                 1 => {
                     self.bram_cpy(
                         BRAM_SELECT_CONTROLLER,
-                        BRAM_ADDR_MOD_FREQ_DIV_1_0,
+                        ADDR_MOD_FREQ_DIV1_0,
                         &freq_div as *const _ as _,
                         std::mem::size_of::<u32>() >> 1,
                     );
                     self.bram_cpy(
                         BRAM_SELECT_CONTROLLER,
-                        BRAM_ADDR_MOD_REP_1_0,
+                        ADDR_MOD_REP1_0,
                         &rep as *const _ as _,
                         std::mem::size_of::<u32>() >> 1,
                     );
                 }
-                _ => return ERR_INVALID_SEGMENT,
+                _ => unreachable!(),
             }
             self.mod_segment = segment as _;
 
@@ -111,14 +139,14 @@ impl CPUEmulator {
                 0 => {
                     self.bram_write(
                         BRAM_SELECT_CONTROLLER,
-                        BRAM_ADDR_MOD_CYCLE_0,
+                        ADDR_MOD_CYCLE0,
                         (self.mod_cycle.max(1) - 1) as _,
                     );
                 }
                 1 => {
                     self.bram_write(
                         BRAM_SELECT_CONTROLLER,
-                        BRAM_ADDR_MOD_CYCLE_1,
+                        ADDR_MOD_CYCLE1,
                         (self.mod_cycle.max(1) - 1) as _,
                     );
                 }
@@ -126,10 +154,10 @@ impl CPUEmulator {
             }
 
             if (d.subseq.flag & MODULATION_FLAG_UPDATE) == MODULATION_FLAG_UPDATE {
-                self.bram_write(
-                    BRAM_SELECT_CONTROLLER,
-                    BRAM_ADDR_MOD_REQ_RD_SEGMENT,
-                    self.mod_segment as _,
+                return self.mod_segment_update(
+                    self.mod_segment,
+                    self.mod_transition_mode,
+                    self.mod_transition_value,
                 );
             }
         }
@@ -140,13 +168,7 @@ impl CPUEmulator {
     pub(crate) unsafe fn change_mod_segment(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<ModulationUpdate>(data);
 
-        self.bram_write(
-            BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_MOD_REQ_RD_SEGMENT,
-            d.segment as _,
-        );
-
-        NO_ERR
+        self.mod_segment_update(d.segment, d.transition_mode, d.transition_value)
     }
 }
 
@@ -156,21 +178,28 @@ mod tests {
 
     #[test]
     fn modulation_memory_layout() {
-        assert_eq!(16, std::mem::size_of::<ModulationHead>());
+        assert_eq!(24, std::mem::size_of::<ModulationHead>());
         assert_eq!(0, std::mem::offset_of!(ModulationHead, tag));
         assert_eq!(1, std::mem::offset_of!(ModulationHead, flag));
         assert_eq!(2, std::mem::offset_of!(ModulationHead, size));
-        assert_eq!(4, std::mem::offset_of!(ModulationHead, freq_div));
-        assert_eq!(8, std::mem::offset_of!(ModulationHead, rep));
-        assert_eq!(12, std::mem::offset_of!(ModulationHead, segment));
+        assert_eq!(4, std::mem::offset_of!(ModulationHead, transition_mode));
+        assert_eq!(8, std::mem::offset_of!(ModulationHead, freq_div));
+        assert_eq!(12, std::mem::offset_of!(ModulationHead, rep));
+        assert_eq!(16, std::mem::offset_of!(ModulationHead, transition_value));
 
         assert_eq!(4, std::mem::size_of::<ModulationSubseq>());
         assert_eq!(0, std::mem::offset_of!(ModulationSubseq, tag));
         assert_eq!(1, std::mem::offset_of!(ModulationSubseq, flag));
         assert_eq!(2, std::mem::offset_of!(ModulationSubseq, size));
 
-        assert_eq!(16, std::mem::size_of::<Modulation>());
+        assert_eq!(24, std::mem::size_of::<Modulation>());
         assert_eq!(0, std::mem::offset_of!(Modulation, head));
         assert_eq!(0, std::mem::offset_of!(Modulation, subseq));
+
+        assert_eq!(16, std::mem::size_of::<ModulationUpdate>());
+        assert_eq!(0, std::mem::offset_of!(ModulationUpdate, tag));
+        assert_eq!(1, std::mem::offset_of!(ModulationUpdate, segment));
+        assert_eq!(2, std::mem::offset_of!(ModulationUpdate, transition_mode));
+        assert_eq!(8, std::mem::offset_of!(ModulationUpdate, transition_value));
     }
 }

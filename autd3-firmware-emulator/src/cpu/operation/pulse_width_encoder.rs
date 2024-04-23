@@ -31,7 +31,7 @@ impl CPUEmulator {
     pub(crate) unsafe fn change_pwe_wr_page(&mut self, page: u16) {
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_PULSE_WIDTH_ENCODER_TABLE_WR_PAGE,
+            ADDR_PULSE_WIDTH_ENCODER_TABLE_WR_PAGE,
             page,
         );
     }
@@ -50,7 +50,7 @@ impl CPUEmulator {
 
                 self.bram_write(
                     BRAM_SELECT_CONTROLLER,
-                    BRAM_ADDR_PULSE_WIDTH_ENCODER_FULL_WIDTH_START,
+                    ADDR_PULSE_WIDTH_ENCODER_FULL_WIDTH_START,
                     d.head.full_width_start,
                 );
 

@@ -2,11 +2,12 @@ use std::collections::HashMap;
 
 use autd3_driver::{
     cpu::TxDatagram,
+    datagram::Datagram,
     defined::{METER, MILLIMETER},
-    derive::{DatagramS, Drive, LoopBehavior, Phase, Segment},
+    derive::{Drive, LoopBehavior, Phase, Segment},
     error::AUTDInternalError,
     fpga::{
-        FOCUS_STM_BUF_SIZE_MAX, FOCUS_STM_FIXED_NUM_UNIT, SAMPLING_FREQ_DIV_MAX,
+        TransitionMode, FOCUS_STM_BUF_SIZE_MAX, FOCUS_STM_FIXED_NUM_UNIT, SAMPLING_FREQ_DIV_MAX,
         SAMPLING_FREQ_DIV_MIN, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
     },
     geometry::Vector3,
@@ -49,7 +50,15 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
     let foci = gen_random_foci(FOCUS_STM_BUF_SIZE_MAX);
     let loop_behaviour = LoopBehavior::Infinite;
     let segment = Segment::S0;
-    let mut op = FocusSTMOp::new(foci.clone(), freq_div, loop_behaviour, segment, true);
+    let transition_mode = TransitionMode::SyncIdx;
+    let mut op = FocusSTMOp::new(
+        foci.clone(),
+        freq_div,
+        loop_behaviour,
+        segment,
+        transition_mode,
+        true,
+    );
 
     send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
@@ -58,6 +67,7 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
     assert_eq!(loop_behaviour, cpu.fpga().stm_loop_behavior(Segment::S0));
     assert_eq!(foci.len(), cpu.fpga().stm_cycle(Segment::S0));
     assert_eq!(freq_div, cpu.fpga().stm_frequency_division(Segment::S0));
+    assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
     assert_eq!(
         (geometry[0].sound_speed / METER * 1024.0).round() as u32,
         cpu.fpga().sound_speed(Segment::S0)
@@ -98,7 +108,7 @@ fn send_focus_stm_invalid_segment_transition() -> anyhow::Result<()> {
             .collect();
         let g = TestGain { buf: buf.clone() };
 
-        let (mut op, _) = g.operation_with_segment(Segment::S0, true)?;
+        let (mut op, _) = g.operation()?;
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
     }
@@ -113,17 +123,15 @@ fn send_focus_stm_invalid_segment_transition() -> anyhow::Result<()> {
                     .collect()
             })
             .collect();
-        let loop_behavior = LoopBehavior::Infinite;
-        let segment = Segment::S1;
-        let freq_div = 0xFFFFFFFF;
         let mut op = GainSTMOp::new(
             bufs.iter()
                 .map(|buf| TestGain { buf: buf.clone() })
                 .collect(),
             GainSTMMode::PhaseIntensityFull,
-            freq_div,
-            loop_behavior,
-            segment,
+            0xFFFFFFFF,
+            LoopBehavior::Infinite,
+            Segment::S1,
+            TransitionMode::SyncIdx,
             true,
         );
 
@@ -131,13 +139,13 @@ fn send_focus_stm_invalid_segment_transition() -> anyhow::Result<()> {
     }
 
     {
-        let mut op = FocusSTMChangeSegmentOp::new(Segment::S0);
+        let mut op = FocusSTMChangeSegmentOp::new(Segment::S0, TransitionMode::default());
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, &mut op, &geometry, &mut tx)
         );
 
-        let mut op = FocusSTMChangeSegmentOp::new(Segment::S1);
+        let mut op = FocusSTMChangeSegmentOp::new(Segment::S1, TransitionMode::default());
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, &mut op, &geometry, &mut tx)
