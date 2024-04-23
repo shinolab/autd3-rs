@@ -32,9 +32,9 @@ message SendResponseLightweight {
   string msg = 3;
 }
 
-message FirmwareInfoRequestLightweight {}
-message FirmwareInfoResponseLightweight {
-  message FirmwareInfo {
+message FirmwareVersionRequestLightweight {}
+message FirmwareVersionResponseLightweight {
+  message FirmwareVersion {
     uint32 fpga_major_version = 1;
     uint32 fpga_minor_version = 2;
     uint32 cpu_major_version = 3;
@@ -43,14 +43,14 @@ message FirmwareInfoResponseLightweight {
   }
   bool success = 1;
   string msg = 2;
-  repeated FirmwareInfo firmware_info_list = 3;
+  repeated FirmwareVersion firmware_info_list = 3;
 }
 
 message CloseRequestLightweight {}
 
 service ECATLight {
   rpc ConfigGeomety(Geometry) returns (SendResponseLightweight) {}
-  rpc FirmwareInfo(FirmwareInfoRequestLightweight) returns (FirmwareInfoResponseLightweight) {}
+  rpc FirmwareVersion(FirmwareVersionRequestLightweight) returns (FirmwareVersionResponseLightweight) {}
   rpc Send(DatagramLightweight) returns (SendResponseLightweight) {}
   rpc Close(CloseRequestLightweight) returns (SendResponseLightweight) {}
 }

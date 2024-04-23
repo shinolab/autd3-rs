@@ -330,16 +330,16 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
 
     async fn firmware_info(
         &self,
-        _req: Request<FirmwareInfoRequestLightweight>,
-    ) -> Result<Response<FirmwareInfoResponseLightweight>, Status> {
+        _req: Request<FirmwareVersionRequestLightweight>,
+    ) -> Result<Response<FirmwareVersionResponseLightweight>, Status> {
         if let Some(autd) = self.autd.write().await.as_mut() {
             match autd.firmware_infos().await {
-                Ok(list) => Ok(Response::new(FirmwareInfoResponseLightweight {
+                Ok(list) => Ok(Response::new(FirmwareVersionResponseLightweight {
                     success: true,
                     msg: String::new(),
                     firmware_info_list: list
                         .iter()
-                        .map(|f| firmware_info_response_lightweight::FirmwareInfo {
+                        .map(|f| firmware_info_response_lightweight::FirmwareVersion {
                             cpu_major_version: f.cpu_version_number_major() as _,
                             cpu_minor_version: f.cpu_version_number_minor() as _,
                             fpga_major_version: f.fpga_version_number_major() as _,
@@ -349,7 +349,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                         .collect(),
                 })),
                 Err(e) => {
-                    return Ok(Response::new(FirmwareInfoResponseLightweight {
+                    return Ok(Response::new(FirmwareVersionResponseLightweight {
                         success: false,
                         msg: format!("{}", e),
                         firmware_info_list: Vec::new(),
@@ -357,7 +357,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                 }
             }
         } else {
-            Ok(Response::new(FirmwareInfoResponseLightweight {
+            Ok(Response::new(FirmwareVersionResponseLightweight {
                 success: false,
                 msg: "Geometry is not configured".to_string(),
                 firmware_info_list: Vec::new(),

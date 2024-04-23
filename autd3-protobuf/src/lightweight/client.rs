@@ -67,18 +67,18 @@ impl LightweightClient {
     ///
     /// # Returns
     ///
-    /// * `Ok(Vec<FirmwareInfo>)` - List of firmware information
+    /// * `Ok(Vec<FirmwareVersion>)` - List of firmware information
     ///
     pub async fn firmware_infos(
         &mut self,
     ) -> Result<
-        Vec<autd3_driver::firmware::firmware_version::FirmwareInfo>,
+        Vec<autd3_driver::firmware::version::FirmwareVersion>,
         crate::error::AUTDProtoBufError,
     > {
         let res = self
             .client
             .firmware_info(tonic::Request::new(
-                crate::pb::FirmwareInfoRequestLightweight {},
+                crate::pb::FirmwareVersionRequestLightweight {},
             ))
             .await?
             .into_inner();

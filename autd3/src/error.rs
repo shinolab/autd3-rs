@@ -2,9 +2,9 @@ use autd3_driver::error::AUTDInternalError;
 use thiserror::Error;
 
 #[derive(PartialEq)]
-pub struct ReadFirmwareInfoState(pub Vec<bool>);
+pub struct ReadFirmwareVersionState(pub Vec<bool>);
 
-impl std::fmt::Display for ReadFirmwareInfoState {
+impl std::fmt::Display for ReadFirmwareVersionState {
     // GRCOV_EXCL_START
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -22,7 +22,7 @@ impl std::fmt::Display for ReadFirmwareInfoState {
     // GRCOV_EXCL_STOP
 }
 
-impl std::fmt::Debug for ReadFirmwareInfoState {
+impl std::fmt::Debug for ReadFirmwareVersionState {
     // GRCOV_EXCL_START
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         <Self as std::fmt::Display>::fmt(self, f)
@@ -35,7 +35,7 @@ pub enum AUTDError {
     #[error("Device id ({0}) is specified, but only {1} AUTDs are connected.")]
     GroupedOutOfRange(usize, usize),
     #[error("{0}")]
-    ReadFirmwareInfoFailed(ReadFirmwareInfoState),
+    ReadFirmwareVersionFailed(ReadFirmwareVersionState),
     #[error("Read FPGA state failed")]
     ReadFPGAStateFailed,
     #[error("{0}")]
