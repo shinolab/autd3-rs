@@ -33,13 +33,12 @@ impl<F: Fn(&Device) -> [DebugType; 4]> Operation for DebugSettingOp<F> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert_eq!(self.remains[&device.idx()], 1);
 
-        let d = cast::<DebugSetting>(tx);
-        d.tag = TypeTag::Debug;
-        let types = (self.f)(device);
-        for (i, ty) in types.iter().enumerate() {
-            d.ty[i] = ty.ty();
-            d.value[i] = ty.value();
-        }
+        *cast::<DebugSetting>(tx) = DebugSetting {
+            tag: TypeTag::Debug,
+            __pad: 0,
+            ty: (self.f)(device).map(|t| t.ty()),
+            value: (self.f)(device).map(|t| t.value()),
+        };
 
         Ok(std::mem::size_of::<DebugSetting>())
     }

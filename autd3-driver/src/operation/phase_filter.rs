@@ -31,8 +31,7 @@ impl<F: Fn(&Device, &Transducer) -> Phase> Operation for ConfigurePhaseFilterOp<
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert_eq!(self.remains[&device.idx()], 1);
 
-        let d = cast::<PhaseFilter>(tx);
-        d.tag = TypeTag::PhaseFilter;
+        cast::<PhaseFilter>(tx).tag = TypeTag::PhaseFilter;
 
         unsafe {
             std::slice::from_raw_parts_mut(

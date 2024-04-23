@@ -81,22 +81,27 @@ impl Operation for FocusSTMOp {
         assert!(send_num > 0);
 
         if sent == 0 {
-            let d = cast::<FocusSTMHead>(tx);
-            d.tag = TypeTag::FocusSTM;
-            d.flag = FocusSTMControlFlags::BEGIN;
-            d.flag
-                .set(FocusSTMControlFlags::SEGMENT, self.segment == Segment::S1);
-            d.transition_mode = self.transition_mode.mode();
-            d.transition_value = self.transition_mode.value();
-            d.send_num = send_num as u8;
-            d.freq_div = self.freq_div;
-            d.sound_speed = (device.sound_speed / METER * 1024.0).round() as u32;
-            d.rep = self.loop_behavior.to_rep();
+            *cast::<FocusSTMHead>(tx) = FocusSTMHead {
+                tag: TypeTag::FocusSTM,
+                flag: FocusSTMControlFlags::BEGIN
+                    | if self.segment == Segment::S1 {
+                        FocusSTMControlFlags::SEGMENT
+                    } else {
+                        FocusSTMControlFlags::NONE
+                    },
+                transition_mode: self.transition_mode.mode(),
+                transition_value: self.transition_mode.value(),
+                send_num: send_num as u8,
+                freq_div: self.freq_div,
+                sound_speed: (device.sound_speed / METER * 1024.0).round() as u32,
+                rep: self.loop_behavior.to_rep(),
+            };
         } else {
-            let d = cast::<FocusSTMSubseq>(tx);
-            d.tag = TypeTag::FocusSTM;
-            d.flag = FocusSTMControlFlags::NONE;
-            d.send_num = send_num as u8;
+            *cast::<FocusSTMSubseq>(tx) = FocusSTMSubseq {
+                tag: TypeTag::FocusSTM,
+                flag: FocusSTMControlFlags::NONE,
+                send_num: send_num as u8,
+            };
         }
 
         if sent + send_num == self.points.len() {

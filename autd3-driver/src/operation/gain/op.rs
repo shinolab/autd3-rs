@@ -56,9 +56,11 @@ impl<G: Gain> Operation for GainOp<G> {
             tx.len() >= std::mem::size_of::<GainT>() + d.len() * std::mem::size_of::<FPGADrive>()
         );
 
-        cast::<GainT>(tx).tag = TypeTag::Gain;
-        cast::<GainT>(tx).segment = self.segment as u8;
-        cast::<GainT>(tx).flag = GainControlFlags::NONE;
+        *cast::<GainT>(tx) = GainT {
+            tag: TypeTag::Gain,
+            segment: self.segment as u8,
+            flag: GainControlFlags::NONE,
+        };
         cast::<GainT>(tx)
             .flag
             .set(GainControlFlags::UPDATE_SEGMENT, self.update_segment);

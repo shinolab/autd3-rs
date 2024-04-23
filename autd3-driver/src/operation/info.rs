@@ -8,7 +8,6 @@ use crate::{
 
 use super::cast;
 
-// #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[repr(u8)]
 pub enum FirmwareInfoType {
     CPUVersionMajor = 0x01,
@@ -32,18 +31,18 @@ pub struct FirmInfoOp {
 
 impl Operation for FirmInfoOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        let d = cast::<FirmInfo>(tx);
-        d.tag = TypeTag::FirmwareInfo;
-        d.ty = match self.remains[&device.idx()] {
-            6 => FirmwareInfoType::CPUVersionMajor,
-            5 => FirmwareInfoType::CPUVersionMinor,
-            4 => FirmwareInfoType::FPGAVersionMajor,
-            3 => FirmwareInfoType::FPGAVersionMinor,
-            2 => FirmwareInfoType::FPGAFunctions,
-            1 => FirmwareInfoType::Clear,
-            _ => unreachable!(),
+        *cast::<FirmInfo>(tx) = FirmInfo {
+            tag: TypeTag::FirmwareInfo,
+            ty: match self.remains[&device.idx()] {
+                6 => FirmwareInfoType::CPUVersionMajor,
+                5 => FirmwareInfoType::CPUVersionMinor,
+                4 => FirmwareInfoType::FPGAVersionMajor,
+                3 => FirmwareInfoType::FPGAVersionMinor,
+                2 => FirmwareInfoType::FPGAFunctions,
+                1 => FirmwareInfoType::Clear,
+                _ => unreachable!(),
+            },
         };
-
         Ok(std::mem::size_of::<FirmInfo>())
     }
 

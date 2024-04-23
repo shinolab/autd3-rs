@@ -91,21 +91,22 @@ impl Operation for ConfigurePulseWidthEncoderOp {
         assert!(size > 0);
 
         if sent == 0 {
-            let d = cast::<PWEHead>(tx);
-            d.tag = TypeTag::ConfigPulseWidthEncoder;
-            d.flag = PWEControlFlags::BEGIN;
-            d.size = size as u16;
-            d.full_width_start = self.full_width_start;
+            *cast::<PWEHead>(tx) = PWEHead {
+                tag: TypeTag::ConfigPulseWidthEncoder,
+                flag: PWEControlFlags::BEGIN,
+                size: size as u16,
+                full_width_start: self.full_width_start,
+            };
         } else {
-            let d = cast::<PWESubseq>(tx);
-            d.tag = TypeTag::ConfigPulseWidthEncoder;
-            d.flag = PWEControlFlags::NONE;
-            d.size = size as u16;
+            *cast::<PWESubseq>(tx) = PWESubseq {
+                tag: TypeTag::ConfigPulseWidthEncoder,
+                flag: PWEControlFlags::NONE,
+                size: size as u16,
+            };
         }
 
         if sent + size == self.buf.len() {
-            let d = cast::<PWESubseq>(tx);
-            d.flag.set(PWEControlFlags::END, true);
+            cast::<PWESubseq>(tx).flag.set(PWEControlFlags::END, true);
         }
 
         unsafe {
