@@ -70,7 +70,7 @@ impl Gain for Bessel {
 mod tests {
     use rand::Rng;
 
-    use autd3_driver::defined::PI;
+    use autd3_driver::{defined::PI ,datagram::Datagram};
 
     use super::*;
 
@@ -152,6 +152,6 @@ mod tests {
         assert_eq!(g.theta(), g2.theta());
         assert_eq!(g.intensity(), g2.intensity());
         assert_eq!(g.phase_offset(), g2.phase_offset());
-        let _ = g.operation_with_segment(Segment::S0, true);
+        let _ = g.operation();
     }
 }

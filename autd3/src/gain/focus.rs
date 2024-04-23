@@ -47,6 +47,7 @@ impl Gain for Focus {
 #[cfg(test)]
 mod tests {
     use crate::tests::{create_geometry, random_vector3};
+    use autd3_driver::datagram::Datagram;
 
     use super::*;
     use rand::Rng;
@@ -104,6 +105,6 @@ mod tests {
         let gain = Focus::new(Vector3::zeros());
         let gain2 = gain.clone();
         assert_eq!(gain, gain2);
-        let _ = gain.operation_with_segment(Segment::S0, true);
+        let _ = gain.operation();
     }
 }
