@@ -24,7 +24,7 @@ rand = { workspace = true, optional = true }
 bitfield-struct = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.54.0", features = ["Win32_Media_Multimedia", "Win32_System_Threading", "Win32_Foundation"] }
+windows = { version = "0.56.0", features = ["Win32_Media_Multimedia", "Win32_System_Threading", "Win32_Foundation"] }
 
 [target.'cfg(not(windows))'.dependencies]
 libc = "0.2.144"
