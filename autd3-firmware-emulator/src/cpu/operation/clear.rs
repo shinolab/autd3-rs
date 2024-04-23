@@ -15,27 +15,23 @@ impl CPUEmulator {
 
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_SILENCER_UPDATE_RATE_INTENSITY,
+            ADDR_SILENCER_UPDATE_RATE_INTENSITY,
             256,
         );
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_SILENCER_UPDATE_RATE_PHASE, 256);
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_SILENCER_UPDATE_RATE_PHASE,
-            256,
-        );
-        self.bram_write(
-            BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_SILENCER_MODE,
+            ADDR_SILENCER_MODE,
             SILNCER_MODE_FIXED_COMPLETION_STEPS,
         );
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_SILENCER_COMPLETION_STEPS_INTENSITY,
+            ADDR_SILENCER_COMPLETION_STEPS_INTENSITY,
             10,
         );
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_SILENCER_COMPLETION_STEPS_PHASE,
+            ADDR_SILENCER_COMPLETION_STEPS_PHASE,
             40,
         );
         self.silencer_strict_mode = true;
@@ -44,33 +40,33 @@ impl CPUEmulator {
 
         self.mod_freq_div = [5120, 5120];
         self.mod_cycle = 2;
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_MOD_REQ_RD_SEGMENT, 0);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_REQ_RD_SEGMENT, 0);
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_MOD_CYCLE_0,
+            ADDR_MOD_CYCLE0,
             (self.mod_cycle.max(1) - 1) as _,
         );
         self.bram_cpy(
             BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_MOD_FREQ_DIV_0_0,
+            ADDR_MOD_FREQ_DIV0_0,
             &self.mod_freq_div as *const _ as _,
             std::mem::size_of::<u32>() >> 1,
         );
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_MOD_CYCLE_1,
+            ADDR_MOD_CYCLE1,
             (self.mod_cycle.max(1) - 1) as _,
         );
         self.bram_cpy(
             BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_MOD_FREQ_DIV_1_0,
+            ADDR_MOD_FREQ_DIV1_0,
             &self.mod_freq_div as *const _ as _,
             std::mem::size_of::<u32>() >> 1,
         );
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_MOD_REP_0_0, 0xFFFF);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_MOD_REP_0_1, 0xFFFF);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_MOD_REP_1_0, 0xFFFF);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_MOD_REP_1_1, 0xFFFF);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_REP0_0, 0xFFFF);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_REP0_1, 0xFFFF);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_REP1_0, 0xFFFF);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_REP1_1, 0xFFFF);
         self.change_mod_wr_segment(0);
         self.bram_write(BRAM_SELECT_MOD, 0, 0xFFFF);
         self.change_mod_wr_segment(1);
@@ -79,19 +75,19 @@ impl CPUEmulator {
         self.stm_cycle = [1, 1];
         self.stm_mode = [STM_MODE_GAIN, STM_MODE_GAIN];
         self.stm_freq_div = [0xFFFFFFFF, 0xFFFFFFFF];
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_MODE_0, STM_MODE_GAIN);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_MODE_1, STM_MODE_GAIN);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_REQ_RD_SEGMENT, 0);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_CYCLE_0, 0);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_FREQ_DIV_0_0, 0xFFFF);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_FREQ_DIV_0_1, 0xFFFF);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_CYCLE_1, 0);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_FREQ_DIV_1_0, 0xFFFF);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_FREQ_DIV_1_1, 0xFFFF);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_REP_0_0, 0xFFFF);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_REP_0_1, 0xFFFF);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_REP_1_0, 0xFFFF);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_REP_1_1, 0xFFFF);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_MODE0, STM_MODE_GAIN);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_MODE1, STM_MODE_GAIN);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REQ_RD_SEGMENT, 0);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_CYCLE0, 0);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_FREQ_DIV0_0, 0xFFFF);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_FREQ_DIV0_1, 0xFFFF);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_CYCLE1, 0);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_FREQ_DIV1_0, 0xFFFF);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_FREQ_DIV1_1, 0xFFFF);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REP0_0, 0xFFFF);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REP0_1, 0xFFFF);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REP1_0, 0xFFFF);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REP1_1, 0xFFFF);
         self.change_stm_wr_segment(0);
         self.change_stm_wr_page(0);
         self.bram_set(BRAM_SELECT_STM, 0, 0x0000, TRANS_NUM << 1);
@@ -99,14 +95,14 @@ impl CPUEmulator {
         self.change_stm_wr_page(0);
         self.bram_set(BRAM_SELECT_STM, 0, 0x0000, TRANS_NUM << 1);
 
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_TYPE_0, 0x00);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_TYPE_1, 0x00);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_TYPE_2, 0x00);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_TYPE_3, 0x00);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_VALUE_0, 0x0000);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_VALUE_1, 0x0000);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_VALUE_2, 0x0000);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_VALUE_3, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_TYPE0, 0x00);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_TYPE1, 0x00);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_TYPE2, 0x00);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_TYPE3, 0x00);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE0, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE1, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE2, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE3, 0x0000);
 
         NO_ERR
     }

@@ -4,25 +4,26 @@ pub const FOCUS_STM_BUF_PAGE_SIZE_WIDTH: u32 = 12;
 pub const FOCUS_STM_BUF_PAGE_SIZE: u32 = 1 << FOCUS_STM_BUF_PAGE_SIZE_WIDTH;
 pub const FOCUS_STM_BUF_PAGE_SIZE_MASK: u32 = FOCUS_STM_BUF_PAGE_SIZE - 1;
 
-#[repr(C)]
+#[repr(C, align(2))]
 #[derive(Clone, Copy)]
 struct FocusSTMHead {
     tag: u8,
     flag: u8,
     send_num: u8,
-    segment: u8,
+    transition_mode: u8,
     freq_div: u32,
     sound_speed: u32,
     rep: u32,
+    transition_value: u64,
 }
 
-#[repr(C)]
+#[repr(C, align(2))]
 #[derive(Clone, Copy)]
 struct FocusSTMSubseq {
     tag: u8,
     flag: u8,
     send_num: u8,
-    pad: u8,
+    __pad: u8,
 }
 
 #[repr(C, align(2))]
@@ -36,6 +37,9 @@ union FocusSTM {
 struct FocusSTMUpdate {
     tag: u8,
     segment: u8,
+    transition_mode: u8,
+    __pad: [u8; 5],
+    transition_value: u64,
 }
 
 impl CPUEmulator {
@@ -48,9 +52,15 @@ impl CPUEmulator {
             let freq_div = d.head.freq_div;
             let sound_speed = d.head.sound_speed;
             let rep = d.head.rep;
-            let segment = d.head.segment;
+            let segment = if (d.head.flag & GAIN_STM_FLAG_SEGMENT) != 0 {
+                1
+            } else {
+                0
+            };
 
             self.stm_cycle[segment as usize] = 0;
+            self.stm_transition_mode = d.head.transition_mode;
+            self.stm_transition_value = d.head.transition_value;
 
             if self.silencer_strict_mode
                 && ((freq_div < self.min_freq_div_intensity)
@@ -64,20 +74,20 @@ impl CPUEmulator {
                 0 => {
                     self.bram_cpy(
                         BRAM_SELECT_CONTROLLER,
-                        BRAM_ADDR_STM_FREQ_DIV_0_0,
+                        ADDR_STM_FREQ_DIV0_0,
                         &freq_div as *const _ as _,
                         std::mem::size_of::<u32>() >> 1,
                     );
-                    self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_MODE_0, STM_MODE_FOCUS);
+                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_MODE0, STM_MODE_FOCUS);
                     self.bram_cpy(
                         BRAM_SELECT_CONTROLLER,
-                        BRAM_ADDR_STM_SOUND_SPEED_0_0,
+                        ADDR_STM_SOUND_SPEED0_0,
                         &sound_speed as *const _ as _,
                         std::mem::size_of::<u32>() >> 1,
                     );
                     self.bram_cpy(
                         BRAM_SELECT_CONTROLLER,
-                        BRAM_ADDR_STM_REP_0_0,
+                        ADDR_STM_REP0_0,
                         &rep as *const _ as _,
                         std::mem::size_of::<u32>() >> 1,
                     );
@@ -85,25 +95,25 @@ impl CPUEmulator {
                 1 => {
                     self.bram_cpy(
                         BRAM_SELECT_CONTROLLER,
-                        BRAM_ADDR_STM_FREQ_DIV_1_0,
+                        ADDR_STM_FREQ_DIV1_0,
                         &freq_div as *const _ as _,
                         std::mem::size_of::<u32>() >> 1,
                     );
-                    self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_MODE_1, STM_MODE_FOCUS);
+                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_MODE1, STM_MODE_FOCUS);
                     self.bram_cpy(
                         BRAM_SELECT_CONTROLLER,
-                        BRAM_ADDR_STM_SOUND_SPEED_1_0,
+                        ADDR_STM_SOUND_SPEED1_0,
                         &sound_speed as *const _ as _,
                         std::mem::size_of::<u32>() >> 1,
                     );
                     self.bram_cpy(
                         BRAM_SELECT_CONTROLLER,
-                        BRAM_ADDR_STM_REP_1_0,
+                        ADDR_STM_REP1_0,
                         &rep as *const _ as _,
                         std::mem::size_of::<u32>() >> 1,
                     );
                 }
-                _ => return ERR_INVALID_SEGMENT,
+                _ => unreachable!(),
             }
             self.stm_segment = segment;
 
@@ -190,14 +200,14 @@ impl CPUEmulator {
                 0 => {
                     self.bram_write(
                         BRAM_SELECT_CONTROLLER,
-                        BRAM_ADDR_STM_CYCLE_0,
+                        ADDR_STM_CYCLE0,
                         (self.stm_cycle[self.stm_segment as usize].max(1) - 1) as _,
                     );
                 }
                 1 => {
                     self.bram_write(
                         BRAM_SELECT_CONTROLLER,
-                        BRAM_ADDR_STM_CYCLE_1,
+                        ADDR_STM_CYCLE1,
                         (self.stm_cycle[self.stm_segment as usize].max(1) - 1) as _,
                     );
                 }
@@ -205,10 +215,10 @@ impl CPUEmulator {
             }
 
             if (d.subseq.flag & FOCUS_STM_FLAG_UPDATE) == FOCUS_STM_FLAG_UPDATE {
-                self.bram_write(
-                    BRAM_SELECT_CONTROLLER,
-                    BRAM_ADDR_STM_REQ_RD_SEGMENT,
-                    self.stm_segment as _,
+                return self.stm_segment_update(
+                    self.stm_segment,
+                    self.stm_transition_mode,
+                    self.stm_transition_value,
                 );
             }
         }
@@ -225,13 +235,7 @@ impl CPUEmulator {
             return ERR_INVALID_SEGMENT_TRANSITION;
         }
 
-        self.bram_write(
-            BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_STM_REQ_RD_SEGMENT,
-            d.segment as _,
-        );
-
-        NO_ERR
+        self.stm_segment_update(d.segment, d.transition_mode, d.transition_value)
     }
 }
 
@@ -241,14 +245,15 @@ mod tests {
 
     #[test]
     fn focus_stm_memory_layout() {
-        assert_eq!(16, std::mem::size_of::<FocusSTMHead>());
+        assert_eq!(24, std::mem::size_of::<FocusSTMHead>());
         assert_eq!(0, std::mem::offset_of!(FocusSTMHead, tag));
         assert_eq!(1, std::mem::offset_of!(FocusSTMHead, flag));
         assert_eq!(2, std::mem::offset_of!(FocusSTMHead, send_num));
-        assert_eq!(3, std::mem::offset_of!(FocusSTMHead, segment));
+        assert_eq!(3, std::mem::offset_of!(FocusSTMHead, transition_mode));
         assert_eq!(4, std::mem::offset_of!(FocusSTMHead, freq_div));
         assert_eq!(8, std::mem::offset_of!(FocusSTMHead, sound_speed));
         assert_eq!(12, std::mem::offset_of!(FocusSTMHead, rep));
+        assert_eq!(16, std::mem::offset_of!(FocusSTMHead, transition_value));
 
         assert_eq!(4, std::mem::size_of::<FocusSTMSubseq>());
         assert_eq!(0, std::mem::offset_of!(FocusSTMSubseq, tag));
@@ -258,8 +263,10 @@ mod tests {
         assert_eq!(0, std::mem::offset_of!(FocusSTM, head));
         assert_eq!(0, std::mem::offset_of!(FocusSTM, subseq));
 
-        assert_eq!(2, std::mem::size_of::<FocusSTMUpdate>());
+        assert_eq!(16, std::mem::size_of::<FocusSTMUpdate>());
         assert_eq!(0, std::mem::offset_of!(FocusSTMUpdate, tag));
         assert_eq!(1, std::mem::offset_of!(FocusSTMUpdate, segment));
+        assert_eq!(2, std::mem::offset_of!(FocusSTMUpdate, transition_mode));
+        assert_eq!(8, std::mem::offset_of!(FocusSTMUpdate, transition_value));
     }
 }

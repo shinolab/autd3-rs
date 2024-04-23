@@ -1,4 +1,4 @@
-use autd3_driver::{cpu::TxDatagram, datagram::*, operation::DebugType};
+use autd3_driver::{cpu::TxDatagram, datagram::*, fpga::DebugType};
 use autd3_firmware_emulator::CPUEmulator;
 
 use crate::{create_geometry, send};
@@ -20,10 +20,10 @@ fn send_debug_output_idx() -> anyhow::Result<()> {
     send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
     assert_eq!(
-        debug_types.map(|ty| u8::from(&ty)),
+        debug_types.clone().map(|ty| ty.ty()),
         cpu.fpga().debug_types()
     );
-    assert_eq!([0, 1, 0, 0], cpu.fpga().debug_values());
+    assert_eq!(debug_types.map(|ty| ty.value()), cpu.fpga().debug_values());
 
     Ok(())
 }

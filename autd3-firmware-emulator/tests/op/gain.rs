@@ -50,7 +50,7 @@ fn send_gain() -> anyhow::Result<()> {
             .collect();
         let g = TestGain { buf: buf.clone() };
 
-        let (mut op, _) = g.operation_with_segment(Segment::S0, true)?;
+        let (mut op, _) = g.operation_with_segment(Segment::S0, TransitionMode::SyncIdx, true)?;
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
@@ -84,7 +84,7 @@ fn send_gain() -> anyhow::Result<()> {
             .collect();
         let g = TestGain { buf: buf.clone() };
 
-        let (mut op, _) = g.operation_with_segment(Segment::S1, false)?;
+        let (mut op, _) = g.operation_with_segment(Segment::S1, TransitionMode::SyncIdx, false)?;
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
@@ -122,44 +122,45 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     // segment 0: FocusSTM
-    {
-        let freq_div = 0xFFFFFFFF;
-        let foci = (0..2)
-            .map(|_| ControlPoint::new(Vector3::zeros()))
-            .collect();
-        let loop_behaviour = LoopBehavior::Infinite;
-        let segment = Segment::S0;
-        let mut op = FocusSTMOp::new(foci, freq_div, loop_behaviour, segment, true);
-
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
-    }
+    send(
+        &mut cpu,
+        &mut FocusSTMOp::new(
+            (0..2)
+                .map(|_| ControlPoint::new(Vector3::zeros()))
+                .collect(),
+            0xFFFFFFFF,
+            LoopBehavior::Infinite,
+            Segment::S0,
+            TransitionMode::SyncIdx,
+            true,
+        ),
+        &geometry,
+        &mut tx,
+    )?;
 
     // segment 1: GainSTM
-    {
-        let bufs: Vec<HashMap<usize, Vec<Drive>>> = (0..2)
-            .map(|_| {
-                geometry
-                    .iter()
-                    .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
-                    .collect()
-            })
-            .collect();
-        let loop_behavior = LoopBehavior::Infinite;
-        let segment = Segment::S1;
-        let freq_div = 0xFFFFFFFF;
-        let mut op = GainSTMOp::new(
-            bufs.iter()
-                .map(|buf| TestGain { buf: buf.clone() })
+    send(
+        &mut cpu,
+        &mut GainSTMOp::new(
+            (0..2)
+                .map(|_| {
+                    geometry
+                        .iter()
+                        .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
+                        .collect()
+                })
+                .map(|buf: HashMap<usize, Vec<Drive>>| TestGain { buf: buf.clone() })
                 .collect(),
             GainSTMMode::PhaseIntensityFull,
-            freq_div,
-            loop_behavior,
-            segment,
+            0xFFFFFFFF,
+            LoopBehavior::Infinite,
+            Segment::S1,
+            TransitionMode::SyncIdx,
             true,
-        );
-
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
-    }
+        ),
+        &geometry,
+        &mut tx,
+    )?;
 
     {
         let mut op = GainChangeSegmentOp::new(Segment::S0);

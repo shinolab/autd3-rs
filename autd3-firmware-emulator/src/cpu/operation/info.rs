@@ -23,11 +23,11 @@ impl CPUEmulator {
     }
 
     fn get_fpga_version(&self) -> u16 {
-        self.bram_read(BRAM_SELECT_CONTROLLER, BRAM_ADDR_VERSION_NUM_MAJOR)
+        self.bram_read(BRAM_SELECT_CONTROLLER, ADDR_VERSION_NUM_MAJOR)
     }
 
     fn get_fpga_version_minor(&self) -> u16 {
-        self.bram_read(BRAM_SELECT_CONTROLLER, BRAM_ADDR_VERSION_NUM_MINOR)
+        self.bram_read(BRAM_SELECT_CONTROLLER, ADDR_VERSION_NUM_MINOR)
     }
 
     pub(crate) fn firm_info(&mut self, data: &[u8]) -> u8 {

@@ -35,34 +35,34 @@ impl CPUEmulator {
                 }
                 self.bram_write(
                     BRAM_SELECT_CONTROLLER,
-                    BRAM_ADDR_SILENCER_COMPLETION_STEPS_INTENSITY,
+                    ADDR_SILENCER_COMPLETION_STEPS_INTENSITY,
                     d.value_intensity,
                 );
                 self.bram_write(
                     BRAM_SELECT_CONTROLLER,
-                    BRAM_ADDR_SILENCER_COMPLETION_STEPS_PHASE,
+                    ADDR_SILENCER_COMPLETION_STEPS_PHASE,
                     d.value_phase,
                 );
                 self.bram_write(
                     BRAM_SELECT_CONTROLLER,
-                    BRAM_ADDR_SILENCER_MODE,
+                    ADDR_SILENCER_MODE,
                     SILNCER_MODE_FIXED_COMPLETION_STEPS as _,
                 );
             }
             v if v == SILNCER_MODE_FIXED_UPDATE_RATE as _ => {
                 self.bram_write(
                     BRAM_SELECT_CONTROLLER,
-                    BRAM_ADDR_SILENCER_UPDATE_RATE_INTENSITY,
+                    ADDR_SILENCER_UPDATE_RATE_INTENSITY,
                     d.value_intensity,
                 );
                 self.bram_write(
                     BRAM_SELECT_CONTROLLER,
-                    BRAM_ADDR_SILENCER_UPDATE_RATE_PHASE,
+                    ADDR_SILENCER_UPDATE_RATE_PHASE,
                     d.value_phase,
                 );
                 self.bram_write(
                     BRAM_SELECT_CONTROLLER,
-                    BRAM_ADDR_SILENCER_MODE,
+                    ADDR_SILENCER_MODE,
                     SILNCER_MODE_FIXED_UPDATE_RATE as _,
                 );
             }

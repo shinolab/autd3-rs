@@ -1,12 +1,11 @@
 use std::num::NonZeroU32;
 
 use autd3_driver::{
-    common::EmitIntensity,
     cpu::TxDatagram,
     derive::{LoopBehavior, Segment},
     fpga::{
-        SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN, SILENCER_STEPS_INTENSITY_DEFAULT,
-        SILENCER_STEPS_PHASE_DEFAULT,
+        EmitIntensity, TransitionMode, SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN,
+        SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
     },
     operation::{ModulationChangeSegmentOp, ModulationOp},
 };
@@ -32,7 +31,15 @@ fn send_mod() -> anyhow::Result<()> {
                 ..=SAMPLING_FREQ_DIV_MAX,
         );
         let loop_behavior = LoopBehavior::Infinite;
-        let mut op = ModulationOp::new(m.clone(), freq_div, loop_behavior, Segment::S0, true);
+        let transition_mode = TransitionMode::SyncIdx;
+        let mut op = ModulationOp::new(
+            m.clone(),
+            freq_div,
+            loop_behavior,
+            Segment::S0,
+            transition_mode,
+            true,
+        );
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
@@ -42,7 +49,11 @@ fn send_mod() -> anyhow::Result<()> {
             freq_div,
             cpu.fpga().modulation_frequency_division(Segment::S0)
         );
-        assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(Segment::S0));
+        assert_eq!(
+            loop_behavior,
+            cpu.fpga().modulation_loop_behavior(Segment::S0)
+        );
+        assert_eq!(transition_mode, cpu.fpga().mod_transition_mode());
         assert_eq!(m, cpu.fpga().modulation(Segment::S0));
     }
 
@@ -54,7 +65,15 @@ fn send_mod() -> anyhow::Result<()> {
                 ..=SAMPLING_FREQ_DIV_MAX,
         );
         let loop_behavior = LoopBehavior::Finite(NonZeroU32::new(1).unwrap());
-        let mut op = ModulationOp::new(m.clone(), freq_div, loop_behavior, Segment::S1, false);
+        let transition_mode = TransitionMode::Ext;
+        let mut op = ModulationOp::new(
+            m.clone(),
+            freq_div,
+            loop_behavior,
+            Segment::S1,
+            transition_mode,
+            false,
+        );
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
@@ -68,11 +87,12 @@ fn send_mod() -> anyhow::Result<()> {
             loop_behavior,
             cpu.fpga().modulation_loop_behavior(Segment::S1)
         );
+        assert_eq!(TransitionMode::SyncIdx, cpu.fpga().mod_transition_mode());
         assert_eq!(m, cpu.fpga().modulation(Segment::S1));
     }
 
     {
-        let mut op = ModulationChangeSegmentOp::new(Segment::S1);
+        let mut op = ModulationChangeSegmentOp::new(Segment::S1, TransitionMode::default());
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
