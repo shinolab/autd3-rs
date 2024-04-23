@@ -32,6 +32,7 @@ mod tests {
     use rand::Rng;
 
     use crate::tests::create_geometry;
+    use autd3_driver::datagram::Datagram;
 
     use super::*;
 
@@ -72,6 +73,6 @@ mod tests {
     #[test]
     fn test_transtest_derive() {
         let gain = TransducerTest::new(f);
-        let _ = gain.operation_with_segment(Segment::S0, true);
+        let _ = gain.operation();
     }
 }

@@ -50,6 +50,7 @@ mod tests {
     use rand::Rng;
 
     use super::*;
+    use autd3_driver::datagram::Datagram;
 
     use crate::tests::{create_geometry, random_vector3};
 
@@ -106,6 +107,6 @@ mod tests {
         let gain = Plane::new(Vector3::zeros());
         let gain2 = gain.clone();
         assert_eq!(gain, gain2);
-        let _ = gain.operation_with_segment(Segment::S0, true);
+        let _ = gain.operation();
     }
 }
