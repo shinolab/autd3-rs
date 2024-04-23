@@ -68,7 +68,7 @@ impl<B: LinAlgBackend> Gain for Naive<B> {
 #[cfg(test)]
 mod tests {
     use super::{super::super::NalgebraBackend, super::super::Pascal, *};
-    use autd3_driver::{autd3_device::AUTD3, geometry::IntoDevice};
+    use autd3_driver::{autd3_device::AUTD3, datagram::Datagram, geometry::IntoDevice};
 
     #[test]
     fn test_naive_all() {
@@ -85,7 +85,7 @@ mod tests {
             .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pascal));
 
         let _ = g.calc(&geometry, GainFilter::All);
-        let _ = g.operation_with_segment(Segment::S0, true);
+        let _ = g.operation();
     }
 
     #[test]
