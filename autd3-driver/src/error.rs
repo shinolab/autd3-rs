@@ -44,11 +44,15 @@ pub enum AUTDInternalError {
     )]
     FocusSTMPointSizeOutOfRange(usize),
     #[error(
-        "Point coordinate ({0}) is out of range ([{}, {}])",
-        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER as f64,
-        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_UPPER as f64,
+        "Point coordinate ({0}, {1}, {2}) is out of range ([{}, {}], [{}, {}], [{}, {}])",
+        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER_X as f64,
+        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_UPPER_X as f64,
+        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER_Y as f64,
+        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_UPPER_Y as f64,
+        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER_Z as f64,
+        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_UPPER_Z as f64,
     )]
-    FocusSTMPointOutOfRange(f64),
+    FocusSTMPointOutOfRange(f64, f64, f64),
     #[error(
         "GainSTM size ({0}) is out of range ([{}, {}])",
         STM_BUF_SIZE_MIN,
