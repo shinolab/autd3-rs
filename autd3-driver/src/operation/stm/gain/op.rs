@@ -210,20 +210,26 @@ impl<G: Gain> Operation for GainSTMOp<G> {
         }
 
         if sent == 0 {
-            let d = cast::<GainSTMHead>(tx);
-            d.tag = TypeTag::GainSTM;
-            d.flag = GainSTMControlFlags::BEGIN;
-            d.flag
-                .set(GainSTMControlFlags::SEGMENT, self.segment == Segment::S1);
-            d.mode = self.mode;
-            d.transition_mode = self.transition_mode.mode();
-            d.transition_value = self.transition_mode.value();
-            d.freq_div = self.freq_div;
-            d.rep = self.loop_behavior.to_rep();
+            *cast::<GainSTMHead>(tx) = GainSTMHead {
+                tag: TypeTag::GainSTM,
+                flag: GainSTMControlFlags::BEGIN
+                    | if self.segment == Segment::S1 {
+                        GainSTMControlFlags::SEGMENT
+                    } else {
+                        GainSTMControlFlags::NONE
+                    },
+                mode: self.mode,
+                transition_mode: self.transition_mode.mode(),
+                transition_value: self.transition_mode.value(),
+                freq_div: self.freq_div,
+                rep: self.loop_behavior.to_rep(),
+                __padding: [0; 4],
+            };
         } else {
-            let d = cast::<GainSTMSubseq>(tx);
-            d.tag = TypeTag::GainSTM;
-            d.flag = GainSTMControlFlags::NONE;
+            *cast::<GainSTMSubseq>(tx) = GainSTMSubseq {
+                tag: TypeTag::GainSTM,
+                flag: GainSTMControlFlags::NONE,
+            };
         }
 
         let d = cast::<GainSTMSubseq>(tx);

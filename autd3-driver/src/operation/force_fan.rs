@@ -30,9 +30,10 @@ impl<F: Fn(&Device) -> bool> Operation for ConfigureForceFanOp<F> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert_eq!(self.remains[&device.idx()], 1);
 
-        let d = cast::<ConfigureForceFan>(tx);
-        d.tag = TypeTag::ForceFan;
-        d.value = (self.f)(device);
+        *cast::<ConfigureForceFan>(tx) = ConfigureForceFan {
+            tag: TypeTag::ForceFan,
+            value: (self.f)(device),
+        };
 
         Ok(std::mem::size_of::<ConfigureForceFan>())
     }

@@ -34,11 +34,12 @@ impl Operation for ConfigSilencerFixedUpdateRateOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert_eq!(self.remains[&device.idx()], 1);
 
-        let d = cast::<ConfigSilencerFixedUpdateRate>(tx);
-        d.tag = TypeTag::Silencer;
-        d.value_intensity = self.value_intensity;
-        d.value_phase = self.value_phase;
-        d.flag = SILENCER_CTL_FLAG_FIXED_UPDATE_RATE;
+        *cast::<ConfigSilencerFixedUpdateRate>(tx) = ConfigSilencerFixedUpdateRate {
+            tag: TypeTag::Silencer,
+            flag: SILENCER_CTL_FLAG_FIXED_UPDATE_RATE,
+            value_intensity: self.value_intensity,
+            value_phase: self.value_phase,
+        };
 
         Ok(std::mem::size_of::<ConfigSilencerFixedUpdateRate>())
     }

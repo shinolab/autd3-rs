@@ -78,21 +78,27 @@ impl Operation for ModulationOp {
         assert!(mod_size > 0);
 
         if sent == 0 {
-            let d = cast::<ModulationHead>(tx);
-            d.tag = TypeTag::Modulation;
-            d.flag = ModulationControlFlags::BEGIN;
-            d.flag
-                .set(ModulationControlFlags::SEGMENT, self.segment == Segment::S1);
-            d.transition_mode = self.transition_mode.mode();
-            d.transition_value = self.transition_mode.value();
-            d.size = mod_size as u16;
-            d.freq_div = self.freq_div;
-            d.rep = self.loop_behavior.to_rep();
+            *cast::<ModulationHead>(tx) = ModulationHead {
+                tag: TypeTag::Modulation,
+                flag: ModulationControlFlags::BEGIN
+                    | if self.segment == Segment::S1 {
+                        ModulationControlFlags::SEGMENT
+                    } else {
+                        ModulationControlFlags::NONE
+                    },
+                size: mod_size as u16,
+                transition_mode: self.transition_mode.mode(),
+                __pad: [0; 3],
+                freq_div: self.freq_div,
+                rep: self.loop_behavior.to_rep(),
+                transition_value: self.transition_mode.value(),
+            };
         } else {
-            let d = cast::<ModulationSubseq>(tx);
-            d.tag = TypeTag::Modulation;
-            d.flag = ModulationControlFlags::NONE;
-            d.size = mod_size as u16;
+            *cast::<ModulationSubseq>(tx) = ModulationSubseq {
+                tag: TypeTag::Modulation,
+                flag: ModulationControlFlags::NONE,
+                size: mod_size as u16,
+            };
         }
 
         if sent + mod_size == self.buf.len() {

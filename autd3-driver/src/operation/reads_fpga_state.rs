@@ -30,9 +30,10 @@ impl<F: Fn(&Device) -> bool> Operation for ConfigureReadsFPGAStateOp<F> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert_eq!(self.remains[&device.idx()], 1);
 
-        let d = cast::<ConfigureReadsFPGAState>(tx);
-        d.tag = TypeTag::ReadsFPGAState;
-        d.value = (self.f)(device);
+        *cast::<ConfigureReadsFPGAState>(tx) = ConfigureReadsFPGAState {
+            tag: TypeTag::ReadsFPGAState,
+            value: (self.f)(device),
+        };
 
         Ok(std::mem::size_of::<ConfigureReadsFPGAState>())
     }

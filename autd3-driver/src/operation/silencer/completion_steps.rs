@@ -37,14 +37,17 @@ impl Operation for ConfigSilencerFixedCompletionStepsOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert_eq!(self.remains[&device.idx()], 1);
 
-        let d = cast::<ConfigSilencerFixedCompletionSteps>(tx);
-        d.tag = TypeTag::Silencer;
-        d.value_intensity = self.value_intensity;
-        d.value_phase = self.value_phase;
-        d.flag = SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS;
-        if self.strict_mode {
-            d.flag |= SILENCER_CTL_FLAG_STRICT_MODE;
-        }
+        *cast::<ConfigSilencerFixedCompletionSteps>(tx) = ConfigSilencerFixedCompletionSteps {
+            tag: TypeTag::Silencer,
+            flag: SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS
+                | if self.strict_mode {
+                    SILENCER_CTL_FLAG_STRICT_MODE
+                } else {
+                    0
+                },
+            value_intensity: self.value_intensity,
+            value_phase: self.value_phase,
+        };
 
         Ok(std::mem::size_of::<ConfigSilencerFixedCompletionSteps>())
     }
