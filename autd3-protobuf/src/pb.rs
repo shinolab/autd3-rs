@@ -1485,23 +1485,23 @@ pub struct SendResponseLightweight {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct FirmwareInfoRequestLightweight {}
+pub struct FirmwareVersionRequestLightweight {}
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct FirmwareInfoResponseLightweight {
+pub struct FirmwareVersionResponseLightweight {
     #[prost(bool, tag = "1")]
     pub success: bool,
     #[prost(string, tag = "2")]
     pub msg: ::prost::alloc::string::String,
     #[prost(message, repeated, tag = "3")]
     pub firmware_info_list:
-        ::prost::alloc::vec::Vec<firmware_info_response_lightweight::FirmwareInfo>,
+        ::prost::alloc::vec::Vec<firmware_info_response_lightweight::FirmwareVersion>,
 }
-/// Nested message and enum types in `FirmwareInfoResponseLightweight`.
+/// Nested message and enum types in `FirmwareVersionResponseLightweight`.
 pub mod firmware_info_response_lightweight {
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct FirmwareInfo {
+    pub struct FirmwareVersion {
         #[prost(uint32, tag = "1")]
         pub fpga_major_version: u32,
         #[prost(uint32, tag = "2")]
@@ -1621,9 +1621,9 @@ pub mod ecat_light_client {
         }
         pub async fn firmware_info(
             &mut self,
-            request: impl tonic::IntoRequest<super::FirmwareInfoRequestLightweight>,
+            request: impl tonic::IntoRequest<super::FirmwareVersionRequestLightweight>,
         ) -> std::result::Result<
-            tonic::Response<super::FirmwareInfoResponseLightweight>,
+            tonic::Response<super::FirmwareVersionResponseLightweight>,
             tonic::Status,
         > {
             self.inner.ready().await.map_err(|e| {
@@ -1633,10 +1633,10 @@ pub mod ecat_light_client {
                 )
             })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/autd3.ECATLight/FirmwareInfo");
+            let path = http::uri::PathAndQuery::from_static("/autd3.ECATLight/FirmwareVersion");
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("autd3.ECATLight", "FirmwareInfo"));
+                .insert(GrpcMethod::new("autd3.ECATLight", "FirmwareVersion"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn send(
@@ -1690,9 +1690,9 @@ pub mod ecat_light_server {
         ) -> std::result::Result<tonic::Response<super::SendResponseLightweight>, tonic::Status>;
         async fn firmware_info(
             &self,
-            request: tonic::Request<super::FirmwareInfoRequestLightweight>,
+            request: tonic::Request<super::FirmwareVersionRequestLightweight>,
         ) -> std::result::Result<
-            tonic::Response<super::FirmwareInfoResponseLightweight>,
+            tonic::Response<super::FirmwareVersionResponseLightweight>,
             tonic::Status,
         >;
         async fn send(
@@ -1820,18 +1820,18 @@ pub mod ecat_light_server {
                     };
                     Box::pin(fut)
                 }
-                "/autd3.ECATLight/FirmwareInfo" => {
+                "/autd3.ECATLight/FirmwareVersion" => {
                     #[allow(non_camel_case_types)]
-                    struct FirmwareInfoSvc<T: EcatLight>(pub Arc<T>);
+                    struct FirmwareVersionSvc<T: EcatLight>(pub Arc<T>);
                     impl<T: EcatLight>
-                        tonic::server::UnaryService<super::FirmwareInfoRequestLightweight>
-                        for FirmwareInfoSvc<T>
+                        tonic::server::UnaryService<super::FirmwareVersionRequestLightweight>
+                        for FirmwareVersionSvc<T>
                     {
-                        type Response = super::FirmwareInfoResponseLightweight;
+                        type Response = super::FirmwareVersionResponseLightweight;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::FirmwareInfoRequestLightweight>,
+                            request: tonic::Request<super::FirmwareVersionRequestLightweight>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
@@ -1847,7 +1847,7 @@ pub mod ecat_light_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = FirmwareInfoSvc(inner);
+                        let method = FirmwareVersionSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

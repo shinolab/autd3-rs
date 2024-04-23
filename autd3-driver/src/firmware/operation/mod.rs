@@ -37,7 +37,7 @@ pub enum TypeTag {
     NONE = 0x00,
     Clear = 0x01,
     Sync = 0x02,
-    FirmwareInfo = 0x03,
+    FirmwareVersion = 0x03,
     Modulation = 0x10,
     ModulationChangeSegment = 0x11,
     Silencer = 0x20,

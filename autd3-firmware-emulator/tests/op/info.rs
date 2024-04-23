@@ -2,8 +2,8 @@ use autd3_driver::{
     datagram::*,
     firmware::{
         cpu::TxDatagram,
-        firmware_version::FirmwareInfo,
         operation::{FirmInfoOp, NullOp, OperationHandler},
+        version::FirmwareVersion,
     },
 };
 use autd3_firmware_emulator::CPUEmulator;
@@ -32,18 +32,18 @@ fn send_firminfo() -> anyhow::Result<()> {
     OperationHandler::init(&mut op, &mut op_null, &geometry)?;
 
     send_once(&mut cpu, &mut op, &geometry, &mut tx)?;
-    assert_eq!(FirmwareInfo::LATEST_VERSION_NUM_MAJOR, cpu.rx_data());
+    assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MAJOR, cpu.rx_data());
     assert!(!cpu.reads_fpga_state());
 
     send_once(&mut cpu, &mut op, &geometry, &mut tx)?;
-    assert_eq!(FirmwareInfo::LATEST_VERSION_NUM_MINOR, cpu.rx_data());
+    assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MINOR, cpu.rx_data());
     assert!(!cpu.reads_fpga_state());
 
     send_once(&mut cpu, &mut op, &geometry, &mut tx)?;
     assert!(!cpu.reads_fpga_state());
 
     send_once(&mut cpu, &mut op, &geometry, &mut tx)?;
-    assert_eq!(FirmwareInfo::LATEST_VERSION_NUM_MINOR, cpu.rx_data());
+    assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MINOR, cpu.rx_data());
     assert!(!cpu.reads_fpga_state());
 
     send_once(&mut cpu, &mut op, &geometry, &mut tx)?;

@@ -45,19 +45,19 @@ async fn main() -> Result<()> {
     assert_eq!(2, firmware_infos.len());
     firmware_infos.iter().for_each(|firm_info| {
         assert_eq!(
-            FirmwareInfo::LATEST_VERSION_NUM_MAJOR,
+            FirmwareVersion::LATEST_VERSION_NUM_MAJOR,
             firm_info.fpga_version_number_major()
         );
         assert_eq!(
-            FirmwareInfo::LATEST_VERSION_NUM_MINOR,
+            FirmwareVersion::LATEST_VERSION_NUM_MINOR,
             firm_info.fpga_version_number_minor()
         );
         assert_eq!(
-            FirmwareInfo::LATEST_VERSION_NUM_MAJOR,
+            FirmwareVersion::LATEST_VERSION_NUM_MAJOR,
             firm_info.cpu_version_number_major()
         );
         assert_eq!(
-            FirmwareInfo::LATEST_VERSION_NUM_MINOR,
+            FirmwareVersion::LATEST_VERSION_NUM_MINOR,
             firm_info.cpu_version_number_minor()
         );
     });

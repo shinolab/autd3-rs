@@ -7,16 +7,16 @@ use autd3_driver::{
     datagram::{Clear, ConfigureSilencer, Datagram},
     firmware::{
         cpu::{RxMessage, TxDatagram},
-        firmware_version::FirmwareInfo,
         fpga::FPGAState,
         operation::OperationHandler,
+        version::FirmwareVersion,
     },
     geometry::{Device, Geometry},
     link::{send_receive, Link},
 };
 
 use crate::{
-    error::{AUTDError, ReadFirmwareInfoState},
+    error::{AUTDError, ReadFirmwareVersionState},
     gain::Null,
     link::nop::Nop,
 };
@@ -98,9 +98,9 @@ impl<L: Link> Controller<L> {
     ///
     /// # Returns
     ///
-    /// * `Ok(Vec<FirmwareInfo>)` - List of firmware information
+    /// * `Ok(Vec<FirmwareVersion>)` - List of firmware information
     ///
-    pub async fn firmware_infos(&mut self) -> Result<Vec<FirmwareInfo>, AUTDError> {
+    pub async fn firmware_infos(&mut self) -> Result<Vec<FirmwareVersion>, AUTDError> {
         let mut op = autd3_driver::firmware::operation::FirmInfoOp::default();
         let mut null_op = autd3_driver::firmware::operation::NullOp::default();
 
@@ -117,10 +117,14 @@ impl<L: Link> Controller<L> {
                 )
                 .await?
                 {
-                    return Err(AUTDError::ReadFirmwareInfoFailed(ReadFirmwareInfoState(
-                        autd3_driver::firmware::cpu::check_if_msg_is_processed($tx_buf, $rx_buf)
+                    return Err(AUTDError::ReadFirmwareVersionFailed(
+                        ReadFirmwareVersionState(
+                            autd3_driver::firmware::cpu::check_if_msg_is_processed(
+                                $tx_buf, $rx_buf,
+                            )
                             .collect(),
-                    )));
+                        ),
+                    ));
                 }
             };
         }
@@ -186,7 +190,7 @@ impl<L: Link> Controller<L> {
 
         Ok((0..self.geometry.num_devices())
             .map(|i| {
-                FirmwareInfo::new(
+                FirmwareVersion::new(
                     i,
                     cpu_versions[i],
                     cpu_versions_minor[i],

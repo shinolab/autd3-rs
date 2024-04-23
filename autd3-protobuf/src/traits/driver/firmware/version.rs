@@ -1,15 +1,15 @@
 use crate::{pb::*, traits::FromMessage};
 
-impl FromMessage<FirmwareInfoResponseLightweight>
-    for Vec<autd3_driver::firmware::firmware_version::FirmwareInfo>
+impl FromMessage<FirmwareVersionResponseLightweight>
+    for Vec<autd3_driver::firmware::version::FirmwareVersion>
 {
-    fn from_msg(msg: &FirmwareInfoResponseLightweight) -> Option<Self> {
+    fn from_msg(msg: &FirmwareVersionResponseLightweight) -> Option<Self> {
         Some(
             msg.firmware_info_list
                 .iter()
                 .enumerate()
                 .map(|(i, v)| {
-                    autd3_driver::firmware::firmware_version::FirmwareInfo::new(
+                    autd3_driver::firmware::version::FirmwareVersion::new(
                         i as _,
                         v.cpu_major_version as _,
                         v.cpu_minor_version as _,

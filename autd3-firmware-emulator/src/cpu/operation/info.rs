@@ -14,7 +14,7 @@ struct FirmInfo {
 }
 
 impl CPUEmulator {
-    fn get_cpu_version(&self) -> u16 {
+    fn get_cpu(&self) -> u16 {
         CPU_VERSION_MAJOR
     }
 
@@ -22,7 +22,7 @@ impl CPUEmulator {
         CPU_VERSION_MINOR
     }
 
-    fn get_fpga_version(&self) -> u16 {
+    fn get_fpga(&self) -> u16 {
         self.bram_read(BRAM_SELECT_CONTROLLER, ADDR_VERSION_NUM_MAJOR)
     }
 
@@ -38,19 +38,19 @@ impl CPUEmulator {
                 self.read_fpga_state_store = self.read_fpga_state;
                 self.read_fpga_state = false;
                 self.is_rx_data_used = true;
-                self.rx_data = (self.get_cpu_version() & 0xFF) as _;
+                self.rx_data = (self.get_cpu() & 0xFF) as _;
             }
             INFO_TYPE_CPU_VERSION_MINOR => {
                 self.rx_data = (self.get_cpu_version_minor() & 0xFF) as _;
             }
             INFO_TYPE_FPGA_VERSION_MAJOR => {
-                self.rx_data = (self.get_fpga_version() & 0xFF) as _;
+                self.rx_data = (self.get_fpga() & 0xFF) as _;
             }
             INFO_TYPE_FPGA_VERSION_MINOR => {
                 self.rx_data = (self.get_fpga_version_minor() & 0xFF) as _;
             }
             INFO_TYPE_FPGA_FUNCTIONS => {
-                self.rx_data = ((self.get_fpga_version() >> 8) & 0xFF) as _;
+                self.rx_data = ((self.get_fpga() >> 8) & 0xFF) as _;
             }
             INFO_TYPE_CLEAR => {
                 self.read_fpga_state = self.read_fpga_state_store;
