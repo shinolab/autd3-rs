@@ -24,10 +24,13 @@ tokio = { workspace = true, features = ["time"] }
 async-channel = { workspace = true, optional = true }
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.56.0", features = ["Win32_Foundation", "Win32_System_Performance", "Win32_Networking_WinSock", "Win32_System_SystemInformation"] }
+windows = { version = "0.56.0", features = ["Win32_Foundation", "Win32_System_Performance", "Win32_Networking_WinSock", "Win32_System_SystemInformation"], optional = true }
+
+[target.'cfg(not(windows))'.dependencies]
+libc = { version = "0.2.144", optional = true }
 
 [features]
-local = ["cc", "glob", "async-channel", "time", "thiserror"]
+local = ["cc", "glob", "async-channel", "time", "thiserror", "windows", "libc"]
 remote = ["autd3-protobuf", "tonic"]
 default = ["local"]
 all = ["local", "remote"]
