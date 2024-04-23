@@ -1,8 +1,9 @@
-const ECAT_DC_SYS_TIME_BASE: time::OffsetDateTime = time::macros::datetime!(2000-01-01 0:00 UTC);
+use crate::cpu::ECAT_DC_SYS_TIME_BASE;
 
 #[non_exhaustive]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub enum TransitionMode {
+    #[default]
     SyncIdx,
     SysTime(time::OffsetDateTime),
     GPIO,

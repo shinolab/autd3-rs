@@ -1,21 +1,39 @@
 use std::time::Duration;
 
-use crate::{error::AUTDInternalError, fpga::Segment};
+use crate::{
+    error::AUTDInternalError,
+    fpga::{Segment, TransitionMode},
+};
 
 use super::Datagram;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ChangeModulationSegment {
     segment: Segment,
+    transition_mode: TransitionMode,
 }
 
 impl ChangeModulationSegment {
-    pub const fn new(segment: Segment) -> Self {
-        Self { segment }
+    pub fn new(segment: Segment) -> Self {
+        Self {
+            segment,
+            transition_mode: TransitionMode::default(),
+        }
+    }
+
+    pub const fn with_transition_mode(self, transition_mode: TransitionMode) -> Self {
+        Self {
+            transition_mode,
+            ..self
+        }
     }
 
     pub const fn segment(&self) -> Segment {
         self.segment
+    }
+
+    pub const fn transition_mode(&self) -> TransitionMode {
+        self.transition_mode
     }
 }
 
@@ -28,7 +46,10 @@ impl Datagram for ChangeModulationSegment {
     }
 
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new(self.segment), Self::O2::default()))
+        Ok((
+            Self::O1::new(self.segment, self.transition_mode),
+            Self::O2::default(),
+        ))
     }
 }
 
