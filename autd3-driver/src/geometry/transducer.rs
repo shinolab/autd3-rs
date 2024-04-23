@@ -4,7 +4,7 @@ use crate::{defined::PI, firmware::fpga::Phase};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Transducer {
-    idx: u8,
+    idx: usize,
     pos: Vector3,
     rot: UnitQuaternion,
     #[cfg(feature = "variable_frequency")]
@@ -16,7 +16,7 @@ impl Transducer {
     pub(crate) const fn new(idx: usize, pos: Vector3, rot: UnitQuaternion) -> Self {
         assert!(idx < 256);
         Self {
-            idx: idx as u8,
+            idx,
             pos,
             rot,
             #[cfg(feature = "variable_frequency")]
@@ -76,7 +76,7 @@ impl Transducer {
 
     /// Get the local transducer index
     pub const fn idx(&self) -> usize {
-        self.idx as usize
+        self.idx
     }
 }
 
