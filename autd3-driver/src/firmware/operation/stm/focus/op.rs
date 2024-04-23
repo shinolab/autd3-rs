@@ -178,7 +178,7 @@ mod tests {
         defined::MILLIMETER,
         firmware::{
             fpga::{
-                FOCUS_STM_FIXED_NUM_UNIT, FOCUS_STM_FIXED_NUM_WIDTH, SAMPLING_FREQ_DIV_MAX,
+                FOCUS_STM_FIXED_NUM_UNIT, FOCUS_STM_FIXED_NUM_UPPER_X, SAMPLING_FREQ_DIV_MAX,
                 SAMPLING_FREQ_DIV_MIN,
             },
             operation::tests::parse_tx_as,
@@ -641,7 +641,7 @@ mod tests {
 
         let mut tx = vec![0x00u8; FRAME_SIZE * NUM_DEVICE];
 
-        let x = FOCUS_STM_FIXED_NUM_UNIT * (1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) as f64;
+        let x = FOCUS_STM_FIXED_NUM_UNIT * (FOCUS_STM_FIXED_NUM_UPPER_X as f64 + 1.);
         let points: Vec<ControlPoint> = (0..FOCUS_STM_SIZE)
             .map(|_| ControlPoint::new(Vector3::new(x, x, x)).with_intensity(0))
             .collect();
@@ -661,7 +661,7 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(
                 op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
-                Err(AUTDInternalError::FocusSTMPointOutOfRange(x))
+                Err(AUTDInternalError::FocusSTMPointOutOfRange(x, x, x))
             );
         });
     }
