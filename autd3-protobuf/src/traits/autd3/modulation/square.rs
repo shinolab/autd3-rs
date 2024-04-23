@@ -54,16 +54,18 @@ impl FromMessage<Square> for autd3::modulation::Square {
     fn from_msg(msg: &Square) -> Option<Self> {
         Some(
             Self::new(msg.freq as _)
-                .with_high(autd3_driver::fpga::EmitIntensity::from_msg(
+                .with_high(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
                     msg.high.as_ref()?,
                 )?)
-                .with_low(autd3_driver::fpga::EmitIntensity::from_msg(
+                .with_low(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
                     msg.low.as_ref()?,
                 )?)
                 .with_duty(msg.duty as _)
-                .with_sampling_config(autd3_driver::fpga::SamplingConfiguration::from_msg(
-                    msg.config.as_ref()?,
-                )?)
+                .with_sampling_config(
+                    autd3_driver::firmware::fpga::SamplingConfiguration::from_msg(
+                        msg.config.as_ref()?,
+                    )?,
+                )
                 .with_mode(autd3::modulation::SamplingMode::from(
                     SamplingMode::try_from(msg.mode).ok()?,
                 )),
@@ -74,7 +76,7 @@ impl FromMessage<Square> for autd3::modulation::Square {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::fpga::EmitIntensity;
+    use autd3_driver::firmware::fpga::EmitIntensity;
     use rand::Rng;
 
     #[test]

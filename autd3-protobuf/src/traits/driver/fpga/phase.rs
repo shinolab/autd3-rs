@@ -3,7 +3,7 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3_driver::fpga::Phase {
+impl ToMessage for autd3_driver::firmware::fpga::Phase {
     type Message = Phase;
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
@@ -13,9 +13,9 @@ impl ToMessage for autd3_driver::fpga::Phase {
     }
 }
 
-impl FromMessage<Phase> for autd3_driver::fpga::Phase {
+impl FromMessage<Phase> for autd3_driver::firmware::fpga::Phase {
     fn from_msg(msg: &Phase) -> Option<Self> {
-        Some(autd3_driver::fpga::Phase::new(msg.value as _))
+        Some(autd3_driver::firmware::fpga::Phase::new(msg.value as _))
     }
 }
 

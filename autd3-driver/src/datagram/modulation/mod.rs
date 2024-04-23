@@ -13,12 +13,12 @@ pub use segment::ChangeModulationSegment;
 pub use transform::IntoTransform as IntoModulationTransform;
 pub use transform::Transform as ModulationTransform;
 
-use crate::fpga::TransitionMode;
-use crate::operation::ModulationOp;
-use crate::operation::NullOp;
 use crate::{
     error::AUTDInternalError,
-    fpga::{EmitIntensity, LoopBehavior, SamplingConfiguration, Segment},
+    firmware::{
+        fpga::{EmitIntensity, LoopBehavior, SamplingConfiguration, Segment, TransitionMode},
+        operation::{ModulationOp, NullOp},
+    },
 };
 
 use super::{Datagram, DatagramS, DatagramT};

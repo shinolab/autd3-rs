@@ -1,5 +1,5 @@
 use autd3::{link::Audit, prelude::*};
-use autd3_driver::{cpu::RxMessage, fpga::FPGAState};
+use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
 
 #[tokio::test]
 async fn audit_test() -> anyhow::Result<()> {

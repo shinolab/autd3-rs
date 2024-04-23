@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{
     error::AUTDInternalError,
-    fpga::{Segment, TransitionMode},
+    firmware::fpga::{Segment, TransitionMode},
 };
 
 use super::Datagram;
@@ -38,8 +38,8 @@ impl ChangeModulationSegment {
 }
 
 impl Datagram for ChangeModulationSegment {
-    type O1 = crate::operation::ModulationChangeSegmentOp;
-    type O2 = crate::operation::NullOp;
+    type O1 = crate::firmware::operation::ModulationChangeSegmentOp;
+    type O2 = crate::firmware::operation::NullOp;
 
     fn timeout(&self) -> Option<Duration> {
         Some(Duration::from_millis(200))

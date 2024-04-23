@@ -1,4 +1,4 @@
-use crate::{datagram::*, fpga::DebugType, geometry::Device};
+use crate::{datagram::*, firmware::fpga::DebugType, geometry::Device};
 
 /// Datagram for configure debug_output_idx
 pub struct ConfigureDebugSettings<F: Fn(&Device) -> [DebugType; 4]> {
@@ -19,8 +19,8 @@ impl<F: Fn(&Device) -> [DebugType; 4]> ConfigureDebugSettings<F> {
 }
 
 impl<F: Fn(&Device) -> [DebugType; 4]> Datagram for ConfigureDebugSettings<F> {
-    type O1 = crate::operation::DebugSettingOp<F>;
-    type O2 = crate::operation::NullOp;
+    type O1 = crate::firmware::operation::DebugSettingOp<F>;
+    type O2 = crate::firmware::operation::NullOp;
 
     fn timeout(&self) -> Option<Duration> {
         Some(Duration::from_millis(200))

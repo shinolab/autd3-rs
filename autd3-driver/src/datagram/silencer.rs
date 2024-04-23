@@ -1,6 +1,6 @@
 use crate::{
     datagram::*,
-    fpga::{
+    firmware::fpga::{
         SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, SILENCER_VALUE_MAX,
         SILENCER_VALUE_MIN,
     },
@@ -139,8 +139,8 @@ impl ConfigureSilencer<FixedUpdateRate> {
 }
 
 impl Datagram for ConfigureSilencer<FixedUpdateRate> {
-    type O1 = crate::operation::ConfigSilencerFixedUpdateRateOp;
-    type O2 = crate::operation::NullOp;
+    type O1 = crate::firmware::operation::ConfigSilencerFixedUpdateRateOp;
+    type O2 = crate::firmware::operation::NullOp;
 
     fn timeout(&self) -> Option<Duration> {
         Some(Duration::from_millis(200))
@@ -158,8 +158,8 @@ impl Datagram for ConfigureSilencer<FixedUpdateRate> {
 }
 
 impl Datagram for ConfigureSilencer<FixedCompletionSteps> {
-    type O1 = crate::operation::ConfigSilencerFixedCompletionStepsOp;
-    type O2 = crate::operation::NullOp;
+    type O1 = crate::firmware::operation::ConfigSilencerFixedCompletionStepsOp;
+    type O2 = crate::firmware::operation::NullOp;
 
     fn timeout(&self) -> Option<Duration> {
         Some(Duration::from_millis(200))
@@ -276,16 +276,16 @@ mod tests {
         let r = silencer.operation();
         assert!(r.is_ok());
         let _: (
-            crate::operation::ConfigSilencerFixedUpdateRateOp,
-            crate::operation::NullOp,
+            crate::firmware::operation::ConfigSilencerFixedUpdateRateOp,
+            crate::firmware::operation::NullOp,
         ) = r.unwrap();
 
         let silencer = ConfigureSilencer::fixed_completion_steps(1, 2).unwrap();
         let r = silencer.operation();
         assert!(r.is_ok());
         let _: (
-            crate::operation::ConfigSilencerFixedCompletionStepsOp,
-            crate::operation::NullOp,
+            crate::firmware::operation::ConfigSilencerFixedCompletionStepsOp,
+            crate::firmware::operation::NullOp,
         ) = r.unwrap();
     }
 }

@@ -1,14 +1,12 @@
 use std::time::Duration;
 
-use crate::{
-    local::{
-        error_handler::{ErrHandler, Status},
-        SyncMode,
-    },
-    SOEM,
+use super::{
+    error_handler::{ErrHandler, Status},
+    timer_strategy::TimerStrategy,
+    SyncMode, SOEM,
 };
 
-use autd3_driver::{derive::*, link::LinkBuilder, timer_strategy::TimerStrategy};
+use autd3_driver::{derive::*, link::LinkBuilder};
 
 #[derive(Builder)]
 #[no_const]

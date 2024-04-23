@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    cpu::TxDatagram,
     datagram::*,
     derive::*,
+    firmware::{
+        cpu::TxDatagram,
+        operation::{ControlPoint, FocusSTMOp, GainChangeSegmentOp, GainSTMMode, GainSTMOp},
+    },
     geometry::Vector3,
-    operation::{ControlPoint, FocusSTMOp, GainChangeSegmentOp, GainSTMMode, GainSTMOp},
 };
 use autd3_firmware_emulator::CPUEmulator;
 

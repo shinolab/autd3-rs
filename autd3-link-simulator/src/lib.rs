@@ -6,8 +6,8 @@ use std::{
 };
 
 use autd3_driver::{
-    cpu::{RxMessage, TxDatagram},
     derive::*,
+    firmware::cpu::{RxMessage, TxDatagram},
     link::{Link, LinkBuilder},
 };
 

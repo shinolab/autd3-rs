@@ -12,12 +12,13 @@ pub use transform::Transform as GainTransform;
 
 use std::collections::HashMap;
 
-use crate::fpga::TransitionMode;
 use crate::{
     error::AUTDInternalError,
-    fpga::{Drive, Segment},
+    firmware::{
+        fpga::{Drive, Segment, TransitionMode},
+        operation::{GainOp, NullOp},
+    },
     geometry::{Device, Geometry, Transducer},
-    operation::{GainOp, NullOp},
 };
 
 use bitvec::prelude::*;

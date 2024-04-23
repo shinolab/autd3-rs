@@ -26,7 +26,7 @@ impl FromMessage<focus_stm::ControlPoint> for autd3_driver::operation::stm::Cont
             .with_intensity(
                 msg.intensity
                     .as_ref()
-                    .map(autd3_driver::fpga::EmitIntensity::from_msg)??,
+                    .map(autd3_driver::firmware::fpga::EmitIntensity::from_msg)??,
             ),
         )
     }

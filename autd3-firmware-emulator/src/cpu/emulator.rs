@@ -1,4 +1,7 @@
-use autd3_driver::cpu::{DcSysTime, Header, TxDatagram};
+use autd3_driver::{
+    ethercat::DcSysTime,
+    firmware::cpu::{Header, TxDatagram},
+};
 
 use crate::fpga::emulator::FPGAEmulator;
 

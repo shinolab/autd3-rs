@@ -1,17 +1,20 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    cpu::TxDatagram,
     datagram::Datagram,
     defined::{METER, MILLIMETER},
     derive::{Drive, LoopBehavior, Phase, Segment},
     error::AUTDInternalError,
-    fpga::{
-        TransitionMode, FOCUS_STM_BUF_SIZE_MAX, FOCUS_STM_FIXED_NUM_UNIT, SAMPLING_FREQ_DIV_MAX,
-        SAMPLING_FREQ_DIV_MIN, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
+    firmware::{
+        cpu::TxDatagram,
+        fpga::{
+            TransitionMode, FOCUS_STM_BUF_SIZE_MAX, FOCUS_STM_FIXED_NUM_UNIT,
+            SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN, SILENCER_STEPS_INTENSITY_DEFAULT,
+            SILENCER_STEPS_PHASE_DEFAULT,
+        },
+        operation::{ControlPoint, FocusSTMChangeSegmentOp, FocusSTMOp, GainSTMMode, GainSTMOp},
     },
     geometry::Vector3,
-    operation::{ControlPoint, FocusSTMChangeSegmentOp, FocusSTMOp, GainSTMMode, GainSTMOp},
 };
 use autd3_firmware_emulator::CPUEmulator;
 

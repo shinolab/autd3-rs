@@ -16,7 +16,7 @@ impl ToMessage for autd3_driver::datagram::ChangeGainSegment {
 impl FromMessage<ChangeGainSegment> for autd3_driver::datagram::ChangeGainSegment {
     fn from_msg(msg: &ChangeGainSegment) -> Option<Self> {
         Some(autd3_driver::datagram::ChangeGainSegment::new(
-            autd3_driver::fpga::Segment::from(Segment::try_from(msg.segment).ok()?),
+            autd3_driver::firmware::fpga::Segment::from(Segment::try_from(msg.segment).ok()?),
         ))
     }
 }

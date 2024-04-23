@@ -1,4 +1,4 @@
-use autd3_driver::{cpu::TxDatagram, operation::ConfigurePulseWidthEncoderOp};
+use autd3_driver::firmware::{cpu::TxDatagram, operation::ConfigurePulseWidthEncoderOp};
 use autd3_firmware_emulator::CPUEmulator;
 
 use rand::*;

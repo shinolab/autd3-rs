@@ -1,4 +1,7 @@
-use autd3_driver::cpu::{RxMessage, TxDatagram, EC_INPUT_FRAME_SIZE, EC_OUTPUT_FRAME_SIZE};
+use autd3_driver::{
+    ethercat::{EC_INPUT_FRAME_SIZE, EC_OUTPUT_FRAME_SIZE},
+    firmware::cpu::{RxMessage, TxDatagram},
+};
 
 pub struct IOMap {
     buf: Vec<u8>,

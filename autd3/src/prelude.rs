@@ -19,11 +19,13 @@ pub use autd3_driver::{
     },
     defined::{METER, MILLIMETER, PI},
     error::AUTDInternalError,
-    fpga::Rad as PhaseRad,
-    fpga::{DebugType, TransitionMode, FPGA_CLK_FREQ},
-    fpga::{Drive, EmitIntensity, LoopBehavior, Phase, SamplingConfiguration, Segment},
+    firmware::{
+        fpga::{
+            DebugType, Drive, EmitIntensity, LoopBehavior, Phase, Rad as PhaseRad,
+            SamplingConfiguration, Segment, TransitionMode, FPGA_CLK_FREQ,
+        },
+        operation::{ControlPoint, GainSTMMode},
+    },
     geometry::*,
     link::{Link, LinkBuilder},
-    operation::{ControlPoint, GainSTMMode},
-    timer_strategy::TimerStrategy,
 };

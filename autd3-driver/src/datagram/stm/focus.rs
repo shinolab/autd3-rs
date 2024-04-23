@@ -1,4 +1,7 @@
-use crate::{derive::*, fpga::TransitionMode, operation::ControlPoint};
+use crate::{
+    derive::*,
+    firmware::{fpga::TransitionMode, operation::ControlPoint},
+};
 
 use super::STMProps;
 
@@ -113,8 +116,8 @@ impl std::ops::Index<usize> for FocusSTM {
 }
 
 impl DatagramS for FocusSTM {
-    type O1 = crate::operation::FocusSTMOp;
-    type O2 = crate::operation::NullOp;
+    type O1 = crate::firmware::operation::FocusSTMOp;
+    type O2 = crate::firmware::operation::NullOp;
 
     fn operation_with_segment(
         self,
@@ -149,7 +152,7 @@ mod tests {
     use std::time::Duration;
 
     use super::*;
-    use crate::{geometry::Vector3, operation::FocusSTMOp};
+    use crate::{firmware::operation::FocusSTMOp, geometry::Vector3};
 
     #[rstest::rstest]
     #[test]

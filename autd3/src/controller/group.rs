@@ -3,8 +3,8 @@ use std::{collections::HashMap, hash::Hash, time::Duration};
 use autd3_driver::{
     datagram::Datagram,
     error::AUTDInternalError,
+    firmware::operation::{Operation, OperationHandler},
     geometry::{Device, Geometry},
-    operation::{Operation, OperationHandler},
 };
 
 use super::Controller;
@@ -44,8 +44,8 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
     pub fn set_boxed_op(
         mut self,
         k: K,
-        op1: Box<dyn autd3_driver::operation::Operation>,
-        op2: Box<dyn autd3_driver::operation::Operation>,
+        op1: Box<dyn autd3_driver::firmware::operation::Operation>,
+        op2: Box<dyn autd3_driver::firmware::operation::Operation>,
         timeout: Option<Duration>,
     ) -> Result<Self, AUTDInternalError> {
         self.timeout = match (self.timeout, timeout) {

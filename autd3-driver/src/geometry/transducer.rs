@@ -2,7 +2,7 @@ use super::{Matrix4, Quaternion, UnitQuaternion, Vector3, Vector4};
 
 use crate::{
     defined::{PI, ULTRASOUND_FREQUENCY},
-    fpga::Phase,
+    firmware::fpga::Phase,
 };
 
 #[derive(Clone, Debug, PartialEq)]

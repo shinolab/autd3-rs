@@ -1,10 +1,14 @@
 use autd3_derive::Modulation;
 use autd3_driver::{
-    cpu::TxDatagram,
     datagram::*,
     derive::*,
-    fpga::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, SILENCER_VALUE_MIN},
-    operation::FocusSTMOp,
+    firmware::{
+        cpu::TxDatagram,
+        fpga::{
+            SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, SILENCER_VALUE_MIN,
+        },
+        operation::FocusSTMOp,
+    },
 };
 use autd3_firmware_emulator::CPUEmulator;
 
