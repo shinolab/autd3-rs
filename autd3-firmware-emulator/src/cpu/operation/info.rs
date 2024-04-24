@@ -56,9 +56,7 @@ impl CPUEmulator {
                 self.read_fpga_state = self.read_fpga_state_store;
                 self.is_rx_data_used = false;
             }
-            _ => {
-                unreachable!("Unsupported firmware info type")
-            }
+            _ => return ERR_INVALID_INFO_TYPE,
         };
         NO_ERR
     }

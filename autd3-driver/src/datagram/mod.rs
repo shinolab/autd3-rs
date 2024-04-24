@@ -113,6 +113,7 @@ mod tests {
     #[test]
     fn test_tuple() {
         let d = (TestDatagram1 { err: false }, TestDatagram2 { err: false });
+        assert_eq!(None, d.timeout());
         let _: (ClearOp, NullOp) =
             <(TestDatagram1, TestDatagram2) as Datagram>::operation(d).unwrap();
     }
@@ -126,5 +127,48 @@ mod tests {
         let d2 = (TestDatagram1 { err: false }, TestDatagram2 { err: true });
         let r = <(TestDatagram1, TestDatagram2) as Datagram>::operation(d2);
         assert!(r.is_err());
+    }
+
+    struct TestDatagramWithTimeout {
+        pub timeout: Option<Duration>,
+    }
+    impl Datagram for TestDatagramWithTimeout {
+        type O1 = ClearOp;
+        type O2 = NullOp;
+
+        // GRCOV_EXCL_START
+        fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+            unimplemented!()
+        }
+        // GRCOV_EXCL_STOP
+
+        fn timeout(&self) -> Option<Duration> {
+            self.timeout
+        }
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(
+        Some(Duration::from_secs(2)),
+        Some(Duration::from_secs(2)),
+        Some(Duration::from_secs(1))
+    )]
+    #[case(Some(Duration::from_secs(1)), Some(Duration::from_secs(1)), None)]
+    #[case(Some(Duration::from_secs(1)), None, Some(Duration::from_secs(1)))]
+    #[case(None, None, None)]
+    fn test_tuple_timeout(
+        #[case] expext: Option<Duration>,
+        #[case] t1: Option<Duration>,
+        #[case] t2: Option<Duration>,
+    ) {
+        assert_eq!(
+            expext,
+            (
+                TestDatagramWithTimeout { timeout: t1 },
+                TestDatagramWithTimeout { timeout: t2 },
+            )
+                .timeout()
+        );
     }
 }

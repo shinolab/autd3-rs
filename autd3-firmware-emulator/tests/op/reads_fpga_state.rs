@@ -16,15 +16,15 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
     send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
     assert!(cpu.reads_fpga_state());
-    assert_eq!(0, cpu.rx_data());
+    assert_eq!(0, cpu.rx().data());
 
     cpu.fpga_mut().assert_thermal_sensor();
     cpu.update();
-    assert_eq!(0x89, cpu.rx_data());
+    assert_eq!(0x89, cpu.rx().data());
 
     cpu.fpga_mut().deassert_thermal_sensor();
     cpu.update();
-    assert_eq!(0x88, cpu.rx_data());
+    assert_eq!(0x88, cpu.rx().data());
 
     Ok(())
 }

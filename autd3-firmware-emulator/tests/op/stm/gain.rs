@@ -9,7 +9,10 @@ use autd3_driver::{
             GAIN_STM_BUF_SIZE_MAX, SAMPLING_FREQ_DIV_MAX, SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT,
         },
-        operation::{ControlPoint, FocusSTMOp, GainSTMChangeSegmentOp, GainSTMMode, GainSTMOp},
+        operation::{
+            ControlPoint, FocusSTMOp, GainSTMChangeSegmentOp, GainSTMMode, GainSTMOp,
+            OperationHandler,
+        },
     },
     geometry::Vector3,
 };
@@ -194,6 +197,30 @@ fn test_send_gain_stm_phase_half() -> anyhow::Result<()> {
 }
 
 #[test]
+fn gain_stm_freq_div_too_small() {
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
+
+    let mut op = GainSTMOp::new(
+        gen_random_buf(2, &geometry)
+            .iter()
+            .map(|buf| TestGain { buf: buf.clone() })
+            .collect(),
+        GainSTMMode::PhaseIntensityFull,
+        SAMPLING_FREQ_DIV_MIN,
+        LoopBehavior::Infinite,
+        Segment::S0,
+        Some(TransitionMode::SyncIdx),
+    );
+
+    assert_eq!(
+        Err(AUTDInternalError::FrequencyDivisionTooSmall),
+        send(&mut cpu, &mut op, &geometry, &mut tx)
+    );
+}
+
+#[test]
 fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -245,6 +272,38 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
             send(&mut cpu, &mut op, &geometry, &mut tx)
         );
     }
+
+    Ok(())
+}
+
+#[test]
+fn invalid_gain_stm_mode() -> anyhow::Result<()> {
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
+
+    let bufs = gen_random_buf(2, &geometry);
+    let mut op = GainSTMOp::new(
+        bufs.iter()
+            .map(|buf| TestGain { buf: buf.clone() })
+            .collect(),
+        GainSTMMode::PhaseIntensityFull,
+        SAMPLING_FREQ_DIV_MAX,
+        LoopBehavior::Infinite,
+        Segment::S0,
+        Some(TransitionMode::SyncIdx),
+    );
+    let mut op_null = NullOp::default();
+
+    OperationHandler::init(&mut op, &mut op_null, &geometry)?;
+    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx)?;
+    tx[0].payload[2] = 3;
+
+    cpu.send(&tx);
+    assert_eq!(
+        Err(AUTDInternalError::InvalidGainSTMMode),
+        Result::<(), AUTDInternalError>::from(&cpu.rx())
+    );
 
     Ok(())
 }

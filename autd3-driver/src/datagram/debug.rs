@@ -30,3 +30,37 @@ impl<F: Fn(&Device) -> [DebugType; 4]> Datagram for ConfigureDebugSettings<F> {
         Ok((Self::O1::new(self.f), Self::O2::default()))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::firmware::operation::{DebugSettingOp, NullOp};
+
+    use super::*;
+
+    // GRCOV_EXCL_START
+    fn f(_: &Device) -> [DebugType; 4] {
+        [
+            DebugType::None,
+            DebugType::None,
+            DebugType::None,
+            DebugType::None,
+        ]
+    }
+    // GRCOV_EXCL_STOP
+
+    #[test]
+    fn test_timeout() {
+        let d = ConfigureDebugSettings::new(f);
+        let timeout = d.timeout();
+        assert!(timeout.is_some());
+        assert!(timeout.unwrap() > Duration::ZERO);
+    }
+
+    #[test]
+    fn test_operation() {
+        let d = ConfigureDebugSettings::new(f);
+        let r = d.operation();
+        assert!(r.is_ok());
+        let _: (DebugSettingOp<_>, NullOp) = r.unwrap();
+    }
+}

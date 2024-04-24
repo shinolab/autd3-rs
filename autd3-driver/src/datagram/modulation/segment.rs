@@ -14,17 +14,10 @@ pub struct ChangeModulationSegment {
 }
 
 impl ChangeModulationSegment {
-    pub fn new(segment: Segment) -> Self {
+    pub fn new(segment: Segment, transition_mode: TransitionMode) -> Self {
         Self {
             segment,
-            transition_mode: TransitionMode::default(),
-        }
-    }
-
-    pub const fn with_transition_mode(self, transition_mode: TransitionMode) -> Self {
-        Self {
             transition_mode,
-            ..self
         }
     }
 
@@ -59,8 +52,9 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let d = ChangeModulationSegment::new(Segment::S0);
+        let d = ChangeModulationSegment::new(Segment::S0, TransitionMode::default());
         assert_eq!(Segment::S0, d.segment());
+        assert_eq!(TransitionMode::default(), d.transition_mode());
         assert_eq!(Some(Duration::from_millis(200)), d.timeout());
         let _ = d.operation()?;
         Ok(())

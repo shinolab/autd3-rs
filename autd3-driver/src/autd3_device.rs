@@ -410,10 +410,10 @@ mod tests {
 
     #[test]
     fn test_is_missing_transducer_out_of_range() {
-        itertools::iproduct!(18..=255, 0..=255).for_each(|(x, y)| {
+        itertools::iproduct!(18..=256, 0..=256).for_each(|(x, y)| {
             assert!(AUTD3::is_missing_transducer(x, y));
         });
-        itertools::iproduct!(0..=255, 14..=255).for_each(|(x, y)| {
+        itertools::iproduct!(0..=256, 14..=256).for_each(|(x, y)| {
             assert!(AUTD3::is_missing_transducer(x, y));
         });
     }

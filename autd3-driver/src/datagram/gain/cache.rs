@@ -137,9 +137,15 @@ mod tests {
         Ok(())
     }
 
-    #[derive(Gain, Clone)]
+    #[derive(Gain, Clone, Debug)]
     pub struct CacheTestGain {
         pub calc_cnt: Arc<AtomicUsize>,
+    }
+
+    impl PartialEq for CacheTestGain {
+        fn eq(&self, other: &Self) -> bool {
+            self.calc_cnt.load(Ordering::Relaxed) == other.calc_cnt.load(Ordering::Relaxed)
+        }
     }
 
     impl Gain for CacheTestGain {
@@ -181,6 +187,9 @@ mod tests {
         .with_cache();
 
         let g2 = gain.clone();
+        assert_eq!(gain, g2);
+        assert_eq!(0, gain.calc_cnt.load(Ordering::Relaxed));
+        assert_eq!(0, g2.calc_cnt.load(Ordering::Relaxed));
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
         let _ = g2.calc(&geometry, GainFilter::All);

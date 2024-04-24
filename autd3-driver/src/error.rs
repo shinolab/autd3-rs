@@ -107,8 +107,6 @@ pub enum AUTDInternalError {
     UnknownFirmwareError(u8),
     #[error("Invalid segment transition")]
     InvalidSegmentTransition,
-    #[error("Invalid mode")]
-    InvalidMode,
     #[error("Invalid pulse width encoder data size")]
     InvalidPulseWidthEncoderDataSize,
     #[error("Incomplete pulse width encoder table data")]
@@ -126,7 +124,6 @@ impl AUTDInternalError {
             0x83 => AUTDInternalError::CompletionStepsTooLarge,
             0x84 => AUTDInternalError::InvalidInfoType,
             0x85 => AUTDInternalError::InvalidGainSTMMode,
-            0x87 => AUTDInternalError::InvalidMode,
             0x88 => AUTDInternalError::InvalidSegmentTransition,
             0x89 => AUTDInternalError::InvalidPulseWidthEncoderDataSize,
             0x8A => AUTDInternalError::IncompletePulseWidthEncoderData,
@@ -142,34 +139,10 @@ mod tests {
     use std::error::Error;
 
     #[test]
-    fn test_not_supported_tag() {
-        let err = AUTDInternalError::firmware_err(0x80);
+    fn test_unknown_firmware_err() {
+        let err = AUTDInternalError::firmware_err(0xFF);
         assert!(err.source().is_none());
-        assert_eq!(format!("{}", err), "Not supported tag");
-        assert_eq!(format!("{:?}", err), "NotSupportedTag");
-    }
-
-    #[test]
-    fn test_invalid_msg_id() {
-        let err = AUTDInternalError::firmware_err(0x81);
-        assert!(err.source().is_none());
-        assert_eq!(format!("{}", err), "Invalid message ID");
-        assert_eq!(format!("{:?}", err), "InvalidMessageID");
-    }
-
-    #[test]
-    fn test_freq_div_too_small() {
-        let err = AUTDInternalError::firmware_err(0x82);
-        assert!(err.source().is_none());
-        assert_eq!(format!("{}", err), "Frequency division is too small");
-        assert_eq!(format!("{:?}", err), "FrequencyDivisionTooSmall");
-    }
-
-    #[test]
-    fn test_completion_steps_too_large() {
-        let err = AUTDInternalError::firmware_err(0x83);
-        assert!(err.source().is_none());
-        assert_eq!(format!("{}", err), "Completion steps is too large");
-        assert_eq!(format!("{:?}", err), "CompletionStepsTooLarge");
+        assert_eq!(format!("{}", err), "Unknown firmware error: 255");
+        assert_eq!(format!("{:?}", err), "UnknownFirmwareError(255)");
     }
 }

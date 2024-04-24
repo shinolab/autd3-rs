@@ -1,2 +1,2 @@
 pub mod emulator;
-mod params;
+pub mod params;
