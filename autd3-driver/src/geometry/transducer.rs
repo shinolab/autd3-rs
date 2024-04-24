@@ -66,12 +66,15 @@ impl Transducer {
     }
 
     /// Get the axial direction of the transducer
+    #[cfg(feature = "left_handed")]
     pub fn axial_direction(&self) -> Vector3 {
-        if cfg!(feature = "left_handed") {
-            -self.z_direction()
-        } else {
-            self.z_direction()
-        }
+        -self.z_direction()
+    }
+
+    /// Get the axial direction of the transducer
+    #[cfg(not(feature = "left_handed"))]
+    pub fn axial_direction(&self) -> Vector3 {
+        self.z_direction()
     }
 
     /// Get the local transducer index

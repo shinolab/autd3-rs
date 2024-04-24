@@ -1,5 +1,3 @@
-use std::fmt;
-
 use crate::{
     error::AUTDInternalError,
     firmware::operation::{cast, Operation, TypeTag},
@@ -16,33 +14,9 @@ pub struct PWEControlFlags(u8);
 
 bitflags::bitflags! {
     impl PWEControlFlags : u8 {
-        const NONE           = 0;
-        const BEGIN      = 1 << 0;
-        const END        = 1 << 1;
-    }
-}
-
-impl fmt::Display for PWEControlFlags {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut flags = Vec::new();
-        if self.contains(PWEControlFlags::BEGIN) {
-            flags.push("BEGIN")
-        }
-        if self.contains(PWEControlFlags::END) {
-            flags.push("END")
-        }
-        if self.is_empty() {
-            flags.push("NONE")
-        }
-        write!(
-            f,
-            "{}",
-            flags
-                .iter()
-                .map(|s| s.to_string())
-                .collect::<Vec<_>>()
-                .join(" | ")
-        )
+        const NONE  = 0;
+        const BEGIN = 1 << 0;
+        const END   = 1 << 1;
     }
 }
 

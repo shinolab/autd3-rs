@@ -1,6 +1,6 @@
 use autd3_driver::{
     ethercat::DcSysTime,
-    firmware::cpu::{Header, TxDatagram},
+    firmware::cpu::{Header, RxMessage, TxDatagram},
 };
 
 use crate::fpga::emulator::FPGAEmulator;
@@ -90,12 +90,8 @@ impl CPUEmulator {
         self.read_fpga_state
     }
 
-    pub const fn ack(&self) -> u8 {
-        self.ack
-    }
-
-    pub const fn rx_data(&self) -> u8 {
-        self.rx_data
+    pub const fn rx(&self) -> RxMessage {
+        RxMessage::new(self.ack, self.rx_data)
     }
 
     pub const fn fpga(&self) -> &FPGAEmulator {
@@ -227,6 +223,7 @@ impl CPUEmulator {
 
         if (header.msg_id & 0x80) != 0 {
             self.ack = ERR_INVALID_MSG_ID;
+            return;
         }
 
         self.ack = self.handle_payload(&data[std::mem::size_of::<Header>()..]);

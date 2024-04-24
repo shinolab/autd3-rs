@@ -160,6 +160,7 @@ impl<G: Gain> DatagramS for GainSTM<G> {
     }
 }
 
+// GRCOV_EXCL_START
 impl<G: Gain + Clone> Clone for GainSTM<G> {
     fn clone(&self) -> Self {
         Self {
@@ -169,6 +170,7 @@ impl<G: Gain + Clone> Clone for GainSTM<G> {
         }
     }
 }
+// GRCOV_EXCL_STOP
 
 #[cfg(test)]
 mod tests {

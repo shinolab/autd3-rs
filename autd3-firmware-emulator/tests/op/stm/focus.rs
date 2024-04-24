@@ -1,10 +1,11 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
 use autd3_driver::{
     datagram::Datagram,
     defined::{METER, MILLIMETER},
     derive::{Drive, LoopBehavior, Phase, Segment},
     error::AUTDInternalError,
+    ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::{
         cpu::TxDatagram,
         fpga::{
@@ -16,10 +17,11 @@ use autd3_driver::{
     },
     geometry::Vector3,
 };
-use autd3_firmware_emulator::CPUEmulator;
+use autd3_firmware_emulator::{cpu::params::SYS_TIME_TRANSITION_MARGIN, CPUEmulator};
 
 use num_integer::Roots;
 use rand::*;
+use time::OffsetDateTime;
 
 use crate::{create_geometry, op::gain::TestGain, send};
 
@@ -97,6 +99,26 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
 }
 
 #[test]
+fn test_focus_stm_freq_div_too_small() {
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
+
+    let mut op = FocusSTMOp::new(
+        gen_random_foci(2),
+        SAMPLING_FREQ_DIV_MIN,
+        LoopBehavior::Infinite,
+        Segment::S0,
+        Some(TransitionMode::SyncIdx),
+    );
+
+    assert_eq!(
+        Err(AUTDInternalError::FrequencyDivisionTooSmall),
+        send(&mut cpu, &mut op, &geometry, &mut tx)
+    );
+}
+
+#[test]
 fn send_focus_stm_invalid_segment_transition() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -152,6 +174,34 @@ fn send_focus_stm_invalid_segment_transition() -> anyhow::Result<()> {
             send(&mut cpu, &mut op, &geometry, &mut tx)
         );
     }
+
+    Ok(())
+}
+
+#[rstest::rstest]
+#[test]
+#[case(Ok(()), ECAT_DC_SYS_TIME_BASE, ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
+#[case(Err(AUTDInternalError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE, ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN-1))]
+#[case(Err(AUTDInternalError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(1), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
+fn test_miss_transition_time(
+    #[case] expect: Result<(), AUTDInternalError>,
+    #[case] systime: OffsetDateTime,
+    #[case] transition_time: OffsetDateTime,
+) -> anyhow::Result<()> {
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
+
+    let mut op = FocusSTMOp::new(
+        gen_random_foci(2),
+        SAMPLING_FREQ_DIV_MAX,
+        LoopBehavior::once(),
+        Segment::S1,
+        Some(TransitionMode::SysTime(transition_time)),
+    );
+
+    cpu.set_dc_sys_time(DcSysTime::from_utc(systime).unwrap());
+    assert_eq!(expect, send(&mut cpu, &mut op, &geometry, &mut tx));
 
     Ok(())
 }

@@ -121,7 +121,10 @@ mod tests {
 
     use super::*;
 
-    struct TestDatagram {}
+    #[derive(Clone)]
+    struct TestDatagram {
+        pub data: i32,
+    }
     impl DatagramS for TestDatagram {
         type O1 = ClearOp;
         type O2 = NullOp;
@@ -138,12 +141,21 @@ mod tests {
     #[test]
     fn test() {
         let d: DatagramWithSegment<TestDatagram> =
-            TestDatagram {}.with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
+            TestDatagram { data: 0 }.with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
 
-        let timeout = <DatagramWithSegment<TestDatagram> as Datagram>::timeout(&d);
-        assert!(timeout.is_none());
+        assert_eq!(None, d.timeout());
+        assert_eq!(Segment::S0, d.segment());
+        assert_eq!(Some(TransitionMode::SyncIdx), d.transition_mode());
 
-        let _: (ClearOp, NullOp) =
-            <DatagramWithSegment<TestDatagram> as Datagram>::operation(d).unwrap();
+        let _: (ClearOp, NullOp) = d.operation().unwrap();
+    }
+
+    #[test]
+    fn test_derive() {
+        let data = 1;
+        let d: DatagramWithSegment<TestDatagram> =
+            TestDatagram { data }.with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
+        let c = d.clone();
+        assert_eq!(d.data, c.data);
     }
 }

@@ -247,4 +247,32 @@ mod tests {
             gain.calc(&geometry, GainFilter::All)
         );
     }
+
+    #[derive(Gain, Clone, Copy, PartialEq, Debug)]
+    pub struct ErrGain {}
+
+    impl Gain for ErrGain {
+        fn calc(
+            &self,
+            _geometry: &Geometry,
+            _filter: GainFilter,
+        ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
+            Err(AUTDInternalError::GainError("test error".to_owned()))
+        }
+    }
+
+    #[test]
+    fn test_calc_err() {
+        let geometry = create_geometry(2, 249);
+
+        let gain = Group::new(|_dev, tr| match tr.idx() {
+            _ => Some("test"),
+        })
+        .set("test", ErrGain {});
+
+        assert_eq!(
+            Err(AUTDInternalError::GainError("test error".to_owned())),
+            gain.calc(&geometry, GainFilter::All)
+        );
+    }
 }

@@ -12,17 +12,10 @@ pub struct ChangeFocusSTMSegment {
 }
 
 impl ChangeFocusSTMSegment {
-    pub fn new(segment: Segment) -> Self {
+    pub fn new(segment: Segment, transition_mode: TransitionMode) -> Self {
         Self {
             segment,
-            transition_mode: TransitionMode::default(),
-        }
-    }
-
-    pub const fn with_transition_mode(self, transition_mode: TransitionMode) -> Self {
-        Self {
             transition_mode,
-            ..self
         }
     }
 
@@ -58,17 +51,10 @@ pub struct ChangeGainSTMSegment {
 }
 
 impl ChangeGainSTMSegment {
-    pub fn new(segment: Segment) -> Self {
+    pub fn new(segment: Segment, transition_mode: TransitionMode) -> Self {
         Self {
             segment,
-            transition_mode: TransitionMode::default(),
-        }
-    }
-
-    pub const fn with_transition_mode(self, transition_mode: TransitionMode) -> Self {
-        Self {
             transition_mode,
-            ..self
         }
     }
 
@@ -104,8 +90,9 @@ mod tests {
     #[test]
     fn test_focus_stm() -> anyhow::Result<()> {
         use crate::datagram::Datagram;
-        let d = ChangeFocusSTMSegment::new(Segment::S0);
+        let d = ChangeFocusSTMSegment::new(Segment::S0, TransitionMode::default());
         assert_eq!(Segment::S0, d.segment());
+        assert_eq!(TransitionMode::default(), d.transition_mode());
         assert_eq!(Some(Duration::from_millis(200)), d.timeout());
         let _ = d.operation()?;
         Ok(())
@@ -114,8 +101,9 @@ mod tests {
     #[test]
     fn test_gain_stm() -> anyhow::Result<()> {
         use crate::datagram::Datagram;
-        let d = ChangeGainSTMSegment::new(Segment::S0);
+        let d = ChangeGainSTMSegment::new(Segment::S0, TransitionMode::default());
         assert_eq!(Segment::S0, d.segment());
+        assert_eq!(TransitionMode::default(), d.transition_mode());
         assert_eq!(Some(Duration::from_millis(200)), d.timeout());
         let _ = d.operation()?;
         Ok(())

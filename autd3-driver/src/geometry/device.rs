@@ -126,6 +126,7 @@ impl Deref for Device {
     }
 }
 
+// GRCOV_EXCL_START
 impl<'a> IntoIterator for &'a Device {
     type Item = &'a Transducer;
     type IntoIter = std::slice::Iter<'a, Transducer>;
@@ -134,6 +135,7 @@ impl<'a> IntoIterator for &'a Device {
         self.transducers.iter()
     }
 }
+// GRCOV_EXCL_STOP
 
 pub trait IntoDevice {
     fn into_device(self, dev_idx: usize) -> Device;

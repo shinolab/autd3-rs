@@ -58,10 +58,6 @@ impl FPGAState {
     pub const fn is_stm_mode(&self) -> bool {
         !self.is_gain_mode()
     }
-
-    pub const fn state(&self) -> u8 {
-        self.state
-    }
 }
 
 #[cfg(test)]

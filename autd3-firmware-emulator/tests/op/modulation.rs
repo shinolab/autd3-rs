@@ -2,6 +2,7 @@ use std::num::NonZeroU32;
 
 use autd3_driver::{
     derive::{LoopBehavior, Segment},
+    error::AUTDInternalError,
     firmware::{
         cpu::TxDatagram,
         fpga::{
@@ -93,4 +94,24 @@ fn send_mod() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+#[test]
+fn mod_freq_div_too_small() {
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
+
+    let mut op = ModulationOp::new(
+        (0..2).map(|_| EmitIntensity::MAX).collect(),
+        SAMPLING_FREQ_DIV_MIN,
+        LoopBehavior::Infinite,
+        Segment::S0,
+        Some(TransitionMode::SyncIdx),
+    );
+
+    assert_eq!(
+        Err(AUTDInternalError::FrequencyDivisionTooSmall),
+        send(&mut cpu, &mut op, &geometry, &mut tx)
+    )
 }

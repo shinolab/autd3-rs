@@ -9,7 +9,7 @@ use autd3_driver::{
     geometry::{Geometry, IntoDevice, Vector3},
 };
 use autd3_firmware_emulator::{
-    cpu::params::{ERR_BIT, ERR_NOT_SUPPORTED_TAG},
+    cpu::params::{ERR_BIT, ERR_INVALID_MSG_ID, ERR_NOT_SUPPORTED_TAG},
     CPUEmulator,
 };
 
@@ -32,10 +32,10 @@ pub fn send_once(
     let mut op_null = NullOp::default();
     OperationHandler::pack(op, &mut op_null, geometry, tx)?;
     cpu.send(tx);
-    if (cpu.ack() & ERR_BIT) == ERR_BIT {
-        return Err(AUTDInternalError::firmware_err(cpu.ack()));
+    if (cpu.rx().ack() & ERR_BIT) == ERR_BIT {
+        return Err(AUTDInternalError::firmware_err(cpu.rx().ack()));
     }
-    assert_eq!(tx[0].header.msg_id, cpu.ack());
+    assert_eq!(tx[0].header.msg_id, cpu.rx().ack());
     Ok(())
 }
 
@@ -66,7 +66,25 @@ fn send_invalid_tag() {
     tx[0].payload[0] = 0xFF;
 
     cpu.send(&tx);
-    assert_eq!(ERR_NOT_SUPPORTED_TAG, cpu.ack());
+    assert_eq!(
+        Err(AUTDInternalError::firmware_err(ERR_NOT_SUPPORTED_TAG)),
+        Result::<(), AUTDInternalError>::from(&cpu.rx())
+    );
+}
+
+#[test]
+fn send_invalid_msg_id() {
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
+
+    tx[0].header.msg_id = 0x80;
+
+    cpu.send(&tx);
+    assert_eq!(
+        Err(AUTDInternalError::firmware_err(ERR_INVALID_MSG_ID)),
+        Result::<(), AUTDInternalError>::from(&cpu.rx())
+    );
 }
 
 #[test]
@@ -82,7 +100,7 @@ fn send_ingore_same_data() -> anyhow::Result<()> {
 
     cpu.send(&tx);
     let msg_id = tx[0].header.msg_id;
-    assert_eq!(cpu.ack(), tx[0].header.msg_id);
+    assert_eq!(cpu.rx().ack(), tx[0].header.msg_id);
 
     let (mut op, mut op_null) = Synchronize::new().operation()?;
     OperationHandler::init(&mut op, &mut op_null, &geometry)?;
@@ -109,7 +127,7 @@ fn send_slot_2() -> anyhow::Result<()> {
 
     assert!(!cpu.synchronized());
     cpu.send(&tx);
-    assert_eq!(cpu.ack(), tx[0].header.msg_id);
+    assert_eq!(cpu.rx().ack(), tx[0].header.msg_id);
     assert!(cpu.synchronized());
 
     Ok(())

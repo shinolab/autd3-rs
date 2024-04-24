@@ -33,15 +33,7 @@ impl SamplingConfiguration {
     }
 
     pub fn from_frequency(f: f64) -> Result<Self, AUTDInternalError> {
-        let div = (Self::BASE_FREQUENCY / f) as u64;
-        if div > SAMPLING_FREQ_DIV_MAX as u64 {
-            return Err(AUTDInternalError::SamplingFreqOutOfRange(
-                f as _,
-                Self::FREQ_MIN,
-                Self::FREQ_MAX,
-            ));
-        }
-        Self::from_frequency_division(div as _).map_err(|_| {
+        Self::from_frequency_division((Self::BASE_FREQUENCY / f) as _).map_err(|_| {
             AUTDInternalError::SamplingFreqOutOfRange(f as _, Self::FREQ_MIN, Self::FREQ_MAX)
         })
     }

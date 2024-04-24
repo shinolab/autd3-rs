@@ -78,7 +78,9 @@ mod tests {
                 config,
                 loop_behavior: LoopBehavior::Infinite,
             }
+            // GRCOV_EXCL_START
             .with_transform(|_, x| x)
+            // GRCOV_EXCL_STOP
             .sampling_config()
         );
     }

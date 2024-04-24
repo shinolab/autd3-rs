@@ -116,83 +116,92 @@ impl CPUEmulator {
         let mut dst =
             ((self.stm_cycle[self.stm_segment as usize] & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8) as u16;
 
-        if self.gain_stm_mode == GAIN_STM_MODE_INTENSITY_PHASE_FULL {
-            self.stm_cycle[self.stm_segment as usize] += 1;
-            (0..self.num_transducers).for_each(|_| unsafe {
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-            });
-        } else if self.gain_stm_mode == GAIN_STM_MODE_PHASE_FULL {
-            (0..self.num_transducers).for_each(|_| unsafe {
-                self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (src.read() & 0x00FF));
-                dst += 1;
-                src = src.add(1);
-            });
-            self.stm_cycle[self.stm_segment as usize] += 1;
-
-            if send > 1 {
-                let mut src = src_base;
-                let mut dst = ((self.stm_cycle[self.stm_segment as usize]
-                    & GAIN_STM_BUF_PAGE_SIZE_MASK)
-                    << 8) as u16;
+        match self.gain_stm_mode {
+            GAIN_STM_MODE_INTENSITY_PHASE_FULL => {
+                self.stm_cycle[self.stm_segment as usize] += 1;
                 (0..self.num_transducers).for_each(|_| unsafe {
-                    self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | ((src.read() >> 8) & 0x00FF));
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                });
+            }
+            GAIN_STM_MODE_PHASE_FULL => {
+                (0..self.num_transducers).for_each(|_| unsafe {
+                    self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (src.read() & 0x00FF));
                     dst += 1;
                     src = src.add(1);
                 });
                 self.stm_cycle[self.stm_segment as usize] += 1;
-            }
-        } else if self.gain_stm_mode == GAIN_STM_MODE_PHASE_HALF {
-            (0..self.num_transducers).for_each(|_| unsafe {
-                let phase = src.read() & 0x000F;
-                self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (phase << 4) | phase);
-                dst += 1;
-                src = src.add(1);
-            });
-            self.stm_cycle[self.stm_segment as usize] += 1;
 
-            if send > 1 {
-                let mut src = src_base;
-                let mut dst = ((self.stm_cycle[self.stm_segment as usize]
-                    & GAIN_STM_BUF_PAGE_SIZE_MASK)
-                    << 8) as u16;
+                if send > 1 {
+                    let mut src = src_base;
+                    let mut dst = ((self.stm_cycle[self.stm_segment as usize]
+                        & GAIN_STM_BUF_PAGE_SIZE_MASK)
+                        << 8) as u16;
+                    (0..self.num_transducers).for_each(|_| unsafe {
+                        self.bram_write(
+                            BRAM_SELECT_STM,
+                            dst,
+                            0xFF00 | ((src.read() >> 8) & 0x00FF),
+                        );
+                        dst += 1;
+                        src = src.add(1);
+                    });
+                    self.stm_cycle[self.stm_segment as usize] += 1;
+                }
+            }
+            GAIN_STM_MODE_PHASE_HALF => {
                 (0..self.num_transducers).for_each(|_| unsafe {
-                    let phase = (src.read() >> 4) & 0x000F;
+                    let phase = src.read() & 0x000F;
                     self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (phase << 4) | phase);
                     dst += 1;
                     src = src.add(1);
                 });
                 self.stm_cycle[self.stm_segment as usize] += 1;
-            }
 
-            if send > 2 {
-                let mut src = src_base;
-                let mut dst = ((self.stm_cycle[self.stm_segment as usize]
-                    & GAIN_STM_BUF_PAGE_SIZE_MASK)
-                    << 8) as u16;
-                (0..self.num_transducers).for_each(|_| unsafe {
-                    let phase = (src.read() >> 8) & 0x000F;
-                    self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (phase << 4) | phase);
-                    dst += 1;
-                    src = src.add(1);
-                });
-                self.stm_cycle[self.stm_segment as usize] += 1;
-            }
+                if send > 1 {
+                    let mut src = src_base;
+                    let mut dst = ((self.stm_cycle[self.stm_segment as usize]
+                        & GAIN_STM_BUF_PAGE_SIZE_MASK)
+                        << 8) as u16;
+                    (0..self.num_transducers).for_each(|_| unsafe {
+                        let phase = (src.read() >> 4) & 0x000F;
+                        self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (phase << 4) | phase);
+                        dst += 1;
+                        src = src.add(1);
+                    });
+                    self.stm_cycle[self.stm_segment as usize] += 1;
+                }
 
-            if send > 3 {
-                let mut src = src_base;
-                let mut dst = ((self.stm_cycle[self.stm_segment as usize]
-                    & GAIN_STM_BUF_PAGE_SIZE_MASK)
-                    << 8) as u16;
-                (0..self.num_transducers).for_each(|_| unsafe {
-                    let phase = (src.read() >> 12) & 0x000F;
-                    self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (phase << 4) | phase);
-                    dst += 1;
-                    src = src.add(1);
-                });
-                self.stm_cycle[self.stm_segment as usize] += 1;
+                if send > 2 {
+                    let mut src = src_base;
+                    let mut dst = ((self.stm_cycle[self.stm_segment as usize]
+                        & GAIN_STM_BUF_PAGE_SIZE_MASK)
+                        << 8) as u16;
+                    (0..self.num_transducers).for_each(|_| unsafe {
+                        let phase = (src.read() >> 8) & 0x000F;
+                        self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (phase << 4) | phase);
+                        dst += 1;
+                        src = src.add(1);
+                    });
+                    self.stm_cycle[self.stm_segment as usize] += 1;
+                }
+
+                if send > 3 {
+                    let mut src = src_base;
+                    let mut dst = ((self.stm_cycle[self.stm_segment as usize]
+                        & GAIN_STM_BUF_PAGE_SIZE_MASK)
+                        << 8) as u16;
+                    (0..self.num_transducers).for_each(|_| unsafe {
+                        let phase = (src.read() >> 12) & 0x000F;
+                        self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (phase << 4) | phase);
+                        dst += 1;
+                        src = src.add(1);
+                    });
+                    self.stm_cycle[self.stm_segment as usize] += 1;
+                }
             }
+            _ => return ERR_INVALID_GAIN_STM_MODE,
         }
 
         if self.stm_cycle[self.stm_segment as usize] & GAIN_STM_BUF_PAGE_SIZE_MASK == 0 {
