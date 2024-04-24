@@ -34,21 +34,17 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup
         if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ${{ matrix.os }}
-        
       - name: Rust cache
         if: needs.check-src.outputs.status
         uses: swatinem/rust-cache@v2
-
       - name: Test src on ${{ matrix.os }}
         if: needs.check-src.outputs.status
         run: |
@@ -65,21 +61,17 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup
         if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ${{ matrix.os }}
-
       - name: Rust cache
         if: needs.check-src.outputs.status
         uses: swatinem/rust-cache@v2
-
       - name: Test src on ${{ matrix.os }}
         if: needs.check-src.outputs.status
         run: |
@@ -94,26 +86,45 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-
     steps:
       - uses: actions/checkout@v4
-        
       - name: Setup
         if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ${{ matrix.os }}
-
       - name: Rust cache
         if: needs.check-src.outputs.status
         uses: swatinem/rust-cache@v2
-
       - name: Test src for unity on ${{ matrix.os }}
         if: needs.check-src.outputs.status
         run: |
           python3 build.py test --features "use_meter left_handed"
         shell: bash
+
+  build-windows-aarch64-src:
+    needs: check-src
+    name: build-src-windows-aarch64
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup
+        if: needs.check-src.outputs.status
+        uses: ./.github/actions/setup-build
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          os: windows-latest
+          arch: 'aarch64'
+      - name: Rust cache
+        if: needs.check-src.outputs.status
+        uses: swatinem/rust-cache@v2
+      - name: Test src on ${{ matrix.os }}
+        if: needs.check-src.outputs.status
+        run: |
+          python3 build.py build --arch aarch64
 
   build-linux-arm32-src:
     needs: check-src
@@ -121,7 +132,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-
     steps:
       - uses: actions/checkout@v4
       - name: Setup
@@ -131,11 +141,9 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ubuntu-latest
           arch: 'arm32'
-
       - name: Rust cache
         if: needs.check-src.outputs.status
         uses: swatinem/rust-cache@v2
-
       - name: Test src on ${{ matrix.os }}
         if: needs.check-src.outputs.status
         run: |
@@ -156,11 +164,9 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ubuntu-latest
           arch: 'aarch64'
-
       - name: Rust cache
         if: needs.check-src.outputs.status
         uses: swatinem/rust-cache@v2
-
       - name: Test src on ${{ matrix.os }}
         if: needs.check-src.outputs.status
         run: |
@@ -178,11 +184,9 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ubuntu-latest
-
       - name: Rust cache
         if: needs.check-src.outputs.status
         uses: swatinem/rust-cache@v2
-
       - name: lint src
         if: needs.check-src.outputs.status
         run: |

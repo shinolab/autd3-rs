@@ -12,6 +12,9 @@ macro_rules! add {
 
 #[cfg(feature = "local")]
 fn main() {
+    #[cfg(target_os = "windows")]
+    let target = std::env::var("TARGET").unwrap();
+
     let os = if cfg!(target_os = "windows") {
         "win32"
     } else if cfg!(target_os = "macos") {
@@ -46,6 +49,9 @@ fn main() {
             .include("3rdparty/SOEM/oshw/win32/wpcap/Include")
             .include("3rdparty/SOEM/oshw/win32/wpcap/Include/pcap")
             .flag("/DWIN32");
+        if target.contains("arm") || target.contains("aarch64") {
+            build.target("aarch64-pc-windows-msvc");
+        }
     }
     build.compile("soem");
 
@@ -55,7 +61,7 @@ fn main() {
 
         println!("cargo:rustc-link-lib=winmm");
         println!("cargo:rustc-link-lib=ws2_32");
-        if cfg!(target_arch = "arm") || cfg!(target_arch = "aarch64") {
+        if target.contains("arm") || target.contains("aarch64") {
             println!("cargo:rustc-link-search={home_dir}\\Lib\\ARM64");
         } else {
             println!("cargo:rustc-link-search={home_dir}\\Lib\\x64");
