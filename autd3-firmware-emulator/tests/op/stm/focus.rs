@@ -59,8 +59,7 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
         freq_div,
         loop_behaviour,
         segment,
-        transition_mode,
-        true,
+        Some(transition_mode),
     );
 
     send(&mut cpu, &mut op, &geometry, &mut tx)?;
@@ -134,8 +133,7 @@ fn send_focus_stm_invalid_segment_transition() -> anyhow::Result<()> {
             0xFFFFFFFF,
             LoopBehavior::Infinite,
             Segment::S1,
-            TransitionMode::SyncIdx,
-            true,
+            Some(TransitionMode::SyncIdx),
         );
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;

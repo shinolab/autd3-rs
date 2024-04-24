@@ -67,8 +67,7 @@ fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
         freq_div,
         loop_behavior,
         segment,
-        transition_mode,
-        true,
+        Some(transition_mode),
     );
 
     send(&mut cpu, &mut op, &geometry, &mut tx)?;
@@ -110,8 +109,7 @@ fn send_gain_stm_phase_full(n: usize) -> anyhow::Result<()> {
             * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
         loop_behavior,
         segment,
-        transition_mode,
-        true,
+        Some(transition_mode),
     );
 
     send(&mut cpu, &mut op, &geometry, &mut tx)?;
@@ -160,8 +158,7 @@ fn send_gain_stm_phase_half(n: usize) -> anyhow::Result<()> {
             * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
         loop_behavior,
         segment,
-        transition_mode,
-        true,
+        Some(transition_mode),
     );
 
     send(&mut cpu, &mut op, &geometry, &mut tx)?;
@@ -229,8 +226,7 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
             freq_div,
             loop_behaviour,
             segment,
-            transition_mode,
-            true,
+            Some(transition_mode),
         );
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;

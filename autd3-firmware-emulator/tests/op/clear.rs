@@ -74,8 +74,7 @@ fn send_clear() -> anyhow::Result<()> {
                 * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
             LoopBehavior::Infinite,
             Segment::S0,
-            TransitionMode::Ext,
-            true,
+            Some(TransitionMode::Ext),
         );
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
     }

@@ -241,7 +241,7 @@ mod tests {
             assert_eq!(
                 (ModulationControlFlags::BEGIN
                     | ModulationControlFlags::END
-                    | ModulationControlFlags::transition)
+                    | ModulationControlFlags::TRANSITION)
                     .bits(),
                 tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)
                     + offset_of!(ModulationHead, flag)]
@@ -448,7 +448,7 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(TypeTag::Modulation as u8, tx[dev.idx() * FRAME_SIZE]);
             assert_eq!(
-                (ModulationControlFlags::transition | ModulationControlFlags::END).bits(),
+                (ModulationControlFlags::TRANSITION | ModulationControlFlags::END).bits(),
                 tx[dev.idx() * FRAME_SIZE + offset_of!(ModulationHead, flag)]
             );
             let mod_size = FRAME_SIZE - std::mem::size_of::<ModulationSubseq>();
