@@ -40,6 +40,17 @@ impl CPUEmulator {
 
         self.mod_freq_div = [5120, 5120];
         self.mod_cycle = 2;
+        self.bram_write(
+            BRAM_SELECT_CONTROLLER,
+            ADDR_MOD_TRANSITION_MODE,
+            TRANSITION_MODE_SYNC_IDX as _,
+        );
+        self.bram_set(
+            BRAM_SELECT_CONTROLLER,
+            ADDR_MOD_TRANSITION_VALUE_0,
+            0,
+            std::mem::size_of::<u64>() >> 1,
+        );
         self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_REQ_RD_SEGMENT, 0);
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
@@ -75,6 +86,17 @@ impl CPUEmulator {
         self.stm_cycle = [1, 1];
         self.stm_mode = [STM_MODE_GAIN, STM_MODE_GAIN];
         self.stm_freq_div = [0xFFFFFFFF, 0xFFFFFFFF];
+        self.bram_write(
+            BRAM_SELECT_CONTROLLER,
+            ADDR_STM_TRANSITION_MODE,
+            TRANSITION_MODE_SYNC_IDX as _,
+        );
+        self.bram_set(
+            BRAM_SELECT_CONTROLLER,
+            ADDR_STM_TRANSITION_VALUE_0,
+            0,
+            std::mem::size_of::<u64>() >> 1,
+        );
         self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_MODE0, STM_MODE_GAIN);
         self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_MODE1, STM_MODE_GAIN);
         self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REQ_RD_SEGMENT, 0);
