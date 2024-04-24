@@ -100,7 +100,7 @@ impl<L: Link> Controller<L> {
     ///
     /// * `Ok(Vec<FirmwareVersion>)` - List of firmware information
     ///
-    pub async fn firmware_infos(&mut self) -> Result<Vec<FirmwareVersion>, AUTDError> {
+    pub async fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDError> {
         let mut op = autd3_driver::firmware::operation::FirmInfoOp::default();
         let mut null_op = autd3_driver::firmware::operation::NullOp::default();
 

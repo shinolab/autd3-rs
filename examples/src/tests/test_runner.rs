@@ -19,7 +19,7 @@ pub async fn run<L: Link>(mut autd: Controller<L>) -> anyhow::Result<()> {
     );
 
     println!("======== AUTD3 firmware information ========");
-    autd.firmware_infos().await?.iter().for_each(|firm_info| {
+    autd.firmware_version().await?.iter().for_each(|firm_info| {
         println!("{}", firm_info);
     });
     println!("============================================");
