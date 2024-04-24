@@ -85,7 +85,7 @@ async fn main() -> Result<()> {
             "Check that the focal points are generated 150mm directly above the center of each device by your hands."
         );
 
-        autd.send(Null::new().with_segment(Segment::S1, true))
+        autd.send(Null::new().with_segment(Segment::S1, Some(TransitionMode::SyncIdx)))
             .await?;
         print_msg_and_wait_for_key("Check that the focal points have disappeared.");
         autd.fpga_state().await?.iter().for_each(|state| {
@@ -106,7 +106,7 @@ async fn main() -> Result<()> {
             assert_eq!(None, state.current_stm_segment());
         });
 
-        autd.send(Null::new().with_segment(Segment::S1, false))
+        autd.send(Null::new().with_segment(Segment::S1, None))
             .await?;
         print_msg_and_wait_for_key("Check that the focal points are still presented.");
         autd.fpga_state().await?.iter().for_each(|state| {
@@ -171,7 +171,7 @@ async fn main() -> Result<()> {
             assert_eq!(None, state.current_stm_segment());
         });
 
-        autd.send(Static::new().with_segment(Segment::S1, true))
+        autd.send(Static::new().with_segment(Segment::S1, Some(TransitionMode::SyncIdx)))
             .await?;
         print_msg_and_wait_for_key("Check that the AM modulation is no longer applied.");
         autd.fpga_state().await?.iter().for_each(|state| {
@@ -192,7 +192,7 @@ async fn main() -> Result<()> {
             assert_eq!(None, state.current_stm_segment());
         });
 
-        autd.send(Static::with_intensity(0).with_segment(Segment::S1, false))
+        autd.send(Static::with_intensity(0).with_segment(Segment::S1, None))
             .await?;
         print_msg_and_wait_for_key("Check that the focal points are still presented.");
         autd.fpga_state().await?.iter().for_each(|state| {
@@ -250,7 +250,7 @@ async fn main() -> Result<()> {
             }
         }
 
-        autd.send(Sawtooth::new().with_segment(Segment::S0, true))
+        autd.send(Sawtooth::new().with_segment(Segment::S0, Some(TransitionMode::SyncIdx)))
             .await?;
         print_msg_and_wait_for_key(
             "Check that the AM modulation is applied with a sawtooth pattern.",
@@ -263,7 +263,7 @@ async fn main() -> Result<()> {
             assert_eq!(None, state.current_stm_segment());
         });
 
-        autd.send(Sawtooth::reverse().with_segment(Segment::S1, true))
+        autd.send(Sawtooth::reverse().with_segment(Segment::S1, Some(TransitionMode::SyncIdx)))
             .await?;
         print_msg_and_wait_for_key(
             "Check that the AM modulation is applied with a reversed sawtooth pattern.",
@@ -306,7 +306,8 @@ async fn main() -> Result<()> {
         });
 
         let stm = FocusSTM::from_freq(1.).add_foci_from_iter(gen_foci())?;
-        autd.send(stm.with_segment(Segment::S1, true)).await?;
+        autd.send(stm.with_segment(Segment::S1, Some(TransitionMode::SyncIdx)))
+            .await?;
         print_msg_and_wait_for_key("Check that the frequency is now 1 Hz.");
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
@@ -331,7 +332,7 @@ async fn main() -> Result<()> {
         let stm = FocusSTM::from_freq(0.5)
             .with_loop_behavior(LoopBehavior::once())
             .add_foci_from_iter(foci)?
-            .with_segment(Segment::S1, false);
+            .with_segment(Segment::S1, None);
         autd.send(stm).await?;
         print_msg_and_wait_for_key("Check that the nothing has chenged. Then, continue if the focal point is on the left size of device and check that the focus movement direction reverses when the focus comes to the right edge and stops after a cycle.");
         autd.fpga_state().await?.iter().for_each(|state| {
@@ -406,7 +407,8 @@ async fn main() -> Result<()> {
         });
 
         let stm = GainSTM::from_freq(1.).add_gains_from_iter(gen_foci())?;
-        autd.send(stm.with_segment(Segment::S1, true)).await?;
+        autd.send(stm.with_segment(Segment::S1, Some(TransitionMode::SyncIdx)))
+            .await?;
         print_msg_and_wait_for_key("Check that the frequency is now 1 Hz.");
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
@@ -431,7 +433,7 @@ async fn main() -> Result<()> {
         let stm = GainSTM::from_freq(0.5)
             .with_loop_behavior(LoopBehavior::once())
             .add_gains_from_iter(foci)?
-            .with_segment(Segment::S1, false);
+            .with_segment(Segment::S1, None);
         autd.send(stm).await?;
         print_msg_and_wait_for_key("Check that the nothing has chenged. Then, continue if the focal point is on the left size of device and check that the focus movement direction reverses when the focus comes to the right edge and stops after a cycle.");
         autd.fpga_state().await?.iter().for_each(|state| {

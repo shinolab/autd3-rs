@@ -39,7 +39,7 @@ message GainSTM {
     uint32 freq_div = 1;
     LoopBehavior loop_behavior = 2;
     Segment segment = 3;
-    bool update_segment = 4;
+    bool transition = 4;
     repeated Gain gains = 5;
 }
 
@@ -51,7 +51,7 @@ message FocusSTM {
     uint32 freq_div = 1;
     LoopBehavior loop_behavior = 2;
     Segment segment = 3;
-    bool update_segment = 4;
+    bool transition = 4;
     repeated ControlPoint points = 5;
 }
 

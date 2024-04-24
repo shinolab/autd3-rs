@@ -9,7 +9,7 @@ bitflags::bitflags! {
         const NONE           = 0;
         const BEGIN          = 1 << 0;
         const END            = 1 << 1;
-        const UPDATE_SEGMENT = 1 << 2;
+        const TRANSITION     = 1 << 2;
         const SEGMENT        = 1 << 3;
     }
 }

@@ -16,7 +16,7 @@ where
             freq_div: self.sampling_config().unwrap().frequency_division(),
             loop_behavior: Some(self.loop_behavior().to_msg(None)),
             segment: Segment::S0 as _,
-            update_segment: true,
+            transition: true,
             gains: self
                 .gains()
                 .iter()
@@ -41,7 +41,7 @@ where
             freq_div: self.sampling_config().unwrap().frequency_division(),
             loop_behavior: Some(self.loop_behavior().to_msg(None)),
             segment: self.segment() as _,
-            update_segment: self.update_segment(),
+            transition: self.transition(),
             gains: self
                 .gains()
                 .iter()

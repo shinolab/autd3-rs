@@ -14,7 +14,7 @@ impl ToMessage for autd3::modulation::Static {
                     intensity: Some(self.intensity().to_msg(None)),
                 })),
                 segment: Segment::S0 as _,
-                update_segment: true,
+                transition: true,
             })),
         }
     }
@@ -31,7 +31,7 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::modulation
                     intensity: Some(self.intensity().to_msg(None)),
                 })),
                 segment: self.segment() as _,
-                update_segment: self.update_segment(),
+                transition: self.transition(),
             })),
         }
     }

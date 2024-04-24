@@ -21,7 +21,7 @@ impl ToMessage for autd3::modulation::Sine {
                     mode: SamplingMode::from(self.mode()).into(),
                 })),
                 segment: Segment::S0 as _,
-                update_segment: true,
+                transition: true,
             })),
         }
     }
@@ -43,7 +43,7 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::modulation
                     mode: SamplingMode::from(self.mode()).into(),
                 })),
                 segment: self.segment() as _,
-                update_segment: self.update_segment(),
+                transition: self.transition(),
             })),
         }
     }

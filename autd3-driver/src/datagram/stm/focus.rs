@@ -122,8 +122,7 @@ impl DatagramS for FocusSTM {
     fn operation_with_segment(
         self,
         segment: Segment,
-        transition_mode: TransitionMode,
-        update_segment: bool,
+        transition_mode: Option<TransitionMode>,
     ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         let freq_div = self.sampling_config()?.frequency_division();
         let loop_behavior = self.loop_behavior();
@@ -134,7 +133,6 @@ impl DatagramS for FocusSTM {
                 loop_behavior,
                 segment,
                 transition_mode,
-                update_segment,
             ),
             Self::O2::default(),
         ))
@@ -144,8 +142,6 @@ impl DatagramS for FocusSTM {
         Some(std::time::Duration::from_millis(200))
     }
 }
-
-impl DatagramT for FocusSTM {}
 
 #[cfg(test)]
 mod tests {
@@ -292,7 +288,7 @@ mod tests {
 
         assert_eq!(stm.timeout(), Some(Duration::from_millis(200)));
 
-        let r = stm.operation_with_segment(Segment::S0, TransitionMode::SyncIdx, true);
+        let r = stm.operation_with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
         assert!(r.is_ok());
         let _: (FocusSTMOp, NullOp) = r.unwrap();
         Ok(())

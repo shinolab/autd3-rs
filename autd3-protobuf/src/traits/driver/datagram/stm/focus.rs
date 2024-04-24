@@ -13,7 +13,7 @@ impl ToMessage for autd3_driver::datagram::FocusSTM {
             freq_div: self.sampling_config().unwrap().frequency_division(),
             loop_behavior: Some(self.loop_behavior().to_msg(None)),
             segment: Segment::S0 as _,
-            update_segment: true,
+            transition: true,
             points: self.foci().iter().map(|p| p.to_msg(None)).collect(),
         }
     }
@@ -27,7 +27,7 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3_driver::dat
             freq_div: self.sampling_config().unwrap().frequency_division(),
             loop_behavior: Some(self.loop_behavior().to_msg(None)),
             segment: self.segment() as _,
-            update_segment: self.update_segment(),
+            transition: self.transition(),
             points: self.foci().iter().map(|p| p.to_msg(None)).collect(),
         }
     }

@@ -9,7 +9,7 @@ bitflags::bitflags! {
         const NONE       = 0;
         const BEGIN      = 1 << 0;
         const END        = 1 << 1;
-        const UPDATE     = 1 << 2;
+        const TRANSITION = 1 << 2;
         const SEGMENT    = 1 << 3;
         const SEND_BIT0  = 1 << 6;
         const SEND_BIT1  = 1 << 7;
@@ -25,8 +25,8 @@ impl fmt::Display for GainSTMControlFlags {
         if self.contains(GainSTMControlFlags::END) {
             flags.push("END")
         }
-        if self.contains(GainSTMControlFlags::UPDATE) {
-            flags.push("UPDATE")
+        if self.contains(GainSTMControlFlags::TRANSITION) {
+            flags.push("TRANSITION")
         }
         if self.is_empty() {
             flags.push("NONE")
@@ -57,13 +57,15 @@ mod tests {
         assert_eq!(format!("{}", GainSTMControlFlags::NONE), "NONE");
         assert_eq!(format!("{}", GainSTMControlFlags::BEGIN), "BEGIN");
         assert_eq!(format!("{}", GainSTMControlFlags::END), "END");
-        assert_eq!(format!("{}", GainSTMControlFlags::UPDATE), "UPDATE");
+        assert_eq!(format!("{}", GainSTMControlFlags::TRANSITION), "TRANSITION");
         assert_eq!(
             format!(
                 "{}",
-                GainSTMControlFlags::BEGIN | GainSTMControlFlags::END | GainSTMControlFlags::UPDATE
+                GainSTMControlFlags::BEGIN
+                    | GainSTMControlFlags::END
+                    | GainSTMControlFlags::TRANSITION
             ),
-            "BEGIN | END | UPDATE"
+            "BEGIN | END | TRANSITION"
         );
     }
 }

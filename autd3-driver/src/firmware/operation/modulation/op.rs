@@ -37,8 +37,7 @@ pub struct ModulationOp {
     sent: HashMap<usize, usize>,
     loop_behavior: LoopBehavior,
     segment: Segment,
-    transition_mode: TransitionMode,
-    update_segment: bool,
+    transition_mode: Option<TransitionMode>,
 }
 
 impl ModulationOp {
@@ -47,8 +46,7 @@ impl ModulationOp {
         freq_div: u32,
         loop_behavior: LoopBehavior,
         segment: Segment,
-        transition_mode: TransitionMode,
-        update_segment: bool,
+        transition_mode: Option<TransitionMode>,
     ) -> Self {
         Self {
             buf,
@@ -58,7 +56,6 @@ impl ModulationOp {
             loop_behavior,
             segment,
             transition_mode,
-            update_segment,
         }
     }
 }
@@ -88,11 +85,11 @@ impl Operation for ModulationOp {
                         ModulationControlFlags::NONE
                     },
                 size: mod_size as u16,
-                transition_mode: self.transition_mode.mode(),
                 __pad: [0; 3],
                 freq_div: self.freq_div,
                 rep: self.loop_behavior.to_rep(),
-                transition_value: self.transition_mode.value(),
+                transition_mode: self.transition_mode.unwrap_or_default().mode(),
+                transition_value: self.transition_mode.unwrap_or_default().value(),
             };
         } else {
             *cast::<ModulationSubseq>(tx) = ModulationSubseq {
@@ -105,8 +102,10 @@ impl Operation for ModulationOp {
         if sent + mod_size == self.buf.len() {
             let d = cast::<ModulationSubseq>(tx);
             d.flag.set(ModulationControlFlags::END, true);
-            d.flag
-                .set(ModulationControlFlags::UPDATE_SEGMENT, self.update_segment);
+            d.flag.set(
+                ModulationControlFlags::TRANSITION,
+                self.transition_mode.is_some(),
+            );
         }
 
         unsafe {
@@ -202,8 +201,7 @@ mod tests {
             freq_div,
             loop_behavior,
             segment,
-            transition_mode,
-            true,
+            Some(transition_mode),
         );
 
         assert!(op.init(&geometry).is_ok());
@@ -243,7 +241,7 @@ mod tests {
             assert_eq!(
                 (ModulationControlFlags::BEGIN
                     | ModulationControlFlags::END
-                    | ModulationControlFlags::UPDATE_SEGMENT)
+                    | ModulationControlFlags::transition)
                     .bits(),
                 tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)
                     + offset_of!(ModulationHead, flag)]
@@ -313,8 +311,7 @@ mod tests {
             SAMPLING_FREQ_DIV_MIN,
             LoopBehavior::Infinite,
             Segment::S0,
-            TransitionMode::SyncIdx,
-            true,
+            Some(TransitionMode::SyncIdx),
         );
 
         assert!(op.init(&geometry).is_ok());
@@ -451,7 +448,7 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(TypeTag::Modulation as u8, tx[dev.idx() * FRAME_SIZE]);
             assert_eq!(
-                (ModulationControlFlags::UPDATE_SEGMENT | ModulationControlFlags::END).bits(),
+                (ModulationControlFlags::transition | ModulationControlFlags::END).bits(),
                 tx[dev.idx() * FRAME_SIZE + offset_of!(ModulationHead, flag)]
             );
             let mod_size = FRAME_SIZE - std::mem::size_of::<ModulationSubseq>();
@@ -493,8 +490,7 @@ mod tests {
                 freq_div,
                 LoopBehavior::Infinite,
                 Segment::S0,
-                TransitionMode::SyncIdx,
-                true,
+                Some(TransitionMode::SyncIdx),
             );
 
             op.init(&geometry)

@@ -36,5 +36,5 @@ message Modulation {
     Square square = 4;
   }
   Segment segment = 1001;
-  bool update_segment = 1002;
+  bool transition = 1002;
 }

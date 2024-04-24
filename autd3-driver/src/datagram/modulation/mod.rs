@@ -21,7 +21,7 @@ use crate::{
     },
 };
 
-use super::{Datagram, DatagramS, DatagramT};
+use super::{Datagram, DatagramS};
 
 pub trait ModulationProperty {
     fn sampling_config(&self) -> SamplingConfiguration;
@@ -69,8 +69,7 @@ impl DatagramS for Box<dyn Modulation> {
     fn operation_with_segment(
         self,
         segment: Segment,
-        transition_mode: TransitionMode,
-        update_segment: bool,
+        transition_mode: Option<TransitionMode>,
     ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         let freq_div = self.sampling_config().frequency_division();
         Ok((
@@ -80,7 +79,6 @@ impl DatagramS for Box<dyn Modulation> {
                 self.loop_behavior(),
                 segment,
                 transition_mode,
-                update_segment,
             ),
             Self::O2::default(),
         ))
@@ -90,8 +88,6 @@ impl DatagramS for Box<dyn Modulation> {
         Some(Duration::from_millis(200))
     }
 }
-
-impl DatagramT for Box<dyn Modulation> {}
 // GRCOV_EXCL_STOP
 
 #[cfg(test)]

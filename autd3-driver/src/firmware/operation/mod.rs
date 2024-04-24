@@ -232,7 +232,7 @@ pub mod tests {
     #[derive(Gain, Copy)]
     pub struct ErrGain {
         pub segment: Segment,
-        pub update_segment: bool,
+        pub transition: bool,
     }
 
     impl Clone for ErrGain {
