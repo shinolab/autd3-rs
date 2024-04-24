@@ -16,3 +16,5 @@ where
 {
     fn from_msg(msg: &T) -> Option<Self>;
 }
+
+pub use driver::to_transition_mode;

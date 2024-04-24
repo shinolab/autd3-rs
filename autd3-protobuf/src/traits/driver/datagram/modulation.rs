@@ -1,7 +1,4 @@
-use crate::{
-    pb::*,
-    traits::{FromMessage, ToMessage},
-};
+use crate::{pb::*, traits::*};
 
 impl ToMessage for autd3_driver::datagram::ChangeModulationSegment {
     type Message = ChangeModulationSegment;
@@ -19,6 +16,7 @@ impl FromMessage<ChangeModulationSegment> for autd3_driver::datagram::ChangeModu
     fn from_msg(msg: &ChangeModulationSegment) -> Option<Self> {
         Some(autd3_driver::datagram::ChangeModulationSegment::new(
             autd3_driver::firmware::fpga::Segment::from(Segment::try_from(msg.segment).ok()?),
+            to_transition_mode(Some(msg.transition_mode), Some(msg.transition_value)).unwrap(),
         ))
     }
 }
