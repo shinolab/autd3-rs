@@ -175,7 +175,7 @@ impl OperationHandler {
 
         let t = &mut tx[dev.idx()].payload;
         assert!(t.len() >= op.required_size(dev));
-        Ok(op.pack(dev, t)?)
+        op.pack(dev, t)
     }
 }
 
