@@ -57,6 +57,11 @@ impl CPUEmulator {
                 ADDR_STM_REQ_RD_SEGMENT,
                 segment as _,
             );
+            self.bram_write(
+                BRAM_SELECT_CONTROLLER,
+                ADDR_STM_TRANSITION_MODE,
+                TRANSITION_MODE_SYNC_IDX as _,
+            );
         }
 
         NO_ERR
@@ -75,6 +80,11 @@ impl CPUEmulator {
             BRAM_SELECT_CONTROLLER,
             ADDR_STM_REQ_RD_SEGMENT,
             d.segment as _,
+        );
+        self.bram_write(
+            BRAM_SELECT_CONTROLLER,
+            ADDR_STM_TRANSITION_MODE,
+            TRANSITION_MODE_SYNC_IDX as _,
         );
 
         NO_ERR
