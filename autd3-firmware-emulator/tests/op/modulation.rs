@@ -1,4 +1,4 @@
-use std::{num::NonZeroU32, time::Duration};
+use std::time::Duration;
 
 use autd3_driver::{
     derive::{LoopBehavior, Segment},
