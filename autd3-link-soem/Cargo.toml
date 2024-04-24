@@ -22,15 +22,16 @@ time = { workspace = true, features = ["std"], optional = true }
 tonic = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["time"] }
 async-channel = { workspace = true, optional = true }
+thread-priority = { workspace = true, optional = true }
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.56.0", features = ["Win32_Foundation", "Win32_System_Performance", "Win32_Networking_WinSock", "Win32_System_SystemInformation"], optional = true }
+windows = { version = "0.56.0", features = ["Win32_Media_Multimedia", "Win32_System_Threading", "Win32_Foundation"], optional = true }
 
 [target.'cfg(not(windows))'.dependencies]
 libc = { version = "0.2.144", optional = true }
 
 [features]
-local = ["cc", "glob", "async-channel", "time", "thiserror", "windows", "libc"]
+local = ["cc", "glob", "async-channel", "time", "thiserror", "windows", "libc", "thread-priority"]
 remote = ["autd3-protobuf", "tonic"]
 default = ["local"]
 all = ["local", "remote"]
