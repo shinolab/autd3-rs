@@ -1,7 +1,6 @@
 use std::num::NonZeroU32;
 
 use autd3_driver::{
-    defined::PI,
     derive::{Drive, EmitIntensity, Phase, Segment},
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::fpga::{LoopBehavior, TransitionMode},
@@ -25,7 +24,7 @@ pub struct FPGAEmulator {
 
 impl FPGAEmulator {
     pub(crate) fn new(num_transducers: usize) -> Self {
-        Self {
+        let mut fpga = Self {
             controller_bram: vec![0x0000; 256],
             modulator_bram_0: vec![0x0000; 32768 / std::mem::size_of::<u16>()],
             modulator_bram_1: vec![0x0000; 32768 / std::mem::size_of::<u16>()],
@@ -72,13 +71,25 @@ impl FPGAEmulator {
                 0x0b1c14a3, 0x0cb314a3, 0x0e4914a3, 0x0fdf14a3, 0x117614a3, 0x130c14a3, 0x14a314a3,
                 0x163914a3, 0x17d014a3, 0x196614a3, 0x1afc14a3,
             ],
-        }
+        };
+        fpga.init();
+        fpga
     }
 
     pub(crate) fn init(&mut self) {
         self.controller_bram[ADDR_VERSION_NUM_MAJOR] =
             (ENABLED_FEATURES_BITS as u16) << 8 | VERSION_NUM_MAJOR as u16;
         self.controller_bram[ADDR_VERSION_NUM_MINOR] = VERSION_NUM_MINOR as u16;
+
+        let pwe_init_data = include_bytes!("asin.dat");
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                pwe_init_data.as_ptr(),
+                self.duty_table_bram.as_mut_ptr() as _,
+                pwe_init_data.len(),
+            );
+        }
+        self.controller_bram[ADDR_PULSE_WIDTH_ENCODER_FULL_WIDTH_START] = 0xFF * 0xFF;
     }
 
     pub(crate) fn read(&self, addr: u16) -> u16 {
@@ -336,6 +347,12 @@ impl FPGAEmulator {
         })
     }
 
+    pub fn pulse_width_encoder_table_at(&self, idx: usize) -> u8 {
+        let v = self.duty_table_bram[idx >> 1];
+        let v = if idx % 2 == 0 { v & 0xFF } else { v >> 8 };
+        v as u8
+    }
+
     pub fn pulse_width_encoder_full_width_start(&self) -> u16 {
         self.controller_bram[ADDR_PULSE_WIDTH_ENCODER_FULL_WIDTH_START]
     }
@@ -345,6 +362,16 @@ impl FPGAEmulator {
             .iter()
             .flat_map(|&d| vec![(d & 0xFF) as u8, (d >> 8) as u8])
             .collect()
+    }
+
+    pub fn to_pulse_width(&self, a: EmitIntensity, b: EmitIntensity) -> u16 {
+        let key = a.value() as usize * b.value() as usize;
+        let v = self.pulse_width_encoder_table_at(key) as u16;
+        if key as u16 >= self.pulse_width_encoder_full_width_start() {
+            0x100 | v
+        } else {
+            v
+        }
     }
 
     fn phase_at(&self, idx: usize) -> Phase {
@@ -452,12 +479,6 @@ impl FPGAEmulator {
             .collect()
     }
 
-    pub fn to_pulse_width(a: EmitIntensity, b: EmitIntensity) -> u16 {
-        let a = a.value() as f64 / 255.0;
-        let b = b.value() as f64 / 255.0;
-        ((a * b).asin() / PI * 512.0).round() as u16
-    }
-
     pub fn local_tr_pos(&self) -> &[u64] {
         &self.tr_pos
     }
@@ -497,10 +518,11 @@ mod tests {
 
     #[test]
     fn test_to_pulse_width() {
+        let fpga = FPGAEmulator::new(249);
         itertools::iproduct!(0x00..=0xFF, 0x00..=0xFF).for_each(|(a, b)| {
             assert_eq!(
                 to_pulse_width_actual(a, b),
-                FPGAEmulator::to_pulse_width(a.into(), b.into())
+                fpga.to_pulse_width(a.into(), b.into())
             );
         });
     }
