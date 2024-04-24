@@ -32,6 +32,26 @@ impl DcSysTime {
     }
 }
 
+impl std::ops::Add<std::time::Duration> for DcSysTime {
+    type Output = Self;
+
+    fn add(self, rhs: std::time::Duration) -> Self::Output {
+        Self {
+            dc_sys_time: self.dc_sys_time + rhs.as_nanos() as u64,
+        }
+    }
+}
+
+impl std::ops::Sub<std::time::Duration> for DcSysTime {
+    type Output = Self;
+
+    fn sub(self, rhs: std::time::Duration) -> Self::Output {
+        Self {
+            dc_sys_time: self.dc_sys_time - rhs.as_nanos() as u64,
+        }
+    }
+}
+
 #[cfg(test)]
 
 mod tests {
@@ -69,5 +89,17 @@ mod tests {
         let utc = time::macros::datetime!(1999-01-01 0:0:1 UTC);
         let t = DcSysTime::from_utc(utc);
         assert!(t.is_err());
+    }
+
+    #[test]
+    fn addsub() {
+        let utc = time::macros::datetime!(2000-01-01 0:0:0 UTC);
+        let t = DcSysTime::from_utc(utc);
+        assert!(t.is_ok());
+        let t = t.unwrap() + std::time::Duration::from_secs(1);
+        assert_eq!(1000000000, t.sys_time());
+
+        let t = t - std::time::Duration::from_secs(1);
+        assert_eq!(0, t.sys_time());
     }
 }
