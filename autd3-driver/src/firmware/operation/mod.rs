@@ -54,6 +54,33 @@ pub enum TypeTag {
     Debug = 0xF0,
 }
 
+#[derive(Default)]
+pub(crate) struct Remains {
+    remains: Vec<usize>,
+}
+
+impl Remains {
+    pub fn init(&mut self, geometry: &Geometry, n: usize) {
+        self.remains = vec![n; geometry.num_devices()]
+    }
+
+    pub fn send(&mut self, device: &Device, n: usize) {
+        self.remains[device.idx()] -= n;
+    }
+
+    pub fn is_done(&self, device: &Device) -> bool {
+        self.remains[device.idx()] == 0
+    }
+}
+
+impl std::ops::Index<&Device> for Remains {
+    type Output = usize;
+
+    fn index(&self, index: &Device) -> &Self::Output {
+        &self.remains[index.idx()]
+    }
+}
+
 fn cast<T>(tx: &mut [u8]) -> &mut T {
     unsafe { (tx.as_mut_ptr() as *mut T).as_mut().unwrap() }
 }
@@ -62,7 +89,7 @@ pub trait Operation {
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError>;
     fn required_size(&self, device: &Device) -> usize;
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError>;
-    fn remains(&self, device: &Device) -> usize;
+    fn is_done(&self, device: &Device) -> bool;
 }
 
 // GRCOV_EXCL_START
@@ -79,8 +106,8 @@ impl Operation for Box<dyn Operation> {
         self.as_mut().pack(device, tx)
     }
 
-    fn remains(&self, device: &Device) -> usize {
-        self.as_ref().remains(device)
+    fn is_done(&self, device: &Device) -> bool {
+        self.as_ref().is_done(device)
     }
 }
 // GRCOV_EXCL_STOP
@@ -95,7 +122,7 @@ impl OperationHandler {
     ) -> bool {
         geometry
             .devices()
-            .all(|dev| op1.remains(dev) == 0 && op2.remains(dev) == 0)
+            .all(|dev| op1.is_done(dev) && op2.is_done(dev))
     }
 
     pub fn init(
@@ -115,17 +142,11 @@ impl OperationHandler {
     ) -> Result<(), AUTDInternalError> {
         geometry
             .devices()
-            .map(|dev| match (op1.remains(dev), op2.remains(dev)) {
-                (0, 0) => unreachable!(),
-                (0, _) => {
-                    Self::pack_dev(op2, dev, tx)?;
-                    Ok(())
-                }
-                (_, 0) => {
-                    Self::pack_dev(op1, dev, tx)?;
-                    Ok(())
-                }
-                _ => {
+            .map(|dev| match (op1.is_done(dev), op2.is_done(dev)) {
+                (true, true) => unreachable!(),
+                (true, false) => Self::pack_dev(op2, dev, tx).map(|_| Ok(()))?,
+                (false, true) => Self::pack_dev(op1, dev, tx).map(|_| Ok(()))?,
+                (false, false) => {
                     let op1_size = Self::pack_dev(op1, dev, tx)?;
                     let t = &mut tx[dev.idx()].payload;
                     if t.len() - op1_size >= op2.required_size(dev) {
@@ -278,8 +299,8 @@ pub mod tests {
             Ok(self.pack_size[&device.idx()])
         }
 
-        fn remains(&self, device: &Device) -> usize {
-            self.num_frames[&device.idx()]
+        fn is_done(&self, device: &Device) -> bool {
+            self.num_frames[&device.idx()] == 0
         }
     }
 
@@ -397,8 +418,8 @@ pub mod tests {
 
         OperationHandler::init(&mut op1, &mut op2, &geometry).unwrap();
 
-        assert_eq!(op1.remains(&geometry[0]), 1);
-        assert_eq!(op2.remains(&geometry[0]), 0);
+        assert!(!op1.is_done(&geometry[0]));
+        assert!(op2.is_done(&geometry[0]));
         assert!(!OperationHandler::is_finished(
             &mut op1, &mut op2, &geometry
         ));
@@ -407,8 +428,8 @@ pub mod tests {
 
         assert!(OperationHandler::pack(&mut op1, &mut op2, &geometry, &mut tx).is_ok());
 
-        assert_eq!(op1.remains(&geometry[0]), 0);
-        assert_eq!(op2.remains(&geometry[0]), 0);
+        assert!(op1.is_done(&geometry[0]));
+        assert!(op2.is_done(&geometry[0]));
         assert!(OperationHandler::is_finished(&mut op1, &mut op2, &geometry));
     }
 
@@ -447,8 +468,8 @@ pub mod tests {
 
         OperationHandler::init(&mut op1, &mut op2, &geometry).unwrap();
 
-        assert_eq!(op1.remains(&geometry[0]), 0);
-        assert_eq!(op2.remains(&geometry[0]), 1);
+        assert!(op1.is_done(&geometry[0]));
+        assert!(!op2.is_done(&geometry[0]));
         assert!(!OperationHandler::is_finished(
             &mut op1, &mut op2, &geometry
         ));
@@ -457,8 +478,8 @@ pub mod tests {
 
         assert!(OperationHandler::pack(&mut op1, &mut op2, &geometry, &mut tx).is_ok());
 
-        assert_eq!(op1.remains(&geometry[0]), 0);
-        assert_eq!(op2.remains(&geometry[0]), 0);
+        assert!(op1.is_done(&geometry[0]));
+        assert!(op2.is_done(&geometry[0]));
         assert!(OperationHandler::is_finished(&mut op1, &mut op2, &geometry));
     }
 

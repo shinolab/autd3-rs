@@ -1,12 +1,11 @@
-use std::collections::HashMap;
-use std::mem::size_of;
+use std::{collections::HashMap, mem::size_of};
 
 use crate::{
     datagram::{Gain, GainFilter},
     error::AUTDInternalError,
     firmware::{
         fpga::{Drive, FPGADrive, LoopBehavior, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX},
-        operation::{cast, Operation, TypeTag},
+        operation::{cast, Operation, Remains, TypeTag},
     },
     geometry::{Device, Geometry},
 };
@@ -38,8 +37,7 @@ struct GainSTMSubseq {
 pub struct GainSTMOp<G: Gain> {
     gains: Vec<G>,
     drives: Vec<HashMap<usize, Vec<Drive>>>,
-    remains: HashMap<usize, usize>,
-    sent: HashMap<usize, usize>,
+    remains: Remains,
     mode: GainSTMMode,
     freq_div: u32,
     loop_behavior: LoopBehavior,
@@ -60,7 +58,6 @@ impl<G: Gain> GainSTMOp<G> {
             gains,
             drives: Default::default(),
             remains: Default::default(),
-            sent: Default::default(),
             mode,
             freq_div,
             loop_behavior,
@@ -82,18 +79,13 @@ impl<G: Gain> Operation for GainSTMOp<G> {
             return Err(AUTDInternalError::GainSTMSizeOutOfRange(self.drives.len()));
         }
 
-        self.remains = geometry
-            .devices()
-            .map(|device| (device.idx(), self.drives.len()))
-            .collect();
-
-        self.sent = geometry.devices().map(|device| (device.idx(), 0)).collect();
+        self.remains.init(geometry, self.drives.len());
 
         Ok(())
     }
 
     fn required_size(&self, device: &Device) -> usize {
-        if self.sent[&device.idx()] == 0 {
+        if self.remains[device] == self.drives.len() {
             size_of::<GainSTMHead>() + device.num_transducers() * size_of::<FPGADrive>()
         } else {
             size_of::<GainSTMSubseq>() + device.num_transducers() * size_of::<FPGADrive>()
@@ -101,9 +93,7 @@ impl<G: Gain> Operation for GainSTMOp<G> {
     }
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        assert!(self.remains[&device.idx()] > 0);
-
-        let sent = self.sent[&device.idx()];
+        let sent = self.drives.len() - self.remains[device];
 
         let offset = if sent == 0 {
             size_of::<GainSTMHead>()
@@ -248,9 +238,7 @@ impl<G: Gain> Operation for GainSTMOp<G> {
             );
         }
 
-        self.sent.insert(device.idx(), sent + send);
-        self.remains
-            .insert(device.idx(), self.drives.len() - self.sent[&device.idx()]);
+        self.remains.send(device, send);
         if sent == 0 {
             Ok(size_of::<GainSTMHead>() + device.num_transducers() * size_of::<FPGADrive>())
         } else {
@@ -258,8 +246,8 @@ impl<G: Gain> Operation for GainSTMOp<G> {
         }
     }
 
-    fn remains(&self, device: &Device) -> usize {
-        self.remains[&device.idx()]
+    fn is_done(&self, device: &Device) -> bool {
+        self.remains.is_done(device)
     }
 }
 
@@ -350,7 +338,7 @@ mod tests {
 
             geometry
                 .devices()
-                .for_each(|dev| assert_eq!(op.remains(dev), GAIN_STM_SIZE));
+                .for_each(|dev| assert_eq!(op.remains[dev], GAIN_STM_SIZE));
 
             geometry.devices().for_each(|dev| {
                 assert_eq!(
@@ -361,7 +349,7 @@ mod tests {
 
             geometry
                 .devices()
-                .for_each(|dev| assert_eq!(op.remains(dev), GAIN_STM_SIZE - 1));
+                .for_each(|dev| assert_eq!(op.remains[dev], GAIN_STM_SIZE - 1));
 
             geometry.devices().for_each(|dev| {
                 assert_eq!(TypeTag::GainSTM as u8, tx[dev.idx() * FRAME_SIZE]);
@@ -428,7 +416,7 @@ mod tests {
 
             geometry
                 .devices()
-                .for_each(|dev| assert_eq!(op.remains(dev), GAIN_STM_SIZE - 2));
+                .for_each(|dev| assert_eq!(op.remains[dev], GAIN_STM_SIZE - 2));
 
             geometry.devices().for_each(|dev| {
                 assert_eq!(TypeTag::GainSTM as u8, tx[dev.idx() * FRAME_SIZE]);
@@ -468,7 +456,7 @@ mod tests {
 
         geometry
             .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), 0));
+            .for_each(|dev| assert_eq!(op.remains[dev], 0));
 
         geometry.devices().for_each(|dev| {
             assert_eq!(TypeTag::GainSTM as u8, tx[dev.idx() * FRAME_SIZE]);
@@ -545,7 +533,7 @@ mod tests {
 
         geometry
             .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), GAIN_STM_SIZE));
+            .for_each(|dev| assert_eq!(op.remains[dev], GAIN_STM_SIZE));
 
         // First frame
         {
@@ -565,7 +553,7 @@ mod tests {
 
             geometry
                 .devices()
-                .for_each(|dev| assert_eq!(op.remains(dev), GAIN_STM_SIZE - 2));
+                .for_each(|dev| assert_eq!(op.remains[dev], GAIN_STM_SIZE - 2));
 
             geometry.devices().for_each(|dev| {
                 assert_eq!(TypeTag::GainSTM as u8, tx[dev.idx() * FRAME_SIZE]);
@@ -611,7 +599,7 @@ mod tests {
 
             geometry
                 .devices()
-                .for_each(|dev| assert_eq!(op.remains(dev), GAIN_STM_SIZE - 4));
+                .for_each(|dev| assert_eq!(op.remains[dev], GAIN_STM_SIZE - 4));
 
             geometry.devices().for_each(|dev| {
                 assert_eq!(TypeTag::GainSTM as u8, tx[dev.idx() * FRAME_SIZE]);
@@ -652,7 +640,7 @@ mod tests {
 
             geometry
                 .devices()
-                .for_each(|dev| assert_eq!(op.remains(dev), 0));
+                .for_each(|dev| assert_eq!(op.remains[dev], 0));
 
             geometry.devices().for_each(|dev| {
                 assert_eq!(TypeTag::GainSTM as u8, tx[dev.idx() * FRAME_SIZE]);
@@ -729,7 +717,7 @@ mod tests {
 
         geometry
             .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), GAIN_STM_SIZE));
+            .for_each(|dev| assert_eq!(op.remains[dev], GAIN_STM_SIZE));
 
         // First frame
         {
@@ -749,7 +737,7 @@ mod tests {
 
             geometry
                 .devices()
-                .for_each(|dev| assert_eq!(op.remains(dev), GAIN_STM_SIZE - 4));
+                .for_each(|dev| assert_eq!(op.remains[dev], GAIN_STM_SIZE - 4));
 
             geometry.devices().for_each(|dev| {
                 assert_eq!(TypeTag::GainSTM as u8, tx[dev.idx() * FRAME_SIZE]);
@@ -799,7 +787,7 @@ mod tests {
 
             geometry
                 .devices()
-                .for_each(|dev| assert_eq!(op.remains(dev), GAIN_STM_SIZE - 8));
+                .for_each(|dev| assert_eq!(op.remains[dev], GAIN_STM_SIZE - 8));
 
             geometry.devices().for_each(|dev| {
                 assert_eq!(TypeTag::GainSTM as u8, tx[dev.idx() * FRAME_SIZE]);
@@ -844,7 +832,7 @@ mod tests {
 
             geometry
                 .devices()
-                .for_each(|dev| assert_eq!(op.remains(dev), 0));
+                .for_each(|dev| assert_eq!(op.remains[dev], 0));
 
             geometry.devices().for_each(|dev| {
                 assert_eq!(TypeTag::GainSTM as u8, tx[dev.idx() * FRAME_SIZE]);

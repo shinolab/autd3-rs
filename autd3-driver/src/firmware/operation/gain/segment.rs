@@ -1,10 +1,8 @@
-use std::collections::HashMap;
-
 use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::Segment,
-        operation::{cast, Operation, TypeTag},
+        operation::{cast, Operation, Remains, TypeTag},
     },
     geometry::{Device, Geometry},
 };
@@ -17,27 +15,25 @@ struct GainUpdate {
 
 pub struct GainChangeSegmentOp {
     segment: Segment,
-    remains: HashMap<usize, usize>,
+    remains: Remains,
 }
 
 impl GainChangeSegmentOp {
     pub fn new(segment: Segment) -> Self {
         Self {
             segment,
-            remains: HashMap::new(),
+            remains: Default::default(),
         }
     }
 }
 
 impl Operation for GainChangeSegmentOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        assert_eq!(self.remains[&device.idx()], 1);
-
         let d = cast::<GainUpdate>(tx);
         d.tag = TypeTag::GainChangeSegment;
         d.segment = self.segment as u8;
 
-        self.remains.insert(device.idx(), 0);
+        self.remains.send(device, 1);
         Ok(std::mem::size_of::<GainUpdate>())
     }
 
@@ -46,11 +42,11 @@ impl Operation for GainChangeSegmentOp {
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains = geometry.devices().map(|device| (device.idx(), 1)).collect();
+        self.remains.init(geometry, 1);
         Ok(())
     }
 
-    fn remains(&self, device: &Device) -> usize {
-        self.remains[&device.idx()]
+    fn is_done(&self, device: &Device) -> bool {
+        self.remains.is_done(device)
     }
 }

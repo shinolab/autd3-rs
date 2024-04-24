@@ -6,7 +6,7 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{Drive, FPGADrive, Segment},
-        operation::{cast, Operation, TypeTag},
+        operation::{cast, Operation, Remains, TypeTag},
     },
     geometry::{Device, Geometry},
 };
@@ -21,7 +21,7 @@ struct GainT {
 pub struct GainOp<G: Gain> {
     gain: G,
     drives: HashMap<usize, Vec<Drive>>,
-    remains: HashMap<usize, usize>,
+    remains: Remains,
     segment: Segment,
     transition: bool,
 }
@@ -41,7 +41,7 @@ impl<G: Gain> GainOp<G> {
 impl<G: Gain> Operation for GainOp<G> {
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
         self.drives = self.gain.calc(geometry, GainFilter::All)?;
-        self.remains = geometry.devices().map(|device| (device.idx(), 1)).collect();
+        self.remains.init(geometry, 1);
         Ok(())
     }
 
@@ -50,8 +50,6 @@ impl<G: Gain> Operation for GainOp<G> {
     }
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        assert_eq!(self.remains[&device.idx()], 1);
-
         let d = &self.drives[&device.idx()];
         assert!(
             tx.len() >= std::mem::size_of::<GainT>() + d.len() * std::mem::size_of::<FPGADrive>()
@@ -76,13 +74,12 @@ impl<G: Gain> Operation for GainOp<G> {
             .for_each(|(d, s)| d.set(s));
         }
 
-        self.remains
-            .insert(device.idx(), self.remains[&device.idx()] - 1);
+        self.remains.send(device, 1);
         Ok(std::mem::size_of::<GainT>() + d.len() * std::mem::size_of::<FPGADrive>())
     }
 
-    fn remains(&self, device: &Device) -> usize {
-        self.remains[&device.idx()]
+    fn is_done(&self, device: &Device) -> bool {
+        self.remains.is_done(device)
     }
 }
 
@@ -144,7 +141,7 @@ mod tests {
 
         geometry
             .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), 1));
+            .for_each(|dev| assert_eq!(op.remains[dev], 1));
 
         geometry.devices().for_each(|dev| {
             assert!(op
@@ -159,7 +156,7 @@ mod tests {
 
         geometry
             .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), 0));
+            .for_each(|dev| assert_eq!(op.remains[dev], 0));
 
         geometry.devices().for_each(|dev| {
             assert_eq!(

@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{
     derive::Transducer,
     error::AUTDInternalError,
@@ -10,13 +8,15 @@ use crate::{
     geometry::{Device, Geometry},
 };
 
+use super::Remains;
+
 #[repr(C, align(2))]
 struct PhaseFilter {
     tag: TypeTag,
 }
 
 pub struct ConfigurePhaseFilterOp<F: Fn(&Device, &Transducer) -> Phase> {
-    remains: HashMap<usize, usize>,
+    remains: Remains,
     f: F,
 }
 
@@ -31,8 +31,6 @@ impl<F: Fn(&Device, &Transducer) -> Phase> ConfigurePhaseFilterOp<F> {
 
 impl<F: Fn(&Device, &Transducer) -> Phase> Operation for ConfigurePhaseFilterOp<F> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        assert_eq!(self.remains[&device.idx()], 1);
-
         cast::<PhaseFilter>(tx).tag = TypeTag::PhaseFilter;
 
         unsafe {
@@ -45,7 +43,7 @@ impl<F: Fn(&Device, &Transducer) -> Phase> Operation for ConfigurePhaseFilterOp<
             .for_each(|(d, s)| *d = (self.f)(device, s));
         }
 
-        self.remains.insert(device.idx(), 0);
+        self.remains.send(device, 1);
         Ok(std::mem::size_of::<PhaseFilter>()
             + (((device.num_transducers() + 1) >> 1) << 1) * std::mem::size_of::<Phase>())
     }
@@ -56,12 +54,12 @@ impl<F: Fn(&Device, &Transducer) -> Phase> Operation for ConfigurePhaseFilterOp<
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains = geometry.devices().map(|device| (device.idx(), 1)).collect();
+        self.remains.init(geometry, 1);
         Ok(())
     }
 
-    fn remains(&self, device: &Device) -> usize {
-        self.remains[&device.idx()]
+    fn is_done(&self, device: &Device) -> bool {
+        self.remains.is_done(device)
     }
 }
 
@@ -97,7 +95,7 @@ mod tests {
 
         geometry
             .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), 1));
+            .for_each(|dev| assert_eq!(op.remains[dev], 1));
 
         geometry.devices().for_each(|dev| {
             assert!(op
@@ -112,7 +110,7 @@ mod tests {
 
         geometry
             .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), 0));
+            .for_each(|dev| assert_eq!(op.remains[dev], 0));
 
         geometry.devices().for_each(|dev| {
             assert_eq!(

@@ -22,8 +22,8 @@ impl Operation for NullOp {
         Ok(())
     }
 
-    fn remains(&self, _: &Device) -> usize {
-        0
+    fn is_done(&self, _: &Device) -> bool {
+        true
     }
 }
 
@@ -47,8 +47,6 @@ mod tests {
             .devices()
             .for_each(|dev| assert_eq!(op.required_size(dev), 0));
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), 0));
+        geometry.devices().for_each(|dev| assert!(op.is_done(dev)));
     }
 }

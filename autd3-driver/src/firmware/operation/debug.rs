@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{
     error::AUTDInternalError,
     firmware::{
@@ -8,6 +6,8 @@ use crate::{
     },
     geometry::{Device, Geometry},
 };
+
+use super::Remains;
 
 #[repr(C, align(2))]
 struct DebugSetting {
@@ -18,7 +18,7 @@ struct DebugSetting {
 }
 
 pub struct DebugSettingOp<F: Fn(&Device) -> [DebugType; 4]> {
-    remains: HashMap<usize, usize>,
+    remains: Remains,
     f: F,
 }
 
@@ -33,8 +33,6 @@ impl<F: Fn(&Device) -> [DebugType; 4]> DebugSettingOp<F> {
 
 impl<F: Fn(&Device) -> [DebugType; 4]> Operation for DebugSettingOp<F> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        assert_eq!(self.remains[&device.idx()], 1);
-
         *cast::<DebugSetting>(tx) = DebugSetting {
             tag: TypeTag::Debug,
             __pad: 0,
@@ -42,7 +40,7 @@ impl<F: Fn(&Device) -> [DebugType; 4]> Operation for DebugSettingOp<F> {
             value: (self.f)(device).map(|t| t.value()),
         };
 
-        self.remains.insert(device.idx(), 0);
+        self.remains.send(device, 1);
         Ok(std::mem::size_of::<DebugSetting>())
     }
 
@@ -51,11 +49,11 @@ impl<F: Fn(&Device) -> [DebugType; 4]> Operation for DebugSettingOp<F> {
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains = geometry.devices().map(|device| (device.idx(), 1)).collect();
+        self.remains.init(geometry, 1);
         Ok(())
     }
 
-    fn remains(&self, device: &Device) -> usize {
-        self.remains[&device.idx()]
+    fn is_done(&self, device: &Device) -> bool {
+        self.remains.is_done(device)
     }
 }
