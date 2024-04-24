@@ -17,7 +17,7 @@ pub use async_trait::async_trait;
 pub mod derive {
     pub use crate::{
         datagram::{
-            DatagramS, DatagramT, Gain, GainCache, GainFilter, GainTransform, IntoGainCache,
+            DatagramS, Gain, GainCache, GainFilter, GainTransform, IntoGainCache,
             IntoGainTransform, IntoModulationCache, IntoModulationTransform, IntoRadiationPressure,
             Modulation, ModulationCache, ModulationProperty, ModulationTransform,
             RadiationPressure,

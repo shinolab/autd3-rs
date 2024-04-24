@@ -38,8 +38,7 @@ pub struct FocusSTMOp {
     freq_div: u32,
     loop_behavior: LoopBehavior,
     segment: Segment,
-    transition_mode: TransitionMode,
-    update_segment: bool,
+    transition_mode: Option<TransitionMode>,
 }
 
 impl FocusSTMOp {
@@ -48,8 +47,7 @@ impl FocusSTMOp {
         freq_div: u32,
         loop_behavior: LoopBehavior,
         segment: Segment,
-        transition_mode: TransitionMode,
-        update_segment: bool,
+        transition_mode: Option<TransitionMode>,
     ) -> Self {
         Self {
             points,
@@ -59,7 +57,6 @@ impl FocusSTMOp {
             loop_behavior,
             segment,
             transition_mode,
-            update_segment,
         }
     }
 
@@ -101,8 +98,8 @@ impl Operation for FocusSTMOp {
                     } else {
                         FocusSTMControlFlags::NONE
                     },
-                transition_mode: self.transition_mode.mode(),
-                transition_value: self.transition_mode.value(),
+                transition_mode: self.transition_mode.unwrap_or_default().mode(),
+                transition_value: self.transition_mode.unwrap_or_default().value(),
                 send_num: send_num as u8,
                 freq_div: self.freq_div,
                 sound_speed: Self::convert_sound_speed(device),
@@ -119,8 +116,10 @@ impl Operation for FocusSTMOp {
         if sent + send_num == self.points.len() {
             let d = cast::<FocusSTMSubseq>(tx);
             d.flag.set(FocusSTMControlFlags::END, true);
-            d.flag
-                .set(FocusSTMControlFlags::UPDATE, self.update_segment);
+            d.flag.set(
+                FocusSTMControlFlags::TRANSITION,
+                self.transition_mode.is_some(),
+            );
         }
 
         unsafe {
@@ -237,8 +236,7 @@ mod tests {
             freq_div,
             loop_behavior,
             segment,
-            transition_mode,
-            true,
+            Some(transition_mode),
         );
 
         assert!(op.init(&geometry).is_ok());
@@ -271,7 +269,7 @@ mod tests {
             assert_eq!(
                 (FocusSTMControlFlags::BEGIN
                     | FocusSTMControlFlags::END
-                    | FocusSTMControlFlags::UPDATE)
+                    | FocusSTMControlFlags::TRANSITION)
                     .bits(),
                 tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, flag)]
             );
@@ -360,14 +358,7 @@ mod tests {
         );
         let rep = loop_behavior.to_rep();
         let segment = Segment::S1;
-        let mut op = FocusSTMOp::new(
-            points.clone(),
-            freq_div,
-            loop_behavior,
-            segment,
-            TransitionMode::SyncIdx,
-            false,
-        );
+        let mut op = FocusSTMOp::new(points.clone(), freq_div, loop_behavior, segment, None);
 
         assert!(op.init(&geometry).is_ok());
 
@@ -623,8 +614,7 @@ mod tests {
                 SAMPLING_FREQ_DIV_MIN,
                 LoopBehavior::Infinite,
                 Segment::S0,
-                TransitionMode::SyncIdx,
-                true,
+                Some(TransitionMode::SyncIdx),
             );
             op.init(&geometry)
         };
@@ -663,8 +653,7 @@ mod tests {
             freq_div,
             LoopBehavior::Infinite,
             Segment::S0,
-            TransitionMode::SyncIdx,
-            true,
+            Some(TransitionMode::SyncIdx),
         );
 
         assert!(op.init(&geometry).is_ok());

@@ -133,8 +133,7 @@ impl<G: Gain> DatagramS for GainSTM<G> {
     fn operation_with_segment(
         self,
         segment: Segment,
-        transition_mode: TransitionMode,
-        update_segment: bool,
+        transition_mode: Option<TransitionMode>,
     ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         let freq_div = self.sampling_config()?.frequency_division();
         let Self {
@@ -151,7 +150,6 @@ impl<G: Gain> DatagramS for GainSTM<G> {
                 loop_behavior,
                 segment,
                 transition_mode,
-                update_segment,
             ),
             Self::O2::default(),
         ))
@@ -161,8 +159,6 @@ impl<G: Gain> DatagramS for GainSTM<G> {
         Some(std::time::Duration::from_millis(200))
     }
 }
-
-impl<G: Gain> DatagramT for GainSTM<G> {}
 
 impl<G: Gain + Clone> Clone for GainSTM<G> {
     fn clone(&self) -> Self {
@@ -301,7 +297,7 @@ mod tests {
 
         assert_eq!(stm.timeout(), Some(std::time::Duration::from_millis(200)));
 
-        let r = stm.operation_with_segment(Segment::S0, TransitionMode::SyncIdx, true);
+        let r = stm.operation_with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
         assert!(r.is_ok());
         let _: (GainSTMOp<Box<dyn Gain>>, NullOp) = r.unwrap();
     }

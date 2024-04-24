@@ -1192,7 +1192,7 @@ pub struct Gain {
     #[prost(enumeration = "Segment", tag = "1001")]
     pub segment: i32,
     #[prost(bool, tag = "1002")]
-    pub update_segment: bool,
+    pub transition: bool,
     #[prost(
         oneof = "gain::Gain",
         tags = "1, 2, 3, 4, 5, 100, 101, 102, 103, 104, 105"
@@ -1272,7 +1272,7 @@ pub struct Modulation {
     #[prost(enumeration = "Segment", tag = "1001")]
     pub segment: i32,
     #[prost(bool, tag = "1002")]
-    pub update_segment: bool,
+    pub transition: bool,
     #[prost(oneof = "modulation::Modulation", tags = "1, 2, 4")]
     pub modulation: ::core::option::Option<modulation::Modulation>,
 }
@@ -1378,7 +1378,7 @@ pub struct GainStm {
     #[prost(enumeration = "Segment", tag = "3")]
     pub segment: i32,
     #[prost(bool, tag = "4")]
-    pub update_segment: bool,
+    pub transition: bool,
     #[prost(message, repeated, tag = "5")]
     pub gains: ::prost::alloc::vec::Vec<Gain>,
 }
@@ -1392,7 +1392,7 @@ pub struct FocusStm {
     #[prost(enumeration = "Segment", tag = "3")]
     pub segment: i32,
     #[prost(bool, tag = "4")]
-    pub update_segment: bool,
+    pub transition: bool,
     #[prost(message, repeated, tag = "5")]
     pub points: ::prost::alloc::vec::Vec<focus_stm::ControlPoint>,
 }

@@ -23,17 +23,17 @@ pub struct GainOp<G: Gain> {
     drives: HashMap<usize, Vec<Drive>>,
     remains: HashMap<usize, usize>,
     segment: Segment,
-    update_segment: bool,
+    transition: bool,
 }
 
 impl<G: Gain> GainOp<G> {
-    pub fn new(segment: Segment, update_segment: bool, gain: G) -> Self {
+    pub fn new(segment: Segment, transition: bool, gain: G) -> Self {
         Self {
             gain,
             drives: Default::default(),
             remains: Default::default(),
             segment,
-            update_segment,
+            transition,
         }
     }
 }
@@ -64,7 +64,7 @@ impl<G: Gain> Operation for GainOp<G> {
         };
         cast::<GainT>(tx)
             .flag
-            .set(GainControlFlags::UPDATE_SEGMENT, self.update_segment);
+            .set(GainControlFlags::transition, self.transition);
 
         unsafe {
             std::slice::from_raw_parts_mut(
@@ -195,7 +195,7 @@ mod tests {
 
         let gain = ErrGain {
             segment: Segment::S0,
-            update_segment: true,
+            transition: true,
         };
         let mut op = GainOp::<ErrGain>::new(Segment::S0, true, gain);
 

@@ -76,8 +76,8 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
             type O1 = GainOp<Self>;
             type O2 = NullOp;
 
-            fn operation_with_segment(self, segment: Segment, _transition_mode: TransitionMode, update_segment: bool) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-                Ok((Self::O1::new(segment, update_segment, self), Self::O2::default()))
+            fn operation_with_segment(self, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+                Ok((Self::O1::new(segment, transition_mode.is_some(), self), Self::O2::default()))
             }
         }
     };

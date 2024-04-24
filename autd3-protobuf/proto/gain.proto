@@ -112,5 +112,5 @@ message Gain {
     Greedy greedy = 105;
   }
   Segment segment = 1001;
-  bool update_segment = 1002;
+  bool transition = 1002;
 }

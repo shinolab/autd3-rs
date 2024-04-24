@@ -39,7 +39,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            modulation.update_segment,
+                            modulation.transition,
                         ),
                 )
                 .await?
@@ -54,7 +54,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            modulation.update_segment,
+                            modulation.transition,
                         ),
                 )
                 .await?
@@ -69,7 +69,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            modulation.update_segment,
+                            modulation.transition,
                         ),
                 )
                 .await?
@@ -113,7 +113,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.update_segment,
+                            gain.transition,
                         ),
                 )
                 .await?
@@ -128,7 +128,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.update_segment,
+                            gain.transition,
                         ),
                 )
                 .await?
@@ -143,7 +143,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.update_segment,
+                            gain.transition,
                         ),
                 )
                 .await?
@@ -158,7 +158,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.update_segment,
+                            gain.transition,
                         ),
                 )
                 .await?
@@ -173,7 +173,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.update_segment,
+                            gain.transition,
                         ),
                 )
                 .await?
@@ -188,7 +188,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.update_segment,
+                            gain.transition,
                         ),
                 )
                 .await?
@@ -203,7 +203,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.update_segment,
+                            gain.transition,
                         ),
                 )
                 .await?
@@ -218,7 +218,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.update_segment,
+                            gain.transition,
                         ),
                 )
                 .await?
@@ -233,7 +233,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.update_segment,
+                            gain.transition,
                         ),
                 )
                 .await?
@@ -248,7 +248,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.update_segment,
+                            gain.transition,
                         ),
                 )
                 .await?
@@ -263,7 +263,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.update_segment,
+                            gain.transition,
                         ),
                 )
                 .await?
@@ -418,7 +418,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                         .ok()
                                         .ok_or(AUTDProtoBufError::DataParseError)?,
                                 ),
-                                msg.update_segment,
+                                msg.transition,
                             ),
                     )
                     .await
@@ -433,7 +433,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                         .ok()
                                         .ok_or(AUTDProtoBufError::DataParseError)?,
                                 ),
-                                msg.update_segment,
+                                msg.transition,
                             ),
                     )
                     .await

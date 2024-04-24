@@ -44,8 +44,7 @@ pub struct GainSTMOp<G: Gain> {
     freq_div: u32,
     loop_behavior: LoopBehavior,
     segment: Segment,
-    transition_mode: TransitionMode,
-    update_segment: bool,
+    transition_mode: Option<TransitionMode>,
 }
 
 impl<G: Gain> GainSTMOp<G> {
@@ -55,8 +54,7 @@ impl<G: Gain> GainSTMOp<G> {
         freq_div: u32,
         loop_behavior: LoopBehavior,
         segment: Segment,
-        transition_mode: TransitionMode,
-        update_segment: bool,
+        transition_mode: Option<TransitionMode>,
     ) -> Self {
         Self {
             gains,
@@ -68,7 +66,6 @@ impl<G: Gain> GainSTMOp<G> {
             loop_behavior,
             segment,
             transition_mode,
-            update_segment,
         }
     }
 }
@@ -220,8 +217,8 @@ impl<G: Gain> Operation for GainSTMOp<G> {
                         GainSTMControlFlags::NONE
                     },
                 mode: self.mode,
-                transition_mode: self.transition_mode.mode(),
-                transition_value: self.transition_mode.value(),
+                transition_mode: self.transition_mode.unwrap_or_default().mode(),
+                transition_value: self.transition_mode.unwrap_or_default().value(),
                 freq_div: self.freq_div,
                 rep: self.loop_behavior.to_rep(),
                 __padding: [0; 4],
@@ -245,7 +242,10 @@ impl<G: Gain> Operation for GainSTMOp<G> {
 
         if sent + send == self.drives.len() {
             d.flag.set(GainSTMControlFlags::END, true);
-            d.flag.set(GainSTMControlFlags::UPDATE, self.update_segment);
+            d.flag.set(
+                GainSTMControlFlags::TRANSITION,
+                self.transition_mode.is_some(),
+            );
         }
 
         self.sent.insert(device.idx(), sent + send);
@@ -338,8 +338,7 @@ mod tests {
             freq_div,
             loop_behavior,
             segment,
-            transition_mode,
-            true,
+            Some(transition_mode),
         );
 
         assert!(op.init(&geometry).is_ok());
@@ -481,7 +480,7 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(TypeTag::GainSTM as u8, tx[dev.idx() * FRAME_SIZE]);
             assert_eq!(
-                (GainSTMControlFlags::END | GainSTMControlFlags::UPDATE).bits(),
+                (GainSTMControlFlags::END | GainSTMControlFlags::TRANSITION).bits(),
                 tx[dev.idx() * FRAME_SIZE + offset_of!(GainSTMHead, flag)] & 0x3F
             );
             assert_eq!(
@@ -546,8 +545,7 @@ mod tests {
             freq_div,
             loop_behavior,
             segment,
-            TransitionMode::SyncIdx,
-            false,
+            None,
         );
 
         assert!(op.init(&geometry).is_ok());
@@ -734,8 +732,7 @@ mod tests {
             freq_div,
             loop_behavior,
             segment,
-            TransitionMode::SyncIdx,
-            true,
+            Some(TransitionMode::SyncIdx),
         );
 
         assert!(op.init(&geometry).is_ok());
@@ -865,7 +862,7 @@ mod tests {
             geometry.devices().for_each(|dev| {
                 assert_eq!(TypeTag::GainSTM as u8, tx[dev.idx() * FRAME_SIZE]);
                 assert_eq!(
-                    (GainSTMControlFlags::END | GainSTMControlFlags::UPDATE).bits(),
+                    (GainSTMControlFlags::END | GainSTMControlFlags::TRANSITION).bits(),
                     tx[dev.idx() * FRAME_SIZE + offset_of!(GainSTMHead, flag)] & 0x3F
                 );
                 assert_eq!(
@@ -895,8 +892,7 @@ mod tests {
                 SAMPLING_FREQ_DIV_MIN,
                 LoopBehavior::Infinite,
                 Segment::S0,
-                TransitionMode::SyncIdx,
-                true,
+                Some(TransitionMode::SyncIdx),
             );
             op.init(&geometry)
         };

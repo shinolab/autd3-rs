@@ -17,7 +17,7 @@ impl ToMessage for autd3_gain_holo::Greedy {
                     constraint: Some(self.constraint().to_msg(None)),
                 })),
                 segment: Segment::S0 as _,
-                update_segment: true,
+                transition: true,
             })),
         }
     }
@@ -36,7 +36,7 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3_gain_holo::
                     constraint: Some(self.constraint().to_msg(None)),
                 })),
                 segment: self.segment() as _,
-                update_segment: self.update_segment(),
+                transition: self.transition(),
             })),
         }
     }
