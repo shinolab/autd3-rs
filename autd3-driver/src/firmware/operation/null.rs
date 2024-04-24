@@ -25,12 +25,6 @@ impl Operation for NullOp {
     fn remains(&self, _: &Device) -> usize {
         0
     }
-
-    // GRCOV_EXCL_START
-    fn commit(&mut self, _: &Device) {
-        unreachable!()
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]

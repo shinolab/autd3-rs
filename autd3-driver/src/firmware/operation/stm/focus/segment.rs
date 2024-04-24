@@ -46,6 +46,7 @@ impl Operation for FocusSTMChangeSegmentOp {
             transition_value: self.transition_mode.value(),
         };
 
+        self.remains.insert(device.idx(), 0);
         Ok(std::mem::size_of::<FocusSTMUpdate>())
     }
 
@@ -60,9 +61,5 @@ impl Operation for FocusSTMChangeSegmentOp {
 
     fn remains(&self, device: &Device) -> usize {
         self.remains[&device.idx()]
-    }
-
-    fn commit(&mut self, device: &Device) {
-        self.remains.insert(device.idx(), 0);
     }
 }

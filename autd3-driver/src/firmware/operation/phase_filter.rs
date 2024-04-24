@@ -45,6 +45,7 @@ impl<F: Fn(&Device, &Transducer) -> Phase> Operation for ConfigurePhaseFilterOp<
             .for_each(|(d, s)| *d = (self.f)(device, s));
         }
 
+        self.remains.insert(device.idx(), 0);
         Ok(std::mem::size_of::<PhaseFilter>()
             + (((device.num_transducers() + 1) >> 1) << 1) * std::mem::size_of::<Phase>())
     }
@@ -61,10 +62,6 @@ impl<F: Fn(&Device, &Transducer) -> Phase> Operation for ConfigurePhaseFilterOp<
 
     fn remains(&self, device: &Device) -> usize {
         self.remains[&device.idx()]
-    }
-
-    fn commit(&mut self, device: &Device) {
-        self.remains.insert(device.idx(), 0);
     }
 }
 
@@ -111,7 +108,6 @@ mod tests {
                             + (NUM_TRANS_IN_UNIT + 1) / 2 * 2 * std::mem::size_of::<Phase>())..]
                 )
                 .is_ok());
-            op.commit(dev);
         });
 
         geometry

@@ -62,7 +62,6 @@ pub trait Operation {
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError>;
     fn required_size(&self, device: &Device) -> usize;
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError>;
-    fn commit(&mut self, device: &Device);
     fn remains(&self, device: &Device) -> usize;
 }
 
@@ -78,10 +77,6 @@ impl Operation for Box<dyn Operation> {
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         self.as_mut().pack(device, tx)
-    }
-
-    fn commit(&mut self, device: &Device) {
-        self.as_mut().commit(device)
     }
 
     fn remains(&self, device: &Device) -> usize {
@@ -135,7 +130,6 @@ impl OperationHandler {
                     let t = &mut tx[dev.idx()].payload;
                     if t.len() - op1_size >= op2.required_size(dev) {
                         op2.pack(dev, &mut t[op1_size..])?;
-                        op2.commit(dev);
                         tx[dev.idx()].header.slot_2_offset = op1_size as u16;
                     }
                     Ok(())
@@ -160,10 +154,7 @@ impl OperationHandler {
 
         let t = &mut tx[dev.idx()].payload;
         assert!(t.len() >= op.required_size(dev));
-        let res = op.pack(dev, t)?;
-        op.commit(dev);
-
-        Ok(res)
+        Ok(op.pack(dev, t)?)
     }
 }
 
@@ -283,11 +274,8 @@ pub mod tests {
             if self.broken {
                 return Err(AUTDInternalError::NotSupported("test".to_owned()));
             }
-            Ok(self.pack_size[&device.idx()])
-        }
-
-        fn commit(&mut self, device: &Device) {
             *self.num_frames.get_mut(&device.idx()).unwrap() -= 1;
+            Ok(self.pack_size[&device.idx()])
         }
 
         fn remains(&self, device: &Device) -> usize {

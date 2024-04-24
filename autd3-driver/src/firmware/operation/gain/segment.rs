@@ -37,6 +37,7 @@ impl Operation for GainChangeSegmentOp {
         d.tag = TypeTag::GainChangeSegment;
         d.segment = self.segment as u8;
 
+        self.remains.insert(device.idx(), 0);
         Ok(std::mem::size_of::<GainUpdate>())
     }
 
@@ -51,9 +52,5 @@ impl Operation for GainChangeSegmentOp {
 
     fn remains(&self, device: &Device) -> usize {
         self.remains[&device.idx()]
-    }
-
-    fn commit(&mut self, device: &Device) {
-        self.remains.insert(device.idx(), 0);
     }
 }

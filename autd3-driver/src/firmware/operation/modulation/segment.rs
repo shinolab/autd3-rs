@@ -46,6 +46,7 @@ impl Operation for ModulationChangeSegmentOp {
             transition_value: self.transition_mode.value(),
         };
 
+        self.remains.insert(device.idx(), 0);
         Ok(std::mem::size_of::<ModulationUpdate>())
     }
 
@@ -60,9 +61,5 @@ impl Operation for ModulationChangeSegmentOp {
 
     fn remains(&self, device: &Device) -> usize {
         self.remains[&device.idx()]
-    }
-
-    fn commit(&mut self, device: &Device) {
-        self.remains.insert(device.idx(), 0);
     }
 }

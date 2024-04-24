@@ -249,17 +249,13 @@ impl<G: Gain> Operation for GainSTMOp<G> {
         }
 
         self.sent.insert(device.idx(), sent + send);
-
+        self.remains
+            .insert(device.idx(), self.drives.len() - self.sent[&device.idx()]);
         if sent == 0 {
             Ok(size_of::<GainSTMHead>() + device.num_transducers() * size_of::<FPGADrive>())
         } else {
             Ok(size_of::<GainSTMSubseq>() + device.num_transducers() * size_of::<FPGADrive>())
         }
-    }
-
-    fn commit(&mut self, device: &Device) {
-        self.remains
-            .insert(device.idx(), self.drives.len() - self.sent[&device.idx()]);
     }
 
     fn remains(&self, device: &Device) -> usize {
@@ -361,7 +357,6 @@ mod tests {
                     op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
                     Ok(size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2)
                 );
-                op.commit(dev);
             });
 
             geometry
@@ -429,7 +424,6 @@ mod tests {
                     op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
                     Ok(size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2)
                 );
-                op.commit(dev);
             });
 
             geometry
@@ -470,7 +464,6 @@ mod tests {
                 op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
                 Ok(size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2)
             );
-            op.commit(dev);
         });
 
         geometry
@@ -568,7 +561,6 @@ mod tests {
                     op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
                     Ok(size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2)
                 );
-                op.commit(dev);
             });
 
             geometry
@@ -615,7 +607,6 @@ mod tests {
                     op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
                     Ok(size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2)
                 );
-                op.commit(dev);
             });
 
             geometry
@@ -657,7 +648,6 @@ mod tests {
                     op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
                     Ok(size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2)
                 );
-                op.commit(dev);
             });
 
             geometry
@@ -755,7 +745,6 @@ mod tests {
                     op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
                     Ok(size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2)
                 );
-                op.commit(dev);
             });
 
             geometry
@@ -806,7 +795,6 @@ mod tests {
                     op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
                     Ok(size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2)
                 );
-                op.commit(dev);
             });
 
             geometry
@@ -852,7 +840,6 @@ mod tests {
                     op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
                     Ok(size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2)
                 );
-                op.commit(dev);
             });
 
             geometry
