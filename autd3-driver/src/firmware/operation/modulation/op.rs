@@ -117,6 +117,8 @@ impl Operation for ModulationOp {
         }
 
         self.sent.insert(device.idx(), sent + mod_size);
+        self.remains
+            .insert(device.idx(), self.buf.len() - self.sent[&device.idx()]);
         if sent == 0 {
             Ok(std::mem::size_of::<ModulationHead>() + mod_size)
         } else {
@@ -148,11 +150,6 @@ impl Operation for ModulationOp {
 
     fn remains(&self, device: &Device) -> usize {
         self.remains[&device.idx()]
-    }
-
-    fn commit(&mut self, device: &Device) {
-        self.remains
-            .insert(device.idx(), self.buf.len() - self.sent[&device.idx()]);
     }
 }
 
@@ -225,7 +222,6 @@ mod tests {
                 ),
                 Ok(std::mem::size_of::<ModulationHead>() + MOD_SIZE)
             );
-            op.commit(dev);
         });
 
         geometry
@@ -336,7 +332,6 @@ mod tests {
                 ),
                 Ok(FRAME_SIZE)
             );
-            op.commit(dev);
         });
 
         geometry.devices().for_each(|dev| {
@@ -384,7 +379,6 @@ mod tests {
                 ),
                 Ok(FRAME_SIZE)
             );
-            op.commit(dev);
         });
 
         geometry.devices().for_each(|dev| {
@@ -438,7 +432,6 @@ mod tests {
                 ),
                 Ok(FRAME_SIZE)
             );
-            op.commit(dev);
         });
 
         geometry

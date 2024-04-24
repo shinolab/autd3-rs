@@ -49,6 +49,7 @@ impl Operation for ConfigSilencerFixedCompletionStepsOp {
             value_phase: self.value_phase,
         };
 
+        self.remains.insert(device.idx(), 0);
         Ok(std::mem::size_of::<ConfigSilencerFixedCompletionSteps>())
     }
 
@@ -63,10 +64,6 @@ impl Operation for ConfigSilencerFixedCompletionStepsOp {
 
     fn remains(&self, device: &Device) -> usize {
         self.remains[&device.idx()]
-    }
-
-    fn commit(&mut self, device: &Device) {
-        self.remains.insert(device.idx(), 0);
     }
 }
 
@@ -98,7 +95,6 @@ mod tests {
 
         geometry.devices().for_each(|dev| {
             assert!(op.pack(dev, &mut tx[dev.idx() * 6..]).is_ok());
-            op.commit(dev);
         });
 
         geometry
@@ -135,7 +131,6 @@ mod tests {
 
         geometry.devices().for_each(|dev| {
             assert!(op.pack(dev, &mut tx[dev.idx() * 6..]).is_ok());
-            op.commit(dev);
         });
 
         geometry

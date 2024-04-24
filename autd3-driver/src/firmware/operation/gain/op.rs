@@ -76,12 +76,9 @@ impl<G: Gain> Operation for GainOp<G> {
             .for_each(|(d, s)| d.set(s));
         }
 
-        Ok(std::mem::size_of::<GainT>() + d.len() * std::mem::size_of::<FPGADrive>())
-    }
-
-    fn commit(&mut self, device: &Device) {
         self.remains
             .insert(device.idx(), self.remains[&device.idx()] - 1);
+        Ok(std::mem::size_of::<GainT>() + d.len() * std::mem::size_of::<FPGADrive>())
     }
 
     fn remains(&self, device: &Device) -> usize {
@@ -158,7 +155,6 @@ mod tests {
                             + NUM_TRANS_IN_UNIT * std::mem::size_of::<FPGADrive>())..]
                 )
                 .is_ok());
-            op.commit(dev);
         });
 
         geometry

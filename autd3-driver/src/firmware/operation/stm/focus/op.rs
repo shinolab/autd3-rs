@@ -133,6 +133,8 @@ impl Operation for FocusSTMOp {
         }
 
         self.sent.insert(device.idx(), sent + send_num);
+        self.remains
+            .insert(device.idx(), self.points.len() - self.sent[&device.idx()]);
         if sent == 0 {
             Ok(std::mem::size_of::<FocusSTMHead>() + std::mem::size_of::<STMFocus>() * send_num)
         } else {
@@ -166,11 +168,6 @@ impl Operation for FocusSTMOp {
 
     fn remains(&self, device: &Device) -> usize {
         self.remains[&device.idx()]
-    }
-
-    fn commit(&mut self, device: &Device) {
-        self.remains
-            .insert(device.idx(), self.points.len() - self.sent[&device.idx()]);
     }
 }
 
@@ -257,7 +254,6 @@ mod tests {
                 op.pack(dev, &mut tx[dev.idx() * FRAME_SIZE..]),
                 Ok(FRAME_SIZE)
             );
-            op.commit(dev);
         });
 
         geometry
@@ -385,7 +381,6 @@ mod tests {
                         + (FRAME_SIZE - size_of::<FocusSTMHead>()) / size_of::<STMFocus>()
                             * size_of::<STMFocus>())
                 );
-                op.commit(dev);
             });
 
             geometry.devices().for_each(|dev| {
@@ -475,7 +470,6 @@ mod tests {
                     + (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>()
                         * std::mem::size_of::<STMFocus>())
             );
-            op.commit(dev);
         });
 
         geometry.devices().for_each(|dev| {
@@ -545,7 +539,6 @@ mod tests {
                             / std::mem::size_of::<STMFocus>()
                             * std::mem::size_of::<STMFocus>())
                 );
-                op.commit(dev);
             });
 
             geometry

@@ -118,6 +118,8 @@ impl Operation for ConfigurePulseWidthEncoderOp {
         }
 
         self.sent.insert(device.idx(), sent + size);
+        self.remains
+            .insert(device.idx(), self.buf.len() - self.sent[&device.idx()]);
         if sent == 0 {
             Ok(std::mem::size_of::<PWEHead>() + size)
         } else {
@@ -151,10 +153,5 @@ impl Operation for ConfigurePulseWidthEncoderOp {
 
     fn remains(&self, device: &Device) -> usize {
         self.remains[&device.idx()]
-    }
-
-    fn commit(&mut self, device: &Device) {
-        self.remains
-            .insert(device.idx(), self.buf.len() - self.sent[&device.idx()]);
     }
 }

@@ -24,6 +24,7 @@ impl Operation for SyncOp {
 
         cast::<Sync>(tx).tag = TypeTag::Sync;
 
+        self.remains.insert(device.idx(), 0);
         Ok(std::mem::size_of::<Sync>())
     }
 
@@ -38,10 +39,6 @@ impl Operation for SyncOp {
 
     fn remains(&self, device: &Device) -> usize {
         self.remains[&device.idx()]
-    }
-
-    fn commit(&mut self, device: &Device) {
-        self.remains.insert(device.idx(), 0);
     }
 }
 
@@ -74,7 +71,6 @@ mod tests {
 
         geometry.devices().for_each(|dev| {
             assert!(op.pack(dev, &mut tx[dev.idx() * 2..]).is_ok());
-            op.commit(dev);
         });
 
         geometry

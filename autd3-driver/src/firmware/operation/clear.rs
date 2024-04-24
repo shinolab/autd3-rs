@@ -22,6 +22,7 @@ impl Operation for ClearOp {
 
         cast::<Clear>(tx).tag = TypeTag::Clear;
 
+        self.remains.insert(device.idx(), 0);
         Ok(std::mem::size_of::<Clear>())
     }
 
@@ -36,10 +37,6 @@ impl Operation for ClearOp {
 
     fn remains(&self, device: &Device) -> usize {
         self.remains[&device.idx()]
-    }
-
-    fn commit(&mut self, device: &Device) {
-        self.remains.insert(device.idx(), 0);
     }
 }
 
@@ -71,7 +68,6 @@ mod tests {
 
         geometry.devices().for_each(|dev| {
             assert!(op.pack(dev, &mut tx[dev.idx() * 2..]).is_ok());
-            op.commit(dev);
         });
 
         geometry

@@ -42,6 +42,7 @@ impl<F: Fn(&Device) -> [DebugType; 4]> Operation for DebugSettingOp<F> {
             value: (self.f)(device).map(|t| t.value()),
         };
 
+        self.remains.insert(device.idx(), 0);
         Ok(std::mem::size_of::<DebugSetting>())
     }
 
@@ -56,9 +57,5 @@ impl<F: Fn(&Device) -> [DebugType; 4]> Operation for DebugSettingOp<F> {
 
     fn remains(&self, device: &Device) -> usize {
         self.remains[&device.idx()]
-    }
-
-    fn commit(&mut self, device: &Device) {
-        self.remains.insert(device.idx(), 0);
     }
 }
