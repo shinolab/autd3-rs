@@ -229,9 +229,7 @@ impl CPUEmulator {
     pub(crate) unsafe fn change_focus_stm_segment(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<FocusSTMUpdate>(data);
 
-        if self.stm_mode[d.segment as usize] != STM_MODE_FOCUS
-            || self.stm_cycle[d.segment as usize] == 1
-        {
+        if self.stm_mode[d.segment as usize] != STM_MODE_FOCUS {
             return ERR_INVALID_SEGMENT_TRANSITION;
         }
 
