@@ -19,7 +19,8 @@ impl ToMessage for autd3_gain_holo::GSPAT<NalgebraBackend> {
                     constraint: Some(self.constraint().to_msg(None)),
                 })),
                 segment: Segment::S0 as _,
-                transition: true,
+                transition_mode: Some(TransitionMode::SyncIdx.into()),
+                transition_value: Some(0),
             })),
         }
     }
@@ -40,7 +41,8 @@ impl ToMessage
                     constraint: Some(self.constraint().to_msg(None)),
                 })),
                 segment: self.segment() as _,
-                transition: self.transition(),
+                transition_mode: self.transition_mode().map(|m| m.mode() as _),
+                transition_value: self.transition_mode().map(|m| m.value()),
             })),
         }
     }

@@ -5,7 +5,7 @@ impl FromMessage<FirmwareVersionResponseLightweight>
 {
     fn from_msg(msg: &FirmwareVersionResponseLightweight) -> Option<Self> {
         Some(
-            msg.firmware_info_list
+            msg.firmware_version_list
                 .iter()
                 .enumerate()
                 .map(|(i, v)| {

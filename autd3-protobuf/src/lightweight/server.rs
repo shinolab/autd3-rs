@@ -1,7 +1,7 @@
 use crate::{error::*, pb::*, traits::*};
 
 use autd3::error::AUTDError;
-use autd3_driver::datagram::IntoDatagramWithSegment;
+use autd3_driver::{datagram::IntoDatagramWithSegment, ethercat::ECAT_DC_SYS_TIME_BASE};
 use tokio::sync::RwLock;
 use tonic::{Request, Response, Status};
 
@@ -12,6 +12,21 @@ pub struct LightweightServer<
 > {
     autd: RwLock<Option<autd3::Controller<L::L>>>,
     link: F,
+}
+
+fn to_transition_mode(
+    mode: Option<i32>,
+    value: Option<u64>,
+) -> Option<autd3_driver::firmware::fpga::TransitionMode> {
+    mode.map(|mode| match mode {
+        0 => autd3_driver::firmware::fpga::TransitionMode::SyncIdx,
+        1 => autd3_driver::firmware::fpga::TransitionMode::SysTime(
+            ECAT_DC_SYS_TIME_BASE + std::time::Duration::from_nanos(value.unwrap()),
+        ),
+        2 => autd3_driver::firmware::fpga::TransitionMode::GPIO,
+        3 => autd3_driver::firmware::fpga::TransitionMode::Ext,
+        _ => unreachable!(),
+    })
 }
 
 impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + Sync + 'static>
@@ -39,7 +54,10 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            modulation.transition,
+                            to_transition_mode(
+                                modulation.transition_mode,
+                                modulation.transition_value,
+                            ),
                         ),
                 )
                 .await?
@@ -54,7 +72,10 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            modulation.transition,
+                            to_transition_mode(
+                                modulation.transition_mode,
+                                modulation.transition_value,
+                            ),
                         ),
                 )
                 .await?
@@ -69,7 +90,10 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            modulation.transition,
+                            to_transition_mode(
+                                modulation.transition_mode,
+                                modulation.transition_value,
+                            ),
                         ),
                 )
                 .await?
@@ -113,7 +137,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.transition,
+                            to_transition_mode(gain.transition_mode, gain.transition_value),
                         ),
                 )
                 .await?
@@ -128,7 +152,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.transition,
+                            to_transition_mode(gain.transition_mode, gain.transition_value),
                         ),
                 )
                 .await?
@@ -143,7 +167,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.transition,
+                            to_transition_mode(gain.transition_mode, gain.transition_value),
                         ),
                 )
                 .await?
@@ -158,7 +182,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.transition,
+                            to_transition_mode(gain.transition_mode, gain.transition_value),
                         ),
                 )
                 .await?
@@ -173,7 +197,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.transition,
+                            to_transition_mode(gain.transition_mode, gain.transition_value),
                         ),
                 )
                 .await?
@@ -188,7 +212,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.transition,
+                            to_transition_mode(gain.transition_mode, gain.transition_value),
                         ),
                 )
                 .await?
@@ -203,7 +227,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.transition,
+                            to_transition_mode(gain.transition_mode, gain.transition_value),
                         ),
                 )
                 .await?
@@ -218,7 +242,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.transition,
+                            to_transition_mode(gain.transition_mode, gain.transition_value),
                         ),
                 )
                 .await?
@@ -233,7 +257,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.transition,
+                            to_transition_mode(gain.transition_mode, gain.transition_value),
                         ),
                 )
                 .await?
@@ -248,7 +272,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.transition,
+                            to_transition_mode(gain.transition_mode, gain.transition_value),
                         ),
                 )
                 .await?
@@ -263,7 +287,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                     .ok()
                                     .ok_or(AUTDProtoBufError::DataParseError)?,
                             ),
-                            gain.transition,
+                            to_transition_mode(gain.transition_mode, gain.transition_value),
                         ),
                 )
                 .await?
@@ -328,7 +352,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
         }
     }
 
-    async fn firmware_info(
+    async fn firmware_version(
         &self,
         _req: Request<FirmwareVersionRequestLightweight>,
     ) -> Result<Response<FirmwareVersionResponseLightweight>, Status> {
@@ -337,9 +361,9 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                 Ok(list) => Ok(Response::new(FirmwareVersionResponseLightweight {
                     success: true,
                     msg: String::new(),
-                    firmware_info_list: list
+                    firmware_version_list: list
                         .iter()
-                        .map(|f| firmware_info_response_lightweight::FirmwareVersion {
+                        .map(|f| firmware_version_response_lightweight::FirmwareVersion {
                             cpu_major_version: f.cpu_version_number_major() as _,
                             cpu_minor_version: f.cpu_version_number_minor() as _,
                             fpga_major_version: f.fpga_version_number_major() as _,
@@ -352,7 +376,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     return Ok(Response::new(FirmwareVersionResponseLightweight {
                         success: false,
                         msg: format!("{}", e),
-                        firmware_info_list: Vec::new(),
+                        firmware_version_list: Vec::new(),
                     }))
                 }
             }
@@ -360,7 +384,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
             Ok(Response::new(FirmwareVersionResponseLightweight {
                 success: false,
                 msg: "Geometry is not configured".to_string(),
-                firmware_info_list: Vec::new(),
+                firmware_version_list: Vec::new(),
             }))
         }
     }
@@ -418,7 +442,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                         .ok()
                                         .ok_or(AUTDProtoBufError::DataParseError)?,
                                 ),
-                                msg.transition,
+                                to_transition_mode(msg.transition_mode, msg.transition_value),
                             ),
                     )
                     .await
@@ -433,7 +457,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                                         .ok()
                                         .ok_or(AUTDProtoBufError::DataParseError)?,
                                 ),
-                                msg.transition,
+                                to_transition_mode(msg.transition_mode, msg.transition_value),
                             ),
                     )
                     .await

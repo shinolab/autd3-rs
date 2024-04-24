@@ -112,5 +112,6 @@ message Gain {
     Greedy greedy = 105;
   }
   Segment segment = 1001;
-  bool transition = 1002;
+  optional TransitionMode transition_mode = 1002;
+  optional uint64 transition_value = 1003;
 }

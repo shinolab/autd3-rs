@@ -39,8 +39,9 @@ message GainSTM {
     uint32 freq_div = 1;
     LoopBehavior loop_behavior = 2;
     Segment segment = 3;
-    bool transition = 4;
     repeated Gain gains = 5;
+    optional TransitionMode transition_mode = 6;
+    optional uint64 transition_value = 7;
 }
 
 message FocusSTM {
@@ -51,8 +52,9 @@ message FocusSTM {
     uint32 freq_div = 1;
     LoopBehavior loop_behavior = 2;
     Segment segment = 3;
-    bool transition = 4;
     repeated ControlPoint points = 5;
+    optional TransitionMode transition_mode = 6;
+    optional uint64 transition_value = 7;
 }
 
 message ChangeGainSegment {
@@ -61,12 +63,18 @@ message ChangeGainSegment {
 
 message ChangeFocusSTMSegment {
     Segment segment = 1;
+    TransitionMode transition_mode = 2;
+    uint64 transition_value = 3;
 }
 
 message ChangeGainSTMSegment {
     Segment segment = 1;
+    TransitionMode transition_mode = 2;
+    uint64 transition_value = 3;
 }
 
 message ChangeModulationSegment {
     Segment segment = 1;
+    TransitionMode transition_mode = 2;
+    uint64 transition_value = 3;
 }

@@ -92,6 +92,38 @@ impl Segment {
         }
     }
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum TransitionMode {
+    SyncIdx = 0,
+    SysTime = 1,
+    Gpio = 2,
+    Ext = 3,
+}
+impl TransitionMode {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            TransitionMode::SyncIdx => "SyncIdx",
+            TransitionMode::SysTime => "SysTime",
+            TransitionMode::Gpio => "GPIO",
+            TransitionMode::Ext => "Ext",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "SyncIdx" => Some(Self::SyncIdx),
+            "SysTime" => Some(Self::SysTime),
+            "GPIO" => Some(Self::Gpio),
+            "Ext" => Some(Self::Ext),
+            _ => None,
+        }
+    }
+}
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TxRawData {
@@ -1191,8 +1223,10 @@ pub struct Greedy {
 pub struct Gain {
     #[prost(enumeration = "Segment", tag = "1001")]
     pub segment: i32,
-    #[prost(bool, tag = "1002")]
-    pub transition: bool,
+    #[prost(enumeration = "TransitionMode", optional, tag = "1002")]
+    pub transition_mode: ::core::option::Option<i32>,
+    #[prost(uint64, optional, tag = "1003")]
+    pub transition_value: ::core::option::Option<u64>,
     #[prost(
         oneof = "gain::Gain",
         tags = "1, 2, 3, 4, 5, 100, 101, 102, 103, 104, 105"
@@ -1271,8 +1305,10 @@ pub struct Square {
 pub struct Modulation {
     #[prost(enumeration = "Segment", tag = "1001")]
     pub segment: i32,
-    #[prost(bool, tag = "1002")]
-    pub transition: bool,
+    #[prost(enumeration = "TransitionMode", optional, tag = "1002")]
+    pub transition_mode: ::core::option::Option<i32>,
+    #[prost(uint64, optional, tag = "1003")]
+    pub transition_value: ::core::option::Option<u64>,
     #[prost(oneof = "modulation::Modulation", tags = "1, 2, 4")]
     pub modulation: ::core::option::Option<modulation::Modulation>,
 }
@@ -1377,10 +1413,12 @@ pub struct GainStm {
     pub loop_behavior: ::core::option::Option<LoopBehavior>,
     #[prost(enumeration = "Segment", tag = "3")]
     pub segment: i32,
-    #[prost(bool, tag = "4")]
-    pub transition: bool,
     #[prost(message, repeated, tag = "5")]
     pub gains: ::prost::alloc::vec::Vec<Gain>,
+    #[prost(enumeration = "TransitionMode", optional, tag = "6")]
+    pub transition_mode: ::core::option::Option<i32>,
+    #[prost(uint64, optional, tag = "7")]
+    pub transition_value: ::core::option::Option<u64>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1391,10 +1429,12 @@ pub struct FocusStm {
     pub loop_behavior: ::core::option::Option<LoopBehavior>,
     #[prost(enumeration = "Segment", tag = "3")]
     pub segment: i32,
-    #[prost(bool, tag = "4")]
-    pub transition: bool,
     #[prost(message, repeated, tag = "5")]
     pub points: ::prost::alloc::vec::Vec<focus_stm::ControlPoint>,
+    #[prost(enumeration = "TransitionMode", optional, tag = "6")]
+    pub transition_mode: ::core::option::Option<i32>,
+    #[prost(uint64, optional, tag = "7")]
+    pub transition_value: ::core::option::Option<u64>,
 }
 /// Nested message and enum types in `FocusSTM`.
 pub mod focus_stm {
@@ -1418,18 +1458,30 @@ pub struct ChangeGainSegment {
 pub struct ChangeFocusStmSegment {
     #[prost(enumeration = "Segment", tag = "1")]
     pub segment: i32,
+    #[prost(enumeration = "TransitionMode", tag = "2")]
+    pub transition_mode: i32,
+    #[prost(uint64, tag = "3")]
+    pub transition_value: u64,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ChangeGainStmSegment {
     #[prost(enumeration = "Segment", tag = "1")]
     pub segment: i32,
+    #[prost(enumeration = "TransitionMode", tag = "2")]
+    pub transition_mode: i32,
+    #[prost(uint64, tag = "3")]
+    pub transition_value: u64,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ChangeModulationSegment {
     #[prost(enumeration = "Segment", tag = "1")]
     pub segment: i32,
+    #[prost(enumeration = "TransitionMode", tag = "2")]
+    pub transition_mode: i32,
+    #[prost(uint64, tag = "3")]
+    pub transition_value: u64,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1494,11 +1546,11 @@ pub struct FirmwareVersionResponseLightweight {
     #[prost(string, tag = "2")]
     pub msg: ::prost::alloc::string::String,
     #[prost(message, repeated, tag = "3")]
-    pub firmware_info_list:
-        ::prost::alloc::vec::Vec<firmware_info_response_lightweight::FirmwareVersion>,
+    pub firmware_version_list:
+        ::prost::alloc::vec::Vec<firmware_version_response_lightweight::FirmwareVersion>,
 }
 /// Nested message and enum types in `FirmwareVersionResponseLightweight`.
-pub mod firmware_info_response_lightweight {
+pub mod firmware_version_response_lightweight {
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct FirmwareVersion {
@@ -1619,7 +1671,7 @@ pub mod ecat_light_client {
                 .insert(GrpcMethod::new("autd3.ECATLight", "ConfigGeomety"));
             self.inner.unary(req, path, codec).await
         }
-        pub async fn firmware_info(
+        pub async fn firmware_version(
             &mut self,
             request: impl tonic::IntoRequest<super::FirmwareVersionRequestLightweight>,
         ) -> std::result::Result<
@@ -1688,7 +1740,7 @@ pub mod ecat_light_server {
             &self,
             request: tonic::Request<super::Geometry>,
         ) -> std::result::Result<tonic::Response<super::SendResponseLightweight>, tonic::Status>;
-        async fn firmware_info(
+        async fn firmware_version(
             &self,
             request: tonic::Request<super::FirmwareVersionRequestLightweight>,
         ) -> std::result::Result<
@@ -1835,7 +1887,7 @@ pub mod ecat_light_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as EcatLight>::firmware_info(&inner, request).await
+                                <T as EcatLight>::firmware_version(&inner, request).await
                             };
                             Box::pin(fut)
                         }
