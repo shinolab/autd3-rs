@@ -171,6 +171,7 @@ mod tests {
     use super::*;
     use crate::{
         defined::MILLIMETER,
+        ethercat::DcSysTime,
         firmware::{
             fpga::{
                 FOCUS_STM_FIXED_NUM_UNIT, FOCUS_STM_FIXED_NUM_UPPER_X, SAMPLING_FREQ_DIV_MAX,
@@ -212,7 +213,7 @@ mod tests {
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
         let transition_value = 0x0123456789ABCDEF;
         let transition_mode = TransitionMode::SysTime(
-            time::macros::datetime!(2000-01-01 0:00 UTC)
+            DcSysTime::from_utc(time::macros::datetime!(2000-01-01 0:00 UTC)).unwrap()
                 + std::time::Duration::from_nanos(transition_value),
         );
 

@@ -19,6 +19,7 @@ pub use autd3_driver::{
     },
     defined::{METER, MILLIMETER, PI},
     error::AUTDInternalError,
+    ethercat::DcSysTime,
     firmware::{
         fpga::{
             DebugType, Drive, EmitIntensity, LoopBehavior, Phase, Rad as PhaseRad,

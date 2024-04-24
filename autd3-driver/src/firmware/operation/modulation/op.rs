@@ -149,6 +149,7 @@ mod tests {
 
     use super::*;
     use crate::{
+        ethercat::DcSysTime,
         firmware::{
             fpga::{SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
             operation::tests::parse_tx_as,
@@ -177,7 +178,7 @@ mod tests {
         let segment = Segment::S0;
         let rep = loop_behavior.to_rep();
         let transition_mode = TransitionMode::SysTime(
-            time::macros::datetime!(2000-01-01 0:00 UTC)
+            DcSysTime::from_utc(time::macros::datetime!(2000-01-01 0:00 UTC)).unwrap()
                 + std::time::Duration::from_nanos(0x0123456789ABCDEF),
         );
 

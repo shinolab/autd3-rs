@@ -197,7 +197,9 @@ fn test_miss_transition_time(
         SAMPLING_FREQ_DIV_MAX,
         LoopBehavior::once(),
         Segment::S1,
-        Some(TransitionMode::SysTime(transition_time)),
+        Some(TransitionMode::SysTime(
+            DcSysTime::from_utc(transition_time).unwrap(),
+        )),
     );
 
     cpu.set_dc_sys_time(DcSysTime::from_utc(systime).unwrap());
