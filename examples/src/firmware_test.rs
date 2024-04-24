@@ -131,25 +131,41 @@ async fn main() -> Result<()> {
             Err(AUTDError::Internal(
                 AUTDInternalError::InvalidSegmentTransition
             )),
-            autd.send(ChangeGainSTMSegment::new(Segment::S0)).await
+            autd.send(ChangeGainSTMSegment::new(
+                Segment::S0,
+                TransitionMode::SyncIdx
+            ))
+            .await
         );
         assert_eq!(
             Err(AUTDError::Internal(
                 AUTDInternalError::InvalidSegmentTransition
             )),
-            autd.send(ChangeGainSTMSegment::new(Segment::S1)).await
+            autd.send(ChangeGainSTMSegment::new(
+                Segment::S1,
+                TransitionMode::SyncIdx
+            ))
+            .await
         );
         assert_eq!(
             Err(AUTDError::Internal(
                 AUTDInternalError::InvalidSegmentTransition
             )),
-            autd.send(ChangeFocusSTMSegment::new(Segment::S0)).await
+            autd.send(ChangeFocusSTMSegment::new(
+                Segment::S0,
+                TransitionMode::SyncIdx
+            ))
+            .await
         );
         assert_eq!(
             Err(AUTDError::Internal(
                 AUTDInternalError::InvalidSegmentTransition
             )),
-            autd.send(ChangeFocusSTMSegment::new(Segment::S1)).await
+            autd.send(ChangeFocusSTMSegment::new(
+                Segment::S1,
+                TransitionMode::SyncIdx
+            ))
+            .await
         );
     }
 
@@ -182,7 +198,11 @@ async fn main() -> Result<()> {
             assert_eq!(None, state.current_stm_segment());
         });
 
-        autd.send(ChangeModulationSegment::new(Segment::S0)).await?;
+        autd.send(ChangeModulationSegment::new(
+            Segment::S0,
+            TransitionMode::SyncIdx,
+        ))
+        .await?;
         print_msg_and_wait_for_key("Check that the AM modulation has been applied again.");
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
@@ -203,7 +223,11 @@ async fn main() -> Result<()> {
             assert_eq!(None, state.current_stm_segment());
         });
 
-        autd.send(ChangeModulationSegment::new(Segment::S1)).await?;
+        autd.send(ChangeModulationSegment::new(
+            Segment::S1,
+            TransitionMode::SyncIdx,
+        ))
+        .await?;
         print_msg_and_wait_for_key("Check that the focal points have disappeared.");
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
@@ -317,7 +341,11 @@ async fn main() -> Result<()> {
             assert_eq!(Some(Segment::S1), state.current_stm_segment());
         });
 
-        autd.send(ChangeFocusSTMSegment::new(Segment::S0)).await?;
+        autd.send(ChangeFocusSTMSegment::new(
+            Segment::S0,
+            TransitionMode::SyncIdx,
+        ))
+        .await?;
         print_msg_and_wait_for_key("Check that the frequency returned to 0.5 Hz.");
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
@@ -342,7 +370,11 @@ async fn main() -> Result<()> {
             assert_eq!(None, state.current_gain_segment());
             assert_eq!(Some(Segment::S0), state.current_stm_segment());
         });
-        autd.send(ChangeFocusSTMSegment::new(Segment::S1)).await?;
+        autd.send(ChangeFocusSTMSegment::new(
+            Segment::S1,
+            TransitionMode::SyncIdx,
+        ))
+        .await?;
         print_msg_and_wait_for_key("");
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
@@ -356,13 +388,21 @@ async fn main() -> Result<()> {
             Err(AUTDError::Internal(
                 AUTDInternalError::InvalidSegmentTransition
             )),
-            autd.send(ChangeGainSTMSegment::new(Segment::S0)).await
+            autd.send(ChangeGainSTMSegment::new(
+                Segment::S0,
+                TransitionMode::SyncIdx
+            ))
+            .await
         );
         assert_eq!(
             Err(AUTDError::Internal(
                 AUTDInternalError::InvalidSegmentTransition
             )),
-            autd.send(ChangeGainSTMSegment::new(Segment::S1)).await
+            autd.send(ChangeGainSTMSegment::new(
+                Segment::S1,
+                TransitionMode::SyncIdx
+            ))
+            .await
         );
         assert_eq!(
             Err(AUTDError::Internal(
@@ -418,7 +458,11 @@ async fn main() -> Result<()> {
             assert_eq!(Some(Segment::S1), state.current_stm_segment());
         });
 
-        autd.send(ChangeGainSTMSegment::new(Segment::S0)).await?;
+        autd.send(ChangeGainSTMSegment::new(
+            Segment::S0,
+            TransitionMode::SyncIdx,
+        ))
+        .await?;
         print_msg_and_wait_for_key("Check that the frequency returned to 0.5 Hz.");
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
@@ -443,7 +487,11 @@ async fn main() -> Result<()> {
             assert_eq!(None, state.current_gain_segment());
             assert_eq!(Some(Segment::S0), state.current_stm_segment());
         });
-        autd.send(ChangeGainSTMSegment::new(Segment::S1)).await?;
+        autd.send(ChangeGainSTMSegment::new(
+            Segment::S1,
+            TransitionMode::SyncIdx,
+        ))
+        .await?;
         print_msg_and_wait_for_key("");
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
@@ -457,13 +505,21 @@ async fn main() -> Result<()> {
             Err(AUTDError::Internal(
                 AUTDInternalError::InvalidSegmentTransition
             )),
-            autd.send(ChangeFocusSTMSegment::new(Segment::S0)).await
+            autd.send(ChangeFocusSTMSegment::new(
+                Segment::S0,
+                TransitionMode::SyncIdx
+            ))
+            .await
         );
         assert_eq!(
             Err(AUTDError::Internal(
                 AUTDInternalError::InvalidSegmentTransition
             )),
-            autd.send(ChangeFocusSTMSegment::new(Segment::S1)).await
+            autd.send(ChangeFocusSTMSegment::new(
+                Segment::S1,
+                TransitionMode::SyncIdx
+            ))
+            .await
         );
         assert_eq!(
             Err(AUTDError::Internal(
@@ -495,25 +551,41 @@ async fn main() -> Result<()> {
             Err(AUTDError::Internal(
                 AUTDInternalError::InvalidSegmentTransition
             )),
-            autd.send(ChangeFocusSTMSegment::new(Segment::S0)).await
+            autd.send(ChangeFocusSTMSegment::new(
+                Segment::S0,
+                TransitionMode::SyncIdx
+            ))
+            .await
         );
         assert_eq!(
             Err(AUTDError::Internal(
                 AUTDInternalError::InvalidSegmentTransition
             )),
-            autd.send(ChangeFocusSTMSegment::new(Segment::S1)).await
+            autd.send(ChangeFocusSTMSegment::new(
+                Segment::S1,
+                TransitionMode::SyncIdx
+            ))
+            .await
         );
         assert_eq!(
             Err(AUTDError::Internal(
                 AUTDInternalError::InvalidSegmentTransition
             )),
-            autd.send(ChangeGainSTMSegment::new(Segment::S0)).await
+            autd.send(ChangeGainSTMSegment::new(
+                Segment::S0,
+                TransitionMode::SyncIdx
+            ))
+            .await
         );
         assert_eq!(
             Err(AUTDError::Internal(
                 AUTDInternalError::InvalidSegmentTransition
             )),
-            autd.send(ChangeGainSTMSegment::new(Segment::S1)).await
+            autd.send(ChangeGainSTMSegment::new(
+                Segment::S1,
+                TransitionMode::SyncIdx
+            ))
+            .await
         );
     }
 
