@@ -197,6 +197,37 @@ fn test_send_gain_stm_phase_half() -> anyhow::Result<()> {
 }
 
 #[test]
+fn change_gain_stm_segment() -> anyhow::Result<()> {
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
+
+    assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
+    assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
+    let mut op = GainSTMOp::new(
+        gen_random_buf(GAIN_STM_BUF_SIZE_MAX, &geometry)
+            .iter()
+            .map(|buf| TestGain { buf: buf.clone() })
+            .collect(),
+        GainSTMMode::PhaseIntensityFull,
+        SAMPLING_FREQ_DIV_MAX,
+        LoopBehavior::Infinite,
+        Segment::S1,
+        None,
+    );
+    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
+    assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
+
+    let mut op = GainSTMChangeSegmentOp::new(Segment::S1, TransitionMode::default());
+    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
+    assert_eq!(Segment::S1, cpu.fpga().current_stm_segment());
+
+    Ok(())
+}
+
+#[test]
 fn gain_stm_freq_div_too_small() {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());

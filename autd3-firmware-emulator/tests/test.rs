@@ -132,3 +132,27 @@ fn send_slot_2() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn send_slot_2_err() -> anyhow::Result<()> {
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
+
+    let (mut op_clear, _) = Clear::new().operation()?;
+    let (mut op_sync, _) = Synchronize::new().operation()?;
+
+    OperationHandler::init(&mut op_clear, &mut op_sync, &geometry)?;
+    OperationHandler::pack(&mut op_clear, &mut op_sync, &geometry, &mut tx)?;
+
+    let slot2_offset = tx[0].header.slot_2_offset as usize;
+    tx[0].payload[slot2_offset] = 0xFF;
+
+    cpu.send(&tx);
+    assert_eq!(
+        Err(AUTDInternalError::firmware_err(ERR_NOT_SUPPORTED_TAG)),
+        Result::<(), AUTDInternalError>::from(&cpu.rx())
+    );
+
+    Ok(())
+}

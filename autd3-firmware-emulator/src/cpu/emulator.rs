@@ -269,4 +269,13 @@ mod tests {
         let cpu = CPUEmulator::new(0, 249);
         assert_eq!(249, cpu.num_transducers());
     }
+
+    #[test]
+    fn dc_sys_time() {
+        let mut rng = rand::thread_rng();
+        let mut cpu = CPUEmulator::new(0, 249);
+
+        cpu.set_dc_sys_time(DcSysTime::now() + std::time::Duration::from_nanos(rng.gen()));
+        assert_eq!(cpu.dc_sys_time(), cpu.dc_sys_time());
+    }
 }
