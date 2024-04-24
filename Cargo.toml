@@ -53,3 +53,4 @@ tokio = "1.35.1"
 tonic = { version = "0.11.0", default-features = false }
 tonic-build = "0.11.0"
 wav_io = "0.1.8"
+thread-priority = "1.0.0"
