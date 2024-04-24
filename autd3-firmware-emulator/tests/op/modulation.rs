@@ -39,8 +39,7 @@ fn send_mod() -> anyhow::Result<()> {
             freq_div,
             loop_behavior,
             Segment::S0,
-            transition_mode,
-            true,
+            Some(transition_mode),
         );
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
@@ -67,15 +66,7 @@ fn send_mod() -> anyhow::Result<()> {
                 ..=SAMPLING_FREQ_DIV_MAX,
         );
         let loop_behavior = LoopBehavior::Finite(NonZeroU32::new(1).unwrap());
-        let transition_mode = TransitionMode::Ext;
-        let mut op = ModulationOp::new(
-            m.clone(),
-            freq_div,
-            loop_behavior,
-            Segment::S1,
-            transition_mode,
-            false,
-        );
+        let mut op = ModulationOp::new(m.clone(), freq_div, loop_behavior, Segment::S1, None);
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 

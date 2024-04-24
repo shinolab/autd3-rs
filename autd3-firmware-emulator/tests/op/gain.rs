@@ -52,7 +52,7 @@ fn send_gain() -> anyhow::Result<()> {
             .collect();
         let g = TestGain { buf: buf.clone() };
 
-        let (mut op, _) = g.operation_with_segment(Segment::S0, TransitionMode::SyncIdx, true)?;
+        let (mut op, _) = g.operation_with_segment(Segment::S0, Some(TransitionMode::SyncIdx))?;
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
@@ -86,7 +86,7 @@ fn send_gain() -> anyhow::Result<()> {
             .collect();
         let g = TestGain { buf: buf.clone() };
 
-        let (mut op, _) = g.operation_with_segment(Segment::S1, TransitionMode::SyncIdx, false)?;
+        let (mut op, _) = g.operation_with_segment(Segment::S1, None)?;
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
@@ -133,8 +133,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
             0xFFFFFFFF,
             LoopBehavior::Infinite,
             Segment::S0,
-            TransitionMode::SyncIdx,
-            true,
+            Some(TransitionMode::SyncIdx),
         ),
         &geometry,
         &mut tx,
@@ -157,8 +156,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
             0xFFFFFFFF,
             LoopBehavior::Infinite,
             Segment::S1,
-            TransitionMode::SyncIdx,
-            true,
+            Some(TransitionMode::SyncIdx),
         ),
         &geometry,
         &mut tx,

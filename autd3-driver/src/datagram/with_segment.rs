@@ -129,8 +129,7 @@ mod tests {
         fn operation_with_segment(
             self,
             _segment: Segment,
-            _transition_mode: TransitionMode,
-            _transition: bool,
+            _transition_mode: Option<TransitionMode>,
         ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
             Ok((Self::O1::default(), Self::O2::default()))
         }
@@ -138,7 +137,8 @@ mod tests {
 
     #[test]
     fn test() {
-        let d: DatagramWithSegment<TestDatagram> = TestDatagram {}.with_segment(Segment::S0, true);
+        let d: DatagramWithSegment<TestDatagram> =
+            TestDatagram {}.with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
 
         let timeout = <DatagramWithSegment<TestDatagram> as Datagram>::timeout(&d);
         assert!(timeout.is_none());
