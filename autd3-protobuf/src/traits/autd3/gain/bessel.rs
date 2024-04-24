@@ -18,7 +18,8 @@ impl ToMessage for autd3::gain::Bessel {
                     phase_offset: Some(self.phase_offset().to_msg(None)),
                 })),
                 segment: Segment::S0 as _,
-                transition: true,
+                transition_mode: Some(TransitionMode::SyncIdx.into()),
+                transition_value: Some(0),
             })),
         }
     }
@@ -39,7 +40,8 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Bess
                     phase_offset: Some(self.phase_offset().to_msg(None)),
                 })),
                 segment: self.segment() as _,
-                transition: self.transition(),
+                transition_mode: self.transition_mode().map(|m| m.mode() as _),
+                transition_value: self.transition_mode().map(|m| m.value()),
             })),
         }
     }

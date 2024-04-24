@@ -77,7 +77,7 @@ impl LightweightClient {
     > {
         let res = self
             .client
-            .firmware_info(tonic::Request::new(
+            .firmware_version(tonic::Request::new(
                 crate::pb::FirmwareVersionRequestLightweight {},
             ))
             .await?

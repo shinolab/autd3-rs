@@ -11,7 +11,7 @@ pub enum TransitionMode {
 }
 
 impl TransitionMode {
-    pub(crate) fn mode(&self) -> u8 {
+    pub fn mode(&self) -> u8 {
         match self {
             TransitionMode::SyncIdx => 0x00,
             TransitionMode::SysTime(_) => 0x01,
@@ -20,7 +20,7 @@ impl TransitionMode {
         }
     }
 
-    pub(crate) fn value(&self) -> u64 {
+    pub fn value(&self) -> u64 {
         match self {
             TransitionMode::SyncIdx | TransitionMode::GPIO | TransitionMode::Ext => 0,
             TransitionMode::SysTime(time) => {

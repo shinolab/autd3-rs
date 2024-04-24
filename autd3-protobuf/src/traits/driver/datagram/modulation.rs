@@ -9,6 +9,8 @@ impl ToMessage for autd3_driver::datagram::ChangeModulationSegment {
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             segment: self.segment() as _,
+            transition_mode: self.transition_mode().mode() as _,
+            transition_value: self.transition_mode().value(),
         }
     }
 }

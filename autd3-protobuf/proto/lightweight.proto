@@ -43,7 +43,7 @@ message FirmwareVersionResponseLightweight {
   }
   bool success = 1;
   string msg = 2;
-  repeated FirmwareVersion firmware_info_list = 3;
+  repeated FirmwareVersion firmware_version_list = 3;
 }
 
 message CloseRequestLightweight {}

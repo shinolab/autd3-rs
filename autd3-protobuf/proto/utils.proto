@@ -45,3 +45,10 @@ enum Segment {
   S0 = 0;
   S1 = 1;
 }
+
+enum TransitionMode {
+  SyncIdx = 0;
+  SysTime = 1;
+  GPIO = 2;
+  Ext = 3;
+}
