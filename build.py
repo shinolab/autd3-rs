@@ -314,6 +314,8 @@ def rust_coverage(args):
                 "--excl-line",
                 r"^\s*((debug_)?assert(_eq|_ne)?!|#\[derive\()",
                 "--ignore",
+                "autd3-derive/**/*",
+                "--ignore",
                 "autd3-link-*/**/*",
                 "--ignore",
                 "**/pb.rs",
