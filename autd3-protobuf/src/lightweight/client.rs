@@ -69,7 +69,7 @@ impl LightweightClient {
     ///
     /// * `Ok(Vec<FirmwareVersion>)` - List of firmware information
     ///
-    pub async fn firmware_infos(
+    pub async fn firmware_version(
         &mut self,
     ) -> Result<
         Vec<autd3_driver::firmware::version::FirmwareVersion>,

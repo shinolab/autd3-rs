@@ -41,9 +41,9 @@ async fn main() -> Result<()> {
     .await?;
     print_msg_and_wait_for_key("Check if outputs of GPIO[0] are synchronized.");
 
-    let firmware_infos = autd.firmware_infos().await?;
-    assert_eq!(2, firmware_infos.len());
-    firmware_infos.iter().for_each(|firm_info| {
+    let firmware_version = autd.firmware_version().await?;
+    assert_eq!(2, firmware_version.len());
+    firmware_version.iter().for_each(|firm_info| {
         assert_eq!(
             FirmwareVersion::LATEST_VERSION_NUM_MAJOR,
             firm_info.fpga_version_number_major()

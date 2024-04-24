@@ -357,7 +357,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
         _req: Request<FirmwareVersionRequestLightweight>,
     ) -> Result<Response<FirmwareVersionResponseLightweight>, Status> {
         if let Some(autd) = self.autd.write().await.as_mut() {
-            match autd.firmware_infos().await {
+            match autd.firmware_version().await {
                 Ok(list) => Ok(Response::new(FirmwareVersionResponseLightweight {
                     success: true,
                     msg: String::new(),
