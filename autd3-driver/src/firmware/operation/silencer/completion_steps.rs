@@ -1,9 +1,7 @@
-use std::collections::HashMap;
-
 use super::{SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS, SILENCER_CTL_FLAG_STRICT_MODE};
 use crate::{
     error::AUTDInternalError,
-    firmware::operation::{cast, Operation, TypeTag},
+    firmware::operation::{cast, Operation, Remains, TypeTag},
     geometry::{Device, Geometry},
 };
 
@@ -16,7 +14,7 @@ struct ConfigSilencerFixedCompletionSteps {
 }
 
 pub struct ConfigSilencerFixedCompletionStepsOp {
-    remains: HashMap<usize, usize>,
+    remains: Remains,
     value_intensity: u16,
     value_phase: u16,
     strict_mode: bool,
@@ -35,8 +33,6 @@ impl ConfigSilencerFixedCompletionStepsOp {
 
 impl Operation for ConfigSilencerFixedCompletionStepsOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        assert_eq!(self.remains[&device.idx()], 1);
-
         *cast::<ConfigSilencerFixedCompletionSteps>(tx) = ConfigSilencerFixedCompletionSteps {
             tag: TypeTag::Silencer,
             flag: SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS
@@ -49,7 +45,7 @@ impl Operation for ConfigSilencerFixedCompletionStepsOp {
             value_phase: self.value_phase,
         };
 
-        self.remains.insert(device.idx(), 0);
+        self.remains.send(device, 1);
         Ok(std::mem::size_of::<ConfigSilencerFixedCompletionSteps>())
     }
 
@@ -58,12 +54,12 @@ impl Operation for ConfigSilencerFixedCompletionStepsOp {
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains = geometry.devices().map(|device| (device.idx(), 1)).collect();
+        self.remains.init(geometry, 1);
         Ok(())
     }
 
-    fn remains(&self, device: &Device) -> usize {
-        self.remains[&device.idx()]
+    fn is_done(&self, device: &Device) -> bool {
+        self.remains.is_done(device)
     }
 }
 
@@ -91,7 +87,7 @@ mod tests {
 
         geometry
             .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), 1));
+            .for_each(|dev| assert_eq!(op.remains[dev], 1));
 
         geometry.devices().for_each(|dev| {
             assert!(op.pack(dev, &mut tx[dev.idx() * 6..]).is_ok());
@@ -99,7 +95,7 @@ mod tests {
 
         geometry
             .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), 0));
+            .for_each(|dev| assert_eq!(op.remains[dev], 0));
 
         geometry.devices().for_each(|dev| {
             assert_eq!(tx[dev.idx() * 6], TypeTag::Silencer as u8);
@@ -127,7 +123,7 @@ mod tests {
 
         geometry
             .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), 1));
+            .for_each(|dev| assert_eq!(op.remains[dev], 1));
 
         geometry.devices().for_each(|dev| {
             assert!(op.pack(dev, &mut tx[dev.idx() * 6..]).is_ok());
@@ -135,7 +131,7 @@ mod tests {
 
         geometry
             .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), 0));
+            .for_each(|dev| assert_eq!(op.remains[dev], 0));
 
         geometry.devices().for_each(|dev| {
             assert_eq!(tx[dev.idx() * 6], TypeTag::Silencer as u8);

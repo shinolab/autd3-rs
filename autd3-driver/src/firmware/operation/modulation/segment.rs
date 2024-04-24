@@ -1,10 +1,8 @@
-use std::collections::HashMap;
-
 use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{Segment, TransitionMode},
-        operation::{cast, Operation, TypeTag},
+        operation::{cast, Operation, Remains, TypeTag},
     },
     geometry::{Device, Geometry},
 };
@@ -21,7 +19,7 @@ struct ModulationUpdate {
 pub struct ModulationChangeSegmentOp {
     segment: Segment,
     transition_mode: TransitionMode,
-    remains: HashMap<usize, usize>,
+    remains: Remains,
 }
 
 impl ModulationChangeSegmentOp {
@@ -29,15 +27,13 @@ impl ModulationChangeSegmentOp {
         Self {
             segment,
             transition_mode,
-            remains: HashMap::new(),
+            remains: Default::default(),
         }
     }
 }
 
 impl Operation for ModulationChangeSegmentOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        assert_eq!(self.remains[&device.idx()], 1);
-
         *cast::<ModulationUpdate>(tx) = ModulationUpdate {
             tag: TypeTag::ModulationChangeSegment,
             segment: self.segment as u8,
@@ -46,7 +42,7 @@ impl Operation for ModulationChangeSegmentOp {
             transition_value: self.transition_mode.value(),
         };
 
-        self.remains.insert(device.idx(), 0);
+        self.remains.send(device, 1);
         Ok(std::mem::size_of::<ModulationUpdate>())
     }
 
@@ -55,11 +51,11 @@ impl Operation for ModulationChangeSegmentOp {
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains = geometry.devices().map(|device| (device.idx(), 1)).collect();
+        self.remains.init(geometry, 1);
         Ok(())
     }
 
-    fn remains(&self, device: &Device) -> usize {
-        self.remains[&device.idx()]
+    fn is_done(&self, device: &Device) -> bool {
+        self.remains.is_done(device)
     }
 }

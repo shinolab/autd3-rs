@@ -1,10 +1,8 @@
-use std::collections::HashMap;
-
 use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{EmitIntensity, LoopBehavior, Segment, TransitionMode, MOD_BUF_SIZE_MAX},
-        operation::{cast, Operation, TypeTag},
+        operation::{cast, Operation, Remains, TypeTag},
     },
     geometry::{Device, Geometry},
 };
@@ -33,8 +31,7 @@ struct ModulationSubseq {
 pub struct ModulationOp {
     buf: Vec<EmitIntensity>,
     freq_div: u32,
-    remains: HashMap<usize, usize>,
-    sent: HashMap<usize, usize>,
+    remains: Remains,
     loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
@@ -51,8 +48,7 @@ impl ModulationOp {
         Self {
             buf,
             freq_div,
-            remains: HashMap::new(),
-            sent: HashMap::new(),
+            remains: Default::default(),
             loop_behavior,
             segment,
             transition_mode,
@@ -62,9 +58,7 @@ impl ModulationOp {
 
 impl Operation for ModulationOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        assert!(self.remains[&device.idx()] > 0);
-
-        let sent = self.sent[&device.idx()];
+        let sent = self.buf.len() - self.remains[device];
 
         let offset = if sent == 0 {
             std::mem::size_of::<ModulationHead>()
@@ -116,9 +110,7 @@ impl Operation for ModulationOp {
             )
         }
 
-        self.sent.insert(device.idx(), sent + mod_size);
-        self.remains
-            .insert(device.idx(), self.buf.len() - self.sent[&device.idx()]);
+        self.remains.send(device, mod_size);
         if sent == 0 {
             Ok(std::mem::size_of::<ModulationHead>() + mod_size)
         } else {
@@ -127,7 +119,7 @@ impl Operation for ModulationOp {
     }
 
     fn required_size(&self, device: &Device) -> usize {
-        if self.sent[&device.idx()] == 0 {
+        if self.remains[device] == self.buf.len() {
             std::mem::size_of::<ModulationHead>() + 1
         } else {
             std::mem::size_of::<ModulationSubseq>() + 1
@@ -139,17 +131,13 @@ impl Operation for ModulationOp {
             return Err(AUTDInternalError::ModulationSizeOutOfRange(self.buf.len()));
         }
 
-        self.remains = geometry
-            .devices()
-            .map(|device| (device.idx(), self.buf.len()))
-            .collect();
-        self.sent = geometry.devices().map(|device| (device.idx(), 0)).collect();
+        self.remains.init(geometry, self.buf.len());
 
         Ok(())
     }
 
-    fn remains(&self, device: &Device) -> usize {
-        self.remains[&device.idx()]
+    fn is_done(&self, device: &Device) -> bool {
+        self.remains.is_done(device)
     }
 }
 
@@ -212,7 +200,7 @@ mod tests {
 
         geometry
             .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), MOD_SIZE));
+            .for_each(|dev| assert_eq!(op.remains[dev], MOD_SIZE));
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
@@ -226,7 +214,7 @@ mod tests {
 
         geometry
             .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), 0));
+            .for_each(|dev| assert_eq!(op.remains[dev], 0));
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
@@ -322,7 +310,7 @@ mod tests {
 
         geometry
             .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), MOD_SIZE));
+            .for_each(|dev| assert_eq!(op.remains[dev], MOD_SIZE));
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
@@ -336,7 +324,7 @@ mod tests {
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
-                op.remains(dev),
+                op.remains[dev],
                 MOD_SIZE - (FRAME_SIZE - std::mem::size_of::<ModulationHead>())
             )
         });
@@ -383,7 +371,7 @@ mod tests {
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
-                op.remains(dev),
+                op.remains[dev],
                 MOD_SIZE
                     - (FRAME_SIZE - std::mem::size_of::<ModulationHead>())
                     - (FRAME_SIZE - std::mem::size_of::<ModulationSubseq>())
@@ -436,7 +424,7 @@ mod tests {
 
         geometry
             .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), 0));
+            .for_each(|dev| assert_eq!(op.remains[dev], 0));
 
         geometry.devices().for_each(|dev| {
             assert_eq!(TypeTag::Modulation as u8, tx[dev.idx() * FRAME_SIZE]);

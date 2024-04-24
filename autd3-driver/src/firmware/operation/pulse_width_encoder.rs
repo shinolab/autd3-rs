@@ -1,10 +1,14 @@
-use std::{collections::HashMap, fmt};
+use std::fmt;
 
 use crate::{
     error::AUTDInternalError,
     firmware::operation::{cast, Operation, TypeTag},
     geometry::{Device, Geometry},
 };
+
+use super::Remains;
+
+const BUF_SIZE: usize = 65536;
 
 #[derive(Clone, Copy)]
 #[repr(C)]
@@ -60,8 +64,7 @@ struct PWESubseq {
 pub struct ConfigurePulseWidthEncoderOp {
     buf: Vec<u8>,
     full_width_start: u16,
-    remains: HashMap<usize, usize>,
-    sent: HashMap<usize, usize>,
+    remains: Remains,
 }
 
 impl ConfigurePulseWidthEncoderOp {
@@ -69,17 +72,14 @@ impl ConfigurePulseWidthEncoderOp {
         Self {
             buf,
             full_width_start,
-            remains: HashMap::new(),
-            sent: HashMap::new(),
+            remains: Default::default(),
         }
     }
 }
 
 impl Operation for ConfigurePulseWidthEncoderOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        assert!(self.remains[&device.idx()] > 0);
-
-        let sent = self.sent[&device.idx()];
+        let sent = BUF_SIZE - self.remains[device];
 
         let offset = if sent == 0 {
             std::mem::size_of::<PWEHead>()
@@ -117,9 +117,7 @@ impl Operation for ConfigurePulseWidthEncoderOp {
             )
         }
 
-        self.sent.insert(device.idx(), sent + size);
-        self.remains
-            .insert(device.idx(), self.buf.len() - self.sent[&device.idx()]);
+        self.remains.send(device, size);
         if sent == 0 {
             Ok(std::mem::size_of::<PWEHead>() + size)
         } else {
@@ -128,7 +126,7 @@ impl Operation for ConfigurePulseWidthEncoderOp {
     }
 
     fn required_size(&self, device: &Device) -> usize {
-        if self.sent[&device.idx()] == 0 {
+        if self.remains[device] == BUF_SIZE {
             std::mem::size_of::<PWEHead>() + 2
         } else {
             std::mem::size_of::<PWESubseq>() + 2
@@ -136,22 +134,18 @@ impl Operation for ConfigurePulseWidthEncoderOp {
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        if self.buf.len() != 65536 {
+        if self.buf.len() != BUF_SIZE {
             return Err(AUTDInternalError::InvalidPulseWidthEncoderTableSize(
                 self.buf.len(),
             ));
         }
 
-        self.remains = geometry
-            .devices()
-            .map(|device| (device.idx(), self.buf.len()))
-            .collect();
-        self.sent = geometry.devices().map(|device| (device.idx(), 0)).collect();
+        self.remains.init(geometry, BUF_SIZE);
 
         Ok(())
     }
 
-    fn remains(&self, device: &Device) -> usize {
-        self.remains[&device.idx()]
+    fn is_done(&self, device: &Device) -> bool {
+        self.remains.is_done(device)
     }
 }

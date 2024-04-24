@@ -1,11 +1,9 @@
-use std::collections::HashMap;
-
 use crate::{
     defined::METER,
     error::AUTDInternalError,
     firmware::{
         fpga::{LoopBehavior, STMFocus, Segment, TransitionMode, FOCUS_STM_BUF_SIZE_MAX},
-        operation::{cast, Operation, TypeTag},
+        operation::{cast, Operation, Remains, TypeTag},
     },
     geometry::{Device, Geometry},
 };
@@ -32,8 +30,7 @@ struct FocusSTMSubseq {
 }
 
 pub struct FocusSTMOp {
-    remains: HashMap<usize, usize>,
-    sent: HashMap<usize, usize>,
+    remains: Remains,
     points: Vec<ControlPoint>,
     freq_div: u32,
     loop_behavior: LoopBehavior,
@@ -52,7 +49,6 @@ impl FocusSTMOp {
         Self {
             points,
             remains: Default::default(),
-            sent: Default::default(),
             freq_div,
             loop_behavior,
             segment,
@@ -74,9 +70,7 @@ impl FocusSTMOp {
 
 impl Operation for FocusSTMOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        assert!(self.remains[&device.idx()] > 0);
-
-        let sent = self.sent[&device.idx()];
+        let sent = self.points.len() - self.remains[device];
 
         let offset = if sent == 0 {
             std::mem::size_of::<FocusSTMHead>()
@@ -132,9 +126,7 @@ impl Operation for FocusSTMOp {
                 })?
         }
 
-        self.sent.insert(device.idx(), sent + send_num);
-        self.remains
-            .insert(device.idx(), self.points.len() - self.sent[&device.idx()]);
+        self.remains.send(device, send_num);
         if sent == 0 {
             Ok(std::mem::size_of::<FocusSTMHead>() + std::mem::size_of::<STMFocus>() * send_num)
         } else {
@@ -143,7 +135,7 @@ impl Operation for FocusSTMOp {
     }
 
     fn required_size(&self, device: &Device) -> usize {
-        if self.sent[&device.idx()] == 0 {
+        if self.remains[device] == self.points.len() {
             std::mem::size_of::<FocusSTMHead>() + std::mem::size_of::<STMFocus>()
         } else {
             std::mem::size_of::<FocusSTMSubseq>() + std::mem::size_of::<STMFocus>()
@@ -157,17 +149,13 @@ impl Operation for FocusSTMOp {
             ));
         }
 
-        self.remains = geometry
-            .devices()
-            .map(|device| (device.idx(), self.points.len()))
-            .collect();
-        self.sent = geometry.devices().map(|device| (device.idx(), 0)).collect();
+        self.remains.init(geometry, self.points.len());
 
         Ok(())
     }
 
-    fn remains(&self, device: &Device) -> usize {
-        self.remains[&device.idx()]
+    fn is_done(&self, device: &Device) -> bool {
+        self.remains.is_done(device)
     }
 }
 
@@ -247,7 +235,7 @@ mod tests {
 
         geometry
             .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), FOCUS_STM_SIZE));
+            .for_each(|dev| assert_eq!(op.remains[dev], FOCUS_STM_SIZE));
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
@@ -258,7 +246,7 @@ mod tests {
 
         geometry
             .devices()
-            .for_each(|dev| assert_eq!(op.remains(dev), 0));
+            .for_each(|dev| assert_eq!(op.remains[dev], 0));
 
         geometry.devices().for_each(|dev| {
             assert_eq!(TypeTag::FocusSTM as u8, tx[dev.idx() * FRAME_SIZE]);
@@ -369,7 +357,7 @@ mod tests {
 
             geometry
                 .devices()
-                .for_each(|dev| assert_eq!(op.remains(dev), FOCUS_STM_SIZE));
+                .for_each(|dev| assert_eq!(op.remains[dev], FOCUS_STM_SIZE));
 
             geometry.devices().for_each(|dev| {
                 assert_eq!(
@@ -385,7 +373,7 @@ mod tests {
 
             geometry.devices().for_each(|dev| {
                 assert_eq!(
-                    op.remains(dev),
+                    op.remains[dev],
                     (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>()
                         * 2
                 )
@@ -474,7 +462,7 @@ mod tests {
 
         geometry.devices().for_each(|dev| {
             assert_eq!(
-                op.remains(dev),
+                op.remains[dev],
                 (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>()
             )
         });
@@ -543,7 +531,7 @@ mod tests {
 
             geometry
                 .devices()
-                .for_each(|dev| assert_eq!(op.remains(dev), 0));
+                .for_each(|dev| assert_eq!(op.remains[dev], 0));
 
             geometry.devices().for_each(|dev| {
                 assert_eq!(TypeTag::FocusSTM as u8, tx[dev.idx() * FRAME_SIZE]);
