@@ -1,11 +1,11 @@
-use crate::ethercat::ECAT_DC_SYS_TIME_BASE;
+use crate::ethercat::DcSysTime;
 
 #[non_exhaustive]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub enum TransitionMode {
     #[default]
     SyncIdx,
-    SysTime(time::OffsetDateTime),
+    SysTime(DcSysTime),
     GPIO,
     Ext,
 }
@@ -23,9 +23,7 @@ impl TransitionMode {
     pub fn value(&self) -> u64 {
         match self {
             TransitionMode::SyncIdx | TransitionMode::GPIO | TransitionMode::Ext => 0,
-            TransitionMode::SysTime(time) => {
-                (*time - ECAT_DC_SYS_TIME_BASE).whole_nanoseconds() as u64
-            }
+            TransitionMode::SysTime(time) => time.sys_time(),
         }
     }
 }

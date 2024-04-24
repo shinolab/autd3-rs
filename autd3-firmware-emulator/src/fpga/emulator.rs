@@ -240,7 +240,7 @@ impl FPGAEmulator {
         match self.controller_bram[ADDR_STM_TRANSITION_MODE] as u8 {
             TRANSITION_MODE_SYNC_IDX => TransitionMode::SyncIdx,
             TRANSITION_MODE_SYS_TIME => TransitionMode::SysTime(
-                ECAT_DC_SYS_TIME_BASE
+                DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap()
                     + std::time::Duration::from_nanos(Self::read_bram_as::<u64>(
                         &self.controller_bram,
                         ADDR_STM_TRANSITION_VALUE_0,
@@ -302,7 +302,7 @@ impl FPGAEmulator {
         match self.controller_bram[ADDR_MOD_TRANSITION_MODE] as u8 {
             TRANSITION_MODE_SYNC_IDX => TransitionMode::SyncIdx,
             TRANSITION_MODE_SYS_TIME => TransitionMode::SysTime(
-                ECAT_DC_SYS_TIME_BASE
+                DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap()
                     + std::time::Duration::from_nanos(Self::read_bram_as::<u64>(
                         &self.controller_bram,
                         ADDR_MOD_TRANSITION_VALUE_0,
