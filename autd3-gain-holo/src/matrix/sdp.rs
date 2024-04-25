@@ -160,10 +160,12 @@ impl<B: LinAlgBackend> Gain for SDP<B> {
                     self.backend.set_row_c(&x, i, 0, i, &mut U)?;
                     self.backend.set_row_c(&x, i, i + 1, m, &mut U)?;
                 } else {
+                    // GRCOV_EXCL_START
                     self.backend.set_col_c(&zeros, i, 0, i, &mut U)?;
                     self.backend.set_col_c(&zeros, i, i + 1, m, &mut U)?;
                     self.backend.set_row_c(&zeros, i, 0, i, &mut U)?;
                     self.backend.set_row_c(&zeros, i, i + 1, m, &mut U)?;
+                    // GRCOV_EXCL_STOP
                 }
                 Ok(())
             })?;

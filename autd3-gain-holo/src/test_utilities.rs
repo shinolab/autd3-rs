@@ -227,6 +227,11 @@ impl<const N: usize, B: LinAlgBackend> LinAlgBackendTestHelper<N, B> {
         self.backend.from_slice_m(rows, cols, &v)
     }
 
+    fn make_zeros_m(&self, rows: usize, cols: usize) -> Result<B::MatrixX, HoloError> {
+        let v: Vec<f64> = vec![0.; rows * cols];
+        self.backend.from_slice_m(rows, cols, &v)
+    }
+
     fn make_random_cv(&self, size: usize) -> Result<B::VectorXc, HoloError> {
         let mut rng = rand::thread_rng();
         let real: Vec<f64> = (&mut rng)
@@ -1350,6 +1355,19 @@ impl<const N: usize, B: LinAlgBackend> LinAlgBackendTestHelper<N, B> {
             let a = self.make_random_cv(N)?;
             let b = self.make_random_cv(N)?;
             let mut c = self.make_random_cm(N, N)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            assert!(self
+                .backend
+                .gevv_c(Trans::NoTrans, Trans::NoTrans, alpha, &a, &b, beta, &mut c)
+                .is_err());
+        }
+
+        {
+            let a = self.make_random_cv(N)?;
+            let b = self.make_random_cv(N)?;
+            let mut c = self.make_random_cm(N, N)?;
             let cc = self.backend.clone_cm(&c)?;
 
             let alpha = Complex::new(rng.gen(), rng.gen());
@@ -1396,6 +1414,118 @@ impl<const N: usize, B: LinAlgBackend> LinAlgBackendTestHelper<N, B> {
                 assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
             });
         }
+
+        {
+            let a = self.make_random_cv(N)?;
+            let b = self.make_random_cv(N)?;
+            let mut c = self.make_random_cm(1, 1)?;
+            let cc = self.backend.clone_cm(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            self.backend
+                .gevv_c(Trans::Trans, Trans::NoTrans, alpha, &a, &b, beta, &mut c)?;
+
+            let a = self.backend.to_host_cv(a)?;
+            let b = self.backend.to_host_cv(b)?;
+            let c = self.backend.to_host_cm(c)?;
+            let cc = self.backend.to_host_cm(cc)?;
+            let expected = a.transpose() * b * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+
+        {
+            let a = self.make_random_cv(N)?;
+            let b = self.make_random_cv(N)?;
+            let mut c = self.make_random_cm(N, N)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            assert!(self
+                .backend
+                .gevv_c(Trans::Trans, Trans::Trans, alpha, &a, &b, beta, &mut c)
+                .is_err());
+        }
+
+        {
+            let a = self.make_random_cv(N)?;
+            let b = self.make_random_cv(N)?;
+            let mut c = self.make_random_cm(N, N)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            assert!(self
+                .backend
+                .gevv_c(Trans::Trans, Trans::ConjTrans, alpha, &a, &b, beta, &mut c)
+                .is_err());
+        }
+
+        {
+            let a = self.make_random_cv(N)?;
+            let b = self.make_random_cv(N)?;
+            let mut c = self.make_random_cm(1, 1)?;
+            let cc = self.backend.clone_cm(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            self.backend.gevv_c(
+                Trans::ConjTrans,
+                Trans::NoTrans,
+                alpha,
+                &a,
+                &b,
+                beta,
+                &mut c,
+            )?;
+
+            let a = self.backend.to_host_cv(a)?;
+            let b = self.backend.to_host_cv(b)?;
+            let c = self.backend.to_host_cm(c)?;
+            let cc = self.backend.to_host_cm(cc)?;
+            let expected = a.adjoint() * b * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+
+        {
+            let a = self.make_random_cv(N)?;
+            let b = self.make_random_cv(N)?;
+            let mut c = self.make_random_cm(N, N)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            assert!(self
+                .backend
+                .gevv_c(Trans::ConjTrans, Trans::Trans, alpha, &a, &b, beta, &mut c)
+                .is_err());
+        }
+
+        {
+            let a = self.make_random_cv(N)?;
+            let b = self.make_random_cv(N)?;
+            let mut c = self.make_random_cm(N, N)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            assert!(self
+                .backend
+                .gevv_c(
+                    Trans::ConjTrans,
+                    Trans::ConjTrans,
+                    alpha,
+                    &a,
+                    &b,
+                    beta,
+                    &mut c,
+                )
+                .is_err());
+        }
+
         Ok(())
     }
 
@@ -1740,61 +1870,79 @@ impl<const N: usize, B: LinAlgBackend> LinAlgBackendTestHelper<N, B> {
     }
 
     fn test_solve_inplace(&self) -> Result<(), HoloError> {
-        let tmp = self.make_random_m(N, N)?;
-        let tmp = self.backend.to_host_m(tmp)?;
+        {
+            let tmp = self.make_random_m(N, N)?;
+            let tmp = self.backend.to_host_m(tmp)?;
 
-        let a = &tmp * tmp.adjoint();
+            let a = &tmp * tmp.adjoint();
 
-        let mut rng = rand::thread_rng();
-        let x = VectorX::from_iterator(N, (0..N).map(|_| rng.gen()));
+            let mut rng = rand::thread_rng();
+            let x = VectorX::from_iterator(N, (0..N).map(|_| rng.gen()));
 
-        let b = &a * &x;
+            let b = &a * &x;
 
-        let aa = self.backend.from_slice_m(N, N, a.as_slice())?;
-        let mut bb = self.backend.from_slice_v(b.as_slice())?;
+            let aa = self.backend.from_slice_m(N, N, a.as_slice())?;
+            let mut bb = self.backend.from_slice_v(b.as_slice())?;
 
-        self.backend.solve_inplace(&aa, &mut bb)?;
+            self.backend.solve_inplace(&aa, &mut bb)?;
 
-        let b = self.backend.to_host_v(bb)?;
-        b.iter().zip(x.iter()).for_each(|(b, x)| {
-            assert_approx_eq::assert_approx_eq!(b, x, 0.1);
-        });
+            let b = self.backend.to_host_v(bb)?;
+            b.iter().zip(x.iter()).for_each(|(b, x)| {
+                assert_approx_eq::assert_approx_eq!(b, x, 0.1);
+            });
+        }
+
+        {
+            let aa = self.make_zeros_m(N, N)?;
+            let mut bb = self.backend.alloc_zeros_v(N)?;
+            assert!(self.backend.solve_inplace(&aa, &mut bb).is_err());
+        }
+
         Ok(())
     }
 
     fn test_solve_inplace_h(&self) -> Result<(), HoloError> {
-        let tmp = self.make_random_cm(N, N)?;
-        let mut a = self.backend.alloc_zeros_cm(N, N)?;
-        self.backend.gemm_c(
-            Trans::NoTrans,
-            Trans::ConjTrans,
-            Complex::new(1., 0.),
-            &tmp,
-            &tmp,
-            Complex::new(0., 0.),
-            &mut a,
-        )?;
+        {
+            let tmp = self.make_random_cm(N, N)?;
+            let mut a = self.backend.alloc_zeros_cm(N, N)?;
+            self.backend.gemm_c(
+                Trans::NoTrans,
+                Trans::ConjTrans,
+                Complex::new(1., 0.),
+                &tmp,
+                &tmp,
+                Complex::new(0., 0.),
+                &mut a,
+            )?;
 
-        let x = self.make_random_cv(N)?;
+            let x = self.make_random_cv(N)?;
 
-        let mut b = self.backend.alloc_zeros_cv(N)?;
-        self.backend.gemv_c(
-            Trans::NoTrans,
-            Complex::new(1., 0.),
-            &a,
-            &x,
-            Complex::new(0., 0.),
-            &mut b,
-        )?;
+            let mut b = self.backend.alloc_zeros_cv(N)?;
+            self.backend.gemv_c(
+                Trans::NoTrans,
+                Complex::new(1., 0.),
+                &a,
+                &x,
+                Complex::new(0., 0.),
+                &mut b,
+            )?;
 
-        self.backend.solve_inplace_h(a, &mut b)?;
+            self.backend.solve_inplace_h(a, &mut b)?;
 
-        let x = self.backend.to_host_cv(x)?;
-        let b = self.backend.to_host_cv(b)?;
-        b.iter().zip(x.iter()).for_each(|(b, x)| {
-            assert_approx_eq::assert_approx_eq!(b.re, x.re, 0.1);
-            assert_approx_eq::assert_approx_eq!(b.im, x.im, 0.1);
-        });
+            let x = self.backend.to_host_cv(x)?;
+            let b = self.backend.to_host_cv(b)?;
+            b.iter().zip(x.iter()).for_each(|(b, x)| {
+                assert_approx_eq::assert_approx_eq!(b.re, x.re, 0.1);
+                assert_approx_eq::assert_approx_eq!(b.im, x.im, 0.1);
+            });
+        }
+
+        {
+            let a = self.backend.alloc_zeros_cm(N, N)?;
+            let mut b = self.backend.alloc_zeros_cv(N)?;
+            assert!(self.backend.solve_inplace_h(a, &mut b).is_err());
+        }
+
         Ok(())
     }
 
