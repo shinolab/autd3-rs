@@ -1,7 +1,7 @@
 mod builder;
 mod group;
 
-use std::{hash::Hash, time::Duration};
+use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
     datagram::{Clear, ConfigureSilencer, Datagram},
@@ -42,7 +42,7 @@ impl Controller<Nop> {
 
 impl<L: Link> Controller<L> {
     #[must_use]
-    pub fn group<K: Hash + Eq + Clone, F: Fn(&Device) -> Option<K>>(
+    pub fn group<K: Hash + Eq + Clone + Debug, F: Fn(&Device) -> Option<K>>(
         &mut self,
         f: F,
     ) -> GroupGuard<K, L, F> {

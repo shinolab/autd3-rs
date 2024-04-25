@@ -1,4 +1,9 @@
-use std::{collections::HashMap, hash::Hash, time::Duration};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Debug,
+    hash::Hash,
+    time::Duration,
+};
 
 use autd3_driver::{
     datagram::Datagram,
@@ -13,14 +18,16 @@ use super::Link;
 type OpMap<K> = HashMap<K, (Box<dyn Operation>, Box<dyn Operation>)>;
 
 #[allow(clippy::type_complexity)]
-pub struct GroupGuard<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> {
+pub struct GroupGuard<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>> {
     pub(crate) cnt: &'a mut Controller<L>,
     pub(crate) f: F,
     pub(crate) timeout: Option<Duration>,
     pub(crate) op: OpMap<K>,
 }
 
-impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<'a, K, L, F> {
+impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
+    GroupGuard<'a, K, L, F>
+{
     pub(crate) fn new(cnt: &'a mut Controller<L>, f: F) -> Self {
         Self {
             cnt,
@@ -49,32 +56,47 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
         timeout: Option<Duration>,
     ) -> Result<Self, AUTDInternalError> {
         self.timeout = match (self.timeout, timeout) {
-            (None, None) => None,
-            (None, Some(t)) | (Some(t), None) => Some(t),
             (Some(t1), Some(t2)) => Some(t1.max(t2)),
+            (a, b) => a.or(b),
         };
         self.op.insert(k, (op1, op2));
         Ok(self)
     }
 
-    fn push_enable_flags(&self) -> Vec<bool> {
-        self.cnt
+    pub async fn send(mut self) -> Result<bool, AUTDInternalError> {
+        let enable_flags_store = self
+            .cnt
             .geometry
             .iter()
             .map(|dev| dev.enable)
-            .collect::<Vec<_>>()
-    }
+            .collect::<Vec<_>>();
 
-    fn pop_enable_flags(&mut self, enable_flags_store: Vec<bool>) {
-        self.cnt
+        let specified_keys = self.op.keys().cloned().collect::<HashSet<_>>();
+        let provided_keys = self
+            .cnt
             .geometry
-            .iter_mut()
-            .zip(enable_flags_store.iter())
-            .for_each(|(dev, &enable)| dev.enable = enable);
-    }
+            .devices()
+            .filter_map(|dev| (self.f)(dev))
+            .collect::<HashSet<_>>();
 
-    fn get_enable_flags_map(&self) -> HashMap<K, Vec<bool>> {
-        self.op
+        let unknown_keys = specified_keys
+            .difference(&provided_keys)
+            .collect::<Vec<_>>();
+        if !unknown_keys.is_empty() {
+            return Err(AUTDInternalError::UnkownKey(format!("{:?}", unknown_keys)));
+        }
+        let unspecified_keys = provided_keys
+            .difference(&specified_keys)
+            .collect::<Vec<_>>();
+        if !unspecified_keys.is_empty() {
+            return Err(AUTDInternalError::UnspecifiedKey(format!(
+                "{:?}",
+                unspecified_keys
+            )));
+        }
+
+        let enable_flags_map = self
+            .op
             .keys()
             .map(|k| {
                 (
@@ -86,26 +108,22 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
                         .collect(),
                 )
             })
-            .collect()
-    }
+            .collect();
 
-    fn set_enable_flag(geometry: &mut Geometry, k: &K, enable_flags: &HashMap<K, Vec<bool>>) {
-        geometry.iter_mut().for_each(|dev| {
-            dev.enable = enable_flags[k][dev.idx()];
-        });
-    }
-
-    pub async fn send(mut self) -> Result<bool, AUTDInternalError> {
-        let enable_flags_store = self.push_enable_flags();
-        let enable_flags_map = self.get_enable_flags_map();
+        let set_enable_flag =
+            |geometry: &mut Geometry, k: &K, enable_flags: &HashMap<K, Vec<bool>>| {
+                geometry.iter_mut().for_each(|dev| {
+                    dev.enable = enable_flags[k][dev.idx()];
+                });
+            };
 
         self.op.iter_mut().try_for_each(|(k, (op1, op2))| {
-            Self::set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
+            set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
             OperationHandler::init(op1, op2, &self.cnt.geometry)
         })?;
         let r = loop {
             self.op.iter_mut().try_for_each(|(k, (op1, op2))| {
-                Self::set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
+                set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
                 if OperationHandler::is_finished(op1, op2, &self.cnt.geometry) {
                     return Ok(());
                 }
@@ -124,7 +142,7 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
                 break false;
             }
             if self.op.iter_mut().all(|(k, (op1, op2))| {
-                Self::set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
+                set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
                 OperationHandler::is_finished(op1, op2, &self.cnt.geometry)
             }) {
                 break true;
@@ -132,7 +150,11 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
             tokio::time::sleep_until(start + Duration::from_millis(1)).await;
         };
 
-        self.pop_enable_flags(enable_flags_store);
+        self.cnt
+            .geometry
+            .iter_mut()
+            .zip(enable_flags_store.iter())
+            .for_each(|(dev, &enable)| dev.enable = enable);
 
         Ok(r)
     }
@@ -143,6 +165,7 @@ mod tests {
     use autd3_driver::{
         datagram::{ChangeFocusSTMSegment, GainSTM},
         derive::{Gain, GainFilter, Modulation, Segment, TransitionMode},
+        error::AUTDInternalError,
     };
 
     use crate::{
@@ -153,22 +176,27 @@ mod tests {
 
     #[tokio::test]
     async fn test_group() -> anyhow::Result<()> {
-        let mut autd = create_controller(3).await?;
+        let mut autd = create_controller(4).await?;
 
-        autd.group(|dev| Some(dev.idx()))
-            .set(0, Null::new())?
-            .set(1, (Static::with_intensity(0x80), Null::new()))?
-            .set(
-                2,
-                (
-                    Sine::new(150),
-                    GainSTM::from_freq(1.0)
-                        .add_gain(Uniform::new(0x80))?
-                        .add_gain(Uniform::new(0x81))?,
-                ),
-            )?
-            .send()
-            .await?;
+        autd.send(Uniform::new(0xFF)).await?;
+
+        autd.group(|dev| match dev.idx() {
+            0 | 1 | 3 => Some(dev.idx()),
+            _ => None,
+        })
+        .set(0, Null::new())?
+        .set(1, (Static::with_intensity(0x80), Null::new()))?
+        .set(
+            3,
+            (
+                Sine::new(150),
+                GainSTM::from_freq(1.0)
+                    .add_gain(Uniform::new(0x80))?
+                    .add_gain(Uniform::new(0x81))?,
+            ),
+        )?
+        .send()
+        .await?;
 
         assert_eq!(
             Null::new().calc(&autd.geometry, GainFilter::All)?[&0],
@@ -185,16 +213,21 @@ mod tests {
         );
 
         assert_eq!(
-            Sine::new(150).calc()?,
-            autd.link[2].fpga().modulation(Segment::S0)
-        );
-        assert_eq!(
-            Uniform::new(0x80).calc(&autd.geometry, GainFilter::All)?[&1],
+            Uniform::new(0xFF).calc(&autd.geometry, GainFilter::All)?[&2],
             autd.link[2].fpga().drives(Segment::S0, 0)
         );
+
         assert_eq!(
-            Uniform::new(0x81).calc(&autd.geometry, GainFilter::All)?[&1],
-            autd.link[2].fpga().drives(Segment::S0, 1)
+            Sine::new(150).calc()?,
+            autd.link[3].fpga().modulation(Segment::S0)
+        );
+        assert_eq!(
+            Uniform::new(0x80).calc(&autd.geometry, GainFilter::All)?[&3],
+            autd.link[3].fpga().drives(Segment::S0, 0)
+        );
+        assert_eq!(
+            Uniform::new(0x81).calc(&autd.geometry, GainFilter::All)?[&3],
+            autd.link[3].fpga().drives(Segment::S0, 1)
         );
 
         Ok(())
@@ -258,6 +291,37 @@ mod tests {
 
         assert!(!check.lock().unwrap()[0]);
         assert!(check.lock().unwrap()[1]);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn unknown_key() -> anyhow::Result<()> {
+        let mut autd = create_controller(2).await?;
+
+        assert_eq!(
+            Err(AUTDInternalError::UnkownKey("[2]".to_owned())),
+            autd.group(|dev| Some(dev.idx()))
+                .set(0, Null::new())?
+                .set(2, Null::new())?
+                .send()
+                .await
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn unspecified_key() -> anyhow::Result<()> {
+        let mut autd = create_controller(2).await?;
+
+        assert_eq!(
+            Err(AUTDInternalError::UnspecifiedKey("[1]".to_owned())),
+            autd.group(|dev| Some(dev.idx()))
+                .set(0, Null::new())?
+                .send()
+                .await
+        );
 
         Ok(())
     }

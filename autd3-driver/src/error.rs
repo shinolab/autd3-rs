@@ -25,6 +25,11 @@ pub enum AUTDInternalError {
     )]
     SilencerCompletionStepsOutOfRange(u16),
 
+    #[error("Unknown group key: {0}")]
+    UnkownKey(String),
+    #[error("Unspecified group key: {0}")]
+    UnspecifiedKey(String),
+
     #[error("Sampling frequency division ({0}) is out of range ([{1}, {2}])")]
     SamplingFreqDivOutOfRange(u32, u32, u32),
     #[error("Sampling frequency ({0}) is out of range ([{1}, {2}])")]

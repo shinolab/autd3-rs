@@ -8,7 +8,8 @@ pub use crate::{
 pub use autd3_derive::Gain;
 
 use std::{
-    collections::{hash_map::Entry, HashMap},
+    collections::{hash_map::Entry, HashMap, HashSet},
+    fmt::Debug,
     hash::Hash,
 };
 
@@ -17,7 +18,7 @@ use bitvec::prelude::*;
 #[derive(Gain)]
 pub struct Group<K, F>
 where
-    K: Hash + Eq + Clone + 'static,
+    K: Hash + Eq + Clone + Debug + 'static,
     F: Fn(&Device, &Transducer) -> Option<K> + 'static,
 {
     f: F,
@@ -26,7 +27,7 @@ where
 
 impl<K, F> Group<K, F>
 where
-    K: Hash + Eq + Clone + 'static,
+    K: Hash + Eq + Clone + Debug + 'static,
     F: Fn(&Device, &Transducer) -> Option<K> + 'static,
 {
     /// Group by transducer
@@ -100,7 +101,7 @@ where
 
 impl<K, F> Gain for Group<K, F>
 where
-    K: Hash + Eq + Clone + 'static,
+    K: Hash + Eq + Clone + Debug + 'static,
     F: Fn(&Device, &Transducer) -> Option<K> + 'static,
 {
     fn calc(
@@ -109,21 +110,36 @@ where
         _filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
         let filters = self.get_filters(geometry);
-        let drives_cache =
-            self.gain_map
-                .iter()
-                .map(|(k, g)| {
-                    Ok((
-                        k.clone(),
-                        g.calc(
-                            geometry,
-                            GainFilter::Filter(filters.get(k).ok_or(
-                                AUTDInternalError::GainError("Unknown group key".to_owned()),
-                            )?),
-                        )?,
-                    ))
-                })
-                .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?;
+
+        let specified_keys = self.gain_map.keys().cloned().collect::<HashSet<_>>();
+        let provided_keys = filters.keys().cloned().collect::<HashSet<_>>();
+
+        let unknown_keys = specified_keys
+            .difference(&provided_keys)
+            .collect::<Vec<_>>();
+        if !unknown_keys.is_empty() {
+            return Err(AUTDInternalError::UnkownKey(format!("{:?}", unknown_keys)));
+        }
+        let unspecified_keys = provided_keys
+            .difference(&specified_keys)
+            .collect::<Vec<_>>();
+        if !unspecified_keys.is_empty() {
+            return Err(AUTDInternalError::UnspecifiedKey(format!(
+                "{:?}",
+                unspecified_keys
+            )));
+        }
+
+        let drives_cache = self
+            .gain_map
+            .iter()
+            .map(|(k, g)| {
+                Ok((
+                    k.clone(),
+                    g.calc(geometry, GainFilter::Filter(&filters[&k]))?,
+                ))
+            })
+            .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?;
         geometry
             .devices()
             .map(|dev| {
@@ -132,18 +148,11 @@ where
                     dev.iter()
                         .map(|tr| {
                             (self.f)(dev, tr).map_or_else(
-                                || Ok(Drive::null()),
-                                |key| {
-                                    drives_cache
-                                        .get(&key)
-                                        .ok_or(AUTDInternalError::GainError(
-                                            "Unspecified group key".to_owned(),
-                                        ))
-                                        .map(|g| g[&dev.idx()][tr.idx()])
-                                },
+                                || Drive::null(),
+                                |key| drives_cache[&key][&dev.idx()][tr.idx()],
                             )
                         })
-                        .collect::<Result<Vec<_>, AUTDInternalError>>()?,
+                        .collect::<Vec<_>>(),
                 ))
             })
             .collect()
@@ -224,7 +233,7 @@ mod tests {
         .set("test2", NullGain {});
 
         assert_eq!(
-            Err(AUTDInternalError::GainError("Unknown group key".to_owned())),
+            Err(AUTDInternalError::UnkownKey("[\"test2\"]".to_owned())),
             gain.calc(&geometry, GainFilter::All)
         );
     }
@@ -241,9 +250,7 @@ mod tests {
         .set("test", NullGain {});
 
         assert_eq!(
-            Err(AUTDInternalError::GainError(
-                "Unspecified group key".to_owned()
-            )),
+            Err(AUTDInternalError::UnspecifiedKey("[\"null\"]".to_owned())),
             gain.calc(&geometry, GainFilter::All)
         );
     }
