@@ -105,6 +105,7 @@ mod tests {
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Sdp(g)),
+                ..
             })) => {
                 let holo2 = autd3_gain_holo::SDP::from_msg(&g).unwrap();
                 assert_approx_eq::assert_approx_eq!(holo.alpha(), holo2.alpha());

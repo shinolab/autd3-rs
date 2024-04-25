@@ -113,6 +113,7 @@ mod tests {
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Lm(g)),
+                ..
             })) => {
                 let holo2 = autd3_gain_holo::LM::from_msg(&g).unwrap();
                 assert_approx_eq::assert_approx_eq!(holo.eps_1(), holo2.eps_1());

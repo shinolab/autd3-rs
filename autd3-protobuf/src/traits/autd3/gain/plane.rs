@@ -64,7 +64,7 @@ impl FromMessage<Plane> for autd3::gain::Plane {
 mod tests {
     use super::*;
     use autd3_driver::{
-        fpga::{EmitIntensity, Phase},
+        firmware::fpga::{EmitIntensity, Phase},
         geometry::Vector3,
     };
     use rand::Rng;
@@ -75,19 +75,20 @@ mod tests {
 
         let g = autd3::gain::Plane::new(Vector3::new(rng.gen(), rng.gen(), rng.gen()))
             .with_intensity(EmitIntensity::new(rng.gen()))
-            .with_phase(Phase::new(rng.gen()));
+            .with_phase_offset(Phase::new(rng.gen()));
         let msg = g.to_msg(None);
 
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Plane(gain)),
+                ..
             })) => {
                 let g2 = autd3::gain::Plane::from_msg(&gain).unwrap();
                 assert_approx_eq::assert_approx_eq!(g.dir().x, g2.dir().x);
                 assert_approx_eq::assert_approx_eq!(g.dir().y, g2.dir().y);
                 assert_approx_eq::assert_approx_eq!(g.dir().z, g2.dir().z);
                 assert_eq!(g.intensity(), g2.intensity());
-                assert_eq!(g.phase(), g2.phase());
+                assert_eq!(g.phase_offset(), g2.phase_offset());
             }
             _ => panic!("unexpected datagram type"),
         }

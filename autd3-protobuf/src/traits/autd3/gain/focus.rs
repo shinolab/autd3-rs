@@ -63,7 +63,7 @@ impl FromMessage<Focus> for autd3::gain::Focus {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::{fpga::EmitIntensity, geometry::Vector3};
+    use autd3_driver::{firmware::fpga::EmitIntensity, geometry::Vector3};
     use rand::Rng;
 
     #[test]
@@ -77,6 +77,7 @@ mod tests {
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Focus(gain)),
+                ..
             })) => {
                 let g2 = autd3::gain::Focus::from_msg(&gain).unwrap();
                 assert_approx_eq::assert_approx_eq!(g.pos().x, g2.pos().x);

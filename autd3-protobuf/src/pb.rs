@@ -1270,7 +1270,21 @@ pub struct Static {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct Sine {
+pub struct SineInt {
+    #[prost(message, optional, tag = "1")]
+    pub config: ::core::option::Option<SamplingConfiguration>,
+    #[prost(uint64, tag = "2")]
+    pub freq: u64,
+    #[prost(message, optional, tag = "3")]
+    pub intensity: ::core::option::Option<EmitIntensity>,
+    #[prost(message, optional, tag = "4")]
+    pub offset: ::core::option::Option<EmitIntensity>,
+    #[prost(message, optional, tag = "5")]
+    pub phase: ::core::option::Option<Phase>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SineFloat {
     #[prost(message, optional, tag = "1")]
     pub config: ::core::option::Option<SamplingConfiguration>,
     #[prost(float, tag = "2")]
@@ -1281,12 +1295,24 @@ pub struct Sine {
     pub offset: ::core::option::Option<EmitIntensity>,
     #[prost(message, optional, tag = "5")]
     pub phase: ::core::option::Option<Phase>,
-    #[prost(enumeration = "SamplingMode", tag = "6")]
-    pub mode: i32,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct Square {
+pub struct SquareInt {
+    #[prost(message, optional, tag = "1")]
+    pub config: ::core::option::Option<SamplingConfiguration>,
+    #[prost(uint64, tag = "2")]
+    pub freq: u64,
+    #[prost(message, optional, tag = "3")]
+    pub low: ::core::option::Option<EmitIntensity>,
+    #[prost(message, optional, tag = "4")]
+    pub high: ::core::option::Option<EmitIntensity>,
+    #[prost(float, tag = "5")]
+    pub duty: f32,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SquareFloat {
     #[prost(message, optional, tag = "1")]
     pub config: ::core::option::Option<SamplingConfiguration>,
     #[prost(float, tag = "2")]
@@ -1297,8 +1323,6 @@ pub struct Square {
     pub high: ::core::option::Option<EmitIntensity>,
     #[prost(float, tag = "5")]
     pub duty: f32,
-    #[prost(enumeration = "SamplingMode", tag = "6")]
-    pub mode: i32,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1309,7 +1333,7 @@ pub struct Modulation {
     pub transition_mode: ::core::option::Option<i32>,
     #[prost(uint64, optional, tag = "1003")]
     pub transition_value: ::core::option::Option<u64>,
-    #[prost(oneof = "modulation::Modulation", tags = "1, 2, 4")]
+    #[prost(oneof = "modulation::Modulation", tags = "1, 2, 3, 4, 5")]
     pub modulation: ::core::option::Option<modulation::Modulation>,
 }
 /// Nested message and enum types in `Modulation`.
@@ -1320,35 +1344,13 @@ pub mod modulation {
         #[prost(message, tag = "1")]
         Static(super::Static),
         #[prost(message, tag = "2")]
-        Sine(super::Sine),
+        SineInt(super::SineInt),
+        #[prost(message, tag = "3")]
+        SineFloat(super::SineFloat),
         #[prost(message, tag = "4")]
-        Square(super::Square),
-    }
-}
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
-#[repr(i32)]
-pub enum SamplingMode {
-    ExactFreq = 0,
-    SizeOpt = 1,
-}
-impl SamplingMode {
-    /// String value of the enum field names used in the ProtoBuf definition.
-    ///
-    /// The values are not transformed in any way and thus are considered stable
-    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
-    pub fn as_str_name(&self) -> &'static str {
-        match self {
-            SamplingMode::ExactFreq => "EXACT_FREQ",
-            SamplingMode::SizeOpt => "SIZE_OPT",
-        }
-    }
-    /// Creates an enum from field names used in the ProtoBuf definition.
-    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
-        match value {
-            "EXACT_FREQ" => Some(Self::ExactFreq),
-            "SIZE_OPT" => Some(Self::SizeOpt),
-            _ => None,
-        }
+        SquareInt(super::SquareInt),
+        #[prost(message, tag = "5")]
+        SquareFloat(super::SquareFloat),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]

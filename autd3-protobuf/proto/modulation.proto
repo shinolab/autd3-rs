@@ -4,36 +4,47 @@ package autd3;
 
 import "utils.proto";
 
-enum SamplingMode {
-  EXACT_FREQ = 0;
-  SIZE_OPT = 1;
-}
-
 message Static { EmitIntensity intensity = 1; }
 
-message Sine {
+message SineInt {
+  SamplingConfiguration config = 1;
+  uint64 freq = 2;
+  EmitIntensity intensity = 3;
+  EmitIntensity offset = 4;
+  Phase phase = 5;
+}
+
+message SineFloat {
   SamplingConfiguration config = 1;
   float freq = 2;
   EmitIntensity intensity = 3;
   EmitIntensity offset = 4;
   Phase phase = 5;
-  SamplingMode mode = 6;
 }
 
-message Square {
+message SquareInt {
+  SamplingConfiguration config = 1;
+  uint64 freq = 2;
+  EmitIntensity low = 3;
+  EmitIntensity high = 4;
+  float duty = 5;
+}
+
+message SquareFloat {
   SamplingConfiguration config = 1;
   float freq = 2;
   EmitIntensity low = 3;
   EmitIntensity high = 4;
   float duty = 5;
-  SamplingMode mode = 6;
 }
 
 message Modulation {
   oneof modulation {
     Static static = 1;
-    Sine sine = 2;
-    Square square = 4;
+    SineInt sine_int = 2;
+    SineFloat sine_float = 3;
+    SquareInt square_int = 4;
+    SquareFloat square_float = 5;
   }
   Segment segment = 1001;
   optional TransitionMode transition_mode = 1002;

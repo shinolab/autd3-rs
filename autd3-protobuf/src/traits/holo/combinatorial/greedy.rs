@@ -93,6 +93,7 @@ mod tests {
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Greedy(g)),
+                ..
             })) => {
                 let holo2 = autd3_gain_holo::Greedy::from_msg(&g).unwrap();
                 assert_eq!(holo.phase_div(), holo2.phase_div());

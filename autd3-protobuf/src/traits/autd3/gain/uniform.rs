@@ -72,6 +72,7 @@ mod tests {
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Uniform(gain)),
+                ..
             })) => {
                 let g2 = autd3::gain::Uniform::from_msg(&gain).unwrap();
                 assert_eq!(g.intensity(), g2.intensity());
