@@ -32,3 +32,4 @@ async-trait = ["autd3-driver/async-trait"]
 [dev-dependencies]
 assert_approx_eq = { workspace = true }
 rand = { workspace = true }
+rstest = { workspace = true }
