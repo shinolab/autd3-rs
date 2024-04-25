@@ -272,10 +272,10 @@ mod tests {
 
     #[test]
     fn dc_sys_time() {
-        let mut rng = rand::thread_rng();
         let mut cpu = CPUEmulator::new(0, 249);
 
-        cpu.set_dc_sys_time(DcSysTime::now() + std::time::Duration::from_nanos(rng.gen()));
-        assert_eq!(cpu.dc_sys_time(), cpu.dc_sys_time());
+        let sys_time = DcSysTime::now() + std::time::Duration::from_nanos(1111);
+        cpu.set_dc_sys_time(sys_time);
+        assert_eq!(sys_time, cpu.dc_sys_time());
     }
 }
