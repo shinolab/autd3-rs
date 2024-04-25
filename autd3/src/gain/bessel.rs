@@ -70,7 +70,7 @@ impl Gain for Bessel {
 mod tests {
     use rand::Rng;
 
-    use autd3_driver::{defined::PI ,datagram::Datagram};
+    use autd3_driver::{datagram::Datagram, defined::PI};
 
     use super::*;
 
@@ -100,11 +100,11 @@ mod tests {
                     let dir = dir.normalize();
                     let v = Vector3::new(dir.y, -dir.x, 0.);
                     let theta_v = v.norm().asin();
-                    let rot = if let Some(v) = v.try_normalize(1.0e-6) {
-                        UnitQuaternion::from_scaled_axis(v * -theta_v)
-                    } else {
-                        UnitQuaternion::identity()
-                    };
+                    let rot = v
+                        .try_normalize(1.0e-6)
+                        .map_or_else(UnitQuaternion::identity, |v| {
+                            UnitQuaternion::from_scaled_axis(v * -theta_v)
+                        });
                     let r = tr.position() - pos;
                     let r = rot * r;
                     let dist = theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - theta.cos() * r.z;

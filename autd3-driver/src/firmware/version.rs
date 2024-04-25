@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// Firmware information
 pub struct FirmwareVersion {
     idx: usize,
@@ -14,8 +14,7 @@ pub struct FirmwareVersion {
 impl FirmwareVersion {
     pub const LATEST_VERSION_NUM_MAJOR: u8 = 0x91;
     pub const LATEST_VERSION_NUM_MINOR: u8 = 0x00;
-
-    const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
+    pub const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
 
     #[doc(hidden)]
     pub const fn new(
