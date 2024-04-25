@@ -64,6 +64,7 @@ mod tests {
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::Static(modulation)),
+                ..
             })) => {
                 let m2 = autd3::modulation::Static::from_msg(&modulation).unwrap();
                 assert_eq!(m.intensity(), m2.intensity());

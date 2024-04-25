@@ -5,20 +5,19 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3::modulation::Square {
+impl ToMessage for autd3::modulation::Square<f64> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::Square(Square {
+                modulation: Some(modulation::Modulation::SquareFloat(SquareFloat {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq() as _,
                     high: Some(self.high().to_msg(None)),
                     low: Some(self.low().to_msg(None)),
                     duty: self.duty() as _,
-                    mode: SamplingMode::from(self.mode()).into(),
                 })),
                 segment: Segment::S0 as _,
                 transition_mode: Some(TransitionMode::SyncIdx.into()),
@@ -28,20 +27,19 @@ impl ToMessage for autd3::modulation::Square {
     }
 }
 
-impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::modulation::Square> {
+impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::modulation::Square<f64>> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::Square(Square {
+                modulation: Some(modulation::Modulation::SquareFloat(SquareFloat {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq() as _,
                     high: Some(self.high().to_msg(None)),
                     low: Some(self.low().to_msg(None)),
                     duty: self.duty() as _,
-                    mode: SamplingMode::from(self.mode()).into(),
                 })),
                 segment: self.segment() as _,
                 transition_mode: self.transition_mode().map(|m| m.mode() as _),
@@ -51,9 +49,9 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::modulation
     }
 }
 
-impl FromMessage<Square> for autd3::modulation::Square {
+impl FromMessage<SquareFloat> for autd3::modulation::Square<f64> {
     #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &Square) -> Option<Self> {
+    fn from_msg(msg: &SquareFloat) -> Option<Self> {
         Some(
             Self::new(msg.freq as _)
                 .with_high(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
@@ -67,10 +65,7 @@ impl FromMessage<Square> for autd3::modulation::Square {
                     autd3_driver::firmware::fpga::SamplingConfiguration::from_msg(
                         msg.config.as_ref()?,
                     )?,
-                )
-                .with_mode(autd3::modulation::SamplingMode::from(
-                    SamplingMode::try_from(msg.mode).ok()?,
-                )),
+                ),
         )
     }
 }
@@ -82,26 +77,25 @@ mod tests {
     use rand::Rng;
 
     #[test]
-    fn test_sine() {
+    fn test_square() {
         let mut rng = rand::thread_rng();
 
-        let m = autd3::modulation::Square::new(rng.gen())
+        let m = autd3::modulation::Square::<f64>::new(rng.gen())
             .with_high(EmitIntensity::new(rng.gen()))
             .with_low(EmitIntensity::new(rng.gen()))
-            .with_duty(rng.gen())
-            .with_mode(autd3::modulation::SamplingMode::SizeOptimized);
+            .with_duty(rng.gen());
         let msg = m.to_msg(None);
 
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::Square(modulation)),
+                modulation: Some(modulation::Modulation::SquareFloat(modulation)),
+                ..
             })) => {
-                let m2 = autd3::modulation::Square::from_msg(&modulation).unwrap();
+                let m2 = autd3::modulation::Square::<f64>::from_msg(&modulation).unwrap();
                 assert_approx_eq::assert_approx_eq!(m.freq(), m2.freq());
                 assert_eq!(m.high(), m2.high());
                 assert_eq!(m.low(), m2.low());
                 assert_approx_eq::assert_approx_eq!(m.duty(), m2.duty());
-                assert_eq!(m.mode(), m2.mode());
             }
             _ => panic!("unexpected datagram type"),
         }

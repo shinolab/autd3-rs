@@ -5,20 +5,19 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3::modulation::Sine {
+impl ToMessage for autd3::modulation::Sine<f64> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::Sine(Sine {
+                modulation: Some(modulation::Modulation::SineFloat(SineFloat {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq() as _,
                     intensity: Some(self.intensity().to_msg(None)),
                     offset: Some(self.offset().to_msg(None)),
                     phase: Some(self.phase().to_msg(None)),
-                    mode: SamplingMode::from(self.mode()).into(),
                 })),
                 segment: Segment::S0 as _,
                 transition_mode: Some(TransitionMode::SyncIdx.into()),
@@ -28,20 +27,19 @@ impl ToMessage for autd3::modulation::Sine {
     }
 }
 
-impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::modulation::Sine> {
+impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::modulation::Sine<f64>> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::Sine(Sine {
+                modulation: Some(modulation::Modulation::SineFloat(SineFloat {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq() as _,
                     intensity: Some(self.intensity().to_msg(None)),
                     offset: Some(self.offset().to_msg(None)),
                     phase: Some(self.phase().to_msg(None)),
-                    mode: SamplingMode::from(self.mode()).into(),
                 })),
                 segment: self.segment() as _,
                 transition_mode: self.transition_mode().map(|m| m.mode() as _),
@@ -51,9 +49,9 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::modulation
     }
 }
 
-impl FromMessage<Sine> for autd3::modulation::Sine {
+impl FromMessage<SineFloat> for autd3::modulation::Sine<f64> {
     #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &Sine) -> Option<Self> {
+    fn from_msg(msg: &SineFloat) -> Option<Self> {
         Some(
             Self::new(msg.freq as _)
                 .with_intensity(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
@@ -69,10 +67,7 @@ impl FromMessage<Sine> for autd3::modulation::Sine {
                     autd3_driver::firmware::fpga::SamplingConfiguration::from_msg(
                         msg.config.as_ref()?,
                     )?,
-                )
-                .with_mode(autd3::modulation::SamplingMode::from(
-                    SamplingMode::try_from(msg.mode).ok()?,
-                )),
+                ),
         )
     }
 }
@@ -87,23 +82,22 @@ mod tests {
     fn test_sine() {
         let mut rng = rand::thread_rng();
 
-        let m = autd3::modulation::Sine::new(rng.gen())
+        let m = autd3::modulation::Sine::<f64>::new(rng.gen())
             .with_intensity(EmitIntensity::new(rng.gen()))
             .with_offset(EmitIntensity::new(rng.gen()))
-            .with_phase(Phase::new(rng.gen()))
-            .with_mode(autd3::modulation::SamplingMode::SizeOptimized);
+            .with_phase(Phase::new(rng.gen()));
         let msg = m.to_msg(None);
 
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::Sine(modulation)),
+                modulation: Some(modulation::Modulation::SineFloat(modulation)),
+                ..
             })) => {
-                let m2 = autd3::modulation::Sine::from_msg(&modulation).unwrap();
+                let m2 = autd3::modulation::Sine::<f64>::from_msg(&modulation).unwrap();
                 assert_approx_eq::assert_approx_eq!(m.freq(), m2.freq());
                 assert_eq!(m.intensity(), m2.intensity());
                 assert_eq!(m.offset(), m2.offset());
                 assert_eq!(m.phase(), m2.phase());
-                assert_eq!(m.mode(), m2.mode());
             }
             _ => panic!("unexpected datagram type"),
         }

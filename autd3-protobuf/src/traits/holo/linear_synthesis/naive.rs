@@ -93,6 +93,7 @@ mod tests {
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Naive(g)),
+                ..
             })) => {
                 let holo2 = autd3_gain_holo::Naive::from_msg(&g).unwrap();
                 assert_eq!(holo.constraint(), holo2.constraint());

@@ -54,6 +54,7 @@ mod tests {
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Null(gain)),
+                ..
             })) => {
                 let _ = autd3::gain::Null::from_msg(&gain).unwrap();
             }
