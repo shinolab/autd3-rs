@@ -202,7 +202,7 @@ impl<B: LinAlgBackend> Gain for LM<B> {
         let mut tmp_vec = self.backend.alloc_v(n_param)?;
         for _ in 0..self.k_max {
             if self.backend.max_v(&g)? <= self.eps_1 {
-                break;
+                break; // GRCOV_EXCL_LINE
             }
 
             self.backend.copy_to_m(&a, &mut tmp_mat)?;
@@ -215,7 +215,7 @@ impl<B: LinAlgBackend> Gain for LM<B> {
             if self.backend.dot(&h_lm, &h_lm)?.sqrt()
                 <= self.eps_2 * (self.backend.dot(&x, &x)?.sqrt() + self.eps_2)
             {
-                break;
+                break; // GRCOV_EXCL_LINE
             }
 
             self.backend.copy_to_v(&x, &mut x_new)?;

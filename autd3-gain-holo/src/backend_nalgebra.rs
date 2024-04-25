@@ -533,19 +533,19 @@ impl LinAlgBackend for NalgebraBackend {
     ) -> Result<(), HoloError> {
         match trans_a {
             crate::Trans::NoTrans => match trans_b {
-                crate::Trans::NoTrans => y.gemm(alpha, a, b, beta),
+                crate::Trans::NoTrans => return Err(HoloError::InvalidOperation),
                 crate::Trans::Trans => y.gemm(alpha, a, &b.transpose(), beta),
                 crate::Trans::ConjTrans => y.gemm(alpha, a, &b.adjoint(), beta),
             },
             crate::Trans::Trans => match trans_b {
                 crate::Trans::NoTrans => y.gemm_tr(alpha, a, b, beta),
-                crate::Trans::Trans => y.gemm_tr(alpha, a, &b.transpose(), beta),
-                crate::Trans::ConjTrans => y.gemm_tr(alpha, a, &b.adjoint(), beta),
+                crate::Trans::Trans => return Err(HoloError::InvalidOperation),
+                crate::Trans::ConjTrans => return Err(HoloError::InvalidOperation),
             },
             crate::Trans::ConjTrans => match trans_b {
                 crate::Trans::NoTrans => y.gemm_ad(alpha, a, b, beta),
-                crate::Trans::Trans => y.gemm_ad(alpha, a, &b.transpose(), beta),
-                crate::Trans::ConjTrans => y.gemm_ad(alpha, a, &b.adjoint(), beta),
+                crate::Trans::Trans => return Err(HoloError::InvalidOperation),
+                crate::Trans::ConjTrans => return Err(HoloError::InvalidOperation),
             },
         }
         Ok(())
