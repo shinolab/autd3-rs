@@ -7,21 +7,13 @@ pub struct Transducer {
     idx: usize,
     pos: Vector3,
     rot: UnitQuaternion,
-    #[cfg(feature = "variable_frequency")]
-    frequency: f64,
 }
 
 impl Transducer {
     /// Create transducer
     pub(crate) const fn new(idx: usize, pos: Vector3, rot: UnitQuaternion) -> Self {
         assert!(idx < 256);
-        Self {
-            idx,
-            pos,
-            rot,
-            #[cfg(feature = "variable_frequency")]
-            frequency: crate::defined::FREQUENCY_40K,
-        }
+        Self { idx, pos, rot }
     }
 
     /// Affine transformation
@@ -81,30 +73,7 @@ impl Transducer {
     pub const fn idx(&self) -> usize {
         self.idx
     }
-}
 
-#[cfg(feature = "variable_frequency")]
-impl Transducer {
-    pub(crate) fn set_frequency(&mut self, frequency: f64) {
-        self.frequency = frequency;
-    }
-
-    pub(crate) fn frequency(&self) -> f64 {
-        self.frequency
-    }
-
-    /// Get the wavelength of the transducer
-    pub fn wavelength(&self, sound_speed: f64) -> f64 {
-        sound_speed / self.frequency
-    }
-    /// Get the wavenumber of the transducer
-    pub fn wavenumber(&self, sound_speed: f64) -> f64 {
-        2.0 * PI * self.frequency / sound_speed
-    }
-}
-
-#[cfg(not(feature = "variable_frequency"))]
-impl Transducer {
     /// Get the wavelength of the transducer
     pub fn wavelength(&self, sound_speed: f64) -> f64 {
         sound_speed / crate::defined::ULTRASOUND_FREQUENCY
@@ -159,17 +128,6 @@ mod tests {
         assert_vec3_approx_eq!(expect_pos, tr.position());
     }
 
-    #[cfg(not(feature = "variable_frequency"))]
-    #[rstest::rstest]
-    #[test]
-    #[case(340e3)]
-    #[case(400e3)]
-    fn test_wavelength(#[case] c: f64) {
-        let tr = Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
-        assert_approx_eq!(c / crate::defined::ULTRASOUND_FREQUENCY, tr.wavelength(c));
-    }
-
-    #[cfg(not(feature = "variable_frequency"))]
     #[rstest::rstest]
     #[test]
     #[case(340e3)]
