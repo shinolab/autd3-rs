@@ -130,8 +130,8 @@ impl<L: Link> Controller<L> {
             &mut null_op,
             &mut self.link,
             &self.geometry,
-            &mut self.tx_buf,
-            &mut self.rx_buf
+            &mut self.tx_buf, // GRCOV_EXCL_LINE
+            &mut self.rx_buf  // GRCOV_EXCL_LINE
         );
         let cpu_versions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
@@ -140,8 +140,8 @@ impl<L: Link> Controller<L> {
             &mut null_op,
             &mut self.link,
             &self.geometry,
-            &mut self.tx_buf,
-            &mut self.rx_buf
+            &mut self.tx_buf, // GRCOV_EXCL_LINE
+            &mut self.rx_buf  // GRCOV_EXCL_LINE
         );
         let cpu_versions_minor = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
@@ -150,8 +150,8 @@ impl<L: Link> Controller<L> {
             &mut null_op,
             &mut self.link,
             &self.geometry,
-            &mut self.tx_buf,
-            &mut self.rx_buf
+            &mut self.tx_buf, // GRCOV_EXCL_LINE
+            &mut self.rx_buf  // GRCOV_EXCL_LINE
         );
         let fpga_versions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
@@ -160,8 +160,8 @@ impl<L: Link> Controller<L> {
             &mut null_op,
             &mut self.link,
             &self.geometry,
-            &mut self.tx_buf,
-            &mut self.rx_buf
+            &mut self.tx_buf, // GRCOV_EXCL_LINE
+            &mut self.rx_buf  // GRCOV_EXCL_LINE
         );
         let fpga_versions_minor = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
@@ -170,8 +170,8 @@ impl<L: Link> Controller<L> {
             &mut null_op,
             &mut self.link,
             &self.geometry,
-            &mut self.tx_buf,
-            &mut self.rx_buf
+            &mut self.tx_buf, // GRCOV_EXCL_LINE
+            &mut self.rx_buf  // GRCOV_EXCL_LINE
         );
         let fpga_functions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
@@ -180,8 +180,8 @@ impl<L: Link> Controller<L> {
             &mut null_op,
             &mut self.link,
             &self.geometry,
-            &mut self.tx_buf,
-            &mut self.rx_buf
+            &mut self.tx_buf, // GRCOV_EXCL_LINE
+            &mut self.rx_buf  // GRCOV_EXCL_LINE
         );
 
         Ok((0..self.geometry.num_devices())
@@ -233,12 +233,18 @@ impl<L: Link> Drop for Controller<L> {
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::{autd3_device::AUTD3, geometry::Vector3};
+    use autd3_driver::{
+        autd3_device::AUTD3,
+        datagram::GainSTM,
+        derive::{Gain, GainFilter, Segment},
+        geometry::Vector3,
+    };
 
-    use crate::link::Audit;
+    use crate::{link::Audit, prelude::*};
 
     use super::*;
 
+    // GRCOV_EXCL_START
     pub async fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit>> {
         Ok((0..dev_num)
             .fold(Controller::builder(), |acc, _i| {
@@ -246,5 +252,84 @@ mod tests {
             })
             .open(Audit::builder())
             .await?)
+    }
+    // GRCOV_EXCL_STOP
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_send() -> anyhow::Result<()> {
+        let mut autd = create_controller(1).await?;
+        assert!(
+            autd.send((
+                Sine::new(150.),
+                GainSTM::from_freq(1.0)
+                    .add_gain(Uniform::new(0x80))?
+                    .add_gain(Uniform::new(0x81))?,
+            ))
+            .await?
+        );
+
+        assert_eq!(
+            Sine::new(150.).calc()?,
+            autd.link[0].fpga().modulation(Segment::S0)
+        );
+        assert_eq!(
+            Uniform::new(0x80).calc(&autd.geometry, GainFilter::All)?[&0],
+            autd.link[0].fpga().drives(Segment::S0, 0)
+        );
+        assert_eq!(
+            Uniform::new(0x81).calc(&autd.geometry, GainFilter::All)?[&0],
+            autd.link[0].fpga().drives(Segment::S0, 1)
+        );
+
+        assert!(autd.close().await?);
+        assert!(autd.close().await?);
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_firmware_version() -> anyhow::Result<()> {
+        let mut autd = create_controller(1).await?;
+        assert_eq!(
+            vec![FirmwareVersion::new(
+                0,
+                FirmwareVersion::LATEST_VERSION_NUM_MAJOR,
+                FirmwareVersion::LATEST_VERSION_NUM_MINOR,
+                FirmwareVersion::LATEST_VERSION_NUM_MAJOR,
+                FirmwareVersion::LATEST_VERSION_NUM_MINOR,
+                FirmwareVersion::ENABLED_EMULATOR_BIT
+            )],
+            autd.firmware_version().await?
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_close() -> anyhow::Result<()> {
+        {
+            let mut autd = create_controller(1).await?;
+            assert!(autd.close().await?);
+            assert!(autd.close().await?);
+        }
+
+        {
+            let mut autd = create_controller(1).await?;
+            autd.link.break_down();
+            assert_eq!(
+                Err(AUTDError::Internal(AUTDInternalError::LinkError(
+                    "broken".to_owned()
+                ))),
+                autd.close().await
+            );
+        }
+
+        {
+            let mut autd = create_controller(1).await?;
+            autd.link.down();
+            assert!(!autd.close().await?);
+        }
+
+        Ok(())
     }
 }

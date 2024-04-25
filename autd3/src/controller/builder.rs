@@ -47,7 +47,7 @@ impl ControllerBuilder {
             geometry,
         };
         cnt.send((Clear::new(), Synchronize::new()).with_timeout(timeout))
-            .await?;
+            .await?; // GRCOV_EXCL_LINE
         Ok(cnt)
     }
 }

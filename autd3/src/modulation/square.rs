@@ -143,6 +143,14 @@ mod tests {
             )),
             Square::new(100.1).calc()
         );
+        assert_eq!(
+            Err(AUTDInternalError::ModulationError(
+                "Sampling frequency must be integer".to_string()
+            )),
+            Square::new(100.0)
+                .with_sampling_config(SamplingConfiguration::from_frequency(10.1).unwrap())
+                .calc()
+        );
 
         assert!(Square::new(100.1)
             .with_mode(SamplingMode::SizeOptimized)

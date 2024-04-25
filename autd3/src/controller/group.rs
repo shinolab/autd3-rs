@@ -106,6 +106,9 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
         let r = loop {
             self.op.iter_mut().try_for_each(|(k, (op1, op2))| {
                 Self::set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
+                if OperationHandler::is_finished(op1, op2, &self.cnt.geometry) {
+                    return Ok(());
+                }
                 OperationHandler::pack(op1, op2, &self.cnt.geometry, &mut self.cnt.tx_buf)
             })?;
 
@@ -137,7 +140,10 @@ impl<'a, K: Hash + Eq + Clone, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::derive::{Gain, GainFilter, Modulation, Segment};
+    use autd3_driver::{
+        datagram::{ChangeFocusSTMSegment, GainSTM},
+        derive::{Gain, GainFilter, Modulation, Segment, TransitionMode},
+    };
 
     use crate::{
         controller::tests::create_controller,
@@ -147,29 +153,89 @@ mod tests {
 
     #[tokio::test]
     async fn test_group() -> anyhow::Result<()> {
-        let mut autd = create_controller(2).await?;
+        let mut autd = create_controller(3).await?;
 
         autd.group(|dev| Some(dev.idx()))
-            .set(0, (Static::new(), Null::new()))?
-            .set(1, (Sine::new(150.), Uniform::new(0x80)))?
+            .set(0, Null::new())?
+            .set(1, (Static::with_intensity(0x80), Null::new()))?
+            .set(
+                2,
+                (
+                    Sine::new(150.),
+                    GainSTM::from_freq(1.0)
+                        .add_gain(Uniform::new(0x80))?
+                        .add_gain(Uniform::new(0x81))?,
+                ),
+            )?
             .send()
             .await?;
 
         assert_eq!(
-            Static::new().calc()?,
-            autd.link[0].fpga().modulation(Segment::S0)
-        );
-        assert_eq!(
             Null::new().calc(&autd.geometry, GainFilter::All)?[&0],
             autd.link[0].fpga().drives(Segment::S0, 0)
         );
+
+        assert_eq!(
+            Null::new().calc(&autd.geometry, GainFilter::All)?[&0],
+            autd.link[1].fpga().drives(Segment::S0, 0)
+        );
+        assert_eq!(
+            Static::with_intensity(0x80).calc()?,
+            autd.link[1].fpga().modulation(Segment::S0)
+        );
+
         assert_eq!(
             Sine::new(150.).calc()?,
-            autd.link[1].fpga().modulation(Segment::S0)
+            autd.link[2].fpga().modulation(Segment::S0)
         );
         assert_eq!(
             Uniform::new(0x80).calc(&autd.geometry, GainFilter::All)?[&1],
-            autd.link[1].fpga().drives(Segment::S0, 0)
+            autd.link[2].fpga().drives(Segment::S0, 0)
+        );
+        assert_eq!(
+            Uniform::new(0x81).calc(&autd.geometry, GainFilter::All)?[&1],
+            autd.link[2].fpga().drives(Segment::S0, 1)
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_send_failed() -> anyhow::Result<()> {
+        let mut autd = create_controller(1).await?;
+        assert!(
+            autd.group(|dev| Some(dev.idx()))
+                .set(0, Null::new())?
+                .send()
+                .await?
+        );
+
+        autd.link.down();
+        assert!(
+            !autd
+                .group(|dev| Some(dev.idx()))
+                .set(0, Null::new())?
+                .send()
+                .await?
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_send_err() -> anyhow::Result<()> {
+        let mut autd = create_controller(2).await?;
+
+        assert_eq!(
+            Err(autd3_driver::error::AUTDInternalError::InvalidSegmentTransition),
+            autd.group(|dev| Some(dev.idx()))
+                .set(0, Null::new())?
+                .set(
+                    1,
+                    ChangeFocusSTMSegment::new(Segment::S1, TransitionMode::SyncIdx),
+                )?
+                .send()
+                .await
         );
 
         Ok(())
