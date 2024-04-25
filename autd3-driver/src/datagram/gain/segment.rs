@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::datagram::Datagram;
+use crate::{datagram::Datagram, defined::DEFAULT_TIMEOUT};
 
 use super::group::{AUTDInternalError, Segment};
 
@@ -24,7 +24,7 @@ impl Datagram for ChangeGainSegment {
     type O2 = crate::firmware::operation::NullOp;
 
     fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
+        Some(DEFAULT_TIMEOUT)
     }
 
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
@@ -40,7 +40,7 @@ mod tests {
     fn test() -> anyhow::Result<()> {
         let d = ChangeGainSegment::new(Segment::S0);
         assert_eq!(Segment::S0, d.segment());
-        assert_eq!(Some(Duration::from_millis(200)), d.timeout());
+        assert_eq!(Some(DEFAULT_TIMEOUT), d.timeout());
         let _ = d.operation()?;
 
         Ok(())

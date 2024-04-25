@@ -1,4 +1,4 @@
-use crate::{datagram::*, firmware::fpga::DebugType, geometry::Device};
+use crate::{datagram::*, derive::DEFAULT_TIMEOUT, firmware::fpga::DebugType, geometry::Device};
 
 /// Datagram for configure debug_output_idx
 pub struct ConfigureDebugSettings<F: Fn(&Device) -> [DebugType; 4]> {
@@ -23,7 +23,7 @@ impl<F: Fn(&Device) -> [DebugType; 4]> Datagram for ConfigureDebugSettings<F> {
     type O2 = crate::firmware::operation::NullOp;
 
     fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
+        Some(DEFAULT_TIMEOUT)
     }
 
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {

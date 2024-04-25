@@ -1,4 +1,4 @@
-use autd3::{link::Audit, prelude::*};
+use autd3::{derive::DEFAULT_TIMEOUT, link::Audit, prelude::*};
 use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
 
 #[tokio::test]
@@ -11,10 +11,7 @@ async fn audit_test() -> anyhow::Result<()> {
 
     assert_eq!(0, autd.link.emulators()[0].idx());
     assert_eq!(0, autd.link[0].idx());
-    assert_eq!(
-        Some(std::time::Duration::from_millis(200)),
-        autd.link.last_timeout()
-    );
+    assert_eq!(Some(DEFAULT_TIMEOUT), autd.link.last_timeout());
 
     assert_eq!(vec![None], autd.fpga_state().await?);
     assert!(autd.send(ConfigureReadsFPGAState::new(|_| true)).await?);

@@ -1,4 +1,4 @@
-use crate::datagram::*;
+use crate::{datagram::*, defined::DEFAULT_TIMEOUT};
 
 /// Datagram to synchronize devices
 #[derive(Default)]
@@ -19,7 +19,7 @@ impl Datagram for Synchronize {
     }
 
     fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
+        Some(DEFAULT_TIMEOUT)
     }
 }
 

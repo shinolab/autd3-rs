@@ -1,5 +1,6 @@
 use crate::{
     datagram::*,
+    defined::DEFAULT_TIMEOUT,
     derive::{Device, Transducer},
     firmware::fpga::Phase,
 };
@@ -31,7 +32,7 @@ impl<F: Fn(&Device, &Transducer) -> Phase> Datagram for ConfigurePhaseFilter<F> 
     }
 
     fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
+        Some(DEFAULT_TIMEOUT)
     }
 }
 
@@ -48,7 +49,7 @@ mod tests {
     #[test]
     fn test() {
         let datagram = ConfigurePhaseFilter::additive(f);
-        assert_eq!(Some(Duration::from_millis(200)), datagram.timeout());
+        assert_eq!(Some(DEFAULT_TIMEOUT), datagram.timeout());
         let r = datagram.operation();
         assert!(r.is_ok());
         let _ = r.unwrap();

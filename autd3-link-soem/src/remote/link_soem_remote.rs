@@ -44,7 +44,7 @@ impl RemoteSOEM {
     pub const fn builder(addr: SocketAddr) -> RemoteSOEMBuilder {
         RemoteSOEMBuilder {
             addr,
-            timeout: Duration::from_millis(200),
+            timeout: DEFAULT_TIMEOUT,
         }
     }
 }

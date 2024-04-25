@@ -62,7 +62,7 @@ impl Simulator {
         SimulatorBuilder {
             server_ip: IpAddr::V4(Ipv4Addr::LOCALHOST),
             port,
-            timeout: Duration::from_millis(200),
+            timeout: DEFAULT_TIMEOUT,
         }
     }
 }

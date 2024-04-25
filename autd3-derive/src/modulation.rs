@@ -92,7 +92,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
             }
 
             fn timeout(&self) -> Option<std::time::Duration> {
-                Some(std::time::Duration::from_millis(200))
+                Some(DEFAULT_TIMEOUT)
             }
         }
     };

@@ -13,6 +13,7 @@ pub use segment::ChangeModulationSegment;
 pub use transform::IntoTransform as IntoModulationTransform;
 pub use transform::Transform as ModulationTransform;
 
+use crate::defined::DEFAULT_TIMEOUT;
 use crate::{
     error::AUTDInternalError,
     firmware::{
@@ -85,7 +86,7 @@ impl DatagramS for Box<dyn Modulation> {
     }
 
     fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
+        Some(DEFAULT_TIMEOUT)
     }
 }
 // GRCOV_EXCL_STOP

@@ -1,4 +1,4 @@
-use crate::{datagram::*, geometry::Device};
+use crate::{datagram::*, defined::DEFAULT_TIMEOUT, geometry::Device};
 
 /// Datagram for configure reads_fpga_state
 pub struct ConfigureReadsFPGAState<F: Fn(&Device) -> bool> {
@@ -27,7 +27,7 @@ impl<F: Fn(&Device) -> bool> Datagram for ConfigureReadsFPGAState<F> {
     }
 
     fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
+        Some(DEFAULT_TIMEOUT)
     }
 }
 

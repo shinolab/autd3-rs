@@ -22,3 +22,5 @@ pub type Complex = nalgebra::Complex<f64>;
 pub const ABSOLUTE_THRESHOLD_OF_HEARING: f64 = 20e-6;
 
 pub const T4010A1_AMPLITUDE: f64 = 275.574246625 * 200.0 * MILLIMETER; // [Pa*mm]
+
+pub const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(200);

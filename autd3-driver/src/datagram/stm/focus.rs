@@ -1,4 +1,5 @@
 use crate::{
+    defined::DEFAULT_TIMEOUT,
     derive::*,
     firmware::{fpga::TransitionMode, operation::ControlPoint},
 };
@@ -139,7 +140,7 @@ impl DatagramS for FocusSTM {
     }
 
     fn timeout(&self) -> Option<std::time::Duration> {
-        Some(std::time::Duration::from_millis(200))
+        Some(DEFAULT_TIMEOUT)
     }
 }
 
@@ -286,7 +287,7 @@ mod tests {
             .add_focus((Vector3::new(4., 5., 6.), 1))?
             .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2))?;
 
-        assert_eq!(stm.timeout(), Some(Duration::from_millis(200)));
+        assert_eq!(stm.timeout(), Some(DEFAULT_TIMEOUT));
 
         let r = stm.operation_with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
         assert!(r.is_ok());
