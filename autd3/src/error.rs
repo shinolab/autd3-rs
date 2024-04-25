@@ -32,8 +32,6 @@ impl std::fmt::Debug for ReadFirmwareVersionState {
 
 #[derive(Error, Debug, PartialEq)]
 pub enum AUTDError {
-    #[error("Device id ({0}) is specified, but only {1} AUTDs are connected.")]
-    GroupedOutOfRange(usize, usize),
     #[error("{0}")]
     ReadFirmwareVersionFailed(ReadFirmwareVersionState),
     #[error("Read FPGA state failed")]
