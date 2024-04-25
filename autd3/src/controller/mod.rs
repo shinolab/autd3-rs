@@ -260,7 +260,7 @@ mod tests {
         let mut autd = create_controller(1).await?;
         assert!(
             autd.send((
-                Sine::new(150.),
+                Sine::new(150),
                 GainSTM::from_freq(1.0)
                     .add_gain(Uniform::new(0x80))?
                     .add_gain(Uniform::new(0x81))?,
@@ -269,7 +269,7 @@ mod tests {
         );
 
         assert_eq!(
-            Sine::new(150.).calc()?,
+            Sine::new(150).calc()?,
             autd.link[0].fpga().modulation(Segment::S0)
         );
         assert_eq!(

@@ -7,7 +7,7 @@ use std::io::{self, Write};
 pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     autd.send(ConfigureSilencer::default()).await?;
 
-    let m = Sine::new(150.);
+    let m = Sine::new(150);
 
     let center = autd.geometry.center() + Vector3::new(0., 0., 150.0 * MILLIMETER);
     let p = Vector3::new(30. * MILLIMETER, 0., 0.);

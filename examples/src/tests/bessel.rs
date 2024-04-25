@@ -7,7 +7,7 @@ pub async fn bessel(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     let dir = Vector3::z();
 
     let g = Bessel::new(center, dir, 18. / 180. * PI);
-    let m = Sine::new(150.);
+    let m = Sine::new(150);
 
     autd.send((m, g)).await?;
 
