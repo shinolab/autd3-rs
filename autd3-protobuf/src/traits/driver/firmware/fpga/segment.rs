@@ -17,3 +17,25 @@ impl From<autd3_driver::firmware::fpga::Segment> for Segment {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_segment() {
+        {
+            let v = autd3_driver::firmware::fpga::Segment::S0;
+            let msg: Segment = v.into();
+            let v2: autd3_driver::firmware::fpga::Segment = msg.into();
+            assert_eq!(v, v2);
+        }
+
+        {
+            let v = autd3_driver::firmware::fpga::Segment::S1;
+            let msg: Segment = v.into();
+            let v2: autd3_driver::firmware::fpga::Segment = msg.into();
+            assert_eq!(v, v2);
+        }
+    }
+}
