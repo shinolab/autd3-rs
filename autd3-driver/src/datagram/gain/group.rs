@@ -147,10 +147,9 @@ where
                     dev.idx(),
                     dev.iter()
                         .map(|tr| {
-                            (self.f)(dev, tr).map_or_else(
-                                || Drive::null(),
-                                |key| drives_cache[&key][&dev.idx()][tr.idx()],
-                            )
+                            (self.f)(dev, tr).map_or_else(Drive::null, |key| {
+                                drives_cache[&key][&dev.idx()][tr.idx()]
+                            })
                         })
                         .collect::<Vec<_>>(),
                 ))
