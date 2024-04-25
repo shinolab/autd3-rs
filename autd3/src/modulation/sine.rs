@@ -4,73 +4,26 @@ use num::integer::gcd;
 
 use super::sampling_mode::SamplingMode;
 
-/// Sine wave modulation
-#[derive(Modulation, Clone, PartialEq, Debug, Builder)]
-pub struct Sine {
-    #[get]
-    freq: f64,
-    #[getset]
-    intensity: EmitIntensity,
-    #[getset]
-    phase: Phase,
-    #[getset]
-    offset: EmitIntensity,
-    #[getset]
-    mode: SamplingMode,
-    config: SamplingConfiguration,
-    loop_behavior: LoopBehavior,
-}
-
-impl Sine {
-    /// constructor
-    ///
-    /// The sine wave is defined as `intensity / 2 * sin(2π * freq * t + phase) + offset`, where `t` is time, and `intensity = EmitIntensity::MAX`, `phase = 0`, `offset = EmitIntensity::MAX/2` by default.
-    ///
-    /// # Arguments
-    ///
-    /// * `freq` - Frequency of the sine wave \[Hz\]
-    ///
-    pub const fn new(freq: f64) -> Self {
-        Self {
-            freq,
-            intensity: EmitIntensity::MAX,
-            phase: Phase::new(0),
-            offset: EmitIntensity::new(127),
-            config: SamplingConfiguration::FREQ_4K_HZ,
-            mode: SamplingMode::ExactFrequency,
-            loop_behavior: LoopBehavior::Infinite,
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ExactFrequency;
+impl SamplingMode for ExactFrequency {
+    type F = usize;
+    type D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration);
+    fn calc(freq: Self::F, data: Self::D) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+        let (intensity, phase, offset, sampling_config) = data;
+        if sampling_config.frequency().fract() != 0.0 {
+            return Err(AUTDInternalError::ModulationError(
+                "Sampling frequency must be integer".to_string(),
+            ));
         }
-    }
-}
-
-impl Modulation for Sine {
-    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        let (n, rep) = match self.mode {
-            SamplingMode::ExactFrequency => {
-                if self.sampling_config().frequency().fract() != 0.0 {
-                    return Err(AUTDInternalError::ModulationError(
-                        "Sampling frequency must be integer".to_string(),
-                    ));
-                }
-                if self.freq.fract() != 0.0 {
-                    return Err(AUTDInternalError::ModulationError(
-                        "Frequency must be integer".to_string(),
-                    ));
-                }
-                let sf = self.sampling_config().frequency() as usize;
-                let freq = (self.freq as usize).clamp(1, sf / 2);
-                let k = gcd(sf, freq);
-                (sf / k, freq / k)
-            }
-            SamplingMode::SizeOptimized => {
-                let sf = self.sampling_config().frequency();
-                let freq = self.freq.clamp(0., sf / 2.);
-                ((sf / freq).round() as usize, 1)
-            }
-        };
-        let intensity = self.intensity.value() as f64;
-        let phase = self.phase.radian();
-        let offset = self.offset.value() as f64;
+        let sf = sampling_config.frequency() as usize;
+        let freq = freq.clamp(1, sf / 2);
+        let k = gcd(sf, freq);
+        let n = sf / k;
+        let rep = freq / k;
+        let intensity = intensity.value() as f64;
+        let phase = phase.radian();
+        let offset = offset.value() as f64;
         Ok((0..n)
             .map(|i| {
                 (((intensity / 2. * (2.0 * PI * (rep * i) as f64 / n as f64 + phase).sin())
@@ -79,6 +32,76 @@ impl Modulation for Sine {
                     .into()
             })
             .collect())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SizeOptimized;
+impl SamplingMode for SizeOptimized {
+    type F = f64;
+    type D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration);
+    fn calc(freq: Self::F, data: Self::D) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+        let (intensity, phase, offset, sampling_config) = data;
+        let sf = sampling_config.frequency();
+        let freq = freq.clamp(0., sf / 2.);
+        let n = (sf / freq).round() as usize;
+        let intensity = intensity.value() as f64;
+        let phase = phase.radian();
+        let offset = offset.value() as f64;
+        Ok((0..n)
+            .map(|i| {
+                (((intensity / 2. * (2.0 * PI * i as f64 / n as f64 + phase).sin()) + offset)
+                    .round() as u8)
+                    .into()
+            })
+            .collect())
+    }
+}
+
+pub trait FrequencyType: Copy {
+    type S: SamplingMode<F = Self, D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration)>;
+}
+impl FrequencyType for usize {
+    type S = ExactFrequency;
+}
+impl FrequencyType for f64 {
+    type S = SizeOptimized;
+}
+
+/// Sine wave modulation
+#[derive(Modulation, Clone, PartialEq, Debug, Builder)]
+pub struct Sine<F: FrequencyType> {
+    #[get]
+    freq: F,
+    #[getset]
+    intensity: EmitIntensity,
+    #[getset]
+    phase: Phase,
+    #[getset]
+    offset: EmitIntensity,
+    config: SamplingConfiguration,
+    loop_behavior: LoopBehavior,
+}
+
+impl<F: FrequencyType> Sine<F> {
+    pub fn new(freq: F) -> Sine<F> {
+        Sine {
+            freq,
+            intensity: EmitIntensity::MAX,
+            phase: Phase::new(0),
+            offset: EmitIntensity::new(127),
+            config: SamplingConfiguration::FREQ_4K_HZ,
+            loop_behavior: LoopBehavior::Infinite,
+        }
+    }
+}
+
+impl<F: FrequencyType> Modulation for Sine<F> {
+    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+        F::S::calc(
+            self.freq,
+            (self.intensity, self.phase, self.offset, self.config),
+        )
     }
 }
 
@@ -95,7 +118,7 @@ mod tests {
             224, 241, 251, 255, 251, 241, 224, 202, 176, 147, 117, 88, 60, 37, 18, 6, 0, 1, 9, 24,
             44, 69, 97,
         ];
-        let m = Sine::new(150.);
+        let m = Sine::new(150);
         assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
         assert_eq!(
             expect
@@ -115,7 +138,7 @@ mod tests {
             17, 5, 0, 1, 10, 25, 45, 70, 98,
         ];
 
-        let m = Sine::new(150.).with_mode(SamplingMode::SizeOptimized);
+        let m = Sine::new(150.);
         assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
         assert_eq!(
             expect
@@ -130,38 +153,25 @@ mod tests {
 
     #[test]
     fn test_sine_new() {
-        let m = Sine::new(100.);
-        assert_eq!(100., m.freq());
+        let m = Sine::new(100);
+        assert_eq!(100, m.freq());
         assert_eq!(EmitIntensity::MAX, m.intensity());
         assert_eq!(EmitIntensity::MAX / 2, m.offset());
         assert_eq!(Phase::new(0), m.phase());
-        assert_eq!(SamplingMode::ExactFrequency, m.mode());
-
-        assert_eq!(
-            Err(AUTDInternalError::ModulationError(
-                "Frequency must be integer".to_string()
-            )),
-            Sine::new(100.1).calc()
-        );
 
         assert_eq!(
             Err(AUTDInternalError::ModulationError(
                 "Sampling frequency must be integer".to_string()
             )),
-            Sine::new(100.0)
+            Sine::new(100)
                 .with_sampling_config(SamplingConfiguration::from_frequency(10.1).unwrap())
                 .calc()
         );
-
-        assert!(Sine::new(100.1)
-            .with_mode(SamplingMode::SizeOptimized)
-            .calc()
-            .is_ok());
     }
 
     #[test]
     fn test_sine_with_param() {
-        let m = Sine::new(100.)
+        let m = Sine::new(100)
             .with_intensity(EmitIntensity::MAX / 2)
             .with_offset(EmitIntensity::MAX / 4)
             .with_phase(PI / 4.0 * Rad);
@@ -172,7 +182,7 @@ mod tests {
 
     #[test]
     fn test_sine_derive() {
-        let m = Sine::new(150.);
+        let m = Sine::new(150);
         assert_eq!(m, m.clone());
     }
 }

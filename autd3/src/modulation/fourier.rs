@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use super::sine::Sine;
+use super::sine::{FrequencyType, Sine};
 
 use autd3_driver::derive::*;
 
@@ -8,15 +8,15 @@ use num::integer::lcm;
 
 /// Multi-frequency sine wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug)]
-pub struct Fourier {
+pub struct Fourier<F: FrequencyType> {
     #[no_change]
     config: SamplingConfiguration,
-    components: Vec<Sine>,
+    components: Vec<Sine<F>>,
     loop_behavior: LoopBehavior,
 }
 
-impl Fourier {
-    pub fn new(sine: Sine) -> Self {
+impl<F: FrequencyType> Fourier<F> {
+    pub fn new(sine: Sine<F>) -> Self {
         Self {
             config: sine.sampling_config(),
             components: vec![sine],
@@ -29,7 +29,7 @@ impl Fourier {
     /// # Arguments
     /// - `sine` - [Sine] modulation
     ///
-    pub fn add_component(self, sine: Sine) -> Self {
+    pub fn add_component(self, sine: Sine<F>) -> Self {
         let Self {
             mut components,
             config,
@@ -54,7 +54,10 @@ impl Fourier {
     /// # Arguments
     /// - `iter` - Iterator of [Sine] modulation
     ///
-    pub fn add_components_from_iter(self, iter: impl IntoIterator<Item = impl Into<Sine>>) -> Self {
+    pub fn add_components_from_iter(
+        self,
+        iter: impl IntoIterator<Item = impl Into<Sine<F>>>,
+    ) -> Self {
         let Self {
             mut components,
             config,
@@ -74,37 +77,37 @@ impl Fourier {
     }
 }
 
-impl From<Sine> for Fourier {
-    fn from(sine: Sine) -> Self {
+impl<F: FrequencyType> From<Sine<F>> for Fourier<F> {
+    fn from(sine: Sine<F>) -> Self {
         Self::new(sine)
     }
 }
 
-impl Deref for Fourier {
-    type Target = [Sine];
+impl<F: FrequencyType> Deref for Fourier<F> {
+    type Target = [Sine<F>];
 
     fn deref(&self) -> &Self::Target {
         &self.components
     }
 }
 
-impl std::ops::Add<Sine> for Fourier {
+impl<F: FrequencyType> std::ops::Add<Sine<F>> for Fourier<F> {
     type Output = Self;
 
-    fn add(self, rhs: Sine) -> Self::Output {
+    fn add(self, rhs: Sine<F>) -> Self::Output {
         self.add_component(rhs)
     }
 }
 
-impl std::ops::Add<Sine> for Sine {
-    type Output = Fourier;
+impl<F: FrequencyType> std::ops::Add<Sine<F>> for Sine<F> {
+    type Output = Fourier<F>;
 
-    fn add(self, rhs: Sine) -> Self::Output {
+    fn add(self, rhs: Sine<F>) -> Self::Output {
         Fourier::from(self).add_component(rhs)
     }
 }
 
-impl Modulation for Fourier {
+impl<F: FrequencyType> Modulation for Fourier<F> {
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         let buffers = self
             .components
@@ -136,11 +139,11 @@ mod tests {
 
     #[test]
     fn test_fourier() -> anyhow::Result<()> {
-        let f0 = Sine::new(50.).with_phase(PI / 2.0 * Rad);
-        let f1 = Sine::new(100.).with_phase(PI / 3.0 * Rad);
-        let f2 = Sine::new(150.).with_phase(PI / 4.0 * Rad);
-        let f3 = Sine::new(200.);
-        let f4 = Sine::new(250.);
+        let f0 = Sine::new(50).with_phase(PI / 2.0 * Rad);
+        let f1 = Sine::new(100).with_phase(PI / 3.0 * Rad);
+        let f2 = Sine::new(150).with_phase(PI / 4.0 * Rad);
+        let f3 = Sine::new(200);
+        let f4 = Sine::new(250);
 
         let f0_buf = f0.calc()?;
         let f1_buf = f1.calc()?;
@@ -151,15 +154,15 @@ mod tests {
         let f = (f0 + f1).add_component(f2).add_components_from_iter([f3]) + f4;
 
         assert_eq!(f.sampling_config(), SamplingConfiguration::FREQ_4K_HZ);
-        assert_eq!(f[0].freq(), 50.0);
+        assert_eq!(f[0].freq(), 50);
         assert_eq!(f[0].phase(), PI / 2.0 * Rad);
-        assert_eq!(f[1].freq(), 100.0);
+        assert_eq!(f[1].freq(), 100);
         assert_eq!(f[1].phase(), PI / 3.0 * Rad);
-        assert_eq!(f[2].freq(), 150.0);
+        assert_eq!(f[2].freq(), 150);
         assert_eq!(f[2].phase(), PI / 4.0 * Rad);
-        assert_eq!(f[3].freq(), 200.0);
+        assert_eq!(f[3].freq(), 200);
         assert_eq!(f[3].phase(), 0.0 * Rad);
-        assert_eq!(f[4].freq(), 250.0);
+        assert_eq!(f[4].freq(), 250);
         assert_eq!(f[4].phase(), 0.0 * Rad);
 
         let buf = f.calc()?;

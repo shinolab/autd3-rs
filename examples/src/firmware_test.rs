@@ -77,7 +77,7 @@ async fn main() -> Result<()> {
     // Gain Chcek
     {
         autd.send((
-            Sine::new(150.0),
+            Sine::new(150),
             Focus::new(autd.geometry.center() + 150. * Vector3::z()),
         ))
         .await?;
@@ -172,7 +172,7 @@ async fn main() -> Result<()> {
     // Modulation check
     {
         autd.send((
-            Sine::new(150.0),
+            Sine::new(150),
             Focus::new(autd.geometry.center() + 150. * Vector3::z()),
         ))
         .await?;
@@ -598,11 +598,8 @@ async fn main() -> Result<()> {
             )
         }))
         .await?;
-        autd.send((
-            Sine::new(150.0),
-            Uniform::new(0xFF).with_phase(Phase::new(0)),
-        ))
-        .await?;
+        autd.send((Sine::new(150), Uniform::new(0xFF).with_phase(Phase::new(0))))
+            .await?;
         print_msg_and_wait_for_key(
             "Check that the focal points are generated 150mm directly above the center of each device by your hands."
         );

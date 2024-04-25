@@ -4,84 +4,108 @@ use num::integer::gcd;
 
 use super::sampling_mode::SamplingMode;
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ExactFrequency;
+impl SamplingMode for ExactFrequency {
+    type F = usize;
+    type D = (EmitIntensity, EmitIntensity, f64, SamplingConfiguration);
+    fn calc(freq: Self::F, data: Self::D) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+        let (low, high, duty, sampling_config) = data;
+
+        if sampling_config.frequency().fract() != 0.0 {
+            return Err(AUTDInternalError::ModulationError(
+                "Sampling frequency must be integer".to_string(),
+            ));
+        }
+        let sf = sampling_config.frequency() as usize;
+        let freq = freq.clamp(1, sf / 2);
+        let k = gcd(sf, freq);
+        let d = freq / k;
+        let n = sf / k;
+
+        Ok((0..d)
+            .map(|i| (n + i) / d)
+            .flat_map(|size| {
+                let n_high = (size as f64 * duty) as usize;
+                vec![high; n_high]
+                    .into_iter()
+                    .chain(vec![low; size - n_high])
+            })
+            .collect())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SizeOptimized;
+impl SamplingMode for SizeOptimized {
+    type F = f64;
+    type D = (EmitIntensity, EmitIntensity, f64, SamplingConfiguration);
+    fn calc(freq: Self::F, data: Self::D) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+        let (low, high, duty, sampling_config) = data;
+
+        let sf = sampling_config.frequency();
+        let freq = freq.clamp(0., sf / 2.);
+        let n = (sf / freq).round() as usize;
+        let n_high = (n as f64 * duty) as usize;
+        Ok(vec![high; n_high]
+            .into_iter()
+            .chain(vec![low; n - n_high])
+            .collect())
+    }
+}
+
+pub trait FrequencyType: Copy {
+    type S: SamplingMode<F = Self, D = (EmitIntensity, EmitIntensity, f64, SamplingConfiguration)>;
+}
+impl FrequencyType for usize {
+    type S = ExactFrequency;
+}
+impl FrequencyType for f64 {
+    type S = SizeOptimized;
+}
+
 /// Square wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug, Builder)]
-pub struct Square {
+pub struct Square<F: FrequencyType> {
     #[get]
-    freq: f64,
+    freq: F,
     #[getset]
     low: EmitIntensity,
     #[getset]
     high: EmitIntensity,
     #[getset]
     duty: f64,
-    #[getset]
-    mode: SamplingMode,
     config: SamplingConfiguration,
     loop_behavior: LoopBehavior,
 }
 
-impl Square {
+impl<F: FrequencyType> Square<F> {
     /// constructor.
     ///
     /// # Arguments
     ///
     /// * `freq` - Frequency of the square wave \[Hz\]
     ///
-    pub const fn new(freq: f64) -> Self {
+    pub const fn new(freq: F) -> Self {
         Self {
             freq,
             low: EmitIntensity::MIN,
             high: EmitIntensity::MAX,
             duty: 0.5,
             config: SamplingConfiguration::FREQ_4K_HZ,
-            mode: SamplingMode::ExactFrequency,
             loop_behavior: LoopBehavior::Infinite,
         }
     }
 }
 
-impl Modulation for Square {
+impl<F: FrequencyType> Modulation for Square<F> {
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         if !(0.0..=1.0).contains(&self.duty) {
             return Err(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string(),
             ));
         }
-
-        let (d, n) = match self.mode {
-            SamplingMode::ExactFrequency => {
-                if self.sampling_config().frequency().fract() != 0.0 {
-                    return Err(AUTDInternalError::ModulationError(
-                        "Sampling frequency must be integer".to_string(),
-                    ));
-                }
-                if self.freq.fract() != 0.0 {
-                    return Err(AUTDInternalError::ModulationError(
-                        "Frequency must be integer".to_string(),
-                    ));
-                }
-                let sf = self.sampling_config().frequency() as usize;
-                let freq = (self.freq as usize).clamp(1, sf / 2);
-                let k = gcd(sf, freq);
-                (freq / k, sf / k)
-            }
-            SamplingMode::SizeOptimized => {
-                let sf = self.sampling_config().frequency();
-                let freq = self.freq.clamp(0., sf / 2.);
-                (1, (sf / freq).round() as usize)
-            }
-        };
-
-        Ok((0..d)
-            .map(|i| (n + i) / d)
-            .flat_map(|size| {
-                let n_high = (size as f64 * self.duty) as usize;
-                vec![self.high; n_high]
-                    .into_iter()
-                    .chain(vec![self.low; size - n_high])
-            })
-            .collect())
+        F::S::calc(self.freq, (self.low, self.high, self.duty, self.config))
     }
 }
 
@@ -97,7 +121,7 @@ mod tests {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255,
             255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
-        let m = Square::new(150.).with_cache();
+        let m = Square::new(150).with_cache();
         assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
         assert_eq!(
             expect
@@ -116,7 +140,7 @@ mod tests {
             255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0,
         ];
-        let m = Square::new(150.).with_mode(SamplingMode::SizeOptimized);
+        let m = Square::new(150.);
         assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
         assert_eq!(
             expect
@@ -131,31 +155,19 @@ mod tests {
 
     #[test]
     fn test_square_new() {
-        let m = Square::new(100.);
-        assert_eq!(100., m.freq());
+        let m = Square::new(100);
+        assert_eq!(100, m.freq());
         assert_eq!(EmitIntensity::MAX, m.high());
         assert_eq!(EmitIntensity::MIN, m.low());
-        assert_eq!(SamplingMode::ExactFrequency, m.mode());
 
-        assert_eq!(
-            Err(AUTDInternalError::ModulationError(
-                "Frequency must be integer".to_string()
-            )),
-            Square::new(100.1).calc()
-        );
         assert_eq!(
             Err(AUTDInternalError::ModulationError(
                 "Sampling frequency must be integer".to_string()
             )),
-            Square::new(100.0)
+            Square::new(100)
                 .with_sampling_config(SamplingConfiguration::from_frequency(10.1).unwrap())
                 .calc()
         );
-
-        assert!(Square::new(100.1)
-            .with_mode(SamplingMode::SizeOptimized)
-            .calc()
-            .is_ok());
     }
 
     #[test]
