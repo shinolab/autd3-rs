@@ -1,5 +1,6 @@
 use autd3_driver::{
     datagram::{Clear, IntoDatagramWithTimeout, Synchronize},
+    derive::DEFAULT_TIMEOUT,
     firmware::cpu::{RxMessage, TxDatagram},
     geometry::{Device, Geometry, IntoDevice},
     link::LinkBuilder,
@@ -29,8 +30,7 @@ impl ControllerBuilder {
         self,
         link_builder: B,
     ) -> Result<Controller<B::L>, AUTDError> {
-        self.open_with_timeout(link_builder, std::time::Duration::from_millis(200))
-            .await
+        self.open_with_timeout(link_builder, DEFAULT_TIMEOUT).await
     }
 
     /// Open controller with timeout

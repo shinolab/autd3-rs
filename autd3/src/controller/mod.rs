@@ -5,6 +5,7 @@ use std::{hash::Hash, time::Duration};
 
 use autd3_driver::{
     datagram::{Clear, ConfigureSilencer, Datagram},
+    defined::DEFAULT_TIMEOUT,
     firmware::{
         cpu::{RxMessage, TxDatagram},
         fpga::FPGAState,
@@ -109,13 +110,8 @@ impl<L: Link> Controller<L> {
         macro_rules! pack_and_send {
             ($op:expr, $null_op:expr, $link:expr, $geometry:expr, $tx_buf:expr, $rx_buf:expr ) => {
                 OperationHandler::pack($op, $null_op, $geometry, $tx_buf)?;
-                if !autd3_driver::link::send_receive(
-                    $link,
-                    $tx_buf,
-                    $rx_buf,
-                    Some(Duration::from_millis(200)),
-                )
-                .await?
+                if !autd3_driver::link::send_receive($link, $tx_buf, $rx_buf, Some(DEFAULT_TIMEOUT))
+                    .await?
                 {
                     return Err(AUTDError::ReadFirmwareVersionFailed(
                         ReadFirmwareVersionState(

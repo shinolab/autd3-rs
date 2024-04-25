@@ -1,5 +1,6 @@
 use crate::{
     datagram::*,
+    defined::DEFAULT_TIMEOUT,
     firmware::fpga::{
         SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, SILENCER_VALUE_MAX,
         SILENCER_VALUE_MIN,
@@ -143,7 +144,7 @@ impl Datagram for ConfigureSilencer<FixedUpdateRate> {
     type O2 = crate::firmware::operation::NullOp;
 
     fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
+        Some(DEFAULT_TIMEOUT)
     }
 
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
@@ -162,7 +163,7 @@ impl Datagram for ConfigureSilencer<FixedCompletionSteps> {
     type O2 = crate::firmware::operation::NullOp;
 
     fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
+        Some(DEFAULT_TIMEOUT)
     }
 
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {

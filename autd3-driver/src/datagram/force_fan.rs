@@ -1,4 +1,4 @@
-use crate::{datagram::*, geometry::Device};
+use crate::{datagram::*, derive::DEFAULT_TIMEOUT, geometry::Device};
 
 /// Datagram for configure force fan
 pub struct ConfigureForceFan<F: Fn(&Device) -> bool> {
@@ -28,7 +28,7 @@ impl<F: Fn(&Device) -> bool> Datagram for ConfigureForceFan<F> {
     }
 
     fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
+        Some(DEFAULT_TIMEOUT)
     }
 }
 

@@ -126,7 +126,7 @@ impl RemoteTwinCAT {
             server_ams_net_id: server_ams_net_id.into(),
             server_ip: String::new(),
             client_ams_net_id: String::new(),
-            timeout: Duration::from_millis(200),
+            timeout: DEFAULT_TIMEOUT,
         }
     }
 }

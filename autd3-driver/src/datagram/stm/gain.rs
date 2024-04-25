@@ -1,7 +1,10 @@
 use crate::{
+    defined::DEFAULT_TIMEOUT,
     derive::*,
-    firmware::fpga::{Segment, TransitionMode},
-    firmware::operation::GainSTMMode,
+    firmware::{
+        fpga::{Segment, TransitionMode},
+        operation::GainSTMMode,
+    },
 };
 
 use super::STMProps;
@@ -156,7 +159,7 @@ impl<G: Gain> DatagramS for GainSTM<G> {
     }
 
     fn timeout(&self) -> Option<std::time::Duration> {
-        Some(std::time::Duration::from_millis(200))
+        Some(DEFAULT_TIMEOUT)
     }
 }
 
@@ -297,7 +300,7 @@ mod tests {
             .add_gain(Box::new(NullGain2 {}))
             .unwrap();
 
-        assert_eq!(stm.timeout(), Some(std::time::Duration::from_millis(200)));
+        assert_eq!(stm.timeout(), Some(DEFAULT_TIMEOUT));
 
         let r = stm.operation_with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
         assert!(r.is_ok());

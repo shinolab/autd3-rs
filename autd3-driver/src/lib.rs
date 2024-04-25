@@ -22,6 +22,7 @@ pub mod derive {
             Modulation, ModulationCache, ModulationProperty, ModulationTransform,
             RadiationPressure,
         },
+        defined::DEFAULT_TIMEOUT,
         error::AUTDInternalError,
         firmware::{
             fpga::{

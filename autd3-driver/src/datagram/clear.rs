@@ -1,4 +1,4 @@
-use crate::datagram::*;
+use crate::{datagram::*, defined::DEFAULT_TIMEOUT};
 
 /// Datagram for clear all data in devices
 #[derive(Default)]
@@ -15,7 +15,7 @@ impl Datagram for Clear {
     type O2 = crate::firmware::operation::NullOp;
 
     fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
+        Some(DEFAULT_TIMEOUT)
     }
 
     fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
