@@ -1,44 +1,30 @@
+use std::time::Duration;
+
 use crate::{error::AUTDInternalError, firmware::fpga::SamplingConfiguration};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum STMSamplingConfiguration {
-    Frequency(f64),
-    Period(std::time::Duration),
+    Frequency(u32),
+    FrequencyNearest(f64),
+    Period(Duration),
+    PeriodNearest(Duration),
     SamplingConfiguration(SamplingConfiguration),
 }
 
 impl STMSamplingConfiguration {
-    pub fn frequency(&self, size: usize) -> f64 {
-        match self {
-            Self::Frequency(f) => *f,
-            Self::Period(p) => 1000000000. / p.as_nanos() as f64,
-            Self::SamplingConfiguration(s) => s.frequency() / size as f64,
-        }
-    }
-
-    pub fn period(&self, size: usize) -> std::time::Duration {
-        match self {
-            Self::Frequency(f) => std::time::Duration::from_nanos((1000000000. / f) as _),
-            Self::Period(p) => *p,
-            Self::SamplingConfiguration(s) => s.period() * size as u32,
-        }
-    }
-
     pub fn sampling(&self, size: usize) -> Result<SamplingConfiguration, AUTDInternalError> {
         match self {
-            Self::Frequency(f) => {
-                let min = SamplingConfiguration::FREQ_MIN / size as f64;
-                let max = SamplingConfiguration::FREQ_MAX / size as f64;
-                SamplingConfiguration::from_frequency(f * size as f64)
-                    .map_err(|_| AUTDInternalError::STMFreqOutOfRange(size, *f as _, min, max))
+            STMSamplingConfiguration::Frequency(f) => {
+                SamplingConfiguration::from_freq(f * size as u32)
             }
-            Self::Period(p) => {
-                let min = SamplingConfiguration::PERIOD_MIN as usize / size;
-                let max = SamplingConfiguration::PERIOD_MAX as usize / size;
-                SamplingConfiguration::from_period(std::time::Duration::from_nanos(
-                    (p.as_nanos() as usize / size) as _,
-                ))
-                .map_err(|_| AUTDInternalError::STMPeriodOutOfRange(size, p.as_nanos(), min, max))
+            STMSamplingConfiguration::FrequencyNearest(f) => {
+                SamplingConfiguration::from_freq_nearest(f * size as f64)
+            }
+            STMSamplingConfiguration::Period(p) => {
+                SamplingConfiguration::from_period(*p / size as u32)
+            }
+            STMSamplingConfiguration::PeriodNearest(p) => {
+                SamplingConfiguration::from_period_nearest(*p / size as u32)
             }
             Self::SamplingConfiguration(s) => Ok(*s),
         }
@@ -47,113 +33,131 @@ impl STMSamplingConfiguration {
 
 #[cfg(test)]
 mod tests {
+    use Duration;
+
+    use crate::firmware::fpga::ULTRASOUND_FREQUENCY;
+
     use super::*;
 
+    #[rstest::rstest]
     #[test]
-    fn test_frequency() {
-        let config = STMSamplingConfiguration::Frequency(4e3);
-        assert_eq!(config.frequency(1), 4e3);
-        assert_eq!(config.frequency(2), 4e3);
-        assert_eq!(config.period(1), std::time::Duration::from_micros(250));
-        assert_eq!(config.period(2), std::time::Duration::from_micros(250));
+    #[case(Ok(SamplingConfiguration::from_freq(4000).unwrap()), 4000, 1)]
+    #[case(Ok(SamplingConfiguration::from_freq(8000).unwrap()), 4000, 2)]
+    #[case(Err(AUTDInternalError::SamplingFreqInvalid(4001, ULTRASOUND_FREQUENCY)), 4001, 1)]
+    #[case(Ok(SamplingConfiguration::from_freq(SamplingConfiguration::FREQ_MAX).unwrap()), SamplingConfiguration::FREQ_MAX, 1)]
+    #[case(
+        Err(AUTDInternalError::SamplingFreqInvalid(SamplingConfiguration::FREQ_MAX * 2, ULTRASOUND_FREQUENCY)),
+        SamplingConfiguration::FREQ_MAX,
+        2
+    )]
+    fn frequency(
+        #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
+        #[case] freq: u32,
+        #[case] size: usize,
+    ) {
         assert_eq!(
-            config.sampling(1).unwrap(),
-            SamplingConfiguration::from_frequency(4e3).unwrap()
-        );
-        assert_eq!(
-            config.sampling(2).unwrap(),
-            SamplingConfiguration::from_frequency(8e3).unwrap()
-        );
-
-        let config = STMSamplingConfiguration::Frequency(0.1);
-        assert_eq!(config.frequency(65536), 0.1);
-        assert_eq!(config.period(65536), std::time::Duration::from_secs(10));
-        assert_eq!(
-            config.sampling(65536).unwrap(),
-            SamplingConfiguration::from_frequency(0.1 * 65536.0).unwrap()
+            expect,
+            STMSamplingConfiguration::Frequency(freq).sampling(size)
         );
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_period() {
-        let config = STMSamplingConfiguration::Period(std::time::Duration::from_micros(250));
-        assert_eq!(config.frequency(1), 4e3);
-        assert_eq!(config.frequency(2), 4e3);
-        assert_eq!(config.period(1), std::time::Duration::from_micros(250));
-        assert_eq!(config.period(2), std::time::Duration::from_micros(250));
+    #[case(Ok(SamplingConfiguration::from_freq_nearest(4000.).unwrap()), 4000., 1)]
+    #[case(Ok(SamplingConfiguration::from_freq_nearest(8000.).unwrap()), 4000., 2)]
+    #[case(Ok(SamplingConfiguration::from_freq_nearest(4001.).unwrap()), 4001., 1)]
+    #[case(Ok(SamplingConfiguration::from_freq_nearest(SamplingConfiguration::FREQ_MAX_RAW).unwrap()), SamplingConfiguration::FREQ_MAX_RAW, 1)]
+    #[case(
+        Err(
+            AUTDInternalError::SamplingFreqOutOfRange(
+                SamplingConfiguration::FREQ_MAX_RAW * 2., 
+                SamplingConfiguration::FREQ_MIN_RAW, 
+                SamplingConfiguration::FREQ_MAX_RAW)
+            ),  
+        SamplingConfiguration::FREQ_MAX_RAW,
+        2
+    )]
+    fn frequency_nearest(
+        #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
+        #[case] freq: f64,
+        #[case] size: usize,
+    ) {
         assert_eq!(
-            config.sampling(1).unwrap(),
-            SamplingConfiguration::from_frequency(4e3).unwrap()
-        );
-        assert_eq!(
-            config.sampling(2).unwrap(),
-            SamplingConfiguration::from_frequency(8e3).unwrap()
-        );
-
-        let config = STMSamplingConfiguration::Period(std::time::Duration::from_secs(10));
-        assert_eq!(config.frequency(65536), 0.1);
-        assert_eq!(config.period(65536), std::time::Duration::from_secs(10));
-        assert_eq!(
-            config.sampling(65536).unwrap(),
-            SamplingConfiguration::from_period(std::time::Duration::from_nanos(
-                10 * 1000 * 1000 * 1000 / 65536
-            ))
-            .unwrap()
+            expect,
+            STMSamplingConfiguration::FrequencyNearest(freq).sampling(size)
         );
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_sampling() {
-        let config = STMSamplingConfiguration::SamplingConfiguration(
-            SamplingConfiguration::from_frequency(4e3).unwrap(),
-        );
-        assert_eq!(config.frequency(1), 4e3);
-        assert_eq!(config.frequency(2), 2e3);
-        assert_eq!(config.period(1), std::time::Duration::from_micros(250));
-        assert_eq!(config.period(2), std::time::Duration::from_micros(500));
+    #[case(Ok(SamplingConfiguration::from_period(Duration::from_micros(250)).unwrap()), Duration::from_micros(250), 1)]
+    #[case(Ok(SamplingConfiguration::from_period(Duration::from_micros(125)).unwrap()), Duration::from_micros(250), 2)]
+    #[case(Err(AUTDInternalError::SamplingPeriodInvalid(Duration::from_micros(251), SamplingConfiguration::PERIOD_MIN)), Duration::from_micros(251), 1)]
+    #[case(Ok(SamplingConfiguration::from_period(SamplingConfiguration::PERIOD_MIN).unwrap()), SamplingConfiguration::PERIOD_MIN, 1)]
+    #[case(Err(AUTDInternalError::SamplingPeriodInvalid(SamplingConfiguration::PERIOD_MIN / 2, SamplingConfiguration::PERIOD_MIN)), SamplingConfiguration::PERIOD_MIN, 2)]
+    #[case(Ok(SamplingConfiguration::from_period(SamplingConfiguration::PERIOD_MAX).unwrap()), SamplingConfiguration::PERIOD_MAX, 1)]
+    #[case(
+        Err(AUTDInternalError::SamplingPeriodInvalid(SamplingConfiguration::PERIOD_MAX / 2, SamplingConfiguration::PERIOD_MIN)),
+        SamplingConfiguration::PERIOD_MAX,
+        2
+    )]
+    fn period(
+        #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
+        #[case] p: Duration,
+        #[case] size: usize,
+    ) {
         assert_eq!(
-            config.sampling(1).unwrap(),
-            SamplingConfiguration::from_frequency(4e3).unwrap()
-        );
-        assert_eq!(
-            config.sampling(2).unwrap(),
-            SamplingConfiguration::from_frequency(4e3).unwrap()
+            expect,
+            STMSamplingConfiguration::Period(p).sampling(size)
         );
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_frequency_out_of_range() {
-        let config = STMSamplingConfiguration::Frequency(40e3);
+    #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(250)).unwrap()), Duration::from_micros(250), 1)]
+    #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(125)).unwrap()), Duration::from_micros(250), 2)]
+    #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(251)).unwrap()), Duration::from_micros(251), 1)]
+    #[case(Ok(SamplingConfiguration::from_period_nearest(SamplingConfiguration::PERIOD_MIN).unwrap()), SamplingConfiguration::PERIOD_MIN, 1)]
+    #[case(Err(AUTDInternalError::SamplingPeriodOutOfRange(SamplingConfiguration::PERIOD_MIN / 2, SamplingConfiguration::PERIOD_MIN_RAW, SamplingConfiguration::PERIOD_MAX_RAW)), SamplingConfiguration::PERIOD_MIN, 2)]
+    #[case(Ok(SamplingConfiguration::from_period_nearest(SamplingConfiguration::PERIOD_MAX).unwrap()), SamplingConfiguration::PERIOD_MAX, 1)]
+    #[case(
+        Ok(SamplingConfiguration::from_period_nearest(SamplingConfiguration::PERIOD_MAX / 2).unwrap()),
+        SamplingConfiguration::PERIOD_MAX,
+        2
+    )]
+    fn period_nearest(
+        #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
+        #[case] p: Duration,
+        #[case] size: usize,
+    ) {
         assert_eq!(
-            config.sampling(1),
-            Ok(SamplingConfiguration::from_frequency(40e3).unwrap())
-        );
-        assert_eq!(
-            config.sampling(2),
-            Err(AUTDInternalError::STMFreqOutOfRange(
-                2,
-                40e3,
-                SamplingConfiguration::FREQ_MIN / 2.,
-                SamplingConfiguration::FREQ_MAX / 2.,
-            ))
+            expect,
+            STMSamplingConfiguration::PeriodNearest(p).sampling(size)
         );
     }
 
+    
+    #[rstest::rstest]
     #[test]
-    fn test_period_out_of_range() {
-        let config = STMSamplingConfiguration::Period(std::time::Duration::from_micros(25));
+    #[case(SamplingConfiguration::from_division(SamplingConfiguration::DIV_MIN).unwrap(), 1)]
+    #[case(SamplingConfiguration::from_division(SamplingConfiguration::DIV_MIN).unwrap(), 2)]
+    #[case(SamplingConfiguration::from_division(SamplingConfiguration::DIV_MAX).unwrap(), 1)]
+    #[case(SamplingConfiguration::from_division(SamplingConfiguration::DIV_MAX).unwrap(), 2)]
+    #[case(SamplingConfiguration::from_period(SamplingConfiguration::PERIOD_MIN).unwrap(), 1)]
+    #[case(SamplingConfiguration::from_period(SamplingConfiguration::PERIOD_MIN).unwrap(), 2)]
+    #[case(SamplingConfiguration::from_period(SamplingConfiguration::PERIOD_MAX).unwrap(), 1)]
+    #[case(SamplingConfiguration::from_period(SamplingConfiguration::PERIOD_MAX).unwrap(), 2)]
+    #[case(SamplingConfiguration::from_freq(SamplingConfiguration::FREQ_MIN).unwrap(), 1)]
+    #[case(SamplingConfiguration::from_freq(SamplingConfiguration::FREQ_MIN).unwrap(), 2)]
+    #[case(SamplingConfiguration::from_freq(SamplingConfiguration::FREQ_MAX).unwrap(), 1)]
+    #[case(SamplingConfiguration::from_freq(SamplingConfiguration::FREQ_MAX).unwrap(), 2)]
+    fn sampling_config(
+        #[case] config: SamplingConfiguration,
+        #[case] size: usize,
+    ) {
         assert_eq!(
-            config.sampling(1),
-            Ok(SamplingConfiguration::from_frequency(40e3).unwrap())
-        );
-        assert_eq!(
-            config.sampling(2),
-            Err(AUTDInternalError::STMPeriodOutOfRange(
-                2,
-                25000,
-                SamplingConfiguration::PERIOD_MIN as usize / 2,
-                SamplingConfiguration::PERIOD_MAX as usize / 2,
-            ))
+            Ok(config),
+            STMSamplingConfiguration::SamplingConfiguration(config).sampling(size)
         );
     }
 }

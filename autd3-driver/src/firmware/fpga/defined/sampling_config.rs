@@ -63,18 +63,18 @@ impl SamplingConfiguration {
         }
     }
 
-    pub fn from_frequency(f: u32) -> Result<Self, AUTDInternalError> {
+    pub fn from_freq(f: u32) -> Result<Self, AUTDInternalError> {
         if (super::ULTRASOUND_FREQUENCY % f) != 0 {
             Err(AUTDInternalError::SamplingFreqInvalid(
                 f,
                 super::ULTRASOUND_FREQUENCY,
             ))
         } else {
-            Self::from_frequency_nearest(f as _)
+            Self::from_freq_nearest(f as _)
         }
     }
 
-    pub fn from_frequency_nearest(f: f64) -> Result<Self, AUTDInternalError> {
+    pub fn from_freq_nearest(f: f64) -> Result<Self, AUTDInternalError> {
         if !(Self::FREQ_MIN_RAW..=Self::FREQ_MAX_RAW).contains(&f) {
             Err(AUTDInternalError::SamplingFreqOutOfRange(
                 f,
@@ -118,22 +118,14 @@ impl SamplingConfiguration {
         }
     }
 
-    pub fn frequency(&self) -> f64 {
-        match self {
-            Self::Frequency(f) => f.0,
-            Self::Period(p) => 1000000000. / p.0.as_nanos() as f64,
-            Self::Division(d) => Self::BASE_FREQUENCY as f64 / d.0 as f64,
-        }
+    pub fn freq(&self) -> f64 {
+        Self::BASE_FREQUENCY as f64 / self.division() as f64
     }
 
     pub fn period(&self) -> Duration {
-        match self {
-            Self::Frequency(f) => Duration::from_nanos((1000000000. / f.0) as _),
-            Self::Period(p) => p.0,
-            Self::Division(d) => {
-                Duration::from_nanos((1000000000. / Self::BASE_FREQUENCY as f64 * d.0 as f64) as _)
-            }
-        }
+        Duration::from_nanos(
+            (1000000000. / Self::BASE_FREQUENCY as f64 * self.division() as f64) as _,
+        )
     }
 }
 
@@ -241,11 +233,11 @@ mod tests {
         )),
         SamplingConfiguration::FREQ_MAX * 2
     )]
-    fn from_frequency(
+    fn from_freq(
         #[case] expected: Result<SamplingConfiguration, AUTDInternalError>,
         #[case] freq: u32,
     ) {
-        assert_eq!(expected, SamplingConfiguration::from_frequency(freq));
+        assert_eq!(expected, SamplingConfiguration::from_freq(freq));
     }
 
     #[rstest::rstest]
@@ -279,14 +271,11 @@ mod tests {
         )),
         SamplingConfiguration::FREQ_MAX_RAW as f64 + f64::MIN
     )]
-    fn from_frequency_nearest(
+    fn from_freq_nearest(
         #[case] expected: Result<SamplingConfiguration, AUTDInternalError>,
         #[case] freq: f64,
     ) {
-        assert_eq!(
-            expected,
-            SamplingConfiguration::from_frequency_nearest(freq)
-        );
+        assert_eq!(expected, SamplingConfiguration::from_freq_nearest(freq));
     }
 
     #[rstest::rstest]

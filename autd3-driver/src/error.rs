@@ -36,19 +36,14 @@ pub enum AUTDInternalError {
     SamplingFreqDivInvalid(u32),
     #[error("Sampling frequency division ({0}) is out of range ([{1}, {2}])")]
     SamplingFreqDivOutOfRange(u32, u32, u32),
-    #[error("Sampling frequency ({0}) must divide {1}")]
+    #[error("Sampling frequency ({0}Hz) must divide {1}")]
     SamplingFreqInvalid(u32, u32),
-    #[error("Sampling frequency ({0}) is out of range ([{1}, {2}])")]
+    #[error("Sampling frequency ({0}Hz) is out of range ([{1}, {2}])")]
     SamplingFreqOutOfRange(f64, f64, f64),
     #[error("Sampling period ({0:?}) must be a multiple of {1:?}")]
     SamplingPeriodInvalid(Duration, Duration),
     #[error("Sampling period ({0:?}) is out of range ([{1:?}, {2:?}])")]
     SamplingPeriodOutOfRange(Duration, Duration, Duration),
-
-    #[error("STM frequency ({1} Hz, size={0}) is out of range ([{2}, {3}])")]
-    STMFreqOutOfRange(usize, f64, f64, f64),
-    #[error("STM period ({1:?}, size={0}) is out of range ([{2:?}, {3:?}])")]
-    STMPeriodOutOfRange(usize, Duration, Duration, Duration),
 
     #[error(
         "FocusSTM size ({0}) is out of range ([{}, {}])",

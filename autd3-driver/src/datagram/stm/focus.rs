@@ -1,7 +1,10 @@
 use crate::{
     defined::DEFAULT_TIMEOUT,
     derive::*,
-    firmware::{fpga::TransitionMode, operation::ControlPoint},
+    firmware::{
+        fpga::{TransitionMode, FOCUS_STM_BUF_SIZE_MAX, STM_BUF_SIZE_MIN},
+        operation::ControlPoint,
+    },
 };
 
 use super::STMProps;
@@ -12,7 +15,7 @@ use super::STMProps;
 ///
 /// FocusSTM has following restrictions:
 /// - The maximum number of sampling points is [crate::fpga::FOCUS_STM_BUF_SIZE_MAX].
-/// - The sampling frequency is [crate::fpga::FPGA_CLK_FREQ]/N, where `N` is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN]
+/// - The sampling freq is [crate::fpga::FPGA_CLK_FREQ]/N, where `N` is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN]
 ///
 #[derive(Clone, Builder)]
 pub struct FocusSTM {
@@ -26,10 +29,30 @@ impl FocusSTM {
     ///
     /// # Arguments
     ///
-    /// * `freq` - Frequency of STM. The frequency closest to `freq` from the possible frequencies is set.
+    /// * `freq` - Frequency of STM.
     ///
-    pub const fn from_freq(freq: f64) -> Self {
+    pub const fn from_freq(freq: u32) -> Self {
         Self::from_props(STMProps::from_freq(freq))
+    }
+
+    /// constructor
+    ///
+    /// # Arguments
+    ///
+    /// * `freq` - Frequency of STM. The freq closest to `freq` from the possible frequencies is set.
+    ///
+    pub const fn from_freq_nearest(freq: f64) -> Self {
+        Self::from_props(STMProps::from_freq_nearest(freq))
+    }
+
+    /// constructor
+    ///
+    /// # Arguments
+    ///
+    /// * `period` - Period.
+    ///
+    pub const fn from_period(period: std::time::Duration) -> Self {
+        Self::from_props(STMProps::from_period(period))
     }
 
     /// constructor
@@ -38,8 +61,8 @@ impl FocusSTM {
     ///
     /// * `period` - Period. The period closest to `period` from the possible periods is set.
     ///
-    pub const fn from_period(period: std::time::Duration) -> Self {
-        Self::from_props(STMProps::from_period(period))
+    pub const fn from_period_nearest(period: std::time::Duration) -> Self {
+        Self::from_props(STMProps::from_period_nearest(period))
     }
 
     /// constructor
@@ -95,15 +118,22 @@ impl FocusSTM {
         &self.control_points
     }
 
-    pub fn frequency(&self) -> f64 {
-        self.props.freq(self.control_points.len())
+    pub fn freq(&self) -> Result<f64, AUTDInternalError> {
+        self.sampling_config()
+            .map(|c| c.freq() / self.control_points.len() as f64)
     }
 
-    pub fn period(&self) -> std::time::Duration {
-        self.props.period(self.control_points.len())
+    pub fn period(&self) -> Result<std::time::Duration, AUTDInternalError> {
+        self.sampling_config()
+            .map(|c| c.period() * self.control_points.len() as u32)
     }
 
     pub fn sampling_config(&self) -> Result<SamplingConfiguration, AUTDInternalError> {
+        if !(STM_BUF_SIZE_MIN..=FOCUS_STM_BUF_SIZE_MAX).contains(&self.control_points.len()) {
+            return Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(
+                self.control_points.len(),
+            ));
+        }
         self.props.sampling_config(self.control_points.len())
     }
 }
@@ -125,7 +155,7 @@ impl DatagramS for FocusSTM {
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        let freq_div = self.sampling_config()?.frequency_division();
+        let freq_div = self.sampling_config()?.division();
         let loop_behavior = self.loop_behavior();
         Ok((
             Self::O1::new(
@@ -153,25 +183,23 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(0.5, 2)]
-    #[case(1.0, 10)]
-    #[case(2.0, 10)]
-    fn test_from_requency(#[case] freq: f64, #[case] n: usize) -> anyhow::Result<()> {
+    #[case(1, 10)]
+    #[case(2, 10)]
+    fn from_freq(#[case] freq: u32, #[case] n: usize) -> anyhow::Result<()> {
         let stm = FocusSTM::from_freq(freq).add_foci_from_iter((0..n).map(|_| Vector3::zeros()))?;
-        assert_eq!(freq, stm.frequency());
-        assert_eq!(freq * n as f64, stm.sampling_config()?.frequency());
+        assert_eq!(freq as f64, stm.freq()?);
+        assert_eq!(freq as f64 * n as f64, stm.sampling_config()?.freq());
         Ok(())
     }
 
     #[rstest::rstest]
     #[test]
-    #[case(Duration::from_micros(125), 2)]
     #[case(Duration::from_micros(250), 10)]
     #[case(Duration::from_micros(500), 10)]
     fn test_from_period(#[case] period: Duration, #[case] n: usize) -> anyhow::Result<()> {
         let stm =
             FocusSTM::from_period(period).add_foci_from_iter((0..n).map(|_| Vector3::zeros()))?;
-        assert_eq!(period, stm.period());
+        assert_eq!(period, stm.period()?);
         assert_eq!(period / n as u32, stm.sampling_config()?.period());
         Ok(())
     }
@@ -195,7 +223,7 @@ mod tests {
 
     #[test]
     fn test_add_focus() -> anyhow::Result<()> {
-        let stm = FocusSTM::from_freq(1.0)
+        let stm = FocusSTM::from_freq_nearest(1.)
             .add_focus(Vector3::new(1., 2., 3.))?
             .add_focus((Vector3::new(4., 5., 6.), 1))?
             .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2))?;
@@ -217,7 +245,7 @@ mod tests {
 
     #[test]
     fn test_add_foci() -> anyhow::Result<()> {
-        let stm = FocusSTM::from_freq(1.0)
+        let stm = FocusSTM::from_freq_nearest(1.)
             .add_foci_from_iter([Vector3::new(1., 2., 3.)])?
             .add_foci_from_iter([(Vector3::new(4., 5., 6.), 1)])?
             .add_foci_from_iter([ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2)])?;
@@ -244,7 +272,7 @@ mod tests {
     fn test_with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
             loop_behavior,
-            FocusSTM::from_freq(1.0)
+            FocusSTM::from_freq(1)
                 .with_loop_behavior(loop_behavior)
                 .loop_behavior()
         );
@@ -252,13 +280,13 @@ mod tests {
 
     #[test]
     fn test_with_loop_behavior_deafault() {
-        let stm = FocusSTM::from_freq(1.0);
+        let stm = FocusSTM::from_freq(1);
         assert_eq!(LoopBehavior::Infinite, stm.loop_behavior());
     }
 
     #[test]
     fn test_clear() -> anyhow::Result<()> {
-        let mut stm = FocusSTM::from_freq(1.0)
+        let mut stm = FocusSTM::from_freq_nearest(1.)
             .add_focus(Vector3::new(1., 2., 3.))?
             .add_focus((Vector3::new(4., 5., 6.), 1))?
             .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2))?;
@@ -282,7 +310,7 @@ mod tests {
 
     #[test]
     fn test_operation() -> anyhow::Result<()> {
-        let stm = FocusSTM::from_freq(1.0)
+        let stm = FocusSTM::from_freq_nearest(1.)
             .add_focus(Vector3::new(1., 2., 3.))?
             .add_focus((Vector3::new(4., 5., 6.), 1))?
             .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2))?;
