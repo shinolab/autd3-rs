@@ -26,7 +26,10 @@ pub use segment::Segment;
 pub use transition_mode::TransitionMode;
 
 /// FPGA clock frequency
-pub const FPGA_CLK_FREQ: usize = 20480000;
+pub const FPGA_CLK_FREQ: u32 = 20480000;
+
+pub const FREQUENCY_40K: u32 = 40000;
+pub const ULTRASOUND_FREQUENCY: u32 = FPGA_CLK_FREQ / 512;
 
 pub const FOCUS_STM_FIXED_NUM_UNIT: f64 = 0.025e-3 * METER;
 pub const FOCUS_STM_FIXED_NUM_WIDTH: usize = 18;

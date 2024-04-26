@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use thiserror::Error;
 
 use crate::firmware::{fpga::*, operation::GainSTMMode};
@@ -30,17 +32,23 @@ pub enum AUTDInternalError {
     #[error("Unspecified group key: {0}")]
     UnspecifiedKey(String),
 
+    #[error("Sampling frequency division ({0}) must be a multiple of 512")]
+    SamplingFreqDivInvalid(u32),
     #[error("Sampling frequency division ({0}) is out of range ([{1}, {2}])")]
     SamplingFreqDivOutOfRange(u32, u32, u32),
+    #[error("Sampling frequency ({0}) must divide {1}")]
+    SamplingFreqInvalid(u32, u32),
     #[error("Sampling frequency ({0}) is out of range ([{1}, {2}])")]
     SamplingFreqOutOfRange(f64, f64, f64),
-    #[error("Sampling period ({0} ns) is out of range ([{1}, {2}])")]
-    SamplingPeriodOutOfRange(u128, u128, u128),
+    #[error("Sampling period ({0:?}) must be a multiple of {1:?}")]
+    SamplingPeriodInvalid(Duration, Duration),
+    #[error("Sampling period ({0:?}) is out of range ([{1:?}, {2:?}])")]
+    SamplingPeriodOutOfRange(Duration, Duration, Duration),
 
     #[error("STM frequency ({1} Hz, size={0}) is out of range ([{2}, {3}])")]
     STMFreqOutOfRange(usize, f64, f64, f64),
-    #[error("STM period ({1} ns, size={0}) is out of range ([{2}, {3}])")]
-    STMPeriodOutOfRange(usize, u128, usize, usize),
+    #[error("STM period ({1:?}, size={0}) is out of range ([{2:?}, {3:?}])")]
+    STMPeriodOutOfRange(usize, Duration, Duration, Duration),
 
     #[error(
         "FocusSTM size ({0}) is out of range ([{}, {}])",
