@@ -69,7 +69,8 @@ mod tests {
             assert_eq!(d.len(), geometry[idx].num_transducers());
             d.iter().zip(geometry[idx].iter()).for_each(|(d, tr)| {
                 let expected_phase = Phase::from_rad(
-                    (tr.position() - pos).norm() * tr.wavenumber(geometry[idx].sound_speed),
+                    (tr.position() - pos).norm()
+                        * Transducer::wavenumber(geometry[idx].sound_speed),
                 ) + phase_offset;
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity())

@@ -59,7 +59,7 @@ impl Gain for Bessel {
             let r = rot * (tr.position() - self.pos);
             let dist = self.theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - self.theta.cos() * r.z;
             Drive::new(
-                dist * tr.wavenumber(dev.sound_speed) * Rad + self.phase_offset,
+                dist * Transducer::wavenumber(dev.sound_speed) * Rad + self.phase_offset,
                 self.intensity,
             )
         }))
@@ -108,7 +108,7 @@ mod tests {
                     let r = tr.position() - pos;
                     let r = rot * r;
                     let dist = theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - theta.cos() * r.z;
-                    dist * tr.wavenumber(geometry[0].sound_speed) * Rad + phase_offset
+                    dist * Transducer::wavenumber(geometry[0].sound_speed) * Rad + phase_offset
                 };
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity());

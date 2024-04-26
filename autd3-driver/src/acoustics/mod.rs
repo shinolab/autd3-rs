@@ -28,7 +28,7 @@ pub fn propagate<D: Directivity>(
         T4010A1_AMPLITUDE / (4. * PI) / dist
             * D::directivity_from_tr(tr, &diff)
             * (-dist * attenuation).exp(),
-        -tr.wavenumber(sound_speed) * dist,
+        -Transducer::wavenumber(sound_speed) * dist,
     )
 }
 
@@ -104,7 +104,7 @@ mod tests {
                     * TestDirectivity::directivity_from_tr(&tr, &diff)
                     * (-dist * attenuation).exp()
                     / (4. * PI * dist);
-                let phase = -tr.wavenumber(sound_speed) * dist;
+                let phase = -Transducer::wavenumber(sound_speed) * dist;
                 Complex::new(r * phase.cos(), r * phase.sin())
             },
             super::propagate::<TestDirectivity>(&tr, attenuation, sound_speed, &target)
