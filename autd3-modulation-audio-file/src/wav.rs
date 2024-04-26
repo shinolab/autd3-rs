@@ -80,7 +80,7 @@ impl Modulation for Wav {
             raw_buffer,
             1,
             sample_rate,
-            self.sampling_config().frequency() as u32,
+            self.sampling_config().freq() as u32,
         )
         .iter()
         .map(|&d| EmitIntensity::new(d.round() as u8))
