@@ -31,7 +31,7 @@ impl FocusSTM {
     ///
     /// * `freq` - Frequency of STM.
     ///
-    pub const fn from_freq(freq: u32) -> Self {
+    pub const fn from_freq(freq: f64) -> Self {
         Self::from_props(STMProps::from_freq(freq))
     }
 
@@ -183,9 +183,9 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(1, 10)]
-    #[case(2, 10)]
-    fn from_freq(#[case] freq: u32, #[case] n: usize) -> anyhow::Result<()> {
+    #[case(1., 10)]
+    #[case(2., 10)]
+    fn from_freq(#[case] freq: f64, #[case] n: usize) -> anyhow::Result<()> {
         let stm = FocusSTM::from_freq(freq).add_foci_from_iter((0..n).map(|_| Vector3::zeros()))?;
         assert_eq!(freq as f64, stm.freq()?);
         assert_eq!(freq as f64 * n as f64, stm.sampling_config()?.freq());
@@ -272,7 +272,7 @@ mod tests {
     fn test_with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
             loop_behavior,
-            FocusSTM::from_freq(1)
+            FocusSTM::from_freq(1.)
                 .with_loop_behavior(loop_behavior)
                 .loop_behavior()
         );
@@ -280,7 +280,7 @@ mod tests {
 
     #[test]
     fn test_with_loop_behavior_deafault() {
-        let stm = FocusSTM::from_freq(1);
+        let stm = FocusSTM::from_freq(1.);
         assert_eq!(LoopBehavior::Infinite, stm.loop_behavior());
     }
 

@@ -45,6 +45,11 @@ pub enum AUTDInternalError {
     #[error("Sampling period ({0:?}) is out of range ([{1:?}, {2:?}])")]
     SamplingPeriodOutOfRange(Duration, Duration, Duration),
 
+    #[error("STM frequency ({1}Hz, size={0}) must divide {2}")]
+    STMFrequencyInvalid(usize, f64, f64),
+    #[error("STM period ({1:?}, size={0}) must be a multiple of {2:?}")]
+    STMPeriodInvalid(usize, Duration, Duration),
+
     #[error(
         "FocusSTM size ({0}) is out of range ([{}, {}])",
         STM_BUF_SIZE_MIN,

@@ -190,7 +190,7 @@ mod tests {
             3,
             (
                 Sine::new(150.),
-                GainSTM::from_freq(1)
+                GainSTM::from_freq(1.)
                     .add_gain(Uniform::new(0x80))?
                     .add_gain(Uniform::new(0x81))?,
             ),
