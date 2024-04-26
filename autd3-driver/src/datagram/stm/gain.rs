@@ -2,7 +2,7 @@ use crate::{
     defined::DEFAULT_TIMEOUT,
     derive::*,
     firmware::{
-        fpga::{Segment, TransitionMode},
+        fpga::{Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX, STM_BUF_SIZE_MIN},
         operation::GainSTMMode,
     },
 };
@@ -32,9 +32,9 @@ impl<G: Gain> GainSTM<G> {
     ///
     /// # Arguments
     ///
-    /// * `freq` - Frequency of STM. The frequency closest to `freq` from the possible frequencies is set.
+    /// * `freq` - Frequency of STM.
     ///
-    pub const fn from_freq(freq: f64) -> Self {
+    pub const fn from_freq(freq: u32) -> Self {
         Self::from_props_mode(STMProps::from_freq(freq), GainSTMMode::PhaseIntensityFull)
     }
 
@@ -42,7 +42,20 @@ impl<G: Gain> GainSTM<G> {
     ///
     /// # Arguments
     ///
-    /// * `period` - Period. The period closest to `period` from the possible periods is set.
+    /// * `freq` - Frequency of STM. The frequency closest to `freq` from the possible frequencies is set.
+    ///
+    pub const fn from_freq_nearest(freq: f64) -> Self {
+        Self::from_props_mode(
+            STMProps::from_freq_nearest(freq),
+            GainSTMMode::PhaseIntensityFull,
+        )
+    }
+
+    /// constructor
+    ///
+    /// # Arguments
+    ///
+    /// * `period` - Period.
     ///
     pub const fn from_period(period: std::time::Duration) -> Self {
         Self::from_props_mode(
@@ -55,7 +68,20 @@ impl<G: Gain> GainSTM<G> {
     ///
     /// # Arguments
     ///
-    /// * `freq_div` - Sampling frequency division of STM. The sampling frequency is [crate::fpga::FPGA_CLK_FREQ]/`freq_div`.
+    /// * `period` - Period. The period closest to `period` from the possible periods is set.
+    ///
+    pub const fn from_period_nearest(period: std::time::Duration) -> Self {
+        Self::from_props_mode(
+            STMProps::from_period_nearest(period),
+            GainSTMMode::PhaseIntensityFull,
+        )
+    }
+
+    /// constructor
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - Sampling configuration
     ///
     pub const fn from_sampling_config(config: SamplingConfiguration) -> Self {
         Self::from_props_mode(
@@ -64,15 +90,20 @@ impl<G: Gain> GainSTM<G> {
         )
     }
 
-    pub fn frequency(&self) -> f64 {
-        self.props.freq(self.gains.len())
+    pub fn freq(&self) -> Result<f64, AUTDInternalError> {
+        self.sampling_config()
+            .map(|c| c.freq() / self.gains.len() as f64)
     }
 
-    pub fn period(&self) -> std::time::Duration {
-        self.props.period(self.gains.len())
+    pub fn period(&self) -> Result<std::time::Duration, AUTDInternalError> {
+        self.sampling_config()
+            .map(|c| c.period() * self.gains.len() as u32)
     }
 
     pub fn sampling_config(&self) -> Result<SamplingConfiguration, AUTDInternalError> {
+        if !(STM_BUF_SIZE_MIN..=GAIN_STM_BUF_SIZE_MAX).contains(&self.gains.len()) {
+            return Err(AUTDInternalError::GainSTMSizeOutOfRange(self.gains.len()));
+        }
         self.props.sampling_config(self.gains.len())
     }
 
@@ -138,7 +169,7 @@ impl<G: Gain> DatagramS for GainSTM<G> {
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        let freq_div = self.sampling_config()?.frequency_division();
+        let freq_div = self.sampling_config()?.division();
         let Self {
             gains,
             mode,
@@ -187,24 +218,22 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(0.5, 2)]
-    #[case(1.0, 10)]
-    #[case(2.0, 10)]
-    fn test_from_requency(#[case] freq: f64, #[case] n: usize) -> anyhow::Result<()> {
+    #[case(1, 10)]
+    #[case(2, 10)]
+    fn test_from_requency(#[case] freq: u32, #[case] n: usize) -> anyhow::Result<()> {
         let stm = GainSTM::from_freq(freq).add_gains_from_iter((0..n).map(|_| NullGain {}))?;
-        assert_eq!(freq, stm.frequency());
-        assert_eq!(freq * n as f64, stm.sampling_config()?.frequency());
+        assert_eq!(freq as f64, stm.freq()?);
+        assert_eq!(freq as f64 * n as f64, stm.sampling_config()?.freq());
         Ok(())
     }
 
     #[rstest::rstest]
     #[test]
-    #[case(Duration::from_micros(125), 2)]
     #[case(Duration::from_micros(250), 10)]
     #[case(Duration::from_micros(500), 10)]
     fn test_from_period(#[case] period: Duration, #[case] n: usize) -> anyhow::Result<()> {
         let stm = GainSTM::from_period(period).add_gains_from_iter((0..n).map(|_| NullGain {}))?;
-        assert_eq!(period, stm.period());
+        assert_eq!(period, stm.period()?);
         assert_eq!(period / n as u32, stm.sampling_config()?.period());
         Ok(())
     }
@@ -234,7 +263,7 @@ mod tests {
     fn test_with_mode(#[case] mode: GainSTMMode) {
         assert_eq!(
             mode,
-            GainSTM::<NullGain>::from_freq(1.0).with_mode(mode).mode()
+            GainSTM::<NullGain>::from_freq(1).with_mode(mode).mode()
         );
     }
 
@@ -242,7 +271,7 @@ mod tests {
     fn test_with_mode_default() {
         assert_eq!(
             GainSTMMode::PhaseIntensityFull,
-            GainSTM::<NullGain>::from_freq(1.0).mode()
+            GainSTM::<NullGain>::from_freq(1).mode()
         );
     }
 
@@ -263,7 +292,7 @@ mod tests {
 
     #[test]
     fn test_clear() -> anyhow::Result<()> {
-        let mut stm = GainSTM::<Box<dyn Gain>>::from_freq(1.0)
+        let mut stm = GainSTM::<Box<dyn Gain>>::from_freq(1)
             .add_gain(Box::new(NullGain {}))?
             .add_gain(Box::new(NullGain2 {}))?;
         assert_eq!(stm.gains().len(), 2);
@@ -280,7 +309,7 @@ mod tests {
     fn test_with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
             loop_behavior,
-            GainSTM::<Box<dyn Gain>>::from_freq(1.0)
+            GainSTM::<Box<dyn Gain>>::from_freq(1)
                 .with_loop_behavior(loop_behavior)
                 .loop_behavior()
         );
@@ -288,13 +317,13 @@ mod tests {
 
     #[test]
     fn test_indexer() {
-        let stm = GainSTM::from_freq(1.).add_gain(NullGain {}).unwrap();
+        let stm = GainSTM::from_freq(1).add_gain(NullGain {}).unwrap();
         let _: &NullGain = &stm[0];
     }
 
     #[test]
     fn test_operation() {
-        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.)
+        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1)
             .add_gain(Box::new(NullGain {}))
             .unwrap()
             .add_gain(Box::new(NullGain2 {}))

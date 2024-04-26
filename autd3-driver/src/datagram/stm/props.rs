@@ -4,42 +4,48 @@ use crate::derive::*;
 #[doc(hidden)]
 #[derive(Clone, Copy, Builder)]
 pub struct STMProps {
-    sampling: STMSamplingConfiguration,
+    config: STMSamplingConfiguration,
     #[getset]
     pub(crate) loop_behavior: LoopBehavior,
 }
 
 impl STMProps {
-    pub const fn from_freq(freq: f64) -> Self {
+    pub const fn from_freq(freq: u32) -> Self {
         Self {
-            sampling: STMSamplingConfiguration::Frequency(freq),
+            config: STMSamplingConfiguration::Frequency(freq),
+            loop_behavior: LoopBehavior::Infinite,
+        }
+    }
+
+    pub const fn from_freq_nearest(freq: f64) -> Self {
+        Self {
+            config: STMSamplingConfiguration::FrequencyNearest(freq),
             loop_behavior: LoopBehavior::Infinite,
         }
     }
 
     pub const fn from_period(period: std::time::Duration) -> Self {
         Self {
-            sampling: STMSamplingConfiguration::Period(period),
+            config: STMSamplingConfiguration::Period(period),
+            loop_behavior: LoopBehavior::Infinite,
+        }
+    }
+
+    pub const fn from_period_nearest(period: std::time::Duration) -> Self {
+        Self {
+            config: STMSamplingConfiguration::PeriodNearest(period),
             loop_behavior: LoopBehavior::Infinite,
         }
     }
 
     pub const fn from_sampling_config(sampling: SamplingConfiguration) -> Self {
         Self {
-            sampling: STMSamplingConfiguration::SamplingConfiguration(sampling),
+            config: STMSamplingConfiguration::SamplingConfiguration(sampling),
             loop_behavior: LoopBehavior::Infinite,
         }
     }
 
-    pub fn freq(&self, size: usize) -> f64 {
-        self.sampling.frequency(size)
-    }
-
-    pub fn period(&self, size: usize) -> std::time::Duration {
-        self.sampling.period(size)
-    }
-
     pub fn sampling_config(&self, size: usize) -> Result<SamplingConfiguration, AUTDInternalError> {
-        self.sampling.sampling(size)
+        self.config.sampling(size)
     }
 }
