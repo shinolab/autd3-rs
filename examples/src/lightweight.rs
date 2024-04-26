@@ -19,7 +19,7 @@ async fn main() -> anyhow::Result<()> {
         });
     println!("============================================");
 
-    client.send(Sine::new(150)).await?;
+    client.send(Sine::new(150.)).await?;
     client
         .send(Focus::new(Vector3::new(90., 70., 150.)))
         .await?;
