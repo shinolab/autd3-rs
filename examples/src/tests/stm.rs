@@ -11,7 +11,7 @@ pub async fn focus_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool>
         let theta = 2.0 * PI * i as f64 / point_num as f64;
         let p = radius * Vector3::new(theta.cos(), theta.sin(), 0.0);
         center + p
-    }))?;
+    }));
 
     let m = Static::new();
 
@@ -32,7 +32,7 @@ pub async fn gain_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> 
         let theta = 2.0 * PI * i as f64 / point_num as f64;
         let p = radius * Vector3::new(theta.cos(), theta.sin(), 0.0);
         Focus::new(center + p)
-    }))?;
+    }));
 
     let m = Static::new();
 
