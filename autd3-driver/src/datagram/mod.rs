@@ -4,6 +4,7 @@ mod force_fan;
 mod gain;
 mod modulation;
 mod phase_filter;
+mod pulse_width_encoder;
 mod reads_fpga_state;
 mod silencer;
 mod stm;
@@ -23,6 +24,7 @@ pub use modulation::{
     Modulation, ModulationCache, ModulationProperty, ModulationTransform, RadiationPressure,
 };
 pub use phase_filter::ConfigurePhaseFilter;
+pub use pulse_width_encoder::ConfigurePulseWidthEncoder;
 pub use reads_fpga_state::ConfigureReadsFPGAState;
 pub use silencer::{
     ConfigureSilencer, ConfigureSilencerFixedCompletionSteps, ConfigureSilencerFixedUpdateRate,

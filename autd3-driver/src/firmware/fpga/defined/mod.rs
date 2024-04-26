@@ -58,3 +58,5 @@ pub const MOD_BUF_SIZE_MAX: usize = 32768;
 pub const STM_BUF_SIZE_MIN: usize = 2;
 pub const FOCUS_STM_BUF_SIZE_MAX: usize = 65536;
 pub const GAIN_STM_BUF_SIZE_MAX: usize = 1024;
+
+pub const PWE_BUF_SIZE: usize = 65536;

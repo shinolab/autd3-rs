@@ -1,12 +1,13 @@
 use crate::{
     error::AUTDInternalError,
-    firmware::operation::{cast, Operation, TypeTag},
+    firmware::{
+        fpga::PWE_BUF_SIZE,
+        operation::{cast, Operation, TypeTag},
+    },
     geometry::{Device, Geometry},
 };
 
 use super::Remains;
-
-const BUF_SIZE: usize = 65536;
 
 #[derive(Clone, Copy)]
 #[repr(C)]
@@ -42,7 +43,9 @@ pub struct ConfigurePulseWidthEncoderOp {
 }
 
 impl ConfigurePulseWidthEncoderOp {
-    pub fn new(buf: Vec<u8>, full_width_start: u16) -> Self {
+    pub fn new(buf: Vec<u16>) -> Self {
+        let full_width_start = *buf.iter().find(|&v| *v == 256).unwrap_or(&0);
+        let buf = buf.into_iter().map(|v| v as u8).collect();
         Self {
             buf,
             full_width_start,
@@ -53,7 +56,7 @@ impl ConfigurePulseWidthEncoderOp {
 
 impl Operation for ConfigurePulseWidthEncoderOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        let sent = BUF_SIZE - self.remains[device];
+        let sent = PWE_BUF_SIZE - self.remains[device];
 
         let offset = if sent == 0 {
             std::mem::size_of::<PWEHead>()
@@ -100,7 +103,7 @@ impl Operation for ConfigurePulseWidthEncoderOp {
     }
 
     fn required_size(&self, device: &Device) -> usize {
-        if self.remains[device] == BUF_SIZE {
+        if self.remains[device] == PWE_BUF_SIZE {
             std::mem::size_of::<PWEHead>() + 2
         } else {
             std::mem::size_of::<PWESubseq>() + 2
@@ -108,13 +111,13 @@ impl Operation for ConfigurePulseWidthEncoderOp {
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        if self.buf.len() != BUF_SIZE {
+        if self.buf.len() != PWE_BUF_SIZE {
             return Err(AUTDInternalError::InvalidPulseWidthEncoderTableSize(
                 self.buf.len(),
             ));
         }
 
-        self.remains.init(geometry, BUF_SIZE);
+        self.remains.init(geometry, PWE_BUF_SIZE);
 
         Ok(())
     }

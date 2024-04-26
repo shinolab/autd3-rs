@@ -21,8 +21,8 @@ fn config_pwe() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let buf: Vec<_> = (0..65536).map(|_| rng.gen()).collect();
-    let full_width_start = rng.gen();
-    let mut op = ConfigurePulseWidthEncoderOp::new(buf.clone(), full_width_start);
+    let full_width_start = *buf.iter().find(|&v| *v == 256).unwrap_or(&0);
+    let mut op = ConfigurePulseWidthEncoderOp::new(buf.clone());
 
     send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
@@ -30,7 +30,10 @@ fn config_pwe() -> anyhow::Result<()> {
         full_width_start,
         cpu.fpga().pulse_width_encoder_full_width_start()
     );
-    assert_eq!(buf, cpu.fpga().pulse_width_encoder_table());
+    assert_eq!(
+        buf.into_iter().map(|v| v as u8).collect::<Vec<_>>(),
+        cpu.fpga().pulse_width_encoder_table()
+    );
 
     Ok(())
 }
@@ -44,8 +47,7 @@ fn config_pwe_invalid_table_size() {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let buf: Vec<_> = (0..65535).map(|_| rng.gen()).collect();
-    let full_width_start = rng.gen();
-    let mut op = ConfigurePulseWidthEncoderOp::new(buf.clone(), full_width_start);
+    let mut op = ConfigurePulseWidthEncoderOp::new(buf.clone());
 
     assert_eq!(
         Err(autd3_driver::error::AUTDInternalError::InvalidPulseWidthEncoderTableSize(65535)),
@@ -62,8 +64,7 @@ fn config_pwe_invalid_data_size() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let buf: Vec<_> = (0..65536).map(|_| rng.gen()).collect();
-    let full_width_start = rng.gen();
-    let mut op = ConfigurePulseWidthEncoderOp::new(buf.clone(), full_width_start);
+    let mut op = ConfigurePulseWidthEncoderOp::new(buf.clone());
     let mut op_null = NullOp::default();
 
     OperationHandler::init(&mut op, &mut op_null, &geometry)?;
@@ -88,8 +89,7 @@ fn config_pwe_incomplete_data() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let buf: Vec<_> = (0..65536).map(|_| rng.gen()).collect();
-    let full_width_start = rng.gen();
-    let mut op = ConfigurePulseWidthEncoderOp::new(buf.clone(), full_width_start);
+    let mut op = ConfigurePulseWidthEncoderOp::new(buf);
     let mut op_null = NullOp::default();
 
     OperationHandler::init(&mut op, &mut op_null, &geometry)?;
