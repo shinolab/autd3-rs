@@ -88,21 +88,19 @@ impl FocusSTM {
     }
 
     /// Add [ControlPoint] to FocusSTM
-    pub fn add_focus(mut self, point: impl Into<ControlPoint>) -> Result<Self, AUTDInternalError> {
+    pub fn add_focus(mut self, point: impl Into<ControlPoint>) -> Self {
         self.control_points.push(point.into());
-        self.props.sampling_config(self.control_points.len())?;
-        Ok(self)
+        self
     }
 
     /// Add [ControlPoint]s to FocusSTM
     pub fn add_foci_from_iter(
         mut self,
         iter: impl IntoIterator<Item = impl Into<ControlPoint>>,
-    ) -> Result<Self, AUTDInternalError> {
+    ) -> Self {
         self.control_points
             .extend(iter.into_iter().map(|c| c.into()));
-        self.props.sampling_config(self.control_points.len())?;
-        Ok(self)
+        self
     }
 
     /// Clear current [ControlPoint]s

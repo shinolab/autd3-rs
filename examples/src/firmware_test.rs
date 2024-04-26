@@ -316,7 +316,7 @@ async fn main() -> Result<()> {
             })
         };
 
-        let stm = FocusSTM::from_freq(0.5).add_foci_from_iter(gen_foci())?;
+        let stm = FocusSTM::from_freq(0.5).add_foci_from_iter(gen_foci());
         autd.send(stm).await?;
         print_msg_and_wait_for_key(
             "Check that the focal points are moving at a freq of 0.5 Hz over a circumference of 30 mm radius by your hands."
@@ -329,7 +329,7 @@ async fn main() -> Result<()> {
             assert_eq!(Some(Segment::S0), state.current_stm_segment());
         });
 
-        let stm = FocusSTM::from_freq(1.).add_foci_from_iter(gen_foci())?;
+        let stm = FocusSTM::from_freq(1.).add_foci_from_iter(gen_foci());
         autd.send(stm.with_segment(Segment::S1, Some(TransitionMode::SyncIdx)))
             .await?;
         print_msg_and_wait_for_key("Check that the freq is now 1 Hz.");
@@ -359,7 +359,7 @@ async fn main() -> Result<()> {
         foci[point_num - 1] = foci[point_num - 1].with_intensity(0x00);
         let stm = FocusSTM::from_freq(0.5)
             .with_loop_behavior(LoopBehavior::once())
-            .add_foci_from_iter(foci)?
+            .add_foci_from_iter(foci)
             .with_segment(Segment::S1, None);
         autd.send(stm).await?;
         print_msg_and_wait_for_key("Check that the nothing has chenged. Then, continue if the focal point is on the left size of device and check that the focus movement direction reverses when the focus comes to the right edge and stops after a cycle.");
@@ -433,7 +433,7 @@ async fn main() -> Result<()> {
             })
         };
 
-        let stm = GainSTM::from_freq(0.5).add_gains_from_iter(gen_foci())?;
+        let stm = GainSTM::from_freq(0.5).add_gains_from_iter(gen_foci());
         autd.send(stm).await?;
         print_msg_and_wait_for_key(
             "Check that the focal points are moving at a freq of 0.5 Hz over a circumference of 30 mm radius by your hands."
@@ -446,7 +446,7 @@ async fn main() -> Result<()> {
             assert_eq!(Some(Segment::S0), state.current_stm_segment());
         });
 
-        let stm = GainSTM::from_freq(1.).add_gains_from_iter(gen_foci())?;
+        let stm = GainSTM::from_freq(1.).add_gains_from_iter(gen_foci());
         autd.send(stm.with_segment(Segment::S1, Some(TransitionMode::SyncIdx)))
             .await?;
         print_msg_and_wait_for_key("Check that the freq is now 1 Hz.");
@@ -476,7 +476,7 @@ async fn main() -> Result<()> {
         foci[point_num - 1] = Focus::new(*foci[point_num - 1].pos()).with_intensity(0x00);
         let stm = GainSTM::from_freq(0.5)
             .with_loop_behavior(LoopBehavior::once())
-            .add_gains_from_iter(foci)?
+            .add_gains_from_iter(foci)
             .with_segment(Segment::S1, None);
         autd.send(stm).await?;
         print_msg_and_wait_for_key("Check that the nothing has chenged. Then, continue if the focal point is on the left size of device and check that the focus movement direction reverses when the focus comes to the right edge and stops after a cycle.");
