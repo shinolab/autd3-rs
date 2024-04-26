@@ -6,15 +6,7 @@ import "utils.proto";
 
 message Static { EmitIntensity intensity = 1; }
 
-message SineInt {
-  SamplingConfiguration config = 1;
-  uint64 freq = 2;
-  EmitIntensity intensity = 3;
-  EmitIntensity offset = 4;
-  Phase phase = 5;
-}
-
-message SineFloat {
+message SineExact {
   SamplingConfiguration config = 1;
   float freq = 2;
   EmitIntensity intensity = 3;
@@ -22,15 +14,23 @@ message SineFloat {
   Phase phase = 5;
 }
 
-message SquareInt {
+message SineNearest {
   SamplingConfiguration config = 1;
-  uint64 freq = 2;
+  float freq = 2;
+  EmitIntensity intensity = 3;
+  EmitIntensity offset = 4;
+  Phase phase = 5;
+}
+
+message SquareExact {
+  SamplingConfiguration config = 1;
+  float freq = 2;
   EmitIntensity low = 3;
   EmitIntensity high = 4;
   float duty = 5;
 }
 
-message SquareFloat {
+message SquareNearest {
   SamplingConfiguration config = 1;
   float freq = 2;
   EmitIntensity low = 3;
@@ -41,10 +41,10 @@ message SquareFloat {
 message Modulation {
   oneof modulation {
     Static static = 1;
-    SineInt sine_int = 2;
-    SineFloat sine_float = 3;
-    SquareInt square_int = 4;
-    SquareFloat square_float = 5;
+    SineExact sine_exact = 2;
+    SineNearest sine_nearest = 3;
+    SquareExact square_exact = 4;
+    SquareNearest square_nearest = 5;
   }
   Segment segment = 1001;
   optional TransitionMode transition_mode = 1002;

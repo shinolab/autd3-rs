@@ -5,14 +5,14 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3::modulation::Sine<f64> {
+impl ToMessage for autd3::modulation::Sine<autd3::modulation::sine::NearestFrequency> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::SineFloat(SineFloat {
+                modulation: Some(modulation::Modulation::SineNearest(SineNearest {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq() as _,
                     intensity: Some(self.intensity().to_msg(None)),
@@ -27,14 +27,18 @@ impl ToMessage for autd3::modulation::Sine<f64> {
     }
 }
 
-impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::modulation::Sine<f64>> {
+impl ToMessage
+    for autd3_driver::datagram::DatagramWithSegment<
+        autd3::modulation::Sine<autd3::modulation::sine::NearestFrequency>,
+    >
+{
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::SineFloat(SineFloat {
+                modulation: Some(modulation::Modulation::SineNearest(SineNearest {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq() as _,
                     intensity: Some(self.intensity().to_msg(None)),
@@ -49,11 +53,13 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::modulation
     }
 }
 
-impl FromMessage<SineFloat> for autd3::modulation::Sine<f64> {
+impl FromMessage<SineNearest>
+    for autd3::modulation::Sine<autd3::modulation::sine::NearestFrequency>
+{
     #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &SineFloat) -> Option<Self> {
+    fn from_msg(msg: &SineNearest) -> Option<Self> {
         Some(
-            Self::new(msg.freq as _)
+            autd3::modulation::Sine::with_freq_nearest(msg.freq as _)
                 .with_intensity(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
                     msg.intensity.as_ref()?,
                 )?)
@@ -90,7 +96,7 @@ mod tests {
 
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::SineFloat(modulation)),
+                modulation: Some(modulation::Modulation::SineNearest(modulation)),
                 ..
             })) => {
                 let m2 = autd3::modulation::Sine::<f64>::from_msg(&modulation).unwrap();

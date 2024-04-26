@@ -8,15 +8,14 @@ impl ToMessage for autd3_driver::firmware::fpga::SamplingConfiguration {
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
-            freq_div: self.frequency_division(),
+            freq_div: self.division(),
         }
     }
 }
 
 impl FromMessage<SamplingConfiguration> for autd3_driver::firmware::fpga::SamplingConfiguration {
     fn from_msg(msg: &SamplingConfiguration) -> Option<Self> {
-        autd3_driver::firmware::fpga::SamplingConfiguration::from_frequency_division(msg.freq_div)
-            .ok()
+        autd3_driver::firmware::fpga::SamplingConfiguration::from_division_raw(msg.freq_div).ok()
     }
 }
 
@@ -32,7 +31,7 @@ mod tests {
     #[test]
     fn test_sampling_config() {
         let mut rng = rand::thread_rng();
-        let v = SamplingConfiguration::from_frequency_division(
+        let v = SamplingConfiguration::from_division_raw(
             rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX),
         )
         .unwrap();
