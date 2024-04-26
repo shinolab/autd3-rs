@@ -59,7 +59,7 @@ fn send_gain() -> anyhow::Result<()> {
         assert!(cpu.fpga().is_stm_gain_mode(Segment::S0));
         assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
         assert_eq!(1, cpu.fpga().stm_cycle(Segment::S0));
-        assert_eq!(0xFFFFFFFF, cpu.fpga().stm_frequency_division(Segment::S0));
+        assert_eq!(0xFFFFFFFF, cpu.fpga().stm_freq_division(Segment::S0));
         assert_eq!(
             LoopBehavior::Infinite,
             cpu.fpga().stm_loop_behavior(Segment::S0)
@@ -93,7 +93,7 @@ fn send_gain() -> anyhow::Result<()> {
         assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
         assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
         assert_eq!(1, cpu.fpga().stm_cycle(Segment::S1));
-        assert_eq!(0xFFFFFFFF, cpu.fpga().stm_frequency_division(Segment::S1));
+        assert_eq!(0xFFFFFFFF, cpu.fpga().stm_freq_division(Segment::S1));
         assert_eq!(
             LoopBehavior::Infinite,
             cpu.fpga().stm_loop_behavior(Segment::S1)

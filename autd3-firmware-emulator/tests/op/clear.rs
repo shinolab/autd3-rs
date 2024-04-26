@@ -59,7 +59,7 @@ fn send_clear() -> anyhow::Result<()> {
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
         let (mut op, _) = TestMod {
-            config: SamplingConfiguration::from_frequency_division(10000)?,
+            config: SamplingConfiguration::from_division(5120)?,
             loop_behavior: LoopBehavior::Infinite,
         }
         .operation()?;
@@ -98,8 +98,8 @@ fn send_clear() -> anyhow::Result<()> {
 
     assert_eq!(2, cpu.fpga().modulation_cycle(Segment::S0));
     assert_eq!(2, cpu.fpga().modulation_cycle(Segment::S1));
-    assert_eq!(5120, cpu.fpga().modulation_frequency_division(Segment::S0));
-    assert_eq!(5120, cpu.fpga().modulation_frequency_division(Segment::S1));
+    assert_eq!(5120, cpu.fpga().modulation_freq_division(Segment::S0));
+    assert_eq!(5120, cpu.fpga().modulation_freq_division(Segment::S1));
     assert_eq!(
         LoopBehavior::Infinite,
         cpu.fpga().modulation_loop_behavior(Segment::S0)
@@ -123,8 +123,8 @@ fn send_clear() -> anyhow::Result<()> {
     assert_eq!(vec![Drive::null(); 249], cpu.fpga().drives(Segment::S1, 0));
     assert_eq!(1, cpu.fpga().stm_cycle(Segment::S0));
     assert_eq!(1, cpu.fpga().stm_cycle(Segment::S1));
-    assert_eq!(0xFFFFFFFF, cpu.fpga().stm_frequency_division(Segment::S0));
-    assert_eq!(0xFFFFFFFF, cpu.fpga().stm_frequency_division(Segment::S1));
+    assert_eq!(0xFFFFFFFF, cpu.fpga().stm_freq_division(Segment::S0));
+    assert_eq!(0xFFFFFFFF, cpu.fpga().stm_freq_division(Segment::S1));
     assert_eq!(
         LoopBehavior::Infinite,
         cpu.fpga().stm_loop_behavior(Segment::S0)

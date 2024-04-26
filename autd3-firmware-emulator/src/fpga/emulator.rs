@@ -195,7 +195,7 @@ impl FPGAEmulator {
         self.controller_bram[ADDR_SILENCER_MODE] == SILNCER_MODE_FIXED_COMPLETION_STEPS
     }
 
-    pub fn stm_frequency_division(&self, segment: Segment) -> u32 {
+    pub fn stm_freq_division(&self, segment: Segment) -> u32 {
         Self::read_bram_as::<u32>(
             &self.controller_bram,
             match segment {
@@ -252,7 +252,7 @@ impl FPGAEmulator {
         }
     }
 
-    pub fn modulation_frequency_division(&self, segment: Segment) -> u32 {
+    pub fn modulation_freq_division(&self, segment: Segment) -> u32 {
         Self::read_bram_as::<u32>(
             &self.controller_bram,
             match segment {
@@ -489,12 +489,12 @@ impl FPGAEmulator {
     }
 
     pub fn stm_idx_from_systime(&self, segment: Segment, systime: DcSysTime) -> usize {
-        (Self::fpga_sys_time(systime) / self.stm_frequency_division(segment) as u64) as usize
+        (Self::fpga_sys_time(systime) / self.stm_freq_division(segment) as u64) as usize
             % self.stm_cycle(segment)
     }
 
     pub fn mod_idx_from_systime(&self, segment: Segment, systime: DcSysTime) -> usize {
-        (Self::fpga_sys_time(systime) / self.modulation_frequency_division(segment) as u64) as usize
+        (Self::fpga_sys_time(systime) / self.modulation_freq_division(segment) as u64) as usize
             % self.modulation_cycle(segment)
     }
 }
@@ -605,7 +605,7 @@ mod tests {
             let addr = ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14)
                 | (ADDR_STM_FREQ_DIV0_0 as u16 & 0x3FFF);
             fpga.write(addr, freq_div as u16);
-            assert_eq!(freq_div, fpga.stm_frequency_division(Segment::S0));
+            assert_eq!(freq_div, fpga.stm_freq_division(Segment::S0));
         }
 
         assert_eq!(
@@ -639,7 +639,7 @@ mod tests {
             let addr = ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14)
                 | (ADDR_MOD_FREQ_DIV0_0 as u16 & 0x3FFF);
             fpga.write(addr, freq_div as u16);
-            assert_eq!(freq_div, fpga.modulation_frequency_division(Segment::S0));
+            assert_eq!(freq_div, fpga.modulation_freq_division(Segment::S0));
         }
 
         assert_eq!(

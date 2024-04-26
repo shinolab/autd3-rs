@@ -72,7 +72,7 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
         assert_eq!(segment, cpu.fpga().current_stm_segment());
         assert_eq!(loop_behaviour, cpu.fpga().stm_loop_behavior(Segment::S0));
         assert_eq!(foci.len(), cpu.fpga().stm_cycle(Segment::S0));
-        assert_eq!(freq_div, cpu.fpga().stm_frequency_division(Segment::S0));
+        assert_eq!(freq_div, cpu.fpga().stm_freq_division(Segment::S0));
         assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
         assert_eq!(
             (geometry[0].sound_speed / METER * 1024.0).round() as u32,
@@ -116,7 +116,7 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
         assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
         assert_eq!(loop_behaviour, cpu.fpga().stm_loop_behavior(Segment::S1));
         assert_eq!(foci.len(), cpu.fpga().stm_cycle(Segment::S1));
-        assert_eq!(freq_div, cpu.fpga().stm_frequency_division(Segment::S1));
+        assert_eq!(freq_div, cpu.fpga().stm_freq_division(Segment::S1));
         assert_eq!(TransitionMode::SyncIdx, cpu.fpga().stm_transition_mode());
         assert_eq!(
             (geometry[0].sound_speed / METER * 1024.0).round() as u32,
