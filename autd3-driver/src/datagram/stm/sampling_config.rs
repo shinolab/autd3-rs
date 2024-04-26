@@ -16,8 +16,8 @@ pub enum STMSamplingConfiguration {
 
 impl STMSamplingConfiguration {
     pub fn sampling(&self, size: usize) -> Result<SamplingConfiguration, AUTDInternalError> {
-        match self {
-            &STMSamplingConfiguration::Frequency(f) => {
+        match *self {
+            STMSamplingConfiguration::Frequency(f) => {
                 let fs = f * size as f64;
                 if fs.fract() > 1e-9 {
                     return Err(AUTDInternalError::STMFrequencyInvalid(
@@ -28,10 +28,10 @@ impl STMSamplingConfiguration {
                 }
                 SamplingConfiguration::from_freq(fs as u32)
             }
-            &STMSamplingConfiguration::FrequencyNearest(f) => {
+            STMSamplingConfiguration::FrequencyNearest(f) => {
                 SamplingConfiguration::from_freq_nearest(f * size as f64)
             }
-            &STMSamplingConfiguration::Period(p) => {
+            STMSamplingConfiguration::Period(p) => {
                 if (p.as_nanos() % size as u128) != 0 {
                     return Err(AUTDInternalError::STMPeriodInvalid(
                         size,
@@ -41,10 +41,10 @@ impl STMSamplingConfiguration {
                 }
                 SamplingConfiguration::from_period(p / size as u32)
             }
-            &STMSamplingConfiguration::PeriodNearest(p) => {
+            STMSamplingConfiguration::PeriodNearest(p) => {
                 SamplingConfiguration::from_period_nearest(p / size as u32)
             }
-            &Self::SamplingConfiguration(s) => Ok(s),
+            Self::SamplingConfiguration(s) => Ok(s),
         }
     }
 }
