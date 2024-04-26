@@ -115,6 +115,15 @@ mod tests {
     #[case(Ok(SamplingConfiguration::from_period(Duration::from_micros(250)).unwrap()), Duration::from_micros(250), 1)]
     #[case(Ok(SamplingConfiguration::from_period(Duration::from_micros(125)).unwrap()), Duration::from_micros(250), 2)]
     #[case(
+        Err(AUTDInternalError::STMPeriodInvalid(
+            3,
+            Duration::from_micros(250),
+            SamplingConfiguration::PERIOD_MIN * 3
+        )),
+        Duration::from_micros(250),
+        3
+    )]
+    #[case(
         Err(AUTDInternalError::SamplingPeriodInvalid(
             Duration::from_micros(251),
             SamplingConfiguration::PERIOD_MIN

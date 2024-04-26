@@ -98,19 +98,25 @@ mod tests {
         };
     }
 
+    #[rstest::fixture]
+    fn tr() -> Transducer {
+        Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity())
+    }
+
     #[rstest::rstest]
     #[test]
     #[case(0)]
     #[case(1)]
-    fn test_idx(#[case] idx: usize) {
-        let tr = Transducer::new(idx, Vector3::zeros(), UnitQuaternion::identity());
-        assert_eq!(idx, tr.idx());
+    fn idx(#[case] i: usize) {
+        assert_eq!(
+            i,
+            Transducer::new(i, Vector3::zeros(), UnitQuaternion::identity()).idx()
+        );
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_affine() {
-        let mut tr = Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
-
+    fn affine(mut tr: Transducer) {
         let t = Vector3::new(40., 50., 60.);
         let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)
             * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), 0.)
@@ -130,14 +136,18 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(340e3)]
-    #[case(400e3)]
-    fn test_wavenumber(#[case] c: f64) {
-        let tr = Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
-        assert_approx_eq!(
-            2. * PI * crate::firmware::fpga::ULTRASOUND_FREQUENCY as f64 / c,
-            tr.wavenumber(c)
-        );
+    #[case(8.5, 340e3)]
+    #[case(10., 400e3)]
+    fn wavelength(#[case] expect: f64, #[case] c: f64, tr: Transducer) {
+        assert_approx_eq!(expect, tr.wavelength(c));
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(0.7391982714328925, 340e3)]
+    #[case(0.6283185307179586, 400e3)]
+    fn wavenumber(#[case] expect: f64, #[case] c: f64, tr: Transducer) {
+        assert_approx_eq!(expect, tr.wavenumber(c));
     }
 
     #[rstest::rstest]
@@ -146,8 +156,7 @@ mod tests {
     #[case(0, Vector3::new(8.5, 0., 0.))]
     #[case(0, Vector3::new(-8.5, 0., 0.))]
     #[case(128, Vector3::new(8.5/2., 0., 0.))]
-    fn test_align_phase_at(#[case] expected: u8, #[case] pos: Vector3) {
-        let tr = Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
+    fn align_phase_at(#[case] expected: u8, #[case] pos: Vector3, tr: Transducer) {
         assert_eq!(expected, tr.align_phase_at(pos, 340e3).value());
     }
 }
