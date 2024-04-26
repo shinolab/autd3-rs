@@ -15,7 +15,7 @@ use super::STMProps;
 ///
 /// GainSTM has following restrictions:
 /// - The maximum number of sampling [Gain] is [crate::fpga::GAIN_STM_BUF_SIZE_MAX].
-/// - The sampling frequency is [crate::fpga::FPGA_CLK_FREQ]/N, where `N` is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN]
+/// - The sampling frequency is [crate::firmware::fpga::fpga_clk_freq()]/N, where `N` is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN]
 ///
 #[derive(Builder)]
 #[no_const]
@@ -209,7 +209,10 @@ mod tests {
 
     use super::*;
 
-    use crate::firmware::operation::{tests::NullGain, GainSTMOp};
+    use crate::firmware::{
+        fpga::sampling_config,
+        operation::{tests::NullGain, GainSTMOp},
+    };
 
     #[rstest::rstest]
     #[test]
@@ -267,7 +270,7 @@ mod tests {
     #[case(
         Err(AUTDInternalError::SamplingPeriodInvalid(
             Duration::from_micros(26),
-            SamplingConfiguration::PERIOD_MIN
+            sampling_config::period_min()
         )),
         Duration::from_micros(52),
         2

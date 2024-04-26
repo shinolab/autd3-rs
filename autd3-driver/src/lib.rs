@@ -27,7 +27,7 @@ pub mod derive {
         firmware::{
             fpga::{
                 Drive, EmitIntensity, LoopBehavior, Phase, Rad, SamplingConfiguration, Segment,
-                TransitionMode, FPGA_CLK_FREQ, SAMPLING_FREQ_DIV_MIN,
+                TransitionMode, SAMPLING_FREQ_DIV_MIN,
             },
             operation::{GainOp, ModulationOp, NullOp, Operation},
         },

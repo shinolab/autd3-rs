@@ -87,8 +87,8 @@ impl Operation for FocusSTMOp {
                 freq_div: self.freq_div,
                 sound_speed: (device.sound_speed / METER
                     * 1024.0
-                    * crate::firmware::fpga::FREQUENCY_40K as f64
-                    / crate::firmware::fpga::ULTRASOUND_FREQUENCY as f64)
+                    * crate::firmware::fpga::FREQ_40K as f64
+                    / crate::firmware::fpga::ultrasound_freq() as f64)
                     .round() as u32,
                 rep: self.loop_behavior.to_rep(),
             };

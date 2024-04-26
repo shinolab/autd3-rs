@@ -15,7 +15,7 @@ use super::STMProps;
 ///
 /// FocusSTM has following restrictions:
 /// - The maximum number of sampling points is [crate::fpga::FOCUS_STM_BUF_SIZE_MAX].
-/// - The sampling freq is [crate::fpga::FPGA_CLK_FREQ]/N, where `N` is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN]
+/// - The sampling freq is [crate::firmware::fpga::fpga_clk_freq()]/N, where `N` is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN]
 ///
 #[derive(Clone, Builder)]
 pub struct FocusSTM {
@@ -177,7 +177,10 @@ mod tests {
     use std::time::Duration;
 
     use super::*;
-    use crate::{firmware::operation::FocusSTMOp, geometry::Vector3};
+    use crate::{
+        firmware::{fpga::sampling_config, operation::FocusSTMOp},
+        geometry::Vector3,
+    };
 
     #[rstest::rstest]
     #[test]
@@ -235,7 +238,7 @@ mod tests {
     #[case(
         Err(AUTDInternalError::SamplingPeriodInvalid(
             Duration::from_micros(26),
-            SamplingConfiguration::PERIOD_MIN
+            sampling_config::period_min()
         )),
         Duration::from_micros(52),
         2

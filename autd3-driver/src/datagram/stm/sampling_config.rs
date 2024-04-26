@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{
     error::AUTDInternalError,
-    firmware::fpga::{SamplingConfiguration, ULTRASOUND_FREQUENCY},
+    firmware::fpga::{sampling_config, ultrasound_freq, SamplingConfiguration},
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -23,7 +23,7 @@ impl STMSamplingConfiguration {
                     return Err(AUTDInternalError::STMFrequencyInvalid(
                         size,
                         f,
-                        ULTRASOUND_FREQUENCY as f64 / size as f64,
+                        ultrasound_freq() as f64 / size as f64,
                     ));
                 }
                 SamplingConfiguration::from_freq(fs as u32)
@@ -36,7 +36,7 @@ impl STMSamplingConfiguration {
                     return Err(AUTDInternalError::STMPeriodInvalid(
                         size,
                         p,
-                        SamplingConfiguration::PERIOD_MIN * size as u32,
+                        sampling_config::period_min() * size as u32,
                     ));
                 }
                 SamplingConfiguration::from_period(p / size as u32)
@@ -51,25 +51,26 @@ impl STMSamplingConfiguration {
 
 #[cfg(test)]
 mod tests {
-    use Duration;
-
-    use crate::firmware::fpga::ULTRASOUND_FREQUENCY;
-
-    use super::*;
+    use super::STMSamplingConfiguration;
+    use crate::{
+        derive::AUTDInternalError,
+        firmware::fpga::{sampling_config, ultrasound_freq, SamplingConfiguration},
+    };
+    use std::time::Duration;
 
     #[rstest::rstest]
     #[test]
     #[case(Ok(SamplingConfiguration::from_freq(4000).unwrap()), 4000., 1)]
     #[case(Ok(SamplingConfiguration::from_freq(8000).unwrap()), 4000., 2)]
     #[case(
-        Err(AUTDInternalError::SamplingFreqInvalid(4001, ULTRASOUND_FREQUENCY)),
+        Err(AUTDInternalError::SamplingFreqInvalid(4001, ultrasound_freq())),
         4001.,
         1
     )]
-    #[case(Ok(SamplingConfiguration::from_freq(SamplingConfiguration::FREQ_MAX).unwrap()), SamplingConfiguration::FREQ_MAX as _, 1)]
+    #[case(Ok(SamplingConfiguration::from_freq(sampling_config::freq_max()).unwrap()), sampling_config::freq_max() as _, 1)]
     #[case(
-        Err(AUTDInternalError::SamplingFreqInvalid(SamplingConfiguration::FREQ_MAX * 2, ULTRASOUND_FREQUENCY)),
-        SamplingConfiguration::FREQ_MAX as _,
+        Err(AUTDInternalError::SamplingFreqInvalid(sampling_config::freq_max() * 2, ultrasound_freq())),
+        sampling_config::freq_max() as _,
         2
     )]
     fn frequency(
@@ -88,15 +89,15 @@ mod tests {
     #[case(Ok(SamplingConfiguration::from_freq_nearest(4000.).unwrap()), 4000., 1)]
     #[case(Ok(SamplingConfiguration::from_freq_nearest(8000.).unwrap()), 4000., 2)]
     #[case(Ok(SamplingConfiguration::from_freq_nearest(4001.).unwrap()), 4001., 1)]
-    #[case(Ok(SamplingConfiguration::from_freq_nearest(SamplingConfiguration::FREQ_MAX_RAW).unwrap()), SamplingConfiguration::FREQ_MAX_RAW, 1)]
+    #[case(Ok(SamplingConfiguration::from_freq_nearest(sampling_config::freq_max_raw()).unwrap()), sampling_config::freq_max_raw(), 1)]
     #[case(
         Err(
             AUTDInternalError::SamplingFreqOutOfRange(
-                SamplingConfiguration::FREQ_MAX_RAW * 2.,
-                SamplingConfiguration::FREQ_MIN_RAW,
-                SamplingConfiguration::FREQ_MAX_RAW)
+                sampling_config::freq_max_raw() * 2.,
+                sampling_config::freq_min_raw(),
+                sampling_config::freq_max_raw())
             ),
-        SamplingConfiguration::FREQ_MAX_RAW,
+        sampling_config::freq_max_raw(),
         2
     )]
     fn frequency_nearest(
@@ -118,7 +119,7 @@ mod tests {
         Err(AUTDInternalError::STMPeriodInvalid(
             3,
             Duration::from_micros(250),
-            SamplingConfiguration::PERIOD_MIN * 3
+            sampling_config::period_min() * 3
         )),
         Duration::from_micros(250),
         3
@@ -126,17 +127,17 @@ mod tests {
     #[case(
         Err(AUTDInternalError::SamplingPeriodInvalid(
             Duration::from_micros(251),
-            SamplingConfiguration::PERIOD_MIN
+            sampling_config::period_min()
         )),
         Duration::from_micros(251),
         1
     )]
-    #[case(Ok(SamplingConfiguration::from_period(SamplingConfiguration::PERIOD_MIN).unwrap()), SamplingConfiguration::PERIOD_MIN, 1)]
-    #[case(Err(AUTDInternalError::SamplingPeriodInvalid(SamplingConfiguration::PERIOD_MIN / 2, SamplingConfiguration::PERIOD_MIN)), SamplingConfiguration::PERIOD_MIN, 2)]
-    #[case(Ok(SamplingConfiguration::from_period(SamplingConfiguration::PERIOD_MAX).unwrap()), SamplingConfiguration::PERIOD_MAX, 1)]
+    #[case(Ok(SamplingConfiguration::from_period(sampling_config::period_min()).unwrap()), sampling_config::period_min(), 1)]
+    #[case(Err(AUTDInternalError::SamplingPeriodInvalid(sampling_config::period_min() / 2, sampling_config::period_min())), sampling_config::period_min(), 2)]
+    #[case(Ok(SamplingConfiguration::from_period(sampling_config::period_max()).unwrap()), sampling_config::period_max(), 1)]
     #[case(
-        Err(AUTDInternalError::SamplingPeriodInvalid(SamplingConfiguration::PERIOD_MAX / 2, SamplingConfiguration::PERIOD_MIN)),
-        SamplingConfiguration::PERIOD_MAX,
+        Err(AUTDInternalError::SamplingPeriodInvalid(sampling_config::period_max() / 2, sampling_config::period_min())),
+        sampling_config::period_max(),
         2
     )]
     fn period(
@@ -152,12 +153,12 @@ mod tests {
     #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(250)).unwrap()), Duration::from_micros(250), 1)]
     #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(125)).unwrap()), Duration::from_micros(250), 2)]
     #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(251)).unwrap()), Duration::from_micros(251), 1)]
-    #[case(Ok(SamplingConfiguration::from_period_nearest(SamplingConfiguration::PERIOD_MIN).unwrap()), SamplingConfiguration::PERIOD_MIN, 1)]
-    #[case(Err(AUTDInternalError::SamplingPeriodOutOfRange(SamplingConfiguration::PERIOD_MIN / 2, SamplingConfiguration::PERIOD_MIN_RAW, SamplingConfiguration::PERIOD_MAX_RAW)), SamplingConfiguration::PERIOD_MIN, 2)]
-    #[case(Ok(SamplingConfiguration::from_period_nearest(SamplingConfiguration::PERIOD_MAX).unwrap()), SamplingConfiguration::PERIOD_MAX, 1)]
+    #[case(Ok(SamplingConfiguration::from_period_nearest(sampling_config::period_min()).unwrap()), sampling_config::period_min(), 1)]
+    #[case(Err(AUTDInternalError::SamplingPeriodOutOfRange(sampling_config::period_min() / 2, sampling_config::period_min_raw(), sampling_config::period_max_raw())), sampling_config::period_min(), 2)]
+    #[case(Ok(SamplingConfiguration::from_period_nearest(sampling_config::period_max()).unwrap()), sampling_config::period_max(), 1)]
     #[case(
-        Ok(SamplingConfiguration::from_period_nearest(SamplingConfiguration::PERIOD_MAX / 2).unwrap()),
-        SamplingConfiguration::PERIOD_MAX,
+        Ok(SamplingConfiguration::from_period_nearest(sampling_config::period_max() / 2).unwrap()),
+        sampling_config::period_max(),
         2
     )]
     fn period_nearest(
@@ -173,19 +174,19 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(SamplingConfiguration::from_division(SamplingConfiguration::DIV_MIN).unwrap(), 1)]
-    #[case(SamplingConfiguration::from_division(SamplingConfiguration::DIV_MIN).unwrap(), 2)]
-    #[case(SamplingConfiguration::from_division(SamplingConfiguration::DIV_MAX).unwrap(), 1)]
-    #[case(SamplingConfiguration::from_division(SamplingConfiguration::DIV_MAX).unwrap(), 2)]
-    #[case(SamplingConfiguration::from_period(SamplingConfiguration::PERIOD_MIN).unwrap(), 1)]
-    #[case(SamplingConfiguration::from_period(SamplingConfiguration::PERIOD_MIN).unwrap(), 2)]
-    #[case(SamplingConfiguration::from_period(SamplingConfiguration::PERIOD_MAX).unwrap(), 1)]
-    #[case(SamplingConfiguration::from_period(SamplingConfiguration::PERIOD_MAX).unwrap(), 2)]
-    #[case(SamplingConfiguration::from_freq(SamplingConfiguration::FREQ_MIN).unwrap(), 1)]
-    #[case(SamplingConfiguration::from_freq(SamplingConfiguration::FREQ_MIN).unwrap(), 2)]
-    #[case(SamplingConfiguration::from_freq(SamplingConfiguration::FREQ_MAX).unwrap(), 1)]
-    #[case(SamplingConfiguration::from_freq(SamplingConfiguration::FREQ_MAX).unwrap(), 2)]
-    fn sampling_config(#[case] config: SamplingConfiguration, #[case] size: usize) {
+    #[case(SamplingConfiguration::from_division(sampling_config::div_min()).unwrap(), 1)]
+    #[case(SamplingConfiguration::from_division(sampling_config::div_min()).unwrap(), 2)]
+    #[case(SamplingConfiguration::from_division(sampling_config::div_max()).unwrap(), 1)]
+    #[case(SamplingConfiguration::from_division(sampling_config::div_max()).unwrap(), 2)]
+    #[case(SamplingConfiguration::from_period(sampling_config::period_min()).unwrap(), 1)]
+    #[case(SamplingConfiguration::from_period(sampling_config::period_min()).unwrap(), 2)]
+    #[case(SamplingConfiguration::from_period(sampling_config::period_max()).unwrap(), 1)]
+    #[case(SamplingConfiguration::from_period(sampling_config::period_max()).unwrap(), 2)]
+    #[case(SamplingConfiguration::from_freq(sampling_config::freq_min()).unwrap(), 1)]
+    #[case(SamplingConfiguration::from_freq(sampling_config::freq_min()).unwrap(), 2)]
+    #[case(SamplingConfiguration::from_freq(sampling_config::freq_max()).unwrap(), 1)]
+    #[case(SamplingConfiguration::from_freq(sampling_config::freq_max()).unwrap(), 2)]
+    fn sampling(#[case] config: SamplingConfiguration, #[case] size: usize) {
         assert_eq!(
             Ok(config),
             STMSamplingConfiguration::SamplingConfiguration(config).sampling(size)
