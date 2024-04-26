@@ -1,22 +1,24 @@
 use std::ops::Deref;
 
-use super::sine::{FrequencyType, Sine};
+use super::{sampling_mode::SamplingMode, sine::Sine};
 
 use autd3_driver::derive::*;
 
 use num::integer::lcm;
 
-/// Multi-frequency sine wave modulation
+/// Multi-freq sine wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug)]
-pub struct Fourier<F: FrequencyType> {
+pub struct Fourier<
+    S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration)>,
+> {
     #[no_change]
     config: SamplingConfiguration,
-    components: Vec<Sine<F>>,
+    components: Vec<Sine<S>>,
     loop_behavior: LoopBehavior,
 }
 
-impl<F: FrequencyType> Fourier<F> {
-    pub fn new(sine: Sine<F>) -> Self {
+impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration)>> Fourier<S> {
+    pub fn new(sine: Sine<S>) -> Self {
         Self {
             config: sine.sampling_config(),
             components: vec![sine],
@@ -29,16 +31,14 @@ impl<F: FrequencyType> Fourier<F> {
     /// # Arguments
     /// - `sine` - [Sine] modulation
     ///
-    pub fn add_component(self, sine: Sine<F>) -> Self {
+    pub fn add_component(self, sine: Sine<S>) -> Self {
         let Self {
             mut components,
             config,
             loop_behavior,
         } = self;
-        let config = SamplingConfiguration::from_frequency_division(
-            config
-                .frequency_division()
-                .min(sine.sampling_config().frequency_division()),
+        let config = SamplingConfiguration::from_division_raw(
+            config.division().min(sine.sampling_config().division()),
         )
         .unwrap();
         components.push(sine.with_sampling_config(config));
@@ -56,7 +56,7 @@ impl<F: FrequencyType> Fourier<F> {
     ///
     pub fn add_components_from_iter(
         self,
-        iter: impl IntoIterator<Item = impl Into<Sine<F>>>,
+        iter: impl IntoIterator<Item = impl Into<Sine<S>>>,
     ) -> Self {
         let Self {
             mut components,
@@ -64,10 +64,10 @@ impl<F: FrequencyType> Fourier<F> {
             loop_behavior,
         } = self;
         let append = iter.into_iter().map(|m| m.into()).collect::<Vec<_>>();
-        let freq_div = append.iter().fold(config.frequency_division(), |acc, m| {
-            acc.min(m.sampling_config().frequency_division())
+        let freq_div = append.iter().fold(config.division(), |acc, m| {
+            acc.min(m.sampling_config().division())
         });
-        let config = SamplingConfiguration::from_frequency_division(freq_div).unwrap();
+        let config = SamplingConfiguration::from_division_raw(freq_div).unwrap();
         components.extend(append.into_iter().map(|m| m.with_sampling_config(config)));
         Self {
             components,
@@ -77,37 +77,47 @@ impl<F: FrequencyType> Fourier<F> {
     }
 }
 
-impl<F: FrequencyType> From<Sine<F>> for Fourier<F> {
-    fn from(sine: Sine<F>) -> Self {
+impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration)>>
+    From<Sine<S>> for Fourier<S>
+{
+    fn from(sine: Sine<S>) -> Self {
         Self::new(sine)
     }
 }
 
-impl<F: FrequencyType> Deref for Fourier<F> {
-    type Target = [Sine<F>];
+impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration)>> Deref
+    for Fourier<S>
+{
+    type Target = [Sine<S>];
 
     fn deref(&self) -> &Self::Target {
         &self.components
     }
 }
 
-impl<F: FrequencyType> std::ops::Add<Sine<F>> for Fourier<F> {
+impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration)>>
+    std::ops::Add<Sine<S>> for Fourier<S>
+{
     type Output = Self;
 
-    fn add(self, rhs: Sine<F>) -> Self::Output {
+    fn add(self, rhs: Sine<S>) -> Self::Output {
         self.add_component(rhs)
     }
 }
 
-impl<F: FrequencyType> std::ops::Add<Sine<F>> for Sine<F> {
-    type Output = Fourier<F>;
+impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration)>>
+    std::ops::Add<Sine<S>> for Sine<S>
+{
+    type Output = Fourier<S>;
 
-    fn add(self, rhs: Sine<F>) -> Self::Output {
+    fn add(self, rhs: Sine<S>) -> Self::Output {
         Fourier::from(self).add_component(rhs)
     }
 }
 
-impl<F: FrequencyType> Modulation for Fourier<F> {
+impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration)>> Modulation
+    for Fourier<S>
+{
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         let buffers = self
             .components
@@ -139,11 +149,11 @@ mod tests {
 
     #[test]
     fn test_fourier() -> anyhow::Result<()> {
-        let f0 = Sine::new(50).with_phase(PI / 2.0 * Rad);
-        let f1 = Sine::new(100).with_phase(PI / 3.0 * Rad);
-        let f2 = Sine::new(150).with_phase(PI / 4.0 * Rad);
-        let f3 = Sine::new(200);
-        let f4 = Sine::new(250);
+        let f0 = Sine::new(50.).with_phase(PI / 2.0 * Rad);
+        let f1 = Sine::new(100.).with_phase(PI / 3.0 * Rad);
+        let f2 = Sine::new(150.).with_phase(PI / 4.0 * Rad);
+        let f3 = Sine::new(200.);
+        let f4 = Sine::new(250.);
 
         let f0_buf = f0.calc()?;
         let f1_buf = f1.calc()?;
@@ -154,15 +164,15 @@ mod tests {
         let f = (f0 + f1).add_component(f2).add_components_from_iter([f3]) + f4;
 
         assert_eq!(f.sampling_config(), SamplingConfiguration::FREQ_4K_HZ);
-        assert_eq!(f[0].freq(), 50);
+        assert_eq!(f[0].freq(), 50.);
         assert_eq!(f[0].phase(), PI / 2.0 * Rad);
-        assert_eq!(f[1].freq(), 100);
+        assert_eq!(f[1].freq(), 100.);
         assert_eq!(f[1].phase(), PI / 3.0 * Rad);
-        assert_eq!(f[2].freq(), 150);
+        assert_eq!(f[2].freq(), 150.);
         assert_eq!(f[2].phase(), PI / 4.0 * Rad);
-        assert_eq!(f[3].freq(), 200);
+        assert_eq!(f[3].freq(), 200.);
         assert_eq!(f[3].phase(), 0.0 * Rad);
-        assert_eq!(f[4].freq(), 250);
+        assert_eq!(f[4].freq(), 250.);
         assert_eq!(f[4].phase(), 0.0 * Rad);
 
         let buf = f.calc()?;

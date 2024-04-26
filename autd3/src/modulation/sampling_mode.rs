@@ -1,7 +1,6 @@
 use autd3_driver::{derive::EmitIntensity, error::AUTDInternalError};
 
 pub trait SamplingMode: Clone {
-    type F: Copy;
     type D;
-    fn calc(freq: Self::F, data: Self::D) -> Result<Vec<EmitIntensity>, AUTDInternalError>;
+    fn calc(freq: f64, data: Self::D) -> Result<Vec<EmitIntensity>, AUTDInternalError>;
 }

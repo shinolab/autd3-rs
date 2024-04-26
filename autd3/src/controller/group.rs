@@ -189,8 +189,8 @@ mod tests {
         .set(
             3,
             (
-                Sine::new(150),
-                GainSTM::from_freq(1.0)
+                Sine::new(150.),
+                GainSTM::from_freq(1)
                     .add_gain(Uniform::new(0x80))?
                     .add_gain(Uniform::new(0x81))?,
             ),
@@ -218,7 +218,7 @@ mod tests {
         );
 
         assert_eq!(
-            Sine::new(150).calc()?,
+            Sine::new(150.).calc()?,
             autd.link[3].fpga().modulation(Segment::S0)
         );
         assert_eq!(

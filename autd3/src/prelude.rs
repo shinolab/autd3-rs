@@ -3,7 +3,7 @@ pub use crate::{
     error::AUTDError,
     gain::{Bessel, Focus, Null, Plane, TransducerTest, Uniform},
     link::Nop,
-    modulation::{SamplingMode, Sine, Square, Static},
+    modulation::{Sine, Square, Static},
 };
 
 pub use autd3_driver::{

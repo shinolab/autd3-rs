@@ -29,6 +29,7 @@ criterion = { workspace = true, features = ["html_reports"] }
 itertools = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 anyhow = { workspace = true }
+rstest = { workspace = true }
 
 [[bench]]
 name = "gain"
