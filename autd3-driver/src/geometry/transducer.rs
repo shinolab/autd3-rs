@@ -26,7 +26,7 @@ impl Transducer {
 
     /// Calculate the phase of the transducer to align the phase at the specified position
     pub fn align_phase_at(&self, pos: Vector3, sound_speed: f64) -> Phase {
-        Phase::from_rad((pos - self.position()).norm() * self.wavenumber(sound_speed))
+        Phase::from_rad((pos - self.position()).norm() * Self::wavenumber(sound_speed))
     }
 
     /// Get the position of the transducer
@@ -75,11 +75,11 @@ impl Transducer {
     }
 
     /// Get the wavelength of the transducer
-    pub fn wavelength(&self, sound_speed: f64) -> f64 {
+    pub fn wavelength(sound_speed: f64) -> f64 {
         sound_speed / crate::firmware::fpga::ultrasound_freq() as f64
     }
     /// Get the wavenumber of the transducer
-    pub fn wavenumber(&self, sound_speed: f64) -> f64 {
+    pub fn wavenumber(sound_speed: f64) -> f64 {
         2.0 * PI * crate::firmware::fpga::ultrasound_freq() as f64 / sound_speed
     }
 }
@@ -138,16 +138,16 @@ mod tests {
     #[test]
     #[case(8.5, 340e3)]
     #[case(10., 400e3)]
-    fn wavelength(#[case] expect: f64, #[case] c: f64, tr: Transducer) {
-        assert_approx_eq!(expect, tr.wavelength(c));
+    fn wavelength(#[case] expect: f64, #[case] c: f64) {
+        assert_approx_eq!(expect, Transducer::wavelength(c));
     }
 
     #[rstest::rstest]
     #[test]
     #[case(0.7391982714328925, 340e3)]
     #[case(0.6283185307179586, 400e3)]
-    fn wavenumber(#[case] expect: f64, #[case] c: f64, tr: Transducer) {
-        assert_approx_eq!(expect, tr.wavenumber(c));
+    fn wavenumber(#[case] expect: f64, #[case] c: f64) {
+        assert_approx_eq!(expect, Transducer::wavenumber(c));
     }
 
     #[rstest::rstest]
