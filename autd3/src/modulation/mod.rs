@@ -1,7 +1,7 @@
 mod fourier;
 mod sampling_mode;
-mod sine;
-mod square;
+pub mod sine;
+pub mod square;
 mod r#static;
 
 pub use fourier::Fourier;

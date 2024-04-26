@@ -1270,21 +1270,7 @@ pub struct Static {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct SineInt {
-    #[prost(message, optional, tag = "1")]
-    pub config: ::core::option::Option<SamplingConfiguration>,
-    #[prost(uint64, tag = "2")]
-    pub freq: u64,
-    #[prost(message, optional, tag = "3")]
-    pub intensity: ::core::option::Option<EmitIntensity>,
-    #[prost(message, optional, tag = "4")]
-    pub offset: ::core::option::Option<EmitIntensity>,
-    #[prost(message, optional, tag = "5")]
-    pub phase: ::core::option::Option<Phase>,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct SineFloat {
+pub struct SineExact {
     #[prost(message, optional, tag = "1")]
     pub config: ::core::option::Option<SamplingConfiguration>,
     #[prost(float, tag = "2")]
@@ -1298,11 +1284,25 @@ pub struct SineFloat {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct SquareInt {
+pub struct SineNearest {
     #[prost(message, optional, tag = "1")]
     pub config: ::core::option::Option<SamplingConfiguration>,
-    #[prost(uint64, tag = "2")]
-    pub freq: u64,
+    #[prost(float, tag = "2")]
+    pub freq: f32,
+    #[prost(message, optional, tag = "3")]
+    pub intensity: ::core::option::Option<EmitIntensity>,
+    #[prost(message, optional, tag = "4")]
+    pub offset: ::core::option::Option<EmitIntensity>,
+    #[prost(message, optional, tag = "5")]
+    pub phase: ::core::option::Option<Phase>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SquareExact {
+    #[prost(message, optional, tag = "1")]
+    pub config: ::core::option::Option<SamplingConfiguration>,
+    #[prost(float, tag = "2")]
+    pub freq: f32,
     #[prost(message, optional, tag = "3")]
     pub low: ::core::option::Option<EmitIntensity>,
     #[prost(message, optional, tag = "4")]
@@ -1312,7 +1312,7 @@ pub struct SquareInt {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct SquareFloat {
+pub struct SquareNearest {
     #[prost(message, optional, tag = "1")]
     pub config: ::core::option::Option<SamplingConfiguration>,
     #[prost(float, tag = "2")]
@@ -1344,13 +1344,13 @@ pub mod modulation {
         #[prost(message, tag = "1")]
         Static(super::Static),
         #[prost(message, tag = "2")]
-        SineInt(super::SineInt),
+        SineExact(super::SineExact),
         #[prost(message, tag = "3")]
-        SineFloat(super::SineFloat),
+        SineNearest(super::SineNearest),
         #[prost(message, tag = "4")]
-        SquareInt(super::SquareInt),
+        SquareExact(super::SquareExact),
         #[prost(message, tag = "5")]
-        SquareFloat(super::SquareFloat),
+        SquareNearest(super::SquareNearest),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]

@@ -47,9 +47,9 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                 )
                 .await?
             }
-            Some(modulation::Modulation::SineFloat(msg)) => {
+            Some(modulation::Modulation::SineNearest(msg)) => {
                 autd.send(
-                    autd3::prelude::Sine::<f64>::from_msg(msg)
+                    autd3::prelude::Sine::<autd3::modulation::sine::NearestFrequency>::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
                             autd3_driver::firmware::fpga::Segment::from(
@@ -65,9 +65,9 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                 )
                 .await?
             }
-            Some(modulation::Modulation::SineInt(msg)) => {
+            Some(modulation::Modulation::SineExact(msg)) => {
                 autd.send(
-                    autd3::prelude::Sine::<usize>::from_msg(msg)
+                    autd3::prelude::Sine::<autd3::modulation::sine::ExactFrequency>::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
                             autd3_driver::firmware::fpga::Segment::from(
@@ -83,39 +83,37 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                 )
                 .await?
             }
-            Some(modulation::Modulation::SquareFloat(msg)) => {
+            Some(modulation::Modulation::SquareNearest(msg)) => {
                 autd.send(
-                    autd3::prelude::Square::<f64>::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .with_segment(
-                            autd3_driver::firmware::fpga::Segment::from(
-                                Segment::try_from(modulation.segment)
-                                    .ok()
-                                    .ok_or(AUTDProtoBufError::DataParseError)?,
-                            ),
-                            to_transition_mode(
-                                modulation.transition_mode,
-                                modulation.transition_value,
-                            ),
+                    autd3::prelude::Square::<autd3::modulation::square::NearestFrequency>::from_msg(
+                        msg,
+                    )
+                    .ok_or(AUTDProtoBufError::DataParseError)?
+                    .with_segment(
+                        autd3_driver::firmware::fpga::Segment::from(
+                            Segment::try_from(modulation.segment)
+                                .ok()
+                                .ok_or(AUTDProtoBufError::DataParseError)?,
                         ),
+                        to_transition_mode(modulation.transition_mode, modulation.transition_value),
+                    ),
                 )
                 .await?
             }
-            Some(modulation::Modulation::SquareInt(msg)) => {
+            Some(modulation::Modulation::SquareExact(msg)) => {
                 autd.send(
-                    autd3::prelude::Square::<usize>::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .with_segment(
-                            autd3_driver::firmware::fpga::Segment::from(
-                                Segment::try_from(modulation.segment)
-                                    .ok()
-                                    .ok_or(AUTDProtoBufError::DataParseError)?,
-                            ),
-                            to_transition_mode(
-                                modulation.transition_mode,
-                                modulation.transition_value,
-                            ),
+                    autd3::prelude::Square::<autd3::modulation::square::ExactFrequency>::from_msg(
+                        msg,
+                    )
+                    .ok_or(AUTDProtoBufError::DataParseError)?
+                    .with_segment(
+                        autd3_driver::firmware::fpga::Segment::from(
+                            Segment::try_from(modulation.segment)
+                                .ok()
+                                .ok_or(AUTDProtoBufError::DataParseError)?,
                         ),
+                        to_transition_mode(modulation.transition_mode, modulation.transition_value),
+                    ),
                 )
                 .await?
             }

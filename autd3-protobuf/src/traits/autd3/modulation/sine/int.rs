@@ -5,14 +5,14 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3::modulation::Sine<usize> {
+impl ToMessage for autd3::modulation::Sine<autd3::modulation::sine::ExactFrequency> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::SineInt(SineInt {
+                modulation: Some(modulation::Modulation::SineExact(SineExact {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq() as _,
                     intensity: Some(self.intensity().to_msg(None)),
@@ -27,14 +27,18 @@ impl ToMessage for autd3::modulation::Sine<usize> {
     }
 }
 
-impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::modulation::Sine<usize>> {
+impl ToMessage
+    for autd3_driver::datagram::DatagramWithSegment<
+        autd3::modulation::Sine<autd3::modulation::sine::ExactFrequency>,
+    >
+{
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::SineInt(SineInt {
+                modulation: Some(modulation::Modulation::SineExact(SineExact {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq() as _,
                     intensity: Some(self.intensity().to_msg(None)),
@@ -49,9 +53,9 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::modulation
     }
 }
 
-impl FromMessage<SineInt> for autd3::modulation::Sine<usize> {
+impl FromMessage<SineExact> for autd3::modulation::Sine<autd3::modulation::sine::ExactFrequency> {
     #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &SineInt) -> Option<Self> {
+    fn from_msg(msg: &SineExact) -> Option<Self> {
         Some(
             Self::new(msg.freq as _)
                 .with_intensity(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
@@ -90,7 +94,7 @@ mod tests {
 
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::SineInt(modulation)),
+                modulation: Some(modulation::Modulation::SineExact(modulation)),
                 ..
             })) => {
                 let m2 = autd3::modulation::Sine::<usize>::from_msg(&modulation).unwrap();
