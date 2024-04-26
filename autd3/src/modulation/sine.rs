@@ -1,4 +1,4 @@
-use autd3_driver::{defined::PI, derive::*};
+use autd3_driver::{defined::PI, derive::*, firmware::fpga::sampling_config};
 
 use num::integer::gcd;
 
@@ -19,10 +19,10 @@ impl SamplingMode for ExactFrequency {
             )));
         }
         let fd = fd as u64;
-        let fs = SamplingConfiguration::BASE_FREQUENCY as u64;
+        let fs = sampling_config::base_frequency() as u64;
 
         let k = gcd(fs, fd);
-        if k >= SamplingConfiguration::BASE_FREQUENCY as u64 / 2 {
+        if k >= sampling_config::base_frequency() as u64 / 2 {
             return Err(AUTDInternalError::ModulationError(format!(
                 "Frequency ({}Hz) is equal to or greater than the Nyquist frequency ({}Hz)",
                 freq,

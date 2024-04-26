@@ -483,8 +483,8 @@ impl FPGAEmulator {
         &self.tr_pos
     }
 
-    const fn fpga_sys_time(dc_sys_time: DcSysTime) -> u64 {
-        ((dc_sys_time.sys_time() as u128 * autd3_driver::firmware::fpga::FPGA_CLK_FREQ as u128)
+    fn fpga_sys_time(dc_sys_time: DcSysTime) -> u64 {
+        ((dc_sys_time.sys_time() as u128 * autd3_driver::firmware::fpga::fpga_clk_freq() as u128)
             / 1000000000) as _
     }
 

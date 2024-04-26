@@ -23,7 +23,7 @@ pub use autd3_driver::{
     firmware::{
         fpga::{
             DebugType, Drive, EmitIntensity, LoopBehavior, Phase, Rad as PhaseRad,
-            SamplingConfiguration, Segment, TransitionMode, FPGA_CLK_FREQ,
+            SamplingConfiguration, Segment, TransitionMode,
         },
         operation::{ControlPoint, GainSTMMode},
         version::FirmwareVersion,
