@@ -76,11 +76,11 @@ impl Transducer {
 
     /// Get the wavelength of the transducer
     pub fn wavelength(&self, sound_speed: f64) -> f64 {
-        sound_speed / crate::defined::ULTRASOUND_FREQUENCY
+        sound_speed / crate::firmware::fpga::ULTRASOUND_FREQUENCY as f64
     }
     /// Get the wavenumber of the transducer
     pub fn wavenumber(&self, sound_speed: f64) -> f64 {
-        2.0 * PI * crate::defined::ULTRASOUND_FREQUENCY / sound_speed
+        2.0 * PI * crate::firmware::fpga::ULTRASOUND_FREQUENCY as f64 / sound_speed
     }
 }
 
@@ -135,7 +135,7 @@ mod tests {
     fn test_wavenumber(#[case] c: f64) {
         let tr = Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
         assert_approx_eq!(
-            2. * PI * crate::defined::ULTRASOUND_FREQUENCY / c,
+            2. * PI * crate::firmware::fpga::ULTRASOUND_FREQUENCY as f64 / c,
             tr.wavenumber(c)
         );
     }
