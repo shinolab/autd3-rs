@@ -10,7 +10,7 @@ pub struct STMProps {
 }
 
 impl STMProps {
-    pub const fn from_freq(freq: u32) -> Self {
+    pub const fn from_freq(freq: f64) -> Self {
         Self {
             config: STMSamplingConfiguration::Frequency(freq),
             loop_behavior: LoopBehavior::Infinite,

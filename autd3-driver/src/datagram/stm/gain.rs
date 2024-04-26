@@ -34,7 +34,7 @@ impl<G: Gain> GainSTM<G> {
     ///
     /// * `freq` - Frequency of STM.
     ///
-    pub const fn from_freq(freq: u32) -> Self {
+    pub const fn from_freq(freq: f64) -> Self {
         Self::from_props_mode(STMProps::from_freq(freq), GainSTMMode::PhaseIntensityFull)
     }
 
@@ -218,9 +218,9 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(1, 10)]
-    #[case(2, 10)]
-    fn test_from_requency(#[case] freq: u32, #[case] n: usize) -> anyhow::Result<()> {
+    #[case(1., 10)]
+    #[case(2., 10)]
+    fn test_from_requency(#[case] freq: f64, #[case] n: usize) -> anyhow::Result<()> {
         let stm = GainSTM::from_freq(freq).add_gains_from_iter((0..n).map(|_| NullGain {}))?;
         assert_eq!(freq as f64, stm.freq()?);
         assert_eq!(freq as f64 * n as f64, stm.sampling_config()?.freq());
@@ -263,7 +263,7 @@ mod tests {
     fn test_with_mode(#[case] mode: GainSTMMode) {
         assert_eq!(
             mode,
-            GainSTM::<NullGain>::from_freq(1).with_mode(mode).mode()
+            GainSTM::<NullGain>::from_freq(1.).with_mode(mode).mode()
         );
     }
 
@@ -271,7 +271,7 @@ mod tests {
     fn test_with_mode_default() {
         assert_eq!(
             GainSTMMode::PhaseIntensityFull,
-            GainSTM::<NullGain>::from_freq(1).mode()
+            GainSTM::<NullGain>::from_freq(1.).mode()
         );
     }
 
@@ -292,7 +292,7 @@ mod tests {
 
     #[test]
     fn test_clear() -> anyhow::Result<()> {
-        let mut stm = GainSTM::<Box<dyn Gain>>::from_freq(1)
+        let mut stm = GainSTM::<Box<dyn Gain>>::from_freq(1.)
             .add_gain(Box::new(NullGain {}))?
             .add_gain(Box::new(NullGain2 {}))?;
         assert_eq!(stm.gains().len(), 2);
@@ -309,7 +309,7 @@ mod tests {
     fn test_with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
             loop_behavior,
-            GainSTM::<Box<dyn Gain>>::from_freq(1)
+            GainSTM::<Box<dyn Gain>>::from_freq(1.)
                 .with_loop_behavior(loop_behavior)
                 .loop_behavior()
         );
@@ -317,13 +317,13 @@ mod tests {
 
     #[test]
     fn test_indexer() {
-        let stm = GainSTM::from_freq(1).add_gain(NullGain {}).unwrap();
+        let stm = GainSTM::from_freq(1.).add_gain(NullGain {}).unwrap();
         let _: &NullGain = &stm[0];
     }
 
     #[test]
     fn test_operation() {
-        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1)
+        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.)
             .add_gain(Box::new(NullGain {}))
             .unwrap()
             .add_gain(Box::new(NullGain2 {}))
