@@ -77,7 +77,7 @@ async fn main() -> Result<()> {
     // Gain Chcek
     {
         autd.send((
-            Sine::new(150),
+            Sine::new(150.),
             Focus::new(autd.geometry.center() + 150. * Vector3::z()),
         ))
         .await?;
@@ -172,7 +172,7 @@ async fn main() -> Result<()> {
     // Modulation check
     {
         autd.send((
-            Sine::new(150),
+            Sine::new(150.),
             Focus::new(autd.geometry.center() + 150. * Vector3::z()),
         ))
         .await?;
@@ -247,7 +247,7 @@ async fn main() -> Result<()> {
         impl Sawtooth {
             pub fn new() -> Self {
                 Self {
-                    config: SamplingConfiguration::from_frequency(256.).unwrap(),
+                    config: SamplingConfiguration::from_freq(256).unwrap(),
                     loop_behavior: LoopBehavior::once(),
                     reverse: false,
                 }
@@ -255,7 +255,7 @@ async fn main() -> Result<()> {
 
             pub fn reverse() -> Self {
                 Self {
-                    config: SamplingConfiguration::from_frequency(256.).unwrap(),
+                    config: SamplingConfiguration::from_freq(256).unwrap(),
                     loop_behavior: LoopBehavior::once(),
                     reverse: true,
                 }
@@ -319,7 +319,7 @@ async fn main() -> Result<()> {
         let stm = FocusSTM::from_freq(0.5).add_foci_from_iter(gen_foci())?;
         autd.send(stm).await?;
         print_msg_and_wait_for_key(
-            "Check that the focal points are moving at a frequency of 0.5 Hz over a circumference of 30 mm radius by your hands."
+            "Check that the focal points are moving at a freq of 0.5 Hz over a circumference of 30 mm radius by your hands."
         );
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
@@ -332,7 +332,7 @@ async fn main() -> Result<()> {
         let stm = FocusSTM::from_freq(1.).add_foci_from_iter(gen_foci())?;
         autd.send(stm.with_segment(Segment::S1, Some(TransitionMode::SyncIdx)))
             .await?;
-        print_msg_and_wait_for_key("Check that the frequency is now 1 Hz.");
+        print_msg_and_wait_for_key("Check that the freq is now 1 Hz.");
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
@@ -346,7 +346,7 @@ async fn main() -> Result<()> {
             TransitionMode::SyncIdx,
         ))
         .await?;
-        print_msg_and_wait_for_key("Check that the frequency returned to 0.5 Hz.");
+        print_msg_and_wait_for_key("Check that the freq returned to 0.5 Hz.");
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
@@ -436,7 +436,7 @@ async fn main() -> Result<()> {
         let stm = GainSTM::from_freq(0.5).add_gains_from_iter(gen_foci())?;
         autd.send(stm).await?;
         print_msg_and_wait_for_key(
-            "Check that the focal points are moving at a frequency of 0.5 Hz over a circumference of 30 mm radius by your hands."
+            "Check that the focal points are moving at a freq of 0.5 Hz over a circumference of 30 mm radius by your hands."
         );
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
@@ -449,7 +449,7 @@ async fn main() -> Result<()> {
         let stm = GainSTM::from_freq(1.).add_gains_from_iter(gen_foci())?;
         autd.send(stm.with_segment(Segment::S1, Some(TransitionMode::SyncIdx)))
             .await?;
-        print_msg_and_wait_for_key("Check that the frequency is now 1 Hz.");
+        print_msg_and_wait_for_key("Check that the freq is now 1 Hz.");
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
@@ -463,7 +463,7 @@ async fn main() -> Result<()> {
             TransitionMode::SyncIdx,
         ))
         .await?;
-        print_msg_and_wait_for_key("Check that the frequency returned to 0.5 Hz.");
+        print_msg_and_wait_for_key("Check that the freq returned to 0.5 Hz.");
         autd.fpga_state().await?.iter().for_each(|state| {
             assert!(state.is_some());
             let state = state.unwrap();
@@ -598,8 +598,11 @@ async fn main() -> Result<()> {
             )
         }))
         .await?;
-        autd.send((Sine::new(150), Uniform::new(0xFF).with_phase(Phase::new(0))))
-            .await?;
+        autd.send((
+            Sine::new(150.),
+            Uniform::new(0xFF).with_phase(Phase::new(0)),
+        ))
+        .await?;
         print_msg_and_wait_for_key(
             "Check that the focal points are generated 150mm directly above the center of each device by your hands."
         );

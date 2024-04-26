@@ -5,7 +5,7 @@ pub async fn plane(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
 
     let dir = Vector3::z();
 
-    let m = Sine::new(150);
+    let m = Sine::new(150.);
     let g = Plane::new(dir);
 
     autd.send((m, g)).await?;
