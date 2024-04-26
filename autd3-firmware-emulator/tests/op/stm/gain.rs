@@ -79,7 +79,7 @@ fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
     assert_eq!(segment, cpu.fpga().current_stm_segment());
     assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
     assert_eq!(bufs.len(), cpu.fpga().stm_cycle(segment));
-    assert_eq!(freq_div, cpu.fpga().stm_frequency_division(segment));
+    assert_eq!(freq_div, cpu.fpga().stm_freq_division(segment));
     assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
     (0..bufs.len()).for_each(|gain_idx| {
         cpu.fpga()

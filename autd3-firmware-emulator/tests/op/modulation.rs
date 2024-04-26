@@ -50,10 +50,7 @@ fn send_mod() -> anyhow::Result<()> {
 
         assert_eq!(Segment::S0, cpu.fpga().current_mod_segment());
         assert_eq!(m.len(), cpu.fpga().modulation_cycle(Segment::S0));
-        assert_eq!(
-            freq_div,
-            cpu.fpga().modulation_frequency_division(Segment::S0)
-        );
+        assert_eq!(freq_div, cpu.fpga().modulation_freq_division(Segment::S0));
         assert_eq!(
             loop_behavior,
             cpu.fpga().modulation_loop_behavior(Segment::S0)
@@ -76,10 +73,7 @@ fn send_mod() -> anyhow::Result<()> {
 
         assert_eq!(Segment::S0, cpu.fpga().current_mod_segment());
         assert_eq!(m.len(), cpu.fpga().modulation_cycle(Segment::S1));
-        assert_eq!(
-            freq_div,
-            cpu.fpga().modulation_frequency_division(Segment::S1)
-        );
+        assert_eq!(freq_div, cpu.fpga().modulation_freq_division(Segment::S1));
         assert_eq!(
             loop_behavior,
             cpu.fpga().modulation_loop_behavior(Segment::S1)
