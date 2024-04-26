@@ -35,18 +35,19 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3_driver::dat
 impl FromMessage<FocusStm> for autd3_driver::datagram::FocusSTM {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &FocusStm) -> Option<Self> {
-        autd3_driver::datagram::FocusSTM::from_sampling_config(
-            SamplingConfiguration::from_division_raw(msg.freq_div).ok()?,
+        Some(
+            autd3_driver::datagram::FocusSTM::from_sampling_config(
+                SamplingConfiguration::from_division_raw(msg.freq_div).ok()?,
+            )
+            .with_loop_behavior(autd3_driver::firmware::fpga::LoopBehavior::from_msg(
+                msg.loop_behavior.as_ref()?,
+            )?)
+            .add_foci_from_iter(
+                msg.points
+                    .iter()
+                    .filter_map(autd3_driver::firmware::operation::stm::ControlPoint::from_msg),
+            ),
         )
-        .with_loop_behavior(autd3_driver::firmware::fpga::LoopBehavior::from_msg(
-            msg.loop_behavior.as_ref()?,
-        )?)
-        .add_foci_from_iter(
-            msg.points
-                .iter()
-                .filter_map(autd3_driver::firmware::operation::stm::ControlPoint::from_msg),
-        )
-        .ok()
     }
 }
 
