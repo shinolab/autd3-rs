@@ -262,8 +262,8 @@ mod tests {
             autd.send((
                 Sine::new(150.),
                 GainSTM::from_freq(1.)
-                    .add_gain(Uniform::new(0x80))?
-                    .add_gain(Uniform::new(0x81))?,
+                    .add_gain(Uniform::new(0x80))
+                    .add_gain(Uniform::new(0x81)),
             ))
             .await?
         );

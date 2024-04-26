@@ -108,20 +108,15 @@ impl<G: Gain> GainSTM<G> {
     }
 
     /// Add a [Gain] to GainSTM
-    pub fn add_gain(mut self, gain: G) -> Result<Self, AUTDInternalError> {
+    pub fn add_gain(mut self, gain: G) -> Self {
         self.gains.push(gain);
-        self.props.sampling_config(self.gains.len())?;
-        Ok(self)
+        self
     }
 
     /// Add boxed [Gain]s from iterator to GainSTM
-    pub fn add_gains_from_iter(
-        mut self,
-        iter: impl IntoIterator<Item = G>,
-    ) -> Result<Self, AUTDInternalError> {
+    pub fn add_gains_from_iter(mut self, iter: impl IntoIterator<Item = G>) -> Self {
         self.gains.extend(iter);
-        self.props.sampling_config(self.gains.len())?;
-        Ok(self)
+        self
     }
 
     /// constructor
