@@ -7,44 +7,60 @@ use super::sampling_mode::SamplingMode;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExactFrequency;
 impl SamplingMode for ExactFrequency {
-    type F = usize;
     type D = (EmitIntensity, EmitIntensity, f64, SamplingConfiguration);
-    fn calc(freq: Self::F, data: Self::D) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(freq: f64, data: Self::D) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         let (low, high, duty, sampling_config) = data;
 
-        if sampling_config.frequency().fract() != 0.0 {
-            return Err(AUTDInternalError::ModulationError(
-                "Sampling frequency must be integer".to_string(),
-            ));
+        let fd = freq * sampling_config.division() as f64;
+        if fd.fract() > 1e-9 {
+            return Err(AUTDInternalError::ModulationError(format!(
+                "Frequency ({}) cannot be output with the sampling config ({}).",
+                freq, sampling_config
+            )));
         }
-        let sf = sampling_config.frequency() as usize;
-        let freq = freq.clamp(1, sf / 2);
-        let k = gcd(sf, freq);
-        let d = freq / k;
-        let n = sf / k;
+        let fd = fd as u64;
+        let fs = SamplingConfiguration::BASE_FREQUENCY as u64;
 
-        Ok((0..d)
-            .map(|i| (n + i) / d)
+        let k = gcd(fs, fd);
+        if k >= SamplingConfiguration::BASE_FREQUENCY as u64 / 2 {
+            return Err(AUTDInternalError::ModulationError(format!(
+                "Frequency ({}) is equal to or greater than the Nyquist frequency ({})",
+                freq,
+                sampling_config.freq() / 2.
+            )));
+        }
+
+        let n = fs / k;
+        let rep = fd / k;
+
+        Ok((0..rep)
+            .map(|i| (n + i) / rep)
             .flat_map(|size| {
                 let n_high = (size as f64 * duty) as usize;
                 vec![high; n_high]
                     .into_iter()
-                    .chain(vec![low; size - n_high])
+                    .chain(vec![low; size as usize - n_high])
             })
             .collect())
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SizeOptimized;
-impl SamplingMode for SizeOptimized {
-    type F = f64;
+pub struct NearestFrequency;
+impl SamplingMode for NearestFrequency {
     type D = (EmitIntensity, EmitIntensity, f64, SamplingConfiguration);
-    fn calc(freq: Self::F, data: Self::D) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(freq: f64, data: Self::D) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         let (low, high, duty, sampling_config) = data;
 
-        let sf = sampling_config.frequency();
-        let freq = freq.clamp(0., sf / 2.);
+        let sf = sampling_config.freq();
+        if freq >= sf / 2. {
+            return Err(AUTDInternalError::ModulationError(format!(
+                "Frequency ({}) is equal to or greater than the Nyquist frequency ({})",
+                freq,
+                sampling_config.freq() / 2.
+            )));
+        }
+
         let n = (sf / freq).round() as usize;
         let n_high = (n as f64 * duty) as usize;
         Ok(vec![high; n_high]
@@ -54,21 +70,11 @@ impl SamplingMode for SizeOptimized {
     }
 }
 
-pub trait FrequencyType: Copy {
-    type S: SamplingMode<F = Self, D = (EmitIntensity, EmitIntensity, f64, SamplingConfiguration)>;
-}
-impl FrequencyType for usize {
-    type S = ExactFrequency;
-}
-impl FrequencyType for f64 {
-    type S = SizeOptimized;
-}
-
 /// Square wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug, Builder)]
-pub struct Square<F: FrequencyType> {
+pub struct Square<S: SamplingMode<D = (EmitIntensity, EmitIntensity, f64, SamplingConfiguration)>> {
     #[get]
-    freq: F,
+    freq: f64,
     #[getset]
     low: EmitIntensity,
     #[getset]
@@ -77,16 +83,21 @@ pub struct Square<F: FrequencyType> {
     duty: f64,
     config: SamplingConfiguration,
     loop_behavior: LoopBehavior,
+    __phantom: std::marker::PhantomData<S>,
 }
 
-impl<F: FrequencyType> Square<F> {
+impl Square<ExactFrequency> {
+    pub const fn new(freq: f64) -> Self {
+        Self::with_freq_exact(freq)
+    }
+
     /// constructor.
     ///
     /// # Arguments
     ///
     /// * `freq` - Frequency of the square wave \[Hz\]
     ///
-    pub const fn new(freq: F) -> Self {
+    pub const fn with_freq_exact(freq: f64) -> Self {
         Self {
             freq,
             low: EmitIntensity::MIN,
@@ -94,18 +105,46 @@ impl<F: FrequencyType> Square<F> {
             duty: 0.5,
             config: SamplingConfiguration::FREQ_4K_HZ,
             loop_behavior: LoopBehavior::Infinite,
+            __phantom: std::marker::PhantomData,
+        }
+    }
+
+    /// constructor.
+    ///
+    /// # Arguments
+    ///
+    /// * `freq` - Frequency of the square wave \[Hz\]
+    ///
+    pub const fn with_freq_nearest(freq: f64) -> Square<NearestFrequency> {
+        Square {
+            freq,
+            low: EmitIntensity::MIN,
+            high: EmitIntensity::MAX,
+            duty: 0.5,
+            config: SamplingConfiguration::FREQ_4K_HZ,
+            loop_behavior: LoopBehavior::Infinite,
+            __phantom: std::marker::PhantomData,
         }
     }
 }
 
-impl<F: FrequencyType> Modulation for Square<F> {
+impl<S: SamplingMode<D = (EmitIntensity, EmitIntensity, f64, SamplingConfiguration)>> Modulation
+    for Square<S>
+{
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+        if self.freq < 0. {
+            return Err(AUTDInternalError::ModulationError(format!(
+                "Frequency ({}) must be positive",
+                self.freq
+            )));
+        }
+
         if !(0.0..=1.0).contains(&self.duty) {
             return Err(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string(),
             ));
         }
-        F::S::calc(self.freq, (self.low, self.high, self.duty, self.config))
+        S::calc(self.freq, (self.low, self.high, self.duty, self.config))
     }
 }
 
@@ -113,65 +152,101 @@ impl<F: FrequencyType> Modulation for Square<F> {
 mod tests {
     use super::*;
 
+    #[rstest::rstest]
     #[test]
-    fn test_square() -> anyhow::Result<()> {
-        let expect = [
+    #[case(
+        Ok(vec![
             255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255,
             255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ];
-        let m = Square::new(150).with_cache();
+        ]),
+        150.
+    )]
+    #[case(
+        Ok(vec![255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        200.
+    )]
+    #[case(
+        Ok(vec![
+            255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255,
+            0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0,
+            255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255,
+            0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0,
+            255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255,
+            255, 0, 0, 0, 255, 255, 255, 0, 0, 0, 255, 255, 255, 0, 0, 0
+        ]),
+        781.25
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency (2000) is equal to or greater than the Nyquist frequency (2000)".to_owned())),
+        2000.
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency (4000) is equal to or greater than the Nyquist frequency (2000)".to_owned())),
+        4000.
+    )]
+    fn with_freq_exact(#[case] expect: Result<Vec<u8>, AUTDInternalError>, #[case] freq: f64) {
+        let m = Square::with_freq_exact(freq);
+        assert_eq!(freq, m.freq());
+        assert_eq!(EmitIntensity::MIN, m.low());
+        assert_eq!(EmitIntensity::MAX, m.high());
+        assert_eq!(0.5, m.duty());
         assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
-        assert_eq!(
-            expect
-                .into_iter()
-                .map(EmitIntensity::new)
-                .collect::<Vec<_>>(),
-            m.calc()?
-        );
 
-        Ok(())
+        assert_eq!(
+            expect.map(|v| v.into_iter().map(EmitIntensity::new).collect::<Vec<_>>()),
+            m.calc()
+        );
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_square_with_size_opt() -> anyhow::Result<()> {
-        let expect = [
+    #[case(
+        Ok(vec![
             255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0,
-        ];
-        let m = Square::new(150.);
+        ]),
+        150.
+    )]
+    #[case(
+        Ok(vec![255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        200.
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency (2000) is equal to or greater than the Nyquist frequency (2000)".to_owned())),
+        2000.
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency (4000) is equal to or greater than the Nyquist frequency (2000)".to_owned())),
+        4000.
+    )]
+    fn with_freq_nearest(#[case] expect: Result<Vec<u8>, AUTDInternalError>, #[case] freq: f64) {
+        let m = Square::with_freq_nearest(freq);
+        assert_eq!(freq, m.freq());
+        assert_eq!(EmitIntensity::MIN, m.low());
+        assert_eq!(EmitIntensity::MAX, m.high());
+        assert_eq!(0.5, m.duty());
         assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
-        assert_eq!(
-            expect
-                .into_iter()
-                .map(EmitIntensity::new)
-                .collect::<Vec<_>>(),
-            m.calc()?
-        );
 
-        Ok(())
+        assert_eq!(
+            expect.map(|v| v.into_iter().map(EmitIntensity::new).collect::<Vec<_>>()),
+            m.calc()
+        );
     }
 
     #[test]
-    fn test_square_new() {
-        let m = Square::new(100);
-        assert_eq!(100, m.freq());
-        assert_eq!(EmitIntensity::MAX, m.high());
-        assert_eq!(EmitIntensity::MIN, m.low());
-
+    fn freq_must_be_positive() {
         assert_eq!(
             Err(AUTDInternalError::ModulationError(
-                "Sampling frequency must be integer".to_string()
+                "Frequency (-0.1) must be positive".to_string()
             )),
-            Square::new(100)
-                .with_sampling_config(SamplingConfiguration::from_frequency(10.1).unwrap())
-                .calc()
+            Square::with_freq_nearest(-0.1).calc()
         );
     }
 
     #[test]
-    fn test_square_with_low() -> anyhow::Result<()> {
+    fn with_low() -> anyhow::Result<()> {
         let m = Square::new(150.).with_low(EmitIntensity::MAX);
         assert_eq!(EmitIntensity::MAX, m.low());
         assert!(m.calc()?.iter().all(|&a| a == EmitIntensity::MAX));
@@ -180,7 +255,7 @@ mod tests {
     }
 
     #[test]
-    fn test_square_with_high() -> anyhow::Result<()> {
+    fn with_high() -> anyhow::Result<()> {
         let m = Square::new(150.).with_high(EmitIntensity::MIN);
         assert_eq!(EmitIntensity::MIN, m.high());
         assert!(m.calc()?.iter().all(|&a| a == EmitIntensity::MIN));
@@ -189,7 +264,7 @@ mod tests {
     }
 
     #[test]
-    fn test_square_with_duty() -> anyhow::Result<()> {
+    fn with_duty() -> anyhow::Result<()> {
         let m = Square::new(150.).with_duty(0.0);
         assert_eq!(m.duty(), 0.0);
         assert!(m.calc()?.iter().all(|&a| a == EmitIntensity::MIN));
@@ -202,7 +277,7 @@ mod tests {
     }
 
     #[test]
-    fn test_square_with_duty_out_of_range() {
+    fn duty_out_of_range() {
         assert_eq!(
             Err(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string()
