@@ -87,8 +87,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
             type O2 = NullOp;
 
             fn operation_with_segment(self, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-                let freq_div = self.config.frequency_division();
-                Ok((Self::O1::new(self.calc()?, freq_div, self.loop_behavior, segment, transition_mode), Self::O2::default()))
+                Ok((Self::O1::new(self.calc()?, self.config.division(), self.loop_behavior, segment, transition_mode), Self::O2::default()))
             }
 
             fn timeout(&self) -> Option<std::time::Duration> {

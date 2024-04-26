@@ -72,11 +72,10 @@ impl DatagramS for Box<dyn Modulation> {
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        let freq_div = self.sampling_config().frequency_division();
         Ok((
             Self::O1::new(
                 self.calc()?,
-                freq_div,
+                self.sampling_config().division(),
                 self.loop_behavior(),
                 segment,
                 transition_mode,
