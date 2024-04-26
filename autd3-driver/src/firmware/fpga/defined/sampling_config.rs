@@ -38,7 +38,7 @@ impl SamplingConfiguration {
     pub const FREQ_MAX: u32 = Self::BASE_FREQUENCY / Self::DIV_MIN;
 
     pub const PERIOD_MIN_RAW: Duration =
-        Duration::from_nanos((1000000000. / Self::FREQ_MAX_RAW as f64) as u64);
+        Duration::from_nanos((1000000000. / Self::FREQ_MAX_RAW) as u64);
     pub const PERIOD_MAX_RAW: Duration = Duration::from_nanos(209715196875);
     pub const PERIOD_MIN: Duration = Duration::from_nanos(1000000000 / Self::FREQ_MAX as u64);
     pub const PERIOD_MAX: Duration = Duration::from_nanos(209715175000);
