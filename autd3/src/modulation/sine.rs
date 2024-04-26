@@ -22,14 +22,6 @@ impl SamplingMode for ExactFrequency {
         let fs = sampling_config::base_frequency() as u64;
 
         let k = gcd(fs, fd);
-        if k >= sampling_config::base_frequency() as u64 / 2 {
-            return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}Hz) is equal to or greater than the Nyquist frequency ({}Hz)",
-                freq,
-                sampling_config.freq() / 2.
-            )));
-        }
-
         let n = fs / k;
         let rep = fd / k;
 
@@ -55,13 +47,6 @@ impl SamplingMode for NearestFrequency {
         let (intensity, phase, offset, sampling_config) = data;
 
         let sf = sampling_config.freq();
-        if freq >= sf / 2. {
-            return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}Hz) is equal to or greater than the Nyquist frequency ({}Hz)",
-                freq,
-                sampling_config.freq() / 2.
-            )));
-        }
 
         let n = (sf / freq).round() as usize;
         let intensity = intensity.value() as f64;
@@ -131,6 +116,13 @@ impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfigura
             return Err(AUTDInternalError::ModulationError(format!(
                 "Frequency ({}Hz) must be positive",
                 self.freq
+            )));
+        }
+        if self.freq >= self.config.freq() / 2. {
+            return Err(AUTDInternalError::ModulationError(format!(
+                "Frequency ({}Hz) is equal to or greater than the Nyquist frequency ({}Hz)",
+                self.freq,
+                self.config.freq() / 2.
             )));
         }
 
