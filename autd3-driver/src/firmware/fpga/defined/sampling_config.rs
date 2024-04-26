@@ -5,14 +5,14 @@ use crate::{
     firmware::fpga::{FPGA_CLK_FREQ, SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
 };
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Frequency(f64);
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Period(Duration);
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Division(u32);
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug)]
 pub enum SamplingConfiguration {
     Frequency(Frequency),
     Period(Period),
@@ -136,6 +136,12 @@ impl std::fmt::Display for SamplingConfiguration {
             SamplingConfiguration::Period(p) => write!(f, "Period({:?})", p.0),
             SamplingConfiguration::Division(d) => write!(f, "Division({})", d.0),
         }
+    }
+}
+
+impl std::cmp::PartialEq<SamplingConfiguration> for SamplingConfiguration {
+    fn eq(&self, other: &SamplingConfiguration) -> bool {
+        self.division().eq(&other.division())
     }
 }
 
