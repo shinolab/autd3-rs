@@ -213,39 +213,169 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(1., 10)]
-    #[case(2., 10)]
-    fn test_from_requency(#[case] freq: f64, #[case] n: usize) -> anyhow::Result<()> {
-        let stm = GainSTM::from_freq(freq).add_gains_from_iter((0..n).map(|_| NullGain {}))?;
-        assert_eq!(freq as f64, stm.freq()?);
-        assert_eq!(freq as f64 * n as f64, stm.sampling_config()?.freq());
-        Ok(())
+    #[case(Ok(SamplingConfiguration::from_freq(1).unwrap()), 0.5, 2)]
+    #[case(Err(AUTDInternalError::STMFrequencyInvalid(2, 0.49, 20000.0)), 0.49, 2)]
+    #[case(Ok(SamplingConfiguration::from_freq(10).unwrap()), 1., 10)]
+    #[case(Ok(SamplingConfiguration::from_freq(20).unwrap()), 2., 10)]
+    #[case(Err(AUTDInternalError::GainSTMSizeOutOfRange(STM_BUF_SIZE_MIN - 1)), 1., STM_BUF_SIZE_MIN - 1)]
+    #[case(
+        Err(AUTDInternalError::GainSTMSizeOutOfRange(GAIN_STM_BUF_SIZE_MAX + 1)),
+        1.,
+        GAIN_STM_BUF_SIZE_MAX + 1
+    )]
+    fn from_freq(
+        #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
+        #[case] freq: f64,
+        #[case] n: usize,
+    ) {
+        assert_eq!(
+            expect,
+            GainSTM::from_freq(freq)
+                .add_gains_from_iter((0..n).map(|_| NullGain {}))
+                .sampling_config()
+        );
     }
 
     #[rstest::rstest]
     #[test]
-    #[case(Duration::from_micros(250), 10)]
-    #[case(Duration::from_micros(500), 10)]
-    fn test_from_period(#[case] period: Duration, #[case] n: usize) -> anyhow::Result<()> {
-        let stm = GainSTM::from_period(period).add_gains_from_iter((0..n).map(|_| NullGain {}))?;
-        assert_eq!(period, stm.period()?);
-        assert_eq!(period / n as u32, stm.sampling_config()?.period());
-        Ok(())
+    #[case(Ok(SamplingConfiguration::from_freq_nearest(1.).unwrap()), 0.5, 2)]
+    #[case(Ok(SamplingConfiguration::from_freq_nearest(0.98).unwrap()), 0.49, 2)]
+    #[case(Ok(SamplingConfiguration::from_freq_nearest(10.).unwrap()), 1., 10)]
+    #[case(Ok(SamplingConfiguration::from_freq_nearest(20.).unwrap()), 2., 10)]
+    #[case(Err(AUTDInternalError::GainSTMSizeOutOfRange(STM_BUF_SIZE_MIN - 1)), 1., STM_BUF_SIZE_MIN - 1)]
+    #[case(
+        Err(AUTDInternalError::GainSTMSizeOutOfRange(GAIN_STM_BUF_SIZE_MAX + 1)),
+        1.,
+        GAIN_STM_BUF_SIZE_MAX + 1
+    )]
+    fn from_freq_nearest(
+        #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
+        #[case] freq: f64,
+        #[case] n: usize,
+    ) {
+        assert_eq!(
+            expect,
+            GainSTM::from_freq_nearest(freq)
+                .add_gains_from_iter((0..n).map(|_| NullGain {}))
+                .sampling_config()
+        );
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Ok(SamplingConfiguration::from_period(Duration::from_micros(25)).unwrap()), Duration::from_micros(50), 2)]
+    #[case(
+        Err(AUTDInternalError::SamplingPeriodInvalid(
+            Duration::from_micros(26),
+            SamplingConfiguration::PERIOD_MIN
+        )),
+        Duration::from_micros(52),
+        2
+    )]
+    #[case(Ok(SamplingConfiguration::from_period(Duration::from_micros(25)).unwrap()), Duration::from_micros(250), 10)]
+    #[case(Ok(SamplingConfiguration::from_period(Duration::from_micros(50)).unwrap()), Duration::from_micros(500), 10)]
+    fn from_period(
+        #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
+        #[case] period: Duration,
+        #[case] n: usize,
+    ) {
+        assert_eq!(
+            expect,
+            GainSTM::from_period(period)
+                .add_gains_from_iter((0..n).map(|_| NullGain {}))
+                .sampling_config()
+        );
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(25)).unwrap()), Duration::from_micros(50), 2)]
+    #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(26)).unwrap()), Duration::from_micros(52), 2)]
+    #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(25)).unwrap()), Duration::from_micros(250), 10)]
+    #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(50)).unwrap()), Duration::from_micros(500), 10)]
+    fn from_period_nearest(
+        #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
+        #[case] period: Duration,
+        #[case] n: usize,
+    ) {
+        assert_eq!(
+            expect,
+            GainSTM::from_period_nearest(period)
+                .add_gains_from_iter((0..n).map(|_| NullGain {}))
+                .sampling_config()
+        );
     }
 
     #[rstest::rstest]
     #[test]
     #[case(SamplingConfiguration::DISABLE, 2)]
     #[case(SamplingConfiguration::FREQ_4K_HZ, 10)]
-    fn test_from_sampling_config(
+    fn from_sampling_config(
         #[case] config: SamplingConfiguration,
         #[case] n: usize,
     ) -> anyhow::Result<()> {
         assert_eq!(
             config,
             GainSTM::from_sampling_config(config)
-                .add_gains_from_iter((0..n).map(|_| NullGain {}))?
+                .add_gains_from_iter((0..n).map(|_| NullGain {}))
                 .sampling_config()?
+        );
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Ok(1.0), GainSTM::from_freq(1.0), 2)]
+    #[case(Ok(1.0), GainSTM::from_freq(1.0), 10)]
+    #[case(Ok(1.0), GainSTM::from_period(Duration::from_secs(1)), 2)]
+    #[case(Ok(1.0), GainSTM::from_period(Duration::from_secs(1)), 10)]
+    #[case(
+        Ok(400.0),
+        GainSTM::from_sampling_config(SamplingConfiguration::FREQ_4K_HZ),
+        10
+    )]
+    #[case(Err(AUTDInternalError::GainSTMSizeOutOfRange(STM_BUF_SIZE_MIN - 1)), GainSTM::from_freq(1.), STM_BUF_SIZE_MIN - 1)]
+    fn freq(
+        #[case] expect: Result<f64, AUTDInternalError>,
+        #[case] stm: GainSTM<NullGain>,
+        #[case] n: usize,
+    ) -> anyhow::Result<()> {
+        assert_eq!(
+            expect,
+            stm.add_gains_from_iter((0..n).map(|_| NullGain {})).freq()
+        );
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Ok(Duration::from_secs(1)), GainSTM::from_freq(1.0), 2)]
+    #[case(Ok(Duration::from_secs(1)), GainSTM::from_freq(1.0), 10)]
+    #[case(
+        Ok(Duration::from_secs(1)),
+        GainSTM::from_period(Duration::from_secs(1)),
+        2
+    )]
+    #[case(
+        Ok(Duration::from_secs(1)),
+        GainSTM::from_period(Duration::from_secs(1)),
+        10
+    )]
+    #[case(
+        Ok(Duration::from_micros(2500)),
+        GainSTM::from_sampling_config(SamplingConfiguration::FREQ_4K_HZ),
+        10
+    )]
+    #[case(Err(AUTDInternalError::GainSTMSizeOutOfRange(STM_BUF_SIZE_MIN - 1)), GainSTM::from_freq(1.), STM_BUF_SIZE_MIN - 1)]
+    fn period(
+        #[case] expect: Result<Duration, AUTDInternalError>,
+        #[case] stm: GainSTM<NullGain>,
+        #[case] n: usize,
+    ) -> anyhow::Result<()> {
+        assert_eq!(
+            expect,
+            stm.add_gains_from_iter((0..n).map(|_| NullGain {}))
+                .period()
         );
         Ok(())
     }
@@ -255,7 +385,7 @@ mod tests {
     #[case::phase_intensity_full(GainSTMMode::PhaseIntensityFull)]
     #[case::phase_full(GainSTMMode::PhaseFull)]
     #[case::phase_half(GainSTMMode::PhaseHalf)]
-    fn test_with_mode(#[case] mode: GainSTMMode) {
+    fn with_mode(#[case] mode: GainSTMMode) {
         assert_eq!(
             mode,
             GainSTM::<NullGain>::from_freq(1.).with_mode(mode).mode()
@@ -263,7 +393,7 @@ mod tests {
     }
 
     #[test]
-    fn test_with_mode_default() {
+    fn with_mode_default() {
         assert_eq!(
             GainSTMMode::PhaseIntensityFull,
             GainSTM::<NullGain>::from_freq(1.).mode()
@@ -286,10 +416,10 @@ mod tests {
     }
 
     #[test]
-    fn test_clear() -> anyhow::Result<()> {
+    fn clear() -> anyhow::Result<()> {
         let mut stm = GainSTM::<Box<dyn Gain>>::from_freq(1.)
-            .add_gain(Box::new(NullGain {}))?
-            .add_gain(Box::new(NullGain2 {}))?;
+            .add_gain(Box::new(NullGain {}))
+            .add_gain(Box::new(NullGain2 {}));
         assert_eq!(stm.gains().len(), 2);
         let gains = stm.clear();
         assert_eq!(stm.gains().len(), 0);
@@ -301,7 +431,7 @@ mod tests {
     #[test]
     #[case::infinite(LoopBehavior::Infinite)]
     #[case::finite(LoopBehavior::once())]
-    fn test_with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
+    fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
             loop_behavior,
             GainSTM::<Box<dyn Gain>>::from_freq(1.)
@@ -311,18 +441,16 @@ mod tests {
     }
 
     #[test]
-    fn test_indexer() {
-        let stm = GainSTM::from_freq(1.).add_gain(NullGain {}).unwrap();
+    fn indexer() {
+        let stm = GainSTM::from_freq(1.).add_gain(NullGain {});
         let _: &NullGain = &stm[0];
     }
 
     #[test]
-    fn test_operation() {
+    fn operation() {
         let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.)
             .add_gain(Box::new(NullGain {}))
-            .unwrap()
-            .add_gain(Box::new(NullGain2 {}))
-            .unwrap();
+            .add_gain(Box::new(NullGain2 {}));
 
         assert_eq!(stm.timeout(), Some(DEFAULT_TIMEOUT));
 

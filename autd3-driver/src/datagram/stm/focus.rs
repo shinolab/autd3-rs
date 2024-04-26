@@ -181,50 +181,180 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(1., 10)]
-    #[case(2., 10)]
-    fn from_freq(#[case] freq: f64, #[case] n: usize) -> anyhow::Result<()> {
-        let stm = FocusSTM::from_freq(freq).add_foci_from_iter((0..n).map(|_| Vector3::zeros()))?;
-        assert_eq!(freq as f64, stm.freq()?);
-        assert_eq!(freq as f64 * n as f64, stm.sampling_config()?.freq());
-        Ok(())
+    #[case(Ok(SamplingConfiguration::from_freq(1).unwrap()), 0.5, 2)]
+    #[case(Err(AUTDInternalError::STMFrequencyInvalid(2, 0.49, 20000.0)), 0.49, 2)]
+    #[case(Ok(SamplingConfiguration::from_freq(10).unwrap()), 1., 10)]
+    #[case(Ok(SamplingConfiguration::from_freq(20).unwrap()), 2., 10)]
+    #[case(Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(STM_BUF_SIZE_MIN - 1)), 1., STM_BUF_SIZE_MIN - 1)]
+    #[case(
+        Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(FOCUS_STM_BUF_SIZE_MAX + 1)),
+        1.,
+        FOCUS_STM_BUF_SIZE_MAX + 1
+    )]
+    fn from_freq(
+        #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
+        #[case] freq: f64,
+        #[case] n: usize,
+    ) {
+        assert_eq!(
+            expect,
+            FocusSTM::from_freq(freq)
+                .add_foci_from_iter((0..n).map(|_| Vector3::zeros()))
+                .sampling_config()
+        );
     }
 
     #[rstest::rstest]
     #[test]
-    #[case(Duration::from_micros(250), 10)]
-    #[case(Duration::from_micros(500), 10)]
-    fn test_from_period(#[case] period: Duration, #[case] n: usize) -> anyhow::Result<()> {
-        let stm =
-            FocusSTM::from_period(period).add_foci_from_iter((0..n).map(|_| Vector3::zeros()))?;
-        assert_eq!(period, stm.period()?);
-        assert_eq!(period / n as u32, stm.sampling_config()?.period());
-        Ok(())
+    #[case(Ok(SamplingConfiguration::from_freq_nearest(1.).unwrap()), 0.5, 2)]
+    #[case(Ok(SamplingConfiguration::from_freq_nearest(0.98).unwrap()), 0.49, 2)]
+    #[case(Ok(SamplingConfiguration::from_freq_nearest(10.).unwrap()), 1., 10)]
+    #[case(Ok(SamplingConfiguration::from_freq_nearest(20.).unwrap()), 2., 10)]
+    #[case(Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(STM_BUF_SIZE_MIN - 1)), 1., STM_BUF_SIZE_MIN - 1)]
+    #[case(
+        Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(FOCUS_STM_BUF_SIZE_MAX + 1)),
+        1.,
+        FOCUS_STM_BUF_SIZE_MAX + 1
+    )]
+    fn from_freq_nearest(
+        #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
+        #[case] freq: f64,
+        #[case] n: usize,
+    ) {
+        assert_eq!(
+            expect,
+            FocusSTM::from_freq_nearest(freq)
+                .add_foci_from_iter((0..n).map(|_| Vector3::zeros()))
+                .sampling_config()
+        );
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Ok(SamplingConfiguration::from_period(Duration::from_micros(25)).unwrap()), Duration::from_micros(50), 2)]
+    #[case(
+        Err(AUTDInternalError::SamplingPeriodInvalid(
+            Duration::from_micros(26),
+            SamplingConfiguration::PERIOD_MIN
+        )),
+        Duration::from_micros(52),
+        2
+    )]
+    #[case(Ok(SamplingConfiguration::from_period(Duration::from_micros(25)).unwrap()), Duration::from_micros(250), 10)]
+    #[case(Ok(SamplingConfiguration::from_period(Duration::from_micros(50)).unwrap()), Duration::from_micros(500), 10)]
+    fn from_period(
+        #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
+        #[case] period: Duration,
+        #[case] n: usize,
+    ) {
+        assert_eq!(
+            expect,
+            FocusSTM::from_period(period)
+                .add_foci_from_iter((0..n).map(|_| Vector3::zeros()))
+                .sampling_config()
+        );
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(25)).unwrap()), Duration::from_micros(50), 2)]
+    #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(26)).unwrap()), Duration::from_micros(52), 2)]
+    #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(25)).unwrap()), Duration::from_micros(250), 10)]
+    #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(50)).unwrap()), Duration::from_micros(500), 10)]
+    fn from_period_nearest(
+        #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
+        #[case] period: Duration,
+        #[case] n: usize,
+    ) {
+        assert_eq!(
+            expect,
+            FocusSTM::from_period_nearest(period)
+                .add_foci_from_iter((0..n).map(|_| Vector3::zeros()))
+                .sampling_config()
+        );
     }
 
     #[rstest::rstest]
     #[test]
     #[case(SamplingConfiguration::DISABLE, 2)]
     #[case(SamplingConfiguration::FREQ_4K_HZ, 10)]
-    fn test_from_sampling_config(
+    fn from_sampling_config(
         #[case] config: SamplingConfiguration,
         #[case] n: usize,
     ) -> anyhow::Result<()> {
         assert_eq!(
             config,
             FocusSTM::from_sampling_config(config)
-                .add_foci_from_iter((0..n).map(|_| Vector3::zeros()))?
+                .add_foci_from_iter((0..n).map(|_| Vector3::zeros()))
                 .sampling_config()?
         );
         Ok(())
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_add_focus() -> anyhow::Result<()> {
+    #[case(Ok(1.0), FocusSTM::from_freq(1.0), 2)]
+    #[case(Ok(1.0), FocusSTM::from_freq(1.0), 10)]
+    #[case(Ok(1.0), FocusSTM::from_period(Duration::from_secs(1)), 2)]
+    #[case(Ok(1.0), FocusSTM::from_period(Duration::from_secs(1)), 10)]
+    #[case(
+        Ok(400.0),
+        FocusSTM::from_sampling_config(SamplingConfiguration::FREQ_4K_HZ),
+        10
+    )]
+    #[case(Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(STM_BUF_SIZE_MIN - 1)), FocusSTM::from_freq(1.), STM_BUF_SIZE_MIN - 1)]
+    fn freq(
+        #[case] expect: Result<f64, AUTDInternalError>,
+        #[case] stm: FocusSTM,
+        #[case] n: usize,
+    ) -> anyhow::Result<()> {
+        assert_eq!(
+            expect,
+            stm.add_foci_from_iter((0..n).map(|_| Vector3::zeros()))
+                .freq()
+        );
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Ok(Duration::from_secs(1)), FocusSTM::from_freq(1.0), 2)]
+    #[case(Ok(Duration::from_secs(1)), FocusSTM::from_freq(1.0), 10)]
+    #[case(
+        Ok(Duration::from_secs(1)),
+        FocusSTM::from_period(Duration::from_secs(1)),
+        2
+    )]
+    #[case(
+        Ok(Duration::from_secs(1)),
+        FocusSTM::from_period(Duration::from_secs(1)),
+        10
+    )]
+    #[case(
+        Ok(Duration::from_micros(2500)),
+        FocusSTM::from_sampling_config(SamplingConfiguration::FREQ_4K_HZ),
+        10
+    )]
+    #[case(Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(STM_BUF_SIZE_MIN - 1)), FocusSTM::from_freq(1.), STM_BUF_SIZE_MIN - 1)]
+    fn period(
+        #[case] expect: Result<Duration, AUTDInternalError>,
+        #[case] stm: FocusSTM,
+        #[case] n: usize,
+    ) -> anyhow::Result<()> {
+        assert_eq!(
+            expect,
+            stm.add_foci_from_iter((0..n).map(|_| Vector3::zeros()))
+                .period()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn add_focus() -> anyhow::Result<()> {
         let stm = FocusSTM::from_freq_nearest(1.)
-            .add_focus(Vector3::new(1., 2., 3.))?
-            .add_focus((Vector3::new(4., 5., 6.), 1))?
-            .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2))?;
+            .add_focus(Vector3::new(1., 2., 3.))
+            .add_focus((Vector3::new(4., 5., 6.), 1))
+            .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2));
         assert_eq!(stm.foci().len(), 3);
         assert_eq!(
             stm[0],
@@ -242,11 +372,11 @@ mod tests {
     }
 
     #[test]
-    fn test_add_foci() -> anyhow::Result<()> {
+    fn add_foci() -> anyhow::Result<()> {
         let stm = FocusSTM::from_freq_nearest(1.)
-            .add_foci_from_iter([Vector3::new(1., 2., 3.)])?
-            .add_foci_from_iter([(Vector3::new(4., 5., 6.), 1)])?
-            .add_foci_from_iter([ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2)])?;
+            .add_foci_from_iter([Vector3::new(1., 2., 3.)])
+            .add_foci_from_iter([(Vector3::new(4., 5., 6.), 1)])
+            .add_foci_from_iter([ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2)]);
         assert_eq!(stm.foci().len(), 3);
         assert_eq!(
             stm[0],
@@ -267,7 +397,7 @@ mod tests {
     #[test]
     #[case::infinite(LoopBehavior::Infinite)]
     #[case::finite(LoopBehavior::once())]
-    fn test_with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
+    fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
             loop_behavior,
             FocusSTM::from_freq(1.)
@@ -277,17 +407,17 @@ mod tests {
     }
 
     #[test]
-    fn test_with_loop_behavior_deafault() {
+    fn with_loop_behavior_deafault() {
         let stm = FocusSTM::from_freq(1.);
         assert_eq!(LoopBehavior::Infinite, stm.loop_behavior());
     }
 
     #[test]
-    fn test_clear() -> anyhow::Result<()> {
+    fn clear() -> anyhow::Result<()> {
         let mut stm = FocusSTM::from_freq_nearest(1.)
-            .add_focus(Vector3::new(1., 2., 3.))?
-            .add_focus((Vector3::new(4., 5., 6.), 1))?
-            .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2))?;
+            .add_focus(Vector3::new(1., 2., 3.))
+            .add_focus((Vector3::new(4., 5., 6.), 1))
+            .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2));
         let foci = stm.clear();
         assert_eq!(stm.foci().len(), 0);
         assert_eq!(foci.len(), 3);
@@ -307,11 +437,11 @@ mod tests {
     }
 
     #[test]
-    fn test_operation() -> anyhow::Result<()> {
+    fn operation() -> anyhow::Result<()> {
         let stm = FocusSTM::from_freq_nearest(1.)
-            .add_focus(Vector3::new(1., 2., 3.))?
-            .add_focus((Vector3::new(4., 5., 6.), 1))?
-            .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2))?;
+            .add_focus(Vector3::new(1., 2., 3.))
+            .add_focus((Vector3::new(4., 5., 6.), 1))
+            .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2));
 
         assert_eq!(stm.timeout(), Some(DEFAULT_TIMEOUT));
 

@@ -132,8 +132,8 @@ impl SamplingConfiguration {
 impl std::fmt::Display for SamplingConfiguration {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SamplingConfiguration::Frequency(freq) => write!(f, "Frequency({})", freq.0),
-            SamplingConfiguration::Period(p) => write!(f, "Period({:?})", p.0),
+            SamplingConfiguration::Frequency(freq) => write!(f, "{}Hz", freq.0),
+            SamplingConfiguration::Period(p) => write!(f, "{:?}", p.0),
             SamplingConfiguration::Division(d) => write!(f, "Division({})", d.0),
         }
     }
@@ -370,5 +370,47 @@ mod tests {
         #[case] period: Duration,
     ) {
         assert_eq!(expected, SamplingConfiguration::from_period_nearest(period));
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case::freq(4e3, SamplingConfiguration::Frequency(Frequency(4e3)))]
+    #[case::period(4e3, SamplingConfiguration::Period(Period(Duration::from_micros(250))))]
+    #[case::div(4e3, SamplingConfiguration::Division(Division(5120)))]
+    fn freq(#[case] expect: f64, #[case] config: SamplingConfiguration) {
+        assert_eq!(expect, config.freq());
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case::freq(
+        Duration::from_micros(250),
+        SamplingConfiguration::Frequency(Frequency(4e3))
+    )]
+    #[case::period(
+        Duration::from_micros(250),
+        SamplingConfiguration::Period(Period(Duration::from_micros(250)))
+    )]
+    #[case::div(
+        Duration::from_micros(250),
+        SamplingConfiguration::Division(Division(5120))
+    )]
+    fn period(#[case] expect: Duration, #[case] config: SamplingConfiguration) {
+        assert_eq!(expect, config.period());
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case::freq(SamplingConfiguration::Frequency(Frequency(4e3)), "4000Hz")]
+    #[case::period(
+        SamplingConfiguration::Period(Period(Duration::from_micros(250))),
+        "250µs"
+    )]
+    #[case::div(
+        SamplingConfiguration::Division(Division(305419896)),
+        "Division(305419896)"
+    )]
+    fn display(#[case] config: SamplingConfiguration, #[case] expected: &str) {
+        assert_eq!(expected, config.to_string());
     }
 }

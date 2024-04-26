@@ -14,7 +14,7 @@ impl SamplingMode for ExactFrequency {
         let fd = freq * sampling_config.division() as f64;
         if fd.fract() > 1e-9 {
             return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}) cannot be output with the sampling config ({}).",
+                "Frequency ({}Hz) cannot be output with the sampling config ({}).",
                 freq, sampling_config
             )));
         }
@@ -24,7 +24,7 @@ impl SamplingMode for ExactFrequency {
         let k = gcd(fs, fd);
         if k >= SamplingConfiguration::BASE_FREQUENCY as u64 / 2 {
             return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}) is equal to or greater than the Nyquist frequency ({})",
+                "Frequency ({}Hz) is equal to or greater than the Nyquist frequency ({}Hz)",
                 freq,
                 sampling_config.freq() / 2.
             )));
@@ -55,7 +55,7 @@ impl SamplingMode for NearestFrequency {
         let sf = sampling_config.freq();
         if freq >= sf / 2. {
             return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}) is equal to or greater than the Nyquist frequency ({})",
+                "Frequency ({}Hz) is equal to or greater than the Nyquist frequency ({}Hz)",
                 freq,
                 sampling_config.freq() / 2.
             )));
@@ -134,7 +134,7 @@ impl<S: SamplingMode<D = (EmitIntensity, EmitIntensity, f64, SamplingConfigurati
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         if self.freq < 0. {
             return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}) must be positive",
+                "Frequency ({}Hz) must be positive",
                 self.freq
             )));
         }
@@ -179,11 +179,15 @@ mod tests {
         781.25
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (2000) is equal to or greater than the Nyquist frequency (2000)".to_owned())),
+        Err(AUTDInternalError::ModulationError("Frequency (150.01Hz) cannot be output with the sampling config (4000Hz).".to_owned())),
+        150.01
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency (2000Hz) is equal to or greater than the Nyquist frequency (2000Hz)".to_owned())),
         2000.
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (4000) is equal to or greater than the Nyquist frequency (2000)".to_owned())),
+        Err(AUTDInternalError::ModulationError("Frequency (4000Hz) is equal to or greater than the Nyquist frequency (2000Hz)".to_owned())),
         4000.
     )]
     fn with_freq_exact(#[case] expect: Result<Vec<u8>, AUTDInternalError>, #[case] freq: f64) {
@@ -214,11 +218,11 @@ mod tests {
         200.
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (2000) is equal to or greater than the Nyquist frequency (2000)".to_owned())),
+        Err(AUTDInternalError::ModulationError("Frequency (2000Hz) is equal to or greater than the Nyquist frequency (2000Hz)".to_owned())),
         2000.
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (4000) is equal to or greater than the Nyquist frequency (2000)".to_owned())),
+        Err(AUTDInternalError::ModulationError("Frequency (4000Hz) is equal to or greater than the Nyquist frequency (2000Hz)".to_owned())),
         4000.
     )]
     fn with_freq_nearest(#[case] expect: Result<Vec<u8>, AUTDInternalError>, #[case] freq: f64) {
@@ -239,7 +243,7 @@ mod tests {
     fn freq_must_be_positive() {
         assert_eq!(
             Err(AUTDInternalError::ModulationError(
-                "Frequency (-0.1) must be positive".to_string()
+                "Frequency (-0.1Hz) must be positive".to_string()
             )),
             Square::with_freq_nearest(-0.1).calc()
         );
