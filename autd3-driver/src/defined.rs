@@ -12,9 +12,6 @@ pub use unit::*;
 
 pub const MILLIMETER: f64 = METER / 1000.0;
 
-pub const FREQUENCY_40K: f64 = 40e3;
-pub const ULTRASOUND_FREQUENCY: f64 = crate::firmware::fpga::FPGA_CLK_FREQ as f64 / 512.;
-
 pub type Complex = nalgebra::Complex<f64>;
 
 pub const ABSOLUTE_THRESHOLD_OF_HEARING: f64 = 20e-6;
