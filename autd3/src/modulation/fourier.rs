@@ -8,16 +8,14 @@ use num::integer::lcm;
 
 /// Multi-freq sine wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug)]
-pub struct Fourier<
-    S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration)>,
-> {
+pub struct Fourier<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity)>> {
     #[no_change]
     config: SamplingConfiguration,
     components: Vec<Sine<S>>,
     loop_behavior: LoopBehavior,
 }
 
-impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration)>> Fourier<S> {
+impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity)>> Fourier<S> {
     pub fn new(sine: Sine<S>) -> Self {
         Self {
             config: sine.sampling_config(),
@@ -77,17 +75,13 @@ impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfigura
     }
 }
 
-impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration)>>
-    From<Sine<S>> for Fourier<S>
-{
+impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity)>> From<Sine<S>> for Fourier<S> {
     fn from(sine: Sine<S>) -> Self {
         Self::new(sine)
     }
 }
 
-impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration)>> Deref
-    for Fourier<S>
-{
+impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity)>> Deref for Fourier<S> {
     type Target = [Sine<S>];
 
     fn deref(&self) -> &Self::Target {
@@ -95,8 +89,8 @@ impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfigura
     }
 }
 
-impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration)>>
-    std::ops::Add<Sine<S>> for Fourier<S>
+impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity)>> std::ops::Add<Sine<S>>
+    for Fourier<S>
 {
     type Output = Self;
 
@@ -105,8 +99,8 @@ impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfigura
     }
 }
 
-impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration)>>
-    std::ops::Add<Sine<S>> for Sine<S>
+impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity)>> std::ops::Add<Sine<S>>
+    for Sine<S>
 {
     type Output = Fourier<S>;
 
@@ -115,9 +109,7 @@ impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfigura
     }
 }
 
-impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration)>> Modulation
-    for Fourier<S>
-{
+impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity)>> Modulation for Fourier<S> {
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         let buffers = self
             .components
