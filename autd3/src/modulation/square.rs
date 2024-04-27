@@ -1,4 +1,4 @@
-use autd3_driver::{derive::*, firmware::fpga::sampling_config};
+use autd3_driver::{derive::*, firmware::fpga::sampling_config, utils::float::is_integer};
 
 use num::integer::gcd;
 
@@ -12,7 +12,7 @@ impl SamplingMode for ExactFrequency {
         let (low, high, duty, sampling_config) = data;
 
         let fd = freq * sampling_config.division() as f64;
-        if fd.fract() > 1e-9 {
+        if !is_integer(fd) {
             return Err(AUTDInternalError::ModulationError(format!(
                 "Frequency ({}Hz) cannot be output with the sampling config ({}).",
                 freq, sampling_config

@@ -3,6 +3,7 @@ use std::time::Duration;
 use crate::{
     error::AUTDInternalError,
     firmware::fpga::{sampling_config, ultrasound_freq, SamplingConfiguration},
+    utils::float::is_integer,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -19,7 +20,7 @@ impl STMSamplingConfiguration {
         match *self {
             STMSamplingConfiguration::Frequency(f) => {
                 let fs = f * size as f64;
-                if fs.fract() > 1e-9 {
+                if !is_integer(fs) {
                     return Err(AUTDInternalError::STMFrequencyInvalid(
                         size,
                         f,

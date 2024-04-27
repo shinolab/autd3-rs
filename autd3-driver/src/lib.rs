@@ -9,6 +9,7 @@ pub mod ethercat;
 pub mod firmware;
 pub mod geometry;
 pub mod link;
+pub mod utils;
 
 #[cfg(feature = "async-trait")]
 pub use async_trait::async_trait;
