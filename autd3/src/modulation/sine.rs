@@ -1,39 +1,23 @@
-use autd3_driver::{
-    defined::PI, derive::*, firmware::fpga::sampling_config, utils::float::is_integer,
-};
-
-use num::integer::gcd;
+use autd3_driver::{defined::PI, derive::*};
 
 use super::sampling_mode::SamplingMode;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExactFrequency;
 impl SamplingMode for ExactFrequency {
-    type D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration);
-    fn calc(freq: f64, data: Self::D) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        let (intensity, phase, offset, sampling_config) = data;
-
-        let fd = freq * sampling_config.division() as f64;
-        if !is_integer(fd) {
-            return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}Hz) cannot be output with the sampling config ({}).",
-                freq, sampling_config
-            )));
-        }
-        let fd = fd as u64;
-        let fs = sampling_config::base_frequency() as u64;
-
-        let k = gcd(fs, fd);
-        let n = fs / k;
-        let rep = fd / k;
-
-        let intensity = intensity.value() as f64;
-        let phase = phase.radian();
-        let offset = offset.value() as f64;
+    type D = (EmitIntensity, Phase, EmitIntensity);
+    fn calc(
+        freq: f64,
+        sampling_config: SamplingConfiguration,
+        data: Self::D,
+    ) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+        let (n, rep) = Self::validate(freq, sampling_config)?;
+        let (intensity, phase, offset) = data;
         Ok((0..n)
             .map(|i| {
-                (((intensity / 2. * (2.0 * PI * (rep * i) as f64 / n as f64 + phase).sin())
-                    + offset)
+                (((intensity.value() as f64 / 2.
+                    * (2.0 * PI * (rep * i) as f64 / n as f64 + phase.radian()).sin())
+                    + offset.value() as f64)
                     .round() as u8)
                     .into()
             })
@@ -44,19 +28,19 @@ impl SamplingMode for ExactFrequency {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NearestFrequency;
 impl SamplingMode for NearestFrequency {
-    type D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration);
-    fn calc(freq: f64, data: Self::D) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        let (intensity, phase, offset, sampling_config) = data;
-
-        let sf = sampling_config.freq();
-
-        let n = (sf / freq).round() as usize;
-        let intensity = intensity.value() as f64;
-        let phase = phase.radian();
-        let offset = offset.value() as f64;
+    type D = (EmitIntensity, Phase, EmitIntensity);
+    fn calc(
+        freq: f64,
+        sampling_config: SamplingConfiguration,
+        data: Self::D,
+    ) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+        let n = (sampling_config.freq() / freq).round() as usize;
+        let (intensity, phase, offset) = data;
         Ok((0..n)
             .map(|i| {
-                (((intensity / 2. * (2.0 * PI * i as f64 / n as f64 + phase).sin()) + offset)
+                (((intensity.value() as f64 / 2.
+                    * (2.0 * PI * i as f64 / n as f64 + phase.radian()).sin())
+                    + offset.value() as f64)
                     .round() as u8)
                     .into()
             })
@@ -66,7 +50,7 @@ impl SamplingMode for NearestFrequency {
 
 /// Sine wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug, Builder)]
-pub struct Sine<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration)>> {
+pub struct Sine<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity)>> {
     #[get]
     freq: f64,
     #[getset]
@@ -110,9 +94,7 @@ impl Sine<ExactFrequency> {
     }
 }
 
-impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfiguration)>> Modulation
-    for Sine<S>
-{
+impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity)>> Modulation for Sine<S> {
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         if self.freq < 0. {
             return Err(AUTDInternalError::ModulationError(format!(
@@ -127,10 +109,10 @@ impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity, SamplingConfigura
                 self.config.freq() / 2.
             )));
         }
-
         S::calc(
             self.freq,
-            (self.intensity, self.phase, self.offset, self.config),
+            self.config,
+            (self.intensity, self.phase, self.offset),
         )
     }
 }

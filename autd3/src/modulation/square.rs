@@ -1,30 +1,18 @@
-use autd3_driver::{derive::*, firmware::fpga::sampling_config, utils::float::is_integer};
-
-use num::integer::gcd;
+use autd3_driver::derive::*;
 
 use super::sampling_mode::SamplingMode;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExactFrequency;
 impl SamplingMode for ExactFrequency {
-    type D = (EmitIntensity, EmitIntensity, f64, SamplingConfiguration);
-    fn calc(freq: f64, data: Self::D) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        let (low, high, duty, sampling_config) = data;
-
-        let fd = freq * sampling_config.division() as f64;
-        if !is_integer(fd) {
-            return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}Hz) cannot be output with the sampling config ({}).",
-                freq, sampling_config
-            )));
-        }
-        let fd = fd as u64;
-        let fs = sampling_config::base_frequency() as u64;
-
-        let k = gcd(fs, fd);
-        let n = fs / k;
-        let rep = fd / k;
-
+    type D = (EmitIntensity, EmitIntensity, f64);
+    fn calc(
+        freq: f64,
+        sampling_config: SamplingConfiguration,
+        data: Self::D,
+    ) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+        let (n, rep) = Self::validate(freq, sampling_config)?;
+        let (low, high, duty) = data;
         Ok((0..rep)
             .map(|i| (n + i) / rep)
             .flat_map(|size| {
@@ -40,13 +28,14 @@ impl SamplingMode for ExactFrequency {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NearestFrequency;
 impl SamplingMode for NearestFrequency {
-    type D = (EmitIntensity, EmitIntensity, f64, SamplingConfiguration);
-    fn calc(freq: f64, data: Self::D) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        let (low, high, duty, sampling_config) = data;
-
-        let sf = sampling_config.freq();
-
-        let n = (sf / freq).round() as usize;
+    type D = (EmitIntensity, EmitIntensity, f64);
+    fn calc(
+        freq: f64,
+        sampling_config: SamplingConfiguration,
+        data: Self::D,
+    ) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+        let n = (sampling_config.freq() / freq).round() as usize;
+        let (low, high, duty) = data;
         let n_high = (n as f64 * duty) as usize;
         Ok(vec![high; n_high]
             .into_iter()
@@ -57,7 +46,7 @@ impl SamplingMode for NearestFrequency {
 
 /// Square wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug, Builder)]
-pub struct Square<S: SamplingMode<D = (EmitIntensity, EmitIntensity, f64, SamplingConfiguration)>> {
+pub struct Square<S: SamplingMode<D = (EmitIntensity, EmitIntensity, f64)>> {
     #[get]
     freq: f64,
     #[getset]
@@ -113,9 +102,7 @@ impl Square<ExactFrequency> {
     }
 }
 
-impl<S: SamplingMode<D = (EmitIntensity, EmitIntensity, f64, SamplingConfiguration)>> Modulation
-    for Square<S>
-{
+impl<S: SamplingMode<D = (EmitIntensity, EmitIntensity, f64)>> Modulation for Square<S> {
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         if self.freq < 0. {
             return Err(AUTDInternalError::ModulationError(format!(
@@ -136,7 +123,7 @@ impl<S: SamplingMode<D = (EmitIntensity, EmitIntensity, f64, SamplingConfigurati
                 "duty must be in range from 0 to 1".to_string(),
             ));
         }
-        S::calc(self.freq, (self.low, self.high, self.duty, self.config))
+        S::calc(self.freq, self.config, (self.low, self.high, self.duty))
     }
 }
 
