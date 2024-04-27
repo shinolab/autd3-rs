@@ -1,4 +1,6 @@
-use crate::{datagram::*, defined::DEFAULT_TIMEOUT};
+use crate::{datagram::*, defined::DEFAULT_TIMEOUT, firmware::fpga::ULTRASOUND_PERIOD};
+
+const PULSE_WIDTH_MAX: u16 = ULTRASOUND_PERIOD as u16 / 2;
 
 #[derive(Debug, Clone)]
 pub struct ConfigurePulseWidthEncoder {
@@ -8,7 +10,7 @@ pub struct ConfigurePulseWidthEncoder {
 impl ConfigurePulseWidthEncoder {
     /// constructor
     pub fn new(buf: Vec<u16>) -> Result<Self, AUTDInternalError> {
-        if buf.iter().any(|&v| v > 256)
+        if buf.iter().any(|&v| v > PULSE_WIDTH_MAX)
             || buf
                 != buf
                     .iter()
@@ -34,7 +36,13 @@ impl Default for ConfigurePulseWidthEncoder {
             include_bytes!("asin.dat")
                 .iter()
                 .enumerate()
-                .map(|(i, &v)| if i >= 0xFF * 0xFF { 256 } else { v as u16 })
+                .map(|(i, &v)| {
+                    if i >= 0xFF * 0xFF {
+                        PULSE_WIDTH_MAX
+                    } else {
+                        v as u16
+                    }
+                })
                 .collect(),
         )
         .unwrap()
@@ -65,10 +73,10 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(Ok(vec![0, 0]), vec![0, 0])]
-    #[case(Ok(vec![0, 256]), vec![0, 256])]
-    #[case(Ok(vec![256, 256]), vec![256, 256])]
-    #[case(Err(AUTDInternalError::InvalidPulseWidthEncoderData), vec![0, 257])]
-    #[case(Err(AUTDInternalError::InvalidPulseWidthEncoderData), vec![256, 0])]
+    #[case(Ok(vec![0, PULSE_WIDTH_MAX]), vec![0, PULSE_WIDTH_MAX])]
+    #[case(Ok(vec![PULSE_WIDTH_MAX, PULSE_WIDTH_MAX]), vec![PULSE_WIDTH_MAX, PULSE_WIDTH_MAX])]
+    #[case(Err(AUTDInternalError::InvalidPulseWidthEncoderData), vec![0, PULSE_WIDTH_MAX + 1])]
+    #[case(Err(AUTDInternalError::InvalidPulseWidthEncoderData), vec![PULSE_WIDTH_MAX, 0])]
     fn new(#[case] expected: Result<Vec<u16>, AUTDInternalError>, #[case] buf: Vec<u16>) {
         assert_eq!(
             expected,
@@ -94,7 +102,8 @@ mod tests {
                         / EmitIntensity::MAX.value() as f64)
                         .asin()
                         / PI
-                        * 512.)
+                        * PULSE_WIDTH_MAX as f64
+                        * 2.)
                         .round() as u16,
                     v
                 );
