@@ -6,7 +6,7 @@ pub use autd3_gain_holo::*;
 
 use super::{
     audio_file::*, bessel::*, custom::*, flag::*, focus::*, group::*, holo::*, plane::*, stm::*,
-    transtest::*,
+    user_defined_gain_modulation::*,
 };
 
 pub async fn run<L: Link>(mut autd: Controller<L>) -> anyhow::Result<()> {
@@ -32,11 +32,11 @@ pub async fn run<L: Link>(mut autd: Controller<L>) -> anyhow::Result<()> {
         ("FocusSTM test", |autd| Box::pin(focus_stm(autd))),
         ("GainSTM test", |autd| Box::pin(gain_stm(autd))),
         ("Multiple foci test", |autd| Box::pin(holo(autd))),
-        ("Custom Gain & Modulation test", |autd| {
-            Box::pin(custom(autd))
+        ("User-defined Gain & Modulation test", |autd| {
+            Box::pin(user_defined(autd))
         }),
         ("Flag test", |autd| Box::pin(flag(autd))),
-        ("TransducerTest test", |autd| Box::pin(transtest(autd))),
+        ("Custom Gain test", |autd| Box::pin(custom(autd))),
         ("Group (by Transducer) test", |autd| {
             Box::pin(group_by_transducer(autd))
         }),

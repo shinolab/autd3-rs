@@ -37,10 +37,11 @@ pub trait Gain {
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError>;
-    fn transform(
+
+    fn transform<FT: Fn(&Transducer) -> Drive, F: Fn(&Device) -> FT>(
         geometry: &Geometry,
         filter: GainFilter,
-        f: impl Fn(&Device, &Transducer) -> Drive,
+        f: F,
     ) -> HashMap<usize, Vec<Drive>>
     where
         Self: Sized,
@@ -48,18 +49,19 @@ pub trait Gain {
         match filter {
             GainFilter::All => geometry
                 .devices()
-                .map(|dev| (dev.idx(), dev.iter().map(|tr| f(dev, tr)).collect()))
+                .map(|dev| (dev.idx(), dev.iter().map(f(dev)).collect()))
                 .collect(),
             GainFilter::Filter(filter) => geometry
                 .devices()
                 .filter_map(|dev| {
                     filter.get(&dev.idx()).map(|filter| {
+                        let ft = f(dev);
                         (
                             dev.idx(),
                             dev.iter()
                                 .map(|tr| {
                                     if filter[tr.idx()] {
-                                        f(dev, tr)
+                                        ft(tr)
                                     } else {
                                         Drive::null()
                                     }
@@ -118,19 +120,26 @@ mod tests {
     use crate::{derive::*, geometry::tests::create_geometry};
 
     #[derive(Gain, Clone, Copy, PartialEq, Debug)]
-    pub struct TestGain<F: Fn(&Device, &Transducer) -> Drive + 'static> {
+    pub struct TestGain<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + 'static> {
         pub f: F,
     }
 
-    impl TestGain<Box<dyn Fn(&Device, &Transducer) -> Drive>> {
+    impl
+        TestGain<
+            Box<dyn Fn(&Transducer) -> Drive>,
+            Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive>>,
+        >
+    {
         pub fn null() -> Self {
             Self {
-                f: Box::new(|_, _| Drive::null()),
+                f: Box::new(|_| Box::new(|_| Drive::null())),
             }
         }
     }
 
-    impl<F: Fn(&Device, &Transducer) -> Drive + 'static> Gain for TestGain<F> {
+    impl<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + 'static> Gain
+        for TestGain<FT, F>
+    {
         fn calc(
             &self,
             geometry: &Geometry,
@@ -172,10 +181,15 @@ mod tests {
         assert_eq!(
             Ok(expect),
             TestGain {
-                f: |dev, _| Drive::new(
-                    Phase::new(dev.idx() as u8 + 1),
-                    EmitIntensity::new(dev.idx() as u8 + 1)
-                )
+                f: |dev| {
+                    let dev_idx = dev.idx();
+                    move |_| {
+                        Drive::new(
+                            Phase::new(dev_idx as u8 + 1),
+                            EmitIntensity::new(dev_idx as u8 + 1),
+                        )
+                    }
+                }
             }
             .calc(&geometry, GainFilter::All)
         );
@@ -212,10 +226,15 @@ mod tests {
         assert_eq!(
             Ok(expect),
             TestGain {
-                f: |dev, _| Drive::new(
-                    Phase::new(dev.idx() as u8 + 1),
-                    EmitIntensity::new(dev.idx() as u8 + 1)
-                )
+                f: |dev| {
+                    let dev_idx = dev.idx();
+                    move |_| {
+                        Drive::new(
+                            Phase::new(dev_idx as u8 + 1),
+                            EmitIntensity::new(dev_idx as u8 + 1),
+                        )
+                    }
+                }
             }
             .calc(&geometry, GainFilter::Filter(&filter))
         );

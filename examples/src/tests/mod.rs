@@ -1,6 +1,6 @@
 mod audio_file;
 mod bessel;
-mod custom;
+mod user_defined_gain_modulation;
 mod flag;
 mod focus;
 mod group;
@@ -8,6 +8,6 @@ mod holo;
 mod plane;
 mod stm;
 mod test_runner;
-mod transtest;
+mod custom;
 
 pub use test_runner::run;

@@ -236,7 +236,7 @@ pub mod tests {
             geometry: &Geometry,
             filter: GainFilter,
         ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-            Ok(Self::transform(geometry, filter, |_, _| Drive::null()))
+            Ok(Self::transform(geometry, filter, |_| |_| Drive::null()))
         }
         // GRCOV_EXCL_STOP
     }

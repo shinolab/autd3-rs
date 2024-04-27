@@ -35,12 +35,14 @@ impl Gain for Plane {
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |dev, tr| {
-            Drive::new(
-                self.dir.dot(tr.position()) * Transducer::wavenumber(dev.sound_speed) * Rad
-                    + self.phase_offset,
-                self.intensity,
-            )
+        Ok(Self::transform(geometry, filter, |dev| {
+            let wavenumber = Transducer::wavenumber(dev.sound_speed);
+            move |tr| {
+                Drive::new(
+                    self.dir.dot(tr.position()) * wavenumber * Rad + self.phase_offset,
+                    self.intensity,
+                )
+            }
         }))
     }
 }
