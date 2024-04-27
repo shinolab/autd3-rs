@@ -4,26 +4,26 @@ use autd3_driver::derive::*;
 
 /// Gain to drive only specified transducers
 #[derive(Gain)]
-pub struct TransducerTest<F: Fn(&Device, &Transducer) -> Option<Drive> + 'static> {
+pub struct Custom<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + 'static> {
     f: F,
 }
 
-impl<F: Fn(&Device, &Transducer) -> Option<Drive> + 'static> TransducerTest<F> {
+impl<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + 'static> Custom<FT, F> {
     /// constructor
     pub const fn new(f: F) -> Self {
         Self { f }
     }
 }
 
-impl<F: Fn(&Device, &Transducer) -> Option<Drive> + 'static> Gain for TransducerTest<F> {
+impl<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + 'static> Gain
+    for Custom<FT, F>
+{
     fn calc(
         &self,
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |dev, tr| {
-            (self.f)(dev, tr).unwrap_or(Drive::null())
-        }))
+        Ok(Self::transform(geometry, filter, &self.f))
     }
 }
 
@@ -37,18 +37,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_transducer_test() -> anyhow::Result<()> {
+    fn test_custom() -> anyhow::Result<()> {
         let mut rng = rand::thread_rng();
 
-        let geometry = create_geometry(1);
+        let geometry = create_geometry(2);
 
-        let test_id = rng.gen_range(0..geometry.num_transducers());
+        let test_id = rng.gen_range(0..geometry[0].num_transducers());
         let test_drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
-        let transducer_test = TransducerTest::new(move |dev, tr| {
-            if (dev.idx() == 0) && (tr.idx() == test_id) {
-                Some(test_drive)
-            } else {
-                None
+        let transducer_test = Custom::new(move |dev| {
+            let dev_idx = dev.idx();
+            move |tr| {
+                if dev_idx == 0 && tr.idx() == test_id {
+                    test_drive
+                } else {
+                    Drive::null()
+                }
             }
         });
 
@@ -60,19 +63,22 @@ mod tests {
                 assert_eq!(Drive::null(), drive);
             }
         });
+        drives[&1].iter().for_each(|&drive| {
+            assert_eq!(Drive::null(), drive);
+        });
 
         Ok(())
     }
 
     // GRCOV_EXCL_START
-    fn f(_dev: &Device, _tr: &Transducer) -> Option<Drive> {
-        None
+    fn f(_: &Device) -> impl Fn(&Transducer) -> Drive {
+        |_| Drive::null()
     }
     // GRCOV_EXCL_STOP
 
     #[test]
     fn test_transtest_derive() {
-        let gain = TransducerTest::new(f);
+        let gain = Custom::new(f);
         let _ = gain.operation();
     }
 }

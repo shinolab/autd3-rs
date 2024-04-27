@@ -175,8 +175,12 @@ mod tests {
         let d1: Drive = rng.gen();
         let d2: Drive = rng.gen();
 
-        let g1 = TestGain { f: move |_, _| d1 };
-        let g2 = TestGain { f: move |_, _| d2 };
+        let g1 = TestGain {
+            f: move |_| move |_| d1,
+        };
+        let g2 = TestGain {
+            f: move |_| move |_| d2,
+        };
 
         let gain = Group::new(|dev, tr| match (dev.idx(), tr.idx()) {
             (0, 0..=99) => Some("null"),

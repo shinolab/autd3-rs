@@ -124,7 +124,9 @@ mod tests {
 
         let mut rng = rand::thread_rng();
         let d: Drive = rng.gen();
-        let gain = TestGain { f: move |_, _| d };
+        let gain = TestGain {
+            f: move |_| move |_| d,
+        };
         let cache = gain.with_cache();
 
         assert!(cache.drives().is_empty());
@@ -155,7 +157,7 @@ mod tests {
             filter: GainFilter,
         ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
-            Ok(Self::transform(geometry, filter, |_, _| Drive::null()))
+            Ok(Self::transform(geometry, filter, |_| |_| Drive::null()))
         }
     }
 

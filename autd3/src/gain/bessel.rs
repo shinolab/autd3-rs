@@ -55,13 +55,14 @@ impl Gain for Bessel {
                     UnitQuaternion::from_scaled_axis(v * -theta_v)
                 })
         };
-        Ok(Self::transform(geometry, filter, |dev, tr| {
-            let r = rot * (tr.position() - self.pos);
-            let dist = self.theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - self.theta.cos() * r.z;
-            Drive::new(
-                dist * Transducer::wavenumber(dev.sound_speed) * Rad + self.phase_offset,
-                self.intensity,
-            )
+        Ok(Self::transform(geometry, filter, |dev| {
+            let wavenumber = Transducer::wavenumber(dev.sound_speed);
+            move |tr| {
+                let r = rot * (tr.position() - self.pos);
+                let dist =
+                    self.theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - self.theta.cos() * r.z;
+                Drive::new(dist * wavenumber * Rad + self.phase_offset, self.intensity)
+            }
         }))
     }
 }

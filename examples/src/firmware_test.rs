@@ -614,12 +614,15 @@ async fn main() -> Result<()> {
 
     // Debug output index
     {
-        autd.send(TransducerTest::new(|dev, tr| match (dev.idx(), tr.idx()) {
-            (0, 0) => Some(Drive::new(Phase::new(0), EmitIntensity::new(0xFF))),
-            (0, 248) => Some(Drive::new(Phase::new(0x80), EmitIntensity::new(0x80))),
-            (1, 0) => Some(Drive::new(Phase::new(0x80), EmitIntensity::new(0xFF))),
-            (1, 248) => Some(Drive::new(Phase::new(0), EmitIntensity::new(0x80))),
-            _ => None,
+        autd.send(Custom::new(|dev| {
+            let dev_idx = dev.idx();
+            move |tr| match (dev_idx, tr.idx()) {
+                (0, 0) => Drive::new(Phase::new(0), EmitIntensity::new(0xFF)),
+                (0, 248) => Drive::new(Phase::new(0x80), EmitIntensity::new(0x80)),
+                (1, 0) => Drive::new(Phase::new(0x80), EmitIntensity::new(0xFF)),
+                (1, 248) => Drive::new(Phase::new(0), EmitIntensity::new(0x80)),
+                _ => Drive::null(),
+            }
         }))
         .await?;
         print_msg_and_wait_for_key("Check that there are no outputs of GPIO[1] pins.");
