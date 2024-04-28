@@ -1,6 +1,7 @@
 use super::{EmitIntensity, Phase};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct Drive {
     /// Phase of ultrasound
     phase: Phase,
