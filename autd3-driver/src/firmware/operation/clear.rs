@@ -20,7 +20,7 @@ impl Operation for ClearOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         cast::<Clear>(tx).tag = TypeTag::Clear;
 
-        self.remains.send(device, 1);
+        self.remains[device] -= 1;
         Ok(std::mem::size_of::<Clear>())
     }
 

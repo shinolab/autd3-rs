@@ -64,10 +64,6 @@ impl Remains {
         self.remains = vec![n; geometry.num_devices()]
     }
 
-    pub fn send(&mut self, device: &Device, n: usize) {
-        self.remains[device.idx()] -= n;
-    }
-
     pub fn is_done(&self, device: &Device) -> bool {
         self.remains[device.idx()] == 0
     }
@@ -78,6 +74,12 @@ impl std::ops::Index<&Device> for Remains {
 
     fn index(&self, index: &Device) -> &Self::Output {
         &self.remains[index.idx()]
+    }
+}
+
+impl std::ops::IndexMut<&Device> for Remains {
+    fn index_mut(&mut self, index: &Device) -> &mut Self::Output {
+        &mut self.remains[index.idx()]
     }
 }
 

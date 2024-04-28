@@ -39,7 +39,7 @@ impl Operation for ConfigSilencerFixedUpdateRateOp {
             value_phase: self.value_phase,
         };
 
-        self.remains.send(device, 1);
+        self.remains[device] -= 1;
         Ok(std::mem::size_of::<ConfigSilencerFixedUpdateRate>())
     }
 

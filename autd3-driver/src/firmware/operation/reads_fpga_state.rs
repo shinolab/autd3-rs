@@ -33,7 +33,7 @@ impl<F: Fn(&Device) -> bool> Operation for ConfigureReadsFPGAStateOp<F> {
             value: (self.f)(device),
         };
 
-        self.remains.send(device, 1);
+        self.remains[device] -= 1;
         Ok(std::mem::size_of::<ConfigureReadsFPGAState>())
     }
 

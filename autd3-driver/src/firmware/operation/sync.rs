@@ -22,7 +22,7 @@ impl Operation for SyncOp {
 
         cast::<Sync>(tx).tag = TypeTag::Sync;
 
-        self.remains.send(device, 1);
+        self.remains[device] -= 1;
         Ok(std::mem::size_of::<Sync>())
     }
 

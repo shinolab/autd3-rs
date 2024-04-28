@@ -94,7 +94,7 @@ impl Operation for ConfigurePulseWidthEncoderOp {
             )
         }
 
-        self.remains.send(device, size);
+        self.remains[device] -= size;
         if sent == 0 {
             Ok(std::mem::size_of::<PWEHead>() + size)
         } else {

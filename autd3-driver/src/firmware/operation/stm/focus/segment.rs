@@ -42,7 +42,7 @@ impl Operation for FocusSTMChangeSegmentOp {
             transition_value: self.transition_mode.value(),
         };
 
-        self.remains.send(device, 1);
+        self.remains[device] -= 1;
         Ok(std::mem::size_of::<FocusSTMUpdate>())
     }
 

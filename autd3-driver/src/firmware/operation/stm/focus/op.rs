@@ -122,7 +122,7 @@ impl Operation for FocusSTMOp {
                 })?
         }
 
-        self.remains.send(device, send_num);
+        self.remains[device] -= send_num;
         if sent == 0 {
             Ok(std::mem::size_of::<FocusSTMHead>() + std::mem::size_of::<STMFocus>() * send_num)
         } else {
