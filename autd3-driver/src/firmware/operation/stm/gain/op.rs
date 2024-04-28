@@ -4,7 +4,7 @@ use crate::{
     datagram::{Gain, GainFilter},
     error::AUTDInternalError,
     firmware::{
-        fpga::{Drive, FPGADrive, LoopBehavior, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX},
+        fpga::{Drive, LoopBehavior, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX},
         operation::{cast, Operation, Remains, TypeTag},
     },
     geometry::{Device, Geometry},
@@ -86,9 +86,9 @@ impl<G: Gain> Operation for GainSTMOp<G> {
 
     fn required_size(&self, device: &Device) -> usize {
         if self.remains[device] == self.drives.len() {
-            size_of::<GainSTMHead>() + device.num_transducers() * size_of::<FPGADrive>()
+            size_of::<GainSTMHead>() + device.num_transducers() * size_of::<Drive>()
         } else {
-            size_of::<GainSTMSubseq>() + device.num_transducers() * size_of::<FPGADrive>()
+            size_of::<GainSTMSubseq>() + device.num_transducers() * size_of::<Drive>()
         }
     }
 
@@ -100,20 +100,18 @@ impl<G: Gain> Operation for GainSTMOp<G> {
         } else {
             size_of::<GainSTMSubseq>()
         };
-        assert!(tx.len() >= offset + device.num_transducers() * size_of::<FPGADrive>());
+        assert!(tx.len() >= offset + device.num_transducers() * size_of::<Drive>());
 
         let mut send = 0;
         match self.mode {
             GainSTMMode::PhaseIntensityFull => {
                 let d = &self.drives[sent][&device.idx()];
                 unsafe {
-                    std::slice::from_raw_parts_mut(
-                        tx[offset..].as_mut_ptr() as *mut FPGADrive,
+                    std::ptr::copy_nonoverlapping(
+                        d.as_ptr(),
+                        tx[offset..].as_mut_ptr() as *mut Drive,
                         d.len(),
-                    )
-                    .iter_mut()
-                    .zip(d.iter())
-                    .for_each(|(d, s)| d.set(s));
+                    );
                 }
                 send += 1;
             }
@@ -240,9 +238,9 @@ impl<G: Gain> Operation for GainSTMOp<G> {
 
         self.remains.send(device, send);
         if sent == 0 {
-            Ok(size_of::<GainSTMHead>() + device.num_transducers() * size_of::<FPGADrive>())
+            Ok(size_of::<GainSTMHead>() + device.num_transducers() * size_of::<Drive>())
         } else {
-            Ok(size_of::<GainSTMSubseq>() + device.num_transducers() * size_of::<FPGADrive>())
+            Ok(size_of::<GainSTMSubseq>() + device.num_transducers() * size_of::<Drive>())
         }
     }
 
@@ -390,7 +388,7 @@ mod tests {
                 );
 
                 tx[FRAME_SIZE * dev.idx() + size_of::<GainSTMHead>()..]
-                    .chunks(size_of::<FPGADrive>())
+                    .chunks(size_of::<Drive>())
                     .zip(gain_data[0][&dev.idx()].iter())
                     .for_each(|(d, g)| {
                         assert_eq!(d[0], g.phase().value());
@@ -431,7 +429,7 @@ mod tests {
                 );
 
                 tx[FRAME_SIZE * dev.idx() + 2..]
-                    .chunks(size_of::<FPGADrive>())
+                    .chunks(size_of::<Drive>())
                     .zip(gain_data[1][&dev.idx()].iter())
                     .for_each(|(d, g)| {
                         assert_eq!(d[0], g.phase().value());
@@ -470,7 +468,7 @@ mod tests {
                 tx[dev.idx() * FRAME_SIZE + offset_of!(GainSTMHead, flag)] >> 6
             );
             tx[FRAME_SIZE * dev.idx() + size_of::<GainSTMSubseq>()..]
-                .chunks(size_of::<FPGADrive>())
+                .chunks(size_of::<Drive>())
                 .zip(gain_data[2][&dev.idx()].iter())
                 .for_each(|(d, g)| {
                     assert_eq!(d[0], g.phase().value());
@@ -570,7 +568,7 @@ mod tests {
                     tx[dev.idx() * FRAME_SIZE + offset_of!(GainSTMHead, mode)]
                 );
                 tx[FRAME_SIZE * dev.idx() + size_of::<GainSTMHead>()..]
-                    .chunks(size_of::<FPGADrive>())
+                    .chunks(size_of::<Drive>())
                     .zip(gain_data[0][&dev.idx()].iter())
                     .zip(gain_data[1][&dev.idx()].iter())
                     .for_each(|((d, g0), g1)| {
@@ -611,7 +609,7 @@ mod tests {
                     tx[dev.idx() * FRAME_SIZE + offset_of!(GainSTMHead, flag)] >> 6
                 );
                 tx[FRAME_SIZE * dev.idx() + size_of::<GainSTMSubseq>()..]
-                    .chunks(size_of::<FPGADrive>())
+                    .chunks(size_of::<Drive>())
                     .zip(gain_data[2][&dev.idx()].iter())
                     .zip(gain_data[3][&dev.idx()].iter())
                     .for_each(|((d, g0), g1)| {
@@ -652,7 +650,7 @@ mod tests {
                     tx[dev.idx() * FRAME_SIZE + offset_of!(GainSTMHead, flag)] >> 6
                 );
                 tx[FRAME_SIZE * dev.idx() + size_of::<GainSTMSubseq>()..]
-                    .chunks(size_of::<FPGADrive>())
+                    .chunks(size_of::<Drive>())
                     .zip(gain_data[4][&dev.idx()].iter())
                     .for_each(|(d, g)| {
                         assert_eq!(d[0], g.phase().value());
@@ -752,7 +750,7 @@ mod tests {
                 );
 
                 tx[FRAME_SIZE * dev.idx() + size_of::<GainSTMHead>()..]
-                    .chunks(size_of::<FPGADrive>())
+                    .chunks(size_of::<Drive>())
                     .zip(gain_data[0][&dev.idx()].iter())
                     .zip(gain_data[1][&dev.idx()].iter())
                     .zip(gain_data[2][&dev.idx()].iter())
@@ -797,7 +795,7 @@ mod tests {
                     tx[dev.idx() * FRAME_SIZE + offset_of!(GainSTMHead, flag)] >> 6
                 );
                 tx[FRAME_SIZE * dev.idx() + size_of::<GainSTMSubseq>()..]
-                    .chunks(size_of::<FPGADrive>())
+                    .chunks(size_of::<Drive>())
                     .zip(gain_data[4][&dev.idx()].iter())
                     .zip(gain_data[5][&dev.idx()].iter())
                     .zip(gain_data[6][&dev.idx()].iter())
@@ -842,7 +840,7 @@ mod tests {
                     tx[dev.idx() * FRAME_SIZE + offset_of!(GainSTMHead, flag)] >> 6
                 );
                 tx[FRAME_SIZE * dev.idx() + size_of::<GainSTMSubseq>()..]
-                    .chunks(size_of::<FPGADrive>())
+                    .chunks(size_of::<Drive>())
                     .zip(gain_data[8][&dev.idx()].iter())
                     .for_each(|(d, g)| {
                         assert_eq!(d[0] & 0x0F, g.phase().value() >> 4);

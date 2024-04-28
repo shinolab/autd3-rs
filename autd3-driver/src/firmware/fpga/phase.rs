@@ -3,6 +3,7 @@ use crate::defined::PI;
 pub struct Rad;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(C)]
 pub struct Phase {
     value: u8,
 }

@@ -5,7 +5,7 @@ use crate::{
     datagram::{Gain, GainFilter},
     error::AUTDInternalError,
     firmware::{
-        fpga::{Drive, FPGADrive, Segment},
+        fpga::{Drive, Segment},
         operation::{cast, Operation, Remains, TypeTag},
     },
     geometry::{Device, Geometry},
@@ -46,14 +46,12 @@ impl<G: Gain> Operation for GainOp<G> {
     }
 
     fn required_size(&self, device: &Device) -> usize {
-        std::mem::size_of::<GainT>() + device.num_transducers() * std::mem::size_of::<FPGADrive>()
+        std::mem::size_of::<GainT>() + device.num_transducers() * std::mem::size_of::<Drive>()
     }
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         let d = &self.drives[&device.idx()];
-        assert!(
-            tx.len() >= std::mem::size_of::<GainT>() + d.len() * std::mem::size_of::<FPGADrive>()
-        );
+        assert!(tx.len() >= std::mem::size_of::<GainT>() + d.len() * std::mem::size_of::<Drive>());
 
         *cast::<GainT>(tx) = GainT {
             tag: TypeTag::Gain,
@@ -65,17 +63,15 @@ impl<G: Gain> Operation for GainOp<G> {
             .set(GainControlFlags::transition, self.transition);
 
         unsafe {
-            std::slice::from_raw_parts_mut(
-                tx[std::mem::size_of::<GainT>()..].as_mut_ptr() as *mut FPGADrive,
+            std::ptr::copy_nonoverlapping(
+                d.as_ptr(),
+                tx[std::mem::size_of::<GainT>()..].as_mut_ptr() as *mut Drive,
                 d.len(),
-            )
-            .iter_mut()
-            .zip(d.iter())
-            .for_each(|(d, s)| d.set(s));
+            );
         }
 
         self.remains.send(device, 1);
-        Ok(std::mem::size_of::<GainT>() + d.len() * std::mem::size_of::<FPGADrive>())
+        Ok(std::mem::size_of::<GainT>() + d.len() * std::mem::size_of::<Drive>())
     }
 
     fn is_done(&self, device: &Device) -> bool {
@@ -106,7 +102,7 @@ mod tests {
         let mut tx = vec![
             0x00u8;
             (std::mem::size_of::<GainT>()
-                + NUM_TRANS_IN_UNIT * std::mem::size_of::<FPGADrive>())
+                + NUM_TRANS_IN_UNIT * std::mem::size_of::<Drive>())
                 * NUM_DEVICE
         ];
 
@@ -135,7 +131,7 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(
                 op.required_size(dev),
-                std::mem::size_of::<GainT>() + NUM_TRANS_IN_UNIT * std::mem::size_of::<FPGADrive>()
+                std::mem::size_of::<GainT>() + NUM_TRANS_IN_UNIT * std::mem::size_of::<Drive>()
             )
         });
 
@@ -149,7 +145,7 @@ mod tests {
                     dev,
                     &mut tx[dev.idx()
                         * (std::mem::size_of::<GainT>()
-                            + NUM_TRANS_IN_UNIT * std::mem::size_of::<FPGADrive>())..]
+                            + NUM_TRANS_IN_UNIT * std::mem::size_of::<Drive>())..]
                 )
                 .is_ok());
         });
@@ -162,14 +158,14 @@ mod tests {
             assert_eq!(
                 tx[dev.idx()
                     * (std::mem::size_of::<GainT>()
-                        + NUM_TRANS_IN_UNIT * std::mem::size_of::<FPGADrive>())],
+                        + NUM_TRANS_IN_UNIT * std::mem::size_of::<Drive>())],
                 TypeTag::Gain as u8
             );
             tx.iter()
                 .skip(
                     dev.idx()
                         * (std::mem::size_of::<GainT>()
-                            + NUM_TRANS_IN_UNIT * std::mem::size_of::<FPGADrive>())
+                            + NUM_TRANS_IN_UNIT * std::mem::size_of::<Drive>())
                         + std::mem::size_of::<GainT>(),
                 )
                 .collect::<Vec<_>>()
