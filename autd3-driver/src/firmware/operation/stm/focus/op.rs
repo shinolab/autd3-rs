@@ -2,7 +2,10 @@ use crate::{
     defined::METER,
     error::AUTDInternalError,
     firmware::{
-        fpga::{LoopBehavior, STMFocus, Segment, TransitionMode, FOCUS_STM_BUF_SIZE_MAX},
+        fpga::{
+            LoopBehavior, STMFocus, Segment, TransitionMode, FOCUS_STM_BUF_SIZE_MAX,
+            STM_BUF_SIZE_MIN,
+        },
         operation::{cast, Operation, Remains, TypeTag},
     },
     geometry::{Device, Geometry},
@@ -136,7 +139,7 @@ impl Operation for FocusSTMOp {
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        if !(2..=FOCUS_STM_BUF_SIZE_MAX).contains(&self.points.len()) {
+        if !(STM_BUF_SIZE_MIN..=FOCUS_STM_BUF_SIZE_MAX).contains(&self.points.len()) {
             return Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(
                 self.points.len(),
             ));
