@@ -4,7 +4,9 @@ use crate::{
     datagram::{Gain, GainFilter},
     error::AUTDInternalError,
     firmware::{
-        fpga::{Drive, LoopBehavior, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX},
+        fpga::{
+            Drive, LoopBehavior, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX, STM_BUF_SIZE_MIN,
+        },
         operation::{cast, Operation, Remains, TypeTag},
     },
     geometry::{Device, Geometry},
@@ -75,7 +77,7 @@ impl<G: Gain> Operation for GainSTMOp<G> {
             .map(|g| g.calc(geometry, GainFilter::All))
             .collect::<Result<_, _>>()?;
 
-        if !(2..=GAIN_STM_BUF_SIZE_MAX).contains(&self.drives.len()) {
+        if !(STM_BUF_SIZE_MIN..=GAIN_STM_BUF_SIZE_MAX).contains(&self.drives.len()) {
             return Err(AUTDInternalError::GainSTMSizeOutOfRange(self.drives.len()));
         }
 
