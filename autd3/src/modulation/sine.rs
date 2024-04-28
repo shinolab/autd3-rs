@@ -1,56 +1,10 @@
 use autd3_driver::{defined::PI, derive::*};
 
-use super::sampling_mode::SamplingMode;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ExactFrequency;
-impl SamplingMode for ExactFrequency {
-    type D = (EmitIntensity, Phase, EmitIntensity);
-    fn calc(
-        freq: f64,
-        sampling_config: SamplingConfiguration,
-        data: Self::D,
-    ) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        let (n, rep) = Self::validate(freq, sampling_config)?;
-        let (intensity, phase, offset) = data;
-        Ok((0..n)
-            .map(|i| {
-                (((intensity.value() as f64 / 2.
-                    * (2.0 * PI * (rep * i) as f64 / n as f64 + phase.radian()).sin())
-                    + offset.value() as f64)
-                    .round() as u8)
-                    .into()
-            })
-            .collect())
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct NearestFrequency;
-impl SamplingMode for NearestFrequency {
-    type D = (EmitIntensity, Phase, EmitIntensity);
-    fn calc(
-        freq: f64,
-        sampling_config: SamplingConfiguration,
-        data: Self::D,
-    ) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        let n = (sampling_config.freq() / freq).round() as usize;
-        let (intensity, phase, offset) = data;
-        Ok((0..n)
-            .map(|i| {
-                (((intensity.value() as f64 / 2.
-                    * (2.0 * PI * i as f64 / n as f64 + phase.radian()).sin())
-                    + offset.value() as f64)
-                    .round() as u8)
-                    .into()
-            })
-            .collect())
-    }
-}
+use super::sampling_mode::{ExactFrequency, NearestFrequency, SamplingMode};
 
 /// Sine wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug, Builder)]
-pub struct Sine<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity)>> {
+pub struct Sine<S: SamplingMode> {
     #[get]
     freq: f64,
     #[getset]
@@ -94,7 +48,7 @@ impl Sine<ExactFrequency> {
     }
 }
 
-impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity)>> Modulation for Sine<S> {
+impl<S: SamplingMode> Modulation for Sine<S> {
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         if self.freq < 0. {
             return Err(AUTDInternalError::ModulationError(format!(
@@ -109,11 +63,16 @@ impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity)>> Modulation for 
                 self.config.freq() / 2.
             )));
         }
-        S::calc(
-            self.freq,
-            self.config,
-            (self.intensity, self.phase, self.offset),
-        )
+        let (n, rep) = S::validate(self.freq, self.config)?;
+        Ok((0..n)
+            .map(|i| {
+                (((self.intensity.value() as f64 / 2.
+                    * (2.0 * PI * (rep * i) as f64 / n as f64 + self.phase.radian()).sin())
+                    + self.offset.value() as f64)
+                    .round() as u8)
+                    .into()
+            })
+            .collect())
     }
 }
 
