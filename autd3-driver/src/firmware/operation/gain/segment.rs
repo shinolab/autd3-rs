@@ -33,7 +33,7 @@ impl Operation for GainChangeSegmentOp {
         d.tag = TypeTag::GainChangeSegment;
         d.segment = self.segment as u8;
 
-        self.remains.send(device, 1);
+        self.remains[device] -= 1;
         Ok(std::mem::size_of::<GainUpdate>())
     }
 

@@ -42,7 +42,7 @@ impl Operation for FirmInfoOp {
             },
         };
 
-        self.remains.send(device, 1);
+        self.remains[device] -= 1;
         Ok(std::mem::size_of::<FirmInfo>())
     }
 

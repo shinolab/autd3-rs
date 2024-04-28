@@ -40,7 +40,7 @@ impl<F: Fn(&Device) -> [DebugType; 4]> Operation for DebugSettingOp<F> {
             value: (self.f)(device).map(|t| t.value()),
         };
 
-        self.remains.send(device, 1);
+        self.remains[device] -= 1;
         Ok(std::mem::size_of::<DebugSetting>())
     }
 

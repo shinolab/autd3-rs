@@ -238,7 +238,7 @@ impl<G: Gain> Operation for GainSTMOp<G> {
             );
         }
 
-        self.remains.send(device, send);
+        self.remains[device] -= send;
         if sent == 0 {
             Ok(size_of::<GainSTMHead>() + device.num_transducers() * size_of::<Drive>())
         } else {

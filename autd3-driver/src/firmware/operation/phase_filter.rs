@@ -43,7 +43,7 @@ impl<F: Fn(&Device, &Transducer) -> Phase> Operation for ConfigurePhaseFilterOp<
             .for_each(|(d, s)| *d = (self.f)(device, s));
         }
 
-        self.remains.send(device, 1);
+        self.remains[device] -= 1;
         Ok(std::mem::size_of::<PhaseFilter>()
             + (((device.num_transducers() + 1) >> 1) << 1) * std::mem::size_of::<Phase>())
     }

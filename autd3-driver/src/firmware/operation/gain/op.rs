@@ -70,7 +70,7 @@ impl<G: Gain> Operation for GainOp<G> {
             );
         }
 
-        self.remains.send(device, 1);
+        self.remains[device] -= 1;
         Ok(std::mem::size_of::<GainT>() + d.len() * std::mem::size_of::<Drive>())
     }
 

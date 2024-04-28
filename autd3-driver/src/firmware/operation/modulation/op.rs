@@ -110,7 +110,7 @@ impl Operation for ModulationOp {
             )
         }
 
-        self.remains.send(device, mod_size);
+        self.remains[device] -= mod_size;
         if sent == 0 {
             Ok(std::mem::size_of::<ModulationHead>() + mod_size)
         } else {
