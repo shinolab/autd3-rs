@@ -398,7 +398,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case::infinite(LoopBehavior::Infinite)]
+    #[case::infinite(LoopBehavior::infinite())]
     #[case::finite(LoopBehavior::once())]
     fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
@@ -412,7 +412,7 @@ mod tests {
     #[test]
     fn with_loop_behavior_deafault() {
         let stm = FocusSTM::from_freq(1.);
-        assert_eq!(LoopBehavior::Infinite, stm.loop_behavior());
+        assert_eq!(LoopBehavior::infinite(), stm.loop_behavior());
     }
 
     #[test]

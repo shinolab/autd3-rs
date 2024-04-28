@@ -36,7 +36,7 @@ fn send_mod() -> anyhow::Result<()> {
                 * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
                 ..=SAMPLING_FREQ_DIV_MAX,
         );
-        let loop_behavior = LoopBehavior::Infinite;
+        let loop_behavior = LoopBehavior::infinite();
         let transition_mode = TransitionMode::SyncIdx;
         let mut op = ModulationOp::new(
             m.clone(),
@@ -95,7 +95,7 @@ fn send_mod() -> anyhow::Result<()> {
         let mut op = ModulationOp::new(
             (0..2).map(|_| EmitIntensity::MAX).collect(),
             SAMPLING_FREQ_DIV_MAX,
-            LoopBehavior::Infinite,
+            LoopBehavior::infinite(),
             Segment::S0,
             Some(transition_mode),
         );
@@ -108,7 +108,7 @@ fn send_mod() -> anyhow::Result<()> {
         let mut op = ModulationOp::new(
             (0..2).map(|_| EmitIntensity::MAX).collect(),
             SAMPLING_FREQ_DIV_MAX,
-            LoopBehavior::Infinite,
+            LoopBehavior::infinite(),
             Segment::S0,
             Some(transition_mode),
         );
@@ -128,7 +128,7 @@ fn mod_freq_div_too_small() {
     let mut op = ModulationOp::new(
         (0..2).map(|_| EmitIntensity::MAX).collect(),
         SAMPLING_FREQ_DIV_MIN,
-        LoopBehavior::Infinite,
+        LoopBehavior::infinite(),
         Segment::S0,
         Some(TransitionMode::SyncIdx),
     );

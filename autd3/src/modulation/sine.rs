@@ -76,7 +76,7 @@ impl Sine<ExactFrequency> {
             phase: Phase::new(0),
             offset: EmitIntensity::new(127),
             config: SamplingConfiguration::FREQ_4K_HZ,
-            loop_behavior: LoopBehavior::Infinite,
+            loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
         }
     }
@@ -88,7 +88,7 @@ impl Sine<ExactFrequency> {
             phase: Phase::new(0),
             offset: EmitIntensity::new(127),
             config: SamplingConfiguration::FREQ_4K_HZ,
-            loop_behavior: LoopBehavior::Infinite,
+            loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
         }
     }

@@ -55,7 +55,7 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
                 ..=SAMPLING_FREQ_DIV_MAX,
         );
         let foci = gen_random_foci(FOCUS_STM_BUF_SIZE_MAX);
-        let loop_behaviour = LoopBehavior::Infinite;
+        let loop_behaviour = LoopBehavior::infinite();
         let segment = Segment::S0;
         let transition_mode = TransitionMode::SyncIdx;
         let mut op = FocusSTMOp::new(
@@ -157,7 +157,7 @@ fn change_focus_stm_segment() -> anyhow::Result<()> {
     let mut op = FocusSTMOp::new(
         gen_random_foci(2),
         SAMPLING_FREQ_DIV_MAX,
-        LoopBehavior::Infinite,
+        LoopBehavior::infinite(),
         Segment::S1,
         None,
     );
@@ -182,7 +182,7 @@ fn test_focus_stm_freq_div_too_small() {
     let mut op = FocusSTMOp::new(
         gen_random_foci(2),
         SAMPLING_FREQ_DIV_MIN,
-        LoopBehavior::Infinite,
+        LoopBehavior::infinite(),
         Segment::S0,
         Some(TransitionMode::SyncIdx),
     );
@@ -228,7 +228,7 @@ fn send_focus_stm_invalid_segment_transition() -> anyhow::Result<()> {
                 .collect(),
             GainSTMMode::PhaseIntensityFull,
             0xFFFFFFFF,
-            LoopBehavior::Infinite,
+            LoopBehavior::infinite(),
             Segment::S1,
             Some(TransitionMode::SyncIdx),
         );

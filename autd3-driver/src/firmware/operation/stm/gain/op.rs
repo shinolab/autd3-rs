@@ -210,7 +210,7 @@ impl<G: Gain> Operation for GainSTMOp<G> {
                 transition_mode: self.transition_mode.unwrap_or_default().mode(),
                 transition_value: self.transition_mode.unwrap_or_default().value(),
                 freq_div: self.freq_div,
-                rep: self.loop_behavior.to_rep(),
+                rep: self.loop_behavior.rep,
                 __padding: [0; 4],
             };
         } else {
@@ -253,7 +253,7 @@ impl<G: Gain> Operation for GainSTMOp<G> {
 
 #[cfg(test)]
 mod tests {
-    use std::{mem::offset_of, num::NonZeroU32};
+    use std::mem::offset_of;
 
     use rand::prelude::*;
 
@@ -308,8 +308,8 @@ mod tests {
             .collect();
 
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
-        let loop_behavior = LoopBehavior::Infinite;
-        let rep = loop_behavior.to_rep();
+        let loop_behavior = LoopBehavior::infinite();
+        let rep = loop_behavior.rep;
         let segment = Segment::S0;
         let transition_value = 0x0123456789ABCDEF;
         let transition_mode = TransitionMode::SysTime(
@@ -517,9 +517,7 @@ mod tests {
             .collect();
 
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
-        let loop_behavior = LoopBehavior::Finite(
-            NonZeroU32::new(rng.gen_range(0x0000001..=0xFFFFFFFF)).unwrap_or(NonZeroU32::MIN),
-        );
+        let loop_behavior = LoopBehavior::finite(rng.gen_range(0x0000001..=0xFFFFFFFF)).unwrap();
         let segment = Segment::S1;
         let mut op = GainSTMOp::<_>::new(
             gains,
@@ -701,9 +699,7 @@ mod tests {
             .collect();
 
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
-        let loop_behavior = LoopBehavior::Finite(
-            NonZeroU32::new(rng.gen_range(0x0000001..=0xFFFFFFFF)).unwrap_or(NonZeroU32::MIN),
-        );
+        let loop_behavior = LoopBehavior::finite(rng.gen_range(0x0000001..=0xFFFFFFFF)).unwrap();
         let segment = Segment::S0;
         let mut op = GainSTMOp::<_>::new(
             gains,
@@ -866,7 +862,7 @@ mod tests {
                 gains,
                 GainSTMMode::PhaseIntensityFull,
                 SAMPLING_FREQ_DIV_MIN,
-                LoopBehavior::Infinite,
+                LoopBehavior::infinite(),
                 Segment::S0,
                 Some(TransitionMode::SyncIdx),
             );

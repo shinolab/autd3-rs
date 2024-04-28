@@ -105,7 +105,7 @@ mod tests {
         let m = TestModulation {
             buf: vec![rng.gen(), rng.gen()],
             config: SamplingConfiguration::FREQ_4K_HZ,
-            loop_behavior: LoopBehavior::Infinite,
+            loop_behavior: LoopBehavior::infinite(),
         };
         let cache = m.clone().with_cache();
         assert_eq!(&m, cache.deref());
@@ -132,7 +132,7 @@ mod tests {
             Self {
                 calc_cnt: self.calc_cnt.clone(),
                 config: self.config,
-                loop_behavior: LoopBehavior::Infinite,
+                loop_behavior: LoopBehavior::infinite(),
             }
         }
         // GRCOV_EXCL_STOP
@@ -152,7 +152,7 @@ mod tests {
         let modulation = TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
             config: SamplingConfiguration::FREQ_4K_HZ,
-            loop_behavior: LoopBehavior::Infinite,
+            loop_behavior: LoopBehavior::infinite(),
         }
         .with_cache();
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
@@ -171,7 +171,7 @@ mod tests {
         let modulation = TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
             config: SamplingConfiguration::FREQ_4K_HZ,
-            loop_behavior: LoopBehavior::Infinite,
+            loop_behavior: LoopBehavior::infinite(),
         }
         .with_cache();
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));

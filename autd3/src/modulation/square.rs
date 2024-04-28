@@ -78,7 +78,7 @@ impl Square<ExactFrequency> {
             high: EmitIntensity::MAX,
             duty: 0.5,
             config: SamplingConfiguration::FREQ_4K_HZ,
-            loop_behavior: LoopBehavior::Infinite,
+            loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
         }
     }
@@ -96,7 +96,7 @@ impl Square<ExactFrequency> {
             high: EmitIntensity::MAX,
             duty: 0.5,
             config: SamplingConfiguration::FREQ_4K_HZ,
-            loop_behavior: LoopBehavior::Infinite,
+            loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
         }
     }

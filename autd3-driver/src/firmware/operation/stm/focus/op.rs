@@ -90,7 +90,7 @@ impl Operation for FocusSTMOp {
                     * crate::firmware::fpga::FREQ_40K as f64
                     / crate::firmware::fpga::ultrasound_freq() as f64)
                     .round() as u32,
-                rep: self.loop_behavior.to_rep(),
+                rep: self.loop_behavior.rep,
             };
         } else {
             *cast::<FocusSTMSubseq>(tx) = FocusSTMSubseq {
@@ -154,10 +154,7 @@ impl Operation for FocusSTMOp {
 
 #[cfg(test)]
 mod tests {
-    use std::{
-        mem::{offset_of, size_of},
-        num::NonZeroU32,
-    };
+    use std::mem::{offset_of, size_of};
 
     use rand::prelude::*;
 
@@ -200,8 +197,8 @@ mod tests {
                 .with_intensity(rng.gen::<u8>())
             })
             .collect();
-        let loop_behavior = LoopBehavior::Infinite;
-        let rep = loop_behavior.to_rep();
+        let loop_behavior = LoopBehavior::infinite();
+        let rep = loop_behavior.rep;
         let segment = Segment::S0;
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
         let transition_value = 0x0123456789ABCDEF;
@@ -331,10 +328,8 @@ mod tests {
             })
             .collect();
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
-        let loop_behavior = LoopBehavior::Finite(
-            NonZeroU32::new(rng.gen_range(0x0000001..=0xFFFFFFFF)).unwrap_or(NonZeroU32::MIN),
-        );
-        let rep = loop_behavior.to_rep();
+        let loop_behavior = LoopBehavior::finite(rng.gen_range(0x0000001..=0xFFFFFFFF)).unwrap();
+        let rep = loop_behavior.rep;
         let segment = Segment::S1;
         let mut op = FocusSTMOp::new(points.clone(), freq_div, loop_behavior, segment, None);
 
@@ -587,7 +582,7 @@ mod tests {
             let mut op = FocusSTMOp::new(
                 points,
                 SAMPLING_FREQ_DIV_MIN,
-                LoopBehavior::Infinite,
+                LoopBehavior::infinite(),
                 Segment::S0,
                 Some(TransitionMode::SyncIdx),
             );
@@ -626,7 +621,7 @@ mod tests {
         let mut op = FocusSTMOp::new(
             points.clone(),
             freq_div,
-            LoopBehavior::Infinite,
+            LoopBehavior::infinite(),
             Segment::S0,
             Some(TransitionMode::SyncIdx),
         );

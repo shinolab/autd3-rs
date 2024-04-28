@@ -432,7 +432,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case::infinite(LoopBehavior::Infinite)]
+    #[case::infinite(LoopBehavior::infinite())]
     #[case::finite(LoopBehavior::once())]
     fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(

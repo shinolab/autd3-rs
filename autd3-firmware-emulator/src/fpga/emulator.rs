@@ -1,5 +1,3 @@
-use std::num::NonZeroU32;
-
 use autd3_driver::{
     derive::{Drive, EmitIntensity, Phase, Segment},
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
@@ -231,8 +229,8 @@ impl FPGAEmulator {
                 Segment::S1 => ADDR_STM_REP1_0,
             },
         ) {
-            0xFFFFFFFF => LoopBehavior::Infinite,
-            v => unsafe { LoopBehavior::Finite(NonZeroU32::new_unchecked(v + 1)) },
+            0xFFFFFFFF => LoopBehavior::infinite(),
+            v => LoopBehavior::finite(v + 1).unwrap(),
         }
     }
 
@@ -278,8 +276,8 @@ impl FPGAEmulator {
                 Segment::S1 => ADDR_MOD_REP1_0,
             },
         ) {
-            0xFFFFFFFF => LoopBehavior::Infinite,
-            v => unsafe { LoopBehavior::Finite(NonZeroU32::new_unchecked(v + 1)) },
+            0xFFFFFFFF => LoopBehavior::infinite(),
+            v => LoopBehavior::finite(v + 1).unwrap(),
         }
     }
 
