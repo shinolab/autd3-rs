@@ -81,7 +81,7 @@ impl Operation for ModulationOp {
                 size: mod_size as u16,
                 __pad: [0; 3],
                 freq_div: self.freq_div,
-                rep: self.loop_behavior.to_rep(),
+                rep: self.loop_behavior.rep,
                 transition_mode: self.transition_mode.unwrap_or_default().mode(),
                 transition_value: self.transition_mode.unwrap_or_default().value(),
             };
@@ -174,9 +174,9 @@ mod tests {
             .map(|_| EmitIntensity::new(rng.gen()))
             .collect();
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
-        let loop_behavior = LoopBehavior::Infinite;
+        let loop_behavior = LoopBehavior::infinite();
         let segment = Segment::S0;
-        let rep = loop_behavior.to_rep();
+        let rep = loop_behavior.rep;
         let transition_mode = TransitionMode::SysTime(
             DcSysTime::from_utc(time::macros::datetime!(2000-01-01 0:00 UTC)).unwrap()
                 + std::time::Duration::from_nanos(0x0123456789ABCDEF),
@@ -294,7 +294,7 @@ mod tests {
         let mut op = ModulationOp::new(
             buf.clone(),
             SAMPLING_FREQ_DIV_MIN,
-            LoopBehavior::Infinite,
+            LoopBehavior::infinite(),
             Segment::S0,
             Some(TransitionMode::SyncIdx),
         );
@@ -470,7 +470,7 @@ mod tests {
             let mut op = ModulationOp::new(
                 buf.clone(),
                 freq_div,
-                LoopBehavior::Infinite,
+                LoopBehavior::infinite(),
                 Segment::S0,
                 Some(TransitionMode::SyncIdx),
             );

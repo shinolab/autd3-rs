@@ -85,7 +85,7 @@ fn silencer_completetion_steps_too_large_mod(
         let mut op = ModulationOp::new(
             (0..2).map(|_| EmitIntensity::MAX).collect(),
             SAMPLING_FREQ_DIV_MIN,
-            LoopBehavior::Infinite,
+            LoopBehavior::infinite(),
             Segment::S0,
             Some(TransitionMode::SyncIdx),
         );
@@ -124,7 +124,7 @@ fn silencer_completetion_steps_too_large_stm(
         let mut op = FocusSTMOp::new(
             (0..2).map(|_| Vector3::zeros().into()).collect(),
             SAMPLING_FREQ_DIV_MIN,
-            LoopBehavior::Infinite,
+            LoopBehavior::infinite(),
             Segment::S0,
             Some(TransitionMode::SyncIdx),
         );

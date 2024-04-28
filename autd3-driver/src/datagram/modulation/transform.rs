@@ -76,7 +76,7 @@ mod tests {
             TestModulation {
                 buf: vec![EmitIntensity::MIN; 2],
                 config,
-                loop_behavior: LoopBehavior::Infinite,
+                loop_behavior: LoopBehavior::infinite(),
             }
             .with_transform(|_, x| x) // GRCOV_EXCL_LINE
             .sampling_config()
@@ -94,7 +94,7 @@ mod tests {
             TestModulation {
                 buf: buf.clone(),
                 config: SamplingConfiguration::FREQ_4K_HZ,
-                loop_behavior: LoopBehavior::Infinite,
+                loop_behavior: LoopBehavior::infinite(),
             }
             .with_transform(|_, x| x / 2)
             .calc()

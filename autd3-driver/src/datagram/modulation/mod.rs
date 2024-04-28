@@ -118,7 +118,7 @@ mod tests {
             TestModulation {
                 config,
                 buf: vec![],
-                loop_behavior: LoopBehavior::Infinite,
+                loop_behavior: LoopBehavior::infinite(),
             }
             .sampling_config()
         );
@@ -126,7 +126,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case::infinite(LoopBehavior::Infinite)]
+    #[case::infinite(LoopBehavior::infinite())]
     #[case::once(LoopBehavior::once())]
     fn test_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
@@ -150,7 +150,7 @@ mod tests {
             TestModulation {
                 config: SamplingConfiguration::FREQ_4K_HZ,
                 buf: vec![EmitIntensity::MIN; len],
-                loop_behavior: LoopBehavior::Infinite,
+                loop_behavior: LoopBehavior::infinite(),
             }
             .len()
         );

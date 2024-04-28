@@ -34,7 +34,7 @@ impl Burst {
     pub fn new() -> Self {
         Self {
             config: SamplingConfiguration::FREQ_4K_HZ,
-            loop_behavior: LoopBehavior::Infinite,
+            loop_behavior: LoopBehavior::infinite(),
         }
     }
 }

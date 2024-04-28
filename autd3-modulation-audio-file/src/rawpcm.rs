@@ -34,7 +34,7 @@ impl RawPCM {
             sample_rate,
             path: path.as_ref().to_path_buf(),
             config: SamplingConfiguration::FREQ_4K_HZ,
-            loop_behavior: LoopBehavior::Infinite,
+            loop_behavior: LoopBehavior::infinite(),
         }
     }
 

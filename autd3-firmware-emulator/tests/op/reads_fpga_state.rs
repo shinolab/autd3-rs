@@ -55,7 +55,7 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
         let mut op = ModulationOp::new(
             (0..2).map(|_| EmitIntensity::MAX).collect(),
             SAMPLING_FREQ_DIV_MAX,
-            LoopBehavior::Infinite,
+            LoopBehavior::infinite(),
             Segment::S1,
             Some(TransitionMode::SyncIdx),
         );
@@ -66,7 +66,7 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
                 .map(|_| ControlPoint::new(Vector3::zeros()))
                 .collect(),
             SAMPLING_FREQ_DIV_MAX,
-            LoopBehavior::Infinite,
+            LoopBehavior::infinite(),
             Segment::S1,
             Some(TransitionMode::SyncIdx),
         );

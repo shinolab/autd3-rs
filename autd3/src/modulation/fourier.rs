@@ -20,7 +20,7 @@ impl<S: SamplingMode<D = (EmitIntensity, Phase, EmitIntensity)>> Fourier<S> {
         Self {
             config: sine.sampling_config(),
             components: vec![sine],
-            loop_behavior: LoopBehavior::Infinite,
+            loop_behavior: LoopBehavior::infinite(),
         }
     }
 

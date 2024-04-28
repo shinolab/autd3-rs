@@ -16,7 +16,7 @@ impl Static {
         Self {
             intensity: EmitIntensity::MAX,
             config: SamplingConfiguration::DISABLE,
-            loop_behavior: LoopBehavior::Infinite,
+            loop_behavior: LoopBehavior::infinite(),
         }
     }
 
@@ -30,7 +30,7 @@ impl Static {
         Self {
             intensity: intensity.into(),
             config: SamplingConfiguration::DISABLE,
-            loop_behavior: LoopBehavior::Infinite,
+            loop_behavior: LoopBehavior::infinite(),
         }
     }
 }

@@ -61,7 +61,7 @@ fn send_gain() -> anyhow::Result<()> {
         assert_eq!(1, cpu.fpga().stm_cycle(Segment::S0));
         assert_eq!(0xFFFFFFFF, cpu.fpga().stm_freq_division(Segment::S0));
         assert_eq!(
-            LoopBehavior::Infinite,
+            LoopBehavior::infinite(),
             cpu.fpga().stm_loop_behavior(Segment::S0)
         );
         buf[&0]
@@ -95,7 +95,7 @@ fn send_gain() -> anyhow::Result<()> {
         assert_eq!(1, cpu.fpga().stm_cycle(Segment::S1));
         assert_eq!(0xFFFFFFFF, cpu.fpga().stm_freq_division(Segment::S1));
         assert_eq!(
-            LoopBehavior::Infinite,
+            LoopBehavior::infinite(),
             cpu.fpga().stm_loop_behavior(Segment::S1)
         );
         buf[&0]
@@ -131,7 +131,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
                 .map(|_| ControlPoint::new(Vector3::zeros()))
                 .collect(),
             0xFFFFFFFF,
-            LoopBehavior::Infinite,
+            LoopBehavior::infinite(),
             Segment::S0,
             Some(TransitionMode::SyncIdx),
         ),
@@ -154,7 +154,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
                 .collect(),
             GainSTMMode::PhaseIntensityFull,
             0xFFFFFFFF,
-            LoopBehavior::Infinite,
+            LoopBehavior::infinite(),
             Segment::S1,
             Some(TransitionMode::SyncIdx),
         ),

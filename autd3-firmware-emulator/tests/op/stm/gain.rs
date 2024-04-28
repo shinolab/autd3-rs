@@ -54,7 +54,7 @@ fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let bufs = gen_random_buf(GAIN_STM_BUF_SIZE_MAX, &geometry);
-    let loop_behavior = LoopBehavior::Infinite;
+    let loop_behavior = LoopBehavior::infinite();
     let segment = Segment::S0;
     let freq_div = rng.gen_range(
         SAMPLING_FREQ_DIV_MIN
@@ -100,7 +100,7 @@ fn send_gain_stm_phase_full(n: usize) -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let bufs = gen_random_buf(n, &geometry);
-    let loop_behavior = LoopBehavior::Infinite;
+    let loop_behavior = LoopBehavior::infinite();
     let segment = Segment::S1;
     let transition_mode = TransitionMode::Ext;
     let mut op = GainSTMOp::new(
@@ -149,7 +149,7 @@ fn send_gain_stm_phase_half(n: usize) -> anyhow::Result<()> {
 
     let bufs = gen_random_buf(n, &geometry);
 
-    let loop_behavior = LoopBehavior::Infinite;
+    let loop_behavior = LoopBehavior::infinite();
     let segment = Segment::S1;
     let transition_mode = TransitionMode::GPIO;
     let mut op = GainSTMOp::new(
@@ -211,7 +211,7 @@ fn change_gain_stm_segment() -> anyhow::Result<()> {
             .collect(),
         GainSTMMode::PhaseIntensityFull,
         SAMPLING_FREQ_DIV_MAX,
-        LoopBehavior::Infinite,
+        LoopBehavior::infinite(),
         Segment::S1,
         None,
     );
@@ -240,7 +240,7 @@ fn gain_stm_freq_div_too_small() {
             .collect(),
         GainSTMMode::PhaseIntensityFull,
         SAMPLING_FREQ_DIV_MIN,
-        LoopBehavior::Infinite,
+        LoopBehavior::infinite(),
         Segment::S0,
         Some(TransitionMode::SyncIdx),
     );
@@ -276,7 +276,7 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
         let foci = (0..2)
             .map(|_| ControlPoint::new(Vector3::zeros()))
             .collect();
-        let loop_behaviour = LoopBehavior::Infinite;
+        let loop_behaviour = LoopBehavior::infinite();
         let segment = Segment::S1;
         let transition_mode = TransitionMode::Ext;
         let mut op = FocusSTMOp::new(
@@ -320,7 +320,7 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
             .collect(),
         GainSTMMode::PhaseIntensityFull,
         SAMPLING_FREQ_DIV_MAX,
-        LoopBehavior::Infinite,
+        LoopBehavior::infinite(),
         Segment::S0,
         Some(TransitionMode::SyncIdx),
     );

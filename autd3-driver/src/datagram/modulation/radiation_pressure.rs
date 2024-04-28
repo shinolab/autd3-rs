@@ -54,7 +54,7 @@ mod tests {
             TestModulation {
                 buf: vec![EmitIntensity::MIN; 2],
                 config,
-                loop_behavior: LoopBehavior::Infinite,
+                loop_behavior: LoopBehavior::infinite(),
             }
             .with_radiation_pressure()
             .sampling_config()
@@ -77,7 +77,7 @@ mod tests {
             TestModulation {
                 buf: buf.clone(),
                 config: SamplingConfiguration::FREQ_4K_HZ,
-                loop_behavior: LoopBehavior::Infinite,
+                loop_behavior: LoopBehavior::infinite(),
             }
             .with_radiation_pressure()
             .calc()
