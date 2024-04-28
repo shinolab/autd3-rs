@@ -40,7 +40,6 @@ jobs:
         if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ${{ matrix.os }}
       - name: Rust cache
         if: needs.check-src.outputs.status
@@ -67,7 +66,6 @@ jobs:
         if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ${{ matrix.os }}
       - name: Rust cache
         if: needs.check-src.outputs.status
@@ -92,7 +90,6 @@ jobs:
         if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ${{ matrix.os }}
       - name: Rust cache
         if: needs.check-src.outputs.status
@@ -115,7 +112,6 @@ jobs:
         if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           os: windows-latest
           arch: 'aarch64'
       - name: Rust cache
@@ -138,7 +134,6 @@ jobs:
         if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ubuntu-latest
           arch: 'arm32'
       - name: Rust cache
@@ -161,7 +156,6 @@ jobs:
         if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ubuntu-latest
           arch: 'aarch64'
       - name: Rust cache
@@ -182,7 +176,6 @@ jobs:
         if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ubuntu-latest
       - name: Rust cache
         if: needs.check-src.outputs.status

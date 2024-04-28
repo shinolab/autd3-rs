@@ -1,9 +1,5 @@
 name: 'build tools setup action'
 inputs:
-  github-token:
-    description: 'GITHUB_TOKEN'
-    required: true
-    default: ''
   os:
     description: 'os'
     required: true
