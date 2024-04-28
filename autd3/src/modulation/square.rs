@@ -1,52 +1,10 @@
 use autd3_driver::derive::*;
 
-use super::sampling_mode::SamplingMode;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ExactFrequency;
-impl SamplingMode for ExactFrequency {
-    type D = (EmitIntensity, EmitIntensity, f64);
-    fn calc(
-        freq: f64,
-        sampling_config: SamplingConfiguration,
-        data: Self::D,
-    ) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        let (n, rep) = Self::validate(freq, sampling_config)?;
-        let (low, high, duty) = data;
-        Ok((0..rep)
-            .map(|i| (n + i) / rep)
-            .flat_map(|size| {
-                let n_high = (size as f64 * duty) as usize;
-                vec![high; n_high]
-                    .into_iter()
-                    .chain(vec![low; size as usize - n_high])
-            })
-            .collect())
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct NearestFrequency;
-impl SamplingMode for NearestFrequency {
-    type D = (EmitIntensity, EmitIntensity, f64);
-    fn calc(
-        freq: f64,
-        sampling_config: SamplingConfiguration,
-        data: Self::D,
-    ) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        let n = (sampling_config.freq() / freq).round() as usize;
-        let (low, high, duty) = data;
-        let n_high = (n as f64 * duty) as usize;
-        Ok(vec![high; n_high]
-            .into_iter()
-            .chain(vec![low; n - n_high])
-            .collect())
-    }
-}
+use super::sampling_mode::{ExactFrequency, NearestFrequency, SamplingMode};
 
 /// Square wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug, Builder)]
-pub struct Square<S: SamplingMode<D = (EmitIntensity, EmitIntensity, f64)>> {
+pub struct Square<S: SamplingMode> {
     #[get]
     freq: f64,
     #[getset]
@@ -102,7 +60,7 @@ impl Square<ExactFrequency> {
     }
 }
 
-impl<S: SamplingMode<D = (EmitIntensity, EmitIntensity, f64)>> Modulation for Square<S> {
+impl<S: SamplingMode> Modulation for Square<S> {
     fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         if self.freq < 0. {
             return Err(AUTDInternalError::ModulationError(format!(
@@ -123,7 +81,18 @@ impl<S: SamplingMode<D = (EmitIntensity, EmitIntensity, f64)>> Modulation for Sq
                 "duty must be in range from 0 to 1".to_string(),
             ));
         }
-        S::calc(self.freq, self.config, (self.low, self.high, self.duty))
+
+        let (n, rep) = S::validate(self.freq, self.config)?;
+
+        Ok((0..rep)
+            .map(|i| (n + i) / rep)
+            .flat_map(|size| {
+                let n_high = (size as f64 * self.duty) as usize;
+                vec![self.high; n_high]
+                    .into_iter()
+                    .chain(vec![self.low; size as usize - n_high])
+            })
+            .collect())
     }
 }
 
