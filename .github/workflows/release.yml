@@ -14,7 +14,6 @@ jobs:
       - name: Setup
         uses: ./.github/actions/setup-build
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           os: ubuntu-latest
       - name: Update submodules
         run: |
@@ -22,7 +21,7 @@ jobs:
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
         with:
-          repo-token: ${{ inputs.github-token }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check semver
         uses: obi1kenobi/cargo-semver-checks-action@v2
       - name: publish to carate.io
