@@ -60,7 +60,7 @@ impl<G: Gain> Operation for GainOp<G> {
         };
         cast::<GainT>(tx)
             .flag
-            .set(GainControlFlags::transition, self.transition);
+            .set(GainControlFlags::TRANSITION, self.transition);
 
         unsafe {
             std::ptr::copy_nonoverlapping(
