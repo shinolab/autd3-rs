@@ -58,6 +58,16 @@ impl std::ops::Mul<f64> for Amplitude {
     }
 }
 
+impl std::ops::Div<f64> for Amplitude {
+    type Output = Amplitude;
+
+    fn div(self, rhs: f64) -> Self::Output {
+        Self::Output {
+            value: self.value / rhs,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
