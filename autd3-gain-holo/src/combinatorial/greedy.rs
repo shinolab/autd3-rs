@@ -3,7 +3,10 @@ use std::collections::HashMap;
 use crate::{constraint::EmissionConstraint, impl_holo, Amplitude, Complex};
 
 use autd3_driver::{
-    acoustics::{directivity::Sphere, propagate},
+    acoustics::{
+        directivity::{Directivity, Sphere},
+        propagate,
+    },
     defined::PI,
     derive::*,
     geometry::Vector3,
@@ -18,23 +21,25 @@ use rand::seq::SliceRandom;
 /// * Suzuki, Shun, et al. "Radiation pressure field reconstruction for ultrasound midair haptics by Greedy algorithm with brute-force search." IEEE Transactions on Haptics 14.4 (2021): 914-921.
 #[derive(Gain, Builder)]
 #[no_const]
-pub struct Greedy {
+pub struct Greedy<D: Directivity + 'static> {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,
     #[getset]
     phase_div: u8,
     constraint: EmissionConstraint,
+    _phantom: std::marker::PhantomData<D>,
 }
 
-impl_holo!(Greedy);
+impl_holo!(D, Greedy<D>);
 
-impl Greedy {
+impl<D: Directivity + 'static> Greedy<D> {
     pub const fn new() -> Self {
         Self {
             foci: vec![],
             amps: vec![],
             phase_div: 16,
             constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
+            _phantom: std::marker::PhantomData,
         }
     }
 
@@ -46,12 +51,12 @@ impl Greedy {
         res: &mut [Complex],
     ) {
         res.iter_mut().zip(foci.iter()).for_each(|(r, f)| {
-            *r = propagate::<Sphere>(trans, attenuation, sound_speed, f);
+            *r = propagate::<D>(trans, attenuation, sound_speed, f);
         });
     }
 }
 
-impl Gain for Greedy {
+impl<D: Directivity + 'static> Gain for Greedy<D> {
     fn calc(
         &self,
         geometry: &Geometry,
@@ -127,7 +132,7 @@ impl Gain for Greedy {
     }
 }
 
-impl Default for Greedy {
+impl Default for Greedy<Sphere> {
     fn default() -> Self {
         Self::new()
     }
@@ -142,7 +147,7 @@ mod tests {
     fn test_greedy_all() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
 
-        let g = Greedy::new()
+        let g = Greedy::default()
             .with_phase_div(32)
             .add_focus(Vector3::zeros(), 1. * Pascal)
             .add_foci_from_iter([(Vector3::zeros(), 1. * Pascal)]);

@@ -4,7 +4,9 @@ use crate::{
     constraint::EmissionConstraint, impl_holo, Amplitude, Complex, HoloError, LinAlgBackend, Trans,
 };
 
-use autd3_driver::{defined::PI, derive::*, geometry::Vector3};
+use autd3_driver::{
+    acoustics::directivity::Directivity, defined::PI, derive::*, geometry::Vector3,
+};
 
 /// Gain to produce multiple foci with Levenberg-Marquardt algorithm
 ///
@@ -14,7 +16,7 @@ use autd3_driver::{defined::PI, derive::*, geometry::Vector3};
 /// * K.Madsen, H.Nielsen, and O.Tingleff, “Methods for non-linear least squares problems (2nd ed.),” 2004.
 #[derive(Gain, Builder)]
 #[no_const]
-pub struct LM<B: LinAlgBackend + 'static> {
+pub struct LM<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,
     #[getset]
@@ -29,11 +31,12 @@ pub struct LM<B: LinAlgBackend + 'static> {
     initial: Vec<f64>,
     constraint: EmissionConstraint,
     backend: Arc<B>,
+    _phantom: std::marker::PhantomData<D>,
 }
 
-impl_holo!(B, LM<B>);
+impl_holo!(D, B, LM<D, B>);
 
-impl<B: LinAlgBackend> LM<B> {
+impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
     pub const fn new(backend: Arc<B>) -> Self {
         Self {
             foci: vec![],
@@ -45,6 +48,7 @@ impl<B: LinAlgBackend> LM<B> {
             initial: vec![],
             backend,
             constraint: EmissionConstraint::DontCare,
+            _phantom: std::marker::PhantomData,
         }
     }
 
@@ -53,7 +57,7 @@ impl<B: LinAlgBackend> LM<B> {
     }
 }
 
-impl<B: LinAlgBackend> LM<B> {
+impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
     fn make_t(
         &self,
         zero: &B::VectorX,
@@ -115,7 +119,7 @@ impl<B: LinAlgBackend> LM<B> {
     }
 }
 
-impl<B: LinAlgBackend> Gain for LM<B> {
+impl<D: Directivity, B: LinAlgBackend<D>> Gain for LM<D, B> {
     #[allow(clippy::many_single_char_names)]
     #[allow(clippy::uninit_vec)]
     fn calc(
@@ -333,7 +337,7 @@ mod tests {
     #[test]
     fn test_lm_all() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend = NalgebraBackend::new().unwrap();
+        let backend = Arc::new(NalgebraBackend::default());
 
         let g = LM::new(backend)
             .with_eps_1(1e-3)
@@ -368,7 +372,7 @@ mod tests {
             AUTD3::new(Vector3::zeros()).into_device(0),
             AUTD3::new(Vector3::zeros()).into_device(1),
         ]);
-        let backend = NalgebraBackend::new().unwrap();
+        let backend = Arc::new(NalgebraBackend::default());
 
         let g = LM::new(backend)
             .add_focus(Vector3::new(10., 10., 100.), 5e3 * Pascal)

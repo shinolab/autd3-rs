@@ -2,7 +2,10 @@ use autd3::prelude::*;
 use autd3_gain_holo::*;
 
 use colored::*;
-use std::io::{self, Write};
+use std::{
+    io::{self, Write},
+    sync::Arc,
+};
 
 pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     autd.send(ConfigureSilencer::default()).await?;
@@ -25,7 +28,7 @@ pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     let mut s = String::new();
     io::stdin().read_line(&mut s)?;
 
-    let backend = NalgebraBackend::new()?;
+    let backend = Arc::new(NalgebraBackend::default());
 
     let target_amp = 2.5e3 * autd.geometry.num_devices() as f64 * Pascal;
     match s.trim().parse::<usize>() {
@@ -60,7 +63,7 @@ pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
             autd.send((m, g)).await?
         }
         Ok(5) => {
-            let g = Greedy::new()
+            let g = Greedy::default()
                 .add_focus(center + p, target_amp)
                 .add_focus(center - p, target_amp);
             autd.send((m, g)).await?

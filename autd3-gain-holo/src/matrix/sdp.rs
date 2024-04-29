@@ -7,7 +7,7 @@ use crate::{
     LinAlgBackend, Trans,
 };
 
-use autd3_driver::{derive::*, geometry::Vector3};
+use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vector3};
 
 /// Gain to produce multiple foci by solving Semi-Denfinite Programming
 ///
@@ -15,7 +15,7 @@ use autd3_driver::{derive::*, geometry::Vector3};
 /// * Inoue, Seki, Yasutoshi Makino, and Hiroyuki Shinoda. "Active touch perception produced by airborne ultrasonic haptic hologram." 2015 IEEE World Haptics Conference (WHC). IEEE, 2015.
 #[derive(Gain, Builder)]
 #[no_const]
-pub struct SDP<B: LinAlgBackend + 'static> {
+pub struct SDP<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,
     #[getset]
@@ -26,11 +26,12 @@ pub struct SDP<B: LinAlgBackend + 'static> {
     repeat: usize,
     constraint: EmissionConstraint,
     backend: Arc<B>,
+    _phantom: std::marker::PhantomData<D>,
 }
 
-impl_holo!(B, SDP<B>);
+impl_holo!(D, B, SDP<D, B>);
 
-impl<B: LinAlgBackend + 'static> SDP<B> {
+impl<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> SDP<D, B> {
     pub const fn new(backend: Arc<B>) -> Self {
         Self {
             foci: vec![],
@@ -40,11 +41,12 @@ impl<B: LinAlgBackend + 'static> SDP<B> {
             repeat: 100,
             backend,
             constraint: EmissionConstraint::DontCare,
+            _phantom: std::marker::PhantomData,
         }
     }
 }
 
-impl<B: LinAlgBackend> Gain for SDP<B> {
+impl<D: Directivity, B: LinAlgBackend<D>> Gain for SDP<D, B> {
     #[allow(non_snake_case)]
     fn calc(
         &self,
@@ -210,7 +212,7 @@ mod tests {
     #[test]
     fn test_sdp_all() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend = NalgebraBackend::new().unwrap();
+        let backend = Arc::new(NalgebraBackend::default());
 
         let g = SDP::new(backend)
             .with_alpha(0.1)
@@ -238,7 +240,7 @@ mod tests {
     #[test]
     fn test_sdp_filtered() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend = NalgebraBackend::new().unwrap();
+        let backend = Arc::new(NalgebraBackend::default());
 
         let g = SDP::new(backend)
             .add_focus(Vector3::new(10., 10., 100.), 5e3 * Pascal)

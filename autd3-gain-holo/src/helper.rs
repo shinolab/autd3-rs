@@ -11,10 +11,11 @@ use crate::{EmissionConstraint, VectorXc};
 #[doc(hidden)]
 #[macro_export]
 macro_rules! impl_holo {
-    ($backend:tt, $t:ty) => {
-        impl<$backend> $t
+    ($directivity:tt, $backend:tt, $t:ty) => {
+        impl<$directivity, $backend> $t
         where
-            $backend: $crate::LinAlgBackend,
+            $directivity: autd3_driver::acoustics::directivity::Directivity,
+            $backend: $crate::LinAlgBackend<$directivity>,
         {
             /// Add focus
             pub fn add_focus(self, focus: Vector3, amp: $crate::amp::Amplitude) -> Self {
@@ -65,8 +66,11 @@ macro_rules! impl_holo {
         }
     };
 
-    ($t:ty) => {
-        impl $t {
+    ($directivity:tt, $t:ty) => {
+        impl<$directivity> $t
+        where
+            $directivity: autd3_driver::acoustics::directivity::Directivity,
+        {
             /// Add focus
             pub fn add_focus(self, focus: Vector3, amp: $crate::amp::Amplitude) -> Self {
                 let mut foci = self.foci;

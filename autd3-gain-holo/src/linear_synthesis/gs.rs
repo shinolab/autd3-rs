@@ -5,7 +5,7 @@ use crate::{
     LinAlgBackend, Trans,
 };
 
-use autd3_driver::{derive::*, geometry::Vector3};
+use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vector3};
 
 /// Gain to produce multiple foci with GS algorithm
 ///
@@ -13,18 +13,19 @@ use autd3_driver::{derive::*, geometry::Vector3};
 /// * Marzo, Asier, and Bruce W. Drinkwater. "Holographic acoustic tweezers." Proceedings of the National Academy of Sciences 116.1 (2019): 84-89.
 #[derive(Gain, Builder)]
 #[no_const]
-pub struct GS<B: LinAlgBackend + 'static> {
+pub struct GS<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,
     #[getset]
     repeat: usize,
     constraint: EmissionConstraint,
     backend: Arc<B>,
+    _phantom: std::marker::PhantomData<D>,
 }
 
-impl_holo!(B, GS<B>);
+impl_holo!(D, B, GS<D, B>);
 
-impl<B: LinAlgBackend + 'static> GS<B> {
+impl<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> GS<D, B> {
     pub const fn new(backend: Arc<B>) -> Self {
         Self {
             foci: vec![],
@@ -32,11 +33,12 @@ impl<B: LinAlgBackend + 'static> GS<B> {
             repeat: 100,
             backend,
             constraint: EmissionConstraint::DontCare,
+            _phantom: std::marker::PhantomData,
         }
     }
 }
 
-impl<B: LinAlgBackend> Gain for GS<B> {
+impl<D: Directivity, B: LinAlgBackend<D>> Gain for GS<D, B> {
     fn calc(
         &self,
         geometry: &Geometry,
@@ -97,7 +99,7 @@ mod tests {
     #[test]
     fn test_gs_all() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend = NalgebraBackend::new().unwrap();
+        let backend = Arc::new(NalgebraBackend::default());
 
         let g = GS::new(backend)
             .with_repeat(50)
@@ -124,7 +126,7 @@ mod tests {
             AUTD3::new(Vector3::zeros()).into_device(0),
             AUTD3::new(Vector3::zeros()).into_device(1),
         ]);
-        let backend = NalgebraBackend::new().unwrap();
+        let backend = Arc::new(NalgebraBackend::default());
 
         let g = GS::new(backend)
             .add_focus(Vector3::new(10., 10., 100.), 5e3 * Pascal)
