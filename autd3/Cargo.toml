@@ -30,7 +30,10 @@ itertools = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 anyhow = { workspace = true }
 
+[lib]
+bench = false
+
 [[bench]]
-name = "gain"
-path = "benches/gain/primitive.rs"
+name = "autd3-bench"
+path = "benches/bench.rs"
 harness = false
