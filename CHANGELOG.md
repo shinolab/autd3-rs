@@ -1,3 +1,9 @@
+# 22.1.0
+
+- Update firmware to v6.1.0
+- Add new `ConfigureDebugSettings` datagram
+  - `ConfigureDebugOutputIdx` is now deprecated
+
 # 22.0.4
 
 - Add `left_handed` feature
