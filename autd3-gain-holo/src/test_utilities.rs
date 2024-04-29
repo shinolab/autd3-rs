@@ -46,11 +46,11 @@ fn gen_foci(n: usize) -> impl Iterator<Item = (Vector3, Amplitude)> {
     })
 }
 
-pub struct LinAlgBackendTestHelper<const N: usize, B: LinAlgBackend> {
+pub struct LinAlgBackendTestHelper<const N: usize, B: LinAlgBackend<Sphere>> {
     backend: Arc<B>,
 }
 
-impl<const N: usize, B: LinAlgBackend> LinAlgBackendTestHelper<N, B> {
+impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
     pub fn new() -> Result<Self, HoloError> {
         Ok(Self { backend: B::new()? })
     }
