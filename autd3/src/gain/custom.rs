@@ -2,65 +2,29 @@ use std::collections::HashMap;
 
 use autd3_driver::derive::*;
 
-#[cfg(feature = "parallel")]
-mod inner {
-    use super::*;
+#[derive(Gain)]
+pub struct Custom<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + Sync + 'static> {
+    f: F,
+}
 
-    #[derive(Gain)]
-    pub struct Custom<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + Sync + 'static> {
-        f: F,
-    }
-
-    impl<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + Sync + 'static> Custom<FT, F> {
-        /// constructor
-        pub const fn new(f: F) -> Self {
-            Self { f }
-        }
-    }
-
-    impl<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + Sync + 'static> Gain
-        for Custom<FT, F>
-    {
-        fn calc(
-            &self,
-            geometry: &Geometry,
-            filter: GainFilter,
-        ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-            Ok(Self::transform(geometry, filter, &self.f))
-        }
+impl<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + Sync + 'static> Custom<FT, F> {
+    /// constructor
+    pub const fn new(f: F) -> Self {
+        Self { f }
     }
 }
 
-#[cfg(not(feature = "parallel"))]
-mod inner {
-    use super::*;
-
-    #[derive(Gain)]
-    pub struct Custom<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + 'static> {
-        f: F,
-    }
-
-    impl<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + 'static> Custom<FT, F> {
-        /// constructor
-        pub const fn new(f: F) -> Self {
-            Self { f }
-        }
-    }
-
-    impl<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + 'static> Gain
-        for Custom<FT, F>
-    {
-        fn calc(
-            &self,
-            geometry: &Geometry,
-            filter: GainFilter,
-        ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-            Ok(Self::transform(geometry, filter, &self.f))
-        }
+impl<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + Sync + 'static> Gain
+    for Custom<FT, F>
+{
+    fn calc(
+        &self,
+        geometry: &Geometry,
+        filter: GainFilter,
+    ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
+        Ok(Self::transform(geometry, filter, &self.f))
     }
 }
-
-pub use inner::*;
 
 #[cfg(test)]
 mod tests {

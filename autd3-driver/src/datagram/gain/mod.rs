@@ -22,10 +22,12 @@ use crate::{
 };
 
 use bitvec::prelude::*;
-#[cfg(feature = "parallel")]
+
 use rayon::prelude::*;
 
 use super::with_segment::DatagramS;
+
+const PARALLEL_THRESHOLD: usize = 4;
 
 pub enum GainFilter<'a> {
     All,
@@ -40,44 +42,6 @@ pub trait Gain {
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError>;
 
-    #[cfg(not(feature = "parallel"))]
-    fn transform<FT: Fn(&Transducer) -> Drive, F: Fn(&Device) -> FT>(
-        geometry: &Geometry,
-        filter: GainFilter,
-        f: F,
-    ) -> HashMap<usize, Vec<Drive>>
-    where
-        Self: Sized,
-    {
-        match filter {
-            GainFilter::All => geometry
-                .devices()
-                .map(|dev| (dev.idx(), dev.iter().map(f(dev)).collect()))
-                .collect(),
-            GainFilter::Filter(filter) => geometry
-                .devices()
-                .filter_map(|dev| {
-                    filter.get(&dev.idx()).map(|filter| {
-                        let ft = f(dev);
-                        (
-                            dev.idx(),
-                            dev.iter()
-                                .map(|tr| {
-                                    if filter[tr.idx()] {
-                                        ft(tr)
-                                    } else {
-                                        Drive::null()
-                                    }
-                                })
-                                .collect(),
-                        )
-                    })
-                })
-                .collect(),
-        }
-    }
-
-    #[cfg(feature = "parallel")]
     fn transform<FT: Fn(&Transducer) -> Drive, F: Fn(&Device) -> FT + Sync>(
         geometry: &Geometry,
         filter: GainFilter,
@@ -86,33 +50,71 @@ pub trait Gain {
     where
         Self: Sized,
     {
-        match filter {
-            GainFilter::All => geometry
-                .devices()
-                .par_bridge()
-                .map(|dev| (dev.idx(), dev.iter().map(f(dev)).collect()))
-                .collect(),
-            GainFilter::Filter(filter) => geometry
-                .devices()
-                // .par_bridge()
-                .filter_map(|dev| {
-                    filter.get(&dev.idx()).map(|filter| {
-                        let ft = f(dev);
-                        (
-                            dev.idx(),
-                            dev.iter()
-                                .map(|tr| {
-                                    if filter[tr.idx()] {
-                                        ft(tr)
-                                    } else {
-                                        Drive::null()
-                                    }
-                                })
-                                .collect(),
-                        )
+        #[cfg(all(feature = "force_parallel", feature = "force_serial"))]
+        compile_error!("Cannot specify both force_parallel and force_serial");
+        #[cfg(all(feature = "force_parallel", not(feature = "force_serial")))]
+        let n = usize::MAX;
+        #[cfg(all(not(feature = "force_parallel"), feature = "force_serial"))]
+        let n = 0;
+        #[cfg(all(not(feature = "force_parallel"), not(feature = "force_serial")))]
+        let n = geometry.devices().count();
+
+        if n > PARALLEL_THRESHOLD {
+            match filter {
+                GainFilter::All => geometry
+                    .devices()
+                    .par_bridge()
+                    .map(|dev| (dev.idx(), dev.iter().map(f(dev)).collect()))
+                    .collect(),
+                GainFilter::Filter(filter) => geometry
+                    .devices()
+                    .par_bridge()
+                    .filter_map(|dev| {
+                        filter.get(&dev.idx()).map(|filter| {
+                            let ft = f(dev);
+                            (
+                                dev.idx(),
+                                dev.iter()
+                                    .map(|tr| {
+                                        if filter[tr.idx()] {
+                                            ft(tr)
+                                        } else {
+                                            Drive::null()
+                                        }
+                                    })
+                                    .collect(),
+                            )
+                        })
                     })
-                })
-                .collect(),
+                    .collect(),
+            }
+        } else {
+            match filter {
+                GainFilter::All => geometry
+                    .devices()
+                    .map(|dev| (dev.idx(), dev.iter().map(f(dev)).collect()))
+                    .collect(),
+                GainFilter::Filter(filter) => geometry
+                    .devices()
+                    .filter_map(|dev| {
+                        filter.get(&dev.idx()).map(|filter| {
+                            let ft = f(dev);
+                            (
+                                dev.idx(),
+                                dev.iter()
+                                    .map(|tr| {
+                                        if filter[tr.idx()] {
+                                            ft(tr)
+                                        } else {
+                                            Drive::null()
+                                        }
+                                    })
+                                    .collect(),
+                            )
+                        })
+                    })
+                    .collect(),
+            }
         }
     }
 }
