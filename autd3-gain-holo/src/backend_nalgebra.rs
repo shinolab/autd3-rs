@@ -127,7 +127,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         };
         Ok(MatrixXc::from_iterator(
             foci.len(),
-            v.iter().map(|(_, v)| v.len()).sum::<usize>() / foci.len(),
+            v.values().map(|v| v.len()).sum::<usize>() / foci.len(),
             (0..v.len()).flat_map(|i| v[&i].iter().cloned()),
         ))
     }

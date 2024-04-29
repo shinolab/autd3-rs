@@ -129,7 +129,7 @@ pub fn generate_result(
                 .iter()
                 .scan(0, |state, dev| {
                     let r = *state;
-                    *state = *state + dev.num_transducers();
+                    *state += dev.num_transducers();
                     Some(r)
                 })
                 .collect::<Vec<_>>();
@@ -155,13 +155,10 @@ pub fn generate_result(
                 .iter()
                 .scan(0, |state, dev| {
                     let r = *state;
-                    *state = *state
-                        + filter
-                            .get(&dev.idx())
-                            .and_then(|filter| {
-                                Some(dev.iter().filter(|tr| filter[tr.idx()]).count())
-                            })
-                            .unwrap_or(0);
+                    *state += filter
+                        .get(&dev.idx())
+                        .map(|filter| dev.iter().filter(|tr| filter[tr.idx()]).count())
+                        .unwrap_or(0);
                     Some(r)
                 })
                 .collect::<Vec<_>>();
