@@ -136,7 +136,7 @@ impl Default for Greedy {
 #[cfg(test)]
 mod tests {
     use super::{super::super::Pascal, *};
-    use autd3_driver::{autd3_device::AUTD3, datagram::Datagram, geometry::IntoDevice};
+    use autd3_driver::{autd3_device::AUTD3, geometry::IntoDevice};
 
     #[test]
     fn test_greedy_all() {
@@ -156,8 +156,11 @@ mod tests {
             .foci()
             .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pascal));
 
-        let _ = g.calc(&geometry, GainFilter::All);
-        let _ = g.operation();
+        assert_eq!(
+            g.calc(&geometry, GainFilter::All)
+                .map(|res| res[&0].iter().filter(|&&d| d != Drive::null()).count()),
+            Ok(geometry.num_transducers()),
+        );
     }
 
     #[test]

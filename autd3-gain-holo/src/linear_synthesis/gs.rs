@@ -50,8 +50,7 @@ impl<B: LinAlgBackend> Gain for GS<B> {
         let n = self.backend.cols_c(&g)?;
         let ones = vec![1.; n];
 
-        let mut b = self.backend.alloc_cm(n, m)?;
-        self.backend.gen_back_prop(n, m, &g, &mut b)?;
+        let b = self.backend.gen_back_prop(n, m, &g)?;
 
         let mut q = self.backend.from_slice_cv(&ones)?;
 
@@ -93,7 +92,7 @@ impl<B: LinAlgBackend> Gain for GS<B> {
 #[cfg(test)]
 mod tests {
     use super::{super::super::NalgebraBackend, super::super::Pascal, *};
-    use autd3_driver::{autd3_device::AUTD3, datagram::Datagram, geometry::IntoDevice};
+    use autd3_driver::{autd3_device::AUTD3, geometry::IntoDevice};
 
     #[test]
     fn test_gs_all() {
@@ -111,8 +110,12 @@ mod tests {
             .foci()
             .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pascal));
 
-        let _ = g.calc(&geometry, GainFilter::All);
-        let _ = g.operation();
+        assert_eq!(
+            g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
+                .calc(&geometry, GainFilter::All)
+                .map(|res| res[&0].iter().filter(|&&d| d != Drive::null()).count()),
+            Ok(geometry.num_transducers()),
+        );
     }
 
     #[test]

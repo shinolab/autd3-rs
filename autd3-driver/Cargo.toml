@@ -23,6 +23,7 @@ num-complex = { workspace = true, features = ["std"] }
 rand = { workspace = true, optional = true }
 bitfield-struct = { workspace = true }
 const_fn = { workspace = true }
+rayon = { workspace = true, optional = true }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.56.0", features = ["Win32_Media_Multimedia", "Win32_System_Threading", "Win32_Foundation"] }
@@ -38,8 +39,9 @@ anyhow = { workspace = true }
 rstest = { workspace = true }
 
 [features]
-default = ["derive", "rand"]
+default = ["derive", "rand", "parallel"]
 async-trait = ["dep:async-trait"]
+parallel = ["rayon"]
 use_meter = []
 left_handed = []
 serde = ["dep:serde"]

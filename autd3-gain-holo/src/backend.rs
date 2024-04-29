@@ -246,6 +246,5 @@ pub trait LinAlgBackend {
         _m: usize,
         n: usize,
         transfer: &Self::MatrixXc,
-        b: &mut Self::MatrixXc,
-    ) -> Result<(), HoloError>;
+    ) -> Result<Self::MatrixXc, HoloError>;
 }
