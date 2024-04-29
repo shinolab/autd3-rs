@@ -2123,9 +2123,7 @@ impl<const N: usize, B: LinAlgBackend> LinAlgBackendTestHelper<N, B> {
             .backend
             .generate_propagation_matrix(&geometry, &foci, &GainFilter::All)?;
 
-        let mut b = self.backend.alloc_cm(m, n)?;
-
-        self.backend.gen_back_prop(m, n, &g, &mut b)?;
+        let b = self.backend.gen_back_prop(m, n, &g)?;
         let g = self.backend.to_host_cm(g)?;
         let reference = {
             let mut b = MatrixXc::zeros(m, n);

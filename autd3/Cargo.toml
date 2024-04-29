@@ -19,8 +19,9 @@ bitvec = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 
 [features]
-default = []
+default = ["parallel"]
 async-trait = ["autd3-driver/async-trait"]
+parallel = ["autd3-driver/parallel"]
 
 [dev-dependencies]
 assert_approx_eq = { workspace = true }

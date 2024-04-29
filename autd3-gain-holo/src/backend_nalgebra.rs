@@ -5,10 +5,14 @@ use nalgebra::ComplexField;
 use autd3_driver::{
     acoustics::{directivity::Sphere, propagate},
     datagram::GainFilter,
+    defined::Complex,
     geometry::Geometry,
 };
 
-use crate::{error::HoloError, Complex, LinAlgBackend, MatrixX, MatrixXc, VectorX, VectorXc};
+use crate::{error::HoloError, LinAlgBackend, MatrixX, MatrixXc, VectorX, VectorXc};
+
+#[cfg(feature = "parallel")]
+use rayon::prelude::*;
 
 /// Backend using nalgebra
 pub struct NalgebraBackend {}
@@ -23,6 +27,7 @@ impl LinAlgBackend for NalgebraBackend {
         Ok(Arc::new(Self {}))
     }
 
+    #[cfg(not(feature = "parallel"))]
     fn generate_propagation_matrix(
         &self,
         geometry: &Geometry,
@@ -32,10 +37,7 @@ impl LinAlgBackend for NalgebraBackend {
         match filter {
             GainFilter::All => Ok(MatrixXc::from_iterator(
                 foci.len(),
-                geometry
-                    .devices()
-                    .map(|dev| dev.num_transducers())
-                    .sum::<usize>(),
+                geometry.num_transducers(),
                 geometry.devices().flat_map(|dev| {
                     dev.iter().flat_map(move |tr| {
                         foci.iter().map(move |fp| {
@@ -74,6 +76,67 @@ impl LinAlgBackend for NalgebraBackend {
                 ))
             }
         }
+    }
+
+    #[cfg(feature = "parallel")]
+    fn generate_propagation_matrix(
+        &self,
+        geometry: &Geometry,
+        foci: &[autd3_driver::geometry::Vector3],
+        filter: &GainFilter,
+    ) -> Result<Self::MatrixXc, HoloError> {
+        use std::collections::HashMap;
+        let v = match filter {
+            GainFilter::All => geometry
+                .devices()
+                .par_bridge()
+                .map(|dev| {
+                    (
+                        dev.idx(),
+                        dev.iter()
+                            .flat_map(move |tr| {
+                                foci.iter().map(move |fp| {
+                                    propagate::<Sphere>(tr, dev.attenuation, dev.sound_speed, fp)
+                                })
+                            })
+                            .collect(),
+                    )
+                })
+                .collect::<HashMap<_, Vec<_>>>(),
+            GainFilter::Filter(filter) => geometry
+                .devices()
+                .par_bridge()
+                .map(|dev| {
+                    (
+                        dev.idx(),
+                        dev.iter()
+                            .filter_map(move |tr| {
+                                filter.get(&dev.idx()).and_then(|filter| {
+                                    if filter[tr.idx()] {
+                                        Some(foci.iter().map(move |fp| {
+                                            propagate::<Sphere>(
+                                                tr,
+                                                dev.attenuation,
+                                                dev.sound_speed,
+                                                fp,
+                                            )
+                                        }))
+                                    } else {
+                                        None
+                                    }
+                                })
+                            })
+                            .flatten()
+                            .collect(),
+                    )
+                })
+                .collect::<HashMap<_, Vec<_>>>(),
+        };
+        Ok(MatrixXc::from_iterator(
+            foci.len(),
+            v.iter().map(|(_, v)| v.len()).sum::<usize>() / foci.len(),
+            (0..v.len()).flat_map(|i| v[&i].iter().cloned()),
+        ))
     }
 
     fn to_host_cv(&self, v: Self::VectorXc) -> Result<VectorXc, HoloError> {
@@ -262,25 +325,53 @@ impl LinAlgBackend for NalgebraBackend {
         Ok(v.clone())
     }
 
+    #[cfg(feature = "parallel")]
     fn gen_back_prop(
         &self,
         m: usize,
         n: usize,
         transfer: &Self::MatrixXc,
-        b: &mut Self::MatrixXc,
-    ) -> Result<(), HoloError> {
-        (0..n).for_each(|i| {
-            let x = 1.0
-                / transfer
-                    .rows(i, 1)
-                    .iter()
-                    .map(|x| x.norm_sqr())
-                    .sum::<f64>();
-            (0..m).for_each(|j| {
-                b[(j, i)] = transfer[(i, j)].conj() * x;
-            })
-        });
-        Ok(())
+    ) -> Result<Self::MatrixXc, HoloError> {
+        Ok(MatrixXc::from_vec(
+            m,
+            n,
+            (0..n)
+                .into_par_iter()
+                .flat_map_iter(|i| {
+                    let x = 1.0
+                        / transfer
+                            .rows(i, 1)
+                            .iter()
+                            .map(|x| x.norm_sqr())
+                            .sum::<f64>();
+                    (0..m).map(move |j| transfer[(i, j)].conj() * x)
+                })
+                .collect::<Vec<_>>(),
+        ))
+    }
+
+    #[cfg(not(feature = "parallel"))]
+    fn gen_back_prop(
+        &self,
+        m: usize,
+        n: usize,
+        transfer: &Self::MatrixXc,
+    ) -> Result<Self::MatrixXc, HoloError> {
+        Ok(MatrixXc::from_vec(
+            m,
+            n,
+            (0..n)
+                .flat_map(|i| {
+                    let x = 1.0
+                        / transfer
+                            .rows(i, 1)
+                            .iter()
+                            .map(|x| x.norm_sqr())
+                            .sum::<f64>();
+                    (0..m).map(move |j| transfer[(i, j)].conj() * x)
+                })
+                .collect::<Vec<_>>(),
+        ))
     }
 
     fn max_eigen_vector_c(&self, m: Self::MatrixXc) -> Result<Self::VectorXc, HoloError> {

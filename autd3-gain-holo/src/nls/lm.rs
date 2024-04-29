@@ -256,46 +256,71 @@ impl<B: LinAlgBackend> Gain for LM<B> {
 
         let x = self.backend.to_host_v(x)?;
 
-        let mut idx = 0;
         match filter {
-            GainFilter::All => Ok(geometry
-                .devices()
-                .map(|dev| {
-                    (
-                        dev.idx(),
-                        dev.iter()
-                            .map(|_| {
-                                let phase = Phase::from_rad(x[idx].rem_euclid(2.0 * PI));
-                                let intensity = self.constraint.convert(1.0, 1.0);
-                                idx += 1;
-                                Drive::new(phase, intensity)
-                            })
-                            .collect(),
-                    )
-                })
-                .collect()),
-            GainFilter::Filter(filter) => Ok(geometry
-                .devices()
-                .map(|dev| {
-                    filter.get(&dev.idx()).map_or_else(
-                        || (dev.idx(), dev.iter().map(|_| Drive::null()).collect()),
-                        |filter| {
-                            (
-                                dev.idx(),
-                                dev.iter()
-                                    .filter(|tr| filter[tr.idx()])
-                                    .map(|_| {
-                                        let phase = Phase::from_rad(x[idx].rem_euclid(2.0 * PI));
-                                        let intensity = self.constraint.convert(1.0, 1.0);
-                                        idx += 1;
-                                        Drive::new(phase, intensity)
-                                    })
-                                    .collect(),
-                            )
-                        },
-                    )
-                })
-                .collect()),
+            GainFilter::All => {
+                let num_transducers = geometry
+                    .iter()
+                    .scan(0, |state, dev| {
+                        let r = *state;
+                        *state = *state + dev.num_transducers();
+                        Some(r)
+                    })
+                    .collect::<Vec<_>>();
+                Ok(geometry
+                    .devices()
+                    .map(|dev| {
+                        (
+                            dev.idx(),
+                            dev.iter()
+                                .zip(x.iter().skip(num_transducers[dev.idx()]))
+                                .map(|(_, x)| {
+                                    let phase = Phase::from_rad(x.rem_euclid(2.0 * PI));
+                                    let intensity = self.constraint.convert(1.0, 1.0);
+                                    Drive::new(phase, intensity)
+                                })
+                                .collect(),
+                        )
+                    })
+                    .collect())
+            }
+            GainFilter::Filter(filter) => {
+                let num_transducers = geometry
+                    .iter()
+                    .scan(0, |state, dev| {
+                        let r = *state;
+                        *state = *state
+                            + filter
+                                .get(&dev.idx())
+                                .and_then(|filter| {
+                                    Some(dev.iter().filter(|tr| filter[tr.idx()]).count())
+                                })
+                                .unwrap_or(0);
+                        Some(r)
+                    })
+                    .collect::<Vec<_>>();
+                Ok(geometry
+                    .devices()
+                    .map(|dev| {
+                        filter.get(&dev.idx()).map_or_else(
+                            || (dev.idx(), dev.iter().map(|_| Drive::null()).collect()),
+                            |filter| {
+                                (
+                                    dev.idx(),
+                                    dev.iter()
+                                        .filter(|tr| filter[tr.idx()])
+                                        .zip(x.iter().skip(num_transducers[dev.idx()]))
+                                        .map(|(_, x)| {
+                                            let phase = Phase::from_rad(x.rem_euclid(2.0 * PI));
+                                            let intensity = self.constraint.convert(1.0, 1.0);
+                                            Drive::new(phase, intensity)
+                                        })
+                                        .collect(),
+                                )
+                            },
+                        )
+                    })
+                    .collect())
+            }
         }
     }
 }
@@ -303,7 +328,7 @@ impl<B: LinAlgBackend> Gain for LM<B> {
 #[cfg(test)]
 mod tests {
     use super::{super::super::NalgebraBackend, super::super::Pascal, *};
-    use autd3_driver::{autd3_device::AUTD3, datagram::Datagram, geometry::IntoDevice};
+    use autd3_driver::{autd3_device::AUTD3, geometry::IntoDevice};
 
     #[test]
     fn test_lm_all() {
@@ -329,8 +354,12 @@ mod tests {
             .foci()
             .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pascal));
 
-        let _ = g.calc(&geometry, GainFilter::All);
-        let _ = g.operation();
+        assert_eq!(
+            g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
+                .calc(&geometry, GainFilter::All)
+                .map(|res| res[&0].iter().filter(|&&d| d != Drive::null()).count()),
+            Ok(geometry.num_transducers()),
+        );
     }
 
     #[test]

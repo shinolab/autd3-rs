@@ -22,6 +22,8 @@ use crate::{
 };
 
 use bitvec::prelude::*;
+#[cfg(feature = "parallel")]
+use rayon::prelude::*;
 
 use super::with_segment::DatagramS;
 
@@ -38,6 +40,7 @@ pub trait Gain {
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError>;
 
+    #[cfg(not(feature = "parallel"))]
     fn transform<FT: Fn(&Transducer) -> Drive, F: Fn(&Device) -> FT>(
         geometry: &Geometry,
         filter: GainFilter,
@@ -53,6 +56,45 @@ pub trait Gain {
                 .collect(),
             GainFilter::Filter(filter) => geometry
                 .devices()
+                .filter_map(|dev| {
+                    filter.get(&dev.idx()).map(|filter| {
+                        let ft = f(dev);
+                        (
+                            dev.idx(),
+                            dev.iter()
+                                .map(|tr| {
+                                    if filter[tr.idx()] {
+                                        ft(tr)
+                                    } else {
+                                        Drive::null()
+                                    }
+                                })
+                                .collect(),
+                        )
+                    })
+                })
+                .collect(),
+        }
+    }
+
+    #[cfg(feature = "parallel")]
+    fn transform<FT: Fn(&Transducer) -> Drive, F: Fn(&Device) -> FT + Sync>(
+        geometry: &Geometry,
+        filter: GainFilter,
+        f: F,
+    ) -> HashMap<usize, Vec<Drive>>
+    where
+        Self: Sized,
+    {
+        match filter {
+            GainFilter::All => geometry
+                .devices()
+                .par_bridge()
+                .map(|dev| (dev.idx(), dev.iter().map(f(dev)).collect()))
+                .collect(),
+            GainFilter::Filter(filter) => geometry
+                .devices()
+                // .par_bridge()
                 .filter_map(|dev| {
                     filter.get(&dev.idx()).map(|filter| {
                         let ft = f(dev);
@@ -120,14 +162,17 @@ mod tests {
     use crate::{derive::*, geometry::tests::create_geometry};
 
     #[derive(Gain, Clone, Copy, PartialEq, Debug)]
-    pub struct TestGain<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + 'static> {
+    pub struct TestGain<
+        FT: Fn(&Transducer) -> Drive + 'static,
+        F: Fn(&Device) -> FT + Sync + 'static,
+    > {
         pub f: F,
     }
 
     impl
         TestGain<
             Box<dyn Fn(&Transducer) -> Drive>,
-            Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive>>,
+            Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive> + Sync>,
         >
     {
         pub fn null() -> Self {
@@ -137,7 +182,7 @@ mod tests {
         }
     }
 
-    impl<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + 'static> Gain
+    impl<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + Sync + 'static> Gain
         for TestGain<FT, F>
     {
         fn calc(

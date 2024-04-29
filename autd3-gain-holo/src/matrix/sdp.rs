@@ -205,7 +205,7 @@ impl<B: LinAlgBackend> Gain for SDP<B> {
 #[cfg(test)]
 mod tests {
     use super::{super::super::NalgebraBackend, super::super::Pascal, *};
-    use autd3_driver::{autd3_device::AUTD3, datagram::Datagram, geometry::IntoDevice};
+    use autd3_driver::{autd3_device::AUTD3, geometry::IntoDevice};
 
     #[test]
     fn test_sdp_all() {
@@ -227,8 +227,12 @@ mod tests {
             .foci()
             .all(|(&p, &a)| p == Vector3::new(10., 10., 100.) && a == 5e3 * Pascal));
 
-        let _ = g.calc(&geometry, GainFilter::All);
-        let _ = g.operation();
+        assert_eq!(
+            g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
+                .calc(&geometry, GainFilter::All)
+                .map(|res| res[&0].iter().filter(|&&d| d != Drive::null()).count()),
+            Ok(geometry.num_transducers()),
+        );
     }
 
     #[test]
