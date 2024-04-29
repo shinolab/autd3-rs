@@ -27,6 +27,9 @@ test-utilities = ["assert_approx_eq", "bitvec"]
 bench-utilities = ["criterion"]
 async-trait = ["autd3-driver/async-trait"]
 
+[lib]
+bench = false
+
 [[bench]]
 name = "holo"
 path = "benches/holo.rs"
