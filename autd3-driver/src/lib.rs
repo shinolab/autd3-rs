@@ -1,5 +1,3 @@
-#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
-
 pub mod acoustics;
 pub mod autd3_device;
 pub mod datagram;
