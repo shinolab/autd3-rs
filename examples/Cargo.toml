@@ -40,11 +40,6 @@ name = "lightweight_server"
 path = "src/lightweight_server.rs"
 required-features = ["lightweight-server"]
 
-[[bin]]
-name = "firmware_test"
-path = "src/firmware_test.rs"
-required-features = ["soem"]
-
 [dependencies]
 anyhow = { workspace = true }
 autd3 = { path = "../autd3" }
