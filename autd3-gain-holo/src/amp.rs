@@ -89,5 +89,7 @@ mod tests {
 
         assert_approx_eq::assert_approx_eq!((2. * amp).as_pascal(), 2. * 23.77, 1e-3);
         assert_approx_eq::assert_approx_eq!((amp * 2.).as_pascal(), 2. * 23.77, 1e-3);
+
+        assert_approx_eq::assert_approx_eq!((amp / 2.).as_pascal(), 23.77 / 2., 1e-3);
     }
 }
