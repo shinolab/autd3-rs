@@ -5,7 +5,7 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3::modulation::Square<autd3::modulation::square::NearestFrequency> {
+impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::NearestFrequency> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
@@ -29,7 +29,7 @@ impl ToMessage for autd3::modulation::Square<autd3::modulation::square::NearestF
 
 impl ToMessage
     for autd3_driver::datagram::DatagramWithSegment<
-        autd3::modulation::Square<autd3::modulation::square::NearestFrequency>,
+        autd3::modulation::Square<autd3::modulation::sampling_mode::NearestFrequency>,
     >
 {
     type Message = DatagramLightweight;
@@ -54,7 +54,7 @@ impl ToMessage
 }
 
 impl FromMessage<SquareNearest>
-    for autd3::modulation::Square<autd3::modulation::square::NearestFrequency>
+    for autd3::modulation::Square<autd3::modulation::sampling_mode::NearestFrequency>
 {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &SquareNearest) -> Option<Self> {

@@ -49,7 +49,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
             }
             Some(modulation::Modulation::SineNearest(msg)) => {
                 autd.send(
-                    autd3::prelude::Sine::<autd3::modulation::sine::NearestFrequency>::from_msg(msg)
+                    autd3::prelude::Sine::<autd3::modulation::sampling_mode::NearestFrequency>::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
                             autd3_driver::firmware::fpga::Segment::from(
@@ -67,7 +67,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
             }
             Some(modulation::Modulation::SineExact(msg)) => {
                 autd.send(
-                    autd3::prelude::Sine::<autd3::modulation::sine::ExactFrequency>::from_msg(msg)
+                    autd3::prelude::Sine::<autd3::modulation::sampling_mode::ExactFrequency>::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
                             autd3_driver::firmware::fpga::Segment::from(
@@ -85,7 +85,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
             }
             Some(modulation::Modulation::SquareNearest(msg)) => {
                 autd.send(
-                    autd3::prelude::Square::<autd3::modulation::square::NearestFrequency>::from_msg(
+                    autd3::prelude::Square::<autd3::modulation::sampling_mode::NearestFrequency>::from_msg(
                         msg,
                     )
                     .ok_or(AUTDProtoBufError::DataParseError)?
@@ -102,7 +102,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
             }
             Some(modulation::Modulation::SquareExact(msg)) => {
                 autd.send(
-                    autd3::prelude::Square::<autd3::modulation::square::ExactFrequency>::from_msg(
+                    autd3::prelude::Square::<autd3::modulation::sampling_mode::ExactFrequency>::from_msg(
                         msg,
                     )
                     .ok_or(AUTDProtoBufError::DataParseError)?

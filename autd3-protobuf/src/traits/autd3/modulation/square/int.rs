@@ -5,7 +5,7 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3::modulation::Square<autd3::modulation::square::ExactFrequency> {
+impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFrequency> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
@@ -29,7 +29,7 @@ impl ToMessage for autd3::modulation::Square<autd3::modulation::square::ExactFre
 
 impl ToMessage
     for autd3_driver::datagram::DatagramWithSegment<
-        autd3::modulation::Square<autd3::modulation::square::ExactFrequency>,
+        autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFrequency>,
     >
 {
     type Message = DatagramLightweight;
@@ -54,7 +54,7 @@ impl ToMessage
 }
 
 impl FromMessage<SquareExact>
-    for autd3::modulation::Square<autd3::modulation::square::ExactFrequency>
+    for autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFrequency>
 {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &SquareExact) -> Option<Self> {
