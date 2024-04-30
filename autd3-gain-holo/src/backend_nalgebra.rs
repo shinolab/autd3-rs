@@ -11,9 +11,6 @@ use autd3_driver::{
 
 use crate::{error::HoloError, LinAlgBackend, MatrixX, MatrixXc, VectorX, VectorXc};
 
-#[cfg(feature = "parallel")]
-use rayon::prelude::*;
-
 /// Backend using nalgebra
 pub struct NalgebraBackend<D: Directivity> {
     _phantom: std::marker::PhantomData<D>,
@@ -31,7 +28,6 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         }))
     }
 
-    #[cfg(not(feature = "parallel"))]
     fn generate_propagation_matrix(
         &self,
         geometry: &Geometry,
@@ -74,62 +70,6 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
                 ))
             }
         }
-    }
-
-    #[cfg(feature = "parallel")]
-    fn generate_propagation_matrix(
-        &self,
-        geometry: &Geometry,
-        foci: &[autd3_driver::geometry::Vector3],
-        filter: &GainFilter,
-    ) -> Result<Self::MatrixXc, HoloError> {
-        use std::collections::HashMap;
-        let v = match filter {
-            GainFilter::All => geometry
-                .devices()
-                .par_bridge()
-                .map(|dev| {
-                    (
-                        dev.idx(),
-                        dev.iter()
-                            .flat_map(move |tr| {
-                                foci.iter().map(move |fp| {
-                                    propagate::<D>(tr, dev.attenuation, dev.sound_speed, fp)
-                                })
-                            })
-                            .collect(),
-                    )
-                })
-                .collect::<HashMap<_, Vec<_>>>(),
-            GainFilter::Filter(filter) => geometry
-                .devices()
-                .par_bridge()
-                .map(|dev| {
-                    (
-                        dev.idx(),
-                        dev.iter()
-                            .filter_map(move |tr| {
-                                filter.get(&dev.idx()).and_then(|filter| {
-                                    if filter[tr.idx()] {
-                                        Some(foci.iter().map(move |fp| {
-                                            propagate::<D>(tr, dev.attenuation, dev.sound_speed, fp)
-                                        }))
-                                    } else {
-                                        None
-                                    }
-                                })
-                            })
-                            .flatten()
-                            .collect(),
-                    )
-                })
-                .collect::<HashMap<_, Vec<_>>>(),
-        };
-        Ok(MatrixXc::from_iterator(
-            foci.len(),
-            v.values().map(|v| v.len()).sum::<usize>() / foci.len(),
-            (0..v.len()).flat_map(|i| v[&i].iter().cloned()),
-        ))
     }
 
     fn to_host_cv(&self, v: Self::VectorXc) -> Result<VectorXc, HoloError> {
@@ -318,32 +258,6 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         Ok(v.clone())
     }
 
-    #[cfg(feature = "parallel")]
-    fn gen_back_prop(
-        &self,
-        m: usize,
-        n: usize,
-        transfer: &Self::MatrixXc,
-    ) -> Result<Self::MatrixXc, HoloError> {
-        Ok(MatrixXc::from_vec(
-            m,
-            n,
-            (0..n)
-                .into_par_iter()
-                .flat_map_iter(|i| {
-                    let x = 1.0
-                        / transfer
-                            .rows(i, 1)
-                            .iter()
-                            .map(|x| x.norm_sqr())
-                            .sum::<f64>();
-                    (0..m).map(move |j| transfer[(i, j)].conj() * x)
-                })
-                .collect::<Vec<_>>(),
-        ))
-    }
-
-    #[cfg(not(feature = "parallel"))]
     fn gen_back_prop(
         &self,
         m: usize,

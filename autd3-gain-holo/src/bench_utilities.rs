@@ -1,6 +1,7 @@
 use criterion::{black_box, AxisScale, BenchmarkId, Criterion, PlotConfiguration};
 
 use autd3_driver::{
+    acoustics::directivity::Sphere,
     autd3_device::AUTD3,
     datagram::{Gain, GainFilter},
     defined::PI,
@@ -32,7 +33,7 @@ pub fn gen_foci(n: usize, num_dev: usize) -> impl Iterator<Item = (Vector3, Ampl
     })
 }
 
-pub fn sdp_over_foci<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criterion) {
+pub fn sdp_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut Criterion) {
     let mut group = c.benchmark_group(format!("autd3-gain-holo/sdp_with_{}_devices", N));
     group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
 
@@ -56,7 +57,7 @@ pub fn sdp_over_foci<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criteri
     group.finish();
 }
 
-pub fn naive_over_foci<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criterion) {
+pub fn naive_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut Criterion) {
     let mut group = c.benchmark_group(format!("autd3-gain-holo/naive_with_{}_devices", N));
     group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
 
@@ -80,7 +81,7 @@ pub fn naive_over_foci<B: LinAlgBackend + 'static, const N: usize>(c: &mut Crite
     group.finish();
 }
 
-pub fn gs_over_foci<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criterion) {
+pub fn gs_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut Criterion) {
     let mut group = c.benchmark_group(format!("autd3-gain-holo/gs_with_{}_devices", N));
     group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
 
@@ -104,7 +105,7 @@ pub fn gs_over_foci<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criterio
     group.finish();
 }
 
-pub fn gspat_over_foci<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criterion) {
+pub fn gspat_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut Criterion) {
     let mut group = c.benchmark_group(format!("autd3-gain-holo/gspat_with_{}_devices", N));
     group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
 
@@ -128,7 +129,7 @@ pub fn gspat_over_foci<B: LinAlgBackend + 'static, const N: usize>(c: &mut Crite
     group.finish();
 }
 
-pub fn lm_over_foci<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criterion) {
+pub fn lm_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut Criterion) {
     let mut group = c.benchmark_group(format!("autd3-gain-holo/lm_with_{}_devices", N));
     group
         .sample_size(10)
@@ -154,7 +155,7 @@ pub fn lm_over_foci<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criterio
     group.finish();
 }
 
-pub fn greedy_over_foci<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criterion) {
+pub fn greedy_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut Criterion) {
     let mut group = c.benchmark_group(format!("autd3-gain-holo/greedy_with_{}_devices", N));
     group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
 
@@ -166,7 +167,7 @@ pub fn greedy_over_foci<B: LinAlgBackend + 'static, const N: usize>(c: &mut Crit
                 &generate_geometry(N),
                 |b, geometry| {
                     b.iter(|| {
-                        Greedy::new()
+                        Greedy::default()
                             .add_foci_from_iter(gen_foci(size, N))
                             .calc(geometry, GainFilter::All)
                             .unwrap();
@@ -177,7 +178,7 @@ pub fn greedy_over_foci<B: LinAlgBackend + 'static, const N: usize>(c: &mut Crit
     group.finish();
 }
 
-pub fn sdp_over_devices<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criterion) {
+pub fn sdp_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut Criterion) {
     let mut group = c.benchmark_group(format!("autd3-gain-holo/sdp_with_{}_foci", N));
     group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
 
@@ -199,7 +200,7 @@ pub fn sdp_over_devices<B: LinAlgBackend + 'static, const N: usize>(c: &mut Crit
     group.finish();
 }
 
-pub fn naive_over_devices<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criterion) {
+pub fn naive_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut Criterion) {
     let mut group = c.benchmark_group(format!("autd3-gain-holo/naive_with_{}_foci", N));
     group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
 
@@ -221,7 +222,7 @@ pub fn naive_over_devices<B: LinAlgBackend + 'static, const N: usize>(c: &mut Cr
     group.finish();
 }
 
-pub fn gs_over_devices<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criterion) {
+pub fn gs_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut Criterion) {
     let mut group = c.benchmark_group(format!("autd3-gain-holo/gs_with_{}_foci", N));
     group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
 
@@ -243,7 +244,7 @@ pub fn gs_over_devices<B: LinAlgBackend + 'static, const N: usize>(c: &mut Crite
     group.finish();
 }
 
-pub fn gspat_over_devices<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criterion) {
+pub fn gspat_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut Criterion) {
     let mut group = c.benchmark_group(format!("autd3-gain-holo/gspat_with_{}_foci", N));
     group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
 
@@ -265,7 +266,7 @@ pub fn gspat_over_devices<B: LinAlgBackend + 'static, const N: usize>(c: &mut Cr
     group.finish();
 }
 
-pub fn lm_over_devices<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criterion) {
+pub fn lm_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut Criterion) {
     let mut group = c.benchmark_group(format!("autd3-gain-holo/lm_with_{}_foci", N));
     group
         .sample_size(10)
@@ -289,7 +290,7 @@ pub fn lm_over_devices<B: LinAlgBackend + 'static, const N: usize>(c: &mut Crite
     group.finish();
 }
 
-pub fn greedy_over_devices<B: LinAlgBackend + 'static, const N: usize>(c: &mut Criterion) {
+pub fn greedy_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut Criterion) {
     let mut group = c.benchmark_group(format!("autd3-gain-holo/greedy_with_{}_foci", N));
     group.plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic));
 
@@ -299,7 +300,7 @@ pub fn greedy_over_devices<B: LinAlgBackend + 'static, const N: usize>(c: &mut C
             &generate_geometry(size * size),
             |b, geometry| {
                 b.iter(|| {
-                    Greedy::new()
+                    Greedy::default()
                         .add_foci_from_iter(gen_foci(N, size * size))
                         .calc(geometry, GainFilter::All)
                         .unwrap();

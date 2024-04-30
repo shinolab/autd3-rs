@@ -18,11 +18,9 @@ rand = { workspace = true }
 thiserror = { workspace = true }
 criterion = { workspace = true, features = ["html_reports"], optional = true }
 bitvec = { workspace = true, optional = true }
-rayon = { workspace = true, optional = true }
 
 [features]
-default = ["parallel"]
-parallel = ["rayon", "autd3-driver/parallel"]
+default = []
 test-utilities = ["assert_approx_eq", "bitvec"]
 bench-utilities = ["criterion"]
 async-trait = ["autd3-driver/async-trait"]
