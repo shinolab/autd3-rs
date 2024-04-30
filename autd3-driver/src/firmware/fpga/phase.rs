@@ -1,4 +1,6 @@
-use crate::defined::PI;
+use nalgebra::ComplexField;
+
+use crate::defined::{Complex, PI};
 
 pub struct Rad;
 
@@ -31,6 +33,18 @@ impl Phase {
 impl From<u8> for Phase {
     fn from(v: u8) -> Self {
         Self::new(v)
+    }
+}
+
+impl From<f64> for Phase {
+    fn from(v: f64) -> Self {
+        Self::from_rad(v)
+    }
+}
+
+impl From<Complex> for Phase {
+    fn from(v: Complex) -> Self {
+        Self::from_rad(v.argument())
     }
 }
 

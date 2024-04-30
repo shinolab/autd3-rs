@@ -1,12 +1,11 @@
 use std::{collections::HashMap, sync::Arc};
 
 use crate::{
-    constraint::EmissionConstraint, impl_holo, Amplitude, Complex, HoloError, LinAlgBackend, Trans,
+    constraint::EmissionConstraint, helper::generate_result, impl_holo, Amplitude, Complex,
+    HoloError, LinAlgBackend, Trans,
 };
 
-use autd3_driver::{
-    acoustics::directivity::Directivity, defined::PI, derive::*, geometry::Vector3,
-};
+use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vector3};
 
 /// Gain to produce multiple foci with Levenberg-Marquardt algorithm
 ///
@@ -259,70 +258,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for LM<D, B> {
         }
 
         let x = self.backend.to_host_v(x)?;
-
-        match filter {
-            GainFilter::All => {
-                let num_transducers = geometry
-                    .iter()
-                    .scan(0, |state, dev| {
-                        let r = *state;
-                        *state += dev.num_transducers();
-                        Some(r)
-                    })
-                    .collect::<Vec<_>>();
-                Ok(geometry
-                    .devices()
-                    .map(|dev| {
-                        (
-                            dev.idx(),
-                            dev.iter()
-                                .zip(x.iter().skip(num_transducers[dev.idx()]))
-                                .map(|(_, x)| {
-                                    let phase = Phase::from_rad(x.rem_euclid(2.0 * PI));
-                                    let intensity = self.constraint.convert(1.0, 1.0);
-                                    Drive::new(phase, intensity)
-                                })
-                                .collect(),
-                        )
-                    })
-                    .collect())
-            }
-            GainFilter::Filter(filter) => {
-                let num_transducers = geometry
-                    .iter()
-                    .scan(0, |state, dev| {
-                        let r = *state;
-                        *state += filter
-                            .get(&dev.idx())
-                            .map(|filter| dev.iter().filter(|tr| filter[tr.idx()]).count())
-                            .unwrap_or(0);
-                        Some(r)
-                    })
-                    .collect::<Vec<_>>();
-                Ok(geometry
-                    .devices()
-                    .map(|dev| {
-                        filter.get(&dev.idx()).map_or_else(
-                            || (dev.idx(), dev.iter().map(|_| Drive::null()).collect()),
-                            |filter| {
-                                (
-                                    dev.idx(),
-                                    dev.iter()
-                                        .filter(|tr| filter[tr.idx()])
-                                        .zip(x.iter().skip(num_transducers[dev.idx()]))
-                                        .map(|(_, x)| {
-                                            let phase = Phase::from_rad(x.rem_euclid(2.0 * PI));
-                                            let intensity = self.constraint.convert(1.0, 1.0);
-                                            Drive::new(phase, intensity)
-                                        })
-                                        .collect(),
-                                )
-                            },
-                        )
-                    })
-                    .collect())
-            }
-        }
+        generate_result(geometry, x, 1.0, &self.constraint, filter)
     }
 }
 
