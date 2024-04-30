@@ -5,7 +5,7 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3::modulation::Sine<autd3::modulation::sine::ExactFrequency> {
+impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFrequency> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
@@ -29,7 +29,7 @@ impl ToMessage for autd3::modulation::Sine<autd3::modulation::sine::ExactFrequen
 
 impl ToMessage
     for autd3_driver::datagram::DatagramWithSegment<
-        autd3::modulation::Sine<autd3::modulation::sine::ExactFrequency>,
+        autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFrequency>,
     >
 {
     type Message = DatagramLightweight;
@@ -53,7 +53,9 @@ impl ToMessage
     }
 }
 
-impl FromMessage<SineExact> for autd3::modulation::Sine<autd3::modulation::sine::ExactFrequency> {
+impl FromMessage<SineExact>
+    for autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFrequency>
+{
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &SineExact) -> Option<Self> {
         Some(

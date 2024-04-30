@@ -6,7 +6,12 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3_gain_holo::GSPAT<NalgebraBackend> {
+impl ToMessage
+    for autd3_gain_holo::GSPAT<
+        autd3_driver::acoustics::directivity::Sphere,
+        NalgebraBackend<autd3_driver::acoustics::directivity::Sphere>,
+    >
+{
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
@@ -27,7 +32,12 @@ impl ToMessage for autd3_gain_holo::GSPAT<NalgebraBackend> {
 }
 
 impl ToMessage
-    for autd3_driver::datagram::DatagramWithSegment<autd3_gain_holo::GSPAT<NalgebraBackend>>
+    for autd3_driver::datagram::DatagramWithSegment<
+        autd3_gain_holo::GSPAT<
+            autd3_driver::acoustics::directivity::Sphere,
+            NalgebraBackend<autd3_driver::acoustics::directivity::Sphere>,
+        >,
+    >
 {
     type Message = DatagramLightweight;
 
@@ -48,7 +58,12 @@ impl ToMessage
     }
 }
 
-impl FromMessage<Gspat> for autd3_gain_holo::GSPAT<NalgebraBackend> {
+impl FromMessage<Gspat>
+    for autd3_gain_holo::GSPAT<
+        autd3_driver::acoustics::directivity::Sphere,
+        NalgebraBackend<autd3_driver::acoustics::directivity::Sphere>,
+    >
+{
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &Gspat) -> Option<Self> {
         Some(

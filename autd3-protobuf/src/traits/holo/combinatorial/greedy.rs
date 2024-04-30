@@ -4,7 +4,7 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3_gain_holo::Greedy {
+impl ToMessage for autd3_gain_holo::Greedy<autd3_driver::acoustics::directivity::Sphere> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
@@ -24,7 +24,11 @@ impl ToMessage for autd3_gain_holo::Greedy {
     }
 }
 
-impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3_gain_holo::Greedy> {
+impl ToMessage
+    for autd3_driver::datagram::DatagramWithSegment<
+        autd3_gain_holo::Greedy<autd3_driver::acoustics::directivity::Sphere>,
+    >
+{
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
@@ -44,7 +48,7 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3_gain_holo::
     }
 }
 
-impl FromMessage<Greedy> for autd3_gain_holo::Greedy {
+impl FromMessage<Greedy> for autd3_gain_holo::Greedy<autd3_driver::acoustics::directivity::Sphere> {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &Greedy) -> Option<Self> {
         Some(
