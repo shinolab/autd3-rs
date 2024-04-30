@@ -198,29 +198,37 @@ mod tests {
 
     const NUM_TRANSDUCERS: usize = 2;
 
-    #[rstest::fixture]
-    fn geometry() -> Geometry {
-        create_geometry(2, NUM_TRANSDUCERS)
-    }
-
     #[rstest::rstest]
     #[test]
-    #[case(
-        [true, true],
+    #[case::serial(
         [
             (0, vec![Drive::new(Phase::new(0x01), EmitIntensity::new(0x01)); NUM_TRANSDUCERS]),
             (1, vec![Drive::new(Phase::new(0x02), EmitIntensity::new(0x02)); NUM_TRANSDUCERS])
-        ].into_iter().collect())]
-    #[case::enabled(
-        [true, false],
+        ].into_iter().collect(),
+        vec![true; 2],
+        2)]
+    #[case::parallel(
         [
             (0, vec![Drive::new(Phase::new(0x01), EmitIntensity::new(0x01)); NUM_TRANSDUCERS]),
-        ].into_iter().collect())]
+            (1, vec![Drive::new(Phase::new(0x02), EmitIntensity::new(0x02)); NUM_TRANSDUCERS]),
+            (2, vec![Drive::new(Phase::new(0x03), EmitIntensity::new(0x03)); NUM_TRANSDUCERS]),
+            (3, vec![Drive::new(Phase::new(0x04), EmitIntensity::new(0x04)); NUM_TRANSDUCERS]),
+            (4, vec![Drive::new(Phase::new(0x05), EmitIntensity::new(0x05)); NUM_TRANSDUCERS]),
+        ].into_iter().collect(),
+        vec![true; 5],
+        5)]
+    #[case::enabled(
+        [
+            (0, vec![Drive::new(Phase::new(0x01), EmitIntensity::new(0x01)); NUM_TRANSDUCERS]),
+        ].into_iter().collect(),
+        vec![true, false],
+        2)]
     fn test_transform_all(
-        #[case] enabled: [bool; 2],
         #[case] expect: HashMap<usize, Vec<Drive>>,
-        mut geometry: Geometry,
+        #[case] enabled: Vec<bool>,
+        #[case] n: usize,
     ) {
+        let mut geometry = create_geometry(n, NUM_TRANSDUCERS);
         geometry
             .iter_mut()
             .zip(enabled.iter())
@@ -245,27 +253,49 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(
-        [true, true],
         [
             (0, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x01), EmitIntensity::new(0x01))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
             (1, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x02), EmitIntensity::new(0x02))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect())
-        ].into_iter().collect(), [
+        ].into_iter().collect(), 
+        vec![true; 2],
+        [
             (0, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
             (1, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
-        ].iter().cloned().collect())]
+        ].iter().cloned().collect(),
+        2)]
+    #[case::parallel(
+        [
+            (0, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x01), EmitIntensity::new(0x01))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
+            (1, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x02), EmitIntensity::new(0x02))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
+            (2, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x03), EmitIntensity::new(0x03))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
+            (3, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x04), EmitIntensity::new(0x04))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
+            (4, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x05), EmitIntensity::new(0x05))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
+        ].into_iter().collect(), 
+        vec![true; 5],
+        [
+            (0, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
+            (1, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
+            (2, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
+            (3, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
+            (4, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
+        ].iter().cloned().collect(),
+        5)]
     #[case::enabled(
-        [false, true],
         [
             (1, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x02), EmitIntensity::new(0x02))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect())
-        ].into_iter().collect(),[
+        ].into_iter().collect(),
+        vec![false, true],
+        [
             (1, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
-        ].iter().cloned().collect())]
+        ].iter().cloned().collect(),
+        2)]
     fn test_transform_filtered(
-        #[case] enabled: [bool; 2],
         #[case] expect: HashMap<usize, Vec<Drive>>,
+        #[case] enabled: Vec<bool>,
         #[case] filter: HashMap<usize, BitVec<usize, Lsb0>>,
-        mut geometry: Geometry,
+        #[case] n: usize,
     ) {
+        let mut geometry = create_geometry(n, NUM_TRANSDUCERS);
         geometry
             .iter_mut()
             .zip(enabled.iter())
