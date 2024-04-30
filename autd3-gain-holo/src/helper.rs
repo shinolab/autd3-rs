@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    datagram::GainFilter, defined::PI, derive::Phase, error::AUTDInternalError,
-    firmware::fpga::Drive, geometry::Geometry,
+    datagram::GainFilter, derive::Phase, error::AUTDInternalError, firmware::fpga::Drive,
+    geometry::Geometry,
 };
 use nalgebra::ComplexField;
 
-use crate::{EmissionConstraint, VectorXc};
+use crate::EmissionConstraint;
 
 #[doc(hidden)]
 #[macro_export]
@@ -115,14 +115,37 @@ macro_rules! impl_holo {
     };
 }
 
-pub fn generate_result(
+pub(crate) trait IntoIntensity {
+    fn into_intensity(self) -> f64;
+}
+
+impl IntoIntensity for f64 {
+    fn into_intensity(self) -> f64 {
+        1.
+    }
+}
+
+impl IntoIntensity for crate::Complex {
+    fn into_intensity(self) -> f64 {
+        self.abs()
+    }
+}
+
+pub(crate) fn generate_result<T>(
     geometry: &Geometry,
-    q: VectorXc,
+    q: nalgebra::Matrix<
+        T,
+        nalgebra::Dyn,
+        nalgebra::U1,
+        nalgebra::VecStorage<T, nalgebra::Dyn, nalgebra::U1>,
+    >,
+    max_coefficient: f64,
     constraint: &EmissionConstraint,
     filter: GainFilter,
-) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-    let max_coefficient = q.camax().abs();
-
+) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError>
+where
+    T: Into<Phase> + IntoIntensity + Copy,
+{
     match filter {
         GainFilter::All => {
             let num_transducers = geometry
@@ -140,9 +163,10 @@ pub fn generate_result(
                         dev.idx(),
                         dev.iter()
                             .zip(q.iter().skip(num_transducers[dev.idx()]))
-                            .map(|(_, q)| {
-                                let phase = Phase::from_rad(q.argument() + PI);
-                                let intensity = constraint.convert(q.abs(), max_coefficient);
+                            .map(|(_, &q)| {
+                                let phase = q.into();
+                                let intensity =
+                                    constraint.convert(q.into_intensity(), max_coefficient);
                                 Drive::new(phase, intensity)
                             })
                             .collect(),
@@ -173,10 +197,10 @@ pub fn generate_result(
                                 dev.iter()
                                     .filter(|tr| filter[tr.idx()])
                                     .zip(q.iter().skip(num_transducers[dev.idx()]))
-                                    .map(|(_, q)| {
-                                        let phase = Phase::from_rad(q.argument() + PI);
+                                    .map(|(_, &q)| {
+                                        let phase = q.into();
                                         let intensity =
-                                            constraint.convert(q.abs(), max_coefficient);
+                                            constraint.convert(q.into_intensity(), max_coefficient);
                                         Drive::new(phase, intensity)
                                     })
                                     .collect(),
