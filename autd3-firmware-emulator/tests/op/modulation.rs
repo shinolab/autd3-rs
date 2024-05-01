@@ -7,7 +7,7 @@ use autd3_driver::{
     firmware::{
         cpu::TxDatagram,
         fpga::{
-            EmitIntensity, TransitionMode, SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN,
+            TransitionMode, SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN,
             SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
         },
         operation::{ModulationChangeSegmentOp, ModulationOp},
@@ -30,7 +30,7 @@ fn send_mod() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     {
-        let m: Vec<_> = (0..32768).map(|_| EmitIntensity::new(rng.gen())).collect();
+        let m: Vec<_> = (0..32768).map(|_| rng.gen()).collect();
         let freq_div = rng.gen_range(
             SAMPLING_FREQ_DIV_MIN
                 * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
@@ -60,7 +60,7 @@ fn send_mod() -> anyhow::Result<()> {
     }
 
     {
-        let m: Vec<_> = (0..2).map(|_| EmitIntensity::new(rng.gen())).collect();
+        let m: Vec<_> = (0..2).map(|_| rng.gen()).collect();
         let freq_div = rng.gen_range(
             SAMPLING_FREQ_DIV_MIN
                 * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
@@ -93,7 +93,7 @@ fn send_mod() -> anyhow::Result<()> {
     {
         let transition_mode = TransitionMode::GPIO;
         let mut op = ModulationOp::new(
-            (0..2).map(|_| EmitIntensity::MAX).collect(),
+            (0..2).map(|_| u8::MAX).collect(),
             SAMPLING_FREQ_DIV_MAX,
             LoopBehavior::infinite(),
             Segment::S0,
@@ -106,7 +106,7 @@ fn send_mod() -> anyhow::Result<()> {
     {
         let transition_mode = TransitionMode::Ext;
         let mut op = ModulationOp::new(
-            (0..2).map(|_| EmitIntensity::MAX).collect(),
+            (0..2).map(|_| u8::MAX).collect(),
             SAMPLING_FREQ_DIV_MAX,
             LoopBehavior::infinite(),
             Segment::S0,
@@ -126,7 +126,7 @@ fn mod_freq_div_too_small() {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let mut op = ModulationOp::new(
-        (0..2).map(|_| EmitIntensity::MAX).collect(),
+        (0..2).map(|_| u8::MAX).collect(),
         SAMPLING_FREQ_DIV_MIN,
         LoopBehavior::infinite(),
         Segment::S0,
@@ -155,7 +155,7 @@ fn test_miss_transition_time(
 
     let transition_mode = TransitionMode::SysTime(DcSysTime::from_utc(transition_time).unwrap());
     let mut op = ModulationOp::new(
-        (0..2).map(|_| EmitIntensity::MAX).collect(),
+        (0..2).map(|_| u8::MAX).collect(),
         SAMPLING_FREQ_DIV_MAX,
         LoopBehavior::once(),
         Segment::S1,

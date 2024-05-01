@@ -1,8 +1,6 @@
 use autd3_driver::{
     datagram::*,
-    derive::{
-        EmitIntensity, LoopBehavior, ModulationOp, Segment, TransitionMode, SAMPLING_FREQ_DIV_MIN,
-    },
+    derive::{LoopBehavior, ModulationOp, Segment, TransitionMode, SAMPLING_FREQ_DIV_MIN},
     error::AUTDInternalError,
     firmware::{cpu::TxDatagram, operation::FocusSTMOp},
     geometry::Vector3,
@@ -83,7 +81,7 @@ fn silencer_completetion_steps_too_large_mod(
     // Send modulation
     {
         let mut op = ModulationOp::new(
-            (0..2).map(|_| EmitIntensity::MAX).collect(),
+            (0..2).map(|_| u8::MAX).collect(),
             SAMPLING_FREQ_DIV_MIN,
             LoopBehavior::infinite(),
             Segment::S0,

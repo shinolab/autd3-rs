@@ -106,7 +106,7 @@ impl<S: SamplingMode> std::ops::Add<Sine<S>> for Sine<S> {
 }
 
 impl<S: SamplingMode> Modulation for Fourier<S> {
-    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
         let buffers = self
             .components
             .iter()
@@ -119,12 +119,12 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
                 |acc, x| {
                     acc.iter()
                         .zip(x.iter().cycle())
-                        .map(|(a, &b)| a + b.value() as usize)
+                        .map(|(a, &b)| a + b as usize)
                         .collect::<Vec<_>>()
                 },
             )
             .iter()
-            .map(|x| ((x / self.components.len()) as u8).into())
+            .map(|x| (x / self.components.len()) as u8)
             .collect::<Vec<_>>())
     }
 }
@@ -167,12 +167,12 @@ mod tests {
 
         (0..buf.len()).for_each(|i| {
             assert_eq!(
-                buf[i].value(),
-                ((f0_buf[i % f0_buf.len()].value() as usize
-                    + f1_buf[i % f1_buf.len()].value() as usize
-                    + f2_buf[i % f2_buf.len()].value() as usize
-                    + f3_buf[i % f3_buf.len()].value() as usize
-                    + f4_buf[i % f4_buf.len()].value() as usize)
+                buf[i],
+                ((f0_buf[i % f0_buf.len()] as usize
+                    + f1_buf[i % f1_buf.len()] as usize
+                    + f2_buf[i % f2_buf.len()] as usize
+                    + f3_buf[i % f3_buf.len()] as usize
+                    + f4_buf[i % f4_buf.len()] as usize)
                     / 5) as u8
             );
         });

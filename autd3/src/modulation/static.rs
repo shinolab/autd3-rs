@@ -4,7 +4,7 @@ use autd3_driver::derive::*;
 #[derive(Modulation, Clone, PartialEq, Debug, Builder)]
 pub struct Static {
     #[get]
-    intensity: EmitIntensity,
+    intensity: u8,
     #[no_change]
     config: SamplingConfiguration,
     loop_behavior: LoopBehavior,
@@ -14,7 +14,7 @@ impl Static {
     /// constructor
     pub const fn new() -> Self {
         Self {
-            intensity: EmitIntensity::MAX,
+            intensity: u8::MAX,
             config: SamplingConfiguration::DISABLE,
             loop_behavior: LoopBehavior::infinite(),
         }
@@ -24,9 +24,9 @@ impl Static {
     ///
     /// # Arguments
     ///
-    /// * `intensity` - [EmitIntensity]
+    /// * `intensity` - [u8]
     ///
-    pub fn with_intensity(intensity: impl Into<EmitIntensity>) -> Self {
+    pub fn with_intensity(intensity: impl Into<u8>) -> Self {
         Self {
             intensity: intensity.into(),
             config: SamplingConfiguration::DISABLE,
@@ -36,7 +36,7 @@ impl Static {
 }
 
 impl Modulation for Static {
-    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
         Ok(vec![self.intensity; 2])
     }
 }
@@ -54,9 +54,9 @@ mod tests {
     #[test]
     fn test_static_default() -> anyhow::Result<()> {
         let m = Static::default();
-        assert_eq!(EmitIntensity::MAX, m.intensity());
+        assert_eq!(u8::MAX, m.intensity());
         assert_eq!(SamplingConfiguration::DISABLE, m.sampling_config());
-        assert_eq!(vec![EmitIntensity::MAX, EmitIntensity::MAX], m.calc()?);
+        assert_eq!(vec![u8::MAX, u8::MAX], m.calc()?);
 
         Ok(())
     }
@@ -64,12 +64,9 @@ mod tests {
     #[test]
     fn test_static_with_intensity() -> anyhow::Result<()> {
         let m = Static::with_intensity(0x1F);
-        assert_eq!(EmitIntensity::new(0x1F), m.intensity());
+        assert_eq!(0x1F, m.intensity());
         assert_eq!(SamplingConfiguration::DISABLE, m.sampling_config());
-        assert_eq!(
-            vec![EmitIntensity::new(0x1F), EmitIntensity::new(0x1F)],
-            m.calc()?
-        );
+        assert_eq!(vec![0x1F, 0x1F], m.calc()?);
 
         Ok(())
     }

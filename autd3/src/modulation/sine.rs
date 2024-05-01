@@ -8,11 +8,11 @@ pub struct Sine<S: SamplingMode> {
     #[get]
     freq: f64,
     #[getset]
-    intensity: EmitIntensity,
+    intensity: u8,
     #[getset]
     phase: Phase,
     #[getset]
-    offset: EmitIntensity,
+    offset: u8,
     config: SamplingConfiguration,
     loop_behavior: LoopBehavior,
     __phantom: std::marker::PhantomData<S>,
@@ -26,9 +26,9 @@ impl Sine<ExactFrequency> {
     pub const fn with_freq_exact(freq: f64) -> Sine<ExactFrequency> {
         Sine {
             freq,
-            intensity: EmitIntensity::MAX,
+            intensity: u8::MAX,
             phase: Phase::new(0),
-            offset: EmitIntensity::new(127),
+            offset: 127,
             config: SamplingConfiguration::FREQ_4K_HZ,
             loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
@@ -38,9 +38,9 @@ impl Sine<ExactFrequency> {
     pub const fn with_freq_nearest(freq: f64) -> Sine<NearestFrequency> {
         Sine {
             freq,
-            intensity: EmitIntensity::MAX,
+            intensity: u8::MAX,
             phase: Phase::new(0),
-            offset: EmitIntensity::new(127),
+            offset: 127,
             config: SamplingConfiguration::FREQ_4K_HZ,
             loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
@@ -49,7 +49,7 @@ impl Sine<ExactFrequency> {
 }
 
 impl<S: SamplingMode> Modulation for Sine<S> {
-    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
         if self.freq < 0. {
             return Err(AUTDInternalError::ModulationError(format!(
                 "Frequency ({}Hz) must be positive",
@@ -66,11 +66,10 @@ impl<S: SamplingMode> Modulation for Sine<S> {
         let (n, rep) = S::validate(self.freq, self.config)?;
         Ok((0..n)
             .map(|i| {
-                (((self.intensity.value() as f64 / 2.
+                ((self.intensity as f64 / 2.
                     * (2.0 * PI * (rep * i) as f64 / n as f64 + self.phase.radian()).sin())
-                    + self.offset.value() as f64)
-                    .round() as u8)
-                    .into()
+                    + self.offset as f64)
+                    .round() as u8
             })
             .collect())
     }
@@ -123,15 +122,12 @@ mod tests {
     fn with_freq_exact(#[case] expect: Result<Vec<u8>, AUTDInternalError>, #[case] freq: f64) {
         let m = Sine::with_freq_exact(freq);
         assert_eq!(freq, m.freq());
-        assert_eq!(EmitIntensity::MAX, m.intensity());
-        assert_eq!(EmitIntensity::MAX / 2, m.offset());
+        assert_eq!(u8::MAX, m.intensity());
+        assert_eq!(u8::MAX / 2, m.offset());
         assert_eq!(Phase::new(0), m.phase());
         assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
 
-        assert_eq!(
-            expect.map(|v| v.into_iter().map(EmitIntensity::new).collect::<Vec<_>>()),
-            m.calc()
-        );
+        assert_eq!(expect, m.calc());
     }
 
     #[rstest::rstest]
@@ -158,14 +154,11 @@ mod tests {
     fn with_freq_nearest(#[case] expect: Result<Vec<u8>, AUTDInternalError>, #[case] freq: f64) {
         let m = Sine::with_freq_nearest(freq);
         assert_eq!(freq, m.freq());
-        assert_eq!(EmitIntensity::MAX, m.intensity());
-        assert_eq!(EmitIntensity::MAX / 2, m.offset());
+        assert_eq!(u8::MAX, m.intensity());
+        assert_eq!(u8::MAX / 2, m.offset());
         assert_eq!(Phase::new(0), m.phase());
         assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
-        assert_eq!(
-            expect.map(|v| v.into_iter().map(EmitIntensity::new).collect::<Vec<_>>()),
-            m.calc()
-        );
+        assert_eq!(expect, m.calc());
     }
 
     #[test]
@@ -181,12 +174,12 @@ mod tests {
     #[test]
     fn test_sine_with_param() {
         let m = Sine::new(100.)
-            .with_intensity(EmitIntensity::MAX / 2)
-            .with_offset(EmitIntensity::MAX / 4)
+            .with_intensity(u8::MAX / 2)
+            .with_offset(u8::MAX / 4)
             .with_phase(PI / 4.0 * Rad)
             .with_sampling_config(SamplingConfiguration::from_freq_nearest(10.1).unwrap());
-        assert_eq!(EmitIntensity::MAX / 2, m.intensity);
-        assert_eq!(EmitIntensity::MAX / 4, m.offset);
+        assert_eq!(u8::MAX / 2, m.intensity);
+        assert_eq!(u8::MAX / 4, m.offset);
         assert_eq!(PI / 4.0 * Rad, m.phase);
         assert_eq!(
             SamplingConfiguration::from_freq_nearest(10.1).unwrap(),

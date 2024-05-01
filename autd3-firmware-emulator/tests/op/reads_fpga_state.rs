@@ -1,6 +1,6 @@
 use autd3_driver::{
     datagram::*,
-    derive::{EmitIntensity, LoopBehavior, ModulationOp, Segment, TransitionMode},
+    derive::{LoopBehavior, ModulationOp, Segment, TransitionMode},
     firmware::{
         cpu::TxDatagram,
         fpga::{FPGAState, SAMPLING_FREQ_DIV_MAX},
@@ -53,7 +53,7 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
 
     {
         let mut op = ModulationOp::new(
-            (0..2).map(|_| EmitIntensity::MAX).collect(),
+            (0..2).map(|_| u8::MAX).collect(),
             SAMPLING_FREQ_DIV_MAX,
             LoopBehavior::infinite(),
             Segment::S1,

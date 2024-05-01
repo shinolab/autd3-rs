@@ -28,12 +28,12 @@ pub trait IntoRadiationPressure<M: Modulation> {
 }
 
 impl<M: Modulation> Modulation for RadiationPressure<M> {
-    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
         Ok(self
             .m
             .calc()?
-            .iter()
-            .map(|v| (((v.value() as f64 / 255.).sqrt() * 255.).round() as u8).into())
+            .into_iter()
+            .map(|v| ((v as f64 / 255.).sqrt() * 255.).round() as u8)
             .collect())
     }
 }
@@ -52,7 +52,7 @@ mod tests {
         assert_eq!(
             config,
             TestModulation {
-                buf: vec![EmitIntensity::MIN; 2],
+                buf: vec![u8::MIN; 2],
                 config,
                 loop_behavior: LoopBehavior::infinite(),
             }
@@ -69,11 +69,8 @@ mod tests {
         assert_eq!(
             Ok(buf
                 .iter()
-                .map(
-                    |x: &EmitIntensity| (((x.value() as f64 / 255.).sqrt() * 255.).round() as u8)
-                        .into()
-                )
-                .collect::<Vec<EmitIntensity>>()),
+                .map(|&x| (((x as f64 / 255.).sqrt() * 255.).round() as u8).into())
+                .collect::<Vec<u8>>()),
             TestModulation {
                 buf: buf.clone(),
                 config: SamplingConfiguration::FREQ_4K_HZ,

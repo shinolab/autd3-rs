@@ -40,15 +40,9 @@ impl Burst {
 }
 
 impl Modulation for Burst {
-    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
         Ok((0..4000)
-            .map(|i| {
-                if i == 3999 {
-                    EmitIntensity::MAX
-                } else {
-                    EmitIntensity::MIN
-                }
-            })
+            .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
             .collect())
     }
 }
