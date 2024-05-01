@@ -3,7 +3,7 @@ use crate::derive::*;
 /// Modulation to transform modulation data
 #[derive(Modulation)]
 #[no_modulation_transform]
-pub struct Transform<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> {
+pub struct Transform<M: Modulation, F: Fn(usize, u8) -> u8> {
     m: M,
     #[no_change]
     config: SamplingConfiguration,
@@ -11,7 +11,7 @@ pub struct Transform<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity
     loop_behavior: LoopBehavior,
 }
 
-impl<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> Transform<M, F> {
+impl<M: Modulation, F: Fn(usize, u8) -> u8> Transform<M, F> {
     #[doc(hidden)]
     pub fn new(m: M, f: F) -> Self {
         Self {
@@ -34,22 +34,22 @@ pub trait IntoTransform<M: Modulation> {
     ///
     /// ```
     /// # use autd3::prelude::*;
-    /// let m = Static::with_intensity(EmitIntensity::MAX);
-    /// assert_eq!(m.calc(), Ok(vec![EmitIntensity::MAX, EmitIntensity::MAX]));
+    /// let m = Static::with_intensity(u8::MAX);
+    /// assert_eq!(m.calc(), Ok(vec![u8::MAX, u8::MAX]));
     /// let m = m.with_transform(|i, x| match i {
     ///     0 => x / 2,
-    ///     _ => EmitIntensity::MIN,
+    ///     _ => u8::MIN,
     /// });
     /// assert_eq!(
     ///     m.calc(),
-    ///     Ok(vec![EmitIntensity::MAX / 2, EmitIntensity::MIN])
+    ///     Ok(vec![u8::MAX / 2, u8::MIN])
     /// );
     /// ```
-    fn with_transform<F: Fn(usize, EmitIntensity) -> EmitIntensity>(self, f: F) -> Transform<M, F>;
+    fn with_transform<F: Fn(usize, u8) -> u8>(self, f: F) -> Transform<M, F>;
 }
 
-impl<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> Modulation for Transform<M, F> {
-    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+impl<M: Modulation, F: Fn(usize, u8) -> u8> Modulation for Transform<M, F> {
+    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
         Ok(self
             .m
             .calc()?
@@ -74,7 +74,7 @@ mod tests {
         assert_eq!(
             config,
             TestModulation {
-                buf: vec![EmitIntensity::MIN; 2],
+                buf: vec![u8::MIN; 2],
                 config,
                 loop_behavior: LoopBehavior::infinite(),
             }

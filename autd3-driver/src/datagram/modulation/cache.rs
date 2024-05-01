@@ -12,7 +12,7 @@ use std::{
 #[no_modulation_transform]
 pub struct Cache<M: Modulation> {
     m: Rc<M>,
-    cache: Rc<RefCell<Vec<EmitIntensity>>>,
+    cache: Rc<RefCell<Vec<u8>>>,
     #[no_change]
     config: SamplingConfiguration,
     loop_behavior: LoopBehavior,
@@ -71,13 +71,13 @@ impl<M: Modulation> Cache<M> {
     /// # }
     ///
     /// ```
-    pub fn buffer(&self) -> Ref<'_, Vec<EmitIntensity>> {
+    pub fn buffer(&self) -> Ref<'_, Vec<u8>> {
         self.cache.borrow()
     }
 }
 
 impl<M: Modulation> Modulation for Cache<M> {
-    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
         if self.cache.borrow().is_empty() {
             *self.cache.borrow_mut() = self.m.calc()?;
         }
@@ -139,9 +139,9 @@ mod tests {
     }
 
     impl Modulation for TestCacheModulation {
-        fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+        fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
-            Ok(vec![EmitIntensity::new(0); 2])
+            Ok(vec![0; 2])
         }
     }
 

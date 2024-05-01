@@ -17,7 +17,7 @@ use crate::defined::DEFAULT_TIMEOUT;
 use crate::{
     error::AUTDInternalError,
     firmware::{
-        fpga::{EmitIntensity, LoopBehavior, SamplingConfiguration, Segment, TransitionMode},
+        fpga::{LoopBehavior, SamplingConfiguration, Segment, TransitionMode},
         operation::{ModulationOp, NullOp},
     },
 };
@@ -36,7 +36,7 @@ pub trait ModulationProperty {
 /// * The sampling rate is [crate::firmware::fpga::fpga_clk_freq()]/N, where N is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN].
 #[allow(clippy::len_without_is_empty)]
 pub trait Modulation: ModulationProperty {
-    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError>;
+    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError>;
     fn len(&self) -> Result<usize, AUTDInternalError> {
         self.calc().map(|v| v.len())
     }
@@ -54,7 +54,7 @@ impl ModulationProperty for Box<dyn Modulation> {
 }
 
 impl Modulation for Box<dyn Modulation> {
-    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
         self.as_ref().calc()
     }
 
@@ -98,13 +98,13 @@ mod tests {
 
     #[derive(Modulation, Clone, PartialEq, Debug)]
     pub struct TestModulation {
-        pub buf: Vec<EmitIntensity>,
+        pub buf: Vec<u8>,
         pub config: SamplingConfiguration,
         pub loop_behavior: LoopBehavior,
     }
 
     impl Modulation for TestModulation {
-        fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+        fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
             Ok(self.buf.clone())
         }
     }
@@ -149,7 +149,7 @@ mod tests {
             Ok(len),
             TestModulation {
                 config: SamplingConfiguration::FREQ_4K_HZ,
-                buf: vec![EmitIntensity::MIN; len],
+                buf: vec![u8::MIN; len],
                 loop_behavior: LoopBehavior::infinite(),
             }
             .len()

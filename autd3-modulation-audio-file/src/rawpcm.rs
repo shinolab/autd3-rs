@@ -48,7 +48,7 @@ impl RawPCM {
 }
 
 impl Modulation for RawPCM {
-    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
         Ok(wav_io::resample::linear(
             self.read_buf()?,
             1,
@@ -56,7 +56,7 @@ impl Modulation for RawPCM {
             self.sampling_config().freq() as u32,
         )
         .iter()
-        .map(|&d| EmitIntensity::new(d.round() as u8))
+        .map(|&d| d.round() as u8)
         .collect())
     }
 }
@@ -78,14 +78,7 @@ mod tests {
         let path = dir.path().join("tmp.dat");
         create_dat(&path, &[0xFF, 0x7F, 0x00])?;
         let m = RawPCM::new(&path, 4000);
-        assert_eq!(
-            m.calc().unwrap(),
-            vec![
-                EmitIntensity::new(0xFF),
-                EmitIntensity::new(0x7F),
-                EmitIntensity::new(0x00)
-            ]
-        );
+        assert_eq!(m.calc().unwrap(), vec![0xFF, 0x7F, 0x00]);
 
         let m = RawPCM::new("not_exists.dat", 4000);
         assert!(m.calc().is_err());

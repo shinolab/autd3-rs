@@ -74,7 +74,7 @@ impl Wav {
 
 impl Modulation for Wav {
     #[allow(clippy::unnecessary_cast)]
-    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
         let (raw_buffer, sample_rate) = self.read_buf()?;
         Ok(wav_io::resample::linear(
             raw_buffer,
@@ -83,7 +83,7 @@ impl Modulation for Wav {
             self.sampling_config().freq() as u32,
         )
         .iter()
-        .map(|&d| EmitIntensity::new(d.round() as u8))
+        .map(|&d| d.round() as u8)
         .collect())
     }
 }
@@ -107,9 +107,9 @@ mod tests {
     #[test]
     #[case::i8(
         Ok(vec![
-            EmitIntensity::new(0xFF),
-            EmitIntensity::new(0x80),
-            EmitIntensity::new(0x00)
+            0xFF,
+            0x80,
+            0x00
         ]),
         hound::WavSpec {
             channels: 1,
@@ -121,9 +121,9 @@ mod tests {
     )]
     #[case::i16(
         Ok(vec![
-            EmitIntensity::new(0xFF),
-            EmitIntensity::new(0x80),
-            EmitIntensity::new(0x00)
+            0xFF,
+            0x80,
+            0x00
         ]),
         hound::WavSpec {
             channels: 1,
@@ -135,9 +135,9 @@ mod tests {
     )]
     #[case::i24(
         Ok(vec![
-            EmitIntensity::new(0xFF),
-            EmitIntensity::new(0x80),
-            EmitIntensity::new(0x00)
+            0xFF,
+            0x80,
+            0x00
         ]),
         hound::WavSpec {
             channels: 1,
@@ -149,9 +149,9 @@ mod tests {
     )]
     #[case::i32(
         Ok(vec![
-            EmitIntensity::new(0xFF),
-            EmitIntensity::new(0x80),
-            EmitIntensity::new(0x00)
+            0xFF,
+            0x80,
+            0x00
         ]),
         hound::WavSpec {
             channels: 1,
@@ -163,9 +163,9 @@ mod tests {
     )]
     #[case::f32(
         Ok(vec![
-            EmitIntensity::new(0xFF),
-            EmitIntensity::new(0x80),
-            EmitIntensity::new(0x00)
+            0xFF,
+            0x80,
+            0x00
         ]),
         hound::WavSpec {
             channels: 1,
@@ -176,7 +176,7 @@ mod tests {
         &[1., 0., -1.]
     )]
     fn test_wav(
-        #[case] expect: Result<Vec<EmitIntensity>, AUTDInternalError>,
+        #[case] expect: Result<Vec<u8>, AUTDInternalError>,
         #[case] spec: hound::WavSpec,
         #[case] data: &[impl hound::Sample + Clone + Copy],
     ) -> anyhow::Result<()> {

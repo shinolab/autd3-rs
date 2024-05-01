@@ -8,9 +8,9 @@ pub struct Square<S: SamplingMode> {
     #[get]
     freq: f64,
     #[getset]
-    low: EmitIntensity,
+    low: u8,
     #[getset]
-    high: EmitIntensity,
+    high: u8,
     #[getset]
     duty: f64,
     config: SamplingConfiguration,
@@ -32,8 +32,8 @@ impl Square<ExactFrequency> {
     pub const fn with_freq_exact(freq: f64) -> Self {
         Self {
             freq,
-            low: EmitIntensity::MIN,
-            high: EmitIntensity::MAX,
+            low: u8::MIN,
+            high: u8::MAX,
             duty: 0.5,
             config: SamplingConfiguration::FREQ_4K_HZ,
             loop_behavior: LoopBehavior::infinite(),
@@ -50,8 +50,8 @@ impl Square<ExactFrequency> {
     pub const fn with_freq_nearest(freq: f64) -> Square<NearestFrequency> {
         Square {
             freq,
-            low: EmitIntensity::MIN,
-            high: EmitIntensity::MAX,
+            low: u8::MIN,
+            high: u8::MAX,
             duty: 0.5,
             config: SamplingConfiguration::FREQ_4K_HZ,
             loop_behavior: LoopBehavior::infinite(),
@@ -61,7 +61,7 @@ impl Square<ExactFrequency> {
 }
 
 impl<S: SamplingMode> Modulation for Square<S> {
-    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
         if self.freq < 0. {
             return Err(AUTDInternalError::ModulationError(format!(
                 "Frequency ({}Hz) must be positive",
@@ -141,15 +141,12 @@ mod tests {
     fn with_freq_exact(#[case] expect: Result<Vec<u8>, AUTDInternalError>, #[case] freq: f64) {
         let m = Square::with_freq_exact(freq);
         assert_eq!(freq, m.freq());
-        assert_eq!(EmitIntensity::MIN, m.low());
-        assert_eq!(EmitIntensity::MAX, m.high());
+        assert_eq!(u8::MIN, m.low());
+        assert_eq!(u8::MAX, m.high());
         assert_eq!(0.5, m.duty());
         assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
 
-        assert_eq!(
-            expect.map(|v| v.into_iter().map(EmitIntensity::new).collect::<Vec<_>>()),
-            m.calc()
-        );
+        assert_eq!(expect, m.calc());
     }
 
     #[rstest::rstest]
@@ -176,15 +173,12 @@ mod tests {
     fn with_freq_nearest(#[case] expect: Result<Vec<u8>, AUTDInternalError>, #[case] freq: f64) {
         let m = Square::with_freq_nearest(freq);
         assert_eq!(freq, m.freq());
-        assert_eq!(EmitIntensity::MIN, m.low());
-        assert_eq!(EmitIntensity::MAX, m.high());
+        assert_eq!(u8::MIN, m.low());
+        assert_eq!(u8::MAX, m.high());
         assert_eq!(0.5, m.duty());
         assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
 
-        assert_eq!(
-            expect.map(|v| v.into_iter().map(EmitIntensity::new).collect::<Vec<_>>()),
-            m.calc()
-        );
+        assert_eq!(expect, m.calc());
     }
 
     #[test]
@@ -199,18 +193,18 @@ mod tests {
 
     #[test]
     fn with_low() -> anyhow::Result<()> {
-        let m = Square::new(150.).with_low(EmitIntensity::MAX);
-        assert_eq!(EmitIntensity::MAX, m.low());
-        assert!(m.calc()?.iter().all(|&a| a == EmitIntensity::MAX));
+        let m = Square::new(150.).with_low(u8::MAX);
+        assert_eq!(u8::MAX, m.low());
+        assert!(m.calc()?.iter().all(|&a| a == u8::MAX));
 
         Ok(())
     }
 
     #[test]
     fn with_high() -> anyhow::Result<()> {
-        let m = Square::new(150.).with_high(EmitIntensity::MIN);
-        assert_eq!(EmitIntensity::MIN, m.high());
-        assert!(m.calc()?.iter().all(|&a| a == EmitIntensity::MIN));
+        let m = Square::new(150.).with_high(u8::MIN);
+        assert_eq!(u8::MIN, m.high());
+        assert!(m.calc()?.iter().all(|&a| a == u8::MIN));
 
         Ok(())
     }
@@ -219,11 +213,11 @@ mod tests {
     fn with_duty() -> anyhow::Result<()> {
         let m = Square::new(150.).with_duty(0.0);
         assert_eq!(m.duty(), 0.0);
-        assert!(m.calc()?.iter().all(|&a| a == EmitIntensity::MIN));
+        assert!(m.calc()?.iter().all(|&a| a == u8::MIN));
 
         let m = Square::new(150.).with_duty(1.0);
         assert_eq!(m.duty(), 1.0);
-        assert!(m.calc()?.iter().all(|&a| a == EmitIntensity::MAX));
+        assert!(m.calc()?.iter().all(|&a| a == u8::MAX));
 
         Ok(())
     }
