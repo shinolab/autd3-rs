@@ -40,10 +40,12 @@ impl Burst {
 }
 
 impl Modulation for Burst {
-    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
-        Ok((0..4000)
-            .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
-            .collect())
+    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
+        Self::transform(geometry, |_| {
+            Ok((0..4000)
+                .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
+                .collect())
+        })
     }
 }
 
