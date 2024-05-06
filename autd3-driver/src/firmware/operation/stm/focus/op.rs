@@ -113,15 +113,15 @@ impl Operation for FocusSTMOp {
             );
         }
 
-        unsafe {
-            std::slice::from_raw_parts_mut(tx[offset..].as_mut_ptr() as *mut STMFocus, send_num)
-                .iter_mut()
-                .zip(self.points.iter().skip(sent).take(send_num))
-                .try_for_each(|(d, p)| {
-                    let lp = device.to_local(p.point());
-                    d.set(lp.x, lp.y, lp.z, p.intensity())
-                })?
-        }
+        (0..send_num).try_for_each(|i| {
+            let lp = device.to_local(self.points[sent + i].point());
+            cast::<STMFocus>(&mut tx[offset + i * std::mem::size_of::<STMFocus>()..]).set(
+                lp.x,
+                lp.y,
+                lp.z,
+                self.points[sent + i].intensity(),
+            )
+        })?;
 
         self.remains[device] -= send_num;
         if sent == 0 {
