@@ -74,22 +74,6 @@ impl<G: Gain + 'static> Cache<G> {
     /// get cached drives
     ///
     /// Note that the cached data is created after at least one call to `calc`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use autd3::prelude::*;
-    /// # use autd3_driver::datagram::Gain;
-    /// # fn main() -> anyhow::Result<()>{
-    /// # let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-    /// let g = Null::new().with_cache();
-    /// assert!(g.drives().is_empty());
-    /// let _ = g.calc(&geometry, GainFilter::All)?;
-    /// assert!(!g.drives().is_empty());
-    /// # Ok(())
-    /// # }
-    ///
-    /// ```
     pub fn drives(&self) -> Ref<'_, HashMap<usize, Vec<Drive>>> {
         self.cache.borrow()
     }
