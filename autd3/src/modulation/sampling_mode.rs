@@ -13,9 +13,9 @@ pub trait SamplingMode: Clone + Sync {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ExactFrequency;
+pub struct ExactFreq;
 
-impl SamplingMode for ExactFrequency {
+impl SamplingMode for ExactFreq {
     fn validate(
         freq: f64,
         sampling_config: SamplingConfig,
@@ -37,9 +37,9 @@ impl SamplingMode for ExactFrequency {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct NearestFrequency;
+pub struct NearestFreq;
 
-impl SamplingMode for NearestFrequency {
+impl SamplingMode for NearestFreq {
     fn validate(
         freq: f64,
         sampling_config: SamplingConfig,

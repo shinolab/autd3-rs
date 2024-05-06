@@ -5,7 +5,7 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFrequency> {
+impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreq> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
@@ -29,7 +29,7 @@ impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::E
 
 impl ToMessage
     for autd3_driver::datagram::DatagramWithSegment<
-        autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFrequency>,
+        autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreq>,
     >
 {
     type Message = DatagramLightweight;
@@ -54,7 +54,7 @@ impl ToMessage
 }
 
 impl FromMessage<SquareExact>
-    for autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFrequency>
+    for autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreq>
 {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &SquareExact) -> Option<Self> {
@@ -73,7 +73,7 @@ impl FromMessage<SquareExact>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3::modulation::sampling_mode::ExactFrequency;
+    use autd3::modulation::sampling_mode::ExactFreq;
     use autd3_driver::firmware::fpga::EmitIntensity;
     use rand::Rng;
 
@@ -92,8 +92,7 @@ mod tests {
                 modulation: Some(modulation::Modulation::SquareExact(modulation)),
                 ..
             })) => {
-                let m2 =
-                    autd3::modulation::Square::<ExactFrequency>::from_msg(&modulation).unwrap();
+                let m2 = autd3::modulation::Square::<ExactFreq>::from_msg(&modulation).unwrap();
                 assert_eq!(m.freq(), m2.freq());
                 assert_eq!(m.high(), m2.high());
                 assert_eq!(m.low(), m2.low());

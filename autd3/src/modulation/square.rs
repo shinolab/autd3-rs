@@ -1,6 +1,6 @@
 use autd3_driver::derive::*;
 
-use super::sampling_mode::{ExactFrequency, NearestFrequency, SamplingMode};
+use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode};
 
 /// Square wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug, Builder)]
@@ -18,7 +18,7 @@ pub struct Square<S: SamplingMode> {
     __phantom: std::marker::PhantomData<S>,
 }
 
-impl Square<ExactFrequency> {
+impl Square<ExactFreq> {
     pub const fn new(freq: f64) -> Self {
         Self::with_freq_exact(freq)
     }
@@ -47,7 +47,7 @@ impl Square<ExactFrequency> {
     ///
     /// * `freq` - Frequency of the square wave \[Hz\]
     ///
-    pub const fn with_freq_nearest(freq: f64) -> Square<NearestFrequency> {
+    pub const fn with_freq_nearest(freq: f64) -> Square<NearestFreq> {
         Square {
             freq,
             low: u8::MIN,

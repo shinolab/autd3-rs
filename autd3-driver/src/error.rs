@@ -40,7 +40,7 @@ pub enum AUTDInternalError {
     SamplingFreqOutOfRange(f64, f64, f64),
 
     #[error("STM frequency ({1}Hz, size={0}) must divide ultrasound frequency")]
-    STMFrequencyInvalid(usize, f64),
+    STMFreqInvalid(usize, f64),
 
     #[error(
         "FocusSTM size ({0}) is out of range ([{}, {}])",
@@ -103,7 +103,7 @@ pub enum AUTDInternalError {
     #[error("Invalid message ID")]
     InvalidMessageID,
     #[error("Frequency division is too small")]
-    FrequencyDivisionTooSmall,
+    FreqDivisionTooSmall,
     #[error("Completion steps is too large")]
     CompletionStepsTooLarge,
     #[error("Invalid info type")]
@@ -127,7 +127,7 @@ impl AUTDInternalError {
         match ack {
             0x80 => AUTDInternalError::NotSupportedTag,
             0x81 => AUTDInternalError::InvalidMessageID,
-            0x82 => AUTDInternalError::FrequencyDivisionTooSmall,
+            0x82 => AUTDInternalError::FreqDivisionTooSmall,
             0x83 => AUTDInternalError::CompletionStepsTooLarge,
             0x84 => AUTDInternalError::InvalidInfoType,
             0x85 => AUTDInternalError::InvalidGainSTMMode,

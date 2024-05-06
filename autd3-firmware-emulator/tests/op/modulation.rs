@@ -163,7 +163,7 @@ fn mod_freq_div_too_small() {
     );
 
     assert_eq!(
-        Err(AUTDInternalError::FrequencyDivisionTooSmall),
+        Err(AUTDInternalError::FreqDivisionTooSmall),
         send(&mut cpu, &mut op, &geometry, &mut tx)
     )
 }

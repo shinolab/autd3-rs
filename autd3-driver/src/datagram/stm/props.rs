@@ -11,14 +11,14 @@ pub struct STMProps {
 impl STMProps {
     pub const fn from_freq(freq: f64) -> Self {
         Self {
-            config: STMSamplingConfig::Frequency(freq),
+            config: STMSamplingConfig::Freq(freq),
             loop_behavior: LoopBehavior::infinite(),
         }
     }
 
     pub const fn from_freq_nearest(freq: f64) -> Self {
         Self {
-            config: STMSamplingConfig::FrequencyNearest(freq),
+            config: STMSamplingConfig::FreqNearest(freq),
             loop_behavior: LoopBehavior::infinite(),
         }
     }

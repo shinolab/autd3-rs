@@ -148,10 +148,10 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(SamplingConfig::Frequency(1)), 0.5, 2)]
-    #[case(Ok(SamplingConfig::Frequency(10)), 1., 10)]
-    #[case(Ok(SamplingConfig::Frequency(20)), 2., 10)]
-    #[case(Err(AUTDInternalError::STMFrequencyInvalid(2, 0.49)), 0.49, 2)]
+    #[case(Ok(SamplingConfig::Freq(1)), 0.5, 2)]
+    #[case(Ok(SamplingConfig::Freq(10)), 1., 10)]
+    #[case(Ok(SamplingConfig::Freq(20)), 2., 10)]
+    #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49)), 0.49, 2)]
     fn from_freq(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] freq: f64,
@@ -167,10 +167,10 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(SamplingConfig::FrequencyNearest(1.)), 0.5, 2)]
-    #[case(Ok(SamplingConfig::FrequencyNearest(0.98)), 0.49, 2)]
-    #[case(Ok(SamplingConfig::FrequencyNearest(10.)), 1., 10)]
-    #[case(Ok(SamplingConfig::FrequencyNearest(20.)), 2., 10)]
+    #[case(Ok(SamplingConfig::FreqNearest(1.)), 0.5, 2)]
+    #[case(Ok(SamplingConfig::FreqNearest(0.98)), 0.49, 2)]
+    #[case(Ok(SamplingConfig::FreqNearest(10.)), 1., 10)]
+    #[case(Ok(SamplingConfig::FreqNearest(20.)), 2., 10)]
     fn from_freq_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] freq: f64,
