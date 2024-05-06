@@ -148,11 +148,11 @@ impl DatagramS for Box<dyn Gain> {
         self,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
-    ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((
+    ) -> (Self::O1, Self::O2) {
+        (
             Self::O1::new(segment, transition_mode.is_some(), self),
             Self::O2::default(),
-        ))
+        )
     }
 }
 // GRCOV_EXCL_STOP

@@ -22,8 +22,8 @@ impl<F: Fn(&Device) -> bool> Datagram for ConfigureReadsFPGAState<F> {
     type O1 = crate::firmware::operation::ConfigureReadsFPGAStateOp<F>;
     type O2 = crate::firmware::operation::NullOp;
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new(self.f), Self::O2::default()))
+    fn operation(self) -> (Self::O1, Self::O2) {
+        (Self::O1::new(self.f), Self::O2::default())
     }
 
     fn timeout(&self) -> Option<Duration> {
@@ -44,8 +44,6 @@ mod tests {
     #[test]
     fn test() {
         let datagram = ConfigureReadsFPGAState::new(f);
-        let r = datagram.operation();
-        assert!(r.is_ok());
-        let _ = r.unwrap();
+        let _ = datagram.operation();
     }
 }

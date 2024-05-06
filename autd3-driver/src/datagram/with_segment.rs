@@ -1,12 +1,9 @@
 use std::time::Duration;
 
 use super::Datagram;
-use crate::{
-    error::AUTDInternalError,
-    firmware::{
-        fpga::{Segment, TransitionMode},
-        operation::Operation,
-    },
+use crate::firmware::{
+    fpga::{Segment, TransitionMode},
+    operation::Operation,
 };
 
 /// Datagram with target segment
@@ -40,7 +37,7 @@ impl<D: DatagramS> Datagram for DatagramWithSegment<D> {
     type O1 = D::O1;
     type O2 = D::O2;
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn operation(self) -> (Self::O1, Self::O2) {
         self.datagram
             .operation_with_segment(self.segment, self.transition_mode)
     }
@@ -58,7 +55,7 @@ pub trait DatagramS {
         self,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
-    ) -> Result<(Self::O1, Self::O2), AUTDInternalError>;
+    ) -> (Self::O1, Self::O2);
 
     fn timeout(&self) -> Option<Duration> {
         None
@@ -69,7 +66,7 @@ impl<D: DatagramS> Datagram for D {
     type O1 = D::O1;
     type O2 = D::O2;
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn operation(self) -> (Self::O1, Self::O2) {
         <Self as DatagramS>::operation_with_segment(
             self,
             Segment::S0,
@@ -133,8 +130,8 @@ mod tests {
             self,
             _segment: Segment,
             _transition_mode: Option<TransitionMode>,
-        ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-            Ok((Self::O1::default(), Self::O2::default()))
+        ) -> (Self::O1, Self::O2) {
+            (Self::O1::default(), Self::O2::default())
         }
     }
 
@@ -147,7 +144,7 @@ mod tests {
         assert_eq!(Segment::S0, d.segment());
         assert_eq!(Some(TransitionMode::SyncIdx), d.transition_mode());
 
-        let _: (ClearOp, NullOp) = d.operation().unwrap();
+        let _: (ClearOp, NullOp) = d.operation();
     }
 
     #[test]

@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{datagram::Datagram, defined::DEFAULT_TIMEOUT};
 
-use super::group::{AUTDInternalError, Segment};
+use super::group::Segment;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ChangeGainSegment {
@@ -27,8 +27,8 @@ impl Datagram for ChangeGainSegment {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new(self.segment), Self::O2::default()))
+    fn operation(self) -> (Self::O1, Self::O2) {
+        (Self::O1::new(self.segment), Self::O2::default())
     }
 }
 
@@ -41,7 +41,7 @@ mod tests {
         let d = ChangeGainSegment::new(Segment::S0);
         assert_eq!(Segment::S0, d.segment());
         assert_eq!(Some(DEFAULT_TIMEOUT), d.timeout());
-        let _ = d.operation()?;
+        let _ = d.operation();
 
         Ok(())
     }

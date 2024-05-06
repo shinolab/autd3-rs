@@ -14,8 +14,8 @@ impl Datagram for Synchronize {
     type O1 = crate::firmware::operation::SyncOp;
     type O2 = crate::firmware::operation::NullOp;
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Default::default(), Default::default()))
+    fn operation(self) -> (Self::O1, Self::O2) {
+        (Default::default(), Default::default())
     }
 
     fn timeout(&self) -> Option<Duration> {
@@ -38,11 +38,9 @@ mod tests {
     #[test]
     fn test_operation() {
         let stop = Synchronize::default();
-        let r = <Synchronize as Datagram>::operation(stop);
-        assert!(r.is_ok());
         let _: (
             crate::firmware::operation::SyncOp,
             crate::firmware::operation::NullOp,
-        ) = r.unwrap();
+        ) = <Synchronize as Datagram>::operation(stop);
     }
 }

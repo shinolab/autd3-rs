@@ -147,14 +147,14 @@ impl Datagram for ConfigureSilencer<FixedUpdateRate> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((
+    fn operation(self) -> (Self::O1, Self::O2) {
+        (
             Self::O1::new(
                 self.internal.update_rate_intensity,
                 self.internal.update_rate_phase,
             ),
             Self::O2::default(),
-        ))
+        )
     }
 }
 
@@ -166,15 +166,15 @@ impl Datagram for ConfigureSilencer<FixedCompletionSteps> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((
+    fn operation(self) -> (Self::O1, Self::O2) {
+        (
             Self::O1::new(
                 self.internal.steps_intensity,
                 self.internal.steps_phase,
                 self.internal.strict_mode,
             ),
             Self::O2::default(),
-        ))
+        )
     }
 }
 
@@ -274,19 +274,15 @@ mod tests {
     #[test]
     fn test_operation() {
         let silencer = ConfigureSilencer::fixed_update_rate(1, 2).unwrap();
-        let r = silencer.operation();
-        assert!(r.is_ok());
         let _: (
             crate::firmware::operation::ConfigSilencerFixedUpdateRateOp,
             crate::firmware::operation::NullOp,
-        ) = r.unwrap();
+        ) = silencer.operation();
 
         let silencer = ConfigureSilencer::fixed_completion_steps(1, 2).unwrap();
-        let r = silencer.operation();
-        assert!(r.is_ok());
         let _: (
             crate::firmware::operation::ConfigSilencerFixedCompletionStepsOp,
             crate::firmware::operation::NullOp,
-        ) = r.unwrap();
+        ) = silencer.operation();
     }
 }
