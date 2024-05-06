@@ -1,9 +1,9 @@
-use crate::{derive::*, firmware::fpga::STMSamplingConfiguration};
+use crate::{derive::*, firmware::fpga::STMSamplingConfig};
 
 #[doc(hidden)]
 #[derive(Clone, Copy, Builder)]
 pub struct STMProps {
-    pub(crate) config: STMSamplingConfiguration,
+    pub(crate) config: STMSamplingConfig,
     #[getset]
     pub(crate) loop_behavior: LoopBehavior,
 }
@@ -11,26 +11,26 @@ pub struct STMProps {
 impl STMProps {
     pub const fn from_freq(freq: f64) -> Self {
         Self {
-            config: STMSamplingConfiguration::Frequency(freq),
+            config: STMSamplingConfig::Frequency(freq),
             loop_behavior: LoopBehavior::infinite(),
         }
     }
 
     pub const fn from_freq_nearest(freq: f64) -> Self {
         Self {
-            config: STMSamplingConfiguration::FrequencyNearest(freq),
+            config: STMSamplingConfig::FrequencyNearest(freq),
             loop_behavior: LoopBehavior::infinite(),
         }
     }
 
-    pub const fn from_sampling_config(sampling: SamplingConfiguration) -> Self {
+    pub const fn from_sampling_config(sampling: SamplingConfig) -> Self {
         Self {
-            config: STMSamplingConfiguration::SamplingConfiguration(sampling),
+            config: STMSamplingConfig::SamplingConfig(sampling),
             loop_behavior: LoopBehavior::infinite(),
         }
     }
 
-    pub fn sampling_config(&self, size: usize) -> Result<SamplingConfiguration, AUTDInternalError> {
+    pub fn sampling_config(&self, size: usize) -> Result<SamplingConfig, AUTDInternalError> {
         self.config.sampling(size)
     }
 }

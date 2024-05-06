@@ -5,7 +5,7 @@ use autd3_driver::{
     derive::*,
     firmware::{
         cpu::TxDatagram,
-        fpga::STMSamplingConfiguration,
+        fpga::STMSamplingConfig,
         operation::{ControlPoint, FocusSTMOp, GainChangeSegmentOp, GainSTMMode, GainSTMOp},
     },
     geometry::Vector3,
@@ -131,7 +131,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
             (0..2)
                 .map(|_| ControlPoint::new(Vector3::zeros()))
                 .collect(),
-            STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(0xFFFFFFFF)),
+            STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(0xFFFFFFFF)),
             LoopBehavior::infinite(),
             Segment::S0,
             Some(TransitionMode::SyncIdx),
@@ -154,7 +154,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
                 .map(|buf: HashMap<usize, Vec<Drive>>| TestGain { buf: buf.clone() })
                 .collect(),
             GainSTMMode::PhaseIntensityFull,
-            STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(0xFFFFFFFF)),
+            STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(0xFFFFFFFF)),
             LoopBehavior::infinite(),
             Segment::S1,
             Some(TransitionMode::SyncIdx),

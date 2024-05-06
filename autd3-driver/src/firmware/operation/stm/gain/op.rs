@@ -5,7 +5,7 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{
-            Drive, LoopBehavior, STMSamplingConfiguration, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX,
+            Drive, LoopBehavior, STMSamplingConfig, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX,
             STM_BUF_SIZE_MIN,
         },
         operation::{cast, Operation, Remains, TypeTag},
@@ -42,7 +42,7 @@ pub struct GainSTMOp<G: Gain> {
     drives: Vec<HashMap<usize, Vec<Drive>>>,
     remains: Remains,
     mode: GainSTMMode,
-    stm_sampling_config: STMSamplingConfiguration,
+    stm_sampling_config: STMSamplingConfig,
     loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
@@ -52,7 +52,7 @@ impl<G: Gain> GainSTMOp<G> {
     pub fn new(
         gains: Vec<G>,
         mode: GainSTMMode,
-        stm_sampling_config: STMSamplingConfiguration,
+        stm_sampling_config: STMSamplingConfig,
         loop_behavior: LoopBehavior,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
@@ -324,7 +324,7 @@ mod tests {
         let mut op = GainSTMOp::<_>::new(
             gains,
             GainSTMMode::PhaseIntensityFull,
-            STMSamplingConfiguration::SamplingConfiguration(crate::derive::SamplingConfiguration::DivisionRaw(freq_div)),
+            STMSamplingConfig::SamplingConfig(crate::derive::SamplingConfig::DivisionRaw(freq_div)),
             loop_behavior,
             segment,
             Some(transition_mode),
@@ -526,7 +526,7 @@ mod tests {
         let mut op = GainSTMOp::<_>::new(
             gains,
             GainSTMMode::PhaseFull,
-            STMSamplingConfiguration::SamplingConfiguration(crate::derive::SamplingConfiguration::DivisionRaw(freq_div)),
+            STMSamplingConfig::SamplingConfig(crate::derive::SamplingConfig::DivisionRaw(freq_div)),
             loop_behavior,
             segment,
             None,
@@ -708,7 +708,7 @@ mod tests {
         let mut op = GainSTMOp::<_>::new(
             gains,
             GainSTMMode::PhaseHalf,
-            STMSamplingConfiguration::SamplingConfiguration(crate::derive::SamplingConfiguration::DivisionRaw(freq_div)),
+            STMSamplingConfig::SamplingConfig(crate::derive::SamplingConfig::DivisionRaw(freq_div)),
             loop_behavior,
             segment,
             Some(TransitionMode::SyncIdx),
@@ -865,7 +865,7 @@ mod tests {
             let mut op = GainSTMOp::<_>::new(
                 gains,
                 GainSTMMode::PhaseIntensityFull,
-                STMSamplingConfiguration::SamplingConfiguration(crate::derive::SamplingConfiguration::Division(
+                STMSamplingConfig::SamplingConfig(crate::derive::SamplingConfig::Division(
                     SAMPLING_FREQ_DIV_MIN,
                 )),
                 LoopBehavior::infinite(),

@@ -67,7 +67,7 @@ impl FromMessage<SquareExact>
                     msg.low.as_ref()?,
                 )?)
                 .with_duty(msg.duty as _)
-                .with_sampling_config(autd3_driver::firmware::fpga::SamplingConfiguration::from_msg(
+                .with_sampling_config(autd3_driver::firmware::fpga::SamplingConfig::from_msg(
                     msg.config.as_ref()?,
                 )?),
         )

@@ -14,7 +14,7 @@ pub struct Cache<M: Modulation> {
     m: Rc<M>,
     cache: Rc<RefCell<HashMap<usize, Vec<u8>>>>,
     #[no_change]
-    config: SamplingConfiguration,
+    config: SamplingConfig,
     loop_behavior: LoopBehavior,
 }
 
@@ -93,7 +93,7 @@ mod tests {
 
         let m = TestModulation {
             buf: vec![rng.gen(), rng.gen()],
-            config: SamplingConfiguration::FREQ_4K_HZ,
+            config: SamplingConfig::FREQ_4K_HZ,
             loop_behavior: LoopBehavior::infinite(),
         };
         let cache = m.clone().with_cache();
@@ -111,7 +111,7 @@ mod tests {
     #[derive(Modulation)]
     struct TestCacheModulation {
         pub calc_cnt: Arc<AtomicUsize>,
-        pub config: SamplingConfiguration,
+        pub config: SamplingConfig,
         pub loop_behavior: LoopBehavior,
     }
 
@@ -142,7 +142,7 @@ mod tests {
 
         let modulation = TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
-            config: SamplingConfiguration::FREQ_4K_HZ,
+            config: SamplingConfig::FREQ_4K_HZ,
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_cache();
@@ -163,7 +163,7 @@ mod tests {
 
         let modulation = TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
-            config: SamplingConfiguration::FREQ_4K_HZ,
+            config: SamplingConfig::FREQ_4K_HZ,
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_cache();

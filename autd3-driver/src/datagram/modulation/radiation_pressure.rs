@@ -7,7 +7,7 @@ use crate::derive::*;
 pub struct RadiationPressure<M: Modulation> {
     m: M,
     #[no_change]
-    config: SamplingConfiguration,
+    config: SamplingConfig,
     loop_behavior: LoopBehavior,
 }
 
@@ -55,9 +55,9 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case::freq_4k(SamplingConfiguration::FREQ_4K_HZ)]
-    #[case::disable(SamplingConfiguration::DISABLE)]
-    fn test_sampling_config(#[case] config: SamplingConfiguration) {
+    #[case::freq_4k(SamplingConfig::FREQ_4K_HZ)]
+    #[case::disable(SamplingConfig::DISABLE)]
+    fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
             config,
             TestModulation {
@@ -86,7 +86,7 @@ mod tests {
             )])),
             TestModulation {
                 buf: buf.clone(),
-                config: SamplingConfiguration::FREQ_4K_HZ,
+                config: SamplingConfig::FREQ_4K_HZ,
                 loop_behavior: LoopBehavior::infinite(),
             }
             .with_radiation_pressure()

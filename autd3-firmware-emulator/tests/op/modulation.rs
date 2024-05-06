@@ -24,7 +24,7 @@ use crate::{create_geometry, send};
 #[derive(Modulation)]
 pub struct TestModulation {
     pub buf: Vec<u8>,
-    pub config: SamplingConfiguration,
+    pub config: SamplingConfig,
     pub loop_behavior: LoopBehavior,
 }
 
@@ -54,7 +54,7 @@ fn send_mod() -> anyhow::Result<()> {
         let mut op = ModulationOp::new(
             TestModulation {
                 buf: m.clone(),
-                config: SamplingConfiguration::DivisionRaw(freq_div),
+                config: SamplingConfig::DivisionRaw(freq_div),
                 loop_behavior,
             },
             Segment::S0,
@@ -85,7 +85,7 @@ fn send_mod() -> anyhow::Result<()> {
         let mut op = ModulationOp::new(
             TestModulation {
                 buf: m.clone(),
-                config: SamplingConfiguration::DivisionRaw(freq_div),
+                config: SamplingConfig::DivisionRaw(freq_div),
                 loop_behavior,
             },
             Segment::S1,
@@ -118,7 +118,7 @@ fn send_mod() -> anyhow::Result<()> {
         let mut op = ModulationOp::new(
             TestModulation {
                 buf: (0..2).map(|_| u8::MAX).collect(),
-                config: SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+                config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
                 loop_behavior: LoopBehavior::infinite(),
             },
             Segment::S0,
@@ -133,7 +133,7 @@ fn send_mod() -> anyhow::Result<()> {
         let mut op = ModulationOp::new(
             TestModulation {
                 buf: (0..2).map(|_| u8::MAX).collect(),
-                config: SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+                config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
                 loop_behavior: LoopBehavior::infinite(),
             },
             Segment::S0,
@@ -155,7 +155,7 @@ fn mod_freq_div_too_small() {
     let mut op = ModulationOp::new(
         TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
+            config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
             loop_behavior: LoopBehavior::infinite(),
         },
         Segment::S0,
@@ -186,7 +186,7 @@ fn test_miss_transition_time(
     let mut op = ModulationOp::new(
         TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+            config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
             loop_behavior: LoopBehavior::once(),
         },
         Segment::S1,

@@ -1,4 +1,4 @@
-use autd3_driver::derive::SamplingConfiguration;
+use autd3_driver::derive::SamplingConfig;
 
 use crate::{
     pb::*,
@@ -63,7 +63,7 @@ impl FromMessage<GainStm>
     fn from_msg(msg: &GainStm) -> Option<Self> {
         Some(
             autd3_driver::datagram::GainSTM::from_sampling_config(
-                SamplingConfiguration::from_division_raw(msg.freq_div).ok()?,
+                SamplingConfig::from_division_raw(msg.freq_div).ok()?,
             )
             .with_loop_behavior(autd3_driver::firmware::fpga::LoopBehavior::from_msg(
                 msg.loop_behavior.as_ref()?,

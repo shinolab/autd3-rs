@@ -39,7 +39,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
                 /// * `config` - Sampling configuration
                 ///
                 #[allow(clippy::needless_update)]
-                pub fn with_sampling_config(self, config: SamplingConfiguration) -> Self {
+                pub fn with_sampling_config(self, config: SamplingConfig) -> Self {
                     Self {config, ..self}
                 }
             }
@@ -68,7 +68,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     let type_params = generics.type_params();
     let prop = quote! {
         impl <#(#linetimes,)* #(#type_params,)*> ModulationProperty for #name #ty_generics #where_clause {
-            fn sampling_config(&self) -> SamplingConfiguration {
+            fn sampling_config(&self) -> SamplingConfig {
                 self.config
             }
 

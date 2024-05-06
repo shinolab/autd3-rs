@@ -1,5 +1,5 @@
 use autd3_driver::{
-    derive::SamplingConfiguration, error::AUTDInternalError, firmware::fpga::ULTRASOUND_PERIOD,
+    derive::SamplingConfig, error::AUTDInternalError, firmware::fpga::ULTRASOUND_PERIOD,
     utils::float::is_integer,
 };
 use num::integer::gcd;
@@ -7,7 +7,7 @@ use num::integer::gcd;
 pub trait SamplingMode: Clone + Sync {
     fn validate(
         freq: f64,
-        sampling_config: SamplingConfiguration,
+        sampling_config: SamplingConfig,
         ultrasound_freq: u32,
     ) -> Result<(u64, u64), AUTDInternalError>;
 }
@@ -18,7 +18,7 @@ pub struct ExactFrequency;
 impl SamplingMode for ExactFrequency {
     fn validate(
         freq: f64,
-        sampling_config: SamplingConfiguration,
+        sampling_config: SamplingConfig,
         ultrasound_freq: u32,
     ) -> Result<(u64, u64), AUTDInternalError> {
         let fd = freq * sampling_config.division(ultrasound_freq)? as f64;
@@ -42,7 +42,7 @@ pub struct NearestFrequency;
 impl SamplingMode for NearestFrequency {
     fn validate(
         freq: f64,
-        sampling_config: SamplingConfiguration,
+        sampling_config: SamplingConfig,
         ultrasound_freq: u32,
     ) -> Result<(u64, u64), AUTDInternalError> {
         Ok((

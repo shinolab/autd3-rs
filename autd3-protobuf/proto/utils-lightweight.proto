@@ -10,7 +10,7 @@ message Phase {
   uint32 value = 1;
 }
 
-message SamplingConfiguration {
+message SamplingConfig {
   uint32 freq_div = 1;
 }
 

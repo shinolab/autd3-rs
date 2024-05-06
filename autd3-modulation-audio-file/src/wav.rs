@@ -11,7 +11,7 @@ use crate::error::AudioFileError;
 #[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct Wav {
     path: PathBuf,
-    config: SamplingConfiguration,
+    config: SamplingConfig,
     loop_behavior: LoopBehavior,
 }
 
@@ -25,7 +25,7 @@ impl Wav {
     pub fn new(path: impl AsRef<Path>) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),
-            config: SamplingConfiguration::FREQ_4K_HZ,
+            config: SamplingConfig::FREQ_4K_HZ,
             loop_behavior: LoopBehavior::infinite(),
         }
     }

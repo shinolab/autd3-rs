@@ -3,7 +3,7 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{
-            LoopBehavior, STMFocus, STMSamplingConfiguration, Segment, TransitionMode,
+            LoopBehavior, STMFocus, STMSamplingConfig, Segment, TransitionMode,
             FOCUS_STM_BUF_SIZE_MAX, STM_BUF_SIZE_MIN,
         },
         operation::{cast, Operation, Remains, TypeTag},
@@ -35,7 +35,7 @@ struct FocusSTMSubseq {
 pub struct FocusSTMOp {
     remains: Remains,
     points: Vec<ControlPoint>,
-    stm_sampling_config: STMSamplingConfiguration,
+    stm_sampling_config: STMSamplingConfig,
     loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
@@ -44,7 +44,7 @@ pub struct FocusSTMOp {
 impl FocusSTMOp {
     pub fn new(
         points: Vec<ControlPoint>,
-        stm_sampling_config: STMSamplingConfiguration,
+        stm_sampling_config: STMSamplingConfig,
         loop_behavior: LoopBehavior,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
@@ -213,7 +213,7 @@ mod tests {
 
         let mut op = FocusSTMOp::new(
             points.clone(),
-            STMSamplingConfiguration::SamplingConfiguration(crate::derive::SamplingConfiguration::DivisionRaw(freq_div)),
+            STMSamplingConfig::SamplingConfig(crate::derive::SamplingConfig::DivisionRaw(freq_div)),
             loop_behavior,
             segment,
             Some(transition_mode),
@@ -337,7 +337,7 @@ mod tests {
         let segment = Segment::S1;
         let mut op = FocusSTMOp::new(
             points.clone(),
-            STMSamplingConfiguration::SamplingConfiguration(crate::derive::SamplingConfiguration::DivisionRaw(freq_div)),
+            STMSamplingConfig::SamplingConfig(crate::derive::SamplingConfig::DivisionRaw(freq_div)),
             loop_behavior,
             segment,
             None,
@@ -591,7 +591,7 @@ mod tests {
                 .collect();
             let mut op = FocusSTMOp::new(
                 points,
-                STMSamplingConfiguration::SamplingConfiguration(crate::derive::SamplingConfiguration::Division(
+                STMSamplingConfig::SamplingConfig(crate::derive::SamplingConfig::Division(
                     SAMPLING_FREQ_DIV_MIN,
                 )),
                 LoopBehavior::infinite(),
@@ -630,7 +630,7 @@ mod tests {
             (0..FOCUS_STM_SIZE)
                 .map(|_| ControlPoint::new(Vector3::new(x, x, x)).with_intensity(0))
                 .collect(),
-            STMSamplingConfiguration::SamplingConfiguration(crate::derive::SamplingConfiguration::Division(
+            STMSamplingConfig::SamplingConfig(crate::derive::SamplingConfig::Division(
                 SAMPLING_FREQ_DIV_MIN,
             )),
             LoopBehavior::infinite(),

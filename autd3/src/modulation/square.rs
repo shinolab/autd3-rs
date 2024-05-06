@@ -13,7 +13,7 @@ pub struct Square<S: SamplingMode> {
     high: u8,
     #[getset]
     duty: f64,
-    config: SamplingConfiguration,
+    config: SamplingConfig,
     loop_behavior: LoopBehavior,
     __phantom: std::marker::PhantomData<S>,
 }
@@ -35,7 +35,7 @@ impl Square<ExactFrequency> {
             low: u8::MIN,
             high: u8::MAX,
             duty: 0.5,
-            config: SamplingConfiguration::FREQ_4K_HZ,
+            config: SamplingConfig::FREQ_4K_HZ,
             loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
         }
@@ -53,7 +53,7 @@ impl Square<ExactFrequency> {
             low: u8::MIN,
             high: u8::MAX,
             duty: 0.5,
-            config: SamplingConfiguration::FREQ_4K_HZ,
+            config: SamplingConfig::FREQ_4K_HZ,
             loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
         }
@@ -148,7 +148,7 @@ mod tests {
         assert_eq!(u8::MIN, m.low());
         assert_eq!(u8::MAX, m.high());
         assert_eq!(0.5, m.duty());
-        assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
+        assert_eq!(SamplingConfig::FREQ_4K_HZ, m.sampling_config());
 
         assert_eq!(expect.map(|b| HashMap::from([(0, b)])), m.calc(&geometry));
     }
@@ -181,7 +181,7 @@ mod tests {
         assert_eq!(u8::MIN, m.low());
         assert_eq!(u8::MAX, m.high());
         assert_eq!(0.5, m.duty());
-        assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
+        assert_eq!(SamplingConfig::FREQ_4K_HZ, m.sampling_config());
 
         assert_eq!(expect.map(|b| HashMap::from([(0, b)])), m.calc(&geometry));
     }

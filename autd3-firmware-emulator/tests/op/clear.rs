@@ -5,7 +5,7 @@ use autd3_driver::{
     firmware::{
         cpu::TxDatagram,
         fpga::{
-            STMSamplingConfiguration, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
+            STMSamplingConfig, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
             SILENCER_VALUE_MIN,
         },
         operation::FocusSTMOp,
@@ -17,7 +17,7 @@ use crate::{create_geometry, op::stm::focus::gen_random_foci, send};
 
 #[derive(Modulation)]
 struct TestMod {
-    config: SamplingConfiguration,
+    config: SamplingConfig,
     loop_behavior: LoopBehavior,
 }
 
@@ -60,7 +60,7 @@ fn send_clear() -> anyhow::Result<()> {
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
         let (mut op, _) = TestMod {
-            config: SamplingConfiguration::DivisionRaw(5120),
+            config: SamplingConfig::DivisionRaw(5120),
             loop_behavior: LoopBehavior::infinite(),
         }
         .operation();
@@ -71,7 +71,7 @@ fn send_clear() -> anyhow::Result<()> {
 
         let mut op = FocusSTMOp::new(
             gen_random_foci(2),
-            STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(
+            STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(
                 SAMPLING_FREQ_DIV_MIN
                     * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
             )),

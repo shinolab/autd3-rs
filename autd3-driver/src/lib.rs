@@ -25,7 +25,7 @@ pub mod derive {
         error::AUTDInternalError,
         firmware::{
             fpga::{
-                Drive, EmitIntensity, LoopBehavior, Phase, Rad, SamplingConfiguration, Segment,
+                Drive, EmitIntensity, LoopBehavior, Phase, Rad, SamplingConfig, Segment,
                 TransitionMode, SAMPLING_FREQ_DIV_MIN,
             },
             operation::{GainOp, ModulationOp, NullOp, Operation},

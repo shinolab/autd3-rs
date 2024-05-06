@@ -69,7 +69,7 @@ impl FromMessage<SineExact>
                 .with_phase(autd3_driver::firmware::fpga::Phase::from_msg(
                     msg.phase.as_ref()?,
                 )?)
-                .with_sampling_config(autd3_driver::firmware::fpga::SamplingConfiguration::from_msg(
+                .with_sampling_config(autd3_driver::firmware::fpga::SamplingConfig::from_msg(
                     msg.config.as_ref()?,
                 )?),
         )
