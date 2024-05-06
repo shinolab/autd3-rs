@@ -1,7 +1,6 @@
 mod focus;
 mod gain;
 mod props;
-mod sampling_config;
 mod segment;
 
 pub use focus::FocusSTM;

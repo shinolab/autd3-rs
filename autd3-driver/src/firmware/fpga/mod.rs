@@ -6,9 +6,10 @@ mod emit_intensity;
 mod fpga_state;
 mod loop_behavior;
 mod phase;
-pub mod sampling_config;
+mod sampling_config;
 mod segment;
 mod stm_focus;
+mod stm_sampling_config;
 mod transition_mode;
 
 pub(crate) use stm_focus::STMFocus;
@@ -21,35 +22,11 @@ pub use loop_behavior::LoopBehavior;
 pub use phase::{Phase, Rad};
 pub use sampling_config::SamplingConfiguration;
 pub use segment::Segment;
+pub use stm_sampling_config::STMSamplingConfiguration;
 pub use transition_mode::TransitionMode;
 
-#[cfg(feature = "variable_freq")]
-static ULTRASOUND_FREQ: std::sync::RwLock<u32> = std::sync::RwLock::new(40000);
-#[cfg(not(feature = "variable_freq"))]
-const ULTRASOUND_FREQ: u32 = 40000;
-
-#[cfg(feature = "variable_freq")]
-pub fn set_ultrasound_freq(freq: u32) {
-    *ULTRASOUND_FREQ.write().unwrap() = freq;
-}
-
-#[cfg(feature = "variable_freq")]
-pub fn ultrasound_freq() -> u32 {
-    *ULTRASOUND_FREQ.read().unwrap()
-}
-#[cfg(not(feature = "variable_freq"))]
-pub const fn ultrasound_freq() -> u32 {
-    ULTRASOUND_FREQ
-}
 
 pub const ULTRASOUND_PERIOD: u32 = 512;
-
-#[const_fn::const_fn(cfg(not(feature = "variable_freq")))]
-pub const fn fpga_clk_freq() -> u32 {
-    ultrasound_freq() * ULTRASOUND_PERIOD
-}
-
-pub const FREQ_40K: u32 = 40000;
 
 pub const FOCUS_STM_FIXED_NUM_UNIT: f64 = 0.025e-3 * METER;
 pub const FOCUS_STM_FIXED_NUM_WIDTH: usize = 18;

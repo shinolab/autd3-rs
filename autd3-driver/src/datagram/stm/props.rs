@@ -1,10 +1,9 @@
-use super::sampling_config::STMSamplingConfiguration;
-use crate::derive::*;
+use crate::{derive::*, firmware::fpga::STMSamplingConfiguration};
 
 #[doc(hidden)]
 #[derive(Clone, Copy, Builder)]
 pub struct STMProps {
-    config: STMSamplingConfiguration,
+    pub(crate) config: STMSamplingConfiguration,
     #[getset]
     pub(crate) loop_behavior: LoopBehavior,
 }
@@ -20,20 +19,6 @@ impl STMProps {
     pub const fn from_freq_nearest(freq: f64) -> Self {
         Self {
             config: STMSamplingConfiguration::FrequencyNearest(freq),
-            loop_behavior: LoopBehavior::infinite(),
-        }
-    }
-
-    pub const fn from_period(period: std::time::Duration) -> Self {
-        Self {
-            config: STMSamplingConfiguration::Period(period),
-            loop_behavior: LoopBehavior::infinite(),
-        }
-    }
-
-    pub const fn from_period_nearest(period: std::time::Duration) -> Self {
-        Self {
-            config: STMSamplingConfiguration::PeriodNearest(period),
             loop_behavior: LoopBehavior::infinite(),
         }
     }

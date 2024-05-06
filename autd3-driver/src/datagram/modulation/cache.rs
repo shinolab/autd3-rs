@@ -12,7 +12,7 @@ use std::{
 #[no_modulation_transform]
 pub struct Cache<M: Modulation> {
     m: Rc<M>,
-    cache: Rc<RefCell<Vec<u8>>>,
+    cache: Rc<RefCell<HashMap<usize, Vec<u8>>>>,
     #[no_change]
     config: SamplingConfiguration,
     loop_behavior: LoopBehavior,
@@ -56,30 +56,15 @@ impl<M: Modulation> Cache<M> {
     /// get cached modulation data
     ///
     /// Note that the cached data is created after at least one call to `calc`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use autd3::prelude::*;
-    ///
-    /// # fn main() -> anyhow::Result<()> {
-    /// let m = Static::new().with_cache();
-    /// assert!(m.buffer().is_empty());
-    /// let _ = m.calc()?;
-    /// assert!(!m.buffer().is_empty());
-    /// # Ok(())
-    /// # }
-    ///
-    /// ```
-    pub fn buffer(&self) -> Ref<'_, Vec<u8>> {
+    pub fn buffer(&self) -> Ref<'_, HashMap<usize, Vec<u8>>> {
         self.cache.borrow()
     }
 }
 
 impl<M: Modulation> Modulation for Cache<M> {
-    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
         if self.cache.borrow().is_empty() {
-            *self.cache.borrow_mut() = self.m.calc()?;
+            *self.cache.borrow_mut() = self.m.calc(geometry)?;
         }
         Ok(self.cache.borrow().clone())
     }
@@ -87,6 +72,8 @@ impl<M: Modulation> Modulation for Cache<M> {
 
 #[cfg(test)]
 mod tests {
+    use crate::geometry::tests::create_geometry;
+
     use super::{super::tests::TestModulation, *};
 
     use rand::Rng;
@@ -100,6 +87,8 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
+        let geometry = create_geometry(1, 249);
+
         let mut rng = rand::thread_rng();
 
         let m = TestModulation {
@@ -111,10 +100,10 @@ mod tests {
         assert_eq!(&m, cache.deref());
 
         assert!(cache.buffer().is_empty());
-        assert_eq!(m.calc()?, cache.calc()?);
+        assert_eq!(m.calc(&geometry)?, cache.calc(&geometry)?);
 
         assert!(!cache.buffer().is_empty());
-        assert_eq!(m.calc()?, *cache.buffer());
+        assert_eq!(m.calc(&geometry)?, *cache.buffer());
 
         Ok(())
     }
@@ -139,14 +128,16 @@ mod tests {
     }
 
     impl Modulation for TestCacheModulation {
-        fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
+        fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
-            Ok(vec![0; 2])
+            Self::transform(geometry, |_| Ok(vec![0; 2]))
         }
     }
 
     #[test]
     fn test_calc_once() {
+        let geometry = create_geometry(1, 249);
+
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
         let modulation = TestCacheModulation {
@@ -157,15 +148,17 @@ mod tests {
         .with_cache();
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
-        let _ = modulation.calc();
+        let _ = modulation.calc(&geometry);
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
 
-        let _ = modulation.calc();
+        let _ = modulation.calc(&geometry);
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
     }
 
     #[test]
     fn test_calc_clone() {
+        let geometry = create_geometry(1, 249);
+
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
         let modulation = TestCacheModulation {
@@ -177,7 +170,7 @@ mod tests {
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
         let m2 = modulation.clone();
-        let _ = m2.calc();
+        let _ = m2.calc(&geometry);
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
 
         assert_eq!(*modulation.buffer(), *m2.buffer());

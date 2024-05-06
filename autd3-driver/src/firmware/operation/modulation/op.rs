@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
 use crate::{
+    derive::Modulation,
     error::AUTDInternalError,
     firmware::{
-        fpga::{LoopBehavior, Segment, TransitionMode, MOD_BUF_SIZE_MAX},
+        fpga::{Segment, TransitionMode, MOD_BUF_SIZE_MAX},
         operation::{cast, Operation, Remains, TypeTag},
     },
     geometry::{Device, Geometry},
@@ -28,37 +31,31 @@ struct ModulationSubseq {
     size: u16,
 }
 
-pub struct ModulationOp {
-    buf: Vec<u8>,
-    freq_div: u32,
+pub struct ModulationOp<M: Modulation> {
+    modulation: M,
+    buf: HashMap<usize, Vec<u8>>,
     remains: Remains,
-    loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
 }
 
-impl ModulationOp {
-    pub fn new(
-        buf: Vec<u8>,
-        freq_div: u32,
-        loop_behavior: LoopBehavior,
-        segment: Segment,
-        transition_mode: Option<TransitionMode>,
-    ) -> Self {
+impl<M: Modulation> ModulationOp<M> {
+    pub fn new(modulation: M, segment: Segment, transition_mode: Option<TransitionMode>) -> Self {
         Self {
-            buf,
-            freq_div,
+            modulation,
+            buf: Default::default(),
             remains: Default::default(),
-            loop_behavior,
             segment,
             transition_mode,
         }
     }
 }
 
-impl Operation for ModulationOp {
+impl<M: Modulation> Operation for ModulationOp<M> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        let sent = self.buf.len() - self.remains[device];
+        let buf = &self.buf[&device.idx()];
+
+        let sent = buf.len() - self.remains[device];
 
         let offset = if sent == 0 {
             std::mem::size_of::<ModulationHead>()
@@ -66,7 +63,7 @@ impl Operation for ModulationOp {
             std::mem::size_of::<ModulationSubseq>()
         };
 
-        let mod_size = (self.buf.len() - sent).min(tx.len() - offset);
+        let mod_size = (buf.len() - sent).min(tx.len() - offset);
         assert!(mod_size > 0);
 
         if sent == 0 {
@@ -80,8 +77,11 @@ impl Operation for ModulationOp {
                     },
                 size: mod_size as u16,
                 __pad: [0; 3],
-                freq_div: self.freq_div,
-                rep: self.loop_behavior.rep,
+                freq_div: self
+                    .modulation
+                    .sampling_config()
+                    .division(device.ultrasound_freq())?,
+                rep: self.modulation.loop_behavior().rep,
                 transition_mode: self.transition_mode.unwrap_or_default().mode(),
                 transition_value: self.transition_mode.unwrap_or_default().value(),
             };
@@ -93,7 +93,7 @@ impl Operation for ModulationOp {
             };
         }
 
-        if sent + mod_size == self.buf.len() {
+        if sent + mod_size == buf.len() {
             let d = cast::<ModulationSubseq>(tx);
             d.flag.set(ModulationControlFlags::END, true);
             d.flag.set(
@@ -104,7 +104,7 @@ impl Operation for ModulationOp {
 
         unsafe {
             std::ptr::copy_nonoverlapping(
-                self.buf[sent..].as_ptr(),
+                buf[sent..].as_ptr(),
                 tx[offset..].as_mut_ptr() as _,
                 mod_size,
             )
@@ -119,7 +119,7 @@ impl Operation for ModulationOp {
     }
 
     fn required_size(&self, device: &Device) -> usize {
-        if self.remains[device] == self.buf.len() {
+        if self.remains[device] == self.buf[&device.idx()].len() {
             std::mem::size_of::<ModulationHead>() + 1
         } else {
             std::mem::size_of::<ModulationSubseq>() + 1
@@ -127,11 +127,16 @@ impl Operation for ModulationOp {
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        if !(2..=MOD_BUF_SIZE_MAX).contains(&self.buf.len()) {
-            return Err(AUTDInternalError::ModulationSizeOutOfRange(self.buf.len()));
-        }
+        self.buf = self.modulation.calc(geometry)?;
+        self.buf.values().try_for_each(|buf| {
+            if !(2..=MOD_BUF_SIZE_MAX).contains(&buf.len()) {
+                return Err(AUTDInternalError::ModulationSizeOutOfRange(buf.len()));
+            }
+            Ok(())
+        })?;
 
-        self.remains.init(geometry, self.buf.len());
+        self.remains
+            .init(geometry, |dev| self.buf[&dev.idx()].len());
 
         Ok(())
     }
@@ -149,10 +154,11 @@ mod tests {
 
     use super::*;
     use crate::{
+        derive::{LoopBehavior, SamplingConfiguration},
         ethercat::DcSysTime,
         firmware::{
             fpga::{SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
-            operation::tests::parse_tx_as,
+            operation::tests::{parse_tx_as, TestModulation},
         },
         geometry::tests::create_geometry,
     };
@@ -181,9 +187,11 @@ mod tests {
         );
 
         let mut op = ModulationOp::new(
-            buf.clone(),
-            freq_div,
-            loop_behavior,
+            TestModulation {
+                buf: buf.clone(),
+                config: SamplingConfiguration::DivisionRaw(freq_div),
+                loop_behavior,
+            },
             segment,
             Some(transition_mode),
         );
@@ -288,9 +296,11 @@ mod tests {
         let buf: Vec<u8> = (0..MOD_SIZE).map(|_| rng.gen()).collect();
 
         let mut op = ModulationOp::new(
-            buf.clone(),
-            SAMPLING_FREQ_DIV_MIN,
-            LoopBehavior::infinite(),
+            TestModulation {
+                buf: buf.clone(),
+                config: SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
+                loop_behavior: LoopBehavior::infinite(),
+            },
             Segment::S0,
             Some(TransitionMode::SyncIdx),
         );
@@ -453,38 +463,31 @@ mod tests {
         });
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_buffer_out_of_range() {
+    #[case(Err(AUTDInternalError::ModulationSizeOutOfRange(1)), 1)]
+    #[case(Ok(()), 2)]
+    #[case(Ok(()), MOD_BUF_SIZE_MAX)]
+    #[case(Err(AUTDInternalError::ModulationSizeOutOfRange(
+        MOD_BUF_SIZE_MAX + 1
+    )), MOD_BUF_SIZE_MAX + 1)]
+    fn test_buffer_out_of_range(#[case] expect: Result<(), AUTDInternalError>, #[case] n: usize) {
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
 
-        let check = |n: usize| {
-            let mut rng = rand::thread_rng();
+        let mut rng = rand::thread_rng();
 
-            let buf: Vec<u8> = (0..n).map(|_| rng.gen()).collect();
-            let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
-
-            let mut op = ModulationOp::new(
-                buf.clone(),
-                freq_div,
-                LoopBehavior::infinite(),
-                Segment::S0,
-                Some(TransitionMode::SyncIdx),
-            );
-
-            op.init(&geometry)
-        };
-
-        assert_eq!(
-            check(1),
-            Err(AUTDInternalError::ModulationSizeOutOfRange(1))
+        let mut op = ModulationOp::new(
+            TestModulation {
+                buf: (0..n).map(|_| rng.gen()).collect(),
+                config: SamplingConfiguration::DivisionRaw(
+                    rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX),
+                ),
+                loop_behavior: LoopBehavior::infinite(),
+            },
+            Segment::S0,
+            Some(TransitionMode::SyncIdx),
         );
-        assert_eq!(check(2), Ok(()));
-        assert_eq!(check(MOD_BUF_SIZE_MAX), Ok(()));
-        assert_eq!(
-            check(MOD_BUF_SIZE_MAX + 1),
-            Err(AUTDInternalError::ModulationSizeOutOfRange(
-                MOD_BUF_SIZE_MAX + 1
-            ))
-        );
+
+        assert_eq!(expect, op.init(&geometry));
     }
 }

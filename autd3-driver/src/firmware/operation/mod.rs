@@ -190,6 +190,7 @@ pub mod tests {
     use autd3_derive::Gain;
 
     use crate::{
+        defined::FREQ_40K,
         derive::*,
         ethercat::EC_OUTPUT_FRAME_SIZE,
         firmware::cpu::Header,
@@ -203,6 +204,21 @@ pub mod tests {
             let ptr = tx.as_ptr() as *const T;
             ptr.read()
         }
+    }
+
+    #[derive(Modulation, Clone)]
+    pub struct TestModulation {
+        pub buf: Vec<u8>,
+        pub config: SamplingConfiguration,
+        pub loop_behavior: LoopBehavior,
+    }
+
+    impl Modulation for TestModulation {
+        // GRCOV_EXCL_START
+        fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
+            Self::transform(geometry, |_| Ok(self.buf.clone()))
+        }
+        // GRCOV_EXCL_STOP
     }
 
     #[derive(Gain, Clone)]
@@ -317,6 +333,7 @@ pub mod tests {
                 Vector3::zeros(),
                 UnitQuaternion::identity(),
             )],
+            FREQ_40K,
         )]);
 
         let mut op1 = OperationMock {
@@ -396,6 +413,7 @@ pub mod tests {
                 Vector3::zeros(),
                 UnitQuaternion::identity(),
             )],
+            FREQ_40K,
         )]);
 
         let mut op1 = OperationMock {
@@ -446,6 +464,7 @@ pub mod tests {
                 Vector3::zeros(),
                 UnitQuaternion::identity(),
             )],
+            FREQ_40K,
         )]);
 
         let mut op1 = OperationMock {
@@ -496,6 +515,7 @@ pub mod tests {
                 Vector3::zeros(),
                 UnitQuaternion::identity(),
             )],
+            FREQ_40K,
         )]);
 
         let mut op1 = OperationMock {
@@ -543,6 +563,7 @@ pub mod tests {
                 Vector3::zeros(),
                 UnitQuaternion::identity(),
             )],
+            FREQ_40K,
         )]);
 
         let mut op1 = OperationMock {
@@ -604,7 +625,6 @@ pub mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn test_finished() {
         let geometry = Geometry::new(vec![Device::new(
             0,
@@ -613,6 +633,7 @@ pub mod tests {
                 Vector3::zeros(),
                 UnitQuaternion::identity(),
             )],
+            FREQ_40K,
         )]);
 
         let mut op1 = OperationMock {
