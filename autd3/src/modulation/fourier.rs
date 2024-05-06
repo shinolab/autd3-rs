@@ -29,22 +29,9 @@ impl<S: SamplingMode> Fourier<S> {
     /// # Arguments
     /// - `sine` - [Sine] modulation
     ///
-    pub fn add_component(self, sine: Sine<S>) -> Self {
-        let Self {
-            mut components,
-            config,
-            loop_behavior,
-        } = self;
-        let config = SamplingConfiguration::from_division_raw(
-            config.division().min(sine.sampling_config().division()),
-        )
-        .unwrap();
-        components.push(sine.with_sampling_config(config));
-        Self {
-            components,
-            config,
-            loop_behavior,
-        }
+    pub fn add_component(mut self, sine: Sine<S>) -> Self {
+        self.components.push(sine);
+        self
     }
 
     /// Add sine wave components from iterator
@@ -52,26 +39,9 @@ impl<S: SamplingMode> Fourier<S> {
     /// # Arguments
     /// - `iter` - Iterator of [Sine] modulation
     ///
-    pub fn add_components_from_iter(
-        self,
-        iter: impl IntoIterator<Item = impl Into<Sine<S>>>,
-    ) -> Self {
-        let Self {
-            mut components,
-            config,
-            loop_behavior,
-        } = self;
-        let append = iter.into_iter().map(|m| m.into()).collect::<Vec<_>>();
-        let freq_div = append.iter().fold(config.division(), |acc, m| {
-            acc.min(m.sampling_config().division())
-        });
-        let config = SamplingConfiguration::from_division_raw(freq_div).unwrap();
-        components.extend(append.into_iter().map(|m| m.with_sampling_config(config)));
-        Self {
-            components,
-            config,
-            loop_behavior,
-        }
+    pub fn add_components_from_iter(mut self, iter: impl IntoIterator<Item = Sine<S>>) -> Self {
+        self.components.extend(iter);
+        self
     }
 }
 
@@ -106,48 +76,64 @@ impl<S: SamplingMode> std::ops::Add<Sine<S>> for Sine<S> {
 }
 
 impl<S: SamplingMode> Modulation for Fourier<S> {
-    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
+        if !self
+            .components
+            .iter()
+            .all(|c| c.sampling_config() == self.sampling_config())
+        {
+            return Err(AUTDInternalError::ModulationError(
+                "All components must have the same sampling configuration".to_string(),
+            ));
+        }
+
         let buffers = self
             .components
             .iter()
-            .map(|c| c.calc())
+            .map(|c| c.calc(geometry))
             .collect::<Result<Vec<_>, _>>()?;
-        Ok(buffers
-            .iter()
-            .fold(
-                vec![0usize; buffers.iter().fold(1, |acc, x| lcm(acc, x.len()))],
-                |acc, x| {
-                    acc.iter()
-                        .zip(x.iter().cycle())
-                        .map(|(a, &b)| a + b as usize)
-                        .collect::<Vec<_>>()
-                },
-            )
-            .iter()
-            .map(|x| (x / self.components.len()) as u8)
-            .collect::<Vec<_>>())
+        Self::transform(geometry, |dev| {
+            Ok(buffers
+                .iter()
+                .fold(
+                    vec![0usize; buffers.iter().fold(1, |acc, x| lcm(acc, x.len()))],
+                    |acc, x| {
+                        acc.iter()
+                            .zip(x[&dev.idx()].iter().cycle())
+                            .map(|(a, &b)| a + b as usize)
+                            .collect::<Vec<_>>()
+                    },
+                )
+                .iter()
+                .map(|x| (x / self.components.len()) as u8)
+                .collect::<Vec<_>>())
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::tests::create_geometry;
+
     use super::*;
 
     use autd3_driver::defined::PI;
 
     #[test]
     fn test_fourier() -> anyhow::Result<()> {
+        let geometry = create_geometry(1);
+
         let f0 = Sine::new(50.).with_phase(PI / 2.0 * Rad);
         let f1 = Sine::new(100.).with_phase(PI / 3.0 * Rad);
         let f2 = Sine::new(150.).with_phase(PI / 4.0 * Rad);
         let f3 = Sine::new(200.);
         let f4 = Sine::new(250.);
 
-        let f0_buf = f0.calc()?;
-        let f1_buf = f1.calc()?;
-        let f2_buf = f2.calc()?;
-        let f3_buf = f3.calc()?;
-        let f4_buf = f4.calc()?;
+        let f0_buf = &f0.calc(&geometry)?[&0];
+        let f1_buf = &f1.calc(&geometry)?[&0];
+        let f2_buf = &f2.calc(&geometry)?[&0];
+        let f3_buf = &f3.calc(&geometry)?[&0];
+        let f4_buf = &f4.calc(&geometry)?[&0];
 
         let f = (f0 + f1).add_component(f2).add_components_from_iter([f3]) + f4;
 
@@ -163,7 +149,7 @@ mod tests {
         assert_eq!(f[4].freq(), 250.);
         assert_eq!(f[4].phase(), 0.0 * Rad);
 
-        let buf = f.calc()?;
+        let buf = &f.calc(&geometry)?[&0];
 
         (0..buf.len()).for_each(|i| {
             assert_eq!(
@@ -181,8 +167,17 @@ mod tests {
     }
 
     #[test]
-    fn test_fourier_derive() {
-        let f = Fourier::new(Sine::new(50.).with_phase(PI / 2.0 * Rad));
-        assert_eq!(f, f.clone());
+    fn mismatch_sampling_config() {
+        let geometry = create_geometry(1);
+
+        let f = Fourier::new(Sine::new(50.))
+            + Sine::new(50.).with_sampling_config(SamplingConfiguration::Frequency(1000));
+
+        assert_eq!(
+            Err(AUTDInternalError::ModulationError(
+                "All components must have the same sampling configuration".to_string()
+            )),
+            f.calc(&geometry)
+        );
     }
 }

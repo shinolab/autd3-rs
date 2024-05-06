@@ -56,7 +56,7 @@ impl Gain for Bessel {
                 })
         };
         Ok(Self::transform(geometry, filter, |dev| {
-            let wavenumber = Transducer::wavenumber(dev.sound_speed);
+            let wavenumber = dev.wavenumber();
             move |tr| {
                 let r = rot * (tr.position() - self.pos);
                 let dist =
@@ -109,7 +109,7 @@ mod tests {
                     let r = tr.position() - pos;
                     let r = rot * r;
                     let dist = theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - theta.cos() * r.z;
-                    dist * Transducer::wavenumber(geometry[0].sound_speed) * Rad + phase_offset
+                    dist * geometry[0].wavenumber() * Rad + phase_offset
                 };
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity());

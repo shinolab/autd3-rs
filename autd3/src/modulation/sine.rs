@@ -49,34 +49,39 @@ impl Sine<ExactFrequency> {
 }
 
 impl<S: SamplingMode> Modulation for Sine<S> {
-    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
         if self.freq < 0. {
             return Err(AUTDInternalError::ModulationError(format!(
                 "Frequency ({}Hz) must be positive",
                 self.freq
             )));
         }
-        if self.freq >= self.config.freq() / 2. {
-            return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}Hz) is equal to or greater than the Nyquist frequency ({}Hz)",
-                self.freq,
-                self.config.freq() / 2.
-            )));
-        }
-        let (n, rep) = S::validate(self.freq, self.config)?;
-        Ok((0..n)
-            .map(|i| {
-                ((self.intensity as f64 / 2.
-                    * (2.0 * PI * (rep * i) as f64 / n as f64 + self.phase.radian()).sin())
-                    + self.offset as f64)
-                    .round() as u8
-            })
-            .collect())
+
+        Self::transform(geometry, |dev| {
+            if self.freq >= self.config.freq(dev.ultrasound_freq())? / 2. {
+                return Err(AUTDInternalError::ModulationError(format!(
+                    "Frequency ({}Hz) is equal to or greater than the Nyquist frequency ({}Hz)",
+                    self.freq,
+                    self.config.freq(dev.ultrasound_freq())? / 2.
+                )));
+            }
+            let (n, rep) = S::validate(self.freq, self.config, dev.ultrasound_freq())?;
+            Ok((0..n)
+                .map(|i| {
+                    ((self.intensity as f64 / 2.
+                        * (2.0 * PI * (rep * i) as f64 / n as f64 + self.phase.radian()).sin())
+                        + self.offset as f64)
+                        .round() as u8
+                })
+                .collect())
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::tests::create_geometry;
+
     use super::*;
 
     #[rstest::rstest]
@@ -120,6 +125,7 @@ mod tests {
         4000.
     )]
     fn with_freq_exact(#[case] expect: Result<Vec<u8>, AUTDInternalError>, #[case] freq: f64) {
+        let geometry = create_geometry(1);
         let m = Sine::with_freq_exact(freq);
         assert_eq!(freq, m.freq());
         assert_eq!(u8::MAX, m.intensity());
@@ -127,7 +133,7 @@ mod tests {
         assert_eq!(Phase::new(0), m.phase());
         assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
 
-        assert_eq!(expect, m.calc());
+        assert_eq!(expect.map(|b| HashMap::from([(0, b)])), m.calc(&geometry));
     }
 
     #[rstest::rstest]
@@ -152,22 +158,24 @@ mod tests {
         4e3
     )]
     fn with_freq_nearest(#[case] expect: Result<Vec<u8>, AUTDInternalError>, #[case] freq: f64) {
+        let geometry = create_geometry(1);
         let m = Sine::with_freq_nearest(freq);
         assert_eq!(freq, m.freq());
         assert_eq!(u8::MAX, m.intensity());
         assert_eq!(u8::MAX / 2, m.offset());
         assert_eq!(Phase::new(0), m.phase());
         assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
-        assert_eq!(expect, m.calc());
+        assert_eq!(expect.map(|b| HashMap::from([(0, b)])), m.calc(&geometry));
     }
 
     #[test]
     fn freq_must_be_positive() {
+        let geometry = create_geometry(1);
         assert_eq!(
             Err(AUTDInternalError::ModulationError(
                 "Frequency (-0.1Hz) must be positive".to_string()
             )),
-            Sine::with_freq_nearest(-0.1).calc()
+            Sine::with_freq_nearest(-0.1).calc(&geometry)
         );
     }
 
@@ -177,14 +185,11 @@ mod tests {
             .with_intensity(u8::MAX / 2)
             .with_offset(u8::MAX / 4)
             .with_phase(PI / 4.0 * Rad)
-            .with_sampling_config(SamplingConfiguration::from_freq_nearest(10.1).unwrap());
+            .with_sampling_config(SamplingConfiguration::FrequencyNearest(10.1));
         assert_eq!(u8::MAX / 2, m.intensity);
         assert_eq!(u8::MAX / 4, m.offset);
         assert_eq!(PI / 4.0 * Rad, m.phase);
-        assert_eq!(
-            SamplingConfiguration::from_freq_nearest(10.1).unwrap(),
-            m.config
-        );
+        assert_eq!(SamplingConfiguration::FrequencyNearest(10.1), m.config);
     }
 
     #[test]

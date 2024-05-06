@@ -36,10 +36,11 @@ impl Gain for Focus {
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
         Ok(Self::transform(geometry, filter, |dev| {
-            let sound_speed = dev.sound_speed;
+            let wavenumber = dev.wavenumber();
             move |tr| {
                 Drive::new(
-                    tr.align_phase_at(self.pos, sound_speed) + self.phase_offset,
+                    Phase::from_rad((self.pos - tr.position()).norm() * wavenumber)
+                        + self.phase_offset,
                     self.intensity,
                 )
             }
@@ -71,10 +72,9 @@ mod tests {
         b.iter().for_each(|(&idx, d)| {
             assert_eq!(d.len(), geometry[idx].num_transducers());
             d.iter().zip(geometry[idx].iter()).for_each(|(d, tr)| {
-                let expected_phase = Phase::from_rad(
-                    (tr.position() - pos).norm()
-                        * Transducer::wavenumber(geometry[idx].sound_speed),
-                ) + phase_offset;
+                let expected_phase =
+                    Phase::from_rad((tr.position() - pos).norm() * geometry[idx].wavenumber())
+                        + phase_offset;
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity())
             });
