@@ -42,7 +42,7 @@ impl<F: Fn(&Device) -> bool> Operation for ConfigureForceFanOp<F> {
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains.init(geometry, 1);
+        self.remains.init(geometry, |_| 1);
         Ok(())
     }
 

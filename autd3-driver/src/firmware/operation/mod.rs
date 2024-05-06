@@ -12,6 +12,8 @@ mod silencer;
 pub mod stm;
 mod sync;
 
+use std::collections::HashMap;
+
 pub use clear::*;
 pub use debug::*;
 pub use force_fan::*;
@@ -56,16 +58,16 @@ pub enum TypeTag {
 
 #[derive(Default)]
 pub(crate) struct Remains {
-    remains: Vec<usize>,
+    remains: HashMap<usize, usize>,
 }
 
 impl Remains {
-    pub fn init(&mut self, geometry: &Geometry, n: usize) {
-        self.remains = vec![n; geometry.num_devices()]
+    pub fn init(&mut self, geometry: &Geometry, f: impl Fn(&Device) -> usize) {
+        self.remains = geometry.devices().map(|dev| (dev.idx(), f(dev))).collect();
     }
 
     pub fn is_done(&self, device: &Device) -> bool {
-        self.remains[device.idx()] == 0
+        self.remains[&device.idx()] == 0
     }
 }
 
@@ -73,13 +75,13 @@ impl std::ops::Index<&Device> for Remains {
     type Output = usize;
 
     fn index(&self, index: &Device) -> &Self::Output {
-        &self.remains[index.idx()]
+        &self.remains[&index.idx()]
     }
 }
 
 impl std::ops::IndexMut<&Device> for Remains {
     fn index_mut(&mut self, index: &Device) -> &mut Self::Output {
-        &mut self.remains[index.idx()]
+        self.remains.get_mut(&index.idx()).unwrap()
     }
 }
 
@@ -145,7 +147,7 @@ impl OperationHandler {
         geometry
             .devices()
             .map(|dev| match (op1.is_done(dev), op2.is_done(dev)) {
-                (true, true) => unreachable!(),
+                (true, true) => Ok(()),
                 (true, false) => Self::pack_dev(op2, dev, tx).map(|_| Ok(()))?,
                 (false, true) => Self::pack_dev(op1, dev, tx).map(|_| Ok(()))?,
                 (false, false) => {
