@@ -33,4 +33,5 @@ pub mod derive {
         geometry::{Device, Geometry, Transducer},
     };
     pub use autd3_derive::{Builder, Gain, Modulation};
+    pub use std::collections::HashMap;
 }

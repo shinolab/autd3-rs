@@ -3,6 +3,7 @@ mod radiation_pressure;
 mod segment;
 mod transform;
 
+use std::collections::HashMap;
 use std::time::Duration;
 
 pub use cache::Cache as ModulationCache;
@@ -14,6 +15,8 @@ pub use transform::IntoTransform as IntoModulationTransform;
 pub use transform::Transform as ModulationTransform;
 
 use crate::defined::DEFAULT_TIMEOUT;
+use crate::derive::Device;
+use crate::derive::Geometry;
 use crate::{
     error::AUTDInternalError,
     firmware::{
@@ -23,6 +26,10 @@ use crate::{
 };
 
 use super::{Datagram, DatagramS};
+
+use rayon::prelude::*;
+
+const PARALLEL_THRESHOLD: usize = 4;
 
 pub trait ModulationProperty {
     fn sampling_config(&self) -> SamplingConfiguration;
@@ -36,9 +43,35 @@ pub trait ModulationProperty {
 /// * The sampling rate is [crate::firmware::fpga::fpga_clk_freq()]/N, where N is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN].
 #[allow(clippy::len_without_is_empty)]
 pub trait Modulation: ModulationProperty {
-    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError>;
-    fn len(&self) -> Result<usize, AUTDInternalError> {
-        self.calc().map(|v| v.len())
+    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError>;
+    fn transform<F: Fn(&Device) -> Result<Vec<u8>, AUTDInternalError> + Sync>(
+        geometry: &Geometry,
+        f: F,
+    ) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError>
+    where
+        Self: Sized,
+    {
+        #[cfg(all(feature = "force_parallel", feature = "force_serial"))]
+        compile_error!("Cannot specify both force_parallel and force_serial");
+        #[cfg(all(feature = "force_parallel", not(feature = "force_serial")))]
+        let n = usize::MAX;
+        #[cfg(all(not(feature = "force_parallel"), feature = "force_serial"))]
+        let n = 0;
+        #[cfg(all(not(feature = "force_parallel"), not(feature = "force_serial")))]
+        let n = geometry.devices().count();
+
+        if n > PARALLEL_THRESHOLD {
+            geometry
+                .devices()
+                .par_bridge()
+                .map(|dev| Ok((dev.idx(), f(dev)?)))
+                .collect::<Result<HashMap<usize, Vec<u8>>, AUTDInternalError>>()
+        } else {
+            geometry
+                .devices()
+                .map(|dev| Ok((dev.idx(), f(dev)?)))
+                .collect::<Result<HashMap<usize, Vec<u8>>, AUTDInternalError>>()
+        }
     }
 }
 
@@ -54,34 +87,24 @@ impl ModulationProperty for Box<dyn Modulation> {
 }
 
 impl Modulation for Box<dyn Modulation> {
-    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
-        self.as_ref().calc()
-    }
-
-    fn len(&self) -> Result<usize, AUTDInternalError> {
-        self.as_ref().len()
+    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
+        self.as_ref().calc(geometry)
     }
 }
 
 impl DatagramS for Box<dyn Modulation> {
-    type O1 = ModulationOp;
+    type O1 = ModulationOp<Self>;
     type O2 = NullOp;
 
     fn operation_with_segment(
         self,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
-    ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((
-            Self::O1::new(
-                self.calc()?,
-                self.sampling_config().division(),
-                self.loop_behavior(),
-                segment,
-                transition_mode,
-            ),
+    ) -> (Self::O1, Self::O2) {
+        (
+            Self::O1::new(self, segment, transition_mode),
             Self::O2::default(),
-        ))
+        )
     }
 
     fn timeout(&self) -> Option<Duration> {
@@ -104,8 +127,8 @@ mod tests {
     }
 
     impl Modulation for TestModulation {
-        fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
-            Ok(self.buf.clone())
+        fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
+            Self::transform(geometry, |_| Ok(self.buf.clone()))
         }
     }
 
@@ -137,22 +160,6 @@ mod tests {
                 loop_behavior,
             }
             .loop_behavior()
-        );
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case::n0(0)]
-    #[case::n100(100)]
-    fn test_len(#[case] len: usize) {
-        assert_eq!(
-            Ok(len),
-            TestModulation {
-                config: SamplingConfiguration::FREQ_4K_HZ,
-                buf: vec![u8::MIN; len],
-                loop_behavior: LoopBehavior::infinite(),
-            }
-            .len()
         );
     }
 }

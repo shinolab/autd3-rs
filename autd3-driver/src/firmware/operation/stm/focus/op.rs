@@ -3,8 +3,8 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{
-            LoopBehavior, STMFocus, Segment, TransitionMode, FOCUS_STM_BUF_SIZE_MAX,
-            STM_BUF_SIZE_MIN,
+            LoopBehavior, STMFocus, STMSamplingConfiguration, Segment, TransitionMode,
+            FOCUS_STM_BUF_SIZE_MAX, STM_BUF_SIZE_MIN,
         },
         operation::{cast, Operation, Remains, TypeTag},
     },
@@ -35,7 +35,7 @@ struct FocusSTMSubseq {
 pub struct FocusSTMOp {
     remains: Remains,
     points: Vec<ControlPoint>,
-    freq_div: u32,
+    stm_sampling_config: STMSamplingConfiguration,
     loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
@@ -44,7 +44,7 @@ pub struct FocusSTMOp {
 impl FocusSTMOp {
     pub fn new(
         points: Vec<ControlPoint>,
-        freq_div: u32,
+        stm_sampling_config: STMSamplingConfiguration,
         loop_behavior: LoopBehavior,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
@@ -52,7 +52,7 @@ impl FocusSTMOp {
         Self {
             points,
             remains: Default::default(),
-            freq_div,
+            stm_sampling_config,
             loop_behavior,
             segment,
             transition_mode,
@@ -87,11 +87,12 @@ impl Operation for FocusSTMOp {
                 transition_mode: self.transition_mode.unwrap_or_default().mode(),
                 transition_value: self.transition_mode.unwrap_or_default().value(),
                 send_num: send_num as u8,
-                freq_div: self.freq_div,
-                sound_speed: (device.sound_speed / METER
-                    * 1024.0
-                    * crate::firmware::fpga::FREQ_40K as f64
-                    / crate::firmware::fpga::ultrasound_freq() as f64)
+                freq_div: self
+                    .stm_sampling_config
+                    .sampling(self.points.len())?
+                    .division(device.ultrasound_freq())?,
+                sound_speed: (device.sound_speed / METER * 1024.0 * crate::defined::FREQ_40K as f64
+                    / device.ultrasound_freq() as f64)
                     .round() as u32,
                 rep: self.loop_behavior.rep,
             };
@@ -145,7 +146,7 @@ impl Operation for FocusSTMOp {
             ));
         }
 
-        self.remains.init(geometry, self.points.len());
+        self.remains.init(geometry, |_| self.points.len());
 
         Ok(())
     }
@@ -212,7 +213,7 @@ mod tests {
 
         let mut op = FocusSTMOp::new(
             points.clone(),
-            freq_div,
+            STMSamplingConfiguration::SamplingConfiguration(crate::derive::SamplingConfiguration::DivisionRaw(freq_div)),
             loop_behavior,
             segment,
             Some(transition_mode),
@@ -334,7 +335,13 @@ mod tests {
         let loop_behavior = LoopBehavior::finite(rng.gen_range(0x0000001..=0xFFFFFFFF)).unwrap();
         let rep = loop_behavior.rep;
         let segment = Segment::S1;
-        let mut op = FocusSTMOp::new(points.clone(), freq_div, loop_behavior, segment, None);
+        let mut op = FocusSTMOp::new(
+            points.clone(),
+            STMSamplingConfiguration::SamplingConfiguration(crate::derive::SamplingConfiguration::DivisionRaw(freq_div)),
+            loop_behavior,
+            segment,
+            None,
+        );
 
         assert!(op.init(&geometry).is_ok());
 
@@ -584,7 +591,9 @@ mod tests {
                 .collect();
             let mut op = FocusSTMOp::new(
                 points,
-                SAMPLING_FREQ_DIV_MIN,
+                STMSamplingConfiguration::SamplingConfiguration(crate::derive::SamplingConfiguration::Division(
+                    SAMPLING_FREQ_DIV_MIN,
+                )),
                 LoopBehavior::infinite(),
                 Segment::S0,
                 Some(TransitionMode::SyncIdx),
@@ -616,14 +625,14 @@ mod tests {
         let mut tx = vec![0x00u8; FRAME_SIZE * NUM_DEVICE];
 
         let x = FOCUS_STM_FIXED_NUM_UNIT * (FOCUS_STM_FIXED_NUM_UPPER_X as f64 + 1.);
-        let points: Vec<ControlPoint> = (0..FOCUS_STM_SIZE)
-            .map(|_| ControlPoint::new(Vector3::new(x, x, x)).with_intensity(0))
-            .collect();
-        let freq_div: u32 = SAMPLING_FREQ_DIV_MIN;
 
         let mut op = FocusSTMOp::new(
-            points.clone(),
-            freq_div,
+            (0..FOCUS_STM_SIZE)
+                .map(|_| ControlPoint::new(Vector3::new(x, x, x)).with_intensity(0))
+                .collect(),
+            STMSamplingConfiguration::SamplingConfiguration(crate::derive::SamplingConfiguration::Division(
+                SAMPLING_FREQ_DIV_MIN,
+            )),
             LoopBehavior::infinite(),
             Segment::S0,
             Some(TransitionMode::SyncIdx),

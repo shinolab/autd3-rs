@@ -5,7 +5,8 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{
-            Drive, LoopBehavior, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX, STM_BUF_SIZE_MIN,
+            Drive, LoopBehavior, STMSamplingConfiguration, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX,
+            STM_BUF_SIZE_MIN,
         },
         operation::{cast, Operation, Remains, TypeTag},
     },
@@ -41,7 +42,7 @@ pub struct GainSTMOp<G: Gain> {
     drives: Vec<HashMap<usize, Vec<Drive>>>,
     remains: Remains,
     mode: GainSTMMode,
-    freq_div: u32,
+    stm_sampling_config: STMSamplingConfiguration,
     loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
@@ -51,7 +52,7 @@ impl<G: Gain> GainSTMOp<G> {
     pub fn new(
         gains: Vec<G>,
         mode: GainSTMMode,
-        freq_div: u32,
+        stm_sampling_config: STMSamplingConfiguration,
         loop_behavior: LoopBehavior,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
@@ -61,7 +62,7 @@ impl<G: Gain> GainSTMOp<G> {
             drives: Default::default(),
             remains: Default::default(),
             mode,
-            freq_div,
+            stm_sampling_config,
             loop_behavior,
             segment,
             transition_mode,
@@ -81,7 +82,7 @@ impl<G: Gain> Operation for GainSTMOp<G> {
             return Err(AUTDInternalError::GainSTMSizeOutOfRange(self.drives.len()));
         }
 
-        self.remains.init(geometry, self.drives.len());
+        self.remains.init(geometry, |_| self.drives.len());
 
         Ok(())
     }
@@ -209,7 +210,10 @@ impl<G: Gain> Operation for GainSTMOp<G> {
                 mode: self.mode,
                 transition_mode: self.transition_mode.unwrap_or_default().mode(),
                 transition_value: self.transition_mode.unwrap_or_default().value(),
-                freq_div: self.freq_div,
+                freq_div: self
+                    .stm_sampling_config
+                    .sampling(self.gains.len())?
+                    .division(device.ultrasound_freq())?,
                 rep: self.loop_behavior.rep,
                 __padding: [0; 4],
             };
@@ -320,7 +324,7 @@ mod tests {
         let mut op = GainSTMOp::<_>::new(
             gains,
             GainSTMMode::PhaseIntensityFull,
-            freq_div,
+            STMSamplingConfiguration::SamplingConfiguration(crate::derive::SamplingConfiguration::DivisionRaw(freq_div)),
             loop_behavior,
             segment,
             Some(transition_mode),
@@ -522,7 +526,7 @@ mod tests {
         let mut op = GainSTMOp::<_>::new(
             gains,
             GainSTMMode::PhaseFull,
-            freq_div,
+            STMSamplingConfiguration::SamplingConfiguration(crate::derive::SamplingConfiguration::DivisionRaw(freq_div)),
             loop_behavior,
             segment,
             None,
@@ -704,7 +708,7 @@ mod tests {
         let mut op = GainSTMOp::<_>::new(
             gains,
             GainSTMMode::PhaseHalf,
-            freq_div,
+            STMSamplingConfiguration::SamplingConfiguration(crate::derive::SamplingConfiguration::DivisionRaw(freq_div)),
             loop_behavior,
             segment,
             Some(TransitionMode::SyncIdx),
@@ -861,7 +865,9 @@ mod tests {
             let mut op = GainSTMOp::<_>::new(
                 gains,
                 GainSTMMode::PhaseIntensityFull,
-                SAMPLING_FREQ_DIV_MIN,
+                STMSamplingConfiguration::SamplingConfiguration(crate::derive::SamplingConfiguration::Division(
+                    SAMPLING_FREQ_DIV_MIN,
+                )),
                 LoopBehavior::infinite(),
                 Segment::S0,
                 Some(TransitionMode::SyncIdx),

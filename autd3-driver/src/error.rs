@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use thiserror::Error;
 
 use crate::firmware::{fpga::*, operation::GainSTMMode};
@@ -40,15 +38,9 @@ pub enum AUTDInternalError {
     SamplingFreqInvalid(u32, u32),
     #[error("Sampling frequency ({0}Hz) is out of range ([{1}, {2}])")]
     SamplingFreqOutOfRange(f64, f64, f64),
-    #[error("Sampling period ({0:?}) must be a multiple of {1:?}")]
-    SamplingPeriodInvalid(Duration, Duration),
-    #[error("Sampling period ({0:?}) is out of range ([{1:?}, {2:?}])")]
-    SamplingPeriodOutOfRange(Duration, Duration, Duration),
 
-    #[error("STM frequency ({1}Hz, size={0}) must divide {2}")]
-    STMFrequencyInvalid(usize, f64, f64),
-    #[error("STM period ({1:?}, size={0}) must be a multiple of {2:?}")]
-    STMPeriodInvalid(usize, Duration, Duration),
+    #[error("STM frequency ({1}Hz, size={0}) must divide ultrasound frequency")]
+    STMFrequencyInvalid(usize, f64),
 
     #[error(
         "FocusSTM size ({0}) is out of range ([{}, {}])",

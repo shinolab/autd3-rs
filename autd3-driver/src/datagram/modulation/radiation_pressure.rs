@@ -28,12 +28,19 @@ pub trait IntoRadiationPressure<M: Modulation> {
 }
 
 impl<M: Modulation> Modulation for RadiationPressure<M> {
-    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
         Ok(self
             .m
-            .calc()?
+            .calc(geometry)?
             .into_iter()
-            .map(|v| ((v as f64 / 255.).sqrt() * 255.).round() as u8)
+            .map(|(i, v)| {
+                (
+                    i,
+                    v.into_iter()
+                        .map(|v| ((v as f64 / 255.).sqrt() * 255.).round() as u8)
+                        .collect(),
+                )
+            })
             .collect())
     }
 }
@@ -43,6 +50,8 @@ mod tests {
     use rand::Rng;
 
     use super::{super::tests::TestModulation, *};
+
+    use crate::geometry::tests::create_geometry;
 
     #[rstest::rstest]
     #[test]
@@ -63,21 +72,25 @@ mod tests {
 
     #[test]
     fn test() {
+        let geometry = create_geometry(1, 249);
+
         let mut rng = rand::thread_rng();
 
         let buf = vec![rng.gen(), rng.gen()];
         assert_eq!(
-            Ok(buf
-                .iter()
-                .map(|&x| (((x as f64 / 255.).sqrt() * 255.).round() as u8).into())
-                .collect::<Vec<u8>>()),
+            Ok(HashMap::from([(
+                0,
+                buf.iter()
+                    .map(|&x| (((x as f64 / 255.).sqrt() * 255.).round() as u8).into())
+                    .collect::<Vec<u8>>()
+            )])),
             TestModulation {
                 buf: buf.clone(),
                 config: SamplingConfiguration::FREQ_4K_HZ,
                 loop_behavior: LoopBehavior::infinite(),
             }
             .with_radiation_pressure()
-            .calc()
+            .calc(&geometry)
         );
     }
 }

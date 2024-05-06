@@ -83,11 +83,11 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let datagram = quote! {
         impl <#(#linetimes,)* #(#type_params,)* > DatagramS for #name #ty_generics #where_clause {
-            type O1 = ModulationOp;
+            type O1 = ModulationOp<Self>;
             type O2 = NullOp;
 
-            fn operation_with_segment(self, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-                Ok((Self::O1::new(self.calc()?, self.config.division(), self.loop_behavior, segment, transition_mode), Self::O2::default()))
+            fn operation_with_segment(self, segment: Segment, transition_mode: Option<TransitionMode>) -> (Self::O1, Self::O2) {
+                (Self::O1::new(self, segment, transition_mode), Self::O2::default())
             }
 
             fn timeout(&self) -> Option<std::time::Duration> {
@@ -107,7 +107,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     } else {
         quote! {
             impl <#(#linetimes,)* #(#type_params,)*> IntoModulationTransform<Self> for #name #ty_generics #where_clause {
-                fn with_transform<ModulationTransformF: Fn(usize, u8) -> u8>(self, f: ModulationTransformF) -> ModulationTransform<Self, ModulationTransformF> {
+                fn with_transform<ModulationTransformF: Fn(&Device, usize, u8) -> u8>(self, f: ModulationTransformF) -> ModulationTransform<Self, ModulationTransformF> {
                     ModulationTransform::new(self, f)
                 }
             }

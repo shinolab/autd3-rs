@@ -1,10 +1,7 @@
 use crate::{
     defined::DEFAULT_TIMEOUT,
     derive::*,
-    firmware::{
-        fpga::{TransitionMode, FOCUS_STM_BUF_SIZE_MAX, STM_BUF_SIZE_MIN},
-        operation::ControlPoint,
-    },
+    firmware::{fpga::TransitionMode, operation::ControlPoint},
 };
 
 use super::STMProps;
@@ -43,26 +40,6 @@ impl FocusSTM {
     ///
     pub const fn from_freq_nearest(freq: f64) -> Self {
         Self::from_props(STMProps::from_freq_nearest(freq))
-    }
-
-    /// constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `period` - Period.
-    ///
-    pub const fn from_period(period: std::time::Duration) -> Self {
-        Self::from_props(STMProps::from_period(period))
-    }
-
-    /// constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `period` - Period. The period closest to `period` from the possible periods is set.
-    ///
-    pub const fn from_period_nearest(period: std::time::Duration) -> Self {
-        Self::from_props(STMProps::from_period_nearest(period))
     }
 
     /// constructor
@@ -116,22 +93,7 @@ impl FocusSTM {
         &self.control_points
     }
 
-    pub fn freq(&self) -> Result<f64, AUTDInternalError> {
-        self.sampling_config()
-            .map(|c| c.freq() / self.control_points.len() as f64)
-    }
-
-    pub fn period(&self) -> Result<std::time::Duration, AUTDInternalError> {
-        self.sampling_config()
-            .map(|c| c.period() * self.control_points.len() as u32)
-    }
-
     pub fn sampling_config(&self) -> Result<SamplingConfiguration, AUTDInternalError> {
-        if !(STM_BUF_SIZE_MIN..=FOCUS_STM_BUF_SIZE_MAX).contains(&self.control_points.len()) {
-            return Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(
-                self.control_points.len(),
-            ));
-        }
         self.props.sampling_config(self.control_points.len())
     }
 }
@@ -152,19 +114,25 @@ impl DatagramS for FocusSTM {
         self,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
-    ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        let freq_div = self.sampling_config()?.division();
-        let loop_behavior = self.loop_behavior();
-        Ok((
+    ) -> (Self::O1, Self::O2) {
+        let Self {
+            control_points,
+            props: STMProps {
+                loop_behavior,
+                config,
+            },
+            ..
+        } = self;
+        (
             Self::O1::new(
-                self.control_points,
-                freq_div,
+                control_points,
+                config,
                 loop_behavior,
                 segment,
                 transition_mode,
             ),
             Self::O2::default(),
-        ))
+        )
     }
 
     fn timeout(&self) -> Option<std::time::Duration> {
@@ -174,26 +142,16 @@ impl DatagramS for FocusSTM {
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
 
     use super::*;
-    use crate::{
-        firmware::{fpga::sampling_config, operation::FocusSTMOp},
-        geometry::Vector3,
-    };
+    use crate::{firmware::operation::FocusSTMOp, geometry::Vector3};
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(SamplingConfiguration::from_freq(1).unwrap()), 0.5, 2)]
-    #[case(Err(AUTDInternalError::STMFrequencyInvalid(2, 0.49, 20000.0)), 0.49, 2)]
-    #[case(Ok(SamplingConfiguration::from_freq(10).unwrap()), 1., 10)]
-    #[case(Ok(SamplingConfiguration::from_freq(20).unwrap()), 2., 10)]
-    #[case(Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(STM_BUF_SIZE_MIN - 1)), 1., STM_BUF_SIZE_MIN - 1)]
-    #[case(
-        Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(FOCUS_STM_BUF_SIZE_MAX + 1)),
-        1.,
-        FOCUS_STM_BUF_SIZE_MAX + 1
-    )]
+    #[case(Ok(SamplingConfiguration::Frequency(1)), 0.5, 2)]
+    #[case(Ok(SamplingConfiguration::Frequency(10)), 1., 10)]
+    #[case(Ok(SamplingConfiguration::Frequency(20)), 2., 10)]
+    #[case(Err(AUTDInternalError::STMFrequencyInvalid(2, 0.49)), 0.49, 2)]
     fn from_freq(
         #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
         #[case] freq: f64,
@@ -209,16 +167,10 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(SamplingConfiguration::from_freq_nearest(1.).unwrap()), 0.5, 2)]
-    #[case(Ok(SamplingConfiguration::from_freq_nearest(0.98).unwrap()), 0.49, 2)]
-    #[case(Ok(SamplingConfiguration::from_freq_nearest(10.).unwrap()), 1., 10)]
-    #[case(Ok(SamplingConfiguration::from_freq_nearest(20.).unwrap()), 2., 10)]
-    #[case(Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(STM_BUF_SIZE_MIN - 1)), 1., STM_BUF_SIZE_MIN - 1)]
-    #[case(
-        Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(FOCUS_STM_BUF_SIZE_MAX + 1)),
-        1.,
-        FOCUS_STM_BUF_SIZE_MAX + 1
-    )]
+    #[case(Ok(SamplingConfiguration::FrequencyNearest(1.)), 0.5, 2)]
+    #[case(Ok(SamplingConfiguration::FrequencyNearest(0.98)), 0.49, 2)]
+    #[case(Ok(SamplingConfiguration::FrequencyNearest(10.)), 1., 10)]
+    #[case(Ok(SamplingConfiguration::FrequencyNearest(20.)), 2., 10)]
     fn from_freq_nearest(
         #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
         #[case] freq: f64,
@@ -227,51 +179,6 @@ mod tests {
         assert_eq!(
             expect,
             FocusSTM::from_freq_nearest(freq)
-                .add_foci_from_iter((0..n).map(|_| Vector3::zeros()))
-                .sampling_config()
-        );
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(Ok(SamplingConfiguration::from_period(Duration::from_micros(25)).unwrap()), Duration::from_micros(50), 2)]
-    #[case(
-        Err(AUTDInternalError::SamplingPeriodInvalid(
-            Duration::from_micros(26),
-            sampling_config::period_min()
-        )),
-        Duration::from_micros(52),
-        2
-    )]
-    #[case(Ok(SamplingConfiguration::from_period(Duration::from_micros(25)).unwrap()), Duration::from_micros(250), 10)]
-    #[case(Ok(SamplingConfiguration::from_period(Duration::from_micros(50)).unwrap()), Duration::from_micros(500), 10)]
-    fn from_period(
-        #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
-        #[case] period: Duration,
-        #[case] n: usize,
-    ) {
-        assert_eq!(
-            expect,
-            FocusSTM::from_period(period)
-                .add_foci_from_iter((0..n).map(|_| Vector3::zeros()))
-                .sampling_config()
-        );
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(25)).unwrap()), Duration::from_micros(50), 2)]
-    #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(26)).unwrap()), Duration::from_micros(52), 2)]
-    #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(25)).unwrap()), Duration::from_micros(250), 10)]
-    #[case(Ok(SamplingConfiguration::from_period_nearest(Duration::from_micros(50)).unwrap()), Duration::from_micros(500), 10)]
-    fn from_period_nearest(
-        #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
-        #[case] period: Duration,
-        #[case] n: usize,
-    ) {
-        assert_eq!(
-            expect,
-            FocusSTM::from_period_nearest(period)
                 .add_foci_from_iter((0..n).map(|_| Vector3::zeros()))
                 .sampling_config()
         );
@@ -290,64 +197,6 @@ mod tests {
             FocusSTM::from_sampling_config(config)
                 .add_foci_from_iter((0..n).map(|_| Vector3::zeros()))
                 .sampling_config()?
-        );
-        Ok(())
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(Ok(1.0), FocusSTM::from_freq(1.0), 2)]
-    #[case(Ok(1.0), FocusSTM::from_freq(1.0), 10)]
-    #[case(Ok(1.0), FocusSTM::from_period(Duration::from_secs(1)), 2)]
-    #[case(Ok(1.0), FocusSTM::from_period(Duration::from_secs(1)), 10)]
-    #[case(
-        Ok(400.0),
-        FocusSTM::from_sampling_config(SamplingConfiguration::FREQ_4K_HZ),
-        10
-    )]
-    #[case(Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(STM_BUF_SIZE_MIN - 1)), FocusSTM::from_freq(1.), STM_BUF_SIZE_MIN - 1)]
-    fn freq(
-        #[case] expect: Result<f64, AUTDInternalError>,
-        #[case] stm: FocusSTM,
-        #[case] n: usize,
-    ) -> anyhow::Result<()> {
-        assert_eq!(
-            expect,
-            stm.add_foci_from_iter((0..n).map(|_| Vector3::zeros()))
-                .freq()
-        );
-        Ok(())
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(Ok(Duration::from_secs(1)), FocusSTM::from_freq(1.0), 2)]
-    #[case(Ok(Duration::from_secs(1)), FocusSTM::from_freq(1.0), 10)]
-    #[case(
-        Ok(Duration::from_secs(1)),
-        FocusSTM::from_period(Duration::from_secs(1)),
-        2
-    )]
-    #[case(
-        Ok(Duration::from_secs(1)),
-        FocusSTM::from_period(Duration::from_secs(1)),
-        10
-    )]
-    #[case(
-        Ok(Duration::from_micros(2500)),
-        FocusSTM::from_sampling_config(SamplingConfiguration::FREQ_4K_HZ),
-        10
-    )]
-    #[case(Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(STM_BUF_SIZE_MIN - 1)), FocusSTM::from_freq(1.), STM_BUF_SIZE_MIN - 1)]
-    fn period(
-        #[case] expect: Result<Duration, AUTDInternalError>,
-        #[case] stm: FocusSTM,
-        #[case] n: usize,
-    ) -> anyhow::Result<()> {
-        assert_eq!(
-            expect,
-            stm.add_foci_from_iter((0..n).map(|_| Vector3::zeros()))
-                .period()
         );
         Ok(())
     }
@@ -440,7 +289,7 @@ mod tests {
     }
 
     #[test]
-    fn operation() -> anyhow::Result<()> {
+    fn operation() {
         let stm = FocusSTM::from_freq_nearest(1.)
             .add_focus(Vector3::new(1., 2., 3.))
             .add_focus((Vector3::new(4., 5., 6.), 1))
@@ -448,9 +297,7 @@ mod tests {
 
         assert_eq!(stm.timeout(), Some(DEFAULT_TIMEOUT));
 
-        let r = stm.operation_with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
-        assert!(r.is_ok());
-        let _: (FocusSTMOp, NullOp) = r.unwrap();
-        Ok(())
+        let _: (FocusSTMOp, NullOp) =
+            stm.operation_with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
     }
 }

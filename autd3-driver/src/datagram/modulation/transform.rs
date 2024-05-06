@@ -3,7 +3,7 @@ use crate::derive::*;
 /// Modulation to transform modulation data
 #[derive(Modulation)]
 #[no_modulation_transform]
-pub struct Transform<M: Modulation, F: Fn(usize, u8) -> u8> {
+pub struct Transform<M: Modulation, F: Fn(&Device, usize, u8) -> u8> {
     m: M,
     #[no_change]
     config: SamplingConfiguration,
@@ -11,7 +11,7 @@ pub struct Transform<M: Modulation, F: Fn(usize, u8) -> u8> {
     loop_behavior: LoopBehavior,
 }
 
-impl<M: Modulation, F: Fn(usize, u8) -> u8> Transform<M, F> {
+impl<M: Modulation, F: Fn(&Device, usize, u8) -> u8> Transform<M, F> {
     #[doc(hidden)]
     pub fn new(m: M, f: F) -> Self {
         Self {
@@ -29,33 +29,24 @@ pub trait IntoTransform<M: Modulation> {
     /// # Arguments
     ///
     /// * `f` - transform function. The first argument is index of the element, and the second argument is the value of the element of the original modulation data.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use autd3::prelude::*;
-    /// let m = Static::with_intensity(u8::MAX);
-    /// assert_eq!(m.calc(), Ok(vec![u8::MAX, u8::MAX]));
-    /// let m = m.with_transform(|i, x| match i {
-    ///     0 => x / 2,
-    ///     _ => u8::MIN,
-    /// });
-    /// assert_eq!(
-    ///     m.calc(),
-    ///     Ok(vec![u8::MAX / 2, u8::MIN])
-    /// );
-    /// ```
-    fn with_transform<F: Fn(usize, u8) -> u8>(self, f: F) -> Transform<M, F>;
+    fn with_transform<F: Fn(&Device, usize, u8) -> u8>(self, f: F) -> Transform<M, F>;
 }
 
-impl<M: Modulation, F: Fn(usize, u8) -> u8> Modulation for Transform<M, F> {
-    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
+impl<M: Modulation, F: Fn(&Device, usize, u8) -> u8> Modulation for Transform<M, F> {
+    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
         Ok(self
             .m
-            .calc()?
-            .iter()
-            .enumerate()
-            .map(|(i, &x)| (self.f)(i, x))
+            .calc(geometry)?
+            .into_iter()
+            .map(|(k, buf)| {
+                (
+                    k,
+                    buf.iter()
+                        .enumerate()
+                        .map(|(i, &x)| (self.f)(&geometry[k], i, x))
+                        .collect(),
+                )
+            })
             .collect())
     }
 }
@@ -63,6 +54,8 @@ impl<M: Modulation, F: Fn(usize, u8) -> u8> Modulation for Transform<M, F> {
 #[cfg(test)]
 mod tests {
     use rand::Rng;
+
+    use crate::geometry::tests::create_geometry;
 
     use super::{super::tests::TestModulation, *};
 
@@ -78,26 +71,31 @@ mod tests {
                 config,
                 loop_behavior: LoopBehavior::infinite(),
             }
-            .with_transform(|_, x| x) // GRCOV_EXCL_LINE
+            .with_transform(|_, _, x| x) // GRCOV_EXCL_LINE
             .sampling_config()
         );
     }
 
     #[test]
     fn test() {
+        let geometry = create_geometry(1, 249);
+
         let mut rng = rand::thread_rng();
 
         let buf = vec![rng.gen(), rng.gen()];
 
         assert_eq!(
-            Ok(buf.iter().map(|&x| x / 2).collect::<Vec<_>>()),
+            Ok(HashMap::from([(
+                0,
+                buf.iter().map(|&x| x / 2).collect::<Vec<_>>()
+            )])),
             TestModulation {
                 buf: buf.clone(),
                 config: SamplingConfiguration::FREQ_4K_HZ,
                 loop_behavior: LoopBehavior::infinite(),
             }
-            .with_transform(|_, x| x / 2)
-            .calc()
+            .with_transform(|_, _, x| x / 2)
+            .calc(&geometry)
         );
     }
 }
