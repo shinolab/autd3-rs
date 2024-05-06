@@ -74,22 +74,26 @@ impl Wav {
 
 impl Modulation for Wav {
     #[allow(clippy::unnecessary_cast)]
-    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
         let (raw_buffer, sample_rate) = self.read_buf()?;
-        Ok(wav_io::resample::linear(
-            raw_buffer,
-            1,
-            sample_rate,
-            self.sampling_config().freq() as u32,
-        )
-        .iter()
-        .map(|&d| d.round() as u8)
-        .collect())
+        Self::transform(geometry, |dev| {
+            Ok(wav_io::resample::linear(
+                raw_buffer.clone(),
+                1,
+                sample_rate,
+                self.sampling_config().freq(dev.ultrasound_freq())? as u32,
+            )
+            .iter()
+            .map(|&d| d.round() as u8)
+            .collect())
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::tests::create_geometry;
+
     use super::*;
 
     fn create_wav(
@@ -106,11 +110,11 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case::i8(
-        Ok(vec![
+        vec![
             0xFF,
             0x80,
             0x00
-        ]),
+        ],
         hound::WavSpec {
             channels: 1,
             sample_rate: 4000,
@@ -120,11 +124,11 @@ mod tests {
         &[i8::MAX, 0, i8::MIN]
     )]
     #[case::i16(
-        Ok(vec![
+        vec![
             0xFF,
             0x80,
             0x00
-        ]),
+        ],
         hound::WavSpec {
             channels: 1,
             sample_rate: 4000,
@@ -134,11 +138,11 @@ mod tests {
         &[i16::MAX, 0, i16::MIN]
     )]
     #[case::i24(
-        Ok(vec![
+        vec![
             0xFF,
             0x80,
             0x00
-        ]),
+        ],
         hound::WavSpec {
             channels: 1,
             sample_rate: 4000,
@@ -148,11 +152,11 @@ mod tests {
         &[8388607, 0, -8388608]
     )]
     #[case::i32(
-        Ok(vec![
+        vec![
             0xFF,
             0x80,
             0x00
-        ]),
+        ],
         hound::WavSpec {
             channels: 1,
             sample_rate: 4000,
@@ -162,11 +166,11 @@ mod tests {
         &[i32::MAX, 0, i32::MIN]
     )]
     #[case::f32(
-        Ok(vec![
+        vec![
             0xFF,
             0x80,
             0x00
-        ]),
+        ],
         hound::WavSpec {
             channels: 1,
             sample_rate: 4000,
@@ -176,19 +180,24 @@ mod tests {
         &[1., 0., -1.]
     )]
     fn test_wav(
-        #[case] expect: Result<Vec<u8>, AUTDInternalError>,
+        #[case] expect: Vec<u8>,
         #[case] spec: hound::WavSpec,
         #[case] data: &[impl hound::Sample + Clone + Copy],
     ) -> anyhow::Result<()> {
+        let geometry = create_geometry(1);
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("tmp.wav");
         create_wav(&path, spec, data)?;
-        assert_eq!(expect, Wav::new(&path).calc());
+        assert_eq!(
+            HashMap::from([(0, expect)]),
+            Wav::new(&path).calc(&geometry)?
+        );
         Ok(())
     }
 
     #[test]
     fn test_wav_new_unsupported() -> anyhow::Result<()> {
+        let geometry = create_geometry(1);
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("tmp.wav");
         create_wav(
@@ -201,7 +210,7 @@ mod tests {
             },
             &[0, 0],
         )?;
-        assert!(Wav::new(&path).calc().is_err());
+        assert!(Wav::new(&path).calc(&geometry).is_err());
         Ok(())
     }
 
