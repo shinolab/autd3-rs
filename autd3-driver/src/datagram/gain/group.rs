@@ -122,7 +122,7 @@ where
             .map(|(k, g)| {
                 Ok((
                     k.clone(),
-                    g.calc(geometry, GainFilter::Filter(&filters[&k]))?,
+                    g.calc(geometry, GainFilter::Filter(&filters[k]))?,
                 ))
             })
             .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?;
