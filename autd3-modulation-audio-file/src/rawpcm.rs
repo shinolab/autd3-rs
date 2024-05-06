@@ -48,21 +48,25 @@ impl RawPCM {
 }
 
 impl Modulation for RawPCM {
-    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
-        Ok(wav_io::resample::linear(
-            self.read_buf()?,
-            1,
-            self.sample_rate,
-            self.sampling_config().freq() as u32,
-        )
-        .iter()
-        .map(|&d| d.round() as u8)
-        .collect())
+    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
+        Self::transform(geometry, |dev| {
+            Ok(wav_io::resample::linear(
+                self.read_buf()?,
+                1,
+                self.sample_rate,
+                self.sampling_config().freq(dev.ultrasound_freq())? as u32,
+            )
+            .iter()
+            .map(|&d| d.round() as u8)
+            .collect())
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::tests::create_geometry;
+
     use super::*;
     use std::io::Write;
 
@@ -74,14 +78,18 @@ mod tests {
 
     #[test]
     fn test_rawpcm_new() -> anyhow::Result<()> {
+        let geometry = create_geometry(1);
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("tmp.dat");
         create_dat(&path, &[0xFF, 0x7F, 0x00])?;
         let m = RawPCM::new(&path, 4000);
-        assert_eq!(m.calc().unwrap(), vec![0xFF, 0x7F, 0x00]);
+        assert_eq!(
+            m.calc(&geometry)?,
+            HashMap::from([(0, vec![0xFF, 0x7F, 0x00])])
+        );
 
         let m = RawPCM::new("not_exists.dat", 4000);
-        assert!(m.calc().is_err());
+        assert!(m.calc(&geometry).is_err());
 
         Ok(())
     }
