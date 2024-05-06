@@ -3,38 +3,39 @@ syntax = "proto3";
 package autd3;
 
 import "utils.proto";
+import "utils-lightweight.proto";
 
-message Static { EmitIntensity intensity = 1; }
+message Static { uint32 intensity = 1; }
 
 message SineExact {
   SamplingConfig config = 1;
   float freq = 2;
-  EmitIntensity intensity = 3;
-  EmitIntensity offset = 4;
+  uint32 intensity = 3;
+  uint32 offset = 4;
   Phase phase = 5;
 }
 
 message SineNearest {
   SamplingConfig config = 1;
   float freq = 2;
-  EmitIntensity intensity = 3;
-  EmitIntensity offset = 4;
+  uint32 intensity = 3;
+  uint32 offset = 4;
   Phase phase = 5;
 }
 
 message SquareExact {
   SamplingConfig config = 1;
   float freq = 2;
-  EmitIntensity low = 3;
-  EmitIntensity high = 4;
+  uint32 low = 3;
+  uint32 high = 4;
   float duty = 5;
 }
 
 message SquareNearest {
   SamplingConfig config = 1;
   float freq = 2;
-  EmitIntensity low = 3;
-  EmitIntensity high = 4;
+  uint32 low = 3;
+  uint32 high = 4;
   float duty = 5;
 }
 

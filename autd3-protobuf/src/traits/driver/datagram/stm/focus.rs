@@ -7,7 +7,7 @@ impl ToMessage for autd3_driver::datagram::FocusSTM {
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
-            freq_div: self.sampling_config().unwrap().division(),
+            config: self.sampling_config().ok().map(|c| c.to_msg(None)),
             loop_behavior: Some(self.loop_behavior().to_msg(None)),
             segment: Segment::S0 as _,
             transition_mode: Some(TransitionMode::SyncIdx.into()),
@@ -22,7 +22,7 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3_driver::dat
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
-            freq_div: self.sampling_config().unwrap().division(),
+            config: self.sampling_config().ok().map(|c| c.to_msg(None)),
             loop_behavior: Some(self.loop_behavior().to_msg(None)),
             segment: self.segment() as _,
             transition_mode: self.transition_mode().map(|m| m.mode() as _),
@@ -35,9 +35,12 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3_driver::dat
 impl FromMessage<FocusStm> for autd3_driver::datagram::FocusSTM {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &FocusStm) -> Option<Self> {
+        if msg.config.is_none() {
+            return None;
+        }
         Some(
             autd3_driver::datagram::FocusSTM::from_sampling_config(
-                SamplingConfig::from_division_raw(msg.freq_div).ok()?,
+                SamplingConfig::from_msg(msg.config.as_ref().unwrap()).unwrap(),
             )
             .with_loop_behavior(autd3_driver::firmware::fpga::LoopBehavior::from_msg(
                 msg.loop_behavior.as_ref()?,
