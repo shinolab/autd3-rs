@@ -51,7 +51,7 @@ impl Operation for FirmInfoOp {
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains.init(geometry, 6);
+        self.remains.init(geometry, |_| 6);
         Ok(())
     }
 

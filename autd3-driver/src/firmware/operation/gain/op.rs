@@ -41,7 +41,7 @@ impl<G: Gain> GainOp<G> {
 impl<G: Gain> Operation for GainOp<G> {
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
         self.drives = self.gain.calc(geometry, GainFilter::All)?;
-        self.remains.init(geometry, 1);
+        self.remains.init(geometry, |_| 1);
         Ok(())
     }
 

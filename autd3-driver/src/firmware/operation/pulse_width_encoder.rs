@@ -117,7 +117,7 @@ impl Operation for ConfigurePulseWidthEncoderOp {
             ));
         }
 
-        self.remains.init(geometry, PWE_BUF_SIZE);
+        self.remains.init(geometry, |_| PWE_BUF_SIZE);
 
         Ok(())
     }
