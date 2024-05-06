@@ -1,6 +1,6 @@
 use autd3_driver::{defined::PI, derive::*};
 
-use super::sampling_mode::{ExactFrequency, NearestFrequency, SamplingMode};
+use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode};
 
 /// Sine wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug, Builder)]
@@ -18,12 +18,12 @@ pub struct Sine<S: SamplingMode> {
     __phantom: std::marker::PhantomData<S>,
 }
 
-impl Sine<ExactFrequency> {
+impl Sine<ExactFreq> {
     pub const fn new(freq: f64) -> Self {
         Self::with_freq_exact(freq)
     }
 
-    pub const fn with_freq_exact(freq: f64) -> Sine<ExactFrequency> {
+    pub const fn with_freq_exact(freq: f64) -> Sine<ExactFreq> {
         Sine {
             freq,
             intensity: u8::MAX,
@@ -35,7 +35,7 @@ impl Sine<ExactFrequency> {
         }
     }
 
-    pub const fn with_freq_nearest(freq: f64) -> Sine<NearestFrequency> {
+    pub const fn with_freq_nearest(freq: f64) -> Sine<NearestFreq> {
         Sine {
             freq,
             intensity: u8::MAX,
@@ -185,11 +185,11 @@ mod tests {
             .with_intensity(u8::MAX / 2)
             .with_offset(u8::MAX / 4)
             .with_phase(PI / 4.0 * Rad)
-            .with_sampling_config(SamplingConfig::FrequencyNearest(10.1));
+            .with_sampling_config(SamplingConfig::FreqNearest(10.1));
         assert_eq!(u8::MAX / 2, m.intensity);
         assert_eq!(u8::MAX / 4, m.offset);
         assert_eq!(PI / 4.0 * Rad, m.phase);
-        assert_eq!(SamplingConfig::FrequencyNearest(10.1), m.config);
+        assert_eq!(SamplingConfig::FreqNearest(10.1), m.config);
     }
 
     #[test]

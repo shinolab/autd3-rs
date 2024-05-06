@@ -5,7 +5,7 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::NearestFrequency> {
+impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::NearestFreq> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
@@ -29,7 +29,7 @@ impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::Nea
 
 impl ToMessage
     for autd3_driver::datagram::DatagramWithSegment<
-        autd3::modulation::Sine<autd3::modulation::sampling_mode::NearestFrequency>,
+        autd3::modulation::Sine<autd3::modulation::sampling_mode::NearestFreq>,
     >
 {
     type Message = DatagramLightweight;
@@ -54,7 +54,7 @@ impl ToMessage
 }
 
 impl FromMessage<SineNearest>
-    for autd3::modulation::Sine<autd3::modulation::sampling_mode::NearestFrequency>
+    for autd3::modulation::Sine<autd3::modulation::sampling_mode::NearestFreq>
 {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &SineNearest) -> Option<Self> {
@@ -75,7 +75,7 @@ impl FromMessage<SineNearest>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3::modulation::sampling_mode::NearestFrequency;
+    use autd3::modulation::sampling_mode::NearestFreq;
     use autd3_driver::firmware::fpga::Phase;
     use rand::Rng;
 
@@ -94,8 +94,7 @@ mod tests {
                 modulation: Some(modulation::Modulation::SineNearest(modulation)),
                 ..
             })) => {
-                let m2 =
-                    autd3::modulation::Sine::<NearestFrequency>::from_msg(&modulation).unwrap();
+                let m2 = autd3::modulation::Sine::<NearestFreq>::from_msg(&modulation).unwrap();
                 assert_approx_eq::assert_approx_eq!(m.freq(), m2.freq());
                 assert_eq!(m.intensity(), m2.intensity());
                 assert_eq!(m.offset(), m2.offset());

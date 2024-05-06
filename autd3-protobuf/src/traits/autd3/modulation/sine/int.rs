@@ -5,7 +5,7 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFrequency> {
+impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFreq> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
@@ -29,7 +29,7 @@ impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::Exa
 
 impl ToMessage
     for autd3_driver::datagram::DatagramWithSegment<
-        autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFrequency>,
+        autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFreq>,
     >
 {
     type Message = DatagramLightweight;
@@ -54,7 +54,7 @@ impl ToMessage
 }
 
 impl FromMessage<SineExact>
-    for autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFrequency>
+    for autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFreq>
 {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &SineExact) -> Option<Self> {
@@ -75,7 +75,7 @@ impl FromMessage<SineExact>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3::modulation::sampling_mode::ExactFrequency;
+    use autd3::modulation::sampling_mode::ExactFreq;
     use autd3_driver::firmware::fpga::Phase;
     use rand::Rng;
 
@@ -94,7 +94,7 @@ mod tests {
                 modulation: Some(modulation::Modulation::SineExact(modulation)),
                 ..
             })) => {
-                let m2 = autd3::modulation::Sine::<ExactFrequency>::from_msg(&modulation).unwrap();
+                let m2 = autd3::modulation::Sine::<ExactFreq>::from_msg(&modulation).unwrap();
                 assert_eq!(m.freq(), m2.freq());
                 assert_eq!(m.intensity(), m2.intensity());
                 assert_eq!(m.offset(), m2.offset());

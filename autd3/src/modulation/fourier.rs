@@ -171,7 +171,7 @@ mod tests {
         let geometry = create_geometry(1);
 
         let f = Fourier::new(Sine::new(50.))
-            + Sine::new(50.).with_sampling_config(SamplingConfig::Frequency(1000));
+            + Sine::new(50.).with_sampling_config(SamplingConfig::Freq(1000));
 
         assert_eq!(
             Err(AUTDInternalError::ModulationError(

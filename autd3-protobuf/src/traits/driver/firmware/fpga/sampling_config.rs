@@ -9,10 +9,10 @@ impl ToMessage for autd3_driver::firmware::fpga::SamplingConfig {
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             config: Some(match *self {
-                autd3::derive::SamplingConfig::Frequency(value) => {
+                autd3::derive::SamplingConfig::Freq(value) => {
                     sampling_config::Config::Freq(SamplingConfigFreq { value })
                 }
-                autd3::derive::SamplingConfig::FrequencyNearest(value) => {
+                autd3::derive::SamplingConfig::FreqNearest(value) => {
                     sampling_config::Config::FreqNearest(SamplingConfigFreqNearest {
                         value: value as f32,
                     })
@@ -32,10 +32,10 @@ impl FromMessage<SamplingConfig> for autd3_driver::firmware::fpga::SamplingConfi
     fn from_msg(msg: &SamplingConfig) -> Option<Self> {
         msg.config.as_ref().map(|config| match *config {
             sampling_config::Config::Freq(SamplingConfigFreq { value }) => {
-                autd3_driver::firmware::fpga::SamplingConfig::Frequency(value)
+                autd3_driver::firmware::fpga::SamplingConfig::Freq(value)
             }
             sampling_config::Config::FreqNearest(SamplingConfigFreqNearest { value }) => {
-                autd3_driver::firmware::fpga::SamplingConfig::FrequencyNearest(value as f64)
+                autd3_driver::firmware::fpga::SamplingConfig::FreqNearest(value as f64)
             }
             sampling_config::Config::Division(SamplingConfigDivision { value }) => {
                 autd3_driver::firmware::fpga::SamplingConfig::Division(value)

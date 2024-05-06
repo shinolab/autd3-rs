@@ -9,8 +9,8 @@ use super::ULTRASOUND_PERIOD;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum SamplingConfig {
-    Frequency(u32),
-    FrequencyNearest(f64),
+    Freq(u32),
+    FreqNearest(f64),
     DivisionRaw(u32),
     Division(u32),
 }
@@ -34,7 +34,7 @@ fn freq_max_raw(base_freq: u32) -> f64 {
 
 impl SamplingConfig {
     pub const DISABLE: Self = Self::DivisionRaw(0xFFFFFFFF);
-    pub const FREQ_4K_HZ: Self = Self::Frequency(4000);
+    pub const FREQ_4K_HZ: Self = Self::Freq(4000);
 
     fn division_from_freq_nearest(f: f64, base_freq: u32) -> Result<u32, AUTDInternalError> {
         if !(freq_min_raw(base_freq)..=freq_max_raw(base_freq)).contains(&f) {
@@ -70,13 +70,13 @@ impl SamplingConfig {
                 Self::division_from_division_raw(div)
             }
             Self::DivisionRaw(div) => Self::division_from_division_raw(div),
-            Self::Frequency(f) => {
+            Self::Freq(f) => {
                 if (ultrasound_freq % f) != 0 {
                     return Err(AUTDInternalError::SamplingFreqInvalid(f, ultrasound_freq));
                 }
                 Self::division_from_freq_nearest(f as _, base_freq)
             }
-            Self::FrequencyNearest(f) => Self::division_from_freq_nearest(f, base_freq),
+            Self::FreqNearest(f) => Self::division_from_freq_nearest(f, base_freq),
         }
     }
 
@@ -89,10 +89,10 @@ impl SamplingConfig {
 impl std::fmt::Display for SamplingConfig {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Frequency(freq) => {
+            Self::Freq(freq) => {
                 write!(f, "{}Hz", freq)
             }
-            Self::FrequencyNearest(freq) => {
+            Self::FreqNearest(freq) => {
                 write!(f, "{}Hz", freq)
             }
             Self::Division(d) | Self::DivisionRaw(d) => {
@@ -181,7 +181,7 @@ mod tests {
         freq_max(20480000) * 2
     )]
     fn from_freq(#[case] expected: Result<u32, AUTDInternalError>, #[case] freq: u32) {
-        assert_eq!(expected, SamplingConfig::Frequency(freq).division(FREQ_40K));
+        assert_eq!(expected, SamplingConfig::Freq(freq).division(FREQ_40K));
     }
 
     #[rstest::rstest]
@@ -212,14 +212,14 @@ mod tests {
     fn from_freq_nearest(#[case] expected: Result<u32, AUTDInternalError>, #[case] freq: f64) {
         assert_eq!(
             expected,
-            SamplingConfig::FrequencyNearest(freq).division(FREQ_40K)
+            SamplingConfig::FreqNearest(freq).division(FREQ_40K)
         );
     }
 
     #[rstest::rstest]
     #[test]
-    #[case::freq(SamplingConfig::Frequency(4000), "4000Hz")]
-    #[case::freq(SamplingConfig::FrequencyNearest(4000.), "4000Hz")]
+    #[case::freq(SamplingConfig::Freq(4000), "4000Hz")]
+    #[case::freq(SamplingConfig::FreqNearest(4000.), "4000Hz")]
     #[case::div(SamplingConfig::Division(305419896), "Division(305419896)")]
     fn display(#[case] config: SamplingConfig, #[case] expected: &str) {
         assert_eq!(expected, config.to_string());
