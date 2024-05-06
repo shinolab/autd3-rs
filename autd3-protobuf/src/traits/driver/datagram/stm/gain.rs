@@ -13,7 +13,7 @@ where
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
-            freq_div: self.sampling_config().unwrap().division(),
+            config: self.sampling_config().ok().map(|c| c.to_msg(None)),
             loop_behavior: Some(self.loop_behavior().to_msg(None)),
             segment: Segment::S0 as _,
             transition_mode: Some(TransitionMode::SyncIdx.into()),
@@ -39,7 +39,7 @@ where
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
-            freq_div: self.sampling_config().unwrap().division(),
+            config: self.sampling_config().ok().map(|c| c.to_msg(None)),
             loop_behavior: Some(self.loop_behavior().to_msg(None)),
             segment: self.segment() as _,
             transition_mode: self.transition_mode().map(|m| m.mode() as _),
@@ -61,9 +61,12 @@ impl FromMessage<GainStm>
 {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &GainStm) -> Option<Self> {
+        if msg.config.is_none() {
+            return None;
+        }
         Some(
             autd3_driver::datagram::GainSTM::from_sampling_config(
-                SamplingConfig::from_division_raw(msg.freq_div).ok()?,
+                SamplingConfig::from_msg(msg.config.as_ref().unwrap()).unwrap(),
             )
             .with_loop_behavior(autd3_driver::firmware::fpga::LoopBehavior::from_msg(
                 msg.loop_behavior.as_ref()?,

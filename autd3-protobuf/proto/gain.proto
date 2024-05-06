@@ -3,6 +3,7 @@ syntax = "proto3";
 package autd3;
 
 import "utils.proto";
+import "utils-lightweight.proto";
 
 message Bessel {
   EmitIntensity intensity = 1;

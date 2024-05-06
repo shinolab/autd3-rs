@@ -8,14 +8,42 @@ impl ToMessage for autd3_driver::firmware::fpga::SamplingConfig {
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
-            freq_div: self.division(),
+            config: Some(match *self {
+                autd3::derive::SamplingConfig::Frequency(value) => {
+                    sampling_config::Config::Freq(SamplingConfigFreq { value })
+                }
+                autd3::derive::SamplingConfig::FrequencyNearest(value) => {
+                    sampling_config::Config::FreqNearest(SamplingConfigFreqNearest {
+                        value: value as f32,
+                    })
+                }
+                autd3::derive::SamplingConfig::DivisionRaw(value) => {
+                    sampling_config::Config::DivisionRaw(SamplingConfigDivisionRaw { value })
+                }
+                autd3::derive::SamplingConfig::Division(value) => {
+                    sampling_config::Config::Division(SamplingConfigDivision { value })
+                }
+            }),
         }
     }
 }
 
 impl FromMessage<SamplingConfig> for autd3_driver::firmware::fpga::SamplingConfig {
     fn from_msg(msg: &SamplingConfig) -> Option<Self> {
-        autd3_driver::firmware::fpga::SamplingConfig::from_division_raw(msg.freq_div).ok()
+        msg.config.as_ref().map(|config| match *config {
+            sampling_config::Config::Freq(SamplingConfigFreq { value }) => {
+                autd3_driver::firmware::fpga::SamplingConfig::Frequency(value)
+            }
+            sampling_config::Config::FreqNearest(SamplingConfigFreqNearest { value }) => {
+                autd3_driver::firmware::fpga::SamplingConfig::FrequencyNearest(value as f64)
+            }
+            sampling_config::Config::Division(SamplingConfigDivision { value }) => {
+                autd3_driver::firmware::fpga::SamplingConfig::Division(value)
+            }
+            sampling_config::Config::DivisionRaw(SamplingConfigDivisionRaw { value }) => {
+                autd3_driver::firmware::fpga::SamplingConfig::DivisionRaw(value)
+            }
+        })
     }
 }
 

@@ -4,6 +4,7 @@ package autd3;
 
 import "gain.proto";
 import "utils.proto";
+import "utils-lightweight.proto";
 
 message Clear {}
 
@@ -36,7 +37,7 @@ message ConfigureReadsFPGAState {
 }
 
 message GainSTM {
-    uint32 freq_div = 1;
+    SamplingConfig config = 1;
     LoopBehavior loop_behavior = 2;
     Segment segment = 3;
     repeated Gain gains = 5;
@@ -49,7 +50,7 @@ message FocusSTM {
         EmitIntensity intensity = 1;
         Vector3 pos = 2;
     }
-    uint32 freq_div = 1;
+    SamplingConfig config = 1;
     LoopBehavior loop_behavior = 2;
     Segment segment = 3;
     repeated ControlPoint points = 5;

@@ -10,8 +10,17 @@ message Phase {
   uint32 value = 1;
 }
 
+message SamplingConfigFreq { uint32 value = 1; }
+message SamplingConfigFreqNearest { float value = 1; }
+message SamplingConfigDivision { uint32 value = 1; }
+message SamplingConfigDivisionRaw { uint32 value = 1; }
 message SamplingConfig {
-  uint32 freq_div = 1;
+  oneof config {
+    SamplingConfigFreq freq = 1;
+    SamplingConfigFreqNearest freq_nearest = 2;
+    SamplingConfigDivision division = 3;
+    SamplingConfigDivisionRaw division_raw = 4;
+  }
 }
 
 message LoopBehavior {

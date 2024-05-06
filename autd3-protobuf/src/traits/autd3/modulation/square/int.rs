@@ -15,8 +15,8 @@ impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::E
                 modulation: Some(modulation::Modulation::SquareExact(SquareExact {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq() as _,
-                    high: Some(self.high().to_msg(None)),
-                    low: Some(self.low().to_msg(None)),
+                    high: self.high() as _,
+                    low: self.low() as _,
                     duty: self.duty() as _,
                 })),
                 segment: Segment::S0 as _,
@@ -41,8 +41,8 @@ impl ToMessage
                 modulation: Some(modulation::Modulation::SquareExact(SquareExact {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq() as _,
-                    high: Some(self.high().to_msg(None)),
-                    low: Some(self.low().to_msg(None)),
+                    high: self.high() as _,
+                    low: self.low() as _,
                     duty: self.duty() as _,
                 })),
                 segment: self.segment() as _,
@@ -60,12 +60,8 @@ impl FromMessage<SquareExact>
     fn from_msg(msg: &SquareExact) -> Option<Self> {
         Some(
             Self::new(msg.freq as _)
-                .with_high(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
-                    msg.high.as_ref()?,
-                )?)
-                .with_low(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
-                    msg.low.as_ref()?,
-                )?)
+                .with_high(msg.high as _)
+                .with_low(msg.low as _)
                 .with_duty(msg.duty as _)
                 .with_sampling_config(autd3_driver::firmware::fpga::SamplingConfig::from_msg(
                     msg.config.as_ref()?,
@@ -77,6 +73,7 @@ impl FromMessage<SquareExact>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use autd3::modulation::sampling_mode::ExactFrequency;
     use autd3_driver::firmware::fpga::EmitIntensity;
     use rand::Rng;
 
@@ -84,9 +81,9 @@ mod tests {
     fn test_square() {
         let mut rng = rand::thread_rng();
 
-        let m = autd3::modulation::Square::<usize>::new(rng.gen())
-            .with_high(EmitIntensity::new(rng.gen()))
-            .with_low(EmitIntensity::new(rng.gen()))
+        let m = autd3::modulation::Square::new(rng.gen())
+            .with_high(rng.gen())
+            .with_low(rng.gen())
             .with_duty(rng.gen());
         let msg = m.to_msg(None);
 
@@ -95,7 +92,8 @@ mod tests {
                 modulation: Some(modulation::Modulation::SquareExact(modulation)),
                 ..
             })) => {
-                let m2 = autd3::modulation::Square::<usize>::from_msg(&modulation).unwrap();
+                let m2 =
+                    autd3::modulation::Square::<ExactFrequency>::from_msg(&modulation).unwrap();
                 assert_eq!(m.freq(), m2.freq());
                 assert_eq!(m.high(), m2.high());
                 assert_eq!(m.low(), m2.low());
