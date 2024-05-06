@@ -48,7 +48,7 @@ impl FocusSTM {
     ///
     /// * `config` - Sampling configuration
     ///
-    pub const fn from_sampling_config(config: SamplingConfiguration) -> Self {
+    pub const fn from_sampling_config(config: SamplingConfig) -> Self {
         Self::from_props(STMProps::from_sampling_config(config))
     }
 
@@ -93,7 +93,7 @@ impl FocusSTM {
         &self.control_points
     }
 
-    pub fn sampling_config(&self) -> Result<SamplingConfiguration, AUTDInternalError> {
+    pub fn sampling_config(&self) -> Result<SamplingConfig, AUTDInternalError> {
         self.props.sampling_config(self.control_points.len())
     }
 }
@@ -148,12 +148,12 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(SamplingConfiguration::Frequency(1)), 0.5, 2)]
-    #[case(Ok(SamplingConfiguration::Frequency(10)), 1., 10)]
-    #[case(Ok(SamplingConfiguration::Frequency(20)), 2., 10)]
+    #[case(Ok(SamplingConfig::Frequency(1)), 0.5, 2)]
+    #[case(Ok(SamplingConfig::Frequency(10)), 1., 10)]
+    #[case(Ok(SamplingConfig::Frequency(20)), 2., 10)]
     #[case(Err(AUTDInternalError::STMFrequencyInvalid(2, 0.49)), 0.49, 2)]
     fn from_freq(
-        #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
+        #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] freq: f64,
         #[case] n: usize,
     ) {
@@ -167,12 +167,12 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(SamplingConfiguration::FrequencyNearest(1.)), 0.5, 2)]
-    #[case(Ok(SamplingConfiguration::FrequencyNearest(0.98)), 0.49, 2)]
-    #[case(Ok(SamplingConfiguration::FrequencyNearest(10.)), 1., 10)]
-    #[case(Ok(SamplingConfiguration::FrequencyNearest(20.)), 2., 10)]
+    #[case(Ok(SamplingConfig::FrequencyNearest(1.)), 0.5, 2)]
+    #[case(Ok(SamplingConfig::FrequencyNearest(0.98)), 0.49, 2)]
+    #[case(Ok(SamplingConfig::FrequencyNearest(10.)), 1., 10)]
+    #[case(Ok(SamplingConfig::FrequencyNearest(20.)), 2., 10)]
     fn from_freq_nearest(
-        #[case] expect: Result<SamplingConfiguration, AUTDInternalError>,
+        #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] freq: f64,
         #[case] n: usize,
     ) {
@@ -186,10 +186,10 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(SamplingConfiguration::DISABLE, 2)]
-    #[case(SamplingConfiguration::FREQ_4K_HZ, 10)]
+    #[case(SamplingConfig::DISABLE, 2)]
+    #[case(SamplingConfig::FREQ_4K_HZ, 10)]
     fn from_sampling_config(
-        #[case] config: SamplingConfiguration,
+        #[case] config: SamplingConfig,
         #[case] n: usize,
     ) -> anyhow::Result<()> {
         assert_eq!(

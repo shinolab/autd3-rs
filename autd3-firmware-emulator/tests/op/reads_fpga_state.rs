@@ -1,9 +1,9 @@
 use autd3_driver::{
     datagram::*,
-    derive::{LoopBehavior, ModulationOp, SamplingConfiguration, Segment, TransitionMode},
+    derive::{LoopBehavior, ModulationOp, SamplingConfig, Segment, TransitionMode},
     firmware::{
         cpu::TxDatagram,
-        fpga::{FPGAState, STMSamplingConfiguration, SAMPLING_FREQ_DIV_MAX},
+        fpga::{FPGAState, STMSamplingConfig, SAMPLING_FREQ_DIV_MAX},
         operation::{ControlPoint, FocusSTMOp},
     },
     geometry::Vector3,
@@ -55,7 +55,7 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
         let mut op = ModulationOp::new(
             TestModulation {
                 buf: (0..2).map(|_| u8::MAX).collect(),
-                config: SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+                config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
                 loop_behavior: LoopBehavior::infinite(),
             },
             Segment::S1,
@@ -67,7 +67,7 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
             (0..2)
                 .map(|_| ControlPoint::new(Vector3::zeros()))
                 .collect(),
-            STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MAX)),
+            STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX)),
             LoopBehavior::infinite(),
             Segment::S1,
             Some(TransitionMode::SyncIdx),

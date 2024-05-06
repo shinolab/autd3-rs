@@ -20,7 +20,7 @@ use crate::derive::Geometry;
 use crate::{
     error::AUTDInternalError,
     firmware::{
-        fpga::{LoopBehavior, SamplingConfiguration, Segment, TransitionMode},
+        fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
         operation::{ModulationOp, NullOp},
     },
 };
@@ -32,7 +32,7 @@ use rayon::prelude::*;
 const PARALLEL_THRESHOLD: usize = 4;
 
 pub trait ModulationProperty {
-    fn sampling_config(&self) -> SamplingConfiguration;
+    fn sampling_config(&self) -> SamplingConfig;
     fn loop_behavior(&self) -> LoopBehavior;
 }
 
@@ -77,7 +77,7 @@ pub trait Modulation: ModulationProperty {
 
 // GRCOV_EXCL_START
 impl ModulationProperty for Box<dyn Modulation> {
-    fn sampling_config(&self) -> SamplingConfiguration {
+    fn sampling_config(&self) -> SamplingConfig {
         self.as_ref().sampling_config()
     }
 
@@ -122,7 +122,7 @@ mod tests {
     #[derive(Modulation, Clone, PartialEq, Debug)]
     pub struct TestModulation {
         pub buf: Vec<u8>,
-        pub config: SamplingConfiguration,
+        pub config: SamplingConfig,
         pub loop_behavior: LoopBehavior,
     }
 
@@ -134,8 +134,8 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(SamplingConfiguration::FREQ_4K_HZ)]
-    fn test_sampling_config(#[case] config: SamplingConfiguration) {
+    #[case(SamplingConfig::FREQ_4K_HZ)]
+    fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
             config,
             TestModulation {
@@ -155,7 +155,7 @@ mod tests {
         assert_eq!(
             loop_behavior,
             TestModulation {
-                config: SamplingConfiguration::FREQ_4K_HZ,
+                config: SamplingConfig::FREQ_4K_HZ,
                 buf: vec![],
                 loop_behavior,
             }

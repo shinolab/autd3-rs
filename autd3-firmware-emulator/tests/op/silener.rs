@@ -1,10 +1,10 @@
 use autd3_driver::{
     datagram::*,
     derive::{
-        LoopBehavior, ModulationOp, SamplingConfiguration, Segment, TransitionMode, SAMPLING_FREQ_DIV_MIN,
+        LoopBehavior, ModulationOp, SamplingConfig, Segment, TransitionMode, SAMPLING_FREQ_DIV_MIN,
     },
     error::AUTDInternalError,
-    firmware::{cpu::TxDatagram, fpga::STMSamplingConfiguration, operation::FocusSTMOp},
+    firmware::{cpu::TxDatagram, fpga::STMSamplingConfig, operation::FocusSTMOp},
     geometry::Vector3,
 };
 use autd3_firmware_emulator::CPUEmulator;
@@ -72,7 +72,7 @@ fn silencer_completetion_steps_too_large_mod(
     #[case] expect: Result<(), AUTDInternalError>,
     #[case] steps_intensity: u16,
 ) -> anyhow::Result<()> {
-    use autd3_driver::derive::SamplingConfiguration;
+    use autd3_driver::derive::SamplingConfig;
 
     use crate::op::modulation::TestModulation;
 
@@ -88,7 +88,7 @@ fn silencer_completetion_steps_too_large_mod(
         let mut op = ModulationOp::new(
             TestModulation {
                 buf: (0..2).map(|_| u8::MAX).collect(),
-                config: SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
+                config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
                 loop_behavior: LoopBehavior::infinite(),
             },
             Segment::S0,
@@ -128,7 +128,7 @@ fn silencer_completetion_steps_too_large_stm(
     {
         let mut op = FocusSTMOp::new(
             (0..2).map(|_| Vector3::zeros().into()).collect(),
-            STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MIN)),
+            STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN)),
             LoopBehavior::infinite(),
             Segment::S0,
             Some(TransitionMode::SyncIdx),

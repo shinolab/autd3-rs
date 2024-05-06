@@ -8,7 +8,7 @@ use crate::{
 use super::ULTRASOUND_PERIOD;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum SamplingConfiguration {
+pub enum SamplingConfig {
     Frequency(u32),
     FrequencyNearest(f64),
     DivisionRaw(u32),
@@ -32,7 +32,7 @@ fn freq_max_raw(base_freq: u32) -> f64 {
     base_freq as f64 / div_min_raw() as f64
 }
 
-impl SamplingConfiguration {
+impl SamplingConfig {
     pub const DISABLE: Self = Self::DivisionRaw(0xFFFFFFFF);
     pub const FREQ_4K_HZ: Self = Self::Frequency(4000);
 
@@ -86,7 +86,7 @@ impl SamplingConfiguration {
     }
 }
 
-impl std::fmt::Display for SamplingConfiguration {
+impl std::fmt::Display for SamplingConfig {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Frequency(freq) => {
@@ -138,7 +138,7 @@ mod tests {
     ) {
         assert_eq!(
             expected,
-            SamplingConfiguration::Division(freq_div).division(FREQ_40K)
+            SamplingConfig::Division(freq_div).division(FREQ_40K)
         );
     }
 
@@ -157,7 +157,7 @@ mod tests {
     fn from_division_raw(#[case] expected: Result<u32, AUTDInternalError>, #[case] freq_div: u32) {
         assert_eq!(
             expected,
-            SamplingConfiguration::DivisionRaw(freq_div).division(FREQ_40K)
+            SamplingConfig::DivisionRaw(freq_div).division(FREQ_40K)
         );
     }
 
@@ -181,7 +181,7 @@ mod tests {
         freq_max(20480000) * 2
     )]
     fn from_freq(#[case] expected: Result<u32, AUTDInternalError>, #[case] freq: u32) {
-        assert_eq!(expected, SamplingConfiguration::Frequency(freq).division(FREQ_40K));
+        assert_eq!(expected, SamplingConfig::Frequency(freq).division(FREQ_40K));
     }
 
     #[rstest::rstest]
@@ -212,16 +212,16 @@ mod tests {
     fn from_freq_nearest(#[case] expected: Result<u32, AUTDInternalError>, #[case] freq: f64) {
         assert_eq!(
             expected,
-            SamplingConfiguration::FrequencyNearest(freq).division(FREQ_40K)
+            SamplingConfig::FrequencyNearest(freq).division(FREQ_40K)
         );
     }
 
     #[rstest::rstest]
     #[test]
-    #[case::freq(SamplingConfiguration::Frequency(4000), "4000Hz")]
-    #[case::freq(SamplingConfiguration::FrequencyNearest(4000.), "4000Hz")]
-    #[case::div(SamplingConfiguration::Division(305419896), "Division(305419896)")]
-    fn display(#[case] config: SamplingConfiguration, #[case] expected: &str) {
+    #[case::freq(SamplingConfig::Frequency(4000), "4000Hz")]
+    #[case::freq(SamplingConfig::FrequencyNearest(4000.), "4000Hz")]
+    #[case::div(SamplingConfig::Division(305419896), "Division(305419896)")]
+    fn display(#[case] config: SamplingConfig, #[case] expected: &str) {
         assert_eq!(expected, config.to_string());
     }
 }

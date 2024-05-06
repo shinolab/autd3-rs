@@ -6,7 +6,7 @@ use autd3_driver::{
     firmware::{
         cpu::TxDatagram,
         fpga::{
-            STMSamplingConfiguration, GAIN_STM_BUF_SIZE_MAX, SAMPLING_FREQ_DIV_MAX,
+            STMSamplingConfig, GAIN_STM_BUF_SIZE_MAX, SAMPLING_FREQ_DIV_MAX,
             SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
         },
         operation::{
@@ -67,7 +67,7 @@ fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
             .map(|buf| TestGain { buf: buf.clone() })
             .collect(),
         GainSTMMode::PhaseIntensityFull,
-        STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(freq_div)),
+        STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(freq_div)),
         loop_behavior,
         segment,
         Some(transition_mode),
@@ -108,7 +108,7 @@ fn send_gain_stm_phase_full(n: usize) -> anyhow::Result<()> {
             .map(|buf| TestGain { buf: buf.clone() })
             .collect(),
         GainSTMMode::PhaseFull,
-        STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(
+        STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(
             SAMPLING_FREQ_DIV_MIN
                 * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
         )),
@@ -159,7 +159,7 @@ fn send_gain_stm_phase_half(n: usize) -> anyhow::Result<()> {
             .map(|buf| TestGain { buf: buf.clone() })
             .collect(),
         GainSTMMode::PhaseHalf,
-        STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(
+        STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(
             SAMPLING_FREQ_DIV_MIN
                 * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
         )),
@@ -214,7 +214,7 @@ fn change_gain_stm_segment() -> anyhow::Result<()> {
             .map(|buf| TestGain { buf: buf.clone() })
             .collect(),
         GainSTMMode::PhaseIntensityFull,
-        STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MAX)),
+        STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX)),
         LoopBehavior::infinite(),
         Segment::S1,
         None,
@@ -243,7 +243,7 @@ fn gain_stm_freq_div_too_small() {
             .map(|buf| TestGain { buf: buf.clone() })
             .collect(),
         GainSTMMode::PhaseIntensityFull,
-        STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MIN)),
+        STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN)),
         LoopBehavior::infinite(),
         Segment::S0,
         Some(TransitionMode::SyncIdx),
@@ -285,7 +285,7 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
         let transition_mode = TransitionMode::Ext;
         let mut op = FocusSTMOp::new(
             foci,
-            STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(freq_div)),
+            STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(freq_div)),
             loop_behaviour,
             segment,
             Some(transition_mode),
@@ -323,7 +323,7 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
             .map(|buf| TestGain { buf: buf.clone() })
             .collect(),
         GainSTMMode::PhaseIntensityFull,
-        STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MAX)),
+        STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX)),
         LoopBehavior::infinite(),
         Segment::S0,
         Some(TransitionMode::SyncIdx),

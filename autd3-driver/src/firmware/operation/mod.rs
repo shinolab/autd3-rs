@@ -209,7 +209,7 @@ pub mod tests {
     #[derive(Modulation, Clone)]
     pub struct TestModulation {
         pub buf: Vec<u8>,
-        pub config: SamplingConfiguration,
+        pub config: SamplingConfig,
         pub loop_behavior: LoopBehavior,
     }
 

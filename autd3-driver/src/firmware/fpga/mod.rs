@@ -20,11 +20,10 @@ pub use emit_intensity::EmitIntensity;
 pub use fpga_state::FPGAState;
 pub use loop_behavior::LoopBehavior;
 pub use phase::{Phase, Rad};
-pub use sampling_config::SamplingConfiguration;
+pub use sampling_config::SamplingConfig;
 pub use segment::Segment;
-pub use stm_sampling_config::STMSamplingConfiguration;
+pub use stm_sampling_config::STMSamplingConfig;
 pub use transition_mode::TransitionMode;
-
 
 pub const ULTRASOUND_PERIOD: u32 = 512;
 

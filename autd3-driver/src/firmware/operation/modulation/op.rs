@@ -154,7 +154,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        derive::{LoopBehavior, SamplingConfiguration},
+        derive::{LoopBehavior, SamplingConfig},
         ethercat::DcSysTime,
         firmware::{
             fpga::{SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
@@ -189,7 +189,7 @@ mod tests {
         let mut op = ModulationOp::new(
             TestModulation {
                 buf: buf.clone(),
-                config: SamplingConfiguration::DivisionRaw(freq_div),
+                config: SamplingConfig::DivisionRaw(freq_div),
                 loop_behavior,
             },
             segment,
@@ -298,7 +298,7 @@ mod tests {
         let mut op = ModulationOp::new(
             TestModulation {
                 buf: buf.clone(),
-                config: SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
+                config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
                 loop_behavior: LoopBehavior::infinite(),
             },
             Segment::S0,
@@ -479,7 +479,7 @@ mod tests {
         let mut op = ModulationOp::new(
             TestModulation {
                 buf: (0..n).map(|_| rng.gen()).collect(),
-                config: SamplingConfiguration::DivisionRaw(
+                config: SamplingConfig::DivisionRaw(
                     rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX),
                 ),
                 loop_behavior: LoopBehavior::infinite(),

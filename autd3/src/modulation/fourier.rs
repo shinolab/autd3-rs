@@ -10,7 +10,7 @@ use num::integer::lcm;
 #[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct Fourier<S: SamplingMode> {
     #[no_change]
-    config: SamplingConfiguration,
+    config: SamplingConfig,
     components: Vec<Sine<S>>,
     loop_behavior: LoopBehavior,
 }
@@ -137,7 +137,7 @@ mod tests {
 
         let f = (f0 + f1).add_component(f2).add_components_from_iter([f3]) + f4;
 
-        assert_eq!(f.sampling_config(), SamplingConfiguration::FREQ_4K_HZ);
+        assert_eq!(f.sampling_config(), SamplingConfig::FREQ_4K_HZ);
         assert_eq!(f[0].freq(), 50.);
         assert_eq!(f[0].phase(), PI / 2.0 * Rad);
         assert_eq!(f[1].freq(), 100.);
@@ -171,7 +171,7 @@ mod tests {
         let geometry = create_geometry(1);
 
         let f = Fourier::new(Sine::new(50.))
-            + Sine::new(50.).with_sampling_config(SamplingConfiguration::Frequency(1000));
+            + Sine::new(50.).with_sampling_config(SamplingConfig::Frequency(1000));
 
         assert_eq!(
             Err(AUTDInternalError::ModulationError(

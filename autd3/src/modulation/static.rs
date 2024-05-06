@@ -6,7 +6,7 @@ pub struct Static {
     #[get]
     intensity: u8,
     #[no_change]
-    config: SamplingConfiguration,
+    config: SamplingConfig,
     loop_behavior: LoopBehavior,
 }
 
@@ -15,7 +15,7 @@ impl Static {
     pub const fn new() -> Self {
         Self {
             intensity: u8::MAX,
-            config: SamplingConfiguration::DISABLE,
+            config: SamplingConfig::DISABLE,
             loop_behavior: LoopBehavior::infinite(),
         }
     }
@@ -29,7 +29,7 @@ impl Static {
     pub fn with_intensity(intensity: impl Into<u8>) -> Self {
         Self {
             intensity: intensity.into(),
-            config: SamplingConfiguration::DISABLE,
+            config: SamplingConfig::DISABLE,
             loop_behavior: LoopBehavior::infinite(),
         }
     }
@@ -58,7 +58,7 @@ mod tests {
         let geometry = create_geometry(1);
         let m = Static::default();
         assert_eq!(u8::MAX, m.intensity());
-        assert_eq!(SamplingConfiguration::DISABLE, m.sampling_config());
+        assert_eq!(SamplingConfig::DISABLE, m.sampling_config());
         assert_eq!(vec![u8::MAX, u8::MAX], m.calc(&geometry)?[&0]);
 
         Ok(())
@@ -69,7 +69,7 @@ mod tests {
         let geometry = create_geometry(1);
         let m = Static::with_intensity(0x1F);
         assert_eq!(0x1F, m.intensity());
-        assert_eq!(SamplingConfiguration::DISABLE, m.sampling_config());
+        assert_eq!(SamplingConfig::DISABLE, m.sampling_config());
         assert_eq!(vec![0x1F, 0x1F], m.calc(&geometry)?[&0]);
 
         Ok(())

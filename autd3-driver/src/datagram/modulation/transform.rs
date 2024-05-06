@@ -6,7 +6,7 @@ use crate::derive::*;
 pub struct Transform<M: Modulation, F: Fn(&Device, usize, u8) -> u8> {
     m: M,
     #[no_change]
-    config: SamplingConfiguration,
+    config: SamplingConfig,
     f: F,
     loop_behavior: LoopBehavior,
 }
@@ -61,9 +61,9 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case::freq_4k(SamplingConfiguration::FREQ_4K_HZ)]
-    #[case::disable(SamplingConfiguration::DISABLE)]
-    fn test_sampling_config(#[case] config: SamplingConfiguration) {
+    #[case::freq_4k(SamplingConfig::FREQ_4K_HZ)]
+    #[case::disable(SamplingConfig::DISABLE)]
+    fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
             config,
             TestModulation {
@@ -91,7 +91,7 @@ mod tests {
             )])),
             TestModulation {
                 buf: buf.clone(),
-                config: SamplingConfiguration::FREQ_4K_HZ,
+                config: SamplingConfig::FREQ_4K_HZ,
                 loop_behavior: LoopBehavior::infinite(),
             }
             .with_transform(|_, _, x| x / 2)

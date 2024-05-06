@@ -7,7 +7,7 @@ import "utils.proto";
 message Static { EmitIntensity intensity = 1; }
 
 message SineExact {
-  SamplingConfiguration config = 1;
+  SamplingConfig config = 1;
   float freq = 2;
   EmitIntensity intensity = 3;
   EmitIntensity offset = 4;
@@ -15,7 +15,7 @@ message SineExact {
 }
 
 message SineNearest {
-  SamplingConfiguration config = 1;
+  SamplingConfig config = 1;
   float freq = 2;
   EmitIntensity intensity = 3;
   EmitIntensity offset = 4;
@@ -23,7 +23,7 @@ message SineNearest {
 }
 
 message SquareExact {
-  SamplingConfiguration config = 1;
+  SamplingConfig config = 1;
   float freq = 2;
   EmitIntensity low = 3;
   EmitIntensity high = 4;
@@ -31,7 +31,7 @@ message SquareExact {
 }
 
 message SquareNearest {
-  SamplingConfiguration config = 1;
+  SamplingConfig config = 1;
   float freq = 2;
   EmitIntensity low = 3;
   EmitIntensity high = 4;

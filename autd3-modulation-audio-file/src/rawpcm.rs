@@ -17,7 +17,7 @@ use crate::error::AudioFileError;
 pub struct RawPCM {
     sample_rate: u32,
     path: PathBuf,
-    config: SamplingConfiguration,
+    config: SamplingConfig,
     loop_behavior: LoopBehavior,
 }
 
@@ -33,7 +33,7 @@ impl RawPCM {
         Self {
             sample_rate,
             path: path.as_ref().to_path_buf(),
-            config: SamplingConfiguration::FREQ_4K_HZ,
+            config: SamplingConfig::FREQ_4K_HZ,
             loop_behavior: LoopBehavior::infinite(),
         }
     }
