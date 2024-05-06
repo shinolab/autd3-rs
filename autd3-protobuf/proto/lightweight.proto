@@ -4,6 +4,7 @@ package autd3;
 
 import "autd3.proto";
 import "utils.proto";
+import "utils-lightweight.proto";
 import "gain.proto";
 import "modulation.proto";
 import "datagram.proto";
