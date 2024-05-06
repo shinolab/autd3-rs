@@ -34,21 +34,7 @@ where
     ///
     /// # Arguments
     ///
-    /// `f` - function to get key from transducer (currentry, transducer type annotation is required)
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use autd3::prelude::*;
-    /// # let gain : Group<_, _> =
-    /// Group::new(|dev, tr| match tr.idx() {
-    ///                 0..=100 => Some("null"),
-    ///                 101.. => Some("focus"),
-    ///                 _ => None,
-    ///             })
-    ///             .set("null", Null::new())
-    ///             .set("focus", Focus::new(Vector3::new(0.0, 0.0, 150.0)));
-    /// ```
+    /// `f` - function to get key
     pub fn new(f: F) -> Group<K, F> {
         Group {
             f,
