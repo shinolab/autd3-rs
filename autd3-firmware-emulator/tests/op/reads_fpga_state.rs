@@ -1,16 +1,16 @@
 use autd3_driver::{
     datagram::*,
-    derive::{LoopBehavior, ModulationOp, Segment, TransitionMode},
+    derive::{LoopBehavior, ModulationOp, SamplingConfiguration, Segment, TransitionMode},
     firmware::{
         cpu::TxDatagram,
-        fpga::{FPGAState, SAMPLING_FREQ_DIV_MAX},
+        fpga::{FPGAState, STMSamplingConfiguration, SAMPLING_FREQ_DIV_MAX},
         operation::{ControlPoint, FocusSTMOp},
     },
     geometry::Vector3,
 };
 use autd3_firmware_emulator::CPUEmulator;
 
-use crate::{create_geometry, send};
+use crate::{create_geometry, op::modulation::TestModulation, send};
 
 fn fpga_state(cpu: &CPUEmulator) -> FPGAState {
     unsafe { std::mem::transmute(cpu.rx().data()) }
@@ -24,7 +24,7 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
 
     assert!(!cpu.reads_fpga_state());
 
-    let (mut op, _) = ConfigureReadsFPGAState::new(|_| true).operation().unwrap();
+    let (mut op, _) = ConfigureReadsFPGAState::new(|_| true).operation();
 
     send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
@@ -53,9 +53,11 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
 
     {
         let mut op = ModulationOp::new(
-            (0..2).map(|_| u8::MAX).collect(),
-            SAMPLING_FREQ_DIV_MAX,
-            LoopBehavior::infinite(),
+            TestModulation {
+                buf: (0..2).map(|_| u8::MAX).collect(),
+                config: SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+                loop_behavior: LoopBehavior::infinite(),
+            },
             Segment::S1,
             Some(TransitionMode::SyncIdx),
         );
@@ -65,7 +67,7 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
             (0..2)
                 .map(|_| ControlPoint::new(Vector3::zeros()))
                 .collect(),
-            SAMPLING_FREQ_DIV_MAX,
+            STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MAX)),
             LoopBehavior::infinite(),
             Segment::S1,
             Some(TransitionMode::SyncIdx),

@@ -5,6 +5,7 @@ use autd3_driver::{
     derive::*,
     firmware::{
         cpu::TxDatagram,
+        fpga::STMSamplingConfiguration,
         operation::{ControlPoint, FocusSTMOp, GainChangeSegmentOp, GainSTMMode, GainSTMOp},
     },
     geometry::Vector3,
@@ -52,7 +53,7 @@ fn send_gain() -> anyhow::Result<()> {
             .collect();
         let g = TestGain { buf: buf.clone() };
 
-        let (mut op, _) = g.operation_with_segment(Segment::S0, Some(TransitionMode::SyncIdx))?;
+        let (mut op, _) = g.operation_with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
@@ -86,7 +87,7 @@ fn send_gain() -> anyhow::Result<()> {
             .collect();
         let g = TestGain { buf: buf.clone() };
 
-        let (mut op, _) = g.operation_with_segment(Segment::S1, None)?;
+        let (mut op, _) = g.operation_with_segment(Segment::S1, None);
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
@@ -130,7 +131,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
             (0..2)
                 .map(|_| ControlPoint::new(Vector3::zeros()))
                 .collect(),
-            0xFFFFFFFF,
+            STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(0xFFFFFFFF)),
             LoopBehavior::infinite(),
             Segment::S0,
             Some(TransitionMode::SyncIdx),
@@ -153,7 +154,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
                 .map(|buf: HashMap<usize, Vec<Drive>>| TestGain { buf: buf.clone() })
                 .collect(),
             GainSTMMode::PhaseIntensityFull,
-            0xFFFFFFFF,
+            STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(0xFFFFFFFF)),
             LoopBehavior::infinite(),
             Segment::S1,
             Some(TransitionMode::SyncIdx),
