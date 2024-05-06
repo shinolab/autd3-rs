@@ -1,7 +1,5 @@
 use super::{Matrix4, Quaternion, UnitQuaternion, Vector3, Vector4};
 
-use crate::{defined::PI, firmware::fpga::Phase};
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Transducer {
     idx: usize,
@@ -22,11 +20,6 @@ impl Transducer {
             * Vector4::new(self.pos[0], self.pos[1], self.pos[2], 1.0);
         self.pos = Vector3::new(new_pos[0], new_pos[1], new_pos[2]);
         self.rot = r * self.rot;
-    }
-
-    /// Calculate the phase of the transducer to align the phase at the specified position
-    pub fn align_phase_at(&self, pos: Vector3, sound_speed: f64) -> Phase {
-        Phase::from_rad((pos - self.position()).norm() * Self::wavenumber(sound_speed))
     }
 
     /// Get the position of the transducer
@@ -73,19 +66,12 @@ impl Transducer {
     pub const fn idx(&self) -> usize {
         self.idx
     }
-
-    /// Get the wavelength of the transducer
-    pub fn wavelength(sound_speed: f64) -> f64 {
-        sound_speed / crate::firmware::fpga::ultrasound_freq() as f64
-    }
-    /// Get the wavenumber of the transducer
-    pub fn wavenumber(sound_speed: f64) -> f64 {
-        2.0 * PI * crate::firmware::fpga::ultrasound_freq() as f64 / sound_speed
-    }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::f64::consts::PI;
+
     use assert_approx_eq::assert_approx_eq;
 
     use super::*;
@@ -132,31 +118,5 @@ mod tests {
 
         let expect_pos = Vector3::zeros() + t;
         assert_vec3_approx_eq!(expect_pos, tr.position());
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(8.5, 340e3)]
-    #[case(10., 400e3)]
-    fn wavelength(#[case] expect: f64, #[case] c: f64) {
-        assert_approx_eq!(expect, Transducer::wavelength(c));
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(0.7391982714328925, 340e3)]
-    #[case(0.6283185307179586, 400e3)]
-    fn wavenumber(#[case] expect: f64, #[case] c: f64) {
-        assert_approx_eq!(expect, Transducer::wavenumber(c));
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(0, Vector3::zeros())]
-    #[case(0, Vector3::new(8.5, 0., 0.))]
-    #[case(0, Vector3::new(-8.5, 0., 0.))]
-    #[case(128, Vector3::new(8.5/2., 0., 0.))]
-    fn align_phase_at(#[case] expected: u8, #[case] pos: Vector3, tr: Transducer) {
-        assert_eq!(expected, tr.align_phase_at(pos, 340e3).value());
     }
 }

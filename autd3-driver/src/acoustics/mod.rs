@@ -13,13 +13,13 @@ use directivity::Directivity;
 ///
 /// * `tr` - Source [Transducer]
 /// * `attenuation` - Attenuation coefficient
-/// * `sound_speed` - Speed of sound
+/// * `wavenumber` - Wavenumber
 /// * `target_pos` - Position of target
 ///
 pub fn propagate<D: Directivity>(
     tr: &Transducer,
     attenuation: f64,
-    sound_speed: f64,
+    wavenumber: f64,
     target_pos: &Vector3,
 ) -> Complex {
     let diff = target_pos - tr.position();
@@ -28,7 +28,7 @@ pub fn propagate<D: Directivity>(
         T4010A1_AMPLITUDE / (4. * PI) / dist
             * D::directivity_from_tr(tr, &diff)
             * (-dist * attenuation).exp(),
-        -Transducer::wavenumber(sound_speed) * dist,
+        -wavenumber * dist,
     )
 }
 
@@ -38,7 +38,11 @@ mod tests {
 
     use rand::Rng;
 
-    use crate::{defined::MILLIMETER, geometry::UnitQuaternion};
+    use crate::{
+        defined::{FREQ_40K, MILLIMETER},
+        derive::Device,
+        geometry::UnitQuaternion,
+    };
     use directivity::tests::TestDirectivity;
 
     macro_rules! assert_complex_approx_eq {
@@ -96,6 +100,9 @@ mod tests {
     #[rstest::rstest]
     #[test]
     fn test_propagate(tr: Transducer, target: Vector3, attenuation: f64, sound_speed: f64) {
+        let mut device = Device::new(0, vec![tr.clone()], FREQ_40K);
+        device.sound_speed = sound_speed;
+        let wavenumber = device.wavenumber();
         assert_complex_approx_eq!(
             {
                 let diff = target - tr.position();
@@ -104,10 +111,10 @@ mod tests {
                     * TestDirectivity::directivity_from_tr(&tr, &diff)
                     * (-dist * attenuation).exp()
                     / (4. * PI * dist);
-                let phase = -Transducer::wavenumber(sound_speed) * dist;
+                let phase = -wavenumber * dist;
                 Complex::new(r * phase.cos(), r * phase.sin())
             },
-            super::propagate::<TestDirectivity>(&tr, attenuation, sound_speed, &target)
+            super::propagate::<TestDirectivity>(&tr, attenuation, wavenumber, &target)
         );
     }
 }

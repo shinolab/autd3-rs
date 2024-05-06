@@ -1,5 +1,5 @@
 use crate::{
-    defined::MILLIMETER,
+    defined::{FREQ_40K, MILLIMETER},
     derive::*,
     geometry::{IntoDevice, Matrix4, UnitQuaternion, Vector3, Vector4},
 };
@@ -11,6 +11,8 @@ pub struct AUTD3 {
     position: Vector3,
     #[getset]
     rotation: UnitQuaternion,
+    #[getset]
+    ultrasound_freq: u32,
 }
 
 impl AUTD3 {
@@ -39,6 +41,7 @@ impl AUTD3 {
         Self {
             position,
             rotation: UnitQuaternion::identity(),
+            ultrasound_freq: FREQ_40K,
         }
     }
 
@@ -113,6 +116,7 @@ impl IntoDevice for AUTD3 {
                 .zip(0..)
                 .map(|(p, i)| Transducer::new(i, Vector3::new(p.x, p.y, p.z), self.rotation))
                 .collect(),
+                self.ultrasound_freq
         )
     }
 }
