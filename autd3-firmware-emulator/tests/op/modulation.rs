@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use autd3_driver::{
-    derive::{LoopBehavior, Segment},
+    derive::*,
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::{
@@ -21,6 +21,19 @@ use rand::*;
 
 use crate::{create_geometry, send};
 
+#[derive(Modulation)]
+pub struct TestModulation {
+    pub buf: Vec<u8>,
+    pub config: SamplingConfiguration,
+    pub loop_behavior: LoopBehavior,
+}
+
+impl Modulation for TestModulation {
+    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
+        Self::transform(geometry, |_| Ok(self.buf.clone()))
+    }
+}
+
 #[test]
 fn send_mod() -> anyhow::Result<()> {
     let mut rng = rand::thread_rng();
@@ -39,9 +52,11 @@ fn send_mod() -> anyhow::Result<()> {
         let loop_behavior = LoopBehavior::infinite();
         let transition_mode = TransitionMode::SyncIdx;
         let mut op = ModulationOp::new(
-            m.clone(),
-            freq_div,
-            loop_behavior,
+            TestModulation {
+                buf: m.clone(),
+                config: SamplingConfiguration::DivisionRaw(freq_div),
+                loop_behavior,
+            },
             Segment::S0,
             Some(transition_mode),
         );
@@ -67,7 +82,15 @@ fn send_mod() -> anyhow::Result<()> {
                 ..=SAMPLING_FREQ_DIV_MAX,
         );
         let loop_behavior = LoopBehavior::once();
-        let mut op = ModulationOp::new(m.clone(), freq_div, loop_behavior, Segment::S1, None);
+        let mut op = ModulationOp::new(
+            TestModulation {
+                buf: m.clone(),
+                config: SamplingConfiguration::DivisionRaw(freq_div),
+                loop_behavior,
+            },
+            Segment::S1,
+            None,
+        );
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
@@ -93,9 +116,11 @@ fn send_mod() -> anyhow::Result<()> {
     {
         let transition_mode = TransitionMode::GPIO;
         let mut op = ModulationOp::new(
-            (0..2).map(|_| u8::MAX).collect(),
-            SAMPLING_FREQ_DIV_MAX,
-            LoopBehavior::infinite(),
+            TestModulation {
+                buf: (0..2).map(|_| u8::MAX).collect(),
+                config: SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+                loop_behavior: LoopBehavior::infinite(),
+            },
             Segment::S0,
             Some(transition_mode),
         );
@@ -106,9 +131,11 @@ fn send_mod() -> anyhow::Result<()> {
     {
         let transition_mode = TransitionMode::Ext;
         let mut op = ModulationOp::new(
-            (0..2).map(|_| u8::MAX).collect(),
-            SAMPLING_FREQ_DIV_MAX,
-            LoopBehavior::infinite(),
+            TestModulation {
+                buf: (0..2).map(|_| u8::MAX).collect(),
+                config: SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+                loop_behavior: LoopBehavior::infinite(),
+            },
             Segment::S0,
             Some(transition_mode),
         );
@@ -126,9 +153,11 @@ fn mod_freq_div_too_small() {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let mut op = ModulationOp::new(
-        (0..2).map(|_| u8::MAX).collect(),
-        SAMPLING_FREQ_DIV_MIN,
-        LoopBehavior::infinite(),
+        TestModulation {
+            buf: (0..2).map(|_| u8::MAX).collect(),
+            config: SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
+            loop_behavior: LoopBehavior::infinite(),
+        },
         Segment::S0,
         Some(TransitionMode::SyncIdx),
     );
@@ -155,9 +184,11 @@ fn test_miss_transition_time(
 
     let transition_mode = TransitionMode::SysTime(DcSysTime::from_utc(transition_time).unwrap());
     let mut op = ModulationOp::new(
-        (0..2).map(|_| u8::MAX).collect(),
-        SAMPLING_FREQ_DIV_MAX,
-        LoopBehavior::once(),
+        TestModulation {
+            buf: (0..2).map(|_| u8::MAX).collect(),
+            config: SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+            loop_behavior: LoopBehavior::once(),
+        },
         Segment::S1,
         Some(transition_mode),
     );

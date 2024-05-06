@@ -6,8 +6,8 @@ use autd3_driver::{
     firmware::{
         cpu::TxDatagram,
         fpga::{
-            GAIN_STM_BUF_SIZE_MAX, SAMPLING_FREQ_DIV_MAX, SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT,
+            STMSamplingConfiguration, GAIN_STM_BUF_SIZE_MAX, SAMPLING_FREQ_DIV_MAX,
+            SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
         },
         operation::{
             ControlPoint, FocusSTMOp, GainSTMChangeSegmentOp, GainSTMMode, GainSTMOp,
@@ -67,7 +67,7 @@ fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
             .map(|buf| TestGain { buf: buf.clone() })
             .collect(),
         GainSTMMode::PhaseIntensityFull,
-        freq_div,
+        STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(freq_div)),
         loop_behavior,
         segment,
         Some(transition_mode),
@@ -108,8 +108,10 @@ fn send_gain_stm_phase_full(n: usize) -> anyhow::Result<()> {
             .map(|buf| TestGain { buf: buf.clone() })
             .collect(),
         GainSTMMode::PhaseFull,
-        SAMPLING_FREQ_DIV_MIN
-            * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
+        STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(
+            SAMPLING_FREQ_DIV_MIN
+                * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
+        )),
         loop_behavior,
         segment,
         Some(transition_mode),
@@ -157,8 +159,10 @@ fn send_gain_stm_phase_half(n: usize) -> anyhow::Result<()> {
             .map(|buf| TestGain { buf: buf.clone() })
             .collect(),
         GainSTMMode::PhaseHalf,
-        SAMPLING_FREQ_DIV_MIN
-            * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
+        STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(
+            SAMPLING_FREQ_DIV_MIN
+                * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
+        )),
         loop_behavior,
         segment,
         Some(transition_mode),
@@ -210,7 +214,7 @@ fn change_gain_stm_segment() -> anyhow::Result<()> {
             .map(|buf| TestGain { buf: buf.clone() })
             .collect(),
         GainSTMMode::PhaseIntensityFull,
-        SAMPLING_FREQ_DIV_MAX,
+        STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MAX)),
         LoopBehavior::infinite(),
         Segment::S1,
         None,
@@ -239,7 +243,7 @@ fn gain_stm_freq_div_too_small() {
             .map(|buf| TestGain { buf: buf.clone() })
             .collect(),
         GainSTMMode::PhaseIntensityFull,
-        SAMPLING_FREQ_DIV_MIN,
+        STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MIN)),
         LoopBehavior::infinite(),
         Segment::S0,
         Some(TransitionMode::SyncIdx),
@@ -265,7 +269,7 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
             .collect();
         let g = TestGain { buf: buf.clone() };
 
-        let (mut op, _) = g.operation()?;
+        let (mut op, _) = g.operation();
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
     }
@@ -281,7 +285,7 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
         let transition_mode = TransitionMode::Ext;
         let mut op = FocusSTMOp::new(
             foci,
-            freq_div,
+            STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(freq_div)),
             loop_behaviour,
             segment,
             Some(transition_mode),
@@ -319,7 +323,7 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
             .map(|buf| TestGain { buf: buf.clone() })
             .collect(),
         GainSTMMode::PhaseIntensityFull,
-        SAMPLING_FREQ_DIV_MAX,
+        STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MAX)),
         LoopBehavior::infinite(),
         Segment::S0,
         Some(TransitionMode::SyncIdx),

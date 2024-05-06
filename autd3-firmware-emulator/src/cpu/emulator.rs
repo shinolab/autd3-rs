@@ -55,7 +55,7 @@ impl CPUEmulator {
             stm_transition_value: 0,
             mod_transition_mode: TRANSITION_MODE_SYNC_IDX,
             mod_transition_value: 0,
-            fpga: FPGAEmulator::new(num_transducers),
+            fpga: FPGAEmulator::new(num_transducers, 20480000),
             synchronized: false,
             num_transducers,
             fpga_flags_internal: 0x0000,

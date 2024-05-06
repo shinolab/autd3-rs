@@ -3,13 +3,13 @@ use std::{collections::HashMap, time::Duration};
 use autd3_driver::{
     datagram::Datagram,
     defined::{METER, MILLIMETER},
-    derive::{Drive, LoopBehavior, Phase, Segment},
+    derive::{Drive, LoopBehavior, Phase, SamplingConfiguration, Segment},
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::{
         cpu::TxDatagram,
         fpga::{
-            TransitionMode, FOCUS_STM_BUF_SIZE_MAX, FOCUS_STM_FIXED_NUM_UNIT,
+            STMSamplingConfiguration, TransitionMode, FOCUS_STM_BUF_SIZE_MAX, FOCUS_STM_FIXED_NUM_UNIT,
             SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN, SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT,
         },
@@ -60,7 +60,7 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
         let transition_mode = TransitionMode::SyncIdx;
         let mut op = FocusSTMOp::new(
             foci.clone(),
-            freq_div,
+            STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(freq_div)),
             loop_behaviour,
             segment,
             Some(transition_mode),
@@ -108,7 +108,13 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
         let foci = gen_random_foci(2);
         let loop_behaviour = LoopBehavior::once();
         let segment = Segment::S1;
-        let mut op = FocusSTMOp::new(foci.clone(), freq_div, loop_behaviour, segment, None);
+        let mut op = FocusSTMOp::new(
+            foci.clone(),
+            STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(freq_div)),
+            loop_behaviour,
+            segment,
+            None,
+        );
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
@@ -156,7 +162,7 @@ fn change_focus_stm_segment() -> anyhow::Result<()> {
     assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
     let mut op = FocusSTMOp::new(
         gen_random_foci(2),
-        SAMPLING_FREQ_DIV_MAX,
+        STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MAX)),
         LoopBehavior::infinite(),
         Segment::S1,
         None,
@@ -181,7 +187,7 @@ fn test_focus_stm_freq_div_too_small() {
 
     let mut op = FocusSTMOp::new(
         gen_random_foci(2),
-        SAMPLING_FREQ_DIV_MIN,
+        STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MIN)),
         LoopBehavior::infinite(),
         Segment::S0,
         Some(TransitionMode::SyncIdx),
@@ -207,7 +213,7 @@ fn send_focus_stm_invalid_segment_transition() -> anyhow::Result<()> {
             .collect();
         let g = TestGain { buf: buf.clone() };
 
-        let (mut op, _) = g.operation()?;
+        let (mut op, _) = g.operation();
 
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
     }
@@ -227,7 +233,7 @@ fn send_focus_stm_invalid_segment_transition() -> anyhow::Result<()> {
                 .map(|buf| TestGain { buf: buf.clone() })
                 .collect(),
             GainSTMMode::PhaseIntensityFull,
-            0xFFFFFFFF,
+            STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(0xFFFFFFFF)),
             LoopBehavior::infinite(),
             Segment::S1,
             Some(TransitionMode::SyncIdx),
@@ -270,7 +276,7 @@ fn test_miss_transition_time(
     let transition_mode = TransitionMode::SysTime(DcSysTime::from_utc(transition_time).unwrap());
     let mut op = FocusSTMOp::new(
         gen_random_foci(2),
-        SAMPLING_FREQ_DIV_MAX,
+        STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(SAMPLING_FREQ_DIV_MAX)),
         LoopBehavior::once(),
         Segment::S1,
         Some(transition_mode),

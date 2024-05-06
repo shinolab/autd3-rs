@@ -93,7 +93,7 @@ fn send_ingore_same_data() -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let (mut op, mut op_null) = Clear::new().operation()?;
+    let (mut op, mut op_null) = Clear::new().operation();
 
     OperationHandler::init(&mut op, &mut op_null, &geometry)?;
     OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx)?;
@@ -102,7 +102,7 @@ fn send_ingore_same_data() -> anyhow::Result<()> {
     let msg_id = tx[0].header.msg_id;
     assert_eq!(cpu.rx().ack(), tx[0].header.msg_id);
 
-    let (mut op, mut op_null) = Synchronize::new().operation()?;
+    let (mut op, mut op_null) = Synchronize::new().operation();
     OperationHandler::init(&mut op, &mut op_null, &geometry)?;
     OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx)?;
     tx[0].header.msg_id = msg_id;
@@ -119,8 +119,8 @@ fn send_slot_2() -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let (mut op_clear, _) = Clear::new().operation()?;
-    let (mut op_sync, _) = Synchronize::new().operation()?;
+    let (mut op_clear, _) = Clear::new().operation();
+    let (mut op_sync, _) = Synchronize::new().operation();
 
     OperationHandler::init(&mut op_clear, &mut op_sync, &geometry)?;
     OperationHandler::pack(&mut op_clear, &mut op_sync, &geometry, &mut tx)?;
@@ -139,8 +139,8 @@ fn send_slot_2_err() -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let (mut op_clear, _) = Clear::new().operation()?;
-    let (mut op_sync, _) = Synchronize::new().operation()?;
+    let (mut op_clear, _) = Clear::new().operation();
+    let (mut op_sync, _) = Synchronize::new().operation();
 
     OperationHandler::init(&mut op_clear, &mut op_sync, &geometry)?;
     OperationHandler::pack(&mut op_clear, &mut op_sync, &geometry, &mut tx)?;

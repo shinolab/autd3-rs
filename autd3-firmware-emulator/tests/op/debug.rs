@@ -20,7 +20,7 @@ fn send_debug_output_idx(
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let (mut op, _) = ConfigureDebugSettings::new(|_| debug_types.clone()).operation()?;
+    let (mut op, _) = ConfigureDebugSettings::new(|_| debug_types.clone()).operation();
 
     send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
@@ -44,7 +44,7 @@ fn send_debug_pwm_out() -> anyhow::Result<()> {
             DebugType::PwmOut(&dev[3]),
         ]
     })
-    .operation()?;
+    .operation();
 
     send(&mut cpu, &mut op, &geometry, &mut tx)?;
 

@@ -9,7 +9,7 @@ fn send_sync() -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let (mut op, _) = Synchronize::new().operation()?;
+    let (mut op, _) = Synchronize::new().operation();
     assert!(!cpu.synchronized());
 
     send(&mut cpu, &mut op, &geometry, &mut tx)?;

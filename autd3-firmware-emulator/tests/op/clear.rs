@@ -5,7 +5,8 @@ use autd3_driver::{
     firmware::{
         cpu::TxDatagram,
         fpga::{
-            SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, SILENCER_VALUE_MIN,
+            STMSamplingConfiguration, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
+            SILENCER_VALUE_MIN,
         },
         operation::FocusSTMOp,
     },
@@ -21,8 +22,8 @@ struct TestMod {
 }
 
 impl Modulation for TestMod {
-    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
-        Ok(vec![u8::MIN; 100])
+    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
+        Self::transform(geometry, |_| Ok(vec![u8::MIN; 100]))
     }
 }
 
@@ -50,28 +51,30 @@ fn send_clear() -> anyhow::Result<()> {
     {
         let (mut op, _) =
             ConfigureSilencer::fixed_completion_steps(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN)?
-                .operation()?;
+                .operation();
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
         let (mut op, _) =
             ConfigureSilencer::fixed_update_rate(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN)?
-                .operation()?;
+                .operation();
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
         let (mut op, _) = TestMod {
-            config: SamplingConfiguration::from_division(5120)?,
+            config: SamplingConfiguration::DivisionRaw(5120),
             loop_behavior: LoopBehavior::infinite(),
         }
-        .operation()?;
+        .operation();
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
-        let (mut op, _) = TestGain {}.operation()?;
+        let (mut op, _) = TestGain {}.operation();
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
         let mut op = FocusSTMOp::new(
             gen_random_foci(2),
-            SAMPLING_FREQ_DIV_MIN
-                * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
+            STMSamplingConfiguration::SamplingConfiguration(SamplingConfiguration::DivisionRaw(
+                SAMPLING_FREQ_DIV_MIN
+                    * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
+            )),
             LoopBehavior::infinite(),
             Segment::S0,
             Some(TransitionMode::Ext),
@@ -79,7 +82,7 @@ fn send_clear() -> anyhow::Result<()> {
         send(&mut cpu, &mut op, &geometry, &mut tx)?;
     }
 
-    let (mut op, _) = Clear::new().operation()?;
+    let (mut op, _) = Clear::new().operation();
 
     send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
