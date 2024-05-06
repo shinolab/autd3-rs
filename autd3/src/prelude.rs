@@ -22,8 +22,8 @@ pub use autd3_driver::{
     ethercat::DcSysTime,
     firmware::{
         fpga::{
-            DebugType, Drive, EmitIntensity, LoopBehavior, Phase, Rad as PhaseRad,
-            SamplingConfiguration, Segment, TransitionMode,
+            DebugType, Drive, EmitIntensity, LoopBehavior, Phase, Rad as PhaseRad, SamplingConfiguration,
+            Segment, TransitionMode,
         },
         operation::{ControlPoint, GainSTMMode},
         version::FirmwareVersion,

@@ -65,7 +65,7 @@ impl<L: Link> Controller<L> {
     pub async fn send(&mut self, s: impl Datagram) -> Result<bool, AUTDError> {
         let timeout = s.timeout();
 
-        let (mut op1, mut op2) = s.operation()?;
+        let (mut op1, mut op2) = s.operation();
         OperationHandler::init(&mut op1, &mut op2, &self.geometry)?;
         loop {
             OperationHandler::pack(&mut op1, &mut op2, &self.geometry, &mut self.tx_buf)?;
@@ -269,7 +269,7 @@ mod tests {
         );
 
         assert_eq!(
-            Sine::new(150.).calc()?,
+            Sine::new(150.).calc(&autd.geometry)?[&0],
             autd.link[0].fpga().modulation(Segment::S0)
         );
         assert_eq!(

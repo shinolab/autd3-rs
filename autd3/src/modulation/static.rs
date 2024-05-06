@@ -1,7 +1,7 @@
 use autd3_driver::derive::*;
 
 /// Without modulation
-#[derive(Modulation, Clone, PartialEq, Debug, Builder)]
+#[derive(Modulation, Clone, Debug, PartialEq, Builder)]
 pub struct Static {
     #[get]
     intensity: u8,
@@ -36,8 +36,8 @@ impl Static {
 }
 
 impl Modulation for Static {
-    fn calc(&self) -> Result<Vec<u8>, AUTDInternalError> {
-        Ok(vec![self.intensity; 2])
+    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
+        Self::transform(geometry, |_| Ok(vec![self.intensity; 2]))
     }
 }
 
@@ -49,24 +49,28 @@ impl Default for Static {
 
 #[cfg(test)]
 mod tests {
+    use crate::tests::create_geometry;
+
     use super::*;
 
     #[test]
     fn test_static_default() -> anyhow::Result<()> {
+        let geometry = create_geometry(1);
         let m = Static::default();
         assert_eq!(u8::MAX, m.intensity());
         assert_eq!(SamplingConfiguration::DISABLE, m.sampling_config());
-        assert_eq!(vec![u8::MAX, u8::MAX], m.calc()?);
+        assert_eq!(vec![u8::MAX, u8::MAX], m.calc(&geometry)?[&0]);
 
         Ok(())
     }
 
     #[test]
     fn test_static_with_intensity() -> anyhow::Result<()> {
+        let geometry = create_geometry(1);
         let m = Static::with_intensity(0x1F);
         assert_eq!(0x1F, m.intensity());
         assert_eq!(SamplingConfiguration::DISABLE, m.sampling_config());
-        assert_eq!(vec![0x1F, 0x1F], m.calc()?);
+        assert_eq!(vec![0x1F, 0x1F], m.calc(&geometry)?[&0]);
 
         Ok(())
     }

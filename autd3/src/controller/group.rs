@@ -43,7 +43,7 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
         D::O2: 'static,
     {
         let timeout = d.timeout();
-        let (op1, op2) = d.operation()?;
+        let (op1, op2) = d.operation();
         self.set_boxed_op(k, Box::new(op1), Box::new(op2), timeout)
     }
 
@@ -208,7 +208,7 @@ mod tests {
             autd.link[1].fpga().drives(Segment::S0, 0)
         );
         assert_eq!(
-            Static::with_intensity(0x80).calc()?,
+            Static::with_intensity(0x80).calc(&autd.geometry)?[&0],
             autd.link[1].fpga().modulation(Segment::S0)
         );
 
@@ -218,7 +218,7 @@ mod tests {
         );
 
         assert_eq!(
-            Sine::new(150.).calc()?,
+            Sine::new(150.).calc(&autd.geometry)?[&0],
             autd.link[3].fpga().modulation(Segment::S0)
         );
         assert_eq!(
