@@ -27,8 +27,8 @@ impl<F: Fn(&Device, &Transducer) -> Phase> Datagram for ConfigurePhaseFilter<F> 
     type O1 = crate::firmware::operation::ConfigurePhaseFilterOp<F>;
     type O2 = crate::firmware::operation::NullOp;
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new(self.f), Self::O2::default()))
+    fn operation(self) -> (Self::O1, Self::O2) {
+        (Self::O1::new(self.f), Self::O2::default())
     }
 
     fn timeout(&self) -> Option<Duration> {
@@ -50,8 +50,6 @@ mod tests {
     fn test() {
         let datagram = ConfigurePhaseFilter::additive(f);
         assert_eq!(Some(DEFAULT_TIMEOUT), datagram.timeout());
-        let r = datagram.operation();
-        assert!(r.is_ok());
-        let _ = r.unwrap();
+        let _ = datagram.operation();
     }
 }

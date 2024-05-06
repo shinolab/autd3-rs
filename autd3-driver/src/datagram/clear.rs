@@ -18,8 +18,8 @@ impl Datagram for Clear {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::default(), Self::O2::default()))
+    fn operation(self) -> (Self::O1, Self::O2) {
+        (Self::O1::default(), Self::O2::default())
     }
 }
 
@@ -40,8 +40,6 @@ mod tests {
     #[test]
     fn test_operation() {
         let clear = Clear::default();
-        let r = <Clear as Datagram>::operation(clear);
-        assert!(r.is_ok());
-        let _: (ClearOp, NullOp) = r.unwrap();
+        let _: (ClearOp, NullOp) = clear.operation();
     }
 }

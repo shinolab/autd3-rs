@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use crate::{
     defined::DEFAULT_TIMEOUT,
-    derive::AUTDInternalError,
     firmware::fpga::{Segment, TransitionMode},
 };
 
@@ -37,11 +36,11 @@ impl crate::datagram::Datagram for ChangeFocusSTMSegment {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((
+    fn operation(self) -> (Self::O1, Self::O2) {
+        (
             Self::O1::new(self.segment, self.transition_mode),
             Self::O2::default(),
-        ))
+        )
     }
 }
 
@@ -76,11 +75,11 @@ impl crate::datagram::Datagram for ChangeGainSTMSegment {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((
+    fn operation(self) -> (Self::O1, Self::O2) {
+        (
             Self::O1::new(self.segment, self.transition_mode),
             Self::O2::default(),
-        ))
+        )
     }
 }
 
@@ -89,24 +88,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_focus_stm() -> anyhow::Result<()> {
+    fn test_focus_stm() {
         use crate::datagram::Datagram;
         let d = ChangeFocusSTMSegment::new(Segment::S0, TransitionMode::default());
         assert_eq!(Segment::S0, d.segment());
         assert_eq!(TransitionMode::default(), d.transition_mode());
         assert_eq!(Some(DEFAULT_TIMEOUT), d.timeout());
-        let _ = d.operation()?;
-        Ok(())
+        let _ = d.operation();
     }
 
     #[test]
-    fn test_gain_stm() -> anyhow::Result<()> {
+    fn test_gain_stm() {
         use crate::datagram::Datagram;
         let d = ChangeGainSTMSegment::new(Segment::S0, TransitionMode::default());
         assert_eq!(Segment::S0, d.segment());
         assert_eq!(TransitionMode::default(), d.transition_mode());
         assert_eq!(Some(DEFAULT_TIMEOUT), d.timeout());
-        let _ = d.operation()?;
-        Ok(())
+        let _ = d.operation();
     }
 }

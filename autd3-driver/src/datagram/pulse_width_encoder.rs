@@ -53,8 +53,8 @@ impl Datagram for ConfigurePulseWidthEncoder {
     type O1 = crate::firmware::operation::ConfigurePulseWidthEncoderOp;
     type O2 = crate::firmware::operation::NullOp;
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new(self.buf), Self::O2::default()))
+    fn operation(self) -> (Self::O1, Self::O2) {
+        (Self::O1::new(self.buf), Self::O2::default())
     }
 
     fn timeout(&self) -> Option<Duration> {
@@ -108,6 +108,6 @@ mod tests {
                     v
                 );
             });
-        assert!(datagram.operation().is_ok());
+        let _ = datagram.operation();
     }
 }

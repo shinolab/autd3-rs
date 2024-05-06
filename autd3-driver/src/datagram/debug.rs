@@ -26,8 +26,8 @@ impl<F: Fn(&Device) -> [DebugType; 4]> Datagram for ConfigureDebugSettings<F> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new(self.f), Self::O2::default()))
+    fn operation(self) -> (Self::O1, Self::O2) {
+        (Self::O1::new(self.f), Self::O2::default())
     }
 }
 
@@ -59,8 +59,6 @@ mod tests {
     #[test]
     fn test_operation() {
         let d = ConfigureDebugSettings::new(f);
-        let r = d.operation();
-        assert!(r.is_ok());
-        let _: (DebugSettingOp<_>, NullOp) = r.unwrap();
+        let _: (DebugSettingOp<_>, NullOp) = d.operation();
     }
 }
