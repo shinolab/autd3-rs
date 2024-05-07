@@ -4,6 +4,7 @@ use crate::{
     datagram::{Gain, GainFilter},
     error::AUTDInternalError,
     firmware::{
+        cpu::GainSTMMode,
         fpga::{
             Drive, LoopBehavior, STMSamplingConfig, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX,
             STM_BUF_SIZE_MIN,
@@ -15,7 +16,6 @@ use crate::{
 
 use super::{
     control_flags::GainSTMControlFlags,
-    mode::GainSTMMode,
     reduced_phase::{PhaseFull, PhaseHalf},
 };
 

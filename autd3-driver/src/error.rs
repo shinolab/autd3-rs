@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::firmware::{fpga::*, operation::GainSTMMode};
+use crate::firmware::{cpu::GainSTMMode, fpga::*};
 
 #[derive(Error, Debug, PartialEq)]
 pub enum AUTDInternalError {

@@ -4,7 +4,7 @@ use autd3_driver::{
     firmware::{
         cpu::TxDatagram,
         fpga::{FPGAState, STMSamplingConfig, SAMPLING_FREQ_DIV_MAX},
-        operation::{ControlPoint, FocusSTMOp},
+        operation::FocusSTMOp,
     },
     geometry::Vector3,
 };

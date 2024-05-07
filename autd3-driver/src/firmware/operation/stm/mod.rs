@@ -1,5 +1,5 @@
 mod focus;
 mod gain;
 
-pub use focus::{ControlPoint, FocusSTMChangeSegmentOp, FocusSTMOp};
-pub use gain::{GainSTMChangeSegmentOp, GainSTMMode, GainSTMOp};
+pub use focus::{FocusSTMChangeSegmentOp, FocusSTMOp};
+pub use gain::{GainSTMChangeSegmentOp, GainSTMOp};

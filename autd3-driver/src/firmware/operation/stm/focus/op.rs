@@ -1,4 +1,5 @@
 use crate::{
+    datagram::ControlPoint,
     defined::METER,
     error::AUTDInternalError,
     firmware::{
@@ -11,7 +12,7 @@ use crate::{
     geometry::{Device, Geometry},
 };
 
-use super::{ControlPoint, FocusSTMControlFlags};
+use super::FocusSTMControlFlags;
 
 #[repr(C, align(2))]
 struct FocusSTMHead {

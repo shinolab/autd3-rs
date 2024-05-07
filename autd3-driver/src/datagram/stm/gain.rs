@@ -2,8 +2,8 @@ use crate::{
     defined::DEFAULT_TIMEOUT,
     derive::*,
     firmware::{
+        cpu::GainSTMMode,
         fpga::{Segment, TransitionMode},
-        operation::GainSTMMode,
     },
 };
 

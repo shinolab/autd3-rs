@@ -4,9 +4,9 @@ use autd3_driver::{
     datagram::*,
     derive::*,
     firmware::{
-        cpu::TxDatagram,
+        cpu::{GainSTMMode, TxDatagram},
         fpga::STMSamplingConfig,
-        operation::{ControlPoint, FocusSTMOp, GainChangeSegmentOp, GainSTMMode, GainSTMOp},
+        operation::{FocusSTMOp, GainChangeSegmentOp, GainSTMOp},
     },
     geometry::Vector3,
 };
