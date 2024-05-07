@@ -99,7 +99,7 @@ mod tests {
     fn create_wav(
         path: impl AsRef<Path>,
         spec: hound::WavSpec,
-        data: &[impl hound::Sample + Clone + Copy],
+        data: &[impl hound::Sample + Copy],
     ) -> anyhow::Result<()> {
         let mut writer = hound::WavWriter::create(path, spec)?;
         data.iter().try_for_each(|&s| writer.write_sample(s))?;
@@ -182,7 +182,7 @@ mod tests {
     fn test_wav(
         #[case] expect: Vec<u8>,
         #[case] spec: hound::WavSpec,
-        #[case] data: &[impl hound::Sample + Clone + Copy],
+        #[case] data: &[impl hound::Sample + Copy],
     ) -> anyhow::Result<()> {
         let geometry = create_geometry(1);
         let dir = tempfile::tempdir()?;

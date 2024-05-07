@@ -195,19 +195,19 @@ mod tests {
     )]
     #[case::out_of_range_min(
         Err(AUTDInternalError::SamplingFreqOutOfRange(
-            freq_min_raw(20480000) as f64 - f64::MIN,
+            freq_min_raw(20480000) - f64::MIN,
             freq_min_raw(20480000),
             freq_max_raw(20480000)
         )),
-        freq_min_raw(20480000) as f64 - f64::MIN
+        freq_min_raw(20480000) - f64::MIN
     )]
     #[case::out_of_range_max(
         Err(AUTDInternalError::SamplingFreqOutOfRange(
-            freq_max_raw(20480000) as f64 + f64::MIN,
+            freq_max_raw(20480000) + f64::MIN,
             freq_min_raw(20480000),
             freq_max_raw(20480000)
         )),
-        freq_max_raw(20480000) as f64 + f64::MIN
+        freq_max_raw(20480000) + f64::MIN
     )]
     fn from_freq_nearest(#[case] expected: Result<u32, AUTDInternalError>, #[case] freq: f64) {
         assert_eq!(
