@@ -132,9 +132,9 @@ mod tests {
             .is_ok()
         );
         if expect {
-            assert_eq!(x as i32, p.x());
-            assert_eq!(y as i32, p.y());
-            assert_eq!(z as i32, p.z());
+            assert_eq!({ x }, p.x());
+            assert_eq!({ y }, p.y());
+            assert_eq!({ z }, p.z());
             assert_eq!(intensity, p.intensity());
         }
     }

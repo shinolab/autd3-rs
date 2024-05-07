@@ -3,6 +3,12 @@ use crate::{datagram::*, derive::DEFAULT_TIMEOUT};
 /// Datagram for configure debug_output_idx
 pub struct ConfigureFPGAClock {}
 
+impl Default for ConfigureFPGAClock {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ConfigureFPGAClock {
     /// constructor
     pub const fn new() -> Self {

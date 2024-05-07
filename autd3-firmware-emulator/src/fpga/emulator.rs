@@ -527,7 +527,7 @@ mod tests {
         itertools::iproduct!(0x00..=0xFF, 0x00..=0xFF).for_each(|(a, b)| {
             assert_eq!(
                 to_pulse_width_actual(a, b),
-                fpga.to_pulse_width(a.into(), b.into())
+                fpga.to_pulse_width(a.into(), b)
             );
         });
     }

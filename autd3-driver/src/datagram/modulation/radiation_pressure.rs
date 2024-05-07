@@ -81,7 +81,7 @@ mod tests {
             Ok(HashMap::from([(
                 0,
                 buf.iter()
-                    .map(|&x| (((x as f64 / 255.).sqrt() * 255.).round() as u8).into())
+                    .map(|&x| (((x as f64 / 255.).sqrt() * 255.).round() as u8))
                     .collect::<Vec<u8>>()
             )])),
             TestModulation {

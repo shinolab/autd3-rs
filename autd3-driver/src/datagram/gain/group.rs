@@ -263,10 +263,7 @@ mod tests {
     fn test_calc_err() {
         let geometry = create_geometry(2, 249, FREQ_40K);
 
-        let gain = Group::new(|_dev, tr| match tr.idx() {
-            _ => Some("test"),
-        })
-        .set("test", ErrGain {});
+        let gain = Group::new(|_dev, _tr| Some("test")).set("test", ErrGain {});
 
         assert_eq!(
             Err(AUTDInternalError::GainError("test error".to_owned())),
