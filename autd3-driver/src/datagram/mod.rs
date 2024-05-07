@@ -1,4 +1,5 @@
 mod clear;
+mod clk;
 mod debug;
 mod force_fan;
 mod gain;
@@ -13,6 +14,7 @@ mod with_segment;
 mod with_timeout;
 
 pub use clear::Clear;
+pub use clk::ConfigureFPGAClock;
 pub use debug::ConfigureDebugSettings;
 pub use force_fan::ConfigureForceFan;
 pub use gain::{

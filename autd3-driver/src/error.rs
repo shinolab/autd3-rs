@@ -73,6 +73,9 @@ pub enum AUTDInternalError {
     #[error("Pulse width encoder table must be monotonically increasing and each data value must be 256 or less")]
     InvalidPulseWidthEncoderData,
 
+    #[error("Frequency ({0}) can't be produced or is invalid for synchronizer")]
+    InvalidFrequencyError(u32),
+
     #[error("{0}")]
     ModulationError(String),
     #[error("{0}")]

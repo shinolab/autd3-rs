@@ -25,6 +25,7 @@ pub use segment::Segment;
 pub use stm_sampling_config::STMSamplingConfig;
 pub use transition_mode::TransitionMode;
 
+pub const FPGA_BASE_CLK_FREQ: u32 = 25600000;
 pub const ULTRASOUND_PERIOD: u32 = 512;
 
 pub const FOCUS_STM_FIXED_NUM_UNIT: f64 = 0.025e-3 * METER;
@@ -56,3 +57,4 @@ pub const FOCUS_STM_BUF_SIZE_MAX: usize = 65536;
 pub const GAIN_STM_BUF_SIZE_MAX: usize = 1024;
 
 pub const PWE_BUF_SIZE: usize = 65536;
+pub const DRP_ROM_SIZE: usize = 32;
