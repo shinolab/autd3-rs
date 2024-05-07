@@ -14,6 +14,30 @@ pub struct FixedCompletionSteps {
     strict_mode: bool,
 }
 
+impl std::ops::Mul<u16> for FixedCompletionSteps {
+    type Output = Self;
+
+    fn mul(self, rhs: u16) -> Self::Output {
+        Self {
+            steps_intensity: self.steps_intensity * rhs,
+            steps_phase: self.steps_phase * rhs,
+            strict_mode: self.strict_mode,
+        }
+    }
+}
+
+impl std::ops::Div<u16> for FixedCompletionSteps {
+    type Output = Self;
+
+    fn div(self, rhs: u16) -> Self::Output {
+        Self {
+            steps_intensity: self.steps_intensity / rhs,
+            steps_phase: self.steps_phase / rhs,
+            strict_mode: self.strict_mode,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct FixedUpdateRate {
     update_rate_intensity: u16,
@@ -93,6 +117,32 @@ impl ConfigureSilencer<()> {
                 steps_phase: 1,
                 strict_mode: true,
             },
+        }
+    }
+}
+
+impl<T> std::ops::Mul<u16> for ConfigureSilencer<T>
+where
+    T: std::ops::Mul<u16, Output = T>,
+{
+    type Output = ConfigureSilencer<T>;
+
+    fn mul(self, rhs: u16) -> Self::Output {
+        ConfigureSilencer {
+            internal: self.internal * rhs,
+        }
+    }
+}
+
+impl<T> std::ops::Div<u16> for ConfigureSilencer<T>
+where
+    T: std::ops::Div<u16, Output = T>,
+{
+    type Output = ConfigureSilencer<T>;
+
+    fn div(self, rhs: u16) -> Self::Output {
+        ConfigureSilencer {
+            internal: self.internal / rhs,
         }
     }
 }
@@ -256,6 +306,39 @@ mod tests {
             SILENCER_STEPS_PHASE_DEFAULT
         );
         assert!(silencer.strict_mode());
+    }
+
+    #[test]
+    fn test_completion_steps_mul_div() {
+        let silencer = ConfigureSilencer::default();
+        assert_eq!(
+            silencer.completion_steps_intensity(),
+            SILENCER_STEPS_INTENSITY_DEFAULT
+        );
+        assert_eq!(
+            silencer.completion_steps_phase(),
+            SILENCER_STEPS_PHASE_DEFAULT
+        );
+
+        let silencer = ConfigureSilencer::default() * 2;
+        assert_eq!(
+            silencer.completion_steps_intensity(),
+            SILENCER_STEPS_INTENSITY_DEFAULT * 2
+        );
+        assert_eq!(
+            silencer.completion_steps_phase(),
+            SILENCER_STEPS_PHASE_DEFAULT * 2
+        );
+
+        let silencer = ConfigureSilencer::default() / 2;
+        assert_eq!(
+            silencer.completion_steps_intensity(),
+            SILENCER_STEPS_INTENSITY_DEFAULT / 2
+        );
+        assert_eq!(
+            silencer.completion_steps_phase(),
+            SILENCER_STEPS_PHASE_DEFAULT / 2
+        );
     }
 
     #[test]
