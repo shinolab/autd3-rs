@@ -6,11 +6,11 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy)]
-pub struct ConfigurePhaseFilter<F: Fn(&Device, &Transducer) -> Phase> {
+pub struct ConfigurePhaseFilter<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
     f: F,
 }
 
-impl<F: Fn(&Device, &Transducer) -> Phase> ConfigurePhaseFilter<F> {
+impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> ConfigurePhaseFilter<FT, F> {
     /// constructor
     pub const fn additive(f: F) -> Self {
         Self { f }
@@ -23,8 +23,8 @@ impl<F: Fn(&Device, &Transducer) -> Phase> ConfigurePhaseFilter<F> {
     // GRCOV_EXCL_STOP
 }
 
-impl<F: Fn(&Device, &Transducer) -> Phase> Datagram for ConfigurePhaseFilter<F> {
-    type O1 = crate::firmware::operation::ConfigurePhaseFilterOp<F>;
+impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> Datagram for ConfigurePhaseFilter<FT, F> {
+    type O1 = crate::firmware::operation::ConfigurePhaseFilterOp<FT, F>;
     type O2 = crate::firmware::operation::NullOp;
 
     fn operation(self) -> (Self::O1, Self::O2) {
@@ -41,8 +41,8 @@ mod tests {
     use super::*;
 
     // GRCOV_EXCL_START
-    fn f(_: &Device, _: &Transducer) -> Phase {
-        Phase::new(0)
+    fn f(_: &Device) -> impl Fn(&Transducer) -> Phase {
+        |_| Phase::new(0)
     }
     // GRCOV_EXCL_STOP
 
