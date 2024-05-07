@@ -148,9 +148,11 @@ pub trait IntoDevice {
 pub mod tests {
     use rand::Rng;
 
-    use crate::defined::{FREQ_40K, MILLIMETER, PI};
-
     use super::*;
+    use crate::{
+        defined::{FREQ_40K, MILLIMETER, PI},
+        geometry::tests::create_device,
+    };
 
     macro_rules! assert_approx_eq_vec3 {
         ($a:expr, $b:expr) => {
@@ -169,22 +171,12 @@ pub mod tests {
         };
     }
 
-    pub fn create_device(idx: usize, n: usize) -> Device {
-        Device::new(
-            idx,
-            (0..n)
-                .map(|i| Transducer::new(i, Vector3::zeros(), UnitQuaternion::identity()))
-                .collect(),
-            FREQ_40K,
-        )
-    }
-
     #[rstest::rstest]
     #[test]
     #[case(0)]
     #[case(1)]
     fn test_idx(#[case] idx: usize) {
-        assert_eq!(idx, create_device(idx, 249).idx());
+        assert_eq!(idx, create_device(idx, 249, FREQ_40K).idx());
     }
 
     #[rstest::rstest]
@@ -192,7 +184,7 @@ pub mod tests {
     #[case(1)]
     #[case(249)]
     fn test_num_transducers(#[case] n: usize) {
-        assert_eq!(n, create_device(0, n).num_transducers());
+        assert_eq!(n, create_device(0, n, FREQ_40K).num_transducers());
     }
 
     #[test]
@@ -447,7 +439,7 @@ pub mod tests {
     #[case(343.23498846612807e3, 20.)]
     #[case(349.0401521469255e3, 30.)]
     fn test_set_sound_speed_from_temp(#[case] expected: f64, #[case] temp: f64) {
-        let mut device = create_device(0, 249);
+        let mut device = create_device(0, 249, FREQ_40K);
         device.set_sound_speed_from_temp(temp);
         assert_approx_eq::assert_approx_eq!(expected * MILLIMETER, device.sound_speed, 1e-3);
     }
@@ -457,7 +449,7 @@ pub mod tests {
     #[case(8.5, 340e3)]
     #[case(10., 400e3)]
     fn wavelength(#[case] expect: f64, #[case] c: f64) {
-        let mut device = create_device(0, 249);
+        let mut device = create_device(0, 249, FREQ_40K);
         device.sound_speed = c;
         assert_approx_eq::assert_approx_eq!(expect, device.wavelength());
     }
@@ -467,7 +459,7 @@ pub mod tests {
     #[case(0.7391982714328925, 340e3)]
     #[case(0.6283185307179586, 400e3)]
     fn wavenumber(#[case] expect: f64, #[case] c: f64) {
-        let mut device = create_device(0, 249);
+        let mut device = create_device(0, 249, FREQ_40K);
         device.sound_speed = c;
         assert_approx_eq::assert_approx_eq!(expect, device.wavenumber());
     }

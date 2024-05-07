@@ -150,11 +150,13 @@ mod tests {
 
     use super::{super::tests::TestGain, *};
 
-    use crate::{firmware::operation::tests::NullGain, geometry::tests::create_geometry};
+    use crate::{
+        defined::FREQ_40K, firmware::operation::tests::NullGain, geometry::tests::create_geometry,
+    };
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let geometry = create_geometry(4, 249);
+        let geometry = create_geometry(4, 249, FREQ_40K);
 
         let mut rng = rand::thread_rng();
 
@@ -212,7 +214,7 @@ mod tests {
 
     #[test]
     fn test_unknown_key() {
-        let geometry = create_geometry(2, 249);
+        let geometry = create_geometry(2, 249, FREQ_40K);
 
         let gain = Group::new(|_dev, tr| match tr.idx() {
             0..=99 => Some("test"),
@@ -229,7 +231,7 @@ mod tests {
 
     #[test]
     fn test_unspecified_key() {
-        let geometry = create_geometry(2, 249);
+        let geometry = create_geometry(2, 249, FREQ_40K);
 
         let gain = Group::new(|_dev, tr| match tr.idx() {
             0..=99 => Some("test"),
@@ -259,7 +261,7 @@ mod tests {
 
     #[test]
     fn test_calc_err() {
-        let geometry = create_geometry(2, 249);
+        let geometry = create_geometry(2, 249, FREQ_40K);
 
         let gain = Group::new(|_dev, tr| match tr.idx() {
             _ => Some("test"),

@@ -85,6 +85,7 @@ mod tests {
 
     use super::*;
     use crate::{
+        defined::FREQ_40K,
         firmware::{
             fpga::{EmitIntensity, Phase},
             operation::tests::{ErrGain, TestGain},
@@ -97,7 +98,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
 
         let mut tx = vec![
             0x00u8;
@@ -180,7 +181,7 @@ mod tests {
 
     #[test]
     fn test_error() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
 
         let gain = ErrGain {
             segment: Segment::S0,

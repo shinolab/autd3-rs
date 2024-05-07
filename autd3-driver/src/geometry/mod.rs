@@ -156,16 +156,16 @@ pub mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(1, vec![create_device(0, 249)])]
-    #[case(2, vec![create_device(0, 249), create_device(0, 249)])]
+    #[case(1, vec![create_device(0, 249, FREQ_40K)])]
+    #[case(2, vec![create_device(0, 249, FREQ_40K), create_device(0, 249, FREQ_40K)])]
     fn test_num_devices(#[case] expected: usize, #[case] devices: Vec<Device>) {
         assert_eq!(expected, Geometry::new(devices).num_devices());
     }
 
     #[rstest::rstest]
     #[test]
-    #[case(249, vec![create_device(0, 249)])]
-    #[case(498, vec![create_device(0, 249), create_device(0, 249)])]
+    #[case(249, vec![create_device(0, 249, FREQ_40K)])]
+    #[case(498, vec![create_device(0, 249, FREQ_40K), create_device(0, 249, FREQ_40K)])]
     fn test_num_transducers(#[case] expected: usize, #[case] devices: Vec<Device>) {
         assert_eq!(expected, Geometry::new(devices).num_transducers());
     }

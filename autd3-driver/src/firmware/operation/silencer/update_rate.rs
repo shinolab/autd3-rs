@@ -61,7 +61,7 @@ impl Operation for ConfigSilencerFixedUpdateRateOp {
 mod tests {
     use super::*;
     use crate::{
-        firmware::operation::silencer::SILNCER_MODE_FIXED_UPDATE_RATE,
+        defined::FREQ_40K, firmware::operation::silencer::SILNCER_MODE_FIXED_UPDATE_RATE,
         geometry::tests::create_geometry,
     };
 
@@ -70,7 +70,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
 
         let mut tx = [0x00u8; 8 * NUM_DEVICE];
 

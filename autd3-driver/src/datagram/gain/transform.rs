@@ -65,11 +65,11 @@ mod tests {
 
     use super::{super::tests::TestGain, *};
 
-    use crate::geometry::tests::create_geometry;
+    use crate::{defined::FREQ_40K, geometry::tests::create_geometry};
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let geometry = create_geometry(1, 249);
+        let geometry = create_geometry(1, 249, FREQ_40K);
 
         let mut rng = rand::thread_rng();
         let d: Drive = rng.gen();

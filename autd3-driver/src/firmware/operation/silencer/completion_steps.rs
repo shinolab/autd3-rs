@@ -66,14 +66,14 @@ impl Operation for ConfigSilencerFixedCompletionStepsOp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::geometry::tests::create_geometry;
+    use crate::{defined::FREQ_40K, geometry::tests::create_geometry};
 
     const NUM_TRANS_IN_UNIT: usize = 249;
     const NUM_DEVICE: usize = 10;
 
     #[test]
     fn test() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
 
         let mut tx = [0x00u8; 8 * NUM_DEVICE];
 
@@ -109,7 +109,7 @@ mod tests {
 
     #[test]
     fn test_with_strict_mode() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
 
         let mut tx = [0x00u8; 8 * NUM_DEVICE];
 
