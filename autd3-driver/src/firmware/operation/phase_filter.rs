@@ -15,12 +15,12 @@ struct PhaseFilter {
     tag: TypeTag,
 }
 
-pub struct ConfigurePhaseFilterOp<F: Fn(&Device, &Transducer) -> Phase> {
+pub struct ConfigurePhaseFilterOp<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
     remains: Remains,
     f: F,
 }
 
-impl<F: Fn(&Device, &Transducer) -> Phase> ConfigurePhaseFilterOp<F> {
+impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> ConfigurePhaseFilterOp<FT, F> {
     pub fn new(f: F) -> Self {
         Self {
             remains: Default::default(),
@@ -29,10 +29,13 @@ impl<F: Fn(&Device, &Transducer) -> Phase> ConfigurePhaseFilterOp<F> {
     }
 }
 
-impl<F: Fn(&Device, &Transducer) -> Phase> Operation for ConfigurePhaseFilterOp<F> {
+impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> Operation
+    for ConfigurePhaseFilterOp<FT, F>
+{
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         cast::<PhaseFilter>(tx).tag = TypeTag::PhaseFilter;
 
+        let f = (self.f)(device);
         unsafe {
             std::slice::from_raw_parts_mut(
                 tx[std::mem::size_of::<PhaseFilter>()..].as_mut_ptr() as *mut Phase,
@@ -40,7 +43,7 @@ impl<F: Fn(&Device, &Transducer) -> Phase> Operation for ConfigurePhaseFilterOp<
             )
             .iter_mut()
             .zip(device.iter())
-            .for_each(|(d, s)| *d = (self.f)(device, s));
+            .for_each(|(d, s)| *d = f(s));
         }
 
         self.remains[device] -= 1;
@@ -80,8 +83,10 @@ mod tests {
                 + (NUM_TRANS_IN_UNIT + 1) / 2 * 2 * std::mem::size_of::<Phase>())
                 * NUM_DEVICE];
 
-        let mut op =
-            ConfigurePhaseFilterOp::new(|dev, tr| Phase::new((dev.idx() + tr.idx()) as u8));
+        let mut op = ConfigurePhaseFilterOp::new(|dev| {
+            let dev_idx = dev.idx();
+            move |tr| Phase::new((dev_idx + tr.idx()) as u8)
+        });
 
         assert!(op.init(&geometry).is_ok());
 

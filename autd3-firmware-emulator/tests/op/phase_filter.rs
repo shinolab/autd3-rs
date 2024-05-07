@@ -19,7 +19,7 @@ fn send_phase_filter() -> anyhow::Result<()> {
     let phase_offsets: Vec<_> = (0..cpu.num_transducers())
         .map(|_| Phase::new(rng.gen()))
         .collect();
-    let mut op = ConfigurePhaseFilterOp::new(|_dev, tr| phase_offsets[tr.idx()]);
+    let mut op = ConfigurePhaseFilterOp::new(|_| |tr| phase_offsets[tr.idx()]);
 
     send(&mut cpu, &mut op, &geometry, &mut tx)?;
 
