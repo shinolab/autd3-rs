@@ -50,7 +50,7 @@ impl<F: Fn(&Device) -> [bool; 4]> Operation for EmulateGPIOInOp<F> {
         flag.set(GPIOInFlags::GPIO_IN_3, gpio_in[3]);
 
         *cast::<EmulateGPIOIn>(tx) = EmulateGPIOIn {
-            tag: TypeTag::ForceFan,
+            tag: TypeTag::EmulateGPIOIn,
             flag,
         };
 
@@ -110,7 +110,7 @@ mod tests {
             .for_each(|dev| assert_eq!(op.remains[dev], 0));
 
         geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * 2], TypeTag::ForceFan as u8);
+            assert_eq!(tx[dev.idx() * 2], TypeTag::EmulateGPIOIn as u8);
             assert_eq!(
                 tx[dev.idx() * 2 + 1],
                 if dev.idx() == 0 { 0b1001 } else { 0b0110 }

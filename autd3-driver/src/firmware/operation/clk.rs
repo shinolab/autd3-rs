@@ -40,15 +40,10 @@ struct Clk {
     size: u16,
 }
 
+#[derive(Default)]
 pub struct ConfigureClockOp {
     rom: HashMap<usize, Vec<u64>>,
     remains: Remains,
-}
-
-impl Default for ConfigureClockOp {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl ConfigureClockOp {
@@ -60,6 +55,7 @@ impl ConfigureClockOp {
     }
 }
 
+// GRCOV_EXCL_START
 fn round_frac(decimal: u64, precision: u64) -> u64 {
     if decimal & (1 << (10 - precision)) != 0 {
         decimal + (1 << (10 - precision))
@@ -311,11 +307,11 @@ fn mmcm_frac_count_calc(divide: u64, frac: u64) -> u64 {
         | (clkout0_divide_frac & 0b111) << 12
         | (wf_rise_frac as u64) << 10
         | (dt & 0b111111);
-    let drp_reg1: u64 = (pm_rise_frac_filtered & 0b111) << 13
-        | (ht_frac & 0b111111) << 6
-        | (lt_frac & 0b111111);
+    let drp_reg1: u64 =
+        (pm_rise_frac_filtered & 0b111) << 13 | (ht_frac & 0b111111) << 6 | (lt_frac & 0b111111);
     (drp_regshared << 32) | (drp_reg2 << 16) | drp_reg1
 }
+// GRCOV_EXCL_STOP
 
 fn calculate_mult_div(frequency: u32) -> Option<(u64, u64, u64)> {
     let f = frequency as u64;
@@ -679,5 +675,18 @@ mod tests {
                 });
             });
         }
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case::f40k(Ok(()), 40000)]
+    #[case::f1(Err(AUTDInternalError::InvalidFrequencyError(1)), 1)]
+    #[case::f32(Err(AUTDInternalError::InvalidFrequencyError(125)), 125)]
+    fn config_clk_validate(#[case] expect: Result<(), AUTDInternalError>, #[case] freq: u32) {
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, freq);
+
+        let mut op = ConfigureClockOp::new();
+
+        assert_eq!(expect, op.init(&geometry));
     }
 }
