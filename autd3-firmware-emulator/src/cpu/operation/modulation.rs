@@ -71,33 +71,32 @@ impl CPUEmulator {
         let data = if (d.subseq.flag & MODULATION_FLAG_BEGIN) == MODULATION_FLAG_BEGIN {
             self.mod_cycle = 0;
 
-            let freq_div = d.head.freq_div;
-            let segment = if (d.head.flag & GAIN_STM_FLAG_SEGMENT) != 0 {
+            self.mod_segment = if (d.head.flag & GAIN_STM_FLAG_SEGMENT) != 0 {
                 1
             } else {
                 0
             };
-            let rep = d.head.rep;
 
-            if self.silencer_strict_mode & (freq_div < self.min_freq_div_intensity) {
-                return ERR_FREQ_DIV_TOO_SMALL;
-            }
-            self.mod_freq_div[segment as usize] = freq_div;
+            self.mod_freq_div[self.mod_segment as usize] = d.head.freq_div;
             self.mod_transition_mode = d.head.transition_mode;
             self.mod_transition_value = d.head.transition_value;
 
-            match segment {
+            if self.validate_silencer_settings() {
+                return ERR_INVALID_SILENCER_SETTING;
+            }
+
+            match self.mod_segment {
                 0 => {
                     self.bram_cpy(
                         BRAM_SELECT_CONTROLLER,
                         ADDR_MOD_FREQ_DIV0_0,
-                        &freq_div as *const _ as _,
+                        &d.head.freq_div as *const _ as _,
                         std::mem::size_of::<u32>() >> 1,
                     );
                     self.bram_cpy(
                         BRAM_SELECT_CONTROLLER,
                         ADDR_MOD_REP0_0,
-                        &rep as *const _ as _,
+                        &d.head.rep as *const _ as _,
                         std::mem::size_of::<u32>() >> 1,
                     );
                 }
@@ -105,19 +104,18 @@ impl CPUEmulator {
                     self.bram_cpy(
                         BRAM_SELECT_CONTROLLER,
                         ADDR_MOD_FREQ_DIV1_0,
-                        &freq_div as *const _ as _,
+                        &d.head.freq_div as *const _ as _,
                         std::mem::size_of::<u32>() >> 1,
                     );
                     self.bram_cpy(
                         BRAM_SELECT_CONTROLLER,
                         ADDR_MOD_REP1_0,
-                        &rep as *const _ as _,
+                        &d.head.rep as *const _ as _,
                         std::mem::size_of::<u32>() >> 1,
                     );
                 }
                 _ => unreachable!(),
             }
-            self.mod_segment = segment as _;
 
             self.change_mod_wr_segment(self.mod_segment as _);
 
@@ -167,6 +165,11 @@ impl CPUEmulator {
 
     pub(crate) unsafe fn change_mod_segment(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<ModulationUpdate>(data);
+
+        self.mod_segment = d.segment;
+        if self.validate_silencer_settings() {
+            return ERR_INVALID_SILENCER_SETTING;
+        }
 
         self.mod_segment_update(d.segment, d.transition_mode, d.transition_value)
     }

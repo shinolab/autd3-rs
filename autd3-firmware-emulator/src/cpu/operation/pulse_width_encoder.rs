@@ -64,7 +64,7 @@ impl CPUEmulator {
         let page_capacity =
             (self.pwe_write & !PWE_TABLE_PAGE_SIZE_MASK) + PWE_TABLE_PAGE_SIZE - self.pwe_write;
 
-        if size < page_capacity {
+        if size <= page_capacity {
             self.bram_cpy(
                 BRAM_SELECT_DUTY_TABLE,
                 ((self.pwe_write & PWE_TABLE_PAGE_SIZE_MASK) >> 1) as u16,

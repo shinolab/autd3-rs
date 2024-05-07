@@ -247,7 +247,7 @@ fn gain_stm_freq_div_too_small() {
     );
 
     assert_eq!(
-        Err(AUTDInternalError::FreqDivisionTooSmall),
+        Err(AUTDInternalError::InvalidSilencerSettings),
         send(&mut cpu, &mut op, &geometry, &mut tx)
     );
 }

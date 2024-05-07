@@ -40,6 +40,7 @@ impl CPUEmulator {
 
         self.mod_freq_div = [5120, 5120];
         self.mod_cycle = 2;
+        self.mod_segment = 0;
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
             ADDR_MOD_TRANSITION_MODE,
@@ -86,6 +87,7 @@ impl CPUEmulator {
         self.stm_cycle = [1, 1];
         self.stm_mode = [STM_MODE_GAIN, STM_MODE_GAIN];
         self.stm_freq_div = [0xFFFFFFFF, 0xFFFFFFFF];
+        self.stm_segment = 0;
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
             ADDR_STM_TRANSITION_MODE,
