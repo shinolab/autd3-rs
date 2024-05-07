@@ -1,10 +1,6 @@
-use crate::{
-    defined::DEFAULT_TIMEOUT,
-    derive::*,
-    firmware::{fpga::TransitionMode, operation::ControlPoint},
-};
+use crate::{defined::DEFAULT_TIMEOUT, derive::*, firmware::fpga::TransitionMode};
 
-use super::STMProps;
+use super::{ControlPoint, STMProps};
 
 /// FocusSTM is an STM for moving a single focal point.
 ///

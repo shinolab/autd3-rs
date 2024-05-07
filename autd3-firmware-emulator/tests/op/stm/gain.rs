@@ -1,18 +1,15 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    datagram::Datagram,
+    datagram::{ControlPoint, Datagram},
     derive::*,
     firmware::{
-        cpu::TxDatagram,
+        cpu::{GainSTMMode, TxDatagram},
         fpga::{
             STMSamplingConfig, GAIN_STM_BUF_SIZE_MAX, SAMPLING_FREQ_DIV_MAX,
             SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
         },
-        operation::{
-            ControlPoint, FocusSTMOp, GainSTMChangeSegmentOp, GainSTMMode, GainSTMOp,
-            OperationHandler,
-        },
+        operation::{FocusSTMOp, GainSTMChangeSegmentOp, GainSTMOp, OperationHandler},
     },
     geometry::Vector3,
 };

@@ -8,6 +8,7 @@ pub use crate::{
 
 pub use autd3_driver::{
     autd3_device::AUTD3,
+    datagram::ControlPoint,
     datagram::{
         ChangeFocusSTMSegment, ChangeGainSTMSegment, ChangeGainSegment, ChangeModulationSegment,
         Clear, ConfigureDebugSettings, ConfigureForceFan, ConfigurePhaseFilter,
@@ -21,11 +22,11 @@ pub use autd3_driver::{
     error::AUTDInternalError,
     ethercat::DcSysTime,
     firmware::{
+        cpu::GainSTMMode,
         fpga::{
             DebugType, Drive, EmitIntensity, LoopBehavior, Phase, Rad as PhaseRad, SamplingConfig,
             Segment, TransitionMode,
         },
-        operation::{ControlPoint, GainSTMMode},
         version::FirmwareVersion,
     },
     geometry::*,

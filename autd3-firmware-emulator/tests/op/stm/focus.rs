@@ -1,19 +1,19 @@
 use std::{collections::HashMap, time::Duration};
 
 use autd3_driver::{
-    datagram::Datagram,
+    datagram::{ControlPoint, Datagram},
     defined::{METER, MILLIMETER},
     derive::{Drive, LoopBehavior, Phase, SamplingConfig, Segment},
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::{
-        cpu::TxDatagram,
+        cpu::{GainSTMMode, TxDatagram},
         fpga::{
             STMSamplingConfig, TransitionMode, FOCUS_STM_BUF_SIZE_MAX, FOCUS_STM_FIXED_NUM_UNIT,
             SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN, SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT,
         },
-        operation::{ControlPoint, FocusSTMChangeSegmentOp, FocusSTMOp, GainSTMMode, GainSTMOp},
+        operation::{FocusSTMChangeSegmentOp, FocusSTMOp, GainSTMOp},
     },
     geometry::Vector3,
 };
