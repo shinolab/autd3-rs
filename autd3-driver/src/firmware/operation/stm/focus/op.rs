@@ -164,7 +164,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        defined::MILLIMETER,
+        defined::{FREQ_40K, MILLIMETER},
         ethercat::DcSysTime,
         firmware::{
             fpga::{
@@ -185,7 +185,7 @@ mod tests {
         const FRAME_SIZE: usize =
             size_of::<FocusSTMHead>() + size_of::<STMFocus>() * FOCUS_STM_SIZE;
 
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
 
         let mut tx = vec![0x00u8; FRAME_SIZE * NUM_DEVICE];
 
@@ -315,7 +315,7 @@ mod tests {
             / size_of::<STMFocus>()
             + (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / size_of::<STMFocus>() * 2;
 
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
 
         let mut tx = vec![0x00u8; FRAME_SIZE * NUM_DEVICE];
 
@@ -583,7 +583,7 @@ mod tests {
 
     #[test]
     fn test_buffer_out_of_range() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
 
         let test = |n: usize| {
             let points: Vec<ControlPoint> = (0..n)
@@ -620,7 +620,7 @@ mod tests {
         const FOCUS_STM_SIZE: usize = 100;
         const FRAME_SIZE: usize = 16 + 8 * FOCUS_STM_SIZE;
 
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
 
         let mut tx = vec![0x00u8; FRAME_SIZE * NUM_DEVICE];
 

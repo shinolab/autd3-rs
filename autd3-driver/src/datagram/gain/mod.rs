@@ -161,7 +161,7 @@ impl DatagramS for Box<dyn Gain> {
 mod tests {
     use super::*;
 
-    use crate::{derive::*, geometry::tests::create_geometry};
+    use crate::{defined::FREQ_40K, derive::*, geometry::tests::create_geometry};
 
     #[derive(Gain, Clone, Copy, PartialEq, Debug)]
     pub struct TestGain<
@@ -228,7 +228,7 @@ mod tests {
         #[case] enabled: Vec<bool>,
         #[case] n: usize,
     ) {
-        let mut geometry = create_geometry(n, NUM_TRANSDUCERS);
+        let mut geometry = create_geometry(n, NUM_TRANSDUCERS, FREQ_40K);
         geometry
             .iter_mut()
             .zip(enabled.iter())
@@ -295,7 +295,9 @@ mod tests {
         #[case] filter: HashMap<usize, BitVec<usize, Lsb0>>,
         #[case] n: usize,
     ) {
-        let mut geometry = create_geometry(n, NUM_TRANSDUCERS);
+        use crate::defined::FREQ_40K;
+
+        let mut geometry = create_geometry(n, NUM_TRANSDUCERS, FREQ_40K);
         geometry
             .iter_mut()
             .zip(enabled.iter())

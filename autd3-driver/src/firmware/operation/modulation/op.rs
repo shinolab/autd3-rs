@@ -154,6 +154,7 @@ mod tests {
 
     use super::*;
     use crate::{
+        defined::FREQ_40K,
         derive::{LoopBehavior, SamplingConfig},
         ethercat::DcSysTime,
         firmware::{
@@ -170,7 +171,7 @@ mod tests {
     fn test() {
         const MOD_SIZE: usize = 100;
 
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
 
         let mut tx = vec![0x00u8; (std::mem::size_of::<ModulationHead>() + MOD_SIZE) * NUM_DEVICE];
 
@@ -287,7 +288,7 @@ mod tests {
         const MOD_SIZE: usize = FRAME_SIZE - std::mem::size_of::<ModulationHead>()
             + (FRAME_SIZE - std::mem::size_of::<ModulationSubseq>()) * 2;
 
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
 
         let mut tx = vec![0x00u8; FRAME_SIZE * NUM_DEVICE];
 
@@ -472,7 +473,7 @@ mod tests {
         MOD_BUF_SIZE_MAX + 1
     )), MOD_BUF_SIZE_MAX + 1)]
     fn test_buffer_out_of_range(#[case] expect: Result<(), AUTDInternalError>, #[case] n: usize) {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
 
         let mut rng = rand::thread_rng();
 

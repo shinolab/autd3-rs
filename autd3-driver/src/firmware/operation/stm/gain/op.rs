@@ -263,6 +263,7 @@ mod tests {
 
     use super::*;
     use crate::{
+        defined::FREQ_40K,
         ethercat::DcSysTime,
         firmware::{
             fpga::{EmitIntensity, Phase, SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
@@ -279,7 +280,7 @@ mod tests {
         const GAIN_STM_SIZE: usize = 3;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
 
         let mut tx = vec![0x00u8; FRAME_SIZE * NUM_DEVICE];
 
@@ -488,7 +489,7 @@ mod tests {
         const GAIN_STM_SIZE: usize = 5;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
 
         let mut tx = vec![0x00u8; FRAME_SIZE * NUM_DEVICE];
 
@@ -670,7 +671,7 @@ mod tests {
         const GAIN_STM_SIZE: usize = 11;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
 
         let mut tx = vec![0x00u8; FRAME_SIZE * NUM_DEVICE];
 
@@ -857,7 +858,7 @@ mod tests {
 
     #[test]
     fn test_buffer_out_of_range() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT);
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
 
         let test = |n: usize| {
             let gains: Vec<NullGain> = (0..n).map(|_| NullGain {}).collect();

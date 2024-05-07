@@ -72,7 +72,7 @@ impl<M: Modulation> Modulation for Cache<M> {
 
 #[cfg(test)]
 mod tests {
-    use crate::geometry::tests::create_geometry;
+    use crate::{defined::FREQ_40K, geometry::tests::create_geometry};
 
     use super::{super::tests::TestModulation, *};
 
@@ -87,7 +87,7 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let geometry = create_geometry(1, 249);
+        let geometry = create_geometry(1, 249, FREQ_40K);
 
         let mut rng = rand::thread_rng();
 
@@ -136,7 +136,7 @@ mod tests {
 
     #[test]
     fn test_calc_once() {
-        let geometry = create_geometry(1, 249);
+        let geometry = create_geometry(1, 249, FREQ_40K);
 
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
@@ -157,7 +157,7 @@ mod tests {
 
     #[test]
     fn test_calc_clone() {
-        let geometry = create_geometry(1, 249);
+        let geometry = create_geometry(1, 249, FREQ_40K);
 
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
