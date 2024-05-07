@@ -3,6 +3,7 @@ mod clk;
 mod debug;
 mod force_fan;
 mod gain;
+mod gpio_in;
 mod info;
 mod modulation;
 mod null;
@@ -20,6 +21,7 @@ pub use clk::*;
 pub use debug::*;
 pub use force_fan::*;
 pub use gain::*;
+pub use gpio_in::*;
 pub use info::*;
 pub use modulation::*;
 pub use null::*;
@@ -57,6 +59,7 @@ pub enum TypeTag {
     ConfigPulseWidthEncoder = 0x70,
     PhaseFilter = 0x80,
     Debug = 0xF0,
+    EmulateGPIOIn = 0xF1,
 }
 
 #[derive(Default)]

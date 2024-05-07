@@ -3,6 +3,7 @@ mod clk;
 mod debug;
 mod force_fan;
 mod gain;
+mod gpio_in;
 mod modulation;
 mod phase_filter;
 mod pulse_width_encoder;
@@ -21,6 +22,7 @@ pub use gain::{
     ChangeGainSegment, Gain, GainCache, GainFilter, GainTransform, Group, IntoGainCache,
     IntoGainTransform,
 };
+pub use gpio_in::EmulateGPIOIn;
 pub use modulation::{
     ChangeModulationSegment, IntoModulationCache, IntoModulationTransform, IntoRadiationPressure,
     Modulation, ModulationCache, ModulationProperty, ModulationTransform, RadiationPressure,
