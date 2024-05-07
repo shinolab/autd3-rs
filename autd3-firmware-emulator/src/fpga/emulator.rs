@@ -1,7 +1,8 @@
 use autd3_driver::{
+    defined::FREQ_40K,
     derive::{Drive, EmitIntensity, Phase, Segment},
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
-    firmware::fpga::{LoopBehavior, TransitionMode},
+    firmware::fpga::{LoopBehavior, TransitionMode, ULTRASOUND_PERIOD},
 };
 
 use super::params::*;
@@ -16,13 +17,14 @@ pub struct FPGAEmulator {
     stm_bram_1: Vec<u16>,
     duty_table_bram: Vec<u16>,
     phase_filter_bram: Vec<u16>,
+    drp_bram: Vec<u16>,
     num_transducers: usize,
     tr_pos: Vec<u64>,
-    fpga_clk_freq: u32,
+    pub(crate) fpga_clk_freq: u32,
 }
 
 impl FPGAEmulator {
-    pub(crate) fn new(num_transducers: usize, fpga_clk_freq: u32) -> Self {
+    pub(crate) fn new(num_transducers: usize) -> Self {
         let mut fpga = Self {
             controller_bram: vec![0x0000; 256],
             modulator_bram_0: vec![0x0000; 32768 / std::mem::size_of::<u16>()],
@@ -31,8 +33,9 @@ impl FPGAEmulator {
             phase_filter_bram: vec![0x0000; 256 / std::mem::size_of::<u16>()],
             stm_bram_0: vec![0x0000; 1024 * 256],
             stm_bram_1: vec![0x0000; 1024 * 256],
+            drp_bram: vec![0x0000; 32 * std::mem::size_of::<u64>()],
             num_transducers,
-            fpga_clk_freq,
+            fpga_clk_freq: FREQ_40K * ULTRASOUND_PERIOD,
             tr_pos: vec![
                 0x00000000, 0x01960000, 0x032c0000, 0x04c30000, 0x06590000, 0x07ef0000, 0x09860000,
                 0x0b1c0000, 0x0cb30000, 0x0e490000, 0x0fdf0000, 0x11760000, 0x130c0000, 0x14a30000,
@@ -108,6 +111,7 @@ impl FPGAEmulator {
             BRAM_SELECT_CONTROLLER => match addr >> 8 {
                 BRAM_CNT_SEL_MAIN => self.controller_bram[addr] = data,
                 BRAM_CNT_SEL_FILTER => self.phase_filter_bram[addr & 0xFF] = data,
+                BRAM_CNT_SEL_CLOCK => self.drp_bram[addr & 0xFF] = data,
                 _ => unreachable!(),
             },
             BRAM_SELECT_MOD => match self.controller_bram[ADDR_MOD_MEM_WR_SEGMENT] {
@@ -166,6 +170,15 @@ impl FPGAEmulator {
 
     pub fn is_force_fan(&self) -> bool {
         (self.controller_bram[ADDR_CTL_FLAG] & (1 << CTL_FLAG_FORCE_FAN_BIT)) != 0
+    }
+
+    pub fn gpio_in(&self) -> [bool; 4] {
+        [
+            (self.controller_bram[ADDR_CTL_FLAG] & (1 << CTL_FLAG_BIT_GPIO_IN_0)) != 0,
+            (self.controller_bram[ADDR_CTL_FLAG] & (1 << (CTL_FLAG_BIT_GPIO_IN_1))) != 0,
+            (self.controller_bram[ADDR_CTL_FLAG] & (1 << (CTL_FLAG_BIT_GPIO_IN_2))) != 0,
+            (self.controller_bram[ADDR_CTL_FLAG] & (1 << (CTL_FLAG_BIT_GPIO_IN_3))) != 0,
+        ]
     }
 
     pub fn is_stm_gain_mode(&self, segment: Segment) -> bool {
@@ -406,6 +419,10 @@ impl FPGAEmulator {
         ]
     }
 
+    pub fn drp_rom(&self) -> Vec<u64> {
+        unsafe { std::slice::from_raw_parts(self.drp_bram.as_ptr() as *const u64, 32).to_vec() }
+    }
+
     pub fn drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {
         if self.is_stm_gain_mode(segment) {
             self.gain_stm_drives(segment, idx)
@@ -505,8 +522,6 @@ impl FPGAEmulator {
 #[cfg(test)]
 
 mod tests {
-    use autd3_driver::{defined::FREQ_40K, firmware::fpga::ULTRASOUND_PERIOD};
-
     use super::*;
 
     static ASIN_TABLE: &[u8; 65536] = include_bytes!("asin.dat");
@@ -523,7 +538,7 @@ mod tests {
 
     #[test]
     fn test_to_pulse_width() {
-        let fpga = FPGAEmulator::new(249, FREQ_40K * ULTRASOUND_PERIOD);
+        let fpga = FPGAEmulator::new(249);
         itertools::iproduct!(0x00..=0xFF, 0x00..=0xFF).for_each(|(a, b)| {
             assert_eq!(
                 to_pulse_width_actual(a, b),
@@ -535,14 +550,14 @@ mod tests {
     #[test]
     #[should_panic]
     fn read_panic() {
-        let fpga = FPGAEmulator::new(249, FREQ_40K * ULTRASOUND_PERIOD);
+        let fpga = FPGAEmulator::new(249);
         let addr = (BRAM_SELECT_MOD as u16) << 14;
         fpga.read(addr as _);
     }
 
     #[test]
     fn modulation() {
-        let mut fpga = FPGAEmulator::new(249, FREQ_40K * ULTRASOUND_PERIOD);
+        let mut fpga = FPGAEmulator::new(249);
         fpga.modulator_bram_0[0] = 0x1234;
         fpga.modulator_bram_0[1] = 0x5678;
         fpga.controller_bram[ADDR_MOD_CYCLE0] = 3 - 1;
@@ -559,7 +574,7 @@ mod tests {
 
     #[test]
     fn is_outputting() {
-        let mut fpga = FPGAEmulator::new(249, FREQ_40K * ULTRASOUND_PERIOD);
+        let mut fpga = FPGAEmulator::new(249);
         fpga.controller_bram[ADDR_STM_MODE0] = STM_MODE_GAIN;
 
         assert!(!fpga.is_outputting());
@@ -577,7 +592,7 @@ mod tests {
     #[case(20480000, 1_000_000_000)]
     #[case(40960000, 2_000_000_000)]
     fn systime(#[case] expect: u64, #[case] value: u64) {
-        let fpga = FPGAEmulator::new(249, FREQ_40K * ULTRASOUND_PERIOD);
+        let fpga = FPGAEmulator::new(249);
         assert_eq!(
             expect,
             fpga.fpga_sys_time(
@@ -600,7 +615,7 @@ mod tests {
         let stm_cycle = 10;
         let freq_div = 512;
 
-        let mut fpga = FPGAEmulator::new(249, FREQ_40K * ULTRASOUND_PERIOD);
+        let mut fpga = FPGAEmulator::new(249);
         {
             let addr = ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14)
                 | (ADDR_STM_CYCLE0 as u16 & 0x3FFF);
@@ -634,7 +649,7 @@ mod tests {
         let mod_cycle = 10;
         let freq_div = 512;
 
-        let mut fpga = FPGAEmulator::new(249, FREQ_40K * ULTRASOUND_PERIOD);
+        let mut fpga = FPGAEmulator::new(249);
         {
             let addr = ((BRAM_SELECT_CONTROLLER as u16 & 0x0003) << 14)
                 | (ADDR_MOD_CYCLE0 as u16 & 0x3FFF);

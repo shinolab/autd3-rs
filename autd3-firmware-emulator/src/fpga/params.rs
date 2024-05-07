@@ -8,6 +8,7 @@ pub const BRAM_SELECT_STM: u8 = 0x3;
 
 pub const BRAM_CNT_SEL_MAIN: usize = 0x00;
 pub const BRAM_CNT_SEL_FILTER: usize = 0x01;
+pub const BRAM_CNT_SEL_CLOCK: usize = 0x02;
 
 pub const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
 pub const TRANSITION_MODE_SYS_TIME: u8 = 0x01;
@@ -92,6 +93,10 @@ pub const ADDR_DEBUG_VALUE3: usize = 0xF7;
 // pub const CTL_FLAG_DEBUG_SET_BIT: u8 = 4;
 // pub const CTL_FLAG_SYNC_SET_BIT: u8 = 5;
 
+pub const CTL_FLAG_BIT_GPIO_IN_0: u8 = 8;
+pub const CTL_FLAG_BIT_GPIO_IN_1: u8 = 9;
+pub const CTL_FLAG_BIT_GPIO_IN_2: u8 = 10;
+pub const CTL_FLAG_BIT_GPIO_IN_3: u8 = 11;
 pub const CTL_FLAG_FORCE_FAN_BIT: u8 = 13;
 
 pub const ENABLED_EMULATOR_BIT: u8 = 0x80;

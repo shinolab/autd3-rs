@@ -1,7 +1,9 @@
 mod clear;
+mod clk;
 mod debug;
 mod force_fan;
 mod gain;
+mod gpio_in;
 mod info;
 mod modulation;
 mod phase_filter;

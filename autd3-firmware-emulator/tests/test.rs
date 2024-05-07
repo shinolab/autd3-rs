@@ -23,6 +23,18 @@ pub fn create_geometry(n: usize) -> Geometry {
     )
 }
 
+pub fn create_geometry_with_freq(n: usize, ultrasound_freq: u32) -> Geometry {
+    Geometry::new(
+        (0..n)
+            .map(|i| {
+                AUTD3::new(Vector3::zeros())
+                    .with_ultrasound_freq(ultrasound_freq)
+                    .into_device(i)
+            })
+            .collect(),
+    )
+}
+
 pub fn send_once(
     cpu: &mut CPUEmulator,
     op: &mut impl Operation,

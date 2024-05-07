@@ -15,6 +15,7 @@ pub const BRAM_SELECT_STM: u8 = 0x3;
 
 pub const BRAM_CNT_SEL_MAIN: u8 = 0x00;
 pub const BRAM_CNT_SEL_FILTER: u8 = 0x01;
+pub const BRAM_CNT_SELECT_CLOCK: u8 = 0x02;
 
 pub const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
 pub const TRANSITION_MODE_SYS_TIME: u8 = 0x01;
@@ -92,6 +93,10 @@ pub const CTL_FLAG_SILENCER_SET_BIT: u16 = 2;
 pub const CTL_FLAG_PULSE_WIDTH_ENCODER_SET_BIT: u16 = 3;
 pub const CTL_FLAG_DEBUG_SET_BIT: u16 = 4;
 pub const CTL_FLAG_SYNC_SET_BIT: u16 = 5;
+pub const CTL_FLAG_BIT_GPIO_IN_0: u16 = 8;
+pub const CTL_FLAG_BIT_GPIO_IN_1: u16 = 9;
+pub const CTL_FLAG_BIT_GPIO_IN_2: u16 = 10;
+pub const CTL_FLAG_BIT_GPIO_IN_3: u16 = 11;
 pub const CTL_FLAG_FORCE_FAN_BIT: u16 = 13;
 
 pub const CTL_FLAG_MOD_SET: u16 = 1 << CTL_FLAG_MOD_SET_BIT;
@@ -100,6 +105,10 @@ pub const CTL_FLAG_SILENCER_SET: u16 = 1 << CTL_FLAG_SILENCER_SET_BIT;
 pub const CTL_FLAG_PULSE_WIDTH_ENCODER_SET: u16 = 1 << CTL_FLAG_PULSE_WIDTH_ENCODER_SET_BIT;
 pub const CTL_FLAG_DEBUG_SET: u16 = 1 << CTL_FLAG_DEBUG_SET_BIT;
 pub const CTL_FLAG_SYNC_SET: u16 = 1 << CTL_FLAG_SYNC_SET_BIT;
+pub const CTL_FLAG_GPIO_IN_0: u16 = 1 << CTL_FLAG_BIT_GPIO_IN_0;
+pub const CTL_FLAG_GPIO_IN_1: u16 = 1 << CTL_FLAG_BIT_GPIO_IN_1;
+pub const CTL_FLAG_GPIO_IN_2: u16 = 1 << CTL_FLAG_BIT_GPIO_IN_2;
+pub const CTL_FLAG_GPIO_IN_3: u16 = 1 << CTL_FLAG_BIT_GPIO_IN_3;
 pub const CTL_FLAG_FORCE_FAN: u16 = 1 << CTL_FLAG_FORCE_FAN_BIT;
 
 pub const FPGA_STATE_BIT_READS_FPGA_STATE_ENABLED: u8 = 7;
@@ -116,6 +125,7 @@ pub const SILNCER_FLAG_STRICT_MODE: u8 = 1 << 1;
 pub const TAG_CLEAR: u8 = 0x01;
 pub const TAG_SYNC: u8 = 0x02;
 pub const TAG_FIRM_INFO: u8 = 0x03;
+pub const TAG_CONFIG_FPGA_CLK: u8 = 0x04;
 pub const TAG_MODULATION: u8 = 0x10;
 pub const TAG_MODULATION_CHANGE_SEGMENT: u8 = 0x11;
 pub const TAG_SILENCER: u8 = 0x20;
@@ -130,6 +140,7 @@ pub const TAG_READS_FPGA_STATE: u8 = 0x61;
 pub const TAG_CONFIG_PULSE_WIDTH_ENCODER: u8 = 0x70;
 pub const TAG_PHASE_FILTER: u8 = 0x80;
 pub const TAG_DEBUG: u8 = 0xF0;
+pub const TAG_EMULATE_GPIO_IN: u8 = 0xF1;
 
 pub const INFO_TYPE_CPU_VERSION_MAJOR: u8 = 0x01;
 pub const INFO_TYPE_CPU_VERSION_MINOR: u8 = 0x02;
@@ -166,6 +177,14 @@ pub const PULSE_WIDTH_ENCODER_FLAG_END: u8 = 1 << 1;
 pub const SILENCER_FLAG_MODE: u8 = 1 << 0;
 pub const SILENCER_FLAG_STRICT_MODE: u8 = 1 << 1;
 
+pub const CLK_FLAG_BEGIN: u8 = 1 << 0;
+pub const CLK_FLAG_END: u8 = 1 << 1;
+
+pub const GPIO_IN_FLAG_0: u8 = 1 << 0;
+pub const GPIO_IN_FLAG_1: u8 = 1 << 1;
+pub const GPIO_IN_FLAG_2: u8 = 1 << 2;
+pub const GPIO_IN_FLAG_3: u8 = 1 << 3;
+
 pub const NO_ERR: u8 = 0x00;
 pub const ERR_BIT: u8 = 0x80;
 #[allow(clippy::identity_op)]
@@ -180,3 +199,4 @@ pub const ERR_INVALID_SEGMENT_TRANSITION: u8 = ERR_BIT | 0x08;
 pub const ERR_INVALID_PWE_DATA_SIZE: u8 = ERR_BIT | 0x09;
 pub const ERR_PWE_INCOMPLETE_DATA: u8 = ERR_BIT | 0x0A;
 pub const ERR_MISS_TRANSITION_TIME: u8 = ERR_BIT | 0x0B;
+pub const ERR_CLK_INCOMPLETE_DATA: u8 = ERR_BIT | 0x0D;
