@@ -190,8 +190,6 @@ pub const ERR_BIT: u8 = 0x80;
 #[allow(clippy::identity_op)]
 pub const ERR_NOT_SUPPORTED_TAG: u8 = ERR_BIT | 0x00;
 pub const ERR_INVALID_MSG_ID: u8 = ERR_BIT | 0x01;
-pub const ERR_FREQ_DIV_TOO_SMALL: u8 = ERR_BIT | 0x02;
-pub const ERR_COMPLETION_STEPS_TOO_LARGE: u8 = ERR_BIT | 0x03;
 pub const ERR_INVALID_INFO_TYPE: u8 = ERR_BIT | 0x04;
 pub const ERR_INVALID_GAIN_STM_MODE: u8 = ERR_BIT | 0x05;
 pub const ERR_INVALID_MODE: u8 = ERR_BIT | 0x07;
@@ -200,3 +198,4 @@ pub const ERR_INVALID_PWE_DATA_SIZE: u8 = ERR_BIT | 0x09;
 pub const ERR_PWE_INCOMPLETE_DATA: u8 = ERR_BIT | 0x0A;
 pub const ERR_MISS_TRANSITION_TIME: u8 = ERR_BIT | 0x0B;
 pub const ERR_CLK_INCOMPLETE_DATA: u8 = ERR_BIT | 0x0D;
+pub const ERR_INVALID_SILENCER_SETTING: u8 = ERR_BIT | 0x0E;

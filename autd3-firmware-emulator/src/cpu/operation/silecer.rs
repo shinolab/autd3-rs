@@ -9,6 +9,18 @@ struct ConfigSilencer {
 }
 
 impl CPUEmulator {
+    pub(crate) fn validate_silencer_settings(&self) -> bool {
+        if self.silencer_strict_mode {
+            if self.mod_freq_div[self.mod_segment as usize] < self.min_freq_div_intensity
+                || self.stm_freq_div[self.stm_segment as usize] < self.min_freq_div_intensity
+                || self.stm_freq_div[self.stm_segment as usize] < self.min_freq_div_phase
+            {
+                return true;
+            }
+        }
+        false
+    }
+
     pub(crate) fn config_silencer(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<ConfigSilencer>(data);
 
@@ -16,22 +28,11 @@ impl CPUEmulator {
             self.silencer_strict_mode = (d.flag & SILNCER_FLAG_STRICT_MODE) != 0;
             self.min_freq_div_intensity = (d.value_intensity as u32) << 9;
             self.min_freq_div_phase = (d.value_phase as u32) << 9;
-            if self.silencer_strict_mode {
-                if self
-                    .mod_freq_div
-                    .iter()
-                    .any(|&v| v < self.min_freq_div_intensity)
-                {
-                    return ERR_COMPLETION_STEPS_TOO_LARGE;
-                }
-                if self
-                    .stm_freq_div
-                    .iter()
-                    .any(|&v| v < self.min_freq_div_intensity || v < self.min_freq_div_phase)
-                {
-                    return ERR_COMPLETION_STEPS_TOO_LARGE;
-                }
+
+            if self.validate_silencer_settings() {
+                return ERR_INVALID_SILENCER_SETTING;
             }
+
             self.bram_write(
                 BRAM_SELECT_CONTROLLER,
                 ADDR_SILENCER_COMPLETION_STEPS_INTENSITY,

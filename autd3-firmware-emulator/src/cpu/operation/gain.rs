@@ -70,6 +70,7 @@ impl CPUEmulator {
     pub(crate) unsafe fn change_gain_segment(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<GainUpdate>(data);
 
+        self.stm_segment = d.segment;
         if self.stm_mode[d.segment as usize] != STM_MODE_GAIN
             || self.stm_cycle[d.segment as usize] != 1
         {

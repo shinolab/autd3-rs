@@ -67,7 +67,7 @@ fn send_silencer_fixed_completion_steps() -> anyhow::Result<()> {
 #[rstest::rstest]
 #[test]
 #[case(Ok(()), 1)]
-#[case(Err(AUTDInternalError::CompletionStepsTooLarge), 2)]
+#[case(Err(AUTDInternalError::InvalidSilencerSettings), 2)]
 fn silencer_completetion_steps_too_large_mod(
     #[case] expect: Result<(), AUTDInternalError>,
     #[case] steps_intensity: u16,
@@ -110,8 +110,8 @@ fn silencer_completetion_steps_too_large_mod(
 #[rstest::rstest]
 #[test]
 #[case(Ok(()), 1, 1)]
-#[case(Err(AUTDInternalError::CompletionStepsTooLarge), 2, 1)]
-#[case(Err(AUTDInternalError::CompletionStepsTooLarge), 1, 2)]
+#[case(Err(AUTDInternalError::InvalidSilencerSettings), 2, 1)]
+#[case(Err(AUTDInternalError::InvalidSilencerSettings), 1, 2)]
 fn silencer_completetion_steps_too_large_stm(
     #[case] expect: Result<(), AUTDInternalError>,
     #[case] steps_intensity: u16,

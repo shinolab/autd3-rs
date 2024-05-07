@@ -105,10 +105,6 @@ pub enum AUTDInternalError {
     NotSupportedTag,
     #[error("Invalid message ID")]
     InvalidMessageID,
-    #[error("Frequency division is too small")]
-    FreqDivisionTooSmall,
-    #[error("Completion steps is too large")]
-    CompletionStepsTooLarge,
     #[error("Invalid info type")]
     InvalidInfoType,
     #[error("Invalid GainSTM mode")]
@@ -125,6 +121,8 @@ pub enum AUTDInternalError {
     IncompleteDrpRomData,
     #[error("Miss transition time")]
     MissTransitionTime,
+    #[error("Sampling frequency division is too small or silencer completion steps is too large")]
+    InvalidSilencerSettings,
 }
 
 impl AUTDInternalError {
@@ -132,8 +130,6 @@ impl AUTDInternalError {
         match ack {
             0x80 => AUTDInternalError::NotSupportedTag,
             0x81 => AUTDInternalError::InvalidMessageID,
-            0x82 => AUTDInternalError::FreqDivisionTooSmall,
-            0x83 => AUTDInternalError::CompletionStepsTooLarge,
             0x84 => AUTDInternalError::InvalidInfoType,
             0x85 => AUTDInternalError::InvalidGainSTMMode,
             0x88 => AUTDInternalError::InvalidSegmentTransition,
@@ -141,6 +137,7 @@ impl AUTDInternalError {
             0x8A => AUTDInternalError::IncompletePulseWidthEncoderData,
             0x8B => AUTDInternalError::MissTransitionTime,
             0x8D => AUTDInternalError::IncompleteDrpRomData,
+            0x8E => AUTDInternalError::InvalidSilencerSettings,
             _ => AUTDInternalError::UnknownFirmwareError(ack),
         }
     }
