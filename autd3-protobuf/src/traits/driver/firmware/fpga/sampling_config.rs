@@ -59,7 +59,7 @@ mod tests {
     #[test]
     fn test_sampling_config() {
         let mut rng = rand::thread_rng();
-        let v = SamplingConfig::from_division_raw(
+        let v = SamplingConfig::DivisionRaw(
             rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX),
         )
         .unwrap();

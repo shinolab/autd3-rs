@@ -2,8 +2,6 @@ mod cpu;
 #[cfg(feature = "lightweight")]
 mod fpga;
 #[cfg(feature = "lightweight")]
-mod operation;
-#[cfg(feature = "lightweight")]
 mod version;
 
 #[cfg(feature = "lightweight")]
