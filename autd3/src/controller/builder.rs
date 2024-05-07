@@ -1,5 +1,6 @@
 use autd3_driver::{
-    datagram::{Clear, IntoDatagramWithTimeout, Synchronize},
+    datagram::{Clear, ConfigureFPGAClock, IntoDatagramWithTimeout, Synchronize},
+    defined::FREQ_40K,
     derive::DEFAULT_TIMEOUT,
     firmware::cpu::{RxMessage, TxDatagram},
     geometry::{Device, Geometry, IntoDevice},
@@ -46,8 +47,16 @@ impl ControllerBuilder {
             rx_buf: vec![RxMessage::new(0, 0); geometry.num_devices()],
             geometry,
         };
+        if cnt
+            .geometry
+            .iter()
+            .any(|dev| dev.ultrasound_freq() != FREQ_40K)
+        {
+            cnt.send(ConfigureFPGAClock::new().with_timeout(timeout))
+                .await?;
+        }
         cnt.send((Clear::new(), Synchronize::new()).with_timeout(timeout))
-            .await?; // GRCOV_EXCL_LINE
+            .await?;
         Ok(cnt)
     }
 }

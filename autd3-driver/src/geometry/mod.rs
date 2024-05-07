@@ -136,20 +136,20 @@ pub mod tests {
         };
     }
 
-    fn create_device(idx: usize, n: usize) -> Device {
+    pub fn create_device(idx: usize, n: usize, freq: u32) -> Device {
         Device::new(
             idx,
             (0..n)
                 .map(|i| Transducer::new(i, Vector3::zeros(), UnitQuaternion::identity()))
                 .collect(),
-            FREQ_40K,
+            freq,
         )
     }
 
-    pub fn create_geometry(n: usize, num_trans_in_unit: usize) -> Geometry {
+    pub fn create_geometry(n: usize, num_trans_in_unit: usize, freq: u32) -> Geometry {
         Geometry::new(
             (0..n)
-                .map(|i| create_device(i, num_trans_in_unit))
+                .map(|i| create_device(i, num_trans_in_unit, freq))
                 .collect(),
         )
     }
