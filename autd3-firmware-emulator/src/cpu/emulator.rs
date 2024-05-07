@@ -36,6 +36,7 @@ pub struct CPUEmulator {
     pub(crate) is_rx_data_used: bool,
     pub(crate) pwe_write: u32,
     pub(crate) dc_sys_time: DcSysTime,
+    pub(crate) clk_write: u32,
 }
 
 impl CPUEmulator {
@@ -55,7 +56,7 @@ impl CPUEmulator {
             stm_transition_value: 0,
             mod_transition_mode: TRANSITION_MODE_SYNC_IDX,
             mod_transition_value: 0,
-            fpga: FPGAEmulator::new(num_transducers, 20480000),
+            fpga: FPGAEmulator::new(num_transducers),
             synchronized: false,
             num_transducers,
             fpga_flags_internal: 0x0000,
@@ -69,6 +70,7 @@ impl CPUEmulator {
             is_rx_data_used: false,
             pwe_write: 0,
             dc_sys_time: DcSysTime::now(),
+            clk_write: 0,
         };
         s.init();
         s
@@ -192,6 +194,7 @@ impl CPUEmulator {
                 TAG_CLEAR => self.clear(data),
                 TAG_SYNC => self.synchronize(data),
                 TAG_FIRM_INFO => self.firm_info(data),
+                TAG_CONFIG_FPGA_CLK => self.configure_clk(data),
                 TAG_MODULATION => self.write_mod(data),
                 TAG_MODULATION_CHANGE_SEGMENT => self.change_mod_segment(data),
                 TAG_SILENCER => self.config_silencer(data),
@@ -206,6 +209,7 @@ impl CPUEmulator {
                 TAG_CONFIG_PULSE_WIDTH_ENCODER => self.config_pwe(data),
                 TAG_PHASE_FILTER => self.write_phase_filter(data),
                 TAG_DEBUG => self.config_debug(data),
+                TAG_EMULATE_GPIO_IN => self.emulate_gpio_in(data),
                 _ => ERR_NOT_SUPPORTED_TAG,
             }
         }
