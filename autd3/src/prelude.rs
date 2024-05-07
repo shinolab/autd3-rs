@@ -12,8 +12,8 @@ pub use autd3_driver::{
     datagram::{
         ChangeFocusSTMSegment, ChangeGainSTMSegment, ChangeGainSegment, ChangeModulationSegment,
         Clear, ConfigureDebugSettings, ConfigureForceFan, ConfigurePhaseFilter,
-        ConfigurePulseWidthEncoder, ConfigureReadsFPGAState, ConfigureSilencer, FocusSTM,
-        GainCache, GainFilter, GainSTM, GainTransform, Group, IntoDatagramWithSegment,
+        ConfigurePulseWidthEncoder, ConfigureReadsFPGAState, ConfigureSilencer, EmulateGPIOIn,
+        FocusSTM, GainCache, GainFilter, GainSTM, GainTransform, Group, IntoDatagramWithSegment,
         IntoDatagramWithTimeout, IntoGainCache, IntoGainTransform, IntoModulationCache,
         IntoModulationTransform, IntoRadiationPressure, Modulation, ModulationCache,
         ModulationProperty, ModulationTransform, RadiationPressure, Synchronize,
