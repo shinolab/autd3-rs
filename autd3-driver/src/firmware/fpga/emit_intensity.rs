@@ -1,5 +1,3 @@
-use crate::defined::PI;
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub struct EmitIntensity {
@@ -9,20 +7,9 @@ pub struct EmitIntensity {
 impl EmitIntensity {
     pub const MAX: EmitIntensity = EmitIntensity { value: 255 };
     pub const MIN: EmitIntensity = EmitIntensity { value: 0 };
-    pub const DEFAULT_CORRECTED_ALPHA: f64 = 0.803;
 
     pub const fn new(value: u8) -> Self {
         Self { value }
-    }
-
-    pub fn with_correction(value: u8) -> Self {
-        Self::with_correction_alpha(value, Self::DEFAULT_CORRECTED_ALPHA)
-    }
-
-    pub fn with_correction_alpha(value: u8, alpha: f64) -> Self {
-        Self {
-            value: ((value as f64 / 255.).powf(1. / alpha).asin() / PI * 510.0).round() as u8,
-        }
     }
 
     pub const fn value(&self) -> u8 {
@@ -94,15 +81,6 @@ mod tests {
     #[case::value_ff(0xFF)]
     fn test_new(#[case] expected: u8) {
         assert_eq!(expected, EmitIntensity::new(expected).value(),);
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case::value_0(0x00, 0x00)]
-    #[case::value_1(0x00, 0x01)]
-    #[case::value_ff(0xFF, 0xFF)]
-    fn test_with_correction(#[case] expected: u8, #[case] value: u8) {
-        assert_eq!(expected, EmitIntensity::with_correction(value).value());
     }
 
     #[rstest::rstest]
