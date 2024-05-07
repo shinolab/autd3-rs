@@ -256,7 +256,7 @@ mod tests {
         [
             (0, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x01), EmitIntensity::new(0x01))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
             (1, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x02), EmitIntensity::new(0x02))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect())
-        ].into_iter().collect(), 
+        ].into_iter().collect(),
         vec![true; 2],
         [
             (0, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
@@ -270,7 +270,7 @@ mod tests {
             (2, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x03), EmitIntensity::new(0x03))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
             (3, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x04), EmitIntensity::new(0x04))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
             (4, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x05), EmitIntensity::new(0x05))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
-        ].into_iter().collect(), 
+        ].into_iter().collect(),
         vec![true; 5],
         [
             (0, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),

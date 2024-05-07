@@ -121,6 +121,8 @@ pub enum AUTDInternalError {
     InvalidPulseWidthEncoderDataSize,
     #[error("Incomplete pulse width encoder table data")]
     IncompletePulseWidthEncoderData,
+    #[error("Incomplete DRP ROM data")]
+    IncompleteDrpRomData,
     #[error("Miss transition time")]
     MissTransitionTime,
 }
@@ -138,6 +140,7 @@ impl AUTDInternalError {
             0x89 => AUTDInternalError::InvalidPulseWidthEncoderDataSize,
             0x8A => AUTDInternalError::IncompletePulseWidthEncoderData,
             0x8B => AUTDInternalError::MissTransitionTime,
+            0x8D => AUTDInternalError::IncompleteDrpRomData,
             _ => AUTDInternalError::UnknownFirmwareError(ack),
         }
     }

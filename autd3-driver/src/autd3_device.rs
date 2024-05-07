@@ -116,7 +116,7 @@ impl IntoDevice for AUTD3 {
                 .zip(0..)
                 .map(|(p, i)| Transducer::new(i, Vector3::new(p.x, p.y, p.z), self.rotation))
                 .collect(),
-                self.ultrasound_freq
+            self.ultrasound_freq,
         )
     }
 }

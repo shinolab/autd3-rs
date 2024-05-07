@@ -446,20 +446,24 @@ pub mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(8.5, 340e3)]
-    #[case(10., 400e3)]
-    fn wavelength(#[case] expect: f64, #[case] c: f64) {
-        let mut device = create_device(0, 249, FREQ_40K);
+    #[case(8.5, 340e3, 40000)]
+    #[case(10., 400e3, 40000)]
+    #[case(4.25, 340e3, 80000)]
+    #[case(5., 400e3, 80000)]
+    fn wavelength(#[case] expect: f64, #[case] c: f64, #[case] freq: u32) {
+        let mut device = create_device(0, 249, freq);
         device.sound_speed = c;
         assert_approx_eq::assert_approx_eq!(expect, device.wavelength());
     }
 
     #[rstest::rstest]
     #[test]
-    #[case(0.7391982714328925, 340e3)]
-    #[case(0.6283185307179586, 400e3)]
-    fn wavenumber(#[case] expect: f64, #[case] c: f64) {
-        let mut device = create_device(0, 249, FREQ_40K);
+    #[case(0.7391982714328925, 340e3, 40000)]
+    #[case(0.6283185307179586, 400e3, 40000)]
+    #[case(1.478396542865785, 340e3, 80000)]
+    #[case(1.2566370614359172, 400e3, 80000)]
+    fn wavenumber(#[case] expect: f64, #[case] c: f64, #[case] freq: u32) {
+        let mut device = create_device(0, 249, freq);
         device.sound_speed = c;
         assert_approx_eq::assert_approx_eq!(expect, device.wavenumber());
     }

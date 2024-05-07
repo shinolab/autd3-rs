@@ -49,15 +49,19 @@ impl Operation for SyncOp {
 #[cfg(test)]
 mod tests {
 
+    use rand::Rng;
+
     use super::*;
-    use crate::{defined::FREQ_40K, geometry::tests::create_geometry};
+    use crate::geometry::tests::create_geometry;
 
     const NUM_TRANS_IN_UNIT: usize = 249;
     const NUM_DEVICE: usize = 10;
 
     #[test]
     fn test() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
+        let mut rng = rand::thread_rng();
+
+        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, rng.gen_range(40000..80000));
 
         let mut tx = [0x00u8; 8 * NUM_DEVICE];
 

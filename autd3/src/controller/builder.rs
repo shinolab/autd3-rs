@@ -53,10 +53,10 @@ impl ControllerBuilder {
             .any(|dev| dev.ultrasound_freq() != FREQ_40K)
         {
             cnt.send(ConfigureFPGAClock::new().with_timeout(timeout))
-                .await?;
+                .await?; // GRCOV_EXCL_LINE
         }
         cnt.send((Clear::new(), Synchronize::new()).with_timeout(timeout))
-            .await?;
+            .await?; // GRCOV_EXCL_LINE
         Ok(cnt)
     }
 }

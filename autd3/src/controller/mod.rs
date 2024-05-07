@@ -288,6 +288,19 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn test_clk() -> anyhow::Result<()> {
+        let mut autd = Controller::builder()
+            .add_device(AUTD3::new(Vector3::zeros()).with_ultrasound_freq(41000))
+            .open(Audit::builder())
+            .await?;
+        assert_eq!(41000 * 512, autd.link[0].fpga().fpga_clk_freq());
+
+        assert!(autd.close().await?);
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_firmware_version() -> anyhow::Result<()> {
         let mut autd = create_controller(1).await?;
         assert_eq!(
