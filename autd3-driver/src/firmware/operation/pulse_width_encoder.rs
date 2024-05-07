@@ -44,7 +44,12 @@ pub struct ConfigurePulseWidthEncoderOp {
 
 impl ConfigurePulseWidthEncoderOp {
     pub fn new(buf: Vec<u16>) -> Self {
-        let full_width_start = *buf.iter().find(|&v| *v == 256).unwrap_or(&0);
+        let full_width_start = buf
+            .iter()
+            .enumerate()
+            .find(|&(_, v)| *v == 256)
+            .map(|v| v.0 as u16)
+            .unwrap_or(0xFFFF);
         let buf = buf.into_iter().map(|v| v as u8).collect();
         Self {
             buf,

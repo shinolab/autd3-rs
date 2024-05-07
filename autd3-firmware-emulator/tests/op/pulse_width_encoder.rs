@@ -21,7 +21,12 @@ fn config_pwe() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let buf: Vec<_> = (0..65536).map(|_| rng.gen()).collect();
-    let full_width_start = *buf.iter().find(|&v| *v == 256).unwrap_or(&0);
+    let full_width_start = buf
+        .iter()
+        .enumerate()
+        .find(|&(_, v)| *v == 256)
+        .map(|v| v.0 as u16)
+        .unwrap_or(0xFFFF);
     let mut op = ConfigurePulseWidthEncoderOp::new(buf.clone());
 
     send(&mut cpu, &mut op, &geometry, &mut tx)?;
