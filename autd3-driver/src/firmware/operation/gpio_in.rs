@@ -1,6 +1,9 @@
 use crate::{
     error::AUTDInternalError,
-    firmware::operation::{cast, Operation, TypeTag},
+    firmware::{
+        fpga::GPIOIn,
+        operation::{cast, Operation, TypeTag},
+    },
     geometry::{Device, Geometry},
 };
 
@@ -26,12 +29,12 @@ struct EmulateGPIOIn {
     flag: GPIOInFlags,
 }
 
-pub struct EmulateGPIOInOp<F: Fn(&Device) -> [bool; 4]> {
+pub struct EmulateGPIOInOp<F: Fn(&Device, GPIOIn) -> bool> {
     remains: Remains,
     f: F,
 }
 
-impl<F: Fn(&Device) -> [bool; 4]> EmulateGPIOInOp<F> {
+impl<F: Fn(&Device, GPIOIn) -> bool> EmulateGPIOInOp<F> {
     pub fn new(f: F) -> Self {
         Self {
             remains: Default::default(),
@@ -40,14 +43,13 @@ impl<F: Fn(&Device) -> [bool; 4]> EmulateGPIOInOp<F> {
     }
 }
 
-impl<F: Fn(&Device) -> [bool; 4]> Operation for EmulateGPIOInOp<F> {
+impl<F: Fn(&Device, GPIOIn) -> bool> Operation for EmulateGPIOInOp<F> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        let gpio_in = (self.f)(device);
         let mut flag = GPIOInFlags::NONE;
-        flag.set(GPIOInFlags::GPIO_IN_0, gpio_in[0]);
-        flag.set(GPIOInFlags::GPIO_IN_1, gpio_in[1]);
-        flag.set(GPIOInFlags::GPIO_IN_2, gpio_in[2]);
-        flag.set(GPIOInFlags::GPIO_IN_3, gpio_in[3]);
+        flag.set(GPIOInFlags::GPIO_IN_0, (self.f)(device, GPIOIn::I0));
+        flag.set(GPIOInFlags::GPIO_IN_1, (self.f)(device, GPIOIn::I1));
+        flag.set(GPIOInFlags::GPIO_IN_2, (self.f)(device, GPIOIn::I2));
+        flag.set(GPIOInFlags::GPIO_IN_3, (self.f)(device, GPIOIn::I3));
 
         *cast::<EmulateGPIOIn>(tx) = EmulateGPIOIn {
             tag: TypeTag::EmulateGPIOIn,
@@ -86,9 +88,9 @@ mod tests {
 
         let mut tx = [0x00u8; 2 * NUM_DEVICE];
 
-        let mut op = EmulateGPIOInOp::new(|dev| match dev.idx() {
-            0 => [true, false, false, true],
-            _ => [false, true, true, false],
+        let mut op = EmulateGPIOInOp::new(|dev, gpio| match dev.idx() {
+            0 => gpio == GPIOIn::I0 || gpio == GPIOIn::I3,
+            _ => gpio == GPIOIn::I1 || gpio == GPIOIn::I2,
         });
 
         assert!(op.init(&geometry).is_ok());

@@ -1,4 +1,7 @@
-use autd3_driver::{datagram::*, firmware::cpu::TxDatagram};
+use autd3_driver::{
+    datagram::*,
+    firmware::{cpu::TxDatagram, fpga::GPIOIn},
+};
 use autd3_firmware_emulator::CPUEmulator;
 
 use crate::{create_geometry, send};
@@ -11,11 +14,13 @@ fn send_gpio_in() -> anyhow::Result<()> {
 
     assert_eq!([false; 4], cpu.fpga().gpio_in());
 
-    let (mut op, _) = EmulateGPIOIn::new(|_dev| [true, false, false, true]).operation();
+    let (mut op, _) =
+        EmulateGPIOIn::new(|_dev, gpio| gpio == GPIOIn::I0 || gpio == GPIOIn::I3).operation();
     assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
     assert_eq!([true, false, false, true], cpu.fpga().gpio_in());
 
-    let (mut op, _) = EmulateGPIOIn::new(|_dev| [false, true, true, false]).operation();
+    let (mut op, _) =
+        EmulateGPIOIn::new(|_dev, gpio| gpio == GPIOIn::I1 || gpio == GPIOIn::I2).operation();
     assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
     assert_eq!([false, true, true, false], cpu.fpga().gpio_in());
 

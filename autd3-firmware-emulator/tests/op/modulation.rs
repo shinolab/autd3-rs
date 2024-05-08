@@ -8,7 +8,7 @@ use autd3_driver::{
     firmware::{
         cpu::TxDatagram,
         fpga::{
-            TransitionMode, GPIO, SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN,
+            GPIOIn, TransitionMode, SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN,
             SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
         },
         operation::{ModulationChangeSegmentOp, ModulationOp},
@@ -116,7 +116,7 @@ fn send_mod() -> anyhow::Result<()> {
     }
 
     {
-        let transition_mode = TransitionMode::GPIO(GPIO::I0);
+        let transition_mode = TransitionMode::GPIO(GPIOIn::I0);
         let mut op = ModulationOp::new(
             TestModulation {
                 buf: (0..2).map(|_| u8::MAX).collect(),

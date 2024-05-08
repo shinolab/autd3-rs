@@ -1,7 +1,7 @@
 use crate::{
     error::AUTDInternalError,
     firmware::{
-        fpga::DebugType,
+        fpga::{DebugType, GPIOOut},
         operation::{cast, Operation, TypeTag},
     },
     geometry::{Device, Geometry},
@@ -17,12 +17,12 @@ struct DebugSetting {
     value: [u16; 4],
 }
 
-pub struct DebugSettingOp<F: Fn(&Device) -> [DebugType; 4]> {
+pub struct DebugSettingOp<F: Fn(&Device, GPIOOut) -> DebugType> {
     remains: Remains,
     f: F,
 }
 
-impl<F: Fn(&Device) -> [DebugType; 4]> DebugSettingOp<F> {
+impl<F: Fn(&Device, GPIOOut) -> DebugType> DebugSettingOp<F> {
     pub fn new(f: F) -> Self {
         Self {
             remains: Default::default(),
@@ -31,13 +31,15 @@ impl<F: Fn(&Device) -> [DebugType; 4]> DebugSettingOp<F> {
     }
 }
 
-impl<F: Fn(&Device) -> [DebugType; 4]> Operation for DebugSettingOp<F> {
+impl<F: Fn(&Device, GPIOOut) -> DebugType> Operation for DebugSettingOp<F> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         *cast::<DebugSetting>(tx) = DebugSetting {
             tag: TypeTag::Debug,
             __pad: 0,
-            ty: (self.f)(device).map(|t| t.ty()),
-            value: (self.f)(device).map(|t| t.value()),
+            ty: [GPIOOut::O0, GPIOOut::O1, GPIOOut::O2, GPIOOut::O3]
+                .map(|gpio| (self.f)(device, gpio).ty()),
+            value: [GPIOOut::O0, GPIOOut::O1, GPIOOut::O2, GPIOOut::O3]
+                .map(|gpio| (self.f)(device, gpio).value()),
         };
 
         self.remains[device] -= 1;

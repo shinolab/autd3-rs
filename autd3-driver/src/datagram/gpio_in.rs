@@ -1,11 +1,11 @@
-use crate::{datagram::*, derive::DEFAULT_TIMEOUT, geometry::Device};
+use crate::{datagram::*, derive::DEFAULT_TIMEOUT, firmware::fpga::GPIOIn, geometry::Device};
 
 /// Datagram for configure force fan
-pub struct EmulateGPIOIn<F: Fn(&Device) -> [bool; 4]> {
+pub struct EmulateGPIOIn<F: Fn(&Device, GPIOIn) -> bool> {
     f: F,
 }
 
-impl<F: Fn(&Device) -> [bool; 4]> EmulateGPIOIn<F> {
+impl<F: Fn(&Device, GPIOIn) -> bool> EmulateGPIOIn<F> {
     /// constructor
     pub const fn new(f: F) -> Self {
         Self { f }
@@ -19,7 +19,7 @@ impl<F: Fn(&Device) -> [bool; 4]> EmulateGPIOIn<F> {
     // GRCOV_EXCL_STOP
 }
 
-impl<F: Fn(&Device) -> [bool; 4]> Datagram for EmulateGPIOIn<F> {
+impl<F: Fn(&Device, GPIOIn) -> bool> Datagram for EmulateGPIOIn<F> {
     type O1 = crate::firmware::operation::EmulateGPIOInOp<F>;
     type O2 = crate::firmware::operation::NullOp;
 
@@ -37,8 +37,8 @@ mod tests {
     use super::*;
 
     // GRCOV_EXCL_START
-    fn f(_: &Device) -> [bool; 4] {
-        [true; 4]
+    fn f(_: &Device, _: GPIOIn) -> bool {
+        true
     }
     // GRCOV_EXCL_STOP
 
