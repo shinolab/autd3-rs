@@ -25,7 +25,7 @@ impl Wav {
     pub fn new(path: impl AsRef<Path>) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),
-            config: SamplingConfig::FREQ_4K_HZ,
+            config: SamplingConfig::Division(5120),
             loop_behavior: LoopBehavior::infinite(),
         }
     }

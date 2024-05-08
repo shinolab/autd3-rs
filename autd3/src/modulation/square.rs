@@ -35,7 +35,7 @@ impl Square<ExactFreq> {
             low: u8::MIN,
             high: u8::MAX,
             duty: 0.5,
-            config: SamplingConfig::FREQ_4K_HZ,
+            config: SamplingConfig::Division(5120),
             loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
         }
@@ -53,7 +53,7 @@ impl Square<ExactFreq> {
             low: u8::MIN,
             high: u8::MAX,
             duty: 0.5,
-            config: SamplingConfig::FREQ_4K_HZ,
+            config: SamplingConfig::Division(5120),
             loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
         }
@@ -148,7 +148,7 @@ mod tests {
         assert_eq!(u8::MIN, m.low());
         assert_eq!(u8::MAX, m.high());
         assert_eq!(0.5, m.duty());
-        assert_eq!(SamplingConfig::FREQ_4K_HZ, m.sampling_config());
+        assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
 
         assert_eq!(expect.map(|b| HashMap::from([(0, b)])), m.calc(&geometry));
     }
@@ -181,7 +181,7 @@ mod tests {
         assert_eq!(u8::MIN, m.low());
         assert_eq!(u8::MAX, m.high());
         assert_eq!(0.5, m.duty());
-        assert_eq!(SamplingConfig::FREQ_4K_HZ, m.sampling_config());
+        assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
 
         assert_eq!(expect.map(|b| HashMap::from([(0, b)])), m.calc(&geometry));
     }
