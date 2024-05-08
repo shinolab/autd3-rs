@@ -2,7 +2,9 @@ use autd3_driver::{
     defined::FREQ_40K,
     derive::{Drive, EmitIntensity, Phase, Segment},
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
-    firmware::fpga::{LoopBehavior, TransitionMode, TRANSITION_MODE_IMMIDIATE, ULTRASOUND_PERIOD},
+    firmware::fpga::{
+        LoopBehavior, TransitionMode, GPIO, TRANSITION_MODE_IMMIDIATE, ULTRASOUND_PERIOD,
+    },
 };
 
 use super::params::*;
@@ -259,7 +261,16 @@ impl FPGAEmulator {
                         ADDR_STM_TRANSITION_VALUE_0,
                     )),
             ),
-            TRANSITION_MODE_GPIO => TransitionMode::GPIO,
+            TRANSITION_MODE_GPIO => TransitionMode::GPIO(
+                match Self::read_bram_as::<u64>(&self.controller_bram, ADDR_STM_TRANSITION_VALUE_0)
+                {
+                    0 => GPIO::I0,
+                    1 => GPIO::I1,
+                    2 => GPIO::I2,
+                    3 => GPIO::I3,
+                    _ => unreachable!(),
+                },
+            ),
             TRANSITION_MODE_EXT => TransitionMode::Ext,
             TRANSITION_MODE_IMMIDIATE => TransitionMode::Immidiate,
             _ => unreachable!(),
@@ -322,7 +333,16 @@ impl FPGAEmulator {
                         ADDR_MOD_TRANSITION_VALUE_0,
                     )),
             ),
-            TRANSITION_MODE_GPIO => TransitionMode::GPIO,
+            TRANSITION_MODE_GPIO => TransitionMode::GPIO(
+                match Self::read_bram_as::<u64>(&self.controller_bram, ADDR_MOD_TRANSITION_VALUE_0)
+                {
+                    0 => GPIO::I0,
+                    1 => GPIO::I1,
+                    2 => GPIO::I2,
+                    3 => GPIO::I3,
+                    _ => unreachable!(),
+                },
+            ),
             TRANSITION_MODE_EXT => TransitionMode::Ext,
             TRANSITION_MODE_IMMIDIATE => TransitionMode::Immidiate,
             _ => unreachable!(),
