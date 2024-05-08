@@ -53,9 +53,9 @@ fn send_gain() -> anyhow::Result<()> {
             .collect();
         let g = TestGain { buf: buf.clone() };
 
-        let (mut op, _) = g.operation_with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
+        let (mut op, _) = g.operation_with_segment(Segment::S0, true);
 
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         assert!(cpu.fpga().is_stm_gain_mode(Segment::S0));
         assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
@@ -87,9 +87,9 @@ fn send_gain() -> anyhow::Result<()> {
             .collect();
         let g = TestGain { buf: buf.clone() };
 
-        let (mut op, _) = g.operation_with_segment(Segment::S1, None);
+        let (mut op, _) = g.operation_with_segment(Segment::S1, false);
 
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
         assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
@@ -110,7 +110,7 @@ fn send_gain() -> anyhow::Result<()> {
     {
         let mut op = GainChangeSegmentOp::new(Segment::S1);
 
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         assert_eq!(Segment::S1, cpu.fpga().current_stm_segment());
     }
@@ -134,7 +134,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
             STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(0xFFFFFFFF)),
             LoopBehavior::infinite(),
             Segment::S0,
-            Some(TransitionMode::SyncIdx),
+            Some(TransitionMode::Immidiate),
         ),
         &geometry,
         &mut tx,
@@ -157,7 +157,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
             STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(0xFFFFFFFF)),
             LoopBehavior::infinite(),
             Segment::S1,
-            Some(TransitionMode::SyncIdx),
+            Some(TransitionMode::Immidiate),
         ),
         &geometry,
         &mut tx,

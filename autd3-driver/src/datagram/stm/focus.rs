@@ -102,7 +102,7 @@ impl std::ops::Index<usize> for FocusSTM {
     }
 }
 
-impl DatagramS for FocusSTM {
+impl DatagramST for FocusSTM {
     type O1 = crate::firmware::operation::FocusSTMOp;
     type O2 = crate::firmware::operation::NullOp;
 
@@ -291,7 +291,7 @@ mod tests {
             .add_focus((Vector3::new(4., 5., 6.), 1))
             .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2));
 
-        assert_eq!(stm.timeout(), Some(DEFAULT_TIMEOUT));
+        assert_eq!(Datagram::timeout(&stm), Some(DEFAULT_TIMEOUT));
 
         let _: (FocusSTMOp, NullOp) =
             stm.operation_with_segment(Segment::S0, Some(TransitionMode::SyncIdx));

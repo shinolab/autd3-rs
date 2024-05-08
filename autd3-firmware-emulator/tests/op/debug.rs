@@ -22,7 +22,7 @@ fn send_debug_output_idx(
 
     let (mut op, _) = ConfigureDebugSettings::new(|_| debug_types.clone()).operation();
 
-    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
     assert_eq!(expect_types, cpu.fpga().debug_types());
     assert_eq!(expect_values, cpu.fpga().debug_values());
@@ -46,7 +46,7 @@ fn send_debug_pwm_out() -> anyhow::Result<()> {
     })
     .operation();
 
-    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
     assert_eq!(
         [DBG_PWM_OUT, DBG_PWM_OUT, DBG_PWM_OUT, DBG_PWM_OUT],

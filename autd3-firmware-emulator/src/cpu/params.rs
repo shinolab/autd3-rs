@@ -21,6 +21,8 @@ pub const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
 pub const TRANSITION_MODE_SYS_TIME: u8 = 0x01;
 pub const TRANSITION_MODE_GPIO: u8 = 0x02;
 pub const TRANSITION_MODE_EXT: u8 = 0xF0;
+pub const TRANSITION_MODE_NONE: u8 = 0xFE;
+pub const TRANSITION_MODE_IMMIDIATE: u8 = 0xFF;
 
 pub const ADDR_CTL_FLAG: u16 = 0x00;
 pub const ADDR_FPGA_STATE: u16 = 0x01;
@@ -149,8 +151,7 @@ pub const INFO_TYPE_FPGA_VERSION_MINOR: u8 = 0x04;
 pub const INFO_TYPE_FPGA_FUNCTIONS: u8 = 0x05;
 pub const INFO_TYPE_CLEAR: u8 = 0x06;
 
-pub const GAIN_FLAG_UPDATE: u16 = 1 << 0;
-pub const GAIN_FLAG_SEGMENT: u16 = 1 << 1;
+pub const GAIN_FLAG_UPDATE: u8 = 1 << 0;
 
 pub const MODULATION_FLAG_BEGIN: u8 = 1 << 0;
 pub const MODULATION_FLAG_END: u8 = 1 << 1;
@@ -199,3 +200,4 @@ pub const ERR_PWE_INCOMPLETE_DATA: u8 = ERR_BIT | 0x0A;
 pub const ERR_MISS_TRANSITION_TIME: u8 = ERR_BIT | 0x0B;
 pub const ERR_CLK_INCOMPLETE_DATA: u8 = ERR_BIT | 0x0D;
 pub const ERR_INVALID_SILENCER_SETTING: u8 = ERR_BIT | 0x0E;
+pub const ERR_INVALID_TRANSITION_MODE: u8 = ERR_BIT | 0x0F;

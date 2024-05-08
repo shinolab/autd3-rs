@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use crate::{
     error::AUTDInternalError,
     firmware::{
-        fpga::{Drive, Segment, TransitionMode},
+        fpga::{Drive, Segment},
         operation::{GainOp, NullOp},
     },
     geometry::{Device, Geometry, Transducer},
@@ -144,13 +144,9 @@ impl DatagramS for Box<dyn Gain> {
     type O1 = GainOp<Self>;
     type O2 = NullOp;
 
-    fn operation_with_segment(
-        self,
-        segment: Segment,
-        transition_mode: Option<TransitionMode>,
-    ) -> (Self::O1, Self::O2) {
+    fn operation_with_segment(self, segment: Segment, transition: bool) -> (Self::O1, Self::O2) {
         (
-            Self::O1::new(segment, transition_mode.is_some(), self),
+            Self::O1::new(segment, transition, self),
             Self::O2::default(),
         )
     }

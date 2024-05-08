@@ -113,6 +113,8 @@ pub enum AUTDInternalError {
     UnknownFirmwareError(u8),
     #[error("Invalid segment transition")]
     InvalidSegmentTransition,
+    #[error("Invalid transition mode")]
+    InvalidTransitionMode,
     #[error("Invalid pulse width encoder data size")]
     InvalidPulseWidthEncoderDataSize,
     #[error("Incomplete pulse width encoder table data")]
@@ -138,6 +140,7 @@ impl AUTDInternalError {
             0x8B => AUTDInternalError::MissTransitionTime,
             0x8D => AUTDInternalError::IncompleteDrpRomData,
             0x8E => AUTDInternalError::InvalidSilencerSettings,
+            0x8F => AUTDInternalError::InvalidTransitionMode,
             _ => AUTDInternalError::UnknownFirmwareError(ack),
         }
     }

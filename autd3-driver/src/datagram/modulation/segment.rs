@@ -52,9 +52,9 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let d = ChangeModulationSegment::new(Segment::S0, TransitionMode::default());
+        let d = ChangeModulationSegment::new(Segment::S0, TransitionMode::Immidiate);
         assert_eq!(Segment::S0, d.segment());
-        assert_eq!(TransitionMode::default(), d.transition_mode());
+        assert_eq!(TransitionMode::Immidiate, d.transition_mode());
         assert_eq!(Some(DEFAULT_TIMEOUT), d.timeout());
         let _ = d.operation();
         Ok(())

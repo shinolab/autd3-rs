@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use autd3_driver::{
+    datagram::ConfigureSilencer,
     derive::*,
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
@@ -50,7 +51,7 @@ fn send_mod() -> anyhow::Result<()> {
                 ..=SAMPLING_FREQ_DIV_MAX,
         );
         let loop_behavior = LoopBehavior::infinite();
-        let transition_mode = TransitionMode::SyncIdx;
+        let transition_mode = TransitionMode::Immidiate;
         let mut op = ModulationOp::new(
             TestModulation {
                 buf: m.clone(),
@@ -61,7 +62,7 @@ fn send_mod() -> anyhow::Result<()> {
             Some(transition_mode),
         );
 
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         assert_eq!(Segment::S0, cpu.fpga().current_mod_segment());
         assert_eq!(m.len(), cpu.fpga().modulation_cycle(Segment::S0));
@@ -92,7 +93,7 @@ fn send_mod() -> anyhow::Result<()> {
             None,
         );
 
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         assert_eq!(Segment::S0, cpu.fpga().current_mod_segment());
         assert_eq!(m.len(), cpu.fpga().modulation_cycle(Segment::S1));
@@ -101,16 +102,17 @@ fn send_mod() -> anyhow::Result<()> {
             loop_behavior,
             cpu.fpga().modulation_loop_behavior(Segment::S1)
         );
-        assert_eq!(TransitionMode::SyncIdx, cpu.fpga().mod_transition_mode());
+        assert_eq!(TransitionMode::Immidiate, cpu.fpga().mod_transition_mode());
         assert_eq!(m, cpu.fpga().modulation(Segment::S1));
     }
 
     {
-        let mut op = ModulationChangeSegmentOp::new(Segment::S1, TransitionMode::default());
+        let mut op = ModulationChangeSegmentOp::new(Segment::S1, TransitionMode::SyncIdx);
 
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         assert_eq!(Segment::S1, cpu.fpga().current_mod_segment());
+        assert_eq!(TransitionMode::SyncIdx, cpu.fpga().mod_transition_mode());
     }
 
     {
@@ -119,12 +121,12 @@ fn send_mod() -> anyhow::Result<()> {
             TestModulation {
                 buf: (0..2).map(|_| u8::MAX).collect(),
                 config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
-                loop_behavior: LoopBehavior::infinite(),
+                loop_behavior: LoopBehavior::once(),
             },
             Segment::S0,
             Some(transition_mode),
         );
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
         assert_eq!(transition_mode, cpu.fpga().mod_transition_mode());
     }
 
@@ -139,7 +141,7 @@ fn send_mod() -> anyhow::Result<()> {
             Segment::S0,
             Some(transition_mode),
         );
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
         assert_eq!(transition_mode, cpu.fpga().mod_transition_mode());
     }
 
@@ -147,25 +149,139 @@ fn send_mod() -> anyhow::Result<()> {
 }
 
 #[test]
-fn mod_freq_div_too_small() {
+fn mod_freq_div_too_small() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let mut op = ModulationOp::new(
-        TestModulation {
-            buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
-            loop_behavior: LoopBehavior::infinite(),
-        },
-        Segment::S0,
-        Some(TransitionMode::SyncIdx),
-    );
+    {
+        let mut op = ModulationOp::new(
+            TestModulation {
+                buf: (0..2).map(|_| u8::MAX).collect(),
+                config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
+                loop_behavior: LoopBehavior::infinite(),
+            },
+            Segment::S0,
+            Some(TransitionMode::Immidiate),
+        );
 
-    assert_eq!(
-        Err(AUTDInternalError::InvalidSilencerSettings),
-        send(&mut cpu, &mut op, &geometry, &mut tx)
-    )
+        assert_eq!(
+            Err(AUTDInternalError::InvalidSilencerSettings),
+            send(&mut cpu, &mut op, &geometry, &mut tx)
+        )
+    }
+
+    {
+        let mut op = ModulationOp::new(
+            TestModulation {
+                buf: (0..2).map(|_| u8::MAX).collect(),
+                config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+                loop_behavior: LoopBehavior::infinite(),
+            },
+            Segment::S0,
+            Some(TransitionMode::Immidiate),
+        );
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+
+        let (mut op, _) = ConfigureSilencer::fixed_completion_steps(
+            SILENCER_STEPS_INTENSITY_DEFAULT,
+            SILENCER_STEPS_PHASE_DEFAULT,
+        )?
+        .operation();
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+
+        let mut op = ModulationOp::new(
+            TestModulation {
+                buf: (0..2).map(|_| u8::MAX).collect(),
+                config: SamplingConfig::DivisionRaw(
+                    SAMPLING_FREQ_DIV_MIN
+                        * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
+                ),
+                loop_behavior: LoopBehavior::infinite(),
+            },
+            Segment::S1,
+            None,
+        );
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+
+        let (mut op, _) = ConfigureSilencer::fixed_completion_steps(
+            SILENCER_STEPS_PHASE_DEFAULT * 2,
+            SILENCER_STEPS_PHASE_DEFAULT,
+        )?
+        .operation();
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+
+        let mut op = ModulationChangeSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
+        assert_eq!(
+            Err(AUTDInternalError::InvalidSilencerSettings),
+            send(&mut cpu, &mut op, &geometry, &mut tx)
+        );
+    }
+
+    Ok(())
+}
+
+#[test]
+fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
+
+    // segment 0 to 0
+    {
+        let mut op = ModulationOp::new(
+            TestModulation {
+                buf: (0..2).map(|_| u8::MAX).collect(),
+                config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+                loop_behavior: LoopBehavior::infinite(),
+            },
+            Segment::S0,
+            Some(TransitionMode::SyncIdx),
+        );
+        assert_eq!(
+            Err(AUTDInternalError::InvalidTransitionMode),
+            send(&mut cpu, &mut op, &geometry, &mut tx)
+        );
+    }
+
+    // segment 0 to 1 immidiate
+    {
+        let mut op = ModulationOp::new(
+            TestModulation {
+                buf: (0..2).map(|_| u8::MAX).collect(),
+                config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+                loop_behavior: LoopBehavior::once(),
+            },
+            Segment::S1,
+            Some(TransitionMode::Immidiate),
+        );
+        assert_eq!(
+            Err(AUTDInternalError::InvalidTransitionMode),
+            send(&mut cpu, &mut op, &geometry, &mut tx)
+        );
+    }
+
+    // Infinite but SyncIdx
+    {
+        let mut op = ModulationOp::new(
+            TestModulation {
+                buf: (0..2).map(|_| u8::MAX).collect(),
+                config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+                loop_behavior: LoopBehavior::infinite(),
+            },
+            Segment::S1,
+            None,
+        );
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+
+        let mut op = ModulationChangeSegmentOp::new(Segment::S1, TransitionMode::SyncIdx);
+        assert_eq!(
+            Err(AUTDInternalError::InvalidTransitionMode),
+            send(&mut cpu, &mut op, &geometry, &mut tx)
+        );
+    }
+
+    Ok(())
 }
 
 #[rstest::rstest]

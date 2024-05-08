@@ -1,10 +1,10 @@
 #[derive(Clone, Copy)]
 #[repr(C)]
-pub struct GainControlFlags(u16);
+pub struct GainControlFlags(u8);
 
 bitflags::bitflags! {
-    impl GainControlFlags : u16 {
-        const NONE           = 0;
-        const TRANSITION     = 1 << 0;
+    impl GainControlFlags : u8 {
+        const NONE   = 0;
+        const UPDATE = 1 << 0;
     }
 }

@@ -7,7 +7,7 @@ use crate::{
         cpu::GainSTMMode,
         fpga::{
             Drive, LoopBehavior, STMSamplingConfig, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX,
-            STM_BUF_SIZE_MIN,
+            STM_BUF_SIZE_MIN, TRANSITION_MODE_NONE,
         },
         operation::{cast, Operation, Remains, TypeTag},
     },
@@ -201,15 +201,13 @@ impl<G: Gain> Operation for GainSTMOp<G> {
         if sent == 0 {
             *cast::<GainSTMHead>(tx) = GainSTMHead {
                 tag: TypeTag::GainSTM,
-                flag: GainSTMControlFlags::BEGIN
-                    | if self.segment == Segment::S1 {
-                        GainSTMControlFlags::SEGMENT
-                    } else {
-                        GainSTMControlFlags::NONE
-                    },
+                flag: GainSTMControlFlags::BEGIN,
                 mode: self.mode,
-                transition_mode: self.transition_mode.unwrap_or_default().mode(),
-                transition_value: self.transition_mode.unwrap_or_default().value(),
+                transition_mode: self
+                    .transition_mode
+                    .map(|m| m.mode())
+                    .unwrap_or(TRANSITION_MODE_NONE),
+                transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
                 freq_div: self
                     .stm_sampling_config
                     .sampling(self.gains.len())?
@@ -223,6 +221,10 @@ impl<G: Gain> Operation for GainSTMOp<G> {
                 flag: GainSTMControlFlags::NONE,
             };
         }
+
+        cast::<GainSTMSubseq>(tx)
+            .flag
+            .set(GainSTMControlFlags::SEGMENT, self.segment == Segment::S1);
 
         let d = cast::<GainSTMSubseq>(tx);
         d.flag.set(
@@ -608,7 +610,7 @@ mod tests {
             geometry.devices().for_each(|dev| {
                 assert_eq!(TypeTag::GainSTM as u8, tx[dev.idx() * FRAME_SIZE]);
                 assert_eq!(
-                    GainSTMControlFlags::NONE.bits(),
+                    GainSTMControlFlags::SEGMENT.bits(),
                     tx[dev.idx() * FRAME_SIZE + offset_of!(GainSTMHead, flag)] & 0x3F
                 );
                 assert_eq!(
@@ -649,7 +651,7 @@ mod tests {
             geometry.devices().for_each(|dev| {
                 assert_eq!(TypeTag::GainSTM as u8, tx[dev.idx() * FRAME_SIZE]);
                 assert_eq!(
-                    GainSTMControlFlags::END.bits(),
+                    (GainSTMControlFlags::END | GainSTMControlFlags::SEGMENT).bits(),
                     tx[dev.idx() * FRAME_SIZE + offset_of!(GainSTMHead, flag)] & 0x3F
                 );
                 assert_eq!(

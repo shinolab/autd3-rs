@@ -23,7 +23,7 @@ pub use phase::{Phase, Rad};
 pub use sampling_config::SamplingConfig;
 pub use segment::Segment;
 pub use stm_sampling_config::STMSamplingConfig;
-pub use transition_mode::TransitionMode;
+pub use transition_mode::*;
 
 pub const FPGA_BASE_CLK_FREQ: u32 = 25600000;
 pub const ULTRASOUND_PERIOD: u32 = 512;

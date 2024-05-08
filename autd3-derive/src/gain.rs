@@ -71,19 +71,37 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
     let type_params = generics.type_params();
     let where_clause = to_gain_where(where_clause);
     let datagram = quote! {
+        impl <#(#linetimes,)* #(#type_params,)*> Datagram for #name #ty_generics #where_clause
+        {
+            type O1 = GainOp<Self>;
+            type O2 = NullOp;
+
+            fn operation(self) -> (Self::O1, Self::O2) {
+                (Self::O1::new(Segment::S0, true, self), Self::O2::default())
+            }
+        }
+    };
+
+    let linetimes = generics.lifetimes();
+    let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let type_params = generics.type_params();
+    let where_clause = to_gain_where(where_clause);
+    let datagram_with_segment = quote! {
         impl <#(#linetimes,)* #(#type_params,)*> DatagramS for #name #ty_generics #where_clause
         {
             type O1 = GainOp<Self>;
             type O2 = NullOp;
 
-            fn operation_with_segment(self, segment: Segment, transition_mode: Option<TransitionMode>) -> (Self::O1, Self::O2) {
-                (Self::O1::new(segment, transition_mode.is_some(), self), Self::O2::default())
+            fn operation_with_segment(self, segment: Segment, transition: bool) -> (Self::O1, Self::O2) {
+                (Self::O1::new(segment, transition, self), Self::O2::default())
             }
         }
     };
 
     let gen = quote! {
         #datagram
+
+        #datagram_with_segment
 
         #cache
 

@@ -5,7 +5,7 @@ use crate::{
     firmware::{
         fpga::{
             LoopBehavior, STMFocus, STMSamplingConfig, Segment, TransitionMode,
-            FOCUS_STM_BUF_SIZE_MAX, STM_BUF_SIZE_MIN,
+            FOCUS_STM_BUF_SIZE_MAX, STM_BUF_SIZE_MIN, TRANSITION_MODE_NONE,
         },
         operation::{cast, Operation, Remains, TypeTag},
     },
@@ -79,14 +79,12 @@ impl Operation for FocusSTMOp {
         if sent == 0 {
             *cast::<FocusSTMHead>(tx) = FocusSTMHead {
                 tag: TypeTag::FocusSTM,
-                flag: FocusSTMControlFlags::BEGIN
-                    | if self.segment == Segment::S1 {
-                        FocusSTMControlFlags::SEGMENT
-                    } else {
-                        FocusSTMControlFlags::NONE
-                    },
-                transition_mode: self.transition_mode.unwrap_or_default().mode(),
-                transition_value: self.transition_mode.unwrap_or_default().value(),
+                flag: FocusSTMControlFlags::BEGIN,
+                transition_mode: self
+                    .transition_mode
+                    .map(|m| m.mode())
+                    .unwrap_or(TRANSITION_MODE_NONE),
+                transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
                 send_num: send_num as u8,
                 freq_div: self
                     .stm_sampling_config
@@ -104,6 +102,10 @@ impl Operation for FocusSTMOp {
                 send_num: send_num as u8,
             };
         }
+
+        cast::<FocusSTMSubseq>(tx)
+            .flag
+            .set(FocusSTMControlFlags::SEGMENT, self.segment == Segment::S1);
 
         if sent + send_num == self.points.len() {
             let d = cast::<FocusSTMSubseq>(tx);
@@ -470,7 +472,7 @@ mod tests {
         geometry.devices().for_each(|dev| {
             assert_eq!(TypeTag::FocusSTM as u8, tx[dev.idx() * FRAME_SIZE]);
             assert_eq!(
-                FocusSTMControlFlags::NONE.bits(),
+                FocusSTMControlFlags::SEGMENT.bits(),
                 tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, flag)]
             );
             assert_eq!(
@@ -536,7 +538,7 @@ mod tests {
             geometry.devices().for_each(|dev| {
                 assert_eq!(TypeTag::FocusSTM as u8, tx[dev.idx() * FRAME_SIZE]);
                 assert_eq!(
-                    FocusSTMControlFlags::END.bits(),
+                    (FocusSTMControlFlags::SEGMENT | FocusSTMControlFlags::END).bits(),
                     tx[dev.idx() * FRAME_SIZE + offset_of!(FocusSTMHead, flag)]
                 );
                 assert_eq!(

@@ -21,7 +21,7 @@ fn send_phase_filter() -> anyhow::Result<()> {
         .collect();
     let mut op = ConfigurePhaseFilterOp::new(|_| |tr| phase_offsets[tr.idx()]);
 
-    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
     assert_eq!(phase_offsets, cpu.fpga().phase_filter());
 

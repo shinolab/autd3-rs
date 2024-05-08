@@ -66,26 +66,38 @@ impl CPUEmulator {
     pub(crate) unsafe fn write_mod(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<Modulation>(data);
 
+        let segment = if (d.head.flag & MODULATION_FLAG_SEGMENT) != 0 {
+            1
+        } else {
+            0
+        };
         let write = d.subseq.size as u32;
 
         let data = if (d.subseq.flag & MODULATION_FLAG_BEGIN) == MODULATION_FLAG_BEGIN {
             self.mod_cycle = 0;
 
-            self.mod_segment = if (d.head.flag & GAIN_STM_FLAG_SEGMENT) != 0 {
-                1
-            } else {
-                0
-            };
+            if Self::validate_transition_mode(
+                self.mod_segment,
+                segment,
+                d.head.rep,
+                d.head.transition_mode,
+            ) {
+                return ERR_INVALID_TRANSITION_MODE;
+            }
+            if d.head.transition_mode != TRANSITION_MODE_NONE {
+                self.mod_segment = segment;
+            }
 
-            self.mod_freq_div[self.mod_segment as usize] = d.head.freq_div;
+            self.mod_rep[segment as usize] = d.head.rep;
+            self.mod_freq_div[segment as usize] = d.head.freq_div;
             self.mod_transition_mode = d.head.transition_mode;
             self.mod_transition_value = d.head.transition_value;
 
-            if self.validate_silencer_settings() {
+            if self.validate_silencer_settings(self.stm_segment, segment) {
                 return ERR_INVALID_SILENCER_SETTING;
             }
 
-            match self.mod_segment {
+            match segment {
                 0 => {
                     self.bram_cpy(
                         BRAM_SELECT_CONTROLLER,
@@ -117,7 +129,7 @@ impl CPUEmulator {
                 _ => unreachable!(),
             }
 
-            self.change_mod_wr_segment(self.mod_segment as _);
+            self.change_mod_wr_segment(segment as _);
 
             data[std::mem::size_of::<ModulationHead>()..].as_ptr() as *const u16
         } else {
@@ -133,7 +145,7 @@ impl CPUEmulator {
         self.mod_cycle += write;
 
         if (d.subseq.flag & MODULATION_FLAG_END) == MODULATION_FLAG_END {
-            match self.mod_segment {
+            match segment {
                 0 => {
                     self.bram_write(
                         BRAM_SELECT_CONTROLLER,
@@ -153,7 +165,7 @@ impl CPUEmulator {
 
             if (d.subseq.flag & MODULATION_FLAG_UPDATE) == MODULATION_FLAG_UPDATE {
                 return self.mod_segment_update(
-                    self.mod_segment,
+                    segment,
                     self.mod_transition_mode,
                     self.mod_transition_value,
                 );
@@ -166,8 +178,16 @@ impl CPUEmulator {
     pub(crate) unsafe fn change_mod_segment(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<ModulationUpdate>(data);
 
+        if Self::validate_transition_mode(
+            self.mod_segment,
+            d.segment,
+            self.mod_rep[d.segment as usize],
+            d.transition_mode,
+        ) {
+            return ERR_INVALID_TRANSITION_MODE;
+        }
         self.mod_segment = d.segment;
-        if self.validate_silencer_settings() {
+        if self.validate_silencer_settings(self.stm_segment, self.mod_segment) {
             return ERR_INVALID_SILENCER_SETTING;
         }
 

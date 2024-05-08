@@ -26,7 +26,7 @@ fn send_silencer_fixed_update_rate() -> anyhow::Result<()> {
     let (mut op, _) =
         ConfigureSilencer::fixed_update_rate(update_rate_intensity, update_rate_phase)?.operation();
 
-    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
     assert_eq!(
         update_rate_intensity,
@@ -51,7 +51,7 @@ fn send_silencer_fixed_completion_steps() -> anyhow::Result<()> {
     let (mut op, _) =
         ConfigureSilencer::fixed_completion_steps(steps_intensity, steps_phase)?.operation();
 
-    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
     assert_eq!(
         steps_intensity,
@@ -81,7 +81,7 @@ fn silencer_completetion_steps_too_large_mod(
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let (mut op, _) = ConfigureSilencer::fixed_completion_steps(1, 1)?.operation();
-    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
     // Send modulation
     {
@@ -92,10 +92,10 @@ fn silencer_completetion_steps_too_large_mod(
                 loop_behavior: LoopBehavior::infinite(),
             },
             Segment::S0,
-            Some(TransitionMode::SyncIdx),
+            Some(TransitionMode::Immidiate),
         );
 
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
     }
 
     let steps_phase = 1;
@@ -122,7 +122,7 @@ fn silencer_completetion_steps_too_large_stm(
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let (mut op, _) = ConfigureSilencer::fixed_completion_steps(1, 1)?.operation();
-    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
     // Send FocusSTM
     {
@@ -131,10 +131,10 @@ fn silencer_completetion_steps_too_large_stm(
             STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN)),
             LoopBehavior::infinite(),
             Segment::S0,
-            Some(TransitionMode::SyncIdx),
+            Some(TransitionMode::Immidiate),
         );
 
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
     }
 
     let (mut op, _) =
@@ -159,7 +159,7 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
         .with_strict_mode(false)
         .operation();
 
-    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
     assert_eq!(
         cpu.fpga().silencer_completion_steps_intensity(),
