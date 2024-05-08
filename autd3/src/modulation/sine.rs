@@ -29,7 +29,7 @@ impl Sine<ExactFreq> {
             intensity: u8::MAX,
             phase: Phase::new(0),
             offset: 127,
-            config: SamplingConfig::FREQ_4K_HZ,
+            config: SamplingConfig::Division(5120),
             loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
         }
@@ -41,7 +41,7 @@ impl Sine<ExactFreq> {
             intensity: u8::MAX,
             phase: Phase::new(0),
             offset: 127,
-            config: SamplingConfig::FREQ_4K_HZ,
+            config: SamplingConfig::Division(5120),
             loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
         }
@@ -131,7 +131,7 @@ mod tests {
         assert_eq!(u8::MAX, m.intensity());
         assert_eq!(u8::MAX / 2, m.offset());
         assert_eq!(Phase::new(0), m.phase());
-        assert_eq!(SamplingConfig::FREQ_4K_HZ, m.sampling_config());
+        assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
 
         assert_eq!(expect.map(|b| HashMap::from([(0, b)])), m.calc(&geometry));
     }
@@ -164,7 +164,7 @@ mod tests {
         assert_eq!(u8::MAX, m.intensity());
         assert_eq!(u8::MAX / 2, m.offset());
         assert_eq!(Phase::new(0), m.phase());
-        assert_eq!(SamplingConfig::FREQ_4K_HZ, m.sampling_config());
+        assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
         assert_eq!(expect.map(|b| HashMap::from([(0, b)])), m.calc(&geometry));
     }
 
