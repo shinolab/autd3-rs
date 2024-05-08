@@ -17,7 +17,9 @@ impl ToMessage for autd3_driver::datagram::FocusSTM {
     }
 }
 
-impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3_driver::datagram::FocusSTM> {
+impl ToMessage
+    for autd3_driver::datagram::DatagramWithSegmentTransition<autd3_driver::datagram::FocusSTM>
+{
     type Message = FocusStm;
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
