@@ -1,6 +1,6 @@
 use crate::ethercat::DcSysTime;
 
-use super::GPIO;
+use super::GPIOIn;
 
 pub const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
 pub const TRANSITION_MODE_SYS_TIME: u8 = 0x01;
@@ -14,7 +14,7 @@ pub const TRANSITION_MODE_IMMIDIATE: u8 = 0xFF;
 pub enum TransitionMode {
     SyncIdx,
     SysTime(DcSysTime),
-    GPIO(GPIO),
+    GPIO(GPIOIn),
     Ext,
     Immidiate,
 }

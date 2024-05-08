@@ -1,6 +1,9 @@
 use autd3_driver::{
     datagram::*,
-    firmware::{cpu::TxDatagram, fpga::DebugType},
+    firmware::{
+        cpu::TxDatagram,
+        fpga::{DebugType, GPIOOut},
+    },
 };
 use autd3_firmware_emulator::{fpga::params::*, CPUEmulator};
 
@@ -20,7 +23,13 @@ fn send_debug_output_idx(
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let (mut op, _) = ConfigureDebugSettings::new(|_| debug_types.clone()).operation();
+    let (mut op, _) = ConfigureDebugSettings::new(|_, gpio| match gpio {
+        GPIOOut::O0 => debug_types[0].clone(),
+        GPIOOut::O1 => debug_types[1].clone(),
+        GPIOOut::O2 => debug_types[2].clone(),
+        GPIOOut::O3 => debug_types[3].clone(),
+    })
+    .operation();
 
     assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
@@ -36,13 +45,11 @@ fn send_debug_pwm_out() -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let (mut op, _) = ConfigureDebugSettings::new(|dev| {
-        [
-            DebugType::PwmOut(&dev[0]),
-            DebugType::PwmOut(&dev[1]),
-            DebugType::PwmOut(&dev[2]),
-            DebugType::PwmOut(&dev[3]),
-        ]
+    let (mut op, _) = ConfigureDebugSettings::new(|dev, gpio| match gpio {
+        GPIOOut::O0 => DebugType::PwmOut(&dev[0]),
+        GPIOOut::O1 => DebugType::PwmOut(&dev[1]),
+        GPIOOut::O2 => DebugType::PwmOut(&dev[2]),
+        GPIOOut::O3 => DebugType::PwmOut(&dev[3]),
     })
     .operation();
 

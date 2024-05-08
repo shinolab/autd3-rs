@@ -19,7 +19,7 @@ pub use debug_type::DebugType;
 pub use drive::Drive;
 pub use emit_intensity::EmitIntensity;
 pub use fpga_state::FPGAState;
-pub use gpio::GPIO;
+pub use gpio::*;
 pub use loop_behavior::LoopBehavior;
 pub use phase::{Phase, Rad};
 pub use sampling_config::SamplingConfig;

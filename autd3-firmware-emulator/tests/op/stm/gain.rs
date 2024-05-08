@@ -6,7 +6,7 @@ use autd3_driver::{
     firmware::{
         cpu::{GainSTMMode, TxDatagram},
         fpga::{
-            STMSamplingConfig, GAIN_STM_BUF_SIZE_MAX, GPIO, SAMPLING_FREQ_DIV_MAX,
+            GPIOIn, STMSamplingConfig, GAIN_STM_BUF_SIZE_MAX, SAMPLING_FREQ_DIV_MAX,
             SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
         },
         operation::{FocusSTMOp, GainSTMChangeSegmentOp, GainSTMOp, OperationHandler},
@@ -196,7 +196,7 @@ fn send_gain_stm_phase_half(n: usize) -> anyhow::Result<()> {
 
     let loop_behavior = LoopBehavior::once();
     let segment = Segment::S1;
-    let transition_mode = TransitionMode::GPIO(GPIO::I0);
+    let transition_mode = TransitionMode::GPIO(GPIOIn::I0);
     let mut op = GainSTMOp::new(
         bufs.iter()
             .map(|buf| TestGain { buf: buf.clone() })

@@ -1,11 +1,16 @@
-use crate::{datagram::*, derive::DEFAULT_TIMEOUT, firmware::fpga::DebugType, geometry::Device};
+use crate::{
+    datagram::*,
+    derive::DEFAULT_TIMEOUT,
+    firmware::fpga::{DebugType, GPIOOut},
+    geometry::Device,
+};
 
 /// Datagram for configure debug_output_idx
-pub struct ConfigureDebugSettings<F: Fn(&Device) -> [DebugType; 4]> {
+pub struct ConfigureDebugSettings<F: Fn(&Device, GPIOOut) -> DebugType> {
     f: F,
 }
 
-impl<F: Fn(&Device) -> [DebugType; 4]> ConfigureDebugSettings<F> {
+impl<F: Fn(&Device, GPIOOut) -> DebugType> ConfigureDebugSettings<F> {
     /// constructor
     pub const fn new(f: F) -> Self {
         Self { f }
@@ -18,7 +23,7 @@ impl<F: Fn(&Device) -> [DebugType; 4]> ConfigureDebugSettings<F> {
     // GRCOV_EXCL_STOP
 }
 
-impl<F: Fn(&Device) -> [DebugType; 4]> Datagram for ConfigureDebugSettings<F> {
+impl<F: Fn(&Device, GPIOOut) -> DebugType> Datagram for ConfigureDebugSettings<F> {
     type O1 = crate::firmware::operation::DebugSettingOp<F>;
     type O2 = crate::firmware::operation::NullOp;
 
@@ -38,13 +43,8 @@ mod tests {
     use super::*;
 
     // GRCOV_EXCL_START
-    fn f(_: &Device) -> [DebugType; 4] {
-        [
-            DebugType::None,
-            DebugType::None,
-            DebugType::None,
-            DebugType::None,
-        ]
+    fn f(_: &Device, _: GPIOOut) -> DebugType {
+        DebugType::None
     }
     // GRCOV_EXCL_STOP
 
