@@ -108,7 +108,7 @@ mod tests {
 
         assert_eq!(None, d.timeout());
         assert_eq!(Segment::S0, d.segment());
-        assert_eq!(true, d.transition());
+        assert!(d.transition());
 
         let _: (ClearOp, NullOp) = d.operation();
     }

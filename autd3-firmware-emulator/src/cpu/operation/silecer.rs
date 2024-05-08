@@ -10,13 +10,9 @@ struct ConfigSilencer {
 
 impl CPUEmulator {
     pub(crate) fn validate_silencer_settings(&self, stm_segment: u8, mod_segment: u8) -> bool {
-        if self.silencer_strict_mode {
-            if self.mod_freq_div[mod_segment as usize] < self.min_freq_div_intensity
-                || self.stm_freq_div[stm_segment as usize] < self.min_freq_div_intensity
-                || self.stm_freq_div[stm_segment as usize] < self.min_freq_div_phase
-            {
-                return true;
-            }
+        if self.silencer_strict_mode && (self.mod_freq_div[mod_segment as usize] < self.min_freq_div_intensity
+                || self.stm_freq_div[stm_segment as usize] < self.min_freq_div_intensity || self.stm_freq_div[stm_segment as usize] < self.min_freq_div_phase) {
+            return true;
         }
         false
     }
