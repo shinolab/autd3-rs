@@ -10,7 +10,13 @@ pub fn to_transition_mode(
             DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap()
                 + std::time::Duration::from_nanos(value.unwrap()),
         ),
-        2 => autd3_driver::firmware::fpga::TransitionMode::GPIO,
+        2 => autd3_driver::firmware::fpga::TransitionMode::GPIO(match value.unwrap() {
+            0 => autd3_driver::firmware::fpga::GPIOIn::I0,
+            1 => autd3_driver::firmware::fpga::GPIOIn::I1,
+            2 => autd3_driver::firmware::fpga::GPIOIn::I2,
+            3 => autd3_driver::firmware::fpga::GPIOIn::I3,
+            _ => unreachable!(),
+        }),
         3 => autd3_driver::firmware::fpga::TransitionMode::Ext,
         _ => unreachable!(),
     })
