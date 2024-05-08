@@ -113,7 +113,7 @@ mod tests {
         781.25
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (150.01Hz) cannot be output with the sampling config (4000Hz).".to_owned())),
+        Err(AUTDInternalError::ModulationError("Frequency (150.01Hz) cannot be output with the sampling config (Division(5120)).".to_owned())),
         150.01
     )]
     #[case(
