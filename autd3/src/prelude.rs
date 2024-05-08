@@ -26,7 +26,7 @@ pub use autd3_driver::{
         cpu::GainSTMMode,
         fpga::{
             DebugType, Drive, EmitIntensity, LoopBehavior, Phase, Rad as PhaseRad, SamplingConfig,
-            Segment, TransitionMode,
+            Segment, TransitionMode, GPIO,
         },
         version::FirmwareVersion,
     },
