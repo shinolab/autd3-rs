@@ -21,7 +21,9 @@ impl ToMessage for autd3::modulation::Static {
     }
 }
 
-impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::modulation::Static> {
+impl ToMessage
+    for autd3_driver::datagram::DatagramWithSegmentTransition<autd3::modulation::Static>
+{
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]

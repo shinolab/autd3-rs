@@ -80,8 +80,8 @@ pub struct GeometryResponse {}
 /// Generated client implementations.
 pub mod simulator_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
-    use tonic::codegen::http::Uri;
     use tonic::codegen::*;
+    use tonic::codegen::http::Uri;
     #[derive(Debug, Clone)]
     pub struct SimulatorClient<T> {
         inner: tonic::client::Grpc<T>,
@@ -125,8 +125,9 @@ pub mod simulator_client {
                     <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
                 >,
             >,
-            <T as tonic::codegen::Service<http::Request<tonic::body::BoxBody>>>::Error:
-                Into<StdError> + Send + Sync,
+            <T as tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+            >>::Error: Into<StdError> + Send + Sync,
         {
             SimulatorClient::new(InterceptedService::new(inner, interceptor))
         }
@@ -164,15 +165,23 @@ pub mod simulator_client {
         pub async fn config_geomety(
             &mut self,
             request: impl tonic::IntoRequest<super::Geometry>,
-        ) -> std::result::Result<tonic::Response<super::GeometryResponse>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::GeometryResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/autd3.Simulator/ConfigGeomety");
+            let path = http::uri::PathAndQuery::from_static(
+                "/autd3.Simulator/ConfigGeomety",
+            );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("autd3.Simulator", "ConfigGeomety"));
@@ -181,15 +190,23 @@ pub mod simulator_client {
         pub async fn update_geomety(
             &mut self,
             request: impl tonic::IntoRequest<super::Geometry>,
-        ) -> std::result::Result<tonic::Response<super::GeometryResponse>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::GeometryResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/autd3.Simulator/UpdateGeomety");
+            let path = http::uri::PathAndQuery::from_static(
+                "/autd3.Simulator/UpdateGeomety",
+            );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("autd3.Simulator", "UpdateGeomety"));
@@ -199,51 +216,57 @@ pub mod simulator_client {
             &mut self,
             request: impl tonic::IntoRequest<super::TxRawData>,
         ) -> std::result::Result<tonic::Response<super::SendResponse>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/autd3.Simulator/SendData");
             let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("autd3.Simulator", "SendData"));
+            req.extensions_mut().insert(GrpcMethod::new("autd3.Simulator", "SendData"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn read_data(
             &mut self,
             request: impl tonic::IntoRequest<super::ReadRequest>,
         ) -> std::result::Result<tonic::Response<super::RxMessage>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/autd3.Simulator/ReadData");
             let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("autd3.Simulator", "ReadData"));
+            req.extensions_mut().insert(GrpcMethod::new("autd3.Simulator", "ReadData"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn close(
             &mut self,
             request: impl tonic::IntoRequest<super::CloseRequest>,
         ) -> std::result::Result<tonic::Response<super::CloseResponse>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/autd3.Simulator/Close");
             let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("autd3.Simulator", "Close"));
+            req.extensions_mut().insert(GrpcMethod::new("autd3.Simulator", "Close"));
             self.inner.unary(req, path, codec).await
         }
     }
@@ -251,8 +274,8 @@ pub mod simulator_client {
 /// Generated client implementations.
 pub mod ecat_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
-    use tonic::codegen::http::Uri;
     use tonic::codegen::*;
+    use tonic::codegen::http::Uri;
     #[derive(Debug, Clone)]
     pub struct EcatClient<T> {
         inner: tonic::client::Grpc<T>,
@@ -283,7 +306,10 @@ pub mod ecat_client {
             let inner = tonic::client::Grpc::with_origin(inner, origin);
             Self { inner }
         }
-        pub fn with_interceptor<F>(inner: T, interceptor: F) -> EcatClient<InterceptedService<T, F>>
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> EcatClient<InterceptedService<T, F>>
         where
             F: tonic::service::Interceptor,
             T::ResponseBody: Default,
@@ -293,8 +319,9 @@ pub mod ecat_client {
                     <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
                 >,
             >,
-            <T as tonic::codegen::Service<http::Request<tonic::body::BoxBody>>>::Error:
-                Into<StdError> + Send + Sync,
+            <T as tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+            >>::Error: Into<StdError> + Send + Sync,
         {
             EcatClient::new(InterceptedService::new(inner, interceptor))
         }
@@ -333,51 +360,57 @@ pub mod ecat_client {
             &mut self,
             request: impl tonic::IntoRequest<super::TxRawData>,
         ) -> std::result::Result<tonic::Response<super::SendResponse>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/autd3.ECAT/SendData");
             let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("autd3.ECAT", "SendData"));
+            req.extensions_mut().insert(GrpcMethod::new("autd3.ECAT", "SendData"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn read_data(
             &mut self,
             request: impl tonic::IntoRequest<super::ReadRequest>,
         ) -> std::result::Result<tonic::Response<super::RxMessage>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/autd3.ECAT/ReadData");
             let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("autd3.ECAT", "ReadData"));
+            req.extensions_mut().insert(GrpcMethod::new("autd3.ECAT", "ReadData"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn close(
             &mut self,
             request: impl tonic::IntoRequest<super::CloseRequest>,
         ) -> std::result::Result<tonic::Response<super::CloseResponse>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/autd3.ECAT/Close");
             let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("autd3.ECAT", "Close"));
+            req.extensions_mut().insert(GrpcMethod::new("autd3.ECAT", "Close"));
             self.inner.unary(req, path, codec).await
         }
     }
@@ -392,11 +425,17 @@ pub mod simulator_server {
         async fn config_geomety(
             &self,
             request: tonic::Request<super::Geometry>,
-        ) -> std::result::Result<tonic::Response<super::GeometryResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::GeometryResponse>,
+            tonic::Status,
+        >;
         async fn update_geomety(
             &self,
             request: tonic::Request<super::Geometry>,
-        ) -> std::result::Result<tonic::Response<super::GeometryResponse>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::GeometryResponse>,
+            tonic::Status,
+        >;
         async fn send_data(
             &self,
             request: tonic::Request<super::TxRawData>,
@@ -433,7 +472,10 @@ pub mod simulator_server {
                 max_encoding_message_size: None,
             }
         }
-        pub fn with_interceptor<F>(inner: T, interceptor: F) -> InterceptedService<Self, F>
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> InterceptedService<Self, F>
         where
             F: tonic::service::Interceptor,
         {
@@ -489,9 +531,13 @@ pub mod simulator_server {
                 "/autd3.Simulator/ConfigGeomety" => {
                     #[allow(non_camel_case_types)]
                     struct ConfigGeometySvc<T: Simulator>(pub Arc<T>);
-                    impl<T: Simulator> tonic::server::UnaryService<super::Geometry> for ConfigGeometySvc<T> {
+                    impl<T: Simulator> tonic::server::UnaryService<super::Geometry>
+                    for ConfigGeometySvc<T> {
                         type Response = super::GeometryResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::Geometry>,
@@ -529,9 +575,13 @@ pub mod simulator_server {
                 "/autd3.Simulator/UpdateGeomety" => {
                     #[allow(non_camel_case_types)]
                     struct UpdateGeometySvc<T: Simulator>(pub Arc<T>);
-                    impl<T: Simulator> tonic::server::UnaryService<super::Geometry> for UpdateGeometySvc<T> {
+                    impl<T: Simulator> tonic::server::UnaryService<super::Geometry>
+                    for UpdateGeometySvc<T> {
                         type Response = super::GeometryResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::Geometry>,
@@ -569,16 +619,21 @@ pub mod simulator_server {
                 "/autd3.Simulator/SendData" => {
                     #[allow(non_camel_case_types)]
                     struct SendDataSvc<T: Simulator>(pub Arc<T>);
-                    impl<T: Simulator> tonic::server::UnaryService<super::TxRawData> for SendDataSvc<T> {
+                    impl<T: Simulator> tonic::server::UnaryService<super::TxRawData>
+                    for SendDataSvc<T> {
                         type Response = super::SendResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::TxRawData>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut =
-                                async move { <T as Simulator>::send_data(&inner, request).await };
+                            let fut = async move {
+                                <T as Simulator>::send_data(&inner, request).await
+                            };
                             Box::pin(fut)
                         }
                     }
@@ -608,16 +663,21 @@ pub mod simulator_server {
                 "/autd3.Simulator/ReadData" => {
                     #[allow(non_camel_case_types)]
                     struct ReadDataSvc<T: Simulator>(pub Arc<T>);
-                    impl<T: Simulator> tonic::server::UnaryService<super::ReadRequest> for ReadDataSvc<T> {
+                    impl<T: Simulator> tonic::server::UnaryService<super::ReadRequest>
+                    for ReadDataSvc<T> {
                         type Response = super::RxMessage;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::ReadRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut =
-                                async move { <T as Simulator>::read_data(&inner, request).await };
+                            let fut = async move {
+                                <T as Simulator>::read_data(&inner, request).await
+                            };
                             Box::pin(fut)
                         }
                     }
@@ -647,15 +707,21 @@ pub mod simulator_server {
                 "/autd3.Simulator/Close" => {
                     #[allow(non_camel_case_types)]
                     struct CloseSvc<T: Simulator>(pub Arc<T>);
-                    impl<T: Simulator> tonic::server::UnaryService<super::CloseRequest> for CloseSvc<T> {
+                    impl<T: Simulator> tonic::server::UnaryService<super::CloseRequest>
+                    for CloseSvc<T> {
                         type Response = super::CloseResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::CloseRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move { <T as Simulator>::close(&inner, request).await };
+                            let fut = async move {
+                                <T as Simulator>::close(&inner, request).await
+                            };
                             Box::pin(fut)
                         }
                     }
@@ -682,14 +748,18 @@ pub mod simulator_server {
                     };
                     Box::pin(fut)
                 }
-                _ => Box::pin(async move {
-                    Ok(http::Response::builder()
-                        .status(200)
-                        .header("grpc-status", "12")
-                        .header("content-type", "application/grpc")
-                        .body(empty_body())
-                        .unwrap())
-                }),
+                _ => {
+                    Box::pin(async move {
+                        Ok(
+                            http::Response::builder()
+                                .status(200)
+                                .header("grpc-status", "12")
+                                .header("content-type", "application/grpc")
+                                .body(empty_body())
+                                .unwrap(),
+                        )
+                    })
+                }
             }
         }
     }
@@ -762,7 +832,10 @@ pub mod ecat_server {
                 max_encoding_message_size: None,
             }
         }
-        pub fn with_interceptor<F>(inner: T, interceptor: F) -> InterceptedService<Self, F>
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> InterceptedService<Self, F>
         where
             F: tonic::service::Interceptor,
         {
@@ -818,15 +891,21 @@ pub mod ecat_server {
                 "/autd3.ECAT/SendData" => {
                     #[allow(non_camel_case_types)]
                     struct SendDataSvc<T: Ecat>(pub Arc<T>);
-                    impl<T: Ecat> tonic::server::UnaryService<super::TxRawData> for SendDataSvc<T> {
+                    impl<T: Ecat> tonic::server::UnaryService<super::TxRawData>
+                    for SendDataSvc<T> {
                         type Response = super::SendResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::TxRawData>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move { <T as Ecat>::send_data(&inner, request).await };
+                            let fut = async move {
+                                <T as Ecat>::send_data(&inner, request).await
+                            };
                             Box::pin(fut)
                         }
                     }
@@ -856,15 +935,21 @@ pub mod ecat_server {
                 "/autd3.ECAT/ReadData" => {
                     #[allow(non_camel_case_types)]
                     struct ReadDataSvc<T: Ecat>(pub Arc<T>);
-                    impl<T: Ecat> tonic::server::UnaryService<super::ReadRequest> for ReadDataSvc<T> {
+                    impl<T: Ecat> tonic::server::UnaryService<super::ReadRequest>
+                    for ReadDataSvc<T> {
                         type Response = super::RxMessage;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::ReadRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move { <T as Ecat>::read_data(&inner, request).await };
+                            let fut = async move {
+                                <T as Ecat>::read_data(&inner, request).await
+                            };
                             Box::pin(fut)
                         }
                     }
@@ -894,15 +979,21 @@ pub mod ecat_server {
                 "/autd3.ECAT/Close" => {
                     #[allow(non_camel_case_types)]
                     struct CloseSvc<T: Ecat>(pub Arc<T>);
-                    impl<T: Ecat> tonic::server::UnaryService<super::CloseRequest> for CloseSvc<T> {
+                    impl<T: Ecat> tonic::server::UnaryService<super::CloseRequest>
+                    for CloseSvc<T> {
                         type Response = super::CloseResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::CloseRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move { <T as Ecat>::close(&inner, request).await };
+                            let fut = async move {
+                                <T as Ecat>::close(&inner, request).await
+                            };
                             Box::pin(fut)
                         }
                     }
@@ -929,14 +1020,18 @@ pub mod ecat_server {
                     };
                     Box::pin(fut)
                 }
-                _ => Box::pin(async move {
-                    Ok(http::Response::builder()
-                        .status(200)
-                        .header("grpc-status", "12")
-                        .header("content-type", "application/grpc")
-                        .body(empty_body())
-                        .unwrap())
-                }),
+                _ => {
+                    Box::pin(async move {
+                        Ok(
+                            http::Response::builder()
+                                .status(200)
+                                .header("grpc-status", "12")
+                                .header("content-type", "application/grpc")
+                                .body(empty_body())
+                                .unwrap(),
+                        )
+                    })
+                }
             }
         }
     }
@@ -1262,14 +1357,9 @@ pub struct Greedy {
 pub struct Gain {
     #[prost(enumeration = "Segment", tag = "1001")]
     pub segment: i32,
-    #[prost(enumeration = "TransitionMode", optional, tag = "1002")]
-    pub transition_mode: ::core::option::Option<i32>,
-    #[prost(uint64, optional, tag = "1003")]
-    pub transition_value: ::core::option::Option<u64>,
-    #[prost(
-        oneof = "gain::Gain",
-        tags = "1, 2, 3, 4, 5, 100, 101, 102, 103, 104, 105"
-    )]
+    #[prost(bool, tag = "1002")]
+    pub transition: bool,
+    #[prost(oneof = "gain::Gain", tags = "1, 2, 3, 4, 5, 100, 101, 102, 103, 104, 105")]
     pub gain: ::core::option::Option<gain::Gain>,
 }
 /// Nested message and enum types in `Gain`.
@@ -1587,8 +1677,9 @@ pub struct FirmwareVersionResponseLightweight {
     #[prost(string, tag = "2")]
     pub msg: ::prost::alloc::string::String,
     #[prost(message, repeated, tag = "3")]
-    pub firmware_version_list:
-        ::prost::alloc::vec::Vec<firmware_version_response_lightweight::FirmwareVersion>,
+    pub firmware_version_list: ::prost::alloc::vec::Vec<
+        firmware_version_response_lightweight::FirmwareVersion,
+    >,
 }
 /// Nested message and enum types in `FirmwareVersionResponseLightweight`.
 pub mod firmware_version_response_lightweight {
@@ -1613,8 +1704,8 @@ pub struct CloseRequestLightweight {}
 /// Generated client implementations.
 pub mod ecat_light_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
-    use tonic::codegen::http::Uri;
     use tonic::codegen::*;
+    use tonic::codegen::http::Uri;
     #[derive(Debug, Clone)]
     pub struct EcatLightClient<T> {
         inner: tonic::client::Grpc<T>,
@@ -1658,8 +1749,9 @@ pub mod ecat_light_client {
                     <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
                 >,
             >,
-            <T as tonic::codegen::Service<http::Request<tonic::body::BoxBody>>>::Error:
-                Into<StdError> + Send + Sync,
+            <T as tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+            >>::Error: Into<StdError> + Send + Sync,
         {
             EcatLightClient::new(InterceptedService::new(inner, interceptor))
         }
@@ -1697,16 +1789,23 @@ pub mod ecat_light_client {
         pub async fn config_geomety(
             &mut self,
             request: impl tonic::IntoRequest<super::Geometry>,
-        ) -> std::result::Result<tonic::Response<super::SendResponseLightweight>, tonic::Status>
-        {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::SendResponseLightweight>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/autd3.ECATLight/ConfigGeomety");
+            let path = http::uri::PathAndQuery::from_static(
+                "/autd3.ECATLight/ConfigGeomety",
+            );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("autd3.ECATLight", "ConfigGeomety"));
@@ -1719,14 +1818,19 @@ pub mod ecat_light_client {
             tonic::Response<super::FirmwareVersionResponseLightweight>,
             tonic::Status,
         > {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/autd3.ECATLight/FirmwareVersion");
+            let path = http::uri::PathAndQuery::from_static(
+                "/autd3.ECATLight/FirmwareVersion",
+            );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("autd3.ECATLight", "FirmwareVersion"));
@@ -1735,37 +1839,45 @@ pub mod ecat_light_client {
         pub async fn send(
             &mut self,
             request: impl tonic::IntoRequest<super::DatagramLightweight>,
-        ) -> std::result::Result<tonic::Response<super::SendResponseLightweight>, tonic::Status>
-        {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::SendResponseLightweight>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/autd3.ECATLight/Send");
             let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("autd3.ECATLight", "Send"));
+            req.extensions_mut().insert(GrpcMethod::new("autd3.ECATLight", "Send"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn close(
             &mut self,
             request: impl tonic::IntoRequest<super::CloseRequestLightweight>,
-        ) -> std::result::Result<tonic::Response<super::SendResponseLightweight>, tonic::Status>
-        {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::new(
-                    tonic::Code::Unknown,
-                    format!("Service was not ready: {}", e.into()),
-                )
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::SendResponseLightweight>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static("/autd3.ECATLight/Close");
             let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("autd3.ECATLight", "Close"));
+            req.extensions_mut().insert(GrpcMethod::new("autd3.ECATLight", "Close"));
             self.inner.unary(req, path, codec).await
         }
     }
@@ -1780,7 +1892,10 @@ pub mod ecat_light_server {
         async fn config_geomety(
             &self,
             request: tonic::Request<super::Geometry>,
-        ) -> std::result::Result<tonic::Response<super::SendResponseLightweight>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::SendResponseLightweight>,
+            tonic::Status,
+        >;
         async fn firmware_version(
             &self,
             request: tonic::Request<super::FirmwareVersionRequestLightweight>,
@@ -1791,11 +1906,17 @@ pub mod ecat_light_server {
         async fn send(
             &self,
             request: tonic::Request<super::DatagramLightweight>,
-        ) -> std::result::Result<tonic::Response<super::SendResponseLightweight>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::SendResponseLightweight>,
+            tonic::Status,
+        >;
         async fn close(
             &self,
             request: tonic::Request<super::CloseRequestLightweight>,
-        ) -> std::result::Result<tonic::Response<super::SendResponseLightweight>, tonic::Status>;
+        ) -> std::result::Result<
+            tonic::Response<super::SendResponseLightweight>,
+            tonic::Status,
+        >;
     }
     #[derive(Debug)]
     pub struct EcatLightServer<T: EcatLight> {
@@ -1820,7 +1941,10 @@ pub mod ecat_light_server {
                 max_encoding_message_size: None,
             }
         }
-        pub fn with_interceptor<F>(inner: T, interceptor: F) -> InterceptedService<Self, F>
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> InterceptedService<Self, F>
         where
             F: tonic::service::Interceptor,
         {
@@ -1876,9 +2000,13 @@ pub mod ecat_light_server {
                 "/autd3.ECATLight/ConfigGeomety" => {
                     #[allow(non_camel_case_types)]
                     struct ConfigGeometySvc<T: EcatLight>(pub Arc<T>);
-                    impl<T: EcatLight> tonic::server::UnaryService<super::Geometry> for ConfigGeometySvc<T> {
+                    impl<T: EcatLight> tonic::server::UnaryService<super::Geometry>
+                    for ConfigGeometySvc<T> {
                         type Response = super::SendResponseLightweight;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::Geometry>,
@@ -1916,15 +2044,21 @@ pub mod ecat_light_server {
                 "/autd3.ECATLight/FirmwareVersion" => {
                     #[allow(non_camel_case_types)]
                     struct FirmwareVersionSvc<T: EcatLight>(pub Arc<T>);
-                    impl<T: EcatLight>
-                        tonic::server::UnaryService<super::FirmwareVersionRequestLightweight>
-                        for FirmwareVersionSvc<T>
-                    {
+                    impl<
+                        T: EcatLight,
+                    > tonic::server::UnaryService<
+                        super::FirmwareVersionRequestLightweight,
+                    > for FirmwareVersionSvc<T> {
                         type Response = super::FirmwareVersionResponseLightweight;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::FirmwareVersionRequestLightweight>,
+                            request: tonic::Request<
+                                super::FirmwareVersionRequestLightweight,
+                            >,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
@@ -1959,15 +2093,23 @@ pub mod ecat_light_server {
                 "/autd3.ECATLight/Send" => {
                     #[allow(non_camel_case_types)]
                     struct SendSvc<T: EcatLight>(pub Arc<T>);
-                    impl<T: EcatLight> tonic::server::UnaryService<super::DatagramLightweight> for SendSvc<T> {
+                    impl<
+                        T: EcatLight,
+                    > tonic::server::UnaryService<super::DatagramLightweight>
+                    for SendSvc<T> {
                         type Response = super::SendResponseLightweight;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::DatagramLightweight>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move { <T as EcatLight>::send(&inner, request).await };
+                            let fut = async move {
+                                <T as EcatLight>::send(&inner, request).await
+                            };
                             Box::pin(fut)
                         }
                     }
@@ -1997,15 +2139,23 @@ pub mod ecat_light_server {
                 "/autd3.ECATLight/Close" => {
                     #[allow(non_camel_case_types)]
                     struct CloseSvc<T: EcatLight>(pub Arc<T>);
-                    impl<T: EcatLight> tonic::server::UnaryService<super::CloseRequestLightweight> for CloseSvc<T> {
+                    impl<
+                        T: EcatLight,
+                    > tonic::server::UnaryService<super::CloseRequestLightweight>
+                    for CloseSvc<T> {
                         type Response = super::SendResponseLightweight;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::CloseRequestLightweight>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move { <T as EcatLight>::close(&inner, request).await };
+                            let fut = async move {
+                                <T as EcatLight>::close(&inner, request).await
+                            };
                             Box::pin(fut)
                         }
                     }
@@ -2032,14 +2182,18 @@ pub mod ecat_light_server {
                     };
                     Box::pin(fut)
                 }
-                _ => Box::pin(async move {
-                    Ok(http::Response::builder()
-                        .status(200)
-                        .header("grpc-status", "12")
-                        .header("content-type", "application/grpc")
-                        .body(empty_body())
-                        .unwrap())
-                }),
+                _ => {
+                    Box::pin(async move {
+                        Ok(
+                            http::Response::builder()
+                                .status(200)
+                                .header("grpc-status", "12")
+                                .header("content-type", "application/grpc")
+                                .body(empty_body())
+                                .unwrap(),
+                        )
+                    })
+                }
             }
         }
     }

@@ -28,7 +28,7 @@ impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::Nea
 }
 
 impl ToMessage
-    for autd3_driver::datagram::DatagramWithSegment<
+    for autd3_driver::datagram::DatagramWithSegmentTransition<
         autd3::modulation::Sine<autd3::modulation::sampling_mode::NearestFreq>,
     >
 {

@@ -12,8 +12,7 @@ impl ToMessage for autd3::gain::Null {
             datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Null(Null {})),
                 segment: Segment::S0 as _,
-                transition_mode: Some(TransitionMode::SyncIdx.into()),
-                transition_value: Some(0),
+                transition: true,
             })),
         }
     }
@@ -28,8 +27,7 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Null
             datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Null(Null {})),
                 segment: self.segment() as _,
-                transition_mode: self.transition_mode().map(|m| m.mode() as _),
-                transition_value: self.transition_mode().map(|m| m.value()),
+                transition: self.transition(),
             })),
         }
     }

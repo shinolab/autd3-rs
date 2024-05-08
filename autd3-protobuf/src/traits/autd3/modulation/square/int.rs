@@ -28,7 +28,7 @@ impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::E
 }
 
 impl ToMessage
-    for autd3_driver::datagram::DatagramWithSegment<
+    for autd3_driver::datagram::DatagramWithSegmentTransition<
         autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreq>,
     >
 {

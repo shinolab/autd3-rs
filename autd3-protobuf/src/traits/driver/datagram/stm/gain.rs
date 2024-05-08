@@ -31,7 +31,7 @@ where
 }
 
 impl<G> ToMessage
-    for autd3_driver::datagram::DatagramWithSegment<autd3_driver::datagram::GainSTM<G>>
+    for autd3_driver::datagram::DatagramWithSegmentTransition<autd3_driver::datagram::GainSTM<G>>
 where
     G: autd3_driver::datagram::Gain + ToMessage<Message = DatagramLightweight>,
 {
