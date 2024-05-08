@@ -84,18 +84,24 @@ impl CPUEmulator {
             ) {
                 return ERR_INVALID_TRANSITION_MODE;
             }
+
+            if Self::validate_silencer_settings(
+                self.silencer_strict_mode,
+                self.min_freq_div_intensity,
+                self.min_freq_div_phase,
+                self.stm_freq_div[self.stm_segment as usize],
+                d.head.freq_div,
+            ) {
+                return ERR_INVALID_SILENCER_SETTING;
+            }
+
             if d.head.transition_mode != TRANSITION_MODE_NONE {
                 self.mod_segment = segment;
             }
-
             self.mod_rep[segment as usize] = d.head.rep;
             self.mod_freq_div[segment as usize] = d.head.freq_div;
             self.mod_transition_mode = d.head.transition_mode;
             self.mod_transition_value = d.head.transition_value;
-
-            if self.validate_silencer_settings(self.stm_segment, segment) {
-                return ERR_INVALID_SILENCER_SETTING;
-            }
 
             match segment {
                 0 => {
@@ -186,11 +192,18 @@ impl CPUEmulator {
         ) {
             return ERR_INVALID_TRANSITION_MODE;
         }
-        self.mod_segment = d.segment;
-        if self.validate_silencer_settings(self.stm_segment, self.mod_segment) {
+
+        if Self::validate_silencer_settings(
+            self.silencer_strict_mode,
+            self.min_freq_div_intensity,
+            self.min_freq_div_phase,
+            self.stm_freq_div[self.stm_segment as usize],
+            self.mod_freq_div[d.segment as usize],
+        ) {
             return ERR_INVALID_SILENCER_SETTING;
         }
 
+        self.mod_segment = d.segment;
         self.mod_segment_update(d.segment, d.transition_mode, d.transition_value)
     }
 }

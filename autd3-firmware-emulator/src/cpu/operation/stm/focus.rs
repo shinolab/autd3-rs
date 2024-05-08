@@ -62,18 +62,25 @@ impl CPUEmulator {
             ) {
                 return ERR_INVALID_TRANSITION_MODE;
             }
+
+            if Self::validate_silencer_settings(
+                self.silencer_strict_mode,
+                self.min_freq_div_intensity,
+                self.min_freq_div_phase,
+                d.head.freq_div,
+                self.mod_freq_div[self.mod_segment as usize],
+            ) {
+                return ERR_INVALID_SILENCER_SETTING;
+            }
+
             if d.head.transition_mode != TRANSITION_MODE_NONE {
                 self.stm_segment = segment;
             }
-
             self.stm_cycle[segment as usize] = 0;
             self.stm_rep[segment as usize] = d.head.rep;
             self.stm_transition_mode = d.head.transition_mode;
             self.stm_transition_value = d.head.transition_value;
             self.stm_freq_div[segment as usize] = d.head.freq_div;
-            if self.validate_silencer_settings(segment, self.mod_segment) {
-                return ERR_INVALID_SILENCER_SETTING;
-            }
 
             match segment {
                 0 => {
@@ -232,6 +239,7 @@ impl CPUEmulator {
         if self.stm_mode[d.segment as usize] != STM_MODE_FOCUS {
             return ERR_INVALID_SEGMENT_TRANSITION;
         }
+
         if Self::validate_transition_mode(
             self.stm_segment,
             d.segment,
@@ -240,11 +248,18 @@ impl CPUEmulator {
         ) {
             return ERR_INVALID_TRANSITION_MODE;
         }
-        self.stm_segment = d.segment;
-        if self.validate_silencer_settings(d.segment, self.mod_segment) {
+
+        if Self::validate_silencer_settings(
+            self.silencer_strict_mode,
+            self.min_freq_div_intensity,
+            self.min_freq_div_phase,
+            self.stm_freq_div[d.segment as usize],
+            self.mod_freq_div[self.mod_segment as usize],
+        ) {
             return ERR_INVALID_SILENCER_SETTING;
         }
 
+        self.stm_segment = d.segment;
         self.stm_segment_update(d.segment, d.transition_mode, d.transition_value)
     }
 }
