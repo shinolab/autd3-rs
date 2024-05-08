@@ -5,15 +5,13 @@ struct Gain {
     tag: u8,
     segment: u8,
     flag: u8,
-    transition_mode: u8,
+    __pad: u8,
 }
 
 #[repr(C, align(2))]
 struct GainUpdate {
     tag: u8,
     segment: u8,
-    transition_mode: u8,
-    __pad: u8,
 }
 
 impl CPUEmulator {

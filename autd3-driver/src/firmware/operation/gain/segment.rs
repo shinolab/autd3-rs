@@ -1,7 +1,7 @@
 use crate::{
     error::AUTDInternalError,
     firmware::{
-        fpga::{Segment, TRANSITION_MODE_IMMIDIATE},
+        fpga::Segment,
         operation::{cast, Operation, Remains, TypeTag},
     },
     geometry::{Device, Geometry},
@@ -11,8 +11,6 @@ use crate::{
 struct GainUpdate {
     tag: TypeTag,
     segment: u8,
-    transition_mode: u8,
-    __pad: u8,
 }
 
 pub struct GainChangeSegmentOp {
@@ -34,8 +32,6 @@ impl Operation for GainChangeSegmentOp {
         *cast::<GainUpdate>(tx) = GainUpdate {
             tag: TypeTag::GainChangeSegment,
             segment: self.segment as u8,
-            transition_mode: TRANSITION_MODE_IMMIDIATE,
-            __pad: 0,
         };
 
         self.remains[device] -= 1;
