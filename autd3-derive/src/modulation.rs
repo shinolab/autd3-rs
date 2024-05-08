@@ -81,8 +81,8 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     let linetimes = generics.lifetimes();
     let type_params = generics.type_params();
     let (_, ty_generics, where_clause) = generics.split_for_impl();
-    let datagram = quote! {
-        impl <#(#linetimes,)* #(#type_params,)* > DatagramS for #name #ty_generics #where_clause {
+    let datagram_with_segment_transition = quote! {
+        impl <#(#linetimes,)* #(#type_params,)* > DatagramST for #name #ty_generics #where_clause {
             type O1 = ModulationOp<Self>;
             type O2 = NullOp;
 
@@ -157,7 +157,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
 
         #freq_config
 
-        #datagram
+        #datagram_with_segment_transition
 
         #transform
 

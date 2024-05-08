@@ -4,7 +4,7 @@ use crate::{
     derive::Modulation,
     error::AUTDInternalError,
     firmware::{
-        fpga::{Segment, TransitionMode, MOD_BUF_SIZE_MAX},
+        fpga::{Segment, TransitionMode, MOD_BUF_SIZE_MAX, TRANSITION_MODE_NONE},
         operation::{cast, Operation, Remains, TypeTag},
     },
     geometry::{Device, Geometry},
@@ -69,12 +69,7 @@ impl<M: Modulation> Operation for ModulationOp<M> {
         if sent == 0 {
             *cast::<ModulationHead>(tx) = ModulationHead {
                 tag: TypeTag::Modulation,
-                flag: ModulationControlFlags::BEGIN
-                    | if self.segment == Segment::S1 {
-                        ModulationControlFlags::SEGMENT
-                    } else {
-                        ModulationControlFlags::NONE
-                    },
+                flag: ModulationControlFlags::BEGIN,
                 size: mod_size as u16,
                 __pad: [0; 3],
                 freq_div: self
@@ -82,8 +77,11 @@ impl<M: Modulation> Operation for ModulationOp<M> {
                     .sampling_config()
                     .division(device.ultrasound_freq())?,
                 rep: self.modulation.loop_behavior().rep,
-                transition_mode: self.transition_mode.unwrap_or_default().mode(),
-                transition_value: self.transition_mode.unwrap_or_default().value(),
+                transition_mode: self
+                    .transition_mode
+                    .map(|m| m.mode())
+                    .unwrap_or(TRANSITION_MODE_NONE),
+                transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
             };
         } else {
             *cast::<ModulationSubseq>(tx) = ModulationSubseq {
@@ -92,6 +90,9 @@ impl<M: Modulation> Operation for ModulationOp<M> {
                 size: mod_size as u16,
             };
         }
+        cast::<ModulationSubseq>(tx)
+            .flag
+            .set(ModulationControlFlags::SEGMENT, self.segment == Segment::S1);
 
         if sent + mod_size == buf.len() {
             let d = cast::<ModulationSubseq>(tx);

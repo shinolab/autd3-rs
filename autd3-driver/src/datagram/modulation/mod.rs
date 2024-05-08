@@ -25,7 +25,7 @@ use crate::{
     },
 };
 
-use super::{Datagram, DatagramS};
+use super::{Datagram, DatagramST};
 
 use rayon::prelude::*;
 
@@ -92,7 +92,7 @@ impl Modulation for Box<dyn Modulation> {
     }
 }
 
-impl DatagramS for Box<dyn Modulation> {
+impl DatagramST for Box<dyn Modulation> {
     type O1 = ModulationOp<Self>;
     type O2 = NullOp;
 

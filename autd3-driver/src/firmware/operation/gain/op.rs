@@ -16,6 +16,7 @@ struct GainT {
     tag: TypeTag,
     segment: u8,
     flag: GainControlFlags,
+    __pad: u8,
 }
 
 pub struct GainOp<G: Gain> {
@@ -57,10 +58,11 @@ impl<G: Gain> Operation for GainOp<G> {
             tag: TypeTag::Gain,
             segment: self.segment as u8,
             flag: GainControlFlags::NONE,
+            __pad: 0,
         };
         cast::<GainT>(tx)
             .flag
-            .set(GainControlFlags::TRANSITION, self.transition);
+            .set(GainControlFlags::UPDATE, self.transition);
 
         unsafe {
             std::ptr::copy_nonoverlapping(

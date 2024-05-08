@@ -87,7 +87,7 @@ fn config_clk(#[case] expect_rom: Vec<u64>, #[case] ultrasound_clk: u32) -> anyh
 
     let mut op = ConfigureClockOp::new();
 
-    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
     assert_eq!(expect_rom, cpu.fpga().drp_rom());
 

@@ -12,7 +12,7 @@ fn send_sync() -> anyhow::Result<()> {
     let (mut op, _) = Synchronize::new().operation();
     assert!(!cpu.synchronized());
 
-    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
     assert!(cpu.synchronized());
 

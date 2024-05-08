@@ -23,7 +23,7 @@ fn send_firminfo() -> anyhow::Result<()> {
     {
         assert!(!cpu.reads_fpga_state());
         let (mut op, _) = ConfigureReadsFPGAState::new(|_| true).operation();
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
         assert!(cpu.reads_fpga_state());
     }
 

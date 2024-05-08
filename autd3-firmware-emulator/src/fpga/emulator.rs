@@ -2,7 +2,7 @@ use autd3_driver::{
     defined::FREQ_40K,
     derive::{Drive, EmitIntensity, Phase, Segment},
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
-    firmware::fpga::{LoopBehavior, TransitionMode, ULTRASOUND_PERIOD},
+    firmware::fpga::{LoopBehavior, TransitionMode, TRANSITION_MODE_IMMIDIATE, ULTRASOUND_PERIOD},
 };
 
 use super::params::*;
@@ -261,6 +261,7 @@ impl FPGAEmulator {
             ),
             TRANSITION_MODE_GPIO => TransitionMode::GPIO,
             TRANSITION_MODE_EXT => TransitionMode::Ext,
+            TRANSITION_MODE_IMMIDIATE => TransitionMode::Immidiate,
             _ => unreachable!(),
         }
     }
@@ -323,6 +324,7 @@ impl FPGAEmulator {
             ),
             TRANSITION_MODE_GPIO => TransitionMode::GPIO,
             TRANSITION_MODE_EXT => TransitionMode::Ext,
+            TRANSITION_MODE_IMMIDIATE => TransitionMode::Immidiate,
             _ => unreachable!(),
         }
     }

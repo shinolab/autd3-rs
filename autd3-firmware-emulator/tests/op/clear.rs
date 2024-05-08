@@ -52,22 +52,22 @@ fn send_clear() -> anyhow::Result<()> {
         let (mut op, _) =
             ConfigureSilencer::fixed_completion_steps(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN)?
                 .operation();
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         let (mut op, _) =
             ConfigureSilencer::fixed_update_rate(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN)?
                 .operation();
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         let (mut op, _) = TestMod {
             config: SamplingConfig::DivisionRaw(5120),
             loop_behavior: LoopBehavior::infinite(),
         }
-        .operation();
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        .operation_with_segment(Segment::S0, Some(TransitionMode::Immidiate));
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-        let (mut op, _) = TestGain {}.operation();
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        let (mut op, _) = TestGain {}.operation_with_segment(Segment::S0, true);
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         let mut op = FocusSTMOp::new(
             gen_random_foci(2),
@@ -79,12 +79,12 @@ fn send_clear() -> anyhow::Result<()> {
             Segment::S0,
             Some(TransitionMode::Ext),
         );
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
     }
 
     let (mut op, _) = Clear::new().operation();
 
-    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
     assert!(!cpu.reads_fpga_state());
     assert_eq!(256, cpu.fpga().silencer_update_rate_intensity());

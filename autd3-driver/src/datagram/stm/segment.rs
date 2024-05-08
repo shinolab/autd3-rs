@@ -90,9 +90,9 @@ mod tests {
     #[test]
     fn test_focus_stm() {
         use crate::datagram::Datagram;
-        let d = ChangeFocusSTMSegment::new(Segment::S0, TransitionMode::default());
+        let d = ChangeFocusSTMSegment::new(Segment::S0, TransitionMode::Immidiate);
         assert_eq!(Segment::S0, d.segment());
-        assert_eq!(TransitionMode::default(), d.transition_mode());
+        assert_eq!(TransitionMode::Immidiate, d.transition_mode());
         assert_eq!(Some(DEFAULT_TIMEOUT), d.timeout());
         let _ = d.operation();
     }
@@ -100,9 +100,9 @@ mod tests {
     #[test]
     fn test_gain_stm() {
         use crate::datagram::Datagram;
-        let d = ChangeGainSTMSegment::new(Segment::S0, TransitionMode::default());
+        let d = ChangeGainSTMSegment::new(Segment::S0, TransitionMode::Immidiate);
         assert_eq!(Segment::S0, d.segment());
-        assert_eq!(TransitionMode::default(), d.transition_mode());
+        assert_eq!(TransitionMode::Immidiate, d.transition_mode());
         assert_eq!(Some(DEFAULT_TIMEOUT), d.timeout());
         let _ = d.operation();
     }

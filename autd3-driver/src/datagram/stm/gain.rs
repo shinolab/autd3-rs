@@ -116,7 +116,7 @@ impl<G: Gain> std::ops::Index<usize> for GainSTM<G> {
     }
 }
 
-impl<G: Gain> DatagramS for GainSTM<G> {
+impl<G: Gain> DatagramST for GainSTM<G> {
     type O1 = crate::firmware::operation::GainSTMOp<G>;
     type O2 = crate::firmware::operation::NullOp;
 
@@ -294,7 +294,7 @@ mod tests {
             .add_gain(Box::new(NullGain {}))
             .add_gain(Box::new(NullGain2 {}));
 
-        assert_eq!(stm.timeout(), Some(DEFAULT_TIMEOUT));
+        assert_eq!(Datagram::timeout(&stm), Some(DEFAULT_TIMEOUT));
 
         let _: (GainSTMOp<Box<dyn Gain>>, NullOp) =
             stm.operation_with_segment(Segment::S0, Some(TransitionMode::SyncIdx));

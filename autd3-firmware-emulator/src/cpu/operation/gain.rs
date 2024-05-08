@@ -4,13 +4,16 @@ use crate::{cpu::params::*, CPUEmulator};
 struct Gain {
     tag: u8,
     segment: u8,
-    flag: u16,
+    flag: u8,
+    transition_mode: u8,
 }
 
 #[repr(C, align(2))]
 struct GainUpdate {
     tag: u8,
     segment: u8,
+    transition_mode: u8,
+    __pad: u8,
 }
 
 impl CPUEmulator {
@@ -18,6 +21,7 @@ impl CPUEmulator {
         let d = Self::cast::<Gain>(data);
 
         let segment = d.segment;
+        self.stm_segment = segment;
 
         let data = unsafe {
             std::slice::from_raw_parts(
@@ -45,6 +49,8 @@ impl CPUEmulator {
             }
             _ => unreachable!(),
         }
+        self.stm_cycle[segment as usize] = 1;
+        self.stm_rep[segment as usize] = 0xFFFFFFFF;
         self.stm_freq_div[segment as usize] = 0xFFFFFFFF;
 
         self.change_stm_wr_segment(segment as _);
@@ -70,12 +76,13 @@ impl CPUEmulator {
     pub(crate) unsafe fn change_gain_segment(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<GainUpdate>(data);
 
-        self.stm_segment = d.segment;
         if self.stm_mode[d.segment as usize] != STM_MODE_GAIN
             || self.stm_cycle[d.segment as usize] != 1
         {
             return ERR_INVALID_SEGMENT_TRANSITION;
         }
+
+        self.stm_segment = d.segment;
 
         self.bram_write(
             BRAM_SELECT_CONTROLLER,

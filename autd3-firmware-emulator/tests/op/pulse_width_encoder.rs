@@ -29,7 +29,7 @@ fn config_pwe() -> anyhow::Result<()> {
         .unwrap_or(0xFFFF);
     let mut op = ConfigurePulseWidthEncoderOp::new(buf.clone());
 
-    send(&mut cpu, &mut op, &geometry, &mut tx)?;
+    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
     assert_eq!(
         full_width_start,

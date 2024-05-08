@@ -12,6 +12,7 @@ mod silencer;
 mod stm;
 mod synchronize;
 mod with_segment;
+mod with_segment_transition;
 mod with_timeout;
 
 pub use clear::Clear;
@@ -38,6 +39,9 @@ pub use stm::{
 };
 pub use synchronize::Synchronize;
 pub use with_segment::{DatagramS, DatagramWithSegment, IntoDatagramWithSegment};
+pub use with_segment_transition::{
+    DatagramST, DatagramWithSegmentTransition, IntoDatagramWithSegmentTransition,
+};
 pub use with_timeout::{DatagramWithTimeout, IntoDatagramWithTimeout};
 
 use std::time::Duration;
