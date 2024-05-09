@@ -58,23 +58,23 @@ message FocusSTM {
     optional uint64 transition_value = 7;
 }
 
-message ChangeGainSegment {
+message SwapSegmentGain {
     Segment segment = 1;
 }
 
-message ChangeFocusSTMSegment {
-    Segment segment = 1;
-    TransitionMode transition_mode = 2;
-    uint64 transition_value = 3;
-}
-
-message ChangeGainSTMSegment {
+message SwapSegmentModulation {
     Segment segment = 1;
     TransitionMode transition_mode = 2;
     uint64 transition_value = 3;
 }
 
-message ChangeModulationSegment {
+message SwapSegmentFocusSTM {
+    Segment segment = 1;
+    TransitionMode transition_mode = 2;
+    uint64 transition_value = 3;
+}
+
+message SwapSegmentGainSTM {
     Segment segment = 1;
     TransitionMode transition_mode = 2;
     uint64 transition_value = 3;

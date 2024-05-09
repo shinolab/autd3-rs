@@ -1,12 +1,10 @@
 mod cache;
 mod group;
-mod segment;
 mod transform;
 
 pub use cache::Cache as GainCache;
 pub use cache::IntoCache as IntoGainCache;
 pub use group::Group;
-pub use segment::ChangeGainSegment;
 pub use transform::IntoTransform as IntoGainTransform;
 pub use transform::Transform as GainTransform;
 

@@ -8,6 +8,7 @@ mod modulation;
 mod phase_filter;
 mod pulse_width_encoder;
 mod reads_fpga_state;
+pub mod segment;
 mod silencer;
 mod stm;
 mod synchronize;
@@ -20,23 +21,21 @@ pub use clk::ConfigureFPGAClock;
 pub use debug::ConfigureDebugSettings;
 pub use force_fan::ConfigureForceFan;
 pub use gain::{
-    ChangeGainSegment, Gain, GainCache, GainFilter, GainTransform, Group, IntoGainCache,
-    IntoGainTransform,
+    Gain, GainCache, GainFilter, GainTransform, Group, IntoGainCache, IntoGainTransform,
 };
 pub use gpio_in::EmulateGPIOIn;
 pub use modulation::{
-    ChangeModulationSegment, IntoModulationCache, IntoModulationTransform, IntoRadiationPressure,
-    Modulation, ModulationCache, ModulationProperty, ModulationTransform, RadiationPressure,
+    IntoModulationCache, IntoModulationTransform, IntoRadiationPressure, Modulation,
+    ModulationCache, ModulationProperty, ModulationTransform, RadiationPressure,
 };
 pub use phase_filter::ConfigurePhaseFilter;
 pub use pulse_width_encoder::ConfigurePulseWidthEncoder;
 pub use reads_fpga_state::ConfigureReadsFPGAState;
+pub use segment::SwapSegment;
 pub use silencer::{
     ConfigureSilencer, ConfigureSilencerFixedCompletionSteps, ConfigureSilencerFixedUpdateRate,
 };
-pub use stm::{
-    ChangeFocusSTMSegment, ChangeGainSTMSegment, ControlPoint, FocusSTM, GainSTM, STMProps,
-};
+pub use stm::{ControlPoint, FocusSTM, GainSTM, STMProps};
 pub use synchronize::Synchronize;
 pub use with_segment::{DatagramS, DatagramWithSegment, IntoDatagramWithSegment};
 pub use with_segment_transition::{

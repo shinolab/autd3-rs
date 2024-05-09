@@ -2,7 +2,7 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{Segment, TransitionMode},
-        operation::{cast, Operation, Remains, TypeTag},
+        operation::{cast, Remains, SwapSegmentOperation, TypeTag},
     },
     geometry::{Device, Geometry},
 };
@@ -16,26 +16,33 @@ struct ModulationUpdate {
     transition_value: u64,
 }
 
-pub struct ModulationChangeSegmentOp {
+pub struct ModulationSwapSegmentOp {
     segment: Segment,
     transition_mode: TransitionMode,
     remains: Remains,
 }
 
-impl ModulationChangeSegmentOp {
-    pub fn new(segment: Segment, transition_mode: TransitionMode) -> Self {
+impl SwapSegmentOperation for ModulationSwapSegmentOp {
+    fn new(segment: Segment, transition_mode: TransitionMode) -> Self {
         Self {
             segment,
             transition_mode,
             remains: Default::default(),
         }
     }
-}
 
-impl Operation for ModulationChangeSegmentOp {
+    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
+        self.remains.init(geometry, |_| 1);
+        Ok(())
+    }
+
+    fn required_size(&self, _: &Device) -> usize {
+        std::mem::size_of::<ModulationUpdate>()
+    }
+
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         *cast::<ModulationUpdate>(tx) = ModulationUpdate {
-            tag: TypeTag::ModulationChangeSegment,
+            tag: TypeTag::ModulationSwapSegment,
             segment: self.segment as u8,
             transition_mode: self.transition_mode.mode(),
             __padding: [0; 5],
@@ -44,15 +51,6 @@ impl Operation for ModulationChangeSegmentOp {
 
         self.remains[device] -= 1;
         Ok(std::mem::size_of::<ModulationUpdate>())
-    }
-
-    fn required_size(&self, _: &Device) -> usize {
-        std::mem::size_of::<ModulationUpdate>()
-    }
-
-    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains.init(geometry, |_| 1);
-        Ok(())
     }
 
     fn is_done(&self, device: &Device) -> bool {

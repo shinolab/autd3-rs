@@ -2,7 +2,7 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{Segment, TransitionMode},
-        operation::{cast, Operation, Remains, TypeTag},
+        operation::{cast, Remains, SwapSegmentOperation, TypeTag},
     },
     geometry::{Device, Geometry},
 };
@@ -16,26 +16,24 @@ struct GainSTMUpdate {
     transition_value: u64,
 }
 
-pub struct GainSTMChangeSegmentOp {
+pub struct GainSTMSwapSegmentOp {
     segment: Segment,
     transition_mode: TransitionMode,
     remains: Remains,
 }
 
-impl GainSTMChangeSegmentOp {
-    pub fn new(segment: Segment, transition_mode: TransitionMode) -> Self {
+impl SwapSegmentOperation for GainSTMSwapSegmentOp {
+    fn new(segment: Segment, transition_mode: TransitionMode) -> Self {
         Self {
             segment,
             transition_mode,
             remains: Default::default(),
         }
     }
-}
 
-impl Operation for GainSTMChangeSegmentOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         *cast::<GainSTMUpdate>(tx) = GainSTMUpdate {
-            tag: TypeTag::GainSTMChangeSegment,
+            tag: TypeTag::GainSTMSwapSegment,
             segment: self.segment as u8,
             transition_mode: self.transition_mode.mode(),
             __padding: [0; 5],

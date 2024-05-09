@@ -38,6 +38,8 @@ use crate::{
     geometry::{Device, Geometry},
 };
 
+use super::fpga::{Segment, TransitionMode};
+
 #[repr(u8)]
 pub enum TypeTag {
     NONE = 0x00,
@@ -46,14 +48,14 @@ pub enum TypeTag {
     FirmwareVersion = 0x03,
     ConfigFPGAClk = 0x04,
     Modulation = 0x10,
-    ModulationChangeSegment = 0x11,
+    ModulationSwapSegment = 0x11,
     Silencer = 0x20,
     Gain = 0x30,
-    GainChangeSegment = 0x31,
+    GainSwapSegment = 0x31,
     FocusSTM = 0x40,
     GainSTM = 0x41,
-    FocusSTMChangeSegment = 0x42,
-    GainSTMChangeSegment = 0x43,
+    FocusSTMSwapSegment = 0x42,
+    GainSTMSwapSegment = 0x43,
     ForceFan = 0x60,
     ReadsFPGAState = 0x61,
     ConfigPulseWidthEncoder = 0x70,
@@ -121,6 +123,32 @@ impl Operation for Box<dyn Operation> {
     }
 }
 // GRCOV_EXCL_STOP
+
+pub trait SwapSegmentOperation {
+    fn new(segment: Segment, transition_mode: TransitionMode) -> Self;
+    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError>;
+    fn required_size(&self, device: &Device) -> usize;
+    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError>;
+    fn is_done(&self, device: &Device) -> bool;
+}
+
+impl<T: SwapSegmentOperation> Operation for T {
+    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
+        self.init(geometry)
+    }
+
+    fn required_size(&self, device: &Device) -> usize {
+        self.required_size(device)
+    }
+
+    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+        self.pack(device, tx)
+    }
+
+    fn is_done(&self, device: &Device) -> bool {
+        self.is_done(device)
+    }
+}
 
 pub struct OperationHandler {}
 

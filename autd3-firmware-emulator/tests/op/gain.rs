@@ -6,7 +6,7 @@ use autd3_driver::{
     firmware::{
         cpu::{GainSTMMode, TxDatagram},
         fpga::STMSamplingConfig,
-        operation::{FocusSTMOp, GainChangeSegmentOp, GainSTMOp},
+        operation::{FocusSTMOp, GainSTMOp, GainSwapSegmentOp, SwapSegmentOperation},
     },
     geometry::Vector3,
 };
@@ -108,7 +108,7 @@ fn send_gain() -> anyhow::Result<()> {
     }
 
     {
-        let mut op = GainChangeSegmentOp::new(Segment::S1);
+        let mut op = GainSwapSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
 
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
@@ -164,13 +164,13 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     )?;
 
     {
-        let mut op = GainChangeSegmentOp::new(Segment::S0);
+        let mut op = GainSwapSegmentOp::new(Segment::S0, TransitionMode::Immidiate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, &mut op, &geometry, &mut tx)
         );
 
-        let mut op = GainChangeSegmentOp::new(Segment::S1);
+        let mut op = GainSwapSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, &mut op, &geometry, &mut tx)
