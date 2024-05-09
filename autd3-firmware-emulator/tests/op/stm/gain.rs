@@ -192,42 +192,50 @@ fn send_gain_stm_phase_half(n: usize) -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let bufs = gen_random_buf(n, &geometry);
+    [
+        (Segment::S1, GPIOIn::I0),
+        (Segment::S0, GPIOIn::I1),
+        (Segment::S1, GPIOIn::I2),
+        (Segment::S0, GPIOIn::I3),
+    ]
+    .into_iter()
+    .for_each(|(segment, gpio)| {
+        let bufs = gen_random_buf(n, &geometry);
 
-    let loop_behavior = LoopBehavior::once();
-    let segment = Segment::S1;
-    let transition_mode = TransitionMode::GPIO(GPIOIn::I0);
-    let mut op = GainSTMOp::new(
-        bufs.iter()
-            .map(|buf| TestGain { buf: buf.clone() })
-            .collect(),
-        GainSTMMode::PhaseHalf,
-        STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(
-            SAMPLING_FREQ_DIV_MIN
-                * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
-        )),
-        loop_behavior,
-        segment,
-        Some(transition_mode),
-    );
+        let loop_behavior = LoopBehavior::once();
+        let transition_mode = TransitionMode::GPIO(gpio);
+        let mut op = GainSTMOp::new(
+            bufs.iter()
+                .map(|buf| TestGain { buf: buf.clone() })
+                .collect(),
+            GainSTMMode::PhaseHalf,
+            STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(
+                SAMPLING_FREQ_DIV_MIN
+                    * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
+            )),
+            loop_behavior,
+            segment,
+            Some(transition_mode),
+        );
 
-    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-    (0..bufs.len()).for_each(|gain_idx| {
-        cpu.fpga()
-            .drives(segment, gain_idx)
-            .iter()
-            .enumerate()
-            .for_each(|(i, &drive)| {
-                assert_eq!(EmitIntensity::MAX, drive.intensity());
-                assert_eq!(
-                    bufs[gain_idx][&0][i].phase().value() >> 4,
-                    drive.phase().value() >> 4
-                );
-            });
-        assert_eq!(segment, cpu.fpga().current_stm_segment());
-        assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
-        assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
+        (0..bufs.len()).for_each(|gain_idx| {
+            cpu.fpga()
+                .drives(segment, gain_idx)
+                .iter()
+                .enumerate()
+                .for_each(|(i, &drive)| {
+                    assert_eq!(EmitIntensity::MAX, drive.intensity());
+                    assert_eq!(
+                        bufs[gain_idx][&0][i].phase().value() >> 4,
+                        drive.phase().value() >> 4
+                    );
+                });
+            assert_eq!(segment, cpu.fpga().current_stm_segment());
+            assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
+            assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
+        });
     });
 
     Ok(())
