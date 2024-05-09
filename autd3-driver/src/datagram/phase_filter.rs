@@ -6,11 +6,11 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy)]
-pub struct ConfigurePhaseFilter<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
+pub struct PhaseFilter<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
     f: F,
 }
 
-impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> ConfigurePhaseFilter<FT, F> {
+impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> PhaseFilter<FT, F> {
     /// constructor
     pub const fn additive(f: F) -> Self {
         Self { f }
@@ -23,8 +23,8 @@ impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> ConfigurePhaseFilter<FT
     // GRCOV_EXCL_STOP
 }
 
-impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> Datagram for ConfigurePhaseFilter<FT, F> {
-    type O1 = crate::firmware::operation::ConfigurePhaseFilterOp<FT, F>;
+impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> Datagram for PhaseFilter<FT, F> {
+    type O1 = crate::firmware::operation::PhaseFilterOp<FT, F>;
     type O2 = crate::firmware::operation::NullOp;
 
     fn operation(self) -> (Self::O1, Self::O2) {
@@ -48,7 +48,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let datagram = ConfigurePhaseFilter::additive(f);
+        let datagram = PhaseFilter::additive(f);
         assert_eq!(Some(DEFAULT_TIMEOUT), datagram.timeout());
         let _ = datagram.operation();
     }

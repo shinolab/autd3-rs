@@ -7,17 +7,17 @@ use crate::{
 use super::Remains;
 
 #[repr(C, align(2))]
-struct ConfigureReadsFPGAState {
+struct ReadsFPGAState {
     tag: TypeTag,
     value: bool,
 }
 
-pub struct ConfigureReadsFPGAStateOp<F: Fn(&Device) -> bool> {
+pub struct ReadsFPGAStateOp<F: Fn(&Device) -> bool> {
     remains: Remains,
     f: F,
 }
 
-impl<F: Fn(&Device) -> bool> ConfigureReadsFPGAStateOp<F> {
+impl<F: Fn(&Device) -> bool> ReadsFPGAStateOp<F> {
     pub fn new(f: F) -> Self {
         Self {
             remains: Default::default(),
@@ -26,19 +26,19 @@ impl<F: Fn(&Device) -> bool> ConfigureReadsFPGAStateOp<F> {
     }
 }
 
-impl<F: Fn(&Device) -> bool> Operation for ConfigureReadsFPGAStateOp<F> {
+impl<F: Fn(&Device) -> bool> Operation for ReadsFPGAStateOp<F> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        *cast::<ConfigureReadsFPGAState>(tx) = ConfigureReadsFPGAState {
+        *cast::<ReadsFPGAState>(tx) = ReadsFPGAState {
             tag: TypeTag::ReadsFPGAState,
             value: (self.f)(device),
         };
 
         self.remains[device] -= 1;
-        Ok(std::mem::size_of::<ConfigureReadsFPGAState>())
+        Ok(std::mem::size_of::<ReadsFPGAState>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        std::mem::size_of::<ConfigureReadsFPGAState>()
+        std::mem::size_of::<ReadsFPGAState>()
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
@@ -65,7 +65,7 @@ mod tests {
 
         let mut tx = [0x00u8; 2 * NUM_DEVICE];
 
-        let mut op = ConfigureReadsFPGAStateOp::new(|dev| dev.idx() == 0);
+        let mut op = ReadsFPGAStateOp::new(|dev| dev.idx() == 0);
 
         assert!(op.init(&geometry).is_ok());
 

@@ -8,31 +8,31 @@ import "utils-lightweight.proto";
 
 message Clear {}
 
-message ConfigureSilencerFixedUpdateRate {
+message SilencerFixedUpdateRate {
       uint32 value_intensity = 1;
       uint32 value_phase = 2;
 }
 
-message ConfigureSilencerFixedCompletionSteps {
+message SilencerFixedCompletionSteps {
       uint32 value_intensity = 1;
       uint32 value_phase = 2;
       bool strict_mode = 3;
 }
 
-message ConfigureSilencer {
+message Silencer {
     oneof config {
-        ConfigureSilencerFixedUpdateRate fixed_update_rate = 1;
-        ConfigureSilencerFixedCompletionSteps fixed_completion_steps = 2;
+        SilencerFixedUpdateRate fixed_update_rate = 1;
+        SilencerFixedCompletionSteps fixed_completion_steps = 2;
     }
 }
 
 message Synchronize {}
 
-message ConfigureForceFan {
+message ForceFan {
     repeated bool value = 1;
 }
 
-message ConfigureReadsFPGAState {
+message ReadsFPGAState {
     repeated bool value = 1;
 }
 

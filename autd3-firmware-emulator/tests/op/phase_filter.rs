@@ -1,6 +1,6 @@
 use autd3_driver::{
     derive::Phase,
-    firmware::{cpu::TxDatagram, operation::ConfigurePhaseFilterOp},
+    firmware::{cpu::TxDatagram, operation::PhaseFilterOp},
 };
 use autd3_firmware_emulator::CPUEmulator;
 
@@ -19,7 +19,7 @@ fn send_phase_filter() -> anyhow::Result<()> {
     let phase_offsets: Vec<_> = (0..cpu.num_transducers())
         .map(|_| Phase::new(rng.gen()))
         .collect();
-    let mut op = ConfigurePhaseFilterOp::new(|_| |tr| phase_offsets[tr.idx()]);
+    let mut op = PhaseFilterOp::new(|_| |tr| phase_offsets[tr.idx()]);
 
     assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 

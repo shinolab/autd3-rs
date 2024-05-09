@@ -18,8 +18,8 @@ mod with_timeout;
 
 pub use clear::Clear;
 pub use clk::ConfigureFPGAClock;
-pub use debug::ConfigureDebugSettings;
-pub use force_fan::ConfigureForceFan;
+pub use debug::DebugSettings;
+pub use force_fan::ForceFan;
 pub use gain::{
     Gain, GainCache, GainFilter, GainTransform, Group, IntoGainCache, IntoGainTransform,
 };
@@ -28,13 +28,11 @@ pub use modulation::{
     IntoModulationCache, IntoModulationTransform, IntoRadiationPressure, Modulation,
     ModulationCache, ModulationProperty, ModulationTransform, RadiationPressure,
 };
-pub use phase_filter::ConfigurePhaseFilter;
-pub use pulse_width_encoder::ConfigurePulseWidthEncoder;
-pub use reads_fpga_state::ConfigureReadsFPGAState;
+pub use phase_filter::PhaseFilter;
+pub use pulse_width_encoder::PulseWidthEncoder;
+pub use reads_fpga_state::ReadsFPGAState;
 pub use segment::SwapSegment;
-pub use silencer::{
-    ConfigureSilencer, ConfigureSilencerFixedCompletionSteps, ConfigureSilencerFixedUpdateRate,
-};
+pub use silencer::{Silencer, SilencerFixedCompletionSteps, SilencerFixedUpdateRate};
 pub use stm::{ControlPoint, FocusSTM, GainSTM, STMProps};
 pub use synchronize::Synchronize;
 pub use with_segment::{DatagramS, DatagramWithSegment, IntoDatagramWithSegment};

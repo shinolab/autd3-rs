@@ -1395,7 +1395,7 @@ pub mod modulation {
 pub struct Clear {}
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ConfigureSilencerFixedUpdateRate {
+pub struct SilencerFixedUpdateRate {
     #[prost(uint32, tag = "1")]
     pub value_intensity: u32,
     #[prost(uint32, tag = "2")]
@@ -1403,7 +1403,7 @@ pub struct ConfigureSilencerFixedUpdateRate {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ConfigureSilencerFixedCompletionSteps {
+pub struct SilencerFixedCompletionSteps {
     #[prost(uint32, tag = "1")]
     pub value_intensity: u32,
     #[prost(uint32, tag = "2")]
@@ -1413,19 +1413,19 @@ pub struct ConfigureSilencerFixedCompletionSteps {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ConfigureSilencer {
-    #[prost(oneof = "configure_silencer::Config", tags = "1, 2")]
-    pub config: ::core::option::Option<configure_silencer::Config>,
+pub struct Silencer {
+    #[prost(oneof = "silencer::Config", tags = "1, 2")]
+    pub config: ::core::option::Option<silencer::Config>,
 }
-/// Nested message and enum types in `ConfigureSilencer`.
-pub mod configure_silencer {
+/// Nested message and enum types in `Silencer`.
+pub mod silencer {
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Config {
         #[prost(message, tag = "1")]
-        FixedUpdateRate(super::ConfigureSilencerFixedUpdateRate),
+        FixedUpdateRate(super::SilencerFixedUpdateRate),
         #[prost(message, tag = "2")]
-        FixedCompletionSteps(super::ConfigureSilencerFixedCompletionSteps),
+        FixedCompletionSteps(super::SilencerFixedCompletionSteps),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -1433,13 +1433,13 @@ pub mod configure_silencer {
 pub struct Synchronize {}
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ConfigureForceFan {
+pub struct ForceFan {
     #[prost(bool, repeated, tag = "1")]
     pub value: ::prost::alloc::vec::Vec<bool>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ConfigureReadsFpgaState {
+pub struct ReadsFpgaState {
     #[prost(bool, repeated, tag = "1")]
     pub value: ::prost::alloc::vec::Vec<bool>,
 }
@@ -1537,7 +1537,7 @@ pub mod datagram_lightweight {
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Datagram {
         #[prost(message, tag = "1")]
-        Silencer(super::ConfigureSilencer),
+        Silencer(super::Silencer),
         #[prost(message, tag = "2")]
         Modulation(super::Modulation),
         #[prost(message, tag = "3")]
@@ -1547,9 +1547,9 @@ pub mod datagram_lightweight {
         #[prost(message, tag = "5")]
         Synchronize(super::Synchronize),
         #[prost(message, tag = "6")]
-        ForceFan(super::ConfigureForceFan),
+        ForceFan(super::ForceFan),
         #[prost(message, tag = "8")]
-        ReadsFpgaState(super::ConfigureReadsFpgaState),
+        ReadsFpgaState(super::ReadsFpgaState),
         #[prost(message, tag = "10")]
         FocusStm(super::FocusStm),
         #[prost(message, tag = "11")]

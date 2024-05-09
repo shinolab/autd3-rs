@@ -8,7 +8,7 @@ use std::{
 };
 
 pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
-    autd.send(ConfigureSilencer::default()).await?;
+    autd.send(Silencer::default()).await?;
 
     let m = Sine::new(150.);
 

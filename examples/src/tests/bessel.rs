@@ -1,7 +1,7 @@
 use autd3::prelude::*;
 
 pub async fn bessel(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
-    autd.send(ConfigureSilencer::default()).await?;
+    autd.send(Silencer::default()).await?;
 
     let center = autd.geometry.center();
     let dir = Vector3::z();

@@ -7,17 +7,17 @@ use crate::{
 use super::Remains;
 
 #[repr(C, align(2))]
-struct ConfigureForceFan {
+struct ForceFan {
     tag: TypeTag,
     value: bool,
 }
 
-pub struct ConfigureForceFanOp<F: Fn(&Device) -> bool> {
+pub struct ForceFanOp<F: Fn(&Device) -> bool> {
     remains: Remains,
     f: F,
 }
 
-impl<F: Fn(&Device) -> bool> ConfigureForceFanOp<F> {
+impl<F: Fn(&Device) -> bool> ForceFanOp<F> {
     pub fn new(f: F) -> Self {
         Self {
             remains: Default::default(),
@@ -26,19 +26,19 @@ impl<F: Fn(&Device) -> bool> ConfigureForceFanOp<F> {
     }
 }
 
-impl<F: Fn(&Device) -> bool> Operation for ConfigureForceFanOp<F> {
+impl<F: Fn(&Device) -> bool> Operation for ForceFanOp<F> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        *cast::<ConfigureForceFan>(tx) = ConfigureForceFan {
+        *cast::<ForceFan>(tx) = ForceFan {
             tag: TypeTag::ForceFan,
             value: (self.f)(device),
         };
 
         self.remains[device] -= 1;
-        Ok(std::mem::size_of::<ConfigureForceFan>())
+        Ok(std::mem::size_of::<ForceFan>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        std::mem::size_of::<ConfigureForceFan>()
+        std::mem::size_of::<ForceFan>()
     }
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
@@ -65,7 +65,7 @@ mod tests {
 
         let mut tx = [0x00u8; 2 * NUM_DEVICE];
 
-        let mut op = ConfigureForceFanOp::new(|dev| dev.idx() == 0);
+        let mut op = ForceFanOp::new(|dev| dev.idx() == 0);
 
         assert!(op.init(&geometry).is_ok());
 

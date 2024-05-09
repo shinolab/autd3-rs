@@ -1,7 +1,7 @@
 use std::{collections::HashMap, time::Duration};
 
 use autd3_driver::{
-    datagram::{ConfigureSilencer, ControlPoint, Datagram},
+    datagram::{Silencer, ControlPoint, Datagram},
     defined::{METER, MILLIMETER},
     derive::{DatagramS, Drive, LoopBehavior, Phase, SamplingConfig, Segment},
     error::AUTDInternalError,
@@ -219,7 +219,7 @@ fn test_focus_stm_freq_div_too_small() -> anyhow::Result<()> {
         let (mut op, _) = g.operation_with_segment(Segment::S0, true);
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-        let (mut op, _) = ConfigureSilencer::fixed_completion_steps(
+        let (mut op, _) = Silencer::fixed_completion_steps(
             SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT,
         )?
@@ -238,7 +238,7 @@ fn test_focus_stm_freq_div_too_small() -> anyhow::Result<()> {
         );
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-        let (mut op, _) = ConfigureSilencer::fixed_completion_steps(
+        let (mut op, _) = Silencer::fixed_completion_steps(
             SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT * 2,
         )?

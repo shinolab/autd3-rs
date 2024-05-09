@@ -14,7 +14,7 @@ async fn audit_test() -> anyhow::Result<()> {
     assert_eq!(Some(DEFAULT_TIMEOUT), autd.link.last_timeout());
 
     assert_eq!(vec![None], autd.fpga_state().await?);
-    assert!(autd.send(ConfigureReadsFPGAState::new(|_| true)).await?);
+    assert!(autd.send(ReadsFPGAState::new(|_| true)).await?);
     autd.link[0].update();
     assert_eq!(
         vec![Option::<FPGAState>::from(&RxMessage::new(0x00, 0x88))],

@@ -1,7 +1,7 @@
 use autd3::prelude::*;
 
 pub async fn custom(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
-    autd.send(ConfigureSilencer::disable()).await?;
+    autd.send(Silencer::disable()).await?;
 
     let m = autd3::modulation::Custom::new(SamplingConfig::DISABLE, |dev| match dev.idx() {
         0 => Ok(vec![0xFF, 0xFF]),

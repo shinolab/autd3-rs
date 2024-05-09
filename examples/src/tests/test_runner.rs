@@ -70,10 +70,7 @@ pub async fn run<L: Link>(mut autd: Controller<L>) -> anyhow::Result<()> {
         let mut _s = String::new();
         io::stdin().read_line(&mut _s)?;
 
-        if !autd
-            .send((Null::default(), ConfigureSilencer::default()))
-            .await?
-        {
+        if !autd.send((Null::default(), Silencer::default())).await? {
             eprintln!("Failed to stop");
         }
     }

@@ -1,11 +1,11 @@
 use crate::{datagram::*, defined::DEFAULT_TIMEOUT, geometry::Device};
 
 /// Datagram for configure reads_fpga_state
-pub struct ConfigureReadsFPGAState<F: Fn(&Device) -> bool> {
+pub struct ReadsFPGAState<F: Fn(&Device) -> bool> {
     f: F,
 }
 
-impl<F: Fn(&Device) -> bool> ConfigureReadsFPGAState<F> {
+impl<F: Fn(&Device) -> bool> ReadsFPGAState<F> {
     /// constructor
     pub const fn new(f: F) -> Self {
         Self { f }
@@ -18,8 +18,8 @@ impl<F: Fn(&Device) -> bool> ConfigureReadsFPGAState<F> {
     // GRCOV_EXCL_STOP
 }
 
-impl<F: Fn(&Device) -> bool> Datagram for ConfigureReadsFPGAState<F> {
-    type O1 = crate::firmware::operation::ConfigureReadsFPGAStateOp<F>;
+impl<F: Fn(&Device) -> bool> Datagram for ReadsFPGAState<F> {
+    type O1 = crate::firmware::operation::ReadsFPGAStateOp<F>;
     type O2 = crate::firmware::operation::NullOp;
 
     fn operation(self) -> (Self::O1, Self::O2) {
@@ -43,7 +43,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let datagram = ConfigureReadsFPGAState::new(f);
+        let datagram = ReadsFPGAState::new(f);
         let _ = datagram.operation();
     }
 }

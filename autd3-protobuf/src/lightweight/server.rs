@@ -123,19 +123,19 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
 
     async fn send_silencer(
         autd: &mut autd3::Controller<L::L>,
-        msg: &ConfigureSilencer,
+        msg: &Silencer,
     ) -> Result<bool, AUTDError> {
         Ok(match msg.config {
-            Some(configure_silencer::Config::FixedUpdateRate(ref msg)) => {
+            Some(silencer::Config::FixedUpdateRate(ref msg)) => {
                 autd.send(
-                    autd3_driver::datagram::ConfigureSilencerFixedUpdateRate::from_msg(msg)
+                    autd3_driver::datagram::SilencerFixedUpdateRate::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?,
                 )
                 .await?
             }
-            Some(configure_silencer::Config::FixedCompletionSteps(ref msg)) => {
+            Some(silencer::Config::FixedCompletionSteps(ref msg)) => {
                 autd.send(
-                    autd3_driver::datagram::ConfigureSilencerFixedCompletionSteps::from_msg(msg)
+                    autd3_driver::datagram::SilencerFixedCompletionSteps::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?,
                 )
                 .await?
@@ -439,14 +439,14 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                 }
                 Some(datagram_lightweight::Datagram::ForceFan(ref msg)) => {
                     autd.send(
-                        autd3_driver::datagram::ConfigureForceFan::from_msg(msg)
+                        autd3_driver::datagram::ForceFan::from_msg(msg)
                             .ok_or(AUTDProtoBufError::DataParseError)?,
                     )
                     .await
                 }
                 Some(datagram_lightweight::Datagram::ReadsFpgaState(ref msg)) => {
                     autd.send(
-                        autd3_driver::datagram::ConfigureReadsFPGAState::from_msg(msg)
+                        autd3_driver::datagram::ReadsFPGAState::from_msg(msg)
                             .ok_or(AUTDProtoBufError::DataParseError)?,
                     )
                     .await

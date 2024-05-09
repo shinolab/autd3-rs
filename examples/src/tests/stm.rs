@@ -1,7 +1,7 @@
 use autd3::prelude::*;
 
 pub async fn focus_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
-    autd.send(ConfigureSilencer::disable()).await?;
+    autd.send(Silencer::disable()).await?;
 
     let center = autd.geometry.center() + Vector3::new(0., 0., 150.0 * MILLIMETER);
 
@@ -21,7 +21,7 @@ pub async fn focus_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool>
 }
 
 pub async fn gain_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
-    autd.send(ConfigureSilencer::disable()).await?;
+    autd.send(Silencer::disable()).await?;
 
     let center = autd.geometry.center() + Vector3::new(0., 0., 150.0 * MILLIMETER);
 

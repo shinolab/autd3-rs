@@ -11,13 +11,13 @@ import "datagram.proto";
 
 message DatagramLightweight {
   oneof datagram {
-    ConfigureSilencer silencer = 1;
+    Silencer silencer = 1;
     Modulation modulation = 2;
     Gain gain = 3;
     Clear clear = 4;
     Synchronize synchronize = 5;
-    ConfigureForceFan force_fan = 6;
-    ConfigureReadsFPGAState reads_fpga_state = 8;
+    ForceFan force_fan = 6;
+    ReadsFPGAState reads_fpga_state = 8;
     FocusSTM focus_stm = 10;
     GainSTM gain_stm = 11;
     SwapSegmentGain swap_segment_gain = 12;

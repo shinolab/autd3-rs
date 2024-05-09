@@ -24,7 +24,7 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
 
     assert!(!cpu.reads_fpga_state());
 
-    let (mut op, _) = ConfigureReadsFPGAState::new(|_| true).operation();
+    let (mut op, _) = ReadsFPGAState::new(|_| true).operation();
 
     assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
