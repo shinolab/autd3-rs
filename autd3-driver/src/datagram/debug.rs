@@ -6,11 +6,11 @@ use crate::{
 };
 
 /// Datagram for configure debug_output_idx
-pub struct ConfigureDebugSettings<F: Fn(&Device, GPIOOut) -> DebugType> {
+pub struct DebugSettings<F: Fn(&Device, GPIOOut) -> DebugType> {
     f: F,
 }
 
-impl<F: Fn(&Device, GPIOOut) -> DebugType> ConfigureDebugSettings<F> {
+impl<F: Fn(&Device, GPIOOut) -> DebugType> DebugSettings<F> {
     /// constructor
     pub const fn new(f: F) -> Self {
         Self { f }
@@ -23,7 +23,7 @@ impl<F: Fn(&Device, GPIOOut) -> DebugType> ConfigureDebugSettings<F> {
     // GRCOV_EXCL_STOP
 }
 
-impl<F: Fn(&Device, GPIOOut) -> DebugType> Datagram for ConfigureDebugSettings<F> {
+impl<F: Fn(&Device, GPIOOut) -> DebugType> Datagram for DebugSettings<F> {
     type O1 = crate::firmware::operation::DebugSettingOp<F>;
     type O2 = crate::firmware::operation::NullOp;
 
@@ -50,7 +50,7 @@ mod tests {
 
     #[test]
     fn test_timeout() {
-        let d = ConfigureDebugSettings::new(f);
+        let d = DebugSettings::new(f);
         let timeout = d.timeout();
         assert!(timeout.is_some());
         assert!(timeout.unwrap() > Duration::ZERO);
@@ -58,7 +58,7 @@ mod tests {
 
     #[test]
     fn test_operation() {
-        let d = ConfigureDebugSettings::new(f);
+        let d = DebugSettings::new(f);
         let _: (DebugSettingOp<_>, NullOp) = d.operation();
     }
 }

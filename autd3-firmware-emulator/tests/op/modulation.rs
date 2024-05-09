@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use autd3_driver::{
-    datagram::ConfigureSilencer,
+    datagram::Silencer,
     derive::*,
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
@@ -192,7 +192,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         );
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-        let (mut op, _) = ConfigureSilencer::fixed_completion_steps(
+        let (mut op, _) = Silencer::fixed_completion_steps(
             SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT,
         )?
@@ -213,7 +213,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         );
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-        let (mut op, _) = ConfigureSilencer::fixed_completion_steps(
+        let (mut op, _) = Silencer::fixed_completion_steps(
             SILENCER_STEPS_PHASE_DEFAULT * 2,
             SILENCER_STEPS_PHASE_DEFAULT,
         )?

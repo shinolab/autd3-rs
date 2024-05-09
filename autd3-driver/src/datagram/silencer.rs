@@ -46,14 +46,14 @@ pub struct FixedUpdateRate {
 
 /// Datagram for configure silencer
 #[derive(Debug, Clone, Copy)]
-pub struct ConfigureSilencer<T> {
+pub struct Silencer<T> {
     internal: T,
 }
 
-pub type ConfigureSilencerFixedCompletionSteps = ConfigureSilencer<FixedCompletionSteps>;
-pub type ConfigureSilencerFixedUpdateRate = ConfigureSilencer<FixedUpdateRate>;
+pub type SilencerFixedCompletionSteps = Silencer<FixedCompletionSteps>;
+pub type SilencerFixedUpdateRate = Silencer<FixedUpdateRate>;
 
-impl ConfigureSilencer<()> {
+impl Silencer<()> {
     /// constructor
     ///
     /// # Arguments
@@ -62,7 +62,7 @@ impl ConfigureSilencer<()> {
     pub fn fixed_update_rate(
         update_rate_intensity: u16,
         update_rate_phase: u16,
-    ) -> Result<ConfigureSilencer<FixedUpdateRate>, AUTDInternalError> {
+    ) -> Result<Silencer<FixedUpdateRate>, AUTDInternalError> {
         if !(SILENCER_VALUE_MIN..=SILENCER_VALUE_MAX).contains(&update_rate_intensity) {
             return Err(AUTDInternalError::SilencerUpdateRateOutOfRange(
                 update_rate_intensity,
@@ -73,7 +73,7 @@ impl ConfigureSilencer<()> {
                 update_rate_phase,
             ));
         }
-        Ok(ConfigureSilencer {
+        Ok(Silencer {
             internal: FixedUpdateRate {
                 update_rate_intensity,
                 update_rate_phase,
@@ -89,7 +89,7 @@ impl ConfigureSilencer<()> {
     pub fn fixed_completion_steps(
         steps_intensity: u16,
         steps_phase: u16,
-    ) -> Result<ConfigureSilencer<FixedCompletionSteps>, AUTDInternalError> {
+    ) -> Result<Silencer<FixedCompletionSteps>, AUTDInternalError> {
         if !(SILENCER_VALUE_MIN..=SILENCER_VALUE_MAX).contains(&steps_intensity) {
             return Err(AUTDInternalError::SilencerCompletionStepsOutOfRange(
                 steps_intensity,
@@ -100,7 +100,7 @@ impl ConfigureSilencer<()> {
                 steps_phase,
             ));
         }
-        Ok(ConfigureSilencer {
+        Ok(Silencer {
             internal: FixedCompletionSteps {
                 steps_intensity,
                 steps_phase,
@@ -110,8 +110,8 @@ impl ConfigureSilencer<()> {
     }
 
     /// Disable silencer
-    pub const fn disable() -> ConfigureSilencer<FixedCompletionSteps> {
-        ConfigureSilencer {
+    pub const fn disable() -> Silencer<FixedCompletionSteps> {
+        Silencer {
             internal: FixedCompletionSteps {
                 steps_intensity: 1,
                 steps_phase: 1,
@@ -121,35 +121,35 @@ impl ConfigureSilencer<()> {
     }
 }
 
-impl<T> std::ops::Mul<u16> for ConfigureSilencer<T>
+impl<T> std::ops::Mul<u16> for Silencer<T>
 where
     T: std::ops::Mul<u16, Output = T>,
 {
-    type Output = ConfigureSilencer<T>;
+    type Output = Silencer<T>;
 
     fn mul(self, rhs: u16) -> Self::Output {
-        ConfigureSilencer {
+        Silencer {
             internal: self.internal * rhs,
         }
     }
 }
 
-impl<T> std::ops::Div<u16> for ConfigureSilencer<T>
+impl<T> std::ops::Div<u16> for Silencer<T>
 where
     T: std::ops::Div<u16, Output = T>,
 {
-    type Output = ConfigureSilencer<T>;
+    type Output = Silencer<T>;
 
     fn div(self, rhs: u16) -> Self::Output {
-        ConfigureSilencer {
+        Silencer {
             internal: self.internal / rhs,
         }
     }
 }
 
-impl Default for ConfigureSilencer<FixedCompletionSteps> {
+impl Default for Silencer<FixedCompletionSteps> {
     fn default() -> Self {
-        ConfigureSilencer {
+        Silencer {
             internal: FixedCompletionSteps {
                 steps_intensity: SILENCER_STEPS_INTENSITY_DEFAULT,
                 steps_phase: SILENCER_STEPS_PHASE_DEFAULT,
@@ -159,7 +159,7 @@ impl Default for ConfigureSilencer<FixedCompletionSteps> {
     }
 }
 
-impl ConfigureSilencer<FixedCompletionSteps> {
+impl Silencer<FixedCompletionSteps> {
     /// Set strict mode
     pub const fn with_strict_mode(mut self, strict_mode: bool) -> Self {
         self.internal.strict_mode = strict_mode;
@@ -179,7 +179,7 @@ impl ConfigureSilencer<FixedCompletionSteps> {
     }
 }
 
-impl ConfigureSilencer<FixedUpdateRate> {
+impl Silencer<FixedUpdateRate> {
     pub const fn update_rate_intensity(&self) -> u16 {
         self.internal.update_rate_intensity
     }
@@ -189,7 +189,7 @@ impl ConfigureSilencer<FixedUpdateRate> {
     }
 }
 
-impl Datagram for ConfigureSilencer<FixedUpdateRate> {
+impl Datagram for Silencer<FixedUpdateRate> {
     type O1 = crate::firmware::operation::ConfigSilencerFixedUpdateRateOp;
     type O2 = crate::firmware::operation::NullOp;
 
@@ -208,7 +208,7 @@ impl Datagram for ConfigureSilencer<FixedUpdateRate> {
     }
 }
 
-impl Datagram for ConfigureSilencer<FixedCompletionSteps> {
+impl Datagram for Silencer<FixedCompletionSteps> {
     type O1 = crate::firmware::operation::ConfigSilencerFixedCompletionStepsOp;
     type O2 = crate::firmware::operation::NullOp;
 
@@ -234,7 +234,7 @@ mod tests {
 
     #[test]
     fn test_update_rate() {
-        let silencer = ConfigureSilencer::fixed_update_rate(10, 20).unwrap();
+        let silencer = Silencer::fixed_update_rate(10, 20).unwrap();
         assert_eq!(silencer.update_rate_intensity(), 10);
         assert_eq!(silencer.update_rate_phase(), 20);
         assert_eq!(
@@ -246,13 +246,13 @@ mod tests {
             silencer.clone().update_rate_phase()
         );
 
-        let silencer = ConfigureSilencer::fixed_update_rate(0, 1);
+        let silencer = Silencer::fixed_update_rate(0, 1);
         assert_eq!(
             silencer.unwrap_err(),
             AUTDInternalError::SilencerUpdateRateOutOfRange(0)
         );
 
-        let silencer = ConfigureSilencer::fixed_update_rate(1, 0);
+        let silencer = Silencer::fixed_update_rate(1, 0);
         assert_eq!(
             silencer.unwrap_err(),
             AUTDInternalError::SilencerUpdateRateOutOfRange(0)
@@ -261,7 +261,7 @@ mod tests {
 
     #[test]
     fn test_completion_steps() {
-        let silencer = ConfigureSilencer::fixed_completion_steps(10, 20).unwrap();
+        let silencer = Silencer::fixed_completion_steps(10, 20).unwrap();
         assert_eq!(silencer.completion_steps_intensity(), 10);
         assert_eq!(silencer.completion_steps_phase(), 20);
         assert_eq!(
@@ -273,13 +273,13 @@ mod tests {
             silencer.clone().completion_steps_phase()
         );
 
-        let silencer = ConfigureSilencer::fixed_completion_steps(0, 1);
+        let silencer = Silencer::fixed_completion_steps(0, 1);
         assert_eq!(
             silencer.unwrap_err(),
             AUTDInternalError::SilencerCompletionStepsOutOfRange(0)
         );
 
-        let silencer = ConfigureSilencer::fixed_completion_steps(1, 0);
+        let silencer = Silencer::fixed_completion_steps(1, 0);
         assert_eq!(
             silencer.unwrap_err(),
             AUTDInternalError::SilencerCompletionStepsOutOfRange(0)
@@ -288,7 +288,7 @@ mod tests {
 
     #[test]
     fn test_disable() {
-        let silencer = ConfigureSilencer::disable();
+        let silencer = Silencer::disable();
         assert_eq!(silencer.completion_steps_intensity(), 1);
         assert_eq!(silencer.completion_steps_phase(), 1);
         assert!(silencer.strict_mode());
@@ -296,7 +296,7 @@ mod tests {
 
     #[test]
     fn test_default() {
-        let silencer = ConfigureSilencer::default();
+        let silencer = Silencer::default();
         assert_eq!(
             silencer.completion_steps_intensity(),
             SILENCER_STEPS_INTENSITY_DEFAULT
@@ -310,7 +310,7 @@ mod tests {
 
     #[test]
     fn test_completion_steps_mul_div() {
-        let silencer = ConfigureSilencer::default();
+        let silencer = Silencer::default();
         assert_eq!(
             silencer.completion_steps_intensity(),
             SILENCER_STEPS_INTENSITY_DEFAULT
@@ -320,7 +320,7 @@ mod tests {
             SILENCER_STEPS_PHASE_DEFAULT
         );
 
-        let silencer = ConfigureSilencer::default() * 2;
+        let silencer = Silencer::default() * 2;
         assert_eq!(
             silencer.completion_steps_intensity(),
             SILENCER_STEPS_INTENSITY_DEFAULT * 2
@@ -330,7 +330,7 @@ mod tests {
             SILENCER_STEPS_PHASE_DEFAULT * 2
         );
 
-        let silencer = ConfigureSilencer::default() / 2;
+        let silencer = Silencer::default() / 2;
         assert_eq!(
             silencer.completion_steps_intensity(),
             SILENCER_STEPS_INTENSITY_DEFAULT / 2
@@ -343,12 +343,12 @@ mod tests {
 
     #[test]
     fn test_timeout() {
-        let silencer = ConfigureSilencer::fixed_update_rate(1, 2).unwrap();
+        let silencer = Silencer::fixed_update_rate(1, 2).unwrap();
         let timeout = silencer.timeout();
         assert!(timeout.is_some());
         assert!(timeout.unwrap() > Duration::ZERO);
 
-        let silencer = ConfigureSilencer::fixed_completion_steps(1, 2).unwrap();
+        let silencer = Silencer::fixed_completion_steps(1, 2).unwrap();
         let timeout = silencer.timeout();
         assert!(timeout.is_some());
         assert!(timeout.unwrap() > Duration::ZERO);
@@ -356,13 +356,13 @@ mod tests {
 
     #[test]
     fn test_operation() {
-        let silencer = ConfigureSilencer::fixed_update_rate(1, 2).unwrap();
+        let silencer = Silencer::fixed_update_rate(1, 2).unwrap();
         let _: (
             crate::firmware::operation::ConfigSilencerFixedUpdateRateOp,
             crate::firmware::operation::NullOp,
         ) = silencer.operation();
 
-        let silencer = ConfigureSilencer::fixed_completion_steps(1, 2).unwrap();
+        let silencer = Silencer::fixed_completion_steps(1, 2).unwrap();
         let _: (
             crate::firmware::operation::ConfigSilencerFixedCompletionStepsOp,
             crate::firmware::operation::NullOp,

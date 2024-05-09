@@ -4,7 +4,7 @@ mod group;
 use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
-    datagram::{Clear, ConfigureSilencer, Datagram},
+    datagram::{Clear, Datagram, Silencer},
     defined::DEFAULT_TIMEOUT,
     firmware::{
         cpu::{RxMessage, TxDatagram},
@@ -87,9 +87,7 @@ impl<L: Link> Controller<L> {
             return Ok(true);
         }
         self.geometry.iter_mut().for_each(|dev| dev.enable = true);
-        let res = self
-            .send((Null::default(), ConfigureSilencer::default()))
-            .await?
+        let res = self.send((Null::default(), Silencer::default())).await?
             & self.send(Clear::new()).await?;
         self.link.close().await?;
         Ok(res)
@@ -202,7 +200,7 @@ impl<L: Link> Controller<L> {
     ///
     /// # Returns
     ///
-    /// * `Ok(Vec<Option<FPGAState>>)` - List of FPGA state the latest data is fetched. If the reads FPGA state flag is not set, the value is None. See [autd3_driver::datagram::ConfigureReadsFPGAState].
+    /// * `Ok(Vec<Option<FPGAState>>)` - List of FPGA state the latest data is fetched. If the reads FPGA state flag is not set, the value is None. See [autd3_driver::datagram::ReadsFPGAState].
     /// * `Err(AUTDError::ReadFPGAStateFailed)` - If failure to fetch the latest data
     ///
     pub async fn fpga_state(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDError> {

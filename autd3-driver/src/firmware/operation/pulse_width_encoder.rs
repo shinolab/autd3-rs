@@ -36,13 +36,13 @@ struct PWESubseq {
     size: u16,
 }
 
-pub struct ConfigurePulseWidthEncoderOp {
+pub struct PulseWidthEncoderOp {
     buf: Vec<u8>,
     full_width_start: u16,
     remains: Remains,
 }
 
-impl ConfigurePulseWidthEncoderOp {
+impl PulseWidthEncoderOp {
     pub fn new(buf: Vec<u16>) -> Self {
         let full_width_start = buf
             .iter()
@@ -59,7 +59,7 @@ impl ConfigurePulseWidthEncoderOp {
     }
 }
 
-impl Operation for ConfigurePulseWidthEncoderOp {
+impl Operation for PulseWidthEncoderOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         let sent = PWE_BUF_SIZE - self.remains[device];
 

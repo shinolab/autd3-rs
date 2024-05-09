@@ -23,7 +23,7 @@ fn send_debug_output_idx(
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let (mut op, _) = ConfigureDebugSettings::new(|_, gpio| match gpio {
+    let (mut op, _) = DebugSettings::new(|_, gpio| match gpio {
         GPIOOut::O0 => debug_types[0].clone(),
         GPIOOut::O1 => debug_types[1].clone(),
         GPIOOut::O2 => debug_types[2].clone(),
@@ -45,7 +45,7 @@ fn send_debug_pwm_out() -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let (mut op, _) = ConfigureDebugSettings::new(|dev, gpio| match gpio {
+    let (mut op, _) = DebugSettings::new(|dev, gpio| match gpio {
         GPIOOut::O0 => DebugType::PwmOut(&dev[0]),
         GPIOOut::O1 => DebugType::PwmOut(&dev[1]),
         GPIOOut::O2 => DebugType::PwmOut(&dev[2]),

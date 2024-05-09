@@ -3,7 +3,7 @@ use autd3_driver::{
     error::AUTDInternalError,
     firmware::{
         cpu::TxDatagram,
-        operation::{ConfigurePulseWidthEncoderOp, OperationHandler},
+        operation::{OperationHandler, PulseWidthEncoderOp},
     },
 };
 use autd3_firmware_emulator::{cpu::params::PULSE_WIDTH_ENCODER_FLAG_END, CPUEmulator};
@@ -27,7 +27,7 @@ fn config_pwe() -> anyhow::Result<()> {
         .find(|&(_, v)| *v == 256)
         .map(|v| v.0 as u16)
         .unwrap_or(0xFFFF);
-    let mut op = ConfigurePulseWidthEncoderOp::new(buf.clone());
+    let mut op = PulseWidthEncoderOp::new(buf.clone());
 
     assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
@@ -52,7 +52,7 @@ fn config_pwe_invalid_table_size() {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let buf: Vec<_> = (0..65535).map(|_| rng.gen()).collect();
-    let mut op = ConfigurePulseWidthEncoderOp::new(buf.clone());
+    let mut op = PulseWidthEncoderOp::new(buf.clone());
 
     assert_eq!(
         Err(autd3_driver::error::AUTDInternalError::InvalidPulseWidthEncoderTableSize(65535)),
@@ -69,7 +69,7 @@ fn config_pwe_invalid_data_size() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let buf: Vec<_> = (0..65536).map(|_| rng.gen()).collect();
-    let mut op = ConfigurePulseWidthEncoderOp::new(buf.clone());
+    let mut op = PulseWidthEncoderOp::new(buf.clone());
     let mut op_null = NullOp::default();
 
     OperationHandler::init(&mut op, &mut op_null, &geometry)?;
@@ -94,7 +94,7 @@ fn config_pwe_incomplete_data() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let buf: Vec<_> = (0..65536).map(|_| rng.gen()).collect();
-    let mut op = ConfigurePulseWidthEncoderOp::new(buf);
+    let mut op = PulseWidthEncoderOp::new(buf);
     let mut op_null = NullOp::default();
 
     OperationHandler::init(&mut op, &mut op_null, &geometry)?;

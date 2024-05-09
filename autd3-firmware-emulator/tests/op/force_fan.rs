@@ -11,11 +11,11 @@ fn send_force_fan() -> anyhow::Result<()> {
 
     assert!(!cpu.fpga().is_force_fan());
 
-    let (mut op, _) = ConfigureForceFan::new(|_dev| true).operation();
+    let (mut op, _) = ForceFan::new(|_dev| true).operation();
     assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
     assert!(cpu.fpga().is_force_fan());
 
-    let (mut op, _) = ConfigureForceFan::new(|_dev| false).operation();
+    let (mut op, _) = ForceFan::new(|_dev| false).operation();
     assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
     assert!(!cpu.fpga().is_force_fan());
 

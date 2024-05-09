@@ -3,11 +3,11 @@ use crate::{datagram::*, defined::DEFAULT_TIMEOUT, firmware::fpga::ULTRASOUND_PE
 const PULSE_WIDTH_MAX: u16 = ULTRASOUND_PERIOD as u16 / 2;
 
 #[derive(Debug, Clone)]
-pub struct ConfigurePulseWidthEncoder {
+pub struct PulseWidthEncoder {
     buf: Vec<u16>,
 }
 
-impl ConfigurePulseWidthEncoder {
+impl PulseWidthEncoder {
     /// constructor
     pub fn new(buf: Vec<u16>) -> Result<Self, AUTDInternalError> {
         if buf.iter().any(|&v| v > PULSE_WIDTH_MAX)
@@ -30,7 +30,7 @@ impl ConfigurePulseWidthEncoder {
     }
 }
 
-impl Default for ConfigurePulseWidthEncoder {
+impl Default for PulseWidthEncoder {
     fn default() -> Self {
         Self::new(
             include_bytes!("asin.dat")
@@ -49,8 +49,8 @@ impl Default for ConfigurePulseWidthEncoder {
     }
 }
 
-impl Datagram for ConfigurePulseWidthEncoder {
-    type O1 = crate::firmware::operation::ConfigurePulseWidthEncoderOp;
+impl Datagram for PulseWidthEncoder {
+    type O1 = crate::firmware::operation::PulseWidthEncoderOp;
     type O2 = crate::firmware::operation::NullOp;
 
     fn operation(self) -> (Self::O1, Self::O2) {
@@ -80,13 +80,13 @@ mod tests {
     fn new(#[case] expected: Result<Vec<u16>, AUTDInternalError>, #[case] buf: Vec<u16>) {
         assert_eq!(
             expected,
-            ConfigurePulseWidthEncoder::new(buf).map(|d| d.buf)
+            PulseWidthEncoder::new(buf).map(|d| d.buf)
         );
     }
 
     #[test]
     fn default() {
-        let datagram = ConfigurePulseWidthEncoder::default();
+        let datagram = PulseWidthEncoder::default();
         assert_eq!(Some(DEFAULT_TIMEOUT), datagram.timeout());
         datagram
             .buf()

@@ -15,12 +15,12 @@ struct PhaseFilter {
     tag: TypeTag,
 }
 
-pub struct ConfigurePhaseFilterOp<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
+pub struct PhaseFilterOp<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
     remains: Remains,
     f: F,
 }
 
-impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> ConfigurePhaseFilterOp<FT, F> {
+impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> PhaseFilterOp<FT, F> {
     pub fn new(f: F) -> Self {
         Self {
             remains: Default::default(),
@@ -29,9 +29,7 @@ impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> ConfigurePhaseFilterOp<
     }
 }
 
-impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> Operation
-    for ConfigurePhaseFilterOp<FT, F>
-{
+impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> Operation for PhaseFilterOp<FT, F> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         cast::<PhaseFilter>(tx).tag = TypeTag::PhaseFilter;
 
@@ -83,7 +81,7 @@ mod tests {
                 + (NUM_TRANS_IN_UNIT + 1) / 2 * 2 * std::mem::size_of::<Phase>())
                 * NUM_DEVICE];
 
-        let mut op = ConfigurePhaseFilterOp::new(|dev| {
+        let mut op = PhaseFilterOp::new(|dev| {
             let dev_idx = dev.idx();
             move |tr| Phase::new((dev_idx + tr.idx()) as u8)
         });

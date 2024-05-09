@@ -6,13 +6,13 @@ use std::sync::{
 use autd3::prelude::*;
 
 pub async fn flag(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
-    autd.send(ConfigureReadsFPGAState::new(|_dev| true)).await?;
+    autd.send(ReadsFPGAState::new(|_dev| true)).await?;
 
     println!("press any key to force fan...");
     let mut _s = String::new();
     async_std::io::stdin().read_line(&mut _s).await?;
 
-    autd.send(ConfigureForceFan::new(|_dev| true)).await?;
+    autd.send(ForceFan::new(|_dev| true)).await?;
 
     let fin = Arc::new(AtomicBool::new(false));
     println!("press any key to stop checking FPGA status...");
@@ -50,8 +50,8 @@ pub async fn flag(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     fin_signal.await??;
 
     autd.send((
-        ConfigureForceFan::new(|_dev| false),
-        ConfigureReadsFPGAState::new(|_dev| false),
+        ForceFan::new(|_dev| false),
+        ReadsFPGAState::new(|_dev| false),
     ))
     .await?;
 

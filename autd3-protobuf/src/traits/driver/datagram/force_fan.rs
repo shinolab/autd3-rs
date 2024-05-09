@@ -5,28 +5,26 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl<F: Fn(&Device) -> bool> ToMessage for autd3_driver::datagram::ConfigureForceFan<F> {
+impl<F: Fn(&Device) -> bool> ToMessage for autd3_driver::datagram::ForceFan<F> {
     type Message = DatagramLightweight;
 
     fn to_msg(&self, geometry: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::ForceFan(
-                ConfigureForceFan {
-                    value: geometry
-                        .map(|g| g.iter().map(|d| (self.f())(d)).collect::<Vec<bool>>())
-                        .unwrap_or_default(),
-                },
-            )),
+            datagram: Some(datagram_lightweight::Datagram::ForceFan(ForceFan {
+                value: geometry
+                    .map(|g| g.iter().map(|d| (self.f())(d)).collect::<Vec<bool>>())
+                    .unwrap_or_default(),
+            })),
         }
     }
 }
 
-impl FromMessage<ConfigureForceFan>
-    for autd3_driver::datagram::ConfigureForceFan<Box<dyn Fn(&Device) -> bool + Send + 'static>>
+impl FromMessage<ForceFan>
+    for autd3_driver::datagram::ForceFan<Box<dyn Fn(&Device) -> bool + Send + 'static>>
 {
-    fn from_msg(msg: &ConfigureForceFan) -> Option<Self> {
+    fn from_msg(msg: &ForceFan) -> Option<Self> {
         let map = msg.value.clone();
-        Some(autd3_driver::datagram::ConfigureForceFan::new(Box::new(
+        Some(autd3_driver::datagram::ForceFan::new(Box::new(
             move |dev| map[dev.idx()],
         )))
     }
