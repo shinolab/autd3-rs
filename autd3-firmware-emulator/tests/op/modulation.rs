@@ -116,18 +116,27 @@ fn send_mod() -> anyhow::Result<()> {
     }
 
     {
-        let transition_mode = TransitionMode::GPIO(GPIOIn::I0);
-        let mut op = ModulationOp::new(
-            TestModulation {
-                buf: (0..2).map(|_| u8::MAX).collect(),
-                config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
-                loop_behavior: LoopBehavior::once(),
-            },
-            Segment::S0,
-            Some(transition_mode),
-        );
-        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
-        assert_eq!(transition_mode, cpu.fpga().mod_transition_mode());
+        [
+            (Segment::S0, GPIOIn::I0),
+            (Segment::S1, GPIOIn::I1),
+            (Segment::S0, GPIOIn::I2),
+            (Segment::S1, GPIOIn::I3),
+        ]
+        .into_iter()
+        .for_each(|(segment, gpio)| {
+            let transition_mode = TransitionMode::GPIO(gpio);
+            let mut op = ModulationOp::new(
+                TestModulation {
+                    buf: (0..2).map(|_| u8::MAX).collect(),
+                    config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+                    loop_behavior: LoopBehavior::once(),
+                },
+                segment,
+                Some(transition_mode),
+            );
+            assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+            assert_eq!(transition_mode, cpu.fpga().mod_transition_mode());
+        });
     }
 
     {
