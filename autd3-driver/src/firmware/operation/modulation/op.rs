@@ -184,8 +184,11 @@ mod tests {
         let segment = Segment::S0;
         let rep = loop_behavior.rep;
         let transition_mode = TransitionMode::SysTime(
-            DcSysTime::from_utc(time::macros::datetime!(2000-01-01 0:00 UTC)).unwrap()
-                + std::time::Duration::from_nanos(0x0123456789ABCDEF),
+            DcSysTime::from_utc(
+                time::macros::datetime!(2000-01-01 0:00 UTC)
+                    + std::time::Duration::from_nanos(0x0123456789ABCDEF),
+            )
+            .unwrap(),
         );
 
         let mut op = ModulationOp::new(
