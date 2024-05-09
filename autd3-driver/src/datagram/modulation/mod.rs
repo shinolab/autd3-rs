@@ -1,6 +1,5 @@
 mod cache;
 mod radiation_pressure;
-mod segment;
 mod transform;
 
 use std::collections::HashMap;
@@ -10,7 +9,6 @@ pub use cache::Cache as ModulationCache;
 pub use cache::IntoCache as IntoModulationCache;
 pub use radiation_pressure::IntoRadiationPressure;
 pub use radiation_pressure::RadiationPressure;
-pub use segment::ChangeModulationSegment;
 pub use transform::IntoTransform as IntoModulationTransform;
 pub use transform::Transform as ModulationTransform;
 
@@ -25,7 +23,7 @@ use crate::{
     },
 };
 
-use super::{Datagram, DatagramST};
+use super::DatagramST;
 
 use rayon::prelude::*;
 

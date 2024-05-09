@@ -13,7 +13,7 @@ use autd3_driver::{
             SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN, SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT,
         },
-        operation::{FocusSTMChangeSegmentOp, FocusSTMOp, GainSTMOp},
+        operation::{FocusSTMOp, FocusSTMSwapSegmentOp, GainSTMOp, SwapSegmentOperation},
     },
     geometry::Vector3,
 };
@@ -150,7 +150,7 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
     }
 
     {
-        let mut op = FocusSTMChangeSegmentOp::new(Segment::S1, TransitionMode::SyncIdx);
+        let mut op = FocusSTMSwapSegmentOp::new(Segment::S1, TransitionMode::SyncIdx);
 
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
@@ -180,7 +180,7 @@ fn change_focus_stm_segment() -> anyhow::Result<()> {
     assert!(!cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
 
-    let mut op = FocusSTMChangeSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
+    let mut op = FocusSTMSwapSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
     assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
     assert!(!cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S1, cpu.fpga().current_stm_segment());
@@ -245,7 +245,7 @@ fn test_focus_stm_freq_div_too_small() -> anyhow::Result<()> {
         .operation();
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-        let mut op = FocusSTMChangeSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
+        let mut op = FocusSTMSwapSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSilencerSettings),
             send(&mut cpu, &mut op, &geometry, &mut tx)
@@ -299,13 +299,13 @@ fn send_focus_stm_invalid_segment_transition() -> anyhow::Result<()> {
     }
 
     {
-        let mut op = FocusSTMChangeSegmentOp::new(Segment::S0, TransitionMode::Immidiate);
+        let mut op = FocusSTMSwapSegmentOp::new(Segment::S0, TransitionMode::Immidiate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, &mut op, &geometry, &mut tx)
         );
 
-        let mut op = FocusSTMChangeSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
+        let mut op = FocusSTMSwapSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, &mut op, &geometry, &mut tx)
@@ -362,7 +362,7 @@ fn send_focus_stm_invalid_transition_mode() -> anyhow::Result<()> {
         );
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-        let mut op = FocusSTMChangeSegmentOp::new(Segment::S1, TransitionMode::SyncIdx);
+        let mut op = FocusSTMSwapSegmentOp::new(Segment::S1, TransitionMode::SyncIdx);
         assert_eq!(
             Err(AUTDInternalError::InvalidTransitionMode),
             send(&mut cpu, &mut op, &geometry, &mut tx)

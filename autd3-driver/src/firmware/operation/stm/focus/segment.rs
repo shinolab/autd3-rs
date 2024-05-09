@@ -2,7 +2,7 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{Segment, TransitionMode},
-        operation::{cast, Operation, Remains, TypeTag},
+        operation::{cast, Remains, SwapSegmentOperation, TypeTag},
     },
     geometry::{Device, Geometry},
 };
@@ -16,26 +16,24 @@ struct FocusSTMUpdate {
     transition_value: u64,
 }
 
-pub struct FocusSTMChangeSegmentOp {
+pub struct FocusSTMSwapSegmentOp {
     segment: Segment,
     transition_mode: TransitionMode,
     remains: Remains,
 }
 
-impl FocusSTMChangeSegmentOp {
-    pub fn new(segment: Segment, transition_mode: TransitionMode) -> Self {
+impl SwapSegmentOperation for FocusSTMSwapSegmentOp {
+    fn new(segment: Segment, transition_mode: TransitionMode) -> Self {
         Self {
             segment,
             transition_mode,
             remains: Default::default(),
         }
     }
-}
 
-impl Operation for FocusSTMChangeSegmentOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         *cast::<FocusSTMUpdate>(tx) = FocusSTMUpdate {
-            tag: TypeTag::FocusSTMChangeSegment,
+            tag: TypeTag::FocusSTMSwapSegment,
             segment: self.segment as u8,
             transition_mode: self.transition_mode.mode(),
             __padding: [0; 5],

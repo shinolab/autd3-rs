@@ -1,8 +1,9 @@
 use crate::{
+    derive::TransitionMode,
     error::AUTDInternalError,
     firmware::{
         fpga::Segment,
-        operation::{cast, Operation, Remains, TypeTag},
+        operation::{cast, Remains, SwapSegmentOperation, TypeTag},
     },
     geometry::{Device, Geometry},
 };
@@ -13,24 +14,22 @@ struct GainUpdate {
     segment: u8,
 }
 
-pub struct GainChangeSegmentOp {
+pub struct GainSwapSegmentOp {
     segment: Segment,
     remains: Remains,
 }
 
-impl GainChangeSegmentOp {
-    pub fn new(segment: Segment) -> Self {
+impl SwapSegmentOperation for GainSwapSegmentOp {
+    fn new(segment: Segment, _: TransitionMode) -> Self {
         Self {
             segment,
             remains: Default::default(),
         }
     }
-}
 
-impl Operation for GainChangeSegmentOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         *cast::<GainUpdate>(tx) = GainUpdate {
-            tag: TypeTag::GainChangeSegment,
+            tag: TypeTag::GainSwapSegment,
             segment: self.segment as u8,
         };
 

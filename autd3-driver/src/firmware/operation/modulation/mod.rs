@@ -4,4 +4,4 @@ mod segment;
 
 pub use control_flags::ModulationControlFlags;
 pub use op::ModulationOp;
-pub use segment::ModulationChangeSegmentOp;
+pub use segment::ModulationSwapSegmentOp;

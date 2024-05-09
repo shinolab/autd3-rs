@@ -11,7 +11,7 @@ use autd3_driver::{
             GPIOIn, TransitionMode, SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN,
             SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
         },
-        operation::{ModulationChangeSegmentOp, ModulationOp},
+        operation::{ModulationOp, ModulationSwapSegmentOp, SwapSegmentOperation},
     },
 };
 use autd3_firmware_emulator::{cpu::params::SYS_TIME_TRANSITION_MARGIN, CPUEmulator};
@@ -107,7 +107,7 @@ fn send_mod() -> anyhow::Result<()> {
     }
 
     {
-        let mut op = ModulationChangeSegmentOp::new(Segment::S1, TransitionMode::SyncIdx);
+        let mut op = ModulationSwapSegmentOp::new(Segment::S1, TransitionMode::SyncIdx);
 
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
@@ -220,7 +220,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         .operation();
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-        let mut op = ModulationChangeSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
+        let mut op = ModulationSwapSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSilencerSettings),
             send(&mut cpu, &mut op, &geometry, &mut tx)
@@ -283,7 +283,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
         );
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-        let mut op = ModulationChangeSegmentOp::new(Segment::S1, TransitionMode::SyncIdx);
+        let mut op = ModulationSwapSegmentOp::new(Segment::S1, TransitionMode::SyncIdx);
         assert_eq!(
             Err(AUTDInternalError::InvalidTransitionMode),
             send(&mut cpu, &mut op, &geometry, &mut tx)

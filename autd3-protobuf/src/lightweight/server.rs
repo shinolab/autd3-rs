@@ -481,31 +481,40 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     )
                     .await
                 }
-                Some(datagram_lightweight::Datagram::ChangeGainSegment(ref msg)) => {
-                    autd.send(
-                        autd3_driver::datagram::ChangeGainSegment::from_msg(msg)
+                Some(datagram_lightweight::Datagram::SwapSegmentGain(ref msg)) => {
+                    autd
+                        .send(
+                            autd3_driver::datagram::SwapSegment::<
+                                autd3_driver::datagram::segment::Gain,
+                            >::from_msg(msg)
                             .ok_or(AUTDProtoBufError::DataParseError)?,
+                        )
+                        .await
+                }
+                Some(datagram_lightweight::Datagram::SwapSegmentModulation(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::SwapSegment::<
+                            autd3_driver::datagram::segment::Modulation,
+                        >::from_msg(msg)
+                        .ok_or(AUTDProtoBufError::DataParseError)?,
                     )
                     .await
                 }
-                Some(datagram_lightweight::Datagram::ChangeGainStmSegment(ref msg)) => {
+                Some(datagram_lightweight::Datagram::SwapSegmentGainStm(ref msg)) => {
                     autd.send(
-                        autd3_driver::datagram::ChangeGainSTMSegment::from_msg(msg)
-                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                        autd3_driver::datagram::SwapSegment::<
+                            autd3_driver::datagram::segment::GainSTM,
+                        >::from_msg(msg)
+                        .ok_or(AUTDProtoBufError::DataParseError)?,
                     )
                     .await
                 }
-                Some(datagram_lightweight::Datagram::ChangeFocusStmSegment(ref msg)) => {
+                Some(datagram_lightweight::Datagram::SwapSegmentFocusStm(ref msg)) => {
                     autd.send(
-                        autd3_driver::datagram::ChangeFocusSTMSegment::from_msg(msg)
-                            .ok_or(AUTDProtoBufError::DataParseError)?,
-                    )
-                    .await
-                }
-                Some(datagram_lightweight::Datagram::ChangeModulationSegment(ref msg)) => {
-                    autd.send(
-                        autd3_driver::datagram::ChangeModulationSegment::from_msg(msg)
-                            .ok_or(AUTDProtoBufError::DataParseError)?,
+                        autd3_driver::datagram::SwapSegment::<
+                            autd3_driver::datagram::segment::FocusSTM,
+                        >::from_msg(msg)
+                        .ok_or(AUTDProtoBufError::DataParseError)?,
                     )
                     .await
                 }

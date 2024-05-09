@@ -4,4 +4,4 @@ mod reduced_phase;
 mod segment;
 
 pub use op::GainSTMOp;
-pub use segment::GainSTMChangeSegmentOp;
+pub use segment::GainSTMSwapSegmentOp;

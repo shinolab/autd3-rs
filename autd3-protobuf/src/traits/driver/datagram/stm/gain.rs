@@ -2,7 +2,7 @@ use autd3_driver::derive::SamplingConfig;
 
 use crate::{
     pb::*,
-    traits::{to_transition_mode, FromMessage, ToMessage},
+    traits::{FromMessage, ToMessage},
 };
 
 impl<G> ToMessage for autd3_driver::datagram::GainSTM<G>
@@ -119,26 +119,5 @@ impl FromMessage<GainStm>
                 None => None,
             })),
         )
-    }
-}
-
-impl ToMessage for autd3_driver::datagram::ChangeGainSTMSegment {
-    type Message = ChangeGainStmSegment;
-
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
-        Self::Message {
-            segment: self.segment() as _,
-            transition_mode: self.transition_mode().mode() as _,
-            transition_value: self.transition_mode().value(),
-        }
-    }
-}
-
-impl FromMessage<ChangeGainStmSegment> for autd3_driver::datagram::ChangeGainSTMSegment {
-    fn from_msg(msg: &ChangeGainStmSegment) -> Option<Self> {
-        Some(autd3_driver::datagram::ChangeGainSTMSegment::new(
-            autd3_driver::firmware::fpga::Segment::from(Segment::try_from(msg.segment).ok()?),
-            to_transition_mode(Some(msg.transition_mode), Some(msg.transition_value)).unwrap(),
-        ))
     }
 }

@@ -163,7 +163,7 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
 #[cfg(test)]
 mod tests {
     use autd3_driver::{
-        datagram::{ChangeFocusSTMSegment, GainSTM},
+        datagram::{GainSTM, SwapSegment},
         derive::{Gain, GainFilter, Modulation, Segment, TransitionMode},
         error::AUTDInternalError,
     };
@@ -265,7 +265,7 @@ mod tests {
                 .set(0, Null::new())?
                 .set(
                     1,
-                    ChangeFocusSTMSegment::new(Segment::S1, TransitionMode::SyncIdx),
+                    SwapSegment::focus_stm(Segment::S1, TransitionMode::SyncIdx),
                 )?
                 .send()
                 .await
