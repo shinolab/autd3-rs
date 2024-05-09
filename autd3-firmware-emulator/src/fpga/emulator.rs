@@ -628,7 +628,6 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(0, 0)]
     #[case(0, 24_999)]
     #[case(1, 25_000)]
     #[case(9, 25_000 * 9)]
@@ -662,7 +661,6 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(0, 0)]
     #[case(0, 24_999)]
     #[case(1, 25_000)]
     #[case(9, 25_000 * 9)]

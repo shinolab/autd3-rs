@@ -320,8 +320,11 @@ mod tests {
         let segment = Segment::S0;
         let transition_value = 0x0123456789ABCDEF;
         let transition_mode = TransitionMode::SysTime(
-            DcSysTime::from_utc(time::macros::datetime!(2000-01-01 0:00 UTC)).unwrap()
-                + std::time::Duration::from_nanos(transition_value),
+            DcSysTime::from_utc(
+                time::macros::datetime!(2000-01-01 0:00 UTC)
+                    + std::time::Duration::from_nanos(transition_value),
+            )
+            .unwrap(),
         );
 
         let mut op = GainSTMOp::<_>::new(
@@ -390,7 +393,8 @@ mod tests {
                     tx[dev.idx() * FRAME_SIZE + offset_of!(GainSTMHead, transition_mode)]
                 );
                 assert_eq!(
-                    transition_value,
+                    ((transition_value / crate::ethercat::EC_CYCLE_TIME_BASE_NANO_SEC) + 1)
+                        * crate::ethercat::EC_CYCLE_TIME_BASE_NANO_SEC,
                     parse_tx_as::<u64>(
                         &tx[dev.idx() * FRAME_SIZE + offset_of!(GainSTMHead, transition_value)..]
                     )
