@@ -90,8 +90,10 @@ impl Operation for FocusSTMOp {
                     .stm_sampling_config
                     .sampling(self.points.len())?
                     .division(device.ultrasound_freq())?,
-                sound_speed: (device.sound_speed / METER * 1024.0 * crate::defined::FREQ_40K as f64
-                    / device.ultrasound_freq() as f64)
+                sound_speed: (device.sound_speed / METER
+                    * 1024.0
+                    * crate::defined::FREQ_40K.hz() as f64
+                    / device.ultrasound_freq().hz() as f64)
                     .round() as u32,
                 rep: self.loop_behavior.rep,
             };

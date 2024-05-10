@@ -1,3 +1,5 @@
+use autd3_driver::freq::Hz;
+
 use crate::{cpu::params::*, CPUEmulator};
 
 #[repr(C, align(2))]
@@ -13,7 +15,7 @@ impl CPUEmulator {
 
         self.synchronized = true;
 
-        self.fpga.fpga_clk_freq = d.ecat_sync_base_cnt * 2000;
+        self.fpga.fpga_clk_freq = d.ecat_sync_base_cnt * 2000 * Hz;
 
         NO_ERR
     }

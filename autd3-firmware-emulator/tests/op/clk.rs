@@ -5,6 +5,7 @@ use autd3_driver::{
         cpu::TxDatagram,
         operation::{ConfigureClockOp, OperationHandler},
     },
+    freq::{Freq, Hz},
 };
 use autd3_firmware_emulator::{cpu::params::CLK_FLAG_END, CPUEmulator};
 
@@ -45,7 +46,7 @@ use crate::{create_geometry, create_geometry_with_freq, send};
     0x00000000,
     0x00000000,
     0x00000001,
-], 40000)]
+], 40000*Hz)]
 #[case(vec![
     0x280000ffff,
     0x980002800,
@@ -79,8 +80,11 @@ use crate::{create_geometry, create_geometry_with_freq, send};
     0x00000000,
     0x00000000,
     0x00000001,
-], 41000)]
-fn config_clk(#[case] expect_rom: Vec<u64>, #[case] ultrasound_clk: u32) -> anyhow::Result<()> {
+], 41000*Hz)]
+fn config_clk(
+    #[case] expect_rom: Vec<u64>,
+    #[case] ultrasound_clk: Freq<u32>,
+) -> anyhow::Result<()> {
     let geometry = create_geometry_with_freq(1, ultrasound_clk);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());

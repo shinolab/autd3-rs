@@ -25,7 +25,7 @@ impl Operation for SyncOp {
         *cast::<Sync>(tx) = Sync {
             tag: TypeTag::Sync,
             __pad: [0; 3],
-            ecat_sync_base_cnt: device.ultrasound_freq() * 512 / 2000,
+            ecat_sync_base_cnt: device.ultrasound_freq().hz() * 512 / 2000,
         };
 
         self.remains[device] -= 1;
@@ -52,7 +52,7 @@ mod tests {
     use rand::Rng;
 
     use super::*;
-    use crate::geometry::tests::create_geometry;
+    use crate::{freq::Hz, geometry::tests::create_geometry};
 
     const NUM_TRANS_IN_UNIT: usize = 249;
     const NUM_DEVICE: usize = 10;
@@ -61,7 +61,11 @@ mod tests {
     fn test() {
         let mut rng = rand::thread_rng();
 
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, rng.gen_range(40000..80000));
+        let geometry = create_geometry(
+            NUM_DEVICE,
+            NUM_TRANS_IN_UNIT,
+            rng.gen_range(40000..80000) * Hz,
+        );
 
         let mut tx = [0x00u8; 8 * NUM_DEVICE];
 
@@ -86,7 +90,7 @@ mod tests {
             .for_each(|dev| assert_eq!(op.remains[dev], 0));
 
         geometry.devices().for_each(|dev| {
-            let sync_base_cnt = dev.ultrasound_freq() * 512 / 2000;
+            let sync_base_cnt = dev.ultrasound_freq().hz() * 512 / 2000;
             assert_eq!(tx[dev.idx() * 8], TypeTag::Sync as u8);
             assert_eq!(tx[dev.idx() * 8 + 4], (sync_base_cnt & 0xFF) as u8);
             assert_eq!(tx[dev.idx() * 8 + 5], ((sync_base_cnt >> 8) & 0xFF) as u8);

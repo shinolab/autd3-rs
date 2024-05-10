@@ -11,5 +11,5 @@ use derive_more::{Add, Div, Mul, Sub};
 
 #[derive(Clone, Copy, Debug, PartialEq, Add, Div, Mul, Sub)]
 pub struct Freq<T> {
-    freq: T,
+    pub(crate) freq: T,
 }

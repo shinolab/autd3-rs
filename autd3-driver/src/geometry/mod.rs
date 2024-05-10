@@ -124,7 +124,10 @@ impl<'a> IntoIterator for &'a mut Geometry {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::defined::{FREQ_40K, MILLIMETER};
+    use crate::{
+        defined::{FREQ_40K, MILLIMETER},
+        freq::Freq,
+    };
 
     use super::*;
 
@@ -136,7 +139,7 @@ pub mod tests {
         };
     }
 
-    pub fn create_device(idx: usize, n: usize, freq: u32) -> Device {
+    pub fn create_device(idx: usize, n: usize, freq: Freq<u32>) -> Device {
         Device::new(
             idx,
             (0..n)
@@ -146,7 +149,7 @@ pub mod tests {
         )
     }
 
-    pub fn create_geometry(n: usize, num_trans_in_unit: usize, freq: u32) -> Geometry {
+    pub fn create_geometry(n: usize, num_trans_in_unit: usize, freq: Freq<u32>) -> Geometry {
         Geometry::new(
             (0..n)
                 .map(|i| create_device(i, num_trans_in_unit, freq))

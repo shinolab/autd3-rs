@@ -12,7 +12,7 @@ pub trait SamplingMode: Clone + Sync {
     fn validate(
         freq: Self::T,
         sampling_config: SamplingConfig,
-        ultrasound_freq: u32,
+        ultrasound_freq: Freq<u32>,
     ) -> Result<(u64, u64), AUTDInternalError>;
 }
 
@@ -24,18 +24,18 @@ impl SamplingMode for ExactFreq {
     fn validate(
         freq: Freq<u32>,
         sampling_config: SamplingConfig,
-        ultrasound_freq: u32,
+        ultrasound_freq: Freq<u32>,
     ) -> Result<(u64, u64), AUTDInternalError> {
-        if freq.hz() as f64 >= sampling_config.freq(ultrasound_freq)? / 2. {
+        if freq.hz() as f64 >= sampling_config.freq(ultrasound_freq)?.hz() / 2. {
             return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}) is equal to or greater than the Nyquist frequency ({} Hz)",
+                "Frequency ({}) is equal to or greater than the Nyquist frequency ({})",
                 freq,
                 sampling_config.freq(ultrasound_freq)? / 2.
             )));
         }
         let fd = freq.hz() * sampling_config.division(ultrasound_freq)?;
         let fd = fd as u64;
-        let fs = (ultrasound_freq * ULTRASOUND_PERIOD) as u64;
+        let fs = (ultrasound_freq * ULTRASOUND_PERIOD).hz() as u64;
 
         let k = gcd(fs, fd);
         Ok((fs / k, fd / k))
@@ -50,7 +50,7 @@ impl SamplingMode for ExactFreqFloat {
     fn validate(
         freq: Freq<f64>,
         sampling_config: SamplingConfig,
-        ultrasound_freq: u32,
+        ultrasound_freq: Freq<u32>,
     ) -> Result<(u64, u64), AUTDInternalError> {
         if freq.hz() < 0. {
             return Err(AUTDInternalError::ModulationError(format!(
@@ -58,9 +58,9 @@ impl SamplingMode for ExactFreqFloat {
                 freq
             )));
         }
-        if freq.hz() >= sampling_config.freq(ultrasound_freq)? / 2. {
+        if freq.hz() >= sampling_config.freq(ultrasound_freq)?.hz() / 2. {
             return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}) is equal to or greater than the Nyquist frequency ({} Hz)",
+                "Frequency ({}) is equal to or greater than the Nyquist frequency ({})",
                 freq,
                 sampling_config.freq(ultrasound_freq)? / 2.
             )));
@@ -73,7 +73,7 @@ impl SamplingMode for ExactFreqFloat {
             )));
         }
         let fd = fd as u64;
-        let fs = (ultrasound_freq * ULTRASOUND_PERIOD) as u64;
+        let fs = (ultrasound_freq * ULTRASOUND_PERIOD).hz() as u64;
 
         let k = gcd(fs, fd);
         Ok((fs / k, fd / k))
@@ -88,7 +88,7 @@ impl SamplingMode for NearestFreq {
     fn validate(
         freq: Freq<f64>,
         sampling_config: SamplingConfig,
-        ultrasound_freq: u32,
+        ultrasound_freq: Freq<u32>,
     ) -> Result<(u64, u64), AUTDInternalError> {
         if freq.hz() < 0. {
             return Err(AUTDInternalError::ModulationError(format!(
@@ -96,15 +96,17 @@ impl SamplingMode for NearestFreq {
                 freq
             )));
         }
-        if freq.hz() >= sampling_config.freq(ultrasound_freq)? / 2. {
+        if freq.hz() >= sampling_config.freq(ultrasound_freq)?.hz() / 2. {
             return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}) is equal to or greater than the Nyquist frequency ({} Hz)",
+                "Frequency ({}) is equal to or greater than the Nyquist frequency ({})",
                 freq,
                 sampling_config.freq(ultrasound_freq)? / 2.
             )));
         }
         Ok((
-            (sampling_config.freq(ultrasound_freq)? / freq.hz()).round() as u64,
+            (sampling_config.freq(ultrasound_freq)? / freq.hz())
+                .hz()
+                .round() as u64,
             1,
         ))
     }

@@ -5,6 +5,7 @@ use autd3_driver::{
     firmware::fpga::{
         GPIOIn, LoopBehavior, TransitionMode, TRANSITION_MODE_IMMIDIATE, ULTRASOUND_PERIOD,
     },
+    freq::Freq,
 };
 
 use super::params::*;
@@ -22,7 +23,7 @@ pub struct FPGAEmulator {
     drp_bram: Vec<u16>,
     num_transducers: usize,
     tr_pos: Vec<u64>,
-    pub(crate) fpga_clk_freq: u32,
+    pub(crate) fpga_clk_freq: Freq<u32>,
 }
 
 impl FPGAEmulator {
@@ -522,12 +523,12 @@ impl FPGAEmulator {
         &self.tr_pos
     }
 
-    pub fn fpga_clk_freq(&self) -> u32 {
+    pub fn fpga_clk_freq(&self) -> Freq<u32> {
         self.fpga_clk_freq
     }
 
     fn fpga_sys_time(&self, dc_sys_time: DcSysTime) -> u64 {
-        ((dc_sys_time.sys_time() as u128 * self.fpga_clk_freq() as u128) / 1000000000) as _
+        ((dc_sys_time.sys_time() as u128 * self.fpga_clk_freq().hz() as u128) / 1000000000) as _
     }
 
     pub fn stm_idx_from_systime(&self, segment: Segment, systime: DcSysTime) -> usize {

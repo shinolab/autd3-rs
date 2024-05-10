@@ -38,9 +38,9 @@ pub enum AUTDInternalError {
     #[error("Sampling frequency division ({0}) is out of range ([{1}, {2}])")]
     SamplingFreqDivOutOfRange(u32, u32, u32),
     #[error("Sampling frequency ({0}) must divide {1}")]
-    SamplingFreqInvalid(Freq<u32>, u32),
-    #[error("Sampling frequency ({0} Hz) is out of range ([{1}, {2}])")]
-    SamplingFreqOutOfRange(f64, f64, f64),
+    SamplingFreqInvalid(Freq<u32>, Freq<u32>),
+    #[error("Sampling frequency ({0}) is out of range ([{1}, {2}])")]
+    SamplingFreqOutOfRange(Freq<f64>, Freq<f64>, Freq<f64>),
 
     #[error("STM frequency ({1}, size={0}) must divide ultrasound frequency")]
     STMFreqInvalid(usize, Freq<f64>),
@@ -77,7 +77,7 @@ pub enum AUTDInternalError {
     InvalidPulseWidthEncoderData,
 
     #[error("Frequency ({0}) can't be produced or is invalid for synchronizer")]
-    InvalidFrequencyError(u32),
+    InvalidFrequencyError(Freq<u32>),
 
     #[error("{0}")]
     ModulationError(String),

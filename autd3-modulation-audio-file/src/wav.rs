@@ -81,7 +81,7 @@ impl Modulation for Wav {
                 raw_buffer.clone(),
                 1,
                 sample_rate,
-                self.sampling_config().freq(dev.ultrasound_freq())? as u32,
+                self.sampling_config().freq(dev.ultrasound_freq())?.hz() as u32,
             )
             .iter()
             .map(|&d| d.round() as u8)
