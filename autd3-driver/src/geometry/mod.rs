@@ -125,7 +125,7 @@ impl<'a> IntoIterator for &'a mut Geometry {
 #[cfg(test)]
 pub mod tests {
     use crate::{
-        defined::{FREQ_40K, MILLIMETER},
+        defined::{mm, FREQ_40K},
         freq::Freq,
     };
 
@@ -250,7 +250,7 @@ pub mod tests {
         ]);
         geometry.set_sound_speed_from_temp(temp);
         geometry.iter().for_each(|dev| {
-            assert_approx_eq::assert_approx_eq!(expected * MILLIMETER, dev.sound_speed, 1e-3);
+            assert_approx_eq::assert_approx_eq!(expected * mm, dev.sound_speed, 1e-3);
         });
     }
 
@@ -291,9 +291,9 @@ pub mod tests {
                 FREQ_40K,
             ),
         ]);
-        geometry.set_sound_speed(temp * MILLIMETER);
+        geometry.set_sound_speed(temp * mm);
         geometry.iter().for_each(|dev| {
-            assert_eq!(dev.sound_speed, temp * MILLIMETER);
+            assert_eq!(dev.sound_speed, temp * mm);
         });
     }
 }

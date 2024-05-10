@@ -23,3 +23,6 @@ pub const T4010A1_AMPLITUDE: f64 = 275.574246625 * 200.0 * MILLIMETER; // [Pa*mm
 pub const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(200);
 
 pub const FREQ_40K: Freq<u32> = Freq { freq: 40000 };
+
+#[allow(non_upper_case_globals)]
+pub const mm: f64 = MILLIMETER;

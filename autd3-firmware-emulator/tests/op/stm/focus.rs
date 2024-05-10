@@ -2,7 +2,7 @@ use std::{collections::HashMap, time::Duration};
 
 use autd3_driver::{
     datagram::{ControlPoint, Datagram, Silencer},
-    defined::{METER, MILLIMETER},
+    defined::{mm, METER},
     derive::{DatagramS, Drive, LoopBehavior, Phase, SamplingConfig, Segment},
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
@@ -30,9 +30,9 @@ pub fn gen_random_foci(num: usize) -> Vec<ControlPoint> {
     (0..num)
         .map(|_| {
             ControlPoint::new(Vector3::new(
-                rng.gen_range(-100.0 * MILLIMETER..100.0 * MILLIMETER),
-                rng.gen_range(-100.0 * MILLIMETER..100.0 * MILLIMETER),
-                rng.gen_range(-100.0 * MILLIMETER..100.0 * MILLIMETER),
+                rng.gen_range(-100.0 * mm..100.0 * mm),
+                rng.gen_range(-100.0 * mm..100.0 * mm),
+                rng.gen_range(-100.0 * mm..100.0 * mm),
             ))
             .with_intensity(rng.gen::<u8>())
         })

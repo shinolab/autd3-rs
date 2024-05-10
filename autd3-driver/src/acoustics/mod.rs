@@ -39,7 +39,7 @@ mod tests {
     use rand::Rng;
 
     use crate::{
-        defined::{FREQ_40K, MILLIMETER},
+        defined::{mm, FREQ_40K},
         derive::Device,
         geometry::UnitQuaternion,
     };
@@ -47,8 +47,8 @@ mod tests {
 
     macro_rules! assert_complex_approx_eq {
         ($a:expr, $b:expr) => {
-            assert_approx_eq::assert_approx_eq!($a.re, $b.re, 1e-6 / MILLIMETER);
-            assert_approx_eq::assert_approx_eq!($a.im, $b.im, 1e-6 / MILLIMETER);
+            assert_approx_eq::assert_approx_eq!($a.re, $b.re, 1e-6 / mm);
+            assert_approx_eq::assert_approx_eq!($a.im, $b.im, 1e-6 / mm);
         };
     }
 
