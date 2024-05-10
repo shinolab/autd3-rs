@@ -22,6 +22,7 @@
   - from `TransducerTest` to `Custom`
   - from `Pascal` to `Pa`
 - Add `EmulateGPIOIn`
+- Add `EmissionConstraint::Multiply`
 - Make `Controller::group` and `gain::Group` error message more easy to understand
   - Key type now requires `Debug` traits
 - Functions that take a frequency as an argument now use `Freq<u32>` or `Freq<f64>` type
