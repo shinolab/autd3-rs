@@ -59,15 +59,17 @@ impl FromMessage<SineNearest>
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &SineNearest) -> Option<Self> {
         Some(
-            autd3::modulation::Sine::with_freq_nearest((msg.freq as f64) * autd3_driver::freq::Hz)
-                .with_intensity(msg.intensity as _)
-                .with_offset(msg.offset as _)
-                .with_phase(autd3_driver::firmware::fpga::Phase::from_msg(
-                    msg.phase.as_ref()?,
-                )?)
-                .with_sampling_config(autd3_driver::firmware::fpga::SamplingConfig::from_msg(
-                    msg.config.as_ref()?,
-                )?),
+            autd3::modulation::Sine::with_freq_nearest(
+                (msg.freq as f64) * autd3_driver::defined::Hz,
+            )
+            .with_intensity(msg.intensity as _)
+            .with_offset(msg.offset as _)
+            .with_phase(autd3_driver::firmware::fpga::Phase::from_msg(
+                msg.phase.as_ref()?,
+            )?)
+            .with_sampling_config(
+                autd3_driver::firmware::fpga::SamplingConfig::from_msg(msg.config.as_ref()?)?,
+            ),
         )
     }
 }

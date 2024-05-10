@@ -1,4 +1,4 @@
-use crate::{derive::*, firmware::fpga::STMSamplingConfig, freq::Freq};
+use crate::{defined::Freq, derive::*, firmware::fpga::STMSamplingConfig};
 
 #[doc(hidden)]
 #[derive(Clone, Copy, Builder)]

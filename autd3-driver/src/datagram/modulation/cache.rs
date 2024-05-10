@@ -72,7 +72,7 @@ impl<M: Modulation> Modulation for Cache<M> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{defined::FREQ_40K, freq::kHz, geometry::tests::create_geometry};
+    use crate::{defined::kHz, defined::FREQ_40K, geometry::tests::create_geometry};
 
     use super::{super::tests::TestModulation, *};
 

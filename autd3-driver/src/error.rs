@@ -1,8 +1,8 @@
 use thiserror::Error;
 
 use crate::{
+    defined::Freq,
     firmware::{cpu::GainSTMMode, fpga::*},
-    freq::Freq,
 };
 
 #[derive(Error, Debug, PartialEq)]

@@ -457,7 +457,7 @@ mod tests {
     use std::mem::{offset_of, size_of};
 
     use crate::{
-        freq::{Freq, Hz},
+        defined::{Freq, Hz},
         geometry::tests::create_geometry,
     };
 

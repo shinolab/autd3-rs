@@ -60,7 +60,7 @@ impl FromMessage<SquareNearest>
     fn from_msg(msg: &SquareNearest) -> Option<Self> {
         Some(
             autd3::modulation::Square::with_freq_nearest(
-                (msg.freq as f64) * autd3_driver::freq::Hz,
+                (msg.freq as f64) * autd3_driver::defined::Hz,
             )
             .with_high(msg.high as _)
             .with_low(msg.low as _)

@@ -59,7 +59,7 @@ impl FromMessage<SineExact>
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &SineExact) -> Option<Self> {
         Some(
-            autd3::modulation::Sine::new((msg.freq as f64) * autd3_driver::freq::Hz)
+            autd3::modulation::Sine::new((msg.freq as f64) * autd3_driver::defined::Hz)
                 .with_intensity(msg.intensity as _)
                 .with_offset(msg.intensity as _)
                 .with_phase(autd3_driver::firmware::fpga::Phase::from_msg(

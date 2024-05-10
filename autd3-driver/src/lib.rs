@@ -5,7 +5,6 @@ pub mod defined;
 pub mod error;
 pub mod ethercat;
 pub mod firmware;
-pub mod freq;
 pub mod geometry;
 pub mod link;
 pub mod utils;

@@ -164,9 +164,9 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
 mod tests {
     use autd3_driver::{
         datagram::{GainSTM, SwapSegment},
+        defined::Hz,
         derive::{Gain, GainFilter, Modulation, Segment, TransitionMode},
         error::AUTDInternalError,
-        freq::Hz,
     };
 
     use crate::{

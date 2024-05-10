@@ -1,12 +1,12 @@
 use autd3_driver::{
     autd3_device::AUTD3,
     datagram::*,
+    defined::Freq,
     error::AUTDInternalError,
     firmware::{
         cpu::TxDatagram,
         operation::{NullOp, Operation, OperationHandler},
     },
-    freq::Freq,
     geometry::{Geometry, IntoDevice, Vector3},
 };
 use autd3_firmware_emulator::{

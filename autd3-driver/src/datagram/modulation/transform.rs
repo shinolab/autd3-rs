@@ -55,7 +55,7 @@ impl<M: Modulation, F: Fn(&Device, usize, u8) -> u8> Modulation for Transform<M,
 mod tests {
     use rand::Rng;
 
-    use crate::{defined::FREQ_40K, freq::kHz, geometry::tests::create_geometry};
+    use crate::{defined::kHz, defined::FREQ_40K, geometry::tests::create_geometry};
 
     use super::{super::tests::TestModulation, *};
 

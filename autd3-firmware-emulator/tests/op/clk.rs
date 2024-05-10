@@ -1,11 +1,11 @@
 use autd3_driver::{
+    defined::{Freq, Hz},
     derive::NullOp,
     error::AUTDInternalError,
     firmware::{
         cpu::TxDatagram,
         operation::{ConfigureClockOp, OperationHandler},
     },
-    freq::{Freq, Hz},
 };
 use autd3_firmware_emulator::{cpu::params::CLK_FLAG_END, CPUEmulator};
 

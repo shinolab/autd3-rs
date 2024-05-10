@@ -1,11 +1,11 @@
 use autd3_driver::{
+    defined::Freq,
     defined::FREQ_40K,
     derive::{Drive, EmitIntensity, Phase, Segment},
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::fpga::{
         GPIOIn, LoopBehavior, TransitionMode, TRANSITION_MODE_IMMIDIATE, ULTRASOUND_PERIOD,
     },
-    freq::Freq,
 };
 
 use super::params::*;

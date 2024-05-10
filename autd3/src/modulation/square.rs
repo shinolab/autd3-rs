@@ -1,4 +1,4 @@
-use autd3_driver::{derive::*, freq::Freq};
+use autd3_driver::{defined::Freq, derive::*};
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
@@ -74,7 +74,7 @@ impl<S: SamplingMode> Modulation for Square<S> {
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::freq::Hz;
+    use autd3_driver::defined::Hz;
 
     use crate::tests::create_geometry;
 

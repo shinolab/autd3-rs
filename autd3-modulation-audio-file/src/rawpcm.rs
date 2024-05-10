@@ -1,4 +1,4 @@
-use autd3_driver::{derive::*, freq::Freq, utils::float::is_integer};
+use autd3_driver::{defined::Freq, derive::*, utils::float::is_integer};
 
 use std::{
     fs::File,
@@ -69,7 +69,7 @@ impl Modulation for RawPCM {
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::freq::Hz;
+    use autd3_driver::defined::Hz;
 
     use crate::tests::create_geometry;
 

@@ -1,9 +1,9 @@
 use std::fmt::Debug;
 
 use crate::{
+    defined::{Freq, Hz},
     error::AUTDInternalError,
     firmware::fpga::{SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
-    freq::{Freq, Hz},
 };
 
 use super::ULTRASOUND_PERIOD;
@@ -107,7 +107,7 @@ impl std::fmt::Display for SamplingConfig {
 
 #[cfg(test)]
 mod tests {
-    use crate::freq::Hz;
+    use crate::defined::Hz;
 
     use super::*;
 

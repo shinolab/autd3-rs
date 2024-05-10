@@ -1,3 +1,5 @@
+mod freq;
+
 pub use std::f64::consts::PI;
 
 #[cfg(feature = "use_meter")]
@@ -10,7 +12,7 @@ mod unit {
 }
 pub use unit::*;
 
-use crate::freq::Freq;
+pub use freq::*;
 
 pub const MILLIMETER: f64 = METER / 1000.0;
 

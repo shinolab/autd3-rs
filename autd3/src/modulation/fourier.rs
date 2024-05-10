@@ -117,7 +117,7 @@ mod tests {
 
     use super::*;
 
-    use autd3_driver::{defined::PI, freq::Hz};
+    use autd3_driver::{defined::Hz, defined::PI};
 
     #[test]
     fn test_fourier() -> anyhow::Result<()> {

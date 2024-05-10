@@ -1,4 +1,4 @@
-use crate::{defined::DEFAULT_TIMEOUT, derive::*, firmware::fpga::TransitionMode, freq::Freq};
+use crate::{defined::Freq, defined::DEFAULT_TIMEOUT, derive::*, firmware::fpga::TransitionMode};
 
 use super::{ControlPoint, STMProps};
 
@@ -141,8 +141,8 @@ mod tests {
 
     use super::*;
     use crate::{
+        defined::{kHz, Hz},
         firmware::operation::FocusSTMOp,
-        freq::{kHz, Hz},
         geometry::Vector3,
     };
 

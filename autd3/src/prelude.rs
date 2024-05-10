@@ -17,6 +17,7 @@ pub use autd3_driver::{
         ModulationProperty, ModulationTransform, PhaseFilter, PulseWidthEncoder, RadiationPressure,
         ReadsFPGAState, Silencer, SwapSegment, Synchronize,
     },
+    defined::{kHz, Hz},
     defined::{mm, PI},
     error::AUTDInternalError,
     ethercat::DcSysTime,
@@ -28,7 +29,6 @@ pub use autd3_driver::{
         },
         version::FirmwareVersion,
     },
-    freq::{kHz, Hz},
     geometry::*,
     link::{Link, LinkBuilder},
 };

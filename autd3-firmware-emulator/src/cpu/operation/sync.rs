@@ -1,4 +1,4 @@
-use autd3_driver::freq::Hz;
+use autd3_driver::defined::Hz;
 
 use crate::{cpu::params::*, CPUEmulator};
 
