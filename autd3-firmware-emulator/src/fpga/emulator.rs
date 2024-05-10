@@ -462,9 +462,10 @@ impl FPGAEmulator {
         .iter()
         .skip(256 * idx)
         .take(self.num_transducers)
-        .map(|&d| {
+        .zip(self.phase_filter())
+        .map(|(&d, p)| {
             Drive::new(
-                Phase::new((d & 0xFF) as u8),
+                Phase::new((d & 0xFF) as u8) + p,
                 EmitIntensity::new(((d >> 8) & 0xFF) as u8),
             )
         })
@@ -503,7 +504,8 @@ impl FPGAEmulator {
         };
         self.tr_pos
             .iter()
-            .map(|&tr| {
+            .zip(self.phase_filter())
+            .map(|(&tr, p)| {
                 let tr_z = ((tr >> 32) & 0xFFFF) as i16 as i32;
                 let tr_x = ((tr >> 16) & 0xFFFF) as i16 as i32;
                 let tr_y = (tr & 0xFFFF) as i16 as i32;
@@ -512,7 +514,7 @@ impl FPGAEmulator {
                 let dist = d2.sqrt() as u64;
                 let q = (dist << 18) / sound_speed as u64;
                 Drive::new(
-                    Phase::new((q & 0xFF) as u8),
+                    Phase::new((q & 0xFF) as u8) + p,
                     EmitIntensity::new(intensity as u8),
                 )
             })
