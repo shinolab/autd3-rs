@@ -1,45 +1,36 @@
-use super::sampling_config::STMSamplingConfiguration;
-use crate::derive::*;
+use crate::{derive::*, firmware::fpga::STMSamplingConfig, freq::FreqFloat};
 
 #[doc(hidden)]
 #[derive(Clone, Copy, Builder)]
 pub struct STMProps {
-    sampling: STMSamplingConfiguration,
+    pub(crate) config: STMSamplingConfig,
     #[getset]
     pub(crate) loop_behavior: LoopBehavior,
 }
 
 impl STMProps {
-    pub const fn from_freq(freq: f64) -> Self {
+    pub const fn from_freq(freq: FreqFloat) -> Self {
         Self {
-            sampling: STMSamplingConfiguration::Frequency(freq),
-            loop_behavior: LoopBehavior::Infinite,
+            config: STMSamplingConfig::Freq(freq),
+            loop_behavior: LoopBehavior::infinite(),
         }
     }
 
-    pub const fn from_period(period: std::time::Duration) -> Self {
+    pub const fn from_freq_nearest(freq: FreqFloat) -> Self {
         Self {
-            sampling: STMSamplingConfiguration::Period(period),
-            loop_behavior: LoopBehavior::Infinite,
+            config: STMSamplingConfig::FreqNearest(freq),
+            loop_behavior: LoopBehavior::infinite(),
         }
     }
 
-    pub const fn from_sampling_config(sampling: SamplingConfiguration) -> Self {
+    pub const fn from_sampling_config(sampling: SamplingConfig) -> Self {
         Self {
-            sampling: STMSamplingConfiguration::SamplingConfiguration(sampling),
-            loop_behavior: LoopBehavior::Infinite,
+            config: STMSamplingConfig::SamplingConfig(sampling),
+            loop_behavior: LoopBehavior::infinite(),
         }
     }
 
-    pub fn freq(&self, size: usize) -> f64 {
-        self.sampling.frequency(size)
-    }
-
-    pub fn period(&self, size: usize) -> std::time::Duration {
-        self.sampling.period(size)
-    }
-
-    pub fn sampling_config(&self, size: usize) -> Result<SamplingConfiguration, AUTDInternalError> {
-        self.sampling.sampling(size)
+    pub fn sampling_config(&self, size: usize) -> Result<SamplingConfig, AUTDInternalError> {
+        self.config.sampling(size)
     }
 }

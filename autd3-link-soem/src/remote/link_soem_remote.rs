@@ -1,8 +1,8 @@
 use std::{net::SocketAddr, time::Duration};
 
 use autd3_driver::{
-    cpu::{RxMessage, TxDatagram},
     derive::*,
+    firmware::cpu::{RxMessage, TxDatagram},
     link::{Link, LinkBuilder},
 };
 
@@ -44,7 +44,7 @@ impl RemoteSOEM {
     pub const fn builder(addr: SocketAddr) -> RemoteSOEMBuilder {
         RemoteSOEMBuilder {
             addr,
-            timeout: Duration::from_millis(200),
+            timeout: DEFAULT_TIMEOUT,
         }
     }
 }

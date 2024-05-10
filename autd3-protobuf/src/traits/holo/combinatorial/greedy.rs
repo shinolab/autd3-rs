@@ -4,7 +4,7 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3_gain_holo::Greedy {
+impl ToMessage for autd3_gain_holo::Greedy<autd3_driver::acoustics::directivity::Sphere> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
@@ -17,13 +17,17 @@ impl ToMessage for autd3_gain_holo::Greedy {
                     constraint: Some(self.constraint().to_msg(None)),
                 })),
                 segment: Segment::S0 as _,
-                update_segment: true,
+                transition: true,
             })),
         }
     }
 }
 
-impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3_gain_holo::Greedy> {
+impl ToMessage
+    for autd3_driver::datagram::DatagramWithSegment<
+        autd3_gain_holo::Greedy<autd3_driver::acoustics::directivity::Sphere>,
+    >
+{
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
@@ -36,13 +40,13 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3_gain_holo::
                     constraint: Some(self.constraint().to_msg(None)),
                 })),
                 segment: self.segment() as _,
-                update_segment: self.update_segment(),
+                transition: self.transition(),
             })),
         }
     }
 }
 
-impl FromMessage<Greedy> for autd3_gain_holo::Greedy {
+impl FromMessage<Greedy> for autd3_gain_holo::Greedy<autd3_driver::acoustics::directivity::Sphere> {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &Greedy) -> Option<Self> {
         Some(
@@ -91,6 +95,7 @@ mod tests {
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Greedy(g)),
+                ..
             })) => {
                 let holo2 = autd3_gain_holo::Greedy::from_msg(&g).unwrap();
                 assert_eq!(holo.phase_div(), holo2.phase_div());

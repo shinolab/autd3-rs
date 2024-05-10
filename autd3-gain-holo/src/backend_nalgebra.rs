@@ -3,24 +3,29 @@ use std::sync::Arc;
 use nalgebra::ComplexField;
 
 use autd3_driver::{
-    acoustics::{directivity::Sphere, propagate},
+    acoustics::{directivity::Directivity, propagate},
     datagram::GainFilter,
+    defined::Complex,
     geometry::Geometry,
 };
 
-use crate::{error::HoloError, Complex, LinAlgBackend, MatrixX, MatrixXc, VectorX, VectorXc};
+use crate::{error::HoloError, LinAlgBackend, MatrixX, MatrixXc, VectorX, VectorXc};
 
 /// Backend using nalgebra
-pub struct NalgebraBackend {}
+pub struct NalgebraBackend<D: Directivity> {
+    _phantom: std::marker::PhantomData<D>,
+}
 
-impl LinAlgBackend for NalgebraBackend {
+impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
     type MatrixXc = MatrixXc;
     type MatrixX = MatrixX;
     type VectorXc = VectorXc;
     type VectorX = VectorX;
 
     fn new() -> Result<Arc<Self>, HoloError> {
-        Ok(Arc::new(Self {}))
+        Ok(Arc::new(Self {
+            _phantom: std::marker::PhantomData,
+        }))
     }
 
     fn generate_propagation_matrix(
@@ -32,15 +37,11 @@ impl LinAlgBackend for NalgebraBackend {
         match filter {
             GainFilter::All => Ok(MatrixXc::from_iterator(
                 foci.len(),
-                geometry
-                    .devices()
-                    .map(|dev| dev.num_transducers())
-                    .sum::<usize>(),
+                geometry.num_transducers(),
                 geometry.devices().flat_map(|dev| {
                     dev.iter().flat_map(move |tr| {
-                        foci.iter().map(move |fp| {
-                            propagate::<Sphere>(tr, dev.attenuation, dev.sound_speed, fp)
-                        })
+                        foci.iter()
+                            .map(move |fp| propagate::<D>(tr, dev.attenuation, dev.sound_speed, fp))
                     })
                 }),
             )),
@@ -52,12 +53,7 @@ impl LinAlgBackend for NalgebraBackend {
                             filter.get(&dev.idx()).and_then(|filter| {
                                 if filter[tr.idx()] {
                                     Some(foci.iter().map(move |fp| {
-                                        propagate::<Sphere>(
-                                            tr,
-                                            dev.attenuation,
-                                            dev.sound_speed,
-                                            fp,
-                                        )
+                                        propagate::<D>(tr, dev.attenuation, dev.sound_speed, fp)
                                     }))
                                 } else {
                                     None
@@ -267,20 +263,22 @@ impl LinAlgBackend for NalgebraBackend {
         m: usize,
         n: usize,
         transfer: &Self::MatrixXc,
-        b: &mut Self::MatrixXc,
-    ) -> Result<(), HoloError> {
-        (0..n).for_each(|i| {
-            let x = 1.0
-                / transfer
-                    .rows(i, 1)
-                    .iter()
-                    .map(|x| x.norm_sqr())
-                    .sum::<f64>();
-            (0..m).for_each(|j| {
-                b[(j, i)] = transfer[(i, j)].conj() * x;
-            })
-        });
-        Ok(())
+    ) -> Result<Self::MatrixXc, HoloError> {
+        Ok(MatrixXc::from_vec(
+            m,
+            n,
+            (0..n)
+                .flat_map(|i| {
+                    let x = 1.0
+                        / transfer
+                            .rows(i, 1)
+                            .iter()
+                            .map(|x| x.norm_sqr())
+                            .sum::<f64>();
+                    (0..m).map(move |j| transfer[(i, j)].conj() * x)
+                })
+                .collect::<Vec<_>>(),
+        ))
     }
 
     fn max_eigen_vector_c(&self, m: Self::MatrixXc) -> Result<Self::VectorXc, HoloError> {
@@ -533,19 +531,19 @@ impl LinAlgBackend for NalgebraBackend {
     ) -> Result<(), HoloError> {
         match trans_a {
             crate::Trans::NoTrans => match trans_b {
-                crate::Trans::NoTrans => y.gemm(alpha, a, b, beta),
+                crate::Trans::NoTrans => return Err(HoloError::InvalidOperation),
                 crate::Trans::Trans => y.gemm(alpha, a, &b.transpose(), beta),
                 crate::Trans::ConjTrans => y.gemm(alpha, a, &b.adjoint(), beta),
             },
             crate::Trans::Trans => match trans_b {
                 crate::Trans::NoTrans => y.gemm_tr(alpha, a, b, beta),
-                crate::Trans::Trans => y.gemm_tr(alpha, a, &b.transpose(), beta),
-                crate::Trans::ConjTrans => y.gemm_tr(alpha, a, &b.adjoint(), beta),
+                crate::Trans::Trans => return Err(HoloError::InvalidOperation),
+                crate::Trans::ConjTrans => return Err(HoloError::InvalidOperation),
             },
             crate::Trans::ConjTrans => match trans_b {
                 crate::Trans::NoTrans => y.gemm_ad(alpha, a, b, beta),
-                crate::Trans::Trans => y.gemm_ad(alpha, a, &b.transpose(), beta),
-                crate::Trans::ConjTrans => y.gemm_ad(alpha, a, &b.adjoint(), beta),
+                crate::Trans::Trans => return Err(HoloError::InvalidOperation),
+                crate::Trans::ConjTrans => return Err(HoloError::InvalidOperation),
             },
         }
         Ok(())
@@ -587,15 +585,25 @@ impl LinAlgBackend for NalgebraBackend {
     }
 }
 
+impl Default for NalgebraBackend<autd3_driver::acoustics::directivity::Sphere> {
+    fn default() -> Self {
+        Self {
+            _phantom: std::marker::PhantomData,
+        }
+    }
+}
+
 #[cfg(all(test, feature = "test-utilities"))]
 mod tests {
+    use autd3_driver::acoustics::directivity::Sphere;
+
     use super::*;
 
     use crate::test_utilities::*;
 
     #[test]
     fn test_nalgebra_backend() {
-        LinAlgBackendTestHelper::<10, NalgebraBackend>::new()
+        LinAlgBackendTestHelper::<10, NalgebraBackend<Sphere>>::new()
             .unwrap()
             .test()
             .unwrap();

@@ -7,7 +7,7 @@ use crate::derive::*;
 pub struct RadiationPressure<M: Modulation> {
     m: M,
     #[no_change]
-    config: SamplingConfiguration,
+    config: SamplingConfig,
     loop_behavior: LoopBehavior,
 }
 
@@ -28,12 +28,19 @@ pub trait IntoRadiationPressure<M: Modulation> {
 }
 
 impl<M: Modulation> Modulation for RadiationPressure<M> {
-    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
         Ok(self
             .m
-            .calc()?
-            .iter()
-            .map(|v| (((v.value() as f64 / 255.).sqrt() * 255.).round() as u8).into())
+            .calc(geometry)?
+            .into_iter()
+            .map(|(i, v)| {
+                (
+                    i,
+                    v.into_iter()
+                        .map(|v| ((v as f64 / 255.).sqrt() * 255.).round() as u8)
+                        .collect(),
+                )
+            })
             .collect())
     }
 }
@@ -44,17 +51,19 @@ mod tests {
 
     use super::{super::tests::TestModulation, *};
 
+    use crate::{defined::FREQ_40K, freq::kHz, geometry::tests::create_geometry};
+
     #[rstest::rstest]
     #[test]
-    #[case::freq_4k(SamplingConfiguration::FREQ_4K_HZ)]
-    #[case::disable(SamplingConfiguration::DISABLE)]
-    fn test_sampling_config(#[case] config: SamplingConfiguration) {
+    #[case::freq_4k(SamplingConfig::Freq(4 * kHz))]
+    #[case::disable(SamplingConfig::DISABLE)]
+    fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
             config,
             TestModulation {
-                buf: vec![EmitIntensity::MIN; 2],
+                buf: vec![u8::MIN; 2],
                 config,
-                loop_behavior: LoopBehavior::Infinite,
+                loop_behavior: LoopBehavior::infinite(),
             }
             .with_radiation_pressure()
             .sampling_config()
@@ -63,24 +72,25 @@ mod tests {
 
     #[test]
     fn test() {
+        let geometry = create_geometry(1, 249, FREQ_40K);
+
         let mut rng = rand::thread_rng();
 
         let buf = vec![rng.gen(), rng.gen()];
         assert_eq!(
-            Ok(buf
-                .iter()
-                .map(
-                    |x: &EmitIntensity| (((x.value() as f64 / 255.).sqrt() * 255.).round() as u8)
-                        .into()
-                )
-                .collect::<Vec<EmitIntensity>>()),
+            Ok(HashMap::from([(
+                0,
+                buf.iter()
+                    .map(|&x| (((x as f64 / 255.).sqrt() * 255.).round() as u8))
+                    .collect::<Vec<u8>>()
+            )])),
             TestModulation {
                 buf: buf.clone(),
-                config: SamplingConfiguration::FREQ_4K_HZ,
-                loop_behavior: LoopBehavior::Infinite,
+                config: SamplingConfig::Freq(4 * kHz),
+                loop_behavior: LoopBehavior::infinite(),
             }
             .with_radiation_pressure()
-            .calc()
+            .calc(&geometry)
         );
     }
 }

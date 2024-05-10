@@ -1,7 +1,9 @@
 #[cfg(feature = "local")]
 pub mod local;
+#[cfg(all(feature = "local", target_os = "windows"))]
+pub use local::ProcessPriority;
 #[cfg(feature = "local")]
-pub use local::{EthernetAdapters, Status, SyncMode, SOEM};
+pub use local::{EthernetAdapters, Status, SyncMode, ThreadPriority, TimerStrategy, SOEM};
 
 #[cfg(feature = "remote")]
 pub mod remote;

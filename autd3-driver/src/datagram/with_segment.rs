@@ -1,15 +1,13 @@
 use std::time::Duration;
 
 use super::Datagram;
-use crate::common::Segment;
-use crate::error::AUTDInternalError;
-use crate::operation::Operation;
+use crate::firmware::{fpga::Segment, operation::Operation};
 
 /// Datagram with target segment
 pub struct DatagramWithSegment<D: DatagramS> {
     datagram: D,
     segment: Segment,
-    update_segment: bool,
+    transition: bool,
 }
 
 impl<D: DatagramS> DatagramWithSegment<D> {
@@ -17,8 +15,8 @@ impl<D: DatagramS> DatagramWithSegment<D> {
         self.segment
     }
 
-    pub const fn update_segment(&self) -> bool {
-        self.update_segment
+    pub const fn transition(&self) -> bool {
+        self.transition
     }
 }
 
@@ -34,9 +32,9 @@ impl<D: DatagramS> Datagram for DatagramWithSegment<D> {
     type O1 = D::O1;
     type O2 = D::O2;
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn operation(self) -> (Self::O1, Self::O2) {
         self.datagram
-            .operation_with_segment(self.segment, self.update_segment)
+            .operation_with_segment(self.segment, self.transition)
     }
 
     fn timeout(&self) -> Option<Duration> {
@@ -48,41 +46,24 @@ pub trait DatagramS {
     type O1: Operation;
     type O2: Operation;
 
-    fn operation_with_segment(
-        self,
-        segment: Segment,
-        update_segment: bool,
-    ) -> Result<(Self::O1, Self::O2), AUTDInternalError>;
+    fn operation_with_segment(self, segment: Segment, transition: bool) -> (Self::O1, Self::O2);
 
     fn timeout(&self) -> Option<Duration> {
         None
     }
 }
 
-impl<D: DatagramS> Datagram for D {
-    type O1 = D::O1;
-    type O2 = D::O2;
-
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        <Self as DatagramS>::operation_with_segment(self, Segment::S0, true)
-    }
-
-    fn timeout(&self) -> Option<Duration> {
-        <Self as DatagramS>::timeout(self)
-    }
-}
-
 pub trait IntoDatagramWithSegment<D: DatagramS> {
     /// Set segment
-    fn with_segment(self, segment: Segment, update_segment: bool) -> DatagramWithSegment<D>;
+    fn with_segment(self, segment: Segment, transition: bool) -> DatagramWithSegment<D>;
 }
 
 impl<D: DatagramS> IntoDatagramWithSegment<D> for D {
-    fn with_segment(self, segment: Segment, update_segment: bool) -> DatagramWithSegment<D> {
+    fn with_segment(self, segment: Segment, transition: bool) -> DatagramWithSegment<D> {
         DatagramWithSegment {
             datagram: self,
             segment,
-            update_segment,
+            transition,
         }
     }
 }
@@ -92,18 +73,21 @@ impl<D: DatagramS + Clone> Clone for DatagramWithSegment<D> {
         Self {
             datagram: self.datagram.clone(),
             segment: self.segment,
-            update_segment: self.update_segment,
+            transition: self.transition,
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::operation::{ClearOp, NullOp};
+    use crate::firmware::operation::{ClearOp, NullOp};
 
     use super::*;
 
-    struct TestDatagram {}
+    #[derive(Clone)]
+    struct TestDatagram {
+        pub data: i32,
+    }
     impl DatagramS for TestDatagram {
         type O1 = ClearOp;
         type O2 = NullOp;
@@ -111,20 +95,30 @@ mod tests {
         fn operation_with_segment(
             self,
             _segment: Segment,
-            _update_segment: bool,
-        ) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-            Ok((Self::O1::default(), Self::O2::default()))
+            _transition: bool,
+        ) -> (Self::O1, Self::O2) {
+            (Self::O1::default(), Self::O2::default())
         }
     }
 
     #[test]
     fn test() {
-        let d: DatagramWithSegment<TestDatagram> = TestDatagram {}.with_segment(Segment::S0, true);
+        let d: DatagramWithSegment<TestDatagram> =
+            TestDatagram { data: 0 }.with_segment(Segment::S0, true);
 
-        let timeout = <DatagramWithSegment<TestDatagram> as Datagram>::timeout(&d);
-        assert!(timeout.is_none());
+        assert_eq!(None, d.timeout());
+        assert_eq!(Segment::S0, d.segment());
+        assert!(d.transition());
 
-        let _: (ClearOp, NullOp) =
-            <DatagramWithSegment<TestDatagram> as Datagram>::operation(d).unwrap();
+        let _: (ClearOp, NullOp) = d.operation();
+    }
+
+    #[test]
+    fn test_derive() {
+        let data = 1;
+        let d: DatagramWithSegment<TestDatagram> =
+            TestDatagram { data }.with_segment(Segment::S0, true);
+        let c = d.clone();
+        assert_eq!(d.data, c.data);
     }
 }

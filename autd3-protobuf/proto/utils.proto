@@ -24,24 +24,3 @@ message Geometry {
   }
   repeated AUTD3 devices = 1;
 }
-
-message EmitIntensity {
-  uint32 value = 1;
-}
-
-message Phase {
-  uint32 value = 1;
-}
-
-message SamplingConfiguration {
-  uint32 freq_div = 1;
-}
-
-message LoopBehavior {
-  uint32 rep = 1;
-}
-
-enum Segment {
-  S0 = 0;
-  S1 = 1;
-}

@@ -1,14 +1,14 @@
 use std::time::Duration;
 
-use crate::{
-    local::{
-        error_handler::{ErrHandler, Status},
-        SyncMode,
-    },
-    SOEM,
+use super::{
+    error_handler::{ErrHandler, Status},
+    timer_strategy::TimerStrategy,
+    SyncMode, SOEM,
 };
 
-use autd3_driver::{derive::*, link::LinkBuilder, timer_strategy::TimerStrategy};
+use autd3_driver::{derive::*, link::LinkBuilder};
+
+use thread_priority::ThreadPriority;
 
 #[derive(Builder)]
 #[no_const]
@@ -29,6 +29,11 @@ pub struct SOEMBuilder {
     pub(crate) sync0_cycle: u64,
     #[getset]
     pub(crate) send_cycle: u64,
+    #[getset]
+    pub(crate) thread_priority: ThreadPriority,
+    #[cfg(target_os = "windows")]
+    #[getset]
+    pub(crate) process_priority: super::ProcessPriority,
     pub(crate) err_handler: Option<ErrHandler>,
 }
 
@@ -49,6 +54,9 @@ impl SOEMBuilder {
             timeout: Duration::from_millis(20),
             sync0_cycle: 2,
             send_cycle: 2,
+            thread_priority: ThreadPriority::Max,
+            #[cfg(target_os = "windows")]
+            process_priority: super::ProcessPriority::High,
             err_handler: None,
         }
     }

@@ -16,3 +16,6 @@ where
 {
     fn from_msg(msg: &T) -> Option<Self>;
 }
+
+#[cfg(feature = "lightweight")]
+pub use driver::to_transition_mode;

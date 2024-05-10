@@ -25,6 +25,9 @@ pub enum SOEMError {
     #[cfg(target_os = "windows")]
     #[error("{0}")]
     WindowsError(#[from] windows::core::Error),
+
+    #[error("{0}")]
+    ThreadPriorityError(#[from] thread_priority::Error),
 }
 
 impl From<SOEMError> for AUTDInternalError {

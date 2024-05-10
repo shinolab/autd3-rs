@@ -4,47 +4,45 @@ package autd3;
 
 import "gain.proto";
 import "utils.proto";
+import "utils-lightweight.proto";
 
 message Clear {}
 
-message ConfigureSilencerFixedUpdateRate {
+message SilencerFixedUpdateRate {
       uint32 value_intensity = 1;
       uint32 value_phase = 2;
 }
 
-message ConfigureSilencerFixedCompletionSteps {
+message SilencerFixedCompletionSteps {
       uint32 value_intensity = 1;
       uint32 value_phase = 2;
       bool strict_mode = 3;
 }
 
-message ConfigureSilencer {
+message Silencer {
     oneof config {
-        ConfigureSilencerFixedUpdateRate fixed_update_rate = 1;
-        ConfigureSilencerFixedCompletionSteps fixed_completion_steps = 2;
+        SilencerFixedUpdateRate fixed_update_rate = 1;
+        SilencerFixedCompletionSteps fixed_completion_steps = 2;
     }
 }
 
 message Synchronize {}
 
-message ConfigureForceFan {
+message ForceFan {
     repeated bool value = 1;
 }
 
-message ConfigureReadsFPGAState {
+message ReadsFPGAState {
     repeated bool value = 1;
-}
-
-message ConfigureDebugOutputIdx {
-    repeated int32 value = 1;
 }
 
 message GainSTM {
-    uint32 freq_div = 1;
+    SamplingConfig config = 1;
     LoopBehavior loop_behavior = 2;
     Segment segment = 3;
-    bool update_segment = 4;
     repeated Gain gains = 5;
+    optional TransitionMode transition_mode = 6;
+    optional uint64 transition_value = 7;
 }
 
 message FocusSTM {
@@ -52,25 +50,32 @@ message FocusSTM {
         EmitIntensity intensity = 1;
         Vector3 pos = 2;
     }
-    uint32 freq_div = 1;
+    SamplingConfig config = 1;
     LoopBehavior loop_behavior = 2;
     Segment segment = 3;
-    bool update_segment = 4;
     repeated ControlPoint points = 5;
+    optional TransitionMode transition_mode = 6;
+    optional uint64 transition_value = 7;
 }
 
-message ChangeGainSegment {
+message SwapSegmentGain {
     Segment segment = 1;
 }
 
-message ChangeFocusSTMSegment {
+message SwapSegmentModulation {
     Segment segment = 1;
+    TransitionMode transition_mode = 2;
+    uint64 transition_value = 3;
 }
 
-message ChangeGainSTMSegment {
+message SwapSegmentFocusSTM {
     Segment segment = 1;
+    TransitionMode transition_mode = 2;
+    uint64 transition_value = 3;
 }
 
-message ChangeModulationSegment {
+message SwapSegmentGainSTM {
     Segment segment = 1;
+    TransitionMode transition_mode = 2;
+    uint64 transition_value = 3;
 }

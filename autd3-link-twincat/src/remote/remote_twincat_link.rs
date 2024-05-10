@@ -6,8 +6,8 @@ use std::{
 use itertools::Itertools;
 
 use autd3_driver::{
-    cpu::{RxMessage, TxDatagram},
     derive::*,
+    firmware::cpu::{RxMessage, TxDatagram},
     link::{Link, LinkBuilder},
 };
 
@@ -126,7 +126,7 @@ impl RemoteTwinCAT {
             server_ams_net_id: server_ams_net_id.into(),
             server_ip: String::new(),
             client_ams_net_id: String::new(),
-            timeout: Duration::from_millis(200),
+            timeout: DEFAULT_TIMEOUT,
         }
     }
 }

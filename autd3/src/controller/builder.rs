@@ -1,6 +1,8 @@
 use autd3_driver::{
-    cpu::{RxMessage, TxDatagram},
-    datagram::{Clear, IntoDatagramWithTimeout, Synchronize},
+    datagram::{Clear, ConfigureFPGAClock, IntoDatagramWithTimeout, Synchronize},
+    defined::FREQ_40K,
+    derive::DEFAULT_TIMEOUT,
+    firmware::cpu::{RxMessage, TxDatagram},
     geometry::{Device, Geometry, IntoDevice},
     link::LinkBuilder,
 };
@@ -29,8 +31,7 @@ impl ControllerBuilder {
         self,
         link_builder: B,
     ) -> Result<Controller<B::L>, AUTDError> {
-        self.open_with_timeout(link_builder, std::time::Duration::from_millis(200))
-            .await
+        self.open_with_timeout(link_builder, DEFAULT_TIMEOUT).await
     }
 
     /// Open controller with timeout
@@ -46,8 +47,16 @@ impl ControllerBuilder {
             rx_buf: vec![RxMessage::new(0, 0); geometry.num_devices()],
             geometry,
         };
+        if cnt
+            .geometry
+            .iter()
+            .any(|dev| dev.ultrasound_freq() != FREQ_40K)
+        {
+            cnt.send(ConfigureFPGAClock::new().with_timeout(timeout))
+                .await?; // GRCOV_EXCL_LINE
+        }
         cnt.send((Clear::new(), Synchronize::new()).with_timeout(timeout))
-            .await?;
+            .await?; // GRCOV_EXCL_LINE
         Ok(cnt)
     }
 }

@@ -35,12 +35,14 @@ impl Gain for Plane {
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |dev, tr| {
-            Drive::new(
-                self.dir.dot(tr.position()) * tr.wavenumber(dev.sound_speed) * Rad
-                    + self.phase_offset,
-                self.intensity,
-            )
+        Ok(Self::transform(geometry, filter, |dev| {
+            let wavenumber = dev.wavenumber();
+            move |tr| {
+                Drive::new(
+                    self.dir.dot(tr.position()) * wavenumber * Rad + self.phase_offset,
+                    self.intensity,
+                )
+            }
         }))
     }
 }
@@ -50,6 +52,7 @@ mod tests {
     use rand::Rng;
 
     use super::*;
+    use autd3_driver::datagram::Datagram;
 
     use crate::tests::{create_geometry, random_vector3};
 
@@ -69,9 +72,9 @@ mod tests {
         d.iter().for_each(|(&idx, d)| {
             assert_eq!(geometry[idx].num_transducers(), d.len());
             d.iter().zip(geometry[idx].iter()).for_each(|(d, tr)| {
-                let expected_phase = Phase::from_rad(
-                    dir.dot(tr.position()) * tr.wavenumber(geometry[idx].sound_speed),
-                ) + phase_offset;
+                let expected_phase =
+                    Phase::from_rad(dir.dot(tr.position()) * geometry[idx].wavenumber())
+                        + phase_offset;
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity());
             });
@@ -106,6 +109,6 @@ mod tests {
         let gain = Plane::new(Vector3::zeros());
         let gain2 = gain.clone();
         assert_eq!(gain, gain2);
-        let _ = gain.operation_with_segment(Segment::S0, true);
+        let _ = gain.operation();
     }
 }

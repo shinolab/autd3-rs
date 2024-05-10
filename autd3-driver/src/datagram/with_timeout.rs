@@ -1,7 +1,6 @@
 use std::time::Duration;
 
 use super::Datagram;
-use crate::error::AUTDInternalError;
 
 /// Datagram with timeout
 pub struct DatagramWithTimeout<D: Datagram> {
@@ -13,7 +12,7 @@ impl<D: Datagram> Datagram for DatagramWithTimeout<D> {
     type O1 = D::O1;
     type O2 = D::O2;
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn operation(self) -> (Self::O1, Self::O2) {
         self.datagram.operation()
     }
 
@@ -39,7 +38,7 @@ impl<D: Datagram> IntoDatagramWithTimeout<D> for D {
 
 #[cfg(test)]
 mod tests {
-    use crate::operation::{ClearOp, NullOp};
+    use crate::firmware::operation::{ClearOp, NullOp};
 
     use super::*;
 
@@ -48,8 +47,8 @@ mod tests {
         type O1 = ClearOp;
         type O2 = NullOp;
 
-        fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-            Ok((Self::O1::default(), Self::O2::default()))
+        fn operation(self) -> (Self::O1, Self::O2) {
+            (Self::O1::default(), Self::O2::default())
         }
     }
 
@@ -62,7 +61,6 @@ mod tests {
         assert!(timeout.is_some());
         assert_eq!(timeout.unwrap(), Duration::from_millis(100));
 
-        let _: (ClearOp, NullOp) =
-            <DatagramWithTimeout<TestDatagram> as Datagram>::operation(d).unwrap();
+        let _: (ClearOp, NullOp) = <DatagramWithTimeout<TestDatagram> as Datagram>::operation(d);
     }
 }

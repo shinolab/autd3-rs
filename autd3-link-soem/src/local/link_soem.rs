@@ -10,27 +10,29 @@ use std::{
 };
 
 use async_channel::{bounded, Receiver, SendError, Sender};
+use thread_priority::ThreadPriority;
 use time::ext::NumericalDuration;
 
-use autd3_driver::{
-    cpu::{RxMessage, TxDatagram, EC_CYCLE_TIME_BASE_NANO_SEC},
-    error::AUTDInternalError,
-    link::Link,
-    osal_timer::Timer,
-    sync_mode::SyncMode,
-    timer_strategy::TimerStrategy,
-};
-
 pub use crate::local::builder::SOEMBuilder;
-use crate::{
-    local::{error::SOEMError, iomap::IOMap, sleep::SoemCallback, soem_bindings::*},
-    EthernetAdapters,
+
+use autd3_driver::{
+    error::AUTDInternalError,
+    ethercat::{SyncMode, EC_CYCLE_TIME_BASE_NANO_SEC},
+    firmware::cpu::{RxMessage, TxDatagram},
+    link::Link,
 };
 
 use super::{
+    error::SOEMError,
     error_handler::{EcatErrorHandler, ErrHandler},
+    ethernet_adapters::EthernetAdapters,
+    iomap::IOMap,
+    osal_timer::Timer,
+    sleep::SoemCallback,
     sleep::{BusyWait, Sleep, StdSleep},
+    soem_bindings::*,
     state::EcStatus,
+    TimerStrategy,
 };
 
 /// Link using [SOEM](https://github.com/OpenEtherCATsociety/SOEM)
@@ -87,6 +89,9 @@ impl SOEM {
             timeout,
             sync0_cycle,
             send_cycle,
+            thread_priority,
+            #[cfg(target_os = "windows")]
+            process_priority,
             mut err_handler,
         } = builder;
 
@@ -157,6 +162,9 @@ impl SOEM {
             result.io_map.clone(),
             tx_receiver,
             timer_strategy,
+            thread_priority,
+            #[cfg(target_os = "windows")]
+            process_priority,
             ec_send_cycle,
         )?);
 
@@ -418,19 +426,31 @@ struct SOEMECatThreadGuard {
 }
 
 impl SOEMECatThreadGuard {
+    #[cfg_attr(target_os = "windows", allow(clippy::too_many_arguments))]
     fn new(
         is_open: Arc<AtomicBool>,
         wkc: Arc<AtomicI32>,
         io_map: Arc<Mutex<IOMap>>,
         tx_receiver: Receiver<TxDatagram>,
         timer_strategy: TimerStrategy,
+        thread_priority: ThreadPriority,
+        #[cfg(target_os = "windows")] process_priority: super::ProcessPriority,
         ec_send_cycle: Duration,
     ) -> Result<Self, AUTDInternalError> {
         let (ecatth_handle, timer_handle) = match timer_strategy {
             TimerStrategy::Sleep => (
                 {
                     Some(std::thread::spawn(move || {
-                        Self::ecat_run::<StdSleep>(is_open, io_map, wkc, tx_receiver, ec_send_cycle)
+                        Self::ecat_run::<StdSleep>(
+                            is_open,
+                            io_map,
+                            wkc,
+                            tx_receiver,
+                            ec_send_cycle,
+                            thread_priority,
+                            #[cfg(target_os = "windows")]
+                            process_priority,
+                        )
                     }))
                 },
                 None,
@@ -438,7 +458,16 @@ impl SOEMECatThreadGuard {
             TimerStrategy::BusyWait => (
                 {
                     Some(std::thread::spawn(move || {
-                        Self::ecat_run::<BusyWait>(is_open, io_map, wkc, tx_receiver, ec_send_cycle)
+                        Self::ecat_run::<BusyWait>(
+                            is_open,
+                            io_map,
+                            wkc,
+                            tx_receiver,
+                            ec_send_cycle,
+                            thread_priority,
+                            #[cfg(target_os = "windows")]
+                            process_priority,
+                        )
                     }))
                 },
                 None,
@@ -468,6 +497,8 @@ impl SOEMECatThreadGuard {
         wkc: Arc<AtomicI32>,
         receiver: Receiver<TxDatagram>,
         cycle: Duration,
+        thread_priority: ThreadPriority,
+        #[cfg(target_os = "windows")] process_priority: super::ProcessPriority,
     ) -> Result<(), SOEMError> {
         unsafe {
             let mut ts = {
@@ -479,21 +510,19 @@ impl SOEMECatThreadGuard {
             };
 
             #[cfg(target_os = "windows")]
-            let priority = {
-                let priority = windows::Win32::System::Threading::GetPriorityClass(
+            let old_priority = {
+                let old_priority = windows::Win32::System::Threading::GetPriorityClass(
                     windows::Win32::System::Threading::GetCurrentProcess(),
                 );
                 windows::Win32::System::Threading::SetPriorityClass(
                     windows::Win32::System::Threading::GetCurrentProcess(),
-                    windows::Win32::System::Threading::REALTIME_PRIORITY_CLASS,
-                )?;
-                windows::Win32::System::Threading::SetThreadPriority(
-                    windows::Win32::System::Threading::GetCurrentThread(),
-                    windows::Win32::System::Threading::THREAD_PRIORITY_TIME_CRITICAL,
+                    process_priority.into(),
                 )?;
                 windows::Win32::Media::timeBeginPeriod(1);
-                priority
+                old_priority
             };
+
+            thread_priority.set_for_current()?;
 
             let mut toff = time::Duration::ZERO;
             let mut integral = 0;
@@ -528,7 +557,7 @@ impl SOEMECatThreadGuard {
                 windows::Win32::Media::timeEndPeriod(1);
                 windows::Win32::System::Threading::SetPriorityClass(
                     windows::Win32::System::Threading::GetCurrentProcess(),
-                    windows::Win32::System::Threading::PROCESS_CREATION_FLAGS(priority),
+                    windows::Win32::System::Threading::PROCESS_CREATION_FLAGS(old_priority),
                 )?;
             }
         }

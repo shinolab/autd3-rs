@@ -1,11 +1,11 @@
-use crate::{datagram::*, geometry::Device};
+use crate::{datagram::*, defined::DEFAULT_TIMEOUT, geometry::Device};
 
 /// Datagram for configure reads_fpga_state
-pub struct ConfigureReadsFPGAState<F: Fn(&Device) -> bool> {
+pub struct ReadsFPGAState<F: Fn(&Device) -> bool> {
     f: F,
 }
 
-impl<F: Fn(&Device) -> bool> ConfigureReadsFPGAState<F> {
+impl<F: Fn(&Device) -> bool> ReadsFPGAState<F> {
     /// constructor
     pub const fn new(f: F) -> Self {
         Self { f }
@@ -18,16 +18,16 @@ impl<F: Fn(&Device) -> bool> ConfigureReadsFPGAState<F> {
     // GRCOV_EXCL_STOP
 }
 
-impl<F: Fn(&Device) -> bool> Datagram for ConfigureReadsFPGAState<F> {
-    type O1 = crate::operation::ConfigureReadsFPGAStateOp<F>;
-    type O2 = crate::operation::NullOp;
+impl<F: Fn(&Device) -> bool> Datagram for ReadsFPGAState<F> {
+    type O1 = crate::firmware::operation::ReadsFPGAStateOp<F>;
+    type O2 = crate::firmware::operation::NullOp;
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new(self.f), Self::O2::default()))
+    fn operation(self) -> (Self::O1, Self::O2) {
+        (Self::O1::new(self.f), Self::O2::default())
     }
 
     fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
+        Some(DEFAULT_TIMEOUT)
     }
 }
 
@@ -43,9 +43,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let datagram = ConfigureReadsFPGAState::new(f);
-        let r = datagram.operation();
-        assert!(r.is_ok());
-        let _ = r.unwrap();
+        let datagram = ReadsFPGAState::new(f);
+        let _ = datagram.operation();
     }
 }

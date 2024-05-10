@@ -1,11 +1,11 @@
-use crate::{datagram::*, geometry::Device};
+use crate::{datagram::*, derive::DEFAULT_TIMEOUT, geometry::Device};
 
 /// Datagram for configure force fan
-pub struct ConfigureForceFan<F: Fn(&Device) -> bool> {
+pub struct ForceFan<F: Fn(&Device) -> bool> {
     f: F,
 }
 
-impl<F: Fn(&Device) -> bool> ConfigureForceFan<F> {
+impl<F: Fn(&Device) -> bool> ForceFan<F> {
     /// constructor
     pub const fn new(f: F) -> Self {
         Self { f }
@@ -19,16 +19,16 @@ impl<F: Fn(&Device) -> bool> ConfigureForceFan<F> {
     // GRCOV_EXCL_STOP
 }
 
-impl<F: Fn(&Device) -> bool> Datagram for ConfigureForceFan<F> {
-    type O1 = crate::operation::ConfigureForceFanOp<F>;
-    type O2 = crate::operation::NullOp;
+impl<F: Fn(&Device) -> bool> Datagram for ForceFan<F> {
+    type O1 = crate::firmware::operation::ForceFanOp<F>;
+    type O2 = crate::firmware::operation::NullOp;
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new(self.f), Self::O2::default()))
+    fn operation(self) -> (Self::O1, Self::O2) {
+        (Self::O1::new(self.f), Self::O2::default())
     }
 
     fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
+        Some(DEFAULT_TIMEOUT)
     }
 }
 
@@ -44,7 +44,7 @@ mod tests {
 
     #[test]
     fn test_timeout() {
-        let datagram = ConfigureForceFan::new(f);
+        let datagram = ForceFan::new(f);
         let timeout = datagram.timeout();
         assert!(timeout.is_some());
         assert!(timeout.unwrap() > Duration::ZERO);
@@ -52,9 +52,7 @@ mod tests {
 
     #[test]
     fn test_operation() {
-        let datagram = ConfigureForceFan::new(f);
-        let r = datagram.operation();
-        assert!(r.is_ok());
-        let _ = r.unwrap();
+        let datagram = ForceFan::new(f);
+        let _ = datagram.operation();
     }
 }

@@ -55,13 +55,14 @@ impl Gain for Bessel {
                     UnitQuaternion::from_scaled_axis(v * -theta_v)
                 })
         };
-        Ok(Self::transform(geometry, filter, |dev, tr| {
-            let r = rot * (tr.position() - self.pos);
-            let dist = self.theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - self.theta.cos() * r.z;
-            Drive::new(
-                dist * tr.wavenumber(dev.sound_speed) * Rad + self.phase_offset,
-                self.intensity,
-            )
+        Ok(Self::transform(geometry, filter, |dev| {
+            let wavenumber = dev.wavenumber();
+            move |tr| {
+                let r = rot * (tr.position() - self.pos);
+                let dist =
+                    self.theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - self.theta.cos() * r.z;
+                Drive::new(dist * wavenumber * Rad + self.phase_offset, self.intensity)
+            }
         }))
     }
 }
@@ -70,7 +71,7 @@ impl Gain for Bessel {
 mod tests {
     use rand::Rng;
 
-    use autd3_driver::defined::PI;
+    use autd3_driver::{datagram::Datagram, defined::PI};
 
     use super::*;
 
@@ -100,15 +101,15 @@ mod tests {
                     let dir = dir.normalize();
                     let v = Vector3::new(dir.y, -dir.x, 0.);
                     let theta_v = v.norm().asin();
-                    let rot = if let Some(v) = v.try_normalize(1.0e-6) {
-                        UnitQuaternion::from_scaled_axis(v * -theta_v)
-                    } else {
-                        UnitQuaternion::identity()
-                    };
+                    let rot = v
+                        .try_normalize(1.0e-6)
+                        .map_or_else(UnitQuaternion::identity, |v| {
+                            UnitQuaternion::from_scaled_axis(v * -theta_v)
+                        });
                     let r = tr.position() - pos;
                     let r = rot * r;
                     let dist = theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - theta.cos() * r.z;
-                    dist * tr.wavenumber(geometry[0].sound_speed) * Rad + phase_offset
+                    dist * geometry[0].wavenumber() * Rad + phase_offset
                 };
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity());
@@ -152,6 +153,6 @@ mod tests {
         assert_eq!(g.theta(), g2.theta());
         assert_eq!(g.intensity(), g2.intensity());
         assert_eq!(g.phase_offset(), g2.phase_offset());
-        let _ = g.operation_with_segment(Segment::S0, true);
+        let _ = g.operation();
     }
 }

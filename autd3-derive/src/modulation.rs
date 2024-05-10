@@ -39,7 +39,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
                 /// * `config` - Sampling configuration
                 ///
                 #[allow(clippy::needless_update)]
-                pub fn with_sampling_config(self, config: SamplingConfiguration) -> Self {
+                pub fn with_sampling_config(self, config: SamplingConfig) -> Self {
                     Self {config, ..self}
                 }
             }
@@ -68,7 +68,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     let type_params = generics.type_params();
     let prop = quote! {
         impl <#(#linetimes,)* #(#type_params,)*> ModulationProperty for #name #ty_generics #where_clause {
-            fn sampling_config(&self) -> SamplingConfiguration {
+            fn sampling_config(&self) -> SamplingConfig {
                 self.config
             }
 
@@ -81,18 +81,17 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     let linetimes = generics.lifetimes();
     let type_params = generics.type_params();
     let (_, ty_generics, where_clause) = generics.split_for_impl();
-    let datagram = quote! {
-        impl <#(#linetimes,)* #(#type_params,)* > DatagramS for #name #ty_generics #where_clause {
-            type O1 = ModulationOp;
+    let datagram_with_segment_transition = quote! {
+        impl <#(#linetimes,)* #(#type_params,)* > DatagramST for #name #ty_generics #where_clause {
+            type O1 = ModulationOp<Self>;
             type O2 = NullOp;
 
-            fn operation_with_segment(self, segment: Segment, update_segment: bool) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-                let freq_div = self.config.frequency_division();
-                Ok((Self::O1::new(self.calc()?, freq_div, self.loop_behavior, segment, update_segment), Self::O2::default()))
+            fn operation_with_segment(self, segment: Segment, transition_mode: Option<TransitionMode>) -> (Self::O1, Self::O2) {
+                (Self::O1::new(self, segment, transition_mode), Self::O2::default())
             }
 
             fn timeout(&self) -> Option<std::time::Duration> {
-                Some(std::time::Duration::from_millis(200))
+                Some(DEFAULT_TIMEOUT)
             }
         }
     };
@@ -108,7 +107,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     } else {
         quote! {
             impl <#(#linetimes,)* #(#type_params,)*> IntoModulationTransform<Self> for #name #ty_generics #where_clause {
-                fn with_transform<ModulationTransformF: Fn(usize, EmitIntensity) -> EmitIntensity>(self, f: ModulationTransformF) -> ModulationTransform<Self, ModulationTransformF> {
+                fn with_transform<ModulationTransformF: Fn(&Device, usize, u8) -> u8>(self, f: ModulationTransformF) -> ModulationTransform<Self, ModulationTransformF> {
                     ModulationTransform::new(self, f)
                 }
             }
@@ -158,7 +157,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
 
         #freq_config
 
-        #datagram
+        #datagram_with_segment_transition
 
         #transform
 

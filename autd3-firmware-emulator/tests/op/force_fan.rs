@@ -1,4 +1,4 @@
-use autd3_driver::{cpu::TxDatagram, datagram::*};
+use autd3_driver::{datagram::*, firmware::cpu::TxDatagram};
 use autd3_firmware_emulator::CPUEmulator;
 
 use crate::{create_geometry, send};
@@ -11,11 +11,13 @@ fn send_force_fan() -> anyhow::Result<()> {
 
     assert!(!cpu.fpga().is_force_fan());
 
-    let (mut op, _) = ConfigureForceFan::new(|_dev| true).operation().unwrap();
-
-    send(&mut cpu, &mut op, &geometry, &mut tx)?;
-
+    let (mut op, _) = ForceFan::new(|_dev| true).operation();
+    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
     assert!(cpu.fpga().is_force_fan());
+
+    let (mut op, _) = ForceFan::new(|_dev| false).operation();
+    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+    assert!(!cpu.fpga().is_force_fan());
 
     Ok(())
 }

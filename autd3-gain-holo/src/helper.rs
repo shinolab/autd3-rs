@@ -1,19 +1,21 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    common::Drive, datagram::GainFilter, defined::PI, error::AUTDInternalError, geometry::Geometry,
+    datagram::GainFilter, derive::Phase, error::AUTDInternalError, firmware::fpga::Drive,
+    geometry::Geometry,
 };
 use nalgebra::ComplexField;
 
-use crate::{EmissionConstraint, VectorXc};
+use crate::EmissionConstraint;
 
 #[doc(hidden)]
 #[macro_export]
 macro_rules! impl_holo {
-    ($backend:tt, $t:ty) => {
-        impl<$backend> $t
+    ($directivity:tt, $backend:tt, $t:ty) => {
+        impl<$directivity, $backend> $t
         where
-            $backend: $crate::LinAlgBackend,
+            $directivity: autd3_driver::acoustics::directivity::Directivity,
+            $backend: $crate::LinAlgBackend<$directivity>,
         {
             /// Add focus
             pub fn add_focus(self, focus: Vector3, amp: $crate::amp::Amplitude) -> Self {
@@ -64,8 +66,11 @@ macro_rules! impl_holo {
         }
     };
 
-    ($t:ty) => {
-        impl $t {
+    ($directivity:tt, $t:ty) => {
+        impl<$directivity> $t
+        where
+            $directivity: autd3_driver::acoustics::directivity::Directivity,
+        {
             /// Add focus
             pub fn add_focus(self, focus: Vector3, amp: $crate::amp::Amplitude) -> Self {
                 let mut foci = self.foci;
@@ -110,57 +115,100 @@ macro_rules! impl_holo {
     };
 }
 
-#[allow(clippy::uninit_vec)]
-pub fn generate_result(
+pub(crate) trait IntoIntensity {
+    fn into_intensity(self) -> f64;
+}
+
+impl IntoIntensity for f64 {
+    fn into_intensity(self) -> f64 {
+        1.
+    }
+}
+
+impl IntoIntensity for crate::Complex {
+    fn into_intensity(self) -> f64 {
+        self.abs()
+    }
+}
+
+pub(crate) fn generate_result<T>(
     geometry: &Geometry,
-    q: VectorXc,
+    q: nalgebra::Matrix<
+        T,
+        nalgebra::Dyn,
+        nalgebra::U1,
+        nalgebra::VecStorage<T, nalgebra::Dyn, nalgebra::U1>,
+    >,
+    max_coefficient: f64,
     constraint: &EmissionConstraint,
     filter: GainFilter,
-) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-    let max_coefficient = q.camax().abs();
-    let mut idx = 0;
+) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError>
+where
+    T: Into<Phase> + IntoIntensity + Copy,
+{
     match filter {
-        GainFilter::All => Ok(geometry
-            .devices()
-            .map(|dev| {
-                (
-                    dev.idx(),
-                    dev.iter()
-                        .map(|_| {
-                            let phase =
-                                autd3_driver::common::Phase::from_rad(q[idx].argument() + PI);
-                            let intensity = constraint.convert(q[idx].abs(), max_coefficient);
-                            idx += 1;
-                            Drive::new(phase, intensity)
-                        })
-                        .collect(),
-                )
-            })
-            .collect()),
-        GainFilter::Filter(filter) => Ok(geometry
-            .devices()
-            .map(|dev| {
-                filter.get(&dev.idx()).map_or_else(
-                    || (dev.idx(), dev.iter().map(|_| Drive::null()).collect()),
-                    |filter| {
-                        (
-                            dev.idx(),
-                            dev.iter()
-                                .filter(|tr| filter[tr.idx()])
-                                .map(|_| {
-                                    let phase = autd3_driver::common::Phase::from_rad(
-                                        q[idx].argument() + PI,
-                                    );
-                                    let intensity =
-                                        constraint.convert(q[idx].abs(), max_coefficient);
-                                    idx += 1;
-                                    Drive::new(phase, intensity)
-                                })
-                                .collect(),
-                        )
-                    },
-                )
-            })
-            .collect()),
+        GainFilter::All => {
+            let num_transducers = geometry
+                .iter()
+                .scan(0, |state, dev| {
+                    let r = *state;
+                    *state += dev.num_transducers();
+                    Some(r)
+                })
+                .collect::<Vec<_>>();
+            Ok(geometry
+                .devices()
+                .map(|dev| {
+                    (
+                        dev.idx(),
+                        dev.iter()
+                            .zip(q.iter().skip(num_transducers[dev.idx()]))
+                            .map(|(_, &q)| {
+                                let phase = q.into();
+                                let intensity =
+                                    constraint.convert(q.into_intensity(), max_coefficient);
+                                Drive::new(phase, intensity)
+                            })
+                            .collect(),
+                    )
+                })
+                .collect())
+        }
+        GainFilter::Filter(filter) => {
+            let num_transducers = geometry
+                .iter()
+                .scan(0, |state, dev| {
+                    let r = *state;
+                    *state += filter
+                        .get(&dev.idx())
+                        .map(|filter| dev.iter().filter(|tr| filter[tr.idx()]).count())
+                        .unwrap_or(0);
+                    Some(r)
+                })
+                .collect::<Vec<_>>();
+            Ok(geometry
+                .devices()
+                .map(|dev| {
+                    filter.get(&dev.idx()).map_or_else(
+                        || (dev.idx(), dev.iter().map(|_| Drive::null()).collect()),
+                        |filter| {
+                            (
+                                dev.idx(),
+                                dev.iter()
+                                    .filter(|tr| filter[tr.idx()])
+                                    .zip(q.iter().skip(num_transducers[dev.idx()]))
+                                    .map(|(_, &q)| {
+                                        let phase = q.into();
+                                        let intensity =
+                                            constraint.convert(q.into_intensity(), max_coefficient);
+                                        Drive::new(phase, intensity)
+                                    })
+                                    .collect(),
+                            )
+                        },
+                    )
+                })
+                .collect())
+        }
     }
 }

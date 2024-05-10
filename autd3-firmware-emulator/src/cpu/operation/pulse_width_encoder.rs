@@ -31,7 +31,7 @@ impl CPUEmulator {
     pub(crate) unsafe fn change_pwe_wr_page(&mut self, page: u16) {
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_PULSE_WIDTH_ENCODER_TABLE_WR_PAGE,
+            ADDR_PULSE_WIDTH_ENCODER_TABLE_WR_PAGE,
             page,
         );
     }
@@ -50,7 +50,7 @@ impl CPUEmulator {
 
                 self.bram_write(
                     BRAM_SELECT_CONTROLLER,
-                    BRAM_ADDR_PULSE_WIDTH_ENCODER_FULL_WIDTH_START,
+                    ADDR_PULSE_WIDTH_ENCODER_FULL_WIDTH_START,
                     d.head.full_width_start,
                 );
 
@@ -64,7 +64,7 @@ impl CPUEmulator {
         let page_capacity =
             (self.pwe_write & !PWE_TABLE_PAGE_SIZE_MASK) + PWE_TABLE_PAGE_SIZE - self.pwe_write;
 
-        if size < page_capacity {
+        if size <= page_capacity {
             self.bram_cpy(
                 BRAM_SELECT_DUTY_TABLE,
                 ((self.pwe_write & PWE_TABLE_PAGE_SIZE_MASK) >> 1) as u16,

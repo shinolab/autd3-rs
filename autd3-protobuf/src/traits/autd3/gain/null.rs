@@ -12,7 +12,7 @@ impl ToMessage for autd3::gain::Null {
             datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Null(Null {})),
                 segment: Segment::S0 as _,
-                update_segment: true,
+                transition: true,
             })),
         }
     }
@@ -27,7 +27,7 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Null
             datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Null(Null {})),
                 segment: self.segment() as _,
-                update_segment: self.update_segment(),
+                transition: self.transition(),
             })),
         }
     }
@@ -52,6 +52,7 @@ mod tests {
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Null(gain)),
+                ..
             })) => {
                 let _ = autd3::gain::Null::from_msg(&gain).unwrap();
             }

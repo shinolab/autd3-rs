@@ -1,32 +1,34 @@
 pub use crate::{
     controller::Controller,
     error::AUTDError,
-    gain::{Bessel, Focus, Null, Plane, TransducerTest, Uniform},
+    gain::{Bessel, Focus, Null, Plane, Uniform},
     link::Nop,
-    modulation::{SamplingMode, Sine, Square, Static},
+    modulation::{Sine, Square, Static},
 };
 
 pub use autd3_driver::{
     autd3_device::AUTD3,
-    common::Rad as PhaseRad,
-    common::{Drive, EmitIntensity, LoopBehavior, Phase, SamplingConfiguration, Segment},
+    datagram::ControlPoint,
     datagram::{
-        ChangeFocusSTMSegment, ChangeGainSTMSegment, ChangeGainSegment, ChangeModulationSegment,
-        Clear, ConfigureDebugSettings, ConfigureForceFan, ConfigurePhaseFilter,
-        ConfigureReadsFPGAState, ConfigureSilencer, FocusSTM, GainCache, GainFilter, GainSTM,
-        GainTransform, Group, IntoDatagramWithSegment, IntoDatagramWithTimeout, IntoGainCache,
-        IntoGainTransform, IntoModulationCache, IntoModulationTransform, IntoRadiationPressure,
-        Modulation, ModulationCache, ModulationProperty, ModulationTransform, RadiationPressure,
-        Synchronize,
+        Clear, DebugSettings, EmulateGPIOIn, FocusSTM, ForceFan, GainCache, GainFilter, GainSTM,
+        GainTransform, Group, IntoDatagramWithSegment, IntoDatagramWithSegmentTransition,
+        IntoDatagramWithTimeout, IntoGainCache, IntoGainTransform, IntoModulationCache,
+        IntoModulationTransform, IntoRadiationPressure, Modulation, ModulationCache,
+        ModulationProperty, ModulationTransform, PhaseFilter, PulseWidthEncoder, RadiationPressure,
+        ReadsFPGAState, Silencer, SwapSegment, Synchronize,
     },
     defined::{METER, MILLIMETER, PI},
     error::AUTDInternalError,
-    fpga::FPGA_CLK_FREQ,
+    ethercat::DcSysTime,
+    firmware::{
+        cpu::GainSTMMode,
+        fpga::{
+            DebugType, Drive, EmitIntensity, GPIOIn, GPIOOut, LoopBehavior, Phase, Rad as PhaseRad,
+            SamplingConfig, Segment, TransitionMode,
+        },
+        version::FirmwareVersion,
+    },
+    freq::{kHz, Hz},
     geometry::*,
     link::{Link, LinkBuilder},
-    operation::{ControlPoint, DebugType, GainSTMMode},
-    timer_strategy::TimerStrategy,
 };
-
-#[allow(deprecated)]
-pub use autd3_driver::datagram::ConfigureDebugOutputIdx;

@@ -19,13 +19,14 @@ impl Gain for Null {
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |_, _| Drive::null()))
+        Ok(Self::transform(geometry, filter, |_| |_| Drive::null()))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::tests::create_geometry;
+    use autd3_driver::datagram::Datagram;
 
     use super::*;
 
@@ -49,6 +50,6 @@ mod tests {
     fn test_null_derive() {
         let gain = Null::default();
         let _ = gain.clone();
-        let _ = gain.operation_with_segment(Segment::S0, true);
+        let _ = gain.operation();
     }
 }

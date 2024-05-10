@@ -1,9 +1,9 @@
 pub use crate::{
-    common::{Drive, Segment},
-    datagram::{DatagramS, Gain, GainFilter, Modulation},
+    derive::*,
     error::AUTDInternalError,
+    firmware::fpga::{Drive, Segment},
+    firmware::operation::{GainOp, NullOp, Operation},
     geometry::Geometry,
-    operation::{GainOp, NullOp, Operation},
 };
 pub use autd3_derive::Gain;
 
@@ -74,22 +74,6 @@ impl<G: Gain + 'static> Cache<G> {
     /// get cached drives
     ///
     /// Note that the cached data is created after at least one call to `calc`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use autd3::prelude::*;
-    /// # use autd3_driver::datagram::Gain;
-    /// # fn main() -> anyhow::Result<()>{
-    /// # let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-    /// let g = Null::new().with_cache();
-    /// assert!(g.drives().is_empty());
-    /// let _ = g.calc(&geometry, GainFilter::All)?;
-    /// assert!(!g.drives().is_empty());
-    /// # Ok(())
-    /// # }
-    ///
-    /// ```
     pub fn drives(&self) -> Ref<'_, HashMap<usize, Vec<Drive>>> {
         self.cache.borrow()
     }
@@ -116,15 +100,17 @@ mod tests {
         Arc,
     };
 
-    use crate::{derive::*, geometry::tests::create_geometry};
+    use crate::{defined::FREQ_40K, derive::*, geometry::tests::create_geometry};
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let geometry = create_geometry(1, 249);
+        let geometry = create_geometry(1, 249, FREQ_40K);
 
         let mut rng = rand::thread_rng();
         let d: Drive = rng.gen();
-        let gain = TestGain { f: move |_, _| d };
+        let gain = TestGain {
+            f: move |_| move |_| d,
+        };
         let cache = gain.with_cache();
 
         assert!(cache.drives().is_empty());
@@ -137,9 +123,15 @@ mod tests {
         Ok(())
     }
 
-    #[derive(Gain, Clone)]
+    #[derive(Gain, Clone, Debug)]
     pub struct CacheTestGain {
         pub calc_cnt: Arc<AtomicUsize>,
+    }
+
+    impl PartialEq for CacheTestGain {
+        fn eq(&self, other: &Self) -> bool {
+            self.calc_cnt.load(Ordering::Relaxed) == other.calc_cnt.load(Ordering::Relaxed)
+        }
     }
 
     impl Gain for CacheTestGain {
@@ -149,13 +141,13 @@ mod tests {
             filter: GainFilter,
         ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
-            Ok(Self::transform(geometry, filter, |_, _| Drive::null()))
+            Ok(Self::transform(geometry, filter, |_| |_| Drive::null()))
         }
     }
 
     #[test]
     fn test_calc_once() {
-        let geometry = create_geometry(1, 249);
+        let geometry = create_geometry(1, 249, FREQ_40K);
 
         let calc_cnt = Arc::new(AtomicUsize::new(0));
         let gain = CacheTestGain {
@@ -172,7 +164,7 @@ mod tests {
 
     #[test]
     fn test_clone() {
-        let geometry = create_geometry(1, 249);
+        let geometry = create_geometry(1, 249, FREQ_40K);
 
         let calc_cnt = Arc::new(AtomicUsize::new(0));
         let gain = CacheTestGain {
@@ -181,6 +173,9 @@ mod tests {
         .with_cache();
 
         let g2 = gain.clone();
+        assert_eq!(gain, g2);
+        assert_eq!(0, gain.calc_cnt.load(Ordering::Relaxed));
+        assert_eq!(0, g2.calc_cnt.load(Ordering::Relaxed));
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
         let _ = g2.calc(&geometry, GainFilter::All);

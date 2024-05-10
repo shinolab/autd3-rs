@@ -1,11 +1,16 @@
-use crate::{datagram::*, geometry::Device, operation::DebugType};
+use crate::{
+    datagram::*,
+    derive::DEFAULT_TIMEOUT,
+    firmware::fpga::{DebugType, GPIOOut},
+    geometry::Device,
+};
 
 /// Datagram for configure debug_output_idx
-pub struct ConfigureDebugSettings<F: Fn(&Device) -> [DebugType; 4]> {
+pub struct DebugSettings<F: Fn(&Device, GPIOOut) -> DebugType> {
     f: F,
 }
 
-impl<F: Fn(&Device) -> [DebugType; 4]> ConfigureDebugSettings<F> {
+impl<F: Fn(&Device, GPIOOut) -> DebugType> DebugSettings<F> {
     /// constructor
     pub const fn new(f: F) -> Self {
         Self { f }
@@ -18,58 +23,42 @@ impl<F: Fn(&Device) -> [DebugType; 4]> ConfigureDebugSettings<F> {
     // GRCOV_EXCL_STOP
 }
 
-impl<F: Fn(&Device) -> [DebugType; 4]> Datagram for ConfigureDebugSettings<F> {
-    type O1 = crate::operation::DebugSettingOp<F>;
-    type O2 = crate::operation::NullOp;
+impl<F: Fn(&Device, GPIOOut) -> DebugType> Datagram for DebugSettings<F> {
+    type O1 = crate::firmware::operation::DebugSettingOp<F>;
+    type O2 = crate::firmware::operation::NullOp;
 
     fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
+        Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new(self.f), Self::O2::default()))
+    fn operation(self) -> (Self::O1, Self::O2) {
+        (Self::O1::new(self.f), Self::O2::default())
     }
 }
 
-mod old {
-    #![allow(deprecated)]
-
-    use crate::derive::Transducer;
+#[cfg(test)]
+mod tests {
+    use crate::firmware::operation::{DebugSettingOp, NullOp};
 
     use super::*;
 
-    /// Datagram for configure debug_output_idx
-    #[deprecated(note = "Use DebugSettingOp instead", since = "22.1.0")]
-    pub struct ConfigureDebugOutputIdx<F: Fn(&Device) -> Option<&Transducer>> {
-        f: F,
+    // GRCOV_EXCL_START
+    fn f(_: &Device, _: GPIOOut) -> DebugType {
+        DebugType::None
+    }
+    // GRCOV_EXCL_STOP
+
+    #[test]
+    fn test_timeout() {
+        let d = DebugSettings::new(f);
+        let timeout = d.timeout();
+        assert!(timeout.is_some());
+        assert!(timeout.unwrap() > Duration::ZERO);
     }
 
-    impl<F: Fn(&Device) -> Option<&Transducer>> ConfigureDebugOutputIdx<F> {
-        /// constructor
-        pub const fn new(f: F) -> Self {
-            Self { f }
-        }
-
-        // GRCOV_EXCL_START
-        pub fn f(&self) -> &F {
-            &self.f
-        }
-        // GRCOV_EXCL_STOP
-    }
-
-    impl<F: Fn(&Device) -> Option<&Transducer>> Datagram for ConfigureDebugOutputIdx<F> {
-        type O1 = crate::operation::DebugOutIdxOp<F>;
-        type O2 = crate::operation::NullOp;
-
-        fn timeout(&self) -> Option<Duration> {
-            Some(Duration::from_millis(200))
-        }
-
-        fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-            Ok((Self::O1::new(self.f), Self::O2::default()))
-        }
+    #[test]
+    fn test_operation() {
+        let d = DebugSettings::new(f);
+        let _: (DebugSettingOp<_>, NullOp) = d.operation();
     }
 }
-
-#[allow(deprecated)]
-pub use old::ConfigureDebugOutputIdx;

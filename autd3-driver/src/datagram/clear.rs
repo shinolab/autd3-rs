@@ -1,4 +1,4 @@
-use crate::datagram::*;
+use crate::{datagram::*, defined::DEFAULT_TIMEOUT};
 
 /// Datagram for clear all data in devices
 #[derive(Default)]
@@ -11,21 +11,21 @@ impl Clear {
 }
 
 impl Datagram for Clear {
-    type O1 = crate::operation::ClearOp;
-    type O2 = crate::operation::NullOp;
+    type O1 = crate::firmware::operation::ClearOp;
+    type O2 = crate::firmware::operation::NullOp;
 
     fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
+        Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::default(), Self::O2::default()))
+    fn operation(self) -> (Self::O1, Self::O2) {
+        (Self::O1::default(), Self::O2::default())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::operation::{ClearOp, NullOp};
+    use crate::firmware::operation::{ClearOp, NullOp};
 
     use super::*;
 
@@ -40,8 +40,6 @@ mod tests {
     #[test]
     fn test_operation() {
         let clear = Clear::default();
-        let r = <Clear as Datagram>::operation(clear);
-        assert!(r.is_ok());
-        let _: (ClearOp, NullOp) = r.unwrap();
+        let _: (ClearOp, NullOp) = clear.operation();
     }
 }

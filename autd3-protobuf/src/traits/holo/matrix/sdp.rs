@@ -6,7 +6,12 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3_gain_holo::SDP<NalgebraBackend> {
+impl ToMessage
+    for autd3_gain_holo::SDP<
+        autd3_driver::acoustics::directivity::Sphere,
+        NalgebraBackend<autd3_driver::acoustics::directivity::Sphere>,
+    >
+{
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
@@ -21,14 +26,19 @@ impl ToMessage for autd3_gain_holo::SDP<NalgebraBackend> {
                     constraint: Some(self.constraint().to_msg(None)),
                 })),
                 segment: Segment::S0 as _,
-                update_segment: true,
+                transition: true,
             })),
         }
     }
 }
 
 impl ToMessage
-    for autd3_driver::datagram::DatagramWithSegment<autd3_gain_holo::SDP<NalgebraBackend>>
+    for autd3_driver::datagram::DatagramWithSegment<
+        autd3_gain_holo::SDP<
+            autd3_driver::acoustics::directivity::Sphere,
+            NalgebraBackend<autd3_driver::acoustics::directivity::Sphere>,
+        >,
+    >
 {
     type Message = DatagramLightweight;
 
@@ -44,13 +54,18 @@ impl ToMessage
                     constraint: Some(self.constraint().to_msg(None)),
                 })),
                 segment: self.segment() as _,
-                update_segment: self.update_segment(),
+                transition: true,
             })),
         }
     }
 }
 
-impl FromMessage<Sdp> for autd3_gain_holo::SDP<NalgebraBackend> {
+impl FromMessage<Sdp>
+    for autd3_gain_holo::SDP<
+        autd3_driver::acoustics::directivity::Sphere,
+        NalgebraBackend<autd3_driver::acoustics::directivity::Sphere>,
+    >
+{
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &Sdp) -> Option<Self> {
         Some(
@@ -103,6 +118,7 @@ mod tests {
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Sdp(g)),
+                ..
             })) => {
                 let holo2 = autd3_gain_holo::SDP::from_msg(&g).unwrap();
                 assert_approx_eq::assert_approx_eq!(holo.alpha(), holo2.alpha());

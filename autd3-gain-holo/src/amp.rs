@@ -58,6 +58,16 @@ impl std::ops::Mul<f64> for Amplitude {
     }
 }
 
+impl std::ops::Div<f64> for Amplitude {
+    type Output = Amplitude;
+
+    fn div(self, rhs: f64) -> Self::Output {
+        Self::Output {
+            value: self.value / rhs,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -79,5 +89,7 @@ mod tests {
 
         assert_approx_eq::assert_approx_eq!((2. * amp).as_pascal(), 2. * 23.77, 1e-3);
         assert_approx_eq::assert_approx_eq!((amp * 2.).as_pascal(), 2. * 23.77, 1e-3);
+
+        assert_approx_eq::assert_approx_eq!((amp / 2.).as_pascal(), 23.77 / 2., 1e-3);
     }
 }

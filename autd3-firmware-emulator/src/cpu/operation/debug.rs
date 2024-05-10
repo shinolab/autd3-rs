@@ -11,14 +11,14 @@ struct DebugOutIdx {
 impl CPUEmulator {
     pub(crate) fn config_debug(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<DebugOutIdx>(data);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_TYPE_0, d.ty[0] as _);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_TYPE_1, d.ty[1] as _);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_TYPE_2, d.ty[2] as _);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_TYPE_3, d.ty[3] as _);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_VALUE_0, d.value[0]);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_VALUE_1, d.value[1]);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_VALUE_2, d.value[2]);
-        self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_DEBUG_VALUE_3, d.value[3]);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_TYPE0, d.ty[0] as _);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_TYPE1, d.ty[1] as _);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_TYPE2, d.ty[2] as _);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_TYPE3, d.ty[3] as _);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE0, d.value[0]);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE1, d.value[1]);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE2, d.value[2]);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE3, d.value[3]);
 
         NO_ERR
     }

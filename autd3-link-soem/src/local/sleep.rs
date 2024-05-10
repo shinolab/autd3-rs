@@ -3,8 +3,9 @@ use std::sync::{
     Arc, Mutex,
 };
 
+use crate::local::osal_timer::TimerCallback;
 use async_channel::Receiver;
-use autd3_driver::{cpu::TxDatagram, osal_timer::TimerCallback};
+use autd3_driver::firmware::cpu::TxDatagram;
 
 use crate::local::{
     iomap::IOMap,
