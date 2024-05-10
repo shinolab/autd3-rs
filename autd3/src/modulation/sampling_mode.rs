@@ -1,8 +1,8 @@
 use autd3_driver::{
+    defined::{Freq, Frequency},
     derive::SamplingConfig,
     error::AUTDInternalError,
     firmware::fpga::ULTRASOUND_PERIOD,
-    freq::{Freq, Frequency},
     utils::float::is_integer,
 };
 use num::integer::gcd;

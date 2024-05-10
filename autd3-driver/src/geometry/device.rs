@@ -1,6 +1,6 @@
 use std::{f64::consts::PI, ops::Deref};
 
-use crate::{defined::METER, freq::Freq};
+use crate::{defined::Freq, defined::METER};
 
 use super::{Matrix3, Transducer, UnitQuaternion, Vector3};
 
@@ -150,8 +150,8 @@ pub mod tests {
 
     use super::*;
     use crate::{
+        defined::Hz,
         defined::{mm, FREQ_40K, PI},
-        freq::Hz,
         geometry::tests::create_device,
     };
 

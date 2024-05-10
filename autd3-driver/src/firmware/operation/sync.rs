@@ -52,7 +52,7 @@ mod tests {
     use rand::Rng;
 
     use super::*;
-    use crate::{freq::Hz, geometry::tests::create_geometry};
+    use crate::{defined::Hz, geometry::tests::create_geometry};
 
     const NUM_TRANS_IN_UNIT: usize = 249;
     const NUM_DEVICE: usize = 10;

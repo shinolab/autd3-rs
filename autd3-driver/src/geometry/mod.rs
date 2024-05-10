@@ -125,8 +125,8 @@ impl<'a> IntoIterator for &'a mut Geometry {
 #[cfg(test)]
 pub mod tests {
     use crate::{
+        defined::Freq,
         defined::{mm, FREQ_40K},
-        freq::Freq,
     };
 
     use super::*;

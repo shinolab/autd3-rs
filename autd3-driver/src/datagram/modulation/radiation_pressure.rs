@@ -51,7 +51,7 @@ mod tests {
 
     use super::{super::tests::TestModulation, *};
 
-    use crate::{defined::FREQ_40K, freq::kHz, geometry::tests::create_geometry};
+    use crate::{defined::kHz, defined::FREQ_40K, geometry::tests::create_geometry};
 
     #[rstest::rstest]
     #[test]

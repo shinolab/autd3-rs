@@ -234,8 +234,8 @@ mod tests {
     use autd3_driver::{
         autd3_device::AUTD3,
         datagram::GainSTM,
+        defined::Hz,
         derive::{Gain, GainFilter, Segment},
-        freq::Hz,
         geometry::Vector3,
     };
 

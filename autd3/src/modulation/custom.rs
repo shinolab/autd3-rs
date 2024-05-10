@@ -32,7 +32,7 @@ mod tests {
     use rand::Rng;
 
     use crate::tests::create_geometry;
-    use autd3_driver::{datagram::Datagram, freq::kHz};
+    use autd3_driver::{datagram::Datagram, defined::kHz};
 
     use super::*;
 

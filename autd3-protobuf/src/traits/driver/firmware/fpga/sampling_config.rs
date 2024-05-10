@@ -32,11 +32,13 @@ impl FromMessage<SamplingConfig> for autd3_driver::firmware::fpga::SamplingConfi
     fn from_msg(msg: &SamplingConfig) -> Option<Self> {
         msg.config.as_ref().map(|config| match *config {
             sampling_config::Config::Freq(SamplingConfigFreq { value }) => {
-                autd3_driver::firmware::fpga::SamplingConfig::Freq(value * autd3_driver::freq::Hz)
+                autd3_driver::firmware::fpga::SamplingConfig::Freq(
+                    value * autd3_driver::defined::Hz,
+                )
             }
             sampling_config::Config::FreqNearest(SamplingConfigFreqNearest { value }) => {
                 autd3_driver::firmware::fpga::SamplingConfig::FreqNearest(
-                    value as f64 * autd3_driver::freq::Hz,
+                    value as f64 * autd3_driver::defined::Hz,
                 )
             }
             sampling_config::Config::Division(SamplingConfigDivision { value }) => {

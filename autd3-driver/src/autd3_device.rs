@@ -1,7 +1,7 @@
 use crate::{
+    defined::Freq,
     defined::{mm, FREQ_40K},
     derive::*,
-    freq::Freq,
     geometry::{IntoDevice, Matrix4, UnitQuaternion, Vector3, Vector4},
 };
 

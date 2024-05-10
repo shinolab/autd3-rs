@@ -59,7 +59,7 @@ impl FromMessage<SquareExact>
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &SquareExact) -> Option<Self> {
         Some(
-            autd3::modulation::Square::new((msg.freq as f64) * autd3_driver::freq::Hz)
+            autd3::modulation::Square::new((msg.freq as f64) * autd3_driver::defined::Hz)
                 .with_high(msg.high as _)
                 .with_low(msg.low as _)
                 .with_duty(msg.duty as _)

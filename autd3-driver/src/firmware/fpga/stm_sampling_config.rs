@@ -1,7 +1,7 @@
 use crate::{
+    defined::{Freq, Hz},
     error::AUTDInternalError,
     firmware::fpga::SamplingConfig,
-    freq::{Freq, Hz},
     utils::float::is_integer,
 };
 
@@ -34,9 +34,9 @@ impl STMSamplingConfig {
 mod tests {
     use super::*;
     use crate::{
+        defined::Hz,
         derive::{AUTDInternalError, SAMPLING_FREQ_DIV_MIN},
         firmware::fpga::{SamplingConfig, SAMPLING_FREQ_DIV_MAX},
-        freq::Hz,
     };
 
     #[rstest::rstest]

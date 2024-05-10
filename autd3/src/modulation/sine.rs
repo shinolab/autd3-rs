@@ -1,4 +1,4 @@
-use autd3_driver::{defined::PI, derive::*, freq::Freq};
+use autd3_driver::{defined::Freq, defined::PI, derive::*};
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
@@ -62,7 +62,7 @@ impl<S: SamplingMode> Modulation for Sine<S> {
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::freq::{kHz, Hz};
+    use autd3_driver::defined::{kHz, Hz};
 
     use crate::tests::create_geometry;
 

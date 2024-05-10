@@ -1,4 +1,4 @@
-use autd3_driver::{error::AUTDInternalError, freq::Freq};
+use autd3_driver::{defined::Freq, error::AUTDInternalError};
 use thiserror::Error;
 
 #[derive(Error, Debug)]

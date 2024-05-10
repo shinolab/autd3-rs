@@ -115,7 +115,7 @@ impl DatagramST for Box<dyn Modulation> {
 mod tests {
     use super::*;
 
-    use crate::{derive::*, freq::kHz};
+    use crate::{defined::kHz, derive::*};
 
     #[derive(Modulation, Clone, PartialEq, Debug)]
     pub struct TestModulation {

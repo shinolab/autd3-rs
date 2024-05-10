@@ -1,11 +1,11 @@
 use crate::{
+    defined::Freq,
     defined::DEFAULT_TIMEOUT,
     derive::*,
     firmware::{
         cpu::GainSTMMode,
         fpga::{Segment, TransitionMode},
     },
-    freq::Freq,
 };
 
 use super::STMProps;
@@ -167,8 +167,8 @@ mod tests {
     use super::*;
 
     use crate::{
+        defined::{kHz, Hz},
         firmware::operation::{tests::NullGain, GainSTMOp},
-        freq::{kHz, Hz},
     };
 
     #[rstest::rstest]
