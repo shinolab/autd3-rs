@@ -2,13 +2,13 @@ use autd3_driver::{
     derive::SamplingConfig,
     error::AUTDInternalError,
     firmware::fpga::ULTRASOUND_PERIOD,
-    freq::{Freq, FreqFloat, FreqInt},
+    freq::{Freq, Frequency},
     utils::float::is_integer,
 };
 use num::integer::gcd;
 
 pub trait SamplingMode: Clone + Sync {
-    type T: Freq;
+    type T: Frequency;
     fn validate(
         freq: Self::T,
         sampling_config: SamplingConfig,
@@ -20,9 +20,9 @@ pub trait SamplingMode: Clone + Sync {
 pub struct ExactFreq;
 
 impl SamplingMode for ExactFreq {
-    type T = FreqInt;
+    type T = Freq<u32>;
     fn validate(
-        freq: FreqInt,
+        freq: Freq<u32>,
         sampling_config: SamplingConfig,
         ultrasound_freq: u32,
     ) -> Result<(u64, u64), AUTDInternalError> {
@@ -46,9 +46,9 @@ impl SamplingMode for ExactFreq {
 pub struct ExactFreqFloat;
 
 impl SamplingMode for ExactFreqFloat {
-    type T = FreqFloat;
+    type T = Freq<f64>;
     fn validate(
-        freq: FreqFloat,
+        freq: Freq<f64>,
         sampling_config: SamplingConfig,
         ultrasound_freq: u32,
     ) -> Result<(u64, u64), AUTDInternalError> {
@@ -84,9 +84,9 @@ impl SamplingMode for ExactFreqFloat {
 pub struct NearestFreq;
 
 impl SamplingMode for NearestFreq {
-    type T = FreqFloat;
+    type T = Freq<f64>;
     fn validate(
-        freq: FreqFloat,
+        freq: Freq<f64>,
         sampling_config: SamplingConfig,
         ultrasound_freq: u32,
     ) -> Result<(u64, u64), AUTDInternalError> {
@@ -114,10 +114,10 @@ pub trait SamplingModeInference: Copy + Clone + std::fmt::Debug + PartialEq {
     type T: SamplingMode<T = Self>;
 }
 
-impl SamplingModeInference for FreqInt {
+impl SamplingModeInference for Freq<u32> {
     type T = ExactFreq;
 }
 
-impl SamplingModeInference for FreqFloat {
+impl SamplingModeInference for Freq<f64> {
     type T = ExactFreqFloat;
 }

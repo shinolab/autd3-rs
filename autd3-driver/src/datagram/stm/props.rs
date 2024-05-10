@@ -1,4 +1,4 @@
-use crate::{derive::*, firmware::fpga::STMSamplingConfig, freq::FreqFloat};
+use crate::{derive::*, firmware::fpga::STMSamplingConfig, freq::Freq};
 
 #[doc(hidden)]
 #[derive(Clone, Copy, Builder)]
@@ -9,14 +9,14 @@ pub struct STMProps {
 }
 
 impl STMProps {
-    pub const fn from_freq(freq: FreqFloat) -> Self {
+    pub const fn from_freq(freq: Freq<f64>) -> Self {
         Self {
             config: STMSamplingConfig::Freq(freq),
             loop_behavior: LoopBehavior::infinite(),
         }
     }
 
-    pub const fn from_freq_nearest(freq: FreqFloat) -> Self {
+    pub const fn from_freq_nearest(freq: Freq<f64>) -> Self {
         Self {
             config: STMSamplingConfig::FreqNearest(freq),
             loop_behavior: LoopBehavior::infinite(),

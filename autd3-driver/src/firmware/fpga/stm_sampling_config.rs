@@ -1,14 +1,14 @@
 use crate::{
     error::AUTDInternalError,
     firmware::fpga::SamplingConfig,
-    freq::{FreqFloat, Hz},
+    freq::{Freq, Hz},
     utils::float::is_integer,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum STMSamplingConfig {
-    Freq(FreqFloat),
-    FreqNearest(FreqFloat),
+    Freq(Freq<f64>),
+    FreqNearest(Freq<f64>),
     SamplingConfig(SamplingConfig),
 }
 
@@ -47,7 +47,7 @@ mod tests {
     #[case(Err(AUTDInternalError::STMFreqInvalid(1, 4000.5*Hz)), 4000.5*Hz, 1)]
     fn frequency(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
-        #[case] freq: FreqFloat,
+        #[case] freq: Freq<f64>,
         #[case] size: usize,
     ) {
         assert_eq!(expect, STMSamplingConfig::Freq(freq).sampling(size));
@@ -61,7 +61,7 @@ mod tests {
     #[case(Ok(SamplingConfig::FreqNearest(40000.*Hz)), 40000.*Hz, 1)]
     fn frequency_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
-        #[case] freq: FreqFloat,
+        #[case] freq: Freq<f64>,
         #[case] size: usize,
     ) {
         assert_eq!(expect, STMSamplingConfig::FreqNearest(freq).sampling(size));

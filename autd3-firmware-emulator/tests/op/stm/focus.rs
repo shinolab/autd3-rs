@@ -1,7 +1,7 @@
 use std::{collections::HashMap, time::Duration};
 
 use autd3_driver::{
-    datagram::{Silencer, ControlPoint, Datagram},
+    datagram::{ControlPoint, Datagram, Silencer},
     defined::{METER, MILLIMETER},
     derive::{DatagramS, Drive, LoopBehavior, Phase, SamplingConfig, Segment},
     error::AUTDInternalError,

@@ -48,8 +48,7 @@ fn send_silencer_fixed_completion_steps() -> anyhow::Result<()> {
 
     let steps_intensity = rng.gen_range(1..=10);
     let steps_phase = rng.gen_range(1..=u16::MAX);
-    let (mut op, _) =
-        Silencer::fixed_completion_steps(steps_intensity, steps_phase)?.operation();
+    let (mut op, _) = Silencer::fixed_completion_steps(steps_intensity, steps_phase)?.operation();
 
     assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
@@ -99,8 +98,7 @@ fn silencer_completetion_steps_too_large_mod(
     }
 
     let steps_phase = 1;
-    let (mut op, _) =
-        Silencer::fixed_completion_steps(steps_intensity, steps_phase)?.operation();
+    let (mut op, _) = Silencer::fixed_completion_steps(steps_intensity, steps_phase)?.operation();
 
     assert_eq!(expect, send(&mut cpu, &mut op, &geometry, &mut tx));
 
@@ -137,8 +135,7 @@ fn silencer_completetion_steps_too_large_stm(
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
     }
 
-    let (mut op, _) =
-        Silencer::fixed_completion_steps(steps_intensity, steps_phase)?.operation();
+    let (mut op, _) = Silencer::fixed_completion_steps(steps_intensity, steps_phase)?.operation();
 
     assert_eq!(expect, send(&mut cpu, &mut op, &geometry, &mut tx));
 

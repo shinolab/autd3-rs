@@ -50,13 +50,11 @@ fn send_clear() -> anyhow::Result<()> {
 
     {
         let (mut op, _) =
-            Silencer::fixed_completion_steps(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN)?
-                .operation();
+            Silencer::fixed_completion_steps(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN)?.operation();
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         let (mut op, _) =
-            Silencer::fixed_update_rate(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN)?
-                .operation();
+            Silencer::fixed_update_rate(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN)?.operation();
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         let (mut op, _) = TestMod {
