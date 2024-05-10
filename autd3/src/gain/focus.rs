@@ -39,7 +39,7 @@ impl Gain for Focus {
             let wavenumber = dev.wavenumber();
             move |tr| {
                 Drive::new(
-                    Phase::from_rad((self.pos - tr.position()).norm() * wavenumber)
+                    Phase::from((self.pos - tr.position()).norm() * wavenumber * rad)
                         + self.phase_offset,
                     self.intensity,
                 )
@@ -73,7 +73,7 @@ mod tests {
             assert_eq!(d.len(), geometry[idx].num_transducers());
             d.iter().zip(geometry[idx].iter()).for_each(|(d, tr)| {
                 let expected_phase =
-                    Phase::from_rad((tr.position() - pos).norm() * geometry[idx].wavenumber())
+                    Phase::from((tr.position() - pos).norm() * geometry[idx].wavenumber() * rad)
                         + phase_offset;
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity())

@@ -1,8 +1,9 @@
 use nalgebra::ComplexField;
 
-use crate::defined::{Complex, PI};
-
-pub struct Rad;
+use crate::{
+    defined::{Angle, Complex, PI},
+    derive::rad,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
@@ -13,12 +14,6 @@ pub struct Phase {
 impl Phase {
     pub const fn new(value: u8) -> Self {
         Self { value }
-    }
-
-    pub fn from_rad(phase: f64) -> Self {
-        Self {
-            value: (((phase / (2.0 * PI) * 256.0).round() as i32) & 0xFF) as _,
-        }
     }
 
     pub const fn value(&self) -> u8 {
@@ -36,23 +31,17 @@ impl From<u8> for Phase {
     }
 }
 
-impl From<f64> for Phase {
-    fn from(v: f64) -> Self {
-        Self::from_rad(v)
+impl From<Angle> for Phase {
+    fn from(v: Angle) -> Self {
+        Self {
+            value: (((v.radian() / (2.0 * PI) * 256.0).round() as i32) & 0xFF) as _,
+        }
     }
 }
 
 impl From<Complex> for Phase {
     fn from(v: Complex) -> Self {
-        Self::from_rad(v.argument())
-    }
-}
-
-impl std::ops::Mul<Rad> for f64 {
-    type Output = Phase;
-
-    fn mul(self, _rhs: Rad) -> Self::Output {
-        Self::Output::from_rad(self)
+        Self::from(v.argument() * rad)
     }
 }
 

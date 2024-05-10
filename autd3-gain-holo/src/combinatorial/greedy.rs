@@ -123,10 +123,8 @@ impl<D: Directivity + 'static> Gain for Greedy<D> {
             cache.iter_mut().zip(tmp.iter()).for_each(|(c, a)| {
                 *c += a * phase;
             });
-            res.get_mut(&dev_idx).unwrap()[idx] = Drive::new(
-                Phase::from_rad(phase.argument() + PI),
-                self.constraint.convert(1.0, 1.0),
-            );
+            res.get_mut(&dev_idx).unwrap()[idx] =
+                Drive::new(phase, self.constraint.convert(1.0, 1.0));
         });
         Ok(res)
     }
