@@ -69,7 +69,7 @@ impl Modulation for RawPCM {
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::defined::Hz;
+    use autd3_driver::defined::{kHz, Hz};
 
     use crate::tests::create_geometry;
 
@@ -82,31 +82,32 @@ mod tests {
         Ok(())
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_rawpcm_new() -> anyhow::Result<()> {
-        let geometry = create_geometry(1);
-        let dir = tempfile::tempdir()?;
+    #[case(Ok(HashMap::from([(0, vec![0xFF, 0x7F, 0x00])])), vec![0xFF, 0x7F, 0x00], 4000 * Hz, SamplingConfig::Division(5120))]
+    #[case(Err(AudioFileError::RawPCMSamplingRateNotInteger(SamplingConfig::FreqNearest(10.5*kHz).freq(40*kHz).unwrap()).into()), vec![0xFF, 0x7F, 0x00], 4000 * Hz, SamplingConfig::FreqNearest(10.5*kHz))]
+    fn new(
+        #[case] expect: Result<HashMap<usize, Vec<u8>>, AUTDInternalError>,
+        #[case] data: Vec<u8>,
+        #[case] sample_rate: Freq<u32>,
+        #[case] config: SamplingConfig,
+    ) -> anyhow::Result<()> {
+        let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("tmp.dat");
-        create_dat(&path, &[0xFF, 0x7F, 0x00])?;
-        let m = RawPCM::new(&path, 4000 * Hz);
-        assert_eq!(
-            m.calc(&geometry)?,
-            HashMap::from([(0, vec![0xFF, 0x7F, 0x00])])
-        );
+        create_dat(&path, &data)?;
 
-        let m = RawPCM::new("not_exists.dat", 4000 * Hz);
-        assert!(m.calc(&geometry).is_err());
+        let geometry = create_geometry(1);
+        let m = RawPCM::new(&path, sample_rate).with_sampling_config(config);
+        assert_eq!(expect, m.calc(&geometry));
 
         Ok(())
     }
 
     #[test]
-    fn test_rawpcm_clone() -> anyhow::Result<()> {
-        let dir = tempfile::tempdir()?;
-        let path = dir.path().join("tmp.dat");
-        create_dat(&path, &[0xFF, 0xFF])?;
-        let m = RawPCM::new(&path, 4000 * Hz);
-        assert_eq!(m, m.clone());
-        Ok(())
+    fn not_exisit() {
+        let geometry = create_geometry(1);
+
+        let m = RawPCM::new("not_exists.dat", 4000 * Hz);
+        assert!(m.calc(&geometry).is_err());
     }
 }
