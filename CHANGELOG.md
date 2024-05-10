@@ -1,3 +1,43 @@
+# 23.0.0
+
+- Update firmware to v7.0.0
+  - Add new segment transition mode
+      - SysTime
+      - GPIO
+      - Ext
+  - Return errors more strictly for invalid operations
+  - Validate silencer setting only for current segment
+  - Allows ultrasound frequency to be changed
+    - Add `with_ultrasound_freq` to `AUTD3`
+  - Fix configure PulseWidthEncoder operation
+- Renaname functions and structs
+  - from `ConfigureDebugSettings` to `DebugSettings`
+  - from `ConfigurePhaseFilter` to `PhaseFilter`
+  - from `ConfigurePulseWidthEncoder` to `PulseWidthEncoder`
+  - from `ConfigureSilencer` to `Silencer`
+  - from `ConfigureReadsFPGAState` to `ReadsFPGAState`
+  - from `ConfigureForceFan` to `ForceFan`
+  - from `SamplingConfiguration` to `SamplingConfig`
+  - `ChangeGainSegment`, `ChangeModulationSegment`, `ChangeGainSTMSegment` and `ChangeFocusSTMSegment` are merged into `Segment`
+  - from `TransducerTest` to `Custom`
+- Add `EmulateGPIOIn`
+- Make `Controller::group` and `gain::Group` error message more easy to understand
+  - Key type now requires `Debug` traits
+- `Sine` and `Square` frequencies is now strictly checked
+  - Users should use `with_freq_nearest` intead to bypass the check
+- Change Modulation buffer type from `EmitIntensity` to `u8` 
+- Remove correction from `EmitIntensity`
+  - Users should use `PulseWidthEncoder` instead
+- Remove `SamplingConfig::from_period`
+- Add `modulation::Custom`
+- Gain and Modulation calculations are parallelized per device
+- Fix `STMFocus` range check
+- Support Windows on Arm
+- Allow thread/process priority configuration in SOEM link
+- Test coverage is now 100%
+- Remove deprecated functions and structs
+
+
 # 22.1.0
 
 - Update firmware to v6.1.0
