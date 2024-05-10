@@ -18,7 +18,7 @@ impl ToMessage for autd3::gain::Bessel {
                     phase_offset: Some(self.phase_offset().to_msg(None)),
                 })),
                 segment: Segment::S0 as _,
-                update_segment: true,
+                transition: true,
             })),
         }
     }
@@ -39,7 +39,7 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Bess
                     phase_offset: Some(self.phase_offset().to_msg(None)),
                 })),
                 segment: self.segment() as _,
-                update_segment: self.update_segment(),
+                transition: self.transition(),
             })),
         }
     }
@@ -54,10 +54,10 @@ impl FromMessage<Bessel> for autd3::gain::Bessel {
                 autd3_driver::geometry::Vector3::from_msg(msg.dir.as_ref()?)?,
                 msg.theta as _,
             )
-            .with_intensity(autd3_driver::common::EmitIntensity::from_msg(
+            .with_intensity(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
                 msg.intensity.as_ref()?,
             )?)
-            .with_phase_offset(autd3_driver::common::Phase::from_msg(
+            .with_phase_offset(autd3_driver::firmware::fpga::Phase::from_msg(
                 msg.phase_offset.as_ref()?,
             )?),
         )
@@ -67,7 +67,7 @@ impl FromMessage<Bessel> for autd3::gain::Bessel {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::{common::EmitIntensity, geometry::Vector3};
+    use autd3_driver::{firmware::fpga::EmitIntensity, geometry::Vector3};
     use rand::Rng;
 
     #[test]
@@ -85,6 +85,7 @@ mod tests {
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Bessel(gain)),
+                ..
             })) => {
                 let g2 = autd3::gain::Bessel::from_msg(&gain).unwrap();
                 assert_approx_eq::assert_approx_eq!(g.pos().x, g2.pos().x);

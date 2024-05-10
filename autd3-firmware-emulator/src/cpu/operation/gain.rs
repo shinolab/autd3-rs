@@ -4,7 +4,8 @@ use crate::{cpu::params::*, CPUEmulator};
 struct Gain {
     tag: u8,
     segment: u8,
-    flag: u16,
+    flag: u8,
+    __pad: u8,
 }
 
 #[repr(C, align(2))]
@@ -18,6 +19,7 @@ impl CPUEmulator {
         let d = Self::cast::<Gain>(data);
 
         let segment = d.segment;
+        self.stm_segment = segment;
 
         let data = unsafe {
             std::slice::from_raw_parts(
@@ -28,23 +30,25 @@ impl CPUEmulator {
 
         match segment {
             0 => {
-                self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_FREQ_DIV_0_0, 0xFFFF);
-                self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_FREQ_DIV_0_1, 0xFFFF);
-                self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_REP_0_1, 0xFFFF);
-                self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_REP_0_1, 0xFFFF);
-                self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_CYCLE_0, 0);
-                self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_MODE_0, STM_MODE_GAIN);
+                self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_FREQ_DIV0_0, 0xFFFF);
+                self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_FREQ_DIV0_1, 0xFFFF);
+                self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REP0_1, 0xFFFF);
+                self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REP0_1, 0xFFFF);
+                self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_CYCLE0, 0);
+                self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_MODE0, STM_MODE_GAIN);
             }
             1 => {
-                self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_FREQ_DIV_1_0, 0xFFFF);
-                self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_FREQ_DIV_1_1, 0xFFFF);
-                self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_REP_1_0, 0xFFFF);
-                self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_REP_1_1, 0xFFFF);
-                self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_CYCLE_1, 0);
-                self.bram_write(BRAM_SELECT_CONTROLLER, BRAM_ADDR_STM_MODE_1, STM_MODE_GAIN);
+                self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_FREQ_DIV1_0, 0xFFFF);
+                self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_FREQ_DIV1_1, 0xFFFF);
+                self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REP1_0, 0xFFFF);
+                self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REP1_1, 0xFFFF);
+                self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_CYCLE1, 0);
+                self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_MODE1, STM_MODE_GAIN);
             }
-            _ => return ERR_INVALID_SEGMENT,
+            _ => unreachable!(),
         }
+        self.stm_cycle[segment as usize] = 1;
+        self.stm_rep[segment as usize] = 0xFFFFFFFF;
         self.stm_freq_div[segment as usize] = 0xFFFFFFFF;
 
         self.change_stm_wr_segment(segment as _);
@@ -54,8 +58,13 @@ impl CPUEmulator {
         if (d.flag & GAIN_FLAG_UPDATE) == GAIN_FLAG_UPDATE {
             self.bram_write(
                 BRAM_SELECT_CONTROLLER,
-                BRAM_ADDR_STM_REQ_RD_SEGMENT,
+                ADDR_STM_REQ_RD_SEGMENT,
                 segment as _,
+            );
+            self.bram_write(
+                BRAM_SELECT_CONTROLLER,
+                ADDR_STM_TRANSITION_MODE,
+                TRANSITION_MODE_SYNC_IDX as _,
             );
         }
 
@@ -71,10 +80,17 @@ impl CPUEmulator {
             return ERR_INVALID_SEGMENT_TRANSITION;
         }
 
+        self.stm_segment = d.segment;
+
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_STM_REQ_RD_SEGMENT,
+            ADDR_STM_REQ_RD_SEGMENT,
             d.segment as _,
+        );
+        self.bram_write(
+            BRAM_SELECT_CONTROLLER,
+            ADDR_STM_TRANSITION_MODE,
+            TRANSITION_MODE_SYNC_IDX as _,
         );
 
         NO_ERR

@@ -8,6 +8,6 @@ mod holo;
 mod plane;
 mod stm;
 mod test_runner;
-mod transtest;
+mod user_defined_gain_modulation;
 
 pub use test_runner::run;

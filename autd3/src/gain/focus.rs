@@ -35,11 +35,15 @@ impl Gain for Focus {
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |dev, tr| {
-            Drive::new(
-                tr.align_phase_at(self.pos, dev.sound_speed) + self.phase_offset,
-                self.intensity,
-            )
+        Ok(Self::transform(geometry, filter, |dev| {
+            let wavenumber = dev.wavenumber();
+            move |tr| {
+                Drive::new(
+                    Phase::from_rad((self.pos - tr.position()).norm() * wavenumber)
+                        + self.phase_offset,
+                    self.intensity,
+                )
+            }
         }))
     }
 }
@@ -47,6 +51,7 @@ impl Gain for Focus {
 #[cfg(test)]
 mod tests {
     use crate::tests::{create_geometry, random_vector3};
+    use autd3_driver::datagram::Datagram;
 
     use super::*;
     use rand::Rng;
@@ -67,9 +72,9 @@ mod tests {
         b.iter().for_each(|(&idx, d)| {
             assert_eq!(d.len(), geometry[idx].num_transducers());
             d.iter().zip(geometry[idx].iter()).for_each(|(d, tr)| {
-                let expected_phase = Phase::from_rad(
-                    (tr.position() - pos).norm() * tr.wavenumber(geometry[idx].sound_speed),
-                ) + phase_offset;
+                let expected_phase =
+                    Phase::from_rad((tr.position() - pos).norm() * geometry[idx].wavenumber())
+                        + phase_offset;
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity())
             });
@@ -104,6 +109,6 @@ mod tests {
         let gain = Focus::new(Vector3::zeros());
         let gain2 = gain.clone();
         assert_eq!(gain, gain2);
-        let _ = gain.operation_with_segment(Segment::S0, true);
+        let _ = gain.operation();
     }
 }

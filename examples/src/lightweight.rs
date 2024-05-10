@@ -10,12 +10,16 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     println!("======== AUTD3 firmware information ========");
-    client.firmware_infos().await?.iter().for_each(|firm_info| {
-        println!("{}", firm_info);
-    });
+    client
+        .firmware_version()
+        .await?
+        .iter()
+        .for_each(|firm_info| {
+            println!("{}", firm_info);
+        });
     println!("============================================");
 
-    client.send(Sine::new(150.)).await?;
+    client.send(Sine::new(150. * Hz)).await?;
     client
         .send(Focus::new(Vector3::new(90., 70., 150.)))
         .await?;

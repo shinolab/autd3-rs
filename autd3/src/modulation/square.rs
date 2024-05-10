@@ -1,206 +1,265 @@
-use autd3_driver::derive::*;
+use autd3_driver::{derive::*, freq::FreqFloat};
 
-use num::integer::gcd;
-
-use super::sampling_mode::SamplingMode;
+use super::sampling_mode::{ExactFreqFloat, NearestFreq, SamplingMode, SamplingModeInference};
 
 /// Square wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug, Builder)]
-pub struct Square {
+pub struct Square<S: SamplingMode> {
     #[get]
-    freq: f64,
+    freq: S::T,
     #[getset]
-    low: EmitIntensity,
+    low: u8,
     #[getset]
-    high: EmitIntensity,
+    high: u8,
     #[getset]
     duty: f64,
-    #[getset]
-    mode: SamplingMode,
-    config: SamplingConfiguration,
+    config: SamplingConfig,
     loop_behavior: LoopBehavior,
+    __phantom: std::marker::PhantomData<S>,
 }
 
-impl Square {
+impl Square<ExactFreqFloat> {
+    pub const fn new<S: SamplingModeInference>(freq: S) -> Square<S::T> {
+        Square {
+            freq,
+            low: u8::MIN,
+            high: u8::MAX,
+            duty: 0.5,
+            config: SamplingConfig::Division(5120),
+            loop_behavior: LoopBehavior::infinite(),
+            __phantom: std::marker::PhantomData,
+        }
+    }
+
     /// constructor.
     ///
     /// # Arguments
     ///
-    /// * `freq` - Frequency of the square wave \[Hz\]
+    /// * `freq` - Frequency of the square wave
     ///
-    pub const fn new(freq: f64) -> Self {
-        Self {
+    pub const fn with_freq_nearest(freq: FreqFloat) -> Square<NearestFreq> {
+        Square {
             freq,
-            low: EmitIntensity::MIN,
-            high: EmitIntensity::MAX,
+            low: u8::MIN,
+            high: u8::MAX,
             duty: 0.5,
-            config: SamplingConfiguration::FREQ_4K_HZ,
-            mode: SamplingMode::ExactFrequency,
-            loop_behavior: LoopBehavior::Infinite,
+            config: SamplingConfig::Division(5120),
+            loop_behavior: LoopBehavior::infinite(),
+            __phantom: std::marker::PhantomData,
         }
     }
 }
 
-impl Modulation for Square {
-    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+impl<S: SamplingMode> Modulation for Square<S> {
+    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
         if !(0.0..=1.0).contains(&self.duty) {
             return Err(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string(),
             ));
         }
-
-        let (d, n) = match self.mode {
-            SamplingMode::ExactFrequency => {
-                if self.sampling_config().frequency().fract() != 0.0 {
-                    return Err(AUTDInternalError::ModulationError(
-                        "Sampling frequency must be integer".to_string(),
-                    ));
-                }
-                if self.freq.fract() != 0.0 {
-                    return Err(AUTDInternalError::ModulationError(
-                        "Frequency must be integer".to_string(),
-                    ));
-                }
-                let sf = self.sampling_config().frequency() as usize;
-                let freq = (self.freq as usize).clamp(1, sf / 2);
-                let k = gcd(sf, freq);
-                (freq / k, sf / k)
-            }
-            SamplingMode::SizeOptimized => {
-                let sf = self.sampling_config().frequency();
-                let freq = self.freq.clamp(0., sf / 2.);
-                (1, (sf / freq).round() as usize)
-            }
-        };
-
-        Ok((0..d)
-            .map(|i| (n + i) / d)
-            .flat_map(|size| {
-                let n_high = (size as f64 * self.duty) as usize;
-                vec![self.high; n_high]
-                    .into_iter()
-                    .chain(vec![self.low; size - n_high])
-            })
-            .collect())
+        Self::transform(geometry, |dev| {
+            let (n, rep) = S::validate(self.freq, self.config, dev.ultrasound_freq())?;
+            Ok((0..rep)
+                .map(|i| (n + i) / rep)
+                .flat_map(|size| {
+                    let n_high = (size as f64 * self.duty) as usize;
+                    vec![self.high; n_high]
+                        .into_iter()
+                        .chain(vec![self.low; size as usize - n_high])
+                })
+                .collect())
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use autd3_driver::freq::Hz;
+
+    use crate::tests::create_geometry;
+
     use super::*;
 
+    #[rstest::rstest]
     #[test]
-    fn test_square() -> anyhow::Result<()> {
-        let expect = [
+    #[case(
+        Ok(vec![
             255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255,
             255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ];
-        let m = Square::new(150.).with_cache();
-        assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
-        assert_eq!(
-            expect
-                .into_iter()
-                .map(EmitIntensity::new)
-                .collect::<Vec<_>>(),
-            m.calc()?
-        );
-
-        Ok(())
+        ]),
+        150.*Hz
+    )]
+    #[case(
+        Ok(vec![
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ]),
+        150*Hz
+    )]
+    #[case(
+        Ok(vec![255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        200.*Hz
+    )]
+    #[case(
+        Ok(vec![255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        200*Hz
+    )]
+    #[case(
+        Ok(vec![
+            255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255,
+            0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0,
+            255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255,
+            0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0,
+            255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255,
+            255, 0, 0, 0, 255, 255, 255, 0, 0, 0, 255, 255, 255, 0, 0, 0
+        ]),
+        781.25*Hz
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency (150.01 Hz) cannot be output with the sampling config (Division(5120)).".to_owned())),
+        150.01*Hz
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        2000.*Hz
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        2000*Hz
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        4000.*Hz
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        4000*Hz
+    )]
+    fn with_freq_float_exact(
+        #[case] expect: Result<Vec<u8>, AUTDInternalError>,
+        #[case] freq: impl SamplingModeInference,
+    ) {
+        let geometry = create_geometry(1);
+        let m = Square::new(freq);
+        assert_eq!(freq, m.freq());
+        assert_eq!(u8::MIN, m.low());
+        assert_eq!(u8::MAX, m.high());
+        assert_eq!(0.5, m.duty());
+        assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
+        assert_eq!(expect.map(|b| HashMap::from([(0, b)])), m.calc(&geometry));
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_square_with_size_opt() -> anyhow::Result<()> {
-        let expect = [
+    #[case(
+        Ok(vec![
             255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0,
-        ];
-        let m = Square::new(150.).with_mode(SamplingMode::SizeOptimized);
-        assert_eq!(SamplingConfiguration::FREQ_4K_HZ, m.sampling_config());
-        assert_eq!(
-            expect
-                .into_iter()
-                .map(EmitIntensity::new)
-                .collect::<Vec<_>>(),
-            m.calc()?
-        );
+        ]),
+        150.*Hz
+    )]
+    #[case(
+        Ok(vec![255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        200.*Hz
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        2000.*Hz
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        4000.*Hz
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency (-0.1 Hz) must be positive".to_owned())),
+        -0.1*Hz
+    )]
+    fn with_freq_nearest(
+        #[case] expect: Result<Vec<u8>, AUTDInternalError>,
+        #[case] freq: FreqFloat,
+    ) {
+        let geometry = create_geometry(1);
+        let m = Square::with_freq_nearest(freq);
+        assert_eq!(freq, m.freq());
+        assert_eq!(u8::MIN, m.low());
+        assert_eq!(u8::MAX, m.high());
+        assert_eq!(0.5, m.duty());
+        assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
+
+        assert_eq!(expect.map(|b| HashMap::from([(0, b)])), m.calc(&geometry));
+    }
+
+    #[test]
+    fn with_low() -> anyhow::Result<()> {
+        let geometry = create_geometry(1);
+        let m = Square::new(150. * Hz).with_low(u8::MAX);
+        assert_eq!(u8::MAX, m.low());
+        assert!(m
+            .calc(&geometry)?
+            .values()
+            .all(|b| b.iter().all(|&x| x == u8::MAX)));
 
         Ok(())
     }
 
     #[test]
-    fn test_square_new() {
-        let m = Square::new(100.);
-        assert_eq!(100., m.freq());
-        assert_eq!(EmitIntensity::MAX, m.high());
-        assert_eq!(EmitIntensity::MIN, m.low());
-        assert_eq!(SamplingMode::ExactFrequency, m.mode());
-
-        assert_eq!(
-            Err(AUTDInternalError::ModulationError(
-                "Frequency must be integer".to_string()
-            )),
-            Square::new(100.1).calc()
-        );
-
-        assert!(Square::new(100.1)
-            .with_mode(SamplingMode::SizeOptimized)
-            .calc()
-            .is_ok());
-    }
-
-    #[test]
-    fn test_square_with_low() -> anyhow::Result<()> {
-        let m = Square::new(150.).with_low(EmitIntensity::MAX);
-        assert_eq!(EmitIntensity::MAX, m.low());
-        assert!(m.calc()?.iter().all(|&a| a == EmitIntensity::MAX));
+    fn with_high() -> anyhow::Result<()> {
+        let geometry = create_geometry(1);
+        let m = Square::new(150. * Hz).with_high(u8::MIN);
+        assert_eq!(u8::MIN, m.high());
+        assert!(m
+            .calc(&geometry)?
+            .values()
+            .all(|b| b.iter().all(|&x| x == u8::MIN)));
 
         Ok(())
     }
 
     #[test]
-    fn test_square_with_high() -> anyhow::Result<()> {
-        let m = Square::new(150.).with_high(EmitIntensity::MIN);
-        assert_eq!(EmitIntensity::MIN, m.high());
-        assert!(m.calc()?.iter().all(|&a| a == EmitIntensity::MIN));
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_square_with_duty() -> anyhow::Result<()> {
-        let m = Square::new(150.).with_duty(0.0);
+    fn with_duty() -> anyhow::Result<()> {
+        let geometry = create_geometry(1);
+        let m = Square::new(150. * Hz).with_duty(0.0);
         assert_eq!(m.duty(), 0.0);
-        assert!(m.calc()?.iter().all(|&a| a == EmitIntensity::MIN));
+        assert!(m
+            .calc(&geometry)?
+            .values()
+            .all(|b| b.iter().all(|&x| x == u8::MIN)));
 
-        let m = Square::new(150.).with_duty(1.0);
+        let m = Square::new(150. * Hz).with_duty(1.0);
         assert_eq!(m.duty(), 1.0);
-        assert!(m.calc()?.iter().all(|&a| a == EmitIntensity::MAX));
+        assert!(m
+            .calc(&geometry)?
+            .values()
+            .all(|b| b.iter().all(|&x| x == u8::MAX)));
 
         Ok(())
     }
 
     #[test]
-    fn test_square_with_duty_out_of_range() {
+    fn duty_out_of_range() {
+        let geometry = create_geometry(1);
         assert_eq!(
             Err(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string()
             )),
-            Square::new(150.).with_duty(-0.1).calc()
+            Square::new(150. * Hz).with_duty(-0.1).calc(&geometry)
         );
 
         assert_eq!(
             Err(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string()
             )),
-            Square::new(150.).with_duty(1.1).calc()
+            Square::new(150. * Hz).with_duty(1.1).calc(&geometry)
         );
     }
 
     #[test]
     fn test_square_derive() {
-        let m = Square::new(150.);
+        let m = Square::new(150. * Hz);
         assert_eq!(m, m.clone());
     }
 }

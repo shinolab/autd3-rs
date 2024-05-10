@@ -32,8 +32,8 @@ impl Gain for Uniform {
         geometry: &Geometry,
         filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |_, _| {
-            Drive::new(self.phase, self.intensity)
+        Ok(Self::transform(geometry, filter, |_| {
+            |_| Drive::new(self.phase, self.intensity)
         }))
     }
 }
@@ -43,6 +43,7 @@ mod tests {
     use crate::tests::create_geometry;
 
     use super::*;
+    use autd3_driver::datagram::Datagram;
     use rand::Rng;
 
     fn uniform_check(
@@ -90,6 +91,6 @@ mod tests {
         let gain = Uniform::new(0x1F);
         let gain2 = gain.clone();
         assert_eq!(gain, gain2);
-        let _ = gain.operation_with_segment(Segment::S0, true);
+        let _ = gain.operation();
     }
 }

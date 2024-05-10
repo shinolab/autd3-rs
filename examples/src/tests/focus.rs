@@ -1,12 +1,12 @@
 use autd3::prelude::*;
 
 pub async fn focus(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
-    autd.send(ConfigureSilencer::default()).await?;
+    autd.send(Silencer::default()).await?;
 
     let center = autd.geometry.center() + Vector3::new(0., 0., 150.0 * MILLIMETER);
 
     let g = Focus::new(center);
-    let m = Sine::new(150.);
+    let m = Sine::new(150. * Hz);
 
     autd.send((m, g)).await?;
 

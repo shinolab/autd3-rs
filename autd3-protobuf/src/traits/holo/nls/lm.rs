@@ -6,7 +6,12 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3_gain_holo::LM<NalgebraBackend> {
+impl ToMessage
+    for autd3_gain_holo::LM<
+        autd3_driver::acoustics::directivity::Sphere,
+        NalgebraBackend<autd3_driver::acoustics::directivity::Sphere>,
+    >
+{
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
@@ -23,14 +28,19 @@ impl ToMessage for autd3_gain_holo::LM<NalgebraBackend> {
                     constraint: Some(self.constraint().to_msg(None)),
                 })),
                 segment: Segment::S0 as _,
-                update_segment: true,
+                transition: true,
             })),
         }
     }
 }
 
 impl ToMessage
-    for autd3_driver::datagram::DatagramWithSegment<autd3_gain_holo::LM<NalgebraBackend>>
+    for autd3_driver::datagram::DatagramWithSegment<
+        autd3_gain_holo::LM<
+            autd3_driver::acoustics::directivity::Sphere,
+            NalgebraBackend<autd3_driver::acoustics::directivity::Sphere>,
+        >,
+    >
 {
     type Message = DatagramLightweight;
 
@@ -48,13 +58,18 @@ impl ToMessage
                     constraint: Some(self.constraint().to_msg(None)),
                 })),
                 segment: self.segment() as _,
-                update_segment: self.update_segment(),
+                transition: self.transition(),
             })),
         }
     }
 }
 
-impl FromMessage<Lm> for autd3_gain_holo::LM<NalgebraBackend> {
+impl FromMessage<Lm>
+    for autd3_gain_holo::LM<
+        autd3_driver::acoustics::directivity::Sphere,
+        NalgebraBackend<autd3_driver::acoustics::directivity::Sphere>,
+    >
+{
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &Lm) -> Option<Self> {
         Some(
@@ -111,6 +126,7 @@ mod tests {
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Lm(g)),
+                ..
             })) => {
                 let holo2 = autd3_gain_holo::LM::from_msg(&g).unwrap();
                 assert_approx_eq::assert_approx_eq!(holo.eps_1(), holo2.eps_1());

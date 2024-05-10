@@ -5,31 +5,33 @@ use crate::{
     LinAlgBackend, Trans,
 };
 
-use autd3_driver::{derive::*, geometry::Vector3};
+use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vector3};
 
 /// Gain to produce multiple foci with naive linear synthesis
 #[derive(Gain)]
-pub struct Naive<B: LinAlgBackend + 'static> {
+pub struct Naive<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,
     constraint: EmissionConstraint,
     backend: Arc<B>,
+    _phantom: std::marker::PhantomData<D>,
 }
 
-impl_holo!(B, Naive<B>);
+impl_holo!(D, B, Naive<D, B>);
 
-impl<B: LinAlgBackend + 'static> Naive<B> {
+impl<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> Naive<D, B> {
     pub const fn new(backend: Arc<B>) -> Self {
         Self {
             foci: vec![],
             amps: vec![],
             backend,
             constraint: EmissionConstraint::DontCare,
+            _phantom: std::marker::PhantomData,
         }
     }
 }
 
-impl<B: LinAlgBackend> Gain for Naive<B> {
+impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {
     fn calc(
         &self,
         geometry: &Geometry,
@@ -42,8 +44,7 @@ impl<B: LinAlgBackend> Gain for Naive<B> {
         let m = self.foci.len();
         let n = self.backend.cols_c(&g)?;
 
-        let mut b = self.backend.alloc_cm(n, m)?;
-        self.backend.gen_back_prop(n, m, &g, &mut b)?;
+        let b = self.backend.gen_back_prop(n, m, &g)?;
 
         let p = self.backend.from_slice_cv(self.amps_as_slice())?;
         let mut q = self.backend.alloc_zeros_cv(n)?;
@@ -56,12 +57,9 @@ impl<B: LinAlgBackend> Gain for Naive<B> {
             &mut q,
         )?;
 
-        generate_result(
-            geometry,
-            self.backend.to_host_cv(q)?,
-            &self.constraint,
-            filter,
-        )
+        let q = self.backend.to_host_cv(q)?;
+        let max_coefficient = q.camax().abs();
+        generate_result(geometry, q, max_coefficient, &self.constraint, filter)
     }
 }
 
@@ -73,7 +71,7 @@ mod tests {
     #[test]
     fn test_naive_all() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend = NalgebraBackend::new().unwrap();
+        let backend = Arc::new(NalgebraBackend::default());
 
         let g = Naive::new(backend)
             .add_focus(Vector3::zeros(), 1. * Pascal)
@@ -84,14 +82,18 @@ mod tests {
             .foci()
             .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pascal));
 
-        let _ = g.calc(&geometry, GainFilter::All);
-        let _ = g.operation_with_segment(Segment::S0, true);
+        assert_eq!(
+            g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
+                .calc(&geometry, GainFilter::All)
+                .map(|res| res[&0].iter().filter(|&&d| d != Drive::null()).count()),
+            Ok(geometry.num_transducers()),
+        );
     }
 
     #[test]
     fn test_naive_filtered() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend = NalgebraBackend::new().unwrap();
+        let backend = Arc::new(NalgebraBackend::default());
 
         let g = Naive::new(backend)
             .add_focus(Vector3::new(10., 10., 100.), 5e3 * Pascal)

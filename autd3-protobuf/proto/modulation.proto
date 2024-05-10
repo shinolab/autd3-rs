@@ -3,38 +3,51 @@ syntax = "proto3";
 package autd3;
 
 import "utils.proto";
+import "utils-lightweight.proto";
 
-enum SamplingMode {
-  EXACT_FREQ = 0;
-  SIZE_OPT = 1;
-}
+message Static { uint32 intensity = 1; }
 
-message Static { EmitIntensity intensity = 1; }
-
-message Sine {
-  SamplingConfiguration config = 1;
+message SineExact {
+  SamplingConfig config = 1;
   float freq = 2;
-  EmitIntensity intensity = 3;
-  EmitIntensity offset = 4;
+  uint32 intensity = 3;
+  uint32 offset = 4;
   Phase phase = 5;
-  SamplingMode mode = 6;
 }
 
-message Square {
-  SamplingConfiguration config = 1;
+message SineNearest {
+  SamplingConfig config = 1;
   float freq = 2;
-  EmitIntensity low = 3;
-  EmitIntensity high = 4;
+  uint32 intensity = 3;
+  uint32 offset = 4;
+  Phase phase = 5;
+}
+
+message SquareExact {
+  SamplingConfig config = 1;
+  float freq = 2;
+  uint32 low = 3;
+  uint32 high = 4;
   float duty = 5;
-  SamplingMode mode = 6;
+}
+
+message SquareNearest {
+  SamplingConfig config = 1;
+  float freq = 2;
+  uint32 low = 3;
+  uint32 high = 4;
+  float duty = 5;
 }
 
 message Modulation {
   oneof modulation {
     Static static = 1;
-    Sine sine = 2;
-    Square square = 4;
+    SineExact sine_exact = 2;
+    SineNearest sine_nearest = 3;
+    SquareExact square_exact = 4;
+    SquareNearest square_nearest = 5;
   }
   Segment segment = 1001;
-  bool update_segment = 1002;
+  optional TransitionMode transition_mode = 1002;
+  optional uint64 transition_value = 1003;
 }

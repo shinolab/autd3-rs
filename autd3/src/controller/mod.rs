@@ -1,20 +1,23 @@
 mod builder;
 mod group;
 
-use std::{hash::Hash, time::Duration};
+use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
-    cpu::{RxMessage, TxDatagram},
-    datagram::{Clear, ConfigureSilencer, Datagram},
-    firmware_version::FirmwareInfo,
-    fpga::FPGAState,
+    datagram::{Clear, Datagram, Silencer},
+    defined::DEFAULT_TIMEOUT,
+    firmware::{
+        cpu::{RxMessage, TxDatagram},
+        fpga::FPGAState,
+        operation::OperationHandler,
+        version::FirmwareVersion,
+    },
     geometry::{Device, Geometry},
     link::{send_receive, Link},
-    operation::OperationHandler,
 };
 
 use crate::{
-    error::{AUTDError, ReadFirmwareInfoState},
+    error::{AUTDError, ReadFirmwareVersionState},
     gain::Null,
     link::nop::Nop,
 };
@@ -39,7 +42,7 @@ impl Controller<Nop> {
 
 impl<L: Link> Controller<L> {
     #[must_use]
-    pub fn group<K: Hash + Eq + Clone, F: Fn(&Device) -> Option<K>>(
+    pub fn group<K: Hash + Eq + Clone + Debug, F: Fn(&Device) -> Option<K>>(
         &mut self,
         f: F,
     ) -> GroupGuard<K, L, F> {
@@ -62,7 +65,7 @@ impl<L: Link> Controller<L> {
     pub async fn send(&mut self, s: impl Datagram) -> Result<bool, AUTDError> {
         let timeout = s.timeout();
 
-        let (mut op1, mut op2) = s.operation()?;
+        let (mut op1, mut op2) = s.operation();
         OperationHandler::init(&mut op1, &mut op2, &self.geometry)?;
         loop {
             OperationHandler::pack(&mut op1, &mut op2, &self.geometry, &mut self.tx_buf)?;
@@ -84,9 +87,7 @@ impl<L: Link> Controller<L> {
             return Ok(true);
         }
         self.geometry.iter_mut().for_each(|dev| dev.enable = true);
-        let res = self
-            .send((Null::default(), ConfigureSilencer::default()))
-            .await?
+        let res = self.send((Null::default(), Silencer::default())).await?
             & self.send(Clear::new()).await?;
         self.link.close().await?;
         Ok(res)
@@ -96,28 +97,28 @@ impl<L: Link> Controller<L> {
     ///
     /// # Returns
     ///
-    /// * `Ok(Vec<FirmwareInfo>)` - List of firmware information
+    /// * `Ok(Vec<FirmwareVersion>)` - List of firmware information
     ///
-    pub async fn firmware_infos(&mut self) -> Result<Vec<FirmwareInfo>, AUTDError> {
-        let mut op = autd3_driver::operation::FirmInfoOp::default();
-        let mut null_op = autd3_driver::operation::NullOp::default();
+    pub async fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDError> {
+        let mut op = autd3_driver::firmware::operation::FirmInfoOp::default();
+        let mut null_op = autd3_driver::firmware::operation::NullOp::default();
 
         OperationHandler::init(&mut op, &mut null_op, &self.geometry)?;
 
         macro_rules! pack_and_send {
             ($op:expr, $null_op:expr, $link:expr, $geometry:expr, $tx_buf:expr, $rx_buf:expr ) => {
                 OperationHandler::pack($op, $null_op, $geometry, $tx_buf)?;
-                if !autd3_driver::link::send_receive(
-                    $link,
-                    $tx_buf,
-                    $rx_buf,
-                    Some(Duration::from_millis(200)),
-                )
-                .await?
+                if !autd3_driver::link::send_receive($link, $tx_buf, $rx_buf, Some(DEFAULT_TIMEOUT))
+                    .await?
                 {
-                    return Err(AUTDError::ReadFirmwareInfoFailed(ReadFirmwareInfoState(
-                        autd3_driver::cpu::check_if_msg_is_processed($tx_buf, $rx_buf).collect(),
-                    )));
+                    return Err(AUTDError::ReadFirmwareVersionFailed(
+                        ReadFirmwareVersionState(
+                            autd3_driver::firmware::cpu::check_if_msg_is_processed(
+                                $tx_buf, $rx_buf,
+                            )
+                            .collect(),
+                        ),
+                    ));
                 }
             };
         }
@@ -127,8 +128,8 @@ impl<L: Link> Controller<L> {
             &mut null_op,
             &mut self.link,
             &self.geometry,
-            &mut self.tx_buf,
-            &mut self.rx_buf
+            &mut self.tx_buf, // GRCOV_EXCL_LINE
+            &mut self.rx_buf  // GRCOV_EXCL_LINE
         );
         let cpu_versions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
@@ -137,8 +138,8 @@ impl<L: Link> Controller<L> {
             &mut null_op,
             &mut self.link,
             &self.geometry,
-            &mut self.tx_buf,
-            &mut self.rx_buf
+            &mut self.tx_buf, // GRCOV_EXCL_LINE
+            &mut self.rx_buf  // GRCOV_EXCL_LINE
         );
         let cpu_versions_minor = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
@@ -147,8 +148,8 @@ impl<L: Link> Controller<L> {
             &mut null_op,
             &mut self.link,
             &self.geometry,
-            &mut self.tx_buf,
-            &mut self.rx_buf
+            &mut self.tx_buf, // GRCOV_EXCL_LINE
+            &mut self.rx_buf  // GRCOV_EXCL_LINE
         );
         let fpga_versions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
@@ -157,8 +158,8 @@ impl<L: Link> Controller<L> {
             &mut null_op,
             &mut self.link,
             &self.geometry,
-            &mut self.tx_buf,
-            &mut self.rx_buf
+            &mut self.tx_buf, // GRCOV_EXCL_LINE
+            &mut self.rx_buf  // GRCOV_EXCL_LINE
         );
         let fpga_versions_minor = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
@@ -167,8 +168,8 @@ impl<L: Link> Controller<L> {
             &mut null_op,
             &mut self.link,
             &self.geometry,
-            &mut self.tx_buf,
-            &mut self.rx_buf
+            &mut self.tx_buf, // GRCOV_EXCL_LINE
+            &mut self.rx_buf  // GRCOV_EXCL_LINE
         );
         let fpga_functions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
@@ -177,13 +178,13 @@ impl<L: Link> Controller<L> {
             &mut null_op,
             &mut self.link,
             &self.geometry,
-            &mut self.tx_buf,
-            &mut self.rx_buf
+            &mut self.tx_buf, // GRCOV_EXCL_LINE
+            &mut self.rx_buf  // GRCOV_EXCL_LINE
         );
 
         Ok((0..self.geometry.num_devices())
             .map(|i| {
-                FirmwareInfo::new(
+                FirmwareVersion::new(
                     i,
                     cpu_versions[i],
                     cpu_versions_minor[i],
@@ -199,7 +200,7 @@ impl<L: Link> Controller<L> {
     ///
     /// # Returns
     ///
-    /// * `Ok(Vec<Option<FPGAState>>)` - List of FPGA state the latest data is fetched. If the reads FPGA state flag is not set, the value is None. See [autd3_driver::datagram::ConfigureReadsFPGAState].
+    /// * `Ok(Vec<Option<FPGAState>>)` - List of FPGA state the latest data is fetched. If the reads FPGA state flag is not set, the value is None. See [autd3_driver::datagram::ReadsFPGAState].
     /// * `Err(AUTDError::ReadFPGAStateFailed)` - If failure to fetch the latest data
     ///
     pub async fn fpga_state(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDError> {
@@ -230,12 +231,19 @@ impl<L: Link> Drop for Controller<L> {
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::{autd3_device::AUTD3, geometry::Vector3};
+    use autd3_driver::{
+        autd3_device::AUTD3,
+        datagram::GainSTM,
+        derive::{Gain, GainFilter, Segment},
+        freq::Hz,
+        geometry::Vector3,
+    };
 
-    use crate::link::Audit;
+    use crate::{link::Audit, prelude::*};
 
     use super::*;
 
+    // GRCOV_EXCL_START
     pub async fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit>> {
         Ok((0..dev_num)
             .fold(Controller::builder(), |acc, _i| {
@@ -243,5 +251,97 @@ mod tests {
             })
             .open(Audit::builder())
             .await?)
+    }
+    // GRCOV_EXCL_STOP
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_send() -> anyhow::Result<()> {
+        let mut autd = create_controller(1).await?;
+        assert!(
+            autd.send((
+                Sine::new(150. * Hz),
+                GainSTM::from_freq(1. * Hz)
+                    .add_gain(Uniform::new(0x80))
+                    .add_gain(Uniform::new(0x81)),
+            ))
+            .await?
+        );
+
+        assert_eq!(
+            Sine::new(150. * Hz).calc(&autd.geometry)?[&0],
+            autd.link[0].fpga().modulation(Segment::S0)
+        );
+        assert_eq!(
+            Uniform::new(0x80).calc(&autd.geometry, GainFilter::All)?[&0],
+            autd.link[0].fpga().drives(Segment::S0, 0)
+        );
+        assert_eq!(
+            Uniform::new(0x81).calc(&autd.geometry, GainFilter::All)?[&0],
+            autd.link[0].fpga().drives(Segment::S0, 1)
+        );
+
+        assert!(autd.close().await?);
+        assert!(autd.close().await?);
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_clk() -> anyhow::Result<()> {
+        let mut autd = Controller::builder()
+            .add_device(AUTD3::new(Vector3::zeros()).with_ultrasound_freq(41000))
+            .open(Audit::builder())
+            .await?;
+        assert_eq!(41000 * 512, autd.link[0].fpga().fpga_clk_freq());
+
+        assert!(autd.close().await?);
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_firmware_version() -> anyhow::Result<()> {
+        let mut autd = create_controller(1).await?;
+        assert_eq!(
+            vec![FirmwareVersion::new(
+                0,
+                FirmwareVersion::LATEST_VERSION_NUM_MAJOR,
+                FirmwareVersion::LATEST_VERSION_NUM_MINOR,
+                FirmwareVersion::LATEST_VERSION_NUM_MAJOR,
+                FirmwareVersion::LATEST_VERSION_NUM_MINOR,
+                FirmwareVersion::ENABLED_EMULATOR_BIT
+            )],
+            autd.firmware_version().await?
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_close() -> anyhow::Result<()> {
+        {
+            let mut autd = create_controller(1).await?;
+            assert!(autd.close().await?);
+            assert!(autd.close().await?);
+        }
+
+        {
+            let mut autd = create_controller(1).await?;
+            autd.link.break_down();
+            assert_eq!(
+                Err(AUTDError::Internal(AUTDInternalError::LinkError(
+                    "broken".to_owned()
+                ))),
+                autd.close().await
+            );
+        }
+
+        {
+            let mut autd = create_controller(1).await?;
+            autd.link.down();
+            assert!(!autd.close().await?);
+        }
+
+        Ok(())
     }
 }

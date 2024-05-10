@@ -1,6 +1,6 @@
 [package]
 name = "examples"
-version = "22.1.0"
+version = "23.0.0-rc.0"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 license = "MIT"
@@ -39,11 +39,6 @@ required-features = ["lightweight"]
 name = "lightweight_server"
 path = "src/lightweight_server.rs"
 required-features = ["lightweight-server"]
-
-[[bin]]
-name = "firmware_test"
-path = "src/firmware_test.rs"
-required-features = ["soem"]
 
 [dependencies]
 anyhow = { workspace = true }

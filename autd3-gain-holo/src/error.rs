@@ -9,6 +9,8 @@ pub enum HoloError {
     BackendError(String),
     #[error("{0}")]
     BackendCreationError(String),
+    #[error("Invalid operation")]
+    InvalidOperation,
 }
 
 impl From<HoloError> for AUTDInternalError {

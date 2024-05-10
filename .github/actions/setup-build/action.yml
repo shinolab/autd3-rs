@@ -1,9 +1,5 @@
 name: 'build tools setup action'
 inputs:
-  github-token:
-    description: 'GITHUB_TOKEN'
-    required: true
-    default: ''
   os:
     description: 'os'
     required: true
@@ -34,3 +30,9 @@ runs:
         cp cross /usr/local/bin
         cp cross-util /usr/local/bin
         rm cross.tar.gz
+
+    - name: install aarch64-pc-windows-msvc target
+      shell: bash
+      if: inputs.os == 'windows-latest' && inputs.arch
+      run: |
+        rustup target install aarch64-pc-windows-msvc

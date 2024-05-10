@@ -1,17 +1,15 @@
 pub use crate::{
-    common::{Drive, Segment},
-    datagram::{
-        DatagramS, Gain, GainCache, GainFilter, GainTransform, IntoGainCache, IntoGainTransform,
-        Modulation,
-    },
+    derive::*,
     error::AUTDInternalError,
+    firmware::fpga::{Drive, Segment},
+    firmware::operation::{GainOp, NullOp, Operation},
     geometry::{Device, Geometry, Transducer},
-    operation::{GainOp, NullOp, Operation},
 };
 pub use autd3_derive::Gain;
 
 use std::{
-    collections::{hash_map::Entry, HashMap},
+    collections::{hash_map::Entry, HashMap, HashSet},
+    fmt::Debug,
     hash::Hash,
 };
 
@@ -20,7 +18,7 @@ use bitvec::prelude::*;
 #[derive(Gain)]
 pub struct Group<K, F>
 where
-    K: Hash + Eq + Clone + 'static,
+    K: Hash + Eq + Clone + Debug + 'static,
     F: Fn(&Device, &Transducer) -> Option<K> + 'static,
 {
     f: F,
@@ -29,28 +27,14 @@ where
 
 impl<K, F> Group<K, F>
 where
-    K: Hash + Eq + Clone + 'static,
+    K: Hash + Eq + Clone + Debug + 'static,
     F: Fn(&Device, &Transducer) -> Option<K> + 'static,
 {
     /// Group by transducer
     ///
     /// # Arguments
     ///
-    /// `f` - function to get key from transducer (currentry, transducer type annotation is required)
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use autd3::prelude::*;
-    /// # let gain : Group<_, _> =
-    /// Group::new(|dev, tr| match tr.idx() {
-    ///                 0..=100 => Some("null"),
-    ///                 101.. => Some("focus"),
-    ///                 _ => None,
-    ///             })
-    ///             .set("null", Null::new())
-    ///             .set("focus", Focus::new(Vector3::new(0.0, 0.0, 150.0)));
-    /// ```
+    /// `f` - function to get key
     pub fn new(f: F) -> Group<K, F> {
         Group {
             f,
@@ -103,7 +87,7 @@ where
 
 impl<K, F> Gain for Group<K, F>
 where
-    K: Hash + Eq + Clone + 'static,
+    K: Hash + Eq + Clone + Debug + 'static,
     F: Fn(&Device, &Transducer) -> Option<K> + 'static,
 {
     fn calc(
@@ -112,21 +96,36 @@ where
         _filter: GainFilter,
     ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
         let filters = self.get_filters(geometry);
-        let drives_cache =
-            self.gain_map
-                .iter()
-                .map(|(k, g)| {
-                    Ok((
-                        k.clone(),
-                        g.calc(
-                            geometry,
-                            GainFilter::Filter(filters.get(k).ok_or(
-                                AUTDInternalError::GainError("Unknown group key".to_owned()),
-                            )?),
-                        )?,
-                    ))
-                })
-                .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?;
+
+        let specified_keys = self.gain_map.keys().cloned().collect::<HashSet<_>>();
+        let provided_keys = filters.keys().cloned().collect::<HashSet<_>>();
+
+        let unknown_keys = specified_keys
+            .difference(&provided_keys)
+            .collect::<Vec<_>>();
+        if !unknown_keys.is_empty() {
+            return Err(AUTDInternalError::UnkownKey(format!("{:?}", unknown_keys)));
+        }
+        let unspecified_keys = provided_keys
+            .difference(&specified_keys)
+            .collect::<Vec<_>>();
+        if !unspecified_keys.is_empty() {
+            return Err(AUTDInternalError::UnspecifiedKey(format!(
+                "{:?}",
+                unspecified_keys
+            )));
+        }
+
+        let drives_cache = self
+            .gain_map
+            .iter()
+            .map(|(k, g)| {
+                Ok((
+                    k.clone(),
+                    g.calc(geometry, GainFilter::Filter(&filters[k]))?,
+                ))
+            })
+            .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?;
         geometry
             .devices()
             .map(|dev| {
@@ -134,19 +133,11 @@ where
                     dev.idx(),
                     dev.iter()
                         .map(|tr| {
-                            (self.f)(dev, tr).map_or_else(
-                                || Ok(Drive::null()),
-                                |key| {
-                                    drives_cache
-                                        .get(&key)
-                                        .ok_or(AUTDInternalError::GainError(
-                                            "Unspecified group key".to_owned(),
-                                        ))
-                                        .map(|g| g[&dev.idx()][tr.idx()])
-                                },
-                            )
+                            (self.f)(dev, tr).map_or_else(Drive::null, |key| {
+                                drives_cache[&key][&dev.idx()][tr.idx()]
+                            })
                         })
-                        .collect::<Result<Vec<_>, AUTDInternalError>>()?,
+                        .collect::<Vec<_>>(),
                 ))
             })
             .collect()
@@ -159,19 +150,25 @@ mod tests {
 
     use super::{super::tests::TestGain, *};
 
-    use crate::{geometry::tests::create_geometry, operation::tests::NullGain};
+    use crate::{
+        defined::FREQ_40K, firmware::operation::tests::NullGain, geometry::tests::create_geometry,
+    };
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let geometry = create_geometry(4, 249);
+        let geometry = create_geometry(4, 249, FREQ_40K);
 
         let mut rng = rand::thread_rng();
 
         let d1: Drive = rng.gen();
         let d2: Drive = rng.gen();
 
-        let g1 = TestGain { f: move |_, _| d1 };
-        let g2 = TestGain { f: move |_, _| d2 };
+        let g1 = TestGain {
+            f: move |_| move |_| d1,
+        };
+        let g2 = TestGain {
+            f: move |_| move |_| d2,
+        };
 
         let gain = Group::new(|dev, tr| match (dev.idx(), tr.idx()) {
             (0, 0..=99) => Some("null"),
@@ -217,7 +214,7 @@ mod tests {
 
     #[test]
     fn test_unknown_key() {
-        let geometry = create_geometry(2, 249);
+        let geometry = create_geometry(2, 249, FREQ_40K);
 
         let gain = Group::new(|_dev, tr| match tr.idx() {
             0..=99 => Some("test"),
@@ -227,14 +224,14 @@ mod tests {
         .set("test2", NullGain {});
 
         assert_eq!(
-            Err(AUTDInternalError::GainError("Unknown group key".to_owned())),
+            Err(AUTDInternalError::UnkownKey("[\"test2\"]".to_owned())),
             gain.calc(&geometry, GainFilter::All)
         );
     }
 
     #[test]
     fn test_unspecified_key() {
-        let geometry = create_geometry(2, 249);
+        let geometry = create_geometry(2, 249, FREQ_40K);
 
         let gain = Group::new(|_dev, tr| match tr.idx() {
             0..=99 => Some("test"),
@@ -244,9 +241,32 @@ mod tests {
         .set("test", NullGain {});
 
         assert_eq!(
-            Err(AUTDInternalError::GainError(
-                "Unspecified group key".to_owned()
-            )),
+            Err(AUTDInternalError::UnspecifiedKey("[\"null\"]".to_owned())),
+            gain.calc(&geometry, GainFilter::All)
+        );
+    }
+
+    #[derive(Gain, Clone, Copy, PartialEq, Debug)]
+    pub struct ErrGain {}
+
+    impl Gain for ErrGain {
+        fn calc(
+            &self,
+            _geometry: &Geometry,
+            _filter: GainFilter,
+        ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
+            Err(AUTDInternalError::GainError("test error".to_owned()))
+        }
+    }
+
+    #[test]
+    fn test_calc_err() {
+        let geometry = create_geometry(2, 249, FREQ_40K);
+
+        let gain = Group::new(|_dev, _tr| Some("test")).set("test", ErrGain {});
+
+        assert_eq!(
+            Err(AUTDInternalError::GainError("test error".to_owned())),
             gain.calc(&geometry, GainFilter::All)
         );
     }

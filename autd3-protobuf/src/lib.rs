@@ -1,5 +1,3 @@
-#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
-
 #[cfg(feature = "tonic-build")]
 mod pb {
     tonic::include_proto!("autd3");

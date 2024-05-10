@@ -1,9 +1,9 @@
 pub use crate::{
-    common::{Drive, Segment},
-    datagram::{DatagramS, Gain, GainCache, GainFilter, IntoGainCache, Modulation},
+    derive::*,
     error::AUTDInternalError,
+    firmware::fpga::{Drive, Segment},
+    firmware::operation::{GainOp, NullOp, Operation},
     geometry::{Device, Geometry, Transducer},
-    operation::{GainOp, NullOp, Operation},
 };
 pub use autd3_derive::Gain;
 
@@ -65,11 +65,11 @@ mod tests {
 
     use super::{super::tests::TestGain, *};
 
-    use crate::geometry::tests::create_geometry;
+    use crate::{defined::FREQ_40K, geometry::tests::create_geometry};
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let geometry = create_geometry(1, 249);
+        let geometry = create_geometry(1, 249, FREQ_40K);
 
         let mut rng = rand::thread_rng();
         let d: Drive = rng.gen();

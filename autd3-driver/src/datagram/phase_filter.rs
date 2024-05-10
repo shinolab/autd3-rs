@@ -1,15 +1,16 @@
 use crate::{
-    common::Phase,
     datagram::*,
+    defined::DEFAULT_TIMEOUT,
     derive::{Device, Transducer},
+    firmware::fpga::Phase,
 };
 
 #[derive(Debug, Clone, Copy)]
-pub struct ConfigurePhaseFilter<F: Fn(&Device, &Transducer) -> Phase> {
+pub struct PhaseFilter<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
     f: F,
 }
 
-impl<F: Fn(&Device, &Transducer) -> Phase> ConfigurePhaseFilter<F> {
+impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> PhaseFilter<FT, F> {
     /// constructor
     pub const fn additive(f: F) -> Self {
         Self { f }
@@ -22,16 +23,16 @@ impl<F: Fn(&Device, &Transducer) -> Phase> ConfigurePhaseFilter<F> {
     // GRCOV_EXCL_STOP
 }
 
-impl<F: Fn(&Device, &Transducer) -> Phase> Datagram for ConfigurePhaseFilter<F> {
-    type O1 = crate::operation::ConfigurePhaseFilterOp<F>;
-    type O2 = crate::operation::NullOp;
+impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> Datagram for PhaseFilter<FT, F> {
+    type O1 = crate::firmware::operation::PhaseFilterOp<FT, F>;
+    type O2 = crate::firmware::operation::NullOp;
 
-    fn operation(self) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new(self.f), Self::O2::default()))
+    fn operation(self) -> (Self::O1, Self::O2) {
+        (Self::O1::new(self.f), Self::O2::default())
     }
 
     fn timeout(&self) -> Option<Duration> {
-        Some(Duration::from_millis(200))
+        Some(DEFAULT_TIMEOUT)
     }
 }
 
@@ -40,17 +41,15 @@ mod tests {
     use super::*;
 
     // GRCOV_EXCL_START
-    fn f(_: &Device, _: &Transducer) -> Phase {
-        Phase::new(0)
+    fn f(_: &Device) -> impl Fn(&Transducer) -> Phase {
+        |_| Phase::new(0)
     }
     // GRCOV_EXCL_STOP
 
     #[test]
     fn test() {
-        let datagram = ConfigurePhaseFilter::additive(f);
-        assert_eq!(Some(Duration::from_millis(200)), datagram.timeout());
-        let r = datagram.operation();
-        assert!(r.is_ok());
-        let _ = r.unwrap();
+        let datagram = PhaseFilter::additive(f);
+        assert_eq!(Some(DEFAULT_TIMEOUT), datagram.timeout());
+        let _ = datagram.operation();
     }
 }

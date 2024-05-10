@@ -1,13 +1,8 @@
 use super::{Matrix4, Quaternion, UnitQuaternion, Vector3, Vector4};
 
-use crate::{
-    common::Phase,
-    defined::{PI, ULTRASOUND_FREQUENCY},
-};
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Transducer {
-    idx: u8,
+    idx: usize,
     pos: Vector3,
     rot: UnitQuaternion,
 }
@@ -16,11 +11,7 @@ impl Transducer {
     /// Create transducer
     pub(crate) const fn new(idx: usize, pos: Vector3, rot: UnitQuaternion) -> Self {
         assert!(idx < 256);
-        Self {
-            idx: idx as u8,
-            pos,
-            rot,
-        }
+        Self { idx, pos, rot }
     }
 
     /// Affine transformation
@@ -29,11 +20,6 @@ impl Transducer {
             * Vector4::new(self.pos[0], self.pos[1], self.pos[2], 1.0);
         self.pos = Vector3::new(new_pos[0], new_pos[1], new_pos[2]);
         self.rot = r * self.rot;
-    }
-
-    /// Calculate the phase of the transducer to align the phase at the specified position
-    pub fn align_phase_at(&self, pos: Vector3, sound_speed: f64) -> Phase {
-        Phase::from_rad((pos - self.position()).norm() * self.wavenumber(sound_speed))
     }
 
     /// Get the position of the transducer
@@ -65,31 +51,27 @@ impl Transducer {
     }
 
     /// Get the axial direction of the transducer
+    #[cfg(feature = "left_handed")]
     pub fn axial_direction(&self) -> Vector3 {
-        if cfg!(feature = "left_handed") {
-            -self.z_direction()
-        } else {
-            self.z_direction()
-        }
+        -self.z_direction()
+    }
+
+    /// Get the axial direction of the transducer
+    #[cfg(not(feature = "left_handed"))]
+    pub fn axial_direction(&self) -> Vector3 {
+        self.z_direction()
     }
 
     /// Get the local transducer index
     pub const fn idx(&self) -> usize {
-        self.idx as usize
-    }
-
-    /// Get the wavelength of the transducer
-    pub fn wavelength(&self, sound_speed: f64) -> f64 {
-        sound_speed / ULTRASOUND_FREQUENCY
-    }
-    /// Get the wavenumber of the transducer
-    pub fn wavenumber(&self, sound_speed: f64) -> f64 {
-        2.0 * PI * ULTRASOUND_FREQUENCY / sound_speed
+        self.idx
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::f64::consts::PI;
+
     use assert_approx_eq::assert_approx_eq;
 
     use super::*;
@@ -102,19 +84,25 @@ mod tests {
         };
     }
 
+    #[rstest::fixture]
+    fn tr() -> Transducer {
+        Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity())
+    }
+
     #[rstest::rstest]
     #[test]
     #[case(0)]
     #[case(1)]
-    fn test_idx(#[case] idx: usize) {
-        let tr = Transducer::new(idx, Vector3::zeros(), UnitQuaternion::identity());
-        assert_eq!(idx, tr.idx());
+    fn idx(#[case] i: usize) {
+        assert_eq!(
+            i,
+            Transducer::new(i, Vector3::zeros(), UnitQuaternion::identity()).idx()
+        );
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_affine() {
-        let mut tr = Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
-
+    fn affine(mut tr: Transducer) {
         let t = Vector3::new(40., 50., 60.);
         let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)
             * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), 0.)
@@ -130,34 +118,5 @@ mod tests {
 
         let expect_pos = Vector3::zeros() + t;
         assert_vec3_approx_eq!(expect_pos, tr.position());
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(340e3)]
-    #[case(400e3)]
-    fn test_wavelength(#[case] c: f64) {
-        let tr = Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
-        assert_approx_eq!(c / ULTRASOUND_FREQUENCY, tr.wavelength(c));
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(340e3)]
-    #[case(400e3)]
-    fn test_wavenumber(#[case] c: f64) {
-        let tr = Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
-        assert_approx_eq!(2. * PI * ULTRASOUND_FREQUENCY / c, tr.wavenumber(c));
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(0, Vector3::zeros())]
-    #[case(0, Vector3::new(8.5, 0., 0.))]
-    #[case(0, Vector3::new(-8.5, 0., 0.))]
-    #[case(128, Vector3::new(8.5/2., 0., 0.))]
-    fn test_align_phase_at(#[case] expected: u8, #[case] pos: Vector3) {
-        let tr = Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity());
-        assert_eq!(expected, tr.align_phase_at(pos, 340e3).value());
     }
 }

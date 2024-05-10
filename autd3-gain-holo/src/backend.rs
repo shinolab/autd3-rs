@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use autd3_driver::{
+    acoustics::directivity::Directivity,
     datagram::GainFilter,
     geometry::{Geometry, Vector3},
 };
@@ -22,7 +23,7 @@ pub enum Trans {
 }
 
 /// Calculation backend
-pub trait LinAlgBackend {
+pub trait LinAlgBackend<D: Directivity> {
     type MatrixXc;
     type MatrixX;
     type VectorXc;
@@ -246,6 +247,5 @@ pub trait LinAlgBackend {
         _m: usize,
         n: usize,
         transfer: &Self::MatrixXc,
-        b: &mut Self::MatrixXc,
-    ) -> Result<(), HoloError>;
+    ) -> Result<Self::MatrixXc, HoloError>;
 }

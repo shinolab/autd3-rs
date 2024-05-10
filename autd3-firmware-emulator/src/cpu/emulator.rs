@@ -1,4 +1,7 @@
-use autd3_driver::cpu::{Header, TxDatagram};
+use autd3_driver::{
+    ethercat::DcSysTime,
+    firmware::cpu::{Header, RxMessage, TxDatagram},
+};
 
 use crate::fpga::emulator::FPGAEmulator;
 
@@ -14,20 +17,28 @@ pub struct CPUEmulator {
     pub(crate) mod_cycle: u32,
     pub(crate) stm_cycle: [u32; 2],
     pub(crate) stm_mode: [u16; 2],
+    pub(crate) stm_rep: [u32; 2],
+    pub(crate) stm_freq_div: [u32; 2],
+    pub(crate) stm_segment: u8,
+    pub(crate) stm_transition_mode: u8,
+    pub(crate) stm_transition_value: u64,
+    pub(crate) mod_freq_div: [u32; 2],
+    pub(crate) mod_segment: u8,
+    pub(crate) mod_rep: [u32; 2],
+    pub(crate) mod_transition_mode: u8,
+    pub(crate) mod_transition_value: u64,
     pub(crate) gain_stm_mode: u8,
     pub(crate) fpga: FPGAEmulator,
     pub(crate) synchronized: bool,
     pub(crate) num_transducers: usize,
     pub(crate) fpga_flags_internal: u16,
-    pub(crate) mod_freq_div: [u32; 2],
-    pub(crate) mod_segment: u8,
-    pub(crate) stm_freq_div: [u32; 2],
-    pub(crate) stm_segment: u8,
     pub(crate) silencer_strict_mode: bool,
     pub(crate) min_freq_div_intensity: u32,
     pub(crate) min_freq_div_phase: u32,
     pub(crate) is_rx_data_used: bool,
     pub(crate) pwe_write: u32,
+    pub(crate) dc_sys_time: DcSysTime,
+    pub(crate) clk_write: u32,
 }
 
 impl CPUEmulator {
@@ -43,6 +54,10 @@ impl CPUEmulator {
             stm_cycle: [1, 1],
             stm_mode: [STM_MODE_GAIN, STM_MODE_GAIN],
             gain_stm_mode: 0,
+            stm_transition_mode: TRANSITION_MODE_SYNC_IDX,
+            stm_transition_value: 0,
+            mod_transition_mode: TRANSITION_MODE_SYNC_IDX,
+            mod_transition_value: 0,
             fpga: FPGAEmulator::new(num_transducers),
             synchronized: false,
             num_transducers,
@@ -56,6 +71,10 @@ impl CPUEmulator {
             min_freq_div_phase: 20480,
             is_rx_data_used: false,
             pwe_write: 0,
+            dc_sys_time: DcSysTime::now(),
+            clk_write: 0,
+            stm_rep: [0xFFFFFFFF, 0xFFFFFFFF],
+            mod_rep: [0xFFFFFFFF, 0xFFFFFFFF],
         };
         s.init();
         s
@@ -77,12 +96,8 @@ impl CPUEmulator {
         self.read_fpga_state
     }
 
-    pub const fn ack(&self) -> u8 {
-        self.ack
-    }
-
-    pub const fn rx_data(&self) -> u8 {
-        self.rx_data
+    pub const fn rx(&self) -> RxMessage {
+        RxMessage::new(self.ack, self.rx_data)
     }
 
     pub const fn fpga(&self) -> &FPGAEmulator {
@@ -109,6 +124,14 @@ impl CPUEmulator {
             self.fpga.update();
             self.read_fpga_state();
         }
+    }
+
+    pub fn set_dc_sys_time(&mut self, dc_sys_time: DcSysTime) {
+        self.dc_sys_time = dc_sys_time;
+    }
+
+    pub fn dc_sys_time(&self) -> DcSysTime {
+        self.dc_sys_time
     }
 
     pub const fn should_update(&self) -> bool {
@@ -162,10 +185,10 @@ impl CPUEmulator {
             return;
         }
         if self.read_fpga_state {
-            self.rx_data = READS_FPGA_STATE_ENABLED
-                | self.bram_read(BRAM_SELECT_CONTROLLER, BRAM_ADDR_FPGA_STATE) as u8;
+            self.rx_data = FPGA_STATE_READS_FPGA_STATE_ENABLED
+                | self.bram_read(BRAM_SELECT_CONTROLLER, ADDR_FPGA_STATE) as u8;
         } else {
-            self.rx_data &= !READS_FPGA_STATE_ENABLED;
+            self.rx_data &= !FPGA_STATE_READS_FPGA_STATE_ENABLED;
         }
     }
 
@@ -175,6 +198,7 @@ impl CPUEmulator {
                 TAG_CLEAR => self.clear(data),
                 TAG_SYNC => self.synchronize(data),
                 TAG_FIRM_INFO => self.firm_info(data),
+                TAG_CONFIG_FPGA_CLK => self.configure_clk(data),
                 TAG_MODULATION => self.write_mod(data),
                 TAG_MODULATION_CHANGE_SEGMENT => self.change_mod_segment(data),
                 TAG_SILENCER => self.config_silencer(data),
@@ -189,6 +213,7 @@ impl CPUEmulator {
                 TAG_CONFIG_PULSE_WIDTH_ENCODER => self.config_pwe(data),
                 TAG_PHASE_FILTER => self.write_phase_filter(data),
                 TAG_DEBUG => self.config_debug(data),
+                TAG_EMULATE_GPIO_IN => self.emulate_gpio_in(data),
                 _ => ERR_NOT_SUPPORTED_TAG,
             }
         }
@@ -206,6 +231,7 @@ impl CPUEmulator {
 
         if (header.msg_id & 0x80) != 0 {
             self.ack = ERR_INVALID_MSG_ID;
+            return;
         }
 
         self.ack = self.handle_payload(&data[std::mem::size_of::<Header>()..]);
@@ -224,7 +250,7 @@ impl CPUEmulator {
 
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
-            BRAM_ADDR_CTL_FLAG,
+            ADDR_CTL_FLAG,
             self.fpga_flags_internal,
         );
 
@@ -250,5 +276,14 @@ mod tests {
     fn num_transducers() {
         let cpu = CPUEmulator::new(0, 249);
         assert_eq!(249, cpu.num_transducers());
+    }
+
+    #[test]
+    fn dc_sys_time() {
+        let mut cpu = CPUEmulator::new(0, 249);
+
+        let sys_time = DcSysTime::now() + std::time::Duration::from_nanos(1111);
+        cpu.set_dc_sys_time(sys_time);
+        assert_eq!(sys_time, cpu.dc_sys_time());
     }
 }

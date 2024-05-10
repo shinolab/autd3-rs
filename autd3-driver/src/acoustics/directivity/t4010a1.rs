@@ -92,6 +92,7 @@ mod tests {
     #[case::deg_70(0.251189, 70.0)]
     #[case::deg_80(0.199526, 80.0)]
     #[case::deg_90(0.177831, 90.0)]
+    #[case::deg_100(0.199526, 100.0)]
     fn test_directivity(#[case] expected: f64, #[case] theta_deg: f64) {
         assert_approx_eq!(expected, T4010A1::directivity(theta_deg));
     }

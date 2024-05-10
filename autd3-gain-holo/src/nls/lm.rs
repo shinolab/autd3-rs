@@ -1,10 +1,11 @@
 use std::{collections::HashMap, sync::Arc};
 
 use crate::{
-    constraint::EmissionConstraint, impl_holo, Amplitude, Complex, HoloError, LinAlgBackend, Trans,
+    constraint::EmissionConstraint, helper::generate_result, impl_holo, Amplitude, Complex,
+    HoloError, LinAlgBackend, Trans,
 };
 
-use autd3_driver::{defined::PI, derive::*, geometry::Vector3};
+use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vector3};
 
 /// Gain to produce multiple foci with Levenberg-Marquardt algorithm
 ///
@@ -14,7 +15,7 @@ use autd3_driver::{defined::PI, derive::*, geometry::Vector3};
 /// * K.Madsen, H.Nielsen, and O.Tingleff, “Methods for non-linear least squares problems (2nd ed.),” 2004.
 #[derive(Gain, Builder)]
 #[no_const]
-pub struct LM<B: LinAlgBackend + 'static> {
+pub struct LM<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,
     #[getset]
@@ -29,11 +30,12 @@ pub struct LM<B: LinAlgBackend + 'static> {
     initial: Vec<f64>,
     constraint: EmissionConstraint,
     backend: Arc<B>,
+    _phantom: std::marker::PhantomData<D>,
 }
 
-impl_holo!(B, LM<B>);
+impl_holo!(D, B, LM<D, B>);
 
-impl<B: LinAlgBackend> LM<B> {
+impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
     pub const fn new(backend: Arc<B>) -> Self {
         Self {
             foci: vec![],
@@ -45,6 +47,7 @@ impl<B: LinAlgBackend> LM<B> {
             initial: vec![],
             backend,
             constraint: EmissionConstraint::DontCare,
+            _phantom: std::marker::PhantomData,
         }
     }
 
@@ -53,7 +56,7 @@ impl<B: LinAlgBackend> LM<B> {
     }
 }
 
-impl<B: LinAlgBackend> LM<B> {
+impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
     fn make_t(
         &self,
         zero: &B::VectorX,
@@ -115,7 +118,7 @@ impl<B: LinAlgBackend> LM<B> {
     }
 }
 
-impl<B: LinAlgBackend> Gain for LM<B> {
+impl<D: Directivity, B: LinAlgBackend<D>> Gain for LM<D, B> {
     #[allow(clippy::many_single_char_names)]
     #[allow(clippy::uninit_vec)]
     fn calc(
@@ -202,7 +205,7 @@ impl<B: LinAlgBackend> Gain for LM<B> {
         let mut tmp_vec = self.backend.alloc_v(n_param)?;
         for _ in 0..self.k_max {
             if self.backend.max_v(&g)? <= self.eps_1 {
-                break;
+                break; // GRCOV_EXCL_LINE
             }
 
             self.backend.copy_to_m(&a, &mut tmp_mat)?;
@@ -215,7 +218,7 @@ impl<B: LinAlgBackend> Gain for LM<B> {
             if self.backend.dot(&h_lm, &h_lm)?.sqrt()
                 <= self.eps_2 * (self.backend.dot(&x, &x)?.sqrt() + self.eps_2)
             {
-                break;
+                break; // GRCOV_EXCL_LINE
             }
 
             self.backend.copy_to_v(&x, &mut x_new)?;
@@ -255,48 +258,7 @@ impl<B: LinAlgBackend> Gain for LM<B> {
         }
 
         let x = self.backend.to_host_v(x)?;
-
-        let mut idx = 0;
-        match filter {
-            GainFilter::All => Ok(geometry
-                .devices()
-                .map(|dev| {
-                    (
-                        dev.idx(),
-                        dev.iter()
-                            .map(|_| {
-                                let phase = Phase::from_rad(x[idx].rem_euclid(2.0 * PI));
-                                let intensity = self.constraint.convert(1.0, 1.0);
-                                idx += 1;
-                                Drive::new(phase, intensity)
-                            })
-                            .collect(),
-                    )
-                })
-                .collect()),
-            GainFilter::Filter(filter) => Ok(geometry
-                .devices()
-                .map(|dev| {
-                    filter.get(&dev.idx()).map_or_else(
-                        || (dev.idx(), dev.iter().map(|_| Drive::null()).collect()),
-                        |filter| {
-                            (
-                                dev.idx(),
-                                dev.iter()
-                                    .filter(|tr| filter[tr.idx()])
-                                    .map(|_| {
-                                        let phase = Phase::from_rad(x[idx].rem_euclid(2.0 * PI));
-                                        let intensity = self.constraint.convert(1.0, 1.0);
-                                        idx += 1;
-                                        Drive::new(phase, intensity)
-                                    })
-                                    .collect(),
-                            )
-                        },
-                    )
-                })
-                .collect()),
-        }
+        generate_result(geometry, x, 1.0, &self.constraint, filter)
     }
 }
 
@@ -308,7 +270,7 @@ mod tests {
     #[test]
     fn test_lm_all() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend = NalgebraBackend::new().unwrap();
+        let backend = Arc::new(NalgebraBackend::default());
 
         let g = LM::new(backend)
             .with_eps_1(1e-3)
@@ -329,8 +291,12 @@ mod tests {
             .foci()
             .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pascal));
 
-        let _ = g.calc(&geometry, GainFilter::All);
-        let _ = g.operation_with_segment(Segment::S0, true);
+        assert_eq!(
+            g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
+                .calc(&geometry, GainFilter::All)
+                .map(|res| res[&0].iter().filter(|&&d| d != Drive::null()).count()),
+            Ok(geometry.num_transducers()),
+        );
     }
 
     #[test]
@@ -339,7 +305,7 @@ mod tests {
             AUTD3::new(Vector3::zeros()).into_device(0),
             AUTD3::new(Vector3::zeros()).into_device(1),
         ]);
-        let backend = NalgebraBackend::new().unwrap();
+        let backend = Arc::new(NalgebraBackend::default());
 
         let g = LM::new(backend)
             .add_focus(Vector3::new(10., 10., 100.), 5e3 * Pascal)

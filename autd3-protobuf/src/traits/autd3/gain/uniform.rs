@@ -15,7 +15,7 @@ impl ToMessage for autd3::gain::Uniform {
                     phase: Some(self.phase().to_msg(None)),
                 })),
                 segment: Segment::S0 as _,
-                update_segment: true,
+                transition: true,
             })),
         }
     }
@@ -33,7 +33,7 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Unif
                     phase: Some(self.phase().to_msg(None)),
                 })),
                 segment: self.segment() as _,
-                update_segment: self.update_segment(),
+                transition: self.transition(),
             })),
         }
     }
@@ -43,10 +43,12 @@ impl FromMessage<Uniform> for autd3::gain::Uniform {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &Uniform) -> Option<Self> {
         Some(
-            Self::new(autd3_driver::common::EmitIntensity::from_msg(
+            Self::new(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
                 msg.intensity.as_ref()?,
             )?)
-            .with_phase(autd3_driver::common::Phase::from_msg(msg.phase.as_ref()?)?),
+            .with_phase(autd3_driver::firmware::fpga::Phase::from_msg(
+                msg.phase.as_ref()?,
+            )?),
         )
     }
 }
@@ -54,7 +56,7 @@ impl FromMessage<Uniform> for autd3::gain::Uniform {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::common::{EmitIntensity, Phase};
+    use autd3_driver::firmware::fpga::{EmitIntensity, Phase};
     use rand::Rng;
 
     #[test]
@@ -68,6 +70,7 @@ mod tests {
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Uniform(gain)),
+                ..
             })) => {
                 let g2 = autd3::gain::Uniform::from_msg(&gain).unwrap();
                 assert_eq!(g.intensity(), g2.intensity());

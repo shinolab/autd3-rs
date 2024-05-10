@@ -5,8 +5,8 @@ use std::{ffi::c_void, time::Duration};
 use lib::Library;
 
 use autd3_driver::{
-    cpu::{RxMessage, TxDatagram},
     derive::*,
+    firmware::cpu::{RxMessage, TxDatagram},
     link::{Link, LinkBuilder},
 };
 

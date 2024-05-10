@@ -124,7 +124,7 @@ impl<'a> IntoIterator for &'a mut Geometry {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::defined::MILLIMETER;
+    use crate::defined::{FREQ_40K, MILLIMETER};
 
     use super::*;
 
@@ -136,35 +136,36 @@ pub mod tests {
         };
     }
 
-    fn create_device(idx: usize, n: usize) -> Device {
+    pub fn create_device(idx: usize, n: usize, freq: u32) -> Device {
         Device::new(
             idx,
             (0..n)
                 .map(|i| Transducer::new(i, Vector3::zeros(), UnitQuaternion::identity()))
                 .collect(),
+            freq,
         )
     }
 
-    pub fn create_geometry(n: usize, num_trans_in_unit: usize) -> Geometry {
+    pub fn create_geometry(n: usize, num_trans_in_unit: usize, freq: u32) -> Geometry {
         Geometry::new(
             (0..n)
-                .map(|i| create_device(i, num_trans_in_unit))
+                .map(|i| create_device(i, num_trans_in_unit, freq))
                 .collect(),
         )
     }
 
     #[rstest::rstest]
     #[test]
-    #[case(1, vec![create_device(0, 249)])]
-    #[case(2, vec![create_device(0, 249), create_device(0, 249)])]
+    #[case(1, vec![create_device(0, 249, FREQ_40K)])]
+    #[case(2, vec![create_device(0, 249, FREQ_40K), create_device(0, 249, FREQ_40K)])]
     fn test_num_devices(#[case] expected: usize, #[case] devices: Vec<Device>) {
         assert_eq!(expected, Geometry::new(devices).num_devices());
     }
 
     #[rstest::rstest]
     #[test]
-    #[case(249, vec![create_device(0, 249)])]
-    #[case(498, vec![create_device(0, 249), create_device(0, 249)])]
+    #[case(249, vec![create_device(0, 249, FREQ_40K)])]
+    #[case(498, vec![create_device(0, 249, FREQ_40K), create_device(0, 249, FREQ_40K)])]
     fn test_num_transducers(#[case] expected: usize, #[case] devices: Vec<Device>) {
         assert_eq!(expected, Geometry::new(devices).num_transducers());
     }
@@ -184,6 +185,7 @@ pub mod tests {
                         )
                     })
                     .collect::<Vec<_>>(),
+                FREQ_40K,
             ),
             Device::new(
                 1,
@@ -198,6 +200,7 @@ pub mod tests {
                         )
                     })
                     .collect::<Vec<_>>(),
+                FREQ_40K,
             ),
         ]);
         let expect = geometry.iter().map(|dev| dev.center()).sum::<Vector3>()
@@ -224,6 +227,7 @@ pub mod tests {
                         )
                     })
                     .collect::<Vec<_>>(),
+                FREQ_40K,
             ),
             Device::new(
                 1,
@@ -238,6 +242,7 @@ pub mod tests {
                         )
                     })
                     .collect::<Vec<_>>(),
+                FREQ_40K,
             ),
         ]);
         geometry.set_sound_speed_from_temp(temp);
@@ -265,6 +270,7 @@ pub mod tests {
                         )
                     })
                     .collect::<Vec<_>>(),
+                FREQ_40K,
             ),
             Device::new(
                 1,
@@ -279,6 +285,7 @@ pub mod tests {
                         )
                     })
                     .collect::<Vec<_>>(),
+                FREQ_40K,
             ),
         ]);
         geometry.set_sound_speed(temp * MILLIMETER);

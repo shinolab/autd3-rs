@@ -95,16 +95,23 @@ class Config:
         self.release = hasattr(args, "release") and args.release
         self.no_examples = hasattr(args, "no_examples") and args.no_examples
 
-        if self.is_linux() and hasattr(args, "arch") and args.arch is not None:
-            self.shaderc = False
-            match args.arch:
-                case "arm32":
-                    self.target = "armv7-unknown-linux-gnueabihf"
-                case "aarch64":
-                    self.target = "aarch64-unknown-linux-gnu"
-                case _:
-                    err(f'arch "{args.arch}" is not supported.')
-                    sys.exit(-1)
+        if hasattr(args, "arch") and args.arch is not None:
+            if self.is_linux():
+                match args.arch:
+                    case "arm32":
+                        self.target = "armv7-unknown-linux-gnueabihf"
+                    case "aarch64":
+                        self.target = "aarch64-unknown-linux-gnu"
+                    case _:
+                        err(f'arch "{args.arch}" is not supported.')
+                        sys.exit(-1)
+            elif self.is_windows():
+                match args.arch:
+                    case "aarch64":
+                        self.target = "aarch64-pc-windows-msvc"
+                    case _:
+                        err(f'arch "{args.arch}" is not supported.')
+                        sys.exit(-1)
         else:
             self.target = None
 
@@ -114,8 +121,12 @@ class Config:
             command.append("cargo")
             command.append(subcommand)
         else:
-            command.append("cross")
-            command.append(subcommand)
+            if self.is_linux():
+                command.append("cross")
+                command.append(subcommand)
+            else:
+                command.append("cargo")
+                command.append(subcommand)
             command.append("--target")
             command.append(self.target)
         if self.release:
@@ -219,7 +230,6 @@ def rust_test(args):
 def rust_run(args):
     examples = [
         "soem",
-        "firmware_test",
         "remote_soem",
         "twincat",
         "remote_twincat",
@@ -235,7 +245,7 @@ def rust_run(args):
 
     features = None
     match args.target:
-        case "soem" | "firmware_test":
+        case "soem":
             features = "soem"
         case "remote_soem":
             features = "remote_soem"
@@ -301,11 +311,17 @@ def rust_coverage(args):
                 "-t",
                 args.format,
                 "--excl-line",
-                r"^\s*((debug_)?assert(_eq|_ne)?!|#\[derive\()",
+                r"^\s*((debug_)?assert(_eq|_ne)?!|#\[derive\()|GRCOV_EXCL_LINE|unreachable!|unimplemented!",
+                "--ignore",
+                "autd3-derive/**/*",
+                "--ignore",
+                "autd3-link-*/**/*",
                 "--ignore",
                 "**/pb.rs",
                 "--ignore",
                 "**/soem_bindings/*",
+                "--ignore",
+                "*/build.rs",
                 "--excl-start",
                 "GRCOV_EXCL_START",
                 "--excl-stop",

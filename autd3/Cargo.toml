@@ -1,6 +1,6 @@
 [package]
 name = "autd3"
-version = "22.1.0"
+version = "23.0.0-rc.0"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 
@@ -11,8 +11,8 @@ readme = "README.md"
 keywords = ["autd"]
 
 [dependencies]
-autd3-driver = { path = "../autd3-driver", version = "22.1.0" }
-autd3-firmware-emulator = { path = "../autd3-firmware-emulator", version = "22.1.0", default-features = false }
+autd3-driver = { path = "../autd3-driver", version = "23.0.0-rc.0" }
+autd3-firmware-emulator = { path = "../autd3-firmware-emulator", version = "23.0.0-rc.0", default-features = false }
 num = { workspace = true }
 thiserror = { workspace = true }
 bitvec = { workspace = true }
@@ -21,6 +21,8 @@ tokio = { workspace = true, features = ["rt-multi-thread"] }
 [features]
 default = []
 async-trait = ["autd3-driver/async-trait"]
+force_parallel = ["autd3-driver/force_parallel"]
+force_serial = ["autd3-driver/force_serial"]
 
 [dev-dependencies]
 assert_approx_eq = { workspace = true }
@@ -29,8 +31,12 @@ criterion = { workspace = true, features = ["html_reports"] }
 itertools = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 anyhow = { workspace = true }
+rstest = { workspace = true }
+
+[lib]
+bench = false
 
 [[bench]]
-name = "gain"
-path = "benches/gain/primitive.rs"
+name = "autd3-bench"
+path = "benches/bench.rs"
 harness = false

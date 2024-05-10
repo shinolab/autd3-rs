@@ -12,9 +12,9 @@ use std::{
 #[no_modulation_transform]
 pub struct Cache<M: Modulation> {
     m: Rc<M>,
-    cache: Rc<RefCell<Vec<EmitIntensity>>>,
+    cache: Rc<RefCell<HashMap<usize, Vec<u8>>>>,
     #[no_change]
-    config: SamplingConfiguration,
+    config: SamplingConfig,
     loop_behavior: LoopBehavior,
 }
 
@@ -56,30 +56,15 @@ impl<M: Modulation> Cache<M> {
     /// get cached modulation data
     ///
     /// Note that the cached data is created after at least one call to `calc`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use autd3::prelude::*;
-    ///
-    /// # fn main() -> anyhow::Result<()> {
-    /// let m = Static::new().with_cache();
-    /// assert!(m.buffer().is_empty());
-    /// let _ = m.calc()?;
-    /// assert!(!m.buffer().is_empty());
-    /// # Ok(())
-    /// # }
-    ///
-    /// ```
-    pub fn buffer(&self) -> Ref<'_, Vec<EmitIntensity>> {
+    pub fn buffer(&self) -> Ref<'_, HashMap<usize, Vec<u8>>> {
         self.cache.borrow()
     }
 }
 
 impl<M: Modulation> Modulation for Cache<M> {
-    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
         if self.cache.borrow().is_empty() {
-            *self.cache.borrow_mut() = self.m.calc()?;
+            *self.cache.borrow_mut() = self.m.calc(geometry)?;
         }
         Ok(self.cache.borrow().clone())
     }
@@ -87,6 +72,8 @@ impl<M: Modulation> Modulation for Cache<M> {
 
 #[cfg(test)]
 mod tests {
+    use crate::{defined::FREQ_40K, freq::kHz, geometry::tests::create_geometry};
+
     use super::{super::tests::TestModulation, *};
 
     use rand::Rng;
@@ -100,21 +87,23 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
+        let geometry = create_geometry(1, 249, FREQ_40K);
+
         let mut rng = rand::thread_rng();
 
         let m = TestModulation {
             buf: vec![rng.gen(), rng.gen()],
-            config: SamplingConfiguration::FREQ_4K_HZ,
-            loop_behavior: LoopBehavior::Infinite,
+            config: SamplingConfig::Freq(4 * kHz),
+            loop_behavior: LoopBehavior::infinite(),
         };
         let cache = m.clone().with_cache();
         assert_eq!(&m, cache.deref());
 
         assert!(cache.buffer().is_empty());
-        assert_eq!(m.calc()?, cache.calc()?);
+        assert_eq!(m.calc(&geometry)?, cache.calc(&geometry)?);
 
         assert!(!cache.buffer().is_empty());
-        assert_eq!(m.calc()?, *cache.buffer());
+        assert_eq!(m.calc(&geometry)?, *cache.buffer());
 
         Ok(())
     }
@@ -122,7 +111,7 @@ mod tests {
     #[derive(Modulation)]
     struct TestCacheModulation {
         pub calc_cnt: Arc<AtomicUsize>,
-        pub config: SamplingConfiguration,
+        pub config: SamplingConfig,
         pub loop_behavior: LoopBehavior,
     }
 
@@ -132,52 +121,56 @@ mod tests {
             Self {
                 calc_cnt: self.calc_cnt.clone(),
                 config: self.config,
-                loop_behavior: LoopBehavior::Infinite,
+                loop_behavior: LoopBehavior::infinite(),
             }
         }
         // GRCOV_EXCL_STOP
     }
 
     impl Modulation for TestCacheModulation {
-        fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+        fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
-            Ok(vec![EmitIntensity::new(0); 2])
+            Self::transform(geometry, |_| Ok(vec![0; 2]))
         }
     }
 
     #[test]
     fn test_calc_once() {
+        let geometry = create_geometry(1, 249, FREQ_40K);
+
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
         let modulation = TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
-            config: SamplingConfiguration::FREQ_4K_HZ,
-            loop_behavior: LoopBehavior::Infinite,
+            config: SamplingConfig::Freq(4 * kHz),
+            loop_behavior: LoopBehavior::infinite(),
         }
         .with_cache();
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
-        let _ = modulation.calc();
+        let _ = modulation.calc(&geometry);
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
 
-        let _ = modulation.calc();
+        let _ = modulation.calc(&geometry);
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
     }
 
     #[test]
     fn test_calc_clone() {
+        let geometry = create_geometry(1, 249, FREQ_40K);
+
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
         let modulation = TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
-            config: SamplingConfiguration::FREQ_4K_HZ,
-            loop_behavior: LoopBehavior::Infinite,
+            config: SamplingConfig::Freq(4 * kHz),
+            loop_behavior: LoopBehavior::infinite(),
         }
         .with_cache();
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
         let m2 = modulation.clone();
-        let _ = m2.calc();
+        let _ = m2.calc(&geometry);
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
 
         assert_eq!(*modulation.buffer(), *m2.buffer());

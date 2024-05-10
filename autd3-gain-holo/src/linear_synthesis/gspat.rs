@@ -5,7 +5,7 @@ use crate::{
     LinAlgBackend, Trans,
 };
 
-use autd3_driver::{derive::*, geometry::Vector3};
+use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vector3};
 
 /// Gain to produce multiple foci with GS-PAT algorithm
 ///
@@ -13,18 +13,19 @@ use autd3_driver::{derive::*, geometry::Vector3};
 /// * Plasencia, Diego Martinez, et al. "GS-PAT: high-speed multi-point sound-fields for phased arrays of transducers." ACM Transactions on Graphics (TOG) 39.4 (2020): 138-1.
 #[derive(Gain, Builder)]
 #[no_const]
-pub struct GSPAT<B: LinAlgBackend + 'static> {
+pub struct GSPAT<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
     foci: Vec<Vector3>,
     amps: Vec<Amplitude>,
     #[getset]
     repeat: usize,
     constraint: EmissionConstraint,
     backend: Arc<B>,
+    _phantom: std::marker::PhantomData<D>,
 }
 
-impl_holo!(B, GSPAT<B>);
+impl_holo!(D, B, GSPAT<D, B>);
 
-impl<B: LinAlgBackend + 'static> GSPAT<B> {
+impl<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> GSPAT<D, B> {
     pub const fn new(backend: Arc<B>) -> Self {
         Self {
             foci: vec![],
@@ -32,11 +33,12 @@ impl<B: LinAlgBackend + 'static> GSPAT<B> {
             repeat: 100,
             backend,
             constraint: EmissionConstraint::DontCare,
+            _phantom: std::marker::PhantomData,
         }
     }
 }
 
-impl<B: LinAlgBackend> Gain for GSPAT<B> {
+impl<D: Directivity, B: LinAlgBackend<D>> Gain for GSPAT<D, B> {
     fn calc(
         &self,
         geometry: &Geometry,
@@ -53,8 +55,7 @@ impl<B: LinAlgBackend> Gain for GSPAT<B> {
 
         let amps = self.backend.from_slice_cv(self.amps_as_slice())?;
 
-        let mut b = self.backend.alloc_cm(n, m)?;
-        self.backend.gen_back_prop(n, m, &g, &mut b)?;
+        let b = self.backend.gen_back_prop(n, m, &g)?;
 
         let mut r = self.backend.alloc_zeros_cm(m, m)?;
         self.backend.gemm_c(
@@ -99,12 +100,9 @@ impl<B: LinAlgBackend> Gain for GSPAT<B> {
             &mut q,
         )?;
 
-        generate_result(
-            geometry,
-            self.backend.to_host_cv(q)?,
-            &self.constraint,
-            filter,
-        )
+        let q = self.backend.to_host_cv(q)?;
+        let max_coefficient = q.camax().abs();
+        generate_result(geometry, q, max_coefficient, &self.constraint, filter)
     }
 }
 
@@ -116,7 +114,7 @@ mod tests {
     #[test]
     fn test_gspat_all() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend = NalgebraBackend::new().unwrap();
+        let backend = Arc::new(NalgebraBackend::default());
 
         let g = GSPAT::new(backend)
             .with_repeat(50)
@@ -129,14 +127,18 @@ mod tests {
             .foci()
             .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pascal));
 
-        let _ = g.calc(&geometry, GainFilter::All);
-        let _ = g.operation_with_segment(Segment::S0, true);
+        assert_eq!(
+            g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
+                .calc(&geometry, GainFilter::All)
+                .map(|res| res[&0].iter().filter(|&&d| d != Drive::null()).count()),
+            Ok(geometry.num_transducers()),
+        );
     }
 
     #[test]
     fn test_gspat_filtered() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend = NalgebraBackend::new().unwrap();
+        let backend = Arc::new(NalgebraBackend::default());
 
         let g = GSPAT::new(backend)
             .add_focus(Vector3::new(10., 10., 100.), 5e3 * Pascal)

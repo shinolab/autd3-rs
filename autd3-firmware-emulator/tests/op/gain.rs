@@ -1,11 +1,14 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    cpu::TxDatagram,
     datagram::*,
     derive::*,
+    firmware::{
+        cpu::{GainSTMMode, TxDatagram},
+        fpga::STMSamplingConfig,
+        operation::{FocusSTMOp, GainSTMOp, GainSwapSegmentOp, SwapSegmentOperation},
+    },
     geometry::Vector3,
-    operation::{ControlPoint, FocusSTMOp, GainChangeSegmentOp, GainSTMMode, GainSTMOp},
 };
 use autd3_firmware_emulator::CPUEmulator;
 
@@ -50,16 +53,16 @@ fn send_gain() -> anyhow::Result<()> {
             .collect();
         let g = TestGain { buf: buf.clone() };
 
-        let (mut op, _) = g.operation_with_segment(Segment::S0, true)?;
+        let (mut op, _) = g.operation_with_segment(Segment::S0, true);
 
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         assert!(cpu.fpga().is_stm_gain_mode(Segment::S0));
         assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
         assert_eq!(1, cpu.fpga().stm_cycle(Segment::S0));
-        assert_eq!(0xFFFFFFFF, cpu.fpga().stm_frequency_division(Segment::S0));
+        assert_eq!(0xFFFFFFFF, cpu.fpga().stm_freq_division(Segment::S0));
         assert_eq!(
-            LoopBehavior::Infinite,
+            LoopBehavior::infinite(),
             cpu.fpga().stm_loop_behavior(Segment::S0)
         );
         buf[&0]
@@ -84,16 +87,16 @@ fn send_gain() -> anyhow::Result<()> {
             .collect();
         let g = TestGain { buf: buf.clone() };
 
-        let (mut op, _) = g.operation_with_segment(Segment::S1, false)?;
+        let (mut op, _) = g.operation_with_segment(Segment::S1, false);
 
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
         assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
         assert_eq!(1, cpu.fpga().stm_cycle(Segment::S1));
-        assert_eq!(0xFFFFFFFF, cpu.fpga().stm_frequency_division(Segment::S1));
+        assert_eq!(0xFFFFFFFF, cpu.fpga().stm_freq_division(Segment::S1));
         assert_eq!(
-            LoopBehavior::Infinite,
+            LoopBehavior::infinite(),
             cpu.fpga().stm_loop_behavior(Segment::S1)
         );
         buf[&0]
@@ -105,9 +108,9 @@ fn send_gain() -> anyhow::Result<()> {
     }
 
     {
-        let mut op = GainChangeSegmentOp::new(Segment::S1);
+        let mut op = GainSwapSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
 
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
+        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         assert_eq!(Segment::S1, cpu.fpga().current_stm_segment());
     }
@@ -122,53 +125,52 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     // segment 0: FocusSTM
-    {
-        let freq_div = 0xFFFFFFFF;
-        let foci = (0..2)
-            .map(|_| ControlPoint::new(Vector3::zeros()))
-            .collect();
-        let loop_behaviour = LoopBehavior::Infinite;
-        let segment = Segment::S0;
-        let mut op = FocusSTMOp::new(foci, freq_div, loop_behaviour, segment, true);
-
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
-    }
+    send(
+        &mut cpu,
+        &mut FocusSTMOp::new(
+            (0..2)
+                .map(|_| ControlPoint::new(Vector3::zeros()))
+                .collect(),
+            STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(0xFFFFFFFF)),
+            LoopBehavior::infinite(),
+            Segment::S0,
+            Some(TransitionMode::Immidiate),
+        ),
+        &geometry,
+        &mut tx,
+    )?;
 
     // segment 1: GainSTM
-    {
-        let bufs: Vec<HashMap<usize, Vec<Drive>>> = (0..2)
-            .map(|_| {
-                geometry
-                    .iter()
-                    .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
-                    .collect()
-            })
-            .collect();
-        let loop_behavior = LoopBehavior::Infinite;
-        let segment = Segment::S1;
-        let freq_div = 0xFFFFFFFF;
-        let mut op = GainSTMOp::new(
-            bufs.iter()
-                .map(|buf| TestGain { buf: buf.clone() })
+    send(
+        &mut cpu,
+        &mut GainSTMOp::new(
+            (0..2)
+                .map(|_| {
+                    geometry
+                        .iter()
+                        .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
+                        .collect()
+                })
+                .map(|buf: HashMap<usize, Vec<Drive>>| TestGain { buf: buf.clone() })
                 .collect(),
             GainSTMMode::PhaseIntensityFull,
-            freq_div,
-            loop_behavior,
-            segment,
-            true,
-        );
-
-        send(&mut cpu, &mut op, &geometry, &mut tx)?;
-    }
+            STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(0xFFFFFFFF)),
+            LoopBehavior::infinite(),
+            Segment::S1,
+            Some(TransitionMode::Immidiate),
+        ),
+        &geometry,
+        &mut tx,
+    )?;
 
     {
-        let mut op = GainChangeSegmentOp::new(Segment::S0);
+        let mut op = GainSwapSegmentOp::new(Segment::S0, TransitionMode::Immidiate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, &mut op, &geometry, &mut tx)
         );
 
-        let mut op = GainChangeSegmentOp::new(Segment::S1);
+        let mut op = GainSwapSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, &mut op, &geometry, &mut tx)

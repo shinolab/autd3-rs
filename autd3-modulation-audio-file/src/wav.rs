@@ -11,7 +11,7 @@ use crate::error::AudioFileError;
 #[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct Wav {
     path: PathBuf,
-    config: SamplingConfiguration,
+    config: SamplingConfig,
     loop_behavior: LoopBehavior,
 }
 
@@ -25,8 +25,8 @@ impl Wav {
     pub fn new(path: impl AsRef<Path>) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),
-            config: SamplingConfiguration::FREQ_4K_HZ,
-            loop_behavior: LoopBehavior::Infinite,
+            config: SamplingConfig::Division(5120),
+            loop_behavior: LoopBehavior::infinite(),
         }
     }
 
@@ -56,14 +56,14 @@ impl Wav {
                         .iter()
                         .map(|&i| (i as i64 - std::i32::MIN as i64) as f32 / 16843009.)
                         .collect(),
-                    _ => return Err(AudioFileError::Wav(hound::Error::Unsupported)),
+                    _ => return Err(AudioFileError::Wav(hound::Error::Unsupported)), // GRCOV_EXCL_LINE
                 }
             }
             SampleFormat::Float => {
                 let raw_buffer = reader.samples::<f32>().collect::<Result<Vec<_>, _>>()?;
                 match spec.bits_per_sample {
                     32 => raw_buffer.iter().map(|&i| (i + 1.0) / 2. * 255.).collect(),
-                    _ => return Err(AudioFileError::Wav(hound::Error::Unsupported)),
+                    _ => return Err(AudioFileError::Wav(hound::Error::Unsupported)), // GRCOV_EXCL_LINE
                 }
             }
         };
@@ -74,28 +74,32 @@ impl Wav {
 
 impl Modulation for Wav {
     #[allow(clippy::unnecessary_cast)]
-    fn calc(&self) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
         let (raw_buffer, sample_rate) = self.read_buf()?;
-        Ok(wav_io::resample::linear(
-            raw_buffer,
-            1,
-            sample_rate,
-            self.sampling_config().frequency() as u32,
-        )
-        .iter()
-        .map(|&d| EmitIntensity::new(d.round() as u8))
-        .collect())
+        Self::transform(geometry, |dev| {
+            Ok(wav_io::resample::linear(
+                raw_buffer.clone(),
+                1,
+                sample_rate,
+                self.sampling_config().freq(dev.ultrasound_freq())? as u32,
+            )
+            .iter()
+            .map(|&d| d.round() as u8)
+            .collect())
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::tests::create_geometry;
+
     use super::*;
 
     fn create_wav(
         path: impl AsRef<Path>,
         spec: hound::WavSpec,
-        data: &[impl hound::Sample + Clone + Copy],
+        data: &[impl hound::Sample + Copy],
     ) -> anyhow::Result<()> {
         let mut writer = hound::WavWriter::create(path, spec)?;
         data.iter().try_for_each(|&s| writer.write_sample(s))?;
@@ -103,137 +107,97 @@ mod tests {
         Ok(())
     }
 
+    #[rstest::rstest]
     #[test]
-    fn test_wav_new_i8() -> anyhow::Result<()> {
+    #[case::i8(
+        vec![
+            0xFF,
+            0x80,
+            0x00
+        ],
+        hound::WavSpec {
+            channels: 1,
+            sample_rate: 4000,
+            bits_per_sample: 8,
+            sample_format: hound::SampleFormat::Int,
+        },
+        &[i8::MAX, 0, i8::MIN]
+    )]
+    #[case::i16(
+        vec![
+            0xFF,
+            0x80,
+            0x00
+        ],
+        hound::WavSpec {
+            channels: 1,
+            sample_rate: 4000,
+            bits_per_sample: 16,
+            sample_format: hound::SampleFormat::Int,
+        },
+        &[i16::MAX, 0, i16::MIN]
+    )]
+    #[case::i24(
+        vec![
+            0xFF,
+            0x80,
+            0x00
+        ],
+        hound::WavSpec {
+            channels: 1,
+            sample_rate: 4000,
+            bits_per_sample: 24,
+            sample_format: hound::SampleFormat::Int,
+        },
+        &[8388607, 0, -8388608]
+    )]
+    #[case::i32(
+        vec![
+            0xFF,
+            0x80,
+            0x00
+        ],
+        hound::WavSpec {
+            channels: 1,
+            sample_rate: 4000,
+            bits_per_sample: 32,
+            sample_format: hound::SampleFormat::Int,
+        },
+        &[i32::MAX, 0, i32::MIN]
+    )]
+    #[case::f32(
+        vec![
+            0xFF,
+            0x80,
+            0x00
+        ],
+        hound::WavSpec {
+            channels: 1,
+            sample_rate: 4000,
+            bits_per_sample: 32,
+            sample_format: hound::SampleFormat::Float,
+        },
+        &[1., 0., -1.]
+    )]
+    fn test_wav(
+        #[case] expect: Vec<u8>,
+        #[case] spec: hound::WavSpec,
+        #[case] data: &[impl hound::Sample + Copy],
+    ) -> anyhow::Result<()> {
+        let geometry = create_geometry(1);
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("tmp.wav");
-        create_wav(
-            &path,
-            hound::WavSpec {
-                channels: 1,
-                sample_rate: 4000,
-                bits_per_sample: 8,
-                sample_format: hound::SampleFormat::Int,
-            },
-            &[i8::MAX, 0, i8::MIN],
-        )?;
+        create_wav(&path, spec, data)?;
         assert_eq!(
-            vec![
-                EmitIntensity::new(0xFF),
-                EmitIntensity::new(0x80),
-                EmitIntensity::new(0x00)
-            ],
-            Wav::new(&path).calc()?
+            HashMap::from([(0, expect)]),
+            Wav::new(&path).calc(&geometry)?
         );
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_wav_new_i16() -> anyhow::Result<()> {
-        let dir = tempfile::tempdir()?;
-        let path = dir.path().join("tmp.wav");
-        create_wav(
-            &path,
-            hound::WavSpec {
-                channels: 1,
-                sample_rate: 4000,
-                bits_per_sample: 16,
-                sample_format: hound::SampleFormat::Int,
-            },
-            &[i16::MAX, 0, i16::MIN],
-        )?;
-        assert_eq!(
-            vec![
-                EmitIntensity::new(0xFF),
-                EmitIntensity::new(0x80),
-                EmitIntensity::new(0x00)
-            ],
-            Wav::new(&path).calc()?
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn test_wav_new_i24() -> anyhow::Result<()> {
-        let dir = tempfile::tempdir()?;
-        let path = dir.path().join("tmp.wav");
-        create_wav(
-            &path,
-            hound::WavSpec {
-                channels: 1,
-                sample_rate: 4000,
-                bits_per_sample: 24,
-                sample_format: hound::SampleFormat::Int,
-            },
-            &[8388607, 0, -8388608],
-        )?;
-        assert_eq!(
-            vec![
-                EmitIntensity::new(0xFF),
-                EmitIntensity::new(0x80),
-                EmitIntensity::new(0x00)
-            ],
-            Wav::new(&path).calc()?
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_wav_new_i32() -> anyhow::Result<()> {
-        let dir = tempfile::tempdir()?;
-        let path = dir.path().join("tmp.wav");
-        create_wav(
-            &path,
-            hound::WavSpec {
-                channels: 1,
-                sample_rate: 4000,
-                bits_per_sample: 32,
-                sample_format: hound::SampleFormat::Int,
-            },
-            &[i32::MAX, 0, i32::MIN],
-        )?;
-        assert_eq!(
-            vec![
-                EmitIntensity::new(0xFF),
-                EmitIntensity::new(0x80),
-                EmitIntensity::new(0x00)
-            ],
-            Wav::new(&path).calc()?
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_wav_new_f64() -> anyhow::Result<()> {
-        let dir = tempfile::tempdir()?;
-        let path = dir.path().join("tmp.wav");
-        create_wav(
-            &path,
-            hound::WavSpec {
-                channels: 1,
-                sample_rate: 4000,
-                bits_per_sample: 32,
-                sample_format: hound::SampleFormat::Float,
-            },
-            &[1., 0., -1.],
-        )?;
-        assert_eq!(
-            vec![
-                EmitIntensity::new(0xFF),
-                EmitIntensity::new(0x80),
-                EmitIntensity::new(0x00)
-            ],
-            Wav::new(&path).calc()?
-        );
-
         Ok(())
     }
 
     #[test]
     fn test_wav_new_unsupported() -> anyhow::Result<()> {
+        let geometry = create_geometry(1);
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("tmp.wav");
         create_wav(
@@ -246,7 +210,7 @@ mod tests {
             },
             &[0, 0],
         )?;
-        assert!(Wav::new(&path).calc().is_err());
+        assert!(Wav::new(&path).calc(&geometry).is_err());
         Ok(())
     }
 

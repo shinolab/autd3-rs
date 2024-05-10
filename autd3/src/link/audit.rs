@@ -4,8 +4,8 @@ use std::{
 };
 
 use autd3_driver::{
-    cpu::{RxMessage, TxDatagram},
     derive::*,
+    firmware::cpu::{RxMessage, TxDatagram},
     link::{Link, LinkBuilder},
 };
 use autd3_firmware_emulator::CPUEmulator;
@@ -141,7 +141,7 @@ impl Link for Audit {
 
         self.cpus.iter_mut().for_each(|cpu| {
             cpu.update();
-            rx[cpu.idx()] = RxMessage::new(cpu.ack(), cpu.rx_data());
+            rx[cpu.idx()] = cpu.rx();
         });
 
         Ok(true)

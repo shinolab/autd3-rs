@@ -5,13 +5,13 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl<F: Fn(&Device) -> bool> ToMessage for autd3_driver::datagram::ConfigureReadsFPGAState<F> {
+impl<F: Fn(&Device) -> bool> ToMessage for autd3_driver::datagram::ReadsFPGAState<F> {
     type Message = DatagramLightweight;
 
     fn to_msg(&self, geometry: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::ReadsFpgaState(
-                ConfigureReadsFpgaState {
+                ReadsFpgaState {
                     value: geometry
                         .map(|g| g.iter().map(|d| (self.f())(d)).collect::<Vec<bool>>())
                         .unwrap_or_default(),
@@ -21,15 +21,13 @@ impl<F: Fn(&Device) -> bool> ToMessage for autd3_driver::datagram::ConfigureRead
     }
 }
 
-impl FromMessage<ConfigureReadsFpgaState>
-    for autd3_driver::datagram::ConfigureReadsFPGAState<
-        Box<dyn Fn(&Device) -> bool + Send + 'static>,
-    >
+impl FromMessage<ReadsFpgaState>
+    for autd3_driver::datagram::ReadsFPGAState<Box<dyn Fn(&Device) -> bool + Send + 'static>>
 {
-    fn from_msg(msg: &ConfigureReadsFpgaState) -> Option<Self> {
+    fn from_msg(msg: &ReadsFpgaState) -> Option<Self> {
         let map = msg.value.clone();
-        Some(autd3_driver::datagram::ConfigureReadsFPGAState::new(
-            Box::new(move |dev| map[dev.idx()]),
-        ))
+        Some(autd3_driver::datagram::ReadsFPGAState::new(Box::new(
+            move |dev| map[dev.idx()],
+        )))
     }
 }

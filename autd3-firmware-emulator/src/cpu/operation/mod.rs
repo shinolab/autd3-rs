@@ -1,7 +1,16 @@
+use crate::CPUEmulator;
+
+use super::params::{
+    TRANSITION_MODE_EXT, TRANSITION_MODE_GPIO, TRANSITION_MODE_IMMIDIATE, TRANSITION_MODE_NONE,
+    TRANSITION_MODE_SYNC_IDX, TRANSITION_MODE_SYS_TIME,
+};
+
 mod clear;
+mod clk;
 mod debug;
 mod force_fan;
 mod gain;
+mod gpio_in;
 mod info;
 mod modulation;
 mod phase_filter;
@@ -10,3 +19,30 @@ mod reads_fpga_state;
 mod silecer;
 mod stm;
 mod sync;
+
+impl CPUEmulator {
+    pub(crate) fn validate_transition_mode(
+        current_segment: u8,
+        segment: u8,
+        rep: u32,
+        mode: u8,
+    ) -> bool {
+        if mode == TRANSITION_MODE_NONE {
+            return false;
+        }
+
+        if current_segment == segment {
+            return mode == TRANSITION_MODE_SYNC_IDX
+                || mode == TRANSITION_MODE_SYS_TIME
+                || mode == TRANSITION_MODE_GPIO;
+        }
+        match rep {
+            0xFFFFFFFF => {
+                mode == TRANSITION_MODE_SYNC_IDX
+                    || mode == TRANSITION_MODE_SYS_TIME
+                    || mode == TRANSITION_MODE_GPIO
+            }
+            _ => mode == TRANSITION_MODE_IMMIDIATE || mode == TRANSITION_MODE_EXT,
+        }
+    }
+}
