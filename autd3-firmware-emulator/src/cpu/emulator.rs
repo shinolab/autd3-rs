@@ -124,6 +124,7 @@ impl CPUEmulator {
             self.fpga.update();
             self.read_fpga_state();
         }
+        self.dc_sys_time = DcSysTime::now();
     }
 
     pub fn set_dc_sys_time(&mut self, dc_sys_time: DcSysTime) {
