@@ -24,6 +24,8 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check semver
         uses: obi1kenobi/cargo-semver-checks-action@v2
+        with:
+          feature-group: default-features
       - name: publish to carate.io
         run: |
           cd autd3-driver
