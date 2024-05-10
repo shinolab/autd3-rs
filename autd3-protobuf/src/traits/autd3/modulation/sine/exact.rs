@@ -5,7 +5,7 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFreqFloat> {
+impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFreq> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
@@ -29,7 +29,7 @@ impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::Exa
 
 impl ToMessage
     for autd3_driver::datagram::DatagramWithSegmentTransition<
-        autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFreqFloat>,
+        autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFreq>,
     >
 {
     type Message = DatagramLightweight;
@@ -54,17 +54,15 @@ impl ToMessage
 }
 
 impl FromMessage<SineExact>
-    for autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFreqFloat>
+    for autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFreq>
 {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &SineExact) -> Option<Self> {
         Some(
-            autd3::modulation::Sine::new((msg.freq as f64) * autd3_driver::defined::Hz)
+            autd3::modulation::Sine::new(msg.freq * autd3_driver::defined::Hz)
                 .with_intensity(msg.intensity as _)
                 .with_offset(msg.intensity as _)
-                .with_phase(autd3_driver::firmware::fpga::Phase::from_msg(
-                    msg.phase.as_ref()?,
-                )?)
+                .with_phase(autd3_driver::defined::Angle::from_msg(msg.phase.as_ref()?)?)
                 .with_sampling_config(autd3_driver::firmware::fpga::SamplingConfig::from_msg(
                     msg.config.as_ref()?,
                 )?),
@@ -75,18 +73,18 @@ impl FromMessage<SineExact>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3::modulation::sampling_mode::ExactFreqFloat;
-    use autd3_driver::firmware::fpga::Phase;
+    use autd3::modulation::sampling_mode::ExactFreq;
+    use autd3_driver::defined::{rad, Hz};
     use rand::Rng;
 
     #[test]
     fn test_sine() {
         let mut rng = rand::thread_rng();
 
-        let m = autd3::modulation::Sine::new(rng.gen())
+        let m = autd3::modulation::Sine::new(rng.gen::<u32>() * Hz)
             .with_intensity(rng.gen())
             .with_offset(rng.gen())
-            .with_phase(Phase::new(rng.gen()));
+            .with_phase(rng.gen::<f64>() * rad);
         let msg = m.to_msg(None);
 
         match msg.datagram {
@@ -94,8 +92,8 @@ mod tests {
                 modulation: Some(modulation::Modulation::SineExact(modulation)),
                 ..
             })) => {
-                let m2 = autd3::modulation::Sine::<ExactFreqFloat>::from_msg(&modulation).unwrap();
-                assert_eq!(m.freq(), m2.freq());
+                let m2 = autd3::modulation::Sine::<ExactFreq>::from_msg(&modulation).unwrap();
+                assert_eq!(m.freq().hz(), m2.freq().hz());
                 assert_eq!(m.intensity(), m2.intensity());
                 assert_eq!(m.offset(), m2.offset());
                 assert_eq!(m.phase(), m2.phase());

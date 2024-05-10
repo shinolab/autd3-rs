@@ -43,6 +43,7 @@ message Holo {
 
 message DontCareConstraint {}
 message NormalizeConstraint {}
+message MultiplyConstraint { float value = 1; }
 message UniformConstraint { EmitIntensity value = 1; }
 message ClampConstraint {
   EmitIntensity min = 1;
@@ -54,6 +55,7 @@ message EmissionConstraint {
     NormalizeConstraint normalize = 2;
     UniformConstraint uniform = 3;
     ClampConstraint clamp = 4;
+    MultiplyConstraint multiply = 5;
   }
 }
 

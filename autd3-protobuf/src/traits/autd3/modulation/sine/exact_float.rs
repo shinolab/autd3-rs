@@ -5,19 +5,19 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreqFloat> {
+impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFreqFloat> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::SquareExact(SquareExact {
+                modulation: Some(modulation::Modulation::SineExactFloat(SineExactFloat {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq().hz() as _,
-                    high: self.high() as _,
-                    low: self.low() as _,
-                    duty: self.duty() as _,
+                    intensity: self.intensity() as _,
+                    offset: self.offset() as _,
+                    phase: Some(self.phase().to_msg(None)),
                 })),
                 segment: Segment::S0 as _,
                 transition_mode: Some(TransitionMode::SyncIdx.into()),
@@ -29,7 +29,7 @@ impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::E
 
 impl ToMessage
     for autd3_driver::datagram::DatagramWithSegmentTransition<
-        autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreqFloat>,
+        autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFreqFloat>,
     >
 {
     type Message = DatagramLightweight;
@@ -38,12 +38,12 @@ impl ToMessage
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::SquareExact(SquareExact {
+                modulation: Some(modulation::Modulation::SineExactFloat(SineExactFloat {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq().hz() as _,
-                    high: self.high() as _,
-                    low: self.low() as _,
-                    duty: self.duty() as _,
+                    intensity: self.intensity() as _,
+                    offset: self.offset() as _,
+                    phase: Some(self.phase().to_msg(None)),
                 })),
                 segment: self.segment() as _,
                 transition_mode: self.transition_mode().map(|m| m.mode() as _),
@@ -53,16 +53,16 @@ impl ToMessage
     }
 }
 
-impl FromMessage<SquareExact>
-    for autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreqFloat>
+impl FromMessage<SineExactFloat>
+    for autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFreqFloat>
 {
     #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &SquareExact) -> Option<Self> {
+    fn from_msg(msg: &SineExactFloat) -> Option<Self> {
         Some(
-            autd3::modulation::Square::new((msg.freq as f64) * autd3_driver::defined::Hz)
-                .with_high(msg.high as _)
-                .with_low(msg.low as _)
-                .with_duty(msg.duty as _)
+            autd3::modulation::Sine::new((msg.freq as f64) * autd3_driver::defined::Hz)
+                .with_intensity(msg.intensity as _)
+                .with_offset(msg.intensity as _)
+                .with_phase(autd3_driver::defined::Angle::from_msg(msg.phase.as_ref()?)?)
                 .with_sampling_config(autd3_driver::firmware::fpga::SamplingConfig::from_msg(
                     msg.config.as_ref()?,
                 )?),
@@ -74,30 +74,29 @@ impl FromMessage<SquareExact>
 mod tests {
     use super::*;
     use autd3::modulation::sampling_mode::ExactFreqFloat;
-    use autd3_driver::firmware::fpga::EmitIntensity;
+    use autd3_driver::defined::{rad, Hz};
     use rand::Rng;
 
     #[test]
-    fn test_square() {
+    fn test_sine() {
         let mut rng = rand::thread_rng();
 
-        let m = autd3::modulation::Square::new(rng.gen())
-            .with_high(rng.gen())
-            .with_low(rng.gen())
-            .with_duty(rng.gen());
+        let m = autd3::modulation::Sine::new(rng.gen::<f64>() * Hz)
+            .with_intensity(rng.gen())
+            .with_offset(rng.gen())
+            .with_phase(rng.gen::<f64>() * rad);
         let msg = m.to_msg(None);
 
         match msg.datagram {
             Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::SquareExact(modulation)),
+                modulation: Some(modulation::Modulation::SineExactFloat(modulation)),
                 ..
             })) => {
-                let m2 =
-                    autd3::modulation::Square::<ExactFreqFloat>::from_msg(&modulation).unwrap();
+                let m2 = autd3::modulation::Sine::<ExactFreqFloat>::from_msg(&modulation).unwrap();
                 assert_eq!(m.freq(), m2.freq());
-                assert_eq!(m.high(), m2.high());
-                assert_eq!(m.low(), m2.low());
-                assert_approx_eq::assert_approx_eq!(m.duty(), m2.duty());
+                assert_eq!(m.intensity(), m2.intensity());
+                assert_eq!(m.offset(), m2.offset());
+                assert_eq!(m.phase(), m2.phase());
             }
             _ => panic!("unexpected datagram type"),
         }

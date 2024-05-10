@@ -67,6 +67,24 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
             }
             Some(modulation::Modulation::SineExact(msg)) => {
                 autd.send(
+                    autd3::prelude::Sine::<autd3::modulation::sampling_mode::ExactFreq>::from_msg(msg)
+                        .ok_or(AUTDProtoBufError::DataParseError)?
+                        .with_segment(
+                            autd3_driver::firmware::fpga::Segment::from(
+                                Segment::try_from(modulation.segment)
+                                    .ok()
+                                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                            ),
+                            to_transition_mode(
+                                modulation.transition_mode,
+                                modulation.transition_value,
+                            ),
+                        ),
+                )
+                .await?
+            }
+            Some(modulation::Modulation::SineExactFloat(msg)) => {
+                autd.send(
                     autd3::prelude::Sine::<autd3::modulation::sampling_mode::ExactFreqFloat>::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
@@ -101,6 +119,23 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                 .await?
             }
             Some(modulation::Modulation::SquareExact(msg)) => {
+                autd.send(
+                    autd3::prelude::Square::<autd3::modulation::sampling_mode::ExactFreq>::from_msg(
+                        msg,
+                    )
+                    .ok_or(AUTDProtoBufError::DataParseError)?
+                    .with_segment(
+                        autd3_driver::firmware::fpga::Segment::from(
+                            Segment::try_from(modulation.segment)
+                                .ok()
+                                .ok_or(AUTDProtoBufError::DataParseError)?,
+                        ),
+                        to_transition_mode(modulation.transition_mode, modulation.transition_value),
+                    ),
+                )
+                .await?
+            }
+            Some(modulation::Modulation::SquareExactFloat(msg)) => {
                 autd.send(
                     autd3::prelude::Square::<autd3::modulation::sampling_mode::ExactFreqFloat>::from_msg(
                         msg,

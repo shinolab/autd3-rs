@@ -1,2 +1,3 @@
-mod float;
-mod int;
+mod exact;
+mod exact_float;
+mod nearest;

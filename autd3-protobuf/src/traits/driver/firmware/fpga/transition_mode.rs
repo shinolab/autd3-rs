@@ -42,7 +42,9 @@ mod tests {
         Some(1)
     )]
     #[case(
-        Some(autd3_driver::firmware::fpga::TransitionMode::GPIO),
+        Some(autd3_driver::firmware::fpga::TransitionMode::GPIO(
+            autd3_driver::firmware::fpga::GPIOIn::I0
+        )),
         Some(2),
         Some(0)
     )]
