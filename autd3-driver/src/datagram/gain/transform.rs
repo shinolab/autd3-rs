@@ -72,7 +72,7 @@ mod tests {
         let geometry = create_geometry(1, 249, FREQ_40K);
 
         let mut rng = rand::thread_rng();
-        let d: Drive = rng.gen();
+        let d: Drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
 
         let gain = TestGain::null().with_transform(move |_, _, _| d);
 

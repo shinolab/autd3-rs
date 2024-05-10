@@ -160,8 +160,8 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let d1: Drive = rng.gen();
-        let d2: Drive = rng.gen();
+        let d1: Drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
+        let d2: Drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
 
         let g1 = TestGain {
             f: move |_| move |_| d1,

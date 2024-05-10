@@ -61,13 +61,6 @@ impl std::ops::Sub<Phase> for Phase {
     }
 }
 
-#[cfg(any(test, feature = "rand"))]
-impl rand::distributions::Distribution<Phase> for rand::distributions::Standard {
-    fn sample<R: rand::prelude::Rng + ?Sized>(&self, rng: &mut R) -> Phase {
-        Phase::new(rng.gen())
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
