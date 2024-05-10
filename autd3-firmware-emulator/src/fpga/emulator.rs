@@ -523,6 +523,10 @@ impl FPGAEmulator {
         &self.tr_pos
     }
 
+    pub fn ultrasound_freq(&self) -> Freq<u32> {
+        self.fpga_clk_freq / ULTRASOUND_PERIOD
+    }
+
     pub fn fpga_clk_freq(&self) -> Freq<u32> {
         self.fpga_clk_freq
     }

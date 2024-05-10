@@ -292,6 +292,7 @@ mod tests {
             .add_device(AUTD3::new(Vector3::zeros()).with_ultrasound_freq(41000 * Hz))
             .open(Audit::builder())
             .await?;
+        assert_eq!(41000 * Hz, autd.link[0].fpga().ultrasound_freq());
         assert_eq!(41000 * 512 * Hz, autd.link[0].fpga().fpga_clk_freq());
 
         assert!(autd.close().await?);
