@@ -1,6 +1,7 @@
 use crate::{
     defined::{FREQ_40K, MILLIMETER},
     derive::*,
+    freq::Freq,
     geometry::{IntoDevice, Matrix4, UnitQuaternion, Vector3, Vector4},
 };
 
@@ -12,7 +13,7 @@ pub struct AUTD3 {
     #[getset]
     rotation: UnitQuaternion,
     #[getset]
-    ultrasound_freq: u32,
+    ultrasound_freq: Freq<u32>,
 }
 
 impl AUTD3 {

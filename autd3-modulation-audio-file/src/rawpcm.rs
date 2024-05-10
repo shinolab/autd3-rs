@@ -1,4 +1,4 @@
-use autd3_driver::derive::*;
+use autd3_driver::{derive::*, freq::Freq, utils::float::is_integer};
 
 use std::{
     fs::File,
@@ -15,7 +15,7 @@ use crate::error::AudioFileError;
 /// The raw PCM data is resampled to the sampling frequency of Modulation.
 #[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct RawPCM {
-    sample_rate: u32,
+    sample_rate: Freq<u32>,
     path: PathBuf,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
@@ -29,7 +29,7 @@ impl RawPCM {
     /// * `path` - Path to the raw PCM file
     /// * `sample_rate` - Sampling frequency of the raw PCM file
     ///
-    pub fn new(path: impl AsRef<Path>, sample_rate: u32) -> Self {
+    pub fn new(path: impl AsRef<Path>, sample_rate: Freq<u32>) -> Self {
         Self {
             sample_rate,
             path: path.as_ref().to_path_buf(),
@@ -50,11 +50,15 @@ impl RawPCM {
 impl Modulation for RawPCM {
     fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
         Self::transform(geometry, |dev| {
+            let new_rate = self.sampling_config().freq(dev.ultrasound_freq())?;
+            if !is_integer(new_rate.hz()) {
+                return Err(AudioFileError::RawPCMSamplingRateNotInteger(new_rate).into());
+            }
             Ok(wav_io::resample::linear(
                 self.read_buf()?,
                 1,
-                self.sample_rate,
-                self.sampling_config().freq(dev.ultrasound_freq())? as u32,
+                self.sample_rate.hz(),
+                new_rate.hz() as u32,
             )
             .iter()
             .map(|&d| d.round() as u8)
@@ -65,6 +69,8 @@ impl Modulation for RawPCM {
 
 #[cfg(test)]
 mod tests {
+    use autd3_driver::freq::Hz;
+
     use crate::tests::create_geometry;
 
     use super::*;
@@ -82,13 +88,13 @@ mod tests {
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("tmp.dat");
         create_dat(&path, &[0xFF, 0x7F, 0x00])?;
-        let m = RawPCM::new(&path, 4000);
+        let m = RawPCM::new(&path, 4000 * Hz);
         assert_eq!(
             m.calc(&geometry)?,
             HashMap::from([(0, vec![0xFF, 0x7F, 0x00])])
         );
 
-        let m = RawPCM::new("not_exists.dat", 4000);
+        let m = RawPCM::new("not_exists.dat", 4000 * Hz);
         assert!(m.calc(&geometry).is_err());
 
         Ok(())
@@ -99,7 +105,7 @@ mod tests {
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("tmp.dat");
         create_dat(&path, &[0xFF, 0xFF])?;
-        let m = RawPCM::new(&path, 4000);
+        let m = RawPCM::new(&path, 4000 * Hz);
         assert_eq!(m, m.clone());
         Ok(())
     }

@@ -6,6 +6,7 @@ use autd3_driver::{
         cpu::TxDatagram,
         operation::{NullOp, Operation, OperationHandler},
     },
+    freq::Freq,
     geometry::{Geometry, IntoDevice, Vector3},
 };
 use autd3_firmware_emulator::{
@@ -23,7 +24,7 @@ pub fn create_geometry(n: usize) -> Geometry {
     )
 }
 
-pub fn create_geometry_with_freq(n: usize, ultrasound_freq: u32) -> Geometry {
+pub fn create_geometry_with_freq(n: usize, ultrasound_freq: Freq<u32>) -> Geometry {
     Geometry::new(
         (0..n)
             .map(|i| {

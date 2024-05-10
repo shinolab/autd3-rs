@@ -368,7 +368,7 @@ impl Operation for ConfigureClockOp {
         self.remains.init(geometry, |_| DRP_ROM_SIZE);
 
         geometry.devices().try_for_each(|dev| {
-            let fpga_clk_freq = dev.ultrasound_freq() * ULTRASOUND_PERIOD;
+            let fpga_clk_freq = dev.ultrasound_freq().hz() * ULTRASOUND_PERIOD;
             if fpga_clk_freq % 2000 != 0 {
                 return Err(AUTDInternalError::InvalidFrequencyError(
                     dev.ultrasound_freq(),
@@ -456,7 +456,10 @@ impl Operation for ConfigureClockOp {
 mod tests {
     use std::mem::{offset_of, size_of};
 
-    use crate::geometry::tests::create_geometry;
+    use crate::{
+        freq::{Freq, Hz},
+        geometry::tests::create_geometry,
+    };
 
     use super::*;
 
@@ -498,7 +501,7 @@ mod tests {
         0x00000000,
         0x00000000,
         0x00000001,
-    ], 40000)]
+    ], 40000*Hz)]
     #[case::f41k(vec![
         0x280000ffff,
         0x980002800,
@@ -532,8 +535,8 @@ mod tests {
         0x00000000,
         0x00000000,
         0x00000001,
-    ], 41000)]
-    fn config_clk(#[case] expect_rom: Vec<u64>, #[case] freq: u32) {
+    ], 41000*Hz)]
+    fn config_clk(#[case] expect_rom: Vec<u64>, #[case] freq: Freq<u32>) {
         const FRAME_SIZE: usize = size_of::<Clk>() + 12 * size_of::<u64>();
 
         let mut tx = vec![0x00u8; FRAME_SIZE * NUM_DEVICE];
@@ -679,10 +682,10 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case::f40k(Ok(()), 40000)]
-    #[case::f1(Err(AUTDInternalError::InvalidFrequencyError(1)), 1)]
-    #[case::f32(Err(AUTDInternalError::InvalidFrequencyError(125)), 125)]
-    fn config_clk_validate(#[case] expect: Result<(), AUTDInternalError>, #[case] freq: u32) {
+    #[case::f40k(Ok(()), 40000*Hz)]
+    #[case::f1(Err(AUTDInternalError::InvalidFrequencyError(1*Hz)), 1*Hz)]
+    #[case::f32(Err(AUTDInternalError::InvalidFrequencyError(125*Hz)), 125*Hz)]
+    fn config_clk_validate(#[case] expect: Result<(), AUTDInternalError>, #[case] freq: Freq<u32>) {
         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, freq);
 
         let mut op = ConfigureClockOp::new();

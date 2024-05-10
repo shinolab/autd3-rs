@@ -1,4 +1,4 @@
-use autd3_driver::error::AUTDInternalError;
+use autd3_driver::{error::AUTDInternalError, freq::Freq};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -7,6 +7,8 @@ pub enum AudioFileError {
     Io(std::io::Error),
     #[error("{0}")]
     Wav(hound::Error),
+    #[error("RawPCM sampling rate ({0}) must be integer")]
+    RawPCMSamplingRateNotInteger(Freq<f64>),
 }
 
 // GRCOV_EXCL_START

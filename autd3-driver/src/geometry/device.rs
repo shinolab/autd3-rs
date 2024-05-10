@@ -1,6 +1,6 @@
 use std::{f64::consts::PI, ops::Deref};
 
-use crate::defined::METER;
+use crate::{defined::METER, freq::Freq};
 
 use super::{Matrix3, Transducer, UnitQuaternion, Vector3};
 
@@ -11,12 +11,12 @@ pub struct Device {
     pub sound_speed: f64,
     pub attenuation: f64,
     inv: Matrix3,
-    ultrasound_freq: u32,
+    ultrasound_freq: Freq<u32>,
 }
 
 impl Device {
     #[doc(hidden)]
-    pub fn new(idx: usize, transducers: Vec<Transducer>, ultrasound_freq: u32) -> Self {
+    pub fn new(idx: usize, transducers: Vec<Transducer>, ultrasound_freq: Freq<u32>) -> Self {
         let inv = Matrix3::from_columns(&[
             transducers[0].x_direction(),
             transducers[0].y_direction(),
@@ -107,17 +107,17 @@ impl Device {
         self.sound_speed = (k * r * (273.15 + temp) / m).sqrt() * METER;
     }
 
-    pub fn ultrasound_freq(&self) -> u32 {
+    pub fn ultrasound_freq(&self) -> Freq<u32> {
         self.ultrasound_freq
     }
 
     /// Get the wavelength of the transducer
     pub fn wavelength(&self) -> f64 {
-        self.sound_speed / self.ultrasound_freq as f64
+        self.sound_speed / self.ultrasound_freq.freq as f64
     }
     /// Get the wavenumber of the transducer
     pub fn wavenumber(&self) -> f64 {
-        2.0 * PI * self.ultrasound_freq as f64 / self.sound_speed
+        2.0 * PI * self.ultrasound_freq.freq as f64 / self.sound_speed
     }
 }
 
@@ -151,6 +151,7 @@ pub mod tests {
     use super::*;
     use crate::{
         defined::{FREQ_40K, MILLIMETER, PI},
+        freq::Hz,
         geometry::tests::create_device,
     };
 
@@ -446,11 +447,11 @@ pub mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(8.5, 340e3, 40000)]
-    #[case(10., 400e3, 40000)]
-    #[case(4.25, 340e3, 80000)]
-    #[case(5., 400e3, 80000)]
-    fn wavelength(#[case] expect: f64, #[case] c: f64, #[case] freq: u32) {
+    #[case(8.5, 340e3, 40000*Hz)]
+    #[case(10., 400e3, 40000*Hz)]
+    #[case(4.25, 340e3, 80000*Hz)]
+    #[case(5., 400e3, 80000*Hz)]
+    fn wavelength(#[case] expect: f64, #[case] c: f64, #[case] freq: Freq<u32>) {
         let mut device = create_device(0, 249, freq);
         device.sound_speed = c;
         assert_approx_eq::assert_approx_eq!(expect, device.wavelength());
@@ -458,11 +459,11 @@ pub mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(0.7391982714328925, 340e3, 40000)]
-    #[case(0.6283185307179586, 400e3, 40000)]
-    #[case(1.478396542865785, 340e3, 80000)]
-    #[case(1.2566370614359172, 400e3, 80000)]
-    fn wavenumber(#[case] expect: f64, #[case] c: f64, #[case] freq: u32) {
+    #[case(0.7391982714328925, 340e3, 40000*Hz)]
+    #[case(0.6283185307179586, 400e3, 40000*Hz)]
+    #[case(1.478396542865785, 340e3, 80000*Hz)]
+    #[case(1.2566370614359172, 400e3, 80000*Hz)]
+    fn wavenumber(#[case] expect: f64, #[case] c: f64, #[case] freq: Freq<u32>) {
         let mut device = create_device(0, 249, freq);
         device.sound_speed = c;
         assert_approx_eq::assert_approx_eq!(expect, device.wavenumber());
