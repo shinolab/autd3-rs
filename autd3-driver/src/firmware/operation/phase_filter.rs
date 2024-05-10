@@ -15,12 +15,12 @@ struct PhaseFilter {
     tag: TypeTag,
 }
 
-pub struct PhaseFilterOp<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
+pub struct PhaseFilterOp<P: Into<Phase>, FT: Fn(&Transducer) -> P, F: Fn(&Device) -> FT> {
     remains: Remains,
     f: F,
 }
 
-impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> PhaseFilterOp<FT, F> {
+impl<P: Into<Phase>, FT: Fn(&Transducer) -> P, F: Fn(&Device) -> FT> PhaseFilterOp<P, FT, F> {
     pub fn new(f: F) -> Self {
         Self {
             remains: Default::default(),
@@ -29,7 +29,9 @@ impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> PhaseFilterOp<FT, F> {
     }
 }
 
-impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> Operation for PhaseFilterOp<FT, F> {
+impl<P: Into<Phase>, FT: Fn(&Transducer) -> P, F: Fn(&Device) -> FT> Operation
+    for PhaseFilterOp<P, FT, F>
+{
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         cast::<PhaseFilter>(tx).tag = TypeTag::PhaseFilter;
 
@@ -41,7 +43,7 @@ impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> Operation for PhaseFilt
             )
             .iter_mut()
             .zip(device.iter())
-            .for_each(|(d, s)| *d = f(s));
+            .for_each(|(d, s)| *d = f(s).into());
         }
 
         self.remains[device] -= 1;

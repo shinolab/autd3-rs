@@ -6,11 +6,11 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy)]
-pub struct PhaseFilter<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
+pub struct PhaseFilter<P: Into<Phase>, FT: Fn(&Transducer) -> P, F: Fn(&Device) -> FT> {
     f: F,
 }
 
-impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> PhaseFilter<FT, F> {
+impl<P: Into<Phase>, FT: Fn(&Transducer) -> P, F: Fn(&Device) -> FT> PhaseFilter<P, FT, F> {
     /// constructor
     pub const fn additive(f: F) -> Self {
         Self { f }
@@ -23,8 +23,10 @@ impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> PhaseFilter<FT, F> {
     // GRCOV_EXCL_STOP
 }
 
-impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> Datagram for PhaseFilter<FT, F> {
-    type O1 = crate::firmware::operation::PhaseFilterOp<FT, F>;
+impl<P: Into<Phase>, FT: Fn(&Transducer) -> P, F: Fn(&Device) -> FT> Datagram
+    for PhaseFilter<P, FT, F>
+{
+    type O1 = crate::firmware::operation::PhaseFilterOp<P, FT, F>;
     type O2 = crate::firmware::operation::NullOp;
 
     fn operation(self) -> (Self::O1, Self::O2) {
