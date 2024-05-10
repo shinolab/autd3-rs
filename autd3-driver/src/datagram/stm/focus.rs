@@ -1,4 +1,4 @@
-use crate::{defined::DEFAULT_TIMEOUT, derive::*, firmware::fpga::TransitionMode};
+use crate::{defined::DEFAULT_TIMEOUT, derive::*, firmware::fpga::TransitionMode, freq::FreqFloat};
 
 use super::{ControlPoint, STMProps};
 
@@ -24,7 +24,7 @@ impl FocusSTM {
     ///
     /// * `freq` - Frequency of STM.
     ///
-    pub const fn from_freq(freq: f64) -> Self {
+    pub const fn from_freq(freq: FreqFloat) -> Self {
         Self::from_props(STMProps::from_freq(freq))
     }
 
@@ -34,7 +34,7 @@ impl FocusSTM {
     ///
     /// * `freq` - Frequency of STM. The freq closest to `freq` from the possible frequencies is set.
     ///
-    pub const fn from_freq_nearest(freq: f64) -> Self {
+    pub const fn from_freq_nearest(freq: FreqFloat) -> Self {
         Self::from_props(STMProps::from_freq_nearest(freq))
     }
 
@@ -140,17 +140,21 @@ impl DatagramST for FocusSTM {
 mod tests {
 
     use super::*;
-    use crate::{firmware::operation::FocusSTMOp, geometry::Vector3};
+    use crate::{
+        firmware::operation::FocusSTMOp,
+        freq::{kHz, Hz},
+        geometry::Vector3,
+    };
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(SamplingConfig::Freq(1)), 0.5, 2)]
-    #[case(Ok(SamplingConfig::Freq(10)), 1., 10)]
-    #[case(Ok(SamplingConfig::Freq(20)), 2., 10)]
-    #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49)), 0.49, 2)]
+    #[case(Ok(SamplingConfig::Freq(1*Hz)), 0.5*Hz, 2)]
+    #[case(Ok(SamplingConfig::Freq(10*Hz)), 1.*Hz, 10)]
+    #[case(Ok(SamplingConfig::Freq(20*Hz)), 2.*Hz, 10)]
+    #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
     fn from_freq(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
-        #[case] freq: f64,
+        #[case] freq: FreqFloat,
         #[case] n: usize,
     ) {
         assert_eq!(
@@ -163,13 +167,13 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(SamplingConfig::FreqNearest(1.)), 0.5, 2)]
-    #[case(Ok(SamplingConfig::FreqNearest(0.98)), 0.49, 2)]
-    #[case(Ok(SamplingConfig::FreqNearest(10.)), 1., 10)]
-    #[case(Ok(SamplingConfig::FreqNearest(20.)), 2., 10)]
+    #[case(Ok(SamplingConfig::FreqNearest(1.*Hz)), 0.5*Hz, 2)]
+    #[case(Ok(SamplingConfig::FreqNearest(0.98*Hz)), 0.49*Hz, 2)]
+    #[case(Ok(SamplingConfig::FreqNearest(10.*Hz)), 1.*Hz, 10)]
+    #[case(Ok(SamplingConfig::FreqNearest(20.*Hz)), 2.*Hz, 10)]
     fn from_freq_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
-        #[case] freq: f64,
+        #[case] freq: FreqFloat,
         #[case] n: usize,
     ) {
         assert_eq!(
@@ -183,7 +187,7 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(SamplingConfig::DISABLE, 2)]
-    #[case(SamplingConfig::FREQ_4K_HZ, 10)]
+    #[case(SamplingConfig::Freq(4 * kHz), 10)]
     fn from_sampling_config(
         #[case] config: SamplingConfig,
         #[case] n: usize,
@@ -199,7 +203,7 @@ mod tests {
 
     #[test]
     fn add_focus() -> anyhow::Result<()> {
-        let stm = FocusSTM::from_freq_nearest(1.)
+        let stm = FocusSTM::from_freq_nearest(1. * Hz)
             .add_focus(Vector3::new(1., 2., 3.))
             .add_focus((Vector3::new(4., 5., 6.), 1))
             .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2));
@@ -221,7 +225,7 @@ mod tests {
 
     #[test]
     fn add_foci() -> anyhow::Result<()> {
-        let stm = FocusSTM::from_freq_nearest(1.)
+        let stm = FocusSTM::from_freq_nearest(1. * Hz)
             .add_foci_from_iter([Vector3::new(1., 2., 3.)])
             .add_foci_from_iter([(Vector3::new(4., 5., 6.), 1)])
             .add_foci_from_iter([ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2)]);
@@ -248,7 +252,7 @@ mod tests {
     fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
             loop_behavior,
-            FocusSTM::from_freq(1.)
+            FocusSTM::from_freq(1. * Hz)
                 .with_loop_behavior(loop_behavior)
                 .loop_behavior()
         );
@@ -256,13 +260,13 @@ mod tests {
 
     #[test]
     fn with_loop_behavior_deafault() {
-        let stm = FocusSTM::from_freq(1.);
+        let stm = FocusSTM::from_freq(1. * Hz);
         assert_eq!(LoopBehavior::infinite(), stm.loop_behavior());
     }
 
     #[test]
     fn clear() -> anyhow::Result<()> {
-        let mut stm = FocusSTM::from_freq_nearest(1.)
+        let mut stm = FocusSTM::from_freq_nearest(1. * Hz)
             .add_focus(Vector3::new(1., 2., 3.))
             .add_focus((Vector3::new(4., 5., 6.), 1))
             .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2));
@@ -286,7 +290,7 @@ mod tests {
 
     #[test]
     fn operation() {
-        let stm = FocusSTM::from_freq_nearest(1.)
+        let stm = FocusSTM::from_freq_nearest(1. * Hz)
             .add_focus(Vector3::new(1., 2., 3.))
             .add_focus((Vector3::new(4., 5., 6.), 1))
             .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2));

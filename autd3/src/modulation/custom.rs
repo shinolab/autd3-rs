@@ -32,7 +32,7 @@ mod tests {
     use rand::Rng;
 
     use crate::tests::create_geometry;
-    use autd3_driver::datagram::Datagram;
+    use autd3_driver::{datagram::Datagram, freq::kHz};
 
     use super::*;
 
@@ -43,7 +43,7 @@ mod tests {
         let geometry = create_geometry(2);
 
         let test_buf = vec![rng.gen(); 100];
-        let custom = Custom::new(SamplingConfig::FREQ_4K_HZ, |dev| {
+        let custom = Custom::new(SamplingConfig::Freq(4 * kHz), |dev| {
             Ok(if dev.idx() == 0 {
                 test_buf.clone()
             } else {
@@ -66,7 +66,7 @@ mod tests {
 
     #[test]
     fn test_transtest_derive() {
-        let gain = Custom::new(SamplingConfig::FREQ_4K_HZ, f);
+        let gain = Custom::new(SamplingConfig::Freq(4 * kHz), f);
         let _ = gain.operation();
     }
 }

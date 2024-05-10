@@ -14,7 +14,7 @@ impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::N
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SquareNearest(SquareNearest {
                     config: Some(self.sampling_config().to_msg(None)),
-                    freq: self.freq() as _,
+                    freq: self.freq().hz() as _,
                     high: self.high() as _,
                     low: self.low() as _,
                     duty: self.duty() as _,
@@ -40,7 +40,7 @@ impl ToMessage
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SquareNearest(SquareNearest {
                     config: Some(self.sampling_config().to_msg(None)),
-                    freq: self.freq() as _,
+                    freq: self.freq().hz() as _,
                     high: self.high() as _,
                     low: self.low() as _,
                     duty: self.duty() as _,
@@ -59,13 +59,15 @@ impl FromMessage<SquareNearest>
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &SquareNearest) -> Option<Self> {
         Some(
-            autd3::modulation::Square::with_freq_nearest(msg.freq as _)
-                .with_high(msg.high as _)
-                .with_low(msg.low as _)
-                .with_duty(msg.duty as _)
-                .with_sampling_config(autd3_driver::firmware::fpga::SamplingConfig::from_msg(
-                    msg.config.as_ref()?,
-                )?),
+            autd3::modulation::Square::with_freq_nearest(
+                (msg.freq as f64) * autd3_driver::freq::Hz,
+            )
+            .with_high(msg.high as _)
+            .with_low(msg.low as _)
+            .with_duty(msg.duty as _)
+            .with_sampling_config(
+                autd3_driver::firmware::fpga::SamplingConfig::from_msg(msg.config.as_ref()?)?,
+            ),
         )
     }
 }
