@@ -20,6 +20,7 @@
   - from `SamplingConfiguration` to `SamplingConfig`
   - `ChangeGainSegment`, `ChangeModulationSegment`, `ChangeGainSTMSegment` and `ChangeFocusSTMSegment` are merged into `Segment`
   - from `TransducerTest` to `Custom`
+  - from `Pascal` to `Pa`
 - Add `EmulateGPIOIn`
 - Make `Controller::group` and `gain::Group` error message more easy to understand
   - Key type now requires `Debug` traits

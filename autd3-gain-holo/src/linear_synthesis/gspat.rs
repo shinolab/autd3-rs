@@ -108,7 +108,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for GSPAT<D, B> {
 
 #[cfg(test)]
 mod tests {
-    use super::{super::super::NalgebraBackend, super::super::Pascal, *};
+    use super::{super::super::NalgebraBackend, super::super::Pa, *};
     use autd3_driver::{autd3_device::AUTD3, geometry::IntoDevice};
 
     #[test]
@@ -118,14 +118,14 @@ mod tests {
 
         let g = GSPAT::new(backend)
             .with_repeat(50)
-            .add_focus(Vector3::zeros(), 1. * Pascal)
-            .add_foci_from_iter([(Vector3::zeros(), 1. * Pascal)]);
+            .add_focus(Vector3::zeros(), 1. * Pa)
+            .add_foci_from_iter([(Vector3::zeros(), 1. * Pa)]);
 
         assert_eq!(g.repeat(), 50);
         assert_eq!(g.constraint(), EmissionConstraint::DontCare);
         assert!(g
             .foci()
-            .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pascal));
+            .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pa));
 
         assert_eq!(
             g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
@@ -141,8 +141,8 @@ mod tests {
         let backend = Arc::new(NalgebraBackend::default());
 
         let g = GSPAT::new(backend)
-            .add_focus(Vector3::new(10., 10., 100.), 5e3 * Pascal)
-            .add_foci_from_iter([(Vector3::new(-10., 10., 100.), 5e3 * Pascal)])
+            .add_focus(Vector3::new(10., 10., 100.), 5e3 * Pa)
+            .add_foci_from_iter([(Vector3::new(-10., 10., 100.), 5e3 * Pa)])
             .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)));
 
         let filter = geometry
