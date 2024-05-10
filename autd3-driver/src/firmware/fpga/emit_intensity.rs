@@ -63,13 +63,6 @@ impl std::ops::Sub<EmitIntensity> for EmitIntensity {
     }
 }
 
-#[cfg(any(test, feature = "rand"))]
-impl rand::distributions::Distribution<EmitIntensity> for rand::distributions::Standard {
-    fn sample<R: rand::prelude::Rng + ?Sized>(&self, rng: &mut R) -> EmitIntensity {
-        EmitIntensity::new(rng.gen())
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

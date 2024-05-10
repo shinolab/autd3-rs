@@ -18,3 +18,19 @@ impl FromMessage<Angle> for autd3_driver::defined::Angle {
         Some(msg.rad as f64 * autd3_driver::defined::rad)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use autd3_driver::defined::{rad, Angle};
+    use rand::Rng;
+
+    #[test]
+    fn angle() {
+        let mut rng = rand::thread_rng();
+        let v = rng.gen::<f64>() * rad;
+        let msg = v.to_msg(None);
+        let v2 = Angle::from_msg(&msg).unwrap();
+        assert_approx_eq::assert_approx_eq!(v.radian(), v2.radian());
+    }
+}

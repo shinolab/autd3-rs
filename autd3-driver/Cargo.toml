@@ -38,7 +38,7 @@ anyhow = { workspace = true }
 rstest = { workspace = true }
 
 [features]
-default = ["derive", "rand"]
+default = ["derive"]
 async-trait = ["dep:async-trait"]
 force_parallel = []
 force_serial = []
@@ -46,4 +46,3 @@ use_meter = []
 left_handed = []
 serde = ["dep:serde"]
 derive = []
-rand = ["dep:rand"]
