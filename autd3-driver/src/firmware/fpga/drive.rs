@@ -10,11 +10,8 @@ pub struct Drive {
 }
 
 impl Drive {
-    pub fn new(phase: impl Into<Phase>, intensity: impl Into<EmitIntensity>) -> Self {
-        Self {
-            phase: phase.into(),
-            intensity: intensity.into(),
-        }
+    pub const fn new(phase: Phase, intensity: EmitIntensity) -> Self {
+        Self { phase, intensity }
     }
 
     pub const fn phase(&self) -> Phase {
