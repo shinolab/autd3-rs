@@ -17,20 +17,20 @@ impl ToMessage for autd3_gain_holo::Amplitude {
 impl FromMessage<Amplitude> for autd3_gain_holo::Amplitude {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &Amplitude) -> Option<Self> {
-        Some(msg.value as f64 * autd3_gain_holo::Pascal)
+        Some(msg.value as f64 * autd3_gain_holo::Pa)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_gain_holo::Pascal;
+    use autd3_gain_holo::Pa;
     use rand::Rng;
 
     #[test]
     fn test_amp() {
         let mut rng = rand::thread_rng();
-        let v = rng.gen::<f64>() * Pascal;
+        let v = rng.gen::<f64>() * Pa;
         let msg = v.to_msg(None);
         let v2 = autd3_gain_holo::Amplitude::from_msg(&msg).unwrap();
         assert_approx_eq::assert_approx_eq!(v.as_pascal(), v2.as_pascal());

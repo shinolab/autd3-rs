@@ -28,7 +28,7 @@ pub fn gen_foci(n: usize, num_dev: usize) -> impl Iterator<Item = (Vector3, Ampl
                 black_box(70. + 10. * (2.0 * PI * i as f64 / n as f64).sin()),
                 black_box(150.),
             ),
-            5e3 * Pascal * num_dev as f64 / n as f64,
+            5e3 * Pa * num_dev as f64 / n as f64,
         )
     })
 }

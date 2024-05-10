@@ -30,7 +30,7 @@ pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
 
     let backend = Arc::new(NalgebraBackend::default());
 
-    let target_amp = 2.5e3 * autd.geometry.num_devices() as f64 * Pascal;
+    let target_amp = 2.5e3 * autd.geometry.num_devices() as f64 * Pa;
     match s.trim().parse::<usize>() {
         Ok(0) => {
             let g = SDP::new(backend)

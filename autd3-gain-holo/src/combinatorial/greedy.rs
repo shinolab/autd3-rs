@@ -140,7 +140,7 @@ impl Default for Greedy<Sphere> {
 
 #[cfg(test)]
 mod tests {
-    use super::{super::super::Pascal, *};
+    use super::{super::super::Pa, *};
     use autd3_driver::{autd3_device::AUTD3, geometry::IntoDevice};
 
     #[test]
@@ -149,8 +149,8 @@ mod tests {
 
         let g = Greedy::default()
             .with_phase_div(32)
-            .add_focus(Vector3::zeros(), 1. * Pascal)
-            .add_foci_from_iter([(Vector3::zeros(), 1. * Pascal)]);
+            .add_focus(Vector3::zeros(), 1. * Pa)
+            .add_foci_from_iter([(Vector3::zeros(), 1. * Pa)]);
 
         assert_eq!(g.phase_div(), 32);
         assert_eq!(
@@ -159,7 +159,7 @@ mod tests {
         );
         assert!(g
             .foci()
-            .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pascal));
+            .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pa));
 
         assert_eq!(
             g.calc(&geometry, GainFilter::All)
@@ -173,8 +173,8 @@ mod tests {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
 
         let g = Greedy::default()
-            .add_focus(Vector3::new(10., 10., 100.), 5e3 * Pascal)
-            .add_foci_from_iter([(Vector3::new(-10., 10., 100.), 5e3 * Pascal)])
+            .add_focus(Vector3::new(10., 10., 100.), 5e3 * Pa)
+            .add_foci_from_iter([(Vector3::new(-10., 10., 100.), 5e3 * Pa)])
             .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)));
 
         let filter = geometry

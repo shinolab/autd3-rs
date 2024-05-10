@@ -2,11 +2,13 @@ use autd3_driver::defined::ABSOLUTE_THRESHOLD_OF_HEARING;
 
 #[allow(non_camel_case_types)]
 pub struct dB;
-pub struct Pascal;
+pub struct Pa;
+#[allow(non_camel_case_types)]
+pub struct kPa;
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct Amplitude {
-    // Amplitude in Pascal
+    // Amplitude in Pa
     pub(crate) value: f64,
 }
 
@@ -30,11 +32,19 @@ impl std::ops::Mul<dB> for f64 {
     }
 }
 
-impl std::ops::Mul<Pascal> for f64 {
+impl std::ops::Mul<Pa> for f64 {
     type Output = Amplitude;
 
-    fn mul(self, _rhs: Pascal) -> Self::Output {
+    fn mul(self, _rhs: Pa) -> Self::Output {
         Self::Output { value: self }
+    }
+}
+
+impl std::ops::Mul<kPa> for f64 {
+    type Output = Amplitude;
+
+    fn mul(self, _rhs: kPa) -> Self::Output {
+        Self::Output { value: self * 1e3 }
     }
 }
 
@@ -82,7 +92,20 @@ mod tests {
 
     #[test]
     fn test_pascal() {
-        let amp = 23.77 * Pascal;
+        let amp = 23.77 * Pa;
+
+        assert_approx_eq::assert_approx_eq!(amp.as_pascal(), 23.77, 1e-3);
+        assert_approx_eq::assert_approx_eq!(amp.as_spl(), 121.5, 1e-3);
+
+        assert_approx_eq::assert_approx_eq!((2. * amp).as_pascal(), 2. * 23.77, 1e-3);
+        assert_approx_eq::assert_approx_eq!((amp * 2.).as_pascal(), 2. * 23.77, 1e-3);
+
+        assert_approx_eq::assert_approx_eq!((amp / 2.).as_pascal(), 23.77 / 2., 1e-3);
+    }
+
+    #[test]
+    fn test_kilo_pascal() {
+        let amp = 23.77e-3 * kPa;
 
         assert_approx_eq::assert_approx_eq!(amp.as_pascal(), 23.77, 1e-3);
         assert_approx_eq::assert_approx_eq!(amp.as_spl(), 121.5, 1e-3);

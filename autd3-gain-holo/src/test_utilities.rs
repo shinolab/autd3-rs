@@ -3,9 +3,7 @@ use std::sync::Arc;
 use nalgebra::ComplexField;
 use rand::Rng;
 
-use crate::{
-    Amplitude, Complex, HoloError, LinAlgBackend, MatrixXc, Pascal, Trans, VectorX, VectorXc,
-};
+use crate::{Amplitude, Complex, HoloError, LinAlgBackend, MatrixXc, Pa, Trans, VectorX, VectorXc};
 use autd3_driver::{
     acoustics::{directivity::Sphere, propagate},
     autd3_device::AUTD3,
@@ -41,7 +39,7 @@ fn gen_foci(n: usize) -> impl Iterator<Item = (Vector3, Amplitude)> {
                 70. + 10. * (2.0 * PI * i as f64 / n as f64).sin(),
                 150.,
             ),
-            10e3 * Pascal,
+            10e3 * Pa,
         )
     })
 }

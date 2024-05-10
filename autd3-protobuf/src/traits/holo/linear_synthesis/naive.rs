@@ -73,7 +73,7 @@ impl FromMessage<Naive>
                         .map(|h| {
                             Some((
                                 autd3_driver::geometry::Vector3::from_msg(h.pos.as_ref()?)?,
-                                h.amp.as_ref()?.value as f64 * autd3_gain_holo::Pascal,
+                                h.amp.as_ref()?.value as f64 * autd3_gain_holo::Pa,
                             ))
                         })
                         .collect::<Option<Vec<_>>>()?,
@@ -95,11 +95,11 @@ mod tests {
         let holo = autd3_gain_holo::Naive::new(NalgebraBackend::new().unwrap())
             .add_focus(
                 Vector3::new(rng.gen(), rng.gen(), rng.gen()),
-                rng.gen::<f64>() * autd3_gain_holo::Pascal,
+                rng.gen::<f64>() * autd3_gain_holo::Pa,
             )
             .add_focus(
                 Vector3::new(rng.gen(), rng.gen(), rng.gen()),
-                rng.gen::<f64>() * autd3_gain_holo::Pascal,
+                rng.gen::<f64>() * autd3_gain_holo::Pa,
             );
         let msg = holo.to_msg(None);
 

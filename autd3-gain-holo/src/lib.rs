@@ -23,4 +23,4 @@ pub use linear_synthesis::*;
 pub use matrix::*;
 pub use nls::*;
 
-pub use amp::{dB, Amplitude, Pascal};
+pub use amp::{dB, Amplitude, Pa};
