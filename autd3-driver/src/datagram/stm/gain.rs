@@ -5,6 +5,7 @@ use crate::{
         cpu::GainSTMMode,
         fpga::{Segment, TransitionMode},
     },
+    freq::FreqFloat,
 };
 
 use super::STMProps;
@@ -34,7 +35,7 @@ impl<G: Gain> GainSTM<G> {
     ///
     /// * `freq` - Frequency of STM.
     ///
-    pub const fn from_freq(freq: f64) -> Self {
+    pub const fn from_freq(freq: FreqFloat) -> Self {
         Self::from_props_mode(STMProps::from_freq(freq), GainSTMMode::PhaseIntensityFull)
     }
 
@@ -44,7 +45,7 @@ impl<G: Gain> GainSTM<G> {
     ///
     /// * `freq` - Frequency of STM. The frequency closest to `freq` from the possible frequencies is set.
     ///
-    pub const fn from_freq_nearest(freq: f64) -> Self {
+    pub const fn from_freq_nearest(freq: FreqFloat) -> Self {
         Self::from_props_mode(
             STMProps::from_freq_nearest(freq),
             GainSTMMode::PhaseIntensityFull,
@@ -165,17 +166,20 @@ mod tests {
 
     use super::*;
 
-    use crate::firmware::operation::{tests::NullGain, GainSTMOp};
+    use crate::{
+        firmware::operation::{tests::NullGain, GainSTMOp},
+        freq::{kHz, Hz},
+    };
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(SamplingConfig::Freq(1)), 0.5, 2)]
-    #[case(Ok(SamplingConfig::Freq(10)), 1., 10)]
-    #[case(Ok(SamplingConfig::Freq(20)), 2., 10)]
-    #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49)), 0.49, 2)]
+    #[case(Ok(SamplingConfig::Freq(1*Hz)), 0.5*Hz, 2)]
+    #[case(Ok(SamplingConfig::Freq(10*Hz)), 1.*Hz, 10)]
+    #[case(Ok(SamplingConfig::Freq(20*Hz)), 2.*Hz, 10)]
+    #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
     fn from_freq(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
-        #[case] freq: f64,
+        #[case] freq: FreqFloat,
         #[case] n: usize,
     ) {
         assert_eq!(
@@ -188,13 +192,13 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(SamplingConfig::FreqNearest(1.)), 0.5, 2)]
-    #[case(Ok(SamplingConfig::FreqNearest(0.98)), 0.49, 2)]
-    #[case(Ok(SamplingConfig::FreqNearest(10.)), 1., 10)]
-    #[case(Ok(SamplingConfig::FreqNearest(20.)), 2., 10)]
+    #[case(Ok(SamplingConfig::FreqNearest(1.*Hz)), 0.5*Hz, 2)]
+    #[case(Ok(SamplingConfig::FreqNearest(0.98*Hz)), 0.49*Hz, 2)]
+    #[case(Ok(SamplingConfig::FreqNearest(10.*Hz)), 1.*Hz, 10)]
+    #[case(Ok(SamplingConfig::FreqNearest(20.*Hz)), 2.*Hz, 10)]
     fn from_freq_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
-        #[case] freq: f64,
+        #[case] freq: FreqFloat,
         #[case] n: usize,
     ) {
         assert_eq!(
@@ -208,7 +212,7 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(SamplingConfig::DISABLE, 2)]
-    #[case(SamplingConfig::FREQ_4K_HZ, 10)]
+    #[case(SamplingConfig::Freq(4 * kHz), 10)]
     fn from_sampling_config(
         #[case] config: SamplingConfig,
         #[case] n: usize,
@@ -230,7 +234,9 @@ mod tests {
     fn with_mode(#[case] mode: GainSTMMode) {
         assert_eq!(
             mode,
-            GainSTM::<NullGain>::from_freq(1.).with_mode(mode).mode()
+            GainSTM::<NullGain>::from_freq(1. * Hz)
+                .with_mode(mode)
+                .mode()
         );
     }
 
@@ -238,7 +244,7 @@ mod tests {
     fn with_mode_default() {
         assert_eq!(
             GainSTMMode::PhaseIntensityFull,
-            GainSTM::<NullGain>::from_freq(1.).mode()
+            GainSTM::<NullGain>::from_freq(1. * Hz).mode()
         );
     }
 
@@ -259,7 +265,7 @@ mod tests {
 
     #[test]
     fn clear() -> anyhow::Result<()> {
-        let mut stm = GainSTM::<Box<dyn Gain>>::from_freq(1.)
+        let mut stm = GainSTM::<Box<dyn Gain>>::from_freq(1. * Hz)
             .add_gain(Box::new(NullGain {}))
             .add_gain(Box::new(NullGain2 {}));
         assert_eq!(stm.gains().len(), 2);
@@ -276,7 +282,7 @@ mod tests {
     fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
             loop_behavior,
-            GainSTM::<Box<dyn Gain>>::from_freq(1.)
+            GainSTM::<Box<dyn Gain>>::from_freq(1. * Hz)
                 .with_loop_behavior(loop_behavior)
                 .loop_behavior()
         );
@@ -284,13 +290,13 @@ mod tests {
 
     #[test]
     fn indexer() {
-        let stm = GainSTM::from_freq(1.).add_gain(NullGain {});
+        let stm = GainSTM::from_freq(1. * Hz).add_gain(NullGain {});
         let _: &NullGain = &stm[0];
     }
 
     #[test]
     fn operation() {
-        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1.)
+        let stm = GainSTM::<Box<dyn Gain>>::from_freq(1. * Hz)
             .add_gain(Box::new(NullGain {}))
             .add_gain(Box::new(NullGain2 {}));
 

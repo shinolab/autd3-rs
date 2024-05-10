@@ -166,6 +166,7 @@ mod tests {
         datagram::{GainSTM, SwapSegment},
         derive::{Gain, GainFilter, Modulation, Segment, TransitionMode},
         error::AUTDInternalError,
+        freq::Hz,
     };
 
     use crate::{
@@ -189,8 +190,8 @@ mod tests {
         .set(
             3,
             (
-                Sine::new(150.),
-                GainSTM::from_freq(1.)
+                Sine::new(150. * Hz),
+                GainSTM::from_freq(1. * Hz)
                     .add_gain(Uniform::new(0x80))
                     .add_gain(Uniform::new(0x81)),
             ),
@@ -218,7 +219,7 @@ mod tests {
         );
 
         assert_eq!(
-            Sine::new(150.).calc(&autd.geometry)?[&0],
+            Sine::new(150. * Hz).calc(&autd.geometry)?[&0],
             autd.link[3].fpga().modulation(Segment::S0)
         );
         assert_eq!(

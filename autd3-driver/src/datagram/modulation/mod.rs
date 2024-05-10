@@ -115,7 +115,7 @@ impl DatagramST for Box<dyn Modulation> {
 mod tests {
     use super::*;
 
-    use crate::derive::*;
+    use crate::{derive::*, freq::kHz};
 
     #[derive(Modulation, Clone, PartialEq, Debug)]
     pub struct TestModulation {
@@ -132,7 +132,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(SamplingConfig::FREQ_4K_HZ)]
+    #[case(SamplingConfig::Freq(4 * kHz))]
     fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
             config,
@@ -153,7 +153,7 @@ mod tests {
         assert_eq!(
             loop_behavior,
             TestModulation {
-                config: SamplingConfig::FREQ_4K_HZ,
+                config: SamplingConfig::Freq(4 * kHz),
                 buf: vec![],
                 loop_behavior,
             }

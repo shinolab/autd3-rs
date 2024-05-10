@@ -1,6 +1,9 @@
 use thiserror::Error;
 
-use crate::firmware::{cpu::GainSTMMode, fpga::*};
+use crate::{
+    firmware::{cpu::GainSTMMode, fpga::*},
+    freq::{FreqFloat, FreqInt},
+};
 
 #[derive(Error, Debug, PartialEq)]
 pub enum AUTDInternalError {
@@ -34,13 +37,13 @@ pub enum AUTDInternalError {
     SamplingFreqDivInvalid(u32),
     #[error("Sampling frequency division ({0}) is out of range ([{1}, {2}])")]
     SamplingFreqDivOutOfRange(u32, u32, u32),
-    #[error("Sampling frequency ({0}Hz) must divide {1}")]
-    SamplingFreqInvalid(u32, u32),
-    #[error("Sampling frequency ({0}Hz) is out of range ([{1}, {2}])")]
+    #[error("Sampling frequency ({0}) must divide {1}")]
+    SamplingFreqInvalid(FreqInt, u32),
+    #[error("Sampling frequency ({0} Hz) is out of range ([{1}, {2}])")]
     SamplingFreqOutOfRange(f64, f64, f64),
 
-    #[error("STM frequency ({1}Hz, size={0}) must divide ultrasound frequency")]
-    STMFreqInvalid(usize, f64),
+    #[error("STM frequency ({1}, size={0}) must divide ultrasound frequency")]
+    STMFreqInvalid(usize, FreqFloat),
 
     #[error(
         "FocusSTM size ({0}) is out of range ([{}, {}])",

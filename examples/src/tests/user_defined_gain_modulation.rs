@@ -33,7 +33,7 @@ pub struct Burst {
 impl Burst {
     pub fn new() -> Self {
         Self {
-            config: SamplingConfig::FREQ_4K_HZ,
+            config: SamplingConfig::Freq(4 * kHz),
             loop_behavior: LoopBehavior::infinite(),
         }
     }

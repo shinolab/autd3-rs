@@ -28,6 +28,7 @@ pub use autd3_driver::{
         },
         version::FirmwareVersion,
     },
+    freq::{kHz, Hz},
     geometry::*,
     link::{Link, LinkBuilder},
 };

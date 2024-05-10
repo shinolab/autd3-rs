@@ -5,7 +5,7 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreq> {
+impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreqFloat> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
@@ -14,7 +14,7 @@ impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::E
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SquareExact(SquareExact {
                     config: Some(self.sampling_config().to_msg(None)),
-                    freq: self.freq() as _,
+                    freq: self.freq().hz() as _,
                     high: self.high() as _,
                     low: self.low() as _,
                     duty: self.duty() as _,
@@ -29,7 +29,7 @@ impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::E
 
 impl ToMessage
     for autd3_driver::datagram::DatagramWithSegmentTransition<
-        autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreq>,
+        autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreqFloat>,
     >
 {
     type Message = DatagramLightweight;
@@ -40,7 +40,7 @@ impl ToMessage
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SquareExact(SquareExact {
                     config: Some(self.sampling_config().to_msg(None)),
-                    freq: self.freq() as _,
+                    freq: self.freq().hz() as _,
                     high: self.high() as _,
                     low: self.low() as _,
                     duty: self.duty() as _,
@@ -54,12 +54,12 @@ impl ToMessage
 }
 
 impl FromMessage<SquareExact>
-    for autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreq>
+    for autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreqFloat>
 {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &SquareExact) -> Option<Self> {
         Some(
-            Self::new(msg.freq as _)
+            autd3::modulation::Square::new((msg.freq as f64) * autd3_driver::freq::Hz)
                 .with_high(msg.high as _)
                 .with_low(msg.low as _)
                 .with_duty(msg.duty as _)
@@ -73,7 +73,7 @@ impl FromMessage<SquareExact>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3::modulation::sampling_mode::ExactFreq;
+    use autd3::modulation::sampling_mode::ExactFreqFloat;
     use autd3_driver::firmware::fpga::EmitIntensity;
     use rand::Rng;
 
@@ -92,7 +92,8 @@ mod tests {
                 modulation: Some(modulation::Modulation::SquareExact(modulation)),
                 ..
             })) => {
-                let m2 = autd3::modulation::Square::<ExactFreq>::from_msg(&modulation).unwrap();
+                let m2 =
+                    autd3::modulation::Square::<ExactFreqFloat>::from_msg(&modulation).unwrap();
                 assert_eq!(m.freq(), m2.freq());
                 assert_eq!(m.high(), m2.high());
                 assert_eq!(m.low(), m2.low());

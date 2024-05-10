@@ -72,7 +72,7 @@ impl<M: Modulation> Modulation for Cache<M> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{defined::FREQ_40K, geometry::tests::create_geometry};
+    use crate::{defined::FREQ_40K, freq::kHz, geometry::tests::create_geometry};
 
     use super::{super::tests::TestModulation, *};
 
@@ -93,7 +93,7 @@ mod tests {
 
         let m = TestModulation {
             buf: vec![rng.gen(), rng.gen()],
-            config: SamplingConfig::FREQ_4K_HZ,
+            config: SamplingConfig::Freq(4 * kHz),
             loop_behavior: LoopBehavior::infinite(),
         };
         let cache = m.clone().with_cache();
@@ -142,7 +142,7 @@ mod tests {
 
         let modulation = TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
-            config: SamplingConfig::FREQ_4K_HZ,
+            config: SamplingConfig::Freq(4 * kHz),
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_cache();
@@ -163,7 +163,7 @@ mod tests {
 
         let modulation = TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
-            config: SamplingConfig::FREQ_4K_HZ,
+            config: SamplingConfig::Freq(4 * kHz),
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_cache();

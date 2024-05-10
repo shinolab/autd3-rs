@@ -1,12 +1,12 @@
-use autd3_driver::{defined::PI, derive::*};
+use autd3_driver::{defined::PI, derive::*, freq::FreqFloat};
 
-use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode};
+use super::sampling_mode::{ExactFreqFloat, NearestFreq, SamplingMode, SamplingModeInference};
 
 /// Sine wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug, Builder)]
 pub struct Sine<S: SamplingMode> {
     #[get]
-    freq: f64,
+    freq: S::T,
     #[getset]
     intensity: u8,
     #[getset]
@@ -18,12 +18,8 @@ pub struct Sine<S: SamplingMode> {
     __phantom: std::marker::PhantomData<S>,
 }
 
-impl Sine<ExactFreq> {
-    pub const fn new(freq: f64) -> Self {
-        Self::with_freq_exact(freq)
-    }
-
-    pub const fn with_freq_exact(freq: f64) -> Sine<ExactFreq> {
+impl Sine<ExactFreqFloat> {
+    pub const fn new<S: SamplingModeInference>(freq: S) -> Sine<S::T> {
         Sine {
             freq,
             intensity: u8::MAX,
@@ -35,7 +31,7 @@ impl Sine<ExactFreq> {
         }
     }
 
-    pub const fn with_freq_nearest(freq: f64) -> Sine<NearestFreq> {
+    pub const fn with_freq_nearest(freq: FreqFloat) -> Sine<NearestFreq> {
         Sine {
             freq,
             intensity: u8::MAX,
@@ -50,21 +46,7 @@ impl Sine<ExactFreq> {
 
 impl<S: SamplingMode> Modulation for Sine<S> {
     fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
-        if self.freq < 0. {
-            return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}Hz) must be positive",
-                self.freq
-            )));
-        }
-
         Self::transform(geometry, |dev| {
-            if self.freq >= self.config.freq(dev.ultrasound_freq())? / 2. {
-                return Err(AUTDInternalError::ModulationError(format!(
-                    "Frequency ({}Hz) is equal to or greater than the Nyquist frequency ({}Hz)",
-                    self.freq,
-                    self.config.freq(dev.ultrasound_freq())? / 2.
-                )));
-            }
             let (n, rep) = S::validate(self.freq, self.config, dev.ultrasound_freq())?;
             Ok((0..n)
                 .map(|i| {
@@ -80,6 +62,8 @@ impl<S: SamplingMode> Modulation for Sine<S> {
 
 #[cfg(test)]
 mod tests {
+    use autd3_driver::freq::{kHz, Hz};
+
     use crate::tests::create_geometry;
 
     use super::*;
@@ -94,11 +78,25 @@ mod tests {
             224, 241, 251, 255, 251, 241, 224, 202, 176, 147, 117, 88, 60, 37, 18, 6, 0, 1, 9, 24,
             44, 69, 97,
         ]),
-        150.
+        150.*Hz
+    )]
+    #[case(
+        Ok(vec![
+            127, 157, 185, 210, 230, 245, 253, 254, 248, 236, 217, 194, 166, 137, 107, 78, 52, 30,
+            13, 3, 0, 3, 13, 30, 52, 78, 107, 137, 166, 194, 217, 236, 248, 254, 253, 245, 230,
+            210, 185, 157, 127, 97, 69, 44, 24, 9, 1, 0, 6, 18, 37, 60, 88, 117, 147, 176, 202,
+            224, 241, 251, 255, 251, 241, 224, 202, 176, 147, 117, 88, 60, 37, 18, 6, 0, 1, 9, 24,
+            44, 69, 97,
+        ]),
+        150*Hz
     )]
     #[case(
         Ok(vec![127, 166, 202, 230, 248, 255, 248, 230, 202, 166, 127, 88, 52, 24, 6, 0, 6, 24, 52, 88]),
-        200.
+        200.*Hz
+    )]
+    #[case(
+        Ok(vec![127, 166, 202, 230, 248, 255, 248, 230, 202, 166, 127, 88, 52, 24, 6, 0, 6, 24, 52, 88]),
+        200*Hz
     )]
     #[case(
         Ok(vec![
@@ -110,29 +108,43 @@ mod tests {
             226, 236, 102, 1, 67, 213, 245, 121, 5, 51, 198, 251, 139, 12, 37, 182, 254, 158, 21,
             25, 164, 254, 176, 33, 15, 146, 252, 193, 46, 7
         ]),
-        781.25
+        781.25*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (150.01Hz) cannot be output with the sampling config (Division(5120)).".to_owned())),
-        150.01
+        Err(AUTDInternalError::ModulationError("Frequency (150.01 Hz) cannot be output with the sampling config (Division(5120)).".to_owned())),
+        150.01*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (2000Hz) is equal to or greater than the Nyquist frequency (2000Hz)".to_owned())),
-        2000.
+        Err(AUTDInternalError::ModulationError("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        2000.*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (4000Hz) is equal to or greater than the Nyquist frequency (2000Hz)".to_owned())),
-        4000.
+        Err(AUTDInternalError::ModulationError("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        2000*Hz
     )]
-    fn with_freq_exact(#[case] expect: Result<Vec<u8>, AUTDInternalError>, #[case] freq: f64) {
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        4000.*Hz
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        4000*Hz
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency (-0.1 Hz) must be positive".to_owned())),
+        -0.1*Hz
+    )]
+    fn new(
+        #[case] expect: Result<Vec<u8>, AUTDInternalError>,
+        #[case] freq: impl SamplingModeInference,
+    ) {
         let geometry = create_geometry(1);
-        let m = Sine::with_freq_exact(freq);
+        let m = Sine::new(freq);
         assert_eq!(freq, m.freq());
         assert_eq!(u8::MAX, m.intensity());
         assert_eq!(u8::MAX / 2, m.offset());
         assert_eq!(Phase::new(0), m.phase());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
-
         assert_eq!(expect.map(|b| HashMap::from([(0, b)])), m.calc(&geometry));
     }
 
@@ -143,21 +155,28 @@ mod tests {
             127, 156, 184, 209, 229, 244, 253, 254, 249, 237, 220, 197, 171, 142, 112, 83, 57, 34,
             17, 5, 0, 1, 10, 25, 45, 70, 98,
         ]),
-        150.
+        150.*Hz
     )]
     #[case(
         Ok(vec![127, 166, 202, 230, 248, 255, 248, 230, 202, 166, 127, 88, 52, 24, 6, 0, 6, 24, 52, 88]),
-        200.
+        200.*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (2000Hz) is equal to or greater than the Nyquist frequency (2000Hz)".to_owned())),
-        2e3
+        Err(AUTDInternalError::ModulationError("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        2e3*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (4000Hz) is equal to or greater than the Nyquist frequency (2000Hz)".to_owned())),
-        4e3
+        Err(AUTDInternalError::ModulationError("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        4e3*Hz
     )]
-    fn with_freq_nearest(#[case] expect: Result<Vec<u8>, AUTDInternalError>, #[case] freq: f64) {
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency (-0.1 Hz) must be positive".to_owned())),
+        -0.1*Hz
+    )]
+    fn with_freq_nearest(
+        #[case] expect: Result<Vec<u8>, AUTDInternalError>,
+        #[case] freq: FreqFloat,
+    ) {
         let geometry = create_geometry(1);
         let m = Sine::with_freq_nearest(freq);
         assert_eq!(freq, m.freq());
@@ -169,32 +188,21 @@ mod tests {
     }
 
     #[test]
-    fn freq_must_be_positive() {
-        let geometry = create_geometry(1);
-        assert_eq!(
-            Err(AUTDInternalError::ModulationError(
-                "Frequency (-0.1Hz) must be positive".to_string()
-            )),
-            Sine::with_freq_nearest(-0.1).calc(&geometry)
-        );
-    }
-
-    #[test]
     fn test_sine_with_param() {
-        let m = Sine::new(100.)
+        let m = Sine::new(100. * Hz)
             .with_intensity(u8::MAX / 2)
             .with_offset(u8::MAX / 4)
             .with_phase(PI / 4.0 * Rad)
-            .with_sampling_config(SamplingConfig::FreqNearest(10.1));
+            .with_sampling_config(SamplingConfig::FreqNearest(10.1 * kHz));
         assert_eq!(u8::MAX / 2, m.intensity);
         assert_eq!(u8::MAX / 4, m.offset);
         assert_eq!(PI / 4.0 * Rad, m.phase);
-        assert_eq!(SamplingConfig::FreqNearest(10.1), m.config);
+        assert_eq!(SamplingConfig::FreqNearest(10.1 * kHz), m.config);
     }
 
     #[test]
     fn test_sine_derive() {
-        let m = Sine::new(150.);
+        let m = Sine::new(150. * Hz);
         assert_eq!(m, m.clone());
     }
 }

@@ -14,7 +14,7 @@ impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::Nea
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SineNearest(SineNearest {
                     config: Some(self.sampling_config().to_msg(None)),
-                    freq: self.freq() as _,
+                    freq: self.freq().hz() as _,
                     intensity: self.intensity() as _,
                     offset: self.offset() as _,
                     phase: Some(self.phase().to_msg(None)),
@@ -40,7 +40,7 @@ impl ToMessage
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SineNearest(SineNearest {
                     config: Some(self.sampling_config().to_msg(None)),
-                    freq: self.freq() as _,
+                    freq: self.freq().hz() as _,
                     intensity: self.intensity() as _,
                     offset: self.offset() as _,
                     phase: Some(self.phase().to_msg(None)),
@@ -59,7 +59,7 @@ impl FromMessage<SineNearest>
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &SineNearest) -> Option<Self> {
         Some(
-            autd3::modulation::Sine::with_freq_nearest(msg.freq as _)
+            autd3::modulation::Sine::with_freq_nearest((msg.freq as f64) * autd3_driver::freq::Hz)
                 .with_intensity(msg.intensity as _)
                 .with_offset(msg.offset as _)
                 .with_phase(autd3_driver::firmware::fpga::Phase::from_msg(

@@ -117,17 +117,17 @@ mod tests {
 
     use super::*;
 
-    use autd3_driver::defined::PI;
+    use autd3_driver::{defined::PI, freq::Hz};
 
     #[test]
     fn test_fourier() -> anyhow::Result<()> {
         let geometry = create_geometry(1);
 
-        let f0 = Sine::new(50.).with_phase(PI / 2.0 * Rad);
-        let f1 = Sine::new(100.).with_phase(PI / 3.0 * Rad);
-        let f2 = Sine::new(150.).with_phase(PI / 4.0 * Rad);
-        let f3 = Sine::new(200.);
-        let f4 = Sine::new(250.);
+        let f0 = Sine::new(50. * Hz).with_phase(PI / 2.0 * Rad);
+        let f1 = Sine::new(100. * Hz).with_phase(PI / 3.0 * Rad);
+        let f2 = Sine::new(150. * Hz).with_phase(PI / 4.0 * Rad);
+        let f3 = Sine::new(200. * Hz);
+        let f4 = Sine::new(250. * Hz);
 
         let f0_buf = &f0.calc(&geometry)?[&0];
         let f1_buf = &f1.calc(&geometry)?[&0];
@@ -138,15 +138,15 @@ mod tests {
         let f = (f0 + f1).add_component(f2).add_components_from_iter([f3]) + f4;
 
         assert_eq!(f.sampling_config(), SamplingConfig::Division(5120));
-        assert_eq!(f[0].freq(), 50.);
+        assert_eq!(f[0].freq(), 50. * Hz);
         assert_eq!(f[0].phase(), PI / 2.0 * Rad);
-        assert_eq!(f[1].freq(), 100.);
+        assert_eq!(f[1].freq(), 100. * Hz);
         assert_eq!(f[1].phase(), PI / 3.0 * Rad);
-        assert_eq!(f[2].freq(), 150.);
+        assert_eq!(f[2].freq(), 150. * Hz);
         assert_eq!(f[2].phase(), PI / 4.0 * Rad);
-        assert_eq!(f[3].freq(), 200.);
+        assert_eq!(f[3].freq(), 200. * Hz);
         assert_eq!(f[3].phase(), 0.0 * Rad);
-        assert_eq!(f[4].freq(), 250.);
+        assert_eq!(f[4].freq(), 250. * Hz);
         assert_eq!(f[4].phase(), 0.0 * Rad);
 
         let buf = &f.calc(&geometry)?[&0];
@@ -170,8 +170,8 @@ mod tests {
     fn mismatch_sampling_config() {
         let geometry = create_geometry(1);
 
-        let f = Fourier::new(Sine::new(50.))
-            + Sine::new(50.).with_sampling_config(SamplingConfig::Freq(1000));
+        let f = Fourier::new(Sine::new(50. * Hz))
+            + Sine::new(50. * Hz).with_sampling_config(SamplingConfig::Freq(1000 * Hz));
 
         assert_eq!(
             Err(AUTDInternalError::ModulationError(

@@ -55,13 +55,13 @@ impl<M: Modulation, F: Fn(&Device, usize, u8) -> u8> Modulation for Transform<M,
 mod tests {
     use rand::Rng;
 
-    use crate::{defined::FREQ_40K, geometry::tests::create_geometry};
+    use crate::{defined::FREQ_40K, freq::kHz, geometry::tests::create_geometry};
 
     use super::{super::tests::TestModulation, *};
 
     #[rstest::rstest]
     #[test]
-    #[case::freq_4k(SamplingConfig::FREQ_4K_HZ)]
+    #[case::freq_4k(SamplingConfig::Freq(4 * kHz))]
     #[case::disable(SamplingConfig::DISABLE)]
     fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
@@ -91,7 +91,7 @@ mod tests {
             )])),
             TestModulation {
                 buf: buf.clone(),
-                config: SamplingConfig::FREQ_4K_HZ,
+                config: SamplingConfig::Freq(4 * kHz),
                 loop_behavior: LoopBehavior::infinite(),
             }
             .with_transform(|_, _, x| x / 2)
