@@ -1,6 +1,6 @@
 [package]
 name = "autd3-link-soem"
-version = "23.0.0"
+version = "23.0.0-rc.0"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 
@@ -15,8 +15,8 @@ cc = { workspace = true, features = ["parallel"], optional = true }
 glob = { workspace = true, optional = true }
 
 [dependencies]
-autd3-driver = { path = "../autd3-driver", version = "23.0.0" }
-autd3-protobuf = { path = "../autd3-protobuf", version = "23.0.0", optional = true }
+autd3-driver = { path = "../autd3-driver", version = "23.0.0-rc.0" }
+autd3-protobuf = { path = "../autd3-protobuf", version = "23.0.0-rc.0", optional = true }
 thiserror = { workspace = true, optional = true }
 time = { workspace = true, features = ["std"], optional = true }
 tonic = { workspace = true, optional = true }
