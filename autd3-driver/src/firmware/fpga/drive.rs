@@ -10,8 +10,11 @@ pub struct Drive {
 }
 
 impl Drive {
-    pub const fn new(phase: Phase, intensity: EmitIntensity) -> Self {
-        Self { phase, intensity }
+    pub fn new(phase: impl Into<Phase>, intensity: impl Into<EmitIntensity>) -> Self {
+        Self {
+            phase: phase.into(),
+            intensity: intensity.into(),
+        }
     }
 
     pub const fn phase(&self) -> Phase {
@@ -33,7 +36,7 @@ impl Drive {
 #[cfg(any(test, feature = "rand"))]
 impl rand::distributions::Distribution<Drive> for rand::distributions::Standard {
     fn sample<R: rand::prelude::Rng + ?Sized>(&self, rng: &mut R) -> Drive {
-        Drive::new(rng.gen(), rng.gen())
+        Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()))
     }
 }
 

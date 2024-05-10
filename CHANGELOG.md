@@ -21,6 +21,8 @@
   - `ChangeGainSegment`, `ChangeModulationSegment`, `ChangeGainSTMSegment` and `ChangeFocusSTMSegment` are merged into `Segment`
   - from `TransducerTest` to `Custom`
   - from `Pascal` to `Pa`
+  - from `Rad` to `rad`
+  - from `Deg` to `deg`
 - Add `EmulateGPIOIn`
 - Add `EmissionConstraint::Multiply`
 - Make `Controller::group` and `gain::Group` error message more easy to understand
@@ -31,6 +33,7 @@
 - Change Modulation buffer type from `EmitIntensity` to `u8` 
 - Remove correction from `EmitIntensity`
   - Users should use `PulseWidthEncoder` instead
+- Remove `PhaseRad`
 - Remove `SamplingConfig::from_period`
 - Add `modulation::Custom`
 - Gain and Modulation calculations are parallelized per device

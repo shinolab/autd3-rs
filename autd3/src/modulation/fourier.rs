@@ -123,9 +123,9 @@ mod tests {
     fn test_fourier() -> anyhow::Result<()> {
         let geometry = create_geometry(1);
 
-        let f0 = Sine::new(50. * Hz).with_phase(PI / 2.0 * Rad);
-        let f1 = Sine::new(100. * Hz).with_phase(PI / 3.0 * Rad);
-        let f2 = Sine::new(150. * Hz).with_phase(PI / 4.0 * Rad);
+        let f0 = Sine::new(50. * Hz).with_phase(PI / 2.0 * rad);
+        let f1 = Sine::new(100. * Hz).with_phase(PI / 3.0 * rad);
+        let f2 = Sine::new(150. * Hz).with_phase(PI / 4.0 * rad);
         let f3 = Sine::new(200. * Hz);
         let f4 = Sine::new(250. * Hz);
 
@@ -139,15 +139,15 @@ mod tests {
 
         assert_eq!(f.sampling_config(), SamplingConfig::Division(5120));
         assert_eq!(f[0].freq(), 50. * Hz);
-        assert_eq!(f[0].phase(), PI / 2.0 * Rad);
+        assert_eq!(f[0].phase(), PI / 2.0 * rad);
         assert_eq!(f[1].freq(), 100. * Hz);
-        assert_eq!(f[1].phase(), PI / 3.0 * Rad);
+        assert_eq!(f[1].phase(), PI / 3.0 * rad);
         assert_eq!(f[2].freq(), 150. * Hz);
-        assert_eq!(f[2].phase(), PI / 4.0 * Rad);
+        assert_eq!(f[2].phase(), PI / 4.0 * rad);
         assert_eq!(f[3].freq(), 200. * Hz);
-        assert_eq!(f[3].phase(), 0.0 * Rad);
+        assert_eq!(f[3].phase(), 0.0 * rad);
         assert_eq!(f[4].freq(), 250. * Hz);
-        assert_eq!(f[4].phase(), 0.0 * Rad);
+        assert_eq!(f[4].phase(), 0.0 * rad);
 
         let buf = &f.calc(&geometry)?[&0];
 

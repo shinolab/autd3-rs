@@ -1,4 +1,7 @@
-use autd3_driver::{defined::Freq, defined::PI, derive::*};
+use autd3_driver::{
+    defined::{Angle, Freq, PI},
+    derive::*,
+};
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
@@ -10,7 +13,7 @@ pub struct Sine<S: SamplingMode> {
     #[getset]
     intensity: u8,
     #[getset]
-    phase: Phase,
+    phase: Angle,
     #[getset]
     offset: u8,
     config: SamplingConfig,
@@ -23,7 +26,7 @@ impl Sine<ExactFreq> {
         Sine {
             freq,
             intensity: u8::MAX,
-            phase: Phase::new(0),
+            phase: Angle::Rad(0.0),
             offset: 127,
             config: SamplingConfig::Division(5120),
             loop_behavior: LoopBehavior::infinite(),
@@ -35,7 +38,7 @@ impl Sine<ExactFreq> {
         Sine {
             freq,
             intensity: u8::MAX,
-            phase: Phase::new(0),
+            phase: Angle::Rad(0.0),
             offset: 127,
             config: SamplingConfig::Division(5120),
             loop_behavior: LoopBehavior::infinite(),
@@ -143,7 +146,7 @@ mod tests {
         assert_eq!(freq, m.freq());
         assert_eq!(u8::MAX, m.intensity());
         assert_eq!(u8::MAX / 2, m.offset());
-        assert_eq!(Phase::new(0), m.phase());
+        assert_eq!(Angle::Rad(0.0), m.phase());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
         assert_eq!(expect.map(|b| HashMap::from([(0, b)])), m.calc(&geometry));
     }
@@ -182,7 +185,7 @@ mod tests {
         assert_eq!(freq, m.freq());
         assert_eq!(u8::MAX, m.intensity());
         assert_eq!(u8::MAX / 2, m.offset());
-        assert_eq!(Phase::new(0), m.phase());
+        assert_eq!(Angle::Rad(0.0), m.phase());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
         assert_eq!(expect.map(|b| HashMap::from([(0, b)])), m.calc(&geometry));
     }
@@ -192,11 +195,11 @@ mod tests {
         let m = Sine::new(100. * Hz)
             .with_intensity(u8::MAX / 2)
             .with_offset(u8::MAX / 4)
-            .with_phase(PI / 4.0 * Rad)
+            .with_phase(PI / 4.0 * rad)
             .with_sampling_config(SamplingConfig::FreqNearest(10.1 * kHz));
         assert_eq!(u8::MAX / 2, m.intensity);
         assert_eq!(u8::MAX / 4, m.offset);
-        assert_eq!(PI / 4.0 * Rad, m.phase);
+        assert_eq!(PI / 4.0 * rad, m.phase);
         assert_eq!(SamplingConfig::FreqNearest(10.1 * kHz), m.config);
     }
 

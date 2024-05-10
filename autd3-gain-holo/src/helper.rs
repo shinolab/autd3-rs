@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    datagram::GainFilter, derive::Phase, error::AUTDInternalError, firmware::fpga::Drive,
+    datagram::GainFilter,
+    derive::{rad, Phase},
+    error::AUTDInternalError,
+    firmware::fpga::Drive,
     geometry::Geometry,
 };
 use nalgebra::ComplexField;
@@ -115,19 +118,28 @@ macro_rules! impl_holo {
     };
 }
 
-pub(crate) trait IntoIntensity {
+pub(crate) trait IntoDrive {
+    fn into_phase(self) -> Phase;
     fn into_intensity(self) -> f64;
 }
 
-impl IntoIntensity for f64 {
+impl IntoDrive for f64 {
     fn into_intensity(self) -> f64 {
         1.
     }
+
+    fn into_phase(self) -> Phase {
+        Phase::from(self * rad)
+    }
 }
 
-impl IntoIntensity for crate::Complex {
+impl IntoDrive for crate::Complex {
     fn into_intensity(self) -> f64 {
         self.abs()
+    }
+
+    fn into_phase(self) -> Phase {
+        Phase::from(self)
     }
 }
 
@@ -144,7 +156,7 @@ pub(crate) fn generate_result<T>(
     filter: GainFilter,
 ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError>
 where
-    T: Into<Phase> + IntoIntensity + Copy,
+    T: IntoDrive + Copy,
 {
     match filter {
         GainFilter::All => {
@@ -164,7 +176,7 @@ where
                         dev.iter()
                             .zip(q.iter().skip(num_transducers[dev.idx()]))
                             .map(|(_, &q)| {
-                                let phase = q.into();
+                                let phase = q.into_phase();
                                 let intensity =
                                     constraint.convert(q.into_intensity(), max_coefficient);
                                 Drive::new(phase, intensity)
@@ -198,7 +210,7 @@ where
                                     .filter(|tr| filter[tr.idx()])
                                     .zip(q.iter().skip(num_transducers[dev.idx()]))
                                     .map(|(_, &q)| {
-                                        let phase = q.into();
+                                        let phase = q.into_phase();
                                         let intensity =
                                             constraint.convert(q.into_intensity(), max_coefficient);
                                         Drive::new(phase, intensity)

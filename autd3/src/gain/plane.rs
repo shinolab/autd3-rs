@@ -39,7 +39,7 @@ impl Gain for Plane {
             let wavenumber = dev.wavenumber();
             move |tr| {
                 Drive::new(
-                    self.dir.dot(tr.position()) * wavenumber * Rad + self.phase_offset,
+                    Phase::from(self.dir.dot(tr.position()) * wavenumber * rad) + self.phase_offset,
                     self.intensity,
                 )
             }
@@ -73,7 +73,7 @@ mod tests {
             assert_eq!(geometry[idx].num_transducers(), d.len());
             d.iter().zip(geometry[idx].iter()).for_each(|(d, tr)| {
                 let expected_phase =
-                    Phase::from_rad(dir.dot(tr.position()) * geometry[idx].wavenumber())
+                    Phase::from(dir.dot(tr.position()) * geometry[idx].wavenumber() * rad)
                         + phase_offset;
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity());

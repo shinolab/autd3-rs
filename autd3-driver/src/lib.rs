@@ -21,12 +21,12 @@ pub mod derive {
             IntoRadiationPressure, Modulation, ModulationCache, ModulationProperty,
             ModulationTransform, RadiationPressure,
         },
-        defined::DEFAULT_TIMEOUT,
+        defined::{rad, DEFAULT_TIMEOUT},
         error::AUTDInternalError,
         firmware::{
             fpga::{
-                Drive, EmitIntensity, LoopBehavior, Phase, Rad, SamplingConfig, Segment,
-                TransitionMode, SAMPLING_FREQ_DIV_MIN,
+                Drive, EmitIntensity, LoopBehavior, Phase, SamplingConfig, Segment, TransitionMode,
+                SAMPLING_FREQ_DIV_MIN,
             },
             operation::{GainOp, ModulationOp, NullOp, Operation},
         },

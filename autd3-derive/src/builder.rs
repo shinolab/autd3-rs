@@ -158,6 +158,12 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                         self
                     }
                 },
+                syn::Type::Path(path) if path.path.is_ident("Phase") => quote! {
+                    pub fn #name(mut self, value: impl Into<Phase>) -> Self {
+                        self.#ident = value.into();
+                        self
+                    }
+                },
                 syn::Type::Path(path) if path.path.is_ident("UnitQuaternion") => quote! {
                     pub fn #name(mut self, value: impl Into<UnitQuaternion>) -> Self {
                         self.#ident = value.into();
