@@ -169,7 +169,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        defined::{FREQ_40K, MILLIMETER},
+        defined::{mm, FREQ_40K},
         ethercat::DcSysTime,
         firmware::{
             fpga::{
@@ -199,9 +199,9 @@ mod tests {
         let points: Vec<ControlPoint> = (0..FOCUS_STM_SIZE)
             .map(|_| {
                 ControlPoint::new(Vector3::new(
-                    rng.gen_range(-500.0 * MILLIMETER..500.0 * MILLIMETER),
-                    rng.gen_range(-500.0 * MILLIMETER..500.0 * MILLIMETER),
-                    rng.gen_range(0.0 * MILLIMETER..500.0 * MILLIMETER),
+                    rng.gen_range(-500.0 * mm..500.0 * mm),
+                    rng.gen_range(-500.0 * mm..500.0 * mm),
+                    rng.gen_range(0.0 * mm..500.0 * mm),
                 ))
                 .with_intensity(rng.gen::<u8>())
             })
@@ -333,9 +333,9 @@ mod tests {
         let points: Vec<ControlPoint> = (0..FOCUS_STM_SIZE)
             .map(|_| {
                 ControlPoint::new(Vector3::new(
-                    rng.gen_range(-500.0 * MILLIMETER..500.0 * MILLIMETER),
-                    rng.gen_range(-500.0 * MILLIMETER..500.0 * MILLIMETER),
-                    rng.gen_range(0.0 * MILLIMETER..500.0 * MILLIMETER),
+                    rng.gen_range(-500.0 * mm..500.0 * mm),
+                    rng.gen_range(-500.0 * mm..500.0 * mm),
+                    rng.gen_range(0.0 * mm..500.0 * mm),
                 ))
                 .with_intensity(rng.gen::<u8>())
             })

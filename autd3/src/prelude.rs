@@ -17,7 +17,7 @@ pub use autd3_driver::{
         ModulationProperty, ModulationTransform, PhaseFilter, PulseWidthEncoder, RadiationPressure,
         ReadsFPGAState, Silencer, SwapSegment, Synchronize,
     },
-    defined::{METER, MILLIMETER, PI},
+    defined::{mm, PI},
     error::AUTDInternalError,
     ethercat::DcSysTime,
     firmware::{

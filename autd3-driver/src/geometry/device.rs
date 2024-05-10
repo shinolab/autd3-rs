@@ -150,7 +150,7 @@ pub mod tests {
 
     use super::*;
     use crate::{
-        defined::{FREQ_40K, MILLIMETER, PI},
+        defined::{mm, FREQ_40K, PI},
         freq::Hz,
         geometry::tests::create_device,
     };
@@ -442,7 +442,7 @@ pub mod tests {
     fn test_set_sound_speed_from_temp(#[case] expected: f64, #[case] temp: f64) {
         let mut device = create_device(0, 249, FREQ_40K);
         device.set_sound_speed_from_temp(temp);
-        assert_approx_eq::assert_approx_eq!(expected * MILLIMETER, device.sound_speed, 1e-3);
+        assert_approx_eq::assert_approx_eq!(expected * mm, device.sound_speed, 1e-3);
     }
 
     #[rstest::rstest]

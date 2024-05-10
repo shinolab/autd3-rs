@@ -12,8 +12,8 @@ pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
 
     let m = Sine::new(150. * Hz);
 
-    let center = autd.geometry.center() + Vector3::new(0., 0., 150.0 * MILLIMETER);
-    let p = Vector3::new(30. * MILLIMETER, 0., 0.);
+    let center = autd.geometry.center() + Vector3::new(0., 0., 150.0 * mm);
+    let p = Vector3::new(30. * mm, 0., 0.);
 
     println!("[0]: SDP");
     println!("[1]: GS");

@@ -1,5 +1,5 @@
 use crate::{
-    defined::{FREQ_40K, MILLIMETER},
+    defined::{mm, FREQ_40K},
     derive::*,
     freq::Freq,
     geometry::{IntoDevice, Matrix4, UnitQuaternion, Vector3, Vector4},
@@ -26,11 +26,11 @@ impl AUTD3 {
     /// Spacing between transducers in mm
     pub const TRANS_SPACING_MM: f64 = 10.16;
     /// Spacing between transducers
-    pub const TRANS_SPACING: f64 = Self::TRANS_SPACING_MM * MILLIMETER;
+    pub const TRANS_SPACING: f64 = Self::TRANS_SPACING_MM * mm;
     /// Device width including substrate
-    pub const DEVICE_WIDTH: f64 = 192.0 * MILLIMETER;
+    pub const DEVICE_WIDTH: f64 = 192.0 * mm;
     /// Device height including substrate
-    pub const DEVICE_HEIGHT: f64 = 151.4 * MILLIMETER;
+    pub const DEVICE_HEIGHT: f64 = 151.4 * mm;
 
     /// Constructor
     ///
