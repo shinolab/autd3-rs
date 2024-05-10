@@ -76,13 +76,14 @@ impl FromMessage<SquareNearest>
 mod tests {
     use super::*;
     use autd3::modulation::sampling_mode::NearestFreq;
+    use autd3_driver::defined::Hz;
     use rand::Rng;
 
     #[test]
     fn test_square() {
         let mut rng = rand::thread_rng();
 
-        let m = autd3::modulation::Square::with_freq_nearest(rng.gen())
+        let m = autd3::modulation::Square::with_freq_nearest(rng.gen::<f64>() * Hz)
             .with_high(rng.gen())
             .with_low(rng.gen())
             .with_duty(rng.gen());
@@ -94,7 +95,7 @@ mod tests {
                 ..
             })) => {
                 let m2 = autd3::modulation::Square::<NearestFreq>::from_msg(&modulation).unwrap();
-                assert_approx_eq::assert_approx_eq!(m.freq(), m2.freq());
+                assert_approx_eq::assert_approx_eq!(m.freq().hz(), m2.freq().hz());
                 assert_eq!(m.high(), m2.high());
                 assert_eq!(m.low(), m2.low());
                 assert_approx_eq::assert_approx_eq!(m.duty(), m2.duty());

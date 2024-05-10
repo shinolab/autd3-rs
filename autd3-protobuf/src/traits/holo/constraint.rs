@@ -8,7 +8,6 @@ use crate::{
 impl ToMessage for autd3_gain_holo::EmissionConstraint {
     type Message = EmissionConstraint;
 
-    #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         match self {
             autd3_gain_holo::EmissionConstraint::DontCare => Self::Message {
@@ -19,6 +18,11 @@ impl ToMessage for autd3_gain_holo::EmissionConstraint {
             autd3_gain_holo::EmissionConstraint::Normalize => Self::Message {
                 constraint: Some(emission_constraint::Constraint::Normalize(
                     NormalizeConstraint {},
+                )),
+            },
+            autd3_gain_holo::EmissionConstraint::Multiply(value) => Self::Message {
+                constraint: Some(emission_constraint::Constraint::Multiply(
+                    MultiplyConstraint { value: *value as _ },
                 )),
             },
             autd3_gain_holo::EmissionConstraint::Uniform(value) => Self::Message {
@@ -46,6 +50,9 @@ impl FromMessage<EmissionConstraint> for autd3_gain_holo::EmissionConstraint {
             }
             Some(emission_constraint::Constraint::Normalize(_)) => {
                 Some(autd3_gain_holo::EmissionConstraint::Normalize)
+            }
+            Some(emission_constraint::Constraint::Multiply(ref v)) => {
+                Some(autd3_gain_holo::EmissionConstraint::Multiply(v.value as _))
             }
             Some(emission_constraint::Constraint::Uniform(ref v)) => {
                 Some(autd3_gain_holo::EmissionConstraint::Uniform(

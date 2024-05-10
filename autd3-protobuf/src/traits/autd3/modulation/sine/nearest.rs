@@ -64,9 +64,7 @@ impl FromMessage<SineNearest>
             )
             .with_intensity(msg.intensity as _)
             .with_offset(msg.offset as _)
-            .with_phase(autd3_driver::firmware::fpga::Phase::from_msg(
-                msg.phase.as_ref()?,
-            )?)
+            .with_phase(autd3_driver::defined::Angle::from_msg(msg.phase.as_ref()?)?)
             .with_sampling_config(
                 autd3_driver::firmware::fpga::SamplingConfig::from_msg(msg.config.as_ref()?)?,
             ),
@@ -78,17 +76,17 @@ impl FromMessage<SineNearest>
 mod tests {
     use super::*;
     use autd3::modulation::sampling_mode::NearestFreq;
-    use autd3_driver::firmware::fpga::Phase;
+    use autd3_driver::defined::{rad, Hz};
     use rand::Rng;
 
     #[test]
     fn test_sine() {
         let mut rng = rand::thread_rng();
 
-        let m = autd3::modulation::Sine::with_freq_nearest(rng.gen())
+        let m = autd3::modulation::Sine::with_freq_nearest(rng.gen::<f64>() * Hz)
             .with_intensity(rng.gen())
             .with_offset(rng.gen())
-            .with_phase(Phase::new(rng.gen()));
+            .with_phase(rng.gen::<f64>() * rad);
         let msg = m.to_msg(None);
 
         match msg.datagram {
@@ -97,7 +95,7 @@ mod tests {
                 ..
             })) => {
                 let m2 = autd3::modulation::Sine::<NearestFreq>::from_msg(&modulation).unwrap();
-                assert_approx_eq::assert_approx_eq!(m.freq(), m2.freq());
+                assert_approx_eq::assert_approx_eq!(m.freq().hz(), m2.freq().hz());
                 assert_eq!(m.intensity(), m2.intensity());
                 assert_eq!(m.offset(), m2.offset());
                 assert_eq!(m.phase(), m2.phase());

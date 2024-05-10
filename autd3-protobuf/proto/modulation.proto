@@ -9,10 +9,18 @@ message Static { uint32 intensity = 1; }
 
 message SineExact {
   SamplingConfig config = 1;
+  uint32 freq = 2;
+  uint32 intensity = 3;
+  uint32 offset = 4;
+  Angle phase = 5;
+}
+
+message SineExactFloat {
+  SamplingConfig config = 1;
   float freq = 2;
   uint32 intensity = 3;
   uint32 offset = 4;
-  Phase phase = 5;
+  Angle phase = 5;
 }
 
 message SineNearest {
@@ -20,10 +28,18 @@ message SineNearest {
   float freq = 2;
   uint32 intensity = 3;
   uint32 offset = 4;
-  Phase phase = 5;
+  Angle phase = 5;
 }
 
 message SquareExact {
+  SamplingConfig config = 1;
+  uint32 freq = 2;
+  uint32 low = 3;
+  uint32 high = 4;
+  float duty = 5;
+}
+
+message SquareExactFloat {
   SamplingConfig config = 1;
   float freq = 2;
   uint32 low = 3;
@@ -41,11 +57,13 @@ message SquareNearest {
 
 message Modulation {
   oneof modulation {
-    Static static = 1;
-    SineExact sine_exact = 2;
-    SineNearest sine_nearest = 3;
-    SquareExact square_exact = 4;
-    SquareNearest square_nearest = 5;
+    Static static = 10;
+    SineExact sine_exact = 20;
+    SineExactFloat sine_exact_float = 21;
+    SineNearest sine_nearest = 22;
+    SquareExact square_exact = 30;
+    SquareExactFloat square_exact_float = 31;
+    SquareNearest square_nearest = 32;
   }
   Segment segment = 1001;
   optional TransitionMode transition_mode = 1002;

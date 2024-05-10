@@ -65,8 +65,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         let v = SamplingConfig::DivisionRaw(
             rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX),
-        )
-        .unwrap();
+        );
         let msg = v.to_msg(None);
         let v2 = SamplingConfig::from_msg(&msg).unwrap();
         assert_eq!(v, v2);
