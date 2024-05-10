@@ -78,10 +78,7 @@ mod tests {
     #[case(Err(AUTDInternalError::InvalidPulseWidthEncoderData), vec![0, PULSE_WIDTH_MAX + 1])]
     #[case(Err(AUTDInternalError::InvalidPulseWidthEncoderData), vec![PULSE_WIDTH_MAX, 0])]
     fn new(#[case] expected: Result<Vec<u16>, AUTDInternalError>, #[case] buf: Vec<u16>) {
-        assert_eq!(
-            expected,
-            PulseWidthEncoder::new(buf).map(|d| d.buf)
-        );
+        assert_eq!(expected, PulseWidthEncoder::new(buf).map(|d| d.buf));
     }
 
     #[test]

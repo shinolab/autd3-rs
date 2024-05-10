@@ -5,7 +5,7 @@ use crate::{
         cpu::GainSTMMode,
         fpga::{Segment, TransitionMode},
     },
-    freq::FreqFloat,
+    freq::Freq,
 };
 
 use super::STMProps;
@@ -35,7 +35,7 @@ impl<G: Gain> GainSTM<G> {
     ///
     /// * `freq` - Frequency of STM.
     ///
-    pub const fn from_freq(freq: FreqFloat) -> Self {
+    pub const fn from_freq(freq: Freq<f64>) -> Self {
         Self::from_props_mode(STMProps::from_freq(freq), GainSTMMode::PhaseIntensityFull)
     }
 
@@ -45,7 +45,7 @@ impl<G: Gain> GainSTM<G> {
     ///
     /// * `freq` - Frequency of STM. The frequency closest to `freq` from the possible frequencies is set.
     ///
-    pub const fn from_freq_nearest(freq: FreqFloat) -> Self {
+    pub const fn from_freq_nearest(freq: Freq<f64>) -> Self {
         Self::from_props_mode(
             STMProps::from_freq_nearest(freq),
             GainSTMMode::PhaseIntensityFull,
@@ -179,7 +179,7 @@ mod tests {
     #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
     fn from_freq(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
-        #[case] freq: FreqFloat,
+        #[case] freq: Freq<f64>,
         #[case] n: usize,
     ) {
         assert_eq!(
@@ -198,7 +198,7 @@ mod tests {
     #[case(Ok(SamplingConfig::FreqNearest(20.*Hz)), 2.*Hz, 10)]
     fn from_freq_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
-        #[case] freq: FreqFloat,
+        #[case] freq: Freq<f64>,
         #[case] n: usize,
     ) {
         assert_eq!(

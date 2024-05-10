@@ -1,6 +1,6 @@
-use autd3_driver::{derive::*, freq::FreqFloat};
+use autd3_driver::{derive::*, freq::Freq};
 
-use super::sampling_mode::{ExactFreqFloat, NearestFreq, SamplingMode, SamplingModeInference};
+use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
 /// Square wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug, Builder)]
@@ -18,7 +18,7 @@ pub struct Square<S: SamplingMode> {
     __phantom: std::marker::PhantomData<S>,
 }
 
-impl Square<ExactFreqFloat> {
+impl Square<ExactFreq> {
     pub const fn new<S: SamplingModeInference>(freq: S) -> Square<S::T> {
         Square {
             freq,
@@ -37,7 +37,7 @@ impl Square<ExactFreqFloat> {
     ///
     /// * `freq` - Frequency of the square wave
     ///
-    pub const fn with_freq_nearest(freq: FreqFloat) -> Square<NearestFreq> {
+    pub const fn with_freq_nearest(freq: Freq<f64>) -> Square<NearestFreq> {
         Square {
             freq,
             low: u8::MIN,
@@ -180,7 +180,7 @@ mod tests {
     )]
     fn with_freq_nearest(
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
-        #[case] freq: FreqFloat,
+        #[case] freq: Freq<f64>,
     ) {
         let geometry = create_geometry(1);
         let m = Square::with_freq_nearest(freq);

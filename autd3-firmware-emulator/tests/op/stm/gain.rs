@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    datagram::{Silencer, ControlPoint, Datagram},
+    datagram::{ControlPoint, Datagram, Silencer},
     derive::*,
     firmware::{
         cpu::{GainSTMMode, TxDatagram},

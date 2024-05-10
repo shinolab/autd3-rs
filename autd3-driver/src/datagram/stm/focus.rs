@@ -1,4 +1,4 @@
-use crate::{defined::DEFAULT_TIMEOUT, derive::*, firmware::fpga::TransitionMode, freq::FreqFloat};
+use crate::{defined::DEFAULT_TIMEOUT, derive::*, firmware::fpga::TransitionMode, freq::Freq};
 
 use super::{ControlPoint, STMProps};
 
@@ -24,7 +24,7 @@ impl FocusSTM {
     ///
     /// * `freq` - Frequency of STM.
     ///
-    pub const fn from_freq(freq: FreqFloat) -> Self {
+    pub const fn from_freq(freq: Freq<f64>) -> Self {
         Self::from_props(STMProps::from_freq(freq))
     }
 
@@ -34,7 +34,7 @@ impl FocusSTM {
     ///
     /// * `freq` - Frequency of STM. The freq closest to `freq` from the possible frequencies is set.
     ///
-    pub const fn from_freq_nearest(freq: FreqFloat) -> Self {
+    pub const fn from_freq_nearest(freq: Freq<f64>) -> Self {
         Self::from_props(STMProps::from_freq_nearest(freq))
     }
 
@@ -154,7 +154,7 @@ mod tests {
     #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
     fn from_freq(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
-        #[case] freq: FreqFloat,
+        #[case] freq: Freq<f64>,
         #[case] n: usize,
     ) {
         assert_eq!(
@@ -173,7 +173,7 @@ mod tests {
     #[case(Ok(SamplingConfig::FreqNearest(20.*Hz)), 2.*Hz, 10)]
     fn from_freq_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
-        #[case] freq: FreqFloat,
+        #[case] freq: Freq<f64>,
         #[case] n: usize,
     ) {
         assert_eq!(

@@ -23,7 +23,7 @@
 - Add `EmulateGPIOIn`
 - Make `Controller::group` and `gain::Group` error message more easy to understand
   - Key type now requires `Debug` traits
-- Functions that take a frequency as an argument now use `FreqInt` or `FreqFloat` type
+- Functions that take a frequency as an argument now use `Freq<u32>` or `Freq<f64>` type
 - `Sine` and `Square` frequencies is now strictly checked
   - Users should use `with_freq_nearest` intead to bypass the check
 - Change Modulation buffer type from `EmitIntensity` to `u8` 

@@ -1,6 +1,6 @@
-use autd3_driver::{defined::PI, derive::*, freq::FreqFloat};
+use autd3_driver::{defined::PI, derive::*, freq::Freq};
 
-use super::sampling_mode::{ExactFreqFloat, NearestFreq, SamplingMode, SamplingModeInference};
+use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
 /// Sine wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug, Builder)]
@@ -18,7 +18,7 @@ pub struct Sine<S: SamplingMode> {
     __phantom: std::marker::PhantomData<S>,
 }
 
-impl Sine<ExactFreqFloat> {
+impl Sine<ExactFreq> {
     pub const fn new<S: SamplingModeInference>(freq: S) -> Sine<S::T> {
         Sine {
             freq,
@@ -31,7 +31,7 @@ impl Sine<ExactFreqFloat> {
         }
     }
 
-    pub const fn with_freq_nearest(freq: FreqFloat) -> Sine<NearestFreq> {
+    pub const fn with_freq_nearest(freq: Freq<f64>) -> Sine<NearestFreq> {
         Sine {
             freq,
             intensity: u8::MAX,
@@ -175,7 +175,7 @@ mod tests {
     )]
     fn with_freq_nearest(
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
-        #[case] freq: FreqFloat,
+        #[case] freq: Freq<f64>,
     ) {
         let geometry = create_geometry(1);
         let m = Sine::with_freq_nearest(freq);

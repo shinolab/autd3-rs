@@ -3,15 +3,15 @@ use std::fmt::Debug;
 use crate::{
     error::AUTDInternalError,
     firmware::fpga::{SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
-    freq::{FreqFloat, FreqInt},
+    freq::Freq,
 };
 
 use super::ULTRASOUND_PERIOD;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum SamplingConfig {
-    Freq(FreqInt),
-    FreqNearest(FreqFloat),
+    Freq(Freq<u32>),
+    FreqNearest(Freq<f64>),
     DivisionRaw(u32),
     Division(u32),
 }
@@ -238,7 +238,7 @@ mod tests {
     )]
     fn from_freq(
         #[case] expected: Result<u32, AUTDInternalError>,
-        #[case] freq: FreqInt,
+        #[case] freq: Freq<u32>,
         #[case] ultrasound_freq: u32,
     ) {
         assert_eq!(
@@ -303,7 +303,7 @@ mod tests {
     )]
     fn from_freq_nearest(
         #[case] expected: Result<u32, AUTDInternalError>,
-        #[case] freq: FreqFloat,
+        #[case] freq: Freq<f64>,
         #[case] ultrasound_freq: u32,
     ) {
         assert_eq!(
