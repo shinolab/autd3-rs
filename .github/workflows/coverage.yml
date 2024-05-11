@@ -10,27 +10,7 @@ env:
   LLVM_PROFILE_FILE: "target/coverage/%p-%m.profraw"
 
 jobs:
-  check-src:
-    runs-on: ubuntu-latest
-    name: check if src files changed
-    outputs:
-      status: ${{ steps.changed-files.outputs.modified_files }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: tj-actions/changed-files@v42
-        id: changed-files
-        with:
-          files: |
-            .github/actions/setup-build/action.yml
-            .github/workflows/coverage.yml
-            ./**/*.rs
-            ./*.toml
-            ./**/*.toml
-            ./**/*.proto
-
   coverage:
-    needs: check-src
-    if: needs.check-src.outputs.status
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -8,26 +8,7 @@ on:
     types: [opened, reopened, review_requested]
 
 jobs:
-  check-src:
-    runs-on: ubuntu-latest
-    name: check if src files changed
-    outputs:
-      status: ${{ steps.changed-files.outputs.modified_files }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: tj-actions/changed-files@v42
-        id: changed-files
-        with:
-          files: |
-            .github/actions/setup-build/action.yml
-            .github/workflows/build.yml
-            ./**/*.rs
-            ./*.toml
-            ./**/*.toml
-            ./**/*.proto
-
   build-src:
-    needs: check-src
     name: build-src-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -37,15 +18,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup
-        if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
           os: ${{ matrix.os }}
       - name: Rust cache
-        if: needs.check-src.outputs.status
         uses: swatinem/rust-cache@v2
       - name: Test src on ${{ matrix.os }}
-        if: needs.check-src.outputs.status
         run: |
           python3 build.py build
           python3 build.py test
@@ -53,7 +31,6 @@ jobs:
 
 
   build-src-lightweight:
-    needs: check-src
     name: build-src-lightweight-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -63,21 +40,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup
-        if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
           os: ${{ matrix.os }}
       - name: Rust cache
-        if: needs.check-src.outputs.status
         uses: swatinem/rust-cache@v2
       - name: Test src on ${{ matrix.os }}
-        if: needs.check-src.outputs.status
         run: |
           python3 build.py build --features "lightweight async-trait"
         shell: bash
 
   test-src-for-unity:
-    needs: check-src
     name: test-src-for-unity-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -87,21 +60,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup
-        if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
           os: ${{ matrix.os }}
       - name: Rust cache
-        if: needs.check-src.outputs.status
         uses: swatinem/rust-cache@v2
       - name: Test src for unity on ${{ matrix.os }}
-        if: needs.check-src.outputs.status
         run: |
           python3 build.py test --features "use_meter left_handed"
         shell: bash
 
   build-windows-aarch64-src:
-    needs: check-src
     name: build-src-windows-aarch64
     runs-on: windows-latest
     strategy:
@@ -109,21 +78,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup
-        if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
           os: windows-latest
           arch: 'aarch64'
       - name: Rust cache
-        if: needs.check-src.outputs.status
         uses: swatinem/rust-cache@v2
       - name: Test src on ${{ matrix.os }}
-        if: needs.check-src.outputs.status
         run: |
           python3 build.py build --arch aarch64
 
   build-linux-arm32-src:
-    needs: check-src
     name: build-src-linux-arm32
     runs-on: ubuntu-latest
     strategy:
@@ -131,21 +96,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup
-        if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
           os: ubuntu-latest
           arch: 'arm32'
       - name: Rust cache
-        if: needs.check-src.outputs.status
         uses: swatinem/rust-cache@v2
       - name: Test src on ${{ matrix.os }}
-        if: needs.check-src.outputs.status
         run: |
           python3 build.py build --arch arm32 --no-examples
 
   build-linux-aarch64-src:
-    needs: check-src
     name: build-src-linux-aarch64
     runs-on: ubuntu-latest
     strategy:
@@ -153,34 +114,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup
-        if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
           os: ubuntu-latest
           arch: 'aarch64'
       - name: Rust cache
-        if: needs.check-src.outputs.status
         uses: swatinem/rust-cache@v2
       - name: Test src on ${{ matrix.os }}
-        if: needs.check-src.outputs.status
         run: |
           python3 build.py build --arch arm32 --no-examples
 
   lint-src:
-    needs: check-src
     name: lint-src
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Setup
-        if: needs.check-src.outputs.status
         uses: ./.github/actions/setup-build
         with:
           os: ubuntu-latest
       - name: Rust cache
-        if: needs.check-src.outputs.status
         uses: swatinem/rust-cache@v2
       - name: lint src
-        if: needs.check-src.outputs.status
         run: |
           python3 build.py lint
