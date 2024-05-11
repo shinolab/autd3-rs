@@ -1,3 +1,8 @@
+# 23.0.1
+
+- Add `rad` and `deg` to `autd3::prelude`
+- Add serde feature in autd3-link-soem
+
 # 23.0.0
 
 - Update firmware to v7.0.0
