@@ -156,6 +156,10 @@ impl Memory {
         self.controller_bram[ADDR_FPGA_STATE] &= !(1 << 0);
     }
 
+    pub fn is_thermo_asserted(&self) -> bool {
+        (self.controller_bram[ADDR_FPGA_STATE] & (1 << 0)) != 0
+    }
+
     pub fn is_force_fan(&self) -> bool {
         (self.controller_bram[ADDR_CTL_FLAG] & (1 << CTL_FLAG_FORCE_FAN_BIT)) != 0
     }

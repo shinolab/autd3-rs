@@ -107,6 +107,10 @@ impl FPGAEmulator {
         }
     }
 
+    pub fn is_thermo_asserted(&self) -> bool {
+        self.mem.is_thermo_asserted()
+    }
+
     pub fn is_outputting(&self) -> bool {
         let cur_mod_segment = self.current_mod_segment();
         if self
