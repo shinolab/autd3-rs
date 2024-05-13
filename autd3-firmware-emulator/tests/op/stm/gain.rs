@@ -76,7 +76,7 @@ fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         assert!(cpu.fpga().is_stm_gain_mode(segment));
-        assert_eq!(segment, cpu.fpga().current_stm_segment());
+        assert_eq!(segment, cpu.fpga().req_stm_segment());
         assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
         assert_eq!(bufs.len(), cpu.fpga().stm_cycle(segment));
         assert_eq!(freq_div, cpu.fpga().stm_freq_division(segment));
@@ -111,7 +111,7 @@ fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         assert!(cpu.fpga().is_stm_gain_mode(segment));
-        assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
+        assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
         assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
         assert_eq!(bufs.len(), cpu.fpga().stm_cycle(segment));
         assert_eq!(freq_div, cpu.fpga().stm_freq_division(segment));
@@ -132,7 +132,7 @@ fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
 
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-        assert_eq!(Segment::S1, cpu.fpga().current_stm_segment());
+        assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
         assert_eq!(TransitionMode::SyncIdx, cpu.fpga().stm_transition_mode());
     }
 
@@ -173,7 +173,7 @@ fn send_gain_stm_phase_full(n: usize) -> anyhow::Result<()> {
                 assert_eq!(EmitIntensity::MAX, drive.intensity());
                 assert_eq!(bufs[gain_idx][&0][i].phase(), drive.phase());
             });
-        assert_eq!(segment, cpu.fpga().current_stm_segment());
+        assert_eq!(segment, cpu.fpga().req_stm_segment());
         assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
         assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
     });
@@ -234,7 +234,7 @@ fn send_gain_stm_phase_half(n: usize) -> anyhow::Result<()> {
                         drive.phase().value() >> 4
                     );
                 });
-            assert_eq!(segment, cpu.fpga().current_stm_segment());
+            assert_eq!(segment, cpu.fpga().req_stm_segment());
             assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
             assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
         });
@@ -260,7 +260,7 @@ fn change_gain_stm_segment() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
-    assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
+    assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
     let mut op = GainSTMOp::new(
         gen_random_buf(GAIN_STM_BUF_SIZE_MAX, &geometry)
             .iter()
@@ -274,12 +274,12 @@ fn change_gain_stm_segment() -> anyhow::Result<()> {
     );
     assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
-    assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
+    assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
 
     let mut op = GainSTMSwapSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
     assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
-    assert_eq!(Segment::S1, cpu.fpga().current_stm_segment());
+    assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
 
     Ok(())
 }

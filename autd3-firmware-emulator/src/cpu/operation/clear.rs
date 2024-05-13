@@ -130,6 +130,11 @@ impl CPUEmulator {
         self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE2, 0x0000);
         self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE3, 0x0000);
 
+        self.set_and_wait_update(CTL_FLAG_MOD_SET);
+        self.set_and_wait_update(CTL_FLAG_STM_SET);
+        self.set_and_wait_update(CTL_FLAG_SILENCER_SET);
+        self.set_and_wait_update(CTL_FLAG_DEBUG_SET);
+
         NO_ERR
     }
 }

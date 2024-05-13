@@ -1,8 +1,9 @@
 use crate::CPUEmulator;
 
 use super::params::{
-    TRANSITION_MODE_EXT, TRANSITION_MODE_GPIO, TRANSITION_MODE_IMMIDIATE, TRANSITION_MODE_NONE,
-    TRANSITION_MODE_SYNC_IDX, TRANSITION_MODE_SYS_TIME,
+    ADDR_CTL_FLAG, BRAM_SELECT_CONTROLLER, TRANSITION_MODE_EXT, TRANSITION_MODE_GPIO,
+    TRANSITION_MODE_IMMIDIATE, TRANSITION_MODE_NONE, TRANSITION_MODE_SYNC_IDX,
+    TRANSITION_MODE_SYS_TIME,
 };
 
 mod clear;
@@ -44,5 +45,19 @@ impl CPUEmulator {
             }
             _ => mode == TRANSITION_MODE_IMMIDIATE || mode == TRANSITION_MODE_EXT,
         }
+    }
+
+    pub(crate) fn set_and_wait_update(&mut self, flag: u16) {
+        self.bram_write(
+            BRAM_SELECT_CONTROLLER,
+            ADDR_CTL_FLAG,
+            self.fpga_flags_internal | flag,
+        );
+        self.fpga.set_and_wait_update(self.dc_sys_time);
+        self.bram_write(
+            BRAM_SELECT_CONTROLLER,
+            ADDR_CTL_FLAG,
+            self.fpga_flags_internal,
+        );
     }
 }

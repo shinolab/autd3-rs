@@ -87,8 +87,8 @@ pub const ADDR_DEBUG_VALUE2: usize = 0xF5;
 pub const ADDR_DEBUG_TYPE3: usize = 0xF6;
 pub const ADDR_DEBUG_VALUE3: usize = 0xF7;
 
-// pub const CTL_FLAG_MOD_SET_BIT: u8 = 0;
-// pub const CTL_FLAG_STM_SET_BIT: u8 = 1;
+pub const CTL_FLAG_MOD_SET_BIT: u16 = 0;
+pub const CTL_FLAG_STM_SET_BIT: u16 = 1;
 // pub const CTL_FLAG_SILENCER_SET_BIT: u8 = 2;
 // pub const CTL_FLAG_PULSE_WIDTH_ENCODER_SET_BIT: u8 = 3;
 // pub const CTL_FLAG_DEBUG_SET_BIT: u8 = 4;
