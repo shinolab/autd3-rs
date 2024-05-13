@@ -69,7 +69,7 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         assert!(!cpu.fpga().is_stm_gain_mode(Segment::S0));
-        assert_eq!(segment, cpu.fpga().current_stm_segment());
+        assert_eq!(segment, cpu.fpga().req_stm_segment());
         assert_eq!(loop_behaviour, cpu.fpga().stm_loop_behavior(Segment::S0));
         assert_eq!(foci.len(), cpu.fpga().stm_cycle(Segment::S0));
         assert_eq!(freq_div, cpu.fpga().stm_freq_division(Segment::S0));
@@ -119,7 +119,7 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         assert!(!cpu.fpga().is_stm_gain_mode(Segment::S1));
-        assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
+        assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
         assert_eq!(loop_behaviour, cpu.fpga().stm_loop_behavior(Segment::S1));
         assert_eq!(foci.len(), cpu.fpga().stm_cycle(Segment::S1));
         assert_eq!(freq_div, cpu.fpga().stm_freq_division(Segment::S1));
@@ -154,7 +154,7 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
 
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-        assert_eq!(Segment::S1, cpu.fpga().current_stm_segment());
+        assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
         assert_eq!(TransitionMode::SyncIdx, cpu.fpga().stm_transition_mode());
     }
 
@@ -168,7 +168,7 @@ fn change_focus_stm_segment() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
-    assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
+    assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
     let mut op = FocusSTMOp::new(
         gen_random_foci(2),
         STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX)),
@@ -178,12 +178,12 @@ fn change_focus_stm_segment() -> anyhow::Result<()> {
     );
     assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
     assert!(!cpu.fpga().is_stm_gain_mode(Segment::S1));
-    assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
+    assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
 
     let mut op = FocusSTMSwapSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
     assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
     assert!(!cpu.fpga().is_stm_gain_mode(Segment::S1));
-    assert_eq!(Segment::S1, cpu.fpga().current_stm_segment());
+    assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
 
     Ok(())
 }
@@ -395,7 +395,7 @@ fn test_miss_transition_time(
         Some(transition_mode),
     );
 
-    cpu.set_dc_sys_time(DcSysTime::from_utc(systime).unwrap());
+    cpu.update_with_sys_time(DcSysTime::from_utc(systime).unwrap());
     assert_eq!(expect, send(&mut cpu, &mut op, &geometry, &mut tx));
     if expect.is_ok() {
         assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
