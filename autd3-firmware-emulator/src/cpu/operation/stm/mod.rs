@@ -22,6 +22,7 @@ impl CPUEmulator {
             &value as *const u64 as _,
             std::mem::size_of::<u64>() >> 1,
         );
+        self.set_and_wait_update(CTL_FLAG_STM_SET);
         NO_ERR
     }
 

@@ -120,13 +120,18 @@ impl CPUEmulator {
     }
 
     pub fn update(&mut self) {
-        if self.should_update() {
-            self.fpga.update();
-            self.read_fpga_state();
-        }
-        self.dc_sys_time = DcSysTime::now();
+        self.update_with_sys_time(DcSysTime::now());
     }
 
+    pub fn update_with_sys_time(&mut self, sys_time: DcSysTime) {
+        self.fpga.update_with_sys_time(sys_time);
+        if self.should_update() {
+            self.read_fpga_state();
+        }
+        self.dc_sys_time = sys_time;
+    }
+
+    #[deprecated(note = "Users shouldn't use this method directly", since = "23.1.0")]
     pub fn set_dc_sys_time(&mut self, dc_sys_time: DcSysTime) {
         self.dc_sys_time = dc_sys_time;
     }
@@ -284,7 +289,7 @@ mod tests {
         let mut cpu = CPUEmulator::new(0, 249);
 
         let sys_time = DcSysTime::now() + std::time::Duration::from_nanos(1111);
-        cpu.set_dc_sys_time(sys_time);
+        cpu.update_with_sys_time(sys_time);
         assert_eq!(sys_time, cpu.dc_sys_time());
     }
 }

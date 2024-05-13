@@ -11,15 +11,15 @@ use super::super::params::*;
 
 pub(crate) struct Memory {
     num_transducers: usize,
-    pub(crate) controller_bram: Vec<u16>,
-    pub(crate) modulator_bram_0: Vec<u16>,
-    pub(crate) modulator_bram_1: Vec<u16>,
-    pub(crate) stm_bram_0: Vec<u16>,
-    pub(crate) stm_bram_1: Vec<u16>,
-    pub(crate) duty_table_bram: Vec<u16>,
-    pub(crate) phase_filter_bram: Vec<u16>,
-    pub(crate) drp_bram: Vec<u16>,
-    pub(crate) tr_pos: Vec<u64>,
+    controller_bram: Vec<u16>,
+    modulator_bram_0: Vec<u16>,
+    modulator_bram_1: Vec<u16>,
+    stm_bram_0: Vec<u16>,
+    stm_bram_1: Vec<u16>,
+    duty_table_bram: Vec<u16>,
+    phase_filter_bram: Vec<u16>,
+    drp_bram: Vec<u16>,
+    tr_pos: Vec<u64>,
 }
 
 impl Memory {
@@ -140,22 +140,12 @@ impl Memory {
         }
     }
 
-    pub fn update(&mut self) {
-        let mut fpga_state = self.controller_bram[ADDR_FPGA_STATE];
-        match self.current_mod_segment() {
-            Segment::S0 => fpga_state &= !(1 << 1),
-            Segment::S1 => fpga_state |= 1 << 1,
-        }
-        match self.current_stm_segment() {
-            Segment::S0 => fpga_state &= !(1 << 2),
-            Segment::S1 => fpga_state |= 1 << 2,
-        }
-        if self.stm_cycle(self.current_stm_segment()) == 1 {
-            fpga_state |= 1 << 3;
-        } else {
-            fpga_state &= !(1 << 3);
-        }
+    pub fn update(&mut self, fpga_state: u16) {
         self.controller_bram[ADDR_FPGA_STATE] = fpga_state;
+    }
+
+    pub fn fpga_state(&self) -> u16 {
+        self.controller_bram[ADDR_FPGA_STATE]
     }
 
     pub fn assert_thermal_sensor(&mut self) {
@@ -345,7 +335,7 @@ impl Memory {
         }
     }
 
-    pub fn current_mod_segment(&self) -> Segment {
+    pub fn req_mod_segment(&self) -> Segment {
         match self.controller_bram[ADDR_MOD_REQ_RD_SEGMENT] {
             0 => Segment::S0,
             1 => Segment::S1,
@@ -353,7 +343,7 @@ impl Memory {
         }
     }
 
-    pub fn current_stm_segment(&self) -> Segment {
+    pub fn req_stm_segment(&self) -> Segment {
         match self.controller_bram[ADDR_STM_REQ_RD_SEGMENT] {
             0 => Segment::S0,
             1 => Segment::S1,
@@ -499,14 +489,6 @@ impl FPGAEmulator {
         self.mem.read(addr)
     }
 
-    pub(crate) fn write(&mut self, addr: u16, data: u16) {
-        self.mem.write(addr, data)
-    }
-
-    pub fn update(&mut self) {
-        self.mem.update()
-    }
-
     pub fn assert_thermal_sensor(&mut self) {
         self.mem.assert_thermal_sensor()
     }
@@ -591,12 +573,12 @@ impl FPGAEmulator {
         self.mem.mod_transition_mode()
     }
 
-    pub fn current_mod_segment(&self) -> Segment {
-        self.mem.current_mod_segment()
+    pub fn req_mod_segment(&self) -> Segment {
+        self.mem.req_mod_segment()
     }
 
-    pub fn current_stm_segment(&self) -> Segment {
-        self.mem.current_stm_segment()
+    pub fn req_stm_segment(&self) -> Segment {
+        self.mem.req_stm_segment()
     }
 
     pub fn pulse_width_encoder_table_at(&self, idx: usize) -> u8 {

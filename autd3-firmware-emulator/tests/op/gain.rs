@@ -58,7 +58,7 @@ fn send_gain() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         assert!(cpu.fpga().is_stm_gain_mode(Segment::S0));
-        assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
+        assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
         assert_eq!(1, cpu.fpga().stm_cycle(Segment::S0));
         assert_eq!(0xFFFFFFFF, cpu.fpga().stm_freq_division(Segment::S0));
         assert_eq!(
@@ -92,7 +92,7 @@ fn send_gain() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
-        assert_eq!(Segment::S0, cpu.fpga().current_stm_segment());
+        assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
         assert_eq!(1, cpu.fpga().stm_cycle(Segment::S1));
         assert_eq!(0xFFFFFFFF, cpu.fpga().stm_freq_division(Segment::S1));
         assert_eq!(
@@ -112,7 +112,7 @@ fn send_gain() -> anyhow::Result<()> {
 
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-        assert_eq!(Segment::S1, cpu.fpga().current_stm_segment());
+        assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
     }
 
     Ok(())
