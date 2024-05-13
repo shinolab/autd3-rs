@@ -72,9 +72,11 @@ impl FPGAEmulator {
         }
     }
 
+    // GRCOV_EXCL_START
     pub fn update(&mut self) {
         self.update_with_sys_time(DcSysTime::now());
     }
+    // GRCOV_EXCL_STOP
 
     pub fn update_with_sys_time(&mut self, sys_time: DcSysTime) {
         self.mod_swapchain.update(self.mem.gpio_in(), sys_time);
@@ -146,6 +148,7 @@ impl FPGAEmulator {
         ((dc_sys_time.sys_time() as u128 * self.fpga_clk_freq().hz() as u128) / 1000000000) as _
     }
 
+    // GRCOV_EXCL_START
     #[deprecated(note = "Use `current_stm_idx` instead", since = "23.1.0")]
     pub fn stm_idx_from_systime(&self, segment: Segment, sys_time: DcSysTime) -> usize {
         (self.fpga_sys_time(sys_time) / self.stm_freq_division(segment) as u64) as usize
@@ -157,6 +160,7 @@ impl FPGAEmulator {
         (self.fpga_sys_time(sys_time) / self.modulation_freq_division(segment) as u64) as usize
             % self.modulation_cycle(segment)
     }
+    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]
@@ -204,5 +208,15 @@ mod tests {
                 .unwrap(),
             )
         );
+    }
+
+    #[test]
+    fn thermo() {
+        let mut fpga = FPGAEmulator::new(249);
+        assert!(!fpga.is_thermo_asserted());
+        fpga.assert_thermal_sensor();
+        assert!(fpga.is_thermo_asserted());
+        fpga.deassert_thermal_sensor();
+        assert!(!fpga.is_thermo_asserted());
     }
 }
