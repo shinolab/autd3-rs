@@ -1,3 +1,7 @@
+# 23.1.0
+
+- Support `LoopBehavior` and `TransitionMode` in firmware-emulator
+
 # 23.0.1
 
 - Add `rad` and `deg` to `autd3::prelude`

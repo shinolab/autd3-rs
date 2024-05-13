@@ -81,6 +81,8 @@ impl CPUEmulator {
             );
         }
 
+        self.set_and_wait_update(CTL_FLAG_SILENCER_SET);
+
         NO_ERR
     }
 }

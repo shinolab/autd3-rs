@@ -14,8 +14,10 @@ impl CPUEmulator {
         let d = Self::cast::<Sync>(data);
 
         self.synchronized = true;
+        self.set_and_wait_update(CTL_FLAG_SYNC_SET);
 
-        self.fpga.fpga_clk_freq = d.ecat_sync_base_cnt * 2000 * Hz;
+        self.fpga
+            .set_fpga_clk_freq(d.ecat_sync_base_cnt * 2000 * Hz);
 
         NO_ERR
     }

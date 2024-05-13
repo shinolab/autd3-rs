@@ -74,6 +74,7 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
         );
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
     }
+    dbg!("a");
     cpu.update();
     let state = fpga_state(&cpu);
     assert!(!state.is_thermal_assert());

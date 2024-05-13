@@ -66,6 +66,7 @@ impl CPUEmulator {
                 ADDR_STM_TRANSITION_MODE,
                 TRANSITION_MODE_SYNC_IDX as _,
             );
+            self.set_and_wait_update(CTL_FLAG_STM_SET);
         }
 
         NO_ERR
@@ -92,6 +93,7 @@ impl CPUEmulator {
             ADDR_STM_TRANSITION_MODE,
             TRANSITION_MODE_SYNC_IDX as _,
         );
+        self.set_and_wait_update(CTL_FLAG_STM_SET);
 
         NO_ERR
     }

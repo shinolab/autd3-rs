@@ -64,7 +64,7 @@ fn send_mod() -> anyhow::Result<()> {
 
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-        assert_eq!(Segment::S0, cpu.fpga().current_mod_segment());
+        assert_eq!(Segment::S0, cpu.fpga().req_mod_segment());
         assert_eq!(m.len(), cpu.fpga().modulation_cycle(Segment::S0));
         assert_eq!(freq_div, cpu.fpga().modulation_freq_division(Segment::S0));
         assert_eq!(
@@ -95,7 +95,7 @@ fn send_mod() -> anyhow::Result<()> {
 
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-        assert_eq!(Segment::S0, cpu.fpga().current_mod_segment());
+        assert_eq!(Segment::S0, cpu.fpga().req_mod_segment());
         assert_eq!(m.len(), cpu.fpga().modulation_cycle(Segment::S1));
         assert_eq!(freq_div, cpu.fpga().modulation_freq_division(Segment::S1));
         assert_eq!(
@@ -111,7 +111,7 @@ fn send_mod() -> anyhow::Result<()> {
 
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-        assert_eq!(Segment::S1, cpu.fpga().current_mod_segment());
+        assert_eq!(Segment::S1, cpu.fpga().req_mod_segment());
         assert_eq!(TransitionMode::SyncIdx, cpu.fpga().mod_transition_mode());
     }
 
@@ -318,7 +318,7 @@ fn test_miss_transition_time(
         Some(transition_mode),
     );
 
-    cpu.set_dc_sys_time(DcSysTime::from_utc(systime).unwrap());
+    cpu.update_with_sys_time(DcSysTime::from_utc(systime).unwrap());
     assert_eq!(expect, send(&mut cpu, &mut op, &geometry, &mut tx));
     if expect.is_ok() {
         assert_eq!(transition_mode, cpu.fpga().mod_transition_mode());
