@@ -63,7 +63,7 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
         self
     }
 
-    pub async fn send(mut self) -> Result<bool, AUTDInternalError> {
+    pub async fn send(mut self) -> Result<(), AUTDInternalError> {
         let enable_flags_store = self
             .cnt
             .geometry
@@ -122,30 +122,32 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
             OperationHandler::init(op1, op2, &self.cnt.geometry)
         })?;
         let r = loop {
-            self.op.iter_mut().try_for_each(|(k, (op1, op2))| {
+            if let Err(e) = self.op.iter_mut().try_for_each(|(k, (op1, op2))| {
                 set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
                 if OperationHandler::is_finished(op1, op2, &self.cnt.geometry) {
                     return Ok(());
                 }
                 OperationHandler::pack(op1, op2, &self.cnt.geometry, &mut self.cnt.tx_buf)
-            })?;
+            }) {
+                break Err(e);
+            }
 
             let start = tokio::time::Instant::now();
-            if !autd3_driver::link::send_receive(
+            if let Err(e) = autd3_driver::link::send_receive(
                 &mut self.cnt.link,
                 &self.cnt.tx_buf,
                 &mut self.cnt.rx_buf,
                 self.timeout,
             )
-            .await?
+            .await
             {
-                break false;
+                break Err(e);
             }
             if self.op.iter_mut().all(|(k, (op1, op2))| {
                 set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
                 OperationHandler::is_finished(op1, op2, &self.cnt.geometry)
             }) {
-                break true;
+                break Ok(());
             }
             tokio::time::sleep_until(start + Duration::from_millis(1)).await;
         };
@@ -156,7 +158,7 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
             .zip(enable_flags_store.iter())
             .for_each(|(dev, &enable)| dev.enable = enable);
 
-        Ok(r)
+        r
     }
 }
 

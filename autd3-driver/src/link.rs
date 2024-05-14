@@ -121,11 +121,11 @@ pub async fn send_receive(
     tx: &TxDatagram,
     rx: &mut [RxMessage],
     timeout: Option<Duration>,
-) -> Result<bool, AUTDInternalError> {
+) -> Result<(), AUTDInternalError> {
     link.trace(tx, rx, timeout);
     let timeout = timeout.unwrap_or(link.timeout());
     if !link.send(tx).await? {
-        return Ok(false);
+        return Err(AUTDInternalError::SendDataFailed);
     }
     wait_msg_processed(link, tx, rx, timeout).await
 }
@@ -136,12 +136,12 @@ async fn wait_msg_processed(
     tx: &TxDatagram,
     rx: &mut [RxMessage],
     timeout: Duration,
-) -> Result<bool, AUTDInternalError> {
+) -> Result<(), AUTDInternalError> {
     let start = std::time::Instant::now();
     loop {
         if link.receive(rx).await? && check_if_msg_is_processed(tx, rx).all(std::convert::identity)
         {
-            return Ok(true);
+            return Ok(());
         }
         if start.elapsed() > timeout {
             break;
@@ -150,7 +150,13 @@ async fn wait_msg_processed(
     }
     rx.iter()
         .try_fold((), |_, r| Result::<(), AUTDInternalError>::from(r))
-        .map(|_| false)
+        .and_then(|_| {
+            if timeout == Duration::ZERO {
+                return Ok(());
+            } else {
+                Err(AUTDInternalError::ConfirmResponseFailed)
+            }
+        })
 }
 
 #[cfg(test)]

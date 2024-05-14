@@ -61,12 +61,7 @@ impl<L: Link> Controller<L> {
     ///
     /// * `s` - Datagram
     ///
-    /// # Returns
-    ///
-    /// * `Ok(true)` - It is confirmed that the data has been successfully transmitted
-    /// * `Ok(false)` - There are no errors, but it is unclear whether the data has been sent or not
-    ///
-    pub async fn send(&mut self, s: impl Datagram) -> Result<bool, AUTDError> {
+    pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDError> {
         let timeout = s.timeout();
 
         let (mut op1, mut op2) = s.operation();
@@ -75,26 +70,24 @@ impl<L: Link> Controller<L> {
             OperationHandler::pack(&mut op1, &mut op2, &self.geometry, &mut self.tx_buf)?;
 
             let start = tokio::time::Instant::now();
-            if !send_receive(&mut self.link, &self.tx_buf, &mut self.rx_buf, timeout).await? {
-                return Ok(false);
-            }
+            send_receive(&mut self.link, &self.tx_buf, &mut self.rx_buf, timeout).await?;
             if OperationHandler::is_finished(&mut op1, &mut op2, &self.geometry) {
-                return Ok(true);
+                return Ok(());
             }
             tokio::time::sleep_until(start + Duration::from_millis(1)).await;
         }
     }
 
     // Close connection
-    pub async fn close(&mut self) -> Result<bool, AUTDError> {
+    pub async fn close(&mut self) -> Result<(), AUTDError> {
         if !self.link.is_open() {
-            return Ok(true);
+            return Ok(());
         }
         self.geometry.iter_mut().for_each(|dev| dev.enable = true);
-        let res = self.send((Null::default(), Silencer::default())).await?
-            & self.send(Clear::new()).await?;
+        self.send((Null::default(), Silencer::default())).await?;
+        self.send(Clear::new()).await?;
         self.link.close().await?;
-        Ok(res)
+        Ok(())
     }
 
     /// Get firmware information
@@ -112,8 +105,9 @@ impl<L: Link> Controller<L> {
         macro_rules! pack_and_send {
             ($op:expr, $null_op:expr, $link:expr, $geometry:expr, $tx_buf:expr, $rx_buf:expr ) => {
                 OperationHandler::pack($op, $null_op, $geometry, $tx_buf)?;
-                if !autd3_driver::link::send_receive($link, $tx_buf, $rx_buf, Some(DEFAULT_TIMEOUT))
-                    .await?
+                if autd3_driver::link::send_receive($link, $tx_buf, $rx_buf, Some(DEFAULT_TIMEOUT))
+                    .await
+                    .is_err()
                 {
                     return Err(AUTDError::ReadFirmwareVersionFailed(
                         ReadFirmwareVersionState(
