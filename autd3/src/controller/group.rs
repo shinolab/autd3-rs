@@ -23,17 +23,24 @@ pub struct GroupGuard<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) 
     pub(crate) f: F,
     pub(crate) timeout: Option<Duration>,
     pub(crate) op: OpMap<K>,
+    pub(crate) enable_flags: Vec<bool>,
 }
 
 impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
     GroupGuard<'a, K, L, F>
 {
     pub(crate) fn new(cnt: &'a mut Controller<L>, f: F) -> Self {
+        let enable_flags = cnt
+            .geometry
+            .iter()
+            .map(|dev| dev.enable)
+            .collect::<Vec<_>>();
         Self {
             cnt,
             f,
             timeout: None,
             op: OpMap::new(),
+            enable_flags,
         }
     }
 
@@ -64,13 +71,6 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
     }
 
     pub async fn send(mut self) -> Result<(), AUTDInternalError> {
-        let enable_flags_store = self
-            .cnt
-            .geometry
-            .iter()
-            .map(|dev| dev.enable)
-            .collect::<Vec<_>>();
-
         let specified_keys = self.op.keys().cloned().collect::<HashSet<_>>();
         let provided_keys = self
             .cnt
@@ -121,44 +121,46 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
             set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
             OperationHandler::init(op1, op2, &self.cnt.geometry)
         })?;
-        let r = loop {
-            if let Err(e) = self.op.iter_mut().try_for_each(|(k, (op1, op2))| {
+        loop {
+            self.op.iter_mut().try_for_each(|(k, (op1, op2))| {
                 set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
                 if OperationHandler::is_finished(op1, op2, &self.cnt.geometry) {
                     return Ok(());
                 }
                 OperationHandler::pack(op1, op2, &self.cnt.geometry, &mut self.cnt.tx_buf)
-            }) {
-                break Err(e);
-            }
+            })?;
 
             let start = tokio::time::Instant::now();
-            if let Err(e) = autd3_driver::link::send_receive(
+            autd3_driver::link::send_receive(
                 &mut self.cnt.link,
                 &self.cnt.tx_buf,
                 &mut self.cnt.rx_buf,
                 self.timeout,
             )
-            .await
-            {
-                break Err(e);
-            }
+            .await?;
+
             if self.op.iter_mut().all(|(k, (op1, op2))| {
                 set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
                 OperationHandler::is_finished(op1, op2, &self.cnt.geometry)
             }) {
-                break Ok(());
+                break;
             }
             tokio::time::sleep_until(start + Duration::from_millis(1)).await;
-        };
+        }
 
+        Ok(())
+    }
+}
+
+impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>> Drop
+    for GroupGuard<'a, K, L, F>
+{
+    fn drop(&mut self) {
         self.cnt
             .geometry
             .iter_mut()
-            .zip(enable_flags_store.iter())
+            .zip(self.enable_flags.iter())
             .for_each(|(dev, &enable)| dev.enable = enable);
-
-        r
     }
 }
 
