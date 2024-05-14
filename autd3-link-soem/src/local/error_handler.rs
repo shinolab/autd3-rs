@@ -1,19 +1,26 @@
-use std::{
-    fmt::Write as _,
-    sync::{
-        atomic::{AtomicBool, AtomicI32, Ordering},
-        Arc,
-    },
+use std::sync::{
+    atomic::{AtomicBool, AtomicI32, Ordering},
+    Arc,
 };
 
 use crate::local::soem_bindings::*;
 
 #[derive(Debug, Clone, PartialEq)]
-// #[repr(u8)]
+#[repr(u8)]
 pub enum Status {
-    Error(String),
-    Lost(String),
-    StateChanged(String),
+    Error,
+    Lost,
+    StateChanged,
+}
+
+impl std::fmt::Display for Status {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Status::Error => write!(f, "slave is in SAFE_OP + ERROR, attempting ack"),
+            Status::Lost => write!(f, "slave is lost"),
+            Status::StateChanged => write!(f, "slave is in SAFE_OP, change to OPERATIONAL"),
+        }
+    }
 }
 
 pub type ErrHandler = Box<dyn Fn(usize, Status) + Send + Sync>;
@@ -45,7 +52,6 @@ impl<F: Fn(usize, Status)> EcatErrorHandler<F> {
         unsafe {
             ec_group[0].docheckstate = 0;
             ec_readstate();
-            let mut msg = String::new();
             ec_slave
                 .iter_mut()
                 .enumerate()
@@ -58,24 +64,14 @@ impl<F: Fn(usize, Status)> EcatErrorHandler<F> {
                             == ec_state_EC_STATE_SAFE_OP as u16 + ec_state_EC_STATE_ERROR as u16
                         {
                             if let Some(f) = &self.err_handler {
-                                f(
-                                    i,
-                                    Status::Error(
-                                        "slave is in SAFE_OP + ERROR, attempting ack".to_string(),
-                                    ),
-                                );
+                                f(i - 1, Status::Error);
                             }
                             slave.state =
                                 ec_state_EC_STATE_SAFE_OP as u16 + ec_state_EC_STATE_ACK as u16;
                             ec_writestate(i as _);
                         } else if slave.state == ec_state_EC_STATE_SAFE_OP as u16 {
                             if let Some(f) = &self.err_handler {
-                                f(
-                                    i,
-                                    Status::StateChanged(
-                                        "slave is in SAFE_OP, change to OPERATIONAL".to_string(),
-                                    ),
-                                );
+                                f(i - 1, Status::StateChanged);
                             }
                             slave.state = ec_state_EC_STATE_OPERATIONAL as _;
                             ec_writestate(i as _);
@@ -91,9 +87,8 @@ impl<F: Fn(usize, Status)> EcatErrorHandler<F> {
                             );
                             if slave.state == ec_state_EC_STATE_NONE as u16 {
                                 slave.islost = 1;
-                                let _ = writeln!(msg, "slave {i} lost");
                                 if let Some(f) = &self.err_handler {
-                                    f(i, Status::Lost("slave is lost".to_string()));
+                                    f(i - 1, Status::Lost);
                                 }
                             }
                         }

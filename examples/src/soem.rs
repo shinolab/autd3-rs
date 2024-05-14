@@ -11,13 +11,12 @@ async fn main() -> Result<()> {
         .add_device(AUTD3::new(Vector3::zeros()))
         .open(
             SOEM::builder().with_err_handler(|slave, status| match status {
-                Status::Error(msg) => eprintln!("Error [{}]: {}", slave, msg),
-                Status::Lost(msg) => {
-                    eprintln!("Lost [{}]: {}", slave, msg);
+                Status::Lost => {
+                    eprintln!("slave[{}]: {}", slave, status);
                     // You can also wait for the link to recover, without exitting the process
                     std::process::exit(-1);
                 }
-                Status::StateChanged(msg) => eprintln!("StateChanged [{}]: {}", slave, msg),
+                _ => eprintln!("slave[{}]: {}", slave, status),
             }),
         )
         .await?;
