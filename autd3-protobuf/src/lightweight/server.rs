@@ -27,7 +27,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
     async fn send_modulation(
         autd: &mut autd3::Controller<L::L>,
         modulation: &Modulation,
-    ) -> Result<bool, AUTDError> {
+    ) -> Result<(), AUTDError> {
         Ok(match &modulation.modulation {
             Some(modulation::Modulation::Static(msg)) => {
                 autd.send(
@@ -159,7 +159,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
     async fn send_silencer(
         autd: &mut autd3::Controller<L::L>,
         msg: &Silencer,
-    ) -> Result<bool, AUTDError> {
+    ) -> Result<(), AUTDError> {
         Ok(match msg.config {
             Some(silencer::Config::FixedUpdateRate(ref msg)) => {
                 autd.send(
@@ -179,7 +179,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
         })
     }
 
-    async fn send_gain(autd: &mut autd3::Controller<L::L>, gain: &Gain) -> Result<bool, AUTDError> {
+    async fn send_gain(autd: &mut autd3::Controller<L::L>, gain: &Gain) -> Result<(), AUTDError> {
         Ok(match &gain.gain {
             Some(gain::Gain::Focus(msg)) => {
                 autd.send(
@@ -555,8 +555,8 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                 }
                 None => return Err(Status::invalid_argument("No datagram")),
             } {
-                Ok(res) => Ok(Response::new(SendResponseLightweight {
-                    success: res,
+                Ok(_) => Ok(Response::new(SendResponseLightweight {
+                    success: true,
                     err: false,
                     msg: String::new(),
                 })),

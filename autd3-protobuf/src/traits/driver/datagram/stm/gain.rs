@@ -19,7 +19,6 @@ where
             transition_mode: Some(TransitionMode::SyncIdx.into()),
             transition_value: Some(0),
             gains: self
-                .gains()
                 .iter()
                 .filter_map(|g| match g.to_msg(None).datagram {
                     Some(datagram_lightweight::Datagram::Gain(gain)) => Some(gain),
@@ -45,7 +44,6 @@ where
             transition_mode: self.transition_mode().map(|m| m.mode() as _),
             transition_value: self.transition_mode().map(|m| m.value()),
             gains: self
-                .gains()
                 .iter()
                 .filter_map(|g| match g.to_msg(None).datagram {
                     Some(datagram_lightweight::Datagram::Gain(gain)) => Some(gain),
