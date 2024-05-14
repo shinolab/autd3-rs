@@ -91,7 +91,7 @@ fn silencer_completetion_steps_too_large_mod(
                 loop_behavior: LoopBehavior::infinite(),
             },
             Segment::S0,
-            Some(TransitionMode::Immidiate),
+            Some(TransitionMode::Immediate),
         );
 
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
@@ -129,7 +129,7 @@ fn silencer_completetion_steps_too_large_stm(
             STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN)),
             LoopBehavior::infinite(),
             Segment::S0,
-            Some(TransitionMode::Immidiate),
+            Some(TransitionMode::Immediate),
         );
 
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));

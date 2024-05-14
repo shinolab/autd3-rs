@@ -61,7 +61,7 @@ fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
                 * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
                 ..=SAMPLING_FREQ_DIV_MAX,
         );
-        let transition_mode = TransitionMode::Immidiate;
+        let transition_mode = TransitionMode::Immediate;
         let mut op = GainSTMOp::new(
             bufs.iter()
                 .map(|buf| TestGain { buf: buf.clone() })
@@ -115,7 +115,7 @@ fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
         assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
         assert_eq!(bufs.len(), cpu.fpga().stm_cycle(segment));
         assert_eq!(freq_div, cpu.fpga().stm_freq_division(segment));
-        assert_eq!(TransitionMode::Immidiate, cpu.fpga().stm_transition_mode());
+        assert_eq!(TransitionMode::Immediate, cpu.fpga().stm_transition_mode());
         (0..bufs.len()).for_each(|gain_idx| {
             cpu.fpga()
                 .drives(segment, gain_idx)
@@ -276,7 +276,7 @@ fn change_gain_stm_segment() -> anyhow::Result<()> {
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
 
-    let mut op = GainSTMSwapSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
+    let mut op = GainSTMSwapSegmentOp::new(Segment::S1, TransitionMode::Immediate);
     assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
@@ -300,7 +300,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
             STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN)),
             LoopBehavior::infinite(),
             Segment::S0,
-            Some(TransitionMode::Immidiate),
+            Some(TransitionMode::Immediate),
         );
 
         assert_eq!(
@@ -349,7 +349,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
         .operation();
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-        let mut op = GainSTMSwapSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
+        let mut op = GainSTMSwapSegmentOp::new(Segment::S1, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSilencerSettings),
             send(&mut cpu, &mut op, &geometry, &mut tx)
@@ -399,13 +399,13 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
     }
 
     {
-        let mut op = GainSTMSwapSegmentOp::new(Segment::S0, TransitionMode::Immidiate);
+        let mut op = GainSTMSwapSegmentOp::new(Segment::S0, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, &mut op, &geometry, &mut tx)
         );
 
-        let mut op = GainSTMSwapSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
+        let mut op = GainSTMSwapSegmentOp::new(Segment::S1, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, &mut op, &geometry, &mut tx)
@@ -451,7 +451,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
             STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX)),
             LoopBehavior::once(),
             Segment::S1,
-            Some(TransitionMode::Immidiate),
+            Some(TransitionMode::Immediate),
         );
         assert_eq!(
             Err(AUTDInternalError::InvalidTransitionMode),
@@ -499,7 +499,7 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
         STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX)),
         LoopBehavior::infinite(),
         Segment::S0,
-        Some(TransitionMode::Immidiate),
+        Some(TransitionMode::Immediate),
     );
     let mut op_null = NullOp::default();
 

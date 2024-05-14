@@ -50,7 +50,7 @@ impl<const SET: u16> Swapchain<SET> {
             cur_segment: Segment::S0,
             req_segment: Segment::S0,
             cur_idx: 0,
-            transition_mode: TransitionMode::Immidiate,
+            transition_mode: TransitionMode::Immediate,
             stop: false,
             ext_mode: false,
             ext_last_lap: 0,
@@ -216,7 +216,7 @@ mod tests {
             FREQ_DIV,
             1,
             Segment::S0,
-            TransitionMode::Immidiate,
+            TransitionMode::Immediate,
         );
 
         assert!(!fpga.mod_swapchain.stop);

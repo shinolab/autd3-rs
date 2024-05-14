@@ -51,7 +51,7 @@ fn send_mod() -> anyhow::Result<()> {
                 ..=SAMPLING_FREQ_DIV_MAX,
         );
         let loop_behavior = LoopBehavior::infinite();
-        let transition_mode = TransitionMode::Immidiate;
+        let transition_mode = TransitionMode::Immediate;
         let mut op = ModulationOp::new(
             TestModulation {
                 buf: m.clone(),
@@ -102,7 +102,7 @@ fn send_mod() -> anyhow::Result<()> {
             loop_behavior,
             cpu.fpga().modulation_loop_behavior(Segment::S1)
         );
-        assert_eq!(TransitionMode::Immidiate, cpu.fpga().mod_transition_mode());
+        assert_eq!(TransitionMode::Immediate, cpu.fpga().mod_transition_mode());
         assert_eq!(m, cpu.fpga().modulation(Segment::S1));
     }
 
@@ -171,7 +171,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
                 loop_behavior: LoopBehavior::infinite(),
             },
             Segment::S0,
-            Some(TransitionMode::Immidiate),
+            Some(TransitionMode::Immediate),
         );
 
         assert_eq!(
@@ -188,7 +188,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
                 loop_behavior: LoopBehavior::infinite(),
             },
             Segment::S0,
-            Some(TransitionMode::Immidiate),
+            Some(TransitionMode::Immediate),
         );
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
@@ -220,7 +220,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         .operation();
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
-        let mut op = ModulationSwapSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
+        let mut op = ModulationSwapSegmentOp::new(Segment::S1, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSilencerSettings),
             send(&mut cpu, &mut op, &geometry, &mut tx)
@@ -262,7 +262,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
                 loop_behavior: LoopBehavior::once(),
             },
             Segment::S1,
-            Some(TransitionMode::Immidiate),
+            Some(TransitionMode::Immediate),
         );
         assert_eq!(
             Err(AUTDInternalError::InvalidTransitionMode),
