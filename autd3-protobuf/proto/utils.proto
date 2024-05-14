@@ -27,4 +27,5 @@ message Geometry {
     float attenuation = 4;
   }
   repeated AUTD3 devices = 1;
+  uint32 ultrasound_freq = 2;
 }

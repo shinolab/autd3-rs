@@ -17,14 +17,20 @@ pub use transducer::*;
 
 use std::ops::{Deref, DerefMut};
 
+use crate::defined::Freq;
+
 pub struct Geometry {
     pub(crate) devices: Vec<Device>,
+    ultrasound_freq: Freq<u32>,
 }
 
 impl Geometry {
     #[doc(hidden)]
-    pub const fn new(devices: Vec<Device>) -> Geometry {
-        Self { devices }
+    pub const fn new(devices: Vec<Device>, ultrasound_freq: Freq<u32>) -> Geometry {
+        Self {
+            devices,
+            ultrasound_freq,
+        }
     }
 
     /// Get the number of devices
@@ -85,6 +91,10 @@ impl Geometry {
     pub fn set_sound_speed_from_temp_with(&mut self, temp: f64, k: f64, r: f64, m: f64) {
         self.devices_mut()
             .for_each(|dev| dev.set_sound_speed_from_temp_with(temp, k, r, m));
+    }
+
+    pub fn ultrasound_freq(&self) -> Freq<u32> {
+        self.ultrasound_freq
     }
 }
 
@@ -154,6 +164,7 @@ pub mod tests {
             (0..n)
                 .map(|i| create_device(i, num_trans_in_unit, freq))
                 .collect(),
+            freq,
         )
     }
 
@@ -162,7 +173,7 @@ pub mod tests {
     #[case(1, vec![create_device(0, 249, FREQ_40K)])]
     #[case(2, vec![create_device(0, 249, FREQ_40K), create_device(0, 249, FREQ_40K)])]
     fn test_num_devices(#[case] expected: usize, #[case] devices: Vec<Device>) {
-        assert_eq!(expected, Geometry::new(devices).num_devices());
+        assert_eq!(expected, Geometry::new(devices, FREQ_40K).num_devices());
     }
 
     #[rstest::rstest]
@@ -170,42 +181,45 @@ pub mod tests {
     #[case(249, vec![create_device(0, 249, FREQ_40K)])]
     #[case(498, vec![create_device(0, 249, FREQ_40K), create_device(0, 249, FREQ_40K)])]
     fn test_num_transducers(#[case] expected: usize, #[case] devices: Vec<Device>) {
-        assert_eq!(expected, Geometry::new(devices).num_transducers());
+        assert_eq!(expected, Geometry::new(devices, FREQ_40K).num_transducers());
     }
 
     #[test]
     fn test_center() {
-        let geometry = Geometry::new(vec![
-            Device::new(
-                0,
-                itertools::iproduct!((0..18), (0..14))
-                    .enumerate()
-                    .map(|(i, (y, x))| {
-                        Transducer::new(
-                            i,
-                            10.16 * Vector3::new(x as f64, y as f64, 0.),
-                            UnitQuaternion::identity(),
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-                FREQ_40K,
-            ),
-            Device::new(
-                1,
-                itertools::iproduct!((0..18), (0..14))
-                    .enumerate()
-                    .map(|(i, (y, x))| {
-                        Transducer::new(
-                            i,
-                            10.16 * Vector3::new(x as f64, y as f64, 0.)
-                                + Vector3::new(10., 20., 30.),
-                            UnitQuaternion::identity(),
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-                FREQ_40K,
-            ),
-        ]);
+        let geometry = Geometry::new(
+            vec![
+                Device::new(
+                    0,
+                    itertools::iproduct!((0..18), (0..14))
+                        .enumerate()
+                        .map(|(i, (y, x))| {
+                            Transducer::new(
+                                i,
+                                10.16 * Vector3::new(x as f64, y as f64, 0.),
+                                UnitQuaternion::identity(),
+                            )
+                        })
+                        .collect::<Vec<_>>(),
+                    FREQ_40K,
+                ),
+                Device::new(
+                    1,
+                    itertools::iproduct!((0..18), (0..14))
+                        .enumerate()
+                        .map(|(i, (y, x))| {
+                            Transducer::new(
+                                i,
+                                10.16 * Vector3::new(x as f64, y as f64, 0.)
+                                    + Vector3::new(10., 20., 30.),
+                                UnitQuaternion::identity(),
+                            )
+                        })
+                        .collect::<Vec<_>>(),
+                    FREQ_40K,
+                ),
+            ],
+            FREQ_40K,
+        );
         let expect = geometry.iter().map(|dev| dev.center()).sum::<Vector3>()
             / geometry.num_devices() as f64;
         assert_approx_eq_vec3!(expect, geometry.center());
@@ -217,37 +231,40 @@ pub mod tests {
     #[case(343.23498846612807e3, 20.)]
     #[case(349.0401521469255e3, 30.)]
     fn test_set_sound_speed_from_temp(#[case] expected: f64, #[case] temp: f64) {
-        let mut geometry = Geometry::new(vec![
-            Device::new(
-                0,
-                itertools::iproduct!((0..18), (0..14))
-                    .enumerate()
-                    .map(|(i, (y, x))| {
-                        Transducer::new(
-                            i,
-                            10.16 * Vector3::new(x as f64, y as f64, 0.),
-                            UnitQuaternion::identity(),
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-                FREQ_40K,
-            ),
-            Device::new(
-                1,
-                itertools::iproduct!((0..18), (0..14))
-                    .enumerate()
-                    .map(|(i, (y, x))| {
-                        Transducer::new(
-                            i,
-                            10.16 * Vector3::new(x as f64, y as f64, 0.)
-                                + Vector3::new(10., 20., 30.),
-                            UnitQuaternion::identity(),
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-                FREQ_40K,
-            ),
-        ]);
+        let mut geometry = Geometry::new(
+            vec![
+                Device::new(
+                    0,
+                    itertools::iproduct!((0..18), (0..14))
+                        .enumerate()
+                        .map(|(i, (y, x))| {
+                            Transducer::new(
+                                i,
+                                10.16 * Vector3::new(x as f64, y as f64, 0.),
+                                UnitQuaternion::identity(),
+                            )
+                        })
+                        .collect::<Vec<_>>(),
+                    FREQ_40K,
+                ),
+                Device::new(
+                    1,
+                    itertools::iproduct!((0..18), (0..14))
+                        .enumerate()
+                        .map(|(i, (y, x))| {
+                            Transducer::new(
+                                i,
+                                10.16 * Vector3::new(x as f64, y as f64, 0.)
+                                    + Vector3::new(10., 20., 30.),
+                                UnitQuaternion::identity(),
+                            )
+                        })
+                        .collect::<Vec<_>>(),
+                    FREQ_40K,
+                ),
+            ],
+            FREQ_40K,
+        );
         geometry.set_sound_speed_from_temp(temp);
         geometry.iter().for_each(|dev| {
             assert_approx_eq::assert_approx_eq!(expected * mm, dev.sound_speed, 1e-3);
@@ -260,37 +277,40 @@ pub mod tests {
     #[case(343.23498846612807e3)]
     #[case(349.0401521469255e3)]
     fn test_set_sound_speed(#[case] temp: f64) {
-        let mut geometry = Geometry::new(vec![
-            Device::new(
-                0,
-                itertools::iproduct!((0..18), (0..14))
-                    .enumerate()
-                    .map(|(i, (y, x))| {
-                        Transducer::new(
-                            i,
-                            10.16 * Vector3::new(x as f64, y as f64, 0.),
-                            UnitQuaternion::identity(),
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-                FREQ_40K,
-            ),
-            Device::new(
-                1,
-                itertools::iproduct!((0..18), (0..14))
-                    .enumerate()
-                    .map(|(i, (y, x))| {
-                        Transducer::new(
-                            i,
-                            10.16 * Vector3::new(x as f64, y as f64, 0.)
-                                + Vector3::new(10., 20., 30.),
-                            UnitQuaternion::identity(),
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-                FREQ_40K,
-            ),
-        ]);
+        let mut geometry = Geometry::new(
+            vec![
+                Device::new(
+                    0,
+                    itertools::iproduct!((0..18), (0..14))
+                        .enumerate()
+                        .map(|(i, (y, x))| {
+                            Transducer::new(
+                                i,
+                                10.16 * Vector3::new(x as f64, y as f64, 0.),
+                                UnitQuaternion::identity(),
+                            )
+                        })
+                        .collect::<Vec<_>>(),
+                    FREQ_40K,
+                ),
+                Device::new(
+                    1,
+                    itertools::iproduct!((0..18), (0..14))
+                        .enumerate()
+                        .map(|(i, (y, x))| {
+                            Transducer::new(
+                                i,
+                                10.16 * Vector3::new(x as f64, y as f64, 0.)
+                                    + Vector3::new(10., 20., 30.),
+                                UnitQuaternion::identity(),
+                            )
+                        })
+                        .collect::<Vec<_>>(),
+                    FREQ_40K,
+                ),
+            ],
+            FREQ_40K,
+        );
         geometry.set_sound_speed(temp * mm);
         geometry.iter().for_each(|dev| {
             assert_eq!(dev.sound_speed, temp * mm);

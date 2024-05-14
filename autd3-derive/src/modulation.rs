@@ -107,7 +107,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     } else {
         quote! {
             impl <#(#linetimes,)* #(#type_params,)*> IntoModulationTransform<Self> for #name #ty_generics #where_clause {
-                fn with_transform<ModulationTransformF: Fn(&Device, usize, u8) -> u8>(self, f: ModulationTransformF) -> ModulationTransform<Self, ModulationTransformF> {
+                fn with_transform<ModulationTransformF: Fn(usize, u8) -> u8>(self, f: ModulationTransformF) -> ModulationTransform<Self, ModulationTransformF> {
                     ModulationTransform::new(self, f)
                 }
             }

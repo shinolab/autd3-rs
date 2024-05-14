@@ -14,6 +14,7 @@ pub use controller::Controller;
 mod tests {
     use autd3_driver::{
         autd3_device::AUTD3,
+        defined::FREQ_40K,
         geometry::{Geometry, IntoDevice, Vector3},
     };
 
@@ -34,8 +35,9 @@ mod tests {
     pub fn create_geometry(n: usize) -> Geometry {
         Geometry::new(
             (0..n)
-                .map(|i| AUTD3::new(Vector3::zeros()).into_device(i))
+                .map(|i| AUTD3::new(Vector3::zeros()).into_device(i, FREQ_40K))
                 .collect(),
+            FREQ_40K,
         )
     }
 }

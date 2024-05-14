@@ -76,7 +76,7 @@ impl<S: SamplingMode> std::ops::Add<Sine<S>> for Sine<S> {
 }
 
 impl<S: SamplingMode> Modulation for Fourier<S> {
-    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
         if !self
             .components
             .iter()
@@ -92,22 +92,20 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
             .iter()
             .map(|c| c.calc(geometry))
             .collect::<Result<Vec<_>, _>>()?;
-        Self::transform(geometry, |dev| {
-            Ok(buffers
-                .iter()
-                .fold(
-                    vec![0usize; buffers.iter().fold(1, |acc, x| lcm(acc, x.len()))],
-                    |acc, x| {
-                        acc.iter()
-                            .zip(x[&dev.idx()].iter().cycle())
-                            .map(|(a, &b)| a + b as usize)
-                            .collect::<Vec<_>>()
-                    },
-                )
-                .iter()
-                .map(|x| (x / self.components.len()) as u8)
-                .collect::<Vec<_>>())
-        })
+        Ok(buffers
+            .iter()
+            .fold(
+                vec![0usize; buffers.iter().fold(1, |acc, x| lcm(acc, x.len()))],
+                |acc, x| {
+                    acc.iter()
+                        .zip(x.iter().cycle())
+                        .map(|(a, &b)| a + b as usize)
+                        .collect::<Vec<_>>()
+                },
+            )
+            .iter()
+            .map(|x| (x / self.components.len()) as u8)
+            .collect::<Vec<_>>())
     }
 }
 
@@ -129,11 +127,11 @@ mod tests {
         let f3 = Sine::new(200. * Hz);
         let f4 = Sine::new(250. * Hz);
 
-        let f0_buf = &f0.calc(&geometry)?[&0];
-        let f1_buf = &f1.calc(&geometry)?[&0];
-        let f2_buf = &f2.calc(&geometry)?[&0];
-        let f3_buf = &f3.calc(&geometry)?[&0];
-        let f4_buf = &f4.calc(&geometry)?[&0];
+        let f0_buf = &f0.calc(&geometry)?;
+        let f1_buf = &f1.calc(&geometry)?;
+        let f2_buf = &f2.calc(&geometry)?;
+        let f3_buf = &f3.calc(&geometry)?;
+        let f4_buf = &f4.calc(&geometry)?;
 
         let f = (f0 + f1).add_component(f2).add_components_from_iter([f3]) + f4;
 
@@ -149,7 +147,7 @@ mod tests {
         assert_eq!(f[4].freq(), 250. * Hz);
         assert_eq!(f[4].phase(), 0.0 * rad);
 
-        let buf = &f.calc(&geometry)?[&0];
+        let buf = &f.calc(&geometry)?;
 
         (0..buf.len()).for_each(|i| {
             assert_eq!(

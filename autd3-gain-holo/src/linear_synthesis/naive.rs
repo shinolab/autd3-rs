@@ -66,11 +66,14 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {
 #[cfg(test)]
 mod tests {
     use super::{super::super::NalgebraBackend, super::super::Pa, *};
-    use autd3_driver::{autd3_device::AUTD3, geometry::IntoDevice};
+    use autd3_driver::{autd3_device::AUTD3, defined::FREQ_40K, geometry::IntoDevice};
 
     #[test]
     fn test_naive_all() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let geometry: Geometry = Geometry::new(
+            vec![AUTD3::new(Vector3::zeros()).into_device(0, FREQ_40K)],
+            FREQ_40K,
+        );
         let backend = Arc::new(NalgebraBackend::default());
 
         let g = Naive::new(backend)
@@ -92,7 +95,10 @@ mod tests {
 
     #[test]
     fn test_naive_filtered() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let geometry: Geometry = Geometry::new(
+            vec![AUTD3::new(Vector3::zeros()).into_device(0, FREQ_40K)],
+            FREQ_40K,
+        );
         let backend = Arc::new(NalgebraBackend::default());
 
         let g = Naive::new(backend)

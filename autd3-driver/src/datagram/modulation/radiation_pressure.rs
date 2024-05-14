@@ -28,19 +28,12 @@ pub trait IntoRadiationPressure<M: Modulation> {
 }
 
 impl<M: Modulation> Modulation for RadiationPressure<M> {
-    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
         Ok(self
             .m
             .calc(geometry)?
             .into_iter()
-            .map(|(i, v)| {
-                (
-                    i,
-                    v.into_iter()
-                        .map(|v| ((v as f64 / 255.).sqrt() * 255.).round() as u8)
-                        .collect(),
-                )
-            })
+            .map(|v| ((v as f64 / 255.).sqrt() * 255.).round() as u8)
             .collect())
     }
 }
@@ -78,12 +71,10 @@ mod tests {
 
         let buf = vec![rng.gen(), rng.gen()];
         assert_eq!(
-            Ok(HashMap::from([(
-                0,
-                buf.iter()
-                    .map(|&x| (((x as f64 / 255.).sqrt() * 255.).round() as u8))
-                    .collect::<Vec<u8>>()
-            )])),
+            Ok(buf
+                .iter()
+                .map(|&x| (((x as f64 / 255.).sqrt() * 255.).round() as u8))
+                .collect::<Vec<u8>>()),
             TestModulation {
                 buf: buf.clone(),
                 config: SamplingConfig::Freq(4 * kHz),

@@ -5,7 +5,7 @@ use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
     datagram::{Clear, Datagram, Silencer},
-    defined::DEFAULT_TIMEOUT,
+    defined::{Freq, DEFAULT_TIMEOUT, FREQ_40K},
     firmware::{
         cpu::{RxMessage, TxDatagram},
         fpga::FPGAState,
@@ -36,7 +36,11 @@ pub struct Controller<L: Link> {
 impl Controller<Nop> {
     /// Create Controller builder
     pub const fn builder() -> ControllerBuilder {
-        ControllerBuilder::new()
+        Self::builder_with_ultrasound_freq(FREQ_40K)
+    }
+
+    pub const fn builder_with_ultrasound_freq(freq: Freq<u32>) -> ControllerBuilder {
+        ControllerBuilder::new_with_ultrasound_freq(freq)
     }
 }
 
@@ -268,7 +272,7 @@ mod tests {
         );
 
         assert_eq!(
-            Sine::new(150. * Hz).calc(&autd.geometry)?[&0],
+            Sine::new(150. * Hz).calc(&autd.geometry)?,
             autd.link[0].fpga().modulation(Segment::S0)
         );
         assert_eq!(
@@ -288,8 +292,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_clk() -> anyhow::Result<()> {
-        let mut autd = Controller::builder()
-            .add_device(AUTD3::new(Vector3::zeros()).with_ultrasound_freq(41000 * Hz))
+        let mut autd = Controller::builder_with_ultrasound_freq(41000 * Hz)
+            .add_device(AUTD3::new(Vector3::zeros()))
             .open(Audit::builder())
             .await?;
         assert_eq!(41000 * Hz, autd.link[0].fpga().ultrasound_freq());

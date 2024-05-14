@@ -36,8 +36,8 @@ impl Static {
 }
 
 impl Modulation for Static {
-    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
-        Self::transform(geometry, |_| Ok(vec![self.intensity; 2]))
+    fn calc(&self, _: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
+        Ok(vec![self.intensity; 2])
     }
 }
 
@@ -54,30 +54,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_static_default() -> anyhow::Result<()> {
+    fn test_static_default() {
         let geometry = create_geometry(1);
         let m = Static::default();
         assert_eq!(u8::MAX, m.intensity());
         assert_eq!(SamplingConfig::DISABLE, m.sampling_config());
-        assert_eq!(vec![u8::MAX, u8::MAX], m.calc(&geometry)?[&0]);
-
-        Ok(())
+        assert_eq!(Ok(vec![u8::MAX, u8::MAX]), m.calc(&geometry));
     }
 
     #[test]
-    fn test_static_with_intensity() -> anyhow::Result<()> {
+    fn test_static_with_intensity() {
         let geometry = create_geometry(1);
         let m = Static::with_intensity(0x1F);
         assert_eq!(0x1F, m.intensity());
         assert_eq!(SamplingConfig::DISABLE, m.sampling_config());
-        assert_eq!(vec![0x1F, 0x1F], m.calc(&geometry)?[&0]);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_static_derive() {
-        let m = Static::default();
-        assert_eq!(m, m.clone());
+        assert_eq!(Ok(vec![0x1F, 0x1F]), m.calc(&geometry));
     }
 }

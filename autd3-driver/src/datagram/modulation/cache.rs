@@ -12,7 +12,7 @@ use std::{
 #[no_modulation_transform]
 pub struct Cache<M: Modulation> {
     m: Rc<M>,
-    cache: Rc<RefCell<HashMap<usize, Vec<u8>>>>,
+    cache: Rc<RefCell<Vec<u8>>>,
     #[no_change]
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
@@ -56,13 +56,13 @@ impl<M: Modulation> Cache<M> {
     /// get cached modulation data
     ///
     /// Note that the cached data is created after at least one call to `calc`.
-    pub fn buffer(&self) -> Ref<'_, HashMap<usize, Vec<u8>>> {
+    pub fn buffer(&self) -> Ref<'_, Vec<u8>> {
         self.cache.borrow()
     }
 }
 
 impl<M: Modulation> Modulation for Cache<M> {
-    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
         if self.cache.borrow().is_empty() {
             *self.cache.borrow_mut() = self.m.calc(geometry)?;
         }
@@ -128,9 +128,9 @@ mod tests {
     }
 
     impl Modulation for TestCacheModulation {
-        fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
+        fn calc(&self, _: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
-            Self::transform(geometry, |_| Ok(vec![0; 2]))
+            Ok(vec![0; 2])
         }
     }
 

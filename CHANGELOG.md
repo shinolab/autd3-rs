@@ -1,3 +1,7 @@
+# 24.0.0
+
+- Remove per device ultrasound frequency configuration
+
 # 23.1.0
 
 - Support `LoopBehavior` and `TransitionMode` in firmware-emulator

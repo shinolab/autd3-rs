@@ -1,6 +1,9 @@
 use std::net::SocketAddr;
 
-use autd3_driver::geometry::{Device, Geometry, IntoDevice};
+use autd3_driver::{
+    defined::{Freq, FREQ_40K},
+    geometry::{Device, Geometry, IntoDevice},
+};
 
 use crate::traits::*;
 
@@ -12,22 +15,27 @@ pub struct LightweightClient {
 
 pub struct LightweightClientBuilder {
     devices: Vec<Device>,
+    ultrasound_freq: Freq<u32>,
 }
 
 impl Default for LightweightClientBuilder {
     fn default() -> Self {
-        Self::new()
+        Self::new_with_ultrasound_freq(FREQ_40K)
     }
 }
 
 impl LightweightClientBuilder {
-    const fn new() -> Self {
-        Self { devices: vec![] }
+    const fn new_with_ultrasound_freq(ultrasound_freq: Freq<u32>) -> Self {
+        Self {
+            devices: vec![],
+            ultrasound_freq,
+        }
     }
 
     /// Add device
     pub fn add_device(mut self, dev: impl IntoDevice) -> Self {
-        self.devices.push(dev.into_device(self.devices.len()));
+        self.devices
+            .push(dev.into_device(self.devices.len(), self.ultrasound_freq));
         self
     }
 
@@ -36,14 +44,19 @@ impl LightweightClientBuilder {
         self,
         addr: SocketAddr,
     ) -> Result<LightweightClient, crate::error::AUTDProtoBufError> {
-        LightweightClient::open_impl(Geometry::new(self.devices), addr).await
+        LightweightClient::open_impl(Geometry::new(self.devices, self.ultrasound_freq), addr).await
     }
 }
 
 impl LightweightClient {
     /// Create Client builder
     pub const fn builder() -> LightweightClientBuilder {
-        LightweightClientBuilder::new()
+        Self::builder_with_ultrasound_freq(FREQ_40K)
+    }
+
+    /// Create Client builder
+    pub const fn builder_with_ultrasound_freq(freq: Freq<u32>) -> LightweightClientBuilder {
+        LightweightClientBuilder::new_with_ultrasound_freq(freq)
     }
 
     async fn open_impl(
