@@ -1,3 +1,4 @@
+use crate::derive::Builder;
 use crate::firmware::fpga::Segment;
 
 const THERMAL_ASSERT_BIT: u8 = 1 << 0;
@@ -8,17 +9,13 @@ const IS_GAIN_MODE_BIT: u8 = 1 << 3;
 
 /// FPGA state
 #[repr(C)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Builder)]
 pub struct FPGAState {
+    #[get]
     pub(crate) state: u8,
 }
 
 impl FPGAState {
-    #[doc(hidden)]
-    pub const fn state(&self) -> u8 {
-        self.state
-    }
-
     /// Check if thermal sensor is asserted
     pub const fn is_thermal_assert(&self) -> bool {
         (self.state & THERMAL_ASSERT_BIT) != 0
@@ -72,7 +69,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_size() {
+    fn size() {
         assert_eq!(1, size_of::<FPGAState>());
         assert_eq!(0, std::mem::offset_of!(FPGAState, state));
     }
@@ -81,7 +78,7 @@ mod tests {
     #[test]
     #[case(false, 0b0)]
     #[case(true, 0b1)]
-    fn test_is_thermal_assert(#[case] expected: bool, #[case] state: u8) {
+    fn is_thermal_assert(#[case] expected: bool, #[case] state: u8) {
         assert_eq!(expected, FPGAState { state }.is_thermal_assert());
     }
 
@@ -89,7 +86,7 @@ mod tests {
     #[test]
     #[case(Segment::S0, 0b00)]
     #[case(Segment::S1, 0b10)]
-    fn test_current_mod_segment(#[case] expected: Segment, #[case] state: u8) {
+    fn current_mod_segment(#[case] expected: Segment, #[case] state: u8) {
         assert_eq!(expected, FPGAState { state }.current_mod_segment());
     }
 
@@ -97,7 +94,7 @@ mod tests {
     #[test]
     #[case(false, 0b0000)]
     #[case(true, 0b1000)]
-    fn test_is_gain_mode(#[case] expected: bool, #[case] state: u8) {
+    fn is_gain_mode(#[case] expected: bool, #[case] state: u8) {
         assert_eq!(expected, FPGAState { state }.is_gain_mode());
     }
 
@@ -105,7 +102,7 @@ mod tests {
     #[test]
     #[case(false, 0b1000)]
     #[case(true, 0b0000)]
-    fn test_is_stm_mode(#[case] expected: bool, #[case] state: u8) {
+    fn is_stm_mode(#[case] expected: bool, #[case] state: u8) {
         assert_eq!(expected, FPGAState { state }.is_stm_mode());
     }
 
@@ -114,7 +111,7 @@ mod tests {
     #[case(None, 0b1000)]
     #[case(Some(Segment::S0), 0b0000)]
     #[case(Some(Segment::S1), 0b0100)]
-    fn test_current_stm_segment(#[case] expected: Option<Segment>, #[case] state: u8) {
+    fn current_stm_segment(#[case] expected: Option<Segment>, #[case] state: u8) {
         assert_eq!(expected, FPGAState { state }.current_stm_segment());
     }
 
@@ -123,7 +120,7 @@ mod tests {
     #[case(None, 0b0000)]
     #[case(Some(Segment::S0), 0b1000)]
     #[case(Some(Segment::S1), 0b1100)]
-    fn test_current_gain_segment(#[case] expected: Option<Segment>, #[case] state: u8) {
+    fn current_gain_segment(#[case] expected: Option<Segment>, #[case] state: u8) {
         assert_eq!(expected, FPGAState { state }.current_gain_segment());
     }
 }

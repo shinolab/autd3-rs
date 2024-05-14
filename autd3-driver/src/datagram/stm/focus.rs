@@ -228,7 +228,7 @@ mod tests {
     }
 
     #[test]
-    fn add_foci() -> anyhow::Result<()> {
+    fn add_foci() {
         let stm = FocusSTM::from_freq_nearest(1. * Hz)
             .add_foci_from_iter([Vector3::new(1., 2., 3.)])
             .add_foci_from_iter([(Vector3::new(4., 5., 6.), 1)])
@@ -246,7 +246,6 @@ mod tests {
             stm[2],
             ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(0x02)
         );
-        Ok(())
     }
 
     #[rstest::rstest]
@@ -269,7 +268,7 @@ mod tests {
     }
 
     #[test]
-    fn clear() -> anyhow::Result<()> {
+    fn clear() {
         let mut stm = FocusSTM::from_freq_nearest(1. * Hz)
             .add_focus(Vector3::new(1., 2., 3.))
             .add_focus((Vector3::new(4., 5., 6.), 1))
@@ -289,7 +288,20 @@ mod tests {
             foci[2],
             ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(0x02)
         );
-        Ok(())
+    }
+
+    #[test]
+    fn deref_mut() {
+        let mut stm = FocusSTM::from_freq_nearest(1. * Hz).add_focus(Vector3::new(1., 2., 3.));
+        assert_eq!(
+            stm[0],
+            ControlPoint::new(Vector3::new(1., 2., 3.)).with_intensity(0xFF)
+        );
+        stm[0] = ControlPoint::new(Vector3::new(4., 5., 6.)).with_intensity(0x01);
+        assert_eq!(
+            stm[0],
+            ControlPoint::new(Vector3::new(4., 5., 6.)).with_intensity(0x01)
+        );
     }
 
     #[test]
