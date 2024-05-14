@@ -30,8 +30,8 @@ pub struct TestModulation {
 }
 
 impl Modulation for TestModulation {
-    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
-        Self::transform(geometry, |_| Ok(self.buf.clone()))
+    fn calc(&self, _: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
+        Ok(self.buf.clone())
     }
 }
 

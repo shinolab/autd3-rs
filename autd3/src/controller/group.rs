@@ -209,7 +209,7 @@ mod tests {
             autd.link[1].fpga().drives(Segment::S0, 0)
         );
         assert_eq!(
-            Static::with_intensity(0x80).calc(&autd.geometry)?[&0],
+            Static::with_intensity(0x80).calc(&autd.geometry)?,
             autd.link[1].fpga().modulation(Segment::S0)
         );
 
@@ -219,7 +219,7 @@ mod tests {
         );
 
         assert_eq!(
-            Sine::new(150. * Hz).calc(&autd.geometry)?[&0],
+            Sine::new(150. * Hz).calc(&autd.geometry)?,
             autd.link[3].fpga().modulation(Segment::S0)
         );
         assert_eq!(

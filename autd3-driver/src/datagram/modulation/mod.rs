@@ -2,7 +2,6 @@ mod cache;
 mod radiation_pressure;
 mod transform;
 
-use std::collections::HashMap;
 use std::time::Duration;
 
 pub use cache::Cache as ModulationCache;
@@ -13,7 +12,6 @@ pub use transform::IntoTransform as IntoModulationTransform;
 pub use transform::Transform as ModulationTransform;
 
 use crate::defined::DEFAULT_TIMEOUT;
-use crate::derive::Device;
 use crate::derive::Geometry;
 use crate::{
     error::AUTDInternalError,
@@ -24,10 +22,6 @@ use crate::{
 };
 
 use super::DatagramST;
-
-use rayon::prelude::*;
-
-const PARALLEL_THRESHOLD: usize = 4;
 
 pub trait ModulationProperty {
     fn sampling_config(&self) -> SamplingConfig;
@@ -41,36 +35,7 @@ pub trait ModulationProperty {
 /// * The sampling rate is [crate::firmware::fpga::fpga_clk_freq()]/N, where N is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN].
 #[allow(clippy::len_without_is_empty)]
 pub trait Modulation: ModulationProperty {
-    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError>;
-    fn transform<F: Fn(&Device) -> Result<Vec<u8>, AUTDInternalError> + Sync>(
-        geometry: &Geometry,
-        f: F,
-    ) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError>
-    where
-        Self: Sized,
-    {
-        #[cfg(all(feature = "force_parallel", feature = "force_serial"))]
-        compile_error!("Cannot specify both force_parallel and force_serial");
-        #[cfg(all(feature = "force_parallel", not(feature = "force_serial")))]
-        let n = usize::MAX;
-        #[cfg(all(not(feature = "force_parallel"), feature = "force_serial"))]
-        let n = 0;
-        #[cfg(all(not(feature = "force_parallel"), not(feature = "force_serial")))]
-        let n = geometry.devices().count();
-
-        if n > PARALLEL_THRESHOLD {
-            geometry
-                .devices()
-                .par_bridge()
-                .map(|dev| Ok((dev.idx(), f(dev)?)))
-                .collect::<Result<HashMap<usize, Vec<u8>>, AUTDInternalError>>()
-        } else {
-            geometry
-                .devices()
-                .map(|dev| Ok((dev.idx(), f(dev)?)))
-                .collect::<Result<HashMap<usize, Vec<u8>>, AUTDInternalError>>()
-        }
-    }
+    fn calc(&self, geometry: &Geometry) -> Result<Vec<u8>, AUTDInternalError>;
 }
 
 // GRCOV_EXCL_START
@@ -85,7 +50,7 @@ impl ModulationProperty for Box<dyn Modulation> {
 }
 
 impl Modulation for Box<dyn Modulation> {
-    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
         self.as_ref().calc(geometry)
     }
 }
@@ -125,8 +90,8 @@ mod tests {
     }
 
     impl Modulation for TestModulation {
-        fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
-            Self::transform(geometry, |_| Ok(self.buf.clone()))
+        fn calc(&self, _: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
+            Ok(self.buf.clone())
         }
     }
 

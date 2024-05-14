@@ -11,7 +11,7 @@ pub struct Device {
     pub sound_speed: f64,
     pub attenuation: f64,
     inv: Matrix3,
-    ultrasound_freq: Freq<u32>,
+    pub(crate) ultrasound_freq: Freq<u32>,
 }
 
 impl Device {
@@ -107,7 +107,7 @@ impl Device {
         self.sound_speed = (k * r * (273.15 + temp) / m).sqrt() * METER;
     }
 
-    pub fn ultrasound_freq(&self) -> Freq<u32> {
+    pub(crate) const fn ultrasound_freq(&self) -> Freq<u32> {
         self.ultrasound_freq
     }
 
@@ -115,6 +115,7 @@ impl Device {
     pub fn wavelength(&self) -> f64 {
         self.sound_speed / self.ultrasound_freq.freq as f64
     }
+
     /// Get the wavenumber of the transducer
     pub fn wavenumber(&self) -> f64 {
         2.0 * PI * self.ultrasound_freq.freq as f64 / self.sound_speed
@@ -141,7 +142,7 @@ impl<'a> IntoIterator for &'a Device {
 // GRCOV_EXCL_STOP
 
 pub trait IntoDevice {
-    fn into_device(self, dev_idx: usize) -> Device;
+    fn into_device(self, dev_idx: usize, ultrasound_freq: Freq<u32>) -> Device;
 }
 
 #[cfg(test)]

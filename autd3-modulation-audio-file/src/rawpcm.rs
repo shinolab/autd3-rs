@@ -48,22 +48,20 @@ impl RawPCM {
 }
 
 impl Modulation for RawPCM {
-    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
-        Self::transform(geometry, |dev| {
-            let new_rate = self.sampling_config().freq(dev.ultrasound_freq())?;
-            if !is_integer(new_rate.hz()) {
-                return Err(AudioFileError::RawPCMSamplingRateNotInteger(new_rate).into());
-            }
-            Ok(wav_io::resample::linear(
-                self.read_buf()?,
-                1,
-                self.sample_rate.hz(),
-                new_rate.hz() as u32,
-            )
-            .iter()
-            .map(|&d| d.round() as u8)
-            .collect())
-        })
+    fn calc(&self, geometry: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
+        let new_rate = self.sampling_config().freq(geometry.ultrasound_freq())?;
+        if !is_integer(new_rate.hz()) {
+            return Err(AudioFileError::RawPCMSamplingRateNotInteger(new_rate).into());
+        }
+        Ok(wav_io::resample::linear(
+            self.read_buf()?,
+            1,
+            self.sample_rate.hz(),
+            new_rate.hz() as u32,
+        )
+        .iter()
+        .map(|&d| d.round() as u8)
+        .collect())
     }
 }
 
@@ -84,10 +82,10 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(HashMap::from([(0, vec![0xFF, 0x7F, 0x00])])), vec![0xFF, 0x7F, 0x00], 4000 * Hz, SamplingConfig::Division(5120))]
+    #[case(Ok(vec![0xFF, 0x7F, 0x00]), vec![0xFF, 0x7F, 0x00], 4000 * Hz, SamplingConfig::Division(5120))]
     #[case(Err(AudioFileError::RawPCMSamplingRateNotInteger(SamplingConfig::FreqNearest(10.5*kHz).freq(40*kHz).unwrap()).into()), vec![0xFF, 0x7F, 0x00], 4000 * Hz, SamplingConfig::FreqNearest(10.5*kHz))]
     fn new(
-        #[case] expect: Result<HashMap<usize, Vec<u8>>, AUTDInternalError>,
+        #[case] expect: Result<Vec<u8>, AUTDInternalError>,
         #[case] data: Vec<u8>,
         #[case] sample_rate: Freq<u32>,
         #[case] config: SamplingConfig,

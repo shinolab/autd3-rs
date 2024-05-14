@@ -1,6 +1,6 @@
 use autd3_driver::{
     datagram::{Clear, ConfigureFPGAClock, IntoDatagramWithTimeout, Synchronize},
-    defined::FREQ_40K,
+    defined::{Freq, FREQ_40K},
     derive::DEFAULT_TIMEOUT,
     firmware::cpu::{RxMessage, TxDatagram},
     geometry::{Device, Geometry, IntoDevice},
@@ -13,16 +13,21 @@ use crate::error::AUTDError;
 /// Builder for [crate::controller::Controller]
 pub struct ControllerBuilder {
     devices: Vec<Device>,
+    ultrasound_freq: Freq<u32>,
 }
 
 impl ControllerBuilder {
-    pub(crate) const fn new() -> ControllerBuilder {
-        Self { devices: vec![] }
+    pub(crate) const fn new_with_ultrasound_freq(ultrasound_freq: Freq<u32>) -> ControllerBuilder {
+        Self {
+            devices: vec![],
+            ultrasound_freq,
+        }
     }
 
     /// Add device
     pub fn add_device(mut self, dev: impl IntoDevice) -> Self {
-        self.devices.push(dev.into_device(self.devices.len()));
+        self.devices
+            .push(dev.into_device(self.devices.len(), self.ultrasound_freq));
         self
     }
 
@@ -40,18 +45,14 @@ impl ControllerBuilder {
         link_builder: B,
         timeout: std::time::Duration,
     ) -> Result<Controller<B::L>, AUTDError> {
-        let geometry = Geometry::new(self.devices);
+        let geometry = Geometry::new(self.devices, self.ultrasound_freq);
         let mut cnt = Controller {
             link: link_builder.open(&geometry).await?,
             tx_buf: TxDatagram::new(geometry.num_devices()),
             rx_buf: vec![RxMessage::new(0, 0); geometry.num_devices()],
             geometry,
         };
-        if cnt
-            .geometry
-            .iter()
-            .any(|dev| dev.ultrasound_freq() != FREQ_40K)
-        {
+        if self.ultrasound_freq != FREQ_40K {
             cnt.send(ConfigureFPGAClock::new().with_timeout(timeout))
                 .await?; // GRCOV_EXCL_LINE
         }

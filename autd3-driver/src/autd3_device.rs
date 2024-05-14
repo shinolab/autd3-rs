@@ -1,6 +1,6 @@
 use crate::{
+    defined::mm,
     defined::Freq,
-    defined::{mm, FREQ_40K},
     derive::*,
     geometry::{IntoDevice, Matrix4, UnitQuaternion, Vector3, Vector4},
 };
@@ -12,8 +12,6 @@ pub struct AUTD3 {
     position: Vector3,
     #[getset]
     rotation: UnitQuaternion,
-    #[getset]
-    ultrasound_freq: Freq<u32>,
 }
 
 impl AUTD3 {
@@ -42,7 +40,6 @@ impl AUTD3 {
         Self {
             position,
             rotation: UnitQuaternion::identity(),
-            ultrasound_freq: FREQ_40K,
         }
     }
 
@@ -97,7 +94,7 @@ impl AUTD3 {
 }
 
 impl IntoDevice for AUTD3 {
-    fn into_device(self, dev_idx: usize) -> Device {
+    fn into_device(self, dev_idx: usize, ultrasound_freq: Freq<u32>) -> Device {
         let rot_mat: Matrix4 = From::from(self.rotation);
         let trans_mat = rot_mat.append_translation(&self.position);
         Device::new(
@@ -117,7 +114,7 @@ impl IntoDevice for AUTD3 {
                 .zip(0..)
                 .map(|(p, i)| Transducer::new(i, Vector3::new(p.x, p.y, p.z), self.rotation))
                 .collect(),
-            self.ultrasound_freq,
+            ultrasound_freq,
         )
     }
 }
@@ -126,11 +123,13 @@ impl IntoDevice for AUTD3 {
 mod tests {
     use rand::Rng;
 
+    use crate::defined::FREQ_40K;
+
     use super::*;
 
     #[test]
     fn test_new() {
-        let dev = AUTD3::new(Vector3::zeros()).into_device(0);
+        let dev = AUTD3::new(Vector3::zeros()).into_device(0, FREQ_40K);
         assert_eq!(249, dev.num_transducers());
     }
 
@@ -141,7 +140,7 @@ mod tests {
     #[case(18, Vector3::new(0., AUTD3::TRANS_SPACING, 0.))]
     #[case(248, Vector3::new(17. * AUTD3::TRANS_SPACING, 13. * AUTD3::TRANS_SPACING, 0.))]
     fn test_position(#[case] idx: usize, #[case] expected: Vector3) {
-        let dev = AUTD3::new(Vector3::zeros()).into_device(0);
+        let dev = AUTD3::new(Vector3::zeros()).into_device(0, FREQ_40K);
         assert_eq!(&expected, dev[idx].position());
     }
 

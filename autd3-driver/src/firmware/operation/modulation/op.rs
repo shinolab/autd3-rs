@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{
     derive::Modulation,
     error::AUTDInternalError,
@@ -33,7 +31,7 @@ struct ModulationSubseq {
 
 pub struct ModulationOp<M: Modulation> {
     modulation: M,
-    buf: HashMap<usize, Vec<u8>>,
+    buf: Vec<u8>,
     remains: Remains,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
@@ -53,7 +51,7 @@ impl<M: Modulation> ModulationOp<M> {
 
 impl<M: Modulation> Operation for ModulationOp<M> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        let buf = &self.buf[&device.idx()];
+        let buf = &self.buf;
 
         let sent = buf.len() - self.remains[device];
 
@@ -120,7 +118,7 @@ impl<M: Modulation> Operation for ModulationOp<M> {
     }
 
     fn required_size(&self, device: &Device) -> usize {
-        if self.remains[device] == self.buf[&device.idx()].len() {
+        if self.remains[device] == self.buf.len() {
             std::mem::size_of::<ModulationHead>() + 1
         } else {
             std::mem::size_of::<ModulationSubseq>() + 1
@@ -129,15 +127,12 @@ impl<M: Modulation> Operation for ModulationOp<M> {
 
     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
         self.buf = self.modulation.calc(geometry)?;
-        self.buf.values().try_for_each(|buf| {
-            if !(2..=MOD_BUF_SIZE_MAX).contains(&buf.len()) {
-                return Err(AUTDInternalError::ModulationSizeOutOfRange(buf.len()));
-            }
-            Ok(())
-        })?;
 
-        self.remains
-            .init(geometry, |dev| self.buf[&dev.idx()].len());
+        if !(2..=MOD_BUF_SIZE_MAX).contains(&self.buf.len()) {
+            return Err(AUTDInternalError::ModulationSizeOutOfRange(self.buf.len()));
+        }
+
+        self.remains.init(geometry, |_| self.buf.len());
 
         Ok(())
     }

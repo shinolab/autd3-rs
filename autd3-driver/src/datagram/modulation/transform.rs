@@ -3,7 +3,7 @@ use crate::derive::*;
 /// Modulation to transform modulation data
 #[derive(Modulation)]
 #[no_modulation_transform]
-pub struct Transform<M: Modulation, F: Fn(&Device, usize, u8) -> u8> {
+pub struct Transform<M: Modulation, F: Fn(usize, u8) -> u8> {
     m: M,
     #[no_change]
     config: SamplingConfig,
@@ -11,7 +11,7 @@ pub struct Transform<M: Modulation, F: Fn(&Device, usize, u8) -> u8> {
     loop_behavior: LoopBehavior,
 }
 
-impl<M: Modulation, F: Fn(&Device, usize, u8) -> u8> Transform<M, F> {
+impl<M: Modulation, F: Fn(usize, u8) -> u8> Transform<M, F> {
     #[doc(hidden)]
     pub fn new(m: M, f: F) -> Self {
         Self {
@@ -29,24 +29,17 @@ pub trait IntoTransform<M: Modulation> {
     /// # Arguments
     ///
     /// * `f` - transform function. The first argument is index of the element, and the second argument is the value of the element of the original modulation data.
-    fn with_transform<F: Fn(&Device, usize, u8) -> u8>(self, f: F) -> Transform<M, F>;
+    fn with_transform<F: Fn(usize, u8) -> u8>(self, f: F) -> Transform<M, F>;
 }
 
-impl<M: Modulation, F: Fn(&Device, usize, u8) -> u8> Modulation for Transform<M, F> {
-    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
+impl<M: Modulation, F: Fn(usize, u8) -> u8> Modulation for Transform<M, F> {
+    fn calc(&self, geometry: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
         Ok(self
             .m
             .calc(geometry)?
             .into_iter()
-            .map(|(k, buf)| {
-                (
-                    k,
-                    buf.iter()
-                        .enumerate()
-                        .map(|(i, &x)| (self.f)(&geometry[k], i, x))
-                        .collect(),
-                )
-            })
+            .enumerate()
+            .map(|(i, x)| (self.f)(i, x))
             .collect())
     }
 }
@@ -71,7 +64,7 @@ mod tests {
                 config,
                 loop_behavior: LoopBehavior::infinite(),
             }
-            .with_transform(|_, _, x| x) // GRCOV_EXCL_LINE
+            .with_transform(|_, x| x) // GRCOV_EXCL_LINE
             .sampling_config()
         );
     }
@@ -85,16 +78,13 @@ mod tests {
         let buf = vec![rng.gen(), rng.gen()];
 
         assert_eq!(
-            Ok(HashMap::from([(
-                0,
-                buf.iter().map(|&x| x / 2).collect::<Vec<_>>()
-            )])),
+            Ok(buf.iter().map(|&x| x / 2).collect::<Vec<_>>()),
             TestModulation {
                 buf: buf.clone(),
                 config: SamplingConfig::Freq(4 * kHz),
                 loop_behavior: LoopBehavior::infinite(),
             }
-            .with_transform(|_, _, x| x / 2)
+            .with_transform(|_, x| x / 2)
             .calc(&geometry)
         );
     }

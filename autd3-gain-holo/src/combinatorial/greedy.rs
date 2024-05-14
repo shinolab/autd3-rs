@@ -139,11 +139,14 @@ impl Default for Greedy<Sphere> {
 #[cfg(test)]
 mod tests {
     use super::{super::super::Pa, *};
-    use autd3_driver::{autd3_device::AUTD3, geometry::IntoDevice};
+    use autd3_driver::{autd3_device::AUTD3, defined::FREQ_40K, geometry::IntoDevice};
 
     #[test]
     fn test_greedy_all() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let geometry: Geometry = Geometry::new(
+            vec![AUTD3::new(Vector3::zeros()).into_device(0, FREQ_40K)],
+            FREQ_40K,
+        );
 
         let g = Greedy::default()
             .with_phase_div(32)
@@ -168,7 +171,10 @@ mod tests {
 
     #[test]
     fn test_greedy_filtered() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let geometry: Geometry = Geometry::new(
+            vec![AUTD3::new(Vector3::zeros()).into_device(0, FREQ_40K)],
+            FREQ_40K,
+        );
 
         let g = Greedy::default()
             .add_focus(Vector3::new(10., 10., 100.), 5e3 * Pa)

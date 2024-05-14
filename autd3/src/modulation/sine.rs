@@ -48,18 +48,16 @@ impl Sine<ExactFreq> {
 }
 
 impl<S: SamplingMode> Modulation for Sine<S> {
-    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
-        Self::transform(geometry, |dev| {
-            let (n, rep) = S::validate(self.freq, self.config, dev.ultrasound_freq())?;
-            Ok((0..n)
-                .map(|i| {
-                    ((self.intensity as f64 / 2.
-                        * (2.0 * PI * (rep * i) as f64 / n as f64 + self.phase.radian()).sin())
-                        + self.offset as f64)
-                        .round() as u8
-                })
-                .collect())
-        })
+    fn calc(&self, geometry: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
+        let (n, rep) = S::validate(self.freq, self.config, geometry.ultrasound_freq())?;
+        Ok((0..n)
+            .map(|i| {
+                ((self.intensity as f64 / 2.
+                    * (2.0 * PI * (rep * i) as f64 / n as f64 + self.phase.radian()).sin())
+                    + self.offset as f64)
+                    .round() as u8
+            })
+            .collect())
     }
 }
 
@@ -148,7 +146,7 @@ mod tests {
         assert_eq!(u8::MAX / 2, m.offset());
         assert_eq!(Angle::Rad(0.0), m.phase());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
-        assert_eq!(expect.map(|b| HashMap::from([(0, b)])), m.calc(&geometry));
+        assert_eq!(expect, m.calc(&geometry));
     }
 
     #[rstest::rstest]
@@ -187,7 +185,7 @@ mod tests {
         assert_eq!(u8::MAX / 2, m.offset());
         assert_eq!(Angle::Rad(0.0), m.phase());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
-        assert_eq!(expect.map(|b| HashMap::from([(0, b)])), m.calc(&geometry));
+        assert_eq!(expect, m.calc(&geometry));
     }
 
     #[test]

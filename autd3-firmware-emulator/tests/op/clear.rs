@@ -22,8 +22,8 @@ struct TestMod {
 }
 
 impl Modulation for TestMod {
-    fn calc(&self, geometry: &Geometry) -> Result<HashMap<usize, Vec<u8>>, AUTDInternalError> {
-        Self::transform(geometry, |_| Ok(vec![u8::MIN; 100]))
+    fn calc(&self, _: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
+        Ok(vec![u8::MIN; 100])
     }
 }
 
