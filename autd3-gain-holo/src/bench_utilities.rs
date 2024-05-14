@@ -4,7 +4,7 @@ use autd3_driver::{
     acoustics::directivity::Sphere,
     autd3_device::AUTD3,
     datagram::{Gain, GainFilter},
-    defined::PI,
+    defined::{FREQ_40K, PI},
     geometry::{Geometry, IntoDevice, Vector3},
 };
 
@@ -14,9 +14,11 @@ pub fn generate_geometry(size: usize) -> Geometry {
     Geometry::new(
         (0..size)
             .map(move |i| {
-                AUTD3::new(Vector3::new(i as f64 * AUTD3::DEVICE_WIDTH, 0., 0.)).into_device(i)
+                AUTD3::new(Vector3::new(i as f64 * AUTD3::DEVICE_WIDTH, 0., 0.))
+                    .into_device(i, FREQ_40K)
             })
             .collect(),
+        FREQ_40K,
     )
 }
 
