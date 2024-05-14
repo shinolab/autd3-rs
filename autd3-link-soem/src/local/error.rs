@@ -22,6 +22,11 @@ pub enum SOEMError {
     #[error("Invalid interface name: {0}")]
     InvalidInterfaceName(String),
 
+    #[error("Failed to create timer")]
+    TimerCreationFailed,
+    #[error("Failed to delete timer")]
+    TimerDeleteFailed,
+
     #[cfg(target_os = "windows")]
     #[error("{0}")]
     WindowsError(#[from] windows::core::Error),

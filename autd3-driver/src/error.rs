@@ -96,11 +96,6 @@ pub enum AUTDInternalError {
     #[error("Failed to send data")]
     SendDataFailed,
 
-    #[error("Failed to create timer")]
-    TimerCreationFailed,
-    #[error("Failed to delete timer")]
-    TimerDeleteFailed,
-
     #[error("The input data is invalid.")]
     InvalidDateTime,
 

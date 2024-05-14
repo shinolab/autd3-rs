@@ -48,7 +48,7 @@ impl NativeTimerWrapper {
             sa.sa_sigaction = cb.unwrap() as usize;
             libc::sigemptyset(&mut sa.sa_mask);
             if sigaction(SIGRTMIN, &sa, ptr::null_mut()) < 0 {
-                return Err(AUTDInternalError::TimerCreationFailed);
+                return Err(SOEMError::TimerCreationFailed.into());
             }
 
             let mut sev: sigevent = mem::zeroed();
@@ -63,7 +63,7 @@ impl NativeTimerWrapper {
 
             let mut timer = 0;
             if timer_create(CLOCK_REALTIME, &mut sev, &mut timer) < 0 {
-                return Err(AUTDInternalError::TimerCreationFailed);
+                return Err(SOEMError::TimerCreationFailed.into());
             }
 
             let new_value = itimerspec {
@@ -78,7 +78,7 @@ impl NativeTimerWrapper {
             };
 
             if timer_settime(timer, 0, &new_value, ptr::null_mut()) < 0 {
-                return Err(AUTDInternalError::TimerCreationFailed);
+                return Err(SOEMError::TimerCreationFailed.into());
             }
 
             self.timer_handle = Some(TimerHandle { timer });
@@ -90,7 +90,7 @@ impl NativeTimerWrapper {
         if let Some(handle) = self.timer_handle.take() {
             unsafe {
                 if timer_delete(handle.timer) < 0 {
-                    return Err(AUTDInternalError::TimerDeleteFailed);
+                    return Err(SOEMError::TimerDeleteFailed.into());
                 }
             }
         }
