@@ -33,49 +33,29 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
     let getters = getter_fileds.iter().map(|field| {
         let ident = field.ident.as_ref().unwrap();
-        let attr = field
-            .attrs
-            .iter()
-            .find(|attr| match &attr.meta {
-                Meta::Path(path) if path.is_ident("get") || path.is_ident("getset") => true,
-                Meta::List(list) if list.path.is_ident("get") || list.path.is_ident("getset") => {
-                    true
+
+        let ty = &field.ty;
+        match ty {
+            syn::Type::Path(path) if path.path.is_ident("String") => quote! {
+                pub fn #ident(&self) -> &str {
+                    &self.#ident
                 }
-                _ => false,
-            })
-            .unwrap();
-        if let Ok(syn::FnArg::Typed(typed)) = attr.parse_args::<syn::FnArg>() {
-            let name = typed.pat;
-            let ty = typed.ty;
-            quote! {
-                pub const fn #name(&self) -> #ty {
-                    self.#ident.#name
+            },
+            syn::Type::Path(path) if path.path.is_ident("Vector3") => quote! {
+                pub const fn #ident(&self) -> &Vector3 {
+                    &self.#ident
                 }
-            }
-        } else {
-            let ty = &field.ty;
-            match ty {
-                syn::Type::Path(path) if path.path.is_ident("String") => quote! {
-                    pub fn #ident(&self) -> &str {
-                        &self.#ident
-                    }
-                },
-                syn::Type::Path(path) if path.path.is_ident("Vector3") => quote! {
-                    pub const fn #ident(&self) -> &Vector3 {
-                        &self.#ident
-                    }
-                },
-                syn::Type::Path(path) if path.path.is_ident("UnitQuaternion") => quote! {
-                    pub const fn #ident(&self) -> &UnitQuaternion {
-                        &self.#ident
-                    }
-                },
-                _ => quote! {
-                    pub const fn #ident(&self) -> #ty {
-                        self.#ident
-                    }
-                },
-            }
+            },
+            syn::Type::Path(path) if path.path.is_ident("UnitQuaternion") => quote! {
+                pub const fn #ident(&self) -> &UnitQuaternion {
+                    &self.#ident
+                }
+            },
+            _ => quote! {
+                pub const fn #ident(&self) -> #ty {
+                    self.#ident
+                }
+            },
         }
     });
 
@@ -184,11 +164,9 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 },
                 _ => quote! {
                     #[allow(clippy::needless_update)]
-                    pub #const_qua fn #name(self, #ident: #ty) -> Self {
-                        Self {
-                            #ident,
-                            ..self
-                        }
+                    pub #const_qua fn #name(mut self, #ident: #ty) -> Self {
+                        self.#ident = #ident;
+                        self
                     }
                 },
             }

@@ -7,8 +7,6 @@ use crate::{
     },
 };
 
-use super::STMProps;
-
 /// GainSTM is an STM for moving [Gain].
 ///
 /// The sampling timing is determined by hardware, thus the sampling time is precise.
@@ -21,8 +19,10 @@ use super::STMProps;
 #[no_const]
 pub struct GainSTM<G: Gain> {
     gains: Vec<G>,
-    #[getset(loop_behavior: LoopBehavior)]
-    props: STMProps,
+    #[getset]
+    loop_behavior: LoopBehavior,
+    #[get]
+    stm_sampling_config: STMSamplingConfig,
     #[getset]
     mode: GainSTMMode,
 }
@@ -35,7 +35,12 @@ impl<G: Gain> GainSTM<G> {
     /// * `freq` - Frequency of STM.
     ///
     pub const fn from_freq(freq: Freq<f64>) -> Self {
-        Self::from_props_mode(STMProps::from_freq(freq), GainSTMMode::PhaseIntensityFull)
+        Self {
+            gains: Vec::new(),
+            loop_behavior: LoopBehavior::infinite(),
+            stm_sampling_config: STMSamplingConfig::Freq(freq),
+            mode: GainSTMMode::PhaseIntensityFull,
+        }
     }
 
     /// constructor
@@ -45,10 +50,12 @@ impl<G: Gain> GainSTM<G> {
     /// * `freq` - Frequency of STM. The frequency closest to `freq` from the possible frequencies is set.
     ///
     pub const fn from_freq_nearest(freq: Freq<f64>) -> Self {
-        Self::from_props_mode(
-            STMProps::from_freq_nearest(freq),
-            GainSTMMode::PhaseIntensityFull,
-        )
+        Self {
+            gains: Vec::new(),
+            loop_behavior: LoopBehavior::infinite(),
+            stm_sampling_config: STMSamplingConfig::FreqNearest(freq),
+            mode: GainSTMMode::PhaseIntensityFull,
+        }
     }
 
     /// constructor
@@ -58,10 +65,12 @@ impl<G: Gain> GainSTM<G> {
     /// * `config` - Sampling configuration
     ///
     pub const fn from_sampling_config(config: SamplingConfig) -> Self {
-        Self::from_props_mode(
-            STMProps::from_sampling_config(config),
-            GainSTMMode::PhaseIntensityFull,
-        )
+        Self {
+            gains: Vec::new(),
+            loop_behavior: LoopBehavior::infinite(),
+            stm_sampling_config: STMSamplingConfig::SamplingConfig(config),
+            mode: GainSTMMode::PhaseIntensityFull,
+        }
     }
 
     /// Add a [Gain] to GainSTM
@@ -76,25 +85,6 @@ impl<G: Gain> GainSTM<G> {
         self
     }
 
-    /// constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `props` - STMProps
-    /// * `mode` - GainSTMMode
-    pub const fn from_props_mode(props: STMProps, mode: GainSTMMode) -> Self {
-        Self {
-            gains: Vec::new(),
-            mode,
-            props,
-        }
-    }
-
-    /// Get [Gain]s
-    pub fn gains(&self) -> &[G] {
-        &self.gains
-    }
-
     /// Clear current [Gain]s
     ///
     /// # Returns
@@ -104,19 +94,21 @@ impl<G: Gain> GainSTM<G> {
     }
 
     pub fn sampling_config(&self) -> Result<SamplingConfig, AUTDInternalError> {
-        self.props.sampling_config(self.gains.len())
-    }
-
-    pub fn stm_sampling_config(&self) -> STMSamplingConfig {
-        self.props.config
+        self.stm_sampling_config.sampling(self.gains.len())
     }
 }
 
-impl<G: Gain> std::ops::Index<usize> for GainSTM<G> {
-    type Output = G;
+impl<G: Gain> std::ops::Deref for GainSTM<G> {
+    type Target = [G];
 
-    fn index(&self, idx: usize) -> &Self::Output {
-        &self.gains[idx]
+    fn deref(&self) -> &Self::Target {
+        &self.gains
+    }
+}
+
+impl<G: Gain> std::ops::DerefMut for GainSTM<G> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.gains
     }
 }
 
@@ -132,14 +124,18 @@ impl<G: Gain> DatagramST for GainSTM<G> {
         let Self {
             gains,
             mode,
-            props: STMProps {
-                loop_behavior,
-                config,
-            },
-            ..
+            loop_behavior,
+            stm_sampling_config,
         } = self;
         (
-            Self::O1::new(gains, mode, config, loop_behavior, segment, transition_mode),
+            Self::O1::new(
+                gains,
+                mode,
+                stm_sampling_config,
+                loop_behavior,
+                segment,
+                transition_mode,
+            ),
             Self::O2::default(),
         )
     }
@@ -155,7 +151,8 @@ impl<G: Gain + Clone> Clone for GainSTM<G> {
         Self {
             gains: self.gains.clone(),
             mode: self.mode,
-            props: self.props,
+            loop_behavior: self.loop_behavior,
+            stm_sampling_config: self.stm_sampling_config,
         }
     }
 }
@@ -271,9 +268,9 @@ mod tests {
         let mut stm = GainSTM::<Box<dyn Gain>>::from_freq(1. * Hz)
             .add_gain(Box::new(NullGain {}))
             .add_gain(Box::new(NullGain2 {}));
-        assert_eq!(stm.gains().len(), 2);
+        assert_eq!(stm.len(), 2);
         let gains = stm.clear();
-        assert_eq!(stm.gains().len(), 0);
+        assert_eq!(stm.len(), 0);
         assert_eq!(gains.len(), 2);
         Ok(())
     }
