@@ -264,7 +264,7 @@ mod tests {
     }
 
     #[test]
-    fn clear() -> anyhow::Result<()> {
+    fn clear() {
         let mut stm = GainSTM::<Box<dyn Gain>>::from_freq(1. * Hz)
             .add_gain(Box::new(NullGain {}))
             .add_gain(Box::new(NullGain2 {}));
@@ -272,7 +272,12 @@ mod tests {
         let gains = stm.clear();
         assert_eq!(stm.len(), 0);
         assert_eq!(gains.len(), 2);
-        Ok(())
+    }
+
+    #[test]
+    fn deref_mut() {
+        let mut stm = GainSTM::<Box<dyn Gain>>::from_freq(1. * Hz).add_gain(Box::new(NullGain {}));
+        stm[0] = Box::new(NullGain2 {});
     }
 
     #[rstest::rstest]
@@ -286,12 +291,6 @@ mod tests {
                 .with_loop_behavior(loop_behavior)
                 .loop_behavior()
         );
-    }
-
-    #[test]
-    fn indexer() {
-        let stm = GainSTM::from_freq(1. * Hz).add_gain(NullGain {});
-        let _: &NullGain = &stm[0];
     }
 
     #[test]
