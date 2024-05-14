@@ -1,6 +1,13 @@
 # 24.0.0
 
 - Remove per device ultrasound frequency configuration
+- Fix typo: Immidiate -> Immediate
+- Fix for capi
+  - Add `FocusSTM::stm_sampling_config` and `GainSTM::stm_sampling_config`
+  - Add `FPGAState::state`
+- Remove unused Result wrapping from group
+- Fix slave index in SOEM link
+- `Status` does not contain error message now
 
 # 23.1.0
 
