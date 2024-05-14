@@ -42,7 +42,7 @@ impl SwapSegment<()> {
     pub const fn gain(segment: Segment) -> SwapSegment<Gain> {
         SwapSegment {
             segment,
-            transition_mode: TransitionMode::Immidiate,
+            transition_mode: TransitionMode::Immediate,
             _phantom: std::marker::PhantomData,
         }
     }
@@ -123,9 +123,9 @@ mod tests {
 
     #[test]
     fn modulation() -> anyhow::Result<()> {
-        let d = SwapSegment::modulation(Segment::S0, TransitionMode::Immidiate);
+        let d = SwapSegment::modulation(Segment::S0, TransitionMode::Immediate);
         assert_eq!(Segment::S0, d.segment());
-        assert_eq!(TransitionMode::Immidiate, d.transition_mode());
+        assert_eq!(TransitionMode::Immediate, d.transition_mode());
         assert_eq!(Some(DEFAULT_TIMEOUT), d.timeout());
         let _ = d.operation();
         Ok(())
@@ -134,9 +134,9 @@ mod tests {
     #[test]
     fn focus_stm() {
         use crate::datagram::Datagram;
-        let d = SwapSegment::focus_stm(Segment::S0, TransitionMode::Immidiate);
+        let d = SwapSegment::focus_stm(Segment::S0, TransitionMode::Immediate);
         assert_eq!(Segment::S0, d.segment());
-        assert_eq!(TransitionMode::Immidiate, d.transition_mode());
+        assert_eq!(TransitionMode::Immediate, d.transition_mode());
         assert_eq!(Some(DEFAULT_TIMEOUT), d.timeout());
         let _ = d.operation();
     }
@@ -144,9 +144,9 @@ mod tests {
     #[test]
     fn gain_stm() {
         use crate::datagram::Datagram;
-        let d = SwapSegment::gain_stm(Segment::S0, TransitionMode::Immidiate);
+        let d = SwapSegment::gain_stm(Segment::S0, TransitionMode::Immediate);
         assert_eq!(Segment::S0, d.segment());
-        assert_eq!(TransitionMode::Immidiate, d.transition_mode());
+        assert_eq!(TransitionMode::Immediate, d.transition_mode());
         assert_eq!(Some(DEFAULT_TIMEOUT), d.timeout());
         let _ = d.operation();
     }

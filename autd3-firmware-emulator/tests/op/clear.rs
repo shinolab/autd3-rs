@@ -61,7 +61,7 @@ fn send_clear() -> anyhow::Result<()> {
             config: SamplingConfig::DivisionRaw(5120),
             loop_behavior: LoopBehavior::infinite(),
         }
-        .operation_with_segment(Segment::S0, Some(TransitionMode::Immidiate));
+        .operation_with_segment(Segment::S0, Some(TransitionMode::Immediate));
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
         let (mut op, _) = TestGain {}.operation_with_segment(Segment::S0, true);

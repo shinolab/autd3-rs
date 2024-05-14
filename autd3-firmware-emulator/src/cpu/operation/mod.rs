@@ -2,7 +2,7 @@ use crate::CPUEmulator;
 
 use super::params::{
     ADDR_CTL_FLAG, BRAM_SELECT_CONTROLLER, TRANSITION_MODE_EXT, TRANSITION_MODE_GPIO,
-    TRANSITION_MODE_IMMIDIATE, TRANSITION_MODE_NONE, TRANSITION_MODE_SYNC_IDX,
+    TRANSITION_MODE_IMMEDIATE, TRANSITION_MODE_NONE, TRANSITION_MODE_SYNC_IDX,
     TRANSITION_MODE_SYS_TIME,
 };
 
@@ -43,7 +43,7 @@ impl CPUEmulator {
                     || mode == TRANSITION_MODE_SYS_TIME
                     || mode == TRANSITION_MODE_GPIO
             }
-            _ => mode == TRANSITION_MODE_IMMIDIATE || mode == TRANSITION_MODE_EXT,
+            _ => mode == TRANSITION_MODE_IMMEDIATE || mode == TRANSITION_MODE_EXT,
         }
     }
 

@@ -55,7 +55,7 @@ impl<D: DatagramST> Datagram for D {
         <Self as DatagramST>::operation_with_segment(
             self,
             Segment::S0,
-            Some(TransitionMode::Immidiate),
+            Some(TransitionMode::Immediate),
         )
     }
 

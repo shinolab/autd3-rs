@@ -59,7 +59,7 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
                 loop_behavior: LoopBehavior::infinite(),
             },
             Segment::S1,
-            Some(TransitionMode::Immidiate),
+            Some(TransitionMode::Immediate),
         );
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
@@ -70,7 +70,7 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
             STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX)),
             LoopBehavior::infinite(),
             Segment::S1,
-            Some(TransitionMode::Immidiate),
+            Some(TransitionMode::Immediate),
         );
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
     }

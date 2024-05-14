@@ -108,7 +108,7 @@ fn send_gain() -> anyhow::Result<()> {
     }
 
     {
-        let mut op = GainSwapSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
+        let mut op = GainSwapSegmentOp::new(Segment::S1, TransitionMode::Immediate);
 
         assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
 
@@ -134,7 +134,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
             STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(0xFFFFFFFF)),
             LoopBehavior::infinite(),
             Segment::S0,
-            Some(TransitionMode::Immidiate),
+            Some(TransitionMode::Immediate),
         ),
         &geometry,
         &mut tx,
@@ -157,20 +157,20 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
             STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(0xFFFFFFFF)),
             LoopBehavior::infinite(),
             Segment::S1,
-            Some(TransitionMode::Immidiate),
+            Some(TransitionMode::Immediate),
         ),
         &geometry,
         &mut tx,
     )?;
 
     {
-        let mut op = GainSwapSegmentOp::new(Segment::S0, TransitionMode::Immidiate);
+        let mut op = GainSwapSegmentOp::new(Segment::S0, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, &mut op, &geometry, &mut tx)
         );
 
-        let mut op = GainSwapSegmentOp::new(Segment::S1, TransitionMode::Immidiate);
+        let mut op = GainSwapSegmentOp::new(Segment::S1, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, &mut op, &geometry, &mut tx)

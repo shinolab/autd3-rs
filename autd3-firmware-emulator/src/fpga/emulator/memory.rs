@@ -262,7 +262,7 @@ impl Memory {
                 },
             ),
             TRANSITION_MODE_EXT => TransitionMode::Ext,
-            TRANSITION_MODE_IMMIDIATE => TransitionMode::Immidiate,
+            TRANSITION_MODE_IMMEDIATE => TransitionMode::Immediate,
             _ => unreachable!(),
         }
     }
@@ -334,7 +334,7 @@ impl Memory {
                 },
             ),
             TRANSITION_MODE_EXT => TransitionMode::Ext,
-            TRANSITION_MODE_IMMIDIATE => TransitionMode::Immidiate,
+            TRANSITION_MODE_IMMEDIATE => TransitionMode::Immediate,
             _ => unreachable!(),
         }
     }

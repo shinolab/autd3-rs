@@ -22,7 +22,7 @@ pub const TRANSITION_MODE_SYS_TIME: u8 = 0x01;
 pub const TRANSITION_MODE_GPIO: u8 = 0x02;
 pub const TRANSITION_MODE_EXT: u8 = 0xF0;
 pub const TRANSITION_MODE_NONE: u8 = 0xFE;
-pub const TRANSITION_MODE_IMMIDIATE: u8 = 0xFF;
+pub const TRANSITION_MODE_IMMEDIATE: u8 = 0xFF;
 
 pub const ADDR_CTL_FLAG: u16 = 0x00;
 pub const ADDR_FPGA_STATE: u16 = 0x01;

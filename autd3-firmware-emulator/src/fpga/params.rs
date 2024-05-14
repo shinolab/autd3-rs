@@ -14,7 +14,7 @@ pub const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
 pub const TRANSITION_MODE_SYS_TIME: u8 = 0x01;
 pub const TRANSITION_MODE_GPIO: u8 = 0x02;
 pub const TRANSITION_MODE_EXT: u8 = 0xF0;
-pub const TRANSITION_MODE_IMMIDIATE: u8 = 0xFF;
+pub const TRANSITION_MODE_IMMEDIATE: u8 = 0xFF;
 
 // pub const STM_MODE_FOCUS: u16 = 0x0;
 pub const STM_MODE_GAIN: u16 = 0x1;
