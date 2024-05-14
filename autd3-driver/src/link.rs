@@ -152,7 +152,7 @@ async fn wait_msg_processed(
         .try_fold((), |_, r| Result::<(), AUTDInternalError>::from(r))
         .and_then(|_| {
             if timeout == Duration::ZERO {
-                return Ok(());
+                Ok(())
             } else {
                 Err(AUTDInternalError::ConfirmResponseFailed)
             }
