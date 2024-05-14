@@ -91,6 +91,10 @@ pub enum AUTDInternalError {
 
     #[error("Link is closed")]
     LinkClosed,
+    #[error("Failed to confirm the response from the device")]
+    ConfirmResponseFailed,
+    #[error("Failed to send data")]
+    SendDataFailed,
 
     #[error("Failed to create timer")]
     TimerCreationFailed,
