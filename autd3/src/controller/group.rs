@@ -37,7 +37,7 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
         }
     }
 
-    pub fn set<D: Datagram>(self, k: K, d: D) -> Result<Self, AUTDInternalError>
+    pub fn set<D: Datagram>(self, k: K, d: D) -> Self
     where
         D::O1: 'static,
         D::O2: 'static,
@@ -54,13 +54,13 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
         op1: Box<dyn autd3_driver::firmware::operation::Operation>,
         op2: Box<dyn autd3_driver::firmware::operation::Operation>,
         timeout: Option<Duration>,
-    ) -> Result<Self, AUTDInternalError> {
+    ) -> Self {
         self.timeout = match (self.timeout, timeout) {
             (Some(t1), Some(t2)) => Some(t1.max(t2)),
             (a, b) => a.or(b),
         };
         self.op.insert(k, (op1, op2));
-        Ok(self)
+        self
     }
 
     pub async fn send(mut self) -> Result<bool, AUTDInternalError> {
@@ -185,8 +185,8 @@ mod tests {
             0 | 1 | 3 => Some(dev.idx()),
             _ => None,
         })
-        .set(0, Null::new())?
-        .set(1, (Static::with_intensity(0x80), Null::new()))?
+        .set(0, Null::new())
+        .set(1, (Static::with_intensity(0x80), Null::new()))
         .set(
             3,
             (
@@ -195,7 +195,7 @@ mod tests {
                     .add_gain(Uniform::new(0x80))
                     .add_gain(Uniform::new(0x81)),
             ),
-        )?
+        )
         .send()
         .await?;
 
@@ -239,7 +239,7 @@ mod tests {
         let mut autd = create_controller(1).await?;
         assert!(
             autd.group(|dev| Some(dev.idx()))
-                .set(0, Null::new())?
+                .set(0, Null::new())
                 .send()
                 .await?
         );
@@ -248,7 +248,7 @@ mod tests {
         assert!(
             !autd
                 .group(|dev| Some(dev.idx()))
-                .set(0, Null::new())?
+                .set(0, Null::new())
                 .send()
                 .await?
         );
@@ -263,11 +263,11 @@ mod tests {
         assert_eq!(
             Err(autd3_driver::error::AUTDInternalError::InvalidSegmentTransition),
             autd.group(|dev| Some(dev.idx()))
-                .set(0, Null::new())?
+                .set(0, Null::new())
                 .set(
                     1,
                     SwapSegment::focus_stm(Segment::S1, TransitionMode::SyncIdx),
-                )?
+                )
                 .send()
                 .await
         );
@@ -286,7 +286,7 @@ mod tests {
             check.lock().unwrap()[dev.idx()] = true;
             Some(0)
         })
-        .set(0, (Static::new(), Null::new()))?
+        .set(0, (Static::new(), Null::new()))
         .send()
         .await?;
 
@@ -303,8 +303,8 @@ mod tests {
         assert_eq!(
             Err(AUTDInternalError::UnkownKey("[2]".to_owned())),
             autd.group(|dev| Some(dev.idx()))
-                .set(0, Null::new())?
-                .set(2, Null::new())?
+                .set(0, Null::new())
+                .set(2, Null::new())
                 .send()
                 .await
         );
@@ -319,7 +319,7 @@ mod tests {
         assert_eq!(
             Err(AUTDInternalError::UnspecifiedKey("[1]".to_owned())),
             autd.group(|dev| Some(dev.idx()))
-                .set(0, Null::new())?
+                .set(0, Null::new())
                 .send()
                 .await
         );
