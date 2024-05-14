@@ -14,6 +14,11 @@ pub struct FPGAState {
 }
 
 impl FPGAState {
+    #[doc(hidden)]
+    pub const fn state(&self) -> u8 {
+        self.state
+    }
+
     /// Check if thermal sensor is asserted
     pub const fn is_thermal_assert(&self) -> bool {
         (self.state & THERMAL_ASSERT_BIT) != 0
