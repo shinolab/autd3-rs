@@ -9,9 +9,9 @@ async fn nop_test() -> anyhow::Result<()> {
 
     assert_eq!(std::time::Duration::from_millis(100), autd.link.timeout());
 
-    assert!(autd.send(Static::new()).await?);
+    autd.send(Static::new()).await?;
 
-    assert!(autd.close().await?);
+    autd.close().await?;
 
     assert_eq!(
         Err(AUTDError::Internal(AUTDInternalError::LinkClosed)),

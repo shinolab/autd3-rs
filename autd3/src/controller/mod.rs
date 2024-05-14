@@ -255,15 +255,13 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_send() -> anyhow::Result<()> {
         let mut autd = create_controller(1).await?;
-        assert!(
-            autd.send((
-                Sine::new(150. * Hz),
-                GainSTM::from_freq(1. * Hz)
-                    .add_gain(Uniform::new(0x80))
-                    .add_gain(Uniform::new(0x81)),
-            ))
-            .await?
-        );
+        autd.send((
+            Sine::new(150. * Hz),
+            GainSTM::from_freq(1. * Hz)
+                .add_gain(Uniform::new(0x80))
+                .add_gain(Uniform::new(0x81)),
+        ))
+        .await?;
 
         assert_eq!(
             Sine::new(150. * Hz).calc(&autd.geometry)?,
@@ -278,8 +276,8 @@ mod tests {
             autd.link[0].fpga().drives(Segment::S0, 1)
         );
 
-        assert!(autd.close().await?);
-        assert!(autd.close().await?);
+        autd.close().await?;
+        autd.close().await?;
 
         Ok(())
     }
@@ -293,7 +291,7 @@ mod tests {
         assert_eq!(41000 * Hz, autd.link[0].fpga().ultrasound_freq());
         assert_eq!(41000 * 512 * Hz, autd.link[0].fpga().fpga_clk_freq());
 
-        assert!(autd.close().await?);
+        autd.close().await?;
 
         Ok(())
     }
@@ -320,8 +318,8 @@ mod tests {
     async fn test_close() -> anyhow::Result<()> {
         {
             let mut autd = create_controller(1).await?;
-            assert!(autd.close().await?);
-            assert!(autd.close().await?);
+            autd.close().await?;
+            autd.close().await?;
         }
 
         {
@@ -338,7 +336,10 @@ mod tests {
         {
             let mut autd = create_controller(1).await?;
             autd.link.down();
-            assert!(!autd.close().await?);
+            assert_eq!(
+                Err(AUTDError::Internal(AUTDInternalError::SendDataFailed)),
+                autd.close().await
+            );
         }
 
         Ok(())

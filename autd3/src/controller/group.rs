@@ -239,20 +239,21 @@ mod tests {
     #[tokio::test]
     async fn test_send_failed() -> anyhow::Result<()> {
         let mut autd = create_controller(1).await?;
-        assert!(
+        assert_eq!(
+            Ok(()),
             autd.group(|dev| Some(dev.idx()))
                 .set(0, Null::new())
                 .send()
-                .await?
+                .await
         );
 
         autd.link.down();
-        assert!(
-            !autd
-                .group(|dev| Some(dev.idx()))
+        assert_eq!(
+            Err(AUTDInternalError::SendDataFailed),
+            autd.group(|dev| Some(dev.idx()))
                 .set(0, Null::new())
                 .send()
-                .await?
+                .await
         );
 
         Ok(())

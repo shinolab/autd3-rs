@@ -14,7 +14,7 @@ async fn audit_test() -> anyhow::Result<()> {
     assert_eq!(Some(DEFAULT_TIMEOUT), autd.link.last_timeout());
 
     assert_eq!(vec![None], autd.fpga_state().await?);
-    assert!(autd.send(ReadsFPGAState::new(|_| true)).await?);
+    autd.send(ReadsFPGAState::new(|_| true)).await?;
     autd.link[0].update();
     assert_eq!(
         vec![Option::<FPGAState>::from(&RxMessage::new(0x00, 0x88))],
@@ -30,10 +30,13 @@ async fn audit_test() -> anyhow::Result<()> {
     );
 
     autd.link.down();
-    assert!(!autd.send(Static::new()).await?);
+    assert_eq!(
+        Err(AUTDError::Internal(AUTDInternalError::SendDataFailed)),
+        autd.send(Static::new()).await
+    );
     assert_eq!(Err(AUTDError::ReadFPGAStateFailed), autd.fpga_state().await);
     autd.link.up();
-    assert!(autd.send(Static::new()).await?);
+    autd.send(Static::new()).await?;
     autd.link.break_down();
     assert_eq!(
         Err(AUTDError::Internal(AUTDInternalError::LinkError(
@@ -48,9 +51,9 @@ async fn audit_test() -> anyhow::Result<()> {
         autd.fpga_state().await
     );
     autd.link.repair();
-    assert!(autd.send(Static::new()).await?);
+    autd.send(Static::new()).await?;
 
-    assert!(autd.close().await?);
+    autd.close().await?;
     assert_eq!(
         Err(AUTDError::Internal(AUTDInternalError::LinkClosed)),
         autd.send(Static::new()).await

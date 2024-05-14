@@ -242,7 +242,7 @@ mod tests {
 
         let tx = TxDatagram::new(0);
         let mut rx = Vec::new();
-        assert_eq!(send_receive(&mut link, &tx, &mut rx, None).await, Ok(true));
+        assert_eq!(send_receive(&mut link, &tx, &mut rx, None).await, Ok(()));
 
         link.is_open = false;
         assert_eq!(
@@ -252,12 +252,15 @@ mod tests {
 
         link.is_open = true;
         link.down = true;
-        assert_eq!(send_receive(&mut link, &tx, &mut rx, None).await, Ok(false));
+        assert_eq!(
+            send_receive(&mut link, &tx, &mut rx, None).await,
+            Err(AUTDInternalError::SendDataFailed)
+        );
 
         link.down = false;
         assert_eq!(
             send_receive(&mut link, &tx, &mut rx, Some(Duration::from_millis(1))).await,
-            Ok(true)
+            Ok(())
         );
     }
 
@@ -276,7 +279,7 @@ mod tests {
         let mut rx = vec![RxMessage::new(0, 0)];
         assert_eq!(
             wait_msg_processed(&mut link, &tx, &mut rx, Duration::from_millis(10)).await,
-            Ok(true)
+            Ok(())
         );
 
         link.recv_cnt = 0;
@@ -290,8 +293,8 @@ mod tests {
         link.is_open = true;
         link.down = true;
         assert_eq!(
+            Err(AUTDInternalError::ConfirmResponseFailed),
             wait_msg_processed(&mut link, &tx, &mut rx, Duration::from_millis(10)).await,
-            Ok(false)
         );
 
         link.down = false;
