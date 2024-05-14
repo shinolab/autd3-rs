@@ -4,6 +4,8 @@ use libc::{
 };
 use std::{mem, ptr};
 
+use crate::local::error::SOEMError;
+
 #[allow(non_camel_case_types)]
 type timer_t = usize;
 
