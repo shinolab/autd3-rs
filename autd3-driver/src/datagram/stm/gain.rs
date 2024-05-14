@@ -1,10 +1,9 @@
 use crate::{
-    defined::Freq,
-    defined::DEFAULT_TIMEOUT,
+    defined::{Freq, DEFAULT_TIMEOUT},
     derive::*,
     firmware::{
         cpu::GainSTMMode,
-        fpga::{Segment, TransitionMode},
+        fpga::{STMSamplingConfig, Segment, TransitionMode},
     },
 };
 
@@ -106,6 +105,10 @@ impl<G: Gain> GainSTM<G> {
 
     pub fn sampling_config(&self) -> Result<SamplingConfig, AUTDInternalError> {
         self.props.sampling_config(self.gains.len())
+    }
+
+    pub fn stm_sampling_config(&self) -> STMSamplingConfig {
+        self.props.config
     }
 }
 
