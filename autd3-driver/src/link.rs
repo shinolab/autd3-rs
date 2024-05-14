@@ -297,6 +297,14 @@ mod tests {
             wait_msg_processed(&mut link, &tx, &mut rx, Duration::from_millis(10)).await,
         );
 
+        link.recv_cnt = 0;
+        link.is_open = true;
+        link.down = true;
+        assert_eq!(
+            Ok(()),
+            wait_msg_processed(&mut link, &tx, &mut rx, Duration::ZERO).await,
+        );
+
         link.down = false;
         link.recv_cnt = 0;
         tx[0].header.msg_id = 20;
