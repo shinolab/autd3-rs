@@ -1,4 +1,8 @@
-use crate::{defined::Freq, defined::DEFAULT_TIMEOUT, derive::*, firmware::fpga::TransitionMode};
+use crate::{
+    defined::{Freq, DEFAULT_TIMEOUT},
+    derive::*,
+    firmware::fpga::{STMSamplingConfig, TransitionMode},
+};
 
 use super::{ControlPoint, STMProps};
 
@@ -91,6 +95,10 @@ impl FocusSTM {
 
     pub fn sampling_config(&self) -> Result<SamplingConfig, AUTDInternalError> {
         self.props.sampling_config(self.control_points.len())
+    }
+
+    pub fn stm_sampling_config(&self) -> STMSamplingConfig {
+        self.props.config
     }
 }
 
