@@ -8,8 +8,8 @@ pub async fn group_by_device(autd: &mut Controller<impl Link>) -> anyhow::Result
         1 => Some("focus"),
         _ => None,
     })
-    .set("null", (Static::new(), Null::new()))?
-    .set("focus", (Sine::new(150. * Hz), Focus::new(center)))?
+    .set("null", (Static::new(), Null::new()))
+    .set("focus", (Sine::new(150. * Hz), Focus::new(center)))
     .send()
     .await?;
 
