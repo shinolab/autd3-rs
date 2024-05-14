@@ -33,7 +33,7 @@ pub use pulse_width_encoder::PulseWidthEncoder;
 pub use reads_fpga_state::ReadsFPGAState;
 pub use segment::SwapSegment;
 pub use silencer::{Silencer, SilencerFixedCompletionSteps, SilencerFixedUpdateRate};
-pub use stm::{ControlPoint, FocusSTM, GainSTM, STMProps};
+pub use stm::{ControlPoint, FocusSTM, GainSTM};
 pub use synchronize::Synchronize;
 pub use with_segment::{DatagramS, DatagramWithSegment, IntoDatagramWithSegment};
 pub use with_segment_transition::{

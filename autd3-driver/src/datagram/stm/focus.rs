@@ -4,7 +4,7 @@ use crate::{
     firmware::fpga::{STMSamplingConfig, TransitionMode},
 };
 
-use super::{ControlPoint, STMProps};
+use super::ControlPoint;
 
 /// FocusSTM is an STM for moving a single focal point.
 ///
@@ -17,8 +17,10 @@ use super::{ControlPoint, STMProps};
 #[derive(Clone, Builder)]
 pub struct FocusSTM {
     control_points: Vec<ControlPoint>,
-    #[getset(loop_behavior: LoopBehavior)]
-    props: STMProps,
+    #[getset]
+    loop_behavior: LoopBehavior,
+    #[get]
+    stm_sampling_config: STMSamplingConfig,
 }
 
 impl FocusSTM {
@@ -29,7 +31,11 @@ impl FocusSTM {
     /// * `freq` - Frequency of STM.
     ///
     pub const fn from_freq(freq: Freq<f64>) -> Self {
-        Self::from_props(STMProps::from_freq(freq))
+        Self {
+            control_points: Vec::new(),
+            loop_behavior: LoopBehavior::infinite(),
+            stm_sampling_config: STMSamplingConfig::Freq(freq),
+        }
     }
 
     /// constructor
@@ -39,7 +45,11 @@ impl FocusSTM {
     /// * `freq` - Frequency of STM. The freq closest to `freq` from the possible frequencies is set.
     ///
     pub const fn from_freq_nearest(freq: Freq<f64>) -> Self {
-        Self::from_props(STMProps::from_freq_nearest(freq))
+        Self {
+            control_points: Vec::new(),
+            loop_behavior: LoopBehavior::infinite(),
+            stm_sampling_config: STMSamplingConfig::FreqNearest(freq),
+        }
     }
 
     /// constructor
@@ -49,18 +59,10 @@ impl FocusSTM {
     /// * `config` - Sampling configuration
     ///
     pub const fn from_sampling_config(config: SamplingConfig) -> Self {
-        Self::from_props(STMProps::from_sampling_config(config))
-    }
-
-    /// constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `props` - STMProps
-    pub const fn from_props(props: STMProps) -> Self {
         Self {
             control_points: Vec::new(),
-            props,
+            loop_behavior: LoopBehavior::infinite(),
+            stm_sampling_config: STMSamplingConfig::SamplingConfig(config),
         }
     }
 
@@ -88,25 +90,22 @@ impl FocusSTM {
         std::mem::take(&mut self.control_points)
     }
 
-    /// Get [ControlPoint]s
-    pub fn foci(&self) -> &[ControlPoint] {
-        &self.control_points
-    }
-
     pub fn sampling_config(&self) -> Result<SamplingConfig, AUTDInternalError> {
-        self.props.sampling_config(self.control_points.len())
-    }
-
-    pub fn stm_sampling_config(&self) -> STMSamplingConfig {
-        self.props.config
+        self.stm_sampling_config.sampling(self.control_points.len())
     }
 }
 
-impl std::ops::Index<usize> for FocusSTM {
-    type Output = ControlPoint;
+impl std::ops::Deref for FocusSTM {
+    type Target = [ControlPoint];
 
-    fn index(&self, idx: usize) -> &Self::Output {
-        &self.control_points[idx]
+    fn deref(&self) -> &Self::Target {
+        &self.control_points
+    }
+}
+
+impl std::ops::DerefMut for FocusSTM {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.control_points
     }
 }
 
@@ -121,16 +120,13 @@ impl DatagramST for FocusSTM {
     ) -> (Self::O1, Self::O2) {
         let Self {
             control_points,
-            props: STMProps {
-                loop_behavior,
-                config,
-            },
-            ..
+            loop_behavior,
+            stm_sampling_config,
         } = self;
         (
             Self::O1::new(
                 control_points,
-                config,
+                stm_sampling_config,
                 loop_behavior,
                 segment,
                 transition_mode,
@@ -215,7 +211,7 @@ mod tests {
             .add_focus(Vector3::new(1., 2., 3.))
             .add_focus((Vector3::new(4., 5., 6.), 1))
             .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2));
-        assert_eq!(stm.foci().len(), 3);
+        assert_eq!(stm.len(), 3);
         assert_eq!(
             stm[0],
             ControlPoint::new(Vector3::new(1., 2., 3.)).with_intensity(0xFF)
@@ -237,7 +233,7 @@ mod tests {
             .add_foci_from_iter([Vector3::new(1., 2., 3.)])
             .add_foci_from_iter([(Vector3::new(4., 5., 6.), 1)])
             .add_foci_from_iter([ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2)]);
-        assert_eq!(stm.foci().len(), 3);
+        assert_eq!(stm.len(), 3);
         assert_eq!(
             stm[0],
             ControlPoint::new(Vector3::new(1., 2., 3.)).with_intensity(0xFF)
@@ -279,7 +275,7 @@ mod tests {
             .add_focus((Vector3::new(4., 5., 6.), 1))
             .add_focus(ControlPoint::new(Vector3::new(7., 8., 9.)).with_intensity(2));
         let foci = stm.clear();
-        assert_eq!(stm.foci().len(), 0);
+        assert_eq!(stm.len(), 0);
         assert_eq!(foci.len(), 3);
         assert_eq!(
             foci[0],
