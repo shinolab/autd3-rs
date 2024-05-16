@@ -114,7 +114,7 @@ mod tests {
     #[test]
     fn test_gspat_all() {
         let geometry: Geometry = Geometry::new(
-            vec![AUTD3::new(Vector3::zeros()).into_device(0, FREQ_40K)],
+            vec![AUTD3::new(Vector3::zeros()).into_device(0)],
             FREQ_40K,
         );
         let backend = Arc::new(NalgebraBackend::default());
@@ -141,7 +141,7 @@ mod tests {
     #[test]
     fn test_gspat_filtered() {
         let geometry: Geometry = Geometry::new(
-            vec![AUTD3::new(Vector3::zeros()).into_device(0, FREQ_40K)],
+            vec![AUTD3::new(Vector3::zeros()).into_device(0)],
             FREQ_40K,
         );
         let backend = Arc::new(NalgebraBackend::default());

@@ -96,10 +96,8 @@ mod tests {
 
     #[test]
     fn test_gs_all() {
-        let geometry: Geometry = Geometry::new(
-            vec![AUTD3::new(Vector3::zeros()).into_device(0, FREQ_40K)],
-            FREQ_40K,
-        );
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], FREQ_40K);
         let backend = Arc::new(NalgebraBackend::default());
 
         let g = GS::new(backend)
@@ -125,8 +123,8 @@ mod tests {
     fn test_gs_filtered() {
         let geometry: Geometry = Geometry::new(
             vec![
-                AUTD3::new(Vector3::zeros()).into_device(0, FREQ_40K),
-                AUTD3::new(Vector3::zeros()).into_device(1, FREQ_40K),
+                AUTD3::new(Vector3::zeros()).into_device(0),
+                AUTD3::new(Vector3::zeros()).into_device(1),
             ],
             FREQ_40K,
         );

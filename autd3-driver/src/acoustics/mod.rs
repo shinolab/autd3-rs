@@ -38,11 +38,7 @@ mod tests {
 
     use rand::Rng;
 
-    use crate::{
-        defined::{mm, FREQ_40K},
-        derive::Device,
-        geometry::UnitQuaternion,
-    };
+    use crate::{defined::mm, derive::Device, geometry::UnitQuaternion};
     use directivity::tests::TestDirectivity;
 
     macro_rules! assert_complex_approx_eq {
@@ -100,7 +96,7 @@ mod tests {
     #[rstest::rstest]
     #[test]
     fn test_propagate(tr: Transducer, target: Vector3, attenuation: f64, sound_speed: f64) {
-        let mut device = Device::new(0, vec![tr.clone()], FREQ_40K);
+        let mut device = Device::new(0, vec![tr.clone()]);
         device.sound_speed = sound_speed;
         let wavenumber = device.wavenumber();
         assert_complex_approx_eq!(

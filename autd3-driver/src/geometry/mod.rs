@@ -26,7 +26,10 @@ pub struct Geometry {
 
 impl Geometry {
     #[doc(hidden)]
-    pub const fn new(devices: Vec<Device>, ultrasound_freq: Freq<u32>) -> Geometry {
+    pub fn new(mut devices: Vec<Device>, ultrasound_freq: Freq<u32>) -> Geometry {
+        devices
+            .iter_mut()
+            .for_each(|d| d.ultrasound_freq = ultrasound_freq);
         Self {
             devices,
             ultrasound_freq,
@@ -149,20 +152,19 @@ pub mod tests {
         };
     }
 
-    pub fn create_device(idx: usize, n: usize, freq: Freq<u32>) -> Device {
+    pub fn create_device(idx: usize, n: usize) -> Device {
         Device::new(
             idx,
             (0..n)
                 .map(|i| Transducer::new(i, Vector3::zeros(), UnitQuaternion::identity()))
                 .collect(),
-            freq,
         )
     }
 
     pub fn create_geometry(n: usize, num_trans_in_unit: usize, freq: Freq<u32>) -> Geometry {
         Geometry::new(
             (0..n)
-                .map(|i| create_device(i, num_trans_in_unit, freq))
+                .map(|i| create_device(i, num_trans_in_unit))
                 .collect(),
             freq,
         )
@@ -170,16 +172,16 @@ pub mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(1, vec![create_device(0, 249, FREQ_40K)])]
-    #[case(2, vec![create_device(0, 249, FREQ_40K), create_device(0, 249, FREQ_40K)])]
+    #[case(1, vec![create_device(0, 249)])]
+    #[case(2, vec![create_device(0, 249), create_device(0, 249)])]
     fn test_num_devices(#[case] expected: usize, #[case] devices: Vec<Device>) {
         assert_eq!(expected, Geometry::new(devices, FREQ_40K).num_devices());
     }
 
     #[rstest::rstest]
     #[test]
-    #[case(249, vec![create_device(0, 249, FREQ_40K)])]
-    #[case(498, vec![create_device(0, 249, FREQ_40K), create_device(0, 249, FREQ_40K)])]
+    #[case(249, vec![create_device(0, 249)])]
+    #[case(498, vec![create_device(0, 249), create_device(0, 249)])]
     fn test_num_transducers(#[case] expected: usize, #[case] devices: Vec<Device>) {
         assert_eq!(expected, Geometry::new(devices, FREQ_40K).num_transducers());
     }
@@ -200,7 +202,6 @@ pub mod tests {
                             )
                         })
                         .collect::<Vec<_>>(),
-                    FREQ_40K,
                 ),
                 Device::new(
                     1,
@@ -215,7 +216,6 @@ pub mod tests {
                             )
                         })
                         .collect::<Vec<_>>(),
-                    FREQ_40K,
                 ),
             ],
             FREQ_40K,
@@ -245,7 +245,6 @@ pub mod tests {
                             )
                         })
                         .collect::<Vec<_>>(),
-                    FREQ_40K,
                 ),
                 Device::new(
                     1,
@@ -260,7 +259,6 @@ pub mod tests {
                             )
                         })
                         .collect::<Vec<_>>(),
-                    FREQ_40K,
                 ),
             ],
             FREQ_40K,
@@ -291,7 +289,6 @@ pub mod tests {
                             )
                         })
                         .collect::<Vec<_>>(),
-                    FREQ_40K,
                 ),
                 Device::new(
                     1,
@@ -306,7 +303,6 @@ pub mod tests {
                             )
                         })
                         .collect::<Vec<_>>(),
-                    FREQ_40K,
                 ),
             ],
             FREQ_40K,

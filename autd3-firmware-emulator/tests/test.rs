@@ -19,7 +19,7 @@ mod op;
 pub fn create_geometry(n: usize) -> Geometry {
     Geometry::new(
         (0..n)
-            .map(|i| AUTD3::new(Vector3::zeros()).into_device(i, FREQ_40K))
+            .map(|i| AUTD3::new(Vector3::zeros()).into_device(i))
             .collect(),
         FREQ_40K,
     )
@@ -28,7 +28,7 @@ pub fn create_geometry(n: usize) -> Geometry {
 pub fn create_geometry_with_freq(n: usize, ultrasound_freq: Freq<u32>) -> Geometry {
     Geometry::new(
         (0..n)
-            .map(|i| AUTD3::new(Vector3::zeros()).into_device(i, ultrasound_freq))
+            .map(|i| AUTD3::new(Vector3::zeros()).into_device(i))
             .collect(),
         ultrasound_freq,
     )

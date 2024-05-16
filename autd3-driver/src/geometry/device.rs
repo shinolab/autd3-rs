@@ -1,6 +1,6 @@
 use std::{f64::consts::PI, ops::Deref};
 
-use crate::{defined::Freq, defined::METER};
+use crate::defined::{Freq, FREQ_40K, METER};
 
 use super::{Matrix3, Transducer, UnitQuaternion, Vector3};
 
@@ -16,7 +16,7 @@ pub struct Device {
 
 impl Device {
     #[doc(hidden)]
-    pub fn new(idx: usize, transducers: Vec<Transducer>, ultrasound_freq: Freq<u32>) -> Self {
+    pub fn new(idx: usize, transducers: Vec<Transducer>) -> Self {
         let inv = Matrix3::from_columns(&[
             transducers[0].x_direction(),
             transducers[0].y_direction(),
@@ -30,7 +30,7 @@ impl Device {
             sound_speed: 340.0 * METER,
             attenuation: 0.0,
             inv,
-            ultrasound_freq,
+            ultrasound_freq: FREQ_40K,
         }
     }
 
@@ -142,7 +142,7 @@ impl<'a> IntoIterator for &'a Device {
 // GRCOV_EXCL_STOP
 
 pub trait IntoDevice {
-    fn into_device(self, dev_idx: usize, ultrasound_freq: Freq<u32>) -> Device;
+    fn into_device(self, dev_idx: usize) -> Device;
 }
 
 #[cfg(test)]
@@ -152,7 +152,7 @@ pub mod tests {
     use super::*;
     use crate::{
         defined::Hz,
-        defined::{mm, FREQ_40K, PI},
+        defined::{mm, PI},
         geometry::tests::create_device,
     };
 
@@ -178,7 +178,7 @@ pub mod tests {
     #[case(0)]
     #[case(1)]
     fn test_idx(#[case] idx: usize) {
-        assert_eq!(idx, create_device(idx, 249, FREQ_40K).idx());
+        assert_eq!(idx, create_device(idx, 249).idx());
     }
 
     #[rstest::rstest]
@@ -186,7 +186,7 @@ pub mod tests {
     #[case(1)]
     #[case(249)]
     fn test_num_transducers(#[case] n: usize) {
-        assert_eq!(n, create_device(0, n, FREQ_40K).num_transducers());
+        assert_eq!(n, create_device(0, n).num_transducers());
     }
 
     #[test]
@@ -203,7 +203,7 @@ pub mod tests {
             .collect::<Vec<_>>();
         let expected =
             transducers.iter().map(|t| t.position()).sum::<Vector3>() / transducers.len() as f64;
-        let device = Device::new(0, transducers, FREQ_40K);
+        let device = Device::new(0, transducers);
         assert_approx_eq_vec3!(expected, device.center());
     }
 
@@ -251,7 +251,6 @@ pub mod tests {
                     )
                 })
                 .collect::<Vec<_>>(),
-            FREQ_40K,
         );
         assert_approx_eq_vec3!(expected, device.to_local(&target));
     }
@@ -272,7 +271,7 @@ pub mod tests {
             })
             .collect::<Vec<_>>();
 
-        let mut device = Device::new(0, transducers, FREQ_40K);
+        let mut device = Device::new(0, transducers);
 
         let t = Vector3::new(40., 50., 60.);
         device.translate_to(t);
@@ -300,7 +299,6 @@ pub mod tests {
                         )
                     })
                     .collect::<Vec<_>>(),
-                FREQ_40K,
             );
             let mut rng = rand::thread_rng();
             let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), rng.gen())
@@ -348,7 +346,7 @@ pub mod tests {
             })
             .collect::<Vec<_>>();
 
-        let mut device = Device::new(0, transducers.clone(), FREQ_40K);
+        let mut device = Device::new(0, transducers.clone());
 
         let t = Vector3::new(40., 50., 60.);
         device.translate(t);
@@ -373,7 +371,7 @@ pub mod tests {
             })
             .collect::<Vec<_>>();
 
-        let mut device = Device::new(0, transducers, FREQ_40K);
+        let mut device = Device::new(0, transducers);
 
         let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)
             * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), 0.)
@@ -409,7 +407,7 @@ pub mod tests {
             })
             .collect::<Vec<_>>();
 
-        let mut device = Device::new(0, transducers, FREQ_40K);
+        let mut device = Device::new(0, transducers);
 
         let t = Vector3::new(40., 50., 60.);
         let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)
@@ -441,7 +439,7 @@ pub mod tests {
     #[case(343.23498846612807e3, 20.)]
     #[case(349.0401521469255e3, 30.)]
     fn test_set_sound_speed_from_temp(#[case] expected: f64, #[case] temp: f64) {
-        let mut device = create_device(0, 249, FREQ_40K);
+        let mut device = create_device(0, 249);
         device.set_sound_speed_from_temp(temp);
         assert_approx_eq::assert_approx_eq!(expected * mm, device.sound_speed, 1e-3);
     }
@@ -453,7 +451,8 @@ pub mod tests {
     #[case(4.25, 340e3, 80000*Hz)]
     #[case(5., 400e3, 80000*Hz)]
     fn wavelength(#[case] expect: f64, #[case] c: f64, #[case] freq: Freq<u32>) {
-        let mut device = create_device(0, 249, freq);
+        let mut device = create_device(0, 249);
+        device.ultrasound_freq = freq;
         device.sound_speed = c;
         assert_approx_eq::assert_approx_eq!(expect, device.wavelength());
     }
@@ -465,7 +464,8 @@ pub mod tests {
     #[case(1.478396542865785, 340e3, 80000*Hz)]
     #[case(1.2566370614359172, 400e3, 80000*Hz)]
     fn wavenumber(#[case] expect: f64, #[case] c: f64, #[case] freq: Freq<u32>) {
-        let mut device = create_device(0, 249, freq);
+        let mut device = create_device(0, 249);
+        device.ultrasound_freq = freq;
         device.sound_speed = c;
         assert_approx_eq::assert_approx_eq!(expect, device.wavenumber());
     }

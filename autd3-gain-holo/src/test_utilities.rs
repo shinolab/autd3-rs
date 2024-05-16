@@ -24,7 +24,7 @@ fn generate_geometry(size: usize) -> Geometry {
                         j as f64 * AUTD3::DEVICE_HEIGHT,
                         0.,
                     ))
-                    .into_device(j + i * size, FREQ_40K)
+                    .into_device(j + i * size)
                 })
             })
             .collect(),

@@ -143,10 +143,8 @@ mod tests {
 
     #[test]
     fn test_greedy_all() {
-        let geometry: Geometry = Geometry::new(
-            vec![AUTD3::new(Vector3::zeros()).into_device(0, FREQ_40K)],
-            FREQ_40K,
-        );
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], FREQ_40K);
 
         let g = Greedy::default()
             .with_phase_div(32)
@@ -171,10 +169,8 @@ mod tests {
 
     #[test]
     fn test_greedy_filtered() {
-        let geometry: Geometry = Geometry::new(
-            vec![AUTD3::new(Vector3::zeros()).into_device(0, FREQ_40K)],
-            FREQ_40K,
-        );
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], FREQ_40K);
 
         let g = Greedy::default()
             .add_focus(Vector3::new(10., 10., 100.), 5e3 * Pa)

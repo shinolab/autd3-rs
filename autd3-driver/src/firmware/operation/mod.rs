@@ -368,7 +368,6 @@ pub mod tests {
                     Vector3::zeros(),
                     UnitQuaternion::identity(),
                 )],
-                FREQ_40K,
             )],
             FREQ_40K,
         );
@@ -451,7 +450,6 @@ pub mod tests {
                     Vector3::zeros(),
                     UnitQuaternion::identity(),
                 )],
-                FREQ_40K,
             )],
             FREQ_40K,
         );
@@ -505,7 +503,6 @@ pub mod tests {
                     Vector3::zeros(),
                     UnitQuaternion::identity(),
                 )],
-                FREQ_40K,
             )],
             FREQ_40K,
         );
@@ -559,7 +556,6 @@ pub mod tests {
                     Vector3::zeros(),
                     UnitQuaternion::identity(),
                 )],
-                FREQ_40K,
             )],
             FREQ_40K,
         );
@@ -610,7 +606,6 @@ pub mod tests {
                     Vector3::zeros(),
                     UnitQuaternion::identity(),
                 )],
-                FREQ_40K,
             )],
             FREQ_40K,
         );
@@ -683,7 +678,6 @@ pub mod tests {
                     Vector3::zeros(),
                     UnitQuaternion::identity(),
                 )],
-                FREQ_40K,
             )],
             FREQ_40K,
         );
