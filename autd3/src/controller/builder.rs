@@ -1,7 +1,7 @@
 use autd3_driver::{
     datagram::{Clear, ConfigureFPGAClock, IntoDatagramWithTimeout, Synchronize},
     defined::{Freq, FREQ_40K},
-    derive::DEFAULT_TIMEOUT,
+    derive::*,
     firmware::cpu::{RxMessage, TxDatagram},
     geometry::{Device, Geometry, IntoDevice},
     link::LinkBuilder,
@@ -11,23 +11,24 @@ use super::Controller;
 use crate::error::AUTDError;
 
 /// Builder for [crate::controller::Controller]
+#[derive(Builder)]
 pub struct ControllerBuilder {
     devices: Vec<Device>,
+    #[getset]
     ultrasound_freq: Freq<u32>,
 }
 
 impl ControllerBuilder {
-    pub(crate) const fn new_with_ultrasound_freq(ultrasound_freq: Freq<u32>) -> ControllerBuilder {
+    pub(crate) const fn new() -> ControllerBuilder {
         Self {
             devices: vec![],
-            ultrasound_freq,
+            ultrasound_freq: FREQ_40K,
         }
     }
 
     /// Add device
     pub fn add_device(mut self, dev: impl IntoDevice) -> Self {
-        self.devices
-            .push(dev.into_device(self.devices.len(), self.ultrasound_freq));
+        self.devices.push(dev.into_device(self.devices.len()));
         self
     }
 

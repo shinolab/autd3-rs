@@ -85,7 +85,7 @@ impl FromMessage<Geometry> for autd3_driver::geometry::Geometry {
                     .map(autd3_driver::geometry::UnitQuaternion::from_msg)??;
                 let mut dev = autd3_driver::autd3_device::AUTD3::new(pos)
                     .with_rotation(rot)
-                    .into_device(i, msg.ultrasound_freq * Hz);
+                    .into_device(i);
                 dev.sound_speed = dev_msg.sound_speed as _;
                 dev.attenuation = dev_msg.attenuation as _;
                 Some(dev)
@@ -136,8 +136,7 @@ mod tests {
     #[test]
     fn test_geometry() {
         let mut rng = rand::thread_rng();
-        let mut dev =
-            AUTD3::new(Vector3::new(rng.gen(), rng.gen(), rng.gen())).into_device(0, FREQ_40K);
+        let mut dev = AUTD3::new(Vector3::new(rng.gen(), rng.gen(), rng.gen())).into_device(0);
         dev.sound_speed = rng.gen();
         dev.attenuation = rng.gen();
         let geometry = Geometry::new(vec![dev], FREQ_40K);
