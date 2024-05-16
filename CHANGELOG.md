@@ -8,6 +8,7 @@
 - Remove unused Result wrapping from group
 - Fix slave index in SOEM link
 - `Status` does not contain error message now
+- Revert Modulation buffer type to `EmitIntensity`
 
 # 23.1.0
 

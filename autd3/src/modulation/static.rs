@@ -4,7 +4,7 @@ use autd3_driver::derive::*;
 #[derive(Modulation, Clone, Debug, PartialEq, Builder)]
 pub struct Static {
     #[get]
-    intensity: u8,
+    intensity: EmitIntensity,
     #[no_change]
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
@@ -14,7 +14,7 @@ impl Static {
     /// constructor
     pub const fn new() -> Self {
         Self {
-            intensity: u8::MAX,
+            intensity: EmitIntensity::MAX,
             config: SamplingConfig::DISABLE,
             loop_behavior: LoopBehavior::infinite(),
         }
@@ -26,9 +26,9 @@ impl Static {
     ///
     /// * `intensity` - intensity
     ///
-    pub fn with_intensity(intensity: u8) -> Self {
+    pub fn with_intensity(intensity: impl Into<EmitIntensity>) -> Self {
         Self {
-            intensity,
+            intensity: intensity.into(),
             config: SamplingConfig::DISABLE,
             loop_behavior: LoopBehavior::infinite(),
         }
@@ -36,7 +36,7 @@ impl Static {
 }
 
 impl Modulation for Static {
-    fn calc(&self, _: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(&self, _: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         Ok(vec![self.intensity; 2])
     }
 }
@@ -57,17 +57,23 @@ mod tests {
     fn test_static_default() {
         let geometry = create_geometry(1);
         let m = Static::default();
-        assert_eq!(u8::MAX, m.intensity());
+        assert_eq!(EmitIntensity::MAX, m.intensity());
         assert_eq!(SamplingConfig::DISABLE, m.sampling_config());
-        assert_eq!(Ok(vec![u8::MAX, u8::MAX]), m.calc(&geometry));
+        assert_eq!(
+            Ok(vec![EmitIntensity::MAX, EmitIntensity::MAX]),
+            m.calc(&geometry)
+        );
     }
 
     #[test]
     fn test_static_with_intensity() {
         let geometry = create_geometry(1);
         let m = Static::with_intensity(0x1F);
-        assert_eq!(0x1F, m.intensity());
+        assert_eq!(0x1F, m.intensity().value());
         assert_eq!(SamplingConfig::DISABLE, m.sampling_config());
-        assert_eq!(Ok(vec![0x1F, 0x1F]), m.calc(&geometry));
+        assert_eq!(
+            Ok(vec![EmitIntensity::new(0x1F), EmitIntensity::new(0x1F)]),
+            m.calc(&geometry)
+        );
     }
 }

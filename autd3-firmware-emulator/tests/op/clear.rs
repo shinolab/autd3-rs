@@ -22,8 +22,8 @@ struct TestMod {
 }
 
 impl Modulation for TestMod {
-    fn calc(&self, _: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
-        Ok(vec![u8::MIN; 100])
+    fn calc(&self, _: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+        Ok(vec![EmitIntensity::MIN; 100])
     }
 }
 
@@ -109,8 +109,14 @@ fn send_clear() -> anyhow::Result<()> {
         LoopBehavior::infinite(),
         cpu.fpga().modulation_loop_behavior(Segment::S1)
     );
-    assert_eq!(vec![u8::MAX; 2], cpu.fpga().modulation(Segment::S0));
-    assert_eq!(vec![u8::MAX; 2], cpu.fpga().modulation(Segment::S1));
+    assert_eq!(
+        vec![EmitIntensity::MAX; 2],
+        cpu.fpga().modulation(Segment::S0)
+    );
+    assert_eq!(
+        vec![EmitIntensity::MAX; 2],
+        cpu.fpga().modulation(Segment::S1)
+    );
 
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S0));
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));

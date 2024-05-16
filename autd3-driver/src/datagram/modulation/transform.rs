@@ -3,7 +3,7 @@ use crate::derive::*;
 /// Modulation to transform modulation data
 #[derive(Modulation)]
 #[no_modulation_transform]
-pub struct Transform<M: Modulation, F: Fn(usize, u8) -> u8> {
+pub struct Transform<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> {
     m: M,
     #[no_change]
     config: SamplingConfig,
@@ -11,7 +11,7 @@ pub struct Transform<M: Modulation, F: Fn(usize, u8) -> u8> {
     loop_behavior: LoopBehavior,
 }
 
-impl<M: Modulation, F: Fn(usize, u8) -> u8> Transform<M, F> {
+impl<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> Transform<M, F> {
     #[doc(hidden)]
     pub fn new(m: M, f: F) -> Self {
         Self {
@@ -29,11 +29,11 @@ pub trait IntoTransform<M: Modulation> {
     /// # Arguments
     ///
     /// * `f` - transform function. The first argument is index of the element, and the second argument is the value of the element of the original modulation data.
-    fn with_transform<F: Fn(usize, u8) -> u8>(self, f: F) -> Transform<M, F>;
+    fn with_transform<F: Fn(usize, EmitIntensity) -> EmitIntensity>(self, f: F) -> Transform<M, F>;
 }
 
-impl<M: Modulation, F: Fn(usize, u8) -> u8> Modulation for Transform<M, F> {
-    fn calc(&self, geometry: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
+impl<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> Modulation for Transform<M, F> {
+    fn calc(&self, geometry: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         Ok(self
             .m
             .calc(geometry)?
@@ -60,7 +60,7 @@ mod tests {
         assert_eq!(
             config,
             TestModulation {
-                buf: vec![u8::MIN; 2],
+                buf: vec![EmitIntensity::MIN; 2],
                 config,
                 loop_behavior: LoopBehavior::infinite(),
             }
@@ -75,7 +75,7 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let buf = vec![rng.gen(), rng.gen()];
+        let buf = vec![EmitIntensity::new(rng.gen()), EmitIntensity::new(rng.gen())];
 
         assert_eq!(
             Ok(buf.iter().map(|&x| x / 2).collect::<Vec<_>>()),

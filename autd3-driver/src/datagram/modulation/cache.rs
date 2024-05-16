@@ -12,7 +12,7 @@ use std::{
 #[no_modulation_transform]
 pub struct Cache<M: Modulation> {
     m: Rc<M>,
-    cache: Rc<RefCell<Vec<u8>>>,
+    cache: Rc<RefCell<Vec<EmitIntensity>>>,
     #[no_change]
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
@@ -56,13 +56,13 @@ impl<M: Modulation> Cache<M> {
     /// get cached modulation data
     ///
     /// Note that the cached data is created after at least one call to `calc`.
-    pub fn buffer(&self) -> Ref<'_, Vec<u8>> {
+    pub fn buffer(&self) -> Ref<'_, Vec<EmitIntensity>> {
         self.cache.borrow()
     }
 }
 
 impl<M: Modulation> Modulation for Cache<M> {
-    fn calc(&self, geometry: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         if self.cache.borrow().is_empty() {
             *self.cache.borrow_mut() = self.m.calc(geometry)?;
         }
@@ -92,7 +92,7 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let m = TestModulation {
-            buf: vec![rng.gen(), rng.gen()],
+            buf: vec![EmitIntensity::new(rng.gen()), EmitIntensity::new(rng.gen())],
             config: SamplingConfig::Freq(4 * kHz),
             loop_behavior: LoopBehavior::infinite(),
         };
@@ -128,9 +128,9 @@ mod tests {
     }
 
     impl Modulation for TestCacheModulation {
-        fn calc(&self, _: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
+        fn calc(&self, _: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
-            Ok(vec![0; 2])
+            Ok(vec![EmitIntensity::MIN; 2])
         }
     }
 

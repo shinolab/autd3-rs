@@ -15,8 +15,8 @@ impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::E
                 modulation: Some(modulation::Modulation::SquareExactFloat(SquareExactFloat {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq().hz() as _,
-                    high: self.high() as _,
-                    low: self.low() as _,
+                    high: self.high().value() as _,
+                    low: self.low().value() as _,
                     duty: self.duty() as _,
                 })),
                 segment: Segment::S0 as _,
@@ -41,8 +41,8 @@ impl ToMessage
                 modulation: Some(modulation::Modulation::SquareExactFloat(SquareExactFloat {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq().hz() as _,
-                    high: self.high() as _,
-                    low: self.low() as _,
+                    high: self.high().value() as _,
+                    low: self.low().value() as _,
                     duty: self.duty() as _,
                 })),
                 segment: self.segment() as _,
@@ -60,8 +60,8 @@ impl FromMessage<SquareExactFloat>
     fn from_msg(msg: &SquareExactFloat) -> Option<Self> {
         Some(
             autd3::modulation::Square::new((msg.freq as f64) * autd3_driver::defined::Hz)
-                .with_high(msg.high as _)
-                .with_low(msg.low as _)
+                .with_high(msg.high as u8)
+                .with_low(msg.low as u8)
                 .with_duty(msg.duty as _)
                 .with_sampling_config(autd3_driver::firmware::fpga::SamplingConfig::from_msg(
                     msg.config.as_ref()?,

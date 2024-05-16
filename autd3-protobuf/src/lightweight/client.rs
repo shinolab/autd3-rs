@@ -34,8 +34,7 @@ impl LightweightClientBuilder {
 
     /// Add device
     pub fn add_device(mut self, dev: impl IntoDevice) -> Self {
-        self.devices
-            .push(dev.into_device(self.devices.len(), self.ultrasound_freq));
+        self.devices.push(dev.into_device(self.devices.len()));
         self
     }
 

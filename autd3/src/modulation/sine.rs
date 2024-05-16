@@ -11,35 +11,35 @@ pub struct Sine<S: SamplingMode> {
     #[get]
     freq: S::T,
     #[getset]
-    intensity: u8,
+    intensity: EmitIntensity,
     #[getset]
     phase: Angle,
     #[getset]
-    offset: u8,
+    offset: EmitIntensity,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
     __phantom: std::marker::PhantomData<S>,
 }
 
 impl Sine<ExactFreq> {
-    pub const fn new<S: SamplingModeInference>(freq: S) -> Sine<S::T> {
+    pub fn new<S: SamplingModeInference>(freq: S) -> Sine<S::T> {
         Sine {
             freq,
-            intensity: u8::MAX,
+            intensity: EmitIntensity::MAX,
             phase: Angle::Rad(0.0),
-            offset: 127,
+            offset: EmitIntensity::MAX / 2,
             config: SamplingConfig::Division(5120),
             loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
         }
     }
 
-    pub const fn with_freq_nearest(freq: Freq<f64>) -> Sine<NearestFreq> {
+    pub fn with_freq_nearest(freq: Freq<f64>) -> Sine<NearestFreq> {
         Sine {
             freq,
-            intensity: u8::MAX,
+            intensity: EmitIntensity::MAX,
             phase: Angle::Rad(0.0),
-            offset: 127,
+            offset: EmitIntensity::MAX / 2,
             config: SamplingConfig::Division(5120),
             loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
@@ -48,15 +48,16 @@ impl Sine<ExactFreq> {
 }
 
 impl<S: SamplingMode> Modulation for Sine<S> {
-    fn calc(&self, geometry: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         let (n, rep) = S::validate(self.freq, self.config, geometry.ultrasound_freq())?;
         Ok((0..n)
             .map(|i| {
-                ((self.intensity as f64 / 2.
+                ((self.intensity.value() as f64 / 2.
                     * (2.0 * PI * (rep * i) as f64 / n as f64 + self.phase.radian()).sin())
-                    + self.offset as f64)
+                    + self.offset.value() as f64)
                     .round() as u8
             })
+            .map(EmitIntensity::from)
             .collect())
     }
 }
@@ -142,11 +143,14 @@ mod tests {
         let geometry = create_geometry(1);
         let m = Sine::new(freq);
         assert_eq!(freq, m.freq());
-        assert_eq!(u8::MAX, m.intensity());
-        assert_eq!(u8::MAX / 2, m.offset());
+        assert_eq!(EmitIntensity::MAX, m.intensity());
+        assert_eq!(EmitIntensity::MAX / 2, m.offset());
         assert_eq!(Angle::Rad(0.0), m.phase());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
-        assert_eq!(expect, m.calc(&geometry));
+        assert_eq!(
+            expect.map(|v| v.into_iter().map(EmitIntensity::from).collect()),
+            m.calc(&geometry)
+        );
     }
 
     #[rstest::rstest]
@@ -181,11 +185,14 @@ mod tests {
         let geometry = create_geometry(1);
         let m = Sine::with_freq_nearest(freq);
         assert_eq!(freq, m.freq());
-        assert_eq!(u8::MAX, m.intensity());
-        assert_eq!(u8::MAX / 2, m.offset());
+        assert_eq!(EmitIntensity::MAX, m.intensity());
+        assert_eq!(EmitIntensity::MAX / 2, m.offset());
         assert_eq!(Angle::Rad(0.0), m.phase());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
-        assert_eq!(expect, m.calc(&geometry));
+        assert_eq!(
+            expect.map(|v| v.into_iter().map(EmitIntensity::from).collect()),
+            m.calc(&geometry)
+        );
     }
 
     #[test]
@@ -195,8 +202,8 @@ mod tests {
             .with_offset(u8::MAX / 4)
             .with_phase(PI / 4.0 * rad)
             .with_sampling_config(SamplingConfig::FreqNearest(10.1 * kHz));
-        assert_eq!(u8::MAX / 2, m.intensity);
-        assert_eq!(u8::MAX / 4, m.offset);
+        assert_eq!(EmitIntensity::MAX / 2, m.intensity);
+        assert_eq!(EmitIntensity::MAX / 4, m.offset);
         assert_eq!(PI / 4.0 * rad, m.phase);
         assert_eq!(SamplingConfig::FreqNearest(10.1 * kHz), m.config);
     }

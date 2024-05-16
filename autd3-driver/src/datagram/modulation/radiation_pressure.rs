@@ -28,12 +28,12 @@ pub trait IntoRadiationPressure<M: Modulation> {
 }
 
 impl<M: Modulation> Modulation for RadiationPressure<M> {
-    fn calc(&self, geometry: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         Ok(self
             .m
             .calc(geometry)?
             .into_iter()
-            .map(|v| ((v as f64 / 255.).sqrt() * 255.).round() as u8)
+            .map(|v| EmitIntensity::new(((v.value() as f64 / 255.).sqrt() * 255.).round() as u8))
             .collect())
     }
 }
@@ -54,7 +54,7 @@ mod tests {
         assert_eq!(
             config,
             TestModulation {
-                buf: vec![u8::MIN; 2],
+                buf: vec![EmitIntensity::MIN; 2],
                 config,
                 loop_behavior: LoopBehavior::infinite(),
             }
@@ -69,12 +69,14 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let buf = vec![rng.gen(), rng.gen()];
+        let buf = vec![EmitIntensity::new(rng.gen()), EmitIntensity::new(rng.gen())];
         assert_eq!(
             Ok(buf
                 .iter()
-                .map(|&x| (((x as f64 / 255.).sqrt() * 255.).round() as u8))
-                .collect::<Vec<u8>>()),
+                .map(|&x| EmitIntensity::new(
+                    ((x.value() as f64 / 255.).sqrt() * 255.).round() as u8
+                ))
+                .collect::<Vec<EmitIntensity>>()),
             TestModulation {
                 buf: buf.clone(),
                 config: SamplingConfig::Freq(4 * kHz),
