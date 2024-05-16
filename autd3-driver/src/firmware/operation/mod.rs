@@ -242,14 +242,14 @@ pub mod tests {
 
     #[derive(Modulation, Clone)]
     pub struct TestModulation {
-        pub buf: Vec<u8>,
+        pub buf: Vec<EmitIntensity>,
         pub config: SamplingConfig,
         pub loop_behavior: LoopBehavior,
     }
 
     impl Modulation for TestModulation {
         // GRCOV_EXCL_START
-        fn calc(&self, _: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
+        fn calc(&self, _: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
             Ok(self.buf.clone())
         }
         // GRCOV_EXCL_STOP

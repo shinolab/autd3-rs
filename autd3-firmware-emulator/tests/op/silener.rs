@@ -71,7 +71,7 @@ fn silencer_completetion_steps_too_large_mod(
     #[case] expect: Result<(), AUTDInternalError>,
     #[case] steps_intensity: u16,
 ) -> anyhow::Result<()> {
-    use autd3_driver::derive::SamplingConfig;
+    use autd3_driver::derive::{EmitIntensity, SamplingConfig};
 
     use crate::op::modulation::TestModulation;
 
@@ -86,7 +86,7 @@ fn silencer_completetion_steps_too_large_mod(
     {
         let mut op = ModulationOp::new(
             TestModulation {
-                buf: (0..2).map(|_| u8::MAX).collect(),
+                buf: (0..2).map(|_| EmitIntensity::MAX).collect(),
                 config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
                 loop_behavior: LoopBehavior::infinite(),
             },

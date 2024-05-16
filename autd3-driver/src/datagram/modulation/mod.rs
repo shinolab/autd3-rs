@@ -12,6 +12,7 @@ pub use transform::IntoTransform as IntoModulationTransform;
 pub use transform::Transform as ModulationTransform;
 
 use crate::defined::DEFAULT_TIMEOUT;
+use crate::derive::EmitIntensity;
 use crate::derive::Geometry;
 use crate::{
     error::AUTDInternalError,
@@ -35,7 +36,7 @@ pub trait ModulationProperty {
 /// * The sampling rate is [crate::firmware::fpga::fpga_clk_freq()]/N, where N is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN].
 #[allow(clippy::len_without_is_empty)]
 pub trait Modulation: ModulationProperty {
-    fn calc(&self, geometry: &Geometry) -> Result<Vec<u8>, AUTDInternalError>;
+    fn calc(&self, geometry: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError>;
 }
 
 // GRCOV_EXCL_START
@@ -50,7 +51,7 @@ impl ModulationProperty for Box<dyn Modulation> {
 }
 
 impl Modulation for Box<dyn Modulation> {
-    fn calc(&self, geometry: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         self.as_ref().calc(geometry)
     }
 }
@@ -84,13 +85,13 @@ mod tests {
 
     #[derive(Modulation, Clone, PartialEq, Debug)]
     pub struct TestModulation {
-        pub buf: Vec<u8>,
+        pub buf: Vec<EmitIntensity>,
         pub config: SamplingConfig,
         pub loop_behavior: LoopBehavior,
     }
 
     impl Modulation for TestModulation {
-        fn calc(&self, _: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
+        fn calc(&self, _: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
             Ok(self.buf.clone())
         }
     }

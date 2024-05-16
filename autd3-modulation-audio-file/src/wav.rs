@@ -74,7 +74,7 @@ impl Wav {
 
 impl Modulation for Wav {
     #[allow(clippy::unnecessary_cast)]
-    fn calc(&self, geometry: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         let (raw_buffer, sample_rate) = self.read_buf()?;
         Ok(wav_io::resample::linear(
             raw_buffer.clone(),
@@ -86,6 +86,7 @@ impl Modulation for Wav {
         )
         .iter()
         .map(|&d| d.round() as u8)
+        .map(EmitIntensity::from)
         .collect())
     }
 }
@@ -188,7 +189,10 @@ mod tests {
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("tmp.wav");
         create_wav(&path, spec, data)?;
-        assert_eq!(Ok(expect), Wav::new(&path).calc(&geometry));
+        assert_eq!(
+            Ok(expect.into_iter().map(EmitIntensity::from).collect()),
+            Wav::new(&path).calc(&geometry)
+        );
         Ok(())
     }
 

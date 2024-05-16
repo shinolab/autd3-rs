@@ -11,7 +11,7 @@ impl ToMessage for autd3::modulation::Static {
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::Static(Static {
-                    intensity: self.intensity() as _,
+                    intensity: self.intensity().value() as _,
                 })),
                 segment: Segment::S0 as _,
                 transition_mode: Some(TransitionMode::SyncIdx.into()),
@@ -31,7 +31,7 @@ impl ToMessage
         Self::Message {
             datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::Static(Static {
-                    intensity: self.intensity() as _,
+                    intensity: self.intensity().value() as _,
                 })),
                 segment: self.segment() as _,
                 transition_mode: self.transition_mode().map(|m| m.mode() as _),

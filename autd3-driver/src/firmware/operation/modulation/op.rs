@@ -1,5 +1,5 @@
 use crate::{
-    derive::Modulation,
+    derive::{EmitIntensity, Modulation},
     error::AUTDInternalError,
     firmware::{
         fpga::{Segment, TransitionMode, MOD_BUF_SIZE_MAX, TRANSITION_MODE_NONE},
@@ -31,7 +31,7 @@ struct ModulationSubseq {
 
 pub struct ModulationOp<M: Modulation> {
     modulation: M,
-    buf: Vec<u8>,
+    buf: Vec<EmitIntensity>,
     remains: Remains,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
@@ -173,7 +173,9 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let buf: Vec<u8> = (0..MOD_SIZE).map(|_| rng.gen()).collect();
+        let buf: Vec<_> = (0..MOD_SIZE)
+            .map(|_| EmitIntensity::new(rng.gen()))
+            .collect();
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
         let loop_behavior = LoopBehavior::infinite();
         let segment = Segment::S0;
@@ -275,8 +277,8 @@ mod tests {
                 .skip((std::mem::size_of::<ModulationHead>() + MOD_SIZE) * dev.idx())
                 .skip(std::mem::size_of::<ModulationHead>())
                 .zip(buf.iter())
-                .for_each(|(&d, &m)| {
-                    assert_eq!(d, m);
+                .for_each(|(&d, m)| {
+                    assert_eq!(d, m.value());
                 })
         });
     }
@@ -293,7 +295,9 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let buf: Vec<u8> = (0..MOD_SIZE).map(|_| rng.gen()).collect();
+        let buf: Vec<_> = (0..MOD_SIZE)
+            .map(|_| EmitIntensity::new(rng.gen()))
+            .collect();
 
         let mut op = ModulationOp::new(
             TestModulation {
@@ -353,8 +357,8 @@ mod tests {
                 .skip(FRAME_SIZE * dev.idx())
                 .skip(std::mem::size_of::<ModulationHead>())
                 .zip(buf.iter().take(mod_size))
-                .for_each(|(&d, &m)| {
-                    assert_eq!(d, m);
+                .for_each(|(&d, m)| {
+                    assert_eq!(d, m.value());
                 })
         });
 
@@ -406,8 +410,8 @@ mod tests {
                         .skip(FRAME_SIZE - std::mem::size_of::<ModulationHead>())
                         .take(mod_size),
                 )
-                .for_each(|(&d, &m)| {
-                    assert_eq!(d, m);
+                .for_each(|(&d, m)| {
+                    assert_eq!(d, m.value());
                 })
         });
 
@@ -457,8 +461,8 @@ mod tests {
                         )
                         .take(mod_size),
                 )
-                .for_each(|(&d, &m)| {
-                    assert_eq!(d, m);
+                .for_each(|(&d, m)| {
+                    assert_eq!(d, m.value());
                 })
         });
     }
@@ -478,7 +482,7 @@ mod tests {
 
         let mut op = ModulationOp::new(
             TestModulation {
-                buf: (0..n).map(|_| rng.gen()).collect(),
+                buf: (0..n).map(|_| EmitIntensity::new(rng.gen())).collect(),
                 config: SamplingConfig::DivisionRaw(
                     rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX),
                 ),

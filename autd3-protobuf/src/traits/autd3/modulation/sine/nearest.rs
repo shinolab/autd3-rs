@@ -15,8 +15,8 @@ impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::Nea
                 modulation: Some(modulation::Modulation::SineNearest(SineNearest {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq().hz() as _,
-                    intensity: self.intensity() as _,
-                    offset: self.offset() as _,
+                    intensity: self.intensity().value() as _,
+                    offset: self.offset().value() as _,
                     phase: Some(self.phase().to_msg(None)),
                 })),
                 segment: Segment::S0 as _,
@@ -41,8 +41,8 @@ impl ToMessage
                 modulation: Some(modulation::Modulation::SineNearest(SineNearest {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq().hz() as _,
-                    intensity: self.intensity() as _,
-                    offset: self.offset() as _,
+                    intensity: self.intensity().value() as _,
+                    offset: self.offset().value() as _,
                     phase: Some(self.phase().to_msg(None)),
                 })),
                 segment: self.segment() as _,
@@ -62,8 +62,8 @@ impl FromMessage<SineNearest>
             autd3::modulation::Sine::with_freq_nearest(
                 (msg.freq as f64) * autd3_driver::defined::Hz,
             )
-            .with_intensity(msg.intensity as _)
-            .with_offset(msg.offset as _)
+            .with_intensity(msg.intensity as u8)
+            .with_offset(msg.offset as u8)
             .with_phase(autd3_driver::defined::Angle::from_msg(msg.phase.as_ref()?)?)
             .with_sampling_config(
                 autd3_driver::firmware::fpga::SamplingConfig::from_msg(msg.config.as_ref()?)?,

@@ -24,13 +24,13 @@ use crate::{create_geometry, send};
 
 #[derive(Modulation)]
 pub struct TestModulation {
-    pub buf: Vec<u8>,
+    pub buf: Vec<EmitIntensity>,
     pub config: SamplingConfig,
     pub loop_behavior: LoopBehavior,
 }
 
 impl Modulation for TestModulation {
-    fn calc(&self, _: &Geometry) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(&self, _: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
         Ok(self.buf.clone())
     }
 }
@@ -44,7 +44,7 @@ fn send_mod() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     {
-        let m: Vec<_> = (0..32768).map(|_| rng.gen()).collect();
+        let m: Vec<_> = (0..32768).map(|_| EmitIntensity::new(rng.gen())).collect();
         let freq_div = rng.gen_range(
             SAMPLING_FREQ_DIV_MIN
                 * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
@@ -76,7 +76,7 @@ fn send_mod() -> anyhow::Result<()> {
     }
 
     {
-        let m: Vec<_> = (0..2).map(|_| rng.gen()).collect();
+        let m: Vec<_> = (0..2).map(|_| EmitIntensity::new(rng.gen())).collect();
         let freq_div = rng.gen_range(
             SAMPLING_FREQ_DIV_MIN
                 * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
@@ -127,7 +127,7 @@ fn send_mod() -> anyhow::Result<()> {
             let transition_mode = TransitionMode::GPIO(gpio);
             let mut op = ModulationOp::new(
                 TestModulation {
-                    buf: (0..2).map(|_| u8::MAX).collect(),
+                    buf: (0..2).map(|_| EmitIntensity::MAX).collect(),
                     config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
                     loop_behavior: LoopBehavior::once(),
                 },
@@ -143,7 +143,7 @@ fn send_mod() -> anyhow::Result<()> {
         let transition_mode = TransitionMode::Ext;
         let mut op = ModulationOp::new(
             TestModulation {
-                buf: (0..2).map(|_| u8::MAX).collect(),
+                buf: (0..2).map(|_| EmitIntensity::MAX).collect(),
                 config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
                 loop_behavior: LoopBehavior::infinite(),
             },
@@ -166,7 +166,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
     {
         let mut op = ModulationOp::new(
             TestModulation {
-                buf: (0..2).map(|_| u8::MAX).collect(),
+                buf: (0..2).map(|_| EmitIntensity::MAX).collect(),
                 config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
                 loop_behavior: LoopBehavior::infinite(),
             },
@@ -183,7 +183,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
     {
         let mut op = ModulationOp::new(
             TestModulation {
-                buf: (0..2).map(|_| u8::MAX).collect(),
+                buf: (0..2).map(|_| EmitIntensity::MAX).collect(),
                 config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
                 loop_behavior: LoopBehavior::infinite(),
             },
@@ -201,7 +201,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
 
         let mut op = ModulationOp::new(
             TestModulation {
-                buf: (0..2).map(|_| u8::MAX).collect(),
+                buf: (0..2).map(|_| EmitIntensity::MAX).collect(),
                 config: SamplingConfig::DivisionRaw(
                     SAMPLING_FREQ_DIV_MIN
                         * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
@@ -240,7 +240,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
     {
         let mut op = ModulationOp::new(
             TestModulation {
-                buf: (0..2).map(|_| u8::MAX).collect(),
+                buf: (0..2).map(|_| EmitIntensity::MAX).collect(),
                 config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
                 loop_behavior: LoopBehavior::infinite(),
             },
@@ -257,7 +257,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
     {
         let mut op = ModulationOp::new(
             TestModulation {
-                buf: (0..2).map(|_| u8::MAX).collect(),
+                buf: (0..2).map(|_| EmitIntensity::MAX).collect(),
                 config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
                 loop_behavior: LoopBehavior::once(),
             },
@@ -274,7 +274,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
     {
         let mut op = ModulationOp::new(
             TestModulation {
-                buf: (0..2).map(|_| u8::MAX).collect(),
+                buf: (0..2).map(|_| EmitIntensity::MAX).collect(),
                 config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
                 loop_behavior: LoopBehavior::infinite(),
             },
@@ -310,7 +310,7 @@ fn test_miss_transition_time(
     let transition_mode = TransitionMode::SysTime(DcSysTime::from_utc(transition_time).unwrap());
     let mut op = ModulationOp::new(
         TestModulation {
-            buf: (0..2).map(|_| u8::MAX).collect(),
+            buf: (0..2).map(|_| EmitIntensity::MAX).collect(),
             config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
             loop_behavior: LoopBehavior::once(),
         },
