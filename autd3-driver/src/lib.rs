@@ -17,9 +17,9 @@ pub mod derive {
     pub use crate::{
         datagram::{
             Datagram, DatagramS, DatagramST, Gain, GainCache, GainFilter, GainTransform,
-            IntoGainCache, IntoGainTransform, IntoModulationCache, IntoModulationTransform,
-            IntoRadiationPressure, Modulation, ModulationCache, ModulationProperty,
-            ModulationTransform, RadiationPressure,
+            GainTransform2, IntoGainCache, IntoGainTransform, IntoGainTransform2,
+            IntoModulationCache, IntoModulationTransform, IntoRadiationPressure, Modulation,
+            ModulationCache, ModulationProperty, ModulationTransform, RadiationPressure,
         },
         defined::{rad, DEFAULT_TIMEOUT},
         error::AUTDInternalError,
