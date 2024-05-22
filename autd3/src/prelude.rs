@@ -1,10 +1,13 @@
 pub use crate::{
     controller::Controller,
     error::AUTDError,
-    gain::{Bessel, Focus, Null, Plane, Uniform},
+    gain::{Bessel2, Focus, Null, Plane, Uniform},
     link::Nop,
     modulation::{Sine, Square, Static},
 };
+
+#[allow(deprecated)]
+pub use crate::gain::Bessel;
 
 pub use autd3_driver::{
     autd3_device::AUTD3,

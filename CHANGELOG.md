@@ -1,3 +1,8 @@
+# 24.1.0
+
+- Add `gain::Bessel2`
+  - `gain::Bessel` is now deprecated
+
 # 24.0.0
 
 - Remove per device ultrasound frequency configuration
