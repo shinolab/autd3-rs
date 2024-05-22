@@ -74,7 +74,7 @@ impl FromMessage<GainStm>
                     let g: Box<dyn autd3_driver::datagram::Gain + Send + 'static> = Box::new(g);
                     g
                 }),
-                Some(gain::Gain::Bessel(msg)) => autd3::prelude::Bessel::from_msg(msg).map(|g| {
+                Some(gain::Gain::Bessel(msg)) => autd3::prelude::Bessel2::from_msg(msg).map(|g| {
                     let g: Box<dyn autd3_driver::datagram::Gain + Send + 'static> = Box::new(g);
                     g
                 }),
