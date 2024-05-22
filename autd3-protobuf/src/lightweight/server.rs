@@ -198,7 +198,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
             }
             Some(gain::Gain::Bessel(msg)) => {
                 autd.send(
-                    autd3::prelude::Bessel::from_msg(msg)
+                    autd3::prelude::Bessel2::from_msg(msg)
                         .ok_or(AUTDProtoBufError::DataParseError)?
                         .with_segment(
                             autd3_driver::firmware::fpga::Segment::from(
