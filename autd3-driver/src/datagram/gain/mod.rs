@@ -1,12 +1,15 @@
 mod cache;
 mod group;
 mod transform;
+mod transform2;
 
 pub use cache::Cache as GainCache;
 pub use cache::IntoCache as IntoGainCache;
 pub use group::Group;
 pub use transform::IntoTransform as IntoGainTransform;
 pub use transform::Transform as GainTransform;
+pub use transform2::IntoTransform2 as IntoGainTransform2;
+pub use transform2::Transform2 as GainTransform2;
 
 use std::collections::HashMap;
 

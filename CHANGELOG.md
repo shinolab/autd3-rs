@@ -2,6 +2,8 @@
 
 - Add `gain::Bessel2`
   - `gain::Bessel` is now deprecated
+- Add `with_transform2` for gains
+  - `with_transform` is now deprecated
 
 # 24.0.0
 
