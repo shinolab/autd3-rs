@@ -1,6 +1,6 @@
 [package]
 name = "autd3"
-version = "24.0.0"
+version = "24.1.0"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 
@@ -11,8 +11,8 @@ readme = "README.md"
 keywords = ["autd"]
 
 [dependencies]
-autd3-driver = { path = "../autd3-driver", version = "24.0.0" }
-autd3-firmware-emulator = { path = "../autd3-firmware-emulator", version = "24.0.0", default-features = false }
+autd3-driver = { path = "../autd3-driver", version = "24.1.0" }
+autd3-firmware-emulator = { path = "../autd3-firmware-emulator", version = "24.1.0", default-features = false }
 num = { workspace = true }
 thiserror = { workspace = true }
 bitvec = { workspace = true }
