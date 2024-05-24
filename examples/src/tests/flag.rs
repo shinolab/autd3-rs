@@ -3,7 +3,7 @@ use std::sync::{
     Arc,
 };
 
-use autd3::prelude::*;
+use autd3::{driver::link::Link, prelude::*};
 
 pub async fn flag(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     autd.send(ReadsFPGAState::new(|_dev| true)).await?;

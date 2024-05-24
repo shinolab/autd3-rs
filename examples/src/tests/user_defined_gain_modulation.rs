@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use autd3::prelude::*;
+use autd3::{driver::link::Link, prelude::*};
 use autd3_driver::derive::*;
 
 #[derive(Gain, Clone, Copy)]

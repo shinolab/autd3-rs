@@ -59,27 +59,8 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
     } else {
         quote! {
             impl <#(#linetimes,)* #(#type_params,)*> IntoGainTransform<Self> for #name #ty_generics #where_clause {
-                fn with_transform<GainTransformF: Fn(&Device, &Transducer, Drive) -> Drive>(self, f: GainTransformF) -> GainTransform<Self, GainTransformF> {
+                fn with_transform<GainTransformFT: Fn(&Transducer, Drive) -> Drive, GainTransformF: Fn(&Device) -> GainTransformFT>(self, f: GainTransformF) -> GainTransform<Self, GainTransformFT, GainTransformF> {
                     GainTransform::new(self, f)
-                }
-            }
-        }
-    };
-
-    let linetimes = generics.lifetimes();
-    let (_, ty_generics, where_clause) = generics.split_for_impl();
-    let type_params = generics.type_params();
-    let where_clause = to_gain_where(where_clause);
-    let transform2 = if attrs
-        .iter()
-        .any(|attr| attr.path().is_ident("no_gain_transform"))
-    {
-        quote! {}
-    } else {
-        quote! {
-            impl <#(#linetimes,)* #(#type_params,)*> IntoGainTransform2<Self> for #name #ty_generics #where_clause {
-                fn with_transform2<GainTransformFT: Fn(&Transducer, Drive) -> Drive, GainTransformF: Fn(&Device) -> GainTransformFT>(self, f: GainTransformF) -> GainTransform2<Self, GainTransformFT, GainTransformF> {
-                    GainTransform2::new(self, f)
                 }
             }
         }
@@ -125,8 +106,6 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
         #cache
 
         #transform
-
-        #transform2
     };
     gen.into()
 }

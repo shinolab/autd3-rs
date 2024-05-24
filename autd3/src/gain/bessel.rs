@@ -1,22 +1,20 @@
-#![allow(deprecated)]
-
 use std::collections::HashMap;
 
 use autd3_driver::{
+    defined::Angle,
     derive::*,
     geometry::{UnitQuaternion, Vector3},
 };
 
 /// Gain to produce a Bessel beam
 #[derive(Gain, Clone, PartialEq, Debug, Builder)]
-#[deprecated(note = "Use Bessel2 instead")]
 pub struct Bessel {
     #[get]
     pos: Vector3,
     #[get]
     dir: Vector3,
     #[get]
-    theta: f64,
+    theta: Angle,
     #[getset]
     intensity: EmitIntensity,
     #[getset]
@@ -32,7 +30,7 @@ impl Bessel {
     /// * `dir` - Direction of the beam
     /// * `theta` - Angle between the conical wavefront of the beam and the plane normal to `dir`
     ///
-    pub const fn new(pos: Vector3, dir: Vector3, theta: f64) -> Self {
+    pub const fn new(pos: Vector3, dir: Vector3, theta: Angle) -> Self {
         Self {
             pos,
             dir,
@@ -62,8 +60,8 @@ impl Gain for Bessel {
             let wavenumber = dev.wavenumber();
             move |tr| {
                 let r = rot * (tr.position() - self.pos);
-                let dist =
-                    self.theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - self.theta.cos() * r.z;
+                let theta = self.theta.radian();
+                let dist = theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - theta.cos() * r.z;
                 Drive::new(
                     Phase::from(dist * wavenumber * rad) + self.phase_offset,
                     self.intensity,
@@ -87,7 +85,7 @@ mod tests {
         g: Bessel,
         pos: Vector3,
         dir: Vector3,
-        theta: f64,
+        theta: Angle,
         intensity: EmitIntensity,
         phase_offset: Phase,
         geometry: &Geometry,
@@ -114,7 +112,8 @@ mod tests {
                         });
                     let r = tr.position() - pos;
                     let r = rot * r;
-                    let dist = theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - theta.cos() * r.z;
+                    let dist = theta.radian().sin() * (r.x * r.x + r.y * r.y).sqrt()
+                        - theta.radian().cos() * r.z;
                     Phase::from(dist * geometry[0].wavenumber() * rad) + phase_offset
                 };
                 assert_eq!(expected_phase, d.phase());
@@ -134,25 +133,33 @@ mod tests {
         let f = random_vector3(-500.0..500.0, -500.0..500.0, 50.0..500.0);
         let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();
         let theta = rng.gen_range(-PI..PI);
-        let g = Bessel::new(f, d, theta);
-        bessel_check(g, f, d, theta, EmitIntensity::MAX, Phase::new(0), &geometry)?;
+        let g = Bessel::new(f, d, theta * rad);
+        bessel_check(
+            g,
+            f,
+            d,
+            theta * rad,
+            EmitIntensity::MAX,
+            Phase::new(0),
+            &geometry,
+        )?;
 
         let f = random_vector3(-500.0..500.0, -500.0..500.0, 50.0..500.0);
         let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();
         let theta = rng.gen_range(-PI..PI);
         let intensity = EmitIntensity::new(rng.gen());
         let phase_offset = Phase::new(rng.gen());
-        let g = Bessel::new(f, d, theta)
+        let g = Bessel::new(f, d, theta * rad)
             .with_intensity(intensity)
             .with_phase_offset(phase_offset);
-        bessel_check(g, f, d, theta, intensity, phase_offset, &geometry)?;
+        bessel_check(g, f, d, theta * rad, intensity, phase_offset, &geometry)?;
 
         Ok(())
     }
 
     #[test]
     fn test_bessel_derive() {
-        let g = Bessel::new(Vector3::zeros(), Vector3::zeros(), 0.);
+        let g = Bessel::new(Vector3::zeros(), Vector3::zeros(), 0. * rad);
         let g2 = g.clone();
         assert_eq!(g.pos(), g2.pos());
         assert_eq!(g.dir(), g2.dir());

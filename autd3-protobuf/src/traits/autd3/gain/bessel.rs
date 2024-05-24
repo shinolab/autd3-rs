@@ -47,7 +47,7 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Bess
     }
 }
 
-impl ToMessage for autd3::gain::Bessel2 {
+impl ToMessage for autd3::gain::Bessel {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
@@ -68,7 +68,7 @@ impl ToMessage for autd3::gain::Bessel2 {
     }
 }
 
-impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Bessel2> {
+impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Bessel> {
     type Message = DatagramLightweight;
 
     #[allow(clippy::unnecessary_cast)]
@@ -89,7 +89,7 @@ impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Bess
     }
 }
 
-impl FromMessage<Bessel> for autd3::gain::Bessel2 {
+impl FromMessage<Bessel> for autd3::gain::Bessel {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &Bessel) -> Option<Self> {
         Some(

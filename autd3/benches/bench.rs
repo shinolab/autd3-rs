@@ -1,7 +1,7 @@
 mod gain;
 
 use autd3::prelude::*;
-use autd3_driver::defined::FREQ_40K;
+use autd3_driver::{defined::FREQ_40K, geometry::IntoDevice};
 
 use gain::*;
 
