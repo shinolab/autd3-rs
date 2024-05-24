@@ -1,4 +1,4 @@
-use autd3::prelude::*;
+use autd3::{driver::link::Link, prelude::*};
 
 pub async fn plane(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     autd.send(Silencer::default()).await?;

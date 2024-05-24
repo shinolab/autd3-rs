@@ -1,4 +1,4 @@
-use autd3::prelude::*;
+use autd3::{driver::link::Link, prelude::*};
 
 #[tokio::test]
 async fn nop_test() -> anyhow::Result<()> {

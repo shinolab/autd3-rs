@@ -1,4 +1,4 @@
-use autd3::prelude::*;
+use autd3::{driver::link::Link, prelude::*};
 use autd3_gain_holo::*;
 
 use colored::*;

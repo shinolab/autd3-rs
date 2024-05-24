@@ -21,8 +21,7 @@ pub use clk::ConfigureFPGAClock;
 pub use debug::DebugSettings;
 pub use force_fan::ForceFan;
 pub use gain::{
-    Gain, GainCache, GainFilter, GainTransform, GainTransform2, Group, IntoGainCache,
-    IntoGainTransform, IntoGainTransform2,
+    Gain, GainCache, GainFilter, GainTransform, Group, IntoGainCache, IntoGainTransform,
 };
 pub use gpio_in::EmulateGPIOIn;
 pub use modulation::{

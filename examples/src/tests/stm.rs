@@ -1,4 +1,4 @@
-use autd3::prelude::*;
+use autd3::{driver::link::Link, prelude::*};
 
 pub async fn focus_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     autd.send(Silencer::disable()).await?;

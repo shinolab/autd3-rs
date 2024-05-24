@@ -1,5 +1,8 @@
 use autd3::{derive::DEFAULT_TIMEOUT, link::Audit, prelude::*};
-use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
+use autd3_driver::{
+    firmware::{cpu::RxMessage, fpga::FPGAState},
+    link::Link,
+};
 
 #[tokio::test]
 async fn audit_test() -> anyhow::Result<()> {
