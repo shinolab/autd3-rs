@@ -1,7 +1,7 @@
 mod control_flags;
 mod op;
-mod segment;
+// mod segment;
 
 pub use control_flags::GainControlFlags;
 pub use op::GainOp;
-pub use segment::GainSwapSegmentOp;
+// pub use segment::GainSwapSegmentOp;

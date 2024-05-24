@@ -8,18 +8,18 @@ pub use crate::{
 pub use autd3_derive::Gain;
 
 use std::{
-    cell::{Ref, RefCell},
     collections::HashMap,
-    rc::Rc,
+    sync::{Arc, RwLock, RwLockReadGuard},
 };
 
-/// Gain to cache the result of calculation
+use super::GainCalcFn;
+
 #[derive(Gain, Debug)]
 #[no_gain_cache]
 #[no_gain_transform]
 pub struct Cache<G: Gain + 'static> {
-    gain: Rc<G>,
-    cache: Rc<RefCell<HashMap<usize, Vec<Drive>>>>,
+    gain: Arc<G>,
+    cache: Arc<RwLock<HashMap<usize, Vec<Drive>>>>,
 }
 
 impl<G: Gain + 'static> std::ops::Deref for Cache<G> {
@@ -31,7 +31,6 @@ impl<G: Gain + 'static> std::ops::Deref for Cache<G> {
 }
 
 pub trait IntoCache<G: Gain + 'static> {
-    /// Cache the result of calculation
     fn with_cache(self) -> Cache<G>;
 }
 
@@ -44,49 +43,51 @@ impl<G: Gain + Clone + 'static> Clone for Cache<G> {
     }
 }
 
-impl<G: Gain + PartialEq + 'static> PartialEq for Cache<G> {
-    fn eq(&self, other: &Self) -> bool {
-        self.gain == other.gain && self.cache == other.cache
-    }
-}
-
 impl<G: Gain + 'static> Cache<G> {
-    /// constructor
     #[doc(hidden)]
     pub fn new(gain: G) -> Self {
         Self {
-            gain: Rc::new(gain),
-            cache: Rc::new(Default::default()),
+            gain: Arc::new(gain),
+            cache: Arc::new(Default::default()),
         }
     }
 
     pub fn init(&self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        if self.cache.borrow().len() != geometry.devices().count()
+        if self.cache.read().unwrap().len() != geometry.devices().count()
             || geometry
                 .devices()
-                .any(|dev| !self.cache.borrow().contains_key(&dev.idx()))
+                .any(|dev| !self.cache.read().unwrap().contains_key(&dev.idx()))
         {
-            *self.cache.borrow_mut() = self.gain.calc(geometry, GainFilter::All)?;
+            let f = self.gain.calc(geometry, GainFilter::All)?;
+            *self.cache.write().unwrap() = geometry
+                .devices()
+                .map(|dev| {
+                    (dev.idx(), {
+                        let f = f(dev);
+                        dev.iter().map(|tr| f(tr)).collect()
+                    })
+                })
+                .collect();
         }
         Ok(())
     }
 
-    /// get cached drives
-    ///
-    /// Note that the cached data is created after at least one call to `calc`.
-    pub fn drives(&self) -> Ref<'_, HashMap<usize, Vec<Drive>>> {
-        self.cache.borrow()
+    pub fn drives(&self) -> RwLockReadGuard<HashMap<usize, Vec<Drive>>> {
+        self.cache.read().unwrap()
     }
 }
 
 impl<G: Gain + 'static> Gain for Cache<G> {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-        _filter: GainFilter,
-    ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
+    fn calc<'a>(
+        &'a self,
+        geometry: &'a Geometry,
+        _filter: GainFilter<'a>,
+    ) -> Result<GainCalcFn<'a>, AUTDInternalError> {
         self.init(geometry)?;
-        Ok(self.cache.borrow().clone())
+        Ok(Box::new(|dev| {
+            let cache = self.drives()[&dev.idx()].clone();
+            Box::new(move |tr| cache[tr.idx()])
+        }))
     }
 }
 
@@ -114,11 +115,15 @@ mod tests {
         let cache = gain.with_cache();
 
         assert!(cache.drives().is_empty());
-        assert_eq!(
-            gain.calc(&geometry, GainFilter::All)?,
-            cache.calc(&geometry, GainFilter::All)?
-        );
-        assert_eq!(gain.calc(&geometry, GainFilter::All)?, *cache.drives());
+        geometry.devices().try_for_each(|dev| {
+            dev.iter().try_for_each(|tr| {
+                assert_eq!(
+                    gain.calc(&geometry, GainFilter::All)?(dev)(tr),
+                    cache.calc(&geometry, GainFilter::All)?(dev)(tr)
+                );
+                Result::<(), AUTDInternalError>::Ok(())
+            })
+        })?;
 
         Ok(())
     }
@@ -135,13 +140,16 @@ mod tests {
     }
 
     impl Gain for CacheTestGain {
-        fn calc(
-            &self,
-            geometry: &Geometry,
-            filter: GainFilter,
-        ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
+        fn calc<'a>(
+            &'a self,
+            _: &'a Geometry,
+            filter: GainFilter<'a>,
+        ) -> Result<GainCalcFn<'a>, AUTDInternalError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
-            Ok(Self::transform(geometry, filter, |_| |_| Drive::null()))
+            Ok(Self::transform(
+                filter,
+                Box::new(|_| Box::new(|_| Drive::null())),
+            ))
         }
     }
 
@@ -173,7 +181,6 @@ mod tests {
         .with_cache();
 
         let g2 = gain.clone();
-        assert_eq!(gain, g2);
         assert_eq!(0, gain.calc_cnt.load(Ordering::Relaxed));
         assert_eq!(0, g2.calc_cnt.load(Ordering::Relaxed));
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));

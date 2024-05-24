@@ -1,8 +1,4 @@
-use crate::{
-    error::AUTDInternalError,
-    firmware::operation::Operation,
-    geometry::{Device, Geometry},
-};
+use crate::{error::AUTDInternalError, firmware::operation::Operation, geometry::Device};
 
 #[derive(Default)]
 pub struct NullOp {}
@@ -18,7 +14,7 @@ impl Operation for NullOp {
         0
     }
 
-    fn init(&mut self, _: &Geometry) -> Result<(), AUTDInternalError> {
+    fn init(&mut self, _: &Device) -> Result<(), AUTDInternalError> {
         Ok(())
     }
 
@@ -41,7 +37,9 @@ mod tests {
 
         let mut op = NullOp::default();
 
-        assert!(op.init(&geometry).is_ok());
+        geometry
+            .devices()
+            .for_each(|dev| assert!(op.init(dev).is_ok()));
 
         geometry
             .devices()
