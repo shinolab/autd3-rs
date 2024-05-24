@@ -2,7 +2,7 @@ mod rx;
 mod tx;
 
 pub use rx::RxMessage;
-pub use tx::TxDatagram;
+pub use tx::{TxDatagram, TxMessage};
 
 pub fn check_if_msg_is_processed<'a>(
     tx: &'a TxDatagram,

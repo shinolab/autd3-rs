@@ -15,11 +15,15 @@ pub use async_trait::async_trait;
 #[cfg(feature = "derive")]
 pub mod derive {
     pub use crate::{
+        // datagram::{
+        //     Datagram, DatagramS, DatagramST, Gain, GainCache, GainFilter, GainTransform,
+        //     IntoGainCache, IntoGainTransform, IntoModulationCache, IntoModulationTransform,
+        //     IntoRadiationPressure, Modulation, ModulationCache, ModulationProperty,
+        //     ModulationTransform, RadiationPressure,
+        // },
         datagram::{
-            Datagram, DatagramS, DatagramST, Gain, GainCache, GainFilter, GainTransform,
-            IntoGainCache, IntoGainTransform, IntoModulationCache, IntoModulationTransform,
-            IntoRadiationPressure, Modulation, ModulationCache, ModulationProperty,
-            ModulationTransform, RadiationPressure,
+            Datagram, DatagramS, Gain, GainCache, GainFilter, GainTransform, IntoGainCache,
+            IntoGainTransform,
         },
         defined::{rad, DEFAULT_TIMEOUT},
         error::AUTDInternalError,
@@ -28,7 +32,8 @@ pub mod derive {
                 Drive, EmitIntensity, LoopBehavior, Phase, SamplingConfig, Segment, TransitionMode,
                 SAMPLING_FREQ_DIV_MIN,
             },
-            operation::{GainOp, ModulationOp, NullOp, Operation},
+            operation::{GainOp, NullOp, Operation},
+            // operation::{GainOp, ModulationOp, NullOp, Operation},
         },
         geometry::{Device, Geometry, Transducer},
     };

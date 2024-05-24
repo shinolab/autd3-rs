@@ -21,8 +21,6 @@ tokio = { workspace = true, features = ["rt-multi-thread"] }
 [features]
 default = []
 async-trait = ["autd3-driver/async-trait"]
-force_parallel = ["autd3-driver/force_parallel"]
-force_serial = ["autd3-driver/force_serial"]
 
 [dev-dependencies]
 assert_approx_eq = { workspace = true }

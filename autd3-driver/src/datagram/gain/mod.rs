@@ -2,151 +2,84 @@ mod cache;
 mod group;
 mod transform;
 
+use std::collections::HashMap;
+
 pub use cache::Cache as GainCache;
 pub use cache::IntoCache as IntoGainCache;
 pub use group::Group;
 pub use transform::IntoTransform as IntoGainTransform;
 pub use transform::Transform as GainTransform;
 
-use std::collections::HashMap;
-
 use crate::{
-    error::AUTDInternalError,
+    derive::Geometry,
     firmware::{
         fpga::{Drive, Segment},
         operation::{GainOp, NullOp},
     },
-    geometry::{Device, Geometry, Transducer},
+    geometry::{Device, Transducer},
 };
 
 use bitvec::prelude::*;
 
-use rayon::prelude::*;
+use self::transform::AUTDInternalError;
 
 use super::with_segment::DatagramS;
-
-const PARALLEL_THRESHOLD: usize = 4;
 
 pub enum GainFilter<'a> {
     All,
     Filter(&'a HashMap<usize, BitVec<usize, Lsb0>>),
 }
 
-/// Gain controls amplitude and phase of each transducer.
-pub trait Gain {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-        filter: GainFilter,
-    ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError>;
+pub type GainCalcFn<'a> =
+    Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Send + Sync + 'a> + Send + Sync + 'a>;
 
-    fn transform<FT: Fn(&Transducer) -> Drive, F: Fn(&Device) -> FT + Sync>(
-        geometry: &Geometry,
-        filter: GainFilter,
-        f: F,
-    ) -> HashMap<usize, Vec<Drive>>
+pub trait Gain: Send + Sync {
+    fn calc<'a>(
+        &'a self,
+        geometry: &'a Geometry,
+        filter: GainFilter<'a>,
+    ) -> Result<GainCalcFn<'a>, AUTDInternalError>;
+    fn transform<'a>(filter: GainFilter<'a>, f: GainCalcFn<'a>) -> GainCalcFn<'a>
     where
         Self: Sized,
     {
-        #[cfg(all(feature = "force_parallel", feature = "force_serial"))]
-        compile_error!("Cannot specify both force_parallel and force_serial");
-        #[cfg(all(feature = "force_parallel", not(feature = "force_serial")))]
-        let n = usize::MAX;
-        #[cfg(all(not(feature = "force_parallel"), feature = "force_serial"))]
-        let n = 0;
-        #[cfg(all(not(feature = "force_parallel"), not(feature = "force_serial")))]
-        let n = geometry.devices().count();
-
-        if n > PARALLEL_THRESHOLD {
-            match filter {
-                GainFilter::All => geometry
-                    .devices()
-                    .par_bridge()
-                    .map(|dev| (dev.idx(), dev.iter().map(f(dev)).collect()))
-                    .collect(),
-                GainFilter::Filter(filter) => geometry
-                    .devices()
-                    .par_bridge()
-                    .filter_map(|dev| {
-                        filter.get(&dev.idx()).map(|filter| {
-                            let ft = f(dev);
-                            (
-                                dev.idx(),
-                                dev.iter()
-                                    .map(|tr| {
-                                        if filter[tr.idx()] {
-                                            ft(tr)
-                                        } else {
-                                            Drive::null()
-                                        }
-                                    })
-                                    .collect(),
-                            )
-                        })
-                    })
-                    .collect(),
-            }
-        } else {
-            match filter {
-                GainFilter::All => geometry
-                    .devices()
-                    .map(|dev| (dev.idx(), dev.iter().map(f(dev)).collect()))
-                    .collect(),
-                GainFilter::Filter(filter) => geometry
-                    .devices()
-                    .filter_map(|dev| {
-                        filter.get(&dev.idx()).map(|filter| {
-                            let ft = f(dev);
-                            (
-                                dev.idx(),
-                                dev.iter()
-                                    .map(|tr| {
-                                        if filter[tr.idx()] {
-                                            ft(tr)
-                                        } else {
-                                            Drive::null()
-                                        }
-                                    })
-                                    .collect(),
-                            )
-                        })
-                    })
-                    .collect(),
-            }
+        match filter {
+            GainFilter::All => f,
+            GainFilter::Filter(filter) => Box::new(move |dev| {
+                let filter = filter.get(&dev.idx());
+                let ft = f(dev);
+                Box::new(move |tr| match filter {
+                    Some(f) if f[tr.idx()] => ft(tr),
+                    _ => Drive::null(),
+                })
+            }),
         }
     }
 }
 
 // GRCOV_EXCL_START
-impl<'a> Gain for Box<dyn Gain + 'a> {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-        filter: GainFilter,
-    ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
+impl Gain for Box<dyn Gain> {
+    fn calc<'a>(
+        &'a self,
+        geometry: &'a Geometry,
+        filter: GainFilter<'a>,
+    ) -> Result<GainCalcFn<'a>, AUTDInternalError> {
         self.as_ref().calc(geometry, filter)
     }
 }
 
-impl<'a> Gain for Box<dyn Gain + Send + 'a> {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-        filter: GainFilter,
-    ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        self.as_ref().calc(geometry, filter)
-    }
-}
-
-impl DatagramS for Box<dyn Gain> {
-    type O1 = GainOp<Self>;
+impl<'a> DatagramS<'a> for Box<dyn Gain> {
+    type O1 = GainOp<'a>;
     type O2 = NullOp;
 
-    fn operation_with_segment(self, segment: Segment, transition: bool) -> (Self::O1, Self::O2) {
-        (
-            Self::O1::new(segment, transition, self),
-            Self::O2::default(),
-        )
+    fn operation_with_segment(
+        &'a self,
+        geometry: &'a Geometry,
+        segment: Segment,
+        transition: bool,
+    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError> {
+        let f = self.calc(geometry, GainFilter::All)?;
+        Ok(move |dev| (GainOp::new(segment, transition, f(dev)), NullOp::default()))
     }
 }
 // GRCOV_EXCL_STOP
@@ -158,17 +91,18 @@ mod tests {
     use crate::{defined::FREQ_40K, derive::*, geometry::tests::create_geometry};
 
     #[derive(Gain, Clone, Copy, PartialEq, Debug)]
-    pub struct TestGain<
-        FT: Fn(&Transducer) -> Drive + 'static,
-        F: Fn(&Device) -> FT + Sync + 'static,
-    > {
+    pub struct TestGain<FT, F>
+    where
+        FT: Fn(&Transducer) -> Drive + Send + Sync + 'static,
+        F: Fn(&Device) -> FT + Send + Sync + 'static,
+    {
         pub f: F,
     }
 
     impl
         TestGain<
-            Box<dyn Fn(&Transducer) -> Drive>,
-            Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive> + Sync>,
+            Box<dyn Fn(&Transducer) -> Drive + Send + Sync>,
+            Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Send + Sync> + Send + Sync>,
         >
     {
         pub fn null() -> Self {
@@ -178,15 +112,23 @@ mod tests {
         }
     }
 
-    impl<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + Sync + 'static> Gain
-        for TestGain<FT, F>
+    impl<
+            FT: Fn(&Transducer) -> Drive + Send + Sync + 'static,
+            F: Fn(&Device) -> FT + Send + Sync + 'static,
+        > Gain for TestGain<FT, F>
     {
-        fn calc(
-            &self,
-            geometry: &Geometry,
-            filter: GainFilter,
-        ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-            Ok(Self::transform(geometry, filter, &self.f))
+        fn calc<'a>(
+            &'a self,
+            _geometry: &'a Geometry,
+            filter: GainFilter<'a>,
+        ) -> Result<GainCalcFn<'a>, AUTDInternalError> {
+            Ok(Self::transform(
+                filter,
+                Box::new(move |dev| {
+                    let f = (self.f)(dev);
+                    Box::new(move |tr| f(tr))
+                }),
+            ))
         }
     }
 
@@ -227,62 +169,68 @@ mod tests {
             .iter_mut()
             .zip(enabled.iter())
             .for_each(|(dev, &e)| dev.enable = e);
-        assert_eq!(
-            Ok(expect),
-            TestGain {
-                f: |dev| {
-                    let dev_idx = dev.idx();
-                    move |_| {
-                        Drive::new(
-                            Phase::new(dev_idx as u8 + 1),
-                            EmitIntensity::new(dev_idx as u8 + 1),
-                        )
-                    }
+        let g = TestGain {
+            f: |dev| {
+                let dev_idx = dev.idx();
+                move |_| {
+                    Drive::new(
+                        Phase::new(dev_idx as u8 + 1),
+                        EmitIntensity::new(dev_idx as u8 + 1),
+                    )
                 }
-            }
-            .calc(&geometry, GainFilter::All)
+            },
+        };
+        assert_eq!(
+            expect,
+            geometry
+                .devices()
+                .map(|dev| (dev.idx(), {
+                    let f = g.calc(&geometry, GainFilter::All).unwrap()(dev);
+                    dev.iter().map(|tr| f(tr)).collect()
+                }))
+                .collect()
         );
     }
 
     #[rstest::rstest]
     #[test]
     #[case(
-        [
-            (0, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x01), EmitIntensity::new(0x01))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
-            (1, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x02), EmitIntensity::new(0x02))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect())
-        ].into_iter().collect(),
-        vec![true; 2],
-        [
-            (0, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
-            (1, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
-        ].iter().cloned().collect(),
-        2)]
+    [
+        (0, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x01), EmitIntensity::new(0x01))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
+        (1, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x02), EmitIntensity::new(0x02))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect())
+    ].into_iter().collect(),
+    vec![true; 2],
+    [
+        (0, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
+        (1, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
+    ].iter().cloned().collect(),
+    2)]
     #[case::parallel(
-        [
-            (0, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x01), EmitIntensity::new(0x01))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
-            (1, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x02), EmitIntensity::new(0x02))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
-            (2, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x03), EmitIntensity::new(0x03))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
-            (3, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x04), EmitIntensity::new(0x04))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
-            (4, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x05), EmitIntensity::new(0x05))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
-        ].into_iter().collect(),
-        vec![true; 5],
-        [
-            (0, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
-            (1, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
-            (2, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
-            (3, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
-            (4, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
-        ].iter().cloned().collect(),
-        5)]
+    [
+        (0, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x01), EmitIntensity::new(0x01))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
+        (1, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x02), EmitIntensity::new(0x02))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
+        (2, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x03), EmitIntensity::new(0x03))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
+        (3, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x04), EmitIntensity::new(0x04))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
+        (4, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x05), EmitIntensity::new(0x05))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect()),
+    ].into_iter().collect(),
+    vec![true; 5],
+    [
+        (0, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
+        (1, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
+        (2, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
+        (3, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
+        (4, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
+    ].iter().cloned().collect(),
+    5)]
     #[case::enabled(
-        [
-            (1, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x02), EmitIntensity::new(0x02))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect())
-        ].into_iter().collect(),
-        vec![false, true],
-        [
-            (1, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
-        ].iter().cloned().collect(),
-        2)]
+    [
+        (1, (0..NUM_TRANSDUCERS / 2).map(|_| Drive::new(Phase::new(0x02), EmitIntensity::new(0x02))).chain((0..).map(|_| Drive::null())).take(NUM_TRANSDUCERS).collect())
+    ].into_iter().collect(),
+    vec![false, true],
+    [
+        (1, (0..NUM_TRANSDUCERS).map(|i| i < NUM_TRANSDUCERS / 2).collect()),
+    ].iter().cloned().collect(),
+    2)]
     fn test_transform_filtered(
         #[case] expect: HashMap<usize, Vec<Drive>>,
         #[case] enabled: Vec<bool>,
@@ -296,20 +244,27 @@ mod tests {
             .iter_mut()
             .zip(enabled.iter())
             .for_each(|(dev, &e)| dev.enable = e);
-        assert_eq!(
-            Ok(expect),
-            TestGain {
-                f: |dev| {
-                    let dev_idx = dev.idx();
-                    move |_| {
-                        Drive::new(
-                            Phase::new(dev_idx as u8 + 1),
-                            EmitIntensity::new(dev_idx as u8 + 1),
-                        )
-                    }
+
+        let g = TestGain {
+            f: |dev| {
+                let dev_idx = dev.idx();
+                move |_| {
+                    Drive::new(
+                        Phase::new(dev_idx as u8 + 1),
+                        EmitIntensity::new(dev_idx as u8 + 1),
+                    )
                 }
-            }
-            .calc(&geometry, GainFilter::Filter(&filter))
+            },
+        };
+        assert_eq!(
+            expect,
+            geometry
+                .devices()
+                .map(|dev| (dev.idx(), {
+                    let f = g.calc(&geometry, GainFilter::Filter(&filter)).unwrap()(dev);
+                    dev.iter().map(|tr| f(tr)).collect()
+                }))
+                .collect()
         );
     }
 }
