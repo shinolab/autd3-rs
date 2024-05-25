@@ -71,8 +71,6 @@ pub enum AUTDInternalError {
     #[error("GainSTMMode ({0:?}) is not supported")]
     GainSTMModeNotSupported(GainSTMMode),
 
-    #[error("Invalid pulse width encoder table size ({0})")]
-    InvalidPulseWidthEncoderTableSize(usize),
     #[error("Pulse width encoder table must be monotonically increasing and each data value must be 256 or less")]
     InvalidPulseWidthEncoderData,
 

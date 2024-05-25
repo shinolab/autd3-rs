@@ -4,10 +4,8 @@ use crate::{
         fpga::{DebugType, GPIOOut},
         operation::{cast, Operation, TypeTag},
     },
-    geometry::{Device, Geometry},
+    geometry::Device,
 };
-
-use super::Remains;
 
 #[repr(C, align(2))]
 struct DebugSetting {
@@ -17,32 +15,29 @@ struct DebugSetting {
     value: [u16; 4],
 }
 
-pub struct DebugSettingOp<F: Fn(&Device, GPIOOut) -> DebugType> {
-    remains: Remains,
+pub struct DebugSettingOp<'a, F: Fn(GPIOOut) -> DebugType<'a>> {
+    is_done: bool,
     f: F,
 }
 
-impl<F: Fn(&Device, GPIOOut) -> DebugType> DebugSettingOp<F> {
+impl<'a, F: Fn(GPIOOut) -> DebugType<'a>> DebugSettingOp<'a, F> {
     pub fn new(f: F) -> Self {
-        Self {
-            remains: Default::default(),
-            f,
-        }
+        Self { is_done: false, f }
     }
 }
 
-impl<F: Fn(&Device, GPIOOut) -> DebugType> Operation for DebugSettingOp<F> {
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+impl<'a, F: Fn(GPIOOut) -> DebugType<'a>> Operation for DebugSettingOp<'a, F> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         *cast::<DebugSetting>(tx) = DebugSetting {
             tag: TypeTag::Debug,
             __pad: 0,
             ty: [GPIOOut::O0, GPIOOut::O1, GPIOOut::O2, GPIOOut::O3]
-                .map(|gpio| (self.f)(device, gpio).ty()),
+                .map(|gpio| (self.f)(gpio).ty()),
             value: [GPIOOut::O0, GPIOOut::O1, GPIOOut::O2, GPIOOut::O3]
-                .map(|gpio| (self.f)(device, gpio).value()),
+                .map(|gpio| (self.f)(gpio).value()),
         };
 
-        self.remains[device] -= 1;
+        self.is_done = true;
         Ok(std::mem::size_of::<DebugSetting>())
     }
 
@@ -50,12 +45,7 @@ impl<F: Fn(&Device, GPIOOut) -> DebugType> Operation for DebugSettingOp<F> {
         std::mem::size_of::<DebugSetting>()
     }
 
-    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains.init(geometry, |_| 1);
-        Ok(())
-    }
-
-    fn is_done(&self, device: &Device) -> bool {
-        self.remains.is_done(device)
+    fn is_done(&self) -> bool {
+        self.is_done
     }
 }

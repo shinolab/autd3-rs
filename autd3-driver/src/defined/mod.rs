@@ -1,4 +1,5 @@
 mod angle;
+mod control_point;
 mod freq;
 
 pub use std::f64::consts::PI;
@@ -14,6 +15,7 @@ mod unit {
 pub use unit::*;
 
 pub use angle::*;
+pub use control_point::*;
 pub use freq::*;
 
 pub const MILLIMETER: f64 = METER / 1000.0;

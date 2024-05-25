@@ -1,38 +1,38 @@
-// mod clear;
-// mod clk;
-// mod debug;
-// mod force_fan;
+mod clear;
+mod clk;
+mod debug;
+mod force_fan;
 mod gain;
-// mod gpio_in;
-// mod info;
-// mod modulation;
+mod gpio_in;
+mod info;
+mod modulation;
 mod null;
-// mod phase_filter;
-// mod pulse_width_encoder;
-// mod reads_fpga_state;
-// mod segment;
-// mod silencer;
-// mod stm;
-// mod sync;
+mod phase_filter;
+mod pulse_width_encoder;
+mod reads_fpga_state;
+mod segment;
+mod silencer;
+mod stm;
+mod sync;
 
 use std::collections::HashMap;
 
-// pub use clear::*;
-// pub use clk::*;
-// pub use debug::*;
-// pub use force_fan::*;
+pub use clear::*;
+pub use clk::*;
+pub use debug::*;
+pub use force_fan::*;
 pub use gain::*;
-// pub use gpio_in::*;
-// pub use info::*;
-// pub use modulation::*;
+pub use gpio_in::*;
+pub use info::*;
+pub use modulation::*;
 pub use null::*;
-// pub use phase_filter::*;
-// pub use pulse_width_encoder::*;
-// pub use reads_fpga_state::*;
-// pub use segment::*;
-// pub use silencer::*;
-// pub use stm::*;
-// pub use sync::*;
+pub use phase_filter::*;
+pub use pulse_width_encoder::*;
+pub use reads_fpga_state::*;
+pub use segment::*;
+pub use silencer::*;
+pub use stm::*;
+pub use sync::*;
 
 use crate::{
     error::AUTDInternalError,
@@ -69,18 +69,13 @@ fn cast<T>(tx: &mut [u8]) -> &mut T {
 }
 
 pub trait Operation {
-    fn init(&mut self, device: &Device) -> Result<(), AUTDInternalError>;
     fn required_size(&self, device: &Device) -> usize;
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError>;
-    fn is_done(&self, device: &Device) -> bool;
+    fn is_done(&self) -> bool;
 }
 
 // GRCOV_EXCL_START
 impl Operation for Box<dyn Operation> {
-    fn init(&mut self, device: &Device) -> Result<(), AUTDInternalError> {
-        self.as_mut().init(device)
-    }
-
     fn required_size(&self, device: &Device) -> usize {
         self.as_ref().required_size(device)
     }
@@ -89,8 +84,8 @@ impl Operation for Box<dyn Operation> {
         self.as_mut().pack(device, tx)
     }
 
-    fn is_done(&self, device: &Device) -> bool {
-        self.as_ref().is_done(device)
+    fn is_done(&self) -> bool {
+        self.as_ref().is_done()
     }
 }
 // GRCOV_EXCL_STOP
@@ -105,16 +100,7 @@ impl OperationHandler {
     ) -> bool {
         geometry
             .devices()
-            .all(|dev| op1[&dev.idx()].is_done(dev) && op2[&dev.idx()].is_done(dev))
-    }
-
-    pub fn init(
-        op1: &mut impl Operation,
-        op2: &mut impl Operation,
-        device: &Device,
-    ) -> Result<(), AUTDInternalError> {
-        op1.init(device)?;
-        op2.init(device)
+            .all(|dev| op1[&dev.idx()].is_done() && op2[&dev.idx()].is_done())
     }
 
     pub fn pack(
@@ -123,7 +109,7 @@ impl OperationHandler {
         device: &Device,
         tx: &mut TxMessage,
     ) -> Result<(), AUTDInternalError> {
-        match (op1.is_done(device), op2.is_done(device)) {
+        match (op1.is_done(), op2.is_done()) {
             (true, true) => Result::<_, AUTDInternalError>::Ok(()),
             (true, false) => Self::pack_dev(op2, device, tx).map(|_| Ok(()))?,
             (false, true) => Self::pack_dev(op1, device, tx).map(|_| Ok(()))?,
@@ -160,16 +146,12 @@ impl OperationHandler {
 
 #[cfg(test)]
 pub mod tests {
-    use std::collections::HashMap;
-
-    use autd3_derive::Gain;
 
     use crate::{
-        datagram::GainCalcFn,
         defined::FREQ_40K,
         derive::*,
         ethercat::EC_OUTPUT_FRAME_SIZE,
-        firmware::cpu::Header,
+        firmware::cpu::{Header, TxDatagram},
         geometry::{UnitQuaternion, Vector3},
     };
 
@@ -182,200 +164,125 @@ pub mod tests {
         }
     }
 
-    // #[derive(Modulation, Clone)]
-    // pub struct TestModulation {
-    //     pub buf: Vec<EmitIntensity>,
-    //     pub config: SamplingConfig,
-    //     pub loop_behavior: LoopBehavior,
-    // }
-
-    // impl Modulation for TestModulation {
-    //     // GRCOV_EXCL_START
-    //     fn calc(&self, _: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-    //         Ok(self.buf.clone())
-    //     }
-    //     // GRCOV_EXCL_STOP
-    // }
-
-    #[derive(Gain, Clone)]
-    pub struct TestGain {
-        pub data: HashMap<usize, Vec<Drive>>,
+    struct OperationMock {
+        pub pack_size: usize,
+        pub required_size: usize,
+        pub num_frames: usize,
+        pub broken: bool,
     }
 
-    impl Gain for TestGain {
-        // GRCOV_EXCL_START
-        fn calc(
-            &self,
-            _geometry: &Geometry,
-            _filter: GainFilter,
-        ) -> Result<GainCalcFn, AUTDInternalError> {
-            Ok(Box::new(|dev| {
-                let data = self.data[&dev.idx()].clone();
-                Box::new(move |tr| data[tr.idx()])
-            }))
+    impl Operation for OperationMock {
+        fn required_size(&self, _: &Device) -> usize {
+            self.required_size
         }
-        // GRCOV_EXCL_STOP
-    }
 
-    #[derive(Gain, Clone, Copy)]
-    pub struct NullGain {}
+        fn pack(&mut self, _: &Device, _: &mut [u8]) -> Result<usize, AUTDInternalError> {
+            if self.broken {
+                return Err(AUTDInternalError::NotSupported("test".to_owned()));
+            }
+            self.num_frames -= 1;
+            Ok(self.pack_size)
+        }
 
-    // GRCOV_EXCL_START
-    impl Gain for NullGain {
-        fn calc<'a>(
-            &'a self,
-            _: &'a Geometry,
-            filter: GainFilter<'a>,
-        ) -> Result<GainCalcFn<'a>, AUTDInternalError> {
-            Ok(Self::transform(
-                filter,
-                Box::new(|_| Box::new(|_| Drive::null())),
-            ))
+        fn is_done(&self) -> bool {
+            self.num_frames == 0
         }
     }
-    // GRCOV_EXCL_STOP
 
-    #[derive(Gain, Copy)]
-    pub struct ErrGain {}
+    #[test]
+    fn test() {
+        let geometry = Geometry::new(
+            vec![Device::new(
+                0,
+                vec![Transducer::new(
+                    0,
+                    Vector3::zeros(),
+                    UnitQuaternion::identity(),
+                )],
+            )],
+            FREQ_40K,
+        );
 
-    impl Clone for ErrGain {
-        // GRCOV_EXCL_START
-        fn clone(&self) -> Self {
-            *self
-        }
-        // GRCOV_EXCL_STOP
+        let mut op1 = HashMap::from([(
+            0,
+            OperationMock {
+                pack_size: 1,
+                required_size: 2,
+                num_frames: 3,
+                broken: false,
+            },
+        )]);
+
+        let mut op2 = HashMap::from([(
+            0,
+            OperationMock {
+                pack_size: 1,
+                required_size: 2,
+                num_frames: 3,
+                broken: false,
+            },
+        )]);
+
+        assert!(!OperationHandler::is_finished(
+            &mut op1, &mut op2, &geometry
+        ));
+
+        let mut tx = TxDatagram::new(1);
+
+        assert!(OperationHandler::pack(
+            op1.get_mut(&0).unwrap(),
+            op2.get_mut(&0).unwrap(),
+            &geometry[0],
+            &mut tx[0]
+        )
+        .is_ok());
+        assert_eq!(op1[&0].num_frames, 2);
+        assert_eq!(op2[&0].num_frames, 2);
+        assert!(!OperationHandler::is_finished(
+            &mut op1, &mut op2, &geometry
+        ));
+
+        op1.get_mut(&0).unwrap().pack_size =
+            EC_OUTPUT_FRAME_SIZE - std::mem::size_of::<Header>() - op2[&0].required_size;
+        assert!(OperationHandler::pack(
+            op1.get_mut(&0).unwrap(),
+            op2.get_mut(&0).unwrap(),
+            &geometry[0],
+            &mut tx[0]
+        )
+        .is_ok());
+        assert_eq!(op1[&0].num_frames, 1);
+        assert_eq!(op2[&0].num_frames, 1);
+        assert!(!OperationHandler::is_finished(
+            &mut op1, &mut op2, &geometry
+        ));
+
+        op1.get_mut(&0).unwrap().pack_size =
+            EC_OUTPUT_FRAME_SIZE - std::mem::size_of::<Header>() - op2[&0].required_size + 1;
+        assert!(OperationHandler::pack(
+            op1.get_mut(&0).unwrap(),
+            op2.get_mut(&0).unwrap(),
+            &geometry[0],
+            &mut tx[0]
+        )
+        .is_ok());
+        assert_eq!(op1[&0].num_frames, 0);
+        assert_eq!(op2[&0].num_frames, 1);
+        assert!(!OperationHandler::is_finished(
+            &mut op1, &mut op2, &geometry
+        ));
+
+        assert!(OperationHandler::pack(
+            op1.get_mut(&0).unwrap(),
+            op2.get_mut(&0).unwrap(),
+            &geometry[0],
+            &mut tx[0]
+        )
+        .is_ok());
+        assert_eq!(op1[&0].num_frames, 0);
+        assert_eq!(op2[&0].num_frames, 0);
+        assert!(OperationHandler::is_finished(&mut op1, &mut op2, &geometry));
     }
-
-    impl Gain for ErrGain {
-        // GRCOV_EXCL_START
-        fn calc(
-            &self,
-            _geometry: &Geometry,
-            _filter: GainFilter,
-        ) -> Result<GainCalcFn, AUTDInternalError> {
-            Err(AUTDInternalError::GainError("test".to_owned()))
-        }
-        // GRCOV_EXCL_STOP
-    }
-
-    // struct OperationMock {
-    //     pub initialized: HashMap<usize, bool>,
-    //     pub pack_size: HashMap<usize, usize>,
-    //     pub required_size: HashMap<usize, usize>,
-    //     pub num_frames: HashMap<usize, usize>,
-    //     pub broken: bool,
-    // }
-
-    // impl Operation for OperationMock {
-    //     fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-    //         if self.broken {
-    //             return Err(AUTDInternalError::NotSupported("test".to_owned()));
-    //         }
-    //         self.initialized = geometry
-    //             .devices()
-    //             .map(|dev| (dev.idx(), true))
-    //             .collect::<HashMap<_, _>>();
-    //         Ok(())
-    //     }
-
-    //     fn required_size(&self, device: &Device) -> usize {
-    //         self.required_size[&device.idx()]
-    //     }
-
-    //     fn pack(&mut self, device: &Device, _: &mut [u8]) -> Result<usize, AUTDInternalError> {
-    //         if self.broken {
-    //             return Err(AUTDInternalError::NotSupported("test".to_owned()));
-    //         }
-    //         *self.num_frames.get_mut(&device.idx()).unwrap() -= 1;
-    //         Ok(self.pack_size[&device.idx()])
-    //     }
-
-    //     fn is_done(&self, device: &Device) -> bool {
-    //         self.num_frames[&device.idx()] == 0
-    //     }
-    // }
-
-    // #[test]
-    // fn test() {
-    //     let geometry = Geometry::new(
-    //         vec![Device::new(
-    //             0,
-    //             vec![Transducer::new(
-    //                 0,
-    //                 Vector3::zeros(),
-    //                 UnitQuaternion::identity(),
-    //             )],
-    //         )],
-    //         FREQ_40K,
-    //     );
-
-    //     let mut op1 = OperationMock {
-    //         initialized: Default::default(),
-    //         pack_size: Default::default(),
-    //         required_size: Default::default(),
-    //         num_frames: Default::default(),
-    //         broken: false,
-    //     };
-    //     op1.pack_size.insert(0, 1);
-    //     op1.required_size.insert(0, 2);
-    //     op1.num_frames.insert(0, 3);
-
-    //     let mut op2 = OperationMock {
-    //         initialized: Default::default(),
-    //         pack_size: Default::default(),
-    //         required_size: Default::default(),
-    //         num_frames: Default::default(),
-    //         broken: false,
-    //     };
-    //     op2.pack_size.insert(0, 1);
-    //     op2.required_size.insert(0, 2);
-    //     op2.num_frames.insert(0, 3);
-
-    //     OperationHandler::init(&mut op1, &mut op2, &geometry).unwrap();
-
-    //     assert!(op1.initialized[&0]);
-    //     assert!(op2.initialized[&0]);
-    //     assert!(!OperationHandler::is_finished(
-    //         &mut op1, &mut op2, &geometry
-    //     ));
-
-    //     let mut tx = TxDatagram::new(1);
-
-    //     OperationHandler::pack(&mut op1, &mut op2, &geometry, &mut tx).unwrap();
-    //     assert_eq!(op1.num_frames[&0], 2);
-    //     assert_eq!(op2.num_frames[&0], 2);
-    //     assert!(!OperationHandler::is_finished(
-    //         &mut op1, &mut op2, &geometry
-    //     ));
-
-    //     op1.pack_size.insert(
-    //         0,
-    //         EC_OUTPUT_FRAME_SIZE - std::mem::size_of::<Header>() - op2.required_size[&0],
-    //     );
-
-    //     OperationHandler::pack(&mut op1, &mut op2, &geometry, &mut tx).unwrap();
-    //     assert_eq!(op1.num_frames[&0], 1);
-    //     assert_eq!(op2.num_frames[&0], 1);
-    //     assert!(!OperationHandler::is_finished(
-    //         &mut op1, &mut op2, &geometry
-    //     ));
-
-    //     op1.pack_size.insert(
-    //         0,
-    //         EC_OUTPUT_FRAME_SIZE - std::mem::size_of::<Header>() - op2.required_size[&0] + 1,
-    //     );
-    //     OperationHandler::pack(&mut op1, &mut op2, &geometry, &mut tx).unwrap();
-    //     assert_eq!(op1.num_frames[&0], 0);
-    //     assert_eq!(op2.num_frames[&0], 1);
-    //     assert!(!OperationHandler::is_finished(
-    //         &mut op1, &mut op2, &geometry
-    //     ));
-
-    //     OperationHandler::pack(&mut op1, &mut op2, &geometry, &mut tx).unwrap();
-    //     assert_eq!(op1.num_frames[&0], 0);
-    //     assert_eq!(op2.num_frames[&0], 0);
-    //     assert!(OperationHandler::is_finished(&mut op1, &mut op2, &geometry));
-    // }
 
     // #[test]
     // fn test_first() {

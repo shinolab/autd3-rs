@@ -1,9 +1,9 @@
 use crate::{
     error::AUTDInternalError,
     firmware::operation::{
-        cast, silencer::SILENCER_CTL_FLAG_FIXED_UPDATE_RATE, Operation, Remains, TypeTag,
+        cast, silencer::SILENCER_CTL_FLAG_FIXED_UPDATE_RATE, Operation, TypeTag,
     },
-    geometry::{Device, Geometry},
+    geometry::Device,
 };
 
 #[repr(C, align(2))]
@@ -15,7 +15,7 @@ struct ConfigSilencerFixedUpdateRate {
 }
 
 pub struct ConfigSilencerFixedUpdateRateOp {
-    remains: Remains,
+    is_done: bool,
     value_intensity: u16,
     value_phase: u16,
 }
@@ -23,7 +23,7 @@ pub struct ConfigSilencerFixedUpdateRateOp {
 impl ConfigSilencerFixedUpdateRateOp {
     pub fn new(value_intensity: u16, value_phase: u16) -> Self {
         Self {
-            remains: Default::default(),
+            is_done: false,
             value_intensity,
             value_phase,
         }
@@ -31,7 +31,7 @@ impl ConfigSilencerFixedUpdateRateOp {
 }
 
 impl Operation for ConfigSilencerFixedUpdateRateOp {
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         *cast::<ConfigSilencerFixedUpdateRate>(tx) = ConfigSilencerFixedUpdateRate {
             tag: TypeTag::Silencer,
             flag: SILENCER_CTL_FLAG_FIXED_UPDATE_RATE,
@@ -39,7 +39,7 @@ impl Operation for ConfigSilencerFixedUpdateRateOp {
             value_phase: self.value_phase,
         };
 
-        self.remains[device] -= 1;
+        self.is_done = true;
         Ok(std::mem::size_of::<ConfigSilencerFixedUpdateRate>())
     }
 
@@ -47,60 +47,46 @@ impl Operation for ConfigSilencerFixedUpdateRateOp {
         std::mem::size_of::<ConfigSilencerFixedUpdateRate>()
     }
 
-    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains.init(geometry, |_| 1);
-        Ok(())
-    }
-
-    fn is_done(&self, device: &Device) -> bool {
-        self.remains.is_done(device)
+    fn is_done(&self) -> bool {
+        self.is_done
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::mem::size_of;
+
     use super::*;
     use crate::{
-        defined::FREQ_40K, firmware::operation::silencer::SILNCER_MODE_FIXED_UPDATE_RATE,
-        geometry::tests::create_geometry,
+        firmware::operation::silencer::SILNCER_MODE_FIXED_UPDATE_RATE,
+        geometry::tests::create_device,
     };
 
     const NUM_TRANS_IN_UNIT: usize = 249;
-    const NUM_DEVICE: usize = 10;
 
     #[test]
     fn test() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
 
-        let mut tx = [0x00u8; 8 * NUM_DEVICE];
+        let mut tx = [0x00u8; size_of::<ConfigSilencerFixedUpdateRate>()];
 
         let mut op = ConfigSilencerFixedUpdateRateOp::new(0x1234, 0x5678);
 
-        assert!(op.init(&geometry).is_ok());
+        assert_eq!(
+            op.required_size(&device),
+            size_of::<ConfigSilencerFixedUpdateRate>()
+        );
+        assert!(!op.is_done());
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 6));
+        assert!(op.pack(&device, &mut tx).is_ok());
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 1));
+        assert!(op.is_done());
 
-        geometry.devices().for_each(|dev| {
-            assert!(op.pack(dev, &mut tx[dev.idx() * 6..]).is_ok());
-        });
-
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 0));
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * 6], TypeTag::Silencer as u8);
-            assert_eq!(tx[dev.idx() * 6 + 1], SILNCER_MODE_FIXED_UPDATE_RATE);
-            assert_eq!(tx[dev.idx() * 6 + 2], 0x34);
-            assert_eq!(tx[dev.idx() * 6 + 3], 0x12);
-            assert_eq!(tx[dev.idx() * 6 + 4], 0x78);
-            assert_eq!(tx[dev.idx() * 6 + 5], 0x56);
-        });
+        assert_eq!(tx[0], TypeTag::Silencer as u8);
+        assert_eq!(tx[1], SILNCER_MODE_FIXED_UPDATE_RATE);
+        assert_eq!(tx[2], 0x34);
+        assert_eq!(tx[3], 0x12);
+        assert_eq!(tx[4], 0x78);
+        assert_eq!(tx[5], 0x56);
     }
 }

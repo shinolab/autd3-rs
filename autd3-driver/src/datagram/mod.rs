@@ -49,7 +49,6 @@ use crate::{
     firmware::operation::Operation,
 };
 
-/// Datagram to be sent to devices
 pub trait Datagram<'a> {
     type O1: Operation + 'a;
     type O2: Operation + 'a;

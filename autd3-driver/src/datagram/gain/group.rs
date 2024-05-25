@@ -150,7 +150,7 @@ mod tests {
     use super::{super::tests::TestGain, *};
 
     use crate::{
-        defined::FREQ_40K, firmware::operation::tests::*, geometry::tests::create_geometry,
+        datagram::gain::tests::ErrGain, defined::FREQ_40K, geometry::tests::create_geometry,
     };
 
     #[test]
@@ -179,7 +179,7 @@ mod tests {
                 _ => None,
             }
         })
-        .set("null", NullGain {})
+        .set("null", TestGain::null())
         .set("test", g1)
         .set("test2", g2);
 
@@ -234,7 +234,7 @@ mod tests {
                 _ => None,
             }
         })
-        .set("test2", NullGain {});
+        .set("test2", TestGain::null());
 
         assert_eq!(
             Some(AUTDInternalError::UnkownKey("[\"test2\"]".to_owned())),
@@ -253,7 +253,7 @@ mod tests {
                 _ => None,
             }
         })
-        .set("test", NullGain {});
+        .set("test", TestGain::null());
 
         assert_eq!(
             Some(AUTDInternalError::UnspecifiedKey("[\"null\"]".to_owned())),
