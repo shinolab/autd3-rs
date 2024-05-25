@@ -132,6 +132,19 @@ mod tests {
         }
     }
 
+    #[derive(Gain, Copy, Clone)]
+    pub struct ErrGain {}
+
+    impl Gain for ErrGain {
+        fn calc(
+            &self,
+            _geometry: &Geometry,
+            _filter: GainFilter,
+        ) -> Result<GainCalcFn, AUTDInternalError> {
+            Err(AUTDInternalError::GainError("test".to_owned()))
+        }
+    }
+
     const NUM_TRANSDUCERS: usize = 2;
 
     #[rstest::rstest]

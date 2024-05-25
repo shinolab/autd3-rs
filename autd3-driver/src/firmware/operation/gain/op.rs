@@ -40,11 +40,6 @@ impl<'a> GainOp<'a> {
 }
 
 impl<'a> Operation for GainOp<'a> {
-    fn init(&mut self, _: &Device) -> Result<(), AUTDInternalError> {
-        self.is_done = false;
-        Ok(())
-    }
-
     fn required_size(&self, device: &Device) -> usize {
         std::mem::size_of::<GainT>() + device.num_transducers() * std::mem::size_of::<Drive>()
     }
@@ -78,124 +73,66 @@ impl<'a> Operation for GainOp<'a> {
         Ok(std::mem::size_of::<GainT>() + device.len() * std::mem::size_of::<Drive>())
     }
 
-    fn is_done(&self, _: &Device) -> bool {
+    fn is_done(&self) -> bool {
         self.is_done
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use rand::prelude::*;
+#[cfg(test)]
+mod tests {
+    use std::mem::size_of;
 
-//     use super::*;
-//     use crate::{
-//         defined::FREQ_40K,
-//         firmware::{
-//             fpga::{EmitIntensity, Phase},
-//             operation::tests::{ErrGain, TestGain},
-//         },
-//         geometry::tests::create_geometry,
-//     };
+    use rand::prelude::*;
 
-//     const NUM_TRANS_IN_UNIT: usize = 249;
-//     const NUM_DEVICE: usize = 10;
+    use super::*;
+    use crate::{
+        firmware::fpga::{EmitIntensity, Phase},
+        geometry::tests::create_device,
+    };
 
-//     #[test]
-//     fn test() {
-//         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
+    const NUM_TRANS_IN_UNIT: usize = 249;
 
-//         let mut tx = vec![
-//             0x00u8;
-//             (std::mem::size_of::<GainT>()
-//                 + NUM_TRANS_IN_UNIT * std::mem::size_of::<Drive>())
-//                 * NUM_DEVICE
-//         ];
+    #[test]
+    fn test() {
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
 
-//         let mut rng = rand::thread_rng();
-//         let data = geometry
-//             .devices()
-//             .map(|dev| {
-//                 (
-//                     dev.idx(),
-//                     (0..dev.num_transducers())
-//                         .map(|_| {
-//                             Drive::new(
-//                                 Phase::new(rng.gen_range(0x00..=0xFF)),
-//                                 EmitIntensity::new(rng.gen_range(0..=0xFF)),
-//                             )
-//                         })
-//                         .collect(),
-//                 )
-//             })
-//             .collect();
-//         let gain = TestGain { data };
-//         let mut op = GainOp::<TestGain>::new(Segment::S0, true, gain.clone());
+        let mut tx = vec![0x00u8; size_of::<GainT>() + NUM_TRANS_IN_UNIT * size_of::<Drive>()];
 
-//         assert!(op.init(&geometry).is_ok());
+        let mut rng = rand::thread_rng();
+        let data: Vec<_> = (0..NUM_TRANS_IN_UNIT)
+            .map(|_| {
+                Drive::new(
+                    Phase::new(rng.gen_range(0x00..=0xFF)),
+                    EmitIntensity::new(rng.gen_range(0..=0xFF)),
+                )
+            })
+            .collect();
 
-//         geometry.devices().for_each(|dev| {
-//             assert_eq!(
-//                 op.required_size(dev),
-//                 std::mem::size_of::<GainT>() + NUM_TRANS_IN_UNIT * std::mem::size_of::<Drive>()
-//             )
-//         });
+        let mut op = GainOp::new(Segment::S0, true, {
+            let data = data.clone();
+            Box::new(move |tr| data[tr.idx()])
+        });
 
-//         geometry
-//             .devices()
-//             .for_each(|dev| assert_eq!(op.remains[dev], 1));
+        assert_eq!(
+            op.required_size(&device),
+            size_of::<GainT>() + NUM_TRANS_IN_UNIT * size_of::<Drive>()
+        );
 
-//         geometry.devices().for_each(|dev| {
-//             assert!(op
-//                 .pack(
-//                     dev,
-//                     &mut tx[dev.idx()
-//                         * (std::mem::size_of::<GainT>()
-//                             + NUM_TRANS_IN_UNIT * std::mem::size_of::<Drive>())..]
-//                 )
-//                 .is_ok());
-//         });
+        assert!(!op.is_done());
 
-//         geometry
-//             .devices()
-//             .for_each(|dev| assert_eq!(op.remains[dev], 0));
+        assert!(op.pack(&device, &mut tx).is_ok());
 
-//         geometry.devices().for_each(|dev| {
-//             assert_eq!(
-//                 tx[dev.idx()
-//                     * (std::mem::size_of::<GainT>()
-//                         + NUM_TRANS_IN_UNIT * std::mem::size_of::<Drive>())],
-//                 TypeTag::Gain as u8
-//             );
-//             tx.iter()
-//                 .skip(
-//                     dev.idx()
-//                         * (std::mem::size_of::<GainT>()
-//                             + NUM_TRANS_IN_UNIT * std::mem::size_of::<Drive>())
-//                         + std::mem::size_of::<GainT>(),
-//                 )
-//                 .collect::<Vec<_>>()
-//                 .chunks(2)
-//                 .zip(gain.data[&dev.idx()].iter())
-//                 .for_each(|(d, g)| {
-//                     assert_eq!(d[0], &g.phase().value());
-//                     assert_eq!(d[1], &g.intensity().value());
-//                 })
-//         });
-//     }
+        assert!(op.is_done());
 
-//     #[test]
-//     fn test_error() {
-//         let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
-
-//         let gain = ErrGain {
-//             segment: Segment::S0,
-//             transition: true,
-//         };
-//         let mut op = GainOp::<ErrGain>::new(Segment::S0, true, gain);
-
-//         assert_eq!(
-//             op.init(&geometry),
-//             Err(AUTDInternalError::GainError("test".to_owned()))
-//         );
-//     }
-// }
+        assert_eq!(tx[0], TypeTag::Gain as u8);
+        tx.iter()
+            .skip(std::mem::size_of::<GainT>())
+            .collect::<Vec<_>>()
+            .chunks(2)
+            .zip(data.iter())
+            .for_each(|(d, g)| {
+                assert_eq!(d[0], &g.phase().value());
+                assert_eq!(d[1], &g.intensity().value());
+            });
+    }
+}

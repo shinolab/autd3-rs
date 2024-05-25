@@ -1,10 +1,8 @@
 use crate::{
     error::AUTDInternalError,
     firmware::operation::{cast, Operation, TypeTag},
-    geometry::{Device, Geometry},
+    geometry::Device,
 };
-
-use super::Remains;
 
 #[repr(C, align(2))]
 struct ForceFan {
@@ -12,28 +10,28 @@ struct ForceFan {
     value: bool,
 }
 
-pub struct ForceFanOp<F: Fn(&Device) -> bool> {
-    remains: Remains,
-    f: F,
+pub struct ForceFanOp {
+    is_done: bool,
+    value: bool,
 }
 
-impl<F: Fn(&Device) -> bool> ForceFanOp<F> {
-    pub fn new(f: F) -> Self {
+impl ForceFanOp {
+    pub fn new(value: bool) -> Self {
         Self {
-            remains: Default::default(),
-            f,
+            is_done: false,
+            value,
         }
     }
 }
 
-impl<F: Fn(&Device) -> bool> Operation for ForceFanOp<F> {
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+impl Operation for ForceFanOp {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         *cast::<ForceFan>(tx) = ForceFan {
             tag: TypeTag::ForceFan,
-            value: (self.f)(device),
+            value: self.value,
         };
 
-        self.remains[device] -= 1;
+        self.is_done = true;
         Ok(std::mem::size_of::<ForceFan>())
     }
 
@@ -41,56 +39,40 @@ impl<F: Fn(&Device) -> bool> Operation for ForceFanOp<F> {
         std::mem::size_of::<ForceFan>()
     }
 
-    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains.init(geometry, |_| 1);
-        Ok(())
-    }
-
-    fn is_done(&self, device: &Device) -> bool {
-        self.remains.is_done(device)
+    fn is_done(&self) -> bool {
+        self.is_done
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::mem::{offset_of, size_of};
+
     use super::*;
-    use crate::{defined::FREQ_40K, geometry::tests::create_geometry};
+    use crate::geometry::tests::create_device;
 
     const NUM_TRANS_IN_UNIT: usize = 249;
-    const NUM_DEVICE: usize = 10;
 
+    #[rstest::rstest]
     #[test]
-    fn test() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
+    #[case(0x01, true)]
+    #[case(0x00, false)]
+    fn test(#[case] expect: u8, #[case] value: bool) {
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
 
-        let mut tx = [0x00u8; 2 * NUM_DEVICE];
+        let mut tx = [0x00u8; size_of::<ForceFan>()];
 
-        let mut op = ForceFanOp::new(|dev| dev.idx() == 0);
+        let mut op = ForceFanOp::new(value);
 
-        assert!(op.init(&geometry).is_ok());
+        assert_eq!(op.required_size(&device), size_of::<ForceFan>());
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 2));
+        assert!(!op.is_done());
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 1));
+        assert!(op.pack(&device, &mut tx).is_ok());
 
-        geometry.devices().for_each(|dev| {
-            assert!(op.pack(dev, &mut tx[dev.idx() * 2..]).is_ok());
-        });
+        assert!(op.is_done());
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 0));
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * 2], TypeTag::ForceFan as u8);
-            assert_eq!(
-                tx[dev.idx() * 2 + 1],
-                if dev.idx() == 0 { 0x01 } else { 0x00 }
-            );
-        });
+        assert_eq!(tx[0], TypeTag::ForceFan as u8);
+        assert_eq!(tx[offset_of!(ForceFan, value)], expect);
     }
 }

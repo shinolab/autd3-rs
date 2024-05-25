@@ -4,10 +4,8 @@ use crate::{
         fpga::GPIOIn,
         operation::{cast, Operation, TypeTag},
     },
-    geometry::{Device, Geometry},
+    geometry::Device,
 };
-
-use super::Remains;
 
 #[derive(Clone, Copy)]
 #[repr(C)]
@@ -29,34 +27,31 @@ struct EmulateGPIOIn {
     flag: GPIOInFlags,
 }
 
-pub struct EmulateGPIOInOp<F: Fn(&Device, GPIOIn) -> bool> {
-    remains: Remains,
+pub struct EmulateGPIOInOp<F: Fn(GPIOIn) -> bool> {
+    is_done: bool,
     f: F,
 }
 
-impl<F: Fn(&Device, GPIOIn) -> bool> EmulateGPIOInOp<F> {
+impl<F: Fn(GPIOIn) -> bool> EmulateGPIOInOp<F> {
     pub fn new(f: F) -> Self {
-        Self {
-            remains: Default::default(),
-            f,
-        }
+        Self { is_done: false, f }
     }
 }
 
-impl<F: Fn(&Device, GPIOIn) -> bool> Operation for EmulateGPIOInOp<F> {
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+impl<F: Fn(GPIOIn) -> bool> Operation for EmulateGPIOInOp<F> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         let mut flag = GPIOInFlags::NONE;
-        flag.set(GPIOInFlags::GPIO_IN_0, (self.f)(device, GPIOIn::I0));
-        flag.set(GPIOInFlags::GPIO_IN_1, (self.f)(device, GPIOIn::I1));
-        flag.set(GPIOInFlags::GPIO_IN_2, (self.f)(device, GPIOIn::I2));
-        flag.set(GPIOInFlags::GPIO_IN_3, (self.f)(device, GPIOIn::I3));
+        flag.set(GPIOInFlags::GPIO_IN_0, (self.f)(GPIOIn::I0));
+        flag.set(GPIOInFlags::GPIO_IN_1, (self.f)(GPIOIn::I1));
+        flag.set(GPIOInFlags::GPIO_IN_2, (self.f)(GPIOIn::I2));
+        flag.set(GPIOInFlags::GPIO_IN_3, (self.f)(GPIOIn::I3));
 
         *cast::<EmulateGPIOIn>(tx) = EmulateGPIOIn {
             tag: TypeTag::EmulateGPIOIn,
             flag,
         };
 
-        self.remains[device] -= 1;
+        self.is_done = true;
         Ok(std::mem::size_of::<EmulateGPIOIn>())
     }
 
@@ -64,59 +59,40 @@ impl<F: Fn(&Device, GPIOIn) -> bool> Operation for EmulateGPIOInOp<F> {
         std::mem::size_of::<EmulateGPIOIn>()
     }
 
-    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains.init(geometry, |_| 1);
-        Ok(())
-    }
-
-    fn is_done(&self, device: &Device) -> bool {
-        self.remains.is_done(device)
+    fn is_done(&self) -> bool {
+        self.is_done
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::mem::{offset_of, size_of};
+
     use super::*;
-    use crate::{defined::FREQ_40K, geometry::tests::create_geometry};
+    use crate::geometry::tests::create_device;
 
     const NUM_TRANS_IN_UNIT: usize = 249;
-    const NUM_DEVICE: usize = 10;
 
+    #[rstest::rstest]
     #[test]
-    fn test() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
+    #[case(0b1001, |gpio| gpio == GPIOIn::I0 || gpio == GPIOIn::I3)]
+    #[case(0b0110, |gpio| gpio == GPIOIn::I1 || gpio == GPIOIn::I2)]
+    fn test(#[case] expected: u8, #[case] f: impl Fn(GPIOIn) -> bool) {
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
 
-        let mut tx = [0x00u8; 2 * NUM_DEVICE];
+        let mut tx = [0x00u8; size_of::<EmulateGPIOIn>()];
 
-        let mut op = EmulateGPIOInOp::new(|dev, gpio| match dev.idx() {
-            0 => gpio == GPIOIn::I0 || gpio == GPIOIn::I3,
-            _ => gpio == GPIOIn::I1 || gpio == GPIOIn::I2,
-        });
+        let mut op = EmulateGPIOInOp::new(f);
 
-        assert!(op.init(&geometry).is_ok());
+        assert_eq!(op.required_size(&device), size_of::<EmulateGPIOIn>());
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 2));
+        assert!(!op.is_done());
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 1));
+        assert!(op.pack(&device, &mut tx).is_ok());
 
-        geometry.devices().for_each(|dev| {
-            assert!(op.pack(dev, &mut tx[dev.idx() * 2..]).is_ok());
-        });
+        assert!(op.is_done());
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 0));
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * 2], TypeTag::EmulateGPIOIn as u8);
-            assert_eq!(
-                tx[dev.idx() * 2 + 1],
-                if dev.idx() == 0 { 0b1001 } else { 0b0110 }
-            );
-        });
+        assert_eq!(tx[0], TypeTag::EmulateGPIOIn as u8);
+        assert_eq!(tx[offset_of!(EmulateGPIOIn, flag)], expected);
     }
 }

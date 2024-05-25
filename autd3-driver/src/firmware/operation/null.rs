@@ -14,11 +14,7 @@ impl Operation for NullOp {
         0
     }
 
-    fn init(&mut self, _: &Device) -> Result<(), AUTDInternalError> {
-        Ok(())
-    }
-
-    fn is_done(&self, _: &Device) -> bool {
+    fn is_done(&self) -> bool {
         true
     }
 }
@@ -26,25 +22,18 @@ impl Operation for NullOp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{defined::FREQ_40K, geometry::tests::create_geometry};
+    use crate::geometry::tests::create_device;
 
     const NUM_TRANS_IN_UNIT: usize = 249;
-    const NUM_DEVICE: usize = 10;
 
     #[test]
     fn test() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
 
-        let mut op = NullOp::default();
+        let op = NullOp::default();
 
-        geometry
-            .devices()
-            .for_each(|dev| assert!(op.init(dev).is_ok()));
+        assert_eq!(op.required_size(&device), 0);
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 0));
-
-        geometry.devices().for_each(|dev| assert!(op.is_done(dev)));
+        assert!(op.is_done());
     }
 }

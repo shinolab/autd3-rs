@@ -1,23 +1,14 @@
 use crate::{derive::*, geometry::Vector3};
 
-/// Control point for FocusSTM
 #[derive(Clone, Copy, Builder, PartialEq, Debug)]
 pub struct ControlPoint {
-    /// Focal point
     #[getset]
     point: Vector3,
-    /// Emission intensity
     #[getset]
     intensity: EmitIntensity,
 }
 
 impl ControlPoint {
-    /// constructor (shift is 0)
-    ///
-    /// # Arguments
-    ///
-    /// * `point` - focal point
-    ///
     pub const fn new(point: Vector3) -> Self {
         Self {
             point,

@@ -1,10 +1,8 @@
 use crate::{
     error::AUTDInternalError,
     firmware::operation::{cast, Operation, TypeTag},
-    geometry::{Device, Geometry},
+    geometry::Device,
 };
-
-use super::Remains;
 
 #[repr(C, align(2))]
 struct Clear {
@@ -13,14 +11,14 @@ struct Clear {
 
 #[derive(Default)]
 pub struct ClearOp {
-    remains: Remains,
+    is_done: bool,
 }
 
 impl Operation for ClearOp {
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         cast::<Clear>(tx).tag = TypeTag::Clear;
 
-        self.remains[device] -= 1;
+        self.is_done = true;
         Ok(std::mem::size_of::<Clear>())
     }
 
@@ -28,52 +26,36 @@ impl Operation for ClearOp {
         std::mem::size_of::<Clear>()
     }
 
-    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains.init(geometry, |_| 1);
-        Ok(())
-    }
-
-    fn is_done(&self, device: &Device) -> bool {
-        self.remains.is_done(device)
+    fn is_done(&self) -> bool {
+        self.is_done
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::mem::size_of;
+
     use super::*;
-    use crate::{defined::FREQ_40K, geometry::tests::create_geometry};
+    use crate::geometry::tests::create_device;
 
     const NUM_TRANS_IN_UNIT: usize = 249;
-    const NUM_DEVICE: usize = 10;
 
     #[test]
     fn test() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
 
-        let mut tx = [0x00u8; 2 * NUM_DEVICE];
+        let mut tx = [0x00u8; size_of::<Clear>()];
 
         let mut op = ClearOp::default();
 
-        assert!(op.init(&geometry).is_ok());
+        assert_eq!(op.required_size(&device), size_of::<Clear>());
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 2));
+        assert!(!op.is_done());
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 1));
+        assert!(op.pack(&device, &mut tx).is_ok());
 
-        geometry.devices().for_each(|dev| {
-            assert!(op.pack(dev, &mut tx[dev.idx() * 2..]).is_ok());
-        });
+        assert!(op.is_done());
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 0));
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * 2], TypeTag::Clear as u8);
-        });
+        assert_eq!(tx[0], TypeTag::Clear as u8);
     }
 }

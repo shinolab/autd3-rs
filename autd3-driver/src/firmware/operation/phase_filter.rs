@@ -5,37 +5,29 @@ use crate::{
         fpga::Phase,
         operation::{cast, Operation, TypeTag},
     },
-    geometry::{Device, Geometry},
+    geometry::Device,
 };
-
-use super::Remains;
 
 #[repr(C, align(2))]
 struct PhaseFilter {
     tag: TypeTag,
 }
 
-pub struct PhaseFilterOp<P: Into<Phase>, FT: Fn(&Transducer) -> P, F: Fn(&Device) -> FT> {
-    remains: Remains,
+pub struct PhaseFilterOp<P: Into<Phase>, F: Fn(&Transducer) -> P> {
+    is_done: bool,
     f: F,
 }
 
-impl<P: Into<Phase>, FT: Fn(&Transducer) -> P, F: Fn(&Device) -> FT> PhaseFilterOp<P, FT, F> {
+impl<P: Into<Phase>, F: Fn(&Transducer) -> P> PhaseFilterOp<P, F> {
     pub fn new(f: F) -> Self {
-        Self {
-            remains: Default::default(),
-            f,
-        }
+        Self { is_done: false, f }
     }
 }
 
-impl<P: Into<Phase>, FT: Fn(&Transducer) -> P, F: Fn(&Device) -> FT> Operation
-    for PhaseFilterOp<P, FT, F>
-{
+impl<P: Into<Phase>, F: Fn(&Transducer) -> P> Operation for PhaseFilterOp<P, F> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         cast::<PhaseFilter>(tx).tag = TypeTag::PhaseFilter;
 
-        let f = (self.f)(device);
         unsafe {
             std::slice::from_raw_parts_mut(
                 tx[std::mem::size_of::<PhaseFilter>()..].as_mut_ptr() as *mut Phase,
@@ -43,10 +35,10 @@ impl<P: Into<Phase>, FT: Fn(&Transducer) -> P, F: Fn(&Device) -> FT> Operation
             )
             .iter_mut()
             .zip(device.iter())
-            .for_each(|(d, s)| *d = f(s).into());
+            .for_each(|(d, s)| *d = (self.f)(s).into());
         }
 
-        self.remains[device] -= 1;
+        self.is_done = true;
         Ok(std::mem::size_of::<PhaseFilter>()
             + (((device.num_transducers() + 1) >> 1) << 1) * std::mem::size_of::<Phase>())
     }
@@ -56,84 +48,43 @@ impl<P: Into<Phase>, FT: Fn(&Transducer) -> P, F: Fn(&Device) -> FT> Operation
             + (((device.num_transducers() + 1) >> 1) << 1) * std::mem::size_of::<Phase>()
     }
 
-    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains.init(geometry, |_| 1);
-        Ok(())
-    }
-
-    fn is_done(&self, device: &Device) -> bool {
-        self.remains.is_done(device)
+    fn is_done(&self) -> bool {
+        self.is_done
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{defined::FREQ_40K, geometry::tests::create_geometry};
+    use crate::geometry::tests::create_device;
 
     const NUM_TRANS_IN_UNIT: usize = 249;
-    const NUM_DEVICE: usize = 10;
 
     #[test]
     fn test() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
 
         let mut tx = [0x00u8;
             (std::mem::size_of::<PhaseFilter>()
-                + (NUM_TRANS_IN_UNIT + 1) / 2 * 2 * std::mem::size_of::<Phase>())
-                * NUM_DEVICE];
+                + (NUM_TRANS_IN_UNIT + 1) / 2 * 2 * std::mem::size_of::<Phase>())];
 
-        let mut op = PhaseFilterOp::new(|dev| {
-            let dev_idx = dev.idx();
-            move |tr| Phase::new((dev_idx + tr.idx()) as u8)
-        });
+        let mut op = PhaseFilterOp::new(|tr| Phase::new(tr.idx() as u8));
 
-        assert!(op.init(&geometry).is_ok());
+        assert_eq!(
+            std::mem::size_of::<PhaseFilter>()
+                + (NUM_TRANS_IN_UNIT + 1) / 2 * 2 * std::mem::size_of::<Phase>(),
+            op.required_size(&device)
+        );
 
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                std::mem::size_of::<PhaseFilter>()
-                    + (NUM_TRANS_IN_UNIT + 1) / 2 * 2 * std::mem::size_of::<Phase>(),
-                op.required_size(dev)
-            )
-        });
+        assert!(!op.is_done());
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 1));
+        assert!(op.pack(&device, &mut tx).is_ok());
 
-        geometry.devices().for_each(|dev| {
-            assert!(op
-                .pack(
-                    dev,
-                    &mut tx[dev.idx()
-                        * (std::mem::size_of::<PhaseFilter>()
-                            + (NUM_TRANS_IN_UNIT + 1) / 2 * 2 * std::mem::size_of::<Phase>())..]
-                )
-                .is_ok());
-        });
+        assert!(op.is_done());
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 0));
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                tx[dev.idx()
-                    * (std::mem::size_of::<PhaseFilter>()
-                        + (NUM_TRANS_IN_UNIT + 1) / 2 * 2 * std::mem::size_of::<Phase>())],
-                TypeTag::PhaseFilter as u8
-            );
-            (0..dev.num_transducers()).for_each(|i| {
-                assert_eq!(
-                    tx[dev.idx()
-                        * (std::mem::size_of::<PhaseFilter>()
-                            + (NUM_TRANS_IN_UNIT + 1) / 2 * 2 * std::mem::size_of::<Phase>())
-                        + std::mem::size_of::<PhaseFilter>()
-                        + i],
-                    (dev.idx() + i) as u8
-                );
-            });
+        assert_eq!(tx[0], TypeTag::PhaseFilter as u8);
+        (0..device.num_transducers()).for_each(|i| {
+            assert_eq!(tx[std::mem::size_of::<PhaseFilter>() + i], i as u8);
         });
     }
 }

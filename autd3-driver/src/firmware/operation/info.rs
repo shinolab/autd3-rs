@@ -1,10 +1,10 @@
 use crate::{
     error::AUTDInternalError,
     firmware::operation::{Operation, TypeTag},
-    geometry::{Device, Geometry},
+    geometry::Device,
 };
 
-use super::{cast, Remains};
+use super::cast;
 
 #[repr(u8)]
 pub enum FirmwareVersionType {
@@ -22,16 +22,21 @@ struct FirmInfo {
     ty: FirmwareVersionType,
 }
 
-#[derive(Default)]
 pub struct FirmInfoOp {
-    remains: Remains,
+    remains: usize,
+}
+
+impl Default for FirmInfoOp {
+    fn default() -> Self {
+        Self { remains: 6 }
+    }
 }
 
 impl Operation for FirmInfoOp {
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         *cast::<FirmInfo>(tx) = FirmInfo {
             tag: TypeTag::FirmwareVersion,
-            ty: match self.remains[device] {
+            ty: match self.remains {
                 6 => FirmwareVersionType::CPUVersionMajor,
                 5 => FirmwareVersionType::CPUVersionMinor,
                 4 => FirmwareVersionType::FPGAVersionMajor,
@@ -42,7 +47,7 @@ impl Operation for FirmInfoOp {
             },
         };
 
-        self.remains[device] -= 1;
+        self.remains -= 1;
         Ok(std::mem::size_of::<FirmInfo>())
     }
 
@@ -50,129 +55,72 @@ impl Operation for FirmInfoOp {
         std::mem::size_of::<FirmInfo>()
     }
 
-    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains.init(geometry, |_| 6);
-        Ok(())
-    }
-
-    fn is_done(&self, device: &Device) -> bool {
-        self.remains.is_done(device)
+    fn is_done(&self) -> bool {
+        self.remains == 0
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::mem::size_of;
 
     use super::*;
-    use crate::{defined::FREQ_40K, geometry::tests::create_geometry};
+    use crate::geometry::tests::create_device;
 
     const NUM_TRANS_IN_UNIT: usize = 249;
-    const NUM_DEVICE: usize = 10;
 
     #[test]
     fn test() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
 
-        let mut tx = [0x00u8; 2 * NUM_DEVICE];
+        let mut tx = [0x00u8; size_of::<FirmInfo>()];
 
         let mut op = FirmInfoOp::default();
 
-        assert!(op.init(&geometry).is_ok());
+        assert_eq!(op.required_size(&device), size_of::<FirmInfo>());
+        assert_eq!(op.remains, 6);
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.required_size(dev), 2));
+        assert!(op.pack(&device, &mut tx).is_ok());
+        assert_eq!(op.remains, 5);
+        assert_eq!(tx[0], TypeTag::FirmwareVersion as u8);
+        assert_eq!(tx[1], FirmwareVersionType::CPUVersionMajor as u8);
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 6));
+        assert!(op.pack(&device, &mut tx).is_ok());
+        assert_eq!(op.remains, 4);
+        assert_eq!(tx[0], TypeTag::FirmwareVersion as u8);
+        assert_eq!(tx[1], FirmwareVersionType::CPUVersionMinor as u8);
 
-        geometry.devices().for_each(|dev| {
-            assert!(op.pack(dev, &mut tx[dev.idx() * 2..]).is_ok());
-        });
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 5));
-        geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * 2], TypeTag::FirmwareVersion as u8);
-            let flag = tx[dev.idx() * 2 + 1];
-            assert_eq!(flag, FirmwareVersionType::CPUVersionMajor as u8);
-        });
+        assert!(op.pack(&device, &mut tx).is_ok());
+        assert_eq!(op.remains, 3);
+        assert_eq!(tx[0], TypeTag::FirmwareVersion as u8);
+        assert_eq!(tx[1], FirmwareVersionType::FPGAVersionMajor as u8);
 
-        geometry.devices().for_each(|dev| {
-            assert!(op.pack(dev, &mut tx[dev.idx() * 2..]).is_ok());
-        });
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 4));
-        geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * 2], TypeTag::FirmwareVersion as u8);
-            let flag = tx[dev.idx() * 2 + 1];
-            assert_eq!(flag, FirmwareVersionType::CPUVersionMinor as u8);
-        });
+        assert!(op.pack(&device, &mut tx).is_ok());
+        assert_eq!(op.remains, 2);
+        assert_eq!(tx[0], TypeTag::FirmwareVersion as u8);
+        assert_eq!(tx[1], FirmwareVersionType::FPGAVersionMinor as u8);
 
-        geometry.devices().for_each(|dev| {
-            assert!(op.pack(dev, &mut tx[dev.idx() * 2..]).is_ok());
-        });
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 3));
-        geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * 2], TypeTag::FirmwareVersion as u8);
-            let flag = tx[dev.idx() * 2 + 1];
-            assert_eq!(flag, FirmwareVersionType::FPGAVersionMajor as u8);
-        });
+        assert!(op.pack(&device, &mut tx).is_ok());
+        assert_eq!(op.remains, 1);
+        assert_eq!(tx[0], TypeTag::FirmwareVersion as u8);
+        assert_eq!(tx[1], FirmwareVersionType::FPGAFunctions as u8);
 
-        geometry.devices().for_each(|dev| {
-            assert!(op.pack(dev, &mut tx[dev.idx() * 2..]).is_ok());
-        });
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 2));
-        geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * 2], TypeTag::FirmwareVersion as u8);
-            let flag = tx[dev.idx() * 2 + 1];
-            assert_eq!(flag, FirmwareVersionType::FPGAVersionMinor as u8);
-        });
-
-        geometry.devices().for_each(|dev| {
-            assert!(op.pack(dev, &mut tx[dev.idx() * 2..]).is_ok());
-        });
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 1));
-        geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * 2], TypeTag::FirmwareVersion as u8);
-            let flag = tx[dev.idx() * 2 + 1];
-            assert_eq!(flag, FirmwareVersionType::FPGAFunctions as u8);
-        });
-
-        geometry.devices().for_each(|dev| {
-            assert!(op.pack(dev, &mut tx[dev.idx() * 2..]).is_ok());
-        });
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 0));
-        geometry.devices().for_each(|dev| {
-            assert_eq!(tx[dev.idx() * 2], TypeTag::FirmwareVersion as u8);
-            let flag = tx[dev.idx() * 2 + 1];
-            assert_eq!(flag, FirmwareVersionType::Clear as u8);
-        });
+        assert!(op.pack(&device, &mut tx).is_ok());
+        assert!(op.is_done());
+        assert_eq!(tx[0], TypeTag::FirmwareVersion as u8);
+        assert_eq!(tx[1], FirmwareVersionType::Clear as u8);
     }
 
     #[test]
     #[should_panic]
     fn test_panic() {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
-        let mut tx = [0x00u8; 2 * NUM_DEVICE];
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let mut tx = [0x00u8; size_of::<FirmInfo>()];
 
         let mut op = FirmInfoOp::default();
 
-        assert!(op.init(&geometry).is_ok());
         (0..7).for_each(|_| {
-            geometry.devices().for_each(|dev| {
-                assert!(op.pack(dev, &mut tx[dev.idx() * 2..]).is_ok());
-            });
+            assert!(op.pack(&device, &mut tx[0..]).is_ok());
         });
     }
 }

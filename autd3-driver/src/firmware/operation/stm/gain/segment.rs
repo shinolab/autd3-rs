@@ -2,9 +2,9 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{Segment, TransitionMode},
-        operation::{cast, Remains, SwapSegmentOperation, TypeTag},
+        operation::{cast, SwapSegmentOperation, TypeTag},
     },
-    geometry::{Device, Geometry},
+    geometry::Device,
 };
 
 #[repr(C)]
@@ -19,7 +19,7 @@ struct GainSTMUpdate {
 pub struct GainSTMSwapSegmentOp {
     segment: Segment,
     transition_mode: TransitionMode,
-    remains: Remains,
+    is_done: bool,
 }
 
 impl SwapSegmentOperation for GainSTMSwapSegmentOp {
@@ -27,11 +27,11 @@ impl SwapSegmentOperation for GainSTMSwapSegmentOp {
         Self {
             segment,
             transition_mode,
-            remains: Default::default(),
+            is_done: false,
         }
     }
 
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         *cast::<GainSTMUpdate>(tx) = GainSTMUpdate {
             tag: TypeTag::GainSTMSwapSegment,
             segment: self.segment as u8,
@@ -40,7 +40,7 @@ impl SwapSegmentOperation for GainSTMSwapSegmentOp {
             transition_value: self.transition_mode.value(),
         };
 
-        self.remains[device] -= 1;
+        self.is_done = true;
         Ok(std::mem::size_of::<GainSTMUpdate>())
     }
 
@@ -48,12 +48,7 @@ impl SwapSegmentOperation for GainSTMSwapSegmentOp {
         std::mem::size_of::<GainSTMUpdate>()
     }
 
-    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains.init(geometry, |_| 1);
-        Ok(())
-    }
-
-    fn is_done(&self, device: &Device) -> bool {
-        self.remains.is_done(device)
+    fn is_done(&self) -> bool {
+        self.is_done
     }
 }

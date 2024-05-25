@@ -2,9 +2,9 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{Segment, TransitionMode},
-        operation::{cast, Remains, SwapSegmentOperation, TypeTag},
+        operation::{cast, SwapSegmentOperation, TypeTag},
     },
-    geometry::{Device, Geometry},
+    geometry::Device,
 };
 
 #[repr(C, align(2))]
@@ -19,7 +19,7 @@ struct FocusSTMUpdate {
 pub struct FocusSTMSwapSegmentOp {
     segment: Segment,
     transition_mode: TransitionMode,
-    remains: Remains,
+    is_done: bool,
 }
 
 impl SwapSegmentOperation for FocusSTMSwapSegmentOp {
@@ -27,11 +27,11 @@ impl SwapSegmentOperation for FocusSTMSwapSegmentOp {
         Self {
             segment,
             transition_mode,
-            remains: Default::default(),
+            is_done: false,
         }
     }
 
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         *cast::<FocusSTMUpdate>(tx) = FocusSTMUpdate {
             tag: TypeTag::FocusSTMSwapSegment,
             segment: self.segment as u8,
@@ -40,7 +40,7 @@ impl SwapSegmentOperation for FocusSTMSwapSegmentOp {
             transition_value: self.transition_mode.value(),
         };
 
-        self.remains[device] -= 1;
+        self.is_done = true;
         Ok(std::mem::size_of::<FocusSTMUpdate>())
     }
 
@@ -48,12 +48,7 @@ impl SwapSegmentOperation for FocusSTMSwapSegmentOp {
         std::mem::size_of::<FocusSTMUpdate>()
     }
 
-    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.remains.init(geometry, |_| 1);
-        Ok(())
-    }
-
-    fn is_done(&self, device: &Device) -> bool {
-        self.remains.is_done(device)
+    fn is_done(&self) -> bool {
+        self.is_done
     }
 }

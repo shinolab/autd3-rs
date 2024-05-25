@@ -1,11 +1,10 @@
 use crate::{
-    derive::{EmitIntensity, Modulation},
     error::AUTDInternalError,
     firmware::{
-        fpga::{Segment, TransitionMode, MOD_BUF_SIZE_MAX, TRANSITION_MODE_NONE},
-        operation::{cast, Operation, Remains, TypeTag},
+        fpga::{Segment, TransitionMode, TRANSITION_MODE_NONE},
+        operation::{cast, Operation, TypeTag},
     },
-    geometry::{Device, Geometry},
+    geometry::Device,
 };
 
 use super::ModulationControlFlags;
@@ -29,31 +28,40 @@ struct ModulationSubseq {
     size: u16,
 }
 
-pub struct ModulationOp<M: Modulation> {
-    modulation: M,
-    buf: Vec<EmitIntensity>,
-    remains: Remains,
+pub struct ModulationOp {
+    modulation: Box<dyn Fn(usize) -> u8>,
+    size: usize,
+    remains: usize,
+    freq_div: u32,
+    rep: u32,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
 }
 
-impl<M: Modulation> ModulationOp<M> {
-    pub fn new(modulation: M, segment: Segment, transition_mode: Option<TransitionMode>) -> Self {
+impl ModulationOp {
+    pub fn new(
+        modulation: Box<dyn Fn(usize) -> u8>,
+        size: usize,
+        freq_div: u32,
+        rep: u32,
+        segment: Segment,
+        transition_mode: Option<TransitionMode>,
+    ) -> Self {
         Self {
             modulation,
-            buf: Default::default(),
-            remains: Default::default(),
+            size,
+            remains: size,
+            freq_div,
+            rep,
             segment,
             transition_mode,
         }
     }
 }
 
-impl<M: Modulation> Operation for ModulationOp<M> {
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        let buf = &self.buf;
-
-        let sent = buf.len() - self.remains[device];
+impl Operation for ModulationOp {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+        let sent = self.size - self.remains;
 
         let offset = if sent == 0 {
             std::mem::size_of::<ModulationHead>()
@@ -61,7 +69,7 @@ impl<M: Modulation> Operation for ModulationOp<M> {
             std::mem::size_of::<ModulationSubseq>()
         };
 
-        let mod_size = (buf.len() - sent).min(tx.len() - offset);
+        let mod_size = self.remains.min(tx.len() - offset);
         assert!(mod_size > 0);
 
         if sent == 0 {
@@ -70,11 +78,8 @@ impl<M: Modulation> Operation for ModulationOp<M> {
                 flag: ModulationControlFlags::BEGIN,
                 size: mod_size as u16,
                 __pad: [0; 3],
-                freq_div: self
-                    .modulation
-                    .sampling_config()
-                    .division(device.ultrasound_freq())?,
-                rep: self.modulation.loop_behavior().rep,
+                freq_div: self.freq_div,
+                rep: self.rep,
                 transition_mode: self
                     .transition_mode
                     .map(|m| m.mode())
@@ -92,7 +97,7 @@ impl<M: Modulation> Operation for ModulationOp<M> {
             .flag
             .set(ModulationControlFlags::SEGMENT, self.segment == Segment::S1);
 
-        if sent + mod_size == buf.len() {
+        if sent + mod_size == self.size {
             let d = cast::<ModulationSubseq>(tx);
             d.flag.set(ModulationControlFlags::END, true);
             d.flag.set(
@@ -101,15 +106,15 @@ impl<M: Modulation> Operation for ModulationOp<M> {
             );
         }
 
-        unsafe {
-            std::ptr::copy_nonoverlapping(
-                buf[sent..].as_ptr(),
-                tx[offset..].as_mut_ptr() as _,
-                mod_size,
-            )
-        }
+        tx[offset..]
+            .iter_mut()
+            .take(mod_size)
+            .enumerate()
+            .for_each(|(i, x)| {
+                *x = (self.modulation)(sent + i);
+            });
 
-        self.remains[device] -= mod_size;
+        self.remains -= mod_size;
         if sent == 0 {
             Ok(std::mem::size_of::<ModulationHead>() + mod_size)
         } else {
@@ -117,69 +122,53 @@ impl<M: Modulation> Operation for ModulationOp<M> {
         }
     }
 
-    fn required_size(&self, device: &Device) -> usize {
-        if self.remains[device] == self.buf.len() {
+    fn required_size(&self, _: &Device) -> usize {
+        if self.remains == self.size {
             std::mem::size_of::<ModulationHead>() + 1
         } else {
             std::mem::size_of::<ModulationSubseq>() + 1
         }
     }
 
-    fn init(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        self.buf = self.modulation.calc(geometry)?;
-
-        if !(2..=MOD_BUF_SIZE_MAX).contains(&self.buf.len()) {
-            return Err(AUTDInternalError::ModulationSizeOutOfRange(self.buf.len()));
-        }
-
-        self.remains.init(geometry, |_| self.buf.len());
-
-        Ok(())
-    }
-
-    fn is_done(&self, device: &Device) -> bool {
-        self.remains.is_done(device)
+    fn is_done(&self) -> bool {
+        self.remains == 0
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::mem::offset_of;
+    use std::mem::{offset_of, size_of};
 
     use rand::prelude::*;
 
     use super::*;
     use crate::{
-        defined::FREQ_40K,
-        derive::{LoopBehavior, SamplingConfig},
+        derive::LoopBehavior,
         ethercat::DcSysTime,
         firmware::{
             fpga::{SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
-            operation::tests::{parse_tx_as, TestModulation},
+            operation::tests::parse_tx_as,
         },
-        geometry::tests::create_geometry,
+        geometry::tests::create_device,
     };
 
     const NUM_TRANS_IN_UNIT: usize = 249;
-    const NUM_DEVICE: usize = 10;
 
     #[test]
     fn test() {
         const MOD_SIZE: usize = 100;
 
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
 
-        let mut tx = vec![0x00u8; (std::mem::size_of::<ModulationHead>() + MOD_SIZE) * NUM_DEVICE];
+        let mut tx = vec![0x00u8; size_of::<ModulationHead>() + MOD_SIZE];
 
         let mut rng = rand::thread_rng();
 
-        let buf: Vec<_> = (0..MOD_SIZE)
-            .map(|_| EmitIntensity::new(rng.gen()))
-            .collect();
+        let buf: Vec<u8> = (0..MOD_SIZE).map(|_| rng.gen()).collect();
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
         let loop_behavior = LoopBehavior::infinite();
-        let segment = Segment::S0;
         let rep = loop_behavior.rep;
+        let segment = Segment::S0;
         let transition_mode = TransitionMode::SysTime(
             DcSysTime::from_utc(
                 time::macros::datetime!(2000-01-01 0:00 UTC)
@@ -189,98 +178,66 @@ mod tests {
         );
 
         let mut op = ModulationOp::new(
-            TestModulation {
-                buf: buf.clone(),
-                config: SamplingConfig::DivisionRaw(freq_div),
-                loop_behavior,
-            },
+            Box::new({
+                let buf = buf.clone();
+                move |i| buf[i]
+            }),
+            MOD_SIZE,
+            freq_div,
+            rep,
             segment,
             Some(transition_mode),
         );
 
-        assert!(op.init(&geometry).is_ok());
+        assert_eq!(op.required_size(&device), size_of::<ModulationHead>() + 1);
 
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                op.required_size(dev),
-                std::mem::size_of::<ModulationHead>() + 1
-            )
-        });
+        assert_eq!(op.remains, MOD_SIZE);
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], MOD_SIZE));
+        assert_eq!(
+            op.pack(&device, &mut tx),
+            Ok(size_of::<ModulationHead>() + MOD_SIZE)
+        );
 
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                op.pack(
-                    dev,
-                    &mut tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)..]
-                ),
-                Ok(std::mem::size_of::<ModulationHead>() + MOD_SIZE)
-            );
-        });
+        assert_eq!(op.remains, 0);
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 0));
+        assert_eq!(
+            TypeTag::Modulation as u8,
+            tx[offset_of!(ModulationHead, tag)],
+        );
+        assert_eq!(
+            (ModulationControlFlags::BEGIN
+                | ModulationControlFlags::END
+                | ModulationControlFlags::TRANSITION)
+                .bits(),
+            tx[offset_of!(ModulationHead, flag)]
+        );
+        assert_eq!(
+            MOD_SIZE as u16,
+            parse_tx_as::<u16>(&tx[offset_of!(ModulationHead, size)..])
+        );
+        assert_eq!(
+            freq_div,
+            parse_tx_as::<u32>(&tx[offset_of!(ModulationHead, freq_div)..])
+        );
+        assert_eq!(
+            rep,
+            parse_tx_as::<u32>(&tx[offset_of!(ModulationHead, rep)..])
+        );
+        assert_eq!(
+            transition_mode.mode(),
+            tx[offset_of!(ModulationHead, transition_mode)]
+        );
+        assert_eq!(
+            transition_mode.value(),
+            parse_tx_as::<u64>(&tx[offset_of!(ModulationHead, transition_value)..])
+        );
 
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                TypeTag::Modulation as u8,
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)
-                    + offset_of!(ModulationHead, tag)],
-            );
-            assert_eq!(
-                (ModulationControlFlags::BEGIN
-                    | ModulationControlFlags::END
-                    | ModulationControlFlags::TRANSITION)
-                    .bits(),
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)
-                    + offset_of!(ModulationHead, flag)]
-            );
-            assert_eq!(
-                MOD_SIZE as u16,
-                parse_tx_as::<u16>(
-                    &tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)
-                        + offset_of!(ModulationHead, size)..]
-                )
-            );
-            assert_eq!(
-                freq_div,
-                parse_tx_as::<u32>(
-                    &tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)
-                        + offset_of!(ModulationHead, freq_div)..]
-                )
-            );
-            assert_eq!(
-                rep,
-                parse_tx_as::<u32>(
-                    &tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)
-                        + offset_of!(ModulationHead, rep)..]
-                )
-            );
-            assert_eq!(
-                transition_mode.mode(),
-                tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)
-                    + offset_of!(ModulationHead, transition_mode)]
-            );
-            assert_eq!(
-                transition_mode.value(),
-                parse_tx_as::<u64>(
-                    &tx[dev.idx() * (std::mem::size_of::<ModulationHead>() + MOD_SIZE)
-                        + offset_of!(ModulationHead, transition_value)..]
-                )
-            );
-
-            tx.iter()
-                .skip((std::mem::size_of::<ModulationHead>() + MOD_SIZE) * dev.idx())
-                .skip(std::mem::size_of::<ModulationHead>())
-                .zip(buf.iter())
-                .for_each(|(&d, m)| {
-                    assert_eq!(d, m.value());
-                })
-        });
+        tx.iter()
+            .skip(std::mem::size_of::<ModulationHead>())
+            .zip(buf.iter())
+            .for_each(|(d, m)| {
+                assert_eq!(d, m);
+            })
     }
 
     #[test]
@@ -289,169 +246,117 @@ mod tests {
         const MOD_SIZE: usize = FRAME_SIZE - std::mem::size_of::<ModulationHead>()
             + (FRAME_SIZE - std::mem::size_of::<ModulationSubseq>()) * 2;
 
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
 
-        let mut tx = vec![0x00u8; FRAME_SIZE * NUM_DEVICE];
+        let mut tx = vec![0x00u8; FRAME_SIZE];
 
         let mut rng = rand::thread_rng();
 
-        let buf: Vec<_> = (0..MOD_SIZE)
-            .map(|_| EmitIntensity::new(rng.gen()))
-            .collect();
+        let buf: Vec<u8> = (0..MOD_SIZE).map(|_| rng.gen()).collect();
 
         let mut op = ModulationOp::new(
-            TestModulation {
-                buf: buf.clone(),
-                config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
-                loop_behavior: LoopBehavior::infinite(),
-            },
+            Box::new({
+                let buf = buf.clone();
+                move |i| buf[i]
+            }),
+            MOD_SIZE,
+            SAMPLING_FREQ_DIV_MIN,
+            0xFFFFFFFF,
             Segment::S0,
             Some(TransitionMode::SyncIdx),
         );
 
-        assert!(op.init(&geometry).is_ok());
-
         // First frame
-        geometry.devices().for_each(|dev| {
+        {
             assert_eq!(
-                op.required_size(dev),
+                op.required_size(&device),
                 std::mem::size_of::<ModulationHead>() + 1
-            )
-        });
-
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], MOD_SIZE));
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                op.pack(
-                    dev,
-                    &mut tx[dev.idx() * FRAME_SIZE..(dev.idx() + 1) * FRAME_SIZE]
-                ),
-                Ok(FRAME_SIZE)
             );
-        });
+            assert_eq!(op.remains, MOD_SIZE);
+            assert_eq!(op.pack(&device, &mut tx), Ok(FRAME_SIZE));
 
-        geometry.devices().for_each(|dev| {
             assert_eq!(
-                op.remains[dev],
+                op.remains,
                 MOD_SIZE - (FRAME_SIZE - std::mem::size_of::<ModulationHead>())
-            )
-        });
+            );
 
-        geometry.devices().for_each(|dev| {
-            assert_eq!(TypeTag::Modulation as u8, tx[dev.idx() * FRAME_SIZE]);
+            assert_eq!(TypeTag::Modulation as u8, tx[0]);
             assert_eq!(
                 ModulationControlFlags::BEGIN.bits(),
-                tx[dev.idx() * FRAME_SIZE + offset_of!(ModulationHead, flag)]
+                tx[offset_of!(ModulationHead, flag)]
             );
             let mod_size = FRAME_SIZE - std::mem::size_of::<ModulationHead>();
             assert_eq!(
                 mod_size as u16,
-                parse_tx_as::<u16>(
-                    &tx[dev.idx() * FRAME_SIZE + offset_of!(ModulationHead, size)..]
-                )
+                parse_tx_as::<u16>(&tx[offset_of!(ModulationHead, size)..])
             );
             tx.iter()
-                .skip(FRAME_SIZE * dev.idx())
                 .skip(std::mem::size_of::<ModulationHead>())
                 .zip(buf.iter().take(mod_size))
-                .for_each(|(&d, m)| {
-                    assert_eq!(d, m.value());
-                })
-        });
+                .for_each(|(d, m)| {
+                    assert_eq!(d, m);
+                });
+        }
 
         // Second frame
-        geometry.devices().for_each(|dev| {
+        {
             assert_eq!(
-                op.required_size(dev),
+                op.required_size(&device),
                 std::mem::size_of::<ModulationSubseq>() + 1
-            )
-        });
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                op.pack(
-                    dev,
-                    &mut tx[dev.idx() * FRAME_SIZE..(dev.idx() + 1) * FRAME_SIZE]
-                ),
-                Ok(FRAME_SIZE)
             );
-        });
 
-        geometry.devices().for_each(|dev| {
+            assert_eq!(op.pack(&device, &mut tx), Ok(FRAME_SIZE));
+
             assert_eq!(
-                op.remains[dev],
+                op.remains,
                 MOD_SIZE
                     - (FRAME_SIZE - std::mem::size_of::<ModulationHead>())
                     - (FRAME_SIZE - std::mem::size_of::<ModulationSubseq>())
-            )
-        });
+            );
 
-        geometry.devices().for_each(|dev| {
-            assert_eq!(TypeTag::Modulation as u8, tx[dev.idx() * FRAME_SIZE]);
+            assert_eq!(TypeTag::Modulation as u8, tx[0]);
             assert_eq!(
                 ModulationControlFlags::NONE.bits(),
-                tx[dev.idx() * FRAME_SIZE + offset_of!(ModulationHead, flag)]
+                tx[offset_of!(ModulationHead, flag)]
             );
             let mod_size = FRAME_SIZE - std::mem::size_of::<ModulationSubseq>();
             assert_eq!(
                 mod_size as u16,
-                parse_tx_as::<u16>(
-                    &tx[dev.idx() * FRAME_SIZE + offset_of!(ModulationHead, size)..]
-                )
+                parse_tx_as::<u16>(&tx[offset_of!(ModulationHead, size)..])
             );
             tx.iter()
-                .skip(FRAME_SIZE * dev.idx())
                 .skip(std::mem::size_of::<ModulationSubseq>())
                 .zip(
                     buf.iter()
                         .skip(FRAME_SIZE - std::mem::size_of::<ModulationHead>())
                         .take(mod_size),
                 )
-                .for_each(|(&d, m)| {
-                    assert_eq!(d, m.value());
-                })
-        });
+                .for_each(|(d, m)| {
+                    assert_eq!(d, m);
+                });
+        }
 
         // Final frame
-        geometry.devices().for_each(|dev| {
+        {
             assert_eq!(
-                op.required_size(dev),
+                op.required_size(&device),
                 std::mem::size_of::<ModulationSubseq>() + 1
-            )
-        });
-
-        geometry.devices().for_each(|dev| {
-            assert_eq!(
-                op.pack(
-                    dev,
-                    &mut tx[dev.idx() * FRAME_SIZE..(dev.idx() + 1) * FRAME_SIZE]
-                ),
-                Ok(FRAME_SIZE)
             );
-        });
 
-        geometry
-            .devices()
-            .for_each(|dev| assert_eq!(op.remains[dev], 0));
+            assert_eq!(op.pack(&device, &mut tx), Ok(FRAME_SIZE));
+            assert_eq!(op.remains, 0);
 
-        geometry.devices().for_each(|dev| {
-            assert_eq!(TypeTag::Modulation as u8, tx[dev.idx() * FRAME_SIZE]);
+            assert_eq!(TypeTag::Modulation as u8, tx[0]);
             assert_eq!(
                 (ModulationControlFlags::TRANSITION | ModulationControlFlags::END).bits(),
-                tx[dev.idx() * FRAME_SIZE + offset_of!(ModulationHead, flag)]
+                tx[offset_of!(ModulationHead, flag)]
             );
             let mod_size = FRAME_SIZE - std::mem::size_of::<ModulationSubseq>();
             assert_eq!(
                 mod_size as u16,
-                parse_tx_as::<u16>(
-                    &tx[dev.idx() * FRAME_SIZE + offset_of!(ModulationHead, size)..]
-                )
+                parse_tx_as::<u16>(&tx[offset_of!(ModulationHead, size)..])
             );
             tx.iter()
-                .skip(FRAME_SIZE * dev.idx())
                 .skip(std::mem::size_of::<ModulationSubseq>())
                 .zip(
                     buf.iter()
@@ -461,37 +366,9 @@ mod tests {
                         )
                         .take(mod_size),
                 )
-                .for_each(|(&d, m)| {
-                    assert_eq!(d, m.value());
-                })
-        });
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(Err(AUTDInternalError::ModulationSizeOutOfRange(1)), 1)]
-    #[case(Ok(()), 2)]
-    #[case(Ok(()), MOD_BUF_SIZE_MAX)]
-    #[case(Err(AUTDInternalError::ModulationSizeOutOfRange(
-        MOD_BUF_SIZE_MAX + 1
-    )), MOD_BUF_SIZE_MAX + 1)]
-    fn test_buffer_out_of_range(#[case] expect: Result<(), AUTDInternalError>, #[case] n: usize) {
-        let geometry = create_geometry(NUM_DEVICE, NUM_TRANS_IN_UNIT, FREQ_40K);
-
-        let mut rng = rand::thread_rng();
-
-        let mut op = ModulationOp::new(
-            TestModulation {
-                buf: (0..n).map(|_| EmitIntensity::new(rng.gen())).collect(),
-                config: SamplingConfig::DivisionRaw(
-                    rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX),
-                ),
-                loop_behavior: LoopBehavior::infinite(),
-            },
-            Segment::S0,
-            Some(TransitionMode::SyncIdx),
-        );
-
-        assert_eq!(expect, op.init(&geometry));
+                .for_each(|(d, m)| {
+                    assert_eq!(d, m);
+                });
+        }
     }
 }
