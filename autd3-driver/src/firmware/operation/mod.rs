@@ -196,11 +196,8 @@ pub mod tests {
         let geometry = Geometry::new(
             vec![Device::new(
                 0,
-                vec![Transducer::new(
-                    0,
-                    Vector3::zeros(),
-                    UnitQuaternion::identity(),
-                )],
+                UnitQuaternion::identity(),
+                vec![Transducer::new(0, Vector3::zeros())],
             )],
             FREQ_40K,
         );
@@ -291,11 +288,8 @@ pub mod tests {
         let geometry = Geometry::new(
             vec![Device::new(
                 0,
-                vec![Transducer::new(
-                    0,
-                    Vector3::zeros(),
-                    UnitQuaternion::identity(),
-                )],
+                UnitQuaternion::identity(),
+                vec![Transducer::new(0, Vector3::zeros())],
             )],
             FREQ_40K,
         );
@@ -345,11 +339,8 @@ pub mod tests {
         let geometry = Geometry::new(
             vec![Device::new(
                 0,
-                vec![Transducer::new(
-                    0,
-                    Vector3::zeros(),
-                    UnitQuaternion::identity(),
-                )],
+                UnitQuaternion::identity(),
+                vec![Transducer::new(0, Vector3::zeros())],
             )],
             FREQ_40K,
         );
@@ -399,11 +390,8 @@ pub mod tests {
         let geometry = Geometry::new(
             vec![Device::new(
                 0,
-                vec![Transducer::new(
-                    0,
-                    Vector3::zeros(),
-                    UnitQuaternion::identity(),
-                )],
+                UnitQuaternion::identity(),
+                vec![Transducer::new(0, Vector3::zeros())],
             )],
             FREQ_40K,
         );
@@ -487,11 +475,8 @@ pub mod tests {
         let geometry = Geometry::new(
             vec![Device::new(
                 0,
-                vec![Transducer::new(
-                    0,
-                    Vector3::zeros(),
-                    UnitQuaternion::identity(),
-                )],
+                UnitQuaternion::identity(),
+                vec![Transducer::new(0, Vector3::zeros())],
             )],
             FREQ_40K,
         );

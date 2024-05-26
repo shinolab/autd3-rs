@@ -70,6 +70,7 @@ impl IntoDevice for AUTD3 {
         let trans_mat = rot_mat.append_translation(&self.position);
         Device::new(
             dev_idx,
+            self.rotation,
             (0..Self::NUM_TRANS_Y)
                 .flat_map(|y| (0..Self::NUM_TRANS_X).map(move |x| (x, y)))
                 .filter(|&(x, y)| !Self::is_missing_transducer(x, y))
@@ -83,7 +84,7 @@ impl IntoDevice for AUTD3 {
                 })
                 .map(|p| trans_mat * p)
                 .zip(0..)
-                .map(|(p, i)| Transducer::new(i, Vector3::new(p.x, p.y, p.z), self.rotation))
+                .map(|(p, i)| Transducer::new(i, Vector3::new(p.x, p.y, p.z)))
                 .collect(),
         )
     }
