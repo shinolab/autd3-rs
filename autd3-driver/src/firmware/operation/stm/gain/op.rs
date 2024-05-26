@@ -91,7 +91,6 @@ impl<'a, F: Fn(usize) -> Box<dyn Fn(&Transducer) -> Drive + Send + Sync + 'a>> O
         } else {
             size_of::<GainSTMSubseq>()
         };
-        assert!(tx.len() >= offset + device.num_transducers() * size_of::<Drive>());
 
         let mut send = 0;
         match self.mode {
@@ -150,7 +149,7 @@ impl<'a, F: Fn(usize) -> Box<dyn Fn(&Transducer) -> Drive + Send + Sync + 'a>> O
                 }
                 if self.size > sent + 2 {
                     let dst = std::slice::from_raw_parts_mut(
-                        tx[offset..].as_mut_ptr() as *mut PhaseHalf<1>,
+                        tx[offset..].as_mut_ptr() as *mut PhaseHalf<2>,
                         device.len(),
                     );
                     dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
@@ -160,7 +159,7 @@ impl<'a, F: Fn(usize) -> Box<dyn Fn(&Transducer) -> Drive + Send + Sync + 'a>> O
                 }
                 if self.size > sent + 3 {
                     let dst = std::slice::from_raw_parts_mut(
-                        tx[offset..].as_mut_ptr() as *mut PhaseHalf<1>,
+                        tx[offset..].as_mut_ptr() as *mut PhaseHalf<3>,
                         device.len(),
                     );
                     dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
