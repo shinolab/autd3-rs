@@ -11,13 +11,14 @@ pub fn propagate<D: Directivity>(
     tr: &Transducer,
     attenuation: f64,
     wavenumber: f64,
+    dir: &Vector3,
     target_pos: &Vector3,
 ) -> Complex {
     let diff = target_pos - tr.position();
     let dist = diff.norm();
     Complex::from_polar(
         T4010A1_AMPLITUDE / (4. * PI) / dist
-            * D::directivity_from_tr(tr, &diff)
+            * D::directivity_from_dir(dir, &diff)
             * (-dist * attenuation).exp(),
         -wavenumber * dist,
     )
@@ -49,16 +50,21 @@ mod tests {
                 rng.gen_range(-100.0..100.0),
                 rng.gen_range(-100.0..100.0),
             ),
-            UnitQuaternion::from_axis_angle(
-                &Vector3::x_axis(),
-                rng.gen_range::<f64, _>(-180.0..180.0).to_radians(),
-            ) * UnitQuaternion::from_axis_angle(
-                &Vector3::y_axis(),
-                rng.gen_range::<f64, _>(-180.0..180.0).to_radians(),
-            ) * UnitQuaternion::from_axis_angle(
-                &Vector3::z_axis(),
-                rng.gen_range::<f64, _>(-180.0..180.0).to_radians(),
-            ),
+        )
+    }
+
+    #[rstest::fixture]
+    fn rot() -> UnitQuaternion {
+        let mut rng = rand::thread_rng();
+        UnitQuaternion::from_axis_angle(
+            &Vector3::x_axis(),
+            rng.gen_range::<f64, _>(-180.0..180.0).to_radians(),
+        ) * UnitQuaternion::from_axis_angle(
+            &Vector3::y_axis(),
+            rng.gen_range::<f64, _>(-180.0..180.0).to_radians(),
+        ) * UnitQuaternion::from_axis_angle(
+            &Vector3::z_axis(),
+            rng.gen_range::<f64, _>(-180.0..180.0).to_radians(),
         )
     }
 
@@ -86,8 +92,14 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_propagate(tr: Transducer, target: Vector3, attenuation: f64, sound_speed: f64) {
-        let mut device = Device::new(0, vec![tr.clone()]);
+    fn test_propagate(
+        tr: Transducer,
+        rot: UnitQuaternion,
+        target: Vector3,
+        attenuation: f64,
+        sound_speed: f64,
+    ) {
+        let mut device = Device::new(0, rot, vec![tr.clone()]);
         device.sound_speed = sound_speed;
         let wavenumber = device.wavenumber();
         assert_complex_approx_eq!(
@@ -95,13 +107,19 @@ mod tests {
                 let diff = target - tr.position();
                 let dist = diff.norm();
                 let r = T4010A1_AMPLITUDE
-                    * TestDirectivity::directivity_from_tr(&tr, &diff)
+                    * TestDirectivity::directivity_from_dir(&device.axial_direction(), &diff)
                     * (-dist * attenuation).exp()
                     / (4. * PI * dist);
                 let phase = -wavenumber * dist;
                 Complex::new(r * phase.cos(), r * phase.sin())
             },
-            super::propagate::<TestDirectivity>(&tr, attenuation, wavenumber, &target)
+            super::propagate::<TestDirectivity>(
+                &tr,
+                attenuation,
+                wavenumber,
+                &device.axial_direction(),
+                &target
+            )
         );
     }
 }

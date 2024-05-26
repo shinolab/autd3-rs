@@ -2,7 +2,7 @@ use std::{f64::consts::PI, ops::Deref};
 
 use crate::defined::{Freq, FREQ_40K, METER};
 
-use super::{Matrix3, Transducer, UnitQuaternion, Vector3};
+use super::{Matrix3, Quaternion, Transducer, UnitQuaternion, Vector3};
 
 pub struct Device {
     idx: usize,
@@ -10,17 +10,21 @@ pub struct Device {
     pub enable: bool,
     pub sound_speed: f64,
     pub attenuation: f64,
+    rot: UnitQuaternion,
+    x_direction: Vector3,
+    y_direction: Vector3,
+    axial_direction: Vector3,
     inv: Matrix3,
     pub(crate) ultrasound_freq: Freq<u32>,
 }
 
 impl Device {
     #[doc(hidden)]
-    pub fn new(idx: usize, transducers: Vec<Transducer>) -> Self {
+    pub fn new(idx: usize, rot: UnitQuaternion, transducers: Vec<Transducer>) -> Self {
         let inv = Matrix3::from_columns(&[
-            transducers[0].x_direction(),
-            transducers[0].y_direction(),
-            transducers[0].z_direction(),
+            Self::get_direction(Vector3::x(), &rot),
+            Self::get_direction(Vector3::y(), &rot),
+            Self::get_direction(Vector3::z(), &rot),
         ])
         .transpose();
         Self {
@@ -29,6 +33,13 @@ impl Device {
             enable: true,
             sound_speed: 340.0 * METER,
             attenuation: 0.0,
+            rot,
+            x_direction: Self::get_direction(Vector3::x(), &rot),
+            y_direction: Self::get_direction(Vector3::y(), &rot),
+            #[cfg(feature = "left_handed")]
+            axial_direction: Self::get_direction(-Vector3::z(), &rot),
+            #[cfg(not(feature = "left_handed"))]
+            axial_direction: Self::get_direction(Vector3::z(), &rot),
             inv,
             ultrasound_freq: FREQ_40K,
         }
@@ -60,7 +71,7 @@ impl Device {
     }
 
     pub fn rotate_to(&mut self, r: UnitQuaternion) {
-        let cur_rot = self.transducers[0].rotation();
+        let cur_rot = self.rot;
         self.rotate(r * cur_rot.conjugate());
     }
 
@@ -74,6 +85,20 @@ impl Device {
 
     pub fn affine(&mut self, t: Vector3, r: UnitQuaternion) {
         self.transducers.iter_mut().for_each(|tr| tr.affine(t, r));
+        self.rot = r * self.rot;
+        self.inv = Matrix3::from_columns(&[
+            Self::get_direction(Vector3::x(), &self.rot),
+            Self::get_direction(Vector3::y(), &self.rot),
+            Self::get_direction(Vector3::z(), &self.rot),
+        ])
+        .transpose();
+        self.x_direction = Self::get_direction(Vector3::x(), &self.rot);
+        self.y_direction = Self::get_direction(Vector3::y(), &self.rot);
+        self.axial_direction = if cfg!(feature = "left_handed") {
+            Self::get_direction(-Vector3::z(), &self.rot)
+        } else {
+            Self::get_direction(Vector3::z(), &self.rot)
+        };
     }
 
     pub fn set_sound_speed_from_temp(&mut self, temp: f64) {
@@ -94,6 +119,27 @@ impl Device {
 
     pub fn wavenumber(&self) -> f64 {
         2.0 * PI * self.ultrasound_freq.freq as f64 / self.sound_speed
+    }
+
+    fn get_direction(dir: Vector3, rotation: &UnitQuaternion) -> Vector3 {
+        let dir: UnitQuaternion = UnitQuaternion::from_quaternion(Quaternion::from_imag(dir));
+        (rotation * dir * rotation.conjugate()).imag().normalize()
+    }
+
+    pub const fn rotation(&self) -> &UnitQuaternion {
+        &self.rot
+    }
+
+    pub const fn x_direction(&self) -> &Vector3 {
+        &self.x_direction
+    }
+
+    pub const fn y_direction(&self) -> &Vector3 {
+        &self.y_direction
+    }
+
+    pub const fn axial_direction(&self) -> &Vector3 {
+        &self.axial_direction
     }
 }
 
@@ -168,17 +214,11 @@ pub mod tests {
     fn test_center() {
         let transducers = itertools::iproduct!((0..18), (0..14))
             .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(
-                    i,
-                    10.16 * Vector3::new(x as f64, y as f64, 0.),
-                    UnitQuaternion::identity(),
-                )
-            })
+            .map(|(i, (y, x))| Transducer::new(i, 10.16 * Vector3::new(x as f64, y as f64, 0.)))
             .collect::<Vec<_>>();
         let expected =
             transducers.iter().map(|t| t.position()).sum::<Vector3>() / transducers.len() as f64;
-        let device = Device::new(0, transducers);
+        let device = Device::new(0, UnitQuaternion::identity(), transducers);
         assert_approx_eq_vec3!(expected, device.center());
     }
 
@@ -216,14 +256,11 @@ pub mod tests {
     ) {
         let device = Device::new(
             0,
+            quat,
             itertools::iproduct!((0..18), (0..14))
                 .enumerate()
                 .map(|(i, (y, x))| {
-                    Transducer::new(
-                        i,
-                        origin + 10.16 * Vector3::new(x as f64, y as f64, 0.),
-                        quat,
-                    )
+                    Transducer::new(i, origin + 10.16 * Vector3::new(x as f64, y as f64, 0.))
                 })
                 .collect::<Vec<_>>(),
         );
@@ -238,15 +275,11 @@ pub mod tests {
         let transducers = itertools::iproduct!((0..18), (0..14))
             .enumerate()
             .map(|(i, (y, x))| {
-                Transducer::new(
-                    i,
-                    origin + 10.16 * Vector3::new(x as f64, y as f64, 0.),
-                    UnitQuaternion::identity(),
-                )
+                Transducer::new(i, origin + 10.16 * Vector3::new(x as f64, y as f64, 0.))
             })
             .collect::<Vec<_>>();
 
-        let mut device = Device::new(0, transducers);
+        let mut device = Device::new(0, UnitQuaternion::identity(), transducers);
 
         let t = Vector3::new(40., 50., 60.);
         device.translate_to(t);
@@ -264,14 +297,11 @@ pub mod tests {
         let mut device = {
             let mut device = Device::new(
                 0,
+                UnitQuaternion::identity(),
                 itertools::iproduct!((0..18), (0..14))
                     .enumerate()
                     .map(|(i, (y, x))| {
-                        Transducer::new(
-                            i,
-                            10.16 * Vector3::new(x as f64, y as f64, 0.),
-                            UnitQuaternion::identity(),
-                        )
+                        Transducer::new(i, 10.16 * Vector3::new(x as f64, y as f64, 0.))
                     })
                     .collect::<Vec<_>>(),
             );
@@ -291,12 +321,10 @@ pub mod tests {
         let expect_x = Vector3::new(0., 1., 0.);
         let expect_y = Vector3::new(-1., 0., 0.);
         let expect_z = Vector3::new(0., 0., 1.);
-        device.iter().for_each(|tr| {
-            assert_approx_eq_quat!(rot, tr.rotation());
-            assert_approx_eq_vec3!(expect_x, tr.x_direction());
-            assert_approx_eq_vec3!(expect_y, tr.y_direction());
-            assert_approx_eq_vec3!(expect_z, tr.z_direction());
-        });
+        assert_approx_eq_quat!(rot, device.rotation());
+        assert_approx_eq_vec3!(expect_x, device.x_direction());
+        assert_approx_eq_vec3!(expect_y, device.y_direction());
+        assert_approx_eq_vec3!(expect_z, device.axial_direction());
         itertools::iproduct!((0..18), (0..14))
             .map(|(y, x)| 10.16 * Vector3::new(-y as f64, x as f64, 0.))
             .zip(device.iter())
@@ -313,15 +341,11 @@ pub mod tests {
         let transducers = itertools::iproduct!((0..18), (0..14))
             .enumerate()
             .map(|(i, (y, x))| {
-                Transducer::new(
-                    i,
-                    origin + 10.16 * Vector3::new(x as f64, y as f64, 0.),
-                    UnitQuaternion::identity(),
-                )
+                Transducer::new(i, origin + 10.16 * Vector3::new(x as f64, y as f64, 0.))
             })
             .collect::<Vec<_>>();
 
-        let mut device = Device::new(0, transducers.clone());
+        let mut device = Device::new(0, UnitQuaternion::identity(), transducers.clone());
 
         let t = Vector3::new(40., 50., 60.);
         device.translate(t);
@@ -337,16 +361,10 @@ pub mod tests {
     fn test_rotate() {
         let transducers = itertools::iproduct!((0..18), (0..14))
             .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(
-                    i,
-                    10.16 * Vector3::new(x as f64, y as f64, 0.),
-                    UnitQuaternion::identity(),
-                )
-            })
+            .map(|(i, (y, x))| Transducer::new(i, 10.16 * Vector3::new(x as f64, y as f64, 0.)))
             .collect::<Vec<_>>();
 
-        let mut device = Device::new(0, transducers);
+        let mut device = Device::new(0, UnitQuaternion::identity(), transducers);
 
         let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)
             * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), 0.)
@@ -355,12 +373,10 @@ pub mod tests {
         let expect_x = Vector3::new(0., 1., 0.);
         let expect_y = Vector3::new(-1., 0., 0.);
         let expect_z = Vector3::new(0., 0., 1.);
-        device.iter().for_each(|tr| {
-            assert_approx_eq_quat!(rot, tr.rotation());
-            assert_approx_eq_vec3!(expect_x, tr.x_direction());
-            assert_approx_eq_vec3!(expect_y, tr.y_direction());
-            assert_approx_eq_vec3!(expect_z, tr.z_direction());
-        });
+        assert_approx_eq_quat!(rot, device.rotation());
+        assert_approx_eq_vec3!(expect_x, device.x_direction());
+        assert_approx_eq_vec3!(expect_y, device.y_direction());
+        assert_approx_eq_vec3!(expect_z, device.axial_direction());
         itertools::iproduct!((0..18), (0..14))
             .map(|(y, x)| 10.16 * Vector3::new(-y as f64, x as f64, 0.))
             .zip(device.iter())
@@ -373,16 +389,10 @@ pub mod tests {
     fn test_affine() {
         let transducers = itertools::iproduct!((0..18), (0..14))
             .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(
-                    i,
-                    10.16 * Vector3::new(x as f64, y as f64, 0.),
-                    UnitQuaternion::identity(),
-                )
-            })
+            .map(|(i, (y, x))| Transducer::new(i, 10.16 * Vector3::new(x as f64, y as f64, 0.)))
             .collect::<Vec<_>>();
 
-        let mut device = Device::new(0, transducers);
+        let mut device = Device::new(0, UnitQuaternion::identity(), transducers);
 
         let t = Vector3::new(40., 50., 60.);
         let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)
@@ -393,12 +403,10 @@ pub mod tests {
         let expect_x = Vector3::new(0., 1., 0.);
         let expect_y = Vector3::new(-1., 0., 0.);
         let expect_z = Vector3::new(0., 0., 1.);
-        device.iter().for_each(|tr| {
-            assert_approx_eq_quat!(rot, tr.rotation());
-            assert_approx_eq_vec3!(expect_x, tr.x_direction());
-            assert_approx_eq_vec3!(expect_y, tr.y_direction());
-            assert_approx_eq_vec3!(expect_z, tr.z_direction());
-        });
+        assert_approx_eq_quat!(rot, device.rotation());
+        assert_approx_eq_vec3!(expect_x, device.x_direction());
+        assert_approx_eq_vec3!(expect_y, device.y_direction());
+        assert_approx_eq_vec3!(expect_z, device.axial_direction());
 
         itertools::iproduct!((0..18), (0..14))
             .map(|(y, x)| 10.16 * Vector3::new(-y as f64, x as f64, 0.) + t)

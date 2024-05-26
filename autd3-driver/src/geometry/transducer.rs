@@ -1,58 +1,25 @@
-use super::{Matrix4, Quaternion, UnitQuaternion, Vector3, Vector4};
+use super::{Matrix4, UnitQuaternion, Vector3, Vector4};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Transducer {
     idx: usize,
     pos: Vector3,
-    rot: UnitQuaternion,
 }
 
 impl Transducer {
-    pub(crate) const fn new(idx: usize, pos: Vector3, rot: UnitQuaternion) -> Self {
+    pub(crate) const fn new(idx: usize, pos: Vector3) -> Self {
         assert!(idx < 256);
-        Self { idx, pos, rot }
+        Self { idx, pos }
     }
 
     pub fn affine(&mut self, t: Vector3, r: UnitQuaternion) {
         let new_pos = Matrix4::from(r).append_translation(&t)
             * Vector4::new(self.pos[0], self.pos[1], self.pos[2], 1.0);
         self.pos = Vector3::new(new_pos[0], new_pos[1], new_pos[2]);
-        self.rot = r * self.rot;
     }
 
     pub const fn position(&self) -> &Vector3 {
         &self.pos
-    }
-
-    pub const fn rotation(&self) -> &UnitQuaternion {
-        &self.rot
-    }
-
-    fn get_direction(dir: Vector3, rotation: &UnitQuaternion) -> Vector3 {
-        let dir: UnitQuaternion = UnitQuaternion::from_quaternion(Quaternion::from_imag(dir));
-        (rotation * dir * rotation.conjugate()).imag().normalize()
-    }
-
-    pub fn x_direction(&self) -> Vector3 {
-        Self::get_direction(Vector3::x(), self.rotation())
-    }
-
-    pub fn y_direction(&self) -> Vector3 {
-        Self::get_direction(Vector3::y(), self.rotation())
-    }
-
-    pub fn z_direction(&self) -> Vector3 {
-        Self::get_direction(Vector3::z(), self.rotation())
-    }
-
-    #[cfg(feature = "left_handed")]
-    pub fn axial_direction(&self) -> Vector3 {
-        -self.z_direction()
-    }
-
-    #[cfg(not(feature = "left_handed"))]
-    pub fn axial_direction(&self) -> Vector3 {
-        self.z_direction()
     }
 
     pub const fn idx(&self) -> usize {
@@ -78,7 +45,7 @@ mod tests {
 
     #[rstest::fixture]
     fn tr() -> Transducer {
-        Transducer::new(0, Vector3::zeros(), UnitQuaternion::identity())
+        Transducer::new(0, Vector3::zeros())
     }
 
     #[rstest::rstest]
@@ -86,10 +53,7 @@ mod tests {
     #[case(0)]
     #[case(1)]
     fn idx(#[case] i: usize) {
-        assert_eq!(
-            i,
-            Transducer::new(i, Vector3::zeros(), UnitQuaternion::identity()).idx()
-        );
+        assert_eq!(i, Transducer::new(i, Vector3::zeros()).idx());
     }
 
     #[rstest::rstest]
@@ -100,13 +64,6 @@ mod tests {
             * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), 0.)
             * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.);
         tr.affine(t, rot);
-
-        let expect_x = Vector3::new(0., 1., 0.);
-        let expect_y = Vector3::new(-1., 0., 0.);
-        let expect_z = Vector3::new(0., 0., 1.);
-        assert_vec3_approx_eq!(expect_x, tr.x_direction());
-        assert_vec3_approx_eq!(expect_y, tr.y_direction());
-        assert_vec3_approx_eq!(expect_z, tr.z_direction());
 
         let expect_pos = Vector3::zeros() + t;
         assert_vec3_approx_eq!(expect_pos, tr.position());

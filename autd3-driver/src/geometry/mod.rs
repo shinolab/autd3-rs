@@ -128,8 +128,9 @@ pub mod tests {
     pub fn create_device(idx: usize, n: usize) -> Device {
         Device::new(
             idx,
+            UnitQuaternion::identity(),
             (0..n)
-                .map(|i| Transducer::new(i, Vector3::zeros(), UnitQuaternion::identity()))
+                .map(|i| Transducer::new(i, Vector3::zeros()))
                 .collect(),
         )
     }
@@ -165,19 +166,17 @@ pub mod tests {
             vec![
                 Device::new(
                     0,
+                    UnitQuaternion::identity(),
                     itertools::iproduct!((0..18), (0..14))
                         .enumerate()
                         .map(|(i, (y, x))| {
-                            Transducer::new(
-                                i,
-                                10.16 * Vector3::new(x as f64, y as f64, 0.),
-                                UnitQuaternion::identity(),
-                            )
+                            Transducer::new(i, 10.16 * Vector3::new(x as f64, y as f64, 0.))
                         })
                         .collect::<Vec<_>>(),
                 ),
                 Device::new(
                     1,
+                    UnitQuaternion::identity(),
                     itertools::iproduct!((0..18), (0..14))
                         .enumerate()
                         .map(|(i, (y, x))| {
@@ -185,7 +184,6 @@ pub mod tests {
                                 i,
                                 10.16 * Vector3::new(x as f64, y as f64, 0.)
                                     + Vector3::new(10., 20., 30.),
-                                UnitQuaternion::identity(),
                             )
                         })
                         .collect::<Vec<_>>(),
@@ -208,19 +206,17 @@ pub mod tests {
             vec![
                 Device::new(
                     0,
+                    UnitQuaternion::identity(),
                     itertools::iproduct!((0..18), (0..14))
                         .enumerate()
                         .map(|(i, (y, x))| {
-                            Transducer::new(
-                                i,
-                                10.16 * Vector3::new(x as f64, y as f64, 0.),
-                                UnitQuaternion::identity(),
-                            )
+                            Transducer::new(i, 10.16 * Vector3::new(x as f64, y as f64, 0.))
                         })
                         .collect::<Vec<_>>(),
                 ),
                 Device::new(
                     1,
+                    UnitQuaternion::identity(),
                     itertools::iproduct!((0..18), (0..14))
                         .enumerate()
                         .map(|(i, (y, x))| {
@@ -228,7 +224,6 @@ pub mod tests {
                                 i,
                                 10.16 * Vector3::new(x as f64, y as f64, 0.)
                                     + Vector3::new(10., 20., 30.),
-                                UnitQuaternion::identity(),
                             )
                         })
                         .collect::<Vec<_>>(),
@@ -252,19 +247,17 @@ pub mod tests {
             vec![
                 Device::new(
                     0,
+                    UnitQuaternion::identity(),
                     itertools::iproduct!((0..18), (0..14))
                         .enumerate()
                         .map(|(i, (y, x))| {
-                            Transducer::new(
-                                i,
-                                10.16 * Vector3::new(x as f64, y as f64, 0.),
-                                UnitQuaternion::identity(),
-                            )
+                            Transducer::new(i, 10.16 * Vector3::new(x as f64, y as f64, 0.))
                         })
                         .collect::<Vec<_>>(),
                 ),
                 Device::new(
                     1,
+                    UnitQuaternion::identity(),
                     itertools::iproduct!((0..18), (0..14))
                         .enumerate()
                         .map(|(i, (y, x))| {
@@ -272,7 +265,6 @@ pub mod tests {
                                 i,
                                 10.16 * Vector3::new(x as f64, y as f64, 0.)
                                     + Vector3::new(10., 20., 30.),
-                                UnitQuaternion::identity(),
                             )
                         })
                         .collect::<Vec<_>>(),
