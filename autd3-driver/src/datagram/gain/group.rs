@@ -121,7 +121,7 @@ where
                         .map(move |dev| {
                             (dev.idx(), {
                                 let f = f(dev);
-                                dev.iter().map(move |tr| f(tr)).collect::<Vec<_>>()
+                                dev.iter().map(f).collect::<Vec<_>>()
                             })
                         })
                         .collect::<HashMap<_, _>>()
