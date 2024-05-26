@@ -64,7 +64,7 @@ impl<G: Gain + 'static> Cache<G> {
                 .map(|dev| {
                     (dev.idx(), {
                         let f = f(dev);
-                        dev.iter().map(|tr| f(tr)).collect()
+                        dev.iter().map(f).collect()
                     })
                 })
                 .collect();
