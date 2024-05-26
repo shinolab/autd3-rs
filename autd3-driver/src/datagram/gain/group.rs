@@ -22,7 +22,7 @@ use super::GainCalcFn;
 pub struct Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync + 'static,
-    FK: Fn(&Transducer) -> Option<K> + Send + Sync + 'static,
+    FK: Fn(&Transducer) -> Option<K> + 'static,
     F: Fn(&Device) -> FK + Send + Sync + 'static,
 {
     f: F,
@@ -32,7 +32,7 @@ where
 impl<K, FK, F> Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync + 'static,
-    FK: Fn(&Transducer) -> Option<K> + Send + Sync + 'static,
+    FK: Fn(&Transducer) -> Option<K> + 'static,
     F: Fn(&Device) -> FK + Send + Sync + 'static,
 {
     pub fn new(f: F) -> Group<K, FK, F> {
@@ -81,7 +81,7 @@ where
 impl<K, FK, F> Gain for Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync + 'static,
-    FK: Fn(&Transducer) -> Option<K> + Send + Sync + 'static,
+    FK: Fn(&Transducer) -> Option<K> + 'static,
     F: Fn(&Device) -> FK + Send + Sync + 'static,
 {
     fn calc<'a>(
@@ -130,8 +130,9 @@ where
             .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?;
 
         let drives_cache = Arc::new(RwLock::new(drives_cache));
+        let f = &self.f;
         Ok(Box::new(move |dev| {
-            let fk = (self.f)(dev);
+            let fk = f(dev);
             let dev_idx = dev.idx();
             let drives_cache = drives_cache.clone();
             Box::new(move |tr| {

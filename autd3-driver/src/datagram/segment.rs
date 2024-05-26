@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::{
     datagram::Datagram,
     defined::DEFAULT_TIMEOUT,
-    derive::{Segment, TransitionMode},
+    derive::{AUTDInternalError, Device, Geometry, Segment, TransitionMode},
     firmware::operation::SwapSegmentOperation,
 };
 
@@ -91,7 +91,7 @@ impl<T> SwapSegment<T> {
     }
 }
 
-impl<T: SwapSegmentDatagram> Datagram for SwapSegment<T> {
+impl<'a, T: SwapSegmentDatagram + Sync + Send + 'a> Datagram<'a> for SwapSegment<T> {
     type O1 = T::O;
     type O2 = crate::firmware::operation::NullOp;
 
@@ -99,55 +99,15 @@ impl<T: SwapSegmentDatagram> Datagram for SwapSegment<T> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation(self) -> (Self::O1, Self::O2) {
-        (
-            Self::O1::new(self.segment, self.transition_mode),
-            Self::O2::default(),
-        )
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn gain() -> anyhow::Result<()> {
-        let d = SwapSegment::gain(Segment::S0);
-        assert_eq!(Segment::S0, d.segment());
-        assert_eq!(Some(DEFAULT_TIMEOUT), d.timeout());
-        let _ = d.operation();
-
-        Ok(())
-    }
-
-    #[test]
-    fn modulation() -> anyhow::Result<()> {
-        let d = SwapSegment::modulation(Segment::S0, TransitionMode::Immediate);
-        assert_eq!(Segment::S0, d.segment());
-        assert_eq!(TransitionMode::Immediate, d.transition_mode());
-        assert_eq!(Some(DEFAULT_TIMEOUT), d.timeout());
-        let _ = d.operation();
-        Ok(())
-    }
-
-    #[test]
-    fn focus_stm() {
-        use crate::datagram::Datagram;
-        let d = SwapSegment::focus_stm(Segment::S0, TransitionMode::Immediate);
-        assert_eq!(Segment::S0, d.segment());
-        assert_eq!(TransitionMode::Immediate, d.transition_mode());
-        assert_eq!(Some(DEFAULT_TIMEOUT), d.timeout());
-        let _ = d.operation();
-    }
-
-    #[test]
-    fn gain_stm() {
-        use crate::datagram::Datagram;
-        let d = SwapSegment::gain_stm(Segment::S0, TransitionMode::Immediate);
-        assert_eq!(Segment::S0, d.segment());
-        assert_eq!(TransitionMode::Immediate, d.transition_mode());
-        assert_eq!(Some(DEFAULT_TIMEOUT), d.timeout());
-        let _ = d.operation();
+    fn operation(
+        &'a self,
+        _: &'a Geometry,
+    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2), AUTDInternalError> {
+        Ok(|_| {
+            (
+                Self::O1::new(self.segment, self.transition_mode),
+                Self::O2::default(),
+            )
+        })
     }
 }

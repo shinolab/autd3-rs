@@ -82,7 +82,6 @@ fn focus(c: &mut Criterion) {
                         .par_bridge()
                         .for_each(|(dev, tx)| {
                             let (mut op1, mut op2) = gen(dev);
-                            OperationHandler::init(&mut op1, &mut op2, dev).unwrap();
                             OperationHandler::pack(&mut op1, &mut op2, dev, tx).unwrap();
                         });
                 })

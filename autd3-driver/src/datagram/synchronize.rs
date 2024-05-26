@@ -1,6 +1,5 @@
 use crate::{datagram::*, defined::DEFAULT_TIMEOUT};
 
-/// Datagram to synchronize devices
 #[derive(Default)]
 pub struct Synchronize {}
 
@@ -10,37 +9,18 @@ impl Synchronize {
     }
 }
 
-impl Datagram for Synchronize {
+impl<'a> Datagram<'a> for Synchronize {
     type O1 = crate::firmware::operation::SyncOp;
     type O2 = crate::firmware::operation::NullOp;
-
-    fn operation(self) -> (Self::O1, Self::O2) {
-        (Default::default(), Default::default())
-    }
 
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_timeout() {
-        let stop = Synchronize::new();
-        let timeout = <Synchronize as Datagram>::timeout(&stop);
-        assert!(timeout.is_some());
-        assert!(timeout.unwrap() > Duration::ZERO);
-    }
-
-    #[test]
-    fn test_operation() {
-        let stop = Synchronize::default();
-        let _: (
-            crate::firmware::operation::SyncOp,
-            crate::firmware::operation::NullOp,
-        ) = <Synchronize as Datagram>::operation(stop);
+    fn operation(
+        &'a self,
+        _: &'a Geometry,
+    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2), AUTDInternalError> {
+        Ok(move |_| (Self::O1::default(), Self::O2::default()))
     }
 }

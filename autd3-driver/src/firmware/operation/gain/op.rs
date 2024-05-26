@@ -18,7 +18,7 @@ struct GainT {
 }
 
 pub struct GainOp<'a> {
-    gain: Box<dyn Fn(&Transducer) -> Drive + Send + Sync + 'a>,
+    gain: Box<dyn Fn(&Transducer) -> Drive + 'a>,
     is_done: bool,
     segment: Segment,
     transition: bool,
@@ -28,7 +28,7 @@ impl<'a> GainOp<'a> {
     pub fn new(
         segment: Segment,
         transition: bool,
-        gain: Box<dyn Fn(&Transducer) -> Drive + Send + Sync + 'a>,
+        gain: Box<dyn Fn(&Transducer) -> Drive + 'a>,
     ) -> Self {
         Self {
             gain,

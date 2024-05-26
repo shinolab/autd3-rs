@@ -1,9 +1,6 @@
 use crate::{
     error::AUTDInternalError,
-    firmware::{
-        fpga::GPIOIn,
-        operation::{cast, Operation, TypeTag},
-    },
+    firmware::operation::{cast, Operation, TypeTag},
     geometry::Device,
 };
 
@@ -27,24 +24,27 @@ struct EmulateGPIOIn {
     flag: GPIOInFlags,
 }
 
-pub struct EmulateGPIOInOp<F: Fn(GPIOIn) -> bool> {
+pub struct EmulateGPIOInOp {
     is_done: bool,
-    f: F,
+    value: [bool; 4],
 }
 
-impl<F: Fn(GPIOIn) -> bool> EmulateGPIOInOp<F> {
-    pub fn new(f: F) -> Self {
-        Self { is_done: false, f }
+impl EmulateGPIOInOp {
+    pub fn new(value: [bool; 4]) -> Self {
+        Self {
+            is_done: false,
+            value,
+        }
     }
 }
 
-impl<F: Fn(GPIOIn) -> bool> Operation for EmulateGPIOInOp<F> {
+impl Operation for EmulateGPIOInOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         let mut flag = GPIOInFlags::NONE;
-        flag.set(GPIOInFlags::GPIO_IN_0, (self.f)(GPIOIn::I0));
-        flag.set(GPIOInFlags::GPIO_IN_1, (self.f)(GPIOIn::I1));
-        flag.set(GPIOInFlags::GPIO_IN_2, (self.f)(GPIOIn::I2));
-        flag.set(GPIOInFlags::GPIO_IN_3, (self.f)(GPIOIn::I3));
+        flag.set(GPIOInFlags::GPIO_IN_0, self.value[0]);
+        flag.set(GPIOInFlags::GPIO_IN_1, self.value[1]);
+        flag.set(GPIOInFlags::GPIO_IN_2, self.value[2]);
+        flag.set(GPIOInFlags::GPIO_IN_3, self.value[3]);
 
         *cast::<EmulateGPIOIn>(tx) = EmulateGPIOIn {
             tag: TypeTag::EmulateGPIOIn,
@@ -75,14 +75,14 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(0b1001, |gpio| gpio == GPIOIn::I0 || gpio == GPIOIn::I3)]
-    #[case(0b0110, |gpio| gpio == GPIOIn::I1 || gpio == GPIOIn::I2)]
-    fn test(#[case] expected: u8, #[case] f: impl Fn(GPIOIn) -> bool) {
+    #[case(0b1001, [true, false, false, true])]
+    #[case(0b0110, [false, true, true, false])]
+    fn test(#[case] expected: u8, #[case] value: [bool; 4]) {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
         let mut tx = [0x00u8; size_of::<EmulateGPIOIn>()];
 
-        let mut op = EmulateGPIOInOp::new(f);
+        let mut op = EmulateGPIOInOp::new(value);
 
         assert_eq!(op.required_size(&device), size_of::<EmulateGPIOIn>());
 

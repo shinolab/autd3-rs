@@ -1,7 +1,7 @@
 use crate::{
     error::AUTDInternalError,
     firmware::{
-        fpga::PWE_BUF_SIZE,
+        fpga::{PULSE_WIDTH_MAX, PWE_BUF_SIZE},
         operation::{cast, Operation, TypeTag},
     },
     geometry::Device,
@@ -41,10 +41,10 @@ pub struct PulseWidthEncoderOp<F: Fn(usize) -> u16> {
 }
 
 impl<F: Fn(usize) -> u16> PulseWidthEncoderOp<F> {
-    pub fn new(f: F, full_width_start: u16) -> Self {
+    pub fn new(f: F) -> Self {
         Self {
             f,
-            full_width_start,
+            full_width_start: 0,
             remains: PWE_BUF_SIZE,
         }
     }
@@ -55,6 +55,15 @@ impl<F: Fn(usize) -> u16> Operation for PulseWidthEncoderOp<F> {
         let sent = PWE_BUF_SIZE - self.remains;
 
         let offset = if sent == 0 {
+            if !is_sorted::IsSorted::is_sorted(&mut (0..PWE_BUF_SIZE).map(|i| (self.f)(i))) {
+                return Err(AUTDInternalError::InvalidPulseWidthEncoderData);
+            }
+            if (0..PWE_BUF_SIZE).any(|i| (self.f)(i) > PULSE_WIDTH_MAX) {
+                return Err(AUTDInternalError::InvalidPulseWidthEncoderData);
+            }
+            self.full_width_start = (0..PWE_BUF_SIZE)
+                .position(|i| (self.f)(i) == PULSE_WIDTH_MAX)
+                .unwrap_or(0xFFFF) as u16;
             std::mem::size_of::<PWEHead>()
         } else {
             std::mem::size_of::<PWESubseq>()

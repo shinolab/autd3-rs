@@ -32,12 +32,6 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     } else {
         quote! {
             impl <#(#linetimes,)* #(#type_params,)*> #name #ty_generics #where_clause {
-                /// Set sampling configuration
-                ///
-                /// # Arguments
-                ///
-                /// * `config` - Sampling configuration
-                ///
                 #[allow(clippy::needless_update)]
                 pub fn with_sampling_config(self, config: SamplingConfig) -> Self {
                     Self {config, ..self}
@@ -51,12 +45,6 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let loop_behavior = quote! {
             impl <#(#linetimes,)* #(#type_params,)*> #name #ty_generics #where_clause {
-                /// Set loop behavior
-                ///
-                /// # Arguments
-                ///
-                /// * `loop_behavior` - Loop behavior
-                ///
                 #[allow(clippy::needless_update)]
                 pub fn with_loop_behavior(self, loop_behavior: LoopBehavior) -> Self {
                     Self {loop_behavior, ..self}
@@ -82,12 +70,21 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     let type_params = generics.type_params();
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let datagram_with_segment_transition = quote! {
-        impl <#(#linetimes,)* #(#type_params,)* > DatagramST for #name #ty_generics #where_clause {
-            type O1 = ModulationOp<Self>;
+        impl <'autd3, #(#linetimes,)* #(#type_params,)* > DatagramST<'autd3> for #name #ty_generics #where_clause {
+            type O1 = ModulationOp<Box<dyn ExactSizeIterator<Item = u8> + 'autd3>>;
             type O2 = NullOp;
 
-            fn operation_with_segment(self, segment: Segment, transition_mode: Option<TransitionMode>) -> (Self::O1, Self::O2) {
-                (Self::O1::new(self, segment, transition_mode), Self::O2::default())
+            fn operation_with_segment(&'autd3 self, geometry: &'autd3 Geometry, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<impl Fn(&'autd3 Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError> {
+                let f = self.calc(geometry)?;
+                let sampling_config = self.sampling_config();
+                let rep = self.loop_behavior().rep;
+                Ok(move |dev| {
+                    (
+                        Self::O1::new(f(dev), sampling_config, rep, segment, transition_mode),
+                        Self::O2::default(),
+                    )
+                })
+
             }
 
             fn timeout(&self) -> Option<std::time::Duration> {
@@ -107,7 +104,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     } else {
         quote! {
             impl <#(#linetimes,)* #(#type_params,)*> IntoModulationTransform<Self> for #name #ty_generics #where_clause {
-                fn with_transform<ModulationTransformF: Fn(usize, EmitIntensity) -> EmitIntensity>(self, f: ModulationTransformF) -> ModulationTransform<Self, ModulationTransformF> {
+                fn with_transform<ModulationTransformF: Fn(usize, u8) -> u8 + Send + Sync>(self, f: ModulationTransformF) -> ModulationTransform<Self, ModulationTransformF> {
                     ModulationTransform::new(self, f)
                 }
             }

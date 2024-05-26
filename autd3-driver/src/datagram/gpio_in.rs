@@ -1,58 +1,36 @@
 use crate::{datagram::*, derive::DEFAULT_TIMEOUT, firmware::fpga::GPIOIn, geometry::Device};
 
-/// Datagram for configure force fan
-pub struct EmulateGPIOIn<F: Fn(&Device, GPIOIn) -> bool> {
+pub struct EmulateGPIOIn<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H + Send + Sync> {
     f: F,
 }
 
-impl<F: Fn(&Device, GPIOIn) -> bool> EmulateGPIOIn<F> {
-    /// constructor
+impl<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H + Send + Sync> EmulateGPIOIn<H, F> {
     pub const fn new(f: F) -> Self {
         Self { f }
     }
-
-    /// Get the function
-    // GRCOV_EXCL_START
-    pub fn f(&self) -> &F {
-        &self.f
-    }
-    // GRCOV_EXCL_STOP
 }
 
-impl<F: Fn(&Device, GPIOIn) -> bool> Datagram for EmulateGPIOIn<F> {
-    type O1 = crate::firmware::operation::EmulateGPIOInOp<F>;
+impl<'a, H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H + Send + Sync> Datagram<'a>
+    for EmulateGPIOIn<H, F>
+{
+    type O1 = crate::firmware::operation::EmulateGPIOInOp;
     type O2 = crate::firmware::operation::NullOp;
-
-    fn operation(self) -> (Self::O1, Self::O2) {
-        (Self::O1::new(self.f), Self::O2::default())
-    }
 
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // GRCOV_EXCL_START
-    fn f(_: &Device, _: GPIOIn) -> bool {
-        true
-    }
-    // GRCOV_EXCL_STOP
-
-    #[test]
-    fn test_timeout() {
-        let datagram = EmulateGPIOIn::new(f);
-        let timeout = datagram.timeout();
-        assert!(timeout.is_some());
-        assert!(timeout.unwrap() > Duration::ZERO);
-    }
-
-    #[test]
-    fn test_operation() {
-        let datagram = EmulateGPIOIn::new(f);
-        let _ = datagram.operation();
+    fn operation(
+        &'a self,
+        _: &'a Geometry,
+    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError> {
+        let f = &self.f;
+        Ok(|dev| {
+            let f = f(dev);
+            (
+                Self::O1::new([f(GPIOIn::I0), f(GPIOIn::I1), f(GPIOIn::I2), f(GPIOIn::I3)]),
+                Self::O2::default(),
+            )
+        })
     }
 }

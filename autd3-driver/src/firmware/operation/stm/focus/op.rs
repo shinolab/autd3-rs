@@ -76,37 +76,6 @@ impl<F: ExactSizeIterator<Item = ControlPoint>> Operation for FocusSTMOp<F> {
 
         let max_send_bytes = tx.len() - offset;
         let max_send_num = max_send_bytes / size_of::<STMFocus>();
-
-        if is_first {
-            *cast::<FocusSTMHead>(tx) = FocusSTMHead {
-                tag: TypeTag::FocusSTM,
-                flag: FocusSTMControlFlags::BEGIN,
-                transition_mode: self
-                    .transition_mode
-                    .map(|m| m.mode())
-                    .unwrap_or(TRANSITION_MODE_NONE),
-                transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
-                send_num: 0,
-                freq_div: self.freq_div,
-                sound_speed: (device.sound_speed / METER
-                    * 1024.0
-                    * crate::defined::FREQ_40K.hz() as f64
-                    / device.ultrasound_freq().hz() as f64)
-                    .round() as u32,
-                rep: self.rep,
-            };
-        } else {
-            *cast::<FocusSTMSubseq>(tx) = FocusSTMSubseq {
-                tag: TypeTag::FocusSTM,
-                flag: FocusSTMControlFlags::NONE,
-                send_num: 0,
-            };
-        }
-
-        cast::<FocusSTMSubseq>(tx)
-            .flag
-            .set(FocusSTMControlFlags::SEGMENT, self.segment == Segment::S1);
-
         let send_num = (0..max_send_num)
             .filter_map(|_| self.points.next())
             .enumerate()
@@ -124,12 +93,44 @@ impl<F: ExactSizeIterator<Item = ControlPoint>> Operation for FocusSTMOp<F> {
                 Ok(acc + 1)
             })?;
 
-        let d = cast::<FocusSTMSubseq>(tx);
-        d.send_num = send_num as u8;
-
         self.sent += send_num;
         if self.sent > FOCUS_STM_BUF_SIZE_MAX {
             return Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(self.sent));
+        }
+
+        if is_first {
+            *cast::<FocusSTMHead>(tx) = FocusSTMHead {
+                tag: TypeTag::FocusSTM,
+                flag: FocusSTMControlFlags::BEGIN
+                    | if self.segment == Segment::S1 {
+                        FocusSTMControlFlags::SEGMENT
+                    } else {
+                        FocusSTMControlFlags::NONE
+                    },
+                transition_mode: self
+                    .transition_mode
+                    .map(|m| m.mode())
+                    .unwrap_or(TRANSITION_MODE_NONE),
+                transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
+                send_num: send_num as _,
+                freq_div: self.freq_div,
+                sound_speed: (device.sound_speed / METER
+                    * 1024.0
+                    * crate::defined::FREQ_40K.hz() as f64
+                    / device.ultrasound_freq().hz() as f64)
+                    .round() as u32,
+                rep: self.rep,
+            };
+        } else {
+            *cast::<FocusSTMSubseq>(tx) = FocusSTMSubseq {
+                tag: TypeTag::FocusSTM,
+                flag: if self.segment == Segment::S1 {
+                    FocusSTMControlFlags::SEGMENT
+                } else {
+                    FocusSTMControlFlags::NONE
+                },
+                send_num: send_num as _,
+            };
         }
 
         if self.points.peek().is_none() {
@@ -222,7 +223,7 @@ mod tests {
         );
 
         let mut op = FocusSTMOp::new(
-            points.clone().into_iter(),
+            points.iter().cloned(),
             freq_div,
             rep,
             segment,
@@ -320,7 +321,7 @@ mod tests {
         let rep = rng.gen_range(0x0000001..=0xFFFFFFFF);
         let segment = Segment::S1;
 
-        let mut op = FocusSTMOp::new(points.clone().into_iter(), freq_div, rep, segment, None);
+        let mut op = FocusSTMOp::new(points.iter().cloned(), freq_div, rep, segment, None);
 
         // First frame
         {

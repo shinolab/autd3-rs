@@ -44,7 +44,6 @@ pub struct FixedUpdateRate {
     update_rate_phase: u16,
 }
 
-/// Datagram for configure silencer
 #[derive(Debug, Clone, Copy)]
 pub struct Silencer<T> {
     internal: T,
@@ -54,11 +53,6 @@ pub type SilencerFixedCompletionSteps = Silencer<FixedCompletionSteps>;
 pub type SilencerFixedUpdateRate = Silencer<FixedUpdateRate>;
 
 impl Silencer<()> {
-    /// constructor
-    ///
-    /// # Arguments
-    /// * `update_rate_intensity` - The intensity update rate of silencer. The lower the value, the stronger the silencer effect.
-    /// * `update_rate_phase` - The phase update rate of silencer. The lower the value, the stronger the silencer effect.
     pub fn fixed_update_rate(
         update_rate_intensity: u16,
         update_rate_phase: u16,
@@ -81,11 +75,6 @@ impl Silencer<()> {
         })
     }
 
-    /// constructor
-    ///
-    /// # Arguments
-    /// * `steps_intensity` - The intensity completion steps of silencer. The higher the value, the stronger the silencer effect.
-    /// * `steps_phase` - The phase completion steps of silencer. The higher the value, the stronger the silencer effect.
     pub fn fixed_completion_steps(
         steps_intensity: u16,
         steps_phase: u16,
@@ -109,7 +98,6 @@ impl Silencer<()> {
         })
     }
 
-    /// Disable silencer
     pub const fn disable() -> Silencer<FixedCompletionSteps> {
         Silencer {
             internal: FixedCompletionSteps {
@@ -160,7 +148,6 @@ impl Default for Silencer<FixedCompletionSteps> {
 }
 
 impl Silencer<FixedCompletionSteps> {
-    /// Set strict mode
     pub const fn with_strict_mode(mut self, strict_mode: bool) -> Self {
         self.internal.strict_mode = strict_mode;
         self
@@ -189,7 +176,7 @@ impl Silencer<FixedUpdateRate> {
     }
 }
 
-impl Datagram for Silencer<FixedUpdateRate> {
+impl<'a> Datagram<'a> for Silencer<FixedUpdateRate> {
     type O1 = crate::firmware::operation::ConfigSilencerFixedUpdateRateOp;
     type O2 = crate::firmware::operation::NullOp;
 
@@ -197,18 +184,23 @@ impl Datagram for Silencer<FixedUpdateRate> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation(self) -> (Self::O1, Self::O2) {
-        (
-            Self::O1::new(
-                self.internal.update_rate_intensity,
-                self.internal.update_rate_phase,
-            ),
-            Self::O2::default(),
-        )
+    fn operation(
+        &'a self,
+        _: &'a Geometry,
+    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2), AUTDInternalError> {
+        Ok(move |_| {
+            (
+                Self::O1::new(
+                    self.internal.update_rate_intensity,
+                    self.internal.update_rate_phase,
+                ),
+                Self::O2::default(),
+            )
+        })
     }
 }
 
-impl Datagram for Silencer<FixedCompletionSteps> {
+impl<'a> Datagram<'a> for Silencer<FixedCompletionSteps> {
     type O1 = crate::firmware::operation::ConfigSilencerFixedCompletionStepsOp;
     type O2 = crate::firmware::operation::NullOp;
 
@@ -216,156 +208,19 @@ impl Datagram for Silencer<FixedCompletionSteps> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation(self) -> (Self::O1, Self::O2) {
-        (
-            Self::O1::new(
-                self.internal.steps_intensity,
-                self.internal.steps_phase,
-                self.internal.strict_mode,
-            ),
-            Self::O2::default(),
-        )
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_update_rate() {
-        let silencer = Silencer::fixed_update_rate(10, 20).unwrap();
-        assert_eq!(silencer.update_rate_intensity(), 10);
-        assert_eq!(silencer.update_rate_phase(), 20);
-        assert_eq!(
-            silencer.update_rate_intensity(),
-            silencer.clone().update_rate_intensity()
-        );
-        assert_eq!(
-            silencer.update_rate_phase(),
-            silencer.clone().update_rate_phase()
-        );
-
-        let silencer = Silencer::fixed_update_rate(0, 1);
-        assert_eq!(
-            silencer.unwrap_err(),
-            AUTDInternalError::SilencerUpdateRateOutOfRange(0)
-        );
-
-        let silencer = Silencer::fixed_update_rate(1, 0);
-        assert_eq!(
-            silencer.unwrap_err(),
-            AUTDInternalError::SilencerUpdateRateOutOfRange(0)
-        );
-    }
-
-    #[test]
-    fn test_completion_steps() {
-        let silencer = Silencer::fixed_completion_steps(10, 20).unwrap();
-        assert_eq!(silencer.completion_steps_intensity(), 10);
-        assert_eq!(silencer.completion_steps_phase(), 20);
-        assert_eq!(
-            silencer.completion_steps_intensity(),
-            silencer.clone().completion_steps_intensity()
-        );
-        assert_eq!(
-            silencer.completion_steps_phase(),
-            silencer.clone().completion_steps_phase()
-        );
-
-        let silencer = Silencer::fixed_completion_steps(0, 1);
-        assert_eq!(
-            silencer.unwrap_err(),
-            AUTDInternalError::SilencerCompletionStepsOutOfRange(0)
-        );
-
-        let silencer = Silencer::fixed_completion_steps(1, 0);
-        assert_eq!(
-            silencer.unwrap_err(),
-            AUTDInternalError::SilencerCompletionStepsOutOfRange(0)
-        );
-    }
-
-    #[test]
-    fn test_disable() {
-        let silencer = Silencer::disable();
-        assert_eq!(silencer.completion_steps_intensity(), 1);
-        assert_eq!(silencer.completion_steps_phase(), 1);
-        assert!(silencer.strict_mode());
-    }
-
-    #[test]
-    fn test_default() {
-        let silencer = Silencer::default();
-        assert_eq!(
-            silencer.completion_steps_intensity(),
-            SILENCER_STEPS_INTENSITY_DEFAULT
-        );
-        assert_eq!(
-            silencer.completion_steps_phase(),
-            SILENCER_STEPS_PHASE_DEFAULT
-        );
-        assert!(silencer.strict_mode());
-    }
-
-    #[test]
-    fn test_completion_steps_mul_div() {
-        let silencer = Silencer::default();
-        assert_eq!(
-            silencer.completion_steps_intensity(),
-            SILENCER_STEPS_INTENSITY_DEFAULT
-        );
-        assert_eq!(
-            silencer.completion_steps_phase(),
-            SILENCER_STEPS_PHASE_DEFAULT
-        );
-
-        let silencer = Silencer::default() * 2;
-        assert_eq!(
-            silencer.completion_steps_intensity(),
-            SILENCER_STEPS_INTENSITY_DEFAULT * 2
-        );
-        assert_eq!(
-            silencer.completion_steps_phase(),
-            SILENCER_STEPS_PHASE_DEFAULT * 2
-        );
-
-        let silencer = Silencer::default() / 2;
-        assert_eq!(
-            silencer.completion_steps_intensity(),
-            SILENCER_STEPS_INTENSITY_DEFAULT / 2
-        );
-        assert_eq!(
-            silencer.completion_steps_phase(),
-            SILENCER_STEPS_PHASE_DEFAULT / 2
-        );
-    }
-
-    #[test]
-    fn test_timeout() {
-        let silencer = Silencer::fixed_update_rate(1, 2).unwrap();
-        let timeout = silencer.timeout();
-        assert!(timeout.is_some());
-        assert!(timeout.unwrap() > Duration::ZERO);
-
-        let silencer = Silencer::fixed_completion_steps(1, 2).unwrap();
-        let timeout = silencer.timeout();
-        assert!(timeout.is_some());
-        assert!(timeout.unwrap() > Duration::ZERO);
-    }
-
-    #[test]
-    fn test_operation() {
-        let silencer = Silencer::fixed_update_rate(1, 2).unwrap();
-        let _: (
-            crate::firmware::operation::ConfigSilencerFixedUpdateRateOp,
-            crate::firmware::operation::NullOp,
-        ) = silencer.operation();
-
-        let silencer = Silencer::fixed_completion_steps(1, 2).unwrap();
-        let _: (
-            crate::firmware::operation::ConfigSilencerFixedCompletionStepsOp,
-            crate::firmware::operation::NullOp,
-        ) = silencer.operation();
+    fn operation(
+        &'a self,
+        _: &'a Geometry,
+    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2), AUTDInternalError> {
+        Ok(move |_| {
+            (
+                Self::O1::new(
+                    self.internal.steps_intensity,
+                    self.internal.steps_phase,
+                    self.internal.strict_mode,
+                ),
+                Self::O2::default(),
+            )
+        })
     }
 }

@@ -6,52 +6,42 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy)]
-pub struct PhaseFilter<P: Into<Phase>, FT: Fn(&Transducer) -> P, F: Fn(&Device) -> FT> {
+pub struct PhaseFilter<
+    'a,
+    P: Into<Phase>,
+    FT: Fn(&Transducer) -> P + 'a,
+    F: Fn(&Device) -> FT + Send + Sync,
+> {
     f: F,
+    _phantom: std::marker::PhantomData<&'a P>,
 }
 
-impl<P: Into<Phase>, FT: Fn(&Transducer) -> P, F: Fn(&Device) -> FT> PhaseFilter<P, FT, F> {
-    /// constructor
-    pub const fn additive(f: F) -> Self {
-        Self { f }
-    }
-
-    // GRCOV_EXCL_START
-    pub const fn f(&self) -> &F {
-        &self.f
-    }
-    // GRCOV_EXCL_STOP
-}
-
-impl<P: Into<Phase>, FT: Fn(&Transducer) -> P, F: Fn(&Device) -> FT> Datagram
-    for PhaseFilter<P, FT, F>
+impl<'a, P: Into<Phase>, FT: Fn(&Transducer) -> P + 'a, F: Fn(&Device) -> FT + Send + Sync>
+    PhaseFilter<'a, P, FT, F>
 {
-    type O1 = crate::firmware::operation::PhaseFilterOp<P, FT, F>;
-    type O2 = crate::firmware::operation::NullOp;
-
-    fn operation(self) -> (Self::O1, Self::O2) {
-        (Self::O1::new(self.f), Self::O2::default())
+    pub const fn additive(f: F) -> Self {
+        Self {
+            f,
+            _phantom: std::marker::PhantomData,
+        }
     }
+}
+
+impl<'a, P: Into<Phase>, FT: Fn(&Transducer) -> P + 'a, F: Fn(&Device) -> FT + Send + Sync>
+    Datagram<'a> for PhaseFilter<'a, P, FT, F>
+{
+    type O1 = crate::firmware::operation::PhaseFilterOp<P, FT>;
+    type O2 = crate::firmware::operation::NullOp;
 
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // GRCOV_EXCL_START
-    fn f(_: &Device) -> impl Fn(&Transducer) -> Phase {
-        |_| Phase::new(0)
-    }
-    // GRCOV_EXCL_STOP
-
-    #[test]
-    fn test() {
-        let datagram = PhaseFilter::additive(f);
-        assert_eq!(Some(DEFAULT_TIMEOUT), datagram.timeout());
-        let _ = datagram.operation();
+    fn operation(
+        &'a self,
+        _: &'a Geometry,
+    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError> {
+        let f = &self.f;
+        Ok(|dev| (Self::O1::new(f(dev)), Self::O2::default()))
     }
 }

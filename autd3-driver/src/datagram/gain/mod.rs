@@ -12,6 +12,7 @@ pub use transform::Transform as GainTransform;
 
 use crate::{
     derive::Geometry,
+    error::AUTDInternalError,
     firmware::{
         fpga::{Drive, Segment},
         operation::{GainOp, NullOp},
@@ -21,8 +22,6 @@ use crate::{
 
 use bitvec::prelude::*;
 
-use self::transform::AUTDInternalError;
-
 use super::with_segment::DatagramS;
 
 pub enum GainFilter<'a> {
@@ -31,9 +30,9 @@ pub enum GainFilter<'a> {
 }
 
 pub type GainCalcFn<'a> =
-    Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Send + Sync + 'a> + Send + Sync + 'a>;
+    Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + 'a> + Send + Sync + 'a>;
 
-pub trait Gain: Send + Sync {
+pub trait Gain {
     fn calc<'a>(
         &'a self,
         geometry: &'a Geometry,
@@ -93,7 +92,7 @@ mod tests {
     #[derive(Gain, Clone, Copy, PartialEq, Debug)]
     pub struct TestGain<FT, F>
     where
-        FT: Fn(&Transducer) -> Drive + Send + Sync + 'static,
+        FT: Fn(&Transducer) -> Drive + 'static,
         F: Fn(&Device) -> FT + Send + Sync + 'static,
     {
         pub f: F,
@@ -101,8 +100,8 @@ mod tests {
 
     impl
         TestGain<
-            Box<dyn Fn(&Transducer) -> Drive + Send + Sync>,
-            Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Send + Sync> + Send + Sync>,
+            Box<dyn Fn(&Transducer) -> Drive>,
+            Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive> + Send + Sync>,
         >
     {
         pub fn null() -> Self {
@@ -112,10 +111,8 @@ mod tests {
         }
     }
 
-    impl<
-            FT: Fn(&Transducer) -> Drive + Send + Sync + 'static,
-            F: Fn(&Device) -> FT + Send + Sync + 'static,
-        > Gain for TestGain<FT, F>
+    impl<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + Send + Sync + 'static> Gain
+        for TestGain<FT, F>
     {
         fn calc<'a>(
             &'a self,

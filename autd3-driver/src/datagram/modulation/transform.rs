@@ -1,9 +1,10 @@
 use crate::derive::*;
 
-/// Modulation to transform modulation data
+use super::ModCalcFn;
+
 #[derive(Modulation)]
 #[no_modulation_transform]
-pub struct Transform<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> {
+pub struct Transform<M: Modulation, F: Fn(usize, u8) -> u8 + Send + Sync> {
     m: M,
     #[no_change]
     config: SamplingConfig,
@@ -11,7 +12,7 @@ pub struct Transform<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity
     loop_behavior: LoopBehavior,
 }
 
-impl<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> Transform<M, F> {
+impl<M: Modulation, F: Fn(usize, u8) -> u8 + Send + Sync> Transform<M, F> {
     #[doc(hidden)]
     pub fn new(m: M, f: F) -> Self {
         Self {
@@ -24,23 +25,16 @@ impl<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> Transform<M, F
 }
 
 pub trait IntoTransform<M: Modulation> {
-    /// transform modulation data
-    ///
-    /// # Arguments
-    ///
-    /// * `f` - transform function. The first argument is index of the element, and the second argument is the value of the element of the original modulation data.
-    fn with_transform<F: Fn(usize, EmitIntensity) -> EmitIntensity>(self, f: F) -> Transform<M, F>;
+    fn with_transform<F: Fn(usize, u8) -> u8 + Send + Sync>(self, f: F) -> Transform<M, F>;
 }
 
-impl<M: Modulation, F: Fn(usize, EmitIntensity) -> EmitIntensity> Modulation for Transform<M, F> {
-    fn calc(&self, geometry: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        Ok(self
-            .m
-            .calc(geometry)?
-            .into_iter()
-            .enumerate()
-            .map(|(i, x)| (self.f)(i, x))
-            .collect())
+impl<M: Modulation, F: Fn(usize, u8) -> u8 + Send + Sync> Modulation for Transform<M, F> {
+    fn calc<'a>(&'a self, geometry: &'a Geometry) -> Result<ModCalcFn<'a>, AUTDInternalError> {
+        let src = self.m.calc(geometry)?;
+        let f = &self.f;
+        Ok(Box::new(move |dev| {
+            Box::new(src(dev).enumerate().map(move |(i, x)| (f)(i, x)))
+        }))
     }
 }
 
@@ -60,7 +54,7 @@ mod tests {
         assert_eq!(
             config,
             TestModulation {
-                buf: vec![EmitIntensity::MIN; 2],
+                buf: vec![u8::MIN; 2],
                 config,
                 loop_behavior: LoopBehavior::infinite(),
             }
@@ -70,22 +64,27 @@ mod tests {
     }
 
     #[test]
-    fn test() {
+    fn test() -> anyhow::Result<()> {
         let geometry = create_geometry(1, 249, FREQ_40K);
 
         let mut rng = rand::thread_rng();
 
-        let buf = vec![EmitIntensity::new(rng.gen()), EmitIntensity::new(rng.gen())];
+        let buf = vec![rng.gen(), rng.gen()];
+        geometry.devices().try_for_each(|dev| {
+            assert_eq!(
+                buf.iter().map(|&x| x / 2).collect::<Vec<_>>(),
+                TestModulation {
+                    buf: buf.clone(),
+                    config: SamplingConfig::Freq(4 * kHz),
+                    loop_behavior: LoopBehavior::infinite(),
+                }
+                .with_transform(|_, x| x / 2)
+                .calc(&geometry)?(dev)
+                .collect::<Vec<_>>()
+            );
+            Result::<(), AUTDInternalError>::Ok(())
+        })?;
 
-        assert_eq!(
-            Ok(buf.iter().map(|&x| x / 2).collect::<Vec<_>>()),
-            TestModulation {
-                buf: buf.clone(),
-                config: SamplingConfig::Freq(4 * kHz),
-                loop_behavior: LoopBehavior::infinite(),
-            }
-            .with_transform(|_, x| x / 2)
-            .calc(&geometry)
-        );
+        Ok(())
     }
 }
