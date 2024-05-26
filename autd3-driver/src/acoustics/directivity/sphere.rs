@@ -1,6 +1,5 @@
 use super::*;
 
-/// Directivity of spherical wave
 pub struct Sphere {}
 
 impl Directivity for Sphere {

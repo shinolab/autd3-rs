@@ -29,7 +29,6 @@ const INDEX_OFFSET_BASE: u32 = 0x8100_0000;
 const INDEX_OFFSET_BASE_READ: u32 = 0x8000_0000;
 const PORT: u16 = 301;
 
-/// Link using TwinCAT3
 pub struct TwinCAT {
     port: i32,
     send_addr: AmsAddr,

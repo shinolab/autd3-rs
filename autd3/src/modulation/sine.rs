@@ -5,7 +5,6 @@ use autd3_driver::{
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
-/// Sine wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug, Builder)]
 pub struct Sine<S: SamplingMode> {
     #[get]

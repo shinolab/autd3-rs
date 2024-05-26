@@ -7,15 +7,6 @@ use crate::{
 
 use directivity::Directivity;
 
-/// Calculate propagation of ultrasound wave
-///
-/// # Arguments
-///
-/// * `tr` - Source [Transducer]
-/// * `attenuation` - Attenuation coefficient
-/// * `wavenumber` - Wavenumber
-/// * `target_pos` - Position of target
-///
 pub fn propagate<D: Directivity>(
     tr: &Transducer,
     attenuation: f64,

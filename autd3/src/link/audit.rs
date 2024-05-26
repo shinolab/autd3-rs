@@ -10,7 +10,6 @@ use autd3_driver::{
 };
 use autd3_firmware_emulator::CPUEmulator;
 
-/// Link for test
 pub struct Audit {
     is_open: bool,
     timeout: Duration,

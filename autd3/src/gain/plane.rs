@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use autd3_driver::{derive::*, geometry::Vector3};
 
-/// Gain to produce a plane wave
 #[derive(Gain, Clone, PartialEq, Debug, Builder)]
 pub struct Plane {
     #[get]
@@ -14,12 +13,6 @@ pub struct Plane {
 }
 
 impl Plane {
-    /// constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `dir` - direction of the plane wave
-    ///
     pub const fn new(dir: Vector3) -> Self {
         Self {
             dir,

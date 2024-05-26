@@ -35,7 +35,6 @@ use super::{
     TimerStrategy,
 };
 
-/// Link using [SOEM](https://github.com/OpenEtherCATsociety/SOEM)
 pub struct SOEM {
     timeout: Duration,
     sender: Sender<TxDatagram>,

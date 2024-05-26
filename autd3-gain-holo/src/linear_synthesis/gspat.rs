@@ -7,10 +7,6 @@ use crate::{
 
 use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vector3};
 
-/// Gain to produce multiple foci with GS-PAT algorithm
-///
-/// Reference
-/// * Plasencia, Diego Martinez, et al. "GS-PAT: high-speed multi-point sound-fields for phased arrays of transducers." ACM Transactions on Graphics (TOG) 39.4 (2020): 138-1.
 #[derive(Gain, Builder)]
 #[no_const]
 pub struct GSPAT<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
@@ -113,10 +109,8 @@ mod tests {
 
     #[test]
     fn test_gspat_all() {
-        let geometry: Geometry = Geometry::new(
-            vec![AUTD3::new(Vector3::zeros()).into_device(0)],
-            FREQ_40K,
-        );
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], FREQ_40K);
         let backend = Arc::new(NalgebraBackend::default());
 
         let g = GSPAT::new(backend)
@@ -140,10 +134,8 @@ mod tests {
 
     #[test]
     fn test_gspat_filtered() {
-        let geometry: Geometry = Geometry::new(
-            vec![AUTD3::new(Vector3::zeros()).into_device(0)],
-            FREQ_40K,
-        );
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], FREQ_40K);
         let backend = Arc::new(NalgebraBackend::default());
 
         let g = GSPAT::new(backend)

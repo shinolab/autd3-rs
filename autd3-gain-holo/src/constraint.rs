@@ -1,17 +1,15 @@
 use autd3_driver::firmware::fpga::EmitIntensity;
 
-/// Emission constraint
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum EmissionConstraint {
-    /// Do nothing (this is equivalent to `Clamp(EmitIntensity::MIN, EmitIntensity::MAX)`)
     DontCare,
-    /// Normalize the value by dividing the maximum value
+
     Normalize,
-    /// Normalize and then multiply by the specified value
+
     Multiply(f64),
-    /// Set all amplitudes to the specified value
+
     Uniform(EmitIntensity),
-    /// Clamp all amplitudes to the specified range
+
     Clamp(EmitIntensity, EmitIntensity),
 }
 

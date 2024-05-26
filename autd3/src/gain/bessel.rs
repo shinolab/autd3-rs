@@ -6,7 +6,6 @@ use autd3_driver::{
     geometry::{UnitQuaternion, Vector3},
 };
 
-/// Gain to produce a Bessel beam
 #[derive(Gain, Clone, PartialEq, Debug, Builder)]
 pub struct Bessel {
     #[get]
@@ -22,14 +21,6 @@ pub struct Bessel {
 }
 
 impl Bessel {
-    /// constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `pos` - Start point of the beam (the apex of the conical wavefront of the beam)
-    /// * `dir` - Direction of the beam
-    /// * `theta` - Angle between the conical wavefront of the beam and the plane normal to `dir`
-    ///
     pub const fn new(pos: Vector3, dir: Vector3, theta: Angle) -> Self {
         Self {
             pos,

@@ -6,7 +6,6 @@ use std::ffi::CStr;
 use std::ops::Index;
 use std::slice;
 
-/// Ethernet adapter
 #[derive(Clone)]
 pub struct EthernetAdapter {
     desc: String,
@@ -14,12 +13,10 @@ pub struct EthernetAdapter {
 }
 
 impl EthernetAdapter {
-    /// Description of the adapter
     pub fn desc(&self) -> &str {
         &self.desc
     }
 
-    /// Name of the adapter
     pub fn name(&self) -> &str {
         &self.name
     }

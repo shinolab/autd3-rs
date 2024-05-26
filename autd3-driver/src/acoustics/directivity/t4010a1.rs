@@ -52,7 +52,6 @@ static DIR_COEF_D: &[f64] = &[
     -4.79372835035e-06,
 ];
 
-/// Directivity of T4010A1
 pub struct T4010A1 {}
 
 impl Directivity for T4010A1 {

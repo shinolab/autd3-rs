@@ -8,7 +8,6 @@ pub struct Custom<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT +
 }
 
 impl<FT: Fn(&Transducer) -> Drive + 'static, F: Fn(&Device) -> FT + Sync + 'static> Custom<FT, F> {
-    /// constructor
     pub const fn new(f: F) -> Self {
         Self { f }
     }

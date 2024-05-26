@@ -15,10 +15,6 @@ use autd3_driver::{
 use nalgebra::ComplexField;
 use rand::seq::SliceRandom;
 
-/// Gain to produce multiple foci with greedy algorithm
-///
-/// Reference
-/// * Suzuki, Shun, et al. "Radiation pressure field reconstruction for ultrasound midair haptics by Greedy algorithm with brute-force search." IEEE Transactions on Haptics 14.4 (2021): 914-921.
 #[derive(Gain, Builder)]
 #[no_const]
 pub struct Greedy<D: Directivity + 'static> {

@@ -18,7 +18,6 @@ const INDEX_OFFSET_BASE: u32 = 0x8100_0000;
 const INDEX_OFFSET_BASE_READ: u32 = 0x8000_0000;
 const PORT: u16 = 301;
 
-/// Link for remote TwinCAT3 server via [ADS](https://github.com/Beckhoff/ADS) library
 pub struct RemoteTwinCAT {
     port: c_long,
     net_id: AmsNetId,

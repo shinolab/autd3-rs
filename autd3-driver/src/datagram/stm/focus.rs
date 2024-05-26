@@ -6,14 +6,6 @@ use crate::{
 
 use super::ControlPoint;
 
-/// FocusSTM is an STM for moving a single focal point.
-///
-/// The sampling timing is determined by hardware, thus the sampling time is precise.
-///
-/// FocusSTM has following restrictions:
-/// - The maximum number of sampling points is [crate::fpga::FOCUS_STM_BUF_SIZE_MAX].
-/// - The sampling freq is [crate::firmware::fpga::fpga_clk_freq()]/N, where `N` is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN]
-///
 #[derive(Clone, Builder)]
 pub struct FocusSTM {
     control_points: Vec<ControlPoint>,
@@ -24,12 +16,6 @@ pub struct FocusSTM {
 }
 
 impl FocusSTM {
-    /// constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `freq` - Frequency of STM.
-    ///
     pub const fn from_freq(freq: Freq<f64>) -> Self {
         Self {
             control_points: Vec::new(),
@@ -38,12 +24,6 @@ impl FocusSTM {
         }
     }
 
-    /// constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `freq` - Frequency of STM. The freq closest to `freq` from the possible frequencies is set.
-    ///
     pub const fn from_freq_nearest(freq: Freq<f64>) -> Self {
         Self {
             control_points: Vec::new(),
@@ -52,12 +32,6 @@ impl FocusSTM {
         }
     }
 
-    /// constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `config` - Sampling configuration
-    ///
     pub const fn from_sampling_config(config: SamplingConfig) -> Self {
         Self {
             control_points: Vec::new(),
@@ -66,13 +40,11 @@ impl FocusSTM {
         }
     }
 
-    /// Add [ControlPoint] to FocusSTM
     pub fn add_focus(mut self, point: impl Into<ControlPoint>) -> Self {
         self.control_points.push(point.into());
         self
     }
 
-    /// Add [ControlPoint]s to FocusSTM
     pub fn add_foci_from_iter(
         mut self,
         iter: impl IntoIterator<Item = impl Into<ControlPoint>>,
@@ -82,10 +54,6 @@ impl FocusSTM {
         self
     }
 
-    /// Clear current [ControlPoint]s
-    ///
-    /// # Returns
-    /// removed [ControlPoint]s
     pub fn clear(&mut self) -> Vec<ControlPoint> {
         std::mem::take(&mut self.control_points)
     }

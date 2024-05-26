@@ -25,7 +25,6 @@ use crate::{
 pub use builder::ControllerBuilder;
 pub use group::GroupGuard;
 
-/// Controller for AUTD
 pub struct Controller<L: Link> {
     pub link: L,
     pub geometry: Geometry,
@@ -34,7 +33,6 @@ pub struct Controller<L: Link> {
 }
 
 impl Controller<Nop> {
-    /// Create Controller builder
     pub const fn builder() -> ControllerBuilder {
         ControllerBuilder::new()
     }
@@ -51,12 +49,6 @@ impl<L: Link> Controller<L> {
 }
 
 impl<L: Link> Controller<L> {
-    /// Send data to the devices
-    ///
-    /// # Arguments
-    ///
-    /// * `s` - Datagram
-    ///
     pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDError> {
         let timeout = s.timeout();
 
@@ -86,12 +78,6 @@ impl<L: Link> Controller<L> {
         Ok(())
     }
 
-    /// Get firmware information
-    ///
-    /// # Returns
-    ///
-    /// * `Ok(Vec<FirmwareVersion>)` - List of firmware information
-    ///
     pub async fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDError> {
         let mut op = autd3_driver::firmware::operation::FirmInfoOp::default();
         let mut null_op = autd3_driver::firmware::operation::NullOp::default();
@@ -190,13 +176,6 @@ impl<L: Link> Controller<L> {
             .collect())
     }
 
-    /// Get FPGA state
-    ///
-    /// # Returns
-    ///
-    /// * `Ok(Vec<Option<FPGAState>>)` - List of FPGA state the latest data is fetched. If the reads FPGA state flag is not set, the value is None. See [autd3_driver::datagram::ReadsFPGAState].
-    /// * `Err(AUTDError::ReadFPGAStateFailed)` - If failure to fetch the latest data
-    ///
     pub async fn fpga_state(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDError> {
         if self.link.receive(&mut self.rx_buf).await? {
             Ok(self.rx_buf.iter().map(Option::<FPGAState>::from).collect())

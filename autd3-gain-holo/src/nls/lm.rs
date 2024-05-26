@@ -7,12 +7,6 @@ use crate::{
 
 use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vector3};
 
-/// Gain to produce multiple foci with Levenberg-Marquardt algorithm
-///
-/// References
-/// * Levenberg, Kenneth. "A method for the solution of certain non-linear problems in least squares." Quarterly of applied mathematics 2.2 (1944): 164-168.
-/// * Marquardt, Donald W. "An algorithm for least-squares estimation of nonlinear parameters." Journal of the society for Industrial and Applied Mathematics 11.2 (1963): 431-441.
-/// * K.Madsen, H.Nielsen, and O.Tingleff, “Methods for non-linear least squares problems (2nd ed.),” 2004.
 #[derive(Gain, Builder)]
 #[no_const]
 pub struct LM<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {

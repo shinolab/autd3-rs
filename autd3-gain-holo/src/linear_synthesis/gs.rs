@@ -7,10 +7,6 @@ use crate::{
 
 use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vector3};
 
-/// Gain to produce multiple foci with GS algorithm
-///
-/// Reference
-/// * Marzo, Asier, and Bruce W. Drinkwater. "Holographic acoustic tweezers." Proceedings of the National Academy of Sciences 116.1 (2019): 84-89.
 #[derive(Gain, Builder)]
 #[no_const]
 pub struct GS<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {

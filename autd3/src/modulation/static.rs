@@ -1,6 +1,5 @@
 use autd3_driver::derive::*;
 
-/// Without modulation
 #[derive(Modulation, Clone, Debug, PartialEq, Builder)]
 pub struct Static {
     #[get]
@@ -11,7 +10,6 @@ pub struct Static {
 }
 
 impl Static {
-    /// constructor
     pub const fn new() -> Self {
         Self {
             intensity: EmitIntensity::MAX,
@@ -20,12 +18,6 @@ impl Static {
         }
     }
 
-    /// set intensity
-    ///
-    /// # Arguments
-    ///
-    /// * `intensity` - intensity
-    ///
     pub fn with_intensity(intensity: impl Into<EmitIntensity>) -> Self {
         Self {
             intensity: intensity.into(),

@@ -2,12 +2,10 @@ use std::collections::HashMap;
 
 use autd3_driver::derive::*;
 
-/// Gain to output nothing
 #[derive(Gain, Default, Clone, PartialEq, Eq, Debug)]
 pub struct Null {}
 
 impl Null {
-    /// constructor
     pub const fn new() -> Self {
         Self {}
     }

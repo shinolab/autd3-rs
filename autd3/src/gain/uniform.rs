@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use autd3_driver::derive::*;
 
-/// Gain with uniform emission intensity and phase
 #[derive(Gain, Clone, PartialEq, Debug, Builder)]
 pub struct Uniform {
     #[get]
@@ -12,12 +11,6 @@ pub struct Uniform {
 }
 
 impl Uniform {
-    /// constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `intensity` - Emission intensity
-    ///
     pub fn new(intensity: impl Into<EmitIntensity>) -> Self {
         Self {
             intensity: intensity.into(),

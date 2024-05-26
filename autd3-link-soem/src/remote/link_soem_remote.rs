@@ -8,7 +8,6 @@ use autd3_driver::{
 
 use autd3_protobuf::*;
 
-/// Link to connect to remote SOEMServer
 pub struct RemoteSOEM {
     client: ecat_client::EcatClient<tonic::transport::Channel>,
     timeout: Duration,
