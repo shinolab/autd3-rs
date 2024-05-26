@@ -45,10 +45,6 @@ impl<'a> Operation for GainOp<'a> {
     }
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        assert!(
-            tx.len() >= std::mem::size_of::<GainT>() + device.len() * std::mem::size_of::<Drive>()
-        );
-
         *cast::<GainT>(tx) = GainT {
             tag: TypeTag::Gain,
             segment: self.segment as u8,

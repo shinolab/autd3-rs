@@ -139,7 +139,7 @@ impl OperationHandler {
         header.slot_2_offset = 0;
 
         let t = &mut tx.payload;
-        assert!(t.len() >= op.required_size(dev));
+
         op.pack(dev, t)
     }
 }

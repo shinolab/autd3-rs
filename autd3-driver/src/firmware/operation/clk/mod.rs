@@ -145,7 +145,6 @@ impl Operation for ConfigureClockOp {
         let offset = std::mem::size_of::<Clk>();
 
         let size = (DRP_ROM_SIZE - sent).min((tx.len() - offset) / std::mem::size_of::<u64>());
-        assert!(size > 0);
 
         *cast::<Clk>(tx) = Clk {
             tag: TypeTag::ConfigFPGAClk,

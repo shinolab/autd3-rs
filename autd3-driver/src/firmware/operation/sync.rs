@@ -18,8 +18,6 @@ pub struct SyncOp {
 
 impl Operation for SyncOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        assert!(tx.len() >= std::mem::size_of::<Sync>());
-
         *cast::<Sync>(tx) = Sync {
             tag: TypeTag::Sync,
             __pad: [0; 3],

@@ -61,7 +61,6 @@ impl<F: Fn(usize) -> u16> Operation for PulseWidthEncoderOp<F> {
         };
 
         let size = self.remains.min(tx.len() - offset) & !0x1;
-        assert!(size > 0);
 
         if sent == 0 {
             *cast::<PWEHead>(tx) = PWEHead {

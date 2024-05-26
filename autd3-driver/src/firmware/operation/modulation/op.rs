@@ -70,7 +70,6 @@ impl Operation for ModulationOp {
         };
 
         let mod_size = self.remains.min(tx.len() - offset);
-        assert!(mod_size > 0);
 
         if sent == 0 {
             *cast::<ModulationHead>(tx) = ModulationHead {
