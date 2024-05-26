@@ -84,8 +84,9 @@ impl<G: Gain + 'static> Gain for Cache<G> {
         _filter: GainFilter<'a>,
     ) -> Result<GainCalcFn<'a>, AUTDInternalError> {
         self.init(geometry)?;
-        Ok(Box::new(|dev| {
-            let cache = self.drives()[&dev.idx()].clone();
+        let drives = self.drives().clone();
+        Ok(Box::new(move |dev| {
+            let cache = drives[&dev.idx()].clone();
             Box::new(move |tr| cache[tr.idx()])
         }))
     }

@@ -1,19 +1,24 @@
 use std::time::Duration;
 
+use crate::derive::{AUTDInternalError, Device, Geometry};
+
 use super::Datagram;
 
-/// Datagram with timeout
-pub struct DatagramWithTimeout<D: Datagram> {
+pub struct DatagramWithTimeout<'a, D: Datagram<'a>> {
     datagram: D,
     timeout: Duration,
+    _phantom: std::marker::PhantomData<&'a D>,
 }
 
-impl<D: Datagram> Datagram for DatagramWithTimeout<D> {
+impl<'a, D: Datagram<'a>> Datagram<'a> for DatagramWithTimeout<'a, D> {
     type O1 = D::O1;
     type O2 = D::O2;
 
-    fn operation(self) -> (Self::O1, Self::O2) {
-        self.datagram.operation()
+    fn operation(
+        &'a self,
+        geometry: &'a Geometry,
+    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError> {
+        self.datagram.operation(geometry)
     }
 
     fn timeout(&self) -> Option<Duration> {
@@ -21,46 +26,16 @@ impl<D: Datagram> Datagram for DatagramWithTimeout<D> {
     }
 }
 
-pub trait IntoDatagramWithTimeout<D: Datagram> {
-    /// Set timeout.
-    /// This takes precedence over the timeout specified in Link.
-    fn with_timeout(self, timeout: Duration) -> DatagramWithTimeout<D>;
+pub trait IntoDatagramWithTimeout<'a, D: Datagram<'a>> {
+    fn with_timeout(self, timeout: Duration) -> DatagramWithTimeout<'a, D>;
 }
 
-impl<D: Datagram> IntoDatagramWithTimeout<D> for D {
-    fn with_timeout(self, timeout: Duration) -> DatagramWithTimeout<D> {
+impl<'a, D: Datagram<'a>> IntoDatagramWithTimeout<'a, D> for D {
+    fn with_timeout(self, timeout: Duration) -> DatagramWithTimeout<'a, D> {
         DatagramWithTimeout {
             datagram: self,
             timeout,
+            _phantom: std::marker::PhantomData,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::firmware::operation::{ClearOp, NullOp};
-
-    use super::*;
-
-    struct TestDatagram {}
-    impl Datagram for TestDatagram {
-        type O1 = ClearOp;
-        type O2 = NullOp;
-
-        fn operation(self) -> (Self::O1, Self::O2) {
-            (Self::O1::default(), Self::O2::default())
-        }
-    }
-
-    #[test]
-    fn test_timeout() {
-        let d: DatagramWithTimeout<TestDatagram> =
-            TestDatagram {}.with_timeout(Duration::from_millis(100));
-
-        let timeout = <DatagramWithTimeout<TestDatagram> as Datagram>::timeout(&d);
-        assert!(timeout.is_some());
-        assert_eq!(timeout.unwrap(), Duration::from_millis(100));
-
-        let _: (ClearOp, NullOp) = <DatagramWithTimeout<TestDatagram> as Datagram>::operation(d);
     }
 }

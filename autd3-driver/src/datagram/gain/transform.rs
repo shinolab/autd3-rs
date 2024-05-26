@@ -13,7 +13,7 @@ use super::GainCalcFn;
 #[no_gain_transform]
 pub struct Transform<
     G: Gain + 'static,
-    FT: Fn(&Transducer, Drive) -> Drive + Send + Sync + 'static,
+    FT: Fn(&Transducer, Drive) -> Drive + 'static,
     F: Fn(&Device) -> FT + Send + Sync + 'static,
 > {
     gain: G,
@@ -21,20 +21,14 @@ pub struct Transform<
 }
 
 pub trait IntoTransform<G: Gain> {
-    fn with_transform<
-        FT: Fn(&Transducer, Drive) -> Drive + Send + Sync,
-        F: Fn(&Device) -> FT + Send + Sync,
-    >(
+    fn with_transform<FT: Fn(&Transducer, Drive) -> Drive, F: Fn(&Device) -> FT + Send + Sync>(
         self,
         f: F,
     ) -> Transform<G, FT, F>;
 }
 
-impl<
-        G: Gain,
-        FT: Fn(&Transducer, Drive) -> Drive + Send + Sync,
-        F: Fn(&Device) -> FT + Send + Sync,
-    > Transform<G, FT, F>
+impl<G: Gain, FT: Fn(&Transducer, Drive) -> Drive, F: Fn(&Device) -> FT + Send + Sync>
+    Transform<G, FT, F>
 {
     #[doc(hidden)]
     pub fn new(gain: G, f: F) -> Self {
@@ -42,11 +36,8 @@ impl<
     }
 }
 
-impl<
-        G: Gain,
-        FT: Fn(&Transducer, Drive) -> Drive + Send + Sync,
-        F: Fn(&Device) -> FT + Send + Sync,
-    > Gain for Transform<G, FT, F>
+impl<G: Gain, FT: Fn(&Transducer, Drive) -> Drive, F: Fn(&Device) -> FT + Send + Sync> Gain
+    for Transform<G, FT, F>
 {
     fn calc<'a>(
         &'a self,
@@ -54,8 +45,9 @@ impl<
         filter: GainFilter<'a>,
     ) -> Result<GainCalcFn<'a>, AUTDInternalError> {
         let src = self.gain.calc(geometry, filter)?;
+        let f = &self.f;
         Ok(Box::new(move |dev| {
-            let f = (self.f)(dev);
+            let f = f(dev);
             let src = src(dev);
             Box::new(move |tr| f(tr, src(tr)))
         }))

@@ -1,6 +1,7 @@
 use crate::derive::*;
 
-/// Modulation for modulating radiation pressure instead of amplitude
+use super::ModCalcFn;
+
 #[derive(Modulation)]
 #[no_radiation_pressure]
 #[no_modulation_transform]
@@ -23,18 +24,15 @@ impl<M: Modulation> RadiationPressure<M> {
 }
 
 pub trait IntoRadiationPressure<M: Modulation> {
-    /// Apply modulation to radiation pressure instead of amplitude
     fn with_radiation_pressure(self) -> RadiationPressure<M>;
 }
 
 impl<M: Modulation> Modulation for RadiationPressure<M> {
-    fn calc(&self, geometry: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        Ok(self
-            .m
-            .calc(geometry)?
-            .into_iter()
-            .map(|v| EmitIntensity::new(((v.value() as f64 / 255.).sqrt() * 255.).round() as u8))
-            .collect())
+    fn calc<'a>(&'a self, geometry: &'a Geometry) -> Result<ModCalcFn<'a>, AUTDInternalError> {
+        let src = self.m.calc(geometry)?;
+        Ok(Box::new(move |dev| {
+            Box::new(src(dev).map(|v| ((v as f64 / 255.).sqrt() * 255.).round() as u8))
+        }))
     }
 }
 
@@ -54,7 +52,7 @@ mod tests {
         assert_eq!(
             config,
             TestModulation {
-                buf: vec![EmitIntensity::MIN; 2],
+                buf: vec![u8::MIN; 2],
                 config,
                 loop_behavior: LoopBehavior::infinite(),
             }
@@ -64,26 +62,29 @@ mod tests {
     }
 
     #[test]
-    fn test() {
+    fn test() -> anyhow::Result<()> {
         let geometry = create_geometry(1, 249, FREQ_40K);
 
         let mut rng = rand::thread_rng();
 
-        let buf = vec![EmitIntensity::new(rng.gen()), EmitIntensity::new(rng.gen())];
-        assert_eq!(
-            Ok(buf
-                .iter()
-                .map(|&x| EmitIntensity::new(
-                    ((x.value() as f64 / 255.).sqrt() * 255.).round() as u8
-                ))
-                .collect::<Vec<EmitIntensity>>()),
-            TestModulation {
-                buf: buf.clone(),
-                config: SamplingConfig::Freq(4 * kHz),
-                loop_behavior: LoopBehavior::infinite(),
-            }
-            .with_radiation_pressure()
-            .calc(&geometry)
-        );
+        let buf = vec![rng.gen(), rng.gen()];
+        geometry.devices().try_for_each(|dev| {
+            assert_eq!(
+                buf.iter()
+                    .map(|&x| ((x as f64 / 255.).sqrt() * 255.).round() as u8)
+                    .collect::<Vec<_>>(),
+                TestModulation {
+                    buf: buf.clone(),
+                    config: SamplingConfig::Freq(4 * kHz),
+                    loop_behavior: LoopBehavior::infinite(),
+                }
+                .with_radiation_pressure()
+                .calc(&geometry)?(dev)
+                .collect::<Vec<_>>()
+            );
+            Result::<(), AUTDInternalError>::Ok(())
+        })?;
+
+        Ok(())
     }
 }

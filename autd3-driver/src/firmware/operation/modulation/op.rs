@@ -1,7 +1,10 @@
+use std::iter::Peekable;
+
 use crate::{
+    derive::SamplingConfig,
     error::AUTDInternalError,
     firmware::{
-        fpga::{Segment, TransitionMode, TRANSITION_MODE_NONE},
+        fpga::{Segment, TransitionMode, MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN, TRANSITION_MODE_NONE},
         operation::{cast, Operation, TypeTag},
     },
     geometry::Device,
@@ -28,30 +31,29 @@ struct ModulationSubseq {
     size: u16,
 }
 
-pub struct ModulationOp {
-    modulation: Box<dyn Fn(usize) -> u8>,
-    size: usize,
-    remains: usize,
-    freq_div: u32,
+pub struct ModulationOp<F: ExactSizeIterator<Item = u8>> {
+    modulation: Peekable<F>,
+    sent: usize,
+    is_done: bool,
+    config: SamplingConfig,
     rep: u32,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
 }
 
-impl ModulationOp {
+impl<F: ExactSizeIterator<Item = u8>> ModulationOp<F> {
     pub fn new(
-        modulation: Box<dyn Fn(usize) -> u8>,
-        size: usize,
-        freq_div: u32,
+        modulation: F,
+        config: SamplingConfig,
         rep: u32,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Self {
         Self {
-            modulation,
-            size,
-            remains: size,
-            freq_div,
+            modulation: modulation.peekable(),
+            sent: 0,
+            is_done: false,
+            config,
             rep,
             segment,
             transition_mode,
@@ -59,25 +61,40 @@ impl ModulationOp {
     }
 }
 
-impl Operation for ModulationOp {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        let sent = self.size - self.remains;
+impl<F: ExactSizeIterator<Item = u8>> Operation for ModulationOp<F> {
+    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+        let is_first = self.sent == 0;
 
-        let offset = if sent == 0 {
+        let offset = if is_first {
             std::mem::size_of::<ModulationHead>()
         } else {
             std::mem::size_of::<ModulationSubseq>()
         };
 
-        let mod_size = self.remains.min(tx.len() - offset);
+        let max_mod_size = tx.len() - offset;
+        let send_num = (0..max_mod_size)
+            .filter_map(|_| self.modulation.next())
+            .zip(tx[offset..].iter_mut())
+            .map(|(v, dst)| *dst = v)
+            .fold(0, |acc, _| acc + 1);
 
-        if sent == 0 {
+        self.sent += send_num;
+        if self.sent > MOD_BUF_SIZE_MAX {
+            return Err(AUTDInternalError::ModulationSizeOutOfRange(self.sent));
+        }
+
+        if is_first {
             *cast::<ModulationHead>(tx) = ModulationHead {
                 tag: TypeTag::Modulation,
-                flag: ModulationControlFlags::BEGIN,
-                size: mod_size as u16,
+                flag: ModulationControlFlags::BEGIN
+                    | if self.segment == Segment::S1 {
+                        ModulationControlFlags::SEGMENT
+                    } else {
+                        ModulationControlFlags::NONE
+                    },
+                size: send_num as _,
                 __pad: [0; 3],
-                freq_div: self.freq_div,
+                freq_div: self.config.division(device.ultrasound_freq())?,
                 rep: self.rep,
                 transition_mode: self
                     .transition_mode
@@ -88,15 +105,20 @@ impl Operation for ModulationOp {
         } else {
             *cast::<ModulationSubseq>(tx) = ModulationSubseq {
                 tag: TypeTag::Modulation,
-                flag: ModulationControlFlags::NONE,
-                size: mod_size as u16,
+                flag: if self.segment == Segment::S1 {
+                    ModulationControlFlags::SEGMENT
+                } else {
+                    ModulationControlFlags::NONE
+                },
+                size: send_num as _,
             };
         }
-        cast::<ModulationSubseq>(tx)
-            .flag
-            .set(ModulationControlFlags::SEGMENT, self.segment == Segment::S1);
 
-        if sent + mod_size == self.size {
+        if self.modulation.peek().is_none() {
+            if self.sent < MOD_BUF_SIZE_MIN {
+                return Err(AUTDInternalError::ModulationSizeOutOfRange(self.sent));
+            }
+            self.is_done = true;
             let d = cast::<ModulationSubseq>(tx);
             d.flag.set(ModulationControlFlags::END, true);
             d.flag.set(
@@ -105,32 +127,23 @@ impl Operation for ModulationOp {
             );
         }
 
-        tx[offset..]
-            .iter_mut()
-            .take(mod_size)
-            .enumerate()
-            .for_each(|(i, x)| {
-                *x = (self.modulation)(sent + i);
-            });
-
-        self.remains -= mod_size;
-        if sent == 0 {
-            Ok(std::mem::size_of::<ModulationHead>() + mod_size)
+        if is_first {
+            Ok(std::mem::size_of::<ModulationHead>() + send_num)
         } else {
-            Ok(std::mem::size_of::<ModulationSubseq>() + mod_size)
+            Ok(std::mem::size_of::<ModulationSubseq>() + send_num)
         }
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        if self.remains == self.size {
-            std::mem::size_of::<ModulationHead>() + 1
+        if self.sent == 0 {
+            std::mem::size_of::<ModulationHead>() + 2
         } else {
-            std::mem::size_of::<ModulationSubseq>() + 1
+            std::mem::size_of::<ModulationSubseq>() + 2
         }
     }
 
     fn is_done(&self) -> bool {
-        self.remains == 0
+        self.is_done
     }
 }
 
@@ -177,27 +190,23 @@ mod tests {
         );
 
         let mut op = ModulationOp::new(
-            Box::new({
-                let buf = buf.clone();
-                move |i| buf[i]
-            }),
-            MOD_SIZE,
-            freq_div,
+            buf.iter().cloned(),
+            SamplingConfig::DivisionRaw(freq_div),
             rep,
             segment,
             Some(transition_mode),
         );
 
-        assert_eq!(op.required_size(&device), size_of::<ModulationHead>() + 1);
+        assert_eq!(op.required_size(&device), size_of::<ModulationHead>() + 2);
 
-        assert_eq!(op.remains, MOD_SIZE);
+        assert_eq!(op.sent, 0);
 
         assert_eq!(
             op.pack(&device, &mut tx),
             Ok(size_of::<ModulationHead>() + MOD_SIZE)
         );
 
-        assert_eq!(op.remains, 0);
+        assert_eq!(op.sent, MOD_SIZE);
 
         assert_eq!(
             TypeTag::Modulation as u8,
@@ -254,30 +263,24 @@ mod tests {
         let buf: Vec<u8> = (0..MOD_SIZE).map(|_| rng.gen()).collect();
 
         let mut op = ModulationOp::new(
-            Box::new({
-                let buf = buf.clone();
-                move |i| buf[i]
-            }),
-            MOD_SIZE,
-            SAMPLING_FREQ_DIV_MIN,
+            buf.iter().cloned(),
+            SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
             0xFFFFFFFF,
             Segment::S0,
             Some(TransitionMode::SyncIdx),
         );
 
+        assert_eq!(op.sent, 0);
+
         // First frame
         {
             assert_eq!(
                 op.required_size(&device),
-                std::mem::size_of::<ModulationHead>() + 1
+                std::mem::size_of::<ModulationHead>() + 2
             );
-            assert_eq!(op.remains, MOD_SIZE);
             assert_eq!(op.pack(&device, &mut tx), Ok(FRAME_SIZE));
 
-            assert_eq!(
-                op.remains,
-                MOD_SIZE - (FRAME_SIZE - std::mem::size_of::<ModulationHead>())
-            );
+            assert_eq!(op.sent, FRAME_SIZE - std::mem::size_of::<ModulationHead>());
 
             assert_eq!(TypeTag::Modulation as u8, tx[0]);
             assert_eq!(
@@ -301,16 +304,15 @@ mod tests {
         {
             assert_eq!(
                 op.required_size(&device),
-                std::mem::size_of::<ModulationSubseq>() + 1
+                std::mem::size_of::<ModulationSubseq>() + 2
             );
 
             assert_eq!(op.pack(&device, &mut tx), Ok(FRAME_SIZE));
 
             assert_eq!(
-                op.remains,
-                MOD_SIZE
-                    - (FRAME_SIZE - std::mem::size_of::<ModulationHead>())
-                    - (FRAME_SIZE - std::mem::size_of::<ModulationSubseq>())
+                op.sent,
+                FRAME_SIZE - std::mem::size_of::<ModulationHead>() + FRAME_SIZE
+                    - std::mem::size_of::<ModulationSubseq>()
             );
 
             assert_eq!(TypeTag::Modulation as u8, tx[0]);
@@ -339,11 +341,11 @@ mod tests {
         {
             assert_eq!(
                 op.required_size(&device),
-                std::mem::size_of::<ModulationSubseq>() + 1
+                std::mem::size_of::<ModulationSubseq>() + 2
             );
 
             assert_eq!(op.pack(&device, &mut tx), Ok(FRAME_SIZE));
-            assert_eq!(op.remains, 0);
+            assert_eq!(op.sent, MOD_SIZE);
 
             assert_eq!(TypeTag::Modulation as u8, tx[0]);
             assert_eq!(

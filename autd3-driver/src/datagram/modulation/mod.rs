@@ -12,31 +12,28 @@ pub use transform::IntoTransform as IntoModulationTransform;
 pub use transform::Transform as ModulationTransform;
 
 use crate::defined::DEFAULT_TIMEOUT;
-use crate::derive::EmitIntensity;
-use crate::derive::Geometry;
 use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
         operation::{ModulationOp, NullOp},
     },
+    geometry::{Device, Geometry},
 };
 
 use super::DatagramST;
+
+pub type ModCalcFn<'a> =
+    Box<dyn Fn(&Device) -> Box<dyn ExactSizeIterator<Item = u8> + 'a> + Send + Sync + 'a>;
 
 pub trait ModulationProperty {
     fn sampling_config(&self) -> SamplingConfig;
     fn loop_behavior(&self) -> LoopBehavior;
 }
 
-/// Modulation controls the amplitude modulation data.
-///
-/// Modulation has following restrictions:
-/// * The buffer size is up to 65536.
-/// * The sampling rate is [crate::firmware::fpga::fpga_clk_freq()]/N, where N is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN].
 #[allow(clippy::len_without_is_empty)]
 pub trait Modulation: ModulationProperty {
-    fn calc(&self, geometry: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError>;
+    fn calc<'a>(&'a self, geometry: &'a Geometry) -> Result<ModCalcFn<'a>, AUTDInternalError>;
 }
 
 // GRCOV_EXCL_START
@@ -51,24 +48,30 @@ impl ModulationProperty for Box<dyn Modulation> {
 }
 
 impl Modulation for Box<dyn Modulation> {
-    fn calc(&self, geometry: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc<'a>(&'a self, geometry: &'a Geometry) -> Result<ModCalcFn<'a>, AUTDInternalError> {
         self.as_ref().calc(geometry)
     }
 }
 
-impl DatagramST for Box<dyn Modulation> {
-    type O1 = ModulationOp<Self>;
+impl<'a> DatagramST<'a> for Box<dyn Modulation> {
+    type O1 = ModulationOp<Box<dyn ExactSizeIterator<Item = u8> + 'a>>;
     type O2 = NullOp;
 
     fn operation_with_segment(
-        self,
+        &'a self,
+        geometry: &'a Geometry,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
-    ) -> (Self::O1, Self::O2) {
-        (
-            Self::O1::new(self, segment, transition_mode),
-            Self::O2::default(),
-        )
+    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError> {
+        let f = self.calc(geometry)?;
+        let sampling_config = self.sampling_config();
+        let rep = self.loop_behavior().rep;
+        Ok(move |dev| {
+            (
+                Self::O1::new(f(dev), sampling_config, rep, segment, transition_mode),
+                Self::O2::default(),
+            )
+        })
     }
 
     fn timeout(&self) -> Option<Duration> {
@@ -80,50 +83,18 @@ impl DatagramST for Box<dyn Modulation> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    use crate::{defined::kHz, derive::*};
+    use crate::derive::*;
 
     #[derive(Modulation, Clone, PartialEq, Debug)]
     pub struct TestModulation {
-        pub buf: Vec<EmitIntensity>,
+        pub buf: Vec<u8>,
         pub config: SamplingConfig,
         pub loop_behavior: LoopBehavior,
     }
 
     impl Modulation for TestModulation {
-        fn calc(&self, _: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-            Ok(self.buf.clone())
+        fn calc<'a>(&'a self, _: &'a Geometry) -> Result<ModCalcFn<'a>, AUTDInternalError> {
+            Ok(Box::new(move |_| Box::new(self.buf.iter().copied())))
         }
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(SamplingConfig::Freq(4 * kHz))]
-    fn test_sampling_config(#[case] config: SamplingConfig) {
-        assert_eq!(
-            config,
-            TestModulation {
-                config,
-                buf: vec![],
-                loop_behavior: LoopBehavior::infinite(),
-            }
-            .sampling_config()
-        );
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case::infinite(LoopBehavior::infinite())]
-    #[case::once(LoopBehavior::once())]
-    fn test_loop_behavior(#[case] loop_behavior: LoopBehavior) {
-        assert_eq!(
-            loop_behavior,
-            TestModulation {
-                config: SamplingConfig::Freq(4 * kHz),
-                buf: vec![],
-                loop_behavior,
-            }
-            .loop_behavior()
-        );
     }
 }

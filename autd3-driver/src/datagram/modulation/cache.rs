@@ -1,18 +1,16 @@
 use crate::derive::*;
 
-use std::{
-    cell::{Ref, RefCell},
-    rc::Rc,
-};
+use std::sync::{Arc, RwLock, RwLockReadGuard};
 
-/// Modulation to cache the result of calculation
+use super::ModCalcFn;
+
 #[derive(Modulation)]
 #[no_modulation_cache]
 #[no_radiation_pressure]
 #[no_modulation_transform]
 pub struct Cache<M: Modulation> {
-    m: Rc<M>,
-    cache: Rc<RefCell<Vec<EmitIntensity>>>,
+    m: Arc<M>,
+    cache: Arc<RwLock<HashMap<usize, Vec<u8>>>>,
     #[no_change]
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
@@ -27,7 +25,6 @@ impl<M: Modulation> std::ops::Deref for Cache<M> {
 }
 
 pub trait IntoCache<M: Modulation> {
-    /// Cache the result of calculation
     fn with_cache(self) -> Cache<M>;
 }
 
@@ -43,30 +40,39 @@ impl<M: Modulation + Clone> Clone for Cache<M> {
 }
 
 impl<M: Modulation> Cache<M> {
-    /// constructor
     pub fn new(m: M) -> Self {
         Self {
             config: m.sampling_config(),
             loop_behavior: m.loop_behavior(),
-            m: Rc::new(m),
-            cache: Rc::new(Default::default()),
+            m: Arc::new(m),
+            cache: Arc::new(Default::default()),
         }
     }
 
-    /// get cached modulation data
-    ///
-    /// Note that the cached data is created after at least one call to `calc`.
-    pub fn buffer(&self) -> Ref<'_, Vec<EmitIntensity>> {
-        self.cache.borrow()
+    pub fn init(&self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
+        if self.cache.read().unwrap().is_empty() {
+            let f = self.m.calc(geometry)?;
+            *self.cache.write().unwrap() = geometry
+                .devices()
+                .map(|dev| (dev.idx(), { f(dev).collect() }))
+                .collect();
+        }
+        Ok(())
+    }
+
+    pub fn buffer(&self) -> RwLockReadGuard<HashMap<usize, Vec<u8>>> {
+        self.cache.read().unwrap()
     }
 }
 
 impl<M: Modulation> Modulation for Cache<M> {
-    fn calc(&self, geometry: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        if self.cache.borrow().is_empty() {
-            *self.cache.borrow_mut() = self.m.calc(geometry)?;
-        }
-        Ok(self.cache.borrow().clone())
+    fn calc<'a>(&'a self, geometry: &'a Geometry) -> Result<ModCalcFn<'a>, AUTDInternalError> {
+        self.init(geometry)?;
+        let buffer = self.buffer().clone();
+        Ok(Box::new(move |dev| {
+            let cache = buffer[&dev.idx()].clone();
+            Box::new(cache.into_iter())
+        }))
     }
 }
 
@@ -92,7 +98,7 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let m = TestModulation {
-            buf: vec![EmitIntensity::new(rng.gen()), EmitIntensity::new(rng.gen())],
+            buf: vec![rng.gen(), rng.gen()],
             config: SamplingConfig::Freq(4 * kHz),
             loop_behavior: LoopBehavior::infinite(),
         };
@@ -100,37 +106,29 @@ mod tests {
         assert_eq!(&m, cache.deref());
 
         assert!(cache.buffer().is_empty());
-        assert_eq!(m.calc(&geometry)?, cache.calc(&geometry)?);
 
-        assert!(!cache.buffer().is_empty());
-        assert_eq!(m.calc(&geometry)?, *cache.buffer());
+        geometry.devices().try_for_each(|dev| {
+            assert_eq!(
+                m.calc(&geometry)?(dev).collect::<Vec<_>>(),
+                cache.calc(&geometry)?(dev).collect::<Vec<_>>()
+            );
+            Result::<(), AUTDInternalError>::Ok(())
+        })?;
 
         Ok(())
     }
 
-    #[derive(Modulation)]
+    #[derive(Modulation, Clone)]
     struct TestCacheModulation {
         pub calc_cnt: Arc<AtomicUsize>,
         pub config: SamplingConfig,
         pub loop_behavior: LoopBehavior,
     }
 
-    impl Clone for TestCacheModulation {
-        // GRCOV_EXCL_START
-        fn clone(&self) -> Self {
-            Self {
-                calc_cnt: self.calc_cnt.clone(),
-                config: self.config,
-                loop_behavior: LoopBehavior::infinite(),
-            }
-        }
-        // GRCOV_EXCL_STOP
-    }
-
     impl Modulation for TestCacheModulation {
-        fn calc(&self, _: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+        fn calc<'a>(&'a self, _: &'a Geometry) -> Result<ModCalcFn<'a>, AUTDInternalError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
-            Ok(vec![EmitIntensity::MIN; 2])
+            Ok(Box::new(move |_| Box::new([0x00, 0x00].into_iter())))
         }
     }
 
