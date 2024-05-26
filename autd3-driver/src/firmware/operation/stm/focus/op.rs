@@ -4,7 +4,10 @@ use crate::{
     defined::{ControlPoint, METER},
     error::AUTDInternalError,
     firmware::{
-        fpga::{STMFocus, Segment, TransitionMode, FOCUS_STM_BUF_SIZE_MAX, TRANSITION_MODE_NONE},
+        fpga::{
+            STMFocus, Segment, TransitionMode, FOCUS_STM_BUF_SIZE_MAX, STM_BUF_SIZE_MIN,
+            TRANSITION_MODE_NONE,
+        },
         operation::{cast, Operation, TypeTag},
     },
     geometry::Device,
@@ -130,7 +133,7 @@ impl<F: ExactSizeIterator<Item = ControlPoint>> Operation for FocusSTMOp<F> {
         }
 
         if self.points.peek().is_none() {
-            if self.sent == 0 || self.sent == 1 {
+            if self.sent < STM_BUF_SIZE_MIN {
                 return Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(self.sent));
             }
             self.is_done = true;
