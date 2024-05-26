@@ -1,8 +1,10 @@
+use std::{iter::Peekable, mem::size_of};
+
 use crate::{
     defined::{ControlPoint, METER},
     error::AUTDInternalError,
     firmware::{
-        fpga::{STMFocus, Segment, TransitionMode, TRANSITION_MODE_NONE},
+        fpga::{STMFocus, Segment, TransitionMode, FOCUS_STM_BUF_SIZE_MAX, TRANSITION_MODE_NONE},
         operation::{cast, Operation, TypeTag},
     },
     geometry::Device,
@@ -29,29 +31,28 @@ struct FocusSTMSubseq {
     send_num: u8,
 }
 
-pub struct FocusSTMOp<F: Fn(usize) -> ControlPoint> {
-    remains: usize,
-    points: F,
-    size: usize,
+pub struct FocusSTMOp<F: ExactSizeIterator<Item = ControlPoint>> {
+    points: Peekable<F>,
+    sent: usize,
+    is_done: bool,
     freq_div: u32,
     rep: u32,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
 }
 
-impl<F: Fn(usize) -> ControlPoint> FocusSTMOp<F> {
+impl<F: ExactSizeIterator<Item = ControlPoint>> FocusSTMOp<F> {
     pub fn new(
         points: F,
-        size: usize,
         freq_div: u32,
         rep: u32,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Self {
         Self {
-            points,
-            size,
-            remains: size,
+            points: points.peekable(),
+            sent: 0,
+            is_done: false,
             freq_div,
             rep,
             segment,
@@ -60,21 +61,20 @@ impl<F: Fn(usize) -> ControlPoint> FocusSTMOp<F> {
     }
 }
 
-impl<F: Fn(usize) -> ControlPoint> Operation for FocusSTMOp<F> {
+impl<F: ExactSizeIterator<Item = ControlPoint>> Operation for FocusSTMOp<F> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        let sent = self.size - self.remains;
+        let is_first = self.sent == 0;
 
-        let offset = if sent == 0 {
-            std::mem::size_of::<FocusSTMHead>()
+        let offset = if is_first {
+            size_of::<FocusSTMHead>()
         } else {
-            std::mem::size_of::<FocusSTMSubseq>()
+            size_of::<FocusSTMSubseq>()
         };
 
-        let send_bytes = (self.remains * std::mem::size_of::<STMFocus>()).min(tx.len() - offset);
-        let send_num = send_bytes / std::mem::size_of::<STMFocus>();
-        assert!(send_num > 0);
+        let max_send_bytes = tx.len() - offset;
+        let max_send_num = max_send_bytes / size_of::<STMFocus>();
 
-        if sent == 0 {
+        if is_first {
             *cast::<FocusSTMHead>(tx) = FocusSTMHead {
                 tag: TypeTag::FocusSTM,
                 flag: FocusSTMControlFlags::BEGIN,
@@ -83,7 +83,7 @@ impl<F: Fn(usize) -> ControlPoint> Operation for FocusSTMOp<F> {
                     .map(|m| m.mode())
                     .unwrap_or(TRANSITION_MODE_NONE),
                 transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
-                send_num: send_num as u8,
+                send_num: 0,
                 freq_div: self.freq_div,
                 sound_speed: (device.sound_speed / METER
                     * 1024.0
@@ -96,7 +96,7 @@ impl<F: Fn(usize) -> ControlPoint> Operation for FocusSTMOp<F> {
             *cast::<FocusSTMSubseq>(tx) = FocusSTMSubseq {
                 tag: TypeTag::FocusSTM,
                 flag: FocusSTMControlFlags::NONE,
-                send_num: send_num as u8,
+                send_num: 0,
             };
         }
 
@@ -104,7 +104,36 @@ impl<F: Fn(usize) -> ControlPoint> Operation for FocusSTMOp<F> {
             .flag
             .set(FocusSTMControlFlags::SEGMENT, self.segment == Segment::S1);
 
-        if sent + send_num == self.size {
+        let send_num = (0..max_send_num)
+            .filter_map(|_| self.points.next())
+            .enumerate()
+            .map(|(i, p)| {
+                let lp = device.to_local(p.point());
+                cast::<STMFocus>(&mut tx[offset + i * size_of::<STMFocus>()..]).set(
+                    lp.x,
+                    lp.y,
+                    lp.z,
+                    p.intensity(),
+                )
+            })
+            .try_fold(0, |acc, x| -> Result<usize, AUTDInternalError> {
+                x?;
+                Ok(acc + 1)
+            })?;
+
+        let d = cast::<FocusSTMSubseq>(tx);
+        d.send_num = send_num as u8;
+
+        self.sent += send_num;
+        if self.sent > FOCUS_STM_BUF_SIZE_MAX {
+            return Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(self.sent));
+        }
+
+        if self.points.peek().is_none() {
+            if self.sent == 0 || self.sent == 1 {
+                return Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(self.sent));
+            }
+            self.is_done = true;
             let d = cast::<FocusSTMSubseq>(tx);
             d.flag.set(FocusSTMControlFlags::END, true);
             d.flag.set(
@@ -113,35 +142,23 @@ impl<F: Fn(usize) -> ControlPoint> Operation for FocusSTMOp<F> {
             );
         }
 
-        (0..send_num).try_for_each(|i| {
-            let p = (self.points)(sent + i);
-            let lp = device.to_local(p.point());
-            cast::<STMFocus>(&mut tx[offset + i * std::mem::size_of::<STMFocus>()..]).set(
-                lp.x,
-                lp.y,
-                lp.z,
-                p.intensity(),
-            )
-        })?;
-
-        self.remains -= send_num;
-        if sent == 0 {
-            Ok(std::mem::size_of::<FocusSTMHead>() + std::mem::size_of::<STMFocus>() * send_num)
+        if is_first {
+            Ok(size_of::<FocusSTMHead>() + size_of::<STMFocus>() * send_num)
         } else {
-            Ok(std::mem::size_of::<FocusSTMSubseq>() + std::mem::size_of::<STMFocus>() * send_num)
+            Ok(size_of::<FocusSTMSubseq>() + size_of::<STMFocus>() * send_num)
         }
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        if self.remains == self.size {
-            std::mem::size_of::<FocusSTMHead>() + std::mem::size_of::<STMFocus>()
+        if self.sent == 0 {
+            size_of::<FocusSTMHead>() + size_of::<STMFocus>()
         } else {
-            std::mem::size_of::<FocusSTMSubseq>() + std::mem::size_of::<STMFocus>()
+            size_of::<FocusSTMSubseq>() + size_of::<STMFocus>()
         }
     }
 
     fn is_done(&self) -> bool {
-        self.remains == 0
+        self.is_done
     }
 }
 
@@ -202,11 +219,7 @@ mod tests {
         );
 
         let mut op = FocusSTMOp::new(
-            {
-                let points = points.clone();
-                move |i| points[i]
-            },
-            FOCUS_STM_SIZE,
+            points.clone().into_iter(),
             freq_div,
             rep,
             segment,
@@ -218,11 +231,11 @@ mod tests {
             size_of::<FocusSTMHead>() + size_of::<STMFocus>()
         );
 
-        assert_eq!(op.remains, FOCUS_STM_SIZE);
+        assert_eq!(op.sent, 0);
 
         assert_eq!(op.pack(&device, &mut tx), Ok(FRAME_SIZE));
 
-        assert_eq!(op.remains, 0);
+        assert_eq!(op.sent, FOCUS_STM_SIZE);
 
         assert_eq!(TypeTag::FocusSTM as u8, tx[0]);
         assert_eq!(
@@ -282,9 +295,7 @@ mod tests {
     #[test]
     fn test_div() {
         const FRAME_SIZE: usize = 32;
-        const FOCUS_STM_SIZE: usize = (FRAME_SIZE - size_of::<FocusSTMHead>())
-            / size_of::<STMFocus>()
-            + (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / size_of::<STMFocus>() * 2;
+        const FOCUS_STM_SIZE: usize = 7;
 
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
@@ -306,17 +317,7 @@ mod tests {
         let rep = rng.gen_range(0x0000001..=0xFFFFFFFF);
         let segment = Segment::S1;
 
-        let mut op = FocusSTMOp::new(
-            {
-                let points = points.clone();
-                move |i| points[i]
-            },
-            FOCUS_STM_SIZE,
-            freq_div,
-            rep,
-            segment,
-            None,
-        );
+        let mut op = FocusSTMOp::new(points.clone().into_iter(), freq_div, rep, segment, None);
 
         // First frame
         {
@@ -325,7 +326,7 @@ mod tests {
                 size_of::<FocusSTMHead>() + size_of::<STMFocus>()
             );
 
-            assert_eq!(op.remains, FOCUS_STM_SIZE);
+            assert_eq!(op.sent, 0);
 
             assert_eq!(
                 op.pack(&device, &mut tx),
@@ -334,10 +335,7 @@ mod tests {
                         * size_of::<STMFocus>())
             );
 
-            assert_eq!(
-                op.remains,
-                (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>() * 2
-            );
+            assert_eq!(op.sent, 1);
 
             assert_eq!(TypeTag::FocusSTM as u8, tx[0]);
             assert_eq!(
@@ -345,7 +343,7 @@ mod tests {
                 tx[offset_of!(FocusSTMHead, flag)]
             );
             assert_eq!(
-                ((FRAME_SIZE - size_of::<FocusSTMHead>()) / std::mem::size_of::<STMFocus>()) as u8,
+                ((FRAME_SIZE - size_of::<FocusSTMHead>()) / size_of::<STMFocus>()) as u8,
                 tx[offset_of!(FocusSTMHead, send_num)],
             );
             assert_eq!(tx[4], (freq_div & 0xFF) as u8);
@@ -395,20 +393,17 @@ mod tests {
         {
             assert_eq!(
                 op.required_size(&device),
-                size_of::<FocusSTMSubseq>() + std::mem::size_of::<STMFocus>()
+                size_of::<FocusSTMSubseq>() + size_of::<STMFocus>()
             );
 
             assert_eq!(
                 op.pack(&device, &mut tx),
                 Ok(size_of::<FocusSTMSubseq>()
-                    + (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>()
-                        * std::mem::size_of::<STMFocus>())
+                    + (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / size_of::<STMFocus>()
+                        * size_of::<STMFocus>())
             );
 
-            assert_eq!(
-                op.remains,
-                (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>()
-            );
+            assert_eq!(op.sent, 4);
 
             assert_eq!(TypeTag::FocusSTM as u8, tx[0]);
             assert_eq!(
@@ -416,8 +411,7 @@ mod tests {
                 tx[offset_of!(FocusSTMHead, flag)]
             );
             assert_eq!(
-                ((FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>())
-                    as u8,
+                ((FRAME_SIZE - size_of::<FocusSTMSubseq>()) / size_of::<STMFocus>()) as u8,
                 tx[offset_of!(FocusSTMHead, send_num)],
             );
             tx[size_of::<FocusSTMSubseq>()..]
@@ -453,17 +447,17 @@ mod tests {
         {
             assert_eq!(
                 op.required_size(&device),
-                size_of::<FocusSTMSubseq>() + std::mem::size_of::<STMFocus>()
+                size_of::<FocusSTMSubseq>() + size_of::<STMFocus>()
             );
 
             assert_eq!(
                 op.pack(&device, &mut tx[0..(&device.idx() + 1) * FRAME_SIZE]),
                 Ok(size_of::<FocusSTMSubseq>()
-                    + (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>()
-                        * std::mem::size_of::<STMFocus>())
+                    + (FRAME_SIZE - size_of::<FocusSTMSubseq>()) / size_of::<STMFocus>()
+                        * size_of::<STMFocus>())
             );
 
-            assert_eq!(op.remains, 0);
+            assert_eq!(op.sent, FOCUS_STM_SIZE);
 
             assert_eq!(TypeTag::FocusSTM as u8, tx[0]);
             assert_eq!(
@@ -471,8 +465,7 @@ mod tests {
                 tx[offset_of!(FocusSTMHead, flag)]
             );
             assert_eq!(
-                ((FRAME_SIZE - size_of::<FocusSTMSubseq>()) / std::mem::size_of::<STMFocus>())
-                    as u8,
+                ((FRAME_SIZE - size_of::<FocusSTMSubseq>()) / size_of::<STMFocus>()) as u8,
                 tx[offset_of!(FocusSTMHead, send_num)],
             );
             tx[size_of::<FocusSTMSubseq>()..]
@@ -521,8 +514,7 @@ mod tests {
         let x = FOCUS_STM_FIXED_NUM_UNIT * (FOCUS_STM_FIXED_NUM_UPPER_X as f64 + 1.);
 
         let mut op = FocusSTMOp::new(
-            |_| ControlPoint::new(Vector3::new(x, x, x)).with_intensity(0),
-            FOCUS_STM_SIZE,
+            (0..FOCUS_STM_SIZE).map(|_| ControlPoint::new(Vector3::new(x, x, x)).with_intensity(0)),
             SAMPLING_FREQ_DIV_MIN,
             0xFFFFFFFF,
             Segment::S0,
@@ -533,5 +525,28 @@ mod tests {
             op.pack(&device, &mut tx),
             Err(AUTDInternalError::FocusSTMPointOutOfRange(x, x, x))
         );
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(0)), 0)]
+    #[case(Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(1)), 1)]
+    #[case(Ok(()), 2)]
+    #[case(Ok(()), FOCUS_STM_BUF_SIZE_MAX)]
+    #[case(Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(FOCUS_STM_BUF_SIZE_MAX+1)), FOCUS_STM_BUF_SIZE_MAX+1)]
+    fn test_buffer_out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] n: usize) {
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
+
+        let mut op = FocusSTMOp::new(
+            (0..n).map(|_| ControlPoint::new(Vector3::zeros())),
+            SAMPLING_FREQ_DIV_MIN,
+            0xFFFFFFFF,
+            Segment::S0,
+            Some(TransitionMode::SyncIdx),
+        );
+
+        let mut tx = vec![0x00u8; size_of::<FocusSTMHead>() + n * size_of::<STMFocus>()];
+
+        assert_eq!(op.pack(&device, &mut tx).map(|_| ()), expected);
     }
 }
