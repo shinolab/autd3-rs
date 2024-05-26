@@ -6,7 +6,6 @@ use autd3_driver::derive::*;
 
 use num::integer::lcm;
 
-/// Multi-freq sine wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct Fourier<S: SamplingMode> {
     #[no_change]
@@ -24,21 +23,11 @@ impl<S: SamplingMode> Fourier<S> {
         }
     }
 
-    /// Add a sine wave component
-    ///
-    /// # Arguments
-    /// - `sine` - [Sine] modulation
-    ///
     pub fn add_component(mut self, sine: Sine<S>) -> Self {
         self.components.push(sine);
         self
     }
 
-    /// Add sine wave components from iterator
-    ///
-    /// # Arguments
-    /// - `iter` - Iterator of [Sine] modulation
-    ///
     pub fn add_components_from_iter(mut self, iter: impl IntoIterator<Item = Sine<S>>) -> Self {
         self.components.extend(iter);
         self

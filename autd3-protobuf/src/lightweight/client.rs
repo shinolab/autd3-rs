@@ -7,7 +7,6 @@ use autd3_driver::{
 
 use crate::traits::*;
 
-/// Client of AUTD with lightweight mode
 pub struct LightweightClient {
     client: crate::pb::ecat_light_client::EcatLightClient<tonic::transport::Channel>,
     geometry: Geometry,
@@ -32,13 +31,11 @@ impl LightweightClientBuilder {
         }
     }
 
-    /// Add device
     pub fn add_device(mut self, dev: impl IntoDevice) -> Self {
         self.devices.push(dev.into_device(self.devices.len()));
         self
     }
 
-    /// Open connection
     pub async fn open(
         self,
         addr: SocketAddr,
@@ -48,12 +45,10 @@ impl LightweightClientBuilder {
 }
 
 impl LightweightClient {
-    /// Create Client builder
     pub const fn builder() -> LightweightClientBuilder {
         Self::builder_with_ultrasound_freq(FREQ_40K)
     }
 
-    /// Create Client builder
     pub const fn builder_with_ultrasound_freq(freq: Freq<u32>) -> LightweightClientBuilder {
         LightweightClientBuilder::new_with_ultrasound_freq(freq)
     }
@@ -75,12 +70,6 @@ impl LightweightClient {
         Ok(Self { client, geometry })
     }
 
-    /// Get firmware information
-    ///
-    /// # Returns
-    ///
-    /// * `Ok(Vec<FirmwareVersion>)` - List of firmware information
-    ///
     pub async fn firmware_version(
         &mut self,
     ) -> Result<
@@ -103,17 +92,6 @@ impl LightweightClient {
         }
     }
 
-    /// Send data to the devices
-    ///
-    /// # Arguments
-    ///
-    /// * `s` - Datagram
-    ///
-    /// # Returns
-    ///
-    /// * `Ok(true)` - It is confirmed that the data has been successfully transmitted
-    /// * `Ok(false)` - There are no errors, but it is unclear whether the data has been sent reliably or not
-    ///
     pub async fn send(
         &mut self,
         datagram: impl ToMessage<Message = crate::pb::DatagramLightweight>,

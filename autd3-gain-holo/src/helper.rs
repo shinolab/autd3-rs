@@ -20,7 +20,7 @@ macro_rules! impl_holo {
             $directivity: autd3_driver::acoustics::directivity::Directivity,
             $backend: $crate::LinAlgBackend<$directivity>,
         {
-            /// Add focus
+            
             pub fn add_focus(self, focus: Vector3, amp: $crate::amp::Amplitude) -> Self {
                 let mut foci = self.foci;
                 let mut amps = self.amps;
@@ -29,12 +29,12 @@ macro_rules! impl_holo {
                 Self { foci, amps, ..self }
             }
 
-            /// Set constraint
+            
             pub fn with_constraint(self, constraint: EmissionConstraint) -> Self {
                 Self { constraint, ..self }
             }
 
-            /// Add foci
+            
             pub fn add_foci_from_iter(
                 self,
                 iter: impl IntoIterator<Item = (Vector3, $crate::amp::Amplitude)>,
@@ -74,7 +74,7 @@ macro_rules! impl_holo {
         where
             $directivity: autd3_driver::acoustics::directivity::Directivity,
         {
-            /// Add focus
+            
             pub fn add_focus(self, focus: Vector3, amp: $crate::amp::Amplitude) -> Self {
                 let mut foci = self.foci;
                 let mut amps = self.amps;
@@ -83,12 +83,12 @@ macro_rules! impl_holo {
                 Self { foci, amps, ..self }
             }
 
-            /// Set constraint
+            
             pub fn with_constraint(self, constraint: EmissionConstraint) -> Self {
                 Self { constraint, ..self }
             }
 
-            /// Add foci
+            
             pub fn add_foci_from_iter(
                 self,
                 iter: impl IntoIterator<Item = (Vector3, $crate::amp::Amplitude)>,

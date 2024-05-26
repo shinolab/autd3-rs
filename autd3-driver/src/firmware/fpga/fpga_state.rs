@@ -7,7 +7,6 @@ const CURRENT_STM_SEGMENT_BIT: u8 = 1 << 2;
 const CURRENT_GAIN_SEGMENT_BIT: u8 = 1 << 2;
 const IS_GAIN_MODE_BIT: u8 = 1 << 3;
 
-/// FPGA state
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Builder)]
 pub struct FPGAState {
@@ -16,12 +15,10 @@ pub struct FPGAState {
 }
 
 impl FPGAState {
-    /// Check if thermal sensor is asserted
     pub const fn is_thermal_assert(&self) -> bool {
         (self.state & THERMAL_ASSERT_BIT) != 0
     }
 
-    /// Current mod segment
     pub const fn current_mod_segment(&self) -> Segment {
         match self.state & CURRENT_MOD_SEGMENT_BIT {
             0 => Segment::S0,
@@ -29,7 +26,6 @@ impl FPGAState {
         }
     }
 
-    /// Current stm segment
     pub const fn current_stm_segment(&self) -> Option<Segment> {
         if !self.is_stm_mode() {
             return None;
@@ -40,7 +36,6 @@ impl FPGAState {
         }
     }
 
-    /// Current gain segment
     pub const fn current_gain_segment(&self) -> Option<Segment> {
         if !self.is_gain_mode() {
             return None;
@@ -51,12 +46,10 @@ impl FPGAState {
         }
     }
 
-    /// Check if gain mode
     pub const fn is_gain_mode(&self) -> bool {
         (self.state & IS_GAIN_MODE_BIT) != 0
     }
 
-    /// Check if stm mode
     pub const fn is_stm_mode(&self) -> bool {
         !self.is_gain_mode()
     }

@@ -1,7 +1,7 @@
 use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-/// Firmware information
+
 pub struct FirmwareVersion {
     idx: usize,
     cpu_version_number_major: u8,

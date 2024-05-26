@@ -5,7 +5,6 @@ use autd3_driver::{
 };
 use autd3_firmware_emulator::CPUEmulator;
 
-/// Link to do nothing
 pub struct Nop {
     is_open: bool,
     cpus: Vec<CPUEmulator>,

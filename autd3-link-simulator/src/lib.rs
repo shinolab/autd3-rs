@@ -11,7 +11,6 @@ use autd3_driver::{
     link::{Link, LinkBuilder},
 };
 
-/// Link for Simulator
 pub struct Simulator {
     client: simulator_client::SimulatorClient<tonic::transport::Channel>,
     timeout: Duration,

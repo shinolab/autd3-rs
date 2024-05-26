@@ -38,12 +38,10 @@ impl Device {
         self.idx
     }
 
-    /// Get the number of transducers
     pub fn num_transducers(&self) -> usize {
         self.transducers.len()
     }
 
-    /// Get center position
     pub fn center(&self) -> Vector3 {
         self.transducers
             .iter()
@@ -56,53 +54,32 @@ impl Device {
         self.inv * (p - self.transducers[0].position())
     }
 
-    /// Set positions of all transducers in the device
     pub fn translate_to(&mut self, t: Vector3) {
         let cur_pos = self.transducers[0].position();
         self.translate(t - cur_pos);
     }
 
-    /// Set rotation of all transducers in the device
     pub fn rotate_to(&mut self, r: UnitQuaternion) {
         let cur_rot = self.transducers[0].rotation();
         self.rotate(r * cur_rot.conjugate());
     }
 
-    /// Translate all transducers in the device
     pub fn translate(&mut self, t: Vector3) {
         self.affine(t, UnitQuaternion::identity());
     }
 
-    /// Rorate all transducers in the device
     pub fn rotate(&mut self, r: UnitQuaternion) {
         self.affine(Vector3::zeros(), r);
     }
 
-    /// Affine transform
     pub fn affine(&mut self, t: Vector3, r: UnitQuaternion) {
         self.transducers.iter_mut().for_each(|tr| tr.affine(t, r));
     }
 
-    /// Set speed of sound from temperature
-    /// This is equivalent to `set_sound_speed_from_temp_with(temp, 1.4, 8.314463, 28.9647e-3)`
-    ///
-    /// # Arguments
-    ///
-    /// * `temp` - Temperature in Celsius
-    ///
     pub fn set_sound_speed_from_temp(&mut self, temp: f64) {
         self.set_sound_speed_from_temp_with(temp, 1.4, 8.314_463, 28.9647e-3);
     }
 
-    /// Set speed of sound from temperature with air parameter
-    ///
-    /// # Arguments
-    ///
-    /// * `temp` - Temperature in Celsius
-    /// * `k` - Ratio of specific heat
-    /// * `r` - Gas constant
-    /// * `m` - Molar mass
-    ///
     pub fn set_sound_speed_from_temp_with(&mut self, temp: f64, k: f64, r: f64, m: f64) {
         self.sound_speed = (k * r * (273.15 + temp) / m).sqrt() * METER;
     }
@@ -111,12 +88,10 @@ impl Device {
         self.ultrasound_freq
     }
 
-    /// Get the wavelength of the transducer
     pub fn wavelength(&self) -> f64 {
         self.sound_speed / self.ultrasound_freq.freq as f64
     }
 
-    /// Get the wavenumber of the transducer
     pub fn wavenumber(&self) -> f64 {
         2.0 * PI * self.ultrasound_freq.freq as f64 / self.sound_speed
     }

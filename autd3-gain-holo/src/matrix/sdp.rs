@@ -9,10 +9,6 @@ use crate::{
 
 use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vector3};
 
-/// Gain to produce multiple foci by solving Semi-Denfinite Programming
-///
-/// Reference
-/// * Inoue, Seki, Yasutoshi Makino, and Hiroyuki Shinoda. "Active touch perception produced by airborne ultrasonic haptic hologram." 2015 IEEE World Haptics Conference (WHC). IEEE, 2015.
 #[derive(Gain, Builder)]
 #[no_const]
 pub struct SDP<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
@@ -208,10 +204,8 @@ mod tests {
 
     #[test]
     fn test_sdp_all() {
-        let geometry: Geometry = Geometry::new(
-            vec![AUTD3::new(Vector3::zeros()).into_device(0)],
-            FREQ_40K,
-        );
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], FREQ_40K);
         let backend = Arc::new(NalgebraBackend::default());
 
         let g = SDP::new(backend)
@@ -239,10 +233,8 @@ mod tests {
 
     #[test]
     fn test_sdp_filtered() {
-        let geometry: Geometry = Geometry::new(
-            vec![AUTD3::new(Vector3::zeros()).into_device(0)],
-            FREQ_40K,
-        );
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], FREQ_40K);
         let backend = Arc::new(NalgebraBackend::default());
 
         let g = SDP::new(backend)

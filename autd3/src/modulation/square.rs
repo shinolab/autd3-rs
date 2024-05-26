@@ -2,7 +2,6 @@ use autd3_driver::{defined::Freq, derive::*};
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
-/// Square wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug, Builder)]
 pub struct Square<S: SamplingMode> {
     #[get]
@@ -31,12 +30,6 @@ impl Square<ExactFreq> {
         }
     }
 
-    /// constructor.
-    ///
-    /// # Arguments
-    ///
-    /// * `freq` - Frequency of the square wave
-    ///
     pub const fn with_freq_nearest(freq: Freq<f64>) -> Square<NearestFreq> {
         Square {
             freq,

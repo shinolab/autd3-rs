@@ -7,7 +7,6 @@ use crate::{
 
 use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vector3};
 
-/// Gain to produce multiple foci with naive linear synthesis
 #[derive(Gain)]
 pub struct Naive<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
     foci: Vec<Vector3>,
@@ -70,10 +69,8 @@ mod tests {
 
     #[test]
     fn test_naive_all() {
-        let geometry: Geometry = Geometry::new(
-            vec![AUTD3::new(Vector3::zeros()).into_device(0)],
-            FREQ_40K,
-        );
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], FREQ_40K);
         let backend = Arc::new(NalgebraBackend::default());
 
         let g = Naive::new(backend)
@@ -95,10 +92,8 @@ mod tests {
 
     #[test]
     fn test_naive_filtered() {
-        let geometry: Geometry = Geometry::new(
-            vec![AUTD3::new(Vector3::zeros()).into_device(0)],
-            FREQ_40K,
-        );
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], FREQ_40K);
         let backend = Arc::new(NalgebraBackend::default());
 
         let g = Naive::new(backend)

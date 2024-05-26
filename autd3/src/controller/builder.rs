@@ -10,7 +10,6 @@ use autd3_driver::{
 use super::Controller;
 use crate::error::AUTDError;
 
-/// Builder for [crate::controller::Controller]
 #[derive(Builder)]
 pub struct ControllerBuilder {
     devices: Vec<Device>,
@@ -26,13 +25,11 @@ impl ControllerBuilder {
         }
     }
 
-    /// Add device
     pub fn add_device(mut self, dev: impl IntoDevice) -> Self {
         self.devices.push(dev.into_device(self.devices.len()));
         self
     }
 
-    /// Open controller
     pub async fn open<B: LinkBuilder>(
         self,
         link_builder: B,
@@ -40,7 +37,6 @@ impl ControllerBuilder {
         self.open_with_timeout(link_builder, DEFAULT_TIMEOUT).await
     }
 
-    /// Open controller with timeout
     pub async fn open_with_timeout<B: LinkBuilder>(
         self,
         link_builder: B,

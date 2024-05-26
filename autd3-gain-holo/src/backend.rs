@@ -22,7 +22,6 @@ pub enum Trans {
     ConjTrans,
 }
 
-/// Calculation backend
 pub trait LinAlgBackend<D: Directivity> {
     type MatrixXc;
     type MatrixX;

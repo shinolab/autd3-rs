@@ -7,14 +7,6 @@ use crate::{
     },
 };
 
-/// GainSTM is an STM for moving [Gain].
-///
-/// The sampling timing is determined by hardware, thus the sampling time is precise.
-///
-/// GainSTM has following restrictions:
-/// - The maximum number of sampling [Gain] is [crate::fpga::GAIN_STM_BUF_SIZE_MAX].
-/// - The sampling frequency is [crate::firmware::fpga::fpga_clk_freq()]/N, where `N` is a 32-bit unsigned integer and must be at least [crate::fpga::SAMPLING_FREQ_DIV_MIN]
-///
 #[derive(Builder)]
 #[no_const]
 pub struct GainSTM<G: Gain> {
@@ -28,12 +20,6 @@ pub struct GainSTM<G: Gain> {
 }
 
 impl<G: Gain> GainSTM<G> {
-    /// constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `freq` - Frequency of STM.
-    ///
     pub const fn from_freq(freq: Freq<f64>) -> Self {
         Self {
             gains: Vec::new(),
@@ -43,12 +29,6 @@ impl<G: Gain> GainSTM<G> {
         }
     }
 
-    /// constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `freq` - Frequency of STM. The frequency closest to `freq` from the possible frequencies is set.
-    ///
     pub const fn from_freq_nearest(freq: Freq<f64>) -> Self {
         Self {
             gains: Vec::new(),
@@ -58,12 +38,6 @@ impl<G: Gain> GainSTM<G> {
         }
     }
 
-    /// constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `config` - Sampling configuration
-    ///
     pub const fn from_sampling_config(config: SamplingConfig) -> Self {
         Self {
             gains: Vec::new(),
@@ -73,22 +47,16 @@ impl<G: Gain> GainSTM<G> {
         }
     }
 
-    /// Add a [Gain] to GainSTM
     pub fn add_gain(mut self, gain: G) -> Self {
         self.gains.push(gain);
         self
     }
 
-    /// Add boxed [Gain]s from iterator to GainSTM
     pub fn add_gains_from_iter(mut self, iter: impl IntoIterator<Item = G>) -> Self {
         self.gains.extend(iter);
         self
     }
 
-    /// Clear current [Gain]s
-    ///
-    /// # Returns
-    /// removed [Gain]s
     pub fn clear(&mut self) -> Vec<G> {
         std::mem::take(&mut self.gains)
     }

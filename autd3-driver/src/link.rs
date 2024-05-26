@@ -10,19 +10,17 @@ use crate::{
 mod internal {
     use super::*;
 
-    /// Link is a interface to the AUTD device
     #[async_trait::async_trait]
     pub trait Link: Send + Sync {
-        /// Close link
         async fn close(&mut self) -> Result<(), AUTDInternalError>;
-        /// Send data to devices
+
         async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError>;
-        /// Receive data from devices
+
         async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError>;
-        /// Check if link is open
+
         #[must_use]
         fn is_open(&self) -> bool;
-        /// Get timeout
+
         #[must_use]
         fn timeout(&self) -> Duration;
         #[inline(always)]
@@ -33,7 +31,6 @@ mod internal {
     pub trait LinkBuilder: Send + Sync {
         type L: Link;
 
-        /// Open link
         async fn open(self, geometry: &Geometry) -> Result<Self::L, AUTDInternalError>;
     }
 
@@ -70,24 +67,22 @@ mod internal {
 mod internal {
     use super::*;
 
-    /// Link is a interface to the AUTD device
     pub trait Link: Send + Sync {
-        /// Close link
         fn close(&mut self) -> impl std::future::Future<Output = Result<(), AUTDInternalError>>;
-        /// Send data to devices
+
         fn send(
             &mut self,
             tx: &TxDatagram,
         ) -> impl std::future::Future<Output = Result<bool, AUTDInternalError>>;
-        /// Receive data from devices
+
         fn receive(
             &mut self,
             rx: &mut [RxMessage],
         ) -> impl std::future::Future<Output = Result<bool, AUTDInternalError>>;
-        /// Check if link is open
+
         #[must_use]
         fn is_open(&self) -> bool;
-        /// Get timeout
+
         #[must_use]
         fn timeout(&self) -> Duration;
         #[inline(always)]
@@ -97,7 +92,6 @@ mod internal {
     pub trait LinkBuilder {
         type L: Link;
 
-        /// Open link
         fn open(
             self,
             geometry: &Geometry,
@@ -115,7 +109,6 @@ pub use internal::Link;
 #[cfg(not(feature = "async-trait"))]
 pub use internal::LinkBuilder;
 
-/// Send and receive data
 pub async fn send_receive(
     link: &mut impl Link,
     tx: &TxDatagram,
@@ -130,7 +123,6 @@ pub async fn send_receive(
     wait_msg_processed(link, tx, rx, timeout).await
 }
 
-/// Wait until message is processed
 async fn wait_msg_processed(
     link: &mut impl Link,
     tx: &TxDatagram,

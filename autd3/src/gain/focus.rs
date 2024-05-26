@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use autd3_driver::{derive::*, geometry::Vector3};
 
-/// Gain to produce a focal point
 #[derive(Gain, Clone, PartialEq, Debug, Builder)]
 pub struct Focus {
     #[get]
@@ -14,12 +13,6 @@ pub struct Focus {
 }
 
 impl Focus {
-    /// constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `pos` - position of the focal point
-    ///
     pub const fn new(pos: Vector3) -> Self {
         Self {
             pos,

@@ -8,11 +8,6 @@ use std::{
 
 use crate::error::AudioFileError;
 
-/// Modulation constructed from a raw PCM data
-///
-/// The raw PCM data must be 8bit unsigned integer.
-///
-/// The raw PCM data is resampled to the sampling frequency of Modulation.
 #[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct RawPCM {
     sample_rate: Freq<u32>,
@@ -22,13 +17,6 @@ pub struct RawPCM {
 }
 
 impl RawPCM {
-    /// Constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - Path to the raw PCM file
-    /// * `sample_rate` - Sampling frequency of the raw PCM file
-    ///
     pub fn new(path: impl AsRef<Path>, sample_rate: Freq<u32>) -> Self {
         Self {
             sample_rate,

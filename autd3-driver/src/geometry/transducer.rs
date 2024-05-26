@@ -8,13 +8,11 @@ pub struct Transducer {
 }
 
 impl Transducer {
-    /// Create transducer
     pub(crate) const fn new(idx: usize, pos: Vector3, rot: UnitQuaternion) -> Self {
         assert!(idx < 256);
         Self { idx, pos, rot }
     }
 
-    /// Affine transformation
     pub fn affine(&mut self, t: Vector3, r: UnitQuaternion) {
         let new_pos = Matrix4::from(r).append_translation(&t)
             * Vector4::new(self.pos[0], self.pos[1], self.pos[2], 1.0);
@@ -22,12 +20,10 @@ impl Transducer {
         self.rot = r * self.rot;
     }
 
-    /// Get the position of the transducer
     pub const fn position(&self) -> &Vector3 {
         &self.pos
     }
 
-    /// Get the rotation of the transducer
     pub const fn rotation(&self) -> &UnitQuaternion {
         &self.rot
     }
@@ -37,32 +33,28 @@ impl Transducer {
         (rotation * dir * rotation.conjugate()).imag().normalize()
     }
 
-    /// Get the local index of the transducer
     pub fn x_direction(&self) -> Vector3 {
         Self::get_direction(Vector3::x(), self.rotation())
     }
-    /// Get the y-direction of the transducer
+
     pub fn y_direction(&self) -> Vector3 {
         Self::get_direction(Vector3::y(), self.rotation())
     }
-    /// Get the z-direction of the transducer
+
     pub fn z_direction(&self) -> Vector3 {
         Self::get_direction(Vector3::z(), self.rotation())
     }
 
-    /// Get the axial direction of the transducer
     #[cfg(feature = "left_handed")]
     pub fn axial_direction(&self) -> Vector3 {
         -self.z_direction()
     }
 
-    /// Get the axial direction of the transducer
     #[cfg(not(feature = "left_handed"))]
     pub fn axial_direction(&self) -> Vector3 {
         self.z_direction()
     }
 
-    /// Get the local transducer index
     pub const fn idx(&self) -> usize {
         self.idx
     }

@@ -61,7 +61,6 @@ impl SOEMBuilder {
         }
     }
 
-    /// Set callback function when error occurred
     pub fn with_err_handler(
         self,
         err_handler: impl Fn(usize, Status) + Send + Sync + 'static,

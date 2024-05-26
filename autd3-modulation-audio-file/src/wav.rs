@@ -5,9 +5,6 @@ use std::path::{Path, PathBuf};
 
 use crate::error::AudioFileError;
 
-/// Modulation constructed from wav file
-///
-/// The wav data is resampled to the sampling frequency of Modulation.
 #[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct Wav {
     path: PathBuf,
@@ -16,12 +13,6 @@ pub struct Wav {
 }
 
 impl Wav {
-    /// Constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - Path to the wav file
-    ///
     pub fn new(path: impl AsRef<Path>) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),

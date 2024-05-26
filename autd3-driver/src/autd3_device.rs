@@ -4,7 +4,6 @@ use crate::{
     geometry::{IntoDevice, Matrix4, UnitQuaternion, Vector3, Vector4},
 };
 
-/// AUTD3 device
 #[derive(Clone, Copy, Debug, Builder)]
 pub struct AUTD3 {
     #[get]
@@ -14,27 +13,20 @@ pub struct AUTD3 {
 }
 
 impl AUTD3 {
-    /// Number of transducer in an AUTD3 device
     pub const NUM_TRANS_IN_UNIT: usize = 249;
-    /// Number of transducer in x-axis of AUTD3 device
+
     pub const NUM_TRANS_X: usize = 18;
-    /// Number of transducer in y-axis of AUTD3 device
+
     pub const NUM_TRANS_Y: usize = 14;
-    /// Spacing between transducers in mm
+
     pub const TRANS_SPACING_MM: f64 = 10.16;
-    /// Spacing between transducers
+
     pub const TRANS_SPACING: f64 = Self::TRANS_SPACING_MM * mm;
-    /// Device width including substrate
+
     pub const DEVICE_WIDTH: f64 = 192.0 * mm;
-    /// Device height including substrate
+
     pub const DEVICE_HEIGHT: f64 = 151.4 * mm;
 
-    /// Constructor
-    ///
-    /// # Arguments
-    ///
-    /// * `position` - Global position
-    ///
     pub fn new(position: Vector3) -> Self {
         Self {
             position,
@@ -58,26 +50,6 @@ impl AUTD3 {
         y == 1 && (x == 1 || x == 2 || x == 16)
     }
 
-    /// Get grid id from transducer id
-    ///
-    /// # Arguments
-    ///
-    /// * `idx` - Transducer index
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use autd3_driver::autd3_device::AUTD3;
-    ///
-    /// let (x, y) = AUTD3::grid_id(0);
-    /// assert_eq!(x, 0);
-    /// assert_eq!(y, 0);
-    ///
-    /// let (x, y) = AUTD3::grid_id(248);
-    /// assert_eq!(x, 17);
-    /// assert_eq!(y, 13);
-    /// ```
-    ///
     pub const fn grid_id(idx: usize) -> (usize, usize) {
         let local_id = idx % Self::NUM_TRANS_IN_UNIT;
         let mut offset = 0;
