@@ -1,8 +1,8 @@
 use std::time::Duration;
 
-use super::Datagram;
+use super::{Datagram, OperationGenerator};
 use crate::{
-    derive::{AUTDInternalError, Device, Geometry},
+    derive::{AUTDInternalError, Geometry},
     firmware::{
         fpga::{Segment, TransitionMode},
         operation::Operation,
@@ -39,13 +39,11 @@ impl<'a, D: DatagramST<'a>> std::ops::Deref for DatagramWithSegmentTransition<'a
 impl<'a, D: DatagramST<'a>> Datagram<'a> for DatagramWithSegmentTransition<'a, D> {
     type O1 = D::O1;
     type O2 = D::O2;
+    type G = D::G;
 
-    fn operation(
-        &'a self,
-        geometry: &'a Geometry,
-    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError> {
+    fn operation_generator(self, geometry: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
         self.datagram
-            .operation_with_segment(geometry, self.segment, self.transition_mode)
+            .operation_generator_with_segment(geometry, self.segment, self.transition_mode)
     }
 
     fn timeout(&self) -> Option<Duration> {
@@ -56,12 +54,14 @@ impl<'a, D: DatagramST<'a>> Datagram<'a> for DatagramWithSegmentTransition<'a, D
 impl<'a, D: DatagramST<'a>> Datagram<'a> for D {
     type O1 = D::O1;
     type O2 = D::O2;
+    type G = D::G;
 
-    fn operation(
-        &'a self,
-        geometry: &'a Geometry,
-    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError> {
-        self.operation_with_segment(geometry, Segment::S0, Some(TransitionMode::Immediate))
+    fn operation_generator(self, geometry: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
+        self.operation_generator_with_segment(
+            geometry,
+            Segment::S0,
+            Some(TransitionMode::Immediate),
+        )
     }
 
     fn timeout(&self) -> Option<Duration> {
@@ -72,13 +72,14 @@ impl<'a, D: DatagramST<'a>> Datagram<'a> for D {
 pub trait DatagramST<'a> {
     type O1: Operation + 'a;
     type O2: Operation + 'a;
+    type G: OperationGenerator<'a, O1 = Self::O1, O2 = Self::O2>;
 
-    fn operation_with_segment(
-        &'a self,
+    fn operation_generator_with_segment(
+        self,
         geometry: &'a Geometry,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
-    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError>;
+    ) -> Result<Self::G, AUTDInternalError>;
 
     fn timeout(&self) -> Option<Duration> {
         None

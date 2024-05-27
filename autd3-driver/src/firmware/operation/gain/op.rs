@@ -1,6 +1,5 @@
 use super::GainControlFlags;
 use crate::{
-    derive::Transducer,
     error::AUTDInternalError,
     firmware::{
         fpga::{Drive, Segment},
@@ -17,19 +16,15 @@ struct GainT {
     __pad: u8,
 }
 
-pub struct GainOp<'a> {
-    gain: Box<dyn Fn(&Transducer) -> Drive + 'a>,
+pub struct GainOp {
+    gain: Vec<Drive>,
     is_done: bool,
     segment: Segment,
     transition: bool,
 }
 
-impl<'a> GainOp<'a> {
-    pub fn new(
-        segment: Segment,
-        transition: bool,
-        gain: Box<dyn Fn(&Transducer) -> Drive + 'a>,
-    ) -> Self {
+impl GainOp {
+    pub fn new(segment: Segment, transition: bool, gain: Vec<Drive>) -> Self {
         Self {
             gain,
             is_done: false,
@@ -39,12 +34,16 @@ impl<'a> GainOp<'a> {
     }
 }
 
-impl<'a> Operation for GainOp<'a> {
+impl Operation for GainOp {
     fn required_size(&self, device: &Device) -> usize {
         std::mem::size_of::<GainT>() + device.num_transducers() * std::mem::size_of::<Drive>()
     }
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+        assert!(
+            tx.len() >= std::mem::size_of::<GainT>() + device.len() * std::mem::size_of::<Drive>()
+        );
+
         *cast::<GainT>(tx) = GainT {
             tag: TypeTag::Gain,
             segment: self.segment as u8,
@@ -56,13 +55,11 @@ impl<'a> Operation for GainOp<'a> {
             .set(GainControlFlags::UPDATE, self.transition);
 
         unsafe {
-            let dst = std::slice::from_raw_parts_mut(
+            std::ptr::copy_nonoverlapping(
+                self.gain.as_ptr(),
                 tx[std::mem::size_of::<GainT>()..].as_mut_ptr() as *mut Drive,
                 device.len(),
             );
-            dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                *d = (self.gain)(tr);
-            });
         }
 
         self.is_done = true;
@@ -104,10 +101,7 @@ mod tests {
             })
             .collect();
 
-        let mut op = GainOp::new(Segment::S0, true, {
-            let data = data.clone();
-            Box::new(move |tr| data[tr.idx()])
-        });
+        let mut op = GainOp::new(Segment::S0, true, data.clone());
 
         assert_eq!(
             op.required_size(&device),

@@ -12,17 +12,19 @@ use std::{
     sync::{Arc, RwLock, RwLockReadGuard},
 };
 
-use super::GainCalcFn;
-
 #[derive(Gain, Debug)]
 #[no_gain_cache]
 #[no_gain_transform]
-pub struct Cache<G: Gain + 'static> {
-    gain: Arc<G>,
+pub struct Cache<G: Gain> {
+    gain: G,
     cache: Arc<RwLock<HashMap<usize, Vec<Drive>>>>,
 }
 
-impl<G: Gain + 'static> std::ops::Deref for Cache<G> {
+pub trait IntoCache<G: Gain> {
+    fn with_cache(self) -> Cache<G>;
+}
+
+impl<G: Gain> std::ops::Deref for Cache<G> {
     type Target = G;
 
     fn deref(&self) -> &Self::Target {
@@ -30,11 +32,7 @@ impl<G: Gain + 'static> std::ops::Deref for Cache<G> {
     }
 }
 
-pub trait IntoCache<G: Gain + 'static> {
-    fn with_cache(self) -> Cache<G>;
-}
-
-impl<G: Gain + Clone + 'static> Clone for Cache<G> {
+impl<G: Gain + Clone> Clone for Cache<G> {
     fn clone(&self) -> Self {
         Self {
             gain: self.gain.clone(),
@@ -43,11 +41,11 @@ impl<G: Gain + Clone + 'static> Clone for Cache<G> {
     }
 }
 
-impl<G: Gain + 'static> Cache<G> {
+impl<G: Gain> Cache<G> {
     #[doc(hidden)]
     pub fn new(gain: G) -> Self {
         Self {
-            gain: Arc::new(gain),
+            gain,
             cache: Arc::new(Default::default()),
         }
     }
@@ -58,16 +56,9 @@ impl<G: Gain + 'static> Cache<G> {
                 .devices()
                 .any(|dev| !self.cache.read().unwrap().contains_key(&dev.idx()))
         {
-            let f = self.gain.calc(geometry, GainFilter::All)?;
-            *self.cache.write().unwrap() = geometry
-                .devices()
-                .map(|dev| {
-                    (dev.idx(), {
-                        let f = f(dev);
-                        dev.iter().map(f).collect()
-                    })
-                })
-                .collect();
+            let f = self.gain.calc(geometry)?;
+            *self.cache.write().unwrap() =
+                geometry.devices().map(|dev| (dev.idx(), f(dev))).collect();
         }
         Ok(())
     }
@@ -77,18 +68,14 @@ impl<G: Gain + 'static> Cache<G> {
     }
 }
 
-impl<G: Gain + 'static> Gain for Cache<G> {
-    fn calc<'a>(
-        &'a self,
-        geometry: &'a Geometry,
-        _filter: GainFilter<'a>,
-    ) -> Result<GainCalcFn<'a>, AUTDInternalError> {
+impl<G: Gain> Gain for Cache<G> {
+    fn calc(
+        &self,
+        geometry: &Geometry,
+    ) -> Result<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>, AUTDInternalError> {
         self.init(geometry)?;
         let drives = self.drives().clone();
-        Ok(Box::new(move |dev| {
-            let cache = drives[&dev.idx()].clone();
-            Box::new(move |tr| cache[tr.idx()])
-        }))
+        Ok(Box::new(move |dev| drives[&dev.idx()].clone()))
     }
 }
 
@@ -110,20 +97,13 @@ mod tests {
 
         let mut rng = rand::thread_rng();
         let d: Drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
-        let gain = TestGain {
-            f: move |_| move |_| d,
-        };
-        let cache = gain.with_cache();
+        let gain = TestGain::new(|_| |_| d, &geometry);
+        let cache = gain.clone().with_cache();
 
         assert!(cache.drives().is_empty());
         geometry.devices().try_for_each(|dev| {
-            dev.iter().try_for_each(|tr| {
-                assert_eq!(
-                    gain.calc(&geometry, GainFilter::All)?(dev)(tr),
-                    cache.calc(&geometry, GainFilter::All)?(dev)(tr)
-                );
-                Result::<(), AUTDInternalError>::Ok(())
-            })
+            assert_eq!(gain.calc(&geometry)?(dev), cache.calc(&geometry)?(dev));
+            Result::<(), AUTDInternalError>::Ok(())
         })?;
 
         Ok(())
@@ -141,16 +121,12 @@ mod tests {
     }
 
     impl Gain for CacheTestGain {
-        fn calc<'a>(
-            &'a self,
-            _: &'a Geometry,
-            filter: GainFilter<'a>,
-        ) -> Result<GainCalcFn<'a>, AUTDInternalError> {
+        fn calc(
+            &self,
+            _: &Geometry,
+        ) -> Result<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>, AUTDInternalError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
-            Ok(Self::transform(
-                filter,
-                Box::new(|_| Box::new(|_| Drive::null())),
-            ))
+            Ok(Self::transform(|_| |_| Drive::null()))
         }
     }
 
@@ -165,9 +141,9 @@ mod tests {
         .with_cache();
 
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
-        let _ = gain.calc(&geometry, GainFilter::All);
+        let _ = gain.calc(&geometry);
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
-        let _ = gain.calc(&geometry, GainFilter::All);
+        let _ = gain.calc(&geometry);
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
     }
 
@@ -186,11 +162,11 @@ mod tests {
         assert_eq!(0, g2.calc_cnt.load(Ordering::Relaxed));
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
-        let _ = g2.calc(&geometry, GainFilter::All);
+        let _ = g2.calc(&geometry);
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
-        let _ = gain.calc(&geometry, GainFilter::All);
+        let _ = gain.calc(&geometry);
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
-        let _ = g2.calc(&geometry, GainFilter::All);
+        let _ = g2.calc(&geometry);
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
     }
 }

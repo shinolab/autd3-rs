@@ -35,7 +35,7 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
     } else {
         quote! {
             impl <'autd3, #(#linetimes,)* #(#type_params,)*> IntoGainTransform<Self> for #name #ty_generics #where_clause {
-                fn with_transform<GainTransformFT: Fn(&Transducer, Drive) -> Drive , GainTransformF: Fn(&Device) -> GainTransformFT + Send + Sync>(self, f: GainTransformF) -> GainTransform<Self, GainTransformFT, GainTransformF> {
+                fn with_transform<GainTransformFT: Fn(&Transducer, Drive) -> Drive + Send + Sync, GainTransformF: Fn(&Device) -> GainTransformFT + Send + Sync + Clone>(self, f: GainTransformF) -> GainTransform<Self, GainTransformFT, GainTransformF> {
                     GainTransform::new(self, f)
                 }
             }
@@ -48,12 +48,17 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
     let datagram = quote! {
         impl <'autd3, #(#linetimes,)* #(#type_params,)*> Datagram<'autd3> for #name #ty_generics #where_clause
         {
-            type O1 = GainOp<'autd3>;
+            type O1 = GainOp;
             type O2 = NullOp;
+            type G =  GainOperationGenerator<'autd3>;
 
-            fn operation(&'autd3 self, geometry: &'autd3 Geometry) -> Result<impl Fn(&'autd3 Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError> {
-                let f = self.calc(geometry, GainFilter::All)?;
-                Ok(move |dev| (GainOp::new(Segment::S0, true, f(dev)), NullOp::default()))
+            fn operation_generator(self, geometry: &'autd3 Geometry) -> Result<Self::G, AUTDInternalError> {
+                let g = self.calc(geometry)?;
+                Ok(Self::G {
+                    g: Box::new(g),
+                    segment: Segment::S0,
+                    transition: true,
+                })
             }
         }
     };
@@ -64,12 +69,17 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
     let datagram_with_segment = quote! {
         impl <'autd3, #(#linetimes,)* #(#type_params,)*> DatagramS<'autd3> for #name #ty_generics #where_clause
         {
-            type O1 = GainOp<'autd3>;
+            type O1 = GainOp;
             type O2 = NullOp;
+            type G =  GainOperationGenerator<'autd3>;
 
-            fn operation_with_segment(&'autd3 self, geometry: &'autd3 Geometry, segment: Segment, transition: bool) -> Result<impl Fn(&'autd3 Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError>  {
-                let f = self.calc(geometry, GainFilter::All)?;
-                Ok(move |dev| (GainOp::new(segment, transition, f(dev)), NullOp::default()))
+            fn operation_generator_with_segment(self, geometry: &'autd3 Geometry, segment: Segment, transition: bool) -> Result<Self::G, AUTDInternalError> {
+                let g = self.calc(geometry)?;
+                Ok(Self::G {
+                    g: Box::new(g),
+                    segment,
+                    transition,
+                })
             }
         }
     };

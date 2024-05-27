@@ -5,7 +5,7 @@ use crate::{
     firmware::{cpu::GainSTMMode, fpga::*},
 };
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq, Clone)]
 pub enum AUTDInternalError {
     #[error(
         "Modulation buffer size ({0}) is out of range ([{}, {}])",

@@ -6,21 +6,21 @@ use crate::{
 };
 
 #[repr(C, align(2))]
-struct ConfigSilencerFixedCompletionSteps {
+struct SilencerFixedCompletionSteps {
     tag: TypeTag,
     flag: u8,
     value_intensity: u16,
     value_phase: u16,
 }
 
-pub struct ConfigSilencerFixedCompletionStepsOp {
+pub struct SilencerFixedCompletionStepsOp {
     is_done: bool,
     value_intensity: u16,
     value_phase: u16,
     strict_mode: bool,
 }
 
-impl ConfigSilencerFixedCompletionStepsOp {
+impl SilencerFixedCompletionStepsOp {
     pub fn new(value_intensity: u16, value_phase: u16, strict_mode: bool) -> Self {
         Self {
             is_done: false,
@@ -31,9 +31,9 @@ impl ConfigSilencerFixedCompletionStepsOp {
     }
 }
 
-impl Operation for ConfigSilencerFixedCompletionStepsOp {
+impl Operation for SilencerFixedCompletionStepsOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        *cast::<ConfigSilencerFixedCompletionSteps>(tx) = ConfigSilencerFixedCompletionSteps {
+        *cast::<SilencerFixedCompletionSteps>(tx) = SilencerFixedCompletionSteps {
             tag: TypeTag::Silencer,
             flag: SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS
                 | if self.strict_mode {
@@ -46,11 +46,11 @@ impl Operation for ConfigSilencerFixedCompletionStepsOp {
         };
 
         self.is_done = true;
-        Ok(std::mem::size_of::<ConfigSilencerFixedCompletionSteps>())
+        Ok(std::mem::size_of::<SilencerFixedCompletionSteps>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        std::mem::size_of::<ConfigSilencerFixedCompletionSteps>()
+        std::mem::size_of::<SilencerFixedCompletionSteps>()
     }
 
     fn is_done(&self) -> bool {
@@ -74,13 +74,13 @@ mod tests {
     fn test(#[case] value: u8, #[case] strict_mode: bool) {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
-        let mut tx = [0x00u8; size_of::<ConfigSilencerFixedCompletionSteps>()];
+        let mut tx = [0x00u8; size_of::<SilencerFixedCompletionSteps>()];
 
-        let mut op = ConfigSilencerFixedCompletionStepsOp::new(0x1234, 0x5678, strict_mode);
+        let mut op = SilencerFixedCompletionStepsOp::new(0x1234, 0x5678, strict_mode);
 
         assert_eq!(
             op.required_size(&device),
-            size_of::<ConfigSilencerFixedCompletionSteps>()
+            size_of::<SilencerFixedCompletionSteps>()
         );
         assert!(!op.is_done());
 

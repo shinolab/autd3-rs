@@ -31,8 +31,8 @@ struct ModulationSubseq {
     size: u16,
 }
 
-pub struct ModulationOp<F: ExactSizeIterator<Item = u8>> {
-    modulation: Peekable<F>,
+pub struct ModulationOp {
+    modulation: Peekable<std::vec::IntoIter<u8>>,
     sent: usize,
     is_done: bool,
     config: SamplingConfig,
@@ -41,16 +41,16 @@ pub struct ModulationOp<F: ExactSizeIterator<Item = u8>> {
     transition_mode: Option<TransitionMode>,
 }
 
-impl<F: ExactSizeIterator<Item = u8>> ModulationOp<F> {
+impl ModulationOp {
     pub fn new(
-        modulation: F,
+        modulation: Vec<u8>,
         config: SamplingConfig,
         rep: u32,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Self {
         Self {
-            modulation: modulation.peekable(),
+            modulation: modulation.into_iter().peekable(),
             sent: 0,
             is_done: false,
             config,
@@ -61,7 +61,7 @@ impl<F: ExactSizeIterator<Item = u8>> ModulationOp<F> {
     }
 }
 
-impl<F: ExactSizeIterator<Item = u8>> Operation for ModulationOp<F> {
+impl Operation for ModulationOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         let is_first = self.sent == 0;
 
@@ -190,7 +190,7 @@ mod tests {
         );
 
         let mut op = ModulationOp::new(
-            buf.iter().cloned(),
+            buf.clone(),
             SamplingConfig::DivisionRaw(freq_div),
             rep,
             segment,
@@ -263,7 +263,7 @@ mod tests {
         let buf: Vec<u8> = (0..MOD_SIZE).map(|_| rng.gen()).collect();
 
         let mut op = ModulationOp::new(
-            buf.iter().cloned(),
+            buf.clone(),
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
             0xFFFFFFFF,
             Segment::S0,

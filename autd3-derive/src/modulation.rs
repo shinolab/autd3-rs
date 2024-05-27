@@ -71,20 +71,18 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let datagram_with_segment_transition = quote! {
         impl <'autd3, #(#linetimes,)* #(#type_params,)* > DatagramST<'autd3> for #name #ty_generics #where_clause {
-            type O1 = ModulationOp<Box<dyn ExactSizeIterator<Item = u8> + 'autd3>>;
+            type O1 = ModulationOp;
             type O2 = NullOp;
+            type G =  ModulationOperationGenerator<'autd3>;
 
-            fn operation_with_segment(&'autd3 self, geometry: &'autd3 Geometry, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<impl Fn(&'autd3 Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError> {
-                let f = self.calc(geometry)?;
-                let sampling_config = self.sampling_config();
-                let rep = self.loop_behavior().rep;
-                Ok(move |dev| {
-                    (
-                        Self::O1::new(f(dev), sampling_config, rep, segment, transition_mode),
-                        Self::O2::default(),
-                    )
+            fn operation_generator_with_segment(self, geometry: &'autd3 Geometry, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<Self::G, AUTDInternalError> {
+                Ok(Self::G {
+                    g: self.calc(geometry)?,
+                    config: self.sampling_config(),
+                    rep: self.loop_behavior().rep,
+                    segment,
+                    transition_mode,
                 })
-
             }
 
             fn timeout(&self) -> Option<std::time::Duration> {
@@ -104,7 +102,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     } else {
         quote! {
             impl <#(#linetimes,)* #(#type_params,)*> IntoModulationTransform<Self> for #name #ty_generics #where_clause {
-                fn with_transform<ModulationTransformF: Fn(usize, u8) -> u8 + Send + Sync>(self, f: ModulationTransformF) -> ModulationTransform<Self, ModulationTransformF> {
+                fn with_transform<ModulationTransformF: Fn(usize, u8) -> u8 + Send + Sync + Clone + 'static>(self, f: ModulationTransformF) -> ModulationTransform<Self, ModulationTransformF> {
                     ModulationTransform::new(self, f)
                 }
             }

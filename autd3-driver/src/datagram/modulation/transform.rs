@@ -1,10 +1,8 @@
 use crate::derive::*;
 
-use super::ModCalcFn;
-
 #[derive(Modulation)]
 #[no_modulation_transform]
-pub struct Transform<M: Modulation, F: Fn(usize, u8) -> u8 + Send + Sync> {
+pub struct Transform<M: Modulation, F: Fn(usize, u8) -> u8 + Send + Sync + Clone + 'static> {
     m: M,
     #[no_change]
     config: SamplingConfig,
@@ -12,7 +10,7 @@ pub struct Transform<M: Modulation, F: Fn(usize, u8) -> u8 + Send + Sync> {
     loop_behavior: LoopBehavior,
 }
 
-impl<M: Modulation, F: Fn(usize, u8) -> u8 + Send + Sync> Transform<M, F> {
+impl<M: Modulation, F: Fn(usize, u8) -> u8 + Send + Sync + Clone + 'static> Transform<M, F> {
     #[doc(hidden)]
     pub fn new(m: M, f: F) -> Self {
         Self {
@@ -25,15 +23,27 @@ impl<M: Modulation, F: Fn(usize, u8) -> u8 + Send + Sync> Transform<M, F> {
 }
 
 pub trait IntoTransform<M: Modulation> {
-    fn with_transform<F: Fn(usize, u8) -> u8 + Send + Sync>(self, f: F) -> Transform<M, F>;
+    fn with_transform<F: Fn(usize, u8) -> u8 + Send + Sync + Clone + 'static>(
+        self,
+        f: F,
+    ) -> Transform<M, F>;
 }
 
-impl<M: Modulation, F: Fn(usize, u8) -> u8 + Send + Sync> Modulation for Transform<M, F> {
-    fn calc<'a>(&'a self, geometry: &'a Geometry) -> Result<ModCalcFn<'a>, AUTDInternalError> {
+impl<M: Modulation, F: Fn(usize, u8) -> u8 + Send + Sync + Clone + 'static> Modulation
+    for Transform<M, F>
+{
+    fn calc(
+        &self,
+        geometry: &Geometry,
+    ) -> Result<Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>, AUTDInternalError> {
         let src = self.m.calc(geometry)?;
-        let f = &self.f;
+        let f = self.f.clone();
         Ok(Box::new(move |dev| {
-            Box::new(src(dev).enumerate().map(move |(i, x)| (f)(i, x)))
+            src(dev)
+                .into_iter()
+                .enumerate()
+                .map(|(i, x)| (f)(i, x))
+                .collect()
         }))
     }
 }
@@ -80,7 +90,6 @@ mod tests {
                 }
                 .with_transform(|_, x| x / 2)
                 .calc(&geometry)?(dev)
-                .collect::<Vec<_>>()
             );
             Result::<(), AUTDInternalError>::Ok(())
         })?;
