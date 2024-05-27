@@ -26,10 +26,7 @@ pub trait IntoRadiationPressure<M: Modulation> {
 }
 
 impl<M: Modulation> Modulation for RadiationPressure<M> {
-    fn calc<'a>(
-        &'a self,
-        geometry: &Geometry,
-    ) -> Result<Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
         let src = self.m.calc(geometry)?;
         Ok(Box::new(move |dev| {
             src(dev)

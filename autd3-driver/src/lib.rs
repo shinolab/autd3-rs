@@ -16,11 +16,11 @@ pub use async_trait::async_trait;
 pub mod derive {
     pub use crate::{
         datagram::{
-            Datagram, DatagramS, DatagramST, Gain, GainCache, GainOperationGenerator,
-            GainTransform, IntoGainCache, IntoGainTransform, IntoModulationCache,
-            IntoModulationTransform, IntoRadiationPressure, Modulation, ModulationCache,
-            ModulationOperationGenerator, ModulationProperty, ModulationTransform,
-            RadiationPressure,
+            Datagram, DatagramS, DatagramST, Gain, GainCache, GainCalcResult,
+            GainOperationGenerator, GainTransform, IntoGainCache, IntoGainTransform,
+            IntoModulationCache, IntoModulationTransform, IntoRadiationPressure, Modulation,
+            ModulationCache, ModulationCalcResult, ModulationOperationGenerator,
+            ModulationProperty, ModulationTransform, RadiationPressure,
         },
         defined::{rad, DEFAULT_TIMEOUT},
         error::AUTDInternalError,

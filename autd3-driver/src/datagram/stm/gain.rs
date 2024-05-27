@@ -13,8 +13,6 @@ use crate::{
 #[no_const]
 pub struct GainSTM<G: Gain, F: ExactSizeIterator<Item = G> + Send + Sync + Clone> {
     gains: F,
-    #[get]
-    len: usize,
     #[getset]
     loop_behavior: LoopBehavior,
     #[get]
@@ -28,7 +26,6 @@ impl<G: Gain, F: ExactSizeIterator<Item = G> + Send + Sync + Clone> GainSTM<G, F
         let len = gains.len();
         Ok(Self {
             gains,
-            len,
             loop_behavior: LoopBehavior::infinite(),
             sampling_config: STMSamplingConfig::Freq(freq).sampling(len)?,
             mode: GainSTMMode::PhaseIntensityFull,
@@ -39,7 +36,6 @@ impl<G: Gain, F: ExactSizeIterator<Item = G> + Send + Sync + Clone> GainSTM<G, F
         let len = gains.len();
         Ok(Self {
             gains,
-            len,
             loop_behavior: LoopBehavior::infinite(),
             sampling_config: STMSamplingConfig::FreqNearest(freq).sampling(len)?,
             mode: GainSTMMode::PhaseIntensityFull,
@@ -47,10 +43,8 @@ impl<G: Gain, F: ExactSizeIterator<Item = G> + Send + Sync + Clone> GainSTM<G, F
     }
 
     pub fn from_sampling_config(config: SamplingConfig, gains: F) -> Self {
-        let len = gains.len();
         Self {
             gains,
-            len,
             loop_behavior: LoopBehavior::infinite(),
             sampling_config: config,
             mode: GainSTMMode::PhaseIntensityFull,
@@ -63,6 +57,7 @@ impl<G: Gain, F: ExactSizeIterator<Item = G> + Send + Sync + Clone> GainSTM<G, F
 }
 
 pub struct GainSTMOperationGenerator<'a> {
+    #[allow(clippy::type_complexity)]
     g: Vec<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync + 'a>>,
     mode: GainSTMMode,
     config: SamplingConfig,
@@ -96,7 +91,7 @@ impl<'a, G: Gain + 'a, F: ExactSizeIterator<Item = G> + Send + Sync + Clone + 'a
 {
     type O1 = crate::firmware::operation::GainSTMOp;
     type O2 = crate::firmware::operation::NullOp;
-    type G =  GainSTMOperationGenerator<'a>;
+    type G = GainSTMOperationGenerator<'a>;
 
     fn operation_generator_with_segment(
         self,

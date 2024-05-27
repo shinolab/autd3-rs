@@ -32,10 +32,7 @@ pub trait IntoTransform<M: Modulation> {
 impl<M: Modulation, F: Fn(usize, u8) -> u8 + Send + Sync + Clone + 'static> Modulation
     for Transform<M, F>
 {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-    ) -> Result<Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
         let src = self.m.calc(geometry)?;
         let f = self.f.clone();
         Ok(Box::new(move |dev| {

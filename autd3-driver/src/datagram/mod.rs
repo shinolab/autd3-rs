@@ -21,13 +21,14 @@ pub use clk::ConfigureFPGAClock;
 pub use debug::DebugSettings;
 pub use force_fan::ForceFan;
 pub use gain::{
-    Gain, GainCache, GainOperationGenerator, GainTransform, Group, IntoGainCache, IntoGainTransform,
+    Gain, GainCache, GainCalcResult, GainOperationGenerator, GainTransform, Group, IntoGainCache,
+    IntoGainTransform,
 };
 pub use gpio_in::EmulateGPIOIn;
 pub use modulation::{
     IntoModulationCache, IntoModulationTransform, IntoRadiationPressure, Modulation,
-    ModulationCache, ModulationOperationGenerator, ModulationProperty, ModulationTransform,
-    RadiationPressure,
+    ModulationCache, ModulationCalcResult, ModulationOperationGenerator, ModulationProperty,
+    ModulationTransform, RadiationPressure,
 };
 pub use phase_filter::PhaseFilter;
 pub use pulse_width_encoder::PulseWidthEncoder;
