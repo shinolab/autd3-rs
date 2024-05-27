@@ -2,14 +2,12 @@ use crate::derive::*;
 
 use std::sync::{Arc, RwLock, RwLockReadGuard};
 
-use super::ModCalcFn;
-
 #[derive(Modulation)]
 #[no_modulation_cache]
 #[no_radiation_pressure]
 #[no_modulation_transform]
 pub struct Cache<M: Modulation> {
-    m: Arc<M>,
+    m: M,
     cache: Arc<RwLock<HashMap<usize, Vec<u8>>>>,
     #[no_change]
     config: SamplingConfig,
@@ -44,7 +42,7 @@ impl<M: Modulation> Cache<M> {
         Self {
             config: m.sampling_config(),
             loop_behavior: m.loop_behavior(),
-            m: Arc::new(m),
+            m,
             cache: Arc::new(Default::default()),
         }
     }
@@ -54,7 +52,7 @@ impl<M: Modulation> Cache<M> {
             let f = self.m.calc(geometry)?;
             *self.cache.write().unwrap() = geometry
                 .devices()
-                .map(|dev| (dev.idx(), { f(dev).collect() }))
+                .map(|dev| (dev.idx(), { f(dev) }))
                 .collect();
         }
         Ok(())
@@ -66,13 +64,13 @@ impl<M: Modulation> Cache<M> {
 }
 
 impl<M: Modulation> Modulation for Cache<M> {
-    fn calc<'a>(&'a self, geometry: &'a Geometry) -> Result<ModCalcFn<'a>, AUTDInternalError> {
+    fn calc<'a>(
+        &'a self,
+        geometry: &Geometry,
+    ) -> Result<Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>, AUTDInternalError> {
         self.init(geometry)?;
         let buffer = self.buffer().clone();
-        Ok(Box::new(move |dev| {
-            let cache = buffer[&dev.idx()].clone();
-            Box::new(cache.into_iter())
-        }))
+        Ok(Box::new(move |dev| buffer[&dev.idx()].clone()))
     }
 }
 
@@ -108,10 +106,7 @@ mod tests {
         assert!(cache.buffer().is_empty());
 
         geometry.devices().try_for_each(|dev| {
-            assert_eq!(
-                m.calc(&geometry)?(dev).collect::<Vec<_>>(),
-                cache.calc(&geometry)?(dev).collect::<Vec<_>>()
-            );
+            assert_eq!(m.calc(&geometry)?(dev), cache.calc(&geometry)?(dev));
             Result::<(), AUTDInternalError>::Ok(())
         })?;
 
@@ -126,9 +121,12 @@ mod tests {
     }
 
     impl Modulation for TestCacheModulation {
-        fn calc<'a>(&'a self, _: &'a Geometry) -> Result<ModCalcFn<'a>, AUTDInternalError> {
+        fn calc<'a>(
+            &'a self,
+            _: &'a Geometry,
+        ) -> Result<Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>, AUTDInternalError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
-            Ok(Box::new(move |_| Box::new([0x00, 0x00].into_iter())))
+            Ok(Box::new(move |_| vec![0x00, 0x00]))
         }
     }
 

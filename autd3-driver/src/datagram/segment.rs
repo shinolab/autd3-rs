@@ -7,6 +7,8 @@ use crate::{
     firmware::operation::SwapSegmentOperation,
 };
 
+use super::OperationGenerator;
+
 pub trait SwapSegmentDatagram {
     type O: crate::firmware::operation::SwapSegmentOperation;
 }
@@ -91,23 +93,40 @@ impl<T> SwapSegment<T> {
     }
 }
 
+pub struct SwapSegmentOpGenerator<T: SwapSegmentDatagram + Sync + Send> {
+    _phantom: std::marker::PhantomData<T>,
+    segment: Segment,
+    transition_mode: TransitionMode,
+}
+
+impl<'a, T: SwapSegmentDatagram + Sync + Send + 'a> OperationGenerator<'a>
+    for SwapSegmentOpGenerator<T>
+{
+    type O1 = T::O;
+    type O2 = crate::firmware::operation::NullOp;
+
+    fn generate(&'a self, _: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+        Ok((
+            Self::O1::new(self.segment, self.transition_mode),
+            Self::O2::default(),
+        ))
+    }
+}
+
 impl<'a, T: SwapSegmentDatagram + Sync + Send + 'a> Datagram<'a> for SwapSegment<T> {
     type O1 = T::O;
     type O2 = crate::firmware::operation::NullOp;
+    type G = SwapSegmentOpGenerator<T>;
 
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation(
-        &'a self,
-        _: &'a Geometry,
-    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2), AUTDInternalError> {
-        Ok(|_| {
-            (
-                Self::O1::new(self.segment, self.transition_mode),
-                Self::O2::default(),
-            )
+    fn operation_generator(self, _: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
+        Ok(SwapSegmentOpGenerator {
+            _phantom: std::marker::PhantomData,
+            segment: self.segment,
+            transition_mode: self.transition_mode,
         })
     }
 }

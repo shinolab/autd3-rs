@@ -9,18 +9,27 @@ impl Clear {
     }
 }
 
+pub struct ClearOpGenerator {}
+
+impl<'a> OperationGenerator<'a> for ClearOpGenerator {
+    type O1 = crate::firmware::operation::ClearOp;
+    type O2 = crate::firmware::operation::NullOp;
+
+    fn generate(&'a self, _: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+        Ok((Self::O1::default(), Self::O2::default()))
+    }
+}
+
 impl<'a> Datagram<'a> for Clear {
     type O1 = crate::firmware::operation::ClearOp;
     type O2 = crate::firmware::operation::NullOp;
+    type G = ClearOpGenerator;
 
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation(
-        &'a self,
-        _: &'a Geometry,
-    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2), AUTDInternalError> {
-        Ok(move |_| (Self::O1::default(), Self::O2::default()))
+    fn operation_generator(self, _: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
+        Ok(ClearOpGenerator {})
     }
 }

@@ -11,19 +11,16 @@ use std::{
     collections::{hash_map::Entry, HashMap, HashSet},
     fmt::Debug,
     hash::Hash,
-    sync::{Arc, RwLock},
 };
 
 use bitvec::prelude::*;
-
-use super::GainCalcFn;
 
 #[derive(Gain)]
 pub struct Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync + 'static,
-    FK: Fn(&Transducer) -> Option<K> + 'static,
-    F: Fn(&Device) -> FK + Send + Sync + 'static,
+    FK: Fn(&Transducer) -> Option<K> + Send + Sync + 'static,
+    F: Fn(&Device) -> FK + Clone + Send + Sync + 'static,
 {
     f: F,
     gain_map: HashMap<K, Box<dyn Gain>>,
@@ -32,8 +29,8 @@ where
 impl<K, FK, F> Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync + 'static,
-    FK: Fn(&Transducer) -> Option<K> + 'static,
-    F: Fn(&Device) -> FK + Send + Sync + 'static,
+    FK: Fn(&Transducer) -> Option<K> + Send + Sync + 'static,
+    F: Fn(&Device) -> FK + Clone + Send + Sync + 'static,
 {
     pub fn new(f: F) -> Group<K, FK, F> {
         Group {
@@ -81,15 +78,14 @@ where
 impl<K, FK, F> Gain for Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync + 'static,
-    FK: Fn(&Transducer) -> Option<K> + 'static,
-    F: Fn(&Device) -> FK + Send + Sync + 'static,
+    FK: Fn(&Transducer) -> Option<K> + Send + Sync + 'static,
+    F: Fn(&Device) -> FK + Clone + Send + Sync + 'static,
 {
-    fn calc<'a>(
-        &'a self,
-        geometry: &'a Geometry,
-        _filter: GainFilter<'a>,
-    ) -> Result<GainCalcFn<'a>, AUTDInternalError> {
-        let filters = self.get_filters(geometry);
+    fn calc(
+        &self,
+        geometry: &Geometry,
+    ) -> Result<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>, AUTDInternalError> {
+        let mut filters = self.get_filters(geometry);
 
         let specified_keys = self.gain_map.keys().cloned().collect::<HashSet<_>>();
         let provided_keys = filters.keys().cloned().collect::<HashSet<_>>();
@@ -115,31 +111,26 @@ where
             .iter()
             .map(|(k, g)| {
                 Ok((k.clone(), {
-                    let f = g.calc(geometry, GainFilter::Filter(&filters[k]))?;
+                    let f = g.calc_with_filter(geometry, filters.remove(k).unwrap())?;
                     geometry
                         .devices()
-                        .map(move |dev| {
-                            (dev.idx(), {
-                                let f = f(dev);
-                                dev.iter().map(f).collect::<Vec<_>>()
-                            })
-                        })
+                        .map(move |dev| (dev.idx(), f(dev)))
                         .collect::<HashMap<_, _>>()
                 }))
             })
             .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?;
 
-        let drives_cache = Arc::new(RwLock::new(drives_cache));
-        let f = &self.f;
+        let f = self.f.clone();
         Ok(Box::new(move |dev| {
             let fk = f(dev);
             let dev_idx = dev.idx();
-            let drives_cache = drives_cache.clone();
-            Box::new(move |tr| {
-                fk(tr)
-                    .map(|key| drives_cache.read().unwrap()[&key][&dev_idx][tr.idx()])
-                    .unwrap_or(Drive::null())
-            })
+            dev.iter()
+                .map(|tr| {
+                    fk(tr)
+                        .map(|key| drives_cache[&key][&dev_idx][tr.idx()])
+                        .unwrap_or(Drive::null())
+                })
+                .collect()
         }))
     }
 }
@@ -150,9 +141,7 @@ mod tests {
 
     use super::{super::tests::TestGain, *};
 
-    use crate::{
-        datagram::gain::tests::ErrGain, defined::FREQ_40K, geometry::tests::create_geometry,
-    };
+    use crate::{defined::FREQ_40K, geometry::tests::create_geometry};
 
     #[test]
     fn test() -> anyhow::Result<()> {
@@ -163,12 +152,8 @@ mod tests {
         let d1: Drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
         let d2: Drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
 
-        let g1 = TestGain {
-            f: move |_| move |_| d1,
-        };
-        let g2 = TestGain {
-            f: move |_| move |_| d2,
-        };
+        let g1 = TestGain::new(|_| |_| d1, &geometry);
+        let g2 = TestGain::new(|_| |_| d2, &geometry);
 
         let gain = Group::new(|dev| {
             let dev_idx = dev.idx();
@@ -180,19 +165,14 @@ mod tests {
                 _ => None,
             }
         })
-        .set("null", TestGain::null())
+        .set("null", TestGain::null(&geometry))
         .set("test", g1)
         .set("test2", g2);
 
-        let g = gain.calc(&geometry, GainFilter::All)?;
+        let g = gain.calc(&geometry)?;
         let drives = geometry
             .devices()
-            .map(|dev| {
-                (dev.idx(), {
-                    let f = g(dev);
-                    dev.iter().map(|tr| f(tr)).collect::<Vec<_>>()
-                })
-            })
+            .map(|dev| (dev.idx(), g(dev)))
             .collect::<HashMap<_, _>>();
         assert_eq!(4, drives.len());
         drives[&0].iter().enumerate().for_each(|(i, &d)| match i {
@@ -235,11 +215,11 @@ mod tests {
                 _ => None,
             }
         })
-        .set("test2", TestGain::null());
+        .set("test2", TestGain::null(&geometry));
 
         assert_eq!(
             Some(AUTDInternalError::UnkownKey("[\"test2\"]".to_owned())),
-            gain.calc(&geometry, GainFilter::All).err()
+            gain.calc(&geometry).err()
         );
     }
 
@@ -254,11 +234,11 @@ mod tests {
                 _ => None,
             }
         })
-        .set("test", TestGain::null());
+        .set("test", TestGain::null(&geometry));
 
         assert_eq!(
             Some(AUTDInternalError::UnspecifiedKey("[\"null\"]".to_owned())),
-            gain.calc(&geometry, GainFilter::All).err()
+            gain.calc(&geometry).err()
         );
     }
 
@@ -266,11 +246,11 @@ mod tests {
     fn test_calc_err() {
         let geometry = create_geometry(2, 249, FREQ_40K);
 
-        let gain = Group::new(|_dev| |_tr| Some("test")).set("test", ErrGain {});
+        let gain = Group::new(|_dev| |_tr| Some("test")).set("test", TestGain::err());
 
         assert_eq!(
             Some(AUTDInternalError::GainError("test".to_owned())),
-            gain.calc(&geometry, GainFilter::All).err()
+            gain.calc(&geometry,).err()
         );
     }
 }

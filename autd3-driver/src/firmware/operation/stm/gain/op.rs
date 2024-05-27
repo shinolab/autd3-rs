@@ -1,7 +1,7 @@
 use std::{iter::Peekable, mem::size_of};
 
 use crate::{
-    derive::Transducer,
+    derive::SamplingConfig,
     error::AUTDInternalError,
     firmware::{
         cpu::GainSTMMode,
@@ -37,32 +37,32 @@ struct GainSTMSubseq {
     flag: GainSTMControlFlags,
 }
 
-pub struct GainSTMOp<'a, F: ExactSizeIterator<Item = Box<dyn Fn(&Transducer) -> Drive + 'a>>> {
-    gains: Peekable<F>,
+pub struct GainSTMOp {
+    gains: Peekable<std::vec::IntoIter<Vec<Drive>>>,
     sent: usize,
     is_done: bool,
     mode: GainSTMMode,
-    freq_div: u32,
+    config: SamplingConfig,
     rep: u32,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
 }
 
-impl<'a, F: ExactSizeIterator<Item = Box<dyn Fn(&Transducer) -> Drive + 'a>>> GainSTMOp<'a, F> {
+impl GainSTMOp {
     pub fn new(
-        gains: F,
+        gains: Vec<Vec<Drive>>,
         mode: GainSTMMode,
-        freq_div: u32,
+        config: SamplingConfig,
         rep: u32,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Self {
         Self {
-            gains: gains.peekable(),
+            gains: gains.into_iter().peekable(),
             sent: 0,
             is_done: false,
             mode,
-            freq_div,
+            config,
             rep,
             segment,
             transition_mode,
@@ -70,9 +70,7 @@ impl<'a, F: ExactSizeIterator<Item = Box<dyn Fn(&Transducer) -> Drive + 'a>>> Ga
     }
 }
 
-impl<'a, F: ExactSizeIterator<Item = Box<dyn Fn(&Transducer) -> Drive + 'a>>> Operation
-    for GainSTMOp<'a, F>
-{
+impl Operation for GainSTMOp {
     fn required_size(&self, device: &Device) -> usize {
         if self.sent == 0 {
             size_of::<GainSTMHead>() + device.num_transducers() * size_of::<Drive>()
@@ -90,31 +88,29 @@ impl<'a, F: ExactSizeIterator<Item = Box<dyn Fn(&Transducer) -> Drive + 'a>>> Op
             size_of::<GainSTMSubseq>()
         };
 
-        let send = {
+        let send = unsafe {
             let mut send = 0;
             match self.mode {
                 GainSTMMode::PhaseIntensityFull => {
                     if let Some(g) = self.gains.next() {
-                        unsafe {
-                            let dst = std::slice::from_raw_parts_mut(
-                                tx[offset..].as_mut_ptr() as *mut Drive,
-                                device.len(),
-                            );
-                            dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                                *d = g(tr);
-                            });
-                        }
+                        let dst = std::slice::from_raw_parts_mut(
+                            tx[offset..].as_mut_ptr() as *mut Drive,
+                            device.len(),
+                        );
+                        dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
+                            *d = g[tr.idx()];
+                        });
                         send += 1;
                     }
                 }
-                GainSTMMode::PhaseFull => unsafe {
+                GainSTMMode::PhaseFull => {
                     if let Some(g) = self.gains.next() {
                         let dst = std::slice::from_raw_parts_mut(
                             tx[offset..].as_mut_ptr() as *mut PhaseFull<0>,
                             device.len(),
                         );
                         dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
+                            d.set(g[tr.idx()]);
                         });
                         send += 1;
                     }
@@ -124,19 +120,19 @@ impl<'a, F: ExactSizeIterator<Item = Box<dyn Fn(&Transducer) -> Drive + 'a>>> Op
                             device.len(),
                         );
                         dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
+                            d.set(g[tr.idx()]);
                         });
                         send += 1;
                     }
-                },
-                GainSTMMode::PhaseHalf => unsafe {
+                }
+                GainSTMMode::PhaseHalf => {
                     if let Some(g) = self.gains.next() {
                         let dst = std::slice::from_raw_parts_mut(
                             tx[offset..].as_mut_ptr() as *mut PhaseHalf<0>,
                             device.len(),
                         );
                         dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
+                            d.set(g[tr.idx()]);
                         });
                         send += 1;
                     }
@@ -146,7 +142,7 @@ impl<'a, F: ExactSizeIterator<Item = Box<dyn Fn(&Transducer) -> Drive + 'a>>> Op
                             device.len(),
                         );
                         dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
+                            d.set(g[tr.idx()]);
                         });
                         send += 1;
                     }
@@ -156,7 +152,7 @@ impl<'a, F: ExactSizeIterator<Item = Box<dyn Fn(&Transducer) -> Drive + 'a>>> Op
                             device.len(),
                         );
                         dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
+                            d.set(g[tr.idx()]);
                         });
                         send += 1;
                     }
@@ -166,11 +162,11 @@ impl<'a, F: ExactSizeIterator<Item = Box<dyn Fn(&Transducer) -> Drive + 'a>>> Op
                             device.len(),
                         );
                         dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
+                            d.set(g[tr.idx()]);
                         });
                         send += 1;
                     }
-                },
+                }
             }
             send
         };
@@ -195,7 +191,7 @@ impl<'a, F: ExactSizeIterator<Item = Box<dyn Fn(&Transducer) -> Drive + 'a>>> Op
                     .map(|m| m.mode())
                     .unwrap_or(TRANSITION_MODE_NONE),
                 transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
-                freq_div: self.freq_div,
+                freq_div: self.config.division(device.ultrasound_freq())?,
                 rep: self.rep,
                 __padding: [0; 4],
             };
@@ -299,11 +295,9 @@ mod tests {
         );
 
         let mut op = GainSTMOp::new(
-            gain_data
-                .iter()
-                .map(|g| Box::new(move |tr: &Transducer| g[tr.idx()]) as Box<_>),
+            gain_data.clone(),
             GainSTMMode::PhaseIntensityFull,
-            freq_div,
+            SamplingConfig::DivisionRaw(freq_div),
             rep,
             segment,
             Some(transition_mode),
@@ -446,12 +440,10 @@ mod tests {
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
         let rep = rng.gen_range(0x0000001..=0xFFFFFFFF);
         let segment = Segment::S1;
-        let mut op = GainSTMOp::<_>::new(
-            gain_data
-                .iter()
-                .map(|g| Box::new(move |tr: &Transducer| g[tr.idx()]) as Box<_>),
+        let mut op = GainSTMOp::new(
+            gain_data.clone(),
             GainSTMMode::PhaseFull,
-            freq_div,
+            SamplingConfig::DivisionRaw(freq_div),
             rep,
             segment,
             None,
@@ -580,12 +572,10 @@ mod tests {
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
         let rep = rng.gen_range(0x0000001..=0xFFFFFFFF);
         let segment = Segment::S0;
-        let mut op = GainSTMOp::<_>::new(
-            gain_data
-                .iter()
-                .map(|g| Box::new(move |tr: &Transducer| g[tr.idx()]) as Box<_>),
+        let mut op = GainSTMOp::new(
+            gain_data.clone(),
             GainSTMMode::PhaseHalf,
-            freq_div,
+            SamplingConfig::DivisionRaw(freq_div),
             rep,
             segment,
             Some(TransitionMode::SyncIdx),

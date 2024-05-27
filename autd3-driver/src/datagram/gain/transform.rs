@@ -7,28 +7,32 @@ pub use crate::{
 };
 pub use autd3_derive::Gain;
 
-use super::GainCalcFn;
-
 #[derive(Gain)]
 #[no_gain_transform]
 pub struct Transform<
-    G: Gain + 'static,
-    FT: Fn(&Transducer, Drive) -> Drive + 'static,
-    F: Fn(&Device) -> FT + Send + Sync + 'static,
+    G: Gain,
+    FT: Fn(&Transducer, Drive) -> Drive + Send + Sync,
+    F: Fn(&Device) -> FT + Send + Sync + Clone + 'static,
 > {
     gain: G,
     f: F,
 }
 
 pub trait IntoTransform<G: Gain> {
-    fn with_transform<FT: Fn(&Transducer, Drive) -> Drive, F: Fn(&Device) -> FT + Send + Sync>(
+    fn with_transform<
+        FT: Fn(&Transducer, Drive) -> Drive + Send + Sync,
+        F: Fn(&Device) -> FT + Send + Sync + Clone,
+    >(
         self,
         f: F,
     ) -> Transform<G, FT, F>;
 }
 
-impl<G: Gain, FT: Fn(&Transducer, Drive) -> Drive, F: Fn(&Device) -> FT + Send + Sync>
-    Transform<G, FT, F>
+impl<
+        G: Gain,
+        FT: Fn(&Transducer, Drive) -> Drive + Send + Sync,
+        F: Fn(&Device) -> FT + Send + Sync + Clone,
+    > Transform<G, FT, F>
 {
     #[doc(hidden)]
     pub fn new(gain: G, f: F) -> Self {
@@ -36,20 +40,22 @@ impl<G: Gain, FT: Fn(&Transducer, Drive) -> Drive, F: Fn(&Device) -> FT + Send +
     }
 }
 
-impl<G: Gain, FT: Fn(&Transducer, Drive) -> Drive, F: Fn(&Device) -> FT + Send + Sync> Gain
-    for Transform<G, FT, F>
+impl<
+        G: Gain,
+        FT: Fn(&Transducer, Drive) -> Drive + Send + Sync,
+        F: Fn(&Device) -> FT + Send + Sync + Clone + 'static,
+    > Gain for Transform<G, FT, F>
 {
-    fn calc<'a>(
-        &'a self,
-        geometry: &'a Geometry,
-        filter: GainFilter<'a>,
-    ) -> Result<GainCalcFn<'a>, AUTDInternalError> {
-        let src = self.gain.calc(geometry, filter)?;
-        let f = &self.f;
+    fn calc(
+        &self,
+        geometry: &Geometry,
+    ) -> Result<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>, AUTDInternalError> {
+        let src = self.gain.calc(geometry)?;
+        let f = self.f.clone();
         Ok(Box::new(move |dev| {
             let f = f(dev);
             let src = src(dev);
-            Box::new(move |tr| f(tr, src(tr)))
+            dev.iter().map(|tr| f(tr, src[tr.idx()])).collect()
         }))
     }
 }
@@ -69,7 +75,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         let d: Drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
 
-        let gain = TestGain::null().with_transform(move |_| move |_, _| d);
+        let gain = TestGain::null(&geometry).with_transform(move |_| move |_, _| d);
 
         assert_eq!(
             geometry
@@ -78,10 +84,7 @@ mod tests {
                 .collect::<HashMap<_, _>>(),
             geometry
                 .devices()
-                .map(|dev| (dev.idx(), {
-                    let f = gain.calc(&geometry, GainFilter::All).unwrap()(dev);
-                    dev.iter().map(|tr| f(tr)).collect()
-                }))
+                .map(|dev| (dev.idx(), { gain.calc(&geometry).unwrap()(dev) }))
                 .collect()
         );
     }

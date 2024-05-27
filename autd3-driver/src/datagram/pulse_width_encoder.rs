@@ -27,21 +27,33 @@ impl Default for PulseWidthEncoder<fn(usize) -> u16, fn(&Device) -> fn(usize) ->
     }
 }
 
-impl<'a, H: Fn(usize) -> u16 + 'a, F: Fn(&Device) -> H + Send + Sync> Datagram<'a>
+pub struct PulseWidthEncoderOpGenerator<H: Fn(usize) -> u16, F: Fn(&Device) -> H + Send + Sync> {
+    f: F,
+}
+
+impl<'a, H: Fn(usize) -> u16 + 'a, F: Fn(&Device) -> H + Send + Sync> OperationGenerator<'a>
+    for PulseWidthEncoderOpGenerator<H, F>
+{
+    type O1 = crate::firmware::operation::PulseWidthEncoderOp<H>;
+    type O2 = crate::firmware::operation::NullOp;
+
+    fn generate(&'a self, device: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+        Ok((Self::O1::new((self.f)(device)), Self::O2::default()))
+    }
+}
+
+impl<'a, H: Fn(usize) -> u16 + 'a, F: Fn(&Device) -> H + Send + Sync + 'a> Datagram<'a>
     for PulseWidthEncoder<H, F>
 {
     type O1 = crate::firmware::operation::PulseWidthEncoderOp<H>;
     type O2 = crate::firmware::operation::NullOp;
+    type G =  PulseWidthEncoderOpGenerator<H, F>;
 
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation(
-        &'a self,
-        _: &'a Geometry,
-    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError> {
-        let f = &self.f;
-        Ok(|dev| (Self::O1::new(f(dev)), Self::O2::default()))
+    fn operation_generator(self, _: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
+        Ok(PulseWidthEncoderOpGenerator { f: self.f })
     }
 }

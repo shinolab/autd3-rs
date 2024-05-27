@@ -2,6 +2,7 @@ use std::{iter::Peekable, mem::size_of};
 
 use crate::{
     defined::{ControlPoint, METER},
+    derive::SamplingConfig,
     error::AUTDInternalError,
     firmware::{
         fpga::{
@@ -34,29 +35,29 @@ struct FocusSTMSubseq {
     send_num: u8,
 }
 
-pub struct FocusSTMOp<F: ExactSizeIterator<Item = ControlPoint>> {
-    points: Peekable<F>,
+pub struct FocusSTMOp {
+    points: Peekable<std::vec::IntoIter<ControlPoint>>,
     sent: usize,
     is_done: bool,
-    freq_div: u32,
+    config: SamplingConfig,
     rep: u32,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
 }
 
-impl<F: ExactSizeIterator<Item = ControlPoint>> FocusSTMOp<F> {
+impl FocusSTMOp {
     pub fn new(
-        points: F,
-        freq_div: u32,
+        points: Vec<ControlPoint>,
+        config: SamplingConfig,
         rep: u32,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Self {
         Self {
-            points: points.peekable(),
+            points: points.into_iter().peekable(),
             sent: 0,
             is_done: false,
-            freq_div,
+            config,
             rep,
             segment,
             transition_mode,
@@ -64,7 +65,7 @@ impl<F: ExactSizeIterator<Item = ControlPoint>> FocusSTMOp<F> {
     }
 }
 
-impl<F: ExactSizeIterator<Item = ControlPoint>> Operation for FocusSTMOp<F> {
+impl Operation for FocusSTMOp {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         let is_first = self.sent == 0;
 
@@ -80,6 +81,7 @@ impl<F: ExactSizeIterator<Item = ControlPoint>> Operation for FocusSTMOp<F> {
             .filter_map(|_| self.points.next())
             .enumerate()
             .map(|(i, p)| {
+                let p: ControlPoint = p.into();
                 let lp = device.to_local(p.point());
                 cast::<STMFocus>(&mut tx[offset + i * size_of::<STMFocus>()..]).set(
                     lp.x,
@@ -113,7 +115,7 @@ impl<F: ExactSizeIterator<Item = ControlPoint>> Operation for FocusSTMOp<F> {
                     .unwrap_or(TRANSITION_MODE_NONE),
                 transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
                 send_num: send_num as _,
-                freq_div: self.freq_div,
+                freq_div: self.config.division(device.ultrasound_freq())?,
                 sound_speed: (device.sound_speed / METER
                     * 1024.0
                     * crate::defined::FREQ_40K.hz() as f64
@@ -223,8 +225,8 @@ mod tests {
         );
 
         let mut op = FocusSTMOp::new(
-            points.iter().cloned(),
-            freq_div,
+            points.clone(),
+            SamplingConfig::DivisionRaw(freq_div),
             rep,
             segment,
             Some(transition_mode),
@@ -321,7 +323,13 @@ mod tests {
         let rep = rng.gen_range(0x0000001..=0xFFFFFFFF);
         let segment = Segment::S1;
 
-        let mut op = FocusSTMOp::new(points.iter().cloned(), freq_div, rep, segment, None);
+        let mut op = FocusSTMOp::new(
+            points.clone(),
+            SamplingConfig::DivisionRaw(freq_div),
+            rep,
+            segment,
+            None,
+        );
 
         // First frame
         {
@@ -518,8 +526,10 @@ mod tests {
         let x = FOCUS_STM_FIXED_NUM_UNIT * (FOCUS_STM_FIXED_NUM_UPPER_X as f64 + 1.);
 
         let mut op = FocusSTMOp::new(
-            (0..FOCUS_STM_SIZE).map(|_| ControlPoint::new(Vector3::new(x, x, x)).with_intensity(0)),
-            SAMPLING_FREQ_DIV_MIN,
+            (0..FOCUS_STM_SIZE)
+                .map(|_| ControlPoint::new(Vector3::new(x, x, x)).with_intensity(0))
+                .collect::<Vec<_>>(),
+            SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
             0xFFFFFFFF,
             Segment::S0,
             Some(TransitionMode::SyncIdx),
@@ -542,8 +552,10 @@ mod tests {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
         let mut op = FocusSTMOp::new(
-            (0..n).map(|_| ControlPoint::new(Vector3::zeros())),
-            SAMPLING_FREQ_DIV_MIN,
+            (0..n)
+                .map(|_| ControlPoint::new(Vector3::zeros()))
+                .collect::<Vec<_>>(),
+            SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
             0xFFFFFFFF,
             Segment::S0,
             Some(TransitionMode::SyncIdx),

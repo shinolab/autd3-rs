@@ -10,19 +10,29 @@ impl<F: Fn(&Device) -> bool + Send + Sync> ForceFan<F> {
     }
 }
 
-impl<'a, F: Fn(&Device) -> bool + Send + Sync> Datagram<'a> for ForceFan<F> {
+pub struct ForceFanOpGenerator<F: Fn(&Device) -> bool + Send + Sync> {
+    f: F,
+}
+
+impl<'a, F: Fn(&Device) -> bool + Send + Sync> OperationGenerator<'a> for ForceFanOpGenerator<F> {
     type O1 = crate::firmware::operation::ForceFanOp;
     type O2 = crate::firmware::operation::NullOp;
+
+    fn generate(&'a self, device: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+        Ok((Self::O1::new((self.f)(device)), Self::O2::default()))
+    }
+}
+
+impl<'a, F: Fn(&Device) -> bool + Send + Sync + 'a> Datagram<'a> for ForceFan<F> {
+    type O1 = crate::firmware::operation::ForceFanOp;
+    type O2 = crate::firmware::operation::NullOp;
+    type G = ForceFanOpGenerator<F>;
 
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation(
-        &'a self,
-        _: &'a Geometry,
-    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError> {
-        let f = &self.f;
-        Ok(|dev| (Self::O1::new(f(dev)), Self::O2::default()))
+    fn operation_generator(self, _: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
+        Ok(ForceFanOpGenerator { f: self.f })
     }
 }

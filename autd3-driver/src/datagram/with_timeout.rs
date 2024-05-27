@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::derive::{AUTDInternalError, Device, Geometry};
+use crate::derive::{AUTDInternalError, Geometry};
 
 use super::Datagram;
 
@@ -13,12 +13,10 @@ pub struct DatagramWithTimeout<'a, D: Datagram<'a>> {
 impl<'a, D: Datagram<'a>> Datagram<'a> for DatagramWithTimeout<'a, D> {
     type O1 = D::O1;
     type O2 = D::O2;
+    type G = D::G;
 
-    fn operation(
-        &'a self,
-        geometry: &'a Geometry,
-    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError> {
-        self.datagram.operation(geometry)
+    fn operation_generator(self, geometry: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
+        self.datagram.operation_generator(geometry)
     }
 
     fn timeout(&self) -> Option<Duration> {

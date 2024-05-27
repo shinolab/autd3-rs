@@ -13,5 +13,5 @@ const SILENCER_CTL_FLAG_FIXED_UPDATE_RATE: u8 =
     SILENCER_CTL_FLAG_MODE & SILNCER_MODE_FIXED_UPDATE_RATE;
 const SILENCER_CTL_FLAG_STRICT_MODE: u8 = 1 << SILENCER_CTL_FLAG_STRICT_MODE_BIT;
 
-pub use completion_steps::ConfigSilencerFixedCompletionStepsOp;
-pub use update_rate::ConfigSilencerFixedUpdateRateOp;
+pub use completion_steps::SilencerFixedCompletionStepsOp;
+pub use update_rate::SilencerFixedUpdateRateOp;

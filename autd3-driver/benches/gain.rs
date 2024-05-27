@@ -1,8 +1,8 @@
 use autd3_driver::{
     autd3_device::AUTD3,
-    datagram::GainCalcFn,
+    datagram::OperationGenerator,
     defined::FREQ_40K,
-    derive::{GainFilter, Geometry, *},
+    derive::{Geometry, *},
     firmware::{cpu::TxDatagram, operation::OperationHandler},
     geometry::{IntoDevice, Vector3},
 };
@@ -21,7 +21,7 @@ pub fn generate_geometry(size: usize) -> Geometry {
     )
 }
 
-#[derive(Gain, Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Focus {
     pos: Vector3,
     intensity: EmitIntensity,
@@ -39,24 +39,37 @@ impl Focus {
 }
 
 impl Gain for Focus {
-    fn calc<'a>(
-        &'a self,
-        _geometry: &'a Geometry,
-        filter: GainFilter<'a>,
-    ) -> Result<GainCalcFn<'a>, AUTDInternalError> {
-        Ok(Self::transform(
-            filter,
-            Box::new(move |dev| {
-                let wavenumber = dev.wavenumber();
-                Box::new(move |tr| {
-                    Drive::new(
-                        Phase::from((self.pos - tr.position()).norm() * wavenumber * rad)
-                            + self.phase_offset,
-                        self.intensity,
-                    )
-                })
-            }),
-        ))
+    fn calc(
+        &self,
+        _geometry: &Geometry,
+    ) -> Result<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>, AUTDInternalError> {
+        let pos = self.pos;
+        let intensity = self.intensity;
+        let phase_offset = self.phase_offset;
+        Ok(Self::transform(move |dev| {
+            let wavenumber = dev.wavenumber();
+            move |tr| {
+                Drive::new(
+                    Phase::from((pos - tr.position()).norm() * wavenumber * rad) + phase_offset,
+                    intensity,
+                )
+            }
+        }))
+    }
+}
+
+impl<'autd3> Datagram<'autd3> for Focus {
+    type O1 = GainOp;
+    type O2 = NullOp;
+    type G = GainOperationGenerator<'autd3>;
+
+    fn operation_generator(self, geometry: &'autd3 Geometry) -> Result<Self::G, AUTDInternalError> {
+        let g = self.calc(geometry)?;
+        Ok(Self::G {
+            g: Box::new(g),
+            segment: Segment::S0,
+            transition: true,
+        })
     }
 }
 
@@ -76,14 +89,12 @@ fn focus(c: &mut Criterion) {
                         black_box(150.),
                     ));
                     let gen = g.operation(geometry).unwrap();
-                    geometry
-                        .devices()
-                        .zip(tx.iter_mut())
-                        .par_bridge()
-                        .for_each(|(dev, tx)| {
-                            let (mut op1, mut op2) = gen(dev);
+                    geometry.devices().zip(tx.iter_mut()).par_bridge().for_each(
+                        move |(dev, tx)| {
+                            let (mut op1, mut op2) = gen.generate(dev).unwrap();
                             OperationHandler::pack(&mut op1, &mut op2, dev, tx).unwrap();
-                        });
+                        },
+                    );
                 })
             },
         );

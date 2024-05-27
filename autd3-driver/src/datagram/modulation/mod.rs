@@ -22,9 +22,7 @@ use crate::{
 };
 
 use super::DatagramST;
-
-pub type ModCalcFn<'a> =
-    Box<dyn Fn(&Device) -> Box<dyn ExactSizeIterator<Item = u8> + 'a> + Send + Sync + 'a>;
+use super::OperationGenerator;
 
 pub trait ModulationProperty {
     fn sampling_config(&self) -> SamplingConfig;
@@ -33,7 +31,10 @@ pub trait ModulationProperty {
 
 #[allow(clippy::len_without_is_empty)]
 pub trait Modulation: ModulationProperty {
-    fn calc<'a>(&'a self, geometry: &'a Geometry) -> Result<ModCalcFn<'a>, AUTDInternalError>;
+    fn calc(
+        &self,
+        geometry: &Geometry,
+    ) -> Result<Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>, AUTDInternalError>;
 }
 
 // GRCOV_EXCL_START
@@ -48,29 +49,52 @@ impl ModulationProperty for Box<dyn Modulation> {
 }
 
 impl Modulation for Box<dyn Modulation> {
-    fn calc<'a>(&'a self, geometry: &'a Geometry) -> Result<ModCalcFn<'a>, AUTDInternalError> {
+    fn calc(
+        &self,
+        geometry: &Geometry,
+    ) -> Result<Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>, AUTDInternalError> {
         self.as_ref().calc(geometry)
     }
 }
 
-impl<'a> DatagramST<'a> for Box<dyn Modulation> {
-    type O1 = ModulationOp<Box<dyn ExactSizeIterator<Item = u8> + 'a>>;
+pub struct ModulationOperationGenerator<'a> {
+    pub g: Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync + 'a>,
+    pub config: SamplingConfig,
+    pub rep: u32,
+    pub segment: Segment,
+    pub transition_mode: Option<TransitionMode>,
+}
+
+impl<'a> OperationGenerator<'a> for ModulationOperationGenerator<'a> {
+    type O1 = ModulationOp;
     type O2 = NullOp;
 
-    fn operation_with_segment(
-        &'a self,
-        geometry: &'a Geometry,
+    fn generate(&'a self, device: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+        let d = (self.g)(device);
+        Ok((
+            ModulationOp::new(d, self.config, self.rep, self.segment, self.transition_mode),
+            NullOp::default(),
+        ))
+    }
+}
+
+impl<'a> DatagramST<'a> for Box<dyn Modulation> {
+    type O1 = ModulationOp;
+    type O2 = NullOp;
+    type G = ModulationOperationGenerator<'a>;
+
+    fn operation_generator_with_segment(
+        self,
+        geometry: &Geometry,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
-    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError> {
-        let f = self.calc(geometry)?;
-        let sampling_config = self.sampling_config();
-        let rep = self.loop_behavior().rep;
-        Ok(move |dev| {
-            (
-                Self::O1::new(f(dev), sampling_config, rep, segment, transition_mode),
-                Self::O2::default(),
-            )
+    ) -> Result<Self::G, AUTDInternalError> {
+        Ok(Self::G {
+            g: self.calc(geometry)?,
+            config: self.sampling_config(),
+            rep: self.loop_behavior().rep,
+            segment,
+            transition_mode,
         })
     }
 
@@ -93,8 +117,12 @@ mod tests {
     }
 
     impl Modulation for TestModulation {
-        fn calc<'a>(&'a self, _: &'a Geometry) -> Result<ModCalcFn<'a>, AUTDInternalError> {
-            Ok(Box::new(move |_| Box::new(self.buf.iter().copied())))
+        fn calc(
+            &self,
+            _: &Geometry,
+        ) -> Result<Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>, AUTDInternalError> {
+            let buf = self.buf.clone();
+            Ok(Box::new(move |_| buf.clone()))
         }
     }
 }

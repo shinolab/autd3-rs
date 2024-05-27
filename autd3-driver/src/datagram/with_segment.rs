@@ -1,8 +1,8 @@
 use std::time::Duration;
 
-use super::Datagram;
+use super::{Datagram, OperationGenerator};
 use crate::{
-    derive::{AUTDInternalError, Device, Geometry},
+    derive::{AUTDInternalError, Geometry},
     firmware::{fpga::Segment, operation::Operation},
 };
 
@@ -34,13 +34,11 @@ impl<'a, D: DatagramS<'a>> std::ops::Deref for DatagramWithSegment<'a, D> {
 impl<'a, D: DatagramS<'a>> Datagram<'a> for DatagramWithSegment<'a, D> {
     type O1 = D::O1;
     type O2 = D::O2;
+    type G = D::G;
 
-    fn operation(
-        &'a self,
-        geometry: &'a Geometry,
-    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError> {
+    fn operation_generator(self, geometry: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
         self.datagram
-            .operation_with_segment(geometry, self.segment, self.transition)
+            .operation_generator_with_segment(geometry, self.segment, self.transition)
     }
 
     fn timeout(&self) -> Option<Duration> {
@@ -51,13 +49,14 @@ impl<'a, D: DatagramS<'a>> Datagram<'a> for DatagramWithSegment<'a, D> {
 pub trait DatagramS<'a> {
     type O1: Operation + 'a;
     type O2: Operation + 'a;
+    type G: OperationGenerator<'a, O1 = Self::O1, O2 = Self::O2>;
 
-    fn operation_with_segment(
-        &'a self,
+    fn operation_generator_with_segment(
+        self,
         geometry: &'a Geometry,
         segment: Segment,
         transition: bool,
-    ) -> Result<impl Fn(&'a Device) -> (Self::O1, Self::O2) + Send + Sync, AUTDInternalError>;
+    ) -> Result<Self::G, AUTDInternalError>;
 
     fn timeout(&self) -> Option<Duration> {
         None

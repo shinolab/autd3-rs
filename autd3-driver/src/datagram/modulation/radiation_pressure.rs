@@ -1,7 +1,5 @@
 use crate::derive::*;
 
-use super::ModCalcFn;
-
 #[derive(Modulation)]
 #[no_radiation_pressure]
 #[no_modulation_transform]
@@ -28,10 +26,16 @@ pub trait IntoRadiationPressure<M: Modulation> {
 }
 
 impl<M: Modulation> Modulation for RadiationPressure<M> {
-    fn calc<'a>(&'a self, geometry: &'a Geometry) -> Result<ModCalcFn<'a>, AUTDInternalError> {
+    fn calc<'a>(
+        &'a self,
+        geometry: &Geometry,
+    ) -> Result<Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>, AUTDInternalError> {
         let src = self.m.calc(geometry)?;
         Ok(Box::new(move |dev| {
-            Box::new(src(dev).map(|v| ((v as f64 / 255.).sqrt() * 255.).round() as u8))
+            src(dev)
+                .into_iter()
+                .map(|v| ((v as f64 / 255.).sqrt() * 255.).round() as u8)
+                .collect()
         }))
     }
 }
@@ -80,7 +84,6 @@ mod tests {
                 }
                 .with_radiation_pressure()
                 .calc(&geometry)?(dev)
-                .collect::<Vec<_>>()
             );
             Result::<(), AUTDInternalError>::Ok(())
         })?;

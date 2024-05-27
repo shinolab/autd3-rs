@@ -7,20 +7,20 @@ use crate::{
 };
 
 #[repr(C, align(2))]
-struct ConfigSilencerFixedUpdateRate {
+struct SilencerFixedUpdateRate {
     tag: TypeTag,
     flag: u8,
     value_intensity: u16,
     value_phase: u16,
 }
 
-pub struct ConfigSilencerFixedUpdateRateOp {
+pub struct SilencerFixedUpdateRateOp {
     is_done: bool,
     value_intensity: u16,
     value_phase: u16,
 }
 
-impl ConfigSilencerFixedUpdateRateOp {
+impl SilencerFixedUpdateRateOp {
     pub fn new(value_intensity: u16, value_phase: u16) -> Self {
         Self {
             is_done: false,
@@ -30,9 +30,9 @@ impl ConfigSilencerFixedUpdateRateOp {
     }
 }
 
-impl Operation for ConfigSilencerFixedUpdateRateOp {
+impl Operation for SilencerFixedUpdateRateOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        *cast::<ConfigSilencerFixedUpdateRate>(tx) = ConfigSilencerFixedUpdateRate {
+        *cast::<SilencerFixedUpdateRate>(tx) = SilencerFixedUpdateRate {
             tag: TypeTag::Silencer,
             flag: SILENCER_CTL_FLAG_FIXED_UPDATE_RATE,
             value_intensity: self.value_intensity,
@@ -40,11 +40,11 @@ impl Operation for ConfigSilencerFixedUpdateRateOp {
         };
 
         self.is_done = true;
-        Ok(std::mem::size_of::<ConfigSilencerFixedUpdateRate>())
+        Ok(std::mem::size_of::<SilencerFixedUpdateRate>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        std::mem::size_of::<ConfigSilencerFixedUpdateRate>()
+        std::mem::size_of::<SilencerFixedUpdateRate>()
     }
 
     fn is_done(&self) -> bool {
@@ -68,13 +68,13 @@ mod tests {
     fn test() {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
-        let mut tx = [0x00u8; size_of::<ConfigSilencerFixedUpdateRate>()];
+        let mut tx = [0x00u8; size_of::<SilencerFixedUpdateRate>()];
 
-        let mut op = ConfigSilencerFixedUpdateRateOp::new(0x1234, 0x5678);
+        let mut op = SilencerFixedUpdateRateOp::new(0x1234, 0x5678);
 
         assert_eq!(
             op.required_size(&device),
-            size_of::<ConfigSilencerFixedUpdateRate>()
+            size_of::<SilencerFixedUpdateRate>()
         );
         assert!(!op.is_done());
 
