@@ -20,18 +20,19 @@ use crate::{
 
 use bitvec::prelude::*;
 
+pub type GainCalcResult =
+    Result<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>, AUTDInternalError>;
+
 pub trait Gain {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-    ) -> Result<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>, AUTDInternalError>;
+    fn calc(&self, geometry: &Geometry) -> GainCalcResult;
     fn calc_with_filter(
         &self,
         geometry: &Geometry,
         _filter: HashMap<usize, BitVec<usize, Lsb0>>,
-    ) -> Result<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>, AUTDInternalError> {
+    ) -> GainCalcResult {
         self.calc(geometry)
     }
+    #[allow(clippy::type_complexity)]
     fn transform<FT: Fn(&Transducer) -> Drive, F: Fn(&Device) -> FT + Send + Sync + 'static>(
         f: F,
     ) -> Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>
@@ -43,15 +44,13 @@ pub trait Gain {
 }
 
 impl Gain for Box<dyn Gain> {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-    ) -> Result<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         self.as_ref().calc(geometry)
     }
 }
 
 pub struct GainOperationGenerator<'a> {
+    #[allow(clippy::type_complexity)]
     pub g: Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync + 'a>,
     pub segment: Segment,
     pub transition: bool,
@@ -115,10 +114,7 @@ pub mod tests {
     }
 
     impl Gain for TestGain {
-        fn calc(
-            &self,
-            _geometry: &Geometry,
-        ) -> Result<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>, AUTDInternalError> {
+        fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
             if let Some(ref err) = self.err {
                 return Err(err.clone());
             }

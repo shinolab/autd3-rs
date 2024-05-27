@@ -64,10 +64,7 @@ impl<M: Modulation> Cache<M> {
 }
 
 impl<M: Modulation> Modulation for Cache<M> {
-    fn calc<'a>(
-        &'a self,
-        geometry: &Geometry,
-    ) -> Result<Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
         self.init(geometry)?;
         let buffer = self.buffer().clone();
         Ok(Box::new(move |dev| buffer[&dev.idx()].clone()))
@@ -121,10 +118,7 @@ mod tests {
     }
 
     impl Modulation for TestCacheModulation {
-        fn calc<'a>(
-            &'a self,
-            _: &'a Geometry,
-        ) -> Result<Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>, AUTDInternalError> {
+        fn calc<'a>(&'a self, _: &'a Geometry) -> ModulationCalcResult {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
             Ok(Box::new(move |_| vec![0x00, 0x00]))
         }

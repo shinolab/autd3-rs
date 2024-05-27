@@ -15,6 +15,8 @@ use std::{
 
 use bitvec::prelude::*;
 
+use super::GainCalcResult;
+
 #[derive(Gain)]
 pub struct Group<K, FK, F>
 where
@@ -81,10 +83,7 @@ where
     FK: Fn(&Transducer) -> Option<K> + Send + Sync + 'static,
     F: Fn(&Device) -> FK + Clone + Send + Sync + 'static,
 {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-    ) -> Result<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         let mut filters = self.get_filters(geometry);
 
         let specified_keys = self.gain_map.keys().cloned().collect::<HashSet<_>>();

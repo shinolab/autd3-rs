@@ -81,7 +81,6 @@ impl Operation for FocusSTMOp {
             .filter_map(|_| self.points.next())
             .enumerate()
             .map(|(i, p)| {
-                let p: ControlPoint = p.into();
                 let lp = device.to_local(p.point());
                 cast::<STMFocus>(&mut tx[offset + i * size_of::<STMFocus>()..]).set(
                     lp.x,

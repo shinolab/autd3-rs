@@ -12,6 +12,8 @@ use std::{
     sync::{Arc, RwLock, RwLockReadGuard},
 };
 
+use super::GainCalcResult;
+
 #[derive(Gain, Debug)]
 #[no_gain_cache]
 #[no_gain_transform]
@@ -69,10 +71,7 @@ impl<G: Gain> Cache<G> {
 }
 
 impl<G: Gain> Gain for Cache<G> {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-    ) -> Result<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         self.init(geometry)?;
         let drives = self.drives().clone();
         Ok(Box::new(move |dev| drives[&dev.idx()].clone()))
@@ -121,10 +120,7 @@ mod tests {
     }
 
     impl Gain for CacheTestGain {
-        fn calc(
-            &self,
-            _: &Geometry,
-        ) -> Result<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>, AUTDInternalError> {
+        fn calc(&self, _: &Geometry) -> GainCalcResult {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
             Ok(Self::transform(|_| |_| Drive::null()))
         }

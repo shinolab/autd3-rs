@@ -7,6 +7,8 @@ pub use crate::{
 };
 pub use autd3_derive::Gain;
 
+use super::GainCalcResult;
+
 #[derive(Gain)]
 #[no_gain_transform]
 pub struct Transform<
@@ -46,10 +48,7 @@ impl<
         F: Fn(&Device) -> FT + Send + Sync + Clone + 'static,
     > Gain for Transform<G, FT, F>
 {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-    ) -> Result<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         let src = self.gain.calc(geometry)?;
         let f = self.f.clone();
         Ok(Box::new(move |dev| {

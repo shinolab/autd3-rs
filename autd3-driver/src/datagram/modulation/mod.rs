@@ -24,6 +24,9 @@ use crate::{
 use super::DatagramST;
 use super::OperationGenerator;
 
+pub type ModulationCalcResult =
+    Result<Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>, AUTDInternalError>;
+
 pub trait ModulationProperty {
     fn sampling_config(&self) -> SamplingConfig;
     fn loop_behavior(&self) -> LoopBehavior;
@@ -31,10 +34,7 @@ pub trait ModulationProperty {
 
 #[allow(clippy::len_without_is_empty)]
 pub trait Modulation: ModulationProperty {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-    ) -> Result<Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>, AUTDInternalError>;
+    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult;
 }
 
 // GRCOV_EXCL_START
@@ -49,15 +49,13 @@ impl ModulationProperty for Box<dyn Modulation> {
 }
 
 impl Modulation for Box<dyn Modulation> {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-    ) -> Result<Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
         self.as_ref().calc(geometry)
     }
 }
 
 pub struct ModulationOperationGenerator<'a> {
+    #[allow(clippy::type_complexity)]
     pub g: Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync + 'a>,
     pub config: SamplingConfig,
     pub rep: u32,
@@ -117,10 +115,7 @@ mod tests {
     }
 
     impl Modulation for TestModulation {
-        fn calc(
-            &self,
-            _: &Geometry,
-        ) -> Result<Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>, AUTDInternalError> {
+        fn calc(&self, _: &Geometry) -> ModulationCalcResult {
             let buf = self.buf.clone();
             Ok(Box::new(move |_| buf.clone()))
         }
