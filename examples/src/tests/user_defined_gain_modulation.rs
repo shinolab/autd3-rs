@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use autd3::{driver::link::Link, prelude::*};
 use autd3_driver::derive::*;
 
@@ -13,12 +11,8 @@ impl MyUniform {
 }
 
 impl Gain for MyUniform {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-        filter: GainFilter,
-    ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |_| {
+    fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
+        Ok(Self::transform(|_| {
             |_| Drive::new(Phase::new(0), EmitIntensity::MAX)
         }))
     }
@@ -40,16 +34,12 @@ impl Burst {
 }
 
 impl Modulation for Burst {
-    fn calc(&self, _geometry: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        Ok((0..4000)
-            .map(|i| {
-                if i == 3999 {
-                    EmitIntensity::MAX
-                } else {
-                    EmitIntensity::MIN
-                }
-            })
-            .collect())
+    fn calc(&self, _geometry: &Geometry) -> ModulationCalcResult {
+        Ok(Box::new(|_| {
+            (0..4000)
+                .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
+                .collect()
+        }))
     }
 }
 
