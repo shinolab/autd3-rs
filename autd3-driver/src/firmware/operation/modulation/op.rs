@@ -1,4 +1,4 @@
-use std::iter::Peekable;
+use std::sync::Arc;
 
 use crate::{
     derive::SamplingConfig,
@@ -32,7 +32,7 @@ struct ModulationSubseq {
 }
 
 pub struct ModulationOp {
-    modulation: Peekable<std::vec::IntoIter<u8>>,
+    modulation: Arc<Vec<u8>>,
     sent: usize,
     is_done: bool,
     config: SamplingConfig,
@@ -43,14 +43,14 @@ pub struct ModulationOp {
 
 impl ModulationOp {
     pub fn new(
-        modulation: Vec<u8>,
+        modulation: Arc<Vec<u8>>,
         config: SamplingConfig,
         rep: u32,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Self {
         Self {
-            modulation: modulation.into_iter().peekable(),
+            modulation,
             sent: 0,
             is_done: false,
             config,
@@ -72,11 +72,18 @@ impl Operation for ModulationOp {
         };
 
         let max_mod_size = tx.len() - offset;
-        let send_num = (0..max_mod_size)
-            .filter_map(|_| self.modulation.next())
-            .zip(tx[offset..].iter_mut())
-            .map(|(v, dst)| *dst = v)
-            .fold(0, |acc, _| acc + 1);
+        let send_num = (self.modulation.len() - self.sent).min(max_mod_size);
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                self.modulation.as_ptr().add(self.sent),
+                tx.as_mut_ptr().add(offset),
+                send_num,
+            );
+        }
+        // .filter_map(|_| self.modulation.next())
+        // .zip(tx[offset..].iter_mut())
+        // .map(|(v, dst)| *dst = v)
+        // .fold(0, |acc, _| acc + 1);
 
         self.sent += send_num;
         if self.sent > MOD_BUF_SIZE_MAX {
@@ -114,7 +121,7 @@ impl Operation for ModulationOp {
             };
         }
 
-        if self.modulation.peek().is_none() {
+        if self.modulation.len() == self.sent {
             if self.sent < MOD_BUF_SIZE_MIN {
                 return Err(AUTDInternalError::ModulationSizeOutOfRange(self.sent));
             }

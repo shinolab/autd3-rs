@@ -52,16 +52,13 @@ impl<S: SamplingMode> Modulation for Sine<S> {
         let intensity = self.intensity;
         let offset = self.offset;
         let phase = self.phase.radian();
-        Ok(Box::new(move |_| {
-            (0..n)
-                .map(|i| {
-                    ((intensity as f64 / 2.
-                        * (2.0 * PI * (rep * i) as f64 / n as f64 + phase).sin())
-                        + offset as f64)
-                        .round() as u8
-                })
-                .collect()
-        }))
+        Ok((0..n)
+            .map(|i| {
+                ((intensity as f64 / 2. * (2.0 * PI * (rep * i) as f64 / n as f64 + phase).sin())
+                    + offset as f64)
+                    .round() as u8
+            })
+            .collect())
     }
 }
 

@@ -2,6 +2,7 @@ mod cache;
 mod radiation_pressure;
 mod transform;
 
+use std::sync::Arc;
 use std::time::Duration;
 
 pub use cache::Cache as ModulationCache;
@@ -24,8 +25,7 @@ use crate::{
 
 use super::DatagramST;
 
-pub type ModulationCalcResult =
-    Result<Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>, AUTDInternalError>;
+pub type ModulationCalcResult = Result<Vec<u8>, AUTDInternalError>;
 
 pub trait ModulationProperty {
     fn sampling_config(&self) -> SamplingConfig;
@@ -56,7 +56,7 @@ impl Modulation for Box<dyn Modulation> {
 
 pub struct ModulationOperationGenerator {
     #[allow(clippy::type_complexity)]
-    pub g: Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>,
+    pub g: Arc<Vec<u8>>,
     pub config: SamplingConfig,
     pub rep: u32,
     pub segment: Segment,
@@ -67,8 +67,8 @@ impl OperationGenerator for ModulationOperationGenerator {
     type O1 = ModulationOp;
     type O2 = NullOp;
 
-    fn generate(&self, device: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        let d = (self.g)(device);
+    fn generate(&self, _: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+        let d = self.g.clone();
         Ok((
             ModulationOp::new(d, self.config, self.rep, self.segment, self.transition_mode),
             NullOp::default(),
@@ -88,7 +88,7 @@ impl<'a> DatagramST<'a> for Box<dyn Modulation> {
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, AUTDInternalError> {
         Ok(Self::G {
-            g: self.calc(geometry)?,
+            g: Arc::new(self.calc(geometry)?),
             config: self.sampling_config(),
             rep: self.loop_behavior().rep,
             segment,
@@ -116,8 +116,7 @@ mod tests {
 
     impl Modulation for TestModulation {
         fn calc(&self, _: &Geometry) -> ModulationCalcResult {
-            let buf = self.buf.clone();
-            Ok(Box::new(move |_| buf.clone()))
+            Ok(self.buf.clone())
         }
     }
 }

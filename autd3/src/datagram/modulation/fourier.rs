@@ -81,22 +81,20 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
             .iter()
             .map(|c| c.calc(geometry))
             .collect::<Result<Vec<_>, _>>()?;
-        Ok(Box::new(move |dev| {
-            buffers
-                .iter()
-                .fold(
-                    vec![0usize; buffers.iter().fold(1, |acc, x| lcm(acc, x(dev).len()))],
-                    |acc, x| {
-                        acc.iter()
-                            .zip(x(dev).iter().cycle())
-                            .map(|(a, &b)| a + b as usize)
-                            .collect::<Vec<_>>()
-                    },
-                )
-                .iter()
-                .map(|x| (x / buffers.len()) as u8)
-                .collect::<Vec<_>>()
-        }))
+        Ok(buffers
+            .iter()
+            .fold(
+                vec![0usize; buffers.iter().fold(1, |acc, x| lcm(acc, x.len()))],
+                |acc, x| {
+                    acc.iter()
+                        .zip(x.iter().cycle())
+                        .map(|(a, &b)| a + b as usize)
+                        .collect::<Vec<_>>()
+                },
+            )
+            .iter()
+            .map(|x| (x / buffers.len()) as u8)
+            .collect::<Vec<_>>())
     }
 }
 

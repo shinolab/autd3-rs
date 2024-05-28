@@ -2,7 +2,7 @@ use crate::derive::*;
 
 #[derive(Modulation)]
 #[no_modulation_transform]
-pub struct Transform<M: Modulation, F: Fn(usize, u8) -> u8 + Send + Sync + Clone + 'static> {
+pub struct Transform<M: Modulation, F: Fn(usize, u8) -> u8> {
     m: M,
     #[no_change]
     config: SamplingConfig,
@@ -10,7 +10,7 @@ pub struct Transform<M: Modulation, F: Fn(usize, u8) -> u8 + Send + Sync + Clone
     loop_behavior: LoopBehavior,
 }
 
-impl<M: Modulation, F: Fn(usize, u8) -> u8 + Send + Sync + Clone + 'static> Transform<M, F> {
+impl<M: Modulation, F: Fn(usize, u8) -> u8> Transform<M, F> {
     #[doc(hidden)]
     pub fn new(m: M, f: F) -> Self {
         Self {
@@ -23,25 +23,17 @@ impl<M: Modulation, F: Fn(usize, u8) -> u8 + Send + Sync + Clone + 'static> Tran
 }
 
 pub trait IntoTransform<M: Modulation> {
-    fn with_transform<F: Fn(usize, u8) -> u8 + Send + Sync + Clone + 'static>(
-        self,
-        f: F,
-    ) -> Transform<M, F>;
+    fn with_transform<F: Fn(usize, u8) -> u8>(self, f: F) -> Transform<M, F>;
 }
 
-impl<M: Modulation, F: Fn(usize, u8) -> u8 + Send + Sync + Clone + 'static> Modulation
-    for Transform<M, F>
-{
+impl<M: Modulation, F: Fn(usize, u8) -> u8> Modulation for Transform<M, F> {
     fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
         let src = self.m.calc(geometry)?;
-        let f = self.f.clone();
-        Ok(Box::new(move |dev| {
-            src(dev)
-                .into_iter()
-                .enumerate()
-                .map(|(i, x)| (f)(i, x))
-                .collect()
-        }))
+        Ok(src
+            .into_iter()
+            .enumerate()
+            .map(|(i, x)| (self.f)(i, x))
+            .collect())
     }
 }
 
@@ -77,19 +69,16 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let buf = vec![rng.gen(), rng.gen()];
-        geometry.devices().try_for_each(|dev| {
-            assert_eq!(
-                buf.iter().map(|&x| x / 2).collect::<Vec<_>>(),
-                TestModulation {
-                    buf: buf.clone(),
-                    config: SamplingConfig::Freq(4 * kHz),
-                    loop_behavior: LoopBehavior::infinite(),
-                }
-                .with_transform(|_, x| x / 2)
-                .calc(&geometry)?(dev)
-            );
-            Result::<(), AUTDInternalError>::Ok(())
-        })?;
+        assert_eq!(
+            buf.iter().map(|&x| x / 2).collect::<Vec<_>>(),
+            TestModulation {
+                buf: buf.clone(),
+                config: SamplingConfig::Freq(4 * kHz),
+                loop_behavior: LoopBehavior::infinite(),
+            }
+            .with_transform(|_, x| x / 2)
+            .calc(&geometry)?
+        );
 
         Ok(())
     }
