@@ -1,11 +1,8 @@
+use crate::datagram::*;
 use crate::{
-    datagram::OperationGenerator,
-    defined::{ControlPoint, Freq, DEFAULT_TIMEOUT},
+    defined::{ControlPoint, Freq},
     derive::*,
-    firmware::{
-        fpga::{STMSamplingConfig, TransitionMode},
-        operation::FocusSTMOp,
-    },
+    firmware::{fpga::STMSamplingConfig, operation::FocusSTMOp},
 };
 
 #[derive(Clone, Builder)]
@@ -71,11 +68,11 @@ pub struct FocusSTMOperationGenerator {
     transition_mode: Option<TransitionMode>,
 }
 
-impl<'a> OperationGenerator<'a> for FocusSTMOperationGenerator {
+impl<'a> OperationGenerator for FocusSTMOperationGenerator {
     type O1 = FocusSTMOp;
     type O2 = NullOp;
 
-    fn generate(&'a self, _: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn generate(&self, _: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         Ok((
             Self::O1::new(
                 self.g.clone(),
@@ -90,9 +87,9 @@ impl<'a> OperationGenerator<'a> for FocusSTMOperationGenerator {
 }
 
 impl<'a> DatagramST<'a> for FocusSTM {
-    type O1 = crate::firmware::operation::FocusSTMOp;
-    type O2 = crate::firmware::operation::NullOp;
-    type G =  FocusSTMOperationGenerator;
+    type O1 = FocusSTMOp;
+    type O2 = NullOp;
+    type G = FocusSTMOperationGenerator;
 
     fn operation_generator_with_segment(
         self,
@@ -103,7 +100,7 @@ impl<'a> DatagramST<'a> for FocusSTM {
         Ok(FocusSTMOperationGenerator {
             g: self.control_points,
             config: self.sampling_config,
-            rep: self.loop_behavior.rep,
+            rep: self.loop_behavior.rep(),
             segment,
             transition_mode,
         })
@@ -116,12 +113,12 @@ impl<'a> DatagramST<'a> for FocusSTM {
 
 #[cfg(test)]
 mod tests {
-
-    use super::*;
-    use crate::{
+    use autd3_driver::{
         defined::{kHz, Hz},
         geometry::Vector3,
     };
+
+    use super::*;
 
     #[rstest::rstest]
     #[test]

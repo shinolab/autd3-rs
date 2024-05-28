@@ -13,7 +13,7 @@ use super::GainCalcResult;
 #[no_gain_transform]
 pub struct Transform<
     G: Gain,
-    FT: Fn(&Transducer, Drive) -> Drive + Send + Sync,
+    FT: Fn(&Transducer, Drive) -> Drive + Send + Sync + 'static,
     F: Fn(&Device) -> FT + Send + Sync + Clone + 'static,
 > {
     gain: G,
@@ -44,7 +44,7 @@ impl<
 
 impl<
         G: Gain,
-        FT: Fn(&Transducer, Drive) -> Drive + Send + Sync,
+        FT: Fn(&Transducer, Drive) -> Drive + Send + Sync + 'static,
         F: Fn(&Device) -> FT + Send + Sync + Clone + 'static,
     > Gain for Transform<G, FT, F>
 {
@@ -54,7 +54,7 @@ impl<
         Ok(Box::new(move |dev| {
             let f = f(dev);
             let src = src(dev);
-            dev.iter().map(|tr| f(tr, src[tr.idx()])).collect()
+            Box::new(move |tr| f(tr, src(tr)))
         }))
     }
 }
@@ -83,7 +83,10 @@ mod tests {
                 .collect::<HashMap<_, _>>(),
             geometry
                 .devices()
-                .map(|dev| (dev.idx(), { gain.calc(&geometry).unwrap()(dev) }))
+                .map(|dev| (
+                    dev.idx(),
+                    dev.iter().map(gain.calc(&geometry).unwrap()(dev)).collect()
+                ))
                 .collect()
         );
     }

@@ -1,7 +1,7 @@
 use std::{iter::Peekable, mem::size_of};
 
 use crate::{
-    derive::SamplingConfig,
+    derive::{SamplingConfig, Transducer},
     error::AUTDInternalError,
     firmware::{
         cpu::GainSTMMode,
@@ -38,7 +38,7 @@ struct GainSTMSubseq {
 }
 
 pub struct GainSTMOp {
-    gains: Peekable<std::vec::IntoIter<Vec<Drive>>>,
+    gains: Peekable<std::vec::IntoIter<Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>>,
     sent: usize,
     is_done: bool,
     mode: GainSTMMode,
@@ -50,7 +50,7 @@ pub struct GainSTMOp {
 
 impl GainSTMOp {
     pub fn new(
-        gains: Vec<Vec<Drive>>,
+        gains: Vec<Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>,
         mode: GainSTMMode,
         config: SamplingConfig,
         rep: u32,
@@ -98,7 +98,7 @@ impl Operation for GainSTMOp {
                             device.len(),
                         );
                         dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            *d = g[tr.idx()];
+                            *d = g(tr);
                         });
                         send += 1;
                     }
@@ -110,7 +110,7 @@ impl Operation for GainSTMOp {
                             device.len(),
                         );
                         dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g[tr.idx()]);
+                            d.set(g(tr));
                         });
                         send += 1;
                     }
@@ -120,7 +120,7 @@ impl Operation for GainSTMOp {
                             device.len(),
                         );
                         dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g[tr.idx()]);
+                            d.set(g(tr));
                         });
                         send += 1;
                     }
@@ -132,7 +132,7 @@ impl Operation for GainSTMOp {
                             device.len(),
                         );
                         dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g[tr.idx()]);
+                            d.set(g(tr));
                         });
                         send += 1;
                     }
@@ -142,7 +142,7 @@ impl Operation for GainSTMOp {
                             device.len(),
                         );
                         dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g[tr.idx()]);
+                            d.set(g(tr));
                         });
                         send += 1;
                     }
@@ -152,7 +152,7 @@ impl Operation for GainSTMOp {
                             device.len(),
                         );
                         dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g[tr.idx()]);
+                            d.set(g(tr));
                         });
                         send += 1;
                     }
@@ -162,7 +162,7 @@ impl Operation for GainSTMOp {
                             device.len(),
                         );
                         dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g[tr.idx()]);
+                            d.set(g(tr));
                         });
                         send += 1;
                     }
@@ -295,7 +295,13 @@ mod tests {
         );
 
         let mut op = GainSTMOp::new(
-            gain_data.clone(),
+            {
+                let gain_data = gain_data.clone();
+                gain_data
+                    .into_iter()
+                    .map(|g| Box::new(move |tr: &Transducer| g[tr.idx()]) as Box<_>)
+                    .collect()
+            },
             GainSTMMode::PhaseIntensityFull,
             SamplingConfig::DivisionRaw(freq_div),
             rep,
@@ -441,7 +447,13 @@ mod tests {
         let rep = rng.gen_range(0x0000001..=0xFFFFFFFF);
         let segment = Segment::S1;
         let mut op = GainSTMOp::new(
-            gain_data.clone(),
+            {
+                let gain_data = gain_data.clone();
+                gain_data
+                    .into_iter()
+                    .map(|g| Box::new(move |tr: &Transducer| g[tr.idx()]) as Box<_>)
+                    .collect()
+            },
             GainSTMMode::PhaseFull,
             SamplingConfig::DivisionRaw(freq_div),
             rep,
@@ -573,7 +585,13 @@ mod tests {
         let rep = rng.gen_range(0x0000001..=0xFFFFFFFF);
         let segment = Segment::S0;
         let mut op = GainSTMOp::new(
-            gain_data.clone(),
+            {
+                let gain_data = gain_data.clone();
+                gain_data
+                    .into_iter()
+                    .map(|g| Box::new(move |tr: &Transducer| g[tr.idx()]) as Box<_>)
+                    .collect()
+            },
             GainSTMMode::PhaseHalf,
             SamplingConfig::DivisionRaw(freq_div),
             rep,

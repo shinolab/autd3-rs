@@ -2,7 +2,7 @@ use crate::derive::{AUTDInternalError, Device, Segment, TransitionMode};
 
 use super::Operation;
 
-pub trait SwapSegmentOperation {
+pub trait SwapSegmentOperation: Send + Sync {
     fn new(segment: Segment, transition_mode: TransitionMode) -> Self;
     fn required_size(&self, device: &Device) -> usize;
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError>;

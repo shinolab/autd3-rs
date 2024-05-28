@@ -43,60 +43,45 @@ pub use with_segment_transition::{
 };
 pub use with_timeout::{DatagramWithTimeout, IntoDatagramWithTimeout};
 
+use crate::{defined::DEFAULT_TIMEOUT, firmware::operation::NullOp};
 use std::time::Duration;
 
 use crate::{
     derive::{Device, Geometry},
     error::AUTDInternalError,
-    firmware::operation::Operation,
+    firmware::operation::{Operation, OperationGenerator},
 };
-
-pub trait OperationGenerator<'a>: Send + Sync {
-    type O1: Operation + 'a;
-    type O2: Operation + 'a;
-    fn generate(&'a self, device: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError>;
-}
 
 pub trait Datagram<'a> {
     type O1: Operation + 'a;
     type O2: Operation + 'a;
-    type G: OperationGenerator<'a, O1 = Self::O1, O2 = Self::O2>;
+    type G: OperationGenerator<O1 = Self::O1, O2 = Self::O2>;
 
-    fn operation_generator(self, geometry: &'a Geometry) -> Result<Self::G, AUTDInternalError>;
+    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError>;
 
     fn timeout(&self) -> Option<Duration> {
         None
     }
 }
 
-pub struct CombinedOperationGenerator<'a, O1, O2>
+pub struct CombinedOperationGenerator<O1, O2>
 where
-    O1: OperationGenerator<'a>,
-    O2: OperationGenerator<'a>,
+    O1: OperationGenerator,
+    O2: OperationGenerator,
 {
     o1: O1,
     o2: O2,
-    _phantom: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a, O1, O2> OperationGenerator<'a> for CombinedOperationGenerator<'a, O1, O2>
+impl<'a, O1, O2> OperationGenerator for CombinedOperationGenerator<O1, O2>
 where
-    O1: OperationGenerator<'a>,
-    O2: OperationGenerator<'a>,
+    O1: OperationGenerator,
+    O2: OperationGenerator,
 {
     type O1 = O1::O1;
     type O2 = O2::O1;
 
-    fn generate(
-        &'a self,
-        device: &'a Device,
-    ) -> Result<
-        (
-            <O1 as OperationGenerator>::O1,
-            <O2 as OperationGenerator>::O1,
-        ),
-        AUTDInternalError,
-    > {
+    fn generate(&self, device: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         let (o1, _) = self.o1.generate(device)?;
         let (o2, _) = self.o2.generate(device)?;
         Ok((o1, o2))
@@ -110,13 +95,12 @@ where
 {
     type O1 = D1::O1;
     type O2 = D2::O1;
-    type G = CombinedOperationGenerator<'a, D1::G, D2::G>;
+    type G = CombinedOperationGenerator<D1::G, D2::G>;
 
-    fn operation_generator(self, geometry: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(CombinedOperationGenerator {
             o1: self.0.operation_generator(geometry)?,
             o2: self.1.operation_generator(geometry)?,
-            _phantom: std::marker::PhantomData,
         })
     }
 

@@ -73,13 +73,13 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
         impl <'autd3, #(#linetimes,)* #(#type_params,)* > DatagramST<'autd3> for #name #ty_generics #where_clause {
             type O1 = ModulationOp;
             type O2 = NullOp;
-            type G =  ModulationOperationGenerator<'autd3>;
+            type G =  ModulationOperationGenerator;
 
-            fn operation_generator_with_segment(self, geometry: &'autd3 Geometry, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<Self::G, AUTDInternalError> {
+            fn operation_generator_with_segment(self, geometry: &Geometry, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<Self::G, AUTDInternalError> {
                 Ok(Self::G {
                     g: self.calc(geometry)?,
                     config: self.sampling_config(),
-                    rep: self.loop_behavior().rep,
+                    rep: self.loop_behavior().rep(),
                     segment,
                     transition_mode,
                 })

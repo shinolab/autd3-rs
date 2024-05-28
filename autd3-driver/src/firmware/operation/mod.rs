@@ -15,8 +15,6 @@ mod silencer;
 mod stm;
 mod sync;
 
-use std::collections::HashMap;
-
 pub use clear::*;
 pub use clk::*;
 pub use debug::*;
@@ -39,6 +37,10 @@ use crate::{
     firmware::cpu::{TxMessage, MSG_ID_MAX},
     geometry::{Device, Geometry},
 };
+
+use super::cpu::TxDatagram;
+
+use rayon::prelude::*;
 
 #[repr(u8)]
 pub enum TypeTag {
@@ -68,10 +70,16 @@ fn cast<T>(tx: &mut [u8]) -> &mut T {
     unsafe { (tx.as_mut_ptr() as *mut T).as_mut().unwrap() }
 }
 
-pub trait Operation {
+pub trait Operation: Send + Sync {
     fn required_size(&self, device: &Device) -> usize;
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError>;
     fn is_done(&self) -> bool;
+}
+
+pub trait OperationGenerator: Send + Sync {
+    type O1: Operation;
+    type O2: Operation;
+    fn generate(&self, device: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError>;
 }
 
 // GRCOV_EXCL_START
@@ -93,31 +101,64 @@ impl Operation for Box<dyn Operation> {
 pub struct OperationHandler {}
 
 impl OperationHandler {
-    pub fn is_finished(
-        op1: &mut HashMap<usize, impl Operation>,
-        op2: &mut HashMap<usize, impl Operation>,
-        geometry: &Geometry,
-    ) -> bool {
+    pub fn generate<'a, G: OperationGenerator>(
+        gen: G,
+        geometry: &'a Geometry,
+    ) -> Result<Vec<(G::O1, G::O2)>, AUTDInternalError> {
+        geometry.iter().map(|dev| gen.generate(dev)).collect()
+    }
+
+    pub fn is_done(operations: &[(impl Operation, impl Operation)], geometry: &Geometry) -> bool {
         geometry
             .devices()
-            .all(|dev| op1[&dev.idx()].is_done() && op2[&dev.idx()].is_done())
+            .all(|dev| operations[dev.idx()].0.is_done() && operations[dev.idx()].1.is_done())
     }
 
     pub fn pack(
+        operations: &mut [(impl Operation, impl Operation)],
+        geometry: &Geometry,
+        tx: &mut TxDatagram,
+        parallel_threshold: usize,
+    ) -> Result<(), AUTDInternalError> {
+        if geometry.num_devices() > parallel_threshold {
+            geometry
+                .iter()
+                .zip(operations.iter_mut())
+                .zip(tx.iter_mut())
+                .filter(|((dev, _), _)| dev.enable)
+                .par_bridge()
+                .try_for_each(|((dev, op), tx)| {
+                    let (op1, op2) = op;
+                    Self::pack_op2(op1, op2, dev, tx)
+                })
+        } else {
+            geometry
+                .iter()
+                .zip(operations.iter_mut())
+                .zip(tx.iter_mut())
+                .filter(|((dev, _), _)| dev.enable)
+                .try_for_each(|((dev, op), tx)| {
+                    let (op1, op2) = op;
+                    Self::pack_op2(op1, op2, dev, tx)
+                })
+        }
+    }
+
+    fn pack_op2(
         op1: &mut impl Operation,
         op2: &mut impl Operation,
-        device: &Device,
+        dev: &Device,
         tx: &mut TxMessage,
     ) -> Result<(), AUTDInternalError> {
         match (op1.is_done(), op2.is_done()) {
             (true, true) => Result::<_, AUTDInternalError>::Ok(()),
-            (true, false) => Self::pack_dev(op2, device, tx).map(|_| Ok(()))?,
-            (false, true) => Self::pack_dev(op1, device, tx).map(|_| Ok(()))?,
+            (true, false) => Self::pack_op(op2, dev, tx).map(|_| Ok(()))?,
+            (false, true) => Self::pack_op(op1, dev, tx).map(|_| Ok(()))?,
             (false, false) => {
-                let op1_size = Self::pack_dev(op1, device, tx)?;
+                let op1_size = Self::pack_op(op1, dev, tx)?;
                 let t = &mut tx.payload;
-                if t.len() - op1_size >= op2.required_size(device) {
-                    op2.pack(device, &mut t[op1_size..])?;
+                if t.len() - op1_size >= op2.required_size(dev) {
+                    op2.pack(dev, &mut t[op1_size..])?;
                     tx.header.slot_2_offset = op1_size as u16;
                 }
                 Ok(())
@@ -125,7 +166,7 @@ impl OperationHandler {
         }
     }
 
-    fn pack_dev(
+    fn pack_op(
         op: &mut impl Operation,
         dev: &Device,
         tx: &mut TxMessage,
@@ -202,85 +243,46 @@ pub mod tests {
             FREQ_40K,
         );
 
-        let mut op1 = HashMap::from([(
-            0,
+        let mut op = vec![(
             OperationMock {
                 pack_size: 1,
                 required_size: 2,
                 num_frames: 3,
                 broken: false,
             },
-        )]);
-
-        let mut op2 = HashMap::from([(
-            0,
             OperationMock {
                 pack_size: 1,
                 required_size: 2,
                 num_frames: 3,
                 broken: false,
             },
-        )]);
+        )];
 
-        assert!(!OperationHandler::is_finished(
-            &mut op1, &mut op2, &geometry
-        ));
+        assert!(!OperationHandler::is_done(&op, &geometry));
 
         let mut tx = TxDatagram::new(1);
 
-        assert!(OperationHandler::pack(
-            op1.get_mut(&0).unwrap(),
-            op2.get_mut(&0).unwrap(),
-            &geometry[0],
-            &mut tx[0]
-        )
-        .is_ok());
-        assert_eq!(op1[&0].num_frames, 2);
-        assert_eq!(op2[&0].num_frames, 2);
-        assert!(!OperationHandler::is_finished(
-            &mut op1, &mut op2, &geometry
-        ));
+        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, 0).is_ok());
+        assert_eq!(op[0].0.num_frames, 2);
+        assert_eq!(op[0].1.num_frames, 2);
+        assert!(!OperationHandler::is_done(&op, &geometry));
 
-        op1.get_mut(&0).unwrap().pack_size =
-            EC_OUTPUT_FRAME_SIZE - size_of::<Header>() - op2[&0].required_size;
-        assert!(OperationHandler::pack(
-            op1.get_mut(&0).unwrap(),
-            op2.get_mut(&0).unwrap(),
-            &geometry[0],
-            &mut tx[0]
-        )
-        .is_ok());
-        assert_eq!(op1[&0].num_frames, 1);
-        assert_eq!(op2[&0].num_frames, 1);
-        assert!(!OperationHandler::is_finished(
-            &mut op1, &mut op2, &geometry
-        ));
+        op[0].0.pack_size = EC_OUTPUT_FRAME_SIZE - size_of::<Header>() - op[0].1.required_size;
+        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, 0).is_ok());
+        assert_eq!(op[0].0.num_frames, 1);
+        assert_eq!(op[0].1.num_frames, 1);
+        assert!(!OperationHandler::is_done(&op, &geometry));
 
-        op1.get_mut(&0).unwrap().pack_size =
-            EC_OUTPUT_FRAME_SIZE - size_of::<Header>() - op2[&0].required_size + 1;
-        assert!(OperationHandler::pack(
-            op1.get_mut(&0).unwrap(),
-            op2.get_mut(&0).unwrap(),
-            &geometry[0],
-            &mut tx[0]
-        )
-        .is_ok());
-        assert_eq!(op1[&0].num_frames, 0);
-        assert_eq!(op2[&0].num_frames, 1);
-        assert!(!OperationHandler::is_finished(
-            &mut op1, &mut op2, &geometry
-        ));
+        op[0].0.pack_size = EC_OUTPUT_FRAME_SIZE - size_of::<Header>() - op[0].1.required_size + 1;
+        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, 0).is_ok());
+        assert_eq!(op[0].0.num_frames, 0);
+        assert_eq!(op[0].1.num_frames, 1);
+        assert!(!OperationHandler::is_done(&op, &geometry));
 
-        assert!(OperationHandler::pack(
-            op1.get_mut(&0).unwrap(),
-            op2.get_mut(&0).unwrap(),
-            &geometry[0],
-            &mut tx[0]
-        )
-        .is_ok());
-        assert_eq!(op1[&0].num_frames, 0);
-        assert_eq!(op2[&0].num_frames, 0);
-        assert!(OperationHandler::is_finished(&mut op1, &mut op2, &geometry));
+        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, 0).is_ok());
+        assert_eq!(op[0].0.num_frames, 0);
+        assert_eq!(op[0].1.num_frames, 0);
+        assert!(OperationHandler::is_done(&op, &geometry));
     }
 
     #[test]
@@ -294,44 +296,31 @@ pub mod tests {
             FREQ_40K,
         );
 
-        let mut op1 = HashMap::from([(
-            0,
+        let mut op = vec![(
             OperationMock {
                 pack_size: 0,
                 required_size: 0,
                 num_frames: 1,
                 broken: false,
             },
-        )]);
-
-        let mut op2 = HashMap::from([(
-            0,
             OperationMock {
                 pack_size: 0,
                 required_size: 0,
                 num_frames: 0,
                 broken: false,
             },
-        )]);
+        )];
 
-        assert!(!op1[&0].is_done());
-        assert!(op2[&0].is_done());
-        assert!(!OperationHandler::is_finished(
-            &mut op1, &mut op2, &geometry
-        ));
+        assert!(!op[0].0.is_done());
+        assert!(op[0].1.is_done());
+        assert!(!OperationHandler::is_done(&op, &geometry));
 
         let mut tx = TxDatagram::new(1);
 
-        assert!(OperationHandler::pack(
-            op1.get_mut(&0).unwrap(),
-            op2.get_mut(&0).unwrap(),
-            &geometry[0],
-            &mut tx[0]
-        )
-        .is_ok());
-        assert!(op1[&0].is_done());
-        assert!(op2[&0].is_done());
-        assert!(OperationHandler::is_finished(&mut op1, &mut op2, &geometry));
+        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, 0).is_ok());
+        assert!(op[0].0.is_done());
+        assert!(op[0].1.is_done());
+        assert!(OperationHandler::is_done(&op, &geometry));
     }
 
     #[test]
@@ -345,44 +334,31 @@ pub mod tests {
             FREQ_40K,
         );
 
-        let mut op1 = HashMap::from([(
-            0,
+        let mut op = vec![(
             OperationMock {
                 pack_size: 0,
                 required_size: 0,
                 num_frames: 0,
                 broken: false,
             },
-        )]);
-
-        let mut op2 = HashMap::from([(
-            0,
             OperationMock {
                 pack_size: 0,
                 required_size: 0,
                 num_frames: 1,
                 broken: false,
             },
-        )]);
+        )];
 
-        assert!(op1[&0].is_done());
-        assert!(!op2[&0].is_done());
-        assert!(!OperationHandler::is_finished(
-            &mut op1, &mut op2, &geometry
-        ));
+        assert!(op[0].0.is_done());
+        assert!(!op[0].1.is_done());
+        assert!(!OperationHandler::is_done(&op, &geometry));
 
         let mut tx = TxDatagram::new(1);
 
-        assert!(OperationHandler::pack(
-            op1.get_mut(&0).unwrap(),
-            op2.get_mut(&0).unwrap(),
-            &geometry[0],
-            &mut tx[0]
-        )
-        .is_ok());
-        assert!(op1[&0].is_done());
-        assert!(op2[&0].is_done());
-        assert!(OperationHandler::is_finished(&mut op1, &mut op2, &geometry));
+        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, 0).is_ok());
+        assert!(op[0].0.is_done());
+        assert!(op[0].1.is_done());
+        assert!(OperationHandler::is_done(&op, &geometry));
     }
 
     #[test]
@@ -396,77 +372,52 @@ pub mod tests {
             FREQ_40K,
         );
 
-        let mut op1 = HashMap::from([(
-            0,
+        let mut op = vec![(
             OperationMock {
                 pack_size: 0,
                 required_size: 0,
                 num_frames: 1,
                 broken: true,
             },
-        )]);
-
-        let mut op2 = HashMap::from([(
-            0,
             OperationMock {
                 pack_size: 0,
                 required_size: 0,
                 num_frames: 1,
                 broken: false,
             },
-        )]);
+        )];
 
         let mut tx = TxDatagram::new(1);
 
         assert_eq!(
             Err(AUTDInternalError::NotSupported("test".to_owned())),
-            OperationHandler::pack(
-                op1.get_mut(&0).unwrap(),
-                op2.get_mut(&0).unwrap(),
-                &geometry[0],
-                &mut tx[0]
-            )
+            OperationHandler::pack(&mut op, &geometry, &mut tx, 0)
         );
 
-        op1.get_mut(&0).unwrap().broken = false;
-        op2.get_mut(&0).unwrap().broken = true;
+        op[0].0.broken = false;
+        op[0].1.broken = true;
 
         assert_eq!(
             Err(AUTDInternalError::NotSupported("test".to_owned())),
-            OperationHandler::pack(
-                op1.get_mut(&0).unwrap(),
-                op2.get_mut(&0).unwrap(),
-                &geometry[0],
-                &mut tx[0]
-            )
+            OperationHandler::pack(&mut op, &geometry, &mut tx, 0)
         );
 
-        op1.get_mut(&0).unwrap().num_frames = 0;
+        op[0].0.num_frames = 0;
 
         assert_eq!(
             Err(AUTDInternalError::NotSupported("test".to_owned())),
-            OperationHandler::pack(
-                op1.get_mut(&0).unwrap(),
-                op2.get_mut(&0).unwrap(),
-                &geometry[0],
-                &mut tx[0]
-            )
+            OperationHandler::pack(&mut op, &geometry, &mut tx, 0)
         );
 
-        op1.get_mut(&0).unwrap().broken = true;
-        op2.get_mut(&0).unwrap().broken = false;
+        op[0].0.broken = true;
+        op[0].1.broken = false;
 
-        op1.get_mut(&0).unwrap().num_frames = 1;
-        op2.get_mut(&0).unwrap().num_frames = 0;
+        op[0].0.num_frames = 1;
+        op[0].1.num_frames = 0;
 
         assert_eq!(
             Err(AUTDInternalError::NotSupported("test".to_owned())),
-            OperationHandler::pack(
-                op1.get_mut(&0).unwrap(),
-                op2.get_mut(&0).unwrap(),
-                &geometry[0],
-                &mut tx[0]
-            )
+            OperationHandler::pack(&mut op, &geometry, &mut tx, 0)
         );
     }
 
@@ -481,36 +432,25 @@ pub mod tests {
             FREQ_40K,
         );
 
-        let mut op1 = HashMap::from([(
-            0,
+        let mut op = vec![(
             OperationMock {
                 pack_size: 0,
                 required_size: 0,
                 num_frames: 0,
                 broken: false,
             },
-        )]);
-
-        let mut op2 = HashMap::from([(
-            0,
             OperationMock {
                 pack_size: 0,
                 required_size: 0,
                 num_frames: 0,
                 broken: false,
             },
-        )]);
+        )];
 
-        assert!(OperationHandler::is_finished(&mut op1, &mut op2, &geometry));
+        assert!(OperationHandler::is_done(&op, &geometry));
 
         let mut tx = TxDatagram::new(1);
 
-        assert!(OperationHandler::pack(
-            op1.get_mut(&0).unwrap(),
-            op2.get_mut(&0).unwrap(),
-            &geometry[0],
-            &mut tx[0]
-        )
-        .is_ok());
+        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, 0).is_ok());
     }
 }

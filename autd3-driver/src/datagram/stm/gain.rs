@@ -1,12 +1,8 @@
+use crate::datagram::*;
 use crate::{
-    datagram::{DatagramST, OperationGenerator},
-    defined::{Freq, DEFAULT_TIMEOUT},
+    defined::Freq,
     derive::*,
-    firmware::{
-        cpu::GainSTMMode,
-        fpga::{STMSamplingConfig, Segment, TransitionMode},
-        operation::GainSTMOp,
-    },
+    firmware::{cpu::GainSTMMode, fpga::STMSamplingConfig, operation::GainSTMOp},
 };
 
 #[derive(Builder)]
@@ -56,9 +52,9 @@ impl<G: Gain, F: ExactSizeIterator<Item = G> + Send + Sync + Clone> GainSTM<G, F
     }
 }
 
-pub struct GainSTMOperationGenerator<'a> {
+pub struct GainSTMOperationGenerator {
     #[allow(clippy::type_complexity)]
-    g: Vec<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync + 'a>>,
+    g: Vec<Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + Send + Sync>>,
     mode: GainSTMMode,
     config: SamplingConfig,
     rep: u32,
@@ -66,11 +62,11 @@ pub struct GainSTMOperationGenerator<'a> {
     transition_mode: Option<TransitionMode>,
 }
 
-impl<'a> OperationGenerator<'a> for GainSTMOperationGenerator<'a> {
+impl<'a> OperationGenerator for GainSTMOperationGenerator {
     type O1 = GainSTMOp;
     type O2 = NullOp;
 
-    fn generate(&'a self, device: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn generate(&self, device: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         let d = self.g.iter().map(|g| g(device)).collect::<Vec<_>>();
         Ok((
             Self::O1::new(
@@ -89,18 +85,18 @@ impl<'a> OperationGenerator<'a> for GainSTMOperationGenerator<'a> {
 impl<'a, G: Gain + 'a, F: ExactSizeIterator<Item = G> + Send + Sync + Clone + 'a> DatagramST<'a>
     for GainSTM<G, F>
 {
-    type O1 = crate::firmware::operation::GainSTMOp;
-    type O2 = crate::firmware::operation::NullOp;
-    type G = GainSTMOperationGenerator<'a>;
+    type O1 = GainSTMOp;
+    type O2 = NullOp;
+    type G = GainSTMOperationGenerator;
 
     fn operation_generator_with_segment(
         self,
-        geometry: &'a Geometry,
+        geometry: &Geometry,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, AUTDInternalError> {
         let sampling_config = self.sampling_config;
-        let rep = self.loop_behavior.rep;
+        let rep = self.loop_behavior.rep();
         let mode = self.mode;
         let gains = self
             .gains()
@@ -123,18 +119,11 @@ impl<'a, G: Gain + 'a, F: ExactSizeIterator<Item = G> + Send + Sync + Clone + 'a
 
 #[cfg(test)]
 mod tests {
+    use autd3_driver::defined::{kHz, Hz};
+
+    use gain::Null;
+
     use super::*;
-
-    use crate::{
-        datagram::gain::tests::TestGain,
-        defined::{kHz, Hz, FREQ_40K},
-        geometry::tests::create_geometry,
-    };
-
-    #[rstest::fixture]
-    fn geometry() -> Geometry {
-        create_geometry(1, 249, FREQ_40K)
-    }
 
     #[rstest::rstest]
     #[test]
@@ -146,12 +135,10 @@ mod tests {
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] freq: Freq<f64>,
         #[case] n: usize,
-        geometry: Geometry,
     ) {
         assert_eq!(
             expect,
-            GainSTM::from_freq(freq, (0..n).map(|_| TestGain::null(&geometry)))
-                .map(|g| g.sampling_config())
+            GainSTM::from_freq(freq, (0..n).map(|_| Null::new())).map(|g| g.sampling_config())
         );
     }
 
@@ -165,11 +152,10 @@ mod tests {
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] freq: Freq<f64>,
         #[case] n: usize,
-        geometry: Geometry,
     ) {
         assert_eq!(
             expect,
-            GainSTM::from_freq_nearest(freq, (0..n).map(|_| TestGain::null(&geometry)))
+            GainSTM::from_freq_nearest(freq, (0..n).map(|_| Null::new()))
                 .map(|g| g.sampling_config())
         );
     }
@@ -181,12 +167,10 @@ mod tests {
     fn from_sampling_config(
         #[case] config: SamplingConfig,
         #[case] n: usize,
-        geometry: Geometry,
     ) -> anyhow::Result<()> {
         assert_eq!(
             config,
-            GainSTM::from_sampling_config(config, (0..n).map(|_| TestGain::null(&geometry)))
-                .sampling_config()
+            GainSTM::from_sampling_config(config, (0..n).map(|_| Null::new())).sampling_config()
         );
         Ok(())
     }
@@ -196,12 +180,12 @@ mod tests {
     #[case::phase_intensity_full(GainSTMMode::PhaseIntensityFull)]
     #[case::phase_full(GainSTMMode::PhaseFull)]
     #[case::phase_half(GainSTMMode::PhaseHalf)]
-    fn with_mode(#[case] mode: GainSTMMode, geometry: Geometry) {
+    fn with_mode(#[case] mode: GainSTMMode) {
         assert_eq!(
             mode,
             GainSTM::from_sampling_config(
                 SamplingConfig::Division(512),
-                (0..2).map(|_| TestGain::null(&geometry))
+                (0..2).map(|_| Null::new())
             )
             .with_mode(mode)
             .mode()
@@ -210,12 +194,12 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn with_mode_default(geometry: Geometry) {
+    fn with_mode_default() {
         assert_eq!(
             GainSTMMode::PhaseIntensityFull,
             GainSTM::from_sampling_config(
                 SamplingConfig::Division(512),
-                (0..2).map(|_| TestGain::null(&geometry))
+                (0..2).map(|_| Null::new())
             )
             .mode()
         );
@@ -225,12 +209,12 @@ mod tests {
     #[test]
     #[case::infinite(LoopBehavior::infinite())]
     #[case::finite(LoopBehavior::once())]
-    fn with_loop_behavior(#[case] loop_behavior: LoopBehavior, geometry: Geometry) {
+    fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
             loop_behavior,
             GainSTM::from_sampling_config(
                 SamplingConfig::Division(512),
-                (0..2).map(|_| TestGain::null(&geometry))
+                (0..2).map(|_| Null::new())
             )
             .with_loop_behavior(loop_behavior)
             .loop_behavior()

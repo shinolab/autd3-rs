@@ -1,4 +1,6 @@
-use crate::{datagram::*, defined::DEFAULT_TIMEOUT};
+use crate::firmware::operation::SyncOp;
+
+use crate::datagram::*;
 
 #[derive(Default)]
 pub struct Synchronize {}
@@ -11,25 +13,25 @@ impl Synchronize {
 
 pub struct SynchronizeOpGenerator {}
 
-impl<'a> OperationGenerator<'a> for SynchronizeOpGenerator {
-    type O1 = crate::firmware::operation::SyncOp;
-    type O2 = crate::firmware::operation::NullOp;
+impl<'a> OperationGenerator for SynchronizeOpGenerator {
+    type O1 = SyncOp;
+    type O2 = NullOp;
 
-    fn generate(&'a self, _: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn generate(&self, _: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         Ok((Self::O1::default(), Self::O2::default()))
     }
 }
 
 impl<'a> Datagram<'a> for Synchronize {
-    type O1 = crate::firmware::operation::SyncOp;
-    type O2 = crate::firmware::operation::NullOp;
+    type O1 = SyncOp;
+    type O2 = NullOp;
     type G = SynchronizeOpGenerator;
 
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation_generator(self, _: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(SynchronizeOpGenerator {})
     }
 }

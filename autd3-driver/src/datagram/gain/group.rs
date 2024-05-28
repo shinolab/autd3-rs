@@ -105,31 +105,31 @@ where
             )));
         }
 
-        let drives_cache = self
-            .gain_map
-            .iter()
-            .map(|(k, g)| {
-                Ok((k.clone(), {
-                    let f = g.calc_with_filter(geometry, filters.remove(k).unwrap())?;
-                    geometry
-                        .devices()
-                        .map(move |dev| (dev.idx(), f(dev)))
-                        .collect::<HashMap<_, _>>()
-                }))
-            })
-            .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?;
+        let drives_cache = std::sync::Arc::new(std::sync::RwLock::new(
+            self.gain_map
+                .iter()
+                .map(|(k, g)| {
+                    Ok((k.clone(), {
+                        let f = g.calc_with_filter(geometry, filters.remove(k).unwrap())?;
+                        geometry
+                            .devices()
+                            .map(move |dev| (dev.idx(), dev.iter().map(f(dev)).collect::<Vec<_>>()))
+                            .collect::<HashMap<_, _>>()
+                    }))
+                })
+                .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?,
+        ));
 
         let f = self.f.clone();
         Ok(Box::new(move |dev| {
             let fk = f(dev);
             let dev_idx = dev.idx();
-            dev.iter()
-                .map(|tr| {
-                    fk(tr)
-                        .map(|key| drives_cache[&key][&dev_idx][tr.idx()])
-                        .unwrap_or(Drive::null())
-                })
-                .collect()
+            let drives_cache = drives_cache.clone();
+            Box::new(move |tr| {
+                fk(tr)
+                    .map(|key| drives_cache.read().unwrap()[&key][&dev_idx][tr.idx()])
+                    .unwrap_or(Drive::null())
+            })
         }))
     }
 }
@@ -171,7 +171,7 @@ mod tests {
         let g = gain.calc(&geometry)?;
         let drives = geometry
             .devices()
-            .map(|dev| (dev.idx(), g(dev)))
+            .map(|dev| (dev.idx(), dev.iter().map(g(dev)).collect::<Vec<_>>()))
             .collect::<HashMap<_, _>>();
         assert_eq!(4, drives.len());
         drives[&0].iter().enumerate().for_each(|(i, &d)| match i {

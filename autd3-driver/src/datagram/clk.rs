@@ -1,4 +1,6 @@
-use crate::{datagram::*, derive::DEFAULT_TIMEOUT};
+use crate::firmware::operation::ConfigureClockOp;
+
+use crate::datagram::*;
 
 #[derive(Default)]
 pub struct ConfigureFPGAClock {}
@@ -11,25 +13,25 @@ impl ConfigureFPGAClock {
 
 pub struct ConfigureClockOpGenerator {}
 
-impl<'a> OperationGenerator<'a> for ConfigureClockOpGenerator {
-    type O1 = crate::firmware::operation::ConfigureClockOp;
-    type O2 = crate::firmware::operation::NullOp;
+impl<'a> OperationGenerator for ConfigureClockOpGenerator {
+    type O1 = ConfigureClockOp;
+    type O2 = NullOp;
 
-    fn generate(&'a self, _: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn generate(&self, _: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         Ok((Self::O1::default(), Self::O2::default()))
     }
 }
 
 impl<'a> Datagram<'a> for ConfigureFPGAClock {
-    type O1 = crate::firmware::operation::ConfigureClockOp;
-    type O2 = crate::firmware::operation::NullOp;
-    type G =  ConfigureClockOpGenerator;
+    type O1 = ConfigureClockOp;
+    type O2 = NullOp;
+    type G = ConfigureClockOpGenerator;
 
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation_generator(self, _: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(ConfigureClockOpGenerator {})
     }
 }

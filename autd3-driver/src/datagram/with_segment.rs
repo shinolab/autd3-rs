@@ -36,7 +36,7 @@ impl<'a, D: DatagramS<'a>> Datagram<'a> for DatagramWithSegment<'a, D> {
     type O2 = D::O2;
     type G = D::G;
 
-    fn operation_generator(self, geometry: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
         self.datagram
             .operation_generator_with_segment(geometry, self.segment, self.transition)
     }
@@ -49,11 +49,11 @@ impl<'a, D: DatagramS<'a>> Datagram<'a> for DatagramWithSegment<'a, D> {
 pub trait DatagramS<'a> {
     type O1: Operation + 'a;
     type O2: Operation + 'a;
-    type G: OperationGenerator<'a, O1 = Self::O1, O2 = Self::O2>;
+    type G: OperationGenerator<O1 = Self::O1, O2 = Self::O2>;
 
     fn operation_generator_with_segment(
         self,
-        geometry: &'a Geometry,
+        geometry: &Geometry,
         segment: Segment,
         transition: bool,
     ) -> Result<Self::G, AUTDInternalError>;

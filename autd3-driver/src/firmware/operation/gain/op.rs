@@ -1,5 +1,6 @@
 use super::GainControlFlags;
 use crate::{
+    derive::Transducer,
     error::AUTDInternalError,
     firmware::{
         fpga::{Drive, Segment},
@@ -17,14 +18,18 @@ struct GainT {
 }
 
 pub struct GainOp {
-    gain: Vec<Drive>,
+    gain: Box<dyn Fn(&Transducer) -> Drive + Sync + Send>,
     is_done: bool,
     segment: Segment,
     transition: bool,
 }
 
 impl GainOp {
-    pub fn new(segment: Segment, transition: bool, gain: Vec<Drive>) -> Self {
+    pub fn new(
+        segment: Segment,
+        transition: bool,
+        gain: Box<dyn Fn(&Transducer) -> Drive + Sync + Send>,
+    ) -> Self {
         Self {
             gain,
             is_done: false,
@@ -55,11 +60,15 @@ impl Operation for GainOp {
             .set(GainControlFlags::UPDATE, self.transition);
 
         unsafe {
-            std::ptr::copy_nonoverlapping(
-                self.gain.as_ptr(),
-                tx[std::mem::size_of::<GainT>()..].as_mut_ptr() as *mut Drive,
-                device.len(),
-            );
+            device
+                .iter()
+                .zip(std::slice::from_raw_parts_mut(
+                    tx[std::mem::size_of::<GainT>()..].as_mut_ptr() as *mut Drive,
+                    device.len(),
+                ))
+                .for_each(|(tr, dst)| {
+                    *dst = (self.gain)(tr);
+                })
         }
 
         self.is_done = true;
@@ -101,7 +110,10 @@ mod tests {
             })
             .collect();
 
-        let mut op = GainOp::new(Segment::S0, true, data.clone());
+        let mut op = GainOp::new(Segment::S0, true, {
+            let data = data.clone();
+            Box::new(move |tr| data[tr.idx()])
+        });
 
         assert_eq!(
             op.required_size(&device),
