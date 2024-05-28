@@ -1,4 +1,4 @@
-use std::{iter::Peekable, mem::size_of};
+use std::{mem::size_of, sync::Arc};
 
 use crate::{
     defined::{ControlPoint, METER},
@@ -36,7 +36,7 @@ struct FocusSTMSubseq {
 }
 
 pub struct FocusSTMOp {
-    points: Peekable<std::vec::IntoIter<ControlPoint>>,
+    points: Arc<Vec<ControlPoint>>,
     sent: usize,
     is_done: bool,
     config: SamplingConfig,
@@ -47,14 +47,14 @@ pub struct FocusSTMOp {
 
 impl FocusSTMOp {
     pub fn new(
-        points: Vec<ControlPoint>,
+        points: Arc<Vec<ControlPoint>>,
         config: SamplingConfig,
         rep: u32,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Self {
         Self {
-            points: points.into_iter().peekable(),
+            points,
             sent: 0,
             is_done: false,
             config,
@@ -77,10 +77,14 @@ impl Operation for FocusSTMOp {
 
         let max_send_bytes = tx.len() - offset;
         let max_send_num = max_send_bytes / size_of::<STMFocus>();
-        let send_num = (0..max_send_num)
-            .filter_map(|_| self.points.next())
+        let send_num = (self.points.len() - self.sent).min(max_send_num);
+
+        self.points
+            .iter()
+            .skip(self.sent)
+            .take(send_num)
             .enumerate()
-            .map(|(i, p)| {
+            .try_for_each(|(i, p)| {
                 let lp = device.to_local(p.point());
                 cast::<STMFocus>(&mut tx[offset + i * size_of::<STMFocus>()..]).set(
                     lp.x,
@@ -88,10 +92,6 @@ impl Operation for FocusSTMOp {
                     lp.z,
                     p.intensity(),
                 )
-            })
-            .try_fold(0, |acc, x| -> Result<usize, AUTDInternalError> {
-                x?;
-                Ok(acc + 1)
             })?;
 
         self.sent += send_num;
@@ -134,7 +134,7 @@ impl Operation for FocusSTMOp {
             };
         }
 
-        if self.points.peek().is_none() {
+        if self.points.len() == self.sent {
             if self.sent < STM_BUF_SIZE_MIN {
                 return Err(AUTDInternalError::FocusSTMPointSizeOutOfRange(self.sent));
             }
@@ -224,7 +224,7 @@ mod tests {
         );
 
         let mut op = FocusSTMOp::new(
-            points.clone(),
+            Arc::new(points.clone()),
             SamplingConfig::DivisionRaw(freq_div),
             rep,
             segment,
@@ -323,7 +323,7 @@ mod tests {
         let segment = Segment::S1;
 
         let mut op = FocusSTMOp::new(
-            points.clone(),
+            Arc::new(points.clone()),
             SamplingConfig::DivisionRaw(freq_div),
             rep,
             segment,
@@ -525,9 +525,11 @@ mod tests {
         let x = FOCUS_STM_FIXED_NUM_UNIT * (FOCUS_STM_FIXED_NUM_UPPER_X as f64 + 1.);
 
         let mut op = FocusSTMOp::new(
-            (0..FOCUS_STM_SIZE)
-                .map(|_| ControlPoint::new(Vector3::new(x, x, x)).with_intensity(0))
-                .collect::<Vec<_>>(),
+            Arc::new(
+                (0..FOCUS_STM_SIZE)
+                    .map(|_| ControlPoint::new(Vector3::new(x, x, x)).with_intensity(0))
+                    .collect::<Vec<_>>(),
+            ),
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
             0xFFFFFFFF,
             Segment::S0,
@@ -551,9 +553,11 @@ mod tests {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
         let mut op = FocusSTMOp::new(
-            (0..n)
-                .map(|_| ControlPoint::new(Vector3::zeros()))
-                .collect::<Vec<_>>(),
+            Arc::new(
+                (0..n)
+                    .map(|_| ControlPoint::new(Vector3::zeros()))
+                    .collect::<Vec<_>>(),
+            ),
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
             0xFFFFFFFF,
             Segment::S0,
