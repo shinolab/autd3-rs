@@ -30,7 +30,7 @@ impl Static {
 impl Modulation for Static {
     fn calc(&self, _: &Geometry) -> ModulationCalcResult {
         let intensity = self.intensity;
-        Ok(Box::new(move |_| vec![intensity; 2]))
+        Ok(vec![intensity; 2])
     }
 }
 

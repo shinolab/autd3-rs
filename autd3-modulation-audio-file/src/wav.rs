@@ -78,7 +78,7 @@ impl Modulation for Wav {
         .iter()
         .map(|&d| d.round() as u8)
         .collect::<Vec<_>>();
-        Ok(Box::new(move |_| buf.clone()))
+        Ok(buf)
     }
 }
 

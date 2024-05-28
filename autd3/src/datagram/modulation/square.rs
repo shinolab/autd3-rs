@@ -55,17 +55,15 @@ impl<S: SamplingMode> Modulation for Square<S> {
         let high = self.high;
         let low = self.low;
         let duty = self.duty;
-        Ok(Box::new(move |_| {
-            (0..rep)
-                .map(|i| (n + i) / rep)
-                .flat_map(|size| {
-                    let n_high = (size as f64 * duty) as usize;
-                    vec![high; n_high]
-                        .into_iter()
-                        .chain(vec![low; size as usize - n_high])
-                })
-                .collect()
-        }))
+        Ok((0..rep)
+            .map(|i| (n + i) / rep)
+            .flat_map(|size| {
+                let n_high = (size as f64 * duty) as usize;
+                vec![high; n_high]
+                    .into_iter()
+                    .chain(vec![low; size as usize - n_high])
+            })
+            .collect())
     }
 }
 

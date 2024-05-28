@@ -28,12 +28,10 @@ pub trait IntoRadiationPressure<M: Modulation> {
 impl<M: Modulation> Modulation for RadiationPressure<M> {
     fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
         let src = self.m.calc(geometry)?;
-        Ok(Box::new(move |dev| {
-            src(dev)
-                .into_iter()
-                .map(|v| ((v as f64 / 255.).sqrt() * 255.).round() as u8)
-                .collect()
-        }))
+        Ok(src
+            .into_iter()
+            .map(|v| ((v as f64 / 255.).sqrt() * 255.).round() as u8)
+            .collect())
     }
 }
 
@@ -69,21 +67,18 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let buf = vec![rng.gen(), rng.gen()];
-        geometry.devices().try_for_each(|dev| {
-            assert_eq!(
-                buf.iter()
-                    .map(|&x| ((x as f64 / 255.).sqrt() * 255.).round() as u8)
-                    .collect::<Vec<_>>(),
-                TestModulation {
-                    buf: buf.clone(),
-                    config: SamplingConfig::Freq(4 * kHz),
-                    loop_behavior: LoopBehavior::infinite(),
-                }
-                .with_radiation_pressure()
-                .calc(&geometry)?(dev)
-            );
-            Result::<(), AUTDInternalError>::Ok(())
-        })?;
+        assert_eq!(
+            buf.iter()
+                .map(|&x| ((x as f64 / 255.).sqrt() * 255.).round() as u8)
+                .collect::<Vec<_>>(),
+            TestModulation {
+                buf: buf.clone(),
+                config: SamplingConfig::Freq(4 * kHz),
+                loop_behavior: LoopBehavior::infinite(),
+            }
+            .with_radiation_pressure()
+            .calc(&geometry)?
+        );
 
         Ok(())
     }

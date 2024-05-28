@@ -77,7 +77,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
 
             fn operation_generator_with_segment(self, geometry: &Geometry, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<Self::G, AUTDInternalError> {
                 Ok(Self::G {
-                    g: self.calc(geometry)?,
+                    g: std::sync::Arc::new(self.calc(geometry)?),
                     config: self.sampling_config(),
                     rep: self.loop_behavior().rep(),
                     segment,
@@ -102,7 +102,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     } else {
         quote! {
             impl <#(#linetimes,)* #(#type_params,)*> IntoModulationTransform<Self> for #name #ty_generics #where_clause {
-                fn with_transform<ModulationTransformF: Fn(usize, u8) -> u8 + Send + Sync + Clone + 'static>(self, f: ModulationTransformF) -> ModulationTransform<Self, ModulationTransformF> {
+                fn with_transform<ModulationTransformF: Fn(usize, u8) -> u8>(self, f: ModulationTransformF) -> ModulationTransform<Self, ModulationTransformF> {
                     ModulationTransform::new(self, f)
                 }
             }

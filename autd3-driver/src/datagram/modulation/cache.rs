@@ -1,6 +1,6 @@
 use crate::derive::*;
 
-use std::sync::{Arc, RwLock, RwLockReadGuard};
+use std::cell::{Ref, RefCell};
 
 #[derive(Modulation)]
 #[no_modulation_cache]
@@ -8,7 +8,7 @@ use std::sync::{Arc, RwLock, RwLockReadGuard};
 #[no_modulation_transform]
 pub struct Cache<M: Modulation> {
     m: M,
-    cache: Arc<RwLock<HashMap<usize, Vec<u8>>>>,
+    cache: RefCell<Vec<u8>>,
     #[no_change]
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
@@ -43,23 +43,19 @@ impl<M: Modulation> Cache<M> {
             config: m.sampling_config(),
             loop_behavior: m.loop_behavior(),
             m,
-            cache: Arc::new(Default::default()),
+            cache: RefCell::default(),
         }
     }
 
     pub fn init(&self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        if self.cache.read().unwrap().is_empty() {
-            let f = self.m.calc(geometry)?;
-            *self.cache.write().unwrap() = geometry
-                .devices()
-                .map(|dev| (dev.idx(), { f(dev) }))
-                .collect();
+        if self.cache.borrow().is_empty() {
+            *self.cache.borrow_mut() = self.m.calc(geometry)?;
         }
         Ok(())
     }
 
-    pub fn buffer(&self) -> RwLockReadGuard<HashMap<usize, Vec<u8>>> {
-        self.cache.read().unwrap()
+    pub fn buffer(&self) -> Ref<'_, Vec<u8>> {
+        self.cache.borrow()
     }
 }
 
@@ -67,7 +63,7 @@ impl<M: Modulation> Modulation for Cache<M> {
     fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
         self.init(geometry)?;
         let buffer = self.buffer().clone();
-        Ok(Box::new(move |dev| buffer[&dev.idx()].clone()))
+        Ok(buffer)
     }
 }
 
@@ -102,10 +98,7 @@ mod tests {
 
         assert!(cache.buffer().is_empty());
 
-        geometry.devices().try_for_each(|dev| {
-            assert_eq!(m.calc(&geometry)?(dev), cache.calc(&geometry)?(dev));
-            Result::<(), AUTDInternalError>::Ok(())
-        })?;
+        assert_eq!(m.calc(&geometry)?, cache.calc(&geometry)?);
 
         Ok(())
     }
@@ -120,7 +113,7 @@ mod tests {
     impl Modulation for TestCacheModulation {
         fn calc<'a>(&'a self, _: &'a Geometry) -> ModulationCalcResult {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
-            Ok(Box::new(move |_| vec![0x00, 0x00]))
+            Ok(vec![0x00, 0x00])
         }
     }
 
