@@ -64,7 +64,7 @@ pub struct GainOperationGenerator {
     pub transition: bool,
 }
 
-impl<'a> OperationGenerator for GainOperationGenerator {
+impl OperationGenerator for GainOperationGenerator {
     type O1 = GainOp;
     type O2 = NullOp;
 

@@ -63,7 +63,7 @@ pub struct ModulationOperationGenerator {
     pub transition_mode: Option<TransitionMode>,
 }
 
-impl<'a> OperationGenerator for ModulationOperationGenerator {
+impl OperationGenerator for ModulationOperationGenerator {
     type O1 = ModulationOp;
     type O2 = NullOp;
 

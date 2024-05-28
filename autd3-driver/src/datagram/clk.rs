@@ -13,7 +13,7 @@ impl ConfigureFPGAClock {
 
 pub struct ConfigureClockOpGenerator {}
 
-impl<'a> OperationGenerator for ConfigureClockOpGenerator {
+impl OperationGenerator for ConfigureClockOpGenerator {
     type O1 = ConfigureClockOp;
     type O2 = NullOp;
 

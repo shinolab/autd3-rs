@@ -62,7 +62,7 @@ pub struct GainSTMOperationGenerator {
     transition_mode: Option<TransitionMode>,
 }
 
-impl<'a> OperationGenerator for GainSTMOperationGenerator {
+impl OperationGenerator for GainSTMOperationGenerator {
     type O1 = GainSTMOp;
     type O2 = NullOp;
 

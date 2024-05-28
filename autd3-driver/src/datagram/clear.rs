@@ -13,7 +13,7 @@ impl Clear {
 
 pub struct ClearOpGenerator {}
 
-impl<'a> OperationGenerator for ClearOpGenerator {
+impl OperationGenerator for ClearOpGenerator {
     type O1 = ClearOp;
     type O2 = NullOp;
 
