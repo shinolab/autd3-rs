@@ -13,7 +13,7 @@ impl Synchronize {
 
 pub struct SynchronizeOpGenerator {}
 
-impl<'a> OperationGenerator for SynchronizeOpGenerator {
+impl OperationGenerator for SynchronizeOpGenerator {
     type O1 = SyncOp;
     type O2 = NullOp;
 

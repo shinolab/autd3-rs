@@ -101,9 +101,10 @@ impl Operation for Box<dyn Operation> {
 pub struct OperationHandler {}
 
 impl OperationHandler {
-    pub fn generate<'a, G: OperationGenerator>(
+    #[allow(clippy::type_complexity)]
+    pub fn generate<G: OperationGenerator>(
         gen: G,
-        geometry: &'a Geometry,
+        geometry: &Geometry,
     ) -> Result<Vec<(G::O1, G::O2)>, AUTDInternalError> {
         geometry.iter().map(|dev| gen.generate(dev)).collect()
     }

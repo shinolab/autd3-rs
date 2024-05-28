@@ -1,3 +1,5 @@
+#![allow(clippy::type_complexity)]
+
 use std::{iter::Peekable, mem::size_of};
 
 use crate::{

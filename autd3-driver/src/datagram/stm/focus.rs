@@ -68,7 +68,7 @@ pub struct FocusSTMOperationGenerator {
     transition_mode: Option<TransitionMode>,
 }
 
-impl<'a> OperationGenerator for FocusSTMOperationGenerator {
+impl OperationGenerator for FocusSTMOperationGenerator {
     type O1 = FocusSTMOp;
     type O2 = NullOp;
 

@@ -73,7 +73,7 @@ where
     o2: O2,
 }
 
-impl<'a, O1, O2> OperationGenerator for CombinedOperationGenerator<O1, O2>
+impl<O1, O2> OperationGenerator for CombinedOperationGenerator<O1, O2>
 where
     O1: OperationGenerator,
     O2: OperationGenerator,

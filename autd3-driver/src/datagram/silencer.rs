@@ -182,7 +182,7 @@ pub struct SilencerFixedUpdateRateOpGenerator {
     update_rate_phase: u16,
 }
 
-impl<'a> OperationGenerator for SilencerFixedUpdateRateOpGenerator {
+impl OperationGenerator for SilencerFixedUpdateRateOpGenerator {
     type O1 = SilencerFixedUpdateRateOp;
     type O2 = NullOp;
 
@@ -217,7 +217,7 @@ pub struct SilencerFixedCompletionStepsOpGenerator {
     strict_mode: bool,
 }
 
-impl<'a> OperationGenerator for SilencerFixedCompletionStepsOpGenerator {
+impl OperationGenerator for SilencerFixedCompletionStepsOpGenerator {
     type O1 = SilencerFixedCompletionStepsOp;
     type O2 = NullOp;
 

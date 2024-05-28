@@ -16,7 +16,7 @@ pub struct ForceFanOpGenerator<F: Fn(&Device) -> bool + Send + Sync> {
     f: F,
 }
 
-impl<'a, F: Fn(&Device) -> bool + Send + Sync> OperationGenerator for ForceFanOpGenerator<F> {
+impl<F: Fn(&Device) -> bool + Send + Sync> OperationGenerator for ForceFanOpGenerator<F> {
     type O1 = ForceFanOp;
     type O2 = NullOp;
 

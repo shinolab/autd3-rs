@@ -19,7 +19,7 @@ pub struct EmulateGPIOInOpGenerator<
     f: F,
 }
 
-impl<'a, H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H + Send + Sync> OperationGenerator
+impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H + Send + Sync> OperationGenerator
     for EmulateGPIOInOpGenerator<H, F>
 {
     type O1 = EmulateGPIOInOp;
