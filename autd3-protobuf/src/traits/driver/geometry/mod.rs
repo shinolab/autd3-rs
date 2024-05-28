@@ -41,7 +41,7 @@ impl ToMessage for autd3_driver::geometry::Geometry {
                 .iter()
                 .map(|dev| geometry::Autd3 {
                     pos: Some(dev[0].position().to_msg(None)),
-                    rot: Some(dev[0].rotation().to_msg(None)),
+                    rot: Some(dev.rotation().to_msg(None)),
                     sound_speed: dev.sound_speed as _,
                     attenuation: dev.attenuation as _,
                 })
