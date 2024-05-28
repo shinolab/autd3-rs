@@ -1,9 +1,9 @@
-use crate::{
-    datagram::*,
-    derive::DEFAULT_TIMEOUT,
-    firmware::fpga::{DebugType, GPIOOut},
-    geometry::Device,
+use crate::firmware::{
+    fpga::{DebugType, GPIOOut},
+    operation::DebugSettingOp,
 };
+
+use crate::datagram::*;
 
 pub struct DebugSettings<'a, H: Fn(GPIOOut) -> DebugType<'a>, F: Fn(&Device) -> H + Send + Sync> {
     f: F,
@@ -30,12 +30,12 @@ pub struct DebugSettingOpGenerator<
 }
 
 impl<'a, H: Fn(GPIOOut) -> DebugType<'a> + Send + Sync + 'a, F: Fn(&Device) -> H + Send + Sync>
-    OperationGenerator<'a> for DebugSettingOpGenerator<'a, H, F>
+    OperationGenerator for DebugSettingOpGenerator<'a, H, F>
 {
-    type O1 = crate::firmware::operation::DebugSettingOp<'a, H>;
-    type O2 = crate::firmware::operation::NullOp;
+    type O1 = DebugSettingOp<'a, H>;
+    type O2 = NullOp;
 
-    fn generate(&'a self, device: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn generate(&self, device: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         Ok((Self::O1::new((self.f)(device)), Self::O2::default()))
     }
 }
@@ -46,15 +46,15 @@ impl<
         F: Fn(&Device) -> H + Send + Sync + 'a,
     > Datagram<'a> for DebugSettings<'a, H, F>
 {
-    type O1 = crate::firmware::operation::DebugSettingOp<'a, H>;
-    type O2 = crate::firmware::operation::NullOp;
-    type G =  DebugSettingOpGenerator<'a, H, F>;
+    type O1 = DebugSettingOp<'a, H>;
+    type O2 = NullOp;
+    type G = DebugSettingOpGenerator<'a, H, F>;
 
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation_generator(self, _: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(DebugSettingOpGenerator { f: self.f })
     }
 }

@@ -12,6 +12,7 @@ pub use transform::IntoTransform as IntoModulationTransform;
 pub use transform::Transform as ModulationTransform;
 
 use crate::defined::DEFAULT_TIMEOUT;
+use crate::firmware::operation::OperationGenerator;
 use crate::{
     error::AUTDInternalError,
     firmware::{
@@ -22,7 +23,6 @@ use crate::{
 };
 
 use super::DatagramST;
-use super::OperationGenerator;
 
 pub type ModulationCalcResult =
     Result<Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>, AUTDInternalError>;
@@ -54,20 +54,20 @@ impl Modulation for Box<dyn Modulation> {
     }
 }
 
-pub struct ModulationOperationGenerator<'a> {
+pub struct ModulationOperationGenerator {
     #[allow(clippy::type_complexity)]
-    pub g: Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync + 'a>,
+    pub g: Box<dyn Fn(&Device) -> Vec<u8> + Send + Sync>,
     pub config: SamplingConfig,
     pub rep: u32,
     pub segment: Segment,
     pub transition_mode: Option<TransitionMode>,
 }
 
-impl<'a> OperationGenerator<'a> for ModulationOperationGenerator<'a> {
+impl<'a> OperationGenerator for ModulationOperationGenerator {
     type O1 = ModulationOp;
     type O2 = NullOp;
 
-    fn generate(&'a self, device: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn generate(&self, device: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         let d = (self.g)(device);
         Ok((
             ModulationOp::new(d, self.config, self.rep, self.segment, self.transition_mode),
@@ -79,7 +79,7 @@ impl<'a> OperationGenerator<'a> for ModulationOperationGenerator<'a> {
 impl<'a> DatagramST<'a> for Box<dyn Modulation> {
     type O1 = ModulationOp;
     type O2 = NullOp;
-    type G = ModulationOperationGenerator<'a>;
+    type G = ModulationOperationGenerator;
 
     fn operation_generator_with_segment(
         self,

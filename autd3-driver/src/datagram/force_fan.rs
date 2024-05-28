@@ -1,4 +1,6 @@
-use crate::{datagram::*, derive::DEFAULT_TIMEOUT, geometry::Device};
+use crate::firmware::operation::ForceFanOp;
+
+use crate::datagram::*;
 
 pub struct ForceFan<F: Fn(&Device) -> bool + Send + Sync> {
     f: F,
@@ -14,25 +16,25 @@ pub struct ForceFanOpGenerator<F: Fn(&Device) -> bool + Send + Sync> {
     f: F,
 }
 
-impl<'a, F: Fn(&Device) -> bool + Send + Sync> OperationGenerator<'a> for ForceFanOpGenerator<F> {
-    type O1 = crate::firmware::operation::ForceFanOp;
-    type O2 = crate::firmware::operation::NullOp;
+impl<'a, F: Fn(&Device) -> bool + Send + Sync> OperationGenerator for ForceFanOpGenerator<F> {
+    type O1 = ForceFanOp;
+    type O2 = NullOp;
 
-    fn generate(&'a self, device: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn generate(&self, device: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         Ok((Self::O1::new((self.f)(device)), Self::O2::default()))
     }
 }
 
 impl<'a, F: Fn(&Device) -> bool + Send + Sync + 'a> Datagram<'a> for ForceFan<F> {
-    type O1 = crate::firmware::operation::ForceFanOp;
-    type O2 = crate::firmware::operation::NullOp;
+    type O1 = ForceFanOp;
+    type O2 = NullOp;
     type G = ForceFanOpGenerator<F>;
 
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation_generator(self, _: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(ForceFanOpGenerator { f: self.f })
     }
 }

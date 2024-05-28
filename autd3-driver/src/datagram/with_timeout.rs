@@ -15,7 +15,7 @@ impl<'a, D: Datagram<'a>> Datagram<'a> for DatagramWithTimeout<'a, D> {
     type O2 = D::O2;
     type G = D::G;
 
-    fn operation_generator(self, geometry: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
         self.datagram.operation_generator(geometry)
     }
 

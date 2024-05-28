@@ -1,36 +1,39 @@
 use std::time::Duration;
 
+use crate::firmware::operation::{
+    FocusSTMSwapSegmentOp, GainSTMSwapSegmentOp, GainSwapSegmentOp, ModulationSwapSegmentOp,
+    SwapSegmentOperation,
+};
+
 use crate::{
-    datagram::Datagram,
-    defined::DEFAULT_TIMEOUT,
+    datagram::*,
     derive::{AUTDInternalError, Device, Geometry, Segment, TransitionMode},
-    firmware::operation::SwapSegmentOperation,
 };
 
 use super::OperationGenerator;
 
 pub trait SwapSegmentDatagram {
-    type O: crate::firmware::operation::SwapSegmentOperation;
+    type O: SwapSegmentOperation;
 }
 
 pub struct Gain;
 impl SwapSegmentDatagram for Gain {
-    type O = crate::firmware::operation::GainSwapSegmentOp;
+    type O = GainSwapSegmentOp;
 }
 
 pub struct Modulation;
 impl SwapSegmentDatagram for Modulation {
-    type O = crate::firmware::operation::ModulationSwapSegmentOp;
+    type O = ModulationSwapSegmentOp;
 }
 
 pub struct FocusSTM;
 impl SwapSegmentDatagram for FocusSTM {
-    type O = crate::firmware::operation::FocusSTMSwapSegmentOp;
+    type O = FocusSTMSwapSegmentOp;
 }
 
 pub struct GainSTM;
 impl SwapSegmentDatagram for GainSTM {
-    type O = crate::firmware::operation::GainSTMSwapSegmentOp;
+    type O = GainSTMSwapSegmentOp;
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -99,13 +102,13 @@ pub struct SwapSegmentOpGenerator<T: SwapSegmentDatagram + Sync + Send> {
     transition_mode: TransitionMode,
 }
 
-impl<'a, T: SwapSegmentDatagram + Sync + Send + 'a> OperationGenerator<'a>
+impl<'a, T: SwapSegmentDatagram + Sync + Send + 'a> OperationGenerator
     for SwapSegmentOpGenerator<T>
 {
     type O1 = T::O;
-    type O2 = crate::firmware::operation::NullOp;
+    type O2 = NullOp;
 
-    fn generate(&'a self, _: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn generate(&self, _: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         Ok((
             Self::O1::new(self.segment, self.transition_mode),
             Self::O2::default(),
@@ -115,14 +118,14 @@ impl<'a, T: SwapSegmentDatagram + Sync + Send + 'a> OperationGenerator<'a>
 
 impl<'a, T: SwapSegmentDatagram + Sync + Send + 'a> Datagram<'a> for SwapSegment<T> {
     type O1 = T::O;
-    type O2 = crate::firmware::operation::NullOp;
+    type O2 = NullOp;
     type G = SwapSegmentOpGenerator<T>;
 
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation_generator(self, _: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(SwapSegmentOpGenerator {
             _phantom: std::marker::PhantomData,
             segment: self.segment,

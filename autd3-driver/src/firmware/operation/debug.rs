@@ -26,7 +26,7 @@ impl<'a, F: Fn(GPIOOut) -> DebugType<'a>> DebugSettingOp<'a, F> {
     }
 }
 
-impl<'a, F: Fn(GPIOOut) -> DebugType<'a>> Operation for DebugSettingOp<'a, F> {
+impl<'a, F: Fn(GPIOOut) -> DebugType<'a> + Send + Sync> Operation for DebugSettingOp<'a, F> {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         *cast::<DebugSetting>(tx) = DebugSetting {
             tag: TypeTag::Debug,

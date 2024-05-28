@@ -1,11 +1,12 @@
-use crate::{
-    datagram::*,
-    defined::DEFAULT_TIMEOUT,
-    firmware::fpga::{
+use crate::firmware::{
+    fpga::{
         SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, SILENCER_VALUE_MAX,
         SILENCER_VALUE_MIN,
     },
+    operation::{SilencerFixedCompletionStepsOp, SilencerFixedUpdateRateOp},
 };
+
+use crate::datagram::*;
 
 #[derive(Debug, Clone, Copy)]
 pub struct FixedCompletionSteps {
@@ -181,11 +182,11 @@ pub struct SilencerFixedUpdateRateOpGenerator {
     update_rate_phase: u16,
 }
 
-impl<'a> OperationGenerator<'a> for SilencerFixedUpdateRateOpGenerator {
-    type O1 = crate::firmware::operation::SilencerFixedUpdateRateOp;
-    type O2 = crate::firmware::operation::NullOp;
+impl<'a> OperationGenerator for SilencerFixedUpdateRateOpGenerator {
+    type O1 = SilencerFixedUpdateRateOp;
+    type O2 = NullOp;
 
-    fn generate(&'a self, _: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn generate(&self, _: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         Ok((
             Self::O1::new(self.update_rate_intensity, self.update_rate_phase),
             Self::O2::default(),
@@ -194,15 +195,15 @@ impl<'a> OperationGenerator<'a> for SilencerFixedUpdateRateOpGenerator {
 }
 
 impl<'a> Datagram<'a> for Silencer<FixedUpdateRate> {
-    type O1 = crate::firmware::operation::SilencerFixedUpdateRateOp;
-    type O2 = crate::firmware::operation::NullOp;
-    type G =  SilencerFixedUpdateRateOpGenerator;
+    type O1 = SilencerFixedUpdateRateOp;
+    type O2 = NullOp;
+    type G = SilencerFixedUpdateRateOpGenerator;
 
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation_generator(self, _: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(SilencerFixedUpdateRateOpGenerator {
             update_rate_intensity: self.internal.update_rate_intensity,
             update_rate_phase: self.internal.update_rate_phase,
@@ -216,11 +217,11 @@ pub struct SilencerFixedCompletionStepsOpGenerator {
     strict_mode: bool,
 }
 
-impl<'a> OperationGenerator<'a> for SilencerFixedCompletionStepsOpGenerator {
-    type O1 = crate::firmware::operation::SilencerFixedCompletionStepsOp;
-    type O2 = crate::firmware::operation::NullOp;
+impl<'a> OperationGenerator for SilencerFixedCompletionStepsOpGenerator {
+    type O1 = SilencerFixedCompletionStepsOp;
+    type O2 = NullOp;
 
-    fn generate(&'a self, _: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn generate(&self, _: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         Ok((
             Self::O1::new(
                 self.update_rate_intensity,
@@ -233,15 +234,15 @@ impl<'a> OperationGenerator<'a> for SilencerFixedCompletionStepsOpGenerator {
 }
 
 impl<'a> Datagram<'a> for Silencer<FixedCompletionSteps> {
-    type O1 = crate::firmware::operation::SilencerFixedCompletionStepsOp;
-    type O2 = crate::firmware::operation::NullOp;
-    type G =  SilencerFixedCompletionStepsOpGenerator;
+    type O1 = SilencerFixedCompletionStepsOp;
+    type O2 = NullOp;
+    type G = SilencerFixedCompletionStepsOpGenerator;
 
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation_generator(self, _: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(SilencerFixedCompletionStepsOpGenerator {
             update_rate_intensity: self.internal.steps_intensity,
             update_rate_phase: self.internal.steps_phase,

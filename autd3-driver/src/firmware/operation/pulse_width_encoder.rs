@@ -50,7 +50,7 @@ impl<F: Fn(usize) -> u16> PulseWidthEncoderOp<F> {
     }
 }
 
-impl<F: Fn(usize) -> u16> Operation for PulseWidthEncoderOp<F> {
+impl<F: Fn(usize) -> u16 + Send + Sync> Operation for PulseWidthEncoderOp<F> {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         let sent = PWE_BUF_SIZE - self.remains;
 

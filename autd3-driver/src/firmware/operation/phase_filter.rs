@@ -13,18 +13,18 @@ struct PhaseFilter {
     tag: TypeTag,
 }
 
-pub struct PhaseFilterOp<P: Into<Phase>, F: Fn(&Transducer) -> P> {
+pub struct PhaseFilterOp<P: Into<Phase>, F: Fn(&Transducer) -> P + Send + Sync> {
     is_done: bool,
     f: F,
 }
 
-impl<P: Into<Phase>, F: Fn(&Transducer) -> P> PhaseFilterOp<P, F> {
+impl<P: Into<Phase>, F: Fn(&Transducer) -> P + Send + Sync> PhaseFilterOp<P, F> {
     pub fn new(f: F) -> Self {
         Self { is_done: false, f }
     }
 }
 
-impl<P: Into<Phase>, F: Fn(&Transducer) -> P> Operation for PhaseFilterOp<P, F> {
+impl<P: Into<Phase>, F: Fn(&Transducer) -> P + Send + Sync> Operation for PhaseFilterOp<P, F> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         cast::<PhaseFilter>(tx).tag = TypeTag::PhaseFilter;
 

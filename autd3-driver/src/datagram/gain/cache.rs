@@ -59,8 +59,10 @@ impl<G: Gain> Cache<G> {
                 .any(|dev| !self.cache.read().unwrap().contains_key(&dev.idx()))
         {
             let f = self.gain.calc(geometry)?;
-            *self.cache.write().unwrap() =
-                geometry.devices().map(|dev| (dev.idx(), f(dev))).collect();
+            *self.cache.write().unwrap() = geometry
+                .devices()
+                .map(|dev| (dev.idx(), dev.iter().map(f(dev)).collect()))
+                .collect();
         }
         Ok(())
     }
@@ -74,7 +76,10 @@ impl<G: Gain> Gain for Cache<G> {
     fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         self.init(geometry)?;
         let drives = self.drives().clone();
-        Ok(Box::new(move |dev| drives[&dev.idx()].clone()))
+        Ok(Box::new(move |dev| {
+            let drives = drives[&dev.idx()].clone();
+            Box::new(move |tr| drives[tr.idx()])
+        }))
     }
 }
 
@@ -101,10 +106,14 @@ mod tests {
 
         assert!(cache.drives().is_empty());
         geometry.devices().try_for_each(|dev| {
-            assert_eq!(gain.calc(&geometry)?(dev), cache.calc(&geometry)?(dev));
-            Result::<(), AUTDInternalError>::Ok(())
+            dev.iter().try_for_each(|tr| {
+                assert_eq!(
+                    gain.calc(&geometry)?(dev)(tr),
+                    cache.calc(&geometry)?(dev)(tr)
+                );
+                Result::<(), AUTDInternalError>::Ok(())
+            })
         })?;
-
         Ok(())
     }
 

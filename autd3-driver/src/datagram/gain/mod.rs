@@ -10,7 +10,7 @@ pub use group::Group;
 pub use transform::IntoTransform as IntoGainTransform;
 pub use transform::Transform as GainTransform;
 
-use super::OperationGenerator;
+use crate::firmware::operation::OperationGenerator;
 use crate::{
     derive::{GainOp, Geometry, NullOp, Segment},
     error::AUTDInternalError,
@@ -20,8 +20,10 @@ use crate::{
 
 use bitvec::prelude::*;
 
-pub type GainCalcResult =
-    Result<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>, AUTDInternalError>;
+pub type GainCalcResult = Result<
+    Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + Send + Sync>,
+    AUTDInternalError,
+>;
 
 pub trait Gain {
     fn calc(&self, geometry: &Geometry) -> GainCalcResult;
@@ -33,13 +35,19 @@ pub trait Gain {
         self.calc(geometry)
     }
     #[allow(clippy::type_complexity)]
-    fn transform<FT: Fn(&Transducer) -> Drive, F: Fn(&Device) -> FT + Send + Sync + 'static>(
+    fn transform<
+        FT: Fn(&Transducer) -> Drive + Sync + Send + 'static,
+        F: Fn(&Device) -> FT + Send + Sync + 'static,
+    >(
         f: F,
-    ) -> Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>
+    ) -> Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + Send + Sync>
     where
         Self: Sized,
     {
-        Box::new(move |dev| dev.iter().map(f(dev)).collect())
+        Box::new(move |dev| {
+            let f = f(dev);
+            Box::new(move |tr| f(tr))
+        })
     }
 }
 
@@ -49,18 +57,18 @@ impl Gain for Box<dyn Gain> {
     }
 }
 
-pub struct GainOperationGenerator<'a> {
+pub struct GainOperationGenerator {
     #[allow(clippy::type_complexity)]
-    pub g: Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync + 'a>,
+    pub g: Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + Send + Sync>,
     pub segment: Segment,
     pub transition: bool,
 }
 
-impl<'a> OperationGenerator<'a> for GainOperationGenerator<'a> {
+impl<'a> OperationGenerator for GainOperationGenerator {
     type O1 = GainOp;
     type O2 = NullOp;
 
-    fn generate(&'a self, device: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn generate(&self, device: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         let d = (self.g)(device);
         Ok((
             GainOp::new(self.segment, self.transition, d),
@@ -178,7 +186,10 @@ pub mod tests {
         let f = g.calc(&geometry).unwrap();
         assert_eq!(
             expect,
-            geometry.devices().map(|dev| (dev.idx(), f(dev))).collect()
+            geometry
+                .devices()
+                .map(|dev| (dev.idx(), dev.iter().map(f(dev)).collect()))
+                .collect()
         );
     }
 }

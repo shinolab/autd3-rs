@@ -1,4 +1,6 @@
-use crate::{datagram::*, derive::DEFAULT_TIMEOUT, firmware::fpga::GPIOIn, geometry::Device};
+use crate::firmware::{fpga::GPIOIn, operation::EmulateGPIOInOp};
+
+use crate::datagram::*;
 
 pub struct EmulateGPIOIn<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H + Send + Sync> {
     f: F,
@@ -17,13 +19,13 @@ pub struct EmulateGPIOInOpGenerator<
     f: F,
 }
 
-impl<'a, H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H + Send + Sync>
-    OperationGenerator<'a> for EmulateGPIOInOpGenerator<H, F>
+impl<'a, H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H + Send + Sync> OperationGenerator
+    for EmulateGPIOInOpGenerator<H, F>
 {
-    type O1 = crate::firmware::operation::EmulateGPIOInOp;
-    type O2 = crate::firmware::operation::NullOp;
+    type O1 = EmulateGPIOInOp;
+    type O2 = NullOp;
 
-    fn generate(&'a self, device: &'a Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn generate(&self, device: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
         let h = (self.f)(device);
         Ok((
             Self::O1::new([h(GPIOIn::I0), h(GPIOIn::I1), h(GPIOIn::I2), h(GPIOIn::I3)]),
@@ -35,15 +37,15 @@ impl<'a, H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H + Send + Sync>
 impl<'a, H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H + Send + Sync + 'a> Datagram<'a>
     for EmulateGPIOIn<H, F>
 {
-    type O1 = crate::firmware::operation::EmulateGPIOInOp;
-    type O2 = crate::firmware::operation::NullOp;
-    type G =  EmulateGPIOInOpGenerator<H, F>;
+    type O1 = EmulateGPIOInOp;
+    type O2 = NullOp;
+    type G = EmulateGPIOInOpGenerator<H, F>;
 
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation_generator(self, _: &'a Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(EmulateGPIOInOpGenerator { f: self.f })
     }
 }

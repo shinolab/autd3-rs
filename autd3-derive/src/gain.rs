@@ -50,9 +50,9 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
         {
             type O1 = GainOp;
             type O2 = NullOp;
-            type G =  GainOperationGenerator<'autd3>;
+            type G =  GainOperationGenerator;
 
-            fn operation_generator(self, geometry: &'autd3 Geometry) -> Result<Self::G, AUTDInternalError> {
+            fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
                 let g = self.calc(geometry)?;
                 Ok(Self::G {
                     g: Box::new(g),
@@ -71,9 +71,9 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
         {
             type O1 = GainOp;
             type O2 = NullOp;
-            type G =  GainOperationGenerator<'autd3>;
+            type G =  GainOperationGenerator;
 
-            fn operation_generator_with_segment(self, geometry: &'autd3 Geometry, segment: Segment, transition: bool) -> Result<Self::G, AUTDInternalError> {
+            fn operation_generator_with_segment(self, geometry: &Geometry, segment: Segment, transition: bool) -> Result<Self::G, AUTDInternalError> {
                 let g = self.calc(geometry)?;
                 Ok(Self::G {
                     g: Box::new(g),

@@ -1,6 +1,5 @@
 use autd3_driver::{
     autd3_device::AUTD3,
-    datagram::OperationGenerator,
     defined::FREQ_40K,
     derive::{Geometry, *},
     firmware::{cpu::TxDatagram, operation::OperationHandler},
@@ -8,7 +7,6 @@ use autd3_driver::{
 };
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use rayon::iter::{ParallelBridge, ParallelIterator};
 
 pub fn generate_geometry(size: usize) -> Geometry {
     Geometry::new(
@@ -39,21 +37,18 @@ impl Focus {
 }
 
 impl Gain for Focus {
-    fn calc(
-        &self,
-        _geometry: &Geometry,
-    ) -> Result<Box<dyn Fn(&Device) -> Vec<Drive> + Send + Sync>, AUTDInternalError> {
+    fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
         let pos = self.pos;
         let intensity = self.intensity;
         let phase_offset = self.phase_offset;
         Ok(Self::transform(move |dev| {
             let wavenumber = dev.wavenumber();
-            move |tr| {
+            Box::new(move |tr: &Transducer| {
                 Drive::new(
                     Phase::from((pos - tr.position()).norm() * wavenumber * rad) + phase_offset,
                     intensity,
                 )
-            }
+            })
         }))
     }
 }
@@ -61,9 +56,9 @@ impl Gain for Focus {
 impl<'autd3> Datagram<'autd3> for Focus {
     type O1 = GainOp;
     type O2 = NullOp;
-    type G = GainOperationGenerator<'autd3>;
+    type G = GainOperationGenerator;
 
-    fn operation_generator(self, geometry: &'autd3 Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
         let g = self.calc(geometry)?;
         Ok(Self::G {
             g: Box::new(g),
@@ -88,13 +83,9 @@ fn focus(c: &mut Criterion) {
                         black_box(70.),
                         black_box(150.),
                     ));
-                    let gen = g.operation(geometry).unwrap();
-                    geometry.devices().zip(tx.iter_mut()).par_bridge().for_each(
-                        move |(dev, tx)| {
-                            let (mut op1, mut op2) = gen.generate(dev).unwrap();
-                            OperationHandler::pack(&mut op1, &mut op2, dev, tx).unwrap();
-                        },
-                    );
+                    let gen = g.operation_generator(geometry).unwrap();
+                    let mut operations = OperationHandler::generate(gen, geometry).unwrap();
+                    OperationHandler::pack(&mut operations, geometry, &mut tx, usize::MAX).unwrap();
                 })
             },
         );
@@ -102,5 +93,30 @@ fn focus(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, focus);
+fn focus_parallel(c: &mut Criterion) {
+    let mut group = c.benchmark_group("autd3/gain/focus");
+
+    [1, 10].iter().for_each(|&size| {
+        group.bench_with_input(
+            BenchmarkId::new("Gain::FocusParallel", size),
+            &generate_geometry(size),
+            |b, geometry| {
+                let mut tx = TxDatagram::new(size);
+                b.iter(|| {
+                    let g = Focus::new(Vector3::new(
+                        black_box(90.),
+                        black_box(70.),
+                        black_box(150.),
+                    ));
+                    let gen = g.operation_generator(geometry).unwrap();
+                    let mut operations = OperationHandler::generate(gen, geometry).unwrap();
+                    OperationHandler::pack(&mut operations, geometry, &mut tx, 0).unwrap();
+                })
+            },
+        );
+    });
+    group.finish();
+}
+
+criterion_group!(benches, focus, focus_parallel);
 criterion_main!(benches);
