@@ -36,12 +36,12 @@ impl RawPCM {
 }
 
 impl Modulation for RawPCM {
-    fn calc(&self, geometry: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
         let new_rate = self.sampling_config().freq(geometry.ultrasound_freq())?;
         if !is_integer(new_rate.hz()) {
             return Err(AudioFileError::RawPCMSamplingRateNotInteger(new_rate).into());
         }
-        Ok(wav_io::resample::linear(
+        let buf = wav_io::resample::linear(
             self.read_buf()?,
             1,
             self.sample_rate.hz(),
@@ -49,8 +49,8 @@ impl Modulation for RawPCM {
         )
         .iter()
         .map(|&d| d.round() as u8)
-        .map(EmitIntensity::from)
-        .collect())
+        .collect::<Vec<_>>();
+        Ok(Box::new(move |_| buf.clone()))
     }
 }
 
@@ -85,10 +85,7 @@ mod tests {
 
         let geometry = create_geometry(1);
         let m = RawPCM::new(&path, sample_rate).with_sampling_config(config);
-        assert_eq!(
-            expect.map(|v| v.into_iter().map(EmitIntensity::from).collect()),
-            m.calc(&geometry)
-        );
+        assert_eq!(expect, m.calc(&geometry).map(|f| f(&geometry[0])));
 
         Ok(())
     }
