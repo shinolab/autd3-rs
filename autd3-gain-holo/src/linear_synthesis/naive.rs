@@ -6,6 +6,7 @@ use crate::{
 };
 
 use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vector3};
+use bitvec::{order::Lsb0, vec::BitVec};
 
 #[derive(Gain)]
 pub struct Naive<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
@@ -30,15 +31,15 @@ impl<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> Naive<D, B> {
     }
 }
 
-impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {
-    fn calc(
+impl<D: Directivity, B: LinAlgBackend<D>> Naive<D, B> {
+    fn calc_impl(
         &self,
         geometry: &Geometry,
-        filter: GainFilter,
-    ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
+        filter: Option<HashMap<usize, BitVec<usize, Lsb0>>>,
+    ) -> GainCalcResult {
         let g = self
             .backend
-            .generate_propagation_matrix(geometry, &self.foci, &filter)?;
+            .generate_propagation_matrix(geometry, &self.foci, filter)?;
 
         let m = self.foci.len();
         let n = self.backend.cols_c(&g)?;
@@ -58,7 +59,21 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {
 
         let q = self.backend.to_host_cv(q)?;
         let max_coefficient = q.camax().abs();
-        generate_result(geometry, q, max_coefficient, &self.constraint, filter)
+        generate_result(geometry, q, max_coefficient, self.constraint)
+    }
+}
+
+impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {
+    fn calc(&self, geometry: &Geometry) -> GainCalcResult {
+        self.calc_impl(geometry, None)
+    }
+
+    fn calc_with_filter(
+        &self,
+        geometry: &Geometry,
+        filter: HashMap<usize, BitVec<usize, Lsb0>>,
+    ) -> GainCalcResult {
+        self.calc_impl(geometry, Some(filter))
     }
 }
 
@@ -84,7 +99,7 @@ mod tests {
 
         assert_eq!(
             g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
-                .calc(&geometry, GainFilter::All)
+                .calc(&geometry)
                 .map(|res| res[&0].iter().filter(|&&d| d != Drive::null()).count()),
             Ok(geometry.num_transducers()),
         );
@@ -106,7 +121,7 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
         assert_eq!(
-            g.calc(&geometry, GainFilter::Filter(&filter))
+            g.calc(&geometry, Option<HashMap<usize, BitVec<usize, Lsb0>>>,::Filter(&filter))
                 .map(|res| res[&0].iter().filter(|&&d| d != Drive::null()).count()),
             Ok(100),
         )

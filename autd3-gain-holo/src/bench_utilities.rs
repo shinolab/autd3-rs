@@ -3,7 +3,7 @@ use criterion::{black_box, AxisScale, BenchmarkId, Criterion, PlotConfiguration}
 use autd3_driver::{
     acoustics::directivity::Sphere,
     autd3_device::AUTD3,
-    datagram::{Gain, GainFilter},
+    datagram::{Gain, Option<HashMap<usize, BitVec<usize, Lsb0>>>,},
     defined::{FREQ_40K, PI},
     geometry::{Geometry, IntoDevice, Vector3},
 };
@@ -49,7 +49,7 @@ pub fn sdp_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut
                     b.iter(|| {
                         SDP::new(backend.clone())
                             .add_foci_from_iter(gen_foci(size, N))
-                            .calc(geometry, GainFilter::All)
+                            .calc(geometry)
                             .unwrap();
                     })
                 },
@@ -73,7 +73,7 @@ pub fn naive_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &m
                     b.iter(|| {
                         Naive::new(backend.clone())
                             .add_foci_from_iter(gen_foci(size, N))
-                            .calc(geometry, GainFilter::All)
+                            .calc(geometry)
                             .unwrap();
                     })
                 },
@@ -97,7 +97,7 @@ pub fn gs_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut 
                     b.iter(|| {
                         GS::new(backend.clone())
                             .add_foci_from_iter(gen_foci(size, N))
-                            .calc(geometry, GainFilter::All)
+                            .calc(geometry)
                             .unwrap();
                     })
                 },
@@ -121,7 +121,7 @@ pub fn gspat_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &m
                     b.iter(|| {
                         GSPAT::new(backend.clone())
                             .add_foci_from_iter(gen_foci(size, N))
-                            .calc(geometry, GainFilter::All)
+                            .calc(geometry)
                             .unwrap();
                     })
                 },
@@ -147,7 +147,7 @@ pub fn lm_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut 
                     b.iter(|| {
                         LM::new(backend.clone())
                             .add_foci_from_iter(gen_foci(size, N))
-                            .calc(geometry, GainFilter::All)
+                            .calc(geometry)
                             .unwrap();
                     })
                 },
@@ -170,7 +170,7 @@ pub fn greedy_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &
                     b.iter(|| {
                         Greedy::default()
                             .add_foci_from_iter(gen_foci(size, N))
-                            .calc(geometry, GainFilter::All)
+                            .calc(geometry)
                             .unwrap();
                     })
                 },
@@ -192,7 +192,7 @@ pub fn sdp_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &
                 b.iter(|| {
                     SDP::new(backend.clone())
                         .add_foci_from_iter(gen_foci(N, size * size))
-                        .calc(geometry, GainFilter::All)
+                        .calc(geometry)
                         .unwrap();
                 })
             },
@@ -214,7 +214,7 @@ pub fn naive_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c:
                 b.iter(|| {
                     Naive::new(backend.clone())
                         .add_foci_from_iter(gen_foci(N, size * size))
-                        .calc(geometry, GainFilter::All)
+                        .calc(geometry)
                         .unwrap();
                 })
             },
@@ -236,7 +236,7 @@ pub fn gs_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &m
                 b.iter(|| {
                     GS::new(backend.clone())
                         .add_foci_from_iter(gen_foci(N, size * size))
-                        .calc(geometry, GainFilter::All)
+                        .calc(geometry)
                         .unwrap();
                 })
             },
@@ -258,7 +258,7 @@ pub fn gspat_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c:
                 b.iter(|| {
                     GSPAT::new(backend.clone())
                         .add_foci_from_iter(gen_foci(N, size * size))
-                        .calc(geometry, GainFilter::All)
+                        .calc(geometry)
                         .unwrap();
                 })
             },
@@ -282,7 +282,7 @@ pub fn lm_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &m
                 b.iter(|| {
                     LM::new(backend.clone())
                         .add_foci_from_iter(gen_foci(N, size * size))
-                        .calc(geometry, GainFilter::All)
+                        .calc(geometry)
                         .unwrap();
                 })
             },
@@ -303,7 +303,7 @@ pub fn greedy_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c
                 b.iter(|| {
                     Greedy::default()
                         .add_foci_from_iter(gen_foci(N, size * size))
-                        .calc(geometry, GainFilter::All)
+                        .calc(geometry)
                         .unwrap();
                 })
             },

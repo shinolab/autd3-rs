@@ -17,12 +17,12 @@ nalgebra = { workspace = true, features = ["std"] }
 rand = { workspace = true }
 thiserror = { workspace = true }
 criterion = { workspace = true, features = ["html_reports"], optional = true }
-bitvec = { workspace = true, optional = true }
-rstest.workspace = true
+rstest = { workspace = true }
+bitvec = { workspace = true }
 
 [features]
 default = []
-test-utilities = ["assert_approx_eq", "bitvec"]
+test-utilities = ["assert_approx_eq"]
 bench-utilities = ["criterion"]
 async-trait = ["autd3-driver/async-trait"]
 

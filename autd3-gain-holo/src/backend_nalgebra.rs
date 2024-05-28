@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
+use bitvec::{order::Lsb0, vec::BitVec};
 use nalgebra::ComplexField;
 
 use autd3_driver::{
     acoustics::{directivity::Directivity, propagate},
-    datagram::GainFilter,
     defined::Complex,
     geometry::Geometry,
 };
@@ -31,43 +31,56 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         &self,
         geometry: &Geometry,
         foci: &[autd3_driver::geometry::Vector3],
-        filter: &GainFilter,
+        filter: Option<HashMap<usize, BitVec<usize, Lsb0>>>,
     ) -> Result<Self::MatrixXc, HoloError> {
-        match filter {
-            GainFilter::All => Ok(MatrixXc::from_iterator(
+        if let Some(filter) = filter {
+            let iter = geometry
+                .devices()
+                .flat_map(|dev| {
+                    let filter = filter.get(&dev.idx());
+                    dev.iter().filter_map(move |tr| {
+                        filter.and_then(|filter| {
+                            if filter[tr.idx()] {
+                                Some(foci.iter().map(move |fp| {
+                                    propagate::<D>(
+                                        tr,
+                                        dev.attenuation,
+                                        dev.wavenumber(),
+                                        dev.axial_direction(),
+                                        fp,
+                                    )
+                                }))
+                            } else {
+                                None
+                            }
+                        })
+                    })
+                })
+                .flatten()
+                .collect::<Vec<_>>();
+            Ok(MatrixXc::from_iterator(
+                foci.len(),
+                iter.len() / foci.len(),
+                iter,
+            ))
+        } else {
+            Ok(MatrixXc::from_iterator(
                 foci.len(),
                 geometry.num_transducers(),
                 geometry.devices().flat_map(|dev| {
                     dev.iter().flat_map(move |tr| {
-                        foci.iter()
-                            .map(move |fp| propagate::<D>(tr, dev.attenuation, dev.sound_speed, fp))
-                    })
-                }),
-            )),
-            GainFilter::Filter(filter) => {
-                let iter = geometry
-                    .devices()
-                    .flat_map(|dev| {
-                        dev.iter().filter_map(move |tr| {
-                            filter.get(&dev.idx()).and_then(|filter| {
-                                if filter[tr.idx()] {
-                                    Some(foci.iter().map(move |fp| {
-                                        propagate::<D>(tr, dev.attenuation, dev.sound_speed, fp)
-                                    }))
-                                } else {
-                                    None
-                                }
-                            })
+                        foci.iter().map(move |fp| {
+                            propagate::<D>(
+                                tr,
+                                dev.attenuation,
+                                dev.wavenumber(),
+                                dev.axial_direction(),
+                                fp,
+                            )
                         })
                     })
-                    .flatten()
-                    .collect::<Vec<_>>();
-                Ok(MatrixXc::from_iterator(
-                    foci.len(),
-                    iter.len() / foci.len(),
-                    iter,
-                ))
-            }
+                }),
+            ))
         }
     }
 

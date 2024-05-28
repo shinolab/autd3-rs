@@ -1,9 +1,5 @@
-use std::collections::HashMap;
-
 use autd3_driver::{
-    datagram::GainFilter,
-    derive::{rad, Phase},
-    error::AUTDInternalError,
+    derive::{rad, GainCalcResult, Phase},
     firmware::fpga::Drive,
     geometry::Geometry,
 };
@@ -20,7 +16,6 @@ macro_rules! impl_holo {
             $directivity: autd3_driver::acoustics::directivity::Directivity,
             $backend: $crate::LinAlgBackend<$directivity>,
         {
-            
             pub fn add_focus(self, focus: Vector3, amp: $crate::amp::Amplitude) -> Self {
                 let mut foci = self.foci;
                 let mut amps = self.amps;
@@ -29,12 +24,10 @@ macro_rules! impl_holo {
                 Self { foci, amps, ..self }
             }
 
-            
             pub fn with_constraint(self, constraint: EmissionConstraint) -> Self {
                 Self { constraint, ..self }
             }
 
-            
             pub fn add_foci_from_iter(
                 self,
                 iter: impl IntoIterator<Item = (Vector3, $crate::amp::Amplitude)>,
@@ -74,7 +67,6 @@ macro_rules! impl_holo {
         where
             $directivity: autd3_driver::acoustics::directivity::Directivity,
         {
-            
             pub fn add_focus(self, focus: Vector3, amp: $crate::amp::Amplitude) -> Self {
                 let mut foci = self.foci;
                 let mut amps = self.amps;
@@ -83,12 +75,10 @@ macro_rules! impl_holo {
                 Self { foci, amps, ..self }
             }
 
-            
             pub fn with_constraint(self, constraint: EmissionConstraint) -> Self {
                 Self { constraint, ..self }
             }
 
-            
             pub fn add_foci_from_iter(
                 self,
                 iter: impl IntoIterator<Item = (Vector3, $crate::amp::Amplitude)>,
@@ -152,75 +142,28 @@ pub(crate) fn generate_result<T>(
         nalgebra::VecStorage<T, nalgebra::Dyn, nalgebra::U1>,
     >,
     max_coefficient: f64,
-    constraint: &EmissionConstraint,
-    filter: GainFilter,
-) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError>
+    constraint: EmissionConstraint,
+) -> GainCalcResult
 where
-    T: IntoDrive + Copy,
+    T: IntoDrive + Copy + Send + Sync + 'static,
 {
-    match filter {
-        GainFilter::All => {
-            let num_transducers = geometry
-                .iter()
-                .scan(0, |state, dev| {
-                    let r = *state;
-                    *state += dev.num_transducers();
-                    Some(r)
-                })
-                .collect::<Vec<_>>();
-            Ok(geometry
-                .devices()
-                .map(|dev| {
-                    (
-                        dev.idx(),
-                        dev.iter()
-                            .zip(q.iter().skip(num_transducers[dev.idx()]))
-                            .map(|(_, &q)| {
-                                let phase = q.into_phase();
-                                let intensity =
-                                    constraint.convert(q.into_intensity(), max_coefficient);
-                                Drive::new(phase, intensity)
-                            })
-                            .collect(),
-                    )
-                })
-                .collect())
-        }
-        GainFilter::Filter(filter) => {
-            let num_transducers = geometry
-                .iter()
-                .scan(0, |state, dev| {
-                    let r = *state;
-                    *state += filter
-                        .get(&dev.idx())
-                        .map(|filter| dev.iter().filter(|tr| filter[tr.idx()]).count())
-                        .unwrap_or(0);
-                    Some(r)
-                })
-                .collect::<Vec<_>>();
-            Ok(geometry
-                .devices()
-                .map(|dev| {
-                    filter.get(&dev.idx()).map_or_else(
-                        || (dev.idx(), dev.iter().map(|_| Drive::null()).collect()),
-                        |filter| {
-                            (
-                                dev.idx(),
-                                dev.iter()
-                                    .filter(|tr| filter[tr.idx()])
-                                    .zip(q.iter().skip(num_transducers[dev.idx()]))
-                                    .map(|(_, &q)| {
-                                        let phase = q.into_phase();
-                                        let intensity =
-                                            constraint.convert(q.into_intensity(), max_coefficient);
-                                        Drive::new(phase, intensity)
-                                    })
-                                    .collect(),
-                            )
-                        },
-                    )
-                })
-                .collect())
-        }
-    }
+    let num_transducers = geometry
+        .iter()
+        .scan(0, |state, dev| {
+            let r = *state;
+            *state += dev.num_transducers();
+            Some(r)
+        })
+        .collect::<Vec<_>>();
+    let x = std::sync::Arc::new(std::sync::RwLock::new(q));
+    Ok(Box::new(move |dev| {
+        let x = x.clone();
+        let base_idx = num_transducers[dev.idx()];
+        Box::new(move |tr| {
+            let x = x.read().unwrap()[base_idx + tr.idx()];
+            let phase = x.into_phase();
+            let intensity = constraint.convert(x.into_intensity(), max_coefficient);
+            Drive::new(phase, intensity)
+        })
+    }))
 }
