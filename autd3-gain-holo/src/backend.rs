@@ -1,13 +1,13 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use autd3_driver::{
     acoustics::directivity::Directivity,
-    datagram::GainFilter,
     geometry::{Geometry, Vector3},
 };
 use nalgebra::{Dyn, VecStorage, U1};
 
 use crate::error::HoloError;
+use bitvec::prelude::*;
 
 pub type Complex = nalgebra::Complex<f64>;
 
@@ -34,7 +34,7 @@ pub trait LinAlgBackend<D: Directivity> {
         &self,
         geometry: &Geometry,
         foci: &[Vector3],
-        filter: &GainFilter,
+        filter: Option<HashMap<usize, BitVec<usize, Lsb0>>>,
     ) -> Result<Self::MatrixXc, HoloError>;
 
     fn alloc_v(&self, size: usize) -> Result<Self::VectorX, HoloError>;
