@@ -1,12 +1,13 @@
 pub mod controller;
+pub mod datagram;
 pub mod error;
-pub mod gain;
 pub mod link;
-pub mod modulation;
 pub mod prelude;
 
 pub use autd3_driver as driver;
 pub use autd3_driver::derive;
+pub use datagram::gain;
+pub use datagram::modulation;
 
 pub use controller::Controller;
 

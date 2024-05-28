@@ -15,7 +15,7 @@ use autd3_driver::{
 use super::Controller;
 use super::Link;
 
-type OpMap<K> = HashMap<K, (Box<dyn Operation>, Box<dyn Operation>)>;
+type OpMap<K> = HashMap<K, Vec<(Box<dyn Operation>, Box<dyn Operation>)>>;
 
 #[allow(clippy::type_complexity)]
 pub struct GroupGuard<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>> {
@@ -44,29 +44,34 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
         }
     }
 
-    pub fn set<D: Datagram>(self, k: K, d: D) -> Self
+    pub fn set<D: Datagram<'a>>(self, k: K, d: D) -> Result<Self, AUTDInternalError>
     where
         D::O1: 'static,
         D::O2: 'static,
     {
         let timeout = d.timeout();
-        let (op1, op2) = d.operation();
-        self.set_boxed_op(k, Box::new(op1), Box::new(op2), timeout)
+        let operations = {
+            let gen = d.operation_generator(&self.cnt.geometry)?;
+            OperationHandler::generate(gen, &self.cnt.geometry)?
+                .into_iter()
+                .map(|(op1, op2)| (Box::new(op1) as Box<_>, Box::new(op2) as Box<_>))
+                .collect()
+        };
+        Ok(self.set_boxed_op(k, operations, timeout))
     }
 
     #[doc(hidden)]
     pub fn set_boxed_op(
         mut self,
         k: K,
-        op1: Box<dyn autd3_driver::firmware::operation::Operation>,
-        op2: Box<dyn autd3_driver::firmware::operation::Operation>,
+        op: Vec<(Box<dyn Operation>, Box<dyn Operation>)>,
         timeout: Option<Duration>,
     ) -> Self {
         self.timeout = match (self.timeout, timeout) {
             (Some(t1), Some(t2)) => Some(t1.max(t2)),
             (a, b) => a.or(b),
         };
-        self.op.insert(k, (op1, op2));
+        self.op.insert(k, op);
         self
     }
 
@@ -117,17 +122,18 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
                 });
             };
 
-        self.op.iter_mut().try_for_each(|(k, (op1, op2))| {
-            set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
-            OperationHandler::init(op1, op2, &self.cnt.geometry)
-        })?;
         loop {
-            self.op.iter_mut().try_for_each(|(k, (op1, op2))| {
+            self.op.iter_mut().try_for_each(|(k, op)| {
                 set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
-                if OperationHandler::is_finished(op1, op2, &self.cnt.geometry) {
+                if OperationHandler::is_done(op, &self.cnt.geometry) {
                     return Ok(());
                 }
-                OperationHandler::pack(op1, op2, &self.cnt.geometry, &mut self.cnt.tx_buf)
+                OperationHandler::pack(
+                    op,
+                    &self.cnt.geometry,
+                    &mut self.cnt.tx_buf,
+                    self.cnt.parallel_threshold,
+                )
             })?;
 
             let start = tokio::time::Instant::now();
@@ -139,9 +145,9 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
             )
             .await?;
 
-            if self.op.iter_mut().all(|(k, (op1, op2))| {
+            if self.op.iter_mut().all(|(k, op)| {
                 set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
-                OperationHandler::is_finished(op1, op2, &self.cnt.geometry)
+                OperationHandler::is_done(op, &self.cnt.geometry)
             }) {
                 break;
             }
@@ -169,7 +175,7 @@ mod tests {
     use autd3_driver::{
         datagram::{GainSTM, SwapSegment},
         defined::Hz,
-        derive::{Gain, GainFilter, Modulation, Segment, TransitionMode},
+        derive::{Drive, EmitIntensity, Modulation, Phase, Segment, TransitionMode},
         error::AUTDInternalError,
     };
 
@@ -189,49 +195,59 @@ mod tests {
             0 | 1 | 3 => Some(dev.idx()),
             _ => None,
         })
-        .set(0, Null::new())
-        .set(1, (Static::with_intensity(0x80), Null::new()))
+        .set(0, Null::new())?
+        .set(1, (Static::with_intensity(0x80), Null::new()))?
         .set(
             3,
             (
                 Sine::new(150. * Hz),
-                GainSTM::from_freq(1. * Hz)
-                    .add_gain(Uniform::new(0x80))
-                    .add_gain(Uniform::new(0x81)),
+                GainSTM::from_freq(
+                    1. * Hz,
+                    [Uniform::new(0x80), Uniform::new(0x81)].into_iter(),
+                )?,
             ),
-        )
+        )?
         .send()
         .await?;
 
         assert_eq!(
-            Null::new().calc(&autd.geometry, GainFilter::All)?[&0],
+            vec![Drive::null(); autd.geometry[0].num_transducers()],
             autd.link[0].fpga().drives(Segment::S0, 0)
         );
 
         assert_eq!(
-            Null::new().calc(&autd.geometry, GainFilter::All)?[&0],
+            vec![Drive::null(); autd.geometry[1].num_transducers()],
             autd.link[1].fpga().drives(Segment::S0, 0)
         );
         assert_eq!(
-            Static::with_intensity(0x80).calc(&autd.geometry)?,
+            vec![0x80, 0x80],
             autd.link[1].fpga().modulation(Segment::S0)
         );
 
         assert_eq!(
-            Uniform::new(0xFF).calc(&autd.geometry, GainFilter::All)?[&2],
+            vec![
+                Drive::new(Phase::new(0x00), EmitIntensity::new(0xFF));
+                autd.geometry[2].num_transducers()
+            ],
             autd.link[2].fpga().drives(Segment::S0, 0)
         );
 
         assert_eq!(
-            Sine::new(150. * Hz).calc(&autd.geometry)?,
+            Sine::new(150. * Hz).calc(&autd.geometry)?(&autd.geometry[3]),
             autd.link[3].fpga().modulation(Segment::S0)
         );
         assert_eq!(
-            Uniform::new(0x80).calc(&autd.geometry, GainFilter::All)?[&3],
+            vec![
+                Drive::new(Phase::new(0x00), EmitIntensity::new(0x80));
+                autd.geometry[3].num_transducers()
+            ],
             autd.link[3].fpga().drives(Segment::S0, 0)
         );
         assert_eq!(
-            Uniform::new(0x81).calc(&autd.geometry, GainFilter::All)?[&3],
+            vec![
+                Drive::new(Phase::new(0x00), EmitIntensity::new(0x81));
+                autd.geometry[3].num_transducers()
+            ],
             autd.link[3].fpga().drives(Segment::S0, 1)
         );
 
@@ -244,7 +260,7 @@ mod tests {
         assert_eq!(
             Ok(()),
             autd.group(|dev| Some(dev.idx()))
-                .set(0, Null::new())
+                .set(0, Null::new())?
                 .send()
                 .await
         );
@@ -253,7 +269,7 @@ mod tests {
         assert_eq!(
             Err(AUTDInternalError::SendDataFailed),
             autd.group(|dev| Some(dev.idx()))
-                .set(0, Null::new())
+                .set(0, Null::new())?
                 .send()
                 .await
         );
@@ -268,11 +284,11 @@ mod tests {
         assert_eq!(
             Err(autd3_driver::error::AUTDInternalError::InvalidSegmentTransition),
             autd.group(|dev| Some(dev.idx()))
-                .set(0, Null::new())
+                .set(0, Null::new())?
                 .set(
                     1,
                     SwapSegment::focus_stm(Segment::S1, TransitionMode::SyncIdx),
-                )
+                )?
                 .send()
                 .await
         );
@@ -291,7 +307,7 @@ mod tests {
             check.lock().unwrap()[dev.idx()] = true;
             Some(0)
         })
-        .set(0, (Static::new(), Null::new()))
+        .set(0, (Static::new(), Null::new()))?
         .send()
         .await?;
 
@@ -308,8 +324,8 @@ mod tests {
         assert_eq!(
             Err(AUTDInternalError::UnkownKey("[2]".to_owned())),
             autd.group(|dev| Some(dev.idx()))
-                .set(0, Null::new())
-                .set(2, Null::new())
+                .set(0, Null::new())?
+                .set(2, Null::new())?
                 .send()
                 .await
         );
@@ -324,7 +340,7 @@ mod tests {
         assert_eq!(
             Err(AUTDInternalError::UnspecifiedKey("[1]".to_owned())),
             autd.group(|dev| Some(dev.idx()))
-                .set(0, Null::new())
+                .set(0, Null::new())?
                 .send()
                 .await
         );

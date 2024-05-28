@@ -19,7 +19,7 @@ pub fn bessel(c: &mut Criterion) {
                         Vector3::new(black_box(0.), black_box(0.), black_box(1.)),
                         black_box(0.1 * rad),
                     )
-                    .calc(geometry, GainFilter::All)
+                    .calc(geometry)
                     .unwrap();
                 })
             },

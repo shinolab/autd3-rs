@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use autd3_driver::{derive::*, geometry::Vector3};
 
 #[derive(Gain, Clone, PartialEq, Debug, Builder)]
@@ -23,18 +21,16 @@ impl Focus {
 }
 
 impl Gain for Focus {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-        filter: GainFilter,
-    ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |dev| {
+    fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
+        let pos = self.pos;
+        let intensity = self.intensity;
+        let phase_offset = self.phase_offset;
+        Ok(Self::transform(move |dev| {
             let wavenumber = dev.wavenumber();
             move |tr| {
                 Drive::new(
-                    Phase::from((self.pos - tr.position()).norm() * wavenumber * rad)
-                        + self.phase_offset,
-                    self.intensity,
+                    Phase::from((pos - tr.position()).norm() * wavenumber * rad) + phase_offset,
+                    intensity,
                 )
             }
         }))
@@ -44,7 +40,6 @@ impl Gain for Focus {
 #[cfg(test)]
 mod tests {
     use crate::tests::{create_geometry, random_vector3};
-    use autd3_driver::datagram::Datagram;
 
     use super::*;
     use rand::Rng;
@@ -60,16 +55,16 @@ mod tests {
         assert_eq!(intensity, g.intensity());
         assert_eq!(phase_offset, g.phase_offset());
 
-        let b = g.calc(geometry, GainFilter::All)?;
-        assert_eq!(geometry.num_devices(), b.len());
-        b.iter().for_each(|(&idx, d)| {
-            assert_eq!(d.len(), geometry[idx].num_transducers());
-            d.iter().zip(geometry[idx].iter()).for_each(|(d, tr)| {
+        let b = g.calc(geometry)?;
+        geometry.iter().for_each(|dev| {
+            let d = b(dev);
+            dev.iter().for_each(|tr| {
                 let expected_phase =
-                    Phase::from((tr.position() - pos).norm() * geometry[idx].wavenumber() * rad)
+                    Phase::from((tr.position() - pos).norm() * dev.wavenumber() * rad)
                         + phase_offset;
+                let d = d(tr);
                 assert_eq!(expected_phase, d.phase());
-                assert_eq!(intensity, d.intensity())
+                assert_eq!(intensity, d.intensity());
             });
         });
 
@@ -95,13 +90,5 @@ mod tests {
         focus_check(g, f, intensity, phase_offset, &geometry)?;
 
         Ok(())
-    }
-
-    #[test]
-    fn test_focus_derive() {
-        let gain = Focus::new(Vector3::zeros());
-        let gain2 = gain.clone();
-        assert_eq!(gain, gain2);
-        let _ = gain.operation();
     }
 }

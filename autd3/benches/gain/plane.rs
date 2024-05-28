@@ -15,7 +15,7 @@ pub fn plane(c: &mut Criterion) {
             |b, geometry| {
                 b.iter(|| {
                     Plane::new(Vector3::new(black_box(0.), black_box(0.), black_box(1.)))
-                        .calc(geometry, GainFilter::All)
+                        .calc(geometry)
                         .unwrap();
                 })
             },

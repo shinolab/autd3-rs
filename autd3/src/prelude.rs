@@ -9,11 +9,11 @@ pub use crate::{
 pub use autd3_driver::{
     autd3_device::AUTD3,
     datagram::{
-        Clear, ControlPoint, DebugSettings, EmulateGPIOIn, FocusSTM, ForceFan, GainFilter, GainSTM,
-        Group, IntoDatagramWithSegment, IntoDatagramWithSegmentTransition, IntoDatagramWithTimeout,
+        Clear, DebugSettings, EmulateGPIOIn, FocusSTM, ForceFan, GainSTM, Group,
+        IntoDatagramWithSegment, IntoDatagramWithSegmentTransition, IntoDatagramWithTimeout,
         IntoGainCache, IntoGainTransform, IntoModulationCache, IntoModulationTransform,
         IntoRadiationPressure, Modulation, ModulationProperty, PhaseFilter, PulseWidthEncoder,
-        ReadsFPGAState, Silencer, SwapSegment, Synchronize,
+        ReadsFPGAState, Silencer, SwapSegment,
     },
     defined::{deg, kHz, mm, rad, Hz, PI},
     error::AUTDInternalError,

@@ -7,9 +7,9 @@ pub struct Square<S: SamplingMode> {
     #[get]
     freq: S::T,
     #[getset]
-    low: EmitIntensity,
+    low: u8,
     #[getset]
-    high: EmitIntensity,
+    high: u8,
     #[getset]
     duty: f64,
     config: SamplingConfig,
@@ -21,8 +21,8 @@ impl Square<ExactFreq> {
     pub const fn new<S: SamplingModeInference>(freq: S) -> Square<S::T> {
         Square {
             freq,
-            low: EmitIntensity::MIN,
-            high: EmitIntensity::MAX,
+            low: u8::MIN,
+            high: u8::MAX,
             duty: 0.5,
             config: SamplingConfig::Division(5120),
             loop_behavior: LoopBehavior::infinite(),
@@ -33,8 +33,8 @@ impl Square<ExactFreq> {
     pub const fn with_freq_nearest(freq: Freq<f64>) -> Square<NearestFreq> {
         Square {
             freq,
-            low: EmitIntensity::MIN,
-            high: EmitIntensity::MAX,
+            low: u8::MIN,
+            high: u8::MAX,
             duty: 0.5,
             config: SamplingConfig::Division(5120),
             loop_behavior: LoopBehavior::infinite(),
@@ -44,7 +44,7 @@ impl Square<ExactFreq> {
 }
 
 impl<S: SamplingMode> Modulation for Square<S> {
-    fn calc(&self, geometry: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
         if !(0.0..=1.0).contains(&self.duty) {
             return Err(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string(),
@@ -52,16 +52,20 @@ impl<S: SamplingMode> Modulation for Square<S> {
         }
 
         let (n, rep) = S::validate(self.freq, self.config, geometry.ultrasound_freq())?;
-        Ok((0..rep)
-            .map(|i| (n + i) / rep)
-            .flat_map(|size| {
-                let n_high = (size as f64 * self.duty) as usize;
-                vec![self.high; n_high]
-                    .into_iter()
-                    .chain(vec![self.low; size as usize - n_high])
-            })
-            .map(EmitIntensity::from)
-            .collect())
+        let high = self.high;
+        let low = self.low;
+        let duty = self.duty;
+        Ok(Box::new(move |_| {
+            (0..rep)
+                .map(|i| (n + i) / rep)
+                .flat_map(|size| {
+                    let n_high = (size as f64 * duty) as usize;
+                    vec![high; n_high]
+                        .into_iter()
+                        .chain(vec![low; size as usize - n_high])
+                })
+                .collect()
+        }))
     }
 }
 
@@ -139,14 +143,11 @@ mod tests {
         let geometry = create_geometry(1);
         let m = Square::new(freq);
         assert_eq!(freq, m.freq());
-        assert_eq!(EmitIntensity::MIN, m.low());
-        assert_eq!(EmitIntensity::MAX, m.high());
+        assert_eq!(u8::MIN, m.low());
+        assert_eq!(u8::MAX, m.high());
         assert_eq!(0.5, m.duty());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
-        assert_eq!(
-            expect.map(|v| v.into_iter().map(EmitIntensity::from).collect()),
-            m.calc(&geometry)
-        );
+        assert_eq!(expect, m.calc(&geometry).map(|f| f(&geometry[0])));
     }
 
     #[rstest::rstest]
@@ -181,23 +182,22 @@ mod tests {
         let geometry = create_geometry(1);
         let m = Square::with_freq_nearest(freq);
         assert_eq!(freq, m.freq());
-        assert_eq!(EmitIntensity::MIN, m.low());
-        assert_eq!(EmitIntensity::MAX, m.high());
+        assert_eq!(u8::MIN, m.low());
+        assert_eq!(u8::MAX, m.high());
         assert_eq!(0.5, m.duty());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
 
-        assert_eq!(
-            expect.map(|v| v.into_iter().map(EmitIntensity::from).collect()),
-            m.calc(&geometry)
-        );
+        assert_eq!(expect, m.calc(&geometry).map(|f| f(&geometry[0])));
     }
 
     #[test]
     fn with_low() -> anyhow::Result<()> {
         let geometry = create_geometry(1);
         let m = Square::new(150. * Hz).with_low(u8::MAX);
-        assert_eq!(EmitIntensity::MAX, m.low());
-        assert!(m.calc(&geometry)?.iter().all(|&x| x == EmitIntensity::MAX));
+        assert_eq!(u8::MAX, m.low());
+        assert!(m.calc(&geometry)?(&geometry[0])
+            .iter()
+            .all(|&x| x == u8::MAX));
 
         Ok(())
     }
@@ -206,8 +206,10 @@ mod tests {
     fn with_high() -> anyhow::Result<()> {
         let geometry = create_geometry(1);
         let m = Square::new(150. * Hz).with_high(u8::MIN);
-        assert_eq!(EmitIntensity::MIN, m.high());
-        assert!(m.calc(&geometry)?.iter().all(|&x| x == EmitIntensity::MIN));
+        assert_eq!(u8::MIN, m.high());
+        assert!(m.calc(&geometry)?(&geometry[0])
+            .iter()
+            .all(|&x| x == u8::MIN));
 
         Ok(())
     }
@@ -217,11 +219,15 @@ mod tests {
         let geometry = create_geometry(1);
         let m = Square::new(150. * Hz).with_duty(0.0);
         assert_eq!(m.duty(), 0.0);
-        assert!(m.calc(&geometry)?.iter().all(|&x| x == EmitIntensity::MIN));
+        assert!(m.calc(&geometry)?(&geometry[0])
+            .iter()
+            .all(|&x| x == u8::MIN));
 
         let m = Square::new(150. * Hz).with_duty(1.0);
         assert_eq!(m.duty(), 1.0);
-        assert!(m.calc(&geometry)?.iter().all(|&x| x == EmitIntensity::MAX));
+        assert!(m.calc(&geometry)?(&geometry[0])
+            .iter()
+            .all(|&x| x == u8::MAX));
 
         Ok(())
     }
@@ -230,23 +236,17 @@ mod tests {
     fn duty_out_of_range() {
         let geometry = create_geometry(1);
         assert_eq!(
-            Err(AUTDInternalError::ModulationError(
+            Some(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string()
             )),
-            Square::new(150. * Hz).with_duty(-0.1).calc(&geometry)
+            Square::new(150. * Hz).with_duty(-0.1).calc(&geometry).err()
         );
 
         assert_eq!(
-            Err(AUTDInternalError::ModulationError(
+            Some(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string()
             )),
-            Square::new(150. * Hz).with_duty(1.1).calc(&geometry)
+            Square::new(150. * Hz).with_duty(1.1).calc(&geometry).err()
         );
-    }
-
-    #[test]
-    fn test_square_derive() {
-        let m = Square::new(150. * Hz);
-        assert_eq!(m, m.clone());
     }
 }

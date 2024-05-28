@@ -10,11 +10,11 @@ pub struct Sine<S: SamplingMode> {
     #[get]
     freq: S::T,
     #[getset]
-    intensity: EmitIntensity,
+    intensity: u8,
     #[getset]
     phase: Angle,
     #[getset]
-    offset: EmitIntensity,
+    offset: u8,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
     __phantom: std::marker::PhantomData<S>,
@@ -24,9 +24,9 @@ impl Sine<ExactFreq> {
     pub fn new<S: SamplingModeInference>(freq: S) -> Sine<S::T> {
         Sine {
             freq,
-            intensity: EmitIntensity::MAX,
+            intensity: u8::MAX,
             phase: Angle::Rad(0.0),
-            offset: EmitIntensity::MAX / 2,
+            offset: u8::MAX / 2,
             config: SamplingConfig::Division(5120),
             loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
@@ -36,9 +36,9 @@ impl Sine<ExactFreq> {
     pub fn with_freq_nearest(freq: Freq<f64>) -> Sine<NearestFreq> {
         Sine {
             freq,
-            intensity: EmitIntensity::MAX,
+            intensity: u8::MAX,
             phase: Angle::Rad(0.0),
-            offset: EmitIntensity::MAX / 2,
+            offset: u8::MAX / 2,
             config: SamplingConfig::Division(5120),
             loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
@@ -47,17 +47,21 @@ impl Sine<ExactFreq> {
 }
 
 impl<S: SamplingMode> Modulation for Sine<S> {
-    fn calc(&self, geometry: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
         let (n, rep) = S::validate(self.freq, self.config, geometry.ultrasound_freq())?;
-        Ok((0..n)
-            .map(|i| {
-                ((self.intensity.value() as f64 / 2.
-                    * (2.0 * PI * (rep * i) as f64 / n as f64 + self.phase.radian()).sin())
-                    + self.offset.value() as f64)
-                    .round() as u8
-            })
-            .map(EmitIntensity::from)
-            .collect())
+        let intensity = self.intensity;
+        let offset = self.offset;
+        let phase = self.phase.radian();
+        Ok(Box::new(move |_| {
+            (0..n)
+                .map(|i| {
+                    ((intensity as f64 / 2.
+                        * (2.0 * PI * (rep * i) as f64 / n as f64 + phase).sin())
+                        + offset as f64)
+                        .round() as u8
+                })
+                .collect()
+        }))
     }
 }
 
@@ -142,14 +146,11 @@ mod tests {
         let geometry = create_geometry(1);
         let m = Sine::new(freq);
         assert_eq!(freq, m.freq());
-        assert_eq!(EmitIntensity::MAX, m.intensity());
-        assert_eq!(EmitIntensity::MAX / 2, m.offset());
+        assert_eq!(u8::MAX, m.intensity());
+        assert_eq!(u8::MAX / 2, m.offset());
         assert_eq!(Angle::Rad(0.0), m.phase());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
-        assert_eq!(
-            expect.map(|v| v.into_iter().map(EmitIntensity::from).collect()),
-            m.calc(&geometry)
-        );
+        assert_eq!(expect, m.calc(&geometry).map(|f| f(&geometry[0])));
     }
 
     #[rstest::rstest]
@@ -184,14 +185,11 @@ mod tests {
         let geometry = create_geometry(1);
         let m = Sine::with_freq_nearest(freq);
         assert_eq!(freq, m.freq());
-        assert_eq!(EmitIntensity::MAX, m.intensity());
-        assert_eq!(EmitIntensity::MAX / 2, m.offset());
+        assert_eq!(u8::MAX, m.intensity());
+        assert_eq!(u8::MAX / 2, m.offset());
         assert_eq!(Angle::Rad(0.0), m.phase());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
-        assert_eq!(
-            expect.map(|v| v.into_iter().map(EmitIntensity::from).collect()),
-            m.calc(&geometry)
-        );
+        assert_eq!(expect, m.calc(&geometry).map(|f| f(&geometry[0])));
     }
 
     #[test]
@@ -201,15 +199,9 @@ mod tests {
             .with_offset(u8::MAX / 4)
             .with_phase(PI / 4.0 * rad)
             .with_sampling_config(SamplingConfig::FreqNearest(10.1 * kHz));
-        assert_eq!(EmitIntensity::MAX / 2, m.intensity);
-        assert_eq!(EmitIntensity::MAX / 4, m.offset);
+        assert_eq!(u8::MAX / 2, m.intensity);
+        assert_eq!(u8::MAX / 4, m.offset);
         assert_eq!(PI / 4.0 * rad, m.phase);
         assert_eq!(SamplingConfig::FreqNearest(10.1 * kHz), m.config);
-    }
-
-    #[test]
-    fn test_sine_derive() {
-        let m = Sine::new(150. * Hz);
-        assert_eq!(m, m.clone());
     }
 }

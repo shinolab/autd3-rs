@@ -23,13 +23,14 @@ use crate::{
 };
 
 pub use builder::ControllerBuilder;
-pub use group::GroupGuard;
+use group::GroupGuard;
 
 pub struct Controller<L: Link> {
     pub link: L,
     pub geometry: Geometry,
     tx_buf: TxDatagram,
     rx_buf: Vec<RxMessage>,
+    parallel_threshold: usize,
 }
 
 impl Controller<Nop> {
@@ -49,17 +50,21 @@ impl<L: Link> Controller<L> {
 }
 
 impl<L: Link> Controller<L> {
-    pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDError> {
+    pub async fn send<'a>(&'a mut self, s: impl Datagram<'a> + 'a) -> Result<(), AUTDError> {
         let timeout = s.timeout();
 
-        let (mut op1, mut op2) = s.operation();
-        OperationHandler::init(&mut op1, &mut op2, &self.geometry)?;
+        let gen = s.operation_generator(&self.geometry)?;
+        let mut operations = OperationHandler::generate(gen, &self.geometry)?;
         loop {
-            OperationHandler::pack(&mut op1, &mut op2, &self.geometry, &mut self.tx_buf)?;
-
+            OperationHandler::pack(
+                &mut operations,
+                &self.geometry,
+                &mut self.tx_buf,
+                self.parallel_threshold,
+            )?;
             let start = tokio::time::Instant::now();
             send_receive(&mut self.link, &self.tx_buf, &mut self.rx_buf, timeout).await?;
-            if OperationHandler::is_finished(&mut op1, &mut op2, &self.geometry) {
+            if OperationHandler::is_done(&operations, &self.geometry) {
                 return Ok(());
             }
             tokio::time::sleep_until(start + Duration::from_millis(1)).await;
@@ -79,14 +84,20 @@ impl<L: Link> Controller<L> {
     }
 
     pub async fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDError> {
-        let mut op = autd3_driver::firmware::operation::FirmInfoOp::default();
-        let mut null_op = autd3_driver::firmware::operation::NullOp::default();
-
-        OperationHandler::init(&mut op, &mut null_op, &self.geometry)?;
+        let mut operations = self
+            .geometry
+            .iter()
+            .map(|_| {
+                (
+                    autd3_driver::firmware::operation::FirmInfoOp::default(),
+                    autd3_driver::firmware::operation::NullOp::default(),
+                )
+            })
+            .collect::<Vec<_>>();
 
         macro_rules! pack_and_send {
-            ($op:expr, $null_op:expr, $link:expr, $geometry:expr, $tx_buf:expr, $rx_buf:expr ) => {
-                OperationHandler::pack($op, $null_op, $geometry, $tx_buf)?;
+            ($operations:expr, $link:expr, $geometry:expr, $tx_buf:expr, $rx_buf:expr) => {
+                OperationHandler::pack($operations, $geometry, $tx_buf, usize::MAX).unwrap();
                 if autd3_driver::link::send_receive($link, $tx_buf, $rx_buf, Some(DEFAULT_TIMEOUT))
                     .await
                     .is_err()
@@ -104,8 +115,7 @@ impl<L: Link> Controller<L> {
         }
 
         pack_and_send!(
-            &mut op,
-            &mut null_op,
+            &mut operations,
             &mut self.link,
             &self.geometry,
             &mut self.tx_buf, // GRCOV_EXCL_LINE
@@ -114,8 +124,7 @@ impl<L: Link> Controller<L> {
         let cpu_versions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
         pack_and_send!(
-            &mut op,
-            &mut null_op,
+            &mut operations,
             &mut self.link,
             &self.geometry,
             &mut self.tx_buf, // GRCOV_EXCL_LINE
@@ -124,8 +133,7 @@ impl<L: Link> Controller<L> {
         let cpu_versions_minor = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
         pack_and_send!(
-            &mut op,
-            &mut null_op,
+            &mut operations,
             &mut self.link,
             &self.geometry,
             &mut self.tx_buf, // GRCOV_EXCL_LINE
@@ -134,8 +142,7 @@ impl<L: Link> Controller<L> {
         let fpga_versions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
         pack_and_send!(
-            &mut op,
-            &mut null_op,
+            &mut operations,
             &mut self.link,
             &self.geometry,
             &mut self.tx_buf, // GRCOV_EXCL_LINE
@@ -144,8 +151,7 @@ impl<L: Link> Controller<L> {
         let fpga_versions_minor = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
         pack_and_send!(
-            &mut op,
-            &mut null_op,
+            &mut operations,
             &mut self.link,
             &self.geometry,
             &mut self.tx_buf, // GRCOV_EXCL_LINE
@@ -154,8 +160,7 @@ impl<L: Link> Controller<L> {
         let fpga_functions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
 
         pack_and_send!(
-            &mut op,
-            &mut null_op,
+            &mut operations,
             &mut self.link,
             &self.geometry,
             &mut self.tx_buf, // GRCOV_EXCL_LINE
@@ -206,9 +211,8 @@ impl<L: Link> Drop for Controller<L> {
 mod tests {
     use autd3_driver::{
         autd3_device::AUTD3,
-        datagram::GainSTM,
         defined::Hz,
-        derive::{Gain, GainFilter, Segment},
+        derive::{Gain, Segment},
         geometry::Vector3,
     };
 
@@ -232,24 +236,30 @@ mod tests {
         let mut autd = create_controller(1).await?;
         autd.send((
             Sine::new(150. * Hz),
-            GainSTM::from_freq(1. * Hz)
-                .add_gain(Uniform::new(0x80))
-                .add_gain(Uniform::new(0x81)),
+            GainSTM::from_freq(
+                1. * Hz,
+                [Uniform::new(0x80), Uniform::new(0x81)].into_iter(),
+            )?,
         ))
         .await?;
 
-        assert_eq!(
-            Sine::new(150. * Hz).calc(&autd.geometry)?,
-            autd.link[0].fpga().modulation(Segment::S0)
-        );
-        assert_eq!(
-            Uniform::new(0x80).calc(&autd.geometry, GainFilter::All)?[&0],
-            autd.link[0].fpga().drives(Segment::S0, 0)
-        );
-        assert_eq!(
-            Uniform::new(0x81).calc(&autd.geometry, GainFilter::All)?[&0],
-            autd.link[0].fpga().drives(Segment::S0, 1)
-        );
+        autd.geometry.iter().try_for_each(|dev| {
+            assert_eq!(
+                Sine::new(150. * Hz).calc(&autd.geometry)?(dev),
+                autd.link[dev.idx()].fpga().modulation(Segment::S0)
+            );
+            let f = Uniform::new(0x80).calc(&autd.geometry)?(dev);
+            assert_eq!(
+                dev.iter().map(f).collect::<Vec<_>>(),
+                autd.link[dev.idx()].fpga().drives(Segment::S0, 0)
+            );
+            let f = Uniform::new(0x81).calc(&autd.geometry)?(dev);
+            assert_eq!(
+                dev.iter().map(f).collect::<Vec<_>>(),
+                autd.link[dev.idx()].fpga().drives(Segment::S0, 1)
+            );
+            anyhow::Ok(())
+        })?;
 
         autd.close().await?;
         autd.close().await?;
