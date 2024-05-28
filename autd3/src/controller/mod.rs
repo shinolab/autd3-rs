@@ -52,6 +52,7 @@ impl<L: Link> Controller<L> {
 impl<L: Link> Controller<L> {
     pub async fn send<'a>(&'a mut self, s: impl Datagram<'a> + 'a) -> Result<(), AUTDError> {
         let timeout = s.timeout();
+        let parallel_threshold = s.parallel_threshold().unwrap_or(self.parallel_threshold);
 
         let gen = s.operation_generator(&self.geometry)?;
         let mut operations = OperationHandler::generate(gen, &self.geometry)?;
@@ -60,7 +61,7 @@ impl<L: Link> Controller<L> {
                 &mut operations,
                 &self.geometry,
                 &mut self.tx_buf,
-                self.parallel_threshold,
+                parallel_threshold,
             )?;
             let start = tokio::time::Instant::now();
             send_receive(&mut self.link, &self.tx_buf, &mut self.rx_buf, timeout).await?;
