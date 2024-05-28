@@ -34,7 +34,7 @@ impl Gain for TestGain {
     fn calc(
         &self,
         geometry: &Geometry,
-        filter: GainFilter,
+        filter: Option<HashMap<usize, BitVec<usize, Lsb0>>>,,
     ) -> Result<std::collections::HashMap<usize, Vec<Drive>>, AUTDInternalError> {
         Ok(Self::transform(geometry, filter, |_| {
             |_| Drive::new(Phase::new(0xFF), EmitIntensity::MAX)
