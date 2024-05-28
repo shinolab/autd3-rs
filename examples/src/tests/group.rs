@@ -8,8 +8,8 @@ pub async fn group_by_device(autd: &mut Controller<impl Link>) -> anyhow::Result
         1 => Some("focus"),
         _ => None,
     })
-    .set("null", (Static::new(), Null::new()))
-    .set("focus", (Sine::new(150. * Hz), Focus::new(center)))
+    .set("null", (Static::new(), Null::new()))?
+    .set("focus", (Sine::new(150. * Hz), Focus::new(center)))?
     .send()
     .await?;
 
@@ -20,11 +20,13 @@ pub async fn group_by_transducer(autd: &mut Controller<impl Link>) -> anyhow::Re
     let cx = autd.geometry.center().x;
     let g1 = Focus::new(autd.geometry[0].center() + Vector3::new(0., 0., 150.0 * mm));
     let g2 = Null::new();
-    let g = Group::new(move |_dev, tr| {
-        if tr.position().x < cx {
-            Some("focus")
-        } else {
-            Some("null")
+    let g = Group::new(move |_dev| {
+        move |tr| {
+            if tr.position().x < cx {
+                Some("focus")
+            } else {
+                Some("null")
+            }
         }
     })
     .set("focus", g1)
