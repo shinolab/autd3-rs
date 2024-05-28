@@ -12,6 +12,7 @@ pub mod segment;
 mod silencer;
 mod stm;
 mod synchronize;
+mod with_parallel_threshold;
 mod with_segment;
 mod with_segment_transition;
 mod with_timeout;
@@ -37,6 +38,9 @@ pub use segment::SwapSegment;
 pub use silencer::{Silencer, SilencerFixedCompletionSteps, SilencerFixedUpdateRate};
 pub use stm::{FocusSTM, GainSTM};
 pub use synchronize::Synchronize;
+pub use with_parallel_threshold::{
+    DatagramWithParallelThreshold, IntoDatagramWithParallelThreshold,
+};
 pub use with_segment::{DatagramS, DatagramWithSegment, IntoDatagramWithSegment};
 pub use with_segment_transition::{
     DatagramST, DatagramWithSegmentTransition, IntoDatagramWithSegmentTransition,
@@ -60,6 +64,10 @@ pub trait Datagram<'a> {
     fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError>;
 
     fn timeout(&self) -> Option<Duration> {
+        None
+    }
+
+    fn parallel_threshold(&self) -> Option<usize> {
         None
     }
 }

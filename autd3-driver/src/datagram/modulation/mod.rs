@@ -99,6 +99,10 @@ impl<'a> DatagramST<'a> for Box<dyn Modulation> {
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)
     }
+
+    fn parallel_threshold(&self) -> Option<usize> {
+        Some(usize::MAX)
+    }
 }
 // GRCOV_EXCL_STOP
 
