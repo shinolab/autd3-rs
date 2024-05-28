@@ -19,7 +19,7 @@ pub fn focus(c: &mut Criterion) {
                         black_box(70.),
                         black_box(150.),
                     ))
-                    .calc(geometry, GainFilter::All)
+                    .calc(geometry)
                     .unwrap();
                 })
             },

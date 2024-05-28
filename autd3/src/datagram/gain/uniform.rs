@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use autd3_driver::derive::*;
 
 #[derive(Gain, Clone, PartialEq, Debug, Builder)]
@@ -20,14 +18,9 @@ impl Uniform {
 }
 
 impl Gain for Uniform {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-        filter: GainFilter,
-    ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |_| {
-            |_| Drive::new(self.phase, self.intensity)
-        }))
+    fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
+        let d = Drive::new(self.phase, self.intensity);
+        Ok(Self::transform(move |_| move |_| d))
     }
 }
 
@@ -36,7 +29,6 @@ mod tests {
     use crate::tests::create_geometry;
 
     use super::*;
-    use autd3_driver::datagram::Datagram;
     use rand::Rng;
 
     fn uniform_check(
@@ -48,16 +40,15 @@ mod tests {
         assert_eq!(intensity, g.intensity());
         assert_eq!(phase, g.phase());
 
-        let b = g.calc(geometry, GainFilter::All)?;
-        assert_eq!(geometry.num_devices(), b.len());
-        b.iter().for_each(|(&idx, d)| {
-            assert_eq!(geometry[idx].num_transducers(), d.len());
-            d.iter().for_each(|d| {
+        let b = g.calc(geometry)?;
+        geometry.iter().for_each(|dev| {
+            let d = b(dev);
+            dev.iter().for_each(|tr| {
+                let d = d(tr);
                 assert_eq!(phase, d.phase());
                 assert_eq!(intensity, d.intensity());
             });
         });
-
         Ok(())
     }
 
@@ -77,13 +68,5 @@ mod tests {
         uniform_check(g, intensity, phase, &geometry)?;
 
         Ok(())
-    }
-
-    #[test]
-    fn test_uniform_derive() {
-        let gain = Uniform::new(0x1F);
-        let gain2 = gain.clone();
-        assert_eq!(gain, gain2);
-        let _ = gain.operation();
     }
 }

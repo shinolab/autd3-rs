@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use autd3_driver::{derive::*, geometry::Vector3};
 
 #[derive(Gain, Clone, PartialEq, Debug, Builder)]
@@ -23,17 +21,16 @@ impl Plane {
 }
 
 impl Gain for Plane {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-        filter: GainFilter,
-    ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |dev| {
+    fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
+        let dir = self.dir;
+        let intensity = self.intensity;
+        let phase_offset = self.phase_offset;
+        Ok(Self::transform(move |dev| {
             let wavenumber = dev.wavenumber();
             move |tr| {
                 Drive::new(
-                    Phase::from(self.dir.dot(tr.position()) * wavenumber * rad) + self.phase_offset,
-                    self.intensity,
+                    Phase::from(dir.dot(tr.position()) * wavenumber * rad) + phase_offset,
+                    intensity,
                 )
             }
         }))
@@ -45,7 +42,6 @@ mod tests {
     use rand::Rng;
 
     use super::*;
-    use autd3_driver::datagram::Datagram;
 
     use crate::tests::{create_geometry, random_vector3};
 
@@ -60,14 +56,13 @@ mod tests {
         assert_eq!(intensity, g.intensity());
         assert_eq!(phase_offset, g.phase_offset());
 
-        let d = g.calc(geometry, GainFilter::All)?;
-        assert_eq!(geometry.num_devices(), d.len());
-        d.iter().for_each(|(&idx, d)| {
-            assert_eq!(geometry[idx].num_transducers(), d.len());
-            d.iter().zip(geometry[idx].iter()).for_each(|(d, tr)| {
+        let b = g.calc(geometry)?;
+        geometry.iter().for_each(|dev| {
+            let d = b(dev);
+            dev.iter().for_each(|tr| {
                 let expected_phase =
-                    Phase::from(dir.dot(tr.position()) * geometry[idx].wavenumber() * rad)
-                        + phase_offset;
+                    Phase::from(dir.dot(tr.position()) * dev.wavenumber() * rad) + phase_offset;
+                let d = d(tr);
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity());
             });
@@ -95,13 +90,5 @@ mod tests {
         plane_check(g, d, intensity, phase_offset, &geometry)?;
 
         Ok(())
-    }
-
-    #[test]
-    fn test_plane_derive() {
-        let gain = Plane::new(Vector3::zeros());
-        let gain2 = gain.clone();
-        assert_eq!(gain, gain2);
-        let _ = gain.operation();
     }
 }

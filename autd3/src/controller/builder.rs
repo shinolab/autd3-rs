@@ -48,6 +48,7 @@ impl ControllerBuilder {
             tx_buf: TxDatagram::new(geometry.num_devices()),
             rx_buf: vec![RxMessage::new(0, 0); geometry.num_devices()],
             geometry,
+            parallel_threshold: 4,
         };
         if self.ultrasound_freq != FREQ_40K {
             cnt.send(ConfigureFPGAClock::new().with_timeout(timeout))

@@ -65,7 +65,7 @@ impl<S: SamplingMode> std::ops::Add<Sine<S>> for Sine<S> {
 }
 
 impl<S: SamplingMode> Modulation for Fourier<S> {
-    fn calc(&self, geometry: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
+    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
         if !self
             .components
             .iter()
@@ -81,21 +81,22 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
             .iter()
             .map(|c| c.calc(geometry))
             .collect::<Result<Vec<_>, _>>()?;
-        Ok(buffers
-            .iter()
-            .fold(
-                vec![0usize; buffers.iter().fold(1, |acc, x| lcm(acc, x.len()))],
-                |acc, x| {
-                    acc.iter()
-                        .zip(x.iter().cycle())
-                        .map(|(a, &b)| a + b.value() as usize)
-                        .collect::<Vec<_>>()
-                },
-            )
-            .iter()
-            .map(|x| (x / self.components.len()) as u8)
-            .map(EmitIntensity::from)
-            .collect::<Vec<_>>())
+        Ok(Box::new(move |dev| {
+            buffers
+                .iter()
+                .fold(
+                    vec![0usize; buffers.iter().fold(1, |acc, x| lcm(acc, x(dev).len()))],
+                    |acc, x| {
+                        acc.iter()
+                            .zip(x(dev).iter().cycle())
+                            .map(|(a, &b)| a + b as usize)
+                            .collect::<Vec<_>>()
+                    },
+                )
+                .iter()
+                .map(|x| (x / buffers.len()) as u8)
+                .collect::<Vec<_>>()
+        }))
     }
 }
 
@@ -117,11 +118,11 @@ mod tests {
         let f3 = Sine::new(200. * Hz);
         let f4 = Sine::new(250. * Hz);
 
-        let f0_buf = &f0.calc(&geometry)?;
-        let f1_buf = &f1.calc(&geometry)?;
-        let f2_buf = &f2.calc(&geometry)?;
-        let f3_buf = &f3.calc(&geometry)?;
-        let f4_buf = &f4.calc(&geometry)?;
+        let f0_buf = &f0.calc(&geometry)?(&geometry[0]);
+        let f1_buf = &f1.calc(&geometry)?(&geometry[0]);
+        let f2_buf = &f2.calc(&geometry)?(&geometry[0]);
+        let f3_buf = &f3.calc(&geometry)?(&geometry[0]);
+        let f4_buf = &f4.calc(&geometry)?(&geometry[0]);
 
         let f = (f0 + f1).add_component(f2).add_components_from_iter([f3]) + f4;
 
@@ -137,16 +138,16 @@ mod tests {
         assert_eq!(f[4].freq(), 250. * Hz);
         assert_eq!(f[4].phase(), 0.0 * rad);
 
-        let buf = &f.calc(&geometry)?;
+        let buf = &f.calc(&geometry)?(&geometry[0]);
 
         (0..buf.len()).for_each(|i| {
             assert_eq!(
-                buf[i].value(),
-                ((f0_buf[i % f0_buf.len()].value() as usize
-                    + f1_buf[i % f1_buf.len()].value() as usize
-                    + f2_buf[i % f2_buf.len()].value() as usize
-                    + f3_buf[i % f3_buf.len()].value() as usize
-                    + f4_buf[i % f4_buf.len()].value() as usize)
+                buf[i],
+                ((f0_buf[i % f0_buf.len()] as usize
+                    + f1_buf[i % f1_buf.len()] as usize
+                    + f2_buf[i % f2_buf.len()] as usize
+                    + f3_buf[i % f3_buf.len()] as usize
+                    + f4_buf[i % f4_buf.len()] as usize)
                     / 5) as u8
             );
         });
@@ -162,10 +163,10 @@ mod tests {
             + Sine::new(50. * Hz).with_sampling_config(SamplingConfig::Freq(1000 * Hz));
 
         assert_eq!(
-            Err(AUTDInternalError::ModulationError(
+            Some(AUTDInternalError::ModulationError(
                 "All components must have the same sampling configuration".to_string()
             )),
-            f.calc(&geometry)
+            f.calc(&geometry).err()
         );
     }
 }

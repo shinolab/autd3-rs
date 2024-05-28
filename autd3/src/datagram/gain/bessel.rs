@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use autd3_driver::{
     defined::Angle,
     derive::*,
@@ -33,11 +31,7 @@ impl Bessel {
 }
 
 impl Gain for Bessel {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-        filter: GainFilter,
-    ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
+    fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
         let rot = {
             let dir = self.dir.normalize();
             let v = Vector3::new(dir.y, -dir.x, 0.);
@@ -47,15 +41,18 @@ impl Gain for Bessel {
                     UnitQuaternion::from_scaled_axis(v * -theta_v)
                 })
         };
-        Ok(Self::transform(geometry, filter, |dev| {
+        let theta = self.theta.radian();
+        let pos = self.pos;
+        let phase_offset = self.phase_offset;
+        let intensity = self.intensity;
+        Ok(Self::transform(move |dev| {
             let wavenumber = dev.wavenumber();
             move |tr| {
-                let r = rot * (tr.position() - self.pos);
-                let theta = self.theta.radian();
+                let r = rot * (tr.position() - pos);
                 let dist = theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - theta.cos() * r.z;
                 Drive::new(
-                    Phase::from(dist * wavenumber * rad) + self.phase_offset,
-                    self.intensity,
+                    Phase::from(dist * wavenumber * rad) + phase_offset,
+                    intensity,
                 )
             }
         }))
@@ -66,7 +63,7 @@ impl Gain for Bessel {
 mod tests {
     use rand::Rng;
 
-    use autd3_driver::{datagram::Datagram, defined::PI};
+    use autd3_driver::defined::PI;
 
     use super::*;
 
@@ -87,11 +84,10 @@ mod tests {
         assert_eq!(intensity, g.intensity());
         assert_eq!(phase_offset, g.phase_offset());
 
-        let b = g.calc(geometry, GainFilter::All)?;
-        assert_eq!(geometry.num_devices(), b.len());
-        b.iter().for_each(|(&idx, d)| {
-            assert_eq!(geometry[idx].num_transducers(), d.len());
-            d.iter().zip(geometry[idx].iter()).for_each(|(d, tr)| {
+        let b = g.calc(geometry)?;
+        geometry.iter().for_each(|dev| {
+            let d = b(dev);
+            dev.iter().for_each(|tr| {
                 let expected_phase = {
                     let dir = dir.normalize();
                     let v = Vector3::new(dir.y, -dir.x, 0.);
@@ -107,6 +103,7 @@ mod tests {
                         - theta.radian().cos() * r.z;
                     Phase::from(dist * geometry[0].wavenumber() * rad) + phase_offset
                 };
+                let d = d(tr);
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity());
             });
@@ -146,17 +143,5 @@ mod tests {
         bessel_check(g, f, d, theta * rad, intensity, phase_offset, &geometry)?;
 
         Ok(())
-    }
-
-    #[test]
-    fn test_bessel_derive() {
-        let g = Bessel::new(Vector3::zeros(), Vector3::zeros(), 0. * rad);
-        let g2 = g.clone();
-        assert_eq!(g.pos(), g2.pos());
-        assert_eq!(g.dir(), g2.dir());
-        assert_eq!(g.theta(), g2.theta());
-        assert_eq!(g.intensity(), g2.intensity());
-        assert_eq!(g.phase_offset(), g2.phase_offset());
-        let _ = g.operation();
     }
 }
