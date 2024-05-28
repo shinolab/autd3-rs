@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::datagram::*;
 use crate::{
     defined::{ControlPoint, Freq},
@@ -61,7 +63,7 @@ impl FocusSTM {
 }
 
 pub struct FocusSTMOperationGenerator {
-    g: Vec<ControlPoint>,
+    g: Arc<Vec<ControlPoint>>,
     config: SamplingConfig,
     rep: u32,
     segment: Segment,
@@ -98,7 +100,7 @@ impl<'a> DatagramST<'a> for FocusSTM {
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, AUTDInternalError> {
         Ok(FocusSTMOperationGenerator {
-            g: self.control_points,
+            g: Arc::new(self.control_points),
             config: self.sampling_config,
             rep: self.loop_behavior.rep(),
             segment,
@@ -109,11 +111,19 @@ impl<'a> DatagramST<'a> for FocusSTM {
     fn timeout(&self) -> Option<std::time::Duration> {
         Some(DEFAULT_TIMEOUT)
     }
+
+    fn parallel_threshold(&self) -> Option<usize> {
+        if self.control_points.len() > 4000 {
+            None
+        } else {
+            Some(usize::MAX)
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::{
+    use crate::{
         defined::{kHz, Hz},
         geometry::Vector3,
     };
