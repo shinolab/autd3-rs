@@ -298,16 +298,16 @@ impl Memory {
         }
     }
 
-    pub fn modulation_at(&self, segment: Segment, idx: usize) -> EmitIntensity {
+    pub fn modulation_at(&self, segment: Segment, idx: usize) -> u8 {
         let m = match segment {
             Segment::S0 => &self.modulator_bram_0[idx >> 1],
             Segment::S1 => &self.modulator_bram_1[idx >> 1],
         };
         let m = if idx % 2 == 0 { m & 0xFF } else { m >> 8 };
-        EmitIntensity::new(m as u8)
+        m as u8
     }
 
-    pub fn modulation(&self, segment: Segment) -> Vec<EmitIntensity> {
+    pub fn modulation(&self, segment: Segment) -> Vec<u8> {
         (0..self.modulation_cycle(segment))
             .map(|i| self.modulation_at(segment, i))
             .collect()
@@ -565,11 +565,11 @@ impl FPGAEmulator {
         self.mem.modulation_loop_behavior(segment)
     }
 
-    pub fn modulation_at(&self, segment: Segment, idx: usize) -> EmitIntensity {
+    pub fn modulation_at(&self, segment: Segment, idx: usize) -> u8 {
         self.mem.modulation_at(segment, idx)
     }
 
-    pub fn modulation(&self, segment: Segment) -> Vec<EmitIntensity> {
+    pub fn modulation(&self, segment: Segment) -> Vec<u8> {
         self.mem.modulation(segment)
     }
 
@@ -641,14 +641,14 @@ mod tests {
         fpga.mem.modulator_bram_0[1] = 0x5678;
         fpga.mem.controller_bram[ADDR_MOD_CYCLE0] = 3 - 1;
         assert_eq!(3, fpga.modulation_cycle(Segment::S0));
-        assert_eq!(0x34, fpga.modulation_at(Segment::S0, 0).value());
-        assert_eq!(0x12, fpga.modulation_at(Segment::S0, 1).value());
-        assert_eq!(0x78, fpga.modulation_at(Segment::S0, 2).value());
+        assert_eq!(0x34, fpga.modulation_at(Segment::S0, 0));
+        assert_eq!(0x12, fpga.modulation_at(Segment::S0, 1));
+        assert_eq!(0x78, fpga.modulation_at(Segment::S0, 2));
         let m = fpga.modulation(Segment::S0);
         assert_eq!(3, m.len());
-        assert_eq!(0x34, m[0].value());
-        assert_eq!(0x12, m[1].value());
-        assert_eq!(0x78, m[2].value());
+        assert_eq!(0x34, m[0]);
+        assert_eq!(0x12, m[1]);
+        assert_eq!(0x78, m[2]);
     }
 
     #[test]

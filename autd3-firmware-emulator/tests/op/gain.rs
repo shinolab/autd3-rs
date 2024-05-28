@@ -25,8 +25,8 @@ impl Gain for TestGain {
     fn calc(
         &self,
         _: &Geometry,
-        _: GainFilter,
-    ) -> Result<HashMap<usize, Vec<Drive>>, AUTDInternalError> {
+        _: Option<HashMap<usize, BitVec<usize, Lsb0>>>,,
+    ) -> GainCalcResult {
         Ok(self.buf.clone())
     }
 }

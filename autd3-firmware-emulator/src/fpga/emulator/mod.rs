@@ -118,7 +118,7 @@ impl FPGAEmulator {
         if self
             .modulation(cur_mod_segment)
             .iter()
-            .all(|&m| m == EmitIntensity::MIN)
+            .all(|&m| m == u8::MIN)
         {
             return false;
         }
