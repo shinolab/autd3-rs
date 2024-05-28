@@ -1,3 +1,5 @@
+use std::mem::size_of;
+
 use super::GainControlFlags;
 use crate::{
     derive::Transducer,
@@ -41,13 +43,11 @@ impl GainOp {
 
 impl Operation for GainOp {
     fn required_size(&self, device: &Device) -> usize {
-        std::mem::size_of::<GainT>() + device.num_transducers() * std::mem::size_of::<Drive>()
+        size_of::<GainT>() + device.num_transducers() * size_of::<Drive>()
     }
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        assert!(
-            tx.len() >= std::mem::size_of::<GainT>() + device.len() * std::mem::size_of::<Drive>()
-        );
+        assert!(tx.len() >= size_of::<GainT>() + device.len() * size_of::<Drive>());
 
         *cast::<GainT>(tx) = GainT {
             tag: TypeTag::Gain,
@@ -59,20 +59,13 @@ impl Operation for GainOp {
             .flag
             .set(GainControlFlags::UPDATE, self.transition);
 
-        unsafe {
-            device
-                .iter()
-                .zip(std::slice::from_raw_parts_mut(
-                    tx[std::mem::size_of::<GainT>()..].as_mut_ptr() as *mut Drive,
-                    device.len(),
-                ))
-                .for_each(|(tr, dst)| {
-                    *dst = (self.gain)(tr);
-                })
-        }
+        device.iter().enumerate().for_each(|(i, tr)| {
+            *cast::<Drive>(&mut tx[size_of::<GainT>() + i * size_of::<Drive>()..]) =
+                (self.gain)(tr);
+        });
 
         self.is_done = true;
-        Ok(std::mem::size_of::<GainT>() + device.len() * std::mem::size_of::<Drive>())
+        Ok(size_of::<GainT>() + device.len() * size_of::<Drive>())
     }
 
     fn is_done(&self) -> bool {
@@ -82,7 +75,7 @@ impl Operation for GainOp {
 
 #[cfg(test)]
 mod tests {
-    use std::mem::size_of;
+    use size_of;
 
     use rand::prelude::*;
 
@@ -128,7 +121,7 @@ mod tests {
 
         assert_eq!(tx[0], TypeTag::Gain as u8);
         tx.iter()
-            .skip(std::mem::size_of::<GainT>())
+            .skip(size_of::<GainT>())
             .collect::<Vec<_>>()
             .chunks(2)
             .zip(data.iter())
