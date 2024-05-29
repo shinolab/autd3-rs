@@ -3,10 +3,7 @@ use autd3_driver::{
     datagram::*,
     defined::{Freq, FREQ_40K},
     error::AUTDInternalError,
-    firmware::{
-        cpu::TxDatagram,
-        operation::{NullOp, Operation, OperationHandler},
-    },
+    firmware::{cpu::TxDatagram, operation::OperationHandler},
     geometry::{Geometry, IntoDevice, Vector3},
 };
 use autd3_firmware_emulator::{
@@ -34,35 +31,24 @@ pub fn create_geometry_with_freq(n: usize, ultrasound_freq: Freq<u32>) -> Geomet
     )
 }
 
-pub fn send_once(
+pub fn send<'a>(
     cpu: &mut CPUEmulator,
-    op: &mut impl Operation,
+    d: impl Datagram<'a>,
     geometry: &Geometry,
     tx: &mut TxDatagram,
 ) -> Result<(), AUTDInternalError> {
-    let mut op_null = NullOp::default();
-    OperationHandler::pack(op, &mut op_null, geometry, tx)?;
-    cpu.send(tx);
-    if (cpu.rx().ack() & ERR_BIT) == ERR_BIT {
-        return Err(AUTDInternalError::firmware_err(cpu.rx().ack()));
-    }
-    assert_eq!(tx[0].header.msg_id, cpu.rx().ack());
-    Ok(())
-}
-
-pub fn send(
-    cpu: &mut CPUEmulator,
-    op: &mut impl Operation,
-    geometry: &Geometry,
-    tx: &mut TxDatagram,
-) -> Result<(), AUTDInternalError> {
-    let mut op_null = NullOp::default();
-    OperationHandler::init(op, &mut op_null, geometry)?;
+    let gen = d.operation_generator(geometry)?;
+    let mut op = OperationHandler::generate(gen, geometry);
     loop {
-        if OperationHandler::is_finished(op, &mut op_null, geometry) {
+        if OperationHandler::is_done(&op, geometry) {
             break;
         }
-        send_once(cpu, op, geometry, tx)?;
+        OperationHandler::pack(&mut op, geometry, tx, usize::MAX)?;
+        cpu.send(tx);
+        if (cpu.rx().ack() & ERR_BIT) == ERR_BIT {
+            return Err(AUTDInternalError::firmware_err(cpu.rx().ack()));
+        }
+        assert_eq!(tx[0].header.msg_id, cpu.rx().ack());
     }
     Ok(())
 }
@@ -104,18 +90,18 @@ fn send_ingore_same_data() -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let (mut op, mut op_null) = Clear::new().operation();
-
-    OperationHandler::init(&mut op, &mut op_null, &geometry)?;
-    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx)?;
-
+    let d = Clear::new();
+    let gen = d.operation_generator(&geometry)?;
+    let mut op = OperationHandler::generate(gen, &geometry);
+    OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)?;
     cpu.send(&tx);
     let msg_id = tx[0].header.msg_id;
     assert_eq!(cpu.rx().ack(), tx[0].header.msg_id);
 
-    let (mut op, mut op_null) = Synchronize::new().operation();
-    OperationHandler::init(&mut op, &mut op_null, &geometry)?;
-    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx)?;
+    let d = Synchronize::new();
+    let gen = d.operation_generator(&geometry)?;
+    let mut op = OperationHandler::generate(gen, &geometry);
+    OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)?;
     tx[0].header.msg_id = msg_id;
     assert!(!cpu.synchronized());
     cpu.send(&tx);
@@ -130,11 +116,10 @@ fn send_slot_2() -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let (mut op_clear, _) = Clear::new().operation();
-    let (mut op_sync, _) = Synchronize::new().operation();
-
-    OperationHandler::init(&mut op_clear, &mut op_sync, &geometry)?;
-    OperationHandler::pack(&mut op_clear, &mut op_sync, &geometry, &mut tx)?;
+    let d = (Clear::new(), Synchronize::new());
+    let gen = d.operation_generator(&geometry)?;
+    let mut op = OperationHandler::generate(gen, &geometry);
+    OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)?;
 
     assert!(!cpu.synchronized());
     cpu.send(&tx);
@@ -150,11 +135,10 @@ fn send_slot_2_err() -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let (mut op_clear, _) = Clear::new().operation();
-    let (mut op_sync, _) = Synchronize::new().operation();
-
-    OperationHandler::init(&mut op_clear, &mut op_sync, &geometry)?;
-    OperationHandler::pack(&mut op_clear, &mut op_sync, &geometry, &mut tx)?;
+    let d = (Clear::new(), Synchronize::new());
+    let gen = d.operation_generator(&geometry)?;
+    let mut op = OperationHandler::generate(gen, &geometry);
+    OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)?;
 
     let slot2_offset = tx[0].header.slot_2_offset as usize;
     tx[0].payload[slot2_offset] = 0xFF;

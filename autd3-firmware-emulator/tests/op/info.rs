@@ -1,5 +1,6 @@
 use autd3_driver::{
     datagram::*,
+    derive::Geometry,
     error::AUTDInternalError,
     firmware::{
         cpu::TxDatagram,
@@ -7,9 +8,9 @@ use autd3_driver::{
         version::FirmwareVersion,
     },
 };
-use autd3_firmware_emulator::CPUEmulator;
+use autd3_firmware_emulator::{cpu::params::ERR_BIT, CPUEmulator};
 
-use crate::{create_geometry, send, send_once};
+use crate::{create_geometry, send};
 
 #[test]
 fn send_firminfo() -> anyhow::Result<()> {
@@ -22,15 +23,27 @@ fn send_firminfo() -> anyhow::Result<()> {
     // configure Reads FPGA Info
     {
         assert!(!cpu.reads_fpga_state());
-        let (mut op, _) = ReadsFPGAState::new(|_| true).operation();
-        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+        let d = ReadsFPGAState::new(|_| true);
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
         assert!(cpu.reads_fpga_state());
     }
 
-    let mut op = FirmInfoOp::default();
-    let mut op_null = NullOp::default();
+    let op = FirmInfoOp::default();
+    let op_null = NullOp::default();
+    let mut op = [(op, op_null)];
 
-    OperationHandler::init(&mut op, &mut op_null, &geometry)?;
+    let send_once = |cpu: &mut CPUEmulator,
+                     op: &mut [(FirmInfoOp, NullOp)],
+                     geometry: &Geometry,
+                     tx: &mut TxDatagram| {
+        OperationHandler::pack(op, geometry, tx, usize::MAX)?;
+        cpu.send(tx);
+        if (cpu.rx().ack() & ERR_BIT) == ERR_BIT {
+            return Err(AUTDInternalError::firmware_err(cpu.rx().ack()));
+        }
+        assert_eq!(tx[0].header.msg_id, cpu.rx().ack());
+        Ok(())
+    };
 
     send_once(&mut cpu, &mut op, &geometry, &mut tx)?;
     assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MAJOR, cpu.rx().data());
@@ -63,11 +76,10 @@ fn invalid_info_type() -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let mut op = FirmInfoOp::default();
-    let mut op_null = NullOp::default();
+    let op = FirmInfoOp::default();
+    let op_null = NullOp::default();
 
-    OperationHandler::init(&mut op, &mut op_null, &geometry)?;
-    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx)?;
+    OperationHandler::pack(&mut [(op, op_null)], &geometry, &mut tx, usize::MAX)?;
     tx[0].payload[1] = 7;
 
     cpu.send(&tx);

@@ -5,10 +5,8 @@ use autd3_driver::{
     firmware::{
         cpu::TxDatagram,
         fpga::{
-            STMSamplingConfig, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
-            SILENCER_VALUE_MIN,
+            SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, SILENCER_VALUE_MIN,
         },
-        operation::FocusSTMOp,
     },
 };
 use autd3_firmware_emulator::CPUEmulator;
@@ -22,8 +20,8 @@ struct TestMod {
 }
 
 impl Modulation for TestMod {
-    fn calc(&self, _: &Geometry) -> Result<Vec<EmitIntensity>, AUTDInternalError> {
-        Ok(vec![EmitIntensity::MIN; 100])
+    fn calc(&self, _: &Geometry) -> ModulationCalcResult {
+        Ok(vec![u8::MIN; 100])
     }
 }
 
@@ -31,12 +29,8 @@ impl Modulation for TestMod {
 struct TestGain {}
 
 impl Gain for TestGain {
-    fn calc(
-        &self,
-        geometry: &Geometry,
-        filter: Option<HashMap<usize, BitVec<usize, Lsb0>>>,,
-    ) -> Result<std::collections::HashMap<usize, Vec<Drive>>, AUTDInternalError> {
-        Ok(Self::transform(geometry, filter, |_| {
+    fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
+        Ok(Self::transform(|_| {
             |_| Drive::new(Phase::new(0xFF), EmitIntensity::MAX)
         }))
     }
@@ -49,40 +43,36 @@ fn send_clear() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     {
-        let (mut op, _) =
-            Silencer::fixed_completion_steps(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN)?.operation();
-        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+        let d = Silencer::fixed_completion_steps(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN)?;
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let (mut op, _) =
-            Silencer::fixed_update_rate(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN)?.operation();
-        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+        let d = Silencer::fixed_update_rate(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN)?;
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let (mut op, _) = TestMod {
+        let d = TestMod {
             config: SamplingConfig::DivisionRaw(5120),
             loop_behavior: LoopBehavior::infinite(),
         }
-        .operation_with_segment(Segment::S0, Some(TransitionMode::Immediate));
-        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+        .with_segment(Segment::S0, Some(TransitionMode::Immediate));
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let (mut op, _) = TestGain {}.operation_with_segment(Segment::S0, true);
-        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+        let d = TestGain {}.with_segment(Segment::S0, true);
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let mut op = FocusSTMOp::new(
-            gen_random_foci(2),
-            STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(
+        let d = FocusSTM::from_sampling_config(
+            SamplingConfig::DivisionRaw(
                 SAMPLING_FREQ_DIV_MIN
                     * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
-            )),
-            LoopBehavior::infinite(),
-            Segment::S0,
-            Some(TransitionMode::Ext),
-        );
-        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+            ),
+            gen_random_foci(2).into_iter(),
+        )
+        .with_segment(Segment::S0, Some(TransitionMode::Ext));
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }
 
-    let (mut op, _) = Clear::new().operation();
+    let d = Clear::new();
 
-    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     assert!(!cpu.reads_fpga_state());
     assert_eq!(256, cpu.fpga().silencer_update_rate_intensity());
@@ -109,14 +99,8 @@ fn send_clear() -> anyhow::Result<()> {
         LoopBehavior::infinite(),
         cpu.fpga().modulation_loop_behavior(Segment::S1)
     );
-    assert_eq!(
-        vec![EmitIntensity::MAX; 2],
-        cpu.fpga().modulation(Segment::S0)
-    );
-    assert_eq!(
-        vec![EmitIntensity::MAX; 2],
-        cpu.fpga().modulation(Segment::S1)
-    );
+    assert_eq!(vec![u8::MAX; 2], cpu.fpga().modulation(Segment::S0));
+    assert_eq!(vec![u8::MAX; 2], cpu.fpga().modulation(Segment::S1));
 
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S0));
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));

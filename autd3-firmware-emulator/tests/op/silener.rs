@@ -1,10 +1,8 @@
 use autd3_driver::{
     datagram::*,
-    derive::{
-        LoopBehavior, ModulationOp, SamplingConfig, Segment, TransitionMode, SAMPLING_FREQ_DIV_MIN,
-    },
+    derive::{LoopBehavior, SamplingConfig, Segment, TransitionMode, SAMPLING_FREQ_DIV_MIN},
     error::AUTDInternalError,
-    firmware::{cpu::TxDatagram, fpga::STMSamplingConfig, operation::FocusSTMOp},
+    firmware::cpu::TxDatagram,
     geometry::Vector3,
 };
 use autd3_firmware_emulator::CPUEmulator;
@@ -23,10 +21,9 @@ fn send_silencer_fixed_update_rate() -> anyhow::Result<()> {
 
     let update_rate_intensity = rng.gen_range(1..=u16::MAX);
     let update_rate_phase = rng.gen_range(1..=u16::MAX);
-    let (mut op, _) =
-        Silencer::fixed_update_rate(update_rate_intensity, update_rate_phase)?.operation();
+    let d = Silencer::fixed_update_rate(update_rate_intensity, update_rate_phase)?;
 
-    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     assert_eq!(
         update_rate_intensity,
@@ -48,9 +45,9 @@ fn send_silencer_fixed_completion_steps() -> anyhow::Result<()> {
 
     let steps_intensity = rng.gen_range(1..=10);
     let steps_phase = rng.gen_range(1..=u16::MAX);
-    let (mut op, _) = Silencer::fixed_completion_steps(steps_intensity, steps_phase)?.operation();
+    let d = Silencer::fixed_completion_steps(steps_intensity, steps_phase)?;
 
-    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     assert_eq!(
         steps_intensity,
@@ -71,36 +68,31 @@ fn silencer_completetion_steps_too_large_mod(
     #[case] expect: Result<(), AUTDInternalError>,
     #[case] steps_intensity: u16,
 ) -> anyhow::Result<()> {
-    use autd3_driver::derive::{EmitIntensity, SamplingConfig};
-
     use crate::op::modulation::TestModulation;
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let (mut op, _) = Silencer::fixed_completion_steps(1, 1)?.operation();
-    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+    let d = Silencer::fixed_completion_steps(1, 1)?;
+    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     // Send modulation
     {
-        let mut op = ModulationOp::new(
-            TestModulation {
-                buf: (0..2).map(|_| EmitIntensity::MAX).collect(),
-                config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
-                loop_behavior: LoopBehavior::infinite(),
-            },
-            Segment::S0,
-            Some(TransitionMode::Immediate),
-        );
+        let d = TestModulation {
+            buf: (0..2).map(|_| u8::MAX).collect(),
+            config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
+            loop_behavior: LoopBehavior::infinite(),
+        }
+        .with_segment(Segment::S0, Some(TransitionMode::Immediate));
 
-        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }
 
     let steps_phase = 1;
-    let (mut op, _) = Silencer::fixed_completion_steps(steps_intensity, steps_phase)?.operation();
+    let d = Silencer::fixed_completion_steps(steps_intensity, steps_phase)?;
 
-    assert_eq!(expect, send(&mut cpu, &mut op, &geometry, &mut tx));
+    assert_eq!(expect, send(&mut cpu, d, &geometry, &mut tx));
 
     Ok(())
 }
@@ -119,25 +111,23 @@ fn silencer_completetion_steps_too_large_stm(
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let (mut op, _) = Silencer::fixed_completion_steps(1, 1)?.operation();
-    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+    let d = Silencer::fixed_completion_steps(1, 1)?;
+    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     // Send FocusSTM
     {
-        let mut op = FocusSTMOp::new(
-            (0..2).map(|_| Vector3::zeros().into()).collect(),
-            STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN)),
-            LoopBehavior::infinite(),
-            Segment::S0,
-            Some(TransitionMode::Immediate),
-        );
+        let d = FocusSTM::from_sampling_config(
+            SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
+            (0..2).map(|_| Vector3::zeros()),
+        )
+        .with_segment(Segment::S0, Some(TransitionMode::Immediate));
 
-        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }
 
-    let (mut op, _) = Silencer::fixed_completion_steps(steps_intensity, steps_phase)?.operation();
+    let d = Silencer::fixed_completion_steps(steps_intensity, steps_phase)?;
 
-    assert_eq!(expect, send(&mut cpu, &mut op, &geometry, &mut tx));
+    assert_eq!(expect, send(&mut cpu, d, &geometry, &mut tx));
 
     Ok(())
 }
@@ -152,11 +142,9 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
 
     let steps_intensity = rng.gen_range(1..=u16::MAX);
     let steps_phase = rng.gen_range(1..=u16::MAX);
-    let (mut op, _) = Silencer::fixed_completion_steps(steps_intensity, steps_phase)?
-        .with_strict_mode(false)
-        .operation();
+    let d = Silencer::fixed_completion_steps(steps_intensity, steps_phase)?.with_strict_mode(false);
 
-    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     assert_eq!(
         cpu.fpga().silencer_completion_steps_intensity(),
