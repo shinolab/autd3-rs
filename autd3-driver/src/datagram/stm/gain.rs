@@ -7,8 +7,8 @@ use crate::{
 
 #[derive(Builder)]
 #[no_const]
-pub struct GainSTM<G: Gain, F: ExactSizeIterator<Item = G> + Send + Sync + Clone> {
-    gains: F,
+pub struct GainSTM<G: Gain> {
+    gains: Vec<G>,
     #[getset]
     loop_behavior: LoopBehavior,
     #[get]
@@ -17,38 +17,43 @@ pub struct GainSTM<G: Gain, F: ExactSizeIterator<Item = G> + Send + Sync + Clone
     mode: GainSTMMode,
 }
 
-impl<G: Gain, F: ExactSizeIterator<Item = G> + Send + Sync + Clone> GainSTM<G, F> {
-    pub fn from_freq(freq: Freq<f64>, gains: F) -> Result<Self, AUTDInternalError> {
-        let len = gains.len();
+impl<G: Gain> GainSTM<G> {
+    pub fn from_freq<F: IntoIterator<Item = G> + Send + Sync + Clone>(
+        freq: Freq<f64>,
+        gains: F,
+    ) -> Result<Self, AUTDInternalError> {
+        let gains = gains.into_iter().collect::<Vec<_>>();
         Ok(Self {
-            gains,
             loop_behavior: LoopBehavior::infinite(),
-            sampling_config: STMSamplingConfig::Freq(freq).sampling(len)?,
+            sampling_config: STMSamplingConfig::Freq(freq).sampling(gains.len())?,
             mode: GainSTMMode::PhaseIntensityFull,
+            gains,
         })
     }
 
-    pub fn from_freq_nearest(freq: Freq<f64>, gains: F) -> Result<Self, AUTDInternalError> {
-        let len = gains.len();
+    pub fn from_freq_nearest<F: IntoIterator<Item = G> + Send + Sync + Clone>(
+        freq: Freq<f64>,
+        gains: F,
+    ) -> Result<Self, AUTDInternalError> {
+        let gains = gains.into_iter().collect::<Vec<_>>();
         Ok(Self {
-            gains,
             loop_behavior: LoopBehavior::infinite(),
-            sampling_config: STMSamplingConfig::FreqNearest(freq).sampling(len)?,
+            sampling_config: STMSamplingConfig::FreqNearest(freq).sampling(gains.len())?,
             mode: GainSTMMode::PhaseIntensityFull,
+            gains,
         })
     }
 
-    pub fn from_sampling_config(config: SamplingConfig, gains: F) -> Self {
+    pub fn from_sampling_config<F: IntoIterator<Item = G> + Send + Sync + Clone>(
+        config: SamplingConfig,
+        gains: F,
+    ) -> Self {
         Self {
-            gains,
+            gains: gains.into_iter().collect::<Vec<_>>(),
             loop_behavior: LoopBehavior::infinite(),
             sampling_config: config,
             mode: GainSTMMode::PhaseIntensityFull,
         }
-    }
-
-    pub fn gains(&self) -> F {
-        self.gains.clone()
     }
 }
 
@@ -82,9 +87,7 @@ impl OperationGenerator for GainSTMOperationGenerator {
     }
 }
 
-impl<'a, G: Gain + 'a, F: ExactSizeIterator<Item = G> + Send + Sync + Clone + 'a> DatagramST<'a>
-    for GainSTM<G, F>
-{
+impl<'a, G: Gain + 'a + 'a> DatagramST<'a> for GainSTM<G> {
     type O1 = GainSTMOp;
     type O2 = NullOp;
     type G = GainSTMOperationGenerator;
@@ -99,7 +102,8 @@ impl<'a, G: Gain + 'a, F: ExactSizeIterator<Item = G> + Send + Sync + Clone + 'a
         let rep = self.loop_behavior.rep();
         let mode = self.mode;
         let gains = self
-            .gains()
+            .gains
+            .into_iter()
             .map(|g| Ok(Box::new(g.calc(geometry)?) as Box<_>))
             .collect::<Result<Vec<_>, AUTDInternalError>>()?;
         Ok(GainSTMOperationGenerator {

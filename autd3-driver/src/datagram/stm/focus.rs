@@ -17,7 +17,7 @@ pub struct FocusSTM {
 }
 
 impl FocusSTM {
-    pub fn from_freq<C, F: ExactSizeIterator<Item = C>>(
+    pub fn from_freq<C, F: IntoIterator<Item = C>>(
         freq: Freq<f64>,
         control_points: F,
     ) -> Result<Self, AUTDInternalError>
@@ -32,7 +32,7 @@ impl FocusSTM {
         })
     }
 
-    pub fn from_freq_nearest<C, F: ExactSizeIterator<Item = C>>(
+    pub fn from_freq_nearest<C, F: IntoIterator<Item = C>>(
         freq: Freq<f64>,
         control_points: F,
     ) -> Result<Self, AUTDInternalError>
@@ -47,7 +47,7 @@ impl FocusSTM {
         })
     }
 
-    pub fn from_sampling_config<C, F: ExactSizeIterator<Item = C>>(
+    pub fn from_sampling_config<C, F: IntoIterator<Item = C>>(
         config: SamplingConfig,
         control_points: F,
     ) -> Self
