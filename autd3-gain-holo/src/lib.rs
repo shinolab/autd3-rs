@@ -24,3 +24,4 @@ pub use matrix::*;
 pub use nls::*;
 
 pub use amp::{dB, Amplitude, Pa};
+pub use autd3_driver::acoustics::directivity::{Sphere, T4010A1};

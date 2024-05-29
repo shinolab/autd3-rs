@@ -22,7 +22,7 @@ pub fn generate_geometry(size: usize) -> Geometry {
     )
 }
 
-pub fn gen_foci(n: usize, num_dev: usize) -> impl ExactSizeIterator<Item = (Vector3, Amplitude)> {
+pub fn gen_foci(n: usize, num_dev: usize) -> impl IntoIterator<Item = (Vector3, Amplitude)> {
     (0..n).map(move |i| {
         (
             Vector3::new(

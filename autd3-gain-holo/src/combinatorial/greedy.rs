@@ -26,8 +26,8 @@ pub struct Greedy<D: Directivity + 'static> {
 }
 
 impl<D: Directivity + 'static> Greedy<D> {
-    pub fn new(iter: impl ExactSizeIterator<Item = (Vector3, Amplitude)>) -> Self {
-        let (foci, amps) = iter.unzip();
+    pub fn new(iter: impl IntoIterator<Item = (Vector3, Amplitude)>) -> Self {
+        let (foci, amps) = iter.into_iter().unzip();
         Self {
             foci,
             amps,
