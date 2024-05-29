@@ -19,7 +19,7 @@ use super::GainCalcResult;
 #[no_gain_transform]
 pub struct Cache<G: Gain> {
     gain: G,
-    cache: Arc<RwLock<HashMap<usize, Vec<Drive>>>>,
+    cache: Arc<RwLock<HashMap<usize, Arc<Vec<Drive>>>>>,
 }
 
 pub trait IntoCache<G: Gain> {
@@ -61,13 +61,13 @@ impl<G: Gain> Cache<G> {
             let f = self.gain.calc(geometry)?;
             *self.cache.write().unwrap() = geometry
                 .devices()
-                .map(|dev| (dev.idx(), dev.iter().map(f(dev)).collect()))
+                .map(|dev| (dev.idx(), Arc::new(dev.iter().map(f(dev)).collect())))
                 .collect();
         }
         Ok(())
     }
 
-    pub fn drives(&self) -> RwLockReadGuard<HashMap<usize, Vec<Drive>>> {
+    pub fn drives(&self) -> RwLockReadGuard<HashMap<usize, Arc<Vec<Drive>>>> {
         self.cache.read().unwrap()
     }
 }
@@ -75,9 +75,9 @@ impl<G: Gain> Cache<G> {
 impl<G: Gain> Gain for Cache<G> {
     fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         self.init(geometry)?;
-        let drives = self.drives().clone();
+        let cache = self.cache.clone();
         Ok(Box::new(move |dev| {
-            let drives = drives[&dev.idx()].clone();
+            let drives = cache.read().unwrap()[&dev.idx()].clone();
             Box::new(move |tr| drives[tr.idx()])
         }))
     }
