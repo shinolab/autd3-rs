@@ -148,14 +148,14 @@ mod tests {
             .for_each(|(dev, dev2)| {
                 assert_approx_eq::assert_approx_eq!(dev.sound_speed, dev2.sound_speed);
                 assert_approx_eq::assert_approx_eq!(dev.attenuation, dev2.attenuation);
+                assert_approx_eq::assert_approx_eq!(dev.rotation().w, dev2.rotation().w);
+                assert_approx_eq::assert_approx_eq!(dev.rotation().i, dev2.rotation().i);
+                assert_approx_eq::assert_approx_eq!(dev.rotation().j, dev2.rotation().j);
+                assert_approx_eq::assert_approx_eq!(dev.rotation().k, dev2.rotation().k);
                 dev.iter().zip(dev2.iter()).for_each(|(t, t2)| {
                     assert_approx_eq::assert_approx_eq!(t.position().x, t2.position().x);
                     assert_approx_eq::assert_approx_eq!(t.position().y, t2.position().y);
                     assert_approx_eq::assert_approx_eq!(t.position().z, t2.position().z);
-                    assert_approx_eq::assert_approx_eq!(t.rotation().w, t2.rotation().w);
-                    assert_approx_eq::assert_approx_eq!(t.rotation().i, t2.rotation().i);
-                    assert_approx_eq::assert_approx_eq!(t.rotation().j, t2.rotation().j);
-                    assert_approx_eq::assert_approx_eq!(t.rotation().k, t2.rotation().k);
                 });
             });
     }
