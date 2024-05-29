@@ -34,16 +34,6 @@ impl<S: SamplingMode> Fourier<S> {
             loop_behavior: LoopBehavior::infinite(),
         })
     }
-
-    pub fn add_component(mut self, sine: Sine<S>) -> Self {
-        self.components.push(sine);
-        self
-    }
-
-    pub fn add_components_from_iter(mut self, iter: impl IntoIterator<Item = Sine<S>>) -> Self {
-        self.components.extend(iter);
-        self
-    }
 }
 
 impl<S: SamplingMode> Deref for Fourier<S> {
