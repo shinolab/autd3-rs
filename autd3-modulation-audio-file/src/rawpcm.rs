@@ -85,7 +85,7 @@ mod tests {
 
         let geometry = create_geometry(1);
         let m = RawPCM::new(&path, sample_rate).with_sampling_config(config);
-        assert_eq!(expect, m.calc(&geometry).map(|f| f(&geometry[0])));
+        assert_eq!(expect, m.calc(&geometry));
 
         Ok(())
     }
