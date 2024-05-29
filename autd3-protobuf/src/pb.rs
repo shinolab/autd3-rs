@@ -1572,10 +1572,31 @@ pub struct SwapSegmentGainStm {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SwapSegment {
+    #[prost(oneof = "swap_segment::Inner", tags = "1, 2, 3, 4")]
+    pub inner: ::core::option::Option<swap_segment::Inner>,
+}
+/// Nested message and enum types in `SwapSegment`.
+pub mod swap_segment {
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Inner {
+        #[prost(message, tag = "1")]
+        Gain(super::SwapSegmentGain),
+        #[prost(message, tag = "2")]
+        Modulation(super::SwapSegmentModulation),
+        #[prost(message, tag = "3")]
+        FocusStm(super::SwapSegmentFocusStm),
+        #[prost(message, tag = "4")]
+        GainStm(super::SwapSegmentGainStm),
+    }
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DatagramLightweight {
     #[prost(
         oneof = "datagram_lightweight::Datagram",
-        tags = "1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 13, 14, 15"
+        tags = "1, 2, 3, 4, 5, 6, 8, 10, 11, 12"
     )]
     pub datagram: ::core::option::Option<datagram_lightweight::Datagram>,
 }
@@ -1603,13 +1624,7 @@ pub mod datagram_lightweight {
         #[prost(message, tag = "11")]
         GainStm(super::GainStm),
         #[prost(message, tag = "12")]
-        SwapSegmentGain(super::SwapSegmentGain),
-        #[prost(message, tag = "13")]
-        SwapSegmentModulation(super::SwapSegmentModulation),
-        #[prost(message, tag = "14")]
-        SwapSegmentFocusStm(super::SwapSegmentFocusStm),
-        #[prost(message, tag = "15")]
-        SwapSegmentGainStm(super::SwapSegmentGainStm),
+        SwapSegment(super::SwapSegment),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]

@@ -15,8 +15,8 @@ impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::Exa
                 modulation: Some(modulation::Modulation::SineExact(SineExact {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq().hz() as _,
-                    intensity: self.intensity().value() as _,
-                    offset: self.offset().value() as _,
+                    intensity: self.intensity() as _,
+                    offset: self.offset() as _,
                     phase: Some(self.phase().to_msg(None)),
                 })),
                 segment: Segment::S0 as _,
@@ -41,8 +41,8 @@ impl ToMessage
                 modulation: Some(modulation::Modulation::SineExact(SineExact {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq().hz() as _,
-                    intensity: self.intensity().value() as _,
-                    offset: self.offset().value() as _,
+                    intensity: self.intensity() as _,
+                    offset: self.offset() as _,
                     phase: Some(self.phase().to_msg(None)),
                 })),
                 segment: self.segment() as _,

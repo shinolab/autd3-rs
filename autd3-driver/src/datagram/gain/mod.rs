@@ -51,7 +51,13 @@ pub trait Gain {
     }
 }
 
-impl Gain for Box<dyn Gain> {
+impl<'a> Gain for Box<dyn Gain + 'a> {
+    fn calc(&self, geometry: &Geometry) -> GainCalcResult {
+        self.as_ref().calc(geometry)
+    }
+}
+
+impl<'a> Gain for Box<dyn Gain + Send + Sync + 'a> {
     fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         self.as_ref().calc(geometry)
     }

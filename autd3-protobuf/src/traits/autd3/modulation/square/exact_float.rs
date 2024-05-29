@@ -15,8 +15,8 @@ impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::E
                 modulation: Some(modulation::Modulation::SquareExactFloat(SquareExactFloat {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq().hz() as _,
-                    high: self.high().value() as _,
-                    low: self.low().value() as _,
+                    high: self.high() as _,
+                    low: self.low() as _,
                     duty: self.duty() as _,
                 })),
                 segment: Segment::S0 as _,
@@ -41,8 +41,8 @@ impl ToMessage
                 modulation: Some(modulation::Modulation::SquareExactFloat(SquareExactFloat {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq().hz() as _,
-                    high: self.high().value() as _,
-                    low: self.low().value() as _,
+                    high: self.high() as _,
+                    low: self.low() as _,
                     duty: self.duty() as _,
                 })),
                 segment: self.segment() as _,

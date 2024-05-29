@@ -22,7 +22,7 @@ impl<F: Fn(&Device) -> bool> ToMessage for autd3_driver::datagram::ReadsFPGAStat
 }
 
 impl FromMessage<ReadsFpgaState>
-    for autd3_driver::datagram::ReadsFPGAState<Box<dyn Fn(&Device) -> bool + Send + 'static>>
+    for autd3_driver::datagram::ReadsFPGAState<Box<dyn Fn(&Device) -> bool + Send + Sync + 'static>>
 {
     fn from_msg(msg: &ReadsFpgaState) -> Option<Self> {
         let map = msg.value.clone();
