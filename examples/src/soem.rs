@@ -7,8 +7,7 @@ use autd3_link_soem::{Status, SOEM};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let autd = Controller::builder()
-        .add_device(AUTD3::new(Vector3::zeros()))
+    let autd = Controller::builder([AUTD3::new(Vector3::zeros())])
         .open(
             SOEM::builder().with_err_handler(|slave, status| match status {
                 Status::Lost => {
