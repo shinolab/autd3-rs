@@ -37,15 +37,15 @@ impl Geometry {
     }
 
     pub fn num_devices(&self) -> usize {
-        self.devices.len()
+        self.devices().count()
     }
 
     pub fn num_transducers(&self) -> usize {
-        self.devices.iter().map(|dev| dev.num_transducers()).sum()
+        self.devices().map(|dev| dev.num_transducers()).sum()
     }
 
     pub fn center(&self) -> Vector3 {
-        self.devices.iter().map(|d| d.center()).sum::<Vector3>() / self.devices.len() as f64
+        self.devices().map(|d| d.center()).sum::<Vector3>() / self.devices.len() as f64
     }
 
     pub fn devices(&self) -> impl Iterator<Item = &Device> {

@@ -40,7 +40,7 @@ pub fn send<'a>(
     let gen = d.operation_generator(geometry)?;
     let mut op = OperationHandler::generate(gen, geometry);
     loop {
-        if OperationHandler::is_done(&op, geometry) {
+        if OperationHandler::is_done(&op) {
             break;
         }
         OperationHandler::pack(&mut op, geometry, tx, usize::MAX)?;
