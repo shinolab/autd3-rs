@@ -85,7 +85,7 @@ where
                     let intensity = constraint.convert(x.into_intensity(), max_coefficient);
                     Drive::new(phase, intensity)
                 } else {
-                    return Drive::null();
+                    Drive::null()
                 }
             })
         }))
