@@ -197,7 +197,7 @@ mod tests {
         );
 
         let mut op = ModulationOp::new(
-            buf.clone(),
+            Arc::new(buf.clone()),
             SamplingConfig::DivisionRaw(freq_div),
             rep,
             segment,
@@ -270,7 +270,7 @@ mod tests {
         let buf: Vec<u8> = (0..MOD_SIZE).map(|_| rng.gen()).collect();
 
         let mut op = ModulationOp::new(
-            buf.clone(),
+            Arc::new(buf.clone()),
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
             0xFFFFFFFF,
             Segment::S0,

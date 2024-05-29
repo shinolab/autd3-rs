@@ -116,11 +116,11 @@ mod tests {
         let f3 = Sine::new(200. * Hz);
         let f4 = Sine::new(250. * Hz);
 
-        let f0_buf = &f0.calc(&geometry)?(&geometry[0]);
-        let f1_buf = &f1.calc(&geometry)?(&geometry[0]);
-        let f2_buf = &f2.calc(&geometry)?(&geometry[0]);
-        let f3_buf = &f3.calc(&geometry)?(&geometry[0]);
-        let f4_buf = &f4.calc(&geometry)?(&geometry[0]);
+        let f0_buf = &f0.calc(&geometry)?;
+        let f1_buf = &f1.calc(&geometry)?;
+        let f2_buf = &f2.calc(&geometry)?;
+        let f3_buf = &f3.calc(&geometry)?;
+        let f4_buf = &f4.calc(&geometry)?;
 
         let f = (f0 + f1).add_component(f2).add_components_from_iter([f3]) + f4;
 
@@ -136,7 +136,7 @@ mod tests {
         assert_eq!(f[4].freq(), 250. * Hz);
         assert_eq!(f[4].phase(), 0.0 * rad);
 
-        let buf = &f.calc(&geometry)?(&geometry[0]);
+        let buf = &f.calc(&geometry)?;
 
         (0..buf.len()).for_each(|i| {
             assert_eq!(

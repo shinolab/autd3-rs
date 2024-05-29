@@ -67,12 +67,12 @@ impl OperationGenerator for ModulationOperationGenerator {
     type O1 = ModulationOp;
     type O2 = NullOp;
 
-    fn generate(&self, _: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn generate(&self, _: &Device) -> (Self::O1, Self::O2) {
         let d = self.g.clone();
-        Ok((
+        (
             ModulationOp::new(d, self.config, self.rep, self.segment, self.transition_mode),
             NullOp::default(),
-        ))
+        )
     }
 }
 

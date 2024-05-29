@@ -147,7 +147,7 @@ mod tests {
         assert_eq!(u8::MAX / 2, m.offset());
         assert_eq!(Angle::Rad(0.0), m.phase());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
-        assert_eq!(expect, m.calc(&geometry).map(|f| f(&geometry[0])));
+        assert_eq!(expect, m.calc(&geometry));
     }
 
     #[rstest::rstest]
@@ -186,7 +186,7 @@ mod tests {
         assert_eq!(u8::MAX / 2, m.offset());
         assert_eq!(Angle::Rad(0.0), m.phase());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
-        assert_eq!(expect, m.calc(&geometry).map(|f| f(&geometry[0])));
+        assert_eq!(expect, m.calc(&geometry));
     }
 
     #[test]

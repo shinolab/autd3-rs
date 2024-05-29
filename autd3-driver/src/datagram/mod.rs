@@ -89,10 +89,10 @@ where
     type O1 = O1::O1;
     type O2 = O2::O1;
 
-    fn generate(&self, device: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        let (o1, _) = self.o1.generate(device)?;
-        let (o2, _) = self.o2.generate(device)?;
-        Ok((o1, o2))
+    fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
+        let (o1, _) = self.o1.generate(device);
+        let (o2, _) = self.o2.generate(device);
+        (o1, o2)
     }
 }
 

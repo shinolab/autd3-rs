@@ -55,7 +55,7 @@ impl<L: Link> Controller<L> {
         let parallel_threshold = s.parallel_threshold().unwrap_or(self.parallel_threshold);
 
         let gen = s.operation_generator(&self.geometry)?;
-        let mut operations = OperationHandler::generate(gen, &self.geometry)?;
+        let mut operations = OperationHandler::generate(gen, &self.geometry);
         loop {
             OperationHandler::pack(
                 &mut operations,
@@ -246,7 +246,7 @@ mod tests {
 
         autd.geometry.iter().try_for_each(|dev| {
             assert_eq!(
-                Sine::new(150. * Hz).calc(&autd.geometry)?(dev),
+                Sine::new(150. * Hz).calc(&autd.geometry)?,
                 autd.link[dev.idx()].fpga().modulation(Segment::S0)
             );
             let f = Uniform::new(0x80).calc(&autd.geometry)?(dev);

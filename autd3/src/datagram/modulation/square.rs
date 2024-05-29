@@ -145,7 +145,7 @@ mod tests {
         assert_eq!(u8::MAX, m.high());
         assert_eq!(0.5, m.duty());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
-        assert_eq!(expect, m.calc(&geometry).map(|f| f(&geometry[0])));
+        assert_eq!(expect, m.calc(&geometry));
     }
 
     #[rstest::rstest]
@@ -185,7 +185,7 @@ mod tests {
         assert_eq!(0.5, m.duty());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
 
-        assert_eq!(expect, m.calc(&geometry).map(|f| f(&geometry[0])));
+        assert_eq!(expect, m.calc(&geometry));
     }
 
     #[test]
@@ -193,9 +193,7 @@ mod tests {
         let geometry = create_geometry(1);
         let m = Square::new(150. * Hz).with_low(u8::MAX);
         assert_eq!(u8::MAX, m.low());
-        assert!(m.calc(&geometry)?(&geometry[0])
-            .iter()
-            .all(|&x| x == u8::MAX));
+        assert!(m.calc(&geometry)?.iter().all(|&x| x == u8::MAX));
 
         Ok(())
     }
@@ -205,9 +203,7 @@ mod tests {
         let geometry = create_geometry(1);
         let m = Square::new(150. * Hz).with_high(u8::MIN);
         assert_eq!(u8::MIN, m.high());
-        assert!(m.calc(&geometry)?(&geometry[0])
-            .iter()
-            .all(|&x| x == u8::MIN));
+        assert!(m.calc(&geometry)?.iter().all(|&x| x == u8::MIN));
 
         Ok(())
     }
@@ -217,15 +213,11 @@ mod tests {
         let geometry = create_geometry(1);
         let m = Square::new(150. * Hz).with_duty(0.0);
         assert_eq!(m.duty(), 0.0);
-        assert!(m.calc(&geometry)?(&geometry[0])
-            .iter()
-            .all(|&x| x == u8::MIN));
+        assert!(m.calc(&geometry)?.iter().all(|&x| x == u8::MIN));
 
         let m = Square::new(150. * Hz).with_duty(1.0);
         assert_eq!(m.duty(), 1.0);
-        assert!(m.calc(&geometry)?(&geometry[0])
-            .iter()
-            .all(|&x| x == u8::MAX));
+        assert!(m.calc(&geometry)?.iter().all(|&x| x == u8::MAX));
 
         Ok(())
     }

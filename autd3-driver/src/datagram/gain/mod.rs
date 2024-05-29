@@ -68,12 +68,12 @@ impl OperationGenerator for GainOperationGenerator {
     type O1 = GainOp;
     type O2 = NullOp;
 
-    fn generate(&self, device: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
         let d = (self.g)(device);
-        Ok((
+        (
             GainOp::new(self.segment, self.transition, d),
             NullOp::default(),
-        ))
+        )
     }
 }
 

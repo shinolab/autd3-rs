@@ -186,11 +186,11 @@ impl OperationGenerator for SilencerFixedUpdateRateOpGenerator {
     type O1 = SilencerFixedUpdateRateOp;
     type O2 = NullOp;
 
-    fn generate(&self, _: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((
+    fn generate(&self, _: &Device) -> (Self::O1, Self::O2) {
+        (
             Self::O1::new(self.update_rate_intensity, self.update_rate_phase),
             Self::O2::default(),
-        ))
+        )
     }
 }
 
@@ -221,15 +221,15 @@ impl OperationGenerator for SilencerFixedCompletionStepsOpGenerator {
     type O1 = SilencerFixedCompletionStepsOp;
     type O2 = NullOp;
 
-    fn generate(&self, _: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((
+    fn generate(&self, _: &Device) -> (Self::O1, Self::O2) {
+        (
             Self::O1::new(
                 self.update_rate_intensity,
                 self.update_rate_phase,
                 self.strict_mode,
             ),
             Self::O2::default(),
-        ))
+        )
     }
 }
 

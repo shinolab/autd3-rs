@@ -79,7 +79,7 @@ pub trait Operation: Send + Sync {
 pub trait OperationGenerator: Send + Sync {
     type O1: Operation;
     type O2: Operation;
-    fn generate(&self, device: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError>;
+    fn generate(&self, device: &Device) -> (Self::O1, Self::O2);
 }
 
 // GRCOV_EXCL_START
@@ -102,10 +102,7 @@ pub struct OperationHandler {}
 
 impl OperationHandler {
     #[allow(clippy::type_complexity)]
-    pub fn generate<G: OperationGenerator>(
-        gen: G,
-        geometry: &Geometry,
-    ) -> Result<Vec<(G::O1, G::O2)>, AUTDInternalError> {
+    pub fn generate<G: OperationGenerator>(gen: G, geometry: &Geometry) -> Vec<(G::O1, G::O2)> {
         geometry.iter().map(|dev| gen.generate(dev)).collect()
     }
 

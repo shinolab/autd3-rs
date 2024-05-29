@@ -25,12 +25,12 @@ impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H + Send + Sync> Ope
     type O1 = EmulateGPIOInOp;
     type O2 = NullOp;
 
-    fn generate(&self, device: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
+    fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
         let h = (self.f)(device);
-        Ok((
+        (
             Self::O1::new([h(GPIOIn::I0), h(GPIOIn::I1), h(GPIOIn::I2), h(GPIOIn::I3)]),
             Self::O2::default(),
-        ))
+        )
     }
 }
 

@@ -45,8 +45,8 @@ impl<
     type O1 = PhaseFilterOp<P, FT>;
     type O2 = NullOp;
 
-    fn generate(&self, device: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new((self.f)(device)), Self::O2::default()))
+    fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
+        (Self::O1::new((self.f)(device)), Self::O2::default())
     }
 }
 
