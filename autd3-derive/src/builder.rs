@@ -51,6 +51,11 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                     &self.#ident
                 }
             },
+            syn::Type::Path(path) if path.path.is_ident("F") => quote! {
+                pub const fn #ident(&self) -> &F {
+                    &self.#ident
+                }
+            },
             syn::Type::Path(path) => {
                 let re = regex::Regex::new(r"Vec < (?<inner>\w+) >").unwrap();
                 if let Some(caps) = re.captures(&path.path.to_token_stream().to_string()) {

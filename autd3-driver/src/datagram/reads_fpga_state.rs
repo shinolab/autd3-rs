@@ -1,8 +1,8 @@
-use crate::firmware::operation::ReadsFPGAStateOp;
+use crate::{datagram::*, derive::*, firmware::operation::ReadsFPGAStateOp};
 
-use crate::datagram::*;
+#[derive(Builder)]
 pub struct ReadsFPGAState<F: Fn(&Device) -> bool> {
-pub struct ReadsFPGAState<F: Fn(&Device) -> bool + Send + Sync> {
+    #[get]
     f: F,
 }
 
