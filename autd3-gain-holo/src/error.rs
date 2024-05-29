@@ -11,6 +11,8 @@ pub enum HoloError {
     BackendCreationError(String),
     #[error("Invalid operation")]
     InvalidOperation,
+    #[error("Failed to compute SVD")]
+    SVDFailed,
 }
 
 impl From<HoloError> for AUTDInternalError {

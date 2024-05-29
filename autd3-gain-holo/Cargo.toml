@@ -19,6 +19,7 @@ thiserror = { workspace = true }
 criterion = { workspace = true, features = ["html_reports"], optional = true }
 rstest = { workspace = true }
 bitvec = { workspace = true }
+approx = "0.5.1"
 
 [features]
 default = []
