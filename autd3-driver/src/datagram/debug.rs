@@ -5,50 +5,43 @@ use crate::firmware::{
 
 use crate::datagram::*;
 
-pub struct DebugSettings<'a, H: Fn(GPIOOut) -> DebugType<'a>, F: Fn(&Device) -> H + Send + Sync> {
+pub struct DebugSettings<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> {
     f: F,
-    _phantom: std::marker::PhantomData<&'a H>,
 }
 
-impl<'a, H: Fn(GPIOOut) -> DebugType<'a>, F: Fn(&Device) -> H + Send + Sync>
-    DebugSettings<'a, H, F>
-{
+impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> DebugSettings<F> {
     pub const fn new(f: F) -> Self {
-        Self {
-            f,
-            _phantom: std::marker::PhantomData,
-        }
+        Self { f }
     }
 }
 
-pub struct DebugSettingOpGenerator<
-    'a,
-    H: Fn(GPIOOut) -> DebugType<'a> + Send + Sync + 'a,
-    F: Fn(&Device) -> H + Send + Sync + 'a,
-> {
+pub struct DebugSettingOpGenerator<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> {
     f: F,
 }
 
-impl<'a, H: Fn(GPIOOut) -> DebugType<'a> + Send + Sync + 'a, F: Fn(&Device) -> H + Send + Sync>
-    OperationGenerator for DebugSettingOpGenerator<'a, H, F>
+impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> OperationGenerator
+    for DebugSettingOpGenerator<F>
 {
-    type O1 = DebugSettingOp<'a, H>;
+    type O1 = DebugSettingOp;
     type O2 = NullOp;
 
-    fn generate(&self, device: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new((self.f)(device)), Self::O2::default()))
+    fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
+        (
+            Self::O1::new(
+                [GPIOOut::O0, GPIOOut::O1, GPIOOut::O2, GPIOOut::O3]
+                    .map(|gpio| (self.f)(device, gpio).ty()),
+                [GPIOOut::O0, GPIOOut::O1, GPIOOut::O2, GPIOOut::O3]
+                    .map(|gpio| (self.f)(device, gpio).value()),
+            ),
+            Self::O2::default(),
+        )
     }
 }
 
-impl<
-        'a,
-        H: Fn(GPIOOut) -> DebugType<'a> + Send + Sync + 'a,
-        F: Fn(&Device) -> H + Send + Sync + 'a,
-    > Datagram<'a> for DebugSettings<'a, H, F>
-{
-    type O1 = DebugSettingOp<'a, H>;
+impl<'a, F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> Datagram<'a> for DebugSettings<F> {
+    type O1 = DebugSettingOp;
     type O2 = NullOp;
-    type G = DebugSettingOpGenerator<'a, H, F>;
+    type G = DebugSettingOpGenerator<F>;
 
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)

@@ -108,11 +108,11 @@ impl<'a, T: SwapSegmentDatagram + Sync + Send + 'a> OperationGenerator
     type O1 = T::O;
     type O2 = NullOp;
 
-    fn generate(&self, _: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((
+    fn generate(&self, _: &Device) -> (Self::O1, Self::O2) {
+        (
             Self::O1::new(self.segment, self.transition_mode),
             Self::O2::default(),
-        ))
+        )
     }
 }
 

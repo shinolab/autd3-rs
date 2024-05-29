@@ -52,10 +52,7 @@ mod tests {
         let m = Static::default();
         assert_eq!(u8::MAX, m.intensity());
         assert_eq!(SamplingConfig::DISABLE, m.sampling_config());
-        assert_eq!(
-            Ok(vec![u8::MAX, u8::MAX]),
-            m.calc(&geometry).map(|f| f(&geometry[0]))
-        );
+        assert_eq!(Ok(vec![u8::MAX, u8::MAX]), m.calc(&geometry));
     }
 
     #[test]
@@ -64,9 +61,6 @@ mod tests {
         let m = Static::with_intensity(0x1F);
         assert_eq!(0x1F, m.intensity());
         assert_eq!(SamplingConfig::DISABLE, m.sampling_config());
-        assert_eq!(
-            Ok(vec![0x1F, 0x1F]),
-            m.calc(&geometry).map(|f| f(&geometry[0]))
-        );
+        assert_eq!(Ok(vec![0x1F, 0x1F]), m.calc(&geometry));
     }
 }

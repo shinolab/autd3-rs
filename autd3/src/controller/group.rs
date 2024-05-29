@@ -52,7 +52,7 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
         let timeout = d.timeout();
         let operations = {
             let gen = d.operation_generator(&self.cnt.geometry)?;
-            OperationHandler::generate(gen, &self.cnt.geometry)?
+            OperationHandler::generate(gen, &self.cnt.geometry)
                 .into_iter()
                 .map(|(op1, op2)| (Box::new(op1) as Box<_>, Box::new(op2) as Box<_>))
                 .collect()
@@ -233,7 +233,7 @@ mod tests {
         );
 
         assert_eq!(
-            Sine::new(150. * Hz).calc(&autd.geometry)?(&autd.geometry[3]),
+            Sine::new(150. * Hz).calc(&autd.geometry)?,
             autd.link[3].fpga().modulation(Segment::S0)
         );
         assert_eq!(

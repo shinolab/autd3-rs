@@ -39,8 +39,8 @@ struct Clk {
     size: u16,
 }
 
-#[derive(Default)]
 pub struct ConfigureClockOp {
+    ultrasound_freq: Freq<u32>,
     rom: Vec<u64>,
     remains: usize,
 }
@@ -62,79 +62,12 @@ fn calculate_mult_div(frequency: u32) -> Option<(u64, u64, u64)> {
 }
 
 impl ConfigureClockOp {
-    pub fn new(ultrasound_freq: Freq<u32>) -> Result<Self, AUTDInternalError> {
-        let fpga_clk_freq = ultrasound_freq.hz() * ULTRASOUND_PERIOD;
-        if fpga_clk_freq % 2000 != 0 {
-            return Err(AUTDInternalError::InvalidFrequencyError(ultrasound_freq));
-        }
-        let (clkdiv, mult, div) = calculate_mult_div(fpga_clk_freq)
-            .ok_or(AUTDInternalError::InvalidFrequencyError(ultrasound_freq))?;
-
-        let mut rom = vec![0; DRP_ROM_SIZE];
-
-        let clkout0_frac = drp::mmcm_frac_count_calc(div / 8, (div % 8) * 125);
-        let divclk = drp::mmcm_count_calc(clkdiv);
-        let clkfbout_frac = drp::mmcm_frac_count_calc(mult / 8, (mult % 8) * 125);
-        let lock = drp::mmcm_lock_lookup(mult / 8);
-        let digital_filt = drp::mmcm_filter_lookup(mult / 8);
-
-        let clkout_unused = 0x0000400041;
-
-        rom[0] = 0x28_0000_FFFF;
-
-        rom[1] = 0x09_8000_0000 | (clkout0_frac & 0xFFFF0000) >> 16;
-        rom[2] = 0x08_1000_0000 | (clkout0_frac & 0xFFFF);
-
-        rom[3] = 0x0A_1000_0000 | (clkout_unused & 0xFFFF);
-        rom[4] = 0x0B_FC00_0000 | (clkout_unused & 0xFFFF0000) >> 16;
-
-        rom[5] = 0x0C_1000_0000 | (clkout_unused & 0xFFFF);
-        rom[6] = 0x0D_FC00_0000 | (clkout_unused & 0xFFFF0000) >> 16;
-
-        rom[7] = 0x0E_1000_0000 | (clkout_unused & 0xFFFF);
-        rom[8] = 0x0F_FC00_0000 | (clkout_unused & 0xFFFF0000) >> 16;
-
-        rom[9] = 0x10_1000_0000 | (clkout_unused & 0xFFFF);
-        rom[10] = 0x11_FC00_0000 | (clkout_unused & 0xFFFF0000) >> 16;
-
-        rom[11] = 0x06_1000_0000 | (clkout_unused & 0xFFFF);
-        rom[12] = 0x07_C000_0000
-            | (clkout_unused & 0xC0000000) >> 16
-            | (clkout0_frac & 0xF00000000) >> 22
-            | (clkout_unused & 0x3FF0000) >> 16;
-
-        rom[13] = 0x12_1000_0000;
-        rom[14] = 0x13_C000_0000
-            | (clkout_unused & 0xC0000000) >> 16
-            | (clkfbout_frac & 0xF00000000) >> 22
-            | (clkout_unused & 0x3FF0000) >> 16;
-
-        rom[15] = 0x16_C000_0000 | (divclk & 0xC00000) >> 10 | (divclk & 0xFFF);
-
-        rom[16] = 0x14_1000_0000 | (clkfbout_frac & 0xFFFF);
-        rom[17] = 0x15_8000_0000 | (clkfbout_frac & 0xFFFF0000) >> 16;
-
-        rom[18] = 0x18_FC00_0000 | (lock & 0x3FF00000) >> 20;
-        rom[19] = 0x19_8000_0000 | (lock & 0x7C0000000) >> 20 | (lock & 0x3FF);
-        rom[20] = 0x1A_8000_0000 | (lock & 0xF800000000) >> 25 | (lock & 0xFFC00) >> 10;
-
-        rom[21] = 0x4E_66FF_0000
-            | (digital_filt & 0b1000000000) << 6
-            | (digital_filt & 0b0110000000) << 4
-            | (digital_filt & 0b0001000000) << 2;
-
-        rom[22] = 0x4F_666F_0000
-            | (digital_filt & 0b0000100000) << 10
-            | (digital_filt & 0b0000011000) << 8
-            | (digital_filt & 0b0000000110) << 6
-            | (digital_filt & 0b0000000001) << 4;
-
-        rom[31] = 1;
-
-        Ok(Self {
-            rom,
+    pub fn new(ultrasound_freq: Freq<u32>) -> Self {
+        Self {
+            ultrasound_freq,
+            rom: vec![],
             remains: DRP_ROM_SIZE,
-        })
+        }
     }
 }
 
@@ -142,22 +75,100 @@ impl Operation for ConfigureClockOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         let sent = DRP_ROM_SIZE - self.remains;
 
+        if sent == 0 {
+            let fpga_clk_freq = self.ultrasound_freq.hz() * ULTRASOUND_PERIOD;
+            if fpga_clk_freq % 2000 != 0 {
+                return Err(AUTDInternalError::InvalidFrequencyError(
+                    self.ultrasound_freq,
+                ));
+            }
+            let (clkdiv, mult, div) = calculate_mult_div(fpga_clk_freq).ok_or(
+                AUTDInternalError::InvalidFrequencyError(self.ultrasound_freq),
+            )?;
+
+            let mut rom = vec![0; DRP_ROM_SIZE];
+
+            let clkout0_frac = drp::mmcm_frac_count_calc(div / 8, (div % 8) * 125);
+            let divclk = drp::mmcm_count_calc(clkdiv);
+            let clkfbout_frac = drp::mmcm_frac_count_calc(mult / 8, (mult % 8) * 125);
+            let lock = drp::mmcm_lock_lookup(mult / 8);
+            let digital_filt = drp::mmcm_filter_lookup(mult / 8);
+
+            let clkout_unused = 0x0000400041;
+
+            rom[0] = 0x28_0000_FFFF;
+
+            rom[1] = 0x09_8000_0000 | (clkout0_frac & 0xFFFF0000) >> 16;
+            rom[2] = 0x08_1000_0000 | (clkout0_frac & 0xFFFF);
+
+            rom[3] = 0x0A_1000_0000 | (clkout_unused & 0xFFFF);
+            rom[4] = 0x0B_FC00_0000 | (clkout_unused & 0xFFFF0000) >> 16;
+
+            rom[5] = 0x0C_1000_0000 | (clkout_unused & 0xFFFF);
+            rom[6] = 0x0D_FC00_0000 | (clkout_unused & 0xFFFF0000) >> 16;
+
+            rom[7] = 0x0E_1000_0000 | (clkout_unused & 0xFFFF);
+            rom[8] = 0x0F_FC00_0000 | (clkout_unused & 0xFFFF0000) >> 16;
+
+            rom[9] = 0x10_1000_0000 | (clkout_unused & 0xFFFF);
+            rom[10] = 0x11_FC00_0000 | (clkout_unused & 0xFFFF0000) >> 16;
+
+            rom[11] = 0x06_1000_0000 | (clkout_unused & 0xFFFF);
+            rom[12] = 0x07_C000_0000
+                | (clkout_unused & 0xC0000000) >> 16
+                | (clkout0_frac & 0xF00000000) >> 22
+                | (clkout_unused & 0x3FF0000) >> 16;
+
+            rom[13] = 0x12_1000_0000;
+            rom[14] = 0x13_C000_0000
+                | (clkout_unused & 0xC0000000) >> 16
+                | (clkfbout_frac & 0xF00000000) >> 22
+                | (clkout_unused & 0x3FF0000) >> 16;
+
+            rom[15] = 0x16_C000_0000 | (divclk & 0xC00000) >> 10 | (divclk & 0xFFF);
+
+            rom[16] = 0x14_1000_0000 | (clkfbout_frac & 0xFFFF);
+            rom[17] = 0x15_8000_0000 | (clkfbout_frac & 0xFFFF0000) >> 16;
+
+            rom[18] = 0x18_FC00_0000 | (lock & 0x3FF00000) >> 20;
+            rom[19] = 0x19_8000_0000 | (lock & 0x7C0000000) >> 20 | (lock & 0x3FF);
+            rom[20] = 0x1A_8000_0000 | (lock & 0xF800000000) >> 25 | (lock & 0xFFC00) >> 10;
+
+            rom[21] = 0x4E_66FF_0000
+                | (digital_filt & 0b1000000000) << 6
+                | (digital_filt & 0b0110000000) << 4
+                | (digital_filt & 0b0001000000) << 2;
+
+            rom[22] = 0x4F_666F_0000
+                | (digital_filt & 0b0000100000) << 10
+                | (digital_filt & 0b0000011000) << 8
+                | (digital_filt & 0b0000000110) << 6
+                | (digital_filt & 0b0000000001) << 4;
+
+            rom[31] = 1;
+
+            self.rom = rom;
+        }
+
         let offset = std::mem::size_of::<Clk>();
 
-        let size = (DRP_ROM_SIZE - sent).min((tx.len() - offset) / std::mem::size_of::<u64>());
+        let size = self
+            .remains
+            .min((tx.len() - offset) / std::mem::size_of::<u64>());
 
         *cast::<Clk>(tx) = Clk {
             tag: TypeTag::ConfigFPGAClk,
-            flag: ClkControlFlags::NONE,
+            flag: if sent == 0 {
+                ClkControlFlags::BEGIN
+            } else {
+                ClkControlFlags::NONE
+            } | if sent + size == DRP_ROM_SIZE {
+                ClkControlFlags::END
+            } else {
+                ClkControlFlags::NONE
+            },
             size: size as _,
         };
-        if sent == 0 {
-            cast::<Clk>(tx).flag.set(ClkControlFlags::BEGIN, true);
-        }
-
-        if sent + size == DRP_ROM_SIZE {
-            cast::<Clk>(tx).flag.set(ClkControlFlags::END, true);
-        }
 
         (0..size).for_each(|i| {
             *cast::<u64>(&mut tx[offset + i * std::mem::size_of::<u64>()..]) = self.rom[sent + i];
@@ -267,7 +278,7 @@ mod tests {
         let mut device = create_device(0, NUM_TRANS_IN_UNIT);
         device.ultrasound_freq = freq;
 
-        let mut op = ConfigureClockOp::new(freq).unwrap();
+        let mut op = ConfigureClockOp::new(freq);
 
         // First frame
         {
@@ -357,8 +368,10 @@ mod tests {
     #[case::f32(Err(AUTDInternalError::InvalidFrequencyError(125*Hz)), 125*Hz)]
     fn config_clk_validate(#[case] expect: Result<(), AUTDInternalError>, #[case] freq: Freq<u32>) {
         let mut device = create_device(0, NUM_TRANS_IN_UNIT);
+        let mut tx = vec![0x00u8; size_of::<Clk>() + DRP_ROM_SIZE * size_of::<u64>()];
         device.ultrasound_freq = freq;
 
-        assert_eq!(expect, ConfigureClockOp::new(freq).map(|_| ()));
+        let mut op = ConfigureClockOp::new(freq);
+        assert_eq!(expect, op.pack(&device, &mut tx).map(|_| ()));
     }
 }

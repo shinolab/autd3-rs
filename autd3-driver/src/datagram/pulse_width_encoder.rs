@@ -42,8 +42,8 @@ impl<'a, H: Fn(usize) -> u16 + Send + Sync + 'a, F: Fn(&Device) -> H + Send + Sy
     type O1 = PulseWidthEncoderOp<H>;
     type O2 = NullOp;
 
-    fn generate(&self, device: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((Self::O1::new((self.f)(device)), Self::O2::default()))
+    fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
+        (Self::O1::new((self.f)(device)), Self::O2::default())
     }
 }
 

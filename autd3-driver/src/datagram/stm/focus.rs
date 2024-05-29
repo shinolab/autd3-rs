@@ -74,8 +74,8 @@ impl OperationGenerator for FocusSTMOperationGenerator {
     type O1 = FocusSTMOp;
     type O2 = NullOp;
 
-    fn generate(&self, _: &Device) -> Result<(Self::O1, Self::O2), AUTDInternalError> {
-        Ok((
+    fn generate(&self, _: &Device) -> (Self::O1, Self::O2) {
+        (
             Self::O1::new(
                 self.g.clone(),
                 self.config,
@@ -84,7 +84,7 @@ impl OperationGenerator for FocusSTMOperationGenerator {
                 self.transition_mode,
             ),
             Self::O2::default(),
-        ))
+        )
     }
 }
 

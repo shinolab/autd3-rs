@@ -1,6 +1,9 @@
 use crate::derive::*;
 
-use std::cell::{Ref, RefCell};
+use std::{
+    cell::{Ref, RefCell},
+    rc::Rc,
+};
 
 #[derive(Modulation)]
 #[no_modulation_cache]
@@ -8,7 +11,7 @@ use std::cell::{Ref, RefCell};
 #[no_modulation_transform]
 pub struct Cache<M: Modulation> {
     m: M,
-    cache: RefCell<Vec<u8>>,
+    cache: Rc<RefCell<Vec<u8>>>,
     #[no_change]
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
@@ -43,7 +46,7 @@ impl<M: Modulation> Cache<M> {
             config: m.sampling_config(),
             loop_behavior: m.loop_behavior(),
             m,
-            cache: RefCell::default(),
+            cache: Rc::default(),
         }
     }
 
