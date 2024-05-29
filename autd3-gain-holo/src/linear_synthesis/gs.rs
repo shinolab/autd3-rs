@@ -43,7 +43,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> GS<D, B> {
     ) -> GainCalcResult {
         let g = self
             .backend
-            .generate_propagation_matrix(geometry, &self.foci, filter)?;
+            .generate_propagation_matrix(geometry, &self.foci, &filter)?;
 
         let m = self.foci.len();
         let n = self.backend.cols_c(&g)?;
@@ -82,7 +82,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> GS<D, B> {
 
         let q = self.backend.to_host_cv(q)?;
         let max_coefficient = q.camax().abs();
-        generate_result(geometry, q, max_coefficient, self.constraint)
+        generate_result(geometry, q, max_coefficient, self.constraint, filter)
     }
 }
 
@@ -125,7 +125,13 @@ mod tests {
         assert_eq!(
             g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
                 .calc(&geometry)
-                .map(|res| res[&0].iter().filter(|&&d| d != Drive::null()).count()),
+                .map(|res| {
+                    let f = res(&geometry[0]);
+                    geometry[0]
+                        .iter()
+                        .filter(|tr| f(tr) != Drive::null())
+                        .count()
+                }),
             Ok(geometry.num_transducers()),
         );
     }
@@ -152,13 +158,23 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
         assert_eq!(
-            g.calc(&geometry, Option<HashMap<usize, BitVec<usize, Lsb0>>>,::Filter(&filter))
-                .map(|res| res[&0].iter().filter(|&&d| d != Drive::null()).count()),
+            g.calc_with_filter(&geometry, filter.clone()).map(|res| {
+                let f = res(&geometry[0]);
+                geometry[0]
+                    .iter()
+                    .filter(|tr| f(tr) != Drive::null())
+                    .count()
+            }),
             Ok(100),
         );
         assert_eq!(
-            g.calc(&geometry, Option<HashMap<usize, BitVec<usize, Lsb0>>>,::Filter(&filter))
-                .map(|res| res[&1].iter().filter(|&&d| d != Drive::null()).count()),
+            g.calc_with_filter(&geometry, filter).map(|res| {
+                let f = res(&geometry[1]);
+                geometry[1]
+                    .iter()
+                    .filter(|tr| f(tr) != Drive::null())
+                    .count()
+            }),
             Ok(0),
         );
     }
