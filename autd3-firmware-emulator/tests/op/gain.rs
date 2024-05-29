@@ -1,14 +1,7 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    datagram::*,
-    derive::*,
-    firmware::{
-        cpu::{GainSTMMode, TxDatagram},
-        fpga::STMSamplingConfig,
-        operation::{FocusSTMOp, GainSTMOp, GainSwapSegmentOp, SwapSegmentOperation},
-    },
-    geometry::Vector3,
+    datagram::*, defined::ControlPoint, derive::*, firmware::cpu::TxDatagram, geometry::Vector3,
 };
 use autd3_firmware_emulator::CPUEmulator;
 
@@ -22,12 +15,12 @@ pub(crate) struct TestGain {
 }
 
 impl Gain for TestGain {
-    fn calc(
-        &self,
-        _: &Geometry,
-        _: Option<HashMap<usize, BitVec<usize, Lsb0>>>,,
-    ) -> GainCalcResult {
-        Ok(self.buf.clone())
+    fn calc(&self, _: &Geometry) -> GainCalcResult {
+        let buf = self.buf.clone();
+        Ok(Box::new(move |dev| {
+            let buf = buf[&dev.idx()].clone();
+            Box::new(move |tr| buf[tr.idx()])
+        }))
     }
 }
 
@@ -53,9 +46,7 @@ fn send_gain() -> anyhow::Result<()> {
             .collect();
         let g = TestGain { buf: buf.clone() };
 
-        let (mut op, _) = g.operation_with_segment(Segment::S0, true);
-
-        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
 
         assert!(cpu.fpga().is_stm_gain_mode(Segment::S0));
         assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
@@ -85,11 +76,9 @@ fn send_gain() -> anyhow::Result<()> {
                 )
             })
             .collect();
-        let g = TestGain { buf: buf.clone() };
+        let g = TestGain { buf: buf.clone() }.with_segment(Segment::S1, false);
 
-        let (mut op, _) = g.operation_with_segment(Segment::S1, false);
-
-        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
 
         assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
         assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
@@ -108,9 +97,9 @@ fn send_gain() -> anyhow::Result<()> {
     }
 
     {
-        let mut op = GainSwapSegmentOp::new(Segment::S1, TransitionMode::Immediate);
+        let d = SwapSegment::gain(Segment::S1);
 
-        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
     }
@@ -127,15 +116,11 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     // segment 0: FocusSTM
     send(
         &mut cpu,
-        &mut FocusSTMOp::new(
-            (0..2)
-                .map(|_| ControlPoint::new(Vector3::zeros()))
-                .collect(),
-            STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(0xFFFFFFFF)),
-            LoopBehavior::infinite(),
-            Segment::S0,
-            Some(TransitionMode::Immediate),
-        ),
+        FocusSTM::from_sampling_config(
+            SamplingConfig::DivisionRaw(0xFFFFFFFF),
+            (0..2).map(|_| ControlPoint::new(Vector3::zeros())),
+        )
+        .with_segment(Segment::S0, Some(TransitionMode::Immediate)),
         &geometry,
         &mut tx,
     )?;
@@ -143,7 +128,8 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     // segment 1: GainSTM
     send(
         &mut cpu,
-        &mut GainSTMOp::new(
+        GainSTM::from_sampling_config(
+            SamplingConfig::DivisionRaw(0xFFFFFFFF),
             (0..2)
                 .map(|_| {
                     geometry
@@ -151,29 +137,24 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
                         .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
                         .collect()
                 })
-                .map(|buf: HashMap<usize, Vec<Drive>>| TestGain { buf: buf.clone() })
-                .collect(),
-            GainSTMMode::PhaseIntensityFull,
-            STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(0xFFFFFFFF)),
-            LoopBehavior::infinite(),
-            Segment::S1,
-            Some(TransitionMode::Immediate),
-        ),
+                .map(|buf: HashMap<usize, Vec<Drive>>| TestGain { buf: buf.clone() }),
+        )
+        .with_segment(Segment::S1, Some(TransitionMode::Immediate)),
         &geometry,
         &mut tx,
     )?;
 
     {
-        let mut op = GainSwapSegmentOp::new(Segment::S0, TransitionMode::Immediate);
+        let d = SwapSegment::gain(Segment::S0);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
-            send(&mut cpu, &mut op, &geometry, &mut tx)
+            send(&mut cpu, d, &geometry, &mut tx)
         );
 
-        let mut op = GainSwapSegmentOp::new(Segment::S1, TransitionMode::Immediate);
+        let d = SwapSegment::gain(Segment::S1);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
-            send(&mut cpu, &mut op, &geometry, &mut tx)
+            send(&mut cpu, d, &geometry, &mut tx)
         );
     }
 

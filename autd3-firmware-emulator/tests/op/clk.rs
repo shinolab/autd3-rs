@@ -1,11 +1,9 @@
 use autd3_driver::{
+    datagram::ConfigureFPGAClock,
     defined::{Freq, Hz},
-    derive::NullOp,
+    derive::Datagram,
     error::AUTDInternalError,
-    firmware::{
-        cpu::TxDatagram,
-        operation::{ConfigureClockOp, OperationHandler},
-    },
+    firmware::{cpu::TxDatagram, operation::OperationHandler},
 };
 use autd3_firmware_emulator::{cpu::params::CLK_FLAG_END, CPUEmulator};
 
@@ -89,9 +87,9 @@ fn config_clk(
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let mut op = ConfigureClockOp::new();
+    let d = ConfigureFPGAClock::new();
 
-    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     assert_eq!(expect_rom, cpu.fpga().drp_rom());
 
@@ -104,11 +102,10 @@ fn config_clk_incomplete_data() -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let mut op = ConfigureClockOp::new();
-    let mut op_null = NullOp::default();
-
-    OperationHandler::init(&mut op, &mut op_null, &geometry)?;
-    OperationHandler::pack(&mut op, &mut op_null, &geometry, &mut tx)?;
+    let d = ConfigureFPGAClock::new();
+    let gen = d.operation_generator(&geometry)?;
+    let mut op = OperationHandler::generate(gen, &geometry);
+    OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)?;
     tx[0].payload[1] |= CLK_FLAG_END;
     tx[0].payload[2] |= 12;
 

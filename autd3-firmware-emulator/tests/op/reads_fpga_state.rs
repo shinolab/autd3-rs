@@ -1,10 +1,10 @@
 use autd3_driver::{
     datagram::*,
-    derive::{EmitIntensity, LoopBehavior, ModulationOp, SamplingConfig, Segment, TransitionMode},
+    defined::ControlPoint,
+    derive::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
     firmware::{
         cpu::TxDatagram,
-        fpga::{FPGAState, STMSamplingConfig, SAMPLING_FREQ_DIV_MAX},
-        operation::FocusSTMOp,
+        fpga::{FPGAState, SAMPLING_FREQ_DIV_MAX},
     },
     geometry::Vector3,
 };
@@ -24,9 +24,9 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
 
     assert!(!cpu.reads_fpga_state());
 
-    let (mut op, _) = ReadsFPGAState::new(|_| true).operation();
+    let d = ReadsFPGAState::new(|_| true);
 
-    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     assert!(cpu.reads_fpga_state());
     assert_eq!(0, cpu.rx().data());
@@ -52,27 +52,20 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
     assert_eq!(Segment::S0, state.current_mod_segment());
 
     {
-        let mut op = ModulationOp::new(
-            TestModulation {
-                buf: (0..2).map(|_| EmitIntensity::MAX).collect(),
-                config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
-                loop_behavior: LoopBehavior::infinite(),
-            },
-            Segment::S1,
-            Some(TransitionMode::Immediate),
-        );
-        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+        let d = TestModulation {
+            buf: (0..2).map(|_| u8::MAX).collect(),
+            config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+            loop_behavior: LoopBehavior::infinite(),
+        }
+        .with_segment(Segment::S1, Some(TransitionMode::Immediate));
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let mut op = FocusSTMOp::new(
-            (0..2)
-                .map(|_| ControlPoint::new(Vector3::zeros()))
-                .collect(),
-            STMSamplingConfig::SamplingConfig(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX)),
-            LoopBehavior::infinite(),
-            Segment::S1,
-            Some(TransitionMode::Immediate),
-        );
-        assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+        let d = FocusSTM::from_sampling_config(
+            SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+            (0..2).map(|_| ControlPoint::new(Vector3::zeros())),
+        )
+        .with_segment(Segment::S1, Some(TransitionMode::Immediate));
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }
     dbg!("a");
     cpu.update();

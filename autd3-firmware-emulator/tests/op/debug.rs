@@ -23,15 +23,14 @@ fn send_debug_output_idx(
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let (mut op, _) = DebugSettings::new(|_, gpio| match gpio {
+    let d = DebugSettings::new(|_, gpio| match gpio {
         GPIOOut::O0 => debug_types[0].clone(),
         GPIOOut::O1 => debug_types[1].clone(),
         GPIOOut::O2 => debug_types[2].clone(),
         GPIOOut::O3 => debug_types[3].clone(),
-    })
-    .operation();
+    });
 
-    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     assert_eq!(expect_types, cpu.fpga().debug_types());
     assert_eq!(expect_values, cpu.fpga().debug_values());
@@ -45,15 +44,14 @@ fn send_debug_pwm_out() -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let (mut op, _) = DebugSettings::new(|dev, gpio| match gpio {
+    let d = DebugSettings::new(|dev, gpio| match gpio {
         GPIOOut::O0 => DebugType::PwmOut(&dev[0]),
         GPIOOut::O1 => DebugType::PwmOut(&dev[1]),
         GPIOOut::O2 => DebugType::PwmOut(&dev[2]),
         GPIOOut::O3 => DebugType::PwmOut(&dev[3]),
-    })
-    .operation();
+    });
 
-    assert_eq!(Ok(()), send(&mut cpu, &mut op, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     assert_eq!(
         [DBG_PWM_OUT, DBG_PWM_OUT, DBG_PWM_OUT, DBG_PWM_OUT],
