@@ -1,8 +1,8 @@
-use crate::firmware::operation::ForceFanOp;
+use crate::{datagram::*, derive::*, firmware::operation::ForceFanOp};
 
-use crate::datagram::*;
+#[derive(Builder)]
 pub struct ForceFan<F: Fn(&Device) -> bool> {
-pub struct ForceFan<F: Fn(&Device) -> bool + Send + Sync> {
+    #[get]
     f: F,
 }
 
