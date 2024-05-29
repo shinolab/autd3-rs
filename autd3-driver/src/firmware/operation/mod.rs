@@ -103,7 +103,7 @@ pub struct OperationHandler {}
 impl OperationHandler {
     #[allow(clippy::type_complexity)]
     pub fn generate<G: OperationGenerator>(gen: G, geometry: &Geometry) -> Vec<(G::O1, G::O2)> {
-        geometry.iter().map(|dev| gen.generate(dev)).collect()
+        geometry.devices().map(|dev| gen.generate(dev)).collect()
     }
 
     pub fn is_done(operations: &[(impl Operation, impl Operation)], geometry: &Geometry) -> bool {
@@ -121,21 +121,21 @@ impl OperationHandler {
         if geometry.num_devices() > parallel_threshold {
             geometry
                 .iter()
-                .zip(operations.iter_mut())
                 .zip(tx.iter_mut())
-                .filter(|((dev, _), _)| dev.enable)
+                .filter(|(dev, _)| dev.enable)
+                .zip(operations.iter_mut())
                 .par_bridge()
-                .try_for_each(|((dev, op), tx)| {
+                .try_for_each(|((dev, tx), op)| {
                     let (op1, op2) = op;
                     Self::pack_op2(op1, op2, dev, tx)
                 })
         } else {
             geometry
                 .iter()
-                .zip(operations.iter_mut())
                 .zip(tx.iter_mut())
-                .filter(|((dev, _), _)| dev.enable)
-                .try_for_each(|((dev, op), tx)| {
+                .filter(|(dev, _)| dev.enable)
+                .zip(operations.iter_mut())
+                .try_for_each(|((dev, tx), op)| {
                     let (op1, op2) = op;
                     Self::pack_op2(op1, op2, dev, tx)
                 })
