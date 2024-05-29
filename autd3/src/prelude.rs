@@ -26,5 +26,5 @@ pub use autd3_driver::{
             Segment, TransitionMode,
         },
     },
-    geometry::{Geometry, Vector3},
+    geometry::{EulerAngle, Geometry, Quaternion, UnitQuaternion, Vector3},
 };
