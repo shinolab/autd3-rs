@@ -4,8 +4,7 @@ use autd3_protobuf::lightweight::LightweightClient;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let mut client = LightweightClient::builder()
-        .add_device(AUTD3::new(Vector3::zeros()))
+    let mut client = LightweightClient::builder([AUTD3::new(Vector3::zeros())])
         .open("127.0.0.1:8080".parse()?)
         .await?;
 

@@ -33,45 +33,49 @@ pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     let target_amp = 2.5e3 * autd.geometry.num_devices() as f64 * Pa;
     match s.trim().parse::<usize>() {
         Ok(0) => {
-            let g = SDP::new(backend)
-                .add_focus(center + p, target_amp)
-                .add_focus(center - p, target_amp);
+            let g = SDP::new(
+                backend,
+                [(center + p, target_amp), (center - p, target_amp)],
+            );
             autd.send((m, g)).await?
         }
         Ok(1) => {
-            let g = GS::new(backend)
-                .add_focus(center + p, target_amp)
-                .add_focus(center - p, target_amp);
+            let g = GS::new(
+                backend,
+                [(center + p, target_amp), (center - p, target_amp)],
+            );
             autd.send((m, g)).await?
         }
         Ok(2) => {
-            let g = GSPAT::new(backend)
-                .add_focus(center + p, target_amp)
-                .add_focus(center - p, target_amp);
+            let g = GSPAT::new(
+                backend,
+                [(center + p, target_amp), (center - p, target_amp)],
+            );
             autd.send((m, g)).await?
         }
         Ok(3) => {
-            let g = LSS::new(backend)
-                .add_focus(center + p, target_amp)
-                .add_focus(center - p, target_amp);
+            let g = LSS::new(
+                backend,
+                [(center + p, target_amp), (center - p, target_amp)],
+            );
             autd.send((m, g)).await?
         }
         Ok(4) => {
-            let g = LM::new(backend)
-                .add_focus(center + p, target_amp)
-                .add_focus(center - p, target_amp);
+            let g = LM::new(
+                backend,
+                [(center + p, target_amp), (center - p, target_amp)],
+            );
             autd.send((m, g)).await?
         }
         Ok(5) => {
-            let g = Greedy::default()
-                .add_focus(center + p, target_amp)
-                .add_focus(center - p, target_amp);
+            let g = Greedy::<Sphere>::new([(center + p, target_amp), (center - p, target_amp)]);
             autd.send((m, g)).await?
         }
         _ => {
-            let g = GSPAT::new(backend)
-                .add_focus(center + p, target_amp)
-                .add_focus(center - p, target_amp);
+            let g = GSPAT::new(
+                backend,
+                [(center + p, target_amp), (center - p, target_amp)],
+            );
             autd.send((m, g)).await?
         }
     };
