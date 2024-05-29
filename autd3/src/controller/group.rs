@@ -58,7 +58,7 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
                 .devices()
                 .filter(|dev| {
                     if let Some(kk) = (self.f)(dev) {
-                        &kk == &k
+                        kk == k
                     } else {
                         false
                     }
