@@ -11,7 +11,9 @@ use bitvec::{order::Lsb0, vec::BitVec};
 #[derive(Gain, Builder)]
 #[no_const]
 pub struct LM<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
+    #[get]
     foci: Vec<Vector3>,
+    #[get]
     amps: Vec<Amplitude>,
     #[getset]
     eps_1: f64,
@@ -21,7 +23,7 @@ pub struct LM<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
     tau: f64,
     #[getset]
     k_max: usize,
-    #[set]
+    #[getset]
     initial: Vec<f64>,
     #[getset]
     constraint: EmissionConstraint,
@@ -44,10 +46,6 @@ impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
             constraint: EmissionConstraint::DontCare,
             _phantom: std::marker::PhantomData,
         }
-    }
-
-    pub fn initial(&self) -> &[f64] {
-        &self.initial
     }
 }
 

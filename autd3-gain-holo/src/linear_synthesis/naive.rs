@@ -10,7 +10,9 @@ use bitvec::{order::Lsb0, vec::BitVec};
 
 #[derive(Gain, Builder)]
 pub struct Naive<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
+    #[get]
     foci: Vec<Vector3>,
+    #[get]
     amps: Vec<Amplitude>,
     #[getset]
     constraint: EmissionConstraint,
