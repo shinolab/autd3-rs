@@ -9,7 +9,7 @@ impl ToMessage for autd3_gain_holo::Amplitude {
     #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
-            value: self.as_pascal() as _,
+            value: self.pascal() as _,
         }
     }
 }
@@ -33,6 +33,6 @@ mod tests {
         let v = rng.gen::<f64>() * Pa;
         let msg = v.to_msg(None);
         let v2 = autd3_gain_holo::Amplitude::from_msg(&msg).unwrap();
-        assert_approx_eq::assert_approx_eq!(v.as_pascal(), v2.as_pascal());
+        assert_approx_eq::assert_approx_eq!(v.pascal(), v2.pascal());
     }
 }

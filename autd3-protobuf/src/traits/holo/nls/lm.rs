@@ -156,7 +156,7 @@ mod tests {
                     .iter()
                     .zip(holo2.amps().iter())
                     .for_each(|(f1, f2)| {
-                        assert_approx_eq::assert_approx_eq!(f1.as_pascal(), f2.as_pascal());
+                        assert_approx_eq::assert_approx_eq!(f1.pascal(), f2.pascal());
                     });
             }
             _ => panic!("unexpected datagram type"),

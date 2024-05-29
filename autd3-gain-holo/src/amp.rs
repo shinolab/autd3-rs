@@ -13,11 +13,11 @@ pub struct Amplitude {
 }
 
 impl Amplitude {
-    pub const fn as_pascal(&self) -> f64 {
+    pub const fn pascal(&self) -> f64 {
         self.value
     }
 
-    pub fn as_spl(&self) -> f64 {
+    pub fn spl(&self) -> f64 {
         20.0 * f64::log10(self.value / ABSOLUTE_THRESHOLD_OF_HEARING)
     }
 }
@@ -86,33 +86,33 @@ mod tests {
     fn test_db() {
         let amp = 121.5 * dB;
 
-        assert_approx_eq::assert_approx_eq!(amp.as_spl(), 121.5, 1e-3);
-        assert_approx_eq::assert_approx_eq!(amp.as_pascal(), 23.77, 1e-3);
+        assert_approx_eq::assert_approx_eq!(amp.spl(), 121.5, 1e-3);
+        assert_approx_eq::assert_approx_eq!(amp.pascal(), 23.77, 1e-3);
     }
 
     #[test]
     fn test_pascal() {
         let amp = 23.77 * Pa;
 
-        assert_approx_eq::assert_approx_eq!(amp.as_pascal(), 23.77, 1e-3);
-        assert_approx_eq::assert_approx_eq!(amp.as_spl(), 121.5, 1e-3);
+        assert_approx_eq::assert_approx_eq!(amp.pascal(), 23.77, 1e-3);
+        assert_approx_eq::assert_approx_eq!(amp.spl(), 121.5, 1e-3);
 
-        assert_approx_eq::assert_approx_eq!((2. * amp).as_pascal(), 2. * 23.77, 1e-3);
-        assert_approx_eq::assert_approx_eq!((amp * 2.).as_pascal(), 2. * 23.77, 1e-3);
+        assert_approx_eq::assert_approx_eq!((2. * amp).pascal(), 2. * 23.77, 1e-3);
+        assert_approx_eq::assert_approx_eq!((amp * 2.).pascal(), 2. * 23.77, 1e-3);
 
-        assert_approx_eq::assert_approx_eq!((amp / 2.).as_pascal(), 23.77 / 2., 1e-3);
+        assert_approx_eq::assert_approx_eq!((amp / 2.).pascal(), 23.77 / 2., 1e-3);
     }
 
     #[test]
     fn test_kilo_pascal() {
         let amp = 23.77e-3 * kPa;
 
-        assert_approx_eq::assert_approx_eq!(amp.as_pascal(), 23.77, 1e-3);
-        assert_approx_eq::assert_approx_eq!(amp.as_spl(), 121.5, 1e-3);
+        assert_approx_eq::assert_approx_eq!(amp.pascal(), 23.77, 1e-3);
+        assert_approx_eq::assert_approx_eq!(amp.spl(), 121.5, 1e-3);
 
-        assert_approx_eq::assert_approx_eq!((2. * amp).as_pascal(), 2. * 23.77, 1e-3);
-        assert_approx_eq::assert_approx_eq!((amp * 2.).as_pascal(), 2. * 23.77, 1e-3);
+        assert_approx_eq::assert_approx_eq!((2. * amp).pascal(), 2. * 23.77, 1e-3);
+        assert_approx_eq::assert_approx_eq!((amp * 2.).pascal(), 2. * 23.77, 1e-3);
 
-        assert_approx_eq::assert_approx_eq!((amp / 2.).as_pascal(), 23.77 / 2., 1e-3);
+        assert_approx_eq::assert_approx_eq!((amp / 2.).pascal(), 23.77 / 2., 1e-3);
     }
 }
