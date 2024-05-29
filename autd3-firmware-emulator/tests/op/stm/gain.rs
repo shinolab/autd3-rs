@@ -122,7 +122,7 @@ fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
     }
 
     {
-        let d = SwapSegment::gain_stm(Segment::S1, TransitionMode::SyncIdx);
+        let d = SwapSegment::GainSTM(Segment::S1, TransitionMode::SyncIdx);
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -260,7 +260,7 @@ fn change_gain_stm_segment() -> anyhow::Result<()> {
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
 
-    let d = SwapSegment::gain_stm(Segment::S1, TransitionMode::Immediate);
+    let d = SwapSegment::GainSTM(Segment::S1, TransitionMode::Immediate);
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
@@ -323,7 +323,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
         )?;
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = SwapSegment::gain_stm(Segment::S1, TransitionMode::Immediate);
+        let d = SwapSegment::GainSTM(Segment::S1, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSilencerSettings),
             send(&mut cpu, d, &geometry, &mut tx)
@@ -368,13 +368,13 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
     }
 
     {
-        let d = SwapSegment::gain_stm(Segment::S0, TransitionMode::Immediate);
+        let d = SwapSegment::GainSTM(Segment::S0, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, d, &geometry, &mut tx)
         );
 
-        let d = SwapSegment::gain_stm(Segment::S1, TransitionMode::Immediate);
+        let d = SwapSegment::GainSTM(Segment::S1, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, d, &geometry, &mut tx)
@@ -432,7 +432,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
         .with_segment(Segment::S1, None);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = SwapSegment::gain_stm(Segment::S1, TransitionMode::SyncIdx);
+        let d = SwapSegment::GainSTM(Segment::S1, TransitionMode::SyncIdx);
         assert_eq!(
             Err(AUTDInternalError::InvalidTransitionMode),
             send(&mut cpu, d, &geometry, &mut tx)
