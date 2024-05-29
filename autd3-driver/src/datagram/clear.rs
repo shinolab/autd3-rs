@@ -22,7 +22,7 @@ impl OperationGenerator for ClearOpGenerator {
     }
 }
 
-impl<'a> Datagram<'a> for Clear {
+impl Datagram for Clear {
     type O1 = ClearOp;
     type O2 = NullOp;
     type G = ClearOpGenerator;

@@ -11,7 +11,6 @@ use crate::{
 use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vector3};
 
 #[derive(Gain, Builder)]
-#[no_const]
 pub struct SDP<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
     #[get]
     foci: Vec<Vector3>,

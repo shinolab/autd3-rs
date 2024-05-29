@@ -9,7 +9,6 @@ use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vec
 use bitvec::{order::Lsb0, vec::BitVec};
 
 #[derive(Gain, Builder)]
-#[no_const]
 pub struct GS<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
     #[get]
     foci: Vec<Vector3>,

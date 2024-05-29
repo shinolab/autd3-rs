@@ -55,7 +55,7 @@ impl<
         P: Into<Phase>,
         FT: Fn(&Transducer) -> P + Send + Sync + 'a,
         F: Fn(&Device) -> FT + Send + Sync + 'a,
-    > Datagram<'a> for PhaseFilter<'a, P, FT, F>
+    > Datagram for PhaseFilter<'a, P, FT, F>
 {
     type O1 = PhaseFilterOp<P, FT>;
     type O2 = NullOp;

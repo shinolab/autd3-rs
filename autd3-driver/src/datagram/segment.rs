@@ -29,7 +29,7 @@ impl OperationGenerator for SwapSegmentOpGenerator {
     }
 }
 
-impl<'a> Datagram<'a> for SwapSegment {
+impl Datagram for SwapSegment {
     type O1 = SwapSegmentOp;
     type O2 = NullOp;
     type G = SwapSegmentOpGenerator;

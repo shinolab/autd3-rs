@@ -1,18 +1,18 @@
 use crate::firmware::operation::ForceFanOp;
 
 use crate::datagram::*;
-
+pub struct ForceFan<F: Fn(&Device) -> bool> {
 pub struct ForceFan<F: Fn(&Device) -> bool + Send + Sync> {
     f: F,
 }
 
-impl<F: Fn(&Device) -> bool + Send + Sync> ForceFan<F> {
+impl<F: Fn(&Device) -> bool> ForceFan<F> {
     pub const fn new(f: F) -> Self {
         Self { f }
     }
 }
 
-pub struct ForceFanOpGenerator<F: Fn(&Device) -> bool + Send + Sync> {
+pub struct ForceFanOpGenerator<F: Fn(&Device) -> bool> {
     f: F,
 }
 
@@ -25,7 +25,7 @@ impl<F: Fn(&Device) -> bool + Send + Sync> OperationGenerator for ForceFanOpGene
     }
 }
 
-impl<'a, F: Fn(&Device) -> bool + Send + Sync + 'a> Datagram<'a> for ForceFan<F> {
+impl<'a, F: Fn(&Device) -> bool + Send + Sync + 'a> Datagram for ForceFan<F> {
     type O1 = ForceFanOp;
     type O2 = NullOp;
     type G = ForceFanOpGenerator<F>;

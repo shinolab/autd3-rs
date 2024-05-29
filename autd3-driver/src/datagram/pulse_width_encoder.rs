@@ -47,8 +47,8 @@ impl<'a, H: Fn(usize) -> u16 + Send + Sync + 'a, F: Fn(&Device) -> H + Send + Sy
     }
 }
 
-impl<'a, H: Fn(usize) -> u16 + Send + Sync + 'a, F: Fn(&Device) -> H + Send + Sync + 'a>
-    Datagram<'a> for PulseWidthEncoder<H, F>
+impl<'a, H: Fn(usize) -> u16 + Send + Sync + 'a, F: Fn(&Device) -> H + Send + Sync + 'a> Datagram
+    for PulseWidthEncoder<H, F>
 {
     type O1 = PulseWidthEncoderOp<H>;
     type O2 = NullOp;

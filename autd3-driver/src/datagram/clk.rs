@@ -22,7 +22,7 @@ impl OperationGenerator for ConfigureClockOpGenerator {
     }
 }
 
-impl<'a> Datagram<'a> for ConfigureFPGAClock {
+impl Datagram for ConfigureFPGAClock {
     type O1 = ConfigureClockOp;
     type O2 = NullOp;
     type G = ConfigureClockOpGenerator;

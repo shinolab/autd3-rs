@@ -88,7 +88,7 @@ impl OperationGenerator for FocusSTMOperationGenerator {
     }
 }
 
-impl<'a> DatagramST<'a> for FocusSTM {
+impl DatagramST for FocusSTM {
     type O1 = FocusSTMOp;
     type O2 = NullOp;
     type G = FocusSTMOperationGenerator;

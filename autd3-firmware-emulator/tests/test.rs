@@ -31,9 +31,9 @@ pub fn create_geometry_with_freq(n: usize, ultrasound_freq: Freq<u32>) -> Geomet
     )
 }
 
-pub fn send<'a>(
+pub fn send(
     cpu: &mut CPUEmulator,
-    d: impl Datagram<'a>,
+    d: impl Datagram,
     geometry: &Geometry,
     tx: &mut TxDatagram,
 ) -> Result<(), AUTDInternalError> {

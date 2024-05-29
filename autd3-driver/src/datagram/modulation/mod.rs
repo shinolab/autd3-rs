@@ -76,7 +76,7 @@ impl OperationGenerator for ModulationOperationGenerator {
     }
 }
 
-impl<'a> DatagramST<'a> for Box<dyn Modulation> {
+impl DatagramST for Box<dyn Modulation> {
     type O1 = ModulationOp;
     type O2 = NullOp;
     type G = ModulationOperationGenerator;

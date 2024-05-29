@@ -4,13 +4,13 @@ use crate::derive::{AUTDInternalError, Geometry};
 
 use super::Datagram;
 
-pub struct DatagramWithTimeout<'a, D: Datagram<'a>> {
+pub struct DatagramWithTimeout<'a, D: Datagram> {
     datagram: D,
     timeout: Duration,
     _phantom: std::marker::PhantomData<&'a D>,
 }
 
-impl<'a, D: Datagram<'a>> Datagram<'a> for DatagramWithTimeout<'a, D> {
+impl<'a, D: Datagram> Datagram for DatagramWithTimeout<'a, D> {
     type O1 = D::O1;
     type O2 = D::O2;
     type G = D::G;
@@ -28,11 +28,11 @@ impl<'a, D: Datagram<'a>> Datagram<'a> for DatagramWithTimeout<'a, D> {
     }
 }
 
-pub trait IntoDatagramWithTimeout<'a, D: Datagram<'a>> {
+pub trait IntoDatagramWithTimeout<'a, D: Datagram> {
     fn with_timeout(self, timeout: Duration) -> DatagramWithTimeout<'a, D>;
 }
 
-impl<'a, D: Datagram<'a>> IntoDatagramWithTimeout<'a, D> for D {
+impl<'a, D: Datagram> IntoDatagramWithTimeout<'a, D> for D {
     fn with_timeout(self, timeout: Duration) -> DatagramWithTimeout<'a, D> {
         DatagramWithTimeout {
             datagram: self,

@@ -114,7 +114,7 @@ mod tests {
     }
 
     impl Modulation for TestCacheModulation {
-        fn calc<'a>(&'a self, _: &'a Geometry) -> ModulationCalcResult {
+        fn calc(&self, _: &Geometry) -> ModulationCalcResult {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
             Ok(vec![0x00, 0x00])
         }
