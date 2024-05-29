@@ -6,8 +6,7 @@ use autd3_driver::{
 
 #[tokio::test]
 async fn audit_test() -> anyhow::Result<()> {
-    let mut autd = Controller::builder()
-        .add_device(AUTD3::new(Vector3::zeros()))
+    let mut autd = Controller::builder([AUTD3::new(Vector3::zeros())])
         .open(Audit::builder().with_timeout(std::time::Duration::from_millis(100)))
         .await?;
     assert_eq!(std::time::Duration::from_millis(100), autd.link.timeout());

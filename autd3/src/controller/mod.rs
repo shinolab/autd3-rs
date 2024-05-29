@@ -12,7 +12,7 @@ use autd3_driver::{
         operation::OperationHandler,
         version::FirmwareVersion,
     },
-    geometry::{Device, Geometry},
+    geometry::{Device, Geometry, IntoDevice},
     link::{send_receive, Link},
 };
 
@@ -34,8 +34,8 @@ pub struct Controller<L: Link> {
 }
 
 impl Controller<Nop> {
-    pub const fn builder() -> ControllerBuilder {
-        ControllerBuilder::new()
+    pub fn builder<D: IntoDevice, F: IntoIterator<Item = D>>(iter: F) -> ControllerBuilder {
+        ControllerBuilder::new(iter)
     }
 }
 
@@ -223,12 +223,11 @@ mod tests {
 
     // GRCOV_EXCL_START
     pub async fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit>> {
-        Ok((0..dev_num)
-            .fold(Controller::builder(), |acc, _i| {
-                acc.add_device(AUTD3::new(Vector3::zeros()))
-            })
-            .open(Audit::builder())
-            .await?)
+        Ok(
+            Controller::builder((0..dev_num).map(|_| AUTD3::new(Vector3::zeros())))
+                .open(Audit::builder())
+                .await?,
+        )
     }
     // GRCOV_EXCL_STOP
 
@@ -270,8 +269,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_clk() -> anyhow::Result<()> {
-        let mut autd = Controller::builder()
-            .add_device(AUTD3::new(Vector3::zeros()))
+        let mut autd = Controller::builder([AUTD3::new(Vector3::zeros())])
             .with_ultrasound_freq(41 * kHz)
             .open(Audit::builder())
             .await?;

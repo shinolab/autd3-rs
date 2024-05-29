@@ -18,16 +18,15 @@ pub struct ControllerBuilder {
 }
 
 impl ControllerBuilder {
-    pub(crate) const fn new() -> ControllerBuilder {
+    pub(crate) fn new<D: IntoDevice, F: IntoIterator<Item = D>>(iter: F) -> ControllerBuilder {
         Self {
-            devices: vec![],
+            devices: iter
+                .into_iter()
+                .enumerate()
+                .map(|(i, d)| d.into_device(i))
+                .collect(),
             ultrasound_freq: FREQ_40K,
         }
-    }
-
-    pub fn add_device(mut self, dev: impl IntoDevice) -> Self {
-        self.devices.push(dev.into_device(self.devices.len()));
-        self
     }
 
     pub async fn open<B: LinkBuilder>(
