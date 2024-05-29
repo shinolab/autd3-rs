@@ -209,6 +209,10 @@ impl<'a> Datagram<'a> for Silencer<FixedUpdateRate> {
             update_rate_phase: self.internal.update_rate_phase,
         })
     }
+
+    fn parallel_threshold(&self) -> Option<usize> {
+        Some(usize::MAX)
+    }
 }
 
 pub struct SilencerFixedCompletionStepsOpGenerator {
@@ -248,5 +252,9 @@ impl<'a> Datagram<'a> for Silencer<FixedCompletionSteps> {
             update_rate_phase: self.internal.steps_phase,
             strict_mode: self.internal.strict_mode,
         })
+    }
+
+    fn parallel_threshold(&self) -> Option<usize> {
+        Some(usize::MAX)
     }
 }

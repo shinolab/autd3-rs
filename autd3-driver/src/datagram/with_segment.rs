@@ -44,6 +44,10 @@ impl<'a, D: DatagramS<'a>> Datagram<'a> for DatagramWithSegment<'a, D> {
     fn timeout(&self) -> Option<Duration> {
         self.datagram.timeout()
     }
+
+    fn parallel_threshold(&self) -> Option<usize> {
+        self.datagram.parallel_threshold()
+    }
 }
 
 pub trait DatagramS<'a> {
@@ -59,6 +63,10 @@ pub trait DatagramS<'a> {
     ) -> Result<Self::G, AUTDInternalError>;
 
     fn timeout(&self) -> Option<Duration> {
+        None
+    }
+
+    fn parallel_threshold(&self) -> Option<usize> {
         None
     }
 }

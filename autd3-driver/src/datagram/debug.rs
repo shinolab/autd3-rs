@@ -50,4 +50,8 @@ impl<'a, F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> Datagram<'a> for De
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(DebugSettingOpGenerator { f: self.f })
     }
+
+    fn parallel_threshold(&self) -> Option<usize> {
+        Some(usize::MAX)
+    }
 }
