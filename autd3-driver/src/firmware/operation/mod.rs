@@ -106,10 +106,8 @@ impl OperationHandler {
         geometry.devices().map(|dev| gen.generate(dev)).collect()
     }
 
-    pub fn is_done(operations: &[(impl Operation, impl Operation)], geometry: &Geometry) -> bool {
-        geometry
-            .devices()
-            .all(|dev| operations[dev.idx()].0.is_done() && operations[dev.idx()].1.is_done())
+    pub fn is_done(operations: &[(impl Operation, impl Operation)]) -> bool {
+        operations.iter().all(|op| op.0.is_done() && op.1.is_done())
     }
 
     pub fn pack(
@@ -256,31 +254,31 @@ pub mod tests {
             },
         )];
 
-        assert!(!OperationHandler::is_done(&op, &geometry));
+        assert!(!OperationHandler::is_done(&op));
 
         let mut tx = TxDatagram::new(1);
 
         assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, 0).is_ok());
         assert_eq!(op[0].0.num_frames, 2);
         assert_eq!(op[0].1.num_frames, 2);
-        assert!(!OperationHandler::is_done(&op, &geometry));
+        assert!(!OperationHandler::is_done(&op));
 
         op[0].0.pack_size = EC_OUTPUT_FRAME_SIZE - size_of::<Header>() - op[0].1.required_size;
         assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, 0).is_ok());
         assert_eq!(op[0].0.num_frames, 1);
         assert_eq!(op[0].1.num_frames, 1);
-        assert!(!OperationHandler::is_done(&op, &geometry));
+        assert!(!OperationHandler::is_done(&op));
 
         op[0].0.pack_size = EC_OUTPUT_FRAME_SIZE - size_of::<Header>() - op[0].1.required_size + 1;
         assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, 0).is_ok());
         assert_eq!(op[0].0.num_frames, 0);
         assert_eq!(op[0].1.num_frames, 1);
-        assert!(!OperationHandler::is_done(&op, &geometry));
+        assert!(!OperationHandler::is_done(&op));
 
         assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, 0).is_ok());
         assert_eq!(op[0].0.num_frames, 0);
         assert_eq!(op[0].1.num_frames, 0);
-        assert!(OperationHandler::is_done(&op, &geometry));
+        assert!(OperationHandler::is_done(&op));
     }
 
     #[test]
@@ -311,14 +309,14 @@ pub mod tests {
 
         assert!(!op[0].0.is_done());
         assert!(op[0].1.is_done());
-        assert!(!OperationHandler::is_done(&op, &geometry));
+        assert!(!OperationHandler::is_done(&op));
 
         let mut tx = TxDatagram::new(1);
 
         assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, 0).is_ok());
         assert!(op[0].0.is_done());
         assert!(op[0].1.is_done());
-        assert!(OperationHandler::is_done(&op, &geometry));
+        assert!(OperationHandler::is_done(&op));
     }
 
     #[test]
@@ -349,14 +347,14 @@ pub mod tests {
 
         assert!(op[0].0.is_done());
         assert!(!op[0].1.is_done());
-        assert!(!OperationHandler::is_done(&op, &geometry));
+        assert!(!OperationHandler::is_done(&op));
 
         let mut tx = TxDatagram::new(1);
 
         assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, 0).is_ok());
         assert!(op[0].0.is_done());
         assert!(op[0].1.is_done());
-        assert!(OperationHandler::is_done(&op, &geometry));
+        assert!(OperationHandler::is_done(&op));
     }
 
     #[test]
@@ -445,7 +443,7 @@ pub mod tests {
             },
         )];
 
-        assert!(OperationHandler::is_done(&op, &geometry));
+        assert!(OperationHandler::is_done(&op));
 
         let mut tx = TxDatagram::new(1);
 

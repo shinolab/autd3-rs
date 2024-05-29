@@ -8,14 +8,14 @@ use std::{
 use autd3_driver::{
     datagram::Datagram,
     error::AUTDInternalError,
-    firmware::operation::{Operation, OperationHandler},
+    firmware::operation::{Operation, OperationGenerator, OperationHandler},
     geometry::{Device, Geometry},
 };
 
 use super::Controller;
 use super::Link;
 
-type OpMap<K> = HashMap<K, Vec<(Box<dyn Operation>, Box<dyn Operation>)>>;
+type OpMap<K> = HashMap<K, (Option<usize>, Vec<(Box<dyn Operation>, Box<dyn Operation>)>)>;
 
 #[allow(clippy::type_complexity)]
 pub struct GroupGuard<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>> {
@@ -50,14 +50,24 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
         D::O2: 'static,
     {
         let timeout = d.timeout();
+        let parallel_threshold = d.parallel_threshold();
         let operations = {
             let gen = d.operation_generator(&self.cnt.geometry)?;
-            OperationHandler::generate(gen, &self.cnt.geometry)
-                .into_iter()
+            self.cnt
+                .geometry
+                .devices()
+                .filter(|dev| {
+                    if let Some(kk) = (self.f)(dev) {
+                        &kk == &k
+                    } else {
+                        false
+                    }
+                })
+                .map(|dev| gen.generate(dev))
                 .map(|(op1, op2)| (Box::new(op1) as Box<_>, Box::new(op2) as Box<_>))
                 .collect()
         };
-        Ok(self.set_boxed_op(k, operations, timeout))
+        Ok(self.set_boxed_op(k, operations, timeout, parallel_threshold))
     }
 
     #[doc(hidden)]
@@ -66,12 +76,13 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
         k: K,
         op: Vec<(Box<dyn Operation>, Box<dyn Operation>)>,
         timeout: Option<Duration>,
+        parallel_threshold: Option<usize>,
     ) -> Self {
         self.timeout = match (self.timeout, timeout) {
             (Some(t1), Some(t2)) => Some(t1.max(t2)),
             (a, b) => a.or(b),
         };
-        self.op.insert(k, op);
+        self.op.insert(k, (parallel_threshold, op));
         self
     }
 
@@ -123,18 +134,22 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
             };
 
         loop {
-            self.op.iter_mut().try_for_each(|(k, op)| {
-                set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
-                if OperationHandler::is_done(op, &self.cnt.geometry) {
-                    return Ok(());
-                }
-                OperationHandler::pack(
-                    op,
-                    &self.cnt.geometry,
-                    &mut self.cnt.tx_buf,
-                    self.cnt.parallel_threshold,
-                )
-            })?;
+            self.op
+                .iter_mut()
+                .try_for_each(|(k, (parallel_threshold, op))| {
+                    let parallel_threshold =
+                        parallel_threshold.unwrap_or(self.cnt.parallel_threshold);
+                    set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
+                    if OperationHandler::is_done(op) {
+                        return Ok(());
+                    }
+                    OperationHandler::pack(
+                        op,
+                        &self.cnt.geometry,
+                        &mut self.cnt.tx_buf,
+                        parallel_threshold,
+                    )
+                })?;
 
             let start = tokio::time::Instant::now();
             autd3_driver::link::send_receive(
@@ -145,9 +160,9 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
             )
             .await?;
 
-            if self.op.iter_mut().all(|(k, op)| {
+            if self.op.iter_mut().all(|(k, (_, op))| {
                 set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
-                OperationHandler::is_done(op, &self.cnt.geometry)
+                OperationHandler::is_done(op)
             }) {
                 break;
             }
