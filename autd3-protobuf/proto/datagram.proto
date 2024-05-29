@@ -79,3 +79,12 @@ message SwapSegmentGainSTM {
     TransitionMode transition_mode = 2;
     uint64 transition_value = 3;
 }
+
+message SwapSegment {
+  oneof inner {
+    SwapSegmentGain gain = 1;
+    SwapSegmentModulation modulation = 2;
+    SwapSegmentFocusSTM focus_stm = 3;
+    SwapSegmentGainSTM gain_stm = 4;
+  }
+}

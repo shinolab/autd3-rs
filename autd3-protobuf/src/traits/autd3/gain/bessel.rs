@@ -3,50 +3,6 @@ use crate::{
     traits::{FromMessage, ToMessage},
 };
 
-#[allow(deprecated)]
-impl ToMessage for autd3::gain::Bessel {
-    type Message = DatagramLightweight;
-
-    #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
-        Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
-                gain: Some(gain::Gain::Bessel(Bessel {
-                    intensity: Some(self.intensity().to_msg(None)),
-                    pos: Some(self.pos().to_msg(None)),
-                    dir: Some(self.dir().to_msg(None)),
-                    theta: self.theta() as _,
-                    phase_offset: Some(self.phase_offset().to_msg(None)),
-                })),
-                segment: Segment::S0 as _,
-                transition: true,
-            })),
-        }
-    }
-}
-
-#[allow(deprecated)]
-impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Bessel> {
-    type Message = DatagramLightweight;
-
-    #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
-        Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
-                gain: Some(gain::Gain::Bessel(Bessel {
-                    intensity: Some(self.intensity().to_msg(None)),
-                    pos: Some(self.pos().to_msg(None)),
-                    dir: Some(self.dir().to_msg(None)),
-                    theta: self.theta() as _,
-                    phase_offset: Some(self.phase_offset().to_msg(None)),
-                })),
-                segment: self.segment() as _,
-                transition: self.transition(),
-            })),
-        }
-    }
-}
-
 impl ToMessage for autd3::gain::Bessel {
     type Message = DatagramLightweight;
 
@@ -111,6 +67,7 @@ impl FromMessage<Bessel> for autd3::gain::Bessel {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use autd3::derive::rad;
     use autd3_driver::{firmware::fpga::EmitIntensity, geometry::Vector3};
     use rand::Rng;
 
@@ -121,7 +78,7 @@ mod tests {
         let g = autd3::gain::Bessel::new(
             Vector3::new(rng.gen(), rng.gen(), rng.gen()),
             Vector3::new(rng.gen(), rng.gen(), rng.gen()),
-            rng.gen(),
+            rng.gen::<f64>() * rad,
         )
         .with_intensity(EmitIntensity::new(rng.gen()));
         let msg = g.to_msg(None);
@@ -138,7 +95,7 @@ mod tests {
                 assert_approx_eq::assert_approx_eq!(g.dir().x, g2.dir().x);
                 assert_approx_eq::assert_approx_eq!(g.dir().y, g2.dir().y);
                 assert_approx_eq::assert_approx_eq!(g.dir().z, g2.dir().z);
-                assert_approx_eq::assert_approx_eq!(g.theta(), g2.theta());
+                assert_approx_eq::assert_approx_eq!(g.theta().radian(), g2.theta().radian());
                 assert_eq!(g.intensity(), g2.intensity());
             }
             _ => panic!("unexpected datagram type"),

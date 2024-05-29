@@ -372,26 +372,22 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
             }
         }
         if let Some(geometry) = autd3_driver::geometry::Geometry::from_msg(&req.into_inner()) {
-            *self.autd.write().await = match geometry
-                .iter()
-                .fold(autd3::Controller::builder(), |acc, d| {
-                    acc.add_device(
-                        autd3::prelude::AUTD3::new(*d[0].position())
-                            .with_rotation(*d[0].rotation()),
-                    )
-                })
+            *self.autd.write().await =
+                match autd3::Controller::builder(geometry.iter().map(|d| {
+                    autd3::prelude::AUTD3::new(*d[0].position()).with_rotation(*d.rotation())
+                }))
                 .open((self.link)())
                 .await
-            {
-                Ok(autd) => Some(autd),
-                Err(e) => {
-                    return Ok(Response::new(SendResponseLightweight {
-                        success: false,
-                        err: true,
-                        msg: format!("{}", e),
-                    }))
-                }
-            };
+                {
+                    Ok(autd) => Some(autd),
+                    Err(e) => {
+                        return Ok(Response::new(SendResponseLightweight {
+                            success: false,
+                            err: true,
+                            msg: format!("{}", e),
+                        }))
+                    }
+                };
             Ok(Response::new(SendResponseLightweight {
                 success: true,
                 err: false,
@@ -516,44 +512,14 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     )
                     .await
                 }
-                Some(datagram_lightweight::Datagram::SwapSegmentGain(ref msg)) => {
-                    autd
-                        .send(
-                            autd3_driver::datagram::SwapSegment::<
-                                autd3_driver::datagram::segment::Gain,
-                            >::from_msg(msg)
+                Some(datagram_lightweight::Datagram::SwapSegment(ref msg)) => {
+                    autd.send(
+                        autd3_driver::datagram::SwapSegment::from_msg(msg)
                             .ok_or(AUTDProtoBufError::DataParseError)?,
-                        )
-                        .await
-                }
-                Some(datagram_lightweight::Datagram::SwapSegmentModulation(ref msg)) => {
-                    autd.send(
-                        autd3_driver::datagram::SwapSegment::<
-                            autd3_driver::datagram::segment::Modulation,
-                        >::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?,
                     )
                     .await
                 }
-                Some(datagram_lightweight::Datagram::SwapSegmentGainStm(ref msg)) => {
-                    autd.send(
-                        autd3_driver::datagram::SwapSegment::<
-                            autd3_driver::datagram::segment::GainSTM,
-                        >::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?,
-                    )
-                    .await
-                }
-                Some(datagram_lightweight::Datagram::SwapSegmentFocusStm(ref msg)) => {
-                    autd.send(
-                        autd3_driver::datagram::SwapSegment::<
-                            autd3_driver::datagram::segment::FocusSTM,
-                        >::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?,
-                    )
-                    .await
-                }
-                None => return Err(Status::invalid_argument("No datagram")),
+                _ => return Err(Status::invalid_argument("No datagram")),
             } {
                 Ok(_) => Ok(Response::new(SendResponseLightweight {
                     success: true,

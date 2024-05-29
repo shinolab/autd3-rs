@@ -20,10 +20,7 @@ message DatagramLightweight {
     ReadsFPGAState reads_fpga_state = 8;
     FocusSTM focus_stm = 10;
     GainSTM gain_stm = 11;
-    SwapSegmentGain swap_segment_gain = 12;
-    SwapSegmentModulation swap_segment_modulation = 13;
-    SwapSegmentFocusSTM swap_segment_focus_stm = 14;
-    SwapSegmentGainSTM swap_segment_gain_stm = 15;
+    SwapSegment swap_segment = 12;
   }
 }
 
