@@ -181,7 +181,7 @@ mod tests {
         let path = dir.path().join("tmp.wav");
         create_wav(&path, spec, data)?;
         let m = Wav::new(&path);
-        assert_eq!(Ok(expect), m.calc(&geometry).map(|f| f(&geometry[0])));
+        assert_eq!(Ok(expect), m.calc(&geometry));
 
         Ok(())
     }
