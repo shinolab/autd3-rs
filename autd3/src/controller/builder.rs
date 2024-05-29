@@ -15,6 +15,8 @@ pub struct ControllerBuilder {
     devices: Vec<Device>,
     #[getset]
     ultrasound_freq: Freq<u32>,
+    #[getset]
+    parallel_threshold: usize,
 }
 
 impl ControllerBuilder {
@@ -26,6 +28,7 @@ impl ControllerBuilder {
                 .map(|(i, d)| d.into_device(i))
                 .collect(),
             ultrasound_freq: FREQ_40K,
+            parallel_threshold: 4,
         }
     }
 
@@ -47,7 +50,7 @@ impl ControllerBuilder {
             tx_buf: TxDatagram::new(geometry.num_devices()),
             rx_buf: vec![RxMessage::new(0, 0); geometry.num_devices()],
             geometry,
-            parallel_threshold: 4,
+            parallel_threshold: self.parallel_threshold,
         };
         if self.ultrasound_freq != FREQ_40K {
             cnt.send(ConfigureFPGAClock::new().with_timeout(timeout))
