@@ -13,7 +13,9 @@ use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vec
 #[derive(Gain, Builder)]
 #[no_const]
 pub struct SDP<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
+    #[get]
     foci: Vec<Vector3>,
+    #[get]
     amps: Vec<Amplitude>,
     #[getset]
     alpha: f64,
