@@ -1,8 +1,11 @@
+use std::{collections::HashMap, sync::Arc};
+
 use autd3_driver::{
     derive::{rad, GainCalcResult, Phase},
     firmware::fpga::Drive,
     geometry::Geometry,
 };
+use bitvec::{order::Lsb0, vec::BitVec};
 use nalgebra::ComplexField;
 
 use crate::EmissionConstraint;
@@ -143,27 +146,68 @@ pub(crate) fn generate_result<T>(
     >,
     max_coefficient: f64,
     constraint: EmissionConstraint,
+    filter: Option<HashMap<usize, BitVec<usize, Lsb0>>>,
 ) -> GainCalcResult
 where
     T: IntoDrive + Copy + Send + Sync + 'static,
 {
-    let num_transducers = geometry
-        .iter()
-        .scan(0, |state, dev| {
-            let r = *state;
-            *state += dev.num_transducers();
-            Some(r)
-        })
-        .collect::<Vec<_>>();
     let x = std::sync::Arc::new(std::sync::RwLock::new(q));
-    Ok(Box::new(move |dev| {
-        let x = x.clone();
-        let base_idx = num_transducers[dev.idx()];
-        Box::new(move |tr| {
-            let x = x.read().unwrap()[base_idx + tr.idx()];
-            let phase = x.into_phase();
-            let intensity = constraint.convert(x.into_intensity(), max_coefficient);
-            Drive::new(phase, intensity)
-        })
-    }))
+    if let Some(filter) = filter {
+        let transducer_map = geometry
+            .iter()
+            .scan(0usize, |state, dev| {
+                Some(Arc::new(
+                    filter
+                        .get(&dev.idx())
+                        .map(|filter| {
+                            dev.iter()
+                                .map(|tr| {
+                                    if filter[tr.idx()] {
+                                        let r = *state;
+                                        *state += 1;
+                                        Some(r)
+                                    } else {
+                                        None
+                                    }
+                                })
+                                .collect::<Vec<_>>()
+                        })
+                        .unwrap_or(vec![None; dev.num_transducers()]),
+                ))
+            })
+            .collect::<Vec<_>>();
+        Ok(Box::new(move |dev| {
+            let x = x.clone();
+            let map = transducer_map[dev.idx()].clone();
+            Box::new(move |tr| {
+                if let Some(idx) = map[tr.idx()] {
+                    let x = x.read().unwrap()[idx];
+                    let phase = x.into_phase();
+                    let intensity = constraint.convert(x.into_intensity(), max_coefficient);
+                    Drive::new(phase, intensity)
+                } else {
+                    return Drive::null();
+                }
+            })
+        }))
+    } else {
+        let num_transducers = geometry
+            .iter()
+            .scan(0, |state, dev| {
+                let r = *state;
+                *state += dev.num_transducers();
+                Some(r)
+            })
+            .collect::<Vec<_>>();
+        Ok(Box::new(move |dev| {
+            let x = x.clone();
+            let base_idx = num_transducers[dev.idx()];
+            Box::new(move |tr| {
+                let x = x.read().unwrap()[base_idx + tr.idx()];
+                let phase = x.into_phase();
+                let intensity = constraint.convert(x.into_intensity(), max_coefficient);
+                Drive::new(phase, intensity)
+            })
+        }))
+    }
 }

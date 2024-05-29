@@ -31,7 +31,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         &self,
         geometry: &Geometry,
         foci: &[autd3_driver::geometry::Vector3],
-        filter: Option<HashMap<usize, BitVec<usize, Lsb0>>>,
+        filter: &Option<HashMap<usize, BitVec<usize, Lsb0>>>,
     ) -> Result<Self::MatrixXc, HoloError> {
         if let Some(filter) = filter {
             let iter = geometry

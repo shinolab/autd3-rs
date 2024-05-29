@@ -184,8 +184,13 @@ mod tests {
             .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pa));
 
         assert_eq!(
-            g.calc(&geometry)
-                .map(|res| res[&0].iter().filter(|&&d| d != Drive::null()).count()),
+            g.calc(&geometry).map(|res| {
+                let f = res(&geometry[0]);
+                geometry[0]
+                    .iter()
+                    .filter(|tr| f(tr) != Drive::null())
+                    .count()
+            }),
             Ok(geometry.num_transducers()),
         );
     }
@@ -205,8 +210,13 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
         assert_eq!(
-            g.calc(&geometry, Option<HashMap<usize, BitVec<usize, Lsb0>>>,::Filter(&filter))
-                .map(|res| res[&0].iter().filter(|&&d| d != Drive::null()).count()),
+            g.calc_with_filter(&geometry, filter).map(|res| {
+                let f = res(&geometry[0]);
+                geometry[0]
+                    .iter()
+                    .filter(|tr| f(tr) != Drive::null())
+                    .count()
+            }),
             Ok(100),
         )
     }

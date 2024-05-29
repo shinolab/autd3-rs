@@ -7,7 +7,6 @@ use crate::{Amplitude, Complex, HoloError, LinAlgBackend, MatrixXc, Pa, Trans, V
 use autd3_driver::{
     acoustics::{directivity::Sphere, propagate},
     autd3_device::AUTD3,
-    datagram::Option<HashMap<usize, BitVec<usize, Lsb0>>>,,
     defined::{FREQ_40K, PI},
     geometry::{Geometry, IntoDevice, Vector3},
 };
@@ -2023,7 +2022,8 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
                     g[(i, j)] = propagate::<Sphere>(
                         transducers[j].1,
                         geometry[transducers[j].0].attenuation,
-                        geometry[transducers[j].0].sound_speed,
+                        geometry[transducers[j].0].wavenumber(),
+                        geometry[transducers[j].0].axial_direction(),
                         &foci[i],
                     )
                 })
@@ -2033,7 +2033,7 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
 
         let g = self
             .backend
-            .generate_propagation_matrix(&geometry, &foci, &Option<HashMap<usize, BitVec<usize, Lsb0>>>,::All)?;
+            .generate_propagation_matrix(&geometry, &foci, &None)?;
         let g = self.backend.to_host_cm(g)?;
         reference.iter().zip(g.iter()).for_each(|(r, g)| {
             assert_approx_eq::assert_approx_eq!(r.re, g.re, EPS);
@@ -2079,7 +2079,8 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
                     g[(i, j)] = propagate::<Sphere>(
                         transducers[j].1,
                         geometry[transducers[j].0].attenuation,
-                        geometry[transducers[j].0].sound_speed,
+                        geometry[transducers[j].0].wavenumber(),
+                        geometry[transducers[j].0].axial_direction(),
                         &foci[i],
                     )
                 })
@@ -2087,11 +2088,9 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
             g
         };
 
-        let g = self.backend.generate_propagation_matrix(
-            &geometry,
-            &foci,
-            &Option<HashMap<usize, BitVec<usize, Lsb0>>>,::Filter(&filter),
-        )?;
+        let g = self
+            .backend
+            .generate_propagation_matrix(&geometry, &foci, &Some(filter))?;
         let g = self.backend.to_host_cm(g)?;
         assert_eq!(g.nrows(), foci.len());
         assert_eq!(
@@ -2120,7 +2119,7 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
 
         let g = self
             .backend
-            .generate_propagation_matrix(&geometry, &foci, &Option<HashMap<usize, BitVec<usize, Lsb0>>>,::All)?;
+            .generate_propagation_matrix(&geometry, &foci, &None)?;
 
         let b = self.backend.gen_back_prop(m, n, &g)?;
         let g = self.backend.to_host_cm(g)?;
