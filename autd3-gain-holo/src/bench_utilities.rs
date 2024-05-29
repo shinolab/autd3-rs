@@ -3,8 +3,9 @@ use criterion::{black_box, AxisScale, BenchmarkId, Criterion, PlotConfiguration}
 use autd3_driver::{
     acoustics::directivity::Sphere,
     autd3_device::AUTD3,
-    datagram::{Gain, Option<HashMap<usize, BitVec<usize, Lsb0>>>,},
     defined::{FREQ_40K, PI},
+    derive::Datagram,
+    firmware::{cpu::TxDatagram, operation::OperationHandler},
     geometry::{Geometry, IntoDevice, Vector3},
 };
 
@@ -21,7 +22,7 @@ pub fn generate_geometry(size: usize) -> Geometry {
     )
 }
 
-pub fn gen_foci(n: usize, num_dev: usize) -> impl Iterator<Item = (Vector3, Amplitude)> {
+pub fn gen_foci(n: usize, num_dev: usize) -> impl ExactSizeIterator<Item = (Vector3, Amplitude)> {
     (0..n).map(move |i| {
         (
             Vector3::new(
@@ -46,11 +47,13 @@ pub fn sdp_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut
                 BenchmarkId::new("with_foci_num", size),
                 &generate_geometry(N),
                 |b, geometry| {
+                    let mut tx = TxDatagram::new(size);
                     b.iter(|| {
-                        SDP::new(backend.clone())
-                            .add_foci_from_iter(gen_foci(size, N))
-                            .calc(geometry)
+                        let gen = SDP::new(backend.clone(), gen_foci(size, N))
+                            .operation_generator(geometry)
                             .unwrap();
+                        let mut operations = OperationHandler::generate(gen, geometry);
+                        OperationHandler::pack(&mut operations, geometry, &mut tx, 0).unwrap();
                     })
                 },
             );
@@ -70,11 +73,13 @@ pub fn naive_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &m
                 BenchmarkId::new("with_foci_num", size),
                 &generate_geometry(N),
                 |b, geometry| {
+                    let mut tx = TxDatagram::new(size);
                     b.iter(|| {
-                        Naive::new(backend.clone())
-                            .add_foci_from_iter(gen_foci(size, N))
-                            .calc(geometry)
+                        let gen = Naive::new(backend.clone(), gen_foci(size, N))
+                            .operation_generator(geometry)
                             .unwrap();
+                        let mut operations = OperationHandler::generate(gen, geometry);
+                        OperationHandler::pack(&mut operations, geometry, &mut tx, 0).unwrap();
                     })
                 },
             );
@@ -94,11 +99,13 @@ pub fn gs_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut 
                 BenchmarkId::new("with_foci_num", size),
                 &generate_geometry(N),
                 |b, geometry| {
+                    let mut tx = TxDatagram::new(size);
                     b.iter(|| {
-                        GS::new(backend.clone())
-                            .add_foci_from_iter(gen_foci(size, N))
-                            .calc(geometry)
+                        let gen = GS::new(backend.clone(), gen_foci(size, N))
+                            .operation_generator(geometry)
                             .unwrap();
+                        let mut operations = OperationHandler::generate(gen, geometry);
+                        OperationHandler::pack(&mut operations, geometry, &mut tx, 0).unwrap();
                     })
                 },
             );
@@ -118,11 +125,13 @@ pub fn gspat_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &m
                 BenchmarkId::new("with_foci_num", size),
                 &generate_geometry(N),
                 |b, geometry| {
+                    let mut tx = TxDatagram::new(size);
                     b.iter(|| {
-                        GSPAT::new(backend.clone())
-                            .add_foci_from_iter(gen_foci(size, N))
-                            .calc(geometry)
+                        let gen = GSPAT::new(backend.clone(), gen_foci(size, N))
+                            .operation_generator(geometry)
                             .unwrap();
+                        let mut operations = OperationHandler::generate(gen, geometry);
+                        OperationHandler::pack(&mut operations, geometry, &mut tx, 0).unwrap();
                     })
                 },
             );
@@ -144,11 +153,13 @@ pub fn lm_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &mut 
                 BenchmarkId::new("with_foci_num", size),
                 &generate_geometry(N),
                 |b, geometry| {
+                    let mut tx = TxDatagram::new(size);
                     b.iter(|| {
-                        LM::new(backend.clone())
-                            .add_foci_from_iter(gen_foci(size, N))
-                            .calc(geometry)
+                        let gen = LM::new(backend.clone(), gen_foci(size, N))
+                            .operation_generator(geometry)
                             .unwrap();
+                        let mut operations = OperationHandler::generate(gen, geometry);
+                        OperationHandler::pack(&mut operations, geometry, &mut tx, 0).unwrap();
                     })
                 },
             );
@@ -167,11 +178,13 @@ pub fn greedy_over_foci<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &
                 BenchmarkId::new("with_foci_num", size),
                 &generate_geometry(N),
                 |b, geometry| {
+                    let mut tx = TxDatagram::new(size);
                     b.iter(|| {
-                        Greedy::default()
-                            .add_foci_from_iter(gen_foci(size, N))
-                            .calc(geometry)
+                        let gen = Greedy::<Sphere>::new(gen_foci(size, N))
+                            .operation_generator(geometry)
                             .unwrap();
+                        let mut operations = OperationHandler::generate(gen, geometry);
+                        OperationHandler::pack(&mut operations, geometry, &mut tx, 0).unwrap();
                     })
                 },
             );
@@ -189,11 +202,13 @@ pub fn sdp_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &
             BenchmarkId::new("with_device_num", size * size),
             &generate_geometry(size * size),
             |b, geometry| {
+                let mut tx = TxDatagram::new(size);
                 b.iter(|| {
-                    SDP::new(backend.clone())
-                        .add_foci_from_iter(gen_foci(N, size * size))
-                        .calc(geometry)
+                    let gen = SDP::new(backend.clone(), gen_foci(N, size * size))
+                        .operation_generator(geometry)
                         .unwrap();
+                    let mut operations = OperationHandler::generate(gen, geometry);
+                    OperationHandler::pack(&mut operations, geometry, &mut tx, 0).unwrap();
                 })
             },
         );
@@ -211,11 +226,13 @@ pub fn naive_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c:
             BenchmarkId::new("with_device_num", size * size),
             &generate_geometry(size * size),
             |b, geometry| {
+                let mut tx = TxDatagram::new(size);
                 b.iter(|| {
-                    Naive::new(backend.clone())
-                        .add_foci_from_iter(gen_foci(N, size * size))
-                        .calc(geometry)
+                    let gen = Naive::new(backend.clone(), gen_foci(N, size * size))
+                        .operation_generator(geometry)
                         .unwrap();
+                    let mut operations = OperationHandler::generate(gen, geometry);
+                    OperationHandler::pack(&mut operations, geometry, &mut tx, 0).unwrap();
                 })
             },
         );
@@ -233,11 +250,13 @@ pub fn gs_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &m
             BenchmarkId::new("with_device_num", size * size),
             &generate_geometry(size * size),
             |b, geometry| {
+                let mut tx = TxDatagram::new(size);
                 b.iter(|| {
-                    GS::new(backend.clone())
-                        .add_foci_from_iter(gen_foci(N, size * size))
-                        .calc(geometry)
+                    let gen = GS::new(backend.clone(), gen_foci(N, size * size))
+                        .operation_generator(geometry)
                         .unwrap();
+                    let mut operations = OperationHandler::generate(gen, geometry);
+                    OperationHandler::pack(&mut operations, geometry, &mut tx, 0).unwrap();
                 })
             },
         );
@@ -255,11 +274,13 @@ pub fn gspat_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c:
             BenchmarkId::new("with_device_num", size * size),
             &generate_geometry(size * size),
             |b, geometry| {
+                let mut tx = TxDatagram::new(size);
                 b.iter(|| {
-                    GSPAT::new(backend.clone())
-                        .add_foci_from_iter(gen_foci(N, size * size))
-                        .calc(geometry)
+                    let gen = GSPAT::new(backend.clone(), gen_foci(N, size * size))
+                        .operation_generator(geometry)
                         .unwrap();
+                    let mut operations = OperationHandler::generate(gen, geometry);
+                    OperationHandler::pack(&mut operations, geometry, &mut tx, 0).unwrap();
                 })
             },
         );
@@ -279,11 +300,13 @@ pub fn lm_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c: &m
             BenchmarkId::new("with_device_num", size * size),
             &generate_geometry(size * size),
             |b, geometry| {
+                let mut tx = TxDatagram::new(size);
                 b.iter(|| {
-                    LM::new(backend.clone())
-                        .add_foci_from_iter(gen_foci(N, size * size))
-                        .calc(geometry)
+                    let gen = LM::new(backend.clone(), gen_foci(N, size * size))
+                        .operation_generator(geometry)
                         .unwrap();
+                    let mut operations = OperationHandler::generate(gen, geometry);
+                    OperationHandler::pack(&mut operations, geometry, &mut tx, 0).unwrap();
                 })
             },
         );
@@ -300,11 +323,13 @@ pub fn greedy_over_devices<B: LinAlgBackend<Sphere> + 'static, const N: usize>(c
             BenchmarkId::new("with_device_num", size * size),
             &generate_geometry(size * size),
             |b, geometry| {
+                let mut tx = TxDatagram::new(size);
                 b.iter(|| {
-                    Greedy::default()
-                        .add_foci_from_iter(gen_foci(N, size * size))
-                        .calc(geometry)
+                    let gen = Greedy::<Sphere>::new(gen_foci(N, size * size))
+                        .operation_generator(geometry)
                         .unwrap();
+                    let mut operations = OperationHandler::generate(gen, geometry);
+                    OperationHandler::pack(&mut operations, geometry, &mut tx, 0).unwrap();
                 })
             },
         );
