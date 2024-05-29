@@ -34,4 +34,8 @@ impl<'a> Datagram<'a> for Synchronize {
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(SynchronizeOpGenerator {})
     }
+
+    fn parallel_threshold(&self) -> Option<usize> {
+        Some(usize::MAX)
+    }
 }

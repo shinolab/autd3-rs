@@ -115,8 +115,15 @@ where
     fn timeout(&self) -> Option<Duration> {
         match (self.0.timeout(), self.1.timeout()) {
             (Some(t1), Some(t2)) => Some(t1.max(t2)),
-            (Some(t1), None) => Some(t1),
-            (None, Some(t2)) => Some(t2),
+            (Some(t), None) | (None, Some(t)) => Some(t),
+            (None, None) => None,
+        }
+    }
+
+    fn parallel_threshold(&self) -> Option<usize> {
+        match (self.0.parallel_threshold(), self.1.parallel_threshold()) {
+            (Some(t1), Some(t2)) => Some(t1.min(t2)),
+            (Some(t), None) | (None, Some(t)) => Some(t),
             (None, None) => None,
         }
     }

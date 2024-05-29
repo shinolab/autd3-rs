@@ -17,6 +17,10 @@ impl<'a, D: Datagram<'a>> Datagram<'a> for DatagramWithParallelThreshold<'a, D> 
         self.datagram.operation_generator(geometry)
     }
 
+    fn timeout(&self) -> Option<std::time::Duration> {
+        self.datagram.timeout()
+    }
+
     fn parallel_threshold(&self) -> Option<usize> {
         Some(self.threshold)
     }

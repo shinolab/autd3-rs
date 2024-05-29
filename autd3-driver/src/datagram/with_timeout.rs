@@ -22,6 +22,10 @@ impl<'a, D: Datagram<'a>> Datagram<'a> for DatagramWithTimeout<'a, D> {
     fn timeout(&self) -> Option<Duration> {
         Some(self.timeout)
     }
+
+    fn parallel_threshold(&self) -> Option<usize> {
+        self.datagram.parallel_threshold()
+    }
 }
 
 pub trait IntoDatagramWithTimeout<'a, D: Datagram<'a>> {

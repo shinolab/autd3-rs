@@ -37,4 +37,8 @@ impl<'a, F: Fn(&Device) -> bool + Send + Sync + 'a> Datagram<'a> for ReadsFPGASt
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(ReadsFPGAStateOpGenerator { f: self.f })
     }
+
+    fn parallel_threshold(&self) -> Option<usize> {
+        Some(usize::MAX)
+    }
 }

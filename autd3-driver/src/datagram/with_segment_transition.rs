@@ -49,6 +49,10 @@ impl<'a, D: DatagramST<'a>> Datagram<'a> for DatagramWithSegmentTransition<'a, D
     fn timeout(&self) -> Option<Duration> {
         self.datagram.timeout()
     }
+
+    fn parallel_threshold(&self) -> Option<usize> {
+        self.datagram.parallel_threshold()
+    }
 }
 
 impl<'a, D: DatagramST<'a>> Datagram<'a> for D {

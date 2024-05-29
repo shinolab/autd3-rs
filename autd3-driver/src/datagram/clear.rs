@@ -34,4 +34,8 @@ impl<'a> Datagram<'a> for Clear {
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(ClearOpGenerator {})
     }
+
+    fn parallel_threshold(&self) -> Option<usize> {
+        Some(usize::MAX)
+    }
 }
