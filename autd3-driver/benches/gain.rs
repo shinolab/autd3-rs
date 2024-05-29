@@ -53,7 +53,7 @@ impl Gain for Focus {
     }
 }
 
-impl<'autd3> Datagram<'autd3> for Focus {
+impl Datagram for Focus {
     type O1 = GainOp;
     type O2 = NullOp;
     type G = GainOperationGenerator;
