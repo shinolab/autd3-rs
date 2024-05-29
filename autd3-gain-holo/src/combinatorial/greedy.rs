@@ -1,12 +1,9 @@
 use std::collections::HashMap;
 
-use crate::{constraint::EmissionConstraint, impl_holo, Amplitude, Complex};
+use crate::{constraint::EmissionConstraint, Amplitude, Complex};
 
 use autd3_driver::{
-    acoustics::{
-        directivity::{Directivity, Sphere},
-        propagate,
-    },
+    acoustics::{directivity::Directivity, propagate},
     defined::PI,
     derive::*,
     geometry::Vector3,
@@ -23,17 +20,17 @@ pub struct Greedy<D: Directivity + 'static> {
     amps: Vec<Amplitude>,
     #[getset]
     phase_div: u8,
+    #[getset]
     constraint: EmissionConstraint,
     _phantom: std::marker::PhantomData<D>,
 }
 
-impl_holo!(D, Greedy<D>);
-
 impl<D: Directivity + 'static> Greedy<D> {
-    pub const fn new() -> Self {
+    pub fn new(iter: impl ExactSizeIterator<Item = (Vector3, Amplitude)>) -> Self {
+        let (foci, amps) = iter.unzip();
         Self {
-            foci: vec![],
-            amps: vec![],
+            foci,
+            amps,
             phase_div: 16,
             constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
             _phantom: std::marker::PhantomData,
@@ -153,35 +150,29 @@ impl<D: Directivity + 'static> Gain for Greedy<D> {
     }
 }
 
-impl Default for Greedy<Sphere> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::{super::super::Pa, *};
-    use autd3_driver::{autd3_device::AUTD3, defined::FREQ_40K, geometry::IntoDevice};
+    use autd3_driver::{
+        acoustics::directivity::Sphere, autd3_device::AUTD3, defined::FREQ_40K,
+        geometry::IntoDevice,
+    };
 
     #[test]
     fn test_greedy_all() {
         let geometry: Geometry =
             Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], FREQ_40K);
 
-        let g = Greedy::default()
-            .with_phase_div(32)
-            .add_focus(Vector3::zeros(), 1. * Pa)
-            .add_foci_from_iter([(Vector3::zeros(), 1. * Pa)]);
+        let g = Greedy::<Sphere>::new(
+            [(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)].into_iter(),
+        )
+        .with_phase_div(32);
 
         assert_eq!(g.phase_div(), 32);
         assert_eq!(
             g.constraint(),
             EmissionConstraint::Uniform(EmitIntensity::MAX)
         );
-        assert!(g
-            .foci()
-            .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pa));
 
         assert_eq!(
             g.calc(&geometry).map(|res| {
@@ -200,10 +191,14 @@ mod tests {
         let geometry: Geometry =
             Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], FREQ_40K);
 
-        let g = Greedy::default()
-            .add_focus(Vector3::new(10., 10., 100.), 5e3 * Pa)
-            .add_foci_from_iter([(Vector3::new(-10., 10., 100.), 5e3 * Pa)])
-            .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)));
+        let g = Greedy::<Sphere>::new(
+            [
+                (Vector3::new(10., 10., 100.), 5e3 * Pa),
+                (Vector3::new(-10., 10., 100.), 5e3 * Pa),
+            ]
+            .into_iter(),
+        )
+        .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)));
 
         let filter = geometry
             .iter()

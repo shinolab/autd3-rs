@@ -1,8 +1,8 @@
 use std::{collections::HashMap, sync::Arc};
 
 use crate::{
-    constraint::EmissionConstraint, helper::generate_result, impl_holo, Amplitude, Complex,
-    HoloError, LinAlgBackend, Trans,
+    constraint::EmissionConstraint, helper::generate_result, Amplitude, Complex, HoloError,
+    LinAlgBackend, Trans,
 };
 
 use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vector3};
@@ -23,18 +23,18 @@ pub struct LM<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
     k_max: usize,
     #[set]
     initial: Vec<f64>,
+    #[getset]
     constraint: EmissionConstraint,
     backend: Arc<B>,
     _phantom: std::marker::PhantomData<D>,
 }
 
-impl_holo!(D, B, LM<D, B>);
-
 impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
-    pub const fn new(backend: Arc<B>) -> Self {
+    pub fn new(backend: Arc<B>, iter: impl ExactSizeIterator<Item = (Vector3, Amplitude)>) -> Self {
+        let (foci, amps) = iter.unzip();
         Self {
-            foci: vec![],
-            amps: vec![],
+            foci,
+            amps,
             eps_1: 1e-8,
             eps_2: 1e-8,
             tau: 1e-3,
@@ -133,7 +133,9 @@ impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
         let bhb = {
             let mut bhb = self.backend.alloc_zeros_cm(n_param, n_param)?;
 
-            let mut amps = self.backend.from_slice_cv(self.amps_as_slice())?;
+            let mut amps = self.backend.from_slice_cv(unsafe {
+                std::slice::from_raw_parts(self.amps.as_ptr() as *const f64, self.amps.len())
+            })?;
 
             let mut p = self.backend.alloc_cm(m, m)?;
             self.backend
@@ -282,14 +284,15 @@ mod tests {
             Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], FREQ_40K);
         let backend = Arc::new(NalgebraBackend::default());
 
-        let g = LM::new(backend)
-            .with_eps_1(1e-3)
-            .with_eps_2(1e-4)
-            .with_tau(1e-2)
-            .with_k_max(2)
-            .with_initial(vec![1.0])
-            .add_focus(Vector3::zeros(), 1. * Pa)
-            .add_foci_from_iter([(Vector3::zeros(), 1. * Pa)]);
+        let g = LM::new(
+            backend,
+            [(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)].into_iter(),
+        )
+        .with_eps_1(1e-3)
+        .with_eps_2(1e-4)
+        .with_tau(1e-2)
+        .with_k_max(2)
+        .with_initial(vec![1.0]);
 
         assert_eq!(g.eps_1(), 1e-3);
         assert_eq!(g.eps_2(), 1e-4);
@@ -297,9 +300,6 @@ mod tests {
         assert_eq!(g.k_max(), 2);
         assert_eq!(g.initial(), &[1.0]);
         assert_eq!(g.constraint(), EmissionConstraint::DontCare);
-        assert!(g
-            .foci()
-            .all(|(&p, &a)| p == Vector3::zeros() && a == 1. * Pa));
 
         assert_eq!(
             g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
@@ -326,10 +326,15 @@ mod tests {
         );
         let backend = Arc::new(NalgebraBackend::default());
 
-        let g = LM::new(backend)
-            .add_focus(Vector3::new(10., 10., 100.), 5e3 * Pa)
-            .add_foci_from_iter([(Vector3::new(-10., 10., 100.), 5e3 * Pa)])
-            .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)));
+        let g = LM::new(
+            backend,
+            [
+                (Vector3::new(10., 10., 100.), 5e3 * Pa),
+                (Vector3::new(-10., 10., 100.), 5e3 * Pa),
+            ]
+            .into_iter(),
+        )
+        .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)));
 
         let filter = geometry
             .iter()
