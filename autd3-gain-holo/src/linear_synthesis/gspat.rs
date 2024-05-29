@@ -22,8 +22,8 @@ pub struct GSPAT<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
 }
 
 impl<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> GSPAT<D, B> {
-    pub fn new(backend: Arc<B>, iter: impl ExactSizeIterator<Item = (Vector3, Amplitude)>) -> Self {
-        let (foci, amps) = iter.unzip();
+    pub fn new(backend: Arc<B>, iter: impl IntoIterator<Item = (Vector3, Amplitude)>) -> Self {
+        let (foci, amps) = iter.into_iter().unzip();
         Self {
             foci,
             amps,
