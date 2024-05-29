@@ -15,12 +15,24 @@ pub struct Fourier<S: SamplingMode> {
 }
 
 impl<S: SamplingMode> Fourier<S> {
-    pub fn new(sine: Sine<S>) -> Self {
-        Self {
-            config: sine.sampling_config(),
-            components: vec![sine],
-            loop_behavior: LoopBehavior::infinite(),
+    pub fn new(componens: impl IntoIterator<Item = Sine<S>>) -> Result<Self, AUTDInternalError> {
+        let components = componens.into_iter().collect::<Vec<_>>();
+        if components.is_empty() {
+            return Err(AUTDInternalError::ModulationError(
+                "Components must not be empty".to_string(),
+            ));
         }
+        let config = components[0].sampling_config();
+        if !components.iter().all(|c| c.sampling_config() == config) {
+            return Err(AUTDInternalError::ModulationError(
+                "All components must have the same sampling configuration".to_string(),
+            ));
+        }
+        Ok(Self {
+            config,
+            components,
+            loop_behavior: LoopBehavior::infinite(),
+        })
     }
 
     pub fn add_component(mut self, sine: Sine<S>) -> Self {
@@ -34,12 +46,6 @@ impl<S: SamplingMode> Fourier<S> {
     }
 }
 
-impl<S: SamplingMode> From<Sine<S>> for Fourier<S> {
-    fn from(sine: Sine<S>) -> Self {
-        Self::new(sine)
-    }
-}
-
 impl<S: SamplingMode> Deref for Fourier<S> {
     type Target = [Sine<S>];
 
@@ -48,34 +54,8 @@ impl<S: SamplingMode> Deref for Fourier<S> {
     }
 }
 
-impl<S: SamplingMode> std::ops::Add<Sine<S>> for Fourier<S> {
-    type Output = Self;
-
-    fn add(self, rhs: Sine<S>) -> Self::Output {
-        self.add_component(rhs)
-    }
-}
-
-impl<S: SamplingMode> std::ops::Add<Sine<S>> for Sine<S> {
-    type Output = Fourier<S>;
-
-    fn add(self, rhs: Sine<S>) -> Self::Output {
-        Fourier::from(self).add_component(rhs)
-    }
-}
-
 impl<S: SamplingMode> Modulation for Fourier<S> {
     fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
-        if !self
-            .components
-            .iter()
-            .all(|c| c.sampling_config() == self.sampling_config())
-        {
-            return Err(AUTDInternalError::ModulationError(
-                "All components must have the same sampling configuration".to_string(),
-            ));
-        }
-
         let buffers = self
             .components
             .iter()
@@ -122,7 +102,7 @@ mod tests {
         let f3_buf = &f3.calc(&geometry)?;
         let f4_buf = &f4.calc(&geometry)?;
 
-        let f = (f0 + f1).add_component(f2).add_components_from_iter([f3]) + f4;
+        let f = Fourier::new([f0, f1, f2, f3, f4])?;
 
         assert_eq!(f.sampling_config(), SamplingConfig::Division(5120));
         assert_eq!(f[0].freq(), 50. * Hz);
@@ -155,16 +135,14 @@ mod tests {
 
     #[test]
     fn mismatch_sampling_config() {
-        let geometry = create_geometry(1);
-
-        let f = Fourier::new(Sine::new(50. * Hz))
-            + Sine::new(50. * Hz).with_sampling_config(SamplingConfig::Freq(1000 * Hz));
-
         assert_eq!(
-            Some(AUTDInternalError::ModulationError(
+            Err(AUTDInternalError::ModulationError(
                 "All components must have the same sampling configuration".to_string()
             )),
-            f.calc(&geometry).err()
+            Fourier::new([
+                Sine::new(50. * Hz),
+                Sine::new(50. * Hz).with_sampling_config(SamplingConfig::Freq(1000 * Hz)),
+            ])
         );
     }
 }
