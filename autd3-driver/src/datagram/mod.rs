@@ -56,9 +56,9 @@ use crate::{
     firmware::operation::{Operation, OperationGenerator},
 };
 
-pub trait Datagram<'a> {
-    type O1: Operation + 'a;
-    type O2: Operation + 'a;
+pub trait Datagram {
+    type O1: Operation;
+    type O2: Operation;
     type G: OperationGenerator<O1 = Self::O1, O2 = Self::O2>;
 
     fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError>;
@@ -96,10 +96,10 @@ where
     }
 }
 
-impl<'a, D1, D2> Datagram<'a> for (D1, D2)
+impl<D1, D2> Datagram for (D1, D2)
 where
-    D1: Datagram<'a, O2 = crate::firmware::operation::NullOp>,
-    D2: Datagram<'a, O2 = crate::firmware::operation::NullOp>,
+    D1: Datagram<O2 = crate::firmware::operation::NullOp>,
+    D2: Datagram<O2 = crate::firmware::operation::NullOp>,
 {
     type O1 = D1::O1;
     type O2 = D2::O1;

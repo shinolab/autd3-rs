@@ -9,26 +9,25 @@ use crate::{
     },
 };
 
-pub struct DatagramWithSegmentTransition<'a, D: DatagramST<'a>> {
+pub struct DatagramWithSegmentTransition<D: DatagramST> {
     datagram: D,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
-    _phantom: std::marker::PhantomData<&'a D>,
 }
 
-impl<'a, D: DatagramST<'a>> DatagramWithSegmentTransition<'a, D> {
+impl<D: DatagramST> DatagramWithSegmentTransition<D> {
     pub const fn segment(&self) -> Segment {
         self.segment
     }
 }
 
-impl<'a, D: DatagramST<'a>> DatagramWithSegmentTransition<'a, D> {
+impl<D: DatagramST> DatagramWithSegmentTransition<D> {
     pub const fn transition_mode(&self) -> Option<TransitionMode> {
         self.transition_mode
     }
 }
 
-impl<'a, D: DatagramST<'a>> std::ops::Deref for DatagramWithSegmentTransition<'a, D> {
+impl<D: DatagramST> std::ops::Deref for DatagramWithSegmentTransition<D> {
     type Target = D;
 
     fn deref(&self) -> &Self::Target {
@@ -36,7 +35,7 @@ impl<'a, D: DatagramST<'a>> std::ops::Deref for DatagramWithSegmentTransition<'a
     }
 }
 
-impl<'a, D: DatagramST<'a>> Datagram<'a> for DatagramWithSegmentTransition<'a, D> {
+impl<D: DatagramST> Datagram for DatagramWithSegmentTransition<D> {
     type O1 = D::O1;
     type O2 = D::O2;
     type G = D::G;
@@ -55,7 +54,7 @@ impl<'a, D: DatagramST<'a>> Datagram<'a> for DatagramWithSegmentTransition<'a, D
     }
 }
 
-impl<'a, D: DatagramST<'a>> Datagram<'a> for D {
+impl<D: DatagramST> Datagram for D {
     type O1 = D::O1;
     type O2 = D::O2;
     type G = D::G;
@@ -77,9 +76,9 @@ impl<'a, D: DatagramST<'a>> Datagram<'a> for D {
     }
 }
 
-pub trait DatagramST<'a> {
-    type O1: Operation + 'a;
-    type O2: Operation + 'a;
+pub trait DatagramST {
+    type O1: Operation;
+    type O2: Operation;
     type G: OperationGenerator<O1 = Self::O1, O2 = Self::O2>;
 
     fn operation_generator_with_segment(
@@ -98,36 +97,34 @@ pub trait DatagramST<'a> {
     }
 }
 
-pub trait IntoDatagramWithSegmentTransition<'a, D: DatagramST<'a>> {
+pub trait IntoDatagramWithSegmentTransition<D: DatagramST> {
     fn with_segment(
         self,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
-    ) -> DatagramWithSegmentTransition<'a, D>;
+    ) -> DatagramWithSegmentTransition<D>;
 }
 
-impl<'a, D: DatagramST<'a>> IntoDatagramWithSegmentTransition<'a, D> for D {
+impl<D: DatagramST> IntoDatagramWithSegmentTransition<D> for D {
     fn with_segment(
         self,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
-    ) -> DatagramWithSegmentTransition<'a, D> {
+    ) -> DatagramWithSegmentTransition<D> {
         DatagramWithSegmentTransition {
             datagram: self,
             segment,
             transition_mode,
-            _phantom: std::marker::PhantomData,
         }
     }
 }
 
-impl<'a, D: DatagramST<'a> + Clone> Clone for DatagramWithSegmentTransition<'a, D> {
+impl<D: DatagramST + Clone> Clone for DatagramWithSegmentTransition<D> {
     fn clone(&self) -> Self {
         Self {
             datagram: self.datagram.clone(),
             segment: self.segment,
             transition_mode: self.transition_mode,
-            _phantom: std::marker::PhantomData,
         }
     }
 }

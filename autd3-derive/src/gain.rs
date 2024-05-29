@@ -46,7 +46,7 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let type_params = generics.type_params();
     let datagram = quote! {
-        impl <'autd3, #(#linetimes,)* #(#type_params,)*> Datagram<'autd3> for #name #ty_generics #where_clause
+        impl <#(#linetimes,)* #(#type_params,)*> Datagram for #name #ty_generics #where_clause
         {
             type O1 = GainOp;
             type O2 = NullOp;
@@ -67,7 +67,7 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let type_params = generics.type_params();
     let datagram_with_segment = quote! {
-        impl <'autd3, #(#linetimes,)* #(#type_params,)*> DatagramS<'autd3> for #name #ty_generics #where_clause
+        impl <#(#linetimes,)* #(#type_params,)*> DatagramS for #name #ty_generics #where_clause
         {
             type O1 = GainOp;
             type O2 = NullOp;

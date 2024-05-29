@@ -6,7 +6,6 @@ use crate::{
 };
 
 #[derive(Builder)]
-#[no_const]
 pub struct GainSTM<G: Gain> {
     gains: Vec<G>,
     #[getset]
@@ -18,7 +17,7 @@ pub struct GainSTM<G: Gain> {
 }
 
 impl<G: Gain> GainSTM<G> {
-    pub fn from_freq<F: IntoIterator<Item = G> + Send + Sync + Clone>(
+    pub fn from_freq<F: IntoIterator<Item = G>>(
         freq: Freq<f64>,
         gains: F,
     ) -> Result<Self, AUTDInternalError> {
@@ -31,7 +30,7 @@ impl<G: Gain> GainSTM<G> {
         })
     }
 
-    pub fn from_freq_nearest<F: IntoIterator<Item = G> + Send + Sync + Clone>(
+    pub fn from_freq_nearest<F: IntoIterator<Item = G>>(
         freq: Freq<f64>,
         gains: F,
     ) -> Result<Self, AUTDInternalError> {
@@ -44,7 +43,7 @@ impl<G: Gain> GainSTM<G> {
         })
     }
 
-    pub fn from_sampling_config<F: IntoIterator<Item = G> + Send + Sync + Clone>(
+    pub fn from_sampling_config<F: IntoIterator<Item = G>>(
         config: SamplingConfig,
         gains: F,
     ) -> Self {
@@ -87,7 +86,7 @@ impl OperationGenerator for GainSTMOperationGenerator {
     }
 }
 
-impl<'a, G: Gain + 'a + 'a> DatagramST<'a> for GainSTM<G> {
+impl<G: Gain> DatagramST for GainSTM<G> {
     type O1 = GainSTMOp;
     type O2 = NullOp;
     type G = GainSTMOperationGenerator;

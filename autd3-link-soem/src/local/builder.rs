@@ -11,7 +11,6 @@ use autd3_driver::{derive::*, link::LinkBuilder};
 use thread_priority::ThreadPriority;
 
 #[derive(Builder)]
-#[no_const]
 pub struct SOEMBuilder {
     #[getset]
     pub(crate) buf_size: usize,

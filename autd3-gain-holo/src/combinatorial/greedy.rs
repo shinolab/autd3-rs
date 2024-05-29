@@ -14,7 +14,6 @@ use nalgebra::ComplexField;
 use rand::seq::SliceRandom;
 
 #[derive(Gain, Builder)]
-#[no_const]
 pub struct Greedy<D: Directivity + 'static> {
     #[get]
     foci: Vec<Vector3>,

@@ -44,7 +44,7 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
         }
     }
 
-    pub fn set<D: Datagram<'a>>(self, k: K, d: D) -> Result<Self, AUTDInternalError>
+    pub fn set<D: Datagram>(self, k: K, d: D) -> Result<Self, AUTDInternalError>
     where
         D::O1: 'static,
         D::O2: 'static,

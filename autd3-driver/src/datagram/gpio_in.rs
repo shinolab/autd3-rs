@@ -34,7 +34,7 @@ impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H + Send + Sync> Ope
     }
 }
 
-impl<'a, H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H + Send + Sync + 'a> Datagram<'a>
+impl<'a, H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H + Send + Sync + 'a> Datagram
     for EmulateGPIOIn<H, F>
 {
     type O1 = EmulateGPIOInOp;

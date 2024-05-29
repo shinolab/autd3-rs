@@ -194,7 +194,7 @@ impl OperationGenerator for SilencerFixedUpdateRateOpGenerator {
     }
 }
 
-impl<'a> Datagram<'a> for Silencer<FixedUpdateRate> {
+impl Datagram for Silencer<FixedUpdateRate> {
     type O1 = SilencerFixedUpdateRateOp;
     type O2 = NullOp;
     type G = SilencerFixedUpdateRateOpGenerator;
@@ -237,7 +237,7 @@ impl OperationGenerator for SilencerFixedCompletionStepsOpGenerator {
     }
 }
 
-impl<'a> Datagram<'a> for Silencer<FixedCompletionSteps> {
+impl Datagram for Silencer<FixedCompletionSteps> {
     type O1 = SilencerFixedCompletionStepsOp;
     type O2 = NullOp;
     type G = SilencerFixedCompletionStepsOpGenerator;

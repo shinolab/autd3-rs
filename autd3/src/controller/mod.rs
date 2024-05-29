@@ -50,7 +50,7 @@ impl<L: Link> Controller<L> {
 }
 
 impl<L: Link> Controller<L> {
-    pub async fn send<'a>(&'a mut self, s: impl Datagram<'a> + 'a) -> Result<(), AUTDError> {
+    pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDError> {
         let timeout = s.timeout();
         let parallel_threshold = s.parallel_threshold().unwrap_or(self.parallel_threshold);
 

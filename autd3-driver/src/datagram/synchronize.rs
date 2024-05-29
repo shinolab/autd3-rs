@@ -22,7 +22,7 @@ impl OperationGenerator for SynchronizeOpGenerator {
     }
 }
 
-impl<'a> Datagram<'a> for Synchronize {
+impl Datagram for Synchronize {
     type O1 = SyncOp;
     type O2 = NullOp;
     type G = SynchronizeOpGenerator;

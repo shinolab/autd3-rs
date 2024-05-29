@@ -1,18 +1,18 @@
 use crate::firmware::operation::ReadsFPGAStateOp;
 
 use crate::datagram::*;
-
+pub struct ReadsFPGAState<F: Fn(&Device) -> bool> {
 pub struct ReadsFPGAState<F: Fn(&Device) -> bool + Send + Sync> {
     f: F,
 }
 
-impl<F: Fn(&Device) -> bool + Send + Sync> ReadsFPGAState<F> {
+impl<F: Fn(&Device) -> bool> ReadsFPGAState<F> {
     pub const fn new(f: F) -> Self {
         Self { f }
     }
 }
 
-pub struct ReadsFPGAStateOpGenerator<F: Fn(&Device) -> bool + Send + Sync> {
+pub struct ReadsFPGAStateOpGenerator<F: Fn(&Device) -> bool> {
     f: F,
 }
 
@@ -25,7 +25,7 @@ impl<F: Fn(&Device) -> bool + Send + Sync> OperationGenerator for ReadsFPGAState
     }
 }
 
-impl<'a, F: Fn(&Device) -> bool + Send + Sync + 'a> Datagram<'a> for ReadsFPGAState<F> {
+impl<'a, F: Fn(&Device) -> bool + Send + Sync + 'a> Datagram for ReadsFPGAState<F> {
     type O1 = ReadsFPGAStateOp;
     type O2 = NullOp;
     type G = ReadsFPGAStateOpGenerator<F>;

@@ -70,7 +70,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     let type_params = generics.type_params();
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let datagram_with_segment_transition = quote! {
-        impl <'autd3, #(#linetimes,)* #(#type_params,)* > DatagramST<'autd3> for #name #ty_generics #where_clause {
+        impl <#(#linetimes,)* #(#type_params,)* > DatagramST for #name #ty_generics #where_clause {
             type O1 = ModulationOp;
             type O2 = NullOp;
             type G =  ModulationOperationGenerator;

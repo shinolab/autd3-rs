@@ -6,14 +6,13 @@ use crate::{
     firmware::{fpga::Segment, operation::Operation},
 };
 
-pub struct DatagramWithSegment<'a, D: DatagramS<'a>> {
+pub struct DatagramWithSegment<D: DatagramS> {
     datagram: D,
     segment: Segment,
     transition: bool,
-    _phantom: std::marker::PhantomData<&'a D>,
 }
 
-impl<'a, D: DatagramS<'a>> DatagramWithSegment<'a, D> {
+impl<D: DatagramS> DatagramWithSegment<D> {
     pub const fn segment(&self) -> Segment {
         self.segment
     }
@@ -23,7 +22,7 @@ impl<'a, D: DatagramS<'a>> DatagramWithSegment<'a, D> {
     }
 }
 
-impl<'a, D: DatagramS<'a>> std::ops::Deref for DatagramWithSegment<'a, D> {
+impl<D: DatagramS> std::ops::Deref for DatagramWithSegment<D> {
     type Target = D;
 
     fn deref(&self) -> &Self::Target {
@@ -31,7 +30,7 @@ impl<'a, D: DatagramS<'a>> std::ops::Deref for DatagramWithSegment<'a, D> {
     }
 }
 
-impl<'a, D: DatagramS<'a>> Datagram<'a> for DatagramWithSegment<'a, D> {
+impl<D: DatagramS> Datagram for DatagramWithSegment<D> {
     type O1 = D::O1;
     type O2 = D::O2;
     type G = D::G;
@@ -50,9 +49,9 @@ impl<'a, D: DatagramS<'a>> Datagram<'a> for DatagramWithSegment<'a, D> {
     }
 }
 
-pub trait DatagramS<'a> {
-    type O1: Operation + 'a;
-    type O2: Operation + 'a;
+pub trait DatagramS {
+    type O1: Operation;
+    type O2: Operation;
     type G: OperationGenerator<O1 = Self::O1, O2 = Self::O2>;
 
     fn operation_generator_with_segment(
@@ -71,28 +70,26 @@ pub trait DatagramS<'a> {
     }
 }
 
-pub trait IntoDatagramWithSegment<'a, D: DatagramS<'a>> {
-    fn with_segment(self, segment: Segment, transition: bool) -> DatagramWithSegment<'a, D>;
+pub trait IntoDatagramWithSegment<D: DatagramS> {
+    fn with_segment(self, segment: Segment, transition: bool) -> DatagramWithSegment<D>;
 }
 
-impl<'a, D: DatagramS<'a>> IntoDatagramWithSegment<'a, D> for D {
-    fn with_segment(self, segment: Segment, transition: bool) -> DatagramWithSegment<'a, D> {
+impl<D: DatagramS> IntoDatagramWithSegment<D> for D {
+    fn with_segment(self, segment: Segment, transition: bool) -> DatagramWithSegment<D> {
         DatagramWithSegment {
             datagram: self,
             segment,
             transition,
-            _phantom: std::marker::PhantomData,
         }
     }
 }
 
-impl<'a, D: DatagramS<'a> + Clone> Clone for DatagramWithSegment<'a, D> {
+impl<D: DatagramS + Clone> Clone for DatagramWithSegment<D> {
     fn clone(&self) -> Self {
         Self {
             datagram: self.datagram.clone(),
             segment: self.segment,
             transition: self.transition,
-            _phantom: std::marker::PhantomData,
         }
     }
 }
