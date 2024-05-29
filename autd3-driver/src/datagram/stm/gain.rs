@@ -56,6 +56,20 @@ impl<G: Gain> GainSTM<G> {
     }
 }
 
+impl<G: Gain> std::ops::Deref for GainSTM<G> {
+    type Target = [G];
+
+    fn deref(&self) -> &Self::Target {
+        &self.gains
+    }
+}
+
+impl<G: Gain> std::ops::DerefMut for GainSTM<G> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.gains
+    }
+}
+
 pub struct GainSTMOperationGenerator {
     #[allow(clippy::type_complexity)]
     g: Vec<Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + Send + Sync>>,

@@ -62,6 +62,20 @@ impl FocusSTM {
     }
 }
 
+impl std::ops::Deref for FocusSTM {
+    type Target = [ControlPoint];
+
+    fn deref(&self) -> &Self::Target {
+        &self.control_points
+    }
+}
+
+impl std::ops::DerefMut for FocusSTM {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.control_points
+    }
+}
+
 pub struct FocusSTMOperationGenerator {
     g: Arc<Vec<ControlPoint>>,
     config: SamplingConfig,
