@@ -320,7 +320,11 @@ pub mod tests {
 
         let expect_x = Vector3::new(0., 1., 0.);
         let expect_y = Vector3::new(-1., 0., 0.);
-        let expect_z = Vector3::new(0., 0., 1.);
+        let expect_z = if cfg!(feature = "left_handed") {
+            Vector3::new(0., 0., -1.)
+        } else {
+            Vector3::new(0., 0., 1.)
+        };
         assert_approx_eq_quat!(rot, device.rotation());
         assert_approx_eq_vec3!(expect_x, device.x_direction());
         assert_approx_eq_vec3!(expect_y, device.y_direction());
@@ -372,7 +376,11 @@ pub mod tests {
         device.rotate(rot);
         let expect_x = Vector3::new(0., 1., 0.);
         let expect_y = Vector3::new(-1., 0., 0.);
-        let expect_z = Vector3::new(0., 0., 1.);
+        let expect_z = if cfg!(feature = "left_handed") {
+            Vector3::new(0., 0., -1.)
+        } else {
+            Vector3::new(0., 0., 1.)
+        };
         assert_approx_eq_quat!(rot, device.rotation());
         assert_approx_eq_vec3!(expect_x, device.x_direction());
         assert_approx_eq_vec3!(expect_y, device.y_direction());
@@ -402,7 +410,11 @@ pub mod tests {
 
         let expect_x = Vector3::new(0., 1., 0.);
         let expect_y = Vector3::new(-1., 0., 0.);
-        let expect_z = Vector3::new(0., 0., 1.);
+        let expect_z = if cfg!(feature = "left_handed") {
+            Vector3::new(0., 0., -1.)
+        } else {
+            Vector3::new(0., 0., 1.)
+        };
         assert_approx_eq_quat!(rot, device.rotation());
         assert_approx_eq_vec3!(expect_x, device.x_direction());
         assert_approx_eq_vec3!(expect_y, device.y_direction());
