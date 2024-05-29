@@ -17,7 +17,7 @@ impl FromMessage<SwapSegmentGain>
     for autd3_driver::datagram::SwapSegment<autd3_driver::datagram::segment::Gain>
 {
     fn from_msg(msg: &SwapSegmentGain) -> Option<Self> {
-        Some(autd3_driver::datagram::SwapSegment::gain(
+        Some(autd3_driver::datagram::SwapSegment::Gain(
             autd3_driver::firmware::fpga::Segment::from(Segment::try_from(msg.segment).ok()?),
         ))
     }
@@ -41,7 +41,7 @@ impl FromMessage<SwapSegmentModulation>
     for autd3_driver::datagram::SwapSegment<autd3_driver::datagram::segment::Modulation>
 {
     fn from_msg(msg: &SwapSegmentModulation) -> Option<Self> {
-        Some(autd3_driver::datagram::SwapSegment::modulation(
+        Some(autd3_driver::datagram::SwapSegment::Modulation(
             autd3_driver::firmware::fpga::Segment::from(Segment::try_from(msg.segment).ok()?),
             to_transition_mode(Some(msg.transition_mode), Some(msg.transition_value)).unwrap(),
         ))
@@ -64,7 +64,7 @@ impl FromMessage<SwapSegmentFocusStm>
     for autd3_driver::datagram::SwapSegment<autd3_driver::datagram::segment::FocusSTM>
 {
     fn from_msg(msg: &SwapSegmentFocusStm) -> Option<Self> {
-        Some(autd3_driver::datagram::SwapSegment::focus_stm(
+        Some(autd3_driver::datagram::SwapSegment::FocusSTM(
             autd3_driver::firmware::fpga::Segment::from(Segment::try_from(msg.segment).ok()?),
             to_transition_mode(Some(msg.transition_mode), Some(msg.transition_value)).unwrap(),
         ))
@@ -87,7 +87,7 @@ impl FromMessage<SwapSegmentGainStm>
     for autd3_driver::datagram::SwapSegment<autd3_driver::datagram::segment::GainSTM>
 {
     fn from_msg(msg: &SwapSegmentGainStm) -> Option<Self> {
-        Some(autd3_driver::datagram::SwapSegment::gain_stm(
+        Some(autd3_driver::datagram::SwapSegment::GainSTM(
             autd3_driver::firmware::fpga::Segment::from(Segment::try_from(msg.segment).ok()?),
             to_transition_mode(Some(msg.transition_mode), Some(msg.transition_value)).unwrap(),
         ))

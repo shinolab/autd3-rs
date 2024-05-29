@@ -97,7 +97,7 @@ fn send_gain() -> anyhow::Result<()> {
     }
 
     {
-        let d = SwapSegment::gain(Segment::S1);
+        let d = SwapSegment::Gain(Segment::S1);
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -145,13 +145,13 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     )?;
 
     {
-        let d = SwapSegment::gain(Segment::S0);
+        let d = SwapSegment::Gain(Segment::S0);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, d, &geometry, &mut tx)
         );
 
-        let d = SwapSegment::gain(Segment::S1);
+        let d = SwapSegment::Gain(Segment::S1);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, d, &geometry, &mut tx)

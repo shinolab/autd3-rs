@@ -101,7 +101,7 @@ fn send_mod() -> anyhow::Result<()> {
     }
 
     {
-        let d = SwapSegment::modulation(Segment::S1, TransitionMode::SyncIdx);
+        let d = SwapSegment::Modulation(Segment::S1, TransitionMode::SyncIdx);
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -197,7 +197,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         )?;
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = SwapSegment::modulation(Segment::S1, TransitionMode::Immediate);
+        let d = SwapSegment::Modulation(Segment::S1, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSilencerSettings),
             send(&mut cpu, d, &geometry, &mut tx)
@@ -251,7 +251,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
         .with_segment(Segment::S1, None);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = SwapSegment::modulation(Segment::S1, TransitionMode::SyncIdx);
+        let d = SwapSegment::Modulation(Segment::S1, TransitionMode::SyncIdx);
         assert_eq!(
             Err(AUTDInternalError::InvalidTransitionMode),
             send(&mut cpu, d, &geometry, &mut tx)

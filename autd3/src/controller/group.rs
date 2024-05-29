@@ -287,7 +287,7 @@ mod tests {
                 .set(0, Null::new())?
                 .set(
                     1,
-                    SwapSegment::focus_stm(Segment::S1, TransitionMode::SyncIdx),
+                    SwapSegment::FocusSTM(Segment::S1, TransitionMode::SyncIdx),
                 )?
                 .send()
                 .await
