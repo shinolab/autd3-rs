@@ -37,13 +37,15 @@ pub fn send(
     geometry: &Geometry,
     tx: &mut TxDatagram,
 ) -> Result<(), AUTDInternalError> {
+    let _timeout = d.timeout();
+    let parallel_threshold = d.parallel_threshold().unwrap_or(4);
     let gen = d.operation_generator(geometry)?;
     let mut op = OperationHandler::generate(gen, geometry);
     loop {
         if OperationHandler::is_done(&op) {
             break;
         }
-        OperationHandler::pack(&mut op, geometry, tx, usize::MAX)?;
+        OperationHandler::pack(&mut op, geometry, tx, parallel_threshold)?;
         cpu.send(tx);
         if (cpu.rx().ack() & ERR_BIT) == ERR_BIT {
             return Err(AUTDInternalError::firmware_err(cpu.rx().ack()));

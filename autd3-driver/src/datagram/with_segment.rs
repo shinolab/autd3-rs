@@ -2,32 +2,20 @@ use std::time::Duration;
 
 use super::{Datagram, OperationGenerator};
 use crate::{
-    derive::{AUTDInternalError, Geometry},
+    derive::*,
     firmware::{fpga::Segment, operation::Operation},
 };
 
+use derive_more::Deref;
+
+#[derive(Builder, Clone, Deref)]
 pub struct DatagramWithSegment<D: DatagramS> {
+    #[deref]
     datagram: D,
+    #[get]
     segment: Segment,
+    #[get]
     transition: bool,
-}
-
-impl<D: DatagramS> DatagramWithSegment<D> {
-    pub const fn segment(&self) -> Segment {
-        self.segment
-    }
-
-    pub const fn transition(&self) -> bool {
-        self.transition
-    }
-}
-
-impl<D: DatagramS> std::ops::Deref for DatagramWithSegment<D> {
-    type Target = D;
-
-    fn deref(&self) -> &Self::Target {
-        &self.datagram
-    }
 }
 
 impl<D: DatagramS> Datagram for DatagramWithSegment<D> {
@@ -80,16 +68,6 @@ impl<D: DatagramS> IntoDatagramWithSegment<D> for D {
             datagram: self,
             segment,
             transition,
-        }
-    }
-}
-
-impl<D: DatagramS + Clone> Clone for DatagramWithSegment<D> {
-    fn clone(&self) -> Self {
-        Self {
-            datagram: self.datagram.clone(),
-            segment: self.segment,
-            transition: self.transition,
         }
     }
 }

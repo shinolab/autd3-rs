@@ -209,14 +209,6 @@ impl Operation for GainSTMOp {
         }
 
         let d = cast::<GainSTMSubseq>(tx);
-        d.flag.set(
-            GainSTMControlFlags::SEND_BIT0,
-            ((send as u8 - 1) & 0x01) != 0,
-        );
-        d.flag.set(
-            GainSTMControlFlags::SEND_BIT1,
-            ((send as u8 - 1) & 0x02) != 0,
-        );
 
         if self.gains.peek().is_none() {
             if self.sent < STM_BUF_SIZE_MIN {
@@ -229,6 +221,15 @@ impl Operation for GainSTMOp {
                 self.transition_mode.is_some(),
             );
         }
+
+        d.flag.set(
+            GainSTMControlFlags::SEND_BIT0,
+            ((send as u8 - 1) & 0x01) != 0,
+        );
+        d.flag.set(
+            GainSTMControlFlags::SEND_BIT1,
+            ((send as u8 - 1) & 0x02) != 0,
+        );
 
         if is_first {
             Ok(size_of::<GainSTMHead>() + device.num_transducers() * size_of::<Drive>())
@@ -703,5 +704,46 @@ mod tests {
                     assert_eq!(d[0] & 0x0F, g.phase().value() >> 4);
                 });
         }
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Err(AUTDInternalError::GainSTMSizeOutOfRange(0)), 0)]
+    #[case(Err(AUTDInternalError::GainSTMSizeOutOfRange(STM_BUF_SIZE_MIN-1)), STM_BUF_SIZE_MIN-1)]
+    #[case(Ok(()), STM_BUF_SIZE_MIN)]
+    #[case(Ok(()), GAIN_STM_BUF_SIZE_MAX)]
+    #[case(
+        Err(AUTDInternalError::GainSTMSizeOutOfRange(GAIN_STM_BUF_SIZE_MAX+1)),
+        GAIN_STM_BUF_SIZE_MAX+1
+    )]
+    fn out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] size: usize) {
+        let send = |n: usize| {
+            const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
+            let device = create_device(0, NUM_TRANS_IN_UNIT);
+            let mut tx = vec![0x00u8; FRAME_SIZE];
+            let gain_data: Vec<Vec<Drive>> = vec![vec![Drive::null(); NUM_TRANS_IN_UNIT]; n];
+            let mut op = GainSTMOp::new(
+                {
+                    let gain_data = gain_data.clone();
+                    gain_data
+                        .into_iter()
+                        .map(|g| Box::new(move |tr: &Transducer| g[tr.idx()]) as Box<_>)
+                        .collect()
+                },
+                GainSTMMode::PhaseIntensityFull,
+                SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
+                0xFFFFFFFF,
+                Segment::S0,
+                None,
+            );
+            loop {
+                op.pack(&device, &mut tx)?;
+                if op.is_done() {
+                    break;
+                }
+            }
+            Result::<(), AUTDInternalError>::Ok(())
+        };
+        assert_eq!(expected, send(size));
     }
 }

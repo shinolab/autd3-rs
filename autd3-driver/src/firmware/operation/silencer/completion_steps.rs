@@ -1,7 +1,10 @@
 use super::{SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS, SILENCER_CTL_FLAG_STRICT_MODE};
 use crate::{
     error::AUTDInternalError,
-    firmware::operation::{cast, Operation, TypeTag},
+    firmware::{
+        fpga::{SILENCER_VALUE_MAX, SILENCER_VALUE_MIN},
+        operation::{cast, Operation, TypeTag},
+    },
     geometry::Device,
 };
 
@@ -33,6 +36,17 @@ impl SilencerFixedCompletionStepsOp {
 
 impl Operation for SilencerFixedCompletionStepsOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+        if !(SILENCER_VALUE_MIN..=SILENCER_VALUE_MAX).contains(&self.value_intensity) {
+            return Err(AUTDInternalError::SilencerCompletionStepsOutOfRange(
+                self.value_intensity,
+            ));
+        }
+        if !(SILENCER_VALUE_MIN..=SILENCER_VALUE_MAX).contains(&self.value_phase) {
+            return Err(AUTDInternalError::SilencerCompletionStepsOutOfRange(
+                self.value_phase,
+            ));
+        }
+
         *cast::<SilencerFixedCompletionSteps>(tx) = SilencerFixedCompletionSteps {
             tag: TypeTag::Silencer,
             flag: SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS
@@ -94,5 +108,26 @@ mod tests {
         assert_eq!(tx[3], 0x12);
         assert_eq!(tx[4], 0x78);
         assert_eq!(tx[5], 0x56);
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Ok(size_of::<SilencerFixedCompletionSteps>()), SILENCER_VALUE_MIN, SILENCER_VALUE_MIN)]
+    #[case(Ok(size_of::<SilencerFixedCompletionSteps>()), SILENCER_VALUE_MAX, SILENCER_VALUE_MAX)]
+    #[case(Err(AUTDInternalError::SilencerCompletionStepsOutOfRange(0)), SILENCER_VALUE_MAX, SILENCER_VALUE_MIN - 1)]
+    #[case(Err(AUTDInternalError::SilencerCompletionStepsOutOfRange(0)), SILENCER_VALUE_MIN - 1, SILENCER_VALUE_MAX)]
+    fn out_of_range(
+        #[case] expected: Result<usize, AUTDInternalError>,
+        #[case] value_intensity: u16,
+        #[case] value_phase: u16,
+    ) {
+        const FRAME_SIZE: usize = size_of::<SilencerFixedCompletionSteps>() + NUM_TRANS_IN_UNIT * 2;
+
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let mut tx = vec![0x00u8; FRAME_SIZE];
+
+        let mut op = SilencerFixedCompletionStepsOp::new(value_intensity, value_phase, true);
+
+        assert_eq!(expected, op.pack(&device, &mut tx));
     }
 }

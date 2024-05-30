@@ -14,33 +14,19 @@ use std::{
 
 use super::GainCalcResult;
 
-#[derive(Gain, Debug)]
+use derive_more::Deref;
+
+#[derive(Gain, Clone, Debug, Deref)]
 #[no_gain_cache]
 #[no_gain_transform]
 pub struct Cache<G: Gain> {
+    #[deref]
     gain: G,
     cache: Arc<RwLock<HashMap<usize, Arc<Vec<Drive>>>>>,
 }
 
 pub trait IntoCache<G: Gain> {
     fn with_cache(self) -> Cache<G>;
-}
-
-impl<G: Gain> std::ops::Deref for Cache<G> {
-    type Target = G;
-
-    fn deref(&self) -> &Self::Target {
-        &self.gain
-    }
-}
-
-impl<G: Gain + Clone> Clone for Cache<G> {
-    fn clone(&self) -> Self {
-        Self {
-            gain: self.gain.clone(),
-            cache: self.cache.clone(),
-        }
-    }
 }
 
 impl<G: Gain> Cache<G> {
@@ -120,12 +106,6 @@ mod tests {
     #[derive(Gain, Clone, Debug)]
     pub struct CacheTestGain {
         pub calc_cnt: Arc<AtomicUsize>,
-    }
-
-    impl PartialEq for CacheTestGain {
-        fn eq(&self, other: &Self) -> bool {
-            self.calc_cnt.load(Ordering::Relaxed) == other.calc_cnt.load(Ordering::Relaxed)
-        }
     }
 
     impl Gain for CacheTestGain {

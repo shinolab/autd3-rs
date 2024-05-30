@@ -2,37 +2,24 @@ use std::time::Duration;
 
 use super::{Datagram, OperationGenerator};
 use crate::{
-    derive::{AUTDInternalError, Geometry},
+    derive::*,
     firmware::{
         fpga::{Segment, TransitionMode},
         operation::Operation,
     },
 };
 
+use derive_more::Deref;
+
+#[derive(Builder, Clone, Deref)]
+
 pub struct DatagramWithSegmentTransition<D: DatagramST> {
+    #[deref]
     datagram: D,
+    #[get]
     segment: Segment,
+    #[get]
     transition_mode: Option<TransitionMode>,
-}
-
-impl<D: DatagramST> DatagramWithSegmentTransition<D> {
-    pub const fn segment(&self) -> Segment {
-        self.segment
-    }
-}
-
-impl<D: DatagramST> DatagramWithSegmentTransition<D> {
-    pub const fn transition_mode(&self) -> Option<TransitionMode> {
-        self.transition_mode
-    }
-}
-
-impl<D: DatagramST> std::ops::Deref for DatagramWithSegmentTransition<D> {
-    type Target = D;
-
-    fn deref(&self) -> &Self::Target {
-        &self.datagram
-    }
 }
 
 impl<D: DatagramST> Datagram for DatagramWithSegmentTransition<D> {
@@ -88,9 +75,7 @@ pub trait DatagramST {
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, AUTDInternalError>;
 
-    fn timeout(&self) -> Option<Duration> {
-        None
-    }
+    fn timeout(&self) -> Option<Duration>;
 
     fn parallel_threshold(&self) -> Option<usize> {
         None
@@ -115,16 +100,6 @@ impl<D: DatagramST> IntoDatagramWithSegmentTransition<D> for D {
             datagram: self,
             segment,
             transition_mode,
-        }
-    }
-}
-
-impl<D: DatagramST + Clone> Clone for DatagramWithSegmentTransition<D> {
-    fn clone(&self) -> Self {
-        Self {
-            datagram: self.datagram.clone(),
-            segment: self.segment,
-            transition_mode: self.transition_mode,
         }
     }
 }

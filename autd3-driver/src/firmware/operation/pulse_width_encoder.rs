@@ -1,3 +1,5 @@
+use std::mem::size_of;
+
 use crate::{
     error::AUTDInternalError,
     firmware::{
@@ -64,9 +66,9 @@ impl<F: Fn(usize) -> u16 + Send + Sync> Operation for PulseWidthEncoderOp<F> {
             self.full_width_start = (0..PWE_BUF_SIZE)
                 .position(|i| (self.f)(i) == PULSE_WIDTH_MAX)
                 .unwrap_or(0xFFFF) as u16;
-            std::mem::size_of::<PWEHead>()
+            size_of::<PWEHead>()
         } else {
-            std::mem::size_of::<PWESubseq>()
+            size_of::<PWESubseq>()
         };
 
         let size = self.remains.min(tx.len() - offset) & !0x1;
@@ -100,21 +102,66 @@ impl<F: Fn(usize) -> u16 + Send + Sync> Operation for PulseWidthEncoderOp<F> {
 
         self.remains -= size;
         if sent == 0 {
-            Ok(std::mem::size_of::<PWEHead>() + size)
+            Ok(size_of::<PWEHead>() + size)
         } else {
-            Ok(std::mem::size_of::<PWESubseq>() + size)
+            Ok(size_of::<PWESubseq>() + size)
         }
     }
 
     fn required_size(&self, _: &Device) -> usize {
         if self.remains == PWE_BUF_SIZE {
-            std::mem::size_of::<PWEHead>() + 2
+            size_of::<PWEHead>() + 2
         } else {
-            std::mem::size_of::<PWESubseq>() + 2
+            size_of::<PWESubseq>() + 2
         }
     }
 
     fn is_done(&self) -> bool {
         self.remains == 0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::geometry::tests::create_device;
+
+    use super::*;
+
+    const NUM_TRANS_IN_UNIT: usize = 249;
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Err(AUTDInternalError::InvalidPulseWidthEncoderData), |i| { (PWE_BUF_SIZE - i) as u16 })]
+    #[case(Err(AUTDInternalError::InvalidPulseWidthEncoderData), |_| { PULSE_WIDTH_MAX + 1 })]
+    #[case(Ok(()), |_| { 0 })]
+    fn invalid_data(
+        #[case] expected: Result<(), AUTDInternalError>,
+        #[case] f: impl Fn(usize) -> u16 + Send + Sync,
+    ) {
+        let send = || {
+            const FRAME_SIZE: usize = size_of::<PWEHead>() + NUM_TRANS_IN_UNIT * 2;
+
+            let device = create_device(0, NUM_TRANS_IN_UNIT);
+            let mut tx = vec![0x00u8; FRAME_SIZE];
+
+            let mut op = PulseWidthEncoderOp::new(f);
+
+            let mut first = true;
+            loop {
+                if first {
+                    assert_eq!(size_of::<PWEHead>() + 2, op.required_size(&device));
+                } else {
+                    assert_eq!(size_of::<PWESubseq>() + 2, op.required_size(&device));
+                }
+                first = false;
+                op.pack(&device, &mut tx)?;
+                if op.is_done() {
+                    break;
+                }
+            }
+            Ok(())
+        };
+
+        assert_eq!(expected, send());
     }
 }

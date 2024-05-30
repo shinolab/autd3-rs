@@ -5,7 +5,6 @@ use thiserror::Error;
 pub struct ReadFirmwareVersionState(pub Vec<bool>);
 
 impl std::fmt::Display for ReadFirmwareVersionState {
-    // GRCOV_EXCL_START
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -19,15 +18,12 @@ impl std::fmt::Display for ReadFirmwareVersionState {
                 .join(", ")
         )
     }
-    // GRCOV_EXCL_STOP
 }
 
 impl std::fmt::Debug for ReadFirmwareVersionState {
-    // GRCOV_EXCL_START
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         <Self as std::fmt::Display>::fmt(self, f)
     }
-    // GRCOV_EXCL_STOP
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -37,13 +33,23 @@ pub enum AUTDError {
     #[error("Read FPGA state failed")]
     ReadFPGAStateFailed,
     #[error("{0}")]
-    Internal(AUTDInternalError),
+    Internal(#[from] AUTDInternalError),
 }
 
-impl From<AUTDInternalError> for AUTDError {
-    // GRCOV_EXCL_START
-    fn from(e: AUTDInternalError) -> Self {
-        AUTDError::Internal(e)
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn read_firmware_version_state_fmt() {
+        let state = ReadFirmwareVersionState(vec![true, false, true]);
+        assert_eq!(
+            format!("{}", state),
+            "Read firmware info failed: 1".to_string()
+        );
+        assert_eq!(
+            format!("{:?}", state),
+            "Read firmware info failed: 1".to_string()
+        );
     }
-    // GRCOV_EXCL_STOP
 }

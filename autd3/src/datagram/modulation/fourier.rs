@@ -1,15 +1,15 @@
-use std::ops::Deref;
-
 use super::{sampling_mode::SamplingMode, sine::Sine};
 
 use autd3_driver::derive::*;
 
+use derive_more::Deref;
 use num::integer::lcm;
 
-#[derive(Modulation, Clone, PartialEq, Debug)]
+#[derive(Modulation, Clone, PartialEq, Debug, Deref)]
 pub struct Fourier<S: SamplingMode> {
     #[no_change]
     config: SamplingConfig,
+    #[deref]
     components: Vec<Sine<S>>,
     loop_behavior: LoopBehavior,
 }
@@ -33,14 +33,6 @@ impl<S: SamplingMode> Fourier<S> {
             components,
             loop_behavior: LoopBehavior::infinite(),
         })
-    }
-}
-
-impl<S: SamplingMode> Deref for Fourier<S> {
-    type Target = [Sine<S>];
-
-    fn deref(&self) -> &Self::Target {
-        &self.components
     }
 }
 
@@ -70,7 +62,7 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
 
 #[cfg(test)]
 mod tests {
-    use crate::tests::create_geometry;
+    use crate::{modulation::sampling_mode::ExactFreq, tests::create_geometry};
 
     use super::*;
 
@@ -133,6 +125,16 @@ mod tests {
                 Sine::new(50. * Hz),
                 Sine::new(50. * Hz).with_sampling_config(SamplingConfig::Freq(1000 * Hz)),
             ])
+        );
+    }
+
+    #[test]
+    fn empty_components() {
+        assert_eq!(
+            Err(AUTDInternalError::ModulationError(
+                "Components must not be empty".to_string()
+            )),
+            Fourier::<ExactFreq>::new(vec![])
         );
     }
 }

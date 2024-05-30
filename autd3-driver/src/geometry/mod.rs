@@ -15,11 +15,14 @@ pub use device::*;
 pub use rotation::*;
 pub use transducer::*;
 
-use std::ops::{Deref, DerefMut};
+use derive_more::{Deref, DerefMut};
 
 use crate::defined::Freq;
 
+#[derive(Deref, DerefMut)]
 pub struct Geometry {
+    #[deref]
+    #[deref_mut]
     pub(crate) devices: Vec<Device>,
     ultrasound_freq: Freq<u32>,
 }
@@ -71,20 +74,6 @@ impl Geometry {
 
     pub fn ultrasound_freq(&self) -> Freq<u32> {
         self.ultrasound_freq
-    }
-}
-
-impl Deref for Geometry {
-    type Target = [Device];
-
-    fn deref(&self) -> &Self::Target {
-        &self.devices
-    }
-}
-
-impl DerefMut for Geometry {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.devices
     }
 }
 

@@ -17,6 +17,7 @@ num = { workspace = true }
 thiserror = { workspace = true }
 bitvec = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
+derive_more = { workspace = true }
 
 [features]
 default = []

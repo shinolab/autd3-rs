@@ -80,10 +80,6 @@ impl Operation for ModulationOp {
                 send_num,
             );
         }
-        // .filter_map(|_| self.modulation.next())
-        // .zip(tx[offset..].iter_mut())
-        // .map(|(v, dst)| *dst = v)
-        // .fold(0, |acc, _| acc + 1);
 
         self.sent += send_num;
         if self.sent > MOD_BUF_SIZE_MAX {
@@ -93,12 +89,7 @@ impl Operation for ModulationOp {
         if is_first {
             *cast::<ModulationHead>(tx) = ModulationHead {
                 tag: TypeTag::Modulation,
-                flag: ModulationControlFlags::BEGIN
-                    | if self.segment == Segment::S1 {
-                        ModulationControlFlags::SEGMENT
-                    } else {
-                        ModulationControlFlags::NONE
-                    },
+                flag: ModulationControlFlags::BEGIN,
                 size: send_num as _,
                 __pad: [0; 3],
                 freq_div: self.config.division(device.ultrasound_freq())?,
@@ -112,21 +103,24 @@ impl Operation for ModulationOp {
         } else {
             *cast::<ModulationSubseq>(tx) = ModulationSubseq {
                 tag: TypeTag::Modulation,
-                flag: if self.segment == Segment::S1 {
-                    ModulationControlFlags::SEGMENT
-                } else {
-                    ModulationControlFlags::NONE
-                },
+                flag: ModulationControlFlags::NONE,
                 size: send_num as _,
             };
         }
+
+        let d = cast::<ModulationSubseq>(tx);
+
+        d.flag |= if self.segment == Segment::S1 {
+            ModulationControlFlags::SEGMENT
+        } else {
+            ModulationControlFlags::NONE
+        };
 
         if self.modulation.len() == self.sent {
             if self.sent < MOD_BUF_SIZE_MIN {
                 return Err(AUTDInternalError::ModulationSizeOutOfRange(self.sent));
             }
             self.is_done = true;
-            let d = cast::<ModulationSubseq>(tx);
             d.flag.set(ModulationControlFlags::END, true);
             d.flag.set(
                 ModulationControlFlags::TRANSITION,
@@ -378,5 +372,39 @@ mod tests {
                     assert_eq!(d, m);
                 });
         }
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Err(AUTDInternalError::ModulationSizeOutOfRange(0)), 0)]
+    #[case(Err(AUTDInternalError::ModulationSizeOutOfRange(MOD_BUF_SIZE_MIN-1)), MOD_BUF_SIZE_MIN-1)]
+    #[case(Ok(()), MOD_BUF_SIZE_MIN)]
+    #[case(Ok(()), MOD_BUF_SIZE_MAX)]
+    #[case(
+        Err(AUTDInternalError::ModulationSizeOutOfRange(MOD_BUF_SIZE_MAX+1)),
+        MOD_BUF_SIZE_MAX+1
+    )]
+    fn out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] size: usize) {
+        let send = |n: usize| {
+            const FRAME_SIZE: usize = size_of::<ModulationHead>() + NUM_TRANS_IN_UNIT * 2;
+            let device = create_device(0, NUM_TRANS_IN_UNIT);
+            let mut tx = vec![0x00u8; FRAME_SIZE];
+            let buf = Arc::new(vec![0x00; n]);
+            let mut op = ModulationOp::new(
+                buf.clone(),
+                SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
+                0xFFFFFFFF,
+                Segment::S0,
+                None,
+            );
+            loop {
+                op.pack(&device, &mut tx)?;
+                if op.is_done() {
+                    break;
+                }
+            }
+            Result::<(), AUTDInternalError>::Ok(())
+        };
+        assert_eq!(expected, send(size));
     }
 }

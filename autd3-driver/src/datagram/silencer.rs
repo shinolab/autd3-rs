@@ -1,8 +1,5 @@
 use crate::firmware::{
-    fpga::{
-        SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, SILENCER_VALUE_MAX,
-        SILENCER_VALUE_MIN,
-    },
+    fpga::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
     operation::{SilencerFixedCompletionStepsOp, SilencerFixedUpdateRateOp},
 };
 
@@ -57,46 +54,26 @@ impl Silencer<()> {
     pub fn fixed_update_rate(
         update_rate_intensity: u16,
         update_rate_phase: u16,
-    ) -> Result<Silencer<FixedUpdateRate>, AUTDInternalError> {
-        if !(SILENCER_VALUE_MIN..=SILENCER_VALUE_MAX).contains(&update_rate_intensity) {
-            return Err(AUTDInternalError::SilencerUpdateRateOutOfRange(
-                update_rate_intensity,
-            ));
-        }
-        if !(SILENCER_VALUE_MIN..=SILENCER_VALUE_MAX).contains(&update_rate_phase) {
-            return Err(AUTDInternalError::SilencerUpdateRateOutOfRange(
-                update_rate_phase,
-            ));
-        }
-        Ok(Silencer {
+    ) -> Silencer<FixedUpdateRate> {
+        Silencer {
             internal: FixedUpdateRate {
                 update_rate_intensity,
                 update_rate_phase,
             },
-        })
+        }
     }
 
     pub fn fixed_completion_steps(
         steps_intensity: u16,
         steps_phase: u16,
-    ) -> Result<Silencer<FixedCompletionSteps>, AUTDInternalError> {
-        if !(SILENCER_VALUE_MIN..=SILENCER_VALUE_MAX).contains(&steps_intensity) {
-            return Err(AUTDInternalError::SilencerCompletionStepsOutOfRange(
-                steps_intensity,
-            ));
-        }
-        if !(SILENCER_VALUE_MIN..=SILENCER_VALUE_MAX).contains(&steps_phase) {
-            return Err(AUTDInternalError::SilencerCompletionStepsOutOfRange(
-                steps_phase,
-            ));
-        }
-        Ok(Silencer {
+    ) -> Silencer<FixedCompletionSteps> {
+        Silencer {
             internal: FixedCompletionSteps {
                 steps_intensity,
                 steps_phase,
                 strict_mode: true,
             },
-        })
+        }
     }
 
     pub const fn disable() -> Silencer<FixedCompletionSteps> {
@@ -256,5 +233,41 @@ impl Datagram for Silencer<FixedCompletionSteps> {
 
     fn parallel_threshold(&self) -> Option<usize> {
         Some(usize::MAX)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn disable() {
+        let s = Silencer::disable();
+        assert_eq!(s.completion_steps_intensity(), 1);
+        assert_eq!(s.completion_steps_phase(), 1);
+        assert!(s.strict_mode());
+    }
+
+    #[test]
+    fn fixed_update_rate() {
+        let s = Silencer::fixed_update_rate(1, 2);
+        assert_eq!(s.update_rate_intensity(), 1);
+        assert_eq!(s.update_rate_phase(), 2);
+    }
+
+    #[test]
+    fn fixed_completion_steps_mul() {
+        let s = Silencer::fixed_completion_steps(1, 1);
+        let s = s * 2;
+        assert_eq!(s.completion_steps_intensity(), 2);
+        assert_eq!(s.completion_steps_phase(), 2);
+    }
+
+    #[test]
+    fn fixed_completion_steps_div() {
+        let s = Silencer::fixed_completion_steps(2, 2);
+        let s = s / 2;
+        assert_eq!(s.completion_steps_intensity(), 1);
+        assert_eq!(s.completion_steps_phase(), 1);
     }
 }

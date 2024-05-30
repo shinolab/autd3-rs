@@ -115,16 +115,62 @@ where
     fn timeout(&self) -> Option<Duration> {
         match (self.0.timeout(), self.1.timeout()) {
             (Some(t1), Some(t2)) => Some(t1.max(t2)),
-            (Some(t), None) | (None, Some(t)) => Some(t),
-            (None, None) => None,
+            (a, b) => a.or(b),
         }
     }
 
     fn parallel_threshold(&self) -> Option<usize> {
         match (self.0.parallel_threshold(), self.1.parallel_threshold()) {
             (Some(t1), Some(t2)) => Some(t1.min(t2)),
-            (Some(t), None) | (None, Some(t)) => Some(t),
-            (None, None) => None,
+            (a, b) => a.or(b),
+        }
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use crate::derive::{Segment, TransitionMode};
+
+    use super::*;
+
+    pub struct NullDatagram {
+        pub timeout: Option<Duration>,
+        pub parallel_threshold: Option<usize>,
+    }
+
+    pub struct NullOperationGenerator {}
+
+    impl OperationGenerator for NullOperationGenerator {
+        type O1 = crate::firmware::operation::NullOp;
+        type O2 = crate::firmware::operation::NullOp;
+
+        // GRCOV_EXCL_START
+        fn generate(&self, _device: &crate::derive::Device) -> (Self::O1, Self::O2) {
+            (Self::O1::default(), Self::O2::default())
+        }
+        // GRCOV_EXCL_STOP
+    }
+
+    impl DatagramST for NullDatagram {
+        type O1 = crate::firmware::operation::NullOp;
+        type O2 = crate::firmware::operation::NullOp;
+        type G = NullOperationGenerator;
+
+        fn operation_generator_with_segment(
+            self,
+            _: &crate::derive::Geometry,
+            _segment: Segment,
+            _transition_mode: Option<TransitionMode>,
+        ) -> Result<Self::G, crate::derive::AUTDInternalError> {
+            Ok(NullOperationGenerator {})
+        }
+
+        fn timeout(&self) -> Option<Duration> {
+            self.timeout
+        }
+
+        fn parallel_threshold(&self) -> Option<usize> {
+            self.parallel_threshold
         }
     }
 }

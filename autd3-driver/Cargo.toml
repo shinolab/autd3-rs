@@ -24,7 +24,7 @@ rand = { workspace = true, optional = true }
 bitfield-struct = { workspace = true }
 rayon = { workspace = true }
 itertools = { workspace = true }
-derive_more = "0.99.17"
+derive_more = { workspace = true }
 is_sorted = "0.1.1"
 
 [target.'cfg(windows)'.dependencies]

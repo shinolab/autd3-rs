@@ -1,5 +1,6 @@
 use autd3_driver::{
     datagram::PulseWidthEncoder,
+    defined::PI,
     derive::Datagram,
     error::AUTDInternalError,
     firmware::{cpu::TxDatagram, operation::OperationHandler},
@@ -19,28 +20,59 @@ fn config_pwe() -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let buf: Vec<_> = (0..65536)
-        .map(|_| rng.gen_range(0..=256))
-        .sorted()
-        .collect();
-    let full_width_start = buf
-        .iter()
-        .enumerate()
-        .find(|&(_, v)| *v == 256)
-        .map(|v| v.0 as u16)
-        .unwrap_or(0xFFFF);
-    let d = PulseWidthEncoder::new(|_| |i| buf[i]);
+    {
+        let buf: Vec<_> = (0..65536)
+            .map(|_| rng.gen_range(0..=256))
+            .sorted()
+            .collect();
+        let full_width_start = buf
+            .iter()
+            .enumerate()
+            .find(|&(_, v)| *v == 256)
+            .map(|v| v.0 as u16)
+            .unwrap_or(0xFFFF);
+        let d = PulseWidthEncoder::new(|_| |i| buf[i]);
 
-    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-    assert_eq!(
-        full_width_start,
-        cpu.fpga().pulse_width_encoder_full_width_start()
-    );
-    assert_eq!(
-        buf.into_iter().map(|v| v as u8).collect::<Vec<_>>(),
-        cpu.fpga().pulse_width_encoder_table()
-    );
+        assert_eq!(
+            full_width_start,
+            cpu.fpga().pulse_width_encoder_full_width_start()
+        );
+        assert_eq!(
+            buf.into_iter().map(|v| v as u8).collect::<Vec<_>>(),
+            cpu.fpga().pulse_width_encoder_table()
+        );
+    }
+
+    {
+        let full_width_start = 255 * 255;
+        let default_table: Vec<_> = (0..=65535)
+            .map(|i| {
+                if i < full_width_start {
+                    ((i as f64 / 255. / 255.).asin() / PI * 512.0).round() as u16
+                } else {
+                    256
+                }
+            })
+            .collect();
+
+        let d = PulseWidthEncoder::default();
+
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+
+        assert_eq!(
+            full_width_start,
+            cpu.fpga().pulse_width_encoder_full_width_start()
+        );
+        assert_eq!(
+            default_table
+                .into_iter()
+                .map(|v| v as u8)
+                .collect::<Vec<_>>(),
+            cpu.fpga().pulse_width_encoder_table()
+        );
+    }
 
     Ok(())
 }

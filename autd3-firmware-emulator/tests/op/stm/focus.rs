@@ -220,7 +220,7 @@ fn test_focus_stm_freq_div_too_small() -> anyhow::Result<()> {
         let d = Silencer::fixed_completion_steps(
             SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT,
-        )?;
+        );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let stm = FocusSTM::from_sampling_config(
@@ -238,7 +238,7 @@ fn test_focus_stm_freq_div_too_small() -> anyhow::Result<()> {
         let d = Silencer::fixed_completion_steps(
             SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT * 2,
-        )?;
+        );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = SwapSegment::FocusSTM(Segment::S1, TransitionMode::Immediate);

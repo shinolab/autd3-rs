@@ -96,3 +96,119 @@ impl Operation for SwapSegmentOp {
         self.is_done
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        derive::{Segment, TransitionMode},
+        ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
+        geometry::tests::create_device,
+    };
+
+    use super::*;
+
+    const NUM_TRANS_IN_UNIT: usize = 249;
+
+    #[test]
+    fn gain() {
+        const FRAME_SIZE: usize = size_of::<SwapSegmentT>();
+
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let mut tx = vec![0x00u8; FRAME_SIZE];
+
+        let mut op = SwapSegmentOp::new(SwapSegment::Gain(Segment::S0));
+
+        assert_eq!(size_of::<SwapSegmentT>(), op.required_size(&device));
+        assert_eq!(Ok(size_of::<SwapSegmentT>()), op.pack(&device, &mut tx));
+        assert_eq!(op.is_done(), true);
+        assert_eq!(TypeTag::GainSwapSegment as u8, tx[0]);
+        assert_eq!(Segment::S0 as u8, tx[1]);
+    }
+
+    #[test]
+    fn modulation() {
+        const FRAME_SIZE: usize = size_of::<SwapSegmentTWithTransition>();
+
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let mut tx = vec![0x00u8; FRAME_SIZE];
+
+        let sys_time = DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap()
+            + std::time::Duration::from_nanos(0x0123456789ABCDEF);
+        let transition_mode = TransitionMode::SysTime(sys_time);
+        let mut op = SwapSegmentOp::new(SwapSegment::Modulation(Segment::S0, transition_mode));
+
+        assert_eq!(
+            size_of::<SwapSegmentTWithTransition>(),
+            op.required_size(&device)
+        );
+        assert_eq!(
+            Ok(size_of::<SwapSegmentTWithTransition>()),
+            op.pack(&device, &mut tx)
+        );
+        assert_eq!(op.is_done(), true);
+        assert_eq!(TypeTag::ModulationSwapSegment as u8, tx[0]);
+        assert_eq!(Segment::S0 as u8, tx[1]);
+        let mode = transition_mode.mode();
+        let value = transition_mode.value();
+        assert_eq!(mode, tx[2]);
+        assert_eq!(value, u64::from_le_bytes(tx[8..].try_into().unwrap()));
+    }
+
+    #[test]
+    fn focus_stm() {
+        const FRAME_SIZE: usize = size_of::<SwapSegmentTWithTransition>();
+
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let mut tx = vec![0x00u8; FRAME_SIZE];
+
+        let sys_time = DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap()
+            + std::time::Duration::from_nanos(0x0123456789ABCDEF);
+        let transition_mode = TransitionMode::SysTime(sys_time);
+        let mut op = SwapSegmentOp::new(SwapSegment::FocusSTM(Segment::S0, transition_mode));
+
+        assert_eq!(
+            size_of::<SwapSegmentTWithTransition>(),
+            op.required_size(&device)
+        );
+        assert_eq!(
+            Ok(size_of::<SwapSegmentTWithTransition>()),
+            op.pack(&device, &mut tx)
+        );
+        assert_eq!(op.is_done(), true);
+        assert_eq!(TypeTag::FocusSTMSwapSegment as u8, tx[0]);
+        assert_eq!(Segment::S0 as u8, tx[1]);
+        let mode = transition_mode.mode();
+        let value = transition_mode.value();
+        assert_eq!(mode, tx[2]);
+        assert_eq!(value, u64::from_le_bytes(tx[8..].try_into().unwrap()));
+    }
+
+    #[test]
+    fn gain_stm() {
+        const FRAME_SIZE: usize = size_of::<SwapSegmentTWithTransition>();
+
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let mut tx = vec![0x00u8; FRAME_SIZE];
+
+        let sys_time = DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap()
+            + std::time::Duration::from_nanos(0x0123456789ABCDEF);
+        let transition_mode = TransitionMode::SysTime(sys_time);
+        let mut op = SwapSegmentOp::new(SwapSegment::GainSTM(Segment::S0, transition_mode));
+
+        assert_eq!(
+            size_of::<SwapSegmentTWithTransition>(),
+            op.required_size(&device)
+        );
+        assert_eq!(
+            Ok(size_of::<SwapSegmentTWithTransition>()),
+            op.pack(&device, &mut tx)
+        );
+        assert_eq!(op.is_done(), true);
+        assert_eq!(TypeTag::GainSTMSwapSegment as u8, tx[0]);
+        assert_eq!(Segment::S0 as u8, tx[1]);
+        let mode = transition_mode.mode();
+        let value = transition_mode.value();
+        assert_eq!(mode, tx[2]);
+        assert_eq!(value, u64::from_le_bytes(tx[8..].try_into().unwrap()));
+    }
+}
