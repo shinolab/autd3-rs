@@ -34,8 +34,8 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
         quote! {}
     } else {
         quote! {
-            impl <'autd3, #(#linetimes,)* #(#type_params,)*> IntoGainTransform<Self> for #name #ty_generics #where_clause {
-                fn with_transform<GainTransformFT: Fn(&Transducer, Drive) -> Drive + Send + Sync, GainTransformF: Fn(&Device) -> GainTransformFT + Send + Sync + Clone>(self, f: GainTransformF) -> GainTransform<Self, GainTransformFT, GainTransformF> {
+            impl <#(#linetimes,)* #(#type_params,)*> IntoGainTransform<Self> for #name #ty_generics #where_clause {
+                fn with_transform<GainTransformFT: Fn(&Transducer, Drive) -> Drive + Send + Sync, GainTransformF: Fn(&Device) -> GainTransformFT>(self, f: GainTransformF) -> GainTransform<Self, GainTransformFT, GainTransformF> {
                     GainTransform::new(self, f)
                 }
             }
@@ -50,15 +50,15 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
         {
             type O1 = GainOp;
             type O2 = NullOp;
-            type G =  GainOperationGenerator;
+            type G =  GainOperationGenerator<Self>;
 
             fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
-                let g = self.calc(geometry)?;
-                Ok(Self::G {
-                    g: Box::new(g),
-                    segment: Segment::S0,
-                    transition: true,
-                })
+                Ok(Self::G::new(
+                    self,
+                    geometry,
+                    Segment::S0,
+                    true,
+                )?)
             }
         }
     };
@@ -71,15 +71,15 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
         {
             type O1 = GainOp;
             type O2 = NullOp;
-            type G =  GainOperationGenerator;
+            type G =  GainOperationGenerator<Self>;
 
             fn operation_generator_with_segment(self, geometry: &Geometry, segment: Segment, transition: bool) -> Result<Self::G, AUTDInternalError> {
-                let g = self.calc(geometry)?;
-                Ok(Self::G {
-                    g: Box::new(g),
+                Ok(Self::G::new(
+                    self,
+                    geometry,
                     segment,
                     transition,
-                })
+                )?)
             }
         }
     };

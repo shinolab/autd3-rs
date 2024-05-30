@@ -7,14 +7,13 @@ use super::Datagram;
 use derive_more::Deref;
 
 #[derive(Deref)]
-pub struct DatagramWithTimeout<'a, D: Datagram> {
+pub struct DatagramWithTimeout<D: Datagram> {
     #[deref]
     datagram: D,
     timeout: Duration,
-    _phantom: std::marker::PhantomData<&'a D>,
 }
 
-impl<'a, D: Datagram> Datagram for DatagramWithTimeout<'a, D> {
+impl<D: Datagram> Datagram for DatagramWithTimeout<D> {
     type O1 = D::O1;
     type O2 = D::O2;
     type G = D::G;
@@ -32,16 +31,15 @@ impl<'a, D: Datagram> Datagram for DatagramWithTimeout<'a, D> {
     }
 }
 
-pub trait IntoDatagramWithTimeout<'a, D: Datagram> {
-    fn with_timeout(self, timeout: Duration) -> DatagramWithTimeout<'a, D>;
+pub trait IntoDatagramWithTimeout<D: Datagram> {
+    fn with_timeout(self, timeout: Duration) -> DatagramWithTimeout<D>;
 }
 
-impl<'a, D: Datagram> IntoDatagramWithTimeout<'a, D> for D {
-    fn with_timeout(self, timeout: Duration) -> DatagramWithTimeout<'a, D> {
+impl<D: Datagram> IntoDatagramWithTimeout<D> for D {
+    fn with_timeout(self, timeout: Duration) -> DatagramWithTimeout<D> {
         DatagramWithTimeout {
             datagram: self,
             timeout,
-            _phantom: std::marker::PhantomData,
         }
     }
 }

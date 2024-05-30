@@ -25,7 +25,7 @@ impl<F: Fn(&Device) -> bool + Send + Sync> OperationGenerator for ForceFanOpGene
     }
 }
 
-impl<'a, F: Fn(&Device) -> bool + Send + Sync + 'a> Datagram for ForceFan<F> {
+impl<F: Fn(&Device) -> bool + Send + Sync> Datagram for ForceFan<F> {
     type O1 = ForceFanOp;
     type O2 = NullOp;
     type G = ForceFanOpGenerator<F>;

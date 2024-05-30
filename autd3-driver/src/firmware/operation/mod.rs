@@ -76,7 +76,7 @@ pub trait Operation: Send + Sync {
     fn is_done(&self) -> bool;
 }
 
-pub trait OperationGenerator: Send + Sync {
+pub trait OperationGenerator {
     type O1: Operation;
     type O2: Operation;
     fn generate(&self, device: &Device) -> (Self::O1, Self::O2);

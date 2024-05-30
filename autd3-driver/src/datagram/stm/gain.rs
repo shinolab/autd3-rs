@@ -60,9 +60,10 @@ impl<G: Gain> GainSTM<G> {
     }
 }
 
-pub struct GainSTMOperationGenerator {
+pub struct GainSTMOperationGenerator<G: Gain> {
+    pub gain: std::pin::Pin<Box<Vec<G>>>,
     #[allow(clippy::type_complexity)]
-    g: Vec<Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + Send + Sync>>,
+    g: *const Vec<Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>>,
     mode: GainSTMMode,
     config: SamplingConfig,
     rep: u32,
@@ -70,12 +71,61 @@ pub struct GainSTMOperationGenerator {
     transition_mode: Option<TransitionMode>,
 }
 
-impl OperationGenerator for GainSTMOperationGenerator {
+impl<G: Gain> GainSTMOperationGenerator<G> {
+    fn new(
+        g: Vec<G>,
+        geometry: &Geometry,
+        mode: GainSTMMode,
+        config: SamplingConfig,
+        rep: u32,
+        segment: Segment,
+        transition_mode: Option<TransitionMode>,
+    ) -> Result<Self, AUTDInternalError> {
+        let mut r = Self {
+            gain: Box::pin(g),
+            g: std::ptr::null(),
+            mode,
+            config,
+            rep,
+            segment,
+            transition_mode,
+        };
+        r.g = Box::into_raw(Box::new(
+            r.gain
+                .iter()
+                .map(|g| {
+                    Ok(Box::new(g.calc(geometry)?)
+                        as Box<
+                            dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>,
+                        >)
+                })
+                .collect::<Result<Vec<_>, AUTDInternalError>>()?,
+        )) as *const _;
+        Ok(r)
+    }
+}
+
+impl<G: Gain> Drop for GainSTMOperationGenerator<G> {
+    fn drop(&mut self) {
+        if !self.g.is_null() {
+            unsafe {
+                let _ = Box::from_raw(
+                    self.g
+                        as *mut Vec<
+                            Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>,
+                        >,
+                );
+            }
+        }
+    }
+}
+
+impl<G: Gain> OperationGenerator for GainSTMOperationGenerator<G> {
     type O1 = GainSTMOp;
     type O2 = NullOp;
 
     fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
-        let d = self.g.iter().map(|g| g(device)).collect::<Vec<_>>();
+        let d = unsafe { (*self.g).iter().map(|g| g(device)).collect::<Vec<_>>() };
         (
             Self::O1::new(
                 d,
@@ -93,7 +143,7 @@ impl OperationGenerator for GainSTMOperationGenerator {
 impl<G: Gain> DatagramST for GainSTM<G> {
     type O1 = GainSTMOp;
     type O2 = NullOp;
-    type G = GainSTMOperationGenerator;
+    type G = GainSTMOperationGenerator<G>;
 
     fn operation_generator_with_segment(
         self,
@@ -104,19 +154,16 @@ impl<G: Gain> DatagramST for GainSTM<G> {
         let sampling_config = self.sampling_config;
         let rep = self.loop_behavior.rep();
         let mode = self.mode;
-        let gains = self
-            .gains
-            .into_iter()
-            .map(|g| Ok(Box::new(g.calc(geometry)?) as Box<_>))
-            .collect::<Result<Vec<_>, AUTDInternalError>>()?;
-        Ok(GainSTMOperationGenerator {
-            g: gains,
+        let gains = self.gains;
+        GainSTMOperationGenerator::new(
+            gains,
+            geometry,
             mode,
-            config: sampling_config,
+            sampling_config,
             rep,
             segment,
             transition_mode,
-        })
+        )
     }
 
     fn timeout(&self) -> Option<std::time::Duration> {

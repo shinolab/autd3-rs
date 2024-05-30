@@ -6,41 +6,26 @@ use crate::{
 use crate::datagram::*;
 
 #[derive(Debug, Clone, Copy)]
-pub struct PhaseFilter<
-    'a,
-    P: Into<Phase>,
-    FT: Fn(&Transducer) -> P + 'a,
-    F: Fn(&Device) -> FT + Send + Sync,
-> {
+pub struct PhaseFilter<P: Into<Phase>, FT: Fn(&Transducer) -> P, F: Fn(&Device) -> FT> {
     f: F,
-    _phantom: std::marker::PhantomData<&'a P>,
 }
 
-impl<'a, P: Into<Phase>, FT: Fn(&Transducer) -> P + 'a, F: Fn(&Device) -> FT + Send + Sync>
-    PhaseFilter<'a, P, FT, F>
-{
+impl<P: Into<Phase>, FT: Fn(&Transducer) -> P, F: Fn(&Device) -> FT> PhaseFilter<P, FT, F> {
     pub const fn additive(f: F) -> Self {
-        Self {
-            f,
-            _phantom: std::marker::PhantomData,
-        }
+        Self { f }
     }
 }
 
 pub struct PhaseFilterOpGenerator<
     P: Into<Phase>,
     FT: Fn(&Transducer) -> P + Send + Sync,
-    F: Fn(&Device) -> FT + Send + Sync,
+    F: Fn(&Device) -> FT,
 > {
     f: F,
 }
 
-impl<
-        'a,
-        P: Into<Phase> + 'a,
-        FT: Fn(&Transducer) -> P + Send + Sync + 'a,
-        F: Fn(&Device) -> FT + Send + Sync + 'a,
-    > OperationGenerator for PhaseFilterOpGenerator<P, FT, F>
+impl<P: Into<Phase>, FT: Fn(&Transducer) -> P + Send + Sync, F: Fn(&Device) -> FT>
+    OperationGenerator for PhaseFilterOpGenerator<P, FT, F>
 {
     type O1 = PhaseFilterOp<P, FT>;
     type O2 = NullOp;
@@ -50,12 +35,8 @@ impl<
     }
 }
 
-impl<
-        'a,
-        P: Into<Phase>,
-        FT: Fn(&Transducer) -> P + Send + Sync + 'a,
-        F: Fn(&Device) -> FT + Send + Sync + 'a,
-    > Datagram for PhaseFilter<'a, P, FT, F>
+impl<P: Into<Phase>, FT: Fn(&Transducer) -> P + Send + Sync, F: Fn(&Device) -> FT> Datagram
+    for PhaseFilter<P, FT, F>
 {
     type O1 = PhaseFilterOp<P, FT>;
     type O2 = NullOp;

@@ -13,11 +13,11 @@ fn default_table(i: usize) -> u16 {
 }
 
 #[derive(Debug, Clone)]
-pub struct PulseWidthEncoder<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H + Send + Sync> {
+pub struct PulseWidthEncoder<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> {
     f: F,
 }
 
-impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H + Send + Sync> PulseWidthEncoder<H, F> {
+impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> PulseWidthEncoder<H, F> {
     pub fn new(f: F) -> Self {
         Self { f }
     }
@@ -29,15 +29,12 @@ impl Default for PulseWidthEncoder<fn(usize) -> u16, fn(&Device) -> fn(usize) ->
     }
 }
 
-pub struct PulseWidthEncoderOpGenerator<
-    H: Fn(usize) -> u16 + Send + Sync,
-    F: Fn(&Device) -> H + Send + Sync,
-> {
+pub struct PulseWidthEncoderOpGenerator<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> {
     f: F,
 }
 
-impl<'a, H: Fn(usize) -> u16 + Send + Sync + 'a, F: Fn(&Device) -> H + Send + Sync>
-    OperationGenerator for PulseWidthEncoderOpGenerator<H, F>
+impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
+    for PulseWidthEncoderOpGenerator<H, F>
 {
     type O1 = PulseWidthEncoderOp<H>;
     type O2 = NullOp;
@@ -47,9 +44,7 @@ impl<'a, H: Fn(usize) -> u16 + Send + Sync + 'a, F: Fn(&Device) -> H + Send + Sy
     }
 }
 
-impl<'a, H: Fn(usize) -> u16 + Send + Sync + 'a, F: Fn(&Device) -> H + Send + Sync + 'a> Datagram
-    for PulseWidthEncoder<H, F>
-{
+impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> Datagram for PulseWidthEncoder<H, F> {
     type O1 = PulseWidthEncoderOp<H>;
     type O2 = NullOp;
     type G = PulseWidthEncoderOpGenerator<H, F>;

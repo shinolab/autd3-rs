@@ -129,5 +129,6 @@ fn focus_cache(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, focus, focus_parallel, focus_cache);
+criterion_group!(benches, focus_cache);
+// criterion_group!(benches, focus, focus_parallel, focus_cache);
 criterion_main!(benches);
