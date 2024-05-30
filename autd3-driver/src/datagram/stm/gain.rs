@@ -61,7 +61,7 @@ impl<G: Gain> GainSTM<G> {
 }
 
 pub struct GainSTMOperationGenerator<G: Gain> {
-    pub gain: std::pin::Pin<Box<Vec<G>>>,
+    pub gain: Vec<G>,
     #[allow(clippy::type_complexity)]
     g: *const Vec<Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>>,
     mode: GainSTMMode,
@@ -82,7 +82,7 @@ impl<G: Gain> GainSTMOperationGenerator<G> {
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self, AUTDInternalError> {
         let mut r = Self {
-            gain: Box::pin(g),
+            gain: g,
             g: std::ptr::null(),
             mode,
             config,
