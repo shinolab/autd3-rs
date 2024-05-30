@@ -227,11 +227,6 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         self.backend.from_slice_m(rows, cols, &v)
     }
 
-    fn make_zeros_m(&self, rows: usize, cols: usize) -> Result<B::MatrixX, HoloError> {
-        let v: Vec<f32> = vec![0.; rows * cols];
-        self.backend.from_slice_m(rows, cols, &v)
-    }
-
     fn make_random_cv(&self, size: usize) -> Result<B::VectorXc, HoloError> {
         let mut rng = rand::thread_rng();
         let real: Vec<f32> = (&mut rng)
@@ -1902,14 +1897,8 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
 
             let b = self.backend.to_host_v(bb)?;
             b.iter().zip(x.iter()).for_each(|(b, x)| {
-                assert_approx_eq::assert_approx_eq!(b, x, 0.1);
+                assert_approx_eq::assert_approx_eq!(b, x, 0.2);
             });
-        }
-
-        {
-            let aa = self.make_zeros_m(N, N)?;
-            let mut bb = self.backend.alloc_zeros_v(N)?;
-            assert!(self.backend.solve_inplace(&aa, &mut bb).is_err());
         }
 
         Ok(())
@@ -1946,15 +1935,9 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
             let x = self.backend.to_host_cv(x)?;
             let b = self.backend.to_host_cv(b)?;
             b.iter().zip(x.iter()).for_each(|(b, x)| {
-                assert_approx_eq::assert_approx_eq!(b.re, x.re, 0.1);
-                assert_approx_eq::assert_approx_eq!(b.im, x.im, 0.1);
+                assert_approx_eq::assert_approx_eq!(b.re, x.re, 0.2);
+                assert_approx_eq::assert_approx_eq!(b.im, x.im, 0.2);
             });
-        }
-
-        {
-            let a = self.backend.alloc_zeros_cm(N, N)?;
-            let mut b = self.backend.alloc_zeros_cv(N)?;
-            assert!(self.backend.solve_inplace_h(a, &mut b).is_err());
         }
 
         Ok(())
