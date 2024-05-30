@@ -16,11 +16,11 @@ impl STMSamplingConfig {
     pub fn sampling(&self, size: usize) -> Result<SamplingConfig, AUTDInternalError> {
         match *self {
             STMSamplingConfig::Freq(f) => {
-                let fs = f * size as f32;
-                if !is_integer(fs.hz()) {
+                let fs = f.hz() as f64 * size as f64;
+                if !is_integer(fs) {
                     return Err(AUTDInternalError::STMFreqInvalid(size, f));
                 }
-                Ok(SamplingConfig::Freq(fs.hz() as u32 * Hz))
+                Ok(SamplingConfig::Freq(fs as u32 * Hz))
             }
             STMSamplingConfig::FreqNearest(f) => {
                 Ok(SamplingConfig::FreqNearest(f.hz() * size as f32 * Hz))

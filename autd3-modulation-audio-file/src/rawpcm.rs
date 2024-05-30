@@ -38,7 +38,7 @@ impl RawPCM {
 impl Modulation for RawPCM {
     fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
         let new_rate = self.sampling_config().freq(geometry.ultrasound_freq())?;
-        if !is_integer(new_rate.hz()) {
+        if !is_integer(new_rate.hz() as f64) {
             return Err(AudioFileError::RawPCMSamplingRateNotInteger(new_rate).into());
         }
         let buf = wav_io::resample::linear(

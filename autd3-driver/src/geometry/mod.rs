@@ -187,9 +187,9 @@ pub mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(340.29527186788846e3, 15.)]
-    #[case(343.23498846612807e3, 20.)]
-    #[case(349.0401521469255e3, 30.)]
+    #[case(340.29525e3, 15.)]
+    #[case(343.23497e3, 20.)]
+    #[case(349.04013e3, 30.)]
     fn test_set_sound_speed_from_temp(#[case] expected: f32, #[case] temp: f32) {
         let mut geometry = Geometry::new(
             vec![

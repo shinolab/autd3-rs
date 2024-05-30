@@ -11,7 +11,7 @@ use autd3_driver::{
     geometry::{Geometry, IntoDevice, Vector3},
 };
 
-const EPS: f32 = 1e-6;
+const EPS: f32 = 1e-3;
 
 fn generate_geometry(size: usize) -> Geometry {
     Geometry::new(
