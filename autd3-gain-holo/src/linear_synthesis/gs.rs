@@ -83,7 +83,9 @@ impl<D: Directivity, B: LinAlgBackend<D>> GS<D, B> {
             Ok(())
         })?;
 
-        let max_coefficient = self.backend.absmax_cv(&q)?;
+        let mut abs = self.backend.alloc_v(n)?;
+        self.backend.norm_squared_cv(&q, &mut abs)?;
+        let max_coefficient = self.backend.max_v(&abs)?.sqrt();
         let q = self.backend.to_host_cv(q)?;
         generate_result(geometry, q, max_coefficient, self.constraint, filter)
     }

@@ -210,8 +210,9 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         Ok(())
     }
 
-    fn absmax_cv(&self, a: &Self::VectorXc) -> Result<f64, HoloError> {
-        Ok(a.map(|v| v.norm_squared()).amax().sqrt())
+    fn norm_squared_cv(&self, a: &Self::VectorXc, b: &mut Self::VectorX) -> Result<(), HoloError> {
+        *b = a.map(|v| v.norm_squared());
+        Ok(())
     }
 
     fn scale_assign_v(&self, a: f64, b: &mut Self::VectorX) -> Result<(), HoloError> {
