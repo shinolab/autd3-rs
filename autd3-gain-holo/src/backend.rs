@@ -133,6 +133,8 @@ pub trait LinAlgBackend<D: Directivity> {
     fn pow_assign_v(&self, a: f64, v: &mut Self::VectorX) -> Result<(), HoloError>;
     fn exp_assign_cv(&self, v: &mut Self::VectorXc) -> Result<(), HoloError>;
 
+    fn absmax_cv(&self, a: &Self::VectorXc) -> Result<f64, HoloError>;
+
     fn concat_row_cm(
         &self,
         a: &Self::MatrixXc,

@@ -146,6 +146,9 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         self.test_exp_assign_cv()?;
         println!("test_exp_assign_cv done");
 
+        self.test_absmax_cv()?;
+        println!("test_absmax_cv done");
+
         self.test_concat_row_cm()?;
         println!("test_concat_row_cm done");
         self.test_concat_col_cv()?;
@@ -1089,6 +1092,17 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         v.iter().zip(vc.iter()).for_each(|(v, vc)| {
             assert_approx_eq::assert_approx_eq!(vc.exp(), v, EPS);
         });
+        Ok(())
+    }
+
+    fn test_absmax_cv(&self) -> Result<(), HoloError> {
+        let real: Vec<f64> = vec![1.099, 1.0];
+        let imag: Vec<f64> = vec![0.9, 1.0];
+        let v = self.backend.from_slice2_cv(&real, &imag)?;
+
+        let max = self.backend.absmax_cv(&v)?;
+        assert_approx_eq::assert_approx_eq!(1.4204932242006647, max, EPS);
+
         Ok(())
     }
 

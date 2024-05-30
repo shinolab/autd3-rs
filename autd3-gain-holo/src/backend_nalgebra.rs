@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use bitvec::{order::Lsb0, vec::BitVec};
-use nalgebra::ComplexField;
+use nalgebra::{ComplexField, Normed};
 
 use autd3_driver::{
     acoustics::{directivity::Directivity, propagate},
@@ -208,6 +208,10 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
     fn abs_cv(&self, a: &Self::VectorXc, b: &mut Self::VectorX) -> Result<(), HoloError> {
         *b = a.map(|v| v.abs());
         Ok(())
+    }
+
+    fn absmax_cv(&self, a: &Self::VectorXc) -> Result<f64, HoloError> {
+        Ok(a.map(|v| v.norm_squared()).amax().sqrt())
     }
 
     fn scale_assign_v(&self, a: f64, b: &mut Self::VectorX) -> Result<(), HoloError> {

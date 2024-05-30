@@ -100,8 +100,8 @@ impl<D: Directivity, B: LinAlgBackend<D>> GSPAT<D, B> {
             &mut q,
         )?;
 
+        let max_coefficient = self.backend.absmax_cv(&q)?;
         let q = self.backend.to_host_cv(q)?;
-        let max_coefficient = q.camax().abs();
         generate_result(geometry, q, max_coefficient, self.constraint, filter)
     }
 }
