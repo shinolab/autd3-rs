@@ -96,15 +96,11 @@ impl<G: Gain> GainOperationGenerator<G> {
 
 impl<G: Gain> Drop for GainOperationGenerator<G> {
     fn drop(&mut self) {
-        if !self.g.is_null() {
-            unsafe {
-                let _ = Box::from_raw(
-                    self.g
-                        as *mut Box<
-                            dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>,
-                        >,
-                );
-            }
+        unsafe {
+            let _ = Box::from_raw(
+                self.g
+                    as *mut Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>,
+            );
         }
     }
 }
