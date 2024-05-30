@@ -99,8 +99,8 @@ impl FPGAEmulator {
         self.mem.update(fpga_state);
     }
 
-    pub fn to_pulse_width(&self, a: EmitIntensity, b: EmitIntensity) -> u16 {
-        let key = a.value() as usize * b.value() as usize;
+    pub fn to_pulse_width(&self, a: EmitIntensity, b: u8) -> u16 {
+        let key = a.value() as usize * b as usize;
         let v = self.pulse_width_encoder_table_at(key) as u16;
         if key as u16 >= self.pulse_width_encoder_full_width_start() {
             0x100 | v
@@ -188,7 +188,7 @@ mod tests {
         itertools::iproduct!(0x00..=0xFF, 0x00..=0xFF).for_each(|(a, b)| {
             assert_eq!(
                 to_pulse_width_actual(a, b),
-                fpga.to_pulse_width(a.into(), b.into())
+                fpga.to_pulse_width(a.into(), b)
             );
         });
     }
