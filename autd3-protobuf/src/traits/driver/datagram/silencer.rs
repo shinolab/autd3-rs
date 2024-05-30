@@ -20,11 +20,10 @@ impl ToMessage for autd3_driver::datagram::SilencerFixedUpdateRate {
 
 impl FromMessage<SilencerFixedUpdateRate> for autd3_driver::datagram::SilencerFixedUpdateRate {
     fn from_msg(msg: &SilencerFixedUpdateRate) -> Option<Self> {
-        autd3_driver::datagram::Silencer::fixed_update_rate(
+        Some(autd3_driver::datagram::Silencer::fixed_update_rate(
             msg.value_intensity as _,
             msg.value_phase as _,
-        )
-        .ok()
+        ))
     }
 }
 
@@ -55,7 +54,6 @@ impl FromMessage<SilencerFixedCompletionSteps>
                 msg.value_intensity as _,
                 msg.value_phase as _,
             )
-            .ok()?
             .with_strict_mode(msg.strict_mode),
         )
     }
