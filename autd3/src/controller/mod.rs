@@ -4,7 +4,7 @@ mod group;
 use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
-    datagram::{Clear, Datagram, Silencer},
+    datagram::{Clear, Datagram, SilencerFixedCompletionSteps},
     defined::DEFAULT_TIMEOUT,
     firmware::{
         cpu::{RxMessage, TxDatagram},
@@ -78,7 +78,8 @@ impl<L: Link> Controller<L> {
             return Ok(());
         }
         self.geometry.iter_mut().for_each(|dev| dev.enable = true);
-        self.send((Null::default(), Silencer::default())).await?;
+        self.send((Null::default(), SilencerFixedCompletionSteps::default()))
+            .await?;
         self.send(Clear::new()).await?;
         self.link.close().await?;
         Ok(())
