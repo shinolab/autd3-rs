@@ -108,7 +108,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         Ok(Self::VectorXc::zeros(size))
     }
 
-    fn from_slice_v(&self, v: &[f64]) -> Result<Self::VectorX, HoloError> {
+    fn from_slice_v(&self, v: &[f32]) -> Result<Self::VectorX, HoloError> {
         Ok(Self::VectorX::from_row_slice(v))
     }
 
@@ -116,7 +116,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         &self,
         rows: usize,
         cols: usize,
-        v: &[f64],
+        v: &[f32],
     ) -> Result<Self::MatrixX, HoloError> {
         Ok(Self::MatrixX::from_iterator(rows, cols, v.iter().copied()))
     }
@@ -215,7 +215,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         Ok(())
     }
 
-    fn scale_assign_v(&self, a: f64, b: &mut Self::VectorX) -> Result<(), HoloError> {
+    fn scale_assign_v(&self, a: f32, b: &mut Self::VectorX) -> Result<(), HoloError> {
         *b *= a;
         Ok(())
     }
@@ -291,7 +291,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
                             .rows(i, 1)
                             .iter()
                             .map(|x| x.norm_sqr())
-                            .sum::<f64>();
+                            .sum::<f32>();
                     (0..m).map(move |j| transfer[(i, j)].conj() * x)
                 })
                 .collect::<Vec<_>>(),
@@ -303,14 +303,14 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         Ok(eig.eigenvectors.column(eig.eigenvalues.imax()).into())
     }
 
-    fn from_slice_cv(&self, real: &[f64]) -> Result<Self::VectorXc, HoloError> {
+    fn from_slice_cv(&self, real: &[f32]) -> Result<Self::VectorXc, HoloError> {
         Ok(Self::VectorXc::from_iterator(
             real.len(),
             real.iter().map(|&r| Complex::new(r, 0.)),
         ))
     }
 
-    fn from_slice2_cv(&self, r: &[f64], i: &[f64]) -> Result<Self::VectorXc, HoloError> {
+    fn from_slice2_cv(&self, r: &[f32], i: &[f32]) -> Result<Self::VectorXc, HoloError> {
         Ok(Self::VectorXc::from_iterator(
             r.len(),
             r.iter().zip(i.iter()).map(|(&r, &i)| Complex::new(r, i)),
@@ -321,8 +321,8 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         &self,
         rows: usize,
         cols: usize,
-        r: &[f64],
-        i: &[f64],
+        r: &[f32],
+        i: &[f32],
     ) -> Result<Self::MatrixXc, HoloError> {
         Ok(Self::MatrixXc::from_iterator(
             rows,
@@ -331,7 +331,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         ))
     }
 
-    fn pow_assign_v(&self, a: f64, v: &mut Self::VectorX) -> Result<(), HoloError> {
+    fn pow_assign_v(&self, a: f32, v: &mut Self::VectorX) -> Result<(), HoloError> {
         v.apply(|v| *v = v.powf(a));
         Ok(())
     }
@@ -428,7 +428,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
     fn pseudo_inverse_svd(
         &self,
         a: Self::MatrixXc,
-        alpha: f64,
+        alpha: f32,
         _u: &mut Self::MatrixXc,
         _s: &mut Self::MatrixXc,
         _vt: &mut Self::MatrixXc,
@@ -455,7 +455,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         Ok(v)
     }
 
-    fn copy_from_slice_v(&self, v: &[f64], dst: &mut Self::VectorX) -> Result<(), HoloError> {
+    fn copy_from_slice_v(&self, v: &[f32], dst: &mut Self::VectorX) -> Result<(), HoloError> {
         dst.view_mut((0, 0), (v.len(), 1)).copy_from_slice(v);
         Ok(())
     }
@@ -508,7 +508,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         Ok(())
     }
 
-    fn max_v(&self, m: &Self::VectorX) -> Result<f64, HoloError> {
+    fn max_v(&self, m: &Self::VectorX) -> Result<f32, HoloError> {
         Ok(m.max())
     }
 
@@ -522,16 +522,16 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         Ok(())
     }
 
-    fn dot(&self, x: &Self::VectorX, y: &Self::VectorX) -> Result<f64, HoloError> {
+    fn dot(&self, x: &Self::VectorX, y: &Self::VectorX) -> Result<f32, HoloError> {
         Ok(x.dot(y))
     }
 
-    fn add_v(&self, alpha: f64, a: &Self::VectorX, b: &mut Self::VectorX) -> Result<(), HoloError> {
+    fn add_v(&self, alpha: f32, a: &Self::VectorX, b: &mut Self::VectorX) -> Result<(), HoloError> {
         *b += alpha * a;
         Ok(())
     }
 
-    fn add_m(&self, alpha: f64, a: &Self::MatrixX, b: &mut Self::MatrixX) -> Result<(), HoloError> {
+    fn add_m(&self, alpha: f32, a: &Self::MatrixX, b: &mut Self::MatrixX) -> Result<(), HoloError> {
         *b += alpha * a;
         Ok(())
     }

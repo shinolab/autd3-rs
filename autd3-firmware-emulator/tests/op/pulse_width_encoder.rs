@@ -50,7 +50,7 @@ fn config_pwe() -> anyhow::Result<()> {
         let default_table: Vec<_> = (0..=65535)
             .map(|i| {
                 if i < full_width_start {
-                    ((i as f64 / 255. / 255.).asin() / PI * 512.0).round() as u16
+                    ((i as f32 / 255. / 255.).asin() / PI * 512.0).round() as u16
                 } else {
                     256
                 }

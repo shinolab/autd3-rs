@@ -8,7 +8,7 @@ pub enum AudioFileError {
     #[error("{0}")]
     Wav(hound::Error),
     #[error("RawPCM sampling rate ({0}) must be integer")]
-    RawPCMSamplingRateNotInteger(Freq<f64>),
+    RawPCMSamplingRateNotInteger(Freq<f32>),
 }
 
 // GRCOV_EXCL_START

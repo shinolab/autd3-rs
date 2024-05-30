@@ -30,7 +30,7 @@ impl<M: Modulation> Modulation for RadiationPressure<M> {
         let src = self.m.calc(geometry)?;
         Ok(src
             .into_iter()
-            .map(|v| ((v as f64 / 255.).sqrt() * 255.).round() as u8)
+            .map(|v| ((v as f32 / 255.).sqrt() * 255.).round() as u8)
             .collect())
     }
 }
@@ -69,7 +69,7 @@ mod tests {
         let buf = vec![rng.gen(), rng.gen()];
         assert_eq!(
             buf.iter()
-                .map(|&x| ((x as f64 / 255.).sqrt() * 255.).round() as u8)
+                .map(|&x| ((x as f32 / 255.).sqrt() * 255.).round() as u8)
                 .collect::<Vec<_>>(),
             TestModulation {
                 buf: buf.clone(),

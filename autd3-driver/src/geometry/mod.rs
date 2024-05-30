@@ -2,14 +2,14 @@ pub(crate) mod device;
 mod rotation;
 mod transducer;
 
-pub type Vector3 = nalgebra::Vector3<f64>;
-pub type UnitVector3 = nalgebra::UnitVector3<f64>;
-pub type Vector4 = nalgebra::Vector4<f64>;
-pub type Quaternion = nalgebra::Quaternion<f64>;
-pub type UnitQuaternion = nalgebra::UnitQuaternion<f64>;
-pub type Matrix3 = nalgebra::Matrix3<f64>;
-pub type Matrix4 = nalgebra::Matrix4<f64>;
-pub type Affine = nalgebra::Affine3<f64>;
+pub type Vector3 = nalgebra::Vector3<f32>;
+pub type UnitVector3 = nalgebra::UnitVector3<f32>;
+pub type Vector4 = nalgebra::Vector4<f32>;
+pub type Quaternion = nalgebra::Quaternion<f32>;
+pub type UnitQuaternion = nalgebra::UnitQuaternion<f32>;
+pub type Matrix3 = nalgebra::Matrix3<f32>;
+pub type Matrix4 = nalgebra::Matrix4<f32>;
+pub type Affine = nalgebra::Affine3<f32>;
 
 pub use device::*;
 pub use rotation::*;
@@ -48,7 +48,7 @@ impl Geometry {
     }
 
     pub fn center(&self) -> Vector3 {
-        self.devices().map(|d| d.center()).sum::<Vector3>() / self.devices.len() as f64
+        self.devices().map(|d| d.center()).sum::<Vector3>() / self.devices.len() as f32
     }
 
     pub fn devices(&self) -> impl Iterator<Item = &Device> {
@@ -59,15 +59,15 @@ impl Geometry {
         self.devices.iter_mut().filter(|dev| dev.enable)
     }
 
-    pub fn set_sound_speed(&mut self, c: f64) {
+    pub fn set_sound_speed(&mut self, c: f32) {
         self.devices_mut().for_each(|dev| dev.sound_speed = c);
     }
 
-    pub fn set_sound_speed_from_temp(&mut self, temp: f64) {
+    pub fn set_sound_speed_from_temp(&mut self, temp: f32) {
         self.set_sound_speed_from_temp_with(temp, 1.4, 8.314_463, 28.9647e-3);
     }
 
-    pub fn set_sound_speed_from_temp_with(&mut self, temp: f64, k: f64, r: f64, m: f64) {
+    pub fn set_sound_speed_from_temp_with(&mut self, temp: f32, k: f32, r: f32, m: f32) {
         self.devices_mut()
             .for_each(|dev| dev.set_sound_speed_from_temp_with(temp, k, r, m));
     }
@@ -159,7 +159,7 @@ pub mod tests {
                     itertools::iproduct!((0..18), (0..14))
                         .enumerate()
                         .map(|(i, (y, x))| {
-                            Transducer::new(i, 10.16 * Vector3::new(x as f64, y as f64, 0.))
+                            Transducer::new(i, 10.16 * Vector3::new(x as f32, y as f32, 0.))
                         })
                         .collect::<Vec<_>>(),
                 ),
@@ -171,7 +171,7 @@ pub mod tests {
                         .map(|(i, (y, x))| {
                             Transducer::new(
                                 i,
-                                10.16 * Vector3::new(x as f64, y as f64, 0.)
+                                10.16 * Vector3::new(x as f32, y as f32, 0.)
                                     + Vector3::new(10., 20., 30.),
                             )
                         })
@@ -181,7 +181,7 @@ pub mod tests {
             FREQ_40K,
         );
         let expect = geometry.iter().map(|dev| dev.center()).sum::<Vector3>()
-            / geometry.num_devices() as f64;
+            / geometry.num_devices() as f32;
         assert_approx_eq_vec3!(expect, geometry.center());
     }
 
@@ -190,7 +190,7 @@ pub mod tests {
     #[case(340.29527186788846e3, 15.)]
     #[case(343.23498846612807e3, 20.)]
     #[case(349.0401521469255e3, 30.)]
-    fn test_set_sound_speed_from_temp(#[case] expected: f64, #[case] temp: f64) {
+    fn test_set_sound_speed_from_temp(#[case] expected: f32, #[case] temp: f32) {
         let mut geometry = Geometry::new(
             vec![
                 Device::new(
@@ -199,7 +199,7 @@ pub mod tests {
                     itertools::iproduct!((0..18), (0..14))
                         .enumerate()
                         .map(|(i, (y, x))| {
-                            Transducer::new(i, 10.16 * Vector3::new(x as f64, y as f64, 0.))
+                            Transducer::new(i, 10.16 * Vector3::new(x as f32, y as f32, 0.))
                         })
                         .collect::<Vec<_>>(),
                 ),
@@ -211,7 +211,7 @@ pub mod tests {
                         .map(|(i, (y, x))| {
                             Transducer::new(
                                 i,
-                                10.16 * Vector3::new(x as f64, y as f64, 0.)
+                                10.16 * Vector3::new(x as f32, y as f32, 0.)
                                     + Vector3::new(10., 20., 30.),
                             )
                         })
@@ -231,7 +231,7 @@ pub mod tests {
     #[case(340.29527186788846e3)]
     #[case(343.23498846612807e3)]
     #[case(349.0401521469255e3)]
-    fn test_set_sound_speed(#[case] temp: f64) {
+    fn test_set_sound_speed(#[case] temp: f32) {
         let mut geometry = Geometry::new(
             vec![
                 Device::new(
@@ -240,7 +240,7 @@ pub mod tests {
                     itertools::iproduct!((0..18), (0..14))
                         .enumerate()
                         .map(|(i, (y, x))| {
-                            Transducer::new(i, 10.16 * Vector3::new(x as f64, y as f64, 0.))
+                            Transducer::new(i, 10.16 * Vector3::new(x as f32, y as f32, 0.))
                         })
                         .collect::<Vec<_>>(),
                 ),
@@ -252,7 +252,7 @@ pub mod tests {
                         .map(|(i, (y, x))| {
                             Transducer::new(
                                 i,
-                                10.16 * Vector3::new(x as f64, y as f64, 0.)
+                                10.16 * Vector3::new(x as f32, y as f32, 0.)
                                     + Vector3::new(10., 20., 30.),
                             )
                         })

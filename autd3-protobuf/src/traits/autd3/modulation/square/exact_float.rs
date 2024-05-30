@@ -59,7 +59,7 @@ impl FromMessage<SquareExactFloat>
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &SquareExactFloat) -> Option<Self> {
         Some(
-            autd3::modulation::Square::new((msg.freq as f64) * autd3_driver::defined::Hz)
+            autd3::modulation::Square::new((msg.freq as f32) * autd3_driver::defined::Hz)
                 .with_high(msg.high as u8)
                 .with_low(msg.low as u8)
                 .with_duty(msg.duty as _)
@@ -81,7 +81,7 @@ mod tests {
     fn test_square() {
         let mut rng = rand::thread_rng();
 
-        let m = autd3::modulation::Square::new(rng.gen::<f64>() * Hz)
+        let m = autd3::modulation::Square::new(rng.gen::<f32>() * Hz)
             .with_high(rng.gen())
             .with_low(rng.gen())
             .with_duty(rng.gen());

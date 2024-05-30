@@ -20,8 +20,8 @@ impl Phase {
         self.value
     }
 
-    pub fn radian(&self) -> f64 {
-        self.value as f64 / 256.0 * 2.0 * PI
+    pub fn radian(&self) -> f32 {
+        self.value as f32 / 256.0 * 2.0 * PI
     }
 }
 
@@ -97,7 +97,7 @@ mod tests {
     #[case::value_0(0.0, 0)]
     #[case::value_1(2.0 * PI / 256.0 * 128.0, 128)]
     #[case::value_255(2.0 * PI / 256.0 * 255.0, 255)]
-    fn radian(#[case] expect: f64, #[case] value: u8) {
+    fn radian(#[case] expect: f32, #[case] value: u8) {
         assert_approx_eq::assert_approx_eq!(expect, Phase::new(value).radian());
     }
 }

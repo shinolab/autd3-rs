@@ -22,7 +22,7 @@ pub struct FocusSTM {
 
 impl FocusSTM {
     pub fn from_freq<C, F: IntoIterator<Item = C>>(
-        freq: Freq<f64>,
+        freq: Freq<f32>,
         control_points: F,
     ) -> Result<Self, AUTDInternalError>
     where
@@ -37,7 +37,7 @@ impl FocusSTM {
     }
 
     pub fn from_freq_nearest<C, F: IntoIterator<Item = C>>(
-        freq: Freq<f64>,
+        freq: Freq<f32>,
         control_points: F,
     ) -> Result<Self, AUTDInternalError>
     where
@@ -153,7 +153,7 @@ mod tests {
     #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
     fn from_freq(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
-        #[case] freq: Freq<f64>,
+        #[case] freq: Freq<f32>,
         #[case] n: usize,
     ) {
         assert_eq!(
@@ -171,7 +171,7 @@ mod tests {
     #[case(Ok(SamplingConfig::FreqNearest(20.*Hz)), 2.*Hz, 10)]
     fn from_freq_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
-        #[case] freq: Freq<f64>,
+        #[case] freq: Freq<f32>,
         #[case] n: usize,
     ) {
         assert_eq!(

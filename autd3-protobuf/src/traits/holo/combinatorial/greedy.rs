@@ -56,7 +56,7 @@ impl FromMessage<Greedy> for autd3_gain_holo::Greedy<autd3_driver::acoustics::di
                     .map(|h| {
                         Some((
                             autd3_driver::geometry::Vector3::from_msg(h.pos.as_ref()?)?,
-                            h.amp.as_ref()?.value as f64 * autd3_gain_holo::Pa,
+                            h.amp.as_ref()?.value as f32 * autd3_gain_holo::Pa,
                         ))
                     })
                     .collect::<Option<Vec<_>>>()?,
@@ -82,11 +82,11 @@ mod tests {
         let holo = autd3_gain_holo::Greedy::new([
             (
                 Vector3::new(rng.gen(), rng.gen(), rng.gen()),
-                rng.gen::<f64>() * autd3_gain_holo::Pa,
+                rng.gen::<f32>() * autd3_gain_holo::Pa,
             ),
             (
                 Vector3::new(rng.gen(), rng.gen(), rng.gen()),
-                rng.gen::<f64>() * autd3_gain_holo::Pa,
+                rng.gen::<f32>() * autd3_gain_holo::Pa,
             ),
         ])
         .with_phase_div(rng.gen());

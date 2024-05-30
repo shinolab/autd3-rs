@@ -9,12 +9,12 @@ use nalgebra::{Dyn, VecStorage, U1};
 use crate::error::HoloError;
 use bitvec::prelude::*;
 
-pub type Complex = nalgebra::Complex<f64>;
+pub type Complex = nalgebra::Complex<f32>;
 
 pub type MatrixXc = nalgebra::Matrix<Complex, Dyn, Dyn, VecStorage<Complex, Dyn, Dyn>>;
-pub type MatrixX = nalgebra::Matrix<f64, Dyn, Dyn, VecStorage<f64, Dyn, Dyn>>;
+pub type MatrixX = nalgebra::Matrix<f32, Dyn, Dyn, VecStorage<f32, Dyn, Dyn>>;
 pub type VectorXc = nalgebra::Matrix<Complex, Dyn, U1, VecStorage<Complex, Dyn, U1>>;
-pub type VectorX = nalgebra::Matrix<f64, Dyn, U1, VecStorage<f64, Dyn, U1>>;
+pub type VectorX = nalgebra::Matrix<f32, Dyn, U1, VecStorage<f32, Dyn, U1>>;
 
 pub enum Trans {
     NoTrans,
@@ -53,24 +53,24 @@ pub trait LinAlgBackend<D: Directivity> {
     fn cols_c(&self, m: &Self::MatrixXc) -> Result<usize, HoloError>;
 
     #[allow(clippy::wrong_self_convention)]
-    fn from_slice_v(&self, v: &[f64]) -> Result<Self::VectorX, HoloError>;
+    fn from_slice_v(&self, v: &[f32]) -> Result<Self::VectorX, HoloError>;
     #[allow(clippy::wrong_self_convention)]
-    fn from_slice_m(&self, rows: usize, cols: usize, v: &[f64])
+    fn from_slice_m(&self, rows: usize, cols: usize, v: &[f32])
         -> Result<Self::MatrixX, HoloError>;
     #[allow(clippy::wrong_self_convention)]
-    fn from_slice_cv(&self, v: &[f64]) -> Result<Self::VectorXc, HoloError>;
+    fn from_slice_cv(&self, v: &[f32]) -> Result<Self::VectorXc, HoloError>;
     #[allow(clippy::wrong_self_convention)]
-    fn from_slice2_cv(&self, r: &[f64], i: &[f64]) -> Result<Self::VectorXc, HoloError>;
+    fn from_slice2_cv(&self, r: &[f32], i: &[f32]) -> Result<Self::VectorXc, HoloError>;
     #[allow(clippy::wrong_self_convention)]
     fn from_slice2_cm(
         &self,
         rows: usize,
         cols: usize,
-        r: &[f64],
-        i: &[f64],
+        r: &[f32],
+        i: &[f32],
     ) -> Result<Self::MatrixXc, HoloError>;
 
-    fn copy_from_slice_v(&self, v: &[f64], dst: &mut Self::VectorX) -> Result<(), HoloError>;
+    fn copy_from_slice_v(&self, v: &[f32], dst: &mut Self::VectorX) -> Result<(), HoloError>;
 
     fn copy_to_v(&self, src: &Self::VectorX, dst: &mut Self::VectorX) -> Result<(), HoloError>;
     fn copy_to_m(&self, src: &Self::MatrixX, dst: &mut Self::MatrixX) -> Result<(), HoloError>;
@@ -124,14 +124,14 @@ pub trait LinAlgBackend<D: Directivity> {
     fn norm_squared_cv(&self, a: &Self::VectorXc, b: &mut Self::VectorX) -> Result<(), HoloError>;
     fn real_cm(&self, a: &Self::MatrixXc, b: &mut Self::MatrixX) -> Result<(), HoloError>;
     fn imag_cm(&self, a: &Self::MatrixXc, b: &mut Self::MatrixX) -> Result<(), HoloError>;
-    fn scale_assign_v(&self, a: f64, b: &mut Self::VectorX) -> Result<(), HoloError>;
+    fn scale_assign_v(&self, a: f32, b: &mut Self::VectorX) -> Result<(), HoloError>;
     fn scale_assign_cv(&self, a: Complex, b: &mut Self::VectorXc) -> Result<(), HoloError>;
     fn scale_assign_cm(&self, a: Complex, b: &mut Self::MatrixXc) -> Result<(), HoloError>;
     fn conj_assign_v(&self, b: &mut Self::VectorXc) -> Result<(), HoloError>;
     fn sqrt_assign_v(&self, v: &mut Self::VectorX) -> Result<(), HoloError>;
     fn normalize_assign_cv(&self, v: &mut Self::VectorXc) -> Result<(), HoloError>;
     fn reciprocal_assign_c(&self, v: &mut Self::VectorXc) -> Result<(), HoloError>;
-    fn pow_assign_v(&self, a: f64, v: &mut Self::VectorX) -> Result<(), HoloError>;
+    fn pow_assign_v(&self, a: f32, v: &mut Self::VectorX) -> Result<(), HoloError>;
     fn exp_assign_cv(&self, v: &mut Self::VectorXc) -> Result<(), HoloError>;
 
     fn concat_row_cm(
@@ -153,7 +153,7 @@ pub trait LinAlgBackend<D: Directivity> {
         c: &mut Self::MatrixXc,
     ) -> Result<(), HoloError>;
 
-    fn max_v(&self, m: &Self::VectorX) -> Result<f64, HoloError>;
+    fn max_v(&self, m: &Self::VectorX) -> Result<f32, HoloError>;
     fn max_eigen_vector_c(&self, m: Self::MatrixXc) -> Result<Self::VectorXc, HoloError>;
 
     fn hadamard_product_assign_cv(
@@ -174,11 +174,11 @@ pub trait LinAlgBackend<D: Directivity> {
         z: &mut Self::MatrixXc,
     ) -> Result<(), HoloError>;
 
-    fn dot(&self, x: &Self::VectorX, y: &Self::VectorX) -> Result<f64, HoloError>;
+    fn dot(&self, x: &Self::VectorX, y: &Self::VectorX) -> Result<f32, HoloError>;
     fn dot_c(&self, x: &Self::VectorXc, y: &Self::VectorXc) -> Result<Complex, HoloError>;
 
-    fn add_v(&self, alpha: f64, a: &Self::VectorX, b: &mut Self::VectorX) -> Result<(), HoloError>;
-    fn add_m(&self, alpha: f64, a: &Self::MatrixX, b: &mut Self::MatrixX) -> Result<(), HoloError>;
+    fn add_v(&self, alpha: f32, a: &Self::VectorX, b: &mut Self::VectorX) -> Result<(), HoloError>;
+    fn add_m(&self, alpha: f32, a: &Self::MatrixX, b: &mut Self::MatrixX) -> Result<(), HoloError>;
 
     #[allow(clippy::too_many_arguments)]
     fn gevv_c(
@@ -218,7 +218,7 @@ pub trait LinAlgBackend<D: Directivity> {
     fn pseudo_inverse_svd(
         &self,
         a: Self::MatrixXc,
-        alpha: f64,
+        alpha: f32,
         u: &mut Self::MatrixXc,
         s: &mut Self::MatrixXc,
         vt: &mut Self::MatrixXc,

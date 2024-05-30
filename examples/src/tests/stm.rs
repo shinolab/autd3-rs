@@ -10,7 +10,7 @@ pub async fn focus_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool>
     let stm = FocusSTM::from_freq(
         1.0 * Hz,
         (0..point_num).map(|i| {
-            let theta = 2.0 * PI * i as f64 / point_num as f64;
+            let theta = 2.0 * PI * i as f32 / point_num as f32;
             let p = radius * Vector3::new(theta.cos(), theta.sin(), 0.0);
             center + p
         }),
@@ -34,7 +34,7 @@ pub async fn gain_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> 
     let stm = GainSTM::from_freq(
         1.0 * Hz,
         (0..point_num).map(|i| {
-            let theta = 2.0 * PI * i as f64 / point_num as f64;
+            let theta = 2.0 * PI * i as f32 / point_num as f32;
             let p = radius * Vector3::new(theta.cos(), theta.sin(), 0.0);
             Focus::new(center + p)
         }),

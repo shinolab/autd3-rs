@@ -6,7 +6,7 @@ pub enum EmissionConstraint {
 
     Normalize,
 
-    Multiply(f64),
+    Multiply(f32),
 
     Uniform(EmitIntensity),
 
@@ -14,7 +14,7 @@ pub enum EmissionConstraint {
 }
 
 impl EmissionConstraint {
-    pub fn convert(&self, value: f64, max_value: f64) -> EmitIntensity {
+    pub fn convert(&self, value: f32, max_value: f32) -> EmitIntensity {
         match self {
             EmissionConstraint::DontCare => {
                 EmitIntensity::new((value * 255.).round().clamp(0., 255.) as u8)
@@ -29,7 +29,7 @@ impl EmissionConstraint {
             EmissionConstraint::Clamp(min, max) => EmitIntensity::new(
                 (value * 255.)
                     .round()
-                    .clamp(min.value() as f64, max.value() as f64) as u8,
+                    .clamp(min.value() as f32, max.value() as f32) as u8,
             ),
         }
     }
@@ -45,7 +45,7 @@ mod tests {
     #[case(EmitIntensity::new(128), 0.5, 1.0)]
     #[case(EmitIntensity::MAX, 1.0, 1.0)]
     #[case(EmitIntensity::MAX, 1.5, 1.0)]
-    fn dont_care(#[case] expect: EmitIntensity, #[case] value: f64, #[case] max_value: f64) {
+    fn dont_care(#[case] expect: EmitIntensity, #[case] value: f32, #[case] max_value: f32) {
         assert_eq!(
             expect,
             EmissionConstraint::DontCare.convert(value, max_value)
@@ -58,7 +58,7 @@ mod tests {
     #[case(EmitIntensity::new(128), 0.5, 1.0)]
     #[case(EmitIntensity::new(128), 1.0, 2.0)]
     #[case(EmitIntensity::new(191), 1.5, 2.0)]
-    fn normalize(#[case] expect: EmitIntensity, #[case] value: f64, #[case] max_value: f64) {
+    fn normalize(#[case] expect: EmitIntensity, #[case] value: f32, #[case] max_value: f32) {
         assert_eq!(
             expect,
             EmissionConstraint::Normalize.convert(value, max_value)
@@ -73,9 +73,9 @@ mod tests {
     #[case(EmitIntensity::new(96), 1.5, 2.0, 0.5)]
     fn multiply(
         #[case] expect: EmitIntensity,
-        #[case] value: f64,
-        #[case] max_value: f64,
-        #[case] mul: f64,
+        #[case] value: f32,
+        #[case] max_value: f32,
+        #[case] mul: f32,
     ) {
         assert_eq!(
             expect,
@@ -93,7 +93,7 @@ mod tests {
     #[case(EmitIntensity::MAX, 1.0, 2.0)]
     #[case(EmitIntensity::MIN, 1.5, 2.0)]
     #[case(EmitIntensity::MAX, 1.5, 2.0)]
-    fn uniform(#[case] expect: EmitIntensity, #[case] value: f64, #[case] max_value: f64) {
+    fn uniform(#[case] expect: EmitIntensity, #[case] value: f32, #[case] max_value: f32) {
         assert_eq!(
             expect,
             EmissionConstraint::Uniform(expect).convert(value, max_value)
@@ -132,8 +132,8 @@ mod tests {
     )]
     fn clamp(
         #[case] expect: EmitIntensity,
-        #[case] value: f64,
-        #[case] max_value: f64,
+        #[case] value: f32,
+        #[case] max_value: f32,
         #[case] min: EmitIntensity,
         #[case] max: EmitIntensity,
     ) {

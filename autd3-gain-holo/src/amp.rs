@@ -11,30 +11,30 @@ pub struct kPa;
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Div, Mul)]
 pub struct Amplitude {
     // Amplitude in Pa
-    pub(crate) value: f64,
+    pub(crate) value: f32,
 }
 
 impl Amplitude {
-    pub const fn pascal(&self) -> f64 {
+    pub const fn pascal(&self) -> f32 {
         self.value
     }
 
-    pub fn spl(&self) -> f64 {
-        20.0 * f64::log10(self.value / ABSOLUTE_THRESHOLD_OF_HEARING)
+    pub fn spl(&self) -> f32 {
+        20.0 * f32::log10(self.value / ABSOLUTE_THRESHOLD_OF_HEARING)
     }
 }
 
-impl std::ops::Mul<dB> for f64 {
+impl std::ops::Mul<dB> for f32 {
     type Output = Amplitude;
 
     fn mul(self, _rhs: dB) -> Self::Output {
         Self::Output {
-            value: ABSOLUTE_THRESHOLD_OF_HEARING * f64::powf(10.0, self / 20.0),
+            value: ABSOLUTE_THRESHOLD_OF_HEARING * f32::powf(10.0, self / 20.0),
         }
     }
 }
 
-impl std::ops::Mul<Pa> for f64 {
+impl std::ops::Mul<Pa> for f32 {
     type Output = Amplitude;
 
     fn mul(self, _rhs: Pa) -> Self::Output {
@@ -42,7 +42,7 @@ impl std::ops::Mul<Pa> for f64 {
     }
 }
 
-impl std::ops::Mul<kPa> for f64 {
+impl std::ops::Mul<kPa> for f32 {
     type Output = Amplitude;
 
     fn mul(self, _rhs: kPa) -> Self::Output {
@@ -50,7 +50,7 @@ impl std::ops::Mul<kPa> for f64 {
     }
 }
 
-impl std::ops::Mul<Amplitude> for f64 {
+impl std::ops::Mul<Amplitude> for f32 {
     type Output = Amplitude;
 
     fn mul(self, rhs: Amplitude) -> Self::Output {

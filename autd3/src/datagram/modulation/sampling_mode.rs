@@ -26,7 +26,7 @@ impl SamplingMode for ExactFreq {
         sampling_config: SamplingConfig,
         ultrasound_freq: Freq<u32>,
     ) -> Result<(u64, u64), AUTDInternalError> {
-        if freq.hz() as f64 >= sampling_config.freq(ultrasound_freq)?.hz() / 2. {
+        if freq.hz() as f32 >= sampling_config.freq(ultrasound_freq)?.hz() / 2. {
             return Err(AUTDInternalError::ModulationError(format!(
                 "Frequency ({}) is equal to or greater than the Nyquist frequency ({})",
                 freq,
@@ -46,9 +46,9 @@ impl SamplingMode for ExactFreq {
 pub struct ExactFreqFloat;
 
 impl SamplingMode for ExactFreqFloat {
-    type T = Freq<f64>;
+    type T = Freq<f32>;
     fn validate(
-        freq: Freq<f64>,
+        freq: Freq<f32>,
         sampling_config: SamplingConfig,
         ultrasound_freq: Freq<u32>,
     ) -> Result<(u64, u64), AUTDInternalError> {
@@ -65,7 +65,7 @@ impl SamplingMode for ExactFreqFloat {
                 sampling_config.freq(ultrasound_freq)? / 2.
             )));
         }
-        let fd = freq.hz() * sampling_config.division(ultrasound_freq)? as f64;
+        let fd = freq.hz() * sampling_config.division(ultrasound_freq)? as f32;
         if !is_integer(fd) {
             return Err(AUTDInternalError::ModulationError(format!(
                 "Frequency ({}) cannot be output with the sampling config ({}).",
@@ -84,9 +84,9 @@ impl SamplingMode for ExactFreqFloat {
 pub struct NearestFreq;
 
 impl SamplingMode for NearestFreq {
-    type T = Freq<f64>;
+    type T = Freq<f32>;
     fn validate(
-        freq: Freq<f64>,
+        freq: Freq<f32>,
         sampling_config: SamplingConfig,
         ultrasound_freq: Freq<u32>,
     ) -> Result<(u64, u64), AUTDInternalError> {
@@ -120,6 +120,6 @@ impl SamplingModeInference for Freq<u32> {
     type T = ExactFreq;
 }
 
-impl SamplingModeInference for Freq<f64> {
+impl SamplingModeInference for Freq<f32> {
     type T = ExactFreqFloat;
 }

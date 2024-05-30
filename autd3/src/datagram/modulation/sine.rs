@@ -33,7 +33,7 @@ impl Sine<ExactFreq> {
         }
     }
 
-    pub fn with_freq_nearest(freq: Freq<f64>) -> Sine<NearestFreq> {
+    pub fn with_freq_nearest(freq: Freq<f32>) -> Sine<NearestFreq> {
         Sine {
             freq,
             intensity: u8::MAX,
@@ -54,8 +54,8 @@ impl<S: SamplingMode> Modulation for Sine<S> {
         let phase = self.phase.radian();
         Ok((0..n)
             .map(|i| {
-                ((intensity as f64 / 2. * (2.0 * PI * (rep * i) as f64 / n as f64 + phase).sin())
-                    + offset as f64)
+                ((intensity as f32 / 2. * (2.0 * PI * (rep * i) as f32 / n as f32 + phase).sin())
+                    + offset as f32)
                     .round() as u8
             })
             .collect())
@@ -177,7 +177,7 @@ mod tests {
     )]
     fn with_freq_nearest(
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
-        #[case] freq: Freq<f64>,
+        #[case] freq: Freq<f32>,
     ) {
         let geometry = create_geometry(1);
         let m = Sine::with_freq_nearest(freq);

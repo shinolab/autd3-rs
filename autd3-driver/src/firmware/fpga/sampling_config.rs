@@ -11,7 +11,7 @@ use super::ULTRASOUND_PERIOD;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum SamplingConfig {
     Freq(Freq<u32>),
-    FreqNearest(Freq<f64>),
+    FreqNearest(Freq<f32>),
     DivisionRaw(u32),
     Division(u32),
 }
@@ -26,18 +26,18 @@ const fn div_min() -> u32 {
     SAMPLING_FREQ_DIV_MIN
 }
 
-fn freq_min_raw(base_freq: Freq<u32>) -> Freq<f64> {
-    (base_freq.hz() as f64 / div_max_raw() as f64) * Hz
+fn freq_min_raw(base_freq: Freq<u32>) -> Freq<f32> {
+    (base_freq.hz() as f32 / div_max_raw() as f32) * Hz
 }
-fn freq_max_raw(base_freq: Freq<u32>) -> Freq<f64> {
-    (base_freq.hz() as f64 / div_min_raw() as f64) * Hz
+fn freq_max_raw(base_freq: Freq<u32>) -> Freq<f32> {
+    (base_freq.hz() as f32 / div_min_raw() as f32) * Hz
 }
 
 impl SamplingConfig {
     pub const DISABLE: Self = Self::DivisionRaw(0xFFFFFFFF);
 
     fn division_from_freq_nearest(
-        f: Freq<f64>,
+        f: Freq<f32>,
         base_freq: Freq<u32>,
     ) -> Result<u32, AUTDInternalError> {
         if !(freq_min_raw(base_freq).hz()..=freq_max_raw(base_freq).hz()).contains(&f.hz()) {
@@ -47,7 +47,7 @@ impl SamplingConfig {
                 freq_max_raw(base_freq),
             ))
         } else {
-            Ok((base_freq.hz() as f64 / f.hz()) as _)
+            Ok((base_freq.hz() as f32 / f.hz()) as _)
         }
     }
 
@@ -77,15 +77,15 @@ impl SamplingConfig {
                 if (ultrasound_freq.hz() % f.hz()) != 0 {
                     return Err(AUTDInternalError::SamplingFreqInvalid(f, ultrasound_freq));
                 }
-                Self::division_from_freq_nearest((f.hz() as f64) * Hz, base_freq)
+                Self::division_from_freq_nearest((f.hz() as f32) * Hz, base_freq)
             }
             Self::FreqNearest(f) => Self::division_from_freq_nearest(f, base_freq),
         }
     }
 
-    pub fn freq(&self, ultrasound_freq: Freq<u32>) -> Result<Freq<f64>, AUTDInternalError> {
+    pub fn freq(&self, ultrasound_freq: Freq<u32>) -> Result<Freq<f32>, AUTDInternalError> {
         self.division(ultrasound_freq)
-            .map(|d| (ultrasound_freq.hz() * ULTRASOUND_PERIOD) as f64 / d as f64 * Hz)
+            .map(|d| (ultrasound_freq.hz() * ULTRASOUND_PERIOD) as f32 / d as f32 * Hz)
     }
 }
 
@@ -257,25 +257,25 @@ mod tests {
     #[case(Ok(40000), 512.*Hz, 40000 * Hz)]
     #[case::not_supported_max(
         Ok(512),
-        (freq_max(20480000 * Hz).hz() as f64 - 1.)*Hz,
+        (freq_max(20480000 * Hz).hz() as f32 - 1.)*Hz,
         40000 * Hz
     )]
     #[case::out_of_range_min(
         Err(AUTDInternalError::SamplingFreqOutOfRange(
-            freq_min_raw(20480000 * Hz) - f64::MIN * Hz,
+            freq_min_raw(20480000 * Hz) - f32::MIN * Hz,
             freq_min_raw(20480000 * Hz),
             freq_max_raw(20480000 * Hz)
         )),
-        freq_min_raw(20480000 * Hz) - f64::MIN*Hz,
+        freq_min_raw(20480000 * Hz) - f32::MIN*Hz,
         40000 * Hz
     )]
     #[case::out_of_range_max(
         Err(AUTDInternalError::SamplingFreqOutOfRange(
-            freq_max_raw(20480000 * Hz) + f64::MIN * Hz,
+            freq_max_raw(20480000 * Hz) + f32::MIN * Hz,
             freq_min_raw(20480000 * Hz),
             freq_max_raw(20480000 * Hz)
         )),
-        freq_max_raw(20480000 * Hz) + f64::MIN*Hz,
+        freq_max_raw(20480000 * Hz) + f32::MIN*Hz,
         40000 * Hz
     )]
     #[case::min(Ok(0xFFFFFFFF), freq_min_raw(80000*512*Hz), 80000 * Hz)]
@@ -283,30 +283,30 @@ mod tests {
     #[case(Ok(80000), 512.*Hz, 80000 * Hz)]
     #[case::not_supported_max(
         Ok(512),
-        (freq_max(80000*512*Hz).hz() as f64 - 1.)*Hz,
+        (freq_max(80000*512*Hz).hz() as f32 - 1.)*Hz,
         80000 * Hz
     )]
     #[case::out_of_range_min(
         Err(AUTDInternalError::SamplingFreqOutOfRange(
-            freq_min_raw(80000*512*Hz) - f64::MIN * Hz,
+            freq_min_raw(80000*512*Hz) - f32::MIN * Hz,
             freq_min_raw(80000*512*Hz),
             freq_max_raw(80000*512*Hz)
         )),
-        freq_min_raw(20480000*Hz) - f64::MIN*Hz,
+        freq_min_raw(20480000*Hz) - f32::MIN*Hz,
         80000 * Hz
     )]
     #[case::out_of_range_max(
         Err(AUTDInternalError::SamplingFreqOutOfRange(
-            freq_max_raw(80000*512*Hz) + f64::MIN * Hz,
+            freq_max_raw(80000*512*Hz) + f32::MIN * Hz,
             freq_min_raw(80000*512*Hz),
             freq_max_raw(80000*512*Hz)
         )),
-        freq_max_raw(80000*512*Hz) + f64::MIN*Hz,
+        freq_max_raw(80000*512*Hz) + f32::MIN*Hz,
         80000 * Hz
     )]
     fn from_freq_nearest(
         #[case] expected: Result<u32, AUTDInternalError>,
-        #[case] freq: Freq<f64>,
+        #[case] freq: Freq<f32>,
         #[case] ultrasound_freq: Freq<u32>,
     ) {
         assert_eq!(

@@ -12,11 +12,11 @@ use crate::EmissionConstraint;
 
 pub(crate) trait IntoDrive {
     fn into_phase(self) -> Phase;
-    fn into_intensity(self) -> f64;
+    fn into_intensity(self) -> f32;
 }
 
-impl IntoDrive for f64 {
-    fn into_intensity(self) -> f64 {
+impl IntoDrive for f32 {
+    fn into_intensity(self) -> f32 {
         1.
     }
 
@@ -26,7 +26,7 @@ impl IntoDrive for f64 {
 }
 
 impl IntoDrive for crate::Complex {
-    fn into_intensity(self) -> f64 {
+    fn into_intensity(self) -> f32 {
         self.abs()
     }
 
@@ -43,7 +43,7 @@ pub(crate) fn generate_result<'a, T>(
         nalgebra::U1,
         nalgebra::VecStorage<T, nalgebra::Dyn, nalgebra::U1>,
     >,
-    max_coefficient: f64,
+    max_coefficient: f32,
     constraint: EmissionConstraint,
     filter: Option<HashMap<usize, BitVec<usize, Lsb0>>>,
 ) -> GainCalcResult<'a>

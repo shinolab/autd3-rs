@@ -9,8 +9,8 @@ use directivity::Directivity;
 
 pub fn propagate<D: Directivity>(
     tr: &Transducer,
-    attenuation: f64,
-    wavenumber: f64,
+    attenuation: f32,
+    wavenumber: f32,
     dir: &Vector3,
     target_pos: &Vector3,
 ) -> Complex {
@@ -58,13 +58,13 @@ mod tests {
         let mut rng = rand::thread_rng();
         UnitQuaternion::from_axis_angle(
             &Vector3::x_axis(),
-            rng.gen_range::<f64, _>(-180.0..180.0).to_radians(),
+            rng.gen_range::<f32, _>(-180.0..180.0).to_radians(),
         ) * UnitQuaternion::from_axis_angle(
             &Vector3::y_axis(),
-            rng.gen_range::<f64, _>(-180.0..180.0).to_radians(),
+            rng.gen_range::<f32, _>(-180.0..180.0).to_radians(),
         ) * UnitQuaternion::from_axis_angle(
             &Vector3::z_axis(),
-            rng.gen_range::<f64, _>(-180.0..180.0).to_radians(),
+            rng.gen_range::<f32, _>(-180.0..180.0).to_radians(),
         )
     }
 
@@ -79,13 +79,13 @@ mod tests {
     }
 
     #[rstest::fixture]
-    fn attenuation() -> f64 {
+    fn attenuation() -> f32 {
         let mut rng = rand::thread_rng();
         rng.gen_range(0.0..1e-6)
     }
 
     #[rstest::fixture]
-    fn sound_speed() -> f64 {
+    fn sound_speed() -> f32 {
         let mut rng = rand::thread_rng();
         rng.gen_range(300e3..400e3)
     }
@@ -96,8 +96,8 @@ mod tests {
         tr: Transducer,
         rot: UnitQuaternion,
         target: Vector3,
-        attenuation: f64,
-        sound_speed: f64,
+        attenuation: f32,
+        sound_speed: f32,
     ) {
         let mut device = Device::new(0, rot, vec![tr.clone()]);
         device.sound_speed = sound_speed;

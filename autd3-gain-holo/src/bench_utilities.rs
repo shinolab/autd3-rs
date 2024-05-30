@@ -15,7 +15,7 @@ pub fn generate_geometry(size: usize) -> Geometry {
     Geometry::new(
         (0..size)
             .map(move |i| {
-                AUTD3::new(Vector3::new(i as f64 * AUTD3::DEVICE_WIDTH, 0., 0.)).into_device(i)
+                AUTD3::new(Vector3::new(i as f32 * AUTD3::DEVICE_WIDTH, 0., 0.)).into_device(i)
             })
             .collect(),
         FREQ_40K,
@@ -26,11 +26,11 @@ pub fn gen_foci(n: usize, num_dev: usize) -> impl IntoIterator<Item = (Vector3, 
     (0..n).map(move |i| {
         (
             Vector3::new(
-                black_box(90. + 10. * (2.0 * PI * i as f64 / n as f64).cos()),
-                black_box(70. + 10. * (2.0 * PI * i as f64 / n as f64).sin()),
+                black_box(90. + 10. * (2.0 * PI * i as f32 / n as f32).cos()),
+                black_box(70. + 10. * (2.0 * PI * i as f32 / n as f32).sin()),
                 black_box(150.),
             ),
-            5e3 * Pa * num_dev as f64 / n as f64,
+            5e3 * Pa * num_dev as f32 / n as f32,
         )
     })
 }

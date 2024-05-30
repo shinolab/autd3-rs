@@ -11,7 +11,7 @@ pub(crate) fn mmcm_divider(divide: u64) -> u64 {
     let mut duty_cycle = 50000;
     if divide >= 64 {
         let duty_cycle_min = ((divide - 64) * 100_000) / divide;
-        let duty_cycle_max = ((64.5 / divide as f64) * 100000.) as u64;
+        let duty_cycle_max = ((64.5 / divide as f32) * 100000.) as u64;
         if duty_cycle > duty_cycle_max {
             duty_cycle = duty_cycle_max;
         }

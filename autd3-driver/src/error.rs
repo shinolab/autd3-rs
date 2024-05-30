@@ -40,10 +40,10 @@ pub enum AUTDInternalError {
     #[error("Sampling frequency ({0}) must divide {1}")]
     SamplingFreqInvalid(Freq<u32>, Freq<u32>),
     #[error("Sampling frequency ({0}) is out of range ([{1}, {2}])")]
-    SamplingFreqOutOfRange(Freq<f64>, Freq<f64>, Freq<f64>),
+    SamplingFreqOutOfRange(Freq<f32>, Freq<f32>, Freq<f32>),
 
     #[error("STM frequency ({1}, size={0}) must divide ultrasound frequency")]
-    STMFreqInvalid(usize, Freq<f64>),
+    STMFreqInvalid(usize, Freq<f32>),
 
     #[error(
         "FocusSTM size ({0}) is out of range ([{}, {}])",
@@ -53,14 +53,14 @@ pub enum AUTDInternalError {
     FocusSTMPointSizeOutOfRange(usize),
     #[error(
         "Point coordinate ({0}, {1}, {2}) is out of range ([{}, {}], [{}, {}], [{}, {}])",
-        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER_X as f64,
-        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_UPPER_X as f64,
-        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER_Y as f64,
-        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_UPPER_Y as f64,
-        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER_Z as f64,
-        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_UPPER_Z as f64,
+        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER_X as f32,
+        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_UPPER_X as f32,
+        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER_Y as f32,
+        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_UPPER_Y as f32,
+        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER_Z as f32,
+        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_UPPER_Z as f32,
     )]
-    FocusSTMPointOutOfRange(f64, f64, f64),
+    FocusSTMPointOutOfRange(f32, f32, f32),
     #[error(
         "GainSTM size ({0}) is out of range ([{}, {}])",
         STM_BUF_SIZE_MIN,

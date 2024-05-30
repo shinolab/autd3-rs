@@ -38,7 +38,7 @@ impl FromMessage<SamplingConfig> for autd3_driver::firmware::fpga::SamplingConfi
             }
             sampling_config::Config::FreqNearest(SamplingConfigFreqNearest { value }) => {
                 autd3_driver::firmware::fpga::SamplingConfig::FreqNearest(
-                    value as f64 * autd3_driver::defined::Hz,
+                    value as f32 * autd3_driver::defined::Hz,
                 )
             }
             sampling_config::Config::Division(SamplingConfigDivision { value }) => {

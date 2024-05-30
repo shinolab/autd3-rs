@@ -57,7 +57,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> GS<D, B> {
         let q0 = self.backend.from_slice_cv(&ones)?;
 
         let amps = self.backend.from_slice_cv(unsafe {
-            std::slice::from_raw_parts(self.amps.as_ptr() as *const f64, self.amps.len())
+            std::slice::from_raw_parts(self.amps.as_ptr() as *const f32, self.amps.len())
         })?;
         let mut p = self.backend.alloc_zeros_cv(m)?;
         (0..self.repeat).try_for_each(|_| -> Result<(), AUTDInternalError> {

@@ -19,13 +19,13 @@ impl AUTD3 {
 
     pub const NUM_TRANS_Y: usize = 14;
 
-    pub const TRANS_SPACING_MM: f64 = 10.16;
+    pub const TRANS_SPACING_MM: f32 = 10.16;
 
-    pub const TRANS_SPACING: f64 = Self::TRANS_SPACING_MM * mm;
+    pub const TRANS_SPACING: f32 = Self::TRANS_SPACING_MM * mm;
 
-    pub const DEVICE_WIDTH: f64 = 192.0 * mm;
+    pub const DEVICE_WIDTH: f32 = 192.0 * mm;
 
-    pub const DEVICE_HEIGHT: f64 = 151.4 * mm;
+    pub const DEVICE_HEIGHT: f32 = 151.4 * mm;
 
     pub fn new(position: Vector3) -> Self {
         Self {
@@ -76,8 +76,8 @@ impl IntoDevice for AUTD3 {
                 .filter(|&(x, y)| !Self::is_missing_transducer(x, y))
                 .map(|(x, y)| {
                     Vector4::new(
-                        x as f64 * Self::TRANS_SPACING,
-                        y as f64 * Self::TRANS_SPACING,
+                        x as f32 * Self::TRANS_SPACING,
+                        y as f32 * Self::TRANS_SPACING,
                         0.,
                         1.,
                     )

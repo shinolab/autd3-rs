@@ -38,7 +38,7 @@ mod tests {
     #[case(PI / 2., 90. * deg)]
     #[case(0., 0. * rad)]
     #[case(PI / 2., PI / 2. * rad)]
-    fn test_to_radians(#[case] expected: f64, #[case] angle: Angle) {
+    fn test_to_radians(#[case] expected: f32, #[case] angle: Angle) {
         assert_approx_eq::assert_approx_eq!(expected, angle.radian());
     }
 

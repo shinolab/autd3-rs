@@ -11,7 +11,7 @@ use autd3_driver::{
     geometry::{Geometry, IntoDevice, Vector3},
 };
 
-const EPS: f64 = 1e-6;
+const EPS: f32 = 1e-6;
 
 fn generate_geometry(size: usize) -> Geometry {
     Geometry::new(
@@ -19,8 +19,8 @@ fn generate_geometry(size: usize) -> Geometry {
             .flat_map(|i| {
                 (0..size).map(move |j| {
                     AUTD3::new(Vector3::new(
-                        i as f64 * AUTD3::DEVICE_WIDTH,
-                        j as f64 * AUTD3::DEVICE_HEIGHT,
+                        i as f32 * AUTD3::DEVICE_WIDTH,
+                        j as f32 * AUTD3::DEVICE_HEIGHT,
                         0.,
                     ))
                     .into_device(j + i * size)
@@ -35,8 +35,8 @@ fn gen_foci(n: usize) -> impl Iterator<Item = (Vector3, Amplitude)> {
     (0..n).map(move |i| {
         (
             Vector3::new(
-                90. + 10. * (2.0 * PI * i as f64 / n as f64).cos(),
-                70. + 10. * (2.0 * PI * i as f64 / n as f64).sin(),
+                90. + 10. * (2.0 * PI * i as f32 / n as f32).cos(),
+                70. + 10. * (2.0 * PI * i as f32 / n as f32).sin(),
                 150.,
             ),
             10e3 * Pa,
@@ -211,7 +211,7 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
 
     fn make_random_v(&self, size: usize) -> Result<B::VectorX, HoloError> {
         let mut rng = rand::thread_rng();
-        let v: Vec<f64> = (&mut rng)
+        let v: Vec<f32> = (&mut rng)
             .sample_iter(rand::distributions::Standard)
             .take(size)
             .collect();
@@ -220,7 +220,7 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
 
     fn make_random_m(&self, rows: usize, cols: usize) -> Result<B::MatrixX, HoloError> {
         let mut rng = rand::thread_rng();
-        let v: Vec<f64> = (&mut rng)
+        let v: Vec<f32> = (&mut rng)
             .sample_iter(rand::distributions::Standard)
             .take(rows * cols)
             .collect();
@@ -228,17 +228,17 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
     }
 
     fn make_zeros_m(&self, rows: usize, cols: usize) -> Result<B::MatrixX, HoloError> {
-        let v: Vec<f64> = vec![0.; rows * cols];
+        let v: Vec<f32> = vec![0.; rows * cols];
         self.backend.from_slice_m(rows, cols, &v)
     }
 
     fn make_random_cv(&self, size: usize) -> Result<B::VectorXc, HoloError> {
         let mut rng = rand::thread_rng();
-        let real: Vec<f64> = (&mut rng)
+        let real: Vec<f32> = (&mut rng)
             .sample_iter(rand::distributions::Standard)
             .take(size)
             .collect();
-        let imag: Vec<f64> = (&mut rng)
+        let imag: Vec<f32> = (&mut rng)
             .sample_iter(rand::distributions::Standard)
             .take(size)
             .collect();
@@ -247,11 +247,11 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
 
     fn make_random_cm(&self, rows: usize, cols: usize) -> Result<B::MatrixXc, HoloError> {
         let mut rng = rand::thread_rng();
-        let real: Vec<f64> = (&mut rng)
+        let real: Vec<f32> = (&mut rng)
             .sample_iter(rand::distributions::Standard)
             .take(rows * cols)
             .collect();
-        let imag: Vec<f64> = (&mut rng)
+        let imag: Vec<f32> = (&mut rng)
             .sample_iter(rand::distributions::Standard)
             .take(rows * cols)
             .collect();
@@ -331,7 +331,7 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
     fn test_from_slice_v(&self) -> Result<(), HoloError> {
         let rng = rand::thread_rng();
 
-        let v: Vec<f64> = rng
+        let v: Vec<f32> = rng
             .sample_iter(rand::distributions::Standard)
             .take(N)
             .collect();
@@ -349,7 +349,7 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
     fn test_from_slice_m(&self) -> Result<(), HoloError> {
         let rng = rand::thread_rng();
 
-        let v: Vec<f64> = rng
+        let v: Vec<f32> = rng
             .sample_iter(rand::distributions::Standard)
             .take(N * 2 * N)
             .collect();
@@ -370,7 +370,7 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
     fn test_from_slice_cv(&self) -> Result<(), HoloError> {
         let rng = rand::thread_rng();
 
-        let real: Vec<f64> = rng
+        let real: Vec<f32> = rng
             .sample_iter(rand::distributions::Standard)
             .take(N)
             .collect();
@@ -389,11 +389,11 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
     fn test_from_slice2_cv(&self) -> Result<(), HoloError> {
         let mut rng = rand::thread_rng();
 
-        let real: Vec<f64> = (&mut rng)
+        let real: Vec<f32> = (&mut rng)
             .sample_iter(rand::distributions::Standard)
             .take(N)
             .collect();
-        let imag: Vec<f64> = (&mut rng)
+        let imag: Vec<f32> = (&mut rng)
             .sample_iter(rand::distributions::Standard)
             .take(N)
             .collect();
@@ -415,11 +415,11 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
     fn test_from_slice2_cm(&self) -> Result<(), HoloError> {
         let mut rng = rand::thread_rng();
 
-        let real: Vec<f64> = (&mut rng)
+        let real: Vec<f32> = (&mut rng)
             .sample_iter(rand::distributions::Standard)
             .take(N * 2 * N)
             .collect();
-        let imag: Vec<f64> = (&mut rng)
+        let imag: Vec<f32> = (&mut rng)
             .sample_iter(rand::distributions::Standard)
             .take(N * 2 * N)
             .collect();
@@ -445,7 +445,7 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
             let v = (&mut rng)
                 .sample_iter(rand::distributions::Standard)
                 .take(N / 2)
-                .collect::<Vec<f64>>();
+                .collect::<Vec<f32>>();
 
             self.backend.copy_from_slice_v(&v, &mut a)?;
 
@@ -1185,7 +1185,7 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         let u = gen_unitary(N);
 
         let mut rng = rand::thread_rng();
-        let mut lambda_vals: Vec<f64> = (&mut rng)
+        let mut lambda_vals: Vec<f32> = (&mut rng)
             .sample_iter(rand::distributions::Standard)
             .take(N)
             .collect();
@@ -1197,8 +1197,8 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
 
         let a = &u * &lambda * u.adjoint();
 
-        let real = a.iter().map(|c| c.re).collect::<Vec<f64>>();
-        let imag = a.iter().map(|c| c.im).collect::<Vec<f64>>();
+        let real = a.iter().map(|c| c.re).collect::<Vec<f32>>();
+        let imag = a.iter().map(|c| c.im).collect::<Vec<f32>>();
         let a = self.backend.from_slice2_cm(N, N, &real, &imag)?;
 
         let b = self.backend.max_eigen_vector_c(a)?;
@@ -1295,7 +1295,7 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
 
         let a = self.backend.to_host_v(a)?;
         let b = self.backend.to_host_v(b)?;
-        let expect = a.iter().zip(b.iter()).map(|(a, b)| a * b).sum::<f64>();
+        let expect = a.iter().zip(b.iter()).map(|(a, b)| a * b).sum::<f32>();
         assert_approx_eq::assert_approx_eq!(dot, expect, EPS);
         Ok(())
     }
@@ -1971,7 +1971,7 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         let b = self.backend.to_host_v(b)?;
 
         (0..N).for_each(|row| {
-            let sum = a.row(row).iter().sum::<f64>();
+            let sum = a.row(row).iter().sum::<f32>();
             assert_approx_eq::assert_approx_eq!(sum, b[row], EPS);
         });
         Ok(())
@@ -2142,7 +2142,7 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         let reference = {
             let mut b = MatrixXc::zeros(m, n);
             (0..n).for_each(|i| {
-                let x = 1.0 / g.rows(i, 1).iter().map(|x| x.norm_sqr()).sum::<f64>();
+                let x = 1.0 / g.rows(i, 1).iter().map(|x| x.norm_sqr()).sum::<f32>();
                 (0..m).for_each(|j| {
                     b[(j, i)] = g[(i, j)].conj() * x;
                 })
