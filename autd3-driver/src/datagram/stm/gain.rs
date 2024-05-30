@@ -107,15 +107,13 @@ impl<G: Gain> GainSTMOperationGenerator<G> {
 
 impl<G: Gain> Drop for GainSTMOperationGenerator<G> {
     fn drop(&mut self) {
-        if !self.g.is_null() {
-            unsafe {
-                let _ = Box::from_raw(
-                    self.g
-                        as *mut Vec<
-                            Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>,
-                        >,
-                );
-            }
+        unsafe {
+            let _ = Box::from_raw(
+                self.g
+                    as *mut Vec<
+                        Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>,
+                    >,
+            );
         }
     }
 }
