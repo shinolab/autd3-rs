@@ -20,6 +20,9 @@ use crate::{
 
 use bitvec::prelude::*;
 
+use super::Datagram;
+use super::DatagramS;
+
 pub type GainCalcResult<'a> = Result<
     Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + 'a>,
     AUTDInternalError,
@@ -56,6 +59,31 @@ pub trait Gain {
 impl<'a> Gain for Box<dyn Gain + 'a> {
     fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         self.as_ref().calc(geometry)
+    }
+}
+
+impl<'a> Datagram for Box<dyn Gain + 'a> {
+    type O1 = GainOp;
+    type O2 = NullOp;
+    type G = GainOperationGenerator<Box<dyn Gain + 'a>>;
+
+    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
+        Self::G::new(self, geometry, Segment::S0, true)
+    }
+}
+
+impl<'a> DatagramS for Box<dyn Gain + 'a> {
+    type O1 = GainOp;
+    type O2 = NullOp;
+    type G = GainOperationGenerator<Box<dyn Gain + 'a>>;
+
+    fn operation_generator_with_segment(
+        self,
+        geometry: &Geometry,
+        segment: Segment,
+        transition: bool,
+    ) -> Result<Self::G, AUTDInternalError> {
+        Self::G::new(self, geometry, segment, transition)
     }
 }
 
