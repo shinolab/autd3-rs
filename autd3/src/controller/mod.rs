@@ -23,7 +23,7 @@ use crate::{
 };
 
 pub use builder::ControllerBuilder;
-use group::GroupGuard;
+pub use group::GroupGuard;
 
 pub struct Controller<L: Link> {
     pub link: L,
