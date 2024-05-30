@@ -92,6 +92,26 @@ impl<'a> Gain for Box<dyn Gain + Send + Sync + 'a> {
         self.as_ref().calc(geometry)
     }
 }
+
+#[cfg(feature = "capi")]
+mod capi {
+    use crate::derive::*;
+
+    #[derive(Gain)]
+    struct NullGain {}
+
+    impl<'a> Gain for NullGain {
+        fn calc(&self, _: &Geometry) -> GainCalcResult {
+            Ok(Box::new(move |_| Box::new(move |_| Drive::null())))
+        }
+    }
+
+    impl<'a> Default for Box<dyn Gain + 'a> {
+        fn default() -> Self {
+            Box::new(NullGain {})
+        }
+    }
+}
 // GRCOV_EXCL_STOP
 
 pub struct GainOperationGenerator<G: Gain> {

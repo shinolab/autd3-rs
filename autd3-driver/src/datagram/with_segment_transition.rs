@@ -103,3 +103,14 @@ impl<D: DatagramST> IntoDatagramWithSegmentTransition<D> for D {
         }
     }
 }
+
+#[cfg(feature = "capi")]
+impl<D: DatagramST + Default> Default for DatagramWithSegmentTransition<D> {
+    fn default() -> Self {
+        Self {
+            datagram: D::default(),
+            segment: Segment::default(),
+            transition_mode: None,
+        }
+    }
+}

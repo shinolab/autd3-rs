@@ -169,6 +169,18 @@ impl<G: Gain> DatagramST for GainSTM<G> {
     }
 }
 
+#[cfg(feature = "capi")]
+impl Default for GainSTM<Box<dyn Gain>> {
+    fn default() -> Self {
+        Self {
+            gains: vec![],
+            loop_behavior: LoopBehavior::infinite(),
+            sampling_config: SamplingConfig::DISABLE,
+            mode: GainSTMMode::PhaseIntensityFull,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
