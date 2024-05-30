@@ -71,3 +71,14 @@ impl<D: DatagramS> IntoDatagramWithSegment<D> for D {
         }
     }
 }
+
+#[cfg(feature = "capi")]
+impl<D: DatagramS + Default> Default for DatagramWithSegment<D> {
+    fn default() -> Self {
+        Self {
+            datagram: D::default(),
+            segment: Segment::default(),
+            transition: false,
+        }
+    }
+}

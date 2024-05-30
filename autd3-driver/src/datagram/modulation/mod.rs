@@ -104,6 +104,32 @@ impl DatagramST for Box<dyn Modulation> {
         Some(usize::MAX)
     }
 }
+
+#[cfg(feature = "capi")]
+mod capi {
+    use crate::derive::*;
+
+    #[derive(Modulation)]
+    struct NullModulation {
+        config: SamplingConfig,
+        loop_behavior: LoopBehavior,
+    }
+
+    impl Modulation for NullModulation {
+        fn calc(&self, _: &Geometry) -> ModulationCalcResult {
+            Ok(vec![])
+        }
+    }
+
+    impl<'a> Default for Box<dyn Modulation + 'a> {
+        fn default() -> Self {
+            Box::new(NullModulation {
+                config: SamplingConfig::DISABLE,
+                loop_behavior: LoopBehavior::infinite(),
+            })
+        }
+    }
+}
 // GRCOV_EXCL_STOP
 
 #[cfg(test)]

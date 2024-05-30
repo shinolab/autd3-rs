@@ -16,7 +16,7 @@ pub struct ForceFanOpGenerator<F: Fn(&Device) -> bool> {
     f: F,
 }
 
-impl<F: Fn(&Device) -> bool + Send + Sync> OperationGenerator for ForceFanOpGenerator<F> {
+impl<F: Fn(&Device) -> bool> OperationGenerator for ForceFanOpGenerator<F> {
     type O1 = ForceFanOp;
     type O2 = NullOp;
 
@@ -25,7 +25,7 @@ impl<F: Fn(&Device) -> bool + Send + Sync> OperationGenerator for ForceFanOpGene
     }
 }
 
-impl<F: Fn(&Device) -> bool + Send + Sync> Datagram for ForceFan<F> {
+impl<F: Fn(&Device) -> bool> Datagram for ForceFan<F> {
     type O1 = ForceFanOp;
     type O2 = NullOp;
     type G = ForceFanOpGenerator<F>;
@@ -40,5 +40,12 @@ impl<F: Fn(&Device) -> bool + Send + Sync> Datagram for ForceFan<F> {
 
     fn parallel_threshold(&self) -> Option<usize> {
         Some(usize::MAX)
+    }
+}
+
+#[cfg(feature = "capi")]
+impl Default for ForceFan<Box<dyn Fn(&Device) -> bool>> {
+    fn default() -> Self {
+        Self::new(Box::new(|_| false))
     }
 }

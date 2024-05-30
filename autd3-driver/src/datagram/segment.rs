@@ -46,3 +46,10 @@ impl Datagram for SwapSegment {
         Some(usize::MAX)
     }
 }
+
+#[cfg(feature = "capi")]
+impl Default for SwapSegment {
+    fn default() -> Self {
+        Self::Gain(Segment::default())
+    }
+}

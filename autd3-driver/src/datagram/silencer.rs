@@ -236,6 +236,16 @@ impl Datagram for Silencer<FixedCompletionSteps> {
     }
 }
 
+#[cfg(feature = "capi")]
+impl Default for Silencer<FixedUpdateRate> {
+    fn default() -> Self {
+        Silencer::fixed_update_rate(
+            SILENCER_STEPS_INTENSITY_DEFAULT,
+            SILENCER_STEPS_PHASE_DEFAULT,
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

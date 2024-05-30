@@ -125,6 +125,17 @@ impl DatagramST for FocusSTM {
     }
 }
 
+#[cfg(feature = "capi")]
+impl Default for FocusSTM {
+    fn default() -> Self {
+        Self {
+            control_points: vec![],
+            loop_behavior: LoopBehavior::infinite(),
+            sampling_config: SamplingConfig::DISABLE,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{

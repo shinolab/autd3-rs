@@ -23,9 +23,14 @@ impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> PulseWidthEncoder<H
     }
 }
 
-impl Default for PulseWidthEncoder<fn(usize) -> u16, fn(&Device) -> fn(usize) -> u16> {
+impl Default
+    for PulseWidthEncoder<
+        Box<dyn Fn(usize) -> u16 + Send + Sync>,
+        Box<dyn Fn(&Device) -> Box<dyn Fn(usize) -> u16 + Send + Sync>>,
+    >
+{
     fn default() -> Self {
-        PulseWidthEncoder::new(|_| default_table)
+        PulseWidthEncoder::new(Box::new(|_| Box::new(default_table)))
     }
 }
 

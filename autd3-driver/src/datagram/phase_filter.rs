@@ -50,3 +50,16 @@ impl<P: Into<Phase>, FT: Fn(&Transducer) -> P + Send + Sync, F: Fn(&Device) -> F
         Ok(PhaseFilterOpGenerator { f: self.f })
     }
 }
+
+#[cfg(feature = "capi")]
+impl Default
+    for PhaseFilter<
+        Phase,
+        Box<dyn Fn(&Transducer) -> Phase + Send + Sync>,
+        Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Phase + Send + Sync>>,
+    >
+{
+    fn default() -> Self {
+        Self::additive(Box::new(|_| Box::new(|_| Phase::new(0))))
+    }
+}
