@@ -35,7 +35,7 @@ impl IntoDrive for crate::Complex {
     }
 }
 
-pub(crate) fn generate_result<T>(
+pub(crate) fn generate_result<'a, T>(
     geometry: &Geometry,
     q: nalgebra::Matrix<
         T,
@@ -46,11 +46,11 @@ pub(crate) fn generate_result<T>(
     max_coefficient: f64,
     constraint: EmissionConstraint,
     filter: Option<HashMap<usize, BitVec<usize, Lsb0>>>,
-) -> GainCalcResult
+) -> GainCalcResult<'a>
 where
     T: IntoDrive + Copy + Send + Sync + 'static,
 {
-    let x = std::sync::Arc::new(std::sync::RwLock::new(q));
+    let x = std::sync::Arc::new(q);
     if let Some(filter) = filter {
         let transducer_map = geometry
             .iter()
@@ -80,7 +80,7 @@ where
             let map = transducer_map[dev.idx()].clone();
             Box::new(move |tr| {
                 if let Some(idx) = map[tr.idx()] {
-                    let x = x.read().unwrap()[idx];
+                    let x = x[idx];
                     let phase = x.into_phase();
                     let intensity = constraint.convert(x.into_intensity(), max_coefficient);
                     Drive::new(phase, intensity)
@@ -102,7 +102,7 @@ where
             let x = x.clone();
             let base_idx = num_transducers[dev.idx()];
             Box::new(move |tr| {
-                let x = x.read().unwrap()[base_idx + tr.idx()];
+                let x = x[base_idx + tr.idx()];
                 let phase = x.into_phase();
                 let intensity = constraint.convert(x.into_intensity(), max_coefficient);
                 Drive::new(phase, intensity)

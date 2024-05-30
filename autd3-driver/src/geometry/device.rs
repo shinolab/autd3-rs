@@ -95,7 +95,7 @@ impl Device {
         self.x_direction = Self::get_direction(Vector3::x(), &self.rot);
         self.y_direction = Self::get_direction(Vector3::y(), &self.rot);
         self.axial_direction = if cfg!(feature = "left_handed") {
-            Self::get_direction(-Vector3::z(), &self.rot) // GRCOV_EXCL_LINE
+            Self::get_direction(-Vector3::z(), &self.rot)
         } else {
             Self::get_direction(Vector3::z(), &self.rot)
         };
@@ -321,7 +321,7 @@ pub mod tests {
         let expect_x = Vector3::new(0., 1., 0.);
         let expect_y = Vector3::new(-1., 0., 0.);
         let expect_z = if cfg!(feature = "left_handed") {
-            Vector3::new(0., 0., -1.) // GRCOV_EXCL_LINE
+            Vector3::new(0., 0., -1.)
         } else {
             Vector3::new(0., 0., 1.)
         };
@@ -377,7 +377,7 @@ pub mod tests {
         let expect_x = Vector3::new(0., 1., 0.);
         let expect_y = Vector3::new(-1., 0., 0.);
         let expect_z = if cfg!(feature = "left_handed") {
-            Vector3::new(0., 0., -1.) // GRCOV_EXCL_LINE
+            Vector3::new(0., 0., -1.)
         } else {
             Vector3::new(0., 0., 1.)
         };
@@ -411,7 +411,7 @@ pub mod tests {
         let expect_x = Vector3::new(0., 1., 0.);
         let expect_y = Vector3::new(-1., 0., 0.);
         let expect_z = if cfg!(feature = "left_handed") {
-            Vector3::new(0., 0., -1.) // GRCOV_EXCL_LINE
+            Vector3::new(0., 0., -1.)
         } else {
             Vector3::new(0., 0., 1.)
         };

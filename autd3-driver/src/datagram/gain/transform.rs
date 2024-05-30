@@ -14,27 +14,21 @@ use super::GainCalcResult;
 pub struct Transform<
     G: Gain,
     FT: Fn(&Transducer, Drive) -> Drive + Send + Sync + 'static,
-    F: Fn(&Device) -> FT + Send + Sync + Clone + 'static,
+    F: Fn(&Device) -> FT + 'static,
 > {
     gain: G,
     f: F,
 }
 
 pub trait IntoTransform<G: Gain> {
-    fn with_transform<
-        FT: Fn(&Transducer, Drive) -> Drive + Send + Sync,
-        F: Fn(&Device) -> FT + Send + Sync + Clone,
-    >(
+    fn with_transform<FT: Fn(&Transducer, Drive) -> Drive + Send + Sync, F: Fn(&Device) -> FT>(
         self,
         f: F,
     ) -> Transform<G, FT, F>;
 }
 
-impl<
-        G: Gain,
-        FT: Fn(&Transducer, Drive) -> Drive + Send + Sync,
-        F: Fn(&Device) -> FT + Send + Sync + Clone,
-    > Transform<G, FT, F>
+impl<G: Gain, FT: Fn(&Transducer, Drive) -> Drive + Send + Sync, F: Fn(&Device) -> FT>
+    Transform<G, FT, F>
 {
     #[doc(hidden)]
     pub fn new(gain: G, f: F) -> Self {
@@ -45,12 +39,12 @@ impl<
 impl<
         G: Gain,
         FT: Fn(&Transducer, Drive) -> Drive + Send + Sync + 'static,
-        F: Fn(&Device) -> FT + Send + Sync + Clone + 'static,
+        F: Fn(&Device) -> FT + 'static,
     > Gain for Transform<G, FT, F>
 {
     fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         let src = self.gain.calc(geometry)?;
-        let f = self.f.clone();
+        let f = &self.f;
         Ok(Box::new(move |dev| {
             let f = f(dev);
             let src = src(dev);

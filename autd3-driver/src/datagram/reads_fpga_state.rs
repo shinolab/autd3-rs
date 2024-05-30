@@ -16,7 +16,7 @@ pub struct ReadsFPGAStateOpGenerator<F: Fn(&Device) -> bool> {
     f: F,
 }
 
-impl<F: Fn(&Device) -> bool + Send + Sync> OperationGenerator for ReadsFPGAStateOpGenerator<F> {
+impl<F: Fn(&Device) -> bool> OperationGenerator for ReadsFPGAStateOpGenerator<F> {
     type O1 = ReadsFPGAStateOp;
     type O2 = NullOp;
 
@@ -25,7 +25,7 @@ impl<F: Fn(&Device) -> bool + Send + Sync> OperationGenerator for ReadsFPGAState
     }
 }
 
-impl<'a, F: Fn(&Device) -> bool + Send + Sync + 'a> Datagram for ReadsFPGAState<F> {
+impl<F: Fn(&Device) -> bool> Datagram for ReadsFPGAState<F> {
     type O1 = ReadsFPGAStateOp;
     type O2 = NullOp;
     type G = ReadsFPGAStateOpGenerator<F>;

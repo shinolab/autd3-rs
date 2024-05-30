@@ -5,14 +5,13 @@ use super::Datagram;
 use derive_more::Deref;
 
 #[derive(Clone, Deref)]
-pub struct DatagramWithParallelThreshold<'a, D: Datagram> {
+pub struct DatagramWithParallelThreshold<D: Datagram> {
     #[deref]
     datagram: D,
     threshold: usize,
-    _phantom: std::marker::PhantomData<&'a D>,
 }
 
-impl<'a, D: Datagram> Datagram for DatagramWithParallelThreshold<'a, D> {
+impl<D: Datagram> Datagram for DatagramWithParallelThreshold<D> {
     type O1 = D::O1;
     type O2 = D::O2;
     type G = D::G;
@@ -30,16 +29,15 @@ impl<'a, D: Datagram> Datagram for DatagramWithParallelThreshold<'a, D> {
     }
 }
 
-pub trait IntoDatagramWithParallelThreshold<'a, D: Datagram> {
-    fn with_paralle_threshold(self, threshold: usize) -> DatagramWithParallelThreshold<'a, D>;
+pub trait IntoDatagramWithParallelThreshold<D: Datagram> {
+    fn with_paralle_threshold(self, threshold: usize) -> DatagramWithParallelThreshold<D>;
 }
 
-impl<'a, D: Datagram> IntoDatagramWithParallelThreshold<'a, D> for D {
-    fn with_paralle_threshold(self, threshold: usize) -> DatagramWithParallelThreshold<'a, D> {
+impl<D: Datagram> IntoDatagramWithParallelThreshold<D> for D {
+    fn with_paralle_threshold(self, threshold: usize) -> DatagramWithParallelThreshold<D> {
         DatagramWithParallelThreshold {
             datagram: self,
             threshold,
-            _phantom: std::marker::PhantomData,
         }
     }
 }

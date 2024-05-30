@@ -2,24 +2,21 @@ use crate::firmware::{fpga::GPIOIn, operation::EmulateGPIOInOp};
 
 use crate::datagram::*;
 
-pub struct EmulateGPIOIn<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H + Send + Sync> {
+pub struct EmulateGPIOIn<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H> {
     f: F,
 }
 
-impl<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H + Send + Sync> EmulateGPIOIn<H, F> {
+impl<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H> EmulateGPIOIn<H, F> {
     pub const fn new(f: F) -> Self {
         Self { f }
     }
 }
 
-pub struct EmulateGPIOInOpGenerator<
-    H: Fn(GPIOIn) -> bool + Send + Sync,
-    F: Fn(&Device) -> H + Send + Sync,
-> {
+pub struct EmulateGPIOInOpGenerator<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> {
     f: F,
 }
 
-impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H + Send + Sync> OperationGenerator
+impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
     for EmulateGPIOInOpGenerator<H, F>
 {
     type O1 = EmulateGPIOInOp;
@@ -34,9 +31,7 @@ impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H + Send + Sync> Ope
     }
 }
 
-impl<'a, H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H + Send + Sync + 'a> Datagram
-    for EmulateGPIOIn<H, F>
-{
+impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> Datagram for EmulateGPIOIn<H, F> {
     type O1 = EmulateGPIOInOp;
     type O2 = NullOp;
     type G = EmulateGPIOInOpGenerator<H, F>;

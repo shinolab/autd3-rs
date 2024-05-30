@@ -20,27 +20,28 @@ use crate::{
 
 use bitvec::prelude::*;
 
-pub type GainCalcResult = Result<
-    Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + Send + Sync>,
+pub type GainCalcResult<'a> = Result<
+    Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + 'a>,
     AUTDInternalError,
 >;
 
 pub trait Gain {
-    fn calc(&self, geometry: &Geometry) -> GainCalcResult;
-    fn calc_with_filter(
-        &self,
+    fn calc<'a>(&'a self, geometry: &Geometry) -> GainCalcResult<'a>;
+    fn calc_with_filter<'a>(
+        &'a self,
         geometry: &Geometry,
         _filter: HashMap<usize, BitVec<usize, Lsb0>>,
-    ) -> GainCalcResult {
+    ) -> GainCalcResult<'a> {
         self.calc(geometry)
     }
     #[allow(clippy::type_complexity)]
     fn transform<
+        'a,
         FT: Fn(&Transducer) -> Drive + Sync + Send + 'static,
-        F: Fn(&Device) -> FT + Send + Sync + 'static,
+        F: Fn(&Device) -> FT + 'a,
     >(
         f: F,
-    ) -> Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + Send + Sync>
+    ) -> Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + 'a>
     where
         Self: Sized,
     {
@@ -65,19 +66,55 @@ impl<'a> Gain for Box<dyn Gain + Send + Sync + 'a> {
 }
 // GRCOV_EXCL_STOP
 
-pub struct GainOperationGenerator {
+pub struct GainOperationGenerator<G: Gain> {
+    pub gain: std::pin::Pin<Box<G>>,
     #[allow(clippy::type_complexity)]
-    pub g: Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + Send + Sync>,
+    pub g: *const Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>,
     pub segment: Segment,
     pub transition: bool,
 }
 
-impl OperationGenerator for GainOperationGenerator {
+impl<G: Gain> GainOperationGenerator<G> {
+    pub fn new(
+        gain: G,
+        geometry: &Geometry,
+        segment: Segment,
+        transition: bool,
+    ) -> Result<Self, AUTDInternalError> {
+        let mut r = Self {
+            gain: Box::pin(gain),
+            g: std::ptr::null(),
+            segment,
+            transition,
+        };
+        let g = Box::new(r.gain.calc(geometry)?)
+            as Box<Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>>;
+        r.g = Box::into_raw(g) as *const _;
+        Ok(r)
+    }
+}
+
+impl<G: Gain> Drop for GainOperationGenerator<G> {
+    fn drop(&mut self) {
+        if !self.g.is_null() {
+            unsafe {
+                let _ = Box::from_raw(
+                    self.g
+                        as *mut Box<
+                            dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>,
+                        >,
+                );
+            }
+        }
+    }
+}
+
+impl<G: Gain> OperationGenerator for GainOperationGenerator<G> {
     type O1 = GainOp;
     type O2 = NullOp;
 
     fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
-        let d = (self.g)(device);
+        let d = unsafe { (*self.g)(device) };
         (
             GainOp::new(self.segment, self.transition, d),
             NullOp::default(),

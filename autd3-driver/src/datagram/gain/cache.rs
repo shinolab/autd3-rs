@@ -8,8 +8,10 @@ pub use crate::{
 pub use autd3_derive::Gain;
 
 use std::{
+    cell::{Ref, RefCell},
     collections::HashMap,
-    sync::{Arc, RwLock, RwLockReadGuard},
+    rc::Rc,
+    sync::Arc,
 };
 
 use super::GainCalcResult;
@@ -22,7 +24,7 @@ use derive_more::Deref;
 pub struct Cache<G: Gain> {
     #[deref]
     gain: G,
-    cache: Arc<RwLock<HashMap<usize, Arc<Vec<Drive>>>>>,
+    cache: Rc<RefCell<HashMap<usize, Arc<Vec<Drive>>>>>,
 }
 
 pub trait IntoCache<G: Gain> {
@@ -34,18 +36,18 @@ impl<G: Gain> Cache<G> {
     pub fn new(gain: G) -> Self {
         Self {
             gain,
-            cache: Arc::new(Default::default()),
+            cache: Default::default(),
         }
     }
 
     pub fn init(&self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
-        if self.cache.read().unwrap().len() != geometry.devices().count()
+        if self.cache.borrow().len() != geometry.devices().count()
             || geometry
                 .devices()
-                .any(|dev| !self.cache.read().unwrap().contains_key(&dev.idx()))
+                .any(|dev| !self.cache.borrow().contains_key(&dev.idx()))
         {
             let f = self.gain.calc(geometry)?;
-            *self.cache.write().unwrap() = geometry
+            *self.cache.borrow_mut() = geometry
                 .devices()
                 .map(|dev| (dev.idx(), Arc::new(dev.iter().map(f(dev)).collect())))
                 .collect();
@@ -53,17 +55,17 @@ impl<G: Gain> Cache<G> {
         Ok(())
     }
 
-    pub fn drives(&self) -> RwLockReadGuard<HashMap<usize, Arc<Vec<Drive>>>> {
-        self.cache.read().unwrap()
+    pub fn drives(&self) -> Ref<'_, HashMap<usize, Arc<Vec<Drive>>>> {
+        self.cache.borrow()
     }
 }
 
 impl<G: Gain> Gain for Cache<G> {
     fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         self.init(geometry)?;
-        let cache = self.cache.clone();
+        let cache = self.cache.borrow();
         Ok(Box::new(move |dev| {
-            let drives = cache.read().unwrap()[&dev.idx()].clone();
+            let drives = cache[&dev.idx()].clone();
             Box::new(move |tr| drives[tr.idx()])
         }))
     }

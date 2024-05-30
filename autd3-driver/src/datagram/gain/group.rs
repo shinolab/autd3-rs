@@ -22,7 +22,7 @@ pub struct Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync + 'static,
     FK: Fn(&Transducer) -> Option<K> + Send + Sync + 'static,
-    F: Fn(&Device) -> FK + Clone + Send + Sync + 'static,
+    F: Fn(&Device) -> FK + 'static,
 {
     f: F,
     gain_map: HashMap<K, Box<dyn Gain>>,
@@ -32,7 +32,7 @@ impl<K, FK, F> Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync + 'static,
     FK: Fn(&Transducer) -> Option<K> + Send + Sync + 'static,
-    F: Fn(&Device) -> FK + Clone + Send + Sync + 'static,
+    F: Fn(&Device) -> FK + 'static,
 {
     pub fn new(f: F) -> Group<K, FK, F> {
         Group {
@@ -81,7 +81,7 @@ impl<K, FK, F> Gain for Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync + 'static,
     FK: Fn(&Transducer) -> Option<K> + Send + Sync + 'static,
-    F: Fn(&Device) -> FK + Clone + Send + Sync + 'static,
+    F: Fn(&Device) -> FK + 'static,
 {
     fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         let mut filters = self.get_filters(geometry);
@@ -120,7 +120,7 @@ where
                 .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?,
         ));
 
-        let f = self.f.clone();
+        let f = &self.f;
         Ok(Box::new(move |dev| {
             let fk = f(dev);
             let dev_idx = dev.idx();

@@ -3,28 +3,24 @@ use autd3_driver::derive::*;
 #[derive(Gain)]
 pub struct Custom<
     FT: Fn(&Transducer) -> Drive + Send + Sync + 'static,
-    F: Fn(&Device) -> FT + Send + Sync + Clone + 'static,
+    F: Fn(&Device) -> FT + 'static,
 > {
     f: F,
 }
 
-impl<
-        FT: Fn(&Transducer) -> Drive + Send + Sync + 'static,
-        F: Fn(&Device) -> FT + Send + Sync + Clone + 'static,
-    > Custom<FT, F>
+impl<FT: Fn(&Transducer) -> Drive + Send + Sync + 'static, F: Fn(&Device) -> FT + 'static>
+    Custom<FT, F>
 {
     pub const fn new(f: F) -> Self {
         Self { f }
     }
 }
 
-impl<
-        FT: Fn(&Transducer) -> Drive + Send + Sync + 'static,
-        F: Fn(&Device) -> FT + Send + Sync + Clone + 'static,
-    > Gain for Custom<FT, F>
+impl<FT: Fn(&Transducer) -> Drive + Send + Sync + 'static, F: Fn(&Device) -> FT + 'static> Gain
+    for Custom<FT, F>
 {
     fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
-        let f = self.f.clone();
+        let f = &self.f;
         Ok(Self::transform(f))
     }
 }
