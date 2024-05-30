@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use nalgebra::ComplexField;
+use nalgebra::{ComplexField, Normed};
 use rand::Rng;
 
 use crate::{Amplitude, Complex, HoloError, LinAlgBackend, MatrixXc, Pa, Trans, VectorX, VectorXc};
@@ -123,6 +123,8 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
 
         self.test_abs_cv()?;
         println!("test_abs_cv done");
+        self.test_norm_squared_cv()?;
+        println!("test_norm_squared_cv done");
         self.test_real_cm()?;
         println!("test_real_cm done");
         self.test_imag_cm()?;
@@ -145,9 +147,6 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         println!("test_pow_assign_v done");
         self.test_exp_assign_cv()?;
         println!("test_exp_assign_cv done");
-
-        self.test_absmax_cv()?;
-        println!("test_absmax_cv done");
 
         self.test_concat_row_cm()?;
         println!("test_concat_row_cm done");
@@ -919,6 +918,20 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         Ok(())
     }
 
+    fn test_norm_squared_cv(&self) -> Result<(), HoloError> {
+        let v = self.make_random_cv(N)?;
+
+        let mut abs = self.backend.alloc_v(N)?;
+        self.backend.norm_squared_cv(&v, &mut abs)?;
+
+        let v = self.backend.to_host_cv(v)?;
+        let abs = self.backend.to_host_v(abs)?;
+        v.iter().zip(abs.iter()).for_each(|(v, abs)| {
+            assert_approx_eq::assert_approx_eq!(v.norm_squared(), abs, EPS);
+        });
+        Ok(())
+    }
+
     fn test_real_cm(&self) -> Result<(), HoloError> {
         let v = self.make_random_cm(N, N)?;
         let mut r = self.backend.alloc_m(N, N)?;
@@ -1092,17 +1105,6 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         v.iter().zip(vc.iter()).for_each(|(v, vc)| {
             assert_approx_eq::assert_approx_eq!(vc.exp(), v, EPS);
         });
-        Ok(())
-    }
-
-    fn test_absmax_cv(&self) -> Result<(), HoloError> {
-        let real: Vec<f64> = vec![1.099, 1.0];
-        let imag: Vec<f64> = vec![0.9, 1.0];
-        let v = self.backend.from_slice2_cv(&real, &imag)?;
-
-        let max = self.backend.absmax_cv(&v)?;
-        assert_approx_eq::assert_approx_eq!(1.4204932242006647, max, EPS);
-
         Ok(())
     }
 

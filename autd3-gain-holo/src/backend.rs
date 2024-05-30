@@ -121,6 +121,7 @@ pub trait LinAlgBackend<D: Directivity> {
     fn get_diagonal(&self, a: &Self::MatrixX, v: &mut Self::VectorX) -> Result<(), HoloError>;
 
     fn abs_cv(&self, a: &Self::VectorXc, b: &mut Self::VectorX) -> Result<(), HoloError>;
+    fn norm_squared_cv(&self, a: &Self::VectorXc, b: &mut Self::VectorX) -> Result<(), HoloError>;
     fn real_cm(&self, a: &Self::MatrixXc, b: &mut Self::MatrixX) -> Result<(), HoloError>;
     fn imag_cm(&self, a: &Self::MatrixXc, b: &mut Self::MatrixX) -> Result<(), HoloError>;
     fn scale_assign_v(&self, a: f64, b: &mut Self::VectorX) -> Result<(), HoloError>;
@@ -132,8 +133,6 @@ pub trait LinAlgBackend<D: Directivity> {
     fn reciprocal_assign_c(&self, v: &mut Self::VectorXc) -> Result<(), HoloError>;
     fn pow_assign_v(&self, a: f64, v: &mut Self::VectorX) -> Result<(), HoloError>;
     fn exp_assign_cv(&self, v: &mut Self::VectorXc) -> Result<(), HoloError>;
-
-    fn absmax_cv(&self, a: &Self::VectorXc) -> Result<f64, HoloError>;
 
     fn concat_row_cm(
         &self,
