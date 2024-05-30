@@ -1,6 +1,6 @@
 [package]
 name = "autd3-modulation-audio-file"
-version = "25.0.0-rc.5"
+version = "25.0.0-rc.6"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 
@@ -12,7 +12,7 @@ keywords = ["autd"]
 
 [dependencies]
 hound = { workspace = true }
-autd3-driver = { path = "../autd3-driver", version = "25.0.0-rc.5" }
+autd3-driver = { path = "../autd3-driver", version = "25.0.0-rc.6" }
 wav_io = { workspace = true }
 thiserror = { workspace = true }
 
