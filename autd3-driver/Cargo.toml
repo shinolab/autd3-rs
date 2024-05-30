@@ -40,7 +40,7 @@ rstest = { workspace = true }
 criterion.workspace = true
 
 [features]
-default = ["derive", "capi"]
+default = ["derive"]
 async-trait = ["dep:async-trait"]
 use_meter = []
 left_handed = []
