@@ -84,7 +84,7 @@ mod tests {
         let m = autd3::modulation::Sine::new(rng.gen::<u32>() * Hz)
             .with_intensity(rng.gen())
             .with_offset(rng.gen())
-            .with_phase(rng.gen::<f64>() * rad);
+            .with_phase(rng.gen::<f32>() * rad);
         let msg = m.to_msg(None);
 
         match msg.datagram {

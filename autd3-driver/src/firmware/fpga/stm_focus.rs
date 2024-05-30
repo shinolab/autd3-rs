@@ -17,15 +17,15 @@ pub struct STMFocus {
 }
 
 impl STMFocus {
-    fn to_fixed_num(x: f64) -> i32 {
+    fn to_fixed_num(x: f32) -> i32 {
         (x / FOCUS_STM_FIXED_NUM_UNIT).round() as i32
     }
 
     pub fn set(
         &mut self,
-        x: f64,
-        y: f64,
-        z: f64,
+        x: f32,
+        y: f32,
+        z: f32,
         intensity: EmitIntensity,
     ) -> Result<(), AUTDInternalError> {
         let ix = Self::to_fixed_num(x);
@@ -84,7 +84,7 @@ mod tests {
         for i in FOCUS_STM_FIXED_NUM_LOWER_Z..=FOCUS_STM_FIXED_NUM_UPPER_Z {
             assert_eq!(
                 i,
-                STMFocus::to_fixed_num(i as f64 * FOCUS_STM_FIXED_NUM_UNIT)
+                STMFocus::to_fixed_num(i as f32 * FOCUS_STM_FIXED_NUM_UNIT)
             );
         }
     }
@@ -124,9 +124,9 @@ mod tests {
         assert_eq!(
             expect,
             p.set(
-                x as f64 * FOCUS_STM_FIXED_NUM_UNIT,
-                y as f64 * FOCUS_STM_FIXED_NUM_UNIT,
-                z as f64 * FOCUS_STM_FIXED_NUM_UNIT,
+                x as f32 * FOCUS_STM_FIXED_NUM_UNIT,
+                y as f32 * FOCUS_STM_FIXED_NUM_UNIT,
+                z as f32 * FOCUS_STM_FIXED_NUM_UNIT,
                 EmitIntensity::new(intensity)
             )
             .is_ok()

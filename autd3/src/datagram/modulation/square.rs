@@ -11,7 +11,7 @@ pub struct Square<S: SamplingMode> {
     #[getset]
     high: u8,
     #[getset]
-    duty: f64,
+    duty: f32,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
     __phantom: std::marker::PhantomData<S>,
@@ -30,7 +30,7 @@ impl Square<ExactFreq> {
         }
     }
 
-    pub const fn with_freq_nearest(freq: Freq<f64>) -> Square<NearestFreq> {
+    pub const fn with_freq_nearest(freq: Freq<f32>) -> Square<NearestFreq> {
         Square {
             freq,
             low: u8::MIN,
@@ -58,7 +58,7 @@ impl<S: SamplingMode> Modulation for Square<S> {
         Ok((0..rep)
             .map(|i| (n + i) / rep)
             .flat_map(|size| {
-                let n_high = (size as f64 * duty) as usize;
+                let n_high = (size as f32 * duty) as usize;
                 vec![high; n_high]
                     .into_iter()
                     .chain(vec![low; size as usize - n_high])
@@ -175,7 +175,7 @@ mod tests {
     )]
     fn with_freq_nearest(
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
-        #[case] freq: Freq<f64>,
+        #[case] freq: Freq<f32>,
     ) {
         let geometry = create_geometry(1);
         let m = Square::with_freq_nearest(freq);

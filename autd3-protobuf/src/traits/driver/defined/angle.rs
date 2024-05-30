@@ -15,7 +15,7 @@ impl ToMessage for autd3_driver::defined::Angle {
 
 impl FromMessage<Angle> for autd3_driver::defined::Angle {
     fn from_msg(msg: &Angle) -> Option<Self> {
-        Some(msg.rad as f64 * autd3_driver::defined::rad)
+        Some(msg.rad as f32 * autd3_driver::defined::rad)
     }
 }
 
@@ -28,7 +28,7 @@ mod tests {
     #[test]
     fn angle() {
         let mut rng = rand::thread_rng();
-        let v = rng.gen::<f64>() * rad;
+        let v = rng.gen::<f32>() * rad;
         let msg = v.to_msg(None);
         let v2 = Angle::from_msg(&msg).unwrap();
         assert_approx_eq::assert_approx_eq!(v.radian(), v2.radian());

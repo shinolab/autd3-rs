@@ -12,13 +12,13 @@ use crate::{
 
 const DIVCLK_DIVIDE_MIN: u64 = 1;
 const DIVCLK_DIVIDE_MAX: u64 = 106;
-const MULT_MIN: f64 = 2.0;
-const MULT_MAX: f64 = 64.0;
-const DIV_MIN: f64 = 1.0;
-const DIV_MAX: f64 = 128.0;
-const INCREMENTS: f64 = 0.125;
-const VCO_MIN: f64 = 600.0e6;
-const VCO_MAX: f64 = 1600.0e6;
+const MULT_MIN: f32 = 2.0;
+const MULT_MAX: f32 = 64.0;
+const DIV_MIN: f32 = 1.0;
+const DIV_MAX: f32 = 128.0;
+const INCREMENTS: f32 = 0.125;
+const VCO_MIN: f32 = 600.0e6;
+const VCO_MAX: f32 = 1600.0e6;
 
 #[derive(Clone, Copy)]
 #[repr(C)]
@@ -54,7 +54,7 @@ fn calculate_mult_div(frequency: u32) -> Option<(u64, u64, u64)> {
         (DIV_MIN / INCREMENTS) as u64..=(DIV_MAX / INCREMENTS) as u64
     )
     .find(|&(div, m, d)| {
-        if !(VCO_MIN..=VCO_MAX).contains(&(b as f64 * m as f64 * INCREMENTS / div as f64)) {
+        if !(VCO_MIN..=VCO_MAX).contains(&(b as f32 * m as f32 * INCREMENTS / div as f32)) {
             return false;
         }
         f * d == b * m

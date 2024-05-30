@@ -49,7 +49,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Naive<D, B> {
         let b = self.backend.gen_back_prop(n, m, &g)?;
 
         let p = self.backend.from_slice_cv(unsafe {
-            std::slice::from_raw_parts(self.amps.as_ptr() as *const f64, self.amps.len())
+            std::slice::from_raw_parts(self.amps.as_ptr() as *const f32, self.amps.len())
         })?;
         let mut q = self.backend.alloc_zeros_cv(n)?;
         self.backend.gemv_c(

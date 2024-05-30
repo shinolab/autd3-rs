@@ -17,9 +17,9 @@ pub struct SDP<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
     #[get]
     amps: Vec<Amplitude>,
     #[getset]
-    alpha: f64,
+    alpha: f32,
     #[getset]
-    lambda: f64,
+    lambda: f32,
     #[getset]
     repeat: usize,
     #[getset]
@@ -64,7 +64,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> SDP<D, B> {
         let P = {
             let mut P = self.backend.alloc_zeros_cm(m, m)?;
             let amps = self.backend.from_slice_cv(unsafe {
-                std::slice::from_raw_parts(self.amps.as_ptr() as *const f64, self.amps.len())
+                std::slice::from_raw_parts(self.amps.as_ptr() as *const f32, self.amps.len())
             })?;
             self.backend.create_diagonal_c(&amps, &mut P)?;
             P

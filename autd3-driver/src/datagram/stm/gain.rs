@@ -22,7 +22,7 @@ pub struct GainSTM<G: Gain> {
 
 impl<G: Gain> GainSTM<G> {
     pub fn from_freq<F: IntoIterator<Item = G>>(
-        freq: Freq<f64>,
+        freq: Freq<f32>,
         gains: F,
     ) -> Result<Self, AUTDInternalError> {
         let gains = gains.into_iter().collect::<Vec<_>>();
@@ -35,7 +35,7 @@ impl<G: Gain> GainSTM<G> {
     }
 
     pub fn from_freq_nearest<F: IntoIterator<Item = G>>(
-        freq: Freq<f64>,
+        freq: Freq<f32>,
         gains: F,
     ) -> Result<Self, AUTDInternalError> {
         let gains = gains.into_iter().collect::<Vec<_>>();
@@ -208,7 +208,7 @@ mod tests {
     #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
     fn from_freq(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
-        #[case] freq: Freq<f64>,
+        #[case] freq: Freq<f32>,
         #[case] n: usize,
     ) {
         assert_eq!(
@@ -225,7 +225,7 @@ mod tests {
     #[case(Ok(SamplingConfig::FreqNearest(20.*Hz)), 2.*Hz, 10)]
     fn from_freq_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
-        #[case] freq: Freq<f64>,
+        #[case] freq: Freq<f32>,
         #[case] n: usize,
     ) {
         assert_eq!(

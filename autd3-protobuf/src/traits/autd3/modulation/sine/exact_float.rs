@@ -59,7 +59,7 @@ impl FromMessage<SineExactFloat>
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &SineExactFloat) -> Option<Self> {
         Some(
-            autd3::modulation::Sine::new((msg.freq as f64) * autd3_driver::defined::Hz)
+            autd3::modulation::Sine::new((msg.freq as f32) * autd3_driver::defined::Hz)
                 .with_intensity(msg.intensity as u8)
                 .with_offset(msg.offset as u8)
                 .with_phase(autd3_driver::defined::Angle::from_msg(msg.phase.as_ref()?)?)
@@ -81,10 +81,10 @@ mod tests {
     fn test_sine() {
         let mut rng = rand::thread_rng();
 
-        let m = autd3::modulation::Sine::new(rng.gen::<f64>() * Hz)
+        let m = autd3::modulation::Sine::new(rng.gen::<f32>() * Hz)
             .with_intensity(rng.gen())
             .with_offset(rng.gen())
-            .with_phase(rng.gen::<f64>() * rad);
+            .with_phase(rng.gen::<f32>() * rad);
         let msg = m.to_msg(None);
 
         match msg.datagram {

@@ -40,8 +40,8 @@ impl<D: Directivity + 'static> Greedy<D> {
 
     fn transfer_foci(
         trans: &Transducer,
-        wavenumber: f64,
-        attenuation: f64,
+        wavenumber: f32,
+        attenuation: f32,
         dir: &Vector3,
         foci: &[Vector3],
         res: &mut [Complex],
@@ -59,7 +59,7 @@ impl<D: Directivity + 'static> Greedy<D> {
         filter: Option<HashMap<usize, BitVec<usize, Lsb0>>>,
     ) -> GainCalcResult {
         let phase_candidates = (0..self.phase_div)
-            .map(|i| Complex::new(0., 2.0 * PI * i as f64 / self.phase_div as f64).exp())
+            .map(|i| Complex::new(0., 2.0 * PI * i as f32 / self.phase_div as f32).exp())
             .collect::<Vec<_>>();
 
         let indices = {
@@ -110,7 +110,7 @@ impl<D: Directivity + 'static> Greedy<D> {
                 &mut tmp,
             );
             let (min_idx, _) = phase_candidates.iter().enumerate().fold(
-                (0usize, f64::INFINITY),
+                (0usize, f32::INFINITY),
                 |acc, (idx, &phase)| {
                     let v = cache.iter().enumerate().fold(0., |acc, (j, c)| {
                         acc + (self.amps[j].value - (tmp[j] * phase + c).abs()).abs()

@@ -20,9 +20,9 @@ mod tests {
     };
 
     pub fn random_vector3(
-        range_x: std::ops::Range<f64>,
-        range_y: std::ops::Range<f64>,
-        range_z: std::ops::Range<f64>,
+        range_x: std::ops::Range<f32>,
+        range_y: std::ops::Range<f32>,
+        range_z: std::ops::Range<f32>,
     ) -> Vector3 {
         use rand::Rng;
         let mut rng = rand::thread_rng();

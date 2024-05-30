@@ -117,8 +117,8 @@ impl Operation for FocusSTMOp {
                 freq_div: self.config.division(device.ultrasound_freq())?,
                 sound_speed: (device.sound_speed / METER
                     * 1024.0
-                    * crate::defined::FREQ_40K.hz() as f64
-                    / device.ultrasound_freq().hz() as f64)
+                    * crate::defined::FREQ_40K.hz() as f32
+                    / device.ultrasound_freq().hz() as f32)
                     .round() as u32,
                 rep: self.rep,
             };
@@ -522,7 +522,7 @@ mod tests {
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let x = FOCUS_STM_FIXED_NUM_UNIT * (FOCUS_STM_FIXED_NUM_UPPER_X as f64 + 1.);
+        let x = FOCUS_STM_FIXED_NUM_UNIT * (FOCUS_STM_FIXED_NUM_UPPER_X as f32 + 1.);
 
         let mut op = FocusSTMOp::new(
             Arc::new(

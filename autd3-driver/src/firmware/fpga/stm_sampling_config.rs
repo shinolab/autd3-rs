@@ -7,8 +7,8 @@ use crate::{
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum STMSamplingConfig {
-    Freq(Freq<f64>),
-    FreqNearest(Freq<f64>),
+    Freq(Freq<f32>),
+    FreqNearest(Freq<f32>),
     SamplingConfig(SamplingConfig),
 }
 
@@ -16,14 +16,14 @@ impl STMSamplingConfig {
     pub fn sampling(&self, size: usize) -> Result<SamplingConfig, AUTDInternalError> {
         match *self {
             STMSamplingConfig::Freq(f) => {
-                let fs = f * size as f64;
+                let fs = f * size as f32;
                 if !is_integer(fs.hz()) {
                     return Err(AUTDInternalError::STMFreqInvalid(size, f));
                 }
                 Ok(SamplingConfig::Freq(fs.hz() as u32 * Hz))
             }
             STMSamplingConfig::FreqNearest(f) => {
-                Ok(SamplingConfig::FreqNearest(f.hz() * size as f64 * Hz))
+                Ok(SamplingConfig::FreqNearest(f.hz() * size as f32 * Hz))
             }
             Self::SamplingConfig(s) => Ok(s),
         }
@@ -47,7 +47,7 @@ mod tests {
     #[case(Err(AUTDInternalError::STMFreqInvalid(1, 4000.5*Hz)), 4000.5*Hz, 1)]
     fn frequency(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
-        #[case] freq: Freq<f64>,
+        #[case] freq: Freq<f32>,
         #[case] size: usize,
     ) {
         assert_eq!(expect, STMSamplingConfig::Freq(freq).sampling(size));
@@ -61,7 +61,7 @@ mod tests {
     #[case(Ok(SamplingConfig::FreqNearest(40000.*Hz)), 40000.*Hz, 1)]
     fn frequency_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
-        #[case] freq: Freq<f64>,
+        #[case] freq: Freq<f32>,
         #[case] size: usize,
     ) {
         assert_eq!(expect, STMSamplingConfig::FreqNearest(freq).sampling(size));

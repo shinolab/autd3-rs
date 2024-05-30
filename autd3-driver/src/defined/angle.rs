@@ -5,12 +5,12 @@ pub struct rad;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Angle {
-    Deg(f64),
-    Rad(f64),
+    Deg(f32),
+    Rad(f32),
 }
 
 impl Angle {
-    pub fn radian(self) -> f64 {
+    pub fn radian(self) -> f32 {
         match self {
             Self::Deg(a) => a.to_radians(),
             Self::Rad(a) => a,
@@ -18,7 +18,7 @@ impl Angle {
     }
 }
 
-impl std::ops::Mul<deg> for f64 {
+impl std::ops::Mul<deg> for f32 {
     type Output = Angle;
 
     fn mul(self, _rhs: deg) -> Self::Output {
@@ -26,7 +26,7 @@ impl std::ops::Mul<deg> for f64 {
     }
 }
 
-impl std::ops::Mul<rad> for f64 {
+impl std::ops::Mul<rad> for f32 {
     type Output = Angle;
 
     fn mul(self, _rhs: rad) -> Self::Output {

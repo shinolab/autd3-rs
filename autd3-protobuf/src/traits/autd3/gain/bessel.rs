@@ -52,7 +52,7 @@ impl FromMessage<Bessel> for autd3::gain::Bessel {
             Self::new(
                 autd3_driver::geometry::Vector3::from_msg(msg.pos.as_ref()?)?,
                 autd3_driver::geometry::Vector3::from_msg(msg.dir.as_ref()?)?,
-                (msg.theta as f64) * autd3::driver::defined::rad,
+                (msg.theta as f32) * autd3::driver::defined::rad,
             )
             .with_intensity(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
                 msg.intensity.as_ref()?,
@@ -78,7 +78,7 @@ mod tests {
         let g = autd3::gain::Bessel::new(
             Vector3::new(rng.gen(), rng.gen(), rng.gen()),
             Vector3::new(rng.gen(), rng.gen(), rng.gen()),
-            rng.gen::<f64>() * rad,
+            rng.gen::<f32>() * rad,
         )
         .with_intensity(EmitIntensity::new(rng.gen()));
         let msg = g.to_msg(None);

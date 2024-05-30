@@ -30,7 +30,7 @@ use crate::defined::mm;
 pub const FPGA_BASE_CLK_FREQ: u32 = 25600000;
 pub const ULTRASOUND_PERIOD: u32 = 512;
 
-pub const FOCUS_STM_FIXED_NUM_UNIT: f64 = 0.025 * mm;
+pub const FOCUS_STM_FIXED_NUM_UNIT: f32 = 0.025 * mm;
 pub const FOCUS_STM_FIXED_NUM_WIDTH: usize = 18;
 const FOCUS_STM_FIXED_NUM_UPPER: i32 = (1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1)) - 1;
 const FOCUS_STM_FIXED_NUM_LOWER: i32 = -(1 << (FOCUS_STM_FIXED_NUM_WIDTH - 1));

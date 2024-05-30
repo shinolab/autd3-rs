@@ -60,7 +60,7 @@ impl FromMessage<SineNearest>
     fn from_msg(msg: &SineNearest) -> Option<Self> {
         Some(
             autd3::modulation::Sine::with_freq_nearest(
-                (msg.freq as f64) * autd3_driver::defined::Hz,
+                (msg.freq as f32) * autd3_driver::defined::Hz,
             )
             .with_intensity(msg.intensity as u8)
             .with_offset(msg.offset as u8)
@@ -83,10 +83,10 @@ mod tests {
     fn test_sine() {
         let mut rng = rand::thread_rng();
 
-        let m = autd3::modulation::Sine::with_freq_nearest(rng.gen::<f64>() * Hz)
+        let m = autd3::modulation::Sine::with_freq_nearest(rng.gen::<f32>() * Hz)
             .with_intensity(rng.gen())
             .with_offset(rng.gen())
-            .with_phase(rng.gen::<f64>() * rad);
+            .with_phase(rng.gen::<f32>() * rad);
         let msg = m.to_msg(None);
 
         match msg.datagram {

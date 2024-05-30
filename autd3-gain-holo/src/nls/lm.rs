@@ -16,15 +16,15 @@ pub struct LM<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
     #[get]
     amps: Vec<Amplitude>,
     #[getset]
-    eps_1: f64,
+    eps_1: f32,
     #[getset]
-    eps_2: f64,
+    eps_2: f32,
     #[getset]
-    tau: f64,
+    tau: f32,
     #[getset]
     k_max: usize,
     #[getset]
-    initial: Vec<f64>,
+    initial: Vec<f32>,
     #[getset]
     constraint: EmissionConstraint,
     backend: Arc<B>,
@@ -96,7 +96,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
         bhb: &B::MatrixXc,
         tmp: &mut B::VectorXc,
         t: &mut B::VectorXc,
-    ) -> Result<f64, HoloError> {
+    ) -> Result<f32, HoloError> {
         self.backend.make_complex2_v(zero, x, t)?;
         self.backend.exp_assign_cv(t)?;
         self.backend.gemv_c(
@@ -132,7 +132,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
             let mut bhb = self.backend.alloc_zeros_cm(n_param, n_param)?;
 
             let mut amps = self.backend.from_slice_cv(unsafe {
-                std::slice::from_raw_parts(self.amps.as_ptr() as *const f64, self.amps.len())
+                std::slice::from_raw_parts(self.amps.as_ptr() as *const f32, self.amps.len())
             })?;
 
             let mut p = self.backend.alloc_cm(m, m)?;
@@ -244,7 +244,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
                     &mut g,
                 )?;
 
-                mu *= f64::max(1. / 3., f64::powi(1. - (2. * rho - 1.), 3));
+                mu *= f32::max(1. / 3., f32::powi(1. - (2. * rho - 1.), 3));
                 nu = 2.;
             } else {
                 mu *= nu;
