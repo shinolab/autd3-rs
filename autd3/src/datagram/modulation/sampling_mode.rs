@@ -65,7 +65,7 @@ impl SamplingMode for ExactFreqFloat {
                 sampling_config.freq(ultrasound_freq)? / 2.
             )));
         }
-        let fd = freq.hz() * sampling_config.division(ultrasound_freq)? as f32;
+        let fd = freq.hz() as f64 * sampling_config.division(ultrasound_freq)? as f64;
         if !is_integer(fd) {
             return Err(AUTDInternalError::ModulationError(format!(
                 "Frequency ({}) cannot be output with the sampling config ({}).",
