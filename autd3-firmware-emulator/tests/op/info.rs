@@ -8,7 +8,7 @@ use autd3_driver::{
         version::FirmwareVersion,
     },
 };
-use autd3_firmware_emulator::{cpu::params::ERR_BIT, CPUEmulator};
+use autd3_firmware_emulator::CPUEmulator;
 
 use crate::{create_geometry, send};
 
@@ -35,12 +35,10 @@ fn send_firminfo() -> anyhow::Result<()> {
     let send_once = |cpu: &mut CPUEmulator,
                      op: &mut [(FirmInfoOp, NullOp)],
                      geometry: &Geometry,
-                     tx: &mut TxDatagram| {
+                     tx: &mut TxDatagram|
+     -> anyhow::Result<()> {
         OperationHandler::pack(op, geometry, tx, usize::MAX)?;
         cpu.send(tx);
-        if (cpu.rx().ack() & ERR_BIT) == ERR_BIT {
-            return Err(AUTDInternalError::firmware_err(cpu.rx().ack()));
-        }
         assert_eq!(tx[0].header.msg_id, cpu.rx().ack());
         Ok(())
     };

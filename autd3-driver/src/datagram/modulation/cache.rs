@@ -5,11 +5,14 @@ use std::{
     rc::Rc,
 };
 
-#[derive(Modulation)]
+use derive_more::Deref;
+
+#[derive(Modulation, Clone, Deref)]
 #[no_modulation_cache]
 #[no_radiation_pressure]
 #[no_modulation_transform]
 pub struct Cache<M: Modulation> {
+    #[deref]
     m: M,
     cache: Rc<RefCell<Vec<u8>>>,
     #[no_change]
@@ -17,27 +20,8 @@ pub struct Cache<M: Modulation> {
     loop_behavior: LoopBehavior,
 }
 
-impl<M: Modulation> std::ops::Deref for Cache<M> {
-    type Target = M;
-
-    fn deref(&self) -> &Self::Target {
-        &self.m
-    }
-}
-
 pub trait IntoCache<M: Modulation> {
     fn with_cache(self) -> Cache<M>;
-}
-
-impl<M: Modulation + Clone> Clone for Cache<M> {
-    fn clone(&self) -> Self {
-        Self {
-            m: self.m.clone(),
-            cache: self.cache.clone(),
-            config: self.config,
-            loop_behavior: self.loop_behavior,
-        }
-    }
 }
 
 impl<M: Modulation> Cache<M> {

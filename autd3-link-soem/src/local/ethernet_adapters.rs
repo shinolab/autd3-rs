@@ -1,10 +1,8 @@
-use std::fmt;
-
 use crate::local::soem_bindings;
 
-use std::ffi::CStr;
-use std::ops::Index;
-use std::slice;
+use std::{ffi::CStr, fmt, slice};
+
+use derive_more::Deref;
 
 #[derive(Clone)]
 pub struct EthernetAdapter {
@@ -22,8 +20,9 @@ impl EthernetAdapter {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Deref)]
 pub struct EthernetAdapters {
+    #[deref]
     adapters: Vec<EthernetAdapter>,
 }
 
@@ -61,13 +60,6 @@ impl EthernetAdapters {
 impl Default for EthernetAdapters {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-impl Index<usize> for EthernetAdapters {
-    type Output = EthernetAdapter;
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.adapters[index]
     }
 }
 

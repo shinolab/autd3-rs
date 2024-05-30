@@ -7,8 +7,12 @@ use crate::{
     firmware::{fpga::STMSamplingConfig, operation::FocusSTMOp},
 };
 
-#[derive(Clone, Builder)]
+use derive_more::{Deref, DerefMut};
+
+#[derive(Clone, Builder, Deref, DerefMut)]
 pub struct FocusSTM {
+    #[deref]
+    #[deref_mut]
     control_points: Vec<ControlPoint>,
     #[getset]
     loop_behavior: LoopBehavior,
@@ -59,20 +63,6 @@ impl FocusSTM {
             loop_behavior: LoopBehavior::infinite(),
             sampling_config: config,
         }
-    }
-}
-
-impl std::ops::Deref for FocusSTM {
-    type Target = [ControlPoint];
-
-    fn deref(&self) -> &Self::Target {
-        &self.control_points
-    }
-}
-
-impl std::ops::DerefMut for FocusSTM {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.control_points
     }
 }
 

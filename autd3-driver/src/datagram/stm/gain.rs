@@ -5,8 +5,12 @@ use crate::{
     firmware::{cpu::GainSTMMode, fpga::STMSamplingConfig, operation::GainSTMOp},
 };
 
-#[derive(Builder)]
+use derive_more::{Deref, DerefMut};
+
+#[derive(Builder, Clone, Deref, DerefMut)]
 pub struct GainSTM<G: Gain> {
+    #[deref]
+    #[deref_mut]
     gains: Vec<G>,
     #[getset]
     loop_behavior: LoopBehavior,
@@ -53,20 +57,6 @@ impl<G: Gain> GainSTM<G> {
             sampling_config: config,
             mode: GainSTMMode::PhaseIntensityFull,
         }
-    }
-}
-
-impl<G: Gain> std::ops::Deref for GainSTM<G> {
-    type Target = [G];
-
-    fn deref(&self) -> &Self::Target {
-        &self.gains
-    }
-}
-
-impl<G: Gain> std::ops::DerefMut for GainSTM<G> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.gains
     }
 }
 
@@ -140,13 +130,17 @@ mod tests {
 
     use crate::defined::{kHz, Hz};
 
-    #[derive(Gain)]
-    struct Null {}
+    #[derive(Gain, Default, Debug, PartialEq)]
+    struct Null {
+        i: i32,
+    }
 
     impl Gain for Null {
+        // GRCOV_EXCL_START
         fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
             Ok(Self::transform(|_| |_| Drive::null()))
         }
+        // GRCOV_EXCL_STOP
     }
 
     #[rstest::rstest]
@@ -162,7 +156,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::from_freq(freq, (0..n).map(|_| Null {})).map(|g| g.sampling_config())
+            GainSTM::from_freq(freq, (0..n).map(|_| Null::default())).map(|g| g.sampling_config())
         );
     }
 
@@ -179,7 +173,8 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::from_freq_nearest(freq, (0..n).map(|_| Null {})).map(|g| g.sampling_config())
+            GainSTM::from_freq_nearest(freq, (0..n).map(|_| Null::default()))
+                .map(|g| g.sampling_config())
         );
     }
 
@@ -193,7 +188,8 @@ mod tests {
     ) -> anyhow::Result<()> {
         assert_eq!(
             config,
-            GainSTM::from_sampling_config(config, (0..n).map(|_| Null {})).sampling_config()
+            GainSTM::from_sampling_config(config, (0..n).map(|_| Null::default()))
+                .sampling_config()
         );
         Ok(())
     }
@@ -206,9 +202,12 @@ mod tests {
     fn with_mode(#[case] mode: GainSTMMode) {
         assert_eq!(
             mode,
-            GainSTM::from_sampling_config(SamplingConfig::Division(512), (0..2).map(|_| Null {}))
-                .with_mode(mode)
-                .mode()
+            GainSTM::from_sampling_config(
+                SamplingConfig::Division(512),
+                (0..2).map(|_| Null::default())
+            )
+            .with_mode(mode)
+            .mode()
         );
     }
 
@@ -217,8 +216,11 @@ mod tests {
     fn with_mode_default() {
         assert_eq!(
             GainSTMMode::PhaseIntensityFull,
-            GainSTM::from_sampling_config(SamplingConfig::Division(512), (0..2).map(|_| Null {}))
-                .mode()
+            GainSTM::from_sampling_config(
+                SamplingConfig::Division(512),
+                (0..2).map(|_| Null::default())
+            )
+            .mode()
         );
     }
 
@@ -229,9 +231,12 @@ mod tests {
     fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
             loop_behavior,
-            GainSTM::from_sampling_config(SamplingConfig::Division(512), (0..2).map(|_| Null {}))
-                .with_loop_behavior(loop_behavior)
-                .loop_behavior()
+            GainSTM::from_sampling_config(
+                SamplingConfig::Division(512),
+                (0..2).map(|_| Null::default())
+            )
+            .with_loop_behavior(loop_behavior)
+            .loop_behavior()
         );
     }
 }

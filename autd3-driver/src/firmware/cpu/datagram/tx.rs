@@ -1,5 +1,7 @@
 use crate::{ethercat::EC_OUTPUT_FRAME_SIZE, firmware::cpu::Header};
 
+use derive_more::{Deref, DerefMut};
+
 const PAYLOAD_SIZE: usize = EC_OUTPUT_FRAME_SIZE - std::mem::size_of::<Header>();
 type Payload = [u8; PAYLOAD_SIZE];
 
@@ -10,8 +12,10 @@ pub struct TxMessage {
     pub payload: Payload,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Deref, DerefMut)]
 pub struct TxDatagram {
+    #[deref]
+    #[deref_mut]
     data: Vec<TxMessage>,
 }
 
@@ -58,20 +62,6 @@ impl TxDatagram {
         unsafe {
             std::slice::from_raw_parts(&self.data[i] as *const _ as *const u8, EC_OUTPUT_FRAME_SIZE)
         }
-    }
-}
-
-impl std::ops::Deref for TxDatagram {
-    type Target = [TxMessage];
-
-    fn deref(&self) -> &Self::Target {
-        &self.data
-    }
-}
-
-impl std::ops::DerefMut for TxDatagram {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.data
     }
 }
 

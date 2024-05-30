@@ -1,12 +1,14 @@
 use autd3_driver::defined::ABSOLUTE_THRESHOLD_OF_HEARING;
 
+use derive_more::{Div, Mul};
+
 #[allow(non_camel_case_types)]
 pub struct dB;
 pub struct Pa;
 #[allow(non_camel_case_types)]
 pub struct kPa;
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Div, Mul)]
 pub struct Amplitude {
     // Amplitude in Pa
     pub(crate) value: f64,
@@ -54,26 +56,6 @@ impl std::ops::Mul<Amplitude> for f64 {
     fn mul(self, rhs: Amplitude) -> Self::Output {
         Self::Output {
             value: self * rhs.value,
-        }
-    }
-}
-
-impl std::ops::Mul<f64> for Amplitude {
-    type Output = Amplitude;
-
-    fn mul(self, rhs: f64) -> Self::Output {
-        Self::Output {
-            value: self.value * rhs,
-        }
-    }
-}
-
-impl std::ops::Div<f64> for Amplitude {
-    type Output = Amplitude;
-
-    fn div(self, rhs: f64) -> Self::Output {
-        Self::Output {
-            value: self.value / rhs,
         }
     }
 }

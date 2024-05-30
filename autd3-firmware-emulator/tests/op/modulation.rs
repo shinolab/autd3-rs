@@ -177,7 +177,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         let d = Silencer::fixed_completion_steps(
             SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT,
-        )?;
+        );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = TestModulation {
@@ -194,7 +194,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         let d = Silencer::fixed_completion_steps(
             SILENCER_STEPS_PHASE_DEFAULT * 2,
             SILENCER_STEPS_PHASE_DEFAULT,
-        )?;
+        );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = SwapSegment::Modulation(Segment::S1, TransitionMode::Immediate);
