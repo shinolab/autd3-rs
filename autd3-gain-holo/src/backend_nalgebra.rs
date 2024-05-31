@@ -1,7 +1,11 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    mem::{ManuallyDrop, MaybeUninit},
+    sync::Arc,
+};
 
 use bitvec::{order::Lsb0, vec::BitVec};
-use nalgebra::{ComplexField, Normed};
+use nalgebra::{ComplexField, Dyn, Normed, VecStorage, U1};
 
 use autd3_driver::{
     acoustics::{directivity::Directivity, propagate},
@@ -33,54 +37,168 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         foci: &[autd3_driver::geometry::Vector3],
         filter: &Option<HashMap<usize, BitVec<usize, Lsb0>>>,
     ) -> Result<Self::MatrixXc, HoloError> {
+        use rayon::prelude::*;
+
+        let num_transducers = [0]
+            .into_iter()
+            .chain(geometry.devices().scan(0, |state, dev| {
+                *state += filter
+                    .as_ref()
+                    .map(|f| f.get(&dev.idx()).map(|f| f.count_ones()).unwrap_or(0))
+                    .unwrap_or(dev.num_transducers());
+                Some(*state)
+            }))
+            .collect::<Vec<_>>();
+        let n = num_transducers[geometry.num_devices()];
+
         if let Some(filter) = filter {
-            let iter = geometry
-                .devices()
-                .flat_map(|dev| {
+            if geometry.num_devices() < foci.len() {
+                let columns = foci
+                .par_iter()
+                .map(|f| {
+                    nalgebra::Matrix::<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>::from_iterator(
+                        n,
+                        geometry.devices().flat_map(|dev| {
+                            let filter = filter.get(&dev.idx());
+                            dev.iter().filter_map(move |tr| {
+                                filter.and_then(|filter| {
+                                    if filter[tr.idx()] {
+                                        Some(
+                                            propagate::<D>(
+                                                tr,
+                                                dev.wavenumber(),
+                                                dev.axial_direction(),
+                                                f,
+                                            )
+                                        )
+                                    } else {
+                                        None
+                                    }
+                                })
+                            })
+                        }),
+                    )
+                })
+                .collect::<Vec<_>>();
+                Ok(MatrixXc::from_rows(&columns))
+            } else {
+                let mut r = MatrixXc::from_data(unsafe {
+                    let mut data = Vec::<MaybeUninit<Complex>>::new();
+                    let length = foci.len() * n;
+                    data.reserve_exact(length);
+                    data.resize_with(length, MaybeUninit::uninit);
+                    let uninit = VecStorage::new(Dyn(foci.len()), Dyn(n), data);
+                    let vec: Vec<_> = uninit.into();
+                    let mut md = ManuallyDrop::new(vec);
+                    let new_data =
+                        Vec::from_raw_parts(md.as_mut_ptr() as *mut _, md.len(), md.capacity());
+                    VecStorage::new(Dyn(foci.len()), Dyn(n), new_data)
+                });
+                struct Ptr(*mut Complex);
+                impl Ptr {
+                    #[inline]
+                    fn write(&mut self, value: Complex) {
+                        unsafe {
+                            *self.0 = value;
+                            self.0 = self.0.add(1);
+                        }
+                    }
+
+                    #[inline]
+                    fn add(&self, i: usize) -> Self {
+                        Self(unsafe { self.0.add(i) })
+                    }
+                }
+                unsafe impl Send for Ptr {}
+                unsafe impl Sync for Ptr {}
+                let ptr = Ptr(r.as_mut_ptr());
+                geometry.devices().par_bridge().for_each(move |dev| {
+                    let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
                     let filter = filter.get(&dev.idx());
-                    dev.iter().filter_map(move |tr| {
-                        filter.and_then(|filter| {
+                    dev.iter().for_each(move |tr| {
+                        if let Some(filter) = filter {
                             if filter[tr.idx()] {
-                                Some(foci.iter().map(move |fp| {
-                                    propagate::<D>(
+                                foci.iter().for_each(|f| {
+                                    ptr.write(propagate::<D>(
                                         tr,
-                                        dev.attenuation,
                                         dev.wavenumber(),
                                         dev.axial_direction(),
-                                        fp,
-                                    )
-                                }))
-                            } else {
-                                None
+                                        f,
+                                    ));
+                                });
                             }
-                        })
-                    })
-                })
-                .flatten()
-                .collect::<Vec<_>>();
-            Ok(MatrixXc::from_iterator(
-                foci.len(),
-                iter.len() / foci.len(),
-                iter,
-            ))
+                        }
+                    });
+                });
+                Ok(r)
+            }
         } else {
-            Ok(MatrixXc::from_iterator(
-                foci.len(),
-                geometry.num_transducers(),
-                geometry.devices().flat_map(|dev| {
-                    dev.iter().flat_map(move |tr| {
-                        foci.iter().map(move |fp| {
-                            propagate::<D>(
+            if geometry.num_devices() < foci.len() {
+                let columns = foci
+                .par_iter()
+                .map(|f| {
+                    nalgebra::Matrix::<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>::from_iterator(
+                        n,
+                        geometry.devices().flat_map(|dev| {
+                            dev.iter().map(move |tr| {
+                                            propagate::<D>(
+                                                tr,
+                                                dev.wavenumber(),
+                                                dev.axial_direction(),
+                                                f,
+                                            )
+                                })
+                            })
+                    )}
+                )
+                .collect::<Vec<_>>();
+                Ok(MatrixXc::from_rows(&columns))
+            } else {
+                let mut r = MatrixXc::from_data(unsafe {
+                    let mut data = Vec::<MaybeUninit<Complex>>::new();
+                    let length = foci.len() * n;
+                    data.reserve_exact(length);
+                    data.resize_with(length, MaybeUninit::uninit);
+                    let uninit = VecStorage::new(Dyn(foci.len()), Dyn(n), data);
+                    let vec: Vec<_> = uninit.into();
+                    let mut md = ManuallyDrop::new(vec);
+                    let new_data =
+                        Vec::from_raw_parts(md.as_mut_ptr() as *mut _, md.len(), md.capacity());
+                    VecStorage::new(Dyn(foci.len()), Dyn(n), new_data)
+                });
+                struct Ptr(*mut Complex);
+                impl Ptr {
+                    #[inline]
+                    fn write(&mut self, value: Complex) {
+                        unsafe {
+                            *self.0 = value;
+                            self.0 = self.0.add(1);
+                        }
+                    }
+
+                    #[inline]
+                    fn add(&self, i: usize) -> Self {
+                        Self(unsafe { self.0.add(i) })
+                    }
+                }
+                unsafe impl Send for Ptr {}
+                unsafe impl Sync for Ptr {}
+                let ptr = Ptr(r.as_mut_ptr());
+                geometry.devices().par_bridge().for_each(move |dev| {
+                    let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
+                    dev.iter().for_each(move |tr| {
+                        foci.iter().for_each(|f| {
+                            ptr.write(propagate::<D>(
                                 tr,
-                                dev.attenuation,
                                 dev.wavenumber(),
                                 dev.axial_direction(),
-                                fp,
-                            )
-                        })
-                    })
-                }),
-            ))
+                                f,
+                            ));
+                        });
+                    });
+                });
+                Ok(r)
+            }
         }
     }
 
