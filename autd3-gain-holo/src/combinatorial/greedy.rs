@@ -41,13 +41,12 @@ impl<D: Directivity + 'static> Greedy<D> {
     fn transfer_foci(
         trans: &Transducer,
         wavenumber: f32,
-        attenuation: f32,
         dir: &Vector3,
         foci: &[Vector3],
         res: &mut [Complex],
     ) {
         res.iter_mut().zip(foci.iter()).for_each(|(r, f)| {
-            *r = propagate::<D>(trans, attenuation, wavenumber, dir, f);
+            *r = propagate::<D>(trans, wavenumber, dir, f);
         });
     }
 }
@@ -104,7 +103,6 @@ impl<D: Directivity + 'static> Greedy<D> {
             Self::transfer_foci(
                 &geometry[dev_idx][idx],
                 geometry[dev_idx].wavenumber(),
-                geometry[dev_idx].attenuation,
                 geometry[dev_idx].axial_direction(),
                 &self.foci,
                 &mut tmp,
