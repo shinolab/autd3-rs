@@ -46,8 +46,6 @@ pub mod geometry {
         pub rot: ::core::option::Option<super::Quaternion>,
         #[prost(float, tag = "3")]
         pub sound_speed: f32,
-        #[prost(float, tag = "4")]
-        pub attenuation: f32,
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]

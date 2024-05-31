@@ -2001,10 +2001,7 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
     }
 
     fn test_generate_propagation_matrix(&self) -> Result<(), HoloError> {
-        let geometry = generate_geometry(4);
-        let foci = gen_foci(4).map(|(p, _)| p).collect::<Vec<_>>();
-
-        let reference = {
+        let reference = |geometry: Geometry, foci: Vec<Vector3>| {
             let mut g = MatrixXc::zeros(
                 foci.len(),
                 geometry
@@ -2020,7 +2017,6 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
                 (0..transducers.len()).for_each(|j| {
                     g[(i, j)] = propagate::<Sphere>(
                         transducers[j].1,
-                        geometry[transducers[j].0].attenuation,
                         geometry[transducers[j].0].wavenumber(),
                         geometry[transducers[j].0].axial_direction(),
                         &foci[i],
@@ -2030,35 +2026,61 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
             g
         };
 
-        let g = self
-            .backend
-            .generate_propagation_matrix(&geometry, &foci, &None)?;
-        let g = self.backend.to_host_cm(g)?;
-        reference.iter().zip(g.iter()).for_each(|(r, g)| {
-            assert_approx_eq::assert_approx_eq!(r.re, g.re, EPS);
-            assert_approx_eq::assert_approx_eq!(r.im, g.im, EPS);
-        });
+        {
+            let geometry = generate_geometry(4);
+            let foci = gen_foci(10).map(|(p, _)| p).collect::<Vec<_>>();
+
+            let g = self
+                .backend
+                .generate_propagation_matrix(&geometry, &foci, &None)?;
+            let g = self.backend.to_host_cm(g)?;
+            reference(geometry, foci)
+                .iter()
+                .zip(g.iter())
+                .for_each(|(r, g)| {
+                    assert_approx_eq::assert_approx_eq!(r.re, g.re, EPS);
+                    assert_approx_eq::assert_approx_eq!(r.im, g.im, EPS);
+                });
+        }
+
+        {
+            let geometry = generate_geometry(10);
+            let foci = gen_foci(4).map(|(p, _)| p).collect::<Vec<_>>();
+
+            let g = self
+                .backend
+                .generate_propagation_matrix(&geometry, &foci, &None)?;
+            let g = self.backend.to_host_cm(g)?;
+            reference(geometry, foci)
+                .iter()
+                .zip(g.iter())
+                .for_each(|(r, g)| {
+                    assert_approx_eq::assert_approx_eq!(r.re, g.re, EPS);
+                    assert_approx_eq::assert_approx_eq!(r.im, g.im, EPS);
+                });
+        }
+
         Ok(())
     }
 
     fn test_generate_propagation_matrix_with_filter(&self) -> Result<(), HoloError> {
         use std::collections::HashMap;
 
-        let geometry = generate_geometry(4);
-        let foci = gen_foci(4).map(|(p, _)| p).collect::<Vec<_>>();
+        let filter = |geometry: &Geometry| {
+            geometry
+                .iter()
+                .map(|dev| {
+                    let mut filter = bitvec::prelude::BitVec::new();
+                    dev.iter().for_each(|tr| {
+                        filter.push(tr.idx() > dev.num_transducers() / 2);
+                    });
+                    (dev.idx(), filter)
+                })
+                .collect::<HashMap<_, _>>()
+        };
 
-        let filter = geometry
-            .iter()
-            .map(|dev| {
-                let mut filter = bitvec::prelude::BitVec::new();
-                dev.iter().for_each(|tr| {
-                    filter.push(tr.idx() > dev.num_transducers() / 2);
-                });
-                (dev.idx(), filter)
-            })
-            .collect::<HashMap<_, _>>();
-
-        let reference = {
+        let reference = |geometry, foci: Vec<Vector3>| {
+            let filter = filter(&geometry);
             let transducers = geometry
                 .iter()
                 .flat_map(|dev| {
@@ -2077,7 +2099,6 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
                 (0..transducers.len()).for_each(|j| {
                     g[(i, j)] = propagate::<Sphere>(
                         transducers[j].1,
-                        geometry[transducers[j].0].attenuation,
                         geometry[transducers[j].0].wavenumber(),
                         geometry[transducers[j].0].axial_direction(),
                         &foci[i],
@@ -2087,22 +2108,58 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
             g
         };
 
-        let g = self
-            .backend
-            .generate_propagation_matrix(&geometry, &foci, &Some(filter))?;
-        let g = self.backend.to_host_cm(g)?;
-        assert_eq!(g.nrows(), foci.len());
-        assert_eq!(
-            g.ncols(),
-            geometry
+        {
+            let geometry = generate_geometry(4);
+            let foci = gen_foci(10).map(|(p, _)| p).collect::<Vec<_>>();
+            let filter = filter(&geometry);
+
+            let g = self
+                .backend
+                .generate_propagation_matrix(&geometry, &foci, &Some(filter))?;
+            let g = self.backend.to_host_cm(g)?;
+            assert_eq!(g.nrows(), foci.len());
+            assert_eq!(
+                g.ncols(),
+                geometry
+                    .iter()
+                    .map(|dev| dev.num_transducers() / 2)
+                    .sum::<usize>()
+            );
+            reference(geometry, foci)
                 .iter()
-                .map(|dev| dev.num_transducers() / 2)
-                .sum::<usize>()
-        );
-        reference.iter().zip(g.iter()).for_each(|(r, g)| {
-            assert_approx_eq::assert_approx_eq!(r.re, g.re, EPS);
-            assert_approx_eq::assert_approx_eq!(r.im, g.im, EPS);
-        });
+                .zip(g.iter())
+                .for_each(|(r, g)| {
+                    assert_approx_eq::assert_approx_eq!(r.re, g.re, EPS);
+                    assert_approx_eq::assert_approx_eq!(r.im, g.im, EPS);
+                });
+        }
+
+        {
+            let geometry = generate_geometry(10);
+            let foci = gen_foci(4).map(|(p, _)| p).collect::<Vec<_>>();
+            let filter = filter(&geometry);
+
+            let g = self
+                .backend
+                .generate_propagation_matrix(&geometry, &foci, &Some(filter))?;
+            let g = self.backend.to_host_cm(g)?;
+            assert_eq!(g.nrows(), foci.len());
+            assert_eq!(
+                g.ncols(),
+                geometry
+                    .iter()
+                    .map(|dev| dev.num_transducers() / 2)
+                    .sum::<usize>()
+            );
+            reference(geometry, foci)
+                .iter()
+                .zip(g.iter())
+                .for_each(|(r, g)| {
+                    assert_approx_eq::assert_approx_eq!(r.re, g.re, EPS);
+                    assert_approx_eq::assert_approx_eq!(r.im, g.im, EPS);
+                });
+        }
+
         Ok(())
     }
 

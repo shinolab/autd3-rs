@@ -7,19 +7,18 @@ use crate::{
 
 use directivity::Directivity;
 
+#[inline]
 pub fn propagate<D: Directivity>(
     tr: &Transducer,
-    attenuation: f32,
     wavenumber: f32,
     dir: &Vector3,
     target_pos: &Vector3,
 ) -> Complex {
+    const P0: f32 = T4010A1_AMPLITUDE / (4. * PI);
     let diff = target_pos - tr.position();
     let dist = diff.norm();
     Complex::from_polar(
-        T4010A1_AMPLITUDE / (4. * PI) / dist
-            * D::directivity_from_dir(dir, &diff)
-            * (-dist * attenuation).exp(),
+        P0 / dist * D::directivity_from_dir(dir, &diff),
         -wavenumber * dist,
     )
 }
@@ -115,7 +114,6 @@ mod tests {
             },
             super::propagate::<TestDirectivity>(
                 &tr,
-                attenuation,
                 wavenumber,
                 &device.axial_direction(),
                 &target

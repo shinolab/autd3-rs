@@ -43,7 +43,6 @@ impl ToMessage for autd3_driver::geometry::Geometry {
                     pos: Some(dev[0].position().to_msg(None)),
                     rot: Some(dev.rotation().to_msg(None)),
                     sound_speed: dev.sound_speed as _,
-                    attenuation: dev.attenuation as _,
                 })
                 .collect(),
             ultrasound_freq: self.ultrasound_freq().hz(),
@@ -87,7 +86,6 @@ impl FromMessage<Geometry> for autd3_driver::geometry::Geometry {
                     .with_rotation(rot)
                     .into_device(i);
                 dev.sound_speed = dev_msg.sound_speed as _;
-                dev.attenuation = dev_msg.attenuation as _;
                 Some(dev)
             })
             .collect::<Option<Vec<_>>>()
@@ -138,7 +136,6 @@ mod tests {
         let mut rng = rand::thread_rng();
         let mut dev = AUTD3::new(Vector3::new(rng.gen(), rng.gen(), rng.gen())).into_device(0);
         dev.sound_speed = rng.gen();
-        dev.attenuation = rng.gen();
         let geometry = Geometry::new(vec![dev], FREQ_40K);
         let msg = geometry.to_msg(None);
         let geometry2 = Geometry::from_msg(&msg).unwrap();
@@ -147,7 +144,6 @@ mod tests {
             .zip(geometry2.iter())
             .for_each(|(dev, dev2)| {
                 assert_approx_eq::assert_approx_eq!(dev.sound_speed, dev2.sound_speed);
-                assert_approx_eq::assert_approx_eq!(dev.attenuation, dev2.attenuation);
                 assert_approx_eq::assert_approx_eq!(dev.rotation().w, dev2.rotation().w);
                 assert_approx_eq::assert_approx_eq!(dev.rotation().i, dev2.rotation().i);
                 assert_approx_eq::assert_approx_eq!(dev.rotation().j, dev2.rotation().j);

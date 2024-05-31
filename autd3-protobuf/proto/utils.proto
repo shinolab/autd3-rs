@@ -24,7 +24,6 @@ message Geometry {
     Vector3 pos = 1;
     Quaternion rot = 2;
     float sound_speed = 3;
-    float attenuation = 4;
   }
   repeated AUTD3 devices = 1;
   uint32 ultrasound_freq = 2;
