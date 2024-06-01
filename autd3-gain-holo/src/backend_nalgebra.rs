@@ -132,9 +132,8 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
                 });
                 Ok(r)
             }
-        } else {
-            if geometry.num_devices() < foci.len() {
-                let columns = foci
+        } else if geometry.num_devices() < foci.len() {
+            let columns = foci
                 .par_iter()
                 .map(|f| {
                     nalgebra::Matrix::<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>::from_iterator(
@@ -152,53 +151,52 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
                     )}
                 )
                 .collect::<Vec<_>>();
-                Ok(MatrixXc::from_rows(&columns))
-            } else {
-                let mut r = MatrixXc::from_data(unsafe {
-                    let mut data = Vec::<MaybeUninit<Complex>>::new();
-                    let length = foci.len() * n;
-                    data.reserve_exact(length);
-                    data.resize_with(length, MaybeUninit::uninit);
-                    let uninit = VecStorage::new(Dyn(foci.len()), Dyn(n), data);
-                    let vec: Vec<_> = uninit.into();
-                    let mut md = ManuallyDrop::new(vec);
-                    let new_data =
-                        Vec::from_raw_parts(md.as_mut_ptr() as *mut _, md.len(), md.capacity());
-                    VecStorage::new(Dyn(foci.len()), Dyn(n), new_data)
-                });
-                struct Ptr(*mut Complex);
-                impl Ptr {
-                    #[inline]
-                    fn write(&mut self, value: Complex) {
-                        unsafe {
-                            *self.0 = value;
-                            self.0 = self.0.add(1);
-                        }
-                    }
-
-                    #[inline]
-                    fn add(&self, i: usize) -> Self {
-                        Self(unsafe { self.0.add(i) })
+            Ok(MatrixXc::from_rows(&columns))
+        } else {
+            let mut r = MatrixXc::from_data(unsafe {
+                let mut data = Vec::<MaybeUninit<Complex>>::new();
+                let length = foci.len() * n;
+                data.reserve_exact(length);
+                data.resize_with(length, MaybeUninit::uninit);
+                let uninit = VecStorage::new(Dyn(foci.len()), Dyn(n), data);
+                let vec: Vec<_> = uninit.into();
+                let mut md = ManuallyDrop::new(vec);
+                let new_data =
+                    Vec::from_raw_parts(md.as_mut_ptr() as *mut _, md.len(), md.capacity());
+                VecStorage::new(Dyn(foci.len()), Dyn(n), new_data)
+            });
+            struct Ptr(*mut Complex);
+            impl Ptr {
+                #[inline]
+                fn write(&mut self, value: Complex) {
+                    unsafe {
+                        *self.0 = value;
+                        self.0 = self.0.add(1);
                     }
                 }
-                unsafe impl Send for Ptr {}
-                unsafe impl Sync for Ptr {}
-                let ptr = Ptr(r.as_mut_ptr());
-                geometry.devices().par_bridge().for_each(move |dev| {
-                    let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
-                    dev.iter().for_each(move |tr| {
-                        foci.iter().for_each(|f| {
-                            ptr.write(propagate::<D>(
-                                tr,
-                                dev.wavenumber(),
-                                dev.axial_direction(),
-                                f,
-                            ));
-                        });
+
+                #[inline]
+                fn add(&self, i: usize) -> Self {
+                    Self(unsafe { self.0.add(i) })
+                }
+            }
+            unsafe impl Send for Ptr {}
+            unsafe impl Sync for Ptr {}
+            let ptr = Ptr(r.as_mut_ptr());
+            geometry.devices().par_bridge().for_each(move |dev| {
+                let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
+                dev.iter().for_each(move |tr| {
+                    foci.iter().for_each(|f| {
+                        ptr.write(propagate::<D>(
+                            tr,
+                            dev.wavenumber(),
+                            dev.axial_direction(),
+                            f,
+                        ));
                     });
                 });
-                Ok(r)
-            }
+            });
+            Ok(r)
         }
     }
 

@@ -1,4 +1,4 @@
-use std::{fmt::Debug, hash::Hash, time::Duration};
+use std::{fmt::Debug, time::Duration};
 
 use autd3_driver::{
     datagram::Datagram,
@@ -13,7 +13,7 @@ use crate::prelude::AUTDError;
 use super::Controller;
 use super::Link;
 
-pub struct GroupGuard<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>> {
+pub struct GroupGuard<'a, K: PartialEq + Debug, L: Link, F: Fn(&Device) -> Option<K>> {
     pub(crate) cnt: &'a mut Controller<L>,
     pub(crate) f: F,
     pub(crate) timeout: Option<Duration>,
@@ -21,15 +21,13 @@ pub struct GroupGuard<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) 
     pub(crate) operations: Vec<(Box<dyn Operation>, Box<dyn Operation>)>,
 }
 
-impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
-    GroupGuard<'a, K, L, F>
-{
+impl<'a, K: PartialEq + Debug, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<'a, K, L, F> {
     pub(crate) fn new(cnt: &'a mut Controller<L>, f: F) -> Self {
         let operations = (0..cnt.geometry.num_devices())
             .map(|_| {
                 (
-                    Box::new(NullOp::default()) as Box<_>,
-                    Box::new(NullOp::default()) as Box<_>,
+                    Box::<NullOp>::default() as Box<_>,
+                    Box::<NullOp>::default() as Box<_>,
                 )
             })
             .collect();
@@ -55,11 +53,10 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
             parallel_threshold,
         } = self;
 
-        if cnt
+        if !cnt
             .geometry
             .devices()
-            .find(|dev| (f)(dev).map(|kk| &kk == &k).unwrap_or(false))
-            .is_none()
+            .any(|dev| (f)(dev).map(|kk| kk == k).unwrap_or(false))
         {
             return Err(AUTDInternalError::UnkownKey(format!("{:?}", k)));
         }
