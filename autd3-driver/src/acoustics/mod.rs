@@ -78,12 +78,6 @@ mod tests {
     }
 
     #[rstest::fixture]
-    fn attenuation() -> f32 {
-        let mut rng = rand::thread_rng();
-        rng.gen_range(0.0..1e-6)
-    }
-
-    #[rstest::fixture]
     fn sound_speed() -> f32 {
         let mut rng = rand::thread_rng();
         rng.gen_range(300e3..400e3)
@@ -91,13 +85,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_propagate(
-        tr: Transducer,
-        rot: UnitQuaternion,
-        target: Vector3,
-        attenuation: f32,
-        sound_speed: f32,
-    ) {
+    fn test_propagate(tr: Transducer, rot: UnitQuaternion, target: Vector3, sound_speed: f32) {
         let mut device = Device::new(0, rot, vec![tr.clone()]);
         device.sound_speed = sound_speed;
         let wavenumber = device.wavenumber();
@@ -107,7 +95,6 @@ mod tests {
                 let dist = diff.norm();
                 let r = T4010A1_AMPLITUDE
                     * TestDirectivity::directivity_from_dir(&device.axial_direction(), &diff)
-                    * (-dist * attenuation).exp()
                     / (4. * PI * dist);
                 let phase = -wavenumber * dist;
                 Complex::new(r * phase.cos(), r * phase.sin())
