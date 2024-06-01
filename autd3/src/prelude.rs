@@ -1,7 +1,7 @@
 pub use crate::{
     controller::Controller,
     error::AUTDError,
-    gain::{Bessel, Focus, Null, Plane, Uniform},
+    gain::{Bessel, Focus, Group, Null, Plane, Uniform},
     link::Nop,
     modulation::{Sine, Square, Static},
 };
@@ -9,7 +9,7 @@ pub use crate::{
 pub use autd3_driver::{
     autd3_device::AUTD3,
     datagram::{
-        Clear, DebugSettings, EmulateGPIOIn, FocusSTM, ForceFan, GainSTM, Group,
+        Clear, DebugSettings, EmulateGPIOIn, FocusSTM, ForceFan, GainSTM,
         IntoDatagramWithParallelThreshold, IntoDatagramWithSegment,
         IntoDatagramWithSegmentTransition, IntoDatagramWithTimeout, IntoGainCache,
         IntoGainTransform, IntoModulationCache, IntoModulationTransform, IntoRadiationPressure,
