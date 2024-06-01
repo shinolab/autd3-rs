@@ -1,46 +1,44 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::Debug,
-    hash::Hash,
-    time::Duration,
-};
+use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
     datagram::Datagram,
+    derive::NullOp,
     error::AUTDInternalError,
-    firmware::operation::{Operation, OperationGenerator, OperationHandler},
-    geometry::{Device, Geometry},
+    firmware::operation::{Operation, OperationGenerator},
+    geometry::Device,
 };
+
+use crate::prelude::AUTDError;
 
 use super::Controller;
 use super::Link;
 
-type OpMap<K> = HashMap<K, (Option<usize>, Vec<(Box<dyn Operation>, Box<dyn Operation>)>)>;
-
-#[allow(clippy::type_complexity)]
 pub struct GroupGuard<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>> {
     pub(crate) cnt: &'a mut Controller<L>,
     pub(crate) f: F,
     pub(crate) timeout: Option<Duration>,
-    pub(crate) op: OpMap<K>,
-    pub(crate) enable_flags: Vec<bool>,
+    pub(crate) parallel_threshold: Option<usize>,
+    pub(crate) operations: Vec<(Box<dyn Operation>, Box<dyn Operation>)>,
 }
 
 impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
     GroupGuard<'a, K, L, F>
 {
     pub(crate) fn new(cnt: &'a mut Controller<L>, f: F) -> Self {
-        let enable_flags = cnt
-            .geometry
-            .iter()
-            .map(|dev| dev.enable)
-            .collect::<Vec<_>>();
+        let operations = (0..cnt.geometry.num_devices())
+            .map(|_| {
+                (
+                    Box::new(NullOp::default()) as Box<_>,
+                    Box::new(NullOp::default()) as Box<_>,
+                )
+            })
+            .collect();
         Self {
             cnt,
             f,
             timeout: None,
-            op: OpMap::new(),
-            enable_flags,
+            parallel_threshold: None,
+            operations,
         }
     }
 
@@ -49,139 +47,64 @@ impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>>
         D::O1: 'static,
         D::O2: 'static,
     {
-        let timeout = d.timeout();
-        let parallel_threshold = d.parallel_threshold();
-        let operations = {
-            let gen = d.operation_generator(&self.cnt.geometry)?;
-            self.cnt
-                .geometry
-                .devices()
-                .filter(|dev| {
-                    if let Some(kk) = (self.f)(dev) {
-                        kk == k
-                    } else {
-                        false
-                    }
-                })
-                .map(|dev| gen.generate(dev))
-                .map(|(op1, op2)| (Box::new(op1) as Box<_>, Box::new(op2) as Box<_>))
-                .collect()
-        };
-        Ok(self.set_boxed_op(k, operations, timeout, parallel_threshold))
-    }
+        let Self {
+            f,
+            mut operations,
+            cnt,
+            timeout,
+            parallel_threshold,
+        } = self;
 
-    #[doc(hidden)]
-    pub fn set_boxed_op(
-        mut self,
-        k: K,
-        op: Vec<(Box<dyn Operation>, Box<dyn Operation>)>,
-        timeout: Option<Duration>,
-        parallel_threshold: Option<usize>,
-    ) -> Self {
-        self.timeout = match (self.timeout, timeout) {
+        if cnt
+            .geometry
+            .devices()
+            .find(|dev| (f)(dev).map(|kk| &kk == &k).unwrap_or(false))
+            .is_none()
+        {
+            return Err(AUTDInternalError::UnkownKey(format!("{:?}", k)));
+        }
+
+        let timeout = match (timeout, d.timeout()) {
             (Some(t1), Some(t2)) => Some(t1.max(t2)),
             (a, b) => a.or(b),
         };
-        self.op.insert(k, (parallel_threshold, op));
-        self
-    }
+        let parallel_threshold = match (parallel_threshold, d.parallel_threshold()) {
+            (Some(t1), Some(t2)) => Some(t1.min(t2)),
+            (a, b) => a.or(b),
+        };
 
-    pub async fn send(mut self) -> Result<(), AUTDInternalError> {
-        let specified_keys = self.op.keys().cloned().collect::<HashSet<_>>();
-        let provided_keys = self
-            .cnt
-            .geometry
-            .devices()
-            .filter_map(|dev| (self.f)(dev))
-            .collect::<HashSet<_>>();
-
-        let unknown_keys = specified_keys
-            .difference(&provided_keys)
-            .collect::<Vec<_>>();
-        if !unknown_keys.is_empty() {
-            return Err(AUTDInternalError::UnkownKey(format!("{:?}", unknown_keys)));
-        }
-        let unspecified_keys = provided_keys
-            .difference(&specified_keys)
-            .collect::<Vec<_>>();
-        if !unspecified_keys.is_empty() {
-            return Err(AUTDInternalError::UnspecifiedKey(format!(
-                "{:?}",
-                unspecified_keys
-            )));
-        }
-
-        let enable_flags_map = self
-            .op
-            .keys()
-            .map(|k| {
-                (
-                    k.clone(),
-                    self.cnt
-                        .geometry
-                        .iter()
-                        .map(|dev| dev.enable && (self.f)(dev).map(|kk| &kk == k).unwrap_or(false))
-                        .collect(),
-                )
-            })
-            .collect();
-
-        let set_enable_flag =
-            |geometry: &mut Geometry, k: &K, enable_flags: &HashMap<K, Vec<bool>>| {
-                geometry.iter_mut().for_each(|dev| {
-                    dev.enable = enable_flags[k][dev.idx()];
-                });
-            };
-
-        loop {
-            self.op
-                .iter_mut()
-                .try_for_each(|(k, (parallel_threshold, op))| {
-                    let parallel_threshold =
-                        parallel_threshold.unwrap_or(self.cnt.parallel_threshold);
-                    set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
-                    if OperationHandler::is_done(op) {
-                        return Ok(());
-                    }
-                    OperationHandler::pack(
-                        op,
-                        &self.cnt.geometry,
-                        &mut self.cnt.tx_buf,
-                        parallel_threshold,
-                    )
-                })?;
-
-            let start = tokio::time::Instant::now();
-            autd3_driver::link::send_receive(
-                &mut self.cnt.link,
-                &self.cnt.tx_buf,
-                &mut self.cnt.rx_buf,
-                self.timeout,
-            )
-            .await?;
-
-            if self.op.iter_mut().all(|(k, (_, op))| {
-                set_enable_flag(&mut self.cnt.geometry, k, &enable_flags_map);
-                OperationHandler::is_done(op)
-            }) {
-                break;
-            }
-            tokio::time::sleep_until(start + Duration::from_millis(1)).await;
-        }
-
-        Ok(())
-    }
-}
-
-impl<'a, K: Hash + Eq + Clone + Debug, L: Link, F: Fn(&Device) -> Option<K>> Drop
-    for GroupGuard<'a, K, L, F>
-{
-    fn drop(&mut self) {
-        self.cnt
-            .geometry
+        let gen = d.operation_generator(&cnt.geometry)?;
+        operations
             .iter_mut()
-            .zip(self.enable_flags.iter())
-            .for_each(|(dev, &enable)| dev.enable = enable);
+            .zip(cnt.geometry.devices())
+            .for_each(|(op, dev)| {
+                if let Some(kk) = (f)(dev) {
+                    if kk == k {
+                        let (op1, op2) = gen.generate(dev);
+                        *op = (Box::new(op1) as Box<_>, Box::new(op2) as Box<_>);
+                    }
+                }
+            });
+
+        Ok(Self {
+            cnt,
+            f,
+            timeout,
+            parallel_threshold,
+            operations,
+        })
+    }
+
+    pub async fn send(self) -> Result<(), AUTDError> {
+        let timeout = self.timeout;
+        let parallel_threshold = self
+            .parallel_threshold
+            .unwrap_or(self.cnt.parallel_threshold);
+
+        let mut operations = self.operations;
+        self.cnt
+            .send_impl(&mut operations, timeout, parallel_threshold)
+            .await
     }
 }
 
@@ -198,6 +121,7 @@ mod tests {
         controller::tests::create_controller,
         gain::{Null, Uniform},
         modulation::{Sine, Static},
+        prelude::AUTDError,
     };
 
     #[tokio::test]
@@ -282,7 +206,7 @@ mod tests {
 
         autd.link.down();
         assert_eq!(
-            Err(AUTDInternalError::SendDataFailed),
+            Err(AUTDError::Internal(AUTDInternalError::SendDataFailed)),
             autd.group(|dev| Some(dev.idx()))
                 .set(0, Null::new())?
                 .send()
@@ -297,7 +221,9 @@ mod tests {
         let mut autd = create_controller(2).await?;
 
         assert_eq!(
-            Err(autd3_driver::error::AUTDInternalError::InvalidSegmentTransition),
+            Err(AUTDError::Internal(
+                AUTDInternalError::InvalidSegmentTransition
+            )),
             autd.group(|dev| Some(dev.idx()))
                 .set(0, Null::new())?
                 .set(
@@ -337,27 +263,11 @@ mod tests {
         let mut autd = create_controller(2).await?;
 
         assert_eq!(
-            Err(AUTDInternalError::UnkownKey("[2]".to_owned())),
+            Some(AUTDInternalError::UnkownKey("2".to_owned())),
             autd.group(|dev| Some(dev.idx()))
                 .set(0, Null::new())?
-                .set(2, Null::new())?
-                .send()
-                .await
-        );
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn unspecified_key() -> anyhow::Result<()> {
-        let mut autd = create_controller(2).await?;
-
-        assert_eq!(
-            Err(AUTDInternalError::UnspecifiedKey("[1]".to_owned())),
-            autd.group(|dev| Some(dev.idx()))
-                .set(0, Null::new())?
-                .send()
-                .await
+                .set(2, Null::new())
+                .err()
         );
 
         Ok(())

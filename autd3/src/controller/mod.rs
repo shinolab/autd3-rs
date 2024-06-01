@@ -6,6 +6,7 @@ use std::{fmt::Debug, hash::Hash, time::Duration};
 use autd3_driver::{
     datagram::{Clear, Datagram, SilencerFixedCompletionSteps},
     defined::DEFAULT_TIMEOUT,
+    derive::Operation,
     firmware::{
         cpu::{RxMessage, TxDatagram},
         fpga::FPGAState,
@@ -56,9 +57,19 @@ impl<L: Link> Controller<L> {
 
         let gen = s.operation_generator(&self.geometry)?;
         let mut operations = OperationHandler::generate(gen, &self.geometry);
+        self.send_impl(&mut operations, timeout, parallel_threshold)
+            .await
+    }
+
+    pub(crate) async fn send_impl(
+        &mut self,
+        operations: &mut [(impl Operation, impl Operation)],
+        timeout: Option<Duration>,
+        parallel_threshold: usize,
+    ) -> Result<(), AUTDError> {
         loop {
             OperationHandler::pack(
-                &mut operations,
+                operations,
                 &self.geometry,
                 &mut self.tx_buf,
                 parallel_threshold,
