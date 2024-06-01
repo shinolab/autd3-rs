@@ -15,7 +15,7 @@ impl ToMessage for autd3_driver::defined::Angle {
 
 impl FromMessage<Angle> for autd3_driver::defined::Angle {
     fn from_msg(msg: &Angle) -> Option<Self> {
-        Some(msg.rad as f32 * autd3_driver::defined::rad)
+        Some(msg.rad * autd3_driver::defined::rad)
     }
 }
 

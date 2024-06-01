@@ -76,7 +76,7 @@ impl<L: Link> Controller<L> {
             )?;
             let start = tokio::time::Instant::now();
             send_receive(&mut self.link, &self.tx_buf, &mut self.rx_buf, timeout).await?;
-            if OperationHandler::is_done(&operations) {
+            if OperationHandler::is_done(operations) {
                 return Ok(());
             }
             tokio::time::sleep_until(start + Duration::from_millis(1)).await;
