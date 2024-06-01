@@ -30,8 +30,6 @@ pub enum AUTDInternalError {
 
     #[error("Unknown group key: {0}")]
     UnkownKey(String),
-    #[error("Unspecified group key: {0}")]
-    UnspecifiedKey(String),
 
     #[error("Sampling frequency division ({0}) must be a multiple of 512")]
     SamplingFreqDivInvalid(u32),

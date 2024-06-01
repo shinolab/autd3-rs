@@ -95,15 +95,6 @@ where
         if !unknown_keys.is_empty() {
             return Err(AUTDInternalError::UnkownKey(format!("{:?}", unknown_keys)));
         }
-        let unspecified_keys = provided_keys
-            .difference(&specified_keys)
-            .collect::<Vec<_>>();
-        if !unspecified_keys.is_empty() {
-            return Err(AUTDInternalError::UnspecifiedKey(format!(
-                "{:?}",
-                unspecified_keys
-            )));
-        }
 
         let drives_cache = std::sync::Arc::new(std::sync::RwLock::new(
             self.gain_map
@@ -126,9 +117,13 @@ where
             let dev_idx = dev.idx();
             let drives_cache = drives_cache.clone();
             Box::new(move |tr| {
-                fk(tr)
-                    .map(|key| drives_cache.read().unwrap()[&key][&dev_idx][tr.idx()])
-                    .unwrap_or(Drive::null())
+                fk(tr).map_or(Drive::null(), |key| {
+                    drives_cache
+                        .read()
+                        .unwrap()
+                        .get(&key)
+                        .map_or(Drive::null(), |d| d[&dev_idx][tr.idx()])
+                })
             })
         }))
     }
@@ -164,7 +159,6 @@ mod tests {
                 _ => None,
             }
         })
-        .set("null", TestGain::null(&geometry))
         .set("test", g1)
         .set("test2", g2);
 
@@ -218,25 +212,6 @@ mod tests {
 
         assert_eq!(
             Some(AUTDInternalError::UnkownKey("[\"test2\"]".to_owned())),
-            gain.calc(&geometry).err()
-        );
-    }
-
-    #[test]
-    fn test_unspecified_key() {
-        let geometry = create_geometry(2, 249, FREQ_40K);
-
-        let gain = Group::new(|_dev| {
-            |tr| match tr.idx() {
-                0..=99 => Some("test"),
-                100..=199 => Some("null"),
-                _ => None,
-            }
-        })
-        .set("test", TestGain::null(&geometry));
-
-        assert_eq!(
-            Some(AUTDInternalError::UnspecifiedKey("[\"null\"]".to_owned())),
             gain.calc(&geometry).err()
         );
     }
