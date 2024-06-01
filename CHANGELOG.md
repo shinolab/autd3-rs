@@ -2,14 +2,19 @@
 
 - Remove deprecated functions and structs
   - Remove `gain::Bessel2` and `with_transform2`
-- All transmission data calculation steps can now be parallelized per device
-  - Add `with_parallel_threshold` to all `Datagram`s
-  - Add `parallel_threshold` parameter to `ControllerBuilder`
+- Improve performance
+  - Use `f32` intead of `f64`
+  - All transmission data calculation steps can now be parallelized per device
+    - Add `with_parallel_threshold` to all `Datagram`s
+    - Add `parallel_threshold` parameter to `ControllerBuilder`
+  - Improve performance of `NalgebraBackend`
 - Remove `rotation` parameter from `Transducer`, add `rotation` parameter to `Device` instead
+- Remove `attenuation` parameter from `Device`
 - `SwapSegment` is now enum
 - Rename from `as_pascal` to `pascal` and `as_spl` to `spl` in `Amplitude`
 - Remove `add_xxx` functions from `Fourier`, `GainSTM`, `FocusSTM`, `Greedy`, `SDP`, `Naive`, `GS`, `GSPAT`, and `LM`
   - User must pass all data in constructor
+- Add `modulation::Mixer`
 
 # 24.1.0
 
