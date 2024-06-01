@@ -6,11 +6,13 @@ pub use crate::{
     geometry::{Device, Geometry, Transducer},
 };
 pub use autd3_derive::Gain;
+use rayon::prelude::*;
 
 use std::{
-    collections::{hash_map::Entry, HashMap, HashSet},
+    collections::{hash_map::Entry, HashMap},
     fmt::Debug,
     hash::Hash,
+    sync::Arc,
 };
 
 use bitvec::prelude::*;
@@ -22,7 +24,7 @@ pub struct Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync + 'static,
     FK: Fn(&Transducer) -> Option<K> + Send + Sync + 'static,
-    F: Fn(&Device) -> FK + 'static,
+    F: Fn(&Device) -> FK + Send + Sync + 'static,
 {
     f: F,
     gain_map: HashMap<K, Box<dyn Gain>>,
@@ -32,7 +34,7 @@ impl<K, FK, F> Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync + 'static,
     FK: Fn(&Transducer) -> Option<K> + Send + Sync + 'static,
-    F: Fn(&Device) -> FK + 'static,
+    F: Fn(&Device) -> FK + Send + Sync + 'static,
 {
     pub fn new(f: F) -> Group<K, FK, F> {
         Group {
@@ -81,50 +83,57 @@ impl<K, FK, F> Gain for Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync + 'static,
     FK: Fn(&Transducer) -> Option<K> + Send + Sync + 'static,
-    F: Fn(&Device) -> FK + 'static,
+    F: Fn(&Device) -> FK + Send + Sync + 'static,
 {
     fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         let mut filters = self.get_filters(geometry);
 
-        let specified_keys = self.gain_map.keys().cloned().collect::<HashSet<_>>();
-        let provided_keys = filters.keys().cloned().collect::<HashSet<_>>();
-
-        let unknown_keys = specified_keys
-            .difference(&provided_keys)
+        let result = geometry
+            .devices()
+            .map(|dev| dev.iter().map(|_| Drive::null()).collect::<Vec<_>>())
             .collect::<Vec<_>>();
-        if !unknown_keys.is_empty() {
-            return Err(AUTDInternalError::UnkownKey(format!("{:?}", unknown_keys)));
-        }
-
-        let drives_cache = std::sync::Arc::new(std::sync::RwLock::new(
-            self.gain_map
-                .iter()
-                .map(|(k, g)| {
-                    Ok((k.clone(), {
-                        let f = g.calc_with_filter(geometry, filters.remove(k).unwrap())?;
-                        geometry
-                            .devices()
-                            .map(move |dev| (dev.idx(), dev.iter().map(f(dev)).collect::<Vec<_>>()))
-                            .collect::<HashMap<_, _>>()
-                    }))
-                })
-                .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?,
-        ));
-
-        let f = &self.f;
-        Ok(Box::new(move |dev| {
-            let fk = f(dev);
-            let dev_idx = dev.idx();
-            let drives_cache = drives_cache.clone();
-            Box::new(move |tr| {
-                fk(tr).map_or(Drive::null(), |key| {
-                    drives_cache
-                        .read()
-                        .unwrap()
-                        .get(&key)
-                        .map_or(Drive::null(), |d| d[&dev_idx][tr.idx()])
-                })
+        let gain_map = self
+            .gain_map
+            .iter()
+            .map(|(k, g)| {
+                let filter = filters
+                    .remove(k)
+                    .ok_or(AUTDInternalError::UnkownKey(format!("{:?}", k)))?;
+                let g = g.calc_with_filter(geometry, filter)?;
+                Ok((
+                    k.clone(),
+                    geometry.devices().map(|dev| g(dev)).collect::<Vec<_>>(),
+                ))
             })
+            .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?;
+        let f = &self.f;
+        gain_map
+            .par_iter()
+            .try_for_each(|(k, g)| -> Result<(), AUTDInternalError> {
+                geometry.devices().for_each(|dev| {
+                    let f = (f)(dev);
+                    let g = &g[dev.idx()];
+                    let r = result[dev.idx()].as_ptr() as *mut Drive;
+                    dev.iter().for_each(|tr| {
+                        if let Some(kk) = f(tr) {
+                            if &kk == k {
+                                unsafe {
+                                    r.add(tr.idx()).write(g(tr));
+                                }
+                            }
+                        }
+                    })
+                });
+                Ok(())
+            })?;
+        let drives_cache = geometry
+            .devices()
+            .zip(result)
+            .map(|(dev, res)| (dev.idx(), Arc::new(res)))
+            .collect::<HashMap<_, _>>();
+        Ok(Box::new(move |dev| {
+            let d = drives_cache[&dev.idx()].clone();
+            Box::new(move |tr| d[tr.idx()])
         }))
     }
 }
@@ -211,7 +220,7 @@ mod tests {
         .set("test2", TestGain::null(&geometry));
 
         assert_eq!(
-            Some(AUTDInternalError::UnkownKey("[\"test2\"]".to_owned())),
+            Some(AUTDInternalError::UnkownKey("\"test2\"".to_owned())),
             gain.calc(&geometry).err()
         );
     }
