@@ -41,7 +41,7 @@ pub fn gen_random_foci(num: usize) -> Vec<ControlPoints<1>> {
 }
 
 #[test]
-fn test_send_focus_stm() -> anyhow::Result<()> {
+fn test_send_foci_stm() -> anyhow::Result<()> {
     let sin_table = include_bytes!("sin.dat");
     let atan_table = include_bytes!("atan.dat");
 
@@ -172,7 +172,7 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
 }
 
 #[test]
-fn change_focus_stm_segment() -> anyhow::Result<()> {
+fn change_foci_stm_segment() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -200,7 +200,7 @@ fn change_focus_stm_segment() -> anyhow::Result<()> {
 }
 
 #[test]
-fn test_focus_stm_freq_div_too_small() -> anyhow::Result<()> {
+fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -263,7 +263,7 @@ fn test_focus_stm_freq_div_too_small() -> anyhow::Result<()> {
 }
 
 #[test]
-fn send_focus_stm_invalid_segment_transition() -> anyhow::Result<()> {
+fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -316,7 +316,7 @@ fn send_focus_stm_invalid_segment_transition() -> anyhow::Result<()> {
 }
 
 #[test]
-fn send_focus_stm_invalid_transition_mode() -> anyhow::Result<()> {
+fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());

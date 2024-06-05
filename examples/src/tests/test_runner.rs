@@ -29,7 +29,7 @@ pub async fn run<L: Link>(mut autd: Controller<L>) -> anyhow::Result<()> {
         ("Bessel beam test", |autd| Box::pin(bessel(autd))),
         ("Plane wave test", |autd| Box::pin(plane(autd))),
         ("Wav modulation test", |autd| Box::pin(audio_file(autd))),
-        ("FociSTM test", |autd| Box::pin(focus_stm(autd))),
+        ("FociSTM test", |autd| Box::pin(foci_stm(autd))),
         ("GainSTM test", |autd| Box::pin(gain_stm(autd))),
         ("Multiple foci test", |autd| Box::pin(holo(autd))),
         ("User-defined Gain & Modulation test", |autd| {
