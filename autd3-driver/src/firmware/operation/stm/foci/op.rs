@@ -6,8 +6,8 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{
-            STMFocus, Segment, TransitionMode, FOCUS_STM_BUF_SIZE_MAX, STM_BUF_SIZE_MIN,
-            TRANSITION_MODE_NONE,
+            STMFocus, Segment, TransitionMode, FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FOCI_NUM_MAX,
+            STM_BUF_SIZE_MIN, TRANSITION_MODE_NONE,
         },
         operation::{cast, Operation, TypeTag},
     },
@@ -71,6 +71,10 @@ impl<const N: usize> FociSTMOp<N> {
 
 impl<const N: usize> Operation for FociSTMOp<N> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+        if N > FOCI_STM_FOCI_NUM_MAX {
+            return Err(AUTDInternalError::FociSTMNumFociOutOfRange(N));
+        }
+
         let is_first = self.sent == 0;
 
         let offset = if is_first {
@@ -89,18 +93,29 @@ impl<const N: usize> Operation for FociSTMOp<N> {
             .take(send_num)
             .enumerate()
             .try_for_each(|(i, points)| {
+                let intensity = points.intensity();
+                let base_offset = points[0].offset();
                 points.points().iter().enumerate().try_for_each(|(j, p)| {
                     let lp = device.to_local(p.point());
                     cast::<STMFocus>(
                         &mut tx
                             [offset + i * size_of::<STMFocus>() * N + j * size_of::<STMFocus>()..],
                     )
-                    .set(lp.x, lp.y, lp.z, p.intensity())
+                    .set(
+                        lp.x,
+                        lp.y,
+                        lp.z,
+                        if j == 0 {
+                            intensity.value()
+                        } else {
+                            (p.offset() - base_offset).value()
+                        },
+                    )
                 })
             })?;
 
         self.sent += send_num;
-        if self.sent > FOCUS_STM_BUF_SIZE_MAX {
+        if self.sent > FOCI_STM_BUF_SIZE_MAX {
             return Err(AUTDInternalError::FociSTMPointSizeOutOfRange(self.sent));
         }
 
@@ -155,9 +170,9 @@ impl<const N: usize> Operation for FociSTMOp<N> {
 
     fn required_size(&self, _: &Device) -> usize {
         if self.sent == 0 {
-            size_of::<FociSTMHead>() + size_of::<STMFocus>()
+            size_of::<FociSTMHead>() + size_of::<STMFocus>() * N
         } else {
-            size_of::<FociSTMSubseq>() + size_of::<STMFocus>()
+            size_of::<FociSTMSubseq>() + size_of::<STMFocus>() * N
         }
     }
 
@@ -178,7 +193,7 @@ mod tests {
         ethercat::DcSysTime,
         firmware::{
             fpga::{
-                FOCUS_STM_FIXED_NUM_UNIT, FOCUS_STM_FIXED_NUM_UPPER_X, SAMPLING_FREQ_DIV_MAX,
+                FOCI_STM_FIXED_NUM_UNIT, FOCI_STM_FIXED_NUM_UPPER_X, SAMPLING_FREQ_DIV_MAX,
                 SAMPLING_FREQ_DIV_MIN,
             },
             operation::tests::parse_tx_as,
@@ -190,8 +205,8 @@ mod tests {
 
     #[test]
     fn test() {
-        const FOCUS_STM_SIZE: usize = 100;
-        const FRAME_SIZE: usize = size_of::<FociSTMHead>() + size_of::<STMFocus>() * FOCUS_STM_SIZE;
+        const FOCI_STM_SIZE: usize = 100;
+        const FRAME_SIZE: usize = size_of::<FociSTMHead>() + size_of::<STMFocus>() * FOCI_STM_SIZE;
 
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
@@ -199,15 +214,17 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let points: Vec<ControlPoints<1>> = (0..FOCUS_STM_SIZE)
+        let points: Vec<ControlPoints<1>> = (0..FOCI_STM_SIZE)
             .map(|_| {
-                ControlPoint::new(Vector3::new(
-                    rng.gen_range(-500.0 * mm..500.0 * mm),
-                    rng.gen_range(-500.0 * mm..500.0 * mm),
-                    rng.gen_range(0.0 * mm..500.0 * mm),
-                ))
-                .with_intensity(rng.gen::<u8>())
-                .into()
+                (
+                    ControlPoint::new(Vector3::new(
+                        rng.gen_range(-500.0 * mm..500.0 * mm),
+                        rng.gen_range(-500.0 * mm..500.0 * mm),
+                        rng.gen_range(0.0 * mm..500.0 * mm),
+                    )),
+                    rng.gen::<u8>(),
+                )
+                    .into()
             })
             .collect();
         let rep = 0xFFFFFFFF;
@@ -239,7 +256,7 @@ mod tests {
 
         assert_eq!(op.pack(&device, &mut tx), Ok(FRAME_SIZE));
 
-        assert_eq!(op.sent, FOCUS_STM_SIZE);
+        assert_eq!(op.sent, FOCI_STM_SIZE);
 
         assert_eq!(
             FociSTMHead {
@@ -269,7 +286,7 @@ mod tests {
                         p[0].point().x,
                         p[0].point().y,
                         p[0].point().z,
-                        p[0].intensity(),
+                        p.intensity().value(),
                     );
                 }
                 assert_eq!(d[0], (buf[0] & 0xFF) as u8);
@@ -286,7 +303,7 @@ mod tests {
     #[test]
     fn test_div() {
         const FRAME_SIZE: usize = 32;
-        const FOCUS_STM_SIZE: usize = 7;
+        const FOCI_STM_SIZE: usize = 7;
 
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
@@ -294,15 +311,17 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let points: Vec<ControlPoints<1>> = (0..FOCUS_STM_SIZE)
+        let points: Vec<ControlPoints<1>> = (0..FOCI_STM_SIZE)
             .map(|_| {
-                ControlPoint::new(Vector3::new(
-                    rng.gen_range(-500.0 * mm..500.0 * mm),
-                    rng.gen_range(-500.0 * mm..500.0 * mm),
-                    rng.gen_range(0.0 * mm..500.0 * mm),
-                ))
-                .with_intensity(rng.gen::<u8>())
-                .into()
+                (
+                    ControlPoint::new(Vector3::new(
+                        rng.gen_range(-500.0 * mm..500.0 * mm),
+                        rng.gen_range(-500.0 * mm..500.0 * mm),
+                        rng.gen_range(0.0 * mm..500.0 * mm),
+                    )),
+                    rng.gen::<u8>(),
+                )
+                    .into()
             })
             .collect();
         let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
@@ -366,7 +385,7 @@ mod tests {
                             p[0].point().x,
                             p[0].point().y,
                             p[0].point().z,
-                            p[0].intensity(),
+                            p.intensity().value(),
                         );
                     }
                     assert_eq!(d[0], (buf[0] & 0xFF) as u8);
@@ -417,7 +436,7 @@ mod tests {
                             p[0].point().x,
                             p[0].point().y,
                             p[0].point().z,
-                            p[0].intensity(),
+                            p.intensity().value(),
                         );
                     }
                     assert_eq!(d[0], (buf[0] & 0xFF) as u8);
@@ -445,7 +464,7 @@ mod tests {
                         * size_of::<STMFocus>())
             );
 
-            assert_eq!(op.sent, FOCUS_STM_SIZE);
+            assert_eq!(op.sent, FOCI_STM_SIZE);
 
             assert_eq!(TypeTag::FociSTM as u8, tx[0]);
             assert_eq!(
@@ -474,7 +493,7 @@ mod tests {
                             p[0].point().x,
                             p[0].point().y,
                             p[0].point().z,
-                            p[0].intensity(),
+                            p.intensity().value(),
                         );
                     }
                     assert_eq!(d[0], (buf[0] & 0xFF) as u8);
@@ -491,23 +510,19 @@ mod tests {
 
     #[test]
     fn test_point_out_of_range() {
-        const FOCUS_STM_SIZE: usize = 100;
-        const FRAME_SIZE: usize = 16 + 8 * FOCUS_STM_SIZE;
+        const FOCI_STM_SIZE: usize = 100;
+        const FRAME_SIZE: usize = 16 + 8 * FOCI_STM_SIZE;
 
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let x = FOCUS_STM_FIXED_NUM_UNIT * (FOCUS_STM_FIXED_NUM_UPPER_X as f32 + 1.);
+        let x = FOCI_STM_FIXED_NUM_UNIT * (FOCI_STM_FIXED_NUM_UPPER_X as f32 + 1.);
 
         let mut op = FociSTMOp::new(
             Arc::new(
-                (0..FOCUS_STM_SIZE)
-                    .map(|_| {
-                        ControlPoint::from(Vector3::new(x, x, x))
-                            .with_intensity(0)
-                            .into()
-                    })
+                (0..FOCI_STM_SIZE)
+                    .map(|_| ControlPoint::from(Vector3::new(x, x, x)).into())
                     .collect::<Vec<_>>(),
             ),
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
@@ -527,8 +542,8 @@ mod tests {
     #[case(Err(AUTDInternalError::FociSTMPointSizeOutOfRange(0)), 0)]
     #[case(Err(AUTDInternalError::FociSTMPointSizeOutOfRange(1)), 1)]
     #[case(Ok(()), 2)]
-    #[case(Ok(()), FOCUS_STM_BUF_SIZE_MAX)]
-    #[case(Err(AUTDInternalError::FociSTMPointSizeOutOfRange(FOCUS_STM_BUF_SIZE_MAX+1)), FOCUS_STM_BUF_SIZE_MAX+1)]
+    #[case(Ok(()), FOCI_STM_BUF_SIZE_MAX)]
+    #[case(Err(AUTDInternalError::FociSTMPointSizeOutOfRange(FOCI_STM_BUF_SIZE_MAX+1)), FOCI_STM_BUF_SIZE_MAX+1)]
     fn test_buffer_out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] n: usize) {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 

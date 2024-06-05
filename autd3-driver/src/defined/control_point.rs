@@ -7,8 +7,6 @@ pub struct ControlPoint {
     #[getset]
     point: Vector3,
     #[getset]
-    intensity: EmitIntensity,
-    #[getset]
     offset: Phase,
 }
 
@@ -16,7 +14,6 @@ impl ControlPoint {
     pub const fn new(point: Vector3) -> Self {
         Self {
             point,
-            intensity: EmitIntensity::MAX,
             offset: Phase::new(0),
         }
     }
@@ -40,11 +37,16 @@ pub struct ControlPoints<const N: usize> {
     #[deref_mut]
     #[get]
     points: [ControlPoint; N],
+    #[getset]
+    intensity: EmitIntensity,
 }
 
 impl<const N: usize> ControlPoints<N> {
     pub const fn new(points: [ControlPoint; N]) -> Self {
-        Self { points }
+        Self {
+            points,
+            intensity: EmitIntensity::MAX,
+        }
     }
 }
 
@@ -57,12 +59,30 @@ where
     }
 }
 
+impl<C, I: Into<EmitIntensity>> From<(C, I)> for ControlPoints<1>
+where
+    ControlPoint: From<C>,
+{
+    fn from(point: (C, I)) -> Self {
+        Self::new([point.0.into()]).with_intensity(point.1.into())
+    }
+}
+
 impl<C, const N: usize> From<[C; N]> for ControlPoints<N>
 where
     ControlPoint: From<C>,
 {
     fn from(points: [C; N]) -> Self {
         Self::new(points.map(ControlPoint::from))
+    }
+}
+
+impl<C, I: Into<EmitIntensity>, const N: usize> From<([C; N], I)> for ControlPoints<N>
+where
+    ControlPoint: From<C>,
+{
+    fn from(points: ([C; N], I)) -> Self {
+        Self::new(points.0.map(ControlPoint::from)).with_intensity(points.1.into())
     }
 }
 
@@ -75,7 +95,6 @@ mod tests {
         let v = Vector3::new(1.0, 2.0, 3.0);
         let cp = ControlPoint::from(v);
         assert_eq!(&v, cp.point());
-        assert_eq!(EmitIntensity::MAX, cp.intensity());
     }
 
     #[test]
@@ -83,6 +102,5 @@ mod tests {
         let v = Vector3::new(1.0, 2.0, 3.0);
         let cp = ControlPoint::from(&v);
         assert_eq!(&v, cp.point());
-        assert_eq!(EmitIntensity::MAX, cp.intensity());
     }
 }
