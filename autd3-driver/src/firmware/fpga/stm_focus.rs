@@ -1,4 +1,4 @@
-use crate::{error::AUTDInternalError, firmware::fpga::EmitIntensity};
+use crate::error::AUTDInternalError;
 
 use super::*;
 
@@ -18,7 +18,7 @@ pub struct STMFocus {
 
 impl STMFocus {
     fn to_fixed_num(x: f32) -> i32 {
-        (x / FOCUS_STM_FIXED_NUM_UNIT).round() as i32
+        (x / FOCI_STM_FIXED_NUM_UNIT).round() as i32
     }
 
     pub fn set(
@@ -26,15 +26,15 @@ impl STMFocus {
         x: f32,
         y: f32,
         z: f32,
-        intensity: EmitIntensity,
+        intensity_or_offset: u8,
     ) -> Result<(), AUTDInternalError> {
         let ix = Self::to_fixed_num(x);
         let iy = Self::to_fixed_num(y);
         let iz = Self::to_fixed_num(z);
 
-        if !(FOCUS_STM_FIXED_NUM_LOWER_X..=FOCUS_STM_FIXED_NUM_UPPER_X).contains(&ix)
-            || !(FOCUS_STM_FIXED_NUM_LOWER_Y..=FOCUS_STM_FIXED_NUM_UPPER_Y).contains(&iy)
-            || !(FOCUS_STM_FIXED_NUM_LOWER_Z..=FOCUS_STM_FIXED_NUM_UPPER_Z).contains(&iz)
+        if !(FOCI_STM_FIXED_NUM_LOWER_X..=FOCI_STM_FIXED_NUM_UPPER_X).contains(&ix)
+            || !(FOCI_STM_FIXED_NUM_LOWER_Y..=FOCI_STM_FIXED_NUM_UPPER_Y).contains(&iy)
+            || !(FOCI_STM_FIXED_NUM_LOWER_Z..=FOCI_STM_FIXED_NUM_UPPER_Z).contains(&iz)
         {
             return Err(AUTDInternalError::FociSTMPointOutOfRange(x, y, z));
         }
@@ -42,7 +42,7 @@ impl STMFocus {
         self.set_x(ix);
         self.set_y(iy);
         self.set_z(iz);
-        self.set_intensity(intensity.value());
+        self.set_intensity(intensity_or_offset);
         Ok(())
     }
 }
@@ -81,10 +81,10 @@ mod tests {
 
     #[test]
     fn test_to_fixed_num() {
-        for i in FOCUS_STM_FIXED_NUM_LOWER_Z..=FOCUS_STM_FIXED_NUM_UPPER_Z {
+        for i in FOCI_STM_FIXED_NUM_LOWER_Z..=FOCI_STM_FIXED_NUM_UPPER_Z {
             assert_eq!(
                 i,
-                STMFocus::to_fixed_num(i as f32 * FOCUS_STM_FIXED_NUM_UNIT)
+                STMFocus::to_fixed_num(i as f32 * FOCI_STM_FIXED_NUM_UNIT)
             );
         }
     }
@@ -95,24 +95,24 @@ mod tests {
     #[case(true, -1, -2, -3, 0xFF)]
     #[case(
         true,
-        FOCUS_STM_FIXED_NUM_UPPER_X,
-        FOCUS_STM_FIXED_NUM_UPPER_Y,
-        FOCUS_STM_FIXED_NUM_UPPER_Z,
+        FOCI_STM_FIXED_NUM_UPPER_X,
+        FOCI_STM_FIXED_NUM_UPPER_Y,
+        FOCI_STM_FIXED_NUM_UPPER_Z,
         0x01
     )]
     #[case(
         true,
-        FOCUS_STM_FIXED_NUM_LOWER_X,
-        FOCUS_STM_FIXED_NUM_LOWER_Y,
-        FOCUS_STM_FIXED_NUM_LOWER_Z,
+        FOCI_STM_FIXED_NUM_LOWER_X,
+        FOCI_STM_FIXED_NUM_LOWER_Y,
+        FOCI_STM_FIXED_NUM_LOWER_Z,
         0x02
     )]
-    #[case(false, FOCUS_STM_FIXED_NUM_UPPER_X+1, FOCUS_STM_FIXED_NUM_UPPER_Y, FOCUS_STM_FIXED_NUM_UPPER_Z, 0x03)]
-    #[case(false, FOCUS_STM_FIXED_NUM_LOWER_X-1, FOCUS_STM_FIXED_NUM_LOWER_Y, FOCUS_STM_FIXED_NUM_LOWER_Z, 0x04)]
-    #[case(false, FOCUS_STM_FIXED_NUM_UPPER_X, FOCUS_STM_FIXED_NUM_UPPER_Y+1, FOCUS_STM_FIXED_NUM_UPPER_Z, 0x05)]
-    #[case(false, FOCUS_STM_FIXED_NUM_LOWER_X, FOCUS_STM_FIXED_NUM_LOWER_Y-1, FOCUS_STM_FIXED_NUM_LOWER_Z, 0x06)]
-    #[case(false, FOCUS_STM_FIXED_NUM_UPPER_X, FOCUS_STM_FIXED_NUM_UPPER_Y, FOCUS_STM_FIXED_NUM_UPPER_Z+1, 0x07)]
-    #[case(false, FOCUS_STM_FIXED_NUM_LOWER_X, FOCUS_STM_FIXED_NUM_LOWER_Y, FOCUS_STM_FIXED_NUM_LOWER_Z-1, 0x08)]
+    #[case(false, FOCI_STM_FIXED_NUM_UPPER_X+1, FOCI_STM_FIXED_NUM_UPPER_Y, FOCI_STM_FIXED_NUM_UPPER_Z, 0x03)]
+    #[case(false, FOCI_STM_FIXED_NUM_LOWER_X-1, FOCI_STM_FIXED_NUM_LOWER_Y, FOCI_STM_FIXED_NUM_LOWER_Z, 0x04)]
+    #[case(false, FOCI_STM_FIXED_NUM_UPPER_X, FOCI_STM_FIXED_NUM_UPPER_Y+1, FOCI_STM_FIXED_NUM_UPPER_Z, 0x05)]
+    #[case(false, FOCI_STM_FIXED_NUM_LOWER_X, FOCI_STM_FIXED_NUM_LOWER_Y-1, FOCI_STM_FIXED_NUM_LOWER_Z, 0x06)]
+    #[case(false, FOCI_STM_FIXED_NUM_UPPER_X, FOCI_STM_FIXED_NUM_UPPER_Y, FOCI_STM_FIXED_NUM_UPPER_Z+1, 0x07)]
+    #[case(false, FOCI_STM_FIXED_NUM_LOWER_X, FOCI_STM_FIXED_NUM_LOWER_Y, FOCI_STM_FIXED_NUM_LOWER_Z-1, 0x08)]
     fn test_stm_focus(
         #[case] expect: bool,
         #[case] x: i32,
@@ -124,10 +124,10 @@ mod tests {
         assert_eq!(
             expect,
             p.set(
-                x as f32 * FOCUS_STM_FIXED_NUM_UNIT,
-                y as f32 * FOCUS_STM_FIXED_NUM_UNIT,
-                z as f32 * FOCUS_STM_FIXED_NUM_UNIT,
-                EmitIntensity::new(intensity)
+                x as f32 * FOCI_STM_FIXED_NUM_UNIT,
+                y as f32 * FOCI_STM_FIXED_NUM_UNIT,
+                z as f32 * FOCI_STM_FIXED_NUM_UNIT,
+                EmitIntensity::new(intensity).value()
             )
             .is_ok()
         );

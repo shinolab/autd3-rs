@@ -46,17 +46,23 @@ pub enum AUTDInternalError {
     #[error(
         "FociSTM size ({0}) is out of range ([{}, {}])",
         STM_BUF_SIZE_MIN,
-        FOCUS_STM_BUF_SIZE_MAX
+        FOCI_STM_BUF_SIZE_MAX
     )]
     FociSTMPointSizeOutOfRange(usize),
     #[error(
+        "Number of foci ({0}) is out of range ([{}, {}])",
+        1,
+        FOCI_STM_FOCI_NUM_MAX
+    )]
+    FociSTMNumFociOutOfRange(usize),
+    #[error(
         "Point coordinate ({0}, {1}, {2}) is out of range ([{}, {}], [{}, {}], [{}, {}])",
-        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER_X as f32,
-        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_UPPER_X as f32,
-        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER_Y as f32,
-        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_UPPER_Y as f32,
-        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER_Z as f32,
-        FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_UPPER_Z as f32,
+        FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_LOWER_X as f32,
+        FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_UPPER_X as f32,
+        FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_LOWER_Y as f32,
+        FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_UPPER_Y as f32,
+        FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_LOWER_Z as f32,
+        FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_UPPER_Z as f32,
     )]
     FociSTMPointOutOfRange(f32, f32, f32),
     #[error(

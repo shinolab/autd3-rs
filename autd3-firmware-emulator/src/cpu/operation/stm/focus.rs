@@ -1,8 +1,8 @@
 use crate::{cpu::params::*, CPUEmulator};
 
-pub const FOCUS_STM_BUF_PAGE_SIZE_WIDTH: u32 = 9;
-pub const FOCUS_STM_BUF_PAGE_SIZE: u32 = 1 << FOCUS_STM_BUF_PAGE_SIZE_WIDTH;
-pub const FOCUS_STM_BUF_PAGE_SIZE_MASK: u32 = FOCUS_STM_BUF_PAGE_SIZE - 1;
+pub const FOCI_STM_BUF_PAGE_SIZE_WIDTH: u32 = 9;
+pub const FOCI_STM_BUF_PAGE_SIZE: u32 = 1 << FOCI_STM_BUF_PAGE_SIZE_WIDTH;
+pub const FOCI_STM_BUF_PAGE_SIZE_MASK: u32 = FOCI_STM_BUF_PAGE_SIZE - 1;
 
 #[repr(C, align(2))]
 #[derive(Clone, Copy)]
@@ -51,7 +51,7 @@ impl CPUEmulator {
         let segment = d.subseq.segment;
         let size = d.subseq.send_num as u32;
 
-        let mut src = if (d.subseq.flag & FOCUS_STM_FLAG_BEGIN) == FOCUS_STM_FLAG_BEGIN {
+        let mut src = if (d.subseq.flag & FOCI_STM_FLAG_BEGIN) == FOCI_STM_FLAG_BEGIN {
             if Self::validate_transition_mode(
                 self.stm_segment,
                 segment,
@@ -143,12 +143,12 @@ impl CPUEmulator {
             unsafe { data.as_ptr().add(std::mem::size_of::<FociSTMSubseq>()) as *const u16 }
         };
 
-        let page_capacity = (self.stm_cycle[segment as usize] & !FOCUS_STM_BUF_PAGE_SIZE_MASK)
-            + FOCUS_STM_BUF_PAGE_SIZE
+        let page_capacity = (self.stm_cycle[segment as usize] & !FOCI_STM_BUF_PAGE_SIZE_MASK)
+            + FOCI_STM_BUF_PAGE_SIZE
             - self.stm_cycle[segment as usize];
         if size <= page_capacity {
             let mut dst =
-                ((self.stm_cycle[segment as usize] & FOCUS_STM_BUF_PAGE_SIZE_MASK) << 5) as u16;
+                ((self.stm_cycle[segment as usize] & FOCI_STM_BUF_PAGE_SIZE_MASK) << 5) as u16;
             (0..size as usize).for_each(|_| unsafe {
                 self.bram_write(BRAM_SELECT_STM, dst, src.read());
                 dst += 1;
@@ -167,7 +167,7 @@ impl CPUEmulator {
             self.stm_cycle[segment as usize] += size;
         } else {
             let mut dst =
-                ((self.stm_cycle[segment as usize] & FOCUS_STM_BUF_PAGE_SIZE_MASK) << 5) as u16;
+                ((self.stm_cycle[segment as usize] & FOCI_STM_BUF_PAGE_SIZE_MASK) << 5) as u16;
             (0..page_capacity as usize).for_each(|_| unsafe {
                 self.bram_write(BRAM_SELECT_STM, dst, src.read());
                 dst += 1;
@@ -186,12 +186,12 @@ impl CPUEmulator {
             self.stm_cycle[segment as usize] += page_capacity;
 
             self.change_stm_wr_page(
-                ((self.stm_cycle[segment as usize] & !FOCUS_STM_BUF_PAGE_SIZE_MASK)
-                    >> FOCUS_STM_BUF_PAGE_SIZE_WIDTH) as _,
+                ((self.stm_cycle[segment as usize] & !FOCI_STM_BUF_PAGE_SIZE_MASK)
+                    >> FOCI_STM_BUF_PAGE_SIZE_WIDTH) as _,
             );
 
             let mut dst =
-                ((self.stm_cycle[segment as usize] & FOCUS_STM_BUF_PAGE_SIZE_MASK) << 5) as u16;
+                ((self.stm_cycle[segment as usize] & FOCI_STM_BUF_PAGE_SIZE_MASK) << 5) as u16;
             let cnt = size - page_capacity;
             (0..cnt as usize).for_each(|_| unsafe {
                 self.bram_write(BRAM_SELECT_STM, dst, src.read());
@@ -211,7 +211,7 @@ impl CPUEmulator {
             self.stm_cycle[segment as usize] += size - page_capacity;
         }
 
-        if (d.subseq.flag & FOCUS_STM_FLAG_END) == FOCUS_STM_FLAG_END {
+        if (d.subseq.flag & FOCI_STM_FLAG_END) == FOCI_STM_FLAG_END {
             self.stm_mode[segment as usize] = STM_MODE_FOCUS;
             match segment {
                 0 => {
@@ -231,7 +231,7 @@ impl CPUEmulator {
                 _ => unreachable!(),
             }
 
-            if (d.subseq.flag & FOCUS_STM_FLAG_UPDATE) == FOCUS_STM_FLAG_UPDATE {
+            if (d.subseq.flag & FOCI_STM_FLAG_UPDATE) == FOCI_STM_FLAG_UPDATE {
                 return self.stm_segment_update(
                     segment,
                     self.stm_transition_mode,

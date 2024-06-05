@@ -155,9 +155,9 @@ pub const MODULATION_FLAG_END: u8 = 1 << 1;
 pub const MODULATION_FLAG_UPDATE: u8 = 1 << 2;
 pub const MODULATION_FLAG_SEGMENT: u8 = 1 << 3;
 
-pub const FOCUS_STM_FLAG_BEGIN: u8 = 1 << 0;
-pub const FOCUS_STM_FLAG_END: u8 = 1 << 1;
-pub const FOCUS_STM_FLAG_UPDATE: u8 = 1 << 2;
+pub const FOCI_STM_FLAG_BEGIN: u8 = 1 << 0;
+pub const FOCI_STM_FLAG_END: u8 = 1 << 1;
+pub const FOCI_STM_FLAG_UPDATE: u8 = 1 << 2;
 
 pub const GAIN_STM_FLAG_BEGIN: u8 = 1 << 0;
 pub const GAIN_STM_FLAG_END: u8 = 1 << 1;

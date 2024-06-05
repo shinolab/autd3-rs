@@ -2,16 +2,15 @@ use std::{collections::HashMap, time::Duration};
 
 use autd3_driver::{
     datagram::{FociSTM, GainSTM, IntoDatagramWithSegmentTransition, Silencer, SwapSegment},
-    defined::{mm, ControlPoint, METER},
+    defined::{mm, ControlPoint, ControlPoints, METER},
     derive::{Drive, LoopBehavior, Phase, SamplingConfig, Segment},
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::{
         cpu::TxDatagram,
         fpga::{
-            TransitionMode, FOCUS_STM_BUF_SIZE_MAX, FOCUS_STM_FIXED_NUM_UNIT,
-            SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN, SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT,
+            TransitionMode, FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT, SAMPLING_FREQ_DIV_MAX,
+            SAMPLING_FREQ_DIV_MIN, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
         },
     },
     geometry::Vector3,
@@ -24,16 +23,19 @@ use time::OffsetDateTime;
 
 use crate::{create_geometry, op::gain::TestGain, send};
 
-pub fn gen_random_foci(num: usize) -> Vec<ControlPoint> {
+pub fn gen_random_foci(num: usize) -> Vec<ControlPoints<1>> {
     let mut rng = rand::thread_rng();
     (0..num)
         .map(|_| {
-            ControlPoint::new(Vector3::new(
-                rng.gen_range(-100.0 * mm..100.0 * mm),
-                rng.gen_range(-100.0 * mm..100.0 * mm),
-                rng.gen_range(-100.0 * mm..100.0 * mm),
-            ))
-            .with_intensity(rng.gen::<u8>())
+            (
+                ControlPoint::new(Vector3::new(
+                    rng.gen_range(-100.0 * mm..100.0 * mm),
+                    rng.gen_range(-100.0 * mm..100.0 * mm),
+                    rng.gen_range(-100.0 * mm..100.0 * mm),
+                )),
+                rng.gen::<u8>(),
+            )
+                .into()
         })
         .collect()
 }
@@ -56,7 +58,7 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
                 * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
                 ..=SAMPLING_FREQ_DIV_MAX,
         );
-        let foci = gen_random_foci(FOCUS_STM_BUF_SIZE_MAX);
+        let foci = gen_random_foci(FOCI_STM_BUF_SIZE_MAX);
         let loop_behavior = LoopBehavior::infinite();
         let segment = Segment::S0;
         let transition_mode = TransitionMode::Immediate;
@@ -90,9 +92,9 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
                     let tx = ((tr >> 16) & 0xFFFF) as i32;
                     let ty = (tr & 0xFFFF) as i16 as i32;
                     let tz = 0;
-                    let fx = (focus.point().x / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
-                    let fy = (focus.point().y / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
-                    let fz = (focus.point().z / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
+                    let fx = (focus[0].point().x / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                    let fy = (focus[0].point().y / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                    let fz = (focus[0].point().z / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
                     let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
                     let q = (d << 14) / cpu.fpga().sound_speed(Segment::S0) as u32;
                     let sin = (sin_table[q as usize % 256] >> 1) as usize;
@@ -143,9 +145,9 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
                     let tx = ((tr >> 16) & 0xFFFF) as i32;
                     let ty = (tr & 0xFFFF) as i16 as i32;
                     let tz = 0;
-                    let fx = (focus.point().x / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
-                    let fy = (focus.point().y / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
-                    let fz = (focus.point().z / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
+                    let fx = (focus[0].point().x / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                    let fy = (focus[0].point().y / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                    let fz = (focus[0].point().z / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
                     let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
                     let q = (d << 14) / cpu.fpga().sound_speed(Segment::S0) as u32;
                     let sin = (sin_table[q as usize % 256] >> 1) as usize;
