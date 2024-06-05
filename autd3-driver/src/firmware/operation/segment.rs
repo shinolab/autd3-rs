@@ -155,7 +155,7 @@ mod tests {
     }
 
     #[test]
-    fn focus_stm() {
+    fn foci_stm() {
         const FRAME_SIZE: usize = size_of::<SwapSegmentTWithTransition>();
 
         let device = create_device(0, NUM_TRANS_IN_UNIT);
