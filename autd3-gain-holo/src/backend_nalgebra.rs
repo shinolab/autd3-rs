@@ -476,7 +476,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
 
     fn solve_inplace_h(&self, a: Self::MatrixXc, x: &mut Self::VectorXc) -> Result<(), HoloError> {
         if !a.qr().solve_mut(x) {
-            return Err(HoloError::SolveFailed);
+            return Err(HoloError::SolveFailed); // GRCOV_EXCL_LINE
         }
         Ok(())
     }
@@ -684,7 +684,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
 
     fn solve_inplace(&self, a: &Self::MatrixX, x: &mut Self::VectorX) -> Result<(), HoloError> {
         if !a.clone().qr().solve_mut(x) {
-            return Err(HoloError::SolveFailed);
+            return Err(HoloError::SolveFailed); // GRCOV_EXCL_LINE
         }
         Ok(())
     }
