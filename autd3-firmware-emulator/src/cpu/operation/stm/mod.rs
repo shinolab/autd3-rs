@@ -1,6 +1,6 @@
 use crate::{cpu::params::*, CPUEmulator};
 
-mod focus;
+mod foci;
 mod gain;
 
 impl CPUEmulator {
