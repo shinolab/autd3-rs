@@ -65,6 +65,7 @@ impl<F: Fn(usize) -> u16 + Send + Sync> Operation for PulseWidthEncoderOp<F> {
             }
             self.full_width_start = (0..PWE_BUF_SIZE)
                 .position(|i| (self.f)(i) == PULSE_WIDTH_MAX)
+                .map(|i| i * 2)
                 .unwrap_or(0xFFFF) as u16;
             size_of::<PWEHead>()
         } else {

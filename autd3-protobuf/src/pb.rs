@@ -1521,7 +1521,7 @@ pub struct FocusStm {
     #[prost(uint64, optional, tag = "7")]
     pub transition_value: ::core::option::Option<u64>,
 }
-/// Nested message and enum types in `FocusSTM`.
+/// Nested message and enum types in `FociSTM`.
 pub mod focus_stm {
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Message)]

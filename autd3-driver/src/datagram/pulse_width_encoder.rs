@@ -2,10 +2,10 @@ use crate::firmware::{fpga::PULSE_WIDTH_MAX, operation::PulseWidthEncoderOp};
 
 use crate::datagram::*;
 
-const DEFAULT_TABLE: &[u8; 65536] = include_bytes!("asin.dat");
+const DEFAULT_TABLE: &[u8; 32768] = include_bytes!("asin.dat");
 
 fn default_table(i: usize) -> u16 {
-    if i >= 0xFF * 0xFF {
+    if i >= 0xFF * 0xFF / 2 {
         PULSE_WIDTH_MAX
     } else {
         DEFAULT_TABLE[i] as u16

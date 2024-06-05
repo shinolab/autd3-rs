@@ -225,7 +225,7 @@ mod tests {
                 .set(0, Null::new())?
                 .set(
                     1,
-                    SwapSegment::FocusSTM(Segment::S1, TransitionMode::SyncIdx),
+                    SwapSegment::FociSTM(Segment::S1, TransitionMode::SyncIdx),
                 )?
                 .send()
                 .await

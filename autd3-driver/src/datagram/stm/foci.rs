@@ -1,34 +1,38 @@
 use std::sync::Arc;
 
 use crate::datagram::*;
+use crate::defined::ControlPoints;
 use crate::{
-    defined::{ControlPoint, Freq},
+    defined::Freq,
     derive::*,
-    firmware::{fpga::STMSamplingConfig, operation::FocusSTMOp},
+    firmware::{fpga::STMSamplingConfig, operation::FociSTMOp},
 };
 
 use derive_more::{Deref, DerefMut};
 
 #[derive(Clone, Builder, Deref, DerefMut)]
-pub struct FocusSTM {
+pub struct FociSTM<const N: usize> {
     #[deref]
     #[deref_mut]
-    control_points: Vec<ControlPoint>,
+    control_points: Vec<ControlPoints<N>>,
     #[getset]
     loop_behavior: LoopBehavior,
     #[get]
     sampling_config: SamplingConfig,
 }
 
-impl FocusSTM {
+impl<const N: usize> FociSTM<N> {
     pub fn from_freq<C, F: IntoIterator<Item = C>>(
         freq: Freq<f32>,
         control_points: F,
     ) -> Result<Self, AUTDInternalError>
     where
-        ControlPoint: From<C>,
+        ControlPoints<N>: From<C>,
     {
-        let control_points: Vec<_> = control_points.into_iter().map(ControlPoint::from).collect();
+        let control_points: Vec<_> = control_points
+            .into_iter()
+            .map(ControlPoints::from)
+            .collect();
         Ok(Self {
             sampling_config: STMSamplingConfig::Freq(freq).sampling(control_points.len())?,
             loop_behavior: LoopBehavior::infinite(),
@@ -41,9 +45,12 @@ impl FocusSTM {
         control_points: F,
     ) -> Result<Self, AUTDInternalError>
     where
-        ControlPoint: From<C>,
+        ControlPoints<N>: From<C>,
     {
-        let control_points: Vec<_> = control_points.into_iter().map(ControlPoint::from).collect();
+        let control_points: Vec<_> = control_points
+            .into_iter()
+            .map(ControlPoints::from)
+            .collect();
         Ok(Self {
             sampling_config: STMSamplingConfig::FreqNearest(freq).sampling(control_points.len())?,
             loop_behavior: LoopBehavior::infinite(),
@@ -56,26 +63,29 @@ impl FocusSTM {
         control_points: F,
     ) -> Self
     where
-        ControlPoint: From<C>,
+        ControlPoints<N>: From<C>,
     {
         Self {
-            control_points: control_points.into_iter().map(ControlPoint::from).collect(),
+            control_points: control_points
+                .into_iter()
+                .map(ControlPoints::from)
+                .collect(),
             loop_behavior: LoopBehavior::infinite(),
             sampling_config: config,
         }
     }
 }
 
-pub struct FocusSTMOperationGenerator {
-    g: Arc<Vec<ControlPoint>>,
+pub struct FociSTMOperationGenerator<const N: usize> {
+    g: Arc<Vec<ControlPoints<N>>>,
     config: SamplingConfig,
     rep: u32,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
 }
 
-impl OperationGenerator for FocusSTMOperationGenerator {
-    type O1 = FocusSTMOp;
+impl<const N: usize> OperationGenerator for FociSTMOperationGenerator<N> {
+    type O1 = FociSTMOp<N>;
     type O2 = NullOp;
 
     fn generate(&self, _: &Device) -> (Self::O1, Self::O2) {
@@ -92,10 +102,10 @@ impl OperationGenerator for FocusSTMOperationGenerator {
     }
 }
 
-impl DatagramST for FocusSTM {
-    type O1 = FocusSTMOp;
+impl<const N: usize> DatagramST for FociSTM<N> {
+    type O1 = FociSTMOp<N>;
     type O2 = NullOp;
-    type G = FocusSTMOperationGenerator;
+    type G = FociSTMOperationGenerator<N>;
 
     fn operation_generator_with_segment(
         self,
@@ -103,7 +113,7 @@ impl DatagramST for FocusSTM {
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, AUTDInternalError> {
-        Ok(FocusSTMOperationGenerator {
+        Ok(FociSTMOperationGenerator {
             g: Arc::new(self.control_points),
             config: self.sampling_config,
             rep: self.loop_behavior.rep(),
@@ -126,7 +136,7 @@ impl DatagramST for FocusSTM {
 }
 
 #[cfg(feature = "capi")]
-impl Default for FocusSTM {
+impl<const N: usize> Default for FociSTM<N> {
     fn default() -> Self {
         Self {
             control_points: vec![],
@@ -158,8 +168,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            FocusSTM::from_freq(freq, (0..n).map(|_| Vector3::zeros()))
-                .map(|f| f.sampling_config())
+            FociSTM::from_freq(freq, (0..n).map(|_| Vector3::zeros())).map(|f| f.sampling_config())
         );
     }
 
@@ -176,7 +185,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            FocusSTM::from_freq_nearest(freq, (0..n).map(|_| Vector3::zeros()))
+            FociSTM::from_freq_nearest(freq, (0..n).map(|_| Vector3::zeros()))
                 .map(|f| f.sampling_config())
         );
     }
@@ -188,7 +197,7 @@ mod tests {
     fn from_sampling_config(#[case] config: SamplingConfig, #[case] n: usize) {
         assert_eq!(
             config,
-            FocusSTM::from_sampling_config(config, (0..n).map(|_| Vector3::zeros()))
+            FociSTM::from_sampling_config(config, (0..n).map(|_| Vector3::zeros()))
                 .sampling_config()
         );
     }
@@ -200,7 +209,7 @@ mod tests {
     fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) -> anyhow::Result<()> {
         assert_eq!(
             loop_behavior,
-            FocusSTM::from_freq(1. * Hz, (0..2).map(|_| Vector3::zeros()))?
+            FociSTM::from_freq(1. * Hz, (0..2).map(|_| Vector3::zeros()))?
                 .with_loop_behavior(loop_behavior)
                 .loop_behavior()
         );
@@ -209,7 +218,7 @@ mod tests {
 
     #[test]
     fn with_loop_behavior_deafault() -> anyhow::Result<()> {
-        let stm = FocusSTM::from_freq(1. * Hz, (0..2).map(|_| Vector3::zeros()))?;
+        let stm = FociSTM::from_freq(1. * Hz, (0..2).map(|_| Vector3::zeros()))?;
         assert_eq!(LoopBehavior::infinite(), stm.loop_behavior());
         Ok(())
     }

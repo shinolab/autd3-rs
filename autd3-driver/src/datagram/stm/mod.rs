@@ -1,5 +1,5 @@
-mod focus;
+mod foci;
 mod gain;
 
-pub use focus::FocusSTM;
+pub use foci::FociSTM;
 pub use gain::GainSTM;

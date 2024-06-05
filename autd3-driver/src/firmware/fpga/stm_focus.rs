@@ -36,7 +36,7 @@ impl STMFocus {
             || !(FOCUS_STM_FIXED_NUM_LOWER_Y..=FOCUS_STM_FIXED_NUM_UPPER_Y).contains(&iy)
             || !(FOCUS_STM_FIXED_NUM_LOWER_Z..=FOCUS_STM_FIXED_NUM_UPPER_Z).contains(&iz)
         {
-            return Err(AUTDInternalError::FocusSTMPointOutOfRange(x, y, z));
+            return Err(AUTDInternalError::FociSTMPointOutOfRange(x, y, z));
         }
 
         self.set_x(ix);

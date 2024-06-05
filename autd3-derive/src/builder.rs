@@ -83,9 +83,10 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
     let linetimes = generics.lifetimes();
     let type_params = generics.type_params();
+    let const_params = generics.const_params();
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     quote! {
-        impl <#(#linetimes,)* #(#type_params,)*> #name #ty_generics #where_clause {
+        impl <#(#linetimes,)* #(#type_params,)* #(#const_params,)*> #name #ty_generics #where_clause {
            #(#getters)*
         }
     }
@@ -197,9 +198,10 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
     let linetimes = generics.lifetimes();
     let type_params = generics.type_params();
+    let const_params = generics.const_params();
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     quote! {
-        impl <#(#linetimes,)* #(#type_params,)*> #name #ty_generics #where_clause {
+        impl <#(#linetimes,)* #(#type_params,)* #(#const_params,)*> #name #ty_generics #where_clause {
            #(#setters)*
         }
     }

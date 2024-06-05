@@ -1,11 +1,15 @@
 use crate::{derive::*, geometry::Vector3};
 
+use derive_more::{Deref, DerefMut};
+
 #[derive(Clone, Copy, Builder, PartialEq, Debug)]
 pub struct ControlPoint {
     #[getset]
     point: Vector3,
     #[getset]
     intensity: EmitIntensity,
+    #[getset]
+    offset: Phase,
 }
 
 impl ControlPoint {
@@ -13,6 +17,7 @@ impl ControlPoint {
         Self {
             point,
             intensity: EmitIntensity::MAX,
+            offset: Phase::new(0),
         }
     }
 }
@@ -23,21 +28,41 @@ impl From<Vector3> for ControlPoint {
     }
 }
 
-impl<I: Into<EmitIntensity>> From<(Vector3, I)> for ControlPoint {
-    fn from((point, intensity): (Vector3, I)) -> Self {
-        Self::new(point).with_intensity(intensity)
-    }
-}
-
 impl From<&Vector3> for ControlPoint {
     fn from(point: &Vector3) -> Self {
         Self::new(*point)
     }
 }
 
-impl<I: Into<EmitIntensity> + Clone> From<&(Vector3, I)> for ControlPoint {
-    fn from((point, intensity): &(Vector3, I)) -> Self {
-        Self::new(*point).with_intensity(intensity.clone())
+#[derive(Clone, Builder, PartialEq, Debug, Deref, DerefMut)]
+pub struct ControlPoints<const N: usize> {
+    #[deref]
+    #[deref_mut]
+    #[get]
+    points: [ControlPoint; N],
+}
+
+impl<const N: usize> ControlPoints<N> {
+    pub const fn new(points: [ControlPoint; N]) -> Self {
+        Self { points }
+    }
+}
+
+impl<C> From<C> for ControlPoints<1>
+where
+    ControlPoint: From<C>,
+{
+    fn from(point: C) -> Self {
+        Self::new([point.into()])
+    }
+}
+
+impl<C, const N: usize> From<[C; N]> for ControlPoints<N>
+where
+    ControlPoint: From<C>,
+{
+    fn from(points: [C; N]) -> Self {
+        Self::new(points.map(ControlPoint::from))
     }
 }
 
@@ -54,26 +79,10 @@ mod tests {
     }
 
     #[test]
-    fn from_tuple() {
-        let v = Vector3::new(1.0, 2.0, 3.0);
-        let cp = ControlPoint::from((v, EmitIntensity::MIN));
-        assert_eq!(&v, cp.point());
-        assert_eq!(EmitIntensity::MIN, cp.intensity());
-    }
-
-    #[test]
     fn from_vector3_ref() {
         let v = Vector3::new(1.0, 2.0, 3.0);
         let cp = ControlPoint::from(&v);
         assert_eq!(&v, cp.point());
         assert_eq!(EmitIntensity::MAX, cp.intensity());
-    }
-
-    #[test]
-    fn from_tuple_ref() {
-        let v = Vector3::new(1.0, 2.0, 3.0);
-        let cp = ControlPoint::from(&(v, EmitIntensity::MIN));
-        assert_eq!(&v, cp.point());
-        assert_eq!(EmitIntensity::MIN, cp.intensity());
     }
 }

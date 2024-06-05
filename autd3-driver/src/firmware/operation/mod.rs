@@ -7,7 +7,6 @@ mod gpio_in;
 mod info;
 mod modulation;
 mod null;
-mod phase_filter;
 mod pulse_width_encoder;
 mod reads_fpga_state;
 mod segment;
@@ -24,7 +23,6 @@ pub use gpio_in::*;
 pub use info::*;
 pub use modulation::*;
 pub use null::*;
-pub use phase_filter::*;
 pub use pulse_width_encoder::*;
 pub use reads_fpga_state::*;
 pub use segment::*;
@@ -42,6 +40,7 @@ use super::cpu::TxDatagram;
 
 use rayon::prelude::*;
 
+#[derive(PartialEq, Debug)]
 #[repr(u8)]
 pub enum TypeTag {
     NONE = 0x00,
@@ -54,14 +53,13 @@ pub enum TypeTag {
     Silencer = 0x20,
     Gain = 0x30,
     GainSwapSegment = 0x31,
-    FocusSTM = 0x40,
     GainSTM = 0x41,
-    FocusSTMSwapSegment = 0x42,
+    FociSTM = 0x42,
     GainSTMSwapSegment = 0x43,
+    FociSTMSwapSegment = 0x44,
     ForceFan = 0x60,
     ReadsFPGAState = 0x61,
-    ConfigPulseWidthEncoder = 0x70,
-    PhaseFilter = 0x80,
+    ConfigPulseWidthEncoder = 0x71,
     Debug = 0xF0,
     EmulateGPIOIn = 0xF1,
 }

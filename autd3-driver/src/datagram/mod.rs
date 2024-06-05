@@ -5,7 +5,6 @@ mod force_fan;
 mod gain;
 mod gpio_in;
 mod modulation;
-mod phase_filter;
 mod pulse_width_encoder;
 mod reads_fpga_state;
 pub mod segment;
@@ -31,12 +30,11 @@ pub use modulation::{
     ModulationCache, ModulationCalcResult, ModulationOperationGenerator, ModulationProperty,
     ModulationTransform, RadiationPressure,
 };
-pub use phase_filter::PhaseFilter;
 pub use pulse_width_encoder::PulseWidthEncoder;
 pub use reads_fpga_state::ReadsFPGAState;
 pub use segment::SwapSegment;
 pub use silencer::{Silencer, SilencerFixedCompletionSteps, SilencerFixedUpdateRate};
-pub use stm::{FocusSTM, GainSTM};
+pub use stm::{FociSTM, GainSTM};
 pub use synchronize::Synchronize;
 pub use with_parallel_threshold::{
     DatagramWithParallelThreshold, IntoDatagramWithParallelThreshold,

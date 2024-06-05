@@ -1,4 +1,4 @@
-pub const VERSION_NUM_MAJOR: u8 = 0x91;
+pub const VERSION_NUM_MAJOR: u8 = 0x92;
 pub const VERSION_NUM_MINOR: u8 = 0x00;
 
 pub const BRAM_SELECT_CONTROLLER: u8 = 0x0;
@@ -7,7 +7,6 @@ pub const BRAM_SELECT_DUTY_TABLE: u8 = 0x2;
 pub const BRAM_SELECT_STM: u8 = 0x3;
 
 pub const BRAM_CNT_SEL_MAIN: usize = 0x00;
-pub const BRAM_CNT_SEL_FILTER: usize = 0x01;
 pub const BRAM_CNT_SEL_CLOCK: usize = 0x02;
 
 pub const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
@@ -67,15 +66,15 @@ pub const ADDR_STM_REP1_0: usize = 0x5C;
 // pub const ADDR_STM_REP1_1: usize = 0x5D;
 pub const ADDR_STM_MODE0: usize = 0x5E;
 pub const ADDR_STM_MODE1: usize = 0x5F;
-pub const ADDR_STM_SOUND_SPEED0_0: usize = 0x60;
-// pub const ADDR_STM_SOUND_SPEED0_1: usize = 0x61;
-pub const ADDR_STM_SOUND_SPEED1_0: usize = 0x62;
-// pub const ADDR_STM_SOUND_SPEED1_1: usize = 0x63;
+pub const ADDR_STM_SOUND_SPEED0: usize = 0x60;
+pub const ADDR_STM_SOUND_SPEED1: usize = 0x62;
 pub const ADDR_STM_TRANSITION_MODE: usize = 0x64;
 pub const ADDR_STM_TRANSITION_VALUE_0: usize = 0x65;
 // pub const ADDR_STM_TRANSITION_VALUE_1: usize = 0x66;
 // pub const ADDR_STM_TRANSITION_VALUE_2: usize = 0x67;
 // pub const ADDR_STM_TRANSITION_VALUE_3: usize = 0x68;
+pub const ADDR_STM_NUM_FOCI0: usize = 0x69;
+pub const ADDR_STM_NUM_FOCI1: usize = 0x6A;
 pub const ADDR_PULSE_WIDTH_ENCODER_TABLE_WR_PAGE: usize = 0xE0;
 pub const ADDR_PULSE_WIDTH_ENCODER_FULL_WIDTH_START: usize = 0xE1;
 pub const ADDR_DEBUG_TYPE0: usize = 0xF0;

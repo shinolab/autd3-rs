@@ -60,9 +60,9 @@ impl Operation for SwapSegmentOp {
                 };
                 Ok(size_of::<SwapSegmentTWithTransition>())
             }
-            SwapSegment::FocusSTM(segment, transition) => {
+            SwapSegment::FociSTM(segment, transition) => {
                 *cast::<SwapSegmentTWithTransition>(tx) = SwapSegmentTWithTransition {
-                    tag: TypeTag::FocusSTMSwapSegment,
+                    tag: TypeTag::FociSTMSwapSegment,
                     segment: segment as u8,
                     transition_mode: transition.mode(),
                     __padding: [0; 5],
@@ -87,7 +87,7 @@ impl Operation for SwapSegmentOp {
         match self.segment {
             SwapSegment::Gain(_) => size_of::<SwapSegmentT>(),
             SwapSegment::Modulation(_, _)
-            | SwapSegment::FocusSTM(_, _)
+            | SwapSegment::FociSTM(_, _)
             | SwapSegment::GainSTM(_, _) => size_of::<SwapSegmentTWithTransition>(),
         }
     }
@@ -164,7 +164,7 @@ mod tests {
         let sys_time = DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap()
             + std::time::Duration::from_nanos(0x0123456789ABCDEF);
         let transition_mode = TransitionMode::SysTime(sys_time);
-        let mut op = SwapSegmentOp::new(SwapSegment::FocusSTM(Segment::S0, transition_mode));
+        let mut op = SwapSegmentOp::new(SwapSegment::FociSTM(Segment::S0, transition_mode));
 
         assert_eq!(
             size_of::<SwapSegmentTWithTransition>(),
@@ -175,7 +175,7 @@ mod tests {
             op.pack(&device, &mut tx)
         );
         assert_eq!(op.is_done(), true);
-        assert_eq!(TypeTag::FocusSTMSwapSegment as u8, tx[0]);
+        assert_eq!(TypeTag::FociSTMSwapSegment as u8, tx[0]);
         assert_eq!(Segment::S0 as u8, tx[1]);
         let mode = transition_mode.mode();
         let value = transition_mode.value();
