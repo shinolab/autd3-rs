@@ -2,40 +2,53 @@ use autd3_driver::{defined::Freq, derive::*};
 
 use std::{
     fs::File,
-    io::{BufReader, Read},
     path::{Path, PathBuf},
 };
 
 use crate::error::AudioFileError;
 
-#[derive(Modulation, Clone, PartialEq, Debug)]
-pub struct RawPCM {
+#[derive(Modulation, Clone, Builder, PartialEq, Debug)]
+pub struct Csv {
     sample_rate: Freq<u32>,
     path: PathBuf,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
+    #[getset]
+    deliminator: u8,
 }
 
-impl RawPCM {
+impl Csv {
     pub fn new(path: impl AsRef<Path>, sample_rate: Freq<u32>) -> Self {
         Self {
             sample_rate,
             path: path.as_ref().to_path_buf(),
-            config: SamplingConfig::Freq(sample_rate),
+            config: SamplingConfig::Division(5120),
             loop_behavior: LoopBehavior::infinite(),
+            deliminator: b',',
         }
     }
 
     fn read_buf(&self) -> Result<Vec<u8>, AudioFileError> {
         let f = File::open(&self.path)?;
-        let mut reader = BufReader::new(f);
-        let mut raw_buffer = Vec::new();
-        reader.read_to_end(&mut raw_buffer)?;
-        Ok(raw_buffer)
+        let mut rdr = csv::ReaderBuilder::new()
+            .has_headers(false)
+            .delimiter(self.deliminator)
+            .from_reader(f);
+        Ok(rdr
+            .records()
+            .map(|r| {
+                let record = r?;
+                csv::Result::Ok(record.iter().map(|x| x.to_owned()).collect::<Vec<_>>())
+            })
+            .collect::<csv::Result<Vec<_>>>()?
+            .into_iter()
+            .flatten()
+            .map(|s| s.parse::<u8>())
+            .collect::<Result<Vec<u8>, _>>()?)
     }
 }
 
-impl Modulation for RawPCM {
+impl Modulation for Csv {
     fn calc(&self, _: &Geometry) -> ModulationCalcResult {
         Ok(self.read_buf()?)
     }
@@ -50,9 +63,9 @@ mod tests {
     use super::*;
     use std::io::Write;
 
-    fn create_dat(path: impl AsRef<Path>, data: &[u8]) -> anyhow::Result<()> {
+    fn create_csv(path: impl AsRef<Path>, data: &[u8]) -> anyhow::Result<()> {
         let mut f = File::create(path)?;
-        f.write_all(data)?;
+        data.iter().try_for_each(|d| write!(f, "{}\n", d))?;
         Ok(())
     }
 
@@ -66,11 +79,11 @@ mod tests {
         #[case] config: SamplingConfig,
     ) -> anyhow::Result<()> {
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("tmp.dat");
-        create_dat(&path, &data)?;
+        let path = dir.path().join("tmp.csv");
+        create_csv(&path, &data)?;
 
         let geometry = create_geometry(1);
-        let m = RawPCM::new(&path, sample_rate).with_sampling_config(config);
+        let m = Csv::new(&path, sample_rate).with_sampling_config(config);
         assert_eq!(expect, m.calc(&geometry));
 
         Ok(())
@@ -80,7 +93,7 @@ mod tests {
     fn not_exisit() {
         let geometry = create_geometry(1);
 
-        let m = RawPCM::new("not_exists.dat", 4000 * Hz);
+        let m = Csv::new("not_exists.csv", 4000 * Hz);
         assert!(m.calc(&geometry).is_err());
     }
 }

@@ -1,29 +1,21 @@
-use autd3_driver::{defined::Freq, error::AUTDInternalError};
+use std::num::ParseIntError;
+
+use autd3_driver::error::AUTDInternalError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum AudioFileError {
     #[error("{0}")]
-    Io(std::io::Error),
+    Io(#[from] std::io::Error),
     #[error("{0}")]
-    Wav(hound::Error),
-    #[error("RawPCM sampling rate ({0}) must be integer")]
-    RawPCMSamplingRateNotInteger(Freq<f32>),
+    Parse(#[from] ParseIntError),
+    #[error("{0}")]
+    Wav(#[from] hound::Error),
+    #[error("{0}")]
+    Csv(#[from] csv::Error),
 }
 
 // GRCOV_EXCL_START
-impl From<std::io::Error> for AudioFileError {
-    fn from(e: std::io::Error) -> Self {
-        AudioFileError::Io(e)
-    }
-}
-
-impl From<hound::Error> for AudioFileError {
-    fn from(e: hound::Error) -> Self {
-        AudioFileError::Wav(e)
-    }
-}
-
 impl From<AudioFileError> for AUTDInternalError {
     fn from(value: AudioFileError) -> Self {
         AUTDInternalError::ModulationError(value.to_string())
