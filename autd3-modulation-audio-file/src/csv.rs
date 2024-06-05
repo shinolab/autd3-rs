@@ -9,7 +9,6 @@ use crate::error::AudioFileError;
 
 #[derive(Modulation, Clone, Builder, PartialEq, Debug)]
 pub struct Csv {
-    sample_rate: Freq<u32>,
     path: PathBuf,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
@@ -20,9 +19,8 @@ pub struct Csv {
 impl Csv {
     pub fn new(path: impl AsRef<Path>, sample_rate: Freq<u32>) -> Self {
         Self {
-            sample_rate,
             path: path.as_ref().to_path_buf(),
-            config: SamplingConfig::Division(5120),
+            config: SamplingConfig::Freq(sample_rate),
             loop_behavior: LoopBehavior::infinite(),
             deliminator: b',',
         }

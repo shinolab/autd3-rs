@@ -10,7 +10,6 @@ use crate::error::AudioFileError;
 
 #[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct RawPCM {
-    sample_rate: Freq<u32>,
     path: PathBuf,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
@@ -19,7 +18,6 @@ pub struct RawPCM {
 impl RawPCM {
     pub fn new(path: impl AsRef<Path>, sample_rate: Freq<u32>) -> Self {
         Self {
-            sample_rate,
             path: path.as_ref().to_path_buf(),
             config: SamplingConfig::Freq(sample_rate),
             loop_behavior: LoopBehavior::infinite(),
