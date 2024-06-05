@@ -482,20 +482,172 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                     )
                     .await
                 }
-                Some(datagram_lightweight::Datagram::FocusStm(ref msg)) => {
-                    autd.send(
-                        autd3_driver::datagram::FociSTM::from_msg(msg)
-                            .ok_or(AUTDProtoBufError::DataParseError)?
-                            .with_segment(
-                                autd3_driver::firmware::fpga::Segment::from(
-                                    Segment::try_from(msg.segment)
-                                        .ok()
-                                        .ok_or(AUTDProtoBufError::DataParseError)?,
-                                ),
-                                to_transition_mode(msg.transition_mode, msg.transition_value),
-                            ),
-                    )
-                    .await
+                Some(datagram_lightweight::Datagram::FociStm(ref msg)) => {
+                    match msg.inner.as_ref() {
+                        Some(inner) => match inner {
+                            foci_stm::Inner::N1(f) => {
+                                autd.send(
+                                    autd3_driver::datagram::FociSTM::<1>::from_msg(f)
+                                        .ok_or(AUTDProtoBufError::DataParseError)?
+                                        .with_segment(
+                                            autd3_driver::firmware::fpga::Segment::from(
+                                                Segment::try_from(
+                                                    f.props.as_ref().unwrap().segment,
+                                                )
+                                                .ok()
+                                                .ok_or(AUTDProtoBufError::DataParseError)?,
+                                            ),
+                                            to_transition_mode(
+                                                f.props.as_ref().unwrap().transition_mode,
+                                                f.props.as_ref().unwrap().transition_value,
+                                            ),
+                                        ),
+                                )
+                                .await
+                            }
+                            foci_stm::Inner::N2(f) => {
+                                autd.send(
+                                    autd3_driver::datagram::FociSTM::<2>::from_msg(f)
+                                        .ok_or(AUTDProtoBufError::DataParseError)?
+                                        .with_segment(
+                                            autd3_driver::firmware::fpga::Segment::from(
+                                                Segment::try_from(
+                                                    f.props.as_ref().unwrap().segment,
+                                                )
+                                                .ok()
+                                                .ok_or(AUTDProtoBufError::DataParseError)?,
+                                            ),
+                                            to_transition_mode(
+                                                f.props.as_ref().unwrap().transition_mode,
+                                                f.props.as_ref().unwrap().transition_value,
+                                            ),
+                                        ),
+                                )
+                                .await
+                            }
+                            foci_stm::Inner::N3(f) => {
+                                autd.send(
+                                    autd3_driver::datagram::FociSTM::<3>::from_msg(f)
+                                        .ok_or(AUTDProtoBufError::DataParseError)?
+                                        .with_segment(
+                                            autd3_driver::firmware::fpga::Segment::from(
+                                                Segment::try_from(
+                                                    f.props.as_ref().unwrap().segment,
+                                                )
+                                                .ok()
+                                                .ok_or(AUTDProtoBufError::DataParseError)?,
+                                            ),
+                                            to_transition_mode(
+                                                f.props.as_ref().unwrap().transition_mode,
+                                                f.props.as_ref().unwrap().transition_value,
+                                            ),
+                                        ),
+                                )
+                                .await
+                            }
+                            foci_stm::Inner::N4(f) => {
+                                autd.send(
+                                    autd3_driver::datagram::FociSTM::<4>::from_msg(f)
+                                        .ok_or(AUTDProtoBufError::DataParseError)?
+                                        .with_segment(
+                                            autd3_driver::firmware::fpga::Segment::from(
+                                                Segment::try_from(
+                                                    f.props.as_ref().unwrap().segment,
+                                                )
+                                                .ok()
+                                                .ok_or(AUTDProtoBufError::DataParseError)?,
+                                            ),
+                                            to_transition_mode(
+                                                f.props.as_ref().unwrap().transition_mode,
+                                                f.props.as_ref().unwrap().transition_value,
+                                            ),
+                                        ),
+                                )
+                                .await
+                            }
+                            foci_stm::Inner::N5(f) => {
+                                autd.send(
+                                    autd3_driver::datagram::FociSTM::<5>::from_msg(f)
+                                        .ok_or(AUTDProtoBufError::DataParseError)?
+                                        .with_segment(
+                                            autd3_driver::firmware::fpga::Segment::from(
+                                                Segment::try_from(
+                                                    f.props.as_ref().unwrap().segment,
+                                                )
+                                                .ok()
+                                                .ok_or(AUTDProtoBufError::DataParseError)?,
+                                            ),
+                                            to_transition_mode(
+                                                f.props.as_ref().unwrap().transition_mode,
+                                                f.props.as_ref().unwrap().transition_value,
+                                            ),
+                                        ),
+                                )
+                                .await
+                            }
+                            foci_stm::Inner::N6(f) => {
+                                autd.send(
+                                    autd3_driver::datagram::FociSTM::<6>::from_msg(f)
+                                        .ok_or(AUTDProtoBufError::DataParseError)?
+                                        .with_segment(
+                                            autd3_driver::firmware::fpga::Segment::from(
+                                                Segment::try_from(
+                                                    f.props.as_ref().unwrap().segment,
+                                                )
+                                                .ok()
+                                                .ok_or(AUTDProtoBufError::DataParseError)?,
+                                            ),
+                                            to_transition_mode(
+                                                f.props.as_ref().unwrap().transition_mode,
+                                                f.props.as_ref().unwrap().transition_value,
+                                            ),
+                                        ),
+                                )
+                                .await
+                            }
+                            foci_stm::Inner::N7(f) => {
+                                autd.send(
+                                    autd3_driver::datagram::FociSTM::<7>::from_msg(f)
+                                        .ok_or(AUTDProtoBufError::DataParseError)?
+                                        .with_segment(
+                                            autd3_driver::firmware::fpga::Segment::from(
+                                                Segment::try_from(
+                                                    f.props.as_ref().unwrap().segment,
+                                                )
+                                                .ok()
+                                                .ok_or(AUTDProtoBufError::DataParseError)?,
+                                            ),
+                                            to_transition_mode(
+                                                f.props.as_ref().unwrap().transition_mode,
+                                                f.props.as_ref().unwrap().transition_value,
+                                            ),
+                                        ),
+                                )
+                                .await
+                            }
+                            foci_stm::Inner::N8(f) => {
+                                autd.send(
+                                    autd3_driver::datagram::FociSTM::<8>::from_msg(f)
+                                        .ok_or(AUTDProtoBufError::DataParseError)?
+                                        .with_segment(
+                                            autd3_driver::firmware::fpga::Segment::from(
+                                                Segment::try_from(
+                                                    f.props.as_ref().unwrap().segment,
+                                                )
+                                                .ok()
+                                                .ok_or(AUTDProtoBufError::DataParseError)?,
+                                            ),
+                                            to_transition_mode(
+                                                f.props.as_ref().unwrap().transition_mode,
+                                                f.props.as_ref().unwrap().transition_value,
+                                            ),
+                                        ),
+                                )
+                                .await
+                            }
+                        },
+                        None => return Err(AUTDProtoBufError::DataParseError.into()),
+                    }
                 }
                 Some(datagram_lightweight::Datagram::GainStm(ref msg)) => {
                     autd.send(

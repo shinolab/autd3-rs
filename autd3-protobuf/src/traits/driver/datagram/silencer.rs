@@ -72,8 +72,7 @@ mod tests {
         let c = autd3_driver::datagram::Silencer::fixed_update_rate(
             rng.gen_range(SILENCER_VALUE_MIN..SILENCER_VALUE_MAX),
             rng.gen_range(SILENCER_VALUE_MIN..SILENCER_VALUE_MAX),
-        )
-        .unwrap();
+        );
         let msg = c.to_msg(None);
 
         match msg.datagram {
@@ -97,7 +96,6 @@ mod tests {
             rng.gen_range(SILENCER_VALUE_MIN..SILENCER_VALUE_MAX),
             rng.gen_range(SILENCER_VALUE_MIN..SILENCER_VALUE_MAX),
         )
-        .unwrap()
         .with_strict_mode(false);
         let msg = c.to_msg(None);
 

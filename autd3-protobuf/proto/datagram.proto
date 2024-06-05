@@ -45,17 +45,65 @@ message GainSTM {
     optional uint64 transition_value = 7;
 }
 
-message FocusSTM {
-    message ControlPoint {
-        EmitIntensity intensity = 1;
-        Vector3 pos = 2;
-    }
+message FociSTMProps {
     SamplingConfig config = 1;
     LoopBehavior loop_behavior = 2;
     Segment segment = 3;
-    repeated ControlPoint points = 5;
-    optional TransitionMode transition_mode = 6;
-    optional uint64 transition_value = 7;
+    optional TransitionMode transition_mode = 4;
+    optional uint64 transition_value = 5;
+}
+
+message FociSTM1 {
+    FociSTMProps props = 1;
+    repeated ControlPoints foci = 2;
+}
+
+message FociSTM2 {
+    FociSTMProps props = 1;
+    repeated ControlPoints foci = 2;
+}
+
+message FociSTM3 {
+    FociSTMProps props = 1;
+    repeated ControlPoints foci = 2;
+}
+
+message FociSTM4 {
+    FociSTMProps props = 1;
+    repeated ControlPoints foci = 2;
+}
+
+message FociSTM5 {
+    FociSTMProps props = 1;
+    repeated ControlPoints foci = 2;
+}
+
+message FociSTM6 {
+    FociSTMProps props = 1;
+    repeated ControlPoints foci = 2;
+}
+
+message FociSTM7 {
+    FociSTMProps props = 1;
+    repeated ControlPoints foci = 2;
+}
+
+message FociSTM8 {
+    FociSTMProps props = 1;
+    repeated ControlPoints foci = 2;
+}
+
+message FociSTM {
+  oneof inner {
+    FociSTM1 n1 = 1;
+    FociSTM2 n2 = 2;
+    FociSTM3 n3 = 3;
+    FociSTM4 n4 = 4;
+    FociSTM5 n5 = 5;
+    FociSTM6 n6 = 6;
+    FociSTM7 n7 = 7;
+    FociSTM8 n8 = 8;
+  }
 }
 
 message SwapSegmentGain {
@@ -68,7 +116,7 @@ message SwapSegmentModulation {
     uint64 transition_value = 3;
 }
 
-message SwapSegmentFocusSTM {
+message SwapSegmentFociSTM {
     Segment segment = 1;
     TransitionMode transition_mode = 2;
     uint64 transition_value = 3;
@@ -84,7 +132,7 @@ message SwapSegment {
   oneof inner {
     SwapSegmentGain gain = 1;
     SwapSegmentModulation modulation = 2;
-    SwapSegmentFocusSTM focus_stm = 3;
+    SwapSegmentFociSTM foci_stm = 3;
     SwapSegmentGainSTM gain_stm = 4;
   }
 }
