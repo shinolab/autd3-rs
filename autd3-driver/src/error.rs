@@ -44,11 +44,11 @@ pub enum AUTDInternalError {
     STMFreqInvalid(usize, Freq<f32>),
 
     #[error(
-        "FocusSTM size ({0}) is out of range ([{}, {}])",
+        "FociSTM size ({0}) is out of range ([{}, {}])",
         STM_BUF_SIZE_MIN,
         FOCUS_STM_BUF_SIZE_MAX
     )]
-    FocusSTMPointSizeOutOfRange(usize),
+    FociSTMPointSizeOutOfRange(usize),
     #[error(
         "Point coordinate ({0}, {1}, {2}) is out of range ([{}, {}], [{}, {}], [{}, {}])",
         FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER_X as f32,
@@ -58,7 +58,7 @@ pub enum AUTDInternalError {
         FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_LOWER_Z as f32,
         FOCUS_STM_FIXED_NUM_UNIT * FOCUS_STM_FIXED_NUM_UPPER_Z as f32,
     )]
-    FocusSTMPointOutOfRange(f32, f32, f32),
+    FociSTMPointOutOfRange(f32, f32, f32),
     #[error(
         "GainSTM size ({0}) is out of range ([{}, {}])",
         STM_BUF_SIZE_MIN,

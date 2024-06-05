@@ -2,7 +2,7 @@ use autd3_driver::derive::SamplingConfig;
 
 use crate::{pb::*, traits::*};
 
-impl ToMessage for autd3_driver::datagram::FocusSTM {
+impl ToMessage for autd3_driver::datagram::FociSTM {
     type Message = FocusStm;
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
@@ -18,7 +18,7 @@ impl ToMessage for autd3_driver::datagram::FocusSTM {
 }
 
 impl ToMessage
-    for autd3_driver::datagram::DatagramWithSegmentTransition<autd3_driver::datagram::FocusSTM>
+    for autd3_driver::datagram::DatagramWithSegmentTransition<autd3_driver::datagram::FociSTM>
 {
     type Message = FocusStm;
 
@@ -34,11 +34,11 @@ impl ToMessage
     }
 }
 
-impl FromMessage<FocusStm> for autd3_driver::datagram::FocusSTM {
+impl FromMessage<FocusStm> for autd3_driver::datagram::FociSTM {
     #[allow(clippy::unnecessary_cast)]
     fn from_msg(msg: &FocusStm) -> Option<Self> {
         Some(
-            autd3_driver::datagram::FocusSTM::from_sampling_config(
+            autd3_driver::datagram::FociSTM::from_sampling_config(
                 SamplingConfig::from_msg(msg.config.as_ref().unwrap()).unwrap(),
                 msg.points
                     .iter()

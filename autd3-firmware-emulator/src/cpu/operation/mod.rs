@@ -14,7 +14,6 @@ mod gain;
 mod gpio_in;
 mod info;
 mod modulation;
-mod phase_filter;
 mod pulse_width_encoder;
 mod reads_fpga_state;
 mod silecer;

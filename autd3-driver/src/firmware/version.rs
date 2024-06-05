@@ -12,7 +12,7 @@ pub struct FirmwareVersion {
 }
 
 impl FirmwareVersion {
-    pub const LATEST_VERSION_NUM_MAJOR: u8 = 0x91;
+    pub const LATEST_VERSION_NUM_MAJOR: u8 = 0x92;
     pub const LATEST_VERSION_NUM_MINOR: u8 = 0x00;
     pub const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
 
@@ -83,6 +83,11 @@ impl FirmwareVersion {
             0x91..=0x91 => format!(
                 "v7.{}.{}",
                 version_number_major - 0x91,
+                version_number_minor
+            ),
+            0x92..=0x92 => format!(
+                "v8.{}.{}",
+                version_number_major - 0x92,
                 version_number_minor
             ),
             _ => format!("unknown ({version_number_major})"),
@@ -180,7 +185,8 @@ mod tests {
     #[case("v6.0.0", 143)]
     #[case("v6.1.0", 144)]
     #[case("v7.0.0", 145)]
-    #[case("unknown (146)", 146)]
+    #[case("v8.0.0", 146)]
+    #[case("unknown (147)", 147)]
     fn version(#[case] expected: &str, #[case] num: u8) {
         let info = FirmwareVersion::new(0, num, 0, num, 0, 0);
         assert_eq!(expected, info.cpu());
@@ -189,7 +195,7 @@ mod tests {
 
     #[test]
     fn latest() {
-        assert_eq!("v7.0.0", FirmwareVersion::latest());
+        assert_eq!("v8.0.0", FirmwareVersion::latest());
     }
 
     #[test]

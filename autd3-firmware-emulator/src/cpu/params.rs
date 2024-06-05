@@ -3,7 +3,7 @@ pub const MICROSECONDS: u64 = NANOSECONDS * 1000;
 pub const MILLISECONDS: u64 = MICROSECONDS * 1000;
 pub const SYS_TIME_TRANSITION_MARGIN: u64 = 10 * MILLISECONDS;
 
-pub const CPU_VERSION_MAJOR: u16 = 0x91;
+pub const CPU_VERSION_MAJOR: u16 = 0x92;
 pub const CPU_VERSION_MINOR: u16 = 0x00;
 
 pub const TRANS_NUM: usize = 249;
@@ -14,7 +14,6 @@ pub const BRAM_SELECT_DUTY_TABLE: u8 = 0x2;
 pub const BRAM_SELECT_STM: u8 = 0x3;
 
 pub const BRAM_CNT_SEL_MAIN: u8 = 0x00;
-pub const BRAM_CNT_SEL_FILTER: u8 = 0x01;
 pub const BRAM_CNT_SELECT_CLOCK: u8 = 0x02;
 
 pub const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
@@ -69,16 +68,15 @@ pub const ADDR_STM_REP1_0: u16 = 0x5C;
 pub const ADDR_STM_REP1_1: u16 = 0x5D;
 pub const ADDR_STM_MODE0: u16 = 0x5E;
 pub const ADDR_STM_MODE1: u16 = 0x5F;
-pub const ADDR_STM_SOUND_SPEED0_0: u16 = 0x60;
-pub const ADDR_STM_SOUND_SPEED0_1: u16 = 0x61;
-pub const ADDR_STM_SOUND_SPEED1_0: u16 = 0x62;
-pub const ADDR_STM_SOUND_SPEED1_1: u16 = 0x63;
+pub const ADDR_STM_SOUND_SPEED0: u16 = 0x60;
+pub const ADDR_STM_SOUND_SPEED1: u16 = 0x62;
 pub const ADDR_STM_TRANSITION_MODE: u16 = 0x64;
 pub const ADDR_STM_TRANSITION_VALUE_0: u16 = 0x65;
 pub const ADDR_STM_TRANSITION_VALUE_1: u16 = 0x66;
 pub const ADDR_STM_TRANSITION_VALUE_2: u16 = 0x67;
 pub const ADDR_STM_TRANSITION_VALUE_3: u16 = 0x68;
-pub const ADDR_PULSE_WIDTH_ENCODER_TABLE_WR_PAGE: u16 = 0xE0;
+pub const ADDR_STM_NUM_FOCI0: u16 = 0x69;
+pub const ADDR_STM_NUM_FOCI1: u16 = 0x6A;
 pub const ADDR_PULSE_WIDTH_ENCODER_FULL_WIDTH_START: u16 = 0xE1;
 pub const ADDR_DEBUG_TYPE0: u16 = 0xF0;
 pub const ADDR_DEBUG_VALUE0: u16 = 0xF1;
@@ -133,14 +131,13 @@ pub const TAG_MODULATION_CHANGE_SEGMENT: u8 = 0x11;
 pub const TAG_SILENCER: u8 = 0x20;
 pub const TAG_GAIN: u8 = 0x30;
 pub const TAG_GAIN_CHANGE_SEGMENT: u8 = 0x31;
-pub const TAG_FOCUS_STM: u8 = 0x40;
 pub const TAG_GAIN_STM: u8 = 0x41;
-pub const TAG_FOCUS_STM_CHANGE_SEGMENT: u8 = 0x42;
+pub const TAG_FOCI_STM: u8 = 0x42;
 pub const TAG_GAIN_STM_CHANGE_SEGMENT: u8 = 0x43;
+pub const TAG_FOCI_STM_CHANGE_SEGMENT: u8 = 0x44;
 pub const TAG_FORCE_FAN: u8 = 0x60;
 pub const TAG_READS_FPGA_STATE: u8 = 0x61;
-pub const TAG_CONFIG_PULSE_WIDTH_ENCODER: u8 = 0x70;
-pub const TAG_PHASE_FILTER: u8 = 0x80;
+pub const TAG_CONFIG_PULSE_WIDTH_ENCODER: u8 = 0x71;
 pub const TAG_DEBUG: u8 = 0xF0;
 pub const TAG_EMULATE_GPIO_IN: u8 = 0xF1;
 
@@ -161,7 +158,6 @@ pub const MODULATION_FLAG_SEGMENT: u8 = 1 << 3;
 pub const FOCUS_STM_FLAG_BEGIN: u8 = 1 << 0;
 pub const FOCUS_STM_FLAG_END: u8 = 1 << 1;
 pub const FOCUS_STM_FLAG_UPDATE: u8 = 1 << 2;
-pub const FOCUS_STM_FLAG_SEGMENT: u8 = 1 << 3;
 
 pub const GAIN_STM_FLAG_BEGIN: u8 = 1 << 0;
 pub const GAIN_STM_FLAG_END: u8 = 1 << 1;

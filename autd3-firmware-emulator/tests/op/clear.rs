@@ -59,7 +59,7 @@ fn send_clear() -> anyhow::Result<()> {
         let d = TestGain {}.with_segment(Segment::S0, true);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = FocusSTM::from_sampling_config(
+        let d = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(
                 SAMPLING_FREQ_DIV_MIN
                     * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,

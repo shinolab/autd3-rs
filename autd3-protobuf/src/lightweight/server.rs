@@ -484,7 +484,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                 }
                 Some(datagram_lightweight::Datagram::FocusStm(ref msg)) => {
                     autd.send(
-                        autd3_driver::datagram::FocusSTM::from_msg(msg)
+                        autd3_driver::datagram::FociSTM::from_msg(msg)
                             .ok_or(AUTDProtoBufError::DataParseError)?
                             .with_segment(
                                 autd3_driver::firmware::fpga::Segment::from(

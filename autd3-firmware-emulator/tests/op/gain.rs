@@ -113,10 +113,10 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    // segment 0: FocusSTM
+    // segment 0: FociSTM
     send(
         &mut cpu,
-        FocusSTM::from_sampling_config(
+        FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(0xFFFFFFFF),
             (0..2).map(|_| ControlPoint::new(Vector3::zeros())),
         )

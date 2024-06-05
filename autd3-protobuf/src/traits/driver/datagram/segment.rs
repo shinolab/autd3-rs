@@ -21,7 +21,7 @@ impl ToMessage for autd3_driver::datagram::SwapSegment {
                         transition_value: transition.value(),
                     })
                 }
-                autd3_driver::datagram::SwapSegment::FocusSTM(segment, transition) => {
+                autd3_driver::datagram::SwapSegment::FociSTM(segment, transition) => {
                     swap_segment::Inner::FocusStm(SwapSegmentFocusStm {
                         segment: *segment as _,
                         transition_mode: transition.mode() as _,
@@ -62,7 +62,7 @@ impl FromMessage<SwapSegment> for autd3_driver::datagram::SwapSegment {
                     )
                 }
                 swap_segment::Inner::FocusStm(inner) => {
-                    autd3_driver::datagram::SwapSegment::FocusSTM(
+                    autd3_driver::datagram::SwapSegment::FociSTM(
                         autd3_driver::firmware::fpga::Segment::from(
                             Segment::try_from(inner.segment).ok()?,
                         ),

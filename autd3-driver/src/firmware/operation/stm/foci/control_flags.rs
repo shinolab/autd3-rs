@@ -1,29 +1,28 @@
 use std::fmt;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 #[repr(C)]
-pub struct FocusSTMControlFlags(u8);
+pub struct FociSTMControlFlags(u8);
 
 bitflags::bitflags! {
-    impl FocusSTMControlFlags : u8 {
+    impl FociSTMControlFlags : u8 {
         const NONE       = 0;
         const BEGIN      = 1 << 0;
         const END        = 1 << 1;
         const TRANSITION = 1 << 2;
-        const SEGMENT    = 1 << 3;
     }
 }
 
-impl fmt::Display for FocusSTMControlFlags {
+impl fmt::Display for FociSTMControlFlags {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut flags = Vec::new();
-        if self.contains(FocusSTMControlFlags::BEGIN) {
+        if self.contains(FociSTMControlFlags::BEGIN) {
             flags.push("BEGIN")
         }
-        if self.contains(FocusSTMControlFlags::END) {
+        if self.contains(FociSTMControlFlags::END) {
             flags.push("END")
         }
-        if self.contains(FocusSTMControlFlags::TRANSITION) {
+        if self.contains(FociSTMControlFlags::TRANSITION) {
             flags.push("TRANSITION")
         }
         if self.is_empty() {
@@ -47,25 +46,22 @@ mod tests {
 
     #[test]
     fn test_size() {
-        assert_eq!(1, std::mem::size_of::<FocusSTMControlFlags>());
+        assert_eq!(1, std::mem::size_of::<FociSTMControlFlags>());
     }
 
     #[test]
     fn test_fmt() {
-        assert_eq!("NONE", format!("{}", FocusSTMControlFlags::NONE));
-        assert_eq!("BEGIN", format!("{}", FocusSTMControlFlags::BEGIN));
-        assert_eq!("END", format!("{}", FocusSTMControlFlags::END));
-        assert_eq!(
-            "TRANSITION",
-            format!("{}", FocusSTMControlFlags::TRANSITION)
-        );
+        assert_eq!("NONE", format!("{}", FociSTMControlFlags::NONE));
+        assert_eq!("BEGIN", format!("{}", FociSTMControlFlags::BEGIN));
+        assert_eq!("END", format!("{}", FociSTMControlFlags::END));
+        assert_eq!("TRANSITION", format!("{}", FociSTMControlFlags::TRANSITION));
         assert_eq!(
             "BEGIN | END | TRANSITION",
             format!(
                 "{}",
-                FocusSTMControlFlags::BEGIN
-                    | FocusSTMControlFlags::END
-                    | FocusSTMControlFlags::TRANSITION
+                FociSTMControlFlags::BEGIN
+                    | FociSTMControlFlags::END
+                    | FociSTMControlFlags::TRANSITION
             )
         );
     }

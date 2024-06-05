@@ -12,7 +12,7 @@ use super::OperationGenerator;
 pub enum SwapSegment {
     Gain(Segment),
     Modulation(Segment, TransitionMode),
-    FocusSTM(Segment, TransitionMode),
+    FociSTM(Segment, TransitionMode),
     GainSTM(Segment, TransitionMode),
 }
 

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use autd3_driver::{
     datagram::{
-        FocusSTM, GainSTM, IntoDatagramWithSegment, IntoDatagramWithSegmentTransition, Silencer,
+        FociSTM, GainSTM, IntoDatagramWithSegment, IntoDatagramWithSegmentTransition, Silencer,
         SwapSegment,
     },
     defined::ControlPoint,
@@ -357,7 +357,7 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
         let loop_behaviour = LoopBehavior::infinite();
         let segment = Segment::S1;
         let transition_mode = TransitionMode::Ext;
-        let d = FocusSTM::from_sampling_config(
+        let d = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(freq_div),
             (0..2).map(|_| ControlPoint::new(Vector3::zeros())),
         )

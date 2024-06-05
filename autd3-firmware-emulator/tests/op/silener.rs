@@ -114,9 +114,9 @@ fn silencer_completetion_steps_too_large_stm(
     let d = Silencer::fixed_completion_steps(1, 1);
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-    // Send FocusSTM
+    // Send FociSTM
     {
-        let d = FocusSTM::from_sampling_config(
+        let d = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
             (0..2).map(|_| Vector3::zeros()),
         )

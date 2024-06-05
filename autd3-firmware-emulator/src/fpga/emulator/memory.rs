@@ -17,9 +17,10 @@ pub(crate) struct Memory {
     stm_bram_0: Vec<u16>,
     stm_bram_1: Vec<u16>,
     duty_table_bram: Vec<u16>,
-    phase_filter_bram: Vec<u16>,
     drp_bram: Vec<u16>,
     tr_pos: Vec<u64>,
+    sin_table: Vec<u8>,
+    atan_table: Vec<u8>,
 }
 
 impl Memory {
@@ -29,49 +30,51 @@ impl Memory {
             controller_bram: vec![0x0000; 256],
             modulator_bram_0: vec![0x0000; 32768 / std::mem::size_of::<u16>()],
             modulator_bram_1: vec![0x0000; 32768 / std::mem::size_of::<u16>()],
-            duty_table_bram: vec![0x0000; 65536 / std::mem::size_of::<u16>()],
-            phase_filter_bram: vec![0x0000; 256 / std::mem::size_of::<u16>()],
+            duty_table_bram: vec![0x0000; 32768 / std::mem::size_of::<u16>()],
             stm_bram_0: vec![0x0000; 1024 * 256],
             stm_bram_1: vec![0x0000; 1024 * 256],
             drp_bram: vec![0x0000; 32 * std::mem::size_of::<u64>()],
             tr_pos: vec![
-                0x00000000, 0x01960000, 0x032c0000, 0x04c30000, 0x06590000, 0x07ef0000, 0x09860000,
-                0x0b1c0000, 0x0cb30000, 0x0e490000, 0x0fdf0000, 0x11760000, 0x130c0000, 0x14a30000,
-                0x16390000, 0x17d00000, 0x19660000, 0x1afc0000, 0x00000196, 0x04c30196, 0x06590196,
-                0x07ef0196, 0x09860196, 0x0b1c0196, 0x0cb30196, 0x0e490196, 0x0fdf0196, 0x11760196,
-                0x130c0196, 0x14a30196, 0x16390196, 0x17d00196, 0x1afc0196, 0x0000032c, 0x0196032c,
-                0x032c032c, 0x04c3032c, 0x0659032c, 0x07ef032c, 0x0986032c, 0x0b1c032c, 0x0cb3032c,
-                0x0e49032c, 0x0fdf032c, 0x1176032c, 0x130c032c, 0x14a3032c, 0x1639032c, 0x17d0032c,
-                0x1966032c, 0x1afc032c, 0x000004c3, 0x019604c3, 0x032c04c3, 0x04c304c3, 0x065904c3,
-                0x07ef04c3, 0x098604c3, 0x0b1c04c3, 0x0cb304c3, 0x0e4904c3, 0x0fdf04c3, 0x117604c3,
-                0x130c04c3, 0x14a304c3, 0x163904c3, 0x17d004c3, 0x196604c3, 0x1afc04c3, 0x00000659,
-                0x01960659, 0x032c0659, 0x04c30659, 0x06590659, 0x07ef0659, 0x09860659, 0x0b1c0659,
-                0x0cb30659, 0x0e490659, 0x0fdf0659, 0x11760659, 0x130c0659, 0x14a30659, 0x16390659,
-                0x17d00659, 0x19660659, 0x1afc0659, 0x000007ef, 0x019607ef, 0x032c07ef, 0x04c307ef,
-                0x065907ef, 0x07ef07ef, 0x098607ef, 0x0b1c07ef, 0x0cb307ef, 0x0e4907ef, 0x0fdf07ef,
-                0x117607ef, 0x130c07ef, 0x14a307ef, 0x163907ef, 0x17d007ef, 0x196607ef, 0x1afc07ef,
-                0x00000986, 0x01960986, 0x032c0986, 0x04c30986, 0x06590986, 0x07ef0986, 0x09860986,
-                0x0b1c0986, 0x0cb30986, 0x0e490986, 0x0fdf0986, 0x11760986, 0x130c0986, 0x14a30986,
-                0x16390986, 0x17d00986, 0x19660986, 0x1afc0986, 0x00000b1c, 0x01960b1c, 0x032c0b1c,
-                0x04c30b1c, 0x06590b1c, 0x07ef0b1c, 0x09860b1c, 0x0b1c0b1c, 0x0cb30b1c, 0x0e490b1c,
-                0x0fdf0b1c, 0x11760b1c, 0x130c0b1c, 0x14a30b1c, 0x16390b1c, 0x17d00b1c, 0x19660b1c,
-                0x1afc0b1c, 0x00000cb3, 0x01960cb3, 0x032c0cb3, 0x04c30cb3, 0x06590cb3, 0x07ef0cb3,
-                0x09860cb3, 0x0b1c0cb3, 0x0cb30cb3, 0x0e490cb3, 0x0fdf0cb3, 0x11760cb3, 0x130c0cb3,
-                0x14a30cb3, 0x16390cb3, 0x17d00cb3, 0x19660cb3, 0x1afc0cb3, 0x00000e49, 0x01960e49,
-                0x032c0e49, 0x04c30e49, 0x06590e49, 0x07ef0e49, 0x09860e49, 0x0b1c0e49, 0x0cb30e49,
-                0x0e490e49, 0x0fdf0e49, 0x11760e49, 0x130c0e49, 0x14a30e49, 0x16390e49, 0x17d00e49,
-                0x19660e49, 0x1afc0e49, 0x00000fdf, 0x01960fdf, 0x032c0fdf, 0x04c30fdf, 0x06590fdf,
-                0x07ef0fdf, 0x09860fdf, 0x0b1c0fdf, 0x0cb30fdf, 0x0e490fdf, 0x0fdf0fdf, 0x11760fdf,
-                0x130c0fdf, 0x14a30fdf, 0x16390fdf, 0x17d00fdf, 0x19660fdf, 0x1afc0fdf, 0x00001176,
-                0x01961176, 0x032c1176, 0x04c31176, 0x06591176, 0x07ef1176, 0x09861176, 0x0b1c1176,
-                0x0cb31176, 0x0e491176, 0x0fdf1176, 0x11761176, 0x130c1176, 0x14a31176, 0x16391176,
-                0x17d01176, 0x19661176, 0x1afc1176, 0x0000130c, 0x0196130c, 0x032c130c, 0x04c3130c,
-                0x0659130c, 0x07ef130c, 0x0986130c, 0x0b1c130c, 0x0cb3130c, 0x0e49130c, 0x0fdf130c,
-                0x1176130c, 0x130c130c, 0x14a3130c, 0x1639130c, 0x17d0130c, 0x1966130c, 0x1afc130c,
-                0x000014a3, 0x019614a3, 0x032c14a3, 0x04c314a3, 0x065914a3, 0x07ef14a3, 0x098614a3,
-                0x0b1c14a3, 0x0cb314a3, 0x0e4914a3, 0x0fdf14a3, 0x117614a3, 0x130c14a3, 0x14a314a3,
-                0x163914a3, 0x17d014a3, 0x196614a3, 0x1afc14a3,
+                0x00000000, 0x01960000, 0x032d0000, 0x04c30000, 0x065a0000, 0x07f00000, 0x09860000,
+                0x0b1d0000, 0x0cb30000, 0x0e4a0000, 0x0fe00000, 0x11760000, 0x130d0000, 0x14a30000,
+                0x163a0000, 0x17d00000, 0x19660000, 0x1afd0000, 0x00000196, 0x04c30196, 0x065a0196,
+                0x07f00196, 0x09860196, 0x0b1d0196, 0x0cb30196, 0x0e4a0196, 0x0fe00196, 0x11760196,
+                0x130d0196, 0x14a30196, 0x163a0196, 0x17d00196, 0x1afd0196, 0x0000032d, 0x0196032d,
+                0x032d032d, 0x04c3032d, 0x065a032d, 0x07f0032d, 0x0986032d, 0x0b1d032d, 0x0cb3032d,
+                0x0e4a032d, 0x0fe0032d, 0x1176032d, 0x130d032d, 0x14a3032d, 0x163a032d, 0x17d0032d,
+                0x1966032d, 0x1afd032d, 0x000004c3, 0x019604c3, 0x032d04c3, 0x04c304c3, 0x065a04c3,
+                0x07f004c3, 0x098604c3, 0x0b1d04c3, 0x0cb304c3, 0x0e4a04c3, 0x0fe004c3, 0x117604c3,
+                0x130d04c3, 0x14a304c3, 0x163a04c3, 0x17d004c3, 0x196604c3, 0x1afd04c3, 0x0000065a,
+                0x0196065a, 0x032d065a, 0x04c3065a, 0x065a065a, 0x07f0065a, 0x0986065a, 0x0b1d065a,
+                0x0cb3065a, 0x0e4a065a, 0x0fe0065a, 0x1176065a, 0x130d065a, 0x14a3065a, 0x163a065a,
+                0x17d0065a, 0x1966065a, 0x1afd065a, 0x000007f0, 0x019607f0, 0x032d07f0, 0x04c307f0,
+                0x065a07f0, 0x07f007f0, 0x098607f0, 0x0b1d07f0, 0x0cb307f0, 0x0e4a07f0, 0x0fe007f0,
+                0x117607f0, 0x130d07f0, 0x14a307f0, 0x163a07f0, 0x17d007f0, 0x196607f0, 0x1afd07f0,
+                0x00000986, 0x01960986, 0x032d0986, 0x04c30986, 0x065a0986, 0x07f00986, 0x09860986,
+                0x0b1d0986, 0x0cb30986, 0x0e4a0986, 0x0fe00986, 0x11760986, 0x130d0986, 0x14a30986,
+                0x163a0986, 0x17d00986, 0x19660986, 0x1afd0986, 0x00000b1d, 0x01960b1d, 0x032d0b1d,
+                0x04c30b1d, 0x065a0b1d, 0x07f00b1d, 0x09860b1d, 0x0b1d0b1d, 0x0cb30b1d, 0x0e4a0b1d,
+                0x0fe00b1d, 0x11760b1d, 0x130d0b1d, 0x14a30b1d, 0x163a0b1d, 0x17d00b1d, 0x19660b1d,
+                0x1afd0b1d, 0x00000cb3, 0x01960cb3, 0x032d0cb3, 0x04c30cb3, 0x065a0cb3, 0x07f00cb3,
+                0x09860cb3, 0x0b1d0cb3, 0x0cb30cb3, 0x0e4a0cb3, 0x0fe00cb3, 0x11760cb3, 0x130d0cb3,
+                0x14a30cb3, 0x163a0cb3, 0x17d00cb3, 0x19660cb3, 0x1afd0cb3, 0x00000e4a, 0x01960e4a,
+                0x032d0e4a, 0x04c30e4a, 0x065a0e4a, 0x07f00e4a, 0x09860e4a, 0x0b1d0e4a, 0x0cb30e4a,
+                0x0e4a0e4a, 0x0fe00e4a, 0x11760e4a, 0x130d0e4a, 0x14a30e4a, 0x163a0e4a, 0x17d00e4a,
+                0x19660e4a, 0x1afd0e4a, 0x00000fe0, 0x01960fe0, 0x032d0fe0, 0x04c30fe0, 0x065a0fe0,
+                0x07f00fe0, 0x09860fe0, 0x0b1d0fe0, 0x0cb30fe0, 0x0e4a0fe0, 0x0fe00fe0, 0x11760fe0,
+                0x130d0fe0, 0x14a30fe0, 0x163a0fe0, 0x17d00fe0, 0x19660fe0, 0x1afd0fe0, 0x00001176,
+                0x01961176, 0x032d1176, 0x04c31176, 0x065a1176, 0x07f01176, 0x09861176, 0x0b1d1176,
+                0x0cb31176, 0x0e4a1176, 0x0fe01176, 0x11761176, 0x130d1176, 0x14a31176, 0x163a1176,
+                0x17d01176, 0x19661176, 0x1afd1176, 0x0000130d, 0x0196130d, 0x032d130d, 0x04c3130d,
+                0x065a130d, 0x07f0130d, 0x0986130d, 0x0b1d130d, 0x0cb3130d, 0x0e4a130d, 0x0fe0130d,
+                0x1176130d, 0x130d130d, 0x14a3130d, 0x163a130d, 0x17d0130d, 0x1966130d, 0x1afd130d,
+                0x000014a3, 0x019614a3, 0x032d14a3, 0x04c314a3, 0x065a14a3, 0x07f014a3, 0x098614a3,
+                0x0b1d14a3, 0x0cb314a3, 0x0e4a14a3, 0x0fe014a3, 0x117614a3, 0x130d14a3, 0x14a314a3,
+                0x163a14a3, 0x17d014a3, 0x196614a3, 0x1afd14a3, 0x00000000, 0x00000000, 0x00000000,
+                0x00000000, 0x00000000, 0x00000000, 0x00000000,
             ],
+            sin_table: include_bytes!("sin.dat").to_vec(),
+            atan_table: include_bytes!("atan.dat").to_vec(),
         }
     }
 
@@ -110,7 +113,6 @@ impl Memory {
         match select {
             BRAM_SELECT_CONTROLLER => match addr >> 8 {
                 BRAM_CNT_SEL_MAIN => self.controller_bram[addr] = data,
-                BRAM_CNT_SEL_FILTER => self.phase_filter_bram[addr & 0xFF] = data,
                 BRAM_CNT_SEL_CLOCK => self.drp_bram[addr & 0xFF] = data,
                 _ => unreachable!(),
             },
@@ -218,14 +220,18 @@ impl Memory {
             + 1
     }
 
-    pub fn sound_speed(&self, segment: Segment) -> u32 {
-        Self::read_bram_as::<u32>(
-            &self.controller_bram,
-            match segment {
-                Segment::S0 => ADDR_STM_SOUND_SPEED0_0,
-                Segment::S1 => ADDR_STM_SOUND_SPEED1_0,
-            },
-        )
+    pub fn sound_speed(&self, segment: Segment) -> u16 {
+        self.controller_bram[match segment {
+            Segment::S0 => ADDR_STM_SOUND_SPEED0,
+            Segment::S1 => ADDR_STM_SOUND_SPEED1,
+        }]
+    }
+
+    pub fn num_foci(&self, segment: Segment) -> u8 {
+        self.controller_bram[match segment {
+            Segment::S0 => ADDR_STM_NUM_FOCI0,
+            Segment::S1 => ADDR_STM_NUM_FOCI1,
+        }] as u8
     }
 
     pub fn stm_loop_behavior(&self, segment: Segment) -> LoopBehavior {
@@ -372,20 +378,6 @@ impl Memory {
             .collect()
     }
 
-    fn phase_at(&self, idx: usize) -> Phase {
-        Phase::new(if idx % 2 == 0 {
-            self.phase_filter_bram[idx >> 1] & 0xFF
-        } else {
-            self.phase_filter_bram[idx >> 1] >> 8
-        } as u8)
-    }
-
-    pub fn phase_filter(&self) -> Vec<Phase> {
-        (0..self.num_transducers)
-            .map(|i| self.phase_at(i))
-            .collect()
-    }
-
     pub fn debug_types(&self) -> [u8; 4] {
         [
             self.controller_bram[ADDR_DEBUG_TYPE0] as _,
@@ -424,10 +416,9 @@ impl Memory {
         .iter()
         .skip(256 * idx)
         .take(self.num_transducers)
-        .zip(self.phase_filter())
-        .map(|(&d, p)| {
+        .map(|&d| {
             Drive::new(
-                Phase::new((d & 0xFF) as u8) + p,
+                Phase::new((d & 0xFF) as u8),
                 EmitIntensity::new(((d >> 8) & 0xFF) as u8),
             )
         })
@@ -441,44 +432,56 @@ impl Memory {
         };
         let sound_speed = self.sound_speed(segment);
 
-        let intensity = bram[4 * idx + 3] >> 6 & 0x00FF;
+        let intensity = (bram[32 * idx + 3] >> 6 & 0x00FF) as u8;
 
-        let mut x = (bram[4 * idx + 1] as u32) << 16 & 0x30000;
-        x |= bram[4 * idx] as u32;
-        let x = if (x & 0x20000) != 0 {
-            (x | 0xFFFC0000) as i32
-        } else {
-            x as i32
-        };
-        let mut y = (bram[4 * idx + 2] as u32) << 14 & 0x3C000;
-        y |= bram[4 * idx + 1] as u32 >> 2;
-        let y = if (y & 0x20000) != 0 {
-            (y | 0xFFFC0000) as i32
-        } else {
-            y as i32
-        };
-        let mut z = (bram[4 * idx + 3] as u32) << 12 & 0x3F000;
-        z |= bram[4 * idx + 2] as u32 >> 4;
-        let z = if (z & 0x20000) != 0 {
-            (z | 0xFFFC0000) as i32
-        } else {
-            z as i32
-        };
         self.tr_pos
             .iter()
-            .zip(self.phase_filter())
-            .map(|(&tr, p)| {
-                let tr_z = ((tr >> 32) & 0xFFFF) as i16 as i32;
-                let tr_x = ((tr >> 16) & 0xFFFF) as i16 as i32;
-                let tr_y = (tr & 0xFFFF) as i16 as i32;
-                let d2 =
-                    (x - tr_x) * (x - tr_x) + (y - tr_y) * (y - tr_y) + (z - tr_z) * (z - tr_z);
-                let dist = d2.sqrt() as u64;
-                let q = (dist << 18) / sound_speed as u64;
-                Drive::new(
-                    Phase::new((q & 0xFF) as u8) + p,
-                    EmitIntensity::new(intensity as u8),
-                )
+            .map(|&tr| {
+                let (sin, cos): (Vec<_>, Vec<_>) = (0..self.num_foci(segment) as usize)
+                    .map(|i| {
+                        let mut x = (bram[32 * idx + 4 * i + 1] as u32) << 16 & 0x30000;
+                        x |= bram[32 * idx + 32 * i] as u32;
+                        let x = if (x & 0x20000) != 0 {
+                            (x | 0xFFFC0000) as i32
+                        } else {
+                            x as i32
+                        };
+                        let mut y = (bram[32 * idx + 4 * i + 2] as u32) << 14 & 0x3C000;
+                        y |= bram[32 * idx + 4 * i + 1] as u32 >> 2;
+                        let y = if (y & 0x20000) != 0 {
+                            (y | 0xFFFC0000) as i32
+                        } else {
+                            y as i32
+                        };
+                        let mut z = (bram[32 * idx + 4 * i + 3] as u32) << 12 & 0x3F000;
+                        z |= bram[32 * idx + 4 * i + 2] as u32 >> 4;
+                        let z = if (z & 0x20000) != 0 {
+                            (z | 0xFFFC0000) as i32
+                        } else {
+                            z as i32
+                        };
+                        let offset = bram[32 * idx + 4 * i + 3] >> 6 & 0x00FF;
+
+                        let tr_z = ((tr >> 32) & 0xFFFF) as i16 as i32;
+                        let tr_x = ((tr >> 16) & 0xFFFF) as i16 as i32;
+                        let tr_y = (tr & 0xFFFF) as i16 as i32;
+                        let d2 = (x - tr_x) * (x - tr_x)
+                            + (y - tr_y) * (y - tr_y)
+                            + (z - tr_z) * (z - tr_z);
+                        let dist = d2.sqrt() as u32;
+                        let q = ((dist << 14) / sound_speed as u32) as usize;
+                        let q = if i == 0 { q } else { q + offset as usize };
+                        (self.sin_table[q % 256], self.sin_table[(q + 64) % 256])
+                    })
+                    .unzip();
+                let sin = ((sin.iter().fold(0, |acc, &s| acc + s as u16)
+                    / self.num_foci(segment) as u16)
+                    >> 1) as usize;
+                let cos = ((cos.iter().fold(0, |acc, &c| acc + c as u16)
+                    / self.num_foci(segment) as u16)
+                    >> 1) as usize;
+                let phase = self.atan_table[(sin << 7) | cos];
+                Drive::new(Phase::new(phase), EmitIntensity::new(intensity))
             })
             .collect()
     }
@@ -541,7 +544,7 @@ impl FPGAEmulator {
         self.mem.stm_cycle(segment)
     }
 
-    pub fn sound_speed(&self, segment: Segment) -> u32 {
+    pub fn sound_speed(&self, segment: Segment) -> u16 {
         self.mem.sound_speed(segment)
     }
 
@@ -595,10 +598,6 @@ impl FPGAEmulator {
 
     pub fn pulse_width_encoder_table(&self) -> Vec<u8> {
         self.mem.pulse_width_encoder_table()
-    }
-
-    pub fn phase_filter(&self) -> Vec<Phase> {
-        self.mem.phase_filter()
     }
 
     pub fn debug_types(&self) -> [u8; 4] {

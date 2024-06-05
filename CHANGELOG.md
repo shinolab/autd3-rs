@@ -1,5 +1,9 @@
 # 25.0.0
 
+- Update firmware to v8.0.0
+  - Remove `PhaseFilter`
+  - `FocusSTM` is now `FociSTM` with maximum 8 foci
+  - `PulseWidthEncoder` table size is now shrinked to 32768
 - Remove deprecated functions and structs
   - Remove `gain::Bessel2` and `with_transform2`
 - Improve performance

@@ -1,7 +1,7 @@
 use std::{collections::HashMap, time::Duration};
 
 use autd3_driver::{
-    datagram::{FocusSTM, GainSTM, IntoDatagramWithSegmentTransition, Silencer, SwapSegment},
+    datagram::{FociSTM, GainSTM, IntoDatagramWithSegmentTransition, Silencer, SwapSegment},
     defined::{mm, ControlPoint, METER},
     derive::{Drive, LoopBehavior, Phase, SamplingConfig, Segment},
     error::AUTDInternalError,
@@ -40,6 +40,9 @@ pub fn gen_random_foci(num: usize) -> Vec<ControlPoint> {
 
 #[test]
 fn test_send_focus_stm() -> anyhow::Result<()> {
+    let sin_table = include_bytes!("sin.dat");
+    let atan_table = include_bytes!("atan.dat");
+
     let mut rng = rand::thread_rng();
 
     let mut geometry = create_geometry(1);
@@ -58,7 +61,7 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
         let segment = Segment::S0;
         let transition_mode = TransitionMode::Immediate;
 
-        let stm = FocusSTM::from_sampling_config(
+        let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(freq_div),
             foci.clone().into_iter(),
         )
@@ -74,7 +77,7 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
         assert_eq!(freq_div, cpu.fpga().stm_freq_division(Segment::S0));
         assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
         assert_eq!(
-            (geometry[0].sound_speed / METER * 1024.0).round() as u32,
+            (geometry[0].sound_speed / METER * 64.0).round() as u16,
             cpu.fpga().sound_speed(Segment::S0)
         );
         foci.iter().enumerate().for_each(|(focus_idx, focus)| {
@@ -90,9 +93,12 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
                     let fx = (focus.point().x / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
                     let fy = (focus.point().y / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
                     let fz = (focus.point().z / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
-                    let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u64;
-                    let q = (d << 18) / cpu.fpga().sound_speed(Segment::S0) as u64;
-                    assert_eq!(Phase::new((q & 0xFF) as u8), drive.phase());
+                    let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
+                    let q = (d << 14) / cpu.fpga().sound_speed(Segment::S0) as u32;
+                    let sin = (sin_table[q as usize % 256] >> 1) as usize;
+                    let cos = (sin_table[(q as usize + 64) % 256] >> 1) as usize;
+                    let p = atan_table[(sin << 7) | cos];
+                    assert_eq!(Phase::new(p), drive.phase());
                     assert_eq!(focus.intensity(), drive.intensity());
                 })
         });
@@ -108,7 +114,7 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
         let loop_behavior = LoopBehavior::once();
         let segment = Segment::S1;
 
-        let stm = FocusSTM::from_sampling_config(
+        let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(freq_div),
             foci.clone().into_iter(),
         )
@@ -124,7 +130,7 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
         assert_eq!(freq_div, cpu.fpga().stm_freq_division(Segment::S1));
         assert_eq!(TransitionMode::Immediate, cpu.fpga().stm_transition_mode());
         assert_eq!(
-            (geometry[0].sound_speed / METER * 1024.0).round() as u32,
+            (geometry[0].sound_speed / METER * 64.0).round() as u16,
             cpu.fpga().sound_speed(Segment::S1)
         );
         foci.iter().enumerate().for_each(|(focus_idx, focus)| {
@@ -140,16 +146,19 @@ fn test_send_focus_stm() -> anyhow::Result<()> {
                     let fx = (focus.point().x / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
                     let fy = (focus.point().y / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
                     let fz = (focus.point().z / FOCUS_STM_FIXED_NUM_UNIT).round() as i32;
-                    let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u64;
-                    let q = (d << 18) / cpu.fpga().sound_speed(Segment::S1) as u64;
-                    assert_eq!(Phase::new((q & 0xFF) as u8), drive.phase());
+                    let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
+                    let q = (d << 14) / cpu.fpga().sound_speed(Segment::S0) as u32;
+                    let sin = (sin_table[q as usize % 256] >> 1) as usize;
+                    let cos = (sin_table[(q as usize + 64) % 256] >> 1) as usize;
+                    let p = atan_table[sin << 7 | cos];
+                    assert_eq!(Phase::new(p), drive.phase());
                     assert_eq!(focus.intensity(), drive.intensity());
                 })
         });
     }
 
     {
-        let d = SwapSegment::FocusSTM(Segment::S1, TransitionMode::SyncIdx);
+        let d = SwapSegment::FociSTM(Segment::S1, TransitionMode::SyncIdx);
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -169,7 +178,7 @@ fn change_focus_stm_segment() -> anyhow::Result<()> {
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
 
-    let stm = FocusSTM::from_sampling_config(
+    let stm = FociSTM::from_sampling_config(
         SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
         gen_random_foci(2).into_iter(),
     )
@@ -180,7 +189,7 @@ fn change_focus_stm_segment() -> anyhow::Result<()> {
     assert!(!cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
 
-    let d = SwapSegment::FocusSTM(Segment::S1, TransitionMode::Immediate);
+    let d = SwapSegment::FociSTM(Segment::S1, TransitionMode::Immediate);
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     assert!(!cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
@@ -195,7 +204,7 @@ fn test_focus_stm_freq_div_too_small() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     {
-        let stm = FocusSTM::from_sampling_config(
+        let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
             gen_random_foci(2).into_iter(),
         )
@@ -223,7 +232,7 @@ fn test_focus_stm_freq_div_too_small() -> anyhow::Result<()> {
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let stm = FocusSTM::from_sampling_config(
+        let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(
                 SAMPLING_FREQ_DIV_MIN
                     * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
@@ -241,7 +250,7 @@ fn test_focus_stm_freq_div_too_small() -> anyhow::Result<()> {
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = SwapSegment::FocusSTM(Segment::S1, TransitionMode::Immediate);
+        let d = SwapSegment::FociSTM(Segment::S1, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSilencerSettings),
             send(&mut cpu, d, &geometry, &mut tx)
@@ -288,13 +297,13 @@ fn send_focus_stm_invalid_segment_transition() -> anyhow::Result<()> {
     }
 
     {
-        let d = SwapSegment::FocusSTM(Segment::S0, TransitionMode::Immediate);
+        let d = SwapSegment::FociSTM(Segment::S0, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, d, &geometry, &mut tx)
         );
 
-        let d = SwapSegment::FocusSTM(Segment::S1, TransitionMode::Immediate);
+        let d = SwapSegment::FociSTM(Segment::S1, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, d, &geometry, &mut tx)
@@ -312,7 +321,7 @@ fn send_focus_stm_invalid_transition_mode() -> anyhow::Result<()> {
 
     // segment 0 to 0
     {
-        let stm = FocusSTM::from_sampling_config(
+        let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
             gen_random_foci(2).into_iter(),
         )
@@ -325,7 +334,7 @@ fn send_focus_stm_invalid_transition_mode() -> anyhow::Result<()> {
 
     // segment 0 to 1 immidiate
     {
-        let stm = FocusSTM::from_sampling_config(
+        let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
             gen_random_foci(2).into_iter(),
         )
@@ -340,7 +349,7 @@ fn send_focus_stm_invalid_transition_mode() -> anyhow::Result<()> {
 
     // Infinite but SyncIdx
     {
-        let stm = FocusSTM::from_sampling_config(
+        let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
             gen_random_foci(2).into_iter(),
         )
@@ -348,7 +357,7 @@ fn send_focus_stm_invalid_transition_mode() -> anyhow::Result<()> {
 
         assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
 
-        let d = SwapSegment::FocusSTM(Segment::S1, TransitionMode::SyncIdx);
+        let d = SwapSegment::FociSTM(Segment::S1, TransitionMode::SyncIdx);
         assert_eq!(
             Err(AUTDInternalError::InvalidTransitionMode),
             send(&mut cpu, d, &geometry, &mut tx)
@@ -373,7 +382,7 @@ fn test_miss_transition_time(
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let transition_mode = TransitionMode::SysTime(DcSysTime::from_utc(transition_time).unwrap());
-    let stm = FocusSTM::from_sampling_config(
+    let stm = FociSTM::from_sampling_config(
         SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
         gen_random_foci(2).into_iter(),
     )
