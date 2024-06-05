@@ -15,7 +15,7 @@ pub use autd3_driver::{
         IntoGainTransform, IntoModulationCache, IntoModulationTransform, IntoRadiationPressure,
         Modulation, ModulationProperty, PulseWidthEncoder, ReadsFPGAState, Silencer, SwapSegment,
     },
-    defined::{deg, kHz, mm, rad, ControlPoint, Hz, PI},
+    defined::{deg, kHz, mm, rad, ControlPoint, ControlPoints, Hz, PI},
     error::AUTDInternalError,
     ethercat::DcSysTime,
     firmware::{
