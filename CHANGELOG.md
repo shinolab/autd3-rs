@@ -18,7 +18,7 @@
 - Rename from `as_pascal` to `pascal` and `as_spl` to `spl` in `Amplitude`
 - Remove `add_xxx` functions from `Fourier`, `GainSTM`, `FocusSTM`, `Greedy`, `SDP`, `Naive`, `GS`, `GSPAT`, and `LM`
   - User must pass all data in constructor
-- Add `Mixer` and `Csv` modulation
+- Add `Mixer`, `Csv`, and `Custom` modulation
 
 # 24.1.0
 
