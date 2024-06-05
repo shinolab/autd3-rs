@@ -103,4 +103,24 @@ mod tests {
         let cp = ControlPoint::from(&v);
         assert_eq!(&v, cp.point());
     }
+
+    #[test]
+    fn from_control_point() {
+        let v1 = Vector3::new(1.0, 2.0, 3.0);
+        let v2 = Vector3::new(4.0, 5.0, 6.0);
+        let cp = ControlPoints::from([v1, v2]);
+        assert_eq!(EmitIntensity::MAX, cp.intensity());
+        assert_eq!(&v1, cp[0].point());
+        assert_eq!(&v2, cp[1].point());
+    }
+
+    #[test]
+    fn from_control_point_and_intensity() {
+        let v1 = Vector3::new(1.0, 2.0, 3.0);
+        let v2 = Vector3::new(4.0, 5.0, 6.0);
+        let cp = ControlPoints::from(([v1, v2], EmitIntensity::MIN));
+        assert_eq!(EmitIntensity::MIN, cp.intensity());
+        assert_eq!(&v1, cp[0].point());
+        assert_eq!(&v2, cp[1].point());
+    }
 }

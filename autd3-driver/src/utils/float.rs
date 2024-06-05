@@ -31,13 +31,7 @@ mod tests {
             let a: u32 = rng.gen_range(1..40000);
             let m: u32 = rng.gen_range(512..=0xFFFFFFFF);
             let b = a as f64 / m as f64;
-            assert!(
-                super::is_integer(b * m as f64),
-                "{} = {} * {}",
-                b * m as f64,
-                b,
-                m
-            );
+            assert!(super::is_integer(b * m as f64));
         });
     }
 }

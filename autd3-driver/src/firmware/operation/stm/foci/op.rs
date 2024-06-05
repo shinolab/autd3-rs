@@ -71,7 +71,7 @@ impl<const N: usize> FociSTMOp<N> {
 
 impl<const N: usize> Operation for FociSTMOp<N> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        if N > FOCI_STM_FOCI_NUM_MAX {
+        if N == 0 || N > FOCI_STM_FOCI_NUM_MAX {
             return Err(AUTDInternalError::FociSTMNumFociOutOfRange(N));
         }
 
@@ -162,9 +162,9 @@ impl<const N: usize> Operation for FociSTMOp<N> {
         }
 
         if is_first {
-            Ok(size_of::<FociSTMHead>() + size_of::<STMFocus>() * send_num)
+            Ok(size_of::<FociSTMHead>() + size_of::<STMFocus>() * send_num * N)
         } else {
-            Ok(size_of::<FociSTMSubseq>() + size_of::<STMFocus>() * send_num)
+            Ok(size_of::<FociSTMSubseq>() + size_of::<STMFocus>() * send_num * N)
         }
     }
 
@@ -297,6 +297,126 @@ mod tests {
                 assert_eq!(d[5], ((buf[2] >> 8) & 0xFF) as u8);
                 assert_eq!(d[6], (buf[3] & 0xFF) as u8);
                 assert_eq!(d[7] & 0x3F, ((buf[3] >> 8) & 0xFF) as u8);
+            });
+    }
+
+    #[test]
+    fn test_foci() {
+        const FOCI_STM_SIZE: usize = 100;
+        const N: usize = 8;
+        const FRAME_SIZE: usize =
+            size_of::<FociSTMHead>() + size_of::<STMFocus>() * FOCI_STM_SIZE * N;
+
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
+
+        let mut tx = vec![0x00u8; FRAME_SIZE];
+
+        let mut rng = rand::thread_rng();
+
+        let points: Vec<ControlPoints<N>> = (0..FOCI_STM_SIZE)
+            .map(|_| {
+                (
+                    [0; N].map(|_| {
+                        ControlPoint::new(Vector3::new(
+                            rng.gen_range(-500.0 * mm..500.0 * mm),
+                            rng.gen_range(-500.0 * mm..500.0 * mm),
+                            rng.gen_range(0.0 * mm..500.0 * mm),
+                        ))
+                    }),
+                    rng.gen::<u8>(),
+                )
+                    .into()
+            })
+            .collect();
+        let rep = 0xFFFFFFFF;
+        let segment = Segment::S0;
+        let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
+        let transition_value = 0x0123456789ABCDEF;
+        let transition_mode = TransitionMode::SysTime(
+            DcSysTime::from_utc(
+                time::macros::datetime!(2000-01-01 0:00 UTC)
+                    + std::time::Duration::from_nanos(transition_value),
+            )
+            .unwrap(),
+        );
+
+        let mut op = FociSTMOp::new(
+            Arc::new(points.clone()),
+            SamplingConfig::DivisionRaw(freq_div),
+            rep,
+            segment,
+            Some(transition_mode),
+        );
+
+        assert_eq!(
+            op.required_size(&device),
+            size_of::<FociSTMHead>() + size_of::<STMFocus>() * N
+        );
+
+        assert_eq!(op.sent, 0);
+
+        assert_eq!(op.pack(&device, &mut tx), Ok(FRAME_SIZE));
+
+        assert_eq!(op.sent, FOCI_STM_SIZE);
+
+        assert_eq!(
+            FociSTMHead {
+                tag: TypeTag::FociSTM,
+                flag: FociSTMControlFlags::BEGIN
+                    | FociSTMControlFlags::END
+                    | FociSTMControlFlags::TRANSITION,
+                send_num: FOCI_STM_SIZE as u8,
+                segment: segment as _,
+                transition_mode: transition_mode.mode(),
+                num_foci: N as u8,
+                sound_speed: (device.sound_speed / METER * 64.0).round() as u16,
+                freq_div,
+                rep,
+                transition_value: transition_mode.value(),
+            },
+            parse_tx_as::<FociSTMHead>(&tx)
+        );
+
+        tx[size_of::<FociSTMHead>()..]
+            .chunks(size_of::<STMFocus>() * N)
+            .zip(points.iter())
+            .for_each(|(d, p)| {
+                let base_offset = p[0].offset();
+                (0..N).for_each(|i| {
+                    let mut buf = [0x0000u16; 4];
+                    unsafe {
+                        let _ = (*(&mut buf as *mut _ as *mut STMFocus)).set(
+                            p[i].point().x,
+                            p[i].point().y,
+                            p[i].point().z,
+                            if i == 0 {
+                                p.intensity().value()
+                            } else {
+                                (p[i].offset() - base_offset).value()
+                            },
+                        );
+                    }
+                    assert_eq!(d[i * size_of::<STMFocus>()], (buf[0] & 0xFF) as u8);
+                    assert_eq!(
+                        d[i * size_of::<STMFocus>() + 1],
+                        ((buf[0] >> 8) & 0xFF) as u8
+                    );
+                    assert_eq!(d[i * size_of::<STMFocus>() + 2], (buf[1] & 0xFF) as u8);
+                    assert_eq!(
+                        d[i * size_of::<STMFocus>() + 3],
+                        ((buf[1] >> 8) & 0xFF) as u8
+                    );
+                    assert_eq!(d[i * size_of::<STMFocus>() + 4], (buf[2] & 0xFF) as u8);
+                    assert_eq!(
+                        d[i * size_of::<STMFocus>() + 5],
+                        ((buf[2] >> 8) & 0xFF) as u8
+                    );
+                    assert_eq!(d[i * size_of::<STMFocus>() + 6], (buf[3] & 0xFF) as u8);
+                    assert_eq!(
+                        d[i * size_of::<STMFocus>() + 7] & 0x3F,
+                        ((buf[3] >> 8) & 0xFF) as u8
+                    );
+                });
             });
     }
 
@@ -562,5 +682,98 @@ mod tests {
         let mut tx = vec![0x00u8; size_of::<FociSTMHead>() + n * size_of::<STMFocus>()];
 
         assert_eq!(op.pack(&device, &mut tx).map(|_| ()), expected);
+    }
+
+    #[test]
+    fn test_foci_out_of_range() {
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
+
+        {
+            let mut op = FociSTMOp::new(
+                Arc::new(
+                    (0..2)
+                        .map(|_| ControlPoints::<0>::new([]))
+                        .collect::<Vec<_>>(),
+                ),
+                SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
+                0xFFFFFFFF,
+                Segment::S0,
+                Some(TransitionMode::SyncIdx),
+            );
+            let mut tx = vec![0x00u8; size_of::<FociSTMHead>()];
+            assert_eq!(
+                Err(AUTDInternalError::FociSTMNumFociOutOfRange(0)),
+                op.pack(&device, &mut tx).map(|_| ())
+            );
+        }
+
+        {
+            let mut op = FociSTMOp::new(
+                Arc::new(
+                    (0..2)
+                        .map(|_| [0; 1].map(|_| ControlPoint::new(Vector3::zeros())).into())
+                        .collect::<Vec<_>>(),
+                ),
+                SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
+                0xFFFFFFFF,
+                Segment::S0,
+                Some(TransitionMode::SyncIdx),
+            );
+            let mut tx = vec![0x00u8; size_of::<FociSTMHead>() + 2 * 1 * size_of::<STMFocus>()];
+            assert_eq!(Ok(()), op.pack(&device, &mut tx).map(|_| ()));
+        }
+
+        {
+            let mut op = FociSTMOp::new(
+                Arc::new(
+                    (0..2)
+                        .map(|_| {
+                            [0; FOCI_STM_FOCI_NUM_MAX]
+                                .map(|_| ControlPoint::new(Vector3::zeros()))
+                                .into()
+                        })
+                        .collect::<Vec<_>>(),
+                ),
+                SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
+                0xFFFFFFFF,
+                Segment::S0,
+                Some(TransitionMode::SyncIdx),
+            );
+            let mut tx = vec![
+                0x00u8;
+                size_of::<FociSTMHead>()
+                    + 2 * FOCI_STM_FOCI_NUM_MAX * size_of::<STMFocus>()
+            ];
+            assert_eq!(Ok(()), op.pack(&device, &mut tx).map(|_| ()));
+        }
+
+        {
+            let mut op = FociSTMOp::new(
+                Arc::new(
+                    (0..2)
+                        .map(|_| {
+                            [0; FOCI_STM_FOCI_NUM_MAX + 1]
+                                .map(|_| ControlPoint::new(Vector3::zeros()))
+                                .into()
+                        })
+                        .collect::<Vec<_>>(),
+                ),
+                SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
+                0xFFFFFFFF,
+                Segment::S0,
+                Some(TransitionMode::SyncIdx),
+            );
+            let mut tx = vec![
+                0x00u8;
+                size_of::<FociSTMHead>()
+                    + 2 * (FOCI_STM_FOCI_NUM_MAX + 1) * size_of::<STMFocus>()
+            ];
+            assert_eq!(
+                Err(AUTDInternalError::FociSTMNumFociOutOfRange(
+                    FOCI_STM_FOCI_NUM_MAX + 1
+                )),
+                op.pack(&device, &mut tx).map(|_| ())
+            );
+        }
     }
 }
