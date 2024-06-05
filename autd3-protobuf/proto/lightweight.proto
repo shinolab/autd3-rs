@@ -18,7 +18,7 @@ message DatagramLightweight {
     Synchronize synchronize = 5;
     ForceFan force_fan = 6;
     ReadsFPGAState reads_fpga_state = 8;
-    FocusSTM focus_stm = 10;
+    FociSTM foci_stm = 10;
     GainSTM gain_stm = 11;
     SwapSegment swap_segment = 12;
   }

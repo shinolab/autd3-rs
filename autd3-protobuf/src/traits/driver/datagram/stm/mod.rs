@@ -1,3 +1,3 @@
 mod control_point;
-mod focus;
+mod foci;
 mod gain;

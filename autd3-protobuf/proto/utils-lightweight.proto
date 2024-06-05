@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package autd3;
 
+import "utils.proto";
+
 message EmitIntensity {
   uint32 value = 1;
 }
@@ -37,4 +39,14 @@ enum TransitionMode {
   SysTime = 1;
   GPIO = 2;
   Ext = 3;
+}
+
+message ControlPoint {
+    Vector3 pos = 1;
+    Phase offset = 2;
+}
+
+message ControlPoints {
+    repeated ControlPoint points = 1;
+    EmitIntensity intensity = 2;
 }

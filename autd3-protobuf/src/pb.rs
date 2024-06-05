@@ -1035,6 +1035,22 @@ pub struct LoopBehavior {
     #[prost(uint32, tag = "1")]
     pub rep: u32,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ControlPoint {
+    #[prost(message, optional, tag = "1")]
+    pub pos: ::core::option::Option<Vector3>,
+    #[prost(message, optional, tag = "2")]
+    pub offset: ::core::option::Option<Phase>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ControlPoints {
+    #[prost(message, repeated, tag = "1")]
+    pub points: ::prost::alloc::vec::Vec<ControlPoint>,
+    #[prost(message, optional, tag = "2")]
+    pub intensity: ::core::option::Option<EmitIntensity>,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum Segment {
@@ -1507,29 +1523,109 @@ pub struct GainStm {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct FocusStm {
+pub struct FociStmProps {
     #[prost(message, optional, tag = "1")]
     pub config: ::core::option::Option<SamplingConfig>,
     #[prost(message, optional, tag = "2")]
     pub loop_behavior: ::core::option::Option<LoopBehavior>,
     #[prost(enumeration = "Segment", tag = "3")]
     pub segment: i32,
-    #[prost(message, repeated, tag = "5")]
-    pub points: ::prost::alloc::vec::Vec<focus_stm::ControlPoint>,
-    #[prost(enumeration = "TransitionMode", optional, tag = "6")]
+    #[prost(enumeration = "TransitionMode", optional, tag = "4")]
     pub transition_mode: ::core::option::Option<i32>,
-    #[prost(uint64, optional, tag = "7")]
+    #[prost(uint64, optional, tag = "5")]
     pub transition_value: ::core::option::Option<u64>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FociStm1 {
+    #[prost(message, optional, tag = "1")]
+    pub props: ::core::option::Option<FociStmProps>,
+    #[prost(message, repeated, tag = "2")]
+    pub foci: ::prost::alloc::vec::Vec<ControlPoints>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FociStm2 {
+    #[prost(message, optional, tag = "1")]
+    pub props: ::core::option::Option<FociStmProps>,
+    #[prost(message, repeated, tag = "2")]
+    pub foci: ::prost::alloc::vec::Vec<ControlPoints>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FociStm3 {
+    #[prost(message, optional, tag = "1")]
+    pub props: ::core::option::Option<FociStmProps>,
+    #[prost(message, repeated, tag = "2")]
+    pub foci: ::prost::alloc::vec::Vec<ControlPoints>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FociStm4 {
+    #[prost(message, optional, tag = "1")]
+    pub props: ::core::option::Option<FociStmProps>,
+    #[prost(message, repeated, tag = "2")]
+    pub foci: ::prost::alloc::vec::Vec<ControlPoints>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FociStm5 {
+    #[prost(message, optional, tag = "1")]
+    pub props: ::core::option::Option<FociStmProps>,
+    #[prost(message, repeated, tag = "2")]
+    pub foci: ::prost::alloc::vec::Vec<ControlPoints>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FociStm6 {
+    #[prost(message, optional, tag = "1")]
+    pub props: ::core::option::Option<FociStmProps>,
+    #[prost(message, repeated, tag = "2")]
+    pub foci: ::prost::alloc::vec::Vec<ControlPoints>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FociStm7 {
+    #[prost(message, optional, tag = "1")]
+    pub props: ::core::option::Option<FociStmProps>,
+    #[prost(message, repeated, tag = "2")]
+    pub foci: ::prost::alloc::vec::Vec<ControlPoints>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FociStm8 {
+    #[prost(message, optional, tag = "1")]
+    pub props: ::core::option::Option<FociStmProps>,
+    #[prost(message, repeated, tag = "2")]
+    pub foci: ::prost::alloc::vec::Vec<ControlPoints>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FociStm {
+    #[prost(oneof = "foci_stm::Inner", tags = "1, 2, 3, 4, 5, 6, 7, 8")]
+    pub inner: ::core::option::Option<foci_stm::Inner>,
+}
 /// Nested message and enum types in `FociSTM`.
-pub mod focus_stm {
+pub mod foci_stm {
     #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct ControlPoint {
-        #[prost(message, optional, tag = "1")]
-        pub intensity: ::core::option::Option<super::EmitIntensity>,
-        #[prost(message, optional, tag = "2")]
-        pub pos: ::core::option::Option<super::Vector3>,
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Inner {
+        #[prost(message, tag = "1")]
+        N1(super::FociStm1),
+        #[prost(message, tag = "2")]
+        N2(super::FociStm2),
+        #[prost(message, tag = "3")]
+        N3(super::FociStm3),
+        #[prost(message, tag = "4")]
+        N4(super::FociStm4),
+        #[prost(message, tag = "5")]
+        N5(super::FociStm5),
+        #[prost(message, tag = "6")]
+        N6(super::FociStm6),
+        #[prost(message, tag = "7")]
+        N7(super::FociStm7),
+        #[prost(message, tag = "8")]
+        N8(super::FociStm8),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -1550,7 +1646,7 @@ pub struct SwapSegmentModulation {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct SwapSegmentFocusStm {
+pub struct SwapSegmentFociStm {
     #[prost(enumeration = "Segment", tag = "1")]
     pub segment: i32,
     #[prost(enumeration = "TransitionMode", tag = "2")]
@@ -1584,7 +1680,7 @@ pub mod swap_segment {
         #[prost(message, tag = "2")]
         Modulation(super::SwapSegmentModulation),
         #[prost(message, tag = "3")]
-        FocusStm(super::SwapSegmentFocusStm),
+        FociStm(super::SwapSegmentFociStm),
         #[prost(message, tag = "4")]
         GainStm(super::SwapSegmentGainStm),
     }
@@ -1618,7 +1714,7 @@ pub mod datagram_lightweight {
         #[prost(message, tag = "8")]
         ReadsFpgaState(super::ReadsFpgaState),
         #[prost(message, tag = "10")]
-        FocusStm(super::FocusStm),
+        FociStm(super::FociStm),
         #[prost(message, tag = "11")]
         GainStm(super::GainStm),
         #[prost(message, tag = "12")]
