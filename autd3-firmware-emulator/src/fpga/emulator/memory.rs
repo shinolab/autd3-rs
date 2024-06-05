@@ -404,7 +404,7 @@ impl Memory {
         if self.is_stm_gain_mode(segment) {
             self.gain_stm_drives(segment, idx)
         } else {
-            self.focus_stm_drives(segment, idx)
+            self.foci_stm_drives(segment, idx)
         }
     }
 
@@ -425,7 +425,7 @@ impl Memory {
         .collect()
     }
 
-    fn focus_stm_drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {
+    fn foci_stm_drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {
         let bram = match segment {
             Segment::S0 => &self.stm_bram_0,
             Segment::S1 => &self.stm_bram_1,
@@ -440,7 +440,7 @@ impl Memory {
                 let (sin, cos): (Vec<_>, Vec<_>) = (0..self.num_foci(segment) as usize)
                     .map(|i| {
                         let mut x = (bram[32 * idx + 4 * i + 1] as u32) << 16 & 0x30000;
-                        x |= bram[32 * idx + 32 * i] as u32;
+                        x |= bram[32 * idx + 4 * i] as u32;
                         let x = if (x & 0x20000) != 0 {
                             (x | 0xFFFC0000) as i32
                         } else {

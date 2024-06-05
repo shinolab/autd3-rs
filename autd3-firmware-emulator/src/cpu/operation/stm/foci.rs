@@ -149,38 +149,42 @@ impl CPUEmulator {
         if size <= page_capacity {
             let mut dst =
                 ((self.stm_cycle[segment as usize] & FOCI_STM_BUF_PAGE_SIZE_MASK) << 5) as u16;
-            (0..size as usize).for_each(|_| unsafe {
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
+            (0..size as usize).for_each(|_| {
+                (0..self.num_foci).for_each(|_| unsafe {
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                });
                 dst += 4 * (8 - self.num_foci as u16);
             });
             self.stm_cycle[segment as usize] += size;
         } else {
             let mut dst =
                 ((self.stm_cycle[segment as usize] & FOCI_STM_BUF_PAGE_SIZE_MASK) << 5) as u16;
-            (0..page_capacity as usize).for_each(|_| unsafe {
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
+            (0..page_capacity as usize).for_each(|_| {
+                (0..self.num_foci).for_each(|_| unsafe {
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                });
                 dst += 4 * (8 - self.num_foci as u16);
             });
             self.stm_cycle[segment as usize] += page_capacity;
@@ -193,19 +197,21 @@ impl CPUEmulator {
             let mut dst =
                 ((self.stm_cycle[segment as usize] & FOCI_STM_BUF_PAGE_SIZE_MASK) << 5) as u16;
             let cnt = size - page_capacity;
-            (0..cnt as usize).for_each(|_| unsafe {
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
-                self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                dst += 1;
-                src = src.add(1);
+            (0..cnt as usize).for_each(|_| {
+                (0..self.num_foci).for_each(|_| unsafe {
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                });
                 dst += 4 * (8 - self.num_foci as u16);
             });
             self.stm_cycle[segment as usize] += size - page_capacity;
