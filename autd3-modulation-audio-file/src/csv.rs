@@ -36,7 +36,12 @@ impl Csv {
             .records()
             .map(|r| {
                 let record = r?;
-                csv::Result::Ok(record.iter().map(|x| x.to_owned()).collect::<Vec<_>>())
+                csv::Result::Ok(
+                    record
+                        .iter()
+                        .map(|x| x.trim().to_owned())
+                        .collect::<Vec<_>>(),
+                )
             })
             .collect::<csv::Result<Vec<_>>>()?
             .into_iter()
