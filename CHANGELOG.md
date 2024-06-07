@@ -1,3 +1,7 @@
+# 25.0.1
+
+- Fix `gain::Group`
+
 # 25.0.0
 
 - Update firmware to v8.0.0
