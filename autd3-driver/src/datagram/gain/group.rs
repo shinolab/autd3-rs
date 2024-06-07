@@ -110,20 +110,23 @@ where
         gain_map
             .par_iter()
             .try_for_each(|(k, g)| -> Result<(), AUTDInternalError> {
-                geometry.devices().for_each(|dev| {
-                    let f = (f)(dev);
-                    let g = &g[dev.idx()];
-                    let r = result[dev.idx()].as_ptr() as *mut Drive;
-                    dev.iter().for_each(|tr| {
-                        if let Some(kk) = f(tr) {
-                            if &kk == k {
-                                unsafe {
-                                    r.add(tr.idx()).write(g(tr));
+                geometry
+                    .devices()
+                    .zip(g.iter())
+                    .zip(result.iter())
+                    .for_each(|((dev, g), result)| {
+                        let f = (f)(dev);
+                        let r = result.as_ptr() as *mut Drive;
+                        dev.iter().for_each(|tr| {
+                            if let Some(kk) = f(tr) {
+                                if &kk == k {
+                                    unsafe {
+                                        r.add(tr.idx()).write(g(tr));
+                                    }
                                 }
                             }
-                        }
-                    })
-                });
+                        })
+                    });
                 Ok(())
             })?;
         let drives_cache = geometry
