@@ -11,6 +11,7 @@ use crate::error::AudioFileError;
 #[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct RawPCM {
     path: PathBuf,
+    #[no_change]
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
 }
@@ -30,6 +31,11 @@ impl RawPCM {
         let mut raw_buffer = Vec::new();
         reader.read_to_end(&mut raw_buffer)?;
         Ok(raw_buffer)
+    }
+
+    #[deprecated(note = "Do not change the sampling configuration", since = "25.0.2")]
+    pub fn with_sampling_config(self, config: SamplingConfig) -> Self {
+        Self { config, ..self }
     }
 }
 
@@ -56,19 +62,18 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(vec![0xFF, 0x7F, 0x00]), vec![0xFF, 0x7F, 0x00], 4000 * Hz, SamplingConfig::Division(5120))]
+    #[case(Ok(vec![0xFF, 0x7F, 0x00]), vec![0xFF, 0x7F, 0x00], 4000 * Hz)]
     fn new(
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
         #[case] data: Vec<u8>,
         #[case] sample_rate: Freq<u32>,
-        #[case] config: SamplingConfig,
     ) -> anyhow::Result<()> {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("tmp.dat");
         create_dat(&path, &data)?;
 
         let geometry = create_geometry(1);
-        let m = RawPCM::new(&path, sample_rate).with_sampling_config(config);
+        let m = RawPCM::new(&path, sample_rate);
         assert_eq!(expect, m.calc(&geometry));
 
         Ok(())
