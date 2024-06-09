@@ -3,6 +3,7 @@ use crate::{derive::*, geometry::Vector3};
 use derive_more::{Deref, DerefMut};
 
 #[derive(Clone, Copy, Builder, PartialEq, Debug)]
+#[repr(C)]
 pub struct ControlPoint {
     #[getset]
     point: Vector3,
@@ -32,6 +33,7 @@ impl From<&Vector3> for ControlPoint {
 }
 
 #[derive(Clone, Builder, PartialEq, Debug, Deref, DerefMut)]
+#[repr(C)]
 pub struct ControlPoints<const N: usize> {
     #[deref]
     #[deref_mut]
