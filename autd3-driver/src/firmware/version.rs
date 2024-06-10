@@ -13,7 +13,7 @@ pub struct FirmwareVersion {
 
 impl FirmwareVersion {
     pub const LATEST_VERSION_NUM_MAJOR: u8 = 0x92;
-    pub const LATEST_VERSION_NUM_MINOR: u8 = 0x00;
+    pub const LATEST_VERSION_NUM_MINOR: u8 = 0x01;
     pub const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
 
     #[doc(hidden)]
@@ -195,7 +195,7 @@ mod tests {
 
     #[test]
     fn latest() {
-        assert_eq!("v8.0.0", FirmwareVersion::latest());
+        assert_eq!("v8.0.1", FirmwareVersion::latest());
     }
 
     #[test]
