@@ -437,49 +437,45 @@ impl Memory {
         self.tr_pos
             .iter()
             .map(|&tr| {
-                let (sin, cos): (Vec<_>, Vec<_>) = (0..self.num_foci(segment) as usize)
-                    .map(|i| {
-                        let mut x = (bram[32 * idx + 4 * i + 1] as u32) << 16 & 0x30000;
-                        x |= bram[32 * idx + 4 * i] as u32;
-                        let x = if (x & 0x20000) != 0 {
-                            (x | 0xFFFC0000) as i32
-                        } else {
-                            x as i32
-                        };
-                        let mut y = (bram[32 * idx + 4 * i + 2] as u32) << 14 & 0x3C000;
-                        y |= bram[32 * idx + 4 * i + 1] as u32 >> 2;
-                        let y = if (y & 0x20000) != 0 {
-                            (y | 0xFFFC0000) as i32
-                        } else {
-                            y as i32
-                        };
-                        let mut z = (bram[32 * idx + 4 * i + 3] as u32) << 12 & 0x3F000;
-                        z |= bram[32 * idx + 4 * i + 2] as u32 >> 4;
-                        let z = if (z & 0x20000) != 0 {
-                            (z | 0xFFFC0000) as i32
-                        } else {
-                            z as i32
-                        };
-                        let offset = bram[32 * idx + 4 * i + 3] >> 6 & 0x00FF;
+                let tr_z = ((tr >> 32) & 0xFFFF) as i16 as i32;
+                let tr_x = ((tr >> 16) & 0xFFFF) as i16 as i32;
+                let tr_y = (tr & 0xFFFF) as i16 as i32;
+                let (sin, cos) = (0..self.num_foci(segment) as usize).fold((0, 0), |acc, i| {
+                    let mut x = (bram[32 * idx + 4 * i + 1] as u32) << 16 & 0x30000;
+                    x |= bram[32 * idx + 4 * i] as u32;
+                    let x = if (x & 0x20000) != 0 {
+                        (x | 0xFFFC0000) as i32
+                    } else {
+                        x as i32
+                    };
+                    let mut y = (bram[32 * idx + 4 * i + 2] as u32) << 14 & 0x3C000;
+                    y |= bram[32 * idx + 4 * i + 1] as u32 >> 2;
+                    let y = if (y & 0x20000) != 0 {
+                        (y | 0xFFFC0000) as i32
+                    } else {
+                        y as i32
+                    };
+                    let mut z = (bram[32 * idx + 4 * i + 3] as u32) << 12 & 0x3F000;
+                    z |= bram[32 * idx + 4 * i + 2] as u32 >> 4;
+                    let z = if (z & 0x20000) != 0 {
+                        (z | 0xFFFC0000) as i32
+                    } else {
+                        z as i32
+                    };
+                    let offset = bram[32 * idx + 4 * i + 3] >> 6 & 0x00FF;
 
-                        let tr_z = ((tr >> 32) & 0xFFFF) as i16 as i32;
-                        let tr_x = ((tr >> 16) & 0xFFFF) as i16 as i32;
-                        let tr_y = (tr & 0xFFFF) as i16 as i32;
-                        let d2 = (x - tr_x) * (x - tr_x)
-                            + (y - tr_y) * (y - tr_y)
-                            + (z - tr_z) * (z - tr_z);
-                        let dist = d2.sqrt() as u32;
-                        let q = ((dist << 14) / sound_speed as u32) as usize;
-                        let q = if i == 0 { q } else { q + offset as usize };
-                        (self.sin_table[q % 256], self.sin_table[(q + 64) % 256])
-                    })
-                    .unzip();
-                let sin = ((sin.iter().fold(0, |acc, &s| acc + s as u16)
-                    / self.num_foci(segment) as u16)
-                    >> 1) as usize;
-                let cos = ((cos.iter().fold(0, |acc, &c| acc + c as u16)
-                    / self.num_foci(segment) as u16)
-                    >> 1) as usize;
+                    let d2 =
+                        (x - tr_x) * (x - tr_x) + (y - tr_y) * (y - tr_y) + (z - tr_z) * (z - tr_z);
+                    let dist = d2.sqrt() as u32;
+                    let q = ((dist << 14) / sound_speed as u32) as usize;
+                    let q = if i == 0 { q } else { q + offset as usize };
+                    (
+                        acc.0 + self.sin_table[q % 256] as u16,
+                        acc.1 + self.sin_table[(q + 64) % 256] as u16,
+                    )
+                });
+                let sin = ((sin / self.num_foci(segment) as u16) >> 1) as usize;
+                let cos = ((cos / self.num_foci(segment) as u16) >> 1) as usize;
                 let phase = self.atan_table[(sin << 7) | cos];
                 Drive::new(Phase::new(phase), EmitIntensity::new(intensity))
             })

@@ -23,19 +23,19 @@ use time::OffsetDateTime;
 
 use crate::{create_geometry, op::gain::TestGain, send};
 
-pub fn gen_random_foci(num: usize) -> Vec<ControlPoints<1>> {
+pub fn gen_random_foci<const N: usize>(num: usize) -> Vec<ControlPoints<N>> {
     let mut rng = rand::thread_rng();
     (0..num)
         .map(|_| {
-            (
+            ControlPoints::new([0; N].map(|_| {
                 ControlPoint::new(Vector3::new(
                     rng.gen_range(-100.0 * mm..100.0 * mm),
                     rng.gen_range(-100.0 * mm..100.0 * mm),
                     rng.gen_range(-100.0 * mm..100.0 * mm),
-                )),
-                rng.gen::<u8>(),
-            )
-                .into()
+                ))
+                .with_offset(rng.gen::<u8>())
+            }))
+            .with_intensity(rng.gen::<u8>())
         })
         .collect()
 }
@@ -58,7 +58,7 @@ fn test_send_foci_stm() -> anyhow::Result<()> {
                 * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
                 ..=SAMPLING_FREQ_DIV_MAX,
         );
-        let foci = gen_random_foci(FOCI_STM_BUF_SIZE_MAX);
+        let foci = gen_random_foci::<1>(FOCI_STM_BUF_SIZE_MAX);
         let loop_behavior = LoopBehavior::infinite();
         let segment = Segment::S0;
         let transition_mode = TransitionMode::Immediate;
@@ -112,7 +112,7 @@ fn test_send_foci_stm() -> anyhow::Result<()> {
                 * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
                 ..=SAMPLING_FREQ_DIV_MAX,
         );
-        let foci = gen_random_foci(2);
+        let foci = gen_random_foci::<1>(2);
         let loop_behavior = LoopBehavior::once();
         let segment = Segment::S1;
 
@@ -182,7 +182,7 @@ fn change_foci_stm_segment() -> anyhow::Result<()> {
 
     let stm = FociSTM::from_sampling_config(
         SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
-        gen_random_foci(2).into_iter(),
+        gen_random_foci::<1>(2).into_iter(),
     )
     .with_loop_behavior(LoopBehavior::infinite())
     .with_segment(Segment::S1, None);
@@ -208,7 +208,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
     {
         let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
-            gen_random_foci(2).into_iter(),
+            gen_random_foci::<1>(2).into_iter(),
         )
         .with_loop_behavior(LoopBehavior::infinite())
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
@@ -239,7 +239,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
                 SAMPLING_FREQ_DIV_MIN
                     * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
             ),
-            gen_random_foci(2).into_iter(),
+            gen_random_foci::<1>(2).into_iter(),
         )
         .with_loop_behavior(LoopBehavior::infinite())
         .with_segment(Segment::S1, None);
@@ -325,7 +325,7 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
     {
         let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
-            gen_random_foci(2).into_iter(),
+            gen_random_foci::<1>(2).into_iter(),
         )
         .with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
         assert_eq!(
@@ -338,7 +338,7 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
     {
         let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
-            gen_random_foci(2).into_iter(),
+            gen_random_foci::<1>(2).into_iter(),
         )
         .with_loop_behavior(LoopBehavior::once())
         .with_segment(Segment::S1, Some(TransitionMode::Immediate));
@@ -353,7 +353,7 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
     {
         let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
-            gen_random_foci(2).into_iter(),
+            gen_random_foci::<1>(2).into_iter(),
         )
         .with_segment(Segment::S1, None);
 
@@ -386,7 +386,7 @@ fn test_miss_transition_time(
     let transition_mode = TransitionMode::SysTime(DcSysTime::from_utc(transition_time).unwrap());
     let stm = FociSTM::from_sampling_config(
         SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
-        gen_random_foci(2).into_iter(),
+        gen_random_foci::<1>(2).into_iter(),
     )
     .with_loop_behavior(LoopBehavior::once())
     .with_segment(Segment::S1, Some(transition_mode));
@@ -398,4 +398,114 @@ fn test_miss_transition_time(
     }
 
     Ok(())
+}
+
+fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
+    let sin_table = include_bytes!("sin.dat");
+    let atan_table = include_bytes!("atan.dat");
+
+    let mut rng = rand::thread_rng();
+
+    let mut geometry = create_geometry(1);
+    geometry.set_sound_speed(400e3);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
+
+    {
+        let freq_div = rng.gen_range(
+            SAMPLING_FREQ_DIV_MIN
+                * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
+                ..=SAMPLING_FREQ_DIV_MAX,
+        );
+        let foci = gen_random_foci::<N>(1000);
+        let loop_behavior = LoopBehavior::infinite();
+        let segment = Segment::S0;
+        let transition_mode = TransitionMode::Immediate;
+
+        let stm = FociSTM::from_sampling_config(
+            SamplingConfig::DivisionRaw(freq_div),
+            foci.clone().into_iter(),
+        )
+        .with_loop_behavior(loop_behavior)
+        .with_segment(segment, Some(transition_mode));
+
+        assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
+
+        assert!(!cpu.fpga().is_stm_gain_mode(Segment::S0));
+        assert_eq!(segment, cpu.fpga().req_stm_segment());
+        assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(Segment::S0));
+        assert_eq!(foci.len(), cpu.fpga().stm_cycle(Segment::S0));
+        assert_eq!(freq_div, cpu.fpga().stm_freq_division(Segment::S0));
+        assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
+        assert_eq!(
+            (geometry[0].sound_speed / METER * 64.0).round() as u16,
+            cpu.fpga().sound_speed(Segment::S0)
+        );
+        foci.iter().enumerate().for_each(|(focus_idx, focus)| {
+            cpu.fpga()
+                .drives(Segment::S0, focus_idx)
+                .iter()
+                .enumerate()
+                .for_each(|(tr_idx, &drive)| {
+                    let tr = cpu.fpga().local_tr_pos()[tr_idx];
+                    let tx = ((tr >> 16) & 0xFFFF) as i32;
+                    let ty = (tr & 0xFFFF) as i16 as i32;
+                    let tz = 0;
+                    let base_offset = focus[0].offset();
+                    let (sin, cos) = focus.into_iter().fold((0, 0), |acc, f| {
+                        let fx = (f.point().x / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                        let fy = (f.point().y / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                        let fz = (f.point().z / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                        let d =
+                            ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
+                        let q = (d << 14) / cpu.fpga().sound_speed(Segment::S0) as u32
+                            + (f.offset() - base_offset).value() as u32;
+                        let sin = sin_table[q as usize % 256] as usize;
+                        let cos = sin_table[(q as usize + 64) % 256] as usize;
+                        (acc.0 + sin, acc.1 + cos)
+                    });
+                    let (sin, cos) = ((sin / N) >> 1, (cos / N) >> 1);
+                    let p = atan_table[(sin << 7) | cos];
+                    assert_eq!(Phase::new(p), drive.phase());
+                    assert_eq!(focus.intensity(), drive.intensity());
+                })
+        });
+    }
+
+    Ok(())
+}
+
+#[test]
+fn test_send_foci_stm_2() -> anyhow::Result<()> {
+    test_send_foci_stm_n::<2>()
+}
+
+#[test]
+fn test_send_foci_stm_3() -> anyhow::Result<()> {
+    test_send_foci_stm_n::<3>()
+}
+
+#[test]
+fn test_send_foci_stm_4() -> anyhow::Result<()> {
+    test_send_foci_stm_n::<4>()
+}
+
+#[test]
+fn test_send_foci_stm_5() -> anyhow::Result<()> {
+    test_send_foci_stm_n::<5>()
+}
+
+#[test]
+fn test_send_foci_stm_6() -> anyhow::Result<()> {
+    test_send_foci_stm_n::<6>()
+}
+
+#[test]
+fn test_send_foci_stm_7() -> anyhow::Result<()> {
+    test_send_foci_stm_n::<7>()
+}
+
+#[test]
+fn test_send_foci_stm_8() -> anyhow::Result<()> {
+    test_send_foci_stm_n::<8>()
 }
