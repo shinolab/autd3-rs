@@ -11,7 +11,7 @@ use autd3_driver::{
 };
 use autd3_firmware_emulator::CPUEmulator;
 
-use crate::{create_geometry, op::stm::focus::gen_random_foci, send};
+use crate::{create_geometry, op::stm::foci::gen_random_foci, send};
 
 #[derive(Modulation)]
 struct TestMod {
@@ -64,7 +64,7 @@ fn send_clear() -> anyhow::Result<()> {
                 SAMPLING_FREQ_DIV_MIN
                     * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
             ),
-            gen_random_foci(2).into_iter(),
+            gen_random_foci::<1>(2).into_iter(),
         )
         .with_segment(Segment::S0, Some(TransitionMode::Ext));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));

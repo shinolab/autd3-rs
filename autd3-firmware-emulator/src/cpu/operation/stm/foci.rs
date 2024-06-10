@@ -146,7 +146,7 @@ impl CPUEmulator {
         let page_capacity = (self.stm_cycle[segment as usize] & !FOCI_STM_BUF_PAGE_SIZE_MASK)
             + FOCI_STM_BUF_PAGE_SIZE
             - self.stm_cycle[segment as usize];
-        if size <= page_capacity {
+        if size < page_capacity {
             let mut dst =
                 ((self.stm_cycle[segment as usize] & FOCI_STM_BUF_PAGE_SIZE_MASK) << 5) as u16;
             (0..size as usize).for_each(|_| {
