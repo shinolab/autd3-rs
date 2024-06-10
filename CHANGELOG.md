@@ -1,3 +1,11 @@
+# 25.1.0
+
+- Update firmware to v8.0.1
+  - Fix `FociSTM` op
+- Add `repc(C)` for `ControlPoint` and `ControlPoints`
+- `with_sampling_config` of `RawPCM` and `Csv` is now deprecated
+- Trim records in `Csv`
+
 # 25.0.1
 
 - Fix `gain::Group`
