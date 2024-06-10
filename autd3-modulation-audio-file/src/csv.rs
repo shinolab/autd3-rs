@@ -51,10 +51,12 @@ impl Csv {
             .collect::<Result<Vec<u8>, _>>()?)
     }
 
+    // GRCOV_EXCL_START
     #[deprecated(note = "Do not change the sampling configuration", since = "25.0.2")]
     pub fn with_sampling_config(self, config: SamplingConfig) -> Self {
         Self { config, ..self }
     }
+    // GRCOV_EXCL_STOP
 }
 
 impl Modulation for Csv {
