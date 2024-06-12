@@ -96,7 +96,10 @@ pub trait DatagramST {
         None
     }
 
-    fn trace(&self, geometry: &Geometry);
+    #[tracing::instrument(skip(self, _geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+    }
 }
 
 pub trait IntoDatagramWithSegmentTransition<D: DatagramST> {
