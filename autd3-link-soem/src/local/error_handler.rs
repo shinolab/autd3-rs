@@ -38,7 +38,6 @@ impl<F: Fn(usize, Status)> EcatErrorHandler<F> {
         state_check_interval: std::time::Duration,
     ) {
         unsafe {
-            // let error_handler = EcatErrorHandler { on_lost, on_err };
             while is_open.load(Ordering::Acquire) {
                 if wkc.load(Ordering::Relaxed) < expected_wkc || ec_group[0].docheckstate != 0 {
                     self.handle();

@@ -99,7 +99,6 @@ impl LightweightClient {
         Ok(res.success)
     }
 
-    // Close connection
     pub async fn close(mut self) -> Result<(), crate::error::AUTDProtoBufError> {
         let res = self
             .client
