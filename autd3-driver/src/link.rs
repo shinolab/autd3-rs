@@ -109,6 +109,7 @@ pub use internal::Link;
 #[cfg(not(feature = "async-trait"))]
 pub use internal::LinkBuilder;
 
+#[tracing::instrument(skip(link, tx, rx, timeout))]
 pub async fn send_receive(
     link: &mut impl Link,
     tx: &TxDatagram,
@@ -117,6 +118,7 @@ pub async fn send_receive(
 ) -> Result<(), AUTDInternalError> {
     link.trace(tx, rx, timeout);
     let timeout = timeout.unwrap_or(link.timeout());
+    tracing::debug!("send with timeout: {:?}", timeout);
     if !link.send(tx).await? {
         return Err(AUTDInternalError::SendDataFailed);
     }

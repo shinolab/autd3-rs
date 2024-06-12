@@ -59,10 +59,10 @@ impl<L: Link> Controller<L> {
 impl<L: Link> Controller<L> {
     #[tracing::instrument(skip(self, s))]
     pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDError> {
-        s.trace(&self.geometry);
-
         let timeout = s.timeout();
         let parallel_threshold = s.parallel_threshold().unwrap_or(self.parallel_threshold);
+
+        s.trace(&self.geometry);
 
         let gen = s.operation_generator(&self.geometry)?;
         let mut operations = OperationHandler::generate(gen, &self.geometry);
@@ -70,6 +70,7 @@ impl<L: Link> Controller<L> {
             .await
     }
 
+    #[tracing::instrument(skip(self, operations))]
     pub(crate) async fn send_impl(
         &mut self,
         operations: &mut [(impl Operation, impl Operation)],
@@ -92,6 +93,7 @@ impl<L: Link> Controller<L> {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     pub(crate) async fn open_impl(
         &mut self,
         ultrasound_freq: Freq<u32>,
@@ -99,6 +101,7 @@ impl<L: Link> Controller<L> {
     ) -> Result<(), AUTDError> {
         #[cfg(target_os = "windows")]
         unsafe {
+            tracing::debug!("Set timer resulution: {:?}", self.timer_resulution);
             windows::Win32::Media::timeBeginPeriod(self.timer_resulution);
         }
         if ultrasound_freq != FREQ_40K {

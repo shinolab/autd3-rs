@@ -2,7 +2,7 @@ use std::{fmt::Debug, time::Duration};
 
 use autd3_driver::{
     datagram::Datagram,
-    derive::NullOp,
+    derive::{tracing, NullOp},
     error::AUTDInternalError,
     firmware::operation::{Operation, OperationGenerator},
     geometry::Device,
@@ -40,6 +40,7 @@ impl<'a, K: PartialEq + Debug, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
         }
     }
 
+    #[tracing::instrument(level = "debug", skip(self, d))]
     pub fn set<D: Datagram>(self, k: K, d: D) -> Result<Self, AUTDInternalError>
     where
         D::O1: 'static,
@@ -70,13 +71,17 @@ impl<'a, K: PartialEq + Debug, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
             (a, b) => a.or(b),
         };
 
+        d.trace(&cnt.geometry);
+
         let gen = d.operation_generator(&cnt.geometry)?;
+
         operations
             .iter_mut()
             .zip(cnt.geometry.devices())
             .for_each(|(op, dev)| {
                 if let Some(kk) = (f)(dev) {
                     if kk == k {
+                        tracing::debug!("Generate operation for device {}", dev.idx());
                         let (op1, op2) = gen.generate(dev);
                         *op = (Box::new(op1) as Box<_>, Box::new(op2) as Box<_>);
                     }
