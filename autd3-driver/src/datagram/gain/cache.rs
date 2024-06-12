@@ -69,6 +69,12 @@ impl<G: Gain> Gain for Cache<G> {
             Box::new(move |tr| drives[tr.idx()])
         }))
     }
+
+    #[tracing::instrument(level = "debug", skip(self, geometry), fields(cached = self.cache.borrow().len() == geometry.devices().count() && geometry.devices().all(|dev| self.cache.borrow().contains_key(&dev.idx()))))]
+    fn trace(&self, geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+        <G as Gain>::trace(&self.gain, geometry);
+    }
 }
 
 #[cfg(test)]

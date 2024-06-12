@@ -14,6 +14,12 @@ impl std::fmt::Display for Freq<u32> {
     }
 }
 
+impl std::fmt::Debug for Freq<u32> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{} Hz", self.freq)
+    }
+}
+
 impl std::ops::Mul<Hz> for u32 {
     type Output = Freq<u32>;
 

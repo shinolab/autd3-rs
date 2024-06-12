@@ -41,6 +41,16 @@ impl<F: Fn(&Device) -> bool> Datagram for ForceFan<F> {
     fn parallel_threshold(&self) -> Option<usize> {
         Some(usize::MAX)
     }
+
+    #[tracing::instrument(level = "debug", skip(self, geometry))]
+    fn trace(&self, geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+        if tracing::enabled!(tracing::Level::DEBUG) {
+            geometry
+                .devices()
+                .for_each(|dev| tracing::debug!("Device[{}]: {}", dev.idx(), (self.f)(&dev)));
+        }
+    }
 }
 
 #[cfg(feature = "capi")]

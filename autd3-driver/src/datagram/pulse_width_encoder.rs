@@ -1,8 +1,11 @@
-use crate::firmware::{fpga::PULSE_WIDTH_MAX, operation::PulseWidthEncoderOp};
+use crate::firmware::{
+    fpga::{PULSE_WIDTH_MAX, PWE_BUF_SIZE},
+    operation::PulseWidthEncoderOp,
+};
 
 use crate::datagram::*;
 
-const DEFAULT_TABLE: &[u8; 32768] = include_bytes!("asin.dat");
+const DEFAULT_TABLE: &[u8; PWE_BUF_SIZE] = include_bytes!("asin.dat");
 
 fn default_table(i: usize) -> u16 {
     if i >= 0xFF * 0xFF / 2 {
@@ -60,5 +63,25 @@ impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> Datagram for PulseW
 
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(PulseWidthEncoderOpGenerator { f: self.f })
+    }
+
+    #[tracing::instrument(skip(self, geometry))]
+    fn trace(&self, geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+        if tracing::enabled!(tracing::Level::DEBUG) {
+            geometry.devices().for_each(|dev| {
+                tracing::debug!("Device[{}]", dev.idx());
+                let f = (self.f)(dev);
+                if tracing::enabled!(tracing::Level::TRACE) {
+                    (0..PWE_BUF_SIZE).for_each(|i| {
+                        tracing::debug!("  PWE[{}] -> {}", i, f(i));
+                    });
+                } else {
+                    tracing::debug!("  PWE[{}] -> {}", 0, f(0));
+                    tracing::debug!("  ︙");
+                    tracing::debug!("  PWE[{}] -> {}", PWE_BUF_SIZE - 1, f(PWE_BUF_SIZE - 1));
+                }
+            });
+        }
     }
 }

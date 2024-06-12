@@ -63,6 +63,11 @@ impl Modulation for Csv {
     fn calc(&self, _: &Geometry) -> ModulationCalcResult {
         Ok(self.read_buf()?)
     }
+
+    #[tracing::instrument(level = "debug", skip(_geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+    }
 }
 
 #[cfg(test)]

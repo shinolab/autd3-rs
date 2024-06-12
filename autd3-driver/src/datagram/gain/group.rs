@@ -139,6 +139,25 @@ where
             Box::new(move |tr| d[tr.idx()])
         }))
     }
+
+    #[tracing::instrument(level = "debug", skip(self, geometry))]
+    fn trace(&self, geometry: &Geometry) {
+        tracing::info!("Group");
+        if tracing::enabled!(tracing::Level::TRACE) {
+            geometry.devices().for_each(|dev| {
+                tracing::trace!("Device[{}]", dev.idx());
+                dev.iter().for_each(|tr| {
+                    if let Some(key) = (self.f)(dev)(tr) {
+                        tracing::trace!(" Transducer[{}]: {:?}", tr.idx(), key);
+                    }
+                })
+            });
+            self.gain_map.iter().for_each(|(k, g)| {
+                tracing::trace!("Key: {:?}", k);
+                Gain::trace(g, geometry);
+            });
+        }
+    }
 }
 
 #[cfg(test)]

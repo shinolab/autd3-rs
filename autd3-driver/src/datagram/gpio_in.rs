@@ -47,4 +47,22 @@ impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> Datagram for Emul
     fn parallel_threshold(&self) -> Option<usize> {
         Some(usize::MAX)
     }
+
+    #[tracing::instrument(level = "debug", skip(self, geometry))]
+    fn trace(&self, geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+        if tracing::enabled!(tracing::Level::DEBUG) {
+            geometry.devices().for_each(|dev| {
+                let f = (self.f)(dev);
+                tracing::debug!(
+                    "Device[{}]: I0={}, I1={}, I2={}, I3={}",
+                    dev.idx(),
+                    f(GPIOIn::I0),
+                    f(GPIOIn::I1),
+                    f(GPIOIn::I2),
+                    f(GPIOIn::I3)
+                )
+            });
+        }
+    }
 }

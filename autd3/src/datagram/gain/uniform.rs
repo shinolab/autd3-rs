@@ -22,6 +22,11 @@ impl Gain for Uniform {
         let d = Drive::new(self.phase, self.intensity);
         Ok(Self::transform(move |_| move |_| d))
     }
+
+    #[tracing::instrument(level = "debug", skip(_geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+    }
 }
 
 #[cfg(test)]

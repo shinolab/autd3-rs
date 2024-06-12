@@ -52,6 +52,12 @@ impl<M: Modulation> Modulation for Cache<M> {
         let buffer = self.buffer().clone();
         Ok(buffer)
     }
+
+    #[tracing::instrument(level = "debug", skip(self, geometry), fields(%self.config, %self.loop_behavior, cached = !self.cache.borrow().is_empty()))]
+    fn trace(&self, geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+        <M as Modulation>::trace(&self.m, geometry);
+    }
 }
 
 #[cfg(test)]

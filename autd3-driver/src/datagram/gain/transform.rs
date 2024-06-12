@@ -51,6 +51,12 @@ impl<
             Box::new(move |tr| f(tr, src(tr)))
         }))
     }
+
+    #[tracing::instrument(skip(self, geometry))]
+    fn trace(&self, geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+        <G as Gain>::trace(&self.gain, geometry);
+    }
 }
 
 #[cfg(test)]

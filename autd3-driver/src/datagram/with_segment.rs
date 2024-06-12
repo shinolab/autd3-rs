@@ -35,6 +35,17 @@ impl<D: DatagramS> Datagram for DatagramWithSegment<D> {
     fn parallel_threshold(&self) -> Option<usize> {
         self.datagram.parallel_threshold()
     }
+
+    #[tracing::instrument(level = "debug", skip(self, geometry))]
+    fn trace(&self, geometry: &Geometry) {
+        tracing::info!(
+            "{} ({:?}, {:?})",
+            tynm::type_name::<D>(),
+            self.segment,
+            self.transition
+        );
+        self.datagram.trace(geometry);
+    }
 }
 
 pub trait DatagramS {
@@ -56,6 +67,8 @@ pub trait DatagramS {
     fn parallel_threshold(&self) -> Option<usize> {
         None
     }
+
+    fn trace(&self, geometry: &Geometry);
 }
 
 pub trait IntoDatagramWithSegment<D: DatagramS> {

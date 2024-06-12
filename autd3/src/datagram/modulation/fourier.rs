@@ -58,6 +58,34 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
             .map(|x| (x / buffers.len()) as u8)
             .collect::<Vec<_>>())
     }
+
+    #[tracing::instrument(level = "debug", skip(self, _geometry), fields(%self.config, %self.loop_behavior))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+        if self.components.is_empty() {
+            tracing::error!("Components is empty");
+            return;
+        }
+        if tracing::enabled!(tracing::Level::DEBUG) {
+            if tracing::enabled!(tracing::Level::TRACE) {
+                self.components.iter().enumerate().for_each(|(i, v)| {
+                    tracing::debug!("Components[{}]: {:?}", i, v);
+                });
+            } else {
+                tracing::debug!("Components[{}]: {:?}", 0, self.components[0]);
+                if self.components.len() > 2 {
+                    tracing::debug!("︙");
+                }
+                if self.components.len() > 1 {
+                    tracing::debug!(
+                        "Components[{}]: {:?}",
+                        self.components.len() - 1,
+                        self.components[self.components.len() - 1]
+                    );
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]

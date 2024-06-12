@@ -92,6 +92,34 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
             fn parallel_threshold(&self) -> Option<usize> {
                 Some(usize::MAX)
             }
+
+            #[tracing::instrument(skip(self, geometry))]
+            fn trace(&self, geometry: &Geometry) {
+                <Self as Modulation>::trace(self, geometry);
+                if tracing::enabled!(tracing::Level::DEBUG) {
+                    if let Ok(buf) = <Self as Modulation>::calc(self, geometry) {
+                        if buf.is_empty() {
+                            tracing::error!("Buffer is empty");
+                            return;
+                        }
+                        if tracing::enabled!(tracing::Level::TRACE) {
+                            buf.iter().enumerate().for_each(|(i, v)| {
+                                tracing::debug!("Buf[{}]: {:#04X}", i, v);
+                            });
+                        } else {
+                            tracing::debug!("Buf[{}]: {:#04X}", 0, buf[0]);
+                            if buf.len() > 2 {
+                                tracing::debug!("︙");
+                            }
+                            if buf.len() > 1 {
+                                tracing::debug!("Buf[{}]: {:#04X}", buf.len() - 1, buf.len() - 1);
+                            }
+                        }
+                    } else {
+                        tracing::error!("Failed to calculate modulation");
+                    }
+                }
+            }
         }
     };
 

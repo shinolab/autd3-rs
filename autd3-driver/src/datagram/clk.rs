@@ -2,7 +2,7 @@ use crate::firmware::operation::ConfigureClockOp;
 
 use crate::datagram::*;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ConfigureFPGAClock {}
 
 impl ConfigureFPGAClock {
@@ -37,5 +37,10 @@ impl Datagram for ConfigureFPGAClock {
 
     fn parallel_threshold(&self) -> Option<usize> {
         Some(usize::MAX)
+    }
+
+    #[tracing::instrument(level = "debug", skip(_geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
     }
 }

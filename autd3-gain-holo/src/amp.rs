@@ -10,7 +10,6 @@ pub struct kPa;
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Div, Mul)]
 pub struct Amplitude {
-    // Amplitude in Pa
     pub(crate) value: f32,
 }
 
@@ -57,6 +56,12 @@ impl std::ops::Mul<Amplitude> for f32 {
         Self::Output {
             value: self * rhs.value,
         }
+    }
+}
+
+impl std::fmt::Display for Amplitude {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:.2} Pa", self.value)
     }
 }
 

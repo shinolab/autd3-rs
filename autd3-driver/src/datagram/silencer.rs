@@ -190,6 +190,11 @@ impl Datagram for Silencer<FixedUpdateRate> {
     fn parallel_threshold(&self) -> Option<usize> {
         Some(usize::MAX)
     }
+
+    #[tracing::instrument(level = "debug", skip(_geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+    }
 }
 
 pub struct SilencerFixedCompletionStepsOpGenerator {
@@ -233,6 +238,11 @@ impl Datagram for Silencer<FixedCompletionSteps> {
 
     fn parallel_threshold(&self) -> Option<usize> {
         Some(usize::MAX)
+    }
+
+    #[tracing::instrument(level = "debug", skip(_geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
     }
 }
 

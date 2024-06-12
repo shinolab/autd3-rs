@@ -53,12 +53,22 @@ pub trait Gain {
             Box::new(move |tr| f(tr))
         })
     }
+
+    #[tracing::instrument(skip(self, _geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+    }
 }
 
 // GRCOV_EXCL_START
 impl<'a> Gain for Box<dyn Gain + 'a> {
     fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         self.as_ref().calc(geometry)
+    }
+
+    #[tracing::instrument(skip(self, geometry))]
+    fn trace(&self, geometry: &Geometry) {
+        self.as_ref().trace(geometry);
     }
 }
 
@@ -69,6 +79,11 @@ impl<'a> Datagram for Box<dyn Gain + 'a> {
 
     fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Self::G::new(self, geometry, Segment::S0, true)
+    }
+
+    #[tracing::instrument(skip(self, geometry))]
+    fn trace(&self, geometry: &Geometry) {
+        self.as_ref().trace(geometry);
     }
 }
 
@@ -85,11 +100,21 @@ impl<'a> DatagramS for Box<dyn Gain + 'a> {
     ) -> Result<Self::G, AUTDInternalError> {
         Self::G::new(self, geometry, segment, transition)
     }
+
+    #[tracing::instrument(skip(self, geometry))]
+    fn trace(&self, geometry: &Geometry) {
+        self.as_ref().trace(geometry);
+    }
 }
 
 impl<'a> Gain for Box<dyn Gain + Send + Sync + 'a> {
     fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         self.as_ref().calc(geometry)
+    }
+
+    #[tracing::instrument(skip(self, geometry))]
+    fn trace(&self, geometry: &Geometry) {
+        self.as_ref().trace(geometry);
     }
 }
 

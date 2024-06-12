@@ -35,6 +35,10 @@ pub trait ModulationProperty {
 #[allow(clippy::len_without_is_empty)]
 pub trait Modulation: ModulationProperty {
     fn calc(&self, geometry: &Geometry) -> ModulationCalcResult;
+    #[tracing::instrument(skip(self, _geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+    }
 }
 
 // GRCOV_EXCL_START
@@ -51,6 +55,10 @@ impl ModulationProperty for Box<dyn Modulation> {
 impl Modulation for Box<dyn Modulation> {
     fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
         self.as_ref().calc(geometry)
+    }
+
+    fn trace(&self, geometry: &Geometry) {
+        self.as_ref().trace(geometry);
     }
 }
 
@@ -102,6 +110,10 @@ impl DatagramST for Box<dyn Modulation> {
 
     fn parallel_threshold(&self) -> Option<usize> {
         Some(usize::MAX)
+    }
+
+    fn trace(&self, geometry: &Geometry) {
+        self.as_ref().trace(geometry);
     }
 }
 

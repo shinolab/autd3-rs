@@ -45,6 +45,11 @@ impl Datagram for SwapSegment {
     fn parallel_threshold(&self) -> Option<usize> {
         Some(usize::MAX)
     }
+
+    #[tracing::instrument(skip(_geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+    }
 }
 
 #[cfg(feature = "capi")]

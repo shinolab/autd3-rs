@@ -1,7 +1,7 @@
 use crate::geometry::Transducer;
 
 #[non_exhaustive]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum DebugType<'a> {
     None,
     BaseSignal,
@@ -49,6 +49,25 @@ impl DebugType<'_> {
             DebugType::ModIdx(idx) => *idx,
             DebugType::StmIdx(idx) => *idx,
             DebugType::Direct(v) => *v as u16,
+        }
+    }
+}
+
+impl<'a> std::fmt::Display for DebugType<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DebugType::None => write!(f, "None"),
+            DebugType::BaseSignal => write!(f, "BaseSignal"),
+            DebugType::Thermo => write!(f, "Thermo"),
+            DebugType::ForceFan => write!(f, "ForceFan"),
+            DebugType::Sync => write!(f, "Sync"),
+            DebugType::ModSegment => write!(f, "ModSegment"),
+            DebugType::ModIdx(idx) => write!(f, "ModIdx({})", idx),
+            DebugType::StmSegment => write!(f, "StmSegment"),
+            DebugType::StmIdx(idx) => write!(f, "StmIdx({})", idx),
+            DebugType::IsStmMode => write!(f, "IsStmMode"),
+            DebugType::PwmOut(tr) => write!(f, "PwmOut({})", tr.idx()),
+            DebugType::Direct(v) => write!(f, "Direct({})", v),
         }
     }
 }

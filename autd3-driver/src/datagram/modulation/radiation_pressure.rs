@@ -33,6 +33,12 @@ impl<M: Modulation> Modulation for RadiationPressure<M> {
             .map(|v| ((v as f32 / 255.).sqrt() * 255.).round() as u8)
             .collect())
     }
+
+    #[tracing::instrument(level = "debug", skip(self, geometry), fields(%self.config, %self.loop_behavior))]
+    fn trace(&self, geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+        <M as Modulation>::trace(&self.m, geometry);
+    }
 }
 
 #[cfg(test)]

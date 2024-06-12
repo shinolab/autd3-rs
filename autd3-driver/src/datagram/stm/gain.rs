@@ -167,6 +167,30 @@ impl<G: Gain> DatagramST for GainSTM<G> {
     fn timeout(&self) -> Option<std::time::Duration> {
         Some(DEFAULT_TIMEOUT)
     }
+
+    #[tracing::instrument(level = "debug", skip(self, geometry), fields(%self.loop_behavior, %self.sampling_config, ?self.mode))]
+    fn trace(&self, geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+        if tracing::enabled!(tracing::Level::DEBUG) {
+            if tracing::enabled!(tracing::Level::TRACE) {
+                self.gains.iter().enumerate().for_each(|(i, g)| {
+                    tracing::debug!("Gain[{}]", i);
+                    g.trace(geometry);
+                });
+            } else {
+                let len = self.gains.len();
+                tracing::debug!("Gain[{}]", 0);
+                self.gains[0].trace(geometry);
+                if len > 2 {
+                    tracing::debug!("︙");
+                }
+                if len > 1 {
+                    tracing::debug!("Gain[{}]", len - 1);
+                    self.gains[len - 1].trace(geometry);
+                }
+            }
+        }
+    }
 }
 
 #[cfg(feature = "capi")]
