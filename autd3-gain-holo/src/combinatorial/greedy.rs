@@ -147,6 +147,36 @@ impl<D: Directivity + 'static> Gain for Greedy<D> {
     ) -> GainCalcResult {
         self.calc_impl(geometry, Some(filter))
     }
+
+    #[tracing::instrument(level = "debug", skip(self, _geometry), fields(?self.phase_div, ?self.constraint))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+        if tracing::enabled!(tracing::Level::DEBUG) {
+            if tracing::enabled!(tracing::Level::TRACE) {
+                self.foci
+                    .iter()
+                    .zip(self.amps.iter())
+                    .enumerate()
+                    .for_each(|(i, (f, a))| {
+                        tracing::debug!("Foci[{}]: {:?}, {}", i, f, a);
+                    });
+            } else {
+                let len = self.foci.len();
+                tracing::debug!("Foci[{}]: {:?}, {}", 0, self.foci[0], self.amps[0]);
+                if len > 2 {
+                    tracing::debug!("︙");
+                }
+                if len > 1 {
+                    tracing::debug!(
+                        "Foci[{}]: {:?}, {}",
+                        0,
+                        self.foci[len - 1],
+                        self.amps[len - 1]
+                    );
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]

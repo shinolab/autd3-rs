@@ -27,6 +27,12 @@ impl<D: Datagram> Datagram for DatagramWithParallelThreshold<D> {
     fn parallel_threshold(&self) -> Option<usize> {
         Some(self.threshold)
     }
+
+    #[tracing::instrument(level = "debug", skip(self, geometry))]
+    fn trace(&self, geometry: &Geometry) {
+        tracing::info!("{} ({:?})", tynm::type_name::<Self>(), self.threshold);
+        self.datagram.trace(geometry);
+    }
 }
 
 pub trait IntoDatagramWithParallelThreshold<D: Datagram> {

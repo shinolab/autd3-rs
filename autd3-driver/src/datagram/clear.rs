@@ -2,7 +2,7 @@ use crate::firmware::operation::ClearOp;
 
 use crate::datagram::*;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Clear {}
 
 impl Clear {
@@ -37,5 +37,10 @@ impl Datagram for Clear {
 
     fn parallel_threshold(&self) -> Option<usize> {
         Some(usize::MAX)
+    }
+
+    #[tracing::instrument(level = "debug", skip(_geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
     }
 }

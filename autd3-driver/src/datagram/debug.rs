@@ -54,6 +54,23 @@ impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> Datagram for DebugSetti
     fn parallel_threshold(&self) -> Option<usize> {
         Some(usize::MAX)
     }
+
+    #[tracing::instrument(level = "debug", skip(self, geometry))]
+    fn trace(&self, geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+        if tracing::enabled!(tracing::Level::DEBUG) {
+            geometry.devices().for_each(|dev| {
+                tracing::debug!(
+                    "Device[{}]: O0={}, O1={}, O2={}, O3={}",
+                    dev.idx(),
+                    (self.f)(dev, GPIOOut::O0),
+                    (self.f)(dev, GPIOOut::O1),
+                    (self.f)(dev, GPIOOut::O2),
+                    (self.f)(dev, GPIOOut::O3)
+                )
+            });
+        }
+    }
 }
 
 #[cfg(feature = "capi")]

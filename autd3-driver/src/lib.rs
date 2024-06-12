@@ -35,4 +35,6 @@ pub mod derive {
     };
     pub use autd3_derive::{Builder, Gain, Modulation};
     pub use std::collections::HashMap;
+    pub use tracing;
+    pub use tynm;
 }

@@ -35,6 +35,11 @@ impl Gain for Plane {
             }
         }))
     }
+
+    #[tracing::instrument(level = "debug", skip(_geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+    }
 }
 
 #[cfg(test)]

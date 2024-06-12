@@ -133,6 +133,31 @@ impl<const N: usize> DatagramST for FociSTM<N> {
             Some(usize::MAX)
         }
     }
+
+    #[tracing::instrument(level = "debug", skip(self, _geometry), fields(%self.loop_behavior, %self.sampling_config))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+        if tracing::enabled!(tracing::Level::DEBUG) {
+            if tracing::enabled!(tracing::Level::TRACE) {
+                self.control_points.iter().enumerate().for_each(|(i, f)| {
+                    tracing::debug!("ControlPoints[{}]: {:?}", i, f);
+                });
+            } else {
+                let len = self.control_points.len();
+                tracing::debug!("ControlPoints[{}]: {:?}", 0, self.control_points[0]);
+                if len > 2 {
+                    tracing::debug!("︙");
+                }
+                if len > 1 {
+                    tracing::debug!(
+                        "ControlPoints[{}]: {:?}",
+                        len - 1,
+                        self.control_points[len - 1]
+                    );
+                }
+            }
+        }
+    }
 }
 
 #[cfg(feature = "capi")]

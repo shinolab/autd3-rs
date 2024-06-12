@@ -68,6 +68,11 @@ pub trait Datagram {
     fn parallel_threshold(&self) -> Option<usize> {
         None
     }
+
+    #[tracing::instrument(skip(self, _geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("Datagram");
+    }
 }
 
 pub struct CombinedOperationGenerator<O1, O2>
@@ -122,6 +127,13 @@ where
             (Some(t1), Some(t2)) => Some(t1.min(t2)),
             (a, b) => a.or(b),
         }
+    }
+
+    #[tracing::instrument(skip(self, geometry))]
+    fn trace(&self, geometry: &Geometry) {
+        tracing::info!("Datagram (tuple)");
+        self.0.trace(geometry);
+        self.1.trace(geometry);
     }
 }
 

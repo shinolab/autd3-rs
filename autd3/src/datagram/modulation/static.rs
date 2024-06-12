@@ -32,6 +32,11 @@ impl Modulation for Static {
         let intensity = self.intensity;
         Ok(vec![intensity; 2])
     }
+
+    #[tracing::instrument(level = "debug", skip(_geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+    }
 }
 
 impl Default for Static {

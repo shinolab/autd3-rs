@@ -9,7 +9,7 @@ use autd3_driver::{
         Synchronize,
     },
     defined::{Freq, DEFAULT_TIMEOUT, FREQ_40K},
-    derive::Operation,
+    derive::{tracing, Operation},
     firmware::{
         cpu::{RxMessage, TxDatagram},
         fpga::FPGAState,
@@ -57,7 +57,10 @@ impl<L: Link> Controller<L> {
 }
 
 impl<L: Link> Controller<L> {
+    #[tracing::instrument(skip(self, s))]
     pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDError> {
+        s.trace(&self.geometry);
+
         let timeout = s.timeout();
         let parallel_threshold = s.parallel_threshold().unwrap_or(self.parallel_threshold);
 

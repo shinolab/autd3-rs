@@ -80,6 +80,11 @@ impl Modulation for Wav {
         .collect::<Vec<_>>();
         Ok(buf)
     }
+
+    #[tracing::instrument(level = "debug", skip(_geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+    }
 }
 
 #[cfg(test)]

@@ -23,6 +23,11 @@ impl<FT: Fn(&Transducer) -> Drive + Send + Sync + 'static, F: Fn(&Device) -> FT 
         let f = &self.f;
         Ok(Self::transform(f))
     }
+
+    #[tracing::instrument(skip(self, _geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+    }
 }
 
 #[cfg(test)]

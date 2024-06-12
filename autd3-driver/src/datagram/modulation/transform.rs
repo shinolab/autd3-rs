@@ -35,6 +35,12 @@ impl<M: Modulation, F: Fn(usize, u8) -> u8> Modulation for Transform<M, F> {
             .map(|(i, x)| (self.f)(i, x))
             .collect())
     }
+
+    #[tracing::instrument(level = "debug", skip(self, geometry), fields(%self.config, %self.loop_behavior))]
+    fn trace(&self, geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+        <M as Modulation>::trace(&self.m, geometry);
+    }
 }
 
 #[cfg(test)]

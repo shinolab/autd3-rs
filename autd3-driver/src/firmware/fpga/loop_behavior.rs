@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct LoopBehavior {
     pub(crate) rep: u32,
 }
@@ -43,6 +43,26 @@ impl LoopBehavior {
 
     pub const fn rep(&self) -> u32 {
         self.rep
+    }
+}
+
+impl std::fmt::Debug for LoopBehavior {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.rep {
+            0xFFFFFFFF => return write!(f, "LoopBehavior::Infinite"),
+            0 => return write!(f, "LoopBehavior::Once"),
+            i => return write!(f, "LoopBehavior::Finite({})", i + 1),
+        }
+    }
+}
+
+impl std::fmt::Display for LoopBehavior {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.rep {
+            0xFFFFFFFF => return write!(f, "LoopBehavior::Infinite"),
+            0 => return write!(f, "LoopBehavior::Once"),
+            i => return write!(f, "LoopBehavior::Finite({})", i + 1),
+        }
     }
 }
 

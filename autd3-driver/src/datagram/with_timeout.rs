@@ -29,6 +29,12 @@ impl<D: Datagram> Datagram for DatagramWithTimeout<D> {
     fn parallel_threshold(&self) -> Option<usize> {
         self.datagram.parallel_threshold()
     }
+
+    #[tracing::instrument(level = "debug", skip(self, geometry))]
+    fn trace(&self, geometry: &Geometry) {
+        tracing::info!("{} ({:?})", tynm::type_name::<Self>(), self.timeout);
+        self.datagram.trace(geometry);
+    }
 }
 
 pub trait IntoDatagramWithTimeout<D: Datagram> {

@@ -2,7 +2,7 @@ use autd3_driver::{defined::Freq, derive::*};
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
-#[derive(Modulation, Clone, PartialEq, Debug, Builder)]
+#[derive(Modulation, Clone, PartialEq, Builder)]
 pub struct Square<S: SamplingMode> {
     #[get]
     freq: S::T,
@@ -64,6 +64,24 @@ impl<S: SamplingMode> Modulation for Square<S> {
                     .chain(vec![low; size as usize - n_high])
             })
             .collect())
+    }
+
+    #[tracing::instrument(level = "debug", skip(_geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+    }
+}
+
+impl<S: SamplingMode> std::fmt::Debug for Square<S> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Square")
+            .field("freq", &self.freq)
+            .field("low", &self.low)
+            .field("high", &self.high)
+            .field("duty", &self.duty)
+            .field("config", &self.config)
+            .field("loop_behavior", &self.loop_behavior)
+            .finish()
     }
 }
 

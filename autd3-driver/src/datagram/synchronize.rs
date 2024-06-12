@@ -2,7 +2,7 @@ use crate::firmware::operation::SyncOp;
 
 use crate::datagram::*;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Synchronize {}
 
 impl Synchronize {
@@ -37,5 +37,10 @@ impl Datagram for Synchronize {
 
     fn parallel_threshold(&self) -> Option<usize> {
         Some(usize::MAX)
+    }
+
+    #[tracing::instrument(level = "debug", skip(_geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
     }
 }
