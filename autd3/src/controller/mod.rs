@@ -4,8 +4,11 @@ mod group;
 use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
-    datagram::{Clear, Datagram, SilencerFixedCompletionSteps},
-    defined::DEFAULT_TIMEOUT,
+    datagram::{
+        Clear, ConfigureFPGAClock, Datagram, IntoDatagramWithTimeout, SilencerFixedCompletionSteps,
+        Synchronize,
+    },
+    defined::{Freq, DEFAULT_TIMEOUT, FREQ_40K},
     derive::Operation,
     firmware::{
         cpu::{RxMessage, TxDatagram},
@@ -32,6 +35,7 @@ pub struct Controller<L: Link> {
     tx_buf: TxDatagram,
     rx_buf: Vec<RxMessage>,
     parallel_threshold: usize,
+    send_interval: Duration,
 }
 
 impl Controller<Nop> {
@@ -79,8 +83,22 @@ impl<L: Link> Controller<L> {
             if OperationHandler::is_done(operations) {
                 return Ok(());
             }
-            tokio::time::sleep_until(start + Duration::from_millis(1)).await;
+            tokio::time::sleep_until(start + self.send_interval).await;
         }
+    }
+
+    pub(crate) async fn open_impl(
+        &mut self,
+        ultrasound_freq: Freq<u32>,
+        timeout: Duration,
+    ) -> Result<(), AUTDError> {
+        if ultrasound_freq != FREQ_40K {
+            self.send(ConfigureFPGAClock::new().with_timeout(timeout))
+                .await?; // GRCOV_EXCL_LINE
+        }
+        self.send((Clear::new(), Synchronize::new()).with_timeout(timeout))
+            .await?; // GRCOV_EXCL_LINE
+        Ok(())
     }
 
     // Close connection

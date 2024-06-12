@@ -1,5 +1,4 @@
 use autd3_driver::{
-    datagram::{Clear, ConfigureFPGAClock, IntoDatagramWithTimeout, Synchronize},
     defined::{Freq, FREQ_40K},
     derive::*,
     firmware::cpu::{RxMessage, TxDatagram},
@@ -17,6 +16,8 @@ pub struct ControllerBuilder {
     ultrasound_freq: Freq<u32>,
     #[getset]
     parallel_threshold: usize,
+    #[getset]
+    send_interval: std::time::Duration,
 }
 
 impl ControllerBuilder {
@@ -29,6 +30,7 @@ impl ControllerBuilder {
                 .collect(),
             ultrasound_freq: FREQ_40K,
             parallel_threshold: 4,
+            send_interval: std::time::Duration::from_millis(1),
         }
     }
 
@@ -45,19 +47,16 @@ impl ControllerBuilder {
         timeout: std::time::Duration,
     ) -> Result<Controller<B::L>, AUTDError> {
         let geometry = Geometry::new(self.devices, self.ultrasound_freq);
+        let link = link_builder.open(&geometry).await?;
         let mut cnt = Controller {
-            link: link_builder.open(&geometry).await?,
+            link,
             tx_buf: TxDatagram::new(geometry.num_devices()),
             rx_buf: vec![RxMessage::new(0, 0); geometry.num_devices()],
             geometry,
             parallel_threshold: self.parallel_threshold,
+            send_interval: self.send_interval,
         };
-        if self.ultrasound_freq != FREQ_40K {
-            cnt.send(ConfigureFPGAClock::new().with_timeout(timeout))
-                .await?; // GRCOV_EXCL_LINE
-        }
-        cnt.send((Clear::new(), Synchronize::new()).with_timeout(timeout))
-            .await?; // GRCOV_EXCL_LINE
+        cnt.open_impl(self.ultrasound_freq, timeout).await?;
         Ok(cnt)
     }
 }
