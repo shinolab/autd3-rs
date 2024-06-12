@@ -36,6 +36,8 @@ pub struct Controller<L: Link> {
     rx_buf: Vec<RxMessage>,
     parallel_threshold: usize,
     send_interval: Duration,
+    #[cfg(target_os = "windows")]
+    timer_resulution: u32,
 }
 
 impl Controller<Nop> {
@@ -92,6 +94,10 @@ impl<L: Link> Controller<L> {
         ultrasound_freq: Freq<u32>,
         timeout: Duration,
     ) -> Result<(), AUTDError> {
+        #[cfg(target_os = "windows")]
+        unsafe {
+            windows::Win32::Media::timeBeginPeriod(self.timer_resulution);
+        }
         if ultrasound_freq != FREQ_40K {
             self.send(ConfigureFPGAClock::new().with_timeout(timeout))
                 .await?; // GRCOV_EXCL_LINE
@@ -223,6 +229,10 @@ impl<L: Link> Controller<L> {
 
 impl<L: Link> Drop for Controller<L> {
     fn drop(&mut self) {
+        #[cfg(target_os = "windows")]
+        unsafe {
+            windows::Win32::Media::timeEndPeriod(self.timer_resulution);
+        }
         if !self.link.is_open() {
             return;
         }

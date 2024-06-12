@@ -31,9 +31,6 @@ impl NativeTimerWrapper {
             self.priority = GetPriorityClass(self.h_process);
             let _ = SetPriorityClass(self.h_process, REALTIME_PRIORITY_CLASS);
 
-            let u_resolution = 1;
-            timeBeginPeriod(u_resolution);
-
             let interval = (period.as_nanos() / 1000 / 1000) as u32;
 
             self.h_queue = CreateTimerQueue()?;
@@ -59,7 +56,6 @@ impl NativeTimerWrapper {
                 DeleteTimerQueueTimer(self.h_queue, self.h_timer, None)?;
                 DeleteTimerQueue(self.h_queue)?;
 
-                timeEndPeriod(1);
                 let _ = SetPriorityClass(
                     self.h_process,
                     windows::Win32::System::Threading::PROCESS_CREATION_FLAGS(self.priority),

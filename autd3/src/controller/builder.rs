@@ -18,6 +18,9 @@ pub struct ControllerBuilder {
     parallel_threshold: usize,
     #[getset]
     send_interval: std::time::Duration,
+    #[cfg(target_os = "windows")]
+    #[getset]
+    timer_resulution: u32,
 }
 
 impl ControllerBuilder {
@@ -31,6 +34,8 @@ impl ControllerBuilder {
             ultrasound_freq: FREQ_40K,
             parallel_threshold: 4,
             send_interval: std::time::Duration::from_millis(1),
+            #[cfg(target_os = "windows")]
+            timer_resulution: 1,
         }
     }
 
@@ -55,6 +60,8 @@ impl ControllerBuilder {
             geometry,
             parallel_threshold: self.parallel_threshold,
             send_interval: self.send_interval,
+            #[cfg(target_os = "windows")]
+            timer_resulution: self.timer_resulution,
         };
         cnt.open_impl(self.ultrasound_freq, timeout).await?;
         Ok(cnt)
