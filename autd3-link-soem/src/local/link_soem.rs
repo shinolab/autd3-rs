@@ -517,7 +517,6 @@ impl SOEMECatThreadGuard {
                     windows::Win32::System::Threading::GetCurrentProcess(),
                     process_priority.into(),
                 )?;
-                windows::Win32::Media::timeBeginPeriod(1);
                 old_priority
             };
 
@@ -553,7 +552,6 @@ impl SOEMECatThreadGuard {
 
             #[cfg(target_os = "windows")]
             {
-                windows::Win32::Media::timeEndPeriod(1);
                 windows::Win32::System::Threading::SetPriorityClass(
                     windows::Win32::System::Threading::GetCurrentProcess(),
                     windows::Win32::System::Threading::PROCESS_CREATION_FLAGS(old_priority),
