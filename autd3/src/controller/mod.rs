@@ -113,7 +113,6 @@ impl<L: Link> Controller<L> {
         Ok(())
     }
 
-    // Close connection
     pub async fn close(&mut self) -> Result<(), AUTDError> {
         if !self.link.is_open() {
             return Ok(());
