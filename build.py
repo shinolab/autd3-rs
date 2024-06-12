@@ -311,7 +311,7 @@ def rust_coverage(args):
                 "-t",
                 args.format,
                 "--excl-line",
-                r"^\s*((debug_)?assert(_eq|_ne)?!|#\[derive\()|GRCOV_EXCL_LINE|unreachable!|unimplemented!",
+                r"^\s*((debug_)?assert(_eq|_ne)?!|#\[derive\()|GRCOV_EXCL_LINE|unreachable!|unimplemented!|tracing::instrument",
                 "--ignore",
                 "autd3-derive/**/*",
                 "--ignore",
