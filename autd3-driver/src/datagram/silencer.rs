@@ -192,9 +192,11 @@ impl Datagram for Silencer<FixedUpdateRate> {
     }
 
     #[tracing::instrument(level = "debug", skip(_geometry))]
+    // GRCOV_EXCL_START
     fn trace(&self, _geometry: &Geometry) {
         tracing::info!("{}", tynm::type_name::<Self>());
     }
+    // GRCOV_EXCL_STOP
 }
 
 pub struct SilencerFixedCompletionStepsOpGenerator {
@@ -241,9 +243,11 @@ impl Datagram for Silencer<FixedCompletionSteps> {
     }
 
     #[tracing::instrument(level = "debug", skip(_geometry))]
+    // GRCOV_EXCL_START
     fn trace(&self, _geometry: &Geometry) {
         tracing::info!("{}", tynm::type_name::<Self>());
     }
+    // GRCOV_EXCL_STOP
 }
 
 #[cfg(feature = "capi")]

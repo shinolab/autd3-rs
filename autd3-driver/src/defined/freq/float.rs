@@ -8,18 +8,6 @@ impl Freq<f32> {
     }
 }
 
-impl std::fmt::Display for Freq<f32> {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{} Hz", self.freq)
-    }
-}
-
-impl std::fmt::Debug for Freq<f32> {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{} Hz", self.freq)
-    }
-}
-
 impl std::ops::Mul<Hz> for f32 {
     type Output = Freq<f32>;
 

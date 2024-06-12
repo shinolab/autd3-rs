@@ -62,6 +62,7 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
             }
 
             #[tracing::instrument(skip(self, geometry))]
+            // GRCOV_EXCL_START
             fn trace(&self, geometry: &Geometry) {
                 <Self as Gain>::trace(self, geometry);
                 if tracing::enabled!(tracing::Level::DEBUG) {
@@ -84,6 +85,7 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
                     }
                 }
             }
+            // GRCOV_EXCL_STOP
         }
     };
 
@@ -107,6 +109,7 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
             }
 
             #[tracing::instrument(skip(self, geometry))]
+            // GRCOV_EXCL_START
             fn trace(&self, geometry: &Geometry) {
                 <Self as Gain>::trace(self, geometry);
                 if tracing::enabled!(tracing::Level::DEBUG) {
@@ -129,6 +132,7 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
                     }
                 }
             }
+            // GRCOV_EXCL_STOP
         }
     };
 

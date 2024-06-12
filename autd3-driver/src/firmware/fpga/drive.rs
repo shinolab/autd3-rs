@@ -79,4 +79,12 @@ mod tests {
             Drive::null()
         );
     }
+
+    #[test]
+    fn display() {
+        assert_eq!(
+            format!("{}", Drive::new(Phase::new(0), EmitIntensity::new(0x00))),
+            "Drive(phase = 0x00, intensity = 0x00)"
+        );
+    }
 }

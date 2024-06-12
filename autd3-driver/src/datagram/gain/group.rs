@@ -141,6 +141,7 @@ where
     }
 
     #[tracing::instrument(level = "debug", skip(self, geometry))]
+    // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
         tracing::info!("Group");
         if tracing::enabled!(tracing::Level::TRACE) {
@@ -158,6 +159,7 @@ where
             });
         }
     }
+    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]

@@ -99,4 +99,30 @@ mod tests {
     ) {
         assert_eq!(expect, LoopBehavior::finite(rep));
     }
+
+    #[test]
+    fn display() {
+        assert_eq!(
+            format!("{}", LoopBehavior::infinite()),
+            "LoopBehavior::Infinite"
+        );
+        assert_eq!(format!("{}", LoopBehavior::once()), "LoopBehavior::Once");
+        assert_eq!(
+            format!("{}", LoopBehavior::finite(0x12345678).unwrap()),
+            "LoopBehavior::Finite(305419896)"
+        );
+    }
+
+    #[test]
+    fn debug() {
+        assert_eq!(
+            format!("{:?}", LoopBehavior::infinite()),
+            "LoopBehavior::Infinite"
+        );
+        assert_eq!(format!("{:?}", LoopBehavior::once()), "LoopBehavior::Once");
+        assert_eq!(
+            format!("{:?}", LoopBehavior::finite(0x12345678).unwrap()),
+            "LoopBehavior::Finite(305419896)"
+        );
+    }
 }

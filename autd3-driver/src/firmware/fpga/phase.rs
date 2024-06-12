@@ -112,4 +112,18 @@ mod tests {
     fn radian(#[case] expect: f32, #[case] value: u8) {
         assert_approx_eq::assert_approx_eq!(expect, Phase::new(value).radian());
     }
+
+    #[test]
+    fn display() {
+        assert_eq!(format!("{}", Phase::new(0x00)), "0x00");
+        assert_eq!(format!("{}", Phase::new(0x01)), "0x01");
+        assert_eq!(format!("{}", Phase::new(0xFF)), "0xFF");
+    }
+
+    #[test]
+    fn dbg() {
+        assert_eq!(format!("{:?}", Phase::new(0x00)), "0x00");
+        assert_eq!(format!("{:?}", Phase::new(0x01)), "0x01");
+        assert_eq!(format!("{:?}", Phase::new(0xFF)), "0xFF");
+    }
 }

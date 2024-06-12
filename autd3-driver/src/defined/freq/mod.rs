@@ -13,3 +13,32 @@ use derive_more::{Add, Div, Mul, Sub};
 pub struct Freq<T> {
     pub(crate) freq: T,
 }
+
+impl<T: std::fmt::Display> std::fmt::Display for Freq<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{} Hz", self.freq)
+    }
+}
+
+impl<T: std::fmt::Debug> std::fmt::Debug for Freq<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{:?} Hz", self.freq)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display() {
+        assert_eq!(format!("{}", 100 * Hz), "100 Hz");
+        assert_eq!(format!("{}", 100 * kHz), "100000 Hz");
+    }
+
+    #[test]
+    fn dbg() {
+        assert_eq!(format!("{:?}", 100 * Hz), "100 Hz");
+        assert_eq!(format!("{:?}", 100 * kHz), "100000 Hz");
+    }
+}

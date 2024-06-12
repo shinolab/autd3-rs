@@ -94,6 +94,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
             }
 
             #[tracing::instrument(skip(self, geometry))]
+            // GRCOV_EXCL_START
             fn trace(&self, geometry: &Geometry) {
                 <Self as Modulation>::trace(self, geometry);
                 if tracing::enabled!(tracing::Level::DEBUG) {
@@ -120,6 +121,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
                     }
                 }
             }
+            // GRCOV_EXCL_STOP
         }
     };
 

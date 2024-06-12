@@ -71,3 +71,29 @@ impl<'a> std::fmt::Display for DebugType<'a> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::geometry::Vector3;
+
+    use super::*;
+
+    #[test]
+    fn display() {
+        assert_eq!("None", DebugType::None.to_string());
+        assert_eq!("BaseSignal", DebugType::BaseSignal.to_string());
+        assert_eq!("Thermo", DebugType::Thermo.to_string());
+        assert_eq!("ForceFan", DebugType::ForceFan.to_string());
+        assert_eq!("Sync", DebugType::Sync.to_string());
+        assert_eq!("ModSegment", DebugType::ModSegment.to_string());
+        assert_eq!("ModIdx(1)", DebugType::ModIdx(1).to_string());
+        assert_eq!("StmSegment", DebugType::StmSegment.to_string());
+        assert_eq!("StmIdx(1)", DebugType::StmIdx(1).to_string());
+        assert_eq!("IsStmMode", DebugType::IsStmMode.to_string());
+        assert_eq!(
+            "PwmOut(1)",
+            DebugType::PwmOut(&Transducer::new(1, Vector3::new(0.0, 0.0, 0.0))).to_string()
+        );
+        assert_eq!("Direct(true)", DebugType::Direct(true).to_string());
+    }
+}
