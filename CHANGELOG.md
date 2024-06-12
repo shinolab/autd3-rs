@@ -1,3 +1,9 @@
+# 25.2.0
+
+- Add `send_interval` to `ControllerBuilder`
+- Add `timer_resolution` to `ControllerBuilder` on Windows
+- Add tracing for debugging
+
 # 25.1.0
 
 - Update firmware to v8.0.1
