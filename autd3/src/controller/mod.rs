@@ -37,7 +37,7 @@ pub struct Controller<L: Link> {
     parallel_threshold: usize,
     send_interval: Duration,
     #[cfg(target_os = "windows")]
-    timer_resulution: u32,
+    timer_resolution: u32,
 }
 
 impl Controller<Nop> {
@@ -101,8 +101,8 @@ impl<L: Link> Controller<L> {
     ) -> Result<(), AUTDError> {
         #[cfg(target_os = "windows")]
         unsafe {
-            tracing::debug!("Set timer resulution: {:?}", self.timer_resulution);
-            windows::Win32::Media::timeBeginPeriod(self.timer_resulution);
+            tracing::debug!("Set timer resulution: {:?}", self.timer_resolution);
+            windows::Win32::Media::timeBeginPeriod(self.timer_resolution);
         }
         if ultrasound_freq != FREQ_40K {
             self.send(ConfigureFPGAClock::new().with_timeout(timeout))
@@ -236,7 +236,7 @@ impl<L: Link> Drop for Controller<L> {
     fn drop(&mut self) {
         #[cfg(target_os = "windows")]
         unsafe {
-            windows::Win32::Media::timeEndPeriod(self.timer_resulution);
+            windows::Win32::Media::timeEndPeriod(self.timer_resolution);
         }
         if !self.link.is_open() {
             return;
