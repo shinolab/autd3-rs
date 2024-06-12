@@ -1,4 +1,4 @@
-use windows::Win32::{Foundation::*, Media::*, System::Threading::*};
+use windows::Win32::{Foundation::*, System::Threading::*};
 
 use autd3_driver::error::AUTDInternalError;
 
