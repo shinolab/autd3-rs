@@ -49,9 +49,9 @@ impl LoopBehavior {
 impl std::fmt::Debug for LoopBehavior {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.rep {
-            0xFFFFFFFF => return write!(f, "LoopBehavior::Infinite"),
-            0 => return write!(f, "LoopBehavior::Once"),
-            i => return write!(f, "LoopBehavior::Finite({})", i + 1),
+            0xFFFFFFFF => write!(f, "LoopBehavior::Infinite"),
+            0 => write!(f, "LoopBehavior::Once"),
+            i => write!(f, "LoopBehavior::Finite({})", i + 1),
         }
     }
 }
@@ -59,9 +59,9 @@ impl std::fmt::Debug for LoopBehavior {
 impl std::fmt::Display for LoopBehavior {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.rep {
-            0xFFFFFFFF => return write!(f, "LoopBehavior::Infinite"),
-            0 => return write!(f, "LoopBehavior::Once"),
-            i => return write!(f, "LoopBehavior::Finite({})", i + 1),
+            0xFFFFFFFF => write!(f, "LoopBehavior::Infinite"),
+            0 => write!(f, "LoopBehavior::Once"),
+            i => write!(f, "LoopBehavior::Finite({})", i + 1),
         }
     }
 }

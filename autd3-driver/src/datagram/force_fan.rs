@@ -48,7 +48,7 @@ impl<F: Fn(&Device) -> bool> Datagram for ForceFan<F> {
         if tracing::enabled!(tracing::Level::DEBUG) {
             geometry
                 .devices()
-                .for_each(|dev| tracing::debug!("Device[{}]: {}", dev.idx(), (self.f)(&dev)));
+                .for_each(|dev| tracing::debug!("Device[{}]: {}", dev.idx(), (self.f)(dev)));
         }
     }
 }
