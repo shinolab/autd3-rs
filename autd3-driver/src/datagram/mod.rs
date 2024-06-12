@@ -70,9 +70,11 @@ pub trait Datagram {
     }
 
     #[tracing::instrument(skip(self, _geometry))]
+    // GRCOV_EXCL_START
     fn trace(&self, _geometry: &Geometry) {
         tracing::info!("Datagram");
     }
+    // GRCOV_EXCL_STOP
 }
 
 pub struct CombinedOperationGenerator<O1, O2>
@@ -130,11 +132,13 @@ where
     }
 
     #[tracing::instrument(skip(self, geometry))]
+    // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
         tracing::info!("Datagram (tuple)");
         self.0.trace(geometry);
         self.1.trace(geometry);
     }
+    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]

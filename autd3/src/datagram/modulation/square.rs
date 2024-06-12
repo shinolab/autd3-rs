@@ -67,11 +67,15 @@ impl<S: SamplingMode> Modulation for Square<S> {
     }
 
     #[tracing::instrument(level = "debug", skip(_geometry))]
+    // GRCOV_EXCL_START
     fn trace(&self, _geometry: &Geometry) {
         tracing::info!("{}", tynm::type_name::<Self>());
     }
+    // GRCOV_EXCL_STOP
 }
 
+// TODO: add Debug to SamplingMode and use derive(Debug)
+// GRCOV_EXCL_START
 impl<S: SamplingMode> std::fmt::Debug for Square<S> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Square")
@@ -84,6 +88,7 @@ impl<S: SamplingMode> std::fmt::Debug for Square<S> {
             .finish()
     }
 }
+// GRCOV_EXCL_STOP
 
 #[cfg(test)]
 mod tests {

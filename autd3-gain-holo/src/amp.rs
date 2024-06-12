@@ -102,4 +102,10 @@ mod tests {
 
         assert_approx_eq::assert_approx_eq!((amp / 2.).pascal(), 23.77 / 2., 1e-3);
     }
+
+    #[test]
+    fn display() {
+        let amp = 23.77 * Pa;
+        assert_eq!(amp.to_string(), "23.77 Pa");
+    }
 }

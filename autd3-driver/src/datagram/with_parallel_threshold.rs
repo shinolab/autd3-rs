@@ -29,10 +29,12 @@ impl<D: Datagram> Datagram for DatagramWithParallelThreshold<D> {
     }
 
     #[tracing::instrument(level = "debug", skip(self, geometry))]
+    // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
         tracing::info!("{} ({:?})", tynm::type_name::<Self>(), self.threshold);
         self.datagram.trace(geometry);
     }
+    // GRCOV_EXCL_STOP
 }
 
 pub trait IntoDatagramWithParallelThreshold<D: Datagram> {

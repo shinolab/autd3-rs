@@ -157,4 +157,18 @@ mod tests {
     ) {
         assert_eq!(expected, lhs - rhs);
     }
+
+    #[test]
+    fn display() {
+        assert_eq!(format!("{}", EmitIntensity::new(0x00)), "0x00");
+        assert_eq!(format!("{}", EmitIntensity::new(0x01)), "0x01");
+        assert_eq!(format!("{}", EmitIntensity::new(0xFF)), "0xFF");
+    }
+
+    #[test]
+    fn dbg() {
+        assert_eq!(format!("{:?}", EmitIntensity::new(0x00)), "0x00");
+        assert_eq!(format!("{:?}", EmitIntensity::new(0x01)), "0x01");
+        assert_eq!(format!("{:?}", EmitIntensity::new(0xFF)), "0xFF");
+    }
 }

@@ -169,6 +169,7 @@ impl<G: Gain> DatagramST for GainSTM<G> {
     }
 
     #[tracing::instrument(level = "debug", skip(self, geometry), fields(%self.loop_behavior, %self.sampling_config, ?self.mode))]
+    // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
         tracing::info!("{}", tynm::type_name::<Self>());
         if tracing::enabled!(tracing::Level::DEBUG) {
@@ -191,6 +192,7 @@ impl<G: Gain> DatagramST for GainSTM<G> {
             }
         }
     }
+    // GRCOV_EXCL_STOP
 }
 
 #[cfg(feature = "capi")]

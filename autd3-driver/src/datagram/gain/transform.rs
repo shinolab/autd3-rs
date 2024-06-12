@@ -53,10 +53,12 @@ impl<
     }
 
     #[tracing::instrument(skip(self, geometry))]
+    // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
         tracing::info!("{}", tynm::type_name::<Self>());
         <G as Gain>::trace(&self.gain, geometry);
     }
+    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]

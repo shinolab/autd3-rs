@@ -41,6 +41,7 @@ impl<D: DatagramST> Datagram for DatagramWithSegmentTransition<D> {
     }
 
     #[tracing::instrument(level = "debug", skip(self, geometry))]
+    // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
         tracing::info!(
             "{} ({:?}, {:?})",
@@ -50,6 +51,7 @@ impl<D: DatagramST> Datagram for DatagramWithSegmentTransition<D> {
         );
         self.datagram.trace(geometry);
     }
+    // GRCOV_EXCL_STOP
 }
 
 impl<D: DatagramST> Datagram for D {
@@ -73,9 +75,11 @@ impl<D: DatagramST> Datagram for D {
         <Self as DatagramST>::parallel_threshold(self)
     }
 
+    // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
         <Self as DatagramST>::trace(self, geometry);
     }
+    // GRCOV_EXCL_STOP
 }
 
 pub trait DatagramST {
@@ -97,9 +101,11 @@ pub trait DatagramST {
     }
 
     #[tracing::instrument(skip(self, _geometry))]
+    // GRCOV_EXCL_START
     fn trace(&self, _geometry: &Geometry) {
         tracing::info!("{}", tynm::type_name::<Self>());
     }
+    // GRCOV_EXCL_STOP
 }
 
 pub trait IntoDatagramWithSegmentTransition<D: DatagramST> {

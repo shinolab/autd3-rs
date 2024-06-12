@@ -67,6 +67,7 @@ impl<S: SamplingMode> Modulation for Mixer<S> {
     }
 
     #[tracing::instrument(level = "debug", skip(self, _geometry), fields(%self.config, %self.loop_behavior))]
+    // GRCOV_EXCL_START
     fn trace(&self, _geometry: &Geometry) {
         tracing::info!("{}", tynm::type_name::<Self>());
         if self.components.is_empty() {
@@ -93,6 +94,7 @@ impl<S: SamplingMode> Modulation for Mixer<S> {
             }
         }
     }
+    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]

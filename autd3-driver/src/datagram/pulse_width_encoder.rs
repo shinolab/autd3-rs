@@ -66,6 +66,7 @@ impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> Datagram for PulseW
     }
 
     #[tracing::instrument(skip(self, geometry))]
+    // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
         tracing::info!("{}", tynm::type_name::<Self>());
         if tracing::enabled!(tracing::Level::DEBUG) {
@@ -84,4 +85,5 @@ impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> Datagram for PulseW
             });
         }
     }
+    // GRCOV_EXCL_STOP
 }

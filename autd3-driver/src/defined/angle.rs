@@ -42,3 +42,14 @@ impl std::ops::Mul<rad> for f32 {
         Self::Output::Rad(self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dbg() {
+        assert_eq!(format!("{:?}", 90.0 * deg), "90 deg");
+        assert_eq!(format!("{:?}", 1.0 * rad), "1 rad");
+    }
+}

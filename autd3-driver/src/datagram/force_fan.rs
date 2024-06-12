@@ -43,6 +43,7 @@ impl<F: Fn(&Device) -> bool> Datagram for ForceFan<F> {
     }
 
     #[tracing::instrument(level = "debug", skip(self, geometry))]
+    // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
         tracing::info!("{}", tynm::type_name::<Self>());
         if tracing::enabled!(tracing::Level::DEBUG) {
@@ -51,6 +52,7 @@ impl<F: Fn(&Device) -> bool> Datagram for ForceFan<F> {
                 .for_each(|dev| tracing::debug!("Device[{}]: {}", dev.idx(), (self.f)(dev)));
         }
     }
+    // GRCOV_EXCL_STOP
 }
 
 #[cfg(feature = "capi")]

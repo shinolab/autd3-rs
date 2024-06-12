@@ -149,6 +149,7 @@ impl<D: Directivity + 'static> Gain for Greedy<D> {
     }
 
     #[tracing::instrument(level = "debug", skip(self, _geometry), fields(?self.phase_div, ?self.constraint))]
+    // GRCOV_EXCL_START
     fn trace(&self, _geometry: &Geometry) {
         tracing::info!("{}", tynm::type_name::<Self>());
         if tracing::enabled!(tracing::Level::DEBUG) {
@@ -177,6 +178,7 @@ impl<D: Directivity + 'static> Gain for Greedy<D> {
             }
         }
     }
+    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]
