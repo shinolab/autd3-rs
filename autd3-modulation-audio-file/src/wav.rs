@@ -33,11 +33,11 @@ impl Wav {
                 match spec.bits_per_sample {
                     8 => raw_buffer
                         .iter()
-                        .map(|i| (i - std::i8::MIN as i32) as f32)
+                        .map(|i| (i - i8::MIN as i32) as f32)
                         .collect(),
                     16 => raw_buffer
                         .iter()
-                        .map(|i| (i - std::i16::MIN as i32) as f32 / 257.)
+                        .map(|i| (i - i16::MIN as i32) as f32 / 257.)
                         .collect(),
                     24 => raw_buffer
                         .iter()
@@ -45,7 +45,7 @@ impl Wav {
                         .collect(),
                     32 => raw_buffer
                         .iter()
-                        .map(|&i| (i as i64 - std::i32::MIN as i64) as f32 / 16843009.)
+                        .map(|&i| (i as i64 - i32::MIN as i64) as f32 / 16843009.)
                         .collect(),
                     _ => return Err(AudioFileError::Wav(hound::Error::Unsupported)), // GRCOV_EXCL_LINE
                 }
