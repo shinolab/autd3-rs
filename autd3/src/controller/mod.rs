@@ -278,7 +278,7 @@ mod tests {
     // GRCOV_EXCL_STOP
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_send() -> anyhow::Result<()> {
+    async fn send() -> anyhow::Result<()> {
         let mut autd = create_controller(1).await?;
         autd.send((
             Sine::new(150. * Hz),
@@ -314,7 +314,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_clk() -> anyhow::Result<()> {
+    async fn clk() -> anyhow::Result<()> {
         let mut autd = Controller::builder([AUTD3::new(Vector3::zeros())])
             .with_ultrasound_freq(41 * kHz)
             .open(Audit::builder())
@@ -328,7 +328,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_firmware_version() -> anyhow::Result<()> {
+    async fn firmware_version() -> anyhow::Result<()> {
         let mut autd = create_controller(1).await?;
         assert_eq!(
             vec![FirmwareVersion::new(
@@ -346,7 +346,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_close() -> anyhow::Result<()> {
+    async fn close() -> anyhow::Result<()> {
         {
             let mut autd = create_controller(1).await?;
             autd.close().await?;
@@ -371,6 +371,50 @@ mod tests {
                 Err(AUTDError::Internal(AUTDInternalError::SendDataFailed)),
                 autd.close().await
             );
+        }
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn fpga_state() -> anyhow::Result<()> {
+        let mut autd =
+            Controller::builder([AUTD3::new(Vector3::zeros()), AUTD3::new(Vector3::zeros())])
+                .open(Audit::builder())
+                .await?;
+
+        autd.send(ReadsFPGAState::new(|_| true)).await?;
+        {
+            autd.link.emulators_mut()[0]
+                .fpga_mut()
+                .assert_thermal_sensor();
+
+            let states = autd.fpga_state().await?;
+            assert_eq!(2, states.len());
+            assert!(states[0].unwrap().is_thermal_assert());
+            assert!(!states[1].unwrap().is_thermal_assert());
+        }
+
+        {
+            autd.link.emulators_mut()[0]
+                .fpga_mut()
+                .deassert_thermal_sensor();
+            autd.link.emulators_mut()[1]
+                .fpga_mut()
+                .assert_thermal_sensor();
+
+            let states = autd.fpga_state().await?;
+            assert_eq!(2, states.len());
+            assert!(!states[0].unwrap().is_thermal_assert());
+            assert!(states[1].unwrap().is_thermal_assert());
+        }
+
+        autd.send(ReadsFPGAState::new(|dev| dev.idx() == 1)).await?;
+        {
+            let states = autd.fpga_state().await?;
+            assert_eq!(2, states.len());
+            assert!(states[0].is_none());
+            assert!(states[1].unwrap().is_thermal_assert());
         }
 
         Ok(())
