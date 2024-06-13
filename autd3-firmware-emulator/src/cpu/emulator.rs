@@ -127,9 +127,7 @@ impl CPUEmulator {
 
     pub fn update_with_sys_time(&mut self, sys_time: DcSysTime) {
         self.fpga.update_with_sys_time(sys_time);
-        if self.should_update() {
-            self.read_fpga_state();
-        }
+        self.read_fpga_state();
         self.dc_sys_time = sys_time;
     }
 
