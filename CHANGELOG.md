@@ -1,3 +1,7 @@
+# 25.2.2
+
+- Fix `CPUEmulator::update`
+
 # 25.2.1
 
 - Fix `close` handling: `close` returns error if modulation with invalid sampling configuration was send
