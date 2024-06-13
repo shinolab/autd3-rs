@@ -1,3 +1,7 @@
+# 25.2.1
+
+- Fix `close` handling: `close` returns error if modulation with invalid sampling configuration was send
+
 # 25.2.0
 
 - Add `send_interval` to `ControllerBuilder`

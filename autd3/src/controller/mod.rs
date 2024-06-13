@@ -5,8 +5,7 @@ use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
     datagram::{
-        Clear, ConfigureFPGAClock, Datagram, IntoDatagramWithTimeout, SilencerFixedCompletionSteps,
-        Synchronize,
+        Clear, ConfigureFPGAClock, Datagram, IntoDatagramWithTimeout, Silencer, Synchronize,
     },
     defined::{Freq, DEFAULT_TIMEOUT, FREQ_40K},
     derive::{tracing, Operation},
@@ -24,6 +23,7 @@ use crate::{
     error::{AUTDError, ReadFirmwareVersionState},
     gain::Null,
     link::nop::Nop,
+    prelude::Static,
 };
 
 pub use builder::ControllerBuilder;
@@ -118,8 +118,9 @@ impl<L: Link> Controller<L> {
             return Ok(());
         }
         self.geometry.iter_mut().for_each(|dev| dev.enable = true);
-        self.send((Null::default(), SilencerFixedCompletionSteps::default()))
+        self.send(Silencer::default().with_strict_mode(false))
             .await?;
+        self.send((Static::new(), Null::default())).await?;
         self.send(Clear::new()).await?;
         self.link.close().await?;
         Ok(())
