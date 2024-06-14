@@ -1,27 +1,50 @@
-use autd3_driver::derive::*;
+use autd3_driver::{defined::Hz, derive::*};
 use hound::SampleFormat;
 
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    sync::Mutex,
+};
 
 use crate::error::AudioFileError;
 
-#[derive(Modulation, Clone, PartialEq, Debug)]
+// TODO: Use `Cell` instead of `Mutex` for `config` field
+// This is a breaking change because `Cell` is not `Sync` nor `RefUnwindSafe`
+#[derive(Debug)]
 pub struct Wav {
     path: PathBuf,
-    config: SamplingConfig,
+    config: Mutex<SamplingConfig>,
     loop_behavior: LoopBehavior,
+}
+
+impl Clone for Wav {
+    fn clone(&self) -> Self {
+        Self {
+            path: self.path.clone(),
+            config: Mutex::new(self.config.lock().unwrap().clone()),
+            loop_behavior: self.loop_behavior,
+        }
+    }
+}
+
+impl PartialEq for Wav {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path
+            && *self.config.lock().unwrap() == *other.config.lock().unwrap()
+            && self.loop_behavior == other.loop_behavior
+    }
 }
 
 impl Wav {
     pub fn new(path: impl AsRef<Path>) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),
-            config: SamplingConfig::Division(5120),
+            config: Mutex::new(SamplingConfig::DISABLE),
             loop_behavior: LoopBehavior::infinite(),
         }
     }
 
-    fn read_buf(&self) -> Result<(Vec<f32>, u32), AudioFileError> {
+    fn read_buf(&self) -> Result<(Vec<u8>, u32), AudioFileError> {
         let mut reader = hound::WavReader::open(&self.path)?;
         let spec = reader.spec();
         if spec.channels != 1 {
@@ -33,19 +56,19 @@ impl Wav {
                 match spec.bits_per_sample {
                     8 => raw_buffer
                         .iter()
-                        .map(|i| (i - i8::MIN as i32) as f32)
+                        .map(|i| (i - i8::MIN as i32) as _)
                         .collect(),
                     16 => raw_buffer
                         .iter()
-                        .map(|i| (i - i16::MIN as i32) as f32 / 257.)
+                        .map(|i| ((i - i16::MIN as i32) as f32 / 257.).round() as _)
                         .collect(),
                     24 => raw_buffer
                         .iter()
-                        .map(|i| (i + 8388608i32) as f32 / 65793.)
+                        .map(|i| ((i + 8388608i32) as f32 / 65793.).round() as _)
                         .collect(),
                     32 => raw_buffer
                         .iter()
-                        .map(|&i| (i as i64 - i32::MIN as i64) as f32 / 16843009.)
+                        .map(|&i| ((i as i64 - i32::MIN as i64) as f32 / 16843009.).round() as _)
                         .collect(),
                     _ => return Err(AudioFileError::Wav(hound::Error::Unsupported)), // GRCOV_EXCL_LINE
                 }
@@ -53,7 +76,10 @@ impl Wav {
             SampleFormat::Float => {
                 let raw_buffer = reader.samples::<f32>().collect::<Result<Vec<_>, _>>()?;
                 match spec.bits_per_sample {
-                    32 => raw_buffer.iter().map(|&i| (i + 1.0) / 2. * 255.).collect(),
+                    32 => raw_buffer
+                        .iter()
+                        .map(|&i| ((i + 1.0) / 2. * 255.).round() as _)
+                        .collect(),
                     _ => return Err(AudioFileError::Wav(hound::Error::Unsupported)), // GRCOV_EXCL_LINE
                 }
             }
@@ -61,23 +87,40 @@ impl Wav {
 
         Ok((buf, spec.sample_rate))
     }
+
+    // GRCOV_EXCL_START
+    #[deprecated(note = "Do not change the sampling configuration", since = "25.3.0")]
+    pub fn with_sampling_config(self, config: SamplingConfig) -> Self {
+        Self {
+            config: Mutex::new(config),
+            ..self
+        }
+    }
+    // GRCOV_EXCL_STOP
+
+    pub fn with_loop_behavior(self, loop_behavior: LoopBehavior) -> Self {
+        Self {
+            loop_behavior,
+            ..self
+        }
+    }
+}
+
+impl ModulationProperty for Wav {
+    fn sampling_config(&self) -> SamplingConfig {
+        self.config.lock().unwrap().clone()
+    }
+
+    fn loop_behavior(&self) -> LoopBehavior {
+        self.loop_behavior
+    }
 }
 
 impl Modulation for Wav {
     #[allow(clippy::unnecessary_cast)]
-    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
-        let (raw_buffer, sample_rate) = self.read_buf()?;
-        let buf = wav_io::resample::linear(
-            raw_buffer.clone(),
-            1,
-            sample_rate,
-            self.sampling_config()
-                .freq(geometry.ultrasound_freq())?
-                .hz() as u32,
-        )
-        .iter()
-        .map(|&d| d.round() as u8)
-        .collect::<Vec<_>>();
+    fn calc(&self, _geometry: &Geometry) -> ModulationCalcResult {
+        let (buf, sample_rate) = self.read_buf()?;
+        *self.config.lock().unwrap() = SamplingConfig::Freq(sample_rate * Hz);
         Ok(buf)
     }
 
@@ -87,6 +130,86 @@ impl Modulation for Wav {
         tracing::info!("{}", tynm::type_name::<Self>());
     }
     // GRCOV_EXCL_STOP
+}
+
+impl DatagramST for Wav {
+    type O1 = ModulationOp;
+    type O2 = NullOp;
+    type G = ModulationOperationGenerator;
+
+    fn operation_generator_with_segment(
+        self,
+        geometry: &Geometry,
+        segment: Segment,
+        transition_mode: Option<TransitionMode>,
+    ) -> Result<Self::G, AUTDInternalError> {
+        Ok(Self::G {
+            g: std::sync::Arc::new(self.calc(geometry)?),
+            config: self.sampling_config(),
+            rep: self.loop_behavior().rep(),
+            segment,
+            transition_mode,
+        })
+    }
+
+    fn timeout(&self) -> Option<std::time::Duration> {
+        Some(DEFAULT_TIMEOUT)
+    }
+
+    fn parallel_threshold(&self) -> Option<usize> {
+        Some(usize::MAX)
+    }
+
+    #[tracing::instrument(skip(self, geometry))]
+    // GRCOV_EXCL_START
+    fn trace(&self, geometry: &Geometry) {
+        <Self as Modulation>::trace(self, geometry);
+        if tracing::enabled!(tracing::Level::DEBUG) {
+            if let Ok(buf) = <Self as Modulation>::calc(self, geometry) {
+                if buf.is_empty() {
+                    tracing::error!("Buffer is empty");
+                    return;
+                }
+                if tracing::enabled!(tracing::Level::TRACE) {
+                    buf.iter().enumerate().for_each(|(i, v)| {
+                        tracing::debug!("Buf[{}]: {:#04X}", i, v);
+                    });
+                } else {
+                    tracing::debug!("Buf[{}]: {:#04X}", 0, buf[0]);
+                    if buf.len() > 2 {
+                        tracing::debug!("︙");
+                    }
+                    if buf.len() > 1 {
+                        tracing::debug!("Buf[{}]: {:#04X}", buf.len() - 1, buf.len() - 1);
+                    }
+                }
+            } else {
+                tracing::error!("Failed to calculate modulation");
+            }
+        }
+    }
+    // GRCOV_EXCL_STOP
+}
+
+impl IntoModulationTransform<Self> for Wav {
+    fn with_transform<ModulationTransformF: Fn(usize, u8) -> u8>(
+        self,
+        f: ModulationTransformF,
+    ) -> ModulationTransform<Self, ModulationTransformF> {
+        ModulationTransform::new(self, f)
+    }
+}
+
+impl IntoModulationCache<Self> for Wav {
+    fn with_cache(self) -> ModulationCache<Self> {
+        ModulationCache::new(self)
+    }
+}
+
+impl IntoRadiationPressure<Self> for Wav {
+    fn with_radiation_pressure(self) -> RadiationPressure<Self> {
+        RadiationPressure::new(self)
+    }
 }
 
 #[cfg(test)]

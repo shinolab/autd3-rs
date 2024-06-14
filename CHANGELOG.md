@@ -4,6 +4,7 @@
 - `Custom::with_sampling_config` is now deprecated
 - Improve `gain::Cache` performance
 - Easing trait bound of `gain::Transform`
+- Stop resampling in `Wav` modulation
 
 # 25.2.3
 
