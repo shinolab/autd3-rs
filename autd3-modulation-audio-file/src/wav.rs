@@ -21,7 +21,7 @@ impl Clone for Wav {
     fn clone(&self) -> Self {
         Self {
             path: self.path.clone(),
-            config: Mutex::new(self.config.lock().unwrap().clone()),
+            config: Mutex::new(*self.config.lock().unwrap()),
             loop_behavior: self.loop_behavior,
         }
     }
@@ -108,7 +108,7 @@ impl Wav {
 
 impl ModulationProperty for Wav {
     fn sampling_config(&self) -> SamplingConfig {
-        self.config.lock().unwrap().clone()
+        *self.config.lock().unwrap()
     }
 
     fn loop_behavior(&self) -> LoopBehavior {
