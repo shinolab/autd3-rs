@@ -293,4 +293,13 @@ mod tests {
         cpu.update_with_sys_time(sys_time);
         assert_eq!(sys_time, cpu.dc_sys_time());
     }
+
+    #[test]
+    fn should_update() {
+        let mut cpu = CPUEmulator::new(0, 249);
+        assert!(!cpu.should_update());
+
+        cpu.read_fpga_state = true;
+        assert!(cpu.should_update());
+    }
 }
