@@ -47,10 +47,14 @@ impl<G: Gain> Cache<G> {
                 .any(|dev| !self.cache.borrow().contains_key(&dev.idx()))
         {
             let f = self.gain.calc(geometry)?;
-            *self.cache.borrow_mut() = geometry
+            geometry
                 .devices()
-                .map(|dev| (dev.idx(), Arc::new(dev.iter().map(f(dev)).collect())))
-                .collect();
+                .filter(|dev| !self.cache.borrow().contains_key(&dev.idx()))
+                .for_each(|dev| {
+                    self.cache
+                        .borrow_mut()
+                        .insert(dev.idx(), Arc::new(dev.iter().map(f(dev)).collect()));
+                });
         }
         Ok(())
     }
