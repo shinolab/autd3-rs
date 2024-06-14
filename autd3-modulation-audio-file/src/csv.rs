@@ -27,6 +27,15 @@ impl Csv {
         }
     }
 
+    pub fn from_sampling_config(path: impl AsRef<Path>, config: SamplingConfig) -> Self {
+        Self {
+            path: path.as_ref().to_path_buf(),
+            config,
+            loop_behavior: LoopBehavior::infinite(),
+            deliminator: b',',
+        }
+    }
+
     fn read_buf(&self) -> Result<Vec<u8>, AudioFileError> {
         let f = File::open(&self.path)?;
         let mut rdr = csv::ReaderBuilder::new()
@@ -104,6 +113,14 @@ mod tests {
         assert_eq!(expect, m.calc(&geometry));
 
         Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case( SamplingConfig::Freq(4000 * Hz))]
+    fn from_sampling_config(#[case] config: SamplingConfig) {
+        let m = Csv::from_sampling_config("tmp.csv", config);
+        assert_eq!(config, m.config);
     }
 
     #[test]
