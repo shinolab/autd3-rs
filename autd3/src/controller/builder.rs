@@ -59,6 +59,7 @@ impl ControllerBuilder {
             rx_buf: vec![RxMessage::new(0, 0); geometry.num_devices()],
             geometry,
             parallel_threshold: self.parallel_threshold,
+            last_parallel_threshold: self.parallel_threshold,
             send_interval: self.send_interval,
             #[cfg(target_os = "windows")]
             timer_resolution: self.timer_resolution,
