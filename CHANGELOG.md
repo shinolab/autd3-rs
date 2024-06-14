@@ -1,6 +1,6 @@
 # 25.2.3
 
-- 
+- Fix `trace` for boxed Gains and Modulations 
 
 # 25.2.2
 
