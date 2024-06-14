@@ -8,7 +8,7 @@ use autd3_driver::{
         Clear, ConfigureFPGAClock, Datagram, IntoDatagramWithTimeout, Silencer, Synchronize,
     },
     defined::{Freq, DEFAULT_TIMEOUT, FREQ_40K},
-    derive::{tracing, Operation},
+    derive::{tracing, Builder, Operation},
     firmware::{
         cpu::{RxMessage, TxDatagram},
         fpga::FPGAState,
@@ -29,14 +29,20 @@ use crate::{
 pub use builder::ControllerBuilder;
 pub use group::GroupGuard;
 
+#[derive(Builder)]
 pub struct Controller<L: Link> {
     pub link: L,
     pub geometry: Geometry,
     tx_buf: TxDatagram,
     rx_buf: Vec<RxMessage>,
+    #[get]
     parallel_threshold: usize,
+    #[get]
+    last_parallel_threshold: usize,
+    #[get]
     send_interval: Duration,
     #[cfg(target_os = "windows")]
+    #[get]
     timer_resolution: u32,
 }
 
