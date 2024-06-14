@@ -1,3 +1,10 @@
+# 25.3.0
+
+- Add `last_parallel_threshold` to `Controller` for debugging
+- `Custom::with_sampling_config` is now deprecated
+- Improve `gain::Cache` performance
+- Easing trait bound of `gain::Transform`
+
 # 25.2.3
 
 - Fix `trace` for boxed Gains and Modulations 
