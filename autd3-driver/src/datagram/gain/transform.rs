@@ -14,21 +14,27 @@ use super::GainCalcResult;
 pub struct Transform<
     G: Gain,
     FT: Fn(&Transducer, Drive) -> Drive + Send + Sync + 'static,
-    F: Fn(&Device) -> FT + 'static,
+    F: Fn(&Device) -> FT,
 > {
     gain: G,
     f: F,
 }
 
 pub trait IntoTransform<G: Gain> {
-    fn with_transform<FT: Fn(&Transducer, Drive) -> Drive + Send + Sync, F: Fn(&Device) -> FT>(
+    fn with_transform<
+        FT: Fn(&Transducer, Drive) -> Drive + Send + Sync + 'static,
+        F: Fn(&Device) -> FT,
+    >(
         self,
         f: F,
     ) -> Transform<G, FT, F>;
 }
 
-impl<G: Gain, FT: Fn(&Transducer, Drive) -> Drive + Send + Sync, F: Fn(&Device) -> FT>
-    Transform<G, FT, F>
+impl<
+        G: Gain,
+        FT: Fn(&Transducer, Drive) -> Drive + Send + Sync + 'static,
+        F: Fn(&Device) -> FT,
+    > Transform<G, FT, F>
 {
     #[doc(hidden)]
     pub fn new(gain: G, f: F) -> Self {
@@ -39,7 +45,7 @@ impl<G: Gain, FT: Fn(&Transducer, Drive) -> Drive + Send + Sync, F: Fn(&Device) 
 impl<
         G: Gain,
         FT: Fn(&Transducer, Drive) -> Drive + Send + Sync + 'static,
-        F: Fn(&Device) -> FT + 'static,
+        F: Fn(&Device) -> FT,
     > Gain for Transform<G, FT, F>
 {
     fn calc(&self, geometry: &Geometry) -> GainCalcResult {
