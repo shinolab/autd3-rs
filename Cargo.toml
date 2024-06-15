@@ -52,9 +52,7 @@ time = { version = "0.3.23", default-features = false }
 tokio = "1.35.1"
 tonic = { version = "0.11.0", default-features = false }
 tonic-build = "0.11.0"
-wav_io = "0.1.8"
 thread-priority = "1.0.0"
-const_fn = "0.4.10"
 rayon = "1.10.0"
 derive_more = "0.99.17"
 tracing = "0.1.40"
