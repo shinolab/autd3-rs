@@ -17,24 +17,6 @@ pub struct Wav {
     loop_behavior: LoopBehavior,
 }
 
-impl Clone for Wav {
-    fn clone(&self) -> Self {
-        Self {
-            path: self.path.clone(),
-            config: Mutex::new(*self.config.lock().unwrap()),
-            loop_behavior: self.loop_behavior,
-        }
-    }
-}
-
-impl PartialEq for Wav {
-    fn eq(&self, other: &Self) -> bool {
-        self.path == other.path
-            && *self.config.lock().unwrap() == *other.config.lock().unwrap()
-            && self.loop_behavior == other.loop_behavior
-    }
-}
-
 impl Wav {
     pub fn new(path: impl AsRef<Path>) -> Self {
         Self {
@@ -96,13 +78,30 @@ impl Wav {
             ..self
         }
     }
-    // GRCOV_EXCL_STOP
 
     pub fn with_loop_behavior(self, loop_behavior: LoopBehavior) -> Self {
         Self {
             loop_behavior,
             ..self
         }
+    }
+}
+
+impl Clone for Wav {
+    fn clone(&self) -> Self {
+        Self {
+            path: self.path.clone(),
+            config: Mutex::new(*self.config.lock().unwrap()),
+            loop_behavior: self.loop_behavior,
+        }
+    }
+}
+
+impl PartialEq for Wav {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path
+            && *self.config.lock().unwrap() == *other.config.lock().unwrap()
+            && self.loop_behavior == other.loop_behavior
     }
 }
 
@@ -114,22 +113,6 @@ impl ModulationProperty for Wav {
     fn loop_behavior(&self) -> LoopBehavior {
         self.loop_behavior
     }
-}
-
-impl Modulation for Wav {
-    #[allow(clippy::unnecessary_cast)]
-    fn calc(&self, _geometry: &Geometry) -> ModulationCalcResult {
-        let (buf, sample_rate) = self.read_buf()?;
-        *self.config.lock().unwrap() = SamplingConfig::Freq(sample_rate * Hz);
-        Ok(buf)
-    }
-
-    #[tracing::instrument(level = "debug", skip(_geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, _geometry: &Geometry) {
-        tracing::info!("{}", tynm::type_name::<Self>());
-    }
-    // GRCOV_EXCL_STOP
 }
 
 impl DatagramST for Wav {
@@ -161,7 +144,6 @@ impl DatagramST for Wav {
     }
 
     #[tracing::instrument(skip(self, geometry))]
-    // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
         <Self as Modulation>::trace(self, geometry);
         if tracing::enabled!(tracing::Level::DEBUG) {
@@ -188,7 +170,6 @@ impl DatagramST for Wav {
             }
         }
     }
-    // GRCOV_EXCL_STOP
 }
 
 impl IntoModulationTransform<Self> for Wav {
@@ -210,6 +191,23 @@ impl IntoRadiationPressure<Self> for Wav {
     fn with_radiation_pressure(self) -> RadiationPressure<Self> {
         RadiationPressure::new(self)
     }
+}
+// GRCOV_EXCL_STOP
+
+impl Modulation for Wav {
+    #[allow(clippy::unnecessary_cast)]
+    fn calc(&self, _geometry: &Geometry) -> ModulationCalcResult {
+        let (buf, sample_rate) = self.read_buf()?;
+        *self.config.lock().unwrap() = SamplingConfig::Freq(sample_rate * Hz);
+        Ok(buf)
+    }
+
+    // GRCOV_EXCL_START
+    #[tracing::instrument(level = "debug", skip(_geometry))]
+    fn trace(&self, _geometry: &Geometry) {
+        tracing::info!("{}", tynm::type_name::<Self>());
+    }
+    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]
