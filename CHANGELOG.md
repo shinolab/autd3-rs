@@ -1,3 +1,8 @@
+# 25.3.1
+
+- Fix `Controller::last_parallel_threshold()` 
+
+
 # 25.3.0
 
 - Add `last_parallel_threshold` to `Controller` for debugging
