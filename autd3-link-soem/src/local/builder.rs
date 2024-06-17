@@ -77,11 +77,9 @@ impl SOEMBuilder {
     }
 
     #[deprecated(note = "This function does nothing", since = "25.3.0")]
-    pub fn with_sync_mode(self, mode: SyncMode) -> Self {
-        Self {
-            sync_mode: mode,
-            ..self
-        }
+    pub const fn with_sync_mode(mut self, mode: SyncMode) -> Self {
+        self.sync_mode = mode;
+        self
     }
 }
 
