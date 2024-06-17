@@ -9,7 +9,7 @@ pub enum SOEMError {
     NoDeviceFound,
     #[error("No socket connection on {0}")]
     NoSocketConnection(String),
-    #[error("The number of slaves you specified: {1}, but found: {0}")]
+    #[error("The number of slaves you specified is {1}, but {0} devices are found")]
     SlaveNotFound(u16, u16),
     #[error("One ore more slaves are not responding")]
     NotResponding(EcStatus),
