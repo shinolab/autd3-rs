@@ -77,7 +77,7 @@ impl<G: Gain> Gain for Cache<G> {
     #[tracing::instrument(level = "debug", skip(self, geometry), fields(cached = self.cache.borrow().len() == geometry.devices().count() && geometry.devices().all(|dev| self.cache.borrow().contains_key(&dev.idx()))))]
     // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
-        tracing::info!("{}", tynm::type_name::<Self>());
+        tracing::debug!("{}", tynm::type_name::<Self>());
         <G as Gain>::trace(&self.gain, geometry);
     }
     // GRCOV_EXCL_STOP

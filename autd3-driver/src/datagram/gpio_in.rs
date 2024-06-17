@@ -51,7 +51,7 @@ impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> Datagram for Emul
     #[tracing::instrument(level = "debug", skip(self, geometry))]
     // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
-        tracing::info!("{}", tynm::type_name::<Self>());
+        tracing::debug!("{}", tynm::type_name::<Self>());
         if tracing::enabled!(tracing::Level::DEBUG) {
             geometry.devices().for_each(|dev| {
                 let f = (self.f)(dev);

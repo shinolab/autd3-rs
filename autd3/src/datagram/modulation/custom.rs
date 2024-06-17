@@ -32,7 +32,7 @@ impl Modulation for Custom {
     #[tracing::instrument(level = "debug", skip(self, _geometry), fields(%self.config, %self.loop_behavior))]
     // GRCOV_EXCL_START
     fn trace(&self, _geometry: &Geometry) {
-        tracing::info!("{}", tynm::type_name::<Self>());
+        tracing::debug!("{}", tynm::type_name::<Self>());
     }
     // GRCOV_EXCL_STOP
 }

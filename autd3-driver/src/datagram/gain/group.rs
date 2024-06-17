@@ -143,7 +143,7 @@ where
     #[tracing::instrument(level = "debug", skip(self, geometry))]
     // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
-        tracing::info!("Group");
+        tracing::debug!("Group");
         if tracing::enabled!(tracing::Level::TRACE) {
             geometry.devices().for_each(|dev| {
                 tracing::debug!("Device[{}]", dev.idx());

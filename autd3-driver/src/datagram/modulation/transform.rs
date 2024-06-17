@@ -39,7 +39,7 @@ impl<M: Modulation, F: Fn(usize, u8) -> u8> Modulation for Transform<M, F> {
     #[tracing::instrument(level = "debug", skip(self, geometry), fields(%self.config, %self.loop_behavior))]
     // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
-        tracing::info!("{}", tynm::type_name::<Self>());
+        tracing::debug!("{}", tynm::type_name::<Self>());
         <M as Modulation>::trace(&self.m, geometry);
     }
     // GRCOV_EXCL_STOP
