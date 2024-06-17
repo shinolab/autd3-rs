@@ -44,9 +44,11 @@ pub trait IntoDatagramWithParallelThreshold<D: Datagram> {
 }
 
 impl<D: Datagram> IntoDatagramWithParallelThreshold<D> for D {
+    // GRCOV_EXCL_START
     fn with_paralle_threshold(self, threshold: usize) -> DatagramWithParallelThreshold<D> {
         Self::with_parallel_threshold(self, threshold)
     }
+    // GRCOV_EXCL_STOP
     fn with_parallel_threshold(self, threshold: usize) -> DatagramWithParallelThreshold<D> {
         DatagramWithParallelThreshold {
             datagram: self,
@@ -72,7 +74,7 @@ mod tests {
             timeout: Some(std::time::Duration::from_secs(1)),
             parallel_threshold: None,
         }
-        .with_paralle_threshold(100);
+        .with_parallel_threshold(100);
         assert_eq!(datagram.timeout(), Some(std::time::Duration::from_secs(1)));
         assert_eq!(datagram.parallel_threshold(), Some(100));
         let _: Result<NullOperationGenerator, _> = datagram.operation_generator(&geometry);
