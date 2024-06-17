@@ -124,7 +124,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for GSPAT<D, B> {
     #[tracing::instrument(level = "debug", skip(self, _geometry), fields(?self.repeat, ?self.constraint))]
     // GRCOV_EXCL_START
     fn trace(&self, _geometry: &Geometry) {
-        tracing::info!("{}", tynm::type_name::<Self>());
+        tracing::debug!("{}", tynm::type_name::<Self>());
         if tracing::enabled!(tracing::Level::DEBUG) {
             if tracing::enabled!(tracing::Level::TRACE) {
                 self.foci

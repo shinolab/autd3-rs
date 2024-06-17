@@ -137,7 +137,7 @@ impl<const N: usize> DatagramST for FociSTM<N> {
     #[tracing::instrument(level = "debug", skip(self, _geometry), fields(%self.loop_behavior, %self.sampling_config))]
     // GRCOV_EXCL_START
     fn trace(&self, _geometry: &Geometry) {
-        tracing::info!("{}", tynm::type_name::<Self>());
+        tracing::debug!("{}", tynm::type_name::<Self>());
         if tracing::enabled!(tracing::Level::DEBUG) {
             if tracing::enabled!(tracing::Level::TRACE) {
                 self.control_points.iter().enumerate().for_each(|(i, f)| {

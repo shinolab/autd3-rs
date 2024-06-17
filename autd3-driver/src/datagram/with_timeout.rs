@@ -33,7 +33,7 @@ impl<D: Datagram> Datagram for DatagramWithTimeout<D> {
     #[tracing::instrument(level = "debug", skip(self, geometry))]
     // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
-        tracing::info!("{} ({:?})", tynm::type_name::<Self>(), self.timeout);
+        tracing::debug!("{} ({:?})", tynm::type_name::<Self>(), self.timeout);
         self.datagram.trace(geometry);
     }
     // GRCOV_EXCL_STOP

@@ -72,7 +72,7 @@ pub trait Datagram {
     #[tracing::instrument(skip(self, _geometry))]
     // GRCOV_EXCL_START
     fn trace(&self, _geometry: &Geometry) {
-        tracing::info!("Datagram");
+        tracing::debug!("Datagram");
     }
     // GRCOV_EXCL_STOP
 }
@@ -134,7 +134,7 @@ where
     #[tracing::instrument(skip(self, geometry))]
     // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
-        tracing::info!("Datagram (tuple)");
+        tracing::debug!("Datagram (tuple)");
         self.0.trace(geometry);
         self.1.trace(geometry);
     }

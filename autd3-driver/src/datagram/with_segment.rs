@@ -39,7 +39,7 @@ impl<D: DatagramS> Datagram for DatagramWithSegment<D> {
     #[tracing::instrument(level = "debug", skip(self, geometry))]
     // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
-        tracing::info!(
+        tracing::debug!(
             "{} ({:?}, {:?})",
             tynm::type_name::<D>(),
             self.segment,

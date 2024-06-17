@@ -61,7 +61,7 @@ impl Gain for Bessel {
     #[tracing::instrument(level = "debug", skip(_geometry))]
     // GRCOV_EXCL_START
     fn trace(&self, _geometry: &Geometry) {
-        tracing::info!("{}", tynm::type_name::<Self>());
+        tracing::debug!("{}", tynm::type_name::<Self>());
     }
     // GRCOV_EXCL_STOP
 }

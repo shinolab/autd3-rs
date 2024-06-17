@@ -205,7 +205,7 @@ impl Modulation for Wav {
     // GRCOV_EXCL_START
     #[tracing::instrument(level = "debug", skip(_geometry))]
     fn trace(&self, _geometry: &Geometry) {
-        tracing::info!("{}", tynm::type_name::<Self>());
+        tracing::debug!("{}", tynm::type_name::<Self>());
     }
     // GRCOV_EXCL_STOP
 }
