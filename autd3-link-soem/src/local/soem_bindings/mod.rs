@@ -4,6 +4,7 @@
 #![allow(dead_code)]
 #![allow(clippy::upper_case_acronyms)]
 #![allow(deref_nullptr)]
+#![allow(unused_imports)]
 #[cfg(target_os = "windows")]
 mod win32;
 #[cfg(target_os = "windows")]

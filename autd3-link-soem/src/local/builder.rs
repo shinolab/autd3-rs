@@ -16,7 +16,7 @@ pub struct SOEMBuilder {
     pub(crate) buf_size: usize,
     #[getset]
     pub(crate) timer_strategy: TimerStrategy,
-    #[getset]
+    #[get]
     pub(crate) sync_mode: SyncMode,
     #[getset]
     pub(crate) ifname: String,
@@ -34,6 +34,10 @@ pub struct SOEMBuilder {
     #[getset]
     pub(crate) process_priority: super::ProcessPriority,
     pub(crate) err_handler: Option<ErrHandler>,
+    #[getset]
+    pub(crate) sync_tolerance: std::time::Duration,
+    #[getset]
+    pub(crate) sync_timeout: std::time::Duration,
 }
 
 impl Default for SOEMBuilder {
@@ -57,6 +61,8 @@ impl SOEMBuilder {
             #[cfg(target_os = "windows")]
             process_priority: super::ProcessPriority::High,
             err_handler: None,
+            sync_tolerance: std::time::Duration::from_micros(1),
+            sync_timeout: std::time::Duration::from_secs(10),
         }
     }
 
@@ -66,6 +72,14 @@ impl SOEMBuilder {
     ) -> Self {
         Self {
             err_handler: Some(Box::new(err_handler)),
+            ..self
+        }
+    }
+
+    #[deprecated(note = "This function does nothing", since = "25.3.0")]
+    pub fn with_sync_mode(self, mode: SyncMode) -> Self {
+        Self {
+            sync_mode: mode,
             ..self
         }
     }
