@@ -184,17 +184,12 @@ def rust_build(args):
     config = Config(args)
 
     with working_dir("."):
-        subprocess.run(config.cargo_build_command(args.features)).check_returncode()
-
-    if not config.no_examples:
-        info("Building examples...")
-        with working_dir("./examples"):
-            command = config.cargo_command_base("build")
-            command.append("--bins")
-            features = "soem twincat simulator remote_soem remote_twincat"
-            command.append("--features")
-            command.append(features)
-            subprocess.run(command).check_returncode()
+        command = config.cargo_build_command(args.features)
+        if config.no_examples:
+            command.append("--workspace")
+            command.append("--exclude")
+            command.append("examples")
+        subprocess.run(command).check_returncode()
 
 
 def rust_lint(args):
