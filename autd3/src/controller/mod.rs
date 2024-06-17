@@ -83,6 +83,7 @@ impl<L: Link> Controller<L> {
         timeout: Option<Duration>,
         parallel_threshold: usize,
     ) -> Result<(), AUTDError> {
+        self.last_parallel_threshold = parallel_threshold;
         loop {
             OperationHandler::pack(
                 operations,
@@ -423,6 +424,31 @@ mod tests {
             assert!(states[0].is_none());
             assert!(states[1].unwrap().is_thermal_assert());
         }
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn last_parallel_threshold() -> anyhow::Result<()> {
+        let mut autd =
+            Controller::builder([AUTD3::new(Vector3::zeros()), AUTD3::new(Vector3::zeros())])
+                .with_parallel_threshold(0)
+                .open(Audit::builder())
+                .await?;
+        assert_eq!(usize::MAX, autd.last_parallel_threshold);
+
+        autd.send(Null::new()).await?;
+        assert_eq!(0, autd.last_parallel_threshold);
+
+        autd.send(Static::new()).await?;
+        assert_eq!(usize::MAX, autd.last_parallel_threshold);
+
+        autd.send(Static::new().with_parallel_threshold(10)).await?;
+        assert_eq!(10, autd.last_parallel_threshold);
+
+        autd.send((Static::new(), Static::new()).with_parallel_threshold(5))
+            .await?;
+        assert_eq!(5, autd.last_parallel_threshold);
 
         Ok(())
     }
