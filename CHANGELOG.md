@@ -5,6 +5,8 @@
 - Improve `gain::Cache` performance
 - Easing trait bound of `gain::Transform`
 - Stop resampling in `Wav` modulation
+- SOEM link now waits for system time to synchronize
+  - Add `with_sync_tolerance` and `with_sync_timeout` for `SOEMBuilder`
 
 # 25.2.3
 

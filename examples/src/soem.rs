@@ -7,6 +7,10 @@ use autd3_link_soem::{Status, SOEM};
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .init();
+
     let autd = Controller::builder([AUTD3::new(Vector3::zeros())])
         .open(
             SOEM::builder().with_err_handler(|slave, status| match status {

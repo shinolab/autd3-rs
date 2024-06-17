@@ -55,9 +55,11 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 async-std = { workspace = true }
 ctrlc-async = { workspace = true, optional = true }
 tonic = { workspace = true, optional = true }
+tracing-subscriber = { workspace = true }
+tracing = { workspace = true }
 
 [features]
-default = []
+default = ["all"]
 simulator = ["autd3-link-simulator"]
 soem = ["autd3-link-soem/local"]
 remote_soem = ["autd3-link-soem/remote"]
