@@ -322,6 +322,8 @@ def rust_coverage(args):
                 "**/soem_bindings/*",
                 "--ignore",
                 "*/build.rs",
+                "--ignore",
+                "examples/**/*.rs",
                 "--excl-start",
                 "GRCOV_EXCL_START",
                 "--excl-stop",
