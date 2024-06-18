@@ -461,7 +461,7 @@ impl SOEMDCConfigGuard {
 impl Drop for SOEMDCConfigGuard {
     fn drop(&mut self) {
         unsafe {
-            if ecx_context.userdata == std::ptr::null_mut() {
+            if ecx_context.userdata.is_null() {
                 return;
             }
 
