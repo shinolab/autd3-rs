@@ -38,17 +38,10 @@ impl<D: Datagram> Datagram for DatagramWithParallelThreshold<D> {
 }
 
 pub trait IntoDatagramWithParallelThreshold<D: Datagram> {
-    #[deprecated(note = "Use with_parallel_threshold instead", since = "25.3.1")]
-    fn with_paralle_threshold(self, threshold: usize) -> DatagramWithParallelThreshold<D>;
     fn with_parallel_threshold(self, threshold: usize) -> DatagramWithParallelThreshold<D>;
 }
 
 impl<D: Datagram> IntoDatagramWithParallelThreshold<D> for D {
-    // GRCOV_EXCL_START
-    fn with_paralle_threshold(self, threshold: usize) -> DatagramWithParallelThreshold<D> {
-        Self::with_parallel_threshold(self, threshold)
-    }
-    // GRCOV_EXCL_STOP
     fn with_parallel_threshold(self, threshold: usize) -> DatagramWithParallelThreshold<D> {
         DatagramWithParallelThreshold {
             datagram: self,

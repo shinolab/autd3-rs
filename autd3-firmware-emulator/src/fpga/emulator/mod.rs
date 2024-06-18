@@ -147,20 +147,6 @@ impl FPGAEmulator {
     fn fpga_sys_time(&self, dc_sys_time: DcSysTime) -> u64 {
         ((dc_sys_time.sys_time() as u128 * self.fpga_clk_freq().hz() as u128) / 1000000000) as _
     }
-
-    // GRCOV_EXCL_START
-    #[deprecated(note = "Use `current_stm_idx` instead", since = "23.1.0")]
-    pub fn stm_idx_from_systime(&self, segment: Segment, sys_time: DcSysTime) -> usize {
-        (self.fpga_sys_time(sys_time) / self.stm_freq_division(segment) as u64) as usize
-            % self.stm_cycle(segment)
-    }
-
-    #[deprecated(note = "Use `current_mod_idx` instead", since = "23.1.0")]
-    pub fn mod_idx_from_systime(&self, segment: Segment, sys_time: DcSysTime) -> usize {
-        (self.fpga_sys_time(sys_time) / self.modulation_freq_division(segment) as u64) as usize
-            % self.modulation_cycle(segment)
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]
