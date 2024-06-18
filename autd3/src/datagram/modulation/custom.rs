@@ -16,13 +16,6 @@ impl Custom {
             loop_behavior: LoopBehavior::infinite(),
         }
     }
-
-    // GRCOV_EXCL_START
-    #[deprecated(note = "Do not change the sampling configuration", since = "25.3.0")]
-    pub fn with_sampling_config(self, config: SamplingConfig) -> Self {
-        Self { config, ..self }
-    }
-    // GRCOV_EXCL_STOP
 }
 impl Modulation for Custom {
     fn calc(&self, _: &Geometry) -> ModulationCalcResult {

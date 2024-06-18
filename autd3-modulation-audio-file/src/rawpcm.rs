@@ -40,13 +40,6 @@ impl RawPCM {
         reader.read_to_end(&mut raw_buffer)?;
         Ok(raw_buffer)
     }
-
-    // GRCOV_EXCL_START
-    #[deprecated(note = "Do not change the sampling configuration", since = "25.0.2")]
-    pub fn with_sampling_config(self, config: SamplingConfig) -> Self {
-        Self { config, ..self }
-    }
-    // GRCOV_EXCL_STOP
 }
 
 impl Modulation for RawPCM {
