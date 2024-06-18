@@ -38,7 +38,7 @@ impl<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> SDP<D, B> {
             lambda: 0.9,
             repeat: 100,
             backend,
-            constraint: EmissionConstraint::DontCare,
+            constraint: EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX),
             _phantom: std::marker::PhantomData,
         }
     }
@@ -275,7 +275,10 @@ mod tests {
         assert_eq!(g.alpha(), 0.1);
         assert_eq!(g.lambda(), 0.9);
         assert_eq!(g.repeat(), 10);
-        assert_eq!(g.constraint(), EmissionConstraint::DontCare);
+        assert_eq!(
+            g.constraint(),
+            EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX)
+        );
 
         assert_eq!(
             g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))

@@ -27,7 +27,7 @@ impl<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> Naive<D, B> {
             foci,
             amps,
             backend,
-            constraint: EmissionConstraint::DontCare,
+            constraint: EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX),
             _phantom: std::marker::PhantomData,
         }
     }
@@ -131,7 +131,10 @@ mod tests {
             [(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)].into_iter(),
         );
 
-        assert_eq!(g.constraint(), EmissionConstraint::DontCare);
+        assert_eq!(
+            g.constraint(),
+            EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX)
+        );
 
         assert_eq!(
             g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))

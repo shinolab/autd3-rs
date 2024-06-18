@@ -3,23 +3,15 @@ use autd3_driver::firmware::fpga::EmitIntensity;
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[non_exhaustive]
 pub enum EmissionConstraint {
-    DontCare,
-
     Normalize,
-
     Multiply(f32),
-
     Uniform(EmitIntensity),
-
     Clamp(EmitIntensity, EmitIntensity),
 }
 
 impl EmissionConstraint {
     pub fn convert(&self, value: f32, max_value: f32) -> EmitIntensity {
         match self {
-            EmissionConstraint::DontCare => {
-                EmitIntensity::new((value * 255.).round().clamp(0., 255.) as u8)
-            }
             EmissionConstraint::Normalize => {
                 EmitIntensity::new((value / max_value * 255.).round() as u8)
             }
@@ -39,19 +31,6 @@ impl EmissionConstraint {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[rstest::rstest]
-    #[test]
-    #[case(EmitIntensity::MIN, 0.0, 1.0)]
-    #[case(EmitIntensity::new(128), 0.5, 1.0)]
-    #[case(EmitIntensity::MAX, 1.0, 1.0)]
-    #[case(EmitIntensity::MAX, 1.5, 1.0)]
-    fn dont_care(#[case] expect: EmitIntensity, #[case] value: f32, #[case] max_value: f32) {
-        assert_eq!(
-            expect,
-            EmissionConstraint::DontCare.convert(value, max_value)
-        );
-    }
 
     #[rstest::rstest]
     #[test]

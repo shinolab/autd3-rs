@@ -10,11 +10,6 @@ impl ToMessage for autd3_gain_holo::EmissionConstraint {
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         match self {
-            autd3_gain_holo::EmissionConstraint::DontCare => Self::Message {
-                constraint: Some(emission_constraint::Constraint::DontCare(
-                    DontCareConstraint {},
-                )),
-            },
             autd3_gain_holo::EmissionConstraint::Normalize => Self::Message {
                 constraint: Some(emission_constraint::Constraint::Normalize(
                     NormalizeConstraint {},
@@ -45,9 +40,6 @@ impl ToMessage for autd3_gain_holo::EmissionConstraint {
 impl FromMessage<EmissionConstraint> for autd3_gain_holo::EmissionConstraint {
     fn from_msg(msg: &EmissionConstraint) -> Option<Self> {
         match msg.constraint {
-            Some(emission_constraint::Constraint::DontCare(_)) => {
-                Some(autd3_gain_holo::EmissionConstraint::DontCare)
-            }
             Some(emission_constraint::Constraint::Normalize(_)) => {
                 Some(autd3_gain_holo::EmissionConstraint::Normalize)
             }
@@ -75,14 +67,6 @@ mod tests {
     use super::*;
     use autd3_driver::derive::EmitIntensity;
     use rand::Rng;
-
-    #[test]
-    fn test_emission_constraint_dont_care() {
-        let v = autd3_gain_holo::EmissionConstraint::DontCare;
-        let msg = v.to_msg(None);
-        let v2 = autd3_gain_holo::EmissionConstraint::from_msg(&msg).unwrap();
-        assert_eq!(v, v2);
-    }
 
     #[test]
     fn test_emission_constraint_normalize() {
