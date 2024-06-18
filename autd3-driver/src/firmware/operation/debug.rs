@@ -21,7 +21,7 @@ pub struct DebugSettingOp {
 }
 
 impl DebugSettingOp {
-    pub fn new(ty: [u8; 4], value: [u16; 4]) -> Self {
+    pub const fn new(ty: [u8; 4], value: [u16; 4]) -> Self {
         Self {
             is_done: false,
             ty,

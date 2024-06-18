@@ -62,7 +62,7 @@ fn calculate_mult_div(frequency: u32) -> Option<(u64, u64, u64)> {
 }
 
 impl ConfigureClockOp {
-    pub fn new(ultrasound_freq: Freq<u32>) -> Self {
+    pub const fn new(ultrasound_freq: Freq<u32>) -> Self {
         Self {
             ultrasound_freq,
             rom: vec![],

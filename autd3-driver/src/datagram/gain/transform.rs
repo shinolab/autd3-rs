@@ -37,7 +37,7 @@ impl<
     > Transform<G, FT, F>
 {
     #[doc(hidden)]
-    pub fn new(gain: G, f: F) -> Self {
+    pub const fn new(gain: G, f: F) -> Self {
         Self { gain, f }
     }
 }

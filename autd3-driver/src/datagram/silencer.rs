@@ -51,7 +51,7 @@ pub type SilencerFixedCompletionSteps = Silencer<FixedCompletionSteps>;
 pub type SilencerFixedUpdateRate = Silencer<FixedUpdateRate>;
 
 impl Silencer<()> {
-    pub fn fixed_update_rate(
+    pub const fn fixed_update_rate(
         update_rate_intensity: u16,
         update_rate_phase: u16,
     ) -> Silencer<FixedUpdateRate> {
@@ -63,7 +63,7 @@ impl Silencer<()> {
         }
     }
 
-    pub fn fixed_completion_steps(
+    pub const fn fixed_completion_steps(
         steps_intensity: u16,
         steps_phase: u16,
     ) -> Silencer<FixedCompletionSteps> {

@@ -20,7 +20,7 @@ impl EthernetAdapter {
     }
 }
 
-#[derive(Clone, Deref)]
+#[derive(Clone, Deref, Default)]
 pub struct EthernetAdapters {
     #[deref]
     adapters: Vec<EthernetAdapter>,
@@ -46,20 +46,6 @@ impl EthernetAdapters {
             soem_bindings::ec_free_adapters(adapter);
             EthernetAdapters { adapters }
         }
-    }
-
-    pub fn len(&self) -> usize {
-        self.adapters.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-}
-
-impl Default for EthernetAdapters {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

@@ -474,7 +474,7 @@ impl Drop for SOEMDCConfigGuard {
 struct OpStateGuard;
 
 impl OpStateGuard {
-    fn new() -> Self {
+    const fn new() -> Self {
         Self
     }
 
