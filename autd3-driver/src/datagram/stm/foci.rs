@@ -59,7 +59,7 @@ impl<const N: usize> FociSTM<N> {
     }
 
     pub fn from_sampling_config<C, F: IntoIterator<Item = C>>(
-        config: SamplingConfig,
+        config: impl Into<SamplingConfig>,
         control_points: F,
     ) -> Self
     where
@@ -71,7 +71,7 @@ impl<const N: usize> FociSTM<N> {
                 .map(ControlPoints::from)
                 .collect(),
             loop_behavior: LoopBehavior::infinite(),
-            sampling_config: config,
+            sampling_config: config.into(),
         }
     }
 }

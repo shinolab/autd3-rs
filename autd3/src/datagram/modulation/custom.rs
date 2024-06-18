@@ -9,10 +9,10 @@ pub struct Custom {
 }
 
 impl Custom {
-    pub fn new(buffer: Vec<u8>, config: SamplingConfig) -> Self {
+    pub fn new(buffer: Vec<u8>, config: impl Into<SamplingConfig>) -> Self {
         Self {
             buffer,
-            config,
+            config: config.into(),
             loop_behavior: LoopBehavior::infinite(),
         }
     }

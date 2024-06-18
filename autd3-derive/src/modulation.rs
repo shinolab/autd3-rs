@@ -33,8 +33,8 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
         quote! {
             impl <#(#linetimes,)* #(#type_params,)*> #name #ty_generics #where_clause {
                 #[allow(clippy::needless_update)]
-                pub fn with_sampling_config(self, config: SamplingConfig) -> Self {
-                    Self {config, ..self}
+                pub fn with_sampling_config(self, config: impl Into<SamplingConfig>) -> Self {
+                    Self {config: config.into(), ..self}
                 }
             }
         }
