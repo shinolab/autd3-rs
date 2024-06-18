@@ -208,10 +208,7 @@ impl SOEM {
                     }
 
                     if start.elapsed() > sync_timeout {
-                        // TODO: add SOEMError variant for this case
-                        return Err(AUTDInternalError::LinkError(
-                            format!("Failed to synchronize devices. Maximum system time difference ({:?}) exceeded the tolerance ({:?}).", max_diff, sync_tolerance),
-                        ));
+                        return Err(SOEMError::SynchronizeFailed(max_diff, sync_tolerance).into());
                     }
                     tokio::time::sleep_until(now + Duration::from_millis(10)).await;
                 }
