@@ -2,6 +2,7 @@ use crate::defined::Angle;
 
 use super::{UnitQuaternion, Vector3};
 
+#[non_exhaustive]
 pub enum EulerAngle {
     ZYZ(Angle, Angle, Angle),
 }

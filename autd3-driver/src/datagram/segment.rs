@@ -9,6 +9,7 @@ use crate::{
 use super::OperationGenerator;
 
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub enum SwapSegment {
     Gain(Segment),
     Modulation(Segment, TransitionMode),

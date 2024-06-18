@@ -86,10 +86,12 @@ impl FPGAEmulator {
         match self.current_mod_segment() {
             Segment::S0 => fpga_state &= !(1 << 1),
             Segment::S1 => fpga_state |= 1 << 1,
+            _ => unimplemented!(),
         }
         match self.current_stm_segment() {
             Segment::S0 => fpga_state &= !(1 << 2),
             Segment::S1 => fpga_state |= 1 << 2,
+            _ => unimplemented!(),
         }
         if self.stm_cycle(self.current_stm_segment()) == 1 {
             fpga_state |= 1 << 3;

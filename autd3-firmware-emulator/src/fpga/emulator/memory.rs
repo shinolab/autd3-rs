@@ -179,6 +179,7 @@ impl Memory {
         match segment {
             Segment::S0 => self.controller_bram[ADDR_STM_MODE0] == STM_MODE_GAIN,
             Segment::S1 => self.controller_bram[ADDR_STM_MODE1] == STM_MODE_GAIN,
+            _ => unimplemented!(),
         }
     }
 
@@ -208,6 +209,7 @@ impl Memory {
             match segment {
                 Segment::S0 => ADDR_STM_FREQ_DIV0_0,
                 Segment::S1 => ADDR_STM_FREQ_DIV1_0,
+                _ => unimplemented!(),
             },
         )
     }
@@ -216,6 +218,7 @@ impl Memory {
         self.controller_bram[match segment {
             Segment::S0 => ADDR_STM_CYCLE0,
             Segment::S1 => ADDR_STM_CYCLE1,
+            _ => unimplemented!(),
         }] as usize
             + 1
     }
@@ -224,6 +227,7 @@ impl Memory {
         self.controller_bram[match segment {
             Segment::S0 => ADDR_STM_SOUND_SPEED0,
             Segment::S1 => ADDR_STM_SOUND_SPEED1,
+            _ => unimplemented!(),
         }]
     }
 
@@ -231,6 +235,7 @@ impl Memory {
         self.controller_bram[match segment {
             Segment::S0 => ADDR_STM_NUM_FOCI0,
             Segment::S1 => ADDR_STM_NUM_FOCI1,
+            _ => unimplemented!(),
         }] as u8
     }
 
@@ -240,6 +245,7 @@ impl Memory {
             match segment {
                 Segment::S0 => ADDR_STM_REP0_0,
                 Segment::S1 => ADDR_STM_REP1_0,
+                _ => unimplemented!(),
             },
         ) {
             0xFFFFFFFF => LoopBehavior::infinite(),
@@ -279,6 +285,7 @@ impl Memory {
             match segment {
                 Segment::S0 => ADDR_MOD_FREQ_DIV0_0,
                 Segment::S1 => ADDR_MOD_FREQ_DIV1_0,
+                _ => unimplemented!(),
             },
         )
     }
@@ -287,6 +294,7 @@ impl Memory {
         self.controller_bram[match segment {
             Segment::S0 => ADDR_MOD_CYCLE0,
             Segment::S1 => ADDR_MOD_CYCLE1,
+            _ => unimplemented!(),
         }] as usize
             + 1
     }
@@ -297,6 +305,7 @@ impl Memory {
             match segment {
                 Segment::S0 => ADDR_MOD_REP0_0,
                 Segment::S1 => ADDR_MOD_REP1_0,
+                _ => unimplemented!(),
             },
         ) {
             0xFFFFFFFF => LoopBehavior::infinite(),
@@ -308,6 +317,7 @@ impl Memory {
         let m = match segment {
             Segment::S0 => &self.modulator_bram_0[idx >> 1],
             Segment::S1 => &self.modulator_bram_1[idx >> 1],
+            _ => unimplemented!(),
         };
         let m = if idx % 2 == 0 { m & 0xFF } else { m >> 8 };
         m as u8
@@ -412,6 +422,7 @@ impl Memory {
         match segment {
             Segment::S0 => &self.stm_bram_0,
             Segment::S1 => &self.stm_bram_1,
+            _ => unimplemented!(),
         }
         .iter()
         .skip(256 * idx)
@@ -429,6 +440,7 @@ impl Memory {
         let bram = match segment {
             Segment::S0 => &self.stm_bram_0,
             Segment::S1 => &self.stm_bram_1,
+            _ => unimplemented!(),
         };
         let sound_speed = self.sound_speed(segment);
 

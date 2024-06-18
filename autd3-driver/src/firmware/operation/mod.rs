@@ -42,6 +42,7 @@ use rayon::prelude::*;
 
 #[derive(PartialEq, Debug)]
 #[repr(u8)]
+#[non_exhaustive]
 pub enum TypeTag {
     NONE = 0x00,
     Clear = 0x01,

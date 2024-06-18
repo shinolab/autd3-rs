@@ -27,6 +27,7 @@ impl std::fmt::Debug for ReadFirmwareVersionState {
 }
 
 #[derive(Error, Debug, PartialEq)]
+#[non_exhaustive]
 pub enum AUTDError {
     #[error("{0}")]
     ReadFirmwareVersionFailed(ReadFirmwareVersionState),

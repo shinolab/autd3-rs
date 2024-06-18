@@ -1,6 +1,7 @@
 use autd3_driver::firmware::fpga::EmitIntensity;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[non_exhaustive]
 pub enum EmissionConstraint {
     DontCare,
 
