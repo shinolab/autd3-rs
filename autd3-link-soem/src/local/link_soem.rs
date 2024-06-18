@@ -18,7 +18,7 @@ pub use crate::local::builder::SOEMBuilder;
 
 use autd3_driver::{
     error::AUTDInternalError,
-    ethercat::EC_CYCLE_TIME_BASE_NANO_SEC,
+    ethercat::{SyncMode, EC_CYCLE_TIME_BASE_NANO_SEC},
     firmware::cpu::{RxMessage, TxDatagram},
     link::Link,
 };
@@ -79,7 +79,7 @@ impl SOEM {
             let SOEMBuilder {
                 buf_size,
                 timer_strategy,
-                sync_mode: _,
+                sync_mode,
                 ifname,
                 state_check_interval,
                 timeout,
@@ -131,60 +131,38 @@ impl SOEM {
             let (tx_sender, tx_receiver) = bounded(buf_size);
             let is_open = Arc::new(AtomicBool::new(true));
             let io_map = Arc::new(Mutex::new(IOMap::new(num_devices)));
-            let config_dc_guard = SOEMDCConfigGuard::new();
-            let mut result = Self {
-                timeout,
-                sender: tx_sender,
-                is_open,
-                ec_send_cycle,
-                io_map,
-                init_guard: Some(init_guard),
-                config_dc_guard: Some(config_dc_guard),
-                op_state_guard: None,
-                ecat_th_guard: None,
-                ecat_check_th_guard: None,
-            };
+            let config_dc_guard = SOEMDCConfigGuard::new(ec_sync0_cycle);
 
-            ec_config_map(result.io_map.lock().unwrap().data() as *mut c_void);
-
-            result.op_state_guard = Some(OpStateGuard::new());
-
-            tracing::info!("Checking if all devices are in safe operational state.");
-            OpStateGuard::to_safe_op(num_devices)?;
-
-            tracing::info!(
-                "All devices are in safe operational state. Switching to operational state."
-            );
-            OpStateGuard::to_op();
-
-            let wkc = Arc::new(AtomicI32::new(0));
-            tracing::info!(
-                "Starting EtherCAT thread with cycle time {:?}.",
-                ec_send_cycle
-            );
-            result.ecat_th_guard = Some(SOEMECatThreadGuard::new(
-                result.is_open.clone(),
-                wkc.clone(),
-                result.io_map.clone(),
-                tx_receiver,
-                timer_strategy,
-                thread_priority,
-                #[cfg(target_os = "windows")]
-                process_priority,
-                ec_send_cycle,
-            )?);
-
-            if !OpStateGuard::is_op_state() {
-                return Err(SOEMError::NotResponding(EcStatus::new(num_devices)).into());
+            if sync_mode == SyncMode::DC {
+                tracing::info!("Configuring Sync0 with cycle time {:?}.", ec_sync0_cycle);
+                config_dc_guard.set_dc_config();
             }
 
-            tracing::info!("All devices are in operational state. Waiting for synchronization.");
+            tracing::info!("Waiting for synchronization.");
+            let sync_done = Arc::new(AtomicBool::new(false));
+            let th = std::thread::spawn({
+                let sync_done = sync_done.clone();
+                move || {
+                    let mut data = 0u64;
+                    while !sync_done.load(Ordering::Acquire) {
+                        ec_FRMW(
+                            ec_slave[1].configadr,
+                            ECT_REG_DCSYSTIME as _,
+                            std::mem::size_of::<u64>() as _,
+                            &mut data as *mut _ as *mut _,
+                            EC_TIMEOUTRET as _,
+                        );
+                        std::thread::sleep(Duration::from_millis(1));
+                    }
+                }
+            });
+            tokio::time::sleep(Duration::from_millis(100)).await;
             if wc > 1 {
                 let mut last_diff = (0..wc as usize - 1)
                     .map(|_| sync_tolerance.as_nanos() as u32)
                     .collect::<Vec<_>>();
                 let mut diff_averages =
-                    vec![ExponentialMovingAverage::new(64).unwrap(); (wc - 1) as usize];
+                    vec![ExponentialMovingAverage::new(9).unwrap(); (wc - 1) as usize];
                 let start = std::time::Instant::now();
                 loop {
                     let now = tokio::time::Instant::now();
@@ -219,7 +197,7 @@ impl SOEM {
                             tracing::trace!("DCSYSDIFF[{}] = {:?}.", slave - 1, diff);
                             acc.max(diff)
                         });
-                    tracing::trace!("Maximum system time difference is {:?}.", max_diff);
+                    tracing::debug!("Maximum system time difference is {:?}.", max_diff);
                     if max_diff < sync_tolerance {
                         tracing::info!(
                             "All devices are synchronized. Maximum system time difference is {:?}.",
@@ -237,13 +215,60 @@ impl SOEM {
                     tokio::time::sleep_until(now + Duration::from_millis(10)).await;
                 }
             }
+            sync_done.store(true, Ordering::Release);
+            let _ = th.join();
 
-            tracing::info!("Configuring Sync0 with cycle time {:?}.", ec_sync0_cycle);
-            result
-                .config_dc_guard
-                .as_mut()
-                .unwrap()
-                .dc_config(ec_sync0_cycle);
+            let mut result = Self {
+                timeout,
+                sender: tx_sender,
+                is_open,
+                ec_send_cycle,
+                io_map,
+                init_guard: Some(init_guard),
+                config_dc_guard: Some(config_dc_guard),
+                op_state_guard: None,
+                ecat_th_guard: None,
+                ecat_check_th_guard: None,
+            };
+
+            ec_config_map(result.io_map.lock().unwrap().data() as *mut c_void);
+
+            result.op_state_guard = Some(OpStateGuard::new());
+
+            tracing::info!("Checking if all devices are in safe operational state.");
+            OpStateGuard::to_safe_op(num_devices)?;
+
+            tracing::info!(
+                "All devices are in safe operational state. Switching to operational state."
+            );
+            OpStateGuard::to_op();
+            tracing::info!("All devices are in operational state.");
+
+            let wkc = Arc::new(AtomicI32::new(0));
+            tracing::info!(
+                "Starting EtherCAT thread with cycle time {:?}.",
+                ec_send_cycle
+            );
+            result.ecat_th_guard = Some(SOEMECatThreadGuard::new(
+                result.is_open.clone(),
+                wkc.clone(),
+                result.io_map.clone(),
+                tx_receiver,
+                timer_strategy,
+                thread_priority,
+                #[cfg(target_os = "windows")]
+                process_priority,
+                ec_send_cycle,
+            )?);
+
+            if !OpStateGuard::is_op_state() {
+                return Err(SOEMError::NotResponding(EcStatus::new(num_devices)).into());
+            }
+
+            if sync_mode == SyncMode::FreeRun {
+                tracing::info!("Configuring Sync0 with cycle time {:?}.", ec_sync0_cycle);
+                result.config_dc_guard.as_mut().unwrap().dc_config();
+            }
 
             tracing::info!(
                 "Starting EtherCAT state check thread with interval {:?}.",
@@ -391,22 +416,40 @@ impl Drop for SOEMInitGuard {
     }
 }
 
-struct SOEMDCConfigGuard {
-    cycle: Option<Duration>,
+struct SOEMDCConfigGuard {}
+
+unsafe extern "C" fn po2so_config(context: *mut ecx_contextt, slave: uint16) -> i32 {
+    let cyc_time = ((*context).userdata as *mut Duration)
+        .as_ref()
+        .unwrap()
+        .as_nanos() as _;
+    ec_dcsync0(slave, 1, cyc_time, 0);
+    0
 }
 
 impl SOEMDCConfigGuard {
-    fn new() -> Self {
+    fn new(ec_sync0_cycle: Duration) -> Self {
         unsafe {
+            ecx_context.userdata = Box::into_raw(Box::new(ec_sync0_cycle)) as *mut _;
             ec_configdc();
         }
-        Self { cycle: None }
+        Self {}
     }
 
-    fn dc_config(&mut self, ec_sync0_cycle: Duration) {
+    fn set_dc_config(&self) {
         unsafe {
-            self.cycle = Some(ec_sync0_cycle);
-            let cyc_time = ec_sync0_cycle.as_nanos() as _;
+            (1..=ec_slavecount as usize).for_each(|i| {
+                ec_slave[i].PO2SOconfigx = Some(po2so_config);
+            });
+        }
+    }
+
+    fn dc_config(&self) {
+        unsafe {
+            let cyc_time = (ecx_context.userdata as *mut Duration)
+                .as_ref()
+                .unwrap()
+                .as_nanos() as _;
             (1..=ec_slavecount as u16).for_each(|i| {
                 ec_dcsync0(i, 1, cyc_time, 0);
             });
@@ -417,12 +460,15 @@ impl SOEMDCConfigGuard {
 impl Drop for SOEMDCConfigGuard {
     fn drop(&mut self) {
         unsafe {
-            if let Some(cyc_time) = self.cycle {
-                let cyc_time = cyc_time.as_nanos() as _;
-                (1..=ec_slavecount as u16).for_each(|i| {
-                    ec_dcsync0(i, 0, cyc_time, 0);
-                });
+            if ecx_context.userdata == std::ptr::null_mut() {
+                return;
             }
+
+            let cyc_time = Box::from_raw(ecx_context.userdata as *mut Duration);
+            let cyc_time = cyc_time.as_nanos() as _;
+            (1..=ec_slavecount as u16).for_each(|i| {
+                ec_dcsync0(i, 0, cyc_time, 0);
+            });
         }
     }
 }

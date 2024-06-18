@@ -16,7 +16,7 @@ pub struct SOEMBuilder {
     pub(crate) buf_size: usize,
     #[getset]
     pub(crate) timer_strategy: TimerStrategy,
-    #[get]
+    #[getset]
     pub(crate) sync_mode: SyncMode,
     #[getset]
     pub(crate) ifname: String,
@@ -51,7 +51,7 @@ impl SOEMBuilder {
         SOEMBuilder {
             buf_size: 32,
             timer_strategy: TimerStrategy::Sleep,
-            sync_mode: SyncMode::FreeRun,
+            sync_mode: SyncMode::DC,
             ifname: String::new(),
             state_check_interval: Duration::from_millis(100),
             timeout: Duration::from_millis(20),
@@ -74,12 +74,6 @@ impl SOEMBuilder {
             err_handler: Some(Box::new(err_handler)),
             ..self
         }
-    }
-
-    #[deprecated(note = "This function does nothing", since = "25.3.0")]
-    pub const fn with_sync_mode(mut self, mode: SyncMode) -> Self {
-        self.sync_mode = mode;
-        self
     }
 }
 
