@@ -7,27 +7,27 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     let name = &input.ident;
     let generics = &input.generics;
 
-    let freq_div_no_change =
-        if let syn::Data::Struct(syn::DataStruct { fields, .. }) = input.data.clone() {
-            fields.iter().any(|field| {
-                let is_config = field
-                    .ident
-                    .as_ref()
-                    .map(|ident| ident == "config")
-                    .unwrap_or(false);
-                let no_change = field.attrs.iter().any(
-                    |attr| matches!(&attr.meta, Meta::Path(path) if path.is_ident("no_change")),
-                );
-                is_config && no_change
-            })
-        } else {
-            false
-        };
+    let no_change = if let syn::Data::Struct(syn::DataStruct { fields, .. }) = input.data.clone() {
+        fields.iter().any(|field| {
+            let is_config = field
+                .ident
+                .as_ref()
+                .map(|ident| ident == "config")
+                .unwrap_or(false);
+            let no_change = field
+                .attrs
+                .iter()
+                .any(|attr| matches!(&attr.meta, Meta::Path(path) if path.is_ident("no_change")));
+            is_config && no_change
+        })
+    } else {
+        false
+    };
 
     let linetimes = generics.lifetimes();
     let type_params = generics.type_params();
     let (_, ty_generics, where_clause) = generics.split_for_impl();
-    let freq_config = if freq_div_no_change {
+    let sampling_config = if no_change {
         quote! {}
     } else {
         quote! {
@@ -54,14 +54,18 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
 
     let linetimes = generics.lifetimes();
     let type_params = generics.type_params();
-    let prop = quote! {
-        impl <#(#linetimes,)* #(#type_params,)*> ModulationProperty for #name #ty_generics #where_clause {
-            fn sampling_config(&self) -> SamplingConfig {
-                self.config
-            }
+    let prop = if attrs.iter().any(|attr| attr.path().is_ident("no_property")) {
+        quote! {}
+    } else {
+        quote! {
+            impl <#(#linetimes,)* #(#type_params,)*> ModulationProperty for #name #ty_generics #where_clause {
+                fn sampling_config(&self) -> SamplingConfig {
+                    self.config
+                }
 
-            fn loop_behavior(&self) -> LoopBehavior {
-                self.loop_behavior
+                fn loop_behavior(&self) -> LoopBehavior {
+                    self.loop_behavior
+                }
             }
         }
     };
@@ -184,7 +188,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
 
         #loop_behavior
 
-        #freq_config
+        #sampling_config
 
         #datagram_with_segment_transition
 
