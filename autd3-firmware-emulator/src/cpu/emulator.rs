@@ -131,7 +131,7 @@ impl CPUEmulator {
         self.dc_sys_time = sys_time;
     }
 
-    pub fn dc_sys_time(&self) -> DcSysTime {
+    pub const fn dc_sys_time(&self) -> DcSysTime {
         self.dc_sys_time
     }
 

@@ -16,7 +16,7 @@ pub struct ReadsFPGAStateOp {
 }
 
 impl ReadsFPGAStateOp {
-    pub fn new(value: bool) -> Self {
+    pub const fn new(value: bool) -> Self {
         Self {
             is_done: false,
             value,

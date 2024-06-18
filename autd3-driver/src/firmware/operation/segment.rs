@@ -30,7 +30,7 @@ pub struct SwapSegmentOp {
 }
 
 impl SwapSegmentOp {
-    pub fn new(segment: SwapSegment) -> Self {
+    pub const fn new(segment: SwapSegment) -> Self {
         Self {
             segment,
             is_done: false,

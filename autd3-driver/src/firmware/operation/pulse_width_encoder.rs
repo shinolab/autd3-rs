@@ -43,7 +43,7 @@ pub struct PulseWidthEncoderOp<F: Fn(usize) -> u16> {
 }
 
 impl<F: Fn(usize) -> u16> PulseWidthEncoderOp<F> {
-    pub fn new(f: F) -> Self {
+    pub const fn new(f: F) -> Self {
         Self {
             f,
             full_width_start: 0,

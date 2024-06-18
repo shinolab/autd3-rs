@@ -50,7 +50,7 @@ pub struct FociSTMOp<const N: usize> {
 }
 
 impl<const N: usize> FociSTMOp<N> {
-    pub fn new(
+    pub const fn new(
         points: Arc<Vec<ControlPoints<N>>>,
         config: SamplingConfig,
         rep: u32,

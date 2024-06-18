@@ -42,7 +42,7 @@ pub struct ModulationOp {
 }
 
 impl ModulationOp {
-    pub fn new(
+    pub const fn new(
         modulation: Arc<Vec<u8>>,
         config: SamplingConfig,
         rep: u32,

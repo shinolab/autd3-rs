@@ -30,7 +30,7 @@ pub struct EmulateGPIOInOp {
 }
 
 impl EmulateGPIOInOp {
-    pub fn new(value: [bool; 4]) -> Self {
+    pub const fn new(value: [bool; 4]) -> Self {
         Self {
             is_done: false,
             value,

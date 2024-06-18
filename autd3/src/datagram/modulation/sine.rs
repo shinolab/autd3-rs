@@ -33,7 +33,7 @@ impl Sine<ExactFreq> {
         }
     }
 
-    pub fn with_freq_nearest(freq: Freq<f32>) -> Sine<NearestFreq> {
+    pub const fn with_freq_nearest(freq: Freq<f32>) -> Sine<NearestFreq> {
         Sine {
             freq,
             intensity: u8::MAX,

@@ -162,7 +162,7 @@ impl<const SET: u16> Swapchain<SET> {
         self.transition_mode = transition_mode;
     }
 
-    fn fpga_sys_time(&self, dc_sys_time: DcSysTime) -> u64 {
+    const fn fpga_sys_time(&self, dc_sys_time: DcSysTime) -> u64 {
         ((dc_sys_time.sys_time() as u128 * self.fpga_clk_freq.hz() as u128) / 1000000000) as _
     }
 
@@ -171,25 +171,25 @@ impl<const SET: u16> Swapchain<SET> {
             .div_rem(&self.cycle[&segment])
     }
 
-    pub fn current_idx(&self) -> usize {
+    pub const fn current_idx(&self) -> usize {
         self.cur_idx
     }
 }
 
 impl FPGAEmulator {
-    pub fn current_mod_segment(&self) -> Segment {
+    pub const fn current_mod_segment(&self) -> Segment {
         self.mod_swapchain.cur_segment
     }
 
-    pub fn current_stm_segment(&self) -> Segment {
+    pub const fn current_stm_segment(&self) -> Segment {
         self.stm_swapchain.cur_segment
     }
 
-    pub fn current_mod_idx(&self) -> usize {
+    pub const fn current_mod_idx(&self) -> usize {
         self.mod_swapchain.current_idx()
     }
 
-    pub fn current_stm_idx(&self) -> usize {
+    pub const fn current_stm_idx(&self) -> usize {
         self.stm_swapchain.current_idx()
     }
 }

@@ -140,7 +140,7 @@ impl FPGAEmulator {
         self.stm_swapchain.fpga_clk_freq = freq;
     }
 
-    pub fn fpga_clk_freq(&self) -> Freq<u32> {
+    pub const fn fpga_clk_freq(&self) -> Freq<u32> {
         self.fpga_clk_freq
     }
 }

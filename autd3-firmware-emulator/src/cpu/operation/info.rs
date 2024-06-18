@@ -14,11 +14,11 @@ struct FirmInfo {
 }
 
 impl CPUEmulator {
-    fn get_cpu(&self) -> u16 {
+    const fn get_cpu(&self) -> u16 {
         CPU_VERSION_MAJOR
     }
 
-    fn get_cpu_version_minor(&self) -> u16 {
+    const fn get_cpu_version_minor(&self) -> u16 {
         CPU_VERSION_MINOR
     }
 

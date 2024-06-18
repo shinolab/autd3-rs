@@ -72,7 +72,7 @@ impl Geometry {
             .for_each(|dev| dev.set_sound_speed_from_temp_with(temp, k, r, m));
     }
 
-    pub fn ultrasound_freq(&self) -> Freq<u32> {
+    pub const fn ultrasound_freq(&self) -> Freq<u32> {
         self.ultrasound_freq
     }
 }
