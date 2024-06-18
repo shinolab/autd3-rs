@@ -2,7 +2,7 @@ use autd3_driver::{defined::Freq, derive::*};
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
-#[derive(Modulation, Clone, PartialEq, Builder)]
+#[derive(Modulation, Clone, PartialEq, Builder, Debug)]
 pub struct Square<S: SamplingMode> {
     #[get]
     freq: S::T,
@@ -73,22 +73,6 @@ impl<S: SamplingMode> Modulation for Square<S> {
     }
     // GRCOV_EXCL_STOP
 }
-
-// TODO: add Debug to SamplingMode and use derive(Debug)
-// GRCOV_EXCL_START
-impl<S: SamplingMode> std::fmt::Debug for Square<S> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Square")
-            .field("freq", &self.freq)
-            .field("low", &self.low)
-            .field("high", &self.high)
-            .field("duty", &self.duty)
-            .field("config", &self.config)
-            .field("loop_behavior", &self.loop_behavior)
-            .finish()
-    }
-}
-// GRCOV_EXCL_STOP
 
 #[cfg(test)]
 mod tests {
