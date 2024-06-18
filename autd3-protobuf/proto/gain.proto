@@ -41,7 +41,6 @@ message Holo {
   Amplitude amp = 2;
 }
 
-message DontCareConstraint {}
 message NormalizeConstraint {}
 message MultiplyConstraint { float value = 1; }
 message UniformConstraint { EmitIntensity value = 1; }
@@ -51,7 +50,6 @@ message ClampConstraint {
 }
 message EmissionConstraint {
   oneof constraint {
-    DontCareConstraint dont_care = 1;
     NormalizeConstraint normalize = 2;
     UniformConstraint uniform = 3;
     ClampConstraint clamp = 4;

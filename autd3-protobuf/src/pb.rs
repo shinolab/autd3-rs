@@ -1170,9 +1170,6 @@ pub struct Holo {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DontCareConstraint {}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct NormalizeConstraint {}
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1205,8 +1202,6 @@ pub mod emission_constraint {
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Constraint {
-        #[prost(message, tag = "1")]
-        DontCare(super::DontCareConstraint),
         #[prost(message, tag = "2")]
         Normalize(super::NormalizeConstraint),
         #[prost(message, tag = "3")]

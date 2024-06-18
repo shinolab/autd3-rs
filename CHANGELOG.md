@@ -1,3 +1,8 @@
+# 26.0.0
+
+- Remove `EmissionConstraint::DontCare`
+  - Use `EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX)` instead
+
 # 25.3.2
 
 - Check synchronization before SafeOp. Also, activate Sync0 at the transition from PreOp to SafeOp.

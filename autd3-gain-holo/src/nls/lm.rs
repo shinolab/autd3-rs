@@ -43,7 +43,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
             k_max: 5,
             initial: vec![],
             backend,
-            constraint: EmissionConstraint::DontCare,
+            constraint: EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX),
             _phantom: std::marker::PhantomData,
         }
     }
@@ -329,7 +329,10 @@ mod tests {
         assert_eq!(g.tau(), 1e-2);
         assert_eq!(g.k_max(), 2);
         assert_eq!(g.initial(), &[1.0]);
-        assert_eq!(g.constraint(), EmissionConstraint::DontCare);
+        assert_eq!(
+            g.constraint(),
+            EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX)
+        );
 
         assert_eq!(
             g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))

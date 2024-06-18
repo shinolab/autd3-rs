@@ -30,7 +30,7 @@ impl<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> GSPAT<D, B> {
             amps,
             repeat: 100,
             backend,
-            constraint: EmissionConstraint::DontCare,
+            constraint: EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX),
             _phantom: std::marker::PhantomData,
         }
     }
@@ -172,7 +172,10 @@ mod tests {
         .with_repeat(50);
 
         assert_eq!(g.repeat(), 50);
-        assert_eq!(g.constraint(), EmissionConstraint::DontCare);
+        assert_eq!(
+            g.constraint(),
+            EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX)
+        );
 
         assert_eq!(
             g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
