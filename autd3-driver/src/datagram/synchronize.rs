@@ -23,8 +23,6 @@ impl OperationGenerator for SynchronizeOpGenerator {
 }
 
 impl Datagram for Synchronize {
-    type O1 = SyncOp;
-    type O2 = NullOp;
     type G = SynchronizeOpGenerator;
 
     fn timeout(&self) -> Option<Duration> {

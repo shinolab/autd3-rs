@@ -8,11 +8,11 @@ use autd3_driver::{
         Clear, ConfigureFPGAClock, Datagram, IntoDatagramWithTimeout, Silencer, Synchronize,
     },
     defined::{Freq, DEFAULT_TIMEOUT, FREQ_40K},
-    derive::{tracing, Builder, Operation},
+    derive::{tracing, Builder},
     firmware::{
         cpu::{RxMessage, TxDatagram},
         fpga::FPGAState,
-        operation::OperationHandler,
+        operation::{Operation, OperationHandler},
         version::FirmwareVersion,
     },
     geometry::{Device, Geometry, IntoDevice},

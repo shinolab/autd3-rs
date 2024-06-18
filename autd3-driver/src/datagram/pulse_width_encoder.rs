@@ -53,8 +53,6 @@ impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
 }
 
 impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> Datagram for PulseWidthEncoder<H, F> {
-    type O1 = PulseWidthEncoderOp<H>;
-    type O2 = NullOp;
     type G = PulseWidthEncoderOpGenerator<H, F>;
 
     fn timeout(&self) -> Option<Duration> {

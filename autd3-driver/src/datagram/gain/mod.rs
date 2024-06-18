@@ -10,9 +10,11 @@ pub use group::Group;
 pub use transform::IntoTransform as IntoGainTransform;
 pub use transform::Transform as GainTransform;
 
+use crate::firmware::operation::GainOp;
+use crate::firmware::operation::NullOp;
 use crate::firmware::operation::OperationGenerator;
 use crate::{
-    derive::{GainOp, Geometry, NullOp, Segment},
+    derive::{Geometry, Segment},
     error::AUTDInternalError,
     firmware::fpga::Drive,
     geometry::{Device, Transducer},
@@ -75,8 +77,6 @@ impl<'a> Gain for Box<dyn Gain + 'a> {
 }
 
 impl<'a> Datagram for Box<dyn Gain + 'a> {
-    type O1 = GainOp;
-    type O2 = NullOp;
     type G = GainOperationGenerator<Box<dyn Gain + 'a>>;
 
     fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
@@ -113,8 +113,6 @@ impl<'a> Datagram for Box<dyn Gain + 'a> {
 }
 
 impl<'a> DatagramS for Box<dyn Gain + 'a> {
-    type O1 = GainOp;
-    type O2 = NullOp;
     type G = GainOperationGenerator<Box<dyn Gain + 'a>>;
 
     fn operation_generator_with_segment(

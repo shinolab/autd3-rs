@@ -30,8 +30,6 @@ impl OperationGenerator for SwapSegmentOpGenerator {
 }
 
 impl Datagram for SwapSegment {
-    type O1 = SwapSegmentOp;
-    type O2 = NullOp;
     type G = SwapSegmentOpGenerator;
 
     fn timeout(&self) -> Option<Duration> {

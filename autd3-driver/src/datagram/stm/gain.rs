@@ -139,8 +139,6 @@ impl<G: Gain> OperationGenerator for GainSTMOperationGenerator<G> {
 }
 
 impl<G: Gain> DatagramST for GainSTM<G> {
-    type O1 = GainSTMOp;
-    type O2 = NullOp;
     type G = GainSTMOperationGenerator<G>;
 
     fn operation_generator_with_segment(

@@ -103,8 +103,6 @@ impl<const N: usize> OperationGenerator for FociSTMOperationGenerator<N> {
 }
 
 impl<const N: usize> DatagramST for FociSTM<N> {
-    type O1 = FociSTMOp<N>;
-    type O2 = NullOp;
     type G = FociSTMOperationGenerator<N>;
 
     fn operation_generator_with_segment(

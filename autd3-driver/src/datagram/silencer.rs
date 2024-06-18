@@ -172,8 +172,6 @@ impl OperationGenerator for SilencerFixedUpdateRateOpGenerator {
 }
 
 impl Datagram for Silencer<FixedUpdateRate> {
-    type O1 = SilencerFixedUpdateRateOp;
-    type O2 = NullOp;
     type G = SilencerFixedUpdateRateOpGenerator;
 
     fn timeout(&self) -> Option<Duration> {
@@ -222,8 +220,6 @@ impl OperationGenerator for SilencerFixedCompletionStepsOpGenerator {
 }
 
 impl Datagram for Silencer<FixedCompletionSteps> {
-    type O1 = SilencerFixedCompletionStepsOp;
-    type O2 = NullOp;
     type G = SilencerFixedCompletionStepsOpGenerator;
 
     fn timeout(&self) -> Option<Duration> {

@@ -24,12 +24,9 @@ pub mod derive {
         },
         defined::{rad, DEFAULT_TIMEOUT},
         error::AUTDInternalError,
-        firmware::{
-            fpga::{
-                Drive, EmitIntensity, LoopBehavior, Phase, SamplingConfig, Segment, TransitionMode,
-                SAMPLING_FREQ_DIV_MIN,
-            },
-            operation::{GainOp, ModulationOp, NullOp, Operation},
+        firmware::fpga::{
+            Drive, EmitIntensity, LoopBehavior, Phase, SamplingConfig, Segment, TransitionMode,
+            SAMPLING_FREQ_DIV_MIN,
         },
         geometry::{Device, Geometry, Transducer},
     };

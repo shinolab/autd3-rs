@@ -23,8 +23,6 @@ impl OperationGenerator for ConfigureClockOpGenerator {
 }
 
 impl Datagram for ConfigureFPGAClock {
-    type O1 = ConfigureClockOp;
-    type O2 = NullOp;
     type G = ConfigureClockOpGenerator;
 
     fn timeout(&self) -> Option<Duration> {

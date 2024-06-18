@@ -2,7 +2,6 @@ pub use crate::{
     derive::*,
     error::AUTDInternalError,
     firmware::fpga::{Drive, Segment},
-    firmware::operation::{GainOp, NullOp},
     geometry::{Device, Geometry, Transducer},
 };
 pub use autd3_derive::Gain;

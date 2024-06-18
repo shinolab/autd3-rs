@@ -14,8 +14,6 @@ pub struct DatagramWithTimeout<D: Datagram> {
 }
 
 impl<D: Datagram> Datagram for DatagramWithTimeout<D> {
-    type O1 = D::O1;
-    type O2 = D::O2;
     type G = D::G;
 
     fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {

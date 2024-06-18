@@ -26,8 +26,6 @@ impl<F: Fn(&Device) -> bool> OperationGenerator for ForceFanOpGenerator<F> {
 }
 
 impl<F: Fn(&Device) -> bool> Datagram for ForceFan<F> {
-    type O1 = ForceFanOp;
-    type O2 = NullOp;
     type G = ForceFanOpGenerator<F>;
 
     fn timeout(&self) -> Option<Duration> {
