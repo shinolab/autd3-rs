@@ -4,6 +4,7 @@ use autd3_driver::error::AUTDInternalError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
+#[non_exhaustive]
 pub enum AudioFileError {
     #[error("{0}")]
     Io(#[from] std::io::Error),

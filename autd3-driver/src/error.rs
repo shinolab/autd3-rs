@@ -6,6 +6,7 @@ use crate::{
 };
 
 #[derive(Error, Debug, PartialEq, Clone)]
+#[non_exhaustive]
 pub enum AUTDInternalError {
     #[error(
         "Modulation buffer size ({0}) is out of range ([{}, {}])",

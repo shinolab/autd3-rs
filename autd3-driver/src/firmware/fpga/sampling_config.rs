@@ -9,6 +9,7 @@ use crate::{
 use super::ULTRASOUND_PERIOD;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[non_exhaustive]
 pub enum SamplingConfig {
     Freq(Freq<u32>),
     FreqNearest(Freq<f32>),

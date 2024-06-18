@@ -6,6 +6,7 @@ use crate::{
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[non_exhaustive]
 pub enum STMSamplingConfig {
     Freq(Freq<f32>),
     FreqNearest(Freq<f32>),
