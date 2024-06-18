@@ -18,9 +18,9 @@ impl Static {
         }
     }
 
-    pub fn with_intensity(intensity: impl Into<u8>) -> Self {
+    pub const fn with_intensity(intensity: u8) -> Self {
         Self {
-            intensity: intensity.into(),
+            intensity,
             config: SamplingConfig::DISABLE,
             loop_behavior: LoopBehavior::infinite(),
         }
