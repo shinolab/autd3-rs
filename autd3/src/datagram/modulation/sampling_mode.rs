@@ -6,8 +6,9 @@ use autd3_driver::{
     utils::float::is_integer,
 };
 use num::integer::gcd;
+use std::fmt::Debug;
 
-pub trait SamplingMode: Clone + Sync {
+pub trait SamplingMode: Clone + Sync + Debug {
     type T: Frequency;
     fn validate(
         freq: Self::T,
