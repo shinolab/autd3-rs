@@ -105,6 +105,12 @@ impl std::fmt::Display for SamplingConfig {
     }
 }
 
+impl From<Freq<u32>> for SamplingConfig {
+    fn from(freq: Freq<u32>) -> Self {
+        Self::Freq(freq)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::defined::Hz;

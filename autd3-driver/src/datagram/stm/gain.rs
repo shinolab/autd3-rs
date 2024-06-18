@@ -48,13 +48,13 @@ impl<G: Gain> GainSTM<G> {
     }
 
     pub fn from_sampling_config<F: IntoIterator<Item = G>>(
-        config: SamplingConfig,
+        config: impl Into<SamplingConfig>,
         gains: F,
     ) -> Self {
         Self {
             gains: gains.into_iter().collect::<Vec<_>>(),
             loop_behavior: LoopBehavior::infinite(),
-            sampling_config: config,
+            sampling_config: config.into(),
             mode: GainSTMMode::PhaseIntensityFull,
         }
     }
