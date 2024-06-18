@@ -1,4 +1,4 @@
-use autd3_driver::{defined::Freq, derive::*};
+use autd3_driver::derive::*;
 
 use std::{
     fs::File,
@@ -17,18 +17,10 @@ pub struct RawPCM {
 }
 
 impl RawPCM {
-    pub fn new(path: impl AsRef<Path>, sample_rate: Freq<u32>) -> Self {
+    pub fn new(path: impl AsRef<Path>, sampling_config: impl Into<SamplingConfig>) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),
-            config: SamplingConfig::Freq(sample_rate),
-            loop_behavior: LoopBehavior::infinite(),
-        }
-    }
-
-    pub fn from_sampling_config(path: impl AsRef<Path>, config: SamplingConfig) -> Self {
-        Self {
-            path: path.as_ref().to_path_buf(),
-            config,
+            config: sampling_config.into(),
             loop_behavior: LoopBehavior::infinite(),
         }
     }
@@ -57,7 +49,7 @@ impl Modulation for RawPCM {
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::defined::Hz;
+    use autd3_driver::defined::{Freq, Hz};
 
     use crate::tests::create_geometry;
 
@@ -87,14 +79,6 @@ mod tests {
         assert_eq!(expect, m.calc(&geometry));
 
         Ok(())
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case( SamplingConfig::Freq(4000 * Hz))]
-    fn from_sampling_config(#[case] config: SamplingConfig) {
-        let m = RawPCM::from_sampling_config("tmp.csv", config);
-        assert_eq!(config, m.config);
     }
 
     #[test]
