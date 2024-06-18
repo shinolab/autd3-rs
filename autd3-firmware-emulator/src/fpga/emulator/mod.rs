@@ -143,18 +143,12 @@ impl FPGAEmulator {
     pub fn fpga_clk_freq(&self) -> Freq<u32> {
         self.fpga_clk_freq
     }
-
-    fn fpga_sys_time(&self, dc_sys_time: DcSysTime) -> u64 {
-        ((dc_sys_time.sys_time() as u128 * self.fpga_clk_freq().hz() as u128) / 1000000000) as _
-    }
 }
 
 #[cfg(test)]
 
 mod tests {
     use super::*;
-
-    use autd3_driver::ethercat::ECAT_DC_SYS_TIME_BASE;
 
     static ASIN_TABLE: &[u8; 32768] = include_bytes!("asin.dat");
 
@@ -178,23 +172,6 @@ mod tests {
                 fpga.to_pulse_width(a.into(), b)
             );
         });
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(20480000, 1_000_000_000)]
-    #[case(40960000, 2_000_000_000)]
-    fn sys_time(#[case] expect: u64, #[case] value: u64) {
-        let fpga = FPGAEmulator::new(249);
-        assert_eq!(
-            expect,
-            fpga.fpga_sys_time(
-                DcSysTime::from_utc(
-                    ECAT_DC_SYS_TIME_BASE + std::time::Duration::from_nanos(value),
-                )
-                .unwrap(),
-            )
-        );
     }
 
     #[test]
