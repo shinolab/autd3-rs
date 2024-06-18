@@ -1,7 +1,10 @@
+# 25.3.2
+
+- Check synchronization before SafeOp. Also, activate Sync0 at the transition from PreOp to SafeOp.
+
 # 25.3.1
 
 - Fix `Controller::last_parallel_threshold()` 
-
 
 # 25.3.0
 

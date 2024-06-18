@@ -1022,6 +1022,15 @@ fn bindgen_test_layout_ecx_portt() {
     );
 }
 extern "C" {
+    pub fn ec_FRMW(
+        ADP: uint16,
+        ADO: uint16,
+        length: uint16,
+        data: *mut ::std::os::raw::c_void,
+        timeout: ::std::os::raw::c_int,
+    ) -> ::std::os::raw::c_int;
+}
+extern "C" {
     pub fn ec_FPRD(
         ADP: uint16,
         ADO: uint16,
