@@ -2,9 +2,9 @@ use std::{fmt::Debug, time::Duration};
 
 use autd3_driver::{
     datagram::Datagram,
-    derive::{tracing, NullOp},
+    derive::tracing,
     error::AUTDInternalError,
-    firmware::operation::{Operation, OperationGenerator},
+    firmware::operation::{NullOp, Operation, OperationGenerator},
     geometry::Device,
 };
 
@@ -43,8 +43,8 @@ impl<'a, K: PartialEq + Debug, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
     #[tracing::instrument(level = "debug", skip(self, d))]
     pub fn set<D: Datagram>(self, k: K, d: D) -> Result<Self, AUTDInternalError>
     where
-        D::O1: 'static,
-        D::O2: 'static,
+        <<D as Datagram>::G as OperationGenerator>::O1: 'static,
+        <<D as Datagram>::G as OperationGenerator>::O2: 'static,
     {
         let Self {
             f,

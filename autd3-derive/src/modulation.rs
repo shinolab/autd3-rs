@@ -75,8 +75,6 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let datagram_with_segment_transition = quote! {
         impl <#(#linetimes,)* #(#type_params,)* > DatagramST for #name #ty_generics #where_clause {
-            type O1 = ModulationOp;
-            type O2 = NullOp;
             type G =  ModulationOperationGenerator;
 
             fn operation_generator_with_segment(self, geometry: &Geometry, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<Self::G, AUTDInternalError> {

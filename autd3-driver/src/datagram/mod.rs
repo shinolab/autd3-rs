@@ -51,13 +51,11 @@ use std::time::Duration;
 use crate::{
     derive::{Device, Geometry},
     error::AUTDInternalError,
-    firmware::operation::{Operation, OperationGenerator},
+    firmware::operation::OperationGenerator,
 };
 
 pub trait Datagram {
-    type O1: Operation;
-    type O2: Operation;
-    type G: OperationGenerator<O1 = Self::O1, O2 = Self::O2>;
+    type G: OperationGenerator;
 
     fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError>;
 
@@ -101,13 +99,13 @@ where
     }
 }
 
-impl<D1, D2> Datagram for (D1, D2)
+impl<G1, G2, D1, D2> Datagram for (D1, D2)
 where
-    D1: Datagram<O2 = crate::firmware::operation::NullOp>,
-    D2: Datagram<O2 = crate::firmware::operation::NullOp>,
+    D1: Datagram<G = G1>,
+    D2: Datagram<G = G2>,
+    G1: OperationGenerator<O2 = NullOp>,
+    G2: OperationGenerator<O2 = NullOp>,
 {
-    type O1 = D1::O1;
-    type O2 = D2::O1;
     type G = CombinedOperationGenerator<D1::G, D2::G>;
 
     fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
@@ -166,8 +164,6 @@ pub mod tests {
     }
 
     impl DatagramST for NullDatagram {
-        type O1 = crate::firmware::operation::NullOp;
-        type O2 = crate::firmware::operation::NullOp;
         type G = NullOperationGenerator;
 
         fn operation_generator_with_segment(

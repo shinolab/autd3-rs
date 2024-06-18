@@ -23,8 +23,6 @@ impl OperationGenerator for ClearOpGenerator {
 }
 
 impl Datagram for Clear {
-    type O1 = ClearOp;
-    type O2 = NullOp;
     type G = ClearOpGenerator;
 
     fn timeout(&self) -> Option<Duration> {
