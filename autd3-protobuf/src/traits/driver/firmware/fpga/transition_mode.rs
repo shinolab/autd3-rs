@@ -18,6 +18,7 @@ pub fn to_transition_mode(
             _ => unreachable!(),
         }),
         3 => autd3_driver::firmware::fpga::TransitionMode::Ext,
+        4 => autd3_driver::firmware::fpga::TransitionMode::Immediate,
         _ => unreachable!(),
     })
 }
