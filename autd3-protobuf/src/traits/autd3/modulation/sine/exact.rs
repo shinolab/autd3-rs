@@ -20,7 +20,7 @@ impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::Exa
                     phase: Some(self.phase().to_msg(None)),
                 })),
                 segment: Segment::S0 as _,
-                transition_mode: Some(TransitionMode::SyncIdx.into()),
+                transition_mode: Some(TransitionMode::Immediate.into()),
                 transition_value: Some(0),
             })),
         }
