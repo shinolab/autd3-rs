@@ -1,3 +1,8 @@
+# 25.3.3
+
+- Fix `DatagramWithSegmentTransition::trace` and `DatagramWithSegment::trace`
+- Fix transition mode in lightweight mode
+
 # 25.3.2
 
 - Check synchronization before SafeOp. Also, activate Sync0 at the transition from PreOp to SafeOp.
