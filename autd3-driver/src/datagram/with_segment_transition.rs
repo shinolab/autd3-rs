@@ -45,7 +45,7 @@ impl<D: DatagramST> Datagram for DatagramWithSegmentTransition<D> {
     fn trace(&self, geometry: &Geometry) {
         tracing::debug!(
             "{} ({:?}, {:?})",
-            tynm::type_name::<D>(),
+            tynm::type_name::<Self>(),
             self.segment,
             self.transition_mode
         );
