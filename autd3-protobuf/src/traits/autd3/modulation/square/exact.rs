@@ -20,7 +20,7 @@ impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::E
                     duty: self.duty() as _,
                 })),
                 segment: Segment::S0 as _,
-                transition_mode: Some(TransitionMode::Immediate.into()),
+                transition_mode: Some(TransitionMode::SyncIdx.into()),
                 transition_value: Some(0),
             })),
         }

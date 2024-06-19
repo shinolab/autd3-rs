@@ -39,7 +39,6 @@ enum TransitionMode {
   SysTime = 1;
   GPIO = 2;
   Ext = 3;
-  Immediate = 4;
 }
 
 message ControlPoint {

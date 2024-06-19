@@ -16,7 +16,7 @@ where
             config: Some(self.sampling_config().to_msg(None)),
             loop_behavior: Some(self.loop_behavior().to_msg(None)),
             segment: Segment::S0 as _,
-            transition_mode: Some(TransitionMode::Immediate.into()),
+            transition_mode: Some(TransitionMode::SyncIdx.into()),
             transition_value: Some(0),
             gains: self
                 .iter()
