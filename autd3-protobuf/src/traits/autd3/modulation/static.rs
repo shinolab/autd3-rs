@@ -14,7 +14,7 @@ impl ToMessage for autd3::modulation::Static {
                     intensity: self.intensity() as _,
                 })),
                 segment: Segment::S0 as _,
-                transition_mode: Some(TransitionMode::SyncIdx.into()),
+                transition_mode: Some(0xFF),
                 transition_value: Some(0),
             })),
         }

@@ -1,5 +1,6 @@
 use autd3_driver::ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE};
 
+// TODO: Add a Immediate variant
 pub fn to_transition_mode(
     mode: Option<i32>,
     value: Option<u64>,
@@ -18,6 +19,7 @@ pub fn to_transition_mode(
             _ => unreachable!(),
         }),
         3 => autd3_driver::firmware::fpga::TransitionMode::Ext,
+        0xFF => autd3_driver::firmware::fpga::TransitionMode::Immediate,
         _ => unreachable!(),
     })
 }
