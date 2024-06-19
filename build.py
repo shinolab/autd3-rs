@@ -261,6 +261,7 @@ def rust_run(args):
             commands.append("--release")
         commands.append("--bin")
         commands.append(args.target)
+        commands.append("--no-default-features")
         if features is not None:
             commands.append("--features")
             commands.append(features)
