@@ -30,7 +30,7 @@ impl Square<ExactFreq> {
         }
     }
 
-    pub const fn with_freq_nearest(freq: Freq<f32>) -> Square<NearestFreq> {
+    pub const fn from_freq_nearest(freq: Freq<f32>) -> Square<NearestFreq> {
         Square {
             freq,
             low: u8::MIN,
@@ -180,12 +180,12 @@ mod tests {
         Err(AUTDInternalError::ModulationError("Frequency (-0.1 Hz) must be positive".to_owned())),
         -0.1*Hz
     )]
-    fn with_freq_nearest(
+    fn from_freq_nearest(
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
         #[case] freq: Freq<f32>,
     ) {
         let geometry = create_geometry(1);
-        let m = Square::with_freq_nearest(freq);
+        let m = Square::from_freq_nearest(freq);
         assert_eq!(freq, m.freq());
         assert_eq!(u8::MIN, m.low());
         assert_eq!(u8::MAX, m.high());
