@@ -86,8 +86,6 @@ mod tests {
     #[rstest::rstest]
     #[test]
     fn test_propagate(tr: Transducer, rot: UnitQuaternion, target: Vector3, sound_speed: f32) {
-        #[cfg(feature = "dynamic_freq")]
-        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
         let mut device = Device::new(0, rot, vec![tr.clone()]);
         device.sound_speed = sound_speed;
         let wavenumber = device.wavenumber();

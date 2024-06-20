@@ -206,8 +206,6 @@ mod tests {
 
     #[test]
     fn test() {
-        #[cfg(feature = "dynamic_freq")]
-        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
 
         const FOCI_STM_SIZE: usize = 100;
         const FRAME_SIZE: usize = size_of::<FociSTMHead>() + size_of::<STMFocus>() * FOCI_STM_SIZE;
@@ -306,8 +304,6 @@ mod tests {
 
     #[test]
     fn test_foci() {
-        #[cfg(feature = "dynamic_freq")]
-        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
 
         const FOCI_STM_SIZE: usize = 100;
         const N: usize = 8;
@@ -429,8 +425,6 @@ mod tests {
 
     #[test]
     fn test_div() {
-        #[cfg(feature = "dynamic_freq")]
-        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
 
         const FRAME_SIZE: usize = 32;
         const FOCI_STM_SIZE: usize = 7;
@@ -675,8 +669,6 @@ mod tests {
     #[case(Ok(()), FOCI_STM_BUF_SIZE_MAX)]
     #[case(Err(AUTDInternalError::FociSTMPointSizeOutOfRange(FOCI_STM_BUF_SIZE_MAX+1)), FOCI_STM_BUF_SIZE_MAX+1)]
     fn test_buffer_out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] n: usize) {
-        #[cfg(feature = "dynamic_freq")]
-        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
 
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
@@ -699,8 +691,6 @@ mod tests {
 
     #[test]
     fn test_foci_out_of_range() {
-        #[cfg(feature = "dynamic_freq")]
-        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
 
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
