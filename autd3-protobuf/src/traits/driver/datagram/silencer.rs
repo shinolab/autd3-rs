@@ -20,7 +20,7 @@ impl ToMessage for autd3_driver::datagram::SilencerFixedUpdateRate {
 
 impl FromMessage<SilencerFixedUpdateRate> for autd3_driver::datagram::SilencerFixedUpdateRate {
     fn from_msg(msg: &SilencerFixedUpdateRate) -> Option<Self> {
-        Some(autd3_driver::datagram::Silencer::fixed_update_rate(
+        Some(autd3_driver::datagram::Silencer::from_update_rate(
             msg.value_intensity as _,
             msg.value_phase as _,
         ))
@@ -50,7 +50,7 @@ impl FromMessage<SilencerFixedCompletionSteps>
 {
     fn from_msg(msg: &SilencerFixedCompletionSteps) -> Option<Self> {
         Some(
-            autd3_driver::datagram::Silencer::fixed_completion_steps(
+            autd3_driver::datagram::Silencer::from_completion_steps(
                 msg.value_intensity as _,
                 msg.value_phase as _,
             )
@@ -69,7 +69,7 @@ mod tests {
     fn test_silencer_fixed_update_rate() {
         let mut rng = rand::thread_rng();
 
-        let c = autd3_driver::datagram::Silencer::fixed_update_rate(
+        let c = autd3_driver::datagram::Silencer::from_update_rate(
             rng.gen_range(SILENCER_VALUE_MIN..SILENCER_VALUE_MAX),
             rng.gen_range(SILENCER_VALUE_MIN..SILENCER_VALUE_MAX),
         );
@@ -92,7 +92,7 @@ mod tests {
     fn test_silencer_fixed_completion_steps() {
         let mut rng = rand::thread_rng();
 
-        let c = autd3_driver::datagram::Silencer::fixed_completion_steps(
+        let c = autd3_driver::datagram::Silencer::from_completion_steps(
             rng.gen_range(SILENCER_VALUE_MIN..SILENCER_VALUE_MAX),
             rng.gen_range(SILENCER_VALUE_MIN..SILENCER_VALUE_MAX),
         )

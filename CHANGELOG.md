@@ -2,6 +2,8 @@
 
 - Remove `EmissionConstraint::DontCare`
   - Use `EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX)` instead
+- Rename `Silencer::fixed_xxx` to `Silencer::from_xxx`
+- Add `Silencer::from_completion_time`
 
 # 25.3.2
 

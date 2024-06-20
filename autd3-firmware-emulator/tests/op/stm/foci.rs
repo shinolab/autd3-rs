@@ -228,7 +228,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
         };
         assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
 
-        let d = Silencer::fixed_completion_steps(
+        let d = Silencer::from_completion_steps(
             SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT,
         );
@@ -246,7 +246,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
 
         assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
 
-        let d = Silencer::fixed_completion_steps(
+        let d = Silencer::from_completion_steps(
             SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT * 2,
         );

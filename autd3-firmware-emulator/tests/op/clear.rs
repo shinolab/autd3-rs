@@ -43,10 +43,10 @@ fn send_clear() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     {
-        let d = Silencer::fixed_completion_steps(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN);
+        let d = Silencer::from_completion_steps(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::fixed_update_rate(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN);
+        let d = Silencer::from_update_rate(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = TestMod {
