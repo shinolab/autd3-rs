@@ -65,7 +65,7 @@ fn test_send_foci_stm() -> anyhow::Result<()> {
 
         let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(freq_div),
-            foci.clone().into_iter(),
+            foci.clone(),
         )
         .with_loop_behavior(loop_behavior)
         .with_segment(segment, Some(transition_mode));
@@ -118,7 +118,7 @@ fn test_send_foci_stm() -> anyhow::Result<()> {
 
         let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(freq_div),
-            foci.clone().into_iter(),
+            foci.clone(),
         )
         .with_loop_behavior(loop_behavior)
         .with_segment(segment, None);
@@ -182,7 +182,7 @@ fn change_foci_stm_segment() -> anyhow::Result<()> {
 
     let stm = FociSTM::from_sampling_config(
         SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
-        gen_random_foci::<1>(2).into_iter(),
+        gen_random_foci::<1>(2),
     )
     .with_loop_behavior(LoopBehavior::infinite())
     .with_segment(Segment::S1, None);
@@ -208,7 +208,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
     {
         let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
-            gen_random_foci::<1>(2).into_iter(),
+            gen_random_foci::<1>(2),
         )
         .with_loop_behavior(LoopBehavior::infinite())
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
@@ -239,7 +239,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
                 SAMPLING_FREQ_DIV_MIN
                     * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
             ),
-            gen_random_foci::<1>(2).into_iter(),
+            gen_random_foci::<1>(2),
         )
         .with_loop_behavior(LoopBehavior::infinite())
         .with_segment(Segment::S1, None);
@@ -325,7 +325,7 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
     {
         let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
-            gen_random_foci::<1>(2).into_iter(),
+            gen_random_foci::<1>(2),
         )
         .with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
         assert_eq!(
@@ -338,7 +338,7 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
     {
         let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
-            gen_random_foci::<1>(2).into_iter(),
+            gen_random_foci::<1>(2),
         )
         .with_loop_behavior(LoopBehavior::once())
         .with_segment(Segment::S1, Some(TransitionMode::Immediate));
@@ -353,7 +353,7 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
     {
         let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
-            gen_random_foci::<1>(2).into_iter(),
+            gen_random_foci::<1>(2),
         )
         .with_segment(Segment::S1, None);
 
@@ -424,7 +424,7 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
 
         let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(freq_div),
-            foci.clone().into_iter(),
+            foci.clone(),
         )
         .with_loop_behavior(loop_behavior)
         .with_segment(segment, Some(transition_mode));

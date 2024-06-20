@@ -49,7 +49,7 @@ impl<M: Modulation, F: Fn(usize, u8) -> u8> Modulation for Transform<M, F> {
 mod tests {
     use rand::Rng;
 
-    use crate::{defined::kHz, defined::FREQ_40K, geometry::tests::create_geometry};
+    use crate::{defined::kHz, geometry::tests::create_geometry};
 
     use super::{super::tests::TestModulation, *};
 
@@ -72,7 +72,7 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let geometry = create_geometry(1, 249, FREQ_40K);
+        let geometry = create_geometry(1, 249);
 
         let mut rng = rand::thread_rng();
 

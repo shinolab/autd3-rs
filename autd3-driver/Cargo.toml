@@ -48,7 +48,8 @@ use_meter = []
 left_handed = []
 serde = ["dep:serde"]
 derive = []
-capi = []
+capi = ["dynamic_freq"]
+dynamic_freq = []
 
 [lib]
 bench = false

@@ -1,6 +1,6 @@
 use std::{f32::consts::PI, ops::Deref};
 
-use crate::defined::{Freq, FREQ_40K, METER};
+use crate::{defined::METER, get_ultrasound_freq};
 
 use super::{Matrix3, Quaternion, Transducer, UnitQuaternion, Vector3};
 
@@ -14,7 +14,6 @@ pub struct Device {
     y_direction: Vector3,
     axial_direction: Vector3,
     inv: Matrix3,
-    pub(crate) ultrasound_freq: Freq<u32>,
 }
 
 impl Device {
@@ -39,7 +38,6 @@ impl Device {
             #[cfg(not(feature = "left_handed"))]
             axial_direction: Self::get_direction(Vector3::z(), &rot),
             inv,
-            ultrasound_freq: FREQ_40K,
         }
     }
 
@@ -107,16 +105,12 @@ impl Device {
         self.sound_speed = (k * r * (273.15 + temp) / m).sqrt() * METER;
     }
 
-    pub(crate) const fn ultrasound_freq(&self) -> Freq<u32> {
-        self.ultrasound_freq
-    }
-
     pub fn wavelength(&self) -> f32 {
-        self.sound_speed / self.ultrasound_freq.freq as f32
+        self.sound_speed / get_ultrasound_freq().hz() as f32
     }
 
     pub fn wavenumber(&self) -> f32 {
-        2.0 * PI * self.ultrasound_freq.freq as f32 / self.sound_speed
+        2.0 * PI * get_ultrasound_freq().hz() as f32 / self.sound_speed
     }
 
     fn get_direction(dir: Vector3, rotation: &UnitQuaternion) -> Vector3 {
@@ -170,7 +164,6 @@ pub mod tests {
 
     use super::*;
     use crate::{
-        defined::Hz,
         defined::{mm, PI},
         geometry::tests::create_device,
     };
@@ -439,26 +432,24 @@ pub mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(8.5, 340e3, 40000*Hz)]
-    #[case(10., 400e3, 40000*Hz)]
-    #[case(4.25, 340e3, 80000*Hz)]
-    #[case(5., 400e3, 80000*Hz)]
-    fn wavelength(#[case] expect: f32, #[case] c: f32, #[case] freq: Freq<u32>) {
+    #[case(8.5, 340e3)]
+    #[case(10., 400e3)]
+    #[case(4.25, 340e3)]
+    #[case(5., 400e3)]
+    fn wavelength(#[case] expect: f32, #[case] c: f32) {
         let mut device = create_device(0, 249);
-        device.ultrasound_freq = freq;
         device.sound_speed = c;
         assert_approx_eq::assert_approx_eq!(expect, device.wavelength());
     }
 
     #[rstest::rstest]
     #[test]
-    #[case(0.7391982714328925, 340e3, 40000*Hz)]
-    #[case(0.6283185307179586, 400e3, 40000*Hz)]
-    #[case(1.478396542865785, 340e3, 80000*Hz)]
-    #[case(1.2566370614359172, 400e3, 80000*Hz)]
-    fn wavenumber(#[case] expect: f32, #[case] c: f32, #[case] freq: Freq<u32>) {
+    #[case(0.739_198_27, 340e3)]
+    #[case(0.628_318_55, 400e3)]
+    #[case(1.478_396_5, 340e3)]
+    #[case(1.256_637_1, 400e3)]
+    fn wavenumber(#[case] expect: f32, #[case] c: f32) {
         let mut device = create_device(0, 249);
-        device.ultrasound_freq = freq;
         device.sound_speed = c;
         assert_approx_eq::assert_approx_eq!(expect, device.wavenumber());
     }

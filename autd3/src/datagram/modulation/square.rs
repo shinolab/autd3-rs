@@ -44,14 +44,14 @@ impl Square<ExactFreq> {
 }
 
 impl<S: SamplingMode> Modulation for Square<S> {
-    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
+    fn calc(&self, _: &Geometry) -> ModulationCalcResult {
         if !(0.0..=1.0).contains(&self.duty) {
             return Err(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string(),
             ));
         }
 
-        let (n, rep) = S::validate(self.freq, self.config, geometry.ultrasound_freq())?;
+        let (n, rep) = S::validate(self.freq, self.config)?;
         let high = self.high;
         let low = self.low;
         let duty = self.duty;

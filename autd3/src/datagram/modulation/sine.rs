@@ -47,8 +47,8 @@ impl Sine<ExactFreq> {
 }
 
 impl<S: SamplingMode> Modulation for Sine<S> {
-    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
-        let (n, rep) = S::validate(self.freq, self.config, geometry.ultrasound_freq())?;
+    fn calc(&self, _: &Geometry) -> ModulationCalcResult {
+        let (n, rep) = S::validate(self.freq, self.config)?;
         let intensity = self.intensity;
         let offset = self.offset;
         let phase = self.phase.radian();

@@ -1,4 +1,5 @@
 mod clear;
+#[cfg(feature = "dynamic_freq")]
 mod clk;
 mod debug;
 mod force_fan;
@@ -15,6 +16,7 @@ mod stm;
 mod sync;
 
 pub use clear::*;
+#[cfg(feature = "dynamic_freq")]
 pub use clk::*;
 pub use debug::*;
 pub use force_fan::*;
@@ -185,7 +187,6 @@ pub mod tests {
     use std::mem::size_of;
 
     use crate::{
-        defined::FREQ_40K,
         derive::*,
         ethercat::EC_OUTPUT_FRAME_SIZE,
         firmware::cpu::{Header, TxDatagram},
@@ -228,14 +229,11 @@ pub mod tests {
 
     #[test]
     fn test() {
-        let geometry = Geometry::new(
-            vec![Device::new(
-                0,
-                UnitQuaternion::identity(),
-                vec![Transducer::new(0, Vector3::zeros())],
-            )],
-            FREQ_40K,
-        );
+        let geometry = Geometry::new(vec![Device::new(
+            0,
+            UnitQuaternion::identity(),
+            vec![Transducer::new(0, Vector3::zeros())],
+        )]);
 
         let mut op = vec![(
             OperationMock {
@@ -281,14 +279,11 @@ pub mod tests {
 
     #[test]
     fn test_first() {
-        let geometry = Geometry::new(
-            vec![Device::new(
-                0,
-                UnitQuaternion::identity(),
-                vec![Transducer::new(0, Vector3::zeros())],
-            )],
-            FREQ_40K,
-        );
+        let geometry = Geometry::new(vec![Device::new(
+            0,
+            UnitQuaternion::identity(),
+            vec![Transducer::new(0, Vector3::zeros())],
+        )]);
 
         let mut op = vec![(
             OperationMock {
@@ -319,14 +314,11 @@ pub mod tests {
 
     #[test]
     fn test_second() {
-        let geometry = Geometry::new(
-            vec![Device::new(
-                0,
-                UnitQuaternion::identity(),
-                vec![Transducer::new(0, Vector3::zeros())],
-            )],
-            FREQ_40K,
-        );
+        let geometry = Geometry::new(vec![Device::new(
+            0,
+            UnitQuaternion::identity(),
+            vec![Transducer::new(0, Vector3::zeros())],
+        )]);
 
         let mut op = vec![(
             OperationMock {
@@ -357,14 +349,11 @@ pub mod tests {
 
     #[test]
     fn test_broken_pack() {
-        let geometry = Geometry::new(
-            vec![Device::new(
-                0,
-                UnitQuaternion::identity(),
-                vec![Transducer::new(0, Vector3::zeros())],
-            )],
-            FREQ_40K,
-        );
+        let geometry = Geometry::new(vec![Device::new(
+            0,
+            UnitQuaternion::identity(),
+            vec![Transducer::new(0, Vector3::zeros())],
+        )]);
 
         let mut op = vec![(
             OperationMock {
@@ -417,14 +406,11 @@ pub mod tests {
 
     #[test]
     fn test_finished() {
-        let geometry = Geometry::new(
-            vec![Device::new(
-                0,
-                UnitQuaternion::identity(),
-                vec![Transducer::new(0, Vector3::zeros())],
-            )],
-            FREQ_40K,
-        );
+        let geometry = Geometry::new(vec![Device::new(
+            0,
+            UnitQuaternion::identity(),
+            vec![Transducer::new(0, Vector3::zeros())],
+        )]);
 
         let mut op = vec![(
             OperationMock {

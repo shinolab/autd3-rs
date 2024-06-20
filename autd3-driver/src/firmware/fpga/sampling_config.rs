@@ -4,6 +4,7 @@ use crate::{
     defined::{Freq, Hz},
     error::AUTDInternalError,
     firmware::fpga::{SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
+    get_ultrasound_freq,
 };
 
 use super::ULTRASOUND_PERIOD;
@@ -64,7 +65,8 @@ impl SamplingConfig {
         }
     }
 
-    pub fn division(&self, ultrasound_freq: Freq<u32>) -> Result<u32, AUTDInternalError> {
+    pub fn division(&self) -> Result<u32, AUTDInternalError> {
+        let ultrasound_freq = get_ultrasound_freq();
         let base_freq = ultrasound_freq * ULTRASOUND_PERIOD;
         match *self {
             Self::Division(div) => {
@@ -84,8 +86,9 @@ impl SamplingConfig {
         }
     }
 
-    pub fn freq(&self, ultrasound_freq: Freq<u32>) -> Result<Freq<f32>, AUTDInternalError> {
-        self.division(ultrasound_freq)
+    pub fn freq(&self) -> Result<Freq<f32>, AUTDInternalError> {
+        let ultrasound_freq = get_ultrasound_freq();
+        self.division()
             .map(|d| (ultrasound_freq.hz() * ULTRASOUND_PERIOD) as f32 / d as f32 * Hz)
     }
 }
@@ -130,94 +133,52 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case::min(Ok(div_min()), div_min(), 40000 * Hz)]
-    #[case::max(Ok(div_max()), div_max(), 40000 * Hz)]
+    #[case::min(Ok(div_min()), div_min())]
+    #[case::max(Ok(div_max()), div_max())]
     #[case::invalid(
         Err(AUTDInternalError::SamplingFreqDivInvalid(
             div_min() + 1
         )),
-        div_min() + 1,
-        40000 * Hz
+        div_min() + 1
     )]
     #[case::out_of_range(
         Err(AUTDInternalError::SamplingFreqDivOutOfRange(0, div_min_raw(), div_max_raw())),
-        0,
-        40000 * Hz
-    )]
-    #[case::min(Ok(div_min()), div_min(), 80000 * Hz)]
-    #[case::max(Ok(div_max()), div_max(), 80000 * Hz)]
-    #[case::invalid(
-        Err(AUTDInternalError::SamplingFreqDivInvalid(
-            div_min() + 1
-        )),
-        div_min() + 1,
-        80000 * Hz
-    )]
-    #[case::out_of_range(
-        Err(AUTDInternalError::SamplingFreqDivOutOfRange(0, div_min_raw(), div_max_raw())),
-        0,
-        80000 * Hz
+        0
     )]
     fn division_from_division(
         #[case] expected: Result<u32, AUTDInternalError>,
         #[case] freq_div: u32,
-        #[case] ultrasound_freq: Freq<u32>,
     ) {
-        assert_eq!(
-            expected,
-            SamplingConfig::Division(freq_div).division(ultrasound_freq)
-        );
+        assert_eq!(expected, SamplingConfig::Division(freq_div).division());
     }
 
     #[rstest::rstest]
     #[test]
-    #[case::min(Ok(div_min_raw()), div_min_raw(), 40000 * Hz)]
-    #[case::max(Ok(div_max_raw()), div_max_raw(), 40000 * Hz)]
+    #[case::min(Ok(div_min_raw()), div_min_raw())]
+    #[case::max(Ok(div_max_raw()), div_max_raw())]
     #[case::invalid(
         Ok(div_min_raw() + 1),
         div_min_raw() + 1,
-        40000 * Hz
     )]
     #[case::out_of_range(
         Err(AUTDInternalError::SamplingFreqDivOutOfRange(0, div_min_raw(), div_max_raw())),
-        0,
-        40000 * Hz
+        0
     )]
-    #[case::min(Ok(div_min_raw()), div_min_raw(), 80000 * Hz)]
-    #[case::max(Ok(div_max_raw()), div_max_raw(), 80000 * Hz)]
-    #[case::invalid(
-        Ok(div_min_raw() + 1),
-        div_min_raw() + 1,
-        80000 * Hz
-    )]
-    #[case::out_of_range(
-        Err(AUTDInternalError::SamplingFreqDivOutOfRange(0, div_min_raw(), div_max_raw())),
-        0,
-        80000 * Hz
-    )]
-    fn from_division_raw(
-        #[case] expected: Result<u32, AUTDInternalError>,
-        #[case] freq_div: u32,
-        #[case] ultrasound_freq: Freq<u32>,
-    ) {
-        assert_eq!(
-            expected,
-            SamplingConfig::DivisionRaw(freq_div).division(ultrasound_freq)
-        );
+    fn from_division_raw(#[case] expected: Result<u32, AUTDInternalError>, #[case] freq_div: u32) {
+        assert_eq!(expected, SamplingConfig::DivisionRaw(freq_div).division());
     }
 
     #[rstest::rstest]
     #[test]
-    #[case::min(Ok(20480000), freq_min(), 40000 * Hz)]
-    #[case::max(Ok(512), freq_max(20480000 * Hz), 40000 * Hz)]
-    #[case(Err(AUTDInternalError::SamplingFreqInvalid(512*Hz, 40000 * Hz)), 512*Hz, 40000 * Hz)]
+    #[case::min(Ok(20480000), freq_min())]
+    #[case::max(Ok(512), freq_max(20480000 * Hz))]
+    #[case(Err(AUTDInternalError::SamplingFreqInvalid(512*Hz, 40000 * Hz)), 512*Hz)]
     #[case::not_supported_max(
         Err(AUTDInternalError::SamplingFreqInvalid(
             freq_max(20480000 * Hz) - 1 * Hz,
             40000 * Hz
         )),
         freq_max(20480000 * Hz) - 1 * Hz,
-        40000 * Hz
     )]
     #[case::out_of_range_max(
         Err(AUTDInternalError::SamplingFreqInvalid(
@@ -225,47 +186,19 @@ mod tests {
             40000 * Hz
         )),
         freq_max(20480000 * Hz) * 2,
-        40000 * Hz
     )]
-    #[case::min(Ok(80000*512), freq_min(), 80000 * Hz)]
-    #[case::max(Ok(512), freq_max(80000*512 * Hz), 80000 * Hz)]
-    #[case(Err(AUTDInternalError::SamplingFreqInvalid(512*Hz, 80000 * Hz)), 512*Hz, 80000 * Hz)]
-    #[case::not_supported_max(
-        Err(AUTDInternalError::SamplingFreqInvalid(
-            freq_max(80000*512 * Hz) - 1*Hz,
-            80000 * Hz
-        )),
-        freq_max(80000*512 * Hz) - 1*Hz,
-        80000 * Hz
-    )]
-    #[case::out_of_range_max(
-        Err(AUTDInternalError::SamplingFreqInvalid(
-            freq_max(80000*512 * Hz) * 2,
-            80000 * Hz
-        )),
-        freq_max(80000*512 * Hz) * 2,
-        80000 * Hz
-    )]
-    fn from_freq(
-        #[case] expected: Result<u32, AUTDInternalError>,
-        #[case] freq: Freq<u32>,
-        #[case] ultrasound_freq: Freq<u32>,
-    ) {
-        assert_eq!(
-            expected,
-            SamplingConfig::Freq(freq).division(ultrasound_freq)
-        );
+    fn from_freq(#[case] expected: Result<u32, AUTDInternalError>, #[case] freq: Freq<u32>) {
+        assert_eq!(expected, SamplingConfig::Freq(freq).division());
     }
 
     #[rstest::rstest]
     #[test]
-    #[case::min(Ok(0xFFFFFFFF), freq_min_raw(20480000 * Hz), 40000 * Hz)]
-    #[case::max(Ok(512), freq_max_raw(20480000 * Hz), 40000 * Hz)]
-    #[case(Ok(40000), 512.*Hz, 40000 * Hz)]
+    #[case::min(Ok(0xFFFFFFFF), freq_min_raw(20480000 * Hz))]
+    #[case::max(Ok(512), freq_max_raw(20480000 * Hz))]
+    #[case(Ok(40000), 512.*Hz)]
     #[case::not_supported_max(
         Ok(512),
         (freq_max(20480000 * Hz).hz() as f32 - 1.)*Hz,
-        40000 * Hz
     )]
     #[case::out_of_range_min(
         Err(AUTDInternalError::SamplingFreqOutOfRange(
@@ -274,7 +207,6 @@ mod tests {
             freq_max_raw(20480000 * Hz)
         )),
         freq_min_raw(20480000 * Hz) - f32::MIN*Hz,
-        40000 * Hz
     )]
     #[case::out_of_range_max(
         Err(AUTDInternalError::SamplingFreqOutOfRange(
@@ -283,43 +215,12 @@ mod tests {
             freq_max_raw(20480000 * Hz)
         )),
         freq_max_raw(20480000 * Hz) + f32::MIN*Hz,
-        40000 * Hz
-    )]
-    #[case::min(Ok(0xFFFFFFFF), freq_min_raw(80000*512*Hz), 80000 * Hz)]
-    #[case::max(Ok(512), freq_max_raw(80000*512*Hz), 80000 * Hz)]
-    #[case(Ok(80000), 512.*Hz, 80000 * Hz)]
-    #[case::not_supported_max(
-        Ok(512),
-        (freq_max(80000*512*Hz).hz() as f32 - 1.)*Hz,
-        80000 * Hz
-    )]
-    #[case::out_of_range_min(
-        Err(AUTDInternalError::SamplingFreqOutOfRange(
-            freq_min_raw(80000*512*Hz) - f32::MIN * Hz,
-            freq_min_raw(80000*512*Hz),
-            freq_max_raw(80000*512*Hz)
-        )),
-        freq_min_raw(20480000*Hz) - f32::MIN*Hz,
-        80000 * Hz
-    )]
-    #[case::out_of_range_max(
-        Err(AUTDInternalError::SamplingFreqOutOfRange(
-            freq_max_raw(80000*512*Hz) + f32::MIN * Hz,
-            freq_min_raw(80000*512*Hz),
-            freq_max_raw(80000*512*Hz)
-        )),
-        freq_max_raw(80000*512*Hz) + f32::MIN*Hz,
-        80000 * Hz
     )]
     fn from_freq_nearest(
         #[case] expected: Result<u32, AUTDInternalError>,
         #[case] freq: Freq<f32>,
-        #[case] ultrasound_freq: Freq<u32>,
     ) {
-        assert_eq!(
-            expected,
-            SamplingConfig::FreqNearest(freq).division(ultrasound_freq)
-        );
+        assert_eq!(expected, SamplingConfig::FreqNearest(freq).division());
     }
 
     #[rstest::rstest]
