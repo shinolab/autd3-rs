@@ -1,6 +1,7 @@
-
 # 26.0.0
 
+- Remove deprecated functions and structs
+  - Remove `with_sampling_config` from `Wav`, `RawPCM`, `Csv`, and `Custom`
 - Fix `DatagramWithSegmentTransition::trace` and `DatagramWithSegment::trace`
 - Fix transition mode in lightweight mode
 - Remove `EmissionConstraint::DontCare`
@@ -8,6 +9,15 @@
 - Rename `Silencer::fixed_xxx` to `Silencer::from_xxx`
 - Add `Silencer::from_completion_time`
 - Add `SamplingConfig::Period` and `SamplingConfig::PeriodNearest`
+- Add `from_period` and `from_period_nearest` to `FociSTM` and `GainSTM`
+- Add `freq` and `period` to `FociTM` and `GainSTM`
+- Add `period` to `SamplingConfig`
+- Functions that take `SamplingConfig` as an argument can now take `impl Into<SamplingConfig>` as an argument
+  - Implement `Into<SamplingConfig>` for `Freq<u32>` and `Duration`
+- Remove `ControllerBuilder::with_ultrasound_freq`
+  - Use `set_ultrasound_freq` instead with enabling `dynamic_freq` feature
+- Update error messages and add logging for debugging
+- Add `#[non_exhaustive]` attribute to enums
 
 # 25.3.2
 
