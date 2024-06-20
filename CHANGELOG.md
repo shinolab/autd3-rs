@@ -4,6 +4,7 @@
   - Use `EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX)` instead
 - Rename `Silencer::fixed_xxx` to `Silencer::from_xxx`
 - Add `Silencer::from_completion_time`
+- Add `SamplingConfig::Period` and `SamplingConfig::PeriodNearest`
 
 # 25.3.2
 
