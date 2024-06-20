@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, time::Duration};
 
 use crate::{
     defined::{Freq, Hz},
@@ -9,11 +9,15 @@ use crate::{
 
 use super::ULTRASOUND_PERIOD;
 
+const NANOSEC: u128 = 1_000_000_000;
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[non_exhaustive]
 pub enum SamplingConfig {
     Freq(Freq<u32>),
     FreqNearest(Freq<f32>),
+    Period(Duration),
+    PeriodNearest(Duration),
     DivisionRaw(u32),
     Division(u32),
 }
@@ -35,6 +39,13 @@ fn freq_max_raw(base_freq: Freq<u32>) -> Freq<f32> {
     (base_freq.hz() as f32 / div_min_raw() as f32) * Hz
 }
 
+const fn period_min_raw(base_freq: Freq<u32>) -> Duration {
+    Duration::from_nanos((div_min_raw() as u128 * NANOSEC / base_freq.hz() as u128) as u64)
+}
+const fn period_max_raw(base_freq: Freq<u32>) -> Duration {
+    Duration::from_nanos((div_max_raw() as u128 * NANOSEC / base_freq.hz() as u128) as u64)
+}
+
 impl SamplingConfig {
     pub const DISABLE: Self = Self::DivisionRaw(0xFFFFFFFF);
 
@@ -50,6 +61,22 @@ impl SamplingConfig {
             ))
         } else {
             Ok((base_freq.hz() as f32 / f.hz()) as _)
+        }
+    }
+
+    fn division_from_period_nearest(
+        p: Duration,
+        base_freq: Freq<u32>,
+    ) -> Result<u32, AUTDInternalError> {
+        if !(period_min_raw(base_freq)..=period_max_raw(base_freq)).contains(&p) {
+            Err(AUTDInternalError::SamplingPeriodOutOfRange(
+                p,
+                period_min_raw(base_freq),
+                period_max_raw(base_freq),
+            ))
+        } else {
+            let k = (p.as_nanos() * base_freq.hz() as u128) / NANOSEC;
+            Ok(k as _)
         }
     }
 
@@ -77,12 +104,20 @@ impl SamplingConfig {
             }
             Self::DivisionRaw(div) => Self::division_from_division_raw(div),
             Self::Freq(f) => {
-                if (ultrasound_freq.hz() % f.hz()) != 0 {
+                if ultrasound_freq.hz() % f.hz() != 0 {
                     return Err(AUTDInternalError::SamplingFreqInvalid(f, ultrasound_freq));
                 }
                 Self::division_from_freq_nearest((f.hz() as f32) * Hz, base_freq)
             }
             Self::FreqNearest(f) => Self::division_from_freq_nearest(f, base_freq),
+            Self::Period(p) => {
+                let k = p.as_nanos() * ultrasound_freq.hz() as u128;
+                if k % NANOSEC != 0 {
+                    return Err(AUTDInternalError::SamplingPeriodInvalid(p));
+                }
+                Self::division_from_period_nearest(p, base_freq)
+            }
+            Self::PeriodNearest(p) => Self::division_from_period_nearest(p, base_freq),
         }
     }
 
@@ -90,6 +125,15 @@ impl SamplingConfig {
         let ultrasound_freq = get_ultrasound_freq();
         self.division()
             .map(|d| (ultrasound_freq.hz() * ULTRASOUND_PERIOD) as f32 / d as f32 * Hz)
+    }
+
+    pub fn period(&self) -> Result<Duration, AUTDInternalError> {
+        self.division().map(|d| {
+            Duration::from_nanos(
+                (d as u128 * NANOSEC / (get_ultrasound_freq() * ULTRASOUND_PERIOD).hz() as u128)
+                    as u64,
+            )
+        })
     }
 }
 
@@ -104,6 +148,9 @@ impl std::fmt::Display for SamplingConfig {
             }
             Self::Division(d) | Self::DivisionRaw(d) => {
                 write!(f, "Division({})", d)
+            }
+            Self::Period(p) | Self::PeriodNearest(p) => {
+                write!(f, "{:?}", p)
             }
         }
     }
@@ -130,6 +177,12 @@ mod tests {
     fn freq_max(base_freq: Freq<u32>) -> Freq<u32> {
         base_freq / div_min()
     }
+    const fn period_min() -> Duration {
+        Duration::from_micros(25)
+    }
+    const fn period_max(base_freq: Freq<u32>) -> Duration {
+        Duration::from_nanos((div_max() as u128 * NANOSEC / base_freq.hz() as u128) as u64)
+    }
 
     #[rstest::rstest]
     #[test]
@@ -152,6 +205,27 @@ mod tests {
         #[cfg(feature = "dynamic_freq")]
         crate::set_ultrasound_freq(crate::defined::FREQ_40K);
         assert_eq!(expected, SamplingConfig::Division(freq_div).division());
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Ok(Duration::from_micros(25)), SamplingConfig::Division(512))]
+    #[case(Ok(Duration::from_micros(25)), SamplingConfig::Freq(40000*Hz))]
+    #[case(
+        Ok(Duration::from_micros(25)),
+        SamplingConfig::Period(Duration::from_micros(25))
+    )]
+    #[case(
+        Err(AUTDInternalError::SamplingFreqDivInvalid(513)),
+        SamplingConfig::Division(513)
+    )]
+    fn period(
+        #[case] expected: Result<Duration, AUTDInternalError>,
+        #[case] config: SamplingConfig,
+    ) {
+        #[cfg(feature = "dynamic_freq")]
+        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
+        assert_eq!(expected, config.period());
     }
 
     #[rstest::rstest]
@@ -233,9 +307,74 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
+    #[case::min(Ok(512), period_min())]
+    #[case::max(Ok(4294966784), period_max(20480000 * Hz))]
+    #[case(
+        Err(AUTDInternalError::SamplingPeriodInvalid(Duration::from_micros(26))),
+        Duration::from_micros(26)
+    )]
+    #[case::not_supported_max(
+        Err(AUTDInternalError::SamplingPeriodInvalid(
+            period_max(20480000 * Hz) - Duration::from_nanos(1)
+        )),
+        period_max(20480000 * Hz) - Duration::from_nanos(1),
+    )]
+    #[case::out_of_range_max(
+        Err(AUTDInternalError::SamplingPeriodOutOfRange(
+            period_max(20480000 * Hz) * 2,
+            period_min(),
+            period_max_raw(20480000 * Hz)
+        )),
+        period_max(20480000 * Hz) * 2,
+    )]
+    fn from_period(#[case] expected: Result<u32, AUTDInternalError>, #[case] period: Duration) {
+        #[cfg(feature = "dynamic_freq")]
+        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
+        assert_eq!(expected, SamplingConfig::Period(period).division());
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case::min(Ok(512), period_min_raw(20480000 * Hz))]
+    #[case::max(Ok(4294967294), period_max_raw(20480000 * Hz))]
+    #[case(Ok(532), Duration::from_micros(26))]
+    #[case::not_supported_max(
+        Ok(4294966783),
+        period_max(20480000 * Hz) - Duration::from_nanos(1),
+    )]
+    #[case::out_of_range_min(
+        Err(AUTDInternalError::SamplingPeriodOutOfRange(
+            period_min_raw(20480000 * Hz) - Duration::from_nanos(1),
+            period_min_raw(20480000 * Hz),
+            period_max_raw(20480000 * Hz)
+        )),
+        period_min_raw(20480000 * Hz) - Duration::from_nanos(1),
+    )]
+    #[case::out_of_range_max(
+        Err(AUTDInternalError::SamplingPeriodOutOfRange(
+            period_max(20480000 * Hz) * 2,
+            period_min_raw(20480000 * Hz),
+            period_max_raw(20480000 * Hz)
+        )),
+        period_max(20480000 * Hz) * 2,
+    )]
+    fn from_period_nearest(
+        #[case] expected: Result<u32, AUTDInternalError>,
+        #[case] period: Duration,
+    ) {
+        #[cfg(feature = "dynamic_freq")]
+        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
+        assert_eq!(expected, SamplingConfig::PeriodNearest(period).division());
+    }
+
+    #[rstest::rstest]
+    #[test]
     #[case::freq(SamplingConfig::Freq(4000*Hz), "4000 Hz")]
     #[case::freq(SamplingConfig::FreqNearest(4000.*Hz), "4000 Hz")]
     #[case::div(SamplingConfig::Division(305419896), "Division(305419896)")]
+    #[case::div(SamplingConfig::DivisionRaw(305419896), "Division(305419896)")]
+    #[case::div(SamplingConfig::Period(Duration::from_micros(25)), "25µs")]
+    #[case::div(SamplingConfig::PeriodNearest(Duration::from_micros(25)), "25µs")]
     fn display(#[case] config: SamplingConfig, #[case] expected: &str) {
         assert_eq!(expected, config.to_string());
     }
