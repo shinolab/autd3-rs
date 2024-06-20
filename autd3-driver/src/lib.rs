@@ -12,6 +12,11 @@ pub mod utils;
 #[cfg(feature = "async-trait")]
 pub use async_trait::async_trait;
 
+#[inline]
+pub const fn get_ultrasound_freq() -> defined::Freq<u32> {
+    defined::FREQ_40K
+}
+
 #[cfg(feature = "derive")]
 pub mod derive {
     pub use crate::{

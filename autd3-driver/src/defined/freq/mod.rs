@@ -10,17 +10,24 @@ pub trait Frequency: Clone + Copy + Sync + std::fmt::Debug + std::fmt::Display +
 use derive_more::{Add, Div, Mul, Sub};
 
 #[derive(Clone, Copy, PartialEq, Add, Div, Mul, Sub)]
-pub struct Freq<T> {
+pub struct Freq<T: Copy> {
     pub(crate) freq: T,
 }
 
-impl<T: std::fmt::Display> std::fmt::Display for Freq<T> {
+impl<T: Copy> Freq<T> {
+    #[inline]
+    pub const fn hz(&self) -> T {
+        self.freq
+    }
+}
+
+impl<T: std::fmt::Display + Copy> std::fmt::Display for Freq<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{} Hz", self.freq)
     }
 }
 
-impl<T: std::fmt::Debug> std::fmt::Debug for Freq<T> {
+impl<T: std::fmt::Debug + Copy> std::fmt::Debug for Freq<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{:?} Hz", self.freq)
     }

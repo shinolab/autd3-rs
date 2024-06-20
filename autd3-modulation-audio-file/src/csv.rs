@@ -76,7 +76,7 @@ mod tests {
 
     fn create_csv(path: impl AsRef<Path>, data: &[u8]) -> anyhow::Result<()> {
         let mut f = File::create(path)?;
-        data.iter().try_for_each(|d| write!(f, "{}\n", d))?;
+        data.iter().try_for_each(|d| writeln!(f, "{}", d))?;
         Ok(())
     }
 

@@ -241,7 +241,7 @@ impl<G: Gain> OperationGenerator for GainOperationGenerator<G> {
 pub mod tests {
     use super::*;
 
-    use crate::{defined::FREQ_40K, derive::*, geometry::tests::create_geometry};
+    use crate::{derive::*, geometry::tests::create_geometry};
 
     #[derive(Gain, Clone)]
     pub struct TestGain {
@@ -326,7 +326,7 @@ pub mod tests {
         #[case] enabled: Vec<bool>,
         #[case] n: usize,
     ) {
-        let mut geometry = create_geometry(n, NUM_TRANSDUCERS, FREQ_40K);
+        let mut geometry = create_geometry(n, NUM_TRANSDUCERS);
         geometry
             .iter_mut()
             .zip(enabled.iter())

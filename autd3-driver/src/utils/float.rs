@@ -11,8 +11,8 @@ mod tests {
     #[test]
     #[case(true, 1.0)]
     #[case(false, 1.5)]
-    #[case(true, 1.0 + std::f32::EPSILON)]
-    #[case(true, 1.0 - std::f32::EPSILON)]
+    #[case(true, 1.0 + f32::EPSILON)]
+    #[case(true, 1.0 - f32::EPSILON)]
     #[case(false, 1.0 + 1e-3)]
     #[case(false, 1.0 - 1e-3)]
     fn is_integer(#[case] expected: bool, #[case] a: f32) {

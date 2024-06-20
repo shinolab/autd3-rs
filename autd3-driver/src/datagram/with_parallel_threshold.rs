@@ -54,13 +54,12 @@ mod tests {
 
     use crate::{
         datagram::tests::{NullDatagram, NullOperationGenerator},
-        defined::FREQ_40K,
         geometry::tests::create_geometry,
     };
 
     #[test]
     fn with_parallel_threshold() {
-        let geometry = create_geometry(1, 249, FREQ_40K);
+        let geometry = create_geometry(1, 249);
         let datagram = NullDatagram {
             timeout: Some(std::time::Duration::from_secs(1)),
             parallel_threshold: None,

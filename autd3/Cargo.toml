@@ -30,16 +30,6 @@ async-trait = ["autd3-driver/async-trait"]
 [dev-dependencies]
 assert_approx_eq = { workspace = true }
 rand = { workspace = true }
-criterion = { workspace = true, features = ["html_reports"] }
-itertools = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 anyhow = { workspace = true }
 rstest = { workspace = true }
-
-[lib]
-bench = false
-
-[[bench]]
-name = "autd3-bench"
-path = "benches/bench.rs"
-harness = false

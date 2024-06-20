@@ -120,7 +120,7 @@ mod tests {
 
         assert_eq!(size_of::<SwapSegmentT>(), op.required_size(&device));
         assert_eq!(Ok(size_of::<SwapSegmentT>()), op.pack(&device, &mut tx));
-        assert_eq!(op.is_done(), true);
+        assert!(op.is_done());
         assert_eq!(TypeTag::GainSwapSegment as u8, tx[0]);
         assert_eq!(Segment::S0 as u8, tx[1]);
     }
@@ -145,7 +145,7 @@ mod tests {
             Ok(size_of::<SwapSegmentTWithTransition>()),
             op.pack(&device, &mut tx)
         );
-        assert_eq!(op.is_done(), true);
+        assert!(op.is_done());
         assert_eq!(TypeTag::ModulationSwapSegment as u8, tx[0]);
         assert_eq!(Segment::S0 as u8, tx[1]);
         let mode = transition_mode.mode();
@@ -174,7 +174,7 @@ mod tests {
             Ok(size_of::<SwapSegmentTWithTransition>()),
             op.pack(&device, &mut tx)
         );
-        assert_eq!(op.is_done(), true);
+        assert!(op.is_done());
         assert_eq!(TypeTag::FociSTMSwapSegment as u8, tx[0]);
         assert_eq!(Segment::S0 as u8, tx[1]);
         let mode = transition_mode.mode();
@@ -203,7 +203,7 @@ mod tests {
             Ok(size_of::<SwapSegmentTWithTransition>()),
             op.pack(&device, &mut tx)
         );
-        assert_eq!(op.is_done(), true);
+        assert!(op.is_done());
         assert_eq!(TypeTag::GainSTMSwapSegment as u8, tx[0]);
         assert_eq!(Segment::S0 as u8, tx[1]);
         let mode = transition_mode.mode();

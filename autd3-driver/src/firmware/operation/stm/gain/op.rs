@@ -193,7 +193,7 @@ impl Operation for GainSTMOp {
                     .map(|m| m.mode())
                     .unwrap_or(TRANSITION_MODE_NONE),
                 transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
-                freq_div: self.config.division(device.ultrasound_freq())?,
+                freq_div: self.config.division()?,
                 rep: self.rep,
                 __padding: [0; 4],
             };

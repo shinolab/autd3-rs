@@ -62,7 +62,7 @@ impl ModulationOp {
 }
 
 impl Operation for ModulationOp {
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         let is_first = self.sent == 0;
 
         let offset = if is_first {
@@ -92,7 +92,7 @@ impl Operation for ModulationOp {
                 flag: ModulationControlFlags::BEGIN,
                 size: send_num as _,
                 __pad: [0; 3],
-                freq_div: self.config.division(device.ultrasound_freq())?,
+                freq_div: self.config.division()?,
                 rep: self.rep,
                 transition_mode: self
                     .transition_mode

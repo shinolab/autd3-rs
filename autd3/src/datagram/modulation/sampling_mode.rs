@@ -3,6 +3,7 @@ use autd3_driver::{
     derive::SamplingConfig,
     error::AUTDInternalError,
     firmware::fpga::ULTRASOUND_PERIOD,
+    get_ultrasound_freq,
     utils::float::is_integer,
 };
 use num::integer::gcd;
@@ -13,7 +14,6 @@ pub trait SamplingMode: Clone + Sync + Debug {
     fn validate(
         freq: Self::T,
         sampling_config: SamplingConfig,
-        ultrasound_freq: Freq<u32>,
     ) -> Result<(u64, u64), AUTDInternalError>;
 }
 
@@ -25,18 +25,17 @@ impl SamplingMode for ExactFreq {
     fn validate(
         freq: Freq<u32>,
         sampling_config: SamplingConfig,
-        ultrasound_freq: Freq<u32>,
     ) -> Result<(u64, u64), AUTDInternalError> {
-        if freq.hz() as f32 >= sampling_config.freq(ultrasound_freq)?.hz() / 2. {
+        if freq.hz() as f32 >= sampling_config.freq()?.hz() / 2. {
             return Err(AUTDInternalError::ModulationError(format!(
                 "Frequency ({}) is equal to or greater than the Nyquist frequency ({})",
                 freq,
-                sampling_config.freq(ultrasound_freq)? / 2.
+                sampling_config.freq()? / 2.
             )));
         }
-        let fd = freq.hz() * sampling_config.division(ultrasound_freq)?;
+        let fd = freq.hz() * sampling_config.division()?;
         let fd = fd as u64;
-        let fs = (ultrasound_freq * ULTRASOUND_PERIOD).hz() as u64;
+        let fs = (get_ultrasound_freq() * ULTRASOUND_PERIOD).hz() as u64;
 
         let k = gcd(fs, fd);
         Ok((fs / k, fd / k))
@@ -51,7 +50,6 @@ impl SamplingMode for ExactFreqFloat {
     fn validate(
         freq: Freq<f32>,
         sampling_config: SamplingConfig,
-        ultrasound_freq: Freq<u32>,
     ) -> Result<(u64, u64), AUTDInternalError> {
         if freq.hz() < 0. {
             return Err(AUTDInternalError::ModulationError(format!(
@@ -59,14 +57,14 @@ impl SamplingMode for ExactFreqFloat {
                 freq
             )));
         }
-        if freq.hz() >= sampling_config.freq(ultrasound_freq)?.hz() / 2. {
+        if freq.hz() >= sampling_config.freq()?.hz() / 2. {
             return Err(AUTDInternalError::ModulationError(format!(
                 "Frequency ({}) is equal to or greater than the Nyquist frequency ({})",
                 freq,
-                sampling_config.freq(ultrasound_freq)? / 2.
+                sampling_config.freq()? / 2.
             )));
         }
-        let fd = freq.hz() as f64 * sampling_config.division(ultrasound_freq)? as f64;
+        let fd = freq.hz() as f64 * sampling_config.division()? as f64;
         if !is_integer(fd) {
             return Err(AUTDInternalError::ModulationError(format!(
                 "Frequency ({}) cannot be output with the sampling config ({}).",
@@ -74,7 +72,7 @@ impl SamplingMode for ExactFreqFloat {
             )));
         }
         let fd = fd as u64;
-        let fs = (ultrasound_freq * ULTRASOUND_PERIOD).hz() as u64;
+        let fs = (get_ultrasound_freq() * ULTRASOUND_PERIOD).hz() as u64;
 
         let k = gcd(fs, fd);
         Ok((fs / k, fd / k))
@@ -89,7 +87,6 @@ impl SamplingMode for NearestFreq {
     fn validate(
         freq: Freq<f32>,
         sampling_config: SamplingConfig,
-        ultrasound_freq: Freq<u32>,
     ) -> Result<(u64, u64), AUTDInternalError> {
         if freq.hz() < 0. {
             return Err(AUTDInternalError::ModulationError(format!(
@@ -97,19 +94,14 @@ impl SamplingMode for NearestFreq {
                 freq
             )));
         }
-        if freq.hz() >= sampling_config.freq(ultrasound_freq)?.hz() / 2. {
+        if freq.hz() >= sampling_config.freq()?.hz() / 2. {
             return Err(AUTDInternalError::ModulationError(format!(
                 "Frequency ({}) is equal to or greater than the Nyquist frequency ({})",
                 freq,
-                sampling_config.freq(ultrasound_freq)? / 2.
+                sampling_config.freq()? / 2.
             )));
         }
-        Ok((
-            (sampling_config.freq(ultrasound_freq)? / freq.hz())
-                .hz()
-                .round() as u64,
-            1,
-        ))
+        Ok(((sampling_config.freq()? / freq.hz()).hz().round() as u64, 1))
     }
 }
 

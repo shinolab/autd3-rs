@@ -32,8 +32,6 @@ pub struct Quaternion {
 pub struct Geometry {
     #[prost(message, repeated, tag = "1")]
     pub devices: ::prost::alloc::vec::Vec<geometry::Autd3>,
-    #[prost(uint32, tag = "2")]
-    pub ultrasound_freq: u32,
 }
 /// Nested message and enum types in `Geometry`.
 pub mod geometry {

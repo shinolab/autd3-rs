@@ -184,18 +184,14 @@ impl<D: Directivity + 'static> Gain for Greedy<D> {
 #[cfg(test)]
 mod tests {
     use super::{super::super::Pa, *};
-    use autd3_driver::{
-        acoustics::directivity::Sphere, autd3_device::AUTD3, defined::FREQ_40K,
-        geometry::IntoDevice,
-    };
+    use autd3_driver::{acoustics::directivity::Sphere, autd3_device::AUTD3, geometry::IntoDevice};
 
     #[test]
     fn test_greedy_all() {
-        let geometry: Geometry =
-            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], FREQ_40K);
+        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
 
         let g = Greedy::<Sphere>::new(
-            [(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)].into_iter(),
+            [(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)],
         )
         .with_phase_div(32);
 
@@ -219,15 +215,13 @@ mod tests {
 
     #[test]
     fn test_greedy_filtered() {
-        let geometry: Geometry =
-            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], FREQ_40K);
+        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
 
         let g = Greedy::<Sphere>::new(
             [
                 (Vector3::new(10., 10., 100.), 5e3 * Pa),
                 (Vector3::new(-10., 10., 100.), 5e3 * Pa),
-            ]
-            .into_iter(),
+            ],
         )
         .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)));
 

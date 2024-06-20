@@ -12,6 +12,7 @@ use crate::{
         operation::{cast, Operation, TypeTag},
     },
     geometry::Device,
+    get_ultrasound_freq,
 };
 
 use super::FociSTMControlFlags;
@@ -131,11 +132,11 @@ impl<const N: usize> Operation for FociSTMOp<N> {
                 transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
                 send_num: send_num as _,
                 num_foci: N as u8,
-                freq_div: self.config.division(device.ultrasound_freq())?,
+                freq_div: self.config.division()?,
                 sound_speed: (device.sound_speed / METER
                     * 64.0
                     * crate::defined::FREQ_40K.hz() as f32
-                    / device.ultrasound_freq().hz() as f32)
+                    / get_ultrasound_freq().hz() as f32)
                     .round() as u16,
                 rep: self.rep,
             };
@@ -719,7 +720,7 @@ mod tests {
                 Segment::S0,
                 Some(TransitionMode::SyncIdx),
             );
-            let mut tx = vec![0x00u8; size_of::<FociSTMHead>() + 2 * 1 * size_of::<STMFocus>()];
+            let mut tx = vec![0x00u8; size_of::<FociSTMHead>() + 2 * size_of::<STMFocus>()];
             assert_eq!(Ok(()), op.pack(&device, &mut tx).map(|_| ()));
         }
 

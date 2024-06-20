@@ -1,6 +1,8 @@
 use std::time::Duration;
 
-use crate::{datagram::*, firmware::operation::SilencerFixedCompletionStepsOp};
+use crate::{
+    datagram::*, firmware::operation::SilencerFixedCompletionStepsOp, get_ultrasound_freq,
+};
 
 const NANOSEC: u128 = 1_000_000_000;
 
@@ -100,8 +102,8 @@ impl Datagram for Silencer<FixedCompletionTime> {
         Some(DEFAULT_TIMEOUT)
     }
 
-    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
-        let ultrasound_freq = geometry.ultrasound_freq().hz() as u128;
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
+        let ultrasound_freq = get_ultrasound_freq().hz() as u128;
         let k_intensity = self.internal.time_intensity.as_nanos() * ultrasound_freq;
         let steps_intensity = if k_intensity % NANOSEC == 0 {
             (k_intensity / NANOSEC).min(u16::MAX as _)

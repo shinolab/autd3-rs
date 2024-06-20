@@ -64,7 +64,7 @@ fn send_clear() -> anyhow::Result<()> {
                 SAMPLING_FREQ_DIV_MIN
                     * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
             ),
-            gen_random_foci::<1>(2).into_iter(),
+            gen_random_foci::<1>(2),
         )
         .with_segment(Segment::S0, Some(TransitionMode::Ext));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
