@@ -162,6 +162,12 @@ impl From<Freq<u32>> for SamplingConfig {
     }
 }
 
+impl From<Duration> for SamplingConfig {
+    fn from(p: Duration) -> Self {
+        Self::Period(p)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::defined::Hz;
