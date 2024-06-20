@@ -121,6 +121,9 @@ mod tests {
 
     #[test]
     fn test_bessel() -> anyhow::Result<()> {
+        #[cfg(feature = "dynamic_freq")]
+        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
         let mut rng = rand::thread_rng();
 
         let geometry = create_geometry(1);

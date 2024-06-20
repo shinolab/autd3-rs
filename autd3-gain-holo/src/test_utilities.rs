@@ -7,7 +7,7 @@ use crate::{Amplitude, Complex, HoloError, LinAlgBackend, MatrixXc, Pa, Trans, V
 use autd3_driver::{
     acoustics::{directivity::Sphere, propagate},
     autd3_device::AUTD3,
-    defined::{FREQ_40K, PI},
+    defined::PI,
     geometry::{Geometry, IntoDevice, Vector3},
 };
 
@@ -27,7 +27,6 @@ fn generate_geometry(size: usize) -> Geometry {
                 })
             })
             .collect(),
-        FREQ_40K,
     )
 }
 

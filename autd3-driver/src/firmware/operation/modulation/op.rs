@@ -169,6 +169,9 @@ mod tests {
 
     #[test]
     fn test() {
+        #[cfg(feature = "dynamic_freq")]
+        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
+
         const MOD_SIZE: usize = 100;
 
         let device = create_device(0, NUM_TRANS_IN_UNIT);
@@ -251,6 +254,9 @@ mod tests {
 
     #[test]
     fn test_div() {
+        #[cfg(feature = "dynamic_freq")]
+        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
+
         const FRAME_SIZE: usize = 30;
         const MOD_SIZE: usize = FRAME_SIZE - std::mem::size_of::<ModulationHead>()
             + (FRAME_SIZE - std::mem::size_of::<ModulationSubseq>()) * 2;
@@ -385,6 +391,9 @@ mod tests {
         MOD_BUF_SIZE_MAX+1
     )]
     fn out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] size: usize) {
+        #[cfg(feature = "dynamic_freq")]
+        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
+
         let send = |n: usize| {
             const FRAME_SIZE: usize = size_of::<ModulationHead>() + NUM_TRANS_IN_UNIT * 2;
             let device = create_device(0, NUM_TRANS_IN_UNIT);

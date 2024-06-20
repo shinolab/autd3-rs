@@ -147,6 +147,9 @@ mod tests {
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
         #[case] freq: impl SamplingModeInference,
     ) {
+        #[cfg(feature = "dynamic_freq")]
+        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
         let geometry = create_geometry(1);
         let m = Sine::new(freq);
         assert_eq!(freq, m.freq());
@@ -186,6 +189,9 @@ mod tests {
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
         #[case] freq: Freq<f32>,
     ) {
+        #[cfg(feature = "dynamic_freq")]
+        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
         let geometry = create_geometry(1);
         let m = Sine::with_freq_nearest(freq);
         assert_eq!(freq, m.freq());

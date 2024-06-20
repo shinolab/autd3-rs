@@ -100,6 +100,9 @@ mod tests {
 
     #[test]
     fn test_fourier() -> anyhow::Result<()> {
+        #[cfg(feature = "dynamic_freq")]
+        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
         let geometry = create_geometry(1);
 
         let f0 = Sine::new(50. * Hz).with_phase(PI / 2.0 * rad);

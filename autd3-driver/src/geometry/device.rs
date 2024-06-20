@@ -163,6 +163,8 @@ pub mod tests {
     use rand::Rng;
 
     use super::*;
+    #[cfg(feature = "dynamic_freq")]
+    use crate::set_ultrasound_freq;
     use crate::{
         defined::{mm, PI},
         geometry::tests::create_device,
@@ -432,23 +434,41 @@ pub mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(8.5, 340e3)]
-    #[case(10., 400e3)]
-    #[case(4.25, 340e3)]
-    #[case(5., 400e3)]
-    fn wavelength(#[case] expect: f32, #[case] c: f32) {
+    #[case(8.5, 340e3, 40000 * crate::defined::Hz)]
+    #[case(10., 400e3, 40000 * crate::defined::Hz)]
+    #[cfg_attr(feature = "dynamic_freq", case(4.25, 340e3, 80000 * crate::defined::Hz))]
+    #[cfg_attr(feature = "dynamic_freq", case(5., 400e3, 80000 * crate::defined::Hz))]
+
+    fn wavelength(
+        #[case] expect: f32,
+        #[case] c: f32,
+        #[allow(unused_variables)]
+        #[case]
+        freq: crate::defined::Freq<u32>,
+    ) {
+        #[cfg(feature = "dynamic_freq")]
+        set_ultrasound_freq(freq);
         let mut device = create_device(0, 249);
         device.sound_speed = c;
         assert_approx_eq::assert_approx_eq!(expect, device.wavelength());
     }
 
+    #[allow(unused_variables)]
     #[rstest::rstest]
     #[test]
-    #[case(0.739_198_27, 340e3)]
-    #[case(0.628_318_55, 400e3)]
-    #[case(1.478_396_5, 340e3)]
-    #[case(1.256_637_1, 400e3)]
-    fn wavenumber(#[case] expect: f32, #[case] c: f32) {
+    #[case(0.739_198_27, 340e3, 40000 * crate::defined::Hz)]
+    #[case(0.628_318_55, 400e3, 40000 * crate::defined::Hz)]
+    #[cfg_attr(feature = "dynamic_freq", case(1.478_396_5, 340e3, 80000 * crate::defined::Hz))]
+    #[cfg_attr(feature = "dynamic_freq", case(1.256_637_1, 400e3, 80000 * crate::defined::Hz))]
+    fn wavenumber(
+        #[case] expect: f32,
+        #[case] c: f32,
+        #[allow(unused_variables)]
+        #[case]
+        freq: crate::defined::Freq<u32>,
+    ) {
+        #[cfg(feature = "dynamic_freq")]
+        set_ultrasound_freq(freq);
         let mut device = create_device(0, 249);
         device.sound_speed = c;
         assert_approx_eq::assert_approx_eq!(expect, device.wavenumber());

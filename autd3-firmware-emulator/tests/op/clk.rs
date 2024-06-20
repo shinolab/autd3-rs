@@ -7,7 +7,7 @@ use autd3_driver::{
 };
 use autd3_firmware_emulator::{cpu::params::CLK_FLAG_END, CPUEmulator};
 
-use crate::{create_geometry, create_geometry_with_freq, send};
+use crate::{create_geometry, send};
 
 #[rstest::rstest]
 #[test]
@@ -83,7 +83,10 @@ fn config_clk(
     #[case] expect_rom: Vec<u64>,
     #[case] ultrasound_clk: Freq<u32>,
 ) -> anyhow::Result<()> {
-    let geometry = create_geometry_with_freq(1, ultrasound_clk);
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(ultrasound_clk);
+
+    let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
@@ -98,6 +101,9 @@ fn config_clk(
 
 #[test]
 fn config_clk_incomplete_data() -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());

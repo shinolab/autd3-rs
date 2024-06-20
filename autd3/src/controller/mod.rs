@@ -4,7 +4,7 @@ mod group;
 use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
-    datagram::{Clear, Datagram, IntoDatagramWithTimeout, Silencer, Synchronize},
+    datagram::{Clear, Datagram, IntoDatagramWithTimeout, Synchronize},
     defined::DEFAULT_TIMEOUT,
     derive::{tracing, Builder},
     firmware::{
@@ -116,8 +116,10 @@ impl<L: Link> Controller<L> {
             return Ok(());
         }
         self.geometry.iter_mut().for_each(|dev| dev.enable = true);
-        self.send(Silencer::default().with_strict_mode(false))
-            .await?;
+        self.send(
+            autd3_driver::datagram::SilencerFixedCompletionSteps::default().with_strict_mode(false),
+        )
+        .await?;
         self.send((Static::new(), Null::default())).await?;
         self.send(Clear::new()).await?;
         self.link.close().await?;
@@ -278,6 +280,9 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn send() -> anyhow::Result<()> {
+        #[cfg(feature = "dynamic_freq")]
+        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
         let mut autd = create_controller(1).await?;
         autd.send((
             Sine::new(150. * Hz),
@@ -314,6 +319,9 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn firmware_version() -> anyhow::Result<()> {
+        #[cfg(feature = "dynamic_freq")]
+        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
         let mut autd = create_controller(1).await?;
         assert_eq!(
             vec![FirmwareVersion::new(
@@ -332,6 +340,9 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn close() -> anyhow::Result<()> {
+        #[cfg(feature = "dynamic_freq")]
+        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
         {
             let mut autd = create_controller(1).await?;
             autd.close().await?;
@@ -363,6 +374,9 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn fpga_state() -> anyhow::Result<()> {
+        #[cfg(feature = "dynamic_freq")]
+        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
         let mut autd =
             Controller::builder([AUTD3::new(Vector3::zeros()), AUTD3::new(Vector3::zeros())])
                 .open(Audit::builder())
@@ -407,6 +421,9 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn last_parallel_threshold() -> anyhow::Result<()> {
+        #[cfg(feature = "dynamic_freq")]
+        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
         let mut autd =
             Controller::builder([AUTD3::new(Vector3::zeros()), AUTD3::new(Vector3::zeros())])
                 .with_parallel_threshold(0)

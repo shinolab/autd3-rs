@@ -36,7 +36,7 @@ impl LightweightClientBuilder {
         self,
         addr: SocketAddr,
     ) -> Result<LightweightClient, crate::error::AUTDProtoBufError> {
-        LightweightClient::open_impl(Geometry::new(self.devices, self.ultrasound_freq), addr).await
+        LightweightClient::open_impl(Geometry::new(self.devices), addr).await
     }
 }
 

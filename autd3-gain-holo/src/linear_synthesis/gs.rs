@@ -144,6 +144,9 @@ mod tests {
 
     #[test]
     fn test_gs_all() {
+        #[cfg(feature = "dynamic_freq")]
+        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
         let backend = Arc::new(NalgebraBackend::default());
 
@@ -175,6 +178,9 @@ mod tests {
 
     #[test]
     fn test_gs_filtered() {
+        #[cfg(feature = "dynamic_freq")]
+        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
         let geometry: Geometry = Geometry::new(vec![
             AUTD3::new(Vector3::zeros()).into_device(0),
             AUTD3::new(Vector3::zeros()).into_device(1),

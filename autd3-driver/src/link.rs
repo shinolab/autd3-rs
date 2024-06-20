@@ -165,6 +165,7 @@ mod tests {
         pub down: bool,
     }
 
+    #[cfg_attr(feature = "async-trait", async_trait::async_trait)]
     impl Link for MockLink {
         async fn close(&mut self) -> Result<(), AUTDInternalError> {
             self.is_open = false;
