@@ -33,6 +33,7 @@ impl ToMessage for autd3_gain_holo::EmissionConstraint {
                     max: Some(max.to_msg(None)),
                 })),
             },
+            _ => unimplemented!(),
         }
     }
 }

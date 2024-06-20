@@ -35,6 +35,7 @@ impl ToMessage for autd3_driver::datagram::SwapSegment {
                         transition_value: transition.value(),
                     })
                 }
+                _ => unimplemented!(),
             }),
         }
     }
