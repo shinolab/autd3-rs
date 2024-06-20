@@ -2,7 +2,6 @@ pub use crate::{
     derive::*,
     error::AUTDInternalError,
     firmware::fpga::{Drive, Segment},
-    firmware::operation::{GainOp, NullOp},
     geometry::Geometry,
 };
 pub use autd3_derive::Gain;
@@ -93,11 +92,11 @@ mod tests {
         Arc,
     };
 
-    use crate::{defined::FREQ_40K, derive::*, geometry::tests::create_geometry};
+    use crate::{derive::*, geometry::tests::create_geometry};
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let geometry = create_geometry(1, 249, FREQ_40K);
+        let geometry = create_geometry(1, 249);
 
         let mut rng = rand::thread_rng();
         let d: Drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
@@ -131,7 +130,7 @@ mod tests {
 
     #[test]
     fn test_calc_once() {
-        let geometry = create_geometry(1, 249, FREQ_40K);
+        let geometry = create_geometry(1, 249);
 
         let calc_cnt = Arc::new(AtomicUsize::new(0));
         let gain = CacheTestGain {
@@ -148,7 +147,7 @@ mod tests {
 
     #[test]
     fn test_clone() {
-        let geometry = create_geometry(1, 249, FREQ_40K);
+        let geometry = create_geometry(1, 249);
 
         let calc_cnt = Arc::new(AtomicUsize::new(0));
         let gain = CacheTestGain {

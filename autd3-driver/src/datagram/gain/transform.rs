@@ -2,7 +2,6 @@ pub use crate::{
     derive::*,
     error::AUTDInternalError,
     firmware::fpga::{Drive, Segment},
-    firmware::operation::{GainOp, NullOp},
     geometry::{Device, Geometry, Transducer},
 };
 pub use autd3_derive::Gain;
@@ -37,7 +36,7 @@ impl<
     > Transform<G, FT, F>
 {
     #[doc(hidden)]
-    pub fn new(gain: G, f: F) -> Self {
+    pub const fn new(gain: G, f: F) -> Self {
         Self { gain, f }
     }
 }
@@ -73,11 +72,11 @@ mod tests {
 
     use super::{super::tests::TestGain, *};
 
-    use crate::{defined::FREQ_40K, geometry::tests::create_geometry};
+    use crate::{geometry::tests::create_geometry};
 
     #[test]
     fn test() {
-        let geometry = create_geometry(1, 249, FREQ_40K);
+        let geometry = create_geometry(1, 249);
 
         let mut rng = rand::thread_rng();
         let d: Drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));

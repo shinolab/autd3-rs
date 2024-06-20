@@ -24,22 +24,14 @@ windows = { version = "0.57.0", features = ["Win32_Media_Multimedia", "Win32_Sys
 
 [features]
 default = []
-capi = []
+capi = ["dynamic_freq", "async-trait"]
 async-trait = ["autd3-driver/async-trait"]
+dynamic_freq = ["autd3-driver/dynamic_freq"]
+test = ["autd3-driver/test"]
 
 [dev-dependencies]
 assert_approx_eq = { workspace = true }
 rand = { workspace = true }
-criterion = { workspace = true, features = ["html_reports"] }
-itertools = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 anyhow = { workspace = true }
 rstest = { workspace = true }
-
-[lib]
-bench = false
-
-[[bench]]
-name = "autd3-bench"
-path = "benches/bench.rs"
-harness = false

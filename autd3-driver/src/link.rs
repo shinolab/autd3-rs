@@ -119,6 +119,16 @@ pub async fn send_receive(
     link.trace(tx, rx, timeout);
     let timeout = timeout.unwrap_or(link.timeout());
     tracing::debug!("send with timeout: {:?}", timeout);
+    if tracing::enabled!(tracing::Level::TRACE) {
+        tx.iter().enumerate().for_each(|(i, tx)| {
+            tracing::trace!(
+                "send[{}]: header = {:?}, tag = {:?}",
+                i,
+                tx.header,
+                tx.payload[0]
+            );
+        });
+    }
     if !link.send(tx).await? {
         return Err(AUTDInternalError::SendDataFailed);
     }
@@ -133,8 +143,13 @@ async fn wait_msg_processed(
 ) -> Result<(), AUTDInternalError> {
     let start = std::time::Instant::now();
     loop {
-        if link.receive(rx).await? && check_if_msg_is_processed(tx, rx).all(std::convert::identity)
-        {
+        let res = link.receive(rx).await?;
+        if tracing::enabled!(tracing::Level::TRACE) {
+            rx.iter().enumerate().for_each(|(i, rx)| {
+                tracing::trace!("receive[{}]: {:?}", i, rx);
+            });
+        }
+        if res && check_if_msg_is_processed(tx, rx).all(std::convert::identity) {
             return Ok(());
         }
         if start.elapsed() > timeout {
@@ -165,6 +180,7 @@ mod tests {
         pub down: bool,
     }
 
+    #[cfg_attr(feature = "async-trait", async_trait::async_trait)]
     impl Link for MockLink {
         async fn close(&mut self) -> Result<(), AUTDInternalError> {
             self.is_open = false;

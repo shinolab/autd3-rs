@@ -62,7 +62,7 @@ fn calculate_mult_div(frequency: u32) -> Option<(u64, u64, u64)> {
 }
 
 impl ConfigureClockOp {
-    pub fn new(ultrasound_freq: Freq<u32>) -> Self {
+    pub const fn new(ultrasound_freq: Freq<u32>) -> Self {
         Self {
             ultrasound_freq,
             rom: vec![],
@@ -275,8 +275,7 @@ mod tests {
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let mut device = create_device(0, NUM_TRANS_IN_UNIT);
-        device.ultrasound_freq = freq;
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
 
         let mut op = ConfigureClockOp::new(freq);
 
@@ -367,9 +366,8 @@ mod tests {
     #[case::f1(Err(AUTDInternalError::InvalidFrequencyError(1*Hz)), 1*Hz)]
     #[case::f32(Err(AUTDInternalError::InvalidFrequencyError(125*Hz)), 125*Hz)]
     fn config_clk_validate(#[case] expect: Result<(), AUTDInternalError>, #[case] freq: Freq<u32>) {
-        let mut device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
         let mut tx = vec![0x00u8; size_of::<Clk>() + DRP_ROM_SIZE * size_of::<u64>()];
-        device.ultrasound_freq = freq;
 
         let mut op = ConfigureClockOp::new(freq);
         assert_eq!(expect, op.pack(&device, &mut tx).map(|_| ()));

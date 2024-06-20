@@ -42,6 +42,9 @@ pub fn gen_random_foci<const N: usize>(num: usize) -> Vec<ControlPoints<N>> {
 
 #[test]
 fn test_send_foci_stm() -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     let sin_table = include_bytes!("sin.dat");
     let atan_table = include_bytes!("atan.dat");
 
@@ -63,12 +66,10 @@ fn test_send_foci_stm() -> anyhow::Result<()> {
         let segment = Segment::S0;
         let transition_mode = TransitionMode::Immediate;
 
-        let stm = FociSTM::from_sampling_config(
-            SamplingConfig::DivisionRaw(freq_div),
-            foci.clone().into_iter(),
-        )
-        .with_loop_behavior(loop_behavior)
-        .with_segment(segment, Some(transition_mode));
+        let stm =
+            FociSTM::from_sampling_config(SamplingConfig::DivisionRaw(freq_div), foci.clone())
+                .with_loop_behavior(loop_behavior)
+                .with_segment(segment, Some(transition_mode));
 
         assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
 
@@ -116,12 +117,10 @@ fn test_send_foci_stm() -> anyhow::Result<()> {
         let loop_behavior = LoopBehavior::once();
         let segment = Segment::S1;
 
-        let stm = FociSTM::from_sampling_config(
-            SamplingConfig::DivisionRaw(freq_div),
-            foci.clone().into_iter(),
-        )
-        .with_loop_behavior(loop_behavior)
-        .with_segment(segment, None);
+        let stm =
+            FociSTM::from_sampling_config(SamplingConfig::DivisionRaw(freq_div), foci.clone())
+                .with_loop_behavior(loop_behavior)
+                .with_segment(segment, None);
 
         assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
 
@@ -173,6 +172,9 @@ fn test_send_foci_stm() -> anyhow::Result<()> {
 
 #[test]
 fn change_foci_stm_segment() -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -182,7 +184,7 @@ fn change_foci_stm_segment() -> anyhow::Result<()> {
 
     let stm = FociSTM::from_sampling_config(
         SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
-        gen_random_foci::<1>(2).into_iter(),
+        gen_random_foci::<1>(2),
     )
     .with_loop_behavior(LoopBehavior::infinite())
     .with_segment(Segment::S1, None);
@@ -201,6 +203,9 @@ fn change_foci_stm_segment() -> anyhow::Result<()> {
 
 #[test]
 fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -208,7 +213,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
     {
         let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
-            gen_random_foci::<1>(2).into_iter(),
+            gen_random_foci::<1>(2),
         )
         .with_loop_behavior(LoopBehavior::infinite())
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
@@ -228,7 +233,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
         };
         assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
 
-        let d = Silencer::fixed_completion_steps(
+        let d = Silencer::from_completion_steps(
             SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT,
         );
@@ -239,14 +244,14 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
                 SAMPLING_FREQ_DIV_MIN
                     * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
             ),
-            gen_random_foci::<1>(2).into_iter(),
+            gen_random_foci::<1>(2),
         )
         .with_loop_behavior(LoopBehavior::infinite())
         .with_segment(Segment::S1, None);
 
         assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
 
-        let d = Silencer::fixed_completion_steps(
+        let d = Silencer::from_completion_steps(
             SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT * 2,
         );
@@ -264,6 +269,9 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
 
 #[test]
 fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -317,6 +325,9 @@ fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
 
 #[test]
 fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -325,7 +336,7 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
     {
         let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
-            gen_random_foci::<1>(2).into_iter(),
+            gen_random_foci::<1>(2),
         )
         .with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
         assert_eq!(
@@ -338,7 +349,7 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
     {
         let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
-            gen_random_foci::<1>(2).into_iter(),
+            gen_random_foci::<1>(2),
         )
         .with_loop_behavior(LoopBehavior::once())
         .with_segment(Segment::S1, Some(TransitionMode::Immediate));
@@ -353,7 +364,7 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
     {
         let stm = FociSTM::from_sampling_config(
             SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
-            gen_random_foci::<1>(2).into_iter(),
+            gen_random_foci::<1>(2),
         )
         .with_segment(Segment::S1, None);
 
@@ -379,6 +390,9 @@ fn test_miss_transition_time(
     #[case] systime: OffsetDateTime,
     #[case] transition_time: OffsetDateTime,
 ) -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -401,6 +415,9 @@ fn test_miss_transition_time(
 }
 
 fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     let sin_table = include_bytes!("sin.dat");
     let atan_table = include_bytes!("atan.dat");
 
@@ -422,12 +439,10 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
         let segment = Segment::S0;
         let transition_mode = TransitionMode::Immediate;
 
-        let stm = FociSTM::from_sampling_config(
-            SamplingConfig::DivisionRaw(freq_div),
-            foci.clone().into_iter(),
-        )
-        .with_loop_behavior(loop_behavior)
-        .with_segment(segment, Some(transition_mode));
+        let stm =
+            FociSTM::from_sampling_config(SamplingConfig::DivisionRaw(freq_div), foci.clone())
+                .with_loop_behavior(loop_behavior)
+                .with_segment(segment, Some(transition_mode));
 
         assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
 

@@ -27,7 +27,7 @@ pub struct GainOp {
 }
 
 impl GainOp {
-    pub fn new(
+    pub const fn new(
         segment: Segment,
         transition: bool,
         gain: Box<dyn Fn(&Transducer) -> Drive + Sync + Send>,

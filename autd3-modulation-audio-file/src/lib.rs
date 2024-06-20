@@ -11,7 +11,6 @@ pub use wav::Wav;
 mod tests {
     use autd3_driver::{
         autd3_device::AUTD3,
-        defined::FREQ_40K,
         derive::Geometry,
         geometry::{IntoDevice, Vector3},
     };
@@ -21,7 +20,6 @@ mod tests {
             (0..n)
                 .map(|i| AUTD3::new(Vector3::zeros()).into_device(i))
                 .collect(),
-            FREQ_40K,
         )
     }
 }

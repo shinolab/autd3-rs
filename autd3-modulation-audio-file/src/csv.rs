@@ -1,4 +1,4 @@
-use autd3_driver::{defined::Freq, derive::*};
+use autd3_driver::derive::*;
 
 use std::{
     fs::File,
@@ -18,19 +18,10 @@ pub struct Csv {
 }
 
 impl Csv {
-    pub fn new(path: impl AsRef<Path>, sample_rate: Freq<u32>) -> Self {
+    pub fn new(path: impl AsRef<Path>, sampling_config: impl Into<SamplingConfig>) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),
-            config: SamplingConfig::Freq(sample_rate),
-            loop_behavior: LoopBehavior::infinite(),
-            deliminator: b',',
-        }
-    }
-
-    pub fn from_sampling_config(path: impl AsRef<Path>, config: SamplingConfig) -> Self {
-        Self {
-            path: path.as_ref().to_path_buf(),
-            config,
+            config: sampling_config.into(),
             loop_behavior: LoopBehavior::infinite(),
             deliminator: b',',
         }
@@ -59,13 +50,6 @@ impl Csv {
             .map(|s| s.parse::<u8>())
             .collect::<Result<Vec<u8>, _>>()?)
     }
-
-    // GRCOV_EXCL_START
-    #[deprecated(note = "Do not change the sampling configuration", since = "25.0.2")]
-    pub fn with_sampling_config(self, config: SamplingConfig) -> Self {
-        Self { config, ..self }
-    }
-    // GRCOV_EXCL_STOP
 }
 
 impl Modulation for Csv {
@@ -83,7 +67,7 @@ impl Modulation for Csv {
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::defined::Hz;
+    use autd3_driver::defined::{Freq, Hz};
 
     use crate::tests::create_geometry;
 
@@ -92,7 +76,7 @@ mod tests {
 
     fn create_csv(path: impl AsRef<Path>, data: &[u8]) -> anyhow::Result<()> {
         let mut f = File::create(path)?;
-        data.iter().try_for_each(|d| write!(f, "{}\n", d))?;
+        data.iter().try_for_each(|d| writeln!(f, "{}", d))?;
         Ok(())
     }
 
@@ -113,14 +97,6 @@ mod tests {
         assert_eq!(expect, m.calc(&geometry));
 
         Ok(())
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case( SamplingConfig::Freq(4000 * Hz))]
-    fn from_sampling_config(#[case] config: SamplingConfig) {
-        let m = Csv::from_sampling_config("tmp.csv", config);
-        assert_eq!(config, m.config);
     }
 
     #[test]

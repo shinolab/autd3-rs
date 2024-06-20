@@ -18,7 +18,7 @@ pub enum DebugType<'a> {
 }
 
 impl DebugType<'_> {
-    pub fn ty(&self) -> u8 {
+    pub const fn ty(&self) -> u8 {
         match self {
             DebugType::None => 0x00,
             DebugType::BaseSignal => 0x01,
@@ -35,7 +35,7 @@ impl DebugType<'_> {
         }
     }
 
-    pub fn value(&self) -> u16 {
+    pub const fn value(&self) -> u16 {
         match self {
             DebugType::None
             | DebugType::BaseSignal

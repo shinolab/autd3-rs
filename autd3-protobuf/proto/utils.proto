@@ -26,5 +26,4 @@ message Geometry {
     float sound_speed = 3;
   }
   repeated AUTD3 devices = 1;
-  uint32 ultrasound_freq = 2;
 }

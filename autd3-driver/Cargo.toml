@@ -48,7 +48,9 @@ use_meter = []
 left_handed = []
 serde = ["dep:serde"]
 derive = []
-capi = []
+capi = ["dynamic_freq", "async-trait"]
+dynamic_freq = []
+test = []
 
 [lib]
 bench = false

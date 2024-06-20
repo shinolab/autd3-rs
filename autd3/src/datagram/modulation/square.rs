@@ -2,7 +2,7 @@ use autd3_driver::{defined::Freq, derive::*};
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
-#[derive(Modulation, Clone, PartialEq, Builder)]
+#[derive(Modulation, Clone, PartialEq, Builder, Debug)]
 pub struct Square<S: SamplingMode> {
     #[get]
     freq: S::T,
@@ -44,14 +44,14 @@ impl Square<ExactFreq> {
 }
 
 impl<S: SamplingMode> Modulation for Square<S> {
-    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
+    fn calc(&self, _: &Geometry) -> ModulationCalcResult {
         if !(0.0..=1.0).contains(&self.duty) {
             return Err(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string(),
             ));
         }
 
-        let (n, rep) = S::validate(self.freq, self.config, geometry.ultrasound_freq())?;
+        let (n, rep) = S::validate(self.freq, self.config)?;
         let high = self.high;
         let low = self.low;
         let duty = self.duty;
@@ -73,22 +73,6 @@ impl<S: SamplingMode> Modulation for Square<S> {
     }
     // GRCOV_EXCL_STOP
 }
-
-// TODO: add Debug to SamplingMode and use derive(Debug)
-// GRCOV_EXCL_START
-impl<S: SamplingMode> std::fmt::Debug for Square<S> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Square")
-            .field("freq", &self.freq)
-            .field("low", &self.low)
-            .field("high", &self.high)
-            .field("duty", &self.duty)
-            .field("config", &self.config)
-            .field("loop_behavior", &self.loop_behavior)
-            .finish()
-    }
-}
-// GRCOV_EXCL_STOP
 
 #[cfg(test)]
 mod tests {

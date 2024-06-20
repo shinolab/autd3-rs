@@ -4,6 +4,7 @@ use thiserror::Error;
 use tonic::Status;
 
 #[derive(Error, Debug)]
+#[non_exhaustive]
 pub enum AUTDProtoBufError {
     #[error("{0}")]
     Status(String),

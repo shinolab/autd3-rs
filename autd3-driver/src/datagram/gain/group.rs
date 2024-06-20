@@ -2,7 +2,6 @@ pub use crate::{
     derive::*,
     error::AUTDInternalError,
     firmware::fpga::{Drive, Segment},
-    firmware::operation::{GainOp, NullOp},
     geometry::{Device, Geometry, Transducer},
 };
 pub use autd3_derive::Gain;
@@ -168,11 +167,11 @@ mod tests {
 
     use super::{super::tests::TestGain, *};
 
-    use crate::{defined::FREQ_40K, geometry::tests::create_geometry};
+    use crate::{geometry::tests::create_geometry};
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let geometry = create_geometry(4, 249, FREQ_40K);
+        let geometry = create_geometry(4, 249);
 
         let mut rng = rand::thread_rng();
 
@@ -232,7 +231,7 @@ mod tests {
 
     #[test]
     fn test_unknown_key() {
-        let geometry = create_geometry(2, 249, FREQ_40K);
+        let geometry = create_geometry(2, 249);
 
         let gain = Group::new(|_dev| {
             |tr| match tr.idx() {
@@ -251,7 +250,7 @@ mod tests {
 
     #[test]
     fn test_calc_err() {
-        let geometry = create_geometry(2, 249, FREQ_40K);
+        let geometry = create_geometry(2, 249);
 
         let gain = Group::new(|_dev| |_tr| Some("test")).set("test", TestGain::err());
 

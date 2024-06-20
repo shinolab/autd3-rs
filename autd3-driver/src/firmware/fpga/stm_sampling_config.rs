@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{
     defined::{Freq, Hz},
     error::AUTDInternalError,
@@ -6,9 +8,12 @@ use crate::{
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[non_exhaustive]
 pub enum STMSamplingConfig {
     Freq(Freq<f32>),
     FreqNearest(Freq<f32>),
+    Period(Duration),
+    PeriodNearest(Duration),
     SamplingConfig(SamplingConfig),
 }
 
@@ -26,6 +31,13 @@ impl STMSamplingConfig {
                 Ok(SamplingConfig::FreqNearest(f.hz() * size as f32 * Hz))
             }
             Self::SamplingConfig(s) => Ok(s),
+            Self::Period(p) => {
+                if p.as_nanos() % size as u128 != 0 {
+                    return Err(AUTDInternalError::STMPeriodInvalid(size, p));
+                }
+                Ok(SamplingConfig::Period(p / size as u32))
+            }
+            Self::PeriodNearest(p) => Ok(SamplingConfig::PeriodNearest(p / size as u32)),
         }
     }
 }
@@ -78,5 +90,65 @@ mod tests {
             Ok(config),
             STMSamplingConfig::SamplingConfig(config).sampling(size)
         );
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(
+        Ok(SamplingConfig::Period(Duration::from_micros(250))),
+        Duration::from_micros(250),
+        1
+    )]
+    #[case(
+        Ok(SamplingConfig::Period(Duration::from_micros(125))),
+        Duration::from_micros(250),
+        2
+    )]
+    #[case(
+        Ok(SamplingConfig::Period(Duration::from_micros(25))),
+        Duration::from_micros(25),
+        1
+    )]
+    #[case(
+        Err(AUTDInternalError::STMPeriodInvalid(2, Duration::from_nanos(25001))),
+        Duration::from_nanos(25001),
+        2
+    )]
+    fn period(
+        #[case] expect: Result<SamplingConfig, AUTDInternalError>,
+        #[case] p: Duration,
+        #[case] size: usize,
+    ) {
+        assert_eq!(expect, STMSamplingConfig::Period(p).sampling(size));
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(
+        Ok(SamplingConfig::PeriodNearest(Duration::from_micros(250))),
+        Duration::from_micros(250),
+        1
+    )]
+    #[case(
+        Ok(SamplingConfig::PeriodNearest(Duration::from_micros(125))),
+        Duration::from_micros(250),
+        2
+    )]
+    #[case(
+        Ok(SamplingConfig::PeriodNearest(Duration::from_micros(25))),
+        Duration::from_micros(25),
+        1
+    )]
+    #[case(
+        Ok(SamplingConfig::PeriodNearest(Duration::from_nanos(12500))),
+        Duration::from_nanos(25001),
+        2
+    )]
+    fn period_nearest(
+        #[case] expect: Result<SamplingConfig, AUTDInternalError>,
+        #[case] p: Duration,
+        #[case] size: usize,
+    ) {
+        assert_eq!(expect, STMSamplingConfig::PeriodNearest(p).sampling(size));
     }
 }

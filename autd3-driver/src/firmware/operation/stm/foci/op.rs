@@ -12,6 +12,7 @@ use crate::{
         operation::{cast, Operation, TypeTag},
     },
     geometry::Device,
+    get_ultrasound_freq,
 };
 
 use super::FociSTMControlFlags;
@@ -50,7 +51,7 @@ pub struct FociSTMOp<const N: usize> {
 }
 
 impl<const N: usize> FociSTMOp<N> {
-    pub fn new(
+    pub const fn new(
         points: Arc<Vec<ControlPoints<N>>>,
         config: SamplingConfig,
         rep: u32,
@@ -131,11 +132,11 @@ impl<const N: usize> Operation for FociSTMOp<N> {
                 transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
                 send_num: send_num as _,
                 num_foci: N as u8,
-                freq_div: self.config.division(device.ultrasound_freq())?,
+                freq_div: self.config.division()?,
                 sound_speed: (device.sound_speed / METER
                     * 64.0
                     * crate::defined::FREQ_40K.hz() as f32
-                    / device.ultrasound_freq().hz() as f32)
+                    / get_ultrasound_freq().hz() as f32)
                     .round() as u16,
                 rep: self.rep,
             };
@@ -205,6 +206,7 @@ mod tests {
 
     #[test]
     fn test() {
+
         const FOCI_STM_SIZE: usize = 100;
         const FRAME_SIZE: usize = size_of::<FociSTMHead>() + size_of::<STMFocus>() * FOCI_STM_SIZE;
 
@@ -302,6 +304,7 @@ mod tests {
 
     #[test]
     fn test_foci() {
+
         const FOCI_STM_SIZE: usize = 100;
         const N: usize = 8;
         const FRAME_SIZE: usize =
@@ -422,6 +425,7 @@ mod tests {
 
     #[test]
     fn test_div() {
+
         const FRAME_SIZE: usize = 32;
         const FOCI_STM_SIZE: usize = 7;
 
@@ -665,6 +669,7 @@ mod tests {
     #[case(Ok(()), FOCI_STM_BUF_SIZE_MAX)]
     #[case(Err(AUTDInternalError::FociSTMPointSizeOutOfRange(FOCI_STM_BUF_SIZE_MAX+1)), FOCI_STM_BUF_SIZE_MAX+1)]
     fn test_buffer_out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] n: usize) {
+
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
         let mut op = FociSTMOp::new(
@@ -686,6 +691,7 @@ mod tests {
 
     #[test]
     fn test_foci_out_of_range() {
+
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
         {
@@ -719,7 +725,7 @@ mod tests {
                 Segment::S0,
                 Some(TransitionMode::SyncIdx),
             );
-            let mut tx = vec![0x00u8; size_of::<FociSTMHead>() + 2 * 1 * size_of::<STMFocus>()];
+            let mut tx = vec![0x00u8; size_of::<FociSTMHead>() + 2 * size_of::<STMFocus>()];
             assert_eq!(Ok(()), op.pack(&device, &mut tx).map(|_| ()));
         }
 

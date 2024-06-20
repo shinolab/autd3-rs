@@ -47,9 +47,7 @@ impl NativeTimerWrapper {
             Ok(true)
         }
     }
-    // GRCOV_EXCL_STOP
 
-    // GRCOV_EXCL_START
     pub fn close(&mut self) -> Result<(), AUTDInternalError> {
         unsafe {
             if !self.h_timer.is_invalid() {

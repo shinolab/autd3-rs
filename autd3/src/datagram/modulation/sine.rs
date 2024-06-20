@@ -5,7 +5,7 @@ use autd3_driver::{
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
-#[derive(Modulation, Clone, PartialEq, Builder)]
+#[derive(Modulation, Clone, PartialEq, Builder, Debug)]
 pub struct Sine<S: SamplingMode> {
     #[get]
     freq: S::T,
@@ -33,7 +33,7 @@ impl Sine<ExactFreq> {
         }
     }
 
-    pub fn with_freq_nearest(freq: Freq<f32>) -> Sine<NearestFreq> {
+    pub const fn with_freq_nearest(freq: Freq<f32>) -> Sine<NearestFreq> {
         Sine {
             freq,
             intensity: u8::MAX,
@@ -47,8 +47,8 @@ impl Sine<ExactFreq> {
 }
 
 impl<S: SamplingMode> Modulation for Sine<S> {
-    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
-        let (n, rep) = S::validate(self.freq, self.config, geometry.ultrasound_freq())?;
+    fn calc(&self, _: &Geometry) -> ModulationCalcResult {
+        let (n, rep) = S::validate(self.freq, self.config)?;
         let intensity = self.intensity;
         let offset = self.offset;
         let phase = self.phase.radian();
@@ -68,22 +68,6 @@ impl<S: SamplingMode> Modulation for Sine<S> {
     }
     // GRCOV_EXCL_STOP
 }
-
-// TODO: add Debug to SamplingMode and use derive(Debug)
-// GRCOV_EXCL_START
-impl<S: SamplingMode> std::fmt::Debug for Sine<S> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Sine")
-            .field("freq", &self.freq)
-            .field("intensity", &self.intensity)
-            .field("phase", &self.phase)
-            .field("offset", &self.offset)
-            .field("config", &self.config)
-            .field("loop_behavior", &self.loop_behavior)
-            .finish()
-    }
-}
-// GRCOV_EXCL_STOP
 
 #[cfg(test)]
 mod tests {

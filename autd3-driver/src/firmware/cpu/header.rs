@@ -8,6 +8,15 @@ pub struct Header {
     pub slot_2_offset: u16,
 }
 
+impl std::fmt::Debug for Header {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Header")
+            .field("msg_id", &self.msg_id)
+            .field("slot_2_offset", &self.slot_2_offset)
+            .finish()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::mem::offset_of;

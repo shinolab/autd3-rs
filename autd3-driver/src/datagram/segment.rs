@@ -9,6 +9,7 @@ use crate::{
 use super::OperationGenerator;
 
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub enum SwapSegment {
     Gain(Segment),
     Modulation(Segment, TransitionMode),
@@ -30,8 +31,6 @@ impl OperationGenerator for SwapSegmentOpGenerator {
 }
 
 impl Datagram for SwapSegment {
-    type O1 = SwapSegmentOp;
-    type O2 = NullOp;
     type G = SwapSegmentOpGenerator;
 
     fn timeout(&self) -> Option<Duration> {

@@ -39,8 +39,6 @@ impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> OperationGenerator
 }
 
 impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> Datagram for DebugSettings<F> {
-    type O1 = DebugSettingOp;
-    type O2 = NullOp;
     type G = DebugSettingOpGenerator<F>;
 
     fn timeout(&self) -> Option<Duration> {
