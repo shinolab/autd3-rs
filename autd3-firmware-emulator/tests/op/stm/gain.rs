@@ -299,7 +299,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
         .with_segment(Segment::S0, true);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::fixed_completion_steps(
+        let d = Silencer::from_completion_steps(
             SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT,
         );
@@ -317,7 +317,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
         .with_segment(Segment::S1, None);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::fixed_completion_steps(
+        let d = Silencer::from_completion_steps(
             SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT * 2,
         );
