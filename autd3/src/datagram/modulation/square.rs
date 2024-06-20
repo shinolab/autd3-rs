@@ -145,9 +145,6 @@ mod tests {
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
         #[case] freq: impl SamplingModeInference,
     ) {
-        #[cfg(feature = "dynamic_freq")]
-        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
         let geometry = create_geometry(1);
         let m = Square::new(freq);
         assert_eq!(freq, m.freq());
@@ -187,9 +184,6 @@ mod tests {
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
         #[case] freq: Freq<f32>,
     ) {
-        #[cfg(feature = "dynamic_freq")]
-        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
         let geometry = create_geometry(1);
         let m = Square::with_freq_nearest(freq);
         assert_eq!(freq, m.freq());
@@ -203,9 +197,6 @@ mod tests {
 
     #[test]
     fn with_low() -> anyhow::Result<()> {
-        #[cfg(feature = "dynamic_freq")]
-        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
         let geometry = create_geometry(1);
         let m = Square::new(150. * Hz).with_low(u8::MAX);
         assert_eq!(u8::MAX, m.low());
@@ -216,9 +207,6 @@ mod tests {
 
     #[test]
     fn with_high() -> anyhow::Result<()> {
-        #[cfg(feature = "dynamic_freq")]
-        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
         let geometry = create_geometry(1);
         let m = Square::new(150. * Hz).with_high(u8::MIN);
         assert_eq!(u8::MIN, m.high());
@@ -229,9 +217,6 @@ mod tests {
 
     #[test]
     fn with_duty() -> anyhow::Result<()> {
-        #[cfg(feature = "dynamic_freq")]
-        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
         let geometry = create_geometry(1);
         let m = Square::new(150. * Hz).with_duty(0.0);
         assert_eq!(m.duty(), 0.0);

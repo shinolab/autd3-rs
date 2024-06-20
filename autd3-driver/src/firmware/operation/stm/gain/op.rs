@@ -263,8 +263,6 @@ mod tests {
 
     #[test]
     fn test_phase_intensity_full() {
-        #[cfg(feature = "dynamic_freq")]
-        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
 
         const GAIN_STM_SIZE: usize = 3;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
@@ -427,8 +425,6 @@ mod tests {
 
     #[test]
     fn test_phase_full() {
-        #[cfg(feature = "dynamic_freq")]
-        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
 
         const GAIN_STM_SIZE: usize = 5;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
@@ -568,8 +564,6 @@ mod tests {
 
     #[test]
     fn test_phase_half() {
-        #[cfg(feature = "dynamic_freq")]
-        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
 
         const GAIN_STM_SIZE: usize = 11;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
@@ -726,8 +720,6 @@ mod tests {
         GAIN_STM_BUF_SIZE_MAX+1
     )]
     fn out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] size: usize) {
-        #[cfg(feature = "dynamic_freq")]
-        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
 
         let send = |n: usize| {
             const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;

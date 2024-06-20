@@ -128,9 +128,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_group() -> anyhow::Result<()> {
-        #[cfg(feature = "dynamic_freq")]
-        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
         let mut autd = create_controller(4).await?;
 
         autd.send(Uniform::new(0xFF)).await?;
@@ -200,9 +197,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_send_failed() -> anyhow::Result<()> {
-        #[cfg(feature = "dynamic_freq")]
-        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
         let mut autd = create_controller(1).await?;
         assert_eq!(
             Ok(()),
@@ -226,9 +220,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_send_err() -> anyhow::Result<()> {
-        #[cfg(feature = "dynamic_freq")]
-        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
         let mut autd = create_controller(2).await?;
 
         assert_eq!(
@@ -250,9 +241,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_group_only_for_enabled() -> anyhow::Result<()> {
-        #[cfg(feature = "dynamic_freq")]
-        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
         let mut autd = create_controller(2).await?;
 
         autd.geometry[0].enable = false;
@@ -274,9 +262,6 @@ mod tests {
 
     #[tokio::test]
     async fn unknown_key() -> anyhow::Result<()> {
-        #[cfg(feature = "dynamic_freq")]
-        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
         let mut autd = create_controller(2).await?;
 
         assert_eq!(
