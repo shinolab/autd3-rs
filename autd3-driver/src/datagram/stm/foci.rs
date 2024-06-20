@@ -74,6 +74,18 @@ impl<const N: usize> FociSTM<N> {
             sampling_config: config.into(),
         }
     }
+
+    pub fn freq(&self) -> Result<Freq<f32>, AUTDInternalError> {
+        self.sampling_config()
+            .freq()
+            .map(|f| f / self.control_points.len() as f32)
+    }
+
+    pub fn period(&self) -> Result<Duration, AUTDInternalError> {
+        self.sampling_config()
+            .period()
+            .map(|p| p * self.control_points.len() as u32)
+    }
 }
 
 pub struct FociSTMOperationGenerator<const N: usize> {
@@ -224,6 +236,40 @@ mod tests {
             config,
             FociSTM::from_sampling_config(config, (0..n).map(|_| Vector3::zeros()))
                 .sampling_config()
+        );
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Ok(0.5*Hz), 0.5*Hz, 2)]
+    #[case(Ok(1.0*Hz), 1.*Hz, 10)]
+    #[case(Ok(2.0*Hz), 2.*Hz, 10)]
+    #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
+    fn freq(
+        #[case] expect: Result<Freq<f32>, AUTDInternalError>,
+        #[case] f: Freq<f32>,
+        #[case] n: usize,
+    ) {
+        assert_eq!(
+            expect,
+            FociSTM::from_freq(f, (0..n).map(|_| Vector3::zeros())).and_then(|f| f.freq())
+        );
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Ok(Duration::from_millis(2000)), 0.5*Hz, 2)]
+    #[case(Ok(Duration::from_millis(1000)), 1.*Hz, 10)]
+    #[case(Ok(Duration::from_millis(500)), 2.*Hz, 10)]
+    #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
+    fn period(
+        #[case] expect: Result<Duration, AUTDInternalError>,
+        #[case] f: Freq<f32>,
+        #[case] n: usize,
+    ) {
+        assert_eq!(
+            expect,
+            FociSTM::from_freq(f, (0..n).map(|_| Vector3::zeros())).and_then(|f| f.period())
         );
     }
 

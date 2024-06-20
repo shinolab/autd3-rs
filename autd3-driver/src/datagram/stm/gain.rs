@@ -58,6 +58,18 @@ impl<G: Gain> GainSTM<G> {
             mode: GainSTMMode::PhaseIntensityFull,
         }
     }
+
+    pub fn freq(&self) -> Result<Freq<f32>, AUTDInternalError> {
+        self.sampling_config()
+            .freq()
+            .map(|f| f / self.gains.len() as f32)
+    }
+
+    pub fn period(&self) -> Result<Duration, AUTDInternalError> {
+        self.sampling_config()
+            .period()
+            .map(|p| p * self.gains.len() as u32)
+    }
 }
 
 pub struct GainSTMOperationGenerator<G: Gain> {
@@ -273,6 +285,40 @@ mod tests {
                 .sampling_config()
         );
         Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Ok(0.5*Hz), 0.5*Hz, 2)]
+    #[case(Ok(1.0*Hz), 1.*Hz, 10)]
+    #[case(Ok(2.0*Hz), 2.*Hz, 10)]
+    #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
+    fn freq(
+        #[case] expect: Result<Freq<f32>, AUTDInternalError>,
+        #[case] f: Freq<f32>,
+        #[case] n: usize,
+    ) {
+        assert_eq!(
+            expect,
+            GainSTM::from_freq(f, (0..n).map(|_| Null::default())).and_then(|f| f.freq())
+        );
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Ok(Duration::from_millis(2000)), 0.5*Hz, 2)]
+    #[case(Ok(Duration::from_millis(1000)), 1.*Hz, 10)]
+    #[case(Ok(Duration::from_millis(500)), 2.*Hz, 10)]
+    #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
+    fn period(
+        #[case] expect: Result<Duration, AUTDInternalError>,
+        #[case] f: Freq<f32>,
+        #[case] n: usize,
+    ) {
+        assert_eq!(
+            expect,
+            GainSTM::from_freq(f, (0..n).map(|_| Null::default())).and_then(|f| f.period())
+        );
     }
 
     #[rstest::rstest]
