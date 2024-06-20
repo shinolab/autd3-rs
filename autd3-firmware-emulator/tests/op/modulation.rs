@@ -36,6 +36,9 @@ impl Modulation for TestModulation {
 
 #[test]
 fn send_mod() -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     let mut rng = rand::thread_rng();
 
     let geometry = create_geometry(1);
@@ -146,6 +149,9 @@ fn send_mod() -> anyhow::Result<()> {
 
 #[test]
 fn mod_freq_div_too_small() -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -208,6 +214,9 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
 
 #[test]
 fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -270,6 +279,9 @@ fn test_miss_transition_time(
     #[case] systime: OffsetDateTime,
     #[case] transition_time: OffsetDateTime,
 ) -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());

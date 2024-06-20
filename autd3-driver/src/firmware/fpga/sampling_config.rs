@@ -149,6 +149,8 @@ mod tests {
         #[case] expected: Result<u32, AUTDInternalError>,
         #[case] freq_div: u32,
     ) {
+        #[cfg(feature = "dynamic_freq")]
+        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
         assert_eq!(expected, SamplingConfig::Division(freq_div).division());
     }
 
@@ -165,6 +167,8 @@ mod tests {
         0
     )]
     fn from_division_raw(#[case] expected: Result<u32, AUTDInternalError>, #[case] freq_div: u32) {
+        #[cfg(feature = "dynamic_freq")]
+        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
         assert_eq!(expected, SamplingConfig::DivisionRaw(freq_div).division());
     }
 
@@ -188,6 +192,8 @@ mod tests {
         freq_max(20480000 * Hz) * 2,
     )]
     fn from_freq(#[case] expected: Result<u32, AUTDInternalError>, #[case] freq: Freq<u32>) {
+        #[cfg(feature = "dynamic_freq")]
+        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
         assert_eq!(expected, SamplingConfig::Freq(freq).division());
     }
 
@@ -220,6 +226,8 @@ mod tests {
         #[case] expected: Result<u32, AUTDInternalError>,
         #[case] freq: Freq<f32>,
     ) {
+        #[cfg(feature = "dynamic_freq")]
+        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
         assert_eq!(expected, SamplingConfig::FreqNearest(freq).division());
     }
 

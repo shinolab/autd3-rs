@@ -161,8 +161,10 @@ mod tests {
 
     #[test]
     fn test_gspat_all() {
-        let geometry: Geometry =
-            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        #[cfg(feature = "dynamic_freq")]
+        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
+        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
         let backend = Arc::new(NalgebraBackend::default());
 
         let g = GSPAT::new(
@@ -193,8 +195,10 @@ mod tests {
 
     #[test]
     fn test_gspat_filtered() {
-        let geometry: Geometry =
-            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        #[cfg(feature = "dynamic_freq")]
+        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
+        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
         let backend = Arc::new(NalgebraBackend::default());
 
         let g = GSPAT::new(

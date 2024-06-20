@@ -188,12 +188,13 @@ mod tests {
 
     #[test]
     fn test_greedy_all() {
+        #[cfg(feature = "dynamic_freq")]
+        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
 
-        let g = Greedy::<Sphere>::new(
-            [(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)],
-        )
-        .with_phase_div(32);
+        let g = Greedy::<Sphere>::new([(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)])
+            .with_phase_div(32);
 
         assert_eq!(g.phase_div(), 32);
         assert_eq!(
@@ -215,14 +216,15 @@ mod tests {
 
     #[test]
     fn test_greedy_filtered() {
+        #[cfg(feature = "dynamic_freq")]
+        autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
 
-        let g = Greedy::<Sphere>::new(
-            [
-                (Vector3::new(10., 10., 100.), 5e3 * Pa),
-                (Vector3::new(-10., 10., 100.), 5e3 * Pa),
-            ],
-        )
+        let g = Greedy::<Sphere>::new([
+            (Vector3::new(10., 10., 100.), 5e3 * Pa),
+            (Vector3::new(-10., 10., 100.), 5e3 * Pa),
+        ])
         .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)));
 
         let filter = geometry

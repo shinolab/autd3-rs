@@ -50,6 +50,27 @@ jobs:
           python3 build.py build --features "lightweight async-trait"
         shell: bash
 
+  build-src-capi:
+    name: build-src-capi-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup
+        uses: ./.github/actions/setup-build
+        with:
+          os: ${{ matrix.os }}
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+      - name: Test src on ${{ matrix.os }}
+        run: |
+          python3 build.py build --features "capi"
+          python3 build.py test --features "capi test"
+        shell: bash
+
   test-src-for-unity:
     name: test-src-for-unity-${{ matrix.os }}
     runs-on: ${{ matrix.os }}

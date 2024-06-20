@@ -50,6 +50,9 @@ mod tests {
 
     #[test]
     fn test() {
+        #[cfg(feature = "dynamic_freq")]
+        crate::set_ultrasound_freq(crate::defined::FREQ_40K);
+
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
         let mut tx = [0x00u8; size_of::<Sync>()];

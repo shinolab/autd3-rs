@@ -1,6 +1,6 @@
 use crate::firmware::operation::ConfigureClockOp;
 
-use crate::datagram::*;
+use crate::{datagram::*, get_ultrasound_freq};
 
 #[derive(Default, Debug)]
 pub struct ConfigureFPGAClock {}
@@ -17,8 +17,8 @@ impl OperationGenerator for ConfigureClockOpGenerator {
     type O1 = ConfigureClockOp;
     type O2 = NullOp;
 
-    fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
-        (Self::O1::new(device.ultrasound_freq()), Self::O2::default())
+    fn generate(&self, _: &Device) -> (Self::O1, Self::O2) {
+        (Self::O1::new(get_ultrasound_freq()), Self::O2::default())
     }
 }
 
