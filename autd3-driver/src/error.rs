@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use thiserror::Error;
 
 use crate::{
@@ -21,13 +23,15 @@ pub enum AUTDInternalError {
         SILENCER_VALUE_MAX
     )]
     SilencerUpdateRateOutOfRange(u16),
-
     #[error(
         "Silencer completion steps ({0}) is out of range ([{}, {}])",
         SILENCER_VALUE_MIN,
         SILENCER_VALUE_MAX
     )]
     SilencerCompletionStepsOutOfRange(u16),
+
+    #[error("Silencer completion time ({0:?}) must be a multiple of ultrasound period")]
+    InvalidSilencerCompletionTime(Duration),
 
     #[error("Unknown group key: {0}")]
     UnkownKey(String),
