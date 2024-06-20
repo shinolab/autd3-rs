@@ -14,6 +14,7 @@ impl From<autd3_driver::firmware::fpga::Segment> for Segment {
         match value {
             autd3_driver::firmware::fpga::Segment::S0 => Self::S0,
             autd3_driver::firmware::fpga::Segment::S1 => Self::S1,
+            _ => unimplemented!(),
         }
     }
 }
