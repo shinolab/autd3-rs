@@ -51,6 +51,8 @@ pub enum AUTDInternalError {
 
     #[error("STM frequency ({1}, size={0}) must divide ultrasound frequency")]
     STMFreqInvalid(usize, Freq<f32>),
+    #[error("STM period ({1:?}, size={0}) must a multiple of  ultrasound frequency")]
+    STMPeriodInvalid(usize, Duration),
 
     #[error(
         "FociSTM size ({0}) is out of range ([{}, {}])",
