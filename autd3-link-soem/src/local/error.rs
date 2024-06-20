@@ -1,9 +1,12 @@
+use std::time::Duration;
+
 use autd3_driver::error::AUTDInternalError;
 use thiserror::Error;
 
 use super::state::EcStatus;
 
 #[derive(Error, Debug)]
+#[non_exhaustive]
 pub enum SOEMError {
     #[error("No AUTD device was found")]
     NoDeviceFound,
@@ -21,6 +24,8 @@ pub enum SOEMError {
     InvalidSync0CycleTime,
     #[error("Invalid interface name: {0}")]
     InvalidInterfaceName(String),
+    #[error("Failed to synchronize devices. Maximum system time difference ({0:?}) exceeded the tolerance ({1:?})")]
+    SynchronizeFailed(Duration, Duration),
 
     #[error("Failed to create timer")]
     TimerCreationFailed,

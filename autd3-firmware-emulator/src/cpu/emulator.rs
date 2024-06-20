@@ -131,14 +131,7 @@ impl CPUEmulator {
         self.dc_sys_time = sys_time;
     }
 
-    // GRCOV_EXCL_START
-    #[deprecated(note = "Users shouldn't use this method directly", since = "23.1.0")]
-    pub fn set_dc_sys_time(&mut self, dc_sys_time: DcSysTime) {
-        self.dc_sys_time = dc_sys_time;
-    }
-    // GRCOV_EXCL_STOP
-
-    pub fn dc_sys_time(&self) -> DcSysTime {
+    pub const fn dc_sys_time(&self) -> DcSysTime {
         self.dc_sys_time
     }
 

@@ -42,7 +42,7 @@ pub struct ModulationOp {
 }
 
 impl ModulationOp {
-    pub fn new(
+    pub const fn new(
         modulation: Arc<Vec<u8>>,
         config: SamplingConfig,
         rep: u32,
@@ -62,7 +62,7 @@ impl ModulationOp {
 }
 
 impl Operation for ModulationOp {
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         let is_first = self.sent == 0;
 
         let offset = if is_first {
@@ -92,7 +92,7 @@ impl Operation for ModulationOp {
                 flag: ModulationControlFlags::BEGIN,
                 size: send_num as _,
                 __pad: [0; 3],
-                freq_div: self.config.division(device.ultrasound_freq())?,
+                freq_div: self.config.division()?,
                 rep: self.rep,
                 transition_mode: self
                     .transition_mode
@@ -169,6 +169,7 @@ mod tests {
 
     #[test]
     fn test() {
+
         const MOD_SIZE: usize = 100;
 
         let device = create_device(0, NUM_TRANS_IN_UNIT);
@@ -251,6 +252,7 @@ mod tests {
 
     #[test]
     fn test_div() {
+
         const FRAME_SIZE: usize = 30;
         const MOD_SIZE: usize = FRAME_SIZE - std::mem::size_of::<ModulationHead>()
             + (FRAME_SIZE - std::mem::size_of::<ModulationSubseq>()) * 2;
@@ -385,6 +387,7 @@ mod tests {
         MOD_BUF_SIZE_MAX+1
     )]
     fn out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] size: usize) {
+
         let send = |n: usize| {
             const FRAME_SIZE: usize = size_of::<ModulationHead>() + NUM_TRANS_IN_UNIT * 2;
             let device = create_device(0, NUM_TRANS_IN_UNIT);

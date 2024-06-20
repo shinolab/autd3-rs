@@ -87,8 +87,6 @@ impl OperationGenerator for ModulationOperationGenerator {
 }
 
 impl DatagramST for Box<dyn Modulation> {
-    type O1 = ModulationOp;
-    type O2 = NullOp;
     type G = ModulationOperationGenerator;
 
     fn operation_generator_with_segment(

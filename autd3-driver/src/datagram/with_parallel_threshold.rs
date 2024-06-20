@@ -12,8 +12,6 @@ pub struct DatagramWithParallelThreshold<D: Datagram> {
 }
 
 impl<D: Datagram> Datagram for DatagramWithParallelThreshold<D> {
-    type O1 = D::O1;
-    type O2 = D::O2;
     type G = D::G;
 
     fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
@@ -38,17 +36,10 @@ impl<D: Datagram> Datagram for DatagramWithParallelThreshold<D> {
 }
 
 pub trait IntoDatagramWithParallelThreshold<D: Datagram> {
-    #[deprecated(note = "Use with_parallel_threshold instead", since = "25.3.1")]
-    fn with_paralle_threshold(self, threshold: usize) -> DatagramWithParallelThreshold<D>;
     fn with_parallel_threshold(self, threshold: usize) -> DatagramWithParallelThreshold<D>;
 }
 
 impl<D: Datagram> IntoDatagramWithParallelThreshold<D> for D {
-    // GRCOV_EXCL_START
-    fn with_paralle_threshold(self, threshold: usize) -> DatagramWithParallelThreshold<D> {
-        Self::with_parallel_threshold(self, threshold)
-    }
-    // GRCOV_EXCL_STOP
     fn with_parallel_threshold(self, threshold: usize) -> DatagramWithParallelThreshold<D> {
         DatagramWithParallelThreshold {
             datagram: self,
@@ -63,13 +54,12 @@ mod tests {
 
     use crate::{
         datagram::tests::{NullDatagram, NullOperationGenerator},
-        defined::FREQ_40K,
         geometry::tests::create_geometry,
     };
 
     #[test]
     fn with_parallel_threshold() {
-        let geometry = create_geometry(1, 249, FREQ_40K);
+        let geometry = create_geometry(1, 249);
         let datagram = NullDatagram {
             timeout: Some(std::time::Duration::from_secs(1)),
             parallel_threshold: None,

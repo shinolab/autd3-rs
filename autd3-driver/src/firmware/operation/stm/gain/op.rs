@@ -193,7 +193,7 @@ impl Operation for GainSTMOp {
                     .map(|m| m.mode())
                     .unwrap_or(TRANSITION_MODE_NONE),
                 transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
-                freq_div: self.config.division(device.ultrasound_freq())?,
+                freq_div: self.config.division()?,
                 rep: self.rep,
                 __padding: [0; 4],
             };
@@ -263,6 +263,7 @@ mod tests {
 
     #[test]
     fn test_phase_intensity_full() {
+
         const GAIN_STM_SIZE: usize = 3;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
@@ -424,6 +425,7 @@ mod tests {
 
     #[test]
     fn test_phase_full() {
+
         const GAIN_STM_SIZE: usize = 5;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
@@ -562,6 +564,7 @@ mod tests {
 
     #[test]
     fn test_phase_half() {
+
         const GAIN_STM_SIZE: usize = 11;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
@@ -717,6 +720,7 @@ mod tests {
         GAIN_STM_BUF_SIZE_MAX+1
     )]
     fn out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] size: usize) {
+
         let send = |n: usize| {
             const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
             let device = create_device(0, NUM_TRANS_IN_UNIT);

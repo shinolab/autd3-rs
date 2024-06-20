@@ -5,7 +5,7 @@ use autd3_driver::derive::*;
 pub struct MyUniform {}
 
 impl MyUniform {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {}
     }
 }

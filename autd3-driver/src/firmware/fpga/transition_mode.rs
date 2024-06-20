@@ -20,7 +20,7 @@ pub enum TransitionMode {
 }
 
 impl TransitionMode {
-    pub fn mode(&self) -> u8 {
+    pub const fn mode(&self) -> u8 {
         match self {
             TransitionMode::SyncIdx => TRANSITION_MODE_SYNC_IDX,
             TransitionMode::SysTime(_) => TRANSITION_MODE_SYS_TIME,

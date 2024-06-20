@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use thiserror::Error;
 
 use crate::{
@@ -6,6 +8,7 @@ use crate::{
 };
 
 #[derive(Error, Debug, PartialEq, Clone)]
+#[non_exhaustive]
 pub enum AUTDInternalError {
     #[error(
         "Modulation buffer size ({0}) is out of range ([{}, {}])",
@@ -20,13 +23,15 @@ pub enum AUTDInternalError {
         SILENCER_VALUE_MAX
     )]
     SilencerUpdateRateOutOfRange(u16),
-
     #[error(
         "Silencer completion steps ({0}) is out of range ([{}, {}])",
         SILENCER_VALUE_MIN,
         SILENCER_VALUE_MAX
     )]
     SilencerCompletionStepsOutOfRange(u16),
+
+    #[error("Silencer completion time ({0:?}) must be a multiple of ultrasound period")]
+    InvalidSilencerCompletionTime(Duration),
 
     #[error("Unknown group key: {0}")]
     UnkownKey(String),
@@ -37,11 +42,17 @@ pub enum AUTDInternalError {
     SamplingFreqDivOutOfRange(u32, u32, u32),
     #[error("Sampling frequency ({0}) must divide {1}")]
     SamplingFreqInvalid(Freq<u32>, Freq<u32>),
+    #[error("Sampling period ({0:?}) must be a multiple of ultrasound period")]
+    SamplingPeriodInvalid(Duration),
     #[error("Sampling frequency ({0}) is out of range ([{1}, {2}])")]
     SamplingFreqOutOfRange(Freq<f32>, Freq<f32>, Freq<f32>),
+    #[error("Sampling period ({0:?}) is out of range ([{1:?}, {2:?}])")]
+    SamplingPeriodOutOfRange(Duration, Duration, Duration),
 
     #[error("STM frequency ({1}, size={0}) must divide ultrasound frequency")]
     STMFreqInvalid(usize, Freq<f32>),
+    #[error("STM period ({1:?}, size={0}) must a multiple of  ultrasound frequency")]
+    STMPeriodInvalid(usize, Duration),
 
     #[error(
         "FociSTM size ({0}) is out of range ([{}, {}])",
@@ -127,7 +138,7 @@ pub enum AUTDInternalError {
     IncompleteDrpRomData,
     #[error("Miss transition time")]
     MissTransitionTime,
-    #[error("Sampling frequency division is too small or silencer completion steps is too large")]
+    #[error("Silencer cannot complete phase/intensity completion in the specified sampling period. Please lower the sampling frequency or make the completion time of Silencer longer than the sampling period.")]
     InvalidSilencerSettings,
 }
 

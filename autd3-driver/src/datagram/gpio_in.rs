@@ -32,8 +32,6 @@ impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> OperationGenerato
 }
 
 impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> Datagram for EmulateGPIOIn<H, F> {
-    type O1 = EmulateGPIOInOp;
-    type O2 = NullOp;
     type G = EmulateGPIOInOpGenerator<H, F>;
 
     fn timeout(&self) -> Option<Duration> {

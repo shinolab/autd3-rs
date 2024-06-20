@@ -2,12 +2,6 @@ use super::{kHz, Freq, Frequency, Hz};
 
 impl Frequency for Freq<f32> {}
 
-impl Freq<f32> {
-    pub const fn hz(&self) -> f32 {
-        self.freq
-    }
-}
-
 impl std::ops::Mul<Hz> for f32 {
     type Output = Freq<f32>;
 

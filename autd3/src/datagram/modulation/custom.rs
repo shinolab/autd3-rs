@@ -9,20 +9,13 @@ pub struct Custom {
 }
 
 impl Custom {
-    pub fn new(buffer: Vec<u8>, config: SamplingConfig) -> Self {
+    pub fn new(buffer: Vec<u8>, config: impl Into<SamplingConfig>) -> Self {
         Self {
             buffer,
-            config,
+            config: config.into(),
             loop_behavior: LoopBehavior::infinite(),
         }
     }
-
-    // GRCOV_EXCL_START
-    #[deprecated(note = "Do not change the sampling configuration", since = "25.3.0")]
-    pub fn with_sampling_config(self, config: SamplingConfig) -> Self {
-        Self { config, ..self }
-    }
-    // GRCOV_EXCL_STOP
 }
 impl Modulation for Custom {
     fn calc(&self, _: &Geometry) -> ModulationCalcResult {

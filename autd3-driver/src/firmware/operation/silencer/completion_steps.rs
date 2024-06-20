@@ -24,7 +24,7 @@ pub struct SilencerFixedCompletionStepsOp {
 }
 
 impl SilencerFixedCompletionStepsOp {
-    pub fn new(value_intensity: u16, value_phase: u16, strict_mode: bool) -> Self {
+    pub const fn new(value_intensity: u16, value_phase: u16, strict_mode: bool) -> Self {
         Self {
             is_done: false,
             value_intensity,

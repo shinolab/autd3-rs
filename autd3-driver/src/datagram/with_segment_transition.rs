@@ -3,10 +3,7 @@ use std::time::Duration;
 use super::{Datagram, OperationGenerator};
 use crate::{
     derive::*,
-    firmware::{
-        fpga::{Segment, TransitionMode},
-        operation::Operation,
-    },
+    firmware::fpga::{Segment, TransitionMode},
 };
 
 use derive_more::Deref;
@@ -23,8 +20,6 @@ pub struct DatagramWithSegmentTransition<D: DatagramST> {
 }
 
 impl<D: DatagramST> Datagram for DatagramWithSegmentTransition<D> {
-    type O1 = D::O1;
-    type O2 = D::O2;
     type G = D::G;
 
     fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
@@ -55,8 +50,6 @@ impl<D: DatagramST> Datagram for DatagramWithSegmentTransition<D> {
 }
 
 impl<D: DatagramST> Datagram for D {
-    type O1 = D::O1;
-    type O2 = D::O2;
     type G = D::G;
 
     fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
@@ -83,9 +76,7 @@ impl<D: DatagramST> Datagram for D {
 }
 
 pub trait DatagramST {
-    type O1: Operation;
-    type O2: Operation;
-    type G: OperationGenerator<O1 = Self::O1, O2 = Self::O2>;
+    type G: OperationGenerator;
 
     fn operation_generator_with_segment(
         self,

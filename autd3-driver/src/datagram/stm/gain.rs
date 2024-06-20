@@ -47,16 +47,54 @@ impl<G: Gain> GainSTM<G> {
         })
     }
 
+    pub fn from_period<F: IntoIterator<Item = G>>(
+        period: Duration,
+        gains: F,
+    ) -> Result<Self, AUTDInternalError> {
+        let gains = gains.into_iter().collect::<Vec<_>>();
+        Ok(Self {
+            loop_behavior: LoopBehavior::infinite(),
+            sampling_config: STMSamplingConfig::Period(period).sampling(gains.len())?,
+            mode: GainSTMMode::PhaseIntensityFull,
+            gains,
+        })
+    }
+
+    pub fn from_period_nearest<F: IntoIterator<Item = G>>(
+        period: Duration,
+        gains: F,
+    ) -> Result<Self, AUTDInternalError> {
+        let gains = gains.into_iter().collect::<Vec<_>>();
+        Ok(Self {
+            loop_behavior: LoopBehavior::infinite(),
+            sampling_config: STMSamplingConfig::PeriodNearest(period).sampling(gains.len())?,
+            mode: GainSTMMode::PhaseIntensityFull,
+            gains,
+        })
+    }
+
     pub fn from_sampling_config<F: IntoIterator<Item = G>>(
-        config: SamplingConfig,
+        config: impl Into<SamplingConfig>,
         gains: F,
     ) -> Self {
         Self {
             gains: gains.into_iter().collect::<Vec<_>>(),
             loop_behavior: LoopBehavior::infinite(),
-            sampling_config: config,
+            sampling_config: config.into(),
             mode: GainSTMMode::PhaseIntensityFull,
         }
+    }
+
+    pub fn freq(&self) -> Result<Freq<f32>, AUTDInternalError> {
+        self.sampling_config()
+            .freq()
+            .map(|f| f / self.gains.len() as f32)
+    }
+
+    pub fn period(&self) -> Result<Duration, AUTDInternalError> {
+        self.sampling_config()
+            .period()
+            .map(|p| p * self.gains.len() as u32)
     }
 }
 
@@ -139,8 +177,6 @@ impl<G: Gain> OperationGenerator for GainSTMOperationGenerator<G> {
 }
 
 impl<G: Gain> DatagramST for GainSTM<G> {
-    type O1 = GainSTMOp;
-    type O2 = NullOp;
     type G = GainSTMOperationGenerator<G>;
 
     fn operation_generator_with_segment(
@@ -263,6 +299,65 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
+    #[case(
+        Ok(SamplingConfig::Period(Duration::from_millis(1000))),
+        Duration::from_millis(2000),
+        2
+    )]
+    #[case(
+        Ok(SamplingConfig::Period(Duration::from_millis(100))),
+        Duration::from_millis(1000),
+        10
+    )]
+    #[case(
+        Ok(SamplingConfig::Period(Duration::from_millis(50))),
+        Duration::from_millis(500),
+        10
+    )]
+    #[case(Err(AUTDInternalError::STMPeriodInvalid(2, Duration::from_millis(2000) + Duration::from_nanos(1))), Duration::from_millis(2000) + Duration::from_nanos(1), 2)]
+    fn from_period(
+        #[case] expect: Result<SamplingConfig, AUTDInternalError>,
+        #[case] p: Duration,
+        #[case] n: usize,
+    ) {
+        assert_eq!(
+            expect,
+            GainSTM::from_period(p, (0..n).map(|_| Null::default())).map(|f| f.sampling_config())
+        );
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(
+        Ok(SamplingConfig::PeriodNearest(Duration::from_millis(1000))),
+        Duration::from_millis(2000),
+        2
+    )]
+    #[case(
+        Ok(SamplingConfig::PeriodNearest(Duration::from_millis(100))),
+        Duration::from_millis(1000),
+        10
+    )]
+    #[case(
+        Ok(SamplingConfig::PeriodNearest(Duration::from_millis(50))),
+        Duration::from_millis(500),
+        10
+    )]
+    #[case(Ok(SamplingConfig::PeriodNearest(Duration::from_millis(1000))), Duration::from_millis(2000) + Duration::from_nanos(1), 2)]
+    fn from_period_nearest(
+        #[case] expect: Result<SamplingConfig, AUTDInternalError>,
+        #[case] p: Duration,
+        #[case] n: usize,
+    ) {
+        assert_eq!(
+            expect,
+            GainSTM::from_period_nearest(p, (0..n).map(|_| Null::default()))
+                .map(|f| f.sampling_config())
+        );
+    }
+
+    #[rstest::rstest]
+    #[test]
     #[case(SamplingConfig::DISABLE, 2)]
     #[case(SamplingConfig::Freq(4 * kHz), 10)]
     fn from_sampling_config(
@@ -275,6 +370,40 @@ mod tests {
                 .sampling_config()
         );
         Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Ok(0.5*Hz), 0.5*Hz, 2)]
+    #[case(Ok(1.0*Hz), 1.*Hz, 10)]
+    #[case(Ok(2.0*Hz), 2.*Hz, 10)]
+    #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
+    fn freq(
+        #[case] expect: Result<Freq<f32>, AUTDInternalError>,
+        #[case] f: Freq<f32>,
+        #[case] n: usize,
+    ) {
+        assert_eq!(
+            expect,
+            GainSTM::from_freq(f, (0..n).map(|_| Null::default())).and_then(|f| f.freq())
+        );
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Ok(Duration::from_millis(2000)), 0.5*Hz, 2)]
+    #[case(Ok(Duration::from_millis(1000)), 1.*Hz, 10)]
+    #[case(Ok(Duration::from_millis(500)), 2.*Hz, 10)]
+    #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
+    fn period(
+        #[case] expect: Result<Duration, AUTDInternalError>,
+        #[case] f: Freq<f32>,
+        #[case] n: usize,
+    ) {
+        assert_eq!(
+            expect,
+            GainSTM::from_freq(f, (0..n).map(|_| Null::default())).and_then(|f| f.period())
+        );
     }
 
     #[rstest::rstest]

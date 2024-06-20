@@ -23,6 +23,7 @@ impl ToMessage for autd3_driver::firmware::fpga::SamplingConfig {
                 autd3::derive::SamplingConfig::Division(value) => {
                     sampling_config::Config::Division(SamplingConfigDivision { value })
                 }
+                _ => unimplemented!(),
             }),
         }
     }

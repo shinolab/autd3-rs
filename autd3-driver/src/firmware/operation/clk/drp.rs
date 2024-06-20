@@ -1,5 +1,5 @@
 // GRCOV_EXCL_START
-pub(crate) fn round_frac(decimal: u64, precision: u64) -> u64 {
+pub(crate) const fn round_frac(decimal: u64, precision: u64) -> u64 {
     if decimal & (1 << (10 - precision)) != 0 {
         decimal + (1 << (10 - precision))
     } else {
@@ -65,7 +65,7 @@ pub(crate) fn mmcm_count_calc(divide: u64) -> u64 {
         | (div_calc & 0b111111111111)
 }
 
-pub(crate) fn mmcm_lock_lookup(divide: u64) -> u64 {
+pub(crate) const fn mmcm_lock_lookup(divide: u64) -> u64 {
     let lookup: [u64; 64] = [
         0b0011_0001_1011_1110_1000_1111_1010_0100_0000_0001,
         0b0011_0001_1011_1110_1000_1111_1010_0100_0000_0001,
@@ -135,7 +135,7 @@ pub(crate) fn mmcm_lock_lookup(divide: u64) -> u64 {
     lookup[divide as usize - 1]
 }
 
-pub(crate) fn mmcm_filter_lookup(divide: u64) -> u64 {
+pub(crate) const fn mmcm_filter_lookup(divide: u64) -> u64 {
     let lookup_optimized: [u64; 64] = [
         0b00_1011_1100,
         0b01_0011_1100,

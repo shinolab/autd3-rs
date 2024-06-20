@@ -21,7 +21,7 @@ fn send_silencer_fixed_update_rate() -> anyhow::Result<()> {
 
     let update_rate_intensity = rng.gen_range(1..=u16::MAX);
     let update_rate_phase = rng.gen_range(1..=u16::MAX);
-    let d = Silencer::fixed_update_rate(update_rate_intensity, update_rate_phase);
+    let d = Silencer::from_update_rate(update_rate_intensity, update_rate_phase);
 
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -45,7 +45,7 @@ fn send_silencer_fixed_completion_steps() -> anyhow::Result<()> {
 
     let steps_intensity = rng.gen_range(1..=10);
     let steps_phase = rng.gen_range(1..=u16::MAX);
-    let d = Silencer::fixed_completion_steps(steps_intensity, steps_phase);
+    let d = Silencer::from_completion_steps(steps_intensity, steps_phase);
 
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -68,13 +68,16 @@ fn silencer_completetion_steps_too_large_mod(
     #[case] expect: Result<(), AUTDInternalError>,
     #[case] steps_intensity: u16,
 ) -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     use crate::op::modulation::TestModulation;
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let d = Silencer::fixed_completion_steps(1, 1);
+    let d = Silencer::from_completion_steps(1, 1);
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     // Send modulation
@@ -90,7 +93,7 @@ fn silencer_completetion_steps_too_large_mod(
     }
 
     let steps_phase = 1;
-    let d = Silencer::fixed_completion_steps(steps_intensity, steps_phase);
+    let d = Silencer::from_completion_steps(steps_intensity, steps_phase);
 
     assert_eq!(expect, send(&mut cpu, d, &geometry, &mut tx));
 
@@ -107,11 +110,14 @@ fn silencer_completetion_steps_too_large_stm(
     #[case] steps_intensity: u16,
     #[case] steps_phase: u16,
 ) -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let d = Silencer::fixed_completion_steps(1, 1);
+    let d = Silencer::from_completion_steps(1, 1);
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     // Send FociSTM
@@ -125,7 +131,7 @@ fn silencer_completetion_steps_too_large_stm(
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }
 
-    let d = Silencer::fixed_completion_steps(steps_intensity, steps_phase);
+    let d = Silencer::from_completion_steps(steps_intensity, steps_phase);
 
     assert_eq!(expect, send(&mut cpu, d, &geometry, &mut tx));
 
@@ -142,7 +148,7 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
 
     let steps_intensity = rng.gen_range(1..=u16::MAX);
     let steps_phase = rng.gen_range(1..=u16::MAX);
-    let d = Silencer::fixed_completion_steps(steps_intensity, steps_phase).with_strict_mode(false);
+    let d = Silencer::from_completion_steps(steps_intensity, steps_phase).with_strict_mode(false);
 
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 

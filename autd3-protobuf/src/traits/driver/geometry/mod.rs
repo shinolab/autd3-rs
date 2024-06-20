@@ -1,4 +1,4 @@
-use autd3_driver::{defined::Hz, geometry::IntoDevice};
+use autd3_driver::geometry::IntoDevice;
 
 use crate::{
     pb::*,
@@ -45,7 +45,6 @@ impl ToMessage for autd3_driver::geometry::Geometry {
                     sound_speed: dev.sound_speed as _,
                 })
                 .collect(),
-            ultrasound_freq: self.ultrasound_freq().hz(),
         }
     }
 }
@@ -89,7 +88,7 @@ impl FromMessage<Geometry> for autd3_driver::geometry::Geometry {
                 Some(dev)
             })
             .collect::<Option<Vec<_>>>()
-            .map(|d| Self::new(d, msg.ultrasound_freq * Hz))
+            .map(Self::new)
     }
 }
 
@@ -98,7 +97,6 @@ mod tests {
     use super::*;
     use autd3_driver::{
         autd3_device::AUTD3,
-        defined::FREQ_40K,
         geometry::{Geometry, Quaternion, UnitQuaternion, Vector3},
     };
     use rand::Rng;
@@ -136,7 +134,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         let mut dev = AUTD3::new(Vector3::new(rng.gen(), rng.gen(), rng.gen())).into_device(0);
         dev.sound_speed = rng.gen();
-        let geometry = Geometry::new(vec![dev], FREQ_40K);
+        let geometry = Geometry::new(vec![dev]);
         let msg = geometry.to_msg(None);
         let geometry2 = Geometry::from_msg(&msg).unwrap();
         geometry

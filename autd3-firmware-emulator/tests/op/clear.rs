@@ -38,15 +38,18 @@ impl Gain for TestGain {
 
 #[test]
 fn send_clear() -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     {
-        let d = Silencer::fixed_completion_steps(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN);
+        let d = Silencer::from_completion_steps(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::fixed_update_rate(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN);
+        let d = Silencer::from_update_rate(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = TestMod {
@@ -64,7 +67,7 @@ fn send_clear() -> anyhow::Result<()> {
                 SAMPLING_FREQ_DIV_MIN
                     * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
             ),
-            gen_random_foci::<1>(2).into_iter(),
+            gen_random_foci::<1>(2),
         )
         .with_segment(Segment::S0, Some(TransitionMode::Ext));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));

@@ -214,8 +214,10 @@ def rust_test(args):
             features += " " + args.features
         command.append("--features")
         command.append(features)
+        command.append("--workspace")
+        command.append("--exclude")
+        command.append("examples")
         if not config.is_pcap_available():
-            command.append("--workspace")
             command.append("--exclude")
             command.append("autd3-link-soem")
 

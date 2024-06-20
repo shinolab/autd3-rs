@@ -4,15 +4,13 @@ mod group;
 use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
-    datagram::{
-        Clear, ConfigureFPGAClock, Datagram, IntoDatagramWithTimeout, Silencer, Synchronize,
-    },
-    defined::{Freq, DEFAULT_TIMEOUT, FREQ_40K},
-    derive::{tracing, Builder, Operation},
+    datagram::{Clear, Datagram, IntoDatagramWithTimeout, Synchronize},
+    defined::DEFAULT_TIMEOUT,
+    derive::{tracing, Builder},
     firmware::{
         cpu::{RxMessage, TxDatagram},
         fpga::FPGAState,
-        operation::OperationHandler,
+        operation::{Operation, OperationHandler},
         version::FirmwareVersion,
     },
     geometry::{Device, Geometry, IntoDevice},
@@ -101,20 +99,20 @@ impl<L: Link> Controller<L> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub(crate) async fn open_impl(
-        &mut self,
-        ultrasound_freq: Freq<u32>,
-        timeout: Duration,
-    ) -> Result<(), AUTDError> {
+    pub(crate) async fn open_impl(&mut self, timeout: Duration) -> Result<(), AUTDError> {
         #[cfg(target_os = "windows")]
         unsafe {
             tracing::debug!("Set timer resulution: {:?}", self.timer_resolution);
             windows::Win32::Media::timeBeginPeriod(self.timer_resolution);
         }
-        if ultrasound_freq != FREQ_40K {
-            self.send(ConfigureFPGAClock::new().with_timeout(timeout))
-                .await?; // GRCOV_EXCL_LINE
+
+        #[cfg(feature = "dynamic_freq")]
+        if autd3_driver::get_ultrasound_freq() != autd3_driver::defined::FREQ_40K {
+            tracing::debug!("Configuring ultrasound frequency to {:?}", autd3_driver::get_ultrasound_freq());
+            self.send(autd3_driver::datagram::ConfigureFPGAClock::new().with_timeout(timeout))
+                .await?;
         }
+
         self.send((Clear::new(), Synchronize::new()).with_timeout(timeout))
             .await?; // GRCOV_EXCL_LINE
         Ok(())
@@ -125,8 +123,10 @@ impl<L: Link> Controller<L> {
             return Ok(());
         }
         self.geometry.iter_mut().for_each(|dev| dev.enable = true);
-        self.send(Silencer::default().with_strict_mode(false))
-            .await?;
+        self.send(
+            autd3_driver::datagram::SilencerFixedCompletionSteps::default().with_strict_mode(false),
+        )
+        .await?;
         self.send((Static::new(), Null::default())).await?;
         self.send(Clear::new()).await?;
         self.link.close().await?;
@@ -316,20 +316,6 @@ mod tests {
         })?;
 
         autd.close().await?;
-        autd.close().await?;
-
-        Ok(())
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn clk() -> anyhow::Result<()> {
-        let mut autd = Controller::builder([AUTD3::new(Vector3::zeros())])
-            .with_ultrasound_freq(41 * kHz)
-            .open(Audit::builder())
-            .await?;
-        assert_eq!(41000 * Hz, autd.link[0].fpga().ultrasound_freq());
-        assert_eq!(41000 * 512 * Hz, autd.link[0].fpga().fpga_clk_freq());
-
         autd.close().await?;
 
         Ok(())

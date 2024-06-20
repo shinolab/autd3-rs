@@ -16,7 +16,8 @@ pub fn gain_derive(input: TokenStream) -> TokenStream {
         no_change,
         no_modulation_cache,
         no_modulation_transform,
-        no_radiation_pressure
+        no_radiation_pressure,
+        no_property
     )
 )]
 pub fn modulation_derive(input: TokenStream) -> TokenStream {

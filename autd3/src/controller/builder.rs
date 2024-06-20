@@ -1,5 +1,4 @@
 use autd3_driver::{
-    defined::{Freq, FREQ_40K},
     derive::*,
     firmware::cpu::{RxMessage, TxDatagram},
     geometry::{Device, Geometry, IntoDevice},
@@ -12,8 +11,6 @@ use crate::error::AUTDError;
 #[derive(Builder)]
 pub struct ControllerBuilder {
     devices: Vec<Device>,
-    #[getset]
-    ultrasound_freq: Freq<u32>,
     #[getset]
     parallel_threshold: usize,
     #[getset]
@@ -31,7 +28,6 @@ impl ControllerBuilder {
                 .enumerate()
                 .map(|(i, d)| d.into_device(i))
                 .collect(),
-            ultrasound_freq: FREQ_40K,
             parallel_threshold: 4,
             send_interval: std::time::Duration::from_millis(1),
             #[cfg(target_os = "windows")]
@@ -51,7 +47,7 @@ impl ControllerBuilder {
         link_builder: B,
         timeout: std::time::Duration,
     ) -> Result<Controller<B::L>, AUTDError> {
-        let geometry = Geometry::new(self.devices, self.ultrasound_freq);
+        let geometry = Geometry::new(self.devices);
         let link = link_builder.open(&geometry).await?;
         let mut cnt = Controller {
             link,
@@ -64,7 +60,7 @@ impl ControllerBuilder {
             #[cfg(target_os = "windows")]
             timer_resolution: self.timer_resolution,
         };
-        cnt.open_impl(self.ultrasound_freq, timeout).await?;
+        cnt.open_impl(timeout).await?;
         Ok(cnt)
     }
 }

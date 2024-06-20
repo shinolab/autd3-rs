@@ -1,7 +1,6 @@
 use autd3_driver::{
     autd3_device::AUTD3,
     datagram::*,
-    defined::{Freq, FREQ_40K},
     error::AUTDInternalError,
     firmware::{cpu::TxDatagram, operation::OperationHandler},
     geometry::{Geometry, IntoDevice, Vector3},
@@ -18,16 +17,6 @@ pub fn create_geometry(n: usize) -> Geometry {
         (0..n)
             .map(|i| AUTD3::new(Vector3::zeros()).into_device(i))
             .collect(),
-        FREQ_40K,
-    )
-}
-
-pub fn create_geometry_with_freq(n: usize, ultrasound_freq: Freq<u32>) -> Geometry {
-    Geometry::new(
-        (0..n)
-            .map(|i| AUTD3::new(Vector3::zeros()).into_device(i))
-            .collect(),
-        ultrasound_freq,
     )
 }
 
@@ -88,6 +77,9 @@ fn send_invalid_msg_id() {
 
 #[test]
 fn send_ingore_same_data() -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -114,6 +106,9 @@ fn send_ingore_same_data() -> anyhow::Result<()> {
 
 #[test]
 fn send_slot_2() -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -133,6 +128,9 @@ fn send_slot_2() -> anyhow::Result<()> {
 
 #[test]
 fn send_slot_2_err() -> anyhow::Result<()> {
+    #[cfg(feature = "dynamic_freq")]
+    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());

@@ -21,7 +21,7 @@ pub struct DebugSettingOp {
 }
 
 impl DebugSettingOp {
-    pub fn new(ty: [u8; 4], value: [u16; 4]) -> Self {
+    pub const fn new(ty: [u8; 4], value: [u16; 4]) -> Self {
         Self {
             is_done: false,
             ty,
@@ -72,7 +72,7 @@ mod tests {
 
         assert_eq!(size_of::<DebugSetting>(), op.required_size(&device));
         assert_eq!(Ok(size_of::<DebugSetting>()), op.pack(&device, &mut tx));
-        assert_eq!(op.is_done(), true);
+        assert!(op.is_done());
         assert_eq!(TypeTag::Debug as u8, tx[0]);
         assert_eq!(0x01, tx[2]);
         assert_eq!(0x02, tx[3]);

@@ -22,7 +22,7 @@ pub struct SilencerFixedUpdateRateOp {
 }
 
 impl SilencerFixedUpdateRateOp {
-    pub fn new(value_intensity: u16, value_phase: u16) -> Self {
+    pub const fn new(value_intensity: u16, value_phase: u16) -> Self {
         Self {
             is_done: false,
             value_intensity,

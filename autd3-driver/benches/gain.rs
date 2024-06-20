@@ -1,7 +1,6 @@
 use autd3_driver::{
     autd3_device::AUTD3,
     datagram::Group,
-    defined::FREQ_40K,
     derive::{Geometry, *},
     firmware::{cpu::TxDatagram, operation::OperationHandler},
     geometry::{IntoDevice, Vector3},
@@ -16,7 +15,6 @@ pub fn generate_geometry(size: usize) -> Geometry {
                 AUTD3::new(Vector3::new(i as f32 * AUTD3::DEVICE_WIDTH, 0., 0.)).into_device(i)
             })
             .collect(),
-        FREQ_40K,
     )
 }
 

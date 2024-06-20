@@ -49,7 +49,7 @@ mod tests {
 
     use super::{super::tests::TestModulation, *};
 
-    use crate::{defined::kHz, defined::FREQ_40K, geometry::tests::create_geometry};
+    use crate::{defined::kHz, geometry::tests::create_geometry};
 
     #[rstest::rstest]
     #[test]
@@ -70,7 +70,7 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let geometry = create_geometry(1, 249, FREQ_40K);
+        let geometry = create_geometry(1, 249);
 
         let mut rng = rand::thread_rng();
 

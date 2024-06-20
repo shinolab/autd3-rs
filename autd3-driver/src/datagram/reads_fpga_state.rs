@@ -26,8 +26,6 @@ impl<F: Fn(&Device) -> bool> OperationGenerator for ReadsFPGAStateOpGenerator<F>
 }
 
 impl<F: Fn(&Device) -> bool> Datagram for ReadsFPGAState<F> {
-    type O1 = ReadsFPGAStateOp;
-    type O2 = NullOp;
     type G = ReadsFPGAStateOpGenerator<F>;
 
     fn timeout(&self) -> Option<Duration> {

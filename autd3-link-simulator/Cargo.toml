@@ -19,3 +19,4 @@ tonic = { workspace = true }
 [features]
 default = []
 async-trait = ["autd3-driver/async-trait", "autd3-protobuf/async-trait"]
+capi = ["async-trait"]
