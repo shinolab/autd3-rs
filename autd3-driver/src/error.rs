@@ -138,7 +138,7 @@ pub enum AUTDInternalError {
     IncompleteDrpRomData,
     #[error("Miss transition time")]
     MissTransitionTime,
-    #[error("Sampling frequency division is too small or silencer completion steps is too large")]
+    #[error("Silencer cannot complete phase/intensity completion in the specified sampling period. Please lower the sampling frequency or make the completion time of Silencer longer than the sampling period.")]
     InvalidSilencerSettings,
 }
 
