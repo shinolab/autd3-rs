@@ -119,6 +119,8 @@ pub async fn send_receive(
     link.trace(tx, rx, timeout);
     let timeout = timeout.unwrap_or(link.timeout());
     tracing::debug!("send with timeout: {:?}", timeout);
+
+    // GRCOV_EXCL_START
     if tracing::enabled!(tracing::Level::TRACE) {
         tx.iter().enumerate().for_each(|(i, tx)| {
             tracing::trace!(
@@ -129,6 +131,8 @@ pub async fn send_receive(
             );
         });
     }
+    // GRCOV_EXCL_STOP
+
     if !link.send(tx).await? {
         return Err(AUTDInternalError::SendDataFailed);
     }
@@ -144,11 +148,15 @@ async fn wait_msg_processed(
     let start = std::time::Instant::now();
     loop {
         let res = link.receive(rx).await?;
+
+        // GRCOV_EXCL_START
         if tracing::enabled!(tracing::Level::TRACE) {
             rx.iter().enumerate().for_each(|(i, rx)| {
                 tracing::trace!("receive[{}]: {:?}", i, rx);
             });
         }
+        // GRCOV_EXCL_STOP
+
         if res && check_if_msg_is_processed(tx, rx).all(std::convert::identity) {
             return Ok(());
         }

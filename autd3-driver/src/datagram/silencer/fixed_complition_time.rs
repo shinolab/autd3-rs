@@ -77,6 +77,7 @@ impl Silencer<FixedCompletionTime> {
     }
 }
 
+#[derive(Debug)]
 pub struct SilencerFixedCompletionTimeOpGenerator {
     steps_intensity: u16,
     steps_phase: u16,
@@ -139,4 +140,41 @@ impl Datagram for Silencer<FixedCompletionTime> {
         tracing::debug!("{}", tynm::type_name::<Self>());
     }
     // GRCOV_EXCL_STOP
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::geometry::tests::create_geometry;
+
+    use super::*;
+
+    #[test]
+    fn fixed_completion_time() {
+        let d =
+            Silencer::from_completion_time(Duration::from_micros(25), Duration::from_micros(50));
+        assert_eq!(d.completion_time_intensity(), Duration::from_micros(25));
+        assert_eq!(d.completion_time_phase(), Duration::from_micros(50));
+        assert!(d.strict_mode());
+    }
+
+    #[test]
+    fn invalid_time() {
+        let geometry = create_geometry(1, 1);
+
+        let d =
+            Silencer::from_completion_time(Duration::from_micros(26), Duration::from_micros(50));
+
+        assert_eq!(
+            AUTDInternalError::InvalidSilencerCompletionTime(Duration::from_micros(26)),
+            d.operation_generator(&geometry).unwrap_err()
+        );
+
+        let d =
+            Silencer::from_completion_time(Duration::from_micros(25), Duration::from_micros(51));
+
+        assert_eq!(
+            AUTDInternalError::InvalidSilencerCompletionTime(Duration::from_micros(51)),
+            d.operation_generator(&geometry).unwrap_err()
+        );
+    }
 }

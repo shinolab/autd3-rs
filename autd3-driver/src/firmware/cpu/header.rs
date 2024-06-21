@@ -8,6 +8,7 @@ pub struct Header {
     pub slot_2_offset: u16,
 }
 
+// GRCOV_EXCL_START
 impl std::fmt::Debug for Header {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Header")
@@ -16,6 +17,7 @@ impl std::fmt::Debug for Header {
             .finish()
     }
 }
+// GRCOV_EXCL_STOP
 
 #[cfg(test)]
 mod tests {

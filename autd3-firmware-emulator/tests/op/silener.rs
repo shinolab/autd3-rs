@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use autd3_driver::{
     datagram::*,
     derive::{LoopBehavior, SamplingConfig, Segment, TransitionMode, SAMPLING_FREQ_DIV_MIN},
@@ -157,6 +159,62 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
         steps_intensity
     );
     assert_eq!(steps_phase, cpu.fpga().silencer_completion_steps_phase());
+    assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
+    assert!(!cpu.silencer_strict_mode());
+
+    Ok(())
+}
+
+#[test]
+fn send_silencer_fixed_completion_time() -> anyhow::Result<()> {
+    let mut rng = rand::thread_rng();
+
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
+
+    let time_intensity = rng.gen_range(1..=10) * Duration::from_micros(25);
+    let time_phase = rng.gen_range(1..=u16::MAX) as u32 * Duration::from_micros(25);
+    let d = Silencer::from_completion_time(time_intensity, time_phase);
+
+    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+
+    assert_eq!(
+        (time_intensity.as_micros() / 25) as u16,
+        cpu.fpga().silencer_completion_steps_intensity()
+    );
+    assert_eq!(
+        (time_phase.as_micros() / 25) as u16,
+        cpu.fpga().silencer_completion_steps_phase()
+    );
+    assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
+    assert!(cpu.silencer_strict_mode());
+
+    Ok(())
+}
+
+#[test]
+fn send_silencer_fixed_completion_time_permissive() -> anyhow::Result<()> {
+    let mut rng = rand::thread_rng();
+
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
+
+    let time_intensity = rng.gen_range(1..=u16::MAX) as u32 * Duration::from_micros(25);
+    let time_phase = rng.gen_range(1..=u16::MAX) as u32 * Duration::from_micros(25);
+    let d = Silencer::from_completion_time(time_intensity, time_phase).with_strict_mode(false);
+
+    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+
+    assert_eq!(
+        (time_intensity.as_micros() / 25) as u16,
+        cpu.fpga().silencer_completion_steps_intensity(),
+    );
+    assert_eq!(
+        (time_phase.as_micros() / 25) as u16,
+        cpu.fpga().silencer_completion_steps_phase()
+    );
     assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
     assert!(!cpu.silencer_strict_mode());
 

@@ -37,4 +37,9 @@ mod tests {
         let v2 = Angle::from_msg(&Some(msg)).unwrap();
         assert_approx_eq::assert_approx_eq!(v.radian(), v2.radian());
     }
+
+    #[test]
+    fn parse_error() {
+        assert!(Angle::from_msg(&None).is_err());
+    }
 }
