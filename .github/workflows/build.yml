@@ -160,8 +160,8 @@ jobs:
       - name: lint src
         run: |
           python3 build.py lint
+          python3 build.py lint --features "capi" --no-example
           python3 build.py lint --features "lightweight async-trait"
-          python3 build.py lint --features "capi"
           python3 build.py lint --features "left_handed use_meter"
 
 

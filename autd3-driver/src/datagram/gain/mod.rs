@@ -160,7 +160,7 @@ mod capi {
     #[derive(Gain)]
     struct NullGain {}
 
-    impl<'a> Gain for NullGain {
+    impl Gain for NullGain {
         fn calc(&self, _: &Geometry) -> GainCalcResult {
             Ok(Box::new(move |_| Box::new(move |_| Drive::null())))
         }

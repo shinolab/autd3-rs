@@ -17,7 +17,7 @@ impl ToMessage for autd3_driver::firmware::fpga::SamplingConfig {
                 }
                 autd3::derive::SamplingConfig::FreqNearest(value) => {
                     sampling_config::Config::FreqNearest(SamplingConfigFreqNearest {
-                        value: value.hz() as f32,
+                        value: value.hz(),
                     })
                 }
                 autd3::derive::SamplingConfig::Period(value) => {
@@ -55,7 +55,7 @@ impl FromMessage<SamplingConfig> for autd3_driver::firmware::fpga::SamplingConfi
                 }
                 sampling_config::Config::FreqNearest(SamplingConfigFreqNearest { value }) => {
                     autd3_driver::firmware::fpga::SamplingConfig::FreqNearest(
-                        value as f32 * autd3_driver::defined::Hz,
+                        value * autd3_driver::defined::Hz,
                     )
                 }
                 sampling_config::Config::Period(SamplingConfigPeriod { value }) => {
