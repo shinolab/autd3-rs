@@ -16,13 +16,20 @@ message SilencerFixedUpdateRate {
 message SilencerFixedCompletionSteps {
       uint32 value_intensity = 1;
       uint32 value_phase = 2;
-      bool strict_mode = 3;
+      optional bool strict_mode = 3;
+}
+
+message SilencerFixedCompletionTime {
+      uint64 value_intensity = 1;
+      uint64 value_phase = 2;
+      optional bool strict_mode = 3;
 }
 
 message Silencer {
     oneof config {
         SilencerFixedUpdateRate fixed_update_rate = 1;
         SilencerFixedCompletionSteps fixed_completion_steps = 2;
+        SilencerFixedCompletionTime fixed_completion_time = 3;
     }
 }
 
@@ -38,19 +45,19 @@ message ReadsFPGAState {
 
 message GainSTM {
     SamplingConfig config = 1;
-    LoopBehavior loop_behavior = 2;
-    Segment segment = 3;
-    repeated Gain gains = 5;
-    optional TransitionMode transition_mode = 6;
-    optional uint64 transition_value = 7;
+    repeated Gain gains = 2;
+    optional LoopBehavior loop_behavior = 3;
+}
+
+message GainSTMWithSegment {
+  GainSTM gain_stm = 1;
+  Segment segment = 2;
+  optional TransitionMode transition_mode = 3;
 }
 
 message FociSTMProps {
     SamplingConfig config = 1;
-    LoopBehavior loop_behavior = 2;
-    Segment segment = 3;
-    optional TransitionMode transition_mode = 4;
-    optional uint64 transition_value = 5;
+    optional LoopBehavior loop_behavior = 2;
 }
 
 message FociSTM1 {
@@ -106,6 +113,12 @@ message FociSTM {
   }
 }
 
+message FociSTMWithSegment {
+  FociSTM foci_stm = 1;
+  Segment segment = 2;
+  optional TransitionMode transition_mode = 3;
+}
+
 message SwapSegmentGain {
     Segment segment = 1;
 }
@@ -113,19 +126,16 @@ message SwapSegmentGain {
 message SwapSegmentModulation {
     Segment segment = 1;
     TransitionMode transition_mode = 2;
-    uint64 transition_value = 3;
 }
 
 message SwapSegmentFociSTM {
     Segment segment = 1;
     TransitionMode transition_mode = 2;
-    uint64 transition_value = 3;
 }
 
 message SwapSegmentGainSTM {
     Segment segment = 1;
     TransitionMode transition_mode = 2;
-    uint64 transition_value = 3;
 }
 
 message SwapSegment {

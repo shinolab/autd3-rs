@@ -4,6 +4,7 @@ use crate::{
     pb::*,
     to_holo,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage
@@ -12,54 +13,23 @@ impl ToMessage
         NalgebraBackend<autd3_driver::acoustics::directivity::Sphere>,
     >
 {
-    type Message = DatagramLightweight;
+    type Message = Datagram;
 
-    #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
+            datagram: Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Lm(Lm {
                     holo: to_holo!(self),
-                    eps_1: self.eps_1() as _,
-                    eps_2: self.eps_2() as _,
-                    tau: self.tau() as _,
-                    k_max: self.k_max() as _,
+                    eps_1: Some(self.eps_1() as _),
+                    eps_2: Some(self.eps_2() as _),
+                    tau: Some(self.tau() as _),
+                    k_max: Some(self.k_max() as _),
                     initial: self.initial().iter().map(|&v| v as _).collect(),
                     constraint: Some(self.constraint().to_msg(None)),
                 })),
-                segment: Segment::S0 as _,
-                transition: true,
             })),
-        }
-    }
-}
-
-impl ToMessage
-    for autd3_driver::datagram::DatagramWithSegment<
-        autd3_gain_holo::LM<
-            autd3_driver::acoustics::directivity::Sphere,
-            NalgebraBackend<autd3_driver::acoustics::directivity::Sphere>,
-        >,
-    >
-{
-    type Message = DatagramLightweight;
-
-    #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
-        Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
-                gain: Some(gain::Gain::Lm(Lm {
-                    holo: to_holo!(self),
-                    eps_1: self.eps_1() as _,
-                    eps_2: self.eps_2() as _,
-                    tau: self.tau() as _,
-                    k_max: self.k_max() as _,
-                    initial: self.initial().iter().map(|&v| v as _).collect(),
-                    constraint: Some(self.constraint().to_msg(None)),
-                })),
-                segment: self.segment() as _,
-                transition: self.transition(),
-            })),
+            timeout: None,
+            parallel_threshold: None,
         }
     }
 }
@@ -70,30 +40,36 @@ impl FromMessage<Lm>
         NalgebraBackend<autd3_driver::acoustics::directivity::Sphere>,
     >
 {
-    #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &Lm) -> Option<Self> {
-        Some(
-            Self::new(
-                NalgebraBackend::new().ok()?,
-                msg.holo
-                    .iter()
-                    .map(|h| {
-                        Some((
-                            autd3_driver::geometry::Vector3::from_msg(h.pos.as_ref()?)?,
-                            h.amp.as_ref()?.value as f32 * autd3_gain_holo::Pa,
-                        ))
-                    })
-                    .collect::<Option<Vec<_>>>()?,
-            )
-            .with_eps_1(msg.eps_1 as _)
-            .with_eps_2(msg.eps_2 as _)
-            .with_tau(msg.tau as _)
-            .with_k_max(msg.k_max as _)
-            .with_initial(msg.initial.iter().map(|&v| v as _).collect())
-            .with_constraint(autd3_gain_holo::EmissionConstraint::from_msg(
-                msg.constraint.as_ref()?,
-            )?),
+    fn from_msg(msg: &Lm) -> Result<Self, AUTDProtoBufError> {
+        let mut g = Self::new(
+            NalgebraBackend::new()?,
+            msg.holo
+                .iter()
+                .map(|h| {
+                    Ok((
+                        autd3_driver::geometry::Vector3::from_msg(&h.pos)?,
+                           autd3_gain_holo::Amplitude::from_msg(&h.amp)?,
+                    ))
+                })
+                .collect::<Result<Vec<_>, AUTDProtoBufError>>()?,
         )
+        .with_initial(msg.initial.clone());
+        if let Some(eps_1) = msg.eps_1 {
+            g = g.with_eps_1(eps_1 as _);
+        }
+        if let Some(eps_2) = msg.eps_2 {
+            g = g.with_eps_2(eps_2 as _);
+        }
+        if let Some(tau) = msg.tau {
+            g = g.with_tau(tau as _);
+        }
+        if let Some(k_max) = msg.k_max {
+            g = g.with_k_max(k_max as _);
+        }
+        if let Some(constraint) = msg.constraint.as_ref() {
+            g = g.with_constraint(autd3_gain_holo::EmissionConstraint::from_msg(constraint)?);
+        }
+        Ok(g)
     }
 }
 
@@ -128,7 +104,7 @@ mod tests {
         let msg = holo.to_msg(None);
 
         match msg.datagram {
-            Some(datagram_lightweight::Datagram::Gain(Gain {
+            Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Lm(g)),
                 ..
             })) => {

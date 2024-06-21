@@ -1,6 +1,7 @@
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3_driver::defined::ControlPoint {
@@ -15,20 +16,14 @@ impl ToMessage for autd3_driver::defined::ControlPoint {
 }
 
 impl FromMessage<ControlPoint> for autd3_driver::defined::ControlPoint {
-    #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &ControlPoint) -> Option<Self> {
-        Some(
-            autd3_driver::defined::ControlPoint::new(
-                msg.pos
-                    .as_ref()
-                    .map(autd3_driver::geometry::Vector3::from_msg)??,
-            )
-            .with_offset(
-                msg.offset
-                    .as_ref()
-                    .map(autd3_driver::firmware::fpga::Phase::from_msg)??,
-            ),
-        )
+    fn from_msg(msg: &ControlPoint) -> Result<Self, AUTDProtoBufError> {
+        let mut p = autd3_driver::defined::ControlPoint::new(
+            autd3_driver::geometry::Vector3::from_msg(&msg.pos)?,
+        );
+        if let Some(offset) = msg.offset.as_ref() {
+            p = p.with_offset(autd3_driver::firmware::fpga::Phase::from_msg(offset)?);
+        }
+        Ok(p)
     }
 }
 

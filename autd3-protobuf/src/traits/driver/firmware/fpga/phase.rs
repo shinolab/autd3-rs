@@ -1,6 +1,7 @@
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3_driver::firmware::fpga::Phase {
@@ -14,8 +15,8 @@ impl ToMessage for autd3_driver::firmware::fpga::Phase {
 }
 
 impl FromMessage<Phase> for autd3_driver::firmware::fpga::Phase {
-    fn from_msg(msg: &Phase) -> Option<Self> {
-        Some(autd3_driver::firmware::fpga::Phase::new(msg.value as _))
+    fn from_msg(msg: &Phase) -> Result<Self, AUTDProtoBufError> {
+        Ok(autd3_driver::firmware::fpga::Phase::new(msg.value as _))
     }
 }
 

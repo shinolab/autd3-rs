@@ -78,15 +78,12 @@ impl LightweightClient {
         if !res.success {
             return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
         }
-        match Vec::from_msg(&res) {
-            Some(v) => Ok(v),
-            None => Err(crate::error::AUTDProtoBufError::DataParseError),
-        }
+        Vec::from_msg(&res)
     }
 
     pub async fn send(
         &mut self,
-        datagram: impl ToMessage<Message = crate::pb::DatagramLightweight>,
+        datagram: impl ToMessage<Message = crate::pb::Datagram>,
     ) -> Result<bool, crate::error::AUTDProtoBufError> {
         let res = self
             .client

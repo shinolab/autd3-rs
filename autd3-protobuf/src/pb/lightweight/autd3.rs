@@ -1091,6 +1091,18 @@ pub struct SamplingConfigFreqNearest {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SamplingConfigPeriod {
+    #[prost(uint64, tag = "1")]
+    pub value: u64,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SamplingConfigPeriodNearest {
+    #[prost(uint64, tag = "1")]
+    pub value: u64,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SamplingConfigDivision {
     #[prost(uint32, tag = "1")]
     pub value: u32,
@@ -1104,7 +1116,7 @@ pub struct SamplingConfigDivisionRaw {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SamplingConfig {
-    #[prost(oneof = "sampling_config::Config", tags = "1, 2, 3, 4")]
+    #[prost(oneof = "sampling_config::Config", tags = "1, 2, 3, 4, 5, 6")]
     pub config: ::core::option::Option<sampling_config::Config>,
 }
 /// Nested message and enum types in `SamplingConfig`.
@@ -1118,8 +1130,12 @@ pub mod sampling_config {
         #[prost(message, tag = "2")]
         FreqNearest(super::SamplingConfigFreqNearest),
         #[prost(message, tag = "3")]
-        Division(super::SamplingConfigDivision),
+        Period(super::SamplingConfigPeriod),
         #[prost(message, tag = "4")]
+        PeriodNearest(super::SamplingConfigPeriodNearest),
+        #[prost(message, tag = "5")]
+        Division(super::SamplingConfigDivision),
+        #[prost(message, tag = "6")]
         DivisionRaw(super::SamplingConfigDivisionRaw),
     }
 }
@@ -1128,6 +1144,51 @@ pub mod sampling_config {
 pub struct LoopBehavior {
     #[prost(uint32, tag = "1")]
     pub rep: u32,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TransitionModeSyncIdx {}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TransitionModeSysTime {
+    #[prost(uint64, tag = "1")]
+    pub value: u64,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TransitionModeGpio {
+    #[prost(uint64, tag = "1")]
+    pub value: u64,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TransitionModeExt {}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TransitionModeImmediate {}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TransitionMode {
+    #[prost(oneof = "transition_mode::Mode", tags = "1, 2, 3, 4, 5")]
+    pub mode: ::core::option::Option<transition_mode::Mode>,
+}
+/// Nested message and enum types in `TransitionMode`.
+pub mod transition_mode {
+    #[non_exhaustive]
+    #[allow(clippy::derive_partial_eq_without_eq)]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Mode {
+        #[prost(message, tag = "1")]
+        SyncIdx(super::TransitionModeSyncIdx),
+        #[prost(message, tag = "2")]
+        SysTime(super::TransitionModeSysTime),
+        #[prost(message, tag = "3")]
+        Gpio(super::TransitionModeGpio),
+        #[prost(message, tag = "4")]
+        Ext(super::TransitionModeExt),
+        #[prost(message, tag = "5")]
+        Immediate(super::TransitionModeImmediate),
+    }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1172,50 +1233,17 @@ impl Segment {
         }
     }
 }
-#[non_exhaustive]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
-#[repr(i32)]
-pub enum TransitionMode {
-    SyncIdx = 0,
-    SysTime = 1,
-    Gpio = 2,
-    Ext = 3,
-}
-impl TransitionMode {
-    /// String value of the enum field names used in the ProtoBuf definition.
-    ///
-    /// The values are not transformed in any way and thus are considered stable
-    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
-    pub fn as_str_name(&self) -> &'static str {
-        match self {
-            TransitionMode::SyncIdx => "SyncIdx",
-            TransitionMode::SysTime => "SysTime",
-            TransitionMode::Gpio => "GPIO",
-            TransitionMode::Ext => "Ext",
-        }
-    }
-    /// Creates an enum from field names used in the ProtoBuf definition.
-    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
-        match value {
-            "SyncIdx" => Some(Self::SyncIdx),
-            "SysTime" => Some(Self::SysTime),
-            "GPIO" => Some(Self::Gpio),
-            "Ext" => Some(Self::Ext),
-            _ => None,
-        }
-    }
-}
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Bessel {
     #[prost(message, optional, tag = "1")]
-    pub intensity: ::core::option::Option<EmitIntensity>,
-    #[prost(message, optional, tag = "2")]
     pub pos: ::core::option::Option<Vector3>,
-    #[prost(message, optional, tag = "3")]
+    #[prost(message, optional, tag = "2")]
     pub dir: ::core::option::Option<Vector3>,
-    #[prost(float, tag = "4")]
-    pub theta: f32,
+    #[prost(message, optional, tag = "3")]
+    pub theta: ::core::option::Option<Angle>,
+    #[prost(message, optional, tag = "4")]
+    pub intensity: ::core::option::Option<EmitIntensity>,
     #[prost(message, optional, tag = "5")]
     pub phase_offset: ::core::option::Option<Phase>,
 }
@@ -1223,9 +1251,9 @@ pub struct Bessel {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Focus {
     #[prost(message, optional, tag = "1")]
-    pub intensity: ::core::option::Option<EmitIntensity>,
-    #[prost(message, optional, tag = "2")]
     pub pos: ::core::option::Option<Vector3>,
+    #[prost(message, optional, tag = "2")]
+    pub intensity: ::core::option::Option<EmitIntensity>,
     #[prost(message, optional, tag = "3")]
     pub phase_offset: ::core::option::Option<Phase>,
 }
@@ -1236,9 +1264,9 @@ pub struct Null {}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Plane {
     #[prost(message, optional, tag = "1")]
-    pub intensity: ::core::option::Option<EmitIntensity>,
-    #[prost(message, optional, tag = "2")]
     pub dir: ::core::option::Option<Vector3>,
+    #[prost(message, optional, tag = "2")]
+    pub intensity: ::core::option::Option<EmitIntensity>,
     #[prost(message, optional, tag = "3")]
     pub phase_offset: ::core::option::Option<Phase>,
 }
@@ -1290,7 +1318,7 @@ pub struct ClampConstraint {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EmissionConstraint {
-    #[prost(oneof = "emission_constraint::Constraint", tags = "2, 3, 4, 5")]
+    #[prost(oneof = "emission_constraint::Constraint", tags = "1, 2, 3, 4")]
     pub constraint: ::core::option::Option<emission_constraint::Constraint>,
 }
 /// Nested message and enum types in `EmissionConstraint`.
@@ -1299,93 +1327,89 @@ pub mod emission_constraint {
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Constraint {
-        #[prost(message, tag = "2")]
+        #[prost(message, tag = "1")]
         Normalize(super::NormalizeConstraint),
-        #[prost(message, tag = "3")]
+        #[prost(message, tag = "2")]
         Uniform(super::UniformConstraint),
-        #[prost(message, tag = "4")]
+        #[prost(message, tag = "3")]
         Clamp(super::ClampConstraint),
-        #[prost(message, tag = "5")]
+        #[prost(message, tag = "4")]
         Multiply(super::MultiplyConstraint),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Sdp {
-    #[prost(message, repeated, tag = "2")]
+    #[prost(message, repeated, tag = "1")]
     pub holo: ::prost::alloc::vec::Vec<Holo>,
-    #[prost(float, tag = "3")]
-    pub alpha: f32,
-    #[prost(float, tag = "4")]
-    pub lambda: f32,
-    #[prost(uint64, tag = "5")]
-    pub repeat: u64,
-    #[prost(message, optional, tag = "6")]
+    #[prost(message, optional, tag = "2")]
     pub constraint: ::core::option::Option<EmissionConstraint>,
+    #[prost(float, optional, tag = "3")]
+    pub alpha: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "4")]
+    pub lambda: ::core::option::Option<f32>,
+    #[prost(uint64, optional, tag = "5")]
+    pub repeat: ::core::option::Option<u64>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Naive {
-    #[prost(message, repeated, tag = "2")]
+    #[prost(message, repeated, tag = "1")]
     pub holo: ::prost::alloc::vec::Vec<Holo>,
-    #[prost(message, optional, tag = "3")]
+    #[prost(message, optional, tag = "2")]
     pub constraint: ::core::option::Option<EmissionConstraint>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Gs {
-    #[prost(message, repeated, tag = "2")]
+    #[prost(message, repeated, tag = "1")]
     pub holo: ::prost::alloc::vec::Vec<Holo>,
-    #[prost(uint64, tag = "3")]
-    pub repeat: u64,
-    #[prost(message, optional, tag = "4")]
+    #[prost(message, optional, tag = "2")]
     pub constraint: ::core::option::Option<EmissionConstraint>,
+    #[prost(uint64, optional, tag = "3")]
+    pub repeat: ::core::option::Option<u64>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Gspat {
-    #[prost(message, repeated, tag = "2")]
+    #[prost(message, repeated, tag = "1")]
     pub holo: ::prost::alloc::vec::Vec<Holo>,
-    #[prost(uint64, tag = "3")]
-    pub repeat: u64,
-    #[prost(message, optional, tag = "4")]
+    #[prost(message, optional, tag = "2")]
     pub constraint: ::core::option::Option<EmissionConstraint>,
+    #[prost(uint64, optional, tag = "3")]
+    pub repeat: ::core::option::Option<u64>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Lm {
-    #[prost(message, repeated, tag = "2")]
+    #[prost(message, repeated, tag = "1")]
     pub holo: ::prost::alloc::vec::Vec<Holo>,
-    #[prost(float, tag = "3")]
-    pub eps_1: f32,
-    #[prost(float, tag = "4")]
-    pub eps_2: f32,
-    #[prost(float, tag = "5")]
-    pub tau: f32,
-    #[prost(uint64, tag = "6")]
-    pub k_max: u64,
+    #[prost(message, optional, tag = "2")]
+    pub constraint: ::core::option::Option<EmissionConstraint>,
+    #[prost(float, optional, tag = "3")]
+    pub eps_1: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "4")]
+    pub eps_2: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "5")]
+    pub tau: ::core::option::Option<f32>,
+    #[prost(uint64, optional, tag = "6")]
+    pub k_max: ::core::option::Option<u64>,
     #[prost(float, repeated, tag = "7")]
     pub initial: ::prost::alloc::vec::Vec<f32>,
-    #[prost(message, optional, tag = "8")]
-    pub constraint: ::core::option::Option<EmissionConstraint>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Greedy {
     #[prost(message, repeated, tag = "1")]
     pub holo: ::prost::alloc::vec::Vec<Holo>,
-    #[prost(uint32, tag = "2")]
-    pub phase_div: u32,
-    #[prost(message, optional, tag = "3")]
+    #[prost(message, optional, tag = "2")]
     pub constraint: ::core::option::Option<EmissionConstraint>,
+    #[prost(uint32, optional, tag = "3")]
+    pub phase_div: ::core::option::Option<u32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Gain {
-    #[prost(enumeration = "Segment", tag = "1001")]
-    pub segment: i32,
-    #[prost(bool, tag = "1002")]
-    pub transition: bool,
     #[prost(oneof = "gain::Gain", tags = "1, 2, 3, 4, 5, 100, 101, 102, 103, 104, 105")]
     pub gain: ::core::option::Option<gain::Gain>,
 }
@@ -1421,6 +1445,16 @@ pub mod gain {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GainWithSegment {
+    #[prost(message, optional, tag = "1")]
+    pub gain: ::core::option::Option<Gain>,
+    #[prost(enumeration = "Segment", tag = "2")]
+    pub segment: i32,
+    #[prost(bool, tag = "3")]
+    pub transition: bool,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Static {
     #[prost(uint32, tag = "1")]
     pub intensity: u32,
@@ -1428,97 +1462,91 @@ pub struct Static {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SineExact {
-    #[prost(message, optional, tag = "1")]
-    pub config: ::core::option::Option<SamplingConfig>,
-    #[prost(uint32, tag = "2")]
+    #[prost(uint32, tag = "1")]
     pub freq: u32,
-    #[prost(uint32, tag = "3")]
-    pub intensity: u32,
-    #[prost(uint32, tag = "4")]
-    pub offset: u32,
+    #[prost(message, optional, tag = "2")]
+    pub config: ::core::option::Option<SamplingConfig>,
+    #[prost(uint32, optional, tag = "3")]
+    pub intensity: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "4")]
+    pub offset: ::core::option::Option<u32>,
     #[prost(message, optional, tag = "5")]
     pub phase: ::core::option::Option<Angle>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SineExactFloat {
-    #[prost(message, optional, tag = "1")]
-    pub config: ::core::option::Option<SamplingConfig>,
-    #[prost(float, tag = "2")]
+    #[prost(float, tag = "1")]
     pub freq: f32,
-    #[prost(uint32, tag = "3")]
-    pub intensity: u32,
-    #[prost(uint32, tag = "4")]
-    pub offset: u32,
+    #[prost(message, optional, tag = "2")]
+    pub config: ::core::option::Option<SamplingConfig>,
+    #[prost(uint32, optional, tag = "3")]
+    pub intensity: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "4")]
+    pub offset: ::core::option::Option<u32>,
     #[prost(message, optional, tag = "5")]
     pub phase: ::core::option::Option<Angle>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SineNearest {
-    #[prost(message, optional, tag = "1")]
-    pub config: ::core::option::Option<SamplingConfig>,
-    #[prost(float, tag = "2")]
+    #[prost(float, tag = "1")]
     pub freq: f32,
-    #[prost(uint32, tag = "3")]
-    pub intensity: u32,
-    #[prost(uint32, tag = "4")]
-    pub offset: u32,
+    #[prost(message, optional, tag = "2")]
+    pub config: ::core::option::Option<SamplingConfig>,
+    #[prost(uint32, optional, tag = "3")]
+    pub intensity: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "4")]
+    pub offset: ::core::option::Option<u32>,
     #[prost(message, optional, tag = "5")]
     pub phase: ::core::option::Option<Angle>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SquareExact {
-    #[prost(message, optional, tag = "1")]
-    pub config: ::core::option::Option<SamplingConfig>,
-    #[prost(uint32, tag = "2")]
+    #[prost(uint32, tag = "1")]
     pub freq: u32,
-    #[prost(uint32, tag = "3")]
-    pub low: u32,
-    #[prost(uint32, tag = "4")]
-    pub high: u32,
-    #[prost(float, tag = "5")]
-    pub duty: f32,
+    #[prost(message, optional, tag = "2")]
+    pub config: ::core::option::Option<SamplingConfig>,
+    #[prost(uint32, optional, tag = "3")]
+    pub low: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "4")]
+    pub high: ::core::option::Option<u32>,
+    #[prost(float, optional, tag = "5")]
+    pub duty: ::core::option::Option<f32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SquareExactFloat {
-    #[prost(message, optional, tag = "1")]
-    pub config: ::core::option::Option<SamplingConfig>,
-    #[prost(float, tag = "2")]
+    #[prost(float, tag = "1")]
     pub freq: f32,
-    #[prost(uint32, tag = "3")]
-    pub low: u32,
-    #[prost(uint32, tag = "4")]
-    pub high: u32,
-    #[prost(float, tag = "5")]
-    pub duty: f32,
+    #[prost(message, optional, tag = "2")]
+    pub config: ::core::option::Option<SamplingConfig>,
+    #[prost(uint32, optional, tag = "3")]
+    pub low: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "4")]
+    pub high: ::core::option::Option<u32>,
+    #[prost(float, optional, tag = "5")]
+    pub duty: ::core::option::Option<f32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SquareNearest {
-    #[prost(message, optional, tag = "1")]
-    pub config: ::core::option::Option<SamplingConfig>,
-    #[prost(float, tag = "2")]
+    #[prost(float, tag = "1")]
     pub freq: f32,
-    #[prost(uint32, tag = "3")]
-    pub low: u32,
-    #[prost(uint32, tag = "4")]
-    pub high: u32,
-    #[prost(float, tag = "5")]
-    pub duty: f32,
+    #[prost(message, optional, tag = "2")]
+    pub config: ::core::option::Option<SamplingConfig>,
+    #[prost(uint32, optional, tag = "3")]
+    pub low: ::core::option::Option<u32>,
+    #[prost(uint32, optional, tag = "4")]
+    pub high: ::core::option::Option<u32>,
+    #[prost(float, optional, tag = "5")]
+    pub duty: ::core::option::Option<f32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Modulation {
-    #[prost(enumeration = "Segment", tag = "1001")]
-    pub segment: i32,
-    #[prost(enumeration = "TransitionMode", optional, tag = "1002")]
-    pub transition_mode: ::core::option::Option<i32>,
-    #[prost(uint64, optional, tag = "1003")]
-    pub transition_value: ::core::option::Option<u64>,
-    #[prost(oneof = "modulation::Modulation", tags = "10, 20, 21, 22, 30, 31, 32")]
+    #[prost(oneof = "modulation::Modulation", tags = "1, 10, 11, 12, 20, 21, 22")]
     pub modulation: ::core::option::Option<modulation::Modulation>,
 }
 /// Nested message and enum types in `Modulation`.
@@ -1527,21 +1555,31 @@ pub mod modulation {
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Modulation {
-        #[prost(message, tag = "10")]
+        #[prost(message, tag = "1")]
         Static(super::Static),
-        #[prost(message, tag = "20")]
+        #[prost(message, tag = "10")]
         SineExact(super::SineExact),
-        #[prost(message, tag = "21")]
+        #[prost(message, tag = "11")]
         SineExactFloat(super::SineExactFloat),
-        #[prost(message, tag = "22")]
+        #[prost(message, tag = "12")]
         SineNearest(super::SineNearest),
-        #[prost(message, tag = "30")]
+        #[prost(message, tag = "20")]
         SquareExact(super::SquareExact),
-        #[prost(message, tag = "31")]
+        #[prost(message, tag = "21")]
         SquareExactFloat(super::SquareExactFloat),
-        #[prost(message, tag = "32")]
+        #[prost(message, tag = "22")]
         SquareNearest(super::SquareNearest),
     }
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ModulationWithSegment {
+    #[prost(message, optional, tag = "1")]
+    pub modulation: ::core::option::Option<Modulation>,
+    #[prost(enumeration = "Segment", tag = "2")]
+    pub segment: i32,
+    #[prost(message, optional, tag = "3")]
+    pub transition_mode: ::core::option::Option<TransitionMode>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1561,13 +1599,23 @@ pub struct SilencerFixedCompletionSteps {
     pub value_intensity: u32,
     #[prost(uint32, tag = "2")]
     pub value_phase: u32,
-    #[prost(bool, tag = "3")]
-    pub strict_mode: bool,
+    #[prost(bool, optional, tag = "3")]
+    pub strict_mode: ::core::option::Option<bool>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SilencerFixedCompletionTime {
+    #[prost(uint64, tag = "1")]
+    pub value_intensity: u64,
+    #[prost(uint64, tag = "2")]
+    pub value_phase: u64,
+    #[prost(bool, optional, tag = "3")]
+    pub strict_mode: ::core::option::Option<bool>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Silencer {
-    #[prost(oneof = "silencer::Config", tags = "1, 2")]
+    #[prost(oneof = "silencer::Config", tags = "1, 2, 3")]
     pub config: ::core::option::Option<silencer::Config>,
 }
 /// Nested message and enum types in `Silencer`.
@@ -1580,6 +1628,8 @@ pub mod silencer {
         FixedUpdateRate(super::SilencerFixedUpdateRate),
         #[prost(message, tag = "2")]
         FixedCompletionSteps(super::SilencerFixedCompletionSteps),
+        #[prost(message, tag = "3")]
+        FixedCompletionTime(super::SilencerFixedCompletionTime),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -1602,16 +1652,20 @@ pub struct ReadsFpgaState {
 pub struct GainStm {
     #[prost(message, optional, tag = "1")]
     pub config: ::core::option::Option<SamplingConfig>,
-    #[prost(message, optional, tag = "2")]
-    pub loop_behavior: ::core::option::Option<LoopBehavior>,
-    #[prost(enumeration = "Segment", tag = "3")]
-    pub segment: i32,
-    #[prost(message, repeated, tag = "5")]
+    #[prost(message, repeated, tag = "2")]
     pub gains: ::prost::alloc::vec::Vec<Gain>,
-    #[prost(enumeration = "TransitionMode", optional, tag = "6")]
-    pub transition_mode: ::core::option::Option<i32>,
-    #[prost(uint64, optional, tag = "7")]
-    pub transition_value: ::core::option::Option<u64>,
+    #[prost(message, optional, tag = "3")]
+    pub loop_behavior: ::core::option::Option<LoopBehavior>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GainStmWithSegment {
+    #[prost(message, optional, tag = "1")]
+    pub gain_stm: ::core::option::Option<GainStm>,
+    #[prost(enumeration = "Segment", tag = "2")]
+    pub segment: i32,
+    #[prost(message, optional, tag = "3")]
+    pub transition_mode: ::core::option::Option<TransitionMode>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1620,12 +1674,6 @@ pub struct FociStmProps {
     pub config: ::core::option::Option<SamplingConfig>,
     #[prost(message, optional, tag = "2")]
     pub loop_behavior: ::core::option::Option<LoopBehavior>,
-    #[prost(enumeration = "Segment", tag = "3")]
-    pub segment: i32,
-    #[prost(enumeration = "TransitionMode", optional, tag = "4")]
-    pub transition_mode: ::core::option::Option<i32>,
-    #[prost(uint64, optional, tag = "5")]
-    pub transition_value: ::core::option::Option<u64>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1723,6 +1771,16 @@ pub mod foci_stm {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FociStmWithSegment {
+    #[prost(message, optional, tag = "1")]
+    pub foci_stm: ::core::option::Option<FociStm>,
+    #[prost(enumeration = "Segment", tag = "2")]
+    pub segment: i32,
+    #[prost(message, optional, tag = "3")]
+    pub transition_mode: ::core::option::Option<TransitionMode>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SwapSegmentGain {
     #[prost(enumeration = "Segment", tag = "1")]
     pub segment: i32,
@@ -1732,30 +1790,24 @@ pub struct SwapSegmentGain {
 pub struct SwapSegmentModulation {
     #[prost(enumeration = "Segment", tag = "1")]
     pub segment: i32,
-    #[prost(enumeration = "TransitionMode", tag = "2")]
-    pub transition_mode: i32,
-    #[prost(uint64, tag = "3")]
-    pub transition_value: u64,
+    #[prost(message, optional, tag = "2")]
+    pub transition_mode: ::core::option::Option<TransitionMode>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SwapSegmentFociStm {
     #[prost(enumeration = "Segment", tag = "1")]
     pub segment: i32,
-    #[prost(enumeration = "TransitionMode", tag = "2")]
-    pub transition_mode: i32,
-    #[prost(uint64, tag = "3")]
-    pub transition_value: u64,
+    #[prost(message, optional, tag = "2")]
+    pub transition_mode: ::core::option::Option<TransitionMode>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SwapSegmentGainStm {
     #[prost(enumeration = "Segment", tag = "1")]
     pub segment: i32,
-    #[prost(enumeration = "TransitionMode", tag = "2")]
-    pub transition_mode: i32,
-    #[prost(uint64, tag = "3")]
-    pub transition_value: u64,
+    #[prost(message, optional, tag = "2")]
+    pub transition_mode: ::core::option::Option<TransitionMode>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1781,39 +1833,51 @@ pub mod swap_segment {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct DatagramLightweight {
+pub struct Datagram {
+    #[prost(uint64, optional, tag = "1001")]
+    pub timeout: ::core::option::Option<u64>,
+    #[prost(uint64, optional, tag = "1002")]
+    pub parallel_threshold: ::core::option::Option<u64>,
     #[prost(
-        oneof = "datagram_lightweight::Datagram",
-        tags = "1, 2, 3, 4, 5, 6, 8, 10, 11, 12"
+        oneof = "datagram::Datagram",
+        tags = "1, 2, 3, 4, 5, 6, 10, 11, 30, 31, 40, 41, 50, 51"
     )]
-    pub datagram: ::core::option::Option<datagram_lightweight::Datagram>,
+    pub datagram: ::core::option::Option<datagram::Datagram>,
 }
-/// Nested message and enum types in `DatagramLightweight`.
-pub mod datagram_lightweight {
+/// Nested message and enum types in `Datagram`.
+pub mod datagram {
     #[non_exhaustive]
     #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Datagram {
         #[prost(message, tag = "1")]
-        Silencer(super::Silencer),
-        #[prost(message, tag = "2")]
-        Modulation(super::Modulation),
-        #[prost(message, tag = "3")]
-        Gain(super::Gain),
-        #[prost(message, tag = "4")]
         Clear(super::Clear),
-        #[prost(message, tag = "5")]
+        #[prost(message, tag = "2")]
         Synchronize(super::Synchronize),
-        #[prost(message, tag = "6")]
+        #[prost(message, tag = "3")]
         ForceFan(super::ForceFan),
-        #[prost(message, tag = "8")]
+        #[prost(message, tag = "4")]
         ReadsFpgaState(super::ReadsFpgaState),
-        #[prost(message, tag = "10")]
-        FociStm(super::FociStm),
-        #[prost(message, tag = "11")]
-        GainStm(super::GainStm),
-        #[prost(message, tag = "12")]
+        #[prost(message, tag = "5")]
+        Silencer(super::Silencer),
+        #[prost(message, tag = "6")]
         SwapSegment(super::SwapSegment),
+        #[prost(message, tag = "10")]
+        Modulation(super::Modulation),
+        #[prost(message, tag = "11")]
+        ModulationWithSegment(super::ModulationWithSegment),
+        #[prost(message, tag = "30")]
+        Gain(super::Gain),
+        #[prost(message, tag = "31")]
+        GainWithSegment(super::GainWithSegment),
+        #[prost(message, tag = "40")]
+        FociStm(super::FociStm),
+        #[prost(message, tag = "41")]
+        FociStmWithSegment(super::FociStmWithSegment),
+        #[prost(message, tag = "50")]
+        GainStm(super::GainStm),
+        #[prost(message, tag = "51")]
+        GainStmWithSegment(super::GainStmWithSegment),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -1998,7 +2062,7 @@ pub mod ecat_light_client {
         }
         pub async fn send(
             &mut self,
-            request: impl tonic::IntoRequest<super::DatagramLightweight>,
+            request: impl tonic::IntoRequest<super::Datagram>,
         ) -> std::result::Result<
             tonic::Response<super::SendResponseLightweight>,
             tonic::Status,
@@ -2065,7 +2129,7 @@ pub mod ecat_light_server {
         >;
         async fn send(
             &self,
-            request: tonic::Request<super::DatagramLightweight>,
+            request: tonic::Request<super::Datagram>,
         ) -> std::result::Result<
             tonic::Response<super::SendResponseLightweight>,
             tonic::Status,
@@ -2253,9 +2317,7 @@ pub mod ecat_light_server {
                 "/autd3.ECATLight/Send" => {
                     #[allow(non_camel_case_types)]
                     struct SendSvc<T: EcatLight>(pub Arc<T>);
-                    impl<
-                        T: EcatLight,
-                    > tonic::server::UnaryService<super::DatagramLightweight>
+                    impl<T: EcatLight> tonic::server::UnaryService<super::Datagram>
                     for SendSvc<T> {
                         type Response = super::SendResponseLightweight;
                         type Future = BoxFuture<
@@ -2264,7 +2326,7 @@ pub mod ecat_light_server {
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::DatagramLightweight>,
+                            request: tonic::Request<super::Datagram>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {

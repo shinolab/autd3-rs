@@ -1,60 +1,39 @@
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3::gain::Focus {
-    type Message = DatagramLightweight;
+    type Message = Datagram;
 
-    #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
+            datagram: Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Focus(Focus {
                     intensity: Some(self.intensity().to_msg(None)),
                     pos: Some(self.pos().to_msg(None)),
                     phase_offset: Some(self.phase_offset().to_msg(None)),
                 })),
-                segment: Segment::S0 as _,
-                transition: true,
             })),
-        }
-    }
-}
-
-impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Focus> {
-    type Message = DatagramLightweight;
-
-    #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
-        Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
-                gain: Some(gain::Gain::Focus(Focus {
-                    intensity: Some(self.intensity().to_msg(None)),
-                    pos: Some(self.pos().to_msg(None)),
-                    phase_offset: Some(self.phase_offset().to_msg(None)),
-                })),
-                segment: self.segment() as _,
-                transition: self.transition(),
-            })),
+            timeout: None,
+            parallel_threshold: None,
         }
     }
 }
 
 impl FromMessage<Focus> for autd3::gain::Focus {
-    #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &Focus) -> Option<Self> {
-        Some(
-            Self::new(autd3_driver::geometry::Vector3::from_msg(
-                msg.pos.as_ref()?,
-            )?)
-            .with_intensity(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
-                msg.intensity.as_ref()?,
-            )?)
-            .with_phase_offset(autd3_driver::firmware::fpga::Phase::from_msg(
-                msg.phase_offset.as_ref()?,
-            )?),
-        )
+    fn from_msg(msg: &Focus) -> Result<Self, AUTDProtoBufError> {
+        let mut g = Self::new(autd3_driver::geometry::Vector3::from_msg(&msg.pos)?);
+        if let Some(intensity) = msg.intensity.as_ref() {
+            g = g.with_intensity(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
+                intensity,
+            )?);
+        }
+        if let Some(phase_offset) = msg.phase_offset.as_ref() {
+            g = g.with_phase_offset(autd3_driver::firmware::fpga::Phase::from_msg(phase_offset)?);
+        }
+        Ok(g)
     }
 }
 
@@ -65,7 +44,7 @@ mod tests {
     use rand::Rng;
 
     #[test]
-    fn test_focus() {
+    fn focus() {
         let mut rng = rand::thread_rng();
 
         let g = autd3::gain::Focus::new(Vector3::new(rng.gen(), rng.gen(), rng.gen()))
@@ -73,7 +52,7 @@ mod tests {
         let msg = g.to_msg(None);
 
         match msg.datagram {
-            Some(datagram_lightweight::Datagram::Gain(Gain {
+            Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Focus(gain)),
                 ..
             })) => {

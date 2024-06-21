@@ -138,7 +138,7 @@ fn focus_boxed(c: &mut Criterion) {
             |b, geometry| {
                 let mut tx = TxDatagram::new(size);
                 b.iter(|| {
-                    let g: Box<dyn Gain> = Box::new(Focus::new(Vector3::new(
+                    let g: Box<dyn Gain + Send + Sync> = Box::new(Focus::new(Vector3::new(
                         black_box(90.),
                         black_box(70.),
                         black_box(150.),

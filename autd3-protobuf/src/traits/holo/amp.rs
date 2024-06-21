@@ -1,12 +1,12 @@
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3_gain_holo::Amplitude {
     type Message = Amplitude;
 
-    #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             value: self.pascal() as _,
@@ -14,10 +14,12 @@ impl ToMessage for autd3_gain_holo::Amplitude {
     }
 }
 
-impl FromMessage<Amplitude> for autd3_gain_holo::Amplitude {
-    #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &Amplitude) -> Option<Self> {
-        Some(msg.value as f32 * autd3_gain_holo::Pa)
+impl FromMessage<Option<Amplitude>> for autd3_gain_holo::Amplitude {
+    fn from_msg(msg: &Option<Amplitude>) -> Result<Self, AUTDProtoBufError> {
+        match msg {
+            Some(msg) => Ok(msg.value * autd3_gain_holo::Pa),
+            None => Err(AUTDProtoBufError::DataParseError),
+        }
     }
 }
 
@@ -32,7 +34,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         let v = rng.gen::<f32>() * Pa;
         let msg = v.to_msg(None);
-        let v2 = autd3_gain_holo::Amplitude::from_msg(&msg).unwrap();
+        let v2 = autd3_gain_holo::Amplitude::from_msg(&Some(msg)).unwrap();
         assert_approx_eq::assert_approx_eq!(v.pascal(), v2.pascal());
     }
 }

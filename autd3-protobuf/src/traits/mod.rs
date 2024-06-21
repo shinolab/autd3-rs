@@ -1,3 +1,5 @@
+use crate::AUTDProtoBufError;
+
 #[cfg(feature = "lightweight")]
 mod autd3;
 mod driver;
@@ -10,12 +12,9 @@ pub trait ToMessage {
     fn to_msg(&self, geometry: Option<&autd3_driver::geometry::Geometry>) -> Self::Message;
 }
 
-pub trait FromMessage<T: prost::Message>
+pub trait FromMessage<T>
 where
     Self: Sized,
 {
-    fn from_msg(msg: &T) -> Option<Self>;
+    fn from_msg(msg: &T) -> Result<Self, AUTDProtoBufError>;
 }
-
-#[cfg(feature = "lightweight")]
-pub use driver::to_transition_mode;

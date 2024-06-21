@@ -14,14 +14,18 @@ message Phase {
 
 message SamplingConfigFreq { uint32 value = 1; }
 message SamplingConfigFreqNearest { float value = 1; }
+message SamplingConfigPeriod { uint64 value = 1; }
+message SamplingConfigPeriodNearest { uint64 value = 1; }
 message SamplingConfigDivision { uint32 value = 1; }
 message SamplingConfigDivisionRaw { uint32 value = 1; }
 message SamplingConfig {
   oneof config {
     SamplingConfigFreq freq = 1;
     SamplingConfigFreqNearest freq_nearest = 2;
-    SamplingConfigDivision division = 3;
-    SamplingConfigDivisionRaw division_raw = 4;
+    SamplingConfigPeriod period = 3;
+    SamplingConfigPeriodNearest period_nearest = 4;
+    SamplingConfigDivision division = 5;
+    SamplingConfigDivisionRaw division_raw = 6;
   }
 }
 
@@ -34,19 +38,28 @@ enum Segment {
   S1 = 1;
 }
 
-enum TransitionMode {
-  SyncIdx = 0;
-  SysTime = 1;
-  GPIO = 2;
-  Ext = 3;
+message TransitionModeSyncIdx { }
+message TransitionModeSysTime { uint64 value = 1; }
+message TransitionModeGPIO { uint64 value = 1; }
+message TransitionModeExt { }
+message TransitionModeImmediate { }
+
+message TransitionMode {
+  oneof mode {
+    TransitionModeSyncIdx sync_idx = 1;
+    TransitionModeSysTime sys_time = 2;
+    TransitionModeGPIO gpio = 3;
+    TransitionModeExt ext = 4;
+    TransitionModeImmediate immediate = 5;
+  }
 }
 
 message ControlPoint {
     Vector3 pos = 1;
-    Phase offset = 2;
+    optional Phase offset = 2;
 }
 
 message ControlPoints {
     repeated ControlPoint points = 1;
-    EmitIntensity intensity = 2;
+    optional EmitIntensity intensity = 2;
 }

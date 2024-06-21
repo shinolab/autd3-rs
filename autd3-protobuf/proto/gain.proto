@@ -6,30 +6,30 @@ import "utils.proto";
 import "utils-lightweight.proto";
 
 message Bessel {
-  EmitIntensity intensity = 1;
-  Vector3 pos = 2;
-  Vector3 dir = 3;
-  float theta = 4;
-  Phase phase_offset = 5;
+  Vector3 pos = 1;
+  Vector3 dir = 2;
+  Angle theta = 3;
+  optional EmitIntensity intensity = 4;
+  optional Phase phase_offset = 5;
 }
 
 message Focus {
-  EmitIntensity intensity = 1;
-  Vector3 pos = 2;
-  Phase phase_offset = 3;
+  Vector3 pos = 1;
+  optional EmitIntensity intensity = 2;
+  optional Phase phase_offset = 3;
 }
 
 message Null {}
 
 message Plane {
-  EmitIntensity intensity = 1;
-  Vector3 dir = 2;
-  Phase phase_offset = 3;
+  Vector3 dir = 1;
+  optional EmitIntensity intensity = 2;
+  optional Phase phase_offset = 3;
 }
 
 message Uniform {
   EmitIntensity intensity = 1;
-  Phase phase = 2;
+  optional Phase phase = 2;
 }
 
 message Amplitude {
@@ -50,52 +50,52 @@ message ClampConstraint {
 }
 message EmissionConstraint {
   oneof constraint {
-    NormalizeConstraint normalize = 2;
-    UniformConstraint uniform = 3;
-    ClampConstraint clamp = 4;
-    MultiplyConstraint multiply = 5;
+    NormalizeConstraint normalize = 1;
+    UniformConstraint uniform = 2;
+    ClampConstraint clamp = 3;
+    MultiplyConstraint multiply = 4;
   }
 }
 
 message SDP {
-  repeated Holo holo = 2;
-  float alpha = 3;
-  float lambda = 4;
-  uint64 repeat = 5;
-  EmissionConstraint constraint = 6;
+  repeated Holo holo = 1;
+  optional EmissionConstraint constraint = 2;
+  optional float alpha = 3;
+  optional float lambda = 4;
+  optional uint64 repeat = 5;
 }
 
 message Naive {
-  repeated Holo holo = 2;
-  EmissionConstraint constraint = 3;
+  repeated Holo holo = 1;
+  optional EmissionConstraint constraint = 2;
 }
 
 message GS {
-  repeated Holo holo = 2;
-  uint64 repeat = 3;
-  EmissionConstraint constraint = 4;
+  repeated Holo holo = 1;
+  optional EmissionConstraint constraint = 2;
+  optional uint64 repeat = 3;
 }
 
 message GSPAT {
-  repeated Holo holo = 2;
-  uint64 repeat = 3;
-  EmissionConstraint constraint = 4;
+  repeated Holo holo = 1;
+  optional EmissionConstraint constraint = 2;
+  optional uint64 repeat = 3;
 }
 
 message LM {
-  repeated Holo holo = 2;
-  float eps_1 = 3;
-  float eps_2 = 4;
-  float tau = 5;
-  uint64 k_max = 6;
+  repeated Holo holo = 1;
+  EmissionConstraint constraint = 2;
+  optional float eps_1 = 3;
+  optional float eps_2 = 4;
+  optional float tau = 5;
+  optional uint64 k_max = 6;
   repeated float initial = 7;
-  EmissionConstraint constraint = 8;
 }
 
 message Greedy {
   repeated Holo holo = 1;
-  uint32 phase_div = 2;
-  EmissionConstraint constraint = 3;
+  optional EmissionConstraint constraint = 2;
+  optional uint32 phase_div = 3;
 }
 
 message Gain {
@@ -112,6 +112,10 @@ message Gain {
     LM lm = 104;
     Greedy greedy = 105;
   }
-  Segment segment = 1001;
-  bool transition = 1002;
+}
+
+message GainWithSegment {
+  Gain gain = 1;
+  Segment segment = 2;
+  bool transition = 3;
 }

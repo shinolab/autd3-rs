@@ -1,6 +1,7 @@
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3_driver::firmware::fpga::EmitIntensity {
@@ -14,8 +15,8 @@ impl ToMessage for autd3_driver::firmware::fpga::EmitIntensity {
 }
 
 impl FromMessage<EmitIntensity> for autd3_driver::firmware::fpga::EmitIntensity {
-    fn from_msg(msg: &EmitIntensity) -> Option<Self> {
-        Some(autd3_driver::firmware::fpga::EmitIntensity::new(
+    fn from_msg(msg: &EmitIntensity) -> Result<Self, AUTDProtoBufError> {
+        Ok(autd3_driver::firmware::fpga::EmitIntensity::new(
             msg.value as _,
         ))
     }

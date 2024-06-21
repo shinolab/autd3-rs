@@ -26,7 +26,7 @@ where
     F: Fn(&Device) -> FK + Send + Sync + 'static,
 {
     f: F,
-    gain_map: HashMap<K, Box<dyn Gain>>,
+    gain_map: HashMap<K, Box<dyn Gain + Send + Sync>>,
 }
 
 impl<K, FK, F> Group<K, FK, F>
@@ -42,7 +42,7 @@ where
         }
     }
 
-    pub fn set(mut self, key: K, gain: impl Gain + 'static) -> Self {
+    pub fn set(mut self, key: K, gain: impl Gain + Send + Sync + 'static) -> Self {
         self.gain_map.insert(key, Box::new(gain));
         self
     }
@@ -167,7 +167,7 @@ mod tests {
 
     use super::{super::tests::TestGain, *};
 
-    use crate::{geometry::tests::create_geometry};
+    use crate::geometry::tests::create_geometry;
 
     #[test]
     fn test() -> anyhow::Result<()> {

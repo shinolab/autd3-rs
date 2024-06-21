@@ -44,7 +44,7 @@ pub trait Modulation: ModulationProperty {
 }
 
 // GRCOV_EXCL_START
-impl ModulationProperty for Box<dyn Modulation> {
+impl<'a> ModulationProperty for Box<dyn Modulation + Send + Sync + 'a> {
     fn sampling_config(&self) -> SamplingConfig {
         self.as_ref().sampling_config()
     }
@@ -54,7 +54,7 @@ impl ModulationProperty for Box<dyn Modulation> {
     }
 }
 
-impl Modulation for Box<dyn Modulation> {
+impl<'a> Modulation for Box<dyn Modulation + Send + Sync + 'a> {
     fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
         self.as_ref().calc(geometry)
     }
@@ -86,7 +86,7 @@ impl OperationGenerator for ModulationOperationGenerator {
     }
 }
 
-impl DatagramST for Box<dyn Modulation> {
+impl<'a> DatagramST for Box<dyn Modulation + Send + Sync + 'a> {
     type G = ModulationOperationGenerator;
 
     fn operation_generator_with_segment(
