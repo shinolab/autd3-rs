@@ -101,17 +101,16 @@ impl Link for Simulator {
             return Err(AUTDInternalError::LinkClosed);
         }
 
-        if let Some(rx_) = Vec::<RxMessage>::from_msg(
+        let rx_ = Vec::<RxMessage>::from_msg(
             &self
                 .client
                 .read_data(ReadRequest {})
                 .await
                 .map_err(AUTDProtoBufError::from)?
                 .into_inner(),
-        ) {
-            if rx.len() == rx_.len() {
-                rx.copy_from_slice(&rx_);
-            }
+        )?;
+        if rx.len() == rx_.len() {
+            rx.copy_from_slice(&rx_);
         }
 
         Ok(true)
