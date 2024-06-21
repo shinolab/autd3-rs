@@ -13,6 +13,7 @@ pub enum AUTDProtoBufError {
     TokioSendError(String),
     #[error("{0}")]
     TransportError(#[from] tonic::transport::Error),
+    #[cfg(feature = "lightweight")]
     #[error("{0}")]
     HoloError(#[from] autd3_gain_holo::HoloError),
     #[error("{0}")]
@@ -61,7 +62,7 @@ mod tests {
     #[test]
     fn test_protobuf_error() {
         let e = AUTDProtoBufError::NotSupportedData;
-        assert_eq!(e.to_string(), "This data is not supported.");
+        assert_eq!(e.to_string(), "Not supported data");
         assert_eq!(format!("{:?}", e), "NotSupportedData");
     }
 }
