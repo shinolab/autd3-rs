@@ -85,7 +85,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
             Some(gain::Gain::Gspat(msg)) => Box::new(autd3_gain_holo::GSPAT::from_msg(msg)?),
             Some(gain::Gain::Greedy(msg)) => Box::new(autd3_gain_holo::Greedy::from_msg(msg)?),
             Some(gain::Gain::Sdp(msg)) => Box::new(autd3_gain_holo::SDP::from_msg(msg)?),
-            None => return Err(AUTDProtoBufError::NotSupportedData.into()),
+            None => return Err(AUTDProtoBufError::NotSupportedData),
         })
     }
 
@@ -266,7 +266,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
         if let Some(autd) = self.autd.write().await.as_mut() {
             let datagram = req.into_inner();
             let parallel_threshold = datagram.parallel_threshold.map(|v| v as usize);
-            let timeout = datagram.timeout.map(|v| Duration::from_nanos(v));
+            let timeout = datagram.timeout.map(Duration::from_nanos);
             let res = match datagram.datagram {
                 Some(datagram::Datagram::Gain(ref msg)) => {
                     autd.send(DatagramWithTimeoutAndParallelThreshold {

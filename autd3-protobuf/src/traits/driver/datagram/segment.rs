@@ -56,7 +56,7 @@ impl FromMessage<SwapSegment> for autd3_driver::datagram::SwapSegment {
                     .ok_or(AUTDProtoBufError::DataParseError)?;
                 autd3_driver::datagram::SwapSegment::Modulation(
                     autd3_driver::firmware::fpga::Segment::from(Segment::try_from(inner.segment)?),
-                    autd3_driver::firmware::fpga::TransitionMode::from_msg(&mode)?,
+                    autd3_driver::firmware::fpga::TransitionMode::from_msg(mode)?,
                 )
             }
             swap_segment::Inner::FociStm(inner) => {
@@ -66,7 +66,7 @@ impl FromMessage<SwapSegment> for autd3_driver::datagram::SwapSegment {
                     .ok_or(AUTDProtoBufError::DataParseError)?;
                 autd3_driver::datagram::SwapSegment::FociSTM(
                     autd3_driver::firmware::fpga::Segment::from(Segment::try_from(inner.segment)?),
-                    autd3_driver::firmware::fpga::TransitionMode::from_msg(&mode)?,
+                    autd3_driver::firmware::fpga::TransitionMode::from_msg(mode)?,
                 )
             }
             swap_segment::Inner::GainStm(inner) => {
@@ -76,7 +76,7 @@ impl FromMessage<SwapSegment> for autd3_driver::datagram::SwapSegment {
                     .ok_or(AUTDProtoBufError::DataParseError)?;
                 autd3_driver::datagram::SwapSegment::GainSTM(
                     autd3_driver::firmware::fpga::Segment::from(Segment::try_from(inner.segment)?),
-                    autd3_driver::firmware::fpga::TransitionMode::from_msg(&mode)?,
+                    autd3_driver::firmware::fpga::TransitionMode::from_msg(mode)?,
                 )
             }
         })

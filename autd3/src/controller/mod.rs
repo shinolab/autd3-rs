@@ -108,7 +108,10 @@ impl<L: Link> Controller<L> {
 
         #[cfg(feature = "dynamic_freq")]
         if autd3_driver::get_ultrasound_freq() != autd3_driver::defined::FREQ_40K {
-            tracing::debug!("Configuring ultrasound frequency to {:?}", autd3_driver::get_ultrasound_freq());
+            tracing::debug!(
+                "Configuring ultrasound frequency to {:?}",
+                autd3_driver::get_ultrasound_freq()
+            );
             self.send(autd3_driver::datagram::ConfigureFPGAClock::new().with_timeout(timeout))
                 .await?;
         }
@@ -240,6 +243,7 @@ impl<L: Link> Controller<L> {
     }
 }
 
+#[cfg_attr(feature = "capi", allow(clippy::needless_return))]
 impl<L: Link> Drop for Controller<L> {
     fn drop(&mut self) {
         #[cfg(target_os = "windows")]

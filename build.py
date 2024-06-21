@@ -198,6 +198,10 @@ def rust_lint(args):
     with working_dir("."):
         command = config.cargo_build_command(args.features)
         command[1] = "clippy"
+        if config.no_examples:
+            command.append("--workspace")
+            command.append("--exclude")
+            command.append("examples")
         command.append("--")
         command.append("-D")
         command.append("warnings")
@@ -385,6 +389,9 @@ if __name__ == "__main__":
         parser_lint = subparsers.add_parser("lint", help="see `lint -h`")
         parser_lint.add_argument("--release", action="store_true", help="release build")
         parser_lint.add_argument("--features", help="additional features", default=None)
+        parser_lint.add_argument(
+            "--no-examples", action="store_true", help="skip examples"
+        )
         parser_lint.set_defaults(handler=rust_lint)
 
         # test
