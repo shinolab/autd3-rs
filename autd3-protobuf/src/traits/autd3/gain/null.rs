@@ -1,42 +1,26 @@
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3::gain::Null {
-    type Message = DatagramLightweight;
+    type Message = Datagram;
 
-    #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
+            datagram: Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Null(Null {})),
-                segment: Segment::S0 as _,
-                transition: true,
             })),
-        }
-    }
-}
-
-impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Null> {
-    type Message = DatagramLightweight;
-
-    #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
-        Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
-                gain: Some(gain::Gain::Null(Null {})),
-                segment: self.segment() as _,
-                transition: self.transition(),
-            })),
+            timeout: None,
+            parallel_threshold: None,
         }
     }
 }
 
 impl FromMessage<Null> for autd3::gain::Null {
-    #[allow(clippy::unnecessary_cast)]
-    fn from_msg(_msg: &Null) -> Option<Self> {
-        Some(Self::new())
+    fn from_msg(_msg: &Null) -> Result<Self, AUTDProtoBufError> {
+        Ok(Self::new())
     }
 }
 
@@ -45,12 +29,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_bessel() {
+    fn null() {
         let g = autd3::gain::Null::new();
         let msg = g.to_msg(None);
 
         match msg.datagram {
-            Some(datagram_lightweight::Datagram::Gain(Gain {
+            Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Null(gain)),
                 ..
             })) => {

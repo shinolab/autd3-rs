@@ -1,6 +1,7 @@
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3_driver::firmware::cpu::TxDatagram {
@@ -15,7 +16,7 @@ impl ToMessage for autd3_driver::firmware::cpu::TxDatagram {
 }
 
 impl FromMessage<TxRawData> for autd3_driver::firmware::cpu::TxDatagram {
-    fn from_msg(msg: &TxRawData) -> Option<Self> {
+    fn from_msg(msg: &TxRawData) -> Result<Self, AUTDProtoBufError> {
         let mut tx = autd3_driver::firmware::cpu::TxDatagram::new(msg.num_devices as usize);
         unsafe {
             std::ptr::copy_nonoverlapping(
@@ -24,7 +25,7 @@ impl FromMessage<TxRawData> for autd3_driver::firmware::cpu::TxDatagram {
                 msg.data.len(),
             );
         }
-        Some(tx)
+        Ok(tx)
     }
 }
 

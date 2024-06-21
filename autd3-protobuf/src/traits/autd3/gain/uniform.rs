@@ -1,55 +1,37 @@
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3::gain::Uniform {
-    type Message = DatagramLightweight;
+    type Message = Datagram;
 
-    #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
+            datagram: Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Uniform(Uniform {
                     intensity: Some(self.intensity().to_msg(None)),
                     phase: Some(self.phase().to_msg(None)),
                 })),
-                segment: Segment::S0 as _,
-                transition: true,
             })),
-        }
-    }
-}
-
-impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Uniform> {
-    type Message = DatagramLightweight;
-
-    #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
-        Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
-                gain: Some(gain::Gain::Uniform(Uniform {
-                    intensity: Some(self.intensity().to_msg(None)),
-                    phase: Some(self.phase().to_msg(None)),
-                })),
-                segment: self.segment() as _,
-                transition: self.transition(),
-            })),
+            timeout: None,
+            parallel_threshold: None,
         }
     }
 }
 
 impl FromMessage<Uniform> for autd3::gain::Uniform {
-    #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &Uniform) -> Option<Self> {
-        Some(
-            Self::new(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
-                msg.intensity.as_ref()?,
-            )?)
-            .with_phase(autd3_driver::firmware::fpga::Phase::from_msg(
-                msg.phase.as_ref()?,
-            )?),
-        )
+    fn from_msg(msg: &Uniform) -> Result<Self, AUTDProtoBufError> {
+        let mut g = Self::new(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
+            msg.intensity
+                .as_ref()
+                .ok_or(AUTDProtoBufError::DataParseError)?,
+        )?);
+        if let Some(phase) = msg.phase.as_ref() {
+            g = g.with_phase(autd3_driver::firmware::fpga::Phase::from_msg(phase)?);
+        }
+        Ok(g)
     }
 }
 
@@ -68,7 +50,7 @@ mod tests {
         let msg = g.to_msg(None);
 
         match msg.datagram {
-            Some(datagram_lightweight::Datagram::Gain(Gain {
+            Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Uniform(gain)),
                 ..
             })) => {

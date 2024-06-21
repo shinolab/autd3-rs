@@ -3,52 +3,25 @@ use autd3_driver::derive::ModulationProperty;
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFreqFloat> {
-    type Message = DatagramLightweight;
+    type Message = Datagram;
 
-    #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
+            datagram: Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SineExactFloat(SineExactFloat {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq().hz() as _,
-                    intensity: self.intensity() as _,
-                    offset: self.offset() as _,
+                    intensity: Some(self.intensity() as _),
+                    offset: Some(self.offset() as _),
                     phase: Some(self.phase().to_msg(None)),
                 })),
-                segment: Segment::S0 as _,
-                transition_mode: Some(0xFF),
-                transition_value: Some(0),
             })),
-        }
-    }
-}
-
-impl ToMessage
-    for autd3_driver::datagram::DatagramWithSegmentTransition<
-        autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFreqFloat>,
-    >
-{
-    type Message = DatagramLightweight;
-
-    #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
-        Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::SineExactFloat(SineExactFloat {
-                    config: Some(self.sampling_config().to_msg(None)),
-                    freq: self.freq().hz() as _,
-                    intensity: self.intensity() as _,
-                    offset: self.offset() as _,
-                    phase: Some(self.phase().to_msg(None)),
-                })),
-                segment: self.segment() as _,
-                transition_mode: self.transition_mode().map(|m| m.mode() as _),
-                transition_value: self.transition_mode().map(|m| m.value()),
-            })),
+            timeout: None,
+            parallel_threshold: None,
         }
     }
 }
@@ -56,17 +29,23 @@ impl ToMessage
 impl FromMessage<SineExactFloat>
     for autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFreqFloat>
 {
-    #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &SineExactFloat) -> Option<Self> {
-        Some(
-            autd3::modulation::Sine::new((msg.freq as f32) * autd3_driver::defined::Hz)
-                .with_intensity(msg.intensity as u8)
-                .with_offset(msg.offset as u8)
-                .with_phase(autd3_driver::defined::Angle::from_msg(msg.phase.as_ref()?)?)
-                .with_sampling_config(autd3_driver::firmware::fpga::SamplingConfig::from_msg(
-                    msg.config.as_ref()?,
-                )?),
-        )
+    fn from_msg(msg: &SineExactFloat) -> Result<Self, AUTDProtoBufError> {
+        let mut sine = autd3::modulation::Sine::new(msg.freq * autd3_driver::defined::Hz);
+        if let Some(intensity) = msg.intensity {
+            sine = sine.with_intensity(intensity as _);
+        }
+        if let Some(offset) = msg.offset {
+            sine = sine.with_offset(offset as _);
+        }
+        if msg.phase.is_some() {
+            sine = sine.with_phase(autd3_driver::defined::Angle::from_msg(&msg.phase)?);
+        }
+        if let Some(config) = msg.config.as_ref() {
+            sine = sine.with_sampling_config(
+                autd3_driver::firmware::fpga::SamplingConfig::from_msg(config)?,
+            );
+        }
+        Ok(sine)
     }
 }
 
@@ -88,7 +67,7 @@ mod tests {
         let msg = m.to_msg(None);
 
         match msg.datagram {
-            Some(datagram_lightweight::Datagram::Modulation(Modulation {
+            Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SineExactFloat(modulation)),
                 ..
             })) => {

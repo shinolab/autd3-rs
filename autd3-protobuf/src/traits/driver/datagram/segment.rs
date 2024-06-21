@@ -1,6 +1,7 @@
 use crate::{
     pb::*,
-    traits::{to_transition_mode, FromMessage, ToMessage},
+    traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3_driver::datagram::SwapSegment {
@@ -17,22 +18,19 @@ impl ToMessage for autd3_driver::datagram::SwapSegment {
                 autd3_driver::datagram::SwapSegment::Modulation(segment, transition) => {
                     swap_segment::Inner::Modulation(SwapSegmentModulation {
                         segment: *segment as _,
-                        transition_mode: transition.mode() as _,
-                        transition_value: transition.value(),
+                        transition_mode: Some(transition.to_msg(None)),
                     })
                 }
                 autd3_driver::datagram::SwapSegment::FociSTM(segment, transition) => {
                     swap_segment::Inner::FociStm(SwapSegmentFociStm {
                         segment: *segment as _,
-                        transition_mode: transition.mode() as _,
-                        transition_value: transition.value(),
+                        transition_mode: Some(transition.to_msg(None)),
                     })
                 }
                 autd3_driver::datagram::SwapSegment::GainSTM(segment, transition) => {
                     swap_segment::Inner::GainStm(SwapSegmentGainStm {
                         segment: *segment as _,
-                        transition_mode: transition.mode() as _,
-                        transition_value: transition.value(),
+                        transition_mode: Some(transition.to_msg(None)),
                     })
                 }
                 _ => unimplemented!(),
@@ -42,51 +40,45 @@ impl ToMessage for autd3_driver::datagram::SwapSegment {
 }
 
 impl FromMessage<SwapSegment> for autd3_driver::datagram::SwapSegment {
-    fn from_msg(msg: &SwapSegment) -> Option<Self> {
-        msg.inner.as_ref().and_then(|inner| {
-            Some(match inner {
-                swap_segment::Inner::Gain(inner) => autd3_driver::datagram::SwapSegment::Gain(
-                    autd3_driver::firmware::fpga::Segment::from(
-                        Segment::try_from(inner.segment).ok()?,
-                    ),
-                ),
-                swap_segment::Inner::Modulation(inner) => {
-                    autd3_driver::datagram::SwapSegment::Modulation(
-                        autd3_driver::firmware::fpga::Segment::from(
-                            Segment::try_from(inner.segment).ok()?,
-                        ),
-                        to_transition_mode(
-                            Some(inner.transition_mode),
-                            Some(inner.transition_value),
-                        )
-                        .unwrap(),
-                    )
-                }
-                swap_segment::Inner::FociStm(inner) => {
-                    autd3_driver::datagram::SwapSegment::FociSTM(
-                        autd3_driver::firmware::fpga::Segment::from(
-                            Segment::try_from(inner.segment).ok()?,
-                        ),
-                        to_transition_mode(
-                            Some(inner.transition_mode),
-                            Some(inner.transition_value),
-                        )
-                        .unwrap(),
-                    )
-                }
-                swap_segment::Inner::GainStm(inner) => {
-                    autd3_driver::datagram::SwapSegment::GainSTM(
-                        autd3_driver::firmware::fpga::Segment::from(
-                            Segment::try_from(inner.segment).ok()?,
-                        ),
-                        to_transition_mode(
-                            Some(inner.transition_mode),
-                            Some(inner.transition_value),
-                        )
-                        .unwrap(),
-                    )
-                }
-            })
+    fn from_msg(msg: &SwapSegment) -> Result<Self, AUTDProtoBufError> {
+        let inner = msg
+            .inner
+            .as_ref()
+            .ok_or(AUTDProtoBufError::DataParseError)?;
+        Ok(match inner {
+            swap_segment::Inner::Gain(inner) => autd3_driver::datagram::SwapSegment::Gain(
+                autd3_driver::firmware::fpga::Segment::from(Segment::try_from(inner.segment)?),
+            ),
+            swap_segment::Inner::Modulation(inner) => {
+                let mode = inner
+                    .transition_mode
+                    .as_ref()
+                    .ok_or(AUTDProtoBufError::DataParseError)?;
+                autd3_driver::datagram::SwapSegment::Modulation(
+                    autd3_driver::firmware::fpga::Segment::from(Segment::try_from(inner.segment)?),
+                    autd3_driver::firmware::fpga::TransitionMode::from_msg(&mode)?,
+                )
+            }
+            swap_segment::Inner::FociStm(inner) => {
+                let mode = inner
+                    .transition_mode
+                    .as_ref()
+                    .ok_or(AUTDProtoBufError::DataParseError)?;
+                autd3_driver::datagram::SwapSegment::FociSTM(
+                    autd3_driver::firmware::fpga::Segment::from(Segment::try_from(inner.segment)?),
+                    autd3_driver::firmware::fpga::TransitionMode::from_msg(&mode)?,
+                )
+            }
+            swap_segment::Inner::GainStm(inner) => {
+                let mode = inner
+                    .transition_mode
+                    .as_ref()
+                    .ok_or(AUTDProtoBufError::DataParseError)?;
+                autd3_driver::datagram::SwapSegment::GainSTM(
+                    autd3_driver::firmware::fpga::Segment::from(Segment::try_from(inner.segment)?),
+                    autd3_driver::firmware::fpga::TransitionMode::from_msg(&mode)?,
+                )
+            }
         })
     }
 }

@@ -3,6 +3,7 @@ use autd3_driver::derive::EmitIntensity;
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3_gain_holo::EmissionConstraint {
@@ -39,26 +40,30 @@ impl ToMessage for autd3_gain_holo::EmissionConstraint {
 }
 
 impl FromMessage<EmissionConstraint> for autd3_gain_holo::EmissionConstraint {
-    fn from_msg(msg: &EmissionConstraint) -> Option<Self> {
+    fn from_msg(msg: &EmissionConstraint) -> Result<Self, AUTDProtoBufError> {
         match msg.constraint {
             Some(emission_constraint::Constraint::Normalize(_)) => {
-                Some(autd3_gain_holo::EmissionConstraint::Normalize)
+                Ok(autd3_gain_holo::EmissionConstraint::Normalize)
             }
             Some(emission_constraint::Constraint::Multiply(ref v)) => {
-                Some(autd3_gain_holo::EmissionConstraint::Multiply(v.value as _))
+                Ok(autd3_gain_holo::EmissionConstraint::Multiply(v.value as _))
             }
-            Some(emission_constraint::Constraint::Uniform(ref v)) => {
-                Some(autd3_gain_holo::EmissionConstraint::Uniform(
-                    EmitIntensity::from_msg(v.value.as_ref()?)?,
-                ))
-            }
+            Some(emission_constraint::Constraint::Uniform(ref v)) => Ok(
+                autd3_gain_holo::EmissionConstraint::Uniform(EmitIntensity::from_msg(
+                    v.value.as_ref().ok_or(AUTDProtoBufError::DataParseError)?,
+                )?),
+            ),
             Some(emission_constraint::Constraint::Clamp(ref v)) => {
-                Some(autd3_gain_holo::EmissionConstraint::Clamp(
-                    EmitIntensity::from_msg(v.min.as_ref()?)?,
-                    EmitIntensity::from_msg(v.max.as_ref()?)?,
+                Ok(autd3_gain_holo::EmissionConstraint::Clamp(
+                    EmitIntensity::from_msg(
+                        v.min.as_ref().ok_or(AUTDProtoBufError::DataParseError)?,
+                    )?,
+                    EmitIntensity::from_msg(
+                        v.max.as_ref().ok_or(AUTDProtoBufError::DataParseError)?,
+                    )?,
                 ))
             }
-            None => None,
+            None => Err(AUTDProtoBufError::DataParseError),
         }
     }
 }

@@ -1,66 +1,45 @@
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3::gain::Bessel {
-    type Message = DatagramLightweight;
+    type Message = Datagram;
 
-    #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
+            datagram: Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Bessel(Bessel {
                     intensity: Some(self.intensity().to_msg(None)),
                     pos: Some(self.pos().to_msg(None)),
                     dir: Some(self.dir().to_msg(None)),
-                    theta: self.theta().radian() as _,
+                    theta: Some(self.theta().to_msg(None)),
                     phase_offset: Some(self.phase_offset().to_msg(None)),
                 })),
-                segment: Segment::S0 as _,
-                transition: true,
             })),
-        }
-    }
-}
-
-impl ToMessage for autd3_driver::datagram::DatagramWithSegment<autd3::gain::Bessel> {
-    type Message = DatagramLightweight;
-
-    #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
-        Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Gain(Gain {
-                gain: Some(gain::Gain::Bessel(Bessel {
-                    intensity: Some(self.intensity().to_msg(None)),
-                    pos: Some(self.pos().to_msg(None)),
-                    dir: Some(self.dir().to_msg(None)),
-                    theta: self.theta().radian() as _,
-                    phase_offset: Some(self.phase_offset().to_msg(None)),
-                })),
-                segment: self.segment() as _,
-                transition: self.transition(),
-            })),
+            timeout: None,
+            parallel_threshold: None,
         }
     }
 }
 
 impl FromMessage<Bessel> for autd3::gain::Bessel {
-    #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &Bessel) -> Option<Self> {
-        Some(
-            Self::new(
-                autd3_driver::geometry::Vector3::from_msg(msg.pos.as_ref()?)?,
-                autd3_driver::geometry::Vector3::from_msg(msg.dir.as_ref()?)?,
-                (msg.theta as f32) * autd3::driver::defined::rad,
-            )
-            .with_intensity(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
-                msg.intensity.as_ref()?,
-            )?)
-            .with_phase_offset(autd3_driver::firmware::fpga::Phase::from_msg(
-                msg.phase_offset.as_ref()?,
-            )?),
-        )
+    fn from_msg(msg: &Bessel) -> Result<Self, AUTDProtoBufError> {
+        let mut g = Self::new(
+            autd3_driver::geometry::Vector3::from_msg(&msg.pos)?,
+            autd3_driver::geometry::Vector3::from_msg(&msg.dir)?,
+            autd3_driver::defined::Angle::from_msg(&msg.theta)?,
+        );
+        if let Some(intensity) = msg.intensity.as_ref() {
+            g = g.with_intensity(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
+                intensity,
+            )?);
+        }
+        if let Some(phase_offset) = msg.phase_offset.as_ref() {
+            g = g.with_phase_offset(autd3_driver::firmware::fpga::Phase::from_msg(phase_offset)?);
+        }
+        Ok(g)
     }
 }
 
@@ -72,7 +51,7 @@ mod tests {
     use rand::Rng;
 
     #[test]
-    fn test_bessel() {
+    fn bessel() {
         let mut rng = rand::thread_rng();
 
         let g = autd3::gain::Bessel::new(
@@ -84,7 +63,7 @@ mod tests {
         let msg = g.to_msg(None);
 
         match msg.datagram {
-            Some(datagram_lightweight::Datagram::Gain(Gain {
+            Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Bessel(gain)),
                 ..
             })) => {

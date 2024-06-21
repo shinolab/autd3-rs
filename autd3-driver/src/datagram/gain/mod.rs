@@ -65,7 +65,7 @@ pub trait Gain {
 }
 
 // GRCOV_EXCL_START
-impl<'a> Gain for Box<dyn Gain + 'a> {
+impl<'a> Gain for Box<dyn Gain + Send + Sync + 'a> {
     fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         self.as_ref().calc(geometry)
     }
@@ -76,8 +76,8 @@ impl<'a> Gain for Box<dyn Gain + 'a> {
     }
 }
 
-impl<'a> Datagram for Box<dyn Gain + 'a> {
-    type G = GainOperationGenerator<Box<dyn Gain + 'a>>;
+impl<'a> Datagram for Box<dyn Gain + Send + Sync + 'a> {
+    type G = GainOperationGenerator<Box<dyn Gain + Send + Sync + 'a>>;
 
     fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Self::G::new(self, geometry, Segment::S0, true)
@@ -112,8 +112,8 @@ impl<'a> Datagram for Box<dyn Gain + 'a> {
     }
 }
 
-impl<'a> DatagramS for Box<dyn Gain + 'a> {
-    type G = GainOperationGenerator<Box<dyn Gain + 'a>>;
+impl<'a> DatagramS for Box<dyn Gain + Send + Sync + 'a> {
+    type G = GainOperationGenerator<Box<dyn Gain + Send + Sync + 'a>>;
 
     fn operation_generator_with_segment(
         self,
@@ -150,17 +150,6 @@ impl<'a> DatagramS for Box<dyn Gain + 'a> {
                 tracing::error!("Failed to calculate gain");
             }
         }
-    }
-}
-
-impl<'a> Gain for Box<dyn Gain + Send + Sync + 'a> {
-    fn calc(&self, geometry: &Geometry) -> GainCalcResult {
-        self.as_ref().calc(geometry)
-    }
-
-    #[tracing::instrument(skip(self, geometry))]
-    fn trace(&self, geometry: &Geometry) {
-        self.as_ref().trace(geometry);
     }
 }
 

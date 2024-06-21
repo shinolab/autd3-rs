@@ -1,6 +1,9 @@
+use std::time::Duration;
+
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3_driver::firmware::fpga::SamplingConfig {
@@ -17,6 +20,16 @@ impl ToMessage for autd3_driver::firmware::fpga::SamplingConfig {
                         value: value.hz() as f32,
                     })
                 }
+                autd3::derive::SamplingConfig::Period(value) => {
+                    sampling_config::Config::Period(SamplingConfigPeriod {
+                        value: value.as_nanos() as _,
+                    })
+                }
+                autd3::derive::SamplingConfig::PeriodNearest(value) => {
+                    sampling_config::Config::PeriodNearest(SamplingConfigPeriodNearest {
+                        value: value.as_nanos() as _,
+                    })
+                }
                 autd3::derive::SamplingConfig::DivisionRaw(value) => {
                     sampling_config::Config::DivisionRaw(SamplingConfigDivisionRaw { value })
                 }
@@ -30,25 +43,38 @@ impl ToMessage for autd3_driver::firmware::fpga::SamplingConfig {
 }
 
 impl FromMessage<SamplingConfig> for autd3_driver::firmware::fpga::SamplingConfig {
-    fn from_msg(msg: &SamplingConfig) -> Option<Self> {
-        msg.config.as_ref().map(|config| match *config {
-            sampling_config::Config::Freq(SamplingConfigFreq { value }) => {
-                autd3_driver::firmware::fpga::SamplingConfig::Freq(
-                    value * autd3_driver::defined::Hz,
-                )
-            }
-            sampling_config::Config::FreqNearest(SamplingConfigFreqNearest { value }) => {
-                autd3_driver::firmware::fpga::SamplingConfig::FreqNearest(
-                    value as f32 * autd3_driver::defined::Hz,
-                )
-            }
-            sampling_config::Config::Division(SamplingConfigDivision { value }) => {
-                autd3_driver::firmware::fpga::SamplingConfig::Division(value)
-            }
-            sampling_config::Config::DivisionRaw(SamplingConfigDivisionRaw { value }) => {
-                autd3_driver::firmware::fpga::SamplingConfig::DivisionRaw(value)
-            }
-        })
+    fn from_msg(msg: &SamplingConfig) -> Result<Self, AUTDProtoBufError> {
+        msg.config
+            .as_ref()
+            .ok_or(AUTDProtoBufError::DataParseError)
+            .map(|config| match *config {
+                sampling_config::Config::Freq(SamplingConfigFreq { value }) => {
+                    autd3_driver::firmware::fpga::SamplingConfig::Freq(
+                        value * autd3_driver::defined::Hz,
+                    )
+                }
+                sampling_config::Config::FreqNearest(SamplingConfigFreqNearest { value }) => {
+                    autd3_driver::firmware::fpga::SamplingConfig::FreqNearest(
+                        value as f32 * autd3_driver::defined::Hz,
+                    )
+                }
+                sampling_config::Config::Period(SamplingConfigPeriod { value }) => {
+                    autd3_driver::firmware::fpga::SamplingConfig::Period(Duration::from_nanos(
+                        value,
+                    ))
+                }
+                sampling_config::Config::PeriodNearest(SamplingConfigPeriodNearest { value }) => {
+                    autd3_driver::firmware::fpga::SamplingConfig::PeriodNearest(
+                        Duration::from_nanos(value),
+                    )
+                }
+                sampling_config::Config::Division(SamplingConfigDivision { value }) => {
+                    autd3_driver::firmware::fpga::SamplingConfig::Division(value)
+                }
+                sampling_config::Config::DivisionRaw(SamplingConfigDivisionRaw { value }) => {
+                    autd3_driver::firmware::fpga::SamplingConfig::DivisionRaw(value)
+                }
+            })
     }
 }
 

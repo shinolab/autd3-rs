@@ -3,52 +3,25 @@ use autd3_driver::derive::ModulationProperty;
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreqFloat> {
-    type Message = DatagramLightweight;
+    type Message = Datagram;
 
-    #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
+            datagram: Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SquareExactFloat(SquareExactFloat {
                     config: Some(self.sampling_config().to_msg(None)),
                     freq: self.freq().hz() as _,
-                    high: self.high() as _,
-                    low: self.low() as _,
-                    duty: self.duty() as _,
+                    high: Some(self.high() as _),
+                    low: Some(self.low() as _),
+                    duty: Some(self.duty() as _),
                 })),
-                segment: Segment::S0 as _,
-                transition_mode: Some(0xFF),
-                transition_value: Some(0),
             })),
-        }
-    }
-}
-
-impl ToMessage
-    for autd3_driver::datagram::DatagramWithSegmentTransition<
-        autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreqFloat>,
-    >
-{
-    type Message = DatagramLightweight;
-
-    #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
-        Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::SquareExactFloat(SquareExactFloat {
-                    config: Some(self.sampling_config().to_msg(None)),
-                    freq: self.freq().hz() as _,
-                    high: self.high() as _,
-                    low: self.low() as _,
-                    duty: self.duty() as _,
-                })),
-                segment: self.segment() as _,
-                transition_mode: self.transition_mode().map(|m| m.mode() as _),
-                transition_value: self.transition_mode().map(|m| m.value()),
-            })),
+            timeout: None,
+            parallel_threshold: None,
         }
     }
 }
@@ -56,17 +29,23 @@ impl ToMessage
 impl FromMessage<SquareExactFloat>
     for autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreqFloat>
 {
-    #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &SquareExactFloat) -> Option<Self> {
-        Some(
-            autd3::modulation::Square::new((msg.freq as f32) * autd3_driver::defined::Hz)
-                .with_high(msg.high as u8)
-                .with_low(msg.low as u8)
-                .with_duty(msg.duty as _)
-                .with_sampling_config(autd3_driver::firmware::fpga::SamplingConfig::from_msg(
-                    msg.config.as_ref()?,
-                )?),
-        )
+    fn from_msg(msg: &SquareExactFloat) -> Result<Self, AUTDProtoBufError> {
+        let mut square = autd3::modulation::Square::new(msg.freq * autd3_driver::defined::Hz);
+        if let Some(high) = msg.high {
+            square = square.with_high(high as _);
+        }
+        if let Some(low) = msg.low {
+            square = square.with_low(low as _);
+        }
+        if let Some(duty) = msg.duty {
+            square = square.with_duty(duty as _);
+        }
+        if let Some(config) = msg.config.as_ref() {
+            square = square.with_sampling_config(
+                autd3_driver::firmware::fpga::SamplingConfig::from_msg(config)?,
+            );
+        }
+        Ok(square)
     }
 }
 
@@ -88,7 +67,7 @@ mod tests {
         let msg = m.to_msg(None);
 
         match msg.datagram {
-            Some(datagram_lightweight::Datagram::Modulation(Modulation {
+            Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SquareExactFloat(modulation)),
                 ..
             })) => {

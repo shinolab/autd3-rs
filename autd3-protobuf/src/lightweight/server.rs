@@ -1,7 +1,12 @@
+use std::time::Duration;
+
 use crate::{error::*, pb::*, traits::*};
 
-use autd3::error::AUTDError;
-use autd3_driver::datagram::{IntoDatagramWithSegment, IntoDatagramWithSegmentTransition};
+use autd3::derive::AUTDInternalError;
+use autd3_driver::{
+    datagram::{IntoDatagramWithSegment, IntoDatagramWithSegmentTransition},
+    derive::tracing,
+};
 use tokio::sync::RwLock;
 use tonic::{Request, Response, Status};
 
@@ -14,6 +19,47 @@ pub struct LightweightServer<
     link: F,
 }
 
+pub struct DatagramWithTimeoutAndParallelThreshold<D: autd3_driver::datagram::Datagram> {
+    datagram: D,
+    timeout: Option<Duration>,
+    parallel_threshold: Option<usize>,
+}
+
+impl<D: autd3_driver::datagram::Datagram> autd3_driver::datagram::Datagram
+    for DatagramWithTimeoutAndParallelThreshold<D>
+{
+    type G = D::G;
+
+    fn operation_generator(
+        self,
+        geometry: &autd3_driver::geometry::Geometry,
+    ) -> Result<Self::G, AUTDInternalError> {
+        self.datagram.operation_generator(geometry)
+    }
+
+    fn timeout(&self) -> Option<std::time::Duration> {
+        self.timeout.or(self.datagram.timeout())
+    }
+
+    fn parallel_threshold(&self) -> Option<usize> {
+        self.parallel_threshold
+            .or(self.datagram.parallel_threshold())
+    }
+
+    #[tracing::instrument(level = "debug", skip(self, geometry))]
+    // GRCOV_EXCL_START
+    fn trace(&self, geometry: &autd3_driver::geometry::Geometry) {
+        tracing::debug!(
+            "{} (threshold = {:?}, timeout = {:?})",
+            autd3_driver::derive::tynm::type_name::<Self>(),
+            self.parallel_threshold,
+            self.timeout
+        );
+        self.datagram.trace(geometry);
+    }
+    // GRCOV_EXCL_STOP
+}
+
 impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + Sync + 'static>
     LightweightServer<L, F>
 {
@@ -24,330 +70,104 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
         }
     }
 
-    async fn send_modulation(
-        autd: &mut autd3::Controller<L::L>,
+    fn parse_gain(
+        gain: &Gain,
+    ) -> Result<Box<dyn autd3_driver::datagram::Gain + Send + Sync>, AUTDProtoBufError> {
+        Ok(match &gain.gain {
+            Some(gain::Gain::Focus(msg)) => Box::new(autd3::gain::Focus::from_msg(msg)?),
+            Some(gain::Gain::Bessel(msg)) => Box::new(autd3::gain::Bessel::from_msg(msg)?),
+            Some(gain::Gain::Plane(msg)) => Box::new(autd3::gain::Plane::from_msg(msg)?),
+            Some(gain::Gain::Uniform(msg)) => Box::new(autd3::gain::Uniform::from_msg(msg)?),
+            Some(gain::Gain::Null(msg)) => Box::new(autd3::gain::Null::from_msg(msg)?),
+            Some(gain::Gain::Lm(msg)) => Box::new(autd3_gain_holo::LM::from_msg(msg)?),
+            Some(gain::Gain::Gs(msg)) => Box::new(autd3_gain_holo::GS::from_msg(msg)?),
+            Some(gain::Gain::Naive(msg)) => Box::new(autd3_gain_holo::Naive::from_msg(msg)?),
+            Some(gain::Gain::Gspat(msg)) => Box::new(autd3_gain_holo::GSPAT::from_msg(msg)?),
+            Some(gain::Gain::Greedy(msg)) => Box::new(autd3_gain_holo::Greedy::from_msg(msg)?),
+            Some(gain::Gain::Sdp(msg)) => Box::new(autd3_gain_holo::SDP::from_msg(msg)?),
+            None => return Err(AUTDProtoBufError::NotSupportedData.into()),
+        })
+    }
+
+    fn parse_gain_with_segment(
+        gain: &GainWithSegment,
+    ) -> Result<
+        autd3_driver::datagram::DatagramWithSegment<
+            Box<dyn autd3_driver::datagram::Gain + Send + Sync>,
+        >,
+        AUTDProtoBufError,
+    > {
+        let g = Self::parse_gain(
+            gain.gain
+                .as_ref()
+                .ok_or(AUTDProtoBufError::DataParseError)?,
+        )?;
+        let segment = autd3_driver::firmware::fpga::Segment::from(Segment::try_from(gain.segment)?);
+        Ok(g.with_segment(segment, gain.transition))
+    }
+
+    fn parse_modulation(
         modulation: &Modulation,
-    ) -> Result<(), AUTDError> {
+    ) -> Result<Box<dyn autd3_driver::datagram::Modulation + Send + Sync>, AUTDProtoBufError> {
         Ok(match &modulation.modulation {
             Some(modulation::Modulation::Static(msg)) => {
-                autd.send(
-                    autd3::prelude::Static::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .with_segment(
-                            autd3_driver::firmware::fpga::Segment::from(
-                                Segment::try_from(modulation.segment)
-                                    .ok()
-                                    .ok_or(AUTDProtoBufError::DataParseError)?,
-                            ),
-                            to_transition_mode(
-                                modulation.transition_mode,
-                                modulation.transition_value,
-                            ),
-                        ),
-                )
-                .await?
+                Box::new(autd3::prelude::Static::from_msg(msg)?)
             }
             Some(modulation::Modulation::SineNearest(msg)) => {
-                autd.send(
-                    autd3::prelude::Sine::<autd3::modulation::sampling_mode::NearestFreq>::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .with_segment(
-                            autd3_driver::firmware::fpga::Segment::from(
-                                Segment::try_from(modulation.segment)
-                                    .ok()
-                                    .ok_or(AUTDProtoBufError::DataParseError)?,
-                            ),
-                            to_transition_mode(
-                                modulation.transition_mode,
-                                modulation.transition_value,
-                            ),
-                        ),
-                )
-                .await?
+                Box::new(autd3::prelude::Sine::<
+                    autd3::modulation::sampling_mode::NearestFreq,
+                >::from_msg(msg)?)
             }
-            Some(modulation::Modulation::SineExact(msg)) => {
-                autd.send(
-                    autd3::prelude::Sine::<autd3::modulation::sampling_mode::ExactFreq>::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .with_segment(
-                            autd3_driver::firmware::fpga::Segment::from(
-                                Segment::try_from(modulation.segment)
-                                    .ok()
-                                    .ok_or(AUTDProtoBufError::DataParseError)?,
-                            ),
-                            to_transition_mode(
-                                modulation.transition_mode,
-                                modulation.transition_value,
-                            ),
-                        ),
-                )
-                .await?
-            }
+            Some(modulation::Modulation::SineExact(msg)) => Box::new(autd3::prelude::Sine::<
+                autd3::modulation::sampling_mode::ExactFreq,
+            >::from_msg(msg)?),
             Some(modulation::Modulation::SineExactFloat(msg)) => {
-                autd.send(
-                    autd3::prelude::Sine::<autd3::modulation::sampling_mode::ExactFreqFloat>::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .with_segment(
-                            autd3_driver::firmware::fpga::Segment::from(
-                                Segment::try_from(modulation.segment)
-                                    .ok()
-                                    .ok_or(AUTDProtoBufError::DataParseError)?,
-                            ),
-                            to_transition_mode(
-                                modulation.transition_mode,
-                                modulation.transition_value,
-                            ),
-                        ),
-                )
-                .await?
+                Box::new(autd3::prelude::Sine::<
+                    autd3::modulation::sampling_mode::ExactFreqFloat,
+                >::from_msg(msg)?)
             }
             Some(modulation::Modulation::SquareNearest(msg)) => {
-                autd.send(
-                    autd3::prelude::Square::<autd3::modulation::sampling_mode::NearestFreq>::from_msg(
-                        msg,
-                    )
-                    .ok_or(AUTDProtoBufError::DataParseError)?
-                    .with_segment(
-                        autd3_driver::firmware::fpga::Segment::from(
-                            Segment::try_from(modulation.segment)
-                                .ok()
-                                .ok_or(AUTDProtoBufError::DataParseError)?,
-                        ),
-                        to_transition_mode(modulation.transition_mode, modulation.transition_value),
-                    ),
-                )
-                .await?
+                Box::new(autd3::prelude::Square::<
+                    autd3::modulation::sampling_mode::NearestFreq,
+                >::from_msg(msg)?)
             }
             Some(modulation::Modulation::SquareExact(msg)) => {
-                autd.send(
-                    autd3::prelude::Square::<autd3::modulation::sampling_mode::ExactFreq>::from_msg(
-                        msg,
-                    )
-                    .ok_or(AUTDProtoBufError::DataParseError)?
-                    .with_segment(
-                        autd3_driver::firmware::fpga::Segment::from(
-                            Segment::try_from(modulation.segment)
-                                .ok()
-                                .ok_or(AUTDProtoBufError::DataParseError)?,
-                        ),
-                        to_transition_mode(modulation.transition_mode, modulation.transition_value),
-                    ),
-                )
-                .await?
+                Box::new(autd3::prelude::Square::<
+                    autd3::modulation::sampling_mode::ExactFreq,
+                >::from_msg(msg)?)
             }
             Some(modulation::Modulation::SquareExactFloat(msg)) => {
-                autd.send(
-                    autd3::prelude::Square::<autd3::modulation::sampling_mode::ExactFreqFloat>::from_msg(
-                        msg,
-                    )
-                    .ok_or(AUTDProtoBufError::DataParseError)?
-                    .with_segment(
-                        autd3_driver::firmware::fpga::Segment::from(
-                            Segment::try_from(modulation.segment)
-                                .ok()
-                                .ok_or(AUTDProtoBufError::DataParseError)?,
-                        ),
-                        to_transition_mode(modulation.transition_mode, modulation.transition_value),
-                    ),
-                )
-                .await?
+                Box::new(autd3::prelude::Square::<
+                    autd3::modulation::sampling_mode::ExactFreqFloat,
+                >::from_msg(msg)?)
             }
-            None => return Err(AUTDProtoBufError::NotSupportedData.into()),
+            None => return Err(AUTDProtoBufError::DataParseError),
         })
     }
 
-    async fn send_silencer(
-        autd: &mut autd3::Controller<L::L>,
-        msg: &Silencer,
-    ) -> Result<(), AUTDError> {
-        Ok(match msg.config {
-            Some(silencer::Config::FixedUpdateRate(ref msg)) => {
-                autd.send(
-                    autd3_driver::datagram::SilencerFixedUpdateRate::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?,
-                )
-                .await?
-            }
-            Some(silencer::Config::FixedCompletionSteps(ref msg)) => {
-                autd.send(
-                    autd3_driver::datagram::SilencerFixedCompletionSteps::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?,
-                )
-                .await?
-            }
-            None => return Err(AUTDProtoBufError::NotSupportedData.into()),
-        })
-    }
-
-    async fn send_gain(autd: &mut autd3::Controller<L::L>, gain: &Gain) -> Result<(), AUTDError> {
-        Ok(match &gain.gain {
-            Some(gain::Gain::Focus(msg)) => {
-                autd.send(
-                    autd3::prelude::Focus::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .with_segment(
-                            autd3_driver::firmware::fpga::Segment::from(
-                                Segment::try_from(gain.segment)
-                                    .ok()
-                                    .ok_or(AUTDProtoBufError::DataParseError)?,
-                            ),
-                            gain.transition,
-                        ),
-                )
-                .await?
-            }
-            Some(gain::Gain::Bessel(msg)) => {
-                autd.send(
-                    autd3::prelude::Bessel::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .with_segment(
-                            autd3_driver::firmware::fpga::Segment::from(
-                                Segment::try_from(gain.segment)
-                                    .ok()
-                                    .ok_or(AUTDProtoBufError::DataParseError)?,
-                            ),
-                            gain.transition,
-                        ),
-                )
-                .await?
-            }
-            Some(gain::Gain::Null(msg)) => {
-                autd.send(
-                    autd3::prelude::Null::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .with_segment(
-                            autd3_driver::firmware::fpga::Segment::from(
-                                Segment::try_from(gain.segment)
-                                    .ok()
-                                    .ok_or(AUTDProtoBufError::DataParseError)?,
-                            ),
-                            gain.transition,
-                        ),
-                )
-                .await?
-            }
-            Some(gain::Gain::Plane(msg)) => {
-                autd.send(
-                    autd3::prelude::Plane::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .with_segment(
-                            autd3_driver::firmware::fpga::Segment::from(
-                                Segment::try_from(gain.segment)
-                                    .ok()
-                                    .ok_or(AUTDProtoBufError::DataParseError)?,
-                            ),
-                            gain.transition,
-                        ),
-                )
-                .await?
-            }
-            Some(gain::Gain::Uniform(msg)) => {
-                autd.send(
-                    autd3::prelude::Uniform::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .with_segment(
-                            autd3_driver::firmware::fpga::Segment::from(
-                                Segment::try_from(gain.segment)
-                                    .ok()
-                                    .ok_or(AUTDProtoBufError::DataParseError)?,
-                            ),
-                            gain.transition,
-                        ),
-                )
-                .await?
-            }
-            Some(gain::Gain::Sdp(msg)) => {
-                autd.send(
-                    autd3_gain_holo::SDP::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .with_segment(
-                            autd3_driver::firmware::fpga::Segment::from(
-                                Segment::try_from(gain.segment)
-                                    .ok()
-                                    .ok_or(AUTDProtoBufError::DataParseError)?,
-                            ),
-                            gain.transition,
-                        ),
-                )
-                .await?
-            }
-            Some(gain::Gain::Naive(msg)) => {
-                autd.send(
-                    autd3_gain_holo::Naive::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .with_segment(
-                            autd3_driver::firmware::fpga::Segment::from(
-                                Segment::try_from(gain.segment)
-                                    .ok()
-                                    .ok_or(AUTDProtoBufError::DataParseError)?,
-                            ),
-                            gain.transition,
-                        ),
-                )
-                .await?
-            }
-            Some(gain::Gain::Gs(msg)) => {
-                autd.send(
-                    autd3_gain_holo::GS::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .with_segment(
-                            autd3_driver::firmware::fpga::Segment::from(
-                                Segment::try_from(gain.segment)
-                                    .ok()
-                                    .ok_or(AUTDProtoBufError::DataParseError)?,
-                            ),
-                            gain.transition,
-                        ),
-                )
-                .await?
-            }
-            Some(gain::Gain::Gspat(msg)) => {
-                autd.send(
-                    autd3_gain_holo::GSPAT::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .with_segment(
-                            autd3_driver::firmware::fpga::Segment::from(
-                                Segment::try_from(gain.segment)
-                                    .ok()
-                                    .ok_or(AUTDProtoBufError::DataParseError)?,
-                            ),
-                            gain.transition,
-                        ),
-                )
-                .await?
-            }
-            Some(gain::Gain::Lm(msg)) => {
-                autd.send(
-                    autd3_gain_holo::LM::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .with_segment(
-                            autd3_driver::firmware::fpga::Segment::from(
-                                Segment::try_from(gain.segment)
-                                    .ok()
-                                    .ok_or(AUTDProtoBufError::DataParseError)?,
-                            ),
-                            gain.transition,
-                        ),
-                )
-                .await?
-            }
-            Some(gain::Gain::Greedy(msg)) => {
-                autd.send(
-                    autd3_gain_holo::Greedy::from_msg(msg)
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .with_segment(
-                            autd3_driver::firmware::fpga::Segment::from(
-                                Segment::try_from(gain.segment)
-                                    .ok()
-                                    .ok_or(AUTDProtoBufError::DataParseError)?,
-                            ),
-                            gain.transition,
-                        ),
-                )
-                .await?
-            }
-            None => return Err(AUTDProtoBufError::NotSupportedData.into()),
-        })
+    fn parse_modulation_with_segment(
+        modulation: &ModulationWithSegment,
+    ) -> Result<
+        autd3_driver::datagram::DatagramWithSegmentTransition<
+            Box<dyn autd3_driver::datagram::Modulation + Send + Sync>,
+        >,
+        AUTDProtoBufError,
+    > {
+        let m = Self::parse_modulation(
+            modulation
+                .modulation
+                .as_ref()
+                .ok_or(AUTDProtoBufError::DataParseError)?,
+        )?;
+        let segment =
+            autd3_driver::firmware::fpga::Segment::from(Segment::try_from(modulation.segment)?);
+        let transition_mode = match modulation.transition_mode.as_ref() {
+            Some(mode) => Some(autd3_driver::firmware::fpga::TransitionMode::from_msg(
+                mode,
+            )?),
+            None => None,
+        };
+        Ok(m.with_segment(segment, transition_mode))
     }
 }
 
@@ -371,7 +191,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                 }
             }
         }
-        if let Some(geometry) = autd3_driver::geometry::Geometry::from_msg(&req.into_inner()) {
+        if let Ok(geometry) = autd3_driver::geometry::Geometry::from_msg(&req.into_inner()) {
             *self.autd.write().await =
                 match autd3::Controller::builder(geometry.iter().map(|d| {
                     autd3::prelude::AUTD3::new(*d[0].position()).with_rotation(*d.rotation())
@@ -441,238 +261,197 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
 
     async fn send(
         &self,
-        req: Request<DatagramLightweight>,
+        req: Request<Datagram>,
     ) -> Result<Response<SendResponseLightweight>, Status> {
         if let Some(autd) = self.autd.write().await.as_mut() {
-            match match req.into_inner().datagram {
-                Some(datagram_lightweight::Datagram::Silencer(ref msg)) => {
-                    Self::send_silencer(autd, msg).await
-                }
-                Some(datagram_lightweight::Datagram::Gain(ref msg)) => {
-                    Self::send_gain(autd, msg).await
-                }
-                Some(datagram_lightweight::Datagram::Modulation(ref msg)) => {
-                    Self::send_modulation(autd, msg).await
-                }
-                Some(datagram_lightweight::Datagram::Clear(ref msg)) => {
-                    autd.send(
-                        autd3_driver::datagram::Clear::from_msg(msg)
-                            .ok_or(AUTDProtoBufError::DataParseError)?,
-                    )
+            let datagram = req.into_inner();
+            let parallel_threshold = datagram.parallel_threshold.map(|v| v as usize);
+            let timeout = datagram.timeout.map(|v| Duration::from_nanos(v));
+            let res = match datagram.datagram {
+                Some(datagram::Datagram::Gain(ref msg)) => {
+                    autd.send(DatagramWithTimeoutAndParallelThreshold {
+                        datagram: Self::parse_gain(msg)?,
+                        timeout,
+                        parallel_threshold,
+                    })
                     .await
                 }
-                Some(datagram_lightweight::Datagram::Synchronize(ref msg)) => {
-                    autd.send(
-                        autd3_driver::datagram::Synchronize::from_msg(msg)
-                            .ok_or(AUTDProtoBufError::DataParseError)?,
-                    )
+                Some(datagram::Datagram::GainWithSegment(ref msg)) => {
+                    autd.send(DatagramWithTimeoutAndParallelThreshold {
+                        datagram: Self::parse_gain_with_segment(msg)?,
+                        timeout,
+                        parallel_threshold,
+                    })
                     .await
                 }
-                Some(datagram_lightweight::Datagram::ForceFan(ref msg)) => {
-                    autd.send(
-                        autd3_driver::datagram::ForceFan::from_msg(msg)
-                            .ok_or(AUTDProtoBufError::DataParseError)?,
-                    )
+                Some(datagram::Datagram::Modulation(ref msg)) => {
+                    autd.send(DatagramWithTimeoutAndParallelThreshold {
+                        datagram: Self::parse_modulation(msg)?,
+                        timeout,
+                        parallel_threshold,
+                    })
                     .await
                 }
-                Some(datagram_lightweight::Datagram::ReadsFpgaState(ref msg)) => {
-                    autd.send(
-                        autd3_driver::datagram::ReadsFPGAState::from_msg(msg)
-                            .ok_or(AUTDProtoBufError::DataParseError)?,
-                    )
+                Some(datagram::Datagram::ModulationWithSegment(ref msg)) => {
+                    autd.send(DatagramWithTimeoutAndParallelThreshold {
+                        datagram: Self::parse_modulation_with_segment(msg)?,
+                        timeout,
+                        parallel_threshold,
+                    })
                     .await
                 }
-                Some(datagram_lightweight::Datagram::FociStm(ref msg)) => {
-                    match msg.inner.as_ref() {
-                        Some(inner) => match inner {
-                            foci_stm::Inner::N1(f) => {
-                                autd.send(
-                                    autd3_driver::datagram::FociSTM::<1>::from_msg(f)
-                                        .ok_or(AUTDProtoBufError::DataParseError)?
-                                        .with_segment(
-                                            autd3_driver::firmware::fpga::Segment::from(
-                                                Segment::try_from(
-                                                    f.props.as_ref().unwrap().segment,
-                                                )
-                                                .ok()
-                                                .ok_or(AUTDProtoBufError::DataParseError)?,
-                                            ),
-                                            to_transition_mode(
-                                                f.props.as_ref().unwrap().transition_mode,
-                                                f.props.as_ref().unwrap().transition_value,
-                                            ),
-                                        ),
-                                )
-                                .await
-                            }
-                            foci_stm::Inner::N2(f) => {
-                                autd.send(
-                                    autd3_driver::datagram::FociSTM::<2>::from_msg(f)
-                                        .ok_or(AUTDProtoBufError::DataParseError)?
-                                        .with_segment(
-                                            autd3_driver::firmware::fpga::Segment::from(
-                                                Segment::try_from(
-                                                    f.props.as_ref().unwrap().segment,
-                                                )
-                                                .ok()
-                                                .ok_or(AUTDProtoBufError::DataParseError)?,
-                                            ),
-                                            to_transition_mode(
-                                                f.props.as_ref().unwrap().transition_mode,
-                                                f.props.as_ref().unwrap().transition_value,
-                                            ),
-                                        ),
-                                )
-                                .await
-                            }
-                            foci_stm::Inner::N3(f) => {
-                                autd.send(
-                                    autd3_driver::datagram::FociSTM::<3>::from_msg(f)
-                                        .ok_or(AUTDProtoBufError::DataParseError)?
-                                        .with_segment(
-                                            autd3_driver::firmware::fpga::Segment::from(
-                                                Segment::try_from(
-                                                    f.props.as_ref().unwrap().segment,
-                                                )
-                                                .ok()
-                                                .ok_or(AUTDProtoBufError::DataParseError)?,
-                                            ),
-                                            to_transition_mode(
-                                                f.props.as_ref().unwrap().transition_mode,
-                                                f.props.as_ref().unwrap().transition_value,
-                                            ),
-                                        ),
-                                )
-                                .await
-                            }
-                            foci_stm::Inner::N4(f) => {
-                                autd.send(
-                                    autd3_driver::datagram::FociSTM::<4>::from_msg(f)
-                                        .ok_or(AUTDProtoBufError::DataParseError)?
-                                        .with_segment(
-                                            autd3_driver::firmware::fpga::Segment::from(
-                                                Segment::try_from(
-                                                    f.props.as_ref().unwrap().segment,
-                                                )
-                                                .ok()
-                                                .ok_or(AUTDProtoBufError::DataParseError)?,
-                                            ),
-                                            to_transition_mode(
-                                                f.props.as_ref().unwrap().transition_mode,
-                                                f.props.as_ref().unwrap().transition_value,
-                                            ),
-                                        ),
-                                )
-                                .await
-                            }
-                            foci_stm::Inner::N5(f) => {
-                                autd.send(
-                                    autd3_driver::datagram::FociSTM::<5>::from_msg(f)
-                                        .ok_or(AUTDProtoBufError::DataParseError)?
-                                        .with_segment(
-                                            autd3_driver::firmware::fpga::Segment::from(
-                                                Segment::try_from(
-                                                    f.props.as_ref().unwrap().segment,
-                                                )
-                                                .ok()
-                                                .ok_or(AUTDProtoBufError::DataParseError)?,
-                                            ),
-                                            to_transition_mode(
-                                                f.props.as_ref().unwrap().transition_mode,
-                                                f.props.as_ref().unwrap().transition_value,
-                                            ),
-                                        ),
-                                )
-                                .await
-                            }
-                            foci_stm::Inner::N6(f) => {
-                                autd.send(
-                                    autd3_driver::datagram::FociSTM::<6>::from_msg(f)
-                                        .ok_or(AUTDProtoBufError::DataParseError)?
-                                        .with_segment(
-                                            autd3_driver::firmware::fpga::Segment::from(
-                                                Segment::try_from(
-                                                    f.props.as_ref().unwrap().segment,
-                                                )
-                                                .ok()
-                                                .ok_or(AUTDProtoBufError::DataParseError)?,
-                                            ),
-                                            to_transition_mode(
-                                                f.props.as_ref().unwrap().transition_mode,
-                                                f.props.as_ref().unwrap().transition_value,
-                                            ),
-                                        ),
-                                )
-                                .await
-                            }
-                            foci_stm::Inner::N7(f) => {
-                                autd.send(
-                                    autd3_driver::datagram::FociSTM::<7>::from_msg(f)
-                                        .ok_or(AUTDProtoBufError::DataParseError)?
-                                        .with_segment(
-                                            autd3_driver::firmware::fpga::Segment::from(
-                                                Segment::try_from(
-                                                    f.props.as_ref().unwrap().segment,
-                                                )
-                                                .ok()
-                                                .ok_or(AUTDProtoBufError::DataParseError)?,
-                                            ),
-                                            to_transition_mode(
-                                                f.props.as_ref().unwrap().transition_mode,
-                                                f.props.as_ref().unwrap().transition_value,
-                                            ),
-                                        ),
-                                )
-                                .await
-                            }
-                            foci_stm::Inner::N8(f) => {
-                                autd.send(
-                                    autd3_driver::datagram::FociSTM::<8>::from_msg(f)
-                                        .ok_or(AUTDProtoBufError::DataParseError)?
-                                        .with_segment(
-                                            autd3_driver::firmware::fpga::Segment::from(
-                                                Segment::try_from(
-                                                    f.props.as_ref().unwrap().segment,
-                                                )
-                                                .ok()
-                                                .ok_or(AUTDProtoBufError::DataParseError)?,
-                                            ),
-                                            to_transition_mode(
-                                                f.props.as_ref().unwrap().transition_mode,
-                                                f.props.as_ref().unwrap().transition_value,
-                                            ),
-                                        ),
-                                )
-                                .await
-                            }
-                        },
-                        None => return Err(AUTDProtoBufError::DataParseError.into()),
+                Some(datagram::Datagram::Clear(ref msg)) => {
+                    autd.send(DatagramWithTimeoutAndParallelThreshold {
+                        datagram: autd3_driver::datagram::Clear::from_msg(msg)?,
+                        timeout,
+                        parallel_threshold,
+                    })
+                    .await
+                }
+                Some(datagram::Datagram::Silencer(ref msg)) => {
+                    match msg.config {
+                        Some(silencer::Config::FixedUpdateRate(ref msg)) => {
+                            autd.send(DatagramWithTimeoutAndParallelThreshold {
+                                datagram:
+                                    autd3_driver::datagram::SilencerFixedUpdateRate::from_msg(msg)?,
+                                timeout,
+                                parallel_threshold,
+                            })
+                            .await
+                        }
+                        Some(silencer::Config::FixedCompletionSteps(ref msg)) => {
+                            autd.send(DatagramWithTimeoutAndParallelThreshold {
+                                datagram:
+                                    autd3_driver::datagram::SilencerFixedCompletionSteps::from_msg(
+                                        msg,
+                                    )?,
+                                timeout,
+                                parallel_threshold,
+                            })
+                            .await
+                        }
+                        Some(silencer::Config::FixedCompletionTime(ref msg)) => {
+                            autd.send(DatagramWithTimeoutAndParallelThreshold {
+                                datagram:
+                                    autd3_driver::datagram::SilencerFixedCompletionTime::from_msg(
+                                        msg,
+                                    )?,
+                                timeout,
+                                parallel_threshold,
+                            })
+                            .await
+                        }
+                        None => return Err(AUTDProtoBufError::NotSupportedData.into()),
                     }
                 }
-                Some(datagram_lightweight::Datagram::GainStm(ref msg)) => {
-                    autd.send(
-                        autd3_driver::datagram::GainSTM::from_msg(msg)
-                            .ok_or(AUTDProtoBufError::DataParseError)?
-                            .with_segment(
-                                autd3_driver::firmware::fpga::Segment::from(
-                                    Segment::try_from(msg.segment)
-                                        .ok()
-                                        .ok_or(AUTDProtoBufError::DataParseError)?,
-                                ),
-                                to_transition_mode(msg.transition_mode, msg.transition_value),
-                            ),
-                    )
+                Some(datagram::Datagram::Synchronize(ref msg)) => {
+                    autd.send(DatagramWithTimeoutAndParallelThreshold {
+                        datagram: autd3_driver::datagram::Synchronize::from_msg(msg)?,
+                        timeout,
+                        parallel_threshold,
+                    })
                     .await
                 }
-                Some(datagram_lightweight::Datagram::SwapSegment(ref msg)) => {
-                    autd.send(
-                        autd3_driver::datagram::SwapSegment::from_msg(msg)
+                Some(datagram::Datagram::ForceFan(ref msg)) => {
+                    autd.send(DatagramWithTimeoutAndParallelThreshold {
+                        datagram: autd3_driver::datagram::ForceFan::from_msg(msg)?,
+                        timeout,
+                        parallel_threshold,
+                    })
+                    .await
+                }
+                Some(datagram::Datagram::ReadsFpgaState(ref msg)) => {
+                    autd.send(DatagramWithTimeoutAndParallelThreshold {
+                        datagram: autd3_driver::datagram::ReadsFPGAState::from_msg(msg)?,
+                        timeout,
+                        parallel_threshold,
+                    })
+                    .await
+                }
+                Some(datagram::Datagram::GainStm(ref msg)) => {
+                    autd.send(DatagramWithTimeoutAndParallelThreshold {
+                        datagram: autd3_driver::datagram::GainSTM::from_msg(msg)?,
+                        timeout,
+                        parallel_threshold,
+                    })
+                    .await
+                }
+                Some(datagram::Datagram::GainStmWithSegment(ref msg)) => {
+                    let stm = autd3_driver::datagram::GainSTM::from_msg(
+                        msg.gain_stm
+                            .as_ref()
                             .ok_or(AUTDProtoBufError::DataParseError)?,
-                    )
+                    )?;
+                    let segment = autd3_driver::firmware::fpga::Segment::from(
+                        Segment::try_from(msg.segment)
+                            .map_err(|_| AUTDProtoBufError::DataParseError)?,
+                    );
+                    let transition_mode = match msg.transition_mode.as_ref() {
+                        Some(mode) => Some(autd3_driver::firmware::fpga::TransitionMode::from_msg(
+                            mode,
+                        )?),
+                        None => None,
+                    };
+                    autd.send(DatagramWithTimeoutAndParallelThreshold {
+                        datagram: stm.with_segment(segment, transition_mode),
+                        timeout,
+                        parallel_threshold,
+                    })
                     .await
                 }
-                _ => return Err(Status::invalid_argument("No datagram")),
-            } {
+                Some(datagram::Datagram::FociStm(ref msg)) => seq_macro::seq!(K in 1..=8 {
+                    match msg.inner{
+                    #(
+                        Some(foci_stm::Inner::N~K(ref msg)) => {
+                            autd.send(DatagramWithTimeoutAndParallelThreshold {
+                                datagram: autd3_driver::datagram::FociSTM::from_msg(msg)?,
+                                timeout,
+                                parallel_threshold
+                            }).await
+                        },
+                    )*
+                    None => return Err(AUTDProtoBufError::NotSupportedData.into()),
+                }}),
+                Some(datagram::Datagram::FociStmWithSegment(ref msg)) => {
+                    let inner = msg
+                        .foci_stm
+                        .as_ref()
+                        .ok_or(AUTDProtoBufError::DataParseError)?;
+                    let segment = autd3_driver::firmware::fpga::Segment::from(
+                        Segment::try_from(msg.segment)
+                            .map_err(|_| AUTDProtoBufError::DataParseError)?,
+                    );
+                    let transition_mode = match msg.transition_mode.as_ref() {
+                        Some(mode) => Some(autd3_driver::firmware::fpga::TransitionMode::from_msg(
+                            mode,
+                        )?),
+                        None => None,
+                    };
+                    seq_macro::seq!(K in 1..=8 {
+                        match inner.inner {
+                        #(
+                            Some(foci_stm::Inner::N~K(ref msg)) => {
+                                autd.send(DatagramWithTimeoutAndParallelThreshold {
+                                    datagram: autd3_driver::datagram::FociSTM::from_msg(msg)?.with_segment(segment, transition_mode),
+                                    timeout,
+                                    parallel_threshold
+                                }).await
+                            },
+                        )*
+                        None => return Err(AUTDProtoBufError::NotSupportedData.into()),
+                    }})
+                }
+                Some(datagram::Datagram::SwapSegment(ref msg)) => {
+                    autd.send(DatagramWithTimeoutAndParallelThreshold {
+                        datagram: autd3_driver::datagram::SwapSegment::from_msg(msg)?,
+                        timeout,
+                        parallel_threshold,
+                    })
+                    .await
+                }
+                None => return Err(AUTDProtoBufError::NotSupportedData.into()),
+            };
+            match res {
                 Ok(_) => Ok(Response::new(SendResponseLightweight {
                     success: true,
                     err: false,

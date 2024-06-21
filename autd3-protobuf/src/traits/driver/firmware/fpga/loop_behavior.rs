@@ -1,6 +1,7 @@
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3_driver::firmware::fpga::LoopBehavior {
@@ -12,8 +13,8 @@ impl ToMessage for autd3_driver::firmware::fpga::LoopBehavior {
 }
 
 impl FromMessage<LoopBehavior> for autd3_driver::firmware::fpga::LoopBehavior {
-    fn from_msg(msg: &LoopBehavior) -> Option<Self> {
-        Some(match msg.rep {
+    fn from_msg(msg: &LoopBehavior) -> Result<Self, AUTDProtoBufError> {
+        Ok(match msg.rep {
             0xFFFFFFFF => autd3_driver::firmware::fpga::LoopBehavior::infinite(),
             v => autd3_driver::firmware::fpga::LoopBehavior::finite(v + 1).unwrap(),
         })

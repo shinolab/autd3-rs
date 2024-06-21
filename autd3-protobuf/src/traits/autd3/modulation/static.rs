@@ -1,50 +1,28 @@
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3::modulation::Static {
-    type Message = DatagramLightweight;
+    type Message = Datagram;
 
-    #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
+            datagram: Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::Static(Static {
                     intensity: self.intensity() as _,
                 })),
-                segment: Segment::S0 as _,
-                transition_mode: Some(0xFF),
-                transition_value: Some(0),
             })),
-        }
-    }
-}
-
-impl ToMessage
-    for autd3_driver::datagram::DatagramWithSegmentTransition<autd3::modulation::Static>
-{
-    type Message = DatagramLightweight;
-
-    #[allow(clippy::unnecessary_cast)]
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
-        Self::Message {
-            datagram: Some(datagram_lightweight::Datagram::Modulation(Modulation {
-                modulation: Some(modulation::Modulation::Static(Static {
-                    intensity: self.intensity() as _,
-                })),
-                segment: self.segment() as _,
-                transition_mode: self.transition_mode().map(|m| m.mode() as _),
-                transition_value: self.transition_mode().map(|m| m.value()),
-            })),
+            timeout: None,
+            parallel_threshold: None,
         }
     }
 }
 
 impl FromMessage<Static> for autd3::modulation::Static {
-    #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &Static) -> Option<Self> {
-        Some(Self::with_intensity(msg.intensity as u8))
+    fn from_msg(msg: &Static) -> Result<Self, AUTDProtoBufError> {
+        Ok(Self::with_intensity(msg.intensity as u8))
     }
 }
 
@@ -61,7 +39,7 @@ mod tests {
         let msg = m.to_msg(None);
 
         match msg.datagram {
-            Some(datagram_lightweight::Datagram::Modulation(Modulation {
+            Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::Static(modulation)),
                 ..
             })) => {

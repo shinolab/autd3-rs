@@ -1,6 +1,7 @@
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3_driver::defined::Angle {
@@ -13,9 +14,12 @@ impl ToMessage for autd3_driver::defined::Angle {
     }
 }
 
-impl FromMessage<Angle> for autd3_driver::defined::Angle {
-    fn from_msg(msg: &Angle) -> Option<Self> {
-        Some(msg.rad * autd3_driver::defined::rad)
+impl FromMessage<Option<Angle>> for autd3_driver::defined::Angle {
+    fn from_msg(msg: &Option<Angle>) -> Result<Self, AUTDProtoBufError> {
+        match msg {
+            None => Err(AUTDProtoBufError::DataParseError),
+            Some(msg) => Ok(msg.rad * autd3_driver::defined::rad),
+        }
     }
 }
 
@@ -30,7 +34,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         let v = rng.gen::<f32>() * rad;
         let msg = v.to_msg(None);
-        let v2 = Angle::from_msg(&msg).unwrap();
+        let v2 = Angle::from_msg(&Some(msg)).unwrap();
         assert_approx_eq::assert_approx_eq!(v.radian(), v2.radian());
     }
 }

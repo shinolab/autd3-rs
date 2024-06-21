@@ -3,12 +3,12 @@ use autd3_driver::geometry::IntoDevice;
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3_driver::geometry::Vector3 {
     type Message = Vector3;
 
-    #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             x: self.x as _,
@@ -21,7 +21,6 @@ impl ToMessage for autd3_driver::geometry::Vector3 {
 impl ToMessage for autd3_driver::geometry::Quaternion {
     type Message = Quaternion;
 
-    #[allow(clippy::unnecessary_cast)]
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             w: self.w as _,
@@ -49,45 +48,44 @@ impl ToMessage for autd3_driver::geometry::Geometry {
     }
 }
 
-impl FromMessage<Vector3> for autd3_driver::geometry::Vector3 {
-    #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &Vector3) -> Option<Self> {
-        Some(autd3_driver::geometry::Vector3::new(
-            msg.x as _, msg.y as _, msg.z as _,
-        ))
+impl FromMessage<Option<Vector3>> for autd3_driver::geometry::Vector3 {
+    fn from_msg(msg: &Option<Vector3>) -> Result<Self, AUTDProtoBufError> {
+        match msg {
+            Some(msg) => Ok(autd3_driver::geometry::Vector3::new(
+                msg.x as _, msg.y as _, msg.z as _,
+            )),
+            None => Err(AUTDProtoBufError::DataParseError),
+        }
     }
 }
 
 impl FromMessage<Quaternion> for autd3_driver::geometry::UnitQuaternion {
-    #[allow(clippy::unnecessary_cast)]
-    fn from_msg(msg: &Quaternion) -> Option<Self> {
-        Some(autd3_driver::geometry::UnitQuaternion::from_quaternion(
+    fn from_msg(msg: &Quaternion) -> Result<Self, AUTDProtoBufError> {
+        Ok(autd3_driver::geometry::UnitQuaternion::from_quaternion(
             autd3_driver::geometry::Quaternion::new(msg.w as _, msg.x as _, msg.y as _, msg.z as _),
         ))
     }
 }
 
 impl FromMessage<Geometry> for autd3_driver::geometry::Geometry {
-    fn from_msg(msg: &Geometry) -> Option<Self> {
+    fn from_msg(msg: &Geometry) -> Result<Self, AUTDProtoBufError> {
         msg.devices
             .iter()
             .enumerate()
             .map(|(i, dev_msg)| {
-                let pos = dev_msg
-                    .pos
-                    .as_ref()
-                    .map(autd3_driver::geometry::Vector3::from_msg)??;
+                let pos = autd3_driver::geometry::Vector3::from_msg(&dev_msg.pos)?;
                 let rot = dev_msg
                     .rot
                     .as_ref()
+                    .ok_or(AUTDProtoBufError::DataParseError)
                     .map(autd3_driver::geometry::UnitQuaternion::from_msg)??;
                 let mut dev = autd3_driver::autd3_device::AUTD3::new(pos)
                     .with_rotation(rot)
                     .into_device(i);
                 dev.sound_speed = dev_msg.sound_speed as _;
-                Some(dev)
+                Ok(dev)
             })
-            .collect::<Option<Vec<_>>>()
+            .collect::<Result<Vec<_>, _>>()
             .map(Self::new)
     }
 }
@@ -106,7 +104,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         let v = Vector3::new(rng.gen(), rng.gen(), rng.gen());
         let msg = v.to_msg(None);
-        let v2 = Vector3::from_msg(&msg).unwrap();
+        let v2 = Vector3::from_msg(&Some(msg)).unwrap();
         assert_approx_eq::assert_approx_eq!(v.x, v2.x);
         assert_approx_eq::assert_approx_eq!(v.y, v2.y);
         assert_approx_eq::assert_approx_eq!(v.z, v2.z);

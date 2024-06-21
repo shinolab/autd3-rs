@@ -1,6 +1,7 @@
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
+    AUTDProtoBufError,
 };
 
 impl ToMessage for Vec<autd3_driver::firmware::cpu::RxMessage> {
@@ -21,7 +22,7 @@ impl ToMessage for Vec<autd3_driver::firmware::cpu::RxMessage> {
 }
 
 impl FromMessage<RxMessage> for Vec<autd3_driver::firmware::cpu::RxMessage> {
-    fn from_msg(msg: &RxMessage) -> Option<Self> {
+    fn from_msg(msg: &RxMessage) -> Result<Self, AUTDProtoBufError> {
         unsafe {
             let mut rx = vec![
                 std::mem::zeroed::<autd3_driver::firmware::cpu::RxMessage>();
@@ -29,7 +30,7 @@ impl FromMessage<RxMessage> for Vec<autd3_driver::firmware::cpu::RxMessage> {
                     / std::mem::size_of::<autd3_driver::firmware::cpu::RxMessage>()
             ];
             std::ptr::copy_nonoverlapping(msg.data.as_ptr(), rx.as_mut_ptr() as _, msg.data.len());
-            Some(rx)
+            Ok(rx)
         }
     }
 }
