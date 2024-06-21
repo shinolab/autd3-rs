@@ -48,6 +48,7 @@ jobs:
       - name: Test src on ${{ matrix.os }}
         run: |
           python3 build.py build --features "lightweight async-trait"
+          python3 build.py test --features "lightweight async-trait"
         shell: bash
 
   build-src-capi:
@@ -67,7 +68,7 @@ jobs:
         uses: swatinem/rust-cache@v2
       - name: Test src on ${{ matrix.os }}
         run: |
-          python3 build.py build --features "capi"
+          python3 build.py build --features "capi" --no-example
           python3 build.py test --features "capi test"
         shell: bash
 
@@ -159,3 +160,8 @@ jobs:
       - name: lint src
         run: |
           python3 build.py lint
+          python3 build.py lint --features "lightweight async-trait"
+          python3 build.py lint --features "capi"
+          python3 build.py lint --features "left_handed use_meter"
+
+
