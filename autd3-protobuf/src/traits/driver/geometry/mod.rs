@@ -100,7 +100,7 @@ mod tests {
     use rand::Rng;
 
     #[test]
-    fn test_vector3() {
+    fn vector3() {
         let mut rng = rand::thread_rng();
         let v = Vector3::new(rng.gen(), rng.gen(), rng.gen());
         let msg = v.to_msg(None);
@@ -111,7 +111,12 @@ mod tests {
     }
 
     #[test]
-    fn test_quaternion() {
+    fn parse_error() {
+        assert!(Vector3::from_msg(&None).is_err());
+    }
+
+    #[test]
+    fn quaternion() {
         let mut rng = rand::thread_rng();
         let q = UnitQuaternion::from_quaternion(Quaternion::new(
             rng.gen(),
@@ -128,7 +133,7 @@ mod tests {
     }
 
     #[test]
-    fn test_geometry() {
+    fn geometry() {
         let mut rng = rand::thread_rng();
         let mut dev = AUTD3::new(Vector3::new(rng.gen(), rng.gen(), rng.gen())).into_device(0);
         dev.sound_speed = rng.gen();

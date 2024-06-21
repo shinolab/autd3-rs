@@ -324,7 +324,7 @@ mod tests {
         period_max(20480000 * Hz) * 2,
     )]
     fn from_period(#[case] expected: Result<u32, AUTDInternalError>, #[case] period: Duration) {
-        assert_eq!(expected, SamplingConfig::Period(period).division());
+        assert_eq!(expected, SamplingConfig::from(period).division());
     }
 
     #[rstest::rstest]

@@ -150,6 +150,8 @@ impl FPGAEmulator {
 #[cfg(test)]
 
 mod tests {
+    use autd3_driver::defined::kHz;
+
     use super::*;
 
     static ASIN_TABLE: &[u8; 32768] = include_bytes!("asin.dat");
@@ -184,5 +186,23 @@ mod tests {
         assert!(fpga.is_thermo_asserted());
         fpga.deassert_thermal_sensor();
         assert!(!fpga.is_thermo_asserted());
+    }
+
+    #[test]
+    fn ultrasound_freq() {
+        let mut fpga = FPGAEmulator::new(249);
+        assert_eq!(fpga.ultrasound_freq(), FREQ_40K);
+
+        fpga.set_fpga_clk_freq(41 * kHz * ULTRASOUND_PERIOD);
+        assert_eq!(fpga.ultrasound_freq(), 41 * kHz);
+    }
+
+    #[test]
+    fn fpga_clk() {
+        let mut fpga = FPGAEmulator::new(249);
+        assert_eq!(fpga.fpga_clk_freq(), FREQ_40K * ULTRASOUND_PERIOD);
+
+        fpga.set_fpga_clk_freq(41 * kHz * ULTRASOUND_PERIOD);
+        assert_eq!(fpga.fpga_clk_freq(), 41 * kHz * ULTRASOUND_PERIOD);
     }
 }

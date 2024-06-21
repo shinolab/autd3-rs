@@ -71,6 +71,7 @@ impl Wav {
     }
 }
 
+// GRCOV_EXCL_START
 impl ModulationProperty for Wav {
     fn sampling_config(&self) -> SamplingConfig {
         self.config.get()
@@ -80,6 +81,7 @@ impl ModulationProperty for Wav {
         self.loop_behavior
     }
 }
+// GRCOV_EXCL_STOP
 
 impl Modulation for Wav {
     #[allow(clippy::unnecessary_cast)]
