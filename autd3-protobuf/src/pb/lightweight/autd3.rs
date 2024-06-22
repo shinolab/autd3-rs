@@ -1656,6 +1656,8 @@ pub struct GainStm {
     pub gains: ::prost::alloc::vec::Vec<Gain>,
     #[prost(message, optional, tag = "3")]
     pub loop_behavior: ::core::option::Option<LoopBehavior>,
+    #[prost(enumeration = "GainStmMode", optional, tag = "4")]
+    pub mode: ::core::option::Option<i32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1829,6 +1831,36 @@ pub mod swap_segment {
         FociStm(super::SwapSegmentFociStm),
         #[prost(message, tag = "4")]
         GainStm(super::SwapSegmentGainStm),
+    }
+}
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum GainStmMode {
+    PhaseIntensityFull = 0,
+    PhaseFull = 1,
+    PhaseHalf = 2,
+}
+impl GainStmMode {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            GainStmMode::PhaseIntensityFull => "PhaseIntensityFull",
+            GainStmMode::PhaseFull => "PhaseFull",
+            GainStmMode::PhaseHalf => "PhaseHalf",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "PhaseIntensityFull" => Some(Self::PhaseIntensityFull),
+            "PhaseFull" => Some(Self::PhaseFull),
+            "PhaseHalf" => Some(Self::PhaseHalf),
+            _ => None,
+        }
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
