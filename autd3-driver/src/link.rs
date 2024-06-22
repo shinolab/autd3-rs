@@ -232,7 +232,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_close() {
+    async fn test_close() -> anyhow::Result<()> {
         let mut link = MockLink {
             is_open: true,
             timeout: Duration::from_millis(0),
@@ -243,9 +243,11 @@ mod tests {
 
         assert!(link.is_open());
 
-        link.close().await.unwrap();
+        link.close().await?;
 
         assert!(!link.is_open());
+
+        Ok(())
     }
 
     #[tokio::test]

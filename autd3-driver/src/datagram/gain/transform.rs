@@ -72,10 +72,10 @@ mod tests {
 
     use super::{super::tests::TestGain, *};
 
-    use crate::{geometry::tests::create_geometry};
+    use crate::geometry::tests::create_geometry;
 
     #[test]
-    fn test() {
+    fn test() -> anyhow::Result<()> {
         let geometry = create_geometry(1, 249);
 
         let mut rng = rand::thread_rng();
@@ -90,11 +90,13 @@ mod tests {
                 .collect::<HashMap<_, _>>(),
             geometry
                 .devices()
-                .map(|dev| (
+                .map(|dev| Ok((
                     dev.idx(),
-                    dev.iter().map(gain.calc(&geometry).unwrap()(dev)).collect()
-                ))
-                .collect()
+                    dev.iter().map(gain.calc(&geometry)?(dev)).collect()
+                )))
+                .collect::<Result<_, AUTDInternalError>>()?
         );
+
+        Ok(())
     }
 }

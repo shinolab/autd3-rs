@@ -150,7 +150,7 @@ impl<L: Link> Controller<L> {
 
         macro_rules! pack_and_send {
             ($operations:expr, $link:expr, $geometry:expr, $tx_buf:expr, $rx_buf:expr) => {
-                OperationHandler::pack($operations, $geometry, $tx_buf, usize::MAX).unwrap();
+                OperationHandler::pack($operations, $geometry, $tx_buf, usize::MAX)?;
                 if autd3_driver::link::send_receive($link, $tx_buf, $rx_buf, Some(DEFAULT_TIMEOUT))
                     .await
                     .is_err()
@@ -389,8 +389,12 @@ mod tests {
 
             let states = autd.fpga_state().await?;
             assert_eq!(2, states.len());
-            assert!(states[0].unwrap().is_thermal_assert());
-            assert!(!states[1].unwrap().is_thermal_assert());
+            assert!(states[0]
+                .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
+                .is_thermal_assert());
+            assert!(!states[1]
+                .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
+                .is_thermal_assert());
         }
 
         {
@@ -403,8 +407,12 @@ mod tests {
 
             let states = autd.fpga_state().await?;
             assert_eq!(2, states.len());
-            assert!(!states[0].unwrap().is_thermal_assert());
-            assert!(states[1].unwrap().is_thermal_assert());
+            assert!(!states[0]
+                .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
+                .is_thermal_assert());
+            assert!(states[1]
+                .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
+                .is_thermal_assert());
         }
 
         autd.send(ReadsFPGAState::new(|dev| dev.idx() == 1)).await?;
@@ -412,7 +420,9 @@ mod tests {
             let states = autd.fpga_state().await?;
             assert_eq!(2, states.len());
             assert!(states[0].is_none());
-            assert!(states[1].unwrap().is_thermal_assert());
+            assert!(states[1]
+                .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
+                .is_thermal_assert());
         }
 
         Ok(())
