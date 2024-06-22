@@ -195,7 +195,7 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                     }
                 },
             ),
-            _ => return None,
+            _ => None,
         }
     });
 
