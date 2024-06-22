@@ -31,11 +31,10 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
             vec![]
         };
 
-    let getters = getter_fileds.iter().map(|field| {
-        let ident = field.ident.as_ref().unwrap();
-
+    let getters = getter_fileds.iter().filter_map(|field| {
         let ty = &field.ty;
-        match ty {
+
+        field.ident.as_ref().map(|ident| match ty {
             syn::Type::Path(path) if path.path.is_ident("String") => quote! {
                 pub fn #ident(&self) -> &str {
                     &self.#ident
@@ -78,7 +77,7 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                     self.#ident
                 }
             },
-        }
+        })
     });
 
     let linetimes = generics.lifetimes();
@@ -127,72 +126,76 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
             vec![]
         };
 
-    let setters = setter_fileds.iter().map(|field| {
-        let ident = field.ident.as_ref().unwrap();
-        let attr = field
-            .attrs
-            .iter()
-            .find(|attr| match &attr.meta {
+    let setters = setter_fileds.iter().filter_map(|field| {
+        match (
+            field.ident.as_ref(),
+            field.attrs.iter().find(|attr| match &attr.meta {
                 Meta::Path(path) if path.is_ident("set") || path.is_ident("getset") => true,
                 Meta::List(list) if list.path.is_ident("set") || list.path.is_ident("getset") => {
                     true
                 }
                 _ => false,
-            })
-            .unwrap();
-        if let Ok(syn::FnArg::Typed(typed)) = attr.parse_args::<syn::FnArg>() {
-            let filed =
-                syn::Ident::new(&typed.pat.to_token_stream().to_string(), Span::call_site());
-            let name = format_ident!("with_{}", filed);
-            let ty = typed.ty;
-            quote! {
-                pub fn #name(mut self, value: #ty) -> Self {
-                    self.#ident.#filed = value;
-                    self
-                }
-            }
-        } else {
-            let ty = &field.ty;
-            let name = format_ident!("with_{}", ident);
-            match ty {
-                syn::Type::Path(path) if path.path.is_ident("EmitIntensity") => quote! {
-                    pub fn #name(mut self, value: impl Into<EmitIntensity>) -> Self {
-                        self.#ident = value.into();
-                        self
+            }),
+        ) {
+            (Some(ident), Some(attr)) => Some(
+                if let Ok(syn::FnArg::Typed(typed)) = attr.parse_args::<syn::FnArg>() {
+                    let filed = syn::Ident::new(
+                        &typed.pat.to_token_stream().to_string(),
+                        Span::call_site(),
+                    );
+                    let name = format_ident!("with_{}", filed);
+                    let ty = typed.ty;
+                    quote! {
+                        pub fn #name(mut self, value: #ty) -> Self {
+                            self.#ident.#filed = value;
+                            self
+                        }
+                    }
+                } else {
+                    let ty = &field.ty;
+                    let name = format_ident!("with_{}", ident);
+                    match ty {
+                        syn::Type::Path(path) if path.path.is_ident("EmitIntensity") => quote! {
+                            pub fn #name(mut self, value: impl Into<EmitIntensity>) -> Self {
+                                self.#ident = value.into();
+                                self
+                            }
+                        },
+                        syn::Type::Path(path) if path.path.is_ident("Phase") => quote! {
+                            pub fn #name(mut self, value: impl Into<Phase>) -> Self {
+                                self.#ident = value.into();
+                                self
+                            }
+                        },
+                        syn::Type::Path(path) if path.path.is_ident("UnitQuaternion") => quote! {
+                            pub fn #name(mut self, value: impl Into<UnitQuaternion>) -> Self {
+                                self.#ident = value.into();
+                                self
+                            }
+                        },
+                        syn::Type::Path(path) if path.path.is_ident("String") => quote! {
+                            pub fn #name(mut self, value: impl Into<String>) -> Self {
+                                self.#ident = value.into();
+                                self
+                            }
+                        },
+                        syn::Type::Path(path) if path.path.is_ident("IpAddr") => quote! {
+                            pub fn #name(mut self, value: impl Into<IpAddr>) -> Self {
+                                self.#ident = value.into();
+                                self
+                            }
+                        },
+                        _ => quote! {
+                            #[allow(clippy::needless_update)]
+                            pub #const_qua fn #name(mut self, #ident: #ty) -> Self {
+                                self.#ident = #ident;
+                                self
+                            }
+                        },
                     }
                 },
-                syn::Type::Path(path) if path.path.is_ident("Phase") => quote! {
-                    pub fn #name(mut self, value: impl Into<Phase>) -> Self {
-                        self.#ident = value.into();
-                        self
-                    }
-                },
-                syn::Type::Path(path) if path.path.is_ident("UnitQuaternion") => quote! {
-                    pub fn #name(mut self, value: impl Into<UnitQuaternion>) -> Self {
-                        self.#ident = value.into();
-                        self
-                    }
-                },
-                syn::Type::Path(path) if path.path.is_ident("String") => quote! {
-                    pub fn #name(mut self, value: impl Into<String>) -> Self {
-                        self.#ident = value.into();
-                        self
-                    }
-                },
-                syn::Type::Path(path) if path.path.is_ident("IpAddr") => quote! {
-                    pub fn #name(mut self, value: impl Into<IpAddr>) -> Self {
-                        self.#ident = value.into();
-                        self
-                    }
-                },
-                _ => quote! {
-                    #[allow(clippy::needless_update)]
-                    pub #const_qua fn #name(mut self, #ident: #ty) -> Self {
-                        self.#ident = #ident;
-                        self
-                    }
-                },
-            }
+            ),
+            _ => return None,
         }
     });
 

@@ -314,7 +314,7 @@ pub mod tests {
         #[case] expect: HashMap<usize, Vec<Drive>>,
         #[case] enabled: Vec<bool>,
         #[case] n: usize,
-    ) {
+    ) -> anyhow::Result<()> {
         let mut geometry = create_geometry(n, NUM_TRANSDUCERS);
         geometry
             .iter_mut()
@@ -332,7 +332,7 @@ pub mod tests {
             },
             &geometry,
         );
-        let f = g.calc(&geometry).unwrap();
+        let f = g.calc(&geometry)?;
         assert_eq!(
             expect,
             geometry
@@ -340,5 +340,7 @@ pub mod tests {
                 .map(|dev| (dev.idx(), dev.iter().map(f(dev)).collect()))
                 .collect()
         );
+
+        Ok(())
     }
 }
