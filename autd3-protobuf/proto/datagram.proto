@@ -43,10 +43,17 @@ message ReadsFPGAState {
     repeated bool value = 1;
 }
 
+enum GainSTMMode {
+  PhaseIntensityFull = 0;
+  PhaseFull = 1;
+  PhaseHalf = 2;
+}
+
 message GainSTM {
     SamplingConfig config = 1;
     repeated Gain gains = 2;
     optional LoopBehavior loop_behavior = 3;
+    optional GainSTMMode mode = 4;
 }
 
 message GainSTMWithSegment {

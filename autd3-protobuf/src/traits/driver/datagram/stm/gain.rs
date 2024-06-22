@@ -23,6 +23,7 @@ where
                     _ => None,
                 })
                 .collect(),
+            mode: Some(self.mode() as _),
         }
     }
 }
@@ -81,6 +82,11 @@ impl FromMessage<GainStm>
             stm = stm.with_loop_behavior(autd3_driver::firmware::fpga::LoopBehavior::from_msg(
                 loop_behavior,
             )?);
+        }
+        if let Some(mode) = msg.mode {
+            stm = stm.with_mode(autd3_driver::firmware::cpu::GainSTMMode::from(
+                GainStmMode::try_from(mode)?,
+            ));
         }
         Ok(stm)
     }
