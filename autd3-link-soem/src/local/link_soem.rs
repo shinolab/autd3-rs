@@ -299,7 +299,9 @@ impl SOEM {
     }
 
     fn lookup_autd() -> Result<String, SOEMError> {
-        let adapters: EthernetAdapters = Default::default();
+        let adapters = EthernetAdapters::new();
+
+        tracing::debug!("Found {} network adapters.", adapters.len());
 
         adapters
             .into_iter()
@@ -308,6 +310,8 @@ impl SOEM {
                     Ok(ifname) => ifname,
                     Err(_) => return false,
                 };
+                tracing::debug!("Searching AUTD device on {}.", adapter.name());
+                dbg!(&ifname);
                 if ec_init(ifname.as_ptr()) <= 0 {
                     ec_close();
                     return false;
