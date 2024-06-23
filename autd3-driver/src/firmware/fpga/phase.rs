@@ -5,7 +5,10 @@ use crate::{
     derive::rad,
 };
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+use derive_more::Display;
+
+#[derive(Clone, Copy, PartialEq, Eq, Display)]
+#[display(fmt = "{:#04X}", value)]
 #[repr(C)]
 pub struct Phase {
     value: u8,
@@ -58,12 +61,6 @@ impl std::ops::Sub<Phase> for Phase {
 
     fn sub(self, rhs: Phase) -> Self::Output {
         Self::Output::new(self.value.wrapping_sub(rhs.value))
-    }
-}
-
-impl std::fmt::Display for Phase {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:#04X}", self.value)
     }
 }
 

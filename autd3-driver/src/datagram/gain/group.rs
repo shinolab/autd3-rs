@@ -145,12 +145,13 @@ where
         tracing::debug!("Group");
         if tracing::enabled!(tracing::Level::TRACE) {
             geometry.devices().for_each(|dev| {
-                tracing::debug!("Device[{}]", dev.idx());
-                dev.iter().for_each(|tr| {
-                    if let Some(key) = (self.f)(dev)(tr) {
-                        tracing::debug!(" Transducer[{}]: {:?}", tr.idx(), key);
-                    }
-                })
+                tracing::debug!(
+                    "Device[{}]: {}",
+                    dev.idx(),
+                    dev.iter()
+                        .map(|tr| { format!("{:#?}", (self.f)(dev)(tr)) })
+                        .join(", ")
+                );
             });
             self.gain_map.iter().for_each(|(k, g)| {
                 tracing::debug!("Key: {:?}", k);

@@ -1,6 +1,9 @@
 use super::{EmitIntensity, Phase};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+use derive_more::Display;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Display)]
+#[display(fmt = "({}, {})", phase, intensity)]
 #[repr(C)]
 pub struct Drive {
     phase: Phase,
@@ -25,16 +28,6 @@ impl Drive {
             phase: Phase::new(0),
             intensity: EmitIntensity::MIN,
         }
-    }
-}
-
-impl std::fmt::Display for Drive {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Drive(phase = {}, intensity = {})",
-            self.phase, self.intensity
-        )
     }
 }
 
@@ -84,7 +77,7 @@ mod tests {
     fn display() {
         assert_eq!(
             format!("{}", Drive::new(Phase::new(0), EmitIntensity::new(0x00))),
-            "Drive(phase = 0x00, intensity = 0x00)"
+            "(0x00, 0x00)"
         );
     }
 }

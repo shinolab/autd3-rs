@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{constraint::EmissionConstraint, Amplitude, Complex};
+use crate::{constraint::EmissionConstraint, helper::holo_trace, Amplitude, Complex};
 
 use autd3_driver::{
     acoustics::{directivity::Directivity, propagate},
@@ -152,31 +152,7 @@ impl<D: Directivity + 'static> Gain for Greedy<D> {
     // GRCOV_EXCL_START
     fn trace(&self, _geometry: &Geometry) {
         tracing::debug!("{}", tynm::type_name::<Self>());
-        if tracing::enabled!(tracing::Level::DEBUG) {
-            if tracing::enabled!(tracing::Level::TRACE) {
-                self.foci
-                    .iter()
-                    .zip(self.amps.iter())
-                    .enumerate()
-                    .for_each(|(i, (f, a))| {
-                        tracing::debug!("Foci[{}]: {:?}, {}", i, f, a);
-                    });
-            } else {
-                let len = self.foci.len();
-                tracing::debug!("Foci[{}]: {:?}, {}", 0, self.foci[0], self.amps[0]);
-                if len > 2 {
-                    tracing::debug!("︙");
-                }
-                if len > 1 {
-                    tracing::debug!(
-                        "Foci[{}]: {:?}, {}",
-                        0,
-                        self.foci[len - 1],
-                        self.amps[len - 1]
-                    );
-                }
-            }
-        }
+        holo_trace(&self.foci, &self.amps);
     }
     // GRCOV_EXCL_STOP
 }

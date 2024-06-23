@@ -1,7 +1,17 @@
-use std::fmt;
+use derive_more::Display;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
+#[display(
+    fmt = "{}: CPU = {}, FPGA = {}{}",
+    idx,
+    "self.cpu()",
+    "self.fpga()",
+    "if self.is_emulator() {
+                \" [Emulator]\"
+            } else {
+                \"\"
+            }"
+)]
 pub struct FirmwareVersion {
     idx: usize,
     cpu_version_number_major: u8,
@@ -122,23 +132,6 @@ impl FirmwareVersion {
     }
 }
 
-impl fmt::Display for FirmwareVersion {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            r"{}: CPU = {}, FPGA = {}{}",
-            self.idx,
-            self.cpu(),
-            self.fpga(),
-            if self.is_emulator() {
-                " [Emulator]"
-            } else {
-                ""
-            }
-        )
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -218,7 +211,7 @@ mod tests {
     }
 
     #[test]
-    fn fmt() {
+    fn display() {
         let info = FirmwareVersion::new(0, 1, 2, 3, 4, 0);
         assert_eq!(format!("{}", info), "0: CPU = v0.4, FPGA = v0.6");
 

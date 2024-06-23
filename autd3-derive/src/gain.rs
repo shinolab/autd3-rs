@@ -66,16 +66,20 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
                 if tracing::enabled!(tracing::Level::DEBUG) {
                     if let Ok(f) = <Self as Gain>::calc(self, geometry) {
                         geometry.devices().for_each(|dev| {
-                            tracing::debug!("Device[{}]", dev.idx());
                             let f = f(dev);
                             if tracing::enabled!(tracing::Level::TRACE) {
-                                dev.iter().for_each(|tr| {
-                                    tracing::debug!("  Transducer[{}]: {}", tr.idx(), f(tr));
-                                });
+                                tracing::debug!(
+                                    "Device[{}]: {}",
+                                    dev.idx(),
+                                    dev.iter().map(|tr| f(tr)).join(", ")
+                                );
                             } else {
-                                tracing::debug!("  Transducer[{}]: {}", 0, f(&dev[0]));
-                                tracing::debug!("  ︙");
-                                tracing::debug!("  Transducer[{}]: {}", dev.num_transducers() - 1, f(&dev[dev.num_transducers() - 1]));
+                                tracing::debug!(
+                                    "Device[{}]: {}, ..., {}",
+                                    dev.idx(),
+                                    f(&dev[0]),
+                                    f(&dev[dev.num_transducers() - 1])
+                                );
                             }
                         });
                     } else {
@@ -111,16 +115,20 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
                 if tracing::enabled!(tracing::Level::DEBUG) {
                     if let Ok(f) = <Self as Gain>::calc(self, geometry) {
                         geometry.devices().for_each(|dev| {
-                            tracing::debug!("Device[{}]", dev.idx());
                             let f = f(dev);
                             if tracing::enabled!(tracing::Level::TRACE) {
-                                dev.iter().for_each(|tr| {
-                                    tracing::debug!("  Transducer[{}]: {}", tr.idx(), f(tr));
-                                });
+                                tracing::debug!(
+                                    "Device[{}]: {}",
+                                    dev.idx(),
+                                    dev.iter().map(|tr| f(tr)).join(", ")
+                                );
                             } else {
-                                tracing::debug!("  Transducer[{}]: {}", 0, f(&dev[0]));
-                                tracing::debug!("  ︙");
-                                tracing::debug!("  Transducer[{}]: {}", dev.num_transducers() - 1, f(&dev[dev.num_transducers() - 1]));
+                                tracing::debug!(
+                                    "Device[{}]: {}, ..., {}",
+                                    dev.idx(),
+                                    f(&dev[0]),
+                                    f(&dev[dev.num_transducers() - 1])
+                                );
                             }
                         });
                     } else {

@@ -2,7 +2,22 @@ use autd3_driver::{defined::Freq, derive::*};
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
-#[derive(Modulation, Clone, PartialEq, Builder, Debug)]
+use derivative::Derivative;
+use derive_more::Display;
+
+#[derive(Derivative)]
+#[derivative(Debug)]
+#[derive(Modulation, Clone, PartialEq, Builder, Display)]
+#[display(
+    fmt = "Square<{}> {{ {}, {}-{}, {}%, {:?}, {:?} }}",
+    "tynm::type_name::<S>()",
+    freq,
+    low,
+    high,
+    "duty * 100.",
+    config,
+    loop_behavior
+)]
 pub struct Square<S: SamplingMode> {
     #[get]
     freq: S::T,
@@ -14,6 +29,7 @@ pub struct Square<S: SamplingMode> {
     duty: f32,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
+    #[derivative(Debug = "ignore")]
     __phantom: std::marker::PhantomData<S>,
 }
 

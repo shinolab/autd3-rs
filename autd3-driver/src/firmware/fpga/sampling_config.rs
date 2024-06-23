@@ -7,18 +7,26 @@ use crate::{
     get_ultrasound_freq,
 };
 
+use derive_more::Display;
+
 use super::ULTRASOUND_PERIOD;
 
 const NANOSEC: u128 = 1_000_000_000;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Display)]
 #[non_exhaustive]
 pub enum SamplingConfig {
+    #[display(fmt = "{}", _0)]
     Freq(Freq<u32>),
+    #[display(fmt = "{}", _0)]
     FreqNearest(Freq<f32>),
+    #[display(fmt = "{:?}", _0)]
     Period(Duration),
+    #[display(fmt = "{:?}", _0)]
     PeriodNearest(Duration),
+    #[display(fmt = "DivisionRaw({})", _0)]
     DivisionRaw(u32),
+    #[display(fmt = "Division({})", _0)]
     Division(u32),
 }
 
@@ -134,25 +142,6 @@ impl SamplingConfig {
                     as u64,
             )
         })
-    }
-}
-
-impl std::fmt::Display for SamplingConfig {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Freq(freq) => {
-                write!(f, "{}", freq)
-            }
-            Self::FreqNearest(freq) => {
-                write!(f, "{}", freq)
-            }
-            Self::Division(d) | Self::DivisionRaw(d) => {
-                write!(f, "Division({})", d)
-            }
-            Self::Period(p) | Self::PeriodNearest(p) => {
-                write!(f, "{:?}", p)
-            }
-        }
     }
 }
 
@@ -364,7 +353,7 @@ mod tests {
     #[case::freq(SamplingConfig::Freq(4000*Hz), "4000 Hz")]
     #[case::freq(SamplingConfig::FreqNearest(4000.*Hz), "4000 Hz")]
     #[case::div(SamplingConfig::Division(305419896), "Division(305419896)")]
-    #[case::div(SamplingConfig::DivisionRaw(305419896), "Division(305419896)")]
+    #[case::div(SamplingConfig::DivisionRaw(305419896), "DivisionRaw(305419896)")]
     #[case::div(SamplingConfig::Period(Duration::from_micros(25)), "25µs")]
     #[case::div(SamplingConfig::PeriodNearest(Duration::from_micros(25)), "25µs")]
     fn display(#[case] config: SamplingConfig, #[case] expected: &str) {

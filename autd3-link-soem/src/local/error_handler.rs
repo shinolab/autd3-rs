@@ -5,22 +5,17 @@ use std::sync::{
 
 use crate::local::soem_bindings::*;
 
-#[derive(Debug, Clone, PartialEq)]
+use derive_more::Display;
+
+#[derive(Debug, Clone, PartialEq, Display)]
 #[repr(u8)]
 pub enum Status {
+    #[display(fmt = "slave is in SAFE_OP + ERROR, attempting ack")]
     Error,
+    #[display(fmt = "slave is lost")]
     Lost,
+    #[display(fmt = "slave is in SAFE_OP, change to OPERATIONAL")]
     StateChanged,
-}
-
-impl std::fmt::Display for Status {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Status::Error => write!(f, "slave is in SAFE_OP + ERROR, attempting ack"),
-            Status::Lost => write!(f, "slave is lost"),
-            Status::StateChanged => write!(f, "slave is in SAFE_OP, change to OPERATIONAL"),
-        }
-    }
 }
 
 pub type ErrHandler = Box<dyn Fn(usize, Status) + Send + Sync>;

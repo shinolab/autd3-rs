@@ -1,14 +1,14 @@
 use std::{collections::HashMap, sync::Arc};
 
 use autd3_driver::{
-    derive::{rad, GainCalcResult, Phase},
+    derive::{rad, tracing, GainCalcResult, Itertools, Phase},
     firmware::fpga::Drive,
-    geometry::Geometry,
+    geometry::{Geometry, Vector3},
 };
 use bitvec::{order::Lsb0, vec::BitVec};
 use nalgebra::ComplexField;
 
-use crate::EmissionConstraint;
+use crate::{Amplitude, EmissionConstraint};
 
 pub(crate) trait IntoDrive {
     fn into_phase(self) -> Phase;
@@ -108,5 +108,61 @@ where
                 Drive::new(phase, intensity)
             })
         }))
+    }
+}
+
+pub(crate) fn holo_trace(foci: &[Vector3], amps: &[Amplitude]) {
+    match foci.len() {
+        0 => {
+            tracing::error!("No foci");
+            return;
+        }
+        1 => {
+            tracing::debug!(
+                "Foci: [({}, {}, {}), {}]",
+                foci[0].x,
+                foci[0].y,
+                foci[0].z,
+                amps[0]
+            );
+        }
+        2 => {
+            tracing::debug!(
+                "Foci: [({}, {}, {}), {}], [({}, {}, {}), {}]",
+                foci[0].x,
+                foci[0].y,
+                foci[0].z,
+                amps[0],
+                foci[1].x,
+                foci[1].y,
+                foci[1].z,
+                amps[1]
+            );
+        }
+        _ => {
+            if tracing::enabled!(tracing::Level::TRACE) {
+                tracing::debug!(
+                    "Foci: {}",
+                    foci.iter()
+                        .zip(amps.iter())
+                        .format_with(", ", |elt, f| f(&format_args!(
+                            "[({}, {}, {}), {}]",
+                            elt.0.x, elt.0.y, elt.0.z, elt.1
+                        )))
+                );
+            } else {
+                tracing::debug!(
+                    "Foci: [({}, {}, {}), {}], ..., [({}, {}, {}), {}]",
+                    foci[0].x,
+                    foci[0].y,
+                    foci[0].z,
+                    amps[0],
+                    foci[foci.len() - 1].x,
+                    foci[foci.len() - 1].y,
+                    foci[foci.len() - 1].z,
+                    amps[foci.len() - 1]
+                );
+            }
+        }
     }
 }
