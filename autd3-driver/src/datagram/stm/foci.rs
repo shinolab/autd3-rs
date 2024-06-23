@@ -33,11 +33,10 @@ impl<const N: usize> FociSTM<N> {
             .into_iter()
             .map(ControlPoints::from)
             .collect();
-        Ok(Self {
-            sampling_config: STMSamplingConfig::Freq(freq).sampling(control_points.len())?,
-            loop_behavior: LoopBehavior::infinite(),
+        Ok(Self::new(
+            STMSamplingConfig::Freq(freq).sampling(control_points.len())?,
             control_points,
-        })
+        ))
     }
 
     pub fn from_freq_nearest<C, F: IntoIterator<Item = C>>(
@@ -51,11 +50,10 @@ impl<const N: usize> FociSTM<N> {
             .into_iter()
             .map(ControlPoints::from)
             .collect();
-        Ok(Self {
-            sampling_config: STMSamplingConfig::FreqNearest(freq).sampling(control_points.len())?,
-            loop_behavior: LoopBehavior::infinite(),
+        Ok(Self::new(
+            STMSamplingConfig::FreqNearest(freq).sampling(control_points.len())?,
             control_points,
-        })
+        ))
     }
 
     pub fn from_period<C, F: IntoIterator<Item = C>>(
@@ -69,11 +67,10 @@ impl<const N: usize> FociSTM<N> {
             .into_iter()
             .map(ControlPoints::from)
             .collect();
-        Ok(Self {
-            sampling_config: STMSamplingConfig::Period(period).sampling(control_points.len())?,
-            loop_behavior: LoopBehavior::infinite(),
+        Ok(Self::new(
+            STMSamplingConfig::Period(period).sampling(control_points.len())?,
             control_points,
-        })
+        ))
     }
 
     pub fn from_period_nearest<C, F: IntoIterator<Item = C>>(
@@ -87,12 +84,10 @@ impl<const N: usize> FociSTM<N> {
             .into_iter()
             .map(ControlPoints::from)
             .collect();
-        Ok(Self {
-            sampling_config: STMSamplingConfig::PeriodNearest(period)
-                .sampling(control_points.len())?,
-            loop_behavior: LoopBehavior::infinite(),
+        Ok(Self::new(
+            STMSamplingConfig::PeriodNearest(period).sampling(control_points.len())?,
             control_points,
-        })
+        ))
     }
 
     pub fn from_sampling_config<C, F: IntoIterator<Item = C>>(
@@ -102,13 +97,20 @@ impl<const N: usize> FociSTM<N> {
     where
         ControlPoints<N>: From<C>,
     {
-        Self {
-            control_points: control_points
+        Self::new(
+            config.into(),
+            control_points
                 .into_iter()
                 .map(ControlPoints::from)
                 .collect(),
+        )
+    }
+
+    fn new(sampling_config: SamplingConfig, control_points: Vec<ControlPoints<N>>) -> Self {
+        Self {
+            control_points,
             loop_behavior: LoopBehavior::infinite(),
-            sampling_config: config.into(),
+            sampling_config,
         }
     }
 
