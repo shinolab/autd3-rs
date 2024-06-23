@@ -26,12 +26,10 @@ impl<G: Gain> GainSTM<G> {
         gains: F,
     ) -> Result<Self, AUTDInternalError> {
         let gains = gains.into_iter().collect::<Vec<_>>();
-        Ok(Self {
-            loop_behavior: LoopBehavior::infinite(),
-            sampling_config: STMSamplingConfig::Freq(freq).sampling(gains.len())?,
-            mode: GainSTMMode::PhaseIntensityFull,
+        Ok(Self::new(
+            STMSamplingConfig::Freq(freq).sampling(gains.len())?,
             gains,
-        })
+        ))
     }
 
     pub fn from_freq_nearest<F: IntoIterator<Item = G>>(
@@ -39,12 +37,10 @@ impl<G: Gain> GainSTM<G> {
         gains: F,
     ) -> Result<Self, AUTDInternalError> {
         let gains = gains.into_iter().collect::<Vec<_>>();
-        Ok(Self {
-            loop_behavior: LoopBehavior::infinite(),
-            sampling_config: STMSamplingConfig::FreqNearest(freq).sampling(gains.len())?,
-            mode: GainSTMMode::PhaseIntensityFull,
+        Ok(Self::new(
+            STMSamplingConfig::FreqNearest(freq).sampling(gains.len())?,
             gains,
-        })
+        ))
     }
 
     pub fn from_period<F: IntoIterator<Item = G>>(
@@ -52,12 +48,10 @@ impl<G: Gain> GainSTM<G> {
         gains: F,
     ) -> Result<Self, AUTDInternalError> {
         let gains = gains.into_iter().collect::<Vec<_>>();
-        Ok(Self {
-            loop_behavior: LoopBehavior::infinite(),
-            sampling_config: STMSamplingConfig::Period(period).sampling(gains.len())?,
-            mode: GainSTMMode::PhaseIntensityFull,
+        Ok(Self::new(
+            STMSamplingConfig::Period(period).sampling(gains.len())?,
             gains,
-        })
+        ))
     }
 
     pub fn from_period_nearest<F: IntoIterator<Item = G>>(
@@ -65,22 +59,24 @@ impl<G: Gain> GainSTM<G> {
         gains: F,
     ) -> Result<Self, AUTDInternalError> {
         let gains = gains.into_iter().collect::<Vec<_>>();
-        Ok(Self {
-            loop_behavior: LoopBehavior::infinite(),
-            sampling_config: STMSamplingConfig::PeriodNearest(period).sampling(gains.len())?,
-            mode: GainSTMMode::PhaseIntensityFull,
+        Ok(Self::new(
+            STMSamplingConfig::PeriodNearest(period).sampling(gains.len())?,
             gains,
-        })
+        ))
     }
 
     pub fn from_sampling_config<F: IntoIterator<Item = G>>(
         config: impl Into<SamplingConfig>,
         gains: F,
     ) -> Self {
+        Self::new(config.into(), gains.into_iter().collect::<Vec<_>>())
+    }
+
+    fn new(sampling_config: SamplingConfig, gains: Vec<G>) -> Self {
         Self {
-            gains: gains.into_iter().collect::<Vec<_>>(),
+            gains,
             loop_behavior: LoopBehavior::infinite(),
-            sampling_config: config.into(),
+            sampling_config,
             mode: GainSTMMode::PhaseIntensityFull,
         }
     }
