@@ -2,18 +2,18 @@ use autd3_driver::{defined::Hz, derive::*};
 use hound::SampleFormat;
 
 use std::{
-    cell::Cell,
     path::{Path, PathBuf},
+    sync::Mutex,
 };
 
 use crate::error::AudioFileError;
 
-#[derive(Modulation, Debug, Clone, PartialEq)]
+#[derive(Modulation, Debug)]
 #[no_property]
 pub struct Wav {
     path: PathBuf,
     #[no_change]
-    config: Cell<SamplingConfig>,
+    config: Mutex<SamplingConfig>,
     loop_behavior: LoopBehavior,
 }
 
@@ -21,7 +21,7 @@ impl Wav {
     pub fn new(path: impl AsRef<Path>) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),
-            config: Cell::new(SamplingConfig::DISABLE),
+            config: Mutex::new(SamplingConfig::DISABLE),
             loop_behavior: LoopBehavior::infinite(),
         }
     }
@@ -72,9 +72,27 @@ impl Wav {
 }
 
 // GRCOV_EXCL_START
+impl Clone for Wav {
+    fn clone(&self) -> Self {
+        Self {
+            path: self.path.clone(),
+            config: Mutex::new(*self.config.lock().unwrap()),
+            loop_behavior: self.loop_behavior,
+        }
+    }
+}
+
+impl PartialEq for Wav {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path
+            && *self.config.lock().unwrap() == *other.config.lock().unwrap()
+            && self.loop_behavior == other.loop_behavior
+    }
+}
+
 impl ModulationProperty for Wav {
     fn sampling_config(&self) -> SamplingConfig {
-        self.config.get()
+        *self.config.lock().unwrap()
     }
 
     fn loop_behavior(&self) -> LoopBehavior {
@@ -87,7 +105,7 @@ impl Modulation for Wav {
     #[allow(clippy::unnecessary_cast)]
     fn calc(&self, _geometry: &Geometry) -> ModulationCalcResult {
         let (buf, sample_rate) = self.read_buf()?;
-        self.config.replace(SamplingConfig::Freq(sample_rate * Hz));
+        *self.config.lock().unwrap() = SamplingConfig::Freq(sample_rate * Hz);
         Ok(buf)
     }
 
