@@ -166,7 +166,7 @@ mod capi {
         }
     }
 
-    impl<'a> Default for Box<dyn Gain + 'a> {
+    impl<'a> Default for Box<dyn Gain + Send + Sync + 'a> {
         fn default() -> Self {
             Box::new(NullGain {})
         }

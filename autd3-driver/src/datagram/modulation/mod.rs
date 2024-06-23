@@ -156,7 +156,7 @@ mod capi {
         }
     }
 
-    impl<'a> Default for Box<dyn Modulation + 'a> {
+    impl<'a> Default for Box<dyn Modulation + Send + Sync + 'a> {
         fn default() -> Self {
             Box::new(NullModulation {
                 config: SamplingConfig::DISABLE,
