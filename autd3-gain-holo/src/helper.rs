@@ -111,6 +111,7 @@ where
     }
 }
 
+// GRCOV_EXCL_START
 pub(crate) fn holo_trace(foci: &[Vector3], amps: &[Amplitude]) {
     match foci.len() {
         0 => {
@@ -165,3 +166,4 @@ pub(crate) fn holo_trace(foci: &[Vector3], amps: &[Amplitude]) {
         }
     }
 }
+// GRCOV_EXCL_STOP
