@@ -93,9 +93,8 @@ mod tests {
             {
                 let diff = target - tr.position();
                 let dist = diff.norm();
-                let r = T4010A1_AMPLITUDE
-                    * TestDirectivity::directivity_from_dir(device.axial_direction(), &diff)
-                    / (4. * PI * dist);
+                let r = T4010A1_AMPLITUDE / (4. * PI) / dist
+                    * TestDirectivity::directivity_from_dir(device.axial_direction(), &diff);
                 let phase = -wavenumber * dist;
                 Complex::new(r * phase.cos(), r * phase.sin())
             },
