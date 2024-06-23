@@ -115,7 +115,6 @@ pub(crate) fn holo_trace(foci: &[Vector3], amps: &[Amplitude]) {
     match foci.len() {
         0 => {
             tracing::error!("No foci");
-            return;
         }
         1 => {
             tracing::debug!(

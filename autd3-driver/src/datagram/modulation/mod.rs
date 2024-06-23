@@ -121,7 +121,6 @@ impl<'a> DatagramST for Box<dyn Modulation + Send + Sync + 'a> {
                 match buf.len() {
                     0 => {
                         tracing::error!("Buffer is empty");
-                        return;
                     }
                     1 => {
                         tracing::debug!("Buffer: {:#04X}", buf[0]);

@@ -92,11 +92,7 @@ impl<'a> Datagram for Box<dyn Gain + Send + Sync + 'a> {
                 geometry.devices().for_each(|dev| {
                     let f = f(dev);
                     if tracing::enabled!(tracing::Level::TRACE) {
-                        tracing::debug!(
-                            "Device[{}]: {}",
-                            dev.idx(),
-                            dev.iter().map(|tr| f(tr)).join(", ")
-                        );
+                        tracing::debug!("Device[{}]: {}", dev.idx(), dev.iter().map(f).join(", "));
                     } else {
                         tracing::debug!(
                             "Device[{}]: {}, ..., {}",
@@ -133,11 +129,7 @@ impl<'a> DatagramS for Box<dyn Gain + Send + Sync + 'a> {
                 geometry.devices().for_each(|dev| {
                     let f = f(dev);
                     if tracing::enabled!(tracing::Level::TRACE) {
-                        tracing::debug!(
-                            "Device[{}]: {}",
-                            dev.idx(),
-                            dev.iter().map(|tr| f(tr)).join(", ")
-                        );
+                        tracing::debug!("Device[{}]: {}", dev.idx(), dev.iter().map(f).join(", "));
                     } else {
                         tracing::debug!(
                             "Device[{}]: {}, ..., {}",

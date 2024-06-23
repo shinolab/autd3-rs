@@ -78,7 +78,7 @@ impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> Datagram for PulseW
                         "Device[{}]: {}",
                         dev.idx(),
                         (0..PWE_BUF_SIZE)
-                            .map(|i| f(i))
+                            .map(f)
                             .format_with(", ", |elt, f| f(&format_args!("{:#04X}", elt)))
                     );
                 } else {

@@ -1,6 +1,6 @@
 use crate::local::soem_bindings;
 
-use std::{ffi::CStr, fmt, slice};
+use std::{ffi::CStr, slice};
 
 use derive_more::{Deref, Display};
 
