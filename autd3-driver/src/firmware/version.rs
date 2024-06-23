@@ -6,11 +6,7 @@ use derive_more::Display;
     idx,
     "self.cpu()",
     "self.fpga()",
-    "if self.is_emulator() {
-                \" [Emulator]\"
-            } else {
-                \"\"
-            }"
+    "if self.is_emulator() {\" [Emulator]\"} else { \"\"}"
 )]
 pub struct FirmwareVersion {
     idx: usize,
