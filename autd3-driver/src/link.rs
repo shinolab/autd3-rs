@@ -147,11 +147,13 @@ async fn wait_msg_processed(
     loop {
         let res = link.receive(rx).await?;
 
+        // GRCOV_EXCL_START
         tracing::trace!(
             "receive: {}",
             rx.iter()
                 .format_with(", ", |elt, f| f(&format_args!("{:?}", elt)))
         );
+        // GRCOV_EXCL_STOP
 
         if res && check_if_msg_is_processed(tx, rx).all(std::convert::identity) {
             return Ok(());
