@@ -1,7 +1,9 @@
 use crate::geometry::Transducer;
 
+use derive_more::Display;
+
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Display)]
 pub enum DebugType<'a> {
     None,
     BaseSignal,
@@ -9,11 +11,15 @@ pub enum DebugType<'a> {
     ForceFan,
     Sync,
     ModSegment,
+    #[display(fmt = "ModIdx({})", _0)]
     ModIdx(u16),
     StmSegment,
+    #[display(fmt = "StmIdx({})", _0)]
     StmIdx(u16),
     IsStmMode,
+    #[display(fmt = "PwmOut({})", "_0.idx()")]
     PwmOut(&'a Transducer),
+    #[display(fmt = "Direct({})", _0)]
     Direct(bool),
 }
 
@@ -49,25 +55,6 @@ impl DebugType<'_> {
             DebugType::ModIdx(idx) => *idx,
             DebugType::StmIdx(idx) => *idx,
             DebugType::Direct(v) => *v as u16,
-        }
-    }
-}
-
-impl<'a> std::fmt::Display for DebugType<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            DebugType::None => write!(f, "None"),
-            DebugType::BaseSignal => write!(f, "BaseSignal"),
-            DebugType::Thermo => write!(f, "Thermo"),
-            DebugType::ForceFan => write!(f, "ForceFan"),
-            DebugType::Sync => write!(f, "Sync"),
-            DebugType::ModSegment => write!(f, "ModSegment"),
-            DebugType::ModIdx(idx) => write!(f, "ModIdx({})", idx),
-            DebugType::StmSegment => write!(f, "StmSegment"),
-            DebugType::StmIdx(idx) => write!(f, "StmIdx({})", idx),
-            DebugType::IsStmMode => write!(f, "IsStmMode"),
-            DebugType::PwmOut(tr) => write!(f, "PwmOut({})", tr.idx()),
-            DebugType::Direct(v) => write!(f, "Direct({})", v),
         }
     }
 }

@@ -21,6 +21,7 @@ use crate::{
 };
 
 use bitvec::prelude::*;
+use itertools::Itertools;
 
 use super::Datagram;
 use super::DatagramS;
@@ -89,18 +90,18 @@ impl<'a> Datagram for Box<dyn Gain + Send + Sync + 'a> {
         if tracing::enabled!(tracing::Level::DEBUG) {
             if let Ok(f) = <Self as Gain>::calc(self, geometry) {
                 geometry.devices().for_each(|dev| {
-                    tracing::debug!("Device[{}]", dev.idx());
                     let f = f(dev);
                     if tracing::enabled!(tracing::Level::TRACE) {
-                        dev.iter().for_each(|tr| {
-                            tracing::debug!("  Transducer[{}]: {}", tr.idx(), f(tr));
-                        });
-                    } else {
-                        tracing::debug!("  Transducer[{}]: {}", 0, f(&dev[0]));
-                        tracing::debug!("  ︙");
                         tracing::debug!(
-                            "  Transducer[{}]: {}",
-                            dev.num_transducers() - 1,
+                            "Device[{}]: {}",
+                            dev.idx(),
+                            dev.iter().map(|tr| f(tr)).join(", ")
+                        );
+                    } else {
+                        tracing::debug!(
+                            "Device[{}]: {}, ..., {}",
+                            dev.idx(),
+                            f(&dev[0]),
                             f(&dev[dev.num_transducers() - 1])
                         );
                     }
@@ -130,18 +131,18 @@ impl<'a> DatagramS for Box<dyn Gain + Send + Sync + 'a> {
         if tracing::enabled!(tracing::Level::DEBUG) {
             if let Ok(f) = <Self as Gain>::calc(self, geometry) {
                 geometry.devices().for_each(|dev| {
-                    tracing::debug!("Device[{}]", dev.idx());
                     let f = f(dev);
                     if tracing::enabled!(tracing::Level::TRACE) {
-                        dev.iter().for_each(|tr| {
-                            tracing::debug!("  Transducer[{}]: {}", tr.idx(), f(tr));
-                        });
-                    } else {
-                        tracing::debug!("  Transducer[{}]: {}", 0, f(&dev[0]));
-                        tracing::debug!("  ︙");
                         tracing::debug!(
-                            "  Transducer[{}]: {}",
-                            dev.num_transducers() - 1,
+                            "Device[{}]: {}",
+                            dev.idx(),
+                            dev.iter().map(|tr| f(tr)).join(", ")
+                        );
+                    } else {
+                        tracing::debug!(
+                            "Device[{}]: {}, ..., {}",
+                            dev.idx(),
+                            f(&dev[0]),
                             f(&dev[dev.num_transducers() - 1])
                         );
                     }

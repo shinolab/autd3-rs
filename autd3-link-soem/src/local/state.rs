@@ -2,21 +2,19 @@ use std::ffi::CStr;
 
 use super::soem_bindings::*;
 
-#[derive(Debug)]
+use derive_more::Display;
+
+#[derive(Debug, Display)]
+#[display(
+    fmt = "{} (State={:#04X}, StatusCode={:#04X})",
+    status,
+    ec_state,
+    al_status_code
+)]
 pub struct State {
     status: String,
     ec_state: u16,
     al_status_code: u16,
-}
-
-impl std::fmt::Display for State {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(
-            f,
-            "{} (State={:#02x}, StatusCode={:#04x})",
-            self.status, self.ec_state, self.al_status_code
-        )
-    }
 }
 
 #[derive(Debug)]
@@ -46,14 +44,5 @@ impl EcStatus {
 
     pub fn states(&self) -> &[State] {
         &self.states
-    }
-}
-
-impl std::fmt::Display for EcStatus {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.states.iter().enumerate().try_for_each(|(i, state)| {
-            writeln!(f, "Slave[{i}]: {state}")?;
-            Ok(())
-        })
     }
 }

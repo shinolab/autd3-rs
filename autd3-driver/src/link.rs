@@ -6,6 +6,8 @@ use crate::{
     geometry::Geometry,
 };
 
+use itertools::Itertools;
+
 #[cfg(feature = "async-trait")]
 mod internal {
     use super::*;
@@ -121,16 +123,12 @@ pub async fn send_receive(
     tracing::debug!("send with timeout: {:?}", timeout);
 
     // GRCOV_EXCL_START
-    if tracing::enabled!(tracing::Level::TRACE) {
-        tx.iter().enumerate().for_each(|(i, tx)| {
-            tracing::trace!(
-                "send[{}]: header = {:?}, tag = {:?}",
-                i,
-                tx.header,
-                tx.payload[0]
-            );
-        });
-    }
+    tracing::trace!(
+        "send: {}",
+        tx.iter().format_with(", ", |elt, f| {
+            f(&format_args!("({:?}, {:#04X})", elt.header, elt.payload[0]))
+        })
+    );
     // GRCOV_EXCL_STOP
 
     if !link.send(tx).await? {
@@ -149,13 +147,11 @@ async fn wait_msg_processed(
     loop {
         let res = link.receive(rx).await?;
 
-        // GRCOV_EXCL_START
-        if tracing::enabled!(tracing::Level::TRACE) {
-            rx.iter().enumerate().for_each(|(i, rx)| {
-                tracing::trace!("receive[{}]: {:?}", i, rx);
-            });
-        }
-        // GRCOV_EXCL_STOP
+        tracing::trace!(
+            "receive: {}",
+            rx.iter()
+                .format_with(", ", |elt, f| f(&format_args!("{:?}", elt)))
+        );
 
         if res && check_if_msg_is_processed(tx, rx).all(std::convert::identity) {
             return Ok(());

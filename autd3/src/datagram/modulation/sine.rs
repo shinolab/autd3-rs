@@ -5,7 +5,22 @@ use autd3_driver::{
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
-#[derive(Modulation, Clone, PartialEq, Builder, Debug)]
+use derivative::Derivative;
+use derive_more::Display;
+
+#[derive(Derivative)]
+#[derivative(Debug)]
+#[derive(Modulation, Clone, PartialEq, Builder, Display)]
+#[display(
+    fmt = "Sine<{}> {{ {}, {}±{}, {:?}, {:?}, {:?} }}",
+    "tynm::type_name::<S>()",
+    freq,
+    offset,
+    "*intensity as f32 / 2.",
+    phase,
+    config,
+    loop_behavior
+)]
 pub struct Sine<S: SamplingMode> {
     #[get]
     freq: S::T,
@@ -17,6 +32,7 @@ pub struct Sine<S: SamplingMode> {
     offset: u8,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
+    #[derivative(Debug = "ignore")]
     __phantom: std::marker::PhantomData<S>,
 }
 
@@ -66,8 +82,9 @@ impl<S: SamplingMode> Modulation for Sine<S> {
     fn trace(&self, _geometry: &Geometry) {
         tracing::debug!("{}", tynm::type_name::<Self>());
     }
-    // GRCOV_EXCL_STOP
 }
+
+// GRCOV_EXCL_STOP
 
 #[cfg(test)]
 mod tests {

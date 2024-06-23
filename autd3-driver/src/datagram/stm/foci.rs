@@ -185,22 +185,29 @@ impl<const N: usize> DatagramST for FociSTM<N> {
     // GRCOV_EXCL_START
     fn trace(&self, _geometry: &Geometry) {
         tracing::debug!("{}", tynm::type_name::<Self>());
-        if tracing::enabled!(tracing::Level::DEBUG) {
-            if tracing::enabled!(tracing::Level::TRACE) {
-                self.control_points.iter().enumerate().for_each(|(i, f)| {
-                    tracing::debug!("ControlPoints[{}]: {:?}", i, f);
-                });
-            } else {
-                let len = self.control_points.len();
-                tracing::debug!("ControlPoints[{}]: {:?}", 0, self.control_points[0]);
-                if len > 2 {
-                    tracing::debug!("︙");
-                }
-                if len > 1 {
+        match self.control_points.len() {
+            0 => {
+                tracing::error!("ControlPoints is empty");
+            }
+            1 => {
+                tracing::debug!("ControlPoints: {}", self.control_points[0]);
+            }
+            2 => {
+                tracing::debug!(
+                    "ControlPoints: {}, {}",
+                    self.control_points[0],
+                    self.control_points[1]
+                );
+            }
+            _ => {
+                if tracing::enabled!(tracing::Level::TRACE) {
+                    tracing::debug!("ControlPoints: {}", self.control_points.iter().join(", "));
+                } else {
                     tracing::debug!(
-                        "ControlPoints[{}]: {:?}",
-                        len - 1,
-                        self.control_points[len - 1]
+                        "ControlPoints: {}, ..., {} ({})",
+                        self.control_points[0],
+                        self.control_points[self.control_points.len() - 1],
+                        self.control_points.len()
                     );
                 }
             }

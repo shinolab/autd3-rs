@@ -2,9 +2,10 @@ use crate::local::soem_bindings;
 
 use std::{ffi::CStr, fmt, slice};
 
-use derive_more::Deref;
+use derive_more::{Deref, Display};
 
-#[derive(Clone)]
+#[derive(Clone, Display)]
+#[display(fmt = "{}, {}", name, desc)]
 pub struct EthernetAdapter {
     desc: String,
     name: String,
@@ -61,11 +62,5 @@ impl<'a> IntoIterator for &'a EthernetAdapters {
 
     fn into_iter(self) -> slice::Iter<'a, EthernetAdapter> {
         self.adapters.iter()
-    }
-}
-
-impl fmt::Display for EthernetAdapter {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}, {}", self.name, self.desc)
     }
 }

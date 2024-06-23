@@ -3,6 +3,8 @@ use crate::firmware::{
     operation::PulseWidthEncoderOp,
 };
 
+use itertools::Itertools;
+
 use crate::datagram::*;
 
 const DEFAULT_TABLE: &[u8; PWE_BUF_SIZE] = include_bytes!("asin.dat");
@@ -67,18 +69,25 @@ impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> Datagram for PulseW
     // GRCOV_EXCL_START
     fn trace(&self, geometry: &Geometry) {
         tracing::debug!("{}", tynm::type_name::<Self>());
+
         if tracing::enabled!(tracing::Level::DEBUG) {
             geometry.devices().for_each(|dev| {
-                tracing::debug!("Device[{}]", dev.idx());
                 let f = (self.f)(dev);
                 if tracing::enabled!(tracing::Level::TRACE) {
-                    (0..PWE_BUF_SIZE).for_each(|i| {
-                        tracing::debug!("  PWE[{}] -> {}", i, f(i));
-                    });
+                    tracing::debug!(
+                        "Device[{}]: {}",
+                        dev.idx(),
+                        (0..PWE_BUF_SIZE)
+                            .map(|i| f(i))
+                            .format_with(", ", |elt, f| f(&format_args!("{:#04X}", elt)))
+                    );
                 } else {
-                    tracing::debug!("  PWE[{}] -> {}", 0, f(0));
-                    tracing::debug!("  ︙");
-                    tracing::debug!("  PWE[{}] -> {}", PWE_BUF_SIZE - 1, f(PWE_BUF_SIZE - 1));
+                    tracing::debug!(
+                        "Device[{}]: {:#04X}, ..., {:#04X}",
+                        dev.idx(),
+                        f(0),
+                        f(PWE_BUF_SIZE - 1)
+                    );
                 }
             });
         }

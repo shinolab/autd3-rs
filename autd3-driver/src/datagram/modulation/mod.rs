@@ -23,6 +23,8 @@ use crate::{
     geometry::{Device, Geometry},
 };
 
+use itertools::Itertools;
+
 use super::DatagramST;
 
 pub type ModulationCalcResult = Result<Vec<u8>, AUTDInternalError>;
@@ -116,21 +118,32 @@ impl<'a> DatagramST for Box<dyn Modulation + Send + Sync + 'a> {
         self.as_ref().trace(geometry);
         if tracing::enabled!(tracing::Level::DEBUG) {
             if let Ok(buf) = <Self as Modulation>::calc(self, geometry) {
-                if buf.is_empty() {
-                    tracing::error!("Buffer is empty");
-                    return;
-                }
-                if tracing::enabled!(tracing::Level::TRACE) {
-                    buf.iter().enumerate().for_each(|(i, v)| {
-                        tracing::debug!("Buf[{}]: {:#04X}", i, v);
-                    });
-                } else {
-                    tracing::debug!("Buf[{}]: {:#04X}", 0, buf[0]);
-                    if buf.len() > 2 {
-                        tracing::debug!("︙");
+                match buf.len() {
+                    0 => {
+                        tracing::error!("Buffer is empty");
+                        return;
                     }
-                    if buf.len() > 1 {
-                        tracing::debug!("Buf[{}]: {:#04X}", buf.len() - 1, buf.len() - 1);
+                    1 => {
+                        tracing::debug!("Buffer: {:#04X}", buf[0]);
+                    }
+                    2 => {
+                        tracing::debug!("Buffer: {:#04X}, {:#04X}", buf[0], buf[1]);
+                    }
+                    _ => {
+                        if tracing::enabled!(tracing::Level::TRACE) {
+                            tracing::debug!(
+                                "Buffer: {}",
+                                buf.iter()
+                                    .format_with(", ", |elt, f| f(&format_args!("{:#04X}", elt)))
+                            );
+                        } else {
+                            tracing::debug!(
+                                "Buffer: {:#04X}, ..., {:#04X} ({})",
+                                buf[0],
+                                buf[buf.len() - 1],
+                                buf.len()
+                            );
+                        }
                     }
                 }
             } else {

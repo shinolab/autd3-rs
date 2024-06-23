@@ -63,25 +63,27 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
     // GRCOV_EXCL_START
     fn trace(&self, _geometry: &Geometry) {
         tracing::debug!("{}", tynm::type_name::<Self>());
-        if self.components.is_empty() {
-            tracing::error!("Components is empty");
-            return;
-        }
-        if tracing::enabled!(tracing::Level::DEBUG) {
-            if tracing::enabled!(tracing::Level::TRACE) {
-                self.components.iter().enumerate().for_each(|(i, v)| {
-                    tracing::debug!("Components[{}]: {:?}", i, v);
-                });
-            } else {
-                tracing::debug!("Components[{}]: {:?}", 0, self.components[0]);
-                if self.components.len() > 2 {
-                    tracing::debug!("︙");
-                }
-                if self.components.len() > 1 {
+
+        match self.components.len() {
+            0 => {
+                tracing::error!("Components is empty");
+                return;
+            }
+            1 => {
+                tracing::debug!("Components: {}", self.components[0]);
+            }
+            2 => {
+                tracing::debug!("Components: {}, {}", self.components[0], self.components[1]);
+            }
+            _ => {
+                if tracing::enabled!(tracing::Level::TRACE) {
+                    tracing::debug!("Components: {}", self.components.iter().join(", "));
+                } else {
                     tracing::debug!(
-                        "Components[{}]: {:?}",
-                        self.components.len() - 1,
-                        self.components[self.components.len() - 1]
+                        "Components: {}, ..., {} ({})",
+                        self.components[0],
+                        self.components[self.components.len() - 1],
+                        self.components.len()
                     );
                 }
             }

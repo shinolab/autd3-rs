@@ -1,4 +1,7 @@
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+use derive_more::Display;
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(fmt = "{:#04X}", value)]
 #[repr(C)]
 pub struct EmitIntensity {
     value: u8,
@@ -60,12 +63,6 @@ impl std::ops::Sub<EmitIntensity> for EmitIntensity {
 
     fn sub(self, rhs: EmitIntensity) -> Self::Output {
         Self::new(self.value.saturating_sub(rhs.value))
-    }
-}
-
-impl std::fmt::Display for EmitIntensity {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:#04X}", self.value)
     }
 }
 
