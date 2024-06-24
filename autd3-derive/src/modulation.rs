@@ -54,10 +54,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
 
     let linetimes = generics.lifetimes();
     let type_params = generics.type_params();
-    let prop = if attrs.iter().any(|attr| attr.path().is_ident("no_property")) {
-        quote! {}
-    } else {
-        quote! {
+    let prop = quote! {
             impl <#(#linetimes,)* #(#type_params,)*> ModulationProperty for #name #ty_generics #where_clause {
                 fn sampling_config(&self) -> SamplingConfig {
                     self.config
@@ -67,7 +64,6 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
                     self.loop_behavior
                 }
             }
-        }
     };
 
     let linetimes = generics.lifetimes();
