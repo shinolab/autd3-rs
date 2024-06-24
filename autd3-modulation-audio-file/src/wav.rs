@@ -119,8 +119,6 @@ impl Modulation for Wav {
 
 #[cfg(test)]
 mod tests {
-    use crate::tests::create_geometry;
-
     use super::*;
 
     fn create_wav(
@@ -211,19 +209,17 @@ mod tests {
         #[case] spec: hound::WavSpec,
         #[case] data: &[impl hound::Sample + Copy],
     ) -> anyhow::Result<()> {
-        let geometry = create_geometry(1);
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("tmp.wav");
         create_wav(&path, spec, data)?;
         let m = Wav::new(&path);
-        assert_eq!(Ok(expect), m.calc(&geometry));
+        assert_eq!(Ok(expect), m.calc());
 
         Ok(())
     }
 
     #[test]
     fn test_wav_new_unsupported() -> anyhow::Result<()> {
-        let geometry = create_geometry(1);
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("tmp.wav");
         create_wav(
@@ -236,7 +232,7 @@ mod tests {
             },
             &[0, 0],
         )?;
-        assert!(Wav::new(&path).calc(&geometry).is_err());
+        assert!(Wav::new(&path).calc().is_err());
         Ok(())
     }
 

@@ -49,7 +49,7 @@ impl<M: Modulation, F: Fn(usize, u8) -> u8> Modulation for Transform<M, F> {
 mod tests {
     use rand::Rng;
 
-    use crate::{defined::kHz, geometry::tests::create_geometry};
+    use crate::defined::kHz;
 
     use super::{super::tests::TestModulation, *};
 
@@ -72,8 +72,6 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let geometry = create_geometry(1, 249);
-
         let mut rng = rand::thread_rng();
 
         let buf = vec![rng.gen(), rng.gen()];
@@ -85,7 +83,7 @@ mod tests {
                 loop_behavior: LoopBehavior::infinite(),
             }
             .with_transform(|_, x| x / 2)
-            .calc(&geometry)?
+            .calc()?
         );
 
         Ok(())

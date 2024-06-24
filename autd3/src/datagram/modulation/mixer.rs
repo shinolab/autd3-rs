@@ -100,7 +100,7 @@ impl<S: SamplingMode> Modulation for Mixer<S> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{modulation::sampling_mode::ExactFreq, tests::create_geometry};
+    use crate::modulation::sampling_mode::ExactFreq;
 
     use super::*;
 
@@ -108,19 +108,17 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let geometry = create_geometry(1);
-
         let f0 = Sine::new(50. * Hz).with_phase(PI / 2.0 * rad);
         let f1 = Sine::new(100. * Hz).with_phase(PI / 3.0 * rad);
         let f2 = Sine::new(150. * Hz).with_phase(PI / 4.0 * rad);
         let f3 = Sine::new(200. * Hz);
         let f4 = Sine::new(250. * Hz);
 
-        let f0_buf = &f0.calc(&geometry)?;
-        let f1_buf = &f1.calc(&geometry)?;
-        let f2_buf = &f2.calc(&geometry)?;
-        let f3_buf = &f3.calc(&geometry)?;
-        let f4_buf = &f4.calc(&geometry)?;
+        let f0_buf = &f0.calc()?;
+        let f1_buf = &f1.calc()?;
+        let f2_buf = &f2.calc()?;
+        let f3_buf = &f3.calc()?;
+        let f4_buf = &f4.calc()?;
 
         let f = Mixer::new([f0, f1, f2, f3, f4])?;
 
@@ -136,7 +134,7 @@ mod tests {
         assert_eq!(f[4].freq(), 250. * Hz);
         assert_eq!(f[4].phase(), 0.0 * rad);
 
-        let buf = &f.calc(&geometry)?;
+        let buf = &f.calc()?;
 
         (0..buf.len()).for_each(|i| {
             assert_eq!(
