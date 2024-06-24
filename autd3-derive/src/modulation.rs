@@ -77,9 +77,9 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
         impl <#(#linetimes,)* #(#type_params,)* > DatagramST for #name #ty_generics #where_clause {
             type G =  ModulationOperationGenerator;
 
-            fn operation_generator_with_segment(self, geometry: &Geometry, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<Self::G, AUTDInternalError> {
+            fn operation_generator_with_segment(self, _: &Geometry, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<Self::G, AUTDInternalError> {
                 Ok(Self::G {
-                    g: std::sync::Arc::new(self.calc(geometry)?),
+                    g: std::sync::Arc::new(self.calc()?),
                     config: self.sampling_config(),
                     rep: self.loop_behavior().rep(),
                     segment,
@@ -100,7 +100,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
             fn trace(&self, geometry: &Geometry) {
                 <Self as Modulation>::trace(self, geometry);
                 if tracing::enabled!(tracing::Level::DEBUG) {
-                    if let Ok(buf) = <Self as Modulation>::calc(self, geometry) {
+                    if let Ok(buf) = <Self as Modulation>::calc(self) {
                         match buf.len() {
                             0 => {
                                 tracing::error!("Buffer is empty");

@@ -34,9 +34,9 @@ impl<M: Modulation> Cache<M> {
         }
     }
 
-    pub fn init(&self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
+    pub fn init(&self) -> Result<(), AUTDInternalError> {
         if self.cache.borrow().is_empty() {
-            *self.cache.borrow_mut() = self.m.calc(geometry)?;
+            *self.cache.borrow_mut() = self.m.calc()?;
         }
         Ok(())
     }
@@ -47,8 +47,8 @@ impl<M: Modulation> Cache<M> {
 }
 
 impl<M: Modulation> Modulation for Cache<M> {
-    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
-        self.init(geometry)?;
+    fn calc(&self) -> ModulationCalcResult {
+        self.init()?;
         let buffer = self.buffer().clone();
         Ok(buffer)
     }
@@ -64,7 +64,7 @@ impl<M: Modulation> Modulation for Cache<M> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{defined::kHz, geometry::tests::create_geometry};
+    use crate::defined::kHz;
 
     use super::{super::tests::TestModulation, *};
 
@@ -79,8 +79,6 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let geometry = create_geometry(1, 249);
-
         let mut rng = rand::thread_rng();
 
         let m = TestModulation {
@@ -93,7 +91,7 @@ mod tests {
 
         assert!(cache.buffer().is_empty());
 
-        assert_eq!(m.calc(&geometry)?, cache.calc(&geometry)?);
+        assert_eq!(m.calc()?, cache.calc()?);
 
         Ok(())
     }
@@ -106,7 +104,7 @@ mod tests {
     }
 
     impl Modulation for TestCacheModulation {
-        fn calc(&self, _: &Geometry) -> ModulationCalcResult {
+        fn calc(&self) -> ModulationCalcResult {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
             Ok(vec![0x00, 0x00])
         }
@@ -114,8 +112,6 @@ mod tests {
 
     #[test]
     fn test_calc_once() {
-        let geometry = create_geometry(1, 249);
-
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
         let modulation = TestCacheModulation {
@@ -126,17 +122,15 @@ mod tests {
         .with_cache();
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
-        let _ = modulation.calc(&geometry);
+        let _ = modulation.calc();
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
 
-        let _ = modulation.calc(&geometry);
+        let _ = modulation.calc();
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
     }
 
     #[test]
     fn test_calc_clone() {
-        let geometry = create_geometry(1, 249);
-
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
         let modulation = TestCacheModulation {
@@ -148,7 +142,7 @@ mod tests {
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
         let m2 = modulation.clone();
-        let _ = m2.calc(&geometry);
+        let _ = m2.calc();
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
 
         assert_eq!(*modulation.buffer(), *m2.buffer());

@@ -28,7 +28,7 @@ impl Static {
 }
 
 impl Modulation for Static {
-    fn calc(&self, _: &Geometry) -> ModulationCalcResult {
+    fn calc(&self) -> ModulationCalcResult {
         let intensity = self.intensity;
         Ok(vec![intensity; 2])
     }

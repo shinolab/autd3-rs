@@ -27,8 +27,8 @@ pub trait IntoTransform<M: Modulation> {
 }
 
 impl<M: Modulation, F: Fn(usize, u8) -> u8> Modulation for Transform<M, F> {
-    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
-        let src = self.m.calc(geometry)?;
+    fn calc(&self) -> ModulationCalcResult {
+        let src = self.m.calc()?;
         Ok(src
             .into_iter()
             .enumerate()

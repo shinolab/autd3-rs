@@ -20,7 +20,7 @@ struct TestMod {
 }
 
 impl Modulation for TestMod {
-    fn calc(&self, _: &Geometry) -> ModulationCalcResult {
+    fn calc(&self) -> ModulationCalcResult {
         Ok(vec![u8::MIN; 100])
     }
 }

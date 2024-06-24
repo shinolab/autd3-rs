@@ -35,7 +35,7 @@ impl RawPCM {
 }
 
 impl Modulation for RawPCM {
-    fn calc(&self, _: &Geometry) -> ModulationCalcResult {
+    fn calc(&self) -> ModulationCalcResult {
         Ok(self.read_buf()?)
     }
 

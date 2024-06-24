@@ -18,6 +18,7 @@
   - Use `set_ultrasound_freq` instead with enabling `dynamic_freq` feature
 - Update error messages and add logging for debugging
 - Add `#[non_exhaustive]` attribute to enums
+- Remove `&Geometry` argument from `Modulation::calc`
 
 # 25.3.2
 

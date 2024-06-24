@@ -103,7 +103,7 @@ impl ModulationProperty for Wav {
 
 impl Modulation for Wav {
     #[allow(clippy::unnecessary_cast)]
-    fn calc(&self, _geometry: &Geometry) -> ModulationCalcResult {
+    fn calc(&self) -> ModulationCalcResult {
         let (buf, sample_rate) = self.read_buf()?;
         *self.config.lock().unwrap() = SamplingConfig::Freq(sample_rate * Hz);
         Ok(buf)
