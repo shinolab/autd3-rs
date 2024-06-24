@@ -135,8 +135,7 @@ impl<const N: usize> Operation for FociSTMOp<N> {
                 freq_div: self.config.division()?,
                 sound_speed: (device.sound_speed / METER
                     * 64.0
-                    * crate::defined::FREQ_40K.hz() as f32
-                    / get_ultrasound_freq().hz() as f32)
+                    * (crate::defined::FREQ_40K.hz() as f32 / get_ultrasound_freq().hz() as f32))
                     .round() as u16,
                 rep: self.rep,
             };
@@ -206,7 +205,6 @@ mod tests {
 
     #[test]
     fn test() {
-
         const FOCI_STM_SIZE: usize = 100;
         const FRAME_SIZE: usize = size_of::<FociSTMHead>() + size_of::<STMFocus>() * FOCI_STM_SIZE;
 
@@ -304,7 +302,6 @@ mod tests {
 
     #[test]
     fn test_foci() {
-
         const FOCI_STM_SIZE: usize = 100;
         const N: usize = 8;
         const FRAME_SIZE: usize =
@@ -425,7 +422,6 @@ mod tests {
 
     #[test]
     fn test_div() {
-
         const FRAME_SIZE: usize = 32;
         const FOCI_STM_SIZE: usize = 7;
 
@@ -669,7 +665,6 @@ mod tests {
     #[case(Ok(()), FOCI_STM_BUF_SIZE_MAX)]
     #[case(Err(AUTDInternalError::FociSTMPointSizeOutOfRange(FOCI_STM_BUF_SIZE_MAX+1)), FOCI_STM_BUF_SIZE_MAX+1)]
     fn test_buffer_out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] n: usize) {
-
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
         let mut op = FociSTMOp::new(
@@ -691,7 +686,6 @@ mod tests {
 
     #[test]
     fn test_foci_out_of_range() {
-
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
         {

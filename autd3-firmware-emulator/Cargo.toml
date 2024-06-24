@@ -23,6 +23,7 @@ autd3-derive = { path = "../autd3-derive", version = "26.0.0-alpha.3" }
 itertools = { workspace = true }
 rand = { workspace = true }
 rstest = { workspace = true }
+temp-env = "0.3.6"
 
 [features]
 default = []

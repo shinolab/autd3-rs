@@ -15,7 +15,7 @@
 - Functions that take `SamplingConfig` as an argument can now take `impl Into<SamplingConfig>` as an argument
   - Implement `Into<SamplingConfig>` for `Freq<u32>` and `Duration`
 - Remove `ControllerBuilder::with_ultrasound_freq`
-  - Use `set_ultrasound_freq` instead with enabling `dynamic_freq` feature
+  - Set environment variable `AUTD3_ULTRASOUND_FREQ` instead with enabling `dynamic_freq` feature
 - Update error messages and add logging for debugging
 - Add `#[non_exhaustive]` attribute to enums
 - Remove `&Geometry` argument from `Modulation::calc`

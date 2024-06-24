@@ -70,9 +70,6 @@ fn silencer_completetion_steps_too_large_mod(
     #[case] expect: Result<(), AUTDInternalError>,
     #[case] steps_intensity: u16,
 ) -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
     use crate::op::modulation::TestModulation;
 
     let geometry = create_geometry(1);
@@ -112,9 +109,6 @@ fn silencer_completetion_steps_too_large_stm(
     #[case] steps_intensity: u16,
     #[case] steps_phase: u16,
 ) -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -166,57 +160,57 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
 }
 
 #[test]
-fn send_silencer_fixed_completion_time() -> anyhow::Result<()> {
-    let mut rng = rand::thread_rng();
+fn send_silencer_fixed_completion_time() {
+    temp_env::with_var("AUTD3_ULTRASOUND_FREQ", Some("40000"), || {
+        let mut rng = rand::thread_rng();
 
-    let geometry = create_geometry(1);
-    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+        let geometry = create_geometry(1);
+        let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+        let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let time_intensity = rng.gen_range(1..=10) * Duration::from_micros(25);
-    let time_phase = rng.gen_range(1..=u16::MAX) as u32 * Duration::from_micros(25);
-    let d = Silencer::from_completion_time(time_intensity, time_phase);
+        let time_intensity = rng.gen_range(1..=10) * Duration::from_micros(25);
+        let time_phase = rng.gen_range(1..=u16::MAX) as u32 * Duration::from_micros(25);
+        let d = Silencer::from_completion_time(time_intensity, time_phase);
 
-    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-    assert_eq!(
-        (time_intensity.as_micros() / 25) as u16,
-        cpu.fpga().silencer_completion_steps_intensity()
-    );
-    assert_eq!(
-        (time_phase.as_micros() / 25) as u16,
-        cpu.fpga().silencer_completion_steps_phase()
-    );
-    assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
-    assert!(cpu.silencer_strict_mode());
-
-    Ok(())
+        assert_eq!(
+            (time_intensity.as_micros() / 25) as u16,
+            cpu.fpga().silencer_completion_steps_intensity()
+        );
+        assert_eq!(
+            (time_phase.as_micros() / 25) as u16,
+            cpu.fpga().silencer_completion_steps_phase()
+        );
+        assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
+        assert!(cpu.silencer_strict_mode());
+    });
 }
 
 #[test]
-fn send_silencer_fixed_completion_time_permissive() -> anyhow::Result<()> {
-    let mut rng = rand::thread_rng();
+fn send_silencer_fixed_completion_time_permissive() {
+    temp_env::with_var("AUTD3_ULTRASOUND_FREQ", Some("40000"), || {
+        let mut rng = rand::thread_rng();
 
-    let geometry = create_geometry(1);
-    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+        let geometry = create_geometry(1);
+        let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+        let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let time_intensity = rng.gen_range(1..=u16::MAX) as u32 * Duration::from_micros(25);
-    let time_phase = rng.gen_range(1..=u16::MAX) as u32 * Duration::from_micros(25);
-    let d = Silencer::from_completion_time(time_intensity, time_phase).with_strict_mode(false);
+        let time_intensity = rng.gen_range(1..=u16::MAX) as u32 * Duration::from_micros(25);
+        let time_phase = rng.gen_range(1..=u16::MAX) as u32 * Duration::from_micros(25);
+        let d = Silencer::from_completion_time(time_intensity, time_phase).with_strict_mode(false);
 
-    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-    assert_eq!(
-        (time_intensity.as_micros() / 25) as u16,
-        cpu.fpga().silencer_completion_steps_intensity(),
-    );
-    assert_eq!(
-        (time_phase.as_micros() / 25) as u16,
-        cpu.fpga().silencer_completion_steps_phase()
-    );
-    assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
-    assert!(!cpu.silencer_strict_mode());
-
-    Ok(())
+        assert_eq!(
+            (time_intensity.as_micros() / 25) as u16,
+            cpu.fpga().silencer_completion_steps_intensity(),
+        );
+        assert_eq!(
+            (time_phase.as_micros() / 25) as u16,
+            cpu.fpga().silencer_completion_steps_phase()
+        );
+        assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
+        assert!(!cpu.silencer_strict_mode());
+    });
 }

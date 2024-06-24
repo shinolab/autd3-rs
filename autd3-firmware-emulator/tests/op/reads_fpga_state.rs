@@ -18,8 +18,6 @@ fn fpga_state(cpu: &CPUEmulator) -> FPGAState {
 
 #[test]
 fn send_reads_fpga_state() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());

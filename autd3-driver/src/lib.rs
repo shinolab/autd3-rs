@@ -18,64 +18,60 @@ pub const fn get_ultrasound_freq() -> defined::Freq<u32> {
     defined::FREQ_40K
 }
 
-#[cfg(all(feature = "dynamic_freq", not(any(feature = "test", feature = "capi"))))]
+#[cfg(all(feature = "dynamic_freq", feature = "test"))]
+mod dynamic {
+    #[inline]
+    pub fn get_ultrasound_freq() -> super::defined::Freq<u32> {
+        std::env::var("AUTD3_ULTRASOUND_FREQ")
+            .map(|freq| {
+                freq.parse::<u32>()
+                    .map(|freq| freq * super::defined::Hz)
+                    .unwrap_or(super::defined::FREQ_40K)
+            })
+            .unwrap_or(super::defined::FREQ_40K)
+    }
+}
+
+#[cfg(all(feature = "dynamic_freq", not(feature = "test")))]
 mod dynamic {
     use std::sync::Once;
 
-    use crate::defined::FREQ_40K;
+    use crate::defined::{Hz, FREQ_40K};
 
     static mut VAL: super::defined::Freq<u32> = FREQ_40K;
     static FREQ: Once = Once::new();
 
     #[inline]
-    pub fn set_ultrasound_freq(freq: super::defined::Freq<u32>) {
-        unsafe {
-            FREQ.call_once(|| {
-                VAL = freq;
-            });
-        }
-    }
-
-    #[inline]
     pub fn get_ultrasound_freq() -> super::defined::Freq<u32> {
         unsafe {
-            #[cfg(not(feature = "capi"))]
-            if !FREQ.is_completed() {
-                panic!("Set ultrasound frequency first by `set_ultrasound_freq`");
-            }
+            FREQ.call_once(|| {
+                VAL = match std::env::var("AUTD3_ULTRASOUND_FREQ") {
+                    Ok(freq) => match freq.parse::<u32>() {
+                        Ok(freq) => {
+                            tracing::info!("Set ultrasound frequency to {} Hz.", freq);
+                            freq * Hz
+                        }
+                        Err(_) => {
+                            tracing::error!(
+                                "Invalid ultrasound frequency ({} Hz), fallback to 40 kHz.",
+                                freq
+                            );
+                            FREQ_40K
+                        }
+                    },
+                    Err(_) => {
+                        tracing::warn!("Environment variable AUTD3_ULTRASOUND_FREQ is not set, fallback to 40 kHz.");
+                        FREQ_40K
+                    }
+                };
+            });
             VAL
         }
     }
 }
 
-#[cfg(all(feature = "dynamic_freq", any(feature = "test", feature = "capi")))]
-mod dynamic {
-    use std::{cell::Cell, sync::Once};
-
-    use crate::defined::FREQ_40K;
-
-    thread_local! {
-        static LOCAL_VAL: Cell<super::defined::Freq<u32>> = const { Cell::new(FREQ_40K) };
-        static FREQ: Once = const { Once::new() };
-    }
-
-    #[inline]
-    pub fn set_ultrasound_freq(freq: super::defined::Freq<u32>) {
-        FREQ.with(|f| {
-            f.call_once(|| {
-                LOCAL_VAL.set(freq);
-            })
-        });
-    }
-
-    #[inline]
-    pub fn get_ultrasound_freq() -> super::defined::Freq<u32> {
-        LOCAL_VAL.get()
-    }
-}
-
 #[cfg(feature = "dynamic_freq")]
-pub use dynamic::{get_ultrasound_freq, set_ultrasound_freq};
+pub use dynamic::get_ultrasound_freq;
 
 #[cfg(feature = "derive")]
 pub mod derive {

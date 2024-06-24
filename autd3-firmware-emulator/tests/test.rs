@@ -77,9 +77,6 @@ fn send_invalid_msg_id() {
 
 #[test]
 fn send_ingore_same_data() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -106,9 +103,6 @@ fn send_ingore_same_data() -> anyhow::Result<()> {
 
 #[test]
 fn send_slot_2() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -128,9 +122,6 @@ fn send_slot_2() -> anyhow::Result<()> {
 
 #[test]
 fn send_slot_2_err() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
