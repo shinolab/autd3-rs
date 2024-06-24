@@ -18,7 +18,7 @@ pub const fn get_ultrasound_freq() -> defined::Freq<u32> {
     defined::FREQ_40K
 }
 
-#[cfg(all(feature = "dynamic_freq", not(feature = "test")))]
+#[cfg(all(feature = "dynamic_freq", not(any(feature = "test", feature = "capi"))))]
 mod dynamic {
     use std::sync::Once;
 
@@ -48,7 +48,7 @@ mod dynamic {
     }
 }
 
-#[cfg(all(feature = "dynamic_freq", feature = "test"))]
+#[cfg(all(feature = "dynamic_freq", any(feature = "test", feature = "capi")))]
 mod dynamic {
     use std::{cell::Cell, sync::Once};
 
