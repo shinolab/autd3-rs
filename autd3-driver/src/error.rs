@@ -49,9 +49,9 @@ pub enum AUTDInternalError {
     #[error("Sampling period ({0:?}) is out of range ([{1:?}, {2:?}])")]
     SamplingPeriodOutOfRange(Duration, Duration, Duration),
 
-    #[error("STM frequency ({1}, size={0}) must divide ultrasound frequency")]
+    #[error("STM sampling frequency ({1}*{0}) must be integer")]
     STMFreqInvalid(usize, Freq<f32>),
-    #[error("STM period ({1:?}, size={0}) must a multiple of  ultrasound frequency")]
+    #[error("STM sampling period ({1:?}/{0}) must be integer")]
     STMPeriodInvalid(usize, Duration),
 
     #[error(
