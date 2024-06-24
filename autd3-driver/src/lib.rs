@@ -55,8 +55,8 @@ mod dynamic {
     use crate::defined::FREQ_40K;
 
     thread_local! {
-        static LOCAL_VAL: Cell<super::defined::Freq<u32>> = Cell::new(FREQ_40K);
-        static FREQ: Once = Once::new();
+        static LOCAL_VAL: Cell<super::defined::Freq<u32>> = const { Cell::new(FREQ_40K) };
+        static FREQ: Once = const { Once::new() };
     }
 
     #[inline]
