@@ -73,7 +73,7 @@ impl<G: Gain> GainSTM<G> {
     }
 
     #[cfg(feature = "capi")]
-    pub fn from_stm_sampling_config<C, F: IntoIterator<Item = G>>(
+    pub fn from_stm_sampling_config<F: IntoIterator<Item = G>>(
         config: STMSamplingConfig,
         gains: F,
     ) -> Result<Self, AUTDInternalError> {
