@@ -51,8 +51,6 @@ impl Modulation for RawPCM {
 mod tests {
     use autd3_driver::defined::{Freq, Hz};
 
-    use crate::tests::create_geometry;
-
     use super::*;
     use std::io::Write;
 
@@ -74,18 +72,15 @@ mod tests {
         let path = dir.path().join("tmp.dat");
         create_dat(&path, &data)?;
 
-        let geometry = create_geometry(1);
         let m = RawPCM::new(&path, sample_rate);
-        assert_eq!(expect, m.calc(&geometry));
+        assert_eq!(expect, m.calc());
 
         Ok(())
     }
 
     #[test]
     fn not_exisit() {
-        let geometry = create_geometry(1);
-
         let m = RawPCM::new("not_exists.dat", 4000 * Hz);
-        assert!(m.calc(&geometry).is_err());
+        assert!(m.calc().is_err());
     }
 }

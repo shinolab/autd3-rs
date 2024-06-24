@@ -303,7 +303,7 @@ mod tests {
 
         autd.geometry.iter().try_for_each(|dev| {
             assert_eq!(
-                Sine::new(150. * Hz).calc(&autd.geometry)?,
+                Sine::new(150. * Hz).calc()?,
                 autd.link[dev.idx()].fpga().modulation(Segment::S0)
             );
             let f = Uniform::new(0x80).calc(&autd.geometry)?(dev);

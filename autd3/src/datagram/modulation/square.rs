@@ -94,8 +94,6 @@ impl<S: SamplingMode> Modulation for Square<S> {
 mod tests {
     use autd3_driver::defined::Hz;
 
-    use crate::tests::create_geometry;
-
     use super::*;
 
     #[rstest::rstest]
@@ -161,14 +159,13 @@ mod tests {
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
         #[case] freq: impl SamplingModeInference,
     ) {
-        let geometry = create_geometry(1);
         let m = Square::new(freq);
         assert_eq!(freq, m.freq());
         assert_eq!(u8::MIN, m.low());
         assert_eq!(u8::MAX, m.high());
         assert_eq!(0.5, m.duty());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
-        assert_eq!(expect, m.calc(&geometry));
+        assert_eq!(expect, m.calc());
     }
 
     #[rstest::rstest]
@@ -200,7 +197,6 @@ mod tests {
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
         #[case] freq: Freq<f32>,
     ) {
-        let geometry = create_geometry(1);
         let m = Square::from_freq_nearest(freq);
         assert_eq!(freq, m.freq());
         assert_eq!(u8::MIN, m.low());
@@ -208,58 +204,54 @@ mod tests {
         assert_eq!(0.5, m.duty());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
 
-        assert_eq!(expect, m.calc(&geometry));
+        assert_eq!(expect, m.calc());
     }
 
     #[test]
     fn with_low() -> anyhow::Result<()> {
-        let geometry = create_geometry(1);
         let m = Square::new(150. * Hz).with_low(u8::MAX);
         assert_eq!(u8::MAX, m.low());
-        assert!(m.calc(&geometry)?.iter().all(|&x| x == u8::MAX));
+        assert!(m.calc()?.iter().all(|&x| x == u8::MAX));
 
         Ok(())
     }
 
     #[test]
     fn with_high() -> anyhow::Result<()> {
-        let geometry = create_geometry(1);
         let m = Square::new(150. * Hz).with_high(u8::MIN);
         assert_eq!(u8::MIN, m.high());
-        assert!(m.calc(&geometry)?.iter().all(|&x| x == u8::MIN));
+        assert!(m.calc()?.iter().all(|&x| x == u8::MIN));
 
         Ok(())
     }
 
     #[test]
     fn with_duty() -> anyhow::Result<()> {
-        let geometry = create_geometry(1);
         let m = Square::new(150. * Hz).with_duty(0.0);
         assert_eq!(m.duty(), 0.0);
-        assert!(m.calc(&geometry)?.iter().all(|&x| x == u8::MIN));
+        assert!(m.calc()?.iter().all(|&x| x == u8::MIN));
 
         let m = Square::new(150. * Hz).with_duty(1.0);
         assert_eq!(m.duty(), 1.0);
-        assert!(m.calc(&geometry)?.iter().all(|&x| x == u8::MAX));
+        assert!(m.calc()?.iter().all(|&x| x == u8::MAX));
 
         Ok(())
     }
 
     #[test]
     fn duty_out_of_range() {
-        let geometry = create_geometry(1);
         assert_eq!(
             Some(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string()
             )),
-            Square::new(150. * Hz).with_duty(-0.1).calc(&geometry).err()
+            Square::new(150. * Hz).with_duty(-0.1).calc().err()
         );
 
         assert_eq!(
             Some(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string()
             )),
-            Square::new(150. * Hz).with_duty(1.1).calc(&geometry).err()
+            Square::new(150. * Hz).with_duty(1.1).calc().err()
         );
     }
 }

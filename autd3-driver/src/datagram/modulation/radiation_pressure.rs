@@ -49,7 +49,7 @@ mod tests {
 
     use super::{super::tests::TestModulation, *};
 
-    use crate::{defined::kHz, geometry::tests::create_geometry};
+    use crate::defined::kHz;
 
     #[rstest::rstest]
     #[test]
@@ -70,8 +70,6 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let geometry = create_geometry(1, 249);
-
         let mut rng = rand::thread_rng();
 
         let buf = vec![rng.gen(), rng.gen()];
@@ -85,7 +83,7 @@ mod tests {
                 loop_behavior: LoopBehavior::infinite(),
             }
             .with_radiation_pressure()
-            .calc(&geometry)?
+            .calc()?
         );
 
         Ok(())

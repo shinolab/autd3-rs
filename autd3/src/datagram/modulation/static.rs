@@ -49,25 +49,21 @@ impl Default for Static {
 
 #[cfg(test)]
 mod tests {
-    use crate::tests::create_geometry;
-
     use super::*;
 
     #[test]
     fn test_static_default() {
-        let geometry = create_geometry(1);
         let m = Static::default();
         assert_eq!(u8::MAX, m.intensity());
         assert_eq!(SamplingConfig::DISABLE, m.sampling_config());
-        assert_eq!(Ok(vec![u8::MAX, u8::MAX]), m.calc(&geometry));
+        assert_eq!(Ok(vec![u8::MAX, u8::MAX]), m.calc());
     }
 
     #[test]
     fn test_static_with_intensity() {
-        let geometry = create_geometry(1);
         let m = Static::with_intensity(0x1F);
         assert_eq!(0x1F, m.intensity());
         assert_eq!(SamplingConfig::DISABLE, m.sampling_config());
-        assert_eq!(Ok(vec![0x1F, 0x1F]), m.calc(&geometry));
+        assert_eq!(Ok(vec![0x1F, 0x1F]), m.calc());
     }
 }

@@ -90,8 +90,6 @@ impl<S: SamplingMode> Modulation for Sine<S> {
 mod tests {
     use autd3_driver::defined::{kHz, Hz};
 
-    use crate::tests::create_geometry;
-
     use super::*;
 
     #[rstest::rstest]
@@ -164,14 +162,13 @@ mod tests {
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
         #[case] freq: impl SamplingModeInference,
     ) {
-        let geometry = create_geometry(1);
         let m = Sine::new(freq);
         assert_eq!(freq, m.freq());
         assert_eq!(u8::MAX, m.intensity());
         assert_eq!(u8::MAX / 2, m.offset());
         assert_eq!(Angle::Rad(0.0), m.phase());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
-        assert_eq!(expect, m.calc(&geometry));
+        assert_eq!(expect, m.calc());
     }
 
     #[rstest::rstest]
@@ -203,14 +200,13 @@ mod tests {
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
         #[case] freq: Freq<f32>,
     ) {
-        let geometry = create_geometry(1);
         let m = Sine::from_freq_nearest(freq);
         assert_eq!(freq, m.freq());
         assert_eq!(u8::MAX, m.intensity());
         assert_eq!(u8::MAX / 2, m.offset());
         assert_eq!(Angle::Rad(0.0), m.phase());
         assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
-        assert_eq!(expect, m.calc(&geometry));
+        assert_eq!(expect, m.calc());
     }
 
     #[test]

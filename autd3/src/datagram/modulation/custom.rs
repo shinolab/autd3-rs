@@ -34,20 +34,16 @@ impl Modulation for Custom {
 mod tests {
     use rand::Rng;
 
-    use crate::tests::create_geometry;
-
     use super::*;
 
     #[test]
     fn test_custom() -> anyhow::Result<()> {
         let mut rng = rand::thread_rng();
 
-        let geometry = create_geometry(2);
-
         let test_buf = (0..2).map(|_| rng.gen()).collect::<Vec<_>>();
         let custom = Custom::new(test_buf.clone(), SamplingConfig::Division(5120));
 
-        let d = custom.calc(&geometry)?;
+        let d = custom.calc()?;
         assert_eq!(d, test_buf);
 
         Ok(())
