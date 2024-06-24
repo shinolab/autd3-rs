@@ -311,7 +311,6 @@ impl SOEM {
                     Err(_) => return false,
                 };
                 tracing::debug!("Searching AUTD device on {}.", adapter.name());
-                dbg!(&ifname);
                 if ec_init(ifname.as_ptr()) <= 0 {
                     ec_close();
                     return false;

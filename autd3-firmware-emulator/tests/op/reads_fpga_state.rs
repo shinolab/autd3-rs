@@ -18,7 +18,6 @@ fn fpga_state(cpu: &CPUEmulator) -> FPGAState {
 
 #[test]
 fn send_reads_fpga_state() -> anyhow::Result<()> {
-
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -68,7 +67,6 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
         .with_segment(Segment::S1, Some(TransitionMode::Immediate));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }
-    dbg!("a");
     cpu.update();
     let state = fpga_state(&cpu);
     assert!(!state.is_thermal_assert());
