@@ -1,6 +1,6 @@
 [package]
 name = "autd3-gain-holo"
-version = "26.0.0-alpha.1"
+version = "26.0.0-alpha.2"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2021"
 
@@ -12,7 +12,7 @@ keywords = ["autd"]
 
 [dependencies]
 assert_approx_eq = { workspace = true, optional = true }
-autd3-driver = { path = "../autd3-driver", version = "26.0.0-alpha.1" }
+autd3-driver = { path = "../autd3-driver", version = "26.0.0-alpha.2" }
 nalgebra = { workspace = true, features = ["std"] }
 rand = { workspace = true }
 thiserror = { workspace = true }
