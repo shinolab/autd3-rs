@@ -60,7 +60,9 @@ mod dynamic {
                         }
                     },
                     Err(_) => {
-                        tracing::warn!("Environment variable AUTD3_ULTRASOUND_FREQ is not set, fallback to 40 kHz.");
+                        if !cfg!(feature = "capi") {
+                          tracing::warn!("Environment variable AUTD3_ULTRASOUND_FREQ is not set, fallback to 40 kHz.");
+                        }
                         FREQ_40K
                     }
                 };
