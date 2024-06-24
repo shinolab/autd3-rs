@@ -106,6 +106,24 @@ impl<const N: usize> FociSTM<N> {
         )
     }
 
+    #[cfg(feature = "capi")]
+    pub fn from_stm_sampling_config<C, F: IntoIterator<Item = C>>(
+        config: STMSamplingConfig,
+        control_points: F,
+    ) -> Result<Self, AUTDInternalError>
+    where
+        ControlPoints<N>: From<C>,
+    {
+        let control_points: Vec<_> = control_points
+            .into_iter()
+            .map(ControlPoints::from)
+            .collect();
+        Ok(Self::new(
+            config.sampling(control_points.len())?,
+            control_points,
+        ))
+    }
+
     fn new(sampling_config: SamplingConfig, control_points: Vec<ControlPoints<N>>) -> Self {
         Self {
             control_points,
