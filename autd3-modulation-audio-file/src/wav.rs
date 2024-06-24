@@ -1,32 +1,31 @@
 use autd3_driver::{defined::Hz, derive::*};
 use hound::SampleFormat;
 
-use std::{
-    path::{Path, PathBuf},
-    sync::Mutex,
-};
+use std::path::{Path, PathBuf};
 
 use crate::error::AudioFileError;
 
-#[derive(Modulation, Debug)]
-#[no_property]
+#[derive(Modulation, Debug, Clone, PartialEq)]
 pub struct Wav {
     path: PathBuf,
     #[no_change]
-    config: Mutex<SamplingConfig>,
+    config: SamplingConfig,
     loop_behavior: LoopBehavior,
 }
 
 impl Wav {
-    pub fn new(path: impl AsRef<Path>) -> Self {
-        Self {
-            path: path.as_ref().to_path_buf(),
-            config: Mutex::new(SamplingConfig::DISABLE),
+    pub fn new(path: impl AsRef<Path>) -> Result<Self, AudioFileError> {
+        let path = path.as_ref().to_path_buf();
+        let reader = hound::WavReader::open(&path)?;
+        let spec = reader.spec();
+        Ok(Self {
+            path,
+            config: SamplingConfig::Freq(spec.sample_rate * Hz),
             loop_behavior: LoopBehavior::infinite(),
-        }
+        })
     }
 
-    fn read_buf(&self) -> Result<(Vec<u8>, u32), AudioFileError> {
+    fn read_buf(&self) -> Result<Vec<u8>, AudioFileError> {
         let mut reader = hound::WavReader::open(&self.path)?;
         let spec = reader.spec();
         if spec.channels != 1 {
@@ -67,46 +66,14 @@ impl Wav {
             }
         };
 
-        Ok((buf, spec.sample_rate))
+        Ok(buf)
     }
 }
-
-// GRCOV_EXCL_START
-impl Clone for Wav {
-    fn clone(&self) -> Self {
-        Self {
-            path: self.path.clone(),
-            config: Mutex::new(*self.config.lock().unwrap()),
-            loop_behavior: self.loop_behavior,
-        }
-    }
-}
-
-impl PartialEq for Wav {
-    fn eq(&self, other: &Self) -> bool {
-        self.path == other.path
-            && *self.config.lock().unwrap() == *other.config.lock().unwrap()
-            && self.loop_behavior == other.loop_behavior
-    }
-}
-
-impl ModulationProperty for Wav {
-    fn sampling_config(&self) -> SamplingConfig {
-        *self.config.lock().unwrap()
-    }
-
-    fn loop_behavior(&self) -> LoopBehavior {
-        self.loop_behavior
-    }
-}
-// GRCOV_EXCL_STOP
 
 impl Modulation for Wav {
     #[allow(clippy::unnecessary_cast)]
     fn calc(&self) -> ModulationCalcResult {
-        let (buf, sample_rate) = self.read_buf()?;
-        *self.config.lock().unwrap() = SamplingConfig::Freq(sample_rate * Hz);
-        Ok(buf)
+        Ok(self.read_buf()?)
     }
 
     // GRCOV_EXCL_START
@@ -212,7 +179,7 @@ mod tests {
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("tmp.wav");
         create_wav(&path, spec, data)?;
-        let m = Wav::new(&path);
+        let m = Wav::new(&path)?;
         assert_eq!(Ok(expect), m.calc());
 
         Ok(())
@@ -232,7 +199,7 @@ mod tests {
             },
             &[0, 0],
         )?;
-        assert!(Wav::new(&path).calc().is_err());
+        assert!(Wav::new(&path)?.calc().is_err());
         Ok(())
     }
 
@@ -250,7 +217,7 @@ mod tests {
             },
             &[i8::MAX, 0, i8::MIN],
         )?;
-        let m = Wav::new(path);
+        let m = Wav::new(path)?;
         let m2 = m.clone();
         assert_eq!(m.sampling_config(), m2.sampling_config());
         Ok(())
