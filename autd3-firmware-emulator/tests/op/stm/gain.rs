@@ -48,9 +48,6 @@ fn gen_random_buf(n: usize, geometry: &Geometry) -> Vec<HashMap<usize, Vec<Drive
 
 #[test]
 fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
     let mut rng = rand::thread_rng();
 
     let geometry = create_geometry(1);
@@ -177,8 +174,6 @@ fn send_gain_stm_phase_full(n: usize) -> anyhow::Result<()> {
 
 #[test]
 fn test_send_gain_stm_phase_full() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
 
     send_gain_stm_phase_full(2)?;
     send_gain_stm_phase_full(3)?;
@@ -239,8 +234,6 @@ fn send_gain_stm_phase_half(n: usize) -> anyhow::Result<()> {
 
 #[test]
 fn test_send_gain_stm_phase_half() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
 
     send_gain_stm_phase_half(2)?;
     send_gain_stm_phase_half(3)?;
@@ -252,8 +245,6 @@ fn test_send_gain_stm_phase_half() -> anyhow::Result<()> {
 
 #[test]
 fn change_gain_stm_segment() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -282,8 +273,6 @@ fn change_gain_stm_segment() -> anyhow::Result<()> {
 
 #[test]
 fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -350,8 +339,6 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
 
 #[test]
 fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -404,8 +391,6 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
 
 #[test]
 fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -465,8 +450,6 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
 
 #[test]
 fn invalid_gain_stm_mode() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());

@@ -2,8 +2,6 @@ use autd3::{driver::link::Link, prelude::*};
 
 #[tokio::test]
 async fn nop_test() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
 
     let mut autd = Controller::builder([AUTD3::new(Vector3::zeros())])
         .open(Nop::builder().with_timeout(std::time::Duration::from_millis(100)))

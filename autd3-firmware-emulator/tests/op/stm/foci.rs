@@ -2,7 +2,7 @@ use std::{collections::HashMap, time::Duration};
 
 use autd3_driver::{
     datagram::{FociSTM, GainSTM, IntoDatagramWithSegmentTransition, Silencer, SwapSegment},
-    defined::{mm, ControlPoint, ControlPoints, METER},
+    defined::{mm, ControlPoint, ControlPoints, FREQ_40K, METER},
     derive::{Drive, LoopBehavior, Phase, SamplingConfig, Segment},
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
@@ -14,6 +14,7 @@ use autd3_driver::{
         },
     },
     geometry::Vector3,
+    get_ultrasound_freq,
 };
 use autd3_firmware_emulator::{cpu::params::SYS_TIME_TRANSITION_MARGIN, CPUEmulator};
 
@@ -41,140 +42,136 @@ pub fn gen_random_foci<const N: usize>(num: usize) -> Vec<ControlPoints<N>> {
 }
 
 #[test]
-fn test_send_foci_stm() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+fn test_send_foci_stm() {
+    temp_env::with_var("AUTD3_ULTRASOUND_FREQ", Some("40000"), || {
+        let sin_table = include_bytes!("sin.dat");
+        let atan_table = include_bytes!("atan.dat");
 
-    let sin_table = include_bytes!("sin.dat");
-    let atan_table = include_bytes!("atan.dat");
+        let mut rng = rand::thread_rng();
 
-    let mut rng = rand::thread_rng();
+        let mut geometry = create_geometry(1);
+        geometry.set_sound_speed(400e3);
+        let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+        let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let mut geometry = create_geometry(1);
-    geometry.set_sound_speed(400e3);
-    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+        {
+            let freq_div = rng.gen_range(
+                SAMPLING_FREQ_DIV_MIN
+                    * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
+                    ..=SAMPLING_FREQ_DIV_MAX,
+            );
+            let foci = gen_random_foci::<1>(FOCI_STM_BUF_SIZE_MAX);
+            let loop_behavior = LoopBehavior::infinite();
+            let segment = Segment::S0;
+            let transition_mode = TransitionMode::Immediate;
 
-    {
-        let freq_div = rng.gen_range(
-            SAMPLING_FREQ_DIV_MIN
-                * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
-                ..=SAMPLING_FREQ_DIV_MAX,
-        );
-        let foci = gen_random_foci::<1>(FOCI_STM_BUF_SIZE_MAX);
-        let loop_behavior = LoopBehavior::infinite();
-        let segment = Segment::S0;
-        let transition_mode = TransitionMode::Immediate;
+            let stm =
+                FociSTM::from_sampling_config(SamplingConfig::DivisionRaw(freq_div), foci.clone())
+                    .with_loop_behavior(loop_behavior)
+                    .with_segment(segment, Some(transition_mode));
 
-        let stm =
-            FociSTM::from_sampling_config(SamplingConfig::DivisionRaw(freq_div), foci.clone())
-                .with_loop_behavior(loop_behavior)
-                .with_segment(segment, Some(transition_mode));
+            assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
 
-        assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
+            assert!(!cpu.fpga().is_stm_gain_mode(Segment::S0));
+            assert_eq!(segment, cpu.fpga().req_stm_segment());
+            assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(Segment::S0));
+            assert_eq!(foci.len(), cpu.fpga().stm_cycle(Segment::S0));
+            assert_eq!(freq_div, cpu.fpga().stm_freq_division(Segment::S0));
+            assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
+            assert_eq!(
+                (geometry[0].sound_speed / METER * 64.0).round() as u16,
+                cpu.fpga().sound_speed(Segment::S0)
+            );
+            foci.iter().enumerate().for_each(|(focus_idx, focus)| {
+                cpu.fpga()
+                    .drives(Segment::S0, focus_idx)
+                    .iter()
+                    .enumerate()
+                    .for_each(|(tr_idx, &drive)| {
+                        let tr = cpu.fpga().local_tr_pos()[tr_idx];
+                        let tx = ((tr >> 16) & 0xFFFF) as i32;
+                        let ty = (tr & 0xFFFF) as i16 as i32;
+                        let tz = 0;
+                        let fx = (focus[0].point().x / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                        let fy = (focus[0].point().y / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                        let fz = (focus[0].point().z / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                        let d =
+                            ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
+                        let q = (d << 14) / cpu.fpga().sound_speed(Segment::S0) as u32;
+                        let sin = (sin_table[q as usize % 256] >> 1) as usize;
+                        let cos = (sin_table[(q as usize + 64) % 256] >> 1) as usize;
+                        let p = atan_table[(sin << 7) | cos];
+                        assert_eq!(Phase::new(p), drive.phase());
+                        assert_eq!(focus.intensity(), drive.intensity());
+                    })
+            });
+        }
 
-        assert!(!cpu.fpga().is_stm_gain_mode(Segment::S0));
-        assert_eq!(segment, cpu.fpga().req_stm_segment());
-        assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(Segment::S0));
-        assert_eq!(foci.len(), cpu.fpga().stm_cycle(Segment::S0));
-        assert_eq!(freq_div, cpu.fpga().stm_freq_division(Segment::S0));
-        assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
-        assert_eq!(
-            (geometry[0].sound_speed / METER * 64.0).round() as u16,
-            cpu.fpga().sound_speed(Segment::S0)
-        );
-        foci.iter().enumerate().for_each(|(focus_idx, focus)| {
-            cpu.fpga()
-                .drives(Segment::S0, focus_idx)
-                .iter()
-                .enumerate()
-                .for_each(|(tr_idx, &drive)| {
-                    let tr = cpu.fpga().local_tr_pos()[tr_idx];
-                    let tx = ((tr >> 16) & 0xFFFF) as i32;
-                    let ty = (tr & 0xFFFF) as i16 as i32;
-                    let tz = 0;
-                    let fx = (focus[0].point().x / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                    let fy = (focus[0].point().y / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                    let fz = (focus[0].point().z / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                    let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
-                    let q = (d << 14) / cpu.fpga().sound_speed(Segment::S0) as u32;
-                    let sin = (sin_table[q as usize % 256] >> 1) as usize;
-                    let cos = (sin_table[(q as usize + 64) % 256] >> 1) as usize;
-                    let p = atan_table[(sin << 7) | cos];
-                    assert_eq!(Phase::new(p), drive.phase());
-                    assert_eq!(focus.intensity(), drive.intensity());
-                })
-        });
-    }
+        {
+            let freq_div = rng.gen_range(
+                SAMPLING_FREQ_DIV_MIN
+                    * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
+                    ..=SAMPLING_FREQ_DIV_MAX,
+            );
+            let foci = gen_random_foci::<1>(2);
+            let loop_behavior = LoopBehavior::once();
+            let segment = Segment::S1;
 
-    {
-        let freq_div = rng.gen_range(
-            SAMPLING_FREQ_DIV_MIN
-                * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
-                ..=SAMPLING_FREQ_DIV_MAX,
-        );
-        let foci = gen_random_foci::<1>(2);
-        let loop_behavior = LoopBehavior::once();
-        let segment = Segment::S1;
+            let stm =
+                FociSTM::from_sampling_config(SamplingConfig::DivisionRaw(freq_div), foci.clone())
+                    .with_loop_behavior(loop_behavior)
+                    .with_segment(segment, None);
 
-        let stm =
-            FociSTM::from_sampling_config(SamplingConfig::DivisionRaw(freq_div), foci.clone())
-                .with_loop_behavior(loop_behavior)
-                .with_segment(segment, None);
+            assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
 
-        assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
+            assert!(!cpu.fpga().is_stm_gain_mode(Segment::S1));
+            assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
+            assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(Segment::S1));
+            assert_eq!(foci.len(), cpu.fpga().stm_cycle(Segment::S1));
+            assert_eq!(freq_div, cpu.fpga().stm_freq_division(Segment::S1));
+            assert_eq!(TransitionMode::Immediate, cpu.fpga().stm_transition_mode());
+            assert_eq!(
+                (geometry[0].sound_speed / METER * 64.0).round() as u16,
+                cpu.fpga().sound_speed(Segment::S1)
+            );
+            foci.iter().enumerate().for_each(|(focus_idx, focus)| {
+                cpu.fpga()
+                    .drives(Segment::S1, focus_idx)
+                    .iter()
+                    .enumerate()
+                    .for_each(|(tr_idx, &drive)| {
+                        let tr = cpu.fpga().local_tr_pos()[tr_idx];
+                        let tx = ((tr >> 16) & 0xFFFF) as i32;
+                        let ty = (tr & 0xFFFF) as i16 as i32;
+                        let tz = 0;
+                        let fx = (focus[0].point().x / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                        let fy = (focus[0].point().y / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                        let fz = (focus[0].point().z / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                        let d =
+                            ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
+                        let q = (d << 14) / cpu.fpga().sound_speed(Segment::S0) as u32;
+                        let sin = (sin_table[q as usize % 256] >> 1) as usize;
+                        let cos = (sin_table[(q as usize + 64) % 256] >> 1) as usize;
+                        let p = atan_table[sin << 7 | cos];
+                        assert_eq!(Phase::new(p), drive.phase());
+                        assert_eq!(focus.intensity(), drive.intensity());
+                    })
+            });
+        }
 
-        assert!(!cpu.fpga().is_stm_gain_mode(Segment::S1));
-        assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
-        assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(Segment::S1));
-        assert_eq!(foci.len(), cpu.fpga().stm_cycle(Segment::S1));
-        assert_eq!(freq_div, cpu.fpga().stm_freq_division(Segment::S1));
-        assert_eq!(TransitionMode::Immediate, cpu.fpga().stm_transition_mode());
-        assert_eq!(
-            (geometry[0].sound_speed / METER * 64.0).round() as u16,
-            cpu.fpga().sound_speed(Segment::S1)
-        );
-        foci.iter().enumerate().for_each(|(focus_idx, focus)| {
-            cpu.fpga()
-                .drives(Segment::S1, focus_idx)
-                .iter()
-                .enumerate()
-                .for_each(|(tr_idx, &drive)| {
-                    let tr = cpu.fpga().local_tr_pos()[tr_idx];
-                    let tx = ((tr >> 16) & 0xFFFF) as i32;
-                    let ty = (tr & 0xFFFF) as i16 as i32;
-                    let tz = 0;
-                    let fx = (focus[0].point().x / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                    let fy = (focus[0].point().y / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                    let fz = (focus[0].point().z / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                    let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
-                    let q = (d << 14) / cpu.fpga().sound_speed(Segment::S0) as u32;
-                    let sin = (sin_table[q as usize % 256] >> 1) as usize;
-                    let cos = (sin_table[(q as usize + 64) % 256] >> 1) as usize;
-                    let p = atan_table[sin << 7 | cos];
-                    assert_eq!(Phase::new(p), drive.phase());
-                    assert_eq!(focus.intensity(), drive.intensity());
-                })
-        });
-    }
+        {
+            let d = SwapSegment::FociSTM(Segment::S1, TransitionMode::SyncIdx);
 
-    {
-        let d = SwapSegment::FociSTM(Segment::S1, TransitionMode::SyncIdx);
+            assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
-
-        assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
-        assert_eq!(TransitionMode::SyncIdx, cpu.fpga().stm_transition_mode());
-    }
-
-    Ok(())
+            assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
+            assert_eq!(TransitionMode::SyncIdx, cpu.fpga().stm_transition_mode());
+        }
+    });
 }
 
 #[test]
-fn change_foci_stm_segment() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
+fn change_foci_stm_segment() {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -197,15 +194,10 @@ fn change_foci_stm_segment() -> anyhow::Result<()> {
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     assert!(!cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
-
-    Ok(())
 }
 
 #[test]
-fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
+fn test_foci_stm_freq_div_too_small() {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -263,15 +255,10 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
             send(&mut cpu, d, &geometry, &mut tx)
         );
     }
-
-    Ok(())
 }
 
 #[test]
-fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
+fn send_foci_stm_invalid_segment_transition() {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -319,15 +306,10 @@ fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
             send(&mut cpu, d, &geometry, &mut tx)
         );
     }
-
-    Ok(())
 }
 
 #[test]
-fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
+fn send_foci_stm_invalid_transition_mode() {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -376,8 +358,6 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
             send(&mut cpu, d, &geometry, &mut tx)
         );
     }
-
-    Ok(())
 }
 
 #[rstest::rstest]
@@ -389,10 +369,7 @@ fn test_miss_transition_time(
     #[case] expect: Result<(), AUTDInternalError>,
     #[case] systime: OffsetDateTime,
     #[case] transition_time: OffsetDateTime,
-) -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
+) {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -410,117 +387,115 @@ fn test_miss_transition_time(
     if expect.is_ok() {
         assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
     }
-
-    Ok(())
 }
 
-fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
+fn test_send_foci_stm_n<const N: usize>() {
+    temp_env::with_var("AUTD3_ULTRASOUND_FREQ", Some("40000"), || {
+        let sin_table = include_bytes!("sin.dat");
+        let atan_table = include_bytes!("atan.dat");
 
-    let sin_table = include_bytes!("sin.dat");
-    let atan_table = include_bytes!("atan.dat");
+        let mut rng = rand::thread_rng();
 
-    let mut rng = rand::thread_rng();
+        let mut geometry = create_geometry(1);
+        geometry.set_sound_speed(400e3);
+        let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+        let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let mut geometry = create_geometry(1);
-    geometry.set_sound_speed(400e3);
-    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+        {
+            let freq_div = rng.gen_range(
+                SAMPLING_FREQ_DIV_MIN
+                    * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
+                    ..=SAMPLING_FREQ_DIV_MAX,
+            );
+            let foci = gen_random_foci::<N>(1000);
+            let loop_behavior = LoopBehavior::infinite();
+            let segment = Segment::S0;
+            let transition_mode = TransitionMode::Immediate;
 
-    {
-        let freq_div = rng.gen_range(
-            SAMPLING_FREQ_DIV_MIN
-                * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
-                ..=SAMPLING_FREQ_DIV_MAX,
-        );
-        let foci = gen_random_foci::<N>(1000);
-        let loop_behavior = LoopBehavior::infinite();
-        let segment = Segment::S0;
-        let transition_mode = TransitionMode::Immediate;
+            let stm =
+                FociSTM::from_sampling_config(SamplingConfig::DivisionRaw(freq_div), foci.clone())
+                    .with_loop_behavior(loop_behavior)
+                    .with_segment(segment, Some(transition_mode));
 
-        let stm =
-            FociSTM::from_sampling_config(SamplingConfig::DivisionRaw(freq_div), foci.clone())
-                .with_loop_behavior(loop_behavior)
-                .with_segment(segment, Some(transition_mode));
+            assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
 
-        assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
-
-        assert!(!cpu.fpga().is_stm_gain_mode(Segment::S0));
-        assert_eq!(segment, cpu.fpga().req_stm_segment());
-        assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(Segment::S0));
-        assert_eq!(foci.len(), cpu.fpga().stm_cycle(Segment::S0));
-        assert_eq!(freq_div, cpu.fpga().stm_freq_division(Segment::S0));
-        assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
-        assert_eq!(
-            (geometry[0].sound_speed / METER * 64.0).round() as u16,
-            cpu.fpga().sound_speed(Segment::S0)
-        );
-        foci.iter().enumerate().for_each(|(focus_idx, focus)| {
-            cpu.fpga()
-                .drives(Segment::S0, focus_idx)
-                .iter()
-                .enumerate()
-                .for_each(|(tr_idx, &drive)| {
-                    let tr = cpu.fpga().local_tr_pos()[tr_idx];
-                    let tx = ((tr >> 16) & 0xFFFF) as i32;
-                    let ty = (tr & 0xFFFF) as i16 as i32;
-                    let tz = 0;
-                    let base_offset = focus[0].offset();
-                    let (sin, cos) = focus.into_iter().fold((0, 0), |acc, f| {
-                        let fx = (f.point().x / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                        let fy = (f.point().y / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                        let fz = (f.point().z / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                        let d =
-                            ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
-                        let q = (d << 14) / cpu.fpga().sound_speed(Segment::S0) as u32
-                            + (f.offset() - base_offset).value() as u32;
-                        let sin = sin_table[q as usize % 256] as usize;
-                        let cos = sin_table[(q as usize + 64) % 256] as usize;
-                        (acc.0 + sin, acc.1 + cos)
-                    });
-                    let (sin, cos) = ((sin / N) >> 1, (cos / N) >> 1);
-                    let p = atan_table[(sin << 7) | cos];
-                    assert_eq!(Phase::new(p), drive.phase());
-                    assert_eq!(focus.intensity(), drive.intensity());
-                })
-        });
-    }
-
-    Ok(())
+            assert!(!cpu.fpga().is_stm_gain_mode(Segment::S0));
+            assert_eq!(segment, cpu.fpga().req_stm_segment());
+            assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(Segment::S0));
+            assert_eq!(foci.len(), cpu.fpga().stm_cycle(Segment::S0));
+            assert_eq!(freq_div, cpu.fpga().stm_freq_division(Segment::S0));
+            assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
+            assert_eq!(
+                (geometry[0].sound_speed / METER
+                    * 64.0
+                    * (FREQ_40K.hz() as f32 / get_ultrasound_freq().hz() as f32))
+                    .round() as u16,
+                cpu.fpga().sound_speed(Segment::S0)
+            );
+            foci.iter().enumerate().for_each(|(focus_idx, focus)| {
+                cpu.fpga()
+                    .drives(Segment::S0, focus_idx)
+                    .iter()
+                    .enumerate()
+                    .for_each(|(tr_idx, &drive)| {
+                        let tr = cpu.fpga().local_tr_pos()[tr_idx];
+                        let tx = ((tr >> 16) & 0xFFFF) as i32;
+                        let ty = (tr & 0xFFFF) as i16 as i32;
+                        let tz = 0;
+                        let base_offset = focus[0].offset();
+                        let (sin, cos) = focus.into_iter().fold((0, 0), |acc, f| {
+                            let fx = (f.point().x / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                            let fy = (f.point().y / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                            let fz = (f.point().z / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                            let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt()
+                                as u32;
+                            let q = (d << 14) / cpu.fpga().sound_speed(Segment::S0) as u32
+                                + (f.offset() - base_offset).value() as u32;
+                            let sin = sin_table[q as usize % 256] as usize;
+                            let cos = sin_table[(q as usize + 64) % 256] as usize;
+                            (acc.0 + sin, acc.1 + cos)
+                        });
+                        let (sin, cos) = ((sin / N) >> 1, (cos / N) >> 1);
+                        let p = atan_table[(sin << 7) | cos];
+                        assert_eq!(Phase::new(p), drive.phase());
+                        assert_eq!(focus.intensity(), drive.intensity());
+                    })
+            });
+        }
+    });
 }
 
 #[test]
-fn test_send_foci_stm_2() -> anyhow::Result<()> {
+fn test_send_foci_stm_2() {
     test_send_foci_stm_n::<2>()
 }
 
 #[test]
-fn test_send_foci_stm_3() -> anyhow::Result<()> {
+fn test_send_foci_stm_3() {
     test_send_foci_stm_n::<3>()
 }
 
 #[test]
-fn test_send_foci_stm_4() -> anyhow::Result<()> {
+fn test_send_foci_stm_4() {
     test_send_foci_stm_n::<4>()
 }
 
 #[test]
-fn test_send_foci_stm_5() -> anyhow::Result<()> {
+fn test_send_foci_stm_5() {
     test_send_foci_stm_n::<5>()
 }
 
 #[test]
-fn test_send_foci_stm_6() -> anyhow::Result<()> {
+fn test_send_foci_stm_6() {
     test_send_foci_stm_n::<6>()
 }
 
 #[test]
-fn test_send_foci_stm_7() -> anyhow::Result<()> {
+fn test_send_foci_stm_7() {
     test_send_foci_stm_n::<7>()
 }
 
 #[test]
-fn test_send_foci_stm_8() -> anyhow::Result<()> {
+fn test_send_foci_stm_8() {
     test_send_foci_stm_n::<8>()
 }

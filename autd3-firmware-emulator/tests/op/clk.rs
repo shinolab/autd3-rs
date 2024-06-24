@@ -79,31 +79,26 @@ use crate::{create_geometry, send};
     0x00000000,
     0x00000001,
 ], 41000*Hz)]
-fn config_clk(
-    #[case] expect_rom: Vec<u64>,
-    #[case] ultrasound_clk: Freq<u32>,
-) -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(ultrasound_clk);
+fn config_clk_40k(#[case] expect_rom: Vec<u64>, #[case] ultrasound_clk: Freq<u32>) {
+    temp_env::with_var(
+        "AUTD3_ULTRASOUND_FREQ",
+        Some(ultrasound_clk.hz().to_string()),
+        || {
+            let geometry = create_geometry(1);
+            let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+            let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let geometry = create_geometry(1);
-    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+            let d = ConfigureFPGAClock::new();
 
-    let d = ConfigureFPGAClock::new();
+            assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
-
-    assert_eq!(expect_rom, cpu.fpga().drp_rom());
-
-    Ok(())
+            assert_eq!(expect_rom, cpu.fpga().drp_rom());
+        },
+    );
 }
 
 #[test]
 fn config_clk_incomplete_data() -> anyhow::Result<()> {
-    #[cfg(feature = "dynamic_freq")]
-    autd3_driver::set_ultrasound_freq(autd3_driver::defined::FREQ_40K);
-
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());

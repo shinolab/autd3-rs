@@ -30,7 +30,6 @@ capi = ["dynamic_freq", "async-trait"]
 bench-utilities = ["criterion"]
 async-trait = ["autd3-driver/async-trait"]
 dynamic_freq = ["autd3-driver/dynamic_freq"]
-test = ["autd3-driver/test"]
 
 [lib]
 bench = false

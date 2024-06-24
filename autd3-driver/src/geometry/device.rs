@@ -163,8 +163,6 @@ pub mod tests {
     use rand::Rng;
 
     use super::*;
-    #[cfg(feature = "dynamic_freq")]
-    use crate::set_ultrasound_freq;
     use crate::{
         defined::{mm, PI},
         geometry::tests::create_device,
@@ -439,18 +437,12 @@ pub mod tests {
     #[cfg_attr(feature = "dynamic_freq", case(4.25, 340e3, 80000 * crate::defined::Hz))]
     #[cfg_attr(feature = "dynamic_freq", case(5., 400e3, 80000 * crate::defined::Hz))]
 
-    fn wavelength(
-        #[case] expect: f32,
-        #[case] c: f32,
-        #[allow(unused_variables)]
-        #[case]
-        freq: crate::defined::Freq<u32>,
-    ) {
-        #[cfg(feature = "dynamic_freq")]
-        set_ultrasound_freq(freq);
-        let mut device = create_device(0, 249);
-        device.sound_speed = c;
-        assert_approx_eq::assert_approx_eq!(expect, device.wavelength());
+    fn wavelength(#[case] expect: f32, #[case] c: f32, #[case] freq: crate::defined::Freq<u32>) {
+        temp_env::with_var("AUTD3_ULTRASOUND_FREQ", Some(freq.hz().to_string()), || {
+            let mut device = create_device(0, 249);
+            device.sound_speed = c;
+            assert_approx_eq::assert_approx_eq!(expect, device.wavelength());
+        });
     }
 
     #[allow(unused_variables)]
@@ -467,10 +459,10 @@ pub mod tests {
         #[case]
         freq: crate::defined::Freq<u32>,
     ) {
-        #[cfg(feature = "dynamic_freq")]
-        set_ultrasound_freq(freq);
-        let mut device = create_device(0, 249);
-        device.sound_speed = c;
-        assert_approx_eq::assert_approx_eq!(expect, device.wavenumber());
+        temp_env::with_var("AUTD3_ULTRASOUND_FREQ", Some(freq.hz().to_string()), || {
+            let mut device = create_device(0, 249);
+            device.sound_speed = c;
+            assert_approx_eq::assert_approx_eq!(expect, device.wavenumber());
+        });
     }
 }
