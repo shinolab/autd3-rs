@@ -17,7 +17,6 @@ nalgebra = { workspace = true, features = ["std"] }
 rand = { workspace = true }
 thiserror = { workspace = true }
 criterion = { workspace = true, features = ["html_reports"], optional = true }
-rstest = { workspace = true }
 bitvec = { workspace = true }
 approx = "0.5.1"
 derive_more = { workspace = true }
@@ -41,3 +40,4 @@ harness = false
 
 [dev-dependencies]
 assert_approx_eq = { workspace = true }
+rstest = { workspace = true }

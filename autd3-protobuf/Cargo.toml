@@ -11,7 +11,6 @@ readme = "README.md"
 keywords = ["autd"]
 
 [dependencies]
-h2 = { workspace = true }
 prost = { workspace = true }
 tonic = { workspace = true, features = ["prost", "codegen", "transport"] }
 autd3-driver = { path = "../autd3-driver", version = "26.0.0-beta.1" }
@@ -19,7 +18,7 @@ autd3 = { path = "../autd3", version = "26.0.0-beta.1", optional = true }
 autd3-gain-holo = { path = "../autd3-gain-holo", version = "26.0.0-beta.1", optional = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["sync"], optional = true }
-seq-macro = "0.3.5"
+seq-macro = { version = "0.3.5", optional = true }
 
 [build-dependencies]
 tonic-build = { workspace = true, optional = true }
@@ -27,7 +26,7 @@ tonic-build = { workspace = true, optional = true }
 [features]
 default = []
 tonic-build = ["dep:tonic-build"]
-lightweight = ["tokio", "autd3", "autd3-gain-holo", "autd3-driver/derive", "autd3-driver/async-trait", "autd3/async-trait", "autd3-gain-holo/async-trait"]
+lightweight = ["tokio", "seq-macro", "autd3", "autd3-gain-holo", "autd3-driver/derive", "autd3-driver/async-trait", "autd3/async-trait", "autd3-gain-holo/async-trait"]
 async-trait = ["autd3-driver/async-trait"]
 
 [dev-dependencies]
