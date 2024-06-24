@@ -63,7 +63,7 @@ impl Sine<ExactFreq> {
 }
 
 impl<S: SamplingMode> Modulation for Sine<S> {
-    fn calc(&self, _: &Geometry) -> ModulationCalcResult {
+    fn calc(&self) -> ModulationCalcResult {
         let (n, rep) = S::validate(self.freq, self.config)?;
         let intensity = self.intensity;
         let offset = self.offset;

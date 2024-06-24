@@ -37,11 +37,11 @@ impl<S: SamplingMode> Fourier<S> {
 }
 
 impl<S: SamplingMode> Modulation for Fourier<S> {
-    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
+    fn calc(&self) -> ModulationCalcResult {
         let buffers = self
             .components
             .iter()
-            .map(|c| c.calc(geometry))
+            .map(|c| c.calc())
             .collect::<Result<Vec<_>, _>>()?;
         Ok(buffers
             .iter()

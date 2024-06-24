@@ -37,11 +37,11 @@ impl<S: SamplingMode> Mixer<S> {
 }
 
 impl<S: SamplingMode> Modulation for Mixer<S> {
-    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
+    fn calc(&self) -> ModulationCalcResult {
         let buffers = self
             .components
             .iter()
-            .map(|c| c.calc(geometry))
+            .map(|c| c.calc())
             .map(|v| {
                 v.map(|v| {
                     v.into_iter()

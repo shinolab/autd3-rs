@@ -29,7 +29,7 @@ pub struct TestModulation {
 }
 
 impl Modulation for TestModulation {
-    fn calc(&self, _: &Geometry) -> ModulationCalcResult {
+    fn calc(&self) -> ModulationCalcResult {
         Ok(self.buf.clone())
     }
 }

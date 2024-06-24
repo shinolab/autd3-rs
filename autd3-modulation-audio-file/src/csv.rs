@@ -53,7 +53,7 @@ impl Csv {
 }
 
 impl Modulation for Csv {
-    fn calc(&self, _: &Geometry) -> ModulationCalcResult {
+    fn calc(&self) -> ModulationCalcResult {
         Ok(self.read_buf()?)
     }
 

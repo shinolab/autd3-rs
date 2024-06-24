@@ -60,7 +60,7 @@ impl Square<ExactFreq> {
 }
 
 impl<S: SamplingMode> Modulation for Square<S> {
-    fn calc(&self, _: &Geometry) -> ModulationCalcResult {
+    fn calc(&self) -> ModulationCalcResult {
         if !(0.0..=1.0).contains(&self.duty) {
             return Err(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string(),

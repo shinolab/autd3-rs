@@ -26,8 +26,8 @@ pub trait IntoRadiationPressure<M: Modulation> {
 }
 
 impl<M: Modulation> Modulation for RadiationPressure<M> {
-    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
-        let src = self.m.calc(geometry)?;
+    fn calc(&self) -> ModulationCalcResult {
+        let src = self.m.calc()?;
         Ok(src
             .into_iter()
             .map(|v| ((v as f32 / 255.).sqrt() * 255.).round() as u8)

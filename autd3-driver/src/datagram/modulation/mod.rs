@@ -36,7 +36,7 @@ pub trait ModulationProperty {
 
 #[allow(clippy::len_without_is_empty)]
 pub trait Modulation: ModulationProperty {
-    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult;
+    fn calc(&self) -> ModulationCalcResult;
     // GRCOV_EXCL_START
     #[tracing::instrument(skip(self, _geometry))]
     fn trace(&self, _geometry: &Geometry) {
@@ -57,8 +57,8 @@ impl<'a> ModulationProperty for Box<dyn Modulation + Send + Sync + 'a> {
 }
 
 impl<'a> Modulation for Box<dyn Modulation + Send + Sync + 'a> {
-    fn calc(&self, geometry: &Geometry) -> ModulationCalcResult {
-        self.as_ref().calc(geometry)
+    fn calc(&self) -> ModulationCalcResult {
+        self.as_ref().calc()
     }
 
     fn trace(&self, geometry: &Geometry) {
@@ -93,12 +93,12 @@ impl<'a> DatagramST for Box<dyn Modulation + Send + Sync + 'a> {
 
     fn operation_generator_with_segment(
         self,
-        geometry: &Geometry,
+        _: &Geometry,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, AUTDInternalError> {
         Ok(Self::G {
-            g: Arc::new(self.calc(geometry)?),
+            g: Arc::new(self.calc()?),
             config: self.sampling_config(),
             rep: self.loop_behavior().rep,
             segment,
@@ -117,7 +117,7 @@ impl<'a> DatagramST for Box<dyn Modulation + Send + Sync + 'a> {
     fn trace(&self, geometry: &Geometry) {
         self.as_ref().trace(geometry);
         if tracing::enabled!(tracing::Level::DEBUG) {
-            if let Ok(buf) = <Self as Modulation>::calc(self, geometry) {
+            if let Ok(buf) = <Self as Modulation>::calc(self) {
                 match buf.len() {
                     0 => {
                         tracing::error!("Buffer is empty");
@@ -163,7 +163,7 @@ mod capi {
     }
 
     impl Modulation for NullModulation {
-        fn calc(&self, _: &Geometry) -> ModulationCalcResult {
+        fn calc(&self) -> ModulationCalcResult {
             Ok(vec![])
         }
     }
@@ -192,7 +192,7 @@ mod tests {
     }
 
     impl Modulation for TestModulation {
-        fn calc(&self, _: &Geometry) -> ModulationCalcResult {
+        fn calc(&self) -> ModulationCalcResult {
             Ok(self.buf.clone())
         }
     }
