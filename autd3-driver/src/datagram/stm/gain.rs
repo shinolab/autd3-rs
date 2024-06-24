@@ -72,6 +72,15 @@ impl<G: Gain> GainSTM<G> {
         Self::new(config.into(), gains.into_iter().collect::<Vec<_>>())
     }
 
+    #[cfg(feature = "capi")]
+    pub fn from_stm_sampling_config<C, F: IntoIterator<Item = G>>(
+        config: STMSamplingConfig,
+        gains: F,
+    ) -> Result<Self, AUTDInternalError> {
+        let gains = gains.into_iter().collect::<Vec<_>>();
+        Ok(Self::new(config.sampling(gains.len())?, gains))
+    }
+
     fn new(sampling_config: SamplingConfig, gains: Vec<G>) -> Self {
         Self {
             gains,
