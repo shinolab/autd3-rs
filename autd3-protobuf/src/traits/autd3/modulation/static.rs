@@ -13,7 +13,7 @@ impl ToMessage for autd3::modulation::Static {
         Self::Message {
             datagram: Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::Static(Static {
-                    intensity: self.intensity() as _,
+                    intensity: Some(self.intensity() as _),
                 })),
                 loop_behavior: Some(self.loop_behavior().to_msg(None)),
             })),
@@ -25,7 +25,11 @@ impl ToMessage for autd3::modulation::Static {
 
 impl FromMessage<Static> for autd3::modulation::Static {
     fn from_msg(msg: &Static) -> Result<Self, AUTDProtoBufError> {
-        Ok(Self::with_intensity(msg.intensity as u8))
+        if let Some(intensity) = msg.intensity {
+            Ok(Self::with_intensity(intensity as _))
+        } else {
+            Ok(Self::new())
+        }
     }
 }
 
