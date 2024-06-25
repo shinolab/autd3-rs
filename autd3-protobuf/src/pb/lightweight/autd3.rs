@@ -1456,8 +1456,8 @@ pub struct GainWithSegment {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Static {
-    #[prost(uint32, tag = "1")]
-    pub intensity: u32,
+    #[prost(uint32, optional, tag = "1")]
+    pub intensity: ::core::option::Option<u32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

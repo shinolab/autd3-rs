@@ -5,7 +5,7 @@ package autd3;
 import "utils.proto";
 import "utils-lightweight.proto";
 
-message Static { uint32 intensity = 1; }
+message Static { optional uint32 intensity = 1; }
 
 message SineExact {
   uint32 freq = 1;
