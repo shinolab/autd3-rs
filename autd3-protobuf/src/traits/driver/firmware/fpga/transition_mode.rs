@@ -1,7 +1,4 @@
-use autd3_driver::{
-    ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
-    firmware::fpga::GPIOIn,
-};
+use autd3_driver::ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE};
 
 use crate::{
     pb::*,
@@ -54,13 +51,9 @@ impl FromMessage<TransitionMode> for autd3_driver::firmware::fpga::TransitionMod
                 )
             }
             transition_mode::Mode::Gpio(TransitionModeGpio { value }) => {
-                autd3_driver::firmware::fpga::TransitionMode::GPIO(match value {
-                    0 => GPIOIn::I0,
-                    1 => GPIOIn::I1,
-                    2 => GPIOIn::I2,
-                    3 => GPIOIn::I3,
-                    _ => unimplemented!(),
-                })
+                autd3_driver::firmware::fpga::TransitionMode::GPIO(
+                    autd3_driver::firmware::fpga::GPIOIn::from(GpioIn::try_from(value)?),
+                )
             }
             transition_mode::Mode::Ext(TransitionModeExt {}) => {
                 autd3_driver::firmware::fpga::TransitionMode::Ext

@@ -38,9 +38,16 @@ enum Segment {
   S1 = 1;
 }
 
+enum GPIOIn {
+  I0 = 0;
+  I1 = 1;
+  I2 = 2;
+  I3 = 3;
+}
+
 message TransitionModeSyncIdx { }
 message TransitionModeSysTime { uint64 value = 1; }
-message TransitionModeGPIO { uint64 value = 1; }
+message TransitionModeGPIO { GPIOIn value = 1; }
 message TransitionModeExt { }
 message TransitionModeImmediate { }
 

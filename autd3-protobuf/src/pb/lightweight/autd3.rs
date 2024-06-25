@@ -1157,8 +1157,8 @@ pub struct TransitionModeSysTime {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TransitionModeGpio {
-    #[prost(uint64, tag = "1")]
-    pub value: u64,
+    #[prost(enumeration = "GpioIn", tag = "1")]
+    pub value: i32,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1229,6 +1229,39 @@ impl Segment {
         match value {
             "S0" => Some(Self::S0),
             "S1" => Some(Self::S1),
+            _ => None,
+        }
+    }
+}
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum GpioIn {
+    I0 = 0,
+    I1 = 1,
+    I2 = 2,
+    I3 = 3,
+}
+impl GpioIn {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            GpioIn::I0 => "I0",
+            GpioIn::I1 => "I1",
+            GpioIn::I2 => "I2",
+            GpioIn::I3 => "I3",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "I0" => Some(Self::I0),
+            "I1" => Some(Self::I1),
+            "I2" => Some(Self::I2),
+            "I3" => Some(Self::I3),
             _ => None,
         }
     }
