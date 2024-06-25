@@ -1546,6 +1546,8 @@ pub struct SquareNearest {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Modulation {
+    #[prost(message, optional, tag = "1000")]
+    pub loop_behavior: ::core::option::Option<LoopBehavior>,
     #[prost(oneof = "modulation::Modulation", tags = "1, 10, 11, 12, 20, 21, 22")]
     pub modulation: ::core::option::Option<modulation::Modulation>,
 }
