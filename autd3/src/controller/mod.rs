@@ -107,7 +107,7 @@ impl<L: Link> Controller<L> {
         }
 
         #[cfg(feature = "dynamic_freq")]
-        if autd3_driver::get_ultrasound_freq() != autd3_driver::defined::FREQ_40K {
+        {
             tracing::debug!(
                 "Configuring ultrasound frequency to {:?}",
                 autd3_driver::get_ultrasound_freq()
