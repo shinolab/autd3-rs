@@ -19,6 +19,7 @@ impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::E
                     low: Some(self.low() as _),
                     duty: Some(self.duty() as _),
                 })),
+                loop_behavior: Some(self.loop_behavior().to_msg(None)),
             })),
             parallel_threshold: None,
             timeout: None,

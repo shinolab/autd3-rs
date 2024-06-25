@@ -1,3 +1,5 @@
+use autd3_driver::derive::ModulationProperty;
+
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
@@ -13,6 +15,7 @@ impl ToMessage for autd3::modulation::Static {
                 modulation: Some(modulation::Modulation::Static(Static {
                     intensity: self.intensity() as _,
                 })),
+                loop_behavior: Some(self.loop_behavior().to_msg(None)),
             })),
             timeout: None,
             parallel_threshold: None,

@@ -65,6 +65,7 @@ message Modulation {
     SquareExactFloat square_exact_float = 21;
     SquareNearest square_nearest = 22;
   }
+  optional LoopBehavior loop_behavior = 1000;
 }
 
 message ModulationWithSegment {

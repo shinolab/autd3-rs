@@ -19,6 +19,7 @@ impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::Exa
                     offset: Some(self.offset() as _),
                     phase: Some(self.phase().to_msg(None)),
                 })),
+                loop_behavior: Some(self.loop_behavior().to_msg(None)),
             })),
             timeout: None,
             parallel_threshold: None,
