@@ -1,12 +1,11 @@
 use std::net::SocketAddr;
 
 use autd3_driver::{
-    defined::{Freq, FREQ_40K},
     derive::*,
     geometry::{Device, Geometry, IntoDevice},
 };
 
-use crate::traits::*;
+use crate::{traits::*, OpenRequestLightweight};
 
 pub struct LightweightClient {
     client: crate::pb::ecat_light_client::EcatLightClient<tonic::transport::Channel>,
@@ -17,7 +16,12 @@ pub struct LightweightClient {
 pub struct LightweightClientBuilder {
     devices: Vec<Device>,
     #[getset]
-    ultrasound_freq: Freq<u32>,
+    parallel_threshold: usize,
+    #[getset]
+    send_interval: std::time::Duration,
+    #[cfg(target_os = "windows")]
+    #[getset]
+    timer_resolution: u32,
 }
 
 impl LightweightClientBuilder {
@@ -28,7 +32,10 @@ impl LightweightClientBuilder {
                 .enumerate()
                 .map(|(i, d)| d.into_device(i))
                 .collect(),
-            ultrasound_freq: FREQ_40K,
+            parallel_threshold: 4,
+            send_interval: std::time::Duration::from_millis(1),
+            #[cfg(target_os = "windows")]
+            timer_resolution: 1,
         }
     }
 
@@ -36,7 +43,7 @@ impl LightweightClientBuilder {
         self,
         addr: SocketAddr,
     ) -> Result<LightweightClient, crate::error::AUTDProtoBufError> {
-        LightweightClient::open_impl(Geometry::new(self.devices), addr).await
+        LightweightClient::open_impl(self, addr).await
     }
 }
 
@@ -46,14 +53,23 @@ impl LightweightClient {
     }
 
     async fn open_impl(
-        geometry: Geometry,
+        builder: LightweightClientBuilder,
         addr: SocketAddr,
     ) -> Result<Self, crate::error::AUTDProtoBufError> {
         let mut client =
             crate::pb::ecat_light_client::EcatLightClient::connect(format!("http://{}", addr))
                 .await?;
+        let geometry = Geometry::new(builder.devices);
         let res = client
-            .config_geomety(geometry.to_msg(None))
+            .open(OpenRequestLightweight {
+                geometry: Some(geometry.to_msg(None)),
+                parallel_threshold: builder.parallel_threshold as _,
+                send_interval: builder.send_interval.as_nanos() as _,
+                #[cfg(target_os = "windows")]
+                timer_resolution: builder.timer_resolution,
+                #[cfg(not(target_os = "windows"))]
+                timer_resolution: 1,
+            })
             .await?
             .into_inner();
         if !res.success {

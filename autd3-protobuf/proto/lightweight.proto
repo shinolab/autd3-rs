@@ -52,8 +52,15 @@ message FirmwareVersionResponseLightweight {
 
 message CloseRequestLightweight {}
 
+message OpenRequestLightweight {
+  Geometry geometry = 1;
+  uint64 parallel_threshold = 2;
+  uint64 send_interval = 3;
+  uint32 timer_resolution = 4;
+}
+
 service ECATLight {
-  rpc ConfigGeomety(Geometry) returns (SendResponseLightweight) {}
+  rpc Open(OpenRequestLightweight) returns (SendResponseLightweight) {}
   rpc FirmwareVersion(FirmwareVersionRequestLightweight) returns (FirmwareVersionResponseLightweight) {}
   rpc Send(Datagram) returns (SendResponseLightweight) {}
   rpc Close(CloseRequestLightweight) returns (SendResponseLightweight) {}
