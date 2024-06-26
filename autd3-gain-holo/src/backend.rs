@@ -111,7 +111,6 @@ pub trait LinAlgBackend<D: Directivity> {
         v: &mut Self::MatrixXc,
     ) -> Result<(), HoloError>;
 
-    fn get_diagonal_c(&self, a: &Self::MatrixXc, v: &mut Self::VectorXc) -> Result<(), HoloError>;
     fn create_diagonal(&self, v: &Self::VectorX, a: &mut Self::MatrixX) -> Result<(), HoloError>;
     fn create_diagonal_c(
         &self,
@@ -120,32 +119,13 @@ pub trait LinAlgBackend<D: Directivity> {
     ) -> Result<(), HoloError>;
     fn get_diagonal(&self, a: &Self::MatrixX, v: &mut Self::VectorX) -> Result<(), HoloError>;
 
-    fn abs_cv(&self, a: &Self::VectorXc, b: &mut Self::VectorX) -> Result<(), HoloError>;
     fn norm_squared_cv(&self, a: &Self::VectorXc, b: &mut Self::VectorX) -> Result<(), HoloError>;
     fn real_cm(&self, a: &Self::MatrixXc, b: &mut Self::MatrixX) -> Result<(), HoloError>;
     fn imag_cm(&self, a: &Self::MatrixXc, b: &mut Self::MatrixX) -> Result<(), HoloError>;
-    fn scale_assign_v(&self, a: f32, b: &mut Self::VectorX) -> Result<(), HoloError>;
     fn scale_assign_cv(&self, a: Complex, b: &mut Self::VectorXc) -> Result<(), HoloError>;
-    fn scale_assign_cm(&self, a: Complex, b: &mut Self::MatrixXc) -> Result<(), HoloError>;
     fn conj_assign_v(&self, b: &mut Self::VectorXc) -> Result<(), HoloError>;
-    fn sqrt_assign_v(&self, v: &mut Self::VectorX) -> Result<(), HoloError>;
-    fn normalize_assign_cv(&self, v: &mut Self::VectorXc) -> Result<(), HoloError>;
-    fn reciprocal_assign_c(&self, v: &mut Self::VectorXc) -> Result<(), HoloError>;
-    fn pow_assign_v(&self, a: f32, v: &mut Self::VectorX) -> Result<(), HoloError>;
     fn exp_assign_cv(&self, v: &mut Self::VectorXc) -> Result<(), HoloError>;
 
-    fn concat_row_cm(
-        &self,
-        a: &Self::MatrixXc,
-        b: &Self::MatrixXc,
-        c: &mut Self::MatrixXc,
-    ) -> Result<(), HoloError>;
-    fn concat_col_cv(
-        &self,
-        a: &Self::VectorXc,
-        b: &Self::VectorXc,
-        c: &mut Self::VectorXc,
-    ) -> Result<(), HoloError>;
     fn concat_col_cm(
         &self,
         a: &Self::MatrixXc,
@@ -156,17 +136,6 @@ pub trait LinAlgBackend<D: Directivity> {
     fn max_v(&self, m: &Self::VectorX) -> Result<f32, HoloError>;
     fn max_eigen_vector_c(&self, m: Self::MatrixXc) -> Result<Self::VectorXc, HoloError>;
 
-    fn hadamard_product_assign_cv(
-        &self,
-        x: &Self::VectorXc,
-        y: &mut Self::VectorXc,
-    ) -> Result<(), HoloError>;
-    fn hadamard_product_cv(
-        &self,
-        x: &Self::VectorXc,
-        y: &Self::VectorXc,
-        z: &mut Self::VectorXc,
-    ) -> Result<(), HoloError>;
     fn hadamard_product_cm(
         &self,
         x: &Self::MatrixXc,
@@ -226,7 +195,6 @@ pub trait LinAlgBackend<D: Directivity> {
         b: &mut Self::MatrixXc,
     ) -> Result<(), HoloError>;
     fn solve_inplace(&self, a: &Self::MatrixX, x: &mut Self::VectorX) -> Result<(), HoloError>;
-    fn solve_inplace_h(&self, a: Self::MatrixXc, x: &mut Self::VectorXc) -> Result<(), HoloError>;
 
     fn reduce_col(&self, a: &Self::MatrixX, b: &mut Self::VectorX) -> Result<(), HoloError>;
 

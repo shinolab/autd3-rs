@@ -269,41 +269,12 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         Ok(())
     }
 
-    fn normalize_assign_cv(&self, v: &mut Self::VectorXc) -> Result<(), HoloError> {
-        v.apply(|v| *v /= v.abs());
-        Ok(())
-    }
-
-    fn hadamard_product_assign_cv(
-        &self,
-        x: &Self::VectorXc,
-        y: &mut Self::VectorXc,
-    ) -> Result<(), HoloError> {
-        y.component_mul_assign(x);
-        Ok(())
-    }
-
-    fn hadamard_product_cv(
-        &self,
-        x: &Self::VectorXc,
-        y: &Self::VectorXc,
-        z: &mut Self::VectorXc,
-    ) -> Result<(), HoloError> {
-        *z = x.component_mul(y);
-        Ok(())
-    }
-
     fn alloc_cv(&self, size: usize) -> Result<Self::VectorXc, HoloError> {
         Ok(Self::VectorXc::zeros(size))
     }
 
     fn alloc_zeros_cm(&self, rows: usize, cols: usize) -> Result<Self::MatrixXc, HoloError> {
         Ok(Self::MatrixXc::zeros(rows, cols))
-    }
-
-    fn get_diagonal_c(&self, a: &Self::MatrixXc, v: &mut Self::VectorXc) -> Result<(), HoloError> {
-        *v = a.diagonal();
-        Ok(())
     }
 
     fn create_diagonal_c(
@@ -316,28 +287,8 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         Ok(())
     }
 
-    fn reciprocal_assign_c(&self, v: &mut Self::VectorXc) -> Result<(), HoloError> {
-        v.apply(|v| *v = Complex::new(1., 0.) / *v);
-        Ok(())
-    }
-
-    fn abs_cv(&self, a: &Self::VectorXc, b: &mut Self::VectorX) -> Result<(), HoloError> {
-        *b = a.map(|v| v.abs());
-        Ok(())
-    }
-
     fn norm_squared_cv(&self, a: &Self::VectorXc, b: &mut Self::VectorX) -> Result<(), HoloError> {
         *b = a.map(|v| v.norm_squared());
-        Ok(())
-    }
-
-    fn scale_assign_v(&self, a: f32, b: &mut Self::VectorX) -> Result<(), HoloError> {
-        *b *= a;
-        Ok(())
-    }
-
-    fn sqrt_assign_v(&self, v: &mut Self::VectorX) -> Result<(), HoloError> {
-        v.apply(|v| *v = v.sqrt());
         Ok(())
     }
 
@@ -447,40 +398,6 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         ))
     }
 
-    fn pow_assign_v(&self, a: f32, v: &mut Self::VectorX) -> Result<(), HoloError> {
-        v.apply(|v| *v = v.powf(a));
-        Ok(())
-    }
-
-    fn concat_row_cm(
-        &self,
-        a: &Self::MatrixXc,
-        b: &Self::MatrixXc,
-        c: &mut Self::MatrixXc,
-    ) -> Result<(), HoloError> {
-        c.view_mut((0, 0), (a.nrows(), a.ncols())).copy_from(a);
-        c.view_mut((a.nrows(), 0), (b.nrows(), b.ncols()))
-            .copy_from(b);
-        Ok(())
-    }
-
-    fn concat_col_cv(
-        &self,
-        a: &Self::VectorXc,
-        b: &Self::VectorXc,
-        c: &mut Self::VectorXc,
-    ) -> Result<(), HoloError> {
-        *c = VectorXc::from_iterator(a.len() + b.len(), a.iter().chain(b.iter()).cloned());
-        Ok(())
-    }
-
-    fn solve_inplace_h(&self, a: Self::MatrixXc, x: &mut Self::VectorXc) -> Result<(), HoloError> {
-        if !a.qr().solve_mut(x) {
-            return Err(HoloError::SolveFailed); // GRCOV_EXCL_LINE
-        }
-        Ok(())
-    }
-
     fn get_col_c(
         &self,
         a: &Self::MatrixXc,
@@ -523,11 +440,6 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
     }
 
     fn scale_assign_cv(&self, a: Complex, b: &mut Self::VectorXc) -> Result<(), HoloError> {
-        b.apply(|x| *x *= a);
-        Ok(())
-    }
-
-    fn scale_assign_cm(&self, a: Complex, b: &mut Self::MatrixXc) -> Result<(), HoloError> {
         b.apply(|x| *x *= a);
         Ok(())
     }

@@ -111,8 +111,6 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         self.set_row_c()?;
         println!("set_row_c done");
 
-        self.test_get_diagonal_c()?;
-        println!("test_get_diagonal_c done");
         self.test_create_diagonal()?;
         println!("test_create_diagonal done");
         self.test_create_diagonal_c()?;
@@ -120,37 +118,19 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         self.test_get_diagonal()?;
         println!("test_get_diagonal done");
 
-        self.test_abs_cv()?;
-        println!("test_abs_cv done");
         self.test_norm_squared_cv()?;
         println!("test_norm_squared_cv done");
         self.test_real_cm()?;
         println!("test_real_cm done");
         self.test_imag_cm()?;
         println!("test_imag_cm done");
-        self.test_scale_assign_v()?;
-        println!("test_scale_assign_v done");
         self.test_scale_assign_cv()?;
         println!("test_scale_assign_cv done");
-        self.test_scale_assign_cm()?;
-        println!("test_scale_assign_cm done");
         self.test_conj_assign_v()?;
         println!("test_conj_assign_v done");
-        self.test_sqrt_assign_v()?;
-        println!("test_sqrt_assign_v done");
-        self.test_normalize_assign_cv()?;
-        println!("test_normalize_assign_cv done");
-        self.test_reciprocal_assign_c()?;
-        println!("test_reciprocal_assign_c done");
-        self.test_pow_assign_v()?;
-        println!("test_pow_assign_v done");
         self.test_exp_assign_cv()?;
         println!("test_exp_assign_cv done");
 
-        self.test_concat_row_cm()?;
-        println!("test_concat_row_cm done");
-        self.test_concat_col_cv()?;
-        println!("test_concat_col_cv done");
         self.test_concat_col_cm()?;
         println!("test_concat_col_cm done");
 
@@ -159,10 +139,6 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         self.test_max_eigen_vector_c()?;
         println!("test_max_eigen_vector_c done");
 
-        self.test_hadamard_product_assign_cv()?;
-        println!("test_hadamard_product_assign_cv done");
-        self.test_hadamard_product_cv()?;
-        println!("test_hadamard_product_cv done");
         self.test_hadamard_product_cm()?;
         println!("test_hadamard_product_cm done");
 
@@ -187,8 +163,6 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         println!("pseudo_inverse_svd done");
         self.test_solve_inplace()?;
         println!("test_solve_inplace done");
-        self.test_solve_inplace_h()?;
-        println!("test_solve_inplace_h done");
 
         self.test_reduce_col()?;
         println!("test_reduce_col done");
@@ -825,21 +799,6 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         Ok(())
     }
 
-    fn test_get_diagonal_c(&self) -> Result<(), HoloError> {
-        let c = self.make_random_cm(N, N)?;
-
-        let mut diagonal = self.backend.alloc_cv(N)?;
-        self.backend.get_diagonal_c(&c, &mut diagonal)?;
-
-        let c = self.backend.to_host_cm(c)?;
-        let diagonal = self.backend.to_host_cv(diagonal)?;
-        (0..N).for_each(|i| {
-            assert_eq!(c[i * N + i].re, diagonal[i].re);
-            assert_eq!(c[i * N + i].im, diagonal[i].im);
-        });
-        Ok(())
-    }
-
     fn test_create_diagonal(&self) -> Result<(), HoloError> {
         let diagonal = self.make_random_v(N)?;
 
@@ -898,20 +857,6 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         Ok(())
     }
 
-    fn test_abs_cv(&self) -> Result<(), HoloError> {
-        let v = self.make_random_cv(N)?;
-
-        let mut abs = self.backend.alloc_v(N)?;
-        self.backend.abs_cv(&v, &mut abs)?;
-
-        let v = self.backend.to_host_cv(v)?;
-        let abs = self.backend.to_host_v(abs)?;
-        v.iter().zip(abs.iter()).for_each(|(v, abs)| {
-            assert_approx_eq::assert_approx_eq!(v.abs(), abs, EPS);
-        });
-        Ok(())
-    }
-
     fn test_norm_squared_cv(&self) -> Result<(), HoloError> {
         let v = self.make_random_cv(N)?;
 
@@ -958,22 +903,6 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         Ok(())
     }
 
-    fn test_scale_assign_v(&self) -> Result<(), HoloError> {
-        let mut v = self.make_random_v(N)?;
-        let vc = self.backend.clone_v(&v)?;
-        let mut rng = rand::thread_rng();
-        let scale = rng.gen();
-
-        self.backend.scale_assign_v(scale, &mut v)?;
-
-        let v = self.backend.to_host_v(v)?;
-        let vc = self.backend.to_host_v(vc)?;
-        v.iter().zip(vc.iter()).for_each(|(&v, &vc)| {
-            assert_approx_eq::assert_approx_eq!(scale * vc, v, EPS);
-        });
-        Ok(())
-    }
-
     fn test_scale_assign_cv(&self) -> Result<(), HoloError> {
         let mut v = self.make_random_cv(N)?;
         let vc = self.backend.clone_cv(&v)?;
@@ -984,22 +913,6 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
 
         let v = self.backend.to_host_cv(v)?;
         let vc = self.backend.to_host_cv(vc)?;
-        v.iter().zip(vc.iter()).for_each(|(&v, &vc)| {
-            assert_approx_eq::assert_approx_eq!(scale * vc, v, EPS);
-        });
-        Ok(())
-    }
-
-    fn test_scale_assign_cm(&self) -> Result<(), HoloError> {
-        let mut v = self.make_random_cm(N, N)?;
-        let vc = self.backend.clone_cm(&v)?;
-        let mut rng = rand::thread_rng();
-        let scale = Complex::new(rng.gen(), rng.gen());
-
-        self.backend.scale_assign_cm(scale, &mut v)?;
-
-        let v = self.backend.to_host_cm(v)?;
-        let vc = self.backend.to_host_cm(vc)?;
         v.iter().zip(vc.iter()).for_each(|(&v, &vc)| {
             assert_approx_eq::assert_approx_eq!(scale * vc, v, EPS);
         });
@@ -1021,73 +934,6 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         Ok(())
     }
 
-    fn test_sqrt_assign_v(&self) -> Result<(), HoloError> {
-        let v = self.make_random_cv(N)?;
-        let mut abs = self.backend.alloc_v(N)?;
-        self.backend.abs_cv(&v, &mut abs)?;
-        let absc = self.backend.clone_v(&abs)?;
-
-        self.backend.sqrt_assign_v(&mut abs)?;
-
-        let abs = self.backend.to_host_v(abs)?;
-        let absc = self.backend.to_host_v(absc)?;
-        abs.iter().zip(absc.iter()).for_each(|(&v, &vc)| {
-            assert_approx_eq::assert_approx_eq!(vc.sqrt(), v, EPS);
-        });
-        Ok(())
-    }
-
-    fn test_normalize_assign_cv(&self) -> Result<(), HoloError> {
-        let mut v = self.make_random_cv(N)?;
-
-        let vc = self.backend.clone_cv(&v)?;
-
-        self.backend.normalize_assign_cv(&mut v)?;
-
-        let v = self.backend.to_host_cv(v)?;
-        let vc = self.backend.to_host_cv(vc)?;
-        v.iter().zip(vc.iter()).for_each(|(v, vc)| {
-            let norm = vc.abs();
-            assert_approx_eq::assert_approx_eq!(vc.re / norm, v.re, EPS);
-            assert_approx_eq::assert_approx_eq!(vc.im / norm, v.im, EPS);
-        });
-        Ok(())
-    }
-
-    fn test_reciprocal_assign_c(&self) -> Result<(), HoloError> {
-        let mut v = self.make_random_cv(N)?;
-        let vc = self.backend.clone_cv(&v)?;
-
-        self.backend.reciprocal_assign_c(&mut v)?;
-
-        let v = self.backend.to_host_cv(v)?;
-        let vc = self.backend.to_host_cv(vc)?;
-        v.iter().zip(vc.iter()).for_each(|(v, vc)| {
-            let r = vc.re;
-            let i = vc.im;
-            let reciprocal = Complex::new(r / (r * r + i * i), -i / (r * r + i * i));
-            assert_approx_eq::assert_approx_eq!(reciprocal.re, v.re, EPS);
-            assert_approx_eq::assert_approx_eq!(reciprocal.im, v.im, EPS);
-        });
-        Ok(())
-    }
-
-    fn test_pow_assign_v(&self) -> Result<(), HoloError> {
-        let mut v = self.make_random_v(N)?;
-        let vc = self.backend.clone_v(&v)?;
-
-        let mut rng = rand::thread_rng();
-        let e = rng.gen();
-        self.backend.pow_assign_v(e, &mut v)?;
-
-        let v = self.backend.to_host_v(v)?;
-        let vc = self.backend.to_host_v(vc)?;
-        v.iter().zip(vc.iter()).for_each(|(v, vc)| {
-            assert_approx_eq::assert_approx_eq!(vc.powf(e), v, EPS);
-        });
-        Ok(())
-    }
-
     fn test_exp_assign_cv(&self) -> Result<(), HoloError> {
         let mut v = self.make_random_cv(N)?;
         let vc = self.backend.clone_cv(&v)?;
@@ -1099,38 +945,6 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
         v.iter().zip(vc.iter()).for_each(|(v, vc)| {
             assert_approx_eq::assert_approx_eq!(vc.exp(), v, EPS);
         });
-        Ok(())
-    }
-
-    fn test_concat_row_cm(&self) -> Result<(), HoloError> {
-        let a = self.make_random_cm(N, N)?;
-        let b = self.make_random_cm(2 * N, N)?;
-        let mut c = self.backend.alloc_cm(N + 2 * N, N)?;
-
-        self.backend.concat_row_cm(&a, &b, &mut c)?;
-
-        let a = self.backend.to_host_cm(a)?;
-        let b = self.backend.to_host_cm(b)?;
-        let c = self.backend.to_host_cm(c)?;
-        (0..N).for_each(|col| (0..N).for_each(|row| assert_eq!(a[(row, col)], c[(row, col)])));
-        (0..N).for_each(|col| {
-            (0..2 * N).for_each(|row| assert_eq!(b[(row, col)], c[(N + row, col)]))
-        });
-        Ok(())
-    }
-
-    fn test_concat_col_cv(&self) -> Result<(), HoloError> {
-        let a = self.make_random_cv(N)?;
-        let b = self.make_random_cv(2 * N)?;
-        let mut c = self.backend.alloc_cv(N + 2 * N)?;
-
-        self.backend.concat_col_cv(&a, &b, &mut c)?;
-
-        let a = self.backend.to_host_cv(a)?;
-        let b = self.backend.to_host_cv(b)?;
-        let c = self.backend.to_host_cv(c)?;
-        (0..N).for_each(|i| assert_eq!(a[i], c[i]));
-        (0..2 * N).for_each(|i| assert_eq!(b[i], c[N + i]));
         Ok(())
     }
 
@@ -1216,48 +1030,6 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
             assert_approx_eq::assert_approx_eq!(b[i].re, expected[i].re, 0.1);
             assert_approx_eq::assert_approx_eq!(b[i].im, expected[i].im, 0.1);
         });
-        Ok(())
-    }
-
-    fn test_hadamard_product_assign_cv(&self) -> Result<(), HoloError> {
-        let a = self.make_random_cv(N)?;
-        let mut b = self.make_random_cv(N)?;
-        let bc = self.backend.clone_cv(&b)?;
-
-        self.backend.hadamard_product_assign_cv(&a, &mut b)?;
-
-        let a = self.backend.to_host_cv(a)?;
-        let b = self.backend.to_host_cv(b)?;
-        let bc = self.backend.to_host_cv(bc)?;
-
-        b.iter()
-            .zip(a.iter())
-            .zip(bc.iter())
-            .for_each(|((b, a), bc)| {
-                assert_approx_eq::assert_approx_eq!(a.re * bc.re - a.im * bc.im, b.re, EPS);
-                assert_approx_eq::assert_approx_eq!(a.re * bc.im + a.im * bc.re, b.im, EPS);
-            });
-        Ok(())
-    }
-
-    fn test_hadamard_product_cv(&self) -> Result<(), HoloError> {
-        let a = self.make_random_cv(N)?;
-        let b = self.make_random_cv(N)?;
-        let mut c = self.backend.alloc_cv(N)?;
-
-        self.backend.hadamard_product_cv(&a, &b, &mut c)?;
-
-        let a = self.backend.to_host_cv(a)?;
-        let b = self.backend.to_host_cv(b)?;
-        let c = self.backend.to_host_cv(c)?;
-
-        c.iter()
-            .zip(a.iter())
-            .zip(b.iter())
-            .for_each(|((c, a), b)| {
-                assert_approx_eq::assert_approx_eq!(a.re * b.re - a.im * b.im, c.re, EPS);
-                assert_approx_eq::assert_approx_eq!(a.re * b.im + a.im * b.re, c.im, EPS);
-            });
         Ok(())
     }
 
@@ -1897,45 +1669,6 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
             let b = self.backend.to_host_v(bb)?;
             b.iter().zip(x.iter()).for_each(|(b, x)| {
                 assert_approx_eq::assert_approx_eq!(b, x, 0.2);
-            });
-        }
-
-        Ok(())
-    }
-
-    fn test_solve_inplace_h(&self) -> Result<(), HoloError> {
-        {
-            let tmp = self.make_random_cm(N, N)?;
-            let mut a = self.backend.alloc_zeros_cm(N, N)?;
-            self.backend.gemm_c(
-                Trans::NoTrans,
-                Trans::ConjTrans,
-                Complex::new(1., 0.),
-                &tmp,
-                &tmp,
-                Complex::new(0., 0.),
-                &mut a,
-            )?;
-
-            let x = self.make_random_cv(N)?;
-
-            let mut b = self.backend.alloc_zeros_cv(N)?;
-            self.backend.gemv_c(
-                Trans::NoTrans,
-                Complex::new(1., 0.),
-                &a,
-                &x,
-                Complex::new(0., 0.),
-                &mut b,
-            )?;
-
-            self.backend.solve_inplace_h(a, &mut b)?;
-
-            let x = self.backend.to_host_cv(x)?;
-            let b = self.backend.to_host_cv(b)?;
-            b.iter().zip(x.iter()).for_each(|(b, x)| {
-                assert_approx_eq::assert_approx_eq!(b.re, x.re, 0.2);
-                assert_approx_eq::assert_approx_eq!(b.im, x.im, 0.2);
             });
         }
 
