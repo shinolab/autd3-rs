@@ -175,9 +175,9 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
 impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + Sync + 'static>
     ecat_light_server::EcatLight for LightweightServer<L, F>
 {
-    async fn config_geomety(
+    async fn open(
         &self,
-        req: Request<Geometry>,
+        req: Request<OpenRequestLightweight>,
     ) -> Result<Response<SendResponseLightweight>, Status> {
         if let Some(mut autd) = self.autd.write().await.take() {
             match autd.close().await {
@@ -191,14 +191,20 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                 }
             }
         }
-        if let Ok(geometry) = autd3_driver::geometry::Geometry::from_msg(&req.into_inner()) {
-            *self.autd.write().await =
-                match autd3::Controller::builder(geometry.iter().map(|d| {
+        let req = req.into_inner();
+        if let Some(ref geometry) = req.geometry {
+            if let Ok(geometry) = autd3_driver::geometry::Geometry::from_msg(geometry) {
+                #[allow(unused_mut)]
+                let mut builder = autd3::Controller::builder(geometry.iter().map(|d| {
                     autd3::prelude::AUTD3::new(*d[0].position()).with_rotation(*d.rotation())
                 }))
-                .open((self.link)())
-                .await
+                .with_parallel_threshold(req.parallel_threshold as _)
+                .with_send_interval(Duration::from_nanos(req.send_interval));
+                #[cfg(target_os = "windows")]
                 {
+                    builder = builder.with_timer_resolution(req.timer_resolution);
+                }
+                *self.autd.write().await = match builder.open((self.link)()).await {
                     Ok(autd) => Some(autd),
                     Err(e) => {
                         return Ok(Response::new(SendResponseLightweight {
@@ -208,17 +214,24 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                         }))
                     }
                 };
-            Ok(Response::new(SendResponseLightweight {
-                success: true,
-                err: false,
-                msg: String::new(),
-            }))
+                Ok(Response::new(SendResponseLightweight {
+                    success: true,
+                    err: false,
+                    msg: String::new(),
+                }))
+            } else {
+                return Ok(Response::new(SendResponseLightweight {
+                    success: false,
+                    err: true,
+                    msg: "Failed to parse Geometry".to_string(),
+                }));
+            }
         } else {
-            return Ok(Response::new(SendResponseLightweight {
+            Ok(Response::new(SendResponseLightweight {
                 success: false,
                 err: true,
-                msg: "Failed to parse Geometry".to_string(),
-            }));
+                msg: "Geometry is not configured".to_string(),
+            }))
         }
     }
 

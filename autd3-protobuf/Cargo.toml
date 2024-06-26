@@ -26,8 +26,8 @@ tonic-build = { workspace = true, optional = true }
 [features]
 default = []
 tonic-build = ["dep:tonic-build"]
-lightweight = ["tokio", "seq-macro", "autd3", "autd3-gain-holo", "autd3-driver/derive", "autd3-driver/async-trait", "autd3/async-trait", "autd3-gain-holo/async-trait"]
-async-trait = ["autd3-driver/async-trait"]
+lightweight = ["tokio", "seq-macro", "autd3", "autd3-gain-holo", "autd3-driver/derive", "async-trait"]
+async-trait = ["autd3-driver/async-trait", "autd3/async-trait", "autd3-gain-holo/async-trait"]
 
 [dev-dependencies]
 assert_approx_eq = { workspace = true }

@@ -1992,6 +1992,18 @@ pub mod firmware_version_response_lightweight {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CloseRequestLightweight {}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct OpenRequestLightweight {
+    #[prost(message, optional, tag = "1")]
+    pub geometry: ::core::option::Option<Geometry>,
+    #[prost(uint64, tag = "2")]
+    pub parallel_threshold: u64,
+    #[prost(uint64, tag = "3")]
+    pub send_interval: u64,
+    #[prost(uint32, tag = "4")]
+    pub timer_resolution: u32,
+}
 /// Generated client implementations.
 pub mod ecat_light_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
@@ -2077,9 +2089,9 @@ pub mod ecat_light_client {
             self.inner = self.inner.max_encoding_message_size(limit);
             self
         }
-        pub async fn config_geomety(
+        pub async fn open(
             &mut self,
-            request: impl tonic::IntoRequest<super::Geometry>,
+            request: impl tonic::IntoRequest<super::OpenRequestLightweight>,
         ) -> std::result::Result<
             tonic::Response<super::SendResponseLightweight>,
             tonic::Status,
@@ -2094,12 +2106,9 @@ pub mod ecat_light_client {
                     )
                 })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/autd3.ECATLight/ConfigGeomety",
-            );
+            let path = http::uri::PathAndQuery::from_static("/autd3.ECATLight/Open");
             let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("autd3.ECATLight", "ConfigGeomety"));
+            req.extensions_mut().insert(GrpcMethod::new("autd3.ECATLight", "Open"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn firmware_version(
@@ -2180,9 +2189,9 @@ pub mod ecat_light_server {
     /// Generated trait containing gRPC methods that should be implemented for use with EcatLightServer.
     #[async_trait]
     pub trait EcatLight: Send + Sync + 'static {
-        async fn config_geomety(
+        async fn open(
             &self,
-            request: tonic::Request<super::Geometry>,
+            request: tonic::Request<super::OpenRequestLightweight>,
         ) -> std::result::Result<
             tonic::Response<super::SendResponseLightweight>,
             tonic::Status,
@@ -2288,11 +2297,13 @@ pub mod ecat_light_server {
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             let inner = self.inner.clone();
             match req.uri().path() {
-                "/autd3.ECATLight/ConfigGeomety" => {
+                "/autd3.ECATLight/Open" => {
                     #[allow(non_camel_case_types)]
-                    struct ConfigGeometySvc<T: EcatLight>(pub Arc<T>);
-                    impl<T: EcatLight> tonic::server::UnaryService<super::Geometry>
-                    for ConfigGeometySvc<T> {
+                    struct OpenSvc<T: EcatLight>(pub Arc<T>);
+                    impl<
+                        T: EcatLight,
+                    > tonic::server::UnaryService<super::OpenRequestLightweight>
+                    for OpenSvc<T> {
                         type Response = super::SendResponseLightweight;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
@@ -2300,11 +2311,11 @@ pub mod ecat_light_server {
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::Geometry>,
+                            request: tonic::Request<super::OpenRequestLightweight>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as EcatLight>::config_geomety(&inner, request).await
+                                <T as EcatLight>::open(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -2316,7 +2327,7 @@ pub mod ecat_light_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = ConfigGeometySvc(inner);
+                        let method = OpenSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
