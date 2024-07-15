@@ -25,10 +25,9 @@ rayon = { workspace = true }
 [features]
 default = []
 test-utilities = ["assert_approx_eq"]
-capi = ["dynamic_freq", "async-trait"]
+capi = ["async-trait"]
 bench-utilities = ["criterion"]
 async-trait = ["autd3-driver/async-trait"]
-dynamic_freq = ["autd3-driver/dynamic_freq"]
 
 [lib]
 bench = false

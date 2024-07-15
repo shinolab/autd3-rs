@@ -1,6 +1,6 @@
 use std::{f32::consts::PI, ops::Deref};
 
-use crate::{defined::METER, get_ultrasound_freq};
+use crate::defined::{METER, ULTRASOUND_FREQ};
 
 use super::{Matrix3, Quaternion, Transducer, UnitQuaternion, Vector3};
 
@@ -106,11 +106,11 @@ impl Device {
     }
 
     pub fn wavelength(&self) -> f32 {
-        self.sound_speed / get_ultrasound_freq().hz() as f32
+        self.sound_speed / ULTRASOUND_FREQ.hz() as f32
     }
 
     pub fn wavenumber(&self) -> f32 {
-        2.0 * PI * get_ultrasound_freq().hz() as f32 / self.sound_speed
+        2.0 * PI * ULTRASOUND_FREQ.hz() as f32 / self.sound_speed
     }
 
     fn get_direction(dir: Vector3, rotation: &UnitQuaternion) -> Vector3 {
@@ -434,9 +434,6 @@ pub mod tests {
     #[test]
     #[case(8.5, 340e3, 40000 * crate::defined::Hz)]
     #[case(10., 400e3, 40000 * crate::defined::Hz)]
-    #[cfg_attr(feature = "dynamic_freq", case(4.25, 340e3, 80000 * crate::defined::Hz))]
-    #[cfg_attr(feature = "dynamic_freq", case(5., 400e3, 80000 * crate::defined::Hz))]
-
     fn wavelength(#[case] expect: f32, #[case] c: f32, #[case] freq: crate::defined::Freq<u32>) {
         temp_env::with_var("AUTD3_ULTRASOUND_FREQ", Some(freq.hz().to_string()), || {
             let mut device = create_device(0, 249);
@@ -450,8 +447,6 @@ pub mod tests {
     #[test]
     #[case(0.739_198_27, 340e3, 40000 * crate::defined::Hz)]
     #[case(0.628_318_55, 400e3, 40000 * crate::defined::Hz)]
-    #[cfg_attr(feature = "dynamic_freq", case(1.478_396_5, 340e3, 80000 * crate::defined::Hz))]
-    #[cfg_attr(feature = "dynamic_freq", case(1.256_637_1, 400e3, 80000 * crate::defined::Hz))]
     fn wavenumber(
         #[case] expect: f32,
         #[case] c: f32,

@@ -27,7 +27,6 @@ temp-env = "0.3.6"
 
 [features]
 default = []
-capi = ["dynamic_freq", "async-trait"]
+capi = ["async-trait"]
 async-trait = ["autd3-driver/async-trait"]
-dynamic_freq = ["autd3-driver/dynamic_freq"]
 test = ["autd3-driver/test"]

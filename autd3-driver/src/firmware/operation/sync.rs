@@ -1,8 +1,10 @@
 use crate::{
     error::AUTDInternalError,
-    firmware::operation::{cast, Operation, TypeTag},
+    firmware::{
+        fpga::FPGA_MAIN_CLK_FREQ,
+        operation::{cast, Operation, TypeTag},
+    },
     geometry::Device,
-    get_ultrasound_freq,
 };
 
 #[repr(C, align(2))]
@@ -22,7 +24,7 @@ impl Operation for SyncOp {
         *cast::<Sync>(tx) = Sync {
             tag: TypeTag::Sync,
             __pad: [0; 3],
-            ecat_sync_base_cnt: get_ultrasound_freq().hz() * 512 / 2000,
+            ecat_sync_base_cnt: FPGA_MAIN_CLK_FREQ.hz() / 2000,
         };
 
         self.is_done = true;
@@ -50,7 +52,6 @@ mod tests {
 
     #[test]
     fn test() {
-
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
         let mut tx = [0x00u8; size_of::<Sync>()];
@@ -65,7 +66,7 @@ mod tests {
 
         assert!(op.is_done());
 
-        let sync_base_cnt = get_ultrasound_freq().hz() * 512 / 2000;
+        let sync_base_cnt = FPGA_MAIN_CLK_FREQ.hz() / 2000;
         assert_eq!(tx[0], TypeTag::Sync as u8);
         assert_eq!(tx[4], (sync_base_cnt & 0xFF) as u8);
         assert_eq!(tx[5], ((sync_base_cnt >> 8) & 0xFF) as u8);

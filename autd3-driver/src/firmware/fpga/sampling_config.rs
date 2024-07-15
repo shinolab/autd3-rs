@@ -1,15 +1,14 @@
 use std::{fmt::Debug, time::Duration};
 
 use crate::{
-    defined::{Freq, Hz},
+    defined::{Freq, Hz, ULTRASOUND_FREQ},
     error::AUTDInternalError,
     firmware::fpga::{SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
-    get_ultrasound_freq,
 };
 
 use derive_more::Display;
 
-use super::ULTRASOUND_PERIOD;
+use super::{FPGA_MAIN_CLK_FREQ, ULTRASOUND_PERIOD};
 
 const NANOSEC: u128 = 1_000_000_000;
 
@@ -101,8 +100,6 @@ impl SamplingConfig {
     }
 
     pub fn division(&self) -> Result<u32, AUTDInternalError> {
-        let ultrasound_freq = get_ultrasound_freq();
-        let base_freq = ultrasound_freq * ULTRASOUND_PERIOD;
         match *self {
             Self::Division(div) => {
                 if div % div_min() != 0 {
@@ -112,35 +109,31 @@ impl SamplingConfig {
             }
             Self::DivisionRaw(div) => Self::division_from_division_raw(div),
             Self::Freq(f) => {
-                if ultrasound_freq.hz() % f.hz() != 0 {
-                    return Err(AUTDInternalError::SamplingFreqInvalid(f, ultrasound_freq));
+                if ULTRASOUND_FREQ.hz() % f.hz() != 0 {
+                    return Err(AUTDInternalError::SamplingFreqInvalid(f, ULTRASOUND_FREQ));
                 }
-                Self::division_from_freq_nearest((f.hz() as f32) * Hz, base_freq)
+                Self::division_from_freq_nearest((f.hz() as f32) * Hz, FPGA_MAIN_CLK_FREQ)
             }
-            Self::FreqNearest(f) => Self::division_from_freq_nearest(f, base_freq),
+            Self::FreqNearest(f) => Self::division_from_freq_nearest(f, FPGA_MAIN_CLK_FREQ),
             Self::Period(p) => {
-                let k = p.as_nanos() * ultrasound_freq.hz() as u128;
+                let k = p.as_nanos() * ULTRASOUND_FREQ.hz() as u128;
                 if k % NANOSEC != 0 {
                     return Err(AUTDInternalError::SamplingPeriodInvalid(p));
                 }
-                Self::division_from_period_nearest(p, base_freq)
+                Self::division_from_period_nearest(p, FPGA_MAIN_CLK_FREQ)
             }
-            Self::PeriodNearest(p) => Self::division_from_period_nearest(p, base_freq),
+            Self::PeriodNearest(p) => Self::division_from_period_nearest(p, FPGA_MAIN_CLK_FREQ),
         }
     }
 
     pub fn freq(&self) -> Result<Freq<f32>, AUTDInternalError> {
-        let ultrasound_freq = get_ultrasound_freq();
         self.division()
-            .map(|d| (ultrasound_freq.hz() * ULTRASOUND_PERIOD) as f32 / d as f32 * Hz)
+            .map(|d| (ULTRASOUND_FREQ.hz() * ULTRASOUND_PERIOD) as f32 / d as f32 * Hz)
     }
 
     pub fn period(&self) -> Result<Duration, AUTDInternalError> {
         self.division().map(|d| {
-            Duration::from_nanos(
-                (d as u128 * NANOSEC / (get_ultrasound_freq() * ULTRASOUND_PERIOD).hz() as u128)
-                    as u64,
-            )
+            Duration::from_nanos((d as u128 * NANOSEC / FPGA_MAIN_CLK_FREQ.hz() as u128) as u64)
         })
     }
 }
