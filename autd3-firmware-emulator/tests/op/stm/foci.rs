@@ -2,7 +2,7 @@ use std::{collections::HashMap, time::Duration};
 
 use autd3_driver::{
     datagram::{FociSTM, GainSTM, IntoDatagramWithSegmentTransition, Silencer, SwapSegment},
-    defined::{mm, ControlPoint, ControlPoints, FREQ_40K, METER},
+    defined::{mm, ControlPoint, ControlPoints, METER},
     derive::{Drive, LoopBehavior, Phase, SamplingConfig, Segment},
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
@@ -14,7 +14,6 @@ use autd3_driver::{
         },
     },
     geometry::Vector3,
-    get_ultrasound_freq,
 };
 use autd3_firmware_emulator::{cpu::params::SYS_TIME_TRANSITION_MARGIN, CPUEmulator};
 
@@ -426,10 +425,7 @@ fn test_send_foci_stm_n<const N: usize>() {
             assert_eq!(freq_div, cpu.fpga().stm_freq_division(Segment::S0));
             assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
             assert_eq!(
-                (geometry[0].sound_speed / METER
-                    * 64.0
-                    * (FREQ_40K.hz() as f32 / get_ultrasound_freq().hz() as f32))
-                    .round() as u16,
+                (geometry[0].sound_speed / METER * 64.0).round() as u16,
                 cpu.fpga().sound_speed(Segment::S0)
             );
             foci.iter().enumerate().for_each(|(focus_idx, focus)| {

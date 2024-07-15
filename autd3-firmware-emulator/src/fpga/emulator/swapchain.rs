@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    defined::{Freq, FREQ_40K},
+    defined::Freq,
     derive::{LoopBehavior, Segment, TransitionMode},
     ethercat::DcSysTime,
-    firmware::fpga::ULTRASOUND_PERIOD,
+    firmware::fpga::FPGA_MAIN_CLK_FREQ,
 };
 use num_integer::Integer;
 
@@ -39,7 +39,7 @@ impl<const SET: u16> Swapchain<SET> {
     pub fn new() -> Self {
         Self {
             sys_time: DcSysTime::now(),
-            fpga_clk_freq: FREQ_40K * ULTRASOUND_PERIOD,
+            fpga_clk_freq: FPGA_MAIN_CLK_FREQ,
             rep: 0,
             freq_div: [(Segment::S0, 5120u32), (Segment::S1, 5120u32)]
                 .into_iter()

@@ -106,16 +106,6 @@ impl<L: Link> Controller<L> {
             windows::Win32::Media::timeBeginPeriod(self.timer_resolution);
         }
 
-        #[cfg(feature = "dynamic_freq")]
-        {
-            tracing::debug!(
-                "Configuring ultrasound frequency to {:?}",
-                autd3_driver::get_ultrasound_freq()
-            );
-            self.send(autd3_driver::datagram::ConfigureFPGAClock::new().with_timeout(timeout))
-                .await?;
-        }
-
         self.send((Clear::new(), Synchronize::new()).with_timeout(timeout))
             .await?; // GRCOV_EXCL_LINE
         Ok(())

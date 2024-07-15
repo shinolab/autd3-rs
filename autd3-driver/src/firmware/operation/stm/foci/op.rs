@@ -12,7 +12,6 @@ use crate::{
         operation::{cast, Operation, TypeTag},
     },
     geometry::Device,
-    get_ultrasound_freq,
 };
 
 use super::FociSTMControlFlags;
@@ -133,10 +132,7 @@ impl<const N: usize> Operation for FociSTMOp<N> {
                 send_num: send_num as _,
                 num_foci: N as u8,
                 freq_div: self.config.division()?,
-                sound_speed: (device.sound_speed / METER
-                    * 64.0
-                    * (crate::defined::FREQ_40K.hz() as f32 / get_ultrasound_freq().hz() as f32))
-                    .round() as u16,
+                sound_speed: (device.sound_speed / METER * 64.0).round() as u16,
                 rep: self.rep,
             };
         } else {

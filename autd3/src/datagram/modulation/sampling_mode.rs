@@ -2,8 +2,7 @@ use autd3_driver::{
     defined::{Freq, Frequency},
     derive::SamplingConfig,
     error::AUTDInternalError,
-    firmware::fpga::ULTRASOUND_PERIOD,
-    get_ultrasound_freq,
+    firmware::fpga::FPGA_MAIN_CLK_FREQ,
     utils::float::is_integer,
 };
 use num::integer::gcd;
@@ -35,7 +34,7 @@ impl SamplingMode for ExactFreq {
         }
         let fd = freq.hz() * sampling_config.division()?;
         let fd = fd as u64;
-        let fs = (get_ultrasound_freq() * ULTRASOUND_PERIOD).hz() as u64;
+        let fs = FPGA_MAIN_CLK_FREQ.hz() as u64;
 
         let k = gcd(fs, fd);
         Ok((fs / k, fd / k))
@@ -72,7 +71,7 @@ impl SamplingMode for ExactFreqFloat {
             )));
         }
         let fd = fd as u64;
-        let fs = (get_ultrasound_freq() * ULTRASOUND_PERIOD).hz() as u64;
+        let fs = FPGA_MAIN_CLK_FREQ.hz() as u64;
 
         let k = gcd(fs, fd);
         Ok((fs / k, fd / k))

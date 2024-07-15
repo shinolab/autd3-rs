@@ -25,10 +25,12 @@ pub use segment::Segment;
 pub use stm_sampling_config::STMSamplingConfig;
 pub use transition_mode::*;
 
-use crate::defined::mm;
+use crate::defined::{mm, Freq, ULTRASOUND_FREQ};
 
-pub const FPGA_BASE_CLK_FREQ: u32 = 25600000;
 pub const ULTRASOUND_PERIOD: u32 = 512;
+pub const FPGA_MAIN_CLK_FREQ: Freq<u32> = Freq {
+    freq: ULTRASOUND_FREQ.hz() * ULTRASOUND_PERIOD,
+};
 
 pub const FOCI_STM_FIXED_NUM_UNIT: f32 = 0.025 * mm;
 pub const FOCI_STM_FIXED_NUM_WIDTH: usize = 18;

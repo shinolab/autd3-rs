@@ -1,6 +1,4 @@
 mod clear;
-#[cfg(feature = "dynamic_freq")]
-mod clk;
 mod debug;
 mod force_fan;
 mod gain;
@@ -16,8 +14,6 @@ mod stm;
 mod sync;
 
 pub use clear::*;
-#[cfg(feature = "dynamic_freq")]
-pub use clk::*;
 pub use debug::*;
 pub use force_fan::*;
 pub use gain::*;

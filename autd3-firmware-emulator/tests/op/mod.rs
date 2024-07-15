@@ -1,6 +1,4 @@
 mod clear;
-#[cfg(feature = "dynamic_freq")]
-mod clk;
 mod debug;
 mod force_fan;
 mod gain;

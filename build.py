@@ -286,7 +286,7 @@ def rust_coverage(args):
             RUSTFLAGS="-C instrument-coverage",
             LLVM_PROFILE_FILE="%m-%p.profraw",
         ):
-            features = "remote test-utilities dynamic_freq test"
+            features = "remote test-utilities test"
             command = [
                 "cargo",
                 "build",

@@ -1,6 +1,4 @@
 mod clear;
-#[cfg(feature = "dynamic_freq")]
-mod clk;
 mod debug;
 mod force_fan;
 mod gain;
@@ -18,8 +16,6 @@ mod with_segment_transition;
 mod with_timeout;
 
 pub use clear::Clear;
-#[cfg(feature = "dynamic_freq")]
-pub use clk::ConfigureFPGAClock;
 pub use debug::DebugSettings;
 pub use force_fan::ForceFan;
 pub use gain::{

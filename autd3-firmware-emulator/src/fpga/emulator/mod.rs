@@ -2,11 +2,8 @@ mod memory;
 mod swapchain;
 
 use autd3_driver::{
-    defined::Freq,
-    defined::FREQ_40K,
     derive::{EmitIntensity, Segment},
     ethercat::DcSysTime,
-    firmware::fpga::ULTRASOUND_PERIOD,
 };
 
 use memory::Memory;
@@ -20,7 +17,6 @@ pub struct FPGAEmulator {
     mem: Memory,
     mod_swapchain: swapchain::Swapchain<CTL_FLAG_MOD_SET>,
     stm_swapchain: swapchain::Swapchain<CTL_FLAG_STM_SET>,
-    fpga_clk_freq: Freq<u32>,
 }
 
 impl FPGAEmulator {
@@ -29,7 +25,6 @@ impl FPGAEmulator {
             mem: Memory::new(num_transducers),
             mod_swapchain: swapchain::Swapchain::new(),
             stm_swapchain: swapchain::Swapchain::new(),
-            fpga_clk_freq: FREQ_40K * ULTRASOUND_PERIOD,
         };
         fpga.init();
         fpga
@@ -131,27 +126,11 @@ impl FPGAEmulator {
                 .any(|&d| d.intensity() != EmitIntensity::MIN)
         })
     }
-
-    pub fn ultrasound_freq(&self) -> Freq<u32> {
-        self.fpga_clk_freq / ULTRASOUND_PERIOD
-    }
-
-    pub(crate) fn set_fpga_clk_freq(&mut self, freq: Freq<u32>) {
-        self.fpga_clk_freq = freq;
-        self.mod_swapchain.fpga_clk_freq = freq;
-        self.stm_swapchain.fpga_clk_freq = freq;
-    }
-
-    pub const fn fpga_clk_freq(&self) -> Freq<u32> {
-        self.fpga_clk_freq
-    }
 }
 
 #[cfg(test)]
 
 mod tests {
-    use autd3_driver::defined::kHz;
-
     use super::*;
 
     static ASIN_TABLE: &[u8; 32768] = include_bytes!("asin.dat");
@@ -186,23 +165,5 @@ mod tests {
         assert!(fpga.is_thermo_asserted());
         fpga.deassert_thermal_sensor();
         assert!(!fpga.is_thermo_asserted());
-    }
-
-    #[test]
-    fn ultrasound_freq() {
-        let mut fpga = FPGAEmulator::new(249);
-        assert_eq!(fpga.ultrasound_freq(), FREQ_40K);
-
-        fpga.set_fpga_clk_freq(41 * kHz * ULTRASOUND_PERIOD);
-        assert_eq!(fpga.ultrasound_freq(), 41 * kHz);
-    }
-
-    #[test]
-    fn fpga_clk() {
-        let mut fpga = FPGAEmulator::new(249);
-        assert_eq!(fpga.fpga_clk_freq(), FREQ_40K * ULTRASOUND_PERIOD);
-
-        fpga.set_fpga_clk_freq(41 * kHz * ULTRASOUND_PERIOD);
-        assert_eq!(fpga.fpga_clk_freq(), 41 * kHz * ULTRASOUND_PERIOD);
     }
 }
