@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, num::NonZeroU16};
 
 use autd3_driver::{
     datagram::*, defined::ControlPoint, derive::*, firmware::cpu::TxDatagram, geometry::Vector3,
@@ -51,7 +51,7 @@ fn send_gain() -> anyhow::Result<()> {
         assert!(cpu.fpga().is_stm_gain_mode(Segment::S0));
         assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
         assert_eq!(1, cpu.fpga().stm_cycle(Segment::S0));
-        assert_eq!(0xFFFFFFFF, cpu.fpga().stm_freq_division(Segment::S0));
+        assert_eq!(0xFFFF, cpu.fpga().stm_freq_division(Segment::S0));
         assert_eq!(
             LoopBehavior::infinite(),
             cpu.fpga().stm_loop_behavior(Segment::S0)
@@ -83,7 +83,7 @@ fn send_gain() -> anyhow::Result<()> {
         assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
         assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
         assert_eq!(1, cpu.fpga().stm_cycle(Segment::S1));
-        assert_eq!(0xFFFFFFFF, cpu.fpga().stm_freq_division(Segment::S1));
+        assert_eq!(0xFFFF, cpu.fpga().stm_freq_division(Segment::S1));
         assert_eq!(
             LoopBehavior::infinite(),
             cpu.fpga().stm_loop_behavior(Segment::S1)
@@ -109,7 +109,6 @@ fn send_gain() -> anyhow::Result<()> {
 
 #[test]
 fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
-
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -118,7 +117,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     send(
         &mut cpu,
         FociSTM::from_sampling_config(
-            SamplingConfig::DivisionRaw(0xFFFFFFFF),
+            SamplingConfig::Division(NonZeroU16::MAX),
             (0..2).map(|_| ControlPoint::new(Vector3::zeros())),
         )
         .with_segment(Segment::S0, Some(TransitionMode::Immediate)),
@@ -130,7 +129,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     send(
         &mut cpu,
         GainSTM::from_sampling_config(
-            SamplingConfig::DivisionRaw(0xFFFFFFFF),
+            SamplingConfig::Division(NonZeroU16::MAX),
             (0..2)
                 .map(|_| {
                     geometry

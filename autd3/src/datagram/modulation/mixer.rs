@@ -122,7 +122,7 @@ mod tests {
 
         let f = Mixer::new([f0, f1, f2, f3, f4])?;
 
-        assert_eq!(f.sampling_config(), SamplingConfig::Division(5120));
+        assert_eq!(f.sampling_config(), SamplingConfig::FREQ_4K);
         assert_eq!(f[0].freq(), 50. * Hz);
         assert_eq!(f[0].phase(), PI / 2.0 * rad);
         assert_eq!(f[1].freq(), 100. * Hz);

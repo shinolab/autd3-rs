@@ -70,7 +70,7 @@ pub struct ModulationOperationGenerator {
     #[allow(clippy::type_complexity)]
     pub g: Arc<Vec<u8>>,
     pub config: SamplingConfig,
-    pub rep: u32,
+    pub loop_behavior: LoopBehavior,
     pub segment: Segment,
     pub transition_mode: Option<TransitionMode>,
 }
@@ -82,7 +82,13 @@ impl OperationGenerator for ModulationOperationGenerator {
     fn generate(&self, _: &Device) -> (Self::O1, Self::O2) {
         let d = self.g.clone();
         (
-            ModulationOp::new(d, self.config, self.rep, self.segment, self.transition_mode),
+            ModulationOp::new(
+                d,
+                self.config,
+                self.loop_behavior,
+                self.segment,
+                self.transition_mode,
+            ),
             NullOp::default(),
         )
     }
@@ -100,7 +106,7 @@ impl<'a> DatagramST for Box<dyn Modulation + Send + Sync + 'a> {
         Ok(Self::G {
             g: Arc::new(self.calc()?),
             config: self.sampling_config(),
-            rep: self.loop_behavior().rep,
+            loop_behavior: self.loop_behavior(),
             segment,
             transition_mode,
         })
@@ -171,7 +177,7 @@ mod capi {
     impl<'a> Default for Box<dyn Modulation + Send + Sync + 'a> {
         fn default() -> Self {
             Box::new(NullModulation {
-                config: SamplingConfig::DISABLE,
+                config: SamplingConfig::FREQ_4K,
                 loop_behavior: LoopBehavior::infinite(),
             })
         }

@@ -1,6 +1,6 @@
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct LoopBehavior {
-    pub(crate) rep: u32,
+    pub(crate) rep: u16,
 }
 
 pub trait IntoLoopBehaviorFinite {
@@ -8,7 +8,7 @@ pub trait IntoLoopBehaviorFinite {
     fn into_loop_behavior(self) -> Self::Output;
 }
 
-impl IntoLoopBehaviorFinite for u32 {
+impl IntoLoopBehaviorFinite for u16 {
     type Output = Option<LoopBehavior>;
     fn into_loop_behavior(self) -> Self::Output {
         if self == 0 {
@@ -19,7 +19,7 @@ impl IntoLoopBehaviorFinite for u32 {
     }
 }
 
-impl IntoLoopBehaviorFinite for std::num::NonZeroU32 {
+impl IntoLoopBehaviorFinite for std::num::NonZeroU16 {
     type Output = LoopBehavior;
     fn into_loop_behavior(self) -> Self::Output {
         LoopBehavior {
@@ -30,7 +30,7 @@ impl IntoLoopBehaviorFinite for std::num::NonZeroU32 {
 
 impl LoopBehavior {
     pub const fn infinite() -> Self {
-        LoopBehavior { rep: 0xFFFFFFFF }
+        LoopBehavior { rep: 0xFFFF }
     }
 
     pub fn finite<T: IntoLoopBehaviorFinite>(repeat: T) -> T::Output {
@@ -41,7 +41,7 @@ impl LoopBehavior {
         Self { rep: 0 }
     }
 
-    pub const fn rep(&self) -> u32 {
+    pub const fn rep(&self) -> u16 {
         self.rep
     }
 }
@@ -49,7 +49,7 @@ impl LoopBehavior {
 impl std::fmt::Debug for LoopBehavior {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.rep {
-            0xFFFFFFFF => write!(f, "LoopBehavior::Infinite"),
+            0xFFFF => write!(f, "LoopBehavior::Infinite"),
             0 => write!(f, "LoopBehavior::Once"),
             i => write!(f, "LoopBehavior::Finite({})", i + 1),
         }
@@ -59,7 +59,7 @@ impl std::fmt::Debug for LoopBehavior {
 impl std::fmt::Display for LoopBehavior {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.rep {
-            0xFFFFFFFF => write!(f, "LoopBehavior::Infinite"),
+            0xFFFF => write!(f, "LoopBehavior::Infinite"),
             0 => write!(f, "LoopBehavior::Once"),
             i => write!(f, "LoopBehavior::Finite({})", i + 1),
         }
@@ -73,29 +73,29 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case::infinite(0xFFFFFFFF, LoopBehavior::infinite())]
-    #[case::finite(0x12345677, LoopBehavior::finite(0x12345678).unwrap())]
-    #[case::once(0x00000000, LoopBehavior::once())]
-    fn loop_behavior(#[case] expect: u32, #[case] target: LoopBehavior) {
+    #[case::infinite(0xFFFF, LoopBehavior::infinite())]
+    #[case::finite(0x1233, LoopBehavior::finite(0x1234).unwrap())]
+    #[case::once(0x0000, LoopBehavior::once())]
+    fn loop_behavior(#[case] expect: u16, #[case] target: LoopBehavior) {
         assert_eq!(expect, target.rep());
     }
 
     #[rstest::rstest]
     #[test]
     #[case(Some(LoopBehavior{ rep: 0 }), 1)]
-    #[case(Some(LoopBehavior{ rep: 0xFFFFFFFE }), 0xFFFFFFFF)]
+    #[case(Some(LoopBehavior{ rep: 0xFFFE }), 0xFFFF)]
     #[case(None, 0)]
-    fn into_loop_behavior_u32(#[case] expect: Option<LoopBehavior>, #[case] rep: u32) {
+    fn into_loop_behavior_u16(#[case] expect: Option<LoopBehavior>, #[case] rep: u16) {
         assert_eq!(expect, LoopBehavior::finite(rep));
     }
 
     #[rstest::rstest]
     #[test]
-    #[case(LoopBehavior{ rep: 0 }, std::num::NonZeroU32::new(1).unwrap())]
-    #[case(LoopBehavior{ rep: 0xFFFFFFFE }, std::num::NonZeroU32::new(0xFFFFFFFF).unwrap())]
-    fn into_loop_behavior_non_zero_u32(
+    #[case(LoopBehavior{ rep: 0 }, std::num::NonZeroU16::new(1).unwrap())]
+    #[case(LoopBehavior{ rep: 0xFFFE }, std::num::NonZeroU16::new(0xFFFF).unwrap())]
+    fn into_loop_behavior_non_zero_u16(
         #[case] expect: LoopBehavior,
-        #[case] rep: std::num::NonZeroU32,
+        #[case] rep: std::num::NonZeroU16,
     ) {
         assert_eq!(expect, LoopBehavior::finite(rep));
     }
@@ -108,8 +108,8 @@ mod tests {
         );
         assert_eq!(format!("{}", LoopBehavior::once()), "LoopBehavior::Once");
         assert_eq!(
-            format!("{}", LoopBehavior::finite(0x12345678).unwrap()),
-            "LoopBehavior::Finite(305419896)"
+            format!("{}", LoopBehavior::finite(0x1234).unwrap()),
+            "LoopBehavior::Finite(4660)"
         );
     }
 
@@ -121,8 +121,8 @@ mod tests {
         );
         assert_eq!(format!("{:?}", LoopBehavior::once()), "LoopBehavior::Once");
         assert_eq!(
-            format!("{:?}", LoopBehavior::finite(0x12345678).unwrap()),
-            "LoopBehavior::Finite(305419896)"
+            format!("{:?}", LoopBehavior::finite(0x1234).unwrap()),
+            "LoopBehavior::Finite(4660)"
         );
     }
 }

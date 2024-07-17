@@ -27,7 +27,7 @@ pub use transition_mode::*;
 
 use crate::defined::{mm, Freq, ULTRASOUND_FREQ};
 
-pub const ULTRASOUND_PERIOD: u32 = 512;
+pub const ULTRASOUND_PERIOD: u32 = 256;
 pub const FPGA_MAIN_CLK_FREQ: Freq<u32> = Freq {
     freq: ULTRASOUND_FREQ.hz() * ULTRASOUND_PERIOD,
 };
@@ -50,9 +50,6 @@ pub const SILENCER_VALUE_MAX: u16 = 0xFFFF;
 pub const SILENCER_STEPS_INTENSITY_DEFAULT: u16 = 10;
 pub const SILENCER_STEPS_PHASE_DEFAULT: u16 = 40;
 
-pub const SAMPLING_FREQ_DIV_MIN: u32 = 512;
-pub const SAMPLING_FREQ_DIV_MAX: u32 = u32::MAX;
-
 pub const MOD_BUF_SIZE_MIN: usize = 2;
 pub const MOD_BUF_SIZE_MAX: usize = 32768;
 
@@ -61,7 +58,4 @@ pub const FOCI_STM_FOCI_NUM_MAX: usize = 8;
 pub const FOCI_STM_BUF_SIZE_MAX: usize = 8192;
 pub const GAIN_STM_BUF_SIZE_MAX: usize = 1024;
 
-pub const PWE_BUF_SIZE: usize = 32768;
-pub const PULSE_WIDTH_MAX: u16 = ULTRASOUND_PERIOD as u16 / 2;
-
-pub const DRP_ROM_SIZE: usize = 32;
+pub const PWE_BUF_SIZE: usize = 256;

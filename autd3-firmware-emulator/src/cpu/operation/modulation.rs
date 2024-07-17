@@ -5,11 +5,10 @@ use crate::{cpu::params::*, CPUEmulator};
 struct ModulationHead {
     tag: u8,
     flag: u8,
-    size: u16,
+    size: u8,
     transition_mode: u8,
-    __pad: [u8; 3],
-    freq_div: u32,
-    rep: u32,
+    freq_div: u16,
+    rep: u16,
     transition_value: u64,
 }
 
@@ -73,10 +72,12 @@ impl CPUEmulator {
         } else {
             0
         };
-        let write = d.subseq.size as u32;
 
+        let write;
         let data = if (d.subseq.flag & MODULATION_FLAG_BEGIN) == MODULATION_FLAG_BEGIN {
             self.mod_cycle = 0;
+
+            write = d.head.size as u16;
 
             if Self::validate_transition_mode(
                 self.mod_segment,
@@ -107,32 +108,12 @@ impl CPUEmulator {
 
             match segment {
                 0 => {
-                    self.bram_cpy(
-                        BRAM_SELECT_CONTROLLER,
-                        ADDR_MOD_FREQ_DIV0_0,
-                        &d.head.freq_div as *const _ as _,
-                        std::mem::size_of::<u32>() >> 1,
-                    );
-                    self.bram_cpy(
-                        BRAM_SELECT_CONTROLLER,
-                        ADDR_MOD_REP0_0,
-                        &d.head.rep as *const _ as _,
-                        std::mem::size_of::<u32>() >> 1,
-                    );
+                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_FREQ_DIV0, d.head.freq_div);
+                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_REP0, d.head.rep);
                 }
                 1 => {
-                    self.bram_cpy(
-                        BRAM_SELECT_CONTROLLER,
-                        ADDR_MOD_FREQ_DIV1_0,
-                        &d.head.freq_div as *const _ as _,
-                        std::mem::size_of::<u32>() >> 1,
-                    );
-                    self.bram_cpy(
-                        BRAM_SELECT_CONTROLLER,
-                        ADDR_MOD_REP1_0,
-                        &d.head.rep as *const _ as _,
-                        std::mem::size_of::<u32>() >> 1,
-                    );
+                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_FREQ_DIV1, d.head.freq_div);
+                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_REP1, d.head.rep);
                 }
                 _ => unreachable!(),
             }
@@ -141,12 +122,14 @@ impl CPUEmulator {
 
             data[std::mem::size_of::<ModulationHead>()..].as_ptr() as *const u16
         } else {
+            write = d.subseq.size;
+
             data[std::mem::size_of::<ModulationSubseq>()..].as_ptr() as *const u16
         };
 
         self.bram_cpy(
             BRAM_SELECT_MOD,
-            (self.mod_cycle >> 1) as u16,
+            self.mod_cycle >> 1,
             data,
             ((write + 1) >> 1) as usize,
         );
@@ -216,21 +199,21 @@ mod tests {
 
     #[test]
     fn modulation_memory_layout() {
-        assert_eq!(24, std::mem::size_of::<ModulationHead>());
+        assert_eq!(16, std::mem::size_of::<ModulationHead>());
         assert_eq!(0, std::mem::offset_of!(ModulationHead, tag));
         assert_eq!(1, std::mem::offset_of!(ModulationHead, flag));
         assert_eq!(2, std::mem::offset_of!(ModulationHead, size));
-        assert_eq!(4, std::mem::offset_of!(ModulationHead, transition_mode));
-        assert_eq!(8, std::mem::offset_of!(ModulationHead, freq_div));
-        assert_eq!(12, std::mem::offset_of!(ModulationHead, rep));
-        assert_eq!(16, std::mem::offset_of!(ModulationHead, transition_value));
+        assert_eq!(3, std::mem::offset_of!(ModulationHead, transition_mode));
+        assert_eq!(4, std::mem::offset_of!(ModulationHead, freq_div));
+        assert_eq!(6, std::mem::offset_of!(ModulationHead, rep));
+        assert_eq!(8, std::mem::offset_of!(ModulationHead, transition_value));
 
         assert_eq!(4, std::mem::size_of::<ModulationSubseq>());
         assert_eq!(0, std::mem::offset_of!(ModulationSubseq, tag));
         assert_eq!(1, std::mem::offset_of!(ModulationSubseq, flag));
         assert_eq!(2, std::mem::offset_of!(ModulationSubseq, size));
 
-        assert_eq!(24, std::mem::size_of::<Modulation>());
+        assert_eq!(16, std::mem::size_of::<Modulation>());
         assert_eq!(0, std::mem::offset_of!(Modulation, head));
         assert_eq!(0, std::mem::offset_of!(Modulation, subseq));
 

@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use autd3_driver::{
     datagram::*,
-    derive::{LoopBehavior, SamplingConfig, Segment, TransitionMode, SAMPLING_FREQ_DIV_MIN},
+    derive::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
     error::AUTDInternalError,
     firmware::cpu::TxDatagram,
     geometry::Vector3,
@@ -32,7 +32,7 @@ fn send_silencer_fixed_update_rate() -> anyhow::Result<()> {
         cpu.fpga().silencer_update_rate_intensity()
     );
     assert_eq!(update_rate_phase, cpu.fpga().silencer_update_rate_phase());
-    assert!(!cpu.fpga().silencer_fixed_completion_steps_mode());
+    assert!(cpu.fpga().silencer_fixed_update_rate_mode());
 
     Ok(())
 }
@@ -83,7 +83,7 @@ fn silencer_completetion_steps_too_large_mod(
     {
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
+            config: SamplingConfig::FREQ_40K,
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
@@ -119,7 +119,7 @@ fn silencer_completetion_steps_too_large_stm(
     // Send FociSTM
     {
         let d = FociSTM::from_sampling_config(
-            SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
+            SamplingConfig::FREQ_40K,
             (0..2).map(|_| Vector3::zeros()),
         )
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));

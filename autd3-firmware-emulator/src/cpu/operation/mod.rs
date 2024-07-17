@@ -7,7 +7,6 @@ use super::params::{
 };
 
 mod clear;
-mod clk;
 mod debug;
 mod force_fan;
 mod gain;
@@ -24,20 +23,19 @@ impl CPUEmulator {
     pub(crate) fn validate_transition_mode(
         current_segment: u8,
         segment: u8,
-        rep: u32,
+        rep: u16,
         mode: u8,
     ) -> bool {
         if mode == TRANSITION_MODE_NONE {
             return false;
         }
-
         if current_segment == segment {
             return mode == TRANSITION_MODE_SYNC_IDX
                 || mode == TRANSITION_MODE_SYS_TIME
                 || mode == TRANSITION_MODE_GPIO;
         }
         match rep {
-            0xFFFFFFFF => {
+            0xFFFF => {
                 mode == TRANSITION_MODE_SYNC_IDX
                     || mode == TRANSITION_MODE_SYS_TIME
                     || mode == TRANSITION_MODE_GPIO

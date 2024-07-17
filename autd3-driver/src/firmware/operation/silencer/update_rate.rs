@@ -2,10 +2,12 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{SILENCER_VALUE_MAX, SILENCER_VALUE_MIN},
-        operation::{cast, silencer::SILENCER_CTL_FLAG_FIXED_UPDATE_RATE, Operation, TypeTag},
+        operation::{cast, Operation, TypeTag},
     },
     geometry::Device,
 };
+
+use super::SILENCER_FLAG_FIXED_UPDATE_RATE_MODE;
 
 #[repr(C, align(2))]
 struct SilencerFixedUpdateRate {
@@ -46,7 +48,7 @@ impl Operation for SilencerFixedUpdateRateOp {
 
         *cast::<SilencerFixedUpdateRate>(tx) = SilencerFixedUpdateRate {
             tag: TypeTag::Silencer,
-            flag: SILENCER_CTL_FLAG_FIXED_UPDATE_RATE,
+            flag: SILENCER_FLAG_FIXED_UPDATE_RATE_MODE,
             value_intensity: self.value_intensity,
             value_phase: self.value_phase,
         };
@@ -69,10 +71,7 @@ mod tests {
     use std::mem::size_of;
 
     use super::*;
-    use crate::{
-        firmware::operation::silencer::SILNCER_MODE_FIXED_UPDATE_RATE,
-        geometry::tests::create_device,
-    };
+    use crate::geometry::tests::create_device;
 
     const NUM_TRANS_IN_UNIT: usize = 249;
 
@@ -95,7 +94,7 @@ mod tests {
         assert!(op.is_done());
 
         assert_eq!(tx[0], TypeTag::Silencer as u8);
-        assert_eq!(tx[1], SILNCER_MODE_FIXED_UPDATE_RATE);
+        assert_eq!(tx[1], SILENCER_FLAG_FIXED_UPDATE_RATE_MODE);
         assert_eq!(tx[2], 0x34);
         assert_eq!(tx[3], 0x12);
         assert_eq!(tx[4], 0x78);

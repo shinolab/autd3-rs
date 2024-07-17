@@ -1,8 +1,8 @@
 use crate::{cpu::params::*, CPUEmulator};
 
-pub const FOCI_STM_BUF_PAGE_SIZE_WIDTH: u32 = 9;
-pub const FOCI_STM_BUF_PAGE_SIZE: u32 = 1 << FOCI_STM_BUF_PAGE_SIZE_WIDTH;
-pub const FOCI_STM_BUF_PAGE_SIZE_MASK: u32 = FOCI_STM_BUF_PAGE_SIZE - 1;
+pub const FOCI_STM_BUF_PAGE_SIZE_WIDTH: u16 = 9;
+pub const FOCI_STM_BUF_PAGE_SIZE: u16 = 1 << FOCI_STM_BUF_PAGE_SIZE_WIDTH;
+pub const FOCI_STM_BUF_PAGE_SIZE_MASK: u16 = FOCI_STM_BUF_PAGE_SIZE - 1;
 
 #[repr(C, align(2))]
 #[derive(Clone, Copy)]
@@ -14,8 +14,9 @@ struct FociSTMHead {
     transition_mode: u8,
     num_foci: u8,
     sound_speed: u16,
-    freq_div: u32,
-    rep: u32,
+    freq_div: u16,
+    rep: u16,
+    __pad: [u8; 4],
     transition_value: u64,
 }
 
@@ -49,7 +50,7 @@ impl CPUEmulator {
         let d = Self::cast::<FociSTM>(data);
 
         let segment = d.subseq.segment;
-        let size = d.subseq.send_num as u32;
+        let size = d.subseq.send_num as u16;
 
         let mut src = if (d.subseq.flag & FOCI_STM_FLAG_BEGIN) == FOCI_STM_FLAG_BEGIN {
             if Self::validate_transition_mode(
@@ -83,24 +84,14 @@ impl CPUEmulator {
 
             match segment {
                 0 => {
-                    self.bram_cpy(
-                        BRAM_SELECT_CONTROLLER,
-                        ADDR_STM_FREQ_DIV0_0,
-                        &d.head.freq_div as *const _ as _,
-                        std::mem::size_of::<u32>() >> 1,
-                    );
+                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_FREQ_DIV0, d.head.freq_div);
                     self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_MODE0, STM_MODE_FOCUS);
                     self.bram_write(
                         BRAM_SELECT_CONTROLLER,
                         ADDR_STM_SOUND_SPEED0,
                         d.head.sound_speed,
                     );
-                    self.bram_cpy(
-                        BRAM_SELECT_CONTROLLER,
-                        ADDR_STM_REP0_0,
-                        &d.head.rep as *const _ as _,
-                        std::mem::size_of::<u32>() >> 1,
-                    );
+                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REP0, d.head.rep);
                     self.bram_write(
                         BRAM_SELECT_CONTROLLER,
                         ADDR_STM_NUM_FOCI0,
@@ -108,24 +99,14 @@ impl CPUEmulator {
                     );
                 }
                 1 => {
-                    self.bram_cpy(
-                        BRAM_SELECT_CONTROLLER,
-                        ADDR_STM_FREQ_DIV1_0,
-                        &d.head.freq_div as *const _ as _,
-                        std::mem::size_of::<u32>() >> 1,
-                    );
+                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_FREQ_DIV1, d.head.freq_div);
                     self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_MODE1, STM_MODE_FOCUS);
                     self.bram_write(
                         BRAM_SELECT_CONTROLLER,
                         ADDR_STM_SOUND_SPEED1,
                         d.head.sound_speed,
                     );
-                    self.bram_cpy(
-                        BRAM_SELECT_CONTROLLER,
-                        ADDR_STM_REP1_0,
-                        &d.head.rep as *const _ as _,
-                        std::mem::size_of::<u32>() >> 1,
-                    );
+                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REP1, d.head.rep);
                     self.bram_write(
                         BRAM_SELECT_CONTROLLER,
                         ADDR_STM_NUM_FOCI1,
@@ -147,8 +128,7 @@ impl CPUEmulator {
             + FOCI_STM_BUF_PAGE_SIZE
             - self.stm_cycle[segment as usize];
         if size < page_capacity {
-            let mut dst =
-                ((self.stm_cycle[segment as usize] & FOCI_STM_BUF_PAGE_SIZE_MASK) << 5) as u16;
+            let mut dst = (self.stm_cycle[segment as usize] & FOCI_STM_BUF_PAGE_SIZE_MASK) << 5;
             (0..size as usize).for_each(|_| {
                 (0..self.num_foci).for_each(|_| unsafe {
                     self.bram_write(BRAM_SELECT_STM, dst, src.read());
@@ -168,8 +148,7 @@ impl CPUEmulator {
             });
             self.stm_cycle[segment as usize] += size;
         } else {
-            let mut dst =
-                ((self.stm_cycle[segment as usize] & FOCI_STM_BUF_PAGE_SIZE_MASK) << 5) as u16;
+            let mut dst = (self.stm_cycle[segment as usize] & FOCI_STM_BUF_PAGE_SIZE_MASK) << 5;
             (0..page_capacity as usize).for_each(|_| {
                 (0..self.num_foci).for_each(|_| unsafe {
                     self.bram_write(BRAM_SELECT_STM, dst, src.read());
@@ -194,8 +173,7 @@ impl CPUEmulator {
                     >> FOCI_STM_BUF_PAGE_SIZE_WIDTH) as _,
             );
 
-            let mut dst =
-                ((self.stm_cycle[segment as usize] & FOCI_STM_BUF_PAGE_SIZE_MASK) << 5) as u16;
+            let mut dst = (self.stm_cycle[segment as usize] & FOCI_STM_BUF_PAGE_SIZE_MASK) << 5;
             let cnt = size - page_capacity;
             (0..cnt as usize).for_each(|_| {
                 (0..self.num_foci).for_each(|_| unsafe {
@@ -295,7 +273,7 @@ mod tests {
         assert_eq!(5, std::mem::offset_of!(FociSTMHead, num_foci));
         assert_eq!(6, std::mem::offset_of!(FociSTMHead, sound_speed));
         assert_eq!(8, std::mem::offset_of!(FociSTMHead, freq_div));
-        assert_eq!(12, std::mem::offset_of!(FociSTMHead, rep));
+        assert_eq!(10, std::mem::offset_of!(FociSTMHead, rep));
         assert_eq!(16, std::mem::offset_of!(FociSTMHead, transition_value));
 
         assert_eq!(4, std::mem::size_of::<FociSTMSubseq>());

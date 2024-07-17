@@ -1109,14 +1109,8 @@ pub struct SamplingConfigDivision {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct SamplingConfigDivisionRaw {
-    #[prost(uint32, tag = "1")]
-    pub value: u32,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SamplingConfig {
-    #[prost(oneof = "sampling_config::Config", tags = "1, 2, 3, 4, 5, 6")]
+    #[prost(oneof = "sampling_config::Config", tags = "1, 2, 3, 4, 5")]
     pub config: ::core::option::Option<sampling_config::Config>,
 }
 /// Nested message and enum types in `SamplingConfig`.
@@ -1135,8 +1129,6 @@ pub mod sampling_config {
         PeriodNearest(super::SamplingConfigPeriodNearest),
         #[prost(message, tag = "5")]
         Division(super::SamplingConfigDivision),
-        #[prost(message, tag = "6")]
-        DivisionRaw(super::SamplingConfigDivisionRaw),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]

@@ -13,9 +13,9 @@ use super::FPGAEmulator;
 pub(crate) struct Swapchain<const SET: u16> {
     sys_time: DcSysTime,
     pub(crate) fpga_clk_freq: Freq<u32>,
-    rep: u32,
+    rep: u16,
     start_lap: HashMap<Segment, usize>,
-    freq_div: HashMap<Segment, u32>,
+    freq_div: HashMap<Segment, u16>,
     cycle: HashMap<Segment, usize>,
     tic_idx_offset: HashMap<Segment, usize>,
     cur_segment: Segment,
@@ -41,7 +41,7 @@ impl<const SET: u16> Swapchain<SET> {
             sys_time: DcSysTime::now(),
             fpga_clk_freq: FPGA_MAIN_CLK_FREQ,
             rep: 0,
-            freq_div: [(Segment::S0, 5120u32), (Segment::S1, 5120u32)]
+            freq_div: [(Segment::S0, 10u16), (Segment::S1, 10u16)]
                 .into_iter()
                 .collect(),
             cycle: [(Segment::S0, 1), (Segment::S1, 1)].into_iter().collect(),
@@ -131,7 +131,7 @@ impl<const SET: u16> Swapchain<SET> {
         &mut self,
         sys_time: DcSysTime,
         rep: LoopBehavior,
-        freq_div: u32,
+        freq_div: u16,
         cycle: usize,
         req_segment: Segment,
         transition_mode: TransitionMode,
@@ -143,7 +143,7 @@ impl<const SET: u16> Swapchain<SET> {
             self.ext_last_lap = lap;
             self.tic_idx_offset.insert(req_segment, 0);
             self.state = State::InfiniteLoop;
-        } else if rep.rep() == 0xFFFFFFFF {
+        } else if rep.rep() == 0xFFFF {
             self.stop = false;
             self.cur_segment = req_segment;
             self.ext_mode = transition_mode == TransitionMode::Ext;
@@ -168,7 +168,7 @@ impl<const SET: u16> Swapchain<SET> {
     }
 
     fn lap_and_idx(&self, segment: Segment, sys_time: DcSysTime) -> (usize, usize) {
-        ((self.fpga_sys_time(sys_time) / self.freq_div[&segment] as u64) as usize)
+        (((self.fpga_sys_time(sys_time) >> 8) / self.freq_div[&segment] as u64) as usize)
             .div_rem(&self.cycle[&segment])
     }
 
@@ -202,7 +202,7 @@ mod tests {
     use super::*;
 
     const CYCLE_PERIOD: std::time::Duration = std::time::Duration::from_micros(25);
-    const FREQ_DIV: u32 = 512;
+    const FREQ_DIV: u16 = 1;
 
     #[test]
     fn transition_same_segment() {

@@ -54,7 +54,7 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case::freq_4k(SamplingConfig::Freq(4 * kHz))]
-    #[case::disable(SamplingConfig::DISABLE)]
+    #[case::freq_8k(SamplingConfig::Freq(8 * kHz))]
     fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
             config,

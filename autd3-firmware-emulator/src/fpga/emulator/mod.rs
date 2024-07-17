@@ -96,14 +96,9 @@ impl FPGAEmulator {
         self.mem.update(fpga_state);
     }
 
-    pub fn to_pulse_width(&self, a: EmitIntensity, b: u8) -> u16 {
-        let key = a.value() as usize * b as usize;
-        let v = self.pulse_width_encoder_table_at(key / 2) as u16;
-        if key as u16 >= self.pulse_width_encoder_full_width_start() {
-            0x100 | v
-        } else {
-            v
-        }
+    pub fn to_pulse_width(&self, a: EmitIntensity, b: u8) -> u8 {
+        let key = (a.value() as usize * (b as usize + 1)) >> 8;
+        self.pulse_width_encoder_table_at(key)
     }
 
     pub fn is_thermo_asserted(&self) -> bool {
@@ -133,17 +128,11 @@ impl FPGAEmulator {
 mod tests {
     use super::*;
 
-    static ASIN_TABLE: &[u8; 32768] = include_bytes!("asin.dat");
+    static ASIN_TABLE: &[u8; 256] = include_bytes!("asin.dat");
 
-    fn to_pulse_width_actual(a: u8, b: u8) -> u16 {
-        let idx = a as usize * b as usize;
-        let r = ASIN_TABLE[idx / 2];
-        let full_width = idx >= 65024;
-        if full_width {
-            r as u16 | 0x0100
-        } else {
-            r as u16
-        }
+    fn to_pulse_width_actual(a: u8, b: u8) -> u8 {
+        let idx = (a as usize * (b as usize + 1)) >> 8;
+        ASIN_TABLE[idx]
     }
 
     #[test]

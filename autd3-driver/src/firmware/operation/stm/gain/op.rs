@@ -3,7 +3,7 @@
 use std::{iter::Peekable, mem::size_of};
 
 use crate::{
-    derive::{SamplingConfig, Transducer},
+    derive::{LoopBehavior, SamplingConfig, Transducer},
     error::AUTDInternalError,
     firmware::{
         cpu::GainSTMMode,
@@ -27,9 +27,8 @@ struct GainSTMHead {
     flag: GainSTMControlFlags,
     mode: GainSTMMode,
     transition_mode: u8,
-    __padding: [u8; 4],
-    freq_div: u32,
-    rep: u32,
+    freq_div: u16,
+    rep: u16,
     transition_value: u64,
 }
 
@@ -45,7 +44,7 @@ pub struct GainSTMOp {
     is_done: bool,
     mode: GainSTMMode,
     config: SamplingConfig,
-    rep: u32,
+    loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
 }
@@ -55,7 +54,7 @@ impl GainSTMOp {
         gains: Vec<Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>,
         mode: GainSTMMode,
         config: SamplingConfig,
-        rep: u32,
+        loop_behavior: LoopBehavior,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Self {
@@ -65,7 +64,7 @@ impl GainSTMOp {
             is_done: false,
             mode,
             config,
-            rep,
+            loop_behavior,
             segment,
             transition_mode,
         }
@@ -194,8 +193,7 @@ impl Operation for GainSTMOp {
                     .unwrap_or(TRANSITION_MODE_NONE),
                 transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
                 freq_div: self.config.division()?,
-                rep: self.rep,
-                __padding: [0; 4],
+                rep: self.loop_behavior.rep(),
             };
         } else {
             *cast::<GainSTMSubseq>(tx) = GainSTMSubseq {
@@ -245,7 +243,7 @@ impl Operation for GainSTMOp {
 
 #[cfg(test)]
 mod tests {
-    use std::mem::offset_of;
+    use std::{mem::offset_of, num::NonZeroU16};
 
     use rand::prelude::*;
 
@@ -253,7 +251,7 @@ mod tests {
     use crate::{
         ethercat::DcSysTime,
         firmware::{
-            fpga::{EmitIntensity, Phase, SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
+            fpga::{EmitIntensity, Phase},
             operation::tests::parse_tx_as,
         },
         geometry::tests::create_device,
@@ -263,7 +261,6 @@ mod tests {
 
     #[test]
     fn test_phase_intensity_full() {
-
         const GAIN_STM_SIZE: usize = 3;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
@@ -286,8 +283,8 @@ mod tests {
             })
             .collect();
 
-        let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
-        let rep = rng.gen_range(0x0000000..=0xFFFFFFFF);
+        let freq_div = rng.gen_range(0x0001..=0xFFFF);
+        let rep = rng.gen_range(0x000..=0xFFFF);
         let segment = Segment::S0;
         let transition_value = 0x0123456789ABCDEF;
         let transition_mode = TransitionMode::SysTime(
@@ -307,8 +304,8 @@ mod tests {
                     .collect()
             },
             GainSTMMode::PhaseIntensityFull,
-            SamplingConfig::DivisionRaw(freq_div),
-            rep,
+            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+            LoopBehavior { rep: rep },
             segment,
             Some(transition_mode),
         );
@@ -341,9 +338,9 @@ mod tests {
             );
             assert_eq!(
                 freq_div,
-                parse_tx_as::<u32>(&tx[offset_of!(GainSTMHead, freq_div)..])
+                parse_tx_as::<u16>(&tx[offset_of!(GainSTMHead, freq_div)..])
             );
-            assert_eq!(rep, parse_tx_as::<u32>(&tx[offset_of!(GainSTMHead, rep)..]));
+            assert_eq!(rep, parse_tx_as::<u16>(&tx[offset_of!(GainSTMHead, rep)..]));
             assert_eq!(
                 transition_mode.mode(),
                 tx[offset_of!(GainSTMHead, transition_mode)]
@@ -425,7 +422,6 @@ mod tests {
 
     #[test]
     fn test_phase_full() {
-
         const GAIN_STM_SIZE: usize = 5;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
@@ -448,8 +444,8 @@ mod tests {
             })
             .collect();
 
-        let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
-        let rep = rng.gen_range(0x0000001..=0xFFFFFFFF);
+        let freq_div = rng.gen_range(0x0001..=0xFFFF);
+        let rep = rng.gen_range(0x0001..=0xFFFF);
         let segment = Segment::S1;
         let mut op = GainSTMOp::new(
             {
@@ -460,8 +456,8 @@ mod tests {
                     .collect()
             },
             GainSTMMode::PhaseFull,
-            SamplingConfig::DivisionRaw(freq_div),
-            rep,
+            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+            LoopBehavior { rep: rep },
             segment,
             None,
         );
@@ -564,7 +560,6 @@ mod tests {
 
     #[test]
     fn test_phase_half() {
-
         const GAIN_STM_SIZE: usize = 11;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
@@ -587,8 +582,8 @@ mod tests {
             })
             .collect();
 
-        let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
-        let rep = rng.gen_range(0x0000001..=0xFFFFFFFF);
+        let freq_div = rng.gen_range(0x0001..=0xFFFF);
+        let rep = rng.gen_range(0x001..=0xFFFF);
         let segment = Segment::S0;
         let mut op = GainSTMOp::new(
             {
@@ -599,8 +594,8 @@ mod tests {
                     .collect()
             },
             GainSTMMode::PhaseHalf,
-            SamplingConfig::DivisionRaw(freq_div),
-            rep,
+            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+            LoopBehavior { rep: rep },
             segment,
             Some(TransitionMode::SyncIdx),
         );
@@ -720,7 +715,6 @@ mod tests {
         GAIN_STM_BUF_SIZE_MAX+1
     )]
     fn out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] size: usize) {
-
         let send = |n: usize| {
             const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
             let device = create_device(0, NUM_TRANS_IN_UNIT);
@@ -735,8 +729,8 @@ mod tests {
                         .collect()
                 },
                 GainSTMMode::PhaseIntensityFull,
-                SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
-                0xFFFFFFFF,
+                SamplingConfig::FREQ_40K,
+                LoopBehavior::infinite(),
                 Segment::S0,
                 None,
             );

@@ -26,7 +26,6 @@ pub mod derive {
         error::AUTDInternalError,
         firmware::fpga::{
             Drive, EmitIntensity, LoopBehavior, Phase, SamplingConfig, Segment, TransitionMode,
-            SAMPLING_FREQ_DIV_MIN,
         },
         geometry::{Device, Geometry, Transducer},
     };

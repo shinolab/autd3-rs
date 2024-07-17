@@ -17,7 +17,6 @@ pub(crate) struct Memory {
     stm_bram_0: Vec<u16>,
     stm_bram_1: Vec<u16>,
     duty_table_bram: Vec<u16>,
-    drp_bram: Vec<u16>,
     tr_pos: Vec<u64>,
     sin_table: Vec<u8>,
     atan_table: Vec<u8>,
@@ -30,10 +29,9 @@ impl Memory {
             controller_bram: vec![0x0000; 256],
             modulator_bram_0: vec![0x0000; 32768 / std::mem::size_of::<u16>()],
             modulator_bram_1: vec![0x0000; 32768 / std::mem::size_of::<u16>()],
-            duty_table_bram: vec![0x0000; 32768 / std::mem::size_of::<u16>()],
+            duty_table_bram: vec![0x0000; 256 / std::mem::size_of::<u16>()],
             stm_bram_0: vec![0x0000; 1024 * 256],
             stm_bram_1: vec![0x0000; 1024 * 256],
-            drp_bram: vec![0x0000; 32 * std::mem::size_of::<u64>()],
             tr_pos: vec![
                 0x00000000, 0x01960000, 0x032d0000, 0x04c30000, 0x065a0000, 0x07f00000, 0x09860000,
                 0x0b1d0000, 0x0cb30000, 0x0e4a0000, 0x0fe00000, 0x11760000, 0x130d0000, 0x14a30000,
@@ -91,7 +89,6 @@ impl Memory {
                 pwe_init_data.len(),
             );
         }
-        self.controller_bram[ADDR_PULSE_WIDTH_ENCODER_FULL_WIDTH_START] = 0xFF * 0xFF;
     }
 
     pub fn read(&self, addr: u16) -> u16 {
@@ -113,7 +110,6 @@ impl Memory {
         match select {
             BRAM_SELECT_CONTROLLER => match addr >> 8 {
                 BRAM_CNT_SEL_MAIN => self.controller_bram[addr] = data,
-                BRAM_CNT_SEL_CLOCK => self.drp_bram[addr & 0xFF] = data,
                 _ => unreachable!(),
             },
             BRAM_SELECT_MOD => match self.controller_bram[ADDR_MOD_MEM_WR_SEGMENT] {
@@ -121,11 +117,8 @@ impl Memory {
                 1 => self.modulator_bram_1[addr] = data,
                 _ => unreachable!(),
             },
-            BRAM_SELECT_DUTY_TABLE => {
-                self.duty_table_bram[((self.controller_bram[ADDR_PULSE_WIDTH_ENCODER_TABLE_WR_PAGE]
-                    as usize)
-                    << 14)
-                    | addr] = data;
+            BRAM_SELECT_PWE_TABLE => {
+                self.duty_table_bram[addr] = data;
             }
             BRAM_SELECT_STM => match self.controller_bram[ADDR_STM_MEM_WR_SEGMENT] {
                 0 => {
@@ -199,16 +192,17 @@ impl Memory {
         self.controller_bram[ADDR_SILENCER_COMPLETION_STEPS_PHASE]
     }
 
-    pub fn silencer_fixed_completion_steps_mode(&self) -> bool {
-        self.controller_bram[ADDR_SILENCER_MODE] == SILNCER_MODE_FIXED_COMPLETION_STEPS
+    pub fn silencer_fixed_update_rate_mode(&self) -> bool {
+        (self.controller_bram[ADDR_SILENCER_FLAG] & SILENCER_FLAG_FIXED_UPDATE_RATE_MODE)
+            == SILENCER_FLAG_FIXED_UPDATE_RATE_MODE
     }
 
-    pub fn stm_freq_division(&self, segment: Segment) -> u32 {
-        Self::read_bram_as::<u32>(
+    pub fn stm_freq_division(&self, segment: Segment) -> u16 {
+        Self::read_bram_as::<u16>(
             &self.controller_bram,
             match segment {
-                Segment::S0 => ADDR_STM_FREQ_DIV0_0,
-                Segment::S1 => ADDR_STM_FREQ_DIV1_0,
+                Segment::S0 => ADDR_STM_FREQ_DIV0,
+                Segment::S1 => ADDR_STM_FREQ_DIV1,
                 _ => unimplemented!(),
             },
         )
@@ -240,15 +234,15 @@ impl Memory {
     }
 
     pub fn stm_loop_behavior(&self, segment: Segment) -> LoopBehavior {
-        match Self::read_bram_as::<u32>(
+        match Self::read_bram_as::<u16>(
             &self.controller_bram,
             match segment {
-                Segment::S0 => ADDR_STM_REP0_0,
-                Segment::S1 => ADDR_STM_REP1_0,
+                Segment::S0 => ADDR_STM_REP0,
+                Segment::S1 => ADDR_STM_REP1,
                 _ => unimplemented!(),
             },
         ) {
-            0xFFFFFFFF => LoopBehavior::infinite(),
+            0xFFFF => LoopBehavior::infinite(),
             v => LoopBehavior::finite(v + 1).unwrap(),
         }
     }
@@ -279,12 +273,12 @@ impl Memory {
         }
     }
 
-    pub fn modulation_freq_division(&self, segment: Segment) -> u32 {
-        Self::read_bram_as::<u32>(
+    pub fn modulation_freq_division(&self, segment: Segment) -> u16 {
+        Self::read_bram_as::<u16>(
             &self.controller_bram,
             match segment {
-                Segment::S0 => ADDR_MOD_FREQ_DIV0_0,
-                Segment::S1 => ADDR_MOD_FREQ_DIV1_0,
+                Segment::S0 => ADDR_MOD_FREQ_DIV0,
+                Segment::S1 => ADDR_MOD_FREQ_DIV1,
                 _ => unimplemented!(),
             },
         )
@@ -300,15 +294,15 @@ impl Memory {
     }
 
     pub fn modulation_loop_behavior(&self, segment: Segment) -> LoopBehavior {
-        match Self::read_bram_as::<u32>(
+        match Self::read_bram_as::<u16>(
             &self.controller_bram,
             match segment {
-                Segment::S0 => ADDR_MOD_REP0_0,
-                Segment::S1 => ADDR_MOD_REP1_0,
+                Segment::S0 => ADDR_MOD_REP0,
+                Segment::S1 => ADDR_MOD_REP1,
                 _ => unimplemented!(),
             },
         ) {
-            0xFFFFFFFF => LoopBehavior::infinite(),
+            0xFFFF => LoopBehavior::infinite(),
             v => LoopBehavior::finite(v + 1).unwrap(),
         }
     }
@@ -377,10 +371,6 @@ impl Memory {
         v as u8
     }
 
-    pub fn pulse_width_encoder_full_width_start(&self) -> u16 {
-        self.controller_bram[ADDR_PULSE_WIDTH_ENCODER_FULL_WIDTH_START]
-    }
-
     pub fn pulse_width_encoder_table(&self) -> Vec<u8> {
         self.duty_table_bram
             .iter()
@@ -404,10 +394,6 @@ impl Memory {
             self.controller_bram[ADDR_DEBUG_VALUE2],
             self.controller_bram[ADDR_DEBUG_VALUE3],
         ]
-    }
-
-    pub fn drp_rom(&self) -> Vec<u64> {
-        unsafe { std::slice::from_raw_parts(self.drp_bram.as_ptr() as *const u64, 32).to_vec() }
     }
 
     pub fn drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {
@@ -540,11 +526,15 @@ impl FPGAEmulator {
         self.mem.silencer_completion_steps_phase()
     }
 
-    pub fn silencer_fixed_completion_steps_mode(&self) -> bool {
-        self.mem.silencer_fixed_completion_steps_mode()
+    pub fn silencer_fixed_update_rate_mode(&self) -> bool {
+        self.mem.silencer_fixed_update_rate_mode()
     }
 
-    pub fn stm_freq_division(&self, segment: Segment) -> u32 {
+    pub fn silencer_fixed_completion_steps_mode(&self) -> bool {
+        !self.silencer_fixed_update_rate_mode()
+    }
+
+    pub fn stm_freq_division(&self, segment: Segment) -> u16 {
         self.mem.stm_freq_division(segment)
     }
 
@@ -564,7 +554,7 @@ impl FPGAEmulator {
         self.mem.stm_transition_mode()
     }
 
-    pub fn modulation_freq_division(&self, segment: Segment) -> u32 {
+    pub fn modulation_freq_division(&self, segment: Segment) -> u16 {
         self.mem.modulation_freq_division(segment)
     }
 
@@ -600,10 +590,6 @@ impl FPGAEmulator {
         self.mem.pulse_width_encoder_table_at(idx)
     }
 
-    pub fn pulse_width_encoder_full_width_start(&self) -> u16 {
-        self.mem.pulse_width_encoder_full_width_start()
-    }
-
     pub fn pulse_width_encoder_table(&self) -> Vec<u8> {
         self.mem.pulse_width_encoder_table()
     }
@@ -614,10 +600,6 @@ impl FPGAEmulator {
 
     pub fn debug_values(&self) -> [u16; 4] {
         self.mem.debug_values()
-    }
-
-    pub fn drp_rom(&self) -> Vec<u64> {
-        self.mem.drp_rom()
     }
 
     pub fn drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {

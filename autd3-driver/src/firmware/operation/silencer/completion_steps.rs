@@ -1,4 +1,3 @@
-use super::{SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS, SILENCER_CTL_FLAG_STRICT_MODE};
 use crate::{
     error::AUTDInternalError,
     firmware::{
@@ -7,6 +6,8 @@ use crate::{
     },
     geometry::Device,
 };
+
+use super::SILENCER_FLAG_STRICT_MODE;
 
 #[repr(C, align(2))]
 struct SilencerFixedCompletionSteps {
@@ -49,12 +50,11 @@ impl Operation for SilencerFixedCompletionStepsOp {
 
         *cast::<SilencerFixedCompletionSteps>(tx) = SilencerFixedCompletionSteps {
             tag: TypeTag::Silencer,
-            flag: SILENCER_CTL_FLAG_FIXED_COMPLETION_STEPS
-                | if self.strict_mode {
-                    SILENCER_CTL_FLAG_STRICT_MODE
-                } else {
-                    0
-                },
+            flag: if self.strict_mode {
+                SILENCER_FLAG_STRICT_MODE
+            } else {
+                0
+            },
             value_intensity: self.value_intensity,
             value_phase: self.value_phase,
         };
@@ -83,7 +83,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(SILENCER_CTL_FLAG_STRICT_MODE, true)]
+    #[case(SILENCER_FLAG_STRICT_MODE, true)]
     #[case(0x00, false)]
     fn test(#[case] value: u8, #[case] strict_mode: bool) {
         let device = create_device(0, NUM_TRANS_IN_UNIT);

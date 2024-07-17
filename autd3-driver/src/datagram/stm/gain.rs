@@ -109,7 +109,7 @@ pub struct GainSTMOperationGenerator<G: Gain> {
     g: *const Vec<Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>>,
     mode: GainSTMMode,
     config: SamplingConfig,
-    rep: u32,
+    loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
 }
@@ -120,7 +120,7 @@ impl<G: Gain> GainSTMOperationGenerator<G> {
         geometry: &Geometry,
         mode: GainSTMMode,
         config: SamplingConfig,
-        rep: u32,
+        loop_behavior: LoopBehavior,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self, AUTDInternalError> {
@@ -129,7 +129,7 @@ impl<G: Gain> GainSTMOperationGenerator<G> {
             g: std::ptr::null(),
             mode,
             config,
-            rep,
+            loop_behavior,
             segment,
             transition_mode,
         };
@@ -172,7 +172,7 @@ impl<G: Gain> OperationGenerator for GainSTMOperationGenerator<G> {
                 d,
                 self.mode,
                 self.config,
-                self.rep,
+                self.loop_behavior,
                 self.segment,
                 self.transition_mode,
             ),
@@ -191,7 +191,7 @@ impl<G: Gain> DatagramST for GainSTM<G> {
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, AUTDInternalError> {
         let sampling_config = self.sampling_config;
-        let rep = self.loop_behavior.rep();
+        let loop_behavior = self.loop_behavior;
         let mode = self.mode;
         let gains = self.gains;
         GainSTMOperationGenerator::new(
@@ -199,7 +199,7 @@ impl<G: Gain> DatagramST for GainSTM<G> {
             geometry,
             mode,
             sampling_config,
-            rep,
+            loop_behavior,
             segment,
             transition_mode,
         )
@@ -242,7 +242,7 @@ impl Default for GainSTM<Box<dyn Gain + Send + Sync>> {
         Self {
             gains: vec![],
             loop_behavior: LoopBehavior::infinite(),
-            sampling_config: SamplingConfig::DISABLE,
+            sampling_config: SamplingConfig::FREQ_40K,
             mode: GainSTMMode::PhaseIntensityFull,
         }
     }
@@ -252,7 +252,7 @@ impl Default for GainSTM<Box<dyn Gain + Send + Sync>> {
 mod tests {
     use super::*;
 
-    use crate::defined::{kHz, Hz};
+    use crate::defined::{kHz, Hz, ULTRASOUND_FREQ};
 
     #[derive(Gain, Default, Debug, PartialEq)]
     struct Null {
@@ -363,8 +363,8 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(SamplingConfig::DISABLE, 2)]
     #[case(SamplingConfig::Freq(4 * kHz), 10)]
+    #[case(SamplingConfig::Freq(8 * kHz), 10)]
     fn from_sampling_config(
         #[case] config: SamplingConfig,
         #[case] n: usize,
@@ -420,7 +420,7 @@ mod tests {
         assert_eq!(
             mode,
             GainSTM::from_sampling_config(
-                SamplingConfig::Division(512),
+                SamplingConfig::Freq(ULTRASOUND_FREQ),
                 (0..2).map(|_| Null::default())
             )
             .with_mode(mode)
@@ -434,7 +434,7 @@ mod tests {
         assert_eq!(
             GainSTMMode::PhaseIntensityFull,
             GainSTM::from_sampling_config(
-                SamplingConfig::Division(512),
+                SamplingConfig::Freq(ULTRASOUND_FREQ),
                 (0..2).map(|_| Null::default())
             )
             .mode()
@@ -449,7 +449,7 @@ mod tests {
         assert_eq!(
             loop_behavior,
             GainSTM::from_sampling_config(
-                SamplingConfig::Division(512),
+                SamplingConfig::Freq(ULTRASOUND_FREQ),
                 (0..2).map(|_| Null::default())
             )
             .with_loop_behavior(loop_behavior)

@@ -11,10 +11,10 @@ struct ConfigSilencer {
 impl CPUEmulator {
     pub(crate) fn validate_silencer_settings(
         strict_mode: bool,
-        min_freq_div_intensity: u32,
-        min_freq_div_phase: u32,
-        stm_freq_div: u32,
-        mod_freq_div: u32,
+        min_freq_div_intensity: u16,
+        min_freq_div_phase: u16,
+        stm_freq_div: u16,
+        mod_freq_div: u16,
     ) -> bool {
         if strict_mode
             && (mod_freq_div < min_freq_div_intensity
@@ -29,10 +29,23 @@ impl CPUEmulator {
     pub(crate) fn config_silencer(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<ConfigSilencer>(data);
 
-        if (d.flag & SILNCER_FLAG_MODE) == SILNCER_MODE_FIXED_COMPLETION_STEPS as _ {
-            let strict_mode = (d.flag & SILNCER_FLAG_STRICT_MODE) != 0;
-            let min_freq_div_intensity = (d.value_intensity as u32) << 9;
-            let min_freq_div_phase = (d.value_phase as u32) << 9;
+        if (d.flag & SILENCER_FLAG_FIXED_UPDATE_RATE_MODE)
+            == SILENCER_FLAG_FIXED_UPDATE_RATE_MODE as _
+        {
+            self.bram_write(
+                BRAM_SELECT_CONTROLLER,
+                ADDR_SILENCER_UPDATE_RATE_INTENSITY,
+                d.value_intensity,
+            );
+            self.bram_write(
+                BRAM_SELECT_CONTROLLER,
+                ADDR_SILENCER_UPDATE_RATE_PHASE,
+                d.value_phase,
+            );
+        } else {
+            let strict_mode = (d.flag & SILENCER_FLAG_STRICT_MODE) == SILENCER_FLAG_STRICT_MODE;
+            let min_freq_div_intensity = d.value_intensity;
+            let min_freq_div_phase = d.value_phase;
 
             if Self::validate_silencer_settings(
                 strict_mode,
@@ -58,28 +71,8 @@ impl CPUEmulator {
                 ADDR_SILENCER_COMPLETION_STEPS_PHASE,
                 d.value_phase,
             );
-            self.bram_write(
-                BRAM_SELECT_CONTROLLER,
-                ADDR_SILENCER_MODE,
-                SILNCER_MODE_FIXED_COMPLETION_STEPS as _,
-            );
-        } else {
-            self.bram_write(
-                BRAM_SELECT_CONTROLLER,
-                ADDR_SILENCER_UPDATE_RATE_INTENSITY,
-                d.value_intensity,
-            );
-            self.bram_write(
-                BRAM_SELECT_CONTROLLER,
-                ADDR_SILENCER_UPDATE_RATE_PHASE,
-                d.value_phase,
-            );
-            self.bram_write(
-                BRAM_SELECT_CONTROLLER,
-                ADDR_SILENCER_MODE,
-                SILNCER_MODE_FIXED_UPDATE_RATE as _,
-            );
         }
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_SILENCER_FLAG, d.flag as _);
 
         self.set_and_wait_update(CTL_FLAG_SILENCER_SET);
 
