@@ -1666,10 +1666,8 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
 
             self.backend.solve_inplace(&aa, &mut bb)?;
 
-            let b = self.backend.to_host_v(bb)?;
-            b.iter().zip(x.iter()).for_each(|(b, x)| {
-                assert_approx_eq::assert_approx_eq!(b, x, 0.2);
-            });
+            let b2 = &a * &self.backend.to_host_v(bb)?;
+            assert!(approx::relative_eq!(b, b2, epsilon = 1e-3));
         }
 
         Ok(())
