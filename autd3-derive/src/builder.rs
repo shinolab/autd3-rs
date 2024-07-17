@@ -35,6 +35,11 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
         let ty = &field.ty;
 
         field.ident.as_ref().map(|ident| match ty {
+            syn::Type::Path(path) if path.path.is_ident("Geometry") => quote! {
+                pub fn #ident(&self) -> &Geometry {
+                    &self.#ident
+                }
+            },
             syn::Type::Path(path) if path.path.is_ident("String") => quote! {
                 pub fn #ident(&self) -> &str {
                     &self.#ident
@@ -52,6 +57,11 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
             },
             syn::Type::Path(path) if path.path.is_ident("F") => quote! {
                 pub const fn #ident(&self) -> &F {
+                    &self.#ident
+                }
+            },
+            syn::Type::Path(path) if path.path.is_ident("L") => quote! {
+                pub const fn #ident(&self) -> &L {
                     &self.#ident
                 }
             },

@@ -1,7 +1,4 @@
-use std::{
-    ops::{Deref, DerefMut},
-    time::Duration,
-};
+use std::time::Duration;
 
 use autd3_driver::{
     derive::*,
@@ -10,10 +7,15 @@ use autd3_driver::{
 };
 use autd3_firmware_emulator::CPUEmulator;
 
+use derive_more::{Deref, DerefMut};
+
+#[derive(Deref, DerefMut)]
 pub struct Audit {
     is_open: bool,
     timeout: Duration,
     last_timeout: Option<Duration>,
+    #[deref]
+    #[deref_mut]
     cpus: Vec<CPUEmulator>,
     down: bool,
     broken: bool,
@@ -81,20 +83,6 @@ impl Audit {
 
     pub fn repair(&mut self) {
         self.broken = false;
-    }
-}
-
-impl Deref for Audit {
-    type Target = [CPUEmulator];
-
-    fn deref(&self) -> &Self::Target {
-        &self.cpus
-    }
-}
-
-impl DerefMut for Audit {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.cpus
     }
 }
 

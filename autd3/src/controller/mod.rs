@@ -29,8 +29,10 @@ pub use group::GroupGuard;
 
 #[derive(Builder)]
 pub struct Controller<L: Link> {
-    pub link: L,
-    pub geometry: Geometry,
+    #[get]
+    link: L,
+    #[get]
+    geometry: Geometry,
     tx_buf: TxDatagram,
     rx_buf: Vec<RxMessage>,
     #[get]
@@ -58,6 +60,11 @@ impl<L: Link> Controller<L> {
     ) -> GroupGuard<K, L, F> {
         GroupGuard::new(self, f)
     }
+
+    #[must_use]
+    pub fn link_mut(&mut self) -> &mut L {
+        &mut self.link
+    }
 }
 
 impl<L: Link> Controller<L> {
@@ -82,6 +89,7 @@ impl<L: Link> Controller<L> {
         parallel_threshold: usize,
     ) -> Result<(), AUTDError> {
         self.last_parallel_threshold = parallel_threshold;
+        self.link.update(&self.geometry).await?;
         loop {
             OperationHandler::pack(
                 operations,
@@ -291,7 +299,7 @@ mod tests {
         ))
         .await?;
 
-        autd.geometry.iter().try_for_each(|dev| {
+        autd.geometry().iter().try_for_each(|dev| {
             assert_eq!(
                 Sine::new(150. * Hz).calc()?,
                 autd.link[dev.idx()].fpga().modulation(Segment::S0)
@@ -343,7 +351,7 @@ mod tests {
 
         {
             let mut autd = create_controller(1).await?;
-            autd.link.break_down();
+            autd.link_mut().break_down();
             assert_eq!(
                 Err(AUTDError::Internal(AUTDInternalError::LinkError(
                     "broken".to_owned()
@@ -354,7 +362,7 @@ mod tests {
 
         {
             let mut autd = create_controller(1).await?;
-            autd.link.down();
+            autd.link_mut().down();
             assert_eq!(
                 Err(AUTDError::Internal(AUTDInternalError::SendDataFailed)),
                 autd.close().await
@@ -373,9 +381,7 @@ mod tests {
 
         autd.send(ReadsFPGAState::new(|_| true)).await?;
         {
-            autd.link.emulators_mut()[0]
-                .fpga_mut()
-                .assert_thermal_sensor();
+            autd.link_mut()[0].fpga_mut().assert_thermal_sensor();
 
             let states = autd.fpga_state().await?;
             assert_eq!(2, states.len());
@@ -388,12 +394,8 @@ mod tests {
         }
 
         {
-            autd.link.emulators_mut()[0]
-                .fpga_mut()
-                .deassert_thermal_sensor();
-            autd.link.emulators_mut()[1]
-                .fpga_mut()
-                .assert_thermal_sensor();
+            autd.link_mut()[0].fpga_mut().deassert_thermal_sensor();
+            autd.link_mut()[1].fpga_mut().assert_thermal_sensor();
 
             let states = autd.fpga_state().await?;
             assert_eq!(2, states.len());

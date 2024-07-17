@@ -16,6 +16,10 @@ mod internal {
     pub trait Link: Send + Sync {
         async fn close(&mut self) -> Result<(), AUTDInternalError>;
 
+        async fn update(&mut self, _geometry: &Geometry) -> Result<(), AUTDInternalError> {
+            Ok(())
+        }
+
         async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError>;
 
         async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError>;
@@ -40,6 +44,10 @@ mod internal {
     impl Link for Box<dyn Link> {
         async fn close(&mut self) -> Result<(), AUTDInternalError> {
             self.as_mut().close().await
+        }
+
+        async fn update(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
+            self.as_mut().update(geometry).await
         }
 
         async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
@@ -71,6 +79,13 @@ mod internal {
 
     pub trait Link: Send + Sync {
         fn close(&mut self) -> impl std::future::Future<Output = Result<(), AUTDInternalError>>;
+
+        fn update(
+            &mut self,
+            _geometry: &Geometry,
+        ) -> impl std::future::Future<Output = Result<(), AUTDInternalError>> {
+            async { Ok(()) }
+        }
 
         fn send(
             &mut self,

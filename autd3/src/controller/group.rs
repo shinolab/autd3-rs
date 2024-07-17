@@ -206,7 +206,7 @@ mod tests {
                 .await
         );
 
-        autd.link.down();
+        autd.link_mut().down();
         assert_eq!(
             Err(AUTDError::Internal(AUTDInternalError::SendDataFailed)),
             autd.group(|dev| Some(dev.idx()))

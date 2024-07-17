@@ -11,23 +11,28 @@ pub type Matrix3 = nalgebra::Matrix3<f32>;
 pub type Matrix4 = nalgebra::Matrix4<f32>;
 pub type Affine = nalgebra::Affine3<f32>;
 
+use autd3_derive::Builder;
 pub use device::*;
 pub use rotation::*;
 pub use transducer::*;
 
-use derive_more::{Deref, DerefMut};
+use derive_more::Deref;
 
-#[derive(Deref, DerefMut)]
+#[derive(Deref, Builder)]
 pub struct Geometry {
     #[deref]
-    #[deref_mut]
     pub(crate) devices: Vec<Device>,
+    #[get]
+    version: usize,
 }
 
 impl Geometry {
     #[doc(hidden)]
     pub const fn new(devices: Vec<Device>) -> Geometry {
-        Self { devices }
+        Self {
+            devices,
+            version: 0,
+        }
     }
 
     pub fn num_devices(&self) -> usize {
@@ -47,10 +52,12 @@ impl Geometry {
     }
 
     pub fn devices_mut(&mut self) -> impl Iterator<Item = &mut Device> {
+        self.version += 1;
         self.devices.iter_mut().filter(|dev| dev.enable)
     }
 
     pub fn set_sound_speed(&mut self, c: f32) {
+        self.version += 1;
         self.devices_mut().for_each(|dev| dev.sound_speed = c);
     }
 
@@ -59,6 +66,7 @@ impl Geometry {
     }
 
     pub fn set_sound_speed_from_temp_with(&mut self, temp: f32, k: f32, r: f32, m: f32) {
+        self.version += 1;
         self.devices_mut()
             .for_each(|dev| dev.set_sound_speed_from_temp_with(temp, k, r, m));
     }
@@ -79,7 +87,15 @@ impl<'a> IntoIterator for &'a mut Geometry {
     type IntoIter = std::slice::IterMut<'a, Device>;
 
     fn into_iter(self) -> Self::IntoIter {
+        self.version += 1;
         self.devices.iter_mut()
+    }
+}
+
+impl std::ops::DerefMut for Geometry {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.version += 1;
+        &mut self.devices
     }
 }
 // GRCOV_EXCL_STOP

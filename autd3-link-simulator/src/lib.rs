@@ -15,6 +15,7 @@ pub struct Simulator {
     client: simulator_client::SimulatorClient<tonic::transport::Channel>,
     timeout: Duration,
     is_open: bool,
+    last_geometry_version: usize,
 }
 
 #[derive(Builder)]
@@ -52,6 +53,7 @@ impl LinkBuilder for SimulatorBuilder {
             client,
             timeout: self.timeout,
             is_open: true,
+            last_geometry_version: geometry.version(),
         })
     }
 }
@@ -79,6 +81,27 @@ impl Link for Simulator {
             .await
             .map_err(AUTDProtoBufError::from)?;
 
+        Ok(())
+    }
+
+    async fn update(
+        &mut self,
+        geometry: &autd3_driver::geometry::Geometry,
+    ) -> Result<(), AUTDInternalError> {
+        if self.last_geometry_version == geometry.version() {
+            return Ok(());
+        }
+        self.last_geometry_version = geometry.version();
+        if self
+            .client
+            .update_geomety(geometry.to_msg(None))
+            .await
+            .is_err()
+        {
+            return Err(
+                AUTDProtoBufError::SendError("Failed to update geometry".to_string()).into(),
+            );
+        }
         Ok(())
     }
 
@@ -122,24 +145,5 @@ impl Link for Simulator {
 
     fn timeout(&self) -> Duration {
         self.timeout
-    }
-}
-
-impl Simulator {
-    pub async fn update_geometry(
-        &mut self,
-        geometry: &autd3_driver::geometry::Geometry,
-    ) -> Result<(), AUTDInternalError> {
-        if self
-            .client
-            .update_geomety(geometry.to_msg(None))
-            .await
-            .is_err()
-        {
-            return Err(
-                AUTDProtoBufError::SendError("Failed to update geometry".to_string()).into(),
-            );
-        }
-        Ok(())
     }
 }

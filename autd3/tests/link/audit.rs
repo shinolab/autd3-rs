@@ -6,41 +6,38 @@ use autd3_driver::{
 
 #[tokio::test]
 async fn audit_test() -> anyhow::Result<()> {
-
     let mut autd = Controller::builder([AUTD3::new(Vector3::zeros())])
         .open(Audit::builder().with_timeout(std::time::Duration::from_millis(100)))
         .await?;
-    assert_eq!(std::time::Duration::from_millis(100), autd.link.timeout());
+    assert_eq!(std::time::Duration::from_millis(100), autd.link().timeout());
 
-    assert_eq!(0, autd.link.emulators()[0].idx());
-    assert_eq!(0, autd.link[0].idx());
-    assert_eq!(Some(DEFAULT_TIMEOUT), autd.link.last_timeout());
+    assert_eq!(0, autd.link().emulators()[0].idx());
+    assert_eq!(0, autd.link()[0].idx());
+    assert_eq!(Some(DEFAULT_TIMEOUT), autd.link().last_timeout());
 
     assert_eq!(vec![None], autd.fpga_state().await?);
     autd.send(ReadsFPGAState::new(|_| true)).await?;
-    autd.link[0].update();
+    autd.link_mut()[0].update();
     assert_eq!(
         vec![Option::<FPGAState>::from(&RxMessage::new(0x00, 0x88))],
         autd.fpga_state().await?
     );
-    autd.link.emulators_mut()[0]
-        .fpga_mut()
-        .assert_thermal_sensor();
-    autd.link[0].update();
+    autd.link_mut()[0].fpga_mut().assert_thermal_sensor();
+    autd.link_mut()[0].update();
     assert_eq!(
         vec![Option::<FPGAState>::from(&RxMessage::new(0x00, 0x89))],
         autd.fpga_state().await?
     );
 
-    autd.link.down();
+    autd.link_mut().down();
     assert_eq!(
         Err(AUTDError::Internal(AUTDInternalError::SendDataFailed)),
         autd.send(Static::new()).await
     );
     assert_eq!(Err(AUTDError::ReadFPGAStateFailed), autd.fpga_state().await);
-    autd.link.up();
+    autd.link_mut().up();
     autd.send(Static::new()).await?;
-    autd.link.break_down();
+    autd.link_mut().break_down();
     assert_eq!(
         Err(AUTDError::Internal(AUTDInternalError::LinkError(
             "broken".to_string()
@@ -53,7 +50,7 @@ async fn audit_test() -> anyhow::Result<()> {
         ))),
         autd.fpga_state().await
     );
-    autd.link.repair();
+    autd.link_mut().repair();
     autd.send(Static::new()).await?;
 
     autd.close().await?;

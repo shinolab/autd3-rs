@@ -41,7 +41,7 @@ pub async fn run<L: Link>(mut autd: Controller<L>) -> anyhow::Result<()> {
             Box::pin(group_by_transducer(autd))
         }),
     ];
-    if autd.geometry.num_devices() >= 2 {
+    if autd.geometry().num_devices() >= 2 {
         examples.push(("Group (by Device) test", |autd| {
             Box::pin(group_by_device(autd))
         }));
