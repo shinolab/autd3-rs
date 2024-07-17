@@ -8,6 +8,8 @@ pub use fixed_update_rate::FixedUpdateRate;
 
 use derive_more::{Div, Mul};
 
+use crate::firmware::operation::Target;
+
 #[derive(Debug, Clone, Copy, Mul, Div)]
 pub struct Silencer<T> {
     internal: T,
@@ -26,6 +28,7 @@ impl Silencer<()> {
             internal: FixedUpdateRate {
                 update_rate_intensity,
                 update_rate_phase,
+                target: Target::Intensity,
             },
         }
     }
@@ -39,6 +42,7 @@ impl Silencer<()> {
                 steps_intensity,
                 steps_phase,
                 strict_mode: true,
+                target: Target::Intensity,
             },
         }
     }
@@ -52,6 +56,7 @@ impl Silencer<()> {
                 time_intensity,
                 time_phase,
                 strict_mode: true,
+                target: Target::Intensity,
             },
         }
     }
@@ -62,6 +67,7 @@ impl Silencer<()> {
                 steps_intensity: 1,
                 steps_phase: 1,
                 strict_mode: true,
+                target: Target::Intensity,
             },
         }
     }

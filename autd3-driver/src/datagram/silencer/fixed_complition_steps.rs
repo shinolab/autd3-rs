@@ -2,14 +2,14 @@ use crate::firmware::{
     fpga::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
     operation::SilencerFixedCompletionStepsOp,
 };
-
-use crate::datagram::*;
+use crate::{datagram::*, firmware::operation::Target};
 
 #[derive(Debug, Clone, Copy)]
 pub struct FixedCompletionSteps {
     pub(super) steps_intensity: u16,
     pub(super) steps_phase: u16,
     pub(super) strict_mode: bool,
+    pub(super) target: Target,
 }
 
 impl<T> std::ops::Mul<T> for FixedCompletionSteps
@@ -24,6 +24,7 @@ where
             steps_intensity: self.steps_intensity * rhs,
             steps_phase: self.steps_phase * rhs,
             strict_mode: self.strict_mode,
+            target: self.target,
         }
     }
 }
@@ -40,6 +41,7 @@ where
             steps_intensity: self.steps_intensity / rhs,
             steps_phase: self.steps_phase / rhs,
             strict_mode: self.strict_mode,
+            target: self.target,
         }
     }
 }
@@ -51,6 +53,7 @@ impl Default for Silencer<FixedCompletionSteps> {
                 steps_intensity: SILENCER_STEPS_INTENSITY_DEFAULT,
                 steps_phase: SILENCER_STEPS_PHASE_DEFAULT,
                 strict_mode: true,
+                target: Target::Intensity,
             },
         }
     }
@@ -59,6 +62,11 @@ impl Default for Silencer<FixedCompletionSteps> {
 impl Silencer<FixedCompletionSteps> {
     pub const fn with_strict_mode(mut self, strict_mode: bool) -> Self {
         self.internal.strict_mode = strict_mode;
+        self
+    }
+
+    pub const fn with_taget(mut self, target: Target) -> Self {
+        self.internal.target = target;
         self
     }
 
@@ -73,12 +81,17 @@ impl Silencer<FixedCompletionSteps> {
     pub const fn strict_mode(&self) -> bool {
         self.internal.strict_mode
     }
+
+    pub const fn target(&self) -> Target {
+        self.internal.target
+    }
 }
 
 pub struct SilencerFixedCompletionStepsOpGenerator {
     steps_intensity: u16,
     steps_phase: u16,
     strict_mode: bool,
+    target: Target,
 }
 
 impl OperationGenerator for SilencerFixedCompletionStepsOpGenerator {
@@ -87,7 +100,12 @@ impl OperationGenerator for SilencerFixedCompletionStepsOpGenerator {
 
     fn generate(&self, _: &Device) -> (Self::O1, Self::O2) {
         (
-            Self::O1::new(self.steps_intensity, self.steps_phase, self.strict_mode),
+            Self::O1::new(
+                self.steps_intensity,
+                self.steps_phase,
+                self.strict_mode,
+                self.target,
+            ),
             Self::O2::default(),
         )
     }
@@ -105,6 +123,7 @@ impl Datagram for Silencer<FixedCompletionSteps> {
             steps_intensity: self.internal.steps_intensity,
             steps_phase: self.internal.steps_phase,
             strict_mode: self.internal.strict_mode,
+            target: self.internal.target,
         })
     }
 

@@ -1,7 +1,9 @@
 use std::time::Duration;
 
 use crate::{
-    datagram::*, defined::ULTRASOUND_FREQ, firmware::operation::SilencerFixedCompletionStepsOp,
+    datagram::*,
+    defined::ULTRASOUND_FREQ,
+    firmware::operation::{SilencerFixedCompletionStepsOp, Target},
 };
 
 const NANOSEC: u128 = 1_000_000_000;
@@ -11,6 +13,7 @@ pub struct FixedCompletionTime {
     pub(super) time_intensity: Duration,
     pub(super) time_phase: Duration,
     pub(super) strict_mode: bool,
+    pub(super) target: Target,
 }
 
 impl<T> std::ops::Mul<T> for FixedCompletionTime
@@ -25,6 +28,7 @@ where
             time_intensity: self.time_intensity * rhs,
             time_phase: self.time_phase * rhs,
             strict_mode: self.strict_mode,
+            target: self.target,
         }
     }
 }
@@ -41,6 +45,7 @@ where
             time_intensity: self.time_intensity / rhs,
             time_phase: self.time_phase / rhs,
             strict_mode: self.strict_mode,
+            target: self.target,
         }
     }
 }
@@ -64,6 +69,11 @@ impl Silencer<FixedCompletionTime> {
         self
     }
 
+    pub const fn with_taget(mut self, target: Target) -> Self {
+        self.internal.target = target;
+        self
+    }
+
     pub const fn completion_time_intensity(&self) -> Duration {
         self.internal.time_intensity
     }
@@ -75,6 +85,10 @@ impl Silencer<FixedCompletionTime> {
     pub const fn strict_mode(&self) -> bool {
         self.internal.strict_mode
     }
+
+    pub const fn target(&self) -> Target {
+        self.internal.target
+    }
 }
 
 #[derive(Debug)]
@@ -82,6 +96,7 @@ pub struct SilencerFixedCompletionTimeOpGenerator {
     steps_intensity: u16,
     steps_phase: u16,
     strict_mode: bool,
+    target: Target,
 }
 
 impl OperationGenerator for SilencerFixedCompletionTimeOpGenerator {
@@ -90,7 +105,12 @@ impl OperationGenerator for SilencerFixedCompletionTimeOpGenerator {
 
     fn generate(&self, _: &Device) -> (Self::O1, Self::O2) {
         (
-            Self::O1::new(self.steps_intensity, self.steps_phase, self.strict_mode),
+            Self::O1::new(
+                self.steps_intensity,
+                self.steps_phase,
+                self.strict_mode,
+                self.target,
+            ),
             Self::O2::default(),
         )
     }
@@ -127,6 +147,7 @@ impl Datagram for Silencer<FixedCompletionTime> {
             steps_intensity: steps_intensity as _,
             steps_phase: steps_phase as _,
             strict_mode: self.internal.strict_mode,
+            target: self.internal.target,
         })
     }
 
