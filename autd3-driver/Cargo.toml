@@ -25,7 +25,6 @@ bitfield-struct = { workspace = true }
 rayon = { workspace = true }
 itertools = { workspace = true }
 derive_more = { workspace = true }
-is_sorted = "0.1.1"
 tracing = { workspace = true }
 tynm = "0.1.10"
 
