@@ -1,8 +1,8 @@
 use crate::{cpu::params::*, CPUEmulator};
 
-pub const GAIN_STM_BUF_PAGE_SIZE_WIDTH: u32 = 6;
-pub const GAIN_STM_BUF_PAGE_SIZE: u32 = 1 << GAIN_STM_BUF_PAGE_SIZE_WIDTH;
-pub const GAIN_STM_BUF_PAGE_SIZE_MASK: u32 = GAIN_STM_BUF_PAGE_SIZE - 1;
+pub const GAIN_STM_BUF_PAGE_SIZE_WIDTH: u16 = 6;
+pub const GAIN_STM_BUF_PAGE_SIZE: u16 = 1 << GAIN_STM_BUF_PAGE_SIZE_WIDTH;
+pub const GAIN_STM_BUF_PAGE_SIZE_MASK: u16 = GAIN_STM_BUF_PAGE_SIZE - 1;
 
 #[repr(C, align(2))]
 #[derive(Clone, Copy)]
@@ -11,9 +11,8 @@ struct GainSTMHead {
     flag: u8,
     mode: u8,
     transition_mode: u8,
-    __pad: [u8; 4],
-    freq_div: u32,
-    rep: u32,
+    freq_div: u16,
+    rep: u16,
     transition_value: u64,
 }
 
@@ -84,34 +83,14 @@ impl CPUEmulator {
 
             match segment {
                 0 => {
-                    self.bram_cpy(
-                        BRAM_SELECT_CONTROLLER,
-                        ADDR_STM_FREQ_DIV0_0,
-                        &d.head.freq_div as *const _ as _,
-                        std::mem::size_of::<u32>() >> 1,
-                    );
+                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_FREQ_DIV0, d.head.freq_div);
                     self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_MODE0, STM_MODE_GAIN);
-                    self.bram_cpy(
-                        BRAM_SELECT_CONTROLLER,
-                        ADDR_STM_REP0_0,
-                        &d.head.rep as *const _ as _,
-                        std::mem::size_of::<u32>() >> 1,
-                    );
+                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REP0, d.head.rep);
                 }
                 1 => {
-                    self.bram_cpy(
-                        BRAM_SELECT_CONTROLLER,
-                        ADDR_STM_FREQ_DIV1_0,
-                        &d.head.freq_div as *const _ as _,
-                        std::mem::size_of::<u32>() >> 1,
-                    );
+                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_FREQ_DIV1, d.head.freq_div);
                     self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_MODE1, STM_MODE_GAIN);
-                    self.bram_cpy(
-                        BRAM_SELECT_CONTROLLER,
-                        ADDR_STM_REP1_0,
-                        &d.head.rep as *const _ as _,
-                        std::mem::size_of::<u32>() >> 1,
-                    );
+                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REP1, d.head.rep);
                 }
                 _ => unreachable!(),
             }
@@ -125,8 +104,7 @@ impl CPUEmulator {
         };
 
         let mut src = src_base;
-        let mut dst =
-            ((self.stm_cycle[segment as usize] & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8) as u16;
+        let mut dst = (self.stm_cycle[segment as usize] & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8;
 
         match self.gain_stm_mode {
             GAIN_STM_MODE_INTENSITY_PHASE_FULL => {
@@ -147,8 +125,8 @@ impl CPUEmulator {
 
                 if send > 1 {
                     let mut src = src_base;
-                    let mut dst = ((self.stm_cycle[segment as usize] & GAIN_STM_BUF_PAGE_SIZE_MASK)
-                        << 8) as u16;
+                    let mut dst =
+                        (self.stm_cycle[segment as usize] & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8;
                     (0..self.num_transducers).for_each(|_| unsafe {
                         self.bram_write(
                             BRAM_SELECT_STM,
@@ -172,8 +150,8 @@ impl CPUEmulator {
 
                 if send > 1 {
                     let mut src = src_base;
-                    let mut dst = ((self.stm_cycle[segment as usize] & GAIN_STM_BUF_PAGE_SIZE_MASK)
-                        << 8) as u16;
+                    let mut dst =
+                        (self.stm_cycle[segment as usize] & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8;
                     (0..self.num_transducers).for_each(|_| unsafe {
                         let phase = (src.read() >> 4) & 0x000F;
                         self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (phase << 4) | phase);
@@ -185,8 +163,8 @@ impl CPUEmulator {
 
                 if send > 2 {
                     let mut src = src_base;
-                    let mut dst = ((self.stm_cycle[segment as usize] & GAIN_STM_BUF_PAGE_SIZE_MASK)
-                        << 8) as u16;
+                    let mut dst =
+                        (self.stm_cycle[segment as usize] & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8;
                     (0..self.num_transducers).for_each(|_| unsafe {
                         let phase = (src.read() >> 8) & 0x000F;
                         self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (phase << 4) | phase);
@@ -198,8 +176,8 @@ impl CPUEmulator {
 
                 if send > 3 {
                     let mut src = src_base;
-                    let mut dst = ((self.stm_cycle[segment as usize] & GAIN_STM_BUF_PAGE_SIZE_MASK)
-                        << 8) as u16;
+                    let mut dst =
+                        (self.stm_cycle[segment as usize] & GAIN_STM_BUF_PAGE_SIZE_MASK) << 8;
                     (0..self.num_transducers).for_each(|_| unsafe {
                         let phase = (src.read() >> 12) & 0x000F;
                         self.bram_write(BRAM_SELECT_STM, dst, 0xFF00 | (phase << 4) | phase);
@@ -290,14 +268,14 @@ mod tests {
 
     #[test]
     fn gain_stm_memory_layout() {
-        assert_eq!(24, std::mem::size_of::<GainSTMHead>());
+        assert_eq!(16, std::mem::size_of::<GainSTMHead>());
         assert_eq!(0, std::mem::offset_of!(GainSTMHead, tag));
         assert_eq!(1, std::mem::offset_of!(GainSTMHead, flag));
         assert_eq!(2, std::mem::offset_of!(GainSTMHead, mode));
         assert_eq!(3, std::mem::offset_of!(GainSTMHead, transition_mode));
-        assert_eq!(8, std::mem::offset_of!(GainSTMHead, freq_div));
-        assert_eq!(12, std::mem::offset_of!(GainSTMHead, rep));
-        assert_eq!(16, std::mem::offset_of!(GainSTMHead, transition_value));
+        assert_eq!(4, std::mem::offset_of!(GainSTMHead, freq_div));
+        assert_eq!(6, std::mem::offset_of!(GainSTMHead, rep));
+        assert_eq!(8, std::mem::offset_of!(GainSTMHead, transition_value));
 
         assert_eq!(2, std::mem::size_of::<GainSTMSubseq>());
         assert_eq!(0, std::mem::offset_of!(GainSTMSubseq, tag));

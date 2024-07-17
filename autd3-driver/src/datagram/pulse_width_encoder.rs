@@ -1,7 +1,4 @@
-use crate::firmware::{
-    fpga::{PULSE_WIDTH_MAX, PWE_BUF_SIZE},
-    operation::PulseWidthEncoderOp,
-};
+use crate::firmware::{fpga::PWE_BUF_SIZE, operation::PulseWidthEncoderOp};
 
 use itertools::Itertools;
 
@@ -9,20 +6,16 @@ use crate::datagram::*;
 
 const DEFAULT_TABLE: &[u8; PWE_BUF_SIZE] = include_bytes!("asin.dat");
 
-fn default_table(i: usize) -> u16 {
-    if i >= 0xFF * 0xFF / 2 {
-        PULSE_WIDTH_MAX
-    } else {
-        DEFAULT_TABLE[i] as u16
-    }
+fn default_table(i: u8) -> u8 {
+    DEFAULT_TABLE[i as usize]
 }
 
 #[derive(Debug, Clone)]
-pub struct PulseWidthEncoder<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> {
+pub struct PulseWidthEncoder<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> {
     f: F,
 }
 
-impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> PulseWidthEncoder<H, F> {
+impl<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> PulseWidthEncoder<H, F> {
     pub const fn new(f: F) -> Self {
         Self { f }
     }
@@ -30,8 +23,8 @@ impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> PulseWidthEncoder<H
 
 impl Default
     for PulseWidthEncoder<
-        Box<dyn Fn(usize) -> u16 + Send + Sync>,
-        Box<dyn Fn(&Device) -> Box<dyn Fn(usize) -> u16 + Send + Sync>>,
+        Box<dyn Fn(u8) -> u8 + Send + Sync>,
+        Box<dyn Fn(&Device) -> Box<dyn Fn(u8) -> u8 + Send + Sync>>,
     >
 {
     fn default() -> Self {
@@ -39,11 +32,11 @@ impl Default
     }
 }
 
-pub struct PulseWidthEncoderOpGenerator<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> {
+pub struct PulseWidthEncoderOpGenerator<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> {
     f: F,
 }
 
-impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
+impl<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
     for PulseWidthEncoderOpGenerator<H, F>
 {
     type O1 = PulseWidthEncoderOp<H>;
@@ -54,7 +47,7 @@ impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
     }
 }
 
-impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> Datagram for PulseWidthEncoder<H, F> {
+impl<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> Datagram for PulseWidthEncoder<H, F> {
     type G = PulseWidthEncoderOpGenerator<H, F>;
 
     fn timeout(&self) -> Option<Duration> {
@@ -78,7 +71,7 @@ impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> Datagram for PulseW
                         "Device[{}]: {}",
                         dev.idx(),
                         (0..PWE_BUF_SIZE)
-                            .map(f)
+                            .map(|i| f(i as u8))
                             .format_with(", ", |elt, f| f(&format_args!("{:#04X}", elt)))
                     );
                 } else {
@@ -86,7 +79,7 @@ impl<H: Fn(usize) -> u16 + Send + Sync, F: Fn(&Device) -> H> Datagram for PulseW
                         "Device[{}]: {:#04X}, ..., {:#04X}",
                         dev.idx(),
                         f(0),
-                        f(PWE_BUF_SIZE - 1)
+                        f((PWE_BUF_SIZE - 1) as u8)
                     );
                 }
             });

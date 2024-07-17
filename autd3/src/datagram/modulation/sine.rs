@@ -43,7 +43,7 @@ impl Sine<ExactFreq> {
             intensity: u8::MAX,
             phase: Angle::Rad(0.0),
             offset: u8::MAX / 2,
-            config: SamplingConfig::Division(5120),
+            config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
         }
@@ -55,7 +55,7 @@ impl Sine<ExactFreq> {
             intensity: u8::MAX,
             phase: Angle::Rad(0.0),
             offset: u8::MAX / 2,
-            config: SamplingConfig::Division(5120),
+            config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
         }
@@ -135,7 +135,7 @@ mod tests {
         781.25*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (150.01 Hz) cannot be output with the sampling config (Division(5120)).".to_owned())),
+        Err(AUTDInternalError::ModulationError("Frequency (150.01 Hz) cannot be output with the sampling config (4000 Hz).".to_owned())),
         150.01*Hz
     )]
     #[case(
@@ -167,7 +167,7 @@ mod tests {
         assert_eq!(u8::MAX, m.intensity());
         assert_eq!(u8::MAX / 2, m.offset());
         assert_eq!(Angle::Rad(0.0), m.phase());
-        assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
+        assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
         assert_eq!(expect, m.calc());
     }
 
@@ -205,7 +205,7 @@ mod tests {
         assert_eq!(u8::MAX, m.intensity());
         assert_eq!(u8::MAX / 2, m.offset());
         assert_eq!(Angle::Rad(0.0), m.phase());
-        assert_eq!(SamplingConfig::Division(5120), m.sampling_config());
+        assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
         assert_eq!(expect, m.calc());
     }
 

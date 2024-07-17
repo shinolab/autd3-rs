@@ -1,11 +1,10 @@
+use std::num::NonZeroU16;
+
 use autd3_driver::{
     datagram::*,
     defined::ControlPoint,
     derive::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
-    firmware::{
-        cpu::TxDatagram,
-        fpga::{FPGAState, SAMPLING_FREQ_DIV_MAX},
-    },
+    firmware::{cpu::TxDatagram, fpga::FPGAState},
     geometry::Vector3,
 };
 use autd3_firmware_emulator::CPUEmulator;
@@ -54,14 +53,14 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
     {
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+            config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_segment(Segment::S1, Some(TransitionMode::Immediate));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = FociSTM::from_sampling_config(
-            SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+            SamplingConfig::Division(NonZeroU16::MAX),
             (0..2).map(|_| ControlPoint::new(Vector3::zeros())),
         )
         .with_segment(Segment::S1, Some(TransitionMode::Immediate));

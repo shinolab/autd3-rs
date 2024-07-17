@@ -1,3 +1,4 @@
+use std::num::NonZeroU16;
 use std::time::Duration;
 
 use crate::{
@@ -30,11 +31,10 @@ impl ToMessage for autd3_driver::firmware::fpga::SamplingConfig {
                         value: value.as_nanos() as _,
                     })
                 }
-                autd3::derive::SamplingConfig::DivisionRaw(value) => {
-                    sampling_config::Config::DivisionRaw(SamplingConfigDivisionRaw { value })
-                }
                 autd3::derive::SamplingConfig::Division(value) => {
-                    sampling_config::Config::Division(SamplingConfigDivision { value })
+                    sampling_config::Config::Division(SamplingConfigDivision {
+                        value: value.get() as _,
+                    })
                 }
                 _ => unimplemented!(),
             }),
@@ -47,32 +47,31 @@ impl FromMessage<SamplingConfig> for autd3_driver::firmware::fpga::SamplingConfi
         msg.config
             .as_ref()
             .ok_or(AUTDProtoBufError::DataParseError)
-            .map(|config| match *config {
+            .and_then(|config| match *config {
                 sampling_config::Config::Freq(SamplingConfigFreq { value }) => {
-                    autd3_driver::firmware::fpga::SamplingConfig::Freq(
+                    Ok(autd3_driver::firmware::fpga::SamplingConfig::Freq(
                         value * autd3_driver::defined::Hz,
-                    )
+                    ))
                 }
                 sampling_config::Config::FreqNearest(SamplingConfigFreqNearest { value }) => {
-                    autd3_driver::firmware::fpga::SamplingConfig::FreqNearest(
+                    Ok(autd3_driver::firmware::fpga::SamplingConfig::FreqNearest(
                         value * autd3_driver::defined::Hz,
-                    )
+                    ))
                 }
                 sampling_config::Config::Period(SamplingConfigPeriod { value }) => {
-                    autd3_driver::firmware::fpga::SamplingConfig::Period(Duration::from_nanos(
-                        value,
+                    Ok(autd3_driver::firmware::fpga::SamplingConfig::Period(
+                        Duration::from_nanos(value),
                     ))
                 }
                 sampling_config::Config::PeriodNearest(SamplingConfigPeriodNearest { value }) => {
-                    autd3_driver::firmware::fpga::SamplingConfig::PeriodNearest(
+                    Ok(autd3_driver::firmware::fpga::SamplingConfig::PeriodNearest(
                         Duration::from_nanos(value),
-                    )
+                    ))
                 }
                 sampling_config::Config::Division(SamplingConfigDivision { value }) => {
-                    autd3_driver::firmware::fpga::SamplingConfig::Division(value)
-                }
-                sampling_config::Config::DivisionRaw(SamplingConfigDivisionRaw { value }) => {
-                    autd3_driver::firmware::fpga::SamplingConfig::DivisionRaw(value)
+                    Ok(autd3_driver::firmware::fpga::SamplingConfig::Division(
+                        NonZeroU16::new(value as _).ok_or(AUTDProtoBufError::DataParseError)?,
+                    ))
                 }
             })
     }
@@ -81,18 +80,13 @@ impl FromMessage<SamplingConfig> for autd3_driver::firmware::fpga::SamplingConfi
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::{
-        derive::SamplingConfig,
-        firmware::fpga::{SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
-    };
+    use autd3_driver::derive::SamplingConfig;
     use rand::Rng;
 
     #[test]
     fn test_sampling_config() {
         let mut rng = rand::thread_rng();
-        let v = SamplingConfig::DivisionRaw(
-            rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX),
-        );
+        let v = SamplingConfig::Division(NonZeroU16::new(rng.gen_range(0x0001..=0xFFFF)).unwrap());
         let msg = v.to_msg(None);
         let v2 = SamplingConfig::from_msg(&msg).unwrap();
         assert_eq!(v, v2);

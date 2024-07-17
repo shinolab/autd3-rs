@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-    derive::SamplingConfig,
+    derive::{LoopBehavior, SamplingConfig},
     error::AUTDInternalError,
     firmware::{
         fpga::{Segment, TransitionMode, MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN, TRANSITION_MODE_NONE},
@@ -16,11 +16,10 @@ use super::ModulationControlFlags;
 struct ModulationHead {
     tag: TypeTag,
     flag: ModulationControlFlags,
-    size: u16,
+    size: u8,
     transition_mode: u8,
-    __pad: [u8; 3],
-    freq_div: u32,
-    rep: u32,
+    freq_div: u16,
+    rep: u16,
     transition_value: u64,
 }
 
@@ -36,7 +35,7 @@ pub struct ModulationOp {
     sent: usize,
     is_done: bool,
     config: SamplingConfig,
-    rep: u32,
+    loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
 }
@@ -45,7 +44,7 @@ impl ModulationOp {
     pub const fn new(
         modulation: Arc<Vec<u8>>,
         config: SamplingConfig,
-        rep: u32,
+        loop_behavior: LoopBehavior,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Self {
@@ -54,7 +53,7 @@ impl ModulationOp {
             sent: 0,
             is_done: false,
             config,
-            rep,
+            loop_behavior,
             segment,
             transition_mode,
         }
@@ -72,7 +71,13 @@ impl Operation for ModulationOp {
         };
 
         let max_mod_size = tx.len() - offset;
-        let send_num = (self.modulation.len() - self.sent).min(max_mod_size);
+        let send_num = if is_first {
+            (self.modulation.len() - self.sent)
+                .min(max_mod_size)
+                .min(254)
+        } else {
+            (self.modulation.len() - self.sent).min(max_mod_size)
+        };
         unsafe {
             std::ptr::copy_nonoverlapping(
                 self.modulation.as_ptr().add(self.sent),
@@ -91,9 +96,8 @@ impl Operation for ModulationOp {
                 tag: TypeTag::Modulation,
                 flag: ModulationControlFlags::BEGIN,
                 size: send_num as _,
-                __pad: [0; 3],
                 freq_div: self.config.division()?,
-                rep: self.rep,
+                rep: self.loop_behavior.rep(),
                 transition_mode: self
                     .transition_mode
                     .map(|m| m.mode())
@@ -150,18 +154,16 @@ impl Operation for ModulationOp {
 
 #[cfg(test)]
 mod tests {
-    use std::mem::{offset_of, size_of};
+    use std::{
+        mem::{offset_of, size_of},
+        num::NonZeroU16,
+    };
 
     use rand::prelude::*;
 
     use super::*;
     use crate::{
-        derive::LoopBehavior,
-        ethercat::DcSysTime,
-        firmware::{
-            fpga::{SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN},
-            operation::tests::parse_tx_as,
-        },
+        derive::LoopBehavior, ethercat::DcSysTime, firmware::operation::tests::parse_tx_as,
         geometry::tests::create_device,
     };
 
@@ -169,7 +171,6 @@ mod tests {
 
     #[test]
     fn test() {
-
         const MOD_SIZE: usize = 100;
 
         let device = create_device(0, NUM_TRANS_IN_UNIT);
@@ -179,7 +180,7 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let buf: Vec<u8> = (0..MOD_SIZE).map(|_| rng.gen()).collect();
-        let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
+        let freq_div = rng.gen_range(0x0001..=0xFFFF);
         let loop_behavior = LoopBehavior::infinite();
         let rep = loop_behavior.rep;
         let segment = Segment::S0;
@@ -193,8 +194,8 @@ mod tests {
 
         let mut op = ModulationOp::new(
             Arc::new(buf.clone()),
-            SamplingConfig::DivisionRaw(freq_div),
-            rep,
+            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+            LoopBehavior { rep },
             segment,
             Some(transition_mode),
         );
@@ -222,16 +223,16 @@ mod tests {
             tx[offset_of!(ModulationHead, flag)]
         );
         assert_eq!(
-            MOD_SIZE as u16,
-            parse_tx_as::<u16>(&tx[offset_of!(ModulationHead, size)..])
+            MOD_SIZE as u8,
+            parse_tx_as::<u8>(&tx[offset_of!(ModulationHead, size)..])
         );
         assert_eq!(
             freq_div,
-            parse_tx_as::<u32>(&tx[offset_of!(ModulationHead, freq_div)..])
+            parse_tx_as::<u16>(&tx[offset_of!(ModulationHead, freq_div)..])
         );
         assert_eq!(
             rep,
-            parse_tx_as::<u32>(&tx[offset_of!(ModulationHead, rep)..])
+            parse_tx_as::<u16>(&tx[offset_of!(ModulationHead, rep)..])
         );
         assert_eq!(
             transition_mode.mode(),
@@ -252,7 +253,6 @@ mod tests {
 
     #[test]
     fn test_div() {
-
         const FRAME_SIZE: usize = 30;
         const MOD_SIZE: usize = FRAME_SIZE - std::mem::size_of::<ModulationHead>()
             + (FRAME_SIZE - std::mem::size_of::<ModulationSubseq>()) * 2;
@@ -267,8 +267,8 @@ mod tests {
 
         let mut op = ModulationOp::new(
             Arc::new(buf.clone()),
-            SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
-            0xFFFFFFFF,
+            SamplingConfig::FREQ_40K,
+            LoopBehavior::infinite(),
             Segment::S0,
             Some(TransitionMode::SyncIdx),
         );
@@ -387,7 +387,6 @@ mod tests {
         MOD_BUF_SIZE_MAX+1
     )]
     fn out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] size: usize) {
-
         let send = |n: usize| {
             const FRAME_SIZE: usize = size_of::<ModulationHead>() + NUM_TRANS_IN_UNIT * 2;
             let device = create_device(0, NUM_TRANS_IN_UNIT);
@@ -395,8 +394,8 @@ mod tests {
             let buf = Arc::new(vec![0x00; n]);
             let mut op = ModulationOp::new(
                 buf.clone(),
-                SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
-                0xFFFFFFFF,
+                SamplingConfig::FREQ_40K,
+                LoopBehavior::infinite(),
                 Segment::S0,
                 None,
             );

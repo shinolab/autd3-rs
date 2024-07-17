@@ -45,11 +45,7 @@ impl STMSamplingConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        defined::Hz,
-        derive::{AUTDInternalError, SAMPLING_FREQ_DIV_MIN},
-        firmware::fpga::{SamplingConfig, SAMPLING_FREQ_DIV_MAX},
-    };
+    use crate::{defined::Hz, derive::AUTDInternalError, firmware::fpga::SamplingConfig};
 
     #[rstest::rstest]
     #[test]
@@ -81,10 +77,10 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN), 1)]
-    #[case(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN), 2)]
-    #[case(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX), 1)]
-    #[case(SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX), 2)]
+    #[case(SamplingConfig::FREQ_40K, 1)]
+    #[case(SamplingConfig::FREQ_40K, 2)]
+    #[case(SamplingConfig::FREQ_4K, 1)]
+    #[case(SamplingConfig::FREQ_4K, 2)]
     fn sampling(#[case] config: SamplingConfig, #[case] size: usize) {
         assert_eq!(
             Ok(config),

@@ -77,7 +77,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
                 Ok(Self::G {
                     g: std::sync::Arc::new(self.calc()?),
                     config: self.sampling_config(),
-                    rep: self.loop_behavior().rep(),
+                    loop_behavior: self.loop_behavior(),
                     segment,
                     transition_mode,
                 })

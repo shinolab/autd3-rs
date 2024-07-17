@@ -36,10 +36,6 @@ pub enum AUTDInternalError {
     #[error("Unknown group key: {0}")]
     UnkownKey(String),
 
-    #[error("Sampling frequency division ({0}) must be a multiple of 512")]
-    SamplingFreqDivInvalid(u32),
-    #[error("Sampling frequency division ({0}) is out of range ([{1}, {2}])")]
-    SamplingFreqDivOutOfRange(u32, u32, u32),
     #[error("Sampling frequency ({0}) must divide {1}")]
     SamplingFreqInvalid(Freq<u32>, Freq<u32>),
     #[error("Sampling period ({0:?}) must be a multiple of ultrasound period")]
@@ -85,9 +81,6 @@ pub enum AUTDInternalError {
 
     #[error("GainSTMMode ({0:?}) is not supported")]
     GainSTMModeNotSupported(GainSTMMode),
-
-    #[error("Pulse width encoder table must be monotonically increasing and each data value must be 256 or less")]
-    InvalidPulseWidthEncoderData,
 
     #[error("Frequency ({0}) can't be produced or is invalid for synchronizer")]
     InvalidFrequencyError(Freq<u32>),

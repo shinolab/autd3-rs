@@ -1,3 +1,5 @@
+use std::num::NonZeroU16;
+
 use autd3_derive::Modulation;
 use autd3_driver::{
     datagram::*,
@@ -38,7 +40,6 @@ impl Gain for TestGain {
 
 #[test]
 fn send_clear() -> anyhow::Result<()> {
-
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -51,7 +52,7 @@ fn send_clear() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = TestMod {
-            config: SamplingConfig::DivisionRaw(5120),
+            config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
@@ -61,9 +62,9 @@ fn send_clear() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = FociSTM::from_sampling_config(
-            SamplingConfig::DivisionRaw(
-                SAMPLING_FREQ_DIV_MIN
-                    * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
+            SamplingConfig::Division(
+                NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT))
+                    .unwrap(),
             ),
             gen_random_foci::<1>(2),
         )
@@ -76,8 +77,8 @@ fn send_clear() -> anyhow::Result<()> {
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     assert!(!cpu.reads_fpga_state());
-    assert_eq!(256, cpu.fpga().silencer_update_rate_intensity());
-    assert_eq!(256, cpu.fpga().silencer_update_rate_phase());
+    assert_eq!(1, cpu.fpga().silencer_update_rate_intensity());
+    assert_eq!(1, cpu.fpga().silencer_update_rate_phase());
     assert_eq!(
         SILENCER_STEPS_INTENSITY_DEFAULT,
         cpu.fpga().silencer_completion_steps_intensity()
@@ -90,8 +91,8 @@ fn send_clear() -> anyhow::Result<()> {
 
     assert_eq!(2, cpu.fpga().modulation_cycle(Segment::S0));
     assert_eq!(2, cpu.fpga().modulation_cycle(Segment::S1));
-    assert_eq!(5120, cpu.fpga().modulation_freq_division(Segment::S0));
-    assert_eq!(5120, cpu.fpga().modulation_freq_division(Segment::S1));
+    assert_eq!(10, cpu.fpga().modulation_freq_division(Segment::S0));
+    assert_eq!(10, cpu.fpga().modulation_freq_division(Segment::S1));
     assert_eq!(
         LoopBehavior::infinite(),
         cpu.fpga().modulation_loop_behavior(Segment::S0)
@@ -109,8 +110,8 @@ fn send_clear() -> anyhow::Result<()> {
     assert_eq!(vec![Drive::null(); 249], cpu.fpga().drives(Segment::S1, 0));
     assert_eq!(1, cpu.fpga().stm_cycle(Segment::S0));
     assert_eq!(1, cpu.fpga().stm_cycle(Segment::S1));
-    assert_eq!(0xFFFFFFFF, cpu.fpga().stm_freq_division(Segment::S0));
-    assert_eq!(0xFFFFFFFF, cpu.fpga().stm_freq_division(Segment::S1));
+    assert_eq!(0xFFFF, cpu.fpga().stm_freq_division(Segment::S0));
+    assert_eq!(0xFFFF, cpu.fpga().stm_freq_division(Segment::S1));
     assert_eq!(
         LoopBehavior::infinite(),
         cpu.fpga().stm_loop_behavior(Segment::S0)

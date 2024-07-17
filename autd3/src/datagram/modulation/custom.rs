@@ -41,7 +41,7 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let test_buf = (0..2).map(|_| rng.gen()).collect::<Vec<_>>();
-        let custom = Custom::new(test_buf.clone(), SamplingConfig::Division(5120));
+        let custom = Custom::new(test_buf.clone(), SamplingConfig::FREQ_4K);
 
         let d = custom.calc()?;
         assert_eq!(d, test_buf);

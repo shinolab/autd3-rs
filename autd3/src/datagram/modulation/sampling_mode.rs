@@ -1,8 +1,8 @@
 use autd3_driver::{
-    defined::{Freq, Frequency},
+    defined::{Freq, Frequency, ULTRASOUND_FREQ},
     derive::SamplingConfig,
     error::AUTDInternalError,
-    firmware::fpga::FPGA_MAIN_CLK_FREQ,
+    firmware::fpga::MOD_BUF_SIZE_MAX,
     utils::float::is_integer,
 };
 use num::integer::gcd;
@@ -32,9 +32,8 @@ impl SamplingMode for ExactFreq {
                 sampling_config.freq()? / 2.
             )));
         }
-        let fd = freq.hz() * sampling_config.division()?;
-        let fd = fd as u64;
-        let fs = FPGA_MAIN_CLK_FREQ.hz() as u64;
+        let fd = freq.hz() as u64 * sampling_config.division()? as u64;
+        let fs = ULTRASOUND_FREQ.hz() as u64;
 
         let k = gcd(fs, fd);
         Ok((fs / k, fd / k))
@@ -64,17 +63,22 @@ impl SamplingMode for ExactFreqFloat {
             )));
         }
         let fd = freq.hz() as f64 * sampling_config.division()? as f64;
-        if !is_integer(fd) {
-            return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}) cannot be output with the sampling config ({}).",
-                freq, sampling_config
-            )));
+        for n in (ULTRASOUND_FREQ.hz() as f64 / fd).floor() as u32..=MOD_BUF_SIZE_MAX as u32 {
+            if !is_integer(fd * n as f64) {
+                continue;
+            }
+            let fnd = (fd * n as f64) as u64;
+            let fs = ULTRASOUND_FREQ.hz() as u64;
+            if fnd % fs != 0 {
+                continue;
+            }
+            let k = fnd / fs;
+            return Ok((n as _, k as _));
         }
-        let fd = fd as u64;
-        let fs = FPGA_MAIN_CLK_FREQ.hz() as u64;
-
-        let k = gcd(fs, fd);
-        Ok((fs / k, fd / k))
+        Err(AUTDInternalError::ModulationError(format!(
+            "Frequency ({}) cannot be output with the sampling config ({}).",
+            freq, sampling_config
+        )))
     }
 }
 

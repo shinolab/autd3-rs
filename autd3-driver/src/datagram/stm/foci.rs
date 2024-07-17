@@ -148,7 +148,7 @@ impl<const N: usize> FociSTM<N> {
 pub struct FociSTMOperationGenerator<const N: usize> {
     g: Arc<Vec<ControlPoints<N>>>,
     config: SamplingConfig,
-    rep: u32,
+    loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
 }
@@ -162,7 +162,7 @@ impl<const N: usize> OperationGenerator for FociSTMOperationGenerator<N> {
             Self::O1::new(
                 self.g.clone(),
                 self.config,
-                self.rep,
+                self.loop_behavior,
                 self.segment,
                 self.transition_mode,
             ),
@@ -183,7 +183,7 @@ impl<const N: usize> DatagramST for FociSTM<N> {
         Ok(FociSTMOperationGenerator {
             g: Arc::new(self.control_points),
             config: self.sampling_config,
-            rep: self.loop_behavior.rep(),
+            loop_behavior: self.loop_behavior,
             segment,
             transition_mode,
         })
@@ -242,7 +242,7 @@ impl<const N: usize> Default for FociSTM<N> {
         Self {
             control_points: vec![],
             loop_behavior: LoopBehavior::infinite(),
-            sampling_config: SamplingConfig::DISABLE,
+            sampling_config: SamplingConfig::FREQ_40K,
         }
     }
 }
@@ -352,8 +352,8 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(SamplingConfig::DISABLE, 2)]
     #[case(SamplingConfig::Freq(4 * kHz), 10)]
+    #[case(SamplingConfig::Freq(8 * kHz), 10)]
     fn from_sampling_config(#[case] config: SamplingConfig, #[case] n: usize) {
         assert_eq!(
             config,

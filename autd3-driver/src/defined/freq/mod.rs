@@ -5,11 +5,14 @@ pub struct Hz;
 #[allow(non_camel_case_types)]
 pub struct kHz;
 
-pub trait Frequency: Clone + Copy + Sync + std::fmt::Debug + std::fmt::Display + PartialEq {}
+pub trait Frequency:
+    Clone + Copy + Sync + std::fmt::Debug + std::fmt::Display + PartialEq + PartialOrd
+{
+}
 
 use derive_more::{Add, Display, Div, Mul, Sub};
 
-#[derive(Clone, Copy, PartialEq, Add, Div, Mul, Sub, Display)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, Add, Div, Mul, Sub, Display)]
 #[display(fmt = "{} Hz", freq)]
 pub struct Freq<T: Copy> {
     pub(crate) freq: T,

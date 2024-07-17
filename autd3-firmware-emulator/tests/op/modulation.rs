@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{num::NonZeroU16, time::Duration};
 
 use autd3_driver::{
     datagram::{IntoDatagramWithSegmentTransition, Silencer, SwapSegment},
@@ -8,8 +8,7 @@ use autd3_driver::{
     firmware::{
         cpu::TxDatagram,
         fpga::{
-            GPIOIn, TransitionMode, SAMPLING_FREQ_DIV_MAX, SAMPLING_FREQ_DIV_MIN,
-            SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
+            GPIOIn, TransitionMode, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
         },
     },
 };
@@ -36,7 +35,6 @@ impl Modulation for TestModulation {
 
 #[test]
 fn send_mod() -> anyhow::Result<()> {
-
     let mut rng = rand::thread_rng();
 
     let geometry = create_geometry(1);
@@ -45,16 +43,13 @@ fn send_mod() -> anyhow::Result<()> {
 
     {
         let m: Vec<_> = (0..32768).map(|_| rng.gen()).collect();
-        let freq_div = rng.gen_range(
-            SAMPLING_FREQ_DIV_MIN
-                * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
-                ..=SAMPLING_FREQ_DIV_MAX,
-        );
+        let freq_div = rng
+            .gen_range(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=0xFFFF);
         let loop_behavior = LoopBehavior::infinite();
         let transition_mode = TransitionMode::Immediate;
         let d = TestModulation {
             buf: m.clone(),
-            config: SamplingConfig::DivisionRaw(freq_div),
+            config: SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
             loop_behavior,
         }
         .with_segment(Segment::S0, Some(transition_mode));
@@ -74,15 +69,12 @@ fn send_mod() -> anyhow::Result<()> {
 
     {
         let m: Vec<_> = (0..2).map(|_| rng.gen()).collect();
-        let freq_div = rng.gen_range(
-            SAMPLING_FREQ_DIV_MIN
-                * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32
-                ..=SAMPLING_FREQ_DIV_MAX,
-        );
+        let freq_div = rng
+            .gen_range(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=0xFFFF);
         let loop_behavior = LoopBehavior::once();
         let d = TestModulation {
             buf: m.clone(),
-            config: SamplingConfig::DivisionRaw(freq_div),
+            config: SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
             loop_behavior,
         }
         .with_segment(Segment::S1, None);
@@ -121,7 +113,7 @@ fn send_mod() -> anyhow::Result<()> {
             let transition_mode = TransitionMode::GPIO(gpio);
             let d = TestModulation {
                 buf: (0..2).map(|_| u8::MAX).collect(),
-                config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+                config: SamplingConfig::FREQ_4K,
                 loop_behavior: LoopBehavior::once(),
             }
             .with_segment(segment, Some(transition_mode));
@@ -134,7 +126,7 @@ fn send_mod() -> anyhow::Result<()> {
         let transition_mode = TransitionMode::Ext;
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+            config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_segment(Segment::S0, Some(transition_mode));
@@ -147,7 +139,6 @@ fn send_mod() -> anyhow::Result<()> {
 
 #[test]
 fn mod_freq_div_too_small() -> anyhow::Result<()> {
-
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -155,7 +146,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
     {
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
+            config: SamplingConfig::Division(NonZeroU16::new(1).unwrap()),
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
@@ -169,7 +160,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
     {
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+            config: SamplingConfig::Division(NonZeroU16::MAX),
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
@@ -183,9 +174,8 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
 
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::DivisionRaw(
-                SAMPLING_FREQ_DIV_MIN
-                    * SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u32,
+            config: SamplingConfig::Division(
+                NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
             ),
             loop_behavior: LoopBehavior::infinite(),
         }
@@ -210,7 +200,6 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
 
 #[test]
 fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
-
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -219,7 +208,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
     {
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+            config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
@@ -233,7 +222,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
     {
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+            config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::once(),
         }
         .with_segment(Segment::S1, Some(TransitionMode::Immediate));
@@ -247,7 +236,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
     {
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+            config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_segment(Segment::S1, None);
@@ -273,7 +262,6 @@ fn test_miss_transition_time(
     #[case] systime: OffsetDateTime,
     #[case] transition_time: OffsetDateTime,
 ) -> anyhow::Result<()> {
-
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -281,7 +269,7 @@ fn test_miss_transition_time(
     let transition_mode = TransitionMode::SysTime(DcSysTime::from_utc(transition_time).unwrap());
     let d = TestModulation {
         buf: (0..2).map(|_| u8::MAX).collect(),
-        config: SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MAX),
+        config: SamplingConfig::FREQ_4K,
         loop_behavior: LoopBehavior::once(),
     }
     .with_segment(Segment::S1, Some(transition_mode));

@@ -2,7 +2,7 @@ use std::{mem::size_of, sync::Arc};
 
 use crate::{
     defined::{ControlPoints, METER},
-    derive::SamplingConfig,
+    derive::{LoopBehavior, SamplingConfig},
     error::AUTDInternalError,
     firmware::{
         fpga::{
@@ -26,8 +26,9 @@ struct FociSTMHead {
     transition_mode: u8,
     num_foci: u8,
     sound_speed: u16,
-    freq_div: u32,
-    rep: u32,
+    freq_div: u16,
+    rep: u16,
+    __pad: [u8; 4],
     transition_value: u64,
 }
 
@@ -44,7 +45,7 @@ pub struct FociSTMOp<const N: usize> {
     sent: usize,
     is_done: bool,
     config: SamplingConfig,
-    rep: u32,
+    loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
 }
@@ -53,7 +54,7 @@ impl<const N: usize> FociSTMOp<N> {
     pub const fn new(
         points: Arc<Vec<ControlPoints<N>>>,
         config: SamplingConfig,
-        rep: u32,
+        loop_behavior: LoopBehavior,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Self {
@@ -62,7 +63,7 @@ impl<const N: usize> FociSTMOp<N> {
             sent: 0,
             is_done: false,
             config,
-            rep,
+            loop_behavior,
             segment,
             transition_mode,
         }
@@ -133,7 +134,8 @@ impl<const N: usize> Operation for FociSTMOp<N> {
                 num_foci: N as u8,
                 freq_div: self.config.division()?,
                 sound_speed: (device.sound_speed / METER * 64.0).round() as u16,
-                rep: self.rep,
+                rep: self.loop_behavior.rep(),
+                __pad: [0; 4],
             };
         } else {
             *cast::<FociSTMSubseq>(tx) = FociSTMSubseq {
@@ -179,7 +181,10 @@ impl<const N: usize> Operation for FociSTMOp<N> {
 
 #[cfg(test)]
 mod tests {
-    use std::mem::{offset_of, size_of};
+    use std::{
+        mem::{offset_of, size_of},
+        num::NonZeroU16,
+    };
 
     use rand::prelude::*;
 
@@ -188,10 +193,7 @@ mod tests {
         defined::{mm, ControlPoint},
         ethercat::DcSysTime,
         firmware::{
-            fpga::{
-                FOCI_STM_FIXED_NUM_UNIT, FOCI_STM_FIXED_NUM_UPPER_X, SAMPLING_FREQ_DIV_MAX,
-                SAMPLING_FREQ_DIV_MIN,
-            },
+            fpga::{FOCI_STM_FIXED_NUM_UNIT, FOCI_STM_FIXED_NUM_UPPER_X},
             operation::tests::parse_tx_as,
         },
         geometry::{tests::create_device, Vector3},
@@ -223,9 +225,9 @@ mod tests {
                     .into()
             })
             .collect();
-        let rep = 0xFFFFFFFF;
+        let rep = 0xFFFF;
         let segment = Segment::S0;
-        let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
+        let freq_div = rng.gen_range(0x0001..=0xFFFF);
         let transition_value = 0x0123456789ABCDEF;
         let transition_mode = TransitionMode::SysTime(
             DcSysTime::from_utc(
@@ -237,8 +239,8 @@ mod tests {
 
         let mut op = FociSTMOp::new(
             Arc::new(points.clone()),
-            SamplingConfig::DivisionRaw(freq_div),
-            rep,
+            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+            LoopBehavior { rep },
             segment,
             Some(transition_mode),
         );
@@ -268,6 +270,7 @@ mod tests {
                 freq_div,
                 rep,
                 transition_value: transition_mode.value(),
+                __pad: [0; 4],
             },
             parse_tx_as::<FociSTMHead>(&tx)
         );
@@ -324,9 +327,9 @@ mod tests {
                     .into()
             })
             .collect();
-        let rep = 0xFFFFFFFF;
+        let rep = 0xFFFF;
         let segment = Segment::S0;
-        let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
+        let freq_div = rng.gen_range(0x0001..=0xFFFF);
         let transition_value = 0x0123456789ABCDEF;
         let transition_mode = TransitionMode::SysTime(
             DcSysTime::from_utc(
@@ -338,8 +341,8 @@ mod tests {
 
         let mut op = FociSTMOp::new(
             Arc::new(points.clone()),
-            SamplingConfig::DivisionRaw(freq_div),
-            rep,
+            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+            LoopBehavior { rep },
             segment,
             Some(transition_mode),
         );
@@ -369,6 +372,7 @@ mod tests {
                 freq_div,
                 rep,
                 transition_value: transition_mode.value(),
+                __pad: [0; 4],
             },
             parse_tx_as::<FociSTMHead>(&tx)
         );
@@ -440,14 +444,14 @@ mod tests {
                     .into()
             })
             .collect();
-        let freq_div: u32 = rng.gen_range(SAMPLING_FREQ_DIV_MIN..SAMPLING_FREQ_DIV_MAX);
-        let rep = rng.gen_range(0x0000001..=0xFFFFFFFF);
+        let freq_div = rng.gen_range(0x0001..=0xFFFF);
+        let rep = rng.gen_range(0x0001..=0xFFFF);
         let segment = Segment::S1;
 
         let mut op = FociSTMOp::new(
             Arc::new(points.clone()),
-            SamplingConfig::DivisionRaw(freq_div),
-            rep,
+            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+            LoopBehavior { rep },
             segment,
             None,
         );
@@ -482,7 +486,8 @@ mod tests {
                     sound_speed: (device.sound_speed / METER * 64.0).round() as u16,
                     freq_div,
                     rep,
-                    transition_value: 0
+                    transition_value: 0,
+                    __pad: [0; 4],
                 },
                 parse_tx_as::<FociSTMHead>(&tx)
             );
@@ -641,8 +646,8 @@ mod tests {
                     .map(|_| ControlPoint::from(Vector3::new(x, x, x)).into())
                     .collect::<Vec<_>>(),
             ),
-            SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
-            0xFFFFFFFF,
+            SamplingConfig::FREQ_40K,
+            LoopBehavior::infinite(),
             Segment::S0,
             Some(TransitionMode::SyncIdx),
         );
@@ -669,8 +674,8 @@ mod tests {
                     .map(|_| ControlPoint::new(Vector3::zeros()).into())
                     .collect::<Vec<_>>(),
             ),
-            SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
-            0xFFFFFFFF,
+            SamplingConfig::FREQ_40K,
+            LoopBehavior::infinite(),
             Segment::S0,
             Some(TransitionMode::SyncIdx),
         );
@@ -691,8 +696,8 @@ mod tests {
                         .map(|_| ControlPoints::<0>::new([]))
                         .collect::<Vec<_>>(),
                 ),
-                SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
-                0xFFFFFFFF,
+                SamplingConfig::FREQ_40K,
+                LoopBehavior::infinite(),
                 Segment::S0,
                 Some(TransitionMode::SyncIdx),
             );
@@ -710,8 +715,8 @@ mod tests {
                         .map(|_| [0; 1].map(|_| ControlPoint::new(Vector3::zeros())).into())
                         .collect::<Vec<_>>(),
                 ),
-                SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
-                0xFFFFFFFF,
+                SamplingConfig::FREQ_40K,
+                LoopBehavior::infinite(),
                 Segment::S0,
                 Some(TransitionMode::SyncIdx),
             );
@@ -730,8 +735,8 @@ mod tests {
                         })
                         .collect::<Vec<_>>(),
                 ),
-                SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
-                0xFFFFFFFF,
+                SamplingConfig::FREQ_40K,
+                LoopBehavior::infinite(),
                 Segment::S0,
                 Some(TransitionMode::SyncIdx),
             );
@@ -754,8 +759,8 @@ mod tests {
                         })
                         .collect::<Vec<_>>(),
                 ),
-                SamplingConfig::DivisionRaw(SAMPLING_FREQ_DIV_MIN),
-                0xFFFFFFFF,
+                SamplingConfig::FREQ_40K,
+                LoopBehavior::infinite(),
                 Segment::S0,
                 Some(TransitionMode::SyncIdx),
             );
