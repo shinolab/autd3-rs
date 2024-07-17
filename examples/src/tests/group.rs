@@ -1,7 +1,7 @@
 use autd3::{driver::link::Link, prelude::*};
 
 pub async fn group_by_device(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
-    let center = autd.geometry.center() + Vector3::new(0., 0., 150.0 * mm);
+    let center = autd.geometry().center() + Vector3::new(0., 0., 150.0 * mm);
 
     autd.group(|dev| match dev.idx() {
         0 => Some("null"),
@@ -17,8 +17,8 @@ pub async fn group_by_device(autd: &mut Controller<impl Link>) -> anyhow::Result
 }
 
 pub async fn group_by_transducer(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
-    let cx = autd.geometry.center().x;
-    let g1 = Focus::new(autd.geometry[0].center() + Vector3::new(0., 0., 150.0 * mm));
+    let cx = autd.geometry().center().x;
+    let g1 = Focus::new(autd.geometry()[0].center() + Vector3::new(0., 0., 150.0 * mm));
     let g2 = Null::new();
     let g = Group::new(move |_dev| {
         move |tr| {

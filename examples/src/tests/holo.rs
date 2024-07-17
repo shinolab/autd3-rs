@@ -12,7 +12,7 @@ pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
 
     let m = Sine::new(150. * Hz);
 
-    let center = autd.geometry.center() + Vector3::new(0., 0., 150.0 * mm);
+    let center = autd.geometry().center() + Vector3::new(0., 0., 150.0 * mm);
     let p = Vector3::new(30. * mm, 0., 0.);
 
     println!("[0]: SDP");
@@ -30,7 +30,7 @@ pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
 
     let backend = Arc::new(NalgebraBackend::default());
 
-    let target_amp = 2.5e3 * autd.geometry.num_devices() as f32 * Pa;
+    let target_amp = 2.5e3 * autd.geometry().num_devices() as f32 * Pa;
     match s.trim().parse::<usize>() {
         Ok(0) => {
             let g = SDP::new(
