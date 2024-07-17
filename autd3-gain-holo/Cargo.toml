@@ -38,5 +38,6 @@ path = "benches/holo.rs"
 harness = false
 
 [dev-dependencies]
+approx = "0.5.1"
 assert_approx_eq = { workspace = true }
 rstest = { workspace = true }
