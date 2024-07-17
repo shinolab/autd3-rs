@@ -123,12 +123,6 @@ pub enum AUTDInternalError {
     InvalidSegmentTransition,
     #[error("Invalid transition mode")]
     InvalidTransitionMode,
-    #[error("Invalid pulse width encoder data size")]
-    InvalidPulseWidthEncoderDataSize,
-    #[error("Incomplete pulse width encoder table data")]
-    IncompletePulseWidthEncoderData,
-    #[error("Incomplete DRP ROM data")]
-    IncompleteDrpRomData,
     #[error("Miss transition time")]
     MissTransitionTime,
     #[error("Silencer cannot complete phase/intensity completion in the specified sampling period. Please lower the sampling frequency or make the completion time of Silencer longer than the sampling period.")]
@@ -143,10 +137,7 @@ impl AUTDInternalError {
             0x84 => AUTDInternalError::InvalidInfoType,
             0x85 => AUTDInternalError::InvalidGainSTMMode,
             0x88 => AUTDInternalError::InvalidSegmentTransition,
-            0x89 => AUTDInternalError::InvalidPulseWidthEncoderDataSize,
-            0x8A => AUTDInternalError::IncompletePulseWidthEncoderData,
             0x8B => AUTDInternalError::MissTransitionTime,
-            0x8D => AUTDInternalError::IncompleteDrpRomData,
             0x8E => AUTDInternalError::InvalidSilencerSettings,
             0x8F => AUTDInternalError::InvalidTransitionMode,
             _ => AUTDInternalError::UnknownFirmwareError(ack),
