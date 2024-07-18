@@ -46,7 +46,6 @@ pub enum TypeTag {
     Clear = 0x01,
     Sync = 0x02,
     FirmwareVersion = 0x03,
-    ConfigFPGAClk = 0x04,
     Modulation = 0x10,
     ModulationSwapSegment = 0x11,
     Silencer = 0x20,
