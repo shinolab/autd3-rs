@@ -58,6 +58,7 @@ impl Default for Silencer<FixedCompletionTime> {
                 time_intensity: Duration::ZERO,
                 time_phase: Duration::ZERO,
                 strict_mode: true,
+                target: Target::Intensity,
             },
         }
     }
