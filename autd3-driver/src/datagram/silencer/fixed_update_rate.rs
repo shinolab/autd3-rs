@@ -1,15 +1,15 @@
 use crate::firmware::operation::SilencerFixedUpdateRateOp;
-use crate::{datagram::*, firmware::operation::Target};
+use crate::{datagram::*, firmware::operation::SilencerTarget};
 
 #[derive(Debug, Clone, Copy)]
 pub struct FixedUpdateRate {
     pub(super) update_rate_intensity: u16,
     pub(super) update_rate_phase: u16,
-    pub(super) target: Target,
+    pub(super) target: SilencerTarget,
 }
 
 impl Silencer<FixedUpdateRate> {
-    pub const fn with_taget(mut self, target: Target) -> Self {
+    pub const fn with_taget(mut self, target: SilencerTarget) -> Self {
         self.internal.target = target;
         self
     }
@@ -22,7 +22,7 @@ impl Silencer<FixedUpdateRate> {
         self.internal.update_rate_phase
     }
 
-    pub const fn target(&self) -> Target {
+    pub const fn target(&self) -> SilencerTarget {
         self.internal.target
     }
 }
@@ -30,7 +30,7 @@ impl Silencer<FixedUpdateRate> {
 pub struct SilencerFixedUpdateRateOpGenerator {
     update_rate_intensity: u16,
     update_rate_phase: u16,
-    target: Target,
+    target: SilencerTarget,
 }
 
 impl OperationGenerator for SilencerFixedUpdateRateOpGenerator {

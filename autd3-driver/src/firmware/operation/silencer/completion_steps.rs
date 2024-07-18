@@ -22,7 +22,7 @@ pub struct SilencerFixedCompletionStepsOp {
     value_intensity: u16,
     value_phase: u16,
     strict_mode: bool,
-    target: super::Target,
+    target: super::SilencerTarget,
 }
 
 impl SilencerFixedCompletionStepsOp {
@@ -30,7 +30,7 @@ impl SilencerFixedCompletionStepsOp {
         value_intensity: u16,
         value_phase: u16,
         strict_mode: bool,
-        target: super::Target,
+        target: super::SilencerTarget,
     ) -> Self {
         Self {
             is_done: false,
@@ -62,8 +62,8 @@ impl Operation for SilencerFixedCompletionStepsOp {
             } else {
                 0
             } | match self.target {
-                super::Target::Intensity => 0,
-                super::Target::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
+                super::SilencerTarget::Intensity => 0,
+                super::SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
             },
             value_intensity: self.value_intensity,
             value_phase: self.value_phase,
@@ -87,7 +87,7 @@ mod tests {
     use std::mem::size_of;
 
     use super::*;
-    use crate::firmware::operation::Target;
+    use crate::firmware::operation::SilencerTarget;
     use crate::geometry::tests::create_device;
 
     const NUM_TRANS_IN_UNIT: usize = 249;
@@ -101,8 +101,12 @@ mod tests {
 
         let mut tx = [0x00u8; size_of::<SilencerFixedCompletionSteps>()];
 
-        let mut op =
-            SilencerFixedCompletionStepsOp::new(0x1234, 0x5678, strict_mode, Target::Intensity);
+        let mut op = SilencerFixedCompletionStepsOp::new(
+            0x1234,
+            0x5678,
+            strict_mode,
+            SilencerTarget::Intensity,
+        );
 
         assert_eq!(
             op.required_size(&device),
@@ -142,7 +146,7 @@ mod tests {
             value_intensity,
             value_phase,
             true,
-            Target::Intensity,
+            SilencerTarget::Intensity,
         );
 
         assert_eq!(expected, op.pack(&device, &mut tx));

@@ -24,6 +24,7 @@ pub use autd3_driver::{
             DebugType, Drive, EmitIntensity, GPIOIn, GPIOOut, LoopBehavior, Phase, SamplingConfig,
             Segment, TransitionMode,
         },
+        operation::SilencerTarget,
     },
     geometry::{EulerAngle, Geometry, Quaternion, UnitQuaternion, Vector3},
 };

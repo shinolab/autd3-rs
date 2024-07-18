@@ -197,6 +197,11 @@ impl Memory {
             == SILENCER_FLAG_FIXED_UPDATE_RATE_MODE
     }
 
+    pub fn silencer_pulse_width_mode(&self) -> bool {
+        (self.controller_bram[ADDR_SILENCER_FLAG] & SILENCER_FLAG_PULSE_WIDTH)
+            == SILENCER_FLAG_PULSE_WIDTH
+    }
+
     pub fn stm_freq_division(&self, segment: Segment) -> u16 {
         Self::read_bram_as::<u16>(
             &self.controller_bram,
@@ -532,6 +537,14 @@ impl FPGAEmulator {
 
     pub fn silencer_fixed_completion_steps_mode(&self) -> bool {
         !self.silencer_fixed_update_rate_mode()
+    }
+
+    pub fn silencer_intensity_mode(&self) -> bool {
+        !self.mem.silencer_pulse_width_mode()
+    }
+
+    pub fn silencer_pulse_width_mode(&self) -> bool {
+        self.mem.silencer_pulse_width_mode()
     }
 
     pub fn stm_freq_division(&self, segment: Segment) -> u16 {
