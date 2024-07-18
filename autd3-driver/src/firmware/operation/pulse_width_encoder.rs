@@ -51,3 +51,33 @@ impl<F: Fn(u8) -> u8 + Send + Sync> Operation for PulseWidthEncoderOp<F> {
         self.is_done
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::mem::size_of;
+
+    use super::*;
+    use crate::geometry::tests::create_device;
+
+    const NUM_TRANS_IN_UNIT: usize = 249;
+
+    #[test]
+    fn test() {
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
+
+        let mut tx = [0x00u8; 2 * (size_of::<Pwe>() + PWE_BUF_SIZE)];
+
+        let mut op = PulseWidthEncoderOp::new(|i| i);
+
+        assert_eq!(size_of::<Pwe>() + PWE_BUF_SIZE, op.required_size(&device));
+
+        assert!(!op.is_done());
+
+        assert!(op.pack(&device, &mut tx).is_ok());
+
+        assert!(op.is_done());
+
+        assert_eq!(tx[0], TypeTag::ConfigPulseWidthEncoder as u8);
+        assert!((0..PWE_BUF_SIZE).all(|i| i as u8 == tx[2 + i]));
+    }
+}
