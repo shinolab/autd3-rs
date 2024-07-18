@@ -13,7 +13,6 @@ fn config_pwe() -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    dbg!('a');
     {
         let buf: Vec<_> = (0..256).map(|_| rng.gen()).collect();
 
@@ -21,30 +20,29 @@ fn config_pwe() -> anyhow::Result<()> {
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        //     assert_eq!(
-        //         buf.into_iter().map(|v| v as u8).collect::<Vec<_>>(),
-        //         cpu.fpga().pulse_width_encoder_table()
-        //     );
+        assert_eq!(
+            buf.into_iter().map(|v| v as u8).collect::<Vec<_>>(),
+            cpu.fpga().pulse_width_encoder_table()
+        );
     }
 
-    // dbg!('b');
-    // {
-    //     let default_table: Vec<_> = (0..256)
-    //         .map(|i| ((i as f64 / 255.).asin() / std::f64::consts::PI * 256.0).round() as u8)
-    //         .collect();
+    {
+        let default_table: Vec<_> = (0..256)
+            .map(|i| ((i as f64 / 255.).asin() / std::f64::consts::PI * 256.0).round() as u8)
+            .collect();
 
-    //     let d = PulseWidthEncoder::default();
+        let d = PulseWidthEncoder::default();
 
-    //     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-    //     assert_eq!(
-    //         default_table
-    //             .into_iter()
-    //             .map(|v| v as u8)
-    //             .collect::<Vec<_>>(),
-    //         cpu.fpga().pulse_width_encoder_table()
-    //     );
-    // }
+        assert_eq!(
+            default_table
+                .into_iter()
+                .map(|v| v as u8)
+                .collect::<Vec<_>>(),
+            cpu.fpga().pulse_width_encoder_table()
+        );
+    }
 
     Ok(())
 }
