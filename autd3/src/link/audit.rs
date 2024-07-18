@@ -61,14 +61,6 @@ impl Audit {
         self.last_timeout
     }
 
-    pub fn emulators(&self) -> &[CPUEmulator] {
-        &self.cpus
-    }
-
-    pub fn emulators_mut(&mut self) -> &mut [CPUEmulator] {
-        &mut self.cpus
-    }
-
     pub fn down(&mut self) {
         self.down = true;
     }

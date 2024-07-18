@@ -11,7 +11,6 @@ async fn audit_test() -> anyhow::Result<()> {
         .await?;
     assert_eq!(std::time::Duration::from_millis(100), autd.link().timeout());
 
-    assert_eq!(0, autd.link().emulators()[0].idx());
     assert_eq!(0, autd.link()[0].idx());
     assert_eq!(Some(DEFAULT_TIMEOUT), autd.link().last_timeout());
 
