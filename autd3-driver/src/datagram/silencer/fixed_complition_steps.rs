@@ -2,14 +2,14 @@ use crate::firmware::{
     fpga::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
     operation::SilencerFixedCompletionStepsOp,
 };
-use crate::{datagram::*, firmware::operation::Target};
+use crate::{datagram::*, firmware::operation::SilencerTarget};
 
 #[derive(Debug, Clone, Copy)]
 pub struct FixedCompletionSteps {
     pub(super) steps_intensity: u16,
     pub(super) steps_phase: u16,
     pub(super) strict_mode: bool,
-    pub(super) target: Target,
+    pub(super) target: SilencerTarget,
 }
 
 impl<T> std::ops::Mul<T> for FixedCompletionSteps
@@ -53,7 +53,7 @@ impl Default for Silencer<FixedCompletionSteps> {
                 steps_intensity: SILENCER_STEPS_INTENSITY_DEFAULT,
                 steps_phase: SILENCER_STEPS_PHASE_DEFAULT,
                 strict_mode: true,
-                target: Target::Intensity,
+                target: SilencerTarget::Intensity,
             },
         }
     }
@@ -65,7 +65,7 @@ impl Silencer<FixedCompletionSteps> {
         self
     }
 
-    pub const fn with_taget(mut self, target: Target) -> Self {
+    pub const fn with_taget(mut self, target: SilencerTarget) -> Self {
         self.internal.target = target;
         self
     }
@@ -82,7 +82,7 @@ impl Silencer<FixedCompletionSteps> {
         self.internal.strict_mode
     }
 
-    pub const fn target(&self) -> Target {
+    pub const fn target(&self) -> SilencerTarget {
         self.internal.target
     }
 }
@@ -91,7 +91,7 @@ pub struct SilencerFixedCompletionStepsOpGenerator {
     steps_intensity: u16,
     steps_phase: u16,
     strict_mode: bool,
-    target: Target,
+    target: SilencerTarget,
 }
 
 impl OperationGenerator for SilencerFixedCompletionStepsOpGenerator {

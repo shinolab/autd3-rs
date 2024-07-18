@@ -21,11 +21,15 @@ pub struct SilencerFixedUpdateRateOp {
     is_done: bool,
     value_intensity: u16,
     value_phase: u16,
-    target: super::Target,
+    target: super::SilencerTarget,
 }
 
 impl SilencerFixedUpdateRateOp {
-    pub const fn new(value_intensity: u16, value_phase: u16, target: super::Target) -> Self {
+    pub const fn new(
+        value_intensity: u16,
+        value_phase: u16,
+        target: super::SilencerTarget,
+    ) -> Self {
         Self {
             is_done: false,
             value_intensity,
@@ -52,8 +56,8 @@ impl Operation for SilencerFixedUpdateRateOp {
             tag: TypeTag::Silencer,
             flag: SILENCER_FLAG_FIXED_UPDATE_RATE_MODE
                 | match self.target {
-                    super::Target::Intensity => 0,
-                    super::Target::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
+                    super::SilencerTarget::Intensity => 0,
+                    super::SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
                 },
             value_intensity: self.value_intensity,
             value_phase: self.value_phase,
@@ -77,7 +81,7 @@ mod tests {
     use std::mem::size_of;
 
     use super::*;
-    use crate::firmware::operation::Target;
+    use crate::firmware::operation::SilencerTarget;
     use crate::geometry::tests::create_device;
 
     const NUM_TRANS_IN_UNIT: usize = 249;
@@ -88,7 +92,7 @@ mod tests {
 
         let mut tx = [0x00u8; size_of::<SilencerFixedUpdateRate>()];
 
-        let mut op = SilencerFixedUpdateRateOp::new(0x1234, 0x5678, Target::Intensity);
+        let mut op = SilencerFixedUpdateRateOp::new(0x1234, 0x5678, SilencerTarget::Intensity);
 
         assert_eq!(
             op.required_size(&device),
@@ -125,7 +129,7 @@ mod tests {
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
         let mut op =
-            SilencerFixedUpdateRateOp::new(value_intensity, value_phase, Target::Intensity);
+            SilencerFixedUpdateRateOp::new(value_intensity, value_phase, SilencerTarget::Intensity);
 
         assert_eq!(expected, op.pack(&device, &mut tx));
     }

@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::{
     datagram::*,
     defined::ULTRASOUND_FREQ,
-    firmware::operation::{SilencerFixedCompletionStepsOp, Target},
+    firmware::operation::{SilencerFixedCompletionStepsOp, SilencerTarget},
 };
 
 const NANOSEC: u128 = 1_000_000_000;
@@ -13,7 +13,7 @@ pub struct FixedCompletionTime {
     pub(super) time_intensity: Duration,
     pub(super) time_phase: Duration,
     pub(super) strict_mode: bool,
-    pub(super) target: Target,
+    pub(super) target: SilencerTarget,
 }
 
 impl<T> std::ops::Mul<T> for FixedCompletionTime
@@ -58,7 +58,7 @@ impl Default for Silencer<FixedCompletionTime> {
                 time_intensity: Duration::ZERO,
                 time_phase: Duration::ZERO,
                 strict_mode: true,
-                target: Target::Intensity,
+                target: SilencerTarget::Intensity,
             },
         }
     }
@@ -70,7 +70,7 @@ impl Silencer<FixedCompletionTime> {
         self
     }
 
-    pub const fn with_taget(mut self, target: Target) -> Self {
+    pub const fn with_taget(mut self, target: SilencerTarget) -> Self {
         self.internal.target = target;
         self
     }
@@ -87,7 +87,7 @@ impl Silencer<FixedCompletionTime> {
         self.internal.strict_mode
     }
 
-    pub const fn target(&self) -> Target {
+    pub const fn target(&self) -> SilencerTarget {
         self.internal.target
     }
 }
@@ -97,7 +97,7 @@ pub struct SilencerFixedCompletionTimeOpGenerator {
     steps_intensity: u16,
     steps_phase: u16,
     strict_mode: bool,
-    target: Target,
+    target: SilencerTarget,
 }
 
 impl OperationGenerator for SilencerFixedCompletionTimeOpGenerator {
