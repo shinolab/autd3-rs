@@ -39,7 +39,6 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 anyhow = { workspace = true }
 rstest = { workspace = true }
 criterion.workspace = true
-temp-env = "0.3.6"
 
 [features]
 default = ["derive"]
