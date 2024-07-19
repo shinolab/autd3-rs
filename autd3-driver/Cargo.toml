@@ -14,7 +14,7 @@ serde = { workspace = true, features = ["derive"], optional = true }
 bitflags = { workspace = true }
 thiserror = { workspace = true }
 nalgebra = { workspace = true, features = ["std"] }
-bitvec = { workspace = true }
+bit-vec = { workspace = true }
 time = { workspace = true, features = ["std", "macros"] }
 tokio = { workspace = true, features = ["time"] }
 autd3-derive = { path = "../autd3-derive", version = "26.0.0" }

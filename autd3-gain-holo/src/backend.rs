@@ -7,7 +7,7 @@ use autd3_driver::{
 use nalgebra::{Dyn, VecStorage, U1};
 
 use crate::error::HoloError;
-use bitvec::prelude::*;
+use bit_vec::BitVec;
 
 pub type Complex = nalgebra::Complex<f32>;
 
@@ -34,7 +34,7 @@ pub trait LinAlgBackend<D: Directivity> {
         &self,
         geometry: &Geometry,
         foci: &[Vector3],
-        filter: &Option<HashMap<usize, BitVec<usize, Lsb0>>>,
+        filter: &Option<HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::MatrixXc, HoloError>;
 
     fn alloc_v(&self, size: usize) -> Result<Self::VectorX, HoloError>;

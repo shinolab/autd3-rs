@@ -7,7 +7,7 @@ use crate::{
 };
 
 use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vector3};
-use bitvec::{order::Lsb0, vec::BitVec};
+use bit_vec::BitVec;
 
 #[derive(Gain, Builder)]
 pub struct Naive<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
@@ -38,7 +38,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Naive<D, B> {
     fn calc_impl(
         &self,
         geometry: &Geometry,
-        filter: Option<HashMap<usize, BitVec<usize, Lsb0>>>,
+        filter: Option<HashMap<usize, BitVec<u32>>>,
     ) -> GainCalcResult {
         let g = self
             .backend
@@ -78,7 +78,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {
     fn calc_with_filter(
         &self,
         geometry: &Geometry,
-        filter: HashMap<usize, BitVec<usize, Lsb0>>,
+        filter: HashMap<usize, BitVec<u32>>,
     ) -> GainCalcResult {
         self.calc_impl(geometry, Some(filter))
     }

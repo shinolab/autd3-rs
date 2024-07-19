@@ -9,7 +9,7 @@ use autd3_driver::{
     geometry::Vector3,
 };
 
-use bitvec::{order::Lsb0, vec::BitVec};
+use bit_vec::BitVec;
 use nalgebra::ComplexField;
 use rand::seq::SliceRandom;
 
@@ -55,7 +55,7 @@ impl<D: Directivity + 'static> Greedy<D> {
     fn calc_impl(
         &self,
         geometry: &Geometry,
-        filter: Option<HashMap<usize, BitVec<usize, Lsb0>>>,
+        filter: Option<HashMap<usize, BitVec<u32>>>,
     ) -> GainCalcResult {
         let phase_candidates = (0..self.phase_div)
             .map(|i| Complex::new(0., 2.0 * PI * i as f32 / self.phase_div as f32).exp())
@@ -143,7 +143,7 @@ impl<D: Directivity + 'static> Gain for Greedy<D> {
     fn calc_with_filter(
         &self,
         geometry: &Geometry,
-        filter: HashMap<usize, BitVec<usize, Lsb0>>,
+        filter: HashMap<usize, BitVec<u32>>,
     ) -> GainCalcResult {
         self.calc_impl(geometry, Some(filter))
     }
