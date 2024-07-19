@@ -383,6 +383,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_is_missing_transducer_out_of_range() {
         itertools::iproduct!(18..=256, 0..=256).for_each(|(x, y)| {
             assert!(AUTD3::is_missing_transducer(x, y));
