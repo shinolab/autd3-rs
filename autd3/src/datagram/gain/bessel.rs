@@ -125,19 +125,9 @@ mod tests {
 
         let geometry = create_geometry(1);
 
-        let f = random_vector3(-500.0..500.0, -500.0..500.0, 50.0..500.0);
-        let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();
-        let theta = rng.gen_range(-PI..PI);
-        let g = Bessel::new(f, d, theta * rad);
-        bessel_check(
-            g,
-            f,
-            d,
-            theta * rad,
-            EmitIntensity::MAX,
-            Phase::new(0),
-            &geometry,
-        )?;
+        let g = Bessel::new(Vector3::zeros(), Vector3::z(), 0. * rad);
+        assert_eq!(EmitIntensity::MAX, g.intensity());
+        assert_eq!(Phase::new(0), g.phase_offset());
 
         let f = random_vector3(-500.0..500.0, -500.0..500.0, 50.0..500.0);
         let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();
