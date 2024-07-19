@@ -212,24 +212,25 @@ def rust_test(args):
     config = Config(args)
 
     with working_dir("."):
-        command = (
-            config.cargo_command_base(["+nightly", "miri", "nextest", "run"])
-            if args.miri
-            else config.cargo_command_base(["nextest", "run"])
-        )
-        features = "test-utilities remote"
-        if args.features is not None:
-            features += " " + args.features
-        command.append("--features")
-        command.append(features)
-        command.append("--workspace")
-        command.append("--exclude")
-        command.append("examples")
-        if not config.is_pcap_available():
+        with with_env(MIRIFLAGS="-Zmiri-disable-isolation"):
+            command = (
+                config.cargo_command_base(["+nightly", "miri", "nextest", "run"])
+                if args.miri
+                else config.cargo_command_base(["nextest", "run"])
+            )
+            features = "test-utilities remote"
+            if args.features is not None:
+                features += " " + args.features
+            command.append("--features")
+            command.append(features)
+            command.append("--workspace")
             command.append("--exclude")
-            command.append("autd3-link-soem")
+            command.append("examples")
+            if not config.is_pcap_available():
+                command.append("--exclude")
+                command.append("autd3-link-soem")
 
-        subprocess.run(command).check_returncode()
+            subprocess.run(command).check_returncode()
 
 
 def rust_run(args):
