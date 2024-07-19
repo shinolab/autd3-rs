@@ -1,6 +1,7 @@
 use autd3::{driver::link::Link, prelude::*};
 
 #[tokio::test]
+#[cfg_attr(miri, ignore)]
 async fn nop_test() -> anyhow::Result<()> {
     let mut autd = Controller::builder([AUTD3::new(Vector3::zeros())])
         .open(Nop::builder().with_timeout(std::time::Duration::from_millis(100)))

@@ -212,7 +212,11 @@ def rust_test(args):
     config = Config(args)
 
     with working_dir("."):
-        command = config.cargo_command_base(["nextest", "run"])
+        command = (
+            config.cargo_command_base(["+nightly", "miri", "nextest", "run"])
+            if args.miri
+            else config.cargo_command_base(["nextest", "run"])
+        )
         features = "test-utilities remote"
         if args.features is not None:
             features += " " + args.features
@@ -400,6 +404,7 @@ if __name__ == "__main__":
         parser_test = subparsers.add_parser("test", help="see `test -h`")
         parser_test.add_argument("--release", action="store_true", help="release build")
         parser_test.add_argument("--features", help="additional features", default=None)
+        parser_test.add_argument("--miri", action="store_true", help="run with miri")
         parser_test.set_defaults(handler=rust_test)
 
         # run
