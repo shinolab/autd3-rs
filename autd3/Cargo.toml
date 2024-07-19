@@ -15,7 +15,7 @@ autd3-driver = { path = "../autd3-driver", version = "26.0.0" }
 autd3-firmware-emulator = { path = "../autd3-firmware-emulator", version = "26.0.0", default-features = false }
 num = { workspace = true }
 thiserror = { workspace = true }
-bitvec = { workspace = true }
+bit-vec = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 derive_more = { workspace = true }
 derivative = "2.2.0"

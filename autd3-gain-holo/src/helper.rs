@@ -5,7 +5,7 @@ use autd3_driver::{
     firmware::fpga::Drive,
     geometry::{Geometry, Vector3},
 };
-use bitvec::{order::Lsb0, vec::BitVec};
+use bit_vec::BitVec;
 use nalgebra::ComplexField;
 
 use crate::{Amplitude, EmissionConstraint};
@@ -45,7 +45,7 @@ pub(crate) fn generate_result<'a, T>(
     >,
     max_coefficient: f32,
     constraint: EmissionConstraint,
-    filter: Option<HashMap<usize, BitVec<usize, Lsb0>>>,
+    filter: Option<HashMap<usize, BitVec<u32>>>,
 ) -> GainCalcResult<'a>
 where
     T: IntoDrive + Copy + Send + Sync + 'static,

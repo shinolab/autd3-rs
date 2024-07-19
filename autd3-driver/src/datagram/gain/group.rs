@@ -14,7 +14,7 @@ use std::{
     sync::Arc,
 };
 
-use bitvec::prelude::*;
+use bit_vec::BitVec;
 
 use super::GainCalcResult;
 
@@ -47,8 +47,8 @@ where
         self
     }
 
-    fn get_filters(&self, geometry: &Geometry) -> HashMap<K, HashMap<usize, BitVec<usize, Lsb0>>> {
-        let mut filters: HashMap<K, HashMap<usize, BitVec<usize, Lsb0>>> = HashMap::new();
+    fn get_filters(&self, geometry: &Geometry) -> HashMap<K, HashMap<usize, BitVec<u32>>> {
+        let mut filters: HashMap<K, HashMap<usize, BitVec<u32>>> = HashMap::new();
         geometry.devices().for_each(|dev| {
             dev.iter().for_each(|tr| {
                 if let Some(key) = (self.f)(dev)(tr) {
@@ -58,15 +58,13 @@ where
                                 e.get_mut().set(tr.idx(), true);
                             }
                             Entry::Vacant(e) => {
-                                let mut filter =
-                                    BitVec::<usize, Lsb0>::repeat(false, dev.num_transducers());
+                                let mut filter = BitVec::from_elem(dev.num_transducers(), false);
                                 filter.set(tr.idx(), true);
                                 e.insert(filter);
                             }
                         },
                         None => {
-                            let mut filter =
-                                BitVec::<usize, Lsb0>::repeat(false, dev.num_transducers());
+                            let mut filter = BitVec::from_elem(dev.num_transducers(), false);
                             filter.set(tr.idx(), true);
                             filters.insert(key.clone(), [(dev.idx(), filter)].into());
                         }

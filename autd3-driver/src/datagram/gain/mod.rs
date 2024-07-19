@@ -20,7 +20,7 @@ use crate::{
     geometry::{Device, Transducer},
 };
 
-use bitvec::prelude::*;
+use bit_vec::BitVec;
 use itertools::Itertools;
 
 use super::Datagram;
@@ -36,7 +36,7 @@ pub trait Gain {
     fn calc_with_filter<'a>(
         &'a self,
         geometry: &Geometry,
-        _filter: HashMap<usize, BitVec<usize, Lsb0>>,
+        _filter: HashMap<usize, BitVec<u32>>,
     ) -> GainCalcResult<'a> {
         self.calc(geometry)
     }

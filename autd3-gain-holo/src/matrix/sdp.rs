@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use bitvec::{order::Lsb0, vec::BitVec};
+use bit_vec::BitVec;
 use rand::Rng;
 
 use crate::{
@@ -50,7 +50,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> SDP<D, B> {
     fn calc_impl(
         &self,
         geometry: &Geometry,
-        filter: Option<HashMap<usize, BitVec<usize, Lsb0>>>,
+        filter: Option<HashMap<usize, BitVec<u32>>>,
     ) -> GainCalcResult {
         let G = self
             .backend
@@ -212,7 +212,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for SDP<D, B> {
     fn calc_with_filter(
         &self,
         geometry: &Geometry,
-        filter: HashMap<usize, BitVec<usize, Lsb0>>,
+        filter: HashMap<usize, BitVec<u32>>,
     ) -> GainCalcResult {
         self.calc_impl(geometry, Some(filter))
     }

@@ -1800,7 +1800,7 @@ impl<const N: usize, B: LinAlgBackend<Sphere>> LinAlgBackendTestHelper<N, B> {
             geometry
                 .iter()
                 .map(|dev| {
-                    let mut filter = bitvec::prelude::BitVec::new();
+                    let mut filter = bit_vec::BitVec::new();
                     dev.iter().for_each(|tr| {
                         filter.push(tr.idx() > dev.num_transducers() / 2);
                     });

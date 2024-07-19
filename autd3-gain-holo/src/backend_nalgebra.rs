@@ -4,7 +4,7 @@ use std::{
     sync::Arc,
 };
 
-use bitvec::{order::Lsb0, vec::BitVec};
+use bit_vec::BitVec;
 use nalgebra::{ComplexField, Dyn, Normed, VecStorage, U1};
 
 use autd3_driver::{
@@ -35,7 +35,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         &self,
         geometry: &Geometry,
         foci: &[autd3_driver::geometry::Vector3],
-        filter: &Option<HashMap<usize, BitVec<usize, Lsb0>>>,
+        filter: &Option<HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::MatrixXc, HoloError> {
         use rayon::prelude::*;
 
@@ -44,7 +44,11 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
             .chain(geometry.devices().scan(0, |state, dev| {
                 *state += filter
                     .as_ref()
-                    .map(|f| f.get(&dev.idx()).map(|f| f.count_ones()).unwrap_or(0))
+                    .map(|f| {
+                        f.get(&dev.idx())
+                            .map(|f| f.count_ones() as usize)
+                            .unwrap_or(0)
+                    })
                     .unwrap_or(dev.num_transducers());
                 Some(*state)
             }))
