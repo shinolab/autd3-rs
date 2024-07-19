@@ -115,18 +115,18 @@ class Config:
         else:
             self.target = None
 
-    def cargo_command_base(self, subcommand):
+    def cargo_command_base(self, subcommands):
         command = []
         if self.target is None:
             command.append("cargo")
-            command.append(subcommand)
+            command.extend(subcommands)
         else:
             if self.is_linux():
                 command.append("cross")
-                command.append(subcommand)
+                command.extend(subcommands)
             else:
                 command.append("cargo")
-                command.append(subcommand)
+                command.extend(subcommands)
             command.append("--target")
             command.append(self.target)
         if self.release:
@@ -134,7 +134,7 @@ class Config:
         return command
 
     def cargo_build_command(self, additional_features: Optional[str] = None):
-        command = self.cargo_command_base("build")
+        command = self.cargo_command_base(["build"])
         features = "remote"
         if additional_features is not None:
             features += " " + additional_features
@@ -212,7 +212,7 @@ def rust_test(args):
     config = Config(args)
 
     with working_dir("."):
-        command = config.cargo_command_base("test")
+        command = config.cargo_command_base(["nextest", "run"])
         features = "test-utilities remote"
         if args.features is not None:
             features += " " + args.features
