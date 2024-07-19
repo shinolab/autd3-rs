@@ -245,6 +245,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore)]
     async fn test_close() -> anyhow::Result<()> {
         let mut link = MockLink {
             is_open: true,
@@ -264,6 +265,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore)]
     async fn test_send_receive() {
         let mut link = MockLink {
             is_open: true,
@@ -298,6 +300,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore)]
     async fn test_wait_msg_processed() {
         let mut link = MockLink {
             is_open: true,

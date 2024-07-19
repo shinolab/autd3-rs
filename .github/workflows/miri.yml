@@ -1,0 +1,23 @@
+name: Miri
+
+on:
+  push:
+    branches:
+      - 'develop'
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup
+        uses: ./.github/actions/setup-build
+        with:
+          os: ubuntu-latest
+          toolchain: nightly
+          components: miri
+
+      - name: Generate code coverage for rust
+        run: |
+          python3 build.py test --miri

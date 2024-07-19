@@ -19,9 +19,8 @@ jobs:
         uses: ./.github/actions/setup-build
         with:
           os: ubuntu-latest
+          components: llvm-tools
 
-      - name: Add components
-        run: rustup component add llvm-tools
       - name: Install grcov
         run: cargo install grcov
 

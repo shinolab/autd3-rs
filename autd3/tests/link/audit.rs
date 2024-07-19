@@ -5,6 +5,7 @@ use autd3_driver::{
 };
 
 #[tokio::test]
+#[cfg_attr(miri, ignore)]
 async fn audit_test() -> anyhow::Result<()> {
     let mut autd = Controller::builder([AUTD3::new(Vector3::zeros())])
         .open(Audit::builder().with_timeout(std::time::Duration::from_millis(100)))

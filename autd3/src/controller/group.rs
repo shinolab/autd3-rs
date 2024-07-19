@@ -127,6 +127,7 @@ mod tests {
     };
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore)]
     async fn test_group() -> anyhow::Result<()> {
         let mut autd = create_controller(4).await?;
 
@@ -196,6 +197,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore)]
     async fn test_send_failed() -> anyhow::Result<()> {
         let mut autd = create_controller(1).await?;
         assert_eq!(
@@ -219,6 +221,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore)]
     async fn test_send_err() -> anyhow::Result<()> {
         let mut autd = create_controller(2).await?;
 
@@ -240,6 +243,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore)]
     async fn test_group_only_for_enabled() -> anyhow::Result<()> {
         let mut autd = create_controller(2).await?;
 
@@ -261,6 +265,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore)]
     async fn unknown_key() -> anyhow::Result<()> {
         let mut autd = create_controller(2).await?;
 
