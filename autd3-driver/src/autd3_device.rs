@@ -377,6 +377,7 @@ mod tests {
     #[case(15, 13, false)]
     #[case(16, 13, false)]
     #[case(17, 13, false)]
+    #[cfg_attr(miri, ignore)]
     fn test_is_missing_transducer(#[case] x: u8, #[case] y: u8, #[case] expected: bool) {
         assert_eq!(expected, AUTD3::is_missing_transducer(x, y));
     }
@@ -642,6 +643,7 @@ mod tests {
     #[case(246, (15, 13))]
     #[case(247, (16, 13))]
     #[case(248, (17, 13))]
+    #[cfg_attr(miri, ignore)]
     fn test_grid_id(#[case] idx: usize, #[case] expected: (usize, usize)) {
         assert_eq!(expected, AUTD3::grid_id(idx));
     }
