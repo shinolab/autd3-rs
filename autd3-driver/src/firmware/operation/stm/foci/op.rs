@@ -289,7 +289,7 @@ mod tests {
             .for_each(|(d, p)| {
                 let mut buf = [0x00u8; 8];
                 write_to_tx(
-                    STMFocus::create(p[0].point(), p.intensity().value()),
+                    STMFocus::create(p[0].point(), p.intensity().value()).unwrap(),
                     &mut buf,
                 );
                 assert_eq!(d, buf);
@@ -383,16 +383,20 @@ mod tests {
                     let mut buf = [0x00u8; 8];
                     write_to_tx(
                         STMFocus::create(
-                            p[0].point(),
+                            p[i].point(),
                             if i == 0 {
                                 p.intensity().value()
                             } else {
                                 (p[i].offset() - base_offset).value()
                             },
-                        ),
+                        )
+                        .unwrap(),
                         &mut buf,
                     );
-                    assert_eq!(d[i * size_of::<STMFocus>()..], buf);
+                    assert_eq!(
+                        d[i * size_of::<STMFocus>()..i * size_of::<STMFocus>() + 8],
+                        buf
+                    );
                 });
             });
     }
@@ -479,7 +483,7 @@ mod tests {
                 .for_each(|(d, p)| {
                     let mut buf = [0x00u8; 8];
                     write_to_tx(
-                        STMFocus::create(p[0].point(), p.intensity().value()),
+                        STMFocus::create(p[0].point(), p.intensity().value()).unwrap(),
                         &mut buf,
                     );
                     assert_eq!(d, buf);
@@ -519,7 +523,7 @@ mod tests {
                 .for_each(|(d, p)| {
                     let mut buf = [0x00u8; 8];
                     write_to_tx(
-                        STMFocus::create(p[0].point(), p.intensity().value()),
+                        STMFocus::create(p[0].point(), p.intensity().value()).unwrap(),
                         &mut buf,
                     );
                     assert_eq!(d, buf);
@@ -565,7 +569,7 @@ mod tests {
                 .for_each(|(d, p)| {
                     let mut buf = [0x00u8; 8];
                     write_to_tx(
-                        STMFocus::create(p[0].point(), p.intensity().value()),
+                        STMFocus::create(p[0].point(), p.intensity().value()).unwrap(),
                         &mut buf,
                     );
                     assert_eq!(d, buf);
