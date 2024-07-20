@@ -6,7 +6,7 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{Drive, Segment},
-        operation::{cast, Operation, TypeTag},
+        operation::{write_to_tx, Operation, TypeTag},
     },
     geometry::Device,
 };
@@ -48,20 +48,24 @@ impl Operation for GainOp {
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         assert!(tx.len() >= size_of::<GainT>() + device.len() * size_of::<Drive>());
-
-        *cast::<GainT>(tx) = GainT {
-            tag: TypeTag::Gain,
-            segment: self.segment as u8,
-            flag: GainControlFlags::NONE,
-            __pad: 0,
-        };
-        cast::<GainT>(tx)
-            .flag
-            .set(GainControlFlags::UPDATE, self.transition);
-
+        write_to_tx(
+            GainT {
+                tag: TypeTag::Gain,
+                segment: self.segment as u8,
+                flag: if self.transition {
+                    GainControlFlags::UPDATE
+                } else {
+                    GainControlFlags::NONE
+                },
+                __pad: 0,
+            },
+            tx,
+        );
         device.iter().enumerate().for_each(|(i, tr)| {
-            *cast::<Drive>(&mut tx[size_of::<GainT>() + i * size_of::<Drive>()..]) =
-                (self.gain)(tr);
+            write_to_tx(
+                (self.gain)(tr),
+                &mut tx[size_of::<GainT>() + i * size_of::<Drive>()..],
+            );
         });
 
         self.is_done = true;

@@ -2,7 +2,7 @@ use std::mem::size_of;
 
 use crate::{
     error::AUTDInternalError,
-    firmware::operation::{cast, Operation, TypeTag},
+    firmware::operation::{write_to_tx, Operation, TypeTag},
     geometry::Device,
 };
 
@@ -32,12 +32,15 @@ impl DebugSettingOp {
 
 impl Operation for DebugSettingOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        *cast::<DebugSetting>(tx) = DebugSetting {
-            tag: TypeTag::Debug,
-            __pad: 0,
-            ty: self.ty,
-            value: self.value,
-        };
+        write_to_tx(
+            DebugSetting {
+                tag: TypeTag::Debug,
+                __pad: 0,
+                ty: self.ty,
+                value: self.value,
+            },
+            tx,
+        );
 
         self.is_done = true;
         Ok(size_of::<DebugSetting>())

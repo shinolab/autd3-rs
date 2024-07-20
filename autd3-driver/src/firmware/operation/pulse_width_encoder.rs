@@ -4,7 +4,7 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::PWE_BUF_SIZE,
-        operation::{cast, Operation, TypeTag},
+        operation::{write_to_tx, Operation, TypeTag},
     },
     geometry::Device,
 };
@@ -27,9 +27,12 @@ impl<F: Fn(u8) -> u8> PulseWidthEncoderOp<F> {
 
 impl<F: Fn(u8) -> u8 + Send + Sync> Operation for PulseWidthEncoderOp<F> {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        *cast::<Pwe>(tx) = Pwe {
-            tag: TypeTag::ConfigPulseWidthEncoder,
-        };
+        write_to_tx(
+            Pwe {
+                tag: TypeTag::ConfigPulseWidthEncoder,
+            },
+            tx,
+        );
 
         tx[size_of::<Pwe>()..]
             .iter_mut()

@@ -5,7 +5,7 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{Segment, TransitionMode, MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN, TRANSITION_MODE_NONE},
-        operation::{cast, Operation, TypeTag},
+        operation::{write_to_tx, Operation, TypeTag},
     },
     geometry::Device,
 };
@@ -91,30 +91,7 @@ impl Operation for ModulationOp {
             return Err(AUTDInternalError::ModulationSizeOutOfRange(self.sent));
         }
 
-        if is_first {
-            *cast::<ModulationHead>(tx) = ModulationHead {
-                tag: TypeTag::Modulation,
-                flag: ModulationControlFlags::BEGIN,
-                size: send_num as _,
-                freq_div: self.config.division()?,
-                rep: self.loop_behavior.rep(),
-                transition_mode: self
-                    .transition_mode
-                    .map(|m| m.mode())
-                    .unwrap_or(TRANSITION_MODE_NONE),
-                transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
-            };
-        } else {
-            *cast::<ModulationSubseq>(tx) = ModulationSubseq {
-                tag: TypeTag::Modulation,
-                flag: ModulationControlFlags::NONE,
-                size: send_num as _,
-            };
-        }
-
-        let d = cast::<ModulationSubseq>(tx);
-
-        d.flag |= if self.segment == Segment::S1 {
+        let mut flag = if self.segment == Segment::S1 {
             ModulationControlFlags::SEGMENT
         } else {
             ModulationControlFlags::NONE
@@ -125,16 +102,39 @@ impl Operation for ModulationOp {
                 return Err(AUTDInternalError::ModulationSizeOutOfRange(self.sent));
             }
             self.is_done = true;
-            d.flag.set(ModulationControlFlags::END, true);
-            d.flag.set(
+            flag.set(ModulationControlFlags::END, true);
+            flag.set(
                 ModulationControlFlags::TRANSITION,
                 self.transition_mode.is_some(),
             );
         }
 
         if is_first {
+            write_to_tx(
+                ModulationHead {
+                    tag: TypeTag::Modulation,
+                    flag: ModulationControlFlags::BEGIN | flag,
+                    size: send_num as _,
+                    freq_div: self.config.division()?,
+                    rep: self.loop_behavior.rep(),
+                    transition_mode: self
+                        .transition_mode
+                        .map(|m| m.mode())
+                        .unwrap_or(TRANSITION_MODE_NONE),
+                    transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
+                },
+                tx,
+            );
             Ok(std::mem::size_of::<ModulationHead>() + send_num)
         } else {
+            write_to_tx(
+                ModulationSubseq {
+                    tag: TypeTag::Modulation,
+                    flag,
+                    size: send_num as _,
+                },
+                tx,
+            );
             Ok(std::mem::size_of::<ModulationSubseq>() + send_num)
         }
     }

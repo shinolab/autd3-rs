@@ -1,6 +1,6 @@
 use crate::{
     error::AUTDInternalError,
-    firmware::operation::{cast, Operation, TypeTag},
+    firmware::operation::{write_to_tx, Operation, TypeTag},
     geometry::Device,
 };
 
@@ -26,10 +26,13 @@ impl ForceFanOp {
 
 impl Operation for ForceFanOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        *cast::<ForceFan>(tx) = ForceFan {
-            tag: TypeTag::ForceFan,
-            value: self.value,
-        };
+        write_to_tx(
+            ForceFan {
+                tag: TypeTag::ForceFan,
+                value: self.value,
+            },
+            tx,
+        );
 
         self.is_done = true;
         Ok(std::mem::size_of::<ForceFan>())
