@@ -609,6 +609,7 @@ mod tests {
     #[case(Ok(()), 2)]
     #[case(Ok(()), FOCI_STM_BUF_SIZE_MAX)]
     #[case(Err(AUTDInternalError::FociSTMPointSizeOutOfRange(FOCI_STM_BUF_SIZE_MAX+1)), FOCI_STM_BUF_SIZE_MAX+1)]
+    #[cfg_attr(miri, ignore)]
     fn test_buffer_out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] n: usize) {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
