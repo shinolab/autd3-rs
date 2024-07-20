@@ -23,11 +23,12 @@ pub trait GroupExec {
     type FK: Fn(&Transducer) -> Option<Self::K>;
     type F: Fn(&Device) -> Self::FK;
 
+    #[allow(clippy::type_complexity)]
     fn exec(
         gain_map: HashMap<Self::K, Vec<Box<dyn Fn(&Transducer) -> Drive + Send + Sync>>>,
         f: &Self::F,
         geometry: &Geometry,
-        result: &Vec<Vec<Drive>>,
+        result: &[Vec<Drive>],
     ) -> Result<(), AUTDInternalError>;
 }
 
@@ -54,7 +55,7 @@ where
         gain_map: HashMap<K, Vec<Box<dyn Fn(&Transducer) -> Drive + Send + Sync>>>,
         f: &F,
         geometry: &Geometry,
-        result: &Vec<Vec<Drive>>,
+        result: &[Vec<Drive>],
     ) -> Result<(), AUTDInternalError> {
         gain_map
             .iter()
@@ -105,7 +106,7 @@ where
         gain_map: HashMap<K, Vec<Box<dyn Fn(&Transducer) -> Drive + Send + Sync>>>,
         f: &F,
         geometry: &Geometry,
-        result: &Vec<Vec<Drive>>,
+        result: &[Vec<Drive>],
     ) -> Result<(), AUTDInternalError> {
         gain_map.par_iter().try_for_each(|(k, g)| {
             geometry
