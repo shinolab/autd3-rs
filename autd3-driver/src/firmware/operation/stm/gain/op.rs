@@ -714,6 +714,7 @@ mod tests {
         Err(AUTDInternalError::GainSTMSizeOutOfRange(GAIN_STM_BUF_SIZE_MAX+1)),
         GAIN_STM_BUF_SIZE_MAX+1
     )]
+    #[cfg_attr(miri, ignore)]
     fn out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] size: usize) {
         let send = |n: usize| {
             const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
