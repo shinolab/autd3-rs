@@ -199,7 +199,7 @@ pub mod tests {
     pub(crate) fn parse_tx_as<T>(tx: &[u8]) -> T {
         unsafe {
             let ptr = tx.as_ptr() as *const T;
-            ptr.read()
+            ptr.read_unaligned()
         }
     }
 
