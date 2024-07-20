@@ -2,7 +2,7 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::FPGA_MAIN_CLK_FREQ,
-        operation::{cast, Operation, TypeTag},
+        operation::{write_to_tx, Operation, TypeTag},
     },
     geometry::Device,
 };
@@ -21,11 +21,14 @@ pub struct SyncOp {
 
 impl Operation for SyncOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        *cast::<Sync>(tx) = Sync {
-            tag: TypeTag::Sync,
-            __pad: [0; 3],
-            ecat_sync_base_cnt: FPGA_MAIN_CLK_FREQ.hz() / 2000,
-        };
+        write_to_tx(
+            Sync {
+                tag: TypeTag::Sync,
+                __pad: [0; 3],
+                ecat_sync_base_cnt: FPGA_MAIN_CLK_FREQ.hz() / 2000,
+            },
+            tx,
+        );
 
         self.is_done = true;
         Ok(std::mem::size_of::<Sync>())

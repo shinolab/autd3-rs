@@ -3,7 +3,7 @@ use std::mem::size_of;
 use crate::{
     datagram::SwapSegment,
     error::AUTDInternalError,
-    firmware::operation::{cast, TypeTag},
+    firmware::operation::{write_to_tx, TypeTag},
     geometry::Device,
 };
 
@@ -44,40 +44,52 @@ impl Operation for SwapSegmentOp {
 
         match self.segment {
             SwapSegment::Gain(segment) => {
-                *cast::<SwapSegmentT>(tx) = SwapSegmentT {
-                    tag: TypeTag::GainSwapSegment,
-                    segment: segment as u8,
-                };
+                write_to_tx(
+                    SwapSegmentT {
+                        tag: TypeTag::GainSwapSegment,
+                        segment: segment as u8,
+                    },
+                    tx,
+                );
                 Ok(size_of::<SwapSegmentT>())
             }
             SwapSegment::Modulation(segment, transition) => {
-                *cast::<SwapSegmentTWithTransition>(tx) = SwapSegmentTWithTransition {
-                    tag: TypeTag::ModulationSwapSegment,
-                    segment: segment as u8,
-                    transition_mode: transition.mode(),
-                    __padding: [0; 5],
-                    transition_value: transition.value(),
-                };
+                write_to_tx(
+                    SwapSegmentTWithTransition {
+                        tag: TypeTag::ModulationSwapSegment,
+                        segment: segment as u8,
+                        transition_mode: transition.mode(),
+                        __padding: [0; 5],
+                        transition_value: transition.value(),
+                    },
+                    tx,
+                );
                 Ok(size_of::<SwapSegmentTWithTransition>())
             }
             SwapSegment::FociSTM(segment, transition) => {
-                *cast::<SwapSegmentTWithTransition>(tx) = SwapSegmentTWithTransition {
-                    tag: TypeTag::FociSTMSwapSegment,
-                    segment: segment as u8,
-                    transition_mode: transition.mode(),
-                    __padding: [0; 5],
-                    transition_value: transition.value(),
-                };
+                write_to_tx(
+                    SwapSegmentTWithTransition {
+                        tag: TypeTag::FociSTMSwapSegment,
+                        segment: segment as u8,
+                        transition_mode: transition.mode(),
+                        __padding: [0; 5],
+                        transition_value: transition.value(),
+                    },
+                    tx,
+                );
                 Ok(size_of::<SwapSegmentTWithTransition>())
             }
             SwapSegment::GainSTM(segment, transition) => {
-                *cast::<SwapSegmentTWithTransition>(tx) = SwapSegmentTWithTransition {
-                    tag: TypeTag::GainSTMSwapSegment,
-                    segment: segment as u8,
-                    transition_mode: transition.mode(),
-                    __padding: [0; 5],
-                    transition_value: transition.value(),
-                };
+                write_to_tx(
+                    SwapSegmentTWithTransition {
+                        tag: TypeTag::GainSTMSwapSegment,
+                        segment: segment as u8,
+                        transition_mode: transition.mode(),
+                        __padding: [0; 5],
+                        transition_value: transition.value(),
+                    },
+                    tx,
+                );
                 Ok(size_of::<SwapSegmentTWithTransition>())
             }
         }

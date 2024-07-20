@@ -4,7 +4,7 @@ use crate::{
     geometry::Device,
 };
 
-use super::cast;
+use super::write_to_tx;
 
 #[repr(u8)]
 pub enum FirmwareVersionType {
@@ -34,18 +34,21 @@ impl Default for FirmInfoOp {
 
 impl Operation for FirmInfoOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        *cast::<FirmInfo>(tx) = FirmInfo {
-            tag: TypeTag::FirmwareVersion,
-            ty: match self.remains {
-                6 => FirmwareVersionType::CPUVersionMajor,
-                5 => FirmwareVersionType::CPUVersionMinor,
-                4 => FirmwareVersionType::FPGAVersionMajor,
-                3 => FirmwareVersionType::FPGAVersionMinor,
-                2 => FirmwareVersionType::FPGAFunctions,
-                1 => FirmwareVersionType::Clear,
-                _ => unreachable!(),
+        write_to_tx(
+            FirmInfo {
+                tag: TypeTag::FirmwareVersion,
+                ty: match self.remains {
+                    6 => FirmwareVersionType::CPUVersionMajor,
+                    5 => FirmwareVersionType::CPUVersionMinor,
+                    4 => FirmwareVersionType::FPGAVersionMajor,
+                    3 => FirmwareVersionType::FPGAVersionMinor,
+                    2 => FirmwareVersionType::FPGAFunctions,
+                    1 => FirmwareVersionType::Clear,
+                    _ => unreachable!(),
+                },
             },
-        };
+            tx,
+        );
 
         self.remains -= 1;
         Ok(std::mem::size_of::<FirmInfo>())

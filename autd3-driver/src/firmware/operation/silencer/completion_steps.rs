@@ -2,7 +2,7 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{SILENCER_VALUE_MAX, SILENCER_VALUE_MIN},
-        operation::{cast, Operation, TypeTag},
+        operation::{write_to_tx, Operation, TypeTag},
     },
     geometry::Device,
 };
@@ -55,19 +55,22 @@ impl Operation for SilencerFixedCompletionStepsOp {
             ));
         }
 
-        *cast::<SilencerFixedCompletionSteps>(tx) = SilencerFixedCompletionSteps {
-            tag: TypeTag::Silencer,
-            flag: if self.strict_mode {
-                SILENCER_FLAG_STRICT_MODE
-            } else {
-                0
-            } | match self.target {
-                super::SilencerTarget::Intensity => 0,
-                super::SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
+        write_to_tx(
+            SilencerFixedCompletionSteps {
+                tag: TypeTag::Silencer,
+                flag: if self.strict_mode {
+                    SILENCER_FLAG_STRICT_MODE
+                } else {
+                    0
+                } | match self.target {
+                    super::SilencerTarget::Intensity => 0,
+                    super::SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
+                },
+                value_intensity: self.value_intensity,
+                value_phase: self.value_phase,
             },
-            value_intensity: self.value_intensity,
-            value_phase: self.value_phase,
-        };
+            tx,
+        );
 
         self.is_done = true;
         Ok(std::mem::size_of::<SilencerFixedCompletionSteps>())

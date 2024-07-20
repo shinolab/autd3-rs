@@ -1,4 +1,4 @@
-use crate::error::AUTDInternalError;
+use crate::{error::AUTDInternalError, geometry::Vector3};
 
 use super::*;
 
@@ -21,29 +21,24 @@ impl STMFocus {
         (x / FOCI_STM_FIXED_NUM_UNIT).round() as i32
     }
 
-    pub fn set(
-        &mut self,
-        x: f32,
-        y: f32,
-        z: f32,
-        intensity_or_offset: u8,
-    ) -> Result<(), AUTDInternalError> {
-        let ix = Self::to_fixed_num(x);
-        let iy = Self::to_fixed_num(y);
-        let iz = Self::to_fixed_num(z);
+    pub fn create(p: &Vector3, intensity_or_offset: u8) -> Result<Self, AUTDInternalError> {
+        let ix = Self::to_fixed_num(p.x);
+        let iy = Self::to_fixed_num(p.y);
+        let iz = Self::to_fixed_num(p.z);
 
         if !(FOCI_STM_FIXED_NUM_LOWER_X..=FOCI_STM_FIXED_NUM_UPPER_X).contains(&ix)
             || !(FOCI_STM_FIXED_NUM_LOWER_Y..=FOCI_STM_FIXED_NUM_UPPER_Y).contains(&iy)
             || !(FOCI_STM_FIXED_NUM_LOWER_Z..=FOCI_STM_FIXED_NUM_UPPER_Z).contains(&iz)
         {
-            return Err(AUTDInternalError::FociSTMPointOutOfRange(x, y, z));
+            return Err(AUTDInternalError::FociSTMPointOutOfRange(p.x, p.y, p.z));
         }
 
-        self.set_x(ix);
-        self.set_y(iy);
-        self.set_z(iz);
-        self.set_intensity(intensity_or_offset);
-        Ok(())
+        let mut f = Self::new();
+        f.set_x(ix);
+        f.set_y(iy);
+        f.set_z(iz);
+        f.set_intensity(intensity_or_offset);
+        Ok(f)
     }
 }
 
@@ -120,18 +115,17 @@ mod tests {
         #[case] z: i32,
         #[case] intensity: u8,
     ) {
-        let mut p = STMFocus::new();
-        assert_eq!(
-            expect,
-            p.set(
+        let p = STMFocus::create(
+            &Vector3::new(
                 x as f32 * FOCI_STM_FIXED_NUM_UNIT,
                 y as f32 * FOCI_STM_FIXED_NUM_UNIT,
                 z as f32 * FOCI_STM_FIXED_NUM_UNIT,
-                EmitIntensity::new(intensity).value()
-            )
-            .is_ok()
+            ),
+            intensity,
         );
+        assert_eq!(expect, p.is_ok());
         if expect {
+            let p = p.unwrap();
             assert_eq!({ x }, p.x());
             assert_eq!({ y }, p.y());
             assert_eq!({ z }, p.z());

@@ -2,7 +2,7 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{SILENCER_VALUE_MAX, SILENCER_VALUE_MIN},
-        operation::{cast, Operation, TypeTag},
+        operation::{write_to_tx, Operation, TypeTag},
     },
     geometry::Device,
 };
@@ -52,16 +52,19 @@ impl Operation for SilencerFixedUpdateRateOp {
             ));
         }
 
-        *cast::<SilencerFixedUpdateRate>(tx) = SilencerFixedUpdateRate {
-            tag: TypeTag::Silencer,
-            flag: SILENCER_FLAG_FIXED_UPDATE_RATE_MODE
-                | match self.target {
-                    super::SilencerTarget::Intensity => 0,
-                    super::SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
-                },
-            value_intensity: self.value_intensity,
-            value_phase: self.value_phase,
-        };
+        write_to_tx(
+            SilencerFixedUpdateRate {
+                tag: TypeTag::Silencer,
+                flag: SILENCER_FLAG_FIXED_UPDATE_RATE_MODE
+                    | match self.target {
+                        super::SilencerTarget::Intensity => 0,
+                        super::SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
+                    },
+                value_intensity: self.value_intensity,
+                value_phase: self.value_phase,
+            },
+            tx,
+        );
 
         self.is_done = true;
         Ok(std::mem::size_of::<SilencerFixedUpdateRate>())

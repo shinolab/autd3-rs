@@ -1,8 +1,10 @@
 use crate::{
     error::AUTDInternalError,
-    firmware::operation::{cast, Operation, TypeTag},
+    firmware::operation::{Operation, TypeTag},
     geometry::Device,
 };
+
+use super::write_to_tx;
 
 #[repr(C, align(2))]
 struct Clear {
@@ -16,7 +18,12 @@ pub struct ClearOp {
 
 impl Operation for ClearOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        cast::<Clear>(tx).tag = TypeTag::Clear;
+        write_to_tx(
+            Clear {
+                tag: TypeTag::Clear,
+            },
+            tx,
+        );
 
         self.is_done = true;
         Ok(std::mem::size_of::<Clear>())

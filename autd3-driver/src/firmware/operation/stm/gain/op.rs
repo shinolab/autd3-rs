@@ -11,7 +11,7 @@ use crate::{
             Drive, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX, STM_BUF_SIZE_MIN,
             TRANSITION_MODE_NONE,
         },
-        operation::{cast, Operation, TypeTag},
+        operation::{write_to_tx, Operation, TypeTag},
     },
     geometry::Device,
 };
@@ -177,57 +177,57 @@ impl Operation for GainSTMOp {
             return Err(AUTDInternalError::GainSTMSizeOutOfRange(self.sent));
         }
 
-        if is_first {
-            *cast::<GainSTMHead>(tx) = GainSTMHead {
-                tag: TypeTag::GainSTM,
-                flag: GainSTMControlFlags::BEGIN
-                    | if self.segment == Segment::S1 {
-                        GainSTMControlFlags::SEGMENT
-                    } else {
-                        GainSTMControlFlags::NONE
-                    },
-                mode: self.mode,
-                transition_mode: self
-                    .transition_mode
-                    .map(|m| m.mode())
-                    .unwrap_or(TRANSITION_MODE_NONE),
-                transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
-                freq_div: self.config.division()?,
-                rep: self.loop_behavior.rep(),
-            };
+        let mut flag = if self.segment == Segment::S1 {
+            GainSTMControlFlags::SEGMENT
         } else {
-            *cast::<GainSTMSubseq>(tx) = GainSTMSubseq {
-                tag: TypeTag::GainSTM,
-                flag: if self.segment == Segment::S1 {
-                    GainSTMControlFlags::SEGMENT
-                } else {
-                    GainSTMControlFlags::NONE
-                },
-            };
-        }
-
-        let d = cast::<GainSTMSubseq>(tx);
-
+            GainSTMControlFlags::NONE
+        };
         if self.gains.peek().is_none() {
             if self.sent < STM_BUF_SIZE_MIN {
                 return Err(AUTDInternalError::GainSTMSizeOutOfRange(self.sent));
             }
             self.is_done = true;
-            d.flag.set(GainSTMControlFlags::END, true);
-            d.flag.set(
+            flag.set(GainSTMControlFlags::END, true);
+            flag.set(
                 GainSTMControlFlags::TRANSITION,
                 self.transition_mode.is_some(),
             );
         }
 
-        d.flag.set(
+        flag.set(
             GainSTMControlFlags::SEND_BIT0,
             ((send as u8 - 1) & 0x01) != 0,
         );
-        d.flag.set(
+        flag.set(
             GainSTMControlFlags::SEND_BIT1,
             ((send as u8 - 1) & 0x02) != 0,
         );
+
+        if is_first {
+            write_to_tx(
+                GainSTMHead {
+                    tag: TypeTag::GainSTM,
+                    flag: GainSTMControlFlags::BEGIN | flag,
+                    mode: self.mode,
+                    transition_mode: self
+                        .transition_mode
+                        .map(|m| m.mode())
+                        .unwrap_or(TRANSITION_MODE_NONE),
+                    transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
+                    freq_div: self.config.division()?,
+                    rep: self.loop_behavior.rep(),
+                },
+                tx,
+            );
+        } else {
+            write_to_tx(
+                GainSTMSubseq {
+                    tag: TypeTag::GainSTM,
+                    flag,
+                },
+                tx,
+            );
+        }
 
         if is_first {
             Ok(size_of::<GainSTMHead>() + device.num_transducers() * size_of::<Drive>())

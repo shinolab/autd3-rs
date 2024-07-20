@@ -62,8 +62,14 @@ pub enum TypeTag {
     EmulateGPIOIn = 0xF1,
 }
 
-fn cast<T>(tx: &mut [u8]) -> &mut T {
-    unsafe { (tx.as_mut_ptr() as *mut T).as_mut().unwrap() }
+fn write_to_tx<T>(src: T, dst: &mut [u8]) {
+    unsafe {
+        std::ptr::copy_nonoverlapping(
+            &src as *const T as *const u8,
+            dst.as_mut_ptr(),
+            std::mem::size_of::<T>(),
+        );
+    }
 }
 
 pub trait Operation: Send + Sync {
