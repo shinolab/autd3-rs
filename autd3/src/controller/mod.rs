@@ -288,7 +288,6 @@ mod tests {
     // GRCOV_EXCL_STOP
 
     #[tokio::test(flavor = "multi_thread")]
-    #[cfg_attr(miri, ignore)]
     async fn send() -> anyhow::Result<()> {
         let mut autd = create_controller(1).await?;
         autd.send((
@@ -325,7 +324,6 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[cfg_attr(miri, ignore)]
     async fn firmware_version() -> anyhow::Result<()> {
         let mut autd = create_controller(1).await?;
         assert_eq!(
@@ -344,7 +342,6 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[cfg_attr(miri, ignore)]
     async fn close() -> anyhow::Result<()> {
         {
             let mut autd = create_controller(1).await?;
@@ -376,7 +373,6 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[cfg_attr(miri, ignore)]
     async fn fpga_state() -> anyhow::Result<()> {
         let mut autd =
             Controller::builder([AUTD3::new(Vector3::zeros()), AUTD3::new(Vector3::zeros())])
@@ -425,7 +421,6 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[cfg_attr(miri, ignore)]
     async fn last_parallel_threshold() -> anyhow::Result<()> {
         let mut autd =
             Controller::builder([AUTD3::new(Vector3::zeros()), AUTD3::new(Vector3::zeros())])
