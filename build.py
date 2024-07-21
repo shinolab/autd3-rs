@@ -230,6 +230,14 @@ def rust_test(args):
                 command.append("--exclude")
                 command.append("autd3-link-soem")
 
+            if args.miri:
+                command.append("--exclude")
+                command.append("autd3")
+                command.append("--exclude")
+                command.append("autd3-derive")
+                command.append("--exclude")
+                command.append("autd3-modulation-audio-file")
+
             subprocess.run(command).check_returncode()
 
 
