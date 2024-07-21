@@ -24,7 +24,7 @@ impl CPUEmulator {
         let data = unsafe {
             std::slice::from_raw_parts(
                 data[std::mem::size_of::<Gain>()..].as_ptr() as *const u16,
-                (data.len() - 2) >> 1,
+                self.num_transducers,
             )
         };
 

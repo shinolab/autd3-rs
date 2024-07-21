@@ -101,7 +101,7 @@ impl Memory {
     }
 
     pub fn read_bram_as<T>(bram: &[u16], addr: usize) -> T {
-        unsafe { (bram.as_ptr().add(addr) as *const T).read() }
+        unsafe { (bram.as_ptr().add(addr) as *const T).read_unaligned() }
     }
 
     pub fn write(&mut self, addr: u16, data: u16) {

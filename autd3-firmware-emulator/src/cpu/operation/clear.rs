@@ -1,13 +1,14 @@
 use crate::{cpu::params::*, CPUEmulator};
 
+#[allow(dead_code)]
 #[repr(C, align(2))]
 struct Clear {
     tag: u8,
 }
 
 impl CPUEmulator {
-    pub(crate) unsafe fn clear(&mut self, data: &[u8]) -> u8 {
-        let _d = Self::cast::<Clear>(data);
+    pub(crate) unsafe fn clear(&mut self, _data: &[u8]) -> u8 {
+        // let _d = Self::cast::<Clear>(data);
 
         self.read_fpga_state = false;
 
