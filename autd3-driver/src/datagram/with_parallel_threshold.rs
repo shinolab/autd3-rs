@@ -58,6 +58,7 @@ mod tests {
     };
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn with_parallel_threshold() {
         let geometry = create_geometry(1, 249);
         let datagram = NullDatagram {

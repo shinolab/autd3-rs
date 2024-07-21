@@ -95,6 +95,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn from_vector3() {
         let v = Vector3::new(1.0, 2.0, 3.0);
         let cp = ControlPoint::from(v);
@@ -102,6 +103,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn from_vector3_ref() {
         let v = Vector3::new(1.0, 2.0, 3.0);
         let cp = ControlPoint::from(&v);
@@ -109,6 +111,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn from_control_point() {
         let v1 = Vector3::new(1.0, 2.0, 3.0);
         let v2 = Vector3::new(4.0, 5.0, 6.0);
@@ -119,6 +122,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn from_control_point_and_intensity() {
         let v1 = Vector3::new(1.0, 2.0, 3.0);
         let v2 = Vector3::new(4.0, 5.0, 6.0);
@@ -129,12 +133,14 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn control_point_display() {
         let cp = ControlPoint::new(Vector3::new(1.0, 2.0, 3.0));
         assert_eq!("[(1, 2, 3), 0x00]", cp.to_string());
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn control_points_display() {
         let cp = ControlPoints::from([Vector3::new(1.0, 2.0, 3.0), Vector3::new(4.0, 5.0, 6.0)]);
         assert_eq!(

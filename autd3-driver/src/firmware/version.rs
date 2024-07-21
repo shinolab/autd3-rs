@@ -182,6 +182,7 @@ mod tests {
     #[case("v8.0.0", 146)]
     #[case("v9.0.0", 160)]
     #[case("unknown (147)", 147)]
+    #[cfg_attr(miri, ignore)]
     fn version(#[case] expected: &str, #[case] num: u8) {
         let info = FirmwareVersion::new(0, num, 0, num, 0, 0);
         assert_eq!(expected, info.cpu());
@@ -189,11 +190,13 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn latest() {
         assert_eq!("v9.0.0", FirmwareVersion::latest());
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn is_emulator() {
         assert!(
             FirmwareVersion::new(0, 0, 0, 0, 0, FirmwareVersion::ENABLED_EMULATOR_BIT)
@@ -203,6 +206,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn number() {
         let info = FirmwareVersion::new(0, 1, 2, 3, 4, 5);
         assert_eq!(info.cpu_version_number_major(), 1);
@@ -213,6 +217,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn display() {
         let info = FirmwareVersion::new(0, 1, 2, 3, 4, 0);
         assert_eq!(format!("{}", info), "0: CPU = v0.4, FPGA = v0.6");

@@ -3,6 +3,5 @@
 #[repr(u8)]
 pub enum SyncMode {
     DC = 0,
-
     FreeRun = 1,
 }

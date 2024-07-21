@@ -40,6 +40,7 @@ mod tests {
         RxMessage::new(1, 0),
         RxMessage::new(1, 0),
     ], vec![false, true, false])]
+    #[cfg_attr(miri, ignore)]
     fn test_check_if_msg_is_processed(
         #[case] mut rx: Vec<RxMessage>,
         #[case] expect: Vec<bool>,

@@ -151,6 +151,7 @@ mod tests {
     use std::error::Error;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_unknown_firmware_err() {
         let err = AUTDInternalError::firmware_err(0xFF);
         assert!(err.source().is_none());

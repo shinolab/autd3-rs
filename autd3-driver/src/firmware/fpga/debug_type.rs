@@ -66,6 +66,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn display() {
         assert_eq!("None", DebugType::None.to_string());
         assert_eq!("BaseSignal", DebugType::BaseSignal.to_string());

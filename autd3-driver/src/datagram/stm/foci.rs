@@ -262,6 +262,7 @@ mod tests {
     #[case(Ok(SamplingConfig::Freq(10*Hz)), 1.*Hz, 10)]
     #[case(Ok(SamplingConfig::Freq(20*Hz)), 2.*Hz, 10)]
     #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
+    #[cfg_attr(miri, ignore)]
     fn from_freq(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] freq: Freq<f32>,
@@ -279,6 +280,7 @@ mod tests {
     #[case(Ok(SamplingConfig::FreqNearest(0.98*Hz)), 0.49*Hz, 2)]
     #[case(Ok(SamplingConfig::FreqNearest(10.*Hz)), 1.*Hz, 10)]
     #[case(Ok(SamplingConfig::FreqNearest(20.*Hz)), 2.*Hz, 10)]
+    #[cfg_attr(miri, ignore)]
     fn from_freq_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] freq: Freq<f32>,
@@ -309,6 +311,7 @@ mod tests {
         10
     )]
     #[case(Err(AUTDInternalError::STMPeriodInvalid(2, Duration::from_millis(2000) + Duration::from_nanos(1))), Duration::from_millis(2000) + Duration::from_nanos(1), 2)]
+    #[cfg_attr(miri, ignore)]
     fn from_period(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] p: Duration,
@@ -338,6 +341,7 @@ mod tests {
         10
     )]
     #[case(Ok(SamplingConfig::PeriodNearest(Duration::from_millis(1000))), Duration::from_millis(2000) + Duration::from_nanos(1), 2)]
+    #[cfg_attr(miri, ignore)]
     fn from_period_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] p: Duration,
@@ -354,6 +358,7 @@ mod tests {
     #[test]
     #[case(SamplingConfig::Freq(4 * kHz), 10)]
     #[case(SamplingConfig::Freq(8 * kHz), 10)]
+    #[cfg_attr(miri, ignore)]
     fn from_sampling_config(#[case] config: SamplingConfig, #[case] n: usize) {
         assert_eq!(
             config,
@@ -368,6 +373,7 @@ mod tests {
     #[case(Ok(1.0*Hz), 1.*Hz, 10)]
     #[case(Ok(2.0*Hz), 2.*Hz, 10)]
     #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
+    #[cfg_attr(miri, ignore)]
     fn freq(
         #[case] expect: Result<Freq<f32>, AUTDInternalError>,
         #[case] f: Freq<f32>,
@@ -385,6 +391,7 @@ mod tests {
     #[case(Ok(Duration::from_millis(1000)), 1.*Hz, 10)]
     #[case(Ok(Duration::from_millis(500)), 2.*Hz, 10)]
     #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
+    #[cfg_attr(miri, ignore)]
     fn period(
         #[case] expect: Result<Duration, AUTDInternalError>,
         #[case] f: Freq<f32>,
@@ -400,6 +407,7 @@ mod tests {
     #[test]
     #[case::infinite(LoopBehavior::infinite())]
     #[case::finite(LoopBehavior::once())]
+    #[cfg_attr(miri, ignore)]
     fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) -> anyhow::Result<()> {
         assert_eq!(
             loop_behavior,
@@ -411,6 +419,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn with_loop_behavior_deafault() -> anyhow::Result<()> {
         let stm = FociSTM::from_freq(1. * Hz, (0..2).map(|_| Vector3::zeros()))?;
         assert_eq!(LoopBehavior::infinite(), stm.loop_behavior());

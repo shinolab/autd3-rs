@@ -34,6 +34,7 @@ pub mod tests {
     #[case::dir_x(90., Vector3::x(), Vector3::z())]
     #[case::dir_y(90., Vector3::y(), Vector3::z())]
     #[case::dir_z(0., Vector3::z(), Vector3::z())]
+    #[cfg_attr(miri, ignore)]
     fn test_directivity_from_dir(
         #[case] expected: f32,
         #[case] target: Vector3,

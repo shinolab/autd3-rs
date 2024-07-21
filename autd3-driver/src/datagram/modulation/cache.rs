@@ -78,6 +78,7 @@ mod tests {
     };
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test() -> anyhow::Result<()> {
         let mut rng = rand::thread_rng();
 
@@ -111,6 +112,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_calc_once() {
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
@@ -130,6 +132,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_calc_clone() {
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 

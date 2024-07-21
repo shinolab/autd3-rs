@@ -12,6 +12,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_size() {
         assert_eq!(1, std::mem::size_of::<GainSTMMode>());
     }

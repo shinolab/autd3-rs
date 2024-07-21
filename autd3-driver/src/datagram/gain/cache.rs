@@ -95,6 +95,7 @@ mod tests {
     use crate::{derive::*, geometry::tests::create_geometry};
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test() -> anyhow::Result<()> {
         let geometry = create_geometry(1, 249);
 
@@ -129,6 +130,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_calc_once() {
         let geometry = create_geometry(1, 249);
 
@@ -146,6 +148,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_clone() {
         let geometry = create_geometry(1, 249);
 

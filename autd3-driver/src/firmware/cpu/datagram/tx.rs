@@ -82,6 +82,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_num_devices(tx: TxDatagram) {
         assert_eq!(2, tx.num_devices());
     }

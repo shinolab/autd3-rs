@@ -55,6 +55,7 @@ mod tests {
     #[test]
     #[case::freq_4k(SamplingConfig::Freq(4 * kHz))]
     #[case::freq_8k(SamplingConfig::Freq(8 * kHz))]
+    #[cfg_attr(miri, ignore)]
     fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
             config,
@@ -69,6 +70,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test() -> anyhow::Result<()> {
         let mut rng = rand::thread_rng();
 

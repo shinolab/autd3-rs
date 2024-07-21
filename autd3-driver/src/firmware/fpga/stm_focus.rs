@@ -109,6 +109,7 @@ mod tests {
     #[case(false, FOCI_STM_FIXED_NUM_LOWER_X, FOCI_STM_FIXED_NUM_LOWER_Y-1, FOCI_STM_FIXED_NUM_LOWER_Z, 0x06)]
     #[case(false, FOCI_STM_FIXED_NUM_UPPER_X, FOCI_STM_FIXED_NUM_UPPER_Y, FOCI_STM_FIXED_NUM_UPPER_Z+1, 0x07)]
     #[case(false, FOCI_STM_FIXED_NUM_LOWER_X, FOCI_STM_FIXED_NUM_LOWER_Y, FOCI_STM_FIXED_NUM_LOWER_Z-1, 0x08)]
+    #[cfg_attr(miri, ignore)]
     fn test_stm_focus(
         #[case] expect: bool,
         #[case] x: i32,

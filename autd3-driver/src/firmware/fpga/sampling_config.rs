@@ -114,6 +114,7 @@ mod tests {
     #[test]
     #[case::min(Ok(1), NonZeroU16::new(1).unwrap())]
     #[case::max(Ok(u16::MAX), NonZeroU16::new(u16::MAX).unwrap())]
+    #[cfg_attr(miri, ignore)]
     fn division_from_division(
         #[case] expected: Result<u16, AUTDInternalError>,
         #[case] div: NonZeroU16,
@@ -129,6 +130,7 @@ mod tests {
         Ok(Duration::from_micros(25)),
         SamplingConfig::Period(Duration::from_micros(25))
     )]
+    #[cfg_attr(miri, ignore)]
     fn period(
         #[case] expected: Result<Duration, AUTDInternalError>,
         #[case] config: SamplingConfig,
@@ -155,6 +157,7 @@ mod tests {
         )),
         ULTRASOUND_FREQ * 2,
     )]
+    #[cfg_attr(miri, ignore)]
     fn from_freq(#[case] expected: Result<u16, AUTDInternalError>, #[case] freq: Freq<u32>) {
         assert_eq!(expected, SamplingConfig::Freq(freq).division());
     }
@@ -183,6 +186,7 @@ mod tests {
         )),
         FREQ_MAX + f32::MIN*Hz,
     )]
+    #[cfg_attr(miri, ignore)]
     fn from_freq_nearest(
         #[case] expected: Result<u16, AUTDInternalError>,
         #[case] freq: Freq<f32>,
@@ -212,6 +216,7 @@ mod tests {
         )),
         PERIOD_MAX * 2,
     )]
+    #[cfg_attr(miri, ignore)]
     fn from_period(#[case] expected: Result<u16, AUTDInternalError>, #[case] period: Duration) {
         assert_eq!(expected, SamplingConfig::from(period).division());
     }
@@ -241,6 +246,7 @@ mod tests {
         )),
         PERIOD_MAX * 2,
     )]
+    #[cfg_attr(miri, ignore)]
     fn from_period_nearest(
         #[case] expected: Result<u16, AUTDInternalError>,
         #[case] period: Duration,
@@ -255,6 +261,7 @@ mod tests {
     #[case::div(SamplingConfig::Division(NonZeroU16::new(12345).unwrap()), "Division(12345)")]
     #[case::div(SamplingConfig::Period(Duration::from_micros(25)), "25µs")]
     #[case::div(SamplingConfig::PeriodNearest(Duration::from_micros(25)), "25µs")]
+    #[cfg_attr(miri, ignore)]
     fn display(#[case] config: SamplingConfig, #[case] expected: &str) {
         assert_eq!(expected, config.to_string());
     }
