@@ -141,8 +141,8 @@ impl CPUEmulator {
 }
 
 impl CPUEmulator {
-    pub(crate) const fn cast<T>(data: &[u8]) -> &T {
-        unsafe { &*(data.as_ptr() as *const T) }
+    pub(crate) const fn cast<T>(data: &[u8]) -> T {
+        unsafe { (data.as_ptr() as *const T).read_unaligned() }
     }
 
     const fn get_addr(select: u8, addr: u16) -> u16 {
