@@ -36,12 +36,14 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn display() {
         assert_eq!(format!("{}", 100 * Hz), "100 Hz");
         assert_eq!(format!("{}", 100 * kHz), "100000 Hz");
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn dbg() {
         assert_eq!(format!("{:?}", 100 * Hz), "100 Hz");
         assert_eq!(format!("{:?}", 100 * kHz), "100000 Hz");

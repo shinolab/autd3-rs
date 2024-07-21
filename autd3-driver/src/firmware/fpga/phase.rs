@@ -79,6 +79,7 @@ mod tests {
     #[case::value_0(0x00)]
     #[case::value_1(0x01)]
     #[case::value_ff(0xFF)]
+    #[cfg_attr(miri, ignore)]
     fn new(#[case] expected: u8) {
         assert_eq!(expected, Phase::from(expected).value());
     }
@@ -88,6 +89,7 @@ mod tests {
     #[case::value_1_1(Phase::new(0x02), Phase::new(0x01), Phase::new(0x01))]
     #[case::value_7f_7f(Phase::new(0xFE), Phase::new(0x7F), Phase::new(0x7F))]
     #[case::value_7f_ff(Phase::new(0x7E), Phase::new(0x7F), Phase::new(0xFF))]
+    #[cfg_attr(miri, ignore)]
     fn add(#[case] expected: Phase, #[case] lhs: Phase, #[case] rhs: Phase) {
         assert_eq!(expected, lhs + rhs);
     }
@@ -97,6 +99,7 @@ mod tests {
     #[case::value_1_1(Phase::new(0x00), Phase::new(0x01), Phase::new(0x01))]
     #[case::value_7f_7f(Phase::new(0x01), Phase::new(0x02), Phase::new(0x01))]
     #[case::value_7f_ff(Phase::new(0x80), Phase::new(0x7F), Phase::new(0xFF))]
+    #[cfg_attr(miri, ignore)]
     fn sub(#[case] expected: Phase, #[case] lhs: Phase, #[case] rhs: Phase) {
         assert_eq!(expected, lhs - rhs);
     }
@@ -106,11 +109,13 @@ mod tests {
     #[case::value_0(0.0, 0)]
     #[case::value_1(2.0 * PI / 256.0 * 128.0, 128)]
     #[case::value_255(2.0 * PI / 256.0 * 255.0, 255)]
+    #[cfg_attr(miri, ignore)]
     fn radian(#[case] expect: f32, #[case] value: u8) {
         assert_approx_eq::assert_approx_eq!(expect, Phase::new(value).radian());
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn display() {
         assert_eq!(format!("{}", Phase::new(0x00)), "0x00");
         assert_eq!(format!("{}", Phase::new(0x01)), "0x01");
@@ -118,6 +123,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn dbg() {
         assert_eq!(format!("{:?}", Phase::new(0x00)), "0x00");
         assert_eq!(format!("{:?}", Phase::new(0x01)), "0x01");

@@ -171,6 +171,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn fixed_completion_time() {
         let d =
             Silencer::from_completion_time(Duration::from_micros(25), Duration::from_micros(50));
@@ -180,6 +181,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn invalid_time() {
         let geometry = create_geometry(1, 1);
 

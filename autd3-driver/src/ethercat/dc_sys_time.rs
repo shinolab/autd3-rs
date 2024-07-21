@@ -58,6 +58,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn now_dc_sys_time() {
         let t = DcSysTime::now();
         assert!(t.sys_time() > 0);
@@ -69,6 +70,7 @@ mod tests {
     #[case(Ok(DcSysTime { dc_sys_time: 1000000000 }), time::macros::datetime!(2000-01-01 0:0:1 UTC))]
     #[case(Ok(DcSysTime { dc_sys_time: 31622400000000000 }), time::macros::datetime!(2001-01-01 0:0:0 UTC))]
     #[case(Err(AUTDInternalError::InvalidDateTime), time::macros::datetime!(1999-01-01 0:0:1 UTC))]
+    #[cfg_attr(miri, ignore)]
     fn from_utc(#[case] expect: Result<DcSysTime, AUTDInternalError>, #[case] utc: OffsetDateTime) {
         assert_eq!(expect, DcSysTime::from_utc(utc));
     }
@@ -77,11 +79,13 @@ mod tests {
     #[test]
     #[case(time::macros::datetime!(2000-01-01 0:0:1 UTC))]
     #[case(time::macros::datetime!(2001-01-01 0:0:0 UTC))]
+    #[cfg_attr(miri, ignore)]
     fn to_utc(#[case] utc: OffsetDateTime) {
         assert_eq!(utc, DcSysTime::from_utc(utc).unwrap().to_utc());
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn addsub() {
         let utc = time::macros::datetime!(2000-01-01 0:0:0 UTC);
         let t = DcSysTime::from_utc(utc);

@@ -75,6 +75,7 @@ mod tests {
     use crate::geometry::tests::create_geometry;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test() -> anyhow::Result<()> {
         let geometry = create_geometry(1, 249);
 

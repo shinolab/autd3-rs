@@ -80,6 +80,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn disable() {
         let s = Silencer::disable();
         assert_eq!(s.completion_steps_intensity(), 1);
@@ -88,6 +89,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn from_update_rate() {
         let s = Silencer::from_update_rate(1, 2);
         assert_eq!(1, s.update_rate_intensity());
@@ -96,6 +98,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn from_completion_steps_mul() {
         let s = Silencer::from_completion_steps(1, 1);
         let s = s * 2;
@@ -105,6 +108,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn from_completion_steps_div() {
         let s = Silencer::from_completion_steps(2, 2);
         let s = s / 2;
@@ -114,6 +118,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn from_completion_time() {
         let s = Silencer::from_completion_time(Duration::from_secs(1), Duration::from_secs(1));
         assert_eq!(Duration::from_secs(1), s.completion_time_intensity(),);
@@ -122,6 +127,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn from_completion_time_mul() {
         let s = Silencer::from_completion_time(Duration::from_secs(1), Duration::from_secs(1));
         let s = s * 2;
@@ -131,6 +137,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn from_completion_time_div() {
         let s = Silencer::from_completion_time(Duration::from_secs(2), Duration::from_secs(2));
         let s = s / 2;

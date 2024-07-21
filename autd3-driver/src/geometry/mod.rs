@@ -136,6 +136,7 @@ pub mod tests {
     #[test]
     #[case(1, vec![create_device(0, 249)])]
     #[case(2, vec![create_device(0, 249), create_device(0, 249)])]
+    #[cfg_attr(miri, ignore)]
     fn test_num_devices(#[case] expected: usize, #[case] devices: Vec<Device>) {
         assert_eq!(expected, Geometry::new(devices).num_devices());
     }
@@ -144,11 +145,13 @@ pub mod tests {
     #[test]
     #[case(249, vec![create_device(0, 249)])]
     #[case(498, vec![create_device(0, 249), create_device(0, 249)])]
+    #[cfg_attr(miri, ignore)]
     fn test_num_transducers(#[case] expected: usize, #[case] devices: Vec<Device>) {
         assert_eq!(expected, Geometry::new(devices).num_transducers());
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_center() {
         let geometry = Geometry::new(vec![
             Device::new(
@@ -186,6 +189,7 @@ pub mod tests {
     #[case(340.29525e3, 15.)]
     #[case(343.23497e3, 20.)]
     #[case(349.04013e3, 30.)]
+    #[cfg_attr(miri, ignore)]
     fn test_set_sound_speed_from_temp(#[case] expected: f32, #[case] temp: f32) {
         let mut geometry = Geometry::new(vec![
             Device::new(
@@ -224,6 +228,7 @@ pub mod tests {
     #[case(3.402_952_8e5)]
     #[case(3.432_35e5)]
     #[case(3.490_401_6e5)]
+    #[cfg_attr(miri, ignore)]
     fn test_set_sound_speed(#[case] temp: f32) {
         let mut geometry = Geometry::new(vec![
             Device::new(

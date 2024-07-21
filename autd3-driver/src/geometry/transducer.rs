@@ -52,12 +52,14 @@ mod tests {
     #[test]
     #[case(0)]
     #[case(1)]
+    #[cfg_attr(miri, ignore)]
     fn idx(#[case] i: usize) {
         assert_eq!(i, Transducer::new(i, Vector3::zeros()).idx());
     }
 
     #[rstest::rstest]
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn affine(mut tr: Transducer) {
         let t = Vector3::new(40., 50., 60.);
         let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)

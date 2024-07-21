@@ -48,6 +48,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn dbg() {
         assert_eq!(format!("{:?}", 90.0 * deg), "90 deg");
         assert_eq!(format!("{:?}", 1.0 * rad), "1 rad");

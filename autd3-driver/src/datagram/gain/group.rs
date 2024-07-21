@@ -390,6 +390,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_unknown_key() {
         let geometry = create_geometry(2, 249);
 
@@ -409,6 +410,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_calc_err() {
         let geometry = create_geometry(2, 249);
 
