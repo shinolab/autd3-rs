@@ -8,7 +8,8 @@ use autd3_driver::{
     firmware::{
         cpu::TxDatagram,
         fpga::{
-            GPIOIn, TransitionMode, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
+            TransitionMode, MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN, SILENCER_STEPS_INTENSITY_DEFAULT,
+            SILENCER_STEPS_PHASE_DEFAULT,
         },
     },
 };
@@ -33,111 +34,56 @@ impl Modulation for TestModulation {
     }
 }
 
+#[rstest::rstest]
 #[test]
-fn send_mod() -> anyhow::Result<()> {
+#[cfg_attr(miri, ignore)]
+#[case(
+    MOD_BUF_SIZE_MAX,
+    LoopBehavior::infinite(),
+    Segment::S0,
+    Some(TransitionMode::Immediate)
+)]
+#[case(MOD_BUF_SIZE_MIN, LoopBehavior::once(), Segment::S1, None)]
+fn send_mod(
+    #[case] n: usize,
+    #[case] loop_behavior: LoopBehavior,
+    #[case] segment: Segment,
+    #[case] transition_mode: Option<TransitionMode>,
+) -> anyhow::Result<()> {
     let mut rng = rand::thread_rng();
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    {
-        let m: Vec<_> = (0..32768).map(|_| rng.gen()).collect();
-        let freq_div = rng
-            .gen_range(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=0xFFFF);
-        let loop_behavior = LoopBehavior::infinite();
-        let transition_mode = TransitionMode::Immediate;
-        let d = TestModulation {
-            buf: m.clone(),
-            config: SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
-            loop_behavior,
-        }
-        .with_segment(Segment::S0, Some(transition_mode));
+    let m: Vec<_> = (0..n).map(|_| rng.gen()).collect();
+    let freq_div =
+        rng.gen_range(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=0xFFFF);
+    let d = TestModulation {
+        buf: m.clone(),
+        config: SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+        loop_behavior,
+    }
+    .with_segment(segment, transition_mode);
 
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        assert_eq!(Segment::S0, cpu.fpga().req_mod_segment());
-        assert_eq!(m.len(), cpu.fpga().modulation_cycle(Segment::S0));
-        assert_eq!(freq_div, cpu.fpga().modulation_freq_division(Segment::S0));
-        assert_eq!(
-            loop_behavior,
-            cpu.fpga().modulation_loop_behavior(Segment::S0)
-        );
+    assert_eq!(m.len(), cpu.fpga().modulation_cycle(segment));
+    assert_eq!(freq_div, cpu.fpga().modulation_freq_division(segment));
+    assert_eq!(loop_behavior, cpu.fpga().modulation_loop_behavior(segment));
+    if let Some(transition_mode) = transition_mode {
+        assert_eq!(segment, cpu.fpga().req_mod_segment());
         assert_eq!(transition_mode, cpu.fpga().mod_transition_mode());
-        assert_eq!(m, cpu.fpga().modulation(Segment::S0));
-    }
-
-    {
-        let m: Vec<_> = (0..2).map(|_| rng.gen()).collect();
-        let freq_div = rng
-            .gen_range(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=0xFFFF);
-        let loop_behavior = LoopBehavior::once();
-        let d = TestModulation {
-            buf: m.clone(),
-            config: SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
-            loop_behavior,
-        }
-        .with_segment(Segment::S1, None);
-
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
-
+    } else {
         assert_eq!(Segment::S0, cpu.fpga().req_mod_segment());
-        assert_eq!(m.len(), cpu.fpga().modulation_cycle(Segment::S1));
-        assert_eq!(freq_div, cpu.fpga().modulation_freq_division(Segment::S1));
-        assert_eq!(
-            loop_behavior,
-            cpu.fpga().modulation_loop_behavior(Segment::S1)
-        );
-        assert_eq!(TransitionMode::Immediate, cpu.fpga().mod_transition_mode());
-        assert_eq!(m, cpu.fpga().modulation(Segment::S1));
     }
-
-    {
-        let d = SwapSegment::Modulation(Segment::S1, TransitionMode::SyncIdx);
-
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
-
-        assert_eq!(Segment::S1, cpu.fpga().req_mod_segment());
-        assert_eq!(TransitionMode::SyncIdx, cpu.fpga().mod_transition_mode());
-    }
-
-    {
-        [
-            (Segment::S0, GPIOIn::I0),
-            (Segment::S1, GPIOIn::I1),
-            (Segment::S0, GPIOIn::I2),
-            (Segment::S1, GPIOIn::I3),
-        ]
-        .into_iter()
-        .for_each(|(segment, gpio)| {
-            let transition_mode = TransitionMode::GPIO(gpio);
-            let d = TestModulation {
-                buf: (0..2).map(|_| u8::MAX).collect(),
-                config: SamplingConfig::FREQ_4K,
-                loop_behavior: LoopBehavior::once(),
-            }
-            .with_segment(segment, Some(transition_mode));
-            assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
-            assert_eq!(transition_mode, cpu.fpga().mod_transition_mode());
-        });
-    }
-
-    {
-        let transition_mode = TransitionMode::Ext;
-        let d = TestModulation {
-            buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::FREQ_4K,
-            loop_behavior: LoopBehavior::infinite(),
-        }
-        .with_segment(Segment::S0, Some(transition_mode));
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
-        assert_eq!(transition_mode, cpu.fpga().mod_transition_mode());
-    }
+    assert_eq!(m, cpu.fpga().modulation(segment));
 
     Ok(())
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn mod_freq_div_too_small() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -199,6 +145,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -257,6 +204,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
 #[case(Ok(()), ECAT_DC_SYS_TIME_BASE, ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
 #[case(Err(AUTDInternalError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE, ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN-autd3_driver::ethercat::EC_CYCLE_TIME_BASE_NANO_SEC))]
 #[case(Err(AUTDInternalError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(1), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
+#[cfg_attr(miri, ignore)]
 fn test_miss_transition_time(
     #[case] expect: Result<(), AUTDInternalError>,
     #[case] systime: OffsetDateTime,

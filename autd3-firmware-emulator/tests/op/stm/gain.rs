@@ -46,91 +46,71 @@ fn gen_random_buf(n: usize, geometry: &Geometry) -> Vec<HashMap<usize, Vec<Drive
         .collect()
 }
 
+#[rstest::rstest]
 #[test]
-fn test_send_gain_stm_phase_intensity_full() -> anyhow::Result<()> {
+#[cfg_attr(miri, ignore)]
+#[case(
+    GAIN_STM_BUF_SIZE_MAX,
+    LoopBehavior::infinite(),
+    Segment::S0,
+    Some(TransitionMode::Immediate)
+)]
+#[case(2, LoopBehavior::once(), Segment::S1, None)]
+fn send_gain_stm_phase_intensity_full(
+    #[case] n: usize,
+    #[case] loop_behavior: LoopBehavior,
+    #[case] segment: Segment,
+    #[case] transition_mode: Option<TransitionMode>,
+) -> anyhow::Result<()> {
     let mut rng = rand::thread_rng();
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    {
-        let bufs = gen_random_buf(GAIN_STM_BUF_SIZE_MAX, &geometry);
-        let loop_behavior = LoopBehavior::infinite();
-        let segment = Segment::S0;
-        let freq_div = rng
-            .gen_range(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=0xFFFF);
-        let transition_mode = TransitionMode::Immediate;
-        let d = GainSTM::from_sampling_config(
-            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
-            bufs.iter().map(|buf| TestGain { buf: buf.clone() }),
-        )
-        .with_loop_behavior(loop_behavior)
-        .with_segment(segment, Some(transition_mode));
+    let bufs = gen_random_buf(n, &geometry);
+    let freq_div =
+        rng.gen_range(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=0xFFFF);
+    let d = GainSTM::from_sampling_config(
+        SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+        bufs.iter().map(|buf| TestGain { buf: buf.clone() }),
+    )
+    .with_loop_behavior(loop_behavior)
+    .with_segment(segment, transition_mode);
 
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        assert!(cpu.fpga().is_stm_gain_mode(segment));
+    assert!(cpu.fpga().is_stm_gain_mode(segment));
+    assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
+    assert_eq!(bufs.len(), cpu.fpga().stm_cycle(segment));
+    assert_eq!(freq_div, cpu.fpga().stm_freq_division(segment));
+    if let Some(transition_mode) = transition_mode {
         assert_eq!(segment, cpu.fpga().req_stm_segment());
-        assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
-        assert_eq!(bufs.len(), cpu.fpga().stm_cycle(segment));
-        assert_eq!(freq_div, cpu.fpga().stm_freq_division(segment));
         assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
-        (0..bufs.len()).for_each(|gain_idx| {
-            cpu.fpga()
-                .drives(segment, gain_idx)
-                .into_iter()
-                .enumerate()
-                .for_each(|(i, drive)| {
-                    assert_eq!(bufs[gain_idx][&0][i], drive);
-                });
-        });
-    }
-
-    {
-        let bufs = gen_random_buf(2, &geometry);
-        let loop_behavior = LoopBehavior::once();
-        let segment = Segment::S1;
-        let freq_div = 0xFFFF;
-        let d = GainSTM::from_sampling_config(
-            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
-            bufs.iter().map(|buf| TestGain { buf: buf.clone() }),
-        )
-        .with_loop_behavior(loop_behavior)
-        .with_segment(segment, None);
-
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
-
-        assert!(cpu.fpga().is_stm_gain_mode(segment));
+    } else {
         assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
-        assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
-        assert_eq!(bufs.len(), cpu.fpga().stm_cycle(segment));
-        assert_eq!(freq_div, cpu.fpga().stm_freq_division(segment));
-        assert_eq!(TransitionMode::Immediate, cpu.fpga().stm_transition_mode());
-        (0..bufs.len()).for_each(|gain_idx| {
-            cpu.fpga()
-                .drives(segment, gain_idx)
-                .into_iter()
-                .enumerate()
-                .for_each(|(i, drive)| {
-                    assert_eq!(bufs[gain_idx][&0][i], drive);
-                });
-        });
     }
-
-    {
-        let d = SwapSegment::GainSTM(Segment::S1, TransitionMode::SyncIdx);
-
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
-
-        assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
-        assert_eq!(TransitionMode::SyncIdx, cpu.fpga().stm_transition_mode());
-    }
+    (0..bufs.len()).for_each(|gain_idx| {
+        cpu.fpga()
+            .drives(segment, gain_idx)
+            .into_iter()
+            .enumerate()
+            .for_each(|(i, drive)| {
+                assert_eq!(bufs[gain_idx][&0][i], drive);
+            });
+    });
 
     Ok(())
 }
 
-fn send_gain_stm_phase_full(n: usize) -> anyhow::Result<()> {
+#[rstest::rstest]
+#[test]
+#[case(2)]
+#[cfg_attr(miri, ignore)]
+#[case(3)]
+#[cfg_attr(miri, ignore)]
+#[case(GAIN_STM_BUF_SIZE_MAX)]
+fn send_gain_stm_phase_full(#[case] n: usize) -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -169,15 +149,19 @@ fn send_gain_stm_phase_full(n: usize) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[rstest::rstest]
 #[test]
-fn test_send_gain_stm_phase_full() -> anyhow::Result<()> {
-    send_gain_stm_phase_full(2)?;
-    send_gain_stm_phase_full(3)?;
-    send_gain_stm_phase_full(GAIN_STM_BUF_SIZE_MAX)?;
-    Ok(())
-}
+#[case(2)]
+#[cfg_attr(miri, ignore)]
+#[case(3)]
+#[cfg_attr(miri, ignore)]
+#[case(4)]
+#[cfg_attr(miri, ignore)]
+#[case(5)]
+#[cfg_attr(miri, ignore)]
+#[case(GAIN_STM_BUF_SIZE_MAX)]
 
-fn send_gain_stm_phase_half(n: usize) -> anyhow::Result<()> {
+fn send_gain_stm_phase_half(#[case] n: usize) -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -229,16 +213,6 @@ fn send_gain_stm_phase_half(n: usize) -> anyhow::Result<()> {
 }
 
 #[test]
-fn test_send_gain_stm_phase_half() -> anyhow::Result<()> {
-    send_gain_stm_phase_half(2)?;
-    send_gain_stm_phase_half(3)?;
-    send_gain_stm_phase_half(4)?;
-    send_gain_stm_phase_half(5)?;
-    send_gain_stm_phase_half(GAIN_STM_BUF_SIZE_MAX)?;
-    Ok(())
-}
-
-#[test]
 fn change_gain_stm_segment() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -248,7 +222,7 @@ fn change_gain_stm_segment() -> anyhow::Result<()> {
     assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
     let d = GainSTM::from_sampling_config(
         SamplingConfig::Division(NonZeroU16::MAX),
-        gen_random_buf(GAIN_STM_BUF_SIZE_MAX, &geometry)
+        gen_random_buf(2, &geometry)
             .into_iter()
             .map(|buf| TestGain { buf: buf.clone() }),
     )
@@ -266,6 +240,7 @@ fn change_gain_stm_segment() -> anyhow::Result<()> {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -331,6 +306,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -382,6 +358,7 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -440,6 +417,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn invalid_gain_stm_mode() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());

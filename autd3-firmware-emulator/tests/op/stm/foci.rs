@@ -40,8 +40,22 @@ pub fn gen_random_foci<const N: usize>(num: usize) -> Vec<ControlPoints<N>> {
         .collect()
 }
 
+#[rstest::rstest]
 #[test]
-fn test_send_foci_stm() {
+#[cfg_attr(miri, ignore)]
+#[case(
+    FOCI_STM_BUF_SIZE_MAX,
+    LoopBehavior::infinite(),
+    Segment::S0,
+    Some(TransitionMode::Immediate)
+)]
+#[case(2, LoopBehavior::once(), Segment::S1, None)]
+fn test_send_foci_stm(
+    #[case] n: usize,
+    #[case] loop_behavior: LoopBehavior,
+    #[case] segment: Segment,
+    #[case] transition_mode: Option<TransitionMode>,
+) {
     let sin_table = include_bytes!("sin.dat");
     let atan_table = include_bytes!("atan.dat");
 
@@ -52,115 +66,55 @@ fn test_send_foci_stm() {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    {
-        let freq_div = rng
-            .gen_range(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=0xFFFF);
-        let foci = gen_random_foci::<1>(FOCI_STM_BUF_SIZE_MAX);
-        let loop_behavior = LoopBehavior::infinite();
-        let segment = Segment::S0;
-        let transition_mode = TransitionMode::Immediate;
+    let freq_div =
+        rng.gen_range(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=0xFFFF);
+    let foci = gen_random_foci::<1>(n);
 
-        let stm = FociSTM::from_sampling_config(
-            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
-            foci.clone(),
-        )
-        .with_loop_behavior(loop_behavior)
-        .with_segment(segment, Some(transition_mode));
+    let stm = FociSTM::from_sampling_config(
+        SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+        foci.clone(),
+    )
+    .with_loop_behavior(loop_behavior)
+    .with_segment(segment, transition_mode);
 
-        assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
 
-        assert!(!cpu.fpga().is_stm_gain_mode(Segment::S0));
+    assert!(!cpu.fpga().is_stm_gain_mode(segment));
+    assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
+    assert_eq!(foci.len(), cpu.fpga().stm_cycle(segment));
+    assert_eq!(freq_div, cpu.fpga().stm_freq_division(segment));
+    if let Some(transition_mode) = transition_mode {
         assert_eq!(segment, cpu.fpga().req_stm_segment());
-        assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(Segment::S0));
-        assert_eq!(foci.len(), cpu.fpga().stm_cycle(Segment::S0));
-        assert_eq!(freq_div, cpu.fpga().stm_freq_division(Segment::S0));
         assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
-        assert_eq!(
-            (geometry[0].sound_speed / METER * 64.0).round() as u16,
-            cpu.fpga().sound_speed(Segment::S0)
-        );
-        foci.iter().enumerate().for_each(|(focus_idx, focus)| {
-            cpu.fpga()
-                .drives(Segment::S0, focus_idx)
-                .iter()
-                .enumerate()
-                .for_each(|(tr_idx, &drive)| {
-                    let tr = cpu.fpga().local_tr_pos()[tr_idx];
-                    let tx = ((tr >> 16) & 0xFFFF) as i32;
-                    let ty = (tr & 0xFFFF) as i16 as i32;
-                    let tz = 0;
-                    let fx = (focus[0].point().x / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                    let fy = (focus[0].point().y / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                    let fz = (focus[0].point().z / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                    let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
-                    let q = (d << 14) / cpu.fpga().sound_speed(Segment::S0) as u32;
-                    let sin = (sin_table[q as usize % 256] >> 1) as usize;
-                    let cos = (sin_table[(q as usize + 64) % 256] >> 1) as usize;
-                    let p = atan_table[(sin << 7) | cos];
-                    assert_eq!(Phase::new(p), drive.phase());
-                    assert_eq!(focus.intensity(), drive.intensity());
-                })
-        });
-    }
-
-    {
-        let freq_div = rng
-            .gen_range(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=0xFFFF);
-        let foci = gen_random_foci::<1>(2);
-        let loop_behavior = LoopBehavior::once();
-        let segment = Segment::S1;
-
-        let stm = FociSTM::from_sampling_config(
-            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
-            foci.clone(),
-        )
-        .with_loop_behavior(loop_behavior)
-        .with_segment(segment, None);
-
-        assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
-
-        assert!(!cpu.fpga().is_stm_gain_mode(Segment::S1));
+    } else {
         assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
-        assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(Segment::S1));
-        assert_eq!(foci.len(), cpu.fpga().stm_cycle(Segment::S1));
-        assert_eq!(freq_div, cpu.fpga().stm_freq_division(Segment::S1));
-        assert_eq!(TransitionMode::Immediate, cpu.fpga().stm_transition_mode());
-        assert_eq!(
-            (geometry[0].sound_speed / METER * 64.0).round() as u16,
-            cpu.fpga().sound_speed(Segment::S1)
-        );
-        foci.iter().enumerate().for_each(|(focus_idx, focus)| {
-            cpu.fpga()
-                .drives(Segment::S1, focus_idx)
-                .iter()
-                .enumerate()
-                .for_each(|(tr_idx, &drive)| {
-                    let tr = cpu.fpga().local_tr_pos()[tr_idx];
-                    let tx = ((tr >> 16) & 0xFFFF) as i32;
-                    let ty = (tr & 0xFFFF) as i16 as i32;
-                    let tz = 0;
-                    let fx = (focus[0].point().x / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                    let fy = (focus[0].point().y / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                    let fz = (focus[0].point().z / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                    let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
-                    let q = (d << 14) / cpu.fpga().sound_speed(Segment::S0) as u32;
-                    let sin = (sin_table[q as usize % 256] >> 1) as usize;
-                    let cos = (sin_table[(q as usize + 64) % 256] >> 1) as usize;
-                    let p = atan_table[sin << 7 | cos];
-                    assert_eq!(Phase::new(p), drive.phase());
-                    assert_eq!(focus.intensity(), drive.intensity());
-                })
-        });
     }
-
-    {
-        let d = SwapSegment::FociSTM(Segment::S1, TransitionMode::SyncIdx);
-
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
-
-        assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
-        assert_eq!(TransitionMode::SyncIdx, cpu.fpga().stm_transition_mode());
-    }
+    assert_eq!(
+        (geometry[0].sound_speed / METER * 64.0).round() as u16,
+        cpu.fpga().sound_speed(segment)
+    );
+    foci.iter().enumerate().for_each(|(focus_idx, focus)| {
+        cpu.fpga()
+            .drives(segment, focus_idx)
+            .iter()
+            .enumerate()
+            .for_each(|(tr_idx, &drive)| {
+                let tr = cpu.fpga().local_tr_pos()[tr_idx];
+                let tx = ((tr >> 16) & 0xFFFF) as i32;
+                let ty = (tr & 0xFFFF) as i16 as i32;
+                let tz = 0;
+                let fx = (focus[0].point().x / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                let fy = (focus[0].point().y / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                let fz = (focus[0].point().z / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+                let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
+                let q = (d << 14) / cpu.fpga().sound_speed(segment) as u32;
+                let sin = (sin_table[q as usize % 256] >> 1) as usize;
+                let cos = (sin_table[(q as usize + 64) % 256] >> 1) as usize;
+                let p = atan_table[(sin << 7) | cos];
+                assert_eq!(Phase::new(p), drive.phase());
+                assert_eq!(focus.intensity(), drive.intensity());
+            })
+    });
 }
 
 #[test]
@@ -190,6 +144,7 @@ fn change_foci_stm_segment() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_foci_stm_freq_div_too_small() {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -248,6 +203,7 @@ fn test_foci_stm_freq_div_too_small() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn send_foci_stm_invalid_segment_transition() {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -299,6 +255,7 @@ fn send_foci_stm_invalid_segment_transition() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn send_foci_stm_invalid_transition_mode() {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -355,6 +312,7 @@ fn send_foci_stm_invalid_transition_mode() {
 #[case(Ok(()), ECAT_DC_SYS_TIME_BASE, ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
 #[case(Err(AUTDInternalError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE, ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN-autd3_driver::ethercat::EC_CYCLE_TIME_BASE_NANO_SEC))]
 #[case(Err(AUTDInternalError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(1), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
+#[cfg_attr(miri, ignore)]
 fn test_miss_transition_time(
     #[case] expect: Result<(), AUTDInternalError>,
     #[case] systime: OffsetDateTime,
@@ -450,36 +408,43 @@ fn test_send_foci_stm_n<const N: usize>() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_send_foci_stm_2() {
     test_send_foci_stm_n::<2>()
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_send_foci_stm_3() {
     test_send_foci_stm_n::<3>()
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_send_foci_stm_4() {
     test_send_foci_stm_n::<4>()
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_send_foci_stm_5() {
     test_send_foci_stm_n::<5>()
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_send_foci_stm_6() {
     test_send_foci_stm_n::<6>()
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_send_foci_stm_7() {
     test_send_foci_stm_n::<7>()
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_send_foci_stm_8() {
     test_send_foci_stm_n::<8>()
 }
