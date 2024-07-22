@@ -430,8 +430,8 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
     )
     .with_segment(Segment::S0, Some(TransitionMode::Immediate));
 
-    let gen = d.operation_generator(&geometry)?;
-    let mut op = OperationHandler::generate(gen, &geometry);
+    let generator = d.operation_generator(&geometry)?;
+    let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)?;
     tx[0].payload[2] = 3;
 

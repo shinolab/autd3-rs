@@ -28,8 +28,8 @@ pub fn send(
 ) -> Result<(), AUTDInternalError> {
     let _timeout = d.timeout();
     let parallel_threshold = d.parallel_threshold().unwrap_or(4);
-    let gen = d.operation_generator(geometry)?;
-    let mut op = OperationHandler::generate(gen, geometry);
+    let generator = d.operation_generator(geometry)?;
+    let mut op = OperationHandler::generate(generator, geometry);
     loop {
         if OperationHandler::is_done(&op) {
             break;
@@ -82,16 +82,16 @@ fn send_ingore_same_data() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let d = Clear::new();
-    let gen = d.operation_generator(&geometry)?;
-    let mut op = OperationHandler::generate(gen, &geometry);
+    let generator = d.operation_generator(&geometry)?;
+    let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)?;
     cpu.send(&tx);
     let msg_id = tx[0].header.msg_id;
     assert_eq!(cpu.rx().ack(), tx[0].header.msg_id);
 
     let d = Synchronize::new();
-    let gen = d.operation_generator(&geometry)?;
-    let mut op = OperationHandler::generate(gen, &geometry);
+    let generator = d.operation_generator(&geometry)?;
+    let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)?;
     tx[0].header.msg_id = msg_id;
     assert!(!cpu.synchronized());
@@ -108,8 +108,8 @@ fn send_slot_2() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let d = (Clear::new(), Synchronize::new());
-    let gen = d.operation_generator(&geometry)?;
-    let mut op = OperationHandler::generate(gen, &geometry);
+    let generator = d.operation_generator(&geometry)?;
+    let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)?;
 
     assert!(!cpu.synchronized());
@@ -127,8 +127,8 @@ fn send_slot_2_err() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let d = (Clear::new(), Synchronize::new());
-    let gen = d.operation_generator(&geometry)?;
-    let mut op = OperationHandler::generate(gen, &geometry);
+    let generator = d.operation_generator(&geometry)?;
+    let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)?;
 
     let slot2_offset = tx[0].header.slot_2_offset as usize;

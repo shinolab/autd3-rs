@@ -188,7 +188,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
         }
     };
 
-    let gen = quote! {
+    let generator = quote! {
         #prop
 
         #loop_behavior
@@ -203,5 +203,5 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
 
         #radiation_pressure
     };
-    gen.into()
+    generator.into()
 }

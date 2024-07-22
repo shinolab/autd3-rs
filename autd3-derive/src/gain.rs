@@ -140,7 +140,7 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
         }
     };
 
-    let gen = quote! {
+    let generator = quote! {
         #datagram
 
         #datagram_with_segment
@@ -149,5 +149,5 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
 
         #transform
     };
-    gen.into()
+    generator.into()
 }

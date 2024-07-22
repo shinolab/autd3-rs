@@ -73,7 +73,7 @@ impl<'a, K: PartialEq + Debug, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
 
         d.trace(&cnt.geometry);
 
-        let gen = d.operation_generator(&cnt.geometry)?;
+        let generator = d.operation_generator(&cnt.geometry)?;
 
         operations
             .iter_mut()
@@ -82,7 +82,7 @@ impl<'a, K: PartialEq + Debug, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
                 if let Some(kk) = (f)(dev) {
                     if kk == k {
                         tracing::debug!("Generate operation for device {}", dev.idx());
-                        let (op1, op2) = gen.generate(dev);
+                        let (op1, op2) = generator.generate(dev);
                         *op = (Box::new(op1) as Box<_>, Box::new(op2) as Box<_>);
                     }
                 }
