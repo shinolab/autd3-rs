@@ -128,9 +128,9 @@ mod tests {
             backend,
             [(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)],
         )
-        .with_repeat(50);
+        .with_repeat(5);
 
-        assert_eq!(g.repeat(), 50);
+        assert_eq!(g.repeat(), 5);
         assert_eq!(
             g.constraint(),
             EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX)
@@ -165,6 +165,7 @@ mod tests {
                 (Vector3::new(-10., 10., 100.), 5e3 * Pa),
             ],
         )
+        .with_repeat(5)
         .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)));
 
         let filter = geometry

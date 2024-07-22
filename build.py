@@ -218,7 +218,7 @@ def rust_test(args):
                 if args.miri
                 else config.cargo_command_base(["nextest", "run"])
             )
-            features = "test-utilities remote"
+            features = "remote"
             if args.features is not None:
                 features += " " + args.features
             command.append("--features")
@@ -299,7 +299,7 @@ def rust_coverage(args):
             RUSTFLAGS="-C instrument-coverage",
             LLVM_PROFILE_FILE="%m-%p.profraw",
         ):
-            features = "remote test-utilities test"
+            features = "remote"
             command = [
                 "cargo",
                 "build",

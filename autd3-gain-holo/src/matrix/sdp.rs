@@ -245,11 +245,11 @@ mod tests {
         )
         .with_alpha(0.1)
         .with_lambda(0.9)
-        .with_repeat(10);
+        .with_repeat(2);
 
         assert_eq!(g.alpha(), 0.1);
         assert_eq!(g.lambda(), 0.9);
-        assert_eq!(g.repeat(), 10);
+        assert_eq!(g.repeat(), 2);
         assert_eq!(
             g.constraint(),
             EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX)
@@ -281,6 +281,7 @@ mod tests {
                 (Vector3::new(-10., 10., 100.), 5e3 * Pa),
             ],
         )
+        .with_repeat(2)
         .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)));
 
         let filter = geometry

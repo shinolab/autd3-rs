@@ -286,6 +286,7 @@ mod tests {
     use autd3_driver::{autd3_device::AUTD3, geometry::IntoDevice};
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_lm_all() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
         let backend = Arc::new(NalgebraBackend::default());
@@ -325,6 +326,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_lm_filtered() {
         let geometry: Geometry = Geometry::new(vec![
             AUTD3::new(Vector3::zeros()).into_device(0),

@@ -11,7 +11,7 @@ readme = "README.md"
 keywords = ["autd"]
 
 [dependencies]
-assert_approx_eq = { workspace = true, optional = true }
+assert_approx_eq = { workspace = true }
 autd3-driver = { path = "../autd3-driver", version = "26.0.0" }
 nalgebra = { workspace = true, features = ["std"] }
 rand = { workspace = true }
@@ -24,7 +24,6 @@ rayon = { workspace = true }
 
 [features]
 default = []
-test-utilities = ["assert_approx_eq"]
 capi = ["async-trait"]
 bench-utilities = ["criterion"]
 async-trait = ["autd3-driver/async-trait"]
@@ -38,6 +37,7 @@ path = "benches/holo.rs"
 harness = false
 
 [dev-dependencies]
+anyhow = { workspace = true }
 approx = "0.5.1"
 assert_approx_eq = { workspace = true }
 rstest = { workspace = true }

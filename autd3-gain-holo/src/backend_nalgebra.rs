@@ -19,6 +19,26 @@ pub struct NalgebraBackend<D: Directivity> {
     _phantom: std::marker::PhantomData<D>,
 }
 
+macro_rules! par_map {
+    ($iter:expr, $f:expr) => {
+        if cfg!(miri) {
+            $iter.iter().map($f).collect::<Vec<_>>()
+        } else {
+            $iter.par_iter().map($f).collect::<Vec<_>>()
+        }
+    };
+}
+
+macro_rules! par_for_each {
+    ($iter:expr, $f:expr) => {
+        if cfg!(miri) {
+            $iter.for_each($f)
+        } else {
+            $iter.par_bridge().for_each($f)
+        }
+    };
+}
+
 impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
     type MatrixXc = MatrixXc;
     type MatrixX = MatrixX;
@@ -57,9 +77,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
 
         if let Some(filter) = filter {
             if geometry.num_devices() < foci.len() {
-                let columns = foci
-                .par_iter()
-                .map(|f| {
+                let columns = par_map!(foci, |f| {
                     nalgebra::Matrix::<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>::from_iterator(
                         n,
                         geometry.devices().flat_map(|dev| {
@@ -82,8 +100,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
                             })
                         }),
                     )
-                })
-                .collect::<Vec<_>>();
+                });
                 Ok(MatrixXc::from_rows(&columns))
             } else {
                 let mut r = MatrixXc::from_data(unsafe {
@@ -116,7 +133,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
                 unsafe impl Send for Ptr {}
                 unsafe impl Sync for Ptr {}
                 let ptr = Ptr(r.as_mut_ptr());
-                geometry.devices().par_bridge().for_each(move |dev| {
+                par_for_each!(geometry.devices(), move |dev| {
                     let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
                     let filter = filter.get(&dev.idx());
                     dev.iter().for_each(move |tr| {
@@ -137,24 +154,16 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
                 Ok(r)
             }
         } else if geometry.num_devices() < foci.len() {
-            let columns = foci
-                .par_iter()
-                .map(|f| {
-                    nalgebra::Matrix::<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>::from_iterator(
-                        n,
-                        geometry.devices().flat_map(|dev| {
-                            dev.iter().map(move |tr| {
-                                            propagate::<D>(
-                                                tr,
-                                                dev.wavenumber(),
-                                                dev.axial_direction(),
-                                                f,
-                                            )
-                                })
-                            })
-                    )}
+            let columns = par_map!(foci, |f| {
+                nalgebra::Matrix::<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>::from_iterator(
+                    n,
+                    geometry.devices().flat_map(|dev| {
+                        dev.iter().map(move |tr| {
+                            propagate::<D>(tr, dev.wavenumber(), dev.axial_direction(), f)
+                        })
+                    }),
                 )
-                .collect::<Vec<_>>();
+            });
             Ok(MatrixXc::from_rows(&columns))
         } else {
             let mut r = MatrixXc::from_data(unsafe {
@@ -187,7 +196,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
             unsafe impl Send for Ptr {}
             unsafe impl Sync for Ptr {}
             let ptr = Ptr(r.as_mut_ptr());
-            geometry.devices().par_bridge().for_each(move |dev| {
+            par_for_each!(geometry.devices(), move |dev| {
                 let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
                 dev.iter().for_each(move |tr| {
                     foci.iter().for_each(|f| {
@@ -642,19 +651,1911 @@ impl Default for NalgebraBackend<autd3_driver::acoustics::directivity::Sphere> {
     }
 }
 
-#[cfg(all(test, feature = "test-utilities"))]
+#[cfg(test)]
 mod tests {
-    use autd3_driver::acoustics::directivity::Sphere;
+    use autd3_driver::{
+        acoustics::directivity::Sphere,
+        autd3_device::AUTD3,
+        defined::PI,
+        geometry::{IntoDevice, Vector3},
+    };
+
+    use crate::{Amplitude, Pa, Trans};
 
     use super::*;
 
-    use crate::test_utilities::*;
+    use rand::Rng;
 
+    const N: usize = 10;
+    const EPS: f32 = 1e-3;
+
+    fn generate_geometry(size: usize) -> Geometry {
+        Geometry::new(
+            (0..size)
+                .flat_map(|i| {
+                    (0..size).map(move |j| {
+                        AUTD3::new(Vector3::new(
+                            i as f32 * AUTD3::DEVICE_WIDTH,
+                            j as f32 * AUTD3::DEVICE_HEIGHT,
+                            0.,
+                        ))
+                        .into_device(j + i * size)
+                    })
+                })
+                .collect(),
+        )
+    }
+
+    fn gen_foci(n: usize) -> impl Iterator<Item = (Vector3, Amplitude)> {
+        (0..n).map(move |i| {
+            (
+                Vector3::new(
+                    90. + 10. * (2.0 * PI * i as f32 / n as f32).cos(),
+                    70. + 10. * (2.0 * PI * i as f32 / n as f32).sin(),
+                    150.,
+                ),
+                10e3 * Pa,
+            )
+        })
+    }
+
+    fn make_random_v(backend: &NalgebraBackend<Sphere>, size: usize) -> Result<VectorX, HoloError> {
+        let mut rng = rand::thread_rng();
+        let v: Vec<f32> = (&mut rng)
+            .sample_iter(rand::distributions::Standard)
+            .take(size)
+            .collect();
+        backend.from_slice_v(&v)
+    }
+
+    fn make_random_m(
+        backend: &NalgebraBackend<Sphere>,
+        rows: usize,
+        cols: usize,
+    ) -> Result<MatrixX, HoloError> {
+        let mut rng = rand::thread_rng();
+        let v: Vec<f32> = (&mut rng)
+            .sample_iter(rand::distributions::Standard)
+            .take(rows * cols)
+            .collect();
+        backend.from_slice_m(rows, cols, &v)
+    }
+
+    fn make_random_cv(
+        backend: &NalgebraBackend<Sphere>,
+        size: usize,
+    ) -> Result<VectorXc, HoloError> {
+        let mut rng = rand::thread_rng();
+        let real: Vec<f32> = (&mut rng)
+            .sample_iter(rand::distributions::Standard)
+            .take(size)
+            .collect();
+        let imag: Vec<f32> = (&mut rng)
+            .sample_iter(rand::distributions::Standard)
+            .take(size)
+            .collect();
+        backend.from_slice2_cv(&real, &imag)
+    }
+
+    fn make_random_cm(
+        backend: &NalgebraBackend<Sphere>,
+        rows: usize,
+        cols: usize,
+    ) -> Result<MatrixXc, HoloError> {
+        let mut rng = rand::thread_rng();
+        let real: Vec<f32> = (&mut rng)
+            .sample_iter(rand::distributions::Standard)
+            .take(rows * cols)
+            .collect();
+        let imag: Vec<f32> = (&mut rng)
+            .sample_iter(rand::distributions::Standard)
+            .take(rows * cols)
+            .collect();
+        backend.from_slice2_cm(rows, cols, &real, &imag)
+    }
+
+    #[rstest::fixture]
+    fn backend() -> NalgebraBackend<Sphere> {
+        NalgebraBackend::default()
+    }
+
+    #[rstest::rstest]
     #[test]
-    fn test_nalgebra_backend() {
-        LinAlgBackendTestHelper::<10, NalgebraBackend<Sphere>>::new()
-            .unwrap()
-            .test()
+    #[cfg_attr(miri, ignore)]
+    fn test_alloc_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let v = backend.alloc_v(N)?;
+        let v = backend.to_host_v(v)?;
+
+        assert_eq!(N, v.len());
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_alloc_m(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let m = backend.alloc_m(N, 2 * N)?;
+        let m = backend.to_host_m(m)?;
+
+        assert_eq!(N, m.nrows());
+        assert_eq!(2 * N, m.ncols());
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_alloc_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let v = backend.alloc_cv(N)?;
+        let v = backend.to_host_cv(v)?;
+
+        assert_eq!(N, v.len());
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_alloc_cm(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let m = backend.alloc_cm(N, 2 * N)?;
+        let m = backend.to_host_cm(m)?;
+
+        assert_eq!(N, m.nrows());
+        assert_eq!(2 * N, m.ncols());
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_alloc_zeros_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let v = backend.alloc_v(N)?;
+        let v = backend.to_host_v(v)?;
+
+        assert_eq!(N, v.len());
+        assert!(v.iter().all(|&v| v == 0.));
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_alloc_zeros_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let v = backend.alloc_cv(N)?;
+        let v = backend.to_host_cv(v)?;
+
+        assert_eq!(N, v.len());
+        assert!(v.iter().all(|&v| v == Complex::new(0., 0.)));
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_alloc_zeros_cm(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let m = backend.alloc_cm(N, 2 * N)?;
+        let m = backend.to_host_cm(m)?;
+
+        assert_eq!(N, m.nrows());
+        assert_eq!(2 * N, m.ncols());
+        assert!(m.iter().all(|&v| v == Complex::new(0., 0.)));
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_cols_c(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let m = backend.alloc_cm(N, 2 * N)?;
+
+        assert_eq!(2 * N, backend.cols_c(&m)?);
+
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_slice_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let rng = rand::thread_rng();
+
+        let v: Vec<f32> = rng
+            .sample_iter(rand::distributions::Standard)
+            .take(N)
+            .collect();
+
+        let c = backend.from_slice_v(&v)?;
+        let c = backend.to_host_v(c)?;
+
+        assert_eq!(N, c.len());
+        v.iter().zip(c.iter()).for_each(|(&r, &c)| {
+            assert_eq!(r, c);
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_slice_m(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let rng = rand::thread_rng();
+
+        let v: Vec<f32> = rng
+            .sample_iter(rand::distributions::Standard)
+            .take(N * 2 * N)
+            .collect();
+
+        let c = backend.from_slice_m(N, 2 * N, &v)?;
+        let c = backend.to_host_m(c)?;
+
+        assert_eq!(N, c.nrows());
+        assert_eq!(2 * N, c.ncols());
+        (0..2 * N).for_each(|col| {
+            (0..N).for_each(|row| {
+                assert_eq!(v[col * N + row], c[(row, col)]);
+            })
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_slice_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let rng = rand::thread_rng();
+
+        let real: Vec<f32> = rng
+            .sample_iter(rand::distributions::Standard)
+            .take(N)
+            .collect();
+
+        let c = backend.from_slice_cv(&real)?;
+        let c = backend.to_host_cv(c)?;
+
+        assert_eq!(N, c.len());
+        real.iter().zip(c.iter()).for_each(|(r, c)| {
+            assert_eq!(r, &c.re);
+            assert_eq!(0.0, c.im);
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_slice2_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let mut rng = rand::thread_rng();
+
+        let real: Vec<f32> = (&mut rng)
+            .sample_iter(rand::distributions::Standard)
+            .take(N)
+            .collect();
+        let imag: Vec<f32> = (&mut rng)
+            .sample_iter(rand::distributions::Standard)
+            .take(N)
+            .collect();
+
+        let c = backend.from_slice2_cv(&real, &imag)?;
+        let c = backend.to_host_cv(c)?;
+
+        assert_eq!(N, c.len());
+        real.iter()
+            .zip(imag.iter())
+            .zip(c.iter())
+            .for_each(|((r, i), c)| {
+                assert_eq!(r, &c.re);
+                assert_eq!(i, &c.im);
+            });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_from_slice2_cm(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let mut rng = rand::thread_rng();
+
+        let real: Vec<f32> = (&mut rng)
+            .sample_iter(rand::distributions::Standard)
+            .take(N * 2 * N)
+            .collect();
+        let imag: Vec<f32> = (&mut rng)
+            .sample_iter(rand::distributions::Standard)
+            .take(N * 2 * N)
+            .collect();
+
+        let c = backend.from_slice2_cm(N, 2 * N, &real, &imag)?;
+        let c = backend.to_host_cm(c)?;
+
+        assert_eq!(N, c.nrows());
+        assert_eq!(2 * N, c.ncols());
+        (0..2 * N).for_each(|col| {
+            (0..N).for_each(|row| {
+                assert_eq!(real[col * N + row], c[(row, col)].re);
+                assert_eq!(imag[col * N + row], c[(row, col)].im);
+            })
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_copy_from_slice_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        {
+            let mut a = backend.alloc_zeros_v(N)?;
+            let mut rng = rand::thread_rng();
+            let v = (&mut rng)
+                .sample_iter(rand::distributions::Standard)
+                .take(N / 2)
+                .collect::<Vec<f32>>();
+
+            backend.copy_from_slice_v(&v, &mut a)?;
+
+            let a = backend.to_host_v(a)?;
+            (0..N / 2).for_each(|i| {
+                assert_eq!(v[i], a[i]);
+            });
+            (N / 2..N).for_each(|i| {
+                assert_eq!(0., a[i]);
+            });
+        }
+
+        {
+            let mut a = backend.alloc_zeros_v(N)?;
+            let v = [];
+
+            backend.copy_from_slice_v(&v, &mut a)?;
+
+            let a = backend.to_host_v(a)?;
+            a.iter().for_each(|&a| {
+                assert_eq!(0., a);
+            });
+        }
+
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_copy_to_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let a = make_random_v(&backend, N)?;
+        let mut b = backend.alloc_v(N)?;
+
+        backend.copy_to_v(&a, &mut b)?;
+
+        let a = backend.to_host_v(a)?;
+        let b = backend.to_host_v(b)?;
+        a.iter().zip(b.iter()).for_each(|(a, b)| {
+            assert_eq!(a, b);
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_copy_to_m(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let a = make_random_m(&backend, N, N)?;
+        let mut b = backend.alloc_m(N, N)?;
+
+        backend.copy_to_m(&a, &mut b)?;
+
+        let a = backend.to_host_m(a)?;
+        let b = backend.to_host_m(b)?;
+        a.iter().zip(b.iter()).for_each(|(a, b)| {
+            assert_eq!(a, b);
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_clone_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let c = make_random_v(&backend, N)?;
+        let c2 = backend.clone_v(&c)?;
+
+        let c = backend.to_host_v(c)?;
+        let c2 = backend.to_host_v(c2)?;
+
+        c.iter().zip(c2.iter()).for_each(|(c, c2)| {
+            assert_eq!(c, c2);
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_clone_m(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let c = make_random_m(&backend, N, N)?;
+        let c2 = backend.clone_m(&c)?;
+
+        let c = backend.to_host_m(c)?;
+        let c2 = backend.to_host_m(c2)?;
+
+        c.iter().zip(c2.iter()).for_each(|(c, c2)| {
+            assert_eq!(c, c2);
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_clone_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let c = make_random_cv(&backend, N)?;
+        let c2 = backend.clone_cv(&c)?;
+
+        let c = backend.to_host_cv(c)?;
+        let c2 = backend.to_host_cv(c2)?;
+
+        c.iter().zip(c2.iter()).for_each(|(c, c2)| {
+            assert_eq!(c.re, c2.re);
+            assert_eq!(c.im, c2.im);
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_clone_cm(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let c = make_random_cm(&backend, N, N)?;
+        let c2 = backend.clone_cm(&c)?;
+
+        let c = backend.to_host_cm(c)?;
+        let c2 = backend.to_host_cm(c2)?;
+
+        c.iter().zip(c2.iter()).for_each(|(c, c2)| {
+            assert_eq!(c.re, c2.re);
+            assert_eq!(c.im, c2.im);
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_make_complex2_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let real = make_random_v(&backend, N)?;
+        let imag = make_random_v(&backend, N)?;
+
+        let mut c = backend.alloc_cv(N)?;
+        backend.make_complex2_v(&real, &imag, &mut c)?;
+
+        let real = backend.to_host_v(real)?;
+        let imag = backend.to_host_v(imag)?;
+        let c = backend.to_host_cv(c)?;
+        real.iter()
+            .zip(imag.iter())
+            .zip(c.iter())
+            .for_each(|((r, i), c)| {
+                assert_eq!(r, &c.re);
+                assert_eq!(i, &c.im);
+            });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_get_col_c(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let a = make_random_cm(&backend, N, N)?;
+        let ac = backend.clone_cm(&a)?;
+
+        let ac = backend.to_host_cm(ac)?;
+        (0..N)
+            .map(|col| {
+                let mut v = backend.alloc_cv(N)?;
+                backend.get_col_c(&a, col, &mut v)?;
+                let v = backend.to_host_cv(v)?;
+                (0..N).for_each(|row| {
+                    assert_eq!(ac[(row, col)].re, v[row].re);
+                    assert_eq!(ac[(row, col)].im, v[row].im);
+                });
+                Ok(())
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_set_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let mut a = backend.alloc_zeros_cv(N)?;
+
+        let mut rng = rand::thread_rng();
+        let i = rng.gen_range(0..N);
+        let v = Complex::new(rng.gen(), rng.gen());
+
+        backend.set_cv(i, v, &mut a)?;
+
+        let a = backend.to_host_cv(a)?;
+        (0..N).for_each(|j| {
+            if j == i {
+                assert_eq!(v.re, a[j].re);
+                assert_eq!(v.im, a[j].im);
+            } else {
+                assert_eq!(0.0, a[j].re);
+                assert_eq!(0.0, a[j].im);
+            }
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_set_col_c(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        {
+            let mut a = backend.alloc_zeros_cm(N, 2 * N)?;
+            let b = make_random_cv(&backend, N)?;
+
+            let mut rng = rand::thread_rng();
+            let i = rng.gen_range(0..2 * N);
+            let start = rng.gen_range(1..=N / 2);
+            let end = rng.gen_range(N / 2..N);
+
+            backend.set_col_c(&b, i, start, end, &mut a)?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cv(b)?;
+            (0..N).for_each(|row| {
+                (0..2 * N).for_each(|col| {
+                    if col == i && (start <= row && row < end) {
+                        assert_eq!(b[row].re, a[(row, col)].re);
+                        assert_eq!(b[row].im, a[(row, col)].im);
+                    } else {
+                        assert_eq!(0.0, a[(row, col)].re);
+                        assert_eq!(0.0, a[(row, col)].im);
+                    }
+                })
+            });
+        }
+
+        {
+            let mut a = backend.alloc_zeros_cm(N, 2 * N)?;
+            let b = make_random_cv(&backend, N)?;
+
+            let mut rng = rand::thread_rng();
+            let i = rng.gen_range(0..2 * N);
+            let start = 0;
+            let end = N - 1;
+
+            backend.set_col_c(&b, i, start, end, &mut a)?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cv(b)?;
+            (0..N).for_each(|row| {
+                (0..2 * N).for_each(|col| {
+                    if col == i && (start <= row && row < end) {
+                        assert_eq!(b[row].re, a[(row, col)].re);
+                        assert_eq!(b[row].im, a[(row, col)].im);
+                    } else {
+                        assert_eq!(0.0, a[(row, col)].re);
+                        assert_eq!(0.0, a[(row, col)].im);
+                    }
+                })
+            });
+        }
+
+        {
+            let mut a = backend.alloc_zeros_cm(N, 2 * N)?;
+            let b = make_random_cv(&backend, N)?;
+
+            let mut rng = rand::thread_rng();
+            let i = rng.gen_range(0..2 * N);
+            let start = 0;
+            let end = 0;
+
+            backend.set_col_c(&b, i, start, end, &mut a)?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cv(b)?;
+            (0..N).for_each(|row| {
+                (0..2 * N).for_each(|col| {
+                    if col == i && (start <= row && row < end) {
+                        assert_eq!(b[row].re, a[(row, col)].re);
+                        assert_eq!(b[row].im, a[(row, col)].im);
+                    } else {
+                        assert_eq!(0.0, a[(row, col)].re);
+                        assert_eq!(0.0, a[(row, col)].im);
+                    }
+                })
+            });
+        }
+
+        {
+            let mut a = backend.alloc_zeros_cm(N, 2 * N)?;
+            let b = make_random_cv(&backend, N)?;
+
+            let mut rng = rand::thread_rng();
+            let i = rng.gen_range(0..2 * N);
+            let start = N - 1;
+            let end = N - 1;
+
+            backend.set_col_c(&b, i, start, end, &mut a)?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cv(b)?;
+            (0..N).for_each(|row| {
+                (0..2 * N).for_each(|col| {
+                    if col == i && (start <= row && row < end) {
+                        assert_eq!(b[row].re, a[(row, col)].re);
+                        assert_eq!(b[row].im, a[(row, col)].im);
+                    } else {
+                        assert_eq!(0.0, a[(row, col)].re);
+                        assert_eq!(0.0, a[(row, col)].im);
+                    }
+                })
+            });
+        }
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_set_row_c(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        {
+            let mut a = backend.alloc_zeros_cm(N, 2 * N)?;
+            let b = make_random_cv(&backend, 2 * N)?;
+
+            let mut rng = rand::thread_rng();
+            let i = rng.gen_range(0..N);
+            let start = rng.gen_range(1..N);
+            let end = rng.gen_range(N..2 * N - 1);
+
+            backend.set_row_c(&b, i, start, end, &mut a)?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cv(b)?;
+            (0..N).for_each(|row| {
+                (0..2 * N).for_each(|col| {
+                    if row == i && (start <= col && col < end) {
+                        assert_eq!(b[col].re, a[(row, col)].re);
+                        assert_eq!(b[col].im, a[(row, col)].im);
+                    } else {
+                        assert_eq!(0.0, a[(row, col)].re);
+                        assert_eq!(0.0, a[(row, col)].im);
+                    }
+                })
+            });
+        }
+
+        {
+            let mut a = backend.alloc_zeros_cm(N, 2 * N)?;
+            let b = make_random_cv(&backend, 2 * N)?;
+
+            let mut rng = rand::thread_rng();
+            let i = rng.gen_range(0..N);
+            let start = 0;
+            let end = 2 * N - 1;
+
+            backend.set_row_c(&b, i, start, end, &mut a)?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cv(b)?;
+            (0..N).for_each(|row| {
+                (0..2 * N).for_each(|col| {
+                    if row == i && (start <= col && col < end) {
+                        assert_eq!(b[col].re, a[(row, col)].re);
+                        assert_eq!(b[col].im, a[(row, col)].im);
+                    } else {
+                        assert_eq!(0.0, a[(row, col)].re);
+                        assert_eq!(0.0, a[(row, col)].im);
+                    }
+                })
+            });
+        }
+
+        {
+            let mut a = backend.alloc_zeros_cm(N, 2 * N)?;
+            let b = make_random_cv(&backend, 2 * N)?;
+
+            let mut rng = rand::thread_rng();
+            let i = rng.gen_range(0..N);
+            let start = 0;
+            let end = 0;
+
+            backend.set_row_c(&b, i, start, end, &mut a)?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cv(b)?;
+            (0..N).for_each(|row| {
+                (0..2 * N).for_each(|col| {
+                    if row == i && (start <= col && col < end) {
+                        assert_eq!(b[col].re, a[(row, col)].re);
+                        assert_eq!(b[col].im, a[(row, col)].im);
+                    } else {
+                        assert_eq!(0.0, a[(row, col)].re);
+                        assert_eq!(0.0, a[(row, col)].im);
+                    }
+                })
+            });
+        }
+
+        {
+            let mut a = backend.alloc_zeros_cm(N, 2 * N)?;
+            let b = make_random_cv(&backend, 2 * N)?;
+
+            let mut rng = rand::thread_rng();
+            let i = rng.gen_range(0..N);
+            let start = 2 * N - 1;
+            let end = 2 * N - 1;
+
+            backend.set_row_c(&b, i, start, end, &mut a)?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cv(b)?;
+            (0..N).for_each(|row| {
+                (0..2 * N).for_each(|col| {
+                    if row == i && (start <= col && col < end) {
+                        assert_eq!(b[col].re, a[(row, col)].re);
+                        assert_eq!(b[col].im, a[(row, col)].im);
+                    } else {
+                        assert_eq!(0.0, a[(row, col)].re);
+                        assert_eq!(0.0, a[(row, col)].im);
+                    }
+                })
+            });
+        }
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_create_diagonal(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let diagonal = make_random_v(&backend, N)?;
+
+        let mut c = backend.alloc_m(N, N)?;
+
+        backend.create_diagonal(&diagonal, &mut c)?;
+
+        let diagonal = backend.to_host_v(diagonal)?;
+        let c = backend.to_host_m(c)?;
+        (0..N).for_each(|i| {
+            (0..N).for_each(|j| {
+                if i == j {
+                    assert_eq!(diagonal[i], c[(i, j)]);
+                } else {
+                    assert_eq!(0.0, c[(i, j)]);
+                }
+            })
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_create_diagonal_c(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let diagonal = make_random_cv(&backend, N)?;
+
+        let mut c = backend.alloc_cm(N, N)?;
+
+        backend.create_diagonal_c(&diagonal, &mut c)?;
+
+        let diagonal = backend.to_host_cv(diagonal)?;
+        let c = backend.to_host_cm(c)?;
+        (0..N).for_each(|i| {
+            (0..N).for_each(|j| {
+                if i == j {
+                    assert_eq!(diagonal[i].re, c[(i, j)].re);
+                    assert_eq!(diagonal[i].im, c[(i, j)].im);
+                } else {
+                    assert_eq!(0.0, c[(i, j)].re);
+                    assert_eq!(0.0, c[(i, j)].im);
+                }
+            })
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_get_diagonal(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let m = make_random_m(&backend, N, N)?;
+        let mut diagonal = backend.alloc_v(N)?;
+
+        backend.get_diagonal(&m, &mut diagonal)?;
+
+        let m = backend.to_host_m(m)?;
+        let diagonal = backend.to_host_v(diagonal)?;
+        (0..N).for_each(|i| {
+            assert_eq!(m[(i, i)], diagonal[i]);
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_norm_squared_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let v = make_random_cv(&backend, N)?;
+
+        let mut abs = backend.alloc_v(N)?;
+        backend.norm_squared_cv(&v, &mut abs)?;
+
+        let v = backend.to_host_cv(v)?;
+        let abs = backend.to_host_v(abs)?;
+        v.iter().zip(abs.iter()).for_each(|(v, abs)| {
+            assert_approx_eq::assert_approx_eq!(v.norm_squared(), abs, EPS);
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_real_cm(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let v = make_random_cm(&backend, N, N)?;
+        let mut r = backend.alloc_m(N, N)?;
+
+        backend.real_cm(&v, &mut r)?;
+
+        let v = backend.to_host_cm(v)?;
+        let r = backend.to_host_m(r)?;
+        (0..N).for_each(|i| {
+            (0..N).for_each(|j| {
+                assert_approx_eq::assert_approx_eq!(v[(i, j)].re, r[(i, j)], EPS);
+            })
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_imag_cm(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let v = make_random_cm(&backend, N, N)?;
+        let mut r = backend.alloc_m(N, N)?;
+
+        backend.imag_cm(&v, &mut r)?;
+
+        let v = backend.to_host_cm(v)?;
+        let r = backend.to_host_m(r)?;
+        (0..N).for_each(|i| {
+            (0..N).for_each(|j| {
+                assert_approx_eq::assert_approx_eq!(v[(i, j)].im, r[(i, j)], EPS);
+            })
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_scale_assign_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let mut v = make_random_cv(&backend, N)?;
+        let vc = backend.clone_cv(&v)?;
+        let mut rng = rand::thread_rng();
+        let scale = Complex::new(rng.gen(), rng.gen());
+
+        backend.scale_assign_cv(scale, &mut v)?;
+
+        let v = backend.to_host_cv(v)?;
+        let vc = backend.to_host_cv(vc)?;
+        v.iter().zip(vc.iter()).for_each(|(&v, &vc)| {
+            assert_approx_eq::assert_approx_eq!(scale * vc, v, EPS);
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_conj_assign_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let mut v = make_random_cv(&backend, N)?;
+        let vc = backend.clone_cv(&v)?;
+
+        backend.conj_assign_v(&mut v)?;
+
+        let v = backend.to_host_cv(v)?;
+        let vc = backend.to_host_cv(vc)?;
+        v.iter().zip(vc.iter()).for_each(|(&v, &vc)| {
+            assert_eq!(vc.re, v.re);
+            assert_eq!(vc.im, -v.im);
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_exp_assign_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let mut v = make_random_cv(&backend, N)?;
+        let vc = backend.clone_cv(&v)?;
+
+        backend.exp_assign_cv(&mut v)?;
+
+        let v = backend.to_host_cv(v)?;
+        let vc = backend.to_host_cv(vc)?;
+        v.iter().zip(vc.iter()).for_each(|(v, vc)| {
+            assert_approx_eq::assert_approx_eq!(vc.exp(), v, EPS);
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_concat_col_cm(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let a = make_random_cm(&backend, N, N)?;
+        let b = make_random_cm(&backend, N, 2 * N)?;
+        let mut c = backend.alloc_cm(N, N + 2 * N)?;
+
+        backend.concat_col_cm(&a, &b, &mut c)?;
+
+        let a = backend.to_host_cm(a)?;
+        let b = backend.to_host_cm(b)?;
+        let c = backend.to_host_cm(c)?;
+        (0..N).for_each(|col| (0..N).for_each(|row| assert_eq!(a[(row, col)], c[(row, col)])));
+        (0..2 * N)
+            .for_each(|col| (0..N).for_each(|row| assert_eq!(b[(row, col)], c[(row, N + col)])));
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_max_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let v = make_random_v(&backend, N)?;
+
+        let max = backend.max_v(&v)?;
+
+        let v = backend.to_host_v(v)?;
+        assert_eq!(
+            *v.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap(),
+            max
+        );
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_max_eigen_vector_c(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let gen_unitary = |size| -> MatrixXc {
+            let mut rng = rand::thread_rng();
+            let tmp = MatrixXc::from_iterator(
+                size,
+                size,
+                (0..size * size).map(|_| Complex::new(rng.gen(), rng.gen())),
+            );
+
+            let hermite = tmp.adjoint() * &tmp;
+            (hermite * Complex::new(0.0, 1.0)).exp()
+        };
+
+        let u = gen_unitary(N);
+
+        let mut rng = rand::thread_rng();
+        let mut lambda_vals: Vec<f32> = (&mut rng)
+            .sample_iter(rand::distributions::Standard)
+            .take(N)
+            .collect();
+        lambda_vals.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        let lambda = MatrixXc::from_diagonal(&VectorXc::from_iterator(
+            N,
+            lambda_vals.iter().map(|&v| Complex::new(v, 0.)),
+        ));
+
+        let a = &u * &lambda * u.adjoint();
+
+        let real = a.iter().map(|c| c.re).collect::<Vec<f32>>();
+        let imag = a.iter().map(|c| c.im).collect::<Vec<f32>>();
+        let a = backend.from_slice2_cm(N, N, &real, &imag)?;
+
+        let b = backend.max_eigen_vector_c(a)?;
+        let b = backend.to_host_cv(b)?;
+
+        let max_idx = u
+            .transpose()
+            .rows(N - 1, 1)
+            .iter()
+            .enumerate()
+            .max_by(|(_, value0), (_, value1)| {
+                value0.norm_sqr().partial_cmp(&value1.norm_sqr()).unwrap()
+            })
+            .map(|(idx, _)| idx)
             .unwrap();
+
+        let k = b[max_idx] / u.transpose().rows(N - 1, 1)[max_idx];
+        let expected = u.transpose().rows(N - 1, 1) * k;
+
+        (0..N).for_each(|i| {
+            assert_approx_eq::assert_approx_eq!(b[i].re, expected[i].re, 0.1);
+            assert_approx_eq::assert_approx_eq!(b[i].im, expected[i].im, 0.1);
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_hadamard_product_cm(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let a = make_random_cm(&backend, N, N)?;
+        let b = make_random_cm(&backend, N, N)?;
+        let mut c = backend.alloc_cm(N, N)?;
+
+        backend.hadamard_product_cm(&a, &b, &mut c)?;
+
+        let a = backend.to_host_cm(a)?;
+        let b = backend.to_host_cm(b)?;
+        let c = backend.to_host_cm(c)?;
+        c.iter()
+            .zip(a.iter())
+            .zip(b.iter())
+            .for_each(|((c, a), b)| {
+                assert_approx_eq::assert_approx_eq!(a.re * b.re - a.im * b.im, c.re, EPS);
+                assert_approx_eq::assert_approx_eq!(a.re * b.im + a.im * b.re, c.im, EPS);
+            });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_dot(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let a = make_random_v(&backend, N)?;
+        let b = make_random_v(&backend, N)?;
+
+        let dot = backend.dot(&a, &b)?;
+
+        let a = backend.to_host_v(a)?;
+        let b = backend.to_host_v(b)?;
+        let expect = a.iter().zip(b.iter()).map(|(a, b)| a * b).sum::<f32>();
+        assert_approx_eq::assert_approx_eq!(dot, expect, EPS);
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_dot_c(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let a = make_random_cv(&backend, N)?;
+        let b = make_random_cv(&backend, N)?;
+
+        let dot = backend.dot_c(&a, &b)?;
+
+        let a = backend.to_host_cv(a)?;
+        let b = backend.to_host_cv(b)?;
+        let expect = a
+            .iter()
+            .zip(b.iter())
+            .map(|(a, b)| a.conj() * b)
+            .sum::<Complex>();
+        assert_approx_eq::assert_approx_eq!(dot.re, expect.re, EPS);
+        assert_approx_eq::assert_approx_eq!(dot.im, expect.im, EPS);
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_add_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let a = make_random_v(&backend, N)?;
+        let mut b = make_random_v(&backend, N)?;
+        let bc = backend.clone_v(&b)?;
+
+        let mut rng = rand::thread_rng();
+        let alpha = rng.gen();
+
+        backend.add_v(alpha, &a, &mut b)?;
+
+        let a = backend.to_host_v(a)?;
+        let b = backend.to_host_v(b)?;
+        let bc = backend.to_host_v(bc)?;
+        b.iter()
+            .zip(a.iter())
+            .zip(bc.iter())
+            .for_each(|((b, a), bc)| {
+                assert_approx_eq::assert_approx_eq!(alpha * a + bc, b, EPS);
+            });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_add_m(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let a = make_random_m(&backend, N, N)?;
+        let mut b = make_random_m(&backend, N, N)?;
+        let bc = backend.clone_m(&b)?;
+
+        let mut rng = rand::thread_rng();
+        let alpha = rng.gen();
+
+        backend.add_m(alpha, &a, &mut b)?;
+
+        let a = backend.to_host_m(a)?;
+        let b = backend.to_host_m(b)?;
+        let bc = backend.to_host_m(bc)?;
+        b.iter()
+            .zip(a.iter())
+            .zip(bc.iter())
+            .for_each(|((b, a), bc)| {
+                assert_approx_eq::assert_approx_eq!(alpha * a + bc, b, EPS);
+            });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_gevv_c(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let mut rng = rand::thread_rng();
+
+        {
+            let a = make_random_cv(&backend, N)?;
+            let b = make_random_cv(&backend, N)?;
+            let mut c = make_random_cm(&backend, N, N)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            assert!(backend
+                .gevv_c(Trans::NoTrans, Trans::NoTrans, alpha, &a, &b, beta, &mut c)
+                .is_err());
+        }
+
+        {
+            let a = make_random_cv(&backend, N)?;
+            let b = make_random_cv(&backend, N)?;
+            let mut c = make_random_cm(&backend, N, N)?;
+            let cc = backend.clone_cm(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            backend.gevv_c(Trans::NoTrans, Trans::Trans, alpha, &a, &b, beta, &mut c)?;
+
+            let a = backend.to_host_cv(a)?;
+            let b = backend.to_host_cv(b)?;
+            let c = backend.to_host_cm(c)?;
+            let cc = backend.to_host_cm(cc)?;
+            let expected = a * b.transpose() * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+
+        {
+            let a = make_random_cv(&backend, N)?;
+            let b = make_random_cv(&backend, N)?;
+            let mut c = make_random_cm(&backend, N, N)?;
+            let cc = backend.clone_cm(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            backend.gevv_c(
+                Trans::NoTrans,
+                Trans::ConjTrans,
+                alpha,
+                &a,
+                &b,
+                beta,
+                &mut c,
+            )?;
+
+            let a = backend.to_host_cv(a)?;
+            let b = backend.to_host_cv(b)?;
+            let c = backend.to_host_cm(c)?;
+            let cc = backend.to_host_cm(cc)?;
+            let expected = a * b.adjoint() * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+
+        {
+            let a = make_random_cv(&backend, N)?;
+            let b = make_random_cv(&backend, N)?;
+            let mut c = make_random_cm(&backend, 1, 1)?;
+            let cc = backend.clone_cm(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            backend.gevv_c(Trans::Trans, Trans::NoTrans, alpha, &a, &b, beta, &mut c)?;
+
+            let a = backend.to_host_cv(a)?;
+            let b = backend.to_host_cv(b)?;
+            let c = backend.to_host_cm(c)?;
+            let cc = backend.to_host_cm(cc)?;
+            let expected = a.transpose() * b * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+
+        {
+            let a = make_random_cv(&backend, N)?;
+            let b = make_random_cv(&backend, N)?;
+            let mut c = make_random_cm(&backend, N, N)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            assert!(backend
+                .gevv_c(Trans::Trans, Trans::Trans, alpha, &a, &b, beta, &mut c)
+                .is_err());
+        }
+
+        {
+            let a = make_random_cv(&backend, N)?;
+            let b = make_random_cv(&backend, N)?;
+            let mut c = make_random_cm(&backend, N, N)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            assert!(backend
+                .gevv_c(Trans::Trans, Trans::ConjTrans, alpha, &a, &b, beta, &mut c)
+                .is_err());
+        }
+
+        {
+            let a = make_random_cv(&backend, N)?;
+            let b = make_random_cv(&backend, N)?;
+            let mut c = make_random_cm(&backend, 1, 1)?;
+            let cc = backend.clone_cm(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            backend.gevv_c(
+                Trans::ConjTrans,
+                Trans::NoTrans,
+                alpha,
+                &a,
+                &b,
+                beta,
+                &mut c,
+            )?;
+
+            let a = backend.to_host_cv(a)?;
+            let b = backend.to_host_cv(b)?;
+            let c = backend.to_host_cm(c)?;
+            let cc = backend.to_host_cm(cc)?;
+            let expected = a.adjoint() * b * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+
+        {
+            let a = make_random_cv(&backend, N)?;
+            let b = make_random_cv(&backend, N)?;
+            let mut c = make_random_cm(&backend, N, N)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            assert!(backend
+                .gevv_c(Trans::ConjTrans, Trans::Trans, alpha, &a, &b, beta, &mut c)
+                .is_err());
+        }
+
+        {
+            let a = make_random_cv(&backend, N)?;
+            let b = make_random_cv(&backend, N)?;
+            let mut c = make_random_cm(&backend, N, N)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            assert!(backend
+                .gevv_c(
+                    Trans::ConjTrans,
+                    Trans::ConjTrans,
+                    alpha,
+                    &a,
+                    &b,
+                    beta,
+                    &mut c,
+                )
+                .is_err());
+        }
+
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_gemv_c(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let m = N;
+        let n = 2 * N;
+
+        let mut rng = rand::thread_rng();
+
+        {
+            let a = make_random_cm(&backend, m, n)?;
+            let b = make_random_cv(&backend, n)?;
+            let mut c = make_random_cv(&backend, m)?;
+            let cc = backend.clone_cv(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            backend.gemv_c(Trans::NoTrans, alpha, &a, &b, beta, &mut c)?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cv(b)?;
+            let c = backend.to_host_cv(c)?;
+            let cc = backend.to_host_cv(cc)?;
+            let expected = a * b * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+
+        {
+            let a = make_random_cm(&backend, n, m)?;
+            let b = make_random_cv(&backend, n)?;
+            let mut c = make_random_cv(&backend, m)?;
+            let cc = backend.clone_cv(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            backend.gemv_c(Trans::Trans, alpha, &a, &b, beta, &mut c)?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cv(b)?;
+            let c = backend.to_host_cv(c)?;
+            let cc = backend.to_host_cv(cc)?;
+            let expected = a.transpose() * b * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+
+        {
+            let a = make_random_cm(&backend, n, m)?;
+            let b = make_random_cv(&backend, n)?;
+            let mut c = make_random_cv(&backend, m)?;
+            let cc = backend.clone_cv(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            backend.gemv_c(Trans::ConjTrans, alpha, &a, &b, beta, &mut c)?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cv(b)?;
+            let c = backend.to_host_cv(c)?;
+            let cc = backend.to_host_cv(cc)?;
+            let expected = a.adjoint() * b * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_gemm_c(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let m = N;
+        let n = 2 * N;
+        let k = 3 * N;
+
+        let mut rng = rand::thread_rng();
+
+        {
+            let a = make_random_cm(&backend, m, k)?;
+            let b = make_random_cm(&backend, k, n)?;
+            let mut c = make_random_cm(&backend, m, n)?;
+            let cc = backend.clone_cm(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            backend.gemm_c(Trans::NoTrans, Trans::NoTrans, alpha, &a, &b, beta, &mut c)?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cm(b)?;
+            let c = backend.to_host_cm(c)?;
+            let cc = backend.to_host_cm(cc)?;
+            let expected = a * b * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+
+        {
+            let a = make_random_cm(&backend, m, k)?;
+            let b = make_random_cm(&backend, n, k)?;
+            let mut c = make_random_cm(&backend, m, n)?;
+            let cc = backend.clone_cm(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            backend.gemm_c(Trans::NoTrans, Trans::Trans, alpha, &a, &b, beta, &mut c)?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cm(b)?;
+            let c = backend.to_host_cm(c)?;
+            let cc = backend.to_host_cm(cc)?;
+            let expected = a * b.transpose() * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+
+        {
+            let a = make_random_cm(&backend, m, k)?;
+            let b = make_random_cm(&backend, n, k)?;
+            let mut c = make_random_cm(&backend, m, n)?;
+            let cc = backend.clone_cm(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            backend.gemm_c(
+                Trans::NoTrans,
+                Trans::ConjTrans,
+                alpha,
+                &a,
+                &b,
+                beta,
+                &mut c,
+            )?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cm(b)?;
+            let c = backend.to_host_cm(c)?;
+            let cc = backend.to_host_cm(cc)?;
+            let expected = a * b.adjoint() * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+
+        {
+            let a = make_random_cm(&backend, k, m)?;
+            let b = make_random_cm(&backend, k, n)?;
+            let mut c = make_random_cm(&backend, m, n)?;
+            let cc = backend.clone_cm(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            backend.gemm_c(Trans::Trans, Trans::NoTrans, alpha, &a, &b, beta, &mut c)?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cm(b)?;
+            let c = backend.to_host_cm(c)?;
+            let cc = backend.to_host_cm(cc)?;
+            let expected = a.transpose() * b * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+
+        {
+            let a = make_random_cm(&backend, k, m)?;
+            let b = make_random_cm(&backend, n, k)?;
+            let mut c = make_random_cm(&backend, m, n)?;
+            let cc = backend.clone_cm(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            backend.gemm_c(Trans::Trans, Trans::Trans, alpha, &a, &b, beta, &mut c)?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cm(b)?;
+            let c = backend.to_host_cm(c)?;
+            let cc = backend.to_host_cm(cc)?;
+            let expected = a.transpose() * b.transpose() * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+
+        {
+            let a = make_random_cm(&backend, k, m)?;
+            let b = make_random_cm(&backend, n, k)?;
+            let mut c = make_random_cm(&backend, m, n)?;
+            let cc = backend.clone_cm(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            backend.gemm_c(Trans::Trans, Trans::ConjTrans, alpha, &a, &b, beta, &mut c)?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cm(b)?;
+            let c = backend.to_host_cm(c)?;
+            let cc = backend.to_host_cm(cc)?;
+            let expected = a.transpose() * b.adjoint() * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+
+        {
+            let a = make_random_cm(&backend, k, m)?;
+            let b = make_random_cm(&backend, k, n)?;
+            let mut c = make_random_cm(&backend, m, n)?;
+            let cc = backend.clone_cm(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            backend.gemm_c(
+                Trans::ConjTrans,
+                Trans::NoTrans,
+                alpha,
+                &a,
+                &b,
+                beta,
+                &mut c,
+            )?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cm(b)?;
+            let c = backend.to_host_cm(c)?;
+            let cc = backend.to_host_cm(cc)?;
+            let expected = a.adjoint() * b * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+
+        {
+            let a = make_random_cm(&backend, k, m)?;
+            let b = make_random_cm(&backend, n, k)?;
+            let mut c = make_random_cm(&backend, m, n)?;
+            let cc = backend.clone_cm(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            backend.gemm_c(Trans::ConjTrans, Trans::Trans, alpha, &a, &b, beta, &mut c)?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cm(b)?;
+            let c = backend.to_host_cm(c)?;
+            let cc = backend.to_host_cm(cc)?;
+            let expected = a.adjoint() * b.transpose() * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+
+        {
+            let a = make_random_cm(&backend, k, m)?;
+            let b = make_random_cm(&backend, n, k)?;
+            let mut c = make_random_cm(&backend, m, n)?;
+            let cc = backend.clone_cm(&c)?;
+
+            let alpha = Complex::new(rng.gen(), rng.gen());
+            let beta = Complex::new(rng.gen(), rng.gen());
+            backend.gemm_c(
+                Trans::ConjTrans,
+                Trans::ConjTrans,
+                alpha,
+                &a,
+                &b,
+                beta,
+                &mut c,
+            )?;
+
+            let a = backend.to_host_cm(a)?;
+            let b = backend.to_host_cm(b)?;
+            let c = backend.to_host_cm(c)?;
+            let cc = backend.to_host_cm(cc)?;
+            let expected = a.adjoint() * b.adjoint() * alpha + cc * beta;
+            c.iter().zip(expected.iter()).for_each(|(c, expected)| {
+                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
+                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+            });
+        }
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_pseudo_inverse_svd(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let a = make_random_cm(&backend, N, 5 * N)?;
+        let mut b = backend.alloc_zeros_cm(5 * N, N)?;
+        let mut u = backend.alloc_zeros_cm(N, N)?;
+        let mut s = backend.alloc_zeros_cm(5 * N, N)?;
+        let mut vt = backend.alloc_zeros_cm(5 * N, 5 * N)?;
+        let mut buf = backend.alloc_zeros_cm(5 * N, N)?;
+        let tmp = backend.clone_cm(&a)?;
+        backend.pseudo_inverse_svd(tmp, 0., &mut u, &mut s, &mut vt, &mut buf, &mut b)?;
+
+        let mut c = backend.alloc_zeros_cm(N, N)?;
+        backend.gemm_c(
+            Trans::NoTrans,
+            Trans::NoTrans,
+            Complex::new(1., 0.),
+            &a,
+            &b,
+            Complex::new(0., 0.),
+            &mut c,
+        )?;
+
+        let c = backend.to_host_cm(c)?;
+
+        (0..N).for_each(|col| {
+            (0..N).for_each(|row| {
+                if row == col {
+                    assert_approx_eq::assert_approx_eq!(c[(row, col)].re, 1., 0.1);
+                    assert_approx_eq::assert_approx_eq!(c[(row, col)].im, 0., 0.1);
+                } else {
+                    assert_approx_eq::assert_approx_eq!(c[(row, col)].re, 0., 0.1);
+                    assert_approx_eq::assert_approx_eq!(c[(row, col)].im, 0., 0.1);
+                }
+            })
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_solve_inplace(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        {
+            let tmp = make_random_m(&backend, N, N)?;
+            let tmp = backend.to_host_m(tmp)?;
+
+            let a = &tmp * tmp.adjoint();
+
+            let mut rng = rand::thread_rng();
+            let x = VectorX::from_iterator(N, (0..N).map(|_| rng.gen()));
+
+            let b = &a * &x;
+
+            let aa = backend.from_slice_m(N, N, a.as_slice())?;
+            let mut bb = backend.from_slice_v(b.as_slice())?;
+
+            backend.solve_inplace(&aa, &mut bb)?;
+
+            let b2 = &a * backend.to_host_v(bb)?;
+            assert!(approx::relative_eq!(b, b2, epsilon = 1e-3));
+        }
+
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_reduce_col(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let a = make_random_m(&backend, N, N)?;
+
+        let mut b = backend.alloc_v(N)?;
+
+        backend.reduce_col(&a, &mut b)?;
+
+        let a = backend.to_host_m(a)?;
+        let b = backend.to_host_v(b)?;
+
+        (0..N).for_each(|row| {
+            let sum = a.row(row).iter().sum::<f32>();
+            assert_approx_eq::assert_approx_eq!(sum, b[row], EPS);
+        });
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_scaled_to_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let a = make_random_cv(&backend, N)?;
+        let b = make_random_cv(&backend, N)?;
+        let mut c = backend.alloc_cv(N)?;
+
+        backend.scaled_to_cv(&a, &b, &mut c)?;
+
+        let a = backend.to_host_cv(a)?;
+        let b = backend.to_host_cv(b)?;
+        let c = backend.to_host_cv(c)?;
+        c.iter()
+            .zip(a.iter())
+            .zip(b.iter())
+            .for_each(|((&c, &a), &b)| {
+                assert_approx_eq::assert_approx_eq!(c, a / a.abs() * b, EPS);
+            });
+
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn test_scaled_to_assign_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let a = make_random_cv(&backend, N)?;
+        let mut b = make_random_cv(&backend, N)?;
+        let bc = backend.clone_cv(&b)?;
+
+        backend.scaled_to_assign_cv(&a, &mut b)?;
+
+        let a = backend.to_host_cv(a)?;
+        let b = backend.to_host_cv(b)?;
+        let bc = backend.to_host_cv(bc)?;
+        b.iter()
+            .zip(a.iter())
+            .zip(bc.iter())
+            .for_each(|((&b, &a), &bc)| {
+                assert_approx_eq::assert_approx_eq!(b, bc / bc.abs() * a, EPS);
+            });
+
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(1, 2)]
+    #[case(2, 1)]
+    fn test_generate_propagation_matrix(
+        #[case] dev_num: usize,
+        #[case] foci_num: usize,
+        backend: NalgebraBackend<Sphere>,
+    ) -> Result<(), HoloError> {
+        let reference = |geometry: Geometry, foci: Vec<Vector3>| {
+            let mut g = MatrixXc::zeros(
+                foci.len(),
+                geometry
+                    .iter()
+                    .map(|dev| dev.num_transducers())
+                    .sum::<usize>(),
+            );
+            let transducers = geometry
+                .iter()
+                .flat_map(|dev| dev.iter().map(|tr| (dev.idx(), tr)))
+                .collect::<Vec<_>>();
+            (0..foci.len()).for_each(|i| {
+                (0..transducers.len()).for_each(|j| {
+                    g[(i, j)] = propagate::<Sphere>(
+                        transducers[j].1,
+                        geometry[transducers[j].0].wavenumber(),
+                        geometry[transducers[j].0].axial_direction(),
+                        &foci[i],
+                    )
+                })
+            });
+            g
+        };
+
+        let geometry = generate_geometry(dev_num);
+        let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
+
+        let g = backend.generate_propagation_matrix(&geometry, &foci, &None)?;
+        let g = backend.to_host_cm(g)?;
+        reference(geometry, foci)
+            .iter()
+            .zip(g.iter())
+            .for_each(|(r, g)| {
+                assert_approx_eq::assert_approx_eq!(r.re, g.re, EPS);
+                assert_approx_eq::assert_approx_eq!(r.im, g.im, EPS);
+            });
+
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(1, 2)]
+    #[case(2, 1)]
+    fn test_generate_propagation_matrix_with_filter(
+        #[case] dev_num: usize,
+        #[case] foci_num: usize,
+        backend: NalgebraBackend<Sphere>,
+    ) -> Result<(), HoloError> {
+        use std::collections::HashMap;
+
+        let filter = |geometry: &Geometry| {
+            geometry
+                .iter()
+                .map(|dev| {
+                    let mut filter = bit_vec::BitVec::new();
+                    dev.iter().for_each(|tr| {
+                        filter.push(tr.idx() > dev.num_transducers() / 2);
+                    });
+                    (dev.idx(), filter)
+                })
+                .collect::<HashMap<_, _>>()
+        };
+
+        let reference = |geometry, foci: Vec<Vector3>| {
+            let filter = filter(&geometry);
+            let transducers = geometry
+                .iter()
+                .flat_map(|dev| {
+                    dev.iter().filter_map(|tr| {
+                        if filter[&dev.idx()][tr.idx()] {
+                            Some((dev.idx(), tr))
+                        } else {
+                            None
+                        }
+                    })
+                })
+                .collect::<Vec<_>>();
+
+            let mut g = MatrixXc::zeros(foci.len(), transducers.len());
+            (0..foci.len()).for_each(|i| {
+                (0..transducers.len()).for_each(|j| {
+                    g[(i, j)] = propagate::<Sphere>(
+                        transducers[j].1,
+                        geometry[transducers[j].0].wavenumber(),
+                        geometry[transducers[j].0].axial_direction(),
+                        &foci[i],
+                    )
+                })
+            });
+            g
+        };
+
+        let geometry = generate_geometry(dev_num);
+        let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
+        let filter = filter(&geometry);
+
+        let g = backend.generate_propagation_matrix(&geometry, &foci, &Some(filter))?;
+        let g = backend.to_host_cm(g)?;
+        assert_eq!(g.nrows(), foci.len());
+        assert_eq!(
+            g.ncols(),
+            geometry
+                .iter()
+                .map(|dev| dev.num_transducers() / 2)
+                .sum::<usize>()
+        );
+        reference(geometry, foci)
+            .iter()
+            .zip(g.iter())
+            .for_each(|(r, g)| {
+                assert_approx_eq::assert_approx_eq!(r.re, g.re, EPS);
+                assert_approx_eq::assert_approx_eq!(r.im, g.im, EPS);
+            });
+
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    fn test_gen_back_prop(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let geometry = generate_geometry(1);
+        let foci = gen_foci(1).map(|(p, _)| p).collect::<Vec<_>>();
+
+        let m = geometry
+            .iter()
+            .map(|dev| dev.num_transducers())
+            .sum::<usize>();
+        let n = foci.len();
+
+        let g = backend.generate_propagation_matrix(&geometry, &foci, &None)?;
+
+        let b = backend.gen_back_prop(m, n, &g)?;
+        let g = backend.to_host_cm(g)?;
+        let reference = {
+            let mut b = MatrixXc::zeros(m, n);
+            (0..n).for_each(|i| {
+                let x = 1.0 / g.rows(i, 1).iter().map(|x| x.norm_sqr()).sum::<f32>();
+                (0..m).for_each(|j| {
+                    b[(j, i)] = g[(i, j)].conj() * x;
+                })
+            });
+            b
+        };
+
+        let b = backend.to_host_cm(b)?;
+        reference.iter().zip(b.iter()).for_each(|(r, b)| {
+            assert_approx_eq::assert_approx_eq!(r.re, b.re, EPS);
+            assert_approx_eq::assert_approx_eq!(r.im, b.im, EPS);
+        });
+        Ok(())
     }
 }
