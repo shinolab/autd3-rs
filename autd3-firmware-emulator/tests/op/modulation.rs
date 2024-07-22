@@ -8,8 +8,8 @@ use autd3_driver::{
     firmware::{
         cpu::TxDatagram,
         fpga::{
-            TransitionMode, MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN, SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT,
+            GPIOIn, TransitionMode, MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN,
+            SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
         },
     },
 };
@@ -42,6 +42,41 @@ impl Modulation for TestModulation {
     LoopBehavior::infinite(),
     Segment::S0,
     Some(TransitionMode::Immediate)
+)]
+#[cfg_attr(miri, ignore)]
+#[case(
+    MOD_BUF_SIZE_MIN,
+    LoopBehavior::infinite(),
+    Segment::S0,
+    Some(TransitionMode::Ext)
+)]
+#[cfg_attr(miri, ignore)]
+#[case(
+    MOD_BUF_SIZE_MIN,
+    LoopBehavior::once(),
+    Segment::S1,
+    Some(TransitionMode::GPIO(GPIOIn::I0))
+)]
+#[cfg_attr(miri, ignore)]
+#[case(
+    MOD_BUF_SIZE_MIN,
+    LoopBehavior::once(),
+    Segment::S1,
+    Some(TransitionMode::GPIO(GPIOIn::I1))
+)]
+#[cfg_attr(miri, ignore)]
+#[case(
+    MOD_BUF_SIZE_MIN,
+    LoopBehavior::once(),
+    Segment::S1,
+    Some(TransitionMode::GPIO(GPIOIn::I2))
+)]
+#[cfg_attr(miri, ignore)]
+#[case(
+    MOD_BUF_SIZE_MIN,
+    LoopBehavior::once(),
+    Segment::S1,
+    Some(TransitionMode::GPIO(GPIOIn::I3))
 )]
 #[case(MOD_BUF_SIZE_MIN, LoopBehavior::once(), Segment::S1, None)]
 fn send_mod(
@@ -78,6 +113,31 @@ fn send_mod(
         assert_eq!(Segment::S0, cpu.fpga().req_mod_segment());
     }
     assert_eq!(m, cpu.fpga().modulation(segment));
+
+    Ok(())
+}
+
+#[test]
+fn swap_mod_segmemt() -> anyhow::Result<()> {
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = TxDatagram::new(geometry.num_devices());
+
+    let m: Vec<_> = (0..MOD_BUF_SIZE_MIN).map(|_| 0x00).collect();
+    let freq_div = SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT);
+    let d = TestModulation {
+        buf: m.clone(),
+        config: SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+        loop_behavior: LoopBehavior::infinite(),
+    }
+    .with_segment(Segment::S1, None);
+
+    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+    assert_eq!(Segment::S0, cpu.fpga().req_mod_segment());
+
+    let d = SwapSegment::Modulation(Segment::S1, TransitionMode::Immediate);
+    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+    assert_eq!(Segment::S1, cpu.fpga().req_mod_segment());
 
     Ok(())
 }
