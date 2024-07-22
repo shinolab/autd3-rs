@@ -68,7 +68,7 @@ mod tests {
             let d = b(dev);
             dev.iter().for_each(|tr| {
                 let expected_phase =
-                    Phase::from(dir.dot(tr.position()) * dev.wavenumber() * rad) + phase_offset;
+                    Phase::from(-dir.dot(tr.position()) * dev.wavenumber() * rad) + phase_offset;
                 let d = d(tr);
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity());
