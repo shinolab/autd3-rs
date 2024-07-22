@@ -11,8 +11,6 @@ mod nls;
 
 #[cfg(feature = "bench-utilities")]
 pub mod bench_utilities;
-#[cfg(feature = "test-utilities")]
-pub mod test_utilities;
 
 pub use backend::*;
 pub use backend_nalgebra::NalgebraBackend;

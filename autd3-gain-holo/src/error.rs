@@ -28,6 +28,7 @@ mod tests {
     use std::error::Error;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn solve_failed() {
         let err = HoloError::SolveFailed;
         assert!(err.source().is_none());
@@ -36,6 +37,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn backend_error() {
         let err = HoloError::BackendError("test".to_string());
         assert!(err.source().is_none());
@@ -44,6 +46,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn backend_creation_error() {
         let err = HoloError::BackendCreationError("test".to_string());
         assert!(err.source().is_none());
@@ -52,6 +55,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn from() {
         let err = HoloError::SolveFailed;
         let err: AUTDInternalError = err.into();
