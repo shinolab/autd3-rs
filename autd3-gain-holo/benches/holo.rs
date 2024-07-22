@@ -1,12 +1,6 @@
 #[cfg(feature = "bench-utilities")]
 criterion::criterion_group!(
     benches,
-    autd3_gain_holo::bench_utilities::sdp::<
-        autd3_driver::acoustics::directivity::Sphere,
-        autd3_gain_holo::NalgebraBackend<autd3_driver::acoustics::directivity::Sphere>,
-        4,
-        4,
-    >,
     autd3_gain_holo::bench_utilities::naive::<
         autd3_driver::acoustics::directivity::Sphere,
         autd3_gain_holo::NalgebraBackend<autd3_driver::acoustics::directivity::Sphere>,

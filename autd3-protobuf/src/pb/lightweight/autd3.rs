@@ -1364,20 +1364,6 @@ pub mod emission_constraint {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct Sdp {
-    #[prost(message, repeated, tag = "1")]
-    pub holo: ::prost::alloc::vec::Vec<Holo>,
-    #[prost(message, optional, tag = "2")]
-    pub constraint: ::core::option::Option<EmissionConstraint>,
-    #[prost(float, optional, tag = "3")]
-    pub alpha: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "4")]
-    pub lambda: ::core::option::Option<f32>,
-    #[prost(uint64, optional, tag = "5")]
-    pub repeat: ::core::option::Option<u64>,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Naive {
     #[prost(message, repeated, tag = "1")]
     pub holo: ::prost::alloc::vec::Vec<Holo>,
@@ -1435,7 +1421,7 @@ pub struct Greedy {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Gain {
-    #[prost(oneof = "gain::Gain", tags = "1, 2, 3, 4, 5, 100, 101, 102, 103, 104, 105")]
+    #[prost(oneof = "gain::Gain", tags = "1, 2, 3, 4, 5, 101, 102, 103, 104, 105")]
     pub gain: ::core::option::Option<gain::Gain>,
 }
 /// Nested message and enum types in `Gain`.
@@ -1454,8 +1440,6 @@ pub mod gain {
         Plane(super::Plane),
         #[prost(message, tag = "5")]
         Uniform(super::Uniform),
-        #[prost(message, tag = "100")]
-        Sdp(super::Sdp),
         #[prost(message, tag = "101")]
         Naive(super::Naive),
         #[prost(message, tag = "102")]
