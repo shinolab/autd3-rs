@@ -18,6 +18,6 @@ jobs:
           toolchain: nightly
           components: miri
 
-      - name: Generate code coverage for rust
+      - name: test with MIRI
         run: |
           python3 build.py test --miri
