@@ -19,7 +19,7 @@ pub fn propagate<D: Directivity>(
     let dist = diff.norm();
     Complex::from_polar(
         P0 / dist * D::directivity_from_dir(dir, &diff),
-        -wavenumber * dist,
+        wavenumber * dist,
     )
 }
 

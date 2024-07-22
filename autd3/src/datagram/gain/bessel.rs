@@ -51,7 +51,7 @@ impl Gain for Bessel {
                 let r = rot * (tr.position() - pos);
                 let dist = theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - theta.cos() * r.z;
                 Drive::new(
-                    Phase::from(dist * wavenumber * rad) + phase_offset,
+                    Phase::from(-dist * wavenumber * rad) + phase_offset,
                     intensity,
                 )
             }
@@ -108,7 +108,7 @@ mod tests {
                     let r = rot * r;
                     let dist = theta.radian().sin() * (r.x * r.x + r.y * r.y).sqrt()
                         - theta.radian().cos() * r.z;
-                    Phase::from(dist * geometry[0].wavenumber() * rad) + phase_offset
+                    Phase::from(-dist * geometry[0].wavenumber() * rad) + phase_offset
                 };
                 let d = d(tr);
                 assert_eq!(expected_phase, d.phase());
