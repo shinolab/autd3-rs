@@ -560,7 +560,7 @@ mod tests {
 
     #[test]
     fn test_phase_half() {
-        const GAIN_STM_SIZE: usize = 11;
+        const GAIN_STM_SIZE: usize = 9;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
         let device = create_device(0, NUM_TRANS_IN_UNIT);
@@ -694,7 +694,7 @@ mod tests {
                 (GainSTMControlFlags::END | GainSTMControlFlags::TRANSITION).bits(),
                 tx[offset_of!(GainSTMHead, flag)] & 0x3F
             );
-            assert_eq!(2, tx[offset_of!(GainSTMHead, flag)] >> 6);
+            assert_eq!(0, tx[offset_of!(GainSTMHead, flag)] >> 6);
             tx[size_of::<GainSTMSubseq>()..]
                 .chunks(size_of::<Drive>())
                 .zip(gain_data[8].iter())
