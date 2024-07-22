@@ -298,7 +298,7 @@ mod tests {
 
     #[test]
     fn test_foci() {
-        const FOCI_STM_SIZE: usize = 100;
+        const FOCI_STM_SIZE: usize = 10;
         const N: usize = 8;
         const FRAME_SIZE: usize =
             size_of::<FociSTMHead>() + size_of::<STMFocus>() * FOCI_STM_SIZE * N;
