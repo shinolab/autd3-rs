@@ -136,6 +136,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_to_pulse_width() {
         let fpga = FPGAEmulator::new(249);
         itertools::iproduct!(0x00..=0xFF, 0x00..=0xFF).for_each(|(a, b)| {
@@ -147,6 +148,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn thermo() {
         let mut fpga = FPGAEmulator::new(249);
         assert!(!fpga.is_thermo_asserted());
