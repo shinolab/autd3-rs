@@ -115,6 +115,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_timer() {
         let timer = Timer::start(
             CountCallback { count: 0 },
