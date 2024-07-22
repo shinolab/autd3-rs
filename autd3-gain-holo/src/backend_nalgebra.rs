@@ -45,11 +45,13 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
     type VectorXc = VectorXc;
     type VectorX = VectorX;
 
+    // GRCOV_EXCL_START
     fn new() -> Result<Arc<Self>, HoloError> {
         Ok(Arc::new(Self {
             _phantom: std::marker::PhantomData,
         }))
     }
+    // GRCOV_EXCL_STOP
 
     fn generate_propagation_matrix(
         &self,
