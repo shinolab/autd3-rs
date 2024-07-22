@@ -224,10 +224,10 @@ pub(crate) fn impl_builder_macro(input: syn::DeriveInput) -> TokenStream {
     let getters = impl_getter(&input);
     let setters = impl_setter(&input);
 
-    let gen = quote! {
+    let generator = quote! {
         #getters
 
         #setters
     };
-    gen.into()
+    generator.into()
 }

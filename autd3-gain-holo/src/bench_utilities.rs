@@ -54,7 +54,7 @@ pub fn sdp<
         |b, geometry| {
             let mut tx = TxDatagram::new(NUM_DEV);
             b.iter(|| {
-                let gen = SDP::new(backend.clone(), gen_foci(NUM_FOCI, NUM_DEV))
+                let generator= SDP::new(backend.clone(), gen_foci(NUM_FOCI, NUM_DEV))
                     .operation_generator(geometry)
                     .unwrap();
                 let mut operations = OperationHandler::generate(gen, geometry);
@@ -84,7 +84,7 @@ pub fn naive<
         |b, geometry| {
             let mut tx = TxDatagram::new(NUM_DEV);
             b.iter(|| {
-                let gen = Naive::new(backend.clone(), gen_foci(NUM_FOCI, NUM_DEV))
+                let generator= Naive::new(backend.clone(), gen_foci(NUM_FOCI, NUM_DEV))
                     .operation_generator(geometry)
                     .unwrap();
                 let mut operations = OperationHandler::generate(gen, geometry);
@@ -114,7 +114,7 @@ pub fn gs<
         |b, geometry| {
             let mut tx = TxDatagram::new(NUM_DEV);
             b.iter(|| {
-                let gen = GS::new(backend.clone(), gen_foci(NUM_FOCI, NUM_DEV))
+                let generator= GS::new(backend.clone(), gen_foci(NUM_FOCI, NUM_DEV))
                     .operation_generator(geometry)
                     .unwrap();
                 let mut operations = OperationHandler::generate(gen, geometry);
@@ -144,7 +144,7 @@ pub fn gspat<
         |b, geometry| {
             let mut tx = TxDatagram::new(NUM_DEV);
             b.iter(|| {
-                let gen = GSPAT::new(backend.clone(), gen_foci(NUM_FOCI, NUM_DEV))
+                let generator= GSPAT::new(backend.clone(), gen_foci(NUM_FOCI, NUM_DEV))
                     .operation_generator(geometry)
                     .unwrap();
                 let mut operations = OperationHandler::generate(gen, geometry);
@@ -174,7 +174,7 @@ pub fn lm<
         |b, geometry| {
             let mut tx = TxDatagram::new(NUM_DEV);
             b.iter(|| {
-                let gen = LM::new(backend.clone(), gen_foci(NUM_FOCI, NUM_DEV))
+                let generator= LM::new(backend.clone(), gen_foci(NUM_FOCI, NUM_DEV))
                     .operation_generator(geometry)
                     .unwrap();
                 let mut operations = OperationHandler::generate(gen, geometry);
@@ -197,7 +197,7 @@ pub fn greedy<D: Directivity + 'static, const NUM_DEV: usize, const NUM_FOCI: us
         |b, geometry| {
             let mut tx = TxDatagram::new(NUM_DEV);
             b.iter(|| {
-                let gen = Greedy::<D>::new(gen_foci(NUM_FOCI, NUM_DEV))
+                let generator= Greedy::<D>::new(gen_foci(NUM_FOCI, NUM_DEV))
                     .operation_generator(geometry)
                     .unwrap();
                 let mut operations = OperationHandler::generate(gen, geometry);

@@ -75,8 +75,8 @@ impl<L: Link> Controller<L> {
 
         s.trace(&self.geometry);
 
-        let gen = s.operation_generator(&self.geometry)?;
-        let mut operations = OperationHandler::generate(gen, &self.geometry);
+        let generator = s.operation_generator(&self.geometry)?;
+        let mut operations = OperationHandler::generate(generator, &self.geometry);
         self.send_impl(&mut operations, timeout, parallel_threshold)
             .await
     }

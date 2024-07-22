@@ -67,8 +67,8 @@ fn focus(c: &mut Criterion) {
                         black_box(70.),
                         black_box(150.),
                     ));
-                    let gen = g.operation_generator(geometry).unwrap();
-                    let mut operations = OperationHandler::generate(gen, geometry);
+                    let generator = g.operation_generator(geometry).unwrap();
+                    let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(&mut operations, geometry, &mut tx, usize::MAX).unwrap();
                 })
             },
@@ -92,8 +92,8 @@ fn focus_parallel(c: &mut Criterion) {
                         black_box(70.),
                         black_box(150.),
                     ));
-                    let gen = g.operation_generator(geometry).unwrap();
-                    let mut operations = OperationHandler::generate(gen, geometry);
+                    let generator = g.operation_generator(geometry).unwrap();
+                    let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(&mut operations, geometry, &mut tx, 0).unwrap();
                 })
             },
@@ -118,8 +118,8 @@ fn focus_cache(c: &mut Criterion) {
                 ))
                 .with_cache();
                 b.iter(|| {
-                    let gen = g.clone().operation_generator(geometry).unwrap();
-                    let mut operations = OperationHandler::generate(gen, geometry);
+                    let generator = g.clone().operation_generator(geometry).unwrap();
+                    let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(&mut operations, geometry, &mut tx, usize::MAX).unwrap();
                 })
             },
@@ -143,8 +143,8 @@ fn focus_boxed(c: &mut Criterion) {
                         black_box(70.),
                         black_box(150.),
                     )));
-                    let gen = g.operation_generator(geometry).unwrap();
-                    let mut operations = OperationHandler::generate(gen, geometry);
+                    let generator = g.operation_generator(geometry).unwrap();
+                    let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(&mut operations, geometry, &mut tx, usize::MAX).unwrap();
                 })
             },
@@ -188,8 +188,8 @@ fn focus_group(c: &mut Criterion) {
                         black_box(150.),
                     )),
                 );
-                let gen = g.operation_generator(geometry).unwrap();
-                let mut operations = OperationHandler::generate(gen, geometry);
+                let generator = g.operation_generator(geometry).unwrap();
+                let mut operations = OperationHandler::generate(generator, geometry);
                 OperationHandler::pack(&mut operations, geometry, &mut tx, usize::MAX).unwrap();
             })
         },
@@ -215,8 +215,8 @@ fn focus_group(c: &mut Criterion) {
                         )
                     },
                 );
-                let gen = g.operation_generator(geometry).unwrap();
-                let mut operations = OperationHandler::generate(gen, geometry);
+                let generator = g.operation_generator(geometry).unwrap();
+                let mut operations = OperationHandler::generate(generator, geometry);
                 OperationHandler::pack(&mut operations, geometry, &mut tx, usize::MAX).unwrap();
             })
         },
