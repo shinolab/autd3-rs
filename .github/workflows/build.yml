@@ -146,6 +146,21 @@ jobs:
         run: |
           python3 build.py build --arch arm32 --no-examples
 
+  miri:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup
+        uses: ./.github/actions/setup-build
+        with:
+          os: ubuntu-latest
+          toolchain: nightly
+          components: miri
+      - name: test with MIRI
+        run: |
+          python3 build.py test --miri
+
   lint-src:
     name: lint-src
     runs-on: ubuntu-latest
