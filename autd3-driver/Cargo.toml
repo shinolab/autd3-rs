@@ -48,7 +48,6 @@ left_handed = []
 serde = ["dep:serde"]
 derive = []
 capi = ["async-trait"]
-test = []
 
 [lib]
 bench = false
