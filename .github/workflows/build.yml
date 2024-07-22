@@ -69,7 +69,7 @@ jobs:
       - name: Test src on ${{ matrix.os }}
         run: |
           python3 build.py build --features "capi" --no-example
-          python3 build.py test --features "capi test"
+          python3 build.py test --features "capi"
         shell: bash
 
   test-src-for-unity:
