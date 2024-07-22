@@ -29,7 +29,7 @@ impl Gain for Plane {
             let wavenumber = dev.wavenumber();
             move |tr| {
                 Drive::new(
-                    Phase::from(dir.dot(tr.position()) * wavenumber * rad) + phase_offset,
+                    Phase::from(-dir.dot(tr.position()) * wavenumber * rad) + phase_offset,
                     intensity,
                 )
             }

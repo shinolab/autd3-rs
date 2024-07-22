@@ -29,7 +29,7 @@ impl Gain for Focus {
             let wavenumber = dev.wavenumber();
             move |tr| {
                 Drive::new(
-                    Phase::from((pos - tr.position()).norm() * wavenumber * rad) + phase_offset,
+                    Phase::from(-(pos - tr.position()).norm() * wavenumber * rad) + phase_offset,
                     intensity,
                 )
             }
@@ -67,7 +67,7 @@ mod tests {
             let d = b(dev);
             dev.iter().for_each(|tr| {
                 let expected_phase =
-                    Phase::from((tr.position() - pos).norm() * dev.wavenumber() * rad)
+                    Phase::from(-(tr.position() - pos).norm() * dev.wavenumber() * rad)
                         + phase_offset;
                 let d = d(tr);
                 assert_eq!(expected_phase, d.phase());
