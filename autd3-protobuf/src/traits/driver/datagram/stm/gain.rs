@@ -56,9 +56,6 @@ impl FromMessage<GainStm>
                     Some(gain::Gain::Uniform(msg)) => {
                         autd3::prelude::Uniform::from_msg(msg).map(|g| Box::new(g) as Box<_>)
                     }
-                    Some(gain::Gain::Sdp(msg)) => {
-                        autd3_gain_holo::SDP::from_msg(msg).map(|g| Box::new(g) as Box<_>)
-                    }
                     Some(gain::Gain::Naive(msg)) => {
                         autd3_gain_holo::Naive::from_msg(msg).map(|g| Box::new(g) as Box<_>)
                     }

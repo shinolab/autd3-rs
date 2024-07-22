@@ -87,30 +87,6 @@ pub trait LinAlgBackend<D: Directivity> {
         v: &mut Self::VectorXc,
     ) -> Result<(), HoloError>;
 
-    fn get_col_c(
-        &self,
-        a: &Self::MatrixXc,
-        col: usize,
-        v: &mut Self::VectorXc,
-    ) -> Result<(), HoloError>;
-    fn set_cv(&self, i: usize, val: Complex, v: &mut Self::VectorXc) -> Result<(), HoloError>;
-    fn set_col_c(
-        &self,
-        a: &Self::VectorXc,
-        col: usize,
-        start: usize,
-        end: usize,
-        v: &mut Self::MatrixXc,
-    ) -> Result<(), HoloError>;
-    fn set_row_c(
-        &self,
-        a: &Self::VectorXc,
-        row: usize,
-        start: usize,
-        end: usize,
-        v: &mut Self::MatrixXc,
-    ) -> Result<(), HoloError>;
-
     fn create_diagonal(&self, v: &Self::VectorX, a: &mut Self::MatrixX) -> Result<(), HoloError>;
     fn create_diagonal_c(
         &self,
@@ -134,7 +110,6 @@ pub trait LinAlgBackend<D: Directivity> {
     ) -> Result<(), HoloError>;
 
     fn max_v(&self, m: &Self::VectorX) -> Result<f32, HoloError>;
-    fn max_eigen_vector_c(&self, m: Self::MatrixXc) -> Result<Self::VectorXc, HoloError>;
 
     fn hadamard_product_cm(
         &self,
@@ -183,17 +158,6 @@ pub trait LinAlgBackend<D: Directivity> {
         y: &mut Self::MatrixXc,
     ) -> Result<(), HoloError>;
 
-    #[allow(clippy::too_many_arguments)]
-    fn pseudo_inverse_svd(
-        &self,
-        a: Self::MatrixXc,
-        alpha: f32,
-        u: &mut Self::MatrixXc,
-        s: &mut Self::MatrixXc,
-        vt: &mut Self::MatrixXc,
-        buf: &mut Self::MatrixXc,
-        b: &mut Self::MatrixXc,
-    ) -> Result<(), HoloError>;
     fn solve_inplace(&self, a: &Self::MatrixX, x: &mut Self::VectorX) -> Result<(), HoloError>;
 
     fn reduce_col(&self, a: &Self::MatrixX, b: &mut Self::VectorX) -> Result<(), HoloError>;

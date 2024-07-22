@@ -6,7 +6,6 @@ mod constraint;
 mod error;
 mod helper;
 mod linear_synthesis;
-mod matrix;
 mod nls;
 
 #[cfg(feature = "bench-utilities")]
@@ -18,7 +17,6 @@ pub use combinatorial::*;
 pub use constraint::*;
 pub use error::HoloError;
 pub use linear_synthesis::*;
-pub use matrix::*;
 pub use nls::*;
 
 pub use amp::{dB, Amplitude, Pa};

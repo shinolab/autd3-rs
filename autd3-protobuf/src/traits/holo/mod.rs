@@ -2,7 +2,6 @@ mod amp;
 mod combinatorial;
 mod constraint;
 mod linear_synthesis;
-mod matrix;
 mod nls;
 
 #[macro_export]

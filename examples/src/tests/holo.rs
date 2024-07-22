@@ -15,12 +15,11 @@ pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     let center = autd.geometry().center() + Vector3::new(0., 0., 150.0 * mm);
     let p = Vector3::new(30. * mm, 0., 0.);
 
-    println!("[0]: SDP");
-    println!("[1]: GS");
-    println!("[2]: GSPAT");
-    println!("[3]: LSS");
-    println!("[4]: LM");
-    println!("[5]: Greedy");
+    println!("[0]: GS");
+    println!("[1]: GSPAT");
+    println!("[2]: LSS");
+    println!("[3]: LM");
+    println!("[4]: Greedy");
     println!("[Others]: GS-PAT");
     print!("{}", "Choose number: ".green().bold());
     io::stdout().flush()?;
@@ -33,41 +32,34 @@ pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     let target_amp = 2.5e3 * autd.geometry().num_devices() as f32 * Pa;
     match s.trim().parse::<usize>() {
         Ok(0) => {
-            let g = SDP::new(
-                backend,
-                [(center + p, target_amp), (center - p, target_amp)],
-            );
-            autd.send((m, g)).await?
-        }
-        Ok(1) => {
             let g = GS::new(
                 backend,
                 [(center + p, target_amp), (center - p, target_amp)],
             );
             autd.send((m, g)).await?
         }
-        Ok(2) => {
+        Ok(1) => {
             let g = GSPAT::new(
                 backend,
                 [(center + p, target_amp), (center - p, target_amp)],
             );
             autd.send((m, g)).await?
         }
-        Ok(3) => {
+        Ok(2) => {
             let g = LSS::new(
                 backend,
                 [(center + p, target_amp), (center - p, target_amp)],
             );
             autd.send((m, g)).await?
         }
-        Ok(4) => {
+        Ok(3) => {
             let g = LM::new(
                 backend,
                 [(center + p, target_amp), (center - p, target_amp)],
             );
             autd.send((m, g)).await?
         }
-        Ok(5) => {
+        Ok(4) => {
             let g = Greedy::<Sphere>::new([(center + p, target_amp), (center - p, target_amp)]);
             autd.send((m, g)).await?
         }

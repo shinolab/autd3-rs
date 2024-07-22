@@ -84,7 +84,6 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
             Some(gain::Gain::Naive(msg)) => Box::new(autd3_gain_holo::Naive::from_msg(msg)?),
             Some(gain::Gain::Gspat(msg)) => Box::new(autd3_gain_holo::GSPAT::from_msg(msg)?),
             Some(gain::Gain::Greedy(msg)) => Box::new(autd3_gain_holo::Greedy::from_msg(msg)?),
-            Some(gain::Gain::Sdp(msg)) => Box::new(autd3_gain_holo::SDP::from_msg(msg)?),
             None => return Err(AUTDProtoBufError::NotSupportedData),
         })
     }
