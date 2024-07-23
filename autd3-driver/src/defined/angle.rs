@@ -25,6 +25,13 @@ impl Angle {
             Self::Rad(a) => a,
         }
     }
+
+    pub fn degree(self) -> f32 {
+        match self {
+            Self::Deg(a) => a,
+            Self::Rad(a) => a.to_degrees(),
+        }
+    }
 }
 
 impl std::ops::Mul<deg> for f32 {
