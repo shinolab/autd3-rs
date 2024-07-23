@@ -292,7 +292,7 @@ mod tests {
         let mut autd = create_controller(1).await?;
         autd.send((
             Sine::new(150. * Hz),
-            GainSTM::from_freq(
+            GainSTM::new(
                 1. * Hz,
                 [
                     Uniform::new(EmitIntensity::new(0x80)),

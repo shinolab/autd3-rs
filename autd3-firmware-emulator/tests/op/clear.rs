@@ -66,7 +66,7 @@ fn send_clear() -> anyhow::Result<()> {
         let d = TestGain {}.with_segment(Segment::S0, true);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = FociSTM::from_sampling_config(
+        let d = FociSTM::new(
             SamplingConfig::Division(
                 NonZeroU16::new(
                     SILENCER_STEPS_INTENSITY_DEFAULT
@@ -76,7 +76,7 @@ fn send_clear() -> anyhow::Result<()> {
                 .unwrap(),
             ),
             gen_random_foci::<1>(2),
-        )
+        )?
         .with_segment(Segment::S0, Some(TransitionMode::Ext));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }

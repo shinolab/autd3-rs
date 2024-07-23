@@ -32,7 +32,7 @@ impl FromMessage<GainStm>
     for autd3_driver::datagram::GainSTM<Box<dyn autd3_driver::datagram::Gain + Send + Sync>>
 {
     fn from_msg(msg: &GainStm) -> Result<Self, AUTDProtoBufError> {
-        let mut stm = autd3_driver::datagram::GainSTM::from_sampling_config(
+        let mut stm = autd3_driver::datagram::GainSTM::new(
             SamplingConfig::from_msg(
                 msg.config
                     .as_ref()

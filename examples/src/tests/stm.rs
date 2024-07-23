@@ -7,7 +7,7 @@ pub async fn foci_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> 
 
     let point_num = 50;
     let radius = 30.0 * mm;
-    let stm = FociSTM::from_freq(
+    let stm = FociSTM::new(
         1.0 * Hz,
         (0..point_num).map(|i| {
             let theta = 2.0 * PI * i as f32 / point_num as f32;
@@ -30,7 +30,7 @@ pub async fn gain_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> 
 
     let point_num = 50;
     let radius = 30.0 * mm;
-    let stm = GainSTM::from_freq(
+    let stm = GainSTM::new(
         1.0 * Hz,
         (0..point_num).map(|i| {
             let theta = 2.0 * PI * i as f32 / point_num as f32;

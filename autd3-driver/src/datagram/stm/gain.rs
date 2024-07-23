@@ -2,7 +2,7 @@ use crate::datagram::*;
 use crate::{
     defined::Freq,
     derive::*,
-    firmware::{cpu::GainSTMMode, fpga::STMSamplingConfig, operation::GainSTMOp},
+    firmware::{cpu::GainSTMMode, fpga::STMConfig, operation::GainSTMOp},
 };
 
 use derive_more::{Deref, DerefMut};
@@ -21,73 +21,20 @@ pub struct GainSTM<G: Gain> {
 }
 
 impl<G: Gain> GainSTM<G> {
-    pub fn from_freq<F: IntoIterator<Item = G>>(
-        freq: Freq<f32>,
+    pub fn new<F: IntoIterator<Item = G>>(
+        config: impl Into<STMConfig>,
         gains: F,
     ) -> Result<Self, AUTDInternalError> {
         let gains = gains.into_iter().collect::<Vec<_>>();
-        Ok(Self::new(
-            STMSamplingConfig::Freq(freq).sampling(gains.len())?,
-            gains,
-        ))
-    }
-
-    pub fn from_freq_nearest<F: IntoIterator<Item = G>>(
-        freq: Freq<f32>,
-        gains: F,
-    ) -> Result<Self, AUTDInternalError> {
-        let gains = gains.into_iter().collect::<Vec<_>>();
-        Ok(Self::new(
-            STMSamplingConfig::FreqNearest(freq).sampling(gains.len())?,
-            gains,
-        ))
-    }
-
-    pub fn from_period<F: IntoIterator<Item = G>>(
-        period: Duration,
-        gains: F,
-    ) -> Result<Self, AUTDInternalError> {
-        let gains = gains.into_iter().collect::<Vec<_>>();
-        Ok(Self::new(
-            STMSamplingConfig::Period(period).sampling(gains.len())?,
-            gains,
-        ))
-    }
-
-    pub fn from_period_nearest<F: IntoIterator<Item = G>>(
-        period: Duration,
-        gains: F,
-    ) -> Result<Self, AUTDInternalError> {
-        let gains = gains.into_iter().collect::<Vec<_>>();
-        Ok(Self::new(
-            STMSamplingConfig::PeriodNearest(period).sampling(gains.len())?,
-            gains,
-        ))
-    }
-
-    pub fn from_sampling_config<F: IntoIterator<Item = G>>(
-        config: impl Into<SamplingConfig>,
-        gains: F,
-    ) -> Self {
-        Self::new(config.into(), gains.into_iter().collect::<Vec<_>>())
-    }
-
-    #[cfg(feature = "capi")]
-    pub fn from_stm_sampling_config<F: IntoIterator<Item = G>>(
-        config: STMSamplingConfig,
-        gains: F,
-    ) -> Result<Self, AUTDInternalError> {
-        let gains = gains.into_iter().collect::<Vec<_>>();
-        Ok(Self::new(config.sampling(gains.len())?, gains))
-    }
-
-    fn new(sampling_config: SamplingConfig, gains: Vec<G>) -> Self {
-        Self {
+        if gains.is_empty() {
+            return Err(AUTDInternalError::GainSTMSizeOutOfRange(gains.len()));
+        }
+        Ok(Self {
+            sampling_config: config.into().sampling(gains.len())?,
             gains,
             loop_behavior: LoopBehavior::infinite(),
-            sampling_config,
             mode: GainSTMMode::PhaseIntensityFull,
-        }
+        })
     }
 
     pub fn freq(&self) -> Result<Freq<f32>, AUTDInternalError> {
@@ -281,7 +228,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::from_freq(freq, (0..n).map(|_| Null::default())).map(|g| g.sampling_config())
+            GainSTM::new(freq, (0..n).map(|_| Null::default())).map(|g| g.sampling_config())
         );
     }
 
@@ -299,8 +246,11 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::from_freq_nearest(freq, (0..n).map(|_| Null::default()))
-                .map(|g| g.sampling_config())
+            GainSTM::new(
+                STMConfig::FreqNearest(freq),
+                (0..n).map(|_| Null::default())
+            )
+            .map(|g| g.sampling_config())
         );
     }
 
@@ -330,7 +280,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::from_period(p, (0..n).map(|_| Null::default())).map(|f| f.sampling_config())
+            GainSTM::new(p, (0..n).map(|_| Null::default())).map(|f| f.sampling_config())
         );
     }
 
@@ -360,7 +310,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::from_period_nearest(p, (0..n).map(|_| Null::default()))
+            GainSTM::new(STMConfig::PeriodNearest(p), (0..n).map(|_| Null::default()))
                 .map(|f| f.sampling_config())
         );
     }
@@ -375,9 +325,8 @@ mod tests {
         #[case] n: usize,
     ) -> anyhow::Result<()> {
         assert_eq!(
-            config,
-            GainSTM::from_sampling_config(config, (0..n).map(|_| Null::default()))
-                .sampling_config()
+            Ok(config),
+            GainSTM::new(config, (0..n).map(|_| Null::default())).map(|f| f.sampling_config())
         );
         Ok(())
     }
@@ -396,7 +345,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::from_freq(f, (0..n).map(|_| Null::default())).and_then(|f| f.freq())
+            GainSTM::new(f, (0..n).map(|_| Null::default())).and_then(|f| f.freq())
         );
     }
 
@@ -414,7 +363,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::from_freq(f, (0..n).map(|_| Null::default())).and_then(|f| f.period())
+            GainSTM::new(f, (0..n).map(|_| Null::default())).and_then(|f| f.period())
         );
     }
 
@@ -427,10 +376,11 @@ mod tests {
     fn with_mode(#[case] mode: GainSTMMode) {
         assert_eq!(
             mode,
-            GainSTM::from_sampling_config(
+            GainSTM::new(
                 SamplingConfig::Freq(ULTRASOUND_FREQ),
                 (0..2).map(|_| Null::default())
             )
+            .unwrap()
             .with_mode(mode)
             .mode()
         );
@@ -442,10 +392,11 @@ mod tests {
     fn with_mode_default() {
         assert_eq!(
             GainSTMMode::PhaseIntensityFull,
-            GainSTM::from_sampling_config(
+            GainSTM::new(
                 SamplingConfig::Freq(ULTRASOUND_FREQ),
                 (0..2).map(|_| Null::default())
             )
+            .unwrap()
             .mode()
         );
     }
@@ -458,10 +409,11 @@ mod tests {
     fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
             loop_behavior,
-            GainSTM::from_sampling_config(
+            GainSTM::new(
                 SamplingConfig::Freq(ULTRASOUND_FREQ),
                 (0..2).map(|_| Null::default())
             )
+            .unwrap()
             .with_loop_behavior(loop_behavior)
             .loop_behavior()
         );

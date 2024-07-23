@@ -5,7 +5,7 @@ use crate::defined::ControlPoints;
 use crate::{
     defined::Freq,
     derive::*,
-    firmware::{fpga::STMSamplingConfig, operation::FociSTMOp},
+    firmware::{fpga::STMConfig, operation::FociSTMOp},
 };
 
 use derive_more::{Deref, DerefMut};
@@ -22,8 +22,8 @@ pub struct FociSTM<const N: usize> {
 }
 
 impl<const N: usize> FociSTM<N> {
-    pub fn from_freq<C, F: IntoIterator<Item = C>>(
-        freq: Freq<f32>,
+    pub fn new<C, F: IntoIterator<Item = C>>(
+        config: impl Into<STMConfig>,
         control_points: F,
     ) -> Result<Self, AUTDInternalError>
     where
@@ -33,103 +33,16 @@ impl<const N: usize> FociSTM<N> {
             .into_iter()
             .map(ControlPoints::from)
             .collect();
-        Ok(Self::new(
-            STMSamplingConfig::Freq(freq).sampling(control_points.len())?,
-            control_points,
-        ))
-    }
-
-    pub fn from_freq_nearest<C, F: IntoIterator<Item = C>>(
-        freq: Freq<f32>,
-        control_points: F,
-    ) -> Result<Self, AUTDInternalError>
-    where
-        ControlPoints<N>: From<C>,
-    {
-        let control_points: Vec<_> = control_points
-            .into_iter()
-            .map(ControlPoints::from)
-            .collect();
-        Ok(Self::new(
-            STMSamplingConfig::FreqNearest(freq).sampling(control_points.len())?,
-            control_points,
-        ))
-    }
-
-    pub fn from_period<C, F: IntoIterator<Item = C>>(
-        period: Duration,
-        control_points: F,
-    ) -> Result<Self, AUTDInternalError>
-    where
-        ControlPoints<N>: From<C>,
-    {
-        let control_points: Vec<_> = control_points
-            .into_iter()
-            .map(ControlPoints::from)
-            .collect();
-        Ok(Self::new(
-            STMSamplingConfig::Period(period).sampling(control_points.len())?,
-            control_points,
-        ))
-    }
-
-    pub fn from_period_nearest<C, F: IntoIterator<Item = C>>(
-        period: Duration,
-        control_points: F,
-    ) -> Result<Self, AUTDInternalError>
-    where
-        ControlPoints<N>: From<C>,
-    {
-        let control_points: Vec<_> = control_points
-            .into_iter()
-            .map(ControlPoints::from)
-            .collect();
-        Ok(Self::new(
-            STMSamplingConfig::PeriodNearest(period).sampling(control_points.len())?,
-            control_points,
-        ))
-    }
-
-    pub fn from_sampling_config<C, F: IntoIterator<Item = C>>(
-        config: impl Into<SamplingConfig>,
-        control_points: F,
-    ) -> Self
-    where
-        ControlPoints<N>: From<C>,
-    {
-        Self::new(
-            config.into(),
-            control_points
-                .into_iter()
-                .map(ControlPoints::from)
-                .collect(),
-        )
-    }
-
-    #[cfg(feature = "capi")]
-    pub fn from_stm_sampling_config<C, F: IntoIterator<Item = C>>(
-        config: STMSamplingConfig,
-        control_points: F,
-    ) -> Result<Self, AUTDInternalError>
-    where
-        ControlPoints<N>: From<C>,
-    {
-        let control_points: Vec<_> = control_points
-            .into_iter()
-            .map(ControlPoints::from)
-            .collect();
-        Ok(Self::new(
-            config.sampling(control_points.len())?,
-            control_points,
-        ))
-    }
-
-    fn new(sampling_config: SamplingConfig, control_points: Vec<ControlPoints<N>>) -> Self {
-        Self {
+        if control_points.is_empty() {
+            return Err(AUTDInternalError::FociSTMPointSizeOutOfRange(
+                control_points.len(),
+            ));
+        }
+        Ok(Self {
+            sampling_config: config.into().sampling(control_points.len())?,
             control_points,
             loop_behavior: LoopBehavior::infinite(),
-            sampling_config,
-        }
+        })
     }
 
     pub fn freq(&self) -> Result<Freq<f32>, AUTDInternalError> {
@@ -270,7 +183,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            FociSTM::from_freq(freq, (0..n).map(|_| Vector3::zeros())).map(|f| f.sampling_config())
+            FociSTM::new(freq, (0..n).map(|_| Vector3::zeros())).map(|f| f.sampling_config())
         );
     }
 
@@ -288,8 +201,11 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            FociSTM::from_freq_nearest(freq, (0..n).map(|_| Vector3::zeros()))
-                .map(|f| f.sampling_config())
+            FociSTM::new(
+                STMConfig::FreqNearest(freq),
+                (0..n).map(|_| Vector3::zeros())
+            )
+            .map(|f| f.sampling_config())
         );
     }
 
@@ -319,7 +235,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            FociSTM::from_period(p, (0..n).map(|_| Vector3::zeros())).map(|f| f.sampling_config())
+            FociSTM::new(p, (0..n).map(|_| Vector3::zeros())).map(|f| f.sampling_config())
         );
     }
 
@@ -349,8 +265,11 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            FociSTM::from_period_nearest(p, (0..n).map(|_| Vector3::zeros()))
-                .map(|f| f.sampling_config())
+            FociSTM::new(
+                STMConfig::PeriodNearest(p),
+                (0..n).map(|_| Vector3::zeros())
+            )
+            .map(|f| f.sampling_config())
         );
     }
 
@@ -361,9 +280,8 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn from_sampling_config(#[case] config: SamplingConfig, #[case] n: usize) {
         assert_eq!(
-            config,
-            FociSTM::from_sampling_config(config, (0..n).map(|_| Vector3::zeros()))
-                .sampling_config()
+            Ok(config),
+            FociSTM::new(config, (0..n).map(|_| Vector3::zeros())).map(|f| f.sampling_config())
         );
     }
 
@@ -381,7 +299,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            FociSTM::from_freq(f, (0..n).map(|_| Vector3::zeros())).and_then(|f| f.freq())
+            FociSTM::new(f, (0..n).map(|_| Vector3::zeros())).and_then(|f| f.freq())
         );
     }
 
@@ -399,7 +317,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            FociSTM::from_freq(f, (0..n).map(|_| Vector3::zeros())).and_then(|f| f.period())
+            FociSTM::new(f, (0..n).map(|_| Vector3::zeros())).and_then(|f| f.period())
         );
     }
 
@@ -411,7 +329,7 @@ mod tests {
     fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) -> anyhow::Result<()> {
         assert_eq!(
             loop_behavior,
-            FociSTM::from_freq(1. * Hz, (0..2).map(|_| Vector3::zeros()))?
+            FociSTM::new(1. * Hz, (0..2).map(|_| Vector3::zeros()))?
                 .with_loop_behavior(loop_behavior)
                 .loop_behavior()
         );
@@ -421,7 +339,7 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn with_loop_behavior_deafault() -> anyhow::Result<()> {
-        let stm = FociSTM::from_freq(1. * Hz, (0..2).map(|_| Vector3::zeros()))?;
+        let stm = FociSTM::new(1. * Hz, (0..2).map(|_| Vector3::zeros()))?;
         assert_eq!(LoopBehavior::infinite(), stm.loop_behavior());
         Ok(())
     }

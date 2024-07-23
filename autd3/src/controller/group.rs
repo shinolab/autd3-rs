@@ -142,7 +142,7 @@ mod tests {
             3,
             (
                 Sine::new(150. * Hz),
-                GainSTM::from_freq(
+                GainSTM::new(
                     1. * Hz,
                     [
                         Uniform::new(EmitIntensity::new(0x80)),

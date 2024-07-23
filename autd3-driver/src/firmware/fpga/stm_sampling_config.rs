@@ -9,7 +9,7 @@ use crate::{
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[non_exhaustive]
-pub enum STMSamplingConfig {
+pub enum STMConfig {
     Freq(Freq<f32>),
     FreqNearest(Freq<f32>),
     Period(Duration),
@@ -17,19 +17,17 @@ pub enum STMSamplingConfig {
     SamplingConfig(SamplingConfig),
 }
 
-impl STMSamplingConfig {
+impl STMConfig {
     pub fn sampling(&self, size: usize) -> Result<SamplingConfig, AUTDInternalError> {
         match *self {
-            STMSamplingConfig::Freq(f) => {
+            STMConfig::Freq(f) => {
                 let fs = f.hz() as f64 * size as f64;
                 if !is_integer(fs) {
                     return Err(AUTDInternalError::STMFreqInvalid(size, f));
                 }
                 Ok(SamplingConfig::Freq(fs as u32 * Hz))
             }
-            STMSamplingConfig::FreqNearest(f) => {
-                Ok(SamplingConfig::FreqNearest(f.hz() * size as f32 * Hz))
-            }
+            STMConfig::FreqNearest(f) => Ok(SamplingConfig::FreqNearest(f.hz() * size as f32 * Hz)),
             Self::SamplingConfig(s) => Ok(s),
             Self::Period(p) => {
                 if p.as_nanos() % size as u128 != 0 {
@@ -39,6 +37,24 @@ impl STMSamplingConfig {
             }
             Self::PeriodNearest(p) => Ok(SamplingConfig::PeriodNearest(p / size as u32)),
         }
+    }
+}
+
+impl From<Freq<f32>> for STMConfig {
+    fn from(freq: Freq<f32>) -> Self {
+        Self::Freq(freq)
+    }
+}
+
+impl From<Duration> for STMConfig {
+    fn from(p: Duration) -> Self {
+        Self::Period(p)
+    }
+}
+
+impl From<SamplingConfig> for STMConfig {
+    fn from(config: SamplingConfig) -> Self {
+        Self::SamplingConfig(config)
     }
 }
 
@@ -59,7 +75,7 @@ mod tests {
         #[case] freq: Freq<f32>,
         #[case] size: usize,
     ) {
-        assert_eq!(expect, STMSamplingConfig::Freq(freq).sampling(size));
+        assert_eq!(expect, STMConfig::Freq(freq).sampling(size));
     }
 
     #[rstest::rstest]
@@ -74,7 +90,7 @@ mod tests {
         #[case] freq: Freq<f32>,
         #[case] size: usize,
     ) {
-        assert_eq!(expect, STMSamplingConfig::FreqNearest(freq).sampling(size));
+        assert_eq!(expect, STMConfig::FreqNearest(freq).sampling(size));
     }
 
     #[rstest::rstest]
@@ -85,10 +101,7 @@ mod tests {
     #[case(SamplingConfig::FREQ_4K, 2)]
     #[cfg_attr(miri, ignore)]
     fn sampling(#[case] config: SamplingConfig, #[case] size: usize) {
-        assert_eq!(
-            Ok(config),
-            STMSamplingConfig::SamplingConfig(config).sampling(size)
-        );
+        assert_eq!(Ok(config), STMConfig::SamplingConfig(config).sampling(size));
     }
 
     #[rstest::rstest]
@@ -119,7 +132,7 @@ mod tests {
         #[case] p: Duration,
         #[case] size: usize,
     ) {
-        assert_eq!(expect, STMSamplingConfig::Period(p).sampling(size));
+        assert_eq!(expect, STMConfig::Period(p).sampling(size));
     }
 
     #[rstest::rstest]
@@ -150,6 +163,6 @@ mod tests {
         #[case] p: Duration,
         #[case] size: usize,
     ) {
-        assert_eq!(expect, STMSamplingConfig::PeriodNearest(p).sampling(size));
+        assert_eq!(expect, STMConfig::PeriodNearest(p).sampling(size));
     }
 }

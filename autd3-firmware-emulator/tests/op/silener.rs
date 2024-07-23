@@ -230,11 +230,8 @@ fn silencer_completetion_steps_too_large_stm(
 
     // Send FociSTM
     {
-        let d = FociSTM::from_sampling_config(
-            SamplingConfig::FREQ_40K,
-            (0..2).map(|_| Vector3::zeros()),
-        )
-        .with_segment(Segment::S0, Some(TransitionMode::Immediate));
+        let d = FociSTM::new(SamplingConfig::FREQ_40K, (0..2).map(|_| Vector3::zeros()))?
+            .with_segment(Segment::S0, Some(TransitionMode::Immediate));
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }
