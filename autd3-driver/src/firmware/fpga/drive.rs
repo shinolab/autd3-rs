@@ -31,6 +31,36 @@ impl Drive {
     }
 }
 
+impl From<(Phase, EmitIntensity)> for Drive {
+    fn from((phase, intensity): (Phase, EmitIntensity)) -> Self {
+        Self { phase, intensity }
+    }
+}
+
+impl From<(EmitIntensity, Phase)> for Drive {
+    fn from((intensity, phase): (EmitIntensity, Phase)) -> Self {
+        Self { phase, intensity }
+    }
+}
+
+impl From<EmitIntensity> for Drive {
+    fn from(intensity: EmitIntensity) -> Self {
+        Self {
+            phase: Phase::new(0),
+            intensity,
+        }
+    }
+}
+
+impl From<Phase> for Drive {
+    fn from(phase: Phase) -> Self {
+        Self {
+            phase,
+            intensity: EmitIntensity::MAX,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -43,7 +43,8 @@ pub trait Gain {
     #[allow(clippy::type_complexity)]
     fn transform<
         'a,
-        FT: Fn(&Transducer) -> Drive + Sync + Send + 'static,
+        D: Into<Drive>,
+        FT: Fn(&Transducer) -> D + Sync + Send + 'static,
         F: Fn(&Device) -> FT + 'a,
     >(
         f: F,
@@ -53,7 +54,7 @@ pub trait Gain {
     {
         Box::new(move |dev| {
             let f = f(dev);
-            Box::new(move |tr| f(tr))
+            Box::new(move |tr| f(tr).into())
         })
     }
 

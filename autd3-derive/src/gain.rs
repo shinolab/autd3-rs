@@ -35,7 +35,7 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
     } else {
         quote! {
             impl <#(#linetimes,)* #(#type_params,)*> IntoGainTransform<Self> for #name #ty_generics #where_clause {
-                fn with_transform<GainTransformFT: Fn(&Transducer, Drive) -> Drive + Send + Sync, GainTransformF: Fn(&Device) -> GainTransformFT>(self, f: GainTransformF) -> GainTransform<Self, GainTransformFT, GainTransformF> {
+                fn with_transform<GainTransformD: Into<Drive>, GainTransformFT: Fn(&Transducer, Drive) -> GainTransformD + Send + Sync, GainTransformF: Fn(&Device) -> GainTransformFT>(self, f: GainTransformF) -> GainTransform<Self, GainTransformD, GainTransformFT, GainTransformF> {
                     GainTransform::new(self, f)
                 }
             }

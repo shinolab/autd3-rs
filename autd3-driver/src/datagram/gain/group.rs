@@ -274,8 +274,8 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let d1: Drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
-        let d2: Drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
+        let d1 = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
+        let d2 = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
 
         let g1 = TestGain::new(|_| |_| d1, &geometry);
         let g2 = TestGain::new(|_| |_| d2, &geometry);
@@ -335,8 +335,8 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let d1: Drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
-        let d2: Drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
+        let d1 = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
+        let d2 = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
 
         let g1 = TestGain::new(|_| |_| d1, &geometry);
         let g2 = TestGain::new(|_| |_| d2, &geometry);

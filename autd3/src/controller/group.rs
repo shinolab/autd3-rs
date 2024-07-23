@@ -130,7 +130,7 @@ mod tests {
     async fn test_group() -> anyhow::Result<()> {
         let mut autd = create_controller(4).await?;
 
-        autd.send(Uniform::new(0xFF)).await?;
+        autd.send(Uniform::new(EmitIntensity::new(0xFF))).await?;
 
         autd.group(|dev| match dev.idx() {
             0 | 1 | 3 => Some(dev.idx()),
@@ -144,7 +144,11 @@ mod tests {
                 Sine::new(150. * Hz),
                 GainSTM::from_freq(
                     1. * Hz,
-                    [Uniform::new(0x80), Uniform::new(0x81)].into_iter(),
+                    [
+                        Uniform::new(EmitIntensity::new(0x80)),
+                        Uniform::new(EmitIntensity::new(0x81)),
+                    ]
+                    .into_iter(),
                 )?,
             ),
         )?

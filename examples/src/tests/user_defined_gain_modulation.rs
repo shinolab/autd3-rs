@@ -12,9 +12,7 @@ impl MyUniform {
 
 impl Gain for MyUniform {
     fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
-        Ok(Self::transform(|_| {
-            |_| Drive::new(Phase::new(0), EmitIntensity::MAX)
-        }))
+        Ok(Self::transform(|_| |_| EmitIntensity::MAX))
     }
 }
 

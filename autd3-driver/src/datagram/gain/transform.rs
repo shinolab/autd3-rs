@@ -12,7 +12,8 @@ use super::GainCalcResult;
 #[no_gain_transform]
 pub struct Transform<
     G: Gain,
-    FT: Fn(&Transducer, Drive) -> Drive + Send + Sync + 'static,
+    D: Into<Drive>,
+    FT: Fn(&Transducer, Drive) -> D + Send + Sync + 'static,
     F: Fn(&Device) -> FT,
 > {
     gain: G,
@@ -21,19 +22,21 @@ pub struct Transform<
 
 pub trait IntoTransform<G: Gain> {
     fn with_transform<
-        FT: Fn(&Transducer, Drive) -> Drive + Send + Sync + 'static,
+        D: Into<Drive>,
+        FT: Fn(&Transducer, Drive) -> D + Send + Sync + 'static,
         F: Fn(&Device) -> FT,
     >(
         self,
         f: F,
-    ) -> Transform<G, FT, F>;
+    ) -> Transform<G, D, FT, F>;
 }
 
 impl<
         G: Gain,
-        FT: Fn(&Transducer, Drive) -> Drive + Send + Sync + 'static,
+        D: Into<Drive>,
+        FT: Fn(&Transducer, Drive) -> D + Send + Sync + 'static,
         F: Fn(&Device) -> FT,
-    > Transform<G, FT, F>
+    > Transform<G, D, FT, F>
 {
     #[doc(hidden)]
     pub const fn new(gain: G, f: F) -> Self {
@@ -43,9 +46,10 @@ impl<
 
 impl<
         G: Gain,
-        FT: Fn(&Transducer, Drive) -> Drive + Send + Sync + 'static,
+        D: Into<Drive>,
+        FT: Fn(&Transducer, Drive) -> D + Send + Sync + 'static,
         F: Fn(&Device) -> FT,
-    > Gain for Transform<G, FT, F>
+    > Gain for Transform<G, D, FT, F>
 {
     fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         let src = self.gain.calc(geometry)?;
@@ -53,7 +57,7 @@ impl<
         Ok(Box::new(move |dev| {
             let f = f(dev);
             let src = src(dev);
-            Box::new(move |tr| f(tr, src(tr)))
+            Box::new(move |tr| f(tr, src(tr)).into())
         }))
     }
 
@@ -80,7 +84,7 @@ mod tests {
         let geometry = create_geometry(1, 249);
 
         let mut rng = rand::thread_rng();
-        let d: Drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
+        let d = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
 
         let gain = TestGain::null(&geometry).with_transform(move |_| move |_, _| d);
 

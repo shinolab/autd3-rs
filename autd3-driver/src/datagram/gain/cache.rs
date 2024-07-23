@@ -100,7 +100,7 @@ mod tests {
         let geometry = create_geometry(1, 249);
 
         let mut rng = rand::thread_rng();
-        let d: Drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
+        let d = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
         let gain = TestGain::new(|_| |_| d, &geometry);
         let cache = gain.clone().with_cache();
 
