@@ -1,7 +1,7 @@
 mod builder;
 mod group;
 
-use std::{fmt::Debug, hash::Hash, time::Duration};
+use std::{fmt::Debug, hash::Hash, num::NonZeroU32, time::Duration};
 
 use autd3_driver::{
     datagram::{Clear, Datagram, IntoDatagramWithTimeout, Synchronize},
@@ -43,7 +43,7 @@ pub struct Controller<L: Link> {
     send_interval: Duration,
     #[cfg(target_os = "windows")]
     #[get]
-    timer_resolution: u32,
+    timer_resolution: NonZeroU32,
 }
 
 impl Controller<Nop> {
@@ -111,7 +111,7 @@ impl<L: Link> Controller<L> {
         #[cfg(target_os = "windows")]
         unsafe {
             tracing::debug!("Set timer resulution: {:?}", self.timer_resolution);
-            windows::Win32::Media::timeBeginPeriod(self.timer_resolution);
+            windows::Win32::Media::timeBeginPeriod(self.timer_resolution.get());
         }
 
         self.send((Clear::new(), Synchronize::new()).with_timeout(timeout))
@@ -246,7 +246,7 @@ impl<L: Link> Drop for Controller<L> {
     fn drop(&mut self) {
         #[cfg(target_os = "windows")]
         unsafe {
-            windows::Win32::Media::timeEndPeriod(self.timer_resolution);
+            windows::Win32::Media::timeEndPeriod(self.timer_resolution.get());
         }
         if !self.link.is_open() {
             return;
