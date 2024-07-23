@@ -1,18 +1,16 @@
 mod sphere;
 mod t4010a1;
 
-use crate::geometry::Vector3;
+use crate::{defined::Angle, derive::rad, geometry::Vector3};
 
 pub use sphere::Sphere;
 pub use t4010a1::T4010A1;
 
 pub trait Directivity: Send + Sync {
-    fn directivity(theta_deg: f32) -> f32;
+    fn directivity(theta: Angle) -> f32;
     fn directivity_from_dir(axial_direction: &Vector3, target: &Vector3) -> f32 {
         Self::directivity(
-            (axial_direction.cross(target).norm())
-                .atan2(axial_direction.dot(target))
-                .to_degrees(),
+            (axial_direction.cross(target).norm()).atan2(axial_direction.dot(target)) * rad,
         )
     }
 }
@@ -24,8 +22,8 @@ pub mod tests {
     pub struct TestDirectivity {}
 
     impl Directivity for TestDirectivity {
-        fn directivity(t: f32) -> f32 {
-            t
+        fn directivity(t: Angle) -> f32 {
+            t.degree()
         }
     }
 

@@ -4,7 +4,7 @@ pub struct Sphere {}
 
 impl Directivity for Sphere {
     #[inline]
-    fn directivity(_: f32) -> f32 {
+    fn directivity(_: Angle) -> f32 {
         1.
     }
 
@@ -24,7 +24,7 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn test_directivity() {
         let mut rng = rand::thread_rng();
-        assert_eq!(1.0, Sphere::directivity(rng.gen()));
+        assert_eq!(1.0, Sphere::directivity(rng.gen::<f32>() * rad));
     }
 
     #[rstest::rstest]

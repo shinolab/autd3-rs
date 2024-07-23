@@ -55,8 +55,8 @@ static DIR_COEF_D: &[f32] = &[
 pub struct T4010A1 {}
 
 impl Directivity for T4010A1 {
-    fn directivity(theta_deg: f32) -> f32 {
-        let theta_deg = theta_deg.abs() % 180.0;
+    fn directivity(theta: Angle) -> f32 {
+        let theta_deg = theta.degree().abs() % 180.0;
         let theta_deg = if theta_deg > 90.0 {
             180.0 - theta_deg
         } else {
@@ -77,6 +77,8 @@ impl Directivity for T4010A1 {
 mod tests {
     use assert_approx_eq::assert_approx_eq;
 
+    use crate::defined::deg;
+
     use super::*;
 
     #[rstest::rstest]
@@ -94,6 +96,6 @@ mod tests {
     #[case::deg_100(0.199526, 100.0)]
     #[cfg_attr(miri, ignore)]
     fn test_directivity(#[case] expected: f32, #[case] theta_deg: f32) {
-        assert_approx_eq!(expected, T4010A1::directivity(theta_deg));
+        assert_approx_eq!(expected, T4010A1::directivity(theta_deg * deg));
     }
 }
