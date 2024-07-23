@@ -294,7 +294,11 @@ mod tests {
             Sine::new(150. * Hz),
             GainSTM::from_freq(
                 1. * Hz,
-                [Uniform::new(0x80), Uniform::new(0x81)].into_iter(),
+                [
+                    Uniform::new(EmitIntensity::new(0x80)),
+                    Uniform::new(EmitIntensity::new(0x81)),
+                ]
+                .into_iter(),
             )?,
         ))
         .await?;
@@ -304,12 +308,12 @@ mod tests {
                 Sine::new(150. * Hz).calc()?,
                 autd.link[dev.idx()].fpga().modulation(Segment::S0)
             );
-            let f = Uniform::new(0x80).calc(&autd.geometry)?(dev);
+            let f = Uniform::new(EmitIntensity::new(0x80)).calc(&autd.geometry)?(dev);
             assert_eq!(
                 dev.iter().map(f).collect::<Vec<_>>(),
                 autd.link[dev.idx()].fpga().drives(Segment::S0, 0)
             );
-            let f = Uniform::new(0x81).calc(&autd.geometry)?(dev);
+            let f = Uniform::new(EmitIntensity::new(0x81)).calc(&autd.geometry)?(dev);
             assert_eq!(
                 dev.iter().map(f).collect::<Vec<_>>(),
                 autd.link[dev.idx()].fpga().drives(Segment::S0, 1)

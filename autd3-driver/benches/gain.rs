@@ -43,7 +43,7 @@ impl Gain for Focus {
         Ok(Self::transform(move |dev| {
             let wavenumber = dev.wavenumber();
             Box::new(move |tr: &Transducer| {
-                Drive::new(
+                (
                     Phase::from(-(pos - tr.position()).norm() * wavenumber * rad) + phase_offset,
                     intensity,
                 )

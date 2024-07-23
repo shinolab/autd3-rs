@@ -45,8 +45,10 @@ mod tests {
     fn test_phase() {
         let mut rng = rand::thread_rng();
 
-        let g = autd3::gain::Uniform::new(EmitIntensity::new(rng.gen()))
-            .with_phase(Phase::new(rng.gen()));
+        let g = autd3::gain::Uniform::new(EmitIntensity::new(EmitIntensity::new(
+            EmitIntensity::new(rng.gen()),
+        )))
+        .with_phase(Phase::new(rng.gen()));
         let msg = g.to_msg(None);
 
         match msg.datagram {
