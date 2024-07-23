@@ -17,20 +17,7 @@ pub enum AUTDInternalError {
     )]
     ModulationSizeOutOfRange(usize),
 
-    #[error(
-        "Silencer update rate ({0}) is out of range ([{}, {}])",
-        SILENCER_VALUE_MIN,
-        SILENCER_VALUE_MAX
-    )]
-    SilencerUpdateRateOutOfRange(u16),
-    #[error(
-        "Silencer completion steps ({0}) is out of range ([{}, {}])",
-        SILENCER_VALUE_MIN,
-        SILENCER_VALUE_MAX
-    )]
-    SilencerCompletionStepsOutOfRange(u16),
-
-    #[error("Silencer completion time ({0:?}) must be a multiple of ultrasound period")]
+    #[error("Silencer completion time ({0:?}) must be a multiple of 25μs")]
     InvalidSilencerCompletionTime(Duration),
 
     #[error("Unknown group key: {0}")]
@@ -38,7 +25,7 @@ pub enum AUTDInternalError {
 
     #[error("Sampling frequency ({0}) must divide {1}")]
     SamplingFreqInvalid(Freq<u32>, Freq<u32>),
-    #[error("Sampling period ({0:?}) must be a multiple of ultrasound period")]
+    #[error("Sampling period ({0:?}) must be a multiple of 25μs")]
     SamplingPeriodInvalid(Duration),
     #[error("Sampling frequency ({0}) is out of range ([{1}, {2}])")]
     SamplingFreqOutOfRange(Freq<f32>, Freq<f32>, Freq<f32>),
@@ -81,9 +68,6 @@ pub enum AUTDInternalError {
 
     #[error("GainSTMMode ({0:?}) is not supported")]
     GainSTMModeNotSupported(GainSTMMode),
-
-    #[error("Frequency ({0}) can't be produced or is invalid for synchronizer")]
-    InvalidFrequencyError(Freq<u32>),
 
     #[error("{0}")]
     ModulationError(String),
