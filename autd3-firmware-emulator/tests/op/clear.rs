@@ -1,4 +1,4 @@
-use std::num::NonZeroU16;
+use std::num::{NonZeroU16, NonZeroU8};
 
 use autd3_derive::Modulation;
 use autd3_driver::{
@@ -6,9 +6,7 @@ use autd3_driver::{
     derive::*,
     firmware::{
         cpu::TxDatagram,
-        fpga::{
-            SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, SILENCER_VALUE_MIN,
-        },
+        fpga::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
     },
 };
 use autd3_firmware_emulator::CPUEmulator;
@@ -45,10 +43,17 @@ fn send_clear() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     {
-        let d = Silencer::from_completion_steps(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN);
+        let d = unsafe {
+            Silencer::from_completion_steps(
+                NonZeroU8::new_unchecked(1),
+                NonZeroU8::new_unchecked(1),
+            )
+        };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::from_update_rate(SILENCER_VALUE_MIN, SILENCER_VALUE_MIN);
+        let d = unsafe {
+            Silencer::from_update_rate(NonZeroU8::new_unchecked(1), NonZeroU8::new_unchecked(1))
+        };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = TestMod {
@@ -63,8 +68,12 @@ fn send_clear() -> anyhow::Result<()> {
 
         let d = FociSTM::from_sampling_config(
             SamplingConfig::Division(
-                NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT))
-                    .unwrap(),
+                NonZeroU16::new(
+                    SILENCER_STEPS_INTENSITY_DEFAULT
+                        .max(SILENCER_STEPS_PHASE_DEFAULT)
+                        .get() as _,
+                )
+                .unwrap(),
             ),
             gen_random_foci::<1>(2),
         )
@@ -80,11 +89,11 @@ fn send_clear() -> anyhow::Result<()> {
     assert_eq!(1, cpu.fpga().silencer_update_rate_intensity());
     assert_eq!(1, cpu.fpga().silencer_update_rate_phase());
     assert_eq!(
-        SILENCER_STEPS_INTENSITY_DEFAULT,
+        SILENCER_STEPS_INTENSITY_DEFAULT.get(),
         cpu.fpga().silencer_completion_steps_intensity()
     );
     assert_eq!(
-        SILENCER_STEPS_PHASE_DEFAULT,
+        SILENCER_STEPS_PHASE_DEFAULT.get(),
         cpu.fpga().silencer_completion_steps_phase()
     );
     assert!(cpu.fpga().silencer_fixed_completion_steps_mode());

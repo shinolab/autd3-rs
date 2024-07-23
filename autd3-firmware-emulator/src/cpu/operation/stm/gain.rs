@@ -62,10 +62,7 @@ impl CPUEmulator {
                 return ERR_INVALID_TRANSITION_MODE;
             }
 
-            if Self::validate_silencer_settings(
-                self.silencer_strict_mode,
-                self.min_freq_div_intensity,
-                self.min_freq_div_phase,
+            if self.validate_silencer_settings(
                 d.head.freq_div,
                 self.mod_freq_div[self.mod_segment as usize],
             ) {
@@ -247,10 +244,7 @@ impl CPUEmulator {
             return ERR_INVALID_TRANSITION_MODE;
         }
 
-        if Self::validate_silencer_settings(
-            self.silencer_strict_mode,
-            self.min_freq_div_intensity,
-            self.min_freq_div_phase,
+        if self.validate_silencer_settings(
             self.stm_freq_div[d.segment as usize],
             self.mod_freq_div[self.mod_segment as usize],
         ) {

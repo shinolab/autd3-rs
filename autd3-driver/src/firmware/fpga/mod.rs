@@ -11,6 +11,8 @@ mod stm_focus;
 mod stm_sampling_config;
 mod transition_mode;
 
+use std::num::NonZeroU8;
+
 pub(crate) use stm_focus::STMFocus;
 
 pub use debug_type::DebugType;
@@ -45,10 +47,8 @@ pub const FOCI_STM_FIXED_NUM_LOWER_Y: i32 = FOCI_STM_FIXED_NUM_LOWER + FOCI_STM_
 pub const FOCI_STM_FIXED_NUM_UPPER_Z: i32 = FOCI_STM_FIXED_NUM_UPPER;
 pub const FOCI_STM_FIXED_NUM_LOWER_Z: i32 = FOCI_STM_FIXED_NUM_LOWER;
 
-pub const SILENCER_VALUE_MIN: u16 = 1;
-pub const SILENCER_VALUE_MAX: u16 = 0xFFFF;
-pub const SILENCER_STEPS_INTENSITY_DEFAULT: u16 = 10;
-pub const SILENCER_STEPS_PHASE_DEFAULT: u16 = 40;
+pub const SILENCER_STEPS_INTENSITY_DEFAULT: NonZeroU8 = unsafe { NonZeroU8::new_unchecked(10) };
+pub const SILENCER_STEPS_PHASE_DEFAULT: NonZeroU8 = unsafe { NonZeroU8::new_unchecked(40) };
 
 pub const MOD_BUF_SIZE_MIN: usize = 2;
 pub const MOD_BUF_SIZE_MAX: usize = 32768;

@@ -1,4 +1,7 @@
-use std::{num::NonZeroU16, time::Duration};
+use std::{
+    num::{NonZeroU16, NonZeroU8},
+    time::Duration,
+};
 
 use autd3_driver::{
     datagram::{IntoDatagramWithSegmentTransition, Silencer, SwapSegment},
@@ -92,8 +95,11 @@ fn send_mod(
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let m: Vec<_> = (0..n).map(|_| rng.gen()).collect();
-    let freq_div =
-        rng.gen_range(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=0xFFFF);
+    let freq_div = rng.gen_range(
+        SILENCER_STEPS_INTENSITY_DEFAULT
+            .max(SILENCER_STEPS_PHASE_DEFAULT)
+            .get() as u16..=u16::MAX,
+    );
     let d = TestModulation {
         buf: m.clone(),
         config: SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
@@ -124,7 +130,9 @@ fn swap_mod_segmemt() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let m: Vec<_> = (0..MOD_BUF_SIZE_MIN).map(|_| 0x00).collect();
-    let freq_div = SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT);
+    let freq_div = SILENCER_STEPS_INTENSITY_DEFAULT
+        .max(SILENCER_STEPS_PHASE_DEFAULT)
+        .get() as u16;
     let d = TestModulation {
         buf: m.clone(),
         config: SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
@@ -181,7 +189,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
             config: SamplingConfig::Division(
-                NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
+                NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT.get() as _).unwrap(),
             ),
             loop_behavior: LoopBehavior::infinite(),
         }
@@ -189,7 +197,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = Silencer::from_completion_steps(
-            SILENCER_STEPS_PHASE_DEFAULT * 2,
+            SILENCER_STEPS_PHASE_DEFAULT.saturating_mul(unsafe { NonZeroU8::new_unchecked(2) }),
             SILENCER_STEPS_PHASE_DEFAULT,
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));

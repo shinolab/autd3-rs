@@ -1,4 +1,7 @@
-use std::{collections::HashMap, num::NonZeroU16};
+use std::{
+    collections::HashMap,
+    num::{NonZeroU16, NonZeroU8},
+};
 
 use autd3_driver::{
     datagram::{
@@ -69,8 +72,11 @@ fn send_gain_stm_phase_intensity_full(
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let bufs = gen_random_buf(n, &geometry);
-    let freq_div =
-        rng.gen_range(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=0xFFFF);
+    let freq_div = rng.gen_range(
+        SILENCER_STEPS_INTENSITY_DEFAULT
+            .max(SILENCER_STEPS_PHASE_DEFAULT)
+            .get() as _..=u16::MAX,
+    );
     let d = GainSTM::from_sampling_config(
         SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
         bufs.iter().map(|buf| TestGain { buf: buf.clone() }),
@@ -121,8 +127,12 @@ fn send_gain_stm_phase_full(#[case] n: usize) -> anyhow::Result<()> {
     let transition_mode = TransitionMode::Ext;
     let d = GainSTM::from_sampling_config(
         SamplingConfig::Division(
-            NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT))
-                .unwrap(),
+            NonZeroU16::new(
+                SILENCER_STEPS_INTENSITY_DEFAULT
+                    .max(SILENCER_STEPS_PHASE_DEFAULT)
+                    .get() as _,
+            )
+            .unwrap(),
         ),
         bufs.iter().map(|buf| TestGain { buf: buf.clone() }),
     )
@@ -180,8 +190,12 @@ fn send_gain_stm_phase_half(#[case] n: usize) -> anyhow::Result<()> {
         let transition_mode = TransitionMode::GPIO(gpio);
         let d = GainSTM::from_sampling_config(
             SamplingConfig::Division(
-                NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT))
-                    .unwrap(),
+                NonZeroU16::new(
+                    SILENCER_STEPS_INTENSITY_DEFAULT
+                        .max(SILENCER_STEPS_PHASE_DEFAULT)
+                        .get() as _,
+                )
+                .unwrap(),
             ),
             bufs.iter().map(|buf| TestGain { buf: buf.clone() }),
         )
@@ -279,8 +293,12 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
 
         let d = GainSTM::from_sampling_config(
             SamplingConfig::Division(
-                NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT))
-                    .unwrap(),
+                NonZeroU16::new(
+                    SILENCER_STEPS_INTENSITY_DEFAULT
+                        .max(SILENCER_STEPS_PHASE_DEFAULT)
+                        .get() as _,
+                )
+                .unwrap(),
             ),
             gen_random_buf(2, &geometry)
                 .into_iter()
@@ -291,7 +309,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
 
         let d = Silencer::from_completion_steps(
             SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT * 2,
+            SILENCER_STEPS_PHASE_DEFAULT.saturating_mul(unsafe { NonZeroU8::new_unchecked(2) }),
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
