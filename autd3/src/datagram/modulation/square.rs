@@ -155,6 +155,14 @@ mod tests {
         Err(AUTDInternalError::ModulationError("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
         4000*Hz
     )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
+        0*Hz
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
+        0.*Hz
+    )]
     fn with_freq_float_exact(
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
         #[case] freq: impl SamplingModeInference,
@@ -192,6 +200,10 @@ mod tests {
     #[case(
         Err(AUTDInternalError::ModulationError("Frequency (-0.1 Hz) must be positive".to_owned())),
         -0.1*Hz
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
+        0.*Hz
     )]
     fn from_freq_nearest(
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,

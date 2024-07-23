@@ -32,6 +32,12 @@ impl SamplingMode for ExactFreq {
                 sampling_config.freq()? / 2.
             )));
         }
+        if freq.hz() == 0 {
+            return Err(AUTDInternalError::ModulationError(
+                "Frequency must not be zero. If intentional, Use `Static` instead.".to_string(),
+            ));
+        }
+
         let fd = freq.hz() as u64 * sampling_config.division()? as u64;
         let fs = ULTRASOUND_FREQ.hz() as u64;
 
@@ -54,6 +60,11 @@ impl SamplingMode for ExactFreqFloat {
                 "Frequency ({}) must be positive",
                 freq
             )));
+        }
+        if freq.hz() == 0. {
+            return Err(AUTDInternalError::ModulationError(
+                "Frequency must not be zero. If intentional, Use `Static` instead.".to_string(),
+            ));
         }
         if freq.hz() >= sampling_config.freq()?.hz() / 2. {
             return Err(AUTDInternalError::ModulationError(format!(
@@ -96,6 +107,11 @@ impl SamplingMode for NearestFreq {
                 "Frequency ({}) must be positive",
                 freq
             )));
+        }
+        if freq.hz() == 0. {
+            return Err(AUTDInternalError::ModulationError(
+                "Frequency must not be zero. If intentional, Use `Static` instead.".to_string(),
+            ));
         }
         if freq.hz() >= sampling_config.freq()?.hz() / 2. {
             return Err(AUTDInternalError::ModulationError(format!(
