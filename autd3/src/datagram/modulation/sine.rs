@@ -158,6 +158,14 @@ mod tests {
         Err(AUTDInternalError::ModulationError("Frequency (-0.1 Hz) must be positive".to_owned())),
         -0.1*Hz
     )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
+        0*Hz
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
+        0.*Hz
+    )]
     fn new(
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
         #[case] freq: impl SamplingModeInference,
@@ -195,6 +203,10 @@ mod tests {
     #[case(
         Err(AUTDInternalError::ModulationError("Frequency (-0.1 Hz) must be positive".to_owned())),
         -0.1*Hz
+    )]
+    #[case(
+        Err(AUTDInternalError::ModulationError("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
+        0.*Hz
     )]
     fn from_freq_nearest(
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
