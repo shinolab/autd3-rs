@@ -59,10 +59,10 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
         .with_segment(Segment::S1, Some(TransitionMode::Immediate));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = FociSTM::from_sampling_config(
+        let d = FociSTM::new(
             SamplingConfig::Division(NonZeroU16::MAX),
             (0..2).map(|_| ControlPoint::new(Vector3::zeros())),
-        )
+        )?
         .with_segment(Segment::S1, Some(TransitionMode::Immediate));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }

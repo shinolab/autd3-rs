@@ -59,7 +59,7 @@ fn test_send_foci_stm(
     #[case] loop_behavior: LoopBehavior,
     #[case] segment: Segment,
     #[case] transition_mode: Option<TransitionMode>,
-) {
+) -> anyhow::Result<()> {
     let sin_table = include_bytes!("sin.dat");
     let atan_table = include_bytes!("atan.dat");
 
@@ -77,10 +77,10 @@ fn test_send_foci_stm(
     );
     let foci = gen_random_foci::<1>(n);
 
-    let stm = FociSTM::from_sampling_config(
+    let stm = FociSTM::new(
         SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
         foci.clone(),
-    )
+    )?
     .with_loop_behavior(loop_behavior)
     .with_segment(segment, transition_mode);
 
@@ -122,10 +122,12 @@ fn test_send_foci_stm(
                 assert_eq!(focus.intensity(), drive.intensity());
             })
     });
+
+    Ok(())
 }
 
 #[test]
-fn change_foci_stm_segment() {
+fn change_foci_stm_segment() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -133,10 +135,10 @@ fn change_foci_stm_segment() {
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
 
-    let stm = FociSTM::from_sampling_config(
+    let stm = FociSTM::new(
         SamplingConfig::Division(NonZeroU16::MAX),
         gen_random_foci::<1>(2),
-    )
+    )?
     .with_loop_behavior(LoopBehavior::infinite())
     .with_segment(Segment::S1, None);
 
@@ -148,17 +150,19 @@ fn change_foci_stm_segment() {
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     assert!(!cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
+
+    Ok(())
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn test_foci_stm_freq_div_too_small() {
+fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     {
-        let stm = FociSTM::from_sampling_config(SamplingConfig::FREQ_40K, gen_random_foci::<1>(2))
+        let stm = FociSTM::new(SamplingConfig::FREQ_40K, gen_random_foci::<1>(2))?
             .with_loop_behavior(LoopBehavior::infinite())
             .with_segment(Segment::S0, Some(TransitionMode::Immediate));
 
@@ -183,7 +187,7 @@ fn test_foci_stm_freq_div_too_small() {
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let stm = FociSTM::from_sampling_config(
+        let stm = FociSTM::new(
             SamplingConfig::Division(
                 NonZeroU16::new(
                     SILENCER_STEPS_INTENSITY_DEFAULT
@@ -193,7 +197,7 @@ fn test_foci_stm_freq_div_too_small() {
                 .unwrap(),
             ),
             gen_random_foci::<1>(2),
-        )
+        )?
         .with_loop_behavior(LoopBehavior::infinite())
         .with_segment(Segment::S1, None);
 
@@ -211,11 +215,13 @@ fn test_foci_stm_freq_div_too_small() {
             send(&mut cpu, d, &geometry, &mut tx)
         );
     }
+
+    Ok(())
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn send_foci_stm_invalid_segment_transition() {
+fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
@@ -241,10 +247,10 @@ fn send_foci_stm_invalid_segment_transition() {
                     .collect()
             })
             .collect();
-        let stm = GainSTM::from_sampling_config(
+        let stm = GainSTM::new(
             SamplingConfig::Division(NonZeroU16::MAX),
             bufs.iter().map(|buf| TestGain { buf: buf.clone() }),
-        )
+        )?
         .with_segment(Segment::S1, Some(TransitionMode::Immediate));
 
         assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
@@ -263,21 +269,23 @@ fn send_foci_stm_invalid_segment_transition() {
             send(&mut cpu, d, &geometry, &mut tx)
         );
     }
+
+    Ok(())
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn send_foci_stm_invalid_transition_mode() {
+fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     // segment 0 to 0
     {
-        let stm = FociSTM::from_sampling_config(
+        let stm = FociSTM::new(
             SamplingConfig::Division(NonZeroU16::MAX),
             gen_random_foci::<1>(2),
-        )
+        )?
         .with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
         assert_eq!(
             Err(AUTDInternalError::InvalidTransitionMode),
@@ -287,10 +295,10 @@ fn send_foci_stm_invalid_transition_mode() {
 
     // segment 0 to 1 immidiate
     {
-        let stm = FociSTM::from_sampling_config(
+        let stm = FociSTM::new(
             SamplingConfig::Division(NonZeroU16::MAX),
             gen_random_foci::<1>(2),
-        )
+        )?
         .with_loop_behavior(LoopBehavior::once())
         .with_segment(Segment::S1, Some(TransitionMode::Immediate));
 
@@ -302,10 +310,10 @@ fn send_foci_stm_invalid_transition_mode() {
 
     // Infinite but SyncIdx
     {
-        let stm = FociSTM::from_sampling_config(
+        let stm = FociSTM::new(
             SamplingConfig::Division(NonZeroU16::MAX),
             gen_random_foci::<1>(2),
-        )
+        )?
         .with_segment(Segment::S1, None);
 
         assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
@@ -316,6 +324,8 @@ fn send_foci_stm_invalid_transition_mode() {
             send(&mut cpu, d, &geometry, &mut tx)
         );
     }
+
+    Ok(())
 }
 
 #[rstest::rstest]
@@ -328,16 +338,16 @@ fn test_miss_transition_time(
     #[case] expect: Result<(), AUTDInternalError>,
     #[case] systime: OffsetDateTime,
     #[case] transition_time: OffsetDateTime,
-) {
+) -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let transition_mode = TransitionMode::SysTime(DcSysTime::from_utc(transition_time).unwrap());
-    let stm = FociSTM::from_sampling_config(
+    let stm = FociSTM::new(
         SamplingConfig::Division(NonZeroU16::MAX),
         gen_random_foci::<1>(2).into_iter(),
-    )
+    )?
     .with_loop_behavior(LoopBehavior::once())
     .with_segment(Segment::S1, Some(transition_mode));
 
@@ -346,9 +356,11 @@ fn test_miss_transition_time(
     if expect.is_ok() {
         assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
     }
+
+    Ok(())
 }
 
-fn test_send_foci_stm_n<const N: usize>() {
+fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
     let sin_table = include_bytes!("sin.dat");
     let atan_table = include_bytes!("atan.dat");
 
@@ -370,10 +382,10 @@ fn test_send_foci_stm_n<const N: usize>() {
         let segment = Segment::S0;
         let transition_mode = TransitionMode::Immediate;
 
-        let stm = FociSTM::from_sampling_config(
+        let stm = FociSTM::new(
             SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
             foci.clone(),
-        )
+        )?
         .with_loop_behavior(loop_behavior)
         .with_segment(segment, Some(transition_mode));
 
@@ -419,46 +431,48 @@ fn test_send_foci_stm_n<const N: usize>() {
                 })
         });
     }
+
+    Ok(())
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn test_send_foci_stm_2() {
+fn test_send_foci_stm_2() -> anyhow::Result<()> {
     test_send_foci_stm_n::<2>()
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn test_send_foci_stm_3() {
+fn test_send_foci_stm_3() -> anyhow::Result<()> {
     test_send_foci_stm_n::<3>()
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn test_send_foci_stm_4() {
+fn test_send_foci_stm_4() -> anyhow::Result<()> {
     test_send_foci_stm_n::<4>()
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn test_send_foci_stm_5() {
+fn test_send_foci_stm_5() -> anyhow::Result<()> {
     test_send_foci_stm_n::<5>()
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn test_send_foci_stm_6() {
+fn test_send_foci_stm_6() -> anyhow::Result<()> {
     test_send_foci_stm_n::<6>()
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn test_send_foci_stm_7() {
+fn test_send_foci_stm_7() -> anyhow::Result<()> {
     test_send_foci_stm_n::<7>()
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn test_send_foci_stm_8() {
+fn test_send_foci_stm_8() -> anyhow::Result<()> {
     test_send_foci_stm_n::<8>()
 }

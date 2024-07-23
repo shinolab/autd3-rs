@@ -116,10 +116,10 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     // segment 0: FociSTM
     send(
         &mut cpu,
-        FociSTM::from_sampling_config(
+        FociSTM::new(
             SamplingConfig::Division(NonZeroU16::MAX),
             (0..2).map(|_| ControlPoint::new(Vector3::zeros())),
-        )
+        )?
         .with_segment(Segment::S0, Some(TransitionMode::Immediate)),
         &geometry,
         &mut tx,
@@ -128,7 +128,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     // segment 1: GainSTM
     send(
         &mut cpu,
-        GainSTM::from_sampling_config(
+        GainSTM::new(
             SamplingConfig::Division(NonZeroU16::MAX),
             (0..2)
                 .map(|_| {
@@ -138,7 +138,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
                         .collect()
                 })
                 .map(|buf: HashMap<usize, Vec<Drive>>| TestGain { buf: buf.clone() }),
-        )
+        )?
         .with_segment(Segment::S1, Some(TransitionMode::Immediate)),
         &geometry,
         &mut tx,

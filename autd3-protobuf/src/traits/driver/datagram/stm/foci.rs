@@ -29,7 +29,7 @@ seq_macro::seq!(N in 1..=8 {
                     .as_ref()
                     .ok_or(AUTDProtoBufError::DataParseError)?;
 
-                let mut stm = autd3_driver::datagram::FociSTM::from_sampling_config(
+                let mut stm = autd3_driver::datagram::FociSTM::new(
                     SamplingConfig::from_msg(
                         props
                             .config
