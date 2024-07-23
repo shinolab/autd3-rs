@@ -1,4 +1,8 @@
-use std::{collections::HashMap, num::NonZeroU16, time::Duration};
+use std::{
+    collections::HashMap,
+    num::{NonZeroU16, NonZeroU8},
+    time::Duration,
+};
 
 use autd3_driver::{
     datagram::{FociSTM, GainSTM, IntoDatagramWithSegmentTransition, Silencer, SwapSegment},
@@ -66,8 +70,11 @@ fn test_send_foci_stm(
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let freq_div =
-        rng.gen_range(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=0xFFFF);
+    let freq_div = rng.gen_range(
+        SILENCER_STEPS_INTENSITY_DEFAULT
+            .max(SILENCER_STEPS_PHASE_DEFAULT)
+            .get() as _..=u16::MAX,
+    );
     let foci = gen_random_foci::<1>(n);
 
     let stm = FociSTM::from_sampling_config(
@@ -178,8 +185,12 @@ fn test_foci_stm_freq_div_too_small() {
 
         let stm = FociSTM::from_sampling_config(
             SamplingConfig::Division(
-                NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT))
-                    .unwrap(),
+                NonZeroU16::new(
+                    SILENCER_STEPS_INTENSITY_DEFAULT
+                        .max(SILENCER_STEPS_PHASE_DEFAULT)
+                        .get() as _,
+                )
+                .unwrap(),
             ),
             gen_random_foci::<1>(2),
         )
@@ -190,7 +201,7 @@ fn test_foci_stm_freq_div_too_small() {
 
         let d = Silencer::from_completion_steps(
             SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT * 2,
+            SILENCER_STEPS_PHASE_DEFAULT.saturating_mul(unsafe { NonZeroU8::new_unchecked(2) }),
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -349,8 +360,11 @@ fn test_send_foci_stm_n<const N: usize>() {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     {
-        let freq_div = rng
-            .gen_range(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=0xFFFF);
+        let freq_div = rng.gen_range(
+            SILENCER_STEPS_INTENSITY_DEFAULT
+                .max(SILENCER_STEPS_PHASE_DEFAULT)
+                .get() as _..=u16::MAX,
+        );
         let foci = gen_random_foci::<N>(1000);
         let loop_behavior = LoopBehavior::infinite();
         let segment = Segment::S0;

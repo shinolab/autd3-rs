@@ -19,6 +19,8 @@ pub enum AUTDInternalError {
 
     #[error("Silencer completion time ({0:?}) must be a multiple of 25μs")]
     InvalidSilencerCompletionTime(Duration),
+    #[error("Silencer completion time ({0:?}) is out of range ([{1:?}, {2:?}])")]
+    SilencerCompletionTimeOutOfRange(Duration, Duration, Duration),
 
     #[error("Unknown group key: {0}")]
     UnkownKey(String),

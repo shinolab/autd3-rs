@@ -1,3 +1,5 @@
+use std::num::NonZeroU8;
+
 use crate::firmware::{
     fpga::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
     operation::SilencerFixedCompletionStepsOp,
@@ -6,44 +8,10 @@ use crate::{datagram::*, firmware::operation::SilencerTarget};
 
 #[derive(Debug, Clone, Copy)]
 pub struct FixedCompletionSteps {
-    pub(super) steps_intensity: u16,
-    pub(super) steps_phase: u16,
+    pub(super) steps_intensity: NonZeroU8,
+    pub(super) steps_phase: NonZeroU8,
     pub(super) strict_mode: bool,
     pub(super) target: SilencerTarget,
-}
-
-impl<T> std::ops::Mul<T> for FixedCompletionSteps
-where
-    T: Copy,
-    u16: std::ops::Mul<T, Output = u16>,
-{
-    type Output = Self;
-
-    fn mul(self, rhs: T) -> Self::Output {
-        Self {
-            steps_intensity: self.steps_intensity * rhs,
-            steps_phase: self.steps_phase * rhs,
-            strict_mode: self.strict_mode,
-            target: self.target,
-        }
-    }
-}
-
-impl<T> std::ops::Div<T> for FixedCompletionSteps
-where
-    T: Copy,
-    u16: std::ops::Div<T, Output = u16>,
-{
-    type Output = Self;
-
-    fn div(self, rhs: T) -> Self::Output {
-        Self {
-            steps_intensity: self.steps_intensity / rhs,
-            steps_phase: self.steps_phase / rhs,
-            strict_mode: self.strict_mode,
-            target: self.target,
-        }
-    }
 }
 
 impl Default for Silencer<FixedCompletionSteps> {
@@ -70,12 +38,12 @@ impl Silencer<FixedCompletionSteps> {
         self
     }
 
-    pub const fn completion_steps_intensity(&self) -> u16 {
-        self.internal.steps_intensity
+    pub const fn completion_steps_intensity(&self) -> u8 {
+        self.internal.steps_intensity.get()
     }
 
-    pub const fn completion_steps_phase(&self) -> u16 {
-        self.internal.steps_phase
+    pub const fn completion_steps_phase(&self) -> u8 {
+        self.internal.steps_phase.get()
     }
 
     pub const fn strict_mode(&self) -> bool {
@@ -87,9 +55,67 @@ impl Silencer<FixedCompletionSteps> {
     }
 }
 
+macro_rules! impl_saturating_op {
+    ($op:ident) => {
+        impl Silencer<FixedCompletionSteps> {
+            pub const fn $op(self, v: u8) -> Self {
+                let steps_intensity = match self.completion_steps_intensity().$op(v) {
+                    0 => 1,
+                    v => v,
+                };
+                let steps_phase = match self.completion_steps_phase().$op(v) {
+                    0 => 1,
+                    v => v,
+                };
+                Self {
+                    internal: FixedCompletionSteps {
+                        steps_intensity: unsafe { NonZeroU8::new_unchecked(steps_intensity) },
+                        steps_phase: unsafe { NonZeroU8::new_unchecked(steps_phase) },
+                        strict_mode: self.strict_mode(),
+                        target: self.target(),
+                    },
+                }
+            }
+        }
+    };
+}
+impl_saturating_op!(saturating_add);
+impl_saturating_op!(saturating_sub);
+impl_saturating_op!(saturating_mul);
+impl_saturating_op!(saturating_div);
+
+macro_rules! impl_checked_op {
+    ($op:ident) => {
+        impl Silencer<FixedCompletionSteps> {
+            pub const fn $op(self, v: u8) -> Option<Self> {
+                let steps_intensity = match self.completion_steps_intensity().$op(v) {
+                    Some(0) | None => return None,
+                    Some(v) => v,
+                };
+                let steps_phase = match self.completion_steps_phase().$op(v) {
+                    Some(0) | None => return None,
+                    Some(v) => v,
+                };
+                Some(Self {
+                    internal: FixedCompletionSteps {
+                        steps_intensity: unsafe { NonZeroU8::new_unchecked(steps_intensity) },
+                        steps_phase: unsafe { NonZeroU8::new_unchecked(steps_phase) },
+                        strict_mode: self.strict_mode(),
+                        target: self.target(),
+                    },
+                })
+            }
+        }
+    };
+}
+impl_checked_op!(checked_add);
+impl_checked_op!(checked_sub);
+impl_checked_op!(checked_mul);
+impl_checked_op!(checked_div);
+
 pub struct SilencerFixedCompletionStepsOpGenerator {
-    steps_intensity: u16,
-    steps_phase: u16,
+    steps_intensity: NonZeroU8,
+    steps_phase: NonZeroU8,
     strict_mode: bool,
     target: SilencerTarget,
 }

@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{num::NonZeroU8, time::Duration};
 
 use crate::{
     datagram::*,
@@ -94,8 +94,8 @@ impl Silencer<FixedCompletionTime> {
 
 #[derive(Debug)]
 pub struct SilencerFixedCompletionTimeOpGenerator {
-    steps_intensity: u16,
-    steps_phase: u16,
+    steps_intensity: NonZeroU8,
+    steps_phase: NonZeroU8,
     strict_mode: bool,
     target: SilencerTarget,
 }
@@ -125,6 +125,9 @@ impl Datagram for Silencer<FixedCompletionTime> {
     }
 
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
+        const ULTRASOUND_PERIOD: Duration =
+            Duration::from_nanos(NANOSEC as u64 / ULTRASOUND_FREQ.hz() as u64);
+
         let ultrasound_freq = ULTRASOUND_FREQ.hz() as u128;
         let k_intensity = self.internal.time_intensity.as_nanos() * ultrasound_freq;
         let steps_intensity = if k_intensity % NANOSEC == 0 {
@@ -134,6 +137,13 @@ impl Datagram for Silencer<FixedCompletionTime> {
                 self.internal.time_intensity,
             ));
         };
+        if steps_intensity == 0 || steps_intensity > u8::MAX as _ {
+            return Err(AUTDInternalError::SilencerCompletionTimeOutOfRange(
+                self.internal.time_intensity,
+                ULTRASOUND_PERIOD,
+                ULTRASOUND_PERIOD * u8::MAX as _,
+            ));
+        }
 
         let k_phase = self.internal.time_phase.as_nanos() * ultrasound_freq;
         let steps_phase = if k_phase % NANOSEC == 0 {
@@ -143,10 +153,17 @@ impl Datagram for Silencer<FixedCompletionTime> {
                 self.internal.time_phase,
             ));
         };
+        if steps_phase == 0 || steps_phase > u8::MAX as _ {
+            return Err(AUTDInternalError::SilencerCompletionTimeOutOfRange(
+                self.internal.time_phase,
+                ULTRASOUND_PERIOD,
+                ULTRASOUND_PERIOD * u8::MAX as _,
+            ));
+        }
 
         Ok(SilencerFixedCompletionTimeOpGenerator {
-            steps_intensity: steps_intensity as _,
-            steps_phase: steps_phase as _,
+            steps_intensity: unsafe { NonZeroU8::new_unchecked(steps_intensity as _) },
+            steps_phase: unsafe { NonZeroU8::new_unchecked(steps_phase as _) },
             strict_mode: self.internal.strict_mode,
             target: self.internal.target,
         })
