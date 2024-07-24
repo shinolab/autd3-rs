@@ -28,7 +28,7 @@ tracing = { workspace = true }
 ta = { workspace = true, optional = true }
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.57.0", features = ["Win32_Media_Multimedia", "Win32_System_Threading", "Win32_Foundation"], optional = true }
+windows = { version = "0.58.0", features = ["Win32_Media_Multimedia", "Win32_System_Threading", "Win32_Foundation"], optional = true }
 
 [target.'cfg(not(windows))'.dependencies]
 libc = { version = "0.2.144", optional = true }
