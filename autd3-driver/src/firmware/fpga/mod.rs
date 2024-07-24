@@ -8,7 +8,6 @@ mod phase;
 mod sampling_config;
 mod segment;
 mod stm_focus;
-mod stm_sampling_config;
 mod transition_mode;
 
 pub(crate) use stm_focus::STMFocus;
@@ -22,7 +21,6 @@ pub use loop_behavior::LoopBehavior;
 pub use phase::Phase;
 pub use sampling_config::SamplingConfig;
 pub use segment::Segment;
-pub use stm_sampling_config::STMConfig;
 pub use transition_mode::*;
 
 use crate::defined::{mm, Freq};

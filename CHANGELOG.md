@@ -7,7 +7,7 @@
   - Invert the sign of the phase
   - Remove `dynamic_freq` feature
 - `Controller::link` and `geometry` is now private. use `link()`, `link_mut()`, `geometry()`, and `geometry_mut()` instead
-- Unified `FociSTM` and `GainSTM` constructor to `new`
+- Unified `FociSTM` and `GainSTM` constructor to `new` and `new_nearest`
 - Remove `Silencer::from_completion_steps`, use `Silencer::from_completion_time` instead
 - Change the maximum value of `LoopBehavior` to 65535 from 4294967295
 - Change base frequency of `SamplingConfig` to 40kHz from 20.48MHz
