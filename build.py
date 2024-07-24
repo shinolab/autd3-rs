@@ -338,6 +338,8 @@ def rust_coverage(args):
                 "--ignore",
                 "**/soem_bindings/*",
                 "--ignore",
+                "**/tests/*",
+                "--ignore",
                 "*/build.rs",
                 "--ignore",
                 "examples/**/*.rs",
