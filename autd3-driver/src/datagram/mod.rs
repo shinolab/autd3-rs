@@ -6,7 +6,7 @@ mod gpio_in;
 mod modulation;
 mod pulse_width_encoder;
 mod reads_fpga_state;
-pub mod segment;
+mod segment;
 mod silencer;
 mod stm;
 mod synchronize;
@@ -33,6 +33,8 @@ pub use reads_fpga_state::ReadsFPGAState;
 pub use segment::SwapSegment;
 pub use silencer::{Silencer, SilencerFixedCompletionTime, SilencerFixedUpdateRate};
 pub use stm::{FociSTM, GainSTM};
+#[cfg(feature = "capi")]
+pub use stm::{STMConfig, STMConfigNearest};
 pub use synchronize::Synchronize;
 pub use with_parallel_threshold::{
     DatagramWithParallelThreshold, IntoDatagramWithParallelThreshold,
