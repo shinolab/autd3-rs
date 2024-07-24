@@ -206,7 +206,7 @@ pub mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn test_center() {
-        let transducers = itertools::iproduct!((0..18), (0..14))
+        let transducers = itertools::iproduct!(0..18, 0..14)
             .enumerate()
             .map(|(i, (y, x))| Transducer::new(i, 10.16 * Vector3::new(x as f32, y as f32, 0.)))
             .collect::<Vec<_>>();
@@ -252,7 +252,7 @@ pub mod tests {
         let device = Device::new(
             0,
             quat,
-            itertools::iproduct!((0..18), (0..14))
+            itertools::iproduct!(0..18, 0..14)
                 .enumerate()
                 .map(|(i, (y, x))| {
                     Transducer::new(i, origin + 10.16 * Vector3::new(x as f32, y as f32, 0.))
@@ -268,7 +268,7 @@ pub mod tests {
         let mut rng = rand::thread_rng();
         let origin = Vector3::new(rng.gen(), rng.gen(), rng.gen());
 
-        let transducers = itertools::iproduct!((0..18), (0..14))
+        let transducers = itertools::iproduct!(0..18, 0..14)
             .enumerate()
             .map(|(i, (y, x))| {
                 Transducer::new(i, origin + 10.16 * Vector3::new(x as f32, y as f32, 0.))
@@ -280,7 +280,7 @@ pub mod tests {
         let t = Vector3::new(40., 50., 60.);
         device.translate_to(t);
 
-        itertools::iproduct!((0..18), (0..14))
+        itertools::iproduct!(0..18, 0..14)
             .map(|(y, x)| 10.16 * Vector3::new(x as f32, y as f32, 0.) + t)
             .zip(device.iter())
             .for_each(|(expect, tr)| {
@@ -295,7 +295,7 @@ pub mod tests {
             let mut device = Device::new(
                 0,
                 UnitQuaternion::identity(),
-                itertools::iproduct!((0..18), (0..14))
+                itertools::iproduct!(0..18, 0..14)
                     .enumerate()
                     .map(|(i, (y, x))| {
                         Transducer::new(i, 10.16 * Vector3::new(x as f32, y as f32, 0.))
@@ -326,7 +326,7 @@ pub mod tests {
         assert_approx_eq_vec3!(expect_x, device.x_direction());
         assert_approx_eq_vec3!(expect_y, device.y_direction());
         assert_approx_eq_vec3!(expect_z, device.axial_direction());
-        itertools::iproduct!((0..18), (0..14))
+        itertools::iproduct!(0..18, 0..14)
             .map(|(y, x)| 10.16 * Vector3::new(-y as f32, x as f32, 0.))
             .zip(device.iter())
             .for_each(|(expect, tr)| {
@@ -340,7 +340,7 @@ pub mod tests {
         let mut rng = rand::thread_rng();
         let origin = Vector3::new(rng.gen(), rng.gen(), rng.gen());
 
-        let transducers = itertools::iproduct!((0..18), (0..14))
+        let transducers = itertools::iproduct!(0..18, 0..14)
             .enumerate()
             .map(|(i, (y, x))| {
                 Transducer::new(i, origin + 10.16 * Vector3::new(x as f32, y as f32, 0.))
@@ -362,7 +362,7 @@ pub mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn test_rotate() {
-        let transducers = itertools::iproduct!((0..18), (0..14))
+        let transducers = itertools::iproduct!(0..18, 0..14)
             .enumerate()
             .map(|(i, (y, x))| Transducer::new(i, 10.16 * Vector3::new(x as f32, y as f32, 0.)))
             .collect::<Vec<_>>();
@@ -384,7 +384,7 @@ pub mod tests {
         assert_approx_eq_vec3!(expect_x, device.x_direction());
         assert_approx_eq_vec3!(expect_y, device.y_direction());
         assert_approx_eq_vec3!(expect_z, device.axial_direction());
-        itertools::iproduct!((0..18), (0..14))
+        itertools::iproduct!(0..18, 0..14)
             .map(|(y, x)| 10.16 * Vector3::new(-y as f32, x as f32, 0.))
             .zip(device.iter())
             .for_each(|(expect, tr)| {
@@ -395,7 +395,7 @@ pub mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn test_affine() {
-        let transducers = itertools::iproduct!((0..18), (0..14))
+        let transducers = itertools::iproduct!(0..18, 0..14)
             .enumerate()
             .map(|(i, (y, x))| Transducer::new(i, 10.16 * Vector3::new(x as f32, y as f32, 0.)))
             .collect::<Vec<_>>();
@@ -420,7 +420,7 @@ pub mod tests {
         assert_approx_eq_vec3!(expect_y, device.y_direction());
         assert_approx_eq_vec3!(expect_z, device.axial_direction());
 
-        itertools::iproduct!((0..18), (0..14))
+        itertools::iproduct!(0..18, 0..14)
             .map(|(y, x)| 10.16 * Vector3::new(-y as f32, x as f32, 0.) + t)
             .zip(device.iter())
             .for_each(|(expect, tr)| {

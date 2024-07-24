@@ -198,6 +198,7 @@ def rust_lint(args):
     with working_dir("."):
         command = config.cargo_build_command(args.features)
         command[1] = "clippy"
+        command.append("--tests")
         if config.no_examples:
             command.append("--workspace")
             command.append("--exclude")

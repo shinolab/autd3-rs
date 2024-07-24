@@ -157,7 +157,7 @@ pub mod tests {
             Device::new(
                 0,
                 UnitQuaternion::identity(),
-                itertools::iproduct!((0..18), (0..14))
+                itertools::iproduct!(0..18, 0..14)
                     .enumerate()
                     .map(|(i, (y, x))| {
                         Transducer::new(i, 10.16 * Vector3::new(x as f32, y as f32, 0.))
@@ -167,7 +167,7 @@ pub mod tests {
             Device::new(
                 1,
                 UnitQuaternion::identity(),
-                itertools::iproduct!((0..18), (0..14))
+                itertools::iproduct!(0..18, 0..14)
                     .enumerate()
                     .map(|(i, (y, x))| {
                         Transducer::new(
@@ -195,7 +195,7 @@ pub mod tests {
             Device::new(
                 0,
                 UnitQuaternion::identity(),
-                itertools::iproduct!((0..18), (0..14))
+                itertools::iproduct!(0..18, 0..14)
                     .enumerate()
                     .map(|(i, (y, x))| {
                         Transducer::new(i, 10.16 * Vector3::new(x as f32, y as f32, 0.))
@@ -205,7 +205,7 @@ pub mod tests {
             Device::new(
                 1,
                 UnitQuaternion::identity(),
-                itertools::iproduct!((0..18), (0..14))
+                itertools::iproduct!(0..18, 0..14)
                     .enumerate()
                     .map(|(i, (y, x))| {
                         Transducer::new(
@@ -234,7 +234,7 @@ pub mod tests {
             Device::new(
                 0,
                 UnitQuaternion::identity(),
-                itertools::iproduct!((0..18), (0..14))
+                itertools::iproduct!(0..18, 0..14)
                     .enumerate()
                     .map(|(i, (y, x))| {
                         Transducer::new(i, 10.16 * Vector3::new(x as f32, y as f32, 0.))
@@ -244,7 +244,7 @@ pub mod tests {
             Device::new(
                 1,
                 UnitQuaternion::identity(),
-                itertools::iproduct!((0..18), (0..14))
+                itertools::iproduct!(0..18, 0..14)
                     .enumerate()
                     .map(|(i, (y, x))| {
                         Transducer::new(
