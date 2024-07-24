@@ -1,9 +1,6 @@
 use autd3_protobuf::*;
 
-use std::{
-    net::{IpAddr, Ipv4Addr, SocketAddr},
-    time::Duration,
-};
+use std::{net::SocketAddr, time::Duration};
 
 use autd3_driver::{
     derive::*,
@@ -21,9 +18,7 @@ pub struct Simulator {
 #[derive(Builder)]
 pub struct SimulatorBuilder {
     #[get]
-    port: u16,
-    #[getset]
-    server_ip: IpAddr,
+    addr: SocketAddr,
     #[getset]
     timeout: Duration,
 }
@@ -36,12 +31,10 @@ impl LinkBuilder for SimulatorBuilder {
         self,
         geometry: &autd3_driver::geometry::Geometry,
     ) -> Result<Self::L, AUTDInternalError> {
-        let mut client = simulator_client::SimulatorClient::connect(format!(
-            "http://{}",
-            SocketAddr::new(self.server_ip, self.port)
-        ))
-        .await
-        .map_err(|e| AUTDInternalError::from(AUTDProtoBufError::from(e)))?;
+        let mut client =
+            simulator_client::SimulatorClient::connect(format!("http://{}", self.addr))
+                .await
+                .map_err(|e| AUTDInternalError::from(AUTDProtoBufError::from(e)))?;
 
         if client.config_geomety(geometry.to_msg(None)).await.is_err() {
             return Err(
@@ -59,10 +52,9 @@ impl LinkBuilder for SimulatorBuilder {
 }
 
 impl Simulator {
-    pub const fn builder(port: u16) -> SimulatorBuilder {
+    pub const fn builder(addr: SocketAddr) -> SimulatorBuilder {
         SimulatorBuilder {
-            server_ip: IpAddr::V4(Ipv4Addr::LOCALHOST),
-            port,
+            addr,
             timeout: DEFAULT_TIMEOUT,
         }
     }
