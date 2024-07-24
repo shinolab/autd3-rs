@@ -55,7 +55,7 @@ tempfile = "3.9.0"
 thiserror = "1.0.40"
 time = { version = "0.3.23", default-features = false }
 tokio = "1.35.1"
-tonic = { version = "0.11.0", default-features = false }
+tonic = { version = "0.12.1", default-features = false }
 tonic-build = "0.11.0"
 thread-priority = "1.0.0"
 rayon = "1.10.0"
