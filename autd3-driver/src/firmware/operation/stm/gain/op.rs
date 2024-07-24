@@ -305,7 +305,7 @@ mod tests {
             },
             GainSTMMode::PhaseIntensityFull,
             SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
-            LoopBehavior { rep: rep },
+            LoopBehavior { rep },
             segment,
             Some(transition_mode),
         );
@@ -457,7 +457,7 @@ mod tests {
             },
             GainSTMMode::PhaseFull,
             SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
-            LoopBehavior { rep: rep },
+            LoopBehavior { rep },
             segment,
             None,
         );
@@ -595,7 +595,7 @@ mod tests {
             },
             GainSTMMode::PhaseHalf,
             SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
-            LoopBehavior { rep: rep },
+            LoopBehavior { rep },
             segment,
             Some(TransitionMode::SyncIdx),
         );

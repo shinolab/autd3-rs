@@ -2,6 +2,7 @@ use std::{num::NonZeroU8, time::Duration};
 
 use autd3_driver::{
     datagram::*,
+    defined::ULTRASOUND_PERIOD,
     derive::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
     error::AUTDInternalError,
     firmware::{cpu::TxDatagram, operation::SilencerTarget},
@@ -64,58 +65,6 @@ fn send_silencer_fixed_update_rate() -> anyhow::Result<()> {
 }
 
 #[test]
-fn send_silencer_fixed_completion_steps() -> anyhow::Result<()> {
-    let mut rng = rand::thread_rng();
-
-    let geometry = create_geometry(1);
-    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
-
-    unsafe {
-        let steps_intensity = rng.gen_range(1..=10);
-        let steps_phase = rng.gen_range(1..=u8::MAX);
-        let d = Silencer::from_completion_steps(
-            NonZeroU8::new_unchecked(steps_intensity),
-            NonZeroU8::new_unchecked(steps_phase),
-        );
-
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
-
-        assert_eq!(
-            steps_intensity,
-            cpu.fpga().silencer_completion_steps_intensity()
-        );
-        assert_eq!(steps_phase, cpu.fpga().silencer_completion_steps_phase());
-        assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
-        assert!(cpu.silencer_strict_mode());
-        assert!(cpu.fpga().silencer_intensity_mode());
-    }
-
-    unsafe {
-        let steps_intensity = rng.gen_range(1..=10);
-        let steps_phase = rng.gen_range(1..=u8::MAX);
-        let d = Silencer::from_completion_steps(
-            NonZeroU8::new_unchecked(steps_intensity),
-            NonZeroU8::new_unchecked(steps_phase),
-        )
-        .with_taget(SilencerTarget::PulseWidth);
-
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
-
-        assert_eq!(
-            steps_intensity,
-            cpu.fpga().silencer_completion_steps_intensity()
-        );
-        assert_eq!(steps_phase, cpu.fpga().silencer_completion_steps_phase());
-        assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
-        assert!(cpu.silencer_strict_mode());
-        assert!(cpu.fpga().silencer_pulse_width_mode());
-    }
-
-    Ok(())
-}
-
-#[test]
 fn send_silencer_fixed_completion_time() {
     let mut rng = rand::thread_rng();
 
@@ -171,7 +120,7 @@ fn send_silencer_fixed_completion_time() {
 #[case(Err(AUTDInternalError::InvalidSilencerSettings), 2)]
 fn silencer_completetion_steps_too_large_mod(
     #[case] expect: Result<(), AUTDInternalError>,
-    #[case] steps_intensity: u8,
+    #[case] steps_intensity: u32,
 ) -> anyhow::Result<()> {
     use crate::op::modulation::TestModulation;
 
@@ -179,9 +128,7 @@ fn silencer_completetion_steps_too_large_mod(
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let d = unsafe {
-        Silencer::from_completion_steps(NonZeroU8::new_unchecked(1), NonZeroU8::new_unchecked(1))
-    };
+    let d = Silencer::from_completion_time(ULTRASOUND_PERIOD, ULTRASOUND_PERIOD);
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     // Send modulation
@@ -197,12 +144,10 @@ fn silencer_completetion_steps_too_large_mod(
     }
 
     let steps_phase = 1;
-    let d = unsafe {
-        Silencer::from_completion_steps(
-            NonZeroU8::new_unchecked(steps_intensity),
-            NonZeroU8::new_unchecked(steps_phase),
-        )
-    };
+    let d = Silencer::from_completion_time(
+        ULTRASOUND_PERIOD * steps_intensity,
+        ULTRASOUND_PERIOD * steps_phase,
+    );
 
     assert_eq!(expect, send(&mut cpu, d, &geometry, &mut tx));
 
@@ -216,16 +161,14 @@ fn silencer_completetion_steps_too_large_mod(
 #[case(Err(AUTDInternalError::InvalidSilencerSettings), 1, 2)]
 fn silencer_completetion_steps_too_large_stm(
     #[case] expect: Result<(), AUTDInternalError>,
-    #[case] steps_intensity: u8,
-    #[case] steps_phase: u8,
+    #[case] steps_intensity: u32,
+    #[case] steps_phase: u32,
 ) -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let d = unsafe {
-        Silencer::from_completion_steps(NonZeroU8::new_unchecked(1), NonZeroU8::new_unchecked(1))
-    };
+    let d = Silencer::from_completion_time(ULTRASOUND_PERIOD, ULTRASOUND_PERIOD);
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     // Send FociSTM
@@ -236,12 +179,10 @@ fn silencer_completetion_steps_too_large_stm(
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }
 
-    let d = unsafe {
-        Silencer::from_completion_steps(
-            NonZeroU8::new_unchecked(steps_intensity),
-            NonZeroU8::new_unchecked(steps_phase),
-        )
-    };
+    let d = Silencer::from_completion_time(
+        ULTRASOUND_PERIOD * steps_intensity,
+        ULTRASOUND_PERIOD * steps_phase,
+    );
 
     assert_eq!(expect, send(&mut cpu, d, &geometry, &mut tx));
 
@@ -256,23 +197,24 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    let steps_intensity = rng.gen_range(1..=u8::MAX);
-    let steps_phase = rng.gen_range(1..=u8::MAX);
-    let d = unsafe {
-        Silencer::from_completion_steps(
-            NonZeroU8::new_unchecked(steps_intensity),
-            NonZeroU8::new_unchecked(steps_phase),
-        )
-    }
+    let steps_intensity = rng.gen_range(1..=u8::MAX as u32);
+    let steps_phase = rng.gen_range(1..=u8::MAX as u32);
+    let d = Silencer::from_completion_time(
+        ULTRASOUND_PERIOD * steps_intensity,
+        ULTRASOUND_PERIOD * steps_phase,
+    )
     .with_strict_mode(false);
 
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     assert_eq!(
         cpu.fpga().silencer_completion_steps_intensity(),
-        steps_intensity
+        steps_intensity as u8
     );
-    assert_eq!(steps_phase, cpu.fpga().silencer_completion_steps_phase());
+    assert_eq!(
+        steps_phase as u8,
+        cpu.fpga().silencer_completion_steps_phase()
+    );
     assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
     assert!(!cpu.silencer_strict_mode());
 

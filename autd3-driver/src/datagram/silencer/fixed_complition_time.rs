@@ -2,11 +2,12 @@ use std::{num::NonZeroU8, time::Duration};
 
 use crate::{
     datagram::*,
-    defined::ULTRASOUND_FREQ,
-    firmware::operation::{SilencerFixedCompletionStepsOp, SilencerTarget},
+    defined::{ULTRASOUND_FREQ, ULTRASOUND_PERIOD},
+    firmware::{
+        fpga::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
+        operation::{SilencerFixedCompletionStepsOp, SilencerTarget},
+    },
 };
-
-const NANOSEC: u128 = 1_000_000_000;
 
 #[derive(Debug, Clone, Copy)]
 pub struct FixedCompletionTime {
@@ -14,6 +15,19 @@ pub struct FixedCompletionTime {
     pub(super) time_phase: Duration,
     pub(super) strict_mode: bool,
     pub(super) target: SilencerTarget,
+}
+
+impl Default for Silencer<FixedCompletionTime> {
+    fn default() -> Self {
+        Silencer {
+            internal: FixedCompletionTime {
+                time_intensity: ULTRASOUND_PERIOD * SILENCER_STEPS_INTENSITY_DEFAULT,
+                time_phase: ULTRASOUND_PERIOD * SILENCER_STEPS_PHASE_DEFAULT,
+                strict_mode: true,
+                target: SilencerTarget::Intensity,
+            },
+        }
+    }
 }
 
 #[cfg(feature = "capi")]
@@ -91,45 +105,22 @@ impl Datagram for Silencer<FixedCompletionTime> {
     }
 
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
-        const ULTRASOUND_PERIOD: Duration =
-            Duration::from_nanos(NANOSEC as u64 / ULTRASOUND_FREQ.hz() as u64);
-
-        let ultrasound_freq = ULTRASOUND_FREQ.hz() as u128;
-        let k_intensity = self.internal.time_intensity.as_nanos() * ultrasound_freq;
-        let steps_intensity = if k_intensity % NANOSEC == 0 {
-            (k_intensity / NANOSEC).min(u16::MAX as _)
-        } else {
-            return Err(AUTDInternalError::InvalidSilencerCompletionTime(
-                self.internal.time_intensity,
-            ));
+        let validate = |value: Duration| {
+            const NANOSEC: u128 = 1_000_000_000;
+            let v = value.as_nanos() * ULTRASOUND_FREQ.hz() as u128;
+            let v = if v % NANOSEC == 0 {
+                v / NANOSEC
+            } else {
+                return Err(AUTDInternalError::InvalidSilencerCompletionTime(value));
+            };
+            if v == 0 || v > u8::MAX as _ {
+                return Err(AUTDInternalError::SilencerCompletionTimeOutOfRange(value));
+            }
+            Ok(unsafe { NonZeroU8::new_unchecked(v as _) })
         };
-        if steps_intensity == 0 || steps_intensity > u8::MAX as _ {
-            return Err(AUTDInternalError::SilencerCompletionTimeOutOfRange(
-                self.internal.time_intensity,
-                ULTRASOUND_PERIOD,
-                ULTRASOUND_PERIOD * u8::MAX as _,
-            ));
-        }
-
-        let k_phase = self.internal.time_phase.as_nanos() * ultrasound_freq;
-        let steps_phase = if k_phase % NANOSEC == 0 {
-            (k_phase / NANOSEC).min(u16::MAX as _)
-        } else {
-            return Err(AUTDInternalError::InvalidSilencerCompletionTime(
-                self.internal.time_phase,
-            ));
-        };
-        if steps_phase == 0 || steps_phase > u8::MAX as _ {
-            return Err(AUTDInternalError::SilencerCompletionTimeOutOfRange(
-                self.internal.time_phase,
-                ULTRASOUND_PERIOD,
-                ULTRASOUND_PERIOD * u8::MAX as _,
-            ));
-        }
-
         Ok(SilencerFixedCompletionTimeOpGenerator {
-            steps_intensity: unsafe { NonZeroU8::new_unchecked(steps_intensity as _) },
-            steps_phase: unsafe { NonZeroU8::new_unchecked(steps_phase as _) },
+            steps_intensity: validate(self.internal.time_intensity)?,
+            steps_phase: validate(self.internal.time_phase)?,
             strict_mode: self.internal.strict_mode,
             target: self.internal.target,
         })
@@ -166,22 +157,22 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(
-        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(0), Duration::from_micros(25), Duration::from_micros(25 * u8::MAX as u64)),
+        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(0)),
         Duration::from_micros(0),
         Duration::from_micros(25)
     )]
     #[case(
-        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(25 * 256), Duration::from_micros(25), Duration::from_micros(25 * u8::MAX as u64)),
+        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(25 * 256)),
         Duration::from_micros(25 * 256),
         Duration::from_micros(25)
     )]
     #[case(
-        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(0), Duration::from_micros(25), Duration::from_micros(25 * u8::MAX as u64)),
+        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(0)),
         Duration::from_micros(25),
-        Duration::from_micros(0),
+        Duration::from_micros(0)
     )]
     #[case(
-        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(25 * 256), Duration::from_micros(25), Duration::from_micros(25 * u8::MAX as u64)),
+        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(25 * 256)),
         Duration::from_micros(25),
         Duration::from_micros(25 * 256),
     )]
