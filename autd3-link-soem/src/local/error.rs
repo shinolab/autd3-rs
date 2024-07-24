@@ -18,10 +18,6 @@ pub enum SOEMError {
     NotResponding(EcStatus),
     #[error("One ore more slaves did not reach safe operational state: {0}")]
     NotReachedSafeOp(u16),
-    #[error("Invalid send cycle time")]
-    InvalidSendCycleTime,
-    #[error("Invalid sync0 cycle time")]
-    InvalidSync0CycleTime,
     #[error("Invalid interface name: {0}")]
     InvalidInterfaceName(String),
     #[error("Failed to synchronize devices. Maximum system time difference ({0:?}) exceeded the tolerance ({1:?})")]
