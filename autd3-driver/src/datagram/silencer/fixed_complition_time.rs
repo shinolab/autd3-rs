@@ -30,20 +30,6 @@ impl Default for Silencer<FixedCompletionTime> {
     }
 }
 
-#[cfg(feature = "capi")]
-impl Default for Silencer<FixedCompletionTime> {
-    fn default() -> Self {
-        Silencer {
-            internal: FixedCompletionTime {
-                time_intensity: Duration::ZERO,
-                time_phase: Duration::ZERO,
-                strict_mode: true,
-                target: SilencerTarget::Intensity,
-            },
-        }
-    }
-}
-
 impl Silencer<FixedCompletionTime> {
     pub const fn with_strict_mode(mut self, strict_mode: bool) -> Self {
         self.internal.strict_mode = strict_mode;
