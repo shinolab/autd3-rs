@@ -9,6 +9,9 @@ pub struct NativeTimerWrapper {
     priority: u32,
 }
 
+unsafe impl Send for NativeTimerWrapper {}
+unsafe impl Sync for NativeTimerWrapper {}
+
 impl NativeTimerWrapper {
     pub fn new() -> NativeTimerWrapper {
         NativeTimerWrapper {
