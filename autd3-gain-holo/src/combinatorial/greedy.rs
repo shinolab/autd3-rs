@@ -14,7 +14,7 @@ use nalgebra::ComplexField;
 use rand::seq::SliceRandom;
 
 #[derive(Gain, Builder)]
-pub struct Greedy<D: Directivity + 'static> {
+pub struct Greedy<D: Directivity> {
     #[get]
     foci: Vec<Vector3>,
     #[get]
@@ -26,7 +26,7 @@ pub struct Greedy<D: Directivity + 'static> {
     _phantom: std::marker::PhantomData<D>,
 }
 
-impl<D: Directivity + 'static> Greedy<D> {
+impl<D: Directivity> Greedy<D> {
     pub fn new(iter: impl IntoIterator<Item = (Vector3, Amplitude)>) -> Self {
         let (foci, amps) = iter.into_iter().unzip();
         Self {
@@ -51,7 +51,7 @@ impl<D: Directivity + 'static> Greedy<D> {
     }
 }
 
-impl<D: Directivity + 'static> Greedy<D> {
+impl<D: Directivity> Greedy<D> {
     fn calc_impl(
         &self,
         geometry: &Geometry,
@@ -135,7 +135,7 @@ impl<D: Directivity + 'static> Greedy<D> {
     }
 }
 
-impl<D: Directivity + 'static> Gain for Greedy<D> {
+impl<D: Directivity> Gain for Greedy<D> {
     fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         self.calc_impl(geometry, None)
     }

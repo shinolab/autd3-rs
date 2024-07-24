@@ -10,7 +10,7 @@ use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vec
 use bit_vec::BitVec;
 
 #[derive(Gain, Builder)]
-pub struct GSPAT<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
+pub struct GSPAT<D: Directivity, B: LinAlgBackend<D>> {
     #[get]
     foci: Vec<Vector3>,
     #[get]
@@ -23,7 +23,7 @@ pub struct GSPAT<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
     _phantom: std::marker::PhantomData<D>,
 }
 
-impl<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> GSPAT<D, B> {
+impl<D: Directivity, B: LinAlgBackend<D>> GSPAT<D, B> {
     pub fn new(backend: Arc<B>, iter: impl IntoIterator<Item = (Vector3, Amplitude)>) -> Self {
         let (foci, amps) = iter.into_iter().unzip();
         Self {
