@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, num::NonZeroU8};
 
 use crate::{constraint::EmissionConstraint, helper::holo_trace, Amplitude, Complex};
 
@@ -20,7 +20,7 @@ pub struct Greedy<D: Directivity> {
     #[get]
     amps: Vec<Amplitude>,
     #[getset]
-    phase_div: u8,
+    phase_div: NonZeroU8,
     #[getset]
     constraint: EmissionConstraint,
     _phantom: std::marker::PhantomData<D>,
@@ -32,7 +32,7 @@ impl<D: Directivity> Greedy<D> {
         Self {
             foci,
             amps,
-            phase_div: 16,
+            phase_div: unsafe { NonZeroU8::new_unchecked(16) },
             constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
             _phantom: std::marker::PhantomData,
         }
@@ -57,8 +57,8 @@ impl<D: Directivity> Greedy<D> {
         geometry: &Geometry,
         filter: Option<HashMap<usize, BitVec<u32>>>,
     ) -> GainCalcResult {
-        let phase_candidates = (0..self.phase_div)
-            .map(|i| Complex::new(0., 2.0 * PI * i as f32 / self.phase_div as f32).exp())
+        let phase_candidates = (0..self.phase_div.get())
+            .map(|i| Complex::new(0., 2.0 * PI * i as f32 / self.phase_div.get() as f32).exp())
             .collect::<Vec<_>>();
 
         let indices = {
@@ -167,9 +167,9 @@ mod tests {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
 
         let g = Greedy::<Sphere>::new([(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)])
-            .with_phase_div(32);
+            .with_phase_div(NonZeroU8::MAX);
 
-        assert_eq!(g.phase_div(), 32);
+        assert_eq!(g.phase_div(), NonZeroU8::MAX);
         assert_eq!(
             g.constraint(),
             EmissionConstraint::Uniform(EmitIntensity::MAX)
