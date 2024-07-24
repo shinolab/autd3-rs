@@ -24,6 +24,9 @@ pub enum AUTDProtoBufError {
     NotSupportedData,
     #[error("Failed to parse data or missing required fields")]
     DataParseError,
+    #[cfg(feature = "lightweight")]
+    #[error("{0}")]
+    UnknownEnumValue(#[from] prost::UnknownEnumValue),
 }
 
 // GRCOV_EXCL_START
