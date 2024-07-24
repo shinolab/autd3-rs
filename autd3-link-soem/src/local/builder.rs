@@ -1,4 +1,7 @@
-use std::time::Duration;
+use std::{
+    num::{NonZeroU64, NonZeroUsize},
+    time::Duration,
+};
 
 use super::{
     error_handler::{ErrHandler, Status},
@@ -13,7 +16,7 @@ use thread_priority::ThreadPriority;
 #[derive(Builder)]
 pub struct SOEMBuilder {
     #[getset]
-    pub(crate) buf_size: usize,
+    pub(crate) buf_size: NonZeroUsize,
     #[getset]
     pub(crate) timer_strategy: TimerStrategy,
     #[getset]
@@ -25,9 +28,9 @@ pub struct SOEMBuilder {
     #[getset]
     pub(crate) timeout: std::time::Duration,
     #[getset]
-    pub(crate) sync0_cycle: u64,
+    pub(crate) sync0_cycle: NonZeroU64,
     #[getset]
-    pub(crate) send_cycle: u64,
+    pub(crate) send_cycle: NonZeroU64,
     #[getset]
     pub(crate) thread_priority: ThreadPriority,
     #[cfg(target_os = "windows")]
@@ -49,14 +52,14 @@ impl Default for SOEMBuilder {
 impl SOEMBuilder {
     pub const fn new() -> Self {
         SOEMBuilder {
-            buf_size: 32,
+            buf_size: unsafe { NonZeroUsize::new_unchecked(32) },
             timer_strategy: TimerStrategy::Sleep,
             sync_mode: SyncMode::DC,
             ifname: String::new(),
             state_check_interval: Duration::from_millis(100),
             timeout: Duration::from_millis(20),
-            sync0_cycle: 2,
-            send_cycle: 2,
+            sync0_cycle: unsafe { NonZeroU64::new_unchecked(2) },
+            send_cycle: unsafe { NonZeroU64::new_unchecked(2) },
             thread_priority: ThreadPriority::Max,
             #[cfg(target_os = "windows")]
             process_priority: super::ProcessPriority::High,

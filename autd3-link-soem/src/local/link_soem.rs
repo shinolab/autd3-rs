@@ -93,15 +93,10 @@ impl SOEM {
                 sync_timeout,
             } = builder;
 
-            if send_cycle == 0 {
-                return Err(SOEMError::InvalidSendCycleTime.into());
-            }
-            if sync0_cycle == 0 {
-                return Err(SOEMError::InvalidSync0CycleTime.into());
-            }
-
-            let ec_sync0_cycle = Duration::from_nanos(sync0_cycle * EC_CYCLE_TIME_BASE_NANO_SEC);
-            let ec_send_cycle = Duration::from_nanos(send_cycle * EC_CYCLE_TIME_BASE_NANO_SEC);
+            let ec_sync0_cycle =
+                Duration::from_nanos(sync0_cycle.get() * EC_CYCLE_TIME_BASE_NANO_SEC);
+            let ec_send_cycle =
+                Duration::from_nanos(send_cycle.get() * EC_CYCLE_TIME_BASE_NANO_SEC);
             let ifname = if ifname.is_empty() {
                 tracing::info!("No interface name is specified. Looking up AUTD device.");
                 let ifname = Self::lookup_autd()?;
@@ -129,7 +124,7 @@ impl SOEM {
             })?;
             let num_devices = wc as _;
 
-            let (tx_sender, tx_receiver) = bounded(buf_size);
+            let (tx_sender, tx_receiver) = bounded(buf_size.get());
             let is_open = Arc::new(AtomicBool::new(true));
             let io_map = Arc::new(Mutex::new(IOMap::new(num_devices)));
             let config_dc_guard = SOEMDCConfigGuard::new(ec_sync0_cycle);
