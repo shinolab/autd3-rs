@@ -1,24 +1,23 @@
 [package]
 name = "autd3"
-version = "27.0.0-alpha.0"
-authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
-edition = "2021"
-
-license = "MIT"
 description = "AUTD3 library"
-repository = "https://github.com/shinolab/autd3-rs"
 readme = "README.md"
 keywords = ["autd"]
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
 
 [dependencies]
-autd3-driver = { path = "../autd3-driver", version = "27.0.0-alpha.0" }
-autd3-firmware-emulator = { path = "../autd3-firmware-emulator", version = "27.0.0-alpha.0", default-features = false }
+autd3-firmware-emulator = { workspace = true }
+autd3-driver = { workspace = true }
 num = { workspace = true }
 thiserror = { workspace = true }
 bit-vec = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 derive_more = { workspace = true }
-derivative = "2.2.0"
+derivative = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.57.0", features = ["Win32_Media_Multimedia", "Win32_System_Threading", "Win32_Foundation"] }

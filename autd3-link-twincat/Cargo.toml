@@ -1,17 +1,16 @@
 [package]
 name = "autd3-link-twincat"
-version = "27.0.0-alpha.0"
-authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
-edition = "2021"
-
 license-file = "LICENSE"
 description = "Link of AUTD using TwinCAT."
-repository = "https://github.com/shinolab/autd3-rs"
 readme = "README.md"
 keywords = ["autd"]
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
 
 [dependencies]
-autd3-driver = { path = "../autd3-driver", version = "27.0.0-alpha.0" }
+autd3-driver = { workspace = true }
 itertools = { workspace = true, optional = true }
 libloading = { workspace = true, optional = true }
 thiserror = { workspace = true }

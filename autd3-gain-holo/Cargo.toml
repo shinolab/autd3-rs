@@ -1,24 +1,22 @@
 [package]
 name = "autd3-gain-holo"
-version = "27.0.0-alpha.0"
-authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
-edition = "2021"
-
-license = "MIT"
 description = "Holo (Multiple foci) Gain for AUTD."
-repository = "https://github.com/shinolab/autd3-rs"
 readme = "README.md"
 keywords = ["autd"]
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
 
 [dependencies]
 assert_approx_eq = { workspace = true }
-autd3-driver = { path = "../autd3-driver", version = "27.0.0-alpha.0" }
+autd3-driver = { workspace = true }
 nalgebra = { workspace = true, features = ["std"] }
 rand = { workspace = true }
 thiserror = { workspace = true }
 criterion = { workspace = true, features = ["html_reports"], optional = true }
 bit-vec = { workspace = true }
-approx = "0.5.1"
 derive_more = { workspace = true }
 rayon = { workspace = true }
 
@@ -38,6 +36,6 @@ harness = false
 
 [dev-dependencies]
 anyhow = { workspace = true }
-approx = "0.5.1"
 assert_approx_eq = { workspace = true }
 rstest = { workspace = true }
+approx = { workspace = true }
