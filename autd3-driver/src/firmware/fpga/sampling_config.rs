@@ -35,8 +35,8 @@ const PERIOD_MAX: Duration =
     Duration::from_nanos((u16::MAX as u128 * NANOSEC / ULTRASOUND_FREQ.hz() as u128) as u64);
 
 impl SamplingConfig {
-    pub const FREQ_40K: SamplingConfig = SamplingConfig::Freq(Freq { freq: 40000 }) ;
-    pub const FREQ_4K: SamplingConfig = SamplingConfig::Freq(Freq { freq: 4000 }) ;
+    pub const FREQ_40K: SamplingConfig = SamplingConfig::Freq(Freq { freq: 40000 });
+    pub const FREQ_4K: SamplingConfig = SamplingConfig::Freq(Freq { freq: 4000 });
 
     fn division_from_freq_nearest(f: Freq<f32>) -> Result<u16, AUTDInternalError> {
         if !(FREQ_MIN..=FREQ_MAX).contains(&f) {
@@ -204,7 +204,7 @@ mod tests {
     )]
     #[case::not_supported_max(
         Err(AUTDInternalError::SamplingPeriodInvalid(
-            PERIOD_MAX - Duration::from_nanos(1) 
+            PERIOD_MAX - Duration::from_nanos(1)
         )),
         PERIOD_MAX - Duration::from_nanos(1),
     )]

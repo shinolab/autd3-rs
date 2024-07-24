@@ -20,10 +20,10 @@ pub struct Greedy<D: Directivity> {
     #[get]
     amps: Vec<Amplitude>,
     #[get]
-#[set]
+    #[set]
     phase_div: NonZeroU8,
     #[get]
-#[set]
+    #[set]
     constraint: EmissionConstraint,
     _phantom: std::marker::PhantomData<D>,
 }

@@ -17,22 +17,22 @@ pub struct LM<D: Directivity, B: LinAlgBackend<D>> {
     #[get]
     amps: Vec<Amplitude>,
     #[get]
-#[set]
+    #[set]
     eps_1: f32,
     #[get]
-#[set]
+    #[set]
     eps_2: f32,
     #[get]
-#[set]
+    #[set]
     tau: f32,
     #[get]
-#[set]
+    #[set]
     k_max: usize,
     #[get]
-#[set]
+    #[set]
     initial: Vec<f32>,
     #[get]
-#[set]
+    #[set]
     constraint: EmissionConstraint,
     backend: Arc<B>,
     _phantom: std::marker::PhantomData<D>,

@@ -25,13 +25,13 @@ pub struct Sine<S: SamplingMode> {
     #[get]
     freq: S::T,
     #[get]
-#[set]
+    #[set]
     intensity: u8,
     #[get]
-#[set]
+    #[set]
     phase: Angle,
     #[get]
-#[set]
+    #[set]
     offset: u8,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,

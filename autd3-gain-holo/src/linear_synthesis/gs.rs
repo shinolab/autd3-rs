@@ -16,10 +16,10 @@ pub struct GS<D: Directivity, B: LinAlgBackend<D>> {
     #[get]
     amps: Vec<Amplitude>,
     #[get]
-#[set]
+    #[set]
     repeat: usize,
     #[get]
-#[set]
+    #[set]
     constraint: EmissionConstraint,
     backend: Arc<B>,
     _phantom: std::marker::PhantomData<D>,
