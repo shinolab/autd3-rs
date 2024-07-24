@@ -20,10 +20,7 @@ fn config_pwe() -> anyhow::Result<()> {
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        assert_eq!(
-            buf.into_iter().map(|v| v as u8).collect::<Vec<_>>(),
-            cpu.fpga().pulse_width_encoder_table()
-        );
+        assert_eq!(buf, cpu.fpga().pulse_width_encoder_table());
     }
 
     {
@@ -35,13 +32,7 @@ fn config_pwe() -> anyhow::Result<()> {
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        assert_eq!(
-            default_table
-                .into_iter()
-                .map(|v| v as u8)
-                .collect::<Vec<_>>(),
-            cpu.fpga().pulse_width_encoder_table()
-        );
+        assert_eq!(default_table, cpu.fpga().pulse_width_encoder_table());
     }
 
     Ok(())
