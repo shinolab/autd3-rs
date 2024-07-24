@@ -65,6 +65,11 @@ impl<L: Link> Controller<L> {
     pub fn link_mut(&mut self) -> &mut L {
         &mut self.link
     }
+
+    #[must_use]
+    pub fn geometry_mut(&mut self) -> &mut Geometry {
+        &mut self.geometry
+    }
 }
 
 impl<L: Link> Controller<L> {
