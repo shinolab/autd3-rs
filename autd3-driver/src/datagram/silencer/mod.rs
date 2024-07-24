@@ -84,6 +84,7 @@ mod tests {
         assert_eq!(s.completion_steps_intensity(), 1);
         assert_eq!(s.completion_steps_phase(), 1);
         assert!(s.strict_mode());
+        assert_eq!(SilencerTarget::Intensity, s.target());
     }
 
     #[test]

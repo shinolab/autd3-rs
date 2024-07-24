@@ -88,13 +88,12 @@ macro_rules! impl_checked_op {
     ($op:ident) => {
         impl Silencer<FixedCompletionSteps> {
             pub const fn $op(self, v: u8) -> Option<Self> {
-                let steps_intensity = match self.completion_steps_intensity().$op(v) {
-                    Some(0) | None => return None,
-                    Some(v) => v,
-                };
-                let steps_phase = match self.completion_steps_phase().$op(v) {
-                    Some(0) | None => return None,
-                    Some(v) => v,
+                let (steps_intensity, steps_phase) = match (
+                    self.completion_steps_intensity().$op(v),
+                    self.completion_steps_phase().$op(v),
+                ) {
+                    (None, _) | (_, None) | (Some(0), _) | (_, Some(0)) => return None,
+                    (Some(i), Some(p)) => (i, p),
                 };
                 Some(Self {
                     internal: FixedCompletionSteps {
@@ -163,4 +162,113 @@ impl Datagram for Silencer<FixedCompletionSteps> {
         tracing::debug!("{}", tynm::type_name::<Self>());
     }
     // GRCOV_EXCL_STOP
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[rstest::rstest]
+    #[test]
+    #[case(0x02, NonZeroU8::new(0x01).unwrap(), 0x01)]
+    #[case(0xFF, NonZeroU8::new(0x01).unwrap(), 0xFE)]
+    #[case(0xFF, NonZeroU8::new(0x01).unwrap(), 0xFF)]
+    #[cfg_attr(miri, ignore)]
+    fn saturating_add(#[case] expect: u8, #[case] value: NonZeroU8, #[case] add: u8) {
+        let d = Silencer::from_completion_steps(value, value);
+        let d = d.saturating_add(add);
+        assert_eq!(expect, d.completion_steps_intensity());
+        assert_eq!(expect, d.completion_steps_phase());
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(0xFE, NonZeroU8::new(0xFF).unwrap(), 0x01)]
+    #[case(0x01, NonZeroU8::new(0xFF).unwrap(), 0xFE)]
+    #[case(0x01, NonZeroU8::new(0xFF).unwrap(), 0xFF)]
+    #[cfg_attr(miri, ignore)]
+    fn saturating_sub(#[case] expect: u8, #[case] value: NonZeroU8, #[case] add: u8) {
+        let d = Silencer::from_completion_steps(value, value);
+        let d = d.saturating_sub(add);
+        assert_eq!(expect, d.completion_steps_intensity());
+        assert_eq!(expect, d.completion_steps_phase());
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(0x7F, NonZeroU8::new(0x7F).unwrap(), 0x01)]
+    #[case(0xFE, NonZeroU8::new(0x7F).unwrap(), 0x02)]
+    #[case(0xFF, NonZeroU8::new(0x7F).unwrap(), 0x03)]
+    #[cfg_attr(miri, ignore)]
+    fn saturating_mul(#[case] expect: u8, #[case] value: NonZeroU8, #[case] add: u8) {
+        let d = Silencer::from_completion_steps(value, value);
+        let d = d.saturating_mul(add);
+        assert_eq!(expect, d.completion_steps_intensity());
+        assert_eq!(expect, d.completion_steps_phase());
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(0x80, NonZeroU8::new(0x80).unwrap(), 0x01)]
+    #[case(0x01, NonZeroU8::new(0x80).unwrap(), 0x80)]
+    #[case(0x01, NonZeroU8::new(0x80).unwrap(), 0x81)]
+    #[cfg_attr(miri, ignore)]
+    fn saturating_div(#[case] expect: u8, #[case] value: NonZeroU8, #[case] add: u8) {
+        let d = Silencer::from_completion_steps(value, value);
+        let d = d.saturating_div(add);
+        assert_eq!(expect, d.completion_steps_intensity());
+        assert_eq!(expect, d.completion_steps_phase());
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Some(0x02), NonZeroU8::new(0x01).unwrap(), 0x01)]
+    #[case(Some(0xFF), NonZeroU8::new(0x01).unwrap(), 0xFE)]
+    #[case(None, NonZeroU8::new(0x01).unwrap(), 0xFF)]
+    #[cfg_attr(miri, ignore)]
+    fn checked_add(#[case] expect: Option<u8>, #[case] value: NonZeroU8, #[case] add: u8) {
+        let d = Silencer::from_completion_steps(value, value);
+        let d = d.checked_add(add);
+        assert_eq!(expect, d.map(|d| d.completion_steps_intensity()));
+        assert_eq!(expect, d.map(|d| d.completion_steps_phase()));
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Some(0xFE), NonZeroU8::new(0xFF).unwrap(), 0x01)]
+    #[case(Some(0x01), NonZeroU8::new(0xFF).unwrap(), 0xFE)]
+    #[case(None, NonZeroU8::new(0xFF).unwrap(), 0xFF)]
+    #[cfg_attr(miri, ignore)]
+    fn checked_sub(#[case] expect: Option<u8>, #[case] value: NonZeroU8, #[case] add: u8) {
+        let d = Silencer::from_completion_steps(value, value);
+        let d = d.checked_sub(add);
+        assert_eq!(expect, d.map(|d| d.completion_steps_intensity()));
+        assert_eq!(expect, d.map(|d| d.completion_steps_phase()));
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Some(0x7F), NonZeroU8::new(0x7F).unwrap(), 0x01)]
+    #[case(Some(0xFE), NonZeroU8::new(0x7F).unwrap(), 0x02)]
+    #[case(None, NonZeroU8::new(0x7F).unwrap(), 0x03)]
+    #[cfg_attr(miri, ignore)]
+    fn checked_mul(#[case] expect: Option<u8>, #[case] value: NonZeroU8, #[case] add: u8) {
+        let d = Silencer::from_completion_steps(value, value);
+        let d = d.checked_mul(add);
+        assert_eq!(expect, d.map(|d| d.completion_steps_intensity()));
+        assert_eq!(expect, d.map(|d| d.completion_steps_phase()));
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Some(0x80), NonZeroU8::new(0x80).unwrap(), 0x01)]
+    #[case(Some(0x01), NonZeroU8::new(0x80).unwrap(), 0x80)]
+    #[case(None, NonZeroU8::new(0x80).unwrap(), 0x81)]
+    #[cfg_attr(miri, ignore)]
+    fn checked_div(#[case] expect: Option<u8>, #[case] value: NonZeroU8, #[case] add: u8) {
+        let d = Silencer::from_completion_steps(value, value);
+        let d = d.checked_div(add);
+        assert_eq!(expect, d.map(|d| d.completion_steps_intensity()));
+        assert_eq!(expect, d.map(|d| d.completion_steps_phase()));
+    }
 }

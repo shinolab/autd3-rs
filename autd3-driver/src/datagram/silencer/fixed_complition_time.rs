@@ -16,40 +16,6 @@ pub struct FixedCompletionTime {
     pub(super) target: SilencerTarget,
 }
 
-impl<T> std::ops::Mul<T> for FixedCompletionTime
-where
-    T: Copy,
-    Duration: std::ops::Mul<T, Output = Duration>,
-{
-    type Output = Self;
-
-    fn mul(self, rhs: T) -> Self::Output {
-        Self {
-            time_intensity: self.time_intensity * rhs,
-            time_phase: self.time_phase * rhs,
-            strict_mode: self.strict_mode,
-            target: self.target,
-        }
-    }
-}
-
-impl<T> std::ops::Div<T> for FixedCompletionTime
-where
-    T: Copy,
-    Duration: std::ops::Div<T, Output = Duration>,
-{
-    type Output = Self;
-
-    fn div(self, rhs: T) -> Self::Output {
-        Self {
-            time_intensity: self.time_intensity / rhs,
-            time_phase: self.time_phase / rhs,
-            strict_mode: self.strict_mode,
-            target: self.target,
-        }
-    }
-}
-
 #[cfg(feature = "capi")]
 impl Default for Silencer<FixedCompletionTime> {
     fn default() -> Self {
@@ -197,25 +163,50 @@ mod tests {
         assert!(d.strict_mode());
     }
 
+    #[rstest::rstest]
     #[test]
+    #[case(
+        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(0), Duration::from_micros(25), Duration::from_micros(25 * u8::MAX as u64)),
+        Duration::from_micros(0),
+        Duration::from_micros(25)
+    )]
+    #[case(
+        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(25 * 256), Duration::from_micros(25), Duration::from_micros(25 * u8::MAX as u64)),
+        Duration::from_micros(25 * 256),
+        Duration::from_micros(25)
+    )]
+    #[case(
+        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(0), Duration::from_micros(25), Duration::from_micros(25 * u8::MAX as u64)),
+        Duration::from_micros(25),
+        Duration::from_micros(0),
+    )]
+    #[case(
+        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(25 * 256), Duration::from_micros(25), Duration::from_micros(25 * u8::MAX as u64)),
+        Duration::from_micros(25),
+        Duration::from_micros(25 * 256),
+    )]
+    #[case(
+        AUTDInternalError::InvalidSilencerCompletionTime(Duration::from_micros(26)),
+        Duration::from_micros(26),
+        Duration::from_micros(50)
+    )]
+    #[case(
+        AUTDInternalError::InvalidSilencerCompletionTime(Duration::from_micros(51)),
+        Duration::from_micros(25),
+        Duration::from_micros(51)
+    )]
     #[cfg_attr(miri, ignore)]
-    fn invalid_time() {
+    fn invalid_time(
+        #[case] expected: AUTDInternalError,
+        #[case] time_intensity: Duration,
+        #[case] time_phase: Duration,
+    ) {
         let geometry = create_geometry(1, 1);
-
-        let d =
-            Silencer::from_completion_time(Duration::from_micros(26), Duration::from_micros(50));
-
         assert_eq!(
-            AUTDInternalError::InvalidSilencerCompletionTime(Duration::from_micros(26)),
-            d.operation_generator(&geometry).unwrap_err()
-        );
-
-        let d =
-            Silencer::from_completion_time(Duration::from_micros(25), Duration::from_micros(51));
-
-        assert_eq!(
-            AUTDInternalError::InvalidSilencerCompletionTime(Duration::from_micros(51)),
-            d.operation_generator(&geometry).unwrap_err()
+            expected,
+            Silencer::from_completion_time(time_intensity, time_phase)
+                .operation_generator(&geometry)
+                .unwrap_err()
         );
     }
 }

@@ -67,34 +67,54 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case::value_0(
+    #[case(
+        Drive::new(Phase::new(0x01), EmitIntensity::new(0x02)),
+        (Phase::new(0x01), EmitIntensity::new(0x02))
+    )]
+    #[case(
+        Drive::new(Phase::new(0x01), EmitIntensity::new(0x02)),
+        (EmitIntensity::new(0x02), Phase::new(0x01))
+    )]
+    #[case(
+        Drive::new(Phase::new(0x00), EmitIntensity::new(0x01)),
+        EmitIntensity::new(0x01)
+    )]
+    #[case(Drive::new(Phase::new(0x01), EmitIntensity::MAX), Phase::new(0x01))]
+    #[cfg_attr(miri, ignore)]
+    fn from(#[case] expected: Drive, #[case] target: impl Into<Drive>) {
+        assert_eq!(expected, target.into());
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(
         EmitIntensity::new(0x00),
         Drive::new(Phase::new(0), EmitIntensity::new(0x00))
     )]
-    #[case::value_1(
+    #[case(
         EmitIntensity::new(0x01),
         Drive::new(Phase::new(0), EmitIntensity::new(0x01))
     )]
-    #[case::value_ff(
+    #[case(
         EmitIntensity::new(0xFF),
         Drive::new(Phase::new(0), EmitIntensity::new(0xFF))
     )]
     #[cfg_attr(miri, ignore)]
     fn test_intensity(#[case] expected: EmitIntensity, #[case] target: Drive) {
-        assert_eq!(expected, target.intensity(),);
+        assert_eq!(expected, target.intensity());
     }
 
     #[rstest::rstest]
     #[test]
-    #[case::value_0(Phase::new(0), Drive::new(Phase::new(0), EmitIntensity::new(0x00)))]
-    #[case::value_1(Phase::new(1), Drive::new(Phase::new(1), EmitIntensity::new(0x00)))]
-    #[case::value_ff(
+    #[case(Phase::new(0), Drive::new(Phase::new(0), EmitIntensity::new(0x00)))]
+    #[case(Phase::new(1), Drive::new(Phase::new(1), EmitIntensity::new(0x00)))]
+    #[case(
         Phase::new(0xFF),
         Drive::new(Phase::new(0xFF), EmitIntensity::new(0x00))
     )]
     #[cfg_attr(miri, ignore)]
     fn test_phase(#[case] expected: Phase, #[case] target: Drive) {
-        assert_eq!(expected, target.phase(),);
+        assert_eq!(expected, target.phase());
     }
 
     #[test]

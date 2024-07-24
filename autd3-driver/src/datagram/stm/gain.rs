@@ -220,6 +220,7 @@ mod tests {
     #[case(Ok(SamplingConfig::Freq(10*Hz)), 1.*Hz, 10)]
     #[case(Ok(SamplingConfig::Freq(20*Hz)), 2.*Hz, 10)]
     #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
+    #[case(Err(AUTDInternalError::GainSTMSizeOutOfRange(0)), 1.*Hz, 0)]
     #[cfg_attr(miri, ignore)]
     fn from_freq(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
