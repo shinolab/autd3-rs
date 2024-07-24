@@ -9,7 +9,7 @@ pub struct AUTD3 {
     #[get]
     position: Vector3,
     #[get]
-#[set]
+    #[set]
     rotation: UnitQuaternion,
 }
 

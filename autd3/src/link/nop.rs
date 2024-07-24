@@ -14,7 +14,7 @@ pub struct Nop {
 #[derive(Builder)]
 pub struct NopBuilder {
     #[get]
-#[set]
+    #[set]
     timeout: std::time::Duration,
 }
 

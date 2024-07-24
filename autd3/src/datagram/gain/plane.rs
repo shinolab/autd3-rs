@@ -5,10 +5,10 @@ pub struct Plane {
     #[get]
     dir: Vector3,
     #[get]
-#[set]
+    #[set]
     intensity: EmitIntensity,
     #[get]
-#[set]
+    #[set]
     phase_offset: Phase,
 }
 

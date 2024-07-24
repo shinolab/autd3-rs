@@ -22,13 +22,13 @@ pub struct Square<S: SamplingMode> {
     #[get]
     freq: S::T,
     #[get]
-#[set]
+    #[set]
     low: u8,
     #[get]
-#[set]
+    #[set]
     high: u8,
     #[get]
-#[set]
+    #[set]
     duty: f32,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,

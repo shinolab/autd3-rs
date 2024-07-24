@@ -11,7 +11,6 @@ mod stm_focus;
 mod stm_sampling_config;
 mod transition_mode;
 
-
 pub(crate) use stm_focus::STMFocus;
 
 pub use debug_type::DebugType;

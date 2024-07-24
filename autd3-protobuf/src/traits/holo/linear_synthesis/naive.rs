@@ -43,7 +43,7 @@ impl FromMessage<Naive>
                 .map(|h| {
                     Ok((
                         autd3_driver::geometry::Vector3::from_msg(&h.pos)?,
-                           autd3_gain_holo::Amplitude::from_msg(&h.amp)?,
+                        autd3_gain_holo::Amplitude::from_msg(&h.amp)?,
                     ))
                 })
                 .collect::<Result<Vec<_>, AUTDProtoBufError>>()?,
