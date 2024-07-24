@@ -2,11 +2,8 @@ use std::{num::NonZeroU8, time::Duration};
 
 use crate::{
     datagram::*,
-    defined::{ULTRASOUND_FREQ, ULTRASOUND_PERIOD},
-    firmware::{
-        fpga::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
-        operation::{SilencerFixedCompletionStepsOp, SilencerTarget},
-    },
+    defined::ULTRASOUND_FREQ,
+    firmware::operation::{SilencerFixedCompletionStepsOp, SilencerTarget},
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -19,10 +16,10 @@ pub struct FixedCompletionTime {
 
 impl Default for Silencer<FixedCompletionTime> {
     fn default() -> Self {
-        Silencer {
+        Self {
             internal: FixedCompletionTime {
-                time_intensity: ULTRASOUND_PERIOD * SILENCER_STEPS_INTENSITY_DEFAULT,
-                time_phase: ULTRASOUND_PERIOD * SILENCER_STEPS_PHASE_DEFAULT,
+                time_intensity: Silencer::DEFAULT_COMPLETION_TIME_INTENSITY,
+                time_phase: Silencer::DEFAULT_COMPLETION_TIME_PHASE,
                 strict_mode: true,
                 target: SilencerTarget::Intensity,
             },
