@@ -94,8 +94,8 @@ fn send_clear() -> anyhow::Result<()> {
 
     assert_eq!(2, cpu.fpga().modulation_cycle(Segment::S0));
     assert_eq!(2, cpu.fpga().modulation_cycle(Segment::S1));
-    assert_eq!(10, cpu.fpga().modulation_freq_division(Segment::S0));
-    assert_eq!(10, cpu.fpga().modulation_freq_division(Segment::S1));
+    assert_eq!(0xFFFF, cpu.fpga().modulation_freq_division(Segment::S0));
+    assert_eq!(0xFFFF, cpu.fpga().modulation_freq_division(Segment::S1));
     assert_eq!(
         LoopBehavior::infinite(),
         cpu.fpga().modulation_loop_behavior(Segment::S0)

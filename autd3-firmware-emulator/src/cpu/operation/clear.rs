@@ -35,7 +35,7 @@ impl CPUEmulator {
         self.min_freq_div_intensity = 10;
         self.min_freq_div_phase = 40;
 
-        self.mod_freq_div = [10, 10];
+        self.mod_freq_div = [0xFFFF, 0xFFFF];
         self.mod_rep = [0xFFFF, 0xFFFF];
         self.mod_cycle = 2;
         self.mod_segment = 0;
