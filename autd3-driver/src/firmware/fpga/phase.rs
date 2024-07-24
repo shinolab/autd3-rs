@@ -15,6 +15,8 @@ pub struct Phase {
 }
 
 impl Phase {
+    pub const PI: Self = Self { value: 128 };
+
     pub const fn new(value: u8) -> Self {
         Self { value }
     }
@@ -61,6 +63,22 @@ impl std::ops::Sub<Phase> for Phase {
 
     fn sub(self, rhs: Phase) -> Self::Output {
         Self::Output::new(self.value.wrapping_sub(rhs.value))
+    }
+}
+
+impl std::ops::Mul<u8> for Phase {
+    type Output = Phase;
+
+    fn mul(self, rhs: u8) -> Self::Output {
+        Self::Output::new(self.value.wrapping_mul(rhs))
+    }
+}
+
+impl std::ops::Div<u8> for Phase {
+    type Output = Phase;
+
+    fn div(self, rhs: u8) -> Self::Output {
+        Self::Output::new(self.value.wrapping_div(rhs))
     }
 }
 
