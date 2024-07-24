@@ -22,7 +22,7 @@ pub enum STMConfigNearest {
     Period(Duration),
 }
 
-pub(crate) trait IntoSamplingConfig {
+pub trait IntoSamplingConfig {
     fn sampling(&self, size: usize) -> Result<SamplingConfig, AUTDInternalError>;
 }
 
