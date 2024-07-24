@@ -11,7 +11,7 @@ use bit_vec::BitVec;
 
 #[derive(Gain, Builder)]
 #[no_const]
-pub struct LM<D: Directivity + 'static, B: LinAlgBackend<D> + 'static> {
+pub struct LM<D: Directivity, B: LinAlgBackend<D>> {
     #[get]
     foci: Vec<Vector3>,
     #[get]
