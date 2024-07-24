@@ -1,16 +1,13 @@
 [package]
 name = "autd3-derive"
-version = "27.0.0-alpha.0"
-authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
-edition = "2021"
-
-license = "MIT"
 description = "Wav Modulation for AUTD."
-repository = "https://github.com/shinolab/autd3-rs"
 readme = "README.md"
 keywords = ["autd"]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
 
 [lib]
 proc-macro = true
@@ -18,7 +15,7 @@ proc-macro = true
 [dependencies]
 proc-macro2 = { workspace = true }
 quote = { workspace = true }
-regex = "1.10.4"
+regex = { workspace = true }
 syn = { workspace = true, features = ["full"] }
 
 [features]

@@ -1,9 +1,10 @@
 [package]
 name = "autd3-examples"
-version = "27.0.0-alpha.0"
-authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
-edition = "2021"
-license = "MIT"
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
 
 [[bin]]
 name = "soem"
@@ -42,14 +43,14 @@ required-features = ["lightweight-server"]
 
 [dependencies]
 anyhow = { workspace = true }
-autd3 = { path = "../autd3" }
-autd3-driver = { path = "../autd3-driver" }
-autd3-gain-holo = { path = "../autd3-gain-holo" }
-autd3-link-simulator = { path = "../autd3-link-simulator", optional = true }
-autd3-link-soem = { path = "../autd3-link-soem", optional = true }
-autd3-link-twincat = { path = "../autd3-link-twincat", optional = true }
-autd3-modulation-audio-file = { path = "../autd3-modulation-audio-file" }
-autd3-protobuf = { path = "../autd3-protobuf", optional = true }
+autd3 = { workspace = true }
+autd3-driver = { workspace = true }
+autd3-gain-holo = { workspace = true }
+autd3-link-simulator = { workspace = true, optional = true }
+autd3-link-soem = { workspace = true, optional = true }
+autd3-link-twincat = { workspace = true, optional = true }
+autd3-modulation-audio-file = { workspace = true }
+autd3-protobuf = { workspace = true, optional = true }
 colored = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 async-std = { workspace = true }

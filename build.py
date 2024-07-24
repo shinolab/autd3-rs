@@ -188,7 +188,7 @@ def rust_build(args):
         if config.no_examples:
             command.append("--workspace")
             command.append("--exclude")
-            command.append("examples")
+            command.append("autd3-examples")
         subprocess.run(command).check_returncode()
 
 
@@ -201,7 +201,7 @@ def rust_lint(args):
         if config.no_examples:
             command.append("--workspace")
             command.append("--exclude")
-            command.append("examples")
+            command.append("autd3-examples")
         command.append("--")
         command.append("-D")
         command.append("warnings")
@@ -225,7 +225,7 @@ def rust_test(args):
             command.append(features)
             command.append("--workspace")
             command.append("--exclude")
-            command.append("examples")
+            command.append("autd3-examples")
             if not config.is_pcap_available():
                 command.append("--exclude")
                 command.append("autd3-link-soem")
@@ -356,23 +356,22 @@ def util_update_ver(args):
     version = args.version
 
     with working_dir("."):
-        for toml in glob.glob("./**/*/Cargo.toml", recursive=True):
-            with open(toml, "r") as f:
-                content = f.read()
-                content = re.sub(
-                    r'^version = "(.*?)"',
-                    f'version = "{version}"',
-                    content,
-                    flags=re.MULTILINE,
-                )
-                content = re.sub(
-                    r'^autd3(.*)version = "(.*?)"',
-                    f'autd3\\1version = "{version}"',
-                    content,
-                    flags=re.MULTILINE,
-                )
-            with open(toml, "w") as f:
-                f.write(content)
+        with open("Cargo.toml", "r") as f:
+            content = f.read()
+            content = re.sub(
+                r'^version = "(.*?)"',
+                f'version = "{version}"',
+                content,
+                flags=re.MULTILINE,
+            )
+            content = re.sub(
+                r'^autd3(.*)version = "(.*?)"',
+                f'autd3\\1version = "{version}"',
+                content,
+                flags=re.MULTILINE,
+            )
+        with open("Cargo.toml", "w") as f:
+            f.write(content)
 
 
 def command_help(args):
