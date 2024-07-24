@@ -1,7 +1,7 @@
 mod builder;
 mod group;
 
-use std::{fmt::Debug, hash::Hash, num::NonZeroU32, time::Duration};
+use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
     datagram::{Clear, Datagram, IntoDatagramWithTimeout, Synchronize},
@@ -43,7 +43,7 @@ pub struct Controller<L: Link> {
     send_interval: Duration,
     #[cfg(target_os = "windows")]
     #[get]
-    timer_resolution: NonZeroU32,
+    timer_resolution: std::num::NonZeroU32,
 }
 
 impl Controller<Nop> {
