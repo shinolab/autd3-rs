@@ -5,7 +5,7 @@ use autd3_driver::{
         FociSTM, GainSTM, IntoDatagramWithSegment, IntoDatagramWithSegmentTransition, Silencer,
         SwapSegment,
     },
-    defined::{ControlPoint, ULTRASOUND_PERIOD},
+    defined::ControlPoint,
     derive::*,
     firmware::{
         cpu::{GainSTMMode, TxDatagram},
@@ -278,8 +278,8 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = Silencer::from_completion_time(
-            SILENCER_STEPS_INTENSITY_DEFAULT * ULTRASOUND_PERIOD,
-            SILENCER_STEPS_PHASE_DEFAULT * ULTRASOUND_PERIOD,
+            Silencer::DEFAULT_COMPLETION_TIME_INTENSITY,
+            Silencer::DEFAULT_COMPLETION_TIME_PHASE,
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -298,8 +298,8 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = Silencer::from_completion_time(
-            ULTRASOUND_PERIOD * SILENCER_STEPS_INTENSITY_DEFAULT,
-            ULTRASOUND_PERIOD * SILENCER_STEPS_PHASE_DEFAULT * 2,
+            Silencer::DEFAULT_COMPLETION_TIME_INTENSITY,
+            Silencer::DEFAULT_COMPLETION_TIME_PHASE * 2,
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 

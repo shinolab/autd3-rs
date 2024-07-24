@@ -6,7 +6,13 @@ use std::{num::NonZeroU8, time::Duration};
 pub use fixed_complition_time::FixedCompletionTime;
 pub use fixed_update_rate::FixedUpdateRate;
 
-use crate::{defined::ULTRASOUND_PERIOD, firmware::operation::SilencerTarget};
+use crate::{
+    defined::ULTRASOUND_PERIOD,
+    firmware::{
+        fpga::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
+        operation::SilencerTarget,
+    },
+};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Silencer<T> {
@@ -17,6 +23,11 @@ pub type SilencerFixedCompletionTime = Silencer<FixedCompletionTime>;
 pub type SilencerFixedUpdateRate = Silencer<FixedUpdateRate>;
 
 impl Silencer<()> {
+    pub const DEFAULT_COMPLETION_TIME_INTENSITY: Duration =
+        Duration::from_micros(25 * SILENCER_STEPS_INTENSITY_DEFAULT as u64);
+    pub const DEFAULT_COMPLETION_TIME_PHASE: Duration =
+        Duration::from_micros(25 * SILENCER_STEPS_PHASE_DEFAULT as u64);
+
     pub const fn from_update_rate(
         update_rate_intensity: NonZeroU8,
         update_rate_phase: NonZeroU8,

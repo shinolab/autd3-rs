@@ -2,7 +2,6 @@ use std::{num::NonZeroU16, time::Duration};
 
 use autd3_driver::{
     datagram::{IntoDatagramWithSegmentTransition, Silencer, SwapSegment},
-    defined::ULTRASOUND_PERIOD,
     derive::*,
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
@@ -175,8 +174,8 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = Silencer::from_completion_time(
-            SILENCER_STEPS_INTENSITY_DEFAULT * ULTRASOUND_PERIOD,
-            SILENCER_STEPS_PHASE_DEFAULT * ULTRASOUND_PERIOD,
+            Silencer::DEFAULT_COMPLETION_TIME_INTENSITY,
+            Silencer::DEFAULT_COMPLETION_TIME_PHASE,
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -191,8 +190,8 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = Silencer::from_completion_time(
-            ULTRASOUND_PERIOD * SILENCER_STEPS_PHASE_DEFAULT * 2,
-            ULTRASOUND_PERIOD * SILENCER_STEPS_PHASE_DEFAULT,
+            Silencer::DEFAULT_COMPLETION_TIME_PHASE * 2,
+            Silencer::DEFAULT_COMPLETION_TIME_PHASE,
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
