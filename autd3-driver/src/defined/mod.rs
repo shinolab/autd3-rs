@@ -31,6 +31,7 @@ pub const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_milli
 
 pub const ULTRASOUND_FREQ: Freq<u32> = Freq { freq: 40000 };
 pub const ULTRASOUND_PERIOD: Duration = Duration::from_micros(25);
+pub const ULTRASOUND_PERIOD_COUNT: usize = 256;
 
 #[allow(non_upper_case_globals)]
 pub const mm: f32 = MILLIMETER;
