@@ -13,7 +13,8 @@ pub struct Csv {
     #[no_change]
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
-    #[getset]
+    #[get]
+    #[set]
     deliminator: u8,
 }
 

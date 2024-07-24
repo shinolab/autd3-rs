@@ -8,7 +8,8 @@ use crate::{
 pub struct AUTD3 {
     #[get]
     position: Vector3,
-    #[getset]
+    #[get]
+#[set]
     rotation: UnitQuaternion,
 }
 

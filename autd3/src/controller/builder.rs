@@ -11,12 +11,15 @@ use crate::error::AUTDError;
 #[derive(Builder)]
 pub struct ControllerBuilder {
     devices: Vec<Device>,
-    #[getset]
+    #[get]
+#[set]
     parallel_threshold: usize,
-    #[getset]
+    #[get]
+#[set]
     send_interval: std::time::Duration,
     #[cfg(target_os = "windows")]
-    #[getset]
+    #[get]
+#[set]
     timer_resolution: std::num::NonZeroU32,
 }
 

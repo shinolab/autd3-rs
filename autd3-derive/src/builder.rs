@@ -13,12 +13,8 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 .iter()
                 .filter_map(|field| {
                     if field.attrs.iter().any(|attr| match &attr.meta {
-                        Meta::Path(path) if path.is_ident("get") || path.is_ident("getset") => true,
-                        Meta::List(list)
-                            if list.path.is_ident("get") || list.path.is_ident("getset") =>
-                        {
-                            true
-                        }
+                        Meta::Path(path) if path.is_ident("get") => true,
+                        Meta::List(list) if list.path.is_ident("get") => true,
                         _ => false,
                     }) {
                         Some(field.clone())
@@ -36,31 +32,37 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
         field.ident.as_ref().map(|ident| match ty {
             syn::Type::Path(path) if path.path.is_ident("Geometry") => quote! {
-                pub fn #ident(&self) -> &Geometry {
+                #[must_use]
+                pub const fn #ident(&self) -> &Geometry {
                     &self.#ident
                 }
             },
             syn::Type::Path(path) if path.path.is_ident("String") => quote! {
+                #[must_use]
                 pub fn #ident(&self) -> &str {
                     &self.#ident
                 }
             },
             syn::Type::Path(path) if path.path.is_ident("Vector3") => quote! {
+                #[must_use]
                 pub const fn #ident(&self) -> &Vector3 {
                     &self.#ident
                 }
             },
             syn::Type::Path(path) if path.path.is_ident("UnitQuaternion") => quote! {
+                #[must_use]
                 pub const fn #ident(&self) -> &UnitQuaternion {
                     &self.#ident
                 }
             },
             syn::Type::Path(path) if path.path.is_ident("F") => quote! {
+                #[must_use]
                 pub const fn #ident(&self) -> &F {
                     &self.#ident
                 }
             },
             syn::Type::Path(path) if path.path.is_ident("L") => quote! {
+                #[must_use]
                 pub const fn #ident(&self) -> &L {
                     &self.#ident
                 }
@@ -70,12 +72,14 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 if let Some(caps) = re.captures(&path.path.to_token_stream().to_string()) {
                     let inner = format_ident!("{}", &caps["inner"]);
                     quote! {
+                        #[must_use]
                         pub fn #ident(&self) -> &[#inner] {
                             &self.#ident
                         }
                     }
                 } else {
                     quote! {
+                        #[must_use]
                         pub const fn #ident(&self) -> #ty {
                             self.#ident
                         }
@@ -83,10 +87,68 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 }
             }
             _ => quote! {
+                #[must_use]
                 pub const fn #ident(&self) -> #ty {
                     self.#ident
                 }
             },
+        })
+    });
+
+    let linetimes = generics.lifetimes();
+    let type_params = generics.type_params();
+    let const_params = generics.const_params();
+    let (_, ty_generics, where_clause) = generics.split_for_impl();
+    quote! {
+        impl <#(#linetimes,)* #(#type_params,)* #(#const_params,)*> #name #ty_generics #where_clause {
+           #(#getters)*
+        }
+    }
+}
+
+fn impl_getter_mut(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
+    let name = &input.ident;
+    let generics = &input.generics;
+
+    let getter_fileds =
+        if let syn::Data::Struct(syn::DataStruct { fields, .. }) = input.data.clone() {
+            fields
+                .iter()
+                .filter_map(|field| {
+                    if field.attrs.iter().any(|attr| match &attr.meta {
+                        Meta::Path(path) if path.is_ident("get_mut") => true,
+                        Meta::List(list) if list.path.is_ident("get_mut") => true,
+                        _ => false,
+                    }) {
+                        Some(field.clone())
+                    } else {
+                        None
+                    }
+                })
+                .collect()
+        } else {
+            vec![]
+        };
+
+    let getters = getter_fileds.iter().filter_map(|field| {
+        let ty = &field.ty;
+        field.ident.as_ref().map(|ident| {
+            let name = format_ident!("{}_mut", ident);
+            match ty {
+                syn::Type::Path(path) if path.path.is_ident("Geometry") => quote! {
+                    #[must_use]
+                    pub fn #name(&mut self) -> &mut Geometry {
+                        &mut self.#ident
+                    }
+                },
+                syn::Type::Path(path) if path.path.is_ident("L") => quote! {
+                    #[must_use]
+                    pub fn #name(&mut self) -> &mut L {
+                        &mut self.#ident
+                    }
+                },
+                _ => quote! {},
+            }
         })
     });
 
@@ -118,12 +180,8 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 .iter()
                 .filter_map(|field| {
                     if field.attrs.iter().any(|attr| match &attr.meta {
-                        Meta::Path(path) if path.is_ident("set") || path.is_ident("getset") => true,
-                        Meta::List(list)
-                            if list.path.is_ident("set") || list.path.is_ident("getset") =>
-                        {
-                            true
-                        }
+                        Meta::Path(path) if path.is_ident("set") => true,
+                        Meta::List(list) if list.path.is_ident("set") => true,
                         _ => false,
                     }) {
                         Some(field.clone())
@@ -140,10 +198,8 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
         match (
             field.ident.as_ref(),
             field.attrs.iter().find(|attr| match &attr.meta {
-                Meta::Path(path) if path.is_ident("set") || path.is_ident("getset") => true,
-                Meta::List(list) if list.path.is_ident("set") || list.path.is_ident("getset") => {
-                    true
-                }
+                Meta::Path(path) if path.is_ident("set") => true,
+                Meta::List(list) if list.path.is_ident("set") => true,
                 _ => false,
             }),
         ) {
@@ -222,10 +278,13 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
 pub(crate) fn impl_builder_macro(input: syn::DeriveInput) -> TokenStream {
     let getters = impl_getter(&input);
+    let getters_mut = impl_getter_mut(&input);
     let setters = impl_setter(&input);
 
     let generator = quote! {
         #getters
+
+        #getters_mut
 
         #setters
     };

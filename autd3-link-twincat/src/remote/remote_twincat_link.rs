@@ -28,11 +28,14 @@ pub struct RemoteTwinCAT {
 pub struct RemoteTwinCATBuilder {
     #[get]
     server_ams_net_id: String,
-    #[getset]
+    #[get]
+    #[set]
     server_ip: String,
-    #[getset]
+    #[get]
+    #[set]
     client_ams_net_id: String,
-    #[getset]
+    #[get]
+    #[set]
     timeout: Duration,
 }
 

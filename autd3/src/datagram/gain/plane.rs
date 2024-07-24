@@ -4,9 +4,11 @@ use autd3_driver::{derive::*, geometry::Vector3};
 pub struct Plane {
     #[get]
     dir: Vector3,
-    #[getset]
+    #[get]
+#[set]
     intensity: EmitIntensity,
-    #[getset]
+    #[get]
+#[set]
     phase_offset: Phase,
 }
 
