@@ -1,3 +1,5 @@
+use std::num::NonZeroU8;
+
 use crate::{
     pb::*,
     to_holo,
@@ -13,7 +15,7 @@ impl ToMessage for autd3_gain_holo::Greedy<autd3_driver::acoustics::directivity:
             datagram: Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Greedy(Greedy {
                     holo: to_holo!(self),
-                    phase_div: Some(self.phase_div() as _),
+                    phase_div: Some(self.phase_div().get() as _),
                     constraint: Some(self.constraint().to_msg(None)),
                 })),
             })),
@@ -37,7 +39,9 @@ impl FromMessage<Greedy> for autd3_gain_holo::Greedy<autd3_driver::acoustics::di
                 .collect::<Result<Vec<_>, AUTDProtoBufError>>()?,
         );
         if let Some(phase_div) = msg.phase_div {
-            g = g.with_phase_div(phase_div as _);
+            g = g.with_phase_div(
+                NonZeroU8::new(phase_div as u8).ok_or(AUTDProtoBufError::DataParseError)?,
+            );
         }
         if let Some(constraint) = msg.constraint.as_ref() {
             g = g.with_constraint(autd3_gain_holo::EmissionConstraint::from_msg(constraint)?);

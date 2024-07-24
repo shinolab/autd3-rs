@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{num::NonZeroU32, time::Duration};
 
 use crate::{error::*, pb::*, traits::*};
 
@@ -201,7 +201,10 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                 .with_send_interval(Duration::from_nanos(req.send_interval));
                 #[cfg(target_os = "windows")]
                 {
-                    builder = builder.with_timer_resolution(req.timer_resolution);
+                    builder = builder.with_timer_resolution(
+                        NonZeroU32::new(req.timer_resolution)
+                            .ok_or(Status::invalid_argument("timer_resolution"))?,
+                    );
                 }
                 *self.autd.write().await = match builder.open((self.link)()).await {
                     Ok(autd) => Some(autd),

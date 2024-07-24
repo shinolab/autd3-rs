@@ -55,7 +55,7 @@ seq_macro::seq!(N in 1..=8 {
                             Ok(c)
                         })
                         .collect::<Result<Vec<_>, AUTDProtoBufError>>()?,
-                );
+                )?;
                 if let Some(loop_behavior) = props.loop_behavior.as_ref() {
                     stm = stm.with_loop_behavior(autd3_driver::firmware::fpga::LoopBehavior::from_msg(
                         loop_behavior,

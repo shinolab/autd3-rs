@@ -29,7 +29,7 @@ message Plane {
 
 message Uniform {
   EmitIntensity intensity = 1;
-  optional Phase phase = 2;
+  Phase phase = 2;
 }
 
 message Amplitude {

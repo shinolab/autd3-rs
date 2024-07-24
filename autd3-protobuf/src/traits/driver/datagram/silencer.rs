@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{num::NonZeroU8, time::Duration};
 
 use crate::{
     pb::*,
@@ -26,8 +26,8 @@ impl ToMessage for autd3_driver::datagram::SilencerFixedUpdateRate {
 impl FromMessage<SilencerFixedUpdateRate> for autd3_driver::datagram::SilencerFixedUpdateRate {
     fn from_msg(msg: &SilencerFixedUpdateRate) -> Result<Self, AUTDProtoBufError> {
         Ok(autd3_driver::datagram::Silencer::from_update_rate(
-            msg.value_intensity as _,
-            msg.value_phase as _,
+            NonZeroU8::new(msg.value_intensity as _).ok_or(AUTDProtoBufError::DataParseError)?,
+            NonZeroU8::new(msg.value_phase as _).ok_or(AUTDProtoBufError::DataParseError)?,
         ))
     }
 }
@@ -57,8 +57,8 @@ impl FromMessage<SilencerFixedCompletionSteps>
 {
     fn from_msg(msg: &SilencerFixedCompletionSteps) -> Result<Self, AUTDProtoBufError> {
         let mut s = autd3_driver::datagram::Silencer::from_completion_steps(
-            msg.value_intensity as _,
-            msg.value_phase as _,
+            NonZeroU8::new(msg.value_intensity as _).ok_or(AUTDProtoBufError::DataParseError)?,
+            NonZeroU8::new(msg.value_phase as _).ok_or(AUTDProtoBufError::DataParseError)?,
         );
         if let Some(strict_mode) = msg.strict_mode {
             s = s.with_strict_mode(strict_mode);
@@ -105,17 +105,18 @@ impl FromMessage<SilencerFixedCompletionTime>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::firmware::fpga::{SILENCER_VALUE_MAX, SILENCER_VALUE_MIN};
     use rand::Rng;
 
     #[test]
     fn test_silencer_fixed_update_rate() {
         let mut rng = rand::thread_rng();
 
-        let c = autd3_driver::datagram::Silencer::from_update_rate(
-            rng.gen_range(SILENCER_VALUE_MIN..SILENCER_VALUE_MAX),
-            rng.gen_range(SILENCER_VALUE_MIN..SILENCER_VALUE_MAX),
-        );
+        let c = unsafe {
+            autd3_driver::datagram::Silencer::from_update_rate(
+                NonZeroU8::new_unchecked(rng.gen_range(1..=u8::MAX)),
+                NonZeroU8::new_unchecked(rng.gen_range(1..=u8::MAX)),
+            )
+        };
         let msg = c.to_msg(None);
 
         match msg.datagram {
@@ -135,10 +136,12 @@ mod tests {
     fn test_silencer_fixed_completion_steps() {
         let mut rng = rand::thread_rng();
 
-        let c = autd3_driver::datagram::Silencer::from_completion_steps(
-            rng.gen_range(SILENCER_VALUE_MIN..SILENCER_VALUE_MAX),
-            rng.gen_range(SILENCER_VALUE_MIN..SILENCER_VALUE_MAX),
-        )
+        let c = unsafe {
+            autd3_driver::datagram::Silencer::from_completion_steps(
+                NonZeroU8::new_unchecked(rng.gen_range(1..=u8::MAX)),
+                NonZeroU8::new_unchecked(rng.gen_range(1..=u8::MAX)),
+            )
+        }
         .with_strict_mode(false);
         let msg = c.to_msg(None);
 
