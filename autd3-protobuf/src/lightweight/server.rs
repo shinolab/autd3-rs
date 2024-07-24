@@ -1,4 +1,4 @@
-use std::{num::NonZeroU32, time::Duration};
+use std::time::Duration;
 
 use crate::{error::*, pb::*, traits::*};
 
@@ -202,7 +202,7 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
                 #[cfg(target_os = "windows")]
                 {
                     builder = builder.with_timer_resolution(
-                        NonZeroU32::new(req.timer_resolution)
+                        std::num::NonZeroU32::new(req.timer_resolution)
                             .ok_or(Status::invalid_argument("timer_resolution"))?,
                     );
                 }

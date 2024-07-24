@@ -1,5 +1,3 @@
-use std::num::NonZeroU32;
-
 use autd3_driver::{
     derive::*,
     firmware::cpu::{RxMessage, TxDatagram},
@@ -19,7 +17,7 @@ pub struct ControllerBuilder {
     send_interval: std::time::Duration,
     #[cfg(target_os = "windows")]
     #[getset]
-    timer_resolution: NonZeroU32,
+    timer_resolution: std::num::NonZeroU32,
 }
 
 impl ControllerBuilder {
@@ -33,7 +31,7 @@ impl ControllerBuilder {
             parallel_threshold: 4,
             send_interval: std::time::Duration::from_millis(1),
             #[cfg(target_os = "windows")]
-            timer_resolution: NonZeroU32::new(1).unwrap(),
+            timer_resolution: std::num::NonZeroU32::new(1).unwrap(),
         }
     }
 
