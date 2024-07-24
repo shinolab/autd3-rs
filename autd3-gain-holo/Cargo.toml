@@ -10,7 +10,6 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-assert_approx_eq = { workspace = true }
 autd3-driver = { workspace = true }
 nalgebra = { workspace = true, features = ["std"] }
 rand = { workspace = true }
