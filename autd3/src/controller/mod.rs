@@ -125,7 +125,7 @@ impl<L: Link> Controller<L> {
         }
         self.geometry.iter_mut().for_each(|dev| dev.enable = true);
         self.send(
-            autd3_driver::datagram::SilencerFixedCompletionSteps::default().with_strict_mode(false),
+            autd3_driver::datagram::SilencerFixedCompletionTime::default().with_strict_mode(false),
         )
         .await?;
         self.send((Static::new(), Null::default())).await?;

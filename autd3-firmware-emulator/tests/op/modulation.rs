@@ -1,10 +1,8 @@
-use std::{
-    num::{NonZeroU16, NonZeroU8},
-    time::Duration,
-};
+use std::{num::NonZeroU16, time::Duration};
 
 use autd3_driver::{
     datagram::{IntoDatagramWithSegmentTransition, Silencer, SwapSegment},
+    defined::ULTRASOUND_PERIOD,
     derive::*,
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
@@ -96,9 +94,7 @@ fn send_mod(
 
     let m: Vec<_> = (0..n).map(|_| rng.gen()).collect();
     let freq_div = rng.gen_range(
-        SILENCER_STEPS_INTENSITY_DEFAULT
-            .max(SILENCER_STEPS_PHASE_DEFAULT)
-            .get() as u16..=u16::MAX,
+        SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16..=u16::MAX,
     );
     let d = TestModulation {
         buf: m.clone(),
@@ -130,9 +126,7 @@ fn swap_mod_segmemt() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let m: Vec<_> = (0..MOD_BUF_SIZE_MIN).map(|_| 0x00).collect();
-    let freq_div = SILENCER_STEPS_INTENSITY_DEFAULT
-        .max(SILENCER_STEPS_PHASE_DEFAULT)
-        .get() as u16;
+    let freq_div = SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16;
     let d = TestModulation {
         buf: m.clone(),
         config: SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
@@ -180,25 +174,25 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::from_completion_steps(
-            SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT,
+        let d = Silencer::from_completion_time(
+            SILENCER_STEPS_INTENSITY_DEFAULT * ULTRASOUND_PERIOD,
+            SILENCER_STEPS_PHASE_DEFAULT * ULTRASOUND_PERIOD,
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
             config: SamplingConfig::Division(
-                NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT.get() as _).unwrap(),
+                NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT as _).unwrap(),
             ),
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_segment(Segment::S1, None);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::from_completion_steps(
-            SILENCER_STEPS_PHASE_DEFAULT.saturating_mul(unsafe { NonZeroU8::new_unchecked(2) }),
-            SILENCER_STEPS_PHASE_DEFAULT,
+        let d = Silencer::from_completion_time(
+            ULTRASOUND_PERIOD * SILENCER_STEPS_PHASE_DEFAULT * 2,
+            ULTRASOUND_PERIOD * SILENCER_STEPS_PHASE_DEFAULT,
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 

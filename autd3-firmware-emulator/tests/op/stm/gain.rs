@@ -1,14 +1,11 @@
-use std::{
-    collections::HashMap,
-    num::{NonZeroU16, NonZeroU8},
-};
+use std::{collections::HashMap, num::NonZeroU16};
 
 use autd3_driver::{
     datagram::{
         FociSTM, GainSTM, IntoDatagramWithSegment, IntoDatagramWithSegmentTransition, Silencer,
         SwapSegment,
     },
-    defined::ControlPoint,
+    defined::{ControlPoint, ULTRASOUND_PERIOD},
     derive::*,
     firmware::{
         cpu::{GainSTMMode, TxDatagram},
@@ -73,9 +70,7 @@ fn send_gain_stm_phase_intensity_full(
 
     let bufs = gen_random_buf(n, &geometry);
     let freq_div = rng.gen_range(
-        SILENCER_STEPS_INTENSITY_DEFAULT
-            .max(SILENCER_STEPS_PHASE_DEFAULT)
-            .get() as _..=u16::MAX,
+        SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _..=u16::MAX,
     );
     let d = GainSTM::new(
         SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
@@ -128,9 +123,7 @@ fn send_gain_stm_phase_full(#[case] n: usize) -> anyhow::Result<()> {
     let d = GainSTM::new(
         SamplingConfig::Division(
             NonZeroU16::new(
-                SILENCER_STEPS_INTENSITY_DEFAULT
-                    .max(SILENCER_STEPS_PHASE_DEFAULT)
-                    .get() as _,
+                SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _,
             )
             .unwrap(),
         ),
@@ -191,9 +184,7 @@ fn send_gain_stm_phase_half(#[case] n: usize) -> anyhow::Result<()> {
         let d = GainSTM::new(
             SamplingConfig::Division(
                 NonZeroU16::new(
-                    SILENCER_STEPS_INTENSITY_DEFAULT
-                        .max(SILENCER_STEPS_PHASE_DEFAULT)
-                        .get() as _,
+                    SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _,
                 )
                 .unwrap(),
             ),
@@ -286,18 +277,16 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
         .with_segment(Segment::S0, true);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::from_completion_steps(
-            SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT,
+        let d = Silencer::from_completion_time(
+            SILENCER_STEPS_INTENSITY_DEFAULT * ULTRASOUND_PERIOD,
+            SILENCER_STEPS_PHASE_DEFAULT * ULTRASOUND_PERIOD,
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = GainSTM::new(
             SamplingConfig::Division(
                 NonZeroU16::new(
-                    SILENCER_STEPS_INTENSITY_DEFAULT
-                        .max(SILENCER_STEPS_PHASE_DEFAULT)
-                        .get() as _,
+                    SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _,
                 )
                 .unwrap(),
             ),
@@ -308,9 +297,9 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
         .with_segment(Segment::S1, None);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::from_completion_steps(
-            SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT.saturating_mul(unsafe { NonZeroU8::new_unchecked(2) }),
+        let d = Silencer::from_completion_time(
+            ULTRASOUND_PERIOD * SILENCER_STEPS_INTENSITY_DEFAULT,
+            ULTRASOUND_PERIOD * SILENCER_STEPS_PHASE_DEFAULT * 2,
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 

@@ -13,12 +13,6 @@ message SilencerFixedUpdateRate {
       uint32 value_phase = 2;
 }
 
-message SilencerFixedCompletionSteps {
-      uint32 value_intensity = 1;
-      uint32 value_phase = 2;
-      optional bool strict_mode = 3;
-}
-
 message SilencerFixedCompletionTime {
       uint64 value_intensity = 1;
       uint64 value_phase = 2;
@@ -28,7 +22,6 @@ message SilencerFixedCompletionTime {
 message Silencer {
     oneof config {
         SilencerFixedUpdateRate fixed_update_rate = 1;
-        SilencerFixedCompletionSteps fixed_completion_steps = 2;
         SilencerFixedCompletionTime fixed_completion_time = 3;
     }
 }

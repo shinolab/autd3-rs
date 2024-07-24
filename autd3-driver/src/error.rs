@@ -3,7 +3,7 @@ use std::time::Duration;
 use thiserror::Error;
 
 use crate::{
-    defined::Freq,
+    defined::{Freq, ULTRASOUND_PERIOD},
     firmware::{cpu::GainSTMMode, fpga::*},
 };
 
@@ -17,17 +17,26 @@ pub enum AUTDInternalError {
     )]
     ModulationSizeOutOfRange(usize),
 
-    #[error("Silencer completion time ({0:?}) must be a multiple of 25μs")]
+    #[error(
+        "Silencer completion time ({0:?}) must be a multiple of {:?}",
+        ULTRASOUND_PERIOD
+    )]
     InvalidSilencerCompletionTime(Duration),
-    #[error("Silencer completion time ({0:?}) is out of range ([{1:?}, {2:?}])")]
-    SilencerCompletionTimeOutOfRange(Duration, Duration, Duration),
+    #[error(
+        "Silencer completion time ({0:?}) is out of range ([{:?}, {:?}])",
+        ULTRASOUND_PERIOD,
+        ULTRASOUND_PERIOD * 256)]
+    SilencerCompletionTimeOutOfRange(Duration),
 
     #[error("Unknown group key: {0}")]
     UnkownKey(String),
 
     #[error("Sampling frequency ({0}) must divide {1}")]
     SamplingFreqInvalid(Freq<u32>, Freq<u32>),
-    #[error("Sampling period ({0:?}) must be a multiple of 25μs")]
+    #[error(
+        "Sampling period ({0:?}) must be a multiple of {:?}",
+        ULTRASOUND_PERIOD
+    )]
     SamplingPeriodInvalid(Duration),
     #[error("Sampling frequency ({0}) is out of range ([{1}, {2}])")]
     SamplingFreqOutOfRange(Freq<f32>, Freq<f32>, Freq<f32>),

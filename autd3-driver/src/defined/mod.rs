@@ -3,6 +3,7 @@ mod control_point;
 mod freq;
 
 pub use std::f32::consts::PI;
+use std::time::Duration;
 
 #[cfg(feature = "use_meter")]
 mod unit {
@@ -29,6 +30,7 @@ pub const T4010A1_AMPLITUDE: f32 = 275.574_25 * 200.0 * MILLIMETER; // [Pa*mm]
 pub const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(200);
 
 pub const ULTRASOUND_FREQ: Freq<u32> = Freq { freq: 40000 };
+pub const ULTRASOUND_PERIOD: Duration = Duration::from_micros(25);
 
 #[allow(non_upper_case_globals)]
 pub const mm: f32 = MILLIMETER;

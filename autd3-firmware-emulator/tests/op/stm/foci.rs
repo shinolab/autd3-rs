@@ -1,12 +1,8 @@
-use std::{
-    collections::HashMap,
-    num::{NonZeroU16, NonZeroU8},
-    time::Duration,
-};
+use std::{collections::HashMap, num::NonZeroU16, time::Duration};
 
 use autd3_driver::{
     datagram::{FociSTM, GainSTM, IntoDatagramWithSegmentTransition, Silencer, SwapSegment},
-    defined::{mm, ControlPoint, ControlPoints, METER},
+    defined::{mm, ControlPoint, ControlPoints, METER, ULTRASOUND_PERIOD},
     derive::{Drive, LoopBehavior, Phase, SamplingConfig, Segment},
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
@@ -71,9 +67,7 @@ fn test_send_foci_stm(
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     let freq_div = rng.gen_range(
-        SILENCER_STEPS_INTENSITY_DEFAULT
-            .max(SILENCER_STEPS_PHASE_DEFAULT)
-            .get() as _..=u16::MAX,
+        SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _..=u16::MAX,
     );
     let foci = gen_random_foci::<1>(n);
 
@@ -181,18 +175,16 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
         };
         assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
 
-        let d = Silencer::from_completion_steps(
-            SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT,
+        let d = Silencer::from_completion_time(
+            SILENCER_STEPS_INTENSITY_DEFAULT * ULTRASOUND_PERIOD,
+            SILENCER_STEPS_PHASE_DEFAULT * ULTRASOUND_PERIOD,
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let stm = FociSTM::new(
             SamplingConfig::Division(
                 NonZeroU16::new(
-                    SILENCER_STEPS_INTENSITY_DEFAULT
-                        .max(SILENCER_STEPS_PHASE_DEFAULT)
-                        .get() as _,
+                    SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _,
                 )
                 .unwrap(),
             ),
@@ -203,9 +195,9 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
 
         assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
 
-        let d = Silencer::from_completion_steps(
-            SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT.saturating_mul(unsafe { NonZeroU8::new_unchecked(2) }),
+        let d = Silencer::from_completion_time(
+            ULTRASOUND_PERIOD * SILENCER_STEPS_INTENSITY_DEFAULT,
+            ULTRASOUND_PERIOD * SILENCER_STEPS_PHASE_DEFAULT * 2,
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -373,9 +365,7 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
 
     {
         let freq_div = rng.gen_range(
-            SILENCER_STEPS_INTENSITY_DEFAULT
-                .max(SILENCER_STEPS_PHASE_DEFAULT)
-                .get() as _..=u16::MAX,
+            SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _..=u16::MAX,
         );
         let foci = gen_random_foci::<N>(1000);
         let loop_behavior = LoopBehavior::infinite();
