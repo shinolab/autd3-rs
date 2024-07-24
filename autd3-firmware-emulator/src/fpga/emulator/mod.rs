@@ -97,7 +97,7 @@ impl FPGAEmulator {
     }
 
     pub fn to_pulse_width(&self, a: EmitIntensity, b: u8) -> u8 {
-        let key = (a.value() as usize * (b as usize + 1)) >> 8;
+        let key = (a.value() as usize * b as usize) / 255;
         self.pulse_width_encoder_table_at(key)
     }
 
@@ -131,7 +131,7 @@ mod tests {
     static ASIN_TABLE: &[u8; 256] = include_bytes!("asin.dat");
 
     fn to_pulse_width_actual(a: u8, b: u8) -> u8 {
-        let idx = (a as usize * (b as usize + 1)) >> 8;
+        let idx = (a as usize * b as usize) / 255;
         ASIN_TABLE[idx]
     }
 
