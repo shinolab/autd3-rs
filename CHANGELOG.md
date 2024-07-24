@@ -7,6 +7,7 @@
   - Invert the sign of the phase
   - Remove `dynamic_freq` feature
 - `Controller::link` and `geometry` is now private. use `link()`, `link_mut()`, `geometry()`, and `geometry_mut()` instead
+- Unified `FociSTM` and `GainSTM` constructor to `new`
 - Remove `Silencer::from_completion_steps`, use `Silencer::from_completion_time` instead
 - Change to use `NonZero<T>` for integer argment which should be non-zero
 - Change `Simulator::builder` argument from port number to `SocketAddr`
@@ -14,6 +15,8 @@
 - Remove `autd3_gain_holo::SDP`
 - `Directivity::directivity` now takes `Angle` as an argument instead of `f32`
 - Add `Phase::PI`
+- Implement `From<(Phase, EmitIntensity)>`, `From<(EmitIntensity, Phase)>`, `From<Phase>`, and `From<EmitIntensity>` for `Drive`
+  - `impl Into<Drive>` can now be used instead of `Drive`
 - Fix bugs
   - Remove unaligned reference
 
