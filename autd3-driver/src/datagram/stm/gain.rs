@@ -1,8 +1,9 @@
-use crate::datagram::*;
+use super::sampling_config::*;
 use crate::{
+    datagram::*,
     defined::Freq,
     derive::*,
-    firmware::{cpu::GainSTMMode, fpga::STMConfig, operation::GainSTMOp},
+    firmware::{cpu::GainSTMMode, operation::GainSTMOp},
 };
 
 use derive_more::{Deref, DerefMut};
@@ -27,12 +28,26 @@ impl<G: Gain> GainSTM<G> {
         config: impl Into<STMConfig>,
         gains: F,
     ) -> Result<Self, AUTDInternalError> {
+        Self::new_from_sampling_config(config.into(), gains)
+    }
+
+    pub fn new_nearest<F: IntoIterator<Item = G>>(
+        config: impl Into<STMConfigNearest>,
+        gains: F,
+    ) -> Result<Self, AUTDInternalError> {
+        Self::new_from_sampling_config(config.into(), gains)
+    }
+
+    fn new_from_sampling_config<F: IntoIterator<Item = G>>(
+        config: impl IntoSamplingConfig,
+        gains: F,
+    ) -> Result<Self, AUTDInternalError> {
         let gains = gains.into_iter().collect::<Vec<_>>();
         if gains.is_empty() {
             return Err(AUTDInternalError::GainSTMSizeOutOfRange(gains.len()));
         }
         Ok(Self {
-            sampling_config: config.into().sampling(gains.len())?,
+            sampling_config: config.sampling(gains.len())?,
             gains,
             loop_behavior: LoopBehavior::infinite(),
             mode: GainSTMMode::PhaseIntensityFull,
@@ -249,11 +264,8 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::new(
-                STMConfig::FreqNearest(freq),
-                (0..n).map(|_| Null::default())
-            )
-            .map(|g| g.sampling_config())
+            GainSTM::new_nearest(freq, (0..n).map(|_| Null::default()))
+                .map(|g| g.sampling_config())
         );
     }
 
@@ -313,8 +325,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::new(STMConfig::PeriodNearest(p), (0..n).map(|_| Null::default()))
-                .map(|f| f.sampling_config())
+            GainSTM::new_nearest(p, (0..n).map(|_| Null::default())).map(|f| f.sampling_config())
         );
     }
 

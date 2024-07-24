@@ -11,31 +11,47 @@ use crate::{
 #[non_exhaustive]
 pub enum STMConfig {
     Freq(Freq<f32>),
-    FreqNearest(Freq<f32>),
     Period(Duration),
-    PeriodNearest(Duration),
     SamplingConfig(SamplingConfig),
 }
 
-impl STMConfig {
-    pub fn sampling(&self, size: usize) -> Result<SamplingConfig, AUTDInternalError> {
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[non_exhaustive]
+pub enum STMConfigNearest {
+    Freq(Freq<f32>),
+    Period(Duration),
+}
+
+pub(crate) trait IntoSamplingConfig {
+    fn sampling(&self, size: usize) -> Result<SamplingConfig, AUTDInternalError>;
+}
+
+impl IntoSamplingConfig for STMConfig {
+    fn sampling(&self, size: usize) -> Result<SamplingConfig, AUTDInternalError> {
         match *self {
-            STMConfig::Freq(f) => {
+            Self::Freq(f) => {
                 let fs = f.hz() as f64 * size as f64;
                 if !is_integer(fs) {
                     return Err(AUTDInternalError::STMFreqInvalid(size, f));
                 }
                 Ok(SamplingConfig::Freq(fs as u32 * Hz))
             }
-            STMConfig::FreqNearest(f) => Ok(SamplingConfig::FreqNearest(f.hz() * size as f32 * Hz)),
-            Self::SamplingConfig(s) => Ok(s),
             Self::Period(p) => {
                 if p.as_nanos() % size as u128 != 0 {
                     return Err(AUTDInternalError::STMPeriodInvalid(size, p));
                 }
                 Ok(SamplingConfig::Period(p / size as u32))
             }
-            Self::PeriodNearest(p) => Ok(SamplingConfig::PeriodNearest(p / size as u32)),
+            Self::SamplingConfig(s) => Ok(s),
+        }
+    }
+}
+
+impl IntoSamplingConfig for STMConfigNearest {
+    fn sampling(&self, size: usize) -> Result<SamplingConfig, AUTDInternalError> {
+        match *self {
+            Self::Freq(f) => Ok(SamplingConfig::FreqNearest(f.hz() * size as f32 * Hz)),
+            Self::Period(p) => Ok(SamplingConfig::PeriodNearest(p / size as u32)),
         }
     }
 }
@@ -58,6 +74,18 @@ impl From<SamplingConfig> for STMConfig {
     }
 }
 
+impl From<Freq<f32>> for STMConfigNearest {
+    fn from(freq: Freq<f32>) -> Self {
+        Self::Freq(freq)
+    }
+}
+
+impl From<Duration> for STMConfigNearest {
+    fn from(p: Duration) -> Self {
+        Self::Period(p)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -76,21 +104,6 @@ mod tests {
         #[case] size: usize,
     ) {
         assert_eq!(expect, STMConfig::Freq(freq).sampling(size));
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(Ok(SamplingConfig::FreqNearest(4000.*Hz)), 4000.*Hz, 1)]
-    #[case(Ok(SamplingConfig::FreqNearest(8000.*Hz)), 4000.*Hz, 2)]
-    #[case(Ok(SamplingConfig::FreqNearest(4001.*Hz)), 4001.*Hz, 1)]
-    #[case(Ok(SamplingConfig::FreqNearest(40000.*Hz)), 40000.*Hz, 1)]
-    #[cfg_attr(miri, ignore)]
-    fn frequency_nearest(
-        #[case] expect: Result<SamplingConfig, AUTDInternalError>,
-        #[case] freq: Freq<f32>,
-        #[case] size: usize,
-    ) {
-        assert_eq!(expect, STMConfig::FreqNearest(freq).sampling(size));
     }
 
     #[rstest::rstest]
@@ -137,6 +150,21 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
+    #[case(Ok(SamplingConfig::FreqNearest(4000.*Hz)), 4000.*Hz, 1)]
+    #[case(Ok(SamplingConfig::FreqNearest(8000.*Hz)), 4000.*Hz, 2)]
+    #[case(Ok(SamplingConfig::FreqNearest(4001.*Hz)), 4001.*Hz, 1)]
+    #[case(Ok(SamplingConfig::FreqNearest(40000.*Hz)), 40000.*Hz, 1)]
+    #[cfg_attr(miri, ignore)]
+    fn frequency_nearest(
+        #[case] expect: Result<SamplingConfig, AUTDInternalError>,
+        #[case] freq: Freq<f32>,
+        #[case] size: usize,
+    ) {
+        assert_eq!(expect, STMConfigNearest::Freq(freq).sampling(size));
+    }
+
+    #[rstest::rstest]
+    #[test]
     #[case(
         Ok(SamplingConfig::PeriodNearest(Duration::from_micros(250))),
         Duration::from_micros(250),
@@ -163,6 +191,6 @@ mod tests {
         #[case] p: Duration,
         #[case] size: usize,
     ) {
-        assert_eq!(expect, STMConfig::PeriodNearest(p).sampling(size));
+        assert_eq!(expect, STMConfigNearest::Period(p).sampling(size));
     }
 }

@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use crate::datagram::*;
-use crate::defined::ControlPoints;
+use super::sampling_config::*;
 use crate::{
-    defined::Freq,
+    datagram::*,
+    defined::{ControlPoints, Freq},
     derive::*,
-    firmware::{fpga::STMConfig, operation::FociSTMOp},
+    firmware::operation::FociSTMOp,
 };
 
 use derive_more::{Deref, DerefMut};
@@ -30,6 +30,26 @@ impl<const N: usize> FociSTM<N> {
     where
         ControlPoints<N>: From<C>,
     {
+        Self::new_from_sampling_config(config.into(), control_points)
+    }
+
+    pub fn new_nearest<C, F: IntoIterator<Item = C>>(
+        config: impl Into<STMConfigNearest>,
+        control_points: F,
+    ) -> Result<Self, AUTDInternalError>
+    where
+        ControlPoints<N>: From<C>,
+    {
+        Self::new_from_sampling_config(config.into(), control_points)
+    }
+
+    fn new_from_sampling_config<C, F: IntoIterator<Item = C>>(
+        config: impl IntoSamplingConfig,
+        control_points: F,
+    ) -> Result<Self, AUTDInternalError>
+    where
+        ControlPoints<N>: From<C>,
+    {
         let control_points: Vec<_> = control_points
             .into_iter()
             .map(ControlPoints::from)
@@ -40,7 +60,7 @@ impl<const N: usize> FociSTM<N> {
             ));
         }
         Ok(Self {
-            sampling_config: config.into().sampling(control_points.len())?,
+            sampling_config: config.sampling(control_points.len())?,
             control_points,
             loop_behavior: LoopBehavior::infinite(),
         })
@@ -203,11 +223,8 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            FociSTM::new(
-                STMConfig::FreqNearest(freq),
-                (0..n).map(|_| Vector3::zeros())
-            )
-            .map(|f| f.sampling_config())
+            FociSTM::new_nearest(freq, (0..n).map(|_| Vector3::zeros()))
+                .map(|f| f.sampling_config())
         );
     }
 
@@ -267,11 +284,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            FociSTM::new(
-                STMConfig::PeriodNearest(p),
-                (0..n).map(|_| Vector3::zeros())
-            )
-            .map(|f| f.sampling_config())
+            FociSTM::new_nearest(p, (0..n).map(|_| Vector3::zeros())).map(|f| f.sampling_config())
         );
     }
 
