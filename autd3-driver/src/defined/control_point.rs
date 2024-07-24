@@ -6,9 +6,11 @@ use derive_more::{Deref, DerefMut, Display};
 #[display(fmt = "[({}, {}, {}), {}]", "point.x", "point.y", "point.z", offset)]
 #[repr(C)]
 pub struct ControlPoint {
-    #[getset]
+    #[get]
+#[set]
     point: Vector3,
-    #[getset]
+    #[get]
+#[set]
     offset: Phase,
 }
 
@@ -41,7 +43,8 @@ pub struct ControlPoints<const N: usize> {
     #[deref_mut]
     #[get]
     points: [ControlPoint; N],
-    #[getset]
+    #[get]
+#[set]
     intensity: EmitIntensity,
 }
 

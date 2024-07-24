@@ -38,7 +38,8 @@ pub struct TwinCAT {
 
 #[derive(Builder)]
 pub struct TwinCATBuilder {
-    #[getset]
+    #[get]
+    #[set]
     timeout: Duration,
 }
 

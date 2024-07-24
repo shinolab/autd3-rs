@@ -24,11 +24,14 @@ use derive_more::Display;
 pub struct Sine<S: SamplingMode> {
     #[get]
     freq: S::T,
-    #[getset]
+    #[get]
+#[set]
     intensity: u8,
-    #[getset]
+    #[get]
+#[set]
     phase: Angle,
-    #[getset]
+    #[get]
+#[set]
     offset: u8,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,

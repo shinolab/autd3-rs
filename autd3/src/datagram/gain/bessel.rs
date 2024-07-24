@@ -12,9 +12,11 @@ pub struct Bessel {
     dir: Vector3,
     #[get]
     theta: Angle,
-    #[getset]
+    #[get]
+#[set]
     intensity: EmitIntensity,
-    #[getset]
+    #[get]
+#[set]
     phase_offset: Phase,
 }
 

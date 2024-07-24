@@ -15,7 +15,8 @@ pub struct Naive<D: Directivity, B: LinAlgBackend<D>> {
     foci: Vec<Vector3>,
     #[get]
     amps: Vec<Amplitude>,
-    #[getset]
+    #[get]
+#[set]
     constraint: EmissionConstraint,
     backend: Arc<B>,
     _phantom: std::marker::PhantomData<D>,

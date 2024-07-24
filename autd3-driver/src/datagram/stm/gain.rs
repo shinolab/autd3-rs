@@ -12,11 +12,13 @@ pub struct GainSTM<G: Gain> {
     #[deref]
     #[deref_mut]
     gains: Vec<G>,
-    #[getset]
+    #[get]
+#[set]
     loop_behavior: LoopBehavior,
     #[get]
     sampling_config: SamplingConfig,
-    #[getset]
+    #[get]
+#[set]
     mode: GainSTMMode,
 }
 

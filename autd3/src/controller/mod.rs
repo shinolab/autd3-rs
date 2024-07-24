@@ -30,8 +30,10 @@ pub use group::GroupGuard;
 #[derive(Builder)]
 pub struct Controller<L: Link> {
     #[get]
+    #[get_mut]
     link: L,
     #[get]
+    #[get_mut]
     geometry: Geometry,
     tx_buf: TxDatagram,
     rx_buf: Vec<RxMessage>,
@@ -59,16 +61,6 @@ impl<L: Link> Controller<L> {
         f: F,
     ) -> GroupGuard<K, L, F> {
         GroupGuard::new(self, f)
-    }
-
-    #[must_use]
-    pub fn link_mut(&mut self) -> &mut L {
-        &mut self.link
-    }
-
-    #[must_use]
-    pub fn geometry_mut(&mut self) -> &mut Geometry {
-        &mut self.geometry
     }
 }
 

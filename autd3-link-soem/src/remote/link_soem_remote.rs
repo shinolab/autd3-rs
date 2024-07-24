@@ -17,7 +17,8 @@ pub struct RemoteSOEM {
 #[derive(Builder)]
 pub struct RemoteSOEMBuilder {
     addr: SocketAddr,
-    #[getset]
+    #[get]
+    #[set]
     timeout: Duration,
 }
 

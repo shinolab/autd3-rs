@@ -19,9 +19,11 @@ pub struct Greedy<D: Directivity> {
     foci: Vec<Vector3>,
     #[get]
     amps: Vec<Amplitude>,
-    #[getset]
+    #[get]
+#[set]
     phase_div: NonZeroU8,
-    #[getset]
+    #[get]
+#[set]
     constraint: EmissionConstraint,
     _phantom: std::marker::PhantomData<D>,
 }

@@ -23,7 +23,8 @@ pub struct Audit {
 
 #[derive(Builder)]
 pub struct AuditBuilder {
-    #[getset]
+    #[get]
+#[set]
     timeout: Duration,
 }
 

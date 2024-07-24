@@ -15,7 +15,8 @@ pub struct FociSTM<const N: usize> {
     #[deref]
     #[deref_mut]
     control_points: Vec<ControlPoints<N>>,
-    #[getset]
+    #[get]
+    #[set]
     loop_behavior: LoopBehavior,
     #[get]
     sampling_config: SamplingConfig,

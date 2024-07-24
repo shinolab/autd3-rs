@@ -15,31 +15,43 @@ use thread_priority::ThreadPriority;
 
 #[derive(Builder)]
 pub struct SOEMBuilder {
-    #[getset]
+    #[get]
+    #[set]
     pub(crate) buf_size: NonZeroUsize,
-    #[getset]
+    #[get]
+    #[set]
     pub(crate) timer_strategy: TimerStrategy,
-    #[getset]
+    #[get]
+    #[set]
     pub(crate) sync_mode: SyncMode,
-    #[getset]
+    #[get]
+    #[set]
     pub(crate) ifname: String,
-    #[getset]
+    #[get]
+    #[set]
     pub(crate) state_check_interval: std::time::Duration,
-    #[getset]
+    #[get]
+    #[set]
     pub(crate) timeout: std::time::Duration,
-    #[getset]
+    #[get]
+    #[set]
     pub(crate) sync0_cycle: NonZeroU64,
-    #[getset]
+    #[get]
+    #[set]
     pub(crate) send_cycle: NonZeroU64,
-    #[getset]
+    #[get]
+    #[set]
     pub(crate) thread_priority: ThreadPriority,
     #[cfg(target_os = "windows")]
-    #[getset]
+    #[get]
+    #[set]
     pub(crate) process_priority: super::ProcessPriority,
     pub(crate) err_handler: Option<ErrHandler>,
-    #[getset]
+    #[get]
+    #[set]
     pub(crate) sync_tolerance: std::time::Duration,
-    #[getset]
+    #[get]
+    #[set]
     pub(crate) sync_timeout: std::time::Duration,
 }
 

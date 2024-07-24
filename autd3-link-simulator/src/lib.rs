@@ -19,7 +19,8 @@ pub struct Simulator {
 pub struct SimulatorBuilder {
     #[get]
     addr: SocketAddr,
-    #[getset]
+    #[get]
+    #[set]
     timeout: Duration,
 }
 

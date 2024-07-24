@@ -21,11 +21,14 @@ use derive_more::Display;
 pub struct Square<S: SamplingMode> {
     #[get]
     freq: S::T,
-    #[getset]
+    #[get]
+#[set]
     low: u8,
-    #[getset]
+    #[get]
+#[set]
     high: u8,
-    #[getset]
+    #[get]
+#[set]
     duty: f32,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
