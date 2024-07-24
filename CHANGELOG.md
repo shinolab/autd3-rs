@@ -1,3 +1,22 @@
+# 27.0.0
+
+- Update firmware to v9.0.0
+  - Add `SilencerTarget::Intensity` and `SilencerTarget::PulseWidth`
+  - Change pulse width encoder table size to 256
+  - Change ultrasound period to 256 from 512
+  - Invert the sign of the phase
+  - Remove `dynamic_freq` feature
+- `Controller::link` and `geometry` is now private. use `link()`, `link_mut()`, `geometry()`, and `geometry_mut()` instead
+- Remove `Silencer::from_completion_steps`, use `Silencer::from_completion_time` instead
+- Change to use `NonZero<T>` for integer argment which should be non-zero
+- Change `Simulator::builder` argument from port number to `SocketAddr`
+- Make `gain::Group` parallelism controllable
+- Remove `autd3_gain_holo::SDP`
+- `Directivity::directivity` now takes `Angle` as an argument instead of `f32`
+- Add `Phase::PI`
+- Fix bugs
+  - Remove unaligned reference
+
 # 26.0.0
 
 - Remove deprecated functions and structs
