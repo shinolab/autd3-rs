@@ -72,10 +72,9 @@ impl IntoDevice for AUTD3 {
         Device::new(
             dev_idx,
             self.rotation,
-            (0..Self::NUM_TRANS_Y)
-                .flat_map(|y| (0..Self::NUM_TRANS_X).map(move |x| (x, y)))
-                .filter(|&(x, y)| !Self::is_missing_transducer(x, y))
-                .map(|(x, y)| {
+            itertools::iproduct!(0..Self::NUM_TRANS_Y, 0..Self::NUM_TRANS_X)
+                .filter(|&(y, x)| !Self::is_missing_transducer(x, y))
+                .map(|(y, x)| {
                     Vector4::new(
                         x as f32 * Self::TRANS_SPACING,
                         y as f32 * Self::TRANS_SPACING,
@@ -84,8 +83,8 @@ impl IntoDevice for AUTD3 {
                     )
                 })
                 .map(|p| trans_mat * p)
-                .zip(0..)
-                .map(|(p, i)| Transducer::new(i, Vector3::new(p.x, p.y, p.z)))
+                .enumerate()
+                .map(|(i, p)| Transducer::new(i, p.xyz()))
                 .collect(),
         )
     }
