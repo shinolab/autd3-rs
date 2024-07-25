@@ -19,12 +19,12 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Setup Python
+    - name: setup Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.12"
       
-    - name: Setup Rust
+    - name: setup rust
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: ${{ inputs.toolchain }}
@@ -45,6 +45,9 @@ runs:
 
     - name: install aarch64-pc-windows-msvc target
       shell: bash
-      if: inputs.os == 'windows-latest' && inputs.arch
+      if: inputs.os == 'windows-latest' && inputs.arch == 'aarch64'
       run: |
         rustup target install aarch64-pc-windows-msvc
+
+    - name: setup cache
+      uses: swatinem/rust-cache@v2

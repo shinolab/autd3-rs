@@ -6,24 +6,19 @@ on:
     - 'v*'
 
 jobs:
-  build:
-    name: publish-src
+  publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup
-        uses: ./.github/actions/setup-build
+      - uses: ./.github/actions/setup-build
         with:
           os: ubuntu-latest
-      - name: Update submodules
-        run: |
+      - run: |
           git submodule update --init --recursive
-      - name: Check semver
-        uses: obi1kenobi/cargo-semver-checks-action@v2
+      - uses: obi1kenobi/cargo-semver-checks-action@v2
         with:
           feature-group: default-features
-      - name: publish to carate.io
-        run: |
+      - run: |
           cd autd3-driver
           cargo publish --no-verify --dry-run
           cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true

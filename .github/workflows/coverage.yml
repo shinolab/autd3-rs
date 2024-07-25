@@ -2,8 +2,10 @@ name: Coverage
 
 on:
   push:
-    branches:
-      - 'develop'
+    branches: [ "main" ]
+  pull_request: {}
+  merge_group:
+    branches: [ "main" ]
 
 env:
   RUSTFLAGS: "-Cinstrument-coverage"
@@ -14,22 +16,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup
-        uses: ./.github/actions/setup-build
+      - uses: ./.github/actions/setup-build
         with:
           os: ubuntu-latest
           components: llvm-tools
-
-      - name: Install grcov
-        run: cargo install grcov
-
-      - name: Generate code coverage for rust
-        run: |
+      - run: cargo install grcov
+      - run: |
           python3 build.py cov
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage
