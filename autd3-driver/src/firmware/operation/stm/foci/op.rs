@@ -578,6 +578,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_point_out_of_range() {
         const FOCI_STM_SIZE: usize = 100;
         const FRAME_SIZE: usize = 16 + 8 * FOCI_STM_SIZE;
@@ -635,6 +636,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_foci_out_of_range() {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 

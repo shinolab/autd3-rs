@@ -91,6 +91,10 @@ mod tests {
     #[test]
     fn test_all_data(tx: TxDatagram) {
         assert_eq!(2 * EC_OUTPUT_FRAME_SIZE, tx.all_data().len());
+        assert_eq!(
+            (0..2 * EC_OUTPUT_FRAME_SIZE).map(|i| i as u8).collect_vec(),
+            tx.all_data()
+        );
     }
 
     #[rstest::rstest]

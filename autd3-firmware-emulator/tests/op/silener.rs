@@ -118,6 +118,7 @@ fn send_silencer_fixed_completion_time() {
 #[test]
 #[case(Ok(()), 1)]
 #[case(Err(AUTDInternalError::InvalidSilencerSettings), 2)]
+#[cfg_attr(miri, ignore)]
 fn silencer_completetion_steps_too_large_mod(
     #[case] expect: Result<(), AUTDInternalError>,
     #[case] steps_intensity: u32,
@@ -159,6 +160,7 @@ fn silencer_completetion_steps_too_large_mod(
 #[case(Ok(()), 1, 1)]
 #[case(Err(AUTDInternalError::InvalidSilencerSettings), 2, 1)]
 #[case(Err(AUTDInternalError::InvalidSilencerSettings), 1, 2)]
+#[cfg_attr(miri, ignore)]
 fn silencer_completetion_steps_too_large_stm(
     #[case] expect: Result<(), AUTDInternalError>,
     #[case] steps_intensity: u32,
@@ -190,6 +192,7 @@ fn silencer_completetion_steps_too_large_stm(
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
     let mut rng = rand::thread_rng();
 
@@ -222,6 +225,7 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn send_silencer_fixed_completion_time_permissive() {
     let mut rng = rand::thread_rng();
 

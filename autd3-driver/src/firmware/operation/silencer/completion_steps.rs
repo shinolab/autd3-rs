@@ -86,6 +86,7 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(SILENCER_FLAG_STRICT_MODE, true)]
+    #[cfg_attr(miri, ignore)]
     #[case(0x00, false)]
     fn test(#[case] value: u8, #[case] strict_mode: bool) {
         let device = create_device(0, NUM_TRANS_IN_UNIT);

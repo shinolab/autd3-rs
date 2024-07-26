@@ -100,6 +100,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn gain_memory_layout() {
         assert_eq!(4, std::mem::size_of::<Gain>());
         assert_eq!(0, std::mem::offset_of!(Gain, tag));

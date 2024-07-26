@@ -48,11 +48,13 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_size() {
         assert_eq!(std::mem::size_of::<GainSTMControlFlags>(), 1);
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_fmt() {
         assert_eq!(format!("{}", GainSTMControlFlags::NONE), "NONE");
         assert_eq!(format!("{}", GainSTMControlFlags::BEGIN), "BEGIN");

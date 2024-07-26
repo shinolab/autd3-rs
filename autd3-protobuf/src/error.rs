@@ -63,6 +63,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_protobuf_error() {
         let e = AUTDProtoBufError::NotSupportedData;
         assert_eq!(e.to_string(), "Not supported data");

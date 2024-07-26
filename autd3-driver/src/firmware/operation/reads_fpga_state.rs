@@ -59,6 +59,7 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(0x01, true)]
+    #[cfg_attr(miri, ignore)]
     #[case(0x00, false)]
     fn test(#[case] expected: u8, #[case] value: bool) {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
