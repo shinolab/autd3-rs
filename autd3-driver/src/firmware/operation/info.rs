@@ -116,6 +116,7 @@ mod tests {
 
     #[test]
     #[should_panic]
+    #[cfg_attr(miri, ignore)]
     fn test_panic() {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
         let mut tx = [0x00u8; size_of::<FirmInfo>()];

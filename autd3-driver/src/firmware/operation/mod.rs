@@ -229,6 +229,7 @@ pub mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test() {
         let geometry = Geometry::new(vec![Device::new(
             0,
@@ -279,6 +280,7 @@ pub mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_first() {
         let geometry = Geometry::new(vec![Device::new(
             0,
@@ -314,6 +316,7 @@ pub mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_second() {
         let geometry = Geometry::new(vec![Device::new(
             0,
@@ -349,6 +352,7 @@ pub mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_broken_pack() {
         let geometry = Geometry::new(vec![Device::new(
             0,
@@ -406,6 +410,7 @@ pub mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_finished() {
         let geometry = Geometry::new(vec![Device::new(
             0,

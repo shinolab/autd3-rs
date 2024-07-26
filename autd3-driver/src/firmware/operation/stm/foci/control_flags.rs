@@ -45,11 +45,13 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_size() {
         assert_eq!(1, std::mem::size_of::<FociSTMControlFlags>());
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_fmt() {
         assert_eq!("NONE", format!("{}", FociSTMControlFlags::NONE));
         assert_eq!("BEGIN", format!("{}", FociSTMControlFlags::BEGIN));

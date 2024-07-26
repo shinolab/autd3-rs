@@ -31,6 +31,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn debug_out_idx_memory_layout() {
         assert_eq!(14, std::mem::size_of::<DebugOutIdx>());
         assert_eq!(0, std::mem::offset_of!(DebugOutIdx, tag));

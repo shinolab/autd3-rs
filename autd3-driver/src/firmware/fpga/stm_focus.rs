@@ -47,11 +47,13 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_size() {
         assert_eq!(8, std::mem::size_of::<STMFocus>());
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_bitfield() {
         let mut d: u64 = 0;
         unsafe {
