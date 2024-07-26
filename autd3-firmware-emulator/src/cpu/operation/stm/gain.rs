@@ -261,6 +261,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn gain_stm_memory_layout() {
         assert_eq!(16, std::mem::size_of::<GainSTMHead>());
         assert_eq!(0, std::mem::offset_of!(GainSTMHead, tag));

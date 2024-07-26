@@ -169,9 +169,9 @@ mod tests {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
 
         let g = Greedy::<Sphere>::new([(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)])
-            .with_phase_div(NonZeroU8::MAX);
+            .with_phase_div(NonZeroU8::MIN);
 
-        assert_eq!(g.phase_div(), NonZeroU8::MAX);
+        assert_eq!(g.phase_div(), NonZeroU8::MIN);
         assert_eq!(
             g.constraint(),
             EmissionConstraint::Uniform(EmitIntensity::MAX)

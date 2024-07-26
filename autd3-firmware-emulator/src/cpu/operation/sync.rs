@@ -23,6 +23,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn sync_memory_layout() {
         assert_eq!(8, std::mem::size_of::<Sync>());
         assert_eq!(0, std::mem::offset_of!(Sync, tag));
