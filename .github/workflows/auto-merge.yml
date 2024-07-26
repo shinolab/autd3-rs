@@ -15,4 +15,4 @@ jobs:
       PR_URL: ${{github.event.pull_request.html_url}}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - run: gh pr merge --merge --auto "$PR_URL"
+      - run: gh pr merge --auto "$PR_URL"
