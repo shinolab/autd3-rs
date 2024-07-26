@@ -45,6 +45,7 @@ pub fn send(
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn send_invalid_tag() {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -61,6 +62,7 @@ fn send_invalid_tag() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn send_invalid_msg_id() {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -76,6 +78,7 @@ fn send_invalid_msg_id() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn send_ingore_same_data() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -121,6 +124,7 @@ fn send_slot_2() -> anyhow::Result<()> {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn send_slot_2_err() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());

@@ -27,6 +27,7 @@ mod tests {
     const NUM_TRANS_IN_UNIT: usize = 249;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test() {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 

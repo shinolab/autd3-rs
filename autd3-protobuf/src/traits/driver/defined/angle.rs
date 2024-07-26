@@ -30,6 +30,7 @@ mod tests {
     use rand::Rng;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn angle() {
         let mut rng = rand::thread_rng();
         let v = rng.gen::<f32>() * rad;
@@ -39,6 +40,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn parse_error() {
         assert!(Angle::from_msg(&None).is_err());
     }

@@ -100,6 +100,7 @@ mod tests {
     use rand::Rng;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn vector3() {
         let mut rng = rand::thread_rng();
         let v = Vector3::new(rng.gen(), rng.gen(), rng.gen());
@@ -111,11 +112,13 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn parse_error() {
         assert!(Vector3::from_msg(&None).is_err());
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn quaternion() {
         let mut rng = rand::thread_rng();
         let q = UnitQuaternion::from_quaternion(Quaternion::new(
@@ -133,6 +136,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn geometry() {
         let mut rng = rand::thread_rng();
         let mut dev = AUTD3::new(Vector3::new(rng.gen(), rng.gen(), rng.gen())).into_device(0);

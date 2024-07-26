@@ -43,11 +43,13 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_size() {
         assert_eq!(std::mem::size_of::<ModulationControlFlags>(), 1);
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)]
     fn test_fmt() {
         assert_eq!(format!("{}", ModulationControlFlags::NONE), "NONE");
         assert_eq!(format!("{}", ModulationControlFlags::BEGIN), "BEGIN");

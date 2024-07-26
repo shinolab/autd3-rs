@@ -304,6 +304,7 @@ pub mod tests {
         ].into_iter().collect(),
         vec![true, false],
         2)]
+    #[cfg_attr(miri, ignore)]
     fn test_transform(
         #[case] expect: HashMap<usize, Vec<Drive>>,
         #[case] enabled: Vec<bool>,

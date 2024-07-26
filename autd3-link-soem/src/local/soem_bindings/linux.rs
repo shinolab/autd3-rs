@@ -9,6 +9,7 @@ pub struct __pthread_internal_list {
     pub __next: *mut __pthread_internal_list,
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout___pthread_internal_list() {
     const UNINIT: ::std::mem::MaybeUninit<__pthread_internal_list> =
         ::std::mem::MaybeUninit::uninit();
@@ -58,6 +59,7 @@ pub struct __pthread_mutex_s {
     pub __list: __pthread_list_t,
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout___pthread_mutex_s() {
     const UNINIT: ::std::mem::MaybeUninit<__pthread_mutex_s> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -160,6 +162,7 @@ pub union pthread_mutex_t {
     pub __align: ::std::os::raw::c_long,
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_pthread_mutex_t() {
     const UNINIT: ::std::mem::MaybeUninit<pthread_mutex_t> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -218,6 +221,7 @@ pub struct ec_timet {
     pub usec: uint32,
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ec_timet() {
     const UNINIT: ::std::mem::MaybeUninit<ec_timet> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -377,6 +381,7 @@ pub struct ec_errort__bindgen_ty_1__bindgen_ty_1 {
     pub w2: uint16,
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ec_errort__bindgen_ty_1__bindgen_ty_1() {
     const UNINIT: ::std::mem::MaybeUninit<ec_errort__bindgen_ty_1__bindgen_ty_1> =
         ::std::mem::MaybeUninit::uninit();
@@ -449,6 +454,7 @@ fn bindgen_test_layout_ec_errort__bindgen_ty_1__bindgen_ty_1() {
     );
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ec_errort__bindgen_ty_1() {
     const UNINIT: ::std::mem::MaybeUninit<ec_errort__bindgen_ty_1> =
         ::std::mem::MaybeUninit::uninit();
@@ -475,6 +481,7 @@ fn bindgen_test_layout_ec_errort__bindgen_ty_1() {
     );
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ec_errort() {
     const UNINIT: ::std::mem::MaybeUninit<ec_errort> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -569,6 +576,7 @@ pub struct ec_stackT {
     pub rxsa: *mut [::std::os::raw::c_int; 16usize],
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ec_stackT() {
     const UNINIT: ::std::mem::MaybeUninit<ec_stackT> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -669,6 +677,7 @@ pub struct ecx_redportt {
     pub tempinbuf: ec_bufT,
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ecx_redportt() {
     const UNINIT: ::std::mem::MaybeUninit<ecx_redportt> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -778,6 +787,7 @@ pub struct ecx_portt {
     pub rx_mutex: pthread_mutex_t,
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ecx_portt() {
     const UNINIT: ::std::mem::MaybeUninit<ecx_portt> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -989,6 +999,7 @@ pub struct ec_adapter {
     pub next: *mut ec_adaptert,
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ec_adapter() {
     const UNINIT: ::std::mem::MaybeUninit<ec_adapter> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -1049,6 +1060,7 @@ pub struct ec_fmmu {
     pub unused2: uint16,
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ec_fmmu() {
     const UNINIT: ::std::mem::MaybeUninit<ec_fmmu> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -1174,6 +1186,7 @@ pub struct ec_sm {
     pub SMflags: uint32,
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ec_sm() {
     const UNINIT: ::std::mem::MaybeUninit<ec_sm> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -1359,6 +1372,7 @@ pub struct ec_slave {
     pub name: [::std::os::raw::c_char; 41usize],
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ec_slave() {
     const UNINIT: ::std::mem::MaybeUninit<ec_slave> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -2053,6 +2067,7 @@ pub struct ec_group {
     pub IOsegment: [uint32; 64usize],
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ec_group() {
     const UNINIT: ::std::mem::MaybeUninit<ec_group> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -2241,6 +2256,7 @@ pub struct ec_eepromFMMU {
     pub FMMU3: uint8,
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ec_eepromFMMU() {
     const UNINIT: ::std::mem::MaybeUninit<ec_eepromFMMU> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -2331,6 +2347,7 @@ pub struct ec_eepromSM {
     pub PDIctrl: uint8,
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ec_eepromSM() {
     const UNINIT: ::std::mem::MaybeUninit<ec_eepromSM> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -2439,6 +2456,7 @@ pub struct ec_idxstack {
     pub dcoffset: [uint16; 16usize],
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ec_idxstack() {
     const UNINIT: ::std::mem::MaybeUninit<ec_idxstack> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -2524,6 +2542,7 @@ pub struct ec_ering {
     pub Error: [ec_errort; 65usize],
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ec_ering() {
     const UNINIT: ::std::mem::MaybeUninit<ec_ering> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -2579,6 +2598,7 @@ pub struct ec_SMcommtype {
     pub SMtype: [uint8; 8usize],
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ec_SMcommtype() {
     const UNINIT: ::std::mem::MaybeUninit<ec_SMcommtype> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -2634,6 +2654,7 @@ pub struct ec_PDOassign {
     pub index: [uint16; 256usize],
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ec_PDOassign() {
     const UNINIT: ::std::mem::MaybeUninit<ec_PDOassign> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -2689,6 +2710,7 @@ pub struct ec_PDOdesc {
     pub PDO: [uint32; 256usize],
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ec_PDOdesc() {
     const UNINIT: ::std::mem::MaybeUninit<ec_PDOdesc> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
@@ -2797,6 +2819,7 @@ pub struct ecx_context {
     pub userdata: *mut ::std::os::raw::c_void,
 }
 #[test]
+#[cfg_attr(miri, ignore)]
 fn bindgen_test_layout_ecx_context() {
     const UNINIT: ::std::mem::MaybeUninit<ecx_context> = ::std::mem::MaybeUninit::uninit();
     let ptr = UNINIT.as_ptr();
