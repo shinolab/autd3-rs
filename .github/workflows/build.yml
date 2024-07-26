@@ -179,7 +179,7 @@ jobs:
       pull-requests: write
       contents: write
     runs-on: ubuntu-latest
-    if: ${{ github.actor == 'dependabot[bot]' }}
+    if: ${{ always() && !cancelled() && !failure() && github.actor == 'dependabot[bot]' }}
     steps:
       - run: gh pr merge --auto "$PR_URL"
         env:
