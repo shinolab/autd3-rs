@@ -165,3 +165,23 @@ jobs:
           python3 build.py lint --features "capi" --no-example
           python3 build.py lint --features "lightweight async-trait"
           python3 build.py lint --features "left_handed use_meter"
+
+  auto-merge:
+    needs:
+      - test
+      - test-on-arm
+      - test-lightweight
+      - test-capi
+      - test-unity
+      - miri
+      - lint
+    permissions:
+      pull-requests: write
+      contents: write
+    runs-on: ubuntu-latest
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    steps:
+      - run: gh pr merge --auto "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
