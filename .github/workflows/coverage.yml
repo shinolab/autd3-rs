@@ -4,6 +4,10 @@ on:
   push:
     branches: [ "main" ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   RUSTFLAGS: "-Cinstrument-coverage"
   LLVM_PROFILE_FILE: "target/coverage/%p-%m.profraw"

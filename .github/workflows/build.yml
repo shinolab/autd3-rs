@@ -6,8 +6,11 @@ on:
   push:
     branches: [ "main" ]
 
-jobs:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
+jobs:
   changed-files:
     name: changed-files
     runs-on: ubuntu-latest
