@@ -170,7 +170,7 @@ mod capi {
 
     impl Modulation for NullModulation {
         fn calc(&self) -> ModulationCalcResult {
-            Ok(vec![])
+            Ok(Arc::new(vec![]))
         }
     }
 
