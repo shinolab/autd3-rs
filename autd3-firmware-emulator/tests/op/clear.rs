@@ -22,7 +22,7 @@ struct TestMod {
 
 impl Modulation for TestMod {
     fn calc(&self) -> ModulationCalcResult {
-        Ok(vec![u8::MIN; 100])
+        Ok(Arc::new(vec![u8::MIN; 100]))
     }
 }
 

@@ -178,7 +178,7 @@ mod tests {
         );
 
         assert_eq!(
-            Sine::new(150. * Hz).calc()?,
+            *Sine::new(150. * Hz).calc()?,
             autd.link[3].fpga().modulation(Segment::S0)
         );
         assert_eq!(

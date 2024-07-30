@@ -27,7 +27,7 @@ use itertools::Itertools;
 
 use super::DatagramST;
 
-pub type ModulationCalcResult = Result<Vec<u8>, AUTDInternalError>;
+pub type ModulationCalcResult = Result<Arc<Vec<u8>>, AUTDInternalError>;
 
 pub trait ModulationProperty {
     fn sampling_config(&self) -> SamplingConfig;
@@ -104,7 +104,7 @@ impl<'a> DatagramST for Box<dyn Modulation + Send + Sync + 'a> {
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, AUTDInternalError> {
         Ok(Self::G {
-            g: Arc::new(self.calc()?),
+            g: self.calc()?,
             config: self.sampling_config(),
             loop_behavior: self.loop_behavior(),
             segment,
@@ -192,7 +192,7 @@ mod tests {
 
     #[derive(Modulation, Clone, PartialEq, Debug)]
     pub struct TestModulation {
-        pub buf: Vec<u8>,
+        pub buf: Arc<Vec<u8>>,
         pub config: SamplingConfig,
         pub loop_behavior: LoopBehavior,
     }

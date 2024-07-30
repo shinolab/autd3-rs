@@ -3,6 +3,7 @@ use crate::derive::*;
 use std::{
     cell::{Ref, RefCell},
     rc::Rc,
+    sync::Arc,
 };
 
 use derive_more::Deref;
@@ -14,7 +15,7 @@ use derive_more::Deref;
 pub struct Cache<M: Modulation> {
     #[deref]
     m: M,
-    cache: Rc<RefCell<Vec<u8>>>,
+    cache: Rc<RefCell<Arc<Vec<u8>>>>,
     #[no_change]
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
@@ -41,7 +42,7 @@ impl<M: Modulation> Cache<M> {
         Ok(())
     }
 
-    pub fn buffer(&self) -> Ref<'_, Vec<u8>> {
+    pub fn buffer(&self) -> Ref<'_, Arc<Vec<u8>>> {
         self.cache.borrow()
     }
 }
@@ -81,7 +82,7 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let m = TestModulation {
-            buf: vec![rng.gen(), rng.gen()],
+            buf: Arc::new(vec![rng.gen(), rng.gen()]),
             config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::infinite(),
         };
@@ -105,7 +106,7 @@ mod tests {
     impl Modulation for TestCacheModulation {
         fn calc(&self) -> ModulationCalcResult {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
-            Ok(vec![0x00, 0x00])
+            Ok(Arc::new(vec![0x00, 0x00]))
         }
     }
 

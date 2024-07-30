@@ -73,7 +73,7 @@ impl Wav {
 impl Modulation for Wav {
     #[allow(clippy::unnecessary_cast)]
     fn calc(&self) -> ModulationCalcResult {
-        Ok(self.read_buf()?)
+        Ok(Arc::new(self.read_buf()?))
     }
 
     // GRCOV_EXCL_START
@@ -180,7 +180,7 @@ mod tests {
         let path = dir.path().join("tmp.wav");
         create_wav(&path, spec, data)?;
         let m = Wav::new(&path)?;
-        assert_eq!(Ok(expect), m.calc());
+        assert_eq!(Ok(Arc::new(expect)), m.calc());
 
         Ok(())
     }
