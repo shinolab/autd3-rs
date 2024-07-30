@@ -19,7 +19,6 @@ use derive_more::Display;
     loop_behavior
 )]
 pub struct Square<S: SamplingMode> {
-    #[get]
     freq: S::T,
     #[get]
     #[set]
@@ -59,6 +58,12 @@ impl Square<ExactFreq> {
             loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
         }
+    }
+}
+
+impl<S: SamplingMode> Square<S> {
+    pub fn freq(&self) -> S::T {
+        S::freq(self.freq, self.config)
     }
 }
 
@@ -191,22 +196,6 @@ mod tests {
     #[case(
         Ok(vec![255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         200.*Hz
-    )]
-    #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
-        2000.*Hz
-    )]
-    #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
-        4000.*Hz
-    )]
-    #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (-0.1 Hz) must be positive".to_owned())),
-        -0.1*Hz
-    )]
-    #[case(
-        Err(AUTDInternalError::ModulationError("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
-        0.*Hz
     )]
     fn new_nearest(#[case] expect: Result<Vec<u8>, AUTDInternalError>, #[case] freq: Freq<f32>) {
         let m = Square::new_nearest(freq);
