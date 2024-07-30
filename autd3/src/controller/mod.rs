@@ -104,16 +104,15 @@ impl<L: Link> Controller<L> {
     }
 
     #[tracing::instrument(skip(self))]
-    pub(crate) async fn open_impl(&mut self, timeout: Duration) -> Result<(), AUTDError> {
+    pub(crate) async fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
         #[cfg(target_os = "windows")]
         unsafe {
             tracing::debug!("Set timer resulution: {:?}", self.timer_resolution);
             windows::Win32::Media::timeBeginPeriod(self.timer_resolution.get());
         }
-
         self.send((Clear::new(), Synchronize::new()).with_timeout(timeout))
             .await?; // GRCOV_EXCL_LINE
-        Ok(())
+        Ok(self)
     }
 
     pub async fn close(&mut self) -> Result<(), AUTDError> {

@@ -51,7 +51,7 @@ impl Gain for Bessel {
             let wavenumber = dev.wavenumber();
             move |tr| {
                 let r = rot * (tr.position() - pos);
-                let dist = theta.sin() * (r.x * r.x + r.y * r.y).sqrt() - theta.cos() * r.z;
+                let dist = theta.sin() * r.xy().norm() - theta.cos() * r.z;
                 (
                     Phase::from(-dist * wavenumber * rad) + phase_offset,
                     intensity,

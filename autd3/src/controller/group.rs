@@ -23,20 +23,19 @@ pub struct GroupGuard<'a, K: PartialEq + Debug, L: Link, F: Fn(&Device) -> Optio
 
 impl<'a, K: PartialEq + Debug, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<'a, K, L, F> {
     pub(crate) fn new(cnt: &'a mut Controller<L>, f: F) -> Self {
-        let operations = (0..cnt.geometry.num_devices())
-            .map(|_| {
-                (
-                    Box::<NullOp>::default() as Box<_>,
-                    Box::<NullOp>::default() as Box<_>,
-                )
-            })
-            .collect();
         Self {
+            operations: (0..cnt.geometry.num_devices())
+                .map(|_| {
+                    (
+                        Box::<NullOp>::default() as Box<_>,
+                        Box::<NullOp>::default() as Box<_>,
+                    )
+                })
+                .collect(),
             cnt,
             f,
             timeout: None,
             parallel_threshold: None,
-            operations,
         }
     }
 
@@ -98,14 +97,15 @@ impl<'a, K: PartialEq + Debug, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
     }
 
     pub async fn send(self) -> Result<(), AUTDError> {
-        let timeout = self.timeout;
-        let parallel_threshold = self
-            .parallel_threshold
-            .unwrap_or(self.cnt.parallel_threshold);
-
-        let mut operations = self.operations;
-        self.cnt
-            .send_impl(&mut operations, timeout, parallel_threshold)
+        let Self {
+            mut operations,
+            cnt,
+            timeout,
+            parallel_threshold,
+            ..
+        } = self;
+        let parallel_threshold = parallel_threshold.unwrap_or(cnt.parallel_threshold);
+        cnt.send_impl(&mut operations, timeout, parallel_threshold)
             .await
     }
 }
