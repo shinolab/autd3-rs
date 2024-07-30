@@ -28,9 +28,9 @@ jobs:
               - '**/*.rs'
               - '**/Cargo.toml'
             lightweight:
-              - autd3-ptotobuf/Cargo.toml
-              - autd3-ptotobuf/**/*.rs
-              - autd3-ptotobuf/**/*.proto
+              - autd3-protobuf/Cargo.toml
+              - autd3-protobuf/**/*.rs
+              - autd3-protobuf/**/*.proto
             miri:
               - autd3-driver/Cargo.toml
               - autd3-driver/**/*.rs
@@ -42,8 +42,8 @@ jobs:
               - autd3-link-soem/**/*.rs
               - autd3-link-twincat/Cargo.toml
               - autd3-link-twincat/**/*.rs
-              - autd3-ptotobuf/Cargo.toml
-              - autd3-ptotobuf/**/*.rs
+              - autd3-protobuf/Cargo.toml
+              - autd3-protobuf/**/*.rs
 
   test:
     needs: changed-files
