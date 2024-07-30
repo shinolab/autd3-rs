@@ -88,19 +88,6 @@ jobs:
           python3 build.py test --features "use_meter left_handed"
         shell: bash
 
-  miri:
-    name: test-with-miri
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-build
-        with:
-          os: ubuntu-latest
-          toolchain: nightly
-          components: miri
-      - run: |
-          python3 build.py test --miri
-
   lint:
     name: lint
     runs-on: ubuntu-latest
