@@ -32,7 +32,7 @@ impl FromMessage<SquareNearest>
 {
     fn from_msg(msg: &SquareNearest) -> Result<Self, AUTDProtoBufError> {
         let mut square =
-            autd3::modulation::Square::from_freq_nearest(msg.freq * autd3_driver::defined::Hz);
+            autd3::modulation::Square::new_nearest(msg.freq * autd3_driver::defined::Hz);
         if let Some(high) = msg.high {
             square = square.with_high(high as _);
         }
@@ -62,7 +62,7 @@ mod tests {
     fn test_square() {
         let mut rng = rand::thread_rng();
 
-        let m = autd3::modulation::Square::from_freq_nearest(rng.gen::<f32>() * Hz)
+        let m = autd3::modulation::Square::new_nearest(rng.gen::<f32>() * Hz)
             .with_high(rng.gen())
             .with_low(rng.gen())
             .with_duty(rng.gen());

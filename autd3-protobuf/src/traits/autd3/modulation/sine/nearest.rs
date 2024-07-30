@@ -31,8 +31,7 @@ impl FromMessage<SineNearest>
     for autd3::modulation::Sine<autd3::modulation::sampling_mode::NearestFreq>
 {
     fn from_msg(msg: &SineNearest) -> Result<Self, AUTDProtoBufError> {
-        let mut sine =
-            autd3::modulation::Sine::from_freq_nearest(msg.freq * autd3_driver::defined::Hz);
+        let mut sine = autd3::modulation::Sine::new_nearest(msg.freq * autd3_driver::defined::Hz);
         if let Some(intensity) = msg.intensity {
             sine = sine.with_intensity(intensity as _);
         }
@@ -62,7 +61,7 @@ mod tests {
     fn test_sine() {
         let mut rng = rand::thread_rng();
 
-        let m = autd3::modulation::Sine::from_freq_nearest(rng.gen::<f32>() * Hz)
+        let m = autd3::modulation::Sine::new_nearest(rng.gen::<f32>() * Hz)
             .with_intensity(rng.gen())
             .with_offset(rng.gen())
             .with_phase(rng.gen::<f32>() * rad);
