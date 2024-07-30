@@ -34,7 +34,7 @@ pub use segment::SwapSegment;
 pub use silencer::{Silencer, SilencerFixedCompletionTime, SilencerFixedUpdateRate};
 pub use stm::{FociSTM, GainSTM};
 #[cfg(feature = "capi")]
-pub use stm::{IntoSamplingConfig, STMConfig, STMConfigNearest};
+pub use stm::{STMConfig, STMConfigNearest};
 pub use synchronize::Synchronize;
 pub use with_parallel_threshold::{
     DatagramWithParallelThreshold, IntoDatagramWithParallelThreshold,

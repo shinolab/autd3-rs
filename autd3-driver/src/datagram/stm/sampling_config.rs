@@ -3,8 +3,7 @@ use std::time::Duration;
 use crate::{
     defined::{Freq, Hz},
     error::AUTDInternalError,
-    firmware::fpga::SamplingConfig,
-    utils::float::is_integer,
+    firmware::fpga::{IntoSamplingConfig, IntoSamplingConfigNearest, SamplingConfig},
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -22,36 +21,34 @@ pub enum STMConfigNearest {
     Period(Duration),
 }
 
-pub trait IntoSamplingConfig {
-    fn sampling(&self, size: usize) -> Result<SamplingConfig, AUTDInternalError>;
-}
+impl TryFrom<(STMConfig, usize)> for SamplingConfig {
+    type Error = AUTDInternalError;
 
-impl IntoSamplingConfig for STMConfig {
-    fn sampling(&self, size: usize) -> Result<SamplingConfig, AUTDInternalError> {
-        match *self {
-            Self::Freq(f) => {
-                let fs = f.hz() as f64 * size as f64;
-                if !is_integer(fs) {
-                    return Err(AUTDInternalError::STMFreqInvalid(size, f));
-                }
-                Ok(SamplingConfig::Freq(fs as u32 * Hz))
-            }
-            Self::Period(p) => {
+    fn try_from(value: (STMConfig, usize)) -> Result<Self, Self::Error> {
+        let (config, size) = value;
+        match config {
+            STMConfig::Freq(f) => (f * size as f32).into_sampling_config(),
+            STMConfig::Period(p) => {
                 if p.as_nanos() % size as u128 != 0 {
                     return Err(AUTDInternalError::STMPeriodInvalid(size, p));
                 }
-                Ok(SamplingConfig::Period(p / size as u32))
+                (p / size as u32).into_sampling_config()
             }
-            Self::SamplingConfig(s) => Ok(s),
+            STMConfig::SamplingConfig(s) => Ok(s),
         }
     }
 }
 
-impl IntoSamplingConfig for STMConfigNearest {
-    fn sampling(&self, size: usize) -> Result<SamplingConfig, AUTDInternalError> {
-        match *self {
-            Self::Freq(f) => Ok(SamplingConfig::FreqNearest(f.hz() * size as f32 * Hz)),
-            Self::Period(p) => Ok(SamplingConfig::PeriodNearest(p / size as u32)),
+impl TryFrom<(STMConfigNearest, usize)> for SamplingConfig {
+    type Error = AUTDInternalError;
+
+    fn try_from(value: (STMConfigNearest, usize)) -> Result<Self, Self::Error> {
+        let (config, size) = value;
+        match config {
+            STMConfigNearest::Freq(f) => {
+                Ok((f.hz() * size as f32 * Hz).into_sampling_config_nearest())
+            }
+            STMConfigNearest::Period(p) => Ok((p / size as u32).into_sampling_config_nearest()),
         }
     }
 }
@@ -93,17 +90,17 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(SamplingConfig::Freq(4000*Hz)), 4000.*Hz, 1)]
-    #[case(Ok(SamplingConfig::Freq(8000*Hz)), 4000.*Hz, 2)]
-    #[case(Ok(SamplingConfig::Freq(40000*Hz)), 40000.*Hz, 1)]
-    #[case(Err(AUTDInternalError::STMFreqInvalid(1, 4000.5*Hz)), 4000.5*Hz, 1)]
+    #[case((4000. * Hz).into_sampling_config(), 4000. * Hz, 1)]
+    #[case((8000. * Hz).into_sampling_config(), 4000. * Hz, 2)]
+    #[case((40000. * Hz).into_sampling_config(), 40000. * Hz, 1)]
+    #[case((4000.5 * Hz).into_sampling_config(), 4000.5 * Hz, 1)]
     #[cfg_attr(miri, ignore)]
     fn frequency(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] freq: Freq<f32>,
         #[case] size: usize,
     ) {
-        assert_eq!(expect, STMConfig::Freq(freq).sampling(size));
+        assert_eq!(expect, (STMConfig::Freq(freq), size).try_into());
     }
 
     #[rstest::rstest]
@@ -114,23 +111,26 @@ mod tests {
     #[case(SamplingConfig::FREQ_4K, 2)]
     #[cfg_attr(miri, ignore)]
     fn sampling(#[case] config: SamplingConfig, #[case] size: usize) {
-        assert_eq!(Ok(config), STMConfig::SamplingConfig(config).sampling(size));
+        assert_eq!(
+            Ok(config),
+            (STMConfig::SamplingConfig(config), size).try_into()
+        );
     }
 
     #[rstest::rstest]
     #[test]
     #[case(
-        Ok(SamplingConfig::Period(Duration::from_micros(250))),
+        Duration::from_micros(250).into_sampling_config(),
         Duration::from_micros(250),
         1
     )]
     #[case(
-        Ok(SamplingConfig::Period(Duration::from_micros(125))),
+        Duration::from_micros(125).into_sampling_config(),
         Duration::from_micros(250),
         2
     )]
     #[case(
-        Ok(SamplingConfig::Period(Duration::from_micros(25))),
+        Duration::from_micros(25).into_sampling_config(),
         Duration::from_micros(25),
         1
     )]
@@ -145,43 +145,43 @@ mod tests {
         #[case] p: Duration,
         #[case] size: usize,
     ) {
-        assert_eq!(expect, STMConfig::Period(p).sampling(size));
+        assert_eq!(expect, (STMConfig::Period(p), size).try_into());
     }
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(SamplingConfig::FreqNearest(4000.*Hz)), 4000.*Hz, 1)]
-    #[case(Ok(SamplingConfig::FreqNearest(8000.*Hz)), 4000.*Hz, 2)]
-    #[case(Ok(SamplingConfig::FreqNearest(4001.*Hz)), 4001.*Hz, 1)]
-    #[case(Ok(SamplingConfig::FreqNearest(40000.*Hz)), 40000.*Hz, 1)]
+    #[case(Ok((4000. * Hz).into_sampling_config_nearest()), 4000. * Hz, 1)]
+    #[case(Ok((8000. * Hz).into_sampling_config_nearest()), 4000. * Hz, 2)]
+    #[case(Ok((4001. * Hz).into_sampling_config_nearest()), 4001. * Hz, 1)]
+    #[case(Ok((40000. * Hz).into_sampling_config_nearest()), 40000. * Hz, 1)]
     #[cfg_attr(miri, ignore)]
     fn frequency_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] freq: Freq<f32>,
         #[case] size: usize,
     ) {
-        assert_eq!(expect, STMConfigNearest::Freq(freq).sampling(size));
+        assert_eq!(expect, (STMConfigNearest::Freq(freq), size).try_into());
     }
 
     #[rstest::rstest]
     #[test]
     #[case(
-        Ok(SamplingConfig::PeriodNearest(Duration::from_micros(250))),
+        Ok(Duration::from_micros(250).into_sampling_config_nearest()),
         Duration::from_micros(250),
         1
     )]
     #[case(
-        Ok(SamplingConfig::PeriodNearest(Duration::from_micros(125))),
+        Ok(Duration::from_micros(125).into_sampling_config_nearest()),
         Duration::from_micros(250),
         2
     )]
     #[case(
-        Ok(SamplingConfig::PeriodNearest(Duration::from_micros(25))),
+        Ok(Duration::from_micros(25).into_sampling_config_nearest()),
         Duration::from_micros(25),
         1
     )]
     #[case(
-        Ok(SamplingConfig::PeriodNearest(Duration::from_nanos(12500))),
+        Ok(Duration::from_nanos(12500).into_sampling_config_nearest()),
         Duration::from_nanos(25001),
         2
     )]
@@ -191,6 +191,6 @@ mod tests {
         #[case] p: Duration,
         #[case] size: usize,
     ) {
-        assert_eq!(expect, STMConfigNearest::Period(p).sampling(size));
+        assert_eq!(expect, (STMConfigNearest::Period(p), size).try_into());
     }
 }

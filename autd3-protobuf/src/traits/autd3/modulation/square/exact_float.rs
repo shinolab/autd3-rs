@@ -44,7 +44,7 @@ impl FromMessage<SquareExactFloat>
         if let Some(config) = msg.config.as_ref() {
             square = square.with_sampling_config(
                 autd3_driver::firmware::fpga::SamplingConfig::from_msg(config)?,
-            );
+            )?;
         }
         Ok(square)
     }

@@ -25,11 +25,11 @@ impl SamplingMode for ExactFreq {
         freq: Freq<u32>,
         sampling_config: SamplingConfig,
     ) -> Result<(u64, u64), AUTDInternalError> {
-        if freq.hz() as f32 >= sampling_config.freq()?.hz() / 2. {
+        if freq.hz() as f32 >= sampling_config.freq().hz() / 2. {
             return Err(AUTDInternalError::ModulationError(format!(
                 "Frequency ({}) is equal to or greater than the Nyquist frequency ({})",
                 freq,
-                sampling_config.freq()? / 2.
+                sampling_config.freq() / 2.
             )));
         }
         if freq.hz() == 0 {
@@ -38,7 +38,7 @@ impl SamplingMode for ExactFreq {
             ));
         }
 
-        let fd = freq.hz() as u64 * sampling_config.division()? as u64;
+        let fd = freq.hz() as u64 * sampling_config.division() as u64;
         let fs = ULTRASOUND_FREQ.hz() as u64;
 
         let k = gcd(fs, fd);
@@ -66,14 +66,14 @@ impl SamplingMode for ExactFreqFloat {
                 "Frequency must not be zero. If intentional, Use `Static` instead.".to_string(),
             ));
         }
-        if freq.hz() >= sampling_config.freq()?.hz() / 2. {
+        if freq.hz() >= sampling_config.freq().hz() / 2. {
             return Err(AUTDInternalError::ModulationError(format!(
                 "Frequency ({}) is equal to or greater than the Nyquist frequency ({})",
                 freq,
-                sampling_config.freq()? / 2.
+                sampling_config.freq() / 2.
             )));
         }
-        let fd = freq.hz() as f64 * sampling_config.division()? as f64;
+        let fd = freq.hz() as f64 * sampling_config.division() as f64;
         for n in (ULTRASOUND_FREQ.hz() as f64 / fd).floor() as u32..=MOD_BUF_SIZE_MAX as u32 {
             if !is_integer(fd * n as f64) {
                 continue;
@@ -113,14 +113,14 @@ impl SamplingMode for NearestFreq {
                 "Frequency must not be zero. If intentional, Use `Static` instead.".to_string(),
             ));
         }
-        if freq.hz() >= sampling_config.freq()?.hz() / 2. {
+        if freq.hz() >= sampling_config.freq().hz() / 2. {
             return Err(AUTDInternalError::ModulationError(format!(
                 "Frequency ({}) is equal to or greater than the Nyquist frequency ({})",
                 freq,
-                sampling_config.freq()? / 2.
+                sampling_config.freq() / 2.
             )));
         }
-        Ok(((sampling_config.freq()? / freq.hz()).hz().round() as u64, 1))
+        Ok(((sampling_config.freq() / freq.hz()).hz().round() as u64, 1))
     }
 }
 

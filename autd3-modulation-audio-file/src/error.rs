@@ -14,6 +14,8 @@ pub enum AudioFileError {
     Wav(#[from] hound::Error),
     #[error("{0}")]
     Csv(#[from] csv::Error),
+    #[error("{0}")]
+    AUTDInternalError(#[from] AUTDInternalError),
 }
 
 // GRCOV_EXCL_START

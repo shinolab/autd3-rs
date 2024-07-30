@@ -3,7 +3,7 @@ use std::time::Duration;
 use thiserror::Error;
 
 use crate::{
-    defined::{Freq, ULTRASOUND_PERIOD},
+    defined::{Freq, ULTRASOUND_FREQ, ULTRASOUND_PERIOD},
     firmware::{cpu::GainSTMMode, fpga::*},
 };
 
@@ -31,20 +31,22 @@ pub enum AUTDInternalError {
     #[error("Unknown group key: {0}")]
     UnkownKey(String),
 
-    #[error("Sampling frequency ({0}) must divide {1}")]
-    SamplingFreqInvalid(Freq<u32>, Freq<u32>),
+    #[error("Sampling frequency ({0}) must divide {:?}", ULTRASOUND_FREQ)]
+    SamplingFreqInvalid(Freq<u32>),
+    #[error("Sampling frequency ({0}) must divide {:?}", ULTRASOUND_FREQ)]
+    SamplingFreqInvalidF(Freq<f32>),
     #[error(
         "Sampling period ({0:?}) must be a multiple of {:?}",
         ULTRASOUND_PERIOD
     )]
     SamplingPeriodInvalid(Duration),
     #[error("Sampling frequency ({0}) is out of range ([{1}, {2}])")]
-    SamplingFreqOutOfRange(Freq<f32>, Freq<f32>, Freq<f32>),
+    SamplingFreqOutOfRange(Freq<u32>, Freq<u32>, Freq<u32>),
+    #[error("Sampling frequency ({0}) is out of range ([{1}, {2}])")]
+    SamplingFreqOutOfRangeF(Freq<f32>, Freq<f32>, Freq<f32>),
     #[error("Sampling period ({0:?}) is out of range ([{1:?}, {2:?}])")]
     SamplingPeriodOutOfRange(Duration, Duration, Duration),
 
-    #[error("STM sampling frequency ({1}*{0}) must be integer")]
-    STMFreqInvalid(usize, Freq<f32>),
     #[error("STM sampling period ({1:?}/{0}) must be integer")]
     STMPeriodInvalid(usize, Duration),
 

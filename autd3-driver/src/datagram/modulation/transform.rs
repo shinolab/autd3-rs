@@ -50,13 +50,14 @@ mod tests {
     use rand::Rng;
 
     use crate::defined::kHz;
+    use crate::firmware::fpga::IntoSamplingConfigNearest;
 
     use super::{super::tests::TestModulation, *};
 
     #[rstest::rstest]
     #[test]
-    #[case::freq_4k(SamplingConfig::Freq(4 * kHz))]
-    #[case::freq_8k(SamplingConfig::Freq(8 * kHz))]
+    #[case::freq_4k((4. * kHz).into_sampling_config_nearest())]
+    #[case::freq_8k((8. * kHz).into_sampling_config_nearest())]
     #[cfg_attr(miri, ignore)]
     fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
@@ -81,7 +82,7 @@ mod tests {
             buf.iter().map(|&x| x / 2).collect::<Vec<_>>(),
             TestModulation {
                 buf: buf.clone(),
-                config: SamplingConfig::Freq(4 * kHz),
+                config: SamplingConfig::FREQ_4K,
                 loop_behavior: LoopBehavior::infinite(),
             }
             .with_transform(|_, x| x / 2)

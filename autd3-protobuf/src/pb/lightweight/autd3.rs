@@ -1051,57 +1051,9 @@ pub struct Phase {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct SamplingConfigFreq {
-    #[prost(uint32, tag = "1")]
-    pub value: u32,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct SamplingConfigFreqNearest {
-    #[prost(float, tag = "1")]
-    pub value: f32,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct SamplingConfigPeriod {
-    #[prost(uint64, tag = "1")]
-    pub value: u64,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct SamplingConfigPeriodNearest {
-    #[prost(uint64, tag = "1")]
-    pub value: u64,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct SamplingConfigDivision {
-    #[prost(uint32, tag = "1")]
-    pub value: u32,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct SamplingConfig {
-    #[prost(oneof = "sampling_config::Config", tags = "1, 2, 3, 4, 5")]
-    pub config: ::core::option::Option<sampling_config::Config>,
-}
-/// Nested message and enum types in `SamplingConfig`.
-pub mod sampling_config {
-    #[non_exhaustive]
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, Copy, PartialEq, ::prost::Oneof)]
-    pub enum Config {
-        #[prost(message, tag = "1")]
-        Freq(super::SamplingConfigFreq),
-        #[prost(message, tag = "2")]
-        FreqNearest(super::SamplingConfigFreqNearest),
-        #[prost(message, tag = "3")]
-        Period(super::SamplingConfigPeriod),
-        #[prost(message, tag = "4")]
-        PeriodNearest(super::SamplingConfigPeriodNearest),
-        #[prost(message, tag = "5")]
-        Division(super::SamplingConfigDivision),
-    }
+    #[prost(uint32, tag = "1")]
+    pub div: u32,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]

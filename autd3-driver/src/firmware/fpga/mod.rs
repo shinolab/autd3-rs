@@ -19,7 +19,7 @@ pub use fpga_state::FPGAState;
 pub use gpio::*;
 pub use loop_behavior::LoopBehavior;
 pub use phase::Phase;
-pub use sampling_config::SamplingConfig;
+pub use sampling_config::*;
 pub use segment::Segment;
 pub use transition_mode::*;
 

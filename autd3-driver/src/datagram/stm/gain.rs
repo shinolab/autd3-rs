@@ -38,32 +38,31 @@ impl<G: Gain> GainSTM<G> {
         Self::new_from_sampling_config(config.into(), gains)
     }
 
-    fn new_from_sampling_config<F: IntoIterator<Item = G>>(
-        config: impl IntoSamplingConfig,
+    fn new_from_sampling_config<T, F: IntoIterator<Item = G>>(
+        config: T,
         gains: F,
-    ) -> Result<Self, AUTDInternalError> {
+    ) -> Result<Self, AUTDInternalError>
+    where
+        SamplingConfig: TryFrom<(T, usize), Error = AUTDInternalError>,
+    {
         let gains = gains.into_iter().collect::<Vec<_>>();
         if gains.is_empty() {
             return Err(AUTDInternalError::GainSTMSizeOutOfRange(gains.len()));
         }
         Ok(Self {
-            sampling_config: config.sampling(gains.len())?,
+            sampling_config: (config, gains.len()).try_into()?,
             gains,
             loop_behavior: LoopBehavior::infinite(),
             mode: GainSTMMode::PhaseIntensityFull,
         })
     }
 
-    pub fn freq(&self) -> Result<Freq<f32>, AUTDInternalError> {
-        self.sampling_config()
-            .freq()
-            .map(|f| f / self.gains.len() as f32)
+    pub fn freq(&self) -> Freq<f32> {
+        self.sampling_config().freq() / self.gains.len() as f32
     }
 
-    pub fn period(&self) -> Result<Duration, AUTDInternalError> {
-        self.sampling_config()
-            .period()
-            .map(|p| p * self.gains.len() as u32)
+    pub fn period(&self) -> Duration {
+        self.sampling_config().period() * self.gains.len() as u32
     }
 }
 
@@ -216,7 +215,10 @@ impl Default for GainSTM<Box<dyn Gain + Send + Sync>> {
 mod tests {
     use super::*;
 
-    use crate::defined::{kHz, Hz, ULTRASOUND_FREQ};
+    use crate::{
+        defined::{kHz, Hz},
+        firmware::fpga::IntoSamplingConfigNearest,
+    };
 
     #[derive(Gain, Default, Debug, PartialEq)]
     struct Null {
@@ -233,10 +235,10 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(SamplingConfig::Freq(1*Hz)), 0.5*Hz, 2)]
-    #[case(Ok(SamplingConfig::Freq(10*Hz)), 1.*Hz, 10)]
-    #[case(Ok(SamplingConfig::Freq(20*Hz)), 2.*Hz, 10)]
-    #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
+    #[case((1. * Hz).into_sampling_config(), 0.5*Hz, 2)]
+    #[case((10. * Hz).into_sampling_config(), 1.*Hz, 10)]
+    #[case((20. * Hz).into_sampling_config(), 2.*Hz, 10)]
+    #[case((2. * 0.49*Hz).into_sampling_config(), 0.49*Hz, 2)]
     #[case(Err(AUTDInternalError::GainSTMSizeOutOfRange(0)), 1.*Hz, 0)]
     #[cfg_attr(miri, ignore)]
     fn from_freq(
@@ -252,10 +254,10 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(SamplingConfig::FreqNearest(1.*Hz)), 0.5*Hz, 2)]
-    #[case(Ok(SamplingConfig::FreqNearest(0.98*Hz)), 0.49*Hz, 2)]
-    #[case(Ok(SamplingConfig::FreqNearest(10.*Hz)), 1.*Hz, 10)]
-    #[case(Ok(SamplingConfig::FreqNearest(20.*Hz)), 2.*Hz, 10)]
+    #[case(Ok((1. * Hz).into_sampling_config_nearest()), 0.5*Hz, 2)]
+    #[case(Ok((0.98 * Hz).into_sampling_config_nearest()), 0.49*Hz, 2)]
+    #[case(Ok((10. * Hz).into_sampling_config_nearest()), 1.*Hz, 10)]
+    #[case(Ok((20. * Hz).into_sampling_config_nearest()), 2.*Hz, 10)]
     #[cfg_attr(miri, ignore)]
     fn from_freq_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
@@ -272,17 +274,17 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(
-        Ok(SamplingConfig::Period(Duration::from_millis(1000))),
+        Duration::from_millis(1000).into_sampling_config(),
         Duration::from_millis(2000),
         2
     )]
     #[case(
-        Ok(SamplingConfig::Period(Duration::from_millis(100))),
+        Duration::from_millis(100).into_sampling_config(),
         Duration::from_millis(1000),
         10
     )]
     #[case(
-        Ok(SamplingConfig::Period(Duration::from_millis(50))),
+        Duration::from_millis(50).into_sampling_config(),
         Duration::from_millis(500),
         10
     )]
@@ -302,21 +304,21 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(
-        Ok(SamplingConfig::PeriodNearest(Duration::from_millis(1000))),
+        Duration::from_millis(1000).into_sampling_config(),
         Duration::from_millis(2000),
         2
     )]
     #[case(
-        Ok(SamplingConfig::PeriodNearest(Duration::from_millis(100))),
+        Duration::from_millis(100).into_sampling_config(),
         Duration::from_millis(1000),
         10
     )]
     #[case(
-        Ok(SamplingConfig::PeriodNearest(Duration::from_millis(50))),
+        Duration::from_millis(50).into_sampling_config(),
         Duration::from_millis(500),
         10
     )]
-    #[case(Ok(SamplingConfig::PeriodNearest(Duration::from_millis(1000))), Duration::from_millis(2000) + Duration::from_nanos(1), 2)]
+    #[case(Duration::from_millis(1000).into_sampling_config(), Duration::from_millis(2000) + Duration::from_nanos(1), 2)]
     #[cfg_attr(miri, ignore)]
     fn from_period_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
@@ -331,8 +333,8 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(SamplingConfig::Freq(4 * kHz), 10)]
-    #[case(SamplingConfig::Freq(8 * kHz), 10)]
+    #[case((4. * kHz).into_sampling_config().unwrap(), 10)]
+    #[case((8. * kHz).into_sampling_config().unwrap(), 10)]
     #[cfg_attr(miri, ignore)]
     fn from_sampling_config(
         #[case] config: SamplingConfig,
@@ -350,7 +352,6 @@ mod tests {
     #[case(Ok(0.5*Hz), 0.5*Hz, 2)]
     #[case(Ok(1.0*Hz), 1.*Hz, 10)]
     #[case(Ok(2.0*Hz), 2.*Hz, 10)]
-    #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
     #[cfg_attr(miri, ignore)]
     fn freq(
         #[case] expect: Result<Freq<f32>, AUTDInternalError>,
@@ -359,7 +360,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::new(f, (0..n).map(|_| Null::default())).and_then(|f| f.freq())
+            GainSTM::new(f, (0..n).map(|_| Null::default())).map(|f| f.freq())
         );
     }
 
@@ -368,7 +369,6 @@ mod tests {
     #[case(Ok(Duration::from_millis(2000)), 0.5*Hz, 2)]
     #[case(Ok(Duration::from_millis(1000)), 1.*Hz, 10)]
     #[case(Ok(Duration::from_millis(500)), 2.*Hz, 10)]
-    #[case(Err(AUTDInternalError::STMFreqInvalid(2, 0.49*Hz)), 0.49*Hz, 2)]
     #[cfg_attr(miri, ignore)]
     fn period(
         #[case] expect: Result<Duration, AUTDInternalError>,
@@ -377,7 +377,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::new(f, (0..n).map(|_| Null::default())).and_then(|f| f.period())
+            GainSTM::new(f, (0..n).map(|_| Null::default())).map(|f| f.period())
         );
     }
 
@@ -390,13 +390,10 @@ mod tests {
     fn with_mode(#[case] mode: GainSTMMode) {
         assert_eq!(
             mode,
-            GainSTM::new(
-                SamplingConfig::Freq(ULTRASOUND_FREQ),
-                (0..2).map(|_| Null::default())
-            )
-            .unwrap()
-            .with_mode(mode)
-            .mode()
+            GainSTM::new(SamplingConfig::FREQ_40K, (0..2).map(|_| Null::default()))
+                .unwrap()
+                .with_mode(mode)
+                .mode()
         );
     }
 
@@ -406,12 +403,9 @@ mod tests {
     fn with_mode_default() {
         assert_eq!(
             GainSTMMode::PhaseIntensityFull,
-            GainSTM::new(
-                SamplingConfig::Freq(ULTRASOUND_FREQ),
-                (0..2).map(|_| Null::default())
-            )
-            .unwrap()
-            .mode()
+            GainSTM::new(SamplingConfig::FREQ_40K, (0..2).map(|_| Null::default()))
+                .unwrap()
+                .mode()
         );
     }
 
@@ -423,13 +417,10 @@ mod tests {
     fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
             loop_behavior,
-            GainSTM::new(
-                SamplingConfig::Freq(ULTRASOUND_FREQ),
-                (0..2).map(|_| Null::default())
-            )
-            .unwrap()
-            .with_loop_behavior(loop_behavior)
-            .loop_behavior()
+            GainSTM::new(SamplingConfig::FREQ_40K, (0..2).map(|_| Null::default()))
+                .unwrap()
+                .with_loop_behavior(loop_behavior)
+                .loop_behavior()
         );
     }
 }
