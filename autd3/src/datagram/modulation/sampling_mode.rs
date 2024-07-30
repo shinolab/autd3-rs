@@ -1,5 +1,5 @@
 use autd3_driver::{
-    defined::{Freq, Frequency, ULTRASOUND_FREQ},
+    defined::{Freq, Frequency, Hz, ULTRASOUND_FREQ},
     derive::SamplingConfig,
     error::AUTDInternalError,
     firmware::fpga::MOD_BUF_SIZE_MAX,
@@ -10,6 +10,9 @@ use std::fmt::Debug;
 
 pub trait SamplingMode: Clone + Sync + Debug {
     type T: Frequency;
+    fn freq(freq: Self::T, _sampling_config: SamplingConfig) -> Self::T {
+        freq
+    }
     fn validate(
         freq: Self::T,
         sampling_config: SamplingConfig,
@@ -55,9 +58,9 @@ impl SamplingMode for ExactFreqFloat {
         freq: Freq<f32>,
         sampling_config: SamplingConfig,
     ) -> Result<(u64, u64), AUTDInternalError> {
-        if freq.hz() < 0. {
+        if freq.hz() < 0. || freq.hz().is_nan() {
             return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}) must be positive",
+                "Frequency ({}) must be valid positive value",
                 freq
             )));
         }
@@ -98,29 +101,24 @@ pub struct NearestFreq;
 
 impl SamplingMode for NearestFreq {
     type T = Freq<f32>;
+    fn freq(freq: Self::T, sampling_config: SamplingConfig) -> Self::T {
+        let freq_min = sampling_config.freq().hz() / MOD_BUF_SIZE_MAX as f32;
+        let freq_max = sampling_config.freq().hz() / 2.;
+        freq.hz().clamp(freq_min, freq_max) * Hz
+    }
+
     fn validate(
         freq: Freq<f32>,
         sampling_config: SamplingConfig,
     ) -> Result<(u64, u64), AUTDInternalError> {
-        if freq.hz() < 0. {
+        let freq = Self::freq(freq, sampling_config);
+        if freq.hz().is_nan() {
             return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}) must be positive",
+                "Frequency ({}) must be valid value",
                 freq
             )));
         }
-        if freq.hz() == 0. {
-            return Err(AUTDInternalError::ModulationError(
-                "Frequency must not be zero. If intentional, Use `Static` instead.".to_string(),
-            ));
-        }
-        if freq.hz() >= sampling_config.freq().hz() / 2. {
-            return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}) is equal to or greater than the Nyquist frequency ({})",
-                freq,
-                sampling_config.freq() / 2.
-            )));
-        }
-        Ok(((sampling_config.freq() / freq.hz()).hz().round() as u64, 1))
+        Ok(((sampling_config.freq().hz() / freq.hz()).round() as u64, 1))
     }
 }
 
@@ -134,4 +132,26 @@ impl SamplingModeInference for Freq<u32> {
 
 impl SamplingModeInference for Freq<f32> {
     type T = ExactFreqFloat;
+}
+
+#[cfg(test)]
+mod tests {
+
+    use autd3_driver::defined::Hz;
+
+    use super::*;
+
+    #[rstest::rstest]
+    #[test]
+    #[case(1.2207031 * Hz, 1. * Hz, SamplingConfig::FREQ_40K)]
+    #[case(1.2207031 * Hz, 1.2207031 * Hz, SamplingConfig::FREQ_40K)]
+    #[case(20000. * Hz, 20000. * Hz, SamplingConfig::FREQ_40K)]
+    #[case(20000. * Hz, 40000. * Hz, SamplingConfig::FREQ_40K)]
+    fn nearest_freq_clamp(
+        #[case] expect: Freq<f32>,
+        #[case] freq: Freq<f32>,
+        #[case] sampling_config: SamplingConfig,
+    ) {
+        assert_eq!(expect, NearestFreq::freq(freq, sampling_config));
+    }
 }
