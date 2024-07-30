@@ -52,7 +52,7 @@ impl Sine<ExactFreq> {
         }
     }
 
-    pub const fn from_freq_nearest(freq: Freq<f32>) -> Sine<NearestFreq> {
+    pub const fn new_nearest(freq: Freq<f32>) -> Sine<NearestFreq> {
         Sine {
             freq,
             intensity: u8::MAX,
@@ -211,11 +211,8 @@ mod tests {
         Err(AUTDInternalError::ModulationError("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
         0.*Hz
     )]
-    fn from_freq_nearest(
-        #[case] expect: Result<Vec<u8>, AUTDInternalError>,
-        #[case] freq: Freq<f32>,
-    ) {
-        let m = Sine::from_freq_nearest(freq);
+    fn new_nearest(#[case] expect: Result<Vec<u8>, AUTDInternalError>, #[case] freq: Freq<f32>) {
+        let m = Sine::new_nearest(freq);
         assert_eq!(freq, m.freq());
         assert_eq!(u8::MAX, m.intensity());
         assert_eq!(u8::MAX / 2, m.offset());
