@@ -9,10 +9,21 @@ pub struct Custom {
 }
 
 impl Custom {
-    pub fn new(buffer: Vec<u8>, config: impl Into<SamplingConfig>) -> Self {
+    pub fn new(
+        buffer: Vec<u8>,
+        config: impl IntoSamplingConfig,
+    ) -> Result<Self, AUTDInternalError> {
+        Ok(Self {
+            buffer,
+            config: config.into_sampling_config()?,
+            loop_behavior: LoopBehavior::infinite(),
+        })
+    }
+
+    pub fn new_nearest(buffer: Vec<u8>, config: impl IntoSamplingConfigNearest) -> Self {
         Self {
             buffer,
-            config: config.into(),
+            config: config.into_sampling_config_nearest(),
             loop_behavior: LoopBehavior::infinite(),
         }
     }
