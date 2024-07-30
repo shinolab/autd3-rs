@@ -22,7 +22,6 @@ use derive_more::Display;
     loop_behavior
 )]
 pub struct Sine<S: SamplingMode> {
-    #[get]
     freq: S::T,
     #[get]
     #[set]
@@ -62,6 +61,12 @@ impl Sine<ExactFreq> {
             loop_behavior: LoopBehavior::infinite(),
             __phantom: std::marker::PhantomData,
         }
+    }
+}
+
+impl<S: SamplingMode> Sine<S> {
+    pub fn freq(&self) -> S::T {
+        S::freq(self.freq, self.config)
     }
 }
 
@@ -158,7 +163,7 @@ mod tests {
         4000*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (-0.1 Hz) must be positive".to_owned())),
+        Err(AUTDInternalError::ModulationError("Frequency (-0.1 Hz) must be valid positive value".to_owned())),
         -0.1*Hz
     )]
     #[case(
@@ -196,24 +201,14 @@ mod tests {
         200.*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
-        2e3*Hz
-    )]
-    #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
-        4e3*Hz
-    )]
-    #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (-0.1 Hz) must be positive".to_owned())),
-        -0.1*Hz
-    )]
-    #[case(
-        Err(AUTDInternalError::ModulationError("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
-        0.*Hz
+        Err(AUTDInternalError::ModulationError("Frequency (NaN Hz) must be valid value".to_owned())),
+        f32::NAN * Hz
     )]
     fn new_nearest(#[case] expect: Result<Vec<u8>, AUTDInternalError>, #[case] freq: Freq<f32>) {
         let m = Sine::new_nearest(freq);
-        assert_eq!(freq, m.freq());
+        if !freq.hz().is_nan() {
+            assert_eq!(freq, m.freq());
+        }
         assert_eq!(u8::MAX, m.intensity());
         assert_eq!(u8::MAX / 2, m.offset());
         assert_eq!(Angle::Rad(0.0), m.phase());
