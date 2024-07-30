@@ -18,7 +18,7 @@ impl<S: SamplingMode> Fourier<S> {
     pub fn new(componens: impl IntoIterator<Item = Sine<S>>) -> Result<Self, AUTDInternalError> {
         let components = componens.into_iter().collect::<Vec<_>>();
         let config = components
-            .get(0)
+            .first()
             .ok_or(AUTDInternalError::ModulationError(
                 "Components must not be empty".to_string(),
             ))?
