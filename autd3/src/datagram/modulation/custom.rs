@@ -9,10 +9,21 @@ pub struct Custom {
 }
 
 impl Custom {
-    pub fn new(buffer: Vec<u8>, config: impl Into<SamplingConfig>) -> Self {
+    pub fn new(
+        buffer: Vec<u8>,
+        config: impl IntoSamplingConfig,
+    ) -> Result<Self, AUTDInternalError> {
+        Ok(Self {
+            buffer,
+            config: config.into_sampling_config()?,
+            loop_behavior: LoopBehavior::infinite(),
+        })
+    }
+
+    pub fn new_nearest(buffer: Vec<u8>, config: impl IntoSamplingConfigNearest) -> Self {
         Self {
             buffer,
-            config: config.into(),
+            config: config.into_sampling_config_nearest(),
             loop_behavior: LoopBehavior::infinite(),
         }
     }
@@ -41,7 +52,7 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let test_buf = (0..2).map(|_| rng.gen()).collect::<Vec<_>>();
-        let custom = Custom::new(test_buf.clone(), SamplingConfig::FREQ_4K);
+        let custom = Custom::new(test_buf.clone(), SamplingConfig::FREQ_4K)?;
 
         let d = custom.calc()?;
         assert_eq!(d, test_buf);
