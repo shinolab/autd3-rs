@@ -44,7 +44,7 @@ impl FromMessage<SineExact>
         if let Some(config) = msg.config.as_ref() {
             sine = sine.with_sampling_config(
                 autd3_driver::firmware::fpga::SamplingConfig::from_msg(config)?,
-            );
+            )?;
         }
         Ok(sine)
     }

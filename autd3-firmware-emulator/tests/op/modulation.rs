@@ -97,7 +97,7 @@ fn send_mod(
     );
     let d = TestModulation {
         buf: m.clone(),
-        config: SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+        config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
         loop_behavior,
     }
     .with_segment(segment, transition_mode);
@@ -128,7 +128,7 @@ fn swap_mod_segmemt() -> anyhow::Result<()> {
     let freq_div = SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16;
     let d = TestModulation {
         buf: m.clone(),
-        config: SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+        config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
         loop_behavior: LoopBehavior::infinite(),
     }
     .with_segment(Segment::S1, None);
@@ -153,7 +153,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
     {
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::Division(NonZeroU16::new(1).unwrap()),
+            config: SamplingConfig::new(NonZeroU16::new(1).unwrap()),
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
@@ -167,7 +167,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
     {
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::Division(NonZeroU16::MAX),
+            config: SamplingConfig::new(NonZeroU16::MAX),
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
@@ -181,7 +181,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
 
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::Division(
+            config: SamplingConfig::new(
                 NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT as _).unwrap(),
             ),
             loop_behavior: LoopBehavior::infinite(),

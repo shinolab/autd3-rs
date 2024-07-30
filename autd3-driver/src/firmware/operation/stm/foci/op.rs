@@ -152,7 +152,7 @@ impl<const N: usize> Operation for FociSTMOp<N> {
                     transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
                     send_num: send_num as _,
                     num_foci: N as u8,
-                    freq_div: self.config.division()?,
+                    freq_div: self.config.division(),
                     sound_speed: (device.sound_speed / METER * 64.0).round() as u16,
                     rep: self.loop_behavior.rep(),
                     __pad: [0; 4],
@@ -247,7 +247,7 @@ mod tests {
 
         let mut op = FociSTMOp::new(
             Arc::new(points.clone()),
-            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             LoopBehavior { rep },
             segment,
             Some(transition_mode),
@@ -338,7 +338,7 @@ mod tests {
 
         let mut op = FociSTMOp::new(
             Arc::new(points.clone()),
-            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             LoopBehavior { rep },
             segment,
             Some(transition_mode),
@@ -431,7 +431,7 @@ mod tests {
 
         let mut op = FociSTMOp::new(
             Arc::new(points.clone()),
-            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             LoopBehavior { rep },
             segment,
             None,
