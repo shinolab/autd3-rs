@@ -33,9 +33,11 @@ impl Burst {
 
 impl Modulation for Burst {
     fn calc(&self) -> ModulationCalcResult {
-        Ok((0..4000)
-            .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
-            .collect())
+        Ok(Arc::new(
+            (0..4000)
+                .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
+                .collect(),
+        ))
     }
 }
 
