@@ -156,16 +156,17 @@ mod tests {
     }
 
     #[test]
-    fn mismatch_sampling_config() {
+    fn mismatch_sampling_config() -> anyhow::Result<()> {
         assert_eq!(
             Err(AUTDInternalError::ModulationError(
                 "All components must have the same sampling configuration".to_string()
             )),
             Mixer::new([
                 Sine::new(50. * Hz),
-                Sine::new(50. * Hz).with_sampling_config(SamplingConfig::Freq(1000 * Hz)),
+                Sine::new(50. * Hz).with_sampling_config(1000 * Hz)?,
             ])
         );
+        Ok(())
     }
 
     #[test]

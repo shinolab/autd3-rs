@@ -230,10 +230,10 @@ mod tests {
             .with_intensity(u8::MAX / 2)
             .with_offset(u8::MAX / 4)
             .with_phase(PI / 4.0 * rad)
-            .with_sampling_config(SamplingConfig::FreqNearest(10.1 * kHz));
+            .with_sampling_config_nearest(10.1 * kHz);
         assert_eq!(u8::MAX / 2, m.intensity);
         assert_eq!(u8::MAX / 4, m.offset);
         assert_eq!(PI / 4.0 * rad, m.phase);
-        assert_eq!(SamplingConfig::FreqNearest(10.1 * kHz), m.config);
+        assert_eq!((10.1 * kHz).into_sampling_config_nearest(), m.config);
     }
 }

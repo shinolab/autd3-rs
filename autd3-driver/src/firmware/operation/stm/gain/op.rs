@@ -214,7 +214,7 @@ impl Operation for GainSTMOp {
                         .map(|m| m.mode())
                         .unwrap_or(TRANSITION_MODE_NONE),
                     transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
-                    freq_div: self.config.division()?,
+                    freq_div: self.config.division(),
                     rep: self.loop_behavior.rep(),
                 },
                 tx,
@@ -304,7 +304,7 @@ mod tests {
                     .collect()
             },
             GainSTMMode::PhaseIntensityFull,
-            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             LoopBehavior { rep },
             segment,
             Some(transition_mode),
@@ -456,7 +456,7 @@ mod tests {
                     .collect()
             },
             GainSTMMode::PhaseFull,
-            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             LoopBehavior { rep },
             segment,
             None,
@@ -594,7 +594,7 @@ mod tests {
                     .collect()
             },
             GainSTMMode::PhaseHalf,
-            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             LoopBehavior { rep },
             segment,
             Some(TransitionMode::SyncIdx),

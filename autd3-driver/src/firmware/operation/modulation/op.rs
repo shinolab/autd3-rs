@@ -115,7 +115,7 @@ impl Operation for ModulationOp {
                     tag: TypeTag::Modulation,
                     flag: ModulationControlFlags::BEGIN | flag,
                     size: send_num as _,
-                    freq_div: self.config.division()?,
+                    freq_div: self.config.division(),
                     rep: self.loop_behavior.rep(),
                     transition_mode: self
                         .transition_mode
@@ -194,7 +194,7 @@ mod tests {
 
         let mut op = ModulationOp::new(
             Arc::new(buf.clone()),
-            SamplingConfig::Division(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             LoopBehavior { rep },
             segment,
             Some(transition_mode),

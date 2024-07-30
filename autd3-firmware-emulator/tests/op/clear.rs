@@ -63,7 +63,7 @@ fn send_clear() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = FociSTM::new(
-            SamplingConfig::Division(
+            SamplingConfig::new(
                 NonZeroU16::new(
                     SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _,
                 )
