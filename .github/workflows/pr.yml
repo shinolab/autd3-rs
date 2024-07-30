@@ -1,7 +1,7 @@
 name: build
 
 on:
-  push:
+  pull_request:
     branches: [ "main" ]
 
 concurrency:
@@ -9,7 +9,42 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changed-files:
+    name: changed-files
+    runs-on: ubuntu-latest
+    outputs:
+      src: ${{ steps.changed-files-yaml.outputs.src_any_changed }}
+      lightweight: ${{ steps.changed-files-yaml.outputs.lightweight_any_changed }}
+      miri: ${{ steps.changed-files-yaml.outputs.miri_any_changed }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: changed-files-yaml
+        uses: tj-actions/changed-files@v44
+        with:
+          files_yaml: |
+            src:
+              - '**/*.rs'
+              - '**/Cargo.toml'
+            lightweight:
+              - autd3-protobuf/Cargo.toml
+              - autd3-protobuf/**/*.rs
+              - autd3-protobuf/**/*.proto
+            miri:
+              - autd3-driver/Cargo.toml
+              - autd3-driver/**/*.rs
+              - autd3-firmware-emulator/Cargo.toml
+              - autd3-firmware-emulator/**/*.rs
+              - autd3-gain-holo/Cargo.toml
+              - autd3-gain-holo/**/*.rs
+              - autd3-link-soem/Cargo.toml
+              - autd3-link-soem/**/*.rs
+              - autd3-link-twincat/Cargo.toml
+              - autd3-link-twincat/**/*.rs
+              - autd3-protobuf/Cargo.toml
+              - autd3-protobuf/**/*.rs
+
   test:
+    needs: changed-files
     name: test-on-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -18,15 +53,19 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
+        if: ${{ needs.changed-files.outputs.src == 'true' }}
       - uses: ./.github/actions/setup-build
+        if: ${{ needs.changed-files.outputs.src == 'true' }}
         with:
           os: ${{ matrix.os }}
       - run: |
           python3 build.py build
           python3 build.py test
         shell: bash
+        if: ${{ needs.changed-files.outputs.src == 'true' }}
 
   test-on-arm:
+    needs: changed-files
     name: test-on-${{ matrix.os }}-${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -41,15 +80,20 @@ jobs:
             arch: aarch64
     steps:
       - uses: actions/checkout@v4
+        if: ${{ needs.changed-files.outputs.src == 'true' }}
       - uses: ./.github/actions/setup-build
+        if: ${{ needs.changed-files.outputs.src == 'true' }}
         with:
           os: ${{ matrix.os }}
           arch: ${{ matrix.arch }}
       - run: |
           python3 build.py build --arch ${{ matrix.arch }} --no-examples
         shell: bash
+        if: ${{ needs.changed-files.outputs.src == 'true' }}
 
   test-lightweight:
+    needs: changed-files
+    if: ${{ needs.changed-files.outputs.lightweight == 'true' }}
     name: test-lightweight
     runs-on: ubuntu-latest
     steps:
@@ -63,6 +107,8 @@ jobs:
         shell: bash
 
   test-capi:
+    needs: changed-files
+    if: ${{ needs.changed-files.outputs.src == 'true' }}
     name: test-capi
     runs-on: ubuntu-latest
     steps:
@@ -76,6 +122,8 @@ jobs:
         shell: bash
 
   test-unity:
+    needs: changed-files
+    if: ${{ needs.changed-files.outputs.src == 'true' }}
     name: test-unity
     runs-on: ubuntu-latest
     steps:
@@ -89,6 +137,8 @@ jobs:
         shell: bash
 
   miri:
+    needs: changed-files
+    if: ${{ needs.changed-files.outputs.miri == 'true' }}
     name: test-with-miri
     runs-on: ubuntu-latest
     steps:
@@ -102,6 +152,8 @@ jobs:
           python3 build.py test --miri
 
   lint:
+    needs: changed-files
+    if: ${{ needs.changed-files.outputs.src == 'true' }}
     name: lint
     runs-on: ubuntu-latest
     steps:
@@ -114,3 +166,23 @@ jobs:
           python3 build.py lint --features "capi" --no-example
           python3 build.py lint --features "lightweight async-trait"
           python3 build.py lint --features "left_handed use_meter"
+
+  auto-merge:
+    needs:
+      - test
+      - test-on-arm
+      - test-lightweight
+      - test-capi
+      - test-unity
+      - miri
+      - lint
+    permissions:
+      pull-requests: write
+      contents: write
+    runs-on: ubuntu-latest
+    if: ${{ always() && !cancelled() && !failure() && github.actor == 'dependabot[bot]' }}
+    steps:
+      - run: gh pr merge --rebase --auto "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
