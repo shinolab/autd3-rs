@@ -53,7 +53,7 @@ impl RawPCM {
 
 impl Modulation for RawPCM {
     fn calc(&self) -> ModulationCalcResult {
-        Ok(self.read_buf()?)
+        Ok(Arc::new(self.read_buf()?))
     }
 
     #[tracing::instrument(level = "debug", skip(_geometry))]
@@ -79,9 +79,9 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(vec![0xFF, 0x7F, 0x00]), vec![0xFF, 0x7F, 0x00], 4000 * Hz)]
+    #[case(Ok(Arc::new(vec![0xFF, 0x7F, 0x00])), vec![0xFF, 0x7F, 0x00], 4000 * Hz)]
     fn new(
-        #[case] expect: Result<Vec<u8>, AUTDInternalError>,
+        #[case] expect: ModulationCalcResult,
         #[case] data: Vec<u8>,
         #[case] sample_rate: Freq<u32>,
     ) -> anyhow::Result<()> {
@@ -97,9 +97,9 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(vec![0xFF, 0x7F, 0x00]), vec![0xFF, 0x7F, 0x00], 4000.000001 * Hz)]
+    #[case(Ok(Arc::new(vec![0xFF, 0x7F, 0x00])), vec![0xFF, 0x7F, 0x00], 4000.000001 * Hz)]
     fn new_nearest(
-        #[case] expect: Result<Vec<u8>, AUTDInternalError>,
+        #[case] expect: ModulationCalcResult,
         #[case] data: Vec<u8>,
         #[case] sample_rate: Freq<f32>,
     ) -> anyhow::Result<()> {

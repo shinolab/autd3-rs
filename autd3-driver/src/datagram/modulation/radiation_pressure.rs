@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::derive::*;
 
 #[derive(Modulation)]
@@ -28,10 +30,11 @@ pub trait IntoRadiationPressure<M: Modulation> {
 impl<M: Modulation> Modulation for RadiationPressure<M> {
     fn calc(&self) -> ModulationCalcResult {
         let src = self.m.calc()?;
-        Ok(src
-            .into_iter()
-            .map(|v| ((v as f32 / 255.).sqrt() * 255.).round() as u8)
-            .collect())
+        Ok(Arc::new(
+            src.iter()
+                .map(|v| ((*v as f32 / 255.).sqrt() * 255.).round() as u8)
+                .collect(),
+        ))
     }
 
     #[tracing::instrument(level = "debug", skip(self, geometry), fields(%self.config, %self.loop_behavior))]
@@ -61,7 +64,7 @@ mod tests {
         assert_eq!(
             config,
             TestModulation {
-                buf: vec![u8::MIN; 2],
+                buf: Arc::new(vec![u8::MIN; 2]),
                 config,
                 loop_behavior: LoopBehavior::infinite(),
             }
@@ -80,8 +83,8 @@ mod tests {
             buf.iter()
                 .map(|&x| ((x as f32 / 255.).sqrt() * 255.).round() as u8)
                 .collect::<Vec<_>>(),
-            TestModulation {
-                buf: buf.clone(),
+            *TestModulation {
+                buf: Arc::new(buf.clone()),
                 config: SamplingConfig::FREQ_4K,
                 loop_behavior: LoopBehavior::infinite(),
             }

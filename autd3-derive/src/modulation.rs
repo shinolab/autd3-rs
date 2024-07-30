@@ -81,7 +81,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
 
             fn operation_generator_with_segment(self, _: &Geometry, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<Self::G, AUTDInternalError> {
                 Ok(Self::G {
-                    g: std::sync::Arc::new(self.calc()?),
+                    g: self.calc()?,
                     config: self.sampling_config(),
                     loop_behavior: self.loop_behavior(),
                     segment,
