@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use autd3_driver::{
     derive::*,
     firmware::cpu::{RxMessage, TxDatagram},
@@ -16,7 +18,7 @@ pub struct ControllerBuilder {
     parallel_threshold: usize,
     #[get]
     #[set]
-    send_interval: std::time::Duration,
+    send_interval: Duration,
     #[cfg(target_os = "windows")]
     #[get]
     #[set]
@@ -32,7 +34,7 @@ impl ControllerBuilder {
                 .map(|(i, d)| d.into_device(i))
                 .collect(),
             parallel_threshold: 4,
-            send_interval: std::time::Duration::from_millis(1),
+            send_interval: Duration::from_millis(1),
             #[cfg(target_os = "windows")]
             timer_resolution: std::num::NonZeroU32::new(1).unwrap(),
         }
@@ -48,12 +50,11 @@ impl ControllerBuilder {
     pub async fn open_with_timeout<B: LinkBuilder>(
         self,
         link_builder: B,
-        timeout: std::time::Duration,
+        timeout: Duration,
     ) -> Result<Controller<B::L>, AUTDError> {
         let geometry = Geometry::new(self.devices);
-        let link = link_builder.open(&geometry).await?;
-        let mut cnt = Controller {
-            link,
+        Ok(Controller {
+            link: link_builder.open(&geometry).await?,
             tx_buf: TxDatagram::new(geometry.num_devices()),
             rx_buf: vec![RxMessage::new(0, 0); geometry.num_devices()],
             geometry,
@@ -62,8 +63,8 @@ impl ControllerBuilder {
             send_interval: self.send_interval,
             #[cfg(target_os = "windows")]
             timer_resolution: self.timer_resolution,
-        };
-        cnt.open_impl(timeout).await?;
-        Ok(cnt)
+        }
+        .open_impl(timeout)
+        .await?)
     }
 }
