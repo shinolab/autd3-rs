@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::derive::*;
 
 #[derive(Modulation)]
@@ -29,11 +31,12 @@ pub trait IntoTransform<M: Modulation> {
 impl<M: Modulation, F: Fn(usize, u8) -> u8> Modulation for Transform<M, F> {
     fn calc(&self) -> ModulationCalcResult {
         let src = self.m.calc()?;
-        Ok(src
-            .into_iter()
-            .enumerate()
-            .map(|(i, x)| (self.f)(i, x))
-            .collect())
+        Ok(Arc::new(
+            src.iter()
+                .enumerate()
+                .map(|(i, x)| (self.f)(i, *x))
+                .collect(),
+        ))
     }
 
     #[tracing::instrument(level = "debug", skip(self, geometry), fields(%self.config, %self.loop_behavior))]
@@ -60,10 +63,12 @@ mod tests {
     #[case::freq_8k((8. * kHz).into_sampling_config_nearest())]
     #[cfg_attr(miri, ignore)]
     fn test_sampling_config(#[case] config: SamplingConfig) {
+        use std::sync::Arc;
+
         assert_eq!(
             config,
             TestModulation {
-                buf: vec![u8::MIN; 2],
+                buf: Arc::new(vec![u8::MIN; 2]),
                 config,
                 loop_behavior: LoopBehavior::infinite(),
             }
@@ -80,8 +85,8 @@ mod tests {
         let buf = vec![rng.gen(), rng.gen()];
         assert_eq!(
             buf.iter().map(|&x| x / 2).collect::<Vec<_>>(),
-            TestModulation {
-                buf: buf.clone(),
+            *TestModulation {
+                buf: Arc::new(buf.clone()),
                 config: SamplingConfig::FREQ_4K,
                 loop_behavior: LoopBehavior::infinite(),
             }

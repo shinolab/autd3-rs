@@ -123,6 +123,8 @@ fn silencer_completetion_steps_too_large_mod(
     #[case] expect: Result<(), AUTDInternalError>,
     #[case] steps_intensity: u32,
 ) -> anyhow::Result<()> {
+    use std::sync::Arc;
+
     use crate::op::modulation::TestModulation;
 
     let geometry = create_geometry(1);
@@ -135,7 +137,7 @@ fn silencer_completetion_steps_too_large_mod(
     // Send modulation
     {
         let d = TestModulation {
-            buf: (0..2).map(|_| u8::MAX).collect(),
+            buf: Arc::new((0..2).map(|_| u8::MAX).collect()),
             config: SamplingConfig::FREQ_40K,
             loop_behavior: LoopBehavior::infinite(),
         }

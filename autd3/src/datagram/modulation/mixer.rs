@@ -48,26 +48,28 @@ impl<S: SamplingMode> Modulation for Mixer<S> {
             .map(|c| c.calc())
             .map(|v| {
                 v.map(|v| {
-                    v.into_iter()
-                        .map(|x| x as f32 / u8::MAX as f32)
+                    v.iter()
+                        .map(|x| *x as f32 / u8::MAX as f32)
                         .collect::<Vec<_>>()
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
-        Ok(buffers
-            .iter()
-            .fold(
-                vec![1.0; buffers.iter().fold(1, |acc, x| lcm(acc, x.len()))],
-                |acc, x| {
-                    acc.iter()
-                        .zip(x.iter().cycle())
-                        .map(|(&a, &b)| a * b)
-                        .collect::<Vec<_>>()
-                },
-            )
-            .iter()
-            .map(|x| (x * u8::MAX as f32) as u8)
-            .collect::<Vec<_>>())
+        Ok(Arc::new(
+            buffers
+                .iter()
+                .fold(
+                    vec![1.0; buffers.iter().fold(1, |acc, x| lcm(acc, x.len()))],
+                    |acc, x| {
+                        acc.iter()
+                            .zip(x.iter().cycle())
+                            .map(|(&a, &b)| a * b)
+                            .collect::<Vec<_>>()
+                    },
+                )
+                .iter()
+                .map(|x| (x * u8::MAX as f32) as u8)
+                .collect::<Vec<_>>(),
+        ))
     }
 
     #[tracing::instrument(level = "debug", skip(self, _geometry), fields(%self.config, %self.loop_behavior))]

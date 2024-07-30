@@ -32,7 +32,7 @@ impl Static {
 impl Modulation for Static {
     fn calc(&self) -> ModulationCalcResult {
         let intensity = self.intensity;
-        Ok(vec![intensity; 2])
+        Ok(Arc::new(vec![intensity; 2]))
     }
 
     #[tracing::instrument(level = "debug", skip(_geometry))]
@@ -58,7 +58,7 @@ mod tests {
         let m = Static::default();
         assert_eq!(u8::MAX, m.intensity());
         assert_eq!(SamplingConfig::new(NonZeroU16::MAX), m.sampling_config());
-        assert_eq!(Ok(vec![u8::MAX, u8::MAX]), m.calc());
+        assert_eq!(Ok(Arc::new(vec![u8::MAX, u8::MAX])), m.calc());
     }
 
     #[test]
@@ -66,6 +66,6 @@ mod tests {
         let m = Static::with_intensity(0x1F);
         assert_eq!(0x1F, m.intensity());
         assert_eq!(SamplingConfig::new(NonZeroU16::MAX), m.sampling_config());
-        assert_eq!(Ok(vec![0x1F, 0x1F]), m.calc());
+        assert_eq!(Ok(Arc::new(vec![0x1F, 0x1F])), m.calc());
     }
 }

@@ -33,6 +33,7 @@ pub mod derive {
     pub use autd3_derive::{Builder, Gain, Modulation};
     pub use itertools::Itertools;
     pub use std::collections::HashMap;
+    pub use std::sync::Arc;
     pub use tracing;
     pub use tynm;
 }
