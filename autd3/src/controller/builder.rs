@@ -53,7 +53,7 @@ impl ControllerBuilder {
         timeout: Duration,
     ) -> Result<Controller<B::L>, AUTDError> {
         let geometry = Geometry::new(self.devices);
-        Ok(Controller {
+        Controller {
             link: link_builder.open(&geometry).await?,
             tx_buf: TxDatagram::new(geometry.num_devices()),
             rx_buf: vec![RxMessage::new(0, 0); geometry.num_devices()],
@@ -65,6 +65,6 @@ impl ControllerBuilder {
             timer_resolution: self.timer_resolution,
         }
         .open_impl(timeout)
-        .await?)
+        .await // GRCOV_EXCL_LINE
     }
 }
