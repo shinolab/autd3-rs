@@ -43,16 +43,34 @@ impl Modulation for Custom {
 
 #[cfg(test)]
 mod tests {
+    use autd3_driver::defined::kHz;
     use rand::Rng;
 
     use super::*;
 
     #[test]
-    fn test_custom() -> anyhow::Result<()> {
+    fn new() -> anyhow::Result<()> {
         let mut rng = rand::thread_rng();
 
         let test_buf = (0..2).map(|_| rng.gen()).collect::<Vec<_>>();
-        let custom = Custom::new(test_buf.clone(), SamplingConfig::FREQ_4K)?;
+        let custom = Custom::new(test_buf.clone(), 4 * kHz)?;
+
+        assert_eq!(4. * kHz, custom.sampling_config().freq());
+
+        let d = custom.calc()?;
+        assert_eq!(d, test_buf);
+
+        Ok(())
+    }
+
+    #[test]
+    fn new_nearest() -> anyhow::Result<()> {
+        let mut rng = rand::thread_rng();
+
+        let test_buf = (0..2).map(|_| rng.gen()).collect::<Vec<_>>();
+        let custom = Custom::new_nearest(test_buf.clone(), 4 * kHz);
+
+        assert_eq!(4. * kHz, custom.sampling_config().freq());
 
         let d = custom.calc()?;
         assert_eq!(d, test_buf);
