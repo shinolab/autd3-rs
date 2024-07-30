@@ -9,6 +9,7 @@ use crate::{
 const NANOSEC: u128 = 1_000_000_000;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
 pub struct SamplingConfig {
     div: NonZeroU16,
 }
