@@ -40,7 +40,7 @@ pub struct Sine<S: SamplingMode> {
 }
 
 impl Sine<ExactFreq> {
-    pub fn new<S: SamplingModeInference>(freq: S) -> Sine<S::T> {
+    pub const fn new<S: SamplingModeInference>(freq: S) -> Sine<S::T> {
         Sine {
             freq,
             intensity: u8::MAX,

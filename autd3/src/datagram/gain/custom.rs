@@ -27,8 +27,7 @@ impl<
     > Gain for Custom<D, FT, F>
 {
     fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
-        let f = &self.f;
-        Ok(Self::transform(f))
+        Ok(Self::transform(&self.f))
     }
 
     #[tracing::instrument(skip(self, _geometry))]

@@ -17,13 +17,17 @@ pub struct Fourier<S: SamplingMode> {
 impl<S: SamplingMode> Fourier<S> {
     pub fn new(componens: impl IntoIterator<Item = Sine<S>>) -> Result<Self, AUTDInternalError> {
         let components = componens.into_iter().collect::<Vec<_>>();
-        if components.is_empty() {
-            return Err(AUTDInternalError::ModulationError(
+        let config = components
+            .get(0)
+            .ok_or(AUTDInternalError::ModulationError(
                 "Components must not be empty".to_string(),
-            ));
-        }
-        let config = components[0].sampling_config();
-        if !components.iter().all(|c| c.sampling_config() == config) {
+            ))?
+            .sampling_config();
+        if !components
+            .iter()
+            .skip(1)
+            .all(|c| c.sampling_config() == config)
+        {
             return Err(AUTDInternalError::ModulationError(
                 "All components must have the same sampling configuration".to_string(),
             ));
