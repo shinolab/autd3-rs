@@ -26,6 +26,7 @@ jobs:
               - '**/*.rs'
               - '**/Cargo.toml'
             lightweight:
+              - Cargo.toml
               - autd3-protobuf/Cargo.toml
               - autd3-protobuf/**/*.rs
               - autd3-protobuf/**/*.proto
