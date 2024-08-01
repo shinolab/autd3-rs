@@ -11,7 +11,8 @@ pub use completion_steps::SilencerFixedCompletionStepsOp;
 pub use update_rate::SilencerFixedUpdateRateOp;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
 pub enum SilencerTarget {
-    Intensity,
-    PulseWidth,
+    Intensity = 0,
+    PulseWidth = 1,
 }

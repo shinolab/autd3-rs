@@ -1526,6 +1526,8 @@ pub struct SilencerFixedUpdateRate {
     pub value_intensity: u32,
     #[prost(uint32, tag = "2")]
     pub value_phase: u32,
+    #[prost(enumeration = "SilencerTarget", optional, tag = "3")]
+    pub target: ::core::option::Option<i32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
@@ -1534,6 +1536,8 @@ pub struct SilencerFixedCompletionTime {
     pub value_intensity: u64,
     #[prost(uint64, tag = "2")]
     pub value_phase: u64,
+    #[prost(enumeration = "SilencerTarget", optional, tag = "4")]
+    pub target: ::core::option::Option<i32>,
     #[prost(bool, optional, tag = "3")]
     pub strict_mode: ::core::option::Option<bool>,
 }
@@ -1754,6 +1758,33 @@ pub mod swap_segment {
         FociStm(super::SwapSegmentFociStm),
         #[prost(message, tag = "4")]
         GainStm(super::SwapSegmentGainStm),
+    }
+}
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SilencerTarget {
+    Intensity = 0,
+    PulseWidth = 1,
+}
+impl SilencerTarget {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            SilencerTarget::Intensity => "Intensity",
+            SilencerTarget::PulseWidth => "PulseWidth",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "Intensity" => Some(Self::Intensity),
+            "PulseWidth" => Some(Self::PulseWidth),
+            _ => None,
+        }
     }
 }
 #[non_exhaustive]
