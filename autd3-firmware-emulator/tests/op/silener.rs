@@ -38,7 +38,7 @@ fn send_silencer_fixed_update_rate() -> anyhow::Result<()> {
         );
         assert_eq!(update_rate_phase, cpu.fpga().silencer_update_rate_phase());
         assert!(cpu.fpga().silencer_fixed_update_rate_mode());
-        assert!(cpu.fpga().silencer_intensity_mode());
+        assert_eq!(SilencerTarget::Intensity, cpu.fpga().silencer_target());
     }
 
     unsafe {
@@ -58,7 +58,7 @@ fn send_silencer_fixed_update_rate() -> anyhow::Result<()> {
         );
         assert_eq!(update_rate_phase, cpu.fpga().silencer_update_rate_phase());
         assert!(cpu.fpga().silencer_fixed_update_rate_mode());
-        assert!(cpu.fpga().silencer_pulse_width_mode());
+        assert_eq!(SilencerTarget::PulseWidth, cpu.fpga().silencer_target());
     }
 
     Ok(())
@@ -89,7 +89,7 @@ fn send_silencer_fixed_completion_time() {
         );
         assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
         assert!(cpu.silencer_strict_mode());
-        assert!(cpu.fpga().silencer_intensity_mode());
+        assert_eq!(SilencerTarget::Intensity, cpu.fpga().silencer_target());
     }
 
     {
@@ -110,7 +110,7 @@ fn send_silencer_fixed_completion_time() {
         );
         assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
         assert!(cpu.silencer_strict_mode());
-        assert!(cpu.fpga().silencer_pulse_width_mode());
+        assert_eq!(SilencerTarget::PulseWidth, cpu.fpga().silencer_target());
     }
 }
 
