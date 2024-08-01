@@ -48,7 +48,7 @@ fn send_silencer_fixed_update_rate() -> anyhow::Result<()> {
             NonZeroU8::new_unchecked(update_rate_intensity),
             NonZeroU8::new_unchecked(update_rate_phase),
         )
-        .with_taget(SilencerTarget::PulseWidth);
+        .with_target(SilencerTarget::PulseWidth);
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -96,7 +96,7 @@ fn send_silencer_fixed_completion_time() {
         let time_intensity = rng.gen_range(1..=10) * Duration::from_micros(25);
         let time_phase = rng.gen_range(1..=u8::MAX) as u32 * Duration::from_micros(25);
         let d = Silencer::from_completion_time(time_intensity, time_phase)
-            .with_taget(SilencerTarget::PulseWidth);
+            .with_target(SilencerTarget::PulseWidth);
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
