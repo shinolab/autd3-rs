@@ -1,7 +1,4 @@
-use autd3_driver::{
-    derive::*,
-    firmware::fpga::{IntoSamplingConfig, IntoSamplingConfigNearest},
-};
+use autd3_driver::derive::*;
 
 use std::{
     fs::File,
@@ -20,24 +17,13 @@ pub struct RawPCM {
 }
 
 impl RawPCM {
-    pub fn new(
+    pub fn new<T: TryInto<SamplingConfig>>(
         path: impl AsRef<Path>,
-        sampling_config: impl IntoSamplingConfig,
-    ) -> Result<Self, AUTDInternalError> {
+        sampling_config: T,
+    ) -> Result<Self, T::Error> {
         Ok(Self {
             path: path.as_ref().to_path_buf(),
-            config: sampling_config.into_sampling_config()?,
-            loop_behavior: LoopBehavior::infinite(),
-        })
-    }
-
-    pub fn new_nearest(
-        path: impl AsRef<Path>,
-        sampling_config: impl IntoSamplingConfigNearest,
-    ) -> Result<Self, AUTDInternalError> {
-        Ok(Self {
-            path: path.as_ref().to_path_buf(),
-            config: sampling_config.into_sampling_config_nearest(),
+            config: sampling_config.try_into()?,
             loop_behavior: LoopBehavior::infinite(),
         })
     }
@@ -90,24 +76,6 @@ mod tests {
         create_dat(&path, &data)?;
 
         let m = RawPCM::new(&path, sample_rate)?;
-        assert_eq!(expect, m.calc());
-
-        Ok(())
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(Ok(Arc::new(vec![0xFF, 0x7F, 0x00])), vec![0xFF, 0x7F, 0x00], 4000.000001 * Hz)]
-    fn new_nearest(
-        #[case] expect: ModulationCalcResult,
-        #[case] data: Vec<u8>,
-        #[case] sample_rate: Freq<f32>,
-    ) -> anyhow::Result<()> {
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("tmp.dat");
-        create_dat(&path, &data)?;
-
-        let m = RawPCM::new_nearest(&path, sample_rate)?;
         assert_eq!(expect, m.calc());
 
         Ok(())

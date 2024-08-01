@@ -27,6 +27,9 @@ pub enum AUTDProtoBufError {
     #[cfg(feature = "lightweight")]
     #[error("{0}")]
     UnknownEnumValue(#[from] prost::UnknownEnumValue),
+    #[cfg(feature = "lightweight")]
+    #[error("{0}")]
+    Infallible(#[from] std::convert::Infallible),
 }
 
 // GRCOV_EXCL_START

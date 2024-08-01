@@ -182,7 +182,6 @@ impl<const N: usize> Default for FociSTM<N> {
 mod tests {
     use crate::{
         defined::{kHz, Hz},
-        firmware::fpga::IntoSamplingConfigNearest,
         geometry::Vector3,
     };
 
@@ -190,10 +189,10 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case((1. * Hz).into_sampling_config(), 0.5*Hz, 2)]
-    #[case((10. * Hz).into_sampling_config(), 1.*Hz, 10)]
-    #[case((20. * Hz).into_sampling_config(), 2.*Hz, 10)]
-    #[case((2. * 0.49*Hz).into_sampling_config(), 0.49*Hz, 2)]
+    #[case((1. * Hz).try_into(), 0.5*Hz, 2)]
+    #[case((10. * Hz).try_into(), 1.*Hz, 10)]
+    #[case((20. * Hz).try_into(), 2.*Hz, 10)]
+    #[case((2. * 0.49*Hz).try_into(), 0.49*Hz, 2)]
     #[case(Err(AUTDInternalError::FociSTMPointSizeOutOfRange(0)), 1.*Hz, 0)]
     #[cfg_attr(miri, ignore)]
     fn from_freq(
@@ -209,10 +208,10 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok((1. * Hz).into_sampling_config_nearest()), 0.5*Hz, 2)]
-    #[case(Ok((0.98 * Hz).into_sampling_config_nearest()), 0.49*Hz, 2)]
-    #[case(Ok((10. * Hz).into_sampling_config_nearest()), 1.*Hz, 10)]
-    #[case(Ok((20. * Hz).into_sampling_config_nearest()), 2.*Hz, 10)]
+    #[case(Ok(SamplingConfig::new_nearest(1. * Hz)), 0.5*Hz, 2)]
+    #[case(Ok(SamplingConfig::new_nearest(0.98 * Hz)), 0.49*Hz, 2)]
+    #[case(Ok(SamplingConfig::new_nearest(10. * Hz)), 1.*Hz, 10)]
+    #[case(Ok(SamplingConfig::new_nearest(20. * Hz)), 2.*Hz, 10)]
     #[cfg_attr(miri, ignore)]
     fn from_freq_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
@@ -229,17 +228,17 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(
-        Duration::from_millis(1000).into_sampling_config(),
+        Duration::from_millis(1000).try_into(),
         Duration::from_millis(2000),
         2
     )]
     #[case(
-        Duration::from_millis(100).into_sampling_config(),
+        Duration::from_millis(100).try_into(),
         Duration::from_millis(1000),
         10
     )]
     #[case(
-        Duration::from_millis(50).into_sampling_config(),
+        Duration::from_millis(50).try_into(),
         Duration::from_millis(500),
         10
     )]
@@ -259,21 +258,21 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(
-        Duration::from_millis(1000).into_sampling_config(),
+        Duration::from_millis(1000).try_into(),
         Duration::from_millis(2000),
         2
     )]
     #[case(
-        Duration::from_millis(100).into_sampling_config(),
+        Duration::from_millis(100).try_into(),
         Duration::from_millis(1000),
         10
     )]
     #[case(
-        Duration::from_millis(50).into_sampling_config(),
+        Duration::from_millis(50).try_into(),
         Duration::from_millis(500),
         10
     )]
-    #[case(Duration::from_millis(1000).into_sampling_config(), Duration::from_millis(2000) + Duration::from_nanos(1), 2)]
+    #[case(Duration::from_millis(1000).try_into(), Duration::from_millis(2000) + Duration::from_nanos(1), 2)]
     #[cfg_attr(miri, ignore)]
     fn from_period_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
@@ -288,8 +287,8 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case((4. * kHz).into_sampling_config().unwrap(), 10)]
-    #[case((8. * kHz).into_sampling_config().unwrap(), 10)]
+    #[case((4. * kHz).try_into().unwrap(), 10)]
+    #[case((8. * kHz).try_into().unwrap(), 10)]
     #[cfg_attr(miri, ignore)]
     fn from_sampling_config(#[case] config: SamplingConfig, #[case] n: usize) {
         assert_eq!(
