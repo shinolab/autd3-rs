@@ -53,14 +53,13 @@ mod tests {
     use rand::Rng;
 
     use crate::defined::kHz;
-    use crate::firmware::fpga::IntoSamplingConfigNearest;
 
     use super::{super::tests::TestModulation, *};
 
     #[rstest::rstest]
     #[test]
-    #[case::freq_4k((4. * kHz).into_sampling_config_nearest())]
-    #[case::freq_8k((8. * kHz).into_sampling_config_nearest())]
+    #[case::freq_4k(SamplingConfig::new_nearest(4. * kHz))]
+    #[case::freq_8k(SamplingConfig::new_nearest(8. * kHz))]
     #[cfg_attr(miri, ignore)]
     fn test_sampling_config(#[case] config: SamplingConfig) {
         use std::sync::Arc;

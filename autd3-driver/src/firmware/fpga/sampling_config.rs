@@ -14,55 +14,6 @@ pub struct SamplingConfig {
     div: NonZeroU16,
 }
 
-const FREQ_MIN: Freq<u32> = Freq { freq: 1 };
-const FREQ_MAX: Freq<u32> = ULTRASOUND_FREQ;
-const FREQ_MIN_F: Freq<f32> = Freq {
-    freq: 40000. / u16::MAX as f32,
-};
-const FREQ_MAX_F: Freq<f32> = Freq { freq: 40000. };
-const PERIOD_MIN: Duration = Duration::from_nanos((NANOSEC / ULTRASOUND_FREQ.hz() as u128) as u64);
-const PERIOD_MAX: Duration =
-    Duration::from_nanos((u16::MAX as u128 * NANOSEC / ULTRASOUND_FREQ.hz() as u128) as u64);
-
-impl SamplingConfig {
-    pub const FREQ_40K: SamplingConfig = SamplingConfig {
-        div: unsafe { NonZeroU16::new_unchecked(1) },
-    };
-    pub const FREQ_4K: SamplingConfig = SamplingConfig {
-        div: unsafe { NonZeroU16::new_unchecked(10) },
-    };
-
-    pub const fn new(div: NonZeroU16) -> Self {
-        Self { div }
-    }
-
-    const unsafe fn new_unchecked(div: u16) -> Self {
-        Self {
-            div: NonZeroU16::new_unchecked(div),
-        }
-    }
-
-    pub const fn division(self) -> u16 {
-        self.div.get()
-    }
-
-    pub fn freq(&self) -> Freq<f32> {
-        ULTRASOUND_FREQ.hz() as f32 / self.division() as f32 * Hz
-    }
-
-    pub const fn period(&self) -> Duration {
-        Duration::from_nanos(
-            (self.division() as u128 * NANOSEC / ULTRASOUND_FREQ.hz() as u128) as u64,
-        )
-    }
-}
-
-impl std::fmt::Display for SamplingConfig {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.freq())
-    }
-}
-
 pub trait IntoSamplingConfigNearest {
     fn into_sampling_config_nearest(self) -> SamplingConfig;
 }
@@ -103,18 +54,73 @@ impl IntoSamplingConfigNearest for Duration {
     }
 }
 
-pub trait IntoSamplingConfig {
-    fn into_sampling_config(self) -> Result<SamplingConfig, AUTDInternalError>;
-}
+const FREQ_MIN: Freq<u32> = Freq { freq: 1 };
+const FREQ_MAX: Freq<u32> = ULTRASOUND_FREQ;
+const FREQ_MIN_F: Freq<f32> = Freq {
+    freq: 40000. / u16::MAX as f32,
+};
+const FREQ_MAX_F: Freq<f32> = Freq { freq: 40000. };
+const PERIOD_MIN: Duration = Duration::from_nanos((NANOSEC / ULTRASOUND_FREQ.hz() as u128) as u64);
+const PERIOD_MAX: Duration =
+    Duration::from_nanos((u16::MAX as u128 * NANOSEC / ULTRASOUND_FREQ.hz() as u128) as u64);
 
-impl IntoSamplingConfig for SamplingConfig {
-    fn into_sampling_config(self) -> Result<SamplingConfig, AUTDInternalError> {
-        Ok(self)
+impl SamplingConfig {
+    pub const FREQ_40K: SamplingConfig = SamplingConfig {
+        div: unsafe { NonZeroU16::new_unchecked(1) },
+    };
+    pub const FREQ_4K: SamplingConfig = SamplingConfig {
+        div: unsafe { NonZeroU16::new_unchecked(10) },
+    };
+
+    pub const fn new(div: NonZeroU16) -> Self {
+        Self { div }
+    }
+
+    const unsafe fn new_unchecked(div: u16) -> Self {
+        Self {
+            div: NonZeroU16::new_unchecked(div),
+        }
+    }
+
+    pub fn new_nearest(value: impl IntoSamplingConfigNearest) -> Self {
+        value.into_sampling_config_nearest()
+    }
+
+    pub const fn division(self) -> u16 {
+        self.div.get()
+    }
+
+    pub fn freq(&self) -> Freq<f32> {
+        ULTRASOUND_FREQ.hz() as f32 / self.division() as f32 * Hz
+    }
+
+    pub const fn period(&self) -> Duration {
+        Duration::from_nanos(
+            (self.division() as u128 * NANOSEC / ULTRASOUND_FREQ.hz() as u128) as u64,
+        )
     }
 }
 
-impl IntoSamplingConfig for Freq<u32> {
-    fn into_sampling_config(self) -> Result<SamplingConfig, AUTDInternalError> {
+impl std::fmt::Display for SamplingConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.freq())
+    }
+}
+
+// pub trait IntoSamplingConfig {
+//     fn into_sampling_config(self) -> Result<SamplingConfig, AUTDInternalError>;
+// }
+
+// impl IntoSamplingConfig for SamplingConfig {
+//     fn into_sampling_config(self) -> Result<SamplingConfig, AUTDInternalError> {
+//         Ok(self)
+//     }
+// }
+
+impl TryInto<SamplingConfig> for Freq<u32> {
+    type Error = AUTDInternalError;
+
+    fn try_into(self) -> Result<SamplingConfig, Self::Error> {
         if !(FREQ_MIN..=FREQ_MAX).contains(&self) {
             return Err(AUTDInternalError::SamplingFreqOutOfRange(
                 self, FREQ_MIN, FREQ_MAX,
@@ -127,8 +133,10 @@ impl IntoSamplingConfig for Freq<u32> {
     }
 }
 
-impl IntoSamplingConfig for Freq<f32> {
-    fn into_sampling_config(self) -> Result<SamplingConfig, AUTDInternalError> {
+impl TryInto<SamplingConfig> for Freq<f32> {
+    type Error = AUTDInternalError;
+
+    fn try_into(self) -> Result<SamplingConfig, Self::Error> {
         if !(FREQ_MIN_F..=FREQ_MAX_F).contains(&self) {
             return Err(AUTDInternalError::SamplingFreqOutOfRangeF(
                 self, FREQ_MIN_F, FREQ_MAX_F,
@@ -142,8 +150,10 @@ impl IntoSamplingConfig for Freq<f32> {
     }
 }
 
-impl IntoSamplingConfig for Duration {
-    fn into_sampling_config(self) -> Result<SamplingConfig, AUTDInternalError> {
+impl TryInto<SamplingConfig> for Duration {
+    type Error = AUTDInternalError;
+
+    fn try_into(self) -> Result<SamplingConfig, Self::Error> {
         if !(PERIOD_MIN..=PERIOD_MAX).contains(&self) {
             return Err(AUTDInternalError::SamplingPeriodOutOfRange(
                 self, PERIOD_MIN, PERIOD_MAX,
@@ -215,7 +225,7 @@ mod tests {
     #[case::out_of_range_max(1, 40000. * Hz + 1. * Hz)]
     #[cfg_attr(miri, ignore)]
     fn from_freq_f32_nearest(#[case] expected: u16, #[case] freq: Freq<f32>) {
-        assert_eq!(expected, freq.into_sampling_config_nearest().division());
+        assert_eq!(expected, SamplingConfig::new_nearest(freq).division());
     }
 
     #[rstest::rstest]
@@ -227,7 +237,7 @@ mod tests {
     #[case::out_of_range_max(1, ULTRASOUND_FREQ + 1 * Hz)]
     #[cfg_attr(miri, ignore)]
     fn from_freq_u32_nearest(#[case] expected: u16, #[case] freq: Freq<u32>) {
-        assert_eq!(expected, freq.into_sampling_config_nearest().division());
+        assert_eq!(expected, SamplingConfig::new_nearest(freq).division());
     }
 
     #[rstest::rstest]
@@ -242,7 +252,10 @@ mod tests {
         #[case] expected: Result<u16, AUTDInternalError>,
         #[case] freq: Freq<f32>,
     ) {
-        assert_eq!(expected, freq.into_sampling_config().map(|c| c.division()));
+        assert_eq!(
+            expected,
+            freq.try_into().map(|c: SamplingConfig| c.division())
+        );
     }
 
     #[rstest::rstest]
@@ -257,7 +270,10 @@ mod tests {
         #[case] expected: Result<u16, AUTDInternalError>,
         #[case] freq: Freq<u32>,
     ) {
-        assert_eq!(expected, freq.into_sampling_config().map(|c| c.division()));
+        assert_eq!(
+            expected,
+            freq.try_into().map(|c: SamplingConfig| c.division())
+        );
     }
 
     #[rstest::rstest]
@@ -269,7 +285,7 @@ mod tests {
     #[case::out_of_range_max(u16::MAX, PERIOD_MAX * 2)]
     #[cfg_attr(miri, ignore)]
     fn from_period_nearest(#[case] expected: u16, #[case] p: Duration) {
-        assert_eq!(expected, p.into_sampling_config_nearest().division());
+        assert_eq!(expected, SamplingConfig::new_nearest(p).division());
     }
 
     #[rstest::rstest]
@@ -281,7 +297,7 @@ mod tests {
     #[case::out_of_range_max(Err(AUTDInternalError::SamplingPeriodOutOfRange(PERIOD_MAX * 2, PERIOD_MIN, PERIOD_MAX)), PERIOD_MAX * 2)]
     #[cfg_attr(miri, ignore)]
     fn try_from_period(#[case] expected: Result<u16, AUTDInternalError>, #[case] p: Duration) {
-        assert_eq!(expected, p.into_sampling_config().map(|c| c.division()));
+        assert_eq!(expected, p.try_into().map(|c: SamplingConfig| c.division()));
     }
 
     #[rstest::rstest]

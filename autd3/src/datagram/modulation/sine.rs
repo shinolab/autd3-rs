@@ -217,15 +217,17 @@ mod tests {
     }
 
     #[test]
-    fn test_sine_with_param() {
+    fn test_sine_with_param() -> anyhow::Result<()> {
         let m = Sine::new(100. * Hz)
             .with_intensity(u8::MAX / 2)
             .with_offset(u8::MAX / 4)
             .with_phase(PI / 4.0 * rad)
-            .with_sampling_config_nearest(10.1 * kHz);
+            .with_sampling_config(SamplingConfig::new_nearest(10.1 * kHz))?;
         assert_eq!(u8::MAX / 2, m.intensity);
         assert_eq!(u8::MAX / 4, m.offset);
         assert_eq!(PI / 4.0 * rad, m.phase);
-        assert_eq!((10.1 * kHz).into_sampling_config_nearest(), m.config);
+        assert_eq!(SamplingConfig::new_nearest(10.1 * kHz), m.config);
+
+        Ok(())
     }
 }

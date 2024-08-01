@@ -20,7 +20,7 @@ impl Wav {
         let spec = reader.spec();
         Ok(Self {
             path,
-            config: (spec.sample_rate * Hz).into_sampling_config()?,
+            config: (spec.sample_rate * Hz).try_into()?,
             loop_behavior: LoopBehavior::infinite(),
         })
     }
