@@ -11,7 +11,7 @@ pub struct FixedUpdateRate {
 }
 
 impl Silencer<FixedUpdateRate> {
-    pub const fn with_taget(mut self, target: SilencerTarget) -> Self {
+    pub const fn with_target(mut self, target: SilencerTarget) -> Self {
         self.internal.target = target;
         self
     }
