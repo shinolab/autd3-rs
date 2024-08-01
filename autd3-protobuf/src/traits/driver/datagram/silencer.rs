@@ -6,6 +6,16 @@ use crate::{
     AUTDProtoBufError,
 };
 
+fn silencer_target_to(v: i32) -> Result<autd3::prelude::SilencerTarget, AUTDProtoBufError> {
+    if v == autd3::prelude::SilencerTarget::Intensity as u8 as _ {
+        Ok(autd3::prelude::SilencerTarget::Intensity)
+    } else if v == autd3::prelude::SilencerTarget::PulseWidth as u8 as _ {
+        Ok(autd3::prelude::SilencerTarget::PulseWidth)
+    } else {
+        Err(AUTDProtoBufError::DataParseError)
+    }
+}
+
 impl ToMessage for autd3_driver::datagram::SilencerFixedUpdateRate {
     type Message = Datagram;
 
@@ -15,6 +25,7 @@ impl ToMessage for autd3_driver::datagram::SilencerFixedUpdateRate {
                 config: Some(silencer::Config::FixedUpdateRate(SilencerFixedUpdateRate {
                     value_intensity: self.update_rate_intensity() as _,
                     value_phase: self.update_rate_phase() as _,
+                    target: Some(self.target() as u8 as _),
                 })),
             })),
             parallel_threshold: None,
@@ -25,10 +36,14 @@ impl ToMessage for autd3_driver::datagram::SilencerFixedUpdateRate {
 
 impl FromMessage<SilencerFixedUpdateRate> for autd3_driver::datagram::SilencerFixedUpdateRate {
     fn from_msg(msg: &SilencerFixedUpdateRate) -> Result<Self, AUTDProtoBufError> {
-        Ok(autd3_driver::datagram::Silencer::from_update_rate(
+        let mut s = autd3_driver::datagram::Silencer::from_update_rate(
             NonZeroU8::new(msg.value_intensity as _).ok_or(AUTDProtoBufError::DataParseError)?,
             NonZeroU8::new(msg.value_phase as _).ok_or(AUTDProtoBufError::DataParseError)?,
-        ))
+        );
+        if let Some(target) = msg.target {
+            s = s.with_target(silencer_target_to(target)?);
+        }
+        Ok(s)
     }
 }
 
@@ -43,6 +58,7 @@ impl ToMessage for autd3_driver::datagram::SilencerFixedCompletionTime {
                         value_intensity: self.completion_time_intensity().as_nanos() as _,
                         value_phase: self.completion_time_phase().as_nanos() as _,
                         strict_mode: Some(self.strict_mode()),
+                        target: Some(self.target() as u8 as _),
                     },
                 )),
             })),
@@ -62,6 +78,9 @@ impl FromMessage<SilencerFixedCompletionTime>
         );
         if let Some(strict_mode) = msg.strict_mode {
             s = s.with_strict_mode(strict_mode);
+        }
+        if let Some(target) = msg.target {
+            s = s.with_target(silencer_target_to(target)?);
         }
         Ok(s)
     }
