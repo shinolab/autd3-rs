@@ -1,7 +1,7 @@
 use autd3_driver::{
     derive::{Drive, EmitIntensity, LoopBehavior, Phase, Segment, TransitionMode},
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
-    firmware::fpga::GPIOIn,
+    firmware::{fpga::GPIOIn, operation::SilencerTarget},
 };
 use num_integer::Roots;
 
@@ -539,12 +539,12 @@ impl FPGAEmulator {
         !self.silencer_fixed_update_rate_mode()
     }
 
-    pub fn silencer_intensity_mode(&self) -> bool {
-        !self.mem.silencer_pulse_width_mode()
-    }
-
-    pub fn silencer_pulse_width_mode(&self) -> bool {
-        self.mem.silencer_pulse_width_mode()
+    pub fn silencer_target(&self) -> SilencerTarget {
+        if self.mem.silencer_pulse_width_mode() {
+            SilencerTarget::PulseWidth
+        } else {
+            SilencerTarget::Intensity
+        }
     }
 
     pub fn stm_freq_division(&self, segment: Segment) -> u16 {
