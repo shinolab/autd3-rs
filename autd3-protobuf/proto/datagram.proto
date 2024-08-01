@@ -8,14 +8,21 @@ import "utils-lightweight.proto";
 
 message Clear {}
 
+enum SilencerTarget{
+  Intensity = 0;
+  PulseWidth = 1;
+}
+
 message SilencerFixedUpdateRate {
       uint32 value_intensity = 1;
       uint32 value_phase = 2;
+      optional SilencerTarget target = 3;
 }
 
 message SilencerFixedCompletionTime {
       uint64 value_intensity = 1;
       uint64 value_phase = 2;
+      optional SilencerTarget target = 4;
       optional bool strict_mode = 3;
 }
 
