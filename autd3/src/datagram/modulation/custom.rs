@@ -9,23 +9,15 @@ pub struct Custom {
 }
 
 impl Custom {
-    pub fn new(
+    pub fn new<T: TryInto<SamplingConfig>>(
         buffer: Arc<Vec<u8>>,
-        config: impl IntoSamplingConfig,
-    ) -> Result<Self, AUTDInternalError> {
+        config: T,
+    ) -> Result<Self, T::Error> {
         Ok(Self {
             buffer,
-            config: config.into_sampling_config()?,
+            config: config.try_into()?,
             loop_behavior: LoopBehavior::infinite(),
         })
-    }
-
-    pub fn new_nearest(buffer: Arc<Vec<u8>>, config: impl IntoSamplingConfigNearest) -> Self {
-        Self {
-            buffer,
-            config: config.into_sampling_config_nearest(),
-            loop_behavior: LoopBehavior::infinite(),
-        }
     }
 }
 impl Modulation for Custom {
@@ -54,21 +46,6 @@ mod tests {
 
         let test_buf = Arc::new((0..2).map(|_| rng.gen()).collect::<Vec<_>>());
         let custom = Custom::new(test_buf.clone(), 4 * kHz)?;
-
-        assert_eq!(4. * kHz, custom.sampling_config().freq());
-
-        let d = custom.calc()?;
-        assert_eq!(d, test_buf);
-
-        Ok(())
-    }
-
-    #[test]
-    fn new_nearest() -> anyhow::Result<()> {
-        let mut rng = rand::thread_rng();
-
-        let test_buf = Arc::new((0..2).map(|_| rng.gen()).collect::<Vec<_>>());
-        let custom = Custom::new_nearest(test_buf.clone(), 4 * kHz);
 
         assert_eq!(4. * kHz, custom.sampling_config().freq());
 
