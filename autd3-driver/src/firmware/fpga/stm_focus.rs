@@ -5,13 +5,13 @@ use super::*;
 #[bitfield_struct::bitfield(u64)]
 pub struct STMFocus {
     #[bits(18)]
-    pub(crate) x: i32,
+    pub x: i32,
     #[bits(18)]
-    pub(crate) y: i32,
+    pub y: i32,
     #[bits(18)]
-    pub(crate) z: i32,
+    pub z: i32,
     #[bits(8)]
-    pub(crate) intensity: u8,
+    pub intensity: u8,
     #[bits(2)]
     __: u8,
 }

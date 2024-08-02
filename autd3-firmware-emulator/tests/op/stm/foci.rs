@@ -95,26 +95,24 @@ fn test_send_foci_stm(
         cpu.fpga().sound_speed(segment)
     );
     foci.iter().enumerate().for_each(|(focus_idx, focus)| {
-        cpu.fpga()
-            .drives(segment, focus_idx)
-            .iter()
-            .enumerate()
-            .for_each(|(tr_idx, &drive)| {
-                let tr = cpu.fpga().local_tr_pos()[tr_idx];
-                let tx = ((tr >> 16) & 0xFFFF) as i32;
-                let ty = (tr & 0xFFFF) as i16 as i32;
-                let tz = 0;
-                let fx = (focus[0].point().x / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                let fy = (focus[0].point().y / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                let fz = (focus[0].point().z / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-                let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
-                let q = (d << 14) / cpu.fpga().sound_speed(segment) as u32;
-                let sin = (sin_table[q as usize % 256] >> 1) as usize;
-                let cos = (sin_table[(q as usize + 64) % 256] >> 1) as usize;
-                let p = atan_table[(sin << 7) | cos];
-                assert_eq!(Phase::new(p), drive.phase());
-                assert_eq!(focus.intensity(), drive.intensity());
-            })
+        let drives = cpu.fpga().drives(segment, focus_idx);
+        assert_eq!(cpu.num_transducers(), drives.len());
+        drives.iter().enumerate().for_each(|(tr_idx, &drive)| {
+            let tr = cpu.fpga().local_tr_pos()[tr_idx];
+            let tx = ((tr >> 16) & 0xFFFF) as i32;
+            let ty = (tr & 0xFFFF) as i16 as i32;
+            let tz = 0;
+            let fx = (focus[0].point().x / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+            let fy = (focus[0].point().y / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+            let fz = (focus[0].point().z / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
+            let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
+            let q = (d << 14) / cpu.fpga().sound_speed(segment) as u32;
+            let sin = (sin_table[q as usize % 256] >> 1) as usize;
+            let cos = (sin_table[(q as usize + 64) % 256] >> 1) as usize;
+            let p = atan_table[(sin << 7) | cos];
+            assert_eq!(Phase::new(p), drive.phase());
+            assert_eq!(focus.intensity(), drive.intensity());
+        })
     });
 
     Ok(())
