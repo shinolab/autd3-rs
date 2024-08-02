@@ -439,6 +439,7 @@ impl Memory {
 
         self.tr_pos
             .iter()
+            .take(self.num_transducers)
             .map(|&tr| {
                 let tr_z = ((tr >> 32) & 0xFFFF) as i16 as i32;
                 let tr_x = ((tr >> 16) & 0xFFFF) as i16 as i32;
