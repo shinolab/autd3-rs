@@ -1,7 +1,10 @@
 use autd3_driver::{
     derive::{Drive, EmitIntensity, LoopBehavior, Phase, Segment, TransitionMode},
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
-    firmware::{fpga::GPIOIn, operation::SilencerTarget},
+    firmware::{
+        fpga::{GPIOIn, STMFocus},
+        operation::SilencerTarget,
+    },
 };
 use num_integer::Roots;
 
@@ -435,8 +438,6 @@ impl Memory {
         };
         let sound_speed = self.sound_speed(segment);
 
-        let intensity = (bram[32 * idx + 3] >> 6 & 0x00FF) as u8;
-
         self.tr_pos
             .iter()
             .take(self.num_transducers)
@@ -444,35 +445,27 @@ impl Memory {
                 let tr_z = ((tr >> 32) & 0xFFFF) as i16 as i32;
                 let tr_x = ((tr >> 16) & 0xFFFF) as i16 as i32;
                 let tr_y = (tr & 0xFFFF) as i16 as i32;
+                let mut intensity = 0x00;
                 let (sin, cos) = (0..self.num_foci(segment) as usize).fold((0, 0), |acc, i| {
-                    let mut x = (bram[32 * idx + 4 * i + 1] as u32) << 16 & 0x30000;
-                    x |= bram[32 * idx + 4 * i] as u32;
-                    let x = if (x & 0x20000) != 0 {
-                        (x | 0xFFFC0000) as i32
-                    } else {
-                        x as i32
+                    let f = unsafe {
+                        (bram[32 * idx + 4 * i..].as_ptr() as *const STMFocus).read_unaligned()
                     };
-                    let mut y = (bram[32 * idx + 4 * i + 2] as u32) << 14 & 0x3C000;
-                    y |= bram[32 * idx + 4 * i + 1] as u32 >> 2;
-                    let y = if (y & 0x20000) != 0 {
-                        (y | 0xFFFC0000) as i32
+                    let x = f.x();
+                    let y = f.y();
+                    let z = f.z();
+                    let intensity_or_offset = f.intensity();
+                    let offset = if i == 0 {
+                        intensity = intensity_or_offset;
+                        0x00
                     } else {
-                        y as i32
+                        intensity_or_offset
                     };
-                    let mut z = (bram[32 * idx + 4 * i + 3] as u32) << 12 & 0x3F000;
-                    z |= bram[32 * idx + 4 * i + 2] as u32 >> 4;
-                    let z = if (z & 0x20000) != 0 {
-                        (z | 0xFFFC0000) as i32
-                    } else {
-                        z as i32
-                    };
-                    let offset = bram[32 * idx + 4 * i + 3] >> 6 & 0x00FF;
 
                     let d2 =
                         (x - tr_x) * (x - tr_x) + (y - tr_y) * (y - tr_y) + (z - tr_z) * (z - tr_z);
                     let dist = d2.sqrt() as u32;
                     let q = ((dist << 14) / sound_speed as u32) as usize;
-                    let q = if i == 0 { q } else { q + offset as usize };
+                    let q = q + offset as usize;
                     (
                         acc.0 + self.sin_table[q % 256] as u16,
                         acc.1 + self.sin_table[(q + 64) % 256] as u16,

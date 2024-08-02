@@ -10,8 +10,6 @@ mod segment;
 mod stm_focus;
 mod transition_mode;
 
-pub(crate) use stm_focus::STMFocus;
-
 pub use debug_type::DebugType;
 pub use drive::Drive;
 pub use emit_intensity::EmitIntensity;
@@ -21,6 +19,7 @@ pub use loop_behavior::LoopBehavior;
 pub use phase::Phase;
 pub use sampling_config::SamplingConfig;
 pub use segment::Segment;
+pub use stm_focus::STMFocus;
 pub use transition_mode::*;
 
 use crate::defined::{mm, Freq};
