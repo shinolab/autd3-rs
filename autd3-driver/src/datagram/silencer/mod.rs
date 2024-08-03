@@ -13,7 +13,7 @@ pub struct Silencer<T> {
     internal: T,
 }
 
-pub type SilencerFixedCompletionTime = Silencer<FixedCompletionSteps>;
+pub type SilencerFixedCompletionSteps = Silencer<FixedCompletionSteps>;
 pub type SilencerFixedUpdateRate = Silencer<FixedUpdateRate>;
 
 impl Silencer<()> {

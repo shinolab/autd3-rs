@@ -1531,11 +1531,11 @@ pub struct SilencerFixedUpdateRate {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct SilencerFixedCompletionTime {
-    #[prost(uint64, tag = "1")]
-    pub value_intensity: u64,
-    #[prost(uint64, tag = "2")]
-    pub value_phase: u64,
+pub struct SilencerFixedCompletionSteps {
+    #[prost(uint32, tag = "1")]
+    pub value_intensity: u32,
+    #[prost(uint32, tag = "2")]
+    pub value_phase: u32,
     #[prost(enumeration = "SilencerTarget", optional, tag = "4")]
     pub target: ::core::option::Option<i32>,
     #[prost(bool, optional, tag = "3")]
@@ -1556,7 +1556,7 @@ pub mod silencer {
         #[prost(message, tag = "1")]
         FixedUpdateRate(super::SilencerFixedUpdateRate),
         #[prost(message, tag = "3")]
-        FixedCompletionTime(super::SilencerFixedCompletionTime),
+        FixedCompletionSteps(super::SilencerFixedCompletionSteps),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
