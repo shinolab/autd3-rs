@@ -23,6 +23,16 @@ pub struct GainSTM<G: Gain> {
     mode: GainSTMMode,
 }
 
+impl<G: Gain> WithSampling for GainSTM<G> {
+    fn sampling_config_intensity(&self) -> Option<SamplingConfig> {
+        Some(self.sampling_config)
+    }
+
+    fn sampling_config_phase(&self) -> Option<SamplingConfig> {
+        Some(self.sampling_config)
+    }
+}
+
 impl<G: Gain> GainSTM<G> {
     pub fn new<F: IntoIterator<Item = G>>(
         config: impl Into<STMConfig>,

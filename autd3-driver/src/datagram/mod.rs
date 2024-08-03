@@ -45,7 +45,7 @@ pub use with_segment_transition::{
 };
 pub use with_timeout::{DatagramWithTimeout, IntoDatagramWithTimeout};
 
-use crate::{defined::DEFAULT_TIMEOUT, firmware::operation::NullOp};
+use crate::{defined::DEFAULT_TIMEOUT, derive::SamplingConfig, firmware::operation::NullOp};
 use std::time::Duration;
 
 use crate::{
@@ -73,6 +73,11 @@ pub trait Datagram {
         tracing::debug!("Datagram");
     }
     // GRCOV_EXCL_STOP
+}
+
+pub trait WithSampling {
+    fn sampling_config_intensity(&self) -> Option<SamplingConfig>;
+    fn sampling_config_phase(&self) -> Option<SamplingConfig>;
 }
 
 pub struct CombinedOperationGenerator<O1, O2>
