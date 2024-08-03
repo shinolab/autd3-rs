@@ -1,33 +1,22 @@
-mod fixed_complition_time;
+mod fixed_complition_steps;
 mod fixed_update_rate;
 
-use std::{num::NonZeroU8, time::Duration};
+use std::num::NonZeroU8;
 
-pub use fixed_complition_time::FixedCompletionTime;
+pub use fixed_complition_steps::FixedCompletionSteps;
 pub use fixed_update_rate::FixedUpdateRate;
 
-use crate::{
-    defined::ULTRASOUND_PERIOD,
-    firmware::{
-        fpga::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
-        operation::SilencerTarget,
-    },
-};
+use crate::firmware::operation::SilencerTarget;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Silencer<T> {
     internal: T,
 }
 
-pub type SilencerFixedCompletionTime = Silencer<FixedCompletionTime>;
+pub type SilencerFixedCompletionTime = Silencer<FixedCompletionSteps>;
 pub type SilencerFixedUpdateRate = Silencer<FixedUpdateRate>;
 
 impl Silencer<()> {
-    pub const DEFAULT_COMPLETION_TIME_INTENSITY: Duration =
-        Duration::from_micros(25 * SILENCER_STEPS_INTENSITY_DEFAULT as u64);
-    pub const DEFAULT_COMPLETION_TIME_PHASE: Duration =
-        Duration::from_micros(25 * SILENCER_STEPS_PHASE_DEFAULT as u64);
-
     pub const fn from_update_rate(
         update_rate_intensity: NonZeroU8,
         update_rate_phase: NonZeroU8,
@@ -41,25 +30,25 @@ impl Silencer<()> {
         }
     }
 
-    pub const fn from_completion_time(
-        time_intensity: Duration,
-        time_phase: Duration,
-    ) -> Silencer<FixedCompletionTime> {
+    pub const fn from_completion_steps(
+        steps_intensity: NonZeroU8,
+        steps_phase: NonZeroU8,
+    ) -> Silencer<FixedCompletionSteps> {
         Silencer {
-            internal: FixedCompletionTime {
-                time_intensity,
-                time_phase,
+            internal: FixedCompletionSteps {
+                steps_intensity,
+                steps_phase,
                 strict_mode: true,
                 target: SilencerTarget::Intensity,
             },
         }
     }
 
-    pub const fn disable() -> Silencer<FixedCompletionTime> {
+    pub const fn disable() -> Silencer<FixedCompletionSteps> {
         Silencer {
-            internal: FixedCompletionTime {
-                time_intensity: ULTRASOUND_PERIOD,
-                time_phase: ULTRASOUND_PERIOD,
+            internal: FixedCompletionSteps {
+                steps_intensity: NonZeroU8::MIN,
+                steps_phase: NonZeroU8::MIN,
                 strict_mode: true,
                 target: SilencerTarget::Intensity,
             },
@@ -75,8 +64,8 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn disable() {
         let s = Silencer::disable();
-        assert_eq!(ULTRASOUND_PERIOD, s.completion_time_intensity());
-        assert_eq!(ULTRASOUND_PERIOD, s.completion_time_phase());
+        assert_eq!(1, s.completion_steps_intensity());
+        assert_eq!(1, s.completion_steps_phase());
         assert!(s.strict_mode());
         assert_eq!(SilencerTarget::Intensity, s.target());
     }
@@ -95,9 +84,14 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn from_completion_time() {
-        let s = Silencer::from_completion_time(Duration::from_secs(1), Duration::from_secs(1));
-        assert_eq!(Duration::from_secs(1), s.completion_time_intensity(),);
-        assert_eq!(Duration::from_secs(1), s.completion_time_phase());
+        let s = unsafe {
+            Silencer::from_completion_steps(
+                NonZeroU8::new_unchecked(1),
+                NonZeroU8::new_unchecked(2),
+            )
+        };
+        assert_eq!(1, s.completion_steps_intensity());
+        assert_eq!(2, s.completion_steps_phase());
         assert_eq!(SilencerTarget::Intensity, s.target());
     }
 }

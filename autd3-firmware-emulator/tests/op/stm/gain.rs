@@ -1,4 +1,7 @@
-use std::{collections::HashMap, num::NonZeroU16};
+use std::{
+    collections::HashMap,
+    num::{NonZeroU16, NonZeroU8},
+};
 
 use autd3_driver::{
     datagram::{
@@ -277,10 +280,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
         .with_segment(Segment::S0, true);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::from_completion_time(
-            Silencer::DEFAULT_COMPLETION_TIME_INTENSITY,
-            Silencer::DEFAULT_COMPLETION_TIME_PHASE,
-        );
+        let d = Silencer::default();
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = GainSTM::new(
@@ -297,9 +297,9 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
         .with_segment(Segment::S1, None);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::from_completion_time(
-            Silencer::DEFAULT_COMPLETION_TIME_INTENSITY,
-            Silencer::DEFAULT_COMPLETION_TIME_PHASE * 2,
+        let d = Silencer::from_completion_steps(
+            NonZeroU8::new(SILENCER_STEPS_INTENSITY_DEFAULT).unwrap(),
+            NonZeroU8::new(SILENCER_STEPS_PHASE_DEFAULT * 2).unwrap(),
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
