@@ -4,7 +4,9 @@ use std::{
 };
 
 use autd3_driver::{
-    datagram::{IntoDatagramWithSegmentTransition, Silencer, SwapSegment},
+    datagram::{
+        IntoDatagramWithSegmentTransition, Silencer, SilencerFixedCompletionSteps, SwapSegment,
+    },
     derive::*,
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
@@ -176,7 +178,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::default();
+        let d = SilencerFixedCompletionSteps::default();
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = TestModulation {

@@ -329,28 +329,31 @@ where
                     })
                     .await
                 }
-                Some(datagram::Datagram::Silencer(ref msg)) => match msg.config {
-                    Some(silencer::Config::FixedUpdateRate(ref msg)) => {
-                        autd.send(DatagramWithTimeoutAndParallelThreshold {
-                            datagram: autd3_driver::datagram::SilencerFixedUpdateRate::from_msg(
-                                msg,
-                            )?,
-                            timeout,
-                            parallel_threshold,
-                        })
-                        .await
+                Some(datagram::Datagram::Silencer(ref msg)) => {
+                    match msg.config {
+                        Some(silencer::Config::FixedUpdateRate(ref msg)) => {
+                            autd.send(DatagramWithTimeoutAndParallelThreshold {
+                                datagram:
+                                    autd3_driver::datagram::SilencerFixedUpdateRate::from_msg(msg)?,
+                                timeout,
+                                parallel_threshold,
+                            })
+                            .await
+                        }
+                        Some(silencer::Config::FixedCompletionSteps(ref msg)) => {
+                            autd.send(DatagramWithTimeoutAndParallelThreshold {
+                                datagram:
+                                    autd3_driver::datagram::SilencerFixedCompletionSteps::from_msg(
+                                        msg,
+                                    )?,
+                                timeout,
+                                parallel_threshold,
+                            })
+                            .await
+                        }
+                        None => return Err(AUTDProtoBufError::NotSupportedData.into()),
                     }
-                    Some(silencer::Config::FixedCompletionTime(ref msg)) => {
-                        autd.send(DatagramWithTimeoutAndParallelThreshold {
-                            datagram:
-                                autd3_driver::datagram::SilencerFixedCompletionTime::from_msg(msg)?,
-                            timeout,
-                            parallel_threshold,
-                        })
-                        .await
-                    }
-                    None => return Err(AUTDProtoBufError::NotSupportedData.into()),
-                },
+                }
                 Some(datagram::Datagram::Synchronize(ref msg)) => {
                     autd.send(DatagramWithTimeoutAndParallelThreshold {
                         datagram: autd3_driver::datagram::Synchronize::from_msg(msg)?,
