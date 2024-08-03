@@ -5,7 +5,10 @@ use std::{
 };
 
 use autd3_driver::{
-    datagram::{FociSTM, GainSTM, IntoDatagramWithSegmentTransition, Silencer, SwapSegment},
+    datagram::{
+        FociSTM, GainSTM, IntoDatagramWithSegmentTransition, Silencer,
+        SilencerFixedCompletionSteps, SwapSegment,
+    },
     defined::{mm, ControlPoint, ControlPoints, METER},
     derive::{Drive, LoopBehavior, Phase, SamplingConfig, Segment},
     error::AUTDInternalError,
@@ -177,7 +180,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
         };
         assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
 
-        let d = Silencer::default();
+        let d = SilencerFixedCompletionSteps::default();
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let stm = FociSTM::new(

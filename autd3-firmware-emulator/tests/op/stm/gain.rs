@@ -6,7 +6,7 @@ use std::{
 use autd3_driver::{
     datagram::{
         FociSTM, GainSTM, IntoDatagramWithSegment, IntoDatagramWithSegmentTransition, Silencer,
-        SwapSegment,
+        SilencerFixedCompletionSteps, SwapSegment,
     },
     defined::ControlPoint,
     derive::*,
@@ -280,7 +280,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
         .with_segment(Segment::S0, true);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::default();
+        let d = SilencerFixedCompletionSteps::default();
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = GainSTM::new(
