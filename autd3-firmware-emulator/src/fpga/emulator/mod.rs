@@ -31,7 +31,6 @@ impl FPGAEmulator {
     }
 
     pub(crate) fn init(&mut self) {
-        self.mem.init();
         self.mod_swapchain.init();
         self.stm_swapchain.init();
     }
