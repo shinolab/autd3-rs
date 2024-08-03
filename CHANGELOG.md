@@ -8,7 +8,7 @@
   - Remove `dynamic_freq` feature
 - `Controller::link` and `geometry` is now private. use `link()`, `link_mut()`, `geometry()`, and `geometry_mut()` instead
 - Unified `FociSTM` and `GainSTM` constructor to `new` and `new_nearest`
-- Remove `Silencer::from_completion_steps`, use `Silencer::from_completion_time` instead
+- Remove `Silencer::from_completion_time`, use `Silencer::from_completion_steps` instead
 - Change the maximum value of `LoopBehavior` to 65535 from 4294967295
 - Change base frequency of `SamplingConfig` to 40kHz from 20.48MHz
 - Change to use `NonZero<T>` for integer argment which should be non-zero
