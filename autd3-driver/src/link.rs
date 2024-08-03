@@ -13,7 +13,7 @@ mod internal {
     use super::*;
 
     #[async_trait::async_trait]
-    pub trait Link: Send + Sync {
+    pub trait Link: Send {
         async fn close(&mut self) -> Result<(), AUTDInternalError>;
 
         async fn update(&mut self, _geometry: &Geometry) -> Result<(), AUTDInternalError> {
@@ -77,7 +77,7 @@ mod internal {
 mod internal {
     use super::*;
 
-    pub trait Link: Send + Sync {
+    pub trait Link: Send {
         fn close(&mut self) -> impl std::future::Future<Output = Result<(), AUTDInternalError>>;
 
         fn update(

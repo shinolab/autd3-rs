@@ -12,9 +12,11 @@ use tonic::{Request, Response, Status};
 
 #[doc(hidden)]
 pub struct LightweightServer<
-    L: autd3_driver::link::LinkBuilder + Sync + 'static,
+    L: autd3_driver::link::LinkBuilder + 'static,
     F: Fn() -> L + Send + Sync + 'static,
-> {
+> where
+    L::L: Sync,
+{
     autd: RwLock<Option<autd3::Controller<L::L>>>,
     link: F,
 }
@@ -60,8 +62,10 @@ impl<D: autd3_driver::datagram::Datagram> autd3_driver::datagram::Datagram
     // GRCOV_EXCL_STOP
 }
 
-impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + Sync + 'static>
+impl<L: autd3_driver::link::LinkBuilder + 'static, F: Fn() -> L + Send + Sync + 'static>
     LightweightServer<L, F>
+where
+    L::L: Sync,
 {
     pub fn new(f: F) -> Self {
         LightweightServer {
@@ -171,8 +175,10 @@ impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + 
 }
 
 #[tonic::async_trait]
-impl<L: autd3_driver::link::LinkBuilder + Sync + 'static, F: Fn() -> L + Send + Sync + 'static>
+impl<L: autd3_driver::link::LinkBuilder + 'static, F: Fn() -> L + Send + Sync + 'static>
     ecat_light_server::EcatLight for LightweightServer<L, F>
+where
+    L::L: Sync,
 {
     async fn open(
         &self,
