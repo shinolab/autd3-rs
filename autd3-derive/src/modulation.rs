@@ -189,6 +189,21 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
         }
     };
 
+    let linetimes = generics.lifetimes();
+    let type_params = generics.type_params();
+    let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let with_sampling = quote! {
+            impl <#(#linetimes,)* #(#type_params,)*> WithSampling for #name #ty_generics #where_clause {
+                fn sampling_config_intensity(&self) -> Option<SamplingConfig> {
+                    Some(self.config)
+                }
+
+                fn sampling_config_phase(&self) -> Option<SamplingConfig> {
+                    None
+                }
+            }
+    };
+
     let generator = quote! {
         #prop
 
@@ -203,6 +218,8 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
         #cache
 
         #radiation_pressure
+
+        #with_sampling
     };
     generator.into()
 }

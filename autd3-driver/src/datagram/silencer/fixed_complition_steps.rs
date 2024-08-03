@@ -59,6 +59,24 @@ impl Silencer<FixedCompletionSteps> {
     }
 }
 
+impl Silencer<FixedCompletionSteps> {
+    pub fn is_valid<T: WithSampling>(&self, target: &T) -> bool {
+        if !self.internal.strict_mode {
+            return true;
+        }
+
+        let intensity_freq_div = target
+            .sampling_config_intensity()
+            .map_or(0xFFFF, |c| c.division());
+        let phase_freq_div = target
+            .sampling_config_phase()
+            .map_or(0xFFFF, |c| c.division());
+
+        self.completion_steps_intensity() as u16 <= intensity_freq_div
+            && self.completion_steps_phase() as u16 <= phase_freq_div
+    }
+}
+
 #[derive(Debug)]
 pub struct SilencerFixedCompletionStepsOpGenerator {
     steps_intensity: NonZeroU8,
@@ -114,6 +132,13 @@ impl Datagram for Silencer<FixedCompletionSteps> {
 
 #[cfg(test)]
 mod tests {
+    use std::{num::NonZeroU16, sync::Arc};
+
+    use gain::tests::TestGain;
+    use modulation::tests::TestModulation;
+
+    use crate::{derive::LoopBehavior, geometry::Vector3};
+
     use super::*;
 
     #[test]
@@ -128,5 +153,38 @@ mod tests {
         assert_eq!(1, d.completion_steps_intensity());
         assert_eq!(2, d.completion_steps_phase());
         assert!(d.strict_mode());
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(true, 10, 10, true, FociSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [Vector3::zeros()]).unwrap())]
+    #[case(false, 11, 10, true, FociSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [Vector3::zeros()]).unwrap())]
+    #[case(false, 10, 11, true, FociSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [Vector3::zeros()]).unwrap())]
+    #[case(true, 11, 10, false, FociSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [Vector3::zeros()]).unwrap())]
+    #[case(true, 10, 11, false, FociSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [Vector3::zeros()]).unwrap())]
+    #[case(true, 10, 10, true, GainSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [TestGain{ data: Default::default(), err: None }]).unwrap())]
+    #[case(false, 11, 10, true, GainSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [TestGain{ data: Default::default(), err: None }]).unwrap())]
+    #[case(false, 10, 11, true, GainSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [TestGain{ data: Default::default(), err: None }]).unwrap())]
+    #[case(true, 11, 10, false, GainSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [TestGain{ data: Default::default(), err: None }]).unwrap())]
+    #[case(true, 10, 11, false, GainSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [TestGain{ data: Default::default(), err: None }]).unwrap())]
+    #[case(true, 10, 10, true, TestModulation { config: SamplingConfig::new(NonZeroU16::new(10).unwrap()), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
+    #[case(false, 11, 10, true, TestModulation { config: SamplingConfig::new(NonZeroU16::new(10).unwrap()), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
+    #[case(true, 10, 11, true, TestModulation { config: SamplingConfig::new(NonZeroU16::new(10).unwrap()), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
+    #[case(true, 11, 10, false, TestModulation { config: SamplingConfig::new(NonZeroU16::new(10).unwrap()), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
+    #[case(true, 10, 11, false, TestModulation { config: SamplingConfig::new(NonZeroU16::new(10).unwrap()), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
+    #[cfg_attr(miri, ignore)]
+    fn is_valid(
+        #[case] expect: bool,
+        #[case] intensity: u8,
+        #[case] phase: u8,
+        #[case] strict: bool,
+        #[case] target: impl WithSampling,
+    ) {
+        let s = Silencer::from_completion_steps(
+            NonZeroU8::new(intensity).unwrap(),
+            NonZeroU8::new(phase).unwrap(),
+        )
+        .with_strict_mode(strict);
+        assert_eq!(expect, s.is_valid(&target));
     }
 }

@@ -22,6 +22,16 @@ pub struct FociSTM<const N: usize> {
     sampling_config: SamplingConfig,
 }
 
+impl<const N: usize> WithSampling for FociSTM<N> {
+    fn sampling_config_intensity(&self) -> Option<SamplingConfig> {
+        Some(self.sampling_config)
+    }
+
+    fn sampling_config_phase(&self) -> Option<SamplingConfig> {
+        Some(self.sampling_config)
+    }
+}
+
 impl<const N: usize> FociSTM<N> {
     pub fn new<C, F: IntoIterator<Item = C>>(
         config: impl Into<STMConfig>,
