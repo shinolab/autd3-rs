@@ -29,6 +29,12 @@ impl Silencer<FixedUpdateRate> {
     }
 }
 
+impl Silencer<FixedUpdateRate> {
+    pub fn is_valid<T: WithSampling>(&self, _target: &T) -> bool {
+        true
+    }
+}
+
 pub struct SilencerFixedUpdateRateOpGenerator {
     update_rate_intensity: NonZeroU8,
     update_rate_phase: NonZeroU8,
@@ -82,5 +88,38 @@ impl Datagram for Silencer<FixedUpdateRate> {
 impl Default for Silencer<FixedUpdateRate> {
     fn default() -> Self {
         Silencer::from_update_rate(NonZeroU8::MIN, NonZeroU8::MIN)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use gain::tests::TestGain;
+    use modulation::tests::TestModulation;
+
+    use crate::{derive::LoopBehavior, geometry::Vector3};
+
+    use super::*;
+
+    #[rstest::rstest]
+    #[test]
+    #[case(FociSTM::new(
+        SamplingConfig::FREQ_4K,
+        [Vector3::zeros(), Vector3::zeros()]
+    ).unwrap())]
+    #[case(GainSTM::new(
+        SamplingConfig::FREQ_4K,
+        [TestGain{ data: Default::default(), err: None }, TestGain{ data: Default::default(), err: None }]
+    ).unwrap())]
+    #[case(TestModulation {
+        buf: Arc::new(Vec::new()),
+        config: SamplingConfig::FREQ_4K,
+        loop_behavior: LoopBehavior::infinite(),
+    })]
+    #[cfg_attr(miri, ignore)]
+    fn is_valid(#[case] target: impl WithSampling) {
+        let s = Silencer::from_update_rate(NonZeroU8::new(1).unwrap(), NonZeroU8::new(1).unwrap());
+        assert!(s.is_valid(&target));
     }
 }

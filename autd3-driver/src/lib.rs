@@ -20,7 +20,7 @@ pub mod derive {
             GainOperationGenerator, GainTransform, IntoGainCache, IntoGainTransform,
             IntoModulationCache, IntoModulationTransform, IntoRadiationPressure, Modulation,
             ModulationCache, ModulationCalcResult, ModulationOperationGenerator,
-            ModulationProperty, ModulationTransform, RadiationPressure,
+            ModulationProperty, ModulationTransform, RadiationPressure, WithSampling,
         },
         defined::{rad, DEFAULT_TIMEOUT},
         error::AUTDInternalError,
