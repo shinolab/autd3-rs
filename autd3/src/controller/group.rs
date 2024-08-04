@@ -13,16 +13,16 @@ use crate::prelude::AUTDError;
 use super::Controller;
 use super::Link;
 
-pub struct GroupGuard<'a, K: PartialEq + Debug, L: Link, F: Fn(&Device) -> Option<K>> {
+pub struct GroupGuard<'a, K: PartialEq + Debug, L: Link> {
     pub(crate) cnt: &'a mut Controller<L>,
-    pub(crate) f: F,
+    pub(crate) keys: Vec<Option<K>>,
     pub(crate) timeout: Option<Duration>,
     pub(crate) parallel_threshold: Option<usize>,
     pub(crate) operations: Vec<(Box<dyn Operation>, Box<dyn Operation>)>,
 }
 
-impl<'a, K: PartialEq + Debug, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<'a, K, L, F> {
-    pub(crate) fn new(cnt: &'a mut Controller<L>, f: F) -> Self {
+impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
+    pub(crate) fn new(cnt: &'a mut Controller<L>, f: impl Fn(&Device) -> Option<K>) -> Self {
         Self {
             operations: (0..cnt.geometry.num_devices())
                 .map(|_| {
@@ -32,8 +32,12 @@ impl<'a, K: PartialEq + Debug, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
                     )
                 })
                 .collect(),
+            keys: cnt
+                .geometry
+                .devices()
+                .map(|dev| (f)(dev))
+                .collect::<Vec<_>>(),
             cnt,
-            f,
             timeout: None,
             parallel_threshold: None,
         }
@@ -46,17 +50,16 @@ impl<'a, K: PartialEq + Debug, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
         <<D as Datagram>::G as OperationGenerator>::O2: 'static,
     {
         let Self {
-            f,
+            keys,
             mut operations,
             cnt,
             timeout,
             parallel_threshold,
         } = self;
 
-        if !cnt
-            .geometry
-            .devices()
-            .any(|dev| (f)(dev).map(|kk| kk == k).unwrap_or(false))
+        if !keys
+            .iter()
+            .any(|key| key.as_ref().map(|kk| kk == &k).unwrap_or(false))
         {
             return Err(AUTDInternalError::UnkownKey(format!("{:?}", k)));
         }
@@ -76,10 +79,11 @@ impl<'a, K: PartialEq + Debug, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
 
         operations
             .iter_mut()
+            .zip(keys.iter())
             .zip(cnt.geometry.devices())
-            .for_each(|(op, dev)| {
-                if let Some(kk) = (f)(dev) {
-                    if kk == k {
+            .for_each(|((op, key), dev)| {
+                if let Some(kk) = key {
+                    if kk == &k {
                         tracing::debug!("Generate operation for device {}", dev.idx());
                         let (op1, op2) = generator.generate(dev);
                         *op = (Box::new(op1) as Box<_>, Box::new(op2) as Box<_>);
@@ -89,7 +93,7 @@ impl<'a, K: PartialEq + Debug, L: Link, F: Fn(&Device) -> Option<K>> GroupGuard<
 
         Ok(Self {
             cnt,
-            f,
+            keys,
             timeout,
             parallel_threshold,
             operations,
