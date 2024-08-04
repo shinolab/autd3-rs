@@ -8,8 +8,11 @@ pub use fixed_update_rate::FixedUpdateRate;
 
 use crate::firmware::operation::SilencerTarget;
 
-#[derive(Debug, Clone, Copy)]
+use derive_more::Deref;
+
+#[derive(Debug, Clone, Copy, Deref)]
 pub struct Silencer<T> {
+    #[deref]
     internal: T,
 }
 
@@ -36,8 +39,8 @@ impl Silencer<()> {
     ) -> Silencer<FixedCompletionSteps> {
         Silencer {
             internal: FixedCompletionSteps {
-                steps_intensity,
-                steps_phase,
+                completion_steps_intensity: steps_intensity,
+                completion_steps_phase: steps_phase,
                 strict_mode: true,
                 target: SilencerTarget::Intensity,
             },
@@ -47,8 +50,8 @@ impl Silencer<()> {
     pub const fn disable() -> Silencer<FixedCompletionSteps> {
         Silencer {
             internal: FixedCompletionSteps {
-                steps_intensity: NonZeroU8::MIN,
-                steps_phase: NonZeroU8::MIN,
+                completion_steps_intensity: NonZeroU8::MIN,
+                completion_steps_phase: NonZeroU8::MIN,
                 strict_mode: true,
                 target: SilencerTarget::Intensity,
             },
@@ -64,8 +67,8 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn disable() {
         let s = Silencer::disable();
-        assert_eq!(1, s.completion_steps_intensity());
-        assert_eq!(1, s.completion_steps_phase());
+        assert_eq!(1, s.completion_steps_intensity().get());
+        assert_eq!(1, s.completion_steps_phase().get());
         assert!(s.strict_mode());
         assert_eq!(SilencerTarget::Intensity, s.target());
     }
@@ -76,8 +79,8 @@ mod tests {
         let s = unsafe {
             Silencer::from_update_rate(NonZeroU8::new_unchecked(1), NonZeroU8::new_unchecked(2))
         };
-        assert_eq!(1, s.update_rate_intensity());
-        assert_eq!(2, s.update_rate_phase());
+        assert_eq!(1, s.update_rate_intensity().get());
+        assert_eq!(2, s.update_rate_phase().get());
         assert_eq!(SilencerTarget::Intensity, s.target());
     }
 
@@ -90,8 +93,8 @@ mod tests {
                 NonZeroU8::new_unchecked(2),
             )
         };
-        assert_eq!(1, s.completion_steps_intensity());
-        assert_eq!(2, s.completion_steps_phase());
+        assert_eq!(1, s.completion_steps_intensity().get());
+        assert_eq!(2, s.completion_steps_phase().get());
         assert_eq!(SilencerTarget::Intensity, s.target());
     }
 }
