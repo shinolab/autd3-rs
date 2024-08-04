@@ -48,16 +48,14 @@ impl Geometry {
     }
 
     pub fn devices(&self) -> impl Iterator<Item = &Device> {
-        self.devices.iter().filter(|dev| dev.enable)
+        self.iter().filter(|dev| dev.enable)
     }
 
     pub fn devices_mut(&mut self) -> impl Iterator<Item = &mut Device> {
-        self.version += 1;
-        self.devices.iter_mut().filter(|dev| dev.enable)
+        self.iter_mut().filter(|dev| dev.enable)
     }
 
     pub fn set_sound_speed(&mut self, c: f32) {
-        self.version += 1;
         self.devices_mut().for_each(|dev| dev.sound_speed = c);
     }
 
@@ -66,7 +64,6 @@ impl Geometry {
     }
 
     pub fn set_sound_speed_from_temp_with(&mut self, temp: f32, k: f32, r: f32, m: f32) {
-        self.version += 1;
         self.devices_mut()
             .for_each(|dev| dev.set_sound_speed_from_temp_with(temp, k, r, m));
     }
@@ -138,7 +135,10 @@ pub mod tests {
     #[case(2, vec![create_device(0, 249), create_device(0, 249)])]
     #[cfg_attr(miri, ignore)]
     fn test_num_devices(#[case] expected: usize, #[case] devices: Vec<Device>) {
-        assert_eq!(expected, Geometry::new(devices).num_devices());
+        let geometry = Geometry::new(devices);
+        assert_eq!(0, geometry.version());
+        assert_eq!(expected, geometry.num_devices());
+        assert_eq!(0, geometry.version());
     }
 
     #[rstest::rstest]
@@ -147,7 +147,10 @@ pub mod tests {
     #[case(498, vec![create_device(0, 249), create_device(0, 249)])]
     #[cfg_attr(miri, ignore)]
     fn test_num_transducers(#[case] expected: usize, #[case] devices: Vec<Device>) {
-        assert_eq!(expected, Geometry::new(devices).num_transducers());
+        let geometry = Geometry::new(devices);
+        assert_eq!(0, geometry.version());
+        assert_eq!(expected, geometry.num_transducers());
+        assert_eq!(0, geometry.version());
     }
 
     #[test]
@@ -181,7 +184,9 @@ pub mod tests {
         ]);
         let expect = geometry.iter().map(|dev| dev.center()).sum::<Vector3>()
             / geometry.num_devices() as f32;
+        assert_eq!(0, geometry.version());
         assert_approx_eq_vec3!(expect, geometry.center());
+        assert_eq!(0, geometry.version());
     }
 
     #[rstest::rstest]
@@ -217,7 +222,9 @@ pub mod tests {
                     .collect::<Vec<_>>(),
             ),
         ]);
+        assert_eq!(0, geometry.version());
         geometry.set_sound_speed_from_temp(temp);
+        assert_eq!(1, geometry.version());
         geometry.iter().for_each(|dev| {
             assert_approx_eq::assert_approx_eq!(expected * mm, dev.sound_speed, 1e-3);
         });
@@ -256,7 +263,9 @@ pub mod tests {
                     .collect::<Vec<_>>(),
             ),
         ]);
+        assert_eq!(0, geometry.version());
         geometry.set_sound_speed(temp * mm);
+        assert_eq!(1, geometry.version());
         geometry.iter().for_each(|dev| {
             assert_eq!(dev.sound_speed, temp * mm);
         });
