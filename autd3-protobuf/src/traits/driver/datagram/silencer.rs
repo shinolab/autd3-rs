@@ -1,4 +1,4 @@
-use std::num::NonZeroU8;
+use std::{num::NonZeroU8, time::Duration};
 
 use crate::{
     pb::*,
@@ -23,8 +23,8 @@ impl ToMessage for autd3_driver::datagram::SilencerFixedUpdateRate {
         Self::Message {
             datagram: Some(datagram::Datagram::Silencer(Silencer {
                 config: Some(silencer::Config::FixedUpdateRate(SilencerFixedUpdateRate {
-                    value_intensity: self.update_rate_intensity() as _,
-                    value_phase: self.update_rate_phase() as _,
+                    value_intensity: self.update_rate_intensity().get() as _,
+                    value_phase: self.update_rate_phase().get() as _,
                     target: Some(self.target() as u8 as _),
                 })),
             })),
@@ -47,16 +47,16 @@ impl FromMessage<SilencerFixedUpdateRate> for autd3_driver::datagram::SilencerFi
     }
 }
 
-impl ToMessage for autd3_driver::datagram::SilencerFixedCompletionSteps {
+impl ToMessage for autd3_driver::datagram::SilencerFixedCompletionTime {
     type Message = Datagram;
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram::Datagram::Silencer(Silencer {
-                config: Some(silencer::Config::FixedCompletionSteps(
-                    SilencerFixedCompletionSteps {
-                        value_intensity: self.completion_steps_intensity() as _,
-                        value_phase: self.completion_steps_phase() as _,
+                config: Some(silencer::Config::FixedCompletionTime(
+                    SilencerFixedCompletionTime {
+                        value_intensity: self.completion_time_intensity().as_micros() as _,
+                        value_phase: self.completion_time_phase().as_micros() as _,
                         strict_mode: Some(self.strict_mode()),
                         target: Some(self.target() as u8 as _),
                     },
@@ -68,13 +68,13 @@ impl ToMessage for autd3_driver::datagram::SilencerFixedCompletionSteps {
     }
 }
 
-impl FromMessage<SilencerFixedCompletionSteps>
-    for autd3_driver::datagram::SilencerFixedCompletionSteps
+impl FromMessage<SilencerFixedCompletionTime>
+    for autd3_driver::datagram::SilencerFixedCompletionTime
 {
-    fn from_msg(msg: &SilencerFixedCompletionSteps) -> Result<Self, AUTDProtoBufError> {
-        let mut s = autd3_driver::datagram::Silencer::from_completion_steps(
-            NonZeroU8::new(msg.value_intensity as _).ok_or(AUTDProtoBufError::DataParseError)?,
-            NonZeroU8::new(msg.value_phase as _).ok_or(AUTDProtoBufError::DataParseError)?,
+    fn from_msg(msg: &SilencerFixedCompletionTime) -> Result<Self, AUTDProtoBufError> {
+        let mut s = autd3_driver::datagram::Silencer::from_completion_time(
+            Duration::from_micros(msg.value_intensity as _),
+            Duration::from_micros(msg.value_phase as _),
         );
         if let Some(strict_mode) = msg.strict_mode {
             s = s.with_strict_mode(strict_mode);

@@ -19,7 +19,7 @@ message SilencerFixedUpdateRate {
       optional SilencerTarget target = 3;
 }
 
-message SilencerFixedCompletionSteps {
+message SilencerFixedCompletionTime {
       uint32 value_intensity = 1;
       uint32 value_phase = 2;
       optional SilencerTarget target = 4;
@@ -29,7 +29,7 @@ message SilencerFixedCompletionSteps {
 message Silencer {
     oneof config {
         SilencerFixedUpdateRate fixed_update_rate = 1;
-        SilencerFixedCompletionSteps fixed_completion_steps = 3;
+        SilencerFixedCompletionTime fixed_completion_time = 2;
     }
 }
 

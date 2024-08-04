@@ -1531,7 +1531,7 @@ pub struct SilencerFixedUpdateRate {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct SilencerFixedCompletionSteps {
+pub struct SilencerFixedCompletionTime {
     #[prost(uint32, tag = "1")]
     pub value_intensity: u32,
     #[prost(uint32, tag = "2")]
@@ -1544,7 +1544,7 @@ pub struct SilencerFixedCompletionSteps {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct Silencer {
-    #[prost(oneof = "silencer::Config", tags = "1, 3")]
+    #[prost(oneof = "silencer::Config", tags = "1, 2")]
     pub config: ::core::option::Option<silencer::Config>,
 }
 /// Nested message and enum types in `Silencer`.
@@ -1555,8 +1555,8 @@ pub mod silencer {
     pub enum Config {
         #[prost(message, tag = "1")]
         FixedUpdateRate(super::SilencerFixedUpdateRate),
-        #[prost(message, tag = "3")]
-        FixedCompletionSteps(super::SilencerFixedCompletionSteps),
+        #[prost(message, tag = "2")]
+        FixedCompletionTime(super::SilencerFixedCompletionTime),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]

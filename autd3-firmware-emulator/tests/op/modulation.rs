@@ -1,11 +1,8 @@
-use std::{
-    num::{NonZeroU16, NonZeroU8},
-    time::Duration,
-};
+use std::{num::NonZeroU16, time::Duration};
 
 use autd3_driver::{
     datagram::{
-        IntoDatagramWithSegmentTransition, Silencer, SilencerFixedCompletionSteps, SwapSegment,
+        IntoDatagramWithSegmentTransition, Silencer, SilencerFixedCompletionTime, SwapSegment,
     },
     derive::*,
     error::AUTDInternalError,
@@ -178,7 +175,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = SilencerFixedCompletionSteps::default();
+        let d = SilencerFixedCompletionTime::default();
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = TestModulation {
@@ -191,9 +188,9 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         .with_segment(Segment::S1, None);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::from_completion_steps(
-            NonZeroU8::new(SILENCER_STEPS_PHASE_DEFAULT * 2).unwrap(),
-            NonZeroU8::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
+        let d = Silencer::from_completion_time(
+            Silencer::DEFAULT_COMPLETION_TIME_PHASE * 2,
+            Silencer::DEFAULT_COMPLETION_TIME_PHASE,
         );
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 

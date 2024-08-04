@@ -17,6 +17,17 @@ pub enum AUTDInternalError {
     )]
     ModulationSizeOutOfRange(usize),
 
+    #[error(
+        "Silencer completion time ({0:?}) must be a multiple of {:?}",
+        ULTRASOUND_PERIOD
+    )]
+    InvalidSilencerCompletionTime(Duration),
+    #[error(
+        "Silencer completion time ({0:?}) is out of range ([{:?}, {:?}])",
+        ULTRASOUND_PERIOD,
+        ULTRASOUND_PERIOD * 256)]
+    SilencerCompletionTimeOutOfRange(Duration),
+
     #[error("Unknown group key: {0}")]
     UnkownKey(String),
 
