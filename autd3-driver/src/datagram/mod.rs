@@ -80,6 +80,16 @@ pub trait WithSampling {
     fn sampling_config_phase(&self) -> Option<SamplingConfig>;
 }
 
+#[cfg(feature = "capi")]
+impl WithSampling for (SamplingConfig, SamplingConfig) {
+    fn sampling_config_intensity(&self) -> Option<SamplingConfig> {
+        Some(self.0)
+    }
+    fn sampling_config_phase(&self) -> Option<SamplingConfig> {
+        Some(self.1)
+    }
+}
+
 pub struct CombinedOperationGenerator<O1, O2>
 where
     O1: OperationGenerator,
