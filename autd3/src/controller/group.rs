@@ -32,11 +32,7 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
                     )
                 })
                 .collect(),
-            keys: cnt
-                .geometry
-                .devices()
-                .map(|dev| (f)(dev))
-                .collect::<Vec<_>>(),
+            keys: cnt.geometry.devices().map(f).collect(),
             cnt,
             timeout: None,
             parallel_threshold: None,
