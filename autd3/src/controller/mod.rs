@@ -107,7 +107,7 @@ impl<L: Link> Controller<L> {
     pub(crate) async fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
         #[cfg(target_os = "windows")]
         unsafe {
-            tracing::debug!("Set timer resulution: {:?}", self.timer_resolution);
+            tracing::debug!("Set timer resolution: {:?}", self.timer_resolution);
             windows::Win32::Media::timeBeginPeriod(self.timer_resolution.get());
         }
         self.send((Clear::new(), Synchronize::new()).with_timeout(timeout))
