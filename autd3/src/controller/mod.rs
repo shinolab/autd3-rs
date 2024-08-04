@@ -59,7 +59,7 @@ impl<L: Link> Controller<L> {
     pub fn group<K: Hash + Eq + Clone + Debug, F: Fn(&Device) -> Option<K>>(
         &mut self,
         f: F,
-    ) -> GroupGuard<K, L, F> {
+    ) -> GroupGuard<K, L> {
         GroupGuard::new(self, f)
     }
 }
