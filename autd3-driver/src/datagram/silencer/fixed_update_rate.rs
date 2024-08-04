@@ -1,12 +1,17 @@
 use std::num::NonZeroU8;
 
+use autd3_derive::Builder;
+
 use crate::firmware::operation::SilencerFixedUpdateRateOp;
 use crate::{datagram::*, firmware::operation::SilencerTarget};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Builder)]
 pub struct FixedUpdateRate {
+    #[get]
     pub(super) update_rate_intensity: NonZeroU8,
+    #[get]
     pub(super) update_rate_phase: NonZeroU8,
+    #[get]
     pub(super) target: SilencerTarget,
 }
 
@@ -14,18 +19,6 @@ impl Silencer<FixedUpdateRate> {
     pub const fn with_target(mut self, target: SilencerTarget) -> Self {
         self.internal.target = target;
         self
-    }
-
-    pub const fn update_rate_intensity(&self) -> u8 {
-        self.internal.update_rate_intensity.get()
-    }
-
-    pub const fn update_rate_phase(&self) -> u8 {
-        self.internal.update_rate_phase.get()
-    }
-
-    pub const fn target(&self) -> SilencerTarget {
-        self.internal.target
     }
 }
 

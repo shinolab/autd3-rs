@@ -1,5 +1,7 @@
 use std::num::NonZeroU8;
 
+use autd3_derive::Builder;
+
 use crate::{
     datagram::*,
     firmware::{
@@ -8,11 +10,15 @@ use crate::{
     },
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Builder)]
 pub struct FixedCompletionSteps {
-    pub(super) steps_intensity: NonZeroU8,
-    pub(super) steps_phase: NonZeroU8,
+    #[get]
+    pub(super) completion_steps_intensity: NonZeroU8,
+    #[get]
+    pub(super) completion_steps_phase: NonZeroU8,
+    #[get]
     pub(super) strict_mode: bool,
+    #[get]
     pub(super) target: SilencerTarget,
 }
 
@@ -20,10 +26,12 @@ impl Default for Silencer<FixedCompletionSteps> {
     fn default() -> Self {
         Self {
             internal: FixedCompletionSteps {
-                steps_intensity: unsafe {
+                completion_steps_intensity: unsafe {
                     NonZeroU8::new_unchecked(SILENCER_STEPS_INTENSITY_DEFAULT)
                 },
-                steps_phase: unsafe { NonZeroU8::new_unchecked(SILENCER_STEPS_PHASE_DEFAULT) },
+                completion_steps_phase: unsafe {
+                    NonZeroU8::new_unchecked(SILENCER_STEPS_PHASE_DEFAULT)
+                },
                 strict_mode: true,
                 target: SilencerTarget::Intensity,
             },
@@ -41,22 +49,6 @@ impl Silencer<FixedCompletionSteps> {
         self.internal.target = target;
         self
     }
-
-    pub const fn completion_steps_intensity(&self) -> u8 {
-        self.internal.steps_intensity.get()
-    }
-
-    pub const fn completion_steps_phase(&self) -> u8 {
-        self.internal.steps_phase.get()
-    }
-
-    pub const fn strict_mode(&self) -> bool {
-        self.internal.strict_mode
-    }
-
-    pub const fn target(&self) -> SilencerTarget {
-        self.internal.target
-    }
 }
 
 impl Silencer<FixedCompletionSteps> {
@@ -72,8 +64,8 @@ impl Silencer<FixedCompletionSteps> {
             .sampling_config_phase()
             .map_or(0xFFFF, |c| c.division());
 
-        self.completion_steps_intensity() as u16 <= intensity_freq_div
-            && self.completion_steps_phase() as u16 <= phase_freq_div
+        self.completion_steps_intensity().get() as u16 <= intensity_freq_div
+            && self.completion_steps_phase().get() as u16 <= phase_freq_div
     }
 }
 
@@ -111,8 +103,8 @@ impl Datagram for Silencer<FixedCompletionSteps> {
 
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(SilencerFixedCompletionStepsOpGenerator {
-            steps_intensity: self.internal.steps_intensity,
-            steps_phase: self.internal.steps_phase,
+            steps_intensity: self.internal.completion_steps_intensity,
+            steps_phase: self.internal.completion_steps_phase,
             strict_mode: self.internal.strict_mode,
             target: self.internal.target,
         })
@@ -150,8 +142,8 @@ mod tests {
                 NonZeroU8::new_unchecked(2),
             )
         };
-        assert_eq!(1, d.completion_steps_intensity());
-        assert_eq!(2, d.completion_steps_phase());
+        assert_eq!(1, d.completion_steps_intensity().get());
+        assert_eq!(2, d.completion_steps_phase().get());
         assert!(d.strict_mode());
     }
 
