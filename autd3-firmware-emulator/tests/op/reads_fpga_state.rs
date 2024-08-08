@@ -1,4 +1,4 @@
-use std::{num::NonZeroU16, sync::Arc};
+use std::sync::Arc;
 
 use autd3_driver::{
     datagram::*,
@@ -60,7 +60,7 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = FociSTM::new(
-            SamplingConfig::new(NonZeroU16::MAX),
+            SamplingConfig::FREQ_MIN,
             (0..2).map(|_| ControlPoint::new(Vector3::zeros())),
         )?
         .with_segment(Segment::S1, Some(TransitionMode::Immediate));

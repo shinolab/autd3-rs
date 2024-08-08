@@ -189,10 +189,7 @@ impl<const N: usize> Operation for FociSTMOp<N> {
 
 #[cfg(test)]
 mod tests {
-    use std::{
-        mem::{offset_of, size_of},
-        num::NonZeroU16,
-    };
+    use std::mem::{offset_of, size_of};
 
     use rand::prelude::*;
 
@@ -247,7 +244,7 @@ mod tests {
 
         let mut op = FociSTMOp::new(
             Arc::new(points.clone()),
-            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(freq_div).unwrap(),
             LoopBehavior { rep },
             segment,
             Some(transition_mode),
@@ -338,7 +335,7 @@ mod tests {
 
         let mut op = FociSTMOp::new(
             Arc::new(points.clone()),
-            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(freq_div).unwrap(),
             LoopBehavior { rep },
             segment,
             Some(transition_mode),
@@ -431,7 +428,7 @@ mod tests {
 
         let mut op = FociSTMOp::new(
             Arc::new(points.clone()),
-            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(freq_div).unwrap(),
             LoopBehavior { rep },
             segment,
             None,

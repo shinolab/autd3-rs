@@ -243,7 +243,7 @@ impl Operation for GainSTMOp {
 
 #[cfg(test)]
 mod tests {
-    use std::{mem::offset_of, num::NonZeroU16};
+    use std::mem::offset_of;
 
     use rand::prelude::*;
 
@@ -304,7 +304,7 @@ mod tests {
                     .collect()
             },
             GainSTMMode::PhaseIntensityFull,
-            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(freq_div).unwrap(),
             LoopBehavior { rep },
             segment,
             Some(transition_mode),
@@ -456,7 +456,7 @@ mod tests {
                     .collect()
             },
             GainSTMMode::PhaseFull,
-            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(freq_div).unwrap(),
             LoopBehavior { rep },
             segment,
             None,
@@ -594,7 +594,7 @@ mod tests {
                     .collect()
             },
             GainSTMMode::PhaseHalf,
-            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(freq_div).unwrap(),
             LoopBehavior { rep },
             segment,
             Some(TransitionMode::SyncIdx),

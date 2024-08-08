@@ -1,4 +1,4 @@
-use std::num::{NonZeroU16, NonZeroU8};
+use std::num::NonZeroU8;
 
 use autd3_derive::Modulation;
 use autd3_driver::{
@@ -64,11 +64,9 @@ fn send_clear() -> anyhow::Result<()> {
 
         let d = FociSTM::new(
             SamplingConfig::new(
-                NonZeroU16::new(
-                    SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _,
-                )
-                .unwrap(),
-            ),
+                SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16,
+            )
+            .unwrap(),
             gen_random_foci::<1>(2),
         )?
         .with_segment(Segment::S0, Some(TransitionMode::Ext));

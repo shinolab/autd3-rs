@@ -27,12 +27,12 @@ impl TryFrom<(STMConfig, usize)> for SamplingConfig {
     fn try_from(value: (STMConfig, usize)) -> Result<Self, Self::Error> {
         let (config, size) = value;
         match config {
-            STMConfig::Freq(f) => (f * size as f32).try_into(),
+            STMConfig::Freq(f) => SamplingConfig::new(f * size as f32),
             STMConfig::Period(p) => {
                 if p.as_nanos() % size as u128 != 0 {
                     return Err(AUTDInternalError::STMPeriodInvalid(size, p));
                 }
-                (p / size as u32).try_into()
+                SamplingConfig::new(p / size as u32)
             }
             STMConfig::SamplingConfig(s) => Ok(s),
         }
