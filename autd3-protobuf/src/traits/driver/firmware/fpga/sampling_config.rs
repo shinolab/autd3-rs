@@ -1,5 +1,3 @@
-use std::num::NonZeroU16;
-
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
@@ -18,9 +16,7 @@ impl ToMessage for autd3_driver::firmware::fpga::SamplingConfig {
 
 impl FromMessage<SamplingConfig> for autd3_driver::firmware::fpga::SamplingConfig {
     fn from_msg(msg: &SamplingConfig) -> Result<Self, AUTDProtoBufError> {
-        Ok(Self::new(
-            NonZeroU16::new(msg.div as u16).ok_or(AUTDProtoBufError::DataParseError)?,
-        ))
+        Self::new(msg.div as u16).map_err(|_| AUTDProtoBufError::DataParseError)
     }
 }
 
@@ -33,7 +29,7 @@ mod tests {
     #[test]
     fn test_sampling_config() {
         let mut rng = rand::thread_rng();
-        let v = SamplingConfig::new(NonZeroU16::new(rng.gen_range(0x0001..=0xFFFF)).unwrap());
+        let v = SamplingConfig::new(rng.gen_range(0x0001..=0xFFFF)).unwrap();
         let msg = v.to_msg(None);
         let v2 = SamplingConfig::from_msg(&msg).unwrap();
         assert_eq!(v, v2);
