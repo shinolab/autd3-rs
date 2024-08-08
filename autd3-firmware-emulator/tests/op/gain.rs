@@ -1,4 +1,4 @@
-use std::{collections::HashMap, num::NonZeroU16};
+use std::collections::HashMap;
 
 use autd3_driver::{
     datagram::*, defined::ControlPoint, derive::*, firmware::cpu::TxDatagram, geometry::Vector3,
@@ -118,7 +118,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     send(
         &mut cpu,
         FociSTM::new(
-            SamplingConfig::new(NonZeroU16::MAX),
+            SamplingConfig::FREQ_MIN,
             (0..2).map(|_| ControlPoint::new(Vector3::zeros())),
         )?
         .with_segment(Segment::S0, Some(TransitionMode::Immediate)),
@@ -130,7 +130,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     send(
         &mut cpu,
         GainSTM::new(
-            SamplingConfig::new(NonZeroU16::MAX),
+            SamplingConfig::FREQ_MIN,
             (0..2)
                 .map(|_| {
                     geometry

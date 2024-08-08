@@ -31,6 +31,8 @@ pub enum AUTDInternalError {
     #[error("Unknown group key: {0}")]
     UnkownKey(String),
 
+    #[error("Sampling division ({0}) must not be zero")]
+    SamplingDivisionInvalid(u16),
     #[error("Sampling frequency ({0}) must divide {:?}", ULTRASOUND_FREQ)]
     SamplingFreqInvalid(Freq<u32>),
     #[error("Sampling frequency ({0}) must divide {:?}", ULTRASOUND_FREQ)]

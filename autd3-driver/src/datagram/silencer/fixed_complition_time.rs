@@ -131,7 +131,7 @@ impl Datagram for Silencer<FixedCompletionTime> {
 
 #[cfg(test)]
 mod tests {
-    use std::{num::NonZeroU16, sync::Arc};
+    use std::sync::Arc;
 
     use gain::tests::TestGain;
     use modulation::tests::TestModulation;
@@ -203,21 +203,21 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(true, 10, 10, true, FociSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [Vector3::zeros()]).unwrap())]
-    #[case(false, 11, 10, true, FociSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [Vector3::zeros()]).unwrap())]
-    #[case(false, 10, 11, true, FociSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [Vector3::zeros()]).unwrap())]
-    #[case(true, 11, 10, false, FociSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [Vector3::zeros()]).unwrap())]
-    #[case(true, 10, 11, false, FociSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [Vector3::zeros()]).unwrap())]
-    #[case(true, 10, 10, true, GainSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [TestGain{ data: Default::default(), err: None }]).unwrap())]
-    #[case(false, 11, 10, true, GainSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [TestGain{ data: Default::default(), err: None }]).unwrap())]
-    #[case(false, 10, 11, true, GainSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [TestGain{ data: Default::default(), err: None }]).unwrap())]
-    #[case(true, 11, 10, false, GainSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [TestGain{ data: Default::default(), err: None }]).unwrap())]
-    #[case(true, 10, 11, false, GainSTM::new(SamplingConfig::new(NonZeroU16::new(10).unwrap()), [TestGain{ data: Default::default(), err: None }]).unwrap())]
-    #[case(true, 10, 10, true, TestModulation { config: SamplingConfig::new(NonZeroU16::new(10).unwrap()), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
-    #[case(false, 11, 10, true, TestModulation { config: SamplingConfig::new(NonZeroU16::new(10).unwrap()), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
-    #[case(true, 10, 11, true, TestModulation { config: SamplingConfig::new(NonZeroU16::new(10).unwrap()), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
-    #[case(true, 11, 10, false, TestModulation { config: SamplingConfig::new(NonZeroU16::new(10).unwrap()), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
-    #[case(true, 10, 11, false, TestModulation { config: SamplingConfig::new(NonZeroU16::new(10).unwrap()), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
+    #[case(true, 10, 10, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
+    #[case(false, 11, 10, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
+    #[case(false, 10, 11, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
+    #[case(true, 11, 10, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
+    #[case(true, 10, 11, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
+    #[case(true, 10, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default(), err: None }]).unwrap())]
+    #[case(false, 11, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default(), err: None }]).unwrap())]
+    #[case(false, 10, 11, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default(), err: None }]).unwrap())]
+    #[case(true, 11, 10, false, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default(), err: None }]).unwrap())]
+    #[case(true, 10, 11, false, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default(), err: None }]).unwrap())]
+    #[case(true, 10, 10, true, TestModulation { config: SamplingConfig::new(10).unwrap(), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
+    #[case(false, 11, 10, true, TestModulation { config: SamplingConfig::new(10).unwrap(), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
+    #[case(true, 10, 11, true, TestModulation { config: SamplingConfig::new(10).unwrap(), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
+    #[case(true, 11, 10, false, TestModulation { config: SamplingConfig::new(10).unwrap(), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
+    #[case(true, 10, 11, false, TestModulation { config: SamplingConfig::new(10).unwrap(), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
     #[cfg_attr(miri, ignore)]
     fn is_valid(
         #[case] expect: bool,

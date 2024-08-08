@@ -154,10 +154,7 @@ impl Operation for ModulationOp {
 
 #[cfg(test)]
 mod tests {
-    use std::{
-        mem::{offset_of, size_of},
-        num::NonZeroU16,
-    };
+    use std::mem::{offset_of, size_of};
 
     use rand::prelude::*;
 
@@ -194,7 +191,7 @@ mod tests {
 
         let mut op = ModulationOp::new(
             Arc::new(buf.clone()),
-            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(freq_div).unwrap(),
             LoopBehavior { rep },
             segment,
             Some(transition_mode),

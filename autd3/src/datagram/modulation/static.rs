@@ -1,5 +1,3 @@
-use std::num::NonZeroU16;
-
 use autd3_driver::derive::*;
 
 #[derive(Modulation, Clone, Debug, PartialEq, Builder)]
@@ -13,17 +11,13 @@ pub struct Static {
 
 impl Static {
     pub const fn new() -> Self {
-        Self {
-            intensity: u8::MAX,
-            config: SamplingConfig::new(NonZeroU16::MAX),
-            loop_behavior: LoopBehavior::infinite(),
-        }
+        Self::with_intensity(u8::MAX)
     }
 
     pub const fn with_intensity(intensity: u8) -> Self {
         Self {
             intensity,
-            config: SamplingConfig::new(NonZeroU16::MAX),
+            config: SamplingConfig::FREQ_MIN,
             loop_behavior: LoopBehavior::infinite(),
         }
     }
@@ -57,7 +51,7 @@ mod tests {
     fn test_static_default() {
         let m = Static::default();
         assert_eq!(u8::MAX, m.intensity());
-        assert_eq!(SamplingConfig::new(NonZeroU16::MAX), m.sampling_config());
+        assert_eq!(SamplingConfig::FREQ_MIN, m.sampling_config());
         assert_eq!(Ok(Arc::new(vec![u8::MAX, u8::MAX])), m.calc());
     }
 
@@ -65,7 +59,7 @@ mod tests {
     fn test_static_with_intensity() {
         let m = Static::with_intensity(0x1F);
         assert_eq!(0x1F, m.intensity());
-        assert_eq!(SamplingConfig::new(NonZeroU16::MAX), m.sampling_config());
+        assert_eq!(SamplingConfig::FREQ_MIN, m.sampling_config());
         assert_eq!(Ok(Arc::new(vec![0x1F, 0x1F])), m.calc());
     }
 }
