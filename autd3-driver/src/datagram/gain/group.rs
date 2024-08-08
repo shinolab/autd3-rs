@@ -18,161 +18,48 @@ use bit_vec::BitVec;
 
 use super::GainCalcResult;
 
-pub trait GroupExec {
-    type K: Hash + Eq + Clone + Debug;
-    type FK: Fn(&Transducer) -> Option<Self::K>;
-    type F: Fn(&Device) -> Self::FK;
-
-    #[allow(clippy::type_complexity)]
-    fn exec(
-        gain_map: HashMap<Self::K, Vec<Box<dyn Fn(&Transducer) -> Drive + Send + Sync>>>,
-        f: &Self::F,
-        geometry: &Geometry,
-        result: &[Vec<Drive>],
-    ) -> Result<(), AUTDInternalError>;
-}
-
-pub struct Serial<K, FK, F>
-where
-    K: Hash + Eq + Clone + Debug,
-    FK: Fn(&Transducer) -> Option<K>,
-    F: Fn(&Device) -> FK,
-{
-    _phantom: std::marker::PhantomData<(K, FK, F)>,
-}
-
-impl<K, FK, F> GroupExec for Serial<K, FK, F>
-where
-    K: Hash + Eq + Clone + Debug,
-    FK: Fn(&Transducer) -> Option<K>,
-    F: Fn(&Device) -> FK,
-{
-    type K = K;
-    type FK = FK;
-    type F = F;
-
-    fn exec(
-        gain_map: HashMap<K, Vec<Box<dyn Fn(&Transducer) -> Drive + Send + Sync>>>,
-        f: &F,
-        geometry: &Geometry,
-        result: &[Vec<Drive>],
-    ) -> Result<(), AUTDInternalError> {
-        gain_map
-            .iter()
-            // .par_iter()
-            .try_for_each(|(k, g)| {
-                geometry
-                    .devices()
-                    .zip(g.iter())
-                    .zip(result.iter())
-                    .for_each(|((dev, g), result)| {
-                        let f = (f)(dev);
-                        let r = result.as_ptr() as *mut Drive;
-                        dev.iter().for_each(|tr| {
-                            if let Some(kk) = f(tr) {
-                                if &kk == k {
-                                    unsafe {
-                                        r.add(tr.idx()).write(g(tr));
-                                    }
-                                }
-                            }
-                        })
-                    });
-                Ok(())
-            })
-    }
-}
-
-pub struct Parallel<K, FK, F>
+#[derive(Gain, Builder)]
+pub struct Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync,
     FK: Fn(&Transducer) -> Option<K> + Send + Sync,
     F: Fn(&Device) -> FK + Send + Sync,
 {
-    _phantom: std::marker::PhantomData<(K, FK, F)>,
+    f: F,
+    gain_map: HashMap<K, Box<dyn Gain + Send + Sync>>,
+    #[get]
+    #[set]
+    parallel: bool,
 }
 
-impl<K, FK, F> GroupExec for Parallel<K, FK, F>
+impl<K, FK, F> Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync,
     FK: Fn(&Transducer) -> Option<K> + Send + Sync,
     F: Fn(&Device) -> FK + Send + Sync,
-{
-    type K = K;
-    type FK = FK;
-    type F = F;
-
-    fn exec(
-        gain_map: HashMap<K, Vec<Box<dyn Fn(&Transducer) -> Drive + Send + Sync>>>,
-        f: &F,
-        geometry: &Geometry,
-        result: &[Vec<Drive>],
-    ) -> Result<(), AUTDInternalError> {
-        gain_map.par_iter().try_for_each(|(k, g)| {
-            geometry
-                .devices()
-                .zip(g.iter())
-                .zip(result.iter())
-                .for_each(|((dev, g), result)| {
-                    let f = (f)(dev);
-                    let r = result.as_ptr() as *mut Drive;
-                    dev.iter().for_each(|tr| {
-                        if let Some(kk) = f(tr) {
-                            if &kk == k {
-                                unsafe {
-                                    r.add(tr.idx()).write(g(tr));
-                                }
-                            }
-                        }
-                    })
-                });
-            Ok(())
-        })
-    }
-}
-
-#[derive(Gain)]
-pub struct Group<E: GroupExec> {
-    f: E::F,
-    gain_map: HashMap<E::K, Box<dyn Gain + Send + Sync>>,
-}
-
-impl<K, FK, F> Group<Serial<K, FK, F>>
-where
-    K: Hash + Eq + Clone + Debug,
-    FK: Fn(&Transducer) -> Option<K>,
-    F: Fn(&Device) -> FK,
 {
     pub fn new(f: F) -> Self {
         Group {
             f,
             gain_map: HashMap::new(),
+            parallel: false,
         }
     }
 }
 
-impl<K, FK, F> Group<Parallel<K, FK, F>>
+impl<K, FK, F> Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync,
     FK: Fn(&Transducer) -> Option<K> + Send + Sync,
     F: Fn(&Device) -> FK + Send + Sync,
 {
-    pub fn with_parallel(f: F) -> Self {
-        Group {
-            f,
-            gain_map: HashMap::new(),
-        }
-    }
-}
-
-impl<E: GroupExec> Group<E> {
-    pub fn set(mut self, key: E::K, gain: impl Gain + Send + Sync + 'static) -> Self {
+    pub fn set(mut self, key: K, gain: impl Gain + Send + Sync + 'static) -> Self {
         self.gain_map.insert(key, Box::new(gain));
         self
     }
 
-    fn get_filters(&self, geometry: &Geometry) -> HashMap<E::K, HashMap<usize, BitVec<u32>>> {
-        let mut filters: HashMap<E::K, HashMap<usize, BitVec<u32>>> = HashMap::new();
+    fn get_filters(&self, geometry: &Geometry) -> HashMap<K, HashMap<usize, BitVec<u32>>> {
+        let mut filters: HashMap<K, HashMap<usize, BitVec<u32>>> = HashMap::new();
         geometry.devices().for_each(|dev| {
             dev.iter().for_each(|tr| {
                 if let Some(key) = (self.f)(dev)(tr) {
@@ -200,7 +87,12 @@ impl<E: GroupExec> Group<E> {
     }
 }
 
-impl<E: GroupExec> Gain for Group<E> {
+impl<K, FK, F> Gain for Group<K, FK, F>
+where
+    K: Hash + Eq + Clone + Debug + Send + Sync,
+    FK: Fn(&Transducer) -> Option<K> + Send + Sync,
+    F: Fn(&Device) -> FK + Send + Sync,
+{
     fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         let mut filters = self.get_filters(geometry);
 
@@ -224,7 +116,53 @@ impl<E: GroupExec> Gain for Group<E> {
             .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?;
 
         let f = &self.f;
-        E::exec(gain_map, f, geometry, &result)?;
+        if self.parallel {
+            gain_map
+                .par_iter()
+                .try_for_each(|(k, g)| -> Result<(), AUTDInternalError> {
+                    geometry
+                        .devices()
+                        .zip(g.iter())
+                        .zip(result.iter())
+                        .for_each(|((dev, g), result)| {
+                            let f = (f)(dev);
+                            let r = result.as_ptr() as *mut Drive;
+                            dev.iter().for_each(|tr| {
+                                if let Some(kk) = f(tr) {
+                                    if &kk == k {
+                                        unsafe {
+                                            r.add(tr.idx()).write(g(tr));
+                                        }
+                                    }
+                                }
+                            })
+                        });
+                    Ok(())
+                })?;
+        } else {
+            gain_map
+                .iter()
+                .try_for_each(|(k, g)| -> Result<(), AUTDInternalError> {
+                    geometry
+                        .devices()
+                        .zip(g.iter())
+                        .zip(result.iter())
+                        .for_each(|((dev, g), result)| {
+                            let f = (f)(dev);
+                            let r = result.as_ptr() as *mut Drive;
+                            dev.iter().for_each(|tr| {
+                                if let Some(kk) = f(tr) {
+                                    if &kk == k {
+                                        unsafe {
+                                            r.add(tr.idx()).write(g(tr));
+                                        }
+                                    }
+                                }
+                            })
+                        });
+                    Ok(())
+                })?;
+        }
 
         let drives_cache = geometry
             .devices()
@@ -341,7 +279,7 @@ mod tests {
         let g1 = TestGain::new(|_| |_| d1, &geometry);
         let g2 = TestGain::new(|_| |_| d2, &geometry);
 
-        let gain = Group::with_parallel(|dev| {
+        let gain = Group::new(|dev| {
             let dev_idx = dev.idx();
             move |tr| match (dev_idx, tr.idx()) {
                 (0, 0..=99) => Some("null"),
@@ -351,6 +289,7 @@ mod tests {
                 _ => None,
             }
         })
+        .with_parallel(true)
         .set("test", g1)
         .set("test2", g2);
 
