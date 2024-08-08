@@ -1,4 +1,4 @@
-use std::{num::NonZeroU16, time::Duration};
+use std::time::Duration;
 
 use autd3_driver::{
     datagram::{
@@ -99,7 +99,7 @@ fn send_mod(
     );
     let d = TestModulation {
         buf: Arc::new(m.clone()),
-        config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+        config: SamplingConfig::new(freq_div).unwrap(),
         loop_behavior,
     }
     .with_segment(segment, transition_mode);
@@ -130,7 +130,7 @@ fn swap_mod_segmemt() -> anyhow::Result<()> {
     let freq_div = SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16;
     let d = TestModulation {
         buf: Arc::new(m.clone()),
-        config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+        config: SamplingConfig::new(freq_div).unwrap(),
         loop_behavior: LoopBehavior::infinite(),
     }
     .with_segment(Segment::S1, None);
@@ -155,7 +155,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
     {
         let d = TestModulation {
             buf: Arc::new((0..2).map(|_| u8::MAX).collect()),
-            config: SamplingConfig::new(NonZeroU16::new(1).unwrap()),
+            config: SamplingConfig::FREQ_40K,
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
@@ -169,7 +169,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
     {
         let d = TestModulation {
             buf: Arc::new((0..2).map(|_| u8::MAX).collect()),
-            config: SamplingConfig::new(NonZeroU16::MAX),
+            config: SamplingConfig::FREQ_MIN,
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
@@ -180,9 +180,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
 
         let d = TestModulation {
             buf: Arc::new((0..2).map(|_| u8::MAX).collect()),
-            config: SamplingConfig::new(
-                NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT as _).unwrap(),
-            ),
+            config: SamplingConfig::new(SILENCER_STEPS_PHASE_DEFAULT as u16).unwrap(),
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_segment(Segment::S1, None);

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, num::NonZeroU16};
+use std::collections::HashMap;
 
 use autd3_driver::{
     datagram::{
@@ -73,7 +73,7 @@ fn send_gain_stm_phase_intensity_full(
         SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _..=u16::MAX,
     );
     let d = GainSTM::new(
-        SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+        SamplingConfig::new(freq_div).unwrap(),
         bufs.iter().map(|buf| TestGain { buf: buf.clone() }),
     )?
     .with_loop_behavior(loop_behavior)
@@ -122,11 +122,9 @@ fn send_gain_stm_phase_full(#[case] n: usize) -> anyhow::Result<()> {
     let transition_mode = TransitionMode::Ext;
     let d = GainSTM::new(
         SamplingConfig::new(
-            NonZeroU16::new(
-                SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _,
-            )
-            .unwrap(),
-        ),
+            SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16,
+        )
+        .unwrap(),
         bufs.iter().map(|buf| TestGain { buf: buf.clone() }),
     )?
     .with_mode(GainSTMMode::PhaseFull)
@@ -183,11 +181,9 @@ fn send_gain_stm_phase_half(#[case] n: usize) -> anyhow::Result<()> {
         let transition_mode = TransitionMode::GPIO(gpio);
         let d = GainSTM::new(
             SamplingConfig::new(
-                NonZeroU16::new(
-                    SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _,
-                )
-                .unwrap(),
-            ),
+                SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16,
+            )
+            .unwrap(),
             bufs.iter().map(|buf| TestGain { buf: buf.clone() }),
         )?
         .with_mode(GainSTMMode::PhaseHalf)
@@ -227,7 +223,7 @@ fn change_gain_stm_segment() -> anyhow::Result<()> {
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
     let d = GainSTM::new(
-        SamplingConfig::new(NonZeroU16::MAX),
+        SamplingConfig::FREQ_MIN,
         gen_random_buf(2, &geometry)
             .into_iter()
             .map(|buf| TestGain { buf: buf.clone() }),
@@ -282,11 +278,9 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
 
         let d = GainSTM::new(
             SamplingConfig::new(
-                NonZeroU16::new(
-                    SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _,
-                )
-                .unwrap(),
-            ),
+                SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16,
+            )
+            .unwrap(),
             gen_random_buf(2, &geometry)
                 .into_iter()
                 .map(|buf| TestGain { buf: buf.clone() }),
@@ -336,7 +330,7 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
         let segment = Segment::S1;
         let transition_mode = TransitionMode::Ext;
         let d = FociSTM::new(
-            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(freq_div).unwrap(),
             (0..2).map(|_| ControlPoint::new(Vector3::zeros())),
         )?
         .with_loop_behavior(loop_behaviour)
@@ -372,7 +366,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
     // segment 0 to 0
     {
         let d = GainSTM::new(
-            SamplingConfig::new(NonZeroU16::MAX),
+            SamplingConfig::FREQ_MIN,
             gen_random_buf(2, &geometry)
                 .into_iter()
                 .map(|buf| TestGain { buf: buf.clone() }),
@@ -387,7 +381,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
     // segment 0 to 1 immidiate
     {
         let d = GainSTM::new(
-            SamplingConfig::new(NonZeroU16::MAX),
+            SamplingConfig::FREQ_MIN,
             gen_random_buf(2, &geometry)
                 .into_iter()
                 .map(|buf| TestGain { buf: buf.clone() }),
@@ -403,7 +397,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
     // Infinite but SyncIdx
     {
         let d = GainSTM::new(
-            SamplingConfig::new(NonZeroU16::MAX),
+            SamplingConfig::FREQ_MIN,
             gen_random_buf(2, &geometry)
                 .into_iter()
                 .map(|buf| TestGain { buf: buf.clone() }),
@@ -430,7 +424,7 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
 
     let bufs = gen_random_buf(2, &geometry);
     let d = GainSTM::new(
-        SamplingConfig::new(NonZeroU16::MAX),
+        SamplingConfig::FREQ_MIN,
         bufs.iter().map(|buf| TestGain { buf: buf.clone() }),
     )?
     .with_segment(Segment::S0, Some(TransitionMode::Immediate));

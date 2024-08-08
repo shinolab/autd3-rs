@@ -1,4 +1,4 @@
-use std::{collections::HashMap, num::NonZeroU16, time::Duration};
+use std::{collections::HashMap, time::Duration};
 
 use autd3_driver::{
     datagram::{
@@ -74,12 +74,9 @@ fn test_send_foci_stm(
     );
     let foci = gen_random_foci::<1>(n);
 
-    let stm = FociSTM::new(
-        SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
-        foci.clone(),
-    )?
-    .with_loop_behavior(loop_behavior)
-    .with_segment(segment, transition_mode);
+    let stm = FociSTM::new(SamplingConfig::new(freq_div).unwrap(), foci.clone())?
+        .with_loop_behavior(loop_behavior)
+        .with_segment(segment, transition_mode);
 
     assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
 
@@ -130,12 +127,9 @@ fn change_foci_stm_segment() -> anyhow::Result<()> {
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
 
-    let stm = FociSTM::new(
-        SamplingConfig::new(NonZeroU16::MAX),
-        gen_random_foci::<1>(2),
-    )?
-    .with_loop_behavior(LoopBehavior::infinite())
-    .with_segment(Segment::S1, None);
+    let stm = FociSTM::new(SamplingConfig::FREQ_MIN, gen_random_foci::<1>(2))?
+        .with_loop_behavior(LoopBehavior::infinite())
+        .with_segment(Segment::S1, None);
 
     assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
     assert!(!cpu.fpga().is_stm_gain_mode(Segment::S1));
@@ -181,11 +175,9 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
 
         let stm = FociSTM::new(
             SamplingConfig::new(
-                NonZeroU16::new(
-                    SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _,
-                )
-                .unwrap(),
-            ),
+                SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16,
+            )
+            .unwrap(),
             gen_random_foci::<1>(2),
         )?
         .with_loop_behavior(LoopBehavior::infinite())
@@ -238,7 +230,7 @@ fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
             })
             .collect();
         let stm = GainSTM::new(
-            SamplingConfig::new(NonZeroU16::MAX),
+            SamplingConfig::FREQ_MIN,
             bufs.iter().map(|buf| TestGain { buf: buf.clone() }),
         )?
         .with_segment(Segment::S1, Some(TransitionMode::Immediate));
@@ -272,11 +264,8 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
 
     // segment 0 to 0
     {
-        let stm = FociSTM::new(
-            SamplingConfig::new(NonZeroU16::MAX),
-            gen_random_foci::<1>(2),
-        )?
-        .with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
+        let stm = FociSTM::new(SamplingConfig::FREQ_MIN, gen_random_foci::<1>(2))?
+            .with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
         assert_eq!(
             Err(AUTDInternalError::InvalidTransitionMode),
             send(&mut cpu, stm, &geometry, &mut tx)
@@ -285,12 +274,9 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
 
     // segment 0 to 1 immidiate
     {
-        let stm = FociSTM::new(
-            SamplingConfig::new(NonZeroU16::MAX),
-            gen_random_foci::<1>(2),
-        )?
-        .with_loop_behavior(LoopBehavior::once())
-        .with_segment(Segment::S1, Some(TransitionMode::Immediate));
+        let stm = FociSTM::new(SamplingConfig::FREQ_MIN, gen_random_foci::<1>(2))?
+            .with_loop_behavior(LoopBehavior::once())
+            .with_segment(Segment::S1, Some(TransitionMode::Immediate));
 
         assert_eq!(
             Err(AUTDInternalError::InvalidTransitionMode),
@@ -300,11 +286,8 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
 
     // Infinite but SyncIdx
     {
-        let stm = FociSTM::new(
-            SamplingConfig::new(NonZeroU16::MAX),
-            gen_random_foci::<1>(2),
-        )?
-        .with_segment(Segment::S1, None);
+        let stm = FociSTM::new(SamplingConfig::FREQ_MIN, gen_random_foci::<1>(2))?
+            .with_segment(Segment::S1, None);
 
         assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
 
@@ -335,7 +318,7 @@ fn test_miss_transition_time(
 
     let transition_mode = TransitionMode::SysTime(DcSysTime::from_utc(transition_time).unwrap());
     let stm = FociSTM::new(
-        SamplingConfig::new(NonZeroU16::MAX),
+        SamplingConfig::FREQ_MIN,
         gen_random_foci::<1>(2).into_iter(),
     )?
     .with_loop_behavior(LoopBehavior::once())
@@ -370,12 +353,9 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
         let segment = Segment::S0;
         let transition_mode = TransitionMode::Immediate;
 
-        let stm = FociSTM::new(
-            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
-            foci.clone(),
-        )?
-        .with_loop_behavior(loop_behavior)
-        .with_segment(segment, Some(transition_mode));
+        let stm = FociSTM::new(SamplingConfig::new(freq_div).unwrap(), foci.clone())?
+            .with_loop_behavior(loop_behavior)
+            .with_segment(segment, Some(transition_mode));
 
         assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
 
