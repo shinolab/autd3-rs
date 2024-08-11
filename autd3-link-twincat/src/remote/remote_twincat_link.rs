@@ -26,13 +26,13 @@ pub struct RemoteTwinCAT {
 
 #[derive(Builder)]
 pub struct RemoteTwinCATBuilder {
-    #[get]
+    #[get(ref)]
     server_ams_net_id: String,
-    #[get]
-    #[set]
+    #[get(ref)]
+    #[set(into)]
     server_ip: String,
-    #[get]
-    #[set]
+    #[get(ref)]
+    #[set(into)]
     client_ams_net_id: String,
     #[get]
     #[set]

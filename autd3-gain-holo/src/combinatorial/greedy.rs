@@ -15,9 +15,9 @@ use rand::seq::SliceRandom;
 
 #[derive(Gain, Builder)]
 pub struct Greedy<D: Directivity> {
-    #[get]
+    #[get(ref)]
     foci: Vec<Vector3>,
-    #[get]
+    #[get(ref)]
     amps: Vec<Amplitude>,
     #[get]
     #[set]

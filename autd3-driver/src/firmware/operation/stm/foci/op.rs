@@ -96,8 +96,10 @@ impl<const N: usize> Operation for FociSTMOp<N> {
             .try_for_each(|(i, points)| {
                 let intensity = points.intensity();
                 let base_offset = points[0].offset();
-                points.points().iter().enumerate().try_for_each(
-                    |(j, p)| -> Result<_, AUTDInternalError> {
+                points
+                    .iter()
+                    .enumerate()
+                    .try_for_each(|(j, p)| -> Result<_, AUTDInternalError> {
                         let lp = device.to_local(p.point());
                         write_to_tx(
                             STMFocus::create(
@@ -113,8 +115,7 @@ impl<const N: usize> Operation for FociSTMOp<N> {
                                 + j * size_of::<STMFocus>()..],
                         );
                         Ok(())
-                    },
-                )
+                    })
             })?;
 
         self.sent += send_num;

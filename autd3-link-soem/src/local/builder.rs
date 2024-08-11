@@ -24,8 +24,8 @@ pub struct SOEMBuilder {
     #[get]
     #[set]
     pub(crate) sync_mode: SyncMode,
-    #[get]
-    #[set]
+    #[get(ref)]
+    #[set(into)]
     pub(crate) ifname: String,
     #[get]
     #[set]

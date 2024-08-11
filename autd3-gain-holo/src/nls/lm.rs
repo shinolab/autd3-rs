@@ -10,11 +10,10 @@ use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vec
 use bit_vec::BitVec;
 
 #[derive(Gain, Builder)]
-#[no_const]
 pub struct LM<D: Directivity, B: LinAlgBackend<D>> {
-    #[get]
+    #[get(ref)]
     foci: Vec<Vector3>,
-    #[get]
+    #[get(ref)]
     amps: Vec<Amplitude>,
     #[get]
     #[set]
@@ -28,8 +27,8 @@ pub struct LM<D: Directivity, B: LinAlgBackend<D>> {
     #[get]
     #[set]
     k_max: usize,
-    #[get]
-    #[set]
+    #[get(ref)]
+    #[set(no_const)]
     initial: Vec<f32>,
     #[get]
     #[set]
