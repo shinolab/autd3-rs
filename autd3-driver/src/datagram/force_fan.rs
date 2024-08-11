@@ -2,7 +2,7 @@ use crate::{datagram::*, derive::*, firmware::operation::ForceFanOp};
 
 #[derive(Builder)]
 pub struct ForceFan<F: Fn(&Device) -> bool> {
-    #[get]
+    #[get(ref)]
     f: F,
 }
 
