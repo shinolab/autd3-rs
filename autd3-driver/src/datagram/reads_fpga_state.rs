@@ -2,7 +2,7 @@ use crate::{datagram::*, derive::*, firmware::operation::ReadsFPGAStateOp};
 
 #[derive(Builder)]
 pub struct ReadsFPGAState<F: Fn(&Device) -> bool> {
-    #[get]
+    #[get(ref)]
     f: F,
 }
 

@@ -2,13 +2,13 @@ use autd3_driver::{derive::*, geometry::Vector3};
 
 #[derive(Gain, Clone, PartialEq, Debug, Builder)]
 pub struct Focus {
-    #[get]
+    #[get(ref)]
     pos: Vector3,
     #[get]
-    #[set]
+    #[set(into)]
     intensity: EmitIntensity,
     #[get]
-    #[set]
+    #[set(into)]
     phase_offset: Phase,
 }
 

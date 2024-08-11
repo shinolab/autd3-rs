@@ -24,7 +24,7 @@ pub fn modulation_derive(input: TokenStream) -> TokenStream {
     modulation::impl_mod_macro(ast)
 }
 
-#[proc_macro_derive(Builder, attributes(no_const, get, get_mut, set))]
+#[proc_macro_derive(Builder, attributes(get, set))]
 pub fn builder_derive(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
     builder::impl_builder_macro(ast)

@@ -11,9 +11,9 @@ use bit_vec::BitVec;
 
 #[derive(Gain, Builder)]
 pub struct GS<D: Directivity, B: LinAlgBackend<D>> {
-    #[get]
+    #[get(ref)]
     foci: Vec<Vector3>,
-    #[get]
+    #[get(ref)]
     amps: Vec<Amplitude>,
     #[get]
     #[set]

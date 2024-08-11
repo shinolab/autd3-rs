@@ -29,11 +29,9 @@ pub use group::GroupGuard;
 
 #[derive(Builder)]
 pub struct Controller<L: Link> {
-    #[get]
-    #[get_mut]
+    #[get(ref, ref_mut)]
     link: L,
-    #[get]
-    #[get_mut]
+    #[get(ref, ref_mut)]
     geometry: Geometry,
     tx_buf: TxDatagram,
     rx_buf: Vec<RxMessage>,

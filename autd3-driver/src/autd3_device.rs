@@ -6,10 +6,10 @@ use crate::{
 
 #[derive(Clone, Copy, Debug, Builder)]
 pub struct AUTD3 {
-    #[get]
+    #[get(ref)]
     position: Vector3,
-    #[get]
-    #[set]
+    #[get(ref)]
+    #[set(into)]
     rotation: UnitQuaternion,
 }
 

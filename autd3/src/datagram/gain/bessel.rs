@@ -6,17 +6,17 @@ use autd3_driver::{
 
 #[derive(Gain, Clone, PartialEq, Debug, Builder)]
 pub struct Bessel {
-    #[get]
+    #[get(ref)]
     pos: Vector3,
-    #[get]
+    #[get(ref)]
     dir: Vector3,
     #[get]
     theta: Angle,
     #[get]
-    #[set]
+    #[set(into)]
     intensity: EmitIntensity,
     #[get]
-    #[set]
+    #[set(into)]
     phase_offset: Phase,
 }
 
