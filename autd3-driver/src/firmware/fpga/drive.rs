@@ -3,7 +3,7 @@ use super::{EmitIntensity, Phase};
 use derive_more::Display;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Display)]
-#[display(fmt = "({}, {})", phase, intensity)]
+#[display("({}, {})", phase, intensity)]
 #[repr(C)]
 pub struct Drive {
     phase: Phase,

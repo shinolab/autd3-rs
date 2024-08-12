@@ -6,7 +6,7 @@ use derive_more::Display;
 
 #[derive(Debug, Display)]
 #[display(
-    fmt = "{} (State={:#04X}, StatusCode={:#04X})",
+    "{} (State={:#04X}, StatusCode={:#04X})",
     status,
     ec_state,
     al_status_code

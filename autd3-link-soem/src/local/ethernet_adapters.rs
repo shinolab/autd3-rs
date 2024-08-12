@@ -5,7 +5,7 @@ use std::{ffi::CStr, slice};
 use derive_more::{Deref, Display};
 
 #[derive(Clone, Display)]
-#[display(fmt = "{}, {}", name, desc)]
+#[display("{}, {}", name, desc)]
 pub struct EthernetAdapter {
     desc: String,
     name: String,

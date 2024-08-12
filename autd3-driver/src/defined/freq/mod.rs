@@ -13,7 +13,7 @@ pub trait Frequency:
 use derive_more::{Add, Display, Div, Mul, Sub};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Add, Div, Mul, Sub, Display)]
-#[display(fmt = "{} Hz", freq)]
+#[display("{} Hz", freq)]
 pub struct Freq<T: Copy> {
     pub(crate) freq: T,
 }
