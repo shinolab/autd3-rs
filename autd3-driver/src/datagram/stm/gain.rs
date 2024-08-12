@@ -3,7 +3,8 @@ use crate::{
     datagram::*,
     defined::Freq,
     derive::*,
-    firmware::{cpu::GainSTMMode, operation::GainSTMOp},
+    firmware::{cpu::GainSTMMode, fpga::Drive, operation::GainSTMOp},
+    geometry::Transducer,
 };
 
 use derive_more::{Deref, DerefMut};

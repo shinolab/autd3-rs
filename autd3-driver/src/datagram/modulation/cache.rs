@@ -9,9 +9,6 @@ use std::{
 use derive_more::Deref;
 
 #[derive(Modulation, Clone, Deref)]
-#[no_modulation_cache]
-#[no_radiation_pressure]
-#[no_modulation_transform]
 pub struct Cache<M: Modulation> {
     #[deref]
     m: M,
@@ -23,6 +20,12 @@ pub struct Cache<M: Modulation> {
 
 pub trait IntoCache<M: Modulation> {
     fn with_cache(self) -> Cache<M>;
+}
+
+impl<M: Modulation> IntoCache<M> for M {
+    fn with_cache(self) -> Cache<M> {
+        Cache::new(self)
+    }
 }
 
 impl<M: Modulation> Cache<M> {

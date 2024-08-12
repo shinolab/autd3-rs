@@ -1,10 +1,9 @@
-use autd3_driver::derive::EmitIntensity;
-
 use crate::{
     pb::*,
     traits::{FromMessage, ToMessage},
     AUTDProtoBufError,
 };
+use autd3_driver::firmware::fpga::EmitIntensity;
 
 impl ToMessage for autd3_gain_holo::EmissionConstraint {
     type Message = EmissionConstraint;
@@ -71,7 +70,7 @@ impl FromMessage<EmissionConstraint> for autd3_gain_holo::EmissionConstraint {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::derive::EmitIntensity;
+    use autd3_driver::firmware::fpga::EmitIntensity;
     use rand::Rng;
 
     #[test]

@@ -188,10 +188,9 @@ pub mod tests {
     use std::mem::size_of;
 
     use crate::{
-        derive::*,
         ethercat::EC_OUTPUT_FRAME_SIZE,
         firmware::cpu::{Header, TxDatagram},
-        geometry::{UnitQuaternion, Vector3},
+        geometry::{Transducer, UnitQuaternion, Vector3},
     };
 
     use super::*;

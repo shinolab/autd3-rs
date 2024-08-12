@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use autd3_driver::{
     defined::{Angle, Freq, PI},
     derive::*,
@@ -99,7 +101,7 @@ impl<S: SamplingMode> Modulation for Sine<S> {
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::defined::{kHz, Hz};
+    use autd3_driver::defined::{kHz, rad, Hz};
 
     use super::*;
 

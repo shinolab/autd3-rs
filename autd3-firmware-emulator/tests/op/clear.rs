@@ -1,4 +1,4 @@
-use std::num::NonZeroU8;
+use std::{num::NonZeroU8, sync::Arc};
 
 use autd3_derive::Modulation;
 use autd3_driver::{
@@ -7,7 +7,10 @@ use autd3_driver::{
     derive::*,
     firmware::{
         cpu::TxDatagram,
-        fpga::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
+        fpga::{
+            Drive, EmitIntensity, Phase, SILENCER_STEPS_INTENSITY_DEFAULT,
+            SILENCER_STEPS_PHASE_DEFAULT,
+        },
     },
 };
 use autd3_firmware_emulator::CPUEmulator;

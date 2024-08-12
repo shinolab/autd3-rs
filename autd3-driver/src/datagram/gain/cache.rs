@@ -18,8 +18,6 @@ use super::GainCalcResult;
 use derive_more::Deref;
 
 #[derive(Gain, Clone, Debug, Deref)]
-#[no_gain_cache]
-#[no_gain_transform]
 pub struct Cache<G: Gain> {
     #[deref]
     gain: G,
@@ -28,6 +26,12 @@ pub struct Cache<G: Gain> {
 
 pub trait IntoCache<G: Gain> {
     fn with_cache(self) -> Cache<G>;
+}
+
+impl<G: Gain> IntoCache<G> for G {
+    fn with_cache(self) -> Cache<G> {
+        Cache::new(self)
+    }
 }
 
 impl<G: Gain> Cache<G> {
@@ -92,7 +96,11 @@ mod tests {
         Arc,
     };
 
-    use crate::{derive::*, geometry::tests::create_geometry};
+    use crate::{
+        derive::*,
+        firmware::fpga::{EmitIntensity, Phase},
+        geometry::tests::create_geometry,
+    };
 
     #[test]
     #[cfg_attr(miri, ignore)]

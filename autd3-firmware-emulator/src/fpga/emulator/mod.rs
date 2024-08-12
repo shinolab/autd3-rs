@@ -1,10 +1,7 @@
 mod memory;
 mod swapchain;
 
-use autd3_driver::{
-    derive::{EmitIntensity, Segment},
-    ethercat::DcSysTime,
-};
+use autd3_driver::{derive::Segment, ethercat::DcSysTime, firmware::fpga::EmitIntensity};
 
 use memory::Memory;
 

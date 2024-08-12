@@ -1,4 +1,4 @@
-use autd3_driver::derive::*;
+use autd3_driver::{derive::*, firmware::fpga::Drive};
 
 #[derive(Gain, Default, Clone, PartialEq, Eq, Debug)]
 pub struct Null {}

@@ -4,21 +4,13 @@ mod modulation;
 
 use proc_macro::TokenStream;
 
-#[proc_macro_derive(Gain, attributes(no_gain_cache, no_gain_transform))]
+#[proc_macro_derive(Gain)]
 pub fn gain_derive(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
     gain::impl_gain_macro(ast)
 }
 
-#[proc_macro_derive(
-    Modulation,
-    attributes(
-        no_change,
-        no_modulation_cache,
-        no_modulation_transform,
-        no_radiation_pressure
-    )
-)]
+#[proc_macro_derive(Modulation, attributes(no_change))]
 pub fn modulation_derive(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
     modulation::impl_mod_macro(ast)

@@ -16,23 +16,29 @@ pub use async_trait::async_trait;
 pub mod derive {
     pub use crate::{
         datagram::{
-            Datagram, DatagramS, DatagramST, Gain, GainCache, GainCalcResult,
-            GainOperationGenerator, GainTransform, IntoGainCache, IntoGainTransform,
-            IntoModulationCache, IntoModulationTransform, IntoRadiationPressure, Modulation,
-            ModulationCache, ModulationCalcResult, ModulationOperationGenerator,
-            ModulationProperty, ModulationTransform, RadiationPressure, WithSampling,
+            Datagram, DatagramS, DatagramST, Gain, GainCalcResult, GainOperationGenerator,
+            Modulation, ModulationCalcResult, ModulationOperationGenerator, ModulationProperty,
         },
-        defined::{rad, DEFAULT_TIMEOUT},
+        defined::DEFAULT_TIMEOUT,
         error::AUTDInternalError,
-        firmware::fpga::{
-            Drive, EmitIntensity, LoopBehavior, Phase, SamplingConfig, Segment, TransitionMode,
-        },
-        geometry::{Device, Geometry, Transducer},
+        firmware::fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
+        geometry::Geometry,
     };
     pub use autd3_derive::{Builder, Gain, Modulation};
     pub use itertools::Itertools;
-    pub use std::collections::HashMap;
-    pub use std::sync::Arc;
     pub use tracing;
     pub use tynm;
+    // TODO@28.0.0: Remove followings
+    pub use crate::{
+        datagram::{
+            GainCache, GainTransform, IntoGainCache, IntoGainTransform, IntoModulationCache,
+            IntoModulationTransform, IntoRadiationPressure, ModulationCache, ModulationTransform,
+            RadiationPressure, WithSampling,
+        },
+        defined::rad,
+        firmware::fpga::{Drive, EmitIntensity, Phase},
+        geometry::{Device, Transducer},
+    };
+    pub use std::collections::HashMap;
+    pub use std::sync::Arc;
 }

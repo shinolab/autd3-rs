@@ -1,7 +1,14 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    datagram::*, defined::ControlPoint, derive::*, firmware::cpu::TxDatagram, geometry::Vector3,
+    datagram::*,
+    defined::ControlPoint,
+    derive::*,
+    firmware::{
+        cpu::TxDatagram,
+        fpga::{Drive, EmitIntensity, Phase},
+    },
+    geometry::Vector3,
 };
 use autd3_firmware_emulator::CPUEmulator;
 
