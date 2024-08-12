@@ -1,7 +1,7 @@
 use crate::{
     defined::mm,
     derive::*,
-    geometry::{IntoDevice, Matrix4, UnitQuaternion, Vector3, Vector4},
+    geometry::{Device, IntoDevice, Matrix4, Transducer, UnitQuaternion, Vector3, Vector4},
 };
 
 #[derive(Clone, Copy, Debug, Builder)]

@@ -1,6 +1,7 @@
 use autd3_driver::{
-    defined::Angle,
+    defined::{rad, Angle},
     derive::*,
+    firmware::fpga::{EmitIntensity, Phase},
     geometry::{UnitQuaternion, Vector3},
 };
 

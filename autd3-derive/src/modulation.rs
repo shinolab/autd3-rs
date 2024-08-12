@@ -3,7 +3,6 @@ use quote::quote;
 use syn::Meta;
 
 pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
-    let attrs = &input.attrs;
     let name = &input.ident;
     let generics = &input.generics;
 
@@ -135,75 +134,6 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
         }
     };
 
-    let linetimes = generics.lifetimes();
-    let type_params = generics.type_params();
-    let (_, ty_generics, where_clause) = generics.split_for_impl();
-    let transform = if attrs
-        .iter()
-        .any(|attr| attr.path().is_ident("no_modulation_transform"))
-    {
-        quote! {}
-    } else {
-        quote! {
-            impl <#(#linetimes,)* #(#type_params,)*> IntoModulationTransform<Self> for #name #ty_generics #where_clause {
-                fn with_transform<ModulationTransformF: Fn(usize, u8) -> u8>(self, f: ModulationTransformF) -> ModulationTransform<Self, ModulationTransformF> {
-                    ModulationTransform::new(self, f)
-                }
-            }
-        }
-    };
-
-    let linetimes = generics.lifetimes();
-    let type_params = generics.type_params();
-    let (_, ty_generics, where_clause) = generics.split_for_impl();
-    let cache = if attrs
-        .iter()
-        .any(|attr| attr.path().is_ident("no_modulation_cache"))
-    {
-        quote! {}
-    } else {
-        quote! {
-            impl <#(#linetimes,)* #(#type_params,)*> IntoModulationCache<Self> for #name #ty_generics #where_clause {
-                fn with_cache(self) -> ModulationCache<Self> {
-                    ModulationCache::new(self)
-                }
-            }
-        }
-    };
-
-    let linetimes = generics.lifetimes();
-    let type_params = generics.type_params();
-    let (_, ty_generics, where_clause) = generics.split_for_impl();
-    let radiation_pressure = if attrs
-        .iter()
-        .any(|attr| attr.path().is_ident("no_radiation_pressure"))
-    {
-        quote! {}
-    } else {
-        quote! {
-            impl <#(#linetimes,)* #(#type_params,)*> IntoRadiationPressure<Self> for #name #ty_generics #where_clause {
-                fn with_radiation_pressure(self) -> RadiationPressure<Self> {
-                    RadiationPressure::new(self)
-                }
-            }
-        }
-    };
-
-    let linetimes = generics.lifetimes();
-    let type_params = generics.type_params();
-    let (_, ty_generics, where_clause) = generics.split_for_impl();
-    let with_sampling = quote! {
-            impl <#(#linetimes,)* #(#type_params,)*> WithSampling for #name #ty_generics #where_clause {
-                fn sampling_config_intensity(&self) -> Option<SamplingConfig> {
-                    Some(self.config)
-                }
-
-                fn sampling_config_phase(&self) -> Option<SamplingConfig> {
-                    None
-                }
-            }
-    };
-
     let generator = quote! {
         #prop
 
@@ -213,13 +143,6 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
 
         #datagram_with_segment_transition
 
-        #transform
-
-        #cache
-
-        #radiation_pressure
-
-        #with_sampling
     };
     generator.into()
 }

@@ -31,7 +31,7 @@ where
 fn has_attr(field: &Field, ident: &str) -> bool {
     field.attrs.iter().any(|attr| match &attr.meta {
         Meta::List(list) => list.tokens.clone().into_iter().any(|token| match token {
-            TokenTree::Ident(i) => &i.to_string() == ident,
+            TokenTree::Ident(i) => i == ident,
             _ => false,
         }),
         _ => false,

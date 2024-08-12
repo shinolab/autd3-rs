@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use super::{sampling_mode::SamplingMode, sine::Sine};
 
 use autd3_driver::derive::*;
@@ -110,7 +112,7 @@ mod tests {
 
     use super::*;
 
-    use autd3_driver::{defined::Hz, defined::PI};
+    use autd3_driver::defined::{rad, Hz, PI};
 
     #[test]
     fn test() -> anyhow::Result<()> {

@@ -6,7 +6,10 @@ use crate::{
     Amplitude, Complex, HoloError, LinAlgBackend, Trans,
 };
 
-use autd3_driver::{acoustics::directivity::Directivity, derive::*, geometry::Vector3};
+use autd3_driver::{
+    acoustics::directivity::Directivity, derive::*, firmware::fpga::EmitIntensity,
+    geometry::Vector3,
+};
 use bit_vec::BitVec;
 
 #[derive(Gain, Builder)]
@@ -288,7 +291,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for LM<D, B> {
 #[cfg(test)]
 mod tests {
     use super::{super::super::NalgebraBackend, super::super::Pa, *};
-    use autd3_driver::{autd3_device::AUTD3, geometry::IntoDevice};
+    use autd3_driver::{autd3_device::AUTD3, firmware::fpga::Drive, geometry::IntoDevice};
 
     #[test]
     #[cfg_attr(miri, ignore)]

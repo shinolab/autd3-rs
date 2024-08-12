@@ -4,6 +4,7 @@ use std::{
     fs::File,
     io::{BufReader, Read},
     path::{Path, PathBuf},
+    sync::Arc,
 };
 
 use crate::error::AudioFileError;

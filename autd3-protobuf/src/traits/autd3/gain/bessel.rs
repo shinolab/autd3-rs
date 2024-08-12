@@ -46,8 +46,7 @@ impl FromMessage<Bessel> for autd3::gain::Bessel {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3::derive::rad;
-    use autd3_driver::{firmware::fpga::EmitIntensity, geometry::Vector3};
+    use autd3_driver::{defined::rad, firmware::fpga::EmitIntensity, geometry::Vector3};
     use rand::Rng;
 
     #[test]

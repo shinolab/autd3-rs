@@ -3,6 +3,7 @@ use autd3_driver::derive::*;
 use std::{
     fs::File,
     path::{Path, PathBuf},
+    sync::Arc,
 };
 
 use crate::error::AudioFileError;

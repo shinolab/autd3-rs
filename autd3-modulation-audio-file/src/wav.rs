@@ -1,7 +1,10 @@
 use autd3_driver::{defined::Hz, derive::*};
 use hound::SampleFormat;
 
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use crate::error::AudioFileError;
 

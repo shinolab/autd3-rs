@@ -6,7 +6,8 @@ use autd3_driver::{
     acoustics::{directivity::Directivity, propagate},
     defined::PI,
     derive::*,
-    geometry::Vector3,
+    firmware::fpga::{Drive, EmitIntensity, Phase},
+    geometry::{Transducer, Vector3},
 };
 
 use bit_vec::BitVec;

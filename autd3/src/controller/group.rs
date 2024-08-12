@@ -115,8 +115,9 @@ mod tests {
     use autd3_driver::{
         datagram::{GainSTM, SwapSegment},
         defined::Hz,
-        derive::{Drive, EmitIntensity, Modulation, Phase, Segment, TransitionMode},
+        derive::{Modulation, Segment, TransitionMode},
         error::AUTDInternalError,
+        firmware::fpga::{Drive, EmitIntensity, Phase},
     };
 
     use crate::{

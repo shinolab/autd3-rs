@@ -3,8 +3,6 @@ use std::sync::Arc;
 use crate::derive::*;
 
 #[derive(Modulation)]
-#[no_radiation_pressure]
-#[no_modulation_transform]
 pub struct RadiationPressure<M: Modulation> {
     m: M,
     #[no_change]
@@ -25,6 +23,12 @@ impl<M: Modulation> RadiationPressure<M> {
 
 pub trait IntoRadiationPressure<M: Modulation> {
     fn with_radiation_pressure(self) -> RadiationPressure<M>;
+}
+
+impl<M: Modulation> IntoRadiationPressure<M> for M {
+    fn with_radiation_pressure(self) -> RadiationPressure<M> {
+        RadiationPressure::new(self)
+    }
 }
 
 impl<M: Modulation> Modulation for RadiationPressure<M> {

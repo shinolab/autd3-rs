@@ -10,8 +10,8 @@ use autd3_driver::{
     firmware::{
         cpu::{GainSTMMode, TxDatagram},
         fpga::{
-            GPIOIn, GAIN_STM_BUF_SIZE_MAX, SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT,
+            Drive, EmitIntensity, GPIOIn, Phase, GAIN_STM_BUF_SIZE_MAX,
+            SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
         },
         operation::OperationHandler,
     },

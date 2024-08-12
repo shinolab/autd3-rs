@@ -25,7 +25,7 @@ impl FromMessage<EmitIntensity> for autd3_driver::firmware::fpga::EmitIntensity 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::derive::EmitIntensity;
+    use autd3_driver::firmware::fpga::EmitIntensity;
     use rand::Rng;
 
     #[test]

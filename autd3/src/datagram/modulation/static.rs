@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use autd3_driver::derive::*;
 
 #[derive(Modulation, Clone, Debug, PartialEq, Builder)]

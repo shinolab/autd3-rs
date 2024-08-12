@@ -1,4 +1,9 @@
-use autd3_driver::{derive::*, geometry::Vector3};
+use autd3_driver::{
+    defined::rad,
+    derive::*,
+    firmware::fpga::{EmitIntensity, Phase},
+    geometry::Vector3,
+};
 
 #[derive(Gain, Clone, PartialEq, Debug, Builder)]
 pub struct Plane {
