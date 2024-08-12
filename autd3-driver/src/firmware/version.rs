@@ -2,11 +2,11 @@ use derive_more::Display;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
 #[display(
-    fmt = "{}: CPU = {}, FPGA = {}{}",
+    "{}: CPU = {}, FPGA = {}{}",
     idx,
-    "self.cpu()",
-    "self.fpga()",
-    "if self.is_emulator() {\" [Emulator]\"} else { \"\"}"
+    self.cpu(),
+    self.fpga(),
+    if self.is_emulator() {" [Emulator]"} else { "" }
 )]
 pub struct FirmwareVersion {
     idx: usize,

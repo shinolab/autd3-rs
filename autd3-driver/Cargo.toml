@@ -24,7 +24,7 @@ rand = { workspace = true, optional = true }
 bitfield-struct = { workspace = true }
 rayon = { workspace = true }
 itertools = { workspace = true }
-derive_more = { workspace = true }
+derive_more = { workspace = true, features = ["add", "deref", "deref_mut", "display", "mul"] }
 tracing = { workspace = true }
 tynm = { workspace = true }
 

@@ -5,7 +5,7 @@ use crate::defined::{rad, Angle, Complex, PI};
 use derive_more::Display;
 
 #[derive(Clone, Copy, PartialEq, Eq, Display)]
-#[display(fmt = "{:#04X}", value)]
+#[display("{:#04X}", value)]
 #[repr(C)]
 pub struct Phase {
     value: u8,

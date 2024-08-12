@@ -14,7 +14,7 @@ use derive_more::Display;
 #[derivative(Debug)]
 #[derive(Modulation, Clone, PartialEq, Builder, Display)]
 #[display(
-    fmt = "Sine<{}> {{ {}, {}±{}, {:?}, {:?}, {:?} }}",
+    "Sine<{}> {{ {}, {}±{}, {:?}, {:?}, {:?} }}",
     "tynm::type_name::<S>()",
     freq,
     offset,
