@@ -1,7 +1,7 @@
 use derive_more::Display;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "{:#04X}", value)]
+#[display("{:#04X}", value)]
 #[repr(C)]
 pub struct EmitIntensity {
     value: u8,

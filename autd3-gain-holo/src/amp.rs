@@ -9,7 +9,7 @@ pub struct Pa;
 pub struct kPa;
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Div, Mul, Display)]
-#[display(fmt = "{:.2} Pa", value)]
+#[display("{:.2} Pa", value)]
 pub struct Amplitude {
     pub(crate) value: f32,
 }

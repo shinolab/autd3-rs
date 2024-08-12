@@ -7,7 +7,7 @@ use crate::{
 use derive_more::{Deref, DerefMut, Display};
 
 #[derive(Clone, Copy, Builder, PartialEq, Debug, Display)]
-#[display(fmt = "[({}, {}, {}), {}]", "point.x", "point.y", "point.z", offset)]
+#[display("[({}, {}, {}), {}]", point.x, point.y, point.z, offset)]
 #[repr(C)]
 pub struct ControlPoint {
     #[get(ref)]
@@ -40,7 +40,7 @@ impl From<&Vector3> for ControlPoint {
 }
 
 #[derive(Clone, Builder, PartialEq, Debug, Deref, DerefMut, Display)]
-#[display(fmt = "[[{}], {}]", "points.iter().join(\", \")", intensity)]
+#[display("[[{}], {}]", points.iter().join(", "), intensity)]
 #[repr(C)]
 pub struct ControlPoints<const N: usize> {
     #[deref]

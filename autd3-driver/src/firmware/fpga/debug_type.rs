@@ -11,15 +11,15 @@ pub enum DebugType<'a> {
     ForceFan,
     Sync,
     ModSegment,
-    #[display(fmt = "ModIdx({})", _0)]
+    #[display("ModIdx({})", _0)]
     ModIdx(u16),
     StmSegment,
-    #[display(fmt = "StmIdx({})", _0)]
+    #[display("StmIdx({})", _0)]
     StmIdx(u16),
     IsStmMode,
-    #[display(fmt = "PwmOut({})", "_0.idx()")]
+    #[display("PwmOut({})", _0.idx())]
     PwmOut(&'a Transducer),
-    #[display(fmt = "Direct({})", _0)]
+    #[display("Direct({})", _0)]
     Direct(bool),
 }
 

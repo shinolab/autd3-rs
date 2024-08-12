@@ -10,11 +10,11 @@ use derive_more::Display;
 #[derive(Debug, Clone, PartialEq, Display)]
 #[repr(u8)]
 pub enum Status {
-    #[display(fmt = "slave is in SAFE_OP + ERROR, attempting ack")]
+    #[display("slave is in SAFE_OP + ERROR, attempting ack")]
     Error,
-    #[display(fmt = "slave is lost")]
+    #[display("slave is lost")]
     Lost,
-    #[display(fmt = "slave is in SAFE_OP, change to OPERATIONAL")]
+    #[display("slave is in SAFE_OP, change to OPERATIONAL")]
     StateChanged,
 }
 
