@@ -1,4 +1,8 @@
-use crate::{derive::*, geometry::Vector3};
+use crate::{
+    derive::*,
+    firmware::fpga::{EmitIntensity, Phase},
+    geometry::Vector3,
+};
 
 use derive_more::{Deref, DerefMut, Display};
 

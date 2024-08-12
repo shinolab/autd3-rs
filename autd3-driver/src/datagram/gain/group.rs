@@ -204,7 +204,10 @@ mod tests {
 
     use super::{super::tests::TestGain, *};
 
-    use crate::geometry::tests::create_geometry;
+    use crate::{
+        firmware::fpga::{EmitIntensity, Phase},
+        geometry::tests::create_geometry,
+    };
 
     #[test]
     fn test() -> anyhow::Result<()> {

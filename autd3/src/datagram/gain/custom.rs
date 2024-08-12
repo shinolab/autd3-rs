@@ -1,4 +1,8 @@
-use autd3_driver::derive::*;
+use autd3_driver::{
+    derive::*,
+    firmware::fpga::Drive,
+    geometry::{Device, Transducer},
+};
 
 #[derive(Gain)]
 pub struct Custom<
@@ -40,6 +44,7 @@ impl<
 
 #[cfg(test)]
 mod tests {
+    use autd3_driver::firmware::fpga::{EmitIntensity, Phase};
     use rand::Rng;
 
     use crate::tests::create_geometry;

@@ -9,7 +9,6 @@ pub use autd3_derive::Gain;
 use super::GainCalcResult;
 
 #[derive(Gain)]
-#[no_gain_transform]
 pub struct Transform<
     G: Gain,
     D: Into<Drive>,
@@ -29,6 +28,19 @@ pub trait IntoTransform<G: Gain> {
         self,
         f: F,
     ) -> Transform<G, D, FT, F>;
+}
+
+impl<G: Gain> IntoTransform<G> for G {
+    fn with_transform<
+        D: Into<Drive>,
+        FT: Fn(&Transducer, Drive) -> D + Send + Sync + 'static,
+        F: Fn(&Device) -> FT,
+    >(
+        self,
+        f: F,
+    ) -> Transform<G, D, FT, F> {
+        Transform::new(self, f)
+    }
 }
 
 impl<
@@ -72,11 +84,16 @@ impl<
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use rand::Rng;
 
     use super::{super::tests::TestGain, *};
 
-    use crate::geometry::tests::create_geometry;
+    use crate::{
+        firmware::fpga::{EmitIntensity, Phase},
+        geometry::tests::create_geometry,
+    };
 
     #[test]
     #[cfg_attr(miri, ignore)]

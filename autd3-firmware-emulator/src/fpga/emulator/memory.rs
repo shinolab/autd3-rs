@@ -1,10 +1,10 @@
 use std::cell::{LazyCell, Ref, RefCell, RefMut};
 
 use autd3_driver::{
-    derive::{Drive, EmitIntensity, LoopBehavior, Phase, Segment, TransitionMode},
+    derive::{LoopBehavior, Segment, TransitionMode},
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::{
-        fpga::{GPIOIn, STMFocus},
+        fpga::{Drive, EmitIntensity, GPIOIn, Phase, STMFocus},
         operation::SilencerTarget,
     },
 };

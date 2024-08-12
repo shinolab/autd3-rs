@@ -224,7 +224,11 @@ impl<G: Gain> OperationGenerator for GainOperationGenerator<G> {
 pub mod tests {
     use super::*;
 
-    use crate::{derive::*, geometry::tests::create_geometry};
+    use crate::{
+        derive::*,
+        firmware::fpga::{EmitIntensity, Phase},
+        geometry::tests::create_geometry,
+    };
 
     #[derive(Gain, Clone)]
     pub struct TestGain {

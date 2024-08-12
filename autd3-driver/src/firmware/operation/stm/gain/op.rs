@@ -3,7 +3,7 @@
 use std::{iter::Peekable, mem::size_of};
 
 use crate::{
-    derive::{LoopBehavior, SamplingConfig, Transducer},
+    derive::{LoopBehavior, SamplingConfig},
     error::AUTDInternalError,
     firmware::{
         cpu::GainSTMMode,
@@ -13,7 +13,7 @@ use crate::{
         },
         operation::{write_to_tx, Operation, TypeTag},
     },
-    geometry::Device,
+    geometry::{Device, Transducer},
 };
 
 use super::{

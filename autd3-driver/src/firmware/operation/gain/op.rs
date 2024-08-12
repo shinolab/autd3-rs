@@ -2,13 +2,12 @@ use std::mem::size_of;
 
 use super::GainControlFlags;
 use crate::{
-    derive::Transducer,
     error::AUTDInternalError,
     firmware::{
         fpga::{Drive, Segment},
         operation::{write_to_tx, Operation, TypeTag},
     },
-    geometry::Device,
+    geometry::{Device, Transducer},
 };
 
 #[repr(C, align(2))]

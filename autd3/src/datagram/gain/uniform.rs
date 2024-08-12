@@ -1,4 +1,4 @@
-use autd3_driver::derive::*;
+use autd3_driver::{derive::*, firmware::fpga::Drive};
 
 #[derive(Gain, Clone, PartialEq, Debug, Builder)]
 pub struct Uniform {
@@ -33,6 +33,7 @@ mod tests {
     use crate::tests::create_geometry;
 
     use super::*;
+    use autd3_driver::firmware::fpga::{EmitIntensity, Phase};
     use rand::Rng;
 
     #[test]

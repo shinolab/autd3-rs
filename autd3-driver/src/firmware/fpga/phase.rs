@@ -1,9 +1,6 @@
 use nalgebra::ComplexField;
 
-use crate::{
-    defined::{Angle, Complex, PI},
-    derive::rad,
-};
+use crate::defined::{rad, Angle, Complex, PI};
 
 use derive_more::Display;
 

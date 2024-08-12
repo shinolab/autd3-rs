@@ -23,7 +23,7 @@ impl FromMessage<Phase> for autd3_driver::firmware::fpga::Phase {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::derive::Phase;
+    use autd3_driver::firmware::fpga::Phase;
     use rand::Rng;
 
     #[test]

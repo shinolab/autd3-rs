@@ -3,7 +3,6 @@ use std::sync::Arc;
 use crate::derive::*;
 
 #[derive(Modulation)]
-#[no_modulation_transform]
 pub struct Transform<M: Modulation, F: Fn(usize, u8) -> u8> {
     m: M,
     #[no_change]
@@ -26,6 +25,12 @@ impl<M: Modulation, F: Fn(usize, u8) -> u8> Transform<M, F> {
 
 pub trait IntoTransform<M: Modulation> {
     fn with_transform<F: Fn(usize, u8) -> u8>(self, f: F) -> Transform<M, F>;
+}
+
+impl<M: Modulation> IntoTransform<M> for M {
+    fn with_transform<F: Fn(usize, u8) -> u8>(self, f: F) -> Transform<M, F> {
+        Transform::new(self, f)
+    }
 }
 
 impl<M: Modulation, F: Fn(usize, u8) -> u8> Modulation for Transform<M, F> {

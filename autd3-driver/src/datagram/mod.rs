@@ -45,14 +45,12 @@ pub use with_segment_transition::{
 };
 pub use with_timeout::{DatagramWithTimeout, IntoDatagramWithTimeout};
 
-use crate::{defined::DEFAULT_TIMEOUT, derive::SamplingConfig, firmware::operation::NullOp};
+use crate::{
+    defined::DEFAULT_TIMEOUT, derive::SamplingConfig, firmware::operation::NullOp, geometry::Device,
+};
 use std::time::Duration;
 
-use crate::{
-    derive::{Device, Geometry},
-    error::AUTDInternalError,
-    firmware::operation::OperationGenerator,
-};
+use crate::{derive::Geometry, error::AUTDInternalError, firmware::operation::OperationGenerator};
 
 pub trait Datagram {
     type G: OperationGenerator;
@@ -78,6 +76,15 @@ pub trait Datagram {
 pub trait WithSampling {
     fn sampling_config_intensity(&self) -> Option<SamplingConfig>;
     fn sampling_config_phase(&self) -> Option<SamplingConfig>;
+}
+
+impl<M: Modulation> WithSampling for M {
+    fn sampling_config_intensity(&self) -> Option<SamplingConfig> {
+        Some(self.sampling_config())
+    }
+    fn sampling_config_phase(&self) -> Option<SamplingConfig> {
+        None
+    }
 }
 
 #[cfg(feature = "capi")]
@@ -172,7 +179,7 @@ pub mod tests {
         type O2 = crate::firmware::operation::NullOp;
 
         // GRCOV_EXCL_START
-        fn generate(&self, _device: &crate::derive::Device) -> (Self::O1, Self::O2) {
+        fn generate(&self, _device: &Device) -> (Self::O1, Self::O2) {
             (Self::O1::default(), Self::O2::default())
         }
         // GRCOV_EXCL_STOP

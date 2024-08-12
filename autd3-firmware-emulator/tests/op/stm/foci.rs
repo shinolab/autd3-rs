@@ -6,13 +6,13 @@ use autd3_driver::{
         SwapSegment,
     },
     defined::{mm, ControlPoint, ControlPoints, METER},
-    derive::{Drive, LoopBehavior, Phase, SamplingConfig, Segment},
+    derive::{LoopBehavior, SamplingConfig, Segment},
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::{
         cpu::TxDatagram,
         fpga::{
-            TransitionMode, FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT,
+            Drive, Phase, TransitionMode, FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT,
             SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
         },
     },

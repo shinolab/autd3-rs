@@ -1,7 +1,10 @@
 mod sphere;
 mod t4010a1;
 
-use crate::{defined::Angle, derive::rad, geometry::Vector3};
+use crate::{
+    defined::{rad, Angle},
+    geometry::Vector3,
+};
 
 pub use sphere::Sphere;
 pub use t4010a1::T4010A1;

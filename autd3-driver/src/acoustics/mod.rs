@@ -29,7 +29,10 @@ mod tests {
 
     use rand::Rng;
 
-    use crate::{defined::mm, derive::Device, geometry::UnitQuaternion};
+    use crate::{
+        defined::mm,
+        geometry::{Device, UnitQuaternion},
+    };
     use directivity::tests::TestDirectivity;
 
     macro_rules! assert_complex_approx_eq {

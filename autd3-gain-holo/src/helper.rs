@@ -1,8 +1,9 @@
 use std::{collections::HashMap, sync::Arc};
 
 use autd3_driver::{
-    derive::{rad, tracing, GainCalcResult, Itertools, Phase},
-    firmware::fpga::Drive,
+    defined::rad,
+    derive::{tracing, GainCalcResult, Itertools},
+    firmware::fpga::{Drive, Phase},
     geometry::{Geometry, Vector3},
 };
 use bit_vec::BitVec;

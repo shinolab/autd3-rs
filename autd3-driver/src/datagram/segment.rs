@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{
     datagram::*,
-    derive::{AUTDInternalError, Device, Geometry, Segment, TransitionMode},
+    derive::{AUTDInternalError, Geometry, Segment, TransitionMode},
     firmware::operation::SwapSegmentOp,
 };
 
