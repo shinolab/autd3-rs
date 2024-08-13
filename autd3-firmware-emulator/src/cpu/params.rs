@@ -3,7 +3,7 @@ pub const MICROSECONDS: u64 = NANOSECONDS * 1000;
 pub const MILLISECONDS: u64 = MICROSECONDS * 1000;
 pub const SYS_TIME_TRANSITION_MARGIN: u64 = 10 * MILLISECONDS;
 
-pub const CPU_VERSION_MAJOR: u16 = 0xA0;
+pub const CPU_VERSION_MAJOR: u16 = 0xA1;
 pub const CPU_VERSION_MINOR: u16 = 0x00;
 
 pub const TRANS_NUM: usize = 249;
