@@ -1,4 +1,5 @@
 mod clear;
+mod cpu_gpio_out;
 mod debug;
 mod force_fan;
 mod gain;
@@ -17,6 +18,7 @@ mod with_segment_transition;
 mod with_timeout;
 
 pub use clear::Clear;
+pub use cpu_gpio_out::{CpuGPIO, CpuGPIOPort};
 pub use debug::DebugSettings;
 pub use force_fan::ForceFan;
 pub use gain::{

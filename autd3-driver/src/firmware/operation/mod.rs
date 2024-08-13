@@ -1,4 +1,5 @@
 mod clear;
+mod cpu_gpio_out;
 mod debug;
 mod force_fan;
 mod gain;
@@ -15,6 +16,7 @@ mod stm;
 mod sync;
 
 pub use clear::*;
+pub use cpu_gpio_out::*;
 pub use debug::*;
 pub use force_fan::*;
 pub use gain::*;
@@ -62,6 +64,7 @@ pub enum TypeTag {
     ConfigPulseWidthEncoder = 0x71,
     Debug = 0xF0,
     EmulateGPIOIn = 0xF1,
+    CpuGPIOOut = 0xF2,
 }
 
 fn write_to_tx<T>(src: T, dst: &mut [u8]) {
