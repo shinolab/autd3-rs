@@ -1,4 +1,4 @@
-pub const VERSION_NUM_MAJOR: u8 = 0xA0;
+pub const VERSION_NUM_MAJOR: u8 = 0xA1;
 pub const VERSION_NUM_MINOR: u8 = 0x00;
 
 pub const BRAM_SELECT_CONTROLLER: u8 = 0x0;
