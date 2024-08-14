@@ -10,6 +10,8 @@ impl CPUEmulator {
     pub(crate) unsafe fn clear(&mut self, _data: &[u8]) -> u8 {
         // let _d = Self::cast::<Clear>(data);
 
+        self.port_a_podr = 0x00;
+
         self.read_fpga_state = false;
 
         self.fpga_flags_internal = 0x0000;
