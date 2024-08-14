@@ -104,7 +104,6 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
             parallel_threshold,
             ..
         } = self;
-        let parallel_threshold = parallel_threshold.unwrap_or(cnt.parallel_threshold);
         cnt.send_impl(&mut operations, timeout, parallel_threshold)
             .await
     }

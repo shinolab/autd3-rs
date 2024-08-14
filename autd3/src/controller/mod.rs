@@ -66,7 +66,7 @@ impl<L: Link> Controller<L> {
     #[tracing::instrument(skip(self, s))]
     pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDError> {
         let timeout = s.timeout();
-        let parallel_threshold = s.parallel_threshold().unwrap_or(self.parallel_threshold);
+        let parallel_threshold = s.parallel_threshold();
 
         s.trace(&self.geometry);
 
@@ -81,9 +81,12 @@ impl<L: Link> Controller<L> {
         &mut self,
         operations: &mut [(impl Operation, impl Operation)],
         timeout: Option<Duration>,
-        parallel_threshold: usize,
+        parallel_threshold: Option<usize>,
     ) -> Result<(), AUTDError> {
+        let parallel_threshold = parallel_threshold.unwrap_or(self.parallel_threshold);
+
         self.last_parallel_threshold = parallel_threshold;
+
         self.link.update(&self.geometry).await?;
         loop {
             OperationHandler::pack(
