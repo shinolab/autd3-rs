@@ -15,7 +15,26 @@ env:
   LLVM_PROFILE_FILE: "target/coverage/%p-%m.profraw"
 
 jobs:
+  changed-files:
+    name: changed-files
+    runs-on: ubuntu-latest
+    outputs:
+      src: ${{ steps.changed-files-yaml.outputs.src_any_changed }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: changed-files-yaml
+        uses: tj-actions/changed-files@v44
+        with:
+          files_yaml: |
+            src:
+              - autd3/**/*.rs
+              - autd3-driver/**/*.rs
+              - autd3-firmware-emulator/**/*.rs
+              - autd3-gain-holo/**/*.rs
+              - autd3-modulation-audio-file/**/*.rs
+
   coverage:
+    if: ${{ needs.changed-files.outputs.src == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,3 +51,15 @@ jobs:
           files: ./coverage
           disable_search: true
           fail_ci_if_error: true
+
+  patch:
+    if: ${{ needs.changed-files.outputs.src != 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: exit 0
+  
+  project:
+    if: ${{ needs.changed-files.outputs.src != 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: exit 0
