@@ -130,6 +130,7 @@ pub const TAG_READS_FPGA_STATE: u8 = 0x61;
 pub const TAG_CONFIG_PULSE_WIDTH_ENCODER: u8 = 0x71;
 pub const TAG_DEBUG: u8 = 0xF0;
 pub const TAG_EMULATE_GPIO_IN: u8 = 0xF1;
+pub const TAG_CPU_GPIO_OUT: u8 = 0xF2;
 
 pub const INFO_TYPE_CPU_VERSION_MAJOR: u8 = 0x01;
 pub const INFO_TYPE_CPU_VERSION_MINOR: u8 = 0x02;
