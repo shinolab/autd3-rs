@@ -38,6 +38,7 @@ pub struct CPUEmulator {
     pub(crate) min_freq_div_phase: u16,
     pub(crate) is_rx_data_used: bool,
     pub(crate) dc_sys_time: DcSysTime,
+    pub(crate) port_a_podr: u8,
 }
 
 impl CPUEmulator {
@@ -73,6 +74,7 @@ impl CPUEmulator {
             dc_sys_time: DcSysTime::now(),
             stm_rep: [0xFFFF, 0xFFFF],
             mod_rep: [0xFFFF, 0xFFFF],
+            port_a_podr: 0x00,
         };
         s.init();
         s
@@ -137,6 +139,10 @@ impl CPUEmulator {
 
     pub const fn silencer_strict_mode(&self) -> bool {
         self.silencer_strict_mode
+    }
+
+    pub const fn port_a_podr(&self) -> u8 {
+        self.port_a_podr
     }
 }
 
@@ -209,6 +215,7 @@ impl CPUEmulator {
                 TAG_CONFIG_PULSE_WIDTH_ENCODER => self.config_pwe(data),
                 TAG_DEBUG => self.config_debug(data),
                 TAG_EMULATE_GPIO_IN => self.emulate_gpio_in(data),
+                TAG_CPU_GPIO_OUT => self.cpu_gpio_out(data),
                 _ => ERR_NOT_SUPPORTED_TAG,
             }
         }

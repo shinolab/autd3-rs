@@ -1,4 +1,5 @@
 mod clear;
+mod cpu_gpio_out;
 mod debug;
 mod force_fan;
 mod gain;
