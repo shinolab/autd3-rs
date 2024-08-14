@@ -4,8 +4,7 @@ mod group;
 use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
-    datagram::{Clear, Datagram, IntoDatagramWithTimeout, Synchronize},
-    defined::DEFAULT_TIMEOUT,
+    datagram::{Clear, Datagram, FetchFirmwareInfo, IntoDatagramWithTimeout, Synchronize},
     derive::{tracing, Builder},
     firmware::{
         cpu::{RxMessage, TxDatagram},
@@ -131,99 +130,48 @@ impl<L: Link> Controller<L> {
         Ok(())
     }
 
-    pub async fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDError> {
-        let mut operations = self
-            .geometry
-            .iter()
-            .map(|_| {
-                (
-                    autd3_driver::firmware::operation::FirmInfoOp::default(),
-                    autd3_driver::firmware::operation::NullOp::default(),
+    async fn fetch_firmare_info(&mut self, ty: FetchFirmwareInfo) -> Result<Vec<u8>, AUTDError> {
+        self.send(ty).await.map_err(|_| {
+            AUTDError::ReadFirmwareVersionFailed(ReadFirmwareVersionState(
+                autd3_driver::firmware::cpu::check_if_msg_is_processed(
+                    &self.tx_buf,
+                    &mut self.rx_buf,
                 )
-            })
-            .collect::<Vec<_>>();
+                .collect(),
+            ))
+        })?;
+        Ok(self.rx_buf.iter().map(|rx| rx.data()).collect())
+    }
 
-        macro_rules! pack_and_send {
-            ($operations:expr, $link:expr, $geometry:expr, $tx_buf:expr, $rx_buf:expr) => {
-                OperationHandler::pack($operations, $geometry, $tx_buf, usize::MAX)?;
-                if autd3_driver::link::send_receive($link, $tx_buf, $rx_buf, Some(DEFAULT_TIMEOUT))
-                    .await
-                    .is_err()
-                {
-                    return Err(AUTDError::ReadFirmwareVersionFailed(
-                        ReadFirmwareVersionState(
-                            autd3_driver::firmware::cpu::check_if_msg_is_processed(
-                                $tx_buf, $rx_buf,
-                            )
-                            .collect(),
-                        ),
-                    ));
-                }
-            };
-        }
+    pub async fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDError> {
+        let cpu_versions_major = self
+            .fetch_firmare_info(FetchFirmwareInfo::CPUVersionMajor)
+            .await?;
+        let cpu_versions_minor = self
+            .fetch_firmare_info(FetchFirmwareInfo::CPUVersionMinor)
+            .await?;
+        let fpga_versions_major = self
+            .fetch_firmare_info(FetchFirmwareInfo::FPGAVersionMajor)
+            .await?;
+        let fpga_versions_minor = self
+            .fetch_firmare_info(FetchFirmwareInfo::FPGAVersionMinor)
+            .await?;
+        let fpga_functions = self
+            .fetch_firmare_info(FetchFirmwareInfo::FPGAFunctions)
+            .await?;
+        self.fetch_firmare_info(FetchFirmwareInfo::Clear).await?;
 
-        pack_and_send!(
-            &mut operations,
-            &mut self.link,
-            &self.geometry,
-            &mut self.tx_buf, // GRCOV_EXCL_LINE
-            &mut self.rx_buf  // GRCOV_EXCL_LINE
-        );
-        let cpu_versions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
-
-        pack_and_send!(
-            &mut operations,
-            &mut self.link,
-            &self.geometry,
-            &mut self.tx_buf, // GRCOV_EXCL_LINE
-            &mut self.rx_buf  // GRCOV_EXCL_LINE
-        );
-        let cpu_versions_minor = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
-
-        pack_and_send!(
-            &mut operations,
-            &mut self.link,
-            &self.geometry,
-            &mut self.tx_buf, // GRCOV_EXCL_LINE
-            &mut self.rx_buf  // GRCOV_EXCL_LINE
-        );
-        let fpga_versions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
-
-        pack_and_send!(
-            &mut operations,
-            &mut self.link,
-            &self.geometry,
-            &mut self.tx_buf, // GRCOV_EXCL_LINE
-            &mut self.rx_buf  // GRCOV_EXCL_LINE
-        );
-        let fpga_versions_minor = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
-
-        pack_and_send!(
-            &mut operations,
-            &mut self.link,
-            &self.geometry,
-            &mut self.tx_buf, // GRCOV_EXCL_LINE
-            &mut self.rx_buf  // GRCOV_EXCL_LINE
-        );
-        let fpga_functions = self.rx_buf.iter().map(|rx| rx.data()).collect::<Vec<_>>();
-
-        pack_and_send!(
-            &mut operations,
-            &mut self.link,
-            &self.geometry,
-            &mut self.tx_buf, // GRCOV_EXCL_LINE
-            &mut self.rx_buf  // GRCOV_EXCL_LINE
-        );
-
-        Ok((0..self.geometry.num_devices())
-            .map(|i| {
+        Ok(self
+            .geometry
+            .devices()
+            .map(|dev| {
                 FirmwareVersion::new(
-                    i,
-                    cpu_versions[i],
-                    cpu_versions_minor[i],
-                    fpga_versions[i],
-                    fpga_versions_minor[i],
-                    fpga_functions[i],
+                    dev.idx(),
+                    cpu_versions_major[dev.idx()],
+                    cpu_versions_minor[dev.idx()],
+                    fpga_versions_major[dev.idx()],
+                    fpga_versions_minor[dev.idx()],
+                    fpga_functions[dev.idx()],
                 )
             })
             .collect())
@@ -338,7 +286,19 @@ mod tests {
             )],
             autd.firmware_version().await?
         );
+        Ok(())
+    }
 
+    #[tokio::test(flavor = "multi_thread")]
+    async fn firmware_version_err() -> anyhow::Result<()> {
+        let mut autd = create_controller(2).await?;
+        autd.link_mut().break_down();
+        assert_eq!(
+            Err(AUTDError::ReadFirmwareVersionFailed(
+                ReadFirmwareVersionState(vec![false, false])
+            )),
+            autd.firmware_version().await
+        );
         Ok(())
     }
 

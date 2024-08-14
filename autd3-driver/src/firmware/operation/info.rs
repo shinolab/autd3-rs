@@ -1,3 +1,7 @@
+// GRCOV_EXCL_START
+
+#![allow(deprecated)]
+
 use crate::{
     error::AUTDInternalError,
     firmware::operation::{Operation, TypeTag},
@@ -6,6 +10,7 @@ use crate::{
 
 use super::write_to_tx;
 
+#[deprecated(note = "Use FirmwareVersionType2 instead")]
 #[repr(u8)]
 pub enum FirmwareVersionType {
     CPUVersionMajor = 0x01,
@@ -22,6 +27,7 @@ struct FirmInfo {
     ty: FirmwareVersionType,
 }
 
+#[deprecated(note = "Use FirmInfoOp2 instead")]
 pub struct FirmInfoOp {
     remains: usize,
 }
@@ -63,68 +69,4 @@ impl Operation for FirmInfoOp {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use std::mem::size_of;
-
-    use super::*;
-    use crate::geometry::tests::create_device;
-
-    const NUM_TRANS_IN_UNIT: usize = 249;
-
-    #[test]
-    fn test() {
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
-
-        let mut tx = [0x00u8; size_of::<FirmInfo>()];
-
-        let mut op = FirmInfoOp::default();
-
-        assert_eq!(op.required_size(&device), size_of::<FirmInfo>());
-        assert_eq!(op.remains, 6);
-
-        assert!(op.pack(&device, &mut tx).is_ok());
-        assert_eq!(op.remains, 5);
-        assert_eq!(tx[0], TypeTag::FirmwareVersion as u8);
-        assert_eq!(tx[1], FirmwareVersionType::CPUVersionMajor as u8);
-
-        assert!(op.pack(&device, &mut tx).is_ok());
-        assert_eq!(op.remains, 4);
-        assert_eq!(tx[0], TypeTag::FirmwareVersion as u8);
-        assert_eq!(tx[1], FirmwareVersionType::CPUVersionMinor as u8);
-
-        assert!(op.pack(&device, &mut tx).is_ok());
-        assert_eq!(op.remains, 3);
-        assert_eq!(tx[0], TypeTag::FirmwareVersion as u8);
-        assert_eq!(tx[1], FirmwareVersionType::FPGAVersionMajor as u8);
-
-        assert!(op.pack(&device, &mut tx).is_ok());
-        assert_eq!(op.remains, 2);
-        assert_eq!(tx[0], TypeTag::FirmwareVersion as u8);
-        assert_eq!(tx[1], FirmwareVersionType::FPGAVersionMinor as u8);
-
-        assert!(op.pack(&device, &mut tx).is_ok());
-        assert_eq!(op.remains, 1);
-        assert_eq!(tx[0], TypeTag::FirmwareVersion as u8);
-        assert_eq!(tx[1], FirmwareVersionType::FPGAFunctions as u8);
-
-        assert!(op.pack(&device, &mut tx).is_ok());
-        assert!(op.is_done());
-        assert_eq!(tx[0], TypeTag::FirmwareVersion as u8);
-        assert_eq!(tx[1], FirmwareVersionType::Clear as u8);
-    }
-
-    #[test]
-    #[should_panic]
-    #[cfg_attr(miri, ignore)]
-    fn test_panic() {
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
-        let mut tx = [0x00u8; size_of::<FirmInfo>()];
-
-        let mut op = FirmInfoOp::default();
-
-        (0..7).for_each(|_| {
-            assert!(op.pack(&device, &mut tx[0..]).is_ok());
-        });
-    }
-}
+// GRPCOV_EXCL_STOP
