@@ -3,6 +3,7 @@ mod debug;
 mod force_fan;
 mod gain;
 mod gpio_in;
+mod info;
 mod modulation;
 mod pulse_width_encoder;
 mod reads_fpga_state;
@@ -23,6 +24,7 @@ pub use gain::{
     IntoGainTransform,
 };
 pub use gpio_in::EmulateGPIOIn;
+pub use info::FetchFirmwareInfo;
 pub use modulation::{
     IntoModulationCache, IntoModulationTransform, IntoRadiationPressure, Modulation,
     ModulationCache, ModulationCalcResult, ModulationOperationGenerator, ModulationProperty,
