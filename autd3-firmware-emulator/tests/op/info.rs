@@ -22,51 +22,26 @@ fn send_firminfo() -> anyhow::Result<()> {
         assert!(cpu.reads_fpga_state());
     }
 
-    send(
-        &mut cpu,
-        FetchFirmwareInfo::CPUVersionMajor,
-        &geometry,
-        &mut tx,
-    )?;
+    send(&mut cpu, FetchFirmInfo::CPUMajor, &geometry, &mut tx)?;
     assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MAJOR, cpu.rx().data());
     assert!(!cpu.reads_fpga_state());
 
-    send(
-        &mut cpu,
-        FetchFirmwareInfo::CPUVersionMinor,
-        &geometry,
-        &mut tx,
-    )?;
+    send(&mut cpu, FetchFirmInfo::CPUMinor, &geometry, &mut tx)?;
     assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MINOR, cpu.rx().data());
     assert!(!cpu.reads_fpga_state());
 
-    send(
-        &mut cpu,
-        FetchFirmwareInfo::FPGAVersionMajor,
-        &geometry,
-        &mut tx,
-    )?;
+    send(&mut cpu, FetchFirmInfo::FPGAMajor, &geometry, &mut tx)?;
     assert!(!cpu.reads_fpga_state());
 
-    send(
-        &mut cpu,
-        FetchFirmwareInfo::FPGAVersionMinor,
-        &geometry,
-        &mut tx,
-    )?;
+    send(&mut cpu, FetchFirmInfo::FPGAMinor, &geometry, &mut tx)?;
     assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MINOR, cpu.rx().data());
     assert!(!cpu.reads_fpga_state());
 
-    send(
-        &mut cpu,
-        FetchFirmwareInfo::FPGAFunctions,
-        &geometry,
-        &mut tx,
-    )?;
+    send(&mut cpu, FetchFirmInfo::FPGAFunctions, &geometry, &mut tx)?;
     assert_eq!(EMULATOR_BIT, cpu.rx().data());
     assert!(!cpu.reads_fpga_state());
 
-    send(&mut cpu, FetchFirmwareInfo::Clear, &geometry, &mut tx)?;
+    send(&mut cpu, FetchFirmInfo::Clear, &geometry, &mut tx)?;
     assert!(cpu.reads_fpga_state());
 
     Ok(())

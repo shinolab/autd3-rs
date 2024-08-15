@@ -10,17 +10,17 @@ use super::OperationGenerator;
 
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
-pub enum FetchFirmwareInfo {
-    CPUVersionMajor,
-    CPUVersionMinor,
-    FPGAVersionMajor,
-    FPGAVersionMinor,
+pub enum FetchFirmInfo {
+    CPUMajor,
+    CPUMinor,
+    FPGAMajor,
+    FPGAMinor,
     FPGAFunctions,
     Clear,
 }
 
 pub struct FetchFirmwareInfoOpGenerator {
-    inner: FetchFirmwareInfo,
+    inner: FetchFirmInfo,
 }
 
 impl OperationGenerator for FetchFirmwareInfoOpGenerator {
@@ -30,19 +30,19 @@ impl OperationGenerator for FetchFirmwareInfoOpGenerator {
     fn generate(&self, _: &Device) -> (Self::O1, Self::O2) {
         (
             Self::O1::new(match self.inner {
-                FetchFirmwareInfo::CPUVersionMajor => FirmwareVersionType2::CPUVersionMajor,
-                FetchFirmwareInfo::CPUVersionMinor => FirmwareVersionType2::CPUVersionMinor,
-                FetchFirmwareInfo::FPGAVersionMajor => FirmwareVersionType2::FPGAVersionMajor,
-                FetchFirmwareInfo::FPGAVersionMinor => FirmwareVersionType2::FPGAVersionMinor,
-                FetchFirmwareInfo::FPGAFunctions => FirmwareVersionType2::FPGAFunctions,
-                FetchFirmwareInfo::Clear => FirmwareVersionType2::Clear,
+                FetchFirmInfo::CPUMajor => FirmwareVersionType2::CPUVersionMajor,
+                FetchFirmInfo::CPUMinor => FirmwareVersionType2::CPUVersionMinor,
+                FetchFirmInfo::FPGAMajor => FirmwareVersionType2::FPGAVersionMajor,
+                FetchFirmInfo::FPGAMinor => FirmwareVersionType2::FPGAVersionMinor,
+                FetchFirmInfo::FPGAFunctions => FirmwareVersionType2::FPGAFunctions,
+                FetchFirmInfo::Clear => FirmwareVersionType2::Clear,
             }),
             Self::O2::default(),
         )
     }
 }
 
-impl Datagram for FetchFirmwareInfo {
+impl Datagram for FetchFirmInfo {
     type G = FetchFirmwareInfoOpGenerator;
 
     fn timeout(&self) -> Option<Duration> {
