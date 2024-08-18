@@ -1,4 +1,4 @@
-use std::num::NonZeroU8;
+use std::num::{NonZeroU16, NonZeroU8};
 
 use crate::{
     error::AUTDInternalError,
@@ -12,20 +12,20 @@ use super::{SILENCER_FLAG_PULSE_WIDTH, SILENCER_FLAG_STRICT_MODE};
 struct SilencerFixedCompletionSteps {
     tag: TypeTag,
     flag: u8,
-    value_intensity: u8,
-    value_phase: u8,
+    value_intensity: u16,
+    value_phase: u16,
 }
 
 pub struct SilencerFixedCompletionStepsOp {
     is_done: bool,
-    value_intensity: NonZeroU8,
-    value_phase: NonZeroU8,
+    value_intensity: NonZeroU16,
+    value_phase: NonZeroU16,
     strict_mode: bool,
     target: super::SilencerTarget,
 }
 
 impl SilencerFixedCompletionStepsOp {
-    pub const fn new(
+    pub fn new(
         value_intensity: NonZeroU8,
         value_phase: NonZeroU8,
         strict_mode: bool,
@@ -33,8 +33,8 @@ impl SilencerFixedCompletionStepsOp {
     ) -> Self {
         Self {
             is_done: false,
-            value_intensity,
-            value_phase,
+            value_intensity: value_intensity.into(),
+            value_phase: value_phase.into(),
             strict_mode,
             target,
         }
@@ -113,6 +113,8 @@ mod tests {
         assert_eq!(tx[0], TypeTag::Silencer as u8);
         assert_eq!(tx[1], value);
         assert_eq!(tx[2], 0x12);
-        assert_eq!(tx[3], 0x34);
+        assert_eq!(tx[3], 0x00);
+        assert_eq!(tx[4], 0x34);
+        assert_eq!(tx[5], 0x00);
     }
 }

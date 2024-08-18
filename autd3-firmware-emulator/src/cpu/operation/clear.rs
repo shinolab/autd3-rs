@@ -19,9 +19,9 @@ impl CPUEmulator {
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
             ADDR_SILENCER_UPDATE_RATE_INTENSITY,
-            1,
+            256,
         );
-        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_SILENCER_UPDATE_RATE_PHASE, 1);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_SILENCER_UPDATE_RATE_PHASE, 256);
         self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_SILENCER_FLAG, 0);
         self.bram_write(
             BRAM_SELECT_CONTROLLER,

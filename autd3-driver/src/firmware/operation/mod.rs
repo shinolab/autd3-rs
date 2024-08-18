@@ -52,7 +52,7 @@ pub enum TypeTag {
     FirmwareVersion = 0x03,
     Modulation = 0x10,
     ModulationSwapSegment = 0x11,
-    Silencer = 0x20,
+    Silencer = 0x21,
     Gain = 0x30,
     GainSwapSegment = 0x31,
     GainSTM = 0x41,

@@ -203,7 +203,8 @@ impl CPUEmulator {
                 TAG_FIRM_INFO => self.firm_info(data),
                 TAG_MODULATION => self.write_mod(data),
                 TAG_MODULATION_CHANGE_SEGMENT => self.change_mod_segment(data),
-                TAG_SILENCER => self.config_silencer(data),
+                TAG_SILENCER => self.config_silencer(data), // GRCOV_EXCL_LINE
+                TAG_SILENCER2 => self.config_silencer2(data),
                 TAG_GAIN => self.write_gain(data),
                 TAG_GAIN_CHANGE_SEGMENT => self.change_gain_segment(data),
                 TAG_GAIN_STM_CHANGE_SEGMENT => self.change_gain_stm_segment(data),
