@@ -1,4 +1,4 @@
-use std::num::NonZeroU8;
+use std::num::NonZeroU16;
 
 use crate::{
     error::AUTDInternalError,
@@ -12,21 +12,21 @@ use super::{SILENCER_FLAG_FIXED_UPDATE_RATE_MODE, SILENCER_FLAG_PULSE_WIDTH};
 struct SilencerFixedUpdateRate {
     tag: TypeTag,
     flag: u8,
-    value_intensity: u8,
-    value_phase: u8,
+    value_intensity: u16,
+    value_phase: u16,
 }
 
 pub struct SilencerFixedUpdateRateOp {
     is_done: bool,
-    value_intensity: NonZeroU8,
-    value_phase: NonZeroU8,
+    value_intensity: NonZeroU16,
+    value_phase: NonZeroU16,
     target: super::SilencerTarget,
 }
 
 impl SilencerFixedUpdateRateOp {
     pub const fn new(
-        value_intensity: NonZeroU8,
-        value_phase: NonZeroU8,
+        value_intensity: NonZeroU16,
+        value_phase: NonZeroU16,
         target: super::SilencerTarget,
     ) -> Self {
         Self {
@@ -84,8 +84,8 @@ mod tests {
         let mut tx = [0x00u8; size_of::<SilencerFixedUpdateRate>()];
 
         let mut op = SilencerFixedUpdateRateOp::new(
-            NonZeroU8::new(0x12).unwrap(),
-            NonZeroU8::new(0x34).unwrap(),
+            NonZeroU16::new(0x1234).unwrap(),
+            NonZeroU16::new(0x5678).unwrap(),
             SilencerTarget::Intensity,
         );
 
@@ -101,7 +101,9 @@ mod tests {
 
         assert_eq!(tx[0], TypeTag::Silencer as u8);
         assert_eq!(tx[1], SILENCER_FLAG_FIXED_UPDATE_RATE_MODE);
-        assert_eq!(tx[2], 0x12);
-        assert_eq!(tx[3], 0x34);
+        assert_eq!(tx[2], 0x34);
+        assert_eq!(tx[3], 0x12);
+        assert_eq!(tx[4], 0x78);
+        assert_eq!(tx[5], 0x56);
     }
 }

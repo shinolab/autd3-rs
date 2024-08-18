@@ -1,7 +1,7 @@
 mod fixed_complition_time;
 mod fixed_update_rate;
 
-use std::{num::NonZeroU8, time::Duration};
+use std::{num::NonZeroU16, time::Duration};
 
 pub use fixed_complition_time::FixedCompletionTime;
 pub use fixed_update_rate::FixedUpdateRate;
@@ -32,8 +32,8 @@ impl Silencer<()> {
         Duration::from_micros(25 * SILENCER_STEPS_PHASE_DEFAULT as u64);
 
     pub const fn from_update_rate(
-        update_rate_intensity: NonZeroU8,
-        update_rate_phase: NonZeroU8,
+        update_rate_intensity: NonZeroU16,
+        update_rate_phase: NonZeroU16,
     ) -> Silencer<FixedUpdateRate> {
         Silencer {
             internal: FixedUpdateRate {
@@ -88,7 +88,7 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn from_update_rate() {
         let s = unsafe {
-            Silencer::from_update_rate(NonZeroU8::new_unchecked(1), NonZeroU8::new_unchecked(2))
+            Silencer::from_update_rate(NonZeroU16::new_unchecked(1), NonZeroU16::new_unchecked(2))
         };
         assert_eq!(1, s.update_rate_intensity().get());
         assert_eq!(2, s.update_rate_phase().get());

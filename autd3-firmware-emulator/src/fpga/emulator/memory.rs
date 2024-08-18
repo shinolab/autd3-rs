@@ -245,12 +245,12 @@ impl Memory {
         }
     }
 
-    pub fn silencer_update_rate_intensity(&self) -> u8 {
-        self.controller_bram()[ADDR_SILENCER_UPDATE_RATE_INTENSITY] as _
+    pub fn silencer_update_rate_intensity(&self) -> u16 {
+        self.controller_bram()[ADDR_SILENCER_UPDATE_RATE_INTENSITY]
     }
 
-    pub fn silencer_update_rate_phase(&self) -> u8 {
-        self.controller_bram()[ADDR_SILENCER_UPDATE_RATE_PHASE] as _
+    pub fn silencer_update_rate_phase(&self) -> u16 {
+        self.controller_bram()[ADDR_SILENCER_UPDATE_RATE_PHASE]
     }
 
     pub fn silencer_completion_steps_intensity(&self) -> u8 {
@@ -579,11 +579,11 @@ impl FPGAEmulator {
         self.mem.is_stm_gain_mode(segment)
     }
 
-    pub fn silencer_update_rate_intensity(&self) -> u8 {
+    pub fn silencer_update_rate_intensity(&self) -> u16 {
         self.mem.silencer_update_rate_intensity()
     }
 
-    pub fn silencer_update_rate_phase(&self) -> u8 {
+    pub fn silencer_update_rate_phase(&self) -> u16 {
         self.mem.silencer_update_rate_phase()
     }
 

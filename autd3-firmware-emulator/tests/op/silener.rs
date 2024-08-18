@@ -1,4 +1,4 @@
-use std::{num::NonZeroU8, time::Duration};
+use std::{num::NonZeroU16, time::Duration};
 
 use autd3_driver::{
     datagram::*,
@@ -23,11 +23,11 @@ fn send_silencer_fixed_update_rate() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     unsafe {
-        let update_rate_intensity = rng.gen_range(1..=u8::MAX);
-        let update_rate_phase = rng.gen_range(1..=u8::MAX);
+        let update_rate_intensity = rng.gen_range(1..=u16::MAX);
+        let update_rate_phase = rng.gen_range(1..=u16::MAX);
         let d = Silencer::from_update_rate(
-            NonZeroU8::new_unchecked(update_rate_intensity),
-            NonZeroU8::new_unchecked(update_rate_phase),
+            NonZeroU16::new_unchecked(update_rate_intensity),
+            NonZeroU16::new_unchecked(update_rate_phase),
         );
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
@@ -42,11 +42,11 @@ fn send_silencer_fixed_update_rate() -> anyhow::Result<()> {
     }
 
     unsafe {
-        let update_rate_intensity = rng.gen_range(1..=u8::MAX);
-        let update_rate_phase = rng.gen_range(1..=u8::MAX);
+        let update_rate_intensity = rng.gen_range(1..=u16::MAX);
+        let update_rate_phase = rng.gen_range(1..=u16::MAX);
         let d = Silencer::from_update_rate(
-            NonZeroU8::new_unchecked(update_rate_intensity),
-            NonZeroU8::new_unchecked(update_rate_phase),
+            NonZeroU16::new_unchecked(update_rate_intensity),
+            NonZeroU16::new_unchecked(update_rate_phase),
         )
         .with_target(SilencerTarget::PulseWidth);
 
