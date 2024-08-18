@@ -1,4 +1,4 @@
-use std::num::NonZeroU8;
+use std::num::NonZeroU16;
 
 use autd3_derive::Builder;
 
@@ -8,9 +8,9 @@ use crate::{datagram::*, firmware::operation::SilencerTarget};
 #[derive(Debug, Clone, Copy, Builder)]
 pub struct FixedUpdateRate {
     #[get]
-    pub(super) update_rate_intensity: NonZeroU8,
+    pub(super) update_rate_intensity: NonZeroU16,
     #[get]
-    pub(super) update_rate_phase: NonZeroU8,
+    pub(super) update_rate_phase: NonZeroU16,
     #[get]
     pub(super) target: SilencerTarget,
 }
@@ -29,8 +29,8 @@ impl Silencer<FixedUpdateRate> {
 }
 
 pub struct SilencerFixedUpdateRateOpGenerator {
-    update_rate_intensity: NonZeroU8,
-    update_rate_phase: NonZeroU8,
+    update_rate_intensity: NonZeroU16,
+    update_rate_phase: NonZeroU16,
     target: SilencerTarget,
 }
 
@@ -78,9 +78,9 @@ impl Datagram for Silencer<FixedUpdateRate> {
 }
 
 #[cfg(feature = "capi")]
-impl Default for Silencer<FixedUpdateRate> {
+impl Default for Silencer<FixedUpdateRate2> {
     fn default() -> Self {
-        Silencer::from_update_rate(NonZeroU8::MIN, NonZeroU8::MIN)
+        Silencer::from_update_rate(NonZeroU16::MIN, NonZeroU16::MIN)
     }
 }
 
@@ -112,7 +112,8 @@ mod tests {
     })]
     #[cfg_attr(miri, ignore)]
     fn is_valid(#[case] target: impl WithSampling) {
-        let s = Silencer::from_update_rate(NonZeroU8::new(1).unwrap(), NonZeroU8::new(1).unwrap());
+        let s =
+            Silencer::from_update_rate(NonZeroU16::new(1).unwrap(), NonZeroU16::new(1).unwrap());
         assert!(s.is_valid(&target));
     }
 }

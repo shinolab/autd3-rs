@@ -1,4 +1,4 @@
-use std::{num::NonZeroU8, sync::Arc};
+use std::{num::NonZeroU16, sync::Arc};
 
 use autd3_derive::Modulation;
 use autd3_driver::{
@@ -51,7 +51,7 @@ fn send_clear() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = unsafe {
-            Silencer::from_update_rate(NonZeroU8::new_unchecked(1), NonZeroU8::new_unchecked(1))
+            Silencer::from_update_rate(NonZeroU16::new_unchecked(1), NonZeroU16::new_unchecked(1))
         };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -81,8 +81,8 @@ fn send_clear() -> anyhow::Result<()> {
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     assert!(!cpu.reads_fpga_state());
-    assert_eq!(1, cpu.fpga().silencer_update_rate_intensity());
-    assert_eq!(1, cpu.fpga().silencer_update_rate_phase());
+    assert_eq!(256, cpu.fpga().silencer_update_rate_intensity());
+    assert_eq!(256, cpu.fpga().silencer_update_rate_phase());
     assert_eq!(
         SILENCER_STEPS_INTENSITY_DEFAULT as u8,
         cpu.fpga().silencer_completion_steps_intensity()
