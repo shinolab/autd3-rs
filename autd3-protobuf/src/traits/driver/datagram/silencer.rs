@@ -1,4 +1,4 @@
-use std::{num::NonZeroU8, time::Duration};
+use std::{num::NonZeroU16, time::Duration};
 
 use crate::{
     pb::*,
@@ -37,8 +37,8 @@ impl ToMessage for autd3_driver::datagram::SilencerFixedUpdateRate {
 impl FromMessage<SilencerFixedUpdateRate> for autd3_driver::datagram::SilencerFixedUpdateRate {
     fn from_msg(msg: &SilencerFixedUpdateRate) -> Result<Self, AUTDProtoBufError> {
         let mut s = autd3_driver::datagram::Silencer::from_update_rate(
-            NonZeroU8::new(msg.value_intensity as _).ok_or(AUTDProtoBufError::DataParseError)?,
-            NonZeroU8::new(msg.value_phase as _).ok_or(AUTDProtoBufError::DataParseError)?,
+            NonZeroU16::new(msg.value_intensity as _).ok_or(AUTDProtoBufError::DataParseError)?,
+            NonZeroU16::new(msg.value_phase as _).ok_or(AUTDProtoBufError::DataParseError)?,
         );
         if let Some(target) = msg.target {
             s = s.with_target(silencer_target_to(target)?);
@@ -97,8 +97,8 @@ mod tests {
 
         let c = unsafe {
             autd3_driver::datagram::Silencer::from_update_rate(
-                NonZeroU8::new_unchecked(rng.gen_range(1..=u8::MAX)),
-                NonZeroU8::new_unchecked(rng.gen_range(1..=u8::MAX)),
+                NonZeroU16::new_unchecked(rng.gen_range(1..=u16::MAX)),
+                NonZeroU16::new_unchecked(rng.gen_range(1..=u16::MAX)),
             )
         };
         let msg = c.to_msg(None);
