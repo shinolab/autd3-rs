@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::{
     datagram::*,
     derive::{AUTDInternalError, Geometry},
-    firmware::operation::{FirmInfoOp2, FirmwareVersionType2},
+    firmware::operation::{FirmInfoOp, FirmwareVersionType},
 };
 
 use super::OperationGenerator;
@@ -24,18 +24,18 @@ pub struct FetchFirmwareInfoOpGenerator {
 }
 
 impl OperationGenerator for FetchFirmwareInfoOpGenerator {
-    type O1 = FirmInfoOp2;
+    type O1 = FirmInfoOp;
     type O2 = NullOp;
 
     fn generate(&self, _: &Device) -> (Self::O1, Self::O2) {
         (
             Self::O1::new(match self.inner {
-                FetchFirmInfo::CPUMajor => FirmwareVersionType2::CPUVersionMajor,
-                FetchFirmInfo::CPUMinor => FirmwareVersionType2::CPUVersionMinor,
-                FetchFirmInfo::FPGAMajor => FirmwareVersionType2::FPGAVersionMajor,
-                FetchFirmInfo::FPGAMinor => FirmwareVersionType2::FPGAVersionMinor,
-                FetchFirmInfo::FPGAFunctions => FirmwareVersionType2::FPGAFunctions,
-                FetchFirmInfo::Clear => FirmwareVersionType2::Clear,
+                FetchFirmInfo::CPUMajor => FirmwareVersionType::CPUVersionMajor,
+                FetchFirmInfo::CPUMinor => FirmwareVersionType::CPUVersionMinor,
+                FetchFirmInfo::FPGAMajor => FirmwareVersionType::FPGAVersionMajor,
+                FetchFirmInfo::FPGAMinor => FirmwareVersionType::FPGAVersionMinor,
+                FetchFirmInfo::FPGAFunctions => FirmwareVersionType::FPGAFunctions,
+                FetchFirmInfo::Clear => FirmwareVersionType::Clear,
             }),
             Self::O2::default(),
         )
