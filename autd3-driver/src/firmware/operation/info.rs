@@ -1,7 +1,3 @@
-// GRCOV_EXCL_START
-
-#![allow(deprecated)]
-
 use crate::{
     error::AUTDInternalError,
     firmware::operation::{Operation, TypeTag},
@@ -10,9 +6,9 @@ use crate::{
 
 use super::write_to_tx;
 
-#[deprecated(note = "Use FirmwareVersionType2 instead")]
 #[repr(u8)]
-pub enum FirmwareVersionType {
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum FirmwareVersionType {
     CPUVersionMajor = 0x01,
     CPUVersionMinor = 0x02,
     FPGAVersionMajor = 0x03,
@@ -27,14 +23,14 @@ struct FirmInfo {
     ty: FirmwareVersionType,
 }
 
-#[deprecated(note = "Use FirmInfoOp2 instead")]
 pub struct FirmInfoOp {
-    remains: usize,
+    is_done: bool,
+    ty: FirmwareVersionType,
 }
 
-impl Default for FirmInfoOp {
-    fn default() -> Self {
-        Self { remains: 6 }
+impl FirmInfoOp {
+    pub(crate) fn new(ty: FirmwareVersionType) -> Self {
+        Self { is_done: false, ty }
     }
 }
 
@@ -43,20 +39,12 @@ impl Operation for FirmInfoOp {
         write_to_tx(
             FirmInfo {
                 tag: TypeTag::FirmwareVersion,
-                ty: match self.remains {
-                    6 => FirmwareVersionType::CPUVersionMajor,
-                    5 => FirmwareVersionType::CPUVersionMinor,
-                    4 => FirmwareVersionType::FPGAVersionMajor,
-                    3 => FirmwareVersionType::FPGAVersionMinor,
-                    2 => FirmwareVersionType::FPGAFunctions,
-                    1 => FirmwareVersionType::Clear,
-                    _ => unreachable!(),
-                },
+                ty: self.ty,
             },
             tx,
         );
 
-        self.remains -= 1;
+        self.is_done = true;
         Ok(std::mem::size_of::<FirmInfo>())
     }
 
@@ -65,8 +53,40 @@ impl Operation for FirmInfoOp {
     }
 
     fn is_done(&self) -> bool {
-        self.remains == 0
+        self.is_done
     }
 }
 
-// GRPCOV_EXCL_STOP
+#[cfg(test)]
+mod tests {
+    use std::mem::size_of;
+
+    use super::*;
+    use crate::geometry::tests::create_device;
+
+    const NUM_TRANS_IN_UNIT: usize = 249;
+
+    #[rstest::rstest]
+    #[test]
+    #[case(FirmwareVersionType::CPUVersionMajor)]
+    #[case(FirmwareVersionType::CPUVersionMinor)]
+    #[case(FirmwareVersionType::FPGAVersionMajor)]
+    #[case(FirmwareVersionType::FPGAVersionMinor)]
+    #[case(FirmwareVersionType::FPGAFunctions)]
+    #[case(FirmwareVersionType::Clear)]
+    fn test(#[case] ty: FirmwareVersionType) {
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
+
+        let mut tx = [0x00u8; size_of::<FirmInfo>()];
+
+        let mut op = FirmInfoOp::new(ty);
+
+        assert_eq!(op.required_size(&device), size_of::<FirmInfo>());
+        assert!(!op.is_done);
+
+        assert!(op.pack(&device, &mut tx).is_ok());
+        assert!(op.is_done);
+        assert_eq!(tx[0], TypeTag::FirmwareVersion as u8);
+        assert_eq!(tx[1], ty as u8);
+    }
+}
