@@ -78,7 +78,7 @@ impl Datagram for Silencer<FixedUpdateRate> {
 }
 
 #[cfg(feature = "capi")]
-impl Default for Silencer<FixedUpdateRate2> {
+impl Default for Silencer<FixedUpdateRate> {
     fn default() -> Self {
         Silencer::from_update_rate(NonZeroU16::MIN, NonZeroU16::MIN)
     }
