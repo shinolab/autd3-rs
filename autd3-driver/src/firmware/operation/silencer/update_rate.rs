@@ -2,7 +2,10 @@ use std::num::NonZeroU16;
 
 use crate::{
     error::AUTDInternalError,
-    firmware::operation::{write_to_tx, Operation, TypeTag},
+    firmware::{
+        fpga::SilencerTarget,
+        operation::{write_to_tx, Operation, TypeTag},
+    },
     geometry::Device,
 };
 
@@ -20,14 +23,14 @@ pub struct SilencerFixedUpdateRateOp {
     is_done: bool,
     value_intensity: NonZeroU16,
     value_phase: NonZeroU16,
-    target: super::SilencerTarget,
+    target: SilencerTarget,
 }
 
 impl SilencerFixedUpdateRateOp {
     pub const fn new(
         value_intensity: NonZeroU16,
         value_phase: NonZeroU16,
-        target: super::SilencerTarget,
+        target: SilencerTarget,
     ) -> Self {
         Self {
             is_done: false,
@@ -45,8 +48,8 @@ impl Operation for SilencerFixedUpdateRateOp {
                 tag: TypeTag::Silencer,
                 flag: SILENCER_FLAG_FIXED_UPDATE_RATE_MODE
                     | match self.target {
-                        super::SilencerTarget::Intensity => 0,
-                        super::SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
+                        SilencerTarget::Intensity => 0,
+                        SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
                     },
                 value_intensity: self.value_intensity.get(),
                 value_phase: self.value_phase.get(),
@@ -72,7 +75,6 @@ mod tests {
     use std::mem::size_of;
 
     use super::*;
-    use crate::firmware::operation::SilencerTarget;
     use crate::geometry::tests::create_device;
 
     const NUM_TRANS_IN_UNIT: usize = 249;

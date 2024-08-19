@@ -4,7 +4,7 @@ use autd3_driver::{
     datagram::Datagram,
     derive::tracing,
     error::AUTDInternalError,
-    firmware::operation::{NullOp, Operation, OperationGenerator},
+    firmware::operation::{Operation, OperationGenerator},
     geometry::Device,
 };
 
@@ -27,8 +27,8 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
             operations: (0..cnt.geometry.num_devices())
                 .map(|_| {
                     (
-                        Box::<NullOp>::default() as Box<_>,
-                        Box::<NullOp>::default() as Box<_>,
+                        Box::<dyn Operation>::default(),
+                        Box::<dyn Operation>::default(),
                     )
                 })
                 .collect(),
