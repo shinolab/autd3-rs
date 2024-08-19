@@ -26,6 +26,7 @@ pub struct ControllerBuilder {
 }
 
 impl ControllerBuilder {
+    #[must_use]
     pub(crate) fn new<D: IntoDevice, F: IntoIterator<Item = D>>(iter: F) -> ControllerBuilder {
         Self {
             devices: iter

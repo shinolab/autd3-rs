@@ -22,6 +22,7 @@ pub struct GroupGuard<'a, K: PartialEq + Debug, L: Link> {
 }
 
 impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
+    #[must_use]
     pub(crate) fn new(cnt: &'a mut Controller<L>, f: impl Fn(&Device) -> Option<K>) -> Self {
         Self {
             operations: (0..cnt.geometry.num_devices())
@@ -40,6 +41,7 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
     }
 
     #[tracing::instrument(level = "debug", skip(self, d))]
+    #[must_use]
     pub fn set<D: Datagram>(self, k: K, d: D) -> Result<Self, AUTDInternalError>
     where
         <<D as Datagram>::G as OperationGenerator>::O1: 'static,
