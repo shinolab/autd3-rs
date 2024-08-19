@@ -191,6 +191,14 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
+    use crate::{
+        datagram::{gain::tests::TestGain, modulation::tests::TestModulation, FociSTM, GainSTM},
+        derive::{LoopBehavior, SamplingConfig},
+        geometry::Vector3,
+    };
+
     use super::*;
 
     #[test]
@@ -227,5 +235,71 @@ mod tests {
         assert_eq!(Duration::from_secs(1), s.config().intensity());
         assert_eq!(Duration::from_secs(1), s.config().phase());
         assert_eq!(SilencerTarget::Intensity, s.target());
+    }
+
+    #[test]
+    fn fixed_update_rate_strict_mode() {
+        let s = Silencer::new(FixedUpdateRate {
+            intensity: NonZeroU16::new(1).unwrap(),
+            phase: NonZeroU16::new(2).unwrap(),
+        });
+        assert!(!s.strict_mode());
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(FociSTM::new(
+        SamplingConfig::FREQ_4K,
+        [Vector3::zeros(), Vector3::zeros()]
+    ).unwrap())]
+    #[case(GainSTM::new(
+        SamplingConfig::FREQ_4K,
+        [TestGain{ data: Default::default(), err: None }, TestGain{ data: Default::default(), err: None }]
+    ).unwrap())]
+    #[case(TestModulation {
+        buf: Arc::new(Vec::new()),
+        config: SamplingConfig::FREQ_4K,
+        loop_behavior: LoopBehavior::infinite(),
+    })]
+    #[cfg_attr(miri, ignore)]
+    fn fixed_update_rate_is_valid(#[case] target: impl WithSampling) {
+        let s = Silencer::new(FixedUpdateRate {
+            intensity: NonZeroU16::new(1).unwrap(),
+            phase: NonZeroU16::new(2).unwrap(),
+        });
+        assert!(s.is_valid(&target));
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(true, 10, 10, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
+    #[case(false, 11, 10, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
+    #[case(false, 10, 11, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
+    #[case(true, 11, 10, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
+    #[case(true, 10, 11, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
+    #[case(true, 10, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default(), err: None }]).unwrap())]
+    #[case(false, 11, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default(), err: None }]).unwrap())]
+    #[case(false, 10, 11, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default(), err: None }]).unwrap())]
+    #[case(true, 11, 10, false, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default(), err: None }]).unwrap())]
+    #[case(true, 10, 11, false, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default(), err: None }]).unwrap())]
+    #[case(true, 10, 10, true, TestModulation { config: SamplingConfig::new(10).unwrap(), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
+    #[case(false, 11, 10, true, TestModulation { config: SamplingConfig::new(10).unwrap(), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
+    #[case(true, 10, 11, true, TestModulation { config: SamplingConfig::new(10).unwrap(), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
+    #[case(true, 11, 10, false, TestModulation { config: SamplingConfig::new(10).unwrap(), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
+    #[case(true, 10, 11, false, TestModulation { config: SamplingConfig::new(10).unwrap(), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
+    #[cfg_attr(miri, ignore)]
+    fn fixed_completion_time_is_valid(
+        #[case] expect: bool,
+        #[case] intensity: u32,
+        #[case] phase: u32,
+        #[case] strict: bool,
+        #[case] target: impl WithSampling,
+    ) {
+        let s = Silencer::new(FixedCompletionTime {
+            intensity: intensity * ULTRASOUND_PERIOD,
+            phase: phase * ULTRASOUND_PERIOD,
+        })
+        .with_strict_mode(strict);
+        assert_eq!(expect, s.is_valid(&target));
     }
 }
