@@ -16,12 +16,7 @@ use autd3_driver::{
     link::{send_receive, Link},
 };
 
-use crate::{
-    error::{AUTDError, ReadFirmwareVersionState},
-    gain::Null,
-    link::nop::Nop,
-    prelude::Static,
-};
+use crate::{error::AUTDError, gain::Null, link::nop::Nop, prelude::Static};
 
 pub use builder::ControllerBuilder;
 pub use group::GroupGuard;
@@ -130,9 +125,9 @@ impl<L: Link> Controller<L> {
 
     async fn fetch_firminfo(&mut self, ty: FetchFirmInfo) -> Result<Vec<u8>, AUTDError> {
         self.send(ty).await.map_err(|_| {
-            AUTDError::ReadFirmwareVersionFailed(ReadFirmwareVersionState(
+            AUTDError::ReadFirmwareVersionFailed(
                 check_if_msg_is_processed(&self.tx_buf, &mut self.rx_buf).collect(),
-            ))
+            )
         })?;
         Ok(self.rx_buf.iter().map(|rx| rx.data()).collect())
     }
@@ -278,9 +273,7 @@ mod tests {
         let mut autd = create_controller(2).await?;
         autd.link_mut().break_down();
         assert_eq!(
-            Err(AUTDError::ReadFirmwareVersionFailed(
-                ReadFirmwareVersionState(vec![false, false])
-            )),
+            Err(AUTDError::ReadFirmwareVersionFailed(vec![false, false])),
             autd.firmware_version().await
         );
         Ok(())
