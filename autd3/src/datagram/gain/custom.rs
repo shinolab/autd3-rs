@@ -6,29 +6,36 @@ use autd3_driver::{
 
 #[derive(Gain)]
 pub struct Custom<
+    'a,
     D: Into<Drive>,
     FT: Fn(&Transducer) -> D + Send + Sync + 'static,
-    F: Fn(&Device) -> FT + 'static,
+    F: Fn(&Device) -> FT + 'a,
 > {
     f: F,
+    _phantom: std::marker::PhantomData<&'a ()>,
 }
 
 impl<
+        'a,
         D: Into<Drive>,
         FT: Fn(&Transducer) -> D + Send + Sync + 'static,
-        F: Fn(&Device) -> FT + 'static,
-    > Custom<D, FT, F>
+        F: Fn(&Device) -> FT + 'a,
+    > Custom<'a, D, FT, F>
 {
     pub const fn new(f: F) -> Self {
-        Self { f }
+        Self {
+            f,
+            _phantom: std::marker::PhantomData,
+        }
     }
 }
 
 impl<
+        'a,
         D: Into<Drive>,
         FT: Fn(&Transducer) -> D + Send + Sync + 'static,
-        F: Fn(&Device) -> FT + 'static,
-    > Gain for Custom<D, FT, F>
+        F: Fn(&Device) -> FT + 'a,
+    > Gain for Custom<'a, D, FT, F>
 {
     fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
         Ok(Self::transform(&self.f))
