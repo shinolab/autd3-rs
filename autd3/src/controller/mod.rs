@@ -41,6 +41,7 @@ pub struct Controller<L: Link> {
 }
 
 impl Controller<Nop> {
+    #[must_use]
     pub fn builder<D: IntoDevice, F: IntoIterator<Item = D>>(iter: F) -> ControllerBuilder {
         ControllerBuilder::new(iter)
     }
@@ -98,6 +99,7 @@ impl<L: Link> Controller<L> {
         }
     }
 
+    #[must_use]
     #[tracing::instrument(skip(self))]
     pub(crate) async fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
         #[cfg(target_os = "windows")]
