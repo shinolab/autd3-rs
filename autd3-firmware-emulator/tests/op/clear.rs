@@ -47,11 +47,17 @@ fn send_clear() -> anyhow::Result<()> {
     let mut tx = TxDatagram::new(geometry.num_devices());
 
     {
-        let d = Silencer::from_completion_time(ULTRASOUND_PERIOD, ULTRASOUND_PERIOD);
+        let d = Silencer::new(FixedCompletionTime {
+            intensity: ULTRASOUND_PERIOD,
+            phase: ULTRASOUND_PERIOD,
+        });
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = unsafe {
-            Silencer::from_update_rate(NonZeroU16::new_unchecked(1), NonZeroU16::new_unchecked(1))
+            Silencer::new(FixedUpdateRate {
+                intensity: NonZeroU16::new_unchecked(1),
+                phase: NonZeroU16::new_unchecked(1),
+            })
         };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 

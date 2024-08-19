@@ -1,6 +1,7 @@
-use std::num::{NonZeroU16, NonZeroU8};
+use std::time::Duration;
 
 use crate::{
+    defined::ULTRASOUND_FREQ,
     error::AUTDInternalError,
     firmware::{
         fpga::SilencerTarget,
@@ -21,23 +22,23 @@ struct SilencerFixedCompletionSteps {
 
 pub struct SilencerFixedCompletionStepsOp {
     is_done: bool,
-    value_intensity: NonZeroU16,
-    value_phase: NonZeroU16,
+    value_intensity: Duration,
+    value_phase: Duration,
     strict_mode: bool,
     target: SilencerTarget,
 }
 
 impl SilencerFixedCompletionStepsOp {
-    pub fn new(
-        value_intensity: NonZeroU8,
-        value_phase: NonZeroU8,
+    pub const fn new(
+        value_intensity: Duration,
+        value_phase: Duration,
         strict_mode: bool,
         target: SilencerTarget,
     ) -> Self {
         Self {
             is_done: false,
-            value_intensity: value_intensity.into(),
-            value_phase: value_phase.into(),
+            value_intensity,
+            value_phase,
             strict_mode,
             target,
         }
@@ -46,6 +47,22 @@ impl SilencerFixedCompletionStepsOp {
 
 impl Operation for SilencerFixedCompletionStepsOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+        let validate = |value: Duration| {
+            const NANOSEC: u128 = 1_000_000_000;
+            let v = value.as_nanos() * ULTRASOUND_FREQ.hz() as u128;
+            let v = if v % NANOSEC == 0 {
+                v / NANOSEC
+            } else {
+                return Err(AUTDInternalError::InvalidSilencerCompletionTime(value));
+            };
+            if v == 0 || v > u8::MAX as _ {
+                return Err(AUTDInternalError::SilencerCompletionTimeOutOfRange(value));
+            }
+            Ok(v as u16)
+        };
+        let step_intensity = validate(self.value_intensity)?;
+        let step_phase = validate(self.value_phase)?;
+
         write_to_tx(
             SilencerFixedCompletionSteps {
                 tag: TypeTag::Silencer,
@@ -57,8 +74,8 @@ impl Operation for SilencerFixedCompletionStepsOp {
                     SilencerTarget::Intensity => 0,
                     SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
                 },
-                value_intensity: self.value_intensity.get(),
-                value_phase: self.value_phase.get(),
+                value_intensity: step_intensity,
+                value_phase: step_phase,
             },
             tx,
         );
@@ -81,7 +98,7 @@ mod tests {
     use std::mem::size_of;
 
     use super::*;
-    use crate::geometry::tests::create_device;
+    use crate::{defined::ULTRASOUND_PERIOD, geometry::tests::create_device};
 
     const NUM_TRANS_IN_UNIT: usize = 249;
 
@@ -98,8 +115,8 @@ mod tests {
         let mut tx = [0x00u8; size_of::<SilencerFixedCompletionSteps>()];
 
         let mut op = SilencerFixedCompletionStepsOp::new(
-            NonZeroU8::new(0x12).unwrap(),
-            NonZeroU8::new(0x34).unwrap(),
+            ULTRASOUND_PERIOD * 0x12,
+            ULTRASOUND_PERIOD * 0x34,
             strict_mode,
             SilencerTarget::Intensity,
         );

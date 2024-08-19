@@ -16,15 +16,15 @@ fn silencer_target_to(v: i32) -> Result<autd3::prelude::SilencerTarget, AUTDProt
     }
 }
 
-impl ToMessage for autd3_driver::datagram::SilencerFixedUpdateRate {
+impl ToMessage for autd3_driver::datagram::Silencer<autd3_driver::datagram::FixedUpdateRate> {
     type Message = Datagram;
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram::Datagram::Silencer(Silencer {
                 config: Some(silencer::Config::FixedUpdateRate(SilencerFixedUpdateRate {
-                    value_intensity: self.update_rate_intensity().get() as _,
-                    value_phase: self.update_rate_phase().get() as _,
+                    value_intensity: self.config().intensity().get() as _,
+                    value_phase: self.config().phase().get() as _,
                     target: Some(self.target() as u8 as _),
                 })),
             })),
@@ -34,12 +34,17 @@ impl ToMessage for autd3_driver::datagram::SilencerFixedUpdateRate {
     }
 }
 
-impl FromMessage<SilencerFixedUpdateRate> for autd3_driver::datagram::SilencerFixedUpdateRate {
+impl FromMessage<SilencerFixedUpdateRate>
+    for autd3_driver::datagram::Silencer<autd3_driver::datagram::FixedUpdateRate>
+{
     fn from_msg(msg: &SilencerFixedUpdateRate) -> Result<Self, AUTDProtoBufError> {
-        let mut s = autd3_driver::datagram::Silencer::from_update_rate(
-            NonZeroU16::new(msg.value_intensity as _).ok_or(AUTDProtoBufError::DataParseError)?,
-            NonZeroU16::new(msg.value_phase as _).ok_or(AUTDProtoBufError::DataParseError)?,
-        );
+        let mut s =
+            autd3_driver::datagram::Silencer::new(autd3_driver::datagram::FixedUpdateRate {
+                intensity: NonZeroU16::new(msg.value_intensity as _)
+                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                phase: NonZeroU16::new(msg.value_phase as _)
+                    .ok_or(AUTDProtoBufError::DataParseError)?,
+            });
         if let Some(target) = msg.target {
             s = s.with_target(silencer_target_to(target)?);
         }
@@ -47,7 +52,7 @@ impl FromMessage<SilencerFixedUpdateRate> for autd3_driver::datagram::SilencerFi
     }
 }
 
-impl ToMessage for autd3_driver::datagram::SilencerFixedCompletionTime {
+impl ToMessage for autd3_driver::datagram::Silencer<autd3_driver::datagram::FixedCompletionTime> {
     type Message = Datagram;
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
@@ -55,8 +60,8 @@ impl ToMessage for autd3_driver::datagram::SilencerFixedCompletionTime {
             datagram: Some(datagram::Datagram::Silencer(Silencer {
                 config: Some(silencer::Config::FixedCompletionTime(
                     SilencerFixedCompletionTime {
-                        value_intensity: self.completion_time_intensity().as_micros() as _,
-                        value_phase: self.completion_time_phase().as_micros() as _,
+                        value_intensity: self.config().intensity().as_micros() as _,
+                        value_phase: self.config().phase().as_micros() as _,
                         strict_mode: Some(self.strict_mode()),
                         target: Some(self.target() as u8 as _),
                     },
@@ -69,13 +74,14 @@ impl ToMessage for autd3_driver::datagram::SilencerFixedCompletionTime {
 }
 
 impl FromMessage<SilencerFixedCompletionTime>
-    for autd3_driver::datagram::SilencerFixedCompletionTime
+    for autd3_driver::datagram::Silencer<autd3_driver::datagram::FixedCompletionTime>
 {
     fn from_msg(msg: &SilencerFixedCompletionTime) -> Result<Self, AUTDProtoBufError> {
-        let mut s = autd3_driver::datagram::Silencer::from_completion_time(
-            Duration::from_micros(msg.value_intensity as _),
-            Duration::from_micros(msg.value_phase as _),
-        );
+        let mut s =
+            autd3_driver::datagram::Silencer::new(autd3_driver::datagram::FixedCompletionTime {
+                intensity: Duration::from_micros(msg.value_intensity as _),
+                phase: Duration::from_micros(msg.value_phase as _),
+            });
         if let Some(strict_mode) = msg.strict_mode {
             s = s.with_strict_mode(strict_mode);
         }
@@ -96,10 +102,10 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let c = unsafe {
-            autd3_driver::datagram::Silencer::from_update_rate(
-                NonZeroU16::new_unchecked(rng.gen_range(1..=u16::MAX)),
-                NonZeroU16::new_unchecked(rng.gen_range(1..=u16::MAX)),
-            )
+            autd3_driver::datagram::Silencer::new(autd3_driver::datagram::FixedUpdateRate {
+                intensity: NonZeroU16::new_unchecked(rng.gen_range(1..=u16::MAX)),
+                phase: NonZeroU16::new_unchecked(rng.gen_range(1..=u16::MAX)),
+            })
         };
         let msg = c.to_msg(None);
 
@@ -108,9 +114,9 @@ mod tests {
                 config: Some(silencer::Config::FixedUpdateRate(config)),
             })) => {
                 let c2 =
-                    autd3_driver::datagram::SilencerFixedUpdateRate::from_msg(&config).unwrap();
-                assert_eq!(c2.update_rate_intensity(), c.update_rate_intensity());
-                assert_eq!(c2.update_rate_phase(), c.update_rate_phase());
+                    autd3_driver::datagram::Silencer::<autd3_driver::datagram::FixedUpdateRate>::from_msg(&config).unwrap();
+                assert_eq!(c2.config().intensity(), c.config().intensity());
+                assert_eq!(c2.config().phase(), c.config().phase());
             }
             _ => panic!("unexpected datagram type"),
         }

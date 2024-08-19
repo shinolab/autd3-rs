@@ -120,10 +120,8 @@ impl<L: Link> Controller<L> {
             return Ok(());
         }
         self.geometry.iter_mut().for_each(|dev| dev.enable = true);
-        self.send(
-            autd3_driver::datagram::SilencerFixedCompletionTime::default().with_strict_mode(false),
-        )
-        .await?;
+        self.send(autd3_driver::datagram::Silencer::<autd3_driver::datagram::FixedCompletionTime>::default().with_strict_mode(false))
+            .await?;
         self.send((Static::new(), Null::default())).await?;
         self.send(Clear::new()).await?;
         self.link.close().await?;
