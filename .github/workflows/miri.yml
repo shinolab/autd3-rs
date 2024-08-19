@@ -17,5 +17,8 @@ jobs:
           os: ubuntu-latest
           toolchain: nightly
           components: miri
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
       - run: |
           python3 build.py test --miri

@@ -10,9 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-build
-        with:
-          os: ubuntu-latest
       - run: |
           git submodule update --init --recursive
       - uses: obi1kenobi/cargo-semver-checks-action@v2
@@ -20,41 +17,40 @@ jobs:
           feature-group: default-features
       - run: |
           cd autd3-driver
-          cargo publish --no-verify --dry-run
-          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true
+          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }}
           cd .. && sleep 15
+
           cd autd3-derive
-          cargo publish --no-verify --dry-run
-          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true
+          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }}
           cd .. && sleep 15
-          cd autd3-firmware-emulator
-          cargo publish --no-verify --dry-run
-          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true
+
+          cd autd3-firmware-emulator          
+          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }}
           cd .. && sleep 15
+
           cd autd3
-          cargo publish --no-verify --dry-run
-          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true
+          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }}
           cd ..
-          cd autd3-gain-holo
-          cargo publish --no-verify --dry-run
-          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true
+
+          cd autd3-gain-holo          
+          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }}
           cd .. && sleep 15
+
           cd autd3-protobuf
-          cargo publish --no-verify --dry-run
-          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true
+          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }}
           cd ..
+
           cd autd3-link-soem
-          cargo publish --no-verify --dry-run
-          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true
+          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }}
           cd ..
+
           cd autd3-link-twincat
-          cargo publish --no-verify --dry-run
-          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true
+          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }}
           cd ..
+
           cd autd3-link-simulator
-          cargo publish --no-verify --dry-run
-          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true
+          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }}
           cd ..
+
           cd autd3-modulation-audio-file
-          cargo publish --no-verify --dry-run
-          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }} || true
+          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }}

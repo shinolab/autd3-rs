@@ -14,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       src: ${{ steps.changed-files-yaml.outputs.src_any_changed }}
-      lightweight: ${{ steps.changed-files-yaml.outputs.lightweight_any_changed }}
       miri: ${{ steps.changed-files-yaml.outputs.miri_any_changed }}
     steps:
       - uses: actions/checkout@v4
@@ -25,11 +24,6 @@ jobs:
             src:
               - '**/*.rs'
               - '**/Cargo.toml'
-            lightweight:
-              - Cargo.toml
-              - autd3-protobuf/Cargo.toml
-              - autd3-protobuf/**/*.rs
-              - autd3-protobuf/**/*.proto
             miri:
               - autd3-driver/Cargo.toml
               - autd3-driver/**/*.rs
@@ -46,96 +40,64 @@ jobs:
 
   test:
     needs: changed-files
-    name: test-on-${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    steps:
-      - uses: actions/checkout@v4
-        if: ${{ needs.changed-files.outputs.src == 'true' }}
-      - uses: ./.github/actions/setup-build
-        if: ${{ needs.changed-files.outputs.src == 'true' }}
-        with:
-          os: ${{ matrix.os }}
-      - run: |
-          python3 build.py build
-          python3 build.py test
-        shell: bash
-        if: ${{ needs.changed-files.outputs.src == 'true' }}
-
-  test-on-arm:
-    needs: changed-files
-    name: test-on-${{ matrix.os }}-${{ matrix.arch }}
+    if: ${{ needs.changed-files.outputs.src == 'true' }}
+    name: test-on-${{ matrix.os }}${{ matrix.arch && '-' }}${{ matrix.arch }}${{ matrix.features && '-' }}${{ matrix.features }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
+          - os: windows-latest
+            lint: true
+          - os: ubuntu-latest
+            lint: true
+          - os: macos-latest
+            lint: true
           - os: ubuntu-latest
             arch: arm32
+            no-example: true
+            no-test: true
           - os: ubuntu-latest
             arch: aarch64
+            no-example: true
+            no-test: true
           - os: windows-latest
             arch: aarch64
+            no-test: true
+          - os: ubuntu-latest
+            features: capi
+            no-example: true
+            lint: true
+          - os: ubuntu-latest
+            features: "use_meter left_handed"
+            lint: true
+          - os: ubuntu-latest
+            features: "lightweight async-trait"
+            lint: true
     steps:
       - uses: actions/checkout@v4
-        if: ${{ needs.changed-files.outputs.src == 'true' }}
       - uses: ./.github/actions/setup-build
-        if: ${{ needs.changed-files.outputs.src == 'true' }}
         with:
           os: ${{ matrix.os }}
           arch: ${{ matrix.arch }}
-      - run: |
-          python3 build.py build --arch ${{ matrix.arch }} --no-examples
-        shell: bash
-        if: ${{ needs.changed-files.outputs.src == 'true' }}
-
-  test-lightweight:
-    needs: changed-files
-    if: ${{ needs.changed-files.outputs.lightweight == 'true' }}
-    name: test-lightweight
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-build
+      - uses: taiki-e/install-action@v2
         with:
-          os: ubuntu-latest
-      - run: |
-          python3 build.py build --features "lightweight async-trait"
-          python3 build.py test --features "lightweight async-trait"
-        shell: bash
+          tool: nextest
+        if: ${{ matrix.no-test != true }}
+      - run: python3 build.py build --arch "${{ matrix.arch }}" --features "${{ matrix.features }}" ${{ matrix.no-example && '--no-example' }}
+      - run: python3 build.py test --features "${{ matrix.features }}"
+        if: ${{ matrix.no-test != true }}
+      - run: python3 build.py lint --features "${{ matrix.features }}" ${{ matrix.no-example && '--no-example' }}
+        if: ${{ matrix.lint == true }}
 
-  test-capi:
-    needs: changed-files
-    if: ${{ needs.changed-files.outputs.src == 'true' }}
-    name: test-capi
+  all-tests-passed:
+    if: ${{ always() }}
+    name: all-tests-passed
     runs-on: ubuntu-latest
+    needs: test
     steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-build
-        with:
-          os: ubuntu-latest
-      - run: |
-          python3 build.py build --features "capi" --no-example
-          python3 build.py test --features "capi"
-        shell: bash
-
-  test-unity:
-    needs: changed-files
-    if: ${{ needs.changed-files.outputs.src == 'true' }}
-    name: test-unity
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-build
-        with:
-          os: ubuntu-latest
-      - run: |
-          python3 build.py build --features "use_meter left_handed"
-          python3 build.py test --features "use_meter left_handed"
-        shell: bash
+      - if: ${{ needs.test.result == 'failure' || needs.test.result == 'cancelled' }}
+        run: exit 1
 
   miri:
     needs: changed-files
@@ -149,34 +111,16 @@ jobs:
           os: ubuntu-latest
           toolchain: nightly
           components: miri
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
       - run: |
           python3 build.py test --miri
 
-  lint:
-    needs: changed-files
-    if: ${{ needs.changed-files.outputs.src == 'true' }}
-    name: lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-build
-        with:
-          os: ubuntu-latest
-      - run: |
-          python3 build.py lint
-          python3 build.py lint --features "capi" --no-example
-          python3 build.py lint --features "lightweight async-trait"
-          python3 build.py lint --features "left_handed use_meter"
-
   auto-merge:
     needs:
-      - test
-      - test-on-arm
-      - test-lightweight
-      - test-capi
-      - test-unity
+      - all-tests-passed
       - miri
-      - lint
     permissions:
       pull-requests: write
       contents: write
