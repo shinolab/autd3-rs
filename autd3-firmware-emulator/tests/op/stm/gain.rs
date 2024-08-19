@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use autd3_driver::{
     datagram::{
-        FociSTM, GainSTM, IntoDatagramWithSegment, IntoDatagramWithSegmentTransition, Silencer,
-        SilencerFixedCompletionTime, SwapSegment,
+        FixedCompletionTime, FociSTM, GainSTM, IntoDatagramWithSegment,
+        IntoDatagramWithSegmentTransition, Silencer, SwapSegment,
     },
     defined::ControlPoint,
     derive::*,
@@ -273,7 +273,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
         .with_segment(Segment::S0, true);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = SilencerFixedCompletionTime::default();
+        let d = Silencer::<FixedCompletionTime>::default();
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = GainSTM::new(
@@ -288,10 +288,10 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
         .with_segment(Segment::S1, None);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::from_completion_time(
-            Silencer::DEFAULT_COMPLETION_TIME_INTENSITY,
-            Silencer::DEFAULT_COMPLETION_TIME_PHASE * 2,
-        );
+        let d = Silencer::new(FixedCompletionTime {
+            intensity: Silencer::DEFAULT_COMPLETION_TIME_INTENSITY,
+            phase: Silencer::DEFAULT_COMPLETION_TIME_PHASE * 2,
+        });
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = SwapSegment::GainSTM(Segment::S1, TransitionMode::Immediate);

@@ -2,7 +2,7 @@ use std::{collections::HashMap, time::Duration};
 
 use autd3_driver::{
     datagram::{
-        FociSTM, GainSTM, IntoDatagramWithSegmentTransition, Silencer, SilencerFixedCompletionTime,
+        FixedCompletionTime, FociSTM, GainSTM, IntoDatagramWithSegmentTransition, Silencer,
         SwapSegment,
     },
     defined::{mm, ControlPoint, ControlPoints, METER},
@@ -170,7 +170,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
         };
         assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
 
-        let d = SilencerFixedCompletionTime::default();
+        let d = Silencer::<FixedCompletionTime>::default();
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let stm = FociSTM::new(
@@ -185,10 +185,10 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
 
         assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
 
-        let d = Silencer::from_completion_time(
-            Silencer::DEFAULT_COMPLETION_TIME_INTENSITY,
-            Silencer::DEFAULT_COMPLETION_TIME_PHASE * 2,
-        );
+        let d = Silencer::new(FixedCompletionTime {
+            intensity: Silencer::DEFAULT_COMPLETION_TIME_INTENSITY,
+            phase: Silencer::DEFAULT_COMPLETION_TIME_PHASE * 2,
+        });
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = SwapSegment::FociSTM(Segment::S1, TransitionMode::Immediate);

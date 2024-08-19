@@ -1,9 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use autd3_driver::{
-    datagram::{
-        IntoDatagramWithSegmentTransition, Silencer, SilencerFixedCompletionTime, SwapSegment,
-    },
+    datagram::{FixedCompletionTime, IntoDatagramWithSegmentTransition, Silencer, SwapSegment},
     derive::*,
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
@@ -175,7 +173,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = SilencerFixedCompletionTime::default();
+        let d = Silencer::<FixedCompletionTime>::default();
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = TestModulation {
@@ -186,10 +184,10 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         .with_segment(Segment::S1, None);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::from_completion_time(
-            Silencer::DEFAULT_COMPLETION_TIME_PHASE * 2,
-            Silencer::DEFAULT_COMPLETION_TIME_PHASE,
-        );
+        let d = Silencer::new(FixedCompletionTime {
+            intensity: Silencer::DEFAULT_COMPLETION_TIME_PHASE * 2,
+            phase: Silencer::DEFAULT_COMPLETION_TIME_PHASE,
+        });
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = SwapSegment::Modulation(Segment::S1, TransitionMode::Immediate);

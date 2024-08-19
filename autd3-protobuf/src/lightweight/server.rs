@@ -332,9 +332,9 @@ where
                 Some(datagram::Datagram::Silencer(ref msg)) => match msg.config {
                     Some(silencer::Config::FixedUpdateRate(ref msg)) => {
                         autd.send(DatagramWithTimeoutAndParallelThreshold {
-                            datagram: autd3_driver::datagram::SilencerFixedUpdateRate::from_msg(
-                                msg,
-                            )?,
+                            datagram: autd3_driver::datagram::Silencer::<
+                                autd3_driver::datagram::FixedUpdateRate,
+                            >::from_msg(msg)?,
                             timeout,
                             parallel_threshold,
                         })
@@ -342,8 +342,9 @@ where
                     }
                     Some(silencer::Config::FixedCompletionTime(ref msg)) => {
                         autd.send(DatagramWithTimeoutAndParallelThreshold {
-                            datagram:
-                                autd3_driver::datagram::SilencerFixedCompletionTime::from_msg(msg)?,
+                            datagram: autd3_driver::datagram::Silencer::<
+                                autd3_driver::datagram::FixedCompletionTime,
+                            >::from_msg(msg)?,
                             timeout,
                             parallel_threshold,
                         })
