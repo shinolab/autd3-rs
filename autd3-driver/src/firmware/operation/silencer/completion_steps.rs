@@ -98,7 +98,9 @@ mod tests {
     use std::mem::size_of;
 
     use super::*;
-    use crate::{defined::ULTRASOUND_PERIOD, geometry::tests::create_device};
+    use crate::{
+        defined::ULTRASOUND_PERIOD, firmware::fpga::SilencerTarget, geometry::tests::create_device,
+    };
 
     const NUM_TRANS_IN_UNIT: usize = 249;
 
@@ -108,8 +110,6 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     #[case(0x00, false)]
     fn test(#[case] value: u8, #[case] strict_mode: bool) {
-        use crate::firmware::fpga::SilencerTarget;
-
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
         let mut tx = [0x00u8; size_of::<SilencerFixedCompletionSteps>()];
@@ -137,5 +137,57 @@ mod tests {
         assert_eq!(tx[3], 0x00);
         assert_eq!(tx[4], 0x34);
         assert_eq!(tx[5], 0x00);
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(
+        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(0)),
+        Duration::from_micros(0),
+        Duration::from_micros(25)
+    )]
+    #[case(
+        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(25 * 256)),
+        Duration::from_micros(25 * 256),
+        Duration::from_micros(25)
+    )]
+    #[case(
+        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(0)),
+        Duration::from_micros(25),
+        Duration::from_micros(0)
+    )]
+    #[case(
+        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(25 * 256)),
+        Duration::from_micros(25),
+        Duration::from_micros(25 * 256),
+    )]
+    #[case(
+        AUTDInternalError::InvalidSilencerCompletionTime(Duration::from_micros(26)),
+        Duration::from_micros(26),
+        Duration::from_micros(50)
+    )]
+    #[case(
+        AUTDInternalError::InvalidSilencerCompletionTime(Duration::from_micros(51)),
+        Duration::from_micros(25),
+        Duration::from_micros(51)
+    )]
+    #[cfg_attr(miri, ignore)]
+    fn invalid_time(
+        #[case] expected: AUTDInternalError,
+        #[case] time_intensity: Duration,
+        #[case] time_phase: Duration,
+    ) {
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
+
+        let mut tx = [0x00u8; size_of::<SilencerFixedCompletionSteps>()];
+
+        let mut op = SilencerFixedCompletionStepsOp::new(
+            time_intensity,
+            time_phase,
+            true,
+            SilencerTarget::Intensity,
+        );
+
+        assert_eq!(expected, op.pack(&device, &mut tx).unwrap_err());
     }
 }
