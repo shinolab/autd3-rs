@@ -48,6 +48,7 @@ jobs:
       - uses: ./.github/actions/setup-build
         with:
           os: ${{ matrix.os }}
+          arch: ${{ matrix.arch }}
       - uses: taiki-e/install-action@v2
         with:
           tool: nextest
