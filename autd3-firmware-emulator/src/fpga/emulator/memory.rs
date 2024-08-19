@@ -3,10 +3,7 @@ use std::cell::{LazyCell, Ref, RefCell, RefMut};
 use autd3_driver::{
     derive::{LoopBehavior, Segment, TransitionMode},
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
-    firmware::{
-        fpga::{Drive, EmitIntensity, GPIOIn, Phase, STMFocus},
-        operation::SilencerTarget,
-    },
+    firmware::fpga::{Drive, EmitIntensity, GPIOIn, Phase, STMFocus, SilencerTarget},
 };
 use num_integer::Roots;
 

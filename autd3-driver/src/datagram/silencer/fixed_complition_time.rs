@@ -5,7 +5,7 @@ use autd3_derive::Builder;
 use crate::{
     datagram::*,
     defined::ULTRASOUND_FREQ,
-    firmware::operation::{SilencerFixedCompletionStepsOp, SilencerTarget},
+    firmware::{fpga::SilencerTarget, operation::SilencerFixedCompletionStepsOp},
 };
 
 #[derive(Debug, Clone, Copy, Builder)]

@@ -8,9 +8,8 @@ pub use fixed_update_rate::FixedUpdateRate;
 
 use crate::{
     defined::ULTRASOUND_PERIOD,
-    firmware::{
-        fpga::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
-        operation::SilencerTarget,
+    firmware::fpga::{
+        SilencerTarget, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
     },
 };
 

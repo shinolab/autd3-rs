@@ -7,6 +7,7 @@ mod loop_behavior;
 mod phase;
 mod sampling_config;
 mod segment;
+mod silencer_target;
 mod stm_focus;
 mod transition_mode;
 
@@ -19,6 +20,7 @@ pub use loop_behavior::LoopBehavior;
 pub use phase::Phase;
 pub use sampling_config::SamplingConfig;
 pub use segment::Segment;
+pub use silencer_target::SilencerTarget;
 pub use stm_focus::STMFocus;
 pub use transition_mode::*;
 

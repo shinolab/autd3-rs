@@ -14,21 +14,21 @@ mod silencer;
 mod stm;
 mod sync;
 
-pub use clear::*;
-pub use cpu_gpio_out::*;
-pub use debug::*;
-pub use force_fan::*;
-pub use gain::*;
-pub use gpio_in::*;
-pub use info::*;
-pub use modulation::*;
-pub use null::*;
-pub use pulse_width_encoder::*;
-pub use reads_fpga_state::*;
-pub use segment::*;
-pub use silencer::*;
-pub use stm::*;
-pub use sync::*;
+pub(crate) use clear::*;
+pub(crate) use cpu_gpio_out::*;
+pub(crate) use debug::*;
+pub(crate) use force_fan::*;
+pub(crate) use gain::*;
+pub(crate) use gpio_in::*;
+pub(crate) use info::*;
+pub(crate) use modulation::*;
+pub(crate) use null::*;
+pub(crate) use pulse_width_encoder::*;
+pub(crate) use reads_fpga_state::*;
+pub(crate) use segment::*;
+pub(crate) use silencer::*;
+pub(crate) use stm::*;
+pub(crate) use sync::*;
 
 use crate::{
     error::AUTDInternalError,
@@ -43,8 +43,7 @@ use rayon::prelude::*;
 #[derive(PartialEq, Debug)]
 #[repr(u8)]
 #[non_exhaustive]
-pub enum TypeTag {
-    NONE = 0x00,
+pub(crate) enum TypeTag {
     Clear = 0x01,
     Sync = 0x02,
     FirmwareVersion = 0x03,
@@ -102,6 +101,12 @@ impl Operation for Box<dyn Operation> {
     }
 }
 // GRCOV_EXCL_STOP
+
+impl Default for Box<dyn Operation> {
+    fn default() -> Self {
+        Box::new(NullOp {})
+    }
+}
 
 pub struct OperationHandler {}
 

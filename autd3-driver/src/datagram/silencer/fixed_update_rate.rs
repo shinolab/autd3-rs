@@ -2,8 +2,9 @@ use std::num::NonZeroU16;
 
 use autd3_derive::Builder;
 
+use crate::datagram::*;
+use crate::firmware::fpga::SilencerTarget;
 use crate::firmware::operation::SilencerFixedUpdateRateOp;
-use crate::{datagram::*, firmware::operation::SilencerTarget};
 
 #[derive(Debug, Clone, Copy, Builder)]
 pub struct FixedUpdateRate {
