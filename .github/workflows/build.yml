@@ -10,94 +10,50 @@ concurrency:
 
 jobs:
   test:
-    name: test-on-${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-build
-        with:
-          os: ${{ matrix.os }}
-      - run: |
-          python3 build.py build
-          python3 build.py test
-        shell: bash
-
-  test-on-arm:
-    name: test-on-${{ matrix.os }}-${{ matrix.arch }}
+    name: test-on-${{ matrix.os }}${{ matrix.arch && '-' }}${{ matrix.arch }}${{ matrix.features && '-' }}${{ matrix.features }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
+          - os: windows-latest
+            lint: true
+          - os: ubuntu-latest
+            lint: true
+          - os: macos-latest
+            lint: true
           - os: ubuntu-latest
             arch: arm32
+            no-example: true
+            no-test: true
           - os: ubuntu-latest
             arch: aarch64
+            no-example: true
+            no-test: true
           - os: windows-latest
             arch: aarch64
+            no-test: true
+          - os: ubuntu-latest
+            features: capi
+            no-example: true
+            lint: true
+          - os: ubuntu-latest
+            features: "use_meter left_handed"
+            lint: true
+          - os: ubuntu-latest
+            features: "lightweight async-trait"
+            lint: true
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-build
         with:
           os: ${{ matrix.os }}
-          arch: ${{ matrix.arch }}
-      - run: |
-          python3 build.py build --arch ${{ matrix.arch }} --no-examples
-        shell: bash
-
-  test-lightweight:
-    name: test-lightweight
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-build
+      - uses: taiki-e/install-action@v2
         with:
-          os: ubuntu-latest
-      - run: |
-          python3 build.py build --features "lightweight async-trait"
-          python3 build.py test --features "lightweight async-trait"
-        shell: bash
-
-  test-capi:
-    name: test-capi
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-build
-        with:
-          os: ubuntu-latest
-      - run: |
-          python3 build.py build --features "capi" --no-example
-          python3 build.py test --features "capi"
-        shell: bash
-
-  test-unity:
-    name: test-unity
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-build
-        with:
-          os: ubuntu-latest
-      - run: |
-          python3 build.py build --features "use_meter left_handed"
-          python3 build.py test --features "use_meter left_handed"
-        shell: bash
-
-  lint:
-    name: lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-build
-        with:
-          os: ubuntu-latest
-      - run: |
-          python3 build.py lint
-          python3 build.py lint --features "capi" --no-example
-          python3 build.py lint --features "lightweight async-trait"
-          python3 build.py lint --features "left_handed use_meter"
+          tool: nextest
+        if: ${{ matrix.no-test != true }}
+      - run: python3 build.py build --arch "${{ matrix.arch }}" --features "${{ matrix.features }}" ${{ matrix.no-example && '--no-example' }}
+      - run: python3 build.py test --features "${{ matrix.features }}"
+        if: ${{ matrix.no-test != true }}
+      - run: python3 build.py lint --features "${{ matrix.features }}" ${{ matrix.no-example && '--no-example' }}
+        if: ${{ matrix.lint == true }}

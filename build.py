@@ -98,6 +98,8 @@ class Config:
         if hasattr(args, "arch") and args.arch is not None:
             if self.is_linux():
                 match args.arch:
+                    case "":
+                        self.target = None
                     case "arm32":
                         self.target = "armv7-unknown-linux-gnueabihf"
                     case "aarch64":
@@ -107,11 +109,15 @@ class Config:
                         sys.exit(-1)
             elif self.is_windows():
                 match args.arch:
+                    case "":
+                        self.target = None
                     case "aarch64":
                         self.target = "aarch64-pc-windows-msvc"
                     case _:
                         err(f'arch "{args.arch}" is not supported.')
                         sys.exit(-1)
+            else:
+                self.target = None
         else:
             self.target = None
 
