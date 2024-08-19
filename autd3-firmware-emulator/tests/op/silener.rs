@@ -5,7 +5,7 @@ use autd3_driver::{
     defined::ULTRASOUND_PERIOD,
     derive::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
     error::AUTDInternalError,
-    firmware::{cpu::TxDatagram, operation::SilencerTarget},
+    firmware::{cpu::TxDatagram, fpga::SilencerTarget},
     geometry::Vector3,
 };
 use autd3_firmware_emulator::CPUEmulator;

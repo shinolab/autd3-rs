@@ -2,7 +2,10 @@ use std::num::{NonZeroU16, NonZeroU8};
 
 use crate::{
     error::AUTDInternalError,
-    firmware::operation::{write_to_tx, Operation, TypeTag},
+    firmware::{
+        fpga::SilencerTarget,
+        operation::{write_to_tx, Operation, TypeTag},
+    },
     geometry::Device,
 };
 
@@ -21,7 +24,7 @@ pub struct SilencerFixedCompletionStepsOp {
     value_intensity: NonZeroU16,
     value_phase: NonZeroU16,
     strict_mode: bool,
-    target: super::SilencerTarget,
+    target: SilencerTarget,
 }
 
 impl SilencerFixedCompletionStepsOp {
@@ -29,7 +32,7 @@ impl SilencerFixedCompletionStepsOp {
         value_intensity: NonZeroU8,
         value_phase: NonZeroU8,
         strict_mode: bool,
-        target: super::SilencerTarget,
+        target: SilencerTarget,
     ) -> Self {
         Self {
             is_done: false,
@@ -51,8 +54,8 @@ impl Operation for SilencerFixedCompletionStepsOp {
                 } else {
                     0
                 } | match self.target {
-                    super::SilencerTarget::Intensity => 0,
-                    super::SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
+                    SilencerTarget::Intensity => 0,
+                    SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
                 },
                 value_intensity: self.value_intensity.get(),
                 value_phase: self.value_phase.get(),
@@ -78,7 +81,6 @@ mod tests {
     use std::mem::size_of;
 
     use super::*;
-    use crate::firmware::operation::SilencerTarget;
     use crate::geometry::tests::create_device;
 
     const NUM_TRANS_IN_UNIT: usize = 249;
@@ -89,6 +91,8 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     #[case(0x00, false)]
     fn test(#[case] value: u8, #[case] strict_mode: bool) {
+        use crate::firmware::fpga::SilencerTarget;
+
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
         let mut tx = [0x00u8; size_of::<SilencerFixedCompletionSteps>()];

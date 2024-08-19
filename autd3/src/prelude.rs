@@ -24,9 +24,8 @@ pub use autd3_driver::{
         cpu::GainSTMMode,
         fpga::{
             DebugType, Drive, EmitIntensity, GPIOIn, GPIOOut, LoopBehavior, Phase, SamplingConfig,
-            Segment, TransitionMode,
+            Segment, SilencerTarget, TransitionMode,
         },
-        operation::SilencerTarget,
     },
     geometry::{EulerAngle, Geometry, Quaternion, UnitQuaternion, Vector3},
 };
