@@ -7,18 +7,15 @@ use autd3_driver::{
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
-use derivative::Derivative;
 use derive_more::Display;
 
-#[derive(Derivative)]
-#[derivative(Debug)]
-#[derive(Modulation, Clone, PartialEq, Builder, Display)]
+#[derive(Modulation, Clone, PartialEq, Debug, Builder, Display)]
 #[display(
     "Sine<{}> {{ {}, {}±{}, {:?}, {:?}, {:?} }}",
-    "tynm::type_name::<S>()",
+    tynm::type_name::<S>(),
     freq,
     offset,
-    "*intensity as f32 / 2.",
+    *intensity as f32 / 2.,
     phase,
     config,
     loop_behavior
@@ -36,8 +33,6 @@ pub struct Sine<S: SamplingMode> {
     offset: u8,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
-    #[derivative(Debug = "ignore")]
-    __phantom: std::marker::PhantomData<S>,
 }
 
 impl Sine<ExactFreq> {
@@ -49,7 +44,6 @@ impl Sine<ExactFreq> {
             offset: u8::MAX / 2,
             config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::infinite(),
-            __phantom: std::marker::PhantomData,
         }
     }
 
@@ -61,7 +55,6 @@ impl Sine<ExactFreq> {
             offset: u8::MAX / 2,
             config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::infinite(),
-            __phantom: std::marker::PhantomData,
         }
     }
 }
@@ -229,6 +222,19 @@ mod tests {
         assert_eq!(u8::MAX / 4, m.offset);
         assert_eq!(PI / 4.0 * rad, m.phase);
         assert_eq!(SamplingConfig::new_nearest(10.1 * kHz), m.config);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_sine_fmt() -> anyhow::Result<()> {
+        let m = Sine::new(100. * Hz)
+            .with_intensity(u8::MAX / 2)
+            .with_offset(u8::MAX / 4)
+            .with_phase(PI / 4.0 * rad)
+            .with_sampling_config(SamplingConfig::new_nearest(10.1 * kHz))?;
+
+        assert_eq!("Sine<ExactFreqFloat> { 100 Hz, 63±63.5, 0.7853982 rad, SamplingConfig { div: 4 }, LoopBehavior::Infinite }", format!("{}", m));
 
         Ok(())
     }
