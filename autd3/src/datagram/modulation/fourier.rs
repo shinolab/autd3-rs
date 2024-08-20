@@ -49,21 +49,20 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
             .iter()
             .map(|c| c.calc())
             .collect::<Result<Vec<_>, _>>()?;
+        let num_components = buffers.len();
+        let res = vec![0usize; buffers.iter().fold(1, |acc, x| lcm(acc, x.len()))];
         Ok(Arc::new(
             buffers
-                .iter()
-                .fold(
-                    vec![0usize; buffers.iter().fold(1, |acc, x| lcm(acc, x.len()))],
-                    |acc, x| {
-                        acc.iter()
-                            .zip(x.iter().cycle())
-                            .map(|(a, &b)| a + b as usize)
-                            .collect::<Vec<_>>()
-                    },
-                )
-                .iter()
-                .map(|x| (x / buffers.len()) as u8)
-                .collect::<Vec<_>>(),
+                .into_iter()
+                .fold(res, |mut acc, x| {
+                    acc.iter_mut()
+                        .zip(x.iter().cycle())
+                        .for_each(|(a, &b)| *a += b as usize);
+                    acc
+                })
+                .into_iter()
+                .map(|x| (x / num_components) as u8)
+                .collect(),
         ))
     }
 
@@ -75,7 +74,6 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
         match self.components.len() {
             0 => {
                 tracing::error!("Components is empty");
-                return;
             }
             1 => {
                 tracing::debug!("Components: {}", self.components[0]);
