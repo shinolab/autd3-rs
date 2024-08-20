@@ -47,30 +47,24 @@ impl<S: SamplingMode> Modulation for Mixer<S> {
         let buffers = self
             .components
             .iter()
-            .map(|c| c.calc())
-            .map(|v| {
-                v.map(|v| {
-                    v.iter()
-                        .map(|x| *x as f32 / u8::MAX as f32)
-                        .collect::<Vec<_>>()
-                })
+            .map(|c| {
+                c.calc()
+                    .map(|v| v.iter().map(|x| *x as f32 / u8::MAX as f32).collect())
             })
-            .collect::<Result<Vec<_>, _>>()?;
+            .collect::<Result<Vec<Vec<_>>, _>>()?;
+        let res = vec![1.; buffers.iter().fold(1, |acc, x| lcm(acc, x.len()))];
         Ok(Arc::new(
             buffers
-                .iter()
-                .fold(
-                    vec![1.0; buffers.iter().fold(1, |acc, x| lcm(acc, x.len()))],
-                    |acc, x| {
-                        acc.iter()
-                            .zip(x.iter().cycle())
-                            .map(|(&a, &b)| a * b)
-                            .collect::<Vec<_>>()
-                    },
-                )
-                .iter()
+                .into_iter()
+                .fold(res, |mut acc, x| {
+                    acc.iter_mut()
+                        .zip(x.into_iter().cycle())
+                        .for_each(|(a, b)| *a *= b);
+                    acc
+                })
+                .into_iter()
                 .map(|x| (x * u8::MAX as f32) as u8)
-                .collect::<Vec<_>>(),
+                .collect(),
         ))
     }
 
@@ -82,7 +76,6 @@ impl<S: SamplingMode> Modulation for Mixer<S> {
         match self.components.len() {
             0 => {
                 tracing::error!("Components is empty");
-                return;
             }
             1 => {
                 tracing::debug!("Components: {}", self.components[0]);

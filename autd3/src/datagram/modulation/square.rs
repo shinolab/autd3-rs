@@ -4,19 +4,16 @@ use autd3_driver::{defined::Freq, derive::*};
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
-use derivative::Derivative;
 use derive_more::Display;
 
-#[derive(Derivative)]
-#[derivative(Debug)]
-#[derive(Modulation, Clone, PartialEq, Builder, Display)]
+#[derive(Modulation, Clone, PartialEq, Debug, Builder, Display)]
 #[display(
     "Square<{}> {{ {}, {}-{}, {}%, {:?}, {:?} }}",
-    "tynm::type_name::<S>()",
+    tynm::type_name::<S>(),
     freq,
     low,
     high,
-    "duty * 100.",
+    duty * 100.,
     config,
     loop_behavior
 )]
@@ -33,8 +30,6 @@ pub struct Square<S: SamplingMode> {
     duty: f32,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
-    #[derivative(Debug = "ignore")]
-    __phantom: std::marker::PhantomData<S>,
 }
 
 impl Square<ExactFreq> {
@@ -46,7 +41,6 @@ impl Square<ExactFreq> {
             duty: 0.5,
             config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::infinite(),
-            __phantom: std::marker::PhantomData,
         }
     }
 
@@ -58,7 +52,6 @@ impl Square<ExactFreq> {
             duty: 0.5,
             config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::infinite(),
-            __phantom: std::marker::PhantomData,
         }
     }
 }
@@ -258,5 +251,20 @@ mod tests {
             )),
             Square::new(150. * Hz).with_duty(1.1).calc().err()
         );
+    }
+
+    #[test]
+    fn square_fmt() -> anyhow::Result<()> {
+        let m = Square::new(150. * Hz)
+            .with_duty(0.1)
+            .with_high(0x80)
+            .with_low(0x40);
+
+        assert_eq!(
+            "Square<ExactFreqFloat> { 150 Hz, 64-128, 10%, SamplingConfig { div: 10 }, LoopBehavior::Infinite }",
+            format!("{}", m)
+        );
+
+        Ok(())
     }
 }
