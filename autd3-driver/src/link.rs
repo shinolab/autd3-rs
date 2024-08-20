@@ -103,7 +103,7 @@ mod internal {
         #[must_use]
         fn timeout(&self) -> Duration;
         #[inline(always)]
-        fn trace(&mut self, _: &TxDatagram, _: &mut [RxMessage], _: Option<Duration>) {}
+        fn trace(&mut self, _: &TxDatagram, _: &mut [RxMessage], _: Duration, _: usize) {}
     }
 
     pub trait LinkBuilder {
@@ -131,21 +131,9 @@ pub async fn send_receive(
     link: &mut impl Link,
     tx: &TxDatagram,
     rx: &mut [RxMessage],
-    timeout: Option<Duration>,
+    timeout: Duration,
 ) -> Result<(), AUTDInternalError> {
-    link.trace(tx, rx, timeout);
-    let timeout = timeout.unwrap_or(link.timeout());
     tracing::debug!("send with timeout: {:?}", timeout);
-
-    // GRCOV_EXCL_START
-    tracing::trace!(
-        "send: {}",
-        tx.iter().format_with(", ", |elt, f| {
-            f(&format_args!("({:?}, {:#04X})", elt.header, elt.payload[0]))
-        })
-    );
-    // GRCOV_EXCL_STOP
-
     if !link.send(tx).await? {
         return Err(AUTDInternalError::SendDataFailed);
     }
@@ -277,24 +265,27 @@ mod tests {
 
         let tx = TxDatagram::new(0);
         let mut rx = Vec::new();
-        assert_eq!(send_receive(&mut link, &tx, &mut rx, None).await, Ok(()));
+        assert_eq!(
+            send_receive(&mut link, &tx, &mut rx, Duration::ZERO).await,
+            Ok(())
+        );
 
         link.is_open = false;
         assert_eq!(
-            send_receive(&mut link, &tx, &mut rx, None).await,
+            send_receive(&mut link, &tx, &mut rx, Duration::ZERO).await,
             Err(AUTDInternalError::LinkClosed)
         );
 
         link.is_open = true;
         link.down = true;
         assert_eq!(
-            send_receive(&mut link, &tx, &mut rx, None).await,
+            send_receive(&mut link, &tx, &mut rx, Duration::ZERO).await,
             Err(AUTDInternalError::SendDataFailed)
         );
 
         link.down = false;
         assert_eq!(
-            send_receive(&mut link, &tx, &mut rx, Some(Duration::from_millis(1))).await,
+            send_receive(&mut link, &tx, &mut rx, Duration::from_millis(1)).await,
             Ok(())
         );
     }

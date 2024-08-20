@@ -5,7 +5,7 @@ use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
     datagram::{Clear, Datagram, FetchFirmInfo, IntoDatagramWithTimeout, Synchronize},
-    derive::{tracing, Builder},
+    derive::{tracing, Builder, Itertools},
     firmware::{
         cpu::{check_if_msg_is_processed, RxMessage, TxDatagram},
         fpga::FPGAState,
@@ -31,8 +31,6 @@ pub struct Controller<L: Link> {
     rx_buf: Vec<RxMessage>,
     #[get]
     parallel_threshold: usize,
-    #[get]
-    last_parallel_threshold: usize,
     #[get]
     send_interval: Duration,
     #[cfg(target_os = "windows")]
@@ -79,8 +77,7 @@ impl<L: Link> Controller<L> {
         parallel_threshold: Option<usize>,
     ) -> Result<(), AUTDError> {
         let parallel_threshold = parallel_threshold.unwrap_or(self.parallel_threshold);
-
-        self.last_parallel_threshold = parallel_threshold;
+        let timeout = timeout.unwrap_or(self.link.timeout());
 
         self.link.update(&self.geometry).await?;
         loop {
@@ -90,6 +87,23 @@ impl<L: Link> Controller<L> {
                 &mut self.tx_buf,
                 parallel_threshold,
             )?;
+
+            self.link.trace(
+                &mut self.tx_buf,
+                &mut self.rx_buf,
+                timeout,
+                parallel_threshold,
+            );
+
+            // GRCOV_EXCL_START
+            tracing::trace!(
+                "send: {}",
+                self.tx_buf.iter().format_with(", ", |elt, f| {
+                    f(&format_args!("({:?}, {:#04X})", elt.header, elt.payload[0]))
+                })
+            );
+            // GRCOV_EXCL_STOP
+
             let start = tokio::time::Instant::now();
             send_receive(&mut self.link, &self.tx_buf, &mut self.rx_buf, timeout).await?;
             if OperationHandler::is_done(operations) {
@@ -356,31 +370,6 @@ mod tests {
                 .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
                 .is_thermal_assert());
         }
-
-        Ok(())
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    async fn last_parallel_threshold() -> anyhow::Result<()> {
-        let mut autd =
-            Controller::builder([AUTD3::new(Vector3::zeros()), AUTD3::new(Vector3::zeros())])
-                .with_parallel_threshold(0)
-                .open(Audit::builder())
-                .await?;
-        assert_eq!(usize::MAX, autd.last_parallel_threshold);
-
-        autd.send(Null::new()).await?;
-        assert_eq!(0, autd.last_parallel_threshold);
-
-        autd.send(Static::new()).await?;
-        assert_eq!(usize::MAX, autd.last_parallel_threshold);
-
-        autd.send(Static::new().with_parallel_threshold(10)).await?;
-        assert_eq!(10, autd.last_parallel_threshold);
-
-        autd.send((Static::new(), Static::new()).with_parallel_threshold(5))
-            .await?;
-        assert_eq!(5, autd.last_parallel_threshold);
 
         Ok(())
     }

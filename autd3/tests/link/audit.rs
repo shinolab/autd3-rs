@@ -12,7 +12,7 @@ async fn audit_test() -> anyhow::Result<()> {
     assert_eq!(std::time::Duration::from_millis(100), autd.link().timeout());
 
     assert_eq!(0, autd.link()[0].idx());
-    assert_eq!(Some(DEFAULT_TIMEOUT), autd.link().last_timeout());
+    assert_eq!(DEFAULT_TIMEOUT, autd.link().last_timeout());
 
     assert_eq!(vec![None], autd.fpga_state().await?);
     autd.send(ReadsFPGAState::new(|_| true)).await?;
@@ -61,6 +61,31 @@ async fn audit_test() -> anyhow::Result<()> {
         Err(AUTDError::Internal(AUTDInternalError::LinkClosed)),
         autd.fpga_state().await
     );
+
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn last_parallel_threshold() -> anyhow::Result<()> {
+    let mut autd =
+        Controller::builder([AUTD3::new(Vector3::zeros()), AUTD3::new(Vector3::zeros())])
+            .with_parallel_threshold(0)
+            .open(Audit::builder())
+            .await?;
+    assert_eq!(usize::MAX, autd.link().last_parallel_threshold());
+
+    autd.send(Null::new()).await?;
+    assert_eq!(0, autd.link().last_parallel_threshold());
+
+    autd.send(Static::new()).await?;
+    assert_eq!(usize::MAX, autd.link().last_parallel_threshold());
+
+    autd.send(Static::new().with_parallel_threshold(10)).await?;
+    assert_eq!(10, autd.link().last_parallel_threshold());
+
+    autd.send((Static::new(), Static::new()).with_parallel_threshold(5))
+        .await?;
+    assert_eq!(5, autd.link().last_parallel_threshold());
 
     Ok(())
 }
