@@ -13,7 +13,8 @@ use derive_more::{Deref, DerefMut};
 pub struct Audit {
     is_open: bool,
     timeout: Duration,
-    last_timeout: Option<Duration>,
+    last_timeout: Duration,
+    last_parallel_threshold: usize,
     #[deref]
     #[deref_mut]
     cpus: Vec<CPUEmulator>,
@@ -39,7 +40,8 @@ impl LinkBuilder for AuditBuilder {
         Ok(Audit {
             is_open: true,
             timeout: self.timeout,
-            last_timeout: None,
+            last_timeout: Duration::ZERO,
+            last_parallel_threshold: 4,
             cpus: geometry
                 .iter()
                 .enumerate()
@@ -58,8 +60,12 @@ impl Audit {
         }
     }
 
-    pub const fn last_timeout(&self) -> Option<Duration> {
+    pub const fn last_timeout(&self) -> Duration {
         self.last_timeout
+    }
+
+    pub const fn last_parallel_threshold(&self) -> usize {
+        self.last_parallel_threshold
     }
 
     pub fn down(&mut self) {
@@ -135,7 +141,14 @@ impl Link for Audit {
         self.timeout
     }
 
-    fn trace(&mut self, _: &TxDatagram, _: &mut [RxMessage], timeout: Option<Duration>) {
+    fn trace(
+        &mut self,
+        _: &TxDatagram,
+        _: &mut [RxMessage],
+        timeout: Duration,
+        parallel_threshold: usize,
+    ) {
         self.last_timeout = timeout;
+        self.last_parallel_threshold = parallel_threshold;
     }
 }
