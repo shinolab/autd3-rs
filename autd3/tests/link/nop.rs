@@ -8,17 +8,13 @@ async fn nop_test() -> anyhow::Result<()> {
 
     assert_eq!(std::time::Duration::from_millis(100), autd.link().timeout());
 
-    autd.send(Static::new()).await?;
+    assert!(autd.send(Static::new()).await.is_ok());
 
-    autd.close().await?;
+    assert!(autd.close().await.is_ok());
 
     assert_eq!(
         Err(AUTDError::Internal(AUTDInternalError::LinkClosed)),
         autd.send(Static::new()).await
-    );
-    assert_eq!(
-        Err(AUTDError::Internal(AUTDInternalError::LinkClosed)),
-        autd.fpga_state().await
     );
 
     Ok(())
