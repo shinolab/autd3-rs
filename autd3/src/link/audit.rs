@@ -9,11 +9,14 @@ use autd3_firmware_emulator::CPUEmulator;
 
 use derive_more::{Deref, DerefMut};
 
-#[derive(Deref, DerefMut)]
+#[derive(Deref, DerefMut, Builder)]
 pub struct Audit {
     is_open: bool,
+    #[get]
     timeout: Duration,
+    #[get]
     last_timeout: Duration,
+    #[get]
     last_parallel_threshold: usize,
     #[deref]
     #[deref_mut]
@@ -58,14 +61,6 @@ impl Audit {
         AuditBuilder {
             timeout: Duration::ZERO,
         }
-    }
-
-    pub const fn last_timeout(&self) -> Duration {
-        self.last_timeout
-    }
-
-    pub const fn last_parallel_threshold(&self) -> usize {
-        self.last_parallel_threshold
     }
 
     pub fn down(&mut self) {
