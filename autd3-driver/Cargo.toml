@@ -19,8 +19,6 @@ time = { workspace = true, features = ["std", "macros"] }
 tokio = { workspace = true, features = ["time"] }
 autd3-derive = { workspace = true }
 async-trait = { workspace = true, optional = true }
-num-complex = { workspace = true, features = ["std"] }
-rand = { workspace = true, optional = true }
 bitfield-struct = { workspace = true }
 rayon = { workspace = true }
 itertools = { workspace = true }
