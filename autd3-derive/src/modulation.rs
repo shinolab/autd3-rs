@@ -31,10 +31,10 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     } else {
         quote! {
             impl <#(#linetimes,)* #(#type_params,)*> #name #ty_generics #where_clause {
-                #[allow(clippy::needless_update)]
-                pub fn with_sampling_config<TryIntoSamplingConfig: TryInto<SamplingConfig>>(self, config: TryIntoSamplingConfig) -> Result<Self, TryIntoSamplingConfig::Error>
+                pub fn with_sampling_config<TryIntoSamplingConfig: TryInto<SamplingConfig>>(mut self, config: TryIntoSamplingConfig) -> Result<Self, TryIntoSamplingConfig::Error>
                 {
-                    Ok(Self {config: config.try_into()?, ..self})
+                    self.config = config.try_into()?;
+                    Ok(self)
                 }
             }
         }
@@ -45,9 +45,10 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let loop_behavior = quote! {
             impl <#(#linetimes,)* #(#type_params,)*> #name #ty_generics #where_clause {
-                #[allow(clippy::needless_update)]
-                pub fn with_loop_behavior(self, loop_behavior: LoopBehavior) -> Self {
-                    Self {loop_behavior, ..self}
+                #[must_use]
+                pub fn with_loop_behavior(mut self, loop_behavior: LoopBehavior) -> Self {
+                    self.loop_behavior = loop_behavior;
+                    self
                 }
             }
     };
