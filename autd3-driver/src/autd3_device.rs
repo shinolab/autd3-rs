@@ -14,18 +14,11 @@ pub struct AUTD3 {
 }
 
 impl AUTD3 {
-    pub const NUM_TRANS_IN_UNIT: usize = 249;
-
     pub const NUM_TRANS_X: usize = 18;
-
     pub const NUM_TRANS_Y: usize = 14;
-
-    pub const TRANS_SPACING_MM: f32 = 10.16;
-
-    pub const TRANS_SPACING: f32 = Self::TRANS_SPACING_MM * mm;
-
+    pub const NUM_TRANS_IN_UNIT: usize = Self::NUM_TRANS_X * Self::NUM_TRANS_Y - 3;
+    pub const TRANS_SPACING: f32 = 10.16 * mm;
     pub const DEVICE_WIDTH: f32 = 192.0 * mm;
-
     pub const DEVICE_HEIGHT: f32 = 151.4 * mm;
 
     pub fn new(position: Vector3) -> Self {
@@ -53,14 +46,11 @@ impl AUTD3 {
 
     pub const fn grid_id(idx: usize) -> (usize, usize) {
         let local_id = idx % Self::NUM_TRANS_IN_UNIT;
-        let mut offset = 0;
-        if local_id >= 19 {
-            offset += 2;
-        }
-        if local_id >= 32 {
-            offset += 1;
-        }
-        let uid = local_id + offset;
+        let uid = match local_id {
+            0..19 => local_id,
+            19..32 => local_id + 2,
+            _ => local_id + 3,
+        };
         (uid % Self::NUM_TRANS_X, uid / Self::NUM_TRANS_X)
     }
 }
@@ -75,14 +65,14 @@ impl IntoDevice for AUTD3 {
             itertools::iproduct!(0..Self::NUM_TRANS_Y, 0..Self::NUM_TRANS_X)
                 .filter(|&(y, x)| !Self::is_missing_transducer(x, y))
                 .map(|(y, x)| {
-                    Vector4::new(
-                        x as f32 * Self::TRANS_SPACING,
-                        y as f32 * Self::TRANS_SPACING,
-                        0.,
-                        1.,
-                    )
+                    trans_mat
+                        * Vector4::new(
+                            x as f32 * Self::TRANS_SPACING,
+                            y as f32 * Self::TRANS_SPACING,
+                            0.,
+                            1.,
+                        )
                 })
-                .map(|p| trans_mat * p)
                 .enumerate()
                 .map(|(i, p)| Transducer::new(i, p.xyz()))
                 .collect(),
