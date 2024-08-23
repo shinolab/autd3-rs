@@ -161,6 +161,7 @@ impl<'a> DatagramST for Box<dyn Modulation + Send + Sync + 'a> {
 #[cfg(feature = "capi")]
 mod capi {
     use crate::derive::*;
+    use std::sync::Arc;
 
     #[derive(Modulation)]
     struct NullModulation {
