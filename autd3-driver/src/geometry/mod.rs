@@ -105,9 +105,9 @@ pub mod tests {
 
     macro_rules! assert_approx_eq_vec3 {
         ($a:expr, $b:expr) => {
-            assert_approx_eq::assert_approx_eq!($a.x, $b.x, 1e-3);
-            assert_approx_eq::assert_approx_eq!($a.y, $b.y, 1e-3);
-            assert_approx_eq::assert_approx_eq!($a.z, $b.z, 1e-3);
+            approx::assert_abs_diff_eq!($a.x, $b.x, epsilon = 1e-3);
+            approx::assert_abs_diff_eq!($a.y, $b.y, epsilon = 1e-3);
+            approx::assert_abs_diff_eq!($a.z, $b.z, epsilon = 1e-3);
         };
     }
 
@@ -226,7 +226,7 @@ pub mod tests {
         geometry.set_sound_speed_from_temp(temp);
         assert_eq!(1, geometry.version());
         geometry.iter().for_each(|dev| {
-            assert_approx_eq::assert_approx_eq!(expected * mm, dev.sound_speed, 1e-3);
+            approx::assert_abs_diff_eq!(expected * mm, dev.sound_speed, epsilon = 1e-3);
         });
     }
 

@@ -69,8 +69,8 @@ mod tests {
     fn test_db() {
         let amp = 121.5 * dB;
 
-        assert_approx_eq::assert_approx_eq!(amp.spl(), 121.5, 1e-3);
-        assert_approx_eq::assert_approx_eq!(amp.pascal(), 23.77, 1e-3);
+        approx::assert_abs_diff_eq!(amp.spl(), 121.5, epsilon = 1e-3);
+        approx::assert_abs_diff_eq!(amp.pascal(), 23.77, epsilon = 1e-3);
     }
 
     #[test]
@@ -78,13 +78,13 @@ mod tests {
     fn test_pascal() {
         let amp = 23.77 * Pa;
 
-        assert_approx_eq::assert_approx_eq!(amp.pascal(), 23.77, 1e-3);
-        assert_approx_eq::assert_approx_eq!(amp.spl(), 121.5, 1e-3);
+        approx::assert_abs_diff_eq!(amp.pascal(), 23.77, epsilon = 1e-3);
+        approx::assert_abs_diff_eq!(amp.spl(), 121.5, epsilon = 1e-3);
 
-        assert_approx_eq::assert_approx_eq!((2. * amp).pascal(), 2. * 23.77, 1e-3);
-        assert_approx_eq::assert_approx_eq!((amp * 2.).pascal(), 2. * 23.77, 1e-3);
+        approx::assert_abs_diff_eq!((2. * amp).pascal(), 2. * 23.77, epsilon = 1e-3);
+        approx::assert_abs_diff_eq!((amp * 2.).pascal(), 2. * 23.77, epsilon = 1e-3);
 
-        assert_approx_eq::assert_approx_eq!((amp / 2.).pascal(), 23.77 / 2., 1e-3);
+        approx::assert_abs_diff_eq!((amp / 2.).pascal(), 23.77 / 2., epsilon = 1e-3);
     }
 
     #[test]
@@ -92,13 +92,13 @@ mod tests {
     fn test_kilo_pascal() {
         let amp = 23.77e-3 * kPa;
 
-        assert_approx_eq::assert_approx_eq!(amp.pascal(), 23.77, 1e-3);
-        assert_approx_eq::assert_approx_eq!(amp.spl(), 121.5, 1e-3);
+        approx::assert_abs_diff_eq!(amp.pascal(), 23.77, epsilon = 1e-3);
+        approx::assert_abs_diff_eq!(amp.spl(), 121.5, epsilon = 1e-3);
 
-        assert_approx_eq::assert_approx_eq!((2. * amp).pascal(), 2. * 23.77, 1e-3);
-        assert_approx_eq::assert_approx_eq!((amp * 2.).pascal(), 2. * 23.77, 1e-3);
+        approx::assert_abs_diff_eq!((2. * amp).pascal(), 2. * 23.77, epsilon = 1e-3);
+        approx::assert_abs_diff_eq!((amp * 2.).pascal(), 2. * 23.77, epsilon = 1e-3);
 
-        assert_approx_eq::assert_approx_eq!((amp / 2.).pascal(), 23.77 / 2., 1e-3);
+        approx::assert_abs_diff_eq!((amp / 2.).pascal(), 23.77 / 2., epsilon = 1e-3);
     }
 
     #[test]

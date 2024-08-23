@@ -77,7 +77,7 @@ mod tests {
                 assert_eq!(m.freq(), m2.freq());
                 assert_eq!(m.high(), m2.high());
                 assert_eq!(m.low(), m2.low());
-                assert_approx_eq::assert_approx_eq!(m.duty(), m2.duty());
+                approx::assert_abs_diff_eq!(m.duty(), m2.duty());
             }
             _ => panic!("unexpected datagram type"),
         }

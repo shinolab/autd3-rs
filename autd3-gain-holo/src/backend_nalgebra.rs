@@ -1152,7 +1152,7 @@ mod tests {
         let v = backend.to_host_cv(v)?;
         let abs = backend.to_host_v(abs)?;
         v.iter().zip(abs.iter()).for_each(|(v, abs)| {
-            assert_approx_eq::assert_approx_eq!(v.norm_squared(), abs, EPS);
+            approx::assert_abs_diff_eq!(v.norm_squared(), abs, epsilon = EPS);
         });
         Ok(())
     }
@@ -1170,7 +1170,7 @@ mod tests {
         let r = backend.to_host_m(r)?;
         (0..N).for_each(|i| {
             (0..N).for_each(|j| {
-                assert_approx_eq::assert_approx_eq!(v[(i, j)].re, r[(i, j)], EPS);
+                approx::assert_abs_diff_eq!(v[(i, j)].re, r[(i, j)], epsilon = EPS);
             })
         });
         Ok(())
@@ -1189,7 +1189,7 @@ mod tests {
         let r = backend.to_host_m(r)?;
         (0..N).for_each(|i| {
             (0..N).for_each(|j| {
-                assert_approx_eq::assert_approx_eq!(v[(i, j)].im, r[(i, j)], EPS);
+                approx::assert_abs_diff_eq!(v[(i, j)].im, r[(i, j)], epsilon = EPS);
             })
         });
         Ok(())
@@ -1209,7 +1209,9 @@ mod tests {
         let v = backend.to_host_cv(v)?;
         let vc = backend.to_host_cv(vc)?;
         v.iter().zip(vc.iter()).for_each(|(&v, &vc)| {
-            assert_approx_eq::assert_approx_eq!(scale * vc, v, EPS);
+            let e = scale * vc;
+            approx::assert_abs_diff_eq!(e.re, v.re, epsilon = EPS);
+            approx::assert_abs_diff_eq!(e.im, v.im, epsilon = EPS);
         });
         Ok(())
     }
@@ -1244,7 +1246,8 @@ mod tests {
         let v = backend.to_host_cv(v)?;
         let vc = backend.to_host_cv(vc)?;
         v.iter().zip(vc.iter()).for_each(|(v, vc)| {
-            assert_approx_eq::assert_approx_eq!(vc.exp(), v, EPS);
+            approx::assert_abs_diff_eq!(vc.exp().re, v.re, epsilon = EPS);
+            approx::assert_abs_diff_eq!(vc.exp().im, v.im, epsilon = EPS);
         });
         Ok(())
     }
@@ -1301,8 +1304,8 @@ mod tests {
             .zip(a.iter())
             .zip(b.iter())
             .for_each(|((c, a), b)| {
-                assert_approx_eq::assert_approx_eq!(a.re * b.re - a.im * b.im, c.re, EPS);
-                assert_approx_eq::assert_approx_eq!(a.re * b.im + a.im * b.re, c.im, EPS);
+                approx::assert_abs_diff_eq!(a.re * b.re - a.im * b.im, c.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(a.re * b.im + a.im * b.re, c.im, epsilon = EPS);
             });
         Ok(())
     }
@@ -1319,7 +1322,7 @@ mod tests {
         let a = backend.to_host_v(a)?;
         let b = backend.to_host_v(b)?;
         let expect = a.iter().zip(b.iter()).map(|(a, b)| a * b).sum::<f32>();
-        assert_approx_eq::assert_approx_eq!(dot, expect, EPS);
+        approx::assert_abs_diff_eq!(dot, expect, epsilon = EPS);
         Ok(())
     }
 
@@ -1339,8 +1342,8 @@ mod tests {
             .zip(b.iter())
             .map(|(a, b)| a.conj() * b)
             .sum::<Complex>();
-        assert_approx_eq::assert_approx_eq!(dot.re, expect.re, EPS);
-        assert_approx_eq::assert_approx_eq!(dot.im, expect.im, EPS);
+        approx::assert_abs_diff_eq!(dot.re, expect.re, epsilon = EPS);
+        approx::assert_abs_diff_eq!(dot.im, expect.im, epsilon = EPS);
         Ok(())
     }
 
@@ -1364,7 +1367,7 @@ mod tests {
             .zip(a.iter())
             .zip(bc.iter())
             .for_each(|((b, a), bc)| {
-                assert_approx_eq::assert_approx_eq!(alpha * a + bc, b, EPS);
+                approx::assert_abs_diff_eq!(alpha * a + bc, b, epsilon = EPS);
             });
         Ok(())
     }
@@ -1389,7 +1392,7 @@ mod tests {
             .zip(a.iter())
             .zip(bc.iter())
             .for_each(|((b, a), bc)| {
-                assert_approx_eq::assert_approx_eq!(alpha * a + bc, b, EPS);
+                approx::assert_abs_diff_eq!(alpha * a + bc, b, epsilon = EPS);
             });
         Ok(())
     }
@@ -1428,8 +1431,8 @@ mod tests {
             let cc = backend.to_host_cm(cc)?;
             let expected = a * b.transpose() * alpha + cc * beta;
             c.iter().zip(expected.iter()).for_each(|(c, expected)| {
-                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
-                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+                approx::assert_abs_diff_eq!(c.re, expected.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(c.im, expected.im, epsilon = EPS);
             });
         }
 
@@ -1457,8 +1460,8 @@ mod tests {
             let cc = backend.to_host_cm(cc)?;
             let expected = a * b.adjoint() * alpha + cc * beta;
             c.iter().zip(expected.iter()).for_each(|(c, expected)| {
-                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
-                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+                approx::assert_abs_diff_eq!(c.re, expected.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(c.im, expected.im, epsilon = EPS);
             });
         }
 
@@ -1478,8 +1481,8 @@ mod tests {
             let cc = backend.to_host_cm(cc)?;
             let expected = a.transpose() * b * alpha + cc * beta;
             c.iter().zip(expected.iter()).for_each(|(c, expected)| {
-                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
-                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+                approx::assert_abs_diff_eq!(c.re, expected.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(c.im, expected.im, epsilon = EPS);
             });
         }
 
@@ -1531,8 +1534,8 @@ mod tests {
             let cc = backend.to_host_cm(cc)?;
             let expected = a.adjoint() * b * alpha + cc * beta;
             c.iter().zip(expected.iter()).for_each(|(c, expected)| {
-                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
-                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+                approx::assert_abs_diff_eq!(c.re, expected.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(c.im, expected.im, epsilon = EPS);
             });
         }
 
@@ -1596,8 +1599,8 @@ mod tests {
             let cc = backend.to_host_cv(cc)?;
             let expected = a * b * alpha + cc * beta;
             c.iter().zip(expected.iter()).for_each(|(c, expected)| {
-                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
-                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+                approx::assert_abs_diff_eq!(c.re, expected.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(c.im, expected.im, epsilon = EPS);
             });
         }
 
@@ -1617,8 +1620,8 @@ mod tests {
             let cc = backend.to_host_cv(cc)?;
             let expected = a.transpose() * b * alpha + cc * beta;
             c.iter().zip(expected.iter()).for_each(|(c, expected)| {
-                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
-                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+                approx::assert_abs_diff_eq!(c.re, expected.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(c.im, expected.im, epsilon = EPS);
             });
         }
 
@@ -1638,8 +1641,8 @@ mod tests {
             let cc = backend.to_host_cv(cc)?;
             let expected = a.adjoint() * b * alpha + cc * beta;
             c.iter().zip(expected.iter()).for_each(|(c, expected)| {
-                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
-                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+                approx::assert_abs_diff_eq!(c.re, expected.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(c.im, expected.im, epsilon = EPS);
             });
         }
         Ok(())
@@ -1671,8 +1674,8 @@ mod tests {
             let cc = backend.to_host_cm(cc)?;
             let expected = a * b * alpha + cc * beta;
             c.iter().zip(expected.iter()).for_each(|(c, expected)| {
-                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
-                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+                approx::assert_abs_diff_eq!(c.re, expected.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(c.im, expected.im, epsilon = EPS);
             });
         }
 
@@ -1692,8 +1695,8 @@ mod tests {
             let cc = backend.to_host_cm(cc)?;
             let expected = a * b.transpose() * alpha + cc * beta;
             c.iter().zip(expected.iter()).for_each(|(c, expected)| {
-                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
-                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+                approx::assert_abs_diff_eq!(c.re, expected.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(c.im, expected.im, epsilon = EPS);
             });
         }
 
@@ -1721,8 +1724,8 @@ mod tests {
             let cc = backend.to_host_cm(cc)?;
             let expected = a * b.adjoint() * alpha + cc * beta;
             c.iter().zip(expected.iter()).for_each(|(c, expected)| {
-                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
-                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+                approx::assert_abs_diff_eq!(c.re, expected.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(c.im, expected.im, epsilon = EPS);
             });
         }
 
@@ -1742,8 +1745,8 @@ mod tests {
             let cc = backend.to_host_cm(cc)?;
             let expected = a.transpose() * b * alpha + cc * beta;
             c.iter().zip(expected.iter()).for_each(|(c, expected)| {
-                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
-                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+                approx::assert_abs_diff_eq!(c.re, expected.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(c.im, expected.im, epsilon = EPS);
             });
         }
 
@@ -1763,8 +1766,8 @@ mod tests {
             let cc = backend.to_host_cm(cc)?;
             let expected = a.transpose() * b.transpose() * alpha + cc * beta;
             c.iter().zip(expected.iter()).for_each(|(c, expected)| {
-                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
-                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+                approx::assert_abs_diff_eq!(c.re, expected.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(c.im, expected.im, epsilon = EPS);
             });
         }
 
@@ -1784,8 +1787,8 @@ mod tests {
             let cc = backend.to_host_cm(cc)?;
             let expected = a.transpose() * b.adjoint() * alpha + cc * beta;
             c.iter().zip(expected.iter()).for_each(|(c, expected)| {
-                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
-                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+                approx::assert_abs_diff_eq!(c.re, expected.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(c.im, expected.im, epsilon = EPS);
             });
         }
 
@@ -1813,8 +1816,8 @@ mod tests {
             let cc = backend.to_host_cm(cc)?;
             let expected = a.adjoint() * b * alpha + cc * beta;
             c.iter().zip(expected.iter()).for_each(|(c, expected)| {
-                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
-                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+                approx::assert_abs_diff_eq!(c.re, expected.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(c.im, expected.im, epsilon = EPS);
             });
         }
 
@@ -1834,8 +1837,8 @@ mod tests {
             let cc = backend.to_host_cm(cc)?;
             let expected = a.adjoint() * b.transpose() * alpha + cc * beta;
             c.iter().zip(expected.iter()).for_each(|(c, expected)| {
-                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
-                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+                approx::assert_abs_diff_eq!(c.re, expected.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(c.im, expected.im, epsilon = EPS);
             });
         }
 
@@ -1863,8 +1866,8 @@ mod tests {
             let cc = backend.to_host_cm(cc)?;
             let expected = a.adjoint() * b.adjoint() * alpha + cc * beta;
             c.iter().zip(expected.iter()).for_each(|(c, expected)| {
-                assert_approx_eq::assert_approx_eq!(c.re, expected.re, EPS);
-                assert_approx_eq::assert_approx_eq!(c.im, expected.im, EPS);
+                approx::assert_abs_diff_eq!(c.re, expected.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(c.im, expected.im, epsilon = EPS);
             });
         }
         Ok(())
@@ -1912,7 +1915,7 @@ mod tests {
 
         (0..N).for_each(|row| {
             let sum = a.row(row).iter().sum::<f32>();
-            assert_approx_eq::assert_approx_eq!(sum, b[row], EPS);
+            approx::assert_abs_diff_eq!(sum, b[row], epsilon = EPS);
         });
         Ok(())
     }
@@ -1934,7 +1937,9 @@ mod tests {
             .zip(a.iter())
             .zip(b.iter())
             .for_each(|((&c, &a), &b)| {
-                assert_approx_eq::assert_approx_eq!(c, a / a.abs() * b, EPS);
+                let e = a / a.abs() * b;
+                approx::assert_abs_diff_eq!(e.re, c.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(e.im, c.im, epsilon = EPS);
             });
 
         Ok(())
@@ -1957,7 +1962,9 @@ mod tests {
             .zip(a.iter())
             .zip(bc.iter())
             .for_each(|((&b, &a), &bc)| {
-                assert_approx_eq::assert_approx_eq!(b, bc / bc.abs() * a, EPS);
+                let e = bc / bc.abs() * a;
+                approx::assert_abs_diff_eq!(e.re, b.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(e.im, b.im, epsilon = EPS);
             });
 
         Ok(())
@@ -2006,8 +2013,8 @@ mod tests {
             .iter()
             .zip(g.iter())
             .for_each(|(r, g)| {
-                assert_approx_eq::assert_approx_eq!(r.re, g.re, EPS);
-                assert_approx_eq::assert_approx_eq!(r.im, g.im, EPS);
+                approx::assert_abs_diff_eq!(r.re, g.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(r.im, g.im, epsilon = EPS);
             });
 
         Ok(())
@@ -2084,8 +2091,8 @@ mod tests {
             .iter()
             .zip(g.iter())
             .for_each(|(r, g)| {
-                assert_approx_eq::assert_approx_eq!(r.re, g.re, EPS);
-                assert_approx_eq::assert_approx_eq!(r.im, g.im, EPS);
+                approx::assert_abs_diff_eq!(r.re, g.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(r.im, g.im, epsilon = EPS);
             });
 
         Ok(())
@@ -2120,8 +2127,8 @@ mod tests {
 
         let b = backend.to_host_cm(b)?;
         reference.iter().zip(b.iter()).for_each(|(r, b)| {
-            assert_approx_eq::assert_approx_eq!(r.re, b.re, EPS);
-            assert_approx_eq::assert_approx_eq!(r.im, b.im, EPS);
+            approx::assert_abs_diff_eq!(r.re, b.re, epsilon = EPS);
+            approx::assert_abs_diff_eq!(r.im, b.im, epsilon = EPS);
         });
         Ok(())
     }

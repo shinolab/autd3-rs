@@ -26,10 +26,10 @@ mod tests {
 
     macro_rules! assert_approx_eq_quat {
         ($a:expr, $b:expr) => {
-            assert_approx_eq::assert_approx_eq!($a.w, $b.w, 1e-3);
-            assert_approx_eq::assert_approx_eq!($a.i, $b.i, 1e-3);
-            assert_approx_eq::assert_approx_eq!($a.j, $b.j, 1e-3);
-            assert_approx_eq::assert_approx_eq!($a.k, $b.k, 1e-3);
+            approx::assert_abs_diff_eq!($a.w, $b.w, epsilon = 1e-3);
+            approx::assert_abs_diff_eq!($a.i, $b.i, epsilon = 1e-3);
+            approx::assert_abs_diff_eq!($a.j, $b.j, epsilon = 1e-3);
+            approx::assert_abs_diff_eq!($a.k, $b.k, epsilon = 1e-3);
         };
     }
 
@@ -41,7 +41,7 @@ mod tests {
     #[case(PI / 2., PI / 2. * rad)]
     #[cfg_attr(miri, ignore)]
     fn test_to_radians(#[case] expected: f32, #[case] angle: Angle) {
-        assert_approx_eq::assert_approx_eq!(expected, angle.radian());
+        approx::assert_abs_diff_eq!(expected, angle.radian());
     }
 
     #[rstest::rstest]

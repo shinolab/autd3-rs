@@ -61,9 +61,9 @@ mod tests {
                 ..
             })) => {
                 let g2 = autd3::gain::Plane::from_msg(&gain).unwrap();
-                assert_approx_eq::assert_approx_eq!(g.dir().x, g2.dir().x);
-                assert_approx_eq::assert_approx_eq!(g.dir().y, g2.dir().y);
-                assert_approx_eq::assert_approx_eq!(g.dir().z, g2.dir().z);
+                approx::assert_abs_diff_eq!(g.dir().x, g2.dir().x);
+                approx::assert_abs_diff_eq!(g.dir().y, g2.dir().y);
+                approx::assert_abs_diff_eq!(g.dir().z, g2.dir().z);
                 assert_eq!(g.intensity(), g2.intensity());
                 assert_eq!(g.phase_offset(), g2.phase_offset());
             }
