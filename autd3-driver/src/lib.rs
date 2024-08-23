@@ -28,17 +28,4 @@ pub mod derive {
     pub use itertools::Itertools;
     pub use tracing;
     pub use tynm;
-    // TODO@28.0.0: Remove followings
-    pub use crate::{
-        datagram::{
-            GainCache, GainTransform, IntoGainCache, IntoGainTransform, IntoModulationCache,
-            IntoModulationTransform, IntoRadiationPressure, ModulationCache, ModulationTransform,
-            RadiationPressure, WithSampling,
-        },
-        defined::rad,
-        firmware::fpga::{Drive, EmitIntensity, Phase},
-        geometry::{Device, Transducer},
-    };
-    pub use std::collections::HashMap;
-    pub use std::sync::Arc;
 }

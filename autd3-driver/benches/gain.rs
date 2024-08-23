@@ -1,9 +1,14 @@
 use autd3_driver::{
     autd3_device::AUTD3,
-    datagram::Group,
+    datagram::{Group, IntoGainCache},
+    defined::rad,
     derive::{Geometry, *},
-    firmware::{cpu::TxDatagram, operation::OperationHandler},
-    geometry::{IntoDevice, Vector3},
+    firmware::{
+        cpu::TxDatagram,
+        fpga::{EmitIntensity, Phase},
+        operation::OperationHandler,
+    },
+    geometry::{IntoDevice, Transducer, Vector3},
 };
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
