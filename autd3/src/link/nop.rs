@@ -43,10 +43,6 @@ impl Link for Nop {
     }
 
     async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
-        if !self.is_open {
-            return Err(AUTDInternalError::LinkClosed);
-        }
-
         self.cpus.iter_mut().for_each(|cpu| {
             cpu.send(tx);
         });
@@ -55,10 +51,6 @@ impl Link for Nop {
     }
 
     async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
-        if !self.is_open {
-            return Err(AUTDInternalError::LinkClosed);
-        }
-
         self.cpus.iter_mut().for_each(|cpu| {
             cpu.update();
             rx[cpu.idx()] = cpu.rx();
