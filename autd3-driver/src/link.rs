@@ -30,7 +30,7 @@ mod internal {
         #[must_use]
         fn timeout(&self) -> Duration;
         #[inline(always)]
-        fn trace(&mut self, _: &TxDatagram, _: &mut [RxMessage], _: Option<Duration>) {}
+        fn trace(&mut self, _: &TxDatagram, _: &mut [RxMessage], _: Duration, _: usize) {}
     }
 
     #[async_trait::async_trait]
@@ -67,8 +67,14 @@ mod internal {
         }
 
         #[inline(always)]
-        fn trace(&mut self, tx: &TxDatagram, rx: &mut [RxMessage], timeout: Option<Duration>) {
-            self.as_mut().trace(tx, rx, timeout)
+        fn trace(
+            &mut self,
+            tx: &TxDatagram,
+            rx: &mut [RxMessage],
+            timeout: Duration,
+            parallel_threshold: usize,
+        ) {
+            self.as_mut().trace(tx, rx, timeout, parallel_threshold)
         }
     }
 }
@@ -116,14 +122,7 @@ mod internal {
     }
 }
 
-#[cfg(feature = "async-trait")]
 pub use internal::Link;
-#[cfg(feature = "async-trait")]
-pub use internal::LinkBuilder;
-
-#[cfg(not(feature = "async-trait"))]
-pub use internal::Link;
-#[cfg(not(feature = "async-trait"))]
 pub use internal::LinkBuilder;
 
 #[tracing::instrument(skip(link, tx, rx, timeout))]
