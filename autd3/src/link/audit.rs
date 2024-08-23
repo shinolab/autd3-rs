@@ -88,10 +88,6 @@ impl Link for Audit {
     }
 
     async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
-        if !self.is_open {
-            return Err(AUTDInternalError::LinkClosed);
-        }
-
         if self.broken {
             return Err(AUTDInternalError::LinkError("broken".to_owned()));
         }
@@ -108,10 +104,6 @@ impl Link for Audit {
     }
 
     async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
-        if !self.is_open {
-            return Err(AUTDInternalError::LinkClosed);
-        }
-
         if self.broken {
             return Err(AUTDInternalError::LinkError("broken".to_owned()));
         }

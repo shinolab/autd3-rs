@@ -348,10 +348,6 @@ impl Link for SOEM {
     }
 
     async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
-        if !self.is_open() {
-            return Err(AUTDInternalError::LinkClosed);
-        }
-
         match self.sender.send(tx.clone()).await {
             Err(SendError(..)) => Err(AUTDInternalError::LinkClosed),
             _ => Ok(true),
@@ -359,9 +355,6 @@ impl Link for SOEM {
     }
 
     async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
-        if !self.is_open() {
-            return Err(AUTDInternalError::LinkClosed);
-        }
         match self.io_map.lock() {
             Ok(io_map) => unsafe {
                 std::ptr::copy_nonoverlapping(io_map.input(), rx.as_mut_ptr(), rx.len());

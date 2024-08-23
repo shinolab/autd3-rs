@@ -61,10 +61,6 @@ impl Link for RemoteSOEM {
     }
 
     async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
-        if !self.is_open() {
-            return Err(AUTDInternalError::LinkClosed);
-        }
-
         Ok(self
             .client
             .send_data(tx.to_msg(None))
@@ -75,10 +71,6 @@ impl Link for RemoteSOEM {
     }
 
     async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
-        if !self.is_open() {
-            return Err(AUTDInternalError::LinkClosed);
-        }
-
         let rx_ = Vec::<RxMessage>::from_msg(
             &self
                 .client
