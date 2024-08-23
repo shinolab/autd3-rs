@@ -224,11 +224,11 @@ mod tests {
         fn is_open(&self) -> bool {
             self.is_open
         }
-        // GRCOV_EXCL_STOP
 
         fn timeout(&self) -> Duration {
             self.timeout
         }
+        // GRCOV_EXCL_STOP
     }
 
     #[tokio::test]
