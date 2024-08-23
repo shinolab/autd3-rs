@@ -35,6 +35,5 @@ harness = false
 
 [dev-dependencies]
 anyhow = { workspace = true }
-assert_approx_eq = { workspace = true }
 rstest = { workspace = true }
 approx = { workspace = true }

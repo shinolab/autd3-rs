@@ -31,15 +31,13 @@ impl Transducer {
 mod tests {
     use std::f32::consts::PI;
 
-    use assert_approx_eq::assert_approx_eq;
-
     use super::*;
 
     macro_rules! assert_vec3_approx_eq {
         ($a:expr, $b:expr) => {
-            assert_approx_eq!($a.x, $b.x, 1e-3);
-            assert_approx_eq!($a.y, $b.y, 1e-3);
-            assert_approx_eq!($a.z, $b.z, 1e-3);
+            approx::assert_abs_diff_eq!($a.x, $b.x, epsilon = 1e-3);
+            approx::assert_abs_diff_eq!($a.y, $b.y, epsilon = 1e-3);
+            approx::assert_abs_diff_eq!($a.z, $b.z, epsilon = 1e-3);
         };
     }
 

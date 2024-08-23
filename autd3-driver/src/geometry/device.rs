@@ -170,18 +170,18 @@ pub mod tests {
 
     macro_rules! assert_approx_eq_vec3 {
         ($a:expr, $b:expr) => {
-            assert_approx_eq::assert_approx_eq!($a.x, $b.x, 1e-3);
-            assert_approx_eq::assert_approx_eq!($a.y, $b.y, 1e-3);
-            assert_approx_eq::assert_approx_eq!($a.z, $b.z, 1e-3);
+            approx::assert_abs_diff_eq!($a.x, $b.x, epsilon = 1e-3);
+            approx::assert_abs_diff_eq!($a.y, $b.y, epsilon = 1e-3);
+            approx::assert_abs_diff_eq!($a.z, $b.z, epsilon = 1e-3);
         };
     }
 
     macro_rules! assert_approx_eq_quat {
         ($a:expr, $b:expr) => {
-            assert_approx_eq::assert_approx_eq!($a.w, $b.w, 1e-3);
-            assert_approx_eq::assert_approx_eq!($a.i, $b.i, 1e-3);
-            assert_approx_eq::assert_approx_eq!($a.j, $b.j, 1e-3);
-            assert_approx_eq::assert_approx_eq!($a.k, $b.k, 1e-3);
+            approx::assert_abs_diff_eq!($a.w, $b.w, epsilon = 1e-3);
+            approx::assert_abs_diff_eq!($a.i, $b.i, epsilon = 1e-3);
+            approx::assert_abs_diff_eq!($a.j, $b.j, epsilon = 1e-3);
+            approx::assert_abs_diff_eq!($a.k, $b.k, epsilon = 1e-3);
         };
     }
 
@@ -437,7 +437,7 @@ pub mod tests {
     fn test_set_sound_speed_from_temp(#[case] expected: f32, #[case] temp: f32) {
         let mut device = create_device(0, 249);
         device.set_sound_speed_from_temp(temp);
-        assert_approx_eq::assert_approx_eq!(expected * mm, device.sound_speed, 1e-3);
+        approx::assert_abs_diff_eq!(expected * mm, device.sound_speed, epsilon = 1e-3);
     }
 
     #[rstest::rstest]
@@ -448,7 +448,7 @@ pub mod tests {
     fn wavelength(#[case] expect: f32, #[case] c: f32) {
         let mut device = create_device(0, 249);
         device.sound_speed = c;
-        assert_approx_eq::assert_approx_eq!(expect, device.wavelength());
+        approx::assert_abs_diff_eq!(expect, device.wavelength());
     }
 
     #[allow(unused_variables)]
@@ -460,6 +460,6 @@ pub mod tests {
     fn wavenumber(#[case] expect: f32, #[case] c: f32) {
         let mut device = create_device(0, 249);
         device.sound_speed = c;
-        assert_approx_eq::assert_approx_eq!(expect, device.wavenumber());
+        approx::assert_abs_diff_eq!(expect, device.wavenumber());
     }
 }

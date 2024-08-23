@@ -29,6 +29,6 @@ lightweight = ["tokio", "seq-macro", "autd3", "autd3-gain-holo", "autd3-driver/d
 async-trait = ["autd3-driver/async-trait", "autd3/async-trait", "autd3-gain-holo/async-trait"]
 
 [dev-dependencies]
-assert_approx_eq = { workspace = true }
+approx = { workspace = true }
 rand = { workspace = true }
 rstest = { workspace = true }

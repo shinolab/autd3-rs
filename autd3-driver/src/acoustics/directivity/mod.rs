@@ -41,7 +41,7 @@ pub mod tests {
         #[case] target: Vector3,
         #[case] dir: Vector3,
     ) {
-        assert_approx_eq::assert_approx_eq!(
+        approx::assert_abs_diff_eq!(
             expected,
             TestDirectivity::directivity_from_dir(&dir, &target)
         );

@@ -109,30 +109,30 @@ mod tests {
                 ..
             })) => {
                 let holo2 = autd3_gain_holo::LM::from_msg(&g).unwrap();
-                assert_approx_eq::assert_approx_eq!(holo.eps_1(), holo2.eps_1());
-                assert_approx_eq::assert_approx_eq!(holo.eps_2(), holo2.eps_2());
-                assert_approx_eq::assert_approx_eq!(holo.tau(), holo2.tau());
+                approx::assert_abs_diff_eq!(holo.eps_1(), holo2.eps_1());
+                approx::assert_abs_diff_eq!(holo.eps_2(), holo2.eps_2());
+                approx::assert_abs_diff_eq!(holo.tau(), holo2.tau());
                 assert_eq!(holo.k_max(), holo2.k_max());
                 holo.initial()
                     .iter()
                     .zip(holo2.initial().iter())
                     .for_each(|(v1, v2)| {
-                        assert_approx_eq::assert_approx_eq!(v1, v2);
+                        approx::assert_abs_diff_eq!(v1, v2);
                     });
                 assert_eq!(holo.constraint(), holo2.constraint());
                 holo.foci()
                     .iter()
                     .zip(holo2.foci().iter())
                     .for_each(|(f1, f2)| {
-                        assert_approx_eq::assert_approx_eq!(f1.x, f2.x);
-                        assert_approx_eq::assert_approx_eq!(f1.y, f2.y);
-                        assert_approx_eq::assert_approx_eq!(f1.z, f2.z);
+                        approx::assert_abs_diff_eq!(f1.x, f2.x);
+                        approx::assert_abs_diff_eq!(f1.y, f2.y);
+                        approx::assert_abs_diff_eq!(f1.z, f2.z);
                     });
                 holo.amps()
                     .iter()
                     .zip(holo2.amps().iter())
                     .for_each(|(f1, f2)| {
-                        assert_approx_eq::assert_approx_eq!(f1.pascal(), f2.pascal());
+                        approx::assert_abs_diff_eq!(f1.pascal(), f2.pascal());
                     });
             }
             _ => panic!("unexpected datagram type"),
