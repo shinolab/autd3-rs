@@ -88,12 +88,8 @@ impl<L: Link> Controller<L> {
                 parallel_threshold,
             )?;
 
-            self.link.trace(
-                &mut self.tx_buf,
-                &mut self.rx_buf,
-                timeout,
-                parallel_threshold,
-            );
+            self.link
+                .trace(&self.tx_buf, &mut self.rx_buf, timeout, parallel_threshold);
 
             // GRCOV_EXCL_START
             tracing::trace!(
