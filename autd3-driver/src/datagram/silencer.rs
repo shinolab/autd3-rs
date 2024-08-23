@@ -4,7 +4,7 @@ use autd3_derive::Builder;
 
 use crate::{
     defined::ULTRASOUND_PERIOD,
-    derive::{Device, Geometry, DEFAULT_TIMEOUT},
+    derive::{Geometry, DEFAULT_TIMEOUT},
     error::AUTDInternalError,
     firmware::{
         fpga::{SilencerTarget, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
@@ -12,6 +12,7 @@ use crate::{
             NullOp, OperationGenerator, SilencerFixedCompletionStepsOp, SilencerFixedUpdateRateOp,
         },
     },
+    geometry::Device,
 };
 
 use super::{Datagram, WithSampling};
