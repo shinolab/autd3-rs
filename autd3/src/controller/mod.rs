@@ -169,6 +169,11 @@ impl<L: Link> Controller<L> {
     }
 
     pub async fn fpga_state(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDError> {
+        if !self.link.is_open() {
+            return Err(AUTDError::Internal(
+                autd3_driver::error::AUTDInternalError::LinkClosed,
+            ));
+        }
         if self.link.receive(&mut self.rx_buf).await? {
             Ok(self.rx_buf.iter().map(Option::<FPGAState>::from).collect())
         } else {

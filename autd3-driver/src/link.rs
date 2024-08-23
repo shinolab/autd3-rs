@@ -133,6 +133,9 @@ pub async fn send_receive(
     timeout: Duration,
 ) -> Result<(), AUTDInternalError> {
     tracing::debug!("send with timeout: {:?}", timeout);
+    if !link.is_open() {
+        return Err(AUTDInternalError::LinkClosed);
+    }
     if !link.send(tx).await? {
         return Err(AUTDInternalError::SendDataFailed);
     }
@@ -147,6 +150,9 @@ async fn wait_msg_processed(
 ) -> Result<(), AUTDInternalError> {
     let start = std::time::Instant::now();
     loop {
+        if !link.is_open() {
+            return Err(AUTDInternalError::LinkClosed);
+        }
         let res = link.receive(rx).await?;
 
         // GRCOV_EXCL_START
@@ -196,19 +202,11 @@ mod tests {
         }
 
         async fn send(&mut self, _: &TxDatagram) -> Result<bool, AUTDInternalError> {
-            if !self.is_open {
-                return Err(AUTDInternalError::LinkClosed);
-            }
-
             self.send_cnt += 1;
             Ok(!self.down)
         }
 
         async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
-            if !self.is_open {
-                return Err(AUTDInternalError::LinkClosed);
-            }
-
             if self.recv_cnt > 10 {
                 return Err(AUTDInternalError::LinkError("too many".to_owned()));
             }
