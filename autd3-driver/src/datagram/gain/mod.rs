@@ -149,7 +149,7 @@ impl<'a> DatagramS for Box<dyn Gain + Send + Sync + 'a> {
 
 #[cfg(feature = "capi")]
 mod capi {
-    use crate::derive::*;
+    use crate::{derive::*, firmware::fpga::Drive};
 
     #[derive(Gain)]
     struct NullGain {}
