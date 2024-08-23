@@ -57,6 +57,12 @@ async fn audit_test() -> anyhow::Result<()> {
             ))),
             autd.send(Static::new()).await
         );
+        assert_eq!(
+            Err(AUTDError::Internal(AUTDInternalError::LinkError(
+                "broken".to_string()
+            ))),
+            autd.fpga_state().await
+        );
         autd.link_mut().repair();
         assert!(autd.send(Static::new()).await.is_ok());
     }
@@ -66,6 +72,10 @@ async fn audit_test() -> anyhow::Result<()> {
         assert_eq!(
             Err(AUTDError::Internal(AUTDInternalError::LinkClosed)),
             autd.send(Static::new()).await
+        );
+        assert_eq!(
+            Err(AUTDError::Internal(AUTDInternalError::LinkClosed)),
+            autd.fpga_state().await
         );
     }
 
