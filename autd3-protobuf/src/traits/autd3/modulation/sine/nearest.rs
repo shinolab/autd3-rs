@@ -73,7 +73,7 @@ mod tests {
                 ..
             })) => {
                 let m2 = autd3::modulation::Sine::<NearestFreq>::from_msg(&modulation).unwrap();
-                assert_approx_eq::assert_approx_eq!(m.freq().hz(), m2.freq().hz());
+                approx::assert_abs_diff_eq!(m.freq().hz(), m2.freq().hz());
                 assert_eq!(m.intensity(), m2.intensity());
                 assert_eq!(m.offset(), m2.offset());
                 assert_eq!(m.phase(), m2.phase());

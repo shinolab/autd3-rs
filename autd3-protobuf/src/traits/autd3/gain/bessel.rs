@@ -67,13 +67,13 @@ mod tests {
                 ..
             })) => {
                 let g2 = autd3::gain::Bessel::from_msg(&gain).unwrap();
-                assert_approx_eq::assert_approx_eq!(g.pos().x, g2.pos().x);
-                assert_approx_eq::assert_approx_eq!(g.pos().y, g2.pos().y);
-                assert_approx_eq::assert_approx_eq!(g.pos().z, g2.pos().z);
-                assert_approx_eq::assert_approx_eq!(g.dir().x, g2.dir().x);
-                assert_approx_eq::assert_approx_eq!(g.dir().y, g2.dir().y);
-                assert_approx_eq::assert_approx_eq!(g.dir().z, g2.dir().z);
-                assert_approx_eq::assert_approx_eq!(g.theta().radian(), g2.theta().radian());
+                approx::assert_abs_diff_eq!(g.pos().x, g2.pos().x);
+                approx::assert_abs_diff_eq!(g.pos().y, g2.pos().y);
+                approx::assert_abs_diff_eq!(g.pos().z, g2.pos().z);
+                approx::assert_abs_diff_eq!(g.dir().x, g2.dir().x);
+                approx::assert_abs_diff_eq!(g.dir().y, g2.dir().y);
+                approx::assert_abs_diff_eq!(g.dir().z, g2.dir().z);
+                approx::assert_abs_diff_eq!(g.theta().radian(), g2.theta().radian());
                 assert_eq!(g.intensity(), g2.intensity());
             }
             _ => panic!("unexpected datagram type"),

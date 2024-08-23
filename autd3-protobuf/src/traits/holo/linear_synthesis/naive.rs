@@ -91,15 +91,15 @@ mod tests {
                     .iter()
                     .zip(holo2.foci().iter())
                     .for_each(|(f1, f2)| {
-                        assert_approx_eq::assert_approx_eq!(f1.x, f2.x);
-                        assert_approx_eq::assert_approx_eq!(f1.y, f2.y);
-                        assert_approx_eq::assert_approx_eq!(f1.z, f2.z);
+                        approx::assert_abs_diff_eq!(f1.x, f2.x);
+                        approx::assert_abs_diff_eq!(f1.y, f2.y);
+                        approx::assert_abs_diff_eq!(f1.z, f2.z);
                     });
                 holo.amps()
                     .iter()
                     .zip(holo2.amps().iter())
                     .for_each(|(f1, f2)| {
-                        assert_approx_eq::assert_approx_eq!(f1.pascal(), f2.pascal());
+                        approx::assert_abs_diff_eq!(f1.pascal(), f2.pascal());
                     });
             }
             _ => panic!("unexpected datagram type"),

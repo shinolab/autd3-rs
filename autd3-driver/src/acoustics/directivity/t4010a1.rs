@@ -75,8 +75,6 @@ impl Directivity for T4010A1 {
 
 #[cfg(test)]
 mod tests {
-    use assert_approx_eq::assert_approx_eq;
-
     use crate::defined::deg;
 
     use super::*;
@@ -87,15 +85,15 @@ mod tests {
     #[case::deg_10(1.0, 10.0)]
     #[case::deg_20(1.0, 20.0)]
     #[case::deg_30(0.891251, 30.0)]
-    #[case::deg_40(0.707946, 40.0)]
-    #[case::deg_50(0.501187, 50.0)]
-    #[case::deg_60(0.354813, 60.0)]
-    #[case::deg_70(0.251189, 70.0)]
-    #[case::deg_80(0.199526, 80.0)]
-    #[case::deg_90(0.177831, 90.0)]
-    #[case::deg_100(0.199526, 100.0)]
+    #[case::deg_40(0.70794576, 40.0)]
+    #[case::deg_50(0.5011872, 50.0)]
+    #[case::deg_60(0.35481337, 60.0)]
+    #[case::deg_70(0.25118864, 70.0)]
+    #[case::deg_80(0.19952622, 80.0)]
+    #[case::deg_90(0.17783181, 90.0)]
+    #[case::deg_100(0.19952622, 100.0)]
     #[cfg_attr(miri, ignore)]
     fn test_directivity(#[case] expected: f32, #[case] theta_deg: f32) {
-        assert_approx_eq!(expected, T4010A1::directivity(theta_deg * deg));
+        approx::assert_abs_diff_eq!(expected, T4010A1::directivity(theta_deg * deg));
     }
 }

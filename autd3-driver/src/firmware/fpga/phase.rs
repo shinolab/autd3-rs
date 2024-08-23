@@ -146,7 +146,7 @@ mod tests {
     #[case(2.0 * PI / 256.0 * 255.0, 255)]
     #[cfg_attr(miri, ignore)]
     fn radian(#[case] expect: f32, #[case] value: u8) {
-        assert_approx_eq::assert_approx_eq!(expect, Phase::new(value).radian());
+        approx::assert_abs_diff_eq!(expect, Phase::new(value).radian());
     }
 
     #[test]

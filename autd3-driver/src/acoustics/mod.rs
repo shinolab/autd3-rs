@@ -37,8 +37,8 @@ mod tests {
 
     macro_rules! assert_complex_approx_eq {
         ($a:expr, $b:expr) => {
-            assert_approx_eq::assert_approx_eq!($a.re, $b.re, 1e-3 / mm);
-            assert_approx_eq::assert_approx_eq!($a.im, $b.im, 1e-3 / mm);
+            approx::assert_abs_diff_eq!($a.re, $b.re, epsilon = 1e-3 / mm);
+            approx::assert_abs_diff_eq!($a.im, $b.im, epsilon = 1e-3 / mm);
         };
     }
 

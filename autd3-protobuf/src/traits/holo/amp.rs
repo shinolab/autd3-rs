@@ -35,6 +35,6 @@ mod tests {
         let v = rng.gen::<f32>() * Pa;
         let msg = v.to_msg(None);
         let v2 = autd3_gain_holo::Amplitude::from_msg(&Some(msg)).unwrap();
-        assert_approx_eq::assert_approx_eq!(v.pascal(), v2.pascal());
+        approx::assert_abs_diff_eq!(v.pascal(), v2.pascal());
     }
 }

@@ -106,9 +106,9 @@ mod tests {
         let v = Vector3::new(rng.gen(), rng.gen(), rng.gen());
         let msg = v.to_msg(None);
         let v2 = Vector3::from_msg(&Some(msg)).unwrap();
-        assert_approx_eq::assert_approx_eq!(v.x, v2.x);
-        assert_approx_eq::assert_approx_eq!(v.y, v2.y);
-        assert_approx_eq::assert_approx_eq!(v.z, v2.z);
+        approx::assert_abs_diff_eq!(v.x, v2.x);
+        approx::assert_abs_diff_eq!(v.y, v2.y);
+        approx::assert_abs_diff_eq!(v.z, v2.z);
     }
 
     #[test]
@@ -129,10 +129,10 @@ mod tests {
         ));
         let msg = q.to_msg(None);
         let q2 = UnitQuaternion::from_msg(&msg).unwrap();
-        assert_approx_eq::assert_approx_eq!(q.w, q2.w);
-        assert_approx_eq::assert_approx_eq!(q.i, q2.i);
-        assert_approx_eq::assert_approx_eq!(q.j, q2.j);
-        assert_approx_eq::assert_approx_eq!(q.k, q2.k);
+        approx::assert_abs_diff_eq!(q.w, q2.w);
+        approx::assert_abs_diff_eq!(q.i, q2.i);
+        approx::assert_abs_diff_eq!(q.j, q2.j);
+        approx::assert_abs_diff_eq!(q.k, q2.k);
     }
 
     #[test]
@@ -148,15 +148,15 @@ mod tests {
             .iter()
             .zip(geometry2.iter())
             .for_each(|(dev, dev2)| {
-                assert_approx_eq::assert_approx_eq!(dev.sound_speed, dev2.sound_speed);
-                assert_approx_eq::assert_approx_eq!(dev.rotation().w, dev2.rotation().w);
-                assert_approx_eq::assert_approx_eq!(dev.rotation().i, dev2.rotation().i);
-                assert_approx_eq::assert_approx_eq!(dev.rotation().j, dev2.rotation().j);
-                assert_approx_eq::assert_approx_eq!(dev.rotation().k, dev2.rotation().k);
+                approx::assert_abs_diff_eq!(dev.sound_speed, dev2.sound_speed);
+                approx::assert_abs_diff_eq!(dev.rotation().w, dev2.rotation().w);
+                approx::assert_abs_diff_eq!(dev.rotation().i, dev2.rotation().i);
+                approx::assert_abs_diff_eq!(dev.rotation().j, dev2.rotation().j);
+                approx::assert_abs_diff_eq!(dev.rotation().k, dev2.rotation().k);
                 dev.iter().zip(dev2.iter()).for_each(|(t, t2)| {
-                    assert_approx_eq::assert_approx_eq!(t.position().x, t2.position().x);
-                    assert_approx_eq::assert_approx_eq!(t.position().y, t2.position().y);
-                    assert_approx_eq::assert_approx_eq!(t.position().z, t2.position().z);
+                    approx::assert_abs_diff_eq!(t.position().x, t2.position().x);
+                    approx::assert_abs_diff_eq!(t.position().y, t2.position().y);
+                    approx::assert_abs_diff_eq!(t.position().z, t2.position().z);
                 });
             });
     }

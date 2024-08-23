@@ -74,10 +74,10 @@ mod tests {
                 ..
             })) => {
                 let m2 = autd3::modulation::Square::<NearestFreq>::from_msg(&modulation).unwrap();
-                assert_approx_eq::assert_approx_eq!(m.freq().hz(), m2.freq().hz());
+                approx::assert_abs_diff_eq!(m.freq().hz(), m2.freq().hz());
                 assert_eq!(m.high(), m2.high());
                 assert_eq!(m.low(), m2.low());
-                assert_approx_eq::assert_approx_eq!(m.duty(), m2.duty());
+                approx::assert_abs_diff_eq!(m.duty(), m2.duty());
             }
             _ => panic!("unexpected datagram type"),
         }
