@@ -8,11 +8,11 @@ use super::write_to_tx;
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
-pub(crate) enum FirmwareVersionType {
-    CPUVersionMajor = 0x01,
-    CPUVersionMinor = 0x02,
-    FPGAVersionMajor = 0x03,
-    FPGAVersionMinor = 0x04,
+pub enum FirmwareVersionType {
+    CPUMajor = 0x01,
+    CPUMinor = 0x02,
+    FPGAMajor = 0x03,
+    FPGAMinor = 0x04,
     FPGAFunctions = 0x05,
     Clear = 0x06,
 }
@@ -68,10 +68,10 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(FirmwareVersionType::CPUVersionMajor)]
-    #[case(FirmwareVersionType::CPUVersionMinor)]
-    #[case(FirmwareVersionType::FPGAVersionMajor)]
-    #[case(FirmwareVersionType::FPGAVersionMinor)]
+    #[case(FirmwareVersionType::CPUMajor)]
+    #[case(FirmwareVersionType::CPUMinor)]
+    #[case(FirmwareVersionType::FPGAMajor)]
+    #[case(FirmwareVersionType::FPGAMinor)]
     #[case(FirmwareVersionType::FPGAFunctions)]
     #[case(FirmwareVersionType::Clear)]
     fn test(#[case] ty: FirmwareVersionType) {
