@@ -8,19 +8,8 @@ use crate::{
 
 use super::OperationGenerator;
 
-#[derive(Debug, Clone, Copy)]
-#[non_exhaustive]
-pub enum FetchFirmInfo {
-    CPUMajor,
-    CPUMinor,
-    FPGAMajor,
-    FPGAMinor,
-    FPGAFunctions,
-    Clear,
-}
-
 pub struct FetchFirmwareInfoOpGenerator {
-    inner: FetchFirmInfo,
+    inner: FirmwareVersionType,
 }
 
 impl OperationGenerator for FetchFirmwareInfoOpGenerator {
@@ -28,21 +17,11 @@ impl OperationGenerator for FetchFirmwareInfoOpGenerator {
     type O2 = NullOp;
 
     fn generate(&self, _: &Device) -> (Self::O1, Self::O2) {
-        (
-            Self::O1::new(match self.inner {
-                FetchFirmInfo::CPUMajor => FirmwareVersionType::CPUVersionMajor,
-                FetchFirmInfo::CPUMinor => FirmwareVersionType::CPUVersionMinor,
-                FetchFirmInfo::FPGAMajor => FirmwareVersionType::FPGAVersionMajor,
-                FetchFirmInfo::FPGAMinor => FirmwareVersionType::FPGAVersionMinor,
-                FetchFirmInfo::FPGAFunctions => FirmwareVersionType::FPGAFunctions,
-                FetchFirmInfo::Clear => FirmwareVersionType::Clear,
-            }),
-            Self::O2::default(),
-        )
+        (Self::O1::new(self.inner), Self::O2::default())
     }
 }
 
-impl Datagram for FetchFirmInfo {
+impl Datagram for FirmwareVersionType {
     type G = FetchFirmwareInfoOpGenerator;
 
     fn timeout(&self) -> Option<Duration> {

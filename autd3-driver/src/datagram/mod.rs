@@ -26,7 +26,6 @@ pub use gain::{
     IntoGainTransform,
 };
 pub use gpio_in::EmulateGPIOIn;
-pub use info::FetchFirmInfo;
 pub use modulation::{
     IntoModulationCache, IntoModulationTransform, IntoRadiationPressure, Modulation,
     ModulationCache, ModulationCalcResult, ModulationOperationGenerator, ModulationProperty,
