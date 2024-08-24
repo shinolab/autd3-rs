@@ -10,7 +10,7 @@ impl CPUEmulator {
     pub(crate) fn configure_reads_fpga_state(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<ReadsFPGAState>(data);
 
-        self.read_fpga_state = d.value != 0x00;
+        self.reads_fpga_state = d.value != 0x00;
 
         NO_ERR
     }

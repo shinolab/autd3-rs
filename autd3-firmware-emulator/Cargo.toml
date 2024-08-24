@@ -11,6 +11,7 @@ repository = { workspace = true }
 
 [dependencies]
 autd3-driver = { workspace = true }
+autd3-derive = { workspace = true }
 time = { workspace = true, features = ["std"] }
 num-integer = { workspace = true }
 thiserror = { workspace = true }

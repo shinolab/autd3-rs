@@ -35,8 +35,8 @@ impl CPUEmulator {
 
         match d.ty {
             INFO_TYPE_CPU_VERSION_MAJOR => {
-                self.read_fpga_state_store = self.read_fpga_state;
-                self.read_fpga_state = false;
+                self.reads_fpga_state_store = self.reads_fpga_state;
+                self.reads_fpga_state = false;
                 self.is_rx_data_used = true;
                 self.rx_data = (self.get_cpu() & 0xFF) as _;
             }
@@ -53,7 +53,7 @@ impl CPUEmulator {
                 self.rx_data = ((self.get_fpga() >> 8) & 0xFF) as _;
             }
             INFO_TYPE_CLEAR => {
-                self.read_fpga_state = self.read_fpga_state_store;
+                self.reads_fpga_state = self.reads_fpga_state_store;
                 self.is_rx_data_used = false;
             }
             _ => return ERR_INVALID_INFO_TYPE,

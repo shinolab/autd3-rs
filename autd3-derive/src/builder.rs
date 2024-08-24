@@ -48,16 +48,37 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
         let ty = &field.ty;
         field.ident.as_ref().map(|ident| {
             if let syn::Type::Path(path) = ty {
-                let re = regex::Regex::new(r"Vec < (?<inner>\w+) >").unwrap();
-                if let Some(caps) = re.captures(&path.path.to_token_stream().to_string()) {
-                    let inner = format_ident!("{}", &caps["inner"]);
-                    return quote! {
-                        #[must_use]
-                        pub fn #ident(&self) -> &[#inner] {
-                            &self.#ident
-                        }
+                let path = path.path.to_token_stream().to_string();
+                {
+                    let re = regex::Regex::new(r"LazyCell < RefCell < Vec < (?<inner>\w+) > > >")
+                        .unwrap();
+                    if let Some(caps) = re.captures(&path) {
+                        let inner = format_ident!("{}", &caps["inner"]);
+                        let mut_name = format_ident!("{}_mut", ident);
+                        return quote! {
+                            #[must_use]
+                            pub fn #ident(&self) -> std::cell::Ref<'_, Vec<#inner>> {
+                                self.#ident.borrow()
+                            }
+                            #[must_use]
+                            pub fn #mut_name(&self) -> std::cell::RefMut<'_, Vec<#inner>> {
+                                self.#ident.borrow_mut()
+                            }
+                        };
                     };
-                };
+                }
+                {
+                    let re = regex::Regex::new(r"Vec < (?<inner>\w+) >").unwrap();
+                    if let Some(caps) = re.captures(&path) {
+                        let inner = format_ident!("{}", &caps["inner"]);
+                        return quote! {
+                            #[must_use]
+                            pub fn #ident(&self) -> &[#inner] {
+                                &self.#ident
+                            }
+                        };
+                    };
+                }
             };
             if has_attr(field, "ref") {
                 if has_attr(field, "ref_mut") {
