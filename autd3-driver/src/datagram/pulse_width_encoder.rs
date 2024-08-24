@@ -30,7 +30,7 @@ impl Default
     >
 {
     fn default() -> Self {
-        PulseWidthEncoder::new(Box::new(|_| Box::new(default_table)))
+        Self::new(Box::new(|_| Box::new(default_table)))
     }
 }
 

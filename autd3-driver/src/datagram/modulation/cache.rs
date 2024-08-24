@@ -30,7 +30,7 @@ impl<M: Modulation> IntoCache<M> for M {
 }
 
 impl<M: Modulation> Cache<M> {
-    pub fn new(m: M) -> Self {
+    fn new(m: M) -> Self {
         Self {
             config: m.sampling_config(),
             loop_behavior: m.loop_behavior(),

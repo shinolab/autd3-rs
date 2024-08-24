@@ -14,8 +14,7 @@ pub struct Transform<M: Modulation, F: Fn(usize, u8) -> u8> {
 }
 
 impl<M: Modulation, F: Fn(usize, u8) -> u8> Transform<M, F> {
-    #[doc(hidden)]
-    pub fn new(m: M, f: F) -> Self {
+    fn new(m: M, f: F) -> Self {
         Self {
             config: m.sampling_config(),
             loop_behavior: m.loop_behavior(),

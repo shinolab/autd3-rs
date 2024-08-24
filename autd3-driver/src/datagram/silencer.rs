@@ -4,7 +4,7 @@ use autd3_derive::Builder;
 
 use crate::{
     defined::ULTRASOUND_PERIOD,
-    derive::{Geometry, DEFAULT_TIMEOUT},
+    derive::{Geometry, SamplingConfig, DEFAULT_TIMEOUT},
     error::AUTDInternalError,
     firmware::{
         fpga::{SilencerTarget, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
@@ -15,7 +15,22 @@ use crate::{
     geometry::Device,
 };
 
-use super::{Datagram, WithSampling};
+use super::Datagram;
+
+pub trait WithSampling {
+    fn sampling_config_intensity(&self) -> Option<SamplingConfig>;
+    fn sampling_config_phase(&self) -> Option<SamplingConfig>;
+}
+
+#[cfg(feature = "capi")]
+impl WithSampling for (SamplingConfig, SamplingConfig) {
+    fn sampling_config_intensity(&self) -> Option<SamplingConfig> {
+        Some(self.0)
+    }
+    fn sampling_config_phase(&self) -> Option<SamplingConfig> {
+        Some(self.1)
+    }
+}
 
 pub trait SilencerConfig: std::fmt::Debug + Clone + Copy {}
 impl SilencerConfig for () {}
