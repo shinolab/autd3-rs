@@ -1,17 +1,12 @@
 use crate::{
     error::AUTDInternalError,
-    firmware::{
-        fpga::FPGA_MAIN_CLK_FREQ,
-        operation::{write_to_tx, Operation, TypeTag},
-    },
+    firmware::operation::{write_to_tx, Operation, TypeTag},
     geometry::Device,
 };
 
 #[repr(C, align(2))]
 struct Sync {
     tag: TypeTag,
-    __pad: [u8; 3],
-    ecat_sync_base_cnt: u32,
 }
 
 #[derive(Default)]
@@ -21,14 +16,7 @@ pub struct SyncOp {
 
 impl Operation for SyncOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        write_to_tx(
-            Sync {
-                tag: TypeTag::Sync,
-                __pad: [0; 3],
-                ecat_sync_base_cnt: FPGA_MAIN_CLK_FREQ.hz() / 2000,
-            },
-            tx,
-        );
+        write_to_tx(Sync { tag: TypeTag::Sync }, tx);
 
         self.is_done = true;
         Ok(std::mem::size_of::<Sync>())
@@ -69,11 +57,6 @@ mod tests {
 
         assert!(op.is_done());
 
-        let sync_base_cnt = FPGA_MAIN_CLK_FREQ.hz() / 2000;
         assert_eq!(tx[0], TypeTag::Sync as u8);
-        assert_eq!(tx[4], (sync_base_cnt & 0xFF) as u8);
-        assert_eq!(tx[5], ((sync_base_cnt >> 8) & 0xFF) as u8);
-        assert_eq!(tx[6], ((sync_base_cnt >> 16) & 0xFF) as u8);
-        assert_eq!(tx[7], ((sync_base_cnt >> 24) & 0xFF) as u8);
     }
 }

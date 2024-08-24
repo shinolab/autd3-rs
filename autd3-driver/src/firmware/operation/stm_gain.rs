@@ -16,10 +16,38 @@ use crate::{
     geometry::{Device, Transducer},
 };
 
-use super::{
-    control_flags::GainSTMControlFlags,
-    reduced_phase::{PhaseFull, PhaseHalf},
-};
+#[derive(Clone, Copy)]
+#[repr(C)]
+pub struct GainSTMControlFlags(u8);
+
+bitflags::bitflags! {
+    impl GainSTMControlFlags : u8 {
+        const NONE       = 0;
+        const BEGIN      = 1 << 0;
+        const END        = 1 << 1;
+        const TRANSITION = 1 << 2;
+        const SEGMENT    = 1 << 3;
+        const SEND_BIT0  = 1 << 6;
+        const SEND_BIT1  = 1 << 7;
+    }
+}
+
+struct PhaseFull {
+    phase_0: u8,
+    phase_1: u8,
+}
+
+#[bitfield_struct::bitfield(u16)]
+struct PhaseHalf {
+    #[bits(4)]
+    phase_0: u8,
+    #[bits(4)]
+    phase_1: u8,
+    #[bits(4)]
+    phase_2: u8,
+    #[bits(4)]
+    phase_3: u8,
+}
 
 #[repr(C, align(2))]
 struct GainSTMHead {
@@ -105,68 +133,36 @@ impl Operation for GainSTMOp {
                     }
                 }
                 GainSTMMode::PhaseFull => {
-                    if let Some(g) = self.gains.next() {
-                        let dst = std::slice::from_raw_parts_mut(
-                            tx[offset..].as_mut_ptr() as *mut PhaseFull<0>,
-                            device.len(),
-                        );
-                        dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
-                        });
-                        send += 1;
-                    }
-                    if let Some(g) = self.gains.next() {
-                        let dst = std::slice::from_raw_parts_mut(
-                            tx[offset..].as_mut_ptr() as *mut PhaseFull<1>,
-                            device.len(),
-                        );
-                        dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
-                        });
-                        send += 1;
-                    }
+                    let dst = std::slice::from_raw_parts_mut(
+                        tx[offset..].as_mut_ptr() as *mut PhaseFull,
+                        device.len(),
+                    );
+                    seq_macro::seq!(N in 0..2 {
+                        #(
+                            if let Some(g) = self.gains.next() {
+                                dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
+                                    d.phase_~N = g(tr).phase().value();
+                                });
+                                send += 1;
+                            }
+                        )*
+                    });
                 }
                 GainSTMMode::PhaseHalf => {
-                    if let Some(g) = self.gains.next() {
-                        let dst = std::slice::from_raw_parts_mut(
-                            tx[offset..].as_mut_ptr() as *mut PhaseHalf<0>,
-                            device.len(),
-                        );
-                        dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
-                        });
-                        send += 1;
-                    }
-                    if let Some(g) = self.gains.next() {
-                        let dst = std::slice::from_raw_parts_mut(
-                            tx[offset..].as_mut_ptr() as *mut PhaseHalf<1>,
-                            device.len(),
-                        );
-                        dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
-                        });
-                        send += 1;
-                    }
-                    if let Some(g) = self.gains.next() {
-                        let dst = std::slice::from_raw_parts_mut(
-                            tx[offset..].as_mut_ptr() as *mut PhaseHalf<2>,
-                            device.len(),
-                        );
-                        dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
-                        });
-                        send += 1;
-                    }
-                    if let Some(g) = self.gains.next() {
-                        let dst = std::slice::from_raw_parts_mut(
-                            tx[offset..].as_mut_ptr() as *mut PhaseHalf<3>,
-                            device.len(),
-                        );
-                        dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
-                        });
-                        send += 1;
-                    }
+                    let dst = std::slice::from_raw_parts_mut(
+                        tx[offset..].as_mut_ptr() as *mut PhaseHalf,
+                        device.len(),
+                    );
+                    seq_macro::seq!(N in 0..4 {
+                        #(
+                            if let Some(g) = self.gains.next() {
+                                dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
+                                    d.set_phase_~N(g(tr).phase().value() >> 4);
+                                });
+                                send += 1;
+                            }
+                        )*
+                    });
                 }
             }
             send
@@ -565,7 +561,18 @@ mod tests {
 
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
-        let mut tx = vec![0x00u8; FRAME_SIZE];
+        let mut tx = unsafe {
+            let mut aligned: Vec<u16> = vec![0; FRAME_SIZE / 2];
+            let ptr = aligned.as_mut_ptr();
+            let len_units = aligned.len();
+            let cap_units = aligned.capacity();
+            std::mem::forget(aligned);
+            Vec::from_raw_parts(
+                ptr as *mut u8,
+                len_units * std::mem::size_of::<u16>(),
+                cap_units * std::mem::size_of::<u16>(),
+            )
+        };
 
         let mut rng = rand::thread_rng();
 
@@ -701,6 +708,18 @@ mod tests {
                 .for_each(|(d, g)| {
                     assert_eq!(d[0] & 0x0F, g.phase().value() >> 4);
                 });
+        }
+
+        unsafe {
+            let ptr = tx.as_mut_ptr();
+            let len_units = tx.len();
+            let cap_units = tx.capacity();
+            std::mem::forget(tx);
+            let _ = Vec::from_raw_parts(
+                ptr as *mut u16,
+                len_units / std::mem::size_of::<u16>(),
+                cap_units / std::mem::size_of::<u16>(),
+            );
         }
     }
 

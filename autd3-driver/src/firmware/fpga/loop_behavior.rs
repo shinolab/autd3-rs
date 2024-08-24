@@ -1,8 +1,10 @@
+use autd3_derive::Builder;
 use derive_more::Debug;
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Builder)]
 #[debug("{}", match self.rep { 0xFFFF => "Infinite".to_string(), 0 => "Once".to_string(), i => format!("Finite({})", i + 1) })]
 pub struct LoopBehavior {
+    #[get]
     pub(crate) rep: u16,
 }
 
@@ -42,10 +44,6 @@ impl LoopBehavior {
 
     pub const fn once() -> Self {
         Self { rep: 0 }
-    }
-
-    pub const fn rep(&self) -> u16 {
-        self.rep
     }
 }
 

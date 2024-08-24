@@ -11,7 +11,8 @@ mod pulse_width_encoder;
 mod reads_fpga_state;
 mod segment;
 mod silencer;
-mod stm;
+mod stm_foci;
+mod stm_gain;
 mod sync;
 
 pub(crate) use clear::*;
@@ -28,7 +29,8 @@ pub(crate) use pulse_width_encoder::*;
 pub(crate) use reads_fpga_state::*;
 pub(crate) use segment::*;
 pub(crate) use silencer::*;
-pub(crate) use stm::*;
+pub(crate) use stm_foci::*;
+pub(crate) use stm_gain::*;
 pub(crate) use sync::*;
 
 use crate::{
@@ -87,7 +89,6 @@ pub trait OperationGenerator {
     fn generate(&self, device: &Device) -> (Self::O1, Self::O2);
 }
 
-// GRCOV_EXCL_START
 impl Operation for Box<dyn Operation> {
     fn required_size(&self, device: &Device) -> usize {
         self.as_ref().required_size(device)
@@ -101,7 +102,6 @@ impl Operation for Box<dyn Operation> {
         self.as_ref().is_done()
     }
 }
-// GRCOV_EXCL_STOP
 
 impl Default for Box<dyn Operation> {
     fn default() -> Self {
@@ -124,9 +124,9 @@ impl OperationHandler {
         operations: &mut [(impl Operation, impl Operation)],
         geometry: &Geometry,
         tx: &mut TxDatagram,
-        parallel_threshold: usize,
+        parallel: bool,
     ) -> Result<(), AUTDInternalError> {
-        if geometry.num_devices() > parallel_threshold {
+        if parallel {
             geometry
                 .iter()
                 .zip(tx.iter_mut())
@@ -178,16 +178,10 @@ impl OperationHandler {
         tx: &mut TxMessage,
     ) -> Result<usize, AUTDInternalError> {
         let header = &mut tx.header;
-        header.msg_id = if header.msg_id == MSG_ID_MAX {
-            0
-        } else {
-            header.msg_id + 1
-        };
+        header.msg_id += 1;
+        header.msg_id &= MSG_ID_MAX;
         header.slot_2_offset = 0;
-
-        let t = &mut tx.payload;
-
-        op.pack(dev, t)
+        op.pack(dev, &mut tx.payload)
     }
 }
 
@@ -238,10 +232,10 @@ pub mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case::serial(usize::MAX)]
-    #[case::parallel(0)]
+    #[case::serial(false)]
+    #[case::parallel(true)]
     #[cfg_attr(miri, ignore)]
-    fn test(#[case] parallel_threshold: usize) {
+    fn test(#[case] parallel: bool) {
         let geometry = Geometry::new(vec![Device::new(
             0,
             UnitQuaternion::identity(),
@@ -267,24 +261,24 @@ pub mod tests {
 
         let mut tx = TxDatagram::new(1);
 
-        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, parallel_threshold).is_ok());
+        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, parallel).is_ok());
         assert_eq!(op[0].0.num_frames, 2);
         assert_eq!(op[0].1.num_frames, 2);
         assert!(!OperationHandler::is_done(&op));
 
         op[0].0.pack_size = EC_OUTPUT_FRAME_SIZE - size_of::<Header>() - op[0].1.required_size;
-        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, parallel_threshold).is_ok());
+        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, parallel).is_ok());
         assert_eq!(op[0].0.num_frames, 1);
         assert_eq!(op[0].1.num_frames, 1);
         assert!(!OperationHandler::is_done(&op));
 
         op[0].0.pack_size = EC_OUTPUT_FRAME_SIZE - size_of::<Header>() - op[0].1.required_size + 1;
-        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, parallel_threshold).is_ok());
+        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, parallel).is_ok());
         assert_eq!(op[0].0.num_frames, 0);
         assert_eq!(op[0].1.num_frames, 1);
         assert!(!OperationHandler::is_done(&op));
 
-        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, parallel_threshold).is_ok());
+        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, parallel).is_ok());
         assert_eq!(op[0].0.num_frames, 0);
         assert_eq!(op[0].1.num_frames, 0);
         assert!(OperationHandler::is_done(&op));
@@ -320,7 +314,7 @@ pub mod tests {
 
         let mut tx = TxDatagram::new(1);
 
-        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX).is_ok());
+        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, false).is_ok());
         assert!(op[0].0.is_done());
         assert!(op[0].1.is_done());
         assert!(OperationHandler::is_done(&op));
@@ -356,7 +350,7 @@ pub mod tests {
 
         let mut tx = TxDatagram::new(1);
 
-        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX).is_ok());
+        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, false).is_ok());
         assert!(op[0].0.is_done());
         assert!(op[0].1.is_done());
         assert!(OperationHandler::is_done(&op));
@@ -390,7 +384,7 @@ pub mod tests {
 
         assert_eq!(
             Err(AUTDInternalError::NotSupported("test".to_owned())),
-            OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)
+            OperationHandler::pack(&mut op, &geometry, &mut tx, false)
         );
 
         op[0].0.broken = false;
@@ -398,14 +392,14 @@ pub mod tests {
 
         assert_eq!(
             Err(AUTDInternalError::NotSupported("test".to_owned())),
-            OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)
+            OperationHandler::pack(&mut op, &geometry, &mut tx, false)
         );
 
         op[0].0.num_frames = 0;
 
         assert_eq!(
             Err(AUTDInternalError::NotSupported("test".to_owned())),
-            OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)
+            OperationHandler::pack(&mut op, &geometry, &mut tx, false)
         );
 
         op[0].0.broken = true;
@@ -416,7 +410,7 @@ pub mod tests {
 
         assert_eq!(
             Err(AUTDInternalError::NotSupported("test".to_owned())),
-            OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)
+            OperationHandler::pack(&mut op, &geometry, &mut tx, false)
         );
     }
 
@@ -448,6 +442,38 @@ pub mod tests {
 
         let mut tx = TxDatagram::new(1);
 
-        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX).is_ok());
+        assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, false).is_ok());
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn msg_id() {
+        let geometry = Geometry::new(vec![Device::new(
+            0,
+            UnitQuaternion::identity(),
+            vec![Transducer::new(0, Vector3::zeros())],
+        )]);
+
+        let mut tx = TxDatagram::new(1);
+
+        for i in 0..=MSG_ID_MAX {
+            assert_eq!(i, tx[0].header.msg_id);
+            let mut op = vec![(
+                OperationMock {
+                    pack_size: 0,
+                    required_size: 0,
+                    num_frames: 1,
+                    broken: false,
+                },
+                OperationMock {
+                    pack_size: 0,
+                    required_size: 0,
+                    num_frames: 0,
+                    broken: false,
+                },
+            )];
+            assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, false).is_ok());
+        }
+        assert_eq!(0, tx[0].header.msg_id);
     }
 }

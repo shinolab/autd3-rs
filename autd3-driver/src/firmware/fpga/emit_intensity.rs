@@ -1,9 +1,11 @@
+use autd3_derive::Builder;
 use derive_more::Debug;
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Builder)]
 #[debug("{:#04X}", self.value)]
 #[repr(C)]
 pub struct EmitIntensity {
+    #[get]
     value: u8,
 }
 
@@ -13,10 +15,6 @@ impl EmitIntensity {
 
     pub const fn new(value: u8) -> Self {
         Self { value }
-    }
-
-    pub const fn value(&self) -> u8 {
-        self.value
     }
 }
 

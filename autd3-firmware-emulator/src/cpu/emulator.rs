@@ -1,6 +1,6 @@
 use autd3_driver::{
-    ethercat::DcSysTime,
-    firmware::cpu::{Header, RxMessage, TxDatagram},
+    ethercat::{DcSysTime, EC_OUTPUT_FRAME_SIZE},
+    firmware::cpu::{Header, RxMessage, TxDatagram, TxMessage},
 };
 
 use crate::fpga::emulator::FPGAEmulator;
@@ -109,7 +109,7 @@ impl CPUEmulator {
     }
 
     pub fn send(&mut self, tx: &TxDatagram) {
-        self.ecat_recv(tx.data(self.idx));
+        self.ecat_recv(&tx[self.idx]);
     }
 
     pub fn init(&mut self) {
@@ -222,7 +222,11 @@ impl CPUEmulator {
         }
     }
 
-    fn ecat_recv(&mut self, data: &[u8]) {
+    fn ecat_recv(&mut self, data: &TxMessage) {
+        let data = unsafe {
+            std::slice::from_raw_parts(data as *const _ as *const u8, EC_OUTPUT_FRAME_SIZE)
+        };
+
         let header = unsafe { &*(data.as_ptr() as *const Header) };
 
         if self.ack == header.msg_id {

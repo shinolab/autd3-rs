@@ -52,7 +52,7 @@ pub struct TxRawData {
     #[prost(bytes = "vec", tag = "1")]
     pub data: ::prost::alloc::vec::Vec<u8>,
     #[prost(uint32, tag = "2")]
-    pub num_devices: u32,
+    pub n: u32,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]

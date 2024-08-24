@@ -33,12 +33,11 @@ impl STMFocus {
             return Err(AUTDInternalError::FociSTMPointOutOfRange(p.x, p.y, p.z));
         }
 
-        let mut f = Self::new();
-        f.set_x(ix);
-        f.set_y(iy);
-        f.set_z(iz);
-        f.set_intensity(intensity_or_offset);
-        Ok(f)
+        Ok(Self::new()
+            .with_x(ix)
+            .with_y(iy)
+            .with_z(iz)
+            .with_intensity(intensity_or_offset))
     }
 }
 

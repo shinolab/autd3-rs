@@ -16,11 +16,12 @@ pub use device::*;
 pub use rotation::*;
 pub use transducer::*;
 
-use derive_more::Deref;
+use derive_more::{Deref, IntoIterator};
 
-#[derive(Deref, Builder)]
+#[derive(Deref, Builder, IntoIterator)]
 pub struct Geometry {
     #[deref]
+    #[into_iterator(ref)]
     pub(crate) devices: Vec<Device>,
     #[get]
     version: usize,
@@ -69,16 +70,6 @@ impl Geometry {
     }
 }
 
-// GRCOV_EXCL_START
-impl<'a> IntoIterator for &'a Geometry {
-    type Item = &'a Device;
-    type IntoIter = std::slice::Iter<'a, Device>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.devices.iter()
-    }
-}
-
 impl<'a> IntoIterator for &'a mut Geometry {
     type Item = &'a mut Device;
     type IntoIter = std::slice::IterMut<'a, Device>;
@@ -95,7 +86,6 @@ impl std::ops::DerefMut for Geometry {
         &mut self.devices
     }
 }
-// GRCOV_EXCL_STOP
 
 #[cfg(test)]
 pub mod tests {
@@ -269,5 +259,15 @@ pub mod tests {
         geometry.iter().for_each(|dev| {
             assert_eq!(dev.sound_speed, temp * mm);
         });
+    }
+
+    #[test]
+    fn into_iter() {
+        let mut geometry = Geometry::new(vec![Device::new(0, UnitQuaternion::identity(), vec![])]);
+        assert_eq!(0, geometry.version());
+        for dev in &mut geometry {
+            dev.enable = true;
+        }
+        assert_eq!(1, geometry.version());
     }
 }

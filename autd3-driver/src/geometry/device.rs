@@ -1,48 +1,49 @@
-use std::{f32::consts::PI, ops::Deref};
+use std::f32::consts::PI;
+
+use autd3_derive::Builder;
+use derive_more::{Deref, IntoIterator};
 
 use crate::defined::{METER, ULTRASOUND_FREQ};
 
-use super::{Matrix3, Quaternion, Transducer, UnitQuaternion, Vector3};
+use super::{Quaternion, Transducer, UnitQuaternion, Vector3};
 
+#[derive(Builder, Deref, IntoIterator)]
 pub struct Device {
+    #[get]
     idx: usize,
+    #[deref]
+    #[into_iterator(ref)]
     transducers: Vec<Transducer>,
     pub enable: bool,
     pub sound_speed: f32,
-    rot: UnitQuaternion,
+    #[get(ref)]
+    rotation: UnitQuaternion,
+    #[get(ref)]
     x_direction: Vector3,
+    #[get(ref)]
     y_direction: Vector3,
+    #[get(ref)]
     axial_direction: Vector3,
-    inv: Matrix3,
+    inv: nalgebra::Rotation<f32, 3>,
 }
 
 impl Device {
     #[doc(hidden)]
     pub fn new(idx: usize, rot: UnitQuaternion, transducers: Vec<Transducer>) -> Self {
-        let inv = Matrix3::from_columns(&[
-            Self::get_direction(Vector3::x(), &rot),
-            Self::get_direction(Vector3::y(), &rot),
-            Self::get_direction(Vector3::z(), &rot),
-        ])
-        .transpose();
         Self {
             idx,
             transducers,
             enable: true,
             sound_speed: 340.0 * METER,
-            rot,
+            rotation: rot,
             x_direction: Self::get_direction(Vector3::x(), &rot),
             y_direction: Self::get_direction(Vector3::y(), &rot),
             #[cfg(feature = "left_handed")]
             axial_direction: Self::get_direction(-Vector3::z(), &rot),
             #[cfg(not(feature = "left_handed"))]
             axial_direction: Self::get_direction(Vector3::z(), &rot),
-            inv,
+            inv: rot.inverse().to_rotation_matrix(),
         }
-    }
-
-    pub const fn idx(&self) -> usize {
-        self.idx
     }
 
     pub fn num_transducers(&self) -> usize {
@@ -67,7 +68,7 @@ impl Device {
     }
 
     pub fn rotate_to(&mut self, r: UnitQuaternion) {
-        let cur_rot = self.rot;
+        let cur_rot = self.rotation;
         self.rotate(r * cur_rot.conjugate());
     }
 
@@ -81,19 +82,14 @@ impl Device {
 
     pub fn affine(&mut self, t: Vector3, r: UnitQuaternion) {
         self.transducers.iter_mut().for_each(|tr| tr.affine(t, r));
-        self.rot = r * self.rot;
-        self.inv = Matrix3::from_columns(&[
-            Self::get_direction(Vector3::x(), &self.rot),
-            Self::get_direction(Vector3::y(), &self.rot),
-            Self::get_direction(Vector3::z(), &self.rot),
-        ])
-        .transpose();
-        self.x_direction = Self::get_direction(Vector3::x(), &self.rot);
-        self.y_direction = Self::get_direction(Vector3::y(), &self.rot);
+        self.rotation = r * self.rotation;
+        self.inv = self.rotation.inverse().to_rotation_matrix();
+        self.x_direction = Self::get_direction(Vector3::x(), &self.rotation);
+        self.y_direction = Self::get_direction(Vector3::y(), &self.rotation);
         self.axial_direction = if cfg!(feature = "left_handed") {
-            Self::get_direction(-Vector3::z(), &self.rot) // GRCOV_EXCL_LINE
+            Self::get_direction(-Vector3::z(), &self.rotation) // GRCOV_EXCL_LINE
         } else {
-            Self::get_direction(Vector3::z(), &self.rot)
+            Self::get_direction(Vector3::z(), &self.rotation)
         };
     }
 
@@ -117,42 +113,7 @@ impl Device {
         let dir: UnitQuaternion = UnitQuaternion::from_quaternion(Quaternion::from_imag(dir));
         (rotation * dir * rotation.conjugate()).imag().normalize()
     }
-
-    pub const fn rotation(&self) -> &UnitQuaternion {
-        &self.rot
-    }
-
-    pub const fn x_direction(&self) -> &Vector3 {
-        &self.x_direction
-    }
-
-    pub const fn y_direction(&self) -> &Vector3 {
-        &self.y_direction
-    }
-
-    pub const fn axial_direction(&self) -> &Vector3 {
-        &self.axial_direction
-    }
 }
-
-impl Deref for Device {
-    type Target = [Transducer];
-
-    fn deref(&self) -> &Self::Target {
-        &self.transducers
-    }
-}
-
-// GRCOV_EXCL_START
-impl<'a> IntoIterator for &'a Device {
-    type Item = &'a Transducer;
-    type IntoIter = std::slice::Iter<'a, Transducer>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.transducers.iter()
-    }
-}
-// GRCOV_EXCL_STOP
 
 pub trait IntoDevice {
     fn into_device(self, dev_idx: usize) -> Device;

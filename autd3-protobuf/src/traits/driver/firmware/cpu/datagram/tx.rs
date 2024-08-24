@@ -8,21 +8,29 @@ impl ToMessage for autd3_driver::firmware::cpu::TxDatagram {
     type Message = TxRawData;
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+        let mut data = vec![0; self.total_len()];
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                self.as_ptr() as *const u8,
+                data.as_mut_ptr(),
+                self.total_len(),
+            );
+        }
         Self::Message {
-            data: self.all_data().to_vec(),
-            num_devices: self.num_devices() as _,
+            data,
+            n: self.len() as _,
         }
     }
 }
 
 impl FromMessage<TxRawData> for autd3_driver::firmware::cpu::TxDatagram {
     fn from_msg(msg: &TxRawData) -> Result<Self, AUTDProtoBufError> {
-        let mut tx = autd3_driver::firmware::cpu::TxDatagram::new(msg.num_devices as usize);
+        let mut tx = autd3_driver::firmware::cpu::TxDatagram::new(msg.n as _);
         unsafe {
             std::ptr::copy_nonoverlapping(
                 msg.data.as_ptr(),
-                tx.all_data_mut().as_mut_ptr(),
-                msg.data.len(),
+                tx.as_mut_ptr() as *mut u8,
+                tx.total_len(),
             );
         }
         Ok(tx)
@@ -44,6 +52,6 @@ mod tests {
         });
         let msg = tx.to_msg(None);
         let tx2 = autd3_driver::firmware::cpu::TxDatagram::from_msg(&msg).unwrap();
-        assert_eq!(tx.all_data(), tx2.all_data());
+        assert_eq!(&tx, &tx2);
     }
 }

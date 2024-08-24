@@ -1,6 +1,5 @@
 use std::mem::size_of;
 
-use super::GainControlFlags;
 use crate::{
     error::AUTDInternalError,
     firmware::{
@@ -9,6 +8,17 @@ use crate::{
     },
     geometry::{Device, Transducer},
 };
+
+#[derive(Clone, Copy)]
+#[repr(C)]
+pub struct GainControlFlags(u8);
+
+bitflags::bitflags! {
+    impl GainControlFlags : u8 {
+        const NONE   = 0;
+        const UPDATE = 1 << 0;
+    }
+}
 
 #[repr(C, align(2))]
 struct GainT {
@@ -46,7 +56,6 @@ impl Operation for GainOp {
     }
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        assert!(tx.len() >= size_of::<GainT>() + device.len() * size_of::<Drive>());
         write_to_tx(
             GainT {
                 tag: TypeTag::Gain,

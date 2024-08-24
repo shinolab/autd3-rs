@@ -14,7 +14,18 @@ use crate::{
     geometry::Device,
 };
 
-use super::FociSTMControlFlags;
+#[derive(Clone, Copy, PartialEq, Debug)]
+#[repr(C)]
+pub struct FociSTMControlFlags(u8);
+
+bitflags::bitflags! {
+    impl FociSTMControlFlags : u8 {
+        const NONE       = 0;
+        const BEGIN      = 1 << 0;
+        const END        = 1 << 1;
+        const TRANSITION = 1 << 2;
+    }
+}
 
 #[repr(C, align(2))]
 #[derive(PartialEq, Debug)]
