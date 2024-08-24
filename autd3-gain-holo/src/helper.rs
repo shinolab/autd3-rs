@@ -2,14 +2,14 @@ use std::{collections::HashMap, sync::Arc};
 
 use autd3_driver::{
     defined::rad,
-    derive::{tracing, GainCalcResult, Itertools},
+    derive::GainCalcResult,
     firmware::fpga::{Drive, Phase},
-    geometry::{Geometry, Vector3},
+    geometry::Geometry,
 };
 use bit_vec::BitVec;
 use nalgebra::ComplexField;
 
-use crate::{Amplitude, EmissionConstraint};
+use crate::EmissionConstraint;
 
 pub(crate) trait IntoDrive {
     fn into_phase(self) -> Phase;
@@ -111,60 +111,3 @@ where
         }))
     }
 }
-
-// GRCOV_EXCL_START
-pub(crate) fn holo_trace(foci: &[Vector3], amps: &[Amplitude]) {
-    match foci.len() {
-        0 => {
-            tracing::error!("No foci");
-        }
-        1 => {
-            tracing::debug!(
-                "Foci: [({}, {}, {}), {}]",
-                foci[0].x,
-                foci[0].y,
-                foci[0].z,
-                amps[0]
-            );
-        }
-        2 => {
-            tracing::debug!(
-                "Foci: [({}, {}, {}), {}], [({}, {}, {}), {}]",
-                foci[0].x,
-                foci[0].y,
-                foci[0].z,
-                amps[0],
-                foci[1].x,
-                foci[1].y,
-                foci[1].z,
-                amps[1]
-            );
-        }
-        _ => {
-            if tracing::enabled!(tracing::Level::TRACE) {
-                tracing::debug!(
-                    "Foci: {}",
-                    foci.iter()
-                        .zip(amps.iter())
-                        .format_with(", ", |elt, f| f(&format_args!(
-                            "[({}, {}, {}), {}]",
-                            elt.0.x, elt.0.y, elt.0.z, elt.1
-                        )))
-                );
-            } else {
-                tracing::debug!(
-                    "Foci: [({}, {}, {}), {}], ..., [({}, {}, {}), {}]",
-                    foci[0].x,
-                    foci[0].y,
-                    foci[0].z,
-                    amps[0],
-                    foci[foci.len() - 1].x,
-                    foci[foci.len() - 1].y,
-                    foci[foci.len() - 1].z,
-                    amps[foci.len() - 1]
-                );
-            }
-        }
-    }
-}
-// GRCOV_EXCL_STOP

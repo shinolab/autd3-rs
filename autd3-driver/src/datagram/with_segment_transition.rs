@@ -8,7 +8,7 @@ use crate::{
 
 use derive_more::Deref;
 
-#[derive(Builder, Clone, Deref)]
+#[derive(Builder, Clone, Deref, Debug)]
 
 pub struct DatagramWithSegmentTransition<D: DatagramST> {
     #[deref]
@@ -34,19 +34,6 @@ impl<D: DatagramST> Datagram for DatagramWithSegmentTransition<D> {
     fn parallel_threshold(&self) -> Option<usize> {
         self.datagram.parallel_threshold()
     }
-
-    #[tracing::instrument(level = "debug", skip(self, geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, geometry: &Geometry) {
-        tracing::debug!(
-            "{} ({:?}, {:?})",
-            tynm::type_name::<Self>(),
-            self.segment,
-            self.transition_mode
-        );
-        self.datagram.trace(geometry);
-    }
-    // GRCOV_EXCL_STOP
 }
 
 impl<D: DatagramST> Datagram for D {
@@ -67,15 +54,9 @@ impl<D: DatagramST> Datagram for D {
     fn parallel_threshold(&self) -> Option<usize> {
         <Self as DatagramST>::parallel_threshold(self)
     }
-
-    // GRCOV_EXCL_START
-    fn trace(&self, geometry: &Geometry) {
-        <Self as DatagramST>::trace(self, geometry);
-    }
-    // GRCOV_EXCL_STOP
 }
 
-pub trait DatagramST {
+pub trait DatagramST: std::fmt::Debug {
     type G: OperationGenerator;
 
     fn operation_generator_with_segment(
@@ -90,13 +71,6 @@ pub trait DatagramST {
     fn parallel_threshold(&self) -> Option<usize> {
         None
     }
-
-    #[tracing::instrument(skip(self, _geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, _geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-    }
-    // GRCOV_EXCL_STOP
 }
 
 pub trait IntoDatagramWithSegmentTransition<D: DatagramST> {

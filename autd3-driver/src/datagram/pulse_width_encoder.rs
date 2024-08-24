@@ -1,8 +1,9 @@
-use crate::firmware::{fpga::PWE_BUF_SIZE, operation::PulseWidthEncoderOp};
+use crate::{
+    datagram::*,
+    firmware::{fpga::PWE_BUF_SIZE, operation::PulseWidthEncoderOp},
+};
 
-use itertools::Itertools;
-
-use crate::datagram::*;
+use derive_more::Debug;
 
 const DEFAULT_TABLE: &[u8; PWE_BUF_SIZE] = include_bytes!("asin.dat");
 
@@ -10,8 +11,9 @@ fn default_table(i: u8) -> u8 {
     DEFAULT_TABLE[i as usize]
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct PulseWidthEncoder<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> {
+    #[debug(ignore)]
     f: F,
 }
 
@@ -57,33 +59,4 @@ impl<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> Datagram for PulseWidth
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(PulseWidthEncoderOpGenerator { f: self.f })
     }
-
-    #[tracing::instrument(skip(self, geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-
-        if tracing::enabled!(tracing::Level::DEBUG) {
-            geometry.devices().for_each(|dev| {
-                let f = (self.f)(dev);
-                if tracing::enabled!(tracing::Level::TRACE) {
-                    tracing::debug!(
-                        "Device[{}]: {}",
-                        dev.idx(),
-                        (0..PWE_BUF_SIZE)
-                            .map(|i| f(i as u8))
-                            .format_with(", ", |elt, f| f(&format_args!("{:#04X}", elt)))
-                    );
-                } else {
-                    tracing::debug!(
-                        "Device[{}]: {:#04X}, ..., {:#04X}",
-                        dev.idx(),
-                        f(0),
-                        f((PWE_BUF_SIZE - 1) as u8)
-                    );
-                }
-            });
-        }
-    }
-    // GRCOV_EXCL_STOP
 }

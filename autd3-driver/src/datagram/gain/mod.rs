@@ -21,7 +21,6 @@ use crate::{
 };
 
 use bit_vec::BitVec;
-use itertools::Itertools;
 
 use super::Datagram;
 use super::DatagramS;
@@ -31,7 +30,7 @@ pub type GainCalcResult<'a> = Result<
     AUTDInternalError,
 >;
 
-pub trait Gain {
+pub trait Gain: std::fmt::Debug {
     fn calc<'a>(&'a self, geometry: &Geometry) -> GainCalcResult<'a>;
     fn calc_with_filter<'a>(
         &'a self,
@@ -57,24 +56,12 @@ pub trait Gain {
             Box::new(move |tr| f(tr).into())
         })
     }
-
-    #[tracing::instrument(skip(self, _geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, _geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-    }
-    // GRCOV_EXCL_STOP
 }
 
 // GRCOV_EXCL_START
 impl<'a> Gain for Box<dyn Gain + Send + Sync + 'a> {
     fn calc(&self, geometry: &Geometry) -> GainCalcResult {
         self.as_ref().calc(geometry)
-    }
-
-    #[tracing::instrument(skip(self, geometry))]
-    fn trace(&self, geometry: &Geometry) {
-        self.as_ref().trace(geometry);
     }
 }
 
@@ -83,30 +70,6 @@ impl<'a> Datagram for Box<dyn Gain + Send + Sync + 'a> {
 
     fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Self::G::new(self, geometry, Segment::S0, true)
-    }
-
-    #[tracing::instrument(skip(self, geometry))]
-    fn trace(&self, geometry: &Geometry) {
-        self.as_ref().trace(geometry);
-        if tracing::enabled!(tracing::Level::DEBUG) {
-            if let Ok(f) = <Self as Gain>::calc(self, geometry) {
-                geometry.devices().for_each(|dev| {
-                    let f = f(dev);
-                    if tracing::enabled!(tracing::Level::TRACE) {
-                        tracing::debug!("Device[{}]: {}", dev.idx(), dev.iter().map(f).join(", "));
-                    } else {
-                        tracing::debug!(
-                            "Device[{}]: {}, ..., {}",
-                            dev.idx(),
-                            f(&dev[0]),
-                            f(&dev[dev.num_transducers() - 1])
-                        );
-                    }
-                });
-            } else {
-                tracing::error!("Failed to calculate gain");
-            }
-        }
     }
 }
 
@@ -121,37 +84,13 @@ impl<'a> DatagramS for Box<dyn Gain + Send + Sync + 'a> {
     ) -> Result<Self::G, AUTDInternalError> {
         Self::G::new(self, geometry, segment, transition)
     }
-
-    #[tracing::instrument(skip(self, geometry))]
-    fn trace(&self, geometry: &Geometry) {
-        self.as_ref().trace(geometry);
-        if tracing::enabled!(tracing::Level::DEBUG) {
-            if let Ok(f) = <Self as Gain>::calc(self, geometry) {
-                geometry.devices().for_each(|dev| {
-                    let f = f(dev);
-                    if tracing::enabled!(tracing::Level::TRACE) {
-                        tracing::debug!("Device[{}]: {}", dev.idx(), dev.iter().map(f).join(", "));
-                    } else {
-                        tracing::debug!(
-                            "Device[{}]: {}, ..., {}",
-                            dev.idx(),
-                            f(&dev[0]),
-                            f(&dev[dev.num_transducers() - 1])
-                        );
-                    }
-                });
-            } else {
-                tracing::error!("Failed to calculate gain");
-            }
-        }
-    }
 }
 
 #[cfg(feature = "capi")]
 mod capi {
     use crate::{derive::*, firmware::fpga::Drive};
 
-    #[derive(Gain)]
+    #[derive(Gain, Debug)]
     struct NullGain {}
 
     impl Gain for NullGain {
@@ -230,7 +169,7 @@ pub mod tests {
         geometry::tests::create_geometry,
     };
 
-    #[derive(Gain, Clone)]
+    #[derive(Gain, Clone, Debug)]
     pub struct TestGain {
         pub data: HashMap<usize, Vec<Drive>>,
         pub err: Option<AUTDInternalError>,

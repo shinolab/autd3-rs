@@ -56,7 +56,7 @@ use std::time::Duration;
 
 use crate::{derive::Geometry, error::AUTDInternalError, firmware::operation::OperationGenerator};
 
-pub trait Datagram {
+pub trait Datagram: std::fmt::Debug {
     type G: OperationGenerator;
 
     fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError>;
@@ -68,13 +68,6 @@ pub trait Datagram {
     fn parallel_threshold(&self) -> Option<usize> {
         None
     }
-
-    #[tracing::instrument(skip(self, _geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, _geometry: &Geometry) {
-        tracing::debug!("Datagram");
-    }
-    // GRCOV_EXCL_STOP
 }
 
 pub trait WithSampling {
@@ -154,15 +147,6 @@ where
             (a, b) => a.or(b),
         }
     }
-
-    #[tracing::instrument(skip(self, geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, geometry: &Geometry) {
-        tracing::debug!("Datagram (tuple)");
-        self.0.trace(geometry);
-        self.1.trace(geometry);
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]
@@ -171,6 +155,7 @@ pub mod tests {
 
     use super::*;
 
+    #[derive(Debug)]
     pub struct NullDatagram {
         pub timeout: Option<Duration>,
         pub parallel_threshold: Option<usize>,

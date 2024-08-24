@@ -16,7 +16,7 @@ use rand::*;
 
 use crate::{create_geometry, send};
 
-#[derive(Gain)]
+#[derive(Gain, Debug)]
 pub(crate) struct TestGain {
     pub(crate) buf: HashMap<usize, Vec<Drive>>,
 }

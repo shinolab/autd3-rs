@@ -1,11 +1,13 @@
 mod builder;
 mod group;
 
+use crate::{error::AUTDError, gain::Null, link::nop::Nop, prelude::Static};
+
 use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
     datagram::{Clear, Datagram, FetchFirmInfo, IntoDatagramWithTimeout, Synchronize},
-    derive::{tracing, Builder, Itertools},
+    derive::Builder,
     firmware::{
         cpu::{check_if_msg_is_processed, RxMessage, TxDatagram},
         fpga::FPGAState,
@@ -16,7 +18,8 @@ use autd3_driver::{
     link::{send_receive, Link},
 };
 
-use crate::{error::AUTDError, gain::Null, link::nop::Nop, prelude::Static};
+use itertools::Itertools;
+use tracing;
 
 pub use builder::ControllerBuilder;
 pub use group::GroupGuard;
@@ -58,10 +61,10 @@ impl<L: Link> Controller<L> {
 impl<L: Link> Controller<L> {
     #[tracing::instrument(skip(self, s))]
     pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDError> {
+        tracing::debug!("datagram: {:?}", s);
+
         let timeout = s.timeout();
         let parallel_threshold = s.parallel_threshold();
-
-        s.trace(&self.geometry);
 
         let generator = s.operation_generator(&self.geometry)?;
         let mut operations = OperationHandler::generate(generator, &self.geometry);
@@ -69,7 +72,6 @@ impl<L: Link> Controller<L> {
             .await
     }
 
-    #[tracing::instrument(skip(self, operations))]
     pub(crate) async fn send_impl(
         &mut self,
         operations: &mut [(impl Operation, impl Operation)],
@@ -78,6 +80,13 @@ impl<L: Link> Controller<L> {
     ) -> Result<(), AUTDError> {
         let parallel_threshold = parallel_threshold.unwrap_or(self.parallel_threshold);
         let timeout = timeout.unwrap_or(self.link.timeout());
+
+        tracing::debug!(
+            "timeout: {:?}, parallel: {:?}",
+            timeout,
+            self.geometry.num_devices() > parallel_threshold
+        );
+        tracing::trace!("parallel_threshold: {:?}", parallel_threshold);
 
         self.link.update(&self.geometry).await?;
         loop {
@@ -91,14 +100,15 @@ impl<L: Link> Controller<L> {
             self.link
                 .trace(&self.tx_buf, &mut self.rx_buf, timeout, parallel_threshold);
 
-            // GRCOV_EXCL_START
             tracing::trace!(
                 "send: {}",
                 self.tx_buf.iter().format_with(", ", |elt, f| {
-                    f(&format_args!("({:?}, {:#04X})", elt.header, elt.payload[0]))
+                    f(&format_args!(
+                        "({:?}, TAG: {:#04X})",
+                        elt.header, elt.payload[0]
+                    ))
                 })
             );
-            // GRCOV_EXCL_STOP
 
             let start = tokio::time::Instant::now();
             send_receive(&mut self.link, &self.tx_buf, &mut self.rx_buf, timeout).await?;

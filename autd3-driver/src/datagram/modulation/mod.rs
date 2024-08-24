@@ -23,8 +23,6 @@ use crate::{
     geometry::{Device, Geometry},
 };
 
-use itertools::Itertools;
-
 use super::DatagramST;
 
 pub type ModulationCalcResult = Result<Arc<Vec<u8>>, AUTDInternalError>;
@@ -35,14 +33,8 @@ pub trait ModulationProperty {
 }
 
 #[allow(clippy::len_without_is_empty)]
-pub trait Modulation: ModulationProperty {
+pub trait Modulation: ModulationProperty + std::fmt::Debug {
     fn calc(&self) -> ModulationCalcResult;
-    // GRCOV_EXCL_START
-    #[tracing::instrument(skip(self, _geometry))]
-    fn trace(&self, _geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-    }
-    // GRCOV_EXCL_STOP
 }
 
 // GRCOV_EXCL_START
@@ -59,10 +51,6 @@ impl<'a> ModulationProperty for Box<dyn Modulation + Send + Sync + 'a> {
 impl<'a> Modulation for Box<dyn Modulation + Send + Sync + 'a> {
     fn calc(&self) -> ModulationCalcResult {
         self.as_ref().calc()
-    }
-
-    fn trace(&self, geometry: &Geometry) {
-        self.as_ref().trace(geometry);
     }
 }
 
@@ -119,43 +107,6 @@ impl<'a> DatagramST for Box<dyn Modulation + Send + Sync + 'a> {
     fn parallel_threshold(&self) -> Option<usize> {
         Some(usize::MAX)
     }
-
-    fn trace(&self, geometry: &Geometry) {
-        self.as_ref().trace(geometry);
-        if tracing::enabled!(tracing::Level::DEBUG) {
-            if let Ok(buf) = <Self as Modulation>::calc(self) {
-                match buf.len() {
-                    0 => {
-                        tracing::error!("Buffer is empty");
-                    }
-                    1 => {
-                        tracing::debug!("Buffer: {:#04X}", buf[0]);
-                    }
-                    2 => {
-                        tracing::debug!("Buffer: {:#04X}, {:#04X}", buf[0], buf[1]);
-                    }
-                    _ => {
-                        if tracing::enabled!(tracing::Level::TRACE) {
-                            tracing::debug!(
-                                "Buffer: {}",
-                                buf.iter()
-                                    .format_with(", ", |elt, f| f(&format_args!("{:#04X}", elt)))
-                            );
-                        } else {
-                            tracing::debug!(
-                                "Buffer: {:#04X}, ..., {:#04X} ({})",
-                                buf[0],
-                                buf[buf.len() - 1],
-                                buf.len()
-                            );
-                        }
-                    }
-                }
-            } else {
-                tracing::error!("Failed to calculate modulation");
-            }
-        }
-    }
 }
 
 #[cfg(feature = "capi")]
@@ -163,7 +114,7 @@ mod capi {
     use crate::derive::*;
     use std::sync::Arc;
 
-    #[derive(Modulation)]
+    #[derive(Modulation, Debug)]
     struct NullModulation {
         config: SamplingConfig,
         loop_behavior: LoopBehavior,

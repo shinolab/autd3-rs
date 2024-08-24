@@ -10,7 +10,7 @@ use crate::{
 
 use derive_more::{Deref, DerefMut};
 
-#[derive(Clone, Builder, Deref, DerefMut)]
+#[derive(Clone, Builder, Deref, DerefMut, Debug)]
 pub struct FociSTM<const N: usize> {
     #[deref]
     #[deref_mut]
@@ -141,40 +141,6 @@ impl<const N: usize> DatagramST for FociSTM<N> {
             Some(usize::MAX)
         }
     }
-
-    #[tracing::instrument(level = "debug", skip(self, _geometry), fields(%self.loop_behavior, %self.sampling_config))]
-    // GRCOV_EXCL_START
-    fn trace(&self, _geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-        match self.control_points.len() {
-            0 => {
-                tracing::error!("ControlPoints is empty");
-            }
-            1 => {
-                tracing::debug!("ControlPoints: {}", self.control_points[0]);
-            }
-            2 => {
-                tracing::debug!(
-                    "ControlPoints: {}, {}",
-                    self.control_points[0],
-                    self.control_points[1]
-                );
-            }
-            _ => {
-                if tracing::enabled!(tracing::Level::TRACE) {
-                    tracing::debug!("ControlPoints: {}", self.control_points.iter().join(", "));
-                } else {
-                    tracing::debug!(
-                        "ControlPoints: {}, ..., {} ({})",
-                        self.control_points[0],
-                        self.control_points[self.control_points.len() - 1],
-                        self.control_points.len()
-                    );
-                }
-            }
-        }
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(feature = "capi")]

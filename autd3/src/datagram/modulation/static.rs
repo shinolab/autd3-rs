@@ -30,13 +30,6 @@ impl Modulation for Static {
         let intensity = self.intensity;
         Ok(Arc::new(vec![intensity; 2]))
     }
-
-    #[tracing::instrument(level = "debug", skip(_geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, _geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-    }
-    // GRCOV_EXCL_STOP
 }
 
 impl Default for Static {

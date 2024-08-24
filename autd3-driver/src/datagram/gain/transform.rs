@@ -7,8 +7,9 @@ pub use crate::{
 pub use autd3_derive::Gain;
 
 use super::GainCalcResult;
+use derive_more::Debug;
 
-#[derive(Gain)]
+#[derive(Gain, Debug)]
 pub struct Transform<
     G: Gain,
     D: Into<Drive>,
@@ -16,6 +17,7 @@ pub struct Transform<
     F: Fn(&Device) -> FT,
 > {
     gain: G,
+    #[debug(ignore)]
     f: F,
 }
 
@@ -72,14 +74,6 @@ impl<
             Box::new(move |tr| f(tr, src(tr)).into())
         }))
     }
-
-    #[tracing::instrument(skip(self, geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-        <G as Gain>::trace(&self.gain, geometry);
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]

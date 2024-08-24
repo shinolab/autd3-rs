@@ -21,36 +21,6 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
                     true,
                 )
             }
-
-            #[tracing::instrument(skip(self, geometry))]
-            // GRCOV_EXCL_START
-            fn trace(&self, geometry: &Geometry) {
-                <Self as Gain>::trace(self, geometry);
-                if tracing::enabled!(tracing::Level::DEBUG) {
-                    if let Ok(f) = <Self as Gain>::calc(self, geometry) {
-                        geometry.devices().for_each(|dev| {
-                            let f = f(dev);
-                            if tracing::enabled!(tracing::Level::TRACE) {
-                                tracing::debug!(
-                                    "Device[{}]: {}",
-                                    dev.idx(),
-                                    dev.iter().map(|tr| f(tr)).join(", ")
-                                );
-                            } else {
-                                tracing::debug!(
-                                    "Device[{}]: {}, ..., {}",
-                                    dev.idx(),
-                                    f(&dev[0]),
-                                    f(&dev[dev.num_transducers() - 1])
-                                );
-                            }
-                        });
-                    } else {
-                        tracing::error!("Failed to calculate gain");
-                    }
-                }
-            }
-            // GRCOV_EXCL_STOP
         }
     };
 
@@ -70,36 +40,6 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
                     transition,
                 )
             }
-
-            #[tracing::instrument(skip(self, geometry))]
-            // GRCOV_EXCL_START
-            fn trace(&self, geometry: &Geometry) {
-                <Self as Gain>::trace(self, geometry);
-                if tracing::enabled!(tracing::Level::DEBUG) {
-                    if let Ok(f) = <Self as Gain>::calc(self, geometry) {
-                        geometry.devices().for_each(|dev| {
-                            let f = f(dev);
-                            if tracing::enabled!(tracing::Level::TRACE) {
-                                tracing::debug!(
-                                    "Device[{}]: {}",
-                                    dev.idx(),
-                                    dev.iter().map(|tr| f(tr)).join(", ")
-                                );
-                            } else {
-                                tracing::debug!(
-                                    "Device[{}]: {}, ..., {}",
-                                    dev.idx(),
-                                    f(&dev[0]),
-                                    f(&dev[dev.num_transducers() - 1])
-                                );
-                            }
-                        });
-                    } else {
-                        tracing::error!("Failed to calculate gain");
-                    }
-                }
-            }
-            // GRCOV_EXCL_STOP
         }
     };
 

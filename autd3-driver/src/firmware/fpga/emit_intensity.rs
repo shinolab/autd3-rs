@@ -1,7 +1,7 @@
-use derive_more::Display;
+use derive_more::Debug;
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display("{:#04X}", value)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+#[debug("{:#04X}", self.value)]
 #[repr(C)]
 pub struct EmitIntensity {
     value: u8,
@@ -63,12 +63,6 @@ impl std::ops::Sub<EmitIntensity> for EmitIntensity {
 
     fn sub(self, rhs: EmitIntensity) -> Self::Output {
         Self::new(self.value.saturating_sub(rhs.value))
-    }
-}
-
-impl std::fmt::Debug for EmitIntensity {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:#04X}", self.value)
     }
 }
 
@@ -158,14 +152,6 @@ mod tests {
         #[case] rhs: EmitIntensity,
     ) {
         assert_eq!(expected, lhs - rhs);
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn display() {
-        assert_eq!(format!("{}", EmitIntensity::new(0x00)), "0x00");
-        assert_eq!(format!("{}", EmitIntensity::new(0x01)), "0x01");
-        assert_eq!(format!("{}", EmitIntensity::new(0xFF)), "0xFF");
     }
 
     #[test]

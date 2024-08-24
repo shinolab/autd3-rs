@@ -1,7 +1,10 @@
 use crate::{datagram::*, derive::*, firmware::operation::ForceFanOp};
 
-#[derive(Builder)]
+use derive_more::Debug;
+
+#[derive(Builder, Debug)]
 pub struct ForceFan<F: Fn(&Device) -> bool> {
+    #[debug(ignore)]
     #[get(ref)]
     f: F,
 }
@@ -39,18 +42,6 @@ impl<F: Fn(&Device) -> bool> Datagram for ForceFan<F> {
     fn parallel_threshold(&self) -> Option<usize> {
         Some(usize::MAX)
     }
-
-    #[tracing::instrument(level = "debug", skip(self, geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-        if tracing::enabled!(tracing::Level::DEBUG) {
-            geometry
-                .devices()
-                .for_each(|dev| tracing::debug!("Device[{}]: {}", dev.idx(), (self.f)(dev)));
-        }
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(feature = "capi")]

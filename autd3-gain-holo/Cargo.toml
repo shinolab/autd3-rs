@@ -18,6 +18,7 @@ criterion = { workspace = true, features = ["html_reports"], optional = true }
 bit-vec = { workspace = true }
 derive_more = { workspace = true }
 rayon = { workspace = true }
+tynm = { workspace = true }
 
 [features]
 default = []

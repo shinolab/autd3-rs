@@ -19,13 +19,6 @@ impl Gain for Uniform {
         let d = self.drive;
         Ok(Self::transform(move |_| move |_| d))
     }
-
-    #[tracing::instrument(level = "debug", skip(_geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, _geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]

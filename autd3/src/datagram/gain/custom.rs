@@ -4,7 +4,10 @@ use autd3_driver::{
     geometry::{Device, Transducer},
 };
 
-#[derive(Gain)]
+use derive_more::Debug;
+
+#[derive(Gain, Debug)]
+#[debug("Custom (Gain)")]
 pub struct Custom<
     'a,
     D: Into<Drive>,
@@ -40,13 +43,6 @@ impl<
     fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
         Ok(Self::transform(&self.f))
     }
-
-    #[tracing::instrument(skip(self, _geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, _geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]

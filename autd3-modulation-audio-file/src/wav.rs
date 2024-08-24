@@ -78,13 +78,6 @@ impl Modulation for Wav {
     fn calc(&self) -> ModulationCalcResult {
         Ok(Arc::new(self.read_buf()?))
     }
-
-    // GRCOV_EXCL_START
-    #[tracing::instrument(level = "debug", skip(_geometry))]
-    fn trace(&self, _geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]

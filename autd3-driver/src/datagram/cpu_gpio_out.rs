@@ -2,16 +2,17 @@ use crate::firmware::operation::CpuGPIOOutOp;
 
 use crate::datagram::*;
 
-use derive_more::Display;
+use derive_more::Debug;
 
-#[derive(Display, Debug, Clone, Copy, PartialEq, Eq)]
-#[display("PA5: {}, PA7: {})", pa5, pa7)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CpuGPIOPort {
     pub pa5: bool,
     pub pa7: bool,
 }
 
+#[derive(Debug)]
 pub struct CpuGPIO<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> {
+    #[debug(ignore)]
     f: F,
 }
 
@@ -49,18 +50,6 @@ impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> Datagram for CpuGPIO<F> {
     fn parallel_threshold(&self) -> Option<usize> {
         Some(usize::MAX)
     }
-
-    #[tracing::instrument(level = "debug", skip(self, geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-        if tracing::enabled!(tracing::Level::DEBUG) {
-            geometry
-                .devices()
-                .for_each(|dev| tracing::debug!("Device[{}]: {}", dev.idx(), (self.f)(dev)));
-        }
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(feature = "capi")]

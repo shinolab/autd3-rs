@@ -6,7 +6,7 @@ use super::Datagram;
 
 use derive_more::Deref;
 
-#[derive(Deref)]
+#[derive(Deref, Debug)]
 pub struct DatagramWithTimeout<D: Datagram> {
     #[deref]
     datagram: D,
@@ -27,14 +27,6 @@ impl<D: Datagram> Datagram for DatagramWithTimeout<D> {
     fn parallel_threshold(&self) -> Option<usize> {
         self.datagram.parallel_threshold()
     }
-
-    #[tracing::instrument(level = "debug", skip(self, geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, geometry: &Geometry) {
-        tracing::debug!("{} ({:?})", tynm::type_name::<Self>(), self.timeout);
-        self.datagram.trace(geometry);
-    }
-    // GRCOV_EXCL_STOP
 }
 
 pub trait IntoDatagramWithTimeout<D: Datagram> {

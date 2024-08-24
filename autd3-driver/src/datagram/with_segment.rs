@@ -5,7 +5,7 @@ use crate::{derive::*, firmware::fpga::Segment};
 
 use derive_more::Deref;
 
-#[derive(Builder, Clone, Deref)]
+#[derive(Builder, Clone, Deref, Debug)]
 pub struct DatagramWithSegment<D: DatagramS> {
     #[deref]
     datagram: D,
@@ -30,22 +30,9 @@ impl<D: DatagramS> Datagram for DatagramWithSegment<D> {
     fn parallel_threshold(&self) -> Option<usize> {
         self.datagram.parallel_threshold()
     }
-
-    #[tracing::instrument(level = "debug", skip(self, geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, geometry: &Geometry) {
-        tracing::debug!(
-            "{} ({:?}, {:?})",
-            tynm::type_name::<Self>(),
-            self.segment,
-            self.transition
-        );
-        self.datagram.trace(geometry);
-    }
-    // GRCOV_EXCL_STOP
 }
 
-pub trait DatagramS {
+pub trait DatagramS: std::fmt::Debug {
     type G: OperationGenerator;
 
     fn operation_generator_with_segment(
@@ -62,8 +49,6 @@ pub trait DatagramS {
     fn parallel_threshold(&self) -> Option<usize> {
         None
     }
-
-    fn trace(&self, geometry: &Geometry);
 }
 
 pub trait IntoDatagramWithSegment<D: DatagramS> {

@@ -1,9 +1,9 @@
 use crate::geometry::Transducer;
 
-use derive_more::Display;
+use derive_more::Debug;
 
 #[non_exhaustive]
-#[derive(Clone, Debug, Display)]
+#[derive(Clone, Debug)]
 pub enum DebugType<'a> {
     None,
     BaseSignal,
@@ -11,15 +11,15 @@ pub enum DebugType<'a> {
     ForceFan,
     Sync,
     ModSegment,
-    #[display("ModIdx({})", _0)]
+    #[debug("ModIdx({})", _0)]
     ModIdx(u16),
     StmSegment,
-    #[display("StmIdx({})", _0)]
+    #[debug("StmIdx({})", _0)]
     StmIdx(u16),
     IsStmMode,
-    #[display("PwmOut({})", _0.idx())]
+    #[debug("PwmOut({})", _0.idx())]
     PwmOut(&'a Transducer),
-    #[display("Direct({})", _0)]
+    #[debug("Direct({})", _0)]
     Direct(bool),
 }
 
@@ -68,20 +68,23 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn display() {
-        assert_eq!("None", DebugType::None.to_string());
-        assert_eq!("BaseSignal", DebugType::BaseSignal.to_string());
-        assert_eq!("Thermo", DebugType::Thermo.to_string());
-        assert_eq!("ForceFan", DebugType::ForceFan.to_string());
-        assert_eq!("Sync", DebugType::Sync.to_string());
-        assert_eq!("ModSegment", DebugType::ModSegment.to_string());
-        assert_eq!("ModIdx(1)", DebugType::ModIdx(1).to_string());
-        assert_eq!("StmSegment", DebugType::StmSegment.to_string());
-        assert_eq!("StmIdx(1)", DebugType::StmIdx(1).to_string());
-        assert_eq!("IsStmMode", DebugType::IsStmMode.to_string());
+        assert_eq!("None", format!("{:?}", DebugType::None));
+        assert_eq!("BaseSignal", format!("{:?}", DebugType::BaseSignal));
+        assert_eq!("Thermo", format!("{:?}", DebugType::Thermo));
+        assert_eq!("ForceFan", format!("{:?}", DebugType::ForceFan));
+        assert_eq!("Sync", format!("{:?}", DebugType::Sync));
+        assert_eq!("ModSegment", format!("{:?}", DebugType::ModSegment));
+        assert_eq!("ModIdx(1)", format!("{:?}", DebugType::ModIdx(1)));
+        assert_eq!("StmSegment", format!("{:?}", DebugType::StmSegment));
+        assert_eq!("StmIdx(1)", format!("{:?}", DebugType::StmIdx(1)));
+        assert_eq!("IsStmMode", format!("{:?}", DebugType::IsStmMode));
         assert_eq!(
             "PwmOut(1)",
-            DebugType::PwmOut(&Transducer::new(1, Vector3::new(0.0, 0.0, 0.0))).to_string()
+            format!(
+                "{:?}",
+                DebugType::PwmOut(&Transducer::new(1, Vector3::new(0.0, 0.0, 0.0)))
+            )
         );
-        assert_eq!("Direct(true)", DebugType::Direct(true).to_string());
+        assert_eq!("Direct(true)", format!("{:?}", DebugType::Direct(true)));
     }
 }

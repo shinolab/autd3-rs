@@ -7,19 +7,7 @@ use autd3_driver::{
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
-use derive_more::Display;
-
-#[derive(Modulation, Clone, PartialEq, Debug, Builder, Display)]
-#[display(
-    "Sine<{}> {{ {}, {}±{}, {:?}, {:?}, {:?} }}",
-    tynm::type_name::<S>(),
-    freq,
-    offset,
-    *intensity as f32 / 2.,
-    phase,
-    config,
-    loop_behavior
-)]
+#[derive(Modulation, Clone, PartialEq, Builder)]
 pub struct Sine<S: SamplingMode> {
     freq: S::T,
     #[get]
@@ -27,10 +15,10 @@ pub struct Sine<S: SamplingMode> {
     intensity: u8,
     #[get]
     #[set]
-    phase: Angle,
+    offset: u8,
     #[get]
     #[set]
-    offset: u8,
+    phase: Angle,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
 }
@@ -40,8 +28,8 @@ impl Sine<ExactFreq> {
         Sine {
             freq,
             intensity: u8::MAX,
-            phase: Angle::Rad(0.0),
             offset: u8::MAX / 2,
+            phase: Angle::Rad(0.0),
             config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::infinite(),
         }
@@ -82,15 +70,20 @@ impl<S: SamplingMode> Modulation for Sine<S> {
                 .collect(),
         ))
     }
-
-    #[tracing::instrument(level = "debug", skip(_geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, _geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-    }
 }
 
-// GRCOV_EXCL_STOP
+impl<S: SamplingMode> std::fmt::Debug for Sine<S> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct(&format!("Sine<{}>", tynm::type_name::<S>()))
+            .field("freq", &self.freq())
+            .field("intensity", &self.intensity)
+            .field("offset", &self.offset)
+            .field("phase", &self.phase)
+            .field("config", &self.config)
+            .field("loop_behavior", &self.loop_behavior)
+            .finish()
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -141,7 +134,7 @@ mod tests {
         781.25*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (150.01 Hz) cannot be output with the sampling config (4000 Hz).".to_owned())),
+        Err(AUTDInternalError::ModulationError("Frequency (150.01 Hz) cannot be output with the sampling config (SamplingConfig { div: 10 }).".to_owned())),
         150.01*Hz
     )]
     #[case(
@@ -222,19 +215,6 @@ mod tests {
         assert_eq!(u8::MAX / 4, m.offset);
         assert_eq!(PI / 4.0 * rad, m.phase);
         assert_eq!(SamplingConfig::new_nearest(10.1 * kHz), m.config);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_sine_fmt() -> anyhow::Result<()> {
-        let m = Sine::new(100. * Hz)
-            .with_intensity(u8::MAX / 2)
-            .with_offset(u8::MAX / 4)
-            .with_phase(PI / 4.0 * rad)
-            .with_sampling_config(SamplingConfig::new_nearest(10.1 * kHz))?;
-
-        assert_eq!("Sine<ExactFreqFloat> { 100 Hz, 63±63.5, 0.7853982 rad, SamplingConfig { div: 4 }, LoopBehavior::Infinite }", format!("{}", m));
 
         Ok(())
     }

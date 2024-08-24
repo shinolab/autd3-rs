@@ -4,7 +4,7 @@ use super::Datagram;
 
 use derive_more::Deref;
 
-#[derive(Clone, Deref)]
+#[derive(Clone, Deref, Debug)]
 pub struct DatagramWithParallelThreshold<D: Datagram> {
     #[deref]
     datagram: D,
@@ -25,14 +25,6 @@ impl<D: Datagram> Datagram for DatagramWithParallelThreshold<D> {
     fn parallel_threshold(&self) -> Option<usize> {
         Some(self.threshold)
     }
-
-    #[tracing::instrument(level = "debug", skip(self, geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, geometry: &Geometry) {
-        tracing::debug!("{} ({:?})", tynm::type_name::<Self>(), self.threshold);
-        self.datagram.trace(geometry);
-    }
-    // GRCOV_EXCL_STOP
 }
 
 pub trait IntoDatagramWithParallelThreshold<D: Datagram> {
