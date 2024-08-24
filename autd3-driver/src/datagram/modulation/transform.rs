@@ -1,13 +1,15 @@
 use std::sync::Arc;
 
 use crate::derive::*;
+use derive_more::Debug;
 
-#[derive(Modulation)]
+#[derive(Modulation, Debug)]
 pub struct Transform<M: Modulation, F: Fn(usize, u8) -> u8> {
     m: M,
+    #[debug(ignore)]
+    f: F,
     #[no_change]
     config: SamplingConfig,
-    f: F,
     loop_behavior: LoopBehavior,
 }
 
@@ -43,14 +45,6 @@ impl<M: Modulation, F: Fn(usize, u8) -> u8> Modulation for Transform<M, F> {
                 .collect(),
         ))
     }
-
-    #[tracing::instrument(level = "debug", skip(self, geometry), fields(%self.config, %self.loop_behavior))]
-    // GRCOV_EXCL_START
-    fn trace(&self, geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-        <M as Modulation>::trace(&self.m, geometry);
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]

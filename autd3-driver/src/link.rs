@@ -132,7 +132,6 @@ pub async fn send_receive(
     rx: &mut [RxMessage],
     timeout: Duration,
 ) -> Result<(), AUTDInternalError> {
-    tracing::debug!("send with timeout: {:?}", timeout);
     if !link.is_open() {
         return Err(AUTDInternalError::LinkClosed);
     }

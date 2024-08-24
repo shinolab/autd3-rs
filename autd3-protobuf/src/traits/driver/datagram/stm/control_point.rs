@@ -10,7 +10,7 @@ impl ToMessage for autd3_driver::defined::ControlPoint {
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
             pos: Some(self.point().to_msg(None)),
-            offset: Some(self.offset().to_msg(None)),
+            offset: Some(self.phase_offset().to_msg(None)),
         }
     }
 }
@@ -21,7 +21,7 @@ impl FromMessage<ControlPoint> for autd3_driver::defined::ControlPoint {
             autd3_driver::geometry::Vector3::from_msg(&msg.pos)?,
         );
         if let Some(offset) = msg.offset.as_ref() {
-            p = p.with_offset(autd3_driver::firmware::fpga::Phase::from_msg(offset)?);
+            p = p.with_phase_offset(autd3_driver::firmware::fpga::Phase::from_msg(offset)?);
         }
         Ok(p)
     }

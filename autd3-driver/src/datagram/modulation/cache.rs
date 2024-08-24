@@ -56,14 +56,17 @@ impl<M: Modulation> Modulation for Cache<M> {
         let buffer = self.buffer().clone();
         Ok(buffer)
     }
+}
 
-    #[tracing::instrument(level = "debug", skip(self, geometry), fields(%self.config, %self.loop_behavior, cached = !self.cache.borrow().is_empty()))]
-    // GRCOV_EXCL_START
-    fn trace(&self, geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-        <M as Modulation>::trace(&self.m, geometry);
+impl<M: Modulation> std::fmt::Debug for Cache<M> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Cache")
+            .field("m", &self.m)
+            .field("cached", &!self.cache.borrow().is_empty())
+            .field("config", &self.config)
+            .field("loop_behavior", &self.loop_behavior)
+            .finish()
     }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]
@@ -99,7 +102,7 @@ mod tests {
         Ok(())
     }
 
-    #[derive(Modulation, Clone)]
+    #[derive(Modulation, Clone, Debug)]
     struct TestCacheModulation {
         pub calc_cnt: Arc<AtomicUsize>,
         pub config: SamplingConfig,

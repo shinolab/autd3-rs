@@ -44,13 +44,6 @@ impl Datagram for SwapSegment {
     fn parallel_threshold(&self) -> Option<usize> {
         Some(usize::MAX)
     }
-
-    #[tracing::instrument(skip(_geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, _geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(feature = "capi")]

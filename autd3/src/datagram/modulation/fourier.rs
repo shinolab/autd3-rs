@@ -9,10 +9,10 @@ use num::integer::lcm;
 
 #[derive(Modulation, Clone, PartialEq, Debug, Deref)]
 pub struct Fourier<S: SamplingMode> {
-    #[no_change]
-    config: SamplingConfig,
     #[deref]
     components: Vec<Sine<S>>,
+    #[no_change]
+    config: SamplingConfig,
     loop_behavior: LoopBehavior,
 }
 
@@ -65,37 +65,6 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
                 .collect(),
         ))
     }
-
-    #[tracing::instrument(level = "debug", skip(self, _geometry), fields(%self.config, %self.loop_behavior))]
-    // GRCOV_EXCL_START
-    fn trace(&self, _geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-
-        match self.components.len() {
-            0 => {
-                tracing::error!("Components is empty");
-            }
-            1 => {
-                tracing::debug!("Components: {}", self.components[0]);
-            }
-            2 => {
-                tracing::debug!("Components: {}, {}", self.components[0], self.components[1]);
-            }
-            _ => {
-                if tracing::enabled!(tracing::Level::TRACE) {
-                    tracing::debug!("Components: {}", self.components.iter().join(", "));
-                } else {
-                    tracing::debug!(
-                        "Components: {}, ..., {} ({})",
-                        self.components[0],
-                        self.components[self.components.len() - 1],
-                        self.components.len()
-                    );
-                }
-            }
-        }
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]

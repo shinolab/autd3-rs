@@ -4,10 +4,9 @@ use crate::{
     geometry::Vector3,
 };
 
-use derive_more::{Deref, DerefMut, Display};
+use derive_more::{Deref, DerefMut};
 
-#[derive(Clone, Copy, Builder, PartialEq, Debug, Display)]
-#[display("[({}, {}, {}), {}]", point.x, point.y, point.z, offset)]
+#[derive(Clone, Copy, Builder, PartialEq, Debug)]
 #[repr(C)]
 pub struct ControlPoint {
     #[get(ref)]
@@ -15,14 +14,14 @@ pub struct ControlPoint {
     point: Vector3,
     #[get]
     #[set(into)]
-    offset: Phase,
+    phase_offset: Phase,
 }
 
 impl ControlPoint {
     pub const fn new(point: Vector3) -> Self {
         Self {
             point,
-            offset: Phase::new(0),
+            phase_offset: Phase::new(0),
         }
     }
 }
@@ -39,8 +38,7 @@ impl From<&Vector3> for ControlPoint {
     }
 }
 
-#[derive(Clone, Builder, PartialEq, Debug, Deref, DerefMut, Display)]
-#[display("[[{}], {}]", points.iter().join(", "), intensity)]
+#[derive(Clone, Builder, PartialEq, Debug, Deref, DerefMut)]
 #[repr(C)]
 pub struct ControlPoints<const N: usize> {
     #[deref]
@@ -137,22 +135,5 @@ mod tests {
         assert_eq!(EmitIntensity::MIN, cp.intensity());
         assert_eq!(&v1, cp[0].point());
         assert_eq!(&v2, cp[1].point());
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn control_point_display() {
-        let cp = ControlPoint::new(Vector3::new(1.0, 2.0, 3.0));
-        assert_eq!("[(1, 2, 3), 0x00]", cp.to_string());
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn control_points_display() {
-        let cp = ControlPoints::from([Vector3::new(1.0, 2.0, 3.0), Vector3::new(4.0, 5.0, 6.0)]);
-        assert_eq!(
-            "[[[(1, 2, 3), 0x00], [(4, 5, 6), 0x00]], 0xFF]",
-            cp.to_string()
-        );
     }
 }

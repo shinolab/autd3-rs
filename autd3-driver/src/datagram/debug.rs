@@ -4,8 +4,11 @@ use crate::firmware::{
 };
 
 use crate::datagram::*;
+use derive_more::Debug;
 
+#[derive(Debug)]
 pub struct DebugSettings<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> {
+    #[debug(ignore)]
     f: F,
 }
 
@@ -52,25 +55,6 @@ impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> Datagram for DebugSetti
     fn parallel_threshold(&self) -> Option<usize> {
         Some(usize::MAX)
     }
-
-    #[tracing::instrument(level = "debug", skip(self, geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-        if tracing::enabled!(tracing::Level::DEBUG) {
-            geometry.devices().for_each(|dev| {
-                tracing::debug!(
-                    "Device[{}]: O0={}, O1={}, O2={}, O3={}",
-                    dev.idx(),
-                    (self.f)(dev, GPIOOut::O0),
-                    (self.f)(dev, GPIOOut::O1),
-                    (self.f)(dev, GPIOOut::O2),
-                    (self.f)(dev, GPIOOut::O3)
-                )
-            });
-        }
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(feature = "capi")]

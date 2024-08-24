@@ -1,6 +1,6 @@
 use std::{collections::HashMap, num::NonZeroU8};
 
-use crate::{constraint::EmissionConstraint, helper::holo_trace, Amplitude, Complex};
+use crate::{constraint::EmissionConstraint, Amplitude, Complex};
 
 use autd3_driver::{
     acoustics::{directivity::Directivity, propagate},
@@ -11,10 +11,11 @@ use autd3_driver::{
 };
 
 use bit_vec::BitVec;
+use derive_more::Debug;
 use nalgebra::ComplexField;
 use rand::seq::SliceRandom;
 
-#[derive(Gain, Builder)]
+#[derive(Gain, Builder, Debug)]
 pub struct Greedy<D: Directivity> {
     #[get(ref)]
     foci: Vec<Vector3>,
@@ -26,6 +27,7 @@ pub struct Greedy<D: Directivity> {
     #[get]
     #[set]
     constraint: EmissionConstraint,
+    #[debug(ignore)]
     _phantom: std::marker::PhantomData<D>,
 }
 
@@ -150,14 +152,6 @@ impl<D: Directivity> Gain for Greedy<D> {
     ) -> GainCalcResult {
         self.calc_impl(geometry, Some(filter))
     }
-
-    #[tracing::instrument(level = "debug", skip(self, _geometry), fields(?self.phase_div, ?self.constraint))]
-    // GRCOV_EXCL_START
-    fn trace(&self, _geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-        holo_trace(&self.foci, &self.amps);
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]

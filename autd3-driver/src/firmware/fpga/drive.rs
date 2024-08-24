@@ -1,9 +1,6 @@
 use super::{EmitIntensity, Phase};
 
-use derive_more::Display;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Display)]
-#[display("({}, {})", phase, intensity)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
 pub struct Drive {
     phase: Phase,
@@ -123,15 +120,6 @@ mod tests {
         assert_eq!(
             Drive::new(Phase::new(0), EmitIntensity::new(0x00)),
             Drive::null()
-        );
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn display() {
-        assert_eq!(
-            format!("{}", Drive::new(Phase::new(0), EmitIntensity::new(0x00))),
-            "(0x00, 0x00)"
         );
     }
 }

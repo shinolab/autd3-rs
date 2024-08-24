@@ -1,4 +1,7 @@
-#[derive(Clone, Copy, PartialEq, Eq)]
+use derive_more::Debug;
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[debug("{}", match self.rep { 0xFFFF => "Infinite".to_string(), 0 => "Once".to_string(), i => format!("Finite({})", i + 1) })]
 pub struct LoopBehavior {
     pub(crate) rep: u16,
 }
@@ -46,26 +49,6 @@ impl LoopBehavior {
     }
 }
 
-impl std::fmt::Debug for LoopBehavior {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.rep {
-            0xFFFF => write!(f, "LoopBehavior::Infinite"),
-            0 => write!(f, "LoopBehavior::Once"),
-            i => write!(f, "LoopBehavior::Finite({})", i + 1),
-        }
-    }
-}
-
-impl std::fmt::Display for LoopBehavior {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.rep {
-            0xFFFF => write!(f, "LoopBehavior::Infinite"),
-            0 => write!(f, "LoopBehavior::Once"),
-            i => write!(f, "LoopBehavior::Finite({})", i + 1),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
 
@@ -105,29 +88,12 @@ mod tests {
 
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn display() {
-        assert_eq!(
-            format!("{}", LoopBehavior::infinite()),
-            "LoopBehavior::Infinite"
-        );
-        assert_eq!(format!("{}", LoopBehavior::once()), "LoopBehavior::Once");
-        assert_eq!(
-            format!("{}", LoopBehavior::finite(0x1234).unwrap()),
-            "LoopBehavior::Finite(4660)"
-        );
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
     fn debug() {
-        assert_eq!(
-            format!("{:?}", LoopBehavior::infinite()),
-            "LoopBehavior::Infinite"
-        );
-        assert_eq!(format!("{:?}", LoopBehavior::once()), "LoopBehavior::Once");
+        assert_eq!(format!("{:?}", LoopBehavior::infinite()), "Infinite");
+        assert_eq!(format!("{:?}", LoopBehavior::once()), "Once");
         assert_eq!(
             format!("{:?}", LoopBehavior::finite(0x1234).unwrap()),
-            "LoopBehavior::Finite(4660)"
+            "Finite(4660)"
         );
     }
 }

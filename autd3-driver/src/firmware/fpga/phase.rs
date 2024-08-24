@@ -1,12 +1,11 @@
+use derive_more::Debug;
 use nalgebra::ComplexField;
 
 use crate::defined::{rad, Angle, Complex, PI};
 
-use derive_more::Display;
-
-#[derive(Clone, Copy, PartialEq, Eq, Display)]
-#[display("{:#04X}", value)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(C)]
+#[debug("{:#04X}", self.value)]
 pub struct Phase {
     value: u8,
 }
@@ -79,12 +78,6 @@ impl std::ops::Div<u8> for Phase {
     }
 }
 
-impl std::fmt::Debug for Phase {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:#04X}", self.value)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -147,14 +140,6 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn radian(#[case] expect: f32, #[case] value: u8) {
         approx::assert_abs_diff_eq!(expect, Phase::new(value).radian());
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn display() {
-        assert_eq!(format!("{}", Phase::new(0x00)), "0x00");
-        assert_eq!(format!("{}", Phase::new(0x01)), "0x01");
-        assert_eq!(format!("{}", Phase::new(0xFF)), "0xFF");
     }
 
     #[test]

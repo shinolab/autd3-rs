@@ -162,12 +162,6 @@ impl SamplingConfig {
     }
 }
 
-impl std::fmt::Display for SamplingConfig {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.freq())
-    }
-}
-
 // GRCOV_EXCL_START
 impl TryInto<SamplingConfig> for Freq<u32> {
     type Error = AUTDInternalError;
@@ -298,13 +292,5 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn from_period_nearest(#[case] expected: u16, #[case] p: Duration) {
         assert_eq!(expected, SamplingConfig::new_nearest(p).division());
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case::freq("40000 Hz", SamplingConfig::FREQ_40K)]
-    #[case::freq("4000 Hz", SamplingConfig::FREQ_4K)]
-    fn display(#[case] expected: &str, #[case] config: SamplingConfig) {
-        assert_eq!(expected, config.to_string());
     }
 }

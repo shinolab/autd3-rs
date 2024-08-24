@@ -36,7 +36,7 @@ pub fn gen_random_foci<const N: usize>(num: usize) -> Vec<ControlPoints<N>> {
                     rng.gen_range(-100.0 * mm..100.0 * mm),
                     rng.gen_range(-100.0 * mm..100.0 * mm),
                 ))
-                .with_offset(rng.gen::<u8>())
+                .with_phase_offset(rng.gen::<u8>())
             }))
             .with_intensity(rng.gen::<u8>())
         })
@@ -379,7 +379,7 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
                     let tx = ((tr >> 16) & 0xFFFF) as i32;
                     let ty = (tr & 0xFFFF) as i16 as i32;
                     let tz = 0;
-                    let base_offset = focus[0].offset();
+                    let base_offset = focus[0].phase_offset();
                     let (sin, cos) = focus.into_iter().fold((0, 0), |acc, f| {
                         let fx = (f.point().x / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
                         let fy = (f.point().y / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
@@ -387,7 +387,7 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
                         let d =
                             ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
                         let q = (d << 14) / cpu.fpga().sound_speed(Segment::S0) as u32
-                            + (f.offset() - base_offset).value() as u32;
+                            + (f.phase_offset() - base_offset).value() as u32;
                         let sin = sin_table[q as usize % 256] as usize;
                         let cos = sin_table[(q as usize + 64) % 256] as usize;
                         (acc.0 + sin, acc.1 + cos)

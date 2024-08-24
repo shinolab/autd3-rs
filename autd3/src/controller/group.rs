@@ -2,16 +2,15 @@ use std::{fmt::Debug, time::Duration};
 
 use autd3_driver::{
     datagram::Datagram,
-    derive::tracing,
     error::AUTDInternalError,
     firmware::operation::{Operation, OperationGenerator},
     geometry::Device,
 };
 
+use super::{Controller, Link};
 use crate::prelude::AUTDError;
 
-use super::Controller;
-use super::Link;
+use tracing;
 
 pub struct GroupGuard<'a, K: PartialEq + Debug, L: Link> {
     pub(crate) cnt: &'a mut Controller<L>,
@@ -40,7 +39,7 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
         }
     }
 
-    #[tracing::instrument(level = "debug", skip(self, d))]
+    #[tracing::instrument(level = "debug", skip(self))]
     #[must_use]
     pub fn set<D: Datagram>(self, k: K, d: D) -> Result<Self, AUTDInternalError>
     where
@@ -70,8 +69,6 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
             (Some(t1), Some(t2)) => Some(t1.min(t2)),
             (a, b) => a.or(b),
         };
-
-        d.trace(&cnt.geometry);
 
         let generator = d.operation_generator(&cnt.geometry)?;
 

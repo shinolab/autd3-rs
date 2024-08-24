@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::derive::*;
 
-#[derive(Modulation)]
+#[derive(Modulation, Debug)]
 pub struct RadiationPressure<M: Modulation> {
     m: M,
     #[no_change]
@@ -40,14 +40,6 @@ impl<M: Modulation> Modulation for RadiationPressure<M> {
                 .collect(),
         ))
     }
-
-    #[tracing::instrument(level = "debug", skip(self, geometry), fields(%self.config, %self.loop_behavior))]
-    // GRCOV_EXCL_START
-    fn trace(&self, geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-        <M as Modulation>::trace(&self.m, geometry);
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]
