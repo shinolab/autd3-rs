@@ -21,7 +21,7 @@ use rand::*;
 
 use crate::{create_geometry, send};
 
-#[derive(Modulation)]
+#[derive(Modulation, Debug)]
 pub struct TestModulation {
     pub buf: Arc<Vec<u8>>,
     pub config: SamplingConfig,

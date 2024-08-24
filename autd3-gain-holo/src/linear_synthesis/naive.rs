@@ -1,9 +1,8 @@
 use std::{collections::HashMap, sync::Arc};
 
 use crate::{
-    constraint::EmissionConstraint,
-    helper::{generate_result, holo_trace},
-    Amplitude, Complex, LinAlgBackend, Trans,
+    constraint::EmissionConstraint, helper::generate_result, Amplitude, Complex, LinAlgBackend,
+    Trans,
 };
 
 use autd3_driver::{
@@ -11,8 +10,9 @@ use autd3_driver::{
     geometry::Vector3,
 };
 use bit_vec::BitVec;
+use derive_more::Debug;
 
-#[derive(Gain, Builder)]
+#[derive(Gain, Builder, Debug)]
 pub struct Naive<D: Directivity, B: LinAlgBackend<D>> {
     #[get(ref)]
     foci: Vec<Vector3>,
@@ -21,7 +21,9 @@ pub struct Naive<D: Directivity, B: LinAlgBackend<D>> {
     #[get]
     #[set]
     constraint: EmissionConstraint,
+    #[debug("{}", tynm::type_name::<B>())]
     backend: Arc<B>,
+    #[debug(ignore)]
     _phantom: std::marker::PhantomData<D>,
 }
 
@@ -86,14 +88,6 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {
     ) -> GainCalcResult {
         self.calc_impl(geometry, Some(filter))
     }
-
-    #[tracing::instrument(level = "debug", skip(self, _geometry), fields(?self.constraint))]
-    // GRCOV_EXCL_START
-    fn trace(&self, _geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-        holo_trace(&self.foci, &self.amps);
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]

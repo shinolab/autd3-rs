@@ -17,7 +17,7 @@ use autd3_firmware_emulator::CPUEmulator;
 
 use crate::{create_geometry, op::stm::foci::gen_random_foci, send};
 
-#[derive(Modulation)]
+#[derive(Modulation, Debug)]
 struct TestMod {
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
@@ -29,7 +29,7 @@ impl Modulation for TestMod {
     }
 }
 
-#[derive(Gain)]
+#[derive(Gain, Debug)]
 struct TestGain {}
 
 impl Gain for TestGain {

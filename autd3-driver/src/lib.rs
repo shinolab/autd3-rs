@@ -25,7 +25,4 @@ pub mod derive {
         geometry::Geometry,
     };
     pub use autd3_derive::{Builder, Gain, Modulation};
-    pub use itertools::Itertools;
-    pub use tracing;
-    pub use tynm;
 }

@@ -30,7 +30,7 @@ impl SamplingMode for ExactFreq {
     ) -> Result<(u64, u64), AUTDInternalError> {
         if freq.hz() as f32 >= sampling_config.freq().hz() / 2. {
             return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}) is equal to or greater than the Nyquist frequency ({})",
+                "Frequency ({:?}) is equal to or greater than the Nyquist frequency ({:?})",
                 freq,
                 sampling_config.freq() / 2.
             )));
@@ -60,7 +60,7 @@ impl SamplingMode for ExactFreqFloat {
     ) -> Result<(u64, u64), AUTDInternalError> {
         if freq.hz() < 0. || freq.hz().is_nan() {
             return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}) must be valid positive value",
+                "Frequency ({:?}) must be valid positive value",
                 freq
             )));
         }
@@ -71,7 +71,7 @@ impl SamplingMode for ExactFreqFloat {
         }
         if freq.hz() >= sampling_config.freq().hz() / 2. {
             return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}) is equal to or greater than the Nyquist frequency ({})",
+                "Frequency ({:?}) is equal to or greater than the Nyquist frequency ({:?})",
                 freq,
                 sampling_config.freq() / 2.
             )));
@@ -90,7 +90,7 @@ impl SamplingMode for ExactFreqFloat {
             return Ok((n as _, k as _));
         }
         Err(AUTDInternalError::ModulationError(format!(
-            "Frequency ({}) cannot be output with the sampling config ({}).",
+            "Frequency ({:?}) cannot be output with the sampling config ({:?}).",
             freq, sampling_config
         )))
     }
@@ -114,7 +114,7 @@ impl SamplingMode for NearestFreq {
         let freq = Self::freq(freq, sampling_config);
         if freq.hz().is_nan() {
             return Err(AUTDInternalError::ModulationError(format!(
-                "Frequency ({}) must be valid value",
+                "Frequency ({:?}) must be valid value",
                 freq
             )));
         }

@@ -9,7 +9,6 @@ use rayon::prelude::*;
 
 use std::{
     collections::{hash_map::Entry, HashMap},
-    fmt::Debug,
     hash::Hash,
     sync::Arc,
 };
@@ -18,13 +17,16 @@ use bit_vec::BitVec;
 
 use super::GainCalcResult;
 
-#[derive(Gain, Builder)]
+use derive_more::Debug;
+
+#[derive(Gain, Builder, Debug)]
 pub struct Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync,
     FK: Fn(&Transducer) -> Option<K> + Send + Sync,
     F: Fn(&Device) -> FK + Send + Sync,
 {
+    #[debug(ignore)]
     f: F,
     gain_map: HashMap<K, Box<dyn Gain + Send + Sync>>,
     #[get]
@@ -174,28 +176,6 @@ where
             Box::new(move |tr| d[tr.idx()])
         }))
     }
-
-    #[tracing::instrument(level = "debug", skip(self, geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, geometry: &Geometry) {
-        tracing::debug!("Group");
-        if tracing::enabled!(tracing::Level::TRACE) {
-            geometry.devices().for_each(|dev| {
-                tracing::debug!(
-                    "Device[{}]: {}",
-                    dev.idx(),
-                    dev.iter()
-                        .map(|tr| { format!("{:#?}", (self.f)(dev)(tr)) })
-                        .join(", ")
-                );
-            });
-            self.gain_map.iter().for_each(|(k, g)| {
-                tracing::debug!("Key: {:?}", k);
-                Gain::trace(g, geometry);
-            });
-        }
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]

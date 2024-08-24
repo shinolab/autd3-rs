@@ -1,8 +1,10 @@
 use autd3::{driver::link::Link, prelude::*};
+use std::sync::Arc;
 
 pub async fn custom(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     autd.send(Silencer::disable()).await?;
 
+    let m = autd3::modulation::Custom::new(Arc::new(vec![0, 255]), 4 * kHz)?;
     let g = autd3::gain::Custom::new(|dev| {
         let dev_idx = dev.idx();
         move |tr| match (dev_idx, tr.idx()) {
@@ -11,7 +13,7 @@ pub async fn custom(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
         }
     });
 
-    autd.send((Static::new(), g)).await?;
+    autd.send((m, g)).await?;
 
     Ok(true)
 }

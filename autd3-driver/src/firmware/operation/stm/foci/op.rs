@@ -95,7 +95,7 @@ impl<const N: usize> Operation for FociSTMOp<N> {
             .enumerate()
             .try_for_each(|(i, points)| {
                 let intensity = points.intensity();
-                let base_offset = points[0].offset();
+                let base_offset = points[0].phase_offset();
                 points
                     .iter()
                     .enumerate()
@@ -107,7 +107,7 @@ impl<const N: usize> Operation for FociSTMOp<N> {
                                 if j == 0 {
                                     intensity.value()
                                 } else {
-                                    (p.offset() - base_offset).value()
+                                    (p.phase_offset() - base_offset).value()
                                 },
                             )?,
                             &mut tx[offset
@@ -376,7 +376,7 @@ mod tests {
             .chunks(size_of::<STMFocus>() * N)
             .zip(points.iter())
             .for_each(|(d, p)| {
-                let base_offset = p[0].offset();
+                let base_offset = p[0].phase_offset();
                 (0..N).for_each(|i| {
                     let mut buf = [0x00u8; 8];
                     write_to_tx(
@@ -385,7 +385,7 @@ mod tests {
                             if i == 0 {
                                 p.intensity().value()
                             } else {
-                                (p[i].offset() - base_offset).value()
+                                (p[i].phase_offset() - base_offset).value()
                             },
                         )
                         .unwrap(),

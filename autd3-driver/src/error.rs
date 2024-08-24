@@ -33,18 +33,18 @@ pub enum AUTDInternalError {
 
     #[error("Sampling division ({0}) must not be zero")]
     SamplingDivisionInvalid(u16),
-    #[error("Sampling frequency ({0}) must divide {:?}", ULTRASOUND_FREQ)]
+    #[error("Sampling frequency ({0:?}) must divide {:?}", ULTRASOUND_FREQ)]
     SamplingFreqInvalid(Freq<u32>),
-    #[error("Sampling frequency ({0}) must divide {:?}", ULTRASOUND_FREQ)]
+    #[error("Sampling frequency ({0:?}) must divide {:?}", ULTRASOUND_FREQ)]
     SamplingFreqInvalidF(Freq<f32>),
     #[error(
         "Sampling period ({0:?}) must be a multiple of {:?}",
         ULTRASOUND_PERIOD
     )]
     SamplingPeriodInvalid(Duration),
-    #[error("Sampling frequency ({0}) is out of range ([{1}, {2}])")]
+    #[error("Sampling frequency ({0:?}) is out of range ([{1:?}, {2:?}])")]
     SamplingFreqOutOfRange(Freq<u32>, Freq<u32>, Freq<u32>),
-    #[error("Sampling frequency ({0}) is out of range ([{1}, {2}])")]
+    #[error("Sampling frequency ({0:?}) is out of range ([{1:?}, {2:?}])")]
     SamplingFreqOutOfRangeF(Freq<f32>, Freq<f32>, Freq<f32>),
     #[error("Sampling period ({0:?}) is out of range ([{1:?}, {2:?}])")]
     SamplingPeriodOutOfRange(Duration, Duration, Duration),

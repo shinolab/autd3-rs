@@ -3,10 +3,7 @@ use std::time::Duration;
 use crate::{error::*, pb::*, traits::*};
 
 use autd3::derive::AUTDInternalError;
-use autd3_driver::{
-    datagram::{IntoDatagramWithSegment, IntoDatagramWithSegmentTransition},
-    derive::tracing,
-};
+use autd3_driver::datagram::{IntoDatagramWithSegment, IntoDatagramWithSegmentTransition};
 use tokio::sync::RwLock;
 use tonic::{Request, Response, Status};
 
@@ -21,6 +18,7 @@ pub struct LightweightServer<
     link: F,
 }
 
+#[derive(Debug)]
 pub struct DatagramWithTimeoutAndParallelThreshold<D: autd3_driver::datagram::Datagram> {
     datagram: D,
     timeout: Option<Duration>,
@@ -47,19 +45,6 @@ impl<D: autd3_driver::datagram::Datagram> autd3_driver::datagram::Datagram
         self.parallel_threshold
             .or(self.datagram.parallel_threshold())
     }
-
-    #[tracing::instrument(level = "debug", skip(self, geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, geometry: &autd3_driver::geometry::Geometry) {
-        tracing::debug!(
-            "{} (threshold = {:?}, timeout = {:?})",
-            autd3_driver::derive::tynm::type_name::<Self>(),
-            self.parallel_threshold,
-            self.timeout
-        );
-        self.datagram.trace(geometry);
-    }
-    // GRCOV_EXCL_STOP
 }
 
 impl<L: autd3_driver::link::LinkBuilder + 'static, F: Fn() -> L + Send + Sync + 'static>

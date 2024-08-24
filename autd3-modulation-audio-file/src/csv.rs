@@ -11,12 +11,12 @@ use crate::error::AudioFileError;
 #[derive(Modulation, Clone, Builder, PartialEq, Debug)]
 pub struct Csv {
     path: PathBuf,
-    #[no_change]
-    config: SamplingConfig,
-    loop_behavior: LoopBehavior,
     #[get]
     #[set]
     deliminator: u8,
+    #[no_change]
+    config: SamplingConfig,
+    loop_behavior: LoopBehavior,
 }
 
 impl Csv {
@@ -61,13 +61,6 @@ impl Modulation for Csv {
     fn calc(&self) -> ModulationCalcResult {
         Ok(Arc::new(self.read_buf()?))
     }
-
-    #[tracing::instrument(level = "debug", skip(_geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, _geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-    }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]

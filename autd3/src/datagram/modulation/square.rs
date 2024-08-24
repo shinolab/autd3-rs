@@ -4,19 +4,7 @@ use autd3_driver::{defined::Freq, derive::*};
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
-use derive_more::Display;
-
-#[derive(Modulation, Clone, PartialEq, Debug, Builder, Display)]
-#[display(
-    "Square<{}> {{ {}, {}-{}, {}%, {:?}, {:?} }}",
-    tynm::type_name::<S>(),
-    freq,
-    low,
-    high,
-    duty * 100.,
-    config,
-    loop_behavior
-)]
+#[derive(Modulation, Clone, PartialEq, Builder)]
 pub struct Square<S: SamplingMode> {
     freq: S::T,
     #[get]
@@ -86,13 +74,19 @@ impl<S: SamplingMode> Modulation for Square<S> {
                 .collect(),
         ))
     }
+}
 
-    #[tracing::instrument(level = "debug", skip(_geometry))]
-    // GRCOV_EXCL_START
-    fn trace(&self, _geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
+impl<S: SamplingMode> std::fmt::Debug for Square<S> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct(&format!("Square<{}>", tynm::type_name::<S>()))
+            .field("freq", &self.freq())
+            .field("low", &self.low)
+            .field("high", &self.high)
+            .field("duty", &self.duty)
+            .field("config", &self.config)
+            .field("loop_behavior", &self.loop_behavior)
+            .finish()
     }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]
@@ -141,7 +135,7 @@ mod tests {
         781.25*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (150.01 Hz) cannot be output with the sampling config (4000 Hz).".to_owned())),
+        Err(AUTDInternalError::ModulationError("Frequency (150.01 Hz) cannot be output with the sampling config (SamplingConfig { div: 10 }).".to_owned())),
         150.01*Hz
     )]
     #[case(
@@ -251,20 +245,5 @@ mod tests {
             )),
             Square::new(150. * Hz).with_duty(1.1).calc().err()
         );
-    }
-
-    #[test]
-    fn square_fmt() -> anyhow::Result<()> {
-        let m = Square::new(150. * Hz)
-            .with_duty(0.1)
-            .with_high(0x80)
-            .with_low(0x40);
-
-        assert_eq!(
-            "Square<ExactFreqFloat> { 150 Hz, 64-128, 10%, SamplingConfig { div: 10 }, LoopBehavior::Infinite }",
-            format!("{}", m)
-        );
-
-        Ok(())
     }
 }

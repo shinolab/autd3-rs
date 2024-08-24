@@ -3,7 +3,7 @@ use std::sync::Arc;
 use autd3::{driver::link::Link, prelude::*};
 use autd3_driver::derive::*;
 
-#[derive(Gain, Clone, Copy)]
+#[derive(Gain, Clone, Copy, Debug)]
 pub struct MyUniform {}
 
 impl MyUniform {
@@ -18,7 +18,7 @@ impl Gain for MyUniform {
     }
 }
 
-#[derive(Modulation, Clone, Copy)]
+#[derive(Modulation, Clone, Copy, Debug)]
 pub struct Burst {
     config: SamplingConfig,
     loop_behavior: LoopBehavior,

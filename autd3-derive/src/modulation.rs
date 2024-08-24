@@ -91,47 +91,6 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
             fn parallel_threshold(&self) -> Option<usize> {
                 Some(usize::MAX)
             }
-
-            #[tracing::instrument(skip(self, geometry))]
-            // GRCOV_EXCL_START
-            fn trace(&self, geometry: &Geometry) {
-                <Self as Modulation>::trace(self, geometry);
-                if tracing::enabled!(tracing::Level::DEBUG) {
-                    if let Ok(buf) = <Self as Modulation>::calc(self) {
-                        match buf.len() {
-                            0 => {
-                                tracing::error!("Buffer is empty");
-                                return;
-                            }
-                            1 => {
-                                tracing::debug!("Buffer: {:#04X}", buf[0]);
-                            }
-                            2 => {
-                                tracing::debug!("Buffer: {:#04X}, {:#04X}", buf[0], buf[1]);
-                            }
-                            _ => {
-                                if tracing::enabled!(tracing::Level::TRACE) {
-                                    tracing::debug!(
-                                        "Buffer: {}",
-                                        buf.iter()
-                                            .format_with(", ", |elt, f| f(&format_args!("{:#04X}", elt)))
-                                    );
-                                } else {
-                                    tracing::debug!(
-                                        "Buffer: {:#04X}, ..., {:#04X} ({})",
-                                        buf[0],
-                                        buf[buf.len() - 1],
-                                        buf.len()
-                                    );
-                                }
-                            }
-                        }
-                    } else {
-                        tracing::error!("Failed to calculate modulation");
-                    }
-                }
-            }
-            // GRCOV_EXCL_STOP
         }
     };
 

@@ -17,7 +17,7 @@ use super::GainCalcResult;
 
 use derive_more::Deref;
 
-#[derive(Gain, Clone, Debug, Deref)]
+#[derive(Gain, Clone, Deref)]
 pub struct Cache<G: Gain> {
     #[deref]
     gain: G,
@@ -76,14 +76,15 @@ impl<G: Gain> Gain for Cache<G> {
             Box::new(move |tr| drives[tr.idx()])
         }))
     }
+}
 
-    #[tracing::instrument(level = "debug", skip(self, geometry), fields(cached = self.cache.borrow().len() == geometry.devices().count() && geometry.devices().all(|dev| self.cache.borrow().contains_key(&dev.idx()))))]
-    // GRCOV_EXCL_START
-    fn trace(&self, geometry: &Geometry) {
-        tracing::debug!("{}", tynm::type_name::<Self>());
-        <G as Gain>::trace(&self.gain, geometry);
+impl<G: Gain> std::fmt::Debug for Cache<G> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Cache")
+            .field("gain", &self.gain)
+            .field("cached", &!self.cache.borrow().is_empty())
+            .finish()
     }
-    // GRCOV_EXCL_STOP
 }
 
 #[cfg(test)]
