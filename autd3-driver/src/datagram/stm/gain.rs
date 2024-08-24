@@ -8,6 +8,7 @@ use crate::{
 };
 
 use derive_more::{Deref, DerefMut};
+use silencer::WithSampling;
 
 #[derive(Builder, Clone, Deref, DerefMut, Debug)]
 pub struct GainSTM<G: Gain> {

@@ -21,6 +21,18 @@ pub struct Transform<
     f: F,
 }
 
+impl<
+        G: Gain,
+        D: Into<Drive>,
+        FT: Fn(&Transducer, Drive) -> D + Send + Sync + 'static,
+        F: Fn(&Device) -> FT,
+    > Transform<G, D, FT, F>
+{
+    const fn new(gain: G, f: F) -> Self {
+        Self { gain, f }
+    }
+}
+
 pub trait IntoTransform<G: Gain> {
     fn with_transform<
         D: Into<Drive>,
@@ -42,19 +54,6 @@ impl<G: Gain> IntoTransform<G> for G {
         f: F,
     ) -> Transform<G, D, FT, F> {
         Transform::new(self, f)
-    }
-}
-
-impl<
-        G: Gain,
-        D: Into<Drive>,
-        FT: Fn(&Transducer, Drive) -> D + Send + Sync + 'static,
-        F: Fn(&Device) -> FT,
-    > Transform<G, D, FT, F>
-{
-    #[doc(hidden)]
-    pub const fn new(gain: G, f: F) -> Self {
-        Self { gain, f }
     }
 }
 

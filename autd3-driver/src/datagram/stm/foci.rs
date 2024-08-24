@@ -9,6 +9,7 @@ use crate::{
 };
 
 use derive_more::{Deref, DerefMut};
+use silencer::WithSampling;
 
 #[derive(Clone, Builder, Deref, DerefMut, Debug)]
 pub struct FociSTM<const N: usize> {
