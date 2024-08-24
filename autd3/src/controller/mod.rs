@@ -81,12 +81,14 @@ impl<L: Link> Controller<L> {
         let parallel_threshold = parallel_threshold.unwrap_or(self.parallel_threshold);
         let timeout = timeout.unwrap_or(self.link.timeout());
 
+        // GRCOV_EXCL_START
         tracing::debug!(
             "timeout: {:?}, parallel: {:?}",
             timeout,
             self.geometry.num_devices() > parallel_threshold
         );
         tracing::trace!("parallel_threshold: {:?}", parallel_threshold);
+        // GRCOV_EXCL_STOP
 
         self.link.update(&self.geometry).await?;
         loop {
@@ -100,6 +102,7 @@ impl<L: Link> Controller<L> {
             self.link
                 .trace(&self.tx_buf, &mut self.rx_buf, timeout, parallel_threshold);
 
+        // GRCOV_EXCL_START
             tracing::trace!(
                 "send: {}",
                 self.tx_buf.iter().format_with(", ", |elt, f| {
@@ -108,7 +111,8 @@ impl<L: Link> Controller<L> {
                         elt.header, elt.payload[0]
                     ))
                 })
-            );
+            ); 
+            // GRCOV_EXCL_STOP
 
             let start = tokio::time::Instant::now();
             send_receive(&mut self.link, &self.tx_buf, &mut self.rx_buf, timeout).await?;
