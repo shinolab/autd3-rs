@@ -11,8 +11,7 @@ pub struct RadiationPressure<M: Modulation> {
 }
 
 impl<M: Modulation> RadiationPressure<M> {
-    #[doc(hidden)]
-    pub fn new(m: M) -> Self {
+    fn new(m: M) -> Self {
         Self {
             config: m.sampling_config(),
             loop_behavior: m.loop_behavior(),

@@ -23,6 +23,7 @@ use crate::{
     geometry::{Device, Geometry},
 };
 
+use super::silencer::WithSampling;
 use super::DatagramST;
 
 pub type ModulationCalcResult = Result<Arc<Vec<u8>>, AUTDInternalError>;
@@ -32,30 +33,20 @@ pub trait ModulationProperty {
     fn loop_behavior(&self) -> LoopBehavior;
 }
 
-#[allow(clippy::len_without_is_empty)]
 pub trait Modulation: ModulationProperty + std::fmt::Debug {
     fn calc(&self) -> ModulationCalcResult;
 }
 
-// GRCOV_EXCL_START
-impl<'a> ModulationProperty for Box<dyn Modulation + Send + Sync + 'a> {
-    fn sampling_config(&self) -> SamplingConfig {
-        self.as_ref().sampling_config()
+impl<M: Modulation> WithSampling for M {
+    fn sampling_config_intensity(&self) -> Option<SamplingConfig> {
+        Some(self.sampling_config())
     }
-
-    fn loop_behavior(&self) -> LoopBehavior {
-        self.as_ref().loop_behavior()
-    }
-}
-
-impl<'a> Modulation for Box<dyn Modulation + Send + Sync + 'a> {
-    fn calc(&self) -> ModulationCalcResult {
-        self.as_ref().calc()
+    fn sampling_config_phase(&self) -> Option<SamplingConfig> {
+        None
     }
 }
 
 pub struct ModulationOperationGenerator {
-    #[allow(clippy::type_complexity)]
     pub g: Arc<Vec<u8>>,
     pub config: SamplingConfig,
     pub loop_behavior: LoopBehavior,
@@ -79,6 +70,23 @@ impl OperationGenerator for ModulationOperationGenerator {
             ),
             NullOp::default(),
         )
+    }
+}
+
+// GRCOV_EXCL_START
+impl<'a> ModulationProperty for Box<dyn Modulation + Send + Sync + 'a> {
+    fn sampling_config(&self) -> SamplingConfig {
+        self.as_ref().sampling_config()
+    }
+
+    fn loop_behavior(&self) -> LoopBehavior {
+        self.as_ref().loop_behavior()
+    }
+}
+
+impl<'a> Modulation for Box<dyn Modulation + Send + Sync + 'a> {
+    fn calc(&self) -> ModulationCalcResult {
+        self.as_ref().calc()
     }
 }
 

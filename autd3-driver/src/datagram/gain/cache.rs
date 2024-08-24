@@ -36,8 +36,7 @@ impl<G: Gain> IntoCache<G> for G {
 }
 
 impl<G: Gain> Cache<G> {
-    #[doc(hidden)]
-    pub fn new(gain: G) -> Self {
+    fn new(gain: G) -> Self {
         Self {
             gain,
             cache: Default::default(),
