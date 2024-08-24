@@ -12,7 +12,7 @@ impl CPUEmulator {
 
         self.port_a_podr = 0x00;
 
-        self.read_fpga_state = false;
+        self.reads_fpga_state = false;
 
         self.fpga_flags_internal = 0x0000;
 
