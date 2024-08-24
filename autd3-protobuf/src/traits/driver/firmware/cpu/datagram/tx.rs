@@ -12,7 +12,7 @@ impl ToMessage for autd3_driver::firmware::cpu::TxDatagram {
         unsafe {
             std::ptr::copy_nonoverlapping(
                 self.as_ptr() as *const u8,
-                data.as_mut_ptr() as *mut u8,
+                data.as_mut_ptr(),
                 self.total_len(),
             );
         }
@@ -28,7 +28,7 @@ impl FromMessage<TxRawData> for autd3_driver::firmware::cpu::TxDatagram {
         let mut tx = autd3_driver::firmware::cpu::TxDatagram::new(msg.n as _);
         unsafe {
             std::ptr::copy_nonoverlapping(
-                msg.data.as_ptr() as *const u8,
+                msg.data.as_ptr(),
                 tx.as_mut_ptr() as *mut u8,
                 tx.total_len(),
             );
