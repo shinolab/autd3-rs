@@ -7,8 +7,11 @@ use autd3_driver::{
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
-#[derive(Modulation, Clone, PartialEq, Builder)]
+use derive_more::Debug;
+
+#[derive(Modulation, Clone, PartialEq, Builder, Debug)]
 pub struct Sine<S: SamplingMode> {
+    #[debug("{}({:?})", tynm::type_name::<S>(), self.freq)]
     freq: S::T,
     #[get]
     #[set]
@@ -69,19 +72,6 @@ impl<S: SamplingMode> Modulation for Sine<S> {
                 })
                 .collect(),
         ))
-    }
-}
-
-impl<S: SamplingMode> std::fmt::Debug for Sine<S> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct(&format!("Sine<{}>", tynm::type_name::<S>()))
-            .field("freq", &self.freq())
-            .field("intensity", &self.intensity)
-            .field("offset", &self.offset)
-            .field("phase", &self.phase)
-            .field("config", &self.config)
-            .field("loop_behavior", &self.loop_behavior)
-            .finish()
     }
 }
 
