@@ -178,16 +178,10 @@ impl OperationHandler {
         tx: &mut TxMessage,
     ) -> Result<usize, AUTDInternalError> {
         let header = &mut tx.header;
-        header.msg_id = if header.msg_id == MSG_ID_MAX {
-            0
-        } else {
-            header.msg_id + 1
-        };
+        header.msg_id += 1;
+        header.msg_id &= MSG_ID_MAX;
         header.slot_2_offset = 0;
-
-        let t = &mut tx.payload;
-
-        op.pack(dev, t)
+        op.pack(dev, &mut tx.payload)
     }
 }
 
@@ -449,5 +443,37 @@ pub mod tests {
         let mut tx = TxDatagram::new(1);
 
         assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, false).is_ok());
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn msg_id() {
+        let geometry = Geometry::new(vec![Device::new(
+            0,
+            UnitQuaternion::identity(),
+            vec![Transducer::new(0, Vector3::zeros())],
+        )]);
+
+        let mut tx = TxDatagram::new(1);
+
+        for i in 0..=MSG_ID_MAX {
+            assert_eq!(i, tx[0].header.msg_id);
+            let mut op = vec![(
+                OperationMock {
+                    pack_size: 0,
+                    required_size: 0,
+                    num_frames: 1,
+                    broken: false,
+                },
+                OperationMock {
+                    pack_size: 0,
+                    required_size: 0,
+                    num_frames: 0,
+                    broken: false,
+                },
+            )];
+            assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, false).is_ok());
+        }
+        assert_eq!(0, tx[0].header.msg_id);
     }
 }

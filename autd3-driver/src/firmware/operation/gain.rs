@@ -25,6 +25,7 @@ struct GainT {
     tag: TypeTag,
     segment: u8,
     flag: GainControlFlags,
+    __pad: u8,
 }
 
 pub struct GainOp {
@@ -64,6 +65,7 @@ impl Operation for GainOp {
                 } else {
                     GainControlFlags::NONE
                 },
+                __pad: 0,
             },
             tx,
         );

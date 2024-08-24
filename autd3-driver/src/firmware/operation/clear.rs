@@ -9,6 +9,7 @@ use super::write_to_tx;
 #[repr(C, align(2))]
 struct Clear {
     tag: TypeTag,
+    __pad: u8,
 }
 
 #[derive(Default)]
@@ -21,6 +22,7 @@ impl Operation for ClearOp {
         write_to_tx(
             Clear {
                 tag: TypeTag::Clear,
+                __pad: 0,
             },
             tx,
         );
