@@ -6,12 +6,12 @@ use crate::{error::AUTDError, gain::Null, link::nop::Nop, prelude::Static};
 use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
-    datagram::{Clear, Datagram, FetchFirmInfo, IntoDatagramWithTimeout, Synchronize},
+    datagram::{Clear, Datagram, IntoDatagramWithTimeout, Synchronize},
     derive::Builder,
     firmware::{
         cpu::{check_if_msg_is_processed, RxMessage, TxDatagram},
         fpga::FPGAState,
-        operation::{Operation, OperationHandler},
+        operation::{FirmwareVersionType, Operation, OperationHandler},
         version::FirmwareVersion,
     },
     geometry::{Device, Geometry, IntoDevice},
@@ -102,7 +102,7 @@ impl<L: Link> Controller<L> {
             self.link
                 .trace(&self.tx_buf, &mut self.rx_buf, timeout, parallel_threshold);
 
-        // GRCOV_EXCL_START
+            // GRCOV_EXCL_START
             tracing::trace!(
                 "send: {}",
                 self.tx_buf.iter().format_with(", ", |elt, f| {
@@ -111,7 +111,7 @@ impl<L: Link> Controller<L> {
                         elt.header, elt.payload[0]
                     ))
                 })
-            ); 
+            );
             // GRCOV_EXCL_STOP
 
             let start = tokio::time::Instant::now();
@@ -149,7 +149,7 @@ impl<L: Link> Controller<L> {
         Ok(())
     }
 
-    async fn fetch_firminfo(&mut self, ty: FetchFirmInfo) -> Result<Vec<u8>, AUTDError> {
+    async fn fetch_firminfo(&mut self, ty: FirmwareVersionType) -> Result<Vec<u8>, AUTDError> {
         self.send(ty).await.map_err(|_| {
             AUTDError::ReadFirmwareVersionFailed(
                 check_if_msg_is_processed(&self.tx_buf, &mut self.rx_buf).collect(),
@@ -159,12 +159,13 @@ impl<L: Link> Controller<L> {
     }
 
     pub async fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDError> {
-        let cpu_major = self.fetch_firminfo(FetchFirmInfo::CPUMajor).await?;
-        let cpu_minor = self.fetch_firminfo(FetchFirmInfo::CPUMinor).await?;
-        let fpga_major = self.fetch_firminfo(FetchFirmInfo::FPGAMajor).await?;
-        let fpga_minor = self.fetch_firminfo(FetchFirmInfo::FPGAMinor).await?;
-        let fpga_functions = self.fetch_firminfo(FetchFirmInfo::FPGAFunctions).await?;
-        self.fetch_firminfo(FetchFirmInfo::Clear).await?;
+        use FirmwareVersionType::*;
+        let cpu_major = self.fetch_firminfo(CPUMajor).await?;
+        let cpu_minor = self.fetch_firminfo(CPUMinor).await?;
+        let fpga_major = self.fetch_firminfo(FPGAMajor).await?;
+        let fpga_minor = self.fetch_firminfo(FPGAMinor).await?;
+        let fpga_functions = self.fetch_firminfo(FPGAFunctions).await?;
+        self.fetch_firminfo(Clear).await?;
 
         Ok(self
             .geometry

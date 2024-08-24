@@ -20,6 +20,7 @@ pub(crate) use debug::*;
 pub(crate) use force_fan::*;
 pub(crate) use gain::*;
 pub(crate) use gpio_in::*;
+pub use info::FirmwareVersionType;
 pub(crate) use info::*;
 pub(crate) use modulation::*;
 pub(crate) use null::*;
