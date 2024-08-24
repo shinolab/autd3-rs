@@ -6,12 +6,13 @@ use std::{
     sync::Arc,
 };
 
-use derive_more::Deref;
+use derive_more::{Debug, Deref};
 
-#[derive(Modulation, Clone, Deref)]
+#[derive(Modulation, Clone, Deref, Debug)]
 pub struct Cache<M: Modulation> {
     #[deref]
     m: M,
+    #[debug("{}", !self.cache.borrow().is_empty())]
     cache: Rc<RefCell<Arc<Vec<u8>>>>,
     #[no_change]
     config: SamplingConfig,
@@ -58,17 +59,6 @@ impl<M: Modulation> Modulation for Cache<M> {
     }
 }
 
-impl<M: Modulation> std::fmt::Debug for Cache<M> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Cache")
-            .field("m", &self.m)
-            .field("cached", &!self.cache.borrow().is_empty())
-            .field("config", &self.config)
-            .field("loop_behavior", &self.loop_behavior)
-            .finish()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::{super::tests::TestModulation, *};
@@ -102,7 +92,7 @@ mod tests {
         Ok(())
     }
 
-    #[derive(Modulation, Clone, Debug)]
+    #[derive(Modulation, Clone, self::Debug)]
     struct TestCacheModulation {
         pub calc_cnt: Arc<AtomicUsize>,
         pub config: SamplingConfig,

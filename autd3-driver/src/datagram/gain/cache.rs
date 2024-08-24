@@ -15,12 +15,13 @@ use std::{
 
 use super::GainCalcResult;
 
-use derive_more::Deref;
+use derive_more::{Debug, Deref};
 
-#[derive(Gain, Clone, Deref)]
+#[derive(Gain, Clone, Deref, Debug)]
 pub struct Cache<G: Gain> {
     #[deref]
     gain: G,
+    #[debug("{}", !self.cache.borrow().is_empty())]
     cache: Rc<RefCell<HashMap<usize, Arc<Vec<Drive>>>>>,
 }
 
@@ -78,15 +79,6 @@ impl<G: Gain> Gain for Cache<G> {
     }
 }
 
-impl<G: Gain> std::fmt::Debug for Cache<G> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Cache")
-            .field("gain", &self.gain)
-            .field("cached", &!self.cache.borrow().is_empty())
-            .finish()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::{super::tests::TestGain, *};
@@ -126,7 +118,7 @@ mod tests {
         Ok(())
     }
 
-    #[derive(Gain, Clone, Debug)]
+    #[derive(Gain, Clone, self::Debug)]
     pub struct CacheTestGain {
         pub calc_cnt: Arc<AtomicUsize>,
     }
