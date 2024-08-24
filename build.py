@@ -334,7 +334,7 @@ def rust_coverage(args):
                 "-t",
                 args.format,
                 "--excl-line",
-                r"^\s*(debug_)?assert(_eq|_ne)?!|#\[derive|GRCOV_EXCL_LINE|unreachable!|unimplemented!|tracing::|#\[error",
+                r"GRCOV_EXCL_LINE|#\[derive|#\[error|unreachable!|unimplemented!|tracing::(debug|trace|info|warn|error)!\([\s\S]*\);",
                 "--ignore",
                 "autd3-derive/**/*",
                 "--ignore",
@@ -438,7 +438,7 @@ if __name__ == "__main__":
         # coverage
         parser_cov = subparsers.add_parser("cov", help="see `cov -h`")
         parser_cov.add_argument(
-            "--format", help="output format (lcov|html|text)", default="lcov"
+            "--format", help="output format (lcov|html|markdown)", default="lcov"
         )
         parser_cov.add_argument("--open", action="store_true", help="open")
         parser_cov.set_defaults(handler=rust_coverage)
