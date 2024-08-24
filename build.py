@@ -250,6 +250,7 @@ def rust_test(args):
 
 def rust_run(args):
     examples = [
+        "nop",
         "soem",
         "remote_soem",
         "twincat",
