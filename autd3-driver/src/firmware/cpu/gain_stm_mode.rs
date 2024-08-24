@@ -6,14 +6,3 @@ pub enum GainSTMMode {
     PhaseFull = 1,
     PhaseHalf = 2,
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test_size() {
-        assert_eq!(1, std::mem::size_of::<GainSTMMode>());
-    }
-}

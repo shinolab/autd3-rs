@@ -80,24 +80,14 @@ impl<L: Link> Controller<L> {
     ) -> Result<(), AUTDError> {
         let parallel_threshold = parallel_threshold.unwrap_or(self.parallel_threshold);
         let timeout = timeout.unwrap_or(self.link.timeout());
+        let parallel = self.geometry.num_devices() > parallel_threshold;
 
-        // GRCOV_EXCL_START
-        tracing::debug!(
-            "timeout: {:?}, parallel: {:?}",
-            timeout,
-            self.geometry.num_devices() > parallel_threshold
-        );
+        tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
         tracing::trace!("parallel_threshold: {:?}", parallel_threshold);
-        // GRCOV_EXCL_STOP
 
         self.link.update(&self.geometry).await?;
         loop {
-            OperationHandler::pack(
-                operations,
-                &self.geometry,
-                &mut self.tx_buf,
-                parallel_threshold,
-            )?;
+            OperationHandler::pack(operations, &self.geometry, &mut self.tx_buf, parallel)?;
 
             self.link
                 .trace(&self.tx_buf, &mut self.rx_buf, timeout, parallel_threshold);

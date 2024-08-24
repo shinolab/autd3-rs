@@ -27,14 +27,14 @@ pub fn send(
     tx: &mut TxDatagram,
 ) -> Result<(), AUTDInternalError> {
     let _timeout = d.timeout();
-    let parallel_threshold = d.parallel_threshold().unwrap_or(4);
+    let parallel = geometry.num_devices() > d.parallel_threshold().unwrap_or(4);
     let generator = d.operation_generator(geometry)?;
     let mut op = OperationHandler::generate(generator, geometry);
     loop {
         if OperationHandler::is_done(&op) {
             break;
         }
-        OperationHandler::pack(&mut op, geometry, tx, parallel_threshold)?;
+        OperationHandler::pack(&mut op, geometry, tx, parallel)?;
         cpu.send(tx);
         if (cpu.rx().ack() & ERR_BIT) == ERR_BIT {
             return Err(AUTDInternalError::firmware_err(cpu.rx().ack()));
@@ -87,7 +87,7 @@ fn send_ingore_same_data() -> anyhow::Result<()> {
     let d = Clear::new();
     let generator = d.operation_generator(&geometry)?;
     let mut op = OperationHandler::generate(generator, &geometry);
-    OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)?;
+    OperationHandler::pack(&mut op, &geometry, &mut tx, false)?;
     cpu.send(&tx);
     let msg_id = tx[0].header.msg_id;
     assert_eq!(cpu.rx().ack(), tx[0].header.msg_id);
@@ -95,7 +95,7 @@ fn send_ingore_same_data() -> anyhow::Result<()> {
     let d = Synchronize::new();
     let generator = d.operation_generator(&geometry)?;
     let mut op = OperationHandler::generate(generator, &geometry);
-    OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)?;
+    OperationHandler::pack(&mut op, &geometry, &mut tx, false)?;
     tx[0].header.msg_id = msg_id;
     assert!(!cpu.synchronized());
     cpu.send(&tx);
@@ -113,7 +113,7 @@ fn send_slot_2() -> anyhow::Result<()> {
     let d = (Clear::new(), Synchronize::new());
     let generator = d.operation_generator(&geometry)?;
     let mut op = OperationHandler::generate(generator, &geometry);
-    OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)?;
+    OperationHandler::pack(&mut op, &geometry, &mut tx, false)?;
 
     assert!(!cpu.synchronized());
     cpu.send(&tx);
@@ -133,7 +133,7 @@ fn send_slot_2_err() -> anyhow::Result<()> {
     let d = (Clear::new(), Synchronize::new());
     let generator = d.operation_generator(&geometry)?;
     let mut op = OperationHandler::generate(generator, &geometry);
-    OperationHandler::pack(&mut op, &geometry, &mut tx, usize::MAX)?;
+    OperationHandler::pack(&mut op, &geometry, &mut tx, false)?;
 
     let slot2_offset = tx[0].header.slot_2_offset as usize;
     tx[0].payload[slot2_offset] = 0xFF;

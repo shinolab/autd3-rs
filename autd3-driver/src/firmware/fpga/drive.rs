@@ -1,23 +1,19 @@
+use autd3_derive::Builder;
+
 use super::{EmitIntensity, Phase};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Builder)]
 #[repr(C)]
 pub struct Drive {
+    #[get]
     phase: Phase,
+    #[get]
     intensity: EmitIntensity,
 }
 
 impl Drive {
     pub const fn new(phase: Phase, intensity: EmitIntensity) -> Self {
         Self { phase, intensity }
-    }
-
-    pub const fn phase(&self) -> Phase {
-        self.phase
-    }
-
-    pub const fn intensity(&self) -> EmitIntensity {
-        self.intensity
     }
 
     pub const fn null() -> Self {

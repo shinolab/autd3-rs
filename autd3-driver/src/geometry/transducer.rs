@@ -1,29 +1,24 @@
+use autd3_derive::Builder;
+
 use super::{Matrix4, UnitQuaternion, Vector3, Vector4};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Builder)]
 pub struct Transducer {
+    #[get]
     idx: usize,
-    pos: Vector3,
+    #[get(ref)]
+    position: Vector3,
 }
 
 impl Transducer {
-    pub(crate) const fn new(idx: usize, pos: Vector3) -> Self {
-        assert!(idx < 256);
-        Self { idx, pos }
+    pub(crate) const fn new(idx: usize, position: Vector3) -> Self {
+        Self { idx, position }
     }
 
     pub fn affine(&mut self, t: Vector3, r: UnitQuaternion) {
-        let new_pos = Matrix4::from(r).append_translation(&t)
-            * Vector4::new(self.pos[0], self.pos[1], self.pos[2], 1.0);
-        self.pos = Vector3::new(new_pos[0], new_pos[1], new_pos[2]);
-    }
-
-    pub const fn position(&self) -> &Vector3 {
-        &self.pos
-    }
-
-    pub const fn idx(&self) -> usize {
-        self.idx
+        self.position = (Matrix4::from(r).append_translation(&t)
+            * Vector4::new(self.position[0], self.position[1], self.position[2], 1.0))
+        .xyz();
     }
 }
 

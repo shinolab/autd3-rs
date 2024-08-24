@@ -1,12 +1,14 @@
+use autd3_derive::Builder;
 use derive_more::Debug;
 use nalgebra::ComplexField;
 
 use crate::defined::{rad, Angle, Complex, PI};
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Builder)]
 #[repr(C)]
 #[debug("{:#04X}", self.value)]
 pub struct Phase {
+    #[get]
     value: u8,
 }
 
@@ -15,10 +17,6 @@ impl Phase {
 
     pub const fn new(value: u8) -> Self {
         Self { value }
-    }
-
-    pub const fn value(&self) -> u8 {
-        self.value
     }
 
     pub fn radian(&self) -> f32 {

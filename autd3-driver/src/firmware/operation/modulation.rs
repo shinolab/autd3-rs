@@ -10,7 +10,19 @@ use crate::{
     geometry::Device,
 };
 
-use super::ModulationControlFlags;
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(C)]
+pub struct ModulationControlFlags(u8);
+
+bitflags::bitflags! {
+    impl ModulationControlFlags : u8 {
+        const NONE           = 0;
+        const BEGIN          = 1 << 0;
+        const END            = 1 << 1;
+        const TRANSITION     = 1 << 2;
+        const SEGMENT        = 1 << 3;
+    }
+}
 
 #[repr(C, align(2))]
 struct ModulationHead {
@@ -70,14 +82,12 @@ impl Operation for ModulationOp {
             std::mem::size_of::<ModulationSubseq>()
         };
 
-        let max_mod_size = tx.len() - offset;
-        let send_num = if is_first {
-            (self.modulation.len() - self.sent)
-                .min(max_mod_size)
-                .min(254)
+        let max_mod_size = if is_first {
+            (tx.len() - offset).min(254)
         } else {
-            (self.modulation.len() - self.sent).min(max_mod_size)
+            tx.len() - offset
         };
+        let send_num = (self.modulation.len() - self.sent).min(max_mod_size);
         unsafe {
             std::ptr::copy_nonoverlapping(
                 self.modulation.as_ptr().add(self.sent),

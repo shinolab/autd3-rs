@@ -16,10 +16,41 @@ use crate::{
     geometry::{Device, Transducer},
 };
 
-use super::{
-    control_flags::GainSTMControlFlags,
-    reduced_phase::{PhaseFull, PhaseHalf},
-};
+#[derive(Clone, Copy)]
+#[repr(C)]
+pub struct GainSTMControlFlags(u8);
+
+bitflags::bitflags! {
+    impl GainSTMControlFlags : u8 {
+        const NONE       = 0;
+        const BEGIN      = 1 << 0;
+        const END        = 1 << 1;
+        const TRANSITION = 1 << 2;
+        const SEGMENT    = 1 << 3;
+        const SEND_BIT0  = 1 << 6;
+        const SEND_BIT1  = 1 << 7;
+    }
+}
+
+#[bitfield_struct::bitfield(u16)]
+pub(crate) struct PhaseFull {
+    #[bits(8)]
+    phase_0: u8,
+    #[bits(8)]
+    phase_1: u8,
+}
+
+#[bitfield_struct::bitfield(u16)]
+pub(crate) struct PhaseHalf {
+    #[bits(4)]
+    phase_0: u8,
+    #[bits(4)]
+    phase_1: u8,
+    #[bits(4)]
+    phase_2: u8,
+    #[bits(4)]
+    phase_3: u8,
+}
 
 #[repr(C, align(2))]
 struct GainSTMHead {
@@ -105,68 +136,36 @@ impl Operation for GainSTMOp {
                     }
                 }
                 GainSTMMode::PhaseFull => {
-                    if let Some(g) = self.gains.next() {
-                        let dst = std::slice::from_raw_parts_mut(
-                            tx[offset..].as_mut_ptr() as *mut PhaseFull<0>,
-                            device.len(),
-                        );
-                        dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
-                        });
-                        send += 1;
-                    }
-                    if let Some(g) = self.gains.next() {
-                        let dst = std::slice::from_raw_parts_mut(
-                            tx[offset..].as_mut_ptr() as *mut PhaseFull<1>,
-                            device.len(),
-                        );
-                        dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
-                        });
-                        send += 1;
-                    }
+                    let dst = std::slice::from_raw_parts_mut(
+                        tx[offset..].as_mut_ptr() as *mut PhaseFull,
+                        device.len(),
+                    );
+                    seq_macro::seq!(N in 0..2 {
+                        #(
+                            if let Some(g) = self.gains.next() {
+                                dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
+                                    d.set_phase_~N(g(tr).phase().value());
+                                });
+                                send += 1;
+                            }
+                        )*
+                    });
                 }
                 GainSTMMode::PhaseHalf => {
-                    if let Some(g) = self.gains.next() {
-                        let dst = std::slice::from_raw_parts_mut(
-                            tx[offset..].as_mut_ptr() as *mut PhaseHalf<0>,
-                            device.len(),
-                        );
-                        dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
-                        });
-                        send += 1;
-                    }
-                    if let Some(g) = self.gains.next() {
-                        let dst = std::slice::from_raw_parts_mut(
-                            tx[offset..].as_mut_ptr() as *mut PhaseHalf<1>,
-                            device.len(),
-                        );
-                        dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
-                        });
-                        send += 1;
-                    }
-                    if let Some(g) = self.gains.next() {
-                        let dst = std::slice::from_raw_parts_mut(
-                            tx[offset..].as_mut_ptr() as *mut PhaseHalf<2>,
-                            device.len(),
-                        );
-                        dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
-                        });
-                        send += 1;
-                    }
-                    if let Some(g) = self.gains.next() {
-                        let dst = std::slice::from_raw_parts_mut(
-                            tx[offset..].as_mut_ptr() as *mut PhaseHalf<3>,
-                            device.len(),
-                        );
-                        dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            d.set(g(tr));
-                        });
-                        send += 1;
-                    }
+                    let dst = std::slice::from_raw_parts_mut(
+                        tx[offset..].as_mut_ptr() as *mut PhaseHalf,
+                        device.len(),
+                    );
+                    seq_macro::seq!(N in 0..4 {
+                        #(
+                            if let Some(g) = self.gains.next() {
+                                dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
+                                    d.set_phase_~N(g(tr).phase().value() >> 4);
+                                });
+                                send += 1;
+                            }
+                        )*
+                    });
                 }
             }
             send

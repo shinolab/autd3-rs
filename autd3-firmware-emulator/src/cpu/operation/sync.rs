@@ -3,8 +3,6 @@ use crate::{cpu::params::*, CPUEmulator};
 #[repr(C, align(2))]
 struct Sync {
     tag: u8,
-    __pad: [u8; 3],
-    ecat_sync_base_cnt: u32,
 }
 
 impl CPUEmulator {
@@ -25,8 +23,7 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn sync_memory_layout() {
-        assert_eq!(8, std::mem::size_of::<Sync>());
+        assert_eq!(2, std::mem::size_of::<Sync>());
         assert_eq!(0, std::mem::offset_of!(Sync, tag));
-        assert_eq!(4, std::mem::offset_of!(Sync, ecat_sync_base_cnt));
     }
 }
