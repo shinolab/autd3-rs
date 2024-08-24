@@ -42,23 +42,21 @@ impl FPGAEmulator {
         if (self.read(addr) & CTL_FLAG_MOD_SET) == CTL_FLAG_MOD_SET {
             self.mod_swapchain.set(
                 sys_time,
-                self.mem
-                    .modulation_loop_behavior(self.mem.req_mod_segment()),
-                self.mem
-                    .modulation_freq_division(self.mem.req_mod_segment()),
-                self.mem.modulation_cycle(self.mem.req_mod_segment()),
-                self.mem.req_mod_segment(),
-                self.mem.mod_transition_mode(),
+                self.modulation_loop_behavior(self.req_mod_segment()),
+                self.modulation_freq_division(self.req_mod_segment()),
+                self.modulation_cycle(self.req_mod_segment()),
+                self.req_mod_segment(),
+                self.mod_transition_mode(),
             );
         }
         if (self.read(addr) & CTL_FLAG_STM_SET) == CTL_FLAG_STM_SET {
             self.stm_swapchain.set(
                 sys_time,
-                self.mem.stm_loop_behavior(self.mem.req_stm_segment()),
-                self.mem.stm_freq_division(self.mem.req_stm_segment()),
-                self.mem.stm_cycle(self.mem.req_stm_segment()),
-                self.mem.req_stm_segment(),
-                self.mem.stm_transition_mode(),
+                self.stm_loop_behavior(self.req_stm_segment()),
+                self.stm_freq_division(self.req_stm_segment()),
+                self.stm_cycle(self.req_stm_segment()),
+                self.req_stm_segment(),
+                self.stm_transition_mode(),
             );
         }
     }
@@ -70,10 +68,10 @@ impl FPGAEmulator {
     // GRCOV_EXCL_STOP
 
     pub fn update_with_sys_time(&mut self, sys_time: DcSysTime) {
-        self.mod_swapchain.update(self.mem.gpio_in(), sys_time);
-        self.stm_swapchain.update(self.mem.gpio_in(), sys_time);
+        self.mod_swapchain.update(self.gpio_in(), sys_time);
+        self.stm_swapchain.update(self.gpio_in(), sys_time);
 
-        let mut fpga_state = self.mem.fpga_state();
+        let mut fpga_state = self.fpga_state();
         match self.current_mod_segment() {
             Segment::S0 => fpga_state &= !(1 << 1),
             Segment::S1 => fpga_state |= 1 << 1,
@@ -95,10 +93,6 @@ impl FPGAEmulator {
     pub fn to_pulse_width(&self, a: EmitIntensity, b: u8) -> u8 {
         let key = (a.value() as usize * b as usize) / 255;
         self.pulse_width_encoder_table_at(key)
-    }
-
-    pub fn is_thermo_asserted(&self) -> bool {
-        self.mem.is_thermo_asserted()
     }
 
     pub fn is_outputting(&self) -> bool {

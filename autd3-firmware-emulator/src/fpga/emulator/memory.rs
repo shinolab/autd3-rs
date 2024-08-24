@@ -1,5 +1,6 @@
-use std::cell::{LazyCell, Ref, RefCell, RefMut};
+use std::cell::{LazyCell, RefCell};
 
+use autd3_derive::Builder;
 use autd3_driver::{
     derive::{LoopBehavior, Segment, TransitionMode},
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
@@ -11,13 +12,20 @@ use crate::FPGAEmulator;
 
 use super::super::params::*;
 
+#[derive(Builder)]
 pub(crate) struct Memory {
     num_transducers: usize,
+    #[get]
     controller_bram: LazyCell<RefCell<Vec<u16>>>,
+    #[get]
     modulation_bram_0: LazyCell<RefCell<Vec<u16>>>,
+    #[get]
     modulation_bram_1: LazyCell<RefCell<Vec<u16>>>,
+    #[get]
     stm_bram_0: LazyCell<RefCell<Vec<u16>>>,
+    #[get]
     stm_bram_1: LazyCell<RefCell<Vec<u16>>>,
+    #[get]
     duty_table_bram: LazyCell<RefCell<Vec<u16>>>,
     tr_pos: LazyCell<Vec<u64>>,
     sin_table: LazyCell<Vec<u8>>,
@@ -107,63 +115,6 @@ impl Memory {
         }
     }
 
-    fn controller_bram(&self) -> Ref<'_, Vec<u16>> {
-        self.controller_bram.borrow()
-    }
-
-    fn controller_bram_mut(&self) -> RefMut<'_, Vec<u16>> {
-        self.controller_bram.borrow_mut()
-    }
-
-    fn modulation_bram_0(&self) -> Ref<'_, Vec<u16>> {
-        self.modulation_bram_0.borrow()
-    }
-
-    fn modulation_bram_1(&self) -> Ref<'_, Vec<u16>> {
-        self.modulation_bram_1.borrow()
-    }
-
-    fn modulation_bram_0_mut(&self) -> RefMut<'_, Vec<u16>> {
-        self.modulation_bram_0.borrow_mut()
-    }
-
-    fn modulation_bram_1_mut(&self) -> RefMut<'_, Vec<u16>> {
-        self.modulation_bram_1.borrow_mut()
-    }
-
-    fn stm_bram_0(&self) -> Ref<'_, Vec<u16>> {
-        self.stm_bram_0.borrow()
-    }
-
-    fn stm_bram_1(&self) -> Ref<'_, Vec<u16>> {
-        self.stm_bram_1.borrow()
-    }
-
-    fn stm_bram_0_mut(&self) -> RefMut<'_, Vec<u16>> {
-        self.stm_bram_0.borrow_mut()
-    }
-
-    fn stm_bram_1_mut(&self) -> RefMut<'_, Vec<u16>> {
-        self.stm_bram_1.borrow_mut()
-    }
-
-    fn duty_table_bram(&self) -> Ref<'_, Vec<u16>> {
-        self.duty_table_bram.borrow()
-    }
-
-    fn duty_table_bram_mut(&self) -> RefMut<'_, Vec<u16>> {
-        self.duty_table_bram.borrow_mut()
-    }
-
-    pub fn read(&self, addr: u16) -> u16 {
-        let select = ((addr >> 14) & 0x0003) as u8;
-        let addr = (addr & 0x3FFF) as usize;
-        match select {
-            BRAM_SELECT_CONTROLLER => self.controller_bram()[addr],
-            _ => unreachable!(),
-        }
-    }
-
     pub fn read_bram_as<T>(bram: &[u16], addr: usize) -> T {
         unsafe { (bram.as_ptr().add(addr) as *const T).read_unaligned() }
     }
@@ -204,73 +155,93 @@ impl Memory {
     pub fn update(&mut self, fpga_state: u16) {
         self.controller_bram_mut()[ADDR_FPGA_STATE] = fpga_state;
     }
+}
+
+impl FPGAEmulator {
+    pub(crate) fn read(&self, addr: u16) -> u16 {
+        let select = ((addr >> 14) & 0x0003) as u8;
+        let addr = (addr & 0x3FFF) as usize;
+        match select {
+            BRAM_SELECT_CONTROLLER => self.mem.controller_bram()[addr],
+            _ => unreachable!(),
+        }
+    }
 
     pub fn fpga_state(&self) -> u16 {
-        self.controller_bram()[ADDR_FPGA_STATE]
+        self.mem.controller_bram()[ADDR_FPGA_STATE]
     }
 
     pub fn assert_thermal_sensor(&mut self) {
-        self.controller_bram_mut()[ADDR_FPGA_STATE] |= 1 << 0;
+        self.mem.controller_bram_mut()[ADDR_FPGA_STATE] |= 1 << 0;
     }
 
     pub fn deassert_thermal_sensor(&mut self) {
-        self.controller_bram_mut()[ADDR_FPGA_STATE] &= !(1 << 0);
+        self.mem.controller_bram_mut()[ADDR_FPGA_STATE] &= !(1 << 0);
     }
 
     pub fn is_thermo_asserted(&self) -> bool {
-        (self.controller_bram()[ADDR_FPGA_STATE] & (1 << 0)) != 0
+        (self.mem.controller_bram()[ADDR_FPGA_STATE] & (1 << 0)) != 0
     }
 
     pub fn is_force_fan(&self) -> bool {
-        (self.controller_bram()[ADDR_CTL_FLAG] & (1 << CTL_FLAG_FORCE_FAN_BIT)) != 0
+        (self.mem.controller_bram()[ADDR_CTL_FLAG] & (1 << CTL_FLAG_FORCE_FAN_BIT)) != 0
     }
 
     pub fn gpio_in(&self) -> [bool; 4] {
         [
-            (self.controller_bram()[ADDR_CTL_FLAG] & (1 << CTL_FLAG_BIT_GPIO_IN_0)) != 0,
-            (self.controller_bram()[ADDR_CTL_FLAG] & (1 << (CTL_FLAG_BIT_GPIO_IN_1))) != 0,
-            (self.controller_bram()[ADDR_CTL_FLAG] & (1 << (CTL_FLAG_BIT_GPIO_IN_2))) != 0,
-            (self.controller_bram()[ADDR_CTL_FLAG] & (1 << (CTL_FLAG_BIT_GPIO_IN_3))) != 0,
+            (self.mem.controller_bram()[ADDR_CTL_FLAG] & (1 << CTL_FLAG_BIT_GPIO_IN_0)) != 0,
+            (self.mem.controller_bram()[ADDR_CTL_FLAG] & (1 << (CTL_FLAG_BIT_GPIO_IN_1))) != 0,
+            (self.mem.controller_bram()[ADDR_CTL_FLAG] & (1 << (CTL_FLAG_BIT_GPIO_IN_2))) != 0,
+            (self.mem.controller_bram()[ADDR_CTL_FLAG] & (1 << (CTL_FLAG_BIT_GPIO_IN_3))) != 0,
         ]
     }
 
     pub fn is_stm_gain_mode(&self, segment: Segment) -> bool {
         match segment {
-            Segment::S0 => self.controller_bram()[ADDR_STM_MODE0] == STM_MODE_GAIN,
-            Segment::S1 => self.controller_bram()[ADDR_STM_MODE1] == STM_MODE_GAIN,
+            Segment::S0 => self.mem.controller_bram()[ADDR_STM_MODE0] == STM_MODE_GAIN,
+            Segment::S1 => self.mem.controller_bram()[ADDR_STM_MODE1] == STM_MODE_GAIN,
             _ => unimplemented!(),
         }
     }
 
     pub fn silencer_update_rate_intensity(&self) -> u16 {
-        self.controller_bram()[ADDR_SILENCER_UPDATE_RATE_INTENSITY]
+        self.mem.controller_bram()[ADDR_SILENCER_UPDATE_RATE_INTENSITY]
     }
 
     pub fn silencer_update_rate_phase(&self) -> u16 {
-        self.controller_bram()[ADDR_SILENCER_UPDATE_RATE_PHASE]
+        self.mem.controller_bram()[ADDR_SILENCER_UPDATE_RATE_PHASE]
     }
 
     pub fn silencer_completion_steps_intensity(&self) -> u8 {
-        self.controller_bram()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] as _
+        self.mem.controller_bram()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] as _
     }
 
     pub fn silencer_completion_steps_phase(&self) -> u8 {
-        self.controller_bram()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] as _
+        self.mem.controller_bram()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] as _
     }
 
     pub fn silencer_fixed_update_rate_mode(&self) -> bool {
-        (self.controller_bram()[ADDR_SILENCER_FLAG] & SILENCER_FLAG_FIXED_UPDATE_RATE_MODE)
+        (self.mem.controller_bram()[ADDR_SILENCER_FLAG] & SILENCER_FLAG_FIXED_UPDATE_RATE_MODE)
             == SILENCER_FLAG_FIXED_UPDATE_RATE_MODE
     }
 
-    pub fn silencer_pulse_width_mode(&self) -> bool {
-        (self.controller_bram()[ADDR_SILENCER_FLAG] & SILENCER_FLAG_PULSE_WIDTH)
+    pub fn silencer_fixed_completion_steps_mode(&self) -> bool {
+        !self.silencer_fixed_update_rate_mode()
+    }
+
+    pub fn silencer_target(&self) -> SilencerTarget {
+        if (self.mem.controller_bram()[ADDR_SILENCER_FLAG] & SILENCER_FLAG_PULSE_WIDTH)
             == SILENCER_FLAG_PULSE_WIDTH
+        {
+            SilencerTarget::PulseWidth
+        } else {
+            SilencerTarget::Intensity
+        }
     }
 
     pub fn stm_freq_division(&self, segment: Segment) -> u16 {
-        Self::read_bram_as::<u16>(
-            &self.controller_bram(),
+        Memory::read_bram_as::<u16>(
+            &self.mem.controller_bram(),
             match segment {
                 Segment::S0 => ADDR_STM_FREQ_DIV0,
                 Segment::S1 => ADDR_STM_FREQ_DIV1,
@@ -280,7 +251,7 @@ impl Memory {
     }
 
     pub fn stm_cycle(&self, segment: Segment) -> usize {
-        self.controller_bram()[match segment {
+        self.mem.controller_bram()[match segment {
             Segment::S0 => ADDR_STM_CYCLE0,
             Segment::S1 => ADDR_STM_CYCLE1,
             _ => unimplemented!(),
@@ -289,24 +260,16 @@ impl Memory {
     }
 
     pub fn sound_speed(&self, segment: Segment) -> u16 {
-        self.controller_bram()[match segment {
+        self.mem.controller_bram()[match segment {
             Segment::S0 => ADDR_STM_SOUND_SPEED0,
             Segment::S1 => ADDR_STM_SOUND_SPEED1,
             _ => unimplemented!(),
         }]
     }
 
-    pub fn num_foci(&self, segment: Segment) -> u8 {
-        self.controller_bram()[match segment {
-            Segment::S0 => ADDR_STM_NUM_FOCI0,
-            Segment::S1 => ADDR_STM_NUM_FOCI1,
-            _ => unimplemented!(),
-        }] as u8
-    }
-
     pub fn stm_loop_behavior(&self, segment: Segment) -> LoopBehavior {
-        match Self::read_bram_as::<u16>(
-            &self.controller_bram(),
+        match Memory::read_bram_as::<u16>(
+            &self.mem.controller_bram(),
             match segment {
                 Segment::S0 => ADDR_STM_REP0,
                 Segment::S1 => ADDR_STM_REP1,
@@ -319,18 +282,18 @@ impl Memory {
     }
 
     pub fn stm_transition_mode(&self) -> TransitionMode {
-        match self.controller_bram()[ADDR_STM_TRANSITION_MODE] as u8 {
+        match self.mem.controller_bram()[ADDR_STM_TRANSITION_MODE] as u8 {
             TRANSITION_MODE_SYNC_IDX => TransitionMode::SyncIdx,
             TRANSITION_MODE_SYS_TIME => TransitionMode::SysTime(
                 DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap()
-                    + std::time::Duration::from_nanos(Self::read_bram_as::<u64>(
-                        &self.controller_bram(),
+                    + std::time::Duration::from_nanos(Memory::read_bram_as::<u64>(
+                        &self.mem.controller_bram(),
                         ADDR_STM_TRANSITION_VALUE_0,
                     )),
             ),
             TRANSITION_MODE_GPIO => TransitionMode::GPIO(
-                match Self::read_bram_as::<u64>(
-                    &self.controller_bram(),
+                match Memory::read_bram_as::<u64>(
+                    &self.mem.controller_bram(),
                     ADDR_STM_TRANSITION_VALUE_0,
                 ) {
                     0 => GPIOIn::I0,
@@ -347,8 +310,8 @@ impl Memory {
     }
 
     pub fn modulation_freq_division(&self, segment: Segment) -> u16 {
-        Self::read_bram_as::<u16>(
-            &self.controller_bram(),
+        Memory::read_bram_as::<u16>(
+            &self.mem.controller_bram(),
             match segment {
                 Segment::S0 => ADDR_MOD_FREQ_DIV0,
                 Segment::S1 => ADDR_MOD_FREQ_DIV1,
@@ -358,7 +321,7 @@ impl Memory {
     }
 
     pub fn modulation_cycle(&self, segment: Segment) -> usize {
-        self.controller_bram()[match segment {
+        self.mem.controller_bram()[match segment {
             Segment::S0 => ADDR_MOD_CYCLE0,
             Segment::S1 => ADDR_MOD_CYCLE1,
             _ => unimplemented!(),
@@ -367,8 +330,8 @@ impl Memory {
     }
 
     pub fn modulation_loop_behavior(&self, segment: Segment) -> LoopBehavior {
-        match Self::read_bram_as::<u16>(
-            &self.controller_bram(),
+        match Memory::read_bram_as::<u16>(
+            &self.mem.controller_bram(),
             match segment {
                 Segment::S0 => ADDR_MOD_REP0,
                 Segment::S1 => ADDR_MOD_REP1,
@@ -382,8 +345,8 @@ impl Memory {
 
     pub fn modulation_at(&self, segment: Segment, idx: usize) -> u8 {
         let m = match segment {
-            Segment::S0 => &self.modulation_bram_0()[idx >> 1],
-            Segment::S1 => &self.modulation_bram_1()[idx >> 1],
+            Segment::S0 => &self.mem.modulation_bram_0()[idx >> 1],
+            Segment::S1 => &self.mem.modulation_bram_1()[idx >> 1],
             _ => unimplemented!(),
         };
         let m = if idx % 2 == 0 { m & 0xFF } else { m >> 8 };
@@ -397,18 +360,18 @@ impl Memory {
     }
 
     pub fn mod_transition_mode(&self) -> TransitionMode {
-        match self.controller_bram()[ADDR_MOD_TRANSITION_MODE] as u8 {
+        match self.mem.controller_bram()[ADDR_MOD_TRANSITION_MODE] as u8 {
             TRANSITION_MODE_SYNC_IDX => TransitionMode::SyncIdx,
             TRANSITION_MODE_SYS_TIME => TransitionMode::SysTime(
                 DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap()
-                    + std::time::Duration::from_nanos(Self::read_bram_as::<u64>(
-                        &self.controller_bram(),
+                    + std::time::Duration::from_nanos(Memory::read_bram_as::<u64>(
+                        &self.mem.controller_bram(),
                         ADDR_MOD_TRANSITION_VALUE_0,
                     )),
             ),
             TRANSITION_MODE_GPIO => TransitionMode::GPIO(
-                match Self::read_bram_as::<u64>(
-                    &self.controller_bram(),
+                match Memory::read_bram_as::<u64>(
+                    &self.mem.controller_bram(),
                     ADDR_MOD_TRANSITION_VALUE_0,
                 ) {
                     0 => GPIOIn::I0,
@@ -425,7 +388,7 @@ impl Memory {
     }
 
     pub fn req_mod_segment(&self) -> Segment {
-        match self.controller_bram()[ADDR_MOD_REQ_RD_SEGMENT] {
+        match self.mem.controller_bram()[ADDR_MOD_REQ_RD_SEGMENT] {
             0 => Segment::S0,
             1 => Segment::S1,
             _ => unreachable!(),
@@ -433,7 +396,7 @@ impl Memory {
     }
 
     pub fn req_stm_segment(&self) -> Segment {
-        match self.controller_bram()[ADDR_STM_REQ_RD_SEGMENT] {
+        match self.mem.controller_bram()[ADDR_STM_REQ_RD_SEGMENT] {
             0 => Segment::S0,
             1 => Segment::S1,
             _ => unreachable!(),
@@ -441,13 +404,14 @@ impl Memory {
     }
 
     pub fn pulse_width_encoder_table_at(&self, idx: usize) -> u8 {
-        let v = self.duty_table_bram()[idx >> 1];
+        let v = self.mem.duty_table_bram()[idx >> 1];
         let v = if idx % 2 == 0 { v & 0xFF } else { v >> 8 };
         v as u8
     }
 
     pub fn pulse_width_encoder_table(&self) -> Vec<u8> {
-        self.duty_table_bram()
+        self.mem
+            .duty_table_bram()
             .iter()
             .flat_map(|&d| vec![(d & 0xFF) as u8, (d >> 8) as u8])
             .collect()
@@ -455,20 +419,28 @@ impl Memory {
 
     pub fn debug_types(&self) -> [u8; 4] {
         [
-            self.controller_bram()[ADDR_DEBUG_TYPE0] as _,
-            self.controller_bram()[ADDR_DEBUG_TYPE1] as _,
-            self.controller_bram()[ADDR_DEBUG_TYPE2] as _,
-            self.controller_bram()[ADDR_DEBUG_TYPE3] as _,
+            self.mem.controller_bram()[ADDR_DEBUG_TYPE0] as _,
+            self.mem.controller_bram()[ADDR_DEBUG_TYPE1] as _,
+            self.mem.controller_bram()[ADDR_DEBUG_TYPE2] as _,
+            self.mem.controller_bram()[ADDR_DEBUG_TYPE3] as _,
         ]
     }
 
     pub fn debug_values(&self) -> [u16; 4] {
         [
-            self.controller_bram()[ADDR_DEBUG_VALUE0],
-            self.controller_bram()[ADDR_DEBUG_VALUE1],
-            self.controller_bram()[ADDR_DEBUG_VALUE2],
-            self.controller_bram()[ADDR_DEBUG_VALUE3],
+            self.mem.controller_bram()[ADDR_DEBUG_VALUE0],
+            self.mem.controller_bram()[ADDR_DEBUG_VALUE1],
+            self.mem.controller_bram()[ADDR_DEBUG_VALUE2],
+            self.mem.controller_bram()[ADDR_DEBUG_VALUE3],
         ]
+    }
+
+    pub fn num_foci(&self, segment: Segment) -> u8 {
+        self.mem.controller_bram()[match segment {
+            Segment::S0 => ADDR_STM_NUM_FOCI0,
+            Segment::S1 => ADDR_STM_NUM_FOCI1,
+            _ => unimplemented!(),
+        }] as u8
     }
 
     pub fn drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {
@@ -481,13 +453,13 @@ impl Memory {
 
     fn gain_stm_drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {
         match segment {
-            Segment::S0 => self.stm_bram_0(),
-            Segment::S1 => self.stm_bram_1(),
+            Segment::S0 => self.mem.stm_bram_0(),
+            Segment::S1 => self.mem.stm_bram_1(),
             _ => unimplemented!(),
         }
         .iter()
         .skip(256 * idx)
-        .take(self.num_transducers)
+        .take(self.mem.num_transducers)
         .map(|&d| {
             Drive::new(
                 Phase::new((d & 0xFF) as u8),
@@ -499,15 +471,16 @@ impl Memory {
 
     fn foci_stm_drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {
         let bram = match segment {
-            Segment::S0 => self.stm_bram_0(),
-            Segment::S1 => self.stm_bram_1(),
+            Segment::S0 => self.mem.stm_bram_0(),
+            Segment::S1 => self.mem.stm_bram_1(),
             _ => unimplemented!(),
         };
         let sound_speed = self.sound_speed(segment);
 
-        self.tr_pos
+        self.mem
+            .tr_pos
             .iter()
-            .take(self.num_transducers)
+            .take(self.mem.num_transducers)
             .map(|&tr| {
                 let tr_z = ((tr >> 32) & 0xFFFF) as i16 as i32;
                 let tr_x = ((tr >> 16) & 0xFFFF) as i16 as i32;
@@ -534,154 +507,20 @@ impl Memory {
                     let q = ((dist << 14) / sound_speed as u32) as usize;
                     let q = q + offset as usize;
                     (
-                        acc.0 + self.sin_table[q % 256] as u16,
-                        acc.1 + self.sin_table[(q + 64) % 256] as u16,
+                        acc.0 + self.mem.sin_table[q % 256] as u16,
+                        acc.1 + self.mem.sin_table[(q + 64) % 256] as u16,
                     )
                 });
                 let sin = ((sin / self.num_foci(segment) as u16) >> 1) as usize;
                 let cos = ((cos / self.num_foci(segment) as u16) >> 1) as usize;
-                let phase = self.atan_table[(sin << 7) | cos];
+                let phase = self.mem.atan_table[(sin << 7) | cos];
                 Drive::new(Phase::new(phase), EmitIntensity::new(intensity))
             })
             .collect()
     }
 
     pub fn local_tr_pos(&self) -> &[u64] {
-        &self.tr_pos
-    }
-}
-
-impl FPGAEmulator {
-    pub(crate) fn read(&self, addr: u16) -> u16 {
-        self.mem.read(addr)
-    }
-
-    pub fn assert_thermal_sensor(&mut self) {
-        self.mem.assert_thermal_sensor()
-    }
-
-    pub fn deassert_thermal_sensor(&mut self) {
-        self.mem.deassert_thermal_sensor()
-    }
-
-    pub fn is_force_fan(&self) -> bool {
-        self.mem.is_force_fan()
-    }
-
-    pub fn gpio_in(&self) -> [bool; 4] {
-        self.mem.gpio_in()
-    }
-
-    pub fn is_stm_gain_mode(&self, segment: Segment) -> bool {
-        self.mem.is_stm_gain_mode(segment)
-    }
-
-    pub fn silencer_update_rate_intensity(&self) -> u16 {
-        self.mem.silencer_update_rate_intensity()
-    }
-
-    pub fn silencer_update_rate_phase(&self) -> u16 {
-        self.mem.silencer_update_rate_phase()
-    }
-
-    pub fn silencer_completion_steps_intensity(&self) -> u8 {
-        self.mem.silencer_completion_steps_intensity()
-    }
-
-    pub fn silencer_completion_steps_phase(&self) -> u8 {
-        self.mem.silencer_completion_steps_phase()
-    }
-
-    pub fn silencer_fixed_update_rate_mode(&self) -> bool {
-        self.mem.silencer_fixed_update_rate_mode()
-    }
-
-    pub fn silencer_fixed_completion_steps_mode(&self) -> bool {
-        !self.silencer_fixed_update_rate_mode()
-    }
-
-    pub fn silencer_target(&self) -> SilencerTarget {
-        if self.mem.silencer_pulse_width_mode() {
-            SilencerTarget::PulseWidth
-        } else {
-            SilencerTarget::Intensity
-        }
-    }
-
-    pub fn stm_freq_division(&self, segment: Segment) -> u16 {
-        self.mem.stm_freq_division(segment)
-    }
-
-    pub fn stm_cycle(&self, segment: Segment) -> usize {
-        self.mem.stm_cycle(segment)
-    }
-
-    pub fn sound_speed(&self, segment: Segment) -> u16 {
-        self.mem.sound_speed(segment)
-    }
-
-    pub fn stm_loop_behavior(&self, segment: Segment) -> LoopBehavior {
-        self.mem.stm_loop_behavior(segment)
-    }
-
-    pub fn stm_transition_mode(&self) -> TransitionMode {
-        self.mem.stm_transition_mode()
-    }
-
-    pub fn modulation_freq_division(&self, segment: Segment) -> u16 {
-        self.mem.modulation_freq_division(segment)
-    }
-
-    pub fn modulation_cycle(&self, segment: Segment) -> usize {
-        self.mem.modulation_cycle(segment)
-    }
-
-    pub fn modulation_loop_behavior(&self, segment: Segment) -> LoopBehavior {
-        self.mem.modulation_loop_behavior(segment)
-    }
-
-    pub fn modulation_at(&self, segment: Segment, idx: usize) -> u8 {
-        self.mem.modulation_at(segment, idx)
-    }
-
-    pub fn modulation(&self, segment: Segment) -> Vec<u8> {
-        self.mem.modulation(segment)
-    }
-
-    pub fn mod_transition_mode(&self) -> TransitionMode {
-        self.mem.mod_transition_mode()
-    }
-
-    pub fn req_mod_segment(&self) -> Segment {
-        self.mem.req_mod_segment()
-    }
-
-    pub fn req_stm_segment(&self) -> Segment {
-        self.mem.req_stm_segment()
-    }
-
-    pub fn pulse_width_encoder_table_at(&self, idx: usize) -> u8 {
-        self.mem.pulse_width_encoder_table_at(idx)
-    }
-
-    pub fn pulse_width_encoder_table(&self) -> Vec<u8> {
-        self.mem.pulse_width_encoder_table()
-    }
-
-    pub fn debug_types(&self) -> [u8; 4] {
-        self.mem.debug_types()
-    }
-
-    pub fn debug_values(&self) -> [u16; 4] {
-        self.mem.debug_values()
-    }
-
-    pub fn drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {
-        self.mem.drives(segment, idx)
-    }
-
-    pub fn local_tr_pos(&self) -> &[u64] {
-        self.mem.local_tr_pos()
+        &self.mem.tr_pos
     }
 }
 

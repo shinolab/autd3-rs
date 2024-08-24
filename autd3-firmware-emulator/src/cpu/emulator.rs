@@ -1,3 +1,4 @@
+use autd3_derive::Builder;
 use autd3_driver::{
     ethercat::{DcSysTime, EC_OUTPUT_FRAME_SIZE},
     firmware::cpu::{Header, RxMessage, TxDatagram, TxMessage},
@@ -7,13 +8,16 @@ use crate::fpga::emulator::FPGAEmulator;
 
 use super::params::*;
 
+#[derive(Builder)]
 pub struct CPUEmulator {
+    #[get]
     pub(crate) idx: usize,
     pub(crate) ack: u8,
     pub(crate) last_msg_id: u8,
     pub(crate) rx_data: u8,
-    pub(crate) read_fpga_state: bool,
-    pub(crate) read_fpga_state_store: bool,
+    #[get]
+    pub(crate) reads_fpga_state: bool,
+    pub(crate) reads_fpga_state_store: bool,
     pub(crate) mod_cycle: u16,
     pub(crate) stm_cycle: [u16; 2],
     pub(crate) stm_mode: [u16; 2],
@@ -29,15 +33,21 @@ pub struct CPUEmulator {
     pub(crate) mod_transition_mode: u8,
     pub(crate) mod_transition_value: u64,
     pub(crate) gain_stm_mode: u8,
+    #[get(ref, ref_mut)]
     pub(crate) fpga: FPGAEmulator,
+    #[get]
     pub(crate) synchronized: bool,
+    #[get]
     pub(crate) num_transducers: usize,
     pub(crate) fpga_flags_internal: u16,
+    #[get]
     pub(crate) silencer_strict_mode: bool,
     pub(crate) min_freq_div_intensity: u16,
     pub(crate) min_freq_div_phase: u16,
     pub(crate) is_rx_data_used: bool,
+    #[get]
     pub(crate) dc_sys_time: DcSysTime,
+    #[get]
     pub(crate) port_a_podr: u8,
 }
 
@@ -48,8 +58,8 @@ impl CPUEmulator {
             ack: 0x00,
             last_msg_id: 0x00,
             rx_data: 0x00,
-            read_fpga_state: false,
-            read_fpga_state_store: false,
+            reads_fpga_state: false,
+            reads_fpga_state_store: false,
             mod_cycle: 0,
             stm_cycle: [1, 1],
             stm_mode: [STM_MODE_GAIN, STM_MODE_GAIN],
@@ -80,32 +90,8 @@ impl CPUEmulator {
         s
     }
 
-    pub const fn idx(&self) -> usize {
-        self.idx
-    }
-
-    pub const fn num_transducers(&self) -> usize {
-        self.num_transducers
-    }
-
-    pub const fn synchronized(&self) -> bool {
-        self.synchronized
-    }
-
-    pub const fn reads_fpga_state(&self) -> bool {
-        self.read_fpga_state
-    }
-
     pub const fn rx(&self) -> RxMessage {
         RxMessage::new(self.ack, self.rx_data)
-    }
-
-    pub const fn fpga(&self) -> &FPGAEmulator {
-        &self.fpga
-    }
-
-    pub fn fpga_mut(&mut self) -> &mut FPGAEmulator {
-        &mut self.fpga
     }
 
     pub fn send(&mut self, tx: &TxDatagram) {
@@ -129,20 +115,8 @@ impl CPUEmulator {
         self.dc_sys_time = sys_time;
     }
 
-    pub const fn dc_sys_time(&self) -> DcSysTime {
-        self.dc_sys_time
-    }
-
     pub const fn should_update(&self) -> bool {
-        self.read_fpga_state
-    }
-
-    pub const fn silencer_strict_mode(&self) -> bool {
-        self.silencer_strict_mode
-    }
-
-    pub const fn port_a_podr(&self) -> u8 {
-        self.port_a_podr
+        self.reads_fpga_state
     }
 }
 
@@ -187,7 +161,7 @@ impl CPUEmulator {
         if self.is_rx_data_used {
             return;
         }
-        if self.read_fpga_state {
+        if self.reads_fpga_state {
             self.rx_data = FPGA_STATE_READS_FPGA_STATE_ENABLED
                 | self.bram_read(BRAM_SELECT_CONTROLLER, ADDR_FPGA_STATE) as u8;
         } else {
@@ -203,8 +177,7 @@ impl CPUEmulator {
                 TAG_FIRM_INFO => self.firm_info(data),
                 TAG_MODULATION => self.write_mod(data),
                 TAG_MODULATION_CHANGE_SEGMENT => self.change_mod_segment(data),
-                TAG_SILENCER => self.config_silencer(data), // GRCOV_EXCL_LINE
-                TAG_SILENCER2 => self.config_silencer2(data),
+                TAG_SILENCER => self.config_silencer(data),
                 TAG_GAIN => self.write_gain(data),
                 TAG_GAIN_CHANGE_SEGMENT => self.change_gain_segment(data),
                 TAG_GAIN_STM_CHANGE_SEGMENT => self.change_gain_stm_segment(data),
@@ -302,7 +275,7 @@ mod tests {
         let mut cpu = CPUEmulator::new(0, 249);
         assert!(!cpu.should_update());
 
-        cpu.read_fpga_state = true;
+        cpu.reads_fpga_state = true;
         assert!(cpu.should_update());
     }
 }

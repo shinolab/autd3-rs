@@ -171,10 +171,6 @@ impl<const SET: u16> Swapchain<SET> {
         (((self.fpga_sys_time(sys_time) >> 8) / self.freq_div[&segment] as u64) as usize)
             .div_rem(&self.cycle[&segment])
     }
-
-    pub const fn current_idx(&self) -> usize {
-        self.cur_idx
-    }
 }
 
 impl FPGAEmulator {
@@ -187,11 +183,11 @@ impl FPGAEmulator {
     }
 
     pub const fn current_mod_idx(&self) -> usize {
-        self.mod_swapchain.current_idx()
+        self.mod_swapchain.cur_idx
     }
 
     pub const fn current_stm_idx(&self) -> usize {
-        self.stm_swapchain.current_idx()
+        self.stm_swapchain.cur_idx
     }
 }
 
