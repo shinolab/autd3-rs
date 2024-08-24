@@ -1,6 +1,7 @@
+use autd3_derive::Builder;
 use derive_more::Display;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, Builder)]
 #[display(
     "{}: CPU = {}, FPGA = {}{}",
     idx,
@@ -10,10 +11,15 @@ use derive_more::Display;
 )]
 pub struct FirmwareVersion {
     idx: usize,
+    #[get]
     cpu_version_number_major: u8,
+    #[get]
     fpga_version_number_major: u8,
+    #[get]
     cpu_version_number_minor: u8,
+    #[get]
     fpga_version_number_minor: u8,
+    #[get]
     fpga_function_bits: u8,
 }
 
@@ -22,7 +28,6 @@ impl FirmwareVersion {
     pub const LATEST_VERSION_NUM_MINOR: u8 = 0x00;
     pub const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
 
-    #[doc(hidden)]
     pub const fn new(
         idx: usize,
         cpu_version_number_major: u8,
@@ -96,9 +101,14 @@ impl FirmwareVersion {
                 version_number_major - 0x92,
                 version_number_minor
             ),
-            0xA0..=0xA1 => format!(
+            0xA0..=0xA0 => format!(
                 "v9.{}.{}",
                 version_number_major - 0xA0,
+                version_number_minor
+            ),
+            0xA1..=0xA1 => format!(
+                "v10.{}.{}",
+                version_number_major - 0xA1,
                 version_number_minor
             ),
             _ => format!("unknown ({version_number_major})"),
@@ -110,26 +120,6 @@ impl FirmwareVersion {
             Self::LATEST_VERSION_NUM_MAJOR,
             Self::LATEST_VERSION_NUM_MINOR,
         )
-    }
-
-    pub const fn cpu_version_number_major(&self) -> u8 {
-        self.cpu_version_number_major
-    }
-
-    pub const fn cpu_version_number_minor(&self) -> u8 {
-        self.cpu_version_number_minor
-    }
-
-    pub const fn fpga_version_number_major(&self) -> u8 {
-        self.fpga_version_number_major
-    }
-
-    pub const fn fpga_version_number_minor(&self) -> u8 {
-        self.fpga_version_number_minor
-    }
-
-    pub const fn fpga_function_bits(&self) -> u8 {
-        self.fpga_function_bits
     }
 }
 
@@ -181,7 +171,7 @@ mod tests {
     #[case("v7.0.0", 145)]
     #[case("v8.0.0", 146)]
     #[case("v9.0.0", 160)]
-    #[case("v9.1.0", 161)]
+    #[case("v10.0.0", 161)]
     #[case("unknown (147)", 147)]
     #[cfg_attr(miri, ignore)]
     fn version(#[case] expected: &str, #[case] num: u8) {
@@ -193,7 +183,7 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn latest() {
-        assert_eq!("v9.1.0", FirmwareVersion::latest());
+        assert_eq!("v10.0.0", FirmwareVersion::latest());
     }
 
     #[test]

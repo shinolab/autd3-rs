@@ -143,8 +143,8 @@ impl Link for TwinCAT {
                     &self.send_addr as *const _,
                     INDEX_GROUP,
                     INDEX_OFFSET_BASE,
-                    tx.all_data().len() as u32,
-                    tx.all_data().as_ptr() as *const c_void,
+                    tx.total_len() as u32,
+                    tx.as_ptr() as *const c_void,
                 ),
                 Err(_) => {
                     return Err(AUTDInternalError::LinkError(

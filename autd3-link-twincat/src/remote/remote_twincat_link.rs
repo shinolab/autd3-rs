@@ -162,8 +162,8 @@ impl Link for RemoteTwinCAT {
                 &addr as _,
                 INDEX_GROUP,
                 INDEX_OFFSET_BASE,
-                tx.all_data().len() as _,
-                tx.all_data().as_ptr() as _,
+                tx.total_len() as _,
+                tx.as_ptr() as _,
             )
         };
 

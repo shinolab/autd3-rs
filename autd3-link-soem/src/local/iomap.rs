@@ -32,9 +32,9 @@ impl IOMap {
     pub fn copy_from(&mut self, tx: &TxDatagram) {
         unsafe {
             std::ptr::copy_nonoverlapping(
-                tx.all_data().as_ptr(),
+                tx.as_ptr() as *const _,
                 self.buf.as_mut_ptr(),
-                tx.all_data().len(),
+                tx.total_len(),
             );
         }
     }

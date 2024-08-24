@@ -42,47 +42,30 @@ impl Operation for SwapSegmentOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         self.is_done = true;
 
+        let tag = match self.segment {
+            SwapSegment::Gain(_) => TypeTag::GainSwapSegment,
+            SwapSegment::Modulation(_, _) => TypeTag::ModulationSwapSegment,
+            SwapSegment::FociSTM(_, _) => TypeTag::FociSTMSwapSegment,
+            SwapSegment::GainSTM(_, _) => TypeTag::GainSTMSwapSegment,
+        };
+
         match self.segment {
             SwapSegment::Gain(segment) => {
                 write_to_tx(
                     SwapSegmentT {
-                        tag: TypeTag::GainSwapSegment,
+                        tag,
                         segment: segment as u8,
                     },
                     tx,
                 );
                 Ok(size_of::<SwapSegmentT>())
             }
-            SwapSegment::Modulation(segment, transition) => {
+            SwapSegment::Modulation(segment, transition)
+            | SwapSegment::FociSTM(segment, transition)
+            | SwapSegment::GainSTM(segment, transition) => {
                 write_to_tx(
                     SwapSegmentTWithTransition {
-                        tag: TypeTag::ModulationSwapSegment,
-                        segment: segment as u8,
-                        transition_mode: transition.mode(),
-                        __padding: [0; 5],
-                        transition_value: transition.value(),
-                    },
-                    tx,
-                );
-                Ok(size_of::<SwapSegmentTWithTransition>())
-            }
-            SwapSegment::FociSTM(segment, transition) => {
-                write_to_tx(
-                    SwapSegmentTWithTransition {
-                        tag: TypeTag::FociSTMSwapSegment,
-                        segment: segment as u8,
-                        transition_mode: transition.mode(),
-                        __padding: [0; 5],
-                        transition_value: transition.value(),
-                    },
-                    tx,
-                );
-                Ok(size_of::<SwapSegmentTWithTransition>())
-            }
-            SwapSegment::GainSTM(segment, transition) => {
-                write_to_tx(
-                    SwapSegmentTWithTransition {
-                        tag: TypeTag::GainSTMSwapSegment,
+                        tag,
                         segment: segment as u8,
                         transition_mode: transition.mode(),
                         __padding: [0; 5],
