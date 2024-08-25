@@ -43,7 +43,7 @@ impl<S: SamplingMode> Mixer<S> {
 }
 
 impl<S: SamplingMode> Modulation for Mixer<S> {
-    fn calc(&self) -> ModulationCalcResult {
+    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         let buffers = self
             .components
             .iter()

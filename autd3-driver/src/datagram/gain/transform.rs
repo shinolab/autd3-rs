@@ -6,7 +6,7 @@ pub use crate::{
 };
 pub use autd3_derive::Gain;
 
-use super::GainCalcResult;
+use super::GainCalcFn;
 use derive_more::Debug;
 
 #[derive(Gain, Debug)]
@@ -64,7 +64,7 @@ impl<
         F: Fn(&Device) -> FT,
     > Gain for Transform<G, D, FT, F>
 {
-    fn calc(&self, geometry: &Geometry) -> GainCalcResult {
+    fn calc(&self, geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
         let src = self.gain.calc(geometry)?;
         let f = &self.f;
         Ok(Box::new(move |dev| {

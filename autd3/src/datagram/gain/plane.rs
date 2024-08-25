@@ -28,7 +28,7 @@ impl Plane {
 }
 
 impl Gain for Plane {
-    fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
+    fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
         let dir = self.dir;
         let intensity = self.intensity;
         let phase_offset = self.phase_offset;

@@ -39,7 +39,7 @@ impl RawPCM {
 }
 
 impl Modulation for RawPCM {
-    fn calc(&self) -> ModulationCalcResult {
+    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         Ok(Arc::new(self.read_buf()?))
     }
 }
@@ -61,7 +61,7 @@ mod tests {
     #[test]
     #[case(Ok(Arc::new(vec![0xFF, 0x7F, 0x00])), vec![0xFF, 0x7F, 0x00], 4000 * Hz)]
     fn new(
-        #[case] expect: ModulationCalcResult,
+        #[case] expect: Result<Arc<Vec<u8>>, AUTDInternalError>,
         #[case] data: Vec<u8>,
         #[case] sample_rate: Freq<u32>,
     ) -> anyhow::Result<()> {

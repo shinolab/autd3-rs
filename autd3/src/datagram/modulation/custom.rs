@@ -23,7 +23,7 @@ impl Custom {
     }
 }
 impl Modulation for Custom {
-    fn calc(&self) -> ModulationCalcResult {
+    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         Ok(self.buffer.clone())
     }
 }

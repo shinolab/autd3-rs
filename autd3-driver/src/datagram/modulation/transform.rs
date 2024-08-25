@@ -35,7 +35,7 @@ impl<M: Modulation> IntoTransform<M> for M {
 }
 
 impl<M: Modulation, F: Fn(usize, u8) -> u8> Modulation for Transform<M, F> {
-    fn calc(&self) -> ModulationCalcResult {
+    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         let src = self.m.calc()?;
         Ok(Arc::new(
             src.iter()

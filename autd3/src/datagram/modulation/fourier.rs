@@ -43,7 +43,7 @@ impl<S: SamplingMode> Fourier<S> {
 }
 
 impl<S: SamplingMode> Modulation for Fourier<S> {
-    fn calc(&self) -> ModulationCalcResult {
+    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         let buffers = self
             .components
             .iter()
