@@ -16,8 +16,8 @@ pub use async_trait::async_trait;
 pub mod derive {
     pub use crate::{
         datagram::{
-            Datagram, DatagramS, DatagramST, Gain, GainCalcResult, GainOperationGenerator,
-            Modulation, ModulationCalcResult, ModulationOperationGenerator, ModulationProperty,
+            Datagram, DatagramS, DatagramST, Gain, GainCalcFn, GainOperationGenerator, Modulation,
+            ModulationOperationGenerator, ModulationProperty,
         },
         defined::DEFAULT_TIMEOUT,
         error::AUTDInternalError,
@@ -25,4 +25,5 @@ pub mod derive {
         geometry::Geometry,
     };
     pub use autd3_derive::{Builder, Gain, Modulation};
+    pub use std::sync::Arc;
 }

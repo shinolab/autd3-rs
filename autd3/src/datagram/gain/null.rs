@@ -10,7 +10,7 @@ impl Null {
 }
 
 impl Gain for Null {
-    fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
+    fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
         Ok(Self::transform(|_| |_| Drive::null()))
     }
 }

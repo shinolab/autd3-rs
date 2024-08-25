@@ -210,7 +210,7 @@ mod tests {
 
     impl Gain for Null {
         // GRCOV_EXCL_START
-        fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
+        fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
             Ok(Self::transform(|_| |_| Drive::null()))
         }
         // GRCOV_EXCL_STOP

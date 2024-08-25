@@ -31,7 +31,7 @@ impl<M: Modulation> IntoRadiationPressure<M> for M {
 }
 
 impl<M: Modulation> Modulation for RadiationPressure<M> {
-    fn calc(&self) -> ModulationCalcResult {
+    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         let src = self.m.calc()?;
         Ok(Arc::new(
             src.iter()

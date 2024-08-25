@@ -13,7 +13,7 @@ use std::{
     sync::Arc,
 };
 
-use super::GainCalcResult;
+use super::GainCalcFn;
 
 use derive_more::{Debug, Deref};
 
@@ -68,7 +68,7 @@ impl<G: Gain> Cache<G> {
 }
 
 impl<G: Gain> Gain for Cache<G> {
-    fn calc(&self, geometry: &Geometry) -> GainCalcResult {
+    fn calc(&self, geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
         self.init(geometry)?;
         let cache = self.cache.borrow();
         Ok(Box::new(move |dev| {
@@ -123,7 +123,7 @@ mod tests {
     }
 
     impl Gain for CacheTestGain {
-        fn calc(&self, _: &Geometry) -> GainCalcResult {
+        fn calc(&self, _: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
             Ok(Self::transform(|_| |_| Drive::null()))
         }

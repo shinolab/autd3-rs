@@ -26,15 +26,13 @@ use crate::{
 use super::silencer::WithSampling;
 use super::DatagramST;
 
-pub type ModulationCalcResult = Result<Arc<Vec<u8>>, AUTDInternalError>;
-
 pub trait ModulationProperty {
     fn sampling_config(&self) -> SamplingConfig;
     fn loop_behavior(&self) -> LoopBehavior;
 }
 
 pub trait Modulation: ModulationProperty + std::fmt::Debug {
-    fn calc(&self) -> ModulationCalcResult;
+    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError>;
 }
 
 impl<M: Modulation> WithSampling for M {
@@ -85,7 +83,7 @@ impl<'a> ModulationProperty for Box<dyn Modulation + Send + Sync + 'a> {
 }
 
 impl<'a> Modulation for Box<dyn Modulation + Send + Sync + 'a> {
-    fn calc(&self) -> ModulationCalcResult {
+    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         self.as_ref().calc()
     }
 }
@@ -129,7 +127,7 @@ mod capi {
     }
 
     impl Modulation for NullModulation {
-        fn calc(&self) -> ModulationCalcResult {
+        fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
             Ok(Arc::new(vec![]))
         }
     }
@@ -158,7 +156,7 @@ pub mod tests {
     }
 
     impl Modulation for TestModulation {
-        fn calc(&self) -> ModulationCalcResult {
+        fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
             Ok(self.buf.clone())
         }
     }

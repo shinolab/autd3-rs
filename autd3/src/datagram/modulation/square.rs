@@ -54,7 +54,7 @@ impl<S: SamplingMode> Square<S> {
 }
 
 impl<S: SamplingMode> Modulation for Square<S> {
-    fn calc(&self) -> ModulationCalcResult {
+    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         if !(0.0..=1.0).contains(&self.duty) {
             return Err(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string(),
@@ -153,7 +153,7 @@ mod tests {
         0.*Hz
     )]
     fn with_freq_float_exact(
-        #[case] expect: ModulationCalcResult,
+        #[case] expect: Result<Arc<Vec<u8>>, AUTDInternalError>,
         #[case] freq: impl SamplingModeInference,
     ) {
         let m = Square::new(freq);
@@ -178,7 +178,7 @@ mod tests {
         Ok(Arc::new(vec![255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
         200.*Hz
     )]
-    fn new_nearest(#[case] expect: ModulationCalcResult, #[case] freq: Freq<f32>) {
+    fn new_nearest(#[case] expect: Result<Arc<Vec<u8>>, AUTDInternalError>, #[case] freq: Freq<f32>) {
         let m = Square::new_nearest(freq);
         assert_eq!(freq, m.freq());
         assert_eq!(u8::MIN, m.low());

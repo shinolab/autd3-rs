@@ -29,7 +29,7 @@ pub struct TestModulation {
 }
 
 impl Modulation for TestModulation {
-    fn calc(&self) -> ModulationCalcResult {
+    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         Ok(self.buf.clone())
     }
 }

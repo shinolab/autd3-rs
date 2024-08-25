@@ -23,14 +23,14 @@ pub use cpu_gpio_out::{CpuGPIO, CpuGPIOPort};
 pub use debug::DebugSettings;
 pub use force_fan::ForceFan;
 pub use gain::{
-    Gain, GainCache, GainCalcResult, GainOperationGenerator, GainTransform, Group, IntoGainCache,
+    Gain, GainCache, GainCalcFn, GainOperationGenerator, GainTransform, Group, IntoGainCache,
     IntoGainTransform,
 };
 pub use gpio_in::EmulateGPIOIn;
 pub use modulation::{
     IntoModulationCache, IntoModulationTransform, IntoRadiationPressure, Modulation,
-    ModulationCache, ModulationCalcResult, ModulationOperationGenerator, ModulationProperty,
-    ModulationTransform, RadiationPressure,
+    ModulationCache, ModulationOperationGenerator, ModulationProperty, ModulationTransform,
+    RadiationPressure,
 };
 pub use pulse_width_encoder::PulseWidthEncoder;
 pub use reads_fpga_state::ReadsFPGAState;

@@ -15,7 +15,7 @@ impl Uniform {
 }
 
 impl Gain for Uniform {
-    fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
+    fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
         let d = self.drive;
         Ok(Self::transform(move |_| move |_| d))
     }

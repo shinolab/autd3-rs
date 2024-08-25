@@ -13,7 +13,7 @@ impl MyUniform {
 }
 
 impl Gain for MyUniform {
-    fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
+    fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
         Ok(Self::transform(|_| |_| EmitIntensity::MAX))
     }
 }
@@ -34,7 +34,7 @@ impl Burst {
 }
 
 impl Modulation for Burst {
-    fn calc(&self) -> ModulationCalcResult {
+    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         Ok(Arc::new(
             (0..4000)
                 .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })

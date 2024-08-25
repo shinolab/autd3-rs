@@ -52,7 +52,7 @@ impl<M: Modulation> Cache<M> {
 }
 
 impl<M: Modulation> Modulation for Cache<M> {
-    fn calc(&self) -> ModulationCalcResult {
+    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         self.init()?;
         let buffer = self.buffer().clone();
         Ok(buffer)
@@ -100,7 +100,7 @@ mod tests {
     }
 
     impl Modulation for TestCacheModulation {
-        fn calc(&self) -> ModulationCalcResult {
+        fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
             Ok(Arc::new(vec![0x00, 0x00]))
         }

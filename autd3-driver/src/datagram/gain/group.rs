@@ -15,7 +15,7 @@ use std::{
 
 use bit_vec::BitVec;
 
-use super::GainCalcResult;
+use super::GainCalcFn;
 
 use derive_more::Debug;
 
@@ -95,7 +95,7 @@ where
     FK: Fn(&Transducer) -> Option<K> + Send + Sync,
     F: Fn(&Device) -> FK + Send + Sync,
 {
-    fn calc(&self, geometry: &Geometry) -> GainCalcResult {
+    fn calc(&self, geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
         let mut filters = self.get_filters(geometry);
 
         let result = geometry

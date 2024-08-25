@@ -26,7 +26,7 @@ impl Static {
 }
 
 impl Modulation for Static {
-    fn calc(&self) -> ModulationCalcResult {
+    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         let intensity = self.intensity;
         Ok(Arc::new(vec![intensity; 2]))
     }
