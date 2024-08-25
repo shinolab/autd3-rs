@@ -61,7 +61,7 @@ impl<D: Directivity> Greedy<D> {
         &self,
         geometry: &Geometry,
         filter: Option<HashMap<usize, BitVec<u32>>>,
-    ) -> GainCalcResult {
+    ) -> Result<GainCalcFn, AUTDInternalError> {
         let phase_candidates = (0..self.phase_div.get())
             .map(|i| Complex::new(0., 2.0 * PI * i as f32 / self.phase_div.get() as f32).exp())
             .collect::<Vec<_>>();
@@ -141,7 +141,7 @@ impl<D: Directivity> Greedy<D> {
 }
 
 impl<D: Directivity> Gain for Greedy<D> {
-    fn calc(&self, geometry: &Geometry) -> GainCalcResult {
+    fn calc(&self, geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
         self.calc_impl(geometry, None)
     }
 
@@ -149,7 +149,7 @@ impl<D: Directivity> Gain for Greedy<D> {
         &self,
         geometry: &Geometry,
         filter: HashMap<usize, BitVec<u32>>,
-    ) -> GainCalcResult {
+    ) -> Result<GainCalcFn, AUTDInternalError> {
         self.calc_impl(geometry, Some(filter))
     }
 }

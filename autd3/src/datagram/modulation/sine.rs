@@ -57,7 +57,7 @@ impl<S: SamplingMode> Sine<S> {
 }
 
 impl<S: SamplingMode> Modulation for Sine<S> {
-    fn calc(&self) -> ModulationCalcResult {
+    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         let (n, rep) = S::validate(self.freq, self.config)?;
         let intensity = self.intensity;
         let offset = self.offset;
@@ -155,7 +155,10 @@ mod tests {
         Err(AUTDInternalError::ModulationError("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
         0.*Hz
     )]
-    fn new(#[case] expect: ModulationCalcResult, #[case] freq: impl SamplingModeInference) {
+    fn new(
+        #[case] expect: Result<Arc<Vec<u8>>, AUTDInternalError>,
+        #[case] freq: impl SamplingModeInference,
+    ) {
         let m = Sine::new(freq);
         assert_eq!(freq, m.freq());
         assert_eq!(u8::MAX, m.intensity());
@@ -182,7 +185,10 @@ mod tests {
         Err(AUTDInternalError::ModulationError("Frequency (NaN Hz) must be valid value".to_owned())),
         f32::NAN * Hz
     )]
-    fn new_nearest(#[case] expect: ModulationCalcResult, #[case] freq: Freq<f32>) {
+    fn new_nearest(
+        #[case] expect: Result<Arc<Vec<u8>>, AUTDInternalError>,
+        #[case] freq: Freq<f32>,
+    ) {
         let m = Sine::new_nearest(freq);
         if !freq.hz().is_nan() {
             assert_eq!(freq, m.freq());

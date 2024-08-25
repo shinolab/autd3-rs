@@ -22,7 +22,7 @@ pub(crate) struct TestGain {
 }
 
 impl Gain for TestGain {
-    fn calc(&self, _: &Geometry) -> GainCalcResult {
+    fn calc(&self, _: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
         let buf = self.buf.clone();
         Ok(Box::new(move |dev| {
             let buf = buf[&dev.idx()].clone();

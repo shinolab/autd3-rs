@@ -40,7 +40,7 @@ impl<
         F: Fn(&Device) -> FT + 'a,
     > Gain for Custom<'a, D, FT, F>
 {
-    fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
+    fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
         Ok(Self::transform(&self.f))
     }
 }

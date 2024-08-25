@@ -24,7 +24,7 @@ struct TestMod {
 }
 
 impl Modulation for TestMod {
-    fn calc(&self) -> ModulationCalcResult {
+    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         Ok(Arc::new(vec![u8::MIN; 100]))
     }
 }
@@ -33,7 +33,7 @@ impl Modulation for TestMod {
 struct TestGain {}
 
 impl Gain for TestGain {
-    fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
+    fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
         Ok(Self::transform(|_| {
             |_| Drive::new(Phase::new(0xFF), EmitIntensity::MAX)
         }))

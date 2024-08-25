@@ -49,7 +49,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> GSPAT<D, B> {
         &self,
         geometry: &Geometry,
         filter: Option<HashMap<usize, BitVec<u32>>>,
-    ) -> GainCalcResult {
+    ) -> Result<GainCalcFn, AUTDInternalError> {
         let g = self
             .backend
             .generate_propagation_matrix(geometry, &self.foci, &filter)?;
@@ -117,7 +117,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> GSPAT<D, B> {
 }
 
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for GSPAT<D, B> {
-    fn calc(&self, geometry: &Geometry) -> GainCalcResult {
+    fn calc(&self, geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
         self.calc_impl(geometry, None)
     }
 
@@ -125,7 +125,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for GSPAT<D, B> {
         &self,
         geometry: &Geometry,
         filter: HashMap<usize, BitVec<u32>>,
-    ) -> GainCalcResult {
+    ) -> Result<GainCalcFn, AUTDInternalError> {
         self.calc_impl(geometry, Some(filter))
     }
 }

@@ -34,7 +34,7 @@ impl Bessel {
 }
 
 impl Gain for Bessel {
-    fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
+    fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
         let rot = {
             let dir = self.dir.normalize();
             let v = Vector3::new(dir.y, -dir.x, 0.);

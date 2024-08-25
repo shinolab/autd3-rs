@@ -2,7 +2,8 @@ use std::{collections::HashMap, sync::Arc};
 
 use autd3_driver::{
     defined::rad,
-    derive::GainCalcResult,
+    derive::GainCalcFn,
+    error::AUTDInternalError,
     firmware::fpga::{Drive, Phase},
     geometry::Geometry,
 };
@@ -47,7 +48,7 @@ pub(crate) fn generate_result<'a, T>(
     max_coefficient: f32,
     constraint: EmissionConstraint,
     filter: Option<HashMap<usize, BitVec<u32>>>,
-) -> GainCalcResult<'a>
+) -> Result<GainCalcFn<'a>, AUTDInternalError>
 where
     T: IntoDrive + Copy + Send + Sync + 'static,
 {

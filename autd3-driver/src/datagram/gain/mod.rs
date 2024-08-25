@@ -25,18 +25,16 @@ use bit_vec::BitVec;
 use super::Datagram;
 use super::DatagramS;
 
-pub type GainCalcResult<'a> = Result<
-    Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + 'a>,
-    AUTDInternalError,
->;
+pub type GainCalcFn<'a> =
+    Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + 'a>;
 
 pub trait Gain: std::fmt::Debug {
-    fn calc<'a>(&'a self, geometry: &Geometry) -> GainCalcResult<'a>;
+    fn calc<'a>(&'a self, geometry: &Geometry) -> Result<GainCalcFn<'a>, AUTDInternalError>;
     fn calc_with_filter<'a>(
         &'a self,
         geometry: &Geometry,
         _filter: HashMap<usize, BitVec<u32>>,
-    ) -> GainCalcResult<'a> {
+    ) -> Result<GainCalcFn<'a>, AUTDInternalError> {
         self.calc(geometry)
     }
     #[allow(clippy::type_complexity)]
@@ -47,7 +45,7 @@ pub trait Gain: std::fmt::Debug {
         F: Fn(&Device) -> FT + 'a,
     >(
         f: F,
-    ) -> Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + 'a>
+    ) -> GainCalcFn<'a>
     where
         Self: Sized,
     {
@@ -60,7 +58,7 @@ pub trait Gain: std::fmt::Debug {
 
 // GRCOV_EXCL_START
 impl<'a> Gain for Box<dyn Gain + Send + Sync + 'a> {
-    fn calc(&self, geometry: &Geometry) -> GainCalcResult {
+    fn calc(&self, geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
         self.as_ref().calc(geometry)
     }
 }
@@ -94,7 +92,7 @@ mod capi {
     struct NullGain {}
 
     impl Gain for NullGain {
-        fn calc(&self, _: &Geometry) -> GainCalcResult {
+        fn calc(&self, _: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
             Ok(Box::new(move |_| Box::new(move |_| Drive::null())))
         }
     }
@@ -208,7 +206,7 @@ pub mod tests {
     }
 
     impl Gain for TestGain {
-        fn calc(&self, _geometry: &Geometry) -> GainCalcResult {
+        fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
             if let Some(ref err) = self.err {
                 return Err(err.clone());
             }
