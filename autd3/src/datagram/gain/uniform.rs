@@ -42,7 +42,7 @@ mod tests {
         assert_eq!(intensity, g.drive().intensity());
         assert_eq!(phase, g.drive().phase());
 
-        let b = g.calc(&geometry)?;
+        let mut b = g.calc(&geometry)?;
         geometry.iter().for_each(|dev| {
             let d = b(dev);
             dev.iter().for_each(|tr| {

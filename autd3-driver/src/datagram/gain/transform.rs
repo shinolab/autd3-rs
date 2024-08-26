@@ -65,7 +65,7 @@ impl<
     > Gain for Transform<G, D, FT, F>
 {
     fn calc(&self, geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
-        let src = self.gain.calc(geometry)?;
+        let mut src = self.gain.calc(geometry)?;
         let f = &self.f;
         Ok(Box::new(move |dev| {
             let f = f(dev);

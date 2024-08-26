@@ -3,8 +3,7 @@ use crate::{
     datagram::*,
     defined::Freq,
     derive::*,
-    firmware::{cpu::GainSTMMode, fpga::Drive, operation::GainSTMOp},
-    geometry::Transducer,
+    firmware::{cpu::GainSTMMode, operation::GainSTMOp},
 };
 
 use derive_more::{Deref, DerefMut};
@@ -80,8 +79,7 @@ impl<G: Gain> GainSTM<G> {
 
 pub struct GainSTMOperationGenerator<G: Gain> {
     pub gain: Vec<G>,
-    #[allow(clippy::type_complexity)]
-    g: *const Vec<Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>>,
+    g: *mut Vec<GainCalcFn<'static>>,
     mode: GainSTMMode,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
@@ -101,7 +99,7 @@ impl<G: Gain> GainSTMOperationGenerator<G> {
     ) -> Result<Self, AUTDInternalError> {
         let mut r = Self {
             gain: g,
-            g: std::ptr::null(),
+            g: std::ptr::null_mut(),
             mode,
             config,
             loop_behavior,
@@ -111,14 +109,9 @@ impl<G: Gain> GainSTMOperationGenerator<G> {
         r.g = Box::into_raw(Box::new(
             r.gain
                 .iter()
-                .map(|g| {
-                    Ok(Box::new(g.calc(geometry)?)
-                        as Box<
-                            dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>,
-                        >)
-                })
+                .map(|g| g.calc(geometry))
                 .collect::<Result<Vec<_>, AUTDInternalError>>()?,
-        )) as *const _;
+        )) as *mut _;
         Ok(r)
     }
 }
@@ -126,12 +119,7 @@ impl<G: Gain> GainSTMOperationGenerator<G> {
 impl<G: Gain> Drop for GainSTMOperationGenerator<G> {
     fn drop(&mut self) {
         unsafe {
-            let _ = Box::from_raw(
-                self.g
-                    as *mut Vec<
-                        Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>,
-                    >,
-            );
+            let _ = Box::from_raw(self.g);
         }
     }
 }
@@ -141,7 +129,7 @@ impl<G: Gain> OperationGenerator for GainSTMOperationGenerator<G> {
     type O2 = NullOp;
 
     fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
-        let d = unsafe { (*self.g).iter().map(|g| g(device)).collect::<Vec<_>>() };
+        let d = unsafe { (*self.g).iter_mut().map(|g| g(device)).collect::<Vec<_>>() };
         (
             Self::O1::new(
                 d,
@@ -201,7 +189,10 @@ impl Default for GainSTM<Box<dyn Gain + Send + Sync>> {
 mod tests {
     use super::*;
 
-    use crate::defined::{kHz, Hz};
+    use crate::{
+        defined::{kHz, Hz},
+        firmware::fpga::Drive,
+    };
 
     #[derive(Gain, Default, Debug, PartialEq)]
     struct Null {
