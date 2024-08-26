@@ -15,6 +15,7 @@ use autd3_driver::{
 
 use crate::{error::HoloError, LinAlgBackend, MatrixX, MatrixXc, VectorX, VectorXc};
 
+#[derive(Default)]
 pub struct NalgebraBackend<D: Directivity> {
     _phantom: std::marker::PhantomData<D>,
 }
@@ -37,6 +38,38 @@ macro_rules! par_for_each {
             $iter.par_bridge().for_each($f)
         }
     };
+}
+
+struct Ptr(*mut Complex);
+impl Ptr {
+    #[inline]
+    fn write(&mut self, value: Complex) {
+        unsafe {
+            *self.0 = value;
+            self.0 = self.0.add(1);
+        }
+    }
+
+    #[inline]
+    fn add(&self, i: usize) -> Self {
+        Self(unsafe { self.0.add(i) })
+    }
+}
+unsafe impl Send for Ptr {}
+unsafe impl Sync for Ptr {}
+
+fn uninit_mat(row: usize, col: usize) -> MatrixXc {
+    MatrixXc::from_data(unsafe {
+        let mut data = Vec::<MaybeUninit<Complex>>::new();
+        let length = row * col;
+        data.reserve_exact(length);
+        data.resize_with(length, MaybeUninit::uninit);
+        let uninit = VecStorage::new(Dyn(row), Dyn(col), data);
+        let vec: Vec<_> = uninit.into();
+        let mut md = ManuallyDrop::new(vec);
+        let new_data = Vec::from_raw_parts(md.as_mut_ptr() as *mut _, md.len(), md.capacity());
+        VecStorage::new(Dyn(row), Dyn(col), new_data)
+    })
 }
 
 impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
@@ -105,35 +138,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
                 });
                 Ok(MatrixXc::from_rows(&columns))
             } else {
-                let mut r = MatrixXc::from_data(unsafe {
-                    let mut data = Vec::<MaybeUninit<Complex>>::new();
-                    let length = foci.len() * n;
-                    data.reserve_exact(length);
-                    data.resize_with(length, MaybeUninit::uninit);
-                    let uninit = VecStorage::new(Dyn(foci.len()), Dyn(n), data);
-                    let vec: Vec<_> = uninit.into();
-                    let mut md = ManuallyDrop::new(vec);
-                    let new_data =
-                        Vec::from_raw_parts(md.as_mut_ptr() as *mut _, md.len(), md.capacity());
-                    VecStorage::new(Dyn(foci.len()), Dyn(n), new_data)
-                });
-                struct Ptr(*mut Complex);
-                impl Ptr {
-                    #[inline]
-                    fn write(&mut self, value: Complex) {
-                        unsafe {
-                            *self.0 = value;
-                            self.0 = self.0.add(1);
-                        }
-                    }
-
-                    #[inline]
-                    fn add(&self, i: usize) -> Self {
-                        Self(unsafe { self.0.add(i) })
-                    }
-                }
-                unsafe impl Send for Ptr {}
-                unsafe impl Sync for Ptr {}
+                let mut r = uninit_mat(foci.len(), n);
                 let ptr = Ptr(r.as_mut_ptr());
                 par_for_each!(geometry.devices(), move |dev| {
                     let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
@@ -168,35 +173,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
             });
             Ok(MatrixXc::from_rows(&columns))
         } else {
-            let mut r = MatrixXc::from_data(unsafe {
-                let mut data = Vec::<MaybeUninit<Complex>>::new();
-                let length = foci.len() * n;
-                data.reserve_exact(length);
-                data.resize_with(length, MaybeUninit::uninit);
-                let uninit = VecStorage::new(Dyn(foci.len()), Dyn(n), data);
-                let vec: Vec<_> = uninit.into();
-                let mut md = ManuallyDrop::new(vec);
-                let new_data =
-                    Vec::from_raw_parts(md.as_mut_ptr() as *mut _, md.len(), md.capacity());
-                VecStorage::new(Dyn(foci.len()), Dyn(n), new_data)
-            });
-            struct Ptr(*mut Complex);
-            impl Ptr {
-                #[inline]
-                fn write(&mut self, value: Complex) {
-                    unsafe {
-                        *self.0 = value;
-                        self.0 = self.0.add(1);
-                    }
-                }
-
-                #[inline]
-                fn add(&self, i: usize) -> Self {
-                    Self(unsafe { self.0.add(i) })
-                }
-            }
-            unsafe impl Send for Ptr {}
-            unsafe impl Sync for Ptr {}
+            let mut r = uninit_mat(foci.len(), n);
             let ptr = Ptr(r.as_mut_ptr());
             par_for_each!(geometry.devices(), move |dev| {
                 let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
@@ -577,14 +554,6 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
     }
 }
 
-impl Default for NalgebraBackend<autd3_driver::acoustics::directivity::Sphere> {
-    fn default() -> Self {
-        Self {
-            _phantom: std::marker::PhantomData,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use autd3_driver::{
@@ -690,7 +659,9 @@ mod tests {
 
     #[rstest::fixture]
     fn backend() -> NalgebraBackend<Sphere> {
-        NalgebraBackend::default()
+        NalgebraBackend {
+            _phantom: std::marker::PhantomData,
+        }
     }
 
     #[rstest::rstest]
