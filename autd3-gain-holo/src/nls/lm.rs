@@ -123,8 +123,6 @@ impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
 }
 
 impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
-    #[allow(clippy::many_single_char_names)]
-    #[allow(clippy::uninit_vec)]
     fn calc_impl(
         &self,
         geometry: &Geometry,
