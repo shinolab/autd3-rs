@@ -1,3 +1,5 @@
+use std::num::NonZeroUsize;
+
 use autd3_gain_holo::{LinAlgBackend, NalgebraBackend};
 
 use crate::{
@@ -20,7 +22,7 @@ impl ToMessage
             datagram: Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Gs(Gs {
                     holo: to_holo!(self),
-                    repeat: Some(self.repeat() as _),
+                    repeat: Some(self.repeat().get() as _),
                     constraint: Some(self.constraint().to_msg(None)),
                 })),
             })),
@@ -50,7 +52,9 @@ impl FromMessage<Gs>
                 .collect::<Result<Vec<_>, AUTDProtoBufError>>()?,
         );
         if let Some(repeat) = msg.repeat {
-            g = g.with_repeat(repeat as _);
+            g = g.with_repeat(
+                NonZeroUsize::new(repeat as _).ok_or(AUTDProtoBufError::DataParseError)?,
+            );
         }
         if let Some(constraint) = msg.constraint.as_ref() {
             g = g.with_constraint(autd3_gain_holo::EmissionConstraint::from_msg(constraint)?);
