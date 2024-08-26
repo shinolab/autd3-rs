@@ -35,7 +35,7 @@ impl LinkBuilder for SimulatorBuilder {
         let mut client =
             simulator_client::SimulatorClient::connect(format!("http://{}", self.addr))
                 .await
-                .map_err(|e| AUTDInternalError::from(AUTDProtoBufError::from(e)))?;
+                .map_err(AUTDProtoBufError::from)?;
 
         if client.config_geomety(geometry.to_msg(None)).await.is_err() {
             return Err(

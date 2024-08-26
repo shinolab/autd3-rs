@@ -12,7 +12,6 @@ repository = { workspace = true }
 [dependencies]
 autd3-protobuf = { workspace = true }
 autd3-driver = { workspace = true }
-thiserror = { workspace = true }
 tonic = { workspace = true }
 
 [features]
