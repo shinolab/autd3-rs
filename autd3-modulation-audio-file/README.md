@@ -1,6 +1,6 @@
 # autd3-modulation-audio-file
 
-This crate provides a Wav/RawPCM modulation.
+This crate provides `Wav`, `RawPCM`, and `Csv` modulation.
 
 # Author
 
