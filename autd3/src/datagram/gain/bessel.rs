@@ -87,7 +87,7 @@ mod tests {
         assert_eq!(intensity, g.intensity());
         assert_eq!(phase_offset, g.phase_offset());
 
-        let b = g.calc(geometry)?;
+        let mut b = g.calc(geometry)?;
         geometry.iter().for_each(|dev| {
             let d = b(dev);
             dev.iter().for_each(|tr| {

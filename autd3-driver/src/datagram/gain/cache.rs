@@ -49,7 +49,7 @@ impl<G: Gain> Cache<G> {
                 .devices()
                 .any(|dev| !self.cache.borrow().contains_key(&dev.idx()))
         {
-            let f = self.gain.calc(geometry)?;
+            let mut f = self.gain.calc(geometry)?;
             geometry
                 .devices()
                 .filter(|dev| !self.cache.borrow().contains_key(&dev.idx()))

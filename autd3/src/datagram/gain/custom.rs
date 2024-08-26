@@ -73,7 +73,7 @@ mod tests {
             }
         });
 
-        let d = transducer_test.calc(&geometry)?;
+        let mut d = transducer_test.calc(&geometry)?;
         geometry.iter().for_each(|dev| {
             let d = d(dev);
             dev.iter().enumerate().for_each(|(idx, tr)| {

@@ -26,7 +26,7 @@ mod tests {
         let geometry = create_geometry(1);
 
         let g = Null::new();
-        let b = g.calc(&geometry)?;
+        let mut b = g.calc(&geometry)?;
         geometry.iter().for_each(|dev| {
             let d = b(dev);
             dev.iter().for_each(|tr| {
