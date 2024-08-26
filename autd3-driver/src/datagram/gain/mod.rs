@@ -56,22 +56,22 @@ pub trait Gain: std::fmt::Debug {
 }
 
 // GRCOV_EXCL_START
-impl<'a> Gain for Box<dyn Gain + Send + Sync + 'a> {
+impl<'a> Gain for Box<dyn Gain + 'a> {
     fn calc(&self, geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
         self.as_ref().calc(geometry)
     }
 }
 
-impl<'a> Datagram for Box<dyn Gain + Send + Sync + 'a> {
-    type G = GainOperationGenerator<Box<dyn Gain + Send + Sync + 'a>>;
+impl<'a> Datagram for Box<dyn Gain + 'a> {
+    type G = GainOperationGenerator<Box<dyn Gain + 'a>>;
 
     fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Self::G::new(self, geometry, Segment::S0, true)
     }
 }
 
-impl<'a> DatagramS for Box<dyn Gain + Send + Sync + 'a> {
-    type G = GainOperationGenerator<Box<dyn Gain + Send + Sync + 'a>>;
+impl<'a> DatagramS for Box<dyn Gain + 'a> {
+    type G = GainOperationGenerator<Box<dyn Gain + 'a>>;
 
     fn operation_generator_with_segment(
         self,
@@ -96,7 +96,7 @@ mod capi {
         }
     }
 
-    impl<'a> Default for Box<dyn Gain + Send + Sync + 'a> {
+    impl<'a> Default for Box<dyn Gain + 'a> {
         fn default() -> Self {
             Box::new(NullGain {})
         }

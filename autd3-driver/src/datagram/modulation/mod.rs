@@ -72,7 +72,7 @@ impl OperationGenerator for ModulationOperationGenerator {
 }
 
 // GRCOV_EXCL_START
-impl<'a> ModulationProperty for Box<dyn Modulation + Send + Sync + 'a> {
+impl<'a> ModulationProperty for Box<dyn Modulation + 'a> {
     fn sampling_config(&self) -> SamplingConfig {
         self.as_ref().sampling_config()
     }
@@ -82,13 +82,13 @@ impl<'a> ModulationProperty for Box<dyn Modulation + Send + Sync + 'a> {
     }
 }
 
-impl<'a> Modulation for Box<dyn Modulation + Send + Sync + 'a> {
+impl<'a> Modulation for Box<dyn Modulation + 'a> {
     fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         self.as_ref().calc()
     }
 }
 
-impl<'a> DatagramST for Box<dyn Modulation + Send + Sync + 'a> {
+impl<'a> DatagramST for Box<dyn Modulation + 'a> {
     type G = ModulationOperationGenerator;
 
     fn operation_generator_with_segment(
@@ -132,7 +132,7 @@ mod capi {
         }
     }
 
-    impl<'a> Default for Box<dyn Modulation + Send + Sync + 'a> {
+    impl<'a> Default for Box<dyn Modulation + 'a> {
         fn default() -> Self {
             Box::new(NullModulation {
                 config: SamplingConfig::FREQ_4K,
