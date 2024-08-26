@@ -33,7 +33,7 @@ impl LinkBuilder for RemoteSOEMBuilder {
         Ok(Self::L {
             client: ecat_client::EcatClient::connect(format!("http://{}", self.addr))
                 .await
-                .map_err(|e| AUTDInternalError::from(AUTDProtoBufError::from(e)))?,
+                .map_err(AUTDProtoBufError::from)?,
             timeout: self.timeout,
             is_open: true,
         })

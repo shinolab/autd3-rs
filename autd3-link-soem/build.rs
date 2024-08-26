@@ -1,17 +1,5 @@
 #[cfg(feature = "local")]
-macro_rules! add {
-    ($path:expr, $p:ident, $work: expr) => {
-        glob::glob($path).unwrap().for_each(|entry| match entry {
-            Ok($p) => {
-                $work;
-            }
-            Err(e) => println!("{:?}", e),
-        });
-    };
-}
-
-#[cfg(feature = "local")]
-fn main() {
+fn main() -> anyhow::Result<()> {
     #[cfg(target_os = "windows")]
     let target = std::env::var("TARGET").unwrap();
 
@@ -27,17 +15,25 @@ fn main() {
 
     let mut build = cc::Build::new();
     build.cpp(false);
-    add!("3rdparty/SOEM/soem/*.c", path, build.file(path));
-    add!(
-        &format!("3rdparty/SOEM/osal/{}/*.c", os),
-        path,
-        build.file(path)
-    );
-    add!(
-        &format!("3rdparty/SOEM/oshw/{}/*.c", os),
-        path,
-        build.file(path)
-    );
+
+    glob::glob("3rdparty/SOEM/soem/*.c")?.try_fold(&mut build, |build, entry| {
+        let build = build.file(entry?);
+        Result::<_, glob::GlobError>::Ok(build)
+    })?;
+    glob::glob(&format!("3rdparty/SOEM/osal/{}/*.c", os))?.try_fold(
+        &mut build,
+        |build, entry| {
+            let build = build.file(entry?);
+            Result::<_, glob::GlobError>::Ok(build)
+        },
+    )?;
+    glob::glob(&format!("3rdparty/SOEM/oshw/{}/*.c", os))?.try_fold(
+        &mut build,
+        |build, entry| {
+            let build = build.file(entry?);
+            Result::<_, glob::GlobError>::Ok(build)
+        },
+    )?;
     build
         .include("3rdparty/SOEM/soem")
         .include("3rdparty/SOEM/osal")
@@ -78,6 +74,8 @@ fn main() {
         println!("cargo:rustc-link-lib=pthread");
         println!("cargo:rustc-link-lib=rt");
     }
+
+    Ok(())
 }
 
 #[cfg(not(feature = "local"))]

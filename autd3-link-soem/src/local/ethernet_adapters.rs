@@ -1,29 +1,23 @@
 use crate::local::soem_bindings;
 
-use std::{ffi::CStr, slice};
+use std::ffi::CStr;
 
-use derive_more::{Deref, Display};
+use autd3_driver::derive::Builder;
+use derive_more::{Deref, Display, IntoIterator};
 
-#[derive(Clone, Display)]
+#[derive(Clone, Display, Builder)]
 #[display("{}, {}", name, desc)]
 pub struct EthernetAdapter {
+    #[get(ref)]
     desc: String,
+    #[get(ref)]
     name: String,
 }
 
-impl EthernetAdapter {
-    pub fn desc(&self) -> &str {
-        &self.desc
-    }
-
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-}
-
-#[derive(Clone, Deref)]
+#[derive(Clone, Deref, IntoIterator)]
 pub struct EthernetAdapters {
     #[deref]
+    #[into_iterator]
     adapters: Vec<EthernetAdapter>,
 }
 
@@ -53,14 +47,5 @@ impl EthernetAdapters {
 impl Default for EthernetAdapters {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-impl<'a> IntoIterator for &'a EthernetAdapters {
-    type Item = &'a EthernetAdapter;
-    type IntoIter = slice::Iter<'a, EthernetAdapter>;
-
-    fn into_iter(self) -> slice::Iter<'a, EthernetAdapter> {
-        self.adapters.iter()
     }
 }
