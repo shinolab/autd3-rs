@@ -1,4 +1,7 @@
-use autd3::{driver::link::Link, prelude::*};
+use autd3::{
+    driver::{datagram::BoxedGain, link::Link},
+    prelude::*,
+};
 use autd3_gain_holo::*;
 
 use colored::*;
@@ -13,7 +16,7 @@ pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     let target_amp = 2.5e3 * autd.geometry().num_devices() as f32 * Pa;
     let foci = [(center + p, target_amp), (center - p, target_amp)];
 
-    let mut gains: Vec<(&str, Box<dyn autd3::driver::datagram::Gain>)> = vec![
+    let mut gains: Vec<(&str, BoxedGain)> = vec![
         ("GS", Box::new(GS::new(backend.clone(), foci))),
         ("GSPAT", Box::new(GSPAT::new(backend.clone(), foci))),
         ("Naive", Box::new(Naive::new(backend.clone(), foci))),

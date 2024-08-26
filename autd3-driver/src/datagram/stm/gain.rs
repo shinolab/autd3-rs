@@ -174,7 +174,7 @@ impl<G: Gain> DatagramST for GainSTM<G> {
 }
 
 #[cfg(feature = "capi")]
-impl Default for GainSTM<Box<dyn Gain + Send + Sync>> {
+impl Default for GainSTM<BoxedGain<'static>> {
     fn default() -> Self {
         Self {
             gains: vec![],

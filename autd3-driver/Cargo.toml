@@ -40,6 +40,7 @@ criterion.workspace = true
 
 [features]
 default = ["derive"]
+lightweight = []
 async-trait = ["dep:async-trait"]
 use_meter = []
 left_handed = []
