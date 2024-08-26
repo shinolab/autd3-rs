@@ -22,16 +22,9 @@ pub enum SOEMError {
     InvalidInterfaceName(String),
     #[error("Failed to synchronize devices. Maximum system time difference ({0:?}) exceeded the tolerance ({1:?})")]
     SynchronizeFailed(Duration, Duration),
-
-    #[error("Failed to create timer")]
-    TimerCreationFailed,
-    #[error("Failed to delete timer")]
-    TimerDeleteFailed,
-
     #[cfg(target_os = "windows")]
     #[error("{0}")]
     WindowsError(#[from] windows::core::Error),
-
     #[error("{0}")]
     ThreadPriorityError(#[from] thread_priority::Error),
 }

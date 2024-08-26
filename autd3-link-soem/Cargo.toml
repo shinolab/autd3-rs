@@ -12,6 +12,7 @@ repository = { workspace = true }
 [build-dependencies]
 cc = { workspace = true, features = ["parallel"], optional = true }
 glob = { workspace = true, optional = true }
+anyhow = { workspace = true, optional = true }
 
 [dependencies]
 serde = { workspace = true, features = ["derive"], optional = true }
@@ -34,7 +35,7 @@ windows = { version = "0.58.0", features = ["Win32_Media_Multimedia", "Win32_Sys
 libc = { version = "0.2.144", optional = true }
 
 [features]
-local = ["ta", "cc", "glob", "async-channel", "time", "thiserror", "windows", "libc", "thread-priority"]
+local = ["ta", "cc", "glob", "anyhow", "async-channel", "time", "thiserror", "windows", "libc", "thread-priority"]
 remote = ["autd3-protobuf", "tonic"]
 default = ["local"]
 all = ["local", "remote"]

@@ -4,7 +4,6 @@ mod error_handler;
 mod ethernet_adapters;
 mod iomap;
 pub mod link_soem;
-mod osal_timer;
 #[cfg(target_os = "windows")]
 mod process_priority;
 mod sleep;

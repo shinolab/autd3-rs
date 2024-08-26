@@ -28,8 +28,6 @@ use super::{
     error_handler::{EcatErrorHandler, ErrHandler},
     ethernet_adapters::EthernetAdapters,
     iomap::IOMap,
-    osal_timer::Timer,
-    sleep::SoemCallback,
     sleep::{BusyWait, Sleep, StdSleep},
     soem_bindings::*,
     state::EcStatus,
@@ -97,6 +95,7 @@ impl SOEM {
                 Duration::from_nanos(sync0_cycle.get() * EC_CYCLE_TIME_BASE_NANO_SEC);
             let ec_send_cycle =
                 Duration::from_nanos(send_cycle.get() * EC_CYCLE_TIME_BASE_NANO_SEC);
+
             let ifname = if ifname.is_empty() {
                 tracing::info!("No interface name is specified. Looking up AUTD device.");
                 let ifname = Self::lookup_autd()?;
@@ -175,7 +174,7 @@ impl SOEM {
                                 EC_TIMEOUTRET as _,
                             );
                             let diff = if res != 1 {
-                                tracing::trace!("Failed to read DCSYSDIFF[{}].", slave - 1,);
+                                tracing::trace!("Failed to read DCSYSDIFF[{}].", slave - 1);
                                 *last_diff
                             } else {
                                 *last_diff = diff;
@@ -514,7 +513,6 @@ impl Drop for OpStateGuard {
 
 struct SOEMECatThreadGuard {
     ecatth_handle: Option<JoinHandle<Result<(), SOEMError>>>,
-    timer_handle: Option<Box<Timer<SoemCallback>>>,
 }
 
 impl SOEMECatThreadGuard {
@@ -529,57 +527,33 @@ impl SOEMECatThreadGuard {
         #[cfg(target_os = "windows")] process_priority: super::ProcessPriority,
         ec_send_cycle: Duration,
     ) -> Result<Self, AUTDInternalError> {
-        let (ecatth_handle, timer_handle) = match timer_strategy {
-            TimerStrategy::Sleep => (
-                {
-                    Some(std::thread::spawn(move || {
-                        Self::ecat_run::<StdSleep>(
-                            is_open,
-                            io_map,
-                            wkc,
-                            tx_receiver,
-                            ec_send_cycle,
-                            thread_priority,
-                            #[cfg(target_os = "windows")]
-                            process_priority,
-                        )
-                    }))
-                },
-                None,
-            ),
-            TimerStrategy::BusyWait => (
-                {
-                    Some(std::thread::spawn(move || {
-                        Self::ecat_run::<BusyWait>(
-                            is_open,
-                            io_map,
-                            wkc,
-                            tx_receiver,
-                            ec_send_cycle,
-                            thread_priority,
-                            #[cfg(target_os = "windows")]
-                            process_priority,
-                        )
-                    }))
-                },
-                None,
-            ),
-            TimerStrategy::NativeTimer => (
-                None,
-                Some(Timer::start(
-                    SoemCallback {
-                        wkc,
-                        receiver: tx_receiver,
-                        io_map,
-                    },
-                    ec_send_cycle,
-                )?),
-            ),
-        };
-
         Ok(Self {
-            ecatth_handle,
-            timer_handle,
+            ecatth_handle: match timer_strategy {
+                TimerStrategy::Sleep => Some(std::thread::spawn(move || {
+                    Self::ecat_run::<StdSleep>(
+                        is_open,
+                        io_map,
+                        wkc,
+                        tx_receiver,
+                        ec_send_cycle,
+                        thread_priority,
+                        #[cfg(target_os = "windows")]
+                        process_priority,
+                    )
+                })),
+                TimerStrategy::BusyWait => Some(std::thread::spawn(move || {
+                    Self::ecat_run::<BusyWait>(
+                        is_open,
+                        io_map,
+                        wkc,
+                        tx_receiver,
+                        ec_send_cycle,
+                        thread_priority,
+                        #[cfg(target_os = "windows")]
+                        process_priority,
+                    )
+                })),
+            },
         })
     }
 
@@ -673,9 +647,6 @@ impl Drop for SOEMECatThreadGuard {
     fn drop(&mut self) {
         if let Some(timer) = self.ecatth_handle.take() {
             let _ = timer.join();
-        }
-        if let Some(timer) = self.timer_handle.take() {
-            let _ = timer.close();
         }
     }
 }
