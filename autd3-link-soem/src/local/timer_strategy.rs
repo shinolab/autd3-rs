@@ -4,8 +4,5 @@
 #[non_exhaustive]
 pub enum TimerStrategy {
     Sleep = 0,
-
     BusyWait = 1,
-
-    NativeTimer = 2,
 }
