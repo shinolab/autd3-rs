@@ -10,7 +10,6 @@ use rayon::prelude::*;
 use std::{
     collections::{hash_map::Entry, HashMap},
     hash::Hash,
-    sync::Arc,
 };
 
 use bit_vec::BitVec;
@@ -98,7 +97,7 @@ where
     fn calc(&self, geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
         let mut filters = self.get_filters(geometry);
 
-        let result = geometry
+        let mut result = geometry
             .devices()
             .map(|dev| dev.iter().map(|_| Drive::null()).collect::<Vec<_>>())
             .collect::<Vec<_>>();
@@ -109,7 +108,7 @@ where
                 let filter = filters
                     .remove(k)
                     .ok_or(AUTDInternalError::UnkownKey(format!("{:?}", k)))?;
-                let g = g.calc_with_filter(geometry, filter)?;
+                let mut g = g.calc_with_filter(geometry, filter)?;
                 Ok((
                     k.clone(),
                     geometry.devices().map(|dev| g(dev)).collect::<Vec<_>>(),
@@ -166,14 +165,10 @@ where
                 })?;
         }
 
-        let drives_cache = geometry
-            .devices()
-            .zip(result)
-            .map(|(dev, res)| (dev.idx(), Arc::new(res)))
-            .collect::<HashMap<_, _>>();
         Ok(Box::new(move |dev| {
-            let d = drives_cache[&dev.idx()].clone();
-            Box::new(move |tr| d[tr.idx()])
+            let mut tmp = vec![];
+            std::mem::swap(&mut tmp, &mut result[dev.idx()]);
+            Box::new(move |tr| tmp[tr.idx()])
         }))
     }
 }
@@ -214,7 +209,7 @@ mod tests {
         .set("test", g1)
         .set("test2", g2);
 
-        let g = gain.calc(&geometry)?;
+        let mut g = gain.calc(&geometry)?;
         let drives = geometry
             .devices()
             .map(|dev| (dev.idx(), dev.iter().map(g(dev)).collect::<Vec<_>>()))
@@ -276,7 +271,7 @@ mod tests {
         .set("test", g1)
         .set("test2", g2);
 
-        let g = gain.calc(&geometry)?;
+        let mut g = gain.calc(&geometry)?;
         let drives = geometry
             .devices()
             .map(|dev| (dev.idx(), dev.iter().map(g(dev)).collect::<Vec<_>>()))

@@ -26,7 +26,7 @@ use super::Datagram;
 use super::DatagramS;
 
 pub type GainCalcFn<'a> =
-    Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + 'a>;
+    Box<dyn FnMut(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + 'a>;
 
 pub trait Gain: std::fmt::Debug {
     fn calc<'a>(&'a self, geometry: &Geometry) -> Result<GainCalcFn<'a>, AUTDInternalError>;
@@ -37,7 +37,6 @@ pub trait Gain: std::fmt::Debug {
     ) -> Result<GainCalcFn<'a>, AUTDInternalError> {
         self.calc(geometry)
     }
-    #[allow(clippy::type_complexity)]
     fn transform<
         'a,
         D: Into<Drive>,
@@ -107,7 +106,6 @@ mod capi {
 
 pub struct GainOperationGenerator<G: Gain> {
     pub gain: std::pin::Pin<Box<G>>,
-    #[allow(clippy::type_complexity)]
     pub g: *mut GainCalcFn<'static>,
     pub segment: Segment,
     pub transition: bool,
@@ -263,7 +261,7 @@ pub mod tests {
             },
             &geometry,
         );
-        let f = g.calc(&geometry)?;
+        let mut f = g.calc(&geometry)?;
         assert_eq!(
             expect,
             geometry
