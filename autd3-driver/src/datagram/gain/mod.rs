@@ -108,7 +108,7 @@ mod capi {
 pub struct GainOperationGenerator<G: Gain> {
     pub gain: std::pin::Pin<Box<G>>,
     #[allow(clippy::type_complexity)]
-    pub g: *const Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>,
+    pub g: *mut GainCalcFn<'static>,
     pub segment: Segment,
     pub transition: bool,
 }
@@ -122,13 +122,11 @@ impl<G: Gain> GainOperationGenerator<G> {
     ) -> Result<Self, AUTDInternalError> {
         let mut r = Self {
             gain: Box::pin(gain),
-            g: std::ptr::null(),
+            g: std::ptr::null_mut(),
             segment,
             transition,
         };
-        let g = Box::new(r.gain.calc(geometry)?)
-            as Box<Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>>;
-        r.g = Box::into_raw(g) as *const _;
+        r.g = Box::into_raw(Box::new(r.gain.calc(geometry)?)) as *mut _;
         Ok(r)
     }
 }
@@ -136,15 +134,12 @@ impl<G: Gain> GainOperationGenerator<G> {
 impl<G: Gain> Drop for GainOperationGenerator<G> {
     fn drop(&mut self) {
         unsafe {
-            let _ = Box::from_raw(
-                self.g
-                    as *mut Box<dyn Fn(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>,
-            );
+            let _ = Box::from_raw(self.g);
         }
     }
 }
 
-impl<G: Gain> OperationGenerator for GainOperationGenerator<G> {
+impl<'a, G: Gain + 'a> OperationGenerator for GainOperationGenerator<G> {
     type O1 = GainOp;
     type O2 = NullOp;
 

@@ -150,7 +150,7 @@ fn focus_boxed(c: &mut Criterion) {
                     )));
                     let generator = g.operation_generator(geometry).unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
-                    OperationHandler::pack(&mut operations, geometry, &mut tx, true).unwrap();
+                    OperationHandler::pack(&mut operations, geometry, &mut tx, false).unwrap();
                 })
             },
         );
