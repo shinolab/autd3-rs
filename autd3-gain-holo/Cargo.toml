@@ -12,9 +12,8 @@ repository = { workspace = true }
 [dependencies]
 autd3-driver = { workspace = true }
 nalgebra = { workspace = true, features = ["std"] }
-rand = { workspace = true }
 thiserror = { workspace = true }
-criterion = { workspace = true, features = ["html_reports"], optional = true }
+rand = { workspace = true }
 bit-vec = { workspace = true }
 derive_more = { workspace = true }
 rayon = { workspace = true }
@@ -23,16 +22,7 @@ tynm = { workspace = true }
 [features]
 default = []
 capi = ["async-trait"]
-bench-utilities = ["criterion"]
 async-trait = ["autd3-driver/async-trait"]
-
-[lib]
-bench = false
-
-[[bench]]
-name = "holo"
-path = "benches/holo.rs"
-harness = false
 
 [dev-dependencies]
 anyhow = { workspace = true }

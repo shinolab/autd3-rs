@@ -98,7 +98,8 @@ mod tests {
     #[test]
     fn test_naive_all() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend = Arc::new(NalgebraBackend::default());
+        let backend =
+            NalgebraBackend::<autd3_driver::acoustics::directivity::Sphere>::new().unwrap();
 
         let g = Naive::new(
             backend,
@@ -113,7 +114,7 @@ mod tests {
         assert_eq!(
             g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
                 .calc(&geometry)
-                .map(|res| {
+                .map(|mut res| {
                     let f = res(&geometry[0]);
                     geometry[0]
                         .iter()
@@ -127,7 +128,8 @@ mod tests {
     #[test]
     fn test_naive_filtered() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend = Arc::new(NalgebraBackend::default());
+        let backend =
+            NalgebraBackend::<autd3_driver::acoustics::directivity::Sphere>::new().unwrap();
 
         let g = Naive::new(
             backend,
@@ -143,7 +145,7 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
         assert_eq!(
-            g.calc_with_filter(&geometry, filter).map(|res| {
+            g.calc_with_filter(&geometry, filter).map(|mut res| {
                 let f = res(&geometry[0]);
                 geometry[0]
                     .iter()
