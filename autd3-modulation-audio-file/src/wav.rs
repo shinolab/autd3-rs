@@ -74,7 +74,6 @@ impl Wav {
 }
 
 impl Modulation for Wav {
-    #[allow(clippy::unnecessary_cast)]
     fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         Ok(Arc::new(self.read_buf()?))
     }
