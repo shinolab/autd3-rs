@@ -8,9 +8,6 @@ mod helper;
 mod linear_synthesis;
 mod nls;
 
-#[cfg(feature = "bench-utilities")]
-pub mod bench_utilities;
-
 pub use backend::*;
 pub use backend_nalgebra::NalgebraBackend;
 pub use combinatorial::*;

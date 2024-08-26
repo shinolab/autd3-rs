@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, num::NonZeroUsize, sync::Arc};
 
 use crate::{
     constraint::EmissionConstraint, helper::generate_result, Amplitude, Complex, HoloError,
@@ -29,7 +29,7 @@ pub struct LM<D: Directivity, B: LinAlgBackend<D>> {
     tau: f32,
     #[get]
     #[set]
-    k_max: usize,
+    k_max: NonZeroUsize,
     #[get(ref)]
     #[set(no_const)]
     initial: Vec<f32>,
@@ -51,7 +51,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
             eps_1: 1e-8,
             eps_2: 1e-8,
             tau: 1e-3,
-            k_max: 5,
+            k_max: NonZeroUsize::new(5).unwrap(),
             initial: vec![],
             backend,
             constraint: EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX),
@@ -209,7 +209,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
         let mut x_new = self.backend.alloc_v(n_param)?;
         let mut tmp_mat = self.backend.alloc_m(n_param, n_param)?;
         let mut tmp_vec = self.backend.alloc_v(n_param)?;
-        for _ in 0..self.k_max {
+        for _ in 0..self.k_max.get() {
             if self.backend.max_v(&g)? <= self.eps_1 {
                 break; // GRCOV_EXCL_LINE
             }
@@ -291,7 +291,8 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn test_lm_all() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend = Arc::new(NalgebraBackend::default());
+        let backend =
+            NalgebraBackend::<autd3_driver::acoustics::directivity::Sphere>::new().unwrap();
 
         let g = LM::new(
             backend,
@@ -300,13 +301,13 @@ mod tests {
         .with_eps_1(1e-3)
         .with_eps_2(1e-4)
         .with_tau(1e-2)
-        .with_k_max(2)
+        .with_k_max(NonZeroUsize::new(2).unwrap())
         .with_initial(vec![1.0]);
 
         assert_eq!(g.eps_1(), 1e-3);
         assert_eq!(g.eps_2(), 1e-4);
         assert_eq!(g.tau(), 1e-2);
-        assert_eq!(g.k_max(), 2);
+        assert_eq!(g.k_max().get(), 2);
         assert_eq!(g.initial(), &[1.0]);
         assert_eq!(
             g.constraint(),
@@ -316,7 +317,7 @@ mod tests {
         assert_eq!(
             g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
                 .calc(&geometry)
-                .map(|res| {
+                .map(|mut res| {
                     let f = res(&geometry[0]);
                     geometry[0]
                         .iter()
@@ -334,7 +335,8 @@ mod tests {
             AUTD3::new(Vector3::zeros()).into_device(0),
             AUTD3::new(Vector3::zeros()).into_device(1),
         ]);
-        let backend = Arc::new(NalgebraBackend::default());
+        let backend =
+            NalgebraBackend::<autd3_driver::acoustics::directivity::Sphere>::new().unwrap();
 
         let g = LM::new(
             backend,
@@ -351,17 +353,18 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
         assert_eq!(
-            g.calc_with_filter(&geometry, filter.clone()).map(|res| {
-                let f = res(&geometry[0]);
-                geometry[0]
-                    .iter()
-                    .filter(|tr| f(tr) != Drive::null())
-                    .count()
-            }),
+            g.calc_with_filter(&geometry, filter.clone())
+                .map(|mut res| {
+                    let f = res(&geometry[0]);
+                    geometry[0]
+                        .iter()
+                        .filter(|tr| f(tr) != Drive::null())
+                        .count()
+                }),
             Ok(100),
         );
         assert_eq!(
-            g.calc_with_filter(&geometry, filter).map(|res| {
+            g.calc_with_filter(&geometry, filter).map(|mut res| {
                 let f = res(&geometry[1]);
                 geometry[1]
                     .iter()

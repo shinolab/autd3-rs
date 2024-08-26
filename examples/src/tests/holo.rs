@@ -2,10 +2,7 @@ use autd3::{driver::link::Link, prelude::*};
 use autd3_gain_holo::*;
 
 use colored::*;
-use std::{
-    io::{self, Write},
-    sync::Arc,
-};
+use std::io::{self, Write};
 
 pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     autd.send(Silencer::default()).await?;
@@ -27,7 +24,7 @@ pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     let mut s = String::new();
     io::stdin().read_line(&mut s)?;
 
-    let backend = Arc::new(NalgebraBackend::default());
+    let backend = NalgebraBackend::<Sphere>::new().unwrap();
 
     let target_amp = 2.5e3 * autd.geometry().num_devices() as f32 * Pa;
     match s.trim().parse::<usize>() {

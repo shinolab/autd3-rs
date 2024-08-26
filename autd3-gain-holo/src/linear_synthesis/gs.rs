@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, num::NonZeroUsize, sync::Arc};
 
 use crate::{
     constraint::EmissionConstraint, helper::generate_result, Amplitude, Complex, LinAlgBackend,
@@ -20,7 +20,7 @@ pub struct GS<D: Directivity, B: LinAlgBackend<D>> {
     amps: Vec<Amplitude>,
     #[get]
     #[set]
-    repeat: usize,
+    repeat: NonZeroUsize,
     #[get]
     #[set]
     constraint: EmissionConstraint,
@@ -36,7 +36,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> GS<D, B> {
         Self {
             foci,
             amps,
-            repeat: 100,
+            repeat: NonZeroUsize::new(100).unwrap(),
             backend,
             constraint: EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX),
             _phantom: std::marker::PhantomData,
@@ -68,7 +68,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> GS<D, B> {
             std::slice::from_raw_parts(self.amps.as_ptr() as *const f32, self.amps.len())
         })?;
         let mut p = self.backend.alloc_zeros_cv(m)?;
-        (0..self.repeat).try_for_each(|_| -> Result<(), AUTDInternalError> {
+        (0..self.repeat.get()).try_for_each(|_| -> Result<(), AUTDInternalError> {
             self.backend.scaled_to_assign_cv(&q0, &mut q)?;
             self.backend.gemv_c(
                 Trans::NoTrans,
@@ -121,15 +121,16 @@ mod tests {
     #[test]
     fn test_gs_all() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend = Arc::new(NalgebraBackend::default());
+        let backend =
+            NalgebraBackend::<autd3_driver::acoustics::directivity::Sphere>::new().unwrap();
 
         let g = GS::new(
             backend,
             [(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)],
         )
-        .with_repeat(5);
+        .with_repeat(NonZeroUsize::new(5).unwrap());
 
-        assert_eq!(g.repeat(), 5);
+        assert_eq!(g.repeat().get(), 5);
         assert_eq!(
             g.constraint(),
             EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX)
@@ -138,7 +139,7 @@ mod tests {
         assert_eq!(
             g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
                 .calc(&geometry)
-                .map(|res| {
+                .map(|mut res| {
                     let f = res(&geometry[0]);
                     geometry[0]
                         .iter()
@@ -155,7 +156,8 @@ mod tests {
             AUTD3::new(Vector3::zeros()).into_device(0),
             AUTD3::new(Vector3::zeros()).into_device(1),
         ]);
-        let backend = Arc::new(NalgebraBackend::default());
+        let backend =
+            NalgebraBackend::<autd3_driver::acoustics::directivity::Sphere>::new().unwrap();
 
         let g = GS::new(
             backend,
@@ -164,7 +166,7 @@ mod tests {
                 (Vector3::new(-10., 10., 100.), 5e3 * Pa),
             ],
         )
-        .with_repeat(5)
+        .with_repeat(NonZeroUsize::new(5).unwrap())
         .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)));
 
         let filter = geometry
@@ -173,17 +175,18 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
         assert_eq!(
-            g.calc_with_filter(&geometry, filter.clone()).map(|res| {
-                let f = res(&geometry[0]);
-                geometry[0]
-                    .iter()
-                    .filter(|tr| f(tr) != Drive::null())
-                    .count()
-            }),
+            g.calc_with_filter(&geometry, filter.clone())
+                .map(|mut res| {
+                    let f = res(&geometry[0]);
+                    geometry[0]
+                        .iter()
+                        .filter(|tr| f(tr) != Drive::null())
+                        .count()
+                }),
             Ok(100),
         );
         assert_eq!(
-            g.calc_with_filter(&geometry, filter).map(|res| {
+            g.calc_with_filter(&geometry, filter).map(|mut res| {
                 let f = res(&geometry[1]);
                 geometry[1]
                     .iter()

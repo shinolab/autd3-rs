@@ -93,14 +93,9 @@ impl<D: Directivity> Greedy<D> {
             indices
         };
 
-        let res: Vec<_> = geometry
+        let mut res: Vec<_> = geometry
             .devices()
-            .map(|dev| {
-                std::sync::Arc::new(std::sync::RwLock::new(vec![
-                    Drive::null();
-                    dev.num_transducers()
-                ]))
-            })
+            .map(|dev| vec![Drive::null(); dev.num_transducers()])
             .collect();
         let mut cache = vec![Complex::new(0., 0.); self.foci.len()];
         indices.iter().for_each(|&(dev_idx, idx)| {
@@ -129,13 +124,13 @@ impl<D: Directivity> Greedy<D> {
             cache.iter_mut().zip(tmp.iter()).for_each(|(c, a)| {
                 *c += a * phase;
             });
-            res[dev_idx].write().unwrap()[idx] =
-                Drive::new(Phase::from(phase), self.constraint.convert(1.0, 1.0));
+            res[dev_idx][idx] = Drive::new(Phase::from(phase), self.constraint.convert(1.0, 1.0));
         });
 
         Ok(Box::new(move |dev| {
-            let d = res[dev.idx()].clone();
-            Box::new(move |tr| d.read().unwrap()[tr.idx()])
+            let mut tmp = vec![];
+            std::mem::swap(&mut tmp, &mut res[dev.idx()]);
+            Box::new(move |tr| tmp[tr.idx()])
         }))
     }
 }
@@ -173,7 +168,7 @@ mod tests {
         );
 
         assert_eq!(
-            g.calc(&geometry).map(|res| {
+            g.calc(&geometry).map(|mut res| {
                 let f = res(&geometry[0]);
                 geometry[0]
                     .iter()
@@ -199,7 +194,7 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
         assert_eq!(
-            g.calc_with_filter(&geometry, filter).map(|res| {
+            g.calc_with_filter(&geometry, filter).map(|mut res| {
                 let f = res(&geometry[0]);
                 geometry[0]
                     .iter()

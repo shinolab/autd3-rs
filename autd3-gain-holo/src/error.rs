@@ -8,8 +8,6 @@ pub enum HoloError {
     SolveFailed,
     #[error("{0}")]
     BackendError(String),
-    #[error("{0}")]
-    BackendCreationError(String),
     #[error("Invalid operation")]
     InvalidOperation,
     #[error("Failed to compute SVD")]
@@ -43,15 +41,6 @@ mod tests {
         assert!(err.source().is_none());
         assert_eq!(format!("{}", err), "test");
         assert_eq!(format!("{:?}", err), "BackendError(\"test\")");
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn backend_creation_error() {
-        let err = HoloError::BackendCreationError("test".to_string());
-        assert!(err.source().is_none());
-        assert_eq!(format!("{}", err), "test");
-        assert_eq!(format!("{:?}", err), "BackendCreationError(\"test\")");
     }
 
     #[test]
