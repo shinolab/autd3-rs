@@ -55,7 +55,7 @@ impl LinkBuilder for RemoteTwinCATBuilder {
             .split('.')
             .map(|octet| octet.parse::<u8>())
             .collect::<Result<Vec<_>, _>>()
-            .map_err(|_| AUTDInternalError::from(AdsError::AmsNetIdParse))?;
+            .map_err(|_| AdsError::AmsNetIdParse)?;
 
         if octets.len() != 6 {
             return Err(AdsError::AmsNetIdParse.into());
@@ -72,7 +72,7 @@ impl LinkBuilder for RemoteTwinCATBuilder {
                 .split('.')
                 .map(|octet| octet.parse::<u8>())
                 .collect::<Result<Vec<_>, _>>()
-                .map_err(|_| AUTDInternalError::from(AdsError::AmsNetIdParse))?;
+                .map_err(|_| AdsError::AmsNetIdParse)?;
             if local_octets.len() != 6 {
                 return Err(AdsError::AmsNetIdParse.into());
             }
@@ -98,10 +98,7 @@ impl LinkBuilder for RemoteTwinCATBuilder {
             ],
         };
 
-        let ip = match CString::new(ip.clone()) {
-            Ok(ip) => ip,
-            Err(_) => return Err(AdsError::InvalidIp(ip).into()),
-        };
+        let ip = CString::new(ip.clone()).map_err(|_| AdsError::InvalidIp(ip.clone()))?;
         let res = unsafe { AdsCAddRoute(net_id, ip.as_c_str().as_ptr()) };
         if res != 0 {
             return Err(AdsError::AmsAddRoute(res as _).into());
