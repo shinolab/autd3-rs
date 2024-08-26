@@ -1,11 +1,6 @@
 # autd3-link-simulator
 
-This crate provides a link for AUTD Simulator.
-
-# Dependencies
-
-This library depends on [tonic](https://github.com/hyperium/tonic).
-To build this library, see the above link and follow the instructions.
+This crate provides a link for [AUTD Simulator](https://github.com/shinolab/autd3-server).
 
 # Author
 
