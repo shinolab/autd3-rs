@@ -72,7 +72,12 @@ impl OperationGenerator for ModulationOperationGenerator {
 }
 
 // GRCOV_EXCL_START
-impl<'a> ModulationProperty for Box<dyn Modulation + 'a> {
+#[cfg(not(feature = "lightweight"))]
+pub type BoxedModulation<'a> = Box<dyn Modulation + 'a>;
+#[cfg(feature = "lightweight")]
+pub type BoxedModulation<'a> = Box<dyn Modulation + Send + Sync + 'a>;
+
+impl<'a> ModulationProperty for BoxedModulation<'a> {
     fn sampling_config(&self) -> SamplingConfig {
         self.as_ref().sampling_config()
     }
@@ -82,13 +87,13 @@ impl<'a> ModulationProperty for Box<dyn Modulation + 'a> {
     }
 }
 
-impl<'a> Modulation for Box<dyn Modulation + 'a> {
+impl<'a> Modulation for BoxedModulation<'a> {
     fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         self.as_ref().calc()
     }
 }
 
-impl<'a> DatagramST for Box<dyn Modulation + 'a> {
+impl<'a> DatagramST for BoxedModulation<'a> {
     type G = ModulationOperationGenerator;
 
     fn operation_generator_with_segment(
@@ -117,7 +122,7 @@ impl<'a> DatagramST for Box<dyn Modulation + 'a> {
 
 #[cfg(feature = "capi")]
 mod capi {
-    use crate::derive::*;
+    use crate::{datagram::BoxedModulation, derive::*};
     use std::sync::Arc;
 
     #[derive(Modulation, Debug)]
@@ -132,7 +137,7 @@ mod capi {
         }
     }
 
-    impl<'a> Default for Box<dyn Modulation + 'a> {
+    impl<'a> Default for BoxedModulation<'a> {
         fn default() -> Self {
             Box::new(NullModulation {
                 config: SamplingConfig::FREQ_4K,

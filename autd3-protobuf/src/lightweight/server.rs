@@ -61,7 +61,7 @@ where
 
     fn parse_gain(
         gain: &Gain,
-    ) -> Result<Box<dyn autd3_driver::datagram::Gain + Send + Sync>, AUTDProtoBufError> {
+    ) -> Result<autd3_driver::datagram::BoxedGain<'static>, AUTDProtoBufError> {
         Ok(match &gain.gain {
             Some(gain::Gain::Focus(msg)) => Box::new(autd3::gain::Focus::from_msg(msg)?),
             Some(gain::Gain::Bessel(msg)) => Box::new(autd3::gain::Bessel::from_msg(msg)?),
@@ -80,9 +80,7 @@ where
     fn parse_gain_with_segment(
         gain: &GainWithSegment,
     ) -> Result<
-        autd3_driver::datagram::DatagramWithSegment<
-            Box<dyn autd3_driver::datagram::Gain + Send + Sync>,
-        >,
+        autd3_driver::datagram::DatagramWithSegment<autd3_driver::datagram::BoxedGain<'static>>,
         AUTDProtoBufError,
     > {
         let g = Self::parse_gain(
@@ -96,7 +94,7 @@ where
 
     fn parse_modulation(
         modulation: &Modulation,
-    ) -> Result<Box<dyn autd3_driver::datagram::Modulation + Send + Sync>, AUTDProtoBufError> {
+    ) -> Result<autd3_driver::datagram::BoxedModulation<'static>, AUTDProtoBufError> {
         Ok(match &modulation.modulation {
             Some(modulation::Modulation::Static(msg)) => {
                 Box::new(autd3::prelude::Static::from_msg(msg)?)
@@ -137,7 +135,7 @@ where
         modulation: &ModulationWithSegment,
     ) -> Result<
         autd3_driver::datagram::DatagramWithSegmentTransition<
-            Box<dyn autd3_driver::datagram::Modulation + Send + Sync>,
+            autd3_driver::datagram::BoxedModulation<'static>,
         >,
         AUTDProtoBufError,
     > {

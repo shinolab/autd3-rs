@@ -56,22 +56,28 @@ pub trait Gain: std::fmt::Debug {
 }
 
 // GRCOV_EXCL_START
-impl<'a> Gain for Box<dyn Gain + 'a> {
+
+#[cfg(not(feature = "lightweight"))]
+pub type BoxedGain<'a> = Box<dyn Gain + 'a>;
+#[cfg(feature = "lightweight")]
+pub type BoxedGain<'a> = Box<dyn Gain + Send + Sync + 'a>;
+
+impl<'a> Gain for BoxedGain<'a> {
     fn calc(&self, geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
         self.as_ref().calc(geometry)
     }
 }
 
-impl<'a> Datagram for Box<dyn Gain + 'a> {
-    type G = GainOperationGenerator<Box<dyn Gain + 'a>>;
+impl<'a> Datagram for BoxedGain<'a> {
+    type G = GainOperationGenerator<BoxedGain<'a>>;
 
     fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Self::G::new(self, geometry, Segment::S0, true)
     }
 }
 
-impl<'a> DatagramS for Box<dyn Gain + 'a> {
-    type G = GainOperationGenerator<Box<dyn Gain + 'a>>;
+impl<'a> DatagramS for BoxedGain<'a> {
+    type G = GainOperationGenerator<BoxedGain<'a>>;
 
     fn operation_generator_with_segment(
         self,
@@ -85,7 +91,7 @@ impl<'a> DatagramS for Box<dyn Gain + 'a> {
 
 #[cfg(feature = "capi")]
 mod capi {
-    use crate::{derive::*, firmware::fpga::Drive};
+    use crate::{datagram::BoxedGain, derive::*, firmware::fpga::Drive};
 
     #[derive(Gain, Debug)]
     struct NullGain {}
@@ -96,7 +102,7 @@ mod capi {
         }
     }
 
-    impl<'a> Default for Box<dyn Gain + 'a> {
+    impl<'a> Default for BoxedGain<'a> {
         fn default() -> Self {
             Box::new(NullGain {})
         }
