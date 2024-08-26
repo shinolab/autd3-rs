@@ -29,7 +29,7 @@ where
 }
 
 impl FromMessage<GainStm>
-    for autd3_driver::datagram::GainSTM<Box<dyn autd3_driver::datagram::Gain + Send + Sync>>
+    for autd3_driver::datagram::GainSTM<autd3_driver::datagram::BoxedGain<'static>>
 {
     fn from_msg(msg: &GainStm) -> Result<Self, AUTDProtoBufError> {
         let mut stm = autd3_driver::datagram::GainSTM::new(
