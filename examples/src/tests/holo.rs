@@ -9,16 +9,16 @@ pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
 
     let center = autd.geometry().center() + Vector3::new(0., 0., 150.0 * mm);
     let p = Vector3::new(30. * mm, 0., 0.);
-    let backend = NalgebraBackend::<Sphere>::new().unwrap();
+    let backend = NalgebraBackend::<Sphere>::new()?;
     let target_amp = 2.5e3 * autd.geometry().num_devices() as f32 * Pa;
     let foci = [(center + p, target_amp), (center - p, target_amp)];
 
     let mut gains: Vec<(&str, Box<dyn autd3::driver::datagram::Gain>)> = vec![
-        ("GS", Box::new(GS::new(backend.clone(), foci.clone()))),
-        ("GSPAT", Box::new(GSPAT::new(backend.clone(), foci.clone()))),
-        ("Naive", Box::new(Naive::new(backend.clone(), foci.clone()))),
-        ("LM", Box::new(LM::new(backend.clone(), foci.clone()))),
-        ("Greedy", Box::new(Greedy::<Sphere>::new(foci.clone()))),
+        ("GS", Box::new(GS::new(backend.clone(), foci))),
+        ("GSPAT", Box::new(GSPAT::new(backend.clone(), foci))),
+        ("Naive", Box::new(Naive::new(backend.clone(), foci))),
+        ("LM", Box::new(LM::new(backend.clone(), foci))),
+        ("Greedy", Box::new(Greedy::<Sphere>::new(foci))),
     ];
 
     gains.iter().enumerate().for_each(|(i, (name, _))| {
