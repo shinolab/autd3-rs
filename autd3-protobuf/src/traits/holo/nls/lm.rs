@@ -1,3 +1,5 @@
+use std::num::NonZeroUsize;
+
 use autd3_gain_holo::{LinAlgBackend, NalgebraBackend};
 
 use crate::{
@@ -23,7 +25,7 @@ impl ToMessage
                     eps_1: Some(self.eps_1() as _),
                     eps_2: Some(self.eps_2() as _),
                     tau: Some(self.tau() as _),
-                    k_max: Some(self.k_max() as _),
+                    k_max: Some(self.k_max().get() as _),
                     initial: self.initial().iter().map(|&v| v as _).collect(),
                     constraint: Some(self.constraint().to_msg(None)),
                 })),
@@ -64,7 +66,9 @@ impl FromMessage<Lm>
             g = g.with_tau(tau as _);
         }
         if let Some(k_max) = msg.k_max {
-            g = g.with_k_max(k_max as _);
+            g = g.with_k_max(
+                NonZeroUsize::new(k_max as _).ok_or(AUTDProtoBufError::DataParseError)?,
+            );
         }
         if let Some(constraint) = msg.constraint.as_ref() {
             g = g.with_constraint(autd3_gain_holo::EmissionConstraint::from_msg(constraint)?);
