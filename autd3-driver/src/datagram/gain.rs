@@ -1,14 +1,4 @@
-mod cache;
-mod group;
-mod transform;
-
 use std::collections::HashMap;
-
-pub use cache::Cache as GainCache;
-pub use cache::IntoCache as IntoGainCache;
-pub use group::Group;
-pub use transform::IntoTransform as IntoGainTransform;
-pub use transform::Transform as GainTransform;
 
 use crate::firmware::operation::GainOp;
 use crate::firmware::operation::NullOp;
@@ -148,7 +138,6 @@ pub mod tests {
     #[derive(Gain, Clone, Debug)]
     pub struct TestGain {
         pub data: HashMap<usize, Vec<Drive>>,
-        pub err: Option<AUTDInternalError>,
     }
 
     impl TestGain {
@@ -161,33 +150,12 @@ pub mod tests {
                     .devices()
                     .map(|dev| (dev.idx(), dev.iter().map(f(dev)).collect()))
                     .collect(),
-                err: None,
-            }
-        }
-
-        pub fn null(geometry: &Geometry) -> Self {
-            Self {
-                data: geometry
-                    .devices()
-                    .map(|dev| (dev.idx(), vec![Drive::null(); dev.num_transducers()]))
-                    .collect(),
-                err: None,
-            }
-        }
-
-        pub fn err() -> Self {
-            Self {
-                data: Default::default(),
-                err: Some(AUTDInternalError::GainError("test".to_owned())),
             }
         }
     }
 
     impl Gain for TestGain {
         fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
-            if let Some(ref err) = self.err {
-                return Err(err.clone());
-            }
             let d = self.data.clone();
             Ok(Self::transform(move |dev| {
                 let d = d[&dev.idx()].clone();

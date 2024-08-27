@@ -43,11 +43,11 @@ impl<M: Modulation> Modulation for RadiationPressure<M> {
 
 #[cfg(test)]
 mod tests {
+    use crate::modulation::Custom;
+    use autd3_driver::defined::kHz;
     use rand::Rng;
 
-    use super::{super::tests::TestModulation, *};
-
-    use crate::defined::kHz;
+    use super::*;
 
     #[rstest::rstest]
     #[test]
@@ -57,13 +57,10 @@ mod tests {
     fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
             config,
-            TestModulation {
-                buf: Arc::new(vec![u8::MIN; 2]),
-                config,
-                loop_behavior: LoopBehavior::infinite(),
-            }
-            .with_radiation_pressure()
-            .sampling_config()
+            Custom::new(Arc::new(vec![u8::MIN; 2]), config)
+                .unwrap()
+                .with_radiation_pressure()
+                .sampling_config()
         );
     }
 
@@ -77,13 +74,9 @@ mod tests {
             buf.iter()
                 .map(|&x| ((x as f32 / 255.).sqrt() * 255.).round() as u8)
                 .collect::<Vec<_>>(),
-            *TestModulation {
-                buf: Arc::new(buf.clone()),
-                config: SamplingConfig::FREQ_4K,
-                loop_behavior: LoopBehavior::infinite(),
-            }
-            .with_radiation_pressure()
-            .calc()?
+            *Custom::new(Arc::new(buf.clone()), SamplingConfig::FREQ_4K)?
+                .with_radiation_pressure()
+                .calc()?
         );
 
         Ok(())

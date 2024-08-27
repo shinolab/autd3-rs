@@ -1,9 +1,11 @@
 pub use crate::{
     controller::Controller,
     error::AUTDError,
-    gain::{Bessel, Focus, Group, Null, Plane, Uniform},
+    gain::{Bessel, Focus, Group, IntoGainCache, IntoGainTransform, Null, Plane, Uniform},
     link::Nop,
-    modulation::{Sine, Square, Static},
+    modulation::{
+        IntoModulationCache, IntoModulationTransform, IntoRadiationPressure, Sine, Square, Static,
+    },
 };
 
 pub use autd3_driver::{
@@ -11,9 +13,7 @@ pub use autd3_driver::{
     datagram::{
         Clear, DebugSettings, FociSTM, ForceFan, GainSTM, IntoDatagramWithParallelThreshold,
         IntoDatagramWithSegment, IntoDatagramWithSegmentTransition, IntoDatagramWithTimeout,
-        IntoGainCache, IntoGainTransform, IntoModulationCache, IntoModulationTransform,
-        IntoRadiationPressure, Modulation, ModulationProperty, PulseWidthEncoder, ReadsFPGAState,
-        Silencer, SwapSegment,
+        Modulation, ModulationProperty, PulseWidthEncoder, ReadsFPGAState, Silencer, SwapSegment,
     },
     defined::{
         deg, kHz, mm, rad, ControlPoint, ControlPoints, Hz, PI, ULTRASOUND_FREQ, ULTRASOUND_PERIOD,

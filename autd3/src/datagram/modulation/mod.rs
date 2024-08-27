@@ -1,14 +1,23 @@
+mod cache;
 mod custom;
 mod fourier;
 mod mixer;
+mod radiation_pressure;
 pub mod sampling_mode;
 mod sine;
 mod square;
 mod r#static;
+mod transform;
 
+pub use cache::Cache as ModulationCache;
+pub use cache::IntoCache as IntoModulationCache;
 pub use custom::Custom;
 pub use fourier::Fourier;
 pub use mixer::Mixer;
 pub use r#static::Static;
+pub use radiation_pressure::IntoRadiationPressure;
+pub use radiation_pressure::RadiationPressure;
 pub use sine::Sine;
 pub use square::Square;
+pub use transform::IntoTransform as IntoModulationTransform;
+pub use transform::Transform as ModulationTransform;
