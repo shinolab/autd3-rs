@@ -62,16 +62,16 @@ impl Default for SOEMBuilder {
 }
 
 impl SOEMBuilder {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         SOEMBuilder {
-            buf_size: unsafe { NonZeroUsize::new_unchecked(32) },
+            buf_size: NonZeroUsize::new(32).unwrap(),
             timer_strategy: TimerStrategy::Sleep,
             sync_mode: SyncMode::DC,
             ifname: String::new(),
             state_check_interval: Duration::from_millis(100),
             timeout: Duration::from_millis(20),
-            sync0_cycle: unsafe { NonZeroU64::new_unchecked(2) },
-            send_cycle: unsafe { NonZeroU64::new_unchecked(2) },
+            sync0_cycle: NonZeroU64::new(2).unwrap(),
+            send_cycle: NonZeroU64::new(2).unwrap(),
             thread_priority: ThreadPriority::Max,
             #[cfg(target_os = "windows")]
             process_priority: super::ProcessPriority::High,

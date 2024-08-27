@@ -55,7 +55,7 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn test_bitfield() {
         let mut d: u64 = 0;
-        unsafe {
+        unsafe /* ignore miri */ {
             (*(&mut d as *mut _ as *mut STMFocus))
                 .set_x(0b11111111111111_111111111111111111u32 as i32);
             assert_eq!(0b111111111111111111, d);

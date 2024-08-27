@@ -68,7 +68,8 @@ async fn audit_test() -> anyhow::Result<()> {
     }
 
     {
-        assert!(autd.close().await.is_ok());
+        use autd3_driver::link::Link;
+        assert!(autd.link_mut().close().await.is_ok());
         assert_eq!(
             Err(AUTDError::Internal(AUTDInternalError::LinkClosed)),
             autd.send(Static::new()).await

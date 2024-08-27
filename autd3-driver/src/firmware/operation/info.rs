@@ -36,13 +36,15 @@ impl FirmInfoOp {
 
 impl Operation for FirmInfoOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        write_to_tx(
-            FirmInfo {
-                tag: TypeTag::FirmwareVersion,
-                ty: self.ty,
-            },
-            tx,
-        );
+        unsafe {
+            write_to_tx(
+                FirmInfo {
+                    tag: TypeTag::FirmwareVersion,
+                    ty: self.ty,
+                },
+                tx,
+            );
+        }
 
         self.is_done = true;
         Ok(std::mem::size_of::<FirmInfo>())

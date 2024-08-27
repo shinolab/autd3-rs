@@ -43,19 +43,21 @@ impl SilencerFixedUpdateRateOp {
 
 impl Operation for SilencerFixedUpdateRateOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        write_to_tx(
-            SilencerFixedUpdateRate {
-                tag: TypeTag::Silencer,
-                flag: SILENCER_FLAG_FIXED_UPDATE_RATE_MODE
-                    | match self.target {
-                        SilencerTarget::Intensity => 0,
-                        SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
-                    },
-                value_intensity: self.value_intensity.get(),
-                value_phase: self.value_phase.get(),
-            },
-            tx,
-        );
+        unsafe {
+            write_to_tx(
+                SilencerFixedUpdateRate {
+                    tag: TypeTag::Silencer,
+                    flag: SILENCER_FLAG_FIXED_UPDATE_RATE_MODE
+                        | match self.target {
+                            SilencerTarget::Intensity => 0,
+                            SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
+                        },
+                    value_intensity: self.value_intensity.get(),
+                    value_phase: self.value_phase.get(),
+                },
+                tx,
+            );
+        }
 
         self.is_done = true;
         Ok(std::mem::size_of::<SilencerFixedUpdateRate>())

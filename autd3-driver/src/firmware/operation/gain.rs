@@ -56,25 +56,27 @@ impl Operation for GainOp {
     }
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        write_to_tx(
-            GainT {
-                tag: TypeTag::Gain,
-                segment: self.segment as u8,
-                flag: if self.transition {
-                    GainControlFlags::UPDATE
-                } else {
-                    GainControlFlags::NONE
-                },
-                __pad: 0,
-            },
-            tx,
-        );
-        device.iter().enumerate().for_each(|(i, tr)| {
+        unsafe {
             write_to_tx(
-                (self.gain)(tr),
-                &mut tx[size_of::<GainT>() + i * size_of::<Drive>()..],
+                GainT {
+                    tag: TypeTag::Gain,
+                    segment: self.segment as u8,
+                    flag: if self.transition {
+                        GainControlFlags::UPDATE
+                    } else {
+                        GainControlFlags::NONE
+                    },
+                    __pad: 0,
+                },
+                tx,
             );
-        });
+            device.iter().enumerate().for_each(|(i, tr)| {
+                write_to_tx(
+                    (self.gain)(tr),
+                    &mut tx[size_of::<GainT>() + i * size_of::<Drive>()..],
+                );
+            });
+        }
 
         self.is_done = true;
         Ok(size_of::<GainT>() + device.len() * size_of::<Drive>())

@@ -32,7 +32,7 @@ impl<F: Fn(usize, Status)> EcatErrorHandler<F> {
         expected_wkc: i32,
         state_check_interval: std::time::Duration,
     ) {
-        unsafe {
+        unsafe /* ignore miri */ {
             while is_open.load(Ordering::Acquire) {
                 if wkc.load(Ordering::Relaxed) < expected_wkc || ec_group[0].docheckstate != 0 {
                     self.handle();
@@ -43,7 +43,7 @@ impl<F: Fn(usize, Status)> EcatErrorHandler<F> {
     }
 
     fn handle(&self) -> bool {
-        unsafe {
+        unsafe /* ignore miri */ {
             ec_group[0].docheckstate = 0;
             ec_readstate();
             ec_slave

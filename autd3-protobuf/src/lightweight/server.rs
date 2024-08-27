@@ -167,7 +167,7 @@ where
         &self,
         req: Request<OpenRequestLightweight>,
     ) -> Result<Response<SendResponseLightweight>, Status> {
-        if let Some(mut autd) = self.autd.write().await.take() {
+        if let Some(autd) = self.autd.write().await.take() {
             match autd.close().await {
                 Ok(_) => {}
                 Err(e) => {
@@ -467,7 +467,7 @@ where
         &self,
         _: Request<CloseRequestLightweight>,
     ) -> Result<Response<SendResponseLightweight>, Status> {
-        if let Some(mut autd) = self.autd.write().await.take() {
+        if let Some(autd) = self.autd.write().await.take() {
             match autd.close().await {
                 Ok(_) => Ok(Response::new(SendResponseLightweight {
                     success: true,

@@ -125,7 +125,7 @@ mod tests {
         781.25*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (150.01 Hz) cannot be output with the sampling config (SamplingConfig { div: 10 }).".to_owned())),
+        Err(AUTDInternalError::ModulationError("Frequency (150.01 Hz) cannot be output with the sampling config (SamplingConfig { division: 10 }).".to_owned())),
         150.01*Hz
     )]
     #[case(
@@ -178,7 +178,10 @@ mod tests {
         Ok(Arc::new(vec![255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
         200.*Hz
     )]
-    fn new_nearest(#[case] expect: Result<Arc<Vec<u8>>, AUTDInternalError>, #[case] freq: Freq<f32>) {
+    fn new_nearest(
+        #[case] expect: Result<Arc<Vec<u8>>, AUTDInternalError>,
+        #[case] freq: Freq<f32>,
+    ) {
         let m = Square::new_nearest(freq);
         assert_eq!(freq, m.freq());
         assert_eq!(u8::MIN, m.low());
