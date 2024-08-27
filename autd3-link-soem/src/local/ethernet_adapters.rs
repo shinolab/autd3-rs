@@ -24,7 +24,7 @@ pub struct EthernetAdapters {
 impl EthernetAdapters {
     pub fn new() -> Self {
         let mut adapters = Vec::new();
-        unsafe {
+        unsafe /* ignore miri */ {
             let mut adapter = soem_bindings::ec_find_adapters();
             while !adapter.is_null() {
                 if let Ok(name) = CStr::from_ptr(((*adapter).name).as_ptr()).to_str() {

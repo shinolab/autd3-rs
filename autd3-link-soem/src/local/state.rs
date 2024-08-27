@@ -24,7 +24,7 @@ pub struct EcStatus {
 
 impl EcStatus {
     pub fn new(n: usize) -> EcStatus {
-        unsafe {
+        unsafe /* ignore miri */ {
             EcStatus {
                 states: (1..=n)
                     .map(|slave| {

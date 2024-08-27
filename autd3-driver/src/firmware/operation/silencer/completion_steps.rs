@@ -63,22 +63,24 @@ impl Operation for SilencerFixedCompletionStepsOp {
         let step_intensity = validate(self.value_intensity)?;
         let step_phase = validate(self.value_phase)?;
 
-        write_to_tx(
-            SilencerFixedCompletionSteps {
-                tag: TypeTag::Silencer,
-                flag: if self.strict_mode {
-                    SILENCER_FLAG_STRICT_MODE
-                } else {
-                    0
-                } | match self.target {
-                    SilencerTarget::Intensity => 0,
-                    SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
+        unsafe {
+            write_to_tx(
+                SilencerFixedCompletionSteps {
+                    tag: TypeTag::Silencer,
+                    flag: if self.strict_mode {
+                        SILENCER_FLAG_STRICT_MODE
+                    } else {
+                        0
+                    } | match self.target {
+                        SilencerTarget::Intensity => 0,
+                        SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
+                    },
+                    value_intensity: step_intensity,
+                    value_phase: step_phase,
                 },
-                value_intensity: step_intensity,
-                value_phase: step_phase,
-            },
-            tx,
-        );
+                tx,
+            );
+        }
 
         self.is_done = true;
         Ok(std::mem::size_of::<SilencerFixedCompletionSteps>())

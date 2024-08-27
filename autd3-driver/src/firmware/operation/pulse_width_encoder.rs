@@ -27,12 +27,14 @@ impl<F: Fn(u8) -> u8> PulseWidthEncoderOp<F> {
 
 impl<F: Fn(u8) -> u8 + Send + Sync> Operation for PulseWidthEncoderOp<F> {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        write_to_tx(
-            Pwe {
-                tag: TypeTag::ConfigPulseWidthEncoder,
-            },
-            tx,
-        );
+        unsafe {
+            write_to_tx(
+                Pwe {
+                    tag: TypeTag::ConfigPulseWidthEncoder,
+                },
+                tx,
+            );
+        }
 
         tx[size_of::<Pwe>()..]
             .iter_mut()

@@ -20,3 +20,4 @@ lcov.info
 .vscode
 coverage/
 *.profraw
+*.txt

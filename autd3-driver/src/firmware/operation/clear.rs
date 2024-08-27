@@ -19,13 +19,15 @@ pub struct ClearOp {
 
 impl Operation for ClearOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        write_to_tx(
-            Clear {
-                tag: TypeTag::Clear,
-                __pad: 0,
-            },
-            tx,
-        );
+        unsafe {
+            write_to_tx(
+                Clear {
+                    tag: TypeTag::Clear,
+                    __pad: 0,
+                },
+                tx,
+            );
+        }
 
         self.is_done = true;
         Ok(std::mem::size_of::<Clear>())

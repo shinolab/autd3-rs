@@ -16,7 +16,9 @@ pub struct SyncOp {
 
 impl Operation for SyncOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        write_to_tx(Sync { tag: TypeTag::Sync }, tx);
+        unsafe {
+            write_to_tx(Sync { tag: TypeTag::Sync }, tx);
+        }
 
         self.is_done = true;
         Ok(std::mem::size_of::<Sync>())

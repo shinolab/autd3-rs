@@ -30,13 +30,15 @@ impl CpuGPIOOutOp {
 
 impl Operation for CpuGPIOOutOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        write_to_tx(
-            CpuGPIOOut {
-                tag: TypeTag::CpuGPIOOut,
-                pa_podr: ((self.pa5 as u8) << 5) | ((self.pa7 as u8) << 7),
-            },
-            tx,
-        );
+        unsafe {
+            write_to_tx(
+                CpuGPIOOut {
+                    tag: TypeTag::CpuGPIOOut,
+                    pa_podr: ((self.pa5 as u8) << 5) | ((self.pa7 as u8) << 7),
+                },
+                tx,
+            );
+        }
 
         self.is_done = true;
         Ok(size_of::<CpuGPIOOut>())

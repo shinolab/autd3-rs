@@ -117,7 +117,7 @@ impl<L: Link> Controller<L> {
     #[tracing::instrument(skip(self))]
     pub(crate) async fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
         #[cfg(target_os = "windows")]
-        unsafe {
+        unsafe /*ignore miri*/ {
             tracing::debug!("Set timer resolution: {:?}", self.timer_resolution);
             windows::Win32::Media::timeBeginPeriod(self.timer_resolution.get());
         }
@@ -195,7 +195,7 @@ impl<L: Link> Controller<L> {
 impl<L: Link> Drop for Controller<L> {
     fn drop(&mut self) {
         #[cfg(target_os = "windows")]
-        unsafe {
+        unsafe /*ignore miri*/ {
             windows::Win32::Media::timeEndPeriod(self.timer_resolution.get());
         }
         if !self.link.is_open() {
@@ -271,7 +271,6 @@ mod tests {
         })?;
 
         autd.close().await?;
-        autd.close().await?;
 
         Ok(())
     }
@@ -308,7 +307,7 @@ mod tests {
     async fn close() -> anyhow::Result<()> {
         {
             let mut autd = create_controller(1).await?;
-            autd.close().await?;
+            autd.close_impl().await?;
             autd.close().await?;
         }
 

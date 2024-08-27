@@ -37,7 +37,7 @@ impl<D: Directivity> Greedy<D> {
         Self {
             foci,
             amps,
-            phase_div: unsafe { NonZeroU8::new_unchecked(16) },
+            phase_div: NonZeroU8::new(16).unwrap(),
             constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
             _phantom: std::marker::PhantomData,
         }

@@ -200,29 +200,33 @@ impl Operation for GainSTMOp {
         );
 
         if is_first {
-            write_to_tx(
-                GainSTMHead {
-                    tag: TypeTag::GainSTM,
-                    flag: GainSTMControlFlags::BEGIN | flag,
-                    mode: self.mode,
-                    transition_mode: self
-                        .transition_mode
-                        .map(|m| m.mode())
-                        .unwrap_or(TRANSITION_MODE_NONE),
-                    transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
-                    freq_div: self.config.division(),
-                    rep: self.loop_behavior.rep(),
-                },
-                tx,
-            );
+            unsafe {
+                write_to_tx(
+                    GainSTMHead {
+                        tag: TypeTag::GainSTM,
+                        flag: GainSTMControlFlags::BEGIN | flag,
+                        mode: self.mode,
+                        transition_mode: self
+                            .transition_mode
+                            .map(|m| m.mode())
+                            .unwrap_or(TRANSITION_MODE_NONE),
+                        transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
+                        freq_div: self.config.division(),
+                        rep: self.loop_behavior.rep(),
+                    },
+                    tx,
+                );
+            }
         } else {
-            write_to_tx(
-                GainSTMSubseq {
-                    tag: TypeTag::GainSTM,
-                    flag,
-                },
-                tx,
-            );
+            unsafe {
+                write_to_tx(
+                    GainSTMSubseq {
+                        tag: TypeTag::GainSTM,
+                        flag,
+                    },
+                    tx,
+                );
+            }
         }
 
         if is_first {

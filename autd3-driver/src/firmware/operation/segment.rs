@@ -49,31 +49,33 @@ impl Operation for SwapSegmentOp {
             SwapSegment::GainSTM(_, _) => TypeTag::GainSTMSwapSegment,
         };
 
-        match self.segment {
-            SwapSegment::Gain(segment) => {
-                write_to_tx(
-                    SwapSegmentT {
-                        tag,
-                        segment: segment as u8,
-                    },
-                    tx,
-                );
-                Ok(size_of::<SwapSegmentT>())
-            }
-            SwapSegment::Modulation(segment, transition)
-            | SwapSegment::FociSTM(segment, transition)
-            | SwapSegment::GainSTM(segment, transition) => {
-                write_to_tx(
-                    SwapSegmentTWithTransition {
-                        tag,
-                        segment: segment as u8,
-                        transition_mode: transition.mode(),
-                        __padding: [0; 5],
-                        transition_value: transition.value(),
-                    },
-                    tx,
-                );
-                Ok(size_of::<SwapSegmentTWithTransition>())
+        unsafe {
+            match self.segment {
+                SwapSegment::Gain(segment) => {
+                    write_to_tx(
+                        SwapSegmentT {
+                            tag,
+                            segment: segment as u8,
+                        },
+                        tx,
+                    );
+                    Ok(size_of::<SwapSegmentT>())
+                }
+                SwapSegment::Modulation(segment, transition)
+                | SwapSegment::FociSTM(segment, transition)
+                | SwapSegment::GainSTM(segment, transition) => {
+                    write_to_tx(
+                        SwapSegmentTWithTransition {
+                            tag,
+                            segment: segment as u8,
+                            transition_mode: transition.mode(),
+                            __padding: [0; 5],
+                            transition_value: transition.value(),
+                        },
+                        tx,
+                    );
+                    Ok(size_of::<SwapSegmentTWithTransition>())
+                }
             }
         }
     }

@@ -101,12 +101,10 @@ mod tests {
     fn test_silencer_fixed_update_rate() {
         let mut rng = rand::thread_rng();
 
-        let c = unsafe {
-            autd3_driver::datagram::Silencer::new(autd3_driver::datagram::FixedUpdateRate {
-                intensity: NonZeroU16::new_unchecked(rng.gen_range(1..=u16::MAX)),
-                phase: NonZeroU16::new_unchecked(rng.gen_range(1..=u16::MAX)),
-            })
-        };
+        let c = autd3_driver::datagram::Silencer::new(autd3_driver::datagram::FixedUpdateRate {
+            intensity: NonZeroU16::new(rng.gen_range(1..=u16::MAX)).unwrap(),
+            phase: NonZeroU16::new(rng.gen_range(1..=u16::MAX)).unwrap(),
+        });
         let msg = c.to_msg(None);
 
         match msg.datagram {
