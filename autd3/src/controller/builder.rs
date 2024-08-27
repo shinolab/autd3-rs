@@ -19,6 +19,9 @@ pub struct ControllerBuilder {
     #[get]
     #[set]
     send_interval: Duration,
+    #[get]
+    #[set]
+    receive_interval: Duration,
     #[cfg(target_os = "windows")]
     #[get]
     #[set]
@@ -36,6 +39,7 @@ impl ControllerBuilder {
                 .collect(),
             parallel_threshold: 4,
             send_interval: Duration::from_millis(1),
+            receive_interval: Duration::from_millis(1),
             #[cfg(target_os = "windows")]
             timer_resolution: std::num::NonZeroU32::new(1).unwrap(),
         }
@@ -61,6 +65,7 @@ impl ControllerBuilder {
             geometry,
             parallel_threshold: self.parallel_threshold,
             send_interval: self.send_interval,
+            receive_interval: self.receive_interval,
             #[cfg(target_os = "windows")]
             timer_resolution: self.timer_resolution,
         }

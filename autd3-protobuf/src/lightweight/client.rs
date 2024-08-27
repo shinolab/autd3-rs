@@ -21,6 +21,9 @@ pub struct LightweightClientBuilder {
     #[get]
     #[set]
     send_interval: std::time::Duration,
+    #[get]
+    #[set]
+    receive_interval: std::time::Duration,
     #[cfg(target_os = "windows")]
     #[get]
     #[set]
@@ -37,6 +40,7 @@ impl LightweightClientBuilder {
                 .collect(),
             parallel_threshold: 4,
             send_interval: std::time::Duration::from_millis(1),
+            receive_interval: std::time::Duration::from_millis(1),
             #[cfg(target_os = "windows")]
             timer_resolution: 1,
         }
@@ -68,6 +72,7 @@ impl LightweightClient {
                 geometry: Some(geometry.to_msg(None)),
                 parallel_threshold: builder.parallel_threshold as _,
                 send_interval: builder.send_interval.as_nanos() as _,
+                receive_interval: builder.receive_interval.as_nanos() as _,
                 #[cfg(target_os = "windows")]
                 timer_resolution: builder.timer_resolution,
                 #[cfg(not(target_os = "windows"))]

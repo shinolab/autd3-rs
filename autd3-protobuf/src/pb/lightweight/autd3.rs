@@ -1920,7 +1920,9 @@ pub struct OpenRequestLightweight {
     pub parallel_threshold: u64,
     #[prost(uint64, tag = "3")]
     pub send_interval: u64,
-    #[prost(uint32, tag = "4")]
+    #[prost(uint64, tag = "4")]
+    pub receive_interval: u64,
+    #[prost(uint32, tag = "5")]
     pub timer_resolution: u32,
 }
 /// Generated client implementations.
