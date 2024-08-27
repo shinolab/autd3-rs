@@ -43,3 +43,30 @@ impl IOMap {
         self.buf.fill(0x00);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_iomap() {
+        let mut iomap = IOMap::new(1);
+        let mut tx = TxDatagram::new(1);
+        let payload_size = tx[0].payload.len();
+        tx[0].header.msg_id = 0x01;
+        tx[0].header.slot_2_offset = 0x0302;
+        tx[0].payload[0] = 0x04;
+        tx[0].payload[payload_size - 1] = 5;
+
+        iomap.copy_from(&tx);
+
+        unsafe {
+            assert_eq!(iomap.data().read(), 0x01);
+            assert_eq!(iomap.data().add(1).read(), 0x00);
+            assert_eq!(iomap.data().add(2).read(), 0x02);
+            assert_eq!(iomap.data().add(3).read(), 0x03);
+            assert_eq!(iomap.data().add(3 + 1).read(), 0x04);
+            assert_eq!(iomap.data().add(3 + payload_size).read(), 0x05);
+        }
+    }
+}
