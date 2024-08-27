@@ -36,9 +36,7 @@ pub use pulse_width_encoder::PulseWidthEncoder;
 pub use reads_fpga_state::ReadsFPGAState;
 pub use segment::SwapSegment;
 pub use silencer::{FixedCompletionTime, FixedUpdateRate, Silencer};
-pub use stm::{FociSTM, GainSTM};
-#[cfg(feature = "capi")]
-pub use stm::{STMConfig, STMConfigNearest};
+pub use stm::{FociSTM, GainSTM, STMConfig, STMConfigNearest};
 pub use synchronize::Synchronize;
 pub use with_parallel_threshold::{
     DatagramWithParallelThreshold, IntoDatagramWithParallelThreshold,

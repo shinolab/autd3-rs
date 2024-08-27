@@ -22,16 +22,6 @@ pub trait WithSampling {
     fn sampling_config_phase(&self) -> Option<SamplingConfig>;
 }
 
-#[cfg(feature = "capi")]
-impl WithSampling for (SamplingConfig, SamplingConfig) {
-    fn sampling_config_intensity(&self) -> Option<SamplingConfig> {
-        Some(self.0)
-    }
-    fn sampling_config_phase(&self) -> Option<SamplingConfig> {
-        Some(self.1)
-    }
-}
-
 pub trait SilencerConfig: std::fmt::Debug + Clone + Copy {}
 impl SilencerConfig for () {}
 
@@ -126,16 +116,6 @@ impl Default for Silencer<FixedCompletionTime> {
         Silencer::new(FixedCompletionTime {
             intensity: Silencer::DEFAULT_COMPLETION_TIME_INTENSITY,
             phase: Silencer::DEFAULT_COMPLETION_TIME_PHASE,
-        })
-    }
-}
-
-#[cfg(feature = "capi")]
-impl Default for Silencer<FixedUpdateRate> {
-    fn default() -> Self {
-        Silencer::new(FixedUpdateRate {
-            intensity: NonZeroU16::MIN,
-            phase: NonZeroU16::MIN,
         })
     }
 }
