@@ -1,10 +1,9 @@
-pub use crate::{
+use autd3_driver::{
     derive::*,
     error::AUTDInternalError,
-    firmware::fpga::{Drive, Segment},
-    geometry::{Device, Geometry, Transducer},
+    firmware::fpga::Drive,
+    geometry::{Device, Transducer},
 };
-pub use autd3_derive::Gain;
 use rayon::prelude::*;
 
 use std::{
@@ -13,8 +12,6 @@ use std::{
 };
 
 use bit_vec::BitVec;
-
-use super::GainCalcFn;
 
 use derive_more::Debug;
 
@@ -175,26 +172,27 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    use autd3_driver::firmware::fpga::{EmitIntensity, Phase};
     use rand::Rng;
 
-    use super::{super::tests::TestGain, *};
-
     use crate::{
-        firmware::fpga::{EmitIntensity, Phase},
-        geometry::tests::create_geometry,
+        gain::{Null, Uniform},
+        tests::create_geometry,
     };
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let geometry = create_geometry(4, 249);
+        let geometry = create_geometry(4);
 
         let mut rng = rand::thread_rng();
 
         let d1 = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
         let d2 = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
 
-        let g1 = TestGain::new(|_| |_| d1, &geometry);
-        let g2 = TestGain::new(|_| |_| d2, &geometry);
+        let g1 = Uniform::new(d1);
+        let g2 = Uniform::new(d2);
 
         let gain = Group::new(|dev| {
             let dev_idx = dev.idx();
@@ -247,15 +245,15 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn with_parallel() -> anyhow::Result<()> {
-        let geometry = create_geometry(4, 249);
+        let geometry = create_geometry(4);
 
         let mut rng = rand::thread_rng();
 
         let d1 = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
         let d2 = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
 
-        let g1 = TestGain::new(|_| |_| d1, &geometry);
-        let g2 = TestGain::new(|_| |_| d2, &geometry);
+        let g1 = Uniform::new(d1);
+        let g2 = Uniform::new(d2);
 
         let gain = Group::new(|dev| {
             let dev_idx = dev.idx();
@@ -309,7 +307,7 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn test_unknown_key() {
-        let geometry = create_geometry(2, 249);
+        let geometry = create_geometry(2);
 
         let gain = Group::new(|_dev| {
             |tr| match tr.idx() {
@@ -318,24 +316,11 @@ mod tests {
                 _ => None,
             }
         })
-        .set("test2", TestGain::null(&geometry));
+        .set("test2", Null::new());
 
         assert_eq!(
             Some(AUTDInternalError::UnkownKey("\"test2\"".to_owned())),
             gain.calc(&geometry).err()
-        );
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test_calc_err() {
-        let geometry = create_geometry(2, 249);
-
-        let gain = Group::new(|_dev| |_tr| Some("test")).set("test", TestGain::err());
-
-        assert_eq!(
-            Some(AUTDInternalError::GainError("test".to_owned())),
-            gain.calc(&geometry,).err()
         );
     }
 }

@@ -1,14 +1,21 @@
 mod bessel;
+mod cache;
 mod custom;
 mod focus;
+mod group;
 mod null;
 mod plane;
+mod transform;
 mod uniform;
 
-pub use autd3_driver::datagram::Group;
 pub use bessel::Bessel;
+pub use cache::Cache as GainCache;
+pub use cache::IntoCache as IntoGainCache;
 pub use custom::Custom;
 pub use focus::Focus;
+pub use group::Group;
 pub use null::Null;
 pub use plane::Plane;
+pub use transform::IntoTransform as IntoGainTransform;
+pub use transform::Transform as GainTransform;
 pub use uniform::Uniform;

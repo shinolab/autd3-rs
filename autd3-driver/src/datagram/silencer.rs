@@ -180,8 +180,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
     use crate::{
         datagram::{gain::tests::TestGain, modulation::tests::TestModulation, FociSTM, GainSTM},
         derive::{LoopBehavior, SamplingConfig},
@@ -241,10 +239,9 @@ mod tests {
     ).unwrap())]
     #[case(GainSTM::new(
         SamplingConfig::FREQ_4K,
-        [TestGain{ data: Default::default(), err: None }, TestGain{ data: Default::default(), err: None }]
+        [TestGain{ data: Default::default() }, TestGain{ data: Default::default() }]
     ).unwrap())]
     #[case(TestModulation {
-        buf: Arc::new(Vec::new()),
         config: SamplingConfig::FREQ_4K,
         loop_behavior: LoopBehavior::infinite(),
     })]
@@ -264,16 +261,16 @@ mod tests {
     #[case(false, 10, 11, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
     #[case(true, 11, 10, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
     #[case(true, 10, 11, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
-    #[case(true, 10, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default(), err: None }]).unwrap())]
-    #[case(false, 11, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default(), err: None }]).unwrap())]
-    #[case(false, 10, 11, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default(), err: None }]).unwrap())]
-    #[case(true, 11, 10, false, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default(), err: None }]).unwrap())]
-    #[case(true, 10, 11, false, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default(), err: None }]).unwrap())]
-    #[case(true, 10, 10, true, TestModulation { config: SamplingConfig::new(10).unwrap(), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
-    #[case(false, 11, 10, true, TestModulation { config: SamplingConfig::new(10).unwrap(), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
-    #[case(true, 10, 11, true, TestModulation { config: SamplingConfig::new(10).unwrap(), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
-    #[case(true, 11, 10, false, TestModulation { config: SamplingConfig::new(10).unwrap(), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
-    #[case(true, 10, 11, false, TestModulation { config: SamplingConfig::new(10).unwrap(), buf: Arc::new(Vec::new()), loop_behavior: LoopBehavior::infinite() })]
+    #[case(true, 10, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
+    #[case(false, 11, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
+    #[case(false, 10, 11, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
+    #[case(true, 11, 10, false, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
+    #[case(true, 10, 11, false, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
+    #[case(true, 10, 10, true, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
+    #[case(false, 11, 10, true, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
+    #[case(true, 10, 11, true, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
+    #[case(true, 11, 10, false, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
+    #[case(true, 10, 11, false, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
     #[cfg_attr(miri, ignore)]
     fn fixed_completion_time_is_valid(
         #[case] expect: bool,
