@@ -56,7 +56,8 @@ message OpenRequestLightweight {
   Geometry geometry = 1;
   uint64 parallel_threshold = 2;
   uint64 send_interval = 3;
-  uint32 timer_resolution = 4;
+  uint64 receive_interval = 4;
+  uint32 timer_resolution = 5;
 }
 
 service ECATLight {

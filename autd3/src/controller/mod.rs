@@ -36,6 +36,8 @@ pub struct Controller<L: Link> {
     parallel_threshold: usize,
     #[get]
     send_interval: Duration,
+    #[get]
+    receive_interval: Duration,
     #[cfg(target_os = "windows")]
     #[get]
     timer_resolution: std::num::NonZeroU32,
@@ -86,6 +88,7 @@ impl<L: Link> Controller<L> {
         tracing::trace!("parallel_threshold: {:?}", parallel_threshold);
 
         self.link.update(&self.geometry).await?;
+        let mut send_timing = tokio::time::Instant::now();
         loop {
             OperationHandler::pack(operations, &self.geometry, &mut self.tx_buf, parallel)?;
 
@@ -104,12 +107,19 @@ impl<L: Link> Controller<L> {
             );
             // GRCOV_EXCL_STOP
 
-            let start = tokio::time::Instant::now();
-            send_receive(&mut self.link, &self.tx_buf, &mut self.rx_buf, timeout).await?;
+            send_receive(
+                &mut self.link,
+                &self.tx_buf,
+                &mut self.rx_buf,
+                timeout,
+                self.receive_interval,
+            )
+            .await?;
             if OperationHandler::is_done(operations) {
                 return Ok(());
             }
-            tokio::time::sleep_until(start + self.send_interval).await;
+            send_timing += self.send_interval;
+            tokio::time::sleep_until(send_timing).await;
         }
     }
 
