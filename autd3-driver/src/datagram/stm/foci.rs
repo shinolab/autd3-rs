@@ -144,17 +144,6 @@ impl<const N: usize> DatagramST for FociSTM<N> {
     }
 }
 
-#[cfg(feature = "capi")]
-impl<const N: usize> Default for FociSTM<N> {
-    fn default() -> Self {
-        Self {
-            control_points: vec![],
-            loop_behavior: LoopBehavior::infinite(),
-            sampling_config: SamplingConfig::FREQ_40K,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::{

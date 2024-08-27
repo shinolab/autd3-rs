@@ -119,33 +119,6 @@ impl<'a> DatagramST for BoxedModulation<'a> {
         Some(usize::MAX)
     }
 }
-
-#[cfg(feature = "capi")]
-mod capi {
-    use crate::{datagram::BoxedModulation, derive::*};
-    use std::sync::Arc;
-
-    #[derive(Modulation, Debug)]
-    struct NullModulation {
-        config: SamplingConfig,
-        loop_behavior: LoopBehavior,
-    }
-
-    impl Modulation for NullModulation {
-        fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
-            Ok(Arc::new(vec![]))
-        }
-    }
-
-    impl<'a> Default for BoxedModulation<'a> {
-        fn default() -> Self {
-            Box::new(NullModulation {
-                config: SamplingConfig::FREQ_4K,
-                loop_behavior: LoopBehavior::infinite(),
-            })
-        }
-    }
-}
 // GRCOV_EXCL_STOP
 
 #[cfg(test)]

@@ -34,10 +34,6 @@ jobs:
             arch: aarch64
             no-test: true
           - os: ubuntu-latest
-            features: capi
-            no-example: true
-            lint: true
-          - os: ubuntu-latest
             features: "use_meter left_handed"
             lint: true
           - os: ubuntu-latest

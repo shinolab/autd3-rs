@@ -43,10 +43,3 @@ impl<F: Fn(&Device) -> bool> Datagram for ForceFan<F> {
         Some(usize::MAX)
     }
 }
-
-#[cfg(feature = "capi")]
-impl Default for ForceFan<Box<dyn Fn(&Device) -> bool>> {
-    fn default() -> Self {
-        Self::new(Box::new(|_| false))
-    }
-}

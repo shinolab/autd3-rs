@@ -26,5 +26,4 @@ rstest = { workspace = true }
 
 [features]
 default = []
-capi = ["async-trait"]
 async-trait = ["autd3-driver/async-trait"]

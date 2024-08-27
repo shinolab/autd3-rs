@@ -56,10 +56,3 @@ impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> Datagram for DebugSetti
         Some(usize::MAX)
     }
 }
-
-#[cfg(feature = "capi")]
-impl Default for DebugSettings<Box<dyn Fn(&Device, GPIOOut) -> DebugType + Send + Sync>> {
-    fn default() -> Self {
-        Self::new(Box::new(|_, _| DebugType::None))
-    }
-}
