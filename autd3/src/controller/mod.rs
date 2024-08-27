@@ -126,10 +126,11 @@ impl<L: Link> Controller<L> {
         Ok(self)
     }
 
-    pub async fn close(&mut self) -> Result<(), AUTDError> {
+    async fn close_impl(&mut self) -> Result<(), AUTDError> {
         if !self.link.is_open() {
             return Ok(());
         }
+
         self.geometry.iter_mut().for_each(|dev| dev.enable = true);
         self.send(autd3_driver::datagram::Silencer::<autd3_driver::datagram::FixedCompletionTime>::default().with_strict_mode(false))
             .await?;
@@ -137,6 +138,10 @@ impl<L: Link> Controller<L> {
         self.send(Clear::new()).await?;
         self.link.close().await?;
         Ok(())
+    }
+
+    pub async fn close(mut self) -> Result<(), AUTDError> {
+        self.close_impl().await
     }
 
     async fn fetch_firminfo(&mut self, ty: FirmwareVersionType) -> Result<Vec<u8>, AUTDError> {
@@ -200,7 +205,7 @@ impl<L: Link> Drop for Controller<L> {
             tokio::runtime::RuntimeFlavor::CurrentThread => {}
             tokio::runtime::RuntimeFlavor::MultiThread => tokio::task::block_in_place(|| {
                 tokio::runtime::Handle::current().block_on(async {
-                    let _ = self.close().await;
+                    let _ = self.close_impl().await;
                 });
             }),
             _ => unimplemented!(),
