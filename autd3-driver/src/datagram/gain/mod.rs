@@ -56,7 +56,6 @@ pub trait Gain: std::fmt::Debug {
 }
 
 // GRCOV_EXCL_START
-
 #[cfg(not(feature = "lightweight"))]
 pub type BoxedGain<'a> = Box<dyn Gain + 'a>;
 #[cfg(feature = "lightweight")]
@@ -86,26 +85,6 @@ impl<'a> DatagramS for BoxedGain<'a> {
         transition: bool,
     ) -> Result<Self::G, AUTDInternalError> {
         Self::G::new(self, geometry, segment, transition)
-    }
-}
-
-#[cfg(feature = "capi")]
-mod capi {
-    use crate::{datagram::BoxedGain, derive::*, firmware::fpga::Drive};
-
-    #[derive(Gain, Debug)]
-    struct NullGain {}
-
-    impl Gain for NullGain {
-        fn calc(&self, _: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
-            Ok(Box::new(move |_| Box::new(move |_| Drive::null())))
-        }
-    }
-
-    impl<'a> Default for BoxedGain<'a> {
-        fn default() -> Self {
-            Box::new(NullGain {})
-        }
     }
 }
 // GRCOV_EXCL_STOP

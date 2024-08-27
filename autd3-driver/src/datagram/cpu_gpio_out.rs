@@ -51,13 +51,3 @@ impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> Datagram for CpuGPIO<F> {
         Some(usize::MAX)
     }
 }
-
-#[cfg(feature = "capi")]
-impl Default for CpuGPIO<Box<dyn Fn(&Device) -> CpuGPIOPort + Send + Sync>> {
-    fn default() -> Self {
-        Self::new(Box::new(|_| CpuGPIOPort {
-            pa5: false,
-            pa7: false,
-        }))
-    }
-}

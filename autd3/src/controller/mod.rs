@@ -187,7 +187,6 @@ impl<L: Link> Controller<L> {
     }
 }
 
-#[cfg_attr(feature = "capi", allow(clippy::needless_return))]
 impl<L: Link> Drop for Controller<L> {
     fn drop(&mut self) {
         #[cfg(target_os = "windows")]
@@ -197,7 +196,6 @@ impl<L: Link> Drop for Controller<L> {
         if !self.link.is_open() {
             return;
         }
-        #[cfg(not(feature = "capi"))]
         match tokio::runtime::Handle::current().runtime_flavor() {
             tokio::runtime::RuntimeFlavor::CurrentThread => {}
             tokio::runtime::RuntimeFlavor::MultiThread => tokio::task::block_in_place(|| {
