@@ -3,12 +3,10 @@ use std::{fmt::Debug, time::Duration};
 use autd3_derive::Builder;
 
 use crate::{
-    defined::{Freq, Hz, ULTRASOUND_FREQ},
+    defined::{Freq, Hz, ULTRASOUND_FREQ, ULTRASOUND_PERIOD},
     error::AUTDInternalError,
     utils::float::is_integer,
 };
-
-const NANOSEC: u128 = 1_000_000_000;
 
 #[derive(Clone, Copy, Debug, PartialEq, Builder)]
 #[repr(C)]
@@ -68,12 +66,11 @@ impl IntoSamplingConfig for Duration {
                 self, PERIOD_MIN, PERIOD_MAX,
             ));
         }
-        let div = self.as_nanos() * ULTRASOUND_FREQ.hz() as u128;
-        if div % NANOSEC != 0 {
+        if self.as_nanos() % ULTRASOUND_PERIOD.as_nanos() != 0 {
             return Err(AUTDInternalError::SamplingPeriodInvalid(self));
         }
         Ok(SamplingConfig {
-            division: (div / NANOSEC) as _,
+            division: (self.as_nanos() / ULTRASOUND_PERIOD.as_nanos()) as _,
         })
     }
 }
@@ -108,7 +105,7 @@ impl IntoSamplingConfigNearest for Freq<u32> {
 impl IntoSamplingConfigNearest for Duration {
     fn into_sampling_config_nearest(self) -> SamplingConfig {
         SamplingConfig::new(
-            ((self.as_nanos() * ULTRASOUND_FREQ.hz() as u128 + NANOSEC / 2) / NANOSEC)
+            ((self.as_nanos() + ULTRASOUND_PERIOD.as_nanos() / 2) / ULTRASOUND_PERIOD.as_nanos())
                 .clamp(1, u16::MAX as u128) as u16,
         )
         .unwrap()
@@ -121,9 +118,9 @@ const FREQ_MIN_F: Freq<f32> = Freq {
     freq: 40000. / u16::MAX as f32,
 };
 const FREQ_MAX_F: Freq<f32> = Freq { freq: 40000. };
-const PERIOD_MIN: Duration = Duration::from_nanos((NANOSEC / ULTRASOUND_FREQ.hz() as u128) as u64);
+const PERIOD_MIN: Duration = ULTRASOUND_PERIOD;
 const PERIOD_MAX: Duration =
-    Duration::from_nanos((u16::MAX as u128 * NANOSEC / ULTRASOUND_FREQ.hz() as u128) as u64);
+    Duration::from_micros(u16::MAX as u64 * ULTRASOUND_PERIOD.as_micros() as u64);
 
 impl SamplingConfig {
     pub const FREQ_40K: SamplingConfig = SamplingConfig { division: 1 };
@@ -142,10 +139,8 @@ impl SamplingConfig {
         ULTRASOUND_FREQ.hz() as f32 / self.division() as f32 * Hz
     }
 
-    pub const fn period(&self) -> Duration {
-        Duration::from_nanos(
-            (self.division() as u128 * NANOSEC / ULTRASOUND_FREQ.hz() as u128) as u64,
-        )
+    pub fn period(&self) -> Duration {
+        ULTRASOUND_PERIOD * self.division() as u32
     }
 }
 
