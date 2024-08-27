@@ -120,31 +120,35 @@ impl Operation for ModulationOp {
         }
 
         if is_first {
-            write_to_tx(
-                ModulationHead {
-                    tag: TypeTag::Modulation,
-                    flag: ModulationControlFlags::BEGIN | flag,
-                    size: send_num as _,
-                    freq_div: self.config.division(),
-                    rep: self.loop_behavior.rep(),
-                    transition_mode: self
-                        .transition_mode
-                        .map(|m| m.mode())
-                        .unwrap_or(TRANSITION_MODE_NONE),
-                    transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
-                },
-                tx,
-            );
+            unsafe {
+                write_to_tx(
+                    ModulationHead {
+                        tag: TypeTag::Modulation,
+                        flag: ModulationControlFlags::BEGIN | flag,
+                        size: send_num as _,
+                        freq_div: self.config.division(),
+                        rep: self.loop_behavior.rep(),
+                        transition_mode: self
+                            .transition_mode
+                            .map(|m| m.mode())
+                            .unwrap_or(TRANSITION_MODE_NONE),
+                        transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
+                    },
+                    tx,
+                )
+            };
             Ok(std::mem::size_of::<ModulationHead>() + send_num)
         } else {
-            write_to_tx(
-                ModulationSubseq {
-                    tag: TypeTag::Modulation,
-                    flag,
-                    size: send_num as _,
-                },
-                tx,
-            );
+            unsafe {
+                write_to_tx(
+                    ModulationSubseq {
+                        tag: TypeTag::Modulation,
+                        flag,
+                        size: send_num as _,
+                    },
+                    tx,
+                );
+            }
             Ok(std::mem::size_of::<ModulationSubseq>() + send_num)
         }
     }

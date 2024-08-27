@@ -203,12 +203,10 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn from_update_rate() {
-        let s = unsafe {
-            Silencer::new(FixedUpdateRate {
-                intensity: NonZeroU16::new_unchecked(1),
-                phase: NonZeroU16::new_unchecked(2),
-            })
-        };
+        let s = Silencer::new(FixedUpdateRate {
+            intensity: NonZeroU16::new(1).unwrap(),
+            phase: NonZeroU16::new(2).unwrap(),
+        });
         assert_eq!(1, s.config().intensity().get());
         assert_eq!(2, s.config().phase().get());
         assert_eq!(SilencerTarget::Intensity, s.target());

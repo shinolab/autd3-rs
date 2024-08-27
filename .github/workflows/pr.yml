@@ -14,29 +14,31 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       src: ${{ steps.changed-files-yaml.outputs.src_any_changed }}
-      miri: ${{ steps.changed-files-yaml.outputs.miri_any_changed }}
     steps:
       - uses: actions/checkout@v4
       - id: changed-files-yaml
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v45
         with:
           files_yaml: |
             src:
               - '**/*.rs'
               - '**/Cargo.toml'
-            miri:
-              - autd3-driver/Cargo.toml
-              - autd3-driver/**/*.rs
-              - autd3-firmware-emulator/Cargo.toml
-              - autd3-firmware-emulator/**/*.rs
-              - autd3-gain-holo/Cargo.toml
-              - autd3-gain-holo/**/*.rs
-              - autd3-link-soem/Cargo.toml
-              - autd3-link-soem/**/*.rs
-              - autd3-link-twincat/Cargo.toml
-              - autd3-link-twincat/**/*.rs
-              - autd3-protobuf/Cargo.toml
-              - autd3-protobuf/**/*.rs
+
+  changed-files-miri:
+    name: changed-files-miri
+    runs-on: ubuntu-latest
+    outputs:
+      miri: ${{ steps.changed-files.outputs.any_changed }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python3 build.py util glob_unsafe
+      - id: changed-files
+        uses: tj-actions/changed-files@v45
+        with:
+          files_from_source_file: filelist-for-miri-test.txt
 
   test:
     needs: changed-files
@@ -96,8 +98,8 @@ jobs:
         run: exit 1
 
   miri:
-    needs: changed-files
-    if: ${{ needs.changed-files.outputs.miri == 'true' }}
+    needs: changed-files-miri
+    if: ${{ needs.changed-files-miri.outputs.miri == 'true' }}
     name: test-with-miri
     runs-on: ubuntu-latest
     steps:

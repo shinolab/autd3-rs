@@ -46,13 +46,15 @@ impl Operation for EmulateGPIOInOp {
         flag.set(GPIOInFlags::GPIO_IN_2, self.value[2]);
         flag.set(GPIOInFlags::GPIO_IN_3, self.value[3]);
 
-        write_to_tx(
-            EmulateGPIOIn {
-                tag: TypeTag::EmulateGPIOIn,
-                flag,
-            },
-            tx,
-        );
+        unsafe {
+            write_to_tx(
+                EmulateGPIOIn {
+                    tag: TypeTag::EmulateGPIOIn,
+                    flag,
+                },
+                tx,
+            );
+        }
 
         self.is_done = true;
         Ok(std::mem::size_of::<EmulateGPIOIn>())

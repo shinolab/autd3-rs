@@ -67,14 +67,13 @@ pub(crate) enum TypeTag {
     CpuGPIOOut = 0xF2,
 }
 
-fn write_to_tx<T>(src: T, dst: &mut [u8]) {
-    unsafe {
-        std::ptr::copy_nonoverlapping(
-            &src as *const T as *const u8,
-            dst.as_mut_ptr(),
-            std::mem::size_of::<T>(),
-        );
-    }
+unsafe fn write_to_tx<T>(src: T, dst: &mut [u8]) /* ignore miri */
+{
+    std::ptr::copy_nonoverlapping(
+        &src as *const T as *const u8,
+        dst.as_mut_ptr(),
+        std::mem::size_of::<T>(),
+    );
 }
 
 pub trait Operation: Send + Sync {
@@ -199,7 +198,7 @@ pub mod tests {
     use super::*;
 
     pub(crate) fn parse_tx_as<T>(tx: &[u8]) -> T {
-        unsafe {
+        unsafe /* ignore miri */ {
             let ptr = tx.as_ptr() as *const T;
             ptr.read_unaligned()
         }

@@ -48,7 +48,7 @@ pub struct SOEM {
 }
 
 impl SOEM {
-    pub const fn builder() -> SOEMBuilder {
+    pub fn builder() -> SOEMBuilder {
         SOEMBuilder::new()
     }
 

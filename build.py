@@ -382,6 +382,25 @@ def util_update_ver(args):
             f.write(content)
 
 
+def util_glob_unsafe(args):
+    with working_dir("."):
+        files = set(glob.glob("**/*.rs", recursive=True))
+        files -= set(glob.glob("**/tests/**/*.rs", recursive=True))
+        files -= set(glob.glob("autd3-link-twincat/**/*.rs", recursive=True))
+        files -= set(glob.glob("autd3-link-soem/**/soem_bindings/*.rs", recursive=True))
+        files -= set(glob.glob("autd3-link-soem/**/link_soem.rs", recursive=True))
+        unsafe_files = []
+        for file_path in sorted(files):
+            with open(file_path) as file:
+                for line in file.readlines():
+                    if "unsafe" in line and "ignore miri" not in line:
+                        unsafe_files.append(file_path.replace("\\", "/"))
+                        break
+        with open("filelist-for-miri-test.txt", "w") as f:
+            for file in unsafe_files:
+                f.write(file + "\n")
+
+
 def command_help(args):
     print(parser.parse_args([args.command, "--help"]))
 
@@ -453,6 +472,12 @@ if __name__ == "__main__":
         )
         parser_util_upver.add_argument("version", help="version")
         parser_util_upver.set_defaults(handler=util_update_ver)
+
+        # enumerate file which contains unsafe codes
+        parser_glob_unsafe = subparsers_util.add_parser(
+            "glob_unsafe", help="see `util glob_unsafe -h`"
+        )
+        parser_glob_unsafe.set_defaults(handler=util_glob_unsafe)
 
         # help
         parser_help = subparsers.add_parser("help", help="see `help -h`")

@@ -1,4 +1,6 @@
-use std::{fmt::Debug, num::NonZeroU16, time::Duration};
+use std::{fmt::Debug, time::Duration};
+
+use autd3_derive::Builder;
 
 use crate::{
     defined::{Freq, Hz, ULTRASOUND_FREQ},
@@ -8,10 +10,11 @@ use crate::{
 
 const NANOSEC: u128 = 1_000_000_000;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Builder)]
 #[repr(C)]
 pub struct SamplingConfig {
-    div: NonZeroU16,
+    #[get]
+    division: u16,
 }
 
 pub trait IntoSamplingConfig {
@@ -23,7 +26,7 @@ impl IntoSamplingConfig for u16 {
         if self == 0 {
             return Err(AUTDInternalError::SamplingDivisionInvalid(self));
         }
-        Ok(unsafe { SamplingConfig::new_unchecked(self) })
+        Ok(SamplingConfig { division: self })
     }
 }
 
@@ -37,7 +40,9 @@ impl IntoSamplingConfig for Freq<u32> {
         if ULTRASOUND_FREQ.hz() % self.hz() != 0 {
             return Err(AUTDInternalError::SamplingFreqInvalid(self));
         }
-        Ok(unsafe { SamplingConfig::new_unchecked((ULTRASOUND_FREQ.hz() / self.hz()) as u16) })
+        Ok(SamplingConfig {
+            division: (ULTRASOUND_FREQ.hz() / self.hz()) as _,
+        })
     }
 }
 
@@ -52,7 +57,7 @@ impl IntoSamplingConfig for Freq<f32> {
         if !is_integer(div as _) {
             return Err(AUTDInternalError::SamplingFreqInvalidF(self));
         }
-        Ok(unsafe { SamplingConfig::new_unchecked(div as u16) })
+        Ok(SamplingConfig { division: div as _ })
     }
 }
 
@@ -67,8 +72,9 @@ impl IntoSamplingConfig for Duration {
         if div % NANOSEC != 0 {
             return Err(AUTDInternalError::SamplingPeriodInvalid(self));
         }
-
-        Ok(unsafe { SamplingConfig::new_unchecked((div / NANOSEC) as _) })
+        Ok(SamplingConfig {
+            division: (div / NANOSEC) as _,
+        })
     }
 }
 
@@ -78,37 +84,34 @@ pub trait IntoSamplingConfigNearest {
 
 impl IntoSamplingConfigNearest for Freq<f32> {
     fn into_sampling_config_nearest(self) -> SamplingConfig {
-        unsafe {
-            SamplingConfig::new_unchecked(
-                (ULTRASOUND_FREQ.hz() as f32 / self.hz())
-                    .clamp(1.0, u16::MAX as f32)
-                    .round() as u16,
-            )
-        }
+        SamplingConfig::new(
+            (ULTRASOUND_FREQ.hz() as f32 / self.hz())
+                .clamp(1.0, u16::MAX as f32)
+                .round() as u16,
+        )
+        .unwrap()
     }
 }
 
 impl IntoSamplingConfigNearest for Freq<u32> {
     fn into_sampling_config_nearest(self) -> SamplingConfig {
-        unsafe {
-            SamplingConfig::new_unchecked(
-                (ULTRASOUND_FREQ.hz() + self.hz() / 2)
-                    .checked_div(self.hz())
-                    .unwrap_or(u32::MAX)
-                    .clamp(1, u16::MAX as u32) as u16,
-            )
-        }
+        SamplingConfig::new(
+            (ULTRASOUND_FREQ.hz() + self.hz() / 2)
+                .checked_div(self.hz())
+                .unwrap_or(u32::MAX)
+                .clamp(1, u16::MAX as u32) as u16,
+        )
+        .unwrap()
     }
 }
 
 impl IntoSamplingConfigNearest for Duration {
     fn into_sampling_config_nearest(self) -> SamplingConfig {
-        unsafe {
-            SamplingConfig::new_unchecked(
-                ((self.as_nanos() * ULTRASOUND_FREQ.hz() as u128 + NANOSEC / 2) / NANOSEC)
-                    .clamp(1, u16::MAX as u128) as u16,
-            )
-        }
+        SamplingConfig::new(
+            ((self.as_nanos() * ULTRASOUND_FREQ.hz() as u128 + NANOSEC / 2) / NANOSEC)
+                .clamp(1, u16::MAX as u128) as u16,
+        )
+        .unwrap()
     }
 }
 
@@ -123,32 +126,16 @@ const PERIOD_MAX: Duration =
     Duration::from_nanos((u16::MAX as u128 * NANOSEC / ULTRASOUND_FREQ.hz() as u128) as u64);
 
 impl SamplingConfig {
-    pub const FREQ_40K: SamplingConfig = SamplingConfig {
-        div: unsafe { NonZeroU16::new_unchecked(1) },
-    };
-    pub const FREQ_4K: SamplingConfig = SamplingConfig {
-        div: unsafe { NonZeroU16::new_unchecked(10) },
-    };
-    pub const FREQ_MIN: SamplingConfig = SamplingConfig {
-        div: unsafe { NonZeroU16::new_unchecked(u16::MAX) },
-    };
+    pub const FREQ_40K: SamplingConfig = SamplingConfig { division: 1 };
+    pub const FREQ_4K: SamplingConfig = SamplingConfig { division: 10 };
+    pub const FREQ_MIN: SamplingConfig = SamplingConfig { division: u16::MAX };
 
     pub fn new(value: impl IntoSamplingConfig) -> Result<Self, AUTDInternalError> {
         value.into_sampling_config()
     }
 
-    const unsafe fn new_unchecked(div: u16) -> Self {
-        Self {
-            div: NonZeroU16::new_unchecked(div),
-        }
-    }
-
     pub fn new_nearest(value: impl IntoSamplingConfigNearest) -> Self {
         value.into_sampling_config_nearest()
-    }
-
-    pub const fn division(self) -> u16 {
-        self.div.get()
     }
 
     pub fn freq(&self) -> Freq<f32> {

@@ -26,13 +26,15 @@ impl ReadsFPGAStateOp {
 
 impl Operation for ReadsFPGAStateOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        write_to_tx(
-            ReadsFPGAState {
-                tag: TypeTag::ReadsFPGAState,
-                value: self.value,
-            },
-            tx,
-        );
+        unsafe {
+            write_to_tx(
+                ReadsFPGAState {
+                    tag: TypeTag::ReadsFPGAState,
+                    value: self.value,
+                },
+                tx,
+            );
+        }
 
         self.is_done = true;
         Ok(std::mem::size_of::<ReadsFPGAState>())

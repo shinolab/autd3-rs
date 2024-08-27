@@ -53,12 +53,10 @@ fn send_clear() -> anyhow::Result<()> {
         });
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = unsafe {
-            Silencer::new(FixedUpdateRate {
-                intensity: NonZeroU16::new_unchecked(1),
-                phase: NonZeroU16::new_unchecked(1),
-            })
-        };
+        let d = Silencer::new(FixedUpdateRate {
+            intensity: NonZeroU16::new(1).unwrap(),
+            phase: NonZeroU16::new(1).unwrap(),
+        });
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = TestMod {
