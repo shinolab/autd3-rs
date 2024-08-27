@@ -117,14 +117,15 @@ pub mod tests {
 
     #[derive(Modulation, Clone, PartialEq, Debug)]
     pub struct TestModulation {
-        pub buf: Arc<Vec<u8>>,
         pub config: SamplingConfig,
         pub loop_behavior: LoopBehavior,
     }
 
     impl Modulation for TestModulation {
+        // GRCOV_EXCL_START
         fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
-            Ok(self.buf.clone())
+            unimplemented!()
         }
+        // GRCOV_EXCL_STOP
     }
 }

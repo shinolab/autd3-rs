@@ -138,7 +138,6 @@ pub mod tests {
     #[derive(Gain, Clone, Debug)]
     pub struct TestGain {
         pub data: HashMap<usize, Vec<Drive>>,
-        pub err: Option<AUTDInternalError>,
     }
 
     impl TestGain {
@@ -151,16 +150,12 @@ pub mod tests {
                     .devices()
                     .map(|dev| (dev.idx(), dev.iter().map(f(dev)).collect()))
                     .collect(),
-                err: None,
             }
         }
     }
 
     impl Gain for TestGain {
         fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
-            if let Some(ref err) = self.err {
-                return Err(err.clone());
-            }
             let d = self.data.clone();
             Ok(Self::transform(move |dev| {
                 let d = d[&dev.idx()].clone();
