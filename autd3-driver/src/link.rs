@@ -125,12 +125,13 @@ mod internal {
 pub use internal::Link;
 pub use internal::LinkBuilder;
 
-#[tracing::instrument(skip(link, tx, rx, timeout))]
+#[tracing::instrument(skip(link, tx, rx))]
 pub async fn send_receive(
     link: &mut impl Link,
     tx: &TxDatagram,
     rx: &mut [RxMessage],
     timeout: Duration,
+    receive_interval: Duration,
 ) -> Result<(), AUTDInternalError> {
     if !link.is_open() {
         return Err(AUTDInternalError::LinkClosed);
@@ -138,7 +139,7 @@ pub async fn send_receive(
     if !link.send(tx).await? {
         return Err(AUTDInternalError::SendDataFailed);
     }
-    wait_msg_processed(link, tx, rx, timeout).await
+    wait_msg_processed(link, tx, rx, timeout, receive_interval).await
 }
 
 async fn wait_msg_processed(
@@ -146,8 +147,10 @@ async fn wait_msg_processed(
     tx: &TxDatagram,
     rx: &mut [RxMessage],
     timeout: Duration,
+    receive_interval: Duration,
 ) -> Result<(), AUTDInternalError> {
-    let start = std::time::Instant::now();
+    let start = tokio::time::Instant::now();
+    let mut receive_timing = start;
     loop {
         if !link.is_open() {
             return Err(AUTDInternalError::LinkClosed);
@@ -168,7 +171,8 @@ async fn wait_msg_processed(
         if start.elapsed() > timeout {
             break;
         }
-        tokio::time::sleep(std::time::Duration::from_millis(1)).await;
+        receive_timing += receive_interval;
+        tokio::time::sleep_until(receive_timing).await;
     }
     rx.iter()
         .try_fold((), |_, r| Result::<(), AUTDInternalError>::from(r))
@@ -262,26 +266,54 @@ mod tests {
         let tx = TxDatagram::new(0);
         let mut rx = Vec::new();
         assert_eq!(
-            send_receive(&mut link, &tx, &mut rx, Duration::ZERO).await,
+            send_receive(
+                &mut link,
+                &tx,
+                &mut rx,
+                Duration::ZERO,
+                Duration::from_millis(1)
+            )
+            .await,
             Ok(())
         );
 
         link.is_open = false;
         assert_eq!(
-            send_receive(&mut link, &tx, &mut rx, Duration::ZERO).await,
+            send_receive(
+                &mut link,
+                &tx,
+                &mut rx,
+                Duration::ZERO,
+                Duration::from_millis(1)
+            )
+            .await,
             Err(AUTDInternalError::LinkClosed)
         );
 
         link.is_open = true;
         link.down = true;
         assert_eq!(
-            send_receive(&mut link, &tx, &mut rx, Duration::ZERO).await,
+            send_receive(
+                &mut link,
+                &tx,
+                &mut rx,
+                Duration::ZERO,
+                Duration::from_millis(1)
+            )
+            .await,
             Err(AUTDInternalError::SendDataFailed)
         );
 
         link.down = false;
         assert_eq!(
-            send_receive(&mut link, &tx, &mut rx, Duration::from_millis(1)).await,
+            send_receive(
+                &mut link,
+                &tx,
+                &mut rx,
+                Duration::from_millis(1),
+                Duration::from_millis(1)
+            )
+            .await,
             Ok(())
         );
     }
@@ -301,14 +333,28 @@ mod tests {
         tx[0].header.msg_id = 2;
         let mut rx = vec![RxMessage::new(0, 0)];
         assert_eq!(
-            wait_msg_processed(&mut link, &tx, &mut rx, Duration::from_millis(10)).await,
+            wait_msg_processed(
+                &mut link,
+                &tx,
+                &mut rx,
+                Duration::from_millis(10),
+                Duration::from_millis(1)
+            )
+            .await,
             Ok(())
         );
 
         link.recv_cnt = 0;
         link.is_open = false;
         assert_eq!(
-            wait_msg_processed(&mut link, &tx, &mut rx, Duration::from_millis(10)).await,
+            wait_msg_processed(
+                &mut link,
+                &tx,
+                &mut rx,
+                Duration::from_millis(10),
+                Duration::from_millis(1)
+            )
+            .await,
             Err(AUTDInternalError::LinkClosed)
         );
 
@@ -317,7 +363,14 @@ mod tests {
         link.down = true;
         assert_eq!(
             Err(AUTDInternalError::ConfirmResponseFailed),
-            wait_msg_processed(&mut link, &tx, &mut rx, Duration::from_millis(10)).await,
+            wait_msg_processed(
+                &mut link,
+                &tx,
+                &mut rx,
+                Duration::from_millis(10),
+                Duration::from_millis(1)
+            )
+            .await,
         );
 
         link.recv_cnt = 0;
@@ -325,14 +378,28 @@ mod tests {
         link.down = true;
         assert_eq!(
             Ok(()),
-            wait_msg_processed(&mut link, &tx, &mut rx, Duration::ZERO).await,
+            wait_msg_processed(
+                &mut link,
+                &tx,
+                &mut rx,
+                Duration::ZERO,
+                Duration::from_millis(1)
+            )
+            .await,
         );
 
         link.down = false;
         link.recv_cnt = 0;
         tx[0].header.msg_id = 20;
         assert_eq!(
-            wait_msg_processed(&mut link, &tx, &mut rx, Duration::from_secs(10)).await,
+            wait_msg_processed(
+                &mut link,
+                &tx,
+                &mut rx,
+                Duration::from_secs(10),
+                Duration::from_millis(1)
+            )
+            .await,
             Err(AUTDInternalError::LinkError("too many".to_owned()))
         );
     }
