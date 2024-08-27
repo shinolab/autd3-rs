@@ -1,10 +1,10 @@
-pub use crate::{
+pub use autd3_driver::derive::Gain;
+pub use autd3_driver::{
     derive::*,
     error::AUTDInternalError,
     firmware::fpga::{Drive, Segment},
     geometry::Geometry,
 };
-pub use autd3_derive::Gain;
 
 use std::{
     cell::{Ref, RefCell},
@@ -12,8 +12,6 @@ use std::{
     rc::Rc,
     sync::Arc,
 };
-
-use super::GainCalcFn;
 
 use derive_more::{Debug, Deref};
 
@@ -80,28 +78,25 @@ impl<G: Gain> Gain for Cache<G> {
 
 #[cfg(test)]
 mod tests {
-    use super::{super::tests::TestGain, *};
+    use crate::{gain::Uniform, tests::create_geometry};
 
+    use super::*;
+
+    use autd3_driver::firmware::fpga::{EmitIntensity, Phase};
     use rand::Rng;
     use std::sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
     };
 
-    use crate::{
-        derive::*,
-        firmware::fpga::{EmitIntensity, Phase},
-        geometry::tests::create_geometry,
-    };
-
     #[test]
     #[cfg_attr(miri, ignore)]
     fn test() -> anyhow::Result<()> {
-        let geometry = create_geometry(1, 249);
+        let geometry = create_geometry(1);
 
         let mut rng = rand::thread_rng();
         let d = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
-        let gain = TestGain::new(|_| |_| d, &geometry);
+        let gain = Uniform::new(d);
         let cache = gain.clone().with_cache();
 
         assert!(cache.drives().is_empty());
@@ -132,7 +127,7 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn test_calc_once() {
-        let geometry = create_geometry(1, 249);
+        let geometry = create_geometry(1);
 
         let calc_cnt = Arc::new(AtomicUsize::new(0));
         let gain = CacheTestGain {
@@ -150,7 +145,7 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn test_clone() {
-        let geometry = create_geometry(1, 249);
+        let geometry = create_geometry(1);
 
         let calc_cnt = Arc::new(AtomicUsize::new(0));
         let gain = CacheTestGain {

@@ -61,7 +61,9 @@ impl<M: Modulation> Modulation for Cache<M> {
 
 #[cfg(test)]
 mod tests {
-    use super::{super::tests::TestModulation, *};
+    use crate::modulation::Custom;
+
+    use super::*;
 
     use rand::Rng;
     use std::{
@@ -77,11 +79,10 @@ mod tests {
     fn test() -> anyhow::Result<()> {
         let mut rng = rand::thread_rng();
 
-        let m = TestModulation {
-            buf: Arc::new(vec![rng.gen(), rng.gen()]),
-            config: SamplingConfig::FREQ_4K,
-            loop_behavior: LoopBehavior::infinite(),
-        };
+        let m = Custom::new(
+            Arc::new(vec![rng.gen(), rng.gen()]),
+            SamplingConfig::FREQ_4K,
+        )?;
         let cache = m.clone().with_cache();
         assert_eq!(&m, cache.deref());
 

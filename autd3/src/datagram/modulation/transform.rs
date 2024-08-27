@@ -48,11 +48,11 @@ impl<M: Modulation, F: Fn(usize, u8) -> u8> Modulation for Transform<M, F> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::modulation::Custom;
+    use autd3_driver::defined::kHz;
     use rand::Rng;
-
-    use crate::defined::kHz;
-
-    use super::{super::tests::TestModulation, *};
+    use std::sync::Arc;
 
     #[rstest::rstest]
     #[test]
@@ -60,17 +60,12 @@ mod tests {
     #[case::freq_8k(SamplingConfig::new_nearest(8. * kHz))]
     #[cfg_attr(miri, ignore)]
     fn test_sampling_config(#[case] config: SamplingConfig) {
-        use std::sync::Arc;
-
         assert_eq!(
             config,
-            TestModulation {
-                buf: Arc::new(vec![u8::MIN; 2]),
-                config,
-                loop_behavior: LoopBehavior::infinite(),
-            }
-            .with_transform(|_, x| x) // GRCOV_EXCL_LINE
-            .sampling_config()
+            Custom::new(Arc::new(vec![u8::MIN; 2]), config)
+                .unwrap()
+                .with_transform(|_, x| x) // GRCOV_EXCL_LINE
+                .sampling_config()
         );
     }
 
@@ -82,13 +77,9 @@ mod tests {
         let buf = vec![rng.gen(), rng.gen()];
         assert_eq!(
             buf.iter().map(|&x| x / 2).collect::<Vec<_>>(),
-            *TestModulation {
-                buf: Arc::new(buf.clone()),
-                config: SamplingConfig::FREQ_4K,
-                loop_behavior: LoopBehavior::infinite(),
-            }
-            .with_transform(|_, x| x / 2)
-            .calc()?
+            *Custom::new(Arc::new(buf.clone()), SamplingConfig::FREQ_4K)?
+                .with_transform(|_, x| x / 2)
+                .calc()?
         );
 
         Ok(())

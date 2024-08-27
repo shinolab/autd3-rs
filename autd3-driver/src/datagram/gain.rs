@@ -1,14 +1,4 @@
-mod cache;
-mod group;
-mod transform;
-
 use std::collections::HashMap;
-
-pub use cache::Cache as GainCache;
-pub use cache::IntoCache as IntoGainCache;
-pub use group::Group;
-pub use transform::IntoTransform as IntoGainTransform;
-pub use transform::Transform as GainTransform;
 
 use crate::firmware::operation::GainOp;
 use crate::firmware::operation::NullOp;
@@ -162,23 +152,6 @@ pub mod tests {
                     .map(|dev| (dev.idx(), dev.iter().map(f(dev)).collect()))
                     .collect(),
                 err: None,
-            }
-        }
-
-        pub fn null(geometry: &Geometry) -> Self {
-            Self {
-                data: geometry
-                    .devices()
-                    .map(|dev| (dev.idx(), vec![Drive::null(); dev.num_transducers()]))
-                    .collect(),
-                err: None,
-            }
-        }
-
-        pub fn err() -> Self {
-            Self {
-                data: Default::default(),
-                err: Some(AUTDInternalError::GainError("test".to_owned())),
             }
         }
     }

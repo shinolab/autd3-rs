@@ -1,12 +1,10 @@
-pub use crate::{
+pub use crate::driver::{
     derive::*,
     error::AUTDInternalError,
     firmware::fpga::{Drive, Segment},
     geometry::{Device, Geometry, Transducer},
 };
-pub use autd3_derive::Gain;
 
-use super::GainCalcFn;
 use derive_more::Debug;
 
 #[derive(Gain, Debug)]
@@ -77,26 +75,23 @@ impl<
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use crate::{gain::Null, tests::create_geometry};
 
+    use super::*;
+
+    use autd3_driver::firmware::fpga::{EmitIntensity, Phase};
     use rand::Rng;
-
-    use super::{super::tests::TestGain, *};
-
-    use crate::{
-        firmware::fpga::{EmitIntensity, Phase},
-        geometry::tests::create_geometry,
-    };
+    use std::collections::HashMap;
 
     #[test]
     #[cfg_attr(miri, ignore)]
     fn test() -> anyhow::Result<()> {
-        let geometry = create_geometry(1, 249);
+        let geometry = create_geometry(1);
 
         let mut rng = rand::thread_rng();
         let d = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
 
-        let gain = TestGain::null(&geometry).with_transform(move |_| move |_, _| d);
+        let gain = Null::new().with_transform(move |_| move |_, _| d);
 
         assert_eq!(
             geometry
