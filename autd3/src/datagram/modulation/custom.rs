@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{borrow::Borrow, sync::Arc};
 
 use autd3_driver::{defined::Freq, derive::*};
 
@@ -13,23 +13,30 @@ pub struct Custom {
 }
 
 impl Custom {
-    pub fn new<T: TryInto<SamplingConfig>>(buffer: &[u8], config: T) -> Result<Self, T::Error> {
+    pub fn new<T: TryInto<SamplingConfig>>(
+        buffer: impl IntoIterator<Item = impl Borrow<u8>>,
+        config: T,
+    ) -> Result<Self, T::Error> {
         Ok(Self {
-            buffer: Arc::new(buffer.to_vec()),
+            buffer: Arc::new(buffer.into_iter().map(|b| *b.borrow()).collect()),
             config: config.try_into()?,
             loop_behavior: LoopBehavior::infinite(),
         })
     }
 
-    #[tracing::instrument]
+    #[tracing::instrument(skip(buffer))]
     pub fn new_with_resample<T: TryInto<SamplingConfig> + std::fmt::Debug>(
-        buffer: &[u8],
+        buffer: impl IntoIterator<Item = impl Borrow<u8>>,
         source: Freq<f32>,
         target: T,
         resampler: impl Resampler,
     ) -> Result<Self, T::Error> {
         let target = target.try_into()?;
-        let buffer = resampler.resample(buffer, source, target);
+        let buffer = resampler.resample(
+            &buffer.into_iter().map(|b| *b.borrow()).collect::<Vec<_>>(),
+            source,
+            target,
+        );
         Ok(Self {
             buffer: Arc::new(buffer),
             config: target,

@@ -53,10 +53,10 @@ mod tests {
     #[test]
     #[case::freq_4k(SamplingConfig::new_nearest(4. * kHz))]
     #[case::freq_8k(SamplingConfig::new_nearest(8. * kHz))]
-        fn test_sampling_config(#[case] config: SamplingConfig) {
+    fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
             config,
-            Custom::new(&[u8::MIN; 2], config)
+            Custom::new([u8::MIN; 2], config)
                 .unwrap()
                 .with_radiation_pressure()
                 .sampling_config()
@@ -64,7 +64,7 @@ mod tests {
     }
 
     #[test]
-        fn test() -> anyhow::Result<()> {
+    fn test() -> anyhow::Result<()> {
         let mut rng = rand::thread_rng();
 
         let buf = vec![rng.gen(), rng.gen()];
