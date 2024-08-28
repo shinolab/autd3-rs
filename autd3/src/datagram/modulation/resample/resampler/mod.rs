@@ -1,7 +1,7 @@
 mod sinc;
 mod window;
 
-use autd3_driver::{defined::Freq, derive::SamplingConfig, utils::float::is_integer};
+use autd3_driver::{defined::Freq, derive::SamplingConfig};
 pub use sinc::SincInterpolation;
 pub use window::*;
 
@@ -13,26 +13,8 @@ pub trait Resampler: std::fmt::Debug {
         let target_fs = target.freq().hz().abs() as f64;
         let ratio = target_fs / src_fs;
         if ratio > 1.0 {
-            // GRCOV_EXCL_START
-            if !is_integer(ratio) {
-                tracing::warn!(
-                    "Upsampling from {:?} to {:?} is not integer ratio",
-                    source,
-                    target.freq()
-                );
-            }
-            // GRCOV_EXCL_STOP
             self.upsample(buffer, ratio)
         } else {
-            // GRCOV_EXCL_START
-            if !is_integer(src_fs / target_fs) {
-                tracing::warn!(
-                    "Downsampling from {:?} to {:?} is not integer ratio",
-                    source,
-                    target.freq()
-                );
-            }
-            // GRCOV_EXCL_STOP
             self.downsample(buffer, ratio)
         }
     }
