@@ -1,5 +1,6 @@
 use super::InterpolationWindow;
 
+#[derive(Debug)]
 pub struct Rectangular {
     pub size: usize,
 }

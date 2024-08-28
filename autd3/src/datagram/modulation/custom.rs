@@ -21,7 +21,8 @@ impl Custom {
         })
     }
 
-    pub fn new_with_resample<T: TryInto<SamplingConfig>>(
+    #[tracing::instrument]
+    pub fn new_with_resample<T: TryInto<SamplingConfig> + std::fmt::Debug>(
         buffer: &[u8],
         source: Freq<f32>,
         target: T,

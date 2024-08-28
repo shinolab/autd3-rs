@@ -2,6 +2,7 @@ use std::f64::consts::PI;
 
 use super::InterpolationWindow;
 
+#[derive(Debug)]
 pub struct Blackman {
     pub size: usize,
 }

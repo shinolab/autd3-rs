@@ -2,7 +2,8 @@ use std::f64::consts::PI;
 
 use super::{window::InterpolationWindow, Blackman, Resampler};
 
-pub struct SincInterpolation<T: InterpolationWindow> {
+#[derive(Debug)]
+pub struct SincInterpolation<T: InterpolationWindow + std::fmt::Debug> {
     pub window: T,
 }
 
