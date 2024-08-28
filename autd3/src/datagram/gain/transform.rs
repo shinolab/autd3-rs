@@ -84,7 +84,6 @@ mod tests {
     use std::collections::HashMap;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test() -> anyhow::Result<()> {
         let geometry = create_geometry(1);
 

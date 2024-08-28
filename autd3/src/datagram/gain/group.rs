@@ -243,8 +243,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
-    fn with_parallel() -> anyhow::Result<()> {
+        fn with_parallel() -> anyhow::Result<()> {
         let geometry = create_geometry(4);
 
         let mut rng = rand::thread_rng();
@@ -305,8 +304,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test_unknown_key() {
+        fn test_unknown_key() {
         let geometry = create_geometry(2);
 
         let gain = Group::new(|_dev| {
