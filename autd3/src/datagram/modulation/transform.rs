@@ -52,7 +52,6 @@ mod tests {
     use crate::modulation::Custom;
     use autd3_driver::defined::kHz;
     use rand::Rng;
-    use std::sync::Arc;
 
     #[rstest::rstest]
     #[test]
@@ -62,7 +61,7 @@ mod tests {
     fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
             config,
-            Custom::new(Arc::new(vec![u8::MIN; 2]), config)
+            Custom::new(&[u8::MIN; 2], config)
                 .unwrap()
                 .with_transform(|_, x| x) // GRCOV_EXCL_LINE
                 .sampling_config()
@@ -77,7 +76,7 @@ mod tests {
         let buf = vec![rng.gen(), rng.gen()];
         assert_eq!(
             buf.iter().map(|&x| x / 2).collect::<Vec<_>>(),
-            *Custom::new(Arc::new(buf.clone()), SamplingConfig::FREQ_4K)?
+            *Custom::new(&buf, SamplingConfig::FREQ_4K)?
                 .with_transform(|_, x| x / 2)
                 .calc()?
         );

@@ -1,4 +1,5 @@
-use autd3_driver::derive::*;
+use autd3::modulation::resample::Resampler;
+use autd3_driver::{defined::Freq, derive::*};
 
 use std::{
     fs::File,
@@ -9,12 +10,13 @@ use std::{
 
 use crate::error::AudioFileError;
 
-#[derive(Modulation, Clone, PartialEq, Debug)]
+#[derive(Modulation, Debug)]
 pub struct RawPCM {
     path: PathBuf,
     #[no_change]
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
+    resampler: Option<(Freq<f32>, Box<dyn Resampler>)>,
 }
 
 impl RawPCM {
@@ -26,15 +28,36 @@ impl RawPCM {
             path: path.as_ref().to_path_buf(),
             config: sampling_config.try_into()?,
             loop_behavior: LoopBehavior::infinite(),
+            resampler: None,
         })
     }
 
+    pub fn new_with_resample<T: TryInto<SamplingConfig>>(
+        path: impl AsRef<Path>,
+        source: Freq<f32>,
+        target: T,
+        resampler: impl Resampler + 'static,
+    ) -> Result<Self, T::Error> {
+        let target = target.try_into()?;
+        Ok(Self {
+            path: path.as_ref().to_path_buf(),
+            config: target,
+            loop_behavior: LoopBehavior::infinite(),
+            resampler: Some((source, Box::new(resampler))),
+        })
+    }
+
+    #[tracing::instrument]
     fn read_buf(&self) -> Result<Vec<u8>, AudioFileError> {
         let f = File::open(&self.path)?;
         let mut reader = BufReader::new(f);
-        let mut raw_buffer = Vec::new();
-        reader.read_to_end(&mut raw_buffer)?;
-        Ok(raw_buffer)
+        let mut buffer = Vec::new();
+        reader.read_to_end(&mut buffer)?;
+        Ok(if let Some((source, resampler)) = &self.resampler {
+            resampler.resample(&buffer, *source, self.config)
+        } else {
+            buffer
+        })
     }
 }
 
@@ -46,6 +69,7 @@ impl Modulation for RawPCM {
 
 #[cfg(test)]
 mod tests {
+    use autd3::{modulation::resample::SincInterpolation, prelude::kHz};
     use autd3_driver::defined::{Freq, Hz};
 
     use super::*;
@@ -71,6 +95,27 @@ mod tests {
 
         let m = RawPCM::new(&path, sample_rate)?;
         assert_eq!(expect, m.calc());
+
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[case(vec![127, 217, 255, 217, 127, 37, 0, 37], vec![127, 255, 127, 0], 2.0 * kHz, 4.0 * kHz, SincInterpolation::default())]
+    #[case(vec![127, 255, 127, 0], vec![127, 217, 255, 217, 127, 37, 0, 37], 8.0 * kHz, 4.0 * kHz, SincInterpolation::default())]
+    #[test]
+    fn new_with_resample(
+        #[case] expected: Vec<u8>,
+        #[case] buffer: Vec<u8>,
+        #[case] source: Freq<f32>,
+        #[case] target: Freq<f32>,
+        #[case] resampler: impl Resampler + 'static,
+    ) -> anyhow::Result<()> {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("tmp.csv");
+        create_dat(&path, &buffer)?;
+
+        let m = RawPCM::new_with_resample(&path, source, target, resampler)?;
+        assert_eq!(expected, *m.calc()?);
 
         Ok(())
     }

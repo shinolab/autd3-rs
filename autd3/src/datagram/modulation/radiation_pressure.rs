@@ -57,7 +57,7 @@ mod tests {
     fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
             config,
-            Custom::new(Arc::new(vec![u8::MIN; 2]), config)
+            Custom::new(&[u8::MIN; 2], config)
                 .unwrap()
                 .with_radiation_pressure()
                 .sampling_config()
@@ -74,7 +74,7 @@ mod tests {
             buf.iter()
                 .map(|&x| ((x as f32 / 255.).sqrt() * 255.).round() as u8)
                 .collect::<Vec<_>>(),
-            *Custom::new(Arc::new(buf.clone()), SamplingConfig::FREQ_4K)?
+            *Custom::new(&buf, SamplingConfig::FREQ_4K)?
                 .with_radiation_pressure()
                 .calc()?
         );
