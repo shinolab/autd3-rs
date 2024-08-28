@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{borrow::Borrow, sync::Arc};
 
 use crate::derive::*;
 
@@ -12,22 +12,22 @@ pub struct Fir<M: Modulation> {
 }
 
 impl<M: Modulation> Fir<M> {
-    fn new(m: M, filter: impl IntoIterator<Item = f32>) -> Self {
+    fn new(m: M, filter: impl IntoIterator<Item = impl Borrow<f32>>) -> Self {
         Self {
             config: m.sampling_config(),
             loop_behavior: m.loop_behavior(),
             m,
-            filter: filter.into_iter().collect(),
+            filter: filter.into_iter().map(|f| *f.borrow()).collect(),
         }
     }
 }
 
 pub trait IntoFir<M: Modulation> {
-    fn with_fir(self, filter: impl IntoIterator<Item = f32>) -> Fir<M>;
+    fn with_fir(self, filter: impl IntoIterator<Item = impl Borrow<f32>>) -> Fir<M>;
 }
 
 impl<M: Modulation> IntoFir<M> for M {
-    fn with_fir(self, filter: impl IntoIterator<Item = f32>) -> Fir<M> {
+    fn with_fir(self, filter: impl IntoIterator<Item = impl Borrow<f32>>) -> Fir<M> {
         Fir::new(self, filter)
     }
 }
@@ -69,7 +69,7 @@ mod tests {
     fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
             config,
-            Custom::new(&[u8::MIN; 2], config)
+            Custom::new([u8::MIN; 2], config)
                 .unwrap()
                 .with_fir([1.0])
                 .sampling_config()
