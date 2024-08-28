@@ -1,5 +1,6 @@
 mod cache;
 mod custom;
+mod fir;
 mod fourier;
 mod mixer;
 mod radiation_pressure;
@@ -13,6 +14,7 @@ mod transform;
 pub use cache::Cache as ModulationCache;
 pub use cache::IntoCache as IntoModulationCache;
 pub use custom::Custom;
+pub use fir::{Fir, IntoFir};
 pub use fourier::Fourier;
 pub use mixer::Mixer;
 pub use r#static::Static;
