@@ -137,7 +137,7 @@ impl Operation for ModulationOp {
                     tx,
                 )
             };
-            Ok(std::mem::size_of::<ModulationHead>() + send_num)
+            Ok(std::mem::size_of::<ModulationHead>() + (send_num + 0x01) & !0x1)
         } else {
             unsafe {
                 write_to_tx(
@@ -149,7 +149,7 @@ impl Operation for ModulationOp {
                     tx,
                 );
             }
-            Ok(std::mem::size_of::<ModulationSubseq>() + send_num)
+            Ok(std::mem::size_of::<ModulationSubseq>() + (send_num + 0x01) & !0x1)
         }
     }
 
@@ -420,5 +420,51 @@ mod tests {
             Result::<(), AUTDInternalError>::Ok(())
         };
         assert_eq!(expected, send(size));
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(3)]
+    #[case(253)]
+    #[case(255)]
+    fn odd_size(#[case] size: usize) -> anyhow::Result<()> {
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
+
+        let mut tx = vec![0x00u8; NUM_TRANS_IN_UNIT * 2];
+
+        let mut rng = rand::thread_rng();
+
+        let buf: Vec<u8> = (0..size).map(|_| rng.gen()).collect();
+
+        let mut op = ModulationOp::new(
+            Arc::new(buf.clone()),
+            SamplingConfig::FREQ_40K,
+            LoopBehavior::infinite(),
+            Segment::S0,
+            Some(TransitionMode::SyncIdx),
+        );
+
+        let mut sent = 0;
+        loop {
+            let offset = if op.sent == 0 {
+                std::mem::size_of::<ModulationHead>()
+            } else {
+                std::mem::size_of::<ModulationSubseq>()
+            };
+            let size = op.pack(&device, &mut tx)? - offset;
+            assert!(size % 2 == 0);
+            tx.iter()
+                .skip(offset)
+                .zip(buf.iter().skip(sent).take(size))
+                .for_each(|(d, m)| {
+                    assert_eq!(d, m);
+                });
+            sent += size;
+            if op.is_done() {
+                break;
+            }
+        }
+
+        Ok(())
     }
 }
