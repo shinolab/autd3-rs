@@ -79,10 +79,7 @@ mod tests {
     fn test() -> anyhow::Result<()> {
         let mut rng = rand::thread_rng();
 
-        let m = Custom::new(
-            Arc::new(vec![rng.gen(), rng.gen()]),
-            SamplingConfig::FREQ_4K,
-        )?;
+        let m = Custom::new(&[rng.gen(), rng.gen()], SamplingConfig::FREQ_4K)?;
         let cache = m.clone().with_cache();
         assert_eq!(&m, cache.deref());
 
