@@ -3,9 +3,7 @@ pub use crate::{
     error::AUTDError,
     gain::{Bessel, Focus, Group, IntoGainCache, IntoGainTransform, Null, Plane, Uniform},
     link::Nop,
-    modulation::{
-        IntoModulationCache, IntoModulationTransform, IntoRadiationPressure, Sine, Square, Static,
-    },
+    modulation::{IntoModulationCache, IntoRadiationPressure, Sine, Square, Static},
 };
 
 pub use autd3_driver::{
