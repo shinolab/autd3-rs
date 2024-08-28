@@ -3,6 +3,7 @@ mod custom;
 mod fourier;
 mod mixer;
 mod radiation_pressure;
+pub mod resample;
 pub mod sampling_mode;
 mod sine;
 mod square;
