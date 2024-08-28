@@ -75,8 +75,7 @@ mod tests {
     };
 
     #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test() -> anyhow::Result<()> {
+        fn test() -> anyhow::Result<()> {
         let mut rng = rand::thread_rng();
 
         let m = Custom::new(&[rng.gen(), rng.gen()], SamplingConfig::FREQ_4K)?;
@@ -105,8 +104,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test_calc_once() {
+        fn test_calc_once() {
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
         let modulation = TestCacheModulation {
@@ -125,8 +123,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test_calc_clone() {
+        fn test_calc_clone() {
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
         let modulation = TestCacheModulation {
