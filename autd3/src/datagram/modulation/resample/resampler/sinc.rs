@@ -1,5 +1,7 @@
 use std::f64::consts::PI;
 
+use autd3_driver::utils::float::is_integer;
+
 use super::{window::InterpolationWindow, Blackman, Resampler};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -35,7 +37,17 @@ impl<T: InterpolationWindow> Resampler for SincInterpolation<T> {
     fn upsample(&self, buffer: &[u8], ratio: f64) -> Vec<u8> {
         let source_len = buffer.len();
         let window_size = self.window.window_size();
-        (0..(source_len as f64 * ratio).ceil() as usize)
+        let target_size = source_len as f64 * ratio;
+        // GRCOV_EXCL_START
+        if !is_integer(target_size) {
+            tracing::warn!(
+                "The target size ({}) is not an integer, ceiling to {}.",
+                target_size,
+                target_size.ceil()
+            );
+        }
+        // GRCOV_EXCL_STOP
+        (0..target_size.ceil() as usize)
             .map(|m| {
                 let (n, frac) = modf(m as f64 / ratio);
                 (0..window_size)
@@ -53,7 +65,17 @@ impl<T: InterpolationWindow> Resampler for SincInterpolation<T> {
     fn downsample(&self, buffer: &[u8], ratio: f64) -> Vec<u8> {
         let source_len = buffer.len();
         let window_size = self.window.window_size();
-        (0..(source_len as f64 * ratio).ceil() as usize)
+        let target_size = source_len as f64 * ratio;
+        // GRCOV_EXCL_START
+        if !is_integer(target_size) {
+            tracing::warn!(
+                "The target size ({}) is not an integer, ceiling to {}.",
+                target_size,
+                target_size.ceil()
+            );
+        }
+        // GRCOV_EXCL_STOP
+        (0..target_size.ceil() as usize)
             .map(|m| {
                 let (n, frac) = modf(m as f64 / ratio);
                 (0..window_size)
