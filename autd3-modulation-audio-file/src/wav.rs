@@ -207,12 +207,12 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[case(vec![127, 217, 255, 217, 127, 37, 0, 37], vec![127, 255, 127, 0], 2000, 4.0 * kHz, SincInterpolation::default())]
-    #[case(vec![127, 255, 127, 0], vec![127, 217, 255, 217, 127, 37, 0, 37], 8000, 4.0 * kHz, SincInterpolation::default())]
+    #[case(vec![127, 217, 255, 217, 127, 37, 0, 37], vec![-1, 127, -1, -128], 2000, 4.0 * kHz, SincInterpolation::default())]
+    #[case(vec![127, 255, 127, 0], vec![-1, 89, 127, 89, -1, -91, -128, -91], 8000, 4.0 * kHz, SincInterpolation::default())]
     #[test]
     fn new_with_resample(
         #[case] expected: Vec<u8>,
-        #[case] buffer: Vec<i16>,
+        #[case] buffer: Vec<i8>,
         #[case] sample_rate: u32,
         #[case] target: Freq<f32>,
         #[case] resampler: impl Resampler + 'static,
