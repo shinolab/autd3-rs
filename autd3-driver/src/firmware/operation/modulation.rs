@@ -137,7 +137,7 @@ impl Operation for ModulationOp {
                     tx,
                 )
             };
-            Ok(std::mem::size_of::<ModulationHead>() + (send_num + 0x01) & !0x1)
+            Ok(std::mem::size_of::<ModulationHead>() + ((send_num + 0x01) & !0x1))
         } else {
             unsafe {
                 write_to_tx(
@@ -149,7 +149,7 @@ impl Operation for ModulationOp {
                     tx,
                 );
             }
-            Ok(std::mem::size_of::<ModulationSubseq>() + (send_num + 0x01) & !0x1)
+            Ok(std::mem::size_of::<ModulationSubseq>() + ((send_num + 0x01) & !0x1))
         }
     }
 
