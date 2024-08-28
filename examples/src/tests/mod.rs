@@ -1,6 +1,7 @@
 mod audio_file;
 mod bessel;
 mod custom;
+mod fir;
 mod flag;
 mod focus;
 mod group;
