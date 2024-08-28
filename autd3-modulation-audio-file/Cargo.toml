@@ -11,9 +11,11 @@ repository = { workspace = true }
 
 [dependencies]
 hound = { workspace = true }
+autd3 = { workspace = true }
 autd3-driver = { workspace = true }
 thiserror = { workspace = true }
 csv = { workspace = true }
+tracing = { workspace = true }
 
 [features]
 default = []
