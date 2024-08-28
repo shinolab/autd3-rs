@@ -1,6 +1,6 @@
 use super::InterpolationWindow;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Rectangular {
     pub size: usize,
 }

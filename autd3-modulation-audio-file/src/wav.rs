@@ -1,3 +1,4 @@
+use autd3::modulation::resample::Resampler;
 use autd3_driver::{defined::Hz, derive::*};
 use hound::SampleFormat;
 
@@ -8,12 +9,13 @@ use std::{
 
 use crate::error::AudioFileError;
 
-#[derive(Modulation, Debug, Clone, PartialEq)]
+#[derive(Modulation, Debug)]
 pub struct Wav {
     path: PathBuf,
     #[no_change]
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
+    resampler: Option<Box<dyn Resampler>>,
 }
 
 impl Wav {
@@ -25,16 +27,33 @@ impl Wav {
             path,
             config: (spec.sample_rate * Hz).try_into()?,
             loop_behavior: LoopBehavior::infinite(),
+            resampler: None,
         })
     }
 
+    pub fn new_with_resample<T: TryInto<SamplingConfig>>(
+        path: impl AsRef<Path>,
+        target: T,
+        resampler: impl Resampler + 'static,
+    ) -> Result<Self, T::Error> {
+        let target = target.try_into()?;
+        Ok(Self {
+            path: path.as_ref().to_path_buf(),
+            config: target,
+            loop_behavior: LoopBehavior::infinite(),
+            resampler: Some(Box::new(resampler)),
+        })
+    }
+
+    #[tracing::instrument]
     fn read_buf(&self) -> Result<Vec<u8>, AudioFileError> {
         let mut reader = hound::WavReader::open(&self.path)?;
         let spec = reader.spec();
+        tracing::debug!("wav spec: {:?}", spec);
         if spec.channels != 1 {
             return Err(AudioFileError::Wav(hound::Error::Unsupported));
         }
-        let buf = match spec.sample_format {
+        let buffer: Vec<_> = match spec.sample_format {
             SampleFormat::Int => {
                 let raw_buffer = reader.samples::<i32>().collect::<Result<Vec<_>, _>>()?;
                 match spec.bits_per_sample {
@@ -69,7 +88,11 @@ impl Wav {
             }
         };
 
-        Ok(buf)
+        Ok(if let Some(resampler) = &self.resampler {
+            resampler.resample(&buffer, spec.sample_rate as f32 * Hz, self.config)
+        } else {
+            buffer
+        })
     }
 }
 
@@ -81,6 +104,9 @@ impl Modulation for Wav {
 
 #[cfg(test)]
 mod tests {
+    use autd3::{modulation::resample::SincInterpolation, prelude::kHz};
+    use autd3_driver::defined::Freq;
+
     use super::*;
 
     fn create_wav(
@@ -180,6 +206,36 @@ mod tests {
         Ok(())
     }
 
+    #[rstest::rstest]
+    #[case(vec![127, 217, 255, 217, 127, 37, 0, 37], vec![127, 255, 127, 0], 2000, 4.0 * kHz, SincInterpolation::default())]
+    #[case(vec![127, 255, 127, 0], vec![127, 217, 255, 217, 127, 37, 0, 37], 8000, 4.0 * kHz, SincInterpolation::default())]
+    #[test]
+    fn new_with_resample(
+        #[case] expected: Vec<u8>,
+        #[case] buffer: Vec<i16>,
+        #[case] sample_rate: u32,
+        #[case] target: Freq<f32>,
+        #[case] resampler: impl Resampler + 'static,
+    ) -> anyhow::Result<()> {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("tmp.csv");
+        create_wav(
+            &path,
+            hound::WavSpec {
+                channels: 1,
+                sample_rate,
+                bits_per_sample: 8,
+                sample_format: hound::SampleFormat::Int,
+            },
+            &buffer,
+        )?;
+
+        let m = Wav::new_with_resample(&path, target, resampler)?;
+        assert_eq!(expected, *m.calc()?);
+
+        Ok(())
+    }
+
     #[test]
     fn test_wav_new_unsupported() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
@@ -195,26 +251,6 @@ mod tests {
             &[0, 0],
         )?;
         assert!(Wav::new(&path)?.calc().is_err());
-        Ok(())
-    }
-
-    #[test]
-    fn test_wav_clone() -> anyhow::Result<()> {
-        let dir = tempfile::tempdir()?;
-        let path = dir.path().join("tmp.wav");
-        create_wav(
-            &path,
-            hound::WavSpec {
-                channels: 1,
-                sample_rate: 4000,
-                bits_per_sample: 8,
-                sample_format: hound::SampleFormat::Int,
-            },
-            &[i8::MAX, 0, i8::MIN],
-        )?;
-        let m = Wav::new(path)?;
-        let m2 = m.clone();
-        assert_eq!(m.sampling_config(), m2.sampling_config());
         Ok(())
     }
 }
