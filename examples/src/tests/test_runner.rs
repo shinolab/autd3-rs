@@ -5,8 +5,8 @@ use autd3::{driver::link::Link, prelude::*};
 pub use autd3_gain_holo::*;
 
 use super::{
-    audio_file::*, bessel::*, custom::*, flag::*, focus::*, group::*, holo::*, plane::*, stm::*,
-    user_defined_gain_modulation::*,
+    audio_file::*, bessel::*, custom::*, fir::*, flag::*, focus::*, group::*, holo::*, plane::*,
+    stm::*, user_defined_gain_modulation::*,
 };
 
 pub async fn run<L: Link>(mut autd: Controller<L>) -> anyhow::Result<()> {
@@ -32,6 +32,7 @@ pub async fn run<L: Link>(mut autd: Controller<L>) -> anyhow::Result<()> {
         ("FociSTM test", |autd| Box::pin(foci_stm(autd))),
         ("GainSTM test", |autd| Box::pin(gain_stm(autd))),
         ("Multiple foci test", |autd| Box::pin(holo(autd))),
+        ("FIR test", |autd| Box::pin(fir(autd))),
         ("User-defined Gain & Modulation test", |autd| {
             Box::pin(user_defined(autd))
         }),
@@ -70,7 +71,8 @@ pub async fn run<L: Link>(mut autd: Controller<L>) -> anyhow::Result<()> {
         let mut _s = String::new();
         io::stdin().read_line(&mut _s)?;
 
-        autd.send((Null::default(), Silencer::default())).await?;
+        autd.send((Static::new(), Null::default())).await?;
+        autd.send(Silencer::default()).await?;
     }
 
     autd.close().await?;
