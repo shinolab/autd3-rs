@@ -108,10 +108,10 @@ fn send_mod(
     assert_eq!(freq_div, cpu.fpga().modulation_freq_division(segment));
     assert_eq!(loop_behavior, cpu.fpga().modulation_loop_behavior(segment));
     if let Some(transition_mode) = transition_mode {
-        assert_eq!(segment, cpu.fpga().req_mod_segment());
-        assert_eq!(transition_mode, cpu.fpga().mod_transition_mode());
+        assert_eq!(segment, cpu.fpga().req_modulation_segment());
+        assert_eq!(transition_mode, cpu.fpga().modulation_transition_mode());
     } else {
-        assert_eq!(Segment::S0, cpu.fpga().req_mod_segment());
+        assert_eq!(Segment::S0, cpu.fpga().req_modulation_segment());
     }
     assert_eq!(m, cpu.fpga().modulation(segment));
 
@@ -134,11 +134,11 @@ fn swap_mod_segmemt() -> anyhow::Result<()> {
     .with_segment(Segment::S1, None);
 
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
-    assert_eq!(Segment::S0, cpu.fpga().req_mod_segment());
+    assert_eq!(Segment::S0, cpu.fpga().req_modulation_segment());
 
     let d = SwapSegment::Modulation(Segment::S1, TransitionMode::Immediate);
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
-    assert_eq!(Segment::S1, cpu.fpga().req_mod_segment());
+    assert_eq!(Segment::S1, cpu.fpga().req_modulation_segment());
 
     Ok(())
 }
@@ -281,7 +281,7 @@ fn test_miss_transition_time(
     cpu.update_with_sys_time(DcSysTime::from_utc(systime).unwrap());
     assert_eq!(expect, send(&mut cpu, d, &geometry, &mut tx));
     if expect.is_ok() {
-        assert_eq!(transition_mode, cpu.fpga().mod_transition_mode());
+        assert_eq!(transition_mode, cpu.fpga().modulation_transition_mode());
     }
 
     Ok(())

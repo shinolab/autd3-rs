@@ -85,15 +85,13 @@ fn send_clear() -> anyhow::Result<()> {
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     assert!(!cpu.reads_fpga_state());
-    assert_eq!(256, cpu.fpga().silencer_update_rate_intensity());
-    assert_eq!(256, cpu.fpga().silencer_update_rate_phase());
+    assert_eq!((256, 256), cpu.fpga().silencer_update_rate());
     assert_eq!(
-        SILENCER_STEPS_INTENSITY_DEFAULT as u8,
-        cpu.fpga().silencer_completion_steps_intensity()
-    );
-    assert_eq!(
-        SILENCER_STEPS_PHASE_DEFAULT as u8,
-        cpu.fpga().silencer_completion_steps_phase()
+        (
+            SILENCER_STEPS_INTENSITY_DEFAULT as u8,
+            SILENCER_STEPS_PHASE_DEFAULT as u8
+        ),
+        cpu.fpga().silencer_completion_steps()
     );
     assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
 
