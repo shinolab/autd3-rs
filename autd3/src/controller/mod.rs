@@ -24,9 +24,13 @@ use tracing;
 pub use builder::ControllerBuilder;
 pub use group::GroupGuard;
 
-#[derive(Builder)]
+use derive_more::{Deref, DerefMut};
+
+#[derive(Builder, Deref, DerefMut)]
 pub struct Controller<L: Link> {
     #[get(ref, ref_mut)]
+    #[deref]
+    #[deref_mut]
     link: L,
     #[get(ref, ref_mut)]
     geometry: Geometry,
