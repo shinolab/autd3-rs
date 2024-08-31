@@ -113,7 +113,7 @@ fn send_mod(
     } else {
         assert_eq!(Segment::S0, cpu.fpga().req_modulation_segment());
     }
-    assert_eq!(m, cpu.fpga().modulation(segment));
+    assert_eq!(m, cpu.fpga().modulation_buffer(segment));
 
     Ok(())
 }

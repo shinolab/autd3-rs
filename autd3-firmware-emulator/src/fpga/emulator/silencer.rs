@@ -36,7 +36,7 @@ impl FPGAEmulator {
         }
     }
 
-    fn apply_silencer_helper_interpolate(
+    fn apply_silencer_interpolate(
         raw_seq: &[u8],
         update_rate: impl IntoIterator<Item = u16>,
         phase: bool,
@@ -84,31 +84,14 @@ impl FPGAEmulator {
             .collect()
     }
 
-    fn apply_silencer_helper(
-        &self,
-        raw: &[u8],
-        phase: bool,
-        sampling_div: u16,
-        initial: u8,
-    ) -> Vec<u8> {
-        let raw_seq = raw
-            .iter()
-            .flat_map(|i| std::iter::repeat(i).take(sampling_div as _))
-            .cloned()
-            .collect::<Vec<_>>();
-
+    pub fn apply_silencer(&self, initial: u8, raw: &[u8], phase: bool) -> Vec<u8> {
         if self.silencer_fixed_update_rate_mode() {
             let update_rate = if phase {
                 self.silencer_update_rate().1
             } else {
                 self.silencer_update_rate().0
             };
-            Self::apply_silencer_helper_interpolate(
-                &raw_seq,
-                std::iter::repeat(update_rate),
-                phase,
-                initial,
-            )
+            Self::apply_silencer_interpolate(raw, std::iter::repeat(update_rate), phase, initial)
         } else {
             let completion_steps = if phase {
                 self.silencer_completion_steps().1
@@ -118,9 +101,9 @@ impl FPGAEmulator {
             let mut current_target = initial;
             let mut diff_mem = 0;
             let mut step_rem_mem = 0;
-            Self::apply_silencer_helper_interpolate(
-                &raw_seq,
-                raw_seq.iter().map(|&v| {
+            Self::apply_silencer_interpolate(
+                raw,
+                raw.iter().map(|&v| {
                     let diff = if v < current_target {
                         current_target - v
                     } else {
@@ -189,10 +172,7 @@ mod tests {
         } else {
             fpga.mem.controller_bram_mut()[ADDR_SILENCER_UPDATE_RATE_INTENSITY] = value;
         }
-        assert_eq!(
-            expect,
-            fpga.apply_silencer_helper(&input, phase, 1, initial)
-        );
+        assert_eq!(expect, fpga.apply_silencer(initial, &input, phase));
     }
 
     #[rstest::rstest]
@@ -235,10 +215,6 @@ mod tests {
         } else {
             fpga.mem.controller_bram_mut()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = value as _;
         }
-        assert_eq!(
-            expect,
-            fpga.apply_silencer_helper(&input, phase, 1, initial)
-        );
+        assert_eq!(expect, fpga.apply_silencer(initial, &input, phase));
     }
-
 }

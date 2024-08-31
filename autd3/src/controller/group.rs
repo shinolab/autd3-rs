@@ -156,16 +156,16 @@ mod tests {
 
         assert_eq!(
             vec![Drive::null(); autd.geometry[0].num_transducers()],
-            autd.link[0].fpga().drives(Segment::S0, 0)
+            autd.link[0].fpga().drives_at(Segment::S0, 0)
         );
 
         assert_eq!(
             vec![Drive::null(); autd.geometry[1].num_transducers()],
-            autd.link[1].fpga().drives(Segment::S0, 0)
+            autd.link[1].fpga().drives_at(Segment::S0, 0)
         );
         assert_eq!(
             vec![0x80, 0x80],
-            autd.link[1].fpga().modulation(Segment::S0)
+            autd.link[1].fpga().modulation_buffer(Segment::S0)
         );
 
         assert_eq!(
@@ -173,26 +173,26 @@ mod tests {
                 Drive::new(Phase::new(0x00), EmitIntensity::new(0xFF));
                 autd.geometry[2].num_transducers()
             ],
-            autd.link[2].fpga().drives(Segment::S0, 0)
+            autd.link[2].fpga().drives_at(Segment::S0, 0)
         );
 
         assert_eq!(
             *Sine::new(150. * Hz).calc()?,
-            autd.link[3].fpga().modulation(Segment::S0)
+            autd.link[3].fpga().modulation_buffer(Segment::S0)
         );
         assert_eq!(
             vec![
                 Drive::new(Phase::new(0x00), EmitIntensity::new(0x80));
                 autd.geometry[3].num_transducers()
             ],
-            autd.link[3].fpga().drives(Segment::S0, 0)
+            autd.link[3].fpga().drives_at(Segment::S0, 0)
         );
         assert_eq!(
             vec![
                 Drive::new(Phase::new(0x00), EmitIntensity::new(0x81));
                 autd.geometry[3].num_transducers()
             ],
-            autd.link[3].fpga().drives(Segment::S0, 1)
+            autd.link[3].fpga().drives_at(Segment::S0, 1)
         );
 
         Ok(())

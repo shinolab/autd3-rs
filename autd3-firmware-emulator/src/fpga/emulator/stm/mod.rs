@@ -88,7 +88,11 @@ impl FPGAEmulator {
         }
     }
 
-    pub fn drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {
+    pub fn drives(&self) -> Vec<Drive> {
+        self.drives_at(self.current_stm_segment(), self.current_stm_idx())
+    }
+
+    pub fn drives_at(&self, segment: Segment, idx: usize) -> Vec<Drive> {
         if self.is_stm_gain_mode(segment) {
             self.gain_stm_drives(segment, idx)
         } else {

@@ -6,7 +6,7 @@ mod silencer;
 mod stm;
 mod swapchain;
 
-use autd3_driver::{derive::Segment, ethercat::DcSysTime, firmware::fpga::EmitIntensity};
+use autd3_driver::{derive::Segment, ethercat::DcSysTime};
 
 use memory::Memory;
 
@@ -117,30 +117,11 @@ impl FPGAEmulator {
     pub fn is_force_fan(&self) -> bool {
         (self.mem.controller_bram()[ADDR_CTL_FLAG] & (1 << CTL_FLAG_FORCE_FAN_BIT)) != 0
     }
-
-    pub fn is_outputting(&self) -> bool {
-        let cur_mod_segment = self.current_mod_segment();
-        if self
-            .modulation(cur_mod_segment)
-            .iter()
-            .all(|&m| m == u8::MIN)
-        {
-            return false;
-        }
-        let cur_stm_segment = self.current_stm_segment();
-        (0..self.stm_cycle(cur_stm_segment)).any(|i| {
-            self.drives(cur_stm_segment, i)
-                .iter()
-                .any(|&d| d.intensity() != EmitIntensity::MIN)
-        })
-    }
 }
 
 #[cfg(test)]
 
 mod tests {
-    use crate::fpga::params::{ADDR_MOD_CYCLE0, ADDR_STM_MODE0, STM_MODE_GAIN};
-
     use super::*;
 
     #[test]
@@ -152,20 +133,5 @@ mod tests {
         assert!(fpga.is_thermo_asserted());
         fpga.deassert_thermal_sensor();
         assert!(!fpga.is_thermo_asserted());
-    }
-
-    #[test]
-    fn is_outputting() {
-        let fpga = FPGAEmulator::new(249);
-        fpga.mem.controller_bram_mut()[ADDR_STM_MODE0] = STM_MODE_GAIN;
-
-        assert!(!fpga.is_outputting());
-
-        fpga.mem.stm_bram_0_mut()[0] = 0xFFFF;
-        assert!(!fpga.is_outputting());
-
-        fpga.mem.modulation_bram_0_mut()[0] = 0xFFFF;
-        fpga.mem.controller_bram_mut()[ADDR_MOD_CYCLE0] = 2 - 1;
-        assert!(fpga.is_outputting());
     }
 }

@@ -41,6 +41,10 @@ impl FPGAEmulator {
         }
     }
 
+    pub fn modulation(&self) -> u8 {
+        self.modulation_at(self.current_mod_segment(), self.current_mod_idx())
+    }
+
     pub fn modulation_at(&self, segment: Segment, idx: usize) -> u8 {
         let m = match segment {
             Segment::S0 => &self.mem.modulation_bram_0()[idx >> 1],
@@ -51,7 +55,7 @@ impl FPGAEmulator {
         m as u8
     }
 
-    pub fn modulation(&self, segment: Segment) -> Vec<u8> {
+    pub fn modulation_buffer(&self, segment: Segment) -> Vec<u8> {
         (0..self.modulation_cycle(segment))
             .map(|i| self.modulation_at(segment, i))
             .collect()
@@ -105,13 +109,10 @@ mod tests {
         fpga.mem.modulation_bram_0_mut()[1] = 0x5678;
         fpga.mem.controller_bram_mut()[ADDR_MOD_CYCLE0] = 3 - 1;
         assert_eq!(3, fpga.modulation_cycle(Segment::S0));
+        assert_eq!(0x34, fpga.modulation());
         assert_eq!(0x34, fpga.modulation_at(Segment::S0, 0));
         assert_eq!(0x12, fpga.modulation_at(Segment::S0, 1));
         assert_eq!(0x78, fpga.modulation_at(Segment::S0, 2));
-        let m = fpga.modulation(Segment::S0);
-        assert_eq!(3, m.len());
-        assert_eq!(0x34, m[0]);
-        assert_eq!(0x12, m[1]);
-        assert_eq!(0x78, m[2]);
+        assert_eq!(vec![0x34, 0x12, 0x78], fpga.modulation_buffer(Segment::S0));
     }
 }

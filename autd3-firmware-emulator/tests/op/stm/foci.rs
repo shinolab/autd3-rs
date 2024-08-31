@@ -95,7 +95,7 @@ fn test_send_foci_stm(
         cpu.fpga().sound_speed(segment)
     );
     foci.iter().enumerate().for_each(|(focus_idx, focus)| {
-        let drives = cpu.fpga().drives(segment, focus_idx);
+        let drives = cpu.fpga().drives_at(segment, focus_idx);
         assert_eq!(cpu.num_transducers(), drives.len());
         drives.iter().enumerate().for_each(|(tr_idx, &drive)| {
             let tr = cpu.fpga().local_tr_pos()[tr_idx];
@@ -371,7 +371,7 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
         );
         foci.iter().enumerate().for_each(|(focus_idx, focus)| {
             cpu.fpga()
-                .drives(Segment::S0, focus_idx)
+                .drives_at(Segment::S0, focus_idx)
                 .iter()
                 .enumerate()
                 .for_each(|(tr_idx, &drive)| {
