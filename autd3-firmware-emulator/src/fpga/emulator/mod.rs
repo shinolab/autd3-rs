@@ -1,17 +1,25 @@
+mod debug;
 mod memory;
+mod modulation;
+mod pwe;
+mod silencer;
+mod stm;
 mod swapchain;
 
-use autd3_driver::{derive::Segment, ethercat::DcSysTime, firmware::fpga::EmitIntensity};
+use autd3_driver::{derive::Segment, ethercat::DcSysTime};
 
 use memory::Memory;
 
-use super::params::{CTL_FLAG_MOD_SET_BIT, CTL_FLAG_STM_SET_BIT};
+use super::params::{
+    ADDR_CTL_FLAG, ADDR_FPGA_STATE, CTL_FLAG_FORCE_FAN_BIT, CTL_FLAG_MOD_SET_BIT,
+    CTL_FLAG_STM_SET_BIT,
+};
 
 const CTL_FLAG_MOD_SET: u16 = 1 << CTL_FLAG_MOD_SET_BIT;
 const CTL_FLAG_STM_SET: u16 = 1 << CTL_FLAG_STM_SET_BIT;
 
 pub struct FPGAEmulator {
-    mem: Memory,
+    pub(crate) mem: Memory,
     mod_swapchain: swapchain::Swapchain<CTL_FLAG_MOD_SET>,
     stm_swapchain: swapchain::Swapchain<CTL_FLAG_STM_SET>,
 }
@@ -42,11 +50,11 @@ impl FPGAEmulator {
         if (self.read(addr) & CTL_FLAG_MOD_SET) == CTL_FLAG_MOD_SET {
             self.mod_swapchain.set(
                 sys_time,
-                self.modulation_loop_behavior(self.req_mod_segment()),
-                self.modulation_freq_division(self.req_mod_segment()),
-                self.modulation_cycle(self.req_mod_segment()),
-                self.req_mod_segment(),
-                self.mod_transition_mode(),
+                self.modulation_loop_behavior(self.req_modulation_segment()),
+                self.modulation_freq_division(self.req_modulation_segment()),
+                self.modulation_cycle(self.req_modulation_segment()),
+                self.req_modulation_segment(),
+                self.modulation_transition_mode(),
             );
         }
         if (self.read(addr) & CTL_FLAG_STM_SET) == CTL_FLAG_STM_SET {
@@ -90,26 +98,24 @@ impl FPGAEmulator {
         self.mem.update(fpga_state);
     }
 
-    pub fn to_pulse_width(&self, a: EmitIntensity, b: u8) -> u8 {
-        let key = (a.value() as usize * b as usize) / 255;
-        self.pulse_width_encoder_table_at(key)
+    pub fn fpga_state(&self) -> u16 {
+        self.mem.controller_bram()[ADDR_FPGA_STATE]
     }
 
-    pub fn is_outputting(&self) -> bool {
-        let cur_mod_segment = self.current_mod_segment();
-        if self
-            .modulation(cur_mod_segment)
-            .iter()
-            .all(|&m| m == u8::MIN)
-        {
-            return false;
-        }
-        let cur_stm_segment = self.current_stm_segment();
-        (0..self.stm_cycle(cur_stm_segment)).any(|i| {
-            self.drives(cur_stm_segment, i)
-                .iter()
-                .any(|&d| d.intensity() != EmitIntensity::MIN)
-        })
+    pub fn assert_thermal_sensor(&mut self) {
+        self.mem.controller_bram_mut()[ADDR_FPGA_STATE] |= 1 << 0;
+    }
+
+    pub fn deassert_thermal_sensor(&mut self) {
+        self.mem.controller_bram_mut()[ADDR_FPGA_STATE] &= !(1 << 0);
+    }
+
+    pub fn is_thermo_asserted(&self) -> bool {
+        (self.mem.controller_bram()[ADDR_FPGA_STATE] & (1 << 0)) != 0
+    }
+
+    pub fn is_force_fan(&self) -> bool {
+        (self.mem.controller_bram()[ADDR_CTL_FLAG] & (1 << CTL_FLAG_FORCE_FAN_BIT)) != 0
     }
 }
 
@@ -117,25 +123,6 @@ impl FPGAEmulator {
 
 mod tests {
     use super::*;
-
-    static ASIN_TABLE: &[u8; 256] = include_bytes!("asin.dat");
-
-    fn to_pulse_width_actual(a: u8, b: u8) -> u8 {
-        let idx = (a as usize * b as usize) / 255;
-        ASIN_TABLE[idx]
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn test_to_pulse_width() {
-        let fpga = FPGAEmulator::new(249);
-        itertools::iproduct!(0x00..=0xFF, 0x00..=0xFF).for_each(|(a, b)| {
-            assert_eq!(
-                to_pulse_width_actual(a, b),
-                fpga.to_pulse_width(a.into(), b)
-            );
-        });
-    }
 
     #[test]
     #[cfg_attr(miri, ignore)]
