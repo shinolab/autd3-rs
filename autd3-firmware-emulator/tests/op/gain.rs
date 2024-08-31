@@ -63,12 +63,9 @@ fn send_gain() -> anyhow::Result<()> {
             LoopBehavior::infinite(),
             cpu.fpga().stm_loop_behavior(Segment::S0)
         );
-        buf[&0]
-            .iter()
-            .zip(cpu.fpga().drives(Segment::S0, 0))
-            .for_each(|(&a, b)| {
-                assert_eq!(a, b);
-            });
+        buf[&0].iter().zip(cpu.fpga().drives()).for_each(|(&a, b)| {
+            assert_eq!(a, b);
+        });
     }
 
     {
@@ -97,7 +94,7 @@ fn send_gain() -> anyhow::Result<()> {
         );
         buf[&0]
             .iter()
-            .zip(cpu.fpga().drives(Segment::S1, 0))
+            .zip(cpu.fpga().drives_at(Segment::S1, 0))
             .for_each(|(&a, b)| {
                 assert_eq!(a, b);
             });

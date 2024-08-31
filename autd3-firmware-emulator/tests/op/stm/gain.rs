@@ -93,7 +93,7 @@ fn send_gain_stm_phase_intensity_full(
     }
     (0..bufs.len()).for_each(|gain_idx| {
         cpu.fpga()
-            .drives(segment, gain_idx)
+            .drives_at(segment, gain_idx)
             .into_iter()
             .enumerate()
             .for_each(|(i, drive)| {
@@ -135,7 +135,7 @@ fn send_gain_stm_phase_full(#[case] n: usize) -> anyhow::Result<()> {
 
     (0..bufs.len()).for_each(|gain_idx| {
         cpu.fpga()
-            .drives(segment, gain_idx)
+            .drives_at(segment, gain_idx)
             .iter()
             .enumerate()
             .for_each(|(i, drive)| {
@@ -194,7 +194,7 @@ fn send_gain_stm_phase_half(#[case] n: usize) -> anyhow::Result<()> {
 
         (0..bufs.len()).for_each(|gain_idx| {
             cpu.fpga()
-                .drives(segment, gain_idx)
+                .drives_at(segment, gain_idx)
                 .iter()
                 .enumerate()
                 .for_each(|(i, &drive)| {
