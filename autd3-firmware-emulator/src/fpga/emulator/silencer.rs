@@ -36,6 +36,7 @@ impl FPGAEmulator {
         }
     }
 
+    #[allow(clippy::collapsible_else_if)]
     fn apply_silencer_interpolate(
         raw_seq: &[u8],
         update_rate: impl IntoIterator<Item = u16>,
@@ -44,7 +45,7 @@ impl FPGAEmulator {
     ) -> Vec<u8> {
         let mut current: i32 = (initial as i32) << 8;
         raw_seq
-            .into_iter()
+            .iter()
             .zip(update_rate)
             .map(|(&v, u)| {
                 let update_rate = u as i32;
@@ -84,6 +85,7 @@ impl FPGAEmulator {
             .collect()
     }
 
+    #[allow(clippy::collapsible_else_if)]
     pub fn apply_silencer(&self, initial: u8, raw: &[u8], phase: bool) -> Vec<u8> {
         if self.silencer_fixed_update_rate_mode() {
             let update_rate = if phase {
