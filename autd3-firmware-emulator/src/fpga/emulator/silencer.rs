@@ -125,7 +125,7 @@ impl FPGAEmulator {
                     };
                     let step_quo = ((diff as u16) << 8) / completion_steps;
                     let step_rem = ((diff as u16) << 8) % completion_steps;
-                    let update_rate = if rst {
+                    if rst {
                         step_rem_mem = step_rem;
                         step_quo
                     } else {
@@ -135,8 +135,7 @@ impl FPGAEmulator {
                             step_rem_mem -= 1;
                             step_quo + 1
                         }
-                    };
-                    update_rate
+                    }
                 }),
                 phase,
                 initial,
