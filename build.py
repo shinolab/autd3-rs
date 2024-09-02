@@ -243,6 +243,12 @@ def rust_test(args):
                 command.append("--exclude")
                 command.append("autd3-derive")
                 command.append("--exclude")
+                command.append("autd3-link-calc")
+                command.append("--exclude")
+                command.append("autd3-link-simulator")
+                command.append("--exclude")
+                command.append("autd3-link-twincat")
+                command.append("--exclude")
                 command.append("autd3-modulation-audio-file")
 
             subprocess.run(command).check_returncode()
@@ -251,6 +257,7 @@ def rust_test(args):
 def rust_run(args):
     examples = [
         "nop",
+        "calc",
         "soem",
         "remote_soem",
         "twincat",
@@ -269,6 +276,8 @@ def rust_run(args):
     match args.target:
         case "soem":
             features = "soem"
+        case "calc":
+            features = "calc"
         case "remote_soem":
             features = "remote_soem"
         case "twincat":
@@ -338,7 +347,11 @@ def rust_coverage(args):
                 "--ignore",
                 "autd3-derive/**/*",
                 "--ignore",
-                "autd3-link-*/**/*",
+                "autd3-link-simulator/**/*",
+                "--ignore",
+                "autd3-link-soem/**/*",
+                "--ignore",
+                "autd3-link-twincat/**/*",
                 "--ignore",
                 "autd3-protobuf/src/pb/*",
                 "--ignore",

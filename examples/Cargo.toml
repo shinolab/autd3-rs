@@ -12,6 +12,11 @@ path = "src/nop.rs"
 required-features = []
 
 [[bin]]
+name = "calc"
+path = "src/calc.rs"
+required-features = ["calc"]
+
+[[bin]]
 name = "soem"
 path = "src/soem.rs"
 required-features = ["soem"]
@@ -51,6 +56,7 @@ anyhow = { workspace = true }
 autd3 = { workspace = true }
 autd3-driver = { workspace = true }
 autd3-gain-holo = { workspace = true }
+autd3-link-calc = { workspace = true, optional = true }
 autd3-link-simulator = { workspace = true, optional = true }
 autd3-link-soem = { workspace = true, optional = true }
 autd3-link-twincat = { workspace = true, optional = true }
@@ -66,6 +72,7 @@ tracing = { workspace = true }
 
 [features]
 default = ["all"]
+calc = ["autd3-link-calc"]
 simulator = ["autd3-link-simulator"]
 soem = ["autd3-link-soem/local"]
 remote_soem = ["autd3-link-soem/remote"]

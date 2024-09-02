@@ -1,0 +1,18 @@
+[package]
+name = "autd3-link-calc"
+description = "Link for calculating sound field, emulation of firmware, etc"
+readme = "README.md"
+keywords = ["autd"]
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
+
+[dependencies]
+autd3-driver = { workspace = true }
+autd3-firmware-emulator = { workspace = true }
+
+[features]
+default = []
+async-trait = ["autd3-driver/async-trait"]
