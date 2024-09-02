@@ -82,8 +82,8 @@ fn send_silencer_fixed_completion_time() {
 
         assert_eq!(
             (
-                (time_intensity.as_micros() / 25) as u8,
-                (time_phase.as_micros() / 25) as u8
+                (time_intensity.as_micros() / 25) as _,
+                (time_phase.as_micros() / 25) as _
             ),
             cpu.fpga().silencer_completion_steps()
         );
@@ -105,8 +105,8 @@ fn send_silencer_fixed_completion_time() {
 
         assert_eq!(
             (
-                (time_intensity.as_micros() / 25) as u8,
-                (time_phase.as_micros() / 25) as u8
+                (time_intensity.as_micros() / 25) as _,
+                (time_phase.as_micros() / 25) as _
             ),
             cpu.fpga().silencer_completion_steps()
         );
@@ -221,7 +221,7 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     assert_eq!(
-        (steps_intensity as u8, steps_phase as u8),
+        (steps_intensity as _, steps_phase as _),
         cpu.fpga().silencer_completion_steps()
     );
     assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
@@ -251,8 +251,8 @@ fn send_silencer_fixed_completion_time_permissive() {
 
     assert_eq!(
         (
-            (time_intensity.as_micros() / 25) as u8,
-            (time_phase.as_micros() / 25) as u8
+            (time_intensity.as_micros() / 25) as _,
+            (time_phase.as_micros() / 25) as _
         ),
         cpu.fpga().silencer_completion_steps(),
     );
