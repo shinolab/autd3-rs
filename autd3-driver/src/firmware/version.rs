@@ -24,7 +24,7 @@ pub struct FirmwareVersion {
 }
 
 impl FirmwareVersion {
-    pub const LATEST_VERSION_NUM_MAJOR: u8 = 0xA1;
+    pub const LATEST_VERSION_NUM_MAJOR: u8 = 0xA2;
     pub const LATEST_VERSION_NUM_MINOR: u8 = 0x00;
     pub const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
 
@@ -101,14 +101,14 @@ impl FirmwareVersion {
                 version_number_major - 0x92,
                 version_number_minor
             ),
-            0xA0..=0xA0 => format!(
+            0xA0..=0xA1 => format!(
                 "v9.{}.{}",
                 version_number_major - 0xA0,
                 version_number_minor
             ),
-            0xA1..=0xA1 => format!(
+            0xA2..=0xA2 => format!(
                 "v10.{}.{}",
-                version_number_major - 0xA1,
+                version_number_major - 0xA2,
                 version_number_minor
             ),
             _ => format!("unknown ({version_number_major})"),
@@ -171,7 +171,8 @@ mod tests {
     #[case("v7.0.0", 145)]
     #[case("v8.0.0", 146)]
     #[case("v9.0.0", 160)]
-    #[case("v10.0.0", 161)]
+    #[case("v9.1.0", 161)]
+    #[case("v10.0.0", 162)]
     #[case("unknown (147)", 147)]
     #[cfg_attr(miri, ignore)]
     fn version(#[case] expected: &str, #[case] num: u8) {

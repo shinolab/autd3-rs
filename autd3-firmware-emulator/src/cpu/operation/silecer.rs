@@ -43,8 +43,8 @@ impl CPUEmulator {
 
             self.silencer_strict_mode =
                 (d.flag & SILENCER_FLAG_STRICT_MODE) == SILENCER_FLAG_STRICT_MODE;
-            self.min_freq_div_intensity = d.value_intensity & 0x00FF;
-            self.min_freq_div_phase = d.value_phase & 0x00FF;
+            self.min_freq_div_intensity = d.value_intensity;
+            self.min_freq_div_phase = d.value_phase;
 
             if self.validate_silencer_settings(
                 self.stm_freq_div[self.stm_segment as usize],
@@ -59,12 +59,12 @@ impl CPUEmulator {
             self.bram_write(
                 BRAM_SELECT_CONTROLLER,
                 ADDR_SILENCER_COMPLETION_STEPS_INTENSITY,
-                d.value_intensity & 0x00FF,
+                d.value_intensity,
             );
             self.bram_write(
                 BRAM_SELECT_CONTROLLER,
                 ADDR_SILENCER_COMPLETION_STEPS_PHASE,
-                d.value_phase & 0x00FF,
+                d.value_phase,
             );
         }
         self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_SILENCER_FLAG, d.flag as _);

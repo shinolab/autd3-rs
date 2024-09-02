@@ -55,7 +55,7 @@ impl Operation for SilencerFixedCompletionStepsOp {
             } else {
                 return Err(AUTDInternalError::InvalidSilencerCompletionTime(value));
             };
-            if v == 0 || v > u8::MAX as _ {
+            if v == 0 || v > u16::MAX as _ {
                 return Err(AUTDInternalError::SilencerCompletionTimeOutOfRange(value));
             }
             Ok(v as u16)
@@ -149,8 +149,8 @@ mod tests {
         Duration::from_micros(25)
     )]
     #[case(
-        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(25 * 256)),
-        Duration::from_micros(25 * 256),
+        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(25 * 65536)),
+        Duration::from_micros(25 * 65536),
         Duration::from_micros(25)
     )]
     #[case(
@@ -159,9 +159,9 @@ mod tests {
         Duration::from_micros(0)
     )]
     #[case(
-        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(25 * 256)),
+        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(25 * 65536)),
         Duration::from_micros(25),
-        Duration::from_micros(25 * 256),
+        Duration::from_micros(25 * 65536),
     )]
     #[case(
         AUTDInternalError::InvalidSilencerCompletionTime(Duration::from_micros(26)),

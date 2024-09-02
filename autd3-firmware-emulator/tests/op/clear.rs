@@ -88,8 +88,8 @@ fn send_clear() -> anyhow::Result<()> {
     assert_eq!((256, 256), cpu.fpga().silencer_update_rate());
     assert_eq!(
         (
-            SILENCER_STEPS_INTENSITY_DEFAULT as u8,
-            SILENCER_STEPS_PHASE_DEFAULT as u8
+            SILENCER_STEPS_INTENSITY_DEFAULT as _,
+            SILENCER_STEPS_PHASE_DEFAULT as _
         ),
         cpu.fpga().silencer_completion_steps()
     );
