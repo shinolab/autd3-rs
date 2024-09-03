@@ -5,6 +5,7 @@ members = [
     "autd3-driver",
     "autd3-derive",
     "autd3-gain-holo",
+    "autd3-link-calc",
     "autd3-link-simulator",
     "autd3-link-soem",
     "autd3-link-twincat",
@@ -70,6 +71,7 @@ autd3 = { path = "./autd3", version = "28.0.0" }
 autd3-driver = { path = "./autd3-driver", version = "28.0.0" }
 autd3-derive = { path = "./autd3-derive", version = "28.0.0" }
 autd3-gain-holo = { path = "./autd3-gain-holo", version = "28.0.0" }
+autd3-link-calc = { path = "./autd3-link-calc", version = "28.0.0" }
 autd3-link-simulator = { path = "./autd3-link-simulator", version = "28.0.0" }
 autd3-link-soem = { path = "./autd3-link-soem", version = "28.0.0" }
 autd3-link-twincat = { path = "./autd3-link-twincat", version = "28.0.0" }

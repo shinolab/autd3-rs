@@ -1,0 +1,25 @@
+[package]
+name = "autd3-link-calc"
+description = "Link for calculating sound field, emulation of firmware, etc"
+readme = "README.md"
+keywords = ["autd"]
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
+
+[dependencies]
+anyhow.workspace = true
+autd3-driver = { workspace = true }
+autd3-firmware-emulator = { workspace = true }
+derive_more = { workspace = true, features = ["deref"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+anyhow = { workspace = true }
+autd3 = { workspace = true }
+
+[features]
+default = []
+async-trait = ["autd3-driver/async-trait"]
