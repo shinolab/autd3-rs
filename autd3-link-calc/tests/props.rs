@@ -25,5 +25,7 @@ async fn gain() -> anyhow::Result<()> {
     autd.send(autd3::gain::Uniform::new(expect)).await?;
     assert!(autd.gain().iter().all(|(_, _, d)| { expect == *d }));
 
+    autd.close().await?;
+
     Ok(())
 }

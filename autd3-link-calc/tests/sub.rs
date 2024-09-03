@@ -47,5 +47,7 @@ async fn modulation() -> anyhow::Result<()> {
         autd[0].modulation()
     );
 
+    autd.close().await?;
+
     Ok(())
 }
