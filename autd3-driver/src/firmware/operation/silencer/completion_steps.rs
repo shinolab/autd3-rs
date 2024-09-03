@@ -104,7 +104,7 @@ mod tests {
         defined::ULTRASOUND_PERIOD, firmware::fpga::SilencerTarget, geometry::tests::create_device,
     };
 
-    const NUM_TRANS_IN_UNIT: usize = 249;
+    const NUM_TRANS_IN_UNIT: u8 = 249;
 
     #[rstest::rstest]
     #[test]

@@ -35,9 +35,9 @@ impl ControllerBuilder {
             devices: iter
                 .into_iter()
                 .enumerate()
-                .scan(0, |state, (i, d)| {
-                    let dev = d.into_device(i, *state);
-                    *state += dev.num_transducers();
+                .scan(0u32, |state, (i, d)| {
+                    let dev = d.into_device(i as _, *state);
+                    *state += dev.num_transducers() as u32;
                     Some(dev)
                 })
                 .collect(),

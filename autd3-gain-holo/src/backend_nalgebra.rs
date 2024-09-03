@@ -582,7 +582,10 @@ mod tests {
                             j as f32 * AUTD3::DEVICE_HEIGHT,
                             0.,
                         ))
-                        .into_device(j + i * size, AUTD3::NUM_TRANS_IN_UNIT * (j + i * size))
+                        .into_device(
+                            (j + i * size) as _,
+                            (AUTD3::NUM_TRANS_IN_UNIT * (j + i * size)) as _,
+                        )
                     })
                 })
                 .collect(),

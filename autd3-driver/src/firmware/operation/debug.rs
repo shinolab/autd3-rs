@@ -63,7 +63,7 @@ mod tests {
 
     use super::*;
 
-    const NUM_TRANS_IN_UNIT: usize = 249;
+    const NUM_TRANS_IN_UNIT: u8= 249;
 
     #[test]
     fn debug_op() {

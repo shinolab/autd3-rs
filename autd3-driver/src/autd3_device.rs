@@ -56,7 +56,7 @@ impl AUTD3 {
 }
 
 impl IntoDevice for AUTD3 {
-    fn into_device(self, dev_idx: usize, global_idx_offset: usize) -> Device {
+    fn into_device(self, dev_idx: u16, global_idx_offset: u32) -> Device {
         let rot_mat: Matrix4 = From::from(self.rotation);
         let trans_mat = rot_mat.append_translation(&self.position);
         Device::new(
@@ -74,7 +74,7 @@ impl IntoDevice for AUTD3 {
                         )
                 })
                 .enumerate()
-                .map(|(i, p)| Transducer::new(i, global_idx_offset + i, p.xyz()))
+                .map(|(i, p)| Transducer::new(i as _, global_idx_offset + i as u32, p.xyz()))
                 .collect(),
         )
     }

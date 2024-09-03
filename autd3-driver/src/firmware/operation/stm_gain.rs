@@ -264,7 +264,7 @@ mod tests {
         const GAIN_STM_SIZE: usize = 3;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(0, NUM_TRANS_IN_UNIT as _);
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
@@ -425,7 +425,7 @@ mod tests {
         const GAIN_STM_SIZE: usize = 5;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(0, NUM_TRANS_IN_UNIT as _);
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
@@ -563,7 +563,7 @@ mod tests {
         const GAIN_STM_SIZE: usize = 9;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(0, NUM_TRANS_IN_UNIT as _);
 
         let mut tx = unsafe {
             let mut aligned: Vec<u16> = vec![0; FRAME_SIZE / 2];
@@ -741,7 +741,7 @@ mod tests {
     fn out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] size: usize) {
         let send = |n: usize| {
             const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
-            let device = create_device(0, NUM_TRANS_IN_UNIT);
+            let device = create_device(0, NUM_TRANS_IN_UNIT as _);
             let mut tx = vec![0x00u8; FRAME_SIZE];
             let gain_data: Vec<Vec<Drive>> = vec![vec![Drive::null(); NUM_TRANS_IN_UNIT]; n];
             let mut op = GainSTMOp::new(
