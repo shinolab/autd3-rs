@@ -155,7 +155,7 @@ mod tests {
     fn test_gs_filtered() {
         let geometry: Geometry = Geometry::new(vec![
             AUTD3::new(Vector3::zeros()).into_device(0, 0),
-            AUTD3::new(Vector3::zeros()).into_device(1, AUTD3::NUM_TRANS_IN_UNIT),
+            AUTD3::new(Vector3::zeros()).into_device(1, AUTD3::NUM_TRANS_IN_UNIT as _),
         ]);
         let backend =
             NalgebraBackend::<autd3_driver::acoustics::directivity::Sphere>::new().unwrap();

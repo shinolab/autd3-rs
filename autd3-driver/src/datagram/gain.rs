@@ -195,9 +195,9 @@ pub mod tests {
     fn test_transform(
         #[case] expect: HashMap<usize, Vec<Drive>>,
         #[case] enabled: Vec<bool>,
-        #[case] n: usize,
+        #[case] n: u16,
     ) -> anyhow::Result<()> {
-        let mut geometry = create_geometry(n, NUM_TRANSDUCERS);
+        let mut geometry = create_geometry(n, NUM_TRANSDUCERS as _);
         geometry
             .iter_mut()
             .zip(enabled.iter())

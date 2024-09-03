@@ -103,7 +103,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(0, NUM_TRANS_IN_UNIT as _);
 
         let mut tx = vec![0x00u8; size_of::<GainT>() + NUM_TRANS_IN_UNIT * size_of::<Drive>()];
 
