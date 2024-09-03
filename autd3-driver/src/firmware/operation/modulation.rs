@@ -184,7 +184,7 @@ mod tests {
     fn test() {
         const MOD_SIZE: usize = 100;
 
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(0, NUM_TRANS_IN_UNIT as _);
 
         let mut tx = vec![0x00u8; size_of::<ModulationHead>() + MOD_SIZE];
 
@@ -268,7 +268,7 @@ mod tests {
         const MOD_SIZE: usize = FRAME_SIZE - std::mem::size_of::<ModulationHead>()
             + (FRAME_SIZE - std::mem::size_of::<ModulationSubseq>()) * 2;
 
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(0, NUM_TRANS_IN_UNIT as _);
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
@@ -401,7 +401,7 @@ mod tests {
     fn out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] size: usize) {
         let send = |n: usize| {
             const FRAME_SIZE: usize = size_of::<ModulationHead>() + NUM_TRANS_IN_UNIT * 2;
-            let device = create_device(0, NUM_TRANS_IN_UNIT);
+            let device = create_device(0, NUM_TRANS_IN_UNIT as _);
             let mut tx = vec![0x00u8; FRAME_SIZE];
             let buf = Arc::new(vec![0x00; n]);
             let mut op = ModulationOp::new(
@@ -428,7 +428,7 @@ mod tests {
     #[case(253)]
     #[case(255)]
     fn odd_size(#[case] size: usize) -> anyhow::Result<()> {
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(0, NUM_TRANS_IN_UNIT as _);
 
         let mut tx = vec![0x00u8; NUM_TRANS_IN_UNIT * 2];
 

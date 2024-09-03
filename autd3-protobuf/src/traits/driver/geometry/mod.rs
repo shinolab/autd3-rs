@@ -81,7 +81,10 @@ impl FromMessage<Geometry> for autd3_driver::geometry::Geometry {
                     .map(autd3_driver::geometry::UnitQuaternion::from_msg)??;
                 let mut dev = autd3_driver::autd3_device::AUTD3::new(pos)
                     .with_rotation(rot)
-                    .into_device(i, i * autd3_driver::autd3_device::AUTD3::NUM_TRANS_IN_UNIT);
+                    .into_device(
+                        i as _,
+                        (i * autd3_driver::autd3_device::AUTD3::NUM_TRANS_IN_UNIT) as _,
+                    );
                 dev.sound_speed = dev_msg.sound_speed as _;
                 Ok(dev)
             })
