@@ -65,7 +65,7 @@ mod tests {
         let transducer_test = Custom::new(move |dev| {
             let dev_idx = dev.idx();
             move |tr| {
-                if dev_idx == 0 && tr.idx() == test_id {
+                if dev_idx == 0 && tr.local_idx() == test_id {
                     test_drive
                 } else {
                     Drive::null()

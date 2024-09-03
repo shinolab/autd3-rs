@@ -116,7 +116,7 @@ impl Device {
 }
 
 pub trait IntoDevice {
-    fn into_device(self, dev_idx: usize) -> Device;
+    fn into_device(self, dev_idx: usize, global_idx_offset: usize) -> Device;
 }
 
 #[cfg(test)]
@@ -169,7 +169,7 @@ pub mod tests {
     fn test_center() {
         let transducers = itertools::iproduct!(0..18, 0..14)
             .enumerate()
-            .map(|(i, (y, x))| Transducer::new(i, 10.16 * Vector3::new(x as f32, y as f32, 0.)))
+            .map(|(i, (y, x))| Transducer::new(i, i, 10.16 * Vector3::new(x as f32, y as f32, 0.)))
             .collect::<Vec<_>>();
         let expected =
             transducers.iter().map(|t| t.position()).sum::<Vector3>() / transducers.len() as f32;
@@ -216,7 +216,7 @@ pub mod tests {
             itertools::iproduct!(0..18, 0..14)
                 .enumerate()
                 .map(|(i, (y, x))| {
-                    Transducer::new(i, origin + 10.16 * Vector3::new(x as f32, y as f32, 0.))
+                    Transducer::new(i, i, origin + 10.16 * Vector3::new(x as f32, y as f32, 0.))
                 })
                 .collect::<Vec<_>>(),
         );
@@ -232,7 +232,7 @@ pub mod tests {
         let transducers = itertools::iproduct!(0..18, 0..14)
             .enumerate()
             .map(|(i, (y, x))| {
-                Transducer::new(i, origin + 10.16 * Vector3::new(x as f32, y as f32, 0.))
+                Transducer::new(i, i, origin + 10.16 * Vector3::new(x as f32, y as f32, 0.))
             })
             .collect::<Vec<_>>();
 
@@ -259,7 +259,7 @@ pub mod tests {
                 itertools::iproduct!(0..18, 0..14)
                     .enumerate()
                     .map(|(i, (y, x))| {
-                        Transducer::new(i, 10.16 * Vector3::new(x as f32, y as f32, 0.))
+                        Transducer::new(i, i, 10.16 * Vector3::new(x as f32, y as f32, 0.))
                     })
                     .collect::<Vec<_>>(),
             );
@@ -304,7 +304,7 @@ pub mod tests {
         let transducers = itertools::iproduct!(0..18, 0..14)
             .enumerate()
             .map(|(i, (y, x))| {
-                Transducer::new(i, origin + 10.16 * Vector3::new(x as f32, y as f32, 0.))
+                Transducer::new(i, i, origin + 10.16 * Vector3::new(x as f32, y as f32, 0.))
             })
             .collect::<Vec<_>>();
 
@@ -325,7 +325,7 @@ pub mod tests {
     fn test_rotate() {
         let transducers = itertools::iproduct!(0..18, 0..14)
             .enumerate()
-            .map(|(i, (y, x))| Transducer::new(i, 10.16 * Vector3::new(x as f32, y as f32, 0.)))
+            .map(|(i, (y, x))| Transducer::new(i, i, 10.16 * Vector3::new(x as f32, y as f32, 0.)))
             .collect::<Vec<_>>();
 
         let mut device = Device::new(0, UnitQuaternion::identity(), transducers);
@@ -358,7 +358,7 @@ pub mod tests {
     fn test_affine() {
         let transducers = itertools::iproduct!(0..18, 0..14)
             .enumerate()
-            .map(|(i, (y, x))| Transducer::new(i, 10.16 * Vector3::new(x as f32, y as f32, 0.)))
+            .map(|(i, (y, x))| Transducer::new(i, i, 10.16 * Vector3::new(x as f32, y as f32, 0.)))
             .collect::<Vec<_>>();
 
         let mut device = Device::new(0, UnitQuaternion::identity(), transducers);

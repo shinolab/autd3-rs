@@ -17,7 +17,7 @@ pub enum DebugType<'a> {
     #[debug("StmIdx({})", _0)]
     StmIdx(u16),
     IsStmMode,
-    #[debug("PwmOut({})", _0.idx())]
+    #[debug("PwmOut({})", _0.local_idx())]
     PwmOut(&'a Transducer),
     #[debug("Direct({})", _0)]
     Direct(bool),
@@ -51,7 +51,7 @@ impl DebugType<'_> {
             | DebugType::ModSegment
             | DebugType::StmSegment
             | DebugType::IsStmMode => 0,
-            DebugType::PwmOut(tr) => tr.idx() as _,
+            DebugType::PwmOut(tr) => tr.local_idx() as _,
             DebugType::ModIdx(idx) => *idx,
             DebugType::StmIdx(idx) => *idx,
             DebugType::Direct(v) => *v as u16,
@@ -82,7 +82,7 @@ mod tests {
             "PwmOut(1)",
             format!(
                 "{:?}",
-                DebugType::PwmOut(&Transducer::new(1, Vector3::new(0.0, 0.0, 0.0)))
+                DebugType::PwmOut(&Transducer::new(1, 1, Vector3::new(0.0, 0.0, 0.0)))
             )
         );
         assert_eq!("Direct(true)", format!("{:?}", DebugType::Direct(true)));

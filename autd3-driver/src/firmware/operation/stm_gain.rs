@@ -300,7 +300,7 @@ mod tests {
                 let gain_data = gain_data.clone();
                 gain_data
                     .into_iter()
-                    .map(|g| Box::new(move |tr: &Transducer| g[tr.idx()]) as Box<_>)
+                    .map(|g| Box::new(move |tr: &Transducer| g[tr.local_idx()]) as Box<_>)
                     .collect()
             },
             GainSTMMode::PhaseIntensityFull,
@@ -452,7 +452,7 @@ mod tests {
                 let gain_data = gain_data.clone();
                 gain_data
                     .into_iter()
-                    .map(|g| Box::new(move |tr: &Transducer| g[tr.idx()]) as Box<_>)
+                    .map(|g| Box::new(move |tr: &Transducer| g[tr.local_idx()]) as Box<_>)
                     .collect()
             },
             GainSTMMode::PhaseFull,
@@ -601,7 +601,7 @@ mod tests {
                 let gain_data = gain_data.clone();
                 gain_data
                     .into_iter()
-                    .map(|g| Box::new(move |tr: &Transducer| g[tr.idx()]) as Box<_>)
+                    .map(|g| Box::new(move |tr: &Transducer| g[tr.local_idx()]) as Box<_>)
                     .collect()
             },
             GainSTMMode::PhaseHalf,
@@ -749,7 +749,7 @@ mod tests {
                     let gain_data = gain_data.clone();
                     gain_data
                         .into_iter()
-                        .map(|g| Box::new(move |tr: &Transducer| g[tr.idx()]) as Box<_>)
+                        .map(|g| Box::new(move |tr: &Transducer| g[tr.local_idx()]) as Box<_>)
                         .collect()
                 },
                 GainSTMMode::PhaseIntensityFull,

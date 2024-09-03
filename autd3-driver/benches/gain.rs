@@ -16,7 +16,8 @@ pub fn generate_geometry(size: usize) -> Geometry {
     Geometry::new(
         (0..size)
             .map(move |i| {
-                AUTD3::new(Vector3::new(i as f32 * AUTD3::DEVICE_WIDTH, 0., 0.)).into_device(i)
+                AUTD3::new(Vector3::new(i as f32 * AUTD3::DEVICE_WIDTH, 0., 0.))
+                    .into_device(i, i * AUTD3::NUM_TRANS_IN_UNIT)
             })
             .collect(),
     )

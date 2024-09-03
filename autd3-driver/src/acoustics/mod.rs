@@ -47,6 +47,7 @@ mod tests {
         let mut rng = rand::thread_rng();
         Transducer::new(
             0,
+            0,
             Vector3::new(
                 rng.gen_range(-100.0..100.0),
                 rng.gen_range(-100.0..100.0),
