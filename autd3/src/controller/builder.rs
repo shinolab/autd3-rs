@@ -35,7 +35,11 @@ impl ControllerBuilder {
             devices: iter
                 .into_iter()
                 .enumerate()
-                .map(|(i, d)| d.into_device(i))
+                .scan(0, |state, (i, d)| {
+                    let dev = d.into_device(i, *state);
+                    *state += dev.num_transducers();
+                    Some(dev)
+                })
                 .collect(),
             parallel_threshold: 4,
             send_interval: Duration::from_millis(1),
@@ -71,5 +75,34 @@ impl ControllerBuilder {
         }
         .open_impl(timeout)
         .await // GRCOV_EXCL_LINE
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use autd3_driver::{autd3_device::AUTD3, geometry::Vector3};
+
+    use super::*;
+
+    #[tokio::test]
+    async fn geometry() -> anyhow::Result<()> {
+        let autd =
+            ControllerBuilder::new([AUTD3::new(Vector3::zeros()), AUTD3::new(Vector3::zeros())])
+                .open(crate::link::Nop::builder())
+                .await?;
+
+        assert_eq!(0, autd.geometry()[0].idx());
+        autd.geometry()[0].iter().enumerate().for_each(|(i, tr)| {
+            assert_eq!(i, tr.local_idx());
+            assert_eq!(i, tr.global_idx());
+        });
+
+        assert_eq!(1, autd.geometry()[1].idx());
+        autd.geometry()[1].iter().enumerate().for_each(|(i, tr)| {
+            assert_eq!(i, tr.local_idx());
+            assert_eq!(AUTD3::NUM_TRANS_IN_UNIT + i, tr.global_idx());
+        });
+
+        Ok(())
     }
 }

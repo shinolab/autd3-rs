@@ -26,7 +26,7 @@ impl Gain for TestGain {
         let buf = self.buf.clone();
         Ok(Box::new(move |dev| {
             let buf = buf[&dev.idx()].clone();
-            Box::new(move |tr| buf[tr.idx()])
+            Box::new(move |tr| buf[tr.local_idx()])
         }))
     }
 }

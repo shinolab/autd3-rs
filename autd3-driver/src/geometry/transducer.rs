@@ -5,14 +5,20 @@ use super::{Matrix4, UnitQuaternion, Vector3, Vector4};
 #[derive(Clone, Debug, PartialEq, Builder)]
 pub struct Transducer {
     #[get]
-    idx: usize,
+    local_idx: usize,
+    #[get]
+    global_idx: usize,
     #[get(ref)]
     position: Vector3,
 }
 
 impl Transducer {
-    pub(crate) const fn new(idx: usize, position: Vector3) -> Self {
-        Self { idx, position }
+    pub(crate) const fn new(local_idx: usize, global_idx: usize, position: Vector3) -> Self {
+        Self {
+            local_idx,
+            global_idx,
+            position,
+        }
     }
 
     pub fn affine(&mut self, t: Vector3, r: UnitQuaternion) {
@@ -38,16 +44,7 @@ mod tests {
 
     #[rstest::fixture]
     fn tr() -> Transducer {
-        Transducer::new(0, Vector3::zeros())
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(0)]
-    #[case(1)]
-    #[cfg_attr(miri, ignore)]
-    fn idx(#[case] i: usize) {
-        assert_eq!(i, Transducer::new(i, Vector3::zeros()).idx());
+        Transducer::new(0, 0, Vector3::zeros())
     }
 
     #[rstest::rstest]

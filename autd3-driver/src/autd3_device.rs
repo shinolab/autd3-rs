@@ -56,7 +56,7 @@ impl AUTD3 {
 }
 
 impl IntoDevice for AUTD3 {
-    fn into_device(self, dev_idx: usize) -> Device {
+    fn into_device(self, dev_idx: usize, global_idx_offset: usize) -> Device {
         let rot_mat: Matrix4 = From::from(self.rotation);
         let trans_mat = rot_mat.append_translation(&self.position);
         Device::new(
@@ -74,7 +74,7 @@ impl IntoDevice for AUTD3 {
                         )
                 })
                 .enumerate()
-                .map(|(i, p)| Transducer::new(i, p.xyz()))
+                .map(|(i, p)| Transducer::new(i, global_idx_offset + i, p.xyz()))
                 .collect(),
         )
     }
@@ -89,7 +89,7 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn test_new() {
-        let dev = AUTD3::new(Vector3::zeros()).into_device(0);
+        let dev = AUTD3::new(Vector3::zeros()).into_device(0, 0);
         assert_eq!(249, dev.num_transducers());
     }
 
@@ -101,7 +101,7 @@ mod tests {
     #[case(248, Vector3::new(17. * AUTD3::TRANS_SPACING, 13. * AUTD3::TRANS_SPACING, 0.))]
     #[cfg_attr(miri, ignore)]
     fn test_position(#[case] idx: usize, #[case] expected: Vector3) {
-        let dev = AUTD3::new(Vector3::zeros()).into_device(0);
+        let dev = AUTD3::new(Vector3::zeros()).into_device(0, 0);
         assert_eq!(&expected, dev[idx].position());
     }
 
