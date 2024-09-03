@@ -106,7 +106,7 @@ pub mod tests {
             idx,
             UnitQuaternion::identity(),
             (0..n)
-                .map(|i| Transducer::new(i, Vector3::zeros()))
+                .map(|i| Transducer::new(i, idx * n + i, Vector3::zeros()))
                 .collect(),
         )
     }
@@ -153,7 +153,7 @@ pub mod tests {
                 itertools::iproduct!(0..18, 0..14)
                     .enumerate()
                     .map(|(i, (y, x))| {
-                        Transducer::new(i, 10.16 * Vector3::new(x as f32, y as f32, 0.))
+                        Transducer::new(i, i, 10.16 * Vector3::new(x as f32, y as f32, 0.))
                     })
                     .collect::<Vec<_>>(),
             ),
@@ -164,6 +164,7 @@ pub mod tests {
                     .enumerate()
                     .map(|(i, (y, x))| {
                         Transducer::new(
+                            i,
                             i,
                             10.16 * Vector3::new(x as f32, y as f32, 0.)
                                 + Vector3::new(10., 20., 30.),
@@ -193,7 +194,7 @@ pub mod tests {
                 itertools::iproduct!(0..18, 0..14)
                     .enumerate()
                     .map(|(i, (y, x))| {
-                        Transducer::new(i, 10.16 * Vector3::new(x as f32, y as f32, 0.))
+                        Transducer::new(i, i, 10.16 * Vector3::new(x as f32, y as f32, 0.))
                     })
                     .collect::<Vec<_>>(),
             ),
@@ -204,6 +205,7 @@ pub mod tests {
                     .enumerate()
                     .map(|(i, (y, x))| {
                         Transducer::new(
+                            i,
                             i,
                             10.16 * Vector3::new(x as f32, y as f32, 0.)
                                 + Vector3::new(10., 20., 30.),
@@ -234,7 +236,7 @@ pub mod tests {
                 itertools::iproduct!(0..18, 0..14)
                     .enumerate()
                     .map(|(i, (y, x))| {
-                        Transducer::new(i, 10.16 * Vector3::new(x as f32, y as f32, 0.))
+                        Transducer::new(i, i, 10.16 * Vector3::new(x as f32, y as f32, 0.))
                     })
                     .collect::<Vec<_>>(),
             ),
@@ -245,6 +247,7 @@ pub mod tests {
                     .enumerate()
                     .map(|(i, (y, x))| {
                         Transducer::new(
+                            i,
                             i,
                             10.16 * Vector3::new(x as f32, y as f32, 0.)
                                 + Vector3::new(10., 20., 30.),

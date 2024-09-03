@@ -159,7 +159,7 @@ pub mod tests {
             let d = self.data.clone();
             Ok(Self::transform(move |dev| {
                 let d = d[&dev.idx()].clone();
-                move |tr| d[tr.idx()]
+                move |tr| d[tr.local_idx()]
             }))
         }
     }

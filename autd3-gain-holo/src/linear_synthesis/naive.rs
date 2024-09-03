@@ -97,7 +97,8 @@ mod tests {
 
     #[test]
     fn test_naive_all() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0, 0)]);
         let backend =
             NalgebraBackend::<autd3_driver::acoustics::directivity::Sphere>::new().unwrap();
 
@@ -127,7 +128,8 @@ mod tests {
 
     #[test]
     fn test_naive_filtered() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0, 0)]);
         let backend =
             NalgebraBackend::<autd3_driver::acoustics::directivity::Sphere>::new().unwrap();
 
@@ -142,7 +144,7 @@ mod tests {
 
         let filter = geometry
             .iter()
-            .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
+            .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.local_idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
         assert_eq!(
             g.calc_with_filter(&geometry, filter).map(|mut res| {

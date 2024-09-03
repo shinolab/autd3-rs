@@ -15,7 +15,7 @@ mod op;
 pub fn create_geometry(n: usize) -> Geometry {
     Geometry::new(
         (0..n)
-            .map(|i| AUTD3::new(Vector3::zeros()).into_device(i))
+            .map(|i| AUTD3::new(Vector3::zeros()).into_device(i, i * AUTD3::NUM_TRANS_IN_UNIT))
             .collect(),
     )
 }

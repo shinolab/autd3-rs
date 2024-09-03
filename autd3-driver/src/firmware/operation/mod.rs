@@ -238,7 +238,7 @@ pub mod tests {
         let geometry = Geometry::new(vec![Device::new(
             0,
             UnitQuaternion::identity(),
-            vec![Transducer::new(0, Vector3::zeros())],
+            vec![Transducer::new(0, 0, Vector3::zeros())],
         )]);
 
         let mut op = vec![(
@@ -289,7 +289,7 @@ pub mod tests {
         let geometry = Geometry::new(vec![Device::new(
             0,
             UnitQuaternion::identity(),
-            vec![Transducer::new(0, Vector3::zeros())],
+            vec![Transducer::new(0, 0, Vector3::zeros())],
         )]);
 
         let mut op = vec![(
@@ -325,7 +325,7 @@ pub mod tests {
         let geometry = Geometry::new(vec![Device::new(
             0,
             UnitQuaternion::identity(),
-            vec![Transducer::new(0, Vector3::zeros())],
+            vec![Transducer::new(0, 0, Vector3::zeros())],
         )]);
 
         let mut op = vec![(
@@ -361,7 +361,7 @@ pub mod tests {
         let geometry = Geometry::new(vec![Device::new(
             0,
             UnitQuaternion::identity(),
-            vec![Transducer::new(0, Vector3::zeros())],
+            vec![Transducer::new(0, 0, Vector3::zeros())],
         )]);
 
         let mut op = vec![(
@@ -419,7 +419,7 @@ pub mod tests {
         let geometry = Geometry::new(vec![Device::new(
             0,
             UnitQuaternion::identity(),
-            vec![Transducer::new(0, Vector3::zeros())],
+            vec![Transducer::new(0, 0, Vector3::zeros())],
         )]);
 
         let mut op = vec![(
@@ -450,7 +450,7 @@ pub mod tests {
         let geometry = Geometry::new(vec![Device::new(
             0,
             UnitQuaternion::identity(),
-            vec![Transducer::new(0, Vector3::zeros())],
+            vec![Transducer::new(0, 0, Vector3::zeros())],
         )]);
 
         let mut tx = TxDatagram::new(1);

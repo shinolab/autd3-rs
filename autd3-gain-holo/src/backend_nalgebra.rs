@@ -119,7 +119,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
                             let filter = filter.get(&dev.idx());
                             dev.iter().filter_map(move |tr| {
                                 filter.and_then(|filter| {
-                                    if filter[tr.idx()] {
+                                    if filter[tr.local_idx()] {
                                         Some(
                                             propagate::<D>(
                                                 tr,
@@ -145,7 +145,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
                     let filter = filter.get(&dev.idx());
                     dev.iter().for_each(move |tr| {
                         if let Some(filter) = filter {
-                            if filter[tr.idx()] {
+                            if filter[tr.local_idx()] {
                                 foci.iter().for_each(|f| {
                                     ptr.write(propagate::<D>(
                                         tr,
@@ -582,7 +582,7 @@ mod tests {
                             j as f32 * AUTD3::DEVICE_HEIGHT,
                             0.,
                         ))
-                        .into_device(j + i * size)
+                        .into_device(j + i * size, AUTD3::NUM_TRANS_IN_UNIT * (j + i * size))
                     })
                 })
                 .collect(),
@@ -2008,7 +2008,7 @@ mod tests {
                 .map(|dev| {
                     let mut filter = bit_vec::BitVec::new();
                     dev.iter().for_each(|tr| {
-                        filter.push(tr.idx() > dev.num_transducers() / 2);
+                        filter.push(tr.local_idx() > dev.num_transducers() / 2);
                     });
                     (dev.idx(), filter)
                 })
@@ -2021,7 +2021,7 @@ mod tests {
                 .iter()
                 .flat_map(|dev| {
                     dev.iter().filter_map(|tr| {
-                        if filter[&dev.idx()][tr.idx()] {
+                        if filter[&dev.idx()][tr.local_idx()] {
                             Some((dev.idx(), tr))
                         } else {
                             None
