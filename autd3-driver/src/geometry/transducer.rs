@@ -4,27 +4,27 @@ use super::{Matrix4, UnitQuaternion, Vector3, Vector4};
 
 #[derive(Clone, Debug, PartialEq, Builder)]
 pub struct Transducer {
-    local_idx: u8,
-    global_idx: u32,
+    idx: u8,
+    dev_idx: u16,
     #[get(ref)]
     position: Vector3,
 }
 
 impl Transducer {
-    pub(crate) const fn new(local_idx: u8, global_idx: u32, position: Vector3) -> Self {
+    pub(crate) const fn new(idx: u8, dev_idx: u16, position: Vector3) -> Self {
         Self {
-            local_idx,
-            global_idx,
+            idx,
+            dev_idx,
             position,
         }
     }
 
-    pub const fn local_idx(&self) -> usize {
-        self.local_idx as _
+    pub const fn idx(&self) -> usize {
+        self.idx as _
     }
 
-    pub const fn global_idx(&self) -> usize {
-        self.global_idx as _
+    pub const fn dev_idx(&self) -> usize {
+        self.dev_idx as _
     }
 
     pub fn affine(&mut self, t: Vector3, r: UnitQuaternion) {

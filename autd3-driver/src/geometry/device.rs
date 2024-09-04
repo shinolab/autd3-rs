@@ -119,7 +119,7 @@ impl Device {
 }
 
 pub trait IntoDevice {
-    fn into_device(self, dev_idx: u16, global_idx_offset: u32) -> Device;
+    fn into_device(self, dev_idx: u16) -> Device;
 }
 
 #[cfg(test)]

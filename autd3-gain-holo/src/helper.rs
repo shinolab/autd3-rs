@@ -63,7 +63,7 @@ where
                         .map(|filter| {
                             dev.iter()
                                 .map(|tr| {
-                                    if filter[tr.local_idx()] {
+                                    if filter[tr.idx()] {
                                         let r = *state;
                                         *state += 1;
                                         Some(r)
@@ -81,7 +81,7 @@ where
             let x = x.clone();
             let map = transducer_map[dev.idx()].clone();
             Box::new(move |tr| {
-                if let Some(idx) = map[tr.local_idx()] {
+                if let Some(idx) = map[tr.idx()] {
                     let x = x[idx];
                     let phase = x.into_phase();
                     let intensity = constraint.convert(x.into_intensity(), max_coefficient);
@@ -104,7 +104,7 @@ where
             let x = x.clone();
             let base_idx = num_transducers[dev.idx()];
             Box::new(move |tr| {
-                let x = x[base_idx + tr.local_idx()];
+                let x = x[base_idx + tr.idx()];
                 let phase = x.into_phase();
                 let intensity = constraint.convert(x.into_intensity(), max_coefficient);
                 Drive::new(phase, intensity)

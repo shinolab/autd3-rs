@@ -64,17 +64,17 @@ where
                     match filters.get_mut(&key) {
                         Some(v) => match v.entry(dev.idx()) {
                             Entry::Occupied(mut e) => {
-                                e.get_mut().set(tr.local_idx(), true);
+                                e.get_mut().set(tr.idx(), true);
                             }
                             Entry::Vacant(e) => {
                                 let mut filter = BitVec::from_elem(dev.num_transducers(), false);
-                                filter.set(tr.local_idx(), true);
+                                filter.set(tr.idx(), true);
                                 e.insert(filter);
                             }
                         },
                         None => {
                             let mut filter = BitVec::from_elem(dev.num_transducers(), false);
-                            filter.set(tr.local_idx(), true);
+                            filter.set(tr.idx(), true);
                             filters.insert(key.clone(), [(dev.idx(), filter)].into());
                         }
                     }
@@ -129,7 +129,7 @@ where
                                 if let Some(kk) = f(tr) {
                                     if &kk == k {
                                         unsafe {
-                                            r.add(tr.local_idx()).write(g(tr));
+                                            r.add(tr.idx()).write(g(tr));
                                         }
                                     }
                                 }
@@ -152,7 +152,7 @@ where
                                 if let Some(kk) = f(tr) {
                                     if &kk == k {
                                         unsafe {
-                                            r.add(tr.local_idx()).write(g(tr));
+                                            r.add(tr.idx()).write(g(tr));
                                         }
                                     }
                                 }
@@ -165,7 +165,7 @@ where
         Ok(Box::new(move |dev| {
             let mut tmp = vec![];
             std::mem::swap(&mut tmp, &mut result[dev.idx()]);
-            Box::new(move |tr| tmp[tr.local_idx()])
+            Box::new(move |tr| tmp[tr.idx()])
         }))
     }
 }
@@ -196,7 +196,7 @@ mod tests {
 
         let gain = Group::new(|dev| {
             let dev_idx = dev.idx();
-            move |tr| match (dev_idx, tr.local_idx()) {
+            move |tr| match (dev_idx, tr.idx()) {
                 (0, 0..=99) => Some("null"),
                 (0, 100..=199) => Some("test"),
                 (1, 200..) => Some("test2"),
@@ -256,7 +256,7 @@ mod tests {
 
         let gain = Group::new(|dev| {
             let dev_idx = dev.idx();
-            move |tr| match (dev_idx, tr.local_idx()) {
+            move |tr| match (dev_idx, tr.idx()) {
                 (0, 0..=99) => Some("null"),
                 (0, 100..=199) => Some("test"),
                 (1, 200..) => Some("test2"),
@@ -308,7 +308,7 @@ mod tests {
         let geometry = create_geometry(2);
 
         let gain = Group::new(|_dev| {
-            |tr| match tr.local_idx() {
+            |tr| match tr.idx() {
                 0..=99 => Some("test"),
                 100..=199 => Some("null"),
                 _ => None,
