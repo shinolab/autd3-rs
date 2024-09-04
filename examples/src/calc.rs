@@ -36,15 +36,15 @@ async fn main() -> Result<()> {
         autd.start_recording()?;
         autd.send((Sine::new(200. * Hz), Uniform::new(EmitIntensity::new(0xFF))))
             .await?;
-        autd.tick(Duration::from_millis(20))?;
+        autd.tick(Duration::from_millis(10))?;
         let record = autd.finish_recording()?;
 
         let pulse_width = autd
             .pulse_width(&record, &autd.geometry()[0][0])
             .into_iter()
-            .skip_while(|(t, _)| *t < Duration::from_millis(15));
+            .skip_while(|(t, _)| *t < Duration::from_millis(5));
         println!("pulse width under 200Hz sine modulation with silencer");
-        Chart::new(180, 40, 15.0, 20.0)
+        Chart::new(180, 40, 5.0, 10.0)
             .lineplot(&Shape::Lines(
                 &pulse_width
                     .into_iter()

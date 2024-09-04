@@ -3,6 +3,7 @@ use std::time::Duration;
 use autd3_driver::{
     defined::ULTRASOUND_PERIOD,
     derive::Builder,
+    ethercat::DcSysTime,
     firmware::fpga::{Drive, SilencerTarget},
     geometry::Transducer,
 };
@@ -26,10 +27,14 @@ pub struct DeviceRecord {
     pub(crate) records: Vec<TransducerRecord>,
 }
 
-#[derive(Debug, Clone, Deref)]
+#[derive(Debug, Clone, Deref, Builder)]
 pub struct Record {
     #[deref]
     pub(crate) records: Vec<DeviceRecord>,
+    #[get]
+    pub(crate) start: DcSysTime,
+    #[get]
+    pub(crate) end: DcSysTime,
 }
 
 impl Calc {
