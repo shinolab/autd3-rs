@@ -32,8 +32,9 @@ impl Calc {
                         .collect(),
                 })
                 .collect(),
+            end: start_time,
+            start: start_time,
         });
-        self.recording_tick = Some(start_time);
         Ok(())
     }
 
@@ -49,7 +50,7 @@ impl Calc {
             if tick.is_zero() || tick.as_nanos() % ULTRASOUND_PERIOD.as_nanos() != 0 {
                 return Err(CalcError::InvalidTick);
             }
-            let mut t = self.recording_tick.unwrap();
+            let mut t = record.end;
             let end = t + tick;
             loop {
                 self.sub_devices.iter_mut().for_each(|sd| {
@@ -70,7 +71,7 @@ impl Calc {
                     break;
                 }
             }
-            self.recording_tick = Some(end);
+            record.end = end;
             Ok(())
         } else {
             Err(CalcError::RecodingNotStarted)

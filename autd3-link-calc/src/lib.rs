@@ -24,7 +24,6 @@ pub struct Calc {
     sub_devices: Vec<SubDevice>,
     timeout: std::time::Duration,
     record: Option<Record>,
-    recording_tick: Option<DcSysTime>,
 }
 
 #[derive(Builder)]
@@ -60,7 +59,6 @@ impl LinkBuilder for CalcBuilder {
                 .collect(),
             timeout: self.timeout,
             record: None,
-            recording_tick: None,
         })
     }
 }
@@ -81,9 +79,13 @@ impl Link for Calc {
     }
 
     async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
+        let sys_time = self
+            .record
+            .as_ref()
+            .map(|r| r.end())
+            .unwrap_or(DcSysTime::now());
         self.sub_devices.iter_mut().for_each(|sub| {
-            sub.cpu
-                .update_with_sys_time(self.recording_tick.unwrap_or(DcSysTime::now()));
+            sub.cpu.update_with_sys_time(sys_time);
             rx[sub.cpu.idx()] = sub.cpu.rx();
         });
 
