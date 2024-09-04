@@ -10,10 +10,11 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-anyhow.workspace = true
+anyhow = { workspace = true }
 autd3-driver = { workspace = true }
 autd3-firmware-emulator = { workspace = true }
 derive_more = { workspace = true, features = ["deref"] }
+thiserror = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
