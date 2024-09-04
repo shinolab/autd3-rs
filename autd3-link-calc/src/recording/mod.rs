@@ -40,7 +40,7 @@ impl Calc {
         Ok(())
     }
 
-    pub fn finish_recording<'a>(&'a mut self) -> Result<Record<'a>, CalcError> {
+    pub fn finish_recording(&mut self) -> Result<Record, CalcError> {
         if self.record.is_none() {
             return Err(CalcError::RecodingNotStarted);
         }
