@@ -10,6 +10,8 @@ pub struct DcSysTime {
 }
 
 impl DcSysTime {
+    pub const ZERO: Self = Self { dc_sys_time: 0 };
+
     pub const fn sys_time(&self) -> u64 {
         self.dc_sys_time
     }
