@@ -11,7 +11,7 @@ use autd3_driver::{
     link::{Link, LinkBuilder},
 };
 use autd3_firmware_emulator::CPUEmulator;
-use recording::Record;
+use recording::RawRecord;
 use sub::SubDevice;
 
 use derive_more::Deref;
@@ -23,7 +23,7 @@ pub struct Calc {
     #[deref]
     sub_devices: Vec<SubDevice>,
     timeout: std::time::Duration,
-    record: Option<Record>,
+    record: Option<RawRecord>,
 }
 
 #[derive(Builder)]
@@ -82,7 +82,7 @@ impl Link for Calc {
         let sys_time = self
             .record
             .as_ref()
-            .map(|r| r.end())
+            .map(|r| r.current)
             .unwrap_or(DcSysTime::now());
         self.sub_devices.iter_mut().for_each(|sub| {
             sub.cpu.update_with_sys_time(sys_time);
