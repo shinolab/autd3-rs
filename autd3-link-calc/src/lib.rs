@@ -1,13 +1,17 @@
+mod error;
 mod props;
+mod recording;
 mod sub;
 
 use autd3_driver::{
     derive::*,
+    ethercat::DcSysTime,
     firmware::cpu::{RxMessage, TxDatagram},
     geometry::Device,
     link::{Link, LinkBuilder},
 };
 use autd3_firmware_emulator::CPUEmulator;
+use recording::Record;
 use sub::SubDevice;
 
 use derive_more::Deref;
@@ -19,6 +23,8 @@ pub struct Calc {
     #[deref]
     sub_devices: Vec<SubDevice>,
     timeout: std::time::Duration,
+    record: Option<Record>,
+    recording_tick: Option<DcSysTime>,
 }
 
 #[derive(Builder)]
@@ -29,7 +35,11 @@ pub struct CalcBuilder {
 }
 
 fn clone_device(dev: &Device) -> Device {
-    Device::new(dev.idx(), *dev.rotation(), dev.iter().cloned().collect())
+    Device::new(
+        dev.idx() as _,
+        *dev.rotation(),
+        dev.iter().cloned().collect(),
+    )
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
@@ -49,6 +59,8 @@ impl LinkBuilder for CalcBuilder {
                 })
                 .collect(),
             timeout: self.timeout,
+            record: None,
+            recording_tick: None,
         })
     }
 }
@@ -70,7 +82,8 @@ impl Link for Calc {
 
     async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
         self.sub_devices.iter_mut().for_each(|sub| {
-            sub.cpu.update();
+            sub.cpu
+                .update_with_sys_time(self.recording_tick.unwrap_or(DcSysTime::now()));
             rx[sub.cpu.idx()] = sub.cpu.rx();
         });
 

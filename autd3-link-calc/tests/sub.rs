@@ -32,19 +32,30 @@ async fn modulation() -> anyhow::Result<()> {
         .await?;
 
     assert_eq!(
-        vec![(Duration::ZERO, 0xFF), (0xFFFF * ULTRASOUND_PERIOD, 0xFF)],
-        autd[0].modulation()
+        vec![(Duration::ZERO, 0xFF), (ULTRASOUND_PERIOD, 0xFF)],
+        autd[0]
+            .modulation()
+            .take_while(|(t, _)| *t <= ULTRASOUND_PERIOD)
+            .collect::<Vec<_>>()
     );
 
     let expect = vec![0x80, 0x81];
     autd.send((
         Silencer::disable(),
-        autd3::modulation::Custom::new(expect, ULTRASOUND_PERIOD)?,
+        autd3::modulation::Custom::new(expect, 2 * ULTRASOUND_PERIOD)?,
     ))
     .await?;
     assert_eq!(
-        vec![(Duration::ZERO, 0x80), (ULTRASOUND_PERIOD, 0x81)],
-        autd[0].modulation()
+        vec![
+            (Duration::ZERO, 0x80),
+            (ULTRASOUND_PERIOD, 0x80),
+            (2 * ULTRASOUND_PERIOD, 0x81),
+            (3 * ULTRASOUND_PERIOD, 0x81)
+        ],
+        autd[0]
+            .modulation()
+            .take_while(|(t, _)| *t <= 3 * ULTRASOUND_PERIOD)
+            .collect::<Vec<_>>()
     );
 
     autd.close().await?;
