@@ -36,7 +36,7 @@ impl LightweightClientBuilder {
             devices: iter
                 .into_iter()
                 .enumerate()
-                .map(|(i, d)| d.into_device(i))
+                .map(|(i, d)| d.into_device(i as _))
                 .collect(),
             parallel_threshold: 4,
             send_interval: std::time::Duration::from_millis(1),
