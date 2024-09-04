@@ -1,3 +1,5 @@
+mod recording;
+
 use autd3::{
     prelude::{Drive, Vector3, AUTD3},
     Controller,
