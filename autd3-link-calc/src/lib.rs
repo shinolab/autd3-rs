@@ -1,6 +1,6 @@
-mod error;
+pub mod error;
 mod props;
-mod recording;
+pub mod recording;
 mod sub;
 
 use autd3_driver::{
@@ -10,7 +10,11 @@ use autd3_driver::{
     geometry::Device,
     link::{Link, LinkBuilder},
 };
-use autd3_firmware_emulator::CPUEmulator;
+use autd3_firmware_emulator::{
+    cpu::params::{TAG_CLEAR, TAG_CONFIG_PULSE_WIDTH_ENCODER, TAG_SILENCER},
+    CPUEmulator,
+};
+use error::CalcError;
 use recording::RawRecord;
 use sub::SubDevice;
 
@@ -71,9 +75,25 @@ impl Link for Calc {
     }
 
     async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
-        self.sub_devices.iter_mut().for_each(|sub| {
+        self.sub_devices.iter_mut().try_for_each(|sub| {
+            let check_tag = |tag: u8| -> Result<(), AUTDInternalError> {
+                match tag {
+                    TAG_CONFIG_PULSE_WIDTH_ENCODER | TAG_SILENCER | TAG_CLEAR => {
+                        Err(CalcError::InvalidOperationWhenRecording.into())
+                    }
+                    _ => Ok(()),
+                }
+            };
+            if self.record.is_some() {
+                check_tag(tx[sub.cpu.idx()].payload[0])?;
+                let slot_2_offset = tx[sub.cpu.idx()].header.slot_2_offset as usize;
+                if slot_2_offset != 0 {
+                    check_tag(tx[sub.cpu.idx()].payload[slot_2_offset])?;
+                }
+            }
             sub.cpu.send(tx);
-        });
+            Result::<(), AUTDInternalError>::Ok(())
+        })?;
 
         Ok(true)
     }

@@ -8,7 +8,7 @@ use autd3_driver::{
 };
 
 use autd3_firmware_emulator::FPGAEmulator;
-use derive_more::Deref;
+use derive_more::{Debug, Deref};
 
 pub(crate) struct RawTransducerRecord {
     pub drive: Vec<Drive>,
@@ -25,22 +25,23 @@ pub(crate) struct RawRecord {
     pub current: DcSysTime,
 }
 
-#[derive(Builder)]
+#[derive(Builder, Debug)]
 pub struct TransducerRecord<'a> {
     #[get]
     pub(crate) drive: Vec<Drive>,
     #[get]
     pub(crate) modulation: Vec<u8>,
+    #[debug(skip)]
     pub(crate) fpga: &'a FPGAEmulator,
 }
 
-#[derive(Deref)]
+#[derive(Deref, Debug)]
 pub struct DeviceRecord<'a> {
     #[deref]
     pub(crate) records: Vec<TransducerRecord<'a>>,
 }
 
-#[derive(Deref, Builder)]
+#[derive(Deref, Builder, Debug)]
 pub struct Record<'a> {
     #[deref]
     pub(crate) records: Vec<DeviceRecord<'a>>,
