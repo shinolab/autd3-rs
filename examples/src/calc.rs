@@ -39,8 +39,8 @@ async fn main() -> Result<()> {
         autd.tick(Duration::from_millis(10))?;
         let record = autd.finish_recording()?;
 
-        let pulse_width = autd
-            .pulse_width(&record, &autd.geometry()[0][0])
+        let pulse_width = record[0][0]
+            .pulse_width()
             .into_iter()
             .skip_while(|(t, _)| *t < Duration::from_millis(5));
         println!("pulse width under 200Hz sine modulation with silencer");
@@ -63,8 +63,8 @@ async fn main() -> Result<()> {
         autd.tick(Duration::from_millis(10))?;
         let record = autd.finish_recording()?;
 
-        let pulse_width = autd
-            .pulse_width(&record, &autd.geometry()[0][0])
+        let pulse_width = record[0][0]
+            .pulse_width()
             .into_iter()
             .skip_while(|(t, _)| *t < Duration::from_millis(5));
         println!("pulse width under 200Hz sine modulation without silencer");

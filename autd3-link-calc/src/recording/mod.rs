@@ -2,9 +2,11 @@ mod record;
 
 use std::time::Duration;
 
+pub use record::{DeviceRecord, Record, TransducerRecord};
+
+pub(crate) use record::{RawDeviceRecord, RawRecord, RawTransducerRecord};
+
 use autd3_driver::{defined::ULTRASOUND_PERIOD, ethercat::DcSysTime};
-pub use record::Record;
-use record::{DeviceRecord, TransducerRecord};
 
 use crate::{error::CalcError, Calc};
 
@@ -17,32 +19,55 @@ impl Calc {
         if self.record.is_some() {
             return Err(CalcError::RecordingAlreadyStarted);
         }
-        self.record = Some(Record {
+        self.record = Some(RawRecord {
             records: self
                 .sub_devices
                 .iter()
-                .map(|sd| DeviceRecord {
+                .map(|sd| RawDeviceRecord {
                     records: sd
                         .device
                         .iter()
-                        .map(|_| TransducerRecord {
+                        .map(|_| RawTransducerRecord {
                             drive: Vec::new(),
                             modulation: Vec::new(),
                         })
                         .collect(),
                 })
                 .collect(),
-            end: start_time,
+            current: start_time,
             start: start_time,
         });
         Ok(())
     }
 
-    pub fn finish_recording(&mut self) -> Result<Record, CalcError> {
+    pub fn finish_recording<'a>(&'a mut self) -> Result<Record<'a>, CalcError> {
         if self.record.is_none() {
             return Err(CalcError::RecodingNotStarted);
         }
-        Ok(self.record.take().unwrap())
+        let RawRecord {
+            records,
+            start,
+            current: end,
+        } = self.record.take().unwrap();
+        Ok(Record {
+            records: records
+                .into_iter()
+                .zip(self.sub_devices.iter())
+                .map(|(rd, sd)| DeviceRecord {
+                    records: rd
+                        .records
+                        .into_iter()
+                        .map(|tr| TransducerRecord {
+                            drive: tr.drive,
+                            modulation: tr.modulation,
+                            fpga: sd.cpu.fpga(),
+                        })
+                        .collect(),
+                })
+                .collect(),
+            start,
+            end,
+        })
     }
 
     pub fn tick(&mut self, tick: Duration) -> Result<(), CalcError> {
@@ -50,7 +75,7 @@ impl Calc {
             if tick.is_zero() || tick.as_nanos() % ULTRASOUND_PERIOD.as_nanos() != 0 {
                 return Err(CalcError::InvalidTick);
             }
-            let mut t = record.end;
+            let mut t = record.current;
             let end = t + tick;
             loop {
                 self.sub_devices.iter_mut().for_each(|sd| {
@@ -71,7 +96,7 @@ impl Calc {
                     break;
                 }
             }
-            record.end = end;
+            record.current = end;
             Ok(())
         } else {
             Err(CalcError::RecodingNotStarted)
