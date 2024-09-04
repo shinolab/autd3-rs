@@ -6,7 +6,7 @@ use autd3_driver::{
 use crate::FPGAEmulator;
 
 impl FPGAEmulator {
-   pub(crate) fn gain_stm_drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {
+    pub(crate) fn gain_stm_drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {
         match segment {
             Segment::S0 => self.mem.stm_bram_0(),
             Segment::S1 => self.mem.stm_bram_1(),

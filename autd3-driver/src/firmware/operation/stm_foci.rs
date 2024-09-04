@@ -222,7 +222,7 @@ mod tests {
         geometry::{tests::create_device, Vector3},
     };
 
-    const NUM_TRANS_IN_UNIT: u8= 249;
+    const NUM_TRANS_IN_UNIT: u8 = 249;
 
     #[test]
     fn test() {

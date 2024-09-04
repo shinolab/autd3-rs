@@ -7,6 +7,7 @@ use super::params::{
 };
 
 mod clear;
+mod cpu_gpio_out;
 mod debug;
 mod force_fan;
 mod gain;
@@ -18,7 +19,6 @@ mod reads_fpga_state;
 mod silecer;
 mod stm;
 mod sync;
-mod cpu_gpio_out;
 
 impl CPUEmulator {
     pub(crate) fn validate_transition_mode(
