@@ -33,15 +33,13 @@ async fn record_pulse_width(#[case] silencer: impl Datagram) -> anyhow::Result<(
     let to_pulse_width = |a, b| {
         let i = (a as usize * b as usize) / 255;
         ((((i as f32) / 255.).asin() / PI) * 256.).round() as u8
-    }
+    };
     assert_eq!(
         vec![
             (Duration::ZERO, to_pulse_width(100, 51)),
             (ULTRASOUND_PERIOD, to_pulse_width(30, 255)),
-            (2 * ULTRASOUND_PERIOD, to_pulse_width(40, 255))(
-                3 * ULTRASOUND_PERIOD,
-                to_pulse_width(40, 255)
-            )
+            (2 * ULTRASOUND_PERIOD, to_pulse_width(40, 255)),
+            (3 * ULTRASOUND_PERIOD, to_pulse_width(40, 255))
         ],
         record[0][0].pulse_width()
     );
