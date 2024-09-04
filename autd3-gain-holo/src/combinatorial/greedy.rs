@@ -73,8 +73,8 @@ impl<D: Directivity> Greedy<D> {
                     .filter_map(|dev| {
                         filter.get(&dev.idx()).map(|filter| {
                             dev.iter().filter_map(|tr| {
-                                if filter[tr.local_idx()] {
-                                    Some((dev.idx(), tr.local_idx()))
+                                if filter[tr.idx()] {
+                                    Some((dev.idx(), tr.idx()))
                                 } else {
                                     None
                                 }
@@ -86,7 +86,7 @@ impl<D: Directivity> Greedy<D> {
             } else {
                 geometry
                     .devices()
-                    .flat_map(|dev| dev.iter().map(|tr| (dev.idx(), tr.local_idx())))
+                    .flat_map(|dev| dev.iter().map(|tr| (dev.idx(), tr.idx())))
                     .collect()
             };
             indices.shuffle(&mut rand::thread_rng());
@@ -130,7 +130,7 @@ impl<D: Directivity> Greedy<D> {
         Ok(Box::new(move |dev| {
             let mut tmp = vec![];
             std::mem::swap(&mut tmp, &mut res[dev.idx()]);
-            Box::new(move |tr| tmp[tr.local_idx()])
+            Box::new(move |tr| tmp[tr.idx()])
         }))
     }
 }
@@ -157,7 +157,7 @@ mod tests {
     #[test]
     fn test_greedy_all() {
         let geometry: Geometry =
-            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0, 0)]);
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
 
         let g = Greedy::<Sphere>::new([(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)])
             .with_phase_div(NonZeroU8::MIN);
@@ -183,7 +183,7 @@ mod tests {
     #[test]
     fn test_greedy_filtered() {
         let geometry: Geometry =
-            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0, 0)]);
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
 
         let g = Greedy::<Sphere>::new([
             (Vector3::new(10., 10., 100.), 5e3 * Pa),
@@ -196,7 +196,7 @@ mod tests {
             .map(|dev| {
                 (
                     dev.idx(),
-                    dev.iter().map(|tr| tr.local_idx() < 100).collect(),
+                    dev.iter().map(|tr| tr.idx() < 100).collect(),
                 )
             })
             .collect::<HashMap<_, _>>();

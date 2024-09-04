@@ -106,7 +106,7 @@ pub mod tests {
             idx,
             UnitQuaternion::identity(),
             (0..n)
-                .map(|i| Transducer::new(i, idx as u32 * n as u32 + i as u32, Vector3::zeros()))
+                .map(|i| Transducer::new(i, idx, Vector3::zeros()))
                 .collect(),
         )
     }

@@ -71,7 +71,7 @@ impl<G: Gain> Gain for Cache<G> {
         let cache = self.cache.borrow();
         Ok(Box::new(move |dev| {
             let drives = cache[&dev.idx()].clone();
-            Box::new(move |tr| drives[tr.local_idx()])
+            Box::new(move |tr| drives[tr.idx()])
         }))
     }
 }
