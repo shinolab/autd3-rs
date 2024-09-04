@@ -156,8 +156,7 @@ mod tests {
 
     #[test]
     fn test_greedy_all() {
-        let geometry: Geometry =
-            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
 
         let g = Greedy::<Sphere>::new([(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)])
             .with_phase_div(NonZeroU8::MIN);
@@ -182,8 +181,7 @@ mod tests {
 
     #[test]
     fn test_greedy_filtered() {
-        let geometry: Geometry =
-            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
 
         let g = Greedy::<Sphere>::new([
             (Vector3::new(10., 10., 100.), 5e3 * Pa),
@@ -193,12 +191,7 @@ mod tests {
 
         let filter = geometry
             .iter()
-            .map(|dev| {
-                (
-                    dev.idx(),
-                    dev.iter().map(|tr| tr.idx() < 100).collect(),
-                )
-            })
+            .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
         assert_eq!(
             g.calc_with_filter(&geometry, filter).map(|mut res| {
