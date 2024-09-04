@@ -21,18 +21,15 @@ impl SubDevice {
             .collect()
     }
 
-    pub fn modulation(&self) -> Vec<(Duration, u8)> {
+    pub fn modulation(&self) -> impl Iterator<Item = (Duration, u8)> + '_ {
         let segment = self.cpu.fpga().current_mod_segment();
         let cycle = self.cpu.fpga().modulation_cycle(segment);
-        let sampling_period =
-            ULTRASOUND_PERIOD * self.cpu.fpga().modulation_freq_division(segment) as _;
         (0..cycle)
-            .map(|i| {
-                (
-                    sampling_period * i as _,
-                    self.cpu.fpga().modulation_at(segment, i),
-                )
+            .flat_map(move |i| {
+                std::iter::repeat(self.cpu.fpga().modulation_at(segment, i))
+                    .take(self.cpu.fpga().modulation_freq_division(segment) as _)
             })
-            .collect()
+            .enumerate()
+            .map(|(i, v)| (ULTRASOUND_PERIOD * i as _, v))
     }
 }
