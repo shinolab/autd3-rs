@@ -9,9 +9,10 @@ pub use crate::{
 pub use autd3_driver::{
     autd3_device::AUTD3,
     datagram::{
-        Clear, DebugSettings, FociSTM, ForceFan, GainSTM, IntoDatagramWithParallelThreshold,
-        IntoDatagramWithSegment, IntoDatagramWithSegmentTransition, IntoDatagramWithTimeout,
-        Modulation, ModulationProperty, PulseWidthEncoder, ReadsFPGAState, Silencer, SwapSegment,
+        Clear, DebugSettings, FixedCompletionTime, FixedUpdateRate, FociSTM, ForceFan, GainSTM,
+        IntoDatagramWithParallelThreshold, IntoDatagramWithSegment,
+        IntoDatagramWithSegmentTransition, IntoDatagramWithTimeout, Modulation, ModulationProperty,
+        PulseWidthEncoder, ReadsFPGAState, Silencer, SwapSegment,
     },
     defined::{
         deg, kHz, mm, rad, ControlPoint, ControlPoints, Hz, PI, ULTRASOUND_FREQ, ULTRASOUND_PERIOD,
