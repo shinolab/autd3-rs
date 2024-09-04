@@ -119,7 +119,7 @@ mod tests {
 
         let mut op = GainOp::new(Segment::S0, true, {
             let data = data.clone();
-            Box::new(move |tr| data[tr.local_idx()])
+            Box::new(move |tr| data[tr.idx()])
         });
 
         assert_eq!(

@@ -35,11 +35,7 @@ impl ControllerBuilder {
             devices: iter
                 .into_iter()
                 .enumerate()
-                .scan(0u32, |state, (i, d)| {
-                    let dev = d.into_device(i as _, *state);
-                    *state += dev.num_transducers() as u32;
-                    Some(dev)
-                })
+                .map(|(i, d)| d.into_device(i as _))
                 .collect(),
             parallel_threshold: 4,
             send_interval: Duration::from_millis(1),
@@ -93,14 +89,14 @@ mod tests {
 
         assert_eq!(0, autd.geometry()[0].idx());
         autd.geometry()[0].iter().enumerate().for_each(|(i, tr)| {
-            assert_eq!(i, tr.local_idx());
-            assert_eq!(i, tr.global_idx());
+            assert_eq!(i, tr.idx());
+            assert_eq!(0, tr.dev_idx());
         });
 
         assert_eq!(1, autd.geometry()[1].idx());
         autd.geometry()[1].iter().enumerate().for_each(|(i, tr)| {
-            assert_eq!(i, tr.local_idx());
-            assert_eq!(AUTD3::NUM_TRANS_IN_UNIT + i, tr.global_idx());
+            assert_eq!(i, tr.idx());
+            assert_eq!(1, tr.dev_idx());
         });
 
         Ok(())

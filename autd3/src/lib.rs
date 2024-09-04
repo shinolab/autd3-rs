@@ -35,10 +35,7 @@ mod tests {
     pub fn create_geometry(n: usize) -> Geometry {
         Geometry::new(
             (0..n)
-                .map(|i| {
-                    AUTD3::new(Vector3::zeros())
-                        .into_device(i as _, (i * AUTD3::NUM_TRANS_IN_UNIT) as _)
-                })
+                .map(|i| AUTD3::new(Vector3::zeros()).into_device(i as _))
                 .collect(),
         )
     }
