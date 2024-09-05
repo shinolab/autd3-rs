@@ -70,6 +70,7 @@ tonic = { workspace = true, optional = true }
 tracing-subscriber = "0.3.18"
 tracing = { workspace = true }
 textplots = { version = "0.8.6", optional = true }
+polars = { workspace = true, features = ["dtype-u8"] }
 
 [features]
 default = ["all"]

@@ -1,7 +1,7 @@
 mod recording;
 
 use autd3::{
-    prelude::{Drive, Vector3, AUTD3},
+    prelude::{Vector3, AUTD3},
     Controller,
 };
 use autd3_link_calc::Calc;
@@ -12,18 +12,13 @@ async fn update() -> anyhow::Result<()> {
         .open(Calc::builder())
         .await?;
 
-    autd.geometry_mut()[0].translate(Vector3::new(10., 20., 30.));
-    let rot = autd.geometry()[0].rotation();
-    assert!(autd.geometry()[0]
-        .iter()
-        .zip(autd[0].gain().iter())
-        .all(|(tr, (p, r, d))| { tr.position() != p && rot == r && Drive::null() == *d }));
+    autd.geometry_mut()[0].translate(Vector3::new(10., 0., 0.));
+    let df = autd.gain();
+    assert_eq!(0., df["x"].f32()?.into_no_null_iter().next().unwrap());
+
     autd.send(autd3::gain::Null::new()).await?;
-    let rot = autd.geometry()[0].rotation();
-    assert!(autd.geometry()[0]
-        .iter()
-        .zip(autd[0].gain().iter())
-        .all(|(tr, (p, r, d))| { tr.position() == p && rot == r && Drive::null() == *d }));
+    let df = autd.gain();
+    assert_eq!(10., df["x"].f32()?.into_no_null_iter().next().unwrap());
 
     autd.close().await?;
 

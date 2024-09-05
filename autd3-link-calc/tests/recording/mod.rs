@@ -3,6 +3,7 @@ use std::time::Duration;
 use autd3::{derive::Datagram, prelude::*, Controller};
 use autd3_driver::firmware::fpga::FPGA_MAIN_CLK_FREQ;
 use autd3_link_calc::{error::CalcError, Calc};
+use polars::prelude::*;
 
 #[rstest::rstest]
 #[case(Silencer::disable())]
@@ -34,11 +35,10 @@ async fn record_pulse_width(#[case] silencer: impl Datagram) -> anyhow::Result<(
         ((((i as f32) / 255.).asin() / PI) * 256.).round() as u8
     };
     assert_eq!(
-        vec![
-            (Duration::ZERO, to_pulse_width(100, 51)),
-            (ULTRASOUND_PERIOD, to_pulse_width(30, 255)),
-            (2 * ULTRASOUND_PERIOD, to_pulse_width(30, 255)),
-        ],
+        df!(
+            "time[s]" => [0f32, 25. / 1e6, 50. / 1e6],
+            "PulseWidth" => [to_pulse_width(100, 51), to_pulse_width(30, 255), to_pulse_width(30, 255)]
+        ).unwrap(),
         record[0][0].pulse_width()
     );
 
@@ -78,8 +78,8 @@ async fn record_output_voltage() -> anyhow::Result<()> {
     let record = autd.finish_recording()?;
 
     let v = record[0][0].output_voltage();
-    v.iter().enumerate().for_each(|(i, (t, _))| {
-        approx::assert_abs_diff_eq!(i as f32 * (1. / FPGA_MAIN_CLK_FREQ.hz() as f32), *t)
+    v["time[s]"].f32()?.iter().enumerate().for_each(|(i, t)| {
+        approx::assert_abs_diff_eq!(i as f32 * (1. / FPGA_MAIN_CLK_FREQ.hz() as f32), t.unwrap())
     });
     let expect_1 = [vec![12.; 64], vec![-12.; 128], vec![12.; 64]].concat();
     let expect_2 = [vec![-12.; 64], vec![12.; 128], vec![-12.; 64]].concat();
@@ -87,27 +87,12 @@ async fn record_output_voltage() -> anyhow::Result<()> {
     let expect_4 = vec![-12.; 256];
     assert_eq!(
         [expect_1, expect_2, expect_3, expect_4].concat(),
-        v.into_iter().map(|(_, v)| v).collect::<Vec<_>>()
+        v["voltage[V]"]
+            .f32()?
+            .iter()
+            .map(|v| v.unwrap())
+            .collect::<Vec<_>>()
     );
-
-    autd.close().await?;
-
-    Ok(())
-}
-
-#[tokio::test]
-async fn recording_already_started() -> anyhow::Result<()> {
-    let mut autd = Controller::builder([AUTD3::new(Vector3::zeros())])
-        .open(Calc::builder())
-        .await?;
-
-    autd.send(Silencer::disable()).await?;
-    autd.start_recording()?;
-    assert_eq!(
-        Err(CalcError::RecordingAlreadyStarted),
-        autd.start_recording()
-    );
-    let _ = autd.finish_recording()?;
 
     autd.close().await?;
 

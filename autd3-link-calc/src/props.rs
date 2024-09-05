@@ -1,15 +1,13 @@
-use autd3_driver::{
-    firmware::fpga::Drive,
-    geometry::{UnitQuaternion, Vector3},
-};
+use polars::prelude::*;
 
 use crate::Calc;
 
 impl Calc {
-    pub fn gain(&self) -> Vec<(Vector3, UnitQuaternion, Drive)> {
+    pub fn gain(&self) -> DataFrame {
+        let temp = self.sub_devices[0].gain();
         self.sub_devices
             .iter()
-            .flat_map(|sub_device| sub_device.gain())
-            .collect()
+            .skip(1)
+            .fold(temp, |acc, sub| acc.vstack(&sub.gain()).unwrap())
     }
 }
