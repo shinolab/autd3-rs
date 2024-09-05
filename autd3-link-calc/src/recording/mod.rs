@@ -4,11 +4,24 @@ use std::time::Duration;
 
 pub use record::{DeviceRecord, Record, TransducerRecord};
 
-pub(crate) use record::{RawDeviceRecord, RawRecord, RawTransducerRecord};
-
-use autd3_driver::{defined::ULTRASOUND_PERIOD, ethercat::DcSysTime};
+use autd3_driver::{defined::ULTRASOUND_PERIOD, ethercat::DcSysTime, firmware::fpga::Drive};
 
 use crate::{error::CalcError, Calc};
+
+pub(crate) struct RawTransducerRecord {
+    pub drive: Vec<Drive>,
+    pub modulation: Vec<u8>,
+}
+
+pub(crate) struct RawDeviceRecord {
+    pub(crate) records: Vec<RawTransducerRecord>,
+}
+
+pub(crate) struct RawRecord {
+    pub records: Vec<RawDeviceRecord>,
+    pub start: DcSysTime,
+    pub current: DcSysTime,
+}
 
 impl Calc {
     pub fn start_recording(&mut self) -> Result<(), CalcError> {

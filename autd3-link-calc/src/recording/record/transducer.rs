@@ -1,28 +1,14 @@
+use autd3_firmware_emulator::FPGAEmulator;
+use polars::prelude::*;
+
 use autd3_driver::{
     defined::{ULTRASOUND_FREQ, ULTRASOUND_PERIOD, ULTRASOUND_PERIOD_COUNT},
     derive::Builder,
-    ethercat::DcSysTime,
-    firmware::fpga::{Drive, SilencerTarget},
+    firmware::fpga::Drive,
+    firmware::fpga::SilencerTarget,
 };
 
-use autd3_firmware_emulator::FPGAEmulator;
-use derive_more::{Debug, Deref};
-use polars::prelude::*;
-
-pub(crate) struct RawTransducerRecord {
-    pub drive: Vec<Drive>,
-    pub modulation: Vec<u8>,
-}
-
-pub(crate) struct RawDeviceRecord {
-    pub(crate) records: Vec<RawTransducerRecord>,
-}
-
-pub(crate) struct RawRecord {
-    pub records: Vec<RawDeviceRecord>,
-    pub start: DcSysTime,
-    pub current: DcSysTime,
-}
+use derive_more::Debug;
 
 #[derive(Builder, Debug)]
 pub struct TransducerRecord<'a> {
@@ -32,24 +18,8 @@ pub struct TransducerRecord<'a> {
     pub(crate) fpga: &'a FPGAEmulator,
 }
 
-#[derive(Deref, Debug)]
-pub struct DeviceRecord<'a> {
-    #[deref]
-    pub(crate) records: Vec<TransducerRecord<'a>>,
-}
-
-#[derive(Deref, Builder, Debug)]
-pub struct Record<'a> {
-    #[deref]
-    pub(crate) records: Vec<DeviceRecord<'a>>,
-    #[get]
-    pub(crate) start: DcSysTime,
-    #[get]
-    pub(crate) end: DcSysTime,
-}
-
 impl<'a> TransducerRecord<'a> {
-    fn time(n: usize) -> Series {
+    pub(crate) fn time(n: usize) -> Series {
         (0..n)
             .map(|i| (i as u32 * ULTRASOUND_PERIOD).as_secs_f32())
             .collect()
