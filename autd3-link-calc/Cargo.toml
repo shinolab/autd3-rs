@@ -21,6 +21,7 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 anyhow = { workspace = true }
 autd3 = { workspace = true }
 rstest = { workspace = true }
+approx = { workspace = true }
 
 [features]
 default = []

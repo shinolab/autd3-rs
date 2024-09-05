@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use autd3_driver::{
-    defined::ULTRASOUND_PERIOD,
+    defined::{ULTRASOUND_FREQ, ULTRASOUND_PERIOD, ULTRASOUND_PERIOD_COUNT},
     derive::Builder,
     ethercat::DcSysTime,
     firmware::fpga::{Drive, SilencerTarget},
@@ -88,5 +88,37 @@ impl<'a> TransducerRecord<'a> {
                     .collect()
             }
         }
+    }
+
+    pub fn output_voltage(&self) -> Vec<(f32, f32)> {
+        self.pulse_width()
+            .into_iter()
+            .zip(self.drive.iter())
+            .flat_map(|((t, pw), d)| {
+                let rise = d.phase().value().wrapping_sub(pw / 2);
+                let fall = d.phase().value().wrapping_add(pw / 2 + (pw & 0x01));
+                (0..=255u8).map(move |i| {
+                    const TS: f32 =
+                        1. / (ULTRASOUND_FREQ.hz() as f32 * ULTRASOUND_PERIOD_COUNT as f32);
+                    (
+                        t.as_secs_f32() + i as f32 * TS,
+                        #[allow(clippy::collapsible_else_if)]
+                        if rise <= fall {
+                            if (rise <= i) && (i < fall) {
+                                12.0
+                            } else {
+                                -12.0
+                            }
+                        } else {
+                            if (i < fall) || (rise <= i) {
+                                12.0
+                            } else {
+                                -12.0
+                            }
+                        },
+                    )
+                })
+            })
+            .collect()
     }
 }
