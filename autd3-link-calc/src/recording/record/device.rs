@@ -57,4 +57,17 @@ impl<'a> DeviceRecord<'a> {
         });
         df
     }
+
+    pub fn output_ultrasound(&self) -> DataFrame {
+        let mut df = self[0].output_ultrasound();
+        df.rename("p[a.u.]", "p_0[a.u.]").unwrap();
+        self.iter().enumerate().skip(1).for_each(|(i, tr)| {
+            let mut d = tr.output_ultrasound();
+            d.rename("p[a.u.]", &format!("p_{}[a.u.]", i)).unwrap();
+            let mut d = d.take_columns();
+            let v = d.pop().unwrap();
+            df.hstack_mut(&[v]).unwrap();
+        });
+        df
+    }
 }

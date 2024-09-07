@@ -1,4 +1,4 @@
-use autd3::{derive::Datagram, gain, prelude::*, Controller};
+use autd3::{gain, prelude::*, Controller};
 use autd3_driver::firmware::fpga::FPGA_MAIN_CLK_FREQ;
 use autd3_link_calc::Calc;
 use polars::prelude::*;
@@ -171,6 +171,41 @@ async fn record_output_voltage() -> anyhow::Result<()> {
                 .into_no_null_iter()
                 .collect::<Vec<_>>()
         );
+    });
+
+    autd.close().await?;
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn record_output_ultrasound() -> anyhow::Result<()> {
+    let mut autd = Controller::builder([AUTD3::new(Vector3::zeros())])
+        .open(Calc::builder())
+        .await?;
+
+    autd.send(Silencer::disable()).await?;
+    autd.start_recording()?;
+    autd.send(Uniform::new((Phase::new(0x40), EmitIntensity::new(0xFF))))
+        .await?;
+    autd.tick(30 * ULTRASOUND_PERIOD)?;
+    let record = autd.finish_recording()?;
+
+    let v = record[0].output_ultrasound();
+    v["time[s]"]
+        .f32()?
+        .into_no_null_iter()
+        .enumerate()
+        .for_each(|(i, t)| {
+            approx::assert_abs_diff_eq!(i as f32 * (1. / FPGA_MAIN_CLK_FREQ.hz() as f32), t)
+        });
+    autd.geometry()[0].iter().for_each(|tr| {
+        // TODO
+        // assert_eq!(
+        //     vec![],
+        //     v["p[a.u.]"].f32()?.into_no_null_iter().collect::<Vec<_>>()
+        // );
+        assert_eq!(30 * 256, v[1 + tr.idx()].f32().unwrap().iter().count());
     });
 
     autd.close().await?;
