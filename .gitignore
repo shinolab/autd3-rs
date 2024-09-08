@@ -21,3 +21,4 @@ lcov.info
 coverage/
 *.profraw
 *.txt
+*.csv
