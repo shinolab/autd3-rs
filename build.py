@@ -243,8 +243,6 @@ def rust_test(args):
                 command.append("--exclude")
                 command.append("autd3-derive")
                 command.append("--exclude")
-                command.append("autd3-link-calc")
-                command.append("--exclude")
                 command.append("autd3-link-simulator")
                 command.append("--exclude")
                 command.append("autd3-link-twincat")
@@ -257,7 +255,6 @@ def rust_test(args):
 def rust_run(args):
     examples = [
         "nop",
-        "calc",
         "soem",
         "remote_soem",
         "twincat",
@@ -276,8 +273,6 @@ def rust_run(args):
     match args.target:
         case "soem":
             features = "soem"
-        case "calc":
-            features = "calc"
         case "remote_soem":
             features = "remote_soem"
         case "twincat":
