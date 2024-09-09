@@ -144,6 +144,18 @@ impl<const N: usize> DatagramST for FociSTM<N> {
     }
 }
 
+// GRCOV_EXCL_START
+impl<const N: usize> FociSTM<N> {
+    pub unsafe fn uninit() -> Self /* ignore miri */ {
+        Self {
+            control_points: vec![],
+            loop_behavior: LoopBehavior::infinite(),
+            sampling_config: SamplingConfig::FREQ_40K,
+        }
+    }
+}
+// GRCOV_EXCL_STOP
+
 #[cfg(test)]
 mod tests {
     use crate::{
