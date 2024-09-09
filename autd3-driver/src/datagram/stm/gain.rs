@@ -175,6 +175,7 @@ impl<G: Gain> DatagramST for GainSTM<G> {
 
 // GRCOV_EXCL_START
 impl GainSTM<BoxedGain<'static>> {
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn uninit() -> Self /* ignore miri */ {
         Self {
             gains: vec![],
