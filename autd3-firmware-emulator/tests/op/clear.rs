@@ -85,12 +85,18 @@ fn send_clear() -> anyhow::Result<()> {
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     assert!(!cpu.reads_fpga_state());
-    assert_eq!((256, 256), cpu.fpga().silencer_update_rate());
     assert_eq!(
-        (
-            SILENCER_STEPS_INTENSITY_DEFAULT as _,
-            SILENCER_STEPS_PHASE_DEFAULT as _
-        ),
+        FixedUpdateRate {
+            intensity: NonZeroU16::new(256).unwrap(),
+            phase: NonZeroU16::new(256).unwrap(),
+        },
+        cpu.fpga().silencer_update_rate()
+    );
+    assert_eq!(
+        FixedCompletionTime {
+            intensity: SILENCER_STEPS_INTENSITY_DEFAULT * ULTRASOUND_PERIOD,
+            phase: SILENCER_STEPS_PHASE_DEFAULT * ULTRASOUND_PERIOD,
+        },
         cpu.fpga().silencer_completion_steps()
     );
     assert!(cpu.fpga().silencer_fixed_completion_steps_mode());

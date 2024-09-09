@@ -25,7 +25,7 @@ pub trait WithSampling {
 pub trait SilencerConfig: std::fmt::Debug + Clone + Copy {}
 impl SilencerConfig for () {}
 
-#[derive(Debug, Clone, Copy, Builder)]
+#[derive(Debug, Clone, Copy, Builder, PartialEq, Eq)]
 pub struct FixedCompletionTime {
     #[get]
     pub intensity: Duration,
@@ -34,7 +34,7 @@ pub struct FixedCompletionTime {
 }
 impl SilencerConfig for FixedCompletionTime {}
 
-#[derive(Debug, Clone, Copy, Builder)]
+#[derive(Debug, Clone, Copy, Builder, PartialEq, Eq)]
 pub struct FixedUpdateRate {
     #[get]
     pub intensity: NonZeroU16,
