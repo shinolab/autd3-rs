@@ -1,20 +1,34 @@
-use autd3_driver::firmware::fpga::SilencerTarget;
+use std::num::NonZeroU16;
+
+use autd3_driver::{
+    datagram::{FixedCompletionTime, FixedUpdateRate},
+    defined::ULTRASOUND_PERIOD,
+    firmware::fpga::SilencerTarget,
+};
 
 use super::{super::params::*, FPGAEmulator};
 
 impl FPGAEmulator {
-    pub fn silencer_update_rate(&self) -> (u16, u16) {
-        (
-            self.mem.controller_bram()[ADDR_SILENCER_UPDATE_RATE_INTENSITY],
-            self.mem.controller_bram()[ADDR_SILENCER_UPDATE_RATE_PHASE],
-        )
+    pub fn silencer_update_rate(&self) -> FixedUpdateRate {
+        unsafe /* ignore miri */ {
+            FixedUpdateRate {
+                intensity: NonZeroU16::new_unchecked(
+                    self.mem.controller_bram()[ADDR_SILENCER_UPDATE_RATE_INTENSITY],
+                ),
+                phase: NonZeroU16::new_unchecked(
+                    self.mem.controller_bram()[ADDR_SILENCER_UPDATE_RATE_PHASE],
+                ),
+            }
+        }
     }
 
-    pub fn silencer_completion_steps(&self) -> (u16, u16) {
-        (
-            self.mem.controller_bram()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY],
-            self.mem.controller_bram()[ADDR_SILENCER_COMPLETION_STEPS_PHASE],
-        )
+    pub fn silencer_completion_steps(&self) -> FixedCompletionTime {
+        FixedCompletionTime {
+            intensity: self.mem.controller_bram()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] as u32
+                * ULTRASOUND_PERIOD,
+            phase: self.mem.controller_bram()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] as u32
+                * ULTRASOUND_PERIOD,
+        }
     }
 
     pub fn silencer_fixed_update_rate_mode(&self) -> bool {
@@ -89,17 +103,19 @@ impl FPGAEmulator {
     pub fn apply_silencer(&self, initial: u8, raw: &[u8], phase: bool) -> Vec<u8> {
         if self.silencer_fixed_update_rate_mode() {
             let update_rate = if phase {
-                self.silencer_update_rate().1
+                self.silencer_update_rate().phase.get()
             } else {
-                self.silencer_update_rate().0
+                self.silencer_update_rate().intensity.get()
             };
             Self::apply_silencer_interpolate(raw, std::iter::repeat(update_rate), phase, initial)
         } else {
-            let completion_steps = if phase {
-                self.silencer_completion_steps().1
+            let completion_steps = (if phase {
+                self.silencer_completion_steps().phase
             } else {
-                self.silencer_completion_steps().0
-            };
+                self.silencer_completion_steps().intensity
+            }
+            .as_micros()
+                / ULTRASOUND_PERIOD.as_micros()) as u16;
             let mut current_target = initial;
             let mut diff_mem = 0;
             let mut step_rem_mem = 0;
@@ -168,11 +184,8 @@ mod tests {
     ) {
         let fpga = FPGAEmulator::new(249);
         fpga.mem.controller_bram_mut()[ADDR_SILENCER_FLAG] = SILENCER_FLAG_FIXED_UPDATE_RATE_MODE;
-        if phase {
-            fpga.mem.controller_bram_mut()[ADDR_SILENCER_UPDATE_RATE_PHASE] = value;
-        } else {
-            fpga.mem.controller_bram_mut()[ADDR_SILENCER_UPDATE_RATE_INTENSITY] = value;
-        }
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_UPDATE_RATE_PHASE] = value;
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_UPDATE_RATE_INTENSITY] = value;
         assert_eq!(expect, fpga.apply_silencer(initial, &input, phase));
     }
 
@@ -211,11 +224,8 @@ mod tests {
         #[case] input: Vec<u8>,
     ) {
         let fpga = FPGAEmulator::new(249);
-        if phase {
-            fpga.mem.controller_bram_mut()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] = value as _;
-        } else {
-            fpga.mem.controller_bram_mut()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = value as _;
-        }
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] = value as _;
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = value as _;
         assert_eq!(expect, fpga.apply_silencer(initial, &input, phase));
     }
 }
