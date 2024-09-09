@@ -146,6 +146,7 @@ impl<const N: usize> DatagramST for FociSTM<N> {
 
 // GRCOV_EXCL_START
 impl<const N: usize> FociSTM<N> {
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn uninit() -> Self /* ignore miri */ {
         Self {
             control_points: vec![],
