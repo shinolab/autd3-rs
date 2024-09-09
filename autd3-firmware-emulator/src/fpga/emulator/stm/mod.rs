@@ -93,10 +93,16 @@ impl FPGAEmulator {
     }
 
     pub fn drives_at(&self, segment: Segment, idx: usize) -> Vec<Drive> {
+        let mut dst = vec![Drive::null(); self.mem.num_transducers];
+        self.drives_at_inplace(segment, idx, &mut dst);
+        dst
+    }
+
+    pub fn drives_at_inplace(&self, segment: Segment, idx: usize, dst: &mut [Drive]) {
         if self.is_stm_gain_mode(segment) {
-            self.gain_stm_drives(segment, idx)
+            self.gain_stm_drives_inplace(segment, idx, dst)
         } else {
-            self.foci_stm_drives(segment, idx)
+            self.foci_stm_drives_inplace(segment, idx, dst)
         }
     }
 }
