@@ -23,7 +23,7 @@ impl FPGAEmulator {
         }] as u8
     }
 
-    pub(crate) fn foci_stm_drives(&self, segment: Segment, idx: usize) -> Vec<Drive> {
+    pub(crate) fn foci_stm_drives_inplace(&self, segment: Segment, idx: usize, dst: &mut [Drive]) {
         let bram = match segment {
             Segment::S0 => self.mem.stm_bram_0(),
             Segment::S1 => self.mem.stm_bram_1(),
@@ -35,7 +35,8 @@ impl FPGAEmulator {
             .tr_pos
             .iter()
             .take(self.mem.num_transducers)
-            .map(|&tr| {
+            .enumerate()
+            .for_each(|(i, &tr)| {
                 let tr_z = ((tr >> 32) & 0xFFFF) as i16 as i32;
                 let tr_x = ((tr >> 16) & 0xFFFF) as i16 as i32;
                 let tr_y = (tr & 0xFFFF) as i16 as i32;
@@ -68,9 +69,8 @@ impl FPGAEmulator {
                 let sin = ((sin / self.num_foci(segment) as u16) >> 1) as usize;
                 let cos = ((cos / self.num_foci(segment) as u16) >> 1) as usize;
                 let phase = self.mem.atan_table[(sin << 7) | cos];
-                Drive::new(Phase::new(phase), EmitIntensity::new(intensity))
-            })
-            .collect()
+                dst[i] = Drive::new(Phase::new(phase), EmitIntensity::new(intensity));
+            });
     }
 
     pub fn local_tr_pos(&self) -> &[u64] {
