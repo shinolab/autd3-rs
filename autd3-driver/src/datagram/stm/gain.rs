@@ -173,6 +173,19 @@ impl<G: Gain> DatagramST for GainSTM<G> {
     }
 }
 
+// GRCOV_EXCL_START
+impl GainSTM<BoxedGain<'static>> {
+    pub unsafe fn uninit() -> Self /* ignore miri */ {
+        Self {
+            gains: vec![],
+            loop_behavior: LoopBehavior::infinite(),
+            sampling_config: SamplingConfig::FREQ_40K,
+            mode: GainSTMMode::PhaseIntensityFull,
+        }
+    }
+}
+// GRCOV_EXCL_STOP
+
 #[cfg(test)]
 mod tests {
     use super::*;
