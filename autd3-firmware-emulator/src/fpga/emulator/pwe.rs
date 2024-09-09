@@ -10,11 +10,18 @@ impl FPGAEmulator {
     }
 
     pub fn pulse_width_encoder_table(&self) -> Vec<u8> {
+        let mut dst = vec![0; 256];
+        self.pulse_width_encoder_table_inplace(&mut dst);
+        dst
+    }
+
+    pub fn pulse_width_encoder_table_inplace(&self, dst: &mut [u8]) {
         self.mem
             .duty_table_bram()
             .iter()
             .flat_map(|&d| vec![(d & 0xFF) as u8, (d >> 8) as u8])
-            .collect()
+            .enumerate()
+            .for_each(|(i, v)| dst[i] = v);
     }
 
     pub fn to_pulse_width(&self, a: EmitIntensity, b: u8) -> u8 {

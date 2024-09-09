@@ -56,9 +56,13 @@ impl FPGAEmulator {
     }
 
     pub fn modulation_buffer(&self, segment: Segment) -> Vec<u8> {
-        (0..self.modulation_cycle(segment))
-            .map(|i| self.modulation_at(segment, i))
-            .collect()
+        let mut dst = vec![0; self.modulation_cycle(segment)];
+        self.modulation_buffer_inplace(segment, &mut dst);
+        dst
+    }
+
+    pub fn modulation_buffer_inplace(&self, segment: Segment, dst: &mut [u8]) {
+        (0..self.modulation_cycle(segment)).for_each(|i| dst[i] = self.modulation_at(segment, i));
     }
 
     pub fn modulation_transition_mode(&self) -> TransitionMode {
