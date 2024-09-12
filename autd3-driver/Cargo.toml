@@ -36,7 +36,6 @@ serde_json = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 anyhow = { workspace = true }
 rstest = { workspace = true }
-criterion.workspace = true
 
 [features]
 default = ["derive"]
@@ -46,11 +45,3 @@ use_meter = []
 left_handed = []
 serde = ["dep:serde"]
 derive = []
-
-[lib]
-bench = false
-
-[[bench]]
-name = "autd3-driver"
-path = "benches/gain.rs"
-harness = false
