@@ -1,4 +1,4 @@
-use crate::geometry::Transducer;
+use crate::{ethercat::DcSysTime, geometry::Transducer};
 
 use derive_more::Debug;
 
@@ -17,14 +17,29 @@ pub enum DebugType<'a> {
     #[debug("StmIdx({})", _0)]
     StmIdx(u16),
     IsStmMode,
+    SysTimeEq(DcSysTime),
     #[debug("PwmOut({})", _0.idx())]
     PwmOut(&'a Transducer),
     #[debug("Direct({})", _0)]
     Direct(bool),
 }
 
+#[bitfield_struct::bitfield(u64)]
+pub(crate) struct DebugValue {
+    #[bits(56)]
+    pub(crate) value: u64,
+    #[bits(8)]
+    pub(crate) tag: u8,
+}
+
+impl From<DebugType<'_>> for DebugValue {
+    fn from(ty: DebugType<'_>) -> Self {
+        Self::new().with_value(ty.value()).with_tag(ty.ty())
+    }
+}
+
 impl DebugType<'_> {
-    pub const fn ty(&self) -> u8 {
+    pub(crate) const fn ty(&self) -> u8 {
         match self {
             DebugType::None => 0x00,
             DebugType::BaseSignal => 0x01,
@@ -36,12 +51,13 @@ impl DebugType<'_> {
             DebugType::StmSegment => 0x50,
             DebugType::StmIdx(_) => 0x51,
             DebugType::IsStmMode => 0x52,
+            DebugType::SysTimeEq(_) => 0x60,
             DebugType::PwmOut(_) => 0xE0,
             DebugType::Direct(_) => 0xF0,
         }
     }
 
-    pub const fn value(&self) -> u16 {
+    pub(crate) const fn value(&self) -> u64 {
         match self {
             DebugType::None
             | DebugType::BaseSignal
@@ -52,9 +68,10 @@ impl DebugType<'_> {
             | DebugType::StmSegment
             | DebugType::IsStmMode => 0,
             DebugType::PwmOut(tr) => tr.idx() as _,
-            DebugType::ModIdx(idx) => *idx,
-            DebugType::StmIdx(idx) => *idx,
-            DebugType::Direct(v) => *v as u16,
+            DebugType::ModIdx(idx) => *idx as _,
+            DebugType::StmIdx(idx) => *idx as _,
+            DebugType::SysTimeEq(time) => (time.sys_time() / 50000) << 9,
+            DebugType::Direct(v) => *v as _,
         }
     }
 }

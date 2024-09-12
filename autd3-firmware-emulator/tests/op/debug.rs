@@ -17,7 +17,7 @@ use crate::{create_geometry, send};
 #[cfg_attr(miri, ignore)]
 fn send_debug_output_idx(
     #[case] expect_types: [u8; 4],
-    #[case] expect_values: [u16; 4],
+    #[case] expect_values: [u64; 4],
     #[case] debug_types: [DebugType<'static>; 4],
 ) -> anyhow::Result<()> {
     let geometry = create_geometry(1);
