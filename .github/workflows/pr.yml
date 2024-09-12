@@ -107,13 +107,13 @@ jobs:
       - uses: ./.github/actions/setup-build
         with:
           os: ubuntu-latest
-          toolchain: nightly
+          toolchain: nightly-2024-07-16
           components: miri
       - uses: taiki-e/install-action@v2
         with:
           tool: nextest
       - run: |
-          python3 build.py test --miri
+          python3 build.py test --miri --channel nightly-2024-07-16
 
   auto-merge:
     needs:
