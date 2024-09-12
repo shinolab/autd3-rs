@@ -32,9 +32,7 @@ impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> OperationGenerator
         (
             Self::O1::new(
                 [GPIOOut::O0, GPIOOut::O1, GPIOOut::O2, GPIOOut::O3]
-                    .map(|gpio| (self.f)(device, gpio).ty()),
-                [GPIOOut::O0, GPIOOut::O1, GPIOOut::O2, GPIOOut::O3]
-                    .map(|gpio| (self.f)(device, gpio).value()),
+                    .map(|gpio| (self.f)(device, gpio).into()),
             ),
             Self::O2::default(),
         )

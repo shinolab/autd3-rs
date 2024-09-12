@@ -112,14 +112,22 @@ impl CPUEmulator {
         self.change_stm_wr_page(0);
         self.bram_set(BRAM_SELECT_STM, 0, 0x0000, TRANS_NUM << 1);
 
-        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_TYPE0, 0x00);
-        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_TYPE1, 0x00);
-        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_TYPE2, 0x00);
-        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_TYPE3, 0x00);
-        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE0, 0x0000);
-        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE1, 0x0000);
-        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE2, 0x0000);
-        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE3, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE0_0, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE0_1, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE0_2, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE0_3, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE1_0, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE1_1, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE1_2, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE1_3, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE2_0, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE2_1, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE2_2, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE2_3, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE3_0, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE3_1, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE3_2, 0x0000);
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE3_3, 0x0000);
 
         self.set_and_wait_update(CTL_FLAG_MOD_SET);
         self.set_and_wait_update(CTL_FLAG_STM_SET);
