@@ -111,5 +111,6 @@ pub const DBG_MOD_IDX: u8 = 0x21;
 pub const DBG_STM_SEGMENT: u8 = 0x50;
 pub const DBG_STM_IDX: u8 = 0x51;
 pub const DBG_IS_STM_MODE: u8 = 0x52;
+pub const DBG_SYS_TIME_EQ: u8 = 0x60;
 pub const DBG_PWM_OUT: u8 = 0xE0;
 pub const DBG_DIRECT: u8 = 0xF0;
