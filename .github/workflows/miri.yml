@@ -17,6 +17,7 @@ jobs:
           os: ubuntu-latest
           toolchain: nightly
           components: miri
+          cache: false
       - uses: taiki-e/install-action@v2
         with:
           tool: nextest

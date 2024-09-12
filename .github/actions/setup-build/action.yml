@@ -16,6 +16,10 @@ inputs:
     description: 'components'
     required: false
     default: ''
+  cache:
+    description: 'cache'
+    required: false
+    default: "true"
 runs:
   using: "composite"
   steps:
@@ -29,6 +33,7 @@ runs:
       with:
         toolchain: ${{ inputs.toolchain }}
         components: ${{ inputs.components }}
+        cache: ${{ inputs.cache }}
         target: ${{ (inputs.os == 'windows-latest' && inputs.arch == 'aarch64') && 'aarch64-pc-windows-msvc' || '' }}
 
     - name: install cross
