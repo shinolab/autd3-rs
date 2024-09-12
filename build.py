@@ -84,6 +84,7 @@ class Config:
     release: bool
     target: Optional[str]
     no_examples: bool
+    channel: Optional[str]
 
     def __init__(self, args):
         self._platform = platform.system()
@@ -94,6 +95,7 @@ class Config:
 
         self.release = hasattr(args, "release") and args.release
         self.no_examples = hasattr(args, "no_examples") and args.no_examples
+        self.channel = hasattr(args, "channel") and args.channel
 
         if hasattr(args, "arch") and args.arch is not None:
             if self.is_linux():
@@ -220,11 +222,15 @@ def rust_test(args):
 
     with working_dir("."):
         with with_env(MIRIFLAGS="-Zmiri-disable-isolation"):
+            miri_channel = args.channel if args.channel is not None else "nightly"
             command = (
-                config.cargo_command_base(["+nightly", "miri", "nextest", "run"])
+                config.cargo_command_base(
+                    [f"+{miri_channel}", "miri", "nextest", "run"]
+                )
                 if args.miri
                 else config.cargo_command_base(["nextest", "run"])
             )
+            print(command)
             features = "remote"
             if args.features is not None:
                 features += " " + args.features
@@ -450,6 +456,7 @@ if __name__ == "__main__":
         parser_test.add_argument("--release", action="store_true", help="release build")
         parser_test.add_argument("--features", help="additional features", default=None)
         parser_test.add_argument("--miri", action="store_true", help="run with miri")
+        parser_test.add_argument("--channel", help="rust toolchain", default=None)
         parser_test.set_defaults(handler=rust_test)
 
         # run
