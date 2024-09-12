@@ -12,6 +12,7 @@ mod stm_focus;
 mod transition_mode;
 
 pub use debug_type::DebugType;
+pub(crate) use debug_type::DebugValue;
 pub use drive::Drive;
 pub use emit_intensity::EmitIntensity;
 pub use fpga_state::FPGAState;

@@ -2,29 +2,29 @@ use std::mem::size_of;
 
 use crate::{
     error::AUTDInternalError,
-    firmware::operation::{write_to_tx, Operation, TypeTag},
+    firmware::{
+        fpga::DebugValue,
+        operation::{write_to_tx, Operation, TypeTag},
+    },
     geometry::Device,
 };
 
 #[repr(C, align(2))]
 struct DebugSetting {
     tag: TypeTag,
-    __pad: u8,
-    ty: [u8; 4],
-    value: [u16; 4],
+    __pad: [u8; 7],
+    value: [DebugValue; 4],
 }
 
 pub struct DebugSettingOp {
     is_done: bool,
-    ty: [u8; 4],
-    value: [u16; 4],
+    value: [DebugValue; 4],
 }
 
 impl DebugSettingOp {
-    pub const fn new(ty: [u8; 4], value: [u16; 4]) -> Self {
+    pub(crate) const fn new(value: [DebugValue; 4]) -> Self {
         Self {
             is_done: false,
-            ty,
             value,
         }
     }
@@ -36,8 +36,7 @@ impl Operation for DebugSettingOp {
             write_to_tx(
                 DebugSetting {
                     tag: TypeTag::Debug,
-                    __pad: 0,
-                    ty: self.ty,
+                    __pad: [0; 7],
                     value: self.value,
                 },
                 tx,
@@ -72,24 +71,56 @@ mod tests {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let mut op =
-            DebugSettingOp::new([0x01, 0x02, 0x03, 0x04], [0x0605, 0x0807, 0x0a09, 0x0c0b]);
+        let mut op = DebugSettingOp::new([
+            DebugValue::new()
+                .with_tag(0x01)
+                .with_value(0x02030405060708),
+            DebugValue::new()
+                .with_tag(0x11)
+                .with_value(0x12131415161718),
+            DebugValue::new()
+                .with_tag(0x10)
+                .with_value(0x20304050607080),
+            DebugValue::new()
+                .with_tag(0x11)
+                .with_value(0x21314151617181),
+        ]);
 
         assert_eq!(size_of::<DebugSetting>(), op.required_size(&device));
         assert_eq!(Ok(size_of::<DebugSetting>()), op.pack(&device, &mut tx));
         assert!(op.is_done());
         assert_eq!(TypeTag::Debug as u8, tx[0]);
-        assert_eq!(0x01, tx[2]);
-        assert_eq!(0x02, tx[3]);
-        assert_eq!(0x03, tx[4]);
-        assert_eq!(0x04, tx[5]);
-        assert_eq!(0x05, tx[6]);
-        assert_eq!(0x06, tx[7]);
-        assert_eq!(0x07, tx[8]);
-        assert_eq!(0x08, tx[9]);
-        assert_eq!(0x09, tx[10]);
-        assert_eq!(0x0a, tx[11]);
-        assert_eq!(0x0b, tx[12]);
-        assert_eq!(0x0c, tx[13]);
+        assert_eq!(0x08, tx[8]);
+        assert_eq!(0x07, tx[9]);
+        assert_eq!(0x06, tx[10]);
+        assert_eq!(0x05, tx[11]);
+        assert_eq!(0x04, tx[12]);
+        assert_eq!(0x03, tx[13]);
+        assert_eq!(0x02, tx[14]);
+        assert_eq!(0x01, tx[15]);
+        assert_eq!(0x18, tx[16]);
+        assert_eq!(0x17, tx[17]);
+        assert_eq!(0x16, tx[18]);
+        assert_eq!(0x15, tx[19]);
+        assert_eq!(0x14, tx[20]);
+        assert_eq!(0x13, tx[21]);
+        assert_eq!(0x12, tx[22]);
+        assert_eq!(0x11, tx[23]);
+        assert_eq!(0x80, tx[24]);
+        assert_eq!(0x70, tx[25]);
+        assert_eq!(0x60, tx[26]);
+        assert_eq!(0x50, tx[27]);
+        assert_eq!(0x40, tx[28]);
+        assert_eq!(0x30, tx[29]);
+        assert_eq!(0x20, tx[30]);
+        assert_eq!(0x10, tx[31]);
+        assert_eq!(0x81, tx[32]);
+        assert_eq!(0x71, tx[33]);
+        assert_eq!(0x61, tx[34]);
+        assert_eq!(0x51, tx[35]);
+        assert_eq!(0x41, tx[36]);
+        assert_eq!(0x31, tx[37]);
+        assert_eq!(0x21, tx[38]);
+        assert_eq!(0x11, tx[39]);
     }
 }
