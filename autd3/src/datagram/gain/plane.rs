@@ -22,7 +22,7 @@ impl Plane {
         Self {
             dir,
             intensity: EmitIntensity::MAX,
-            phase_offset: Phase::new(0),
+            phase_offset: Phase::ZERO,
         }
     }
 }
@@ -86,7 +86,7 @@ mod tests {
 
         let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();
         let g = Plane::new(d);
-        plane_check(g, d, EmitIntensity::MAX, Phase::new(0), &geometry)?;
+        plane_check(g, d, EmitIntensity::MAX, Phase::ZERO, &geometry)?;
 
         let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();
         let intensity = EmitIntensity::new(rng.gen());
