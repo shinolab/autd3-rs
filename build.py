@@ -230,7 +230,6 @@ def rust_test(args):
                 if args.miri
                 else config.cargo_command_base(["nextest", "run"])
             )
-            print(command)
             features = "remote"
             if args.features is not None:
                 features += " " + args.features
