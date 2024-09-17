@@ -13,6 +13,7 @@ pub struct Phase {
 }
 
 impl Phase {
+    pub const ZERO: Self = Self { value: 0 };
     pub const PI: Self = Self { value: 128 };
 
     pub const fn new(value: u8) -> Self {
@@ -102,7 +103,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Phase::new(0x00), Phase::new(0x01), Phase::new(0x01))]
+    #[case(Phase::ZERO, Phase::new(0x01), Phase::new(0x01))]
     #[case(Phase::new(0x01), Phase::new(0x02), Phase::new(0x01))]
     #[case(Phase::new(0x80), Phase::new(0x7F), Phase::new(0xFF))]
     #[cfg_attr(miri, ignore)]
@@ -114,7 +115,7 @@ mod tests {
     #[test]
     #[case(Phase::new(0x02), Phase::new(0x01), 2)]
     #[case(Phase::new(0xFE), Phase::new(0x7F), 2)]
-    #[case(Phase::new(0x00), Phase::new(0x80), 2)]
+    #[case(Phase::ZERO, Phase::new(0x80), 2)]
     #[cfg_attr(miri, ignore)]
     fn mul(#[case] expected: Phase, #[case] lhs: Phase, #[case] rhs: u8) {
         assert_eq!(expected, lhs * rhs);
@@ -124,7 +125,7 @@ mod tests {
     #[test]
     #[case(Phase::new(0x01), Phase::new(0x02), 2)]
     #[case(Phase::new(0x7F), Phase::new(0xFE), 2)]
-    #[case(Phase::new(0x00), Phase::new(0x01), 2)]
+    #[case(Phase::ZERO, Phase::new(0x01), 2)]
     #[cfg_attr(miri, ignore)]
     fn div(#[case] expected: Phase, #[case] lhs: Phase, #[case] rhs: u8) {
         assert_eq!(expected, lhs / rhs);
@@ -143,7 +144,7 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn dbg() {
-        assert_eq!(format!("{:?}", Phase::new(0x00)), "0x00");
+        assert_eq!(format!("{:?}", Phase::ZERO), "0x00");
         assert_eq!(format!("{:?}", Phase::new(0x01)), "0x01");
         assert_eq!(format!("{:?}", Phase::new(0xFF)), "0xFF");
     }

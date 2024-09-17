@@ -34,7 +34,7 @@ impl Focus {
         Self {
             pos,
             intensity: EmitIntensity::MAX,
-            phase_offset: Phase::new(0),
+            phase_offset: Phase::ZERO,
         }
     }
 }

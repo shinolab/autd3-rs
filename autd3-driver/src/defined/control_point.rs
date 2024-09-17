@@ -21,7 +21,7 @@ impl ControlPoint {
     pub const fn new(point: Vector3) -> Self {
         Self {
             point,
-            phase_offset: Phase::new(0),
+            phase_offset: Phase::ZERO,
         }
     }
 }

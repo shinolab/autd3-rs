@@ -10,7 +10,7 @@ impl FPGAEmulator {
     }
 
     pub fn phase_correction(&self) -> Vec<Phase> {
-        let mut dst = vec![Phase::new(0); self.mem.num_transducers];
+        let mut dst = vec![Phase::ZERO; self.mem.num_transducers];
         self.phase_correction_inplace(&mut dst);
         dst
     }
@@ -32,7 +32,7 @@ mod tests {
         assert_eq!(
             [
                 vec![Phase::new(0x34), Phase::new(0x12)],
-                vec![Phase::new(0); 246],
+                vec![Phase::ZERO; 246],
                 vec![Phase::new(0x78)]
             ]
             .concat(),

@@ -170,7 +170,7 @@ mod tests {
 
         assert_eq!(
             vec![
-                Drive::new(Phase::new(0x00), EmitIntensity::new(0xFF));
+                Drive::new(Phase::ZERO, EmitIntensity::new(0xFF));
                 autd.geometry[2].num_transducers()
             ],
             autd.link[2].fpga().drives_at(Segment::S0, 0)
@@ -182,14 +182,14 @@ mod tests {
         );
         assert_eq!(
             vec![
-                Drive::new(Phase::new(0x00), EmitIntensity::new(0x80));
+                Drive::new(Phase::ZERO, EmitIntensity::new(0x80));
                 autd.geometry[3].num_transducers()
             ],
             autd.link[3].fpga().drives_at(Segment::S0, 0)
         );
         assert_eq!(
             vec![
-                Drive::new(Phase::new(0x00), EmitIntensity::new(0x81));
+                Drive::new(Phase::ZERO, EmitIntensity::new(0x81));
                 autd.geometry[3].num_transducers()
             ],
             autd.link[3].fpga().drives_at(Segment::S0, 1)
