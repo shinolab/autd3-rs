@@ -28,7 +28,7 @@ impl Bessel {
             dir,
             theta,
             intensity: EmitIntensity::MAX,
-            phase_offset: Phase::new(0),
+            phase_offset: Phase::ZERO,
         }
     }
 }
@@ -123,7 +123,7 @@ mod tests {
 
         let g = Bessel::new(Vector3::zeros(), Vector3::z(), 0. * rad);
         assert_eq!(EmitIntensity::MAX, g.intensity());
-        assert_eq!(Phase::new(0), g.phase_offset());
+        assert_eq!(Phase::ZERO, g.phase_offset());
 
         let f = random_vector3(-500.0..500.0, -500.0..500.0, 50.0..500.0);
         let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();

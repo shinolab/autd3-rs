@@ -22,7 +22,7 @@ impl Focus {
         Self {
             pos,
             intensity: EmitIntensity::MAX,
-            phase_offset: Phase::new(0),
+            phase_offset: Phase::ZERO,
         }
     }
 }
@@ -86,7 +86,7 @@ mod tests {
 
         let f = random_vector3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
         let g = Focus::new(f);
-        focus_check(g, f, EmitIntensity::MAX, Phase::new(0), &geometry)?;
+        focus_check(g, f, EmitIntensity::MAX, Phase::ZERO, &geometry)?;
 
         let f = random_vector3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
         let intensity = EmitIntensity::new(rng.gen());

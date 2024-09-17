@@ -18,7 +18,7 @@ impl Drive {
 
     pub const fn null() -> Self {
         Self {
-            phase: Phase::new(0),
+            phase: Phase::ZERO,
             intensity: EmitIntensity::MIN,
         }
     }
@@ -39,7 +39,7 @@ impl From<(EmitIntensity, Phase)> for Drive {
 impl From<EmitIntensity> for Drive {
     fn from(intensity: EmitIntensity) -> Self {
         Self {
-            phase: Phase::new(0),
+            phase: Phase::ZERO,
             intensity,
         }
     }
@@ -69,7 +69,7 @@ mod tests {
         (EmitIntensity::new(0x02), Phase::new(0x01))
     )]
     #[case(
-        Drive::new(Phase::new(0x00), EmitIntensity::new(0x01)),
+        Drive::new(Phase::ZERO, EmitIntensity::new(0x01)),
         EmitIntensity::new(0x01)
     )]
     #[case(Drive::new(Phase::new(0x01), EmitIntensity::MAX), Phase::new(0x01))]
@@ -82,15 +82,15 @@ mod tests {
     #[test]
     #[case(
         EmitIntensity::new(0x00),
-        Drive::new(Phase::new(0), EmitIntensity::new(0x00))
+        Drive::new(Phase::ZERO, EmitIntensity::new(0x00))
     )]
     #[case(
         EmitIntensity::new(0x01),
-        Drive::new(Phase::new(0), EmitIntensity::new(0x01))
+        Drive::new(Phase::ZERO, EmitIntensity::new(0x01))
     )]
     #[case(
         EmitIntensity::new(0xFF),
-        Drive::new(Phase::new(0), EmitIntensity::new(0xFF))
+        Drive::new(Phase::ZERO, EmitIntensity::new(0xFF))
     )]
     #[cfg_attr(miri, ignore)]
     fn test_intensity(#[case] expected: EmitIntensity, #[case] target: Drive) {
@@ -99,7 +99,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Phase::new(0), Drive::new(Phase::new(0), EmitIntensity::new(0x00)))]
+    #[case(Phase::ZERO, Drive::new(Phase::ZERO, EmitIntensity::new(0x00)))]
     #[case(Phase::new(1), Drive::new(Phase::new(1), EmitIntensity::new(0x00)))]
     #[case(
         Phase::new(0xFF),
@@ -114,7 +114,7 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn test_null() {
         assert_eq!(
-            Drive::new(Phase::new(0), EmitIntensity::new(0x00)),
+            Drive::new(Phase::ZERO, EmitIntensity::new(0x00)),
             Drive::null()
         );
     }
