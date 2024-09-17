@@ -14,11 +14,12 @@ impl FPGAEmulator {
         }
         .iter()
         .skip(256 * idx)
+        .zip(self.phase_correction().iter())
         .take(self.mem.num_transducers)
         .enumerate()
-        .for_each(|(i, &d)| {
+        .for_each(|(i, (&d, &p))| {
             dst[i] = Drive::new(
-                Phase::new((d & 0xFF) as u8),
+                Phase::new((d & 0xFF) as u8) + p,
                 EmitIntensity::new(((d >> 8) & 0xFF) as u8),
             )
         })
