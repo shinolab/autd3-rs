@@ -1,6 +1,7 @@
 use std::f32::consts::PI;
 
 use autd3_derive::Builder;
+use bvh::aabb::Aabb;
 use derive_more::{Deref, IntoIterator};
 
 use crate::defined::{METER, ULTRASOUND_FREQ};
@@ -24,25 +25,43 @@ pub struct Device {
     #[get(ref)]
     axial_direction: Vector3,
     inv: nalgebra::Rotation<f32, 3>,
+    #[get(ref)]
+    aabb: Aabb<f32, 3>,
 }
 
 impl Device {
+    fn init(&mut self) {
+        self.inv = self.rotation.inverse().to_rotation_matrix();
+        self.x_direction = Self::get_direction(Vector3::x(), &self.rotation);
+        self.y_direction = Self::get_direction(Vector3::y(), &self.rotation);
+        self.axial_direction = if cfg!(feature = "left_handed") {
+            Self::get_direction(-Vector3::z(), &self.rotation) // GRCOV_EXCL_LINE
+        } else {
+            Self::get_direction(Vector3::z(), &self.rotation)
+        };
+        self.aabb = self.transducers.iter().fold(Aabb::empty(), |aabb, tr| {
+            aabb.grow(&nalgebra::Point3 {
+                coords: *tr.position(),
+            })
+        });
+    }
+
     #[doc(hidden)]
     pub fn new(idx: u16, rot: UnitQuaternion, transducers: Vec<Transducer>) -> Self {
-        Self {
+        let mut dev = Self {
             idx,
             transducers,
             enable: true,
             sound_speed: 340.0 * METER,
             rotation: rot,
-            x_direction: Self::get_direction(Vector3::x(), &rot),
-            y_direction: Self::get_direction(Vector3::y(), &rot),
-            #[cfg(feature = "left_handed")]
-            axial_direction: Self::get_direction(-Vector3::z(), &rot),
-            #[cfg(not(feature = "left_handed"))]
-            axial_direction: Self::get_direction(Vector3::z(), &rot),
-            inv: rot.inverse().to_rotation_matrix(),
-        }
+            x_direction: Vector3::zeros(),
+            y_direction: Vector3::zeros(),
+            axial_direction: Vector3::zeros(),
+            inv: nalgebra::Rotation::identity(),
+            aabb: Aabb::empty(),
+        };
+        dev.init();
+        dev
     }
 
     pub const fn idx(&self) -> usize {
@@ -86,14 +105,7 @@ impl Device {
     pub fn affine(&mut self, t: Vector3, r: UnitQuaternion) {
         self.transducers.iter_mut().for_each(|tr| tr.affine(t, r));
         self.rotation = r * self.rotation;
-        self.inv = self.rotation.inverse().to_rotation_matrix();
-        self.x_direction = Self::get_direction(Vector3::x(), &self.rotation);
-        self.y_direction = Self::get_direction(Vector3::y(), &self.rotation);
-        self.axial_direction = if cfg!(feature = "left_handed") {
-            Self::get_direction(-Vector3::z(), &self.rotation) // GRCOV_EXCL_LINE
-        } else {
-            Self::get_direction(Vector3::z(), &self.rotation)
-        };
+        self.init();
     }
 
     pub fn set_sound_speed_from_temp(&mut self, temp: f32) {

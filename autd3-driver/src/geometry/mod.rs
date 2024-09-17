@@ -12,6 +12,7 @@ pub type Matrix4 = nalgebra::Matrix4<f32>;
 pub type Affine = nalgebra::Affine3<f32>;
 
 use autd3_derive::Builder;
+use bvh::aabb::Aabb;
 pub use device::*;
 pub use rotation::*;
 pub use transducer::*;
@@ -67,6 +68,11 @@ impl Geometry {
     pub fn set_sound_speed_from_temp_with(&mut self, temp: f32, k: f32, r: f32, m: f32) {
         self.devices_mut()
             .for_each(|dev| dev.set_sound_speed_from_temp_with(temp, k, r, m));
+    }
+
+    pub fn aabb(&self) -> Aabb<f32, 3> {
+        self.devices()
+            .fold(Aabb::empty(), |aabb, dev| aabb.join(dev.aabb()))
     }
 }
 
