@@ -1,3 +1,8 @@
+# 28.0.0
+
+- Update firmware to v10.0.0
+  - Add `PhaseCorrection`
+
 # 27.0.0
 
 - Update firmware to v9.0.0

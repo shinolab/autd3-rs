@@ -12,6 +12,8 @@ pub(crate) struct Memory {
     #[get]
     pub(crate) controller_bram: LazyCell<RefCell<Vec<u16>>>,
     #[get]
+    pub(crate) phase_corr_bram: LazyCell<RefCell<Vec<u16>>>,
+    #[get]
     pub(crate) modulation_bram_0: LazyCell<RefCell<Vec<u16>>>,
     #[get]
     pub(crate) modulation_bram_1: LazyCell<RefCell<Vec<u16>>>,
@@ -36,6 +38,9 @@ impl Memory {
                     (ENABLED_FEATURES_BITS as u16) << 8 | VERSION_NUM_MAJOR as u16;
                 v[ADDR_VERSION_NUM_MINOR] = VERSION_NUM_MINOR as u16;
                 RefCell::new(v)
+            }),
+            phase_corr_bram: LazyCell::new(|| {
+                RefCell::new(vec![0x0000; 256 / std::mem::size_of::<u16>()])
             }),
             modulation_bram_0: LazyCell::new(|| {
                 RefCell::new(vec![0x0000; 32768 / std::mem::size_of::<u16>()])
@@ -119,6 +124,7 @@ impl Memory {
         match select {
             BRAM_SELECT_CONTROLLER => match addr >> 8 {
                 BRAM_CNT_SEL_MAIN => self.controller_bram_mut()[addr] = data,
+                BRAM_CNT_SEL_PHASE_CORR => self.phase_corr_bram_mut()[addr & 0xFF] = data,
                 _ => unreachable!(),
             },
             BRAM_SELECT_MOD => match self.controller_bram()[ADDR_MOD_MEM_WR_SEGMENT] {

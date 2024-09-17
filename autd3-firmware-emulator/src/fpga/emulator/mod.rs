@@ -1,6 +1,7 @@
 mod debug;
 mod memory;
 mod modulation;
+mod phase_corr;
 mod pwe;
 mod silencer;
 mod stm;

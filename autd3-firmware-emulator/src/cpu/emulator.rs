@@ -190,6 +190,7 @@ impl CPUEmulator {
                 TAG_DEBUG => self.config_debug(data),
                 TAG_EMULATE_GPIO_IN => self.emulate_gpio_in(data),
                 TAG_CPU_GPIO_OUT => self.cpu_gpio_out(data),
+                TAG_PHASE_CORRECTION => self.phase_corr(data),
                 _ => ERR_NOT_SUPPORTED_TAG,
             }
         }

@@ -62,11 +62,21 @@ fn send_gain_stm_phase_intensity_full(
     #[case] segment: Segment,
     #[case] transition_mode: Option<TransitionMode>,
 ) -> anyhow::Result<()> {
+    use autd3_driver::datagram::PhaseCorrection;
+
     let mut rng = rand::thread_rng();
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
+
+    let phase_corr: Vec<_> = (0..geometry.num_transducers())
+        .map(|_| Phase::new(rng.gen()))
+        .collect();
+    {
+        let d = PhaseCorrection::new(|_| |tr| phase_corr[tr.idx()]);
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+    }
 
     let bufs = gen_random_buf(n, &geometry);
     let freq_div = rng.gen_range(
@@ -97,7 +107,8 @@ fn send_gain_stm_phase_intensity_full(
             .into_iter()
             .enumerate()
             .for_each(|(i, drive)| {
-                assert_eq!(bufs[gain_idx][&0][i], drive);
+                assert_eq!(bufs[gain_idx][&0][i].intensity(), drive.intensity());
+                assert_eq!(phase_corr[i] + bufs[gain_idx][&0][i].phase(), drive.phase());
             });
     });
 

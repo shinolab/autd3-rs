@@ -59,6 +59,8 @@ fn test_send_foci_stm(
     #[case] segment: Segment,
     #[case] transition_mode: Option<TransitionMode>,
 ) -> anyhow::Result<()> {
+    use autd3_driver::datagram::PhaseCorrection;
+
     let sin_table = include_bytes!("sin.dat");
     let atan_table = include_bytes!("atan.dat");
 
@@ -68,6 +70,14 @@ fn test_send_foci_stm(
     geometry.set_sound_speed(400e3);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
+
+    let phase_corr: Vec<_> = (0..geometry.num_transducers())
+        .map(|_| Phase::new(rng.gen()))
+        .collect();
+    {
+        let d = PhaseCorrection::new(|_| |tr| phase_corr[tr.idx()]);
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+    }
 
     let freq_div = rng.gen_range(
         SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _..=u16::MAX,
@@ -110,7 +120,7 @@ fn test_send_foci_stm(
             let sin = (sin_table[q as usize % 256] >> 1) as usize;
             let cos = (sin_table[(q as usize + 64) % 256] >> 1) as usize;
             let p = atan_table[(sin << 7) | cos];
-            assert_eq!(Phase::new(p), drive.phase());
+            assert_eq!(Phase::new(p) + phase_corr[tr_idx], drive.phase());
             assert_eq!(focus.intensity(), drive.intensity());
         })
     });
