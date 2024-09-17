@@ -140,6 +140,7 @@ pub mod tests {
 
     use super::*;
     use crate::{
+        autd3_device::AUTD3,
         defined::{mm, PI},
         geometry::tests::create_device,
     };
@@ -166,8 +167,8 @@ pub mod tests {
     #[case(0)]
     #[case(1)]
     #[cfg_attr(miri, ignore)]
-    fn test_idx(#[case] idx: u16) {
-        assert_eq!(idx, create_device(idx, 249).idx() as _);
+    fn idx(#[case] expect: u16) {
+        assert_eq!(expect, create_device(expect, 249).idx() as _);
     }
 
     #[rstest::rstest]
@@ -175,22 +176,15 @@ pub mod tests {
     #[case(1)]
     #[case(249)]
     #[cfg_attr(miri, ignore)]
-    fn test_num_transducers(#[case] n: u8) {
+    fn num_transducers(#[case] n: u8) {
         assert_eq!(n, create_device(0, n).num_transducers() as _);
     }
 
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn test_center() {
-        let transducers = itertools::iproduct!(0..18, 0..14)
-            .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(i as _, i as _, 10.16 * Vector3::new(x as f32, y as f32, 0.))
-            })
-            .collect::<Vec<_>>();
-        let expected =
-            transducers.iter().map(|t| t.position()).sum::<Vector3>() / transducers.len() as f32;
-        let device = Device::new(0, UnitQuaternion::identity(), transducers);
+    fn center() {
+        let device = AUTD3::new(Vector3::zeros()).into_device(0);
+        let expected = device.iter().map(|t| t.position()).sum::<Vector3>() / device.len() as f32;
         assert_approx_eq_vec3!(expected, device.center());
     }
 
@@ -221,84 +215,47 @@ pub mod tests {
         UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.)
     )]
     #[cfg_attr(miri, ignore)]
-    fn test_to_local(
+    fn to_local(
         #[case] expected: Vector3,
         #[case] target: Vector3,
         #[case] origin: Vector3,
-        #[case] quat: UnitQuaternion,
+        #[case] rot: UnitQuaternion,
     ) {
-        let device = Device::new(
-            0,
-            quat,
-            itertools::iproduct!(0..18, 0..14)
-                .enumerate()
-                .map(|(i, (y, x))| {
-                    Transducer::new(
-                        i as _,
-                        i as _,
-                        origin + 10.16 * Vector3::new(x as f32, y as f32, 0.),
-                    )
-                })
-                .collect::<Vec<_>>(),
-        );
+        let device = AUTD3::new(origin).with_rotation(rot).into_device(0);
         assert_approx_eq_vec3!(expected, device.to_local(&target));
     }
 
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn test_translate_to() {
+    fn translate_to() {
         let mut rng = rand::thread_rng();
         let origin = Vector3::new(rng.gen(), rng.gen(), rng.gen());
 
-        let transducers = itertools::iproduct!(0..18, 0..14)
-            .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(
-                    i as _,
-                    i as _,
-                    origin + 10.16 * Vector3::new(x as f32, y as f32, 0.),
-                )
-            })
-            .collect::<Vec<_>>();
-
-        let mut device = Device::new(0, UnitQuaternion::identity(), transducers);
+        let mut device = AUTD3::new(origin).into_device(0);
 
         let t = Vector3::new(40., 50., 60.);
         device.translate_to(t);
 
-        itertools::iproduct!(0..18, 0..14)
-            .map(|(y, x)| 10.16 * Vector3::new(x as f32, y as f32, 0.) + t)
+        AUTD3::new(t)
+            .into_device(0)
+            .iter()
             .zip(device.iter())
             .for_each(|(expect, tr)| {
-                assert_approx_eq_vec3!(expect, tr.position());
+                assert_approx_eq_vec3!(expect.position(), tr.position());
             });
     }
 
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn test_rotate_to() {
-        let mut device = {
-            let mut device = Device::new(
-                0,
-                UnitQuaternion::identity(),
-                itertools::iproduct!(0..18, 0..14)
-                    .enumerate()
-                    .map(|(i, (y, x))| {
-                        Transducer::new(
-                            i as _,
-                            i as _,
-                            10.16 * Vector3::new(x as f32, y as f32, 0.),
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-            );
-            let mut rng = rand::thread_rng();
-            let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), rng.gen())
-                * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), rng.gen())
-                * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), rng.gen());
-            device.rotate(rot);
-            device
-        };
+    fn rotate_to() {
+        let mut rng = rand::thread_rng();
+        let mut device = AUTD3::new(Vector3::zeros())
+            .with_rotation(
+                UnitQuaternion::from_axis_angle(&Vector3::x_axis(), rng.gen())
+                    * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), rng.gen())
+                    * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), rng.gen()),
+            )
+            .into_device(0);
 
         let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)
             * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), 0.)
@@ -316,54 +273,39 @@ pub mod tests {
         assert_approx_eq_vec3!(expect_x, device.x_direction());
         assert_approx_eq_vec3!(expect_y, device.y_direction());
         assert_approx_eq_vec3!(expect_z, device.axial_direction());
-        itertools::iproduct!(0..18, 0..14)
-            .map(|(y, x)| 10.16 * Vector3::new(-y as f32, x as f32, 0.))
+        AUTD3::new(Vector3::zeros())
+            .with_rotation(rot)
+            .into_device(0)
+            .iter()
             .zip(device.iter())
             .for_each(|(expect, tr)| {
-                assert_approx_eq_vec3!(expect, tr.position());
+                assert_approx_eq_vec3!(expect.position(), tr.position());
             });
     }
 
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn test_translate() {
+    fn translate() {
         let mut rng = rand::thread_rng();
         let origin = Vector3::new(rng.gen(), rng.gen(), rng.gen());
 
-        let transducers = itertools::iproduct!(0..18, 0..14)
-            .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(
-                    i as _,
-                    i as _,
-                    origin + 10.16 * Vector3::new(x as f32, y as f32, 0.),
-                )
-            })
-            .collect::<Vec<_>>();
-
-        let mut device = Device::new(0, UnitQuaternion::identity(), transducers.clone());
+        let mut device = AUTD3::new(origin).into_device(0);
 
         let t = Vector3::new(40., 50., 60.);
         device.translate(t);
-        transducers
+        AUTD3::new(origin + t)
+            .into_device(0)
             .iter()
             .zip(device.iter())
-            .for_each(|(orig, tr)| {
-                assert_approx_eq_vec3!(orig.position() + t, tr.position());
+            .for_each(|(expect, tr)| {
+                assert_approx_eq_vec3!(expect.position(), tr.position());
             });
     }
 
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn test_rotate() {
-        let transducers = itertools::iproduct!(0..18, 0..14)
-            .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(i as _, i as _, 10.16 * Vector3::new(x as f32, y as f32, 0.))
-            })
-            .collect::<Vec<_>>();
-
-        let mut device = Device::new(0, UnitQuaternion::identity(), transducers);
+    fn rotate() {
+        let mut device = AUTD3::new(Vector3::zeros()).into_device(0);
 
         let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)
             * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), 0.)
@@ -380,25 +322,20 @@ pub mod tests {
         assert_approx_eq_vec3!(expect_x, device.x_direction());
         assert_approx_eq_vec3!(expect_y, device.y_direction());
         assert_approx_eq_vec3!(expect_z, device.axial_direction());
-        itertools::iproduct!(0..18, 0..14)
-            .map(|(y, x)| 10.16 * Vector3::new(-y as f32, x as f32, 0.))
+        AUTD3::new(Vector3::zeros())
+            .with_rotation(rot)
+            .into_device(0)
+            .iter()
             .zip(device.iter())
             .for_each(|(expect, tr)| {
-                assert_approx_eq_vec3!(expect, tr.position());
+                assert_approx_eq_vec3!(expect.position(), tr.position());
             });
     }
 
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn test_affine() {
-        let transducers = itertools::iproduct!(0..18, 0..14)
-            .enumerate()
-            .map(|(i, (y, x))| {
-                Transducer::new(i as _, i as _, 10.16 * Vector3::new(x as f32, y as f32, 0.))
-            })
-            .collect::<Vec<_>>();
-
-        let mut device = Device::new(0, UnitQuaternion::identity(), transducers);
+    fn affine() {
+        let mut device = AUTD3::new(Vector3::zeros()).into_device(0);
 
         let t = Vector3::new(40., 50., 60.);
         let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)
@@ -418,11 +355,13 @@ pub mod tests {
         assert_approx_eq_vec3!(expect_y, device.y_direction());
         assert_approx_eq_vec3!(expect_z, device.axial_direction());
 
-        itertools::iproduct!(0..18, 0..14)
-            .map(|(y, x)| 10.16 * Vector3::new(-y as f32, x as f32, 0.) + t)
+        AUTD3::new(t)
+            .with_rotation(rot)
+            .into_device(0)
+            .iter()
             .zip(device.iter())
             .for_each(|(expect, tr)| {
-                assert_approx_eq_vec3!(expect, tr.position());
+                assert_approx_eq_vec3!(expect.position(), tr.position());
             });
     }
 
@@ -432,7 +371,7 @@ pub mod tests {
     #[case(343.23497e3, 20.)]
     #[case(349.04013e3, 30.)]
     #[cfg_attr(miri, ignore)]
-    fn test_set_sound_speed_from_temp(#[case] expected: f32, #[case] temp: f32) {
+    fn set_sound_speed_from_temp(#[case] expected: f32, #[case] temp: f32) {
         let mut device = create_device(0, 249);
         device.set_sound_speed_from_temp(temp);
         approx::assert_abs_diff_eq!(expected * mm, device.sound_speed, epsilon = 1e-3);
@@ -449,7 +388,6 @@ pub mod tests {
         approx::assert_abs_diff_eq!(expect, device.wavelength());
     }
 
-    #[allow(unused_variables)]
     #[rstest::rstest]
     #[test]
     #[case(0.739_198_27, 340e3)]
