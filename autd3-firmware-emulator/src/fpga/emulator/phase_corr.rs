@@ -30,7 +30,7 @@ mod tests {
         fpga.mem.phase_corr_bram_mut()[0] = 0x1234;
         fpga.mem.phase_corr_bram_mut()[124] = 0x5678;
         assert_eq!(
-            vec![
+            [
                 vec![Phase::new(0x34), Phase::new(0x12)],
                 vec![Phase::new(0); 246],
                 vec![Phase::new(0x78)]

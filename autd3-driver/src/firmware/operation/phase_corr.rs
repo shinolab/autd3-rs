@@ -45,11 +45,11 @@ impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<
 
         self.is_done = true;
 
-        Ok(size_of::<PhaseCorr>() + (dev.num_transducers() + 1) & !0x1)
+        Ok(size_of::<PhaseCorr>() + ((dev.num_transducers() + 1) & !0x1))
     }
 
     fn required_size(&self, dev: &Device) -> usize {
-        size_of::<PhaseCorr>() + (dev.num_transducers() + 1) & !0x1
+        size_of::<PhaseCorr>() + ((dev.num_transducers() + 1) & !0x1)
     }
 
     fn is_done(&self) -> bool {
