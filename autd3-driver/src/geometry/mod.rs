@@ -299,10 +299,10 @@ pub mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Aabb{min: Point3::origin(), max: Point3::new(172.72, 132.08, 0.)}, vec![AUTD3::new(Vector3::zeros()).into_device(0)])]
-    #[case(Aabb{min: Point3::new(10., 20., 30.), max: Point3::new(182.72, 152.08, 30.)}, vec![AUTD3::new(Vector3::new(10., 20., 30.)).into_device(0)])]
-    #[case(Aabb{min: Point3::new(-132.08, 0., 0.), max: Point3::new(0., 172.72, 0.)}, vec![AUTD3::new(Vector3::zeros()).with_rotation(EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg)).into_device(0)])]
-    #[case(Aabb{min: Point3::new(-132.08, -10., 0.), max: Point3::new(172.72, 162.72, 10.)}, vec![AUTD3::new(Vector3::zeros()).into_device(0), AUTD3::new(Vector3::new(0., -10., 10.)).with_rotation(EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg)).into_device(1)])]
+    #[case(Aabb{min: Point3::origin(), max: Point3::new(172.72 * mm, 132.08 * mm, 0.)}, vec![AUTD3::new(Vector3::zeros()).into_device(0)])]
+    #[case(Aabb{min: Point3::new(10. * mm, 20. * mm, 30. * mm), max: Point3::new(182.72 * mm, 152.08 * mm, 30. * mm)}, vec![AUTD3::new(Vector3::new(10. * mm, 20. * mm, 30. * mm)).into_device(0)])]
+    #[case(Aabb{min: Point3::new(-132.08 * mm, 0., 0.), max: Point3::new(0., 172.72 * mm, 0.)}, vec![AUTD3::new(Vector3::zeros()).with_rotation(EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg)).into_device(0)])]
+    #[case(Aabb{min: Point3::new(-132.08 * mm, -10. * mm, 0.), max: Point3::new(172.72 * mm, 162.72 * mm, 10. * mm)}, vec![AUTD3::new(Vector3::zeros()).into_device(0), AUTD3::new(Vector3::new(0., -10. * mm, 10. * mm)).with_rotation(EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg)).into_device(1)])]
     #[cfg_attr(miri, ignore)]
     fn aabb(#[case] expect: Aabb<f32, 3>, #[case] dev: Vec<Device>) {
         let geometry = Geometry::new(dev);
