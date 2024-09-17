@@ -12,6 +12,7 @@ repository = { workspace = true }
 [dependencies]
 serde = { workspace = true, features = ["derive"], optional = true }
 bitflags = { workspace = true }
+bvh = { workspace = true }
 thiserror = { workspace = true }
 nalgebra = { workspace = true, features = ["std"] }
 bit-vec = { workspace = true }
