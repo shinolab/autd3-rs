@@ -12,6 +12,7 @@ pub type Matrix4 = nalgebra::Matrix4<f32>;
 pub type Affine = nalgebra::Affine3<f32>;
 
 use autd3_derive::Builder;
+use bvh::aabb::Aabb;
 pub use device::*;
 pub use rotation::*;
 pub use transducer::*;
@@ -68,6 +69,11 @@ impl Geometry {
         self.devices_mut()
             .for_each(|dev| dev.set_sound_speed_from_temp_with(temp, k, r, m));
     }
+
+    pub fn aabb(&self) -> Aabb<f32, 3> {
+        self.devices()
+            .fold(Aabb::empty(), |aabb, dev| aabb.join(dev.aabb()))
+    }
 }
 
 impl<'a> IntoIterator for &'a mut Geometry {
@@ -89,7 +95,12 @@ impl std::ops::DerefMut for Geometry {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::defined::mm;
+    use nalgebra::Point3;
+
+    use crate::{
+        autd3_device::AUTD3,
+        defined::{deg, mm},
+    };
 
     use super::*;
 
@@ -284,5 +295,18 @@ pub mod tests {
             dev.enable = true;
         }
         assert_eq!(1, geometry.version());
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(Aabb{min: Point3::origin(), max: Point3::new(172.72 * mm, 132.08 * mm, 0.)}, vec![AUTD3::new(Vector3::zeros()).into_device(0)])]
+    #[case(Aabb{min: Point3::new(10. * mm, 20. * mm, 30. * mm), max: Point3::new(182.72 * mm, 152.08 * mm, 30. * mm)}, vec![AUTD3::new(Vector3::new(10. * mm, 20. * mm, 30. * mm)).into_device(0)])]
+    #[case(Aabb{min: Point3::new(-132.08 * mm, 0., 0.), max: Point3::new(0., 172.72 * mm, 0.)}, vec![AUTD3::new(Vector3::zeros()).with_rotation(EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg)).into_device(0)])]
+    #[case(Aabb{min: Point3::new(-132.08 * mm, -10. * mm, 0.), max: Point3::new(172.72 * mm, 162.72 * mm, 10. * mm)}, vec![AUTD3::new(Vector3::zeros()).into_device(0), AUTD3::new(Vector3::new(0., -10. * mm, 10. * mm)).with_rotation(EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg)).into_device(1)])]
+    #[cfg_attr(miri, ignore)]
+    fn aabb(#[case] expect: Aabb<f32, 3>, #[case] dev: Vec<Device>) {
+        let geometry = Geometry::new(dev);
+        assert_approx_eq_vec3!(expect.min, geometry.aabb().min);
+        assert_approx_eq_vec3!(expect.max, geometry.aabb().max);
     }
 }
