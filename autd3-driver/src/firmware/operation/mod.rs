@@ -7,6 +7,7 @@ mod gpio_in;
 mod info;
 mod modulation;
 mod null;
+mod phase_corr;
 mod pulse_width_encoder;
 mod reads_fpga_state;
 mod segment;
@@ -25,6 +26,7 @@ pub use info::FirmwareVersionType;
 pub(crate) use info::*;
 pub(crate) use modulation::*;
 pub(crate) use null::*;
+pub(crate) use phase_corr::*;
 pub(crate) use pulse_width_encoder::*;
 pub(crate) use reads_fpga_state::*;
 pub(crate) use segment::*;
@@ -62,6 +64,7 @@ pub(crate) enum TypeTag {
     ForceFan = 0x60,
     ReadsFPGAState = 0x61,
     ConfigPulseWidthEncoder = 0x71,
+    PhaseCorrection = 0x80,
     Debug = 0xF0,
     EmulateGPIOIn = 0xF1,
     CpuGPIOOut = 0xF2,
