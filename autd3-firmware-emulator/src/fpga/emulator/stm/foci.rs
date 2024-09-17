@@ -34,9 +34,10 @@ impl FPGAEmulator {
         self.mem
             .tr_pos
             .iter()
+            .zip(self.phase_correction().iter())
             .take(self.mem.num_transducers)
             .enumerate()
-            .for_each(|(i, &tr)| {
+            .for_each(|(i, (&tr, &p))| {
                 let tr_z = ((tr >> 32) & 0xFFFF) as i16 as i32;
                 let tr_x = ((tr >> 16) & 0xFFFF) as i16 as i32;
                 let tr_y = (tr & 0xFFFF) as i16 as i32;
@@ -69,7 +70,7 @@ impl FPGAEmulator {
                 let sin = ((sin / self.num_foci(segment) as u16) >> 1) as usize;
                 let cos = ((cos / self.num_foci(segment) as u16) >> 1) as usize;
                 let phase = self.mem.atan_table[(sin << 7) | cos];
-                dst[i] = Drive::new(Phase::new(phase), EmitIntensity::new(intensity));
+                dst[i] = Drive::new(Phase::new(phase) + p, EmitIntensity::new(intensity));
             });
     }
 

@@ -14,6 +14,7 @@ pub const BRAM_SELECT_PWE_TABLE: u8 = 0x2;
 pub const BRAM_SELECT_STM: u8 = 0x3;
 
 pub const BRAM_CNT_SEL_MAIN: u8 = 0x00;
+pub const BRAM_CNT_SEL_PHASE_CORR: u8 = 0x01;
 
 pub const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
 pub const TRANSITION_MODE_SYS_TIME: u8 = 0x01;
@@ -134,6 +135,7 @@ pub const TAG_FOCI_STM_CHANGE_SEGMENT: u8 = 0x44;
 pub const TAG_FORCE_FAN: u8 = 0x60;
 pub const TAG_READS_FPGA_STATE: u8 = 0x61;
 pub const TAG_CONFIG_PULSE_WIDTH_ENCODER: u8 = 0x71;
+pub const TAG_PHASE_CORRECTION: u8 = 0x80;
 pub const TAG_DEBUG: u8 = 0xF0;
 pub const TAG_EMULATE_GPIO_IN: u8 = 0xF1;
 pub const TAG_CPU_GPIO_OUT: u8 = 0xF2;
