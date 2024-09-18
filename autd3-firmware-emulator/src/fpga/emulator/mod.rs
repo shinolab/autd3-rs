@@ -16,6 +16,8 @@ use super::params::{
     CTL_FLAG_STM_SET_BIT,
 };
 
+pub use silencer::SilencerEmulator;
+
 const CTL_FLAG_MOD_SET: u16 = 1 << CTL_FLAG_MOD_SET_BIT;
 const CTL_FLAG_STM_SET: u16 = 1 << CTL_FLAG_STM_SET_BIT;
 
