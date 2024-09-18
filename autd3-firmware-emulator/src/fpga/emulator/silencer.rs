@@ -3,10 +3,148 @@ use std::num::NonZeroU16;
 use autd3_driver::{
     datagram::{FixedCompletionTime, FixedUpdateRate},
     defined::ULTRASOUND_PERIOD,
-    firmware::fpga::SilencerTarget,
+    firmware::fpga::{EmitIntensity, Phase, SilencerTarget},
 };
 
 use super::{super::params::*, FPGAEmulator};
+
+pub struct SilencerEmulator<T> {
+    current: i32,
+    fixed_update_rate_mode: bool,
+    value: u16,
+    current_target: u8,
+    diff_mem: u8,
+    step_rem_mem: u16,
+    _phantom: std::marker::PhantomData<T>,
+}
+
+impl SilencerEmulator<Phase> {
+    #[allow(clippy::collapsible_else_if)]
+    fn update_rate(&mut self, input: u8) -> u16 {
+        if self.fixed_update_rate_mode {
+            self.value
+        } else {
+            let diff = if input < self.current_target {
+                self.current_target - input
+            } else {
+                input - self.current_target
+            };
+            self.current_target = input;
+            let diff = if diff >= 128 {
+                (256 - diff as u16) as u8
+            } else {
+                diff
+            };
+            let (diff, rst) = if diff == 0 {
+                (self.diff_mem, false)
+            } else {
+                self.diff_mem = diff;
+                (diff, true)
+            };
+            let step_quo = ((diff as u16) << 8) / self.value;
+            let step_rem = ((diff as u16) << 8) % self.value;
+            if rst {
+                self.step_rem_mem = step_rem;
+                step_quo
+            } else {
+                if self.step_rem_mem == 0 {
+                    step_quo
+                } else {
+                    self.step_rem_mem -= 1;
+                    step_quo + 1
+                }
+            }
+        }
+    }
+
+    #[allow(clippy::collapsible_else_if)]
+    pub fn apply(&mut self, input: u8) -> u8 {
+        let update_rate = self.update_rate(input) as i32;
+        let step = ((input as i32) << 8) - self.current;
+        let step = if step < 0 {
+            if -32768 <= step {
+                step
+            } else {
+                step + 65536
+            }
+        } else {
+            if step <= 32768 {
+                step
+            } else {
+                step - 65536
+            }
+        };
+        if step < 0 {
+            if -update_rate <= step {
+                self.current += step;
+            } else {
+                self.current -= update_rate;
+            }
+        } else {
+            if step <= update_rate {
+                self.current += step;
+            } else {
+                self.current += update_rate;
+            }
+        }
+        (self.current >> 8) as u8
+    }
+}
+
+impl SilencerEmulator<EmitIntensity> {
+    #[allow(clippy::collapsible_else_if)]
+    fn update_rate(&mut self, input: u8) -> u16 {
+        if self.fixed_update_rate_mode {
+            self.value
+        } else {
+            let diff = if input < self.current_target {
+                self.current_target - input
+            } else {
+                input - self.current_target
+            };
+            self.current_target = input;
+            let (diff, rst) = if diff == 0 {
+                (self.diff_mem, false)
+            } else {
+                self.diff_mem = diff;
+                (diff, true)
+            };
+            let step_quo = ((diff as u16) << 8) / self.value;
+            let step_rem = ((diff as u16) << 8) % self.value;
+            if rst {
+                self.step_rem_mem = step_rem;
+                step_quo
+            } else {
+                if self.step_rem_mem == 0 {
+                    step_quo
+                } else {
+                    self.step_rem_mem -= 1;
+                    step_quo + 1
+                }
+            }
+        }
+    }
+
+    #[allow(clippy::collapsible_else_if)]
+    pub fn apply(&mut self, input: u8) -> u8 {
+        let update_rate = self.update_rate(input) as i32;
+        let step = ((input as i32) << 8) - self.current;
+        if step < 0 {
+            if -update_rate <= step {
+                self.current += step;
+            } else {
+                self.current -= update_rate;
+            }
+        } else {
+            if step <= update_rate {
+                self.current += step;
+            } else {
+                self.current += update_rate;
+            }
+        }
+        (self.current >> 8) as u8
+    }
+}
 
 impl FPGAEmulator {
     pub fn silencer_update_rate(&self) -> FixedUpdateRate {
@@ -50,112 +188,37 @@ impl FPGAEmulator {
         }
     }
 
-    #[allow(clippy::collapsible_else_if)]
-    fn apply_silencer_interpolate(
-        raw_seq: &[u8],
-        update_rate: impl IntoIterator<Item = u16>,
-        phase: bool,
-        initial: u8,
-    ) -> Vec<u8> {
-        let mut current: i32 = (initial as i32) << 8;
-        raw_seq
-            .iter()
-            .zip(update_rate)
-            .map(|(&v, u)| {
-                let update_rate = u as i32;
-                let step = ((v as i32) << 8) - current;
-                let step = if phase {
-                    if step < 0 {
-                        if -32768 <= step {
-                            step
-                        } else {
-                            step + 65536
-                        }
-                    } else {
-                        if step <= 32768 {
-                            step
-                        } else {
-                            step - 65536
-                        }
-                    }
-                } else {
-                    step
-                };
-                if step < 0 {
-                    if -update_rate <= step {
-                        current += step;
-                    } else {
-                        current -= update_rate;
-                    }
-                } else {
-                    if step <= update_rate {
-                        current += step;
-                    } else {
-                        current += update_rate;
-                    }
-                }
-                (current >> 8) as u8
-            })
-            .collect()
-    }
-
-    #[allow(clippy::collapsible_else_if)]
-    pub fn apply_silencer(&self, initial: u8, raw: &[u8], phase: bool) -> Vec<u8> {
-        if self.silencer_fixed_update_rate_mode() {
-            let update_rate = if phase {
+    pub fn silencer_emulator_phase(&self, initial: u8) -> SilencerEmulator<Phase> {
+        SilencerEmulator {
+            current: (initial as i32) << 8,
+            fixed_update_rate_mode: self.silencer_fixed_update_rate_mode(),
+            value: if self.silencer_fixed_update_rate_mode() {
                 self.silencer_update_rate().phase.get()
             } else {
+                (self.silencer_completion_steps().phase.as_micros() / ULTRASOUND_PERIOD.as_micros())
+                    as u16
+            },
+            current_target: initial,
+            diff_mem: 0,
+            step_rem_mem: 0,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+
+    pub fn silencer_emulator_intensity(&self, initial: u8) -> SilencerEmulator<EmitIntensity> {
+        SilencerEmulator {
+            current: (initial as i32) << 8,
+            fixed_update_rate_mode: self.silencer_fixed_update_rate_mode(),
+            value: if self.silencer_fixed_update_rate_mode() {
                 self.silencer_update_rate().intensity.get()
-            };
-            Self::apply_silencer_interpolate(raw, std::iter::repeat(update_rate), phase, initial)
-        } else {
-            let completion_steps = (if phase {
-                self.silencer_completion_steps().phase
             } else {
-                self.silencer_completion_steps().intensity
-            }
-            .as_micros()
-                / ULTRASOUND_PERIOD.as_micros()) as u16;
-            let mut current_target = initial;
-            let mut diff_mem = 0;
-            let mut step_rem_mem = 0;
-            Self::apply_silencer_interpolate(
-                raw,
-                raw.iter().map(|&v| {
-                    let diff = if v < current_target {
-                        current_target - v
-                    } else {
-                        v - current_target
-                    };
-                    current_target = v;
-                    let diff = if phase && diff >= 128 {
-                        (256 - diff as u16) as u8
-                    } else {
-                        diff
-                    };
-                    let (diff, rst) = if diff == 0 {
-                        (diff_mem, false)
-                    } else {
-                        diff_mem = diff;
-                        (diff, true)
-                    };
-                    let step_quo = ((diff as u16) << 8) / completion_steps;
-                    let step_rem = ((diff as u16) << 8) % completion_steps;
-                    if rst {
-                        step_rem_mem = step_rem;
-                        step_quo
-                    } else {
-                        if step_rem_mem == 0 {
-                            step_quo
-                        } else {
-                            step_rem_mem -= 1;
-                            step_quo + 1
-                        }
-                    }
-                }),
-                phase,
-                initial,
-            )
+                (self.silencer_completion_steps().intensity.as_micros()
+                    / ULTRASOUND_PERIOD.as_micros()) as u16
+            },
+            current_target: initial,
+            diff_mem: 0,
+            step_rem_mem: 0,
+            _phantom: std::marker::PhantomData,
         }
     }
 }
@@ -186,7 +249,25 @@ mod tests {
         fpga.mem.controller_bram_mut()[ADDR_SILENCER_FLAG] = SILENCER_FLAG_FIXED_UPDATE_RATE_MODE;
         fpga.mem.controller_bram_mut()[ADDR_SILENCER_UPDATE_RATE_PHASE] = value;
         fpga.mem.controller_bram_mut()[ADDR_SILENCER_UPDATE_RATE_INTENSITY] = value;
-        assert_eq!(expect, fpga.apply_silencer(initial, &input, phase));
+        if phase {
+            let mut silencer = fpga.silencer_emulator_phase(initial);
+            assert_eq!(
+                expect,
+                input
+                    .into_iter()
+                    .map(|i| silencer.apply(i))
+                    .collect::<Vec<_>>()
+            );
+        } else {
+            let mut silencer = fpga.silencer_emulator_intensity(initial);
+            assert_eq!(
+                expect,
+                input
+                    .into_iter()
+                    .map(|i| silencer.apply(i))
+                    .collect::<Vec<_>>()
+            );
+        }
     }
 
     #[rstest::rstest]
@@ -226,6 +307,24 @@ mod tests {
         let fpga = FPGAEmulator::new(249);
         fpga.mem.controller_bram_mut()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] = value as _;
         fpga.mem.controller_bram_mut()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = value as _;
-        assert_eq!(expect, fpga.apply_silencer(initial, &input, phase));
+        if phase {
+            let mut silencer = fpga.silencer_emulator_phase(initial);
+            assert_eq!(
+                expect,
+                input
+                    .into_iter()
+                    .map(|i| silencer.apply(i))
+                    .collect::<Vec<_>>()
+            );
+        } else {
+            let mut silencer = fpga.silencer_emulator_intensity(initial);
+            assert_eq!(
+                expect,
+                input
+                    .into_iter()
+                    .map(|i| silencer.apply(i))
+                    .collect::<Vec<_>>()
+            );
+        }
     }
 }
