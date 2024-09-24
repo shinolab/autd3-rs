@@ -25,7 +25,7 @@ pub struct ControllerBuilder {
     #[cfg(target_os = "windows")]
     #[get]
     #[set]
-    timer_resolution: std::num::NonZeroU32,
+    timer_resolution: Option<std::num::NonZeroU32>,
 }
 
 impl ControllerBuilder {
@@ -41,7 +41,7 @@ impl ControllerBuilder {
             send_interval: Duration::from_millis(1),
             receive_interval: Duration::from_millis(1),
             #[cfg(target_os = "windows")]
-            timer_resolution: std::num::NonZeroU32::new(1).unwrap(),
+            timer_resolution: Some(std::num::NonZeroU32::MIN),
         }
     }
 
