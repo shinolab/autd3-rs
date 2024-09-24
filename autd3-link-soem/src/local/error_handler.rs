@@ -1,3 +1,7 @@
+#![allow(static_mut_refs)]
+
+// TODO: static mut will be deprecated in Rust 2024 edition?
+
 use std::sync::{
     atomic::{AtomicBool, AtomicI32, Ordering},
     Arc,
