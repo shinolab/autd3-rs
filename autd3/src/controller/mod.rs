@@ -44,7 +44,7 @@ pub struct Controller<L: Link> {
     receive_interval: Duration,
     #[cfg(target_os = "windows")]
     #[get]
-    timer_resolution: std::num::NonZeroU32,
+    timer_resolution: Option<std::num::NonZeroU32>,
 }
 
 impl Controller<Nop> {
@@ -132,8 +132,10 @@ impl<L: Link> Controller<L> {
     pub(crate) async fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
         #[cfg(target_os = "windows")]
         unsafe /*ignore miri*/ {
-            tracing::debug!("Set timer resolution: {:?}", self.timer_resolution);
-            windows::Win32::Media::timeBeginPeriod(self.timer_resolution.get());
+            if let Some(timer_resolution) = self.timer_resolution {
+                tracing::debug!("Set timer resolution: {:?}", self.timer_resolution);
+                windows::Win32::Media::timeBeginPeriod(timer_resolution.get());
+            }
         }
         self.send((Clear::new(), Synchronize::new()).with_timeout(timeout))
             .await?; // GRCOV_EXCL_LINE
@@ -210,7 +212,9 @@ impl<L: Link> Drop for Controller<L> {
     fn drop(&mut self) {
         #[cfg(target_os = "windows")]
         unsafe /*ignore miri*/ {
-            windows::Win32::Media::timeEndPeriod(self.timer_resolution.get());
+            if let Some(timer_resolution) = self.timer_resolution {
+                windows::Win32::Media::timeEndPeriod(timer_resolution.get());
+            }
         }
         if !self.link.is_open() {
             return;
