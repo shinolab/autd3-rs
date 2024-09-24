@@ -8,6 +8,7 @@ use autd3_driver::{
 
 use super::{super::params::*, FPGAEmulator};
 
+#[derive(Debug, Clone, Copy)]
 pub struct SilencerEmulator<T> {
     current: i32,
     fixed_update_rate_mode: bool,
@@ -205,6 +206,36 @@ impl FPGAEmulator {
         }
     }
 
+    pub fn silencer_emulator_phase_continue_with(
+        &self,
+        prev: SilencerEmulator<Phase>,
+    ) -> SilencerEmulator<Phase> {
+        let SilencerEmulator {
+            current,
+            fixed_update_rate_mode: _fixed_update_rate_mode,
+            value: _value,
+            current_target,
+            diff_mem,
+            step_rem_mem,
+            _phantom,
+        } = prev;
+
+        SilencerEmulator {
+            current,
+            fixed_update_rate_mode: self.silencer_fixed_update_rate_mode(),
+            value: if self.silencer_fixed_update_rate_mode() {
+                self.silencer_update_rate().phase.get()
+            } else {
+                (self.silencer_completion_steps().phase.as_micros() / ULTRASOUND_PERIOD.as_micros())
+                    as u16
+            },
+            current_target,
+            diff_mem,
+            step_rem_mem,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+
     pub fn silencer_emulator_intensity(&self, initial: u8) -> SilencerEmulator<EmitIntensity> {
         SilencerEmulator {
             current: (initial as i32) << 8,
@@ -218,6 +249,36 @@ impl FPGAEmulator {
             current_target: initial,
             diff_mem: 0,
             step_rem_mem: 0,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+
+    pub fn silencer_emulator_intensity_continue_with(
+        &self,
+        prev: SilencerEmulator<EmitIntensity>,
+    ) -> SilencerEmulator<EmitIntensity> {
+        let SilencerEmulator {
+            current,
+            fixed_update_rate_mode: _fixed_update_rate_mode,
+            value: _value,
+            current_target,
+            diff_mem,
+            step_rem_mem,
+            _phantom,
+        } = prev;
+
+        SilencerEmulator {
+            current,
+            fixed_update_rate_mode: self.silencer_fixed_update_rate_mode(),
+            value: if self.silencer_fixed_update_rate_mode() {
+                self.silencer_update_rate().intensity.get()
+            } else {
+                (self.silencer_completion_steps().intensity.as_micros()
+                    / ULTRASOUND_PERIOD.as_micros()) as u16
+            },
+            current_target,
+            diff_mem,
+            step_rem_mem,
             _phantom: std::marker::PhantomData,
         }
     }
@@ -326,5 +387,115 @@ mod tests {
                     .collect::<Vec<_>>()
             );
         }
+    }
+
+    #[test]
+    fn silencer_emulator_phase_continue_with() {
+        let fpga = FPGAEmulator::new(249);
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] = 0x01;
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = 0x01;
+
+        let mut silencer = fpga.silencer_emulator_phase(0);
+        silencer.apply(0xFF);
+
+        let SilencerEmulator {
+            current,
+            fixed_update_rate_mode: _,
+            value: _,
+            current_target,
+            diff_mem,
+            step_rem_mem,
+            _phantom,
+        } = silencer;
+
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] = 0x02;
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = 0x02;
+        let silencer = fpga.silencer_emulator_phase_continue_with(silencer);
+
+        assert_eq!(current, silencer.current);
+        assert!(!silencer.fixed_update_rate_mode);
+        assert_eq!(0x02, silencer.value);
+        assert_eq!(current_target, silencer.current_target);
+        assert_eq!(diff_mem, silencer.diff_mem);
+        assert_eq!(step_rem_mem, silencer.step_rem_mem);
+
+        let SilencerEmulator {
+            current,
+            fixed_update_rate_mode: _,
+            value: _,
+            current_target,
+            diff_mem,
+            step_rem_mem,
+            _phantom,
+        } = silencer;
+
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_UPDATE_RATE_PHASE] = 0x03;
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_UPDATE_RATE_INTENSITY] = 0x03;
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_FLAG] =
+            1 << SILENCER_FLAG_BIT_FIXED_UPDATE_RATE_MODE;
+
+        let silencer = fpga.silencer_emulator_phase_continue_with(silencer);
+
+        assert_eq!(current, silencer.current);
+        assert!(silencer.fixed_update_rate_mode);
+        assert_eq!(0x03, silencer.value);
+        assert_eq!(current_target, silencer.current_target);
+        assert_eq!(diff_mem, silencer.diff_mem);
+        assert_eq!(step_rem_mem, silencer.step_rem_mem);
+    }
+
+    #[test]
+    fn silencer_emulator_intensity_continue_with() {
+        let fpga = FPGAEmulator::new(249);
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] = 0x01;
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = 0x01;
+
+        let mut silencer = fpga.silencer_emulator_intensity(0);
+        silencer.apply(0xFF);
+
+        let SilencerEmulator {
+            current,
+            fixed_update_rate_mode: _,
+            value: _,
+            current_target,
+            diff_mem,
+            step_rem_mem,
+            _phantom,
+        } = silencer;
+
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] = 0x02;
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = 0x02;
+        let silencer = fpga.silencer_emulator_intensity_continue_with(silencer);
+
+        assert_eq!(current, silencer.current);
+        assert!(!silencer.fixed_update_rate_mode);
+        assert_eq!(0x02, silencer.value);
+        assert_eq!(current_target, silencer.current_target);
+        assert_eq!(diff_mem, silencer.diff_mem);
+        assert_eq!(step_rem_mem, silencer.step_rem_mem);
+
+        let SilencerEmulator {
+            current,
+            fixed_update_rate_mode: _,
+            value: _,
+            current_target,
+            diff_mem,
+            step_rem_mem,
+            _phantom,
+        } = silencer;
+
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_UPDATE_RATE_PHASE] = 0x03;
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_UPDATE_RATE_INTENSITY] = 0x03;
+        fpga.mem.controller_bram_mut()[ADDR_SILENCER_FLAG] =
+            1 << SILENCER_FLAG_BIT_FIXED_UPDATE_RATE_MODE;
+
+        let silencer = fpga.silencer_emulator_intensity_continue_with(silencer);
+
+        assert_eq!(current, silencer.current);
+        assert!(silencer.fixed_update_rate_mode);
+        assert_eq!(0x03, silencer.value);
+        assert_eq!(current_target, silencer.current_target);
+        assert_eq!(diff_mem, silencer.diff_mem);
+        assert_eq!(step_rem_mem, silencer.step_rem_mem);
     }
 }
