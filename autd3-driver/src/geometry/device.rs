@@ -134,6 +134,13 @@ pub trait IntoDevice {
     fn into_device(self, dev_idx: u16) -> Device;
 }
 
+impl IntoDevice for Device {
+    fn into_device(mut self, dev_idx: u16) -> Device {
+        self.idx = dev_idx;
+        self
+    }
+}
+
 #[cfg(test)]
 pub mod tests {
     use rand::Rng;
@@ -397,5 +404,41 @@ pub mod tests {
         let mut device = create_device(0, 249);
         device.sound_speed = c;
         approx::assert_abs_diff_eq!(expect, device.wavenumber());
+    }
+
+    #[test]
+    fn into_device() {
+        let mut rng = rand::thread_rng();
+        let t = Vector3::new(rng.gen(), rng.gen(), rng.gen());
+        let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), rng.gen())
+            * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), rng.gen())
+            * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), rng.gen());
+        let Device {
+            idx: _idx,
+            transducers: expect_transducers,
+            enable: expect_enable,
+            sound_speed: expect_sound_speed,
+            rotation: expect_rotation,
+            x_direction: expect_x_direction,
+            y_direction: expect_y_direction,
+            axial_direction: expect_axial_direction,
+            inv: expect_inv,
+            aabb: expect_aabb,
+        } = AUTD3::new(t).with_rotation(rot).into_device(0);
+        let dev = AUTD3::new(t)
+            .with_rotation(rot)
+            .into_device(0)
+            .into_device(1);
+        assert_eq!(1, dev.idx());
+        assert_eq!(expect_transducers, dev.transducers);
+        assert_eq!(expect_enable, dev.enable);
+        assert_eq!(expect_sound_speed, dev.sound_speed);
+        assert_eq!(expect_rotation, dev.rotation);
+        assert_eq!(expect_x_direction, dev.x_direction);
+        assert_eq!(expect_y_direction, dev.y_direction);
+        assert_eq!(expect_axial_direction, dev.axial_direction);
+        assert_eq!(expect_inv, dev.inv);
+        assert_eq!(expect_aabb.min, dev.aabb.min);
+        assert_eq!(expect_aabb.max, dev.aabb.max);
     }
 }
