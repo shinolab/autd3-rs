@@ -233,12 +233,9 @@ impl<L: Link + 'static> Controller<L> {
             timer_resolution,
         }
     }
-}
 
-#[cfg(feature = "async-trait")]
-impl Controller<Box<dyn Link>> {
-    pub fn from_boxed_link<L: Link + 'static>(self) -> Controller<L> {
-        let cnt = std::mem::ManuallyDrop::new(self);
+    pub fn from_boxed_link(cnt: Controller<Box<dyn Link>>) -> Controller<L> {
+        let cnt = std::mem::ManuallyDrop::new(cnt);
         let link = unsafe { std::ptr::read(&cnt.link) };
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
         let tx_buf = unsafe { std::ptr::read(&cnt.tx_buf) };
@@ -474,7 +471,7 @@ mod tests {
         ))
         .await?;
 
-        let autd = autd.from_boxed_link::<Audit>();
+        let autd = Controller::<Audit>::from_boxed_link(autd);
 
         autd.geometry().iter().try_for_each(|dev| {
             assert_eq!(
