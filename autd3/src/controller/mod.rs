@@ -235,6 +235,33 @@ impl<L: Link + 'static> Controller<L> {
     }
 }
 
+#[cfg(feature = "async-trait")]
+impl Controller<Box<dyn Link>> {
+    pub fn from_boxed_link<L: Link + 'static>(self) -> Controller<L> {
+        let cnt = std::mem::ManuallyDrop::new(self);
+        let link = unsafe { std::ptr::read(&cnt.link) };
+        let geometry = unsafe { std::ptr::read(&cnt.geometry) };
+        let tx_buf = unsafe { std::ptr::read(&cnt.tx_buf) };
+        let rx_buf = unsafe { std::ptr::read(&cnt.rx_buf) };
+        let parallel_threshold = unsafe { std::ptr::read(&cnt.parallel_threshold) };
+        let send_interval = unsafe { std::ptr::read(&cnt.send_interval) };
+        let receive_interval = unsafe { std::ptr::read(&cnt.receive_interval) };
+        #[cfg(target_os = "windows")]
+        let timer_resolution = unsafe { std::ptr::read(&cnt.timer_resolution) };
+        Controller {
+            link: unsafe { *Box::from_raw(Box::into_raw(link) as *mut L) },
+            geometry,
+            tx_buf,
+            rx_buf,
+            parallel_threshold,
+            send_interval,
+            receive_interval,
+            #[cfg(target_os = "windows")]
+            timer_resolution,
+        }
+    }
+}
+
 impl<L: Link> Drop for Controller<L> {
     fn drop(&mut self) {
         #[cfg(target_os = "windows")]
@@ -446,6 +473,26 @@ mod tests {
             )?,
         ))
         .await?;
+
+        let autd = autd.from_boxed_link::<Audit>();
+
+        autd.geometry().iter().try_for_each(|dev| {
+            assert_eq!(
+                *Sine::new(150. * Hz).calc()?,
+                autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
+            );
+            let f = Uniform::new(EmitIntensity::new(0x80)).calc(&autd.geometry)?(dev);
+            assert_eq!(
+                dev.iter().map(f).collect::<Vec<_>>(),
+                autd.link[dev.idx()].fpga().drives_at(Segment::S0, 0)
+            );
+            let f = Uniform::new(EmitIntensity::new(0x81)).calc(&autd.geometry)?(dev);
+            assert_eq!(
+                dev.iter().map(f).collect::<Vec<_>>(),
+                autd.link[dev.idx()].fpga().drives_at(Segment::S0, 1)
+            );
+            anyhow::Ok(())
+        })?;
 
         autd.close().await?;
 
