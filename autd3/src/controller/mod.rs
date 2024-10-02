@@ -208,6 +208,33 @@ impl<L: Link> Controller<L> {
     }
 }
 
+#[cfg(feature = "async-trait")]
+impl<L: Link + 'static> Controller<L> {
+    pub fn into_boxed_link(self) -> Controller<Box<dyn Link>> {
+        let cnt = std::mem::ManuallyDrop::new(self);
+        let link = unsafe { std::ptr::read(&cnt.link) };
+        let geometry = unsafe { std::ptr::read(&cnt.geometry) };
+        let tx_buf = unsafe { std::ptr::read(&cnt.tx_buf) };
+        let rx_buf = unsafe { std::ptr::read(&cnt.rx_buf) };
+        let parallel_threshold = unsafe { std::ptr::read(&cnt.parallel_threshold) };
+        let send_interval = unsafe { std::ptr::read(&cnt.send_interval) };
+        let receive_interval = unsafe { std::ptr::read(&cnt.receive_interval) };
+        #[cfg(target_os = "windows")]
+        let timer_resolution = unsafe { std::ptr::read(&cnt.timer_resolution) };
+        Controller {
+            link: Box::new(link) as _,
+            geometry,
+            tx_buf,
+            rx_buf,
+            parallel_threshold,
+            send_interval,
+            receive_interval,
+            #[cfg(target_os = "windows")]
+            timer_resolution,
+        }
+    }
+}
+
 impl<L: Link> Drop for Controller<L> {
     fn drop(&mut self) {
         #[cfg(target_os = "windows")]
@@ -396,6 +423,31 @@ mod tests {
                 .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
                 .is_thermal_assert());
         }
+
+        Ok(())
+    }
+
+    #[cfg(feature = "async-trait")]
+    #[tokio::test(flavor = "multi_thread")]
+    async fn into_boxed_link() -> anyhow::Result<()> {
+        let autd = create_controller(1).await?;
+
+        let mut autd = autd.into_boxed_link();
+
+        autd.send((
+            Sine::new(150. * Hz),
+            GainSTM::new(
+                1. * Hz,
+                [
+                    Uniform::new(EmitIntensity::new(0x80)),
+                    Uniform::new(EmitIntensity::new(0x81)),
+                ]
+                .into_iter(),
+            )?,
+        ))
+        .await?;
+
+        autd.close().await?;
 
         Ok(())
     }
