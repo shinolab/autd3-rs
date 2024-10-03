@@ -393,6 +393,7 @@ def util_glob_unsafe(args):
     with working_dir("."):
         files = set(glob.glob("**/*.rs", recursive=True))
         files -= set(glob.glob("**/tests/**/*.rs", recursive=True))
+        files -= set(glob.glob("autd3/**/*.rs", recursive=True))
         files -= set(glob.glob("autd3-link-twincat/**/*.rs", recursive=True))
         files -= set(glob.glob("autd3-link-soem/**/soem_bindings/*.rs", recursive=True))
         files -= set(glob.glob("autd3-link-soem/**/link_soem.rs", recursive=True))
