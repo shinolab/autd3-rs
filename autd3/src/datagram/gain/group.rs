@@ -96,8 +96,13 @@ where
 
         let mut result = geometry
             .devices()
-            .map(|dev| dev.iter().map(|_| Drive::null()).collect::<Vec<_>>())
-            .collect::<Vec<_>>();
+            .map(|dev| {
+                (
+                    dev.idx(),
+                    dev.iter().map(|_| Drive::null()).collect::<Vec<_>>(),
+                )
+            })
+            .collect::<HashMap<_, Vec<_>>>();
         let gain_map = self
             .gain_map
             .iter()
@@ -118,53 +123,45 @@ where
             gain_map
                 .par_iter()
                 .try_for_each(|(k, g)| -> Result<(), AUTDInternalError> {
-                    geometry
-                        .devices()
-                        .zip(g.iter())
-                        .zip(result.iter())
-                        .for_each(|((dev, g), result)| {
-                            let f = (f)(dev);
-                            let r = result.as_ptr() as *mut Drive;
-                            dev.iter().for_each(|tr| {
-                                if let Some(kk) = f(tr) {
-                                    if &kk == k {
-                                        unsafe {
-                                            r.add(tr.idx()).write(g(tr));
-                                        }
+                    geometry.devices().zip(g.iter()).for_each(|(dev, g)| {
+                        let f = (f)(dev);
+                        let r = result[&dev.idx()].as_ptr() as *mut Drive;
+                        dev.iter().for_each(|tr| {
+                            if let Some(kk) = f(tr) {
+                                if &kk == k {
+                                    unsafe {
+                                        r.add(tr.idx()).write(g(tr));
                                     }
                                 }
-                            })
-                        });
+                            }
+                        })
+                    });
                     Ok(())
                 })?;
         } else {
             gain_map
                 .iter()
                 .try_for_each(|(k, g)| -> Result<(), AUTDInternalError> {
-                    geometry
-                        .devices()
-                        .zip(g.iter())
-                        .zip(result.iter())
-                        .for_each(|((dev, g), result)| {
-                            let f = (f)(dev);
-                            let r = result.as_ptr() as *mut Drive;
-                            dev.iter().for_each(|tr| {
-                                if let Some(kk) = f(tr) {
-                                    if &kk == k {
-                                        unsafe {
-                                            r.add(tr.idx()).write(g(tr));
-                                        }
+                    geometry.devices().zip(g.iter()).for_each(|(dev, g)| {
+                        let f = (f)(dev);
+                        let r = result[&dev.idx()].as_ptr() as *mut Drive;
+                        dev.iter().for_each(|tr| {
+                            if let Some(kk) = f(tr) {
+                                if &kk == k {
+                                    unsafe {
+                                        r.add(tr.idx()).write(g(tr));
                                     }
                                 }
-                            })
-                        });
+                            }
+                        })
+                    });
                     Ok(())
                 })?;
         }
 
         Ok(Box::new(move |dev| {
             let mut tmp = vec![];
-            std::mem::swap(&mut tmp, &mut result[dev.idx()]);
+            std::mem::swap(&mut tmp, result.get_mut(&dev.idx()).unwrap());
             Box::new(move |tr| tmp[tr.idx()])
         }))
     }
