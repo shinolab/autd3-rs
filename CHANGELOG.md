@@ -2,6 +2,7 @@
 
 - Update firmware to v10.0.0
   - Add `PhaseCorrection`
+- Remove `modulation::Mixer`
 
 # 27.0.0
 
