@@ -2,11 +2,27 @@
 
 - Update firmware to v10.0.0
   - Add `PhaseCorrection`
-- Remove `modulation::Mixer`
+  - Update Silencer update rate from 8bit to 16bit
+  - Add `DebugType::SysTimeEq`
+- Remove `modulation::Mixer` and `modulation::Transform`
 - Update some `Modulation`s API
   - Add `clamp` option to `Sine` and `Fourier`
   - Add `scale_factor` option to `Fourier`
   - `Sine::offset` value influence halved
+- Change `Silencer` constructor
+- `Controller::close` now take ownership of `self`
+- Add `receive_interval` option to `Controller`
+- Impl `Deref<Target = Link>` and `DerefMut` for `Controller`
+- Change `Controller::timer_resolution` to optional
+- Add `Transducer::dev_idx`
+- Add `Phase::ZERO`
+- Add `resampler`
+  - Add `<Custom, Csv, RawPCM, Wave>::new_with_resampler`
+  - Add `SincInterpolation` resampler and some window: `Blackman` and `Rectangular`
+- Add `Fir` modulation
+  - Add `with_fir` to `Modulation`s
+- Fix bugs
+  - Modulation with odd size causes unaligned memory access
 
 # 27.0.0
 
