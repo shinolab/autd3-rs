@@ -2,7 +2,6 @@ use colored::*;
 use std::io::{self, Write};
 
 use autd3::{driver::link::Link, prelude::*};
-pub use autd3_gain_holo::*;
 
 use super::{
     audio_file::*, bessel::*, custom::*, fir::*, flag::*, focus::*, group::*, holo::*, plane::*,

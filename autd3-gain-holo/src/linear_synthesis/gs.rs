@@ -121,8 +121,7 @@ mod tests {
     #[test]
     fn test_gs_all() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend =
-            NalgebraBackend::<autd3_driver::acoustics::directivity::Sphere>::new().unwrap();
+        let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = GS::new(
             backend,
@@ -156,8 +155,7 @@ mod tests {
             AUTD3::new(Vector3::zeros()).into_device(0),
             AUTD3::new(Vector3::zeros()).into_device(1),
         ]);
-        let backend =
-            NalgebraBackend::<autd3_driver::acoustics::directivity::Sphere>::new().unwrap();
+        let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = GS::new(
             backend,
