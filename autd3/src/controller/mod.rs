@@ -6,7 +6,9 @@ use crate::{error::AUTDError, gain::Null, link::nop::Nop, prelude::Static};
 use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
-    datagram::{Clear, Datagram, IntoDatagramWithTimeout, Synchronize},
+    datagram::{
+        Clear, Datagram, FixedCompletionTime, IntoDatagramWithTimeout, Silencer, Synchronize,
+    },
     derive::Builder,
     firmware::{
         cpu::{check_if_msg_is_processed, RxMessage, TxDatagram},
@@ -148,12 +150,15 @@ impl<L: Link> Controller<L> {
         }
 
         self.geometry.iter_mut().for_each(|dev| dev.enable = true);
-        self.send(autd3_driver::datagram::Silencer::<autd3_driver::datagram::FixedCompletionTime>::default().with_strict_mode(false))
-            .await?;
-        self.send((Static::new(), Null::default())).await?;
-        self.send(Clear::new()).await?;
-        self.link.close().await?;
-        Ok(())
+        [
+            self.send(Silencer::<FixedCompletionTime>::default().with_strict_mode(false))
+                .await,
+            self.send((Static::new(), Null::default())).await,
+            self.send(Clear::new()).await,
+            self.link.close().await.map_err(AUTDError::from),
+        ]
+        .into_iter()
+        .try_fold((), |_, x| x)
     }
 
     pub async fn close(mut self) -> Result<(), AUTDError> {
