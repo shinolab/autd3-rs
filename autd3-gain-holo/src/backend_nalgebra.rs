@@ -1,23 +1,32 @@
 use std::{
     collections::HashMap,
     mem::{ManuallyDrop, MaybeUninit},
-    sync::Arc,
 };
 
 use bit_vec::BitVec;
 use nalgebra::{ComplexField, Dyn, Normed, VecStorage, U1};
 
 use autd3_driver::{
-    acoustics::{directivity::Directivity, propagate},
+    acoustics::{
+        directivity::{Directivity, Sphere},
+        propagate,
+    },
     defined::Complex,
     geometry::Geometry,
 };
 
 use crate::{error::HoloError, LinAlgBackend, MatrixX, MatrixXc, VectorX, VectorXc};
 
-#[derive(Default)]
 pub struct NalgebraBackend<D: Directivity> {
     _phantom: std::marker::PhantomData<D>,
+}
+
+impl Default for NalgebraBackend<Sphere> {
+    fn default() -> Self {
+        Self {
+            _phantom: Default::default(),
+        }
+    }
 }
 
 macro_rules! par_map {
@@ -77,14 +86,6 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
     type MatrixX = MatrixX;
     type VectorXc = VectorXc;
     type VectorX = VectorX;
-
-    // GRCOV_EXCL_START
-    fn new() -> Result<Arc<Self>, HoloError> {
-        Ok(Arc::new(Self {
-            _phantom: std::marker::PhantomData,
-        }))
-    }
-    // GRCOV_EXCL_STOP
 
     fn generate_propagation_matrix(
         &self,
