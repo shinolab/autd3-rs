@@ -138,8 +138,7 @@ mod tests {
     #[test]
     fn test_gspat_all() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend =
-            NalgebraBackend::<autd3_driver::acoustics::directivity::Sphere>::new().unwrap();
+        let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = GSPAT::new(
             backend,
@@ -170,8 +169,7 @@ mod tests {
     #[test]
     fn test_gspat_filtered() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend =
-            NalgebraBackend::<autd3_driver::acoustics::directivity::Sphere>::new().unwrap();
+        let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = GSPAT::new(
             backend,

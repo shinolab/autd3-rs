@@ -98,8 +98,7 @@ mod tests {
     #[test]
     fn test_naive_all() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend =
-            NalgebraBackend::<autd3_driver::acoustics::directivity::Sphere>::new().unwrap();
+        let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = Naive::new(
             backend,
@@ -128,8 +127,7 @@ mod tests {
     #[test]
     fn test_naive_filtered() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
-        let backend =
-            NalgebraBackend::<autd3_driver::acoustics::directivity::Sphere>::new().unwrap();
+        let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = Naive::new(
             backend,

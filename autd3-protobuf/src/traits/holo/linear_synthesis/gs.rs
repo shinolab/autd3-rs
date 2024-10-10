@@ -1,6 +1,6 @@
 use std::num::NonZeroUsize;
 
-use autd3_gain_holo::{LinAlgBackend, NalgebraBackend};
+use autd3_gain_holo::NalgebraBackend;
 
 use crate::{
     pb::*,
@@ -40,7 +40,7 @@ impl FromMessage<Gs>
 {
     fn from_msg(msg: &Gs) -> Result<Self, AUTDProtoBufError> {
         let mut g = Self::new(
-            NalgebraBackend::new()?,
+            std::sync::Arc::new(NalgebraBackend::default()),
             msg.holo
                 .iter()
                 .map(|h| {
@@ -74,7 +74,7 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let holo = autd3_gain_holo::GS::new(
-            NalgebraBackend::new().unwrap(),
+            std::sync::Arc::new(NalgebraBackend::default()),
             [
                 (
                     Vector3::new(rng.gen(), rng.gen(), rng.gen()),

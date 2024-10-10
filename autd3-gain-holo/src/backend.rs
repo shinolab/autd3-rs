@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use autd3_driver::{
     acoustics::directivity::Directivity,
@@ -27,8 +27,6 @@ pub trait LinAlgBackend<D: Directivity> {
     type MatrixX;
     type VectorXc;
     type VectorX;
-
-    fn new() -> Result<Arc<Self>, HoloError>;
 
     fn generate_propagation_matrix(
         &self,

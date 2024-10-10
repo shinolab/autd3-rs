@@ -12,7 +12,7 @@ pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
 
     let center = autd.geometry().center() + Vector3::new(0., 0., 150.0 * mm);
     let p = Vector3::new(30. * mm, 0., 0.);
-    let backend = NalgebraBackend::<Sphere>::new()?;
+    let backend = std::sync::Arc::new(NalgebraBackend::default());
     let target_amp = 2.5e3 * autd.geometry().num_devices() as f32 * Pa;
     let foci = [(center + p, target_amp), (center - p, target_amp)];
 
