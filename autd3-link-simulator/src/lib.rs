@@ -15,7 +15,7 @@ pub struct Simulator {
     last_geometry_version: usize,
 }
 
-#[derive(Builder)]
+#[derive(Builder, Debug)]
 pub struct SimulatorBuilder {
     #[get]
     addr: SocketAddr,
@@ -28,20 +28,24 @@ pub struct SimulatorBuilder {
 impl LinkBuilder for SimulatorBuilder {
     type L = Simulator;
 
+    #[tracing::instrument(level = "debug", skip(geometry))]
     async fn open(
         self,
         geometry: &autd3_driver::geometry::Geometry,
     ) -> Result<Self::L, AUTDInternalError> {
+        tracing::info!("Connecting to simulator@{}", self.addr);
         let mut client =
             simulator_client::SimulatorClient::connect(format!("http://{}", self.addr))
                 .await
                 .map_err(AUTDProtoBufError::from)?;
 
-        if client.config_geomety(geometry.to_msg(None)).await.is_err() {
-            return Err(
-                AUTDProtoBufError::SendError("Failed to initialize simulator".to_string()).into(),
-            );
-        }
+        client
+            .config_geomety(geometry.to_msg(None))
+            .await
+            .map_err(|e| {
+                tracing::error!("Failed to configure simulator geometry: {}", e);
+                AUTDProtoBufError::SendError("Failed to initialize simulator".to_string())
+            })?;
 
         Ok(Self::L {
             client,
@@ -85,16 +89,13 @@ impl Link for Simulator {
             return Ok(());
         }
         self.last_geometry_version = geometry.version();
-        if self
-            .client
+        self.client
             .update_geomety(geometry.to_msg(None))
             .await
-            .is_err()
-        {
-            return Err(
-                AUTDProtoBufError::SendError("Failed to update geometry".to_string()).into(),
-            );
-        }
+            .map_err(|e| {
+                tracing::error!("Failed to update geometry: {}", e);
+                AUTDProtoBufError::SendError("Failed to update geometry".to_string())
+            })?;
         Ok(())
     }
 

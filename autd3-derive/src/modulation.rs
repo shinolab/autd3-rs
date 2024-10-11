@@ -75,8 +75,10 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
             type G =  ModulationOperationGenerator;
 
             fn operation_generator_with_segment(self, _: &Geometry, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<Self::G, AUTDInternalError> {
+                let g = self.calc()?;
+                tracing::trace!("Modulation buffer: {:?}", g);
                 Ok(Self::G {
-                    g: self.calc()?,
+                    g,
                     config: self.sampling_config(),
                     loop_behavior: self.loop_behavior(),
                     segment,
