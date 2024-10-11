@@ -56,7 +56,7 @@ impl CPUEmulator {
         let mut s = Self {
             idx: id,
             ack: 0x00,
-            last_msg_id: 0x00,
+            last_msg_id: 0xFF,
             rx_data: 0x00,
             reads_fpga_state: false,
             reads_fpga_state_store: false,
@@ -117,6 +117,10 @@ impl CPUEmulator {
 
     pub const fn should_update(&self) -> bool {
         self.reads_fpga_state
+    }
+
+    pub fn set_last_msg_id(&mut self, msg_id: u8) {
+        self.last_msg_id = msg_id;
     }
 }
 
@@ -203,7 +207,7 @@ impl CPUEmulator {
 
         let header = unsafe { &*(data.as_ptr() as *const Header) };
 
-        if self.ack == header.msg_id {
+        if self.last_msg_id == header.msg_id {
             return;
         }
         self.last_msg_id = header.msg_id;
