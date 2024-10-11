@@ -41,6 +41,7 @@ impl<M: Modulation> Cache<M> {
 
     pub fn init(&self) -> Result<(), AUTDInternalError> {
         if self.cache.borrow().is_empty() {
+            tracing::debug!("Initialize cache");
             *self.cache.borrow_mut() = self.m.calc()?;
         }
         Ok(())

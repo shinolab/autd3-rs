@@ -74,6 +74,7 @@ impl Csv {
             .flatten()
             .map(|s| s.parse::<u8>())
             .collect::<Result<Vec<u8>, _>>()?;
+        tracing::debug!("Read buffer: {:?}", buffer);
         Ok(if let Some((source, resampler)) = &self.resampler {
             resampler.resample(&buffer, *source, self.config)
         } else {

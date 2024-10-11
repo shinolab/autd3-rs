@@ -40,7 +40,6 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
     }
 
     #[tracing::instrument(level = "debug", skip(self))]
-    #[must_use]
     pub fn set<D: Datagram>(self, k: K, d: D) -> Result<Self, AUTDInternalError>
     where
         <<D as Datagram>::G as OperationGenerator>::O1: 'static,

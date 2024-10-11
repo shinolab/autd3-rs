@@ -52,6 +52,7 @@ impl<G: Gain> Cache<G> {
                 .devices()
                 .filter(|dev| !self.cache.borrow().contains_key(&dev.idx()))
                 .for_each(|dev| {
+                    tracing::debug!("Initialize cache for device {}", dev.idx());
                     self.cache
                         .borrow_mut()
                         .insert(dev.idx(), Arc::new(dev.iter().map(f(dev)).collect()));

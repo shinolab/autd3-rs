@@ -1,7 +1,7 @@
 use std::ffi::{c_char, c_long, c_void};
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub(crate) struct AmsNetId {
     pub(crate) b: [u8; 6],
 }

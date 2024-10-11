@@ -14,7 +14,7 @@ pub struct RemoteSOEM {
     is_open: bool,
 }
 
-#[derive(Builder)]
+#[derive(Builder, Debug)]
 pub struct RemoteSOEMBuilder {
     addr: SocketAddr,
     #[get]
@@ -26,10 +26,12 @@ pub struct RemoteSOEMBuilder {
 impl LinkBuilder for RemoteSOEMBuilder {
     type L = RemoteSOEM;
 
+    #[tracing::instrument(level = "debug", skip(_geometry))]
     async fn open(
         self,
-        _: &autd3_driver::geometry::Geometry,
+        _geometry: &autd3_driver::geometry::Geometry,
     ) -> Result<Self::L, AUTDInternalError> {
+        tracing::info!("Connecting to remote SOEM server@{}", self.addr);
         Ok(Self::L {
             client: ecat_client::EcatClient::connect(format!("http://{}", self.addr))
                 .await

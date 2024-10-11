@@ -136,6 +136,19 @@ pub async fn send_receive(
     if !link.is_open() {
         return Err(AUTDInternalError::LinkClosed);
     }
+
+    // GRCOV_EXCL_START
+    tracing::trace!(
+        "send: {}",
+        tx.iter().format_with(", ", |elt, f| {
+            f(&format_args!(
+                "({:?}, TAG: {:#04X})",
+                elt.header, elt.payload[0]
+            ))
+        })
+    );
+    // GRCOV_EXCL_STOP
+
     if !link.send(tx).await? {
         return Err(AUTDInternalError::SendDataFailed);
     }
