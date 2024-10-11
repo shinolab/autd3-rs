@@ -136,6 +136,7 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
             if has_attr(field, "into") {
                 quote! {
                     #[allow(clippy::needless_update)]
+                    #[must_use]
                     pub fn #name(mut self, #ident: impl Into<#ty>) -> Self {
                         self.#ident = #ident.into();
                         self
@@ -149,6 +150,7 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 };
                 quote! {
                     #[allow(clippy::needless_update)]
+                    #[must_use]
                     pub #const_attr fn #name(mut self, #ident: #ty) -> Self {
                         self.#ident = #ident;
                         self
