@@ -1,8 +1,10 @@
+use std::num::NonZeroUsize;
+
 use super::InterpolationWindow;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Rectangular {
-    pub size: usize,
+    pub size: NonZeroUsize,
 }
 
 impl InterpolationWindow for Rectangular {
@@ -11,6 +13,6 @@ impl InterpolationWindow for Rectangular {
     }
 
     fn window_size(&self) -> usize {
-        self.size
+        self.size.get()
     }
 }
