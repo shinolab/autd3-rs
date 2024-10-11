@@ -63,3 +63,84 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::datagram::tests::NullDatagram;
+
+    use super::*;
+
+    #[rstest::rstest]
+    #[case(None, None, None)]
+    #[case(
+        Some(Duration::from_millis(100)),
+        Some(Duration::from_millis(100)),
+        None
+    )]
+    #[case(
+        Some(Duration::from_millis(100)),
+        None,
+        Some(Duration::from_millis(100))
+    )]
+    #[case(
+        Some(Duration::from_millis(200)),
+        Some(Duration::from_millis(100)),
+        Some(Duration::from_millis(200))
+    )]
+    #[case(
+        Some(Duration::from_millis(200)),
+        Some(Duration::from_millis(200)),
+        Some(Duration::from_millis(100))
+    )]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn timeout(
+        #[case] expect: Option<Duration>,
+        #[case] timeout1: Option<Duration>,
+        #[case] timeout2: Option<Duration>,
+    ) {
+        assert_eq!(
+            expect,
+            (
+                NullDatagram {
+                    timeout: timeout1,
+                    parallel_threshold: None,
+                },
+                NullDatagram {
+                    timeout: timeout2,
+                    parallel_threshold: None,
+                }
+            )
+                .timeout()
+        );
+    }
+
+    #[rstest::rstest]
+    #[case(None, None, None)]
+    #[case(Some(100), Some(100), None)]
+    #[case(Some(100), None, Some(100))]
+    #[case(Some(100), Some(100), Some(200))]
+    #[case(Some(100), Some(200), Some(100))]
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn parallel_threshold(
+        #[case] expect: Option<usize>,
+        #[case] threshold1: Option<usize>,
+        #[case] threshold2: Option<usize>,
+    ) {
+        assert_eq!(
+            expect,
+            (
+                NullDatagram {
+                    timeout: None,
+                    parallel_threshold: threshold1,
+                },
+                NullDatagram {
+                    timeout: None,
+                    parallel_threshold: threshold2,
+                }
+            )
+                .parallel_threshold()
+        );
+    }
+}
