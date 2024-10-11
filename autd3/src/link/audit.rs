@@ -30,6 +30,9 @@ pub struct AuditBuilder {
     #[get]
     #[set]
     timeout: Duration,
+    #[get]
+    #[set]
+    initial_msg_id: Option<u8>,
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
@@ -48,7 +51,13 @@ impl LinkBuilder for AuditBuilder {
             cpus: geometry
                 .iter()
                 .enumerate()
-                .map(|(i, dev)| CPUEmulator::new(i, dev.num_transducers()))
+                .map(|(i, dev)| {
+                    let mut cpu = CPUEmulator::new(i, dev.num_transducers());
+                    if let Some(msg_id) = self.initial_msg_id {
+                        cpu.set_last_msg_id(msg_id);
+                    }
+                    cpu
+                })
                 .collect(),
             down: false,
             broken: false,
@@ -60,6 +69,7 @@ impl Audit {
     pub const fn builder() -> AuditBuilder {
         AuditBuilder {
             timeout: Duration::ZERO,
+            initial_msg_id: None,
         }
     }
 
