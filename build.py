@@ -274,7 +274,7 @@ def rust_run(args):
         info(f"Available examples: {examples}")
         return -1
 
-    features = None
+    features = ""
     match args.target:
         case "soem":
             features = "soem"
