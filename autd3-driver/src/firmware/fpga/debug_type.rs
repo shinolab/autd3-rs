@@ -1,4 +1,4 @@
-use crate::{ethercat::DcSysTime, geometry::Transducer};
+use crate::{defined::ULTRASOUND_PERIOD, ethercat::DcSysTime, geometry::Transducer};
 
 use derive_more::Debug;
 
@@ -70,7 +70,9 @@ impl DebugType<'_> {
             DebugType::PwmOut(tr) => tr.idx() as _,
             DebugType::ModIdx(idx) => *idx as _,
             DebugType::StmIdx(idx) => *idx as _,
-            DebugType::SysTimeEq(time) => (time.sys_time() / 50000) << 9,
+            DebugType::SysTimeEq(time) => {
+                (time.sys_time() / ULTRASOUND_PERIOD.as_nanos() as u64) << 8
+            }
             DebugType::Direct(v) => *v as _,
         }
     }
