@@ -290,6 +290,7 @@ def rust_run(args):
             features = "lightweight"
         case "lightweight_server":
             features = "lightweight-server"
+    features += " " + args.features if args.features is not None else ""
 
     with working_dir("./examples"):
         commands = ["cargo", "run"]
@@ -457,6 +458,7 @@ if __name__ == "__main__":
         parser_run = subparsers.add_parser("run", help="see `run -h`")
         parser_run.add_argument("target", help="binary target")
         parser_run.add_argument("--release", action="store_true", help="release build")
+        parser_run.add_argument("--features", help="additional features", default=None)
         parser_run.set_defaults(handler=rust_run)
 
         # clear
