@@ -12,7 +12,7 @@ pub use autd3_driver::{
         Clear, DebugSettings, FixedCompletionTime, FixedUpdateRate, FociSTM, ForceFan, GainSTM,
         IntoDatagramWithParallelThreshold, IntoDatagramWithSegment,
         IntoDatagramWithSegmentTransition, IntoDatagramWithTimeout, Modulation, ModulationProperty,
-        PulseWidthEncoder, ReadsFPGAState, Silencer, SwapSegment,
+        PhaseCorrection, PulseWidthEncoder, ReadsFPGAState, Silencer, SwapSegment,
     },
     defined::{
         deg, kHz, mm, rad, ControlPoint, ControlPoints, Hz, PI, ULTRASOUND_FREQ, ULTRASOUND_PERIOD,
