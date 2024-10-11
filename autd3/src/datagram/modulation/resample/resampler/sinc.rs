@@ -1,4 +1,4 @@
-use std::f64::consts::PI;
+use std::{f64::consts::PI, num::NonZeroUsize};
 
 use autd3_driver::utils::float::is_integer;
 
@@ -12,7 +12,9 @@ pub struct SincInterpolation<T: InterpolationWindow> {
 impl Default for SincInterpolation<Blackman> {
     fn default() -> Self {
         Self {
-            window: Blackman { size: 32 },
+            window: Blackman {
+                size: NonZeroUsize::new(32).unwrap(),
+            },
         }
     }
 }
@@ -102,14 +104,14 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(vec![127, 217, 255, 223, 127, 42, 0, 37], vec![127, 255, 127, 0], 2.0, Rectangular { size: 32 })]
-    #[case(vec![127, 217, 255, 217, 127, 37, 0, 37], vec![127, 255, 127, 0], 2.0, Rectangular { size: 4096 })]
-    #[case(vec![127, 130, 127, 130], vec![127, 127], 2.0, Rectangular { size: 32 })]
-    #[case(vec![127, 127, 127, 127], vec![127, 127], 2.0, Rectangular { size: 4096 })]
-    #[case(vec![127, 217, 255, 217, 127, 37, 0, 37], vec![127, 255, 127, 0], 2.0, Blackman { size: 32 })]
-    #[case(vec![127, 217, 255, 217, 127, 37, 0, 37], vec![127, 255, 127, 0], 2.0, Blackman { size: 4096 })]
-    #[case(vec![127, 126, 127, 126], vec![127, 127], 2.0, Blackman { size: 32 })]
-    #[case(vec![127, 127, 127, 127], vec![127, 127], 2.0, Blackman { size: 4096 })]
+    #[case(vec![127, 217, 255, 223, 127, 42, 0, 37], vec![127, 255, 127, 0], 2.0, Rectangular { size: NonZeroUsize::new(32).unwrap() })]
+    #[case(vec![127, 217, 255, 217, 127, 37, 0, 37], vec![127, 255, 127, 0], 2.0, Rectangular { size: NonZeroUsize::new(4096).unwrap() })]
+    #[case(vec![127, 130, 127, 130], vec![127, 127], 2.0, Rectangular { size: NonZeroUsize::new(32).unwrap() })]
+    #[case(vec![127, 127, 127, 127], vec![127, 127], 2.0, Rectangular { size: NonZeroUsize::new(4096).unwrap() })]
+    #[case(vec![127, 217, 255, 217, 127, 37, 0, 37], vec![127, 255, 127, 0], 2.0, Blackman { size: NonZeroUsize::new(32).unwrap() })]
+    #[case(vec![127, 217, 255, 217, 127, 37, 0, 37], vec![127, 255, 127, 0], 2.0, Blackman { size: NonZeroUsize::new(4096).unwrap() })]
+    #[case(vec![127, 126, 127, 126], vec![127, 127], 2.0, Blackman { size: NonZeroUsize::new(32).unwrap() })]
+    #[case(vec![127, 127, 127, 127], vec![127, 127], 2.0, Blackman { size: NonZeroUsize::new(4096).unwrap() })]
     fn upsample(
         #[case] expect: Vec<u8>,
         #[case] buffer: Vec<u8>,
@@ -122,14 +124,14 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(vec![124, 249, 124, 1], vec![127, 217, 255, 217, 127, 37, 0, 37], 0.5, Rectangular { size: 32 })]
-    #[case(vec![127, 255, 127, 0], vec![127, 217, 255, 217, 127, 37, 0, 37], 0.5, Rectangular { size: 4096 })]
-    #[case(vec![124, 124], vec![127, 127, 127, 127], 0.5, Rectangular { size: 32 })]
-    #[case(vec![127, 127], vec![127, 127, 127, 127], 0.5, Rectangular { size: 4096 })]
-    #[case(vec![127, 255, 127, 0], vec![127, 217, 255, 217, 127, 37, 0, 37], 0.5, Blackman { size: 32 })]
-    #[case(vec![127, 255, 127, 0], vec![127, 217, 255, 217, 127, 37, 0, 37], 0.5, Blackman { size: 4096 })]
-    #[case(vec![127, 127], vec![127, 127, 127, 127], 0.5, Blackman { size: 32 })]
-    #[case(vec![127, 127], vec![127, 127, 127, 127], 0.5, Blackman { size: 4096 })]
+    #[case(vec![124, 249, 124, 1], vec![127, 217, 255, 217, 127, 37, 0, 37], 0.5, Rectangular { size: NonZeroUsize::new(32).unwrap() })]
+    #[case(vec![127, 255, 127, 0], vec![127, 217, 255, 217, 127, 37, 0, 37], 0.5, Rectangular { size: NonZeroUsize::new(4096).unwrap() })]
+    #[case(vec![124, 124], vec![127, 127, 127, 127], 0.5, Rectangular { size: NonZeroUsize::new(32).unwrap() })]
+    #[case(vec![127, 127], vec![127, 127, 127, 127], 0.5, Rectangular { size: NonZeroUsize::new(4096).unwrap() })]
+    #[case(vec![127, 255, 127, 0], vec![127, 217, 255, 217, 127, 37, 0, 37], 0.5, Blackman { size: NonZeroUsize::new(32).unwrap() })]
+    #[case(vec![127, 255, 127, 0], vec![127, 217, 255, 217, 127, 37, 0, 37], 0.5, Blackman { size: NonZeroUsize::new(4096).unwrap() })]
+    #[case(vec![127, 127], vec![127, 127, 127, 127], 0.5, Blackman { size: NonZeroUsize::new(32).unwrap() })]
+    #[case(vec![127, 127], vec![127, 127, 127, 127], 0.5, Blackman { size: NonZeroUsize::new(4096).unwrap() })]
     fn downsample(
         #[case] expect: Vec<u8>,
         #[case] buffer: Vec<u8>,
