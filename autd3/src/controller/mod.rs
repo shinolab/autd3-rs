@@ -8,6 +8,7 @@ use std::{fmt::Debug, hash::Hash, time::Duration};
 use autd3_driver::{
     datagram::{Clear, Datagram, IntoDatagramWithTimeout, Silencer, Synchronize},
     derive::Builder,
+    error::AUTDInternalError,
     firmware::{
         cpu::{check_if_msg_is_processed, RxMessage, TxDatagram},
         fpga::FPGAState,
@@ -127,8 +128,15 @@ impl<L: Link> Controller<L> {
                 windows::Win32::Media::timeBeginPeriod(timer_resolution.get());
             }
         }
-        self.send((Clear::new(), Synchronize::new()).with_timeout(timeout))
-            .await?; // GRCOV_EXCL_LINE
+        if let Err(e) = self.send(Clear::new().with_timeout(timeout)).await {
+            match e {
+                AUTDError::Internal(AUTDInternalError::ConfirmResponseFailed) => {
+                    self.send(Clear::new().with_timeout(timeout)).await?
+                }
+                _ => return Err(e),
+            }
+        }
+        self.send(Synchronize::new().with_timeout(timeout)).await?;
         Ok(self)
     }
 

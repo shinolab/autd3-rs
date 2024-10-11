@@ -23,6 +23,7 @@
   - Add `with_fir` to `Modulation`s
 - Fix bugs
   - Modulation with odd size causes unaligned memory access
+  - Fix [#118](https://github.com/shinolab/autd3-rs/issues/118): Sometimes failed to open `Controller`
 
 # 27.0.0
 
