@@ -87,7 +87,7 @@ impl Wav {
                 }
             }
         };
-
+        tracing::debug!("Read buffer: {:?}", buffer);
         Ok(if let Some(resampler) = &self.resampler {
             resampler.resample(&buffer, spec.sample_rate as f32 * Hz, self.config)
         } else {

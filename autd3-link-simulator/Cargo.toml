@@ -13,6 +13,7 @@ repository = { workspace = true }
 autd3-protobuf = { workspace = true }
 autd3-driver = { workspace = true }
 tonic = { workspace = true }
+tracing = { workspace = true }
 
 [features]
 default = []

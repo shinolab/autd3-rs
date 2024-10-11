@@ -24,7 +24,7 @@ pub struct RemoteTwinCAT {
     timeout: Duration,
 }
 
-#[derive(Builder)]
+#[derive(Builder, Debug)]
 pub struct RemoteTwinCATBuilder {
     #[get(ref)]
     server_ams_net_id: String,
@@ -43,7 +43,10 @@ pub struct RemoteTwinCATBuilder {
 impl LinkBuilder for RemoteTwinCATBuilder {
     type L = RemoteTwinCAT;
 
-    async fn open(self, _: &Geometry) -> Result<Self::L, AUTDInternalError> {
+    #[tracing::instrument(level = "debug", skip(_geometry))]
+    async fn open(self, _geometry: &Geometry) -> Result<Self::L, AUTDInternalError> {
+        tracing::info!("Connecting to TwinCAT3");
+
         let RemoteTwinCATBuilder {
             server_ams_net_id,
             server_ip,
@@ -66,6 +69,7 @@ impl LinkBuilder for RemoteTwinCATBuilder {
         } else {
             server_ip
         };
+        tracing::info!("Server IP: {}", ip);
 
         if !client_ams_net_id.is_empty() {
             let local_octets = client_ams_net_id
@@ -87,6 +91,7 @@ impl LinkBuilder for RemoteTwinCATBuilder {
                     local_octets[5],
                 ],
             };
+            tracing::info!("Setting local AMS Net ID: {:?}", local_addr);
             unsafe {
                 AdsCSetLocalAddress(local_addr);
             }
@@ -98,6 +103,7 @@ impl LinkBuilder for RemoteTwinCATBuilder {
             ],
         };
 
+        tracing::info!("Setting remote AMS Net ID: {:?}", net_id);
         let ip = CString::new(ip.clone()).map_err(|_| AdsError::InvalidIp(ip.clone()))?;
         let res = unsafe { AdsCAddRoute(net_id, ip.as_c_str().as_ptr()) };
         if res != 0 {

@@ -18,7 +18,6 @@ use autd3_driver::{
     link::{send_receive, Link},
 };
 
-use itertools::Itertools;
 use tracing;
 
 pub use builder::ControllerBuilder;
@@ -65,9 +64,9 @@ impl<L: Link> Controller<L> {
 }
 
 impl<L: Link> Controller<L> {
-    #[tracing::instrument(skip(self, s))]
+    #[tracing::instrument(level = "debug", skip(self, s))]
     pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDError> {
-        tracing::debug!("datagram: {:?}", s);
+        tracing::debug!("send datagram: {:?}", s);
 
         let timeout = s.timeout();
         let parallel_threshold = s.parallel_threshold();
@@ -78,6 +77,7 @@ impl<L: Link> Controller<L> {
             .await
     }
 
+    #[tracing::instrument(skip(self, operations, timeout, parallel_threshold))]
     pub(crate) async fn send_impl(
         &mut self,
         operations: &mut [(impl Operation, impl Operation)],
@@ -99,18 +99,6 @@ impl<L: Link> Controller<L> {
             self.link
                 .trace(&self.tx_buf, &mut self.rx_buf, timeout, parallel_threshold);
 
-            // GRCOV_EXCL_START
-            tracing::trace!(
-                "send: {}",
-                self.tx_buf.iter().format_with(", ", |elt, f| {
-                    f(&format_args!(
-                        "({:?}, TAG: {:#04X})",
-                        elt.header, elt.payload[0]
-                    ))
-                })
-            );
-            // GRCOV_EXCL_STOP
-
             send_receive(
                 &mut self.link,
                 &self.tx_buf,
@@ -119,21 +107,23 @@ impl<L: Link> Controller<L> {
                 self.receive_interval,
             )
             .await?;
+
             if OperationHandler::is_done(operations) {
                 return Ok(());
             }
+
             send_timing += self.send_interval;
             tokio::time::sleep_until(send_timing).await;
         }
     }
 
     #[must_use]
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(level = "debug", skip(self))]
     pub(crate) async fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
         #[cfg(target_os = "windows")]
         unsafe /*ignore miri*/ {
             if let Some(timer_resolution) = self.timer_resolution {
-                tracing::debug!("Set timer resolution: {:?}", self.timer_resolution);
+                tracing::info!("Set timer resolution: {:?}", timer_resolution);
                 windows::Win32::Media::timeBeginPeriod(timer_resolution.get());
             }
         }
@@ -142,8 +132,12 @@ impl<L: Link> Controller<L> {
         Ok(self)
     }
 
+    #[tracing::instrument(level = "debug", skip(self))]
     async fn close_impl(&mut self) -> Result<(), AUTDError> {
+        tracing::info!("Closing controller");
+
         if !self.link.is_open() {
+            tracing::warn!("Link is already closed");
             return Ok(());
         }
 
@@ -163,7 +157,8 @@ impl<L: Link> Controller<L> {
     }
 
     async fn fetch_firminfo(&mut self, ty: FirmwareVersionType) -> Result<Vec<u8>, AUTDError> {
-        self.send(ty).await.map_err(|_| {
+        self.send(ty).await.map_err(|e| {
+            tracing::error!("Fetch firmware info failed: {:?}", e);
             AUTDError::ReadFirmwareVersionFailed(
                 check_if_msg_is_processed(&self.tx_buf, &mut self.rx_buf).collect(),
             )

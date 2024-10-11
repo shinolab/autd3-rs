@@ -27,7 +27,7 @@ impl Transducer {
         self.dev_idx as _
     }
 
-    pub fn affine(&mut self, t: Vector3, r: UnitQuaternion) {
+    pub(super) fn affine(&mut self, t: Vector3, r: UnitQuaternion) {
         self.position = (Matrix4::from(r).append_translation(&t)
             * Vector4::new(self.position[0], self.position[1], self.position[2], 1.0))
         .xyz();

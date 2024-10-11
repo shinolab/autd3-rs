@@ -53,6 +53,7 @@ impl RawPCM {
         let mut reader = BufReader::new(f);
         let mut buffer = Vec::new();
         reader.read_to_end(&mut buffer)?;
+        tracing::debug!("Read buffer: {:?}", buffer);
         Ok(if let Some((source, resampler)) = &self.resampler {
             resampler.resample(&buffer, *source, self.config)
         } else {

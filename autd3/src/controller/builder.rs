@@ -7,11 +7,14 @@ use autd3_driver::{
     link::LinkBuilder,
 };
 
+use derive_more::Debug;
+
 use super::Controller;
 use crate::error::AUTDError;
 
-#[derive(Builder)]
+#[derive(Builder, Debug)]
 pub struct ControllerBuilder {
+    #[debug(skip)]
     devices: Vec<Device>,
     #[get]
     #[set]
@@ -52,11 +55,13 @@ impl ControllerBuilder {
         self.open_with_timeout(link_builder, DEFAULT_TIMEOUT).await
     }
 
+    #[tracing::instrument(level = "debug", skip(link_builder))]
     pub async fn open_with_timeout<B: LinkBuilder>(
         self,
         link_builder: B,
         timeout: Duration,
     ) -> Result<Controller<B::L>, AUTDError> {
+        tracing::info!("Opening controller");
         let geometry = Geometry::new(self.devices);
         Controller {
             link: link_builder.open(&geometry).await?,

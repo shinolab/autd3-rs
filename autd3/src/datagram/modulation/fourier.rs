@@ -28,6 +28,7 @@ impl<S: SamplingMode> Fourier<S> {
             .into_iter()
             .map(|s| s.with_clamp(false))
             .collect::<Vec<_>>();
+        tracing::trace!("Fourier components: {:?}", components);
         let config = components
             .first()
             .ok_or(AUTDInternalError::ModulationError(
