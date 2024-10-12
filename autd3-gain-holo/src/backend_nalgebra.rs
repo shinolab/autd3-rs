@@ -21,11 +21,17 @@ pub struct NalgebraBackend<D: Directivity> {
     _phantom: std::marker::PhantomData<D>,
 }
 
-impl Default for NalgebraBackend<Sphere> {
-    fn default() -> Self {
+impl<D: Directivity> NalgebraBackend<D> {
+    pub fn new() -> Self {
         Self {
             _phantom: Default::default(),
         }
+    }
+}
+
+impl Default for NalgebraBackend<Sphere> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
