@@ -1,3 +1,7 @@
+# 28.0.1
+
+- Fix [#122](https://github.com/shinolab/autd3-rs/issues/122): `NalgebraBackend::new` is missing
+
 # 28.0.0
 
 - Update firmware to v10.0.0
