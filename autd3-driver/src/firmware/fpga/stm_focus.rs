@@ -13,7 +13,7 @@ pub struct STMFocus {
     #[bits(8)]
     pub intensity: u8,
     #[bits(2)]
-    __: u8,
+    pad: u8,
 }
 
 impl STMFocus {
