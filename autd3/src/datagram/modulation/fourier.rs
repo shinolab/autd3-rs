@@ -19,6 +19,9 @@ pub struct Fourier<S: SamplingMode> {
     #[get]
     #[set]
     clamp: bool,
+    #[get]
+    #[set]
+    offset: u8,
     loop_behavior: LoopBehavior,
 }
 
@@ -49,6 +52,7 @@ impl<S: SamplingMode> Fourier<S> {
             components,
             scale_factor: None,
             clamp: false,
+            offset: 0,
             loop_behavior: LoopBehavior::infinite(),
         })
     }
@@ -73,7 +77,7 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
                     acc
                 })
                 .into_iter()
-                .map(|x| (x * scale).round() as isize)
+                .map(|x| (x * scale + (self.offset as f32) / 2.).round() as isize)
                 .map(|v| {
                     if (u8::MIN as _..=u8::MAX as _).contains(&v) {
                         Ok(v as _)
