@@ -1,6 +1,9 @@
 # 28.1.0
 
 - Add `EulerAngle::XYZ`
+- Add `offset` parameter to `Fourier`
+- Add `IntoFir` into `autd3::prelude`
+- Re-export `autd3_link_soem::ThreadPriorityValue`
 
 # 28.0.1
 
