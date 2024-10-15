@@ -1,3 +1,7 @@
+# 28.1.0
+
+- Add `EulerAngle::XYZ`
+
 # 28.0.1
 
 - Fix [#122](https://github.com/shinolab/autd3-rs/issues/122): `NalgebraBackend::new` is missing

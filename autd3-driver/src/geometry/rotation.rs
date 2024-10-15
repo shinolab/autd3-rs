@@ -4,12 +4,18 @@ use super::{UnitQuaternion, Vector3};
 
 #[non_exhaustive]
 pub enum EulerAngle {
+    XYZ(Angle, Angle, Angle),
     ZYZ(Angle, Angle, Angle),
 }
 
 impl From<EulerAngle> for UnitQuaternion {
     fn from(angle: EulerAngle) -> Self {
         match angle {
+            EulerAngle::XYZ(x, y, z) => {
+                UnitQuaternion::from_axis_angle(&Vector3::x_axis(), x.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), y.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), z.radian())
+            }
             EulerAngle::ZYZ(z1, y, z2) => {
                 UnitQuaternion::from_axis_angle(&Vector3::z_axis(), z1.radian())
                     * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), y.radian())
@@ -46,13 +52,26 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::XYZ(90. * deg, 0. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::XYZ(0. * deg, 90. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::XYZ(0. * deg, 0. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::XYZ(0. * deg, 90. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::XYZ(90. * deg, 90. * deg, 0. * deg))]
+    #[cfg_attr(miri, ignore)]
+    fn test_rotation_xyz(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
+        let angle: UnitQuaternion = angle.into();
+        assert_approx_eq_quat!(expected, angle);
+    }
+
+    #[rstest::rstest]
+    #[test]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::ZYZ(0. * deg, 90. * deg, 0. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZYZ(0. * deg, 0. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZYZ(0. * deg, 90. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::ZYZ(90. * deg, 90. * deg, 0. * deg))]
     #[cfg_attr(miri, ignore)]
-    fn test_rotation(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
+    fn test_rotation_zyz(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
         let angle: UnitQuaternion = angle.into();
         assert_approx_eq_quat!(expected, angle);
     }
