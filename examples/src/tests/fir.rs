@@ -1,4 +1,4 @@
-use autd3::{driver::link::Link, modulation::IntoFir, prelude::*};
+use autd3::{driver::link::Link, prelude::*};
 
 pub async fn fir(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     autd.send(Silencer::disable()).await?;
