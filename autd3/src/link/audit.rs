@@ -33,6 +33,9 @@ pub struct AuditBuilder {
     #[get]
     #[set]
     initial_msg_id: Option<u8>,
+    #[get]
+    #[set]
+    down: bool,
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
@@ -59,7 +62,7 @@ impl LinkBuilder for AuditBuilder {
                     cpu
                 })
                 .collect(),
-            down: false,
+            down: self.down,
             broken: false,
         })
     }
@@ -70,6 +73,7 @@ impl Audit {
         AuditBuilder {
             timeout: Duration::ZERO,
             initial_msg_id: None,
+            down: false,
         }
     }
 

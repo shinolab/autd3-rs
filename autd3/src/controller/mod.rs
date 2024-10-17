@@ -306,6 +306,17 @@ mod tests {
     // GRCOV_EXCL_STOP
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn open_failed() {
+        assert_eq!(
+            Some(AUTDError::Internal(AUTDInternalError::SendDataFailed)),
+            Controller::builder([AUTD3::new(Vector3::zeros())])
+                .open(Audit::builder().with_down(true))
+                .await
+                .err()
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn send() -> anyhow::Result<()> {
         let mut autd = create_controller(1).await?;
         autd.send((
