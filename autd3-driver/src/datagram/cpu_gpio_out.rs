@@ -30,7 +30,7 @@ impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> OperationGenerator for CpuGPIO
     type O1 = CpuGPIOOutOp;
     type O2 = NullOp;
 
-    fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
+    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
         let port = (self.f)(device);
         (CpuGPIOOutOp::new(port.pa5, port.pa7), Self::O2::default())
     }

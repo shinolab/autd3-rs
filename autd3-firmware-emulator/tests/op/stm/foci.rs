@@ -173,7 +173,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
 
     {
         let g = TestGain {
-            buf: geometry
+            data: geometry
                 .iter()
                 .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
                 .collect(),
@@ -224,7 +224,7 @@ fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
             .iter()
             .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
             .collect();
-        let g = TestGain { buf: buf.clone() };
+        let g = TestGain { data: buf.clone() };
 
         assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
     }
@@ -241,7 +241,7 @@ fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
             .collect();
         let stm = GainSTM::new(
             SamplingConfig::FREQ_MIN,
-            bufs.iter().map(|buf| TestGain { buf: buf.clone() }),
+            bufs.iter().map(|buf| TestGain { data: buf.clone() }),
         )?
         .with_segment(Segment::S1, Some(TransitionMode::Immediate));
 

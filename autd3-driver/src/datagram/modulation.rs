@@ -45,7 +45,7 @@ impl OperationGenerator for ModulationOperationGenerator {
     type O1 = ModulationOp;
     type O2 = NullOp;
 
-    fn generate(&self, _: &Device) -> (Self::O1, Self::O2) {
+    fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
         let d = self.g.clone();
         (
             ModulationOp::new(

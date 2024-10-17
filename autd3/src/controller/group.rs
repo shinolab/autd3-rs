@@ -69,8 +69,7 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
             (a, b) => a.or(b),
         };
 
-        let generator = d.operation_generator(&cnt.geometry)?;
-
+        let mut generator = d.operation_generator(&cnt.geometry)?;
         operations
             .iter_mut()
             .zip(keys.iter())

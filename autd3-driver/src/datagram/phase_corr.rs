@@ -30,7 +30,7 @@ impl<FT: Fn(&Transducer) -> Phase + Send + Sync, F: Fn(&Device) -> FT> Operation
     type O1 = PhaseCorrectionOp<FT>;
     type O2 = NullOp;
 
-    fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
+    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
         (Self::O1::new((self.f)(device)), Self::O2::default())
     }
 }

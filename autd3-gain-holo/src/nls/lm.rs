@@ -1,8 +1,9 @@
 use std::{collections::HashMap, num::NonZeroUsize, sync::Arc};
 
 use crate::{
-    constraint::EmissionConstraint, helper::generate_result, Amplitude, Complex, HoloError,
-    LinAlgBackend, Trans,
+    constraint::EmissionConstraint,
+    helper::{generate_result, HoloContextGenerator},
+    Amplitude, Complex, HoloError, LinAlgBackend, Trans,
 };
 
 use autd3_driver::{
@@ -122,12 +123,14 @@ impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
     }
 }
 
-impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
-    fn calc_impl(
-        &self,
+impl<D: Directivity, B: LinAlgBackend<D>> Gain for LM<D, B> {
+    type G = HoloContextGenerator<f32>;
+
+    fn init_with_filter(
+        self,
         geometry: &Geometry,
         filter: Option<HashMap<usize, BitVec<u32>>>,
-    ) -> Result<GainCalcFn, AUTDInternalError> {
+    ) -> Result<Self::G, AUTDInternalError> {
         let g = self
             .backend
             .generate_propagation_matrix(geometry, &self.foci, &filter)?;
@@ -266,20 +269,6 @@ impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
     }
 }
 
-impl<D: Directivity, B: LinAlgBackend<D>> Gain for LM<D, B> {
-    fn calc(&self, geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
-        self.calc_impl(geometry, None)
-    }
-
-    fn calc_with_filter(
-        &self,
-        geometry: &Geometry,
-        filter: HashMap<usize, BitVec<u32>>,
-    ) -> Result<GainCalcFn, AUTDInternalError> {
-        self.calc_impl(geometry, Some(filter))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::{super::super::NalgebraBackend, super::super::Pa, *};
@@ -313,12 +302,12 @@ mod tests {
 
         assert_eq!(
             g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
-                .calc(&geometry)
+                .init(&geometry)
                 .map(|mut res| {
-                    let f = res(&geometry[0]);
+                    let f = res.generate(&geometry[0]);
                     geometry[0]
                         .iter()
-                        .filter(|tr| f(tr) != Drive::null())
+                        .filter(|tr| f.calc(tr) != Drive::null())
                         .count()
                 }),
             Ok(geometry.num_transducers()),
@@ -348,26 +337,26 @@ mod tests {
             .take(1)
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
+        let mut g = g.init_with_filter(&geometry, Some(filter)).unwrap();
         assert_eq!(
-            g.calc_with_filter(&geometry, filter.clone())
-                .map(|mut res| {
-                    let f = res(&geometry[0]);
-                    geometry[0]
-                        .iter()
-                        .filter(|tr| f(tr) != Drive::null())
-                        .count()
-                }),
-            Ok(100),
+            {
+                let f = g.generate(&geometry[0]);
+                geometry[0]
+                    .iter()
+                    .filter(|tr| f.calc(tr) != Drive::null())
+                    .count()
+            },
+            100,
         );
         assert_eq!(
-            g.calc_with_filter(&geometry, filter).map(|mut res| {
-                let f = res(&geometry[1]);
+            {
+                let f = g.generate(&geometry[1]);
                 geometry[1]
                     .iter()
-                    .filter(|tr| f(tr) != Drive::null())
+                    .filter(|tr| f.calc(tr) != Drive::null())
                     .count()
-            }),
-            Ok(0),
+            },
+            0,
         );
     }
 }

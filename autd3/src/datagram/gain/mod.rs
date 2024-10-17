@@ -5,7 +5,6 @@ mod focus;
 mod group;
 mod null;
 mod plane;
-mod transform;
 mod uniform;
 
 pub use bessel::Bessel;
@@ -16,6 +15,4 @@ pub use focus::Focus;
 pub use group::Group;
 pub use null::Null;
 pub use plane::Plane;
-pub use transform::IntoTransform as IntoGainTransform;
-pub use transform::Transform as GainTransform;
 pub use uniform::Uniform;

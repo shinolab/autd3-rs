@@ -28,7 +28,9 @@ impl FromMessage<Bessel> for autd3::gain::Bessel {
     fn from_msg(msg: &Bessel) -> Result<Self, AUTDProtoBufError> {
         let mut g = Self::new(
             autd3_driver::geometry::Vector3::from_msg(&msg.pos)?,
-            autd3_driver::geometry::Vector3::from_msg(&msg.dir)?,
+            autd3_driver::geometry::UnitVector3::new_normalize(
+                autd3_driver::geometry::Vector3::from_msg(&msg.dir)?,
+            ),
             autd3_driver::defined::Angle::from_msg(&msg.theta)?,
         );
         if let Some(intensity) = msg.intensity.as_ref() {
@@ -55,7 +57,11 @@ mod tests {
 
         let g = autd3::gain::Bessel::new(
             Vector3::new(rng.gen(), rng.gen(), rng.gen()),
-            Vector3::new(rng.gen(), rng.gen(), rng.gen()),
+            autd3_driver::geometry::UnitVector3::new_normalize(Vector3::new(
+                rng.gen(),
+                rng.gen(),
+                rng.gen(),
+            )),
             rng.gen::<f32>() * rad,
         )
         .with_intensity(EmitIntensity::new(rng.gen()));

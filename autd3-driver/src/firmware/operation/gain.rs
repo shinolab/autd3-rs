@@ -28,21 +28,21 @@ struct GainT {
     __pad: u8,
 }
 
-pub struct GainOp {
-    gain: Box<dyn Fn(&Transducer) -> Drive + Sync + Send>,
+pub trait GainContext: Send + Sync {
+    fn calc(&self, tr: &Transducer) -> Drive;
+}
+
+pub struct GainOp<Context: GainContext> {
+    context: Context,
     is_done: bool,
     segment: Segment,
     transition: bool,
 }
 
-impl GainOp {
-    pub const fn new(
-        segment: Segment,
-        transition: bool,
-        gain: Box<dyn Fn(&Transducer) -> Drive + Sync + Send>,
-    ) -> Self {
+impl<Context: GainContext> GainOp<Context> {
+    pub const fn new(segment: Segment, transition: bool, context: Context) -> Self {
         Self {
-            gain,
+            context,
             is_done: false,
             segment,
             transition,
@@ -50,7 +50,7 @@ impl GainOp {
     }
 }
 
-impl Operation for GainOp {
+impl<Context: GainContext> Operation for GainOp<Context> {
     fn required_size(&self, device: &Device) -> usize {
         size_of::<GainT>() + device.num_transducers() * size_of::<Drive>()
     }
@@ -72,7 +72,7 @@ impl Operation for GainOp {
             );
             device.iter().enumerate().for_each(|(i, tr)| {
                 write_to_tx(
-                    (self.gain)(tr),
+                    self.context.calc(tr),
                     &mut tx[size_of::<GainT>() + i * size_of::<Drive>()..],
                 );
             });
@@ -117,9 +117,19 @@ mod tests {
             })
             .collect();
 
+        struct Context {
+            data: Vec<Drive>,
+        }
+
+        impl GainContext for Context {
+            fn calc(&self, tr: &Transducer) -> Drive {
+                self.data[tr.idx()]
+            }
+        }
+
         let mut op = GainOp::new(Segment::S0, true, {
             let data = data.clone();
-            Box::new(move |tr| data[tr.idx()])
+            Context { data }
         });
 
         assert_eq!(

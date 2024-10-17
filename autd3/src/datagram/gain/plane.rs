@@ -2,45 +2,63 @@ use autd3_driver::{
     defined::rad,
     derive::*,
     firmware::fpga::{EmitIntensity, Phase},
-    geometry::Vector3,
+    geometry::UnitVector3,
 };
+use derive_new::new;
 
-#[derive(Gain, Clone, PartialEq, Debug, Builder)]
+#[derive(Gain, Clone, PartialEq, Debug, Builder, new)]
 pub struct Plane {
     #[get(ref)]
-    dir: Vector3,
+    dir: UnitVector3,
+    #[new(value = "EmitIntensity::MAX")]
     #[get]
     #[set(into)]
     intensity: EmitIntensity,
+    #[new(value = "Phase::ZERO")]
     #[get]
     #[set(into)]
     phase_offset: Phase,
 }
 
-impl Plane {
-    pub const fn new(dir: Vector3) -> Self {
-        Self {
-            dir,
-            intensity: EmitIntensity::MAX,
-            phase_offset: Phase::ZERO,
+pub struct Context {
+    dir: UnitVector3,
+    intensity: EmitIntensity,
+    phase_offset: Phase,
+    wavenumber: f32,
+}
+
+impl GainContext for Context {
+    fn calc(&self, tr: &Transducer) -> Drive {
+        (
+            Phase::from(-self.dir.dot(tr.position()) * self.wavenumber * rad) + self.phase_offset,
+            self.intensity,
+        )
+            .into()
+    }
+}
+
+impl GainContextGenerator for Plane {
+    type Context = Context;
+
+    fn generate(&mut self, device: &Device) -> Self::Context {
+        Context {
+            dir: self.dir,
+            intensity: self.intensity,
+            phase_offset: self.phase_offset,
+            wavenumber: device.wavenumber(),
         }
     }
 }
 
 impl Gain for Plane {
-    fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
-        let dir = self.dir;
-        let intensity = self.intensity;
-        let phase_offset = self.phase_offset;
-        Ok(Self::transform(move |dev| {
-            let wavenumber = dev.wavenumber();
-            move |tr| {
-                (
-                    Phase::from(-dir.dot(tr.position()) * wavenumber * rad) + phase_offset,
-                    intensity,
-                )
-            }
-        }))
+    type G = Plane;
+
+    fn init_with_filter(
+        self,
+        _geometry: &Geometry,
+        _filter: Option<HashMap<usize, BitVec<u32>>>,
+    ) -> Result<Self::G, AUTDInternalError> {
+        Ok(self)
     }
 }
 
@@ -54,7 +72,7 @@ mod tests {
 
     fn plane_check(
         g: Plane,
-        dir: Vector3,
+        dir: UnitVector3,
         intensity: EmitIntensity,
         phase_offset: Phase,
         geometry: &Geometry,
@@ -63,13 +81,13 @@ mod tests {
         assert_eq!(intensity, g.intensity());
         assert_eq!(phase_offset, g.phase_offset());
 
-        let mut b = g.calc(geometry)?;
+        let mut b = g.init(geometry)?;
         geometry.iter().for_each(|dev| {
-            let d = b(dev);
+            let d = b.generate(dev);
             dev.iter().for_each(|tr| {
                 let expected_phase =
                     Phase::from(-dir.dot(tr.position()) * dev.wavenumber() * rad) + phase_offset;
-                let d = d(tr);
+                let d = d.calc(tr);
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity());
             });
@@ -84,11 +102,11 @@ mod tests {
 
         let geometry = create_geometry(1);
 
-        let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();
+        let d = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
         let g = Plane::new(d);
         plane_check(g, d, EmitIntensity::MAX, Phase::ZERO, &geometry)?;
 
-        let d = random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0).normalize();
+        let d = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
         let intensity = EmitIntensity::new(rng.gen());
         let phase_offset = Phase::new(rng.gen());
         let g = Plane::new(d)

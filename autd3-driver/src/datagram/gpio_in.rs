@@ -27,7 +27,7 @@ impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> OperationGenerato
     type O1 = EmulateGPIOInOp;
     type O2 = NullOp;
 
-    fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
+    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
         let h = (self.f)(device);
         (
             Self::O1::new([h(GPIOIn::I0), h(GPIOIn::I1), h(GPIOIn::I2), h(GPIOIn::I3)]),

@@ -59,20 +59,19 @@ where
         }
     }
 
-    fn parse_gain(
-        gain: &Gain,
-    ) -> Result<autd3_driver::datagram::BoxedGain<'static>, AUTDProtoBufError> {
+    fn parse_gain(gain: &Gain) -> Result<autd3_driver::datagram::BoxedGain, AUTDProtoBufError> {
+        use autd3_driver::datagram::IntoBoxedGain;
         Ok(match &gain.gain {
-            Some(gain::Gain::Focus(msg)) => Box::new(autd3::gain::Focus::from_msg(msg)?),
-            Some(gain::Gain::Bessel(msg)) => Box::new(autd3::gain::Bessel::from_msg(msg)?),
-            Some(gain::Gain::Plane(msg)) => Box::new(autd3::gain::Plane::from_msg(msg)?),
-            Some(gain::Gain::Uniform(msg)) => Box::new(autd3::gain::Uniform::from_msg(msg)?),
-            Some(gain::Gain::Null(msg)) => Box::new(autd3::gain::Null::from_msg(msg)?),
-            Some(gain::Gain::Lm(msg)) => Box::new(autd3_gain_holo::LM::from_msg(msg)?),
-            Some(gain::Gain::Gs(msg)) => Box::new(autd3_gain_holo::GS::from_msg(msg)?),
-            Some(gain::Gain::Naive(msg)) => Box::new(autd3_gain_holo::Naive::from_msg(msg)?),
-            Some(gain::Gain::Gspat(msg)) => Box::new(autd3_gain_holo::GSPAT::from_msg(msg)?),
-            Some(gain::Gain::Greedy(msg)) => Box::new(autd3_gain_holo::Greedy::from_msg(msg)?),
+            Some(gain::Gain::Focus(msg)) => autd3::gain::Focus::from_msg(msg)?.into_boxed(),
+            Some(gain::Gain::Bessel(msg)) => autd3::gain::Bessel::from_msg(msg)?.into_boxed(),
+            Some(gain::Gain::Plane(msg)) => autd3::gain::Plane::from_msg(msg)?.into_boxed(),
+            Some(gain::Gain::Uniform(msg)) => autd3::gain::Uniform::from_msg(msg)?.into_boxed(),
+            Some(gain::Gain::Null(msg)) => autd3::gain::Null::from_msg(msg)?.into_boxed(),
+            Some(gain::Gain::Lm(msg)) => autd3_gain_holo::LM::from_msg(msg)?.into_boxed(),
+            Some(gain::Gain::Gs(msg)) => autd3_gain_holo::GS::from_msg(msg)?.into_boxed(),
+            Some(gain::Gain::Naive(msg)) => autd3_gain_holo::Naive::from_msg(msg)?.into_boxed(),
+            Some(gain::Gain::Gspat(msg)) => autd3_gain_holo::GSPAT::from_msg(msg)?.into_boxed(),
+            Some(gain::Gain::Greedy(msg)) => autd3_gain_holo::Greedy::from_msg(msg)?.into_boxed(),
             None => return Err(AUTDProtoBufError::NotSupportedData),
         })
     }
@@ -80,7 +79,7 @@ where
     fn parse_gain_with_segment(
         gain: &GainWithSegment,
     ) -> Result<
-        autd3_driver::datagram::DatagramWithSegment<autd3_driver::datagram::BoxedGain<'static>>,
+        autd3_driver::datagram::DatagramWithSegment<autd3_driver::datagram::BoxedGain>,
         AUTDProtoBufError,
     > {
         let g = Self::parse_gain(

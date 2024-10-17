@@ -4,43 +4,62 @@ use autd3_driver::{
     firmware::fpga::{EmitIntensity, Phase},
     geometry::Vector3,
 };
+use derive_new::new;
 
-#[derive(Gain, Clone, PartialEq, Debug, Builder)]
+#[derive(Gain, Clone, PartialEq, Debug, Builder, new)]
 pub struct Focus {
     #[get(ref)]
     pos: Vector3,
+    #[new(value = "EmitIntensity::MAX")]
     #[get]
     #[set(into)]
     intensity: EmitIntensity,
+    #[new(value = "Phase::ZERO")]
     #[get]
     #[set(into)]
     phase_offset: Phase,
 }
 
-impl Focus {
-    pub const fn new(pos: Vector3) -> Self {
-        Self {
-            pos,
-            intensity: EmitIntensity::MAX,
-            phase_offset: Phase::ZERO,
+pub struct Context {
+    pos: Vector3,
+    intensity: EmitIntensity,
+    phase_offset: Phase,
+    wavenumber: f32,
+}
+
+impl GainContext for Context {
+    fn calc(&self, tr: &Transducer) -> Drive {
+        (
+            Phase::from(-(self.pos - tr.position()).norm() * self.wavenumber * rad)
+                + self.phase_offset,
+            self.intensity,
+        )
+            .into()
+    }
+}
+
+impl GainContextGenerator for Focus {
+    type Context = Context;
+
+    fn generate(&mut self, device: &Device) -> Self::Context {
+        Context {
+            pos: self.pos,
+            intensity: self.intensity,
+            phase_offset: self.phase_offset,
+            wavenumber: device.wavenumber(),
         }
     }
 }
 
 impl Gain for Focus {
-    fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
-        let pos = self.pos;
-        let intensity = self.intensity;
-        let phase_offset = self.phase_offset;
-        Ok(Self::transform(move |dev| {
-            let wavenumber = dev.wavenumber();
-            move |tr| {
-                (
-                    Phase::from(-(pos - tr.position()).norm() * wavenumber * rad) + phase_offset,
-                    intensity,
-                )
-            }
-        }))
+    type G = Focus;
+
+    fn init_with_filter(
+        self,
+        _geometry: &Geometry,
+        _filter: Option<HashMap<usize, BitVec<u32>>>,
+    ) -> Result<Self::G, AUTDInternalError> {
+        Ok(self)
     }
 }
 
@@ -62,14 +81,14 @@ mod tests {
         assert_eq!(intensity, g.intensity());
         assert_eq!(phase_offset, g.phase_offset());
 
-        let mut b = g.calc(geometry)?;
+        let mut b = g.init(geometry)?;
         geometry.iter().for_each(|dev| {
-            let d = b(dev);
+            let d = b.generate(dev);
             dev.iter().for_each(|tr| {
                 let expected_phase =
                     Phase::from(-(tr.position() - pos).norm() * dev.wavenumber() * rad)
                         + phase_offset;
-                let d = d(tr);
+                let d = d.calc(tr);
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity());
             });

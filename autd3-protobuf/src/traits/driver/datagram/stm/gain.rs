@@ -28,10 +28,9 @@ where
     }
 }
 
-impl FromMessage<GainStm>
-    for autd3_driver::datagram::GainSTM<autd3_driver::datagram::BoxedGain<'static>>
-{
+impl FromMessage<GainStm> for autd3_driver::datagram::GainSTM<autd3_driver::datagram::BoxedGain> {
     fn from_msg(msg: &GainStm) -> Result<Self, AUTDProtoBufError> {
+        use autd3_driver::datagram::IntoBoxedGain;
         let mut stm = autd3_driver::datagram::GainSTM::new(
             SamplingConfig::from_msg(
                 msg.config
@@ -42,34 +41,34 @@ impl FromMessage<GainStm>
                 .iter()
                 .map(|gain| match &gain.gain {
                     Some(gain::Gain::Focus(msg)) => {
-                        autd3::prelude::Focus::from_msg(msg).map(|g| Box::new(g) as Box<_>)
+                        autd3::prelude::Focus::from_msg(msg).map(|g| g.into_boxed())
                     }
                     Some(gain::Gain::Bessel(msg)) => {
-                        autd3::prelude::Bessel::from_msg(msg).map(|g| Box::new(g) as Box<_>)
+                        autd3::prelude::Bessel::from_msg(msg).map(|g| g.into_boxed())
                     }
                     Some(gain::Gain::Null(msg)) => {
-                        autd3::prelude::Null::from_msg(msg).map(|g| Box::new(g) as Box<_>)
+                        autd3::prelude::Null::from_msg(msg).map(|g| g.into_boxed())
                     }
                     Some(gain::Gain::Plane(msg)) => {
-                        autd3::prelude::Plane::from_msg(msg).map(|g| Box::new(g) as Box<_>)
+                        autd3::prelude::Plane::from_msg(msg).map(|g| g.into_boxed())
                     }
                     Some(gain::Gain::Uniform(msg)) => {
-                        autd3::prelude::Uniform::from_msg(msg).map(|g| Box::new(g) as Box<_>)
+                        autd3::prelude::Uniform::from_msg(msg).map(|g| g.into_boxed())
                     }
                     Some(gain::Gain::Naive(msg)) => {
-                        autd3_gain_holo::Naive::from_msg(msg).map(|g| Box::new(g) as Box<_>)
+                        autd3_gain_holo::Naive::from_msg(msg).map(|g| g.into_boxed())
                     }
                     Some(gain::Gain::Gs(msg)) => {
-                        autd3_gain_holo::GS::from_msg(msg).map(|g| Box::new(g) as Box<_>)
+                        autd3_gain_holo::GS::from_msg(msg).map(|g| g.into_boxed())
                     }
                     Some(gain::Gain::Gspat(msg)) => {
-                        autd3_gain_holo::GSPAT::from_msg(msg).map(|g| Box::new(g) as Box<_>)
+                        autd3_gain_holo::GSPAT::from_msg(msg).map(|g| g.into_boxed())
                     }
                     Some(gain::Gain::Lm(msg)) => {
-                        autd3_gain_holo::LM::from_msg(msg).map(|g| Box::new(g) as Box<_>)
+                        autd3_gain_holo::LM::from_msg(msg).map(|g| g.into_boxed())
                     }
                     Some(gain::Gain::Greedy(msg)) => {
-                        autd3_gain_holo::Greedy::from_msg(msg).map(|g| Box::new(g) as Box<_>)
+                        autd3_gain_holo::Greedy::from_msg(msg).map(|g| g.into_boxed())
                     }
                     None => Err(AUTDProtoBufError::DataParseError),
                 })

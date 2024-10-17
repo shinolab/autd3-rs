@@ -33,6 +33,34 @@ impl<
     }
 }
 
+pub struct Context<D: Into<Drive>, FT: Fn(&Transducer) -> D + Send + Sync + 'static> {
+    f: FT,
+}
+
+impl<D: Into<Drive>, FT: Fn(&Transducer) -> D + Send + Sync + 'static> GainContext
+    for Context<D, FT>
+{
+    fn calc(&self, tr: &Transducer) -> Drive {
+        (self.f)(tr).into()
+    }
+}
+
+impl<
+        'a,
+        D: Into<Drive>,
+        FT: Fn(&Transducer) -> D + Send + Sync + 'static,
+        F: Fn(&Device) -> FT + 'a,
+    > GainContextGenerator for Custom<'a, D, FT, F>
+{
+    type Context = Context<D, FT>;
+
+    fn generate(&mut self, device: &Device) -> Self::Context {
+        Context {
+            f: (self.f)(device),
+        }
+    }
+}
+
 impl<
         'a,
         D: Into<Drive>,
@@ -40,8 +68,14 @@ impl<
         F: Fn(&Device) -> FT + 'a,
     > Gain for Custom<'a, D, FT, F>
 {
-    fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
-        Ok(Self::transform(&self.f))
+    type G = Custom<'a, D, FT, F>;
+
+    fn init_with_filter(
+        self,
+        _geometry: &Geometry,
+        _filter: Option<HashMap<usize, BitVec<u32>>>,
+    ) -> Result<Self::G, AUTDInternalError> {
+        Ok(self)
     }
 }
 
@@ -73,14 +107,14 @@ mod tests {
             }
         });
 
-        let mut d = transducer_test.calc(&geometry)?;
+        let mut d = transducer_test.init(&geometry)?;
         geometry.iter().for_each(|dev| {
-            let d = d(dev);
+            let d = d.generate(dev);
             dev.iter().enumerate().for_each(|(idx, tr)| {
                 if dev.idx() == 0 && idx == test_id {
-                    assert_eq!(test_drive, d(tr));
+                    assert_eq!(test_drive, d.calc(tr));
                 } else {
-                    assert_eq!(Drive::null(), d(tr));
+                    assert_eq!(Drive::null(), d.calc(tr));
                 }
             });
         });

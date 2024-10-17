@@ -1,23 +1,36 @@
 use autd3_driver::{derive::*, firmware::fpga::Drive};
+use derive_new::new;
 
-#[derive(Gain, Clone, PartialEq, Debug, Builder)]
+#[derive(Gain, Clone, PartialEq, Debug, Builder, new)]
 pub struct Uniform {
     #[get]
+    #[new(into)]
     drive: Drive,
 }
 
-impl Uniform {
-    pub fn new(drive: impl Into<Drive>) -> Self {
-        Self {
-            drive: drive.into(),
-        }
+impl GainContext for Uniform {
+    fn calc(&self, _: &Transducer) -> Drive {
+        self.drive
+    }
+}
+
+impl GainContextGenerator for Uniform {
+    type Context = Uniform;
+
+    fn generate(&mut self, _: &Device) -> Self::Context {
+        self.clone()
     }
 }
 
 impl Gain for Uniform {
-    fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
-        let d = self.drive;
-        Ok(Self::transform(move |_| move |_| d))
+    type G = Uniform;
+
+    fn init_with_filter(
+        self,
+        _geometry: &Geometry,
+        _filter: Option<HashMap<usize, BitVec<u32>>>,
+    ) -> Result<Self::G, AUTDInternalError> {
+        Ok(self)
     }
 }
 
@@ -42,11 +55,11 @@ mod tests {
         assert_eq!(intensity, g.drive().intensity());
         assert_eq!(phase, g.drive().phase());
 
-        let mut b = g.calc(&geometry)?;
+        let mut b = g.init(&geometry)?;
         geometry.iter().for_each(|dev| {
-            let d = b(dev);
+            let d = b.generate(dev);
             dev.iter().for_each(|tr| {
-                let d = d(tr);
+                let d = d.calc(tr);
                 assert_eq!(phase, d.phase());
                 assert_eq!(intensity, d.intensity());
             });

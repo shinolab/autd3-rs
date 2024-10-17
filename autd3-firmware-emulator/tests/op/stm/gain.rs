@@ -84,7 +84,7 @@ fn send_gain_stm_phase_intensity_full(
     );
     let d = GainSTM::new(
         SamplingConfig::new(freq_div).unwrap(),
-        bufs.iter().map(|buf| TestGain { buf: buf.clone() }),
+        bufs.iter().map(|buf| TestGain { data: buf.clone() }),
     )?
     .with_loop_behavior(loop_behavior)
     .with_segment(segment, transition_mode);
@@ -136,7 +136,7 @@ fn send_gain_stm_phase_full(#[case] n: usize) -> anyhow::Result<()> {
             SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16,
         )
         .unwrap(),
-        bufs.iter().map(|buf| TestGain { buf: buf.clone() }),
+        bufs.iter().map(|buf| TestGain { data: buf.clone() }),
     )?
     .with_mode(GainSTMMode::PhaseFull)
     .with_loop_behavior(loop_behavior)
@@ -195,7 +195,7 @@ fn send_gain_stm_phase_half(#[case] n: usize) -> anyhow::Result<()> {
                 SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16,
             )
             .unwrap(),
-            bufs.iter().map(|buf| TestGain { buf: buf.clone() }),
+            bufs.iter().map(|buf| TestGain { data: buf.clone() }),
         )?
         .with_mode(GainSTMMode::PhaseHalf)
         .with_loop_behavior(loop_behavior)
@@ -237,7 +237,7 @@ fn change_gain_stm_segment() -> anyhow::Result<()> {
         SamplingConfig::FREQ_MIN,
         gen_random_buf(2, &geometry)
             .into_iter()
-            .map(|buf| TestGain { buf: buf.clone() }),
+            .map(|buf| TestGain { data: buf.clone() }),
     )?
     .with_segment(Segment::S1, None);
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
@@ -264,7 +264,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
             SamplingConfig::FREQ_40K,
             gen_random_buf(2, &geometry)
                 .into_iter()
-                .map(|buf| TestGain { buf: buf.clone() }),
+                .map(|buf| TestGain { data: buf.clone() }),
         )?
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
 
@@ -276,7 +276,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
 
     {
         let d = TestGain {
-            buf: geometry
+            data: geometry
                 .iter()
                 .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
                 .collect(),
@@ -294,7 +294,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
             .unwrap(),
             gen_random_buf(2, &geometry)
                 .into_iter()
-                .map(|buf| TestGain { buf: buf.clone() }),
+                .map(|buf| TestGain { data: buf.clone() }),
         )?
         .with_segment(Segment::S1, None);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
@@ -328,7 +328,7 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
             .iter()
             .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
             .collect();
-        let d = TestGain { buf: buf.clone() }.with_segment(Segment::S0, true);
+        let d = TestGain { data: buf.clone() }.with_segment(Segment::S0, true);
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }
@@ -380,7 +380,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
             SamplingConfig::FREQ_MIN,
             gen_random_buf(2, &geometry)
                 .into_iter()
-                .map(|buf| TestGain { buf: buf.clone() }),
+                .map(|buf| TestGain { data: buf.clone() }),
         )?
         .with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
         assert_eq!(
@@ -395,7 +395,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
             SamplingConfig::FREQ_MIN,
             gen_random_buf(2, &geometry)
                 .into_iter()
-                .map(|buf| TestGain { buf: buf.clone() }),
+                .map(|buf| TestGain { data: buf.clone() }),
         )?
         .with_loop_behavior(LoopBehavior::once())
         .with_segment(Segment::S1, Some(TransitionMode::Immediate));
@@ -411,7 +411,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
             SamplingConfig::FREQ_MIN,
             gen_random_buf(2, &geometry)
                 .into_iter()
-                .map(|buf| TestGain { buf: buf.clone() }),
+                .map(|buf| TestGain { data: buf.clone() }),
         )?
         .with_segment(Segment::S1, None);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
@@ -436,7 +436,7 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
     let bufs = gen_random_buf(2, &geometry);
     let d = GainSTM::new(
         SamplingConfig::FREQ_MIN,
-        bufs.iter().map(|buf| TestGain { buf: buf.clone() }),
+        bufs.iter().map(|buf| TestGain { data: buf.clone() }),
     )?
     .with_segment(Segment::S0, Some(TransitionMode::Immediate));
 
