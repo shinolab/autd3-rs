@@ -74,7 +74,7 @@ impl ControllerBuilder {
             timer_resolution: self.timer_resolution,
         }
         .open_impl(timeout)
-        .await // GRCOV_EXCL_LINE
+        .await
     }
 }
 
