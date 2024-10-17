@@ -12,26 +12,20 @@ use crate::prelude::AUTDError;
 
 use tracing;
 
+#[allow(clippy::type_complexity)]
 pub struct GroupGuard<'a, K: PartialEq + Debug, L: Link> {
     pub(crate) cnt: &'a mut Controller<L>,
     pub(crate) keys: Vec<Option<K>>,
     pub(crate) timeout: Option<Duration>,
     pub(crate) parallel_threshold: Option<usize>,
-    pub(crate) operations: Vec<(Box<dyn Operation>, Box<dyn Operation>)>,
+    pub(crate) operations: Vec<Option<(Box<dyn Operation>, Box<dyn Operation>)>>,
 }
 
 impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
     #[must_use]
     pub(crate) fn new(cnt: &'a mut Controller<L>, f: impl Fn(&Device) -> Option<K>) -> Self {
         Self {
-            operations: (0..cnt.geometry.num_devices())
-                .map(|_| {
-                    (
-                        Box::<dyn Operation>::default(),
-                        Box::<dyn Operation>::default(),
-                    )
-                })
-                .collect(),
+            operations: (0..cnt.geometry.num_devices()).map(|_| None).collect(),
             keys: cnt.geometry.devices().map(f).collect(),
             cnt,
             timeout: None,
@@ -79,7 +73,7 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
                     if kk == &k {
                         tracing::debug!("Generate operation for device {}", dev.idx());
                         let (op1, op2) = generator.generate(dev);
-                        *op = (Box::new(op1) as Box<_>, Box::new(op2) as Box<_>);
+                        *op = Some((Box::new(op1) as Box<_>, Box::new(op2) as Box<_>));
                     }
                 }
             });
@@ -96,12 +90,16 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
     #[tracing::instrument(level = "debug", skip(self))]
     pub async fn send(self) -> Result<(), AUTDError> {
         let Self {
-            mut operations,
+            operations,
             cnt,
             timeout,
             parallel_threshold,
             ..
         } = self;
+        let mut operations = operations
+            .into_iter()
+            .map(|op| op.unwrap_or_default())
+            .collect::<Vec<_>>();
         cnt.send_impl(&mut operations, timeout, parallel_threshold)
             .await
     }
