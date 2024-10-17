@@ -61,7 +61,6 @@ impl ControllerBuilder {
         link_builder: B,
         timeout: Duration,
     ) -> Result<Controller<B::L>, AUTDError> {
-        tracing::info!("Opening controller");
         let geometry = Geometry::new(self.devices);
         Controller {
             link: link_builder.open(&geometry).await?,

@@ -65,10 +65,8 @@ impl<L: Link> Controller<L> {
 }
 
 impl<L: Link> Controller<L> {
-    #[tracing::instrument(level = "debug", skip(self, s))]
+    #[tracing::instrument(level = "debug", skip(self))]
     pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDError> {
-        tracing::debug!("send datagram: {:?}", s);
-
         let timeout = s.timeout();
         let parallel_threshold = s.parallel_threshold();
 
@@ -78,7 +76,6 @@ impl<L: Link> Controller<L> {
             .await
     }
 
-    #[tracing::instrument(skip(self, operations, timeout, parallel_threshold))]
     pub(crate) async fn send_impl(
         &mut self,
         operations: &mut [(impl Operation, impl Operation)],
@@ -119,7 +116,6 @@ impl<L: Link> Controller<L> {
     }
 
     #[must_use]
-    #[tracing::instrument(level = "debug", skip(self))]
     pub(crate) async fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
         #[cfg(target_os = "windows")]
         unsafe /*ignore miri*/ {
@@ -140,7 +136,6 @@ impl<L: Link> Controller<L> {
         Ok(self)
     }
 
-    #[tracing::instrument(level = "debug", skip(self))]
     async fn close_impl(&mut self) -> Result<(), AUTDError> {
         tracing::info!("Closing controller");
 
@@ -160,6 +155,7 @@ impl<L: Link> Controller<L> {
         .try_fold((), |_, x| x)
     }
 
+    #[tracing::instrument(level = "debug", skip(self))]
     pub async fn close(mut self) -> Result<(), AUTDError> {
         self.close_impl().await
     }
