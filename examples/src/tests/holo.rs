@@ -1,5 +1,8 @@
 use autd3::{
-    driver::{datagram::BoxedGain, link::Link},
+    driver::{
+        datagram::{BoxedGain, IntoBoxedGain},
+        link::Link,
+    },
     prelude::*,
 };
 use autd3_gain_holo::*;
@@ -17,11 +20,11 @@ pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     let foci = [(center + p, target_amp), (center - p, target_amp)];
 
     let mut gains: Vec<(&str, BoxedGain)> = vec![
-        ("GS", Box::new(GS::new(backend.clone(), foci))),
-        ("GSPAT", Box::new(GSPAT::new(backend.clone(), foci))),
-        ("Naive", Box::new(Naive::new(backend.clone(), foci))),
-        ("LM", Box::new(LM::new(backend.clone(), foci))),
-        ("Greedy", Box::new(Greedy::<Sphere>::new(foci))),
+        ("GS", GS::new(backend.clone(), foci).into_boxed()),
+        ("GSPAT", GSPAT::new(backend.clone(), foci).into_boxed()),
+        ("Naive", Naive::new(backend.clone(), foci).into_boxed()),
+        ("LM", LM::new(backend.clone(), foci).into_boxed()),
+        ("Greedy", Greedy::<Sphere>::new(foci).into_boxed()),
     ];
 
     gains.iter().enumerate().for_each(|(i, (name, _))| {

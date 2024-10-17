@@ -2,17 +2,18 @@ use std::{collections::HashMap, sync::Arc};
 
 use autd3_driver::{
     defined::rad,
-    derive::GainCalcFn,
+    derive::{GainContext, GainContextGenerator, Transducer},
     error::AUTDInternalError,
     firmware::fpga::{Drive, Phase},
     geometry::Geometry,
 };
 use bit_vec::BitVec;
 use nalgebra::ComplexField;
+use rayon::iter::Either;
 
 use crate::EmissionConstraint;
 
-pub(crate) trait IntoDrive {
+pub trait IntoDrive {
     fn into_phase(self) -> Phase;
     fn into_intensity(self) -> f32;
 }
@@ -37,7 +38,89 @@ impl IntoDrive for crate::Complex {
     }
 }
 
-pub(crate) fn generate_result<'a, T>(
+#[allow(clippy::type_complexity)]
+pub struct HoloContext<T: IntoDrive + Copy + Send + Sync + 'static> {
+    q: Arc<
+        nalgebra::Matrix<
+            T,
+            nalgebra::Dyn,
+            nalgebra::U1,
+            nalgebra::VecStorage<T, nalgebra::Dyn, nalgebra::U1>,
+        >,
+    >,
+    map: Either<Vec<Option<usize>>, usize>,
+    max_coefficient: f32,
+    constraint: EmissionConstraint,
+}
+
+impl<T: IntoDrive + Copy + Send + Sync + 'static> GainContext for HoloContext<T> {
+    fn calc(&self, tr: &Transducer) -> Drive {
+        match &self.map {
+            Either::Left(map) => {
+                if let Some(idx) = map[tr.idx()] {
+                    let x = self.q[idx];
+                    let phase = x.into_phase();
+                    let intensity = self
+                        .constraint
+                        .convert(x.into_intensity(), self.max_coefficient);
+                    Drive::new(phase, intensity)
+                } else {
+                    Drive::null()
+                }
+            }
+            Either::Right(base_idx) => {
+                let x = self.q[base_idx + tr.idx()];
+                let phase = x.into_phase();
+                let intensity = self
+                    .constraint
+                    .convert(x.into_intensity(), self.max_coefficient);
+                Drive::new(phase, intensity)
+            }
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub struct HoloContextGenerator<T: IntoDrive + Copy + Send + Sync + 'static> {
+    q: Arc<
+        nalgebra::Matrix<
+            T,
+            nalgebra::Dyn,
+            nalgebra::U1,
+            nalgebra::VecStorage<T, nalgebra::Dyn, nalgebra::U1>,
+        >,
+    >,
+    map: Either<Vec<Vec<Option<usize>>>, Vec<usize>>,
+    max_coefficient: f32,
+    constraint: EmissionConstraint,
+}
+
+impl<T: IntoDrive + Copy + Send + Sync + 'static> GainContextGenerator for HoloContextGenerator<T> {
+    type Context = HoloContext<T>;
+
+    fn generate(&mut self, device: &autd3_driver::geometry::Device) -> Self::Context {
+        match &mut self.map {
+            Either::Left(map) => {
+                let mut tmp = vec![];
+                std::mem::swap(&mut tmp, &mut map[device.idx()]);
+                HoloContext {
+                    q: self.q.clone(),
+                    map: Either::Left(tmp),
+                    max_coefficient: self.max_coefficient,
+                    constraint: self.constraint,
+                }
+            }
+            Either::Right(map) => HoloContext {
+                q: self.q.clone(),
+                map: Either::Right(map[device.idx()]),
+                max_coefficient: self.max_coefficient,
+                constraint: self.constraint,
+            },
+        }
+    }
+}
+
+pub(crate) fn generate_result<T>(
     geometry: &Geometry,
     q: nalgebra::Matrix<
         T,
@@ -48,67 +131,57 @@ pub(crate) fn generate_result<'a, T>(
     max_coefficient: f32,
     constraint: EmissionConstraint,
     filter: Option<HashMap<usize, BitVec<u32>>>,
-) -> Result<GainCalcFn<'a>, AUTDInternalError>
+) -> Result<HoloContextGenerator<T>, AUTDInternalError>
 where
     T: IntoDrive + Copy + Send + Sync + 'static,
 {
-    let x = std::sync::Arc::new(q);
+    let q = std::sync::Arc::new(q);
     if let Some(filter) = filter {
-        let transducer_map = geometry
-            .iter()
-            .scan(0usize, |state, dev| {
-                Some(Arc::new(
-                    filter
-                        .get(&dev.idx())
-                        .map(|filter| {
-                            dev.iter()
-                                .map(|tr| {
-                                    if filter[tr.idx()] {
-                                        let r = *state;
-                                        *state += 1;
-                                        Some(r)
-                                    } else {
-                                        None
-                                    }
+        Ok(HoloContextGenerator {
+            q,
+            map: Either::Left(
+                geometry
+                    .iter()
+                    .scan(0usize, |state, dev| {
+                        Some(
+                            filter
+                                .get(&dev.idx())
+                                .map(|filter| {
+                                    dev.iter()
+                                        .map(|tr| {
+                                            if filter[tr.idx()] {
+                                                let r = *state;
+                                                *state += 1;
+                                                Some(r)
+                                            } else {
+                                                None
+                                            }
+                                        })
+                                        .collect::<Vec<_>>()
                                 })
-                                .collect::<Vec<_>>()
-                        })
-                        .unwrap_or(vec![None; dev.num_transducers()]),
-                ))
-            })
-            .collect::<Vec<_>>();
-        Ok(Box::new(move |dev| {
-            let x = x.clone();
-            let map = transducer_map[dev.idx()].clone();
-            Box::new(move |tr| {
-                if let Some(idx) = map[tr.idx()] {
-                    let x = x[idx];
-                    let phase = x.into_phase();
-                    let intensity = constraint.convert(x.into_intensity(), max_coefficient);
-                    Drive::new(phase, intensity)
-                } else {
-                    Drive::null()
-                }
-            })
-        }))
+                                .unwrap_or(vec![None; dev.num_transducers()]),
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            max_coefficient,
+            constraint,
+        })
     } else {
-        let num_transducers = geometry
-            .iter()
-            .scan(0, |state, dev| {
-                let r = *state;
-                *state += dev.num_transducers();
-                Some(r)
-            })
-            .collect::<Vec<_>>();
-        Ok(Box::new(move |dev| {
-            let x = x.clone();
-            let base_idx = num_transducers[dev.idx()];
-            Box::new(move |tr| {
-                let x = x[base_idx + tr.idx()];
-                let phase = x.into_phase();
-                let intensity = constraint.convert(x.into_intensity(), max_coefficient);
-                Drive::new(phase, intensity)
-            })
-        }))
+        Ok(HoloContextGenerator {
+            q,
+            map: Either::Right(
+                geometry
+                    .iter()
+                    .scan(0, |state, dev| {
+                        let r = *state;
+                        *state += dev.num_transducers();
+                        Some(r)
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            max_coefficient,
+            constraint,
+        })
     }
 }

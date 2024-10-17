@@ -23,7 +23,7 @@ impl<F: Fn(&Device) -> bool> OperationGenerator for ForceFanOpGenerator<F> {
     type O1 = ForceFanOp;
     type O2 = NullOp;
 
-    fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
+    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
         (Self::O1::new((self.f)(device)), Self::O2::default())
     }
 }

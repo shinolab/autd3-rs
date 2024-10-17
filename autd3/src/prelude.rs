@@ -1,7 +1,7 @@
 pub use crate::{
     controller::Controller,
     error::AUTDError,
-    gain::{Bessel, Focus, Group, IntoGainCache, IntoGainTransform, Null, Plane, Uniform},
+    gain::{Bessel, Focus, Group, IntoGainCache, Null, Plane, Uniform},
     link::Nop,
     modulation::{IntoFir, IntoModulationCache, IntoRadiationPressure, Sine, Square, Static},
 };

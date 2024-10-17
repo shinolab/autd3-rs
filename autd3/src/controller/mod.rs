@@ -292,7 +292,7 @@ mod tests {
     use autd3_driver::{
         autd3_device::AUTD3,
         defined::Hz,
-        derive::{Gain, Segment},
+        derive::{Gain, GainContext, GainContextGenerator, Segment},
         geometry::Vector3,
     };
 
@@ -331,14 +331,18 @@ mod tests {
                 *Sine::new(150. * Hz).calc()?,
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
             );
-            let f = Uniform::new(EmitIntensity::new(0x80)).calc(&autd.geometry)?(dev);
+            let f = Uniform::new(EmitIntensity::new(0x80))
+                .init(&autd.geometry)?
+                .generate(dev);
             assert_eq!(
-                dev.iter().map(f).collect::<Vec<_>>(),
+                dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 0)
             );
-            let f = Uniform::new(EmitIntensity::new(0x81)).calc(&autd.geometry)?(dev);
+            let f = Uniform::new(EmitIntensity::new(0x81))
+                .init(&autd.geometry)?
+                .generate(dev);
             assert_eq!(
-                dev.iter().map(f).collect::<Vec<_>>(),
+                dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 1)
             );
             anyhow::Ok(())
@@ -483,14 +487,18 @@ mod tests {
                 *Sine::new(150. * Hz).calc()?,
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
             );
-            let f = Uniform::new(EmitIntensity::new(0x80)).calc(&autd.geometry)?(dev);
+            let f = Uniform::new(EmitIntensity::new(0x80))
+                .init(&autd.geometry)?
+                .generate(dev);
             assert_eq!(
-                dev.iter().map(f).collect::<Vec<_>>(),
+                dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 0)
             );
-            let f = Uniform::new(EmitIntensity::new(0x81)).calc(&autd.geometry)?(dev);
+            let f = Uniform::new(EmitIntensity::new(0x81))
+                .init(&autd.geometry)?
+                .generate(dev);
             assert_eq!(
-                dev.iter().map(f).collect::<Vec<_>>(),
+                dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 1)
             );
             anyhow::Ok(())

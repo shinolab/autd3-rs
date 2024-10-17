@@ -12,9 +12,31 @@ impl MyUniform {
     }
 }
 
+pub struct Context {}
+
+impl GainContext for Context {
+    fn calc(&self, _: &Transducer) -> Drive {
+        EmitIntensity::MAX.into()
+    }
+}
+
+impl GainContextGenerator for MyUniform {
+    type Context = Context;
+
+    fn generate(&mut self, _device: &Device) -> Self::Context {
+        Context {}
+    }
+}
+
 impl Gain for MyUniform {
-    fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
-        Ok(Self::transform(|_| |_| EmitIntensity::MAX))
+    type G = MyUniform;
+
+    fn init_with_filter(
+        self,
+        _geometry: &Geometry,
+        _filter: Option<HashMap<usize, BitVec<u32>>>,
+    ) -> Result<Self::G, AUTDInternalError> {
+        Ok(self)
     }
 }
 

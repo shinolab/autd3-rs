@@ -16,15 +16,19 @@ pub use async_trait::async_trait;
 pub mod derive {
     pub use crate::{
         datagram::{
-            Datagram, DatagramS, DatagramST, Gain, GainCalcFn, GainOperationGenerator, Modulation,
-            ModulationOperationGenerator, ModulationProperty,
+            Datagram, DatagramS, DatagramST, Gain, GainContextGenerator, GainOperationGenerator,
+            Modulation, ModulationOperationGenerator, ModulationProperty,
         },
         defined::DEFAULT_TIMEOUT,
         error::AUTDInternalError,
-        firmware::fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
-        geometry::Geometry,
+        firmware::{
+            fpga::{Drive, LoopBehavior, SamplingConfig, Segment, TransitionMode},
+            operation::GainContext,
+        },
+        geometry::{Device, Geometry, Transducer},
     };
     pub use autd3_derive::{Builder, Gain, Modulation};
-    pub use std::sync::Arc;
+    pub use bit_vec::BitVec;
+    pub use std::{collections::HashMap, sync::Arc};
     pub use tracing;
 }

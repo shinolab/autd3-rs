@@ -1,3 +1,8 @@
+# 29.0.0
+
+- Improve calculation performance of `Gain`s
+- Remove `Gain::with_transform`
+
 # 28.1.0
 
 - Add `EulerAngle::XYZ`

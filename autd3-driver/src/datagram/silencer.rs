@@ -130,7 +130,7 @@ impl OperationGenerator for SilencerOpGenerator<FixedUpdateRate> {
     type O1 = SilencerFixedUpdateRateOp;
     type O2 = NullOp;
 
-    fn generate(&self, _: &Device) -> (Self::O1, Self::O2) {
+    fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
         (
             Self::O1::new(self.config.intensity, self.config.phase, self.target),
             Self::O2::default(),
@@ -142,7 +142,7 @@ impl OperationGenerator for SilencerOpGenerator<FixedCompletionTime> {
     type O1 = SilencerFixedCompletionStepsOp;
     type O2 = NullOp;
 
-    fn generate(&self, _: &Device) -> (Self::O1, Self::O2) {
+    fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
         (
             Self::O1::new(
                 self.config.intensity,

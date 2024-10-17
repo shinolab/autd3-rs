@@ -1,4 +1,5 @@
 use autd3_driver::{
+    datagram::{BoxedGain, IntoBoxedGain},
     derive::*,
     error::AUTDInternalError,
     firmware::fpga::Drive,
@@ -11,8 +12,6 @@ use std::{
     hash::Hash,
 };
 
-use bit_vec::BitVec;
-
 use derive_more::Debug;
 
 #[derive(Gain, Builder, Debug)]
@@ -24,7 +23,7 @@ where
 {
     #[debug(ignore)]
     f: F,
-    gain_map: HashMap<K, Box<dyn Gain + Send + Sync>>,
+    gain_map: HashMap<K, BoxedGain>,
     #[get]
     #[set]
     parallel: bool,
@@ -51,8 +50,8 @@ where
     FK: Fn(&Transducer) -> Option<K> + Send + Sync,
     F: Fn(&Device) -> FK + Send + Sync,
 {
-    pub fn set(mut self, key: K, gain: impl Gain + Send + Sync + 'static) -> Self {
-        self.gain_map.insert(key, Box::new(gain));
+    pub fn set(mut self, key: K, gain: impl IntoBoxedGain) -> Self {
+        self.gain_map.insert(key, gain.into_boxed());
         self
     }
 
@@ -85,16 +84,46 @@ where
     }
 }
 
+pub struct Context {
+    g: Vec<Drive>,
+}
+
+impl GainContext for Context {
+    fn calc(&self, tr: &Transducer) -> Drive {
+        self.g[tr.idx()]
+    }
+}
+
+pub struct ContextGenerator {
+    g: HashMap<usize, Vec<Drive>>,
+}
+
+impl GainContextGenerator for ContextGenerator {
+    type Context = Context;
+
+    fn generate(&mut self, device: &Device) -> Self::Context {
+        let mut g = Vec::new();
+        std::mem::swap(&mut g, self.g.get_mut(&device.idx()).unwrap());
+        Context { g }
+    }
+}
+
 impl<K, FK, F> Gain for Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync,
     FK: Fn(&Transducer) -> Option<K> + Send + Sync,
     F: Fn(&Device) -> FK + Send + Sync,
 {
-    fn calc(&self, geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
+    type G = ContextGenerator;
+
+    fn init_with_filter(
+        self,
+        geometry: &Geometry,
+        _filter: Option<HashMap<usize, BitVec<u32>>>,
+    ) -> Result<Self::G, AUTDInternalError> {
         let mut filters = self.get_filters(geometry);
 
-        let mut result = geometry
+        let g = geometry
             .devices()
             .map(|dev| {
                 (
@@ -105,15 +134,18 @@ where
             .collect::<HashMap<_, Vec<_>>>();
         let gain_map = self
             .gain_map
-            .iter()
+            .into_iter()
             .map(|(k, g)| {
                 let filter = filters
-                    .remove(k)
+                    .remove(&k)
                     .ok_or(AUTDInternalError::UnkownKey(format!("{:?}", k)))?;
-                let mut g = g.calc_with_filter(geometry, filter)?;
+                let mut g = g.init_with_filter(geometry, Some(filter))?;
                 Ok((
                     k.clone(),
-                    geometry.devices().map(|dev| g(dev)).collect::<Vec<_>>(),
+                    geometry
+                        .devices()
+                        .map(|dev| g.generate(dev))
+                        .collect::<Vec<_>>(),
                 ))
             })
             .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?;
@@ -122,15 +154,15 @@ where
         if self.parallel {
             gain_map
                 .par_iter()
-                .try_for_each(|(k, g)| -> Result<(), AUTDInternalError> {
-                    geometry.devices().zip(g.iter()).for_each(|(dev, g)| {
+                .try_for_each(|(k, c)| -> Result<(), AUTDInternalError> {
+                    geometry.devices().zip(c.iter()).for_each(|(dev, c)| {
                         let f = (f)(dev);
-                        let r = result[&dev.idx()].as_ptr() as *mut Drive;
+                        let r = g[&dev.idx()].as_ptr() as *mut Drive;
                         dev.iter().for_each(|tr| {
                             if let Some(kk) = f(tr) {
                                 if &kk == k {
                                     unsafe {
-                                        r.add(tr.idx()).write(g(tr));
+                                        r.add(tr.idx()).write(c.calc(tr));
                                     }
                                 }
                             }
@@ -141,15 +173,15 @@ where
         } else {
             gain_map
                 .iter()
-                .try_for_each(|(k, g)| -> Result<(), AUTDInternalError> {
-                    geometry.devices().zip(g.iter()).for_each(|(dev, g)| {
+                .try_for_each(|(k, c)| -> Result<(), AUTDInternalError> {
+                    geometry.devices().zip(c.iter()).for_each(|(dev, c)| {
                         let f = (f)(dev);
-                        let r = result[&dev.idx()].as_ptr() as *mut Drive;
+                        let r = g[&dev.idx()].as_ptr() as *mut Drive;
                         dev.iter().for_each(|tr| {
                             if let Some(kk) = f(tr) {
                                 if &kk == k {
                                     unsafe {
-                                        r.add(tr.idx()).write(g(tr));
+                                        r.add(tr.idx()).write(c.calc(tr));
                                     }
                                 }
                             }
@@ -159,11 +191,7 @@ where
                 })?;
         }
 
-        Ok(Box::new(move |dev| {
-            let mut tmp = vec![];
-            std::mem::swap(&mut tmp, result.get_mut(&dev.idx()).unwrap());
-            Box::new(move |tr| tmp[tr.idx()])
-        }))
+        Ok(Self::G { g })
     }
 }
 
@@ -204,10 +232,16 @@ mod tests {
         .set("test", g1)
         .set("test2", g2);
 
-        let mut g = gain.calc(&geometry)?;
+        let mut g = gain.init(&geometry)?;
         let drives = geometry
             .devices()
-            .map(|dev| (dev.idx(), dev.iter().map(g(dev)).collect::<Vec<_>>()))
+            .map(|dev| {
+                let f = g.generate(dev);
+                (
+                    dev.idx(),
+                    dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
+                )
+            })
             .collect::<HashMap<_, _>>();
         assert_eq!(4, drives.len());
         drives[&0].iter().enumerate().for_each(|(i, &d)| match i {
@@ -265,10 +299,16 @@ mod tests {
         .set("test", g1)
         .set("test2", g2);
 
-        let mut g = gain.calc(&geometry)?;
+        let mut g = gain.init(&geometry)?;
         let drives = geometry
             .devices()
-            .map(|dev| (dev.idx(), dev.iter().map(g(dev)).collect::<Vec<_>>()))
+            .map(|dev| {
+                let f = g.generate(dev);
+                (
+                    dev.idx(),
+                    dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
+                )
+            })
             .collect::<HashMap<_, _>>();
         assert_eq!(4, drives.len());
         drives[&0].iter().enumerate().for_each(|(i, &d)| match i {
@@ -315,7 +355,7 @@ mod tests {
 
         assert_eq!(
             Some(AUTDInternalError::UnkownKey("\"test2\"".to_owned())),
-            gain.calc(&geometry).err()
+            gain.init(&geometry).err()
         );
     }
 }

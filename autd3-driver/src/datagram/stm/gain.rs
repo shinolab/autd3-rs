@@ -77,9 +77,8 @@ impl<G: Gain> GainSTM<G> {
     }
 }
 
-pub struct GainSTMOperationGenerator<G: Gain> {
-    pub gain: Vec<G>,
-    g: *mut Vec<GainCalcFn<'static>>,
+pub struct GainSTMOperationGenerator<G: GainContextGenerator> {
+    g: Vec<G>,
     mode: GainSTMMode,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
@@ -87,9 +86,9 @@ pub struct GainSTMOperationGenerator<G: Gain> {
     transition_mode: Option<TransitionMode>,
 }
 
-impl<G: Gain> GainSTMOperationGenerator<G> {
-    fn new(
-        g: Vec<G>,
+impl<G: GainContextGenerator> GainSTMOperationGenerator<G> {
+    fn new<T: Gain<G = G>>(
+        gains: Vec<T>,
         geometry: &Geometry,
         mode: GainSTMMode,
         config: SamplingConfig,
@@ -97,39 +96,30 @@ impl<G: Gain> GainSTMOperationGenerator<G> {
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self, AUTDInternalError> {
-        let mut r = Self {
-            gain: g,
-            g: std::ptr::null_mut(),
+        Ok(Self {
+            g: gains
+                .into_iter()
+                .map(|gain| gain.init(geometry))
+                .collect::<Result<Vec<_>, AUTDInternalError>>()?,
             mode,
             config,
             loop_behavior,
             segment,
             transition_mode,
-        };
-        r.g = Box::into_raw(Box::new(
-            r.gain
-                .iter()
-                .map(|g| g.calc(geometry))
-                .collect::<Result<Vec<_>, AUTDInternalError>>()?,
-        )) as *mut _;
-        Ok(r)
+        })
     }
 }
 
-impl<G: Gain> Drop for GainSTMOperationGenerator<G> {
-    fn drop(&mut self) {
-        unsafe {
-            let _ = Box::from_raw(self.g);
-        }
-    }
-}
-
-impl<G: Gain> OperationGenerator for GainSTMOperationGenerator<G> {
-    type O1 = GainSTMOp;
+impl<G: GainContextGenerator> OperationGenerator for GainSTMOperationGenerator<G> {
+    type O1 = GainSTMOp<G::Context>;
     type O2 = NullOp;
 
-    fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
-        let d = unsafe { (*self.g).iter_mut().map(|g| g(device)).collect::<Vec<_>>() };
+    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
+        let d = self
+            .g
+            .iter_mut()
+            .map(|g| g.generate(device))
+            .collect::<Vec<_>>();
         (
             Self::O1::new(
                 d,
@@ -145,7 +135,7 @@ impl<G: Gain> OperationGenerator for GainSTMOperationGenerator<G> {
 }
 
 impl<G: Gain> DatagramST for GainSTM<G> {
-    type G = GainSTMOperationGenerator<G>;
+    type G = GainSTMOperationGenerator<G::G>;
 
     fn operation_generator_with_segment(
         self,
@@ -174,7 +164,7 @@ impl<G: Gain> DatagramST for GainSTM<G> {
 }
 
 // GRCOV_EXCL_START
-impl GainSTM<BoxedGain<'static>> {
+impl GainSTM<BoxedGain> {
     #[allow(clippy::missing_safety_doc)]
     pub unsafe fn uninit() -> Self /* ignore miri */ {
         Self {
@@ -191,23 +181,8 @@ impl GainSTM<BoxedGain<'static>> {
 mod tests {
     use super::*;
 
-    use crate::{
-        defined::{kHz, Hz},
-        firmware::fpga::Drive,
-    };
-
-    #[derive(Gain, Default, Debug, PartialEq)]
-    struct Null {
-        i: i32,
-    }
-
-    impl Gain for Null {
-        // GRCOV_EXCL_START
-        fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
-            Ok(Self::transform(|_| |_| Drive::null()))
-        }
-        // GRCOV_EXCL_STOP
-    }
+    use crate::defined::{kHz, Hz};
+    use gain::tests::TestGain;
 
     #[rstest::rstest]
     #[test]
@@ -224,7 +199,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::new(freq, (0..n).map(|_| Null::default())).map(|g| g.sampling_config())
+            GainSTM::new(freq, (0..n).map(|_| TestGain::null())).map(|g| g.sampling_config())
         );
     }
 
@@ -242,7 +217,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::new_nearest(freq, (0..n).map(|_| Null::default()))
+            GainSTM::new_nearest(freq, (0..n).map(|_| TestGain::null()))
                 .map(|g| g.sampling_config())
         );
     }
@@ -273,7 +248,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::new(p, (0..n).map(|_| Null::default())).map(|f| f.sampling_config())
+            GainSTM::new(p, (0..n).map(|_| TestGain::null())).map(|f| f.sampling_config())
         );
     }
 
@@ -303,7 +278,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::new_nearest(p, (0..n).map(|_| Null::default())).map(|f| f.sampling_config())
+            GainSTM::new_nearest(p, (0..n).map(|_| TestGain::null())).map(|f| f.sampling_config())
         );
     }
 
@@ -318,7 +293,7 @@ mod tests {
     ) -> anyhow::Result<()> {
         assert_eq!(
             Ok(config),
-            GainSTM::new(config, (0..n).map(|_| Null::default())).map(|f| f.sampling_config())
+            GainSTM::new(config, (0..n).map(|_| TestGain::null())).map(|f| f.sampling_config())
         );
         Ok(())
     }
@@ -336,7 +311,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::new(f, (0..n).map(|_| Null::default())).map(|f| f.freq())
+            GainSTM::new(f, (0..n).map(|_| TestGain::null())).map(|f| f.freq())
         );
     }
 
@@ -353,7 +328,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::new(f, (0..n).map(|_| Null::default())).map(|f| f.period())
+            GainSTM::new(f, (0..n).map(|_| TestGain::null())).map(|f| f.period())
         );
     }
 
@@ -366,7 +341,7 @@ mod tests {
     fn with_mode(#[case] mode: GainSTMMode) {
         assert_eq!(
             mode,
-            GainSTM::new(SamplingConfig::FREQ_40K, (0..2).map(|_| Null::default()))
+            GainSTM::new(SamplingConfig::FREQ_40K, (0..2).map(|_| TestGain::null()))
                 .unwrap()
                 .with_mode(mode)
                 .mode()
@@ -379,7 +354,7 @@ mod tests {
     fn with_mode_default() {
         assert_eq!(
             GainSTMMode::PhaseIntensityFull,
-            GainSTM::new(SamplingConfig::FREQ_40K, (0..2).map(|_| Null::default()))
+            GainSTM::new(SamplingConfig::FREQ_40K, (0..2).map(|_| TestGain::null()))
                 .unwrap()
                 .mode()
         );
@@ -393,7 +368,7 @@ mod tests {
     fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
         assert_eq!(
             loop_behavior,
-            GainSTM::new(SamplingConfig::FREQ_40K, (0..2).map(|_| Null::default()))
+            GainSTM::new(SamplingConfig::FREQ_40K, (0..2).map(|_| TestGain::null()))
                 .unwrap()
                 .with_loop_behavior(loop_behavior)
                 .loop_behavior()

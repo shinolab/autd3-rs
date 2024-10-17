@@ -13,8 +13,10 @@ use crate::{
         },
         operation::{write_to_tx, Operation, TypeTag},
     },
-    geometry::{Device, Transducer},
+    geometry::Device,
 };
+
+use super::GainContext;
 
 #[derive(Clone, Copy)]
 #[repr(C)]
@@ -66,8 +68,8 @@ struct GainSTMSubseq {
     flag: GainSTMControlFlags,
 }
 
-pub struct GainSTMOp {
-    gains: Peekable<std::vec::IntoIter<Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>>,
+pub struct GainSTMOp<Context: GainContext> {
+    gains: Peekable<std::vec::IntoIter<Context>>,
     sent: usize,
     is_done: bool,
     mode: GainSTMMode,
@@ -77,9 +79,9 @@ pub struct GainSTMOp {
     transition_mode: Option<TransitionMode>,
 }
 
-impl GainSTMOp {
+impl<Context: GainContext> GainSTMOp<Context> {
     pub fn new(
-        gains: Vec<Box<dyn Fn(&Transducer) -> Drive + Sync + Send>>,
+        gains: Vec<Context>,
         mode: GainSTMMode,
         config: SamplingConfig,
         loop_behavior: LoopBehavior,
@@ -99,7 +101,7 @@ impl GainSTMOp {
     }
 }
 
-impl Operation for GainSTMOp {
+impl<Context: GainContext> Operation for GainSTMOp<Context> {
     fn required_size(&self, device: &Device) -> usize {
         if self.sent == 0 {
             size_of::<GainSTMHead>() + device.num_transducers() * size_of::<Drive>()
@@ -127,7 +129,7 @@ impl Operation for GainSTMOp {
                             device.len(),
                         );
                         dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            *d = g(tr);
+                            *d = g.calc(tr);
                         });
                         send += 1;
                     }
@@ -141,7 +143,7 @@ impl Operation for GainSTMOp {
                         #(
                             if let Some(g) = self.gains.next() {
                                 dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                                    d.phase_~N = g(tr).phase().value();
+                                    d.phase_~N = g.calc(tr).phase().value();
                                 });
                                 send += 1;
                             }
@@ -157,7 +159,7 @@ impl Operation for GainSTMOp {
                         #(
                             if let Some(g) = self.gains.next() {
                                 dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                                    d.set_phase_~N(g(tr).phase().value() >> 4);
+                                    d.set_phase_~N(g.calc(tr).phase().value() >> 4);
                                 });
                                 send += 1;
                             }
@@ -249,6 +251,7 @@ mod tests {
 
     use super::*;
     use crate::{
+        derive::Transducer,
         ethercat::DcSysTime,
         firmware::{
             fpga::{EmitIntensity, Phase},
@@ -258,6 +261,16 @@ mod tests {
     };
 
     const NUM_TRANS_IN_UNIT: usize = 249;
+
+    struct Context {
+        g: Vec<Drive>,
+    }
+
+    impl GainContext for Context {
+        fn calc(&self, tr: &Transducer) -> Drive {
+            self.g[tr.idx()]
+        }
+    }
 
     #[test]
     fn test_phase_intensity_full() {
@@ -298,10 +311,7 @@ mod tests {
         let mut op = GainSTMOp::new(
             {
                 let gain_data = gain_data.clone();
-                gain_data
-                    .into_iter()
-                    .map(|g| Box::new(move |tr: &Transducer| g[tr.idx()]) as Box<_>)
-                    .collect()
+                gain_data.into_iter().map(|g| Context { g }).collect()
             },
             GainSTMMode::PhaseIntensityFull,
             SamplingConfig::new(freq_div).unwrap(),
@@ -450,10 +460,7 @@ mod tests {
         let mut op = GainSTMOp::new(
             {
                 let gain_data = gain_data.clone();
-                gain_data
-                    .into_iter()
-                    .map(|g| Box::new(move |tr: &Transducer| g[tr.idx()]) as Box<_>)
-                    .collect()
+                gain_data.into_iter().map(|g| Context { g }).collect()
             },
             GainSTMMode::PhaseFull,
             SamplingConfig::new(freq_div).unwrap(),
@@ -599,10 +606,7 @@ mod tests {
         let mut op = GainSTMOp::new(
             {
                 let gain_data = gain_data.clone();
-                gain_data
-                    .into_iter()
-                    .map(|g| Box::new(move |tr: &Transducer| g[tr.idx()]) as Box<_>)
-                    .collect()
+                gain_data.into_iter().map(|g| Context { g }).collect()
             },
             GainSTMMode::PhaseHalf,
             SamplingConfig::new(freq_div).unwrap(),
@@ -747,10 +751,7 @@ mod tests {
             let mut op = GainSTMOp::new(
                 {
                     let gain_data = gain_data.clone();
-                    gain_data
-                        .into_iter()
-                        .map(|g| Box::new(move |tr: &Transducer| g[tr.idx()]) as Box<_>)
-                        .collect()
+                    gain_data.into_iter().map(|g| Context { g }).collect()
                 },
                 GainSTMMode::PhaseIntensityFull,
                 SamplingConfig::FREQ_40K,

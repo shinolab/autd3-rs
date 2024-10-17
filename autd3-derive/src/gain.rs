@@ -11,7 +11,7 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
     let datagram = quote! {
         impl <#(#linetimes,)* #(#type_params,)*> Datagram for #name #ty_generics #where_clause
         {
-            type G =  GainOperationGenerator<Self>;
+            type G =  GainOperationGenerator<<Self as Gain>::G>;
 
             fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
                 Self::G::new(
@@ -30,7 +30,7 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
     let datagram_with_segment = quote! {
         impl <#(#linetimes,)* #(#type_params,)*> DatagramS for #name #ty_generics #where_clause
         {
-            type G =  GainOperationGenerator<Self>;
+            type G =  GainOperationGenerator<<Self as Gain>::G>;
 
             fn operation_generator_with_segment(self, geometry: &Geometry, segment: Segment, transition: bool) -> Result<Self::G, AUTDInternalError> {
                 Self::G::new(

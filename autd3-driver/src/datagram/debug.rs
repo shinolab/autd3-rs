@@ -28,7 +28,7 @@ impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> OperationGenerator
     type O1 = DebugSettingOp;
     type O2 = NullOp;
 
-    fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
+    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
         (
             Self::O1::new(
                 [GPIOOut::O0, GPIOOut::O1, GPIOOut::O2, GPIOOut::O3]

@@ -44,7 +44,7 @@ impl<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
     type O1 = PulseWidthEncoderOp<H>;
     type O2 = NullOp;
 
-    fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
+    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
         (Self::O1::new((self.f)(device)), Self::O2::default())
     }
 }

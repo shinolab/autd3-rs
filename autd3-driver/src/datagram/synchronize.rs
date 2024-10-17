@@ -17,7 +17,7 @@ impl OperationGenerator for SynchronizeOpGenerator {
     type O1 = SyncOp;
     type O2 = NullOp;
 
-    fn generate(&self, _: &Device) -> (Self::O1, Self::O2) {
+    fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
         (Self::O1::default(), Self::O2::default())
     }
 }

@@ -23,7 +23,7 @@ pub use clear::Clear;
 pub use cpu_gpio_out::{CpuGPIO, CpuGPIOPort};
 pub use debug::DebugSettings;
 pub use force_fan::ForceFan;
-pub use gain::{BoxedGain, Gain, GainCalcFn, GainOperationGenerator};
+pub use gain::{BoxedGain, Gain, GainContextGenerator, GainOperationGenerator, IntoBoxedGain};
 pub use gpio_in::EmulateGPIOIn;
 pub use modulation::{
     BoxedModulation, Modulation, ModulationOperationGenerator, ModulationProperty,
@@ -80,7 +80,7 @@ pub mod tests {
         type O2 = crate::firmware::operation::NullOp;
 
         // GRCOV_EXCL_START
-        fn generate(&self, _device: &Device) -> (Self::O1, Self::O2) {
+        fn generate(&mut self, _device: &Device) -> (Self::O1, Self::O2) {
             (Self::O1::default(), Self::O2::default())
         }
         // GRCOV_EXCL_STOP
