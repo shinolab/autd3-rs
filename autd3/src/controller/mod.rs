@@ -115,7 +115,6 @@ impl<L: Link> Controller<L> {
         }
     }
 
-    #[must_use]
     pub(crate) async fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
         #[cfg(target_os = "windows")]
         unsafe /*ignore miri*/ {
