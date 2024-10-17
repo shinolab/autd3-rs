@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::collections::HashMap;
 
 pub use crate::firmware::operation::GainContext;
 use crate::{
@@ -33,14 +33,16 @@ impl GainContextGenerator for BoxedGainContextGenerator {
 }
 
 #[cfg(not(feature = "lightweight"))]
-type BoxedGainGen = Box<
+type BoxedGen = Box<
     dyn FnOnce(
         &Geometry,
         Option<HashMap<usize, BitVec<u32>>>,
     ) -> Result<BoxedGainContextGenerator, AUTDInternalError>,
 >;
+#[cfg(not(feature = "lightweight"))]
+type BoxedFmt = Box<dyn Fn(&mut std::fmt::Formatter<'_>) -> std::fmt::Result>;
 #[cfg(feature = "lightweight")]
-type BoxedGainGen = Box<
+type BoxedGen = Box<
     dyn FnOnce(
             &Geometry,
             Option<HashMap<usize, BitVec<u32>>>,
@@ -48,10 +50,12 @@ type BoxedGainGen = Box<
         + Send
         + Sync,
 >;
+#[cfg(feature = "lightweight")]
+type BoxedFmt = Box<dyn Fn(&mut std::fmt::Formatter<'_>) -> std::fmt::Result + Send + Sync>;
 
 pub struct BoxedGain {
-    dbg: Box<dyn Fn(&mut std::fmt::Formatter<'_>) -> std::fmt::Result>,
-    g: BoxedGainGen,
+    dbg: BoxedFmt,
+    g: BoxedGen,
 }
 
 impl std::fmt::Debug for BoxedGain {
@@ -103,10 +107,9 @@ pub trait IntoBoxedGain {
 impl<G: Gain> IntoBoxedGain for G
 where
     G: 'static,
-    G::G: 'static,
 {
     fn into_boxed<'a>(self) -> BoxedGain {
-        let gain = Rc::new(RefCell::new(Some(self)));
+        let gain = std::rc::Rc::new(std::cell::RefCell::new(Some(self)));
         BoxedGain {
             dbg: Box::new({
                 let gain = gain.clone();
@@ -131,11 +134,20 @@ where
     G::G: Send + Sync + 'static,
 {
     fn into_boxed<'a>(self) -> BoxedGain {
+        let gain = std::sync::Arc::new(std::sync::Mutex::new(Some(self)));
         BoxedGain {
-            dbg: format!("{:?}", self),
+            dbg: Box::new({
+                let gain = gain.clone();
+                move |f| gain.lock().unwrap().as_ref().unwrap().fmt(f)
+            }),
             g: Box::new(
                 move |geometry: &Geometry, filter: Option<HashMap<usize, BitVec<u32>>>| {
-                    let mut f = self.init_with_filter(geometry, filter)?;
+                    let mut f = gain
+                        .lock()
+                        .unwrap()
+                        .take()
+                        .unwrap()
+                        .init_with_filter(geometry, filter)?;
                     Ok(BoxedGainContextGenerator {
                         f: Box::new(move |dev| Box::new(f.generate(dev))),
                     })
