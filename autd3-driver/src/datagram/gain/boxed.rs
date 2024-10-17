@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 pub use crate::firmware::operation::GainContext;
 use crate::{
@@ -50,13 +50,13 @@ type BoxedGainGen = Box<
 >;
 
 pub struct BoxedGain {
-    dbg: String,
+    dbg: Box<dyn Fn(&mut std::fmt::Formatter<'_>) -> std::fmt::Result>,
     g: BoxedGainGen,
 }
 
 impl std::fmt::Debug for BoxedGain {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", &self.dbg)
+        (self.dbg)(f)
     }
 }
 
@@ -106,11 +106,15 @@ where
     G::G: 'static,
 {
     fn into_boxed<'a>(self) -> BoxedGain {
+        let gain = Rc::new(RefCell::new(Some(self)));
         BoxedGain {
-            dbg: format!("{:?}", self),
+            dbg: Box::new({
+                let gain = gain.clone();
+                move |f| gain.borrow().as_ref().unwrap().fmt(f)
+            }),
             g: Box::new(
                 move |geometry: &Geometry, filter: Option<HashMap<usize, BitVec<u32>>>| {
-                    let mut f = self.init_with_filter(geometry, filter)?;
+                    let mut f = gain.take().unwrap().init_with_filter(geometry, filter)?;
                     Ok(BoxedGainContextGenerator {
                         f: Box::new(move |dev| Box::new(f.generate(dev))),
                     })
