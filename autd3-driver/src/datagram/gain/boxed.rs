@@ -72,6 +72,7 @@ impl Gain for BoxedGain {
     }
 }
 
+// GRCOV_EXCL_START
 impl Datagram for BoxedGain {
     type G = GainOperationGenerator<BoxedGainContextGenerator>;
 
@@ -92,6 +93,7 @@ impl DatagramS for BoxedGain {
         Self::G::new(self, geometry, segment, transition)
     }
 }
+// GRCOV_EXCL_STOP
 
 pub trait IntoBoxedGain {
     fn into_boxed(self) -> BoxedGain;

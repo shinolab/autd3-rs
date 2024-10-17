@@ -140,6 +140,27 @@ mod tests {
         Ok(())
     }
 
+    #[test]
+    fn different_geometry() -> anyhow::Result<()> {
+        let mut geometry = create_geometry(2);
+
+        let gain = Uniform::new(Drive::null());
+        let cache = gain.with_cache();
+
+        cache.clone().init(&geometry)?;
+
+        geometry[1].enable = false;
+
+        assert_eq!(
+            Some(AUTDInternalError::GainError(
+                "Cache is initialized with different geometry".to_string()
+            )),
+            cache.init(&geometry).err()
+        );
+
+        Ok(())
+    }
+
     #[derive(Gain, Clone, self::Debug)]
     struct CacheTestGain {
         pub calc_cnt: Arc<AtomicUsize>,
