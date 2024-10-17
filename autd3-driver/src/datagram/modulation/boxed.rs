@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::time::Duration;
 
 use crate::defined::DEFAULT_TIMEOUT;
@@ -11,7 +13,7 @@ use super::DatagramST;
 use super::{Modulation, ModulationOperationGenerator, ModulationProperty};
 
 pub struct BoxedModulation {
-    dbg: String,
+    dbg: Box<dyn Fn(&mut std::fmt::Formatter<'_>) -> std::fmt::Result>,
     #[cfg(not(feature = "lightweight"))]
     gen: Box<dyn FnOnce() -> Result<Vec<u8>, AUTDInternalError>>,
     #[cfg(feature = "lightweight")]
@@ -22,7 +24,7 @@ pub struct BoxedModulation {
 
 impl std::fmt::Debug for BoxedModulation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", &self.dbg)
+        (self.dbg)(f)
     }
 }
 
@@ -85,11 +87,17 @@ where
     M: 'static,
 {
     fn into_boxed<'a>(self) -> BoxedModulation {
+        let sampling_config = self.sampling_config();
+        let loop_behavior = self.loop_behavior();
+        let m = Rc::new(RefCell::new(Some(self)));
         BoxedModulation {
-            dbg: format!("{:?}", self),
-            sampling_config: self.sampling_config(),
-            loop_behavior: self.loop_behavior(),
-            gen: Box::new(move || self.calc()),
+            dbg: Box::new({
+                let m = m.clone();
+                move |f| m.borrow().as_ref().unwrap().fmt(f)
+            }),
+            sampling_config,
+            loop_behavior,
+            gen: Box::new(move || m.take().unwrap().calc()),
         }
     }
 }
