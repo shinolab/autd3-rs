@@ -93,6 +93,7 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
         })
     }
 
+    #[tracing::instrument(level = "debug", skip(self))]
     pub async fn send(self) -> Result<(), AUTDError> {
         let Self {
             mut operations,
