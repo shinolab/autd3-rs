@@ -93,39 +93,36 @@ where
 
     fn parse_modulation(
         modulation: &Modulation,
-    ) -> Result<autd3_driver::datagram::BoxedModulation<'static>, AUTDProtoBufError> {
+    ) -> Result<autd3_driver::datagram::BoxedModulation, AUTDProtoBufError> {
+        use autd3_driver::datagram::IntoBoxedModulation;
         Ok(match &modulation.modulation {
             Some(modulation::Modulation::Static(msg)) => {
-                Box::new(autd3::prelude::Static::from_msg(msg)?)
+                autd3::prelude::Static::from_msg(msg)?.into_boxed()
             }
-            Some(modulation::Modulation::SineNearest(msg)) => {
-                Box::new(autd3::prelude::Sine::<
-                    autd3::modulation::sampling_mode::NearestFreq,
-                >::from_msg(msg)?)
+            Some(modulation::Modulation::SineNearest(msg)) => autd3::prelude::Sine::<
+                autd3::modulation::sampling_mode::NearestFreq,
+            >::from_msg(msg)?
+            .into_boxed(),
+            Some(modulation::Modulation::SineExact(msg)) => {
+                autd3::prelude::Sine::<autd3::modulation::sampling_mode::ExactFreq>::from_msg(msg)?
+                    .into_boxed()
             }
-            Some(modulation::Modulation::SineExact(msg)) => Box::new(autd3::prelude::Sine::<
+            Some(modulation::Modulation::SineExactFloat(msg)) => autd3::prelude::Sine::<
+                autd3::modulation::sampling_mode::ExactFreqFloat,
+            >::from_msg(msg)?
+            .into_boxed(),
+            Some(modulation::Modulation::SquareNearest(msg)) => autd3::prelude::Square::<
+                autd3::modulation::sampling_mode::NearestFreq,
+            >::from_msg(msg)?
+            .into_boxed(),
+            Some(modulation::Modulation::SquareExact(msg)) => autd3::prelude::Square::<
                 autd3::modulation::sampling_mode::ExactFreq,
-            >::from_msg(msg)?),
-            Some(modulation::Modulation::SineExactFloat(msg)) => {
-                Box::new(autd3::prelude::Sine::<
-                    autd3::modulation::sampling_mode::ExactFreqFloat,
-                >::from_msg(msg)?)
-            }
-            Some(modulation::Modulation::SquareNearest(msg)) => {
-                Box::new(autd3::prelude::Square::<
-                    autd3::modulation::sampling_mode::NearestFreq,
-                >::from_msg(msg)?)
-            }
-            Some(modulation::Modulation::SquareExact(msg)) => {
-                Box::new(autd3::prelude::Square::<
-                    autd3::modulation::sampling_mode::ExactFreq,
-                >::from_msg(msg)?)
-            }
-            Some(modulation::Modulation::SquareExactFloat(msg)) => {
-                Box::new(autd3::prelude::Square::<
-                    autd3::modulation::sampling_mode::ExactFreqFloat,
-                >::from_msg(msg)?)
-            }
+            >::from_msg(msg)?
+            .into_boxed(),
+            Some(modulation::Modulation::SquareExactFloat(msg)) => autd3::prelude::Square::<
+                autd3::modulation::sampling_mode::ExactFreqFloat,
+            >::from_msg(msg)?
+            .into_boxed(),
             None => return Err(AUTDProtoBufError::DataParseError),
         })
     }
@@ -134,7 +131,7 @@ where
         modulation: &ModulationWithSegment,
     ) -> Result<
         autd3_driver::datagram::DatagramWithSegmentTransition<
-            autd3_driver::datagram::BoxedModulation<'static>,
+            autd3_driver::datagram::BoxedModulation,
         >,
         AUTDProtoBufError,
     > {

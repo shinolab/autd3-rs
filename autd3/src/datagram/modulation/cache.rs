@@ -3,17 +3,15 @@ use crate::derive::*;
 use std::{
     cell::{Ref, RefCell},
     rc::Rc,
-    sync::Arc,
 };
 
-use derive_more::{Debug, Deref};
+use derive_more::Debug;
 
-#[derive(Modulation, Clone, Deref, Debug)]
+#[derive(Modulation, Clone, Debug)]
 pub struct Cache<M: Modulation> {
-    #[deref]
-    m: M,
+    m: Rc<RefCell<Option<M>>>,
     #[debug("{}", !self.cache.borrow().is_empty())]
-    cache: Rc<RefCell<Arc<Vec<u8>>>>,
+    cache: Rc<RefCell<Vec<u8>>>,
     #[no_change]
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
@@ -34,26 +32,26 @@ impl<M: Modulation> Cache<M> {
         Self {
             config: m.sampling_config(),
             loop_behavior: m.loop_behavior(),
-            m,
+            m: Rc::new(RefCell::new(Some(m))),
             cache: Rc::default(),
         }
     }
 
     pub fn init(&self) -> Result<(), AUTDInternalError> {
-        if self.cache.borrow().is_empty() {
-            tracing::debug!("Initialize cache");
-            *self.cache.borrow_mut() = self.m.calc()?;
+        if let Some(m) = self.m.take() {
+            tracing::debug!("Initializing cache");
+            *self.cache.borrow_mut() = m.calc()?;
         }
         Ok(())
     }
 
-    pub fn buffer(&self) -> Ref<'_, Arc<Vec<u8>>> {
+    pub fn buffer(&self) -> Ref<'_, Vec<u8>> {
         self.cache.borrow()
     }
 }
 
 impl<M: Modulation> Modulation for Cache<M> {
-    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
+    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
         self.init()?;
         let buffer = self.buffer().clone();
         Ok(buffer)
@@ -67,12 +65,9 @@ mod tests {
     use super::*;
 
     use rand::Rng;
-    use std::{
-        ops::Deref,
-        sync::{
-            atomic::{AtomicUsize, Ordering},
-            Arc,
-        },
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
     };
 
     #[test]
@@ -81,7 +76,6 @@ mod tests {
 
         let m = Custom::new([rng.gen::<u8>(), rng.gen::<u8>()], SamplingConfig::FREQ_4K)?;
         let cache = m.clone().with_cache();
-        assert_eq!(&m, cache.deref());
 
         assert!(cache.buffer().is_empty());
 
@@ -98,29 +92,48 @@ mod tests {
     }
 
     impl Modulation for TestCacheModulation {
-        fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
+        fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
-            Ok(Arc::new(vec![0x00, 0x00]))
+            Ok(vec![0x00, 0x00])
         }
     }
 
     #[test]
     fn test_calc_once() {
-        let calc_cnt = Arc::new(AtomicUsize::new(0));
+        {
+            let calc_cnt = Arc::new(AtomicUsize::new(0));
 
-        let modulation = TestCacheModulation {
-            calc_cnt: calc_cnt.clone(),
-            config: SamplingConfig::FREQ_4K,
-            loop_behavior: LoopBehavior::infinite(),
+            let modulation = TestCacheModulation {
+                calc_cnt: calc_cnt.clone(),
+                config: SamplingConfig::FREQ_4K,
+                loop_behavior: LoopBehavior::infinite(),
+            };
+            assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
+
+            let _ = modulation.clone().calc();
+            assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
+
+            let _ = modulation.calc();
+            assert_eq!(2, calc_cnt.load(Ordering::Relaxed));
         }
-        .with_cache();
-        assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
-        let _ = modulation.calc();
-        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
+        {
+            let calc_cnt = Arc::new(AtomicUsize::new(0));
 
-        let _ = modulation.calc();
-        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
+            let modulation = TestCacheModulation {
+                calc_cnt: calc_cnt.clone(),
+                config: SamplingConfig::FREQ_4K,
+                loop_behavior: LoopBehavior::infinite(),
+            }
+            .with_cache();
+            assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
+
+            let _ = modulation.clone().calc();
+            assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
+
+            let _ = modulation.calc();
+            assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
+        }
     }
 
     #[test]
@@ -136,7 +149,7 @@ mod tests {
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
         let m2 = modulation.clone();
-        let _ = m2.calc();
+        let _ = m2.clone().calc();
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
 
         assert_eq!(*modulation.buffer(), *m2.buffer());

@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 use autd3_driver::{
     datagram::{FixedCompletionTime, IntoDatagramWithSegmentTransition, Silencer, SwapSegment},
@@ -23,13 +23,13 @@ use crate::{create_geometry, send};
 
 #[derive(Modulation, Debug)]
 pub struct TestModulation {
-    pub buf: Arc<Vec<u8>>,
+    pub buf: Vec<u8>,
     pub config: SamplingConfig,
     pub loop_behavior: LoopBehavior,
 }
 
 impl Modulation for TestModulation {
-    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
+    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
         Ok(self.buf.clone())
     }
 }
@@ -96,7 +96,7 @@ fn send_mod(
         SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16..=u16::MAX,
     );
     let d = TestModulation {
-        buf: Arc::new(m.clone()),
+        buf: m.clone(),
         config: SamplingConfig::new(freq_div).unwrap(),
         loop_behavior,
     }
@@ -127,7 +127,7 @@ fn swap_mod_segmemt() -> anyhow::Result<()> {
     let m: Vec<_> = (0..MOD_BUF_SIZE_MIN).map(|_| 0x00).collect();
     let freq_div = SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16;
     let d = TestModulation {
-        buf: Arc::new(m.clone()),
+        buf: m.clone(),
         config: SamplingConfig::new(freq_div).unwrap(),
         loop_behavior: LoopBehavior::infinite(),
     }
@@ -152,7 +152,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
 
     {
         let d = TestModulation {
-            buf: Arc::new((0..2).map(|_| u8::MAX).collect()),
+            buf: (0..2).map(|_| u8::MAX).collect(),
             config: SamplingConfig::FREQ_40K,
             loop_behavior: LoopBehavior::infinite(),
         }
@@ -166,7 +166,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
 
     {
         let d = TestModulation {
-            buf: Arc::new((0..2).map(|_| u8::MAX).collect()),
+            buf: (0..2).map(|_| u8::MAX).collect(),
             config: SamplingConfig::FREQ_MIN,
             loop_behavior: LoopBehavior::infinite(),
         }
@@ -177,7 +177,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = TestModulation {
-            buf: Arc::new((0..2).map(|_| u8::MAX).collect()),
+            buf: (0..2).map(|_| u8::MAX).collect(),
             config: SamplingConfig::new(SILENCER_STEPS_PHASE_DEFAULT as u16).unwrap(),
             loop_behavior: LoopBehavior::infinite(),
         }
@@ -210,7 +210,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
     // segment 0 to 0
     {
         let d = TestModulation {
-            buf: Arc::new((0..2).map(|_| u8::MAX).collect()),
+            buf: (0..2).map(|_| u8::MAX).collect(),
             config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::infinite(),
         }
@@ -224,7 +224,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
     // segment 0 to 1 immidiate
     {
         let d = TestModulation {
-            buf: Arc::new((0..2).map(|_| u8::MAX).collect()),
+            buf: (0..2).map(|_| u8::MAX).collect(),
             config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::once(),
         }
@@ -238,7 +238,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
     // Infinite but SyncIdx
     {
         let d = TestModulation {
-            buf: Arc::new((0..2).map(|_| u8::MAX).collect()),
+            buf: (0..2).map(|_| u8::MAX).collect(),
             config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::infinite(),
         }
@@ -272,7 +272,7 @@ fn test_miss_transition_time(
 
     let transition_mode = TransitionMode::SysTime(DcSysTime::from_utc(transition_time).unwrap());
     let d = TestModulation {
-        buf: Arc::new((0..2).map(|_| u8::MAX).collect()),
+        buf: (0..2).map(|_| u8::MAX).collect(),
         config: SamplingConfig::FREQ_4K,
         loop_behavior: LoopBehavior::once(),
     }

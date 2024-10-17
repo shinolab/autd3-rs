@@ -1,4 +1,3 @@
-use std::sync::Arc;
 
 use autd3_driver::{
     datagram::*,
@@ -52,7 +51,7 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
 
     {
         let d = TestModulation {
-            buf: Arc::new((0..2).map(|_| u8::MAX).collect()),
+            buf: (0..2).map(|_| u8::MAX).collect(),
             config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::infinite(),
         }

@@ -26,7 +26,8 @@ pub use force_fan::ForceFan;
 pub use gain::{BoxedGain, Gain, GainContextGenerator, GainOperationGenerator, IntoBoxedGain};
 pub use gpio_in::EmulateGPIOIn;
 pub use modulation::{
-    BoxedModulation, Modulation, ModulationOperationGenerator, ModulationProperty,
+    BoxedModulation, IntoBoxedModulation, Modulation, ModulationOperationGenerator,
+    ModulationProperty,
 };
 pub use phase_corr::PhaseCorrection;
 pub use pulse_width_encoder::PulseWidthEncoder;

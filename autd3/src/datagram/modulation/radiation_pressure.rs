@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::derive::*;
 
 #[derive(Modulation, Debug)]
@@ -31,13 +29,12 @@ impl<M: Modulation> IntoRadiationPressure<M> for M {
 }
 
 impl<M: Modulation> Modulation for RadiationPressure<M> {
-    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
+    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
         let src = self.m.calc()?;
-        Ok(Arc::new(
-            src.iter()
-                .map(|v| ((*v as f32 / 255.).sqrt() * 255.).round() as u8)
-                .collect(),
-        ))
+        Ok(src
+            .iter()
+            .map(|v| ((*v as f32 / 255.).sqrt() * 255.).round() as u8)
+            .collect())
     }
 }
 

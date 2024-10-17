@@ -1,7 +1,9 @@
-use std::sync::Arc;
-use std::time::Duration;
+mod boxed;
 
-use crate::defined::DEFAULT_TIMEOUT;
+pub use boxed::{BoxedModulation, IntoBoxedModulation};
+
+use std::sync::Arc;
+
 use crate::firmware::operation::OperationGenerator;
 use crate::{
     error::AUTDInternalError,
@@ -9,7 +11,7 @@ use crate::{
         fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
         operation::{ModulationOp, NullOp},
     },
-    geometry::{Device, Geometry},
+    geometry::Device,
 };
 
 use super::silencer::WithSampling;
@@ -21,7 +23,7 @@ pub trait ModulationProperty {
 }
 
 pub trait Modulation: ModulationProperty + std::fmt::Debug {
-    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError>;
+    fn calc(self) -> Result<Vec<u8>, AUTDInternalError>;
 }
 
 impl<M: Modulation> WithSampling for M {
@@ -60,56 +62,6 @@ impl OperationGenerator for ModulationOperationGenerator {
     }
 }
 
-// GRCOV_EXCL_START
-#[cfg(not(feature = "lightweight"))]
-pub type BoxedModulation<'a> = Box<dyn Modulation + 'a>;
-#[cfg(feature = "lightweight")]
-pub type BoxedModulation<'a> = Box<dyn Modulation + Send + Sync + 'a>;
-
-impl<'a> ModulationProperty for BoxedModulation<'a> {
-    fn sampling_config(&self) -> SamplingConfig {
-        self.as_ref().sampling_config()
-    }
-
-    fn loop_behavior(&self) -> LoopBehavior {
-        self.as_ref().loop_behavior()
-    }
-}
-
-impl<'a> Modulation for BoxedModulation<'a> {
-    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
-        self.as_ref().calc()
-    }
-}
-
-impl<'a> DatagramST for BoxedModulation<'a> {
-    type G = ModulationOperationGenerator;
-
-    fn operation_generator_with_segment(
-        self,
-        _: &Geometry,
-        segment: Segment,
-        transition_mode: Option<TransitionMode>,
-    ) -> Result<Self::G, AUTDInternalError> {
-        Ok(Self::G {
-            g: self.calc()?,
-            config: self.sampling_config(),
-            loop_behavior: self.loop_behavior(),
-            segment,
-            transition_mode,
-        })
-    }
-
-    fn timeout(&self) -> Option<Duration> {
-        Some(DEFAULT_TIMEOUT)
-    }
-
-    fn parallel_threshold(&self) -> Option<usize> {
-        Some(usize::MAX)
-    }
-}
-// GRCOV_EXCL_STOP
-
 #[cfg(test)]
 pub mod tests {
     use super::*;
@@ -122,10 +74,20 @@ pub mod tests {
     }
 
     impl Modulation for TestModulation {
-        // GRCOV_EXCL_START
-        fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
-            unimplemented!()
+        fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
+            Ok(vec![0; 2])
         }
-        // GRCOV_EXCL_STOP
+    }
+
+    #[test]
+    fn test() {
+        let m = TestModulation {
+            config: SamplingConfig::FREQ_4K,
+            loop_behavior: LoopBehavior::infinite(),
+        };
+
+        assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
+        assert_eq!(LoopBehavior::infinite(), m.loop_behavior());
+        assert_eq!(Ok(vec![0; 2]), m.calc());
     }
 }
