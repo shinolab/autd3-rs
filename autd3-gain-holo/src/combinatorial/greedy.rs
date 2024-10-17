@@ -4,9 +4,13 @@ use crate::{constraint::EmissionConstraint, Amplitude, Complex};
 
 use autd3_driver::{
     acoustics::{directivity::Directivity, propagate},
+    datagram::GainContextGenerator,
     defined::PI,
     derive::*,
-    firmware::fpga::{Drive, EmitIntensity, Phase},
+    firmware::{
+        fpga::{Drive, EmitIntensity, Phase},
+        operation::GainContext,
+    },
     geometry::{Transducer, Vector3},
 };
 
@@ -56,12 +60,38 @@ impl<D: Directivity> Greedy<D> {
     }
 }
 
-impl<D: Directivity> Greedy<D> {
-    fn calc_impl(
-        &self,
+pub struct Context {
+    g: Vec<Drive>,
+}
+
+impl GainContext for Context {
+    fn calc(&self, tr: &Transducer) -> Drive {
+        self.g[tr.idx()]
+    }
+}
+
+pub struct ContextGenerator {
+    g: Vec<Vec<Drive>>,
+}
+
+impl GainContextGenerator for ContextGenerator {
+    type Context = Context;
+
+    fn generate(&mut self, device: &autd3_driver::geometry::Device) -> Self::Context {
+        let mut tmp = vec![];
+        std::mem::swap(&mut tmp, &mut self.g[device.idx()]);
+        Context { g: tmp }
+    }
+}
+
+impl<D: Directivity> Gain for Greedy<D> {
+    type G = ContextGenerator;
+
+    fn init_with_filter(
+        self,
         geometry: &Geometry,
         filter: Option<HashMap<usize, BitVec<u32>>>,
-    ) -> Result<GainCalcFn, AUTDInternalError> {
+    ) -> Result<Self::G, AUTDInternalError> {
         let phase_candidates = (0..self.phase_div.get())
             .map(|i| Complex::new(0., 2.0 * PI * i as f32 / self.phase_div.get() as f32).exp())
             .collect::<Vec<_>>();
@@ -93,7 +123,7 @@ impl<D: Directivity> Greedy<D> {
             indices
         };
 
-        let mut res: Vec<_> = geometry
+        let mut g: Vec<_> = geometry
             .devices()
             .map(|dev| vec![Drive::null(); dev.num_transducers()])
             .collect();
@@ -124,28 +154,10 @@ impl<D: Directivity> Greedy<D> {
             cache.iter_mut().zip(tmp.iter()).for_each(|(c, a)| {
                 *c += a * phase;
             });
-            res[dev_idx][idx] = Drive::new(Phase::from(phase), self.constraint.convert(1.0, 1.0));
+            g[dev_idx][idx] = Drive::new(Phase::from(phase), self.constraint.convert(1.0, 1.0));
         });
 
-        Ok(Box::new(move |dev| {
-            let mut tmp = vec![];
-            std::mem::swap(&mut tmp, &mut res[dev.idx()]);
-            Box::new(move |tr| tmp[tr.idx()])
-        }))
-    }
-}
-
-impl<D: Directivity> Gain for Greedy<D> {
-    fn calc(&self, geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
-        self.calc_impl(geometry, None)
-    }
-
-    fn calc_with_filter(
-        &self,
-        geometry: &Geometry,
-        filter: HashMap<usize, BitVec<u32>>,
-    ) -> Result<GainCalcFn, AUTDInternalError> {
-        self.calc_impl(geometry, Some(filter))
+        Ok(ContextGenerator { g })
     }
 }
 
@@ -168,11 +180,11 @@ mod tests {
         );
 
         assert_eq!(
-            g.calc(&geometry).map(|mut res| {
-                let f = res(&geometry[0]);
+            g.init(&geometry).map(|mut res| {
+                let f = res.generate(&geometry[0]);
                 geometry[0]
                     .iter()
-                    .filter(|tr| f(tr) != Drive::null())
+                    .filter(|tr| f.calc(tr) != Drive::null())
                     .count()
             }),
             Ok(geometry.num_transducers()),
@@ -194,11 +206,11 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
         assert_eq!(
-            g.calc_with_filter(&geometry, filter).map(|mut res| {
-                let f = res(&geometry[0]);
+            g.init_with_filter(&geometry, Some(filter)).map(|mut res| {
+                let f = res.generate(&geometry[0]);
                 geometry[0]
                     .iter()
-                    .filter(|tr| f(tr) != Drive::null())
+                    .filter(|tr| f.calc(tr) != Drive::null())
                     .count()
             }),
             Ok(100),

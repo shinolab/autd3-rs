@@ -20,6 +20,7 @@ pub(crate) use clear::*;
 pub(crate) use cpu_gpio_out::*;
 pub(crate) use debug::*;
 pub(crate) use force_fan::*;
+pub use gain::GainContext;
 pub(crate) use gain::*;
 pub(crate) use gpio_in::*;
 pub use info::FirmwareVersionType;
@@ -88,7 +89,7 @@ pub trait Operation: Send + Sync {
 pub trait OperationGenerator {
     type O1: Operation;
     type O2: Operation;
-    fn generate(&self, device: &Device) -> (Self::O1, Self::O2);
+    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2);
 }
 
 impl Operation for Box<dyn Operation> {
@@ -114,7 +115,7 @@ impl Default for Box<dyn Operation> {
 pub struct OperationHandler {}
 
 impl OperationHandler {
-    pub fn generate<G: OperationGenerator>(gen: G, geometry: &Geometry) -> Vec<(G::O1, G::O2)> {
+    pub fn generate<G: OperationGenerator>(mut gen: G, geometry: &Geometry) -> Vec<(G::O1, G::O2)> {
         geometry.devices().map(|dev| gen.generate(dev)).collect()
     }
 

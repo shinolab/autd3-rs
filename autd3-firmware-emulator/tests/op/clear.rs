@@ -2,6 +2,7 @@ use std::{num::NonZeroU16, sync::Arc};
 
 use autd3_derive::Modulation;
 use autd3_driver::{
+    autd3_device::AUTD3,
     datagram::*,
     defined::ULTRASOUND_PERIOD,
     derive::*,
@@ -15,7 +16,11 @@ use autd3_driver::{
 };
 use autd3_firmware_emulator::CPUEmulator;
 
-use crate::{create_geometry, op::stm::foci::gen_random_foci, send};
+use crate::{
+    create_geometry,
+    op::{gain::TestGain, stm::foci::gen_random_foci},
+    send,
+};
 
 #[derive(Modulation, Debug)]
 struct TestMod {
@@ -26,17 +31,6 @@ struct TestMod {
 impl Modulation for TestMod {
     fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
         Ok(Arc::new(vec![u8::MIN; 100]))
-    }
-}
-
-#[derive(Gain, Debug)]
-struct TestGain {}
-
-impl Gain for TestGain {
-    fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
-        Ok(Self::transform(|_| {
-            |_| Drive::new(Phase::new(0xFF), EmitIntensity::MAX)
-        }))
     }
 }
 
@@ -66,7 +60,15 @@ fn send_clear() -> anyhow::Result<()> {
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = TestGain {}.with_segment(Segment::S0, true);
+        let d = TestGain {
+            data: [(
+                0,
+                vec![Drive::new(Phase::new(0xFF), EmitIntensity::MAX); AUTD3::NUM_TRANS_IN_UNIT],
+            )]
+            .into_iter()
+            .collect(),
+        }
+        .with_segment(Segment::S0, true);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = FociSTM::new(

@@ -24,7 +24,9 @@ impl ToMessage for autd3::gain::Plane {
 
 impl FromMessage<Plane> for autd3::gain::Plane {
     fn from_msg(msg: &Plane) -> Result<Self, AUTDProtoBufError> {
-        let mut g = Self::new(autd3_driver::geometry::Vector3::from_msg(&msg.dir)?);
+        let mut g = Self::new(autd3_driver::geometry::UnitVector3::new_normalize(
+            autd3_driver::geometry::Vector3::from_msg(&msg.dir)?,
+        ));
         if let Some(intensity) = msg.intensity.as_ref() {
             g = g.with_intensity(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
                 intensity,
@@ -42,7 +44,7 @@ mod tests {
     use super::*;
     use autd3_driver::{
         firmware::fpga::{EmitIntensity, Phase},
-        geometry::Vector3,
+        geometry::{UnitVector3, Vector3},
     };
     use rand::Rng;
 
@@ -50,9 +52,13 @@ mod tests {
     fn test_phase() {
         let mut rng = rand::thread_rng();
 
-        let g = autd3::gain::Plane::new(Vector3::new(rng.gen(), rng.gen(), rng.gen()))
-            .with_intensity(EmitIntensity::new(rng.gen()))
-            .with_phase_offset(Phase::new(rng.gen()));
+        let g = autd3::gain::Plane::new(UnitVector3::new_normalize(Vector3::new(
+            rng.gen(),
+            rng.gen(),
+            rng.gen(),
+        )))
+        .with_intensity(EmitIntensity::new(rng.gen()))
+        .with_phase_offset(Phase::new(rng.gen()));
         let msg = g.to_msg(None);
 
         match msg.datagram {

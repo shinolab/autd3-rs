@@ -18,16 +18,38 @@ use crate::{create_geometry, send};
 
 #[derive(Gain, Debug)]
 pub(crate) struct TestGain {
-    pub(crate) buf: HashMap<usize, Vec<Drive>>,
+    pub(crate) data: HashMap<usize, Vec<Drive>>,
+}
+
+pub struct Context {
+    data: Vec<Drive>,
+}
+
+impl GainContext for Context {
+    fn calc(&self, tr: &Transducer) -> Drive {
+        self.data[tr.idx()]
+    }
+}
+
+impl GainContextGenerator for TestGain {
+    type Context = Context;
+
+    fn generate(&mut self, device: &Device) -> Self::Context {
+        let mut data = Vec::new();
+        std::mem::swap(&mut data, self.data.get_mut(&device.idx()).unwrap());
+        Context { data }
+    }
 }
 
 impl Gain for TestGain {
-    fn calc(&self, _: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
-        let buf = self.buf.clone();
-        Ok(Box::new(move |dev| {
-            let buf = buf[&dev.idx()].clone();
-            Box::new(move |tr| buf[tr.idx()])
-        }))
+    type G = Self;
+
+    fn init_with_filter(
+        self,
+        _geometry: &Geometry,
+        _filter: Option<HashMap<usize, BitVec<u32>>>,
+    ) -> Result<Self::G, AUTDInternalError> {
+        Ok(self)
     }
 }
 
@@ -51,7 +73,7 @@ fn send_gain() -> anyhow::Result<()> {
                 )
             })
             .collect();
-        let g = TestGain { buf: buf.clone() };
+        let g = TestGain { data: buf.clone() };
 
         assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
 
@@ -80,7 +102,7 @@ fn send_gain() -> anyhow::Result<()> {
                 )
             })
             .collect();
-        let g = TestGain { buf: buf.clone() }.with_segment(Segment::S1, false);
+        let g = TestGain { data: buf.clone() }.with_segment(Segment::S1, false);
 
         assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
 
@@ -142,7 +164,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
                         .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
                         .collect()
                 })
-                .map(|buf: HashMap<usize, Vec<Drive>>| TestGain { buf: buf.clone() }),
+                .map(|buf: HashMap<usize, Vec<Drive>>| TestGain { data: buf.clone() }),
         )?
         .with_segment(Segment::S1, Some(TransitionMode::Immediate)),
         &geometry,

@@ -1,13 +1,17 @@
+mod boxed;
+
+pub use boxed::{BoxedGain, IntoBoxedGain};
+
 use std::collections::HashMap;
 
+pub use crate::firmware::operation::GainContext;
 use crate::firmware::operation::GainOp;
 use crate::firmware::operation::NullOp;
 use crate::firmware::operation::OperationGenerator;
 use crate::{
     derive::{Geometry, Segment},
     error::AUTDInternalError,
-    firmware::fpga::Drive,
-    geometry::{Device, Transducer},
+    geometry::Device,
 };
 
 use bit_vec::BitVec;
@@ -15,111 +19,57 @@ use bit_vec::BitVec;
 use super::Datagram;
 use super::DatagramS;
 
-pub type GainCalcFn<'a> =
-    Box<dyn FnMut(&Device) -> Box<dyn Fn(&Transducer) -> Drive + Sync + Send> + 'a>;
+pub trait GainContextGenerator {
+    type Context: GainContext;
+
+    fn generate(&mut self, device: &Device) -> Self::Context;
+}
 
 pub trait Gain: std::fmt::Debug {
-    fn calc<'a>(&'a self, geometry: &Geometry) -> Result<GainCalcFn<'a>, AUTDInternalError>;
-    fn calc_with_filter<'a>(
-        &'a self,
-        geometry: &Geometry,
-        _filter: HashMap<usize, BitVec<u32>>,
-    ) -> Result<GainCalcFn<'a>, AUTDInternalError> {
-        self.calc(geometry)
-    }
-    fn transform<
-        'a,
-        D: Into<Drive>,
-        FT: Fn(&Transducer) -> D + Sync + Send + 'static,
-        F: Fn(&Device) -> FT + 'a,
-    >(
-        f: F,
-    ) -> GainCalcFn<'a>
+    type G: GainContextGenerator;
+
+    fn init(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError>
     where
         Self: Sized,
     {
-        Box::new(move |dev| {
-            let f = f(dev);
-            Box::new(move |tr| f(tr).into())
-        })
+        self.init_with_filter(geometry, None)
     }
-}
-
-// GRCOV_EXCL_START
-#[cfg(not(feature = "lightweight"))]
-pub type BoxedGain<'a> = Box<dyn Gain + 'a>;
-#[cfg(feature = "lightweight")]
-pub type BoxedGain<'a> = Box<dyn Gain + Send + Sync + 'a>;
-
-impl<'a> Gain for BoxedGain<'a> {
-    fn calc(&self, geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
-        self.as_ref().calc(geometry)
-    }
-}
-
-impl<'a> Datagram for BoxedGain<'a> {
-    type G = GainOperationGenerator<BoxedGain<'a>>;
-
-    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
-        Self::G::new(self, geometry, Segment::S0, true)
-    }
-}
-
-impl<'a> DatagramS for BoxedGain<'a> {
-    type G = GainOperationGenerator<BoxedGain<'a>>;
-
-    fn operation_generator_with_segment(
+    fn init_with_filter(
         self,
         geometry: &Geometry,
-        segment: Segment,
-        transition: bool,
-    ) -> Result<Self::G, AUTDInternalError> {
-        Self::G::new(self, geometry, segment, transition)
-    }
+        filter: Option<HashMap<usize, BitVec<u32>>>,
+    ) -> Result<Self::G, AUTDInternalError>;
 }
-// GRCOV_EXCL_STOP
 
-pub struct GainOperationGenerator<G: Gain> {
-    pub gain: std::pin::Pin<Box<G>>,
-    pub g: *mut GainCalcFn<'static>,
+pub struct GainOperationGenerator<G: GainContextGenerator> {
+    pub generator: G,
     pub segment: Segment,
     pub transition: bool,
 }
 
-impl<G: Gain> GainOperationGenerator<G> {
-    pub fn new(
-        gain: G,
+impl<G: GainContextGenerator> GainOperationGenerator<G> {
+    pub fn new<T: Gain<G = G>>(
+        gain: T,
         geometry: &Geometry,
         segment: Segment,
         transition: bool,
     ) -> Result<Self, AUTDInternalError> {
-        let mut r = Self {
-            gain: Box::pin(gain),
-            g: std::ptr::null_mut(),
+        Ok(Self {
+            generator: gain.init(geometry)?,
             segment,
             transition,
-        };
-        r.g = Box::into_raw(Box::new(r.gain.calc(geometry)?)) as *mut _;
-        Ok(r)
+        })
     }
 }
 
-impl<G: Gain> Drop for GainOperationGenerator<G> {
-    fn drop(&mut self) {
-        unsafe {
-            let _ = Box::from_raw(self.g);
-        }
-    }
-}
-
-impl<'a, G: Gain + 'a> OperationGenerator for GainOperationGenerator<G> {
-    type O1 = GainOp;
+impl<G: GainContextGenerator> OperationGenerator for GainOperationGenerator<G> {
+    type O1 = GainOp<G::Context>;
     type O2 = NullOp;
 
-    fn generate(&self, device: &Device) -> (Self::O1, Self::O2) {
-        let d = unsafe { (*self.g)(device) };
+    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
+        let context = self.generator.generate(device);
         (
-            GainOp::new(self.segment, self.transition, d),
+            GainOp::new(self.segment, self.transition, context),
             NullOp::default(),
         )
     }
@@ -152,15 +102,43 @@ pub mod tests {
                     .collect(),
             }
         }
+
+        pub fn null() -> Self {
+            Self {
+                data: HashMap::new(),
+            }
+        }
+    }
+
+    pub struct Context {
+        data: Vec<Drive>,
+    }
+
+    impl GainContext for Context {
+        fn calc(&self, tr: &Transducer) -> Drive {
+            self.data[tr.idx()]
+        }
+    }
+
+    impl GainContextGenerator for TestGain {
+        type Context = Context;
+
+        fn generate(&mut self, device: &Device) -> Self::Context {
+            let mut data = Vec::new();
+            std::mem::swap(&mut data, self.data.get_mut(&device.idx()).unwrap());
+            Context { data }
+        }
     }
 
     impl Gain for TestGain {
-        fn calc(&self, _geometry: &Geometry) -> Result<GainCalcFn, AUTDInternalError> {
-            let d = self.data.clone();
-            Ok(Self::transform(move |dev| {
-                let d = d[&dev.idx()].clone();
-                move |tr| d[tr.idx()]
-            }))
+        type G = Self;
+
+        fn init_with_filter(
+            self,
+            _geometry: &Geometry,
+            _filter: Option<HashMap<usize, BitVec<u32>>>,
+        ) -> Result<Self::G, AUTDInternalError> {
+            Ok(self)
         }
     }
 
@@ -192,7 +170,7 @@ pub mod tests {
         vec![true, false],
         2)]
     #[cfg_attr(miri, ignore)]
-    fn test_transform(
+    fn gain(
         #[case] expect: HashMap<usize, Vec<Drive>>,
         #[case] enabled: Vec<bool>,
         #[case] n: u16,
@@ -214,12 +192,15 @@ pub mod tests {
             },
             &geometry,
         );
-        let mut f = g.calc(&geometry)?;
+        let mut f = g.init(&geometry)?;
         assert_eq!(
             expect,
             geometry
                 .devices()
-                .map(|dev| (dev.idx(), dev.iter().map(f(dev)).collect()))
+                .map(|dev| {
+                    let f = f.generate(dev);
+                    (dev.idx(), dev.iter().map(|tr| f.calc(tr)).collect())
+                })
                 .collect()
         );
 
