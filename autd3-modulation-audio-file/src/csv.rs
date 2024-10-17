@@ -4,7 +4,6 @@ use autd3_driver::{defined::Freq, derive::*};
 use std::{
     fs::File,
     path::{Path, PathBuf},
-    sync::Arc,
 };
 
 use crate::error::AudioFileError;
@@ -84,8 +83,8 @@ impl Csv {
 }
 
 impl Modulation for Csv {
-    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
-        Ok(Arc::new(self.read_buf()?))
+    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
+        Ok(self.read_buf()?)
     }
 }
 

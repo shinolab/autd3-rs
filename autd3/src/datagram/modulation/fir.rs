@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, sync::Arc};
+use std::borrow::Borrow;
 
 use crate::derive::*;
 
@@ -33,22 +33,20 @@ impl<M: Modulation> IntoFir<M> for M {
 }
 
 impl<M: Modulation> Modulation for Fir<M> {
-    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
+    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
         let src = self.m.calc()?;
         let src_len = src.len() as isize;
         let filter_len = self.filter.len() as isize;
-        Ok(Arc::new(
-            (0..src_len)
-                .map(|i| {
-                    (0..filter_len)
-                        .map(|j| {
-                            src[(i + j - filter_len / 2).rem_euclid(src_len) as usize] as f32
-                                * self.filter[j as usize]
-                        })
-                        .sum::<f32>() as u8
-                })
-                .collect(),
-        ))
+        Ok((0..src_len)
+            .map(|i| {
+                (0..filter_len)
+                    .map(|j| {
+                        src[(i + j - filter_len / 2).rem_euclid(src_len) as usize] as f32
+                            * self.filter[j as usize]
+                    })
+                    .sum::<f32>() as u8
+            })
+            .collect())
     }
 }
 

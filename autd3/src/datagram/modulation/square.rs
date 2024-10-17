@@ -1,4 +1,3 @@
-use std::sync::Arc;
 
 use autd3_driver::{defined::Freq, derive::*};
 
@@ -54,7 +53,7 @@ impl<S: SamplingMode> Square<S> {
 }
 
 impl<S: SamplingMode> Modulation for Square<S> {
-    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
+    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
         if !(0.0..=1.0).contains(&self.duty) {
             return Err(AUTDInternalError::ModulationError(
                 "duty must be in range from 0 to 1".to_string(),
@@ -65,17 +64,15 @@ impl<S: SamplingMode> Modulation for Square<S> {
         let high = self.high;
         let low = self.low;
         let duty = self.duty;
-        Ok(Arc::new(
-            (0..rep)
-                .map(|i| (n + i) / rep)
-                .flat_map(|size| {
-                    let n_high = (size as f32 * duty) as usize;
-                    vec![high; n_high]
-                        .into_iter()
-                        .chain(vec![low; size as usize - n_high])
-                })
-                .collect(),
-        ))
+        Ok((0..rep)
+            .map(|i| (n + i) / rep)
+            .flat_map(|size| {
+                let n_high = (size as f32 * duty) as usize;
+                vec![high; n_high]
+                    .into_iter()
+                    .chain(vec![low; size as usize - n_high])
+            })
+            .collect())
     }
 }
 
@@ -88,40 +85,40 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(
-        Ok(Arc::new(vec![
+        Ok(vec![
             255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255,
             255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ])),
+        ]),
         150.*Hz
     )]
     #[case(
-        Ok(Arc::new(vec![
+        Ok(vec![
             255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255,
             255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ])),
+        ]),
         150*Hz
     )]
     #[case(
-        Ok(Arc::new(vec![255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
+        Ok(vec![255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         200.*Hz
     )]
     #[case(
-        Ok(Arc::new(vec![255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
+        Ok(vec![255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         200*Hz
     )]
     #[case(
-        Ok(Arc::new(vec![
+        Ok(vec![
             255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255,
             0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0,
             255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255,
             0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0,
             255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255, 0, 0, 0, 255, 255,
             255, 0, 0, 0, 255, 255, 255, 0, 0, 0, 255, 255, 255, 0, 0, 0
-        ])),
+        ]),
         781.25*Hz
     )]
     #[case(
@@ -153,7 +150,7 @@ mod tests {
         0.*Hz
     )]
     fn with_freq_float_exact(
-        #[case] expect: Result<Arc<Vec<u8>>, AUTDInternalError>,
+        #[case] expect: Result<Vec<u8>, AUTDInternalError>,
         #[case] freq: impl SamplingModeInference,
     ) {
         let m = Square::new(freq);
@@ -168,20 +165,17 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(
-        Ok(Arc::new(vec![
+        Ok(vec![
             255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0,
-        ])),
+        ]),
         150.*Hz
     )]
     #[case(
-        Ok(Arc::new(vec![255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
+        Ok(vec![255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         200.*Hz
     )]
-    fn new_nearest(
-        #[case] expect: Result<Arc<Vec<u8>>, AUTDInternalError>,
-        #[case] freq: Freq<f32>,
-    ) {
+    fn new_nearest(#[case] expect: Result<Vec<u8>, AUTDInternalError>, #[case] freq: Freq<f32>) {
         let m = Square::new_nearest(freq);
         assert_eq!(freq, m.freq());
         assert_eq!(u8::MIN, m.low());
