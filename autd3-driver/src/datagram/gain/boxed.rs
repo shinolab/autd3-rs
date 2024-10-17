@@ -103,7 +103,7 @@ pub trait IntoBoxedGain {
 impl<G: Gain> IntoBoxedGain for G
 where
     G: 'static,
-    G::G: Send + Sync + 'static,
+    G::G: 'static,
 {
     fn into_boxed<'a>(self) -> BoxedGain {
         BoxedGain {

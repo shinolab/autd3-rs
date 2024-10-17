@@ -2,10 +2,7 @@ use autd3::modulation::resample::Resampler;
 use autd3_driver::{defined::Hz, derive::*};
 use hound::SampleFormat;
 
-use std::{
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+use std::path::{Path, PathBuf};
 
 use crate::error::AudioFileError;
 
@@ -97,8 +94,8 @@ impl Wav {
 }
 
 impl Modulation for Wav {
-    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
-        Ok(Arc::new(self.read_buf()?))
+    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
+        Ok(self.read_buf()?)
     }
 }
 
@@ -201,7 +198,7 @@ mod tests {
         let path = dir.path().join("tmp.wav");
         create_wav(&path, spec, data)?;
         let m = Wav::new(&path)?;
-        assert_eq!(Ok(Arc::new(expect)), m.calc());
+        assert_eq!(Ok(expect), m.calc());
 
         Ok(())
     }

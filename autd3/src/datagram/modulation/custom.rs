@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, sync::Arc};
+use std::borrow::Borrow;
 
 use autd3_driver::{defined::Freq, derive::*};
 
@@ -6,7 +6,7 @@ use super::resample::Resampler;
 
 #[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct Custom {
-    buffer: Arc<Vec<u8>>,
+    buffer: Vec<u8>,
     #[no_change]
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
@@ -18,7 +18,7 @@ impl Custom {
         config: T,
     ) -> Result<Self, T::Error> {
         Ok(Self {
-            buffer: Arc::new(buffer.into_iter().map(|b| *b.borrow()).collect()),
+            buffer: buffer.into_iter().map(|b| *b.borrow()).collect(),
             config: config.try_into()?,
             loop_behavior: LoopBehavior::infinite(),
         })
@@ -38,7 +38,7 @@ impl Custom {
             target,
         );
         Ok(Self {
-            buffer: Arc::new(buffer),
+            buffer,
             config: target,
             loop_behavior: LoopBehavior::infinite(),
         })
@@ -46,7 +46,7 @@ impl Custom {
 }
 
 impl Modulation for Custom {
-    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
+    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
         Ok(self.buffer.clone())
     }
 }

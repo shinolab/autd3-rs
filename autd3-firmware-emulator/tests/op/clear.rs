@@ -1,4 +1,4 @@
-use std::{num::NonZeroU16, sync::Arc};
+use std::num::NonZeroU16;
 
 use autd3_derive::Modulation;
 use autd3_driver::{
@@ -29,8 +29,8 @@ struct TestMod {
 }
 
 impl Modulation for TestMod {
-    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
-        Ok(Arc::new(vec![u8::MIN; 100]))
+    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
+        Ok(vec![u8::MIN; 100])
     }
 }
 

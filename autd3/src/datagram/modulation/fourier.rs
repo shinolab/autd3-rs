@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use super::{sampling_mode::SamplingMode, sine::Sine};
 
 use autd3_driver::derive::*;
@@ -59,7 +57,7 @@ impl<S: SamplingMode> Fourier<S> {
 }
 
 impl<S: SamplingMode> Modulation for Fourier<S> {
-    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
+    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
         let buffers = self
             .components
             .iter()
@@ -67,33 +65,31 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
             .collect::<Result<Vec<_>, AUTDInternalError>>()?;
         let scale = self.scale_factor.unwrap_or(1. / buffers.len() as f32);
         let res = vec![0f32; buffers.iter().fold(1, |acc, x| lcm(acc, x.len()))];
-        Ok(Arc::new(
-            buffers
-                .into_iter()
-                .fold(res, |mut acc, x| {
-                    acc.iter_mut()
-                        .zip(x.iter().cycle())
-                        .for_each(|(a, &b)| *a += b);
-                    acc
-                })
-                .into_iter()
-                .map(|x| (x * scale + (self.offset as f32) / 2.).round() as isize)
-                .map(|v| {
-                    if (u8::MIN as _..=u8::MAX as _).contains(&v) {
-                        Ok(v as _)
-                    } else if self.clamp {
-                        Ok(v.clamp(u8::MIN as _, u8::MAX as _) as _)
-                    } else {
-                        Err(AUTDInternalError::ModulationError(format!(
-                            "Fourier modulation value ({}) is out of range [{}, {}]",
-                            v,
-                            u8::MIN,
-                            u8::MAX,
-                        )))?
-                    }
-                })
-                .collect::<Result<Vec<_>, AUTDInternalError>>()?,
-        ))
+        buffers
+            .into_iter()
+            .fold(res, |mut acc, x| {
+                acc.iter_mut()
+                    .zip(x.iter().cycle())
+                    .for_each(|(a, &b)| *a += b);
+                acc
+            })
+            .into_iter()
+            .map(|x| (x * scale + (self.offset as f32) / 2.).round() as isize)
+            .map(|v| {
+                if (u8::MIN as _..=u8::MAX as _).contains(&v) {
+                    Ok(v as _)
+                } else if self.clamp {
+                    Ok(v.clamp(u8::MIN as _, u8::MAX as _) as _)
+                } else {
+                    Err(AUTDInternalError::ModulationError(format!(
+                        "Fourier modulation value ({}) is out of range [{}, {}]",
+                        v,
+                        u8::MIN,
+                        u8::MAX,
+                    )))?
+                }
+            })
+            .collect::<Result<Vec<_>, AUTDInternalError>>()
     }
 }
 
@@ -183,7 +179,7 @@ mod tests {
         None
     )]
     #[case(
-        Ok(Arc::new(vec![0, 39, 75, 103, 121, 128, 121, 103, 75, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
+        Ok(vec![0, 39, 75, 103, 121, 128, 121, 103, 75, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         0x00,
         true,
         None
@@ -196,7 +192,7 @@ mod tests {
     )]
     #[test]
     fn out_of_range(
-        #[case] expect: Result<Arc<Vec<u8>>, AUTDInternalError>,
+        #[case] expect: Result<Vec<u8>, AUTDInternalError>,
         #[case] offset: u8,
         #[case] clamp: bool,
         #[case] scale: Option<f32>,

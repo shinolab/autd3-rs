@@ -13,11 +13,10 @@ use std::{
     sync::Arc,
 };
 
-use derive_more::{Debug, Deref};
+use derive_more::Debug;
 
-#[derive(Gain, Clone, Deref, Debug)]
+#[derive(Gain, Clone, Debug)]
 pub struct Cache<G: Gain> {
-    #[deref]
     gain: Rc<RefCell<Option<G>>>,
     #[debug("{}", !self.cache.borrow().is_empty())]
     cache: Rc<RefCell<HashMap<usize, Arc<Vec<Drive>>>>>,

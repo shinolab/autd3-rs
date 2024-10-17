@@ -1,4 +1,3 @@
-use std::sync::Arc;
 
 use autd3::{driver::link::Link, prelude::*};
 use autd3_driver::derive::*;
@@ -12,19 +11,17 @@ impl MyUniform {
     }
 }
 
-pub struct Context {}
-
-impl GainContext for Context {
+impl GainContext for MyUniform {
     fn calc(&self, _: &Transducer) -> Drive {
         EmitIntensity::MAX.into()
     }
 }
 
 impl GainContextGenerator for MyUniform {
-    type Context = Context;
+    type Context = MyUniform;
 
     fn generate(&mut self, _device: &Device) -> Self::Context {
-        Context {}
+        MyUniform {}
     }
 }
 
@@ -56,12 +53,10 @@ impl Burst {
 }
 
 impl Modulation for Burst {
-    fn calc(&self) -> Result<Arc<Vec<u8>>, AUTDInternalError> {
-        Ok(Arc::new(
-            (0..4000)
-                .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
-                .collect(),
-        ))
+    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
+        Ok((0..4000)
+            .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
+            .collect())
     }
 }
 
