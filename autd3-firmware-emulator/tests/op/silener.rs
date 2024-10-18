@@ -101,8 +101,6 @@ fn silencer_completetion_steps_too_large_mod(
     #[case] expect: Result<(), AUTDInternalError>,
     #[case] steps_intensity: u32,
 ) -> anyhow::Result<()> {
-    
-
     use crate::op::modulation::TestModulation;
 
     let geometry = create_geometry(1);
