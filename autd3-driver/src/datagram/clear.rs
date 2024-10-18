@@ -1,15 +1,10 @@
 use crate::firmware::operation::ClearOp;
 
 use crate::datagram::*;
+use derive_new::new;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, new)]
 pub struct Clear {}
-
-impl Clear {
-    pub const fn new() -> Self {
-        Self {}
-    }
-}
 
 pub struct ClearOpGenerator {}
 
@@ -18,7 +13,7 @@ impl OperationGenerator for ClearOpGenerator {
     type O2 = NullOp;
 
     fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
-        (Self::O1::default(), Self::O2::default())
+        (Self::O1::new(), Self::O2::new())
     }
 }
 

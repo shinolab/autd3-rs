@@ -5,25 +5,18 @@ use crate::{
 };
 
 use derive_more::{Deref, DerefMut};
+use derive_new::new;
 
-#[derive(Clone, Copy, Builder, PartialEq, Debug)]
+#[derive(Clone, Copy, Builder, PartialEq, Debug, new)]
 #[repr(C)]
 pub struct ControlPoint {
     #[get(ref)]
     #[set]
     point: Vector3,
+    #[new(value = "Phase::ZERO")]
     #[get]
     #[set(into)]
     phase_offset: Phase,
-}
-
-impl ControlPoint {
-    pub const fn new(point: Vector3) -> Self {
-        Self {
-            point,
-            phase_offset: Phase::ZERO,
-        }
-    }
 }
 
 impl From<Vector3> for ControlPoint {
@@ -38,25 +31,17 @@ impl From<&Vector3> for ControlPoint {
     }
 }
 
-#[derive(Clone, Builder, PartialEq, Debug, Deref, DerefMut)]
+#[derive(Clone, Builder, PartialEq, Debug, Deref, DerefMut, new)]
 #[repr(C)]
 pub struct ControlPoints<const N: usize> {
     #[deref]
     #[deref_mut]
     #[get]
     points: [ControlPoint; N],
+    #[new(value = "EmitIntensity::MAX")]
     #[get]
     #[set(into)]
     intensity: EmitIntensity,
-}
-
-impl<const N: usize> ControlPoints<N> {
-    pub const fn new(points: [ControlPoint; N]) -> Self {
-        Self {
-            points,
-            intensity: EmitIntensity::MAX,
-        }
-    }
 }
 
 impl<C> From<C> for ControlPoints<1>

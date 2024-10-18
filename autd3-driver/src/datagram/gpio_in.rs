@@ -4,17 +4,12 @@ use crate::{
 };
 
 use derive_more::Debug;
+use derive_new::new;
 
-#[derive(Debug)]
+#[derive(Debug, new)]
 pub struct EmulateGPIOIn<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H> {
     #[debug(ignore)]
     f: F,
-}
-
-impl<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H> EmulateGPIOIn<H, F> {
-    pub const fn new(f: F) -> Self {
-        Self { f }
-    }
 }
 
 pub struct EmulateGPIOInOpGenerator<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> {
@@ -31,7 +26,7 @@ impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> OperationGenerato
         let h = (self.f)(device);
         (
             Self::O1::new([h(GPIOIn::I0), h(GPIOIn::I1), h(GPIOIn::I2), h(GPIOIn::I3)]),
-            Self::O2::default(),
+            Self::O2::new(),
         )
     }
 }

@@ -11,6 +11,8 @@ use crate::{
 
 use super::{SILENCER_FLAG_FIXED_UPDATE_RATE_MODE, SILENCER_FLAG_PULSE_WIDTH};
 
+use derive_new::new;
+
 #[repr(C, align(2))]
 struct SilencerFixedUpdateRate {
     tag: TypeTag,
@@ -19,26 +21,14 @@ struct SilencerFixedUpdateRate {
     value_phase: u16,
 }
 
+#[derive(new)]
+#[new(visibility = "pub(crate)")]
 pub struct SilencerFixedUpdateRateOp {
+    #[new(default)]
     is_done: bool,
-    value_intensity: NonZeroU16,
-    value_phase: NonZeroU16,
+    intensity: NonZeroU16,
+    phase: NonZeroU16,
     target: SilencerTarget,
-}
-
-impl SilencerFixedUpdateRateOp {
-    pub const fn new(
-        value_intensity: NonZeroU16,
-        value_phase: NonZeroU16,
-        target: SilencerTarget,
-    ) -> Self {
-        Self {
-            is_done: false,
-            value_intensity,
-            value_phase,
-            target,
-        }
-    }
 }
 
 impl Operation for SilencerFixedUpdateRateOp {
@@ -52,8 +42,8 @@ impl Operation for SilencerFixedUpdateRateOp {
                             SilencerTarget::Intensity => 0,
                             SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
                         },
-                    value_intensity: self.value_intensity.get(),
-                    value_phase: self.value_phase.get(),
+                    value_intensity: self.intensity.get(),
+                    value_phase: self.phase.get(),
                 },
                 tx,
             );

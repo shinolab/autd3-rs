@@ -76,7 +76,7 @@ pub mod tests {
 
         // GRCOV_EXCL_START
         fn generate(&mut self, _device: &Device) -> (Self::O1, Self::O2) {
-            (Self::O1::default(), Self::O2::default())
+            (Self::O1::new(), Self::O2::new())
         }
         // GRCOV_EXCL_STOP
     }

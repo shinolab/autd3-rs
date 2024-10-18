@@ -31,13 +31,13 @@ async fn audit_test() -> anyhow::Result<()> {
         assert!(autd.send(ReadsFPGAState::new(|_| true)).await.is_ok());
         autd.link_mut()[0].update();
         assert_eq!(
-            vec![Option::<FPGAState>::from(&RxMessage::new(0x00, 0x88))],
+            vec![Option::<FPGAState>::from(&RxMessage::new(0x88, 0x00))],
             autd.fpga_state().await?
         );
         autd.link_mut()[0].fpga_mut().assert_thermal_sensor();
         autd.link_mut()[0].update();
         assert_eq!(
-            vec![Option::<FPGAState>::from(&RxMessage::new(0x00, 0x89))],
+            vec![Option::<FPGAState>::from(&RxMessage::new(0x89, 0x00))],
             autd.fpga_state().await?
         );
     }

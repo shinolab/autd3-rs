@@ -1,7 +1,8 @@
 use autd3_derive::Builder;
 use derive_more::Display;
+use derive_new::new;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, Builder)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, Builder, new)]
 #[display(
     "{}: CPU = {}, FPGA = {}{}",
     idx,
@@ -27,24 +28,6 @@ impl FirmwareVersion {
     pub const LATEST_VERSION_NUM_MAJOR: u8 = 0xA2;
     pub const LATEST_VERSION_NUM_MINOR: u8 = 0x00;
     pub const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
-
-    pub const fn new(
-        idx: usize,
-        cpu_version_number_major: u8,
-        cpu_version_number_minor: u8,
-        fpga_version_number_major: u8,
-        fpga_version_number_minor: u8,
-        fpga_function_bits: u8,
-    ) -> Self {
-        Self {
-            idx,
-            cpu_version_number_major,
-            fpga_version_number_major,
-            cpu_version_number_minor,
-            fpga_version_number_minor,
-            fpga_function_bits,
-        }
-    }
 
     pub fn cpu(&self) -> String {
         Self::version_map(self.cpu_version_number_major, self.cpu_version_number_minor)
@@ -176,7 +159,7 @@ mod tests {
     #[case("unknown (147)", 147)]
     #[cfg_attr(miri, ignore)]
     fn version(#[case] expected: &str, #[case] num: u8) {
-        let info = FirmwareVersion::new(0, num, 0, num, 0, 0);
+        let info = FirmwareVersion::new(0, num, num, 0, 0, 0);
         assert_eq!(expected, info.cpu());
         assert_eq!(expected, info.fpga());
     }
@@ -202,8 +185,8 @@ mod tests {
     fn number() {
         let info = FirmwareVersion::new(0, 1, 2, 3, 4, 5);
         assert_eq!(info.cpu_version_number_major(), 1);
-        assert_eq!(info.cpu_version_number_minor(), 2);
-        assert_eq!(info.fpga_version_number_major(), 3);
+        assert_eq!(info.fpga_version_number_major(), 2);
+        assert_eq!(info.cpu_version_number_minor(), 3);
         assert_eq!(info.fpga_version_number_minor(), 4);
         assert_eq!(info.fpga_function_bits(), 5);
     }
@@ -212,9 +195,9 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn display() {
         let info = FirmwareVersion::new(0, 1, 2, 3, 4, 0);
-        assert_eq!(format!("{}", info), "0: CPU = v0.4, FPGA = v0.6");
+        assert_eq!(format!("{}", info), "0: CPU = v0.4, FPGA = v0.5");
 
         let info = FirmwareVersion::new(0, 1, 2, 3, 4, FirmwareVersion::ENABLED_EMULATOR_BIT);
-        assert_eq!(format!("{}", info), "0: CPU = v0.4, FPGA = v0.6 [Emulator]");
+        assert_eq!(format!("{}", info), "0: CPU = v0.4, FPGA = v0.5 [Emulator]");
     }
 }

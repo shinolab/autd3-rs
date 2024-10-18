@@ -4,6 +4,7 @@ use crate::{
 };
 
 use derive_more::Debug;
+use derive_new::new;
 
 const DEFAULT_TABLE: &[u8; PWE_BUF_SIZE] = include_bytes!("asin.dat");
 
@@ -11,16 +12,10 @@ fn default_table(i: u8) -> u8 {
     DEFAULT_TABLE[i as usize]
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, new)]
 pub struct PulseWidthEncoder<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> {
     #[debug(ignore)]
     f: F,
-}
-
-impl<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> PulseWidthEncoder<H, F> {
-    pub const fn new(f: F) -> Self {
-        Self { f }
-    }
 }
 
 impl Default
@@ -45,7 +40,7 @@ impl<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
     type O2 = NullOp;
 
     fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
-        (Self::O1::new((self.f)(device)), Self::O2::default())
+        (Self::O1::new((self.f)(device)), Self::O2::new())
     }
 }
 

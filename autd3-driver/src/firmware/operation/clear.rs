@@ -6,14 +6,18 @@ use crate::{
 
 use super::write_to_tx;
 
+use derive_new::new;
+
 #[repr(C, align(2))]
 struct Clear {
     tag: TypeTag,
     __pad: u8,
 }
 
-#[derive(Default)]
+#[derive(new)]
+#[new(visibility = "pub(crate)")]
 pub struct ClearOp {
+    #[new(default)]
     is_done: bool,
 }
 
@@ -57,7 +61,7 @@ mod tests {
 
         let mut tx = [0x00u8; size_of::<Clear>()];
 
-        let mut op = ClearOp::default();
+        let mut op = ClearOp::new();
 
         assert_eq!(op.required_size(&device), size_of::<Clear>());
 

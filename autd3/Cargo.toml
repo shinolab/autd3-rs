@@ -21,7 +21,7 @@ itertools = { workspace = true }
 tracing = { workspace = true }
 bit-vec = { workspace = true }
 rayon = { workspace = true }
-derive-new = "0.7.0"
+derive-new = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58.0", features = ["Win32_Media_Multimedia", "Win32_System_Threading", "Win32_Foundation"] }

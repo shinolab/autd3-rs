@@ -1,7 +1,13 @@
 use crate::{error::AUTDInternalError, firmware::operation::Operation, geometry::Device};
 
-#[derive(Default)]
-pub struct NullOp {}
+use derive_new::new;
+
+#[derive(new)]
+#[new(visibility = "pub(crate)")]
+pub struct NullOp {
+    #[new(default)]
+    __: (),
+}
 
 impl Operation for NullOp {
     // GRCOV_EXCL_START
@@ -31,7 +37,7 @@ mod tests {
     fn test() {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
-        let op = NullOp::default();
+        let op = NullOp::new();
 
         assert_eq!(op.required_size(&device), 0);
 

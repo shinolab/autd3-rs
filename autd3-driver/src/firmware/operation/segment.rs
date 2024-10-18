@@ -10,6 +10,8 @@ use crate::{
 
 use super::Operation;
 
+use derive_new::new;
+
 #[repr(C, align(2))]
 struct SwapSegmentT {
     tag: TypeTag,
@@ -25,18 +27,12 @@ struct SwapSegmentTWithTransition {
     transition_value: u64,
 }
 
+#[derive(new)]
+#[new(visibility = "pub(crate)")]
 pub struct SwapSegmentOp {
-    segment: SwapSegment,
+    #[new(default)]
     is_done: bool,
-}
-
-impl SwapSegmentOp {
-    pub const fn new(segment: SwapSegment) -> Self {
-        Self {
-            segment,
-            is_done: false,
-        }
-    }
+    segment: SwapSegment,
 }
 
 impl Operation for SwapSegmentOp {

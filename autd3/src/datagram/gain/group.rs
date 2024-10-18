@@ -13,8 +13,9 @@ use std::{
 };
 
 use derive_more::Debug;
+use derive_new::new;
 
-#[derive(Gain, Builder, Debug)]
+#[derive(Gain, Builder, Debug, new)]
 pub struct Group<K, FK, F>
 where
     K: Hash + Eq + Clone + Debug + Send + Sync,
@@ -23,25 +24,12 @@ where
 {
     #[debug(ignore)]
     f: F,
+    #[new(default)]
     gain_map: HashMap<K, BoxedGain>,
+    #[new(default)]
     #[get]
     #[set]
     parallel: bool,
-}
-
-impl<K, FK, F> Group<K, FK, F>
-where
-    K: Hash + Eq + Clone + Debug + Send + Sync,
-    FK: Fn(&Transducer) -> Option<K> + Send + Sync,
-    F: Fn(&Device) -> FK + Send + Sync,
-{
-    pub fn new(f: F) -> Self {
-        Group {
-            f,
-            gain_map: HashMap::new(),
-            parallel: false,
-        }
-    }
 }
 
 impl<K, FK, F> Group<K, FK, F>

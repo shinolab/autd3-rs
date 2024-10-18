@@ -9,20 +9,19 @@ use crate::{
     geometry::Device,
 };
 
+use derive_new::new;
+
 #[repr(C, align(2))]
 struct Pwe {
     tag: TypeTag,
 }
 
+#[derive(new)]
+#[new(visibility = "pub(crate)")]
 pub struct PulseWidthEncoderOp<F: Fn(u8) -> u8> {
+    #[new(default)]
     is_done: bool,
     f: F,
-}
-
-impl<F: Fn(u8) -> u8> PulseWidthEncoderOp<F> {
-    pub const fn new(f: F) -> Self {
-        Self { is_done: false, f }
-    }
 }
 
 impl<F: Fn(u8) -> u8 + Send + Sync> Operation for PulseWidthEncoderOp<F> {

@@ -129,7 +129,7 @@ impl<G: GainContextGenerator> OperationGenerator for GainSTMOperationGenerator<G
                 self.segment,
                 self.transition_mode,
             ),
-            Self::O2::default(),
+            Self::O2::new(),
         )
     }
 }

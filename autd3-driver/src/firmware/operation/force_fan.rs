@@ -4,24 +4,20 @@ use crate::{
     geometry::Device,
 };
 
+use derive_new::new;
+
 #[repr(C, align(2))]
 struct ForceFan {
     tag: TypeTag,
     value: bool,
 }
 
+#[derive(new)]
+#[new(visibility = "pub(crate)")]
 pub struct ForceFanOp {
+    #[new(default)]
     is_done: bool,
     value: bool,
-}
-
-impl ForceFanOp {
-    pub const fn new(value: bool) -> Self {
-        Self {
-            is_done: false,
-            value,
-        }
-    }
 }
 
 impl Operation for ForceFanOp {

@@ -5,8 +5,9 @@ use autd3_driver::{
 };
 
 use derive_more::Debug;
+use derive_new::new;
 
-#[derive(Gain, Debug)]
+#[derive(Gain, Debug, new)]
 #[debug("Custom (Gain)")]
 pub struct Custom<
     'a,
@@ -16,21 +17,6 @@ pub struct Custom<
 > {
     f: F,
     _phantom: std::marker::PhantomData<&'a ()>,
-}
-
-impl<
-        'a,
-        D: Into<Drive>,
-        FT: Fn(&Transducer) -> D + Send + Sync + 'static,
-        F: Fn(&Device) -> FT + 'a,
-    > Custom<'a, D, FT, F>
-{
-    pub const fn new(f: F) -> Self {
-        Self {
-            f,
-            _phantom: std::marker::PhantomData,
-        }
-    }
 }
 
 pub struct Context<D: Into<Drive>, FT: Fn(&Transducer) -> D + Send + Sync + 'static> {

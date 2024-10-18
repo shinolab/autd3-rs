@@ -64,8 +64,8 @@ impl<G: GainContextGenerator> OperationGenerator for GainOperationGenerator<G> {
     fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
         let context = self.generator.generate(device);
         (
-            GainOp::new(self.segment, self.transition, context),
-            NullOp::default(),
+            Self::O1::new(self.segment, self.transition, context),
+            Self::O2::new(),
         )
     }
 }
