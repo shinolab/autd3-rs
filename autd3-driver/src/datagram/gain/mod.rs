@@ -119,9 +119,9 @@ pub mod tests {
         type Context = Context;
 
         fn generate(&mut self, device: &Device) -> Self::Context {
-            let mut data = Vec::new();
-            std::mem::swap(&mut data, self.data.get_mut(&device.idx()).unwrap());
-            Context { data }
+            Context {
+                data: self.data.remove(&device.idx()).unwrap(),
+            }
         }
     }
 
