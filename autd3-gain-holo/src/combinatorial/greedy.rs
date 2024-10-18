@@ -125,7 +125,7 @@ impl<D: Directivity> Gain for Greedy<D> {
 
         let mut g: HashMap<_, _> = geometry
             .devices()
-            .map(|dev| (dev.idx(), vec![Drive::null(); dev.num_transducers()]))
+            .map(|dev| (dev.idx(), vec![Drive::NULL; dev.num_transducers()]))
             .collect();
         let mut cache = vec![Complex::new(0., 0.); self.foci.len()];
         indices.iter().for_each(|&(dev_idx, idx)| {
@@ -185,7 +185,7 @@ mod tests {
                 let f = res.generate(&geometry[0]);
                 geometry[0]
                     .iter()
-                    .filter(|tr| f.calc(tr) != Drive::null())
+                    .filter(|tr| f.calc(tr) != Drive::NULL)
                     .count()
             }),
             Ok(geometry.num_transducers()),
@@ -207,7 +207,7 @@ mod tests {
         assert_eq!(
             geometry[1]
                 .iter()
-                .filter(|tr| f.calc(tr) != Drive::null())
+                .filter(|tr| f.calc(tr) != Drive::NULL)
                 .count(),
             geometry[1].num_transducers()
         );
@@ -234,7 +234,7 @@ mod tests {
                 let f = res.generate(&geometry[0]);
                 geometry[0]
                     .iter()
-                    .filter(|tr| f.calc(tr) != Drive::null())
+                    .filter(|tr| f.calc(tr) != Drive::NULL)
                     .count()
             }),
             Ok(100),
@@ -261,7 +261,7 @@ mod tests {
         assert_eq!(
             geometry[1]
                 .iter()
-                .filter(|tr| f.calc(tr) != Drive::null())
+                .filter(|tr| f.calc(tr) != Drive::NULL)
                 .count(),
             100
         );

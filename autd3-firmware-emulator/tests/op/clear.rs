@@ -120,14 +120,8 @@ fn send_clear() -> anyhow::Result<()> {
 
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S0));
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
-    assert_eq!(
-        vec![Drive::null(); 249],
-        cpu.fpga().drives_at(Segment::S0, 0)
-    );
-    assert_eq!(
-        vec![Drive::null(); 249],
-        cpu.fpga().drives_at(Segment::S1, 0)
-    );
+    assert_eq!(vec![Drive::NULL; 249], cpu.fpga().drives_at(Segment::S0, 0));
+    assert_eq!(vec![Drive::NULL; 249], cpu.fpga().drives_at(Segment::S1, 0));
     assert_eq!(1, cpu.fpga().stm_cycle(Segment::S0));
     assert_eq!(1, cpu.fpga().stm_cycle(Segment::S1));
     assert_eq!(0xFFFF, cpu.fpga().stm_freq_division(Segment::S0));

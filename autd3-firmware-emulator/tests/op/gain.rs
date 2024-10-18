@@ -161,7 +161,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
                 .map(|_| {
                     geometry
                         .iter()
-                        .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
+                        .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::NULL).collect()))
                         .collect()
                 })
                 .map(|buf: HashMap<usize, Vec<Drive>>| TestGain { data: buf.clone() }),

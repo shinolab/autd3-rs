@@ -106,7 +106,7 @@ mod tests {
                     let f = res.generate(&geometry[0]);
                     geometry[0]
                         .iter()
-                        .filter(|tr| f.calc(tr) != Drive::null())
+                        .filter(|tr| f.calc(tr) != Drive::NULL)
                         .count()
                 }),
             Ok(geometry.num_transducers()),
@@ -134,7 +134,7 @@ mod tests {
         assert_eq!(
             geometry[1]
                 .iter()
-                .filter(|tr| f.calc(tr) != Drive::null())
+                .filter(|tr| f.calc(tr) != Drive::NULL)
                 .count(),
             geometry[1].num_transducers()
         );
@@ -165,7 +165,7 @@ mod tests {
                 let f = res.generate(&geometry[0]);
                 geometry[0]
                     .iter()
-                    .filter(|tr| f.calc(tr) != Drive::null())
+                    .filter(|tr| f.calc(tr) != Drive::NULL)
                     .count()
             }),
             Ok(100),
@@ -197,7 +197,7 @@ mod tests {
         assert_eq!(
             geometry[1]
                 .iter()
-                .filter(|tr| f.calc(tr) != Drive::null())
+                .filter(|tr| f.calc(tr) != Drive::NULL)
                 .count(),
             100
         );

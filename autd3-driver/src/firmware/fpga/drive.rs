@@ -14,12 +14,10 @@ pub struct Drive {
 }
 
 impl Drive {
-    pub const fn null() -> Self {
-        Self {
-            phase: Phase::ZERO,
-            intensity: EmitIntensity::MIN,
-        }
-    }
+    pub const NULL: Self = Self {
+        phase: Phase::ZERO,
+        intensity: EmitIntensity::MIN,
+    };
 }
 
 impl From<(Phase, EmitIntensity)> for Drive {
@@ -113,7 +111,7 @@ mod tests {
     fn test_null() {
         assert_eq!(
             Drive::new(Phase::ZERO, EmitIntensity::new(0x00)),
-            Drive::null()
+            Drive::NULL
         );
     }
 }

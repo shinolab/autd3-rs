@@ -119,7 +119,7 @@ where
             .map(|dev| {
                 (
                     dev.idx(),
-                    dev.iter().map(|_| Drive::null()).collect::<Vec<_>>(),
+                    dev.iter().map(|_| Drive::NULL).collect::<Vec<_>>(),
                 )
             })
             .collect::<HashMap<_, Vec<_>>>();
@@ -237,25 +237,25 @@ mod tests {
         assert_eq!(4, drives.len());
         drives[&0].iter().enumerate().for_each(|(i, &d)| match i {
             i if i <= 99 => {
-                assert_eq!(Drive::null(), d);
+                assert_eq!(Drive::NULL, d);
             }
             i if i <= 199 => {
                 assert_eq!(d1, d);
             }
             _ => {
-                assert_eq!(Drive::null(), d);
+                assert_eq!(Drive::NULL, d);
             }
         });
         drives[&1].iter().enumerate().for_each(|(i, &d)| match i {
             i if i <= 199 => {
-                assert_eq!(Drive::null(), d);
+                assert_eq!(Drive::NULL, d);
             }
             _ => {
                 assert_eq!(d2, d);
             }
         });
         drives[&2].iter().for_each(|&d| {
-            assert_eq!(Drive::null(), d);
+            assert_eq!(Drive::NULL, d);
         });
         drives[&3].iter().for_each(|&d| {
             assert_eq!(d1, d);
@@ -304,25 +304,25 @@ mod tests {
         assert_eq!(4, drives.len());
         drives[&0].iter().enumerate().for_each(|(i, &d)| match i {
             i if i <= 99 => {
-                assert_eq!(Drive::null(), d);
+                assert_eq!(Drive::NULL, d);
             }
             i if i <= 199 => {
                 assert_eq!(d1, d);
             }
             _ => {
-                assert_eq!(Drive::null(), d);
+                assert_eq!(Drive::NULL, d);
             }
         });
         drives[&1].iter().enumerate().for_each(|(i, &d)| match i {
             i if i <= 199 => {
-                assert_eq!(Drive::null(), d);
+                assert_eq!(Drive::NULL, d);
             }
             _ => {
                 assert_eq!(d2, d);
             }
         });
         drives[&2].iter().for_each(|&d| {
-            assert_eq!(Drive::null(), d);
+            assert_eq!(Drive::NULL, d);
         });
         drives[&3].iter().for_each(|&d| {
             assert_eq!(d1, d);

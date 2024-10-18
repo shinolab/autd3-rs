@@ -143,7 +143,7 @@ mod tests {
     fn different_geometry() -> anyhow::Result<()> {
         let mut geometry = create_geometry(2);
 
-        let gain = Uniform::new(Drive::null());
+        let gain = Uniform::new(Drive::NULL);
         let cache = gain.with_cache();
 
         cache.clone().init(&geometry)?;
@@ -169,7 +169,7 @@ mod tests {
 
     impl GainContext for CacheTestGainContext {
         fn calc(&self, _: &Transducer) -> Drive {
-            Drive::null()
+            Drive::NULL
         }
     }
 
