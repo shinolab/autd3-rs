@@ -277,7 +277,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
         let d = TestGain {
             data: geometry
                 .iter()
-                .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
+                .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::NULL).collect()))
                 .collect(),
         }
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
@@ -325,7 +325,7 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
     {
         let buf: HashMap<usize, Vec<Drive>> = geometry
             .iter()
-            .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
+            .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::NULL).collect()))
             .collect();
         let d = TestGain { data: buf.clone() }
             .with_segment(Segment::S0, Some(TransitionMode::Immediate));

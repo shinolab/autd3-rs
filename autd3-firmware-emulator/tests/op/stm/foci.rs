@@ -174,7 +174,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
         let g = TestGain {
             data: geometry
                 .iter()
-                .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
+                .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::NULL).collect()))
                 .collect(),
         };
         assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
@@ -221,7 +221,7 @@ fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
     {
         let buf: HashMap<usize, Vec<Drive>> = geometry
             .iter()
-            .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
+            .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::NULL).collect()))
             .collect();
         let g = TestGain { data: buf.clone() };
 
@@ -234,7 +234,7 @@ fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
             .map(|_| {
                 geometry
                     .iter()
-                    .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
+                    .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::NULL).collect()))
                     .collect()
             })
             .collect();

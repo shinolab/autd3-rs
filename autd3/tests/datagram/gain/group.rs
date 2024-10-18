@@ -33,7 +33,7 @@ async fn only_for_enabled() -> anyhow::Result<()> {
         .fpga()
         .drives_at(Segment::S0, 0)
         .into_iter()
-        .all(|d| Drive::null() == d));
+        .all(|d| Drive::NULL == d));
     assert!(autd[1]
         .fpga()
         .drives_at(Segment::S0, 0)
