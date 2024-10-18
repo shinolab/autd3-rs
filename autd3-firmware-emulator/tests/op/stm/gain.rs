@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use autd3_driver::{
     datagram::{
-        FixedCompletionTime, FociSTM, GainSTM, IntoDatagramWithSegment,
-        IntoDatagramWithSegmentTransition, Silencer, SwapSegment,
+        FixedCompletionTime, FociSTM, GainSTM, IntoDatagramWithSegment, Silencer,
+        SwapSegment,
     },
     defined::ControlPoint,
     derive::*,
@@ -281,7 +281,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
                 .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
                 .collect(),
         }
-        .with_segment(Segment::S0, true);
+        .with_segment(Segment::S0, Some(TransitionMode::Immediate));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = Silencer::<FixedCompletionTime>::default();
@@ -328,7 +328,8 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
             .iter()
             .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::null()).collect()))
             .collect();
-        let d = TestGain { data: buf.clone() }.with_segment(Segment::S0, true);
+        let d = TestGain { data: buf.clone() }
+            .with_segment(Segment::S0, Some(TransitionMode::Immediate));
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }

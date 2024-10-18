@@ -134,7 +134,7 @@ impl<G: GainContextGenerator> OperationGenerator for GainSTMOperationGenerator<G
     }
 }
 
-impl<G: Gain> DatagramST for GainSTM<G> {
+impl<G: Gain> DatagramS for GainSTM<G> {
     type G = GainSTMOperationGenerator<G::G>;
 
     fn operation_generator_with_segment(

@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::{error::*, pb::*, traits::*};
 
 use autd3::derive::AUTDInternalError;
-use autd3_driver::datagram::{IntoDatagramWithSegment, IntoDatagramWithSegmentTransition};
+use autd3_driver::datagram::IntoDatagramWithSegment;
 use tokio::sync::RwLock;
 use tonic::{Request, Response, Status};
 
@@ -88,7 +88,13 @@ where
                 .ok_or(AUTDProtoBufError::DataParseError)?,
         )?;
         let segment = autd3_driver::firmware::fpga::Segment::from(Segment::try_from(gain.segment)?);
-        Ok(g.with_segment(segment, gain.transition))
+        let transition_mode = match gain.transition_mode.as_ref() {
+            Some(mode) => Some(autd3_driver::firmware::fpga::TransitionMode::from_msg(
+                mode,
+            )?),
+            None => None,
+        };
+        Ok(g.with_segment(segment, transition_mode))
     }
 
     fn parse_modulation(
@@ -130,9 +136,7 @@ where
     fn parse_modulation_with_segment(
         modulation: &ModulationWithSegment,
     ) -> Result<
-        autd3_driver::datagram::DatagramWithSegmentTransition<
-            autd3_driver::datagram::BoxedModulation,
-        >,
+        autd3_driver::datagram::DatagramWithSegment<autd3_driver::datagram::BoxedModulation>,
         AUTDProtoBufError,
     > {
         let m = Self::parse_modulation(

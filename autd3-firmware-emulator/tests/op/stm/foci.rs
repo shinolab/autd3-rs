@@ -2,7 +2,7 @@ use std::{collections::HashMap, time::Duration};
 
 use autd3_driver::{
     datagram::{
-        FixedCompletionTime, FociSTM, GainSTM, IntoDatagramWithSegmentTransition, Silencer,
+        FixedCompletionTime, FociSTM, GainSTM, IntoDatagramWithSegment, Silencer,
         SwapSegment,
     },
     defined::{mm, ControlPoint, ControlPoints, METER},

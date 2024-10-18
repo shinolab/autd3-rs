@@ -2,6 +2,7 @@ use std::mem::size_of;
 
 use crate::{
     datagram::SwapSegment,
+    derive::TransitionMode,
     error::AUTDInternalError,
     firmware::operation::{write_to_tx, TypeTag},
     geometry::Device,
@@ -43,7 +44,7 @@ impl Operation for SwapSegmentOp {
         self.is_done = true;
 
         let tag = match self.segment {
-            SwapSegment::Gain(_) => TypeTag::GainSwapSegment,
+            SwapSegment::Gain(_, _) => TypeTag::GainSwapSegment,
             SwapSegment::Modulation(_, _) => TypeTag::ModulationSwapSegment,
             SwapSegment::FociSTM(_, _) => TypeTag::FociSTMSwapSegment,
             SwapSegment::GainSTM(_, _) => TypeTag::GainSTMSwapSegment,
@@ -51,7 +52,10 @@ impl Operation for SwapSegmentOp {
 
         unsafe {
             match self.segment {
-                SwapSegment::Gain(segment) => {
+                SwapSegment::Gain(segment, transition) => {
+                    if transition != TransitionMode::Immediate {
+                        return Err(AUTDInternalError::InvalidTransitionMode);
+                    }
                     write_to_tx(
                         SwapSegmentT {
                             tag,
@@ -82,7 +86,7 @@ impl Operation for SwapSegmentOp {
 
     fn required_size(&self, _: &Device) -> usize {
         match self.segment {
-            SwapSegment::Gain(_) => size_of::<SwapSegmentT>(),
+            SwapSegment::Gain(_, _) => size_of::<SwapSegmentT>(),
             SwapSegment::Modulation(_, _)
             | SwapSegment::FociSTM(_, _)
             | SwapSegment::GainSTM(_, _) => size_of::<SwapSegmentTWithTransition>(),
@@ -113,13 +117,28 @@ mod tests {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let mut op = SwapSegmentOp::new(SwapSegment::Gain(Segment::S0));
+        let mut op = SwapSegmentOp::new(SwapSegment::Gain(Segment::S0, TransitionMode::Immediate));
 
         assert_eq!(size_of::<SwapSegmentT>(), op.required_size(&device));
         assert_eq!(Ok(size_of::<SwapSegmentT>()), op.pack(&device, &mut tx));
         assert!(op.is_done());
         assert_eq!(TypeTag::GainSwapSegment as u8, tx[0]);
         assert_eq!(Segment::S0 as u8, tx[1]);
+    }
+
+    #[test]
+    fn gain_invalid_transition_mode() {
+        const FRAME_SIZE: usize = size_of::<SwapSegmentT>();
+
+        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let mut tx = vec![0x00u8; FRAME_SIZE];
+
+        let mut op = SwapSegmentOp::new(SwapSegment::Gain(Segment::S0, TransitionMode::Ext));
+
+        assert_eq!(
+            Some(AUTDInternalError::InvalidTransitionMode),
+            op.pack(&device, &mut tx).err()
+        );
     }
 
     #[test]

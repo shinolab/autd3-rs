@@ -16,7 +16,6 @@ mod synchronize;
 mod tuple;
 mod with_parallel_threshold;
 mod with_segment;
-mod with_segment_transition;
 mod with_timeout;
 
 pub use clear::Clear;
@@ -40,9 +39,6 @@ pub use with_parallel_threshold::{
     DatagramWithParallelThreshold, IntoDatagramWithParallelThreshold,
 };
 pub use with_segment::{DatagramS, DatagramWithSegment, IntoDatagramWithSegment};
-pub use with_segment_transition::{
-    DatagramST, DatagramWithSegmentTransition, IntoDatagramWithSegmentTransition,
-};
 pub use with_timeout::{DatagramWithTimeout, IntoDatagramWithTimeout};
 
 use crate::{defined::DEFAULT_TIMEOUT, firmware::operation::NullOp, geometry::Device};
@@ -54,9 +50,7 @@ pub trait Datagram: std::fmt::Debug {
     type G: OperationGenerator;
 
     fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError>;
-    fn timeout(&self) -> Option<Duration> {
-        None
-    }
+    fn timeout(&self) -> Option<Duration>;
     fn parallel_threshold(&self) -> Option<usize> {
         None
     }
@@ -87,7 +81,7 @@ pub mod tests {
         // GRCOV_EXCL_STOP
     }
 
-    impl DatagramST for NullDatagram {
+    impl DatagramS for NullDatagram {
         type G = NullOperationGenerator;
 
         fn operation_generator_with_segment(
