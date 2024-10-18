@@ -4,20 +4,16 @@ pub use boxed::{BoxedGain, IntoBoxedGain};
 
 use std::collections::HashMap;
 
+use super::{Datagram, DatagramS};
 pub use crate::firmware::operation::GainContext;
-use crate::firmware::operation::GainOp;
-use crate::firmware::operation::NullOp;
-use crate::firmware::operation::OperationGenerator;
 use crate::{
     derive::{Geometry, Segment},
     error::AUTDInternalError,
+    firmware::operation::{GainOp, NullOp, OperationGenerator},
     geometry::Device,
 };
 
 use bit_vec::BitVec;
-
-use super::Datagram;
-use super::DatagramS;
 
 pub trait GainContextGenerator {
     type Context: GainContext;

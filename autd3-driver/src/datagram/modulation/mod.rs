@@ -4,18 +4,15 @@ pub use boxed::{BoxedModulation, IntoBoxedModulation};
 
 use std::sync::Arc;
 
-use crate::firmware::operation::OperationGenerator;
+use super::{silencer::WithSampling, DatagramST};
 use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
-        operation::{ModulationOp, NullOp},
+        operation::{ModulationOp, NullOp, OperationGenerator},
     },
     geometry::Device,
 };
-
-use super::silencer::WithSampling;
-use super::DatagramST;
 
 pub trait ModulationProperty {
     fn sampling_config(&self) -> SamplingConfig;
