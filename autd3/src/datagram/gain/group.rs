@@ -66,15 +66,18 @@ where
                                 e.get_mut().set(tr.idx(), true);
                             }
                             Entry::Vacant(e) => {
-                                let mut filter = BitVec::from_elem(dev.num_transducers(), false);
-                                filter.set(tr.idx(), true);
-                                e.insert(filter);
+                                e.insert(BitVec::from_fn(dev.num_transducers(), |i| i == tr.idx()));
                             }
                         },
                         None => {
-                            let mut filter = BitVec::from_elem(dev.num_transducers(), false);
-                            filter.set(tr.idx(), true);
-                            filters.insert(key.clone(), [(dev.idx(), filter)].into());
+                            filters.insert(
+                                key.clone(),
+                                [(
+                                    dev.idx(),
+                                    BitVec::from_fn(dev.num_transducers(), |i| i == tr.idx()),
+                                )]
+                                .into(),
+                            );
                         }
                     }
                 }
@@ -102,9 +105,9 @@ impl GainContextGenerator for ContextGenerator {
     type Context = Context;
 
     fn generate(&mut self, device: &Device) -> Self::Context {
-        let mut g = Vec::new();
-        std::mem::swap(&mut g, self.g.get_mut(&device.idx()).unwrap());
-        Context { g }
+        Context {
+            g: self.g.remove(&device.idx()).unwrap(),
+        }
     }
 }
 
