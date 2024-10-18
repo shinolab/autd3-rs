@@ -114,6 +114,35 @@ mod tests {
     }
 
     #[test]
+    fn test_naive_all_disabled() -> anyhow::Result<()> {
+        let mut geometry = Geometry::new(vec![
+            AUTD3::new(Vector3::zeros()).into_device(0),
+            AUTD3::new(Vector3::zeros()).into_device(1),
+        ]);
+        geometry[0].enable = false;
+        let backend = std::sync::Arc::new(NalgebraBackend::default());
+
+        let g = Naive::new(
+            backend,
+            [(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)],
+        );
+
+        let mut g = g
+            .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
+            .init(&geometry)?;
+        let f = g.generate(&geometry[1]);
+        assert_eq!(
+            geometry[1]
+                .iter()
+                .filter(|tr| f.calc(tr) != Drive::null())
+                .count(),
+            geometry[1].num_transducers()
+        );
+
+        Ok(())
+    }
+
+    #[test]
     fn test_naive_filtered() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
@@ -130,7 +159,7 @@ mod tests {
         let filter = geometry
             .iter()
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
-            .collect::<HashMap<_, _>>();
+            .collect();
         assert_eq!(
             g.init_with_filter(&geometry, Some(filter)).map(|mut res| {
                 let f = res.generate(&geometry[0]);
@@ -141,5 +170,38 @@ mod tests {
             }),
             Ok(100),
         )
+    }
+
+    #[test]
+    fn test_naive_filtered_disabled() -> anyhow::Result<()> {
+        let mut geometry = Geometry::new(vec![
+            AUTD3::new(Vector3::zeros()).into_device(0),
+            AUTD3::new(Vector3::zeros()).into_device(1),
+        ]);
+        geometry[0].enable = false;
+        let backend = std::sync::Arc::new(NalgebraBackend::default());
+
+        let g = Naive::new(
+            backend,
+            [(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)],
+        );
+
+        let filter = geometry
+            .iter()
+            .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
+            .collect();
+        let mut g = g
+            .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
+            .init_with_filter(&geometry, Some(filter))?;
+        let f = g.generate(&geometry[1]);
+        assert_eq!(
+            geometry[1]
+                .iter()
+                .filter(|tr| f.calc(tr) != Drive::null())
+                .count(),
+            100
+        );
+
+        Ok(())
     }
 }
