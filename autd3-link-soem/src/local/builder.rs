@@ -32,9 +32,6 @@ pub struct SOEMBuilder {
     pub(crate) state_check_interval: std::time::Duration,
     #[get]
     #[set]
-    pub(crate) timeout: std::time::Duration,
-    #[get]
-    #[set]
     pub(crate) sync0_cycle: NonZeroU64,
     #[get]
     #[set]
@@ -69,7 +66,6 @@ impl SOEMBuilder {
             sync_mode: SyncMode::DC,
             ifname: String::new(),
             state_check_interval: Duration::from_millis(100),
-            timeout: Duration::from_millis(20),
             sync0_cycle: NonZeroU64::new(2).unwrap(),
             send_cycle: NonZeroU64::new(2).unwrap(),
             thread_priority: ThreadPriority::Max,

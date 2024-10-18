@@ -186,8 +186,10 @@ where
                 let mut builder = autd3::Controller::builder(geometry.iter().map(|d| {
                     autd3::prelude::AUTD3::new(*d[0].position()).with_rotation(*d.rotation())
                 }))
-                .with_parallel_threshold(req.parallel_threshold as _)
-                .with_send_interval(Duration::from_nanos(req.send_interval));
+                .with_fallback_parallel_threshold(req.fallback_parallel_threshold as _)
+                .with_fallback_timeout(std::time::Duration::from_nanos(req.fallback_timeout))
+                .with_send_interval(Duration::from_nanos(req.send_interval))
+                .with_receive_interval(Duration::from_nanos(req.receive_interval));
                 #[cfg(target_os = "windows")]
                 {
                     builder = builder

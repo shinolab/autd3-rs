@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, time::Duration};
+use std::net::SocketAddr;
 
 use autd3_driver::{
     derive::*,
@@ -10,16 +10,12 @@ use autd3_protobuf::*;
 
 pub struct RemoteSOEM {
     client: ecat_client::EcatClient<tonic::transport::Channel>,
-    timeout: Duration,
     is_open: bool,
 }
 
 #[derive(Builder, Debug)]
 pub struct RemoteSOEMBuilder {
     addr: SocketAddr,
-    #[get]
-    #[set]
-    timeout: Duration,
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
@@ -36,7 +32,6 @@ impl LinkBuilder for RemoteSOEMBuilder {
             client: ecat_client::EcatClient::connect(format!("http://{}", self.addr))
                 .await
                 .map_err(AUTDProtoBufError::from)?,
-            timeout: self.timeout,
             is_open: true,
         })
     }
@@ -44,10 +39,7 @@ impl LinkBuilder for RemoteSOEMBuilder {
 
 impl RemoteSOEM {
     pub const fn builder(addr: SocketAddr) -> RemoteSOEMBuilder {
-        RemoteSOEMBuilder {
-            addr,
-            timeout: DEFAULT_TIMEOUT,
-        }
+        RemoteSOEMBuilder { addr }
     }
 }
 
@@ -88,9 +80,5 @@ impl Link for RemoteSOEM {
 
     fn is_open(&self) -> bool {
         self.is_open
-    }
-
-    fn timeout(&self) -> Duration {
-        self.timeout
     }
 }

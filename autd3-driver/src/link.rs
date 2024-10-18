@@ -27,8 +27,6 @@ mod internal {
         #[must_use]
         fn is_open(&self) -> bool;
 
-        #[must_use]
-        fn timeout(&self) -> Duration;
         #[inline(always)]
         fn trace(&mut self, _: &TxDatagram, _: &mut [RxMessage], _: Duration, _: usize) {}
     }
@@ -60,10 +58,6 @@ mod internal {
 
         fn is_open(&self) -> bool {
             self.as_ref().is_open()
-        }
-
-        fn timeout(&self) -> Duration {
-            self.as_ref().timeout()
         }
 
         #[inline(always)]
@@ -106,8 +100,6 @@ mod internal {
         #[must_use]
         fn is_open(&self) -> bool;
 
-        #[must_use]
-        fn timeout(&self) -> Duration;
         #[inline(always)]
         fn trace(&mut self, _: &TxDatagram, _: &mut [RxMessage], _: Duration, _: usize) {}
     }
@@ -204,7 +196,6 @@ mod tests {
 
     struct MockLink {
         pub is_open: bool,
-        pub timeout: Duration,
         pub send_cnt: usize,
         pub recv_cnt: usize,
         pub down: bool,
@@ -238,10 +229,6 @@ mod tests {
         fn is_open(&self) -> bool {
             self.is_open
         }
-
-        fn timeout(&self) -> Duration {
-            self.timeout
-        }
         // GRCOV_EXCL_STOP
     }
 
@@ -250,7 +237,6 @@ mod tests {
     async fn test_close() -> anyhow::Result<()> {
         let mut link = MockLink {
             is_open: true,
-            timeout: Duration::from_millis(0),
             send_cnt: 0,
             recv_cnt: 0,
             down: false,
@@ -270,7 +256,6 @@ mod tests {
     async fn test_send_receive() {
         let mut link = MockLink {
             is_open: true,
-            timeout: Duration::from_millis(0),
             send_cnt: 0,
             recv_cnt: 0,
             down: false,
@@ -336,7 +321,6 @@ mod tests {
     async fn test_wait_msg_processed() {
         let mut link = MockLink {
             is_open: true,
-            timeout: Duration::from_millis(0),
             send_cnt: 0,
             recv_cnt: 0,
             down: false,

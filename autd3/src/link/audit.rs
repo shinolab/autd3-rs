@@ -13,8 +13,6 @@ use derive_more::{Deref, DerefMut};
 pub struct Audit {
     is_open: bool,
     #[get]
-    timeout: Duration,
-    #[get]
     last_timeout: Duration,
     #[get]
     last_parallel_threshold: usize,
@@ -27,9 +25,6 @@ pub struct Audit {
 
 #[derive(Builder)]
 pub struct AuditBuilder {
-    #[get]
-    #[set]
-    timeout: Duration,
     #[get]
     #[set]
     initial_msg_id: Option<u8>,
@@ -48,7 +43,6 @@ impl LinkBuilder for AuditBuilder {
     ) -> Result<Self::L, AUTDInternalError> {
         Ok(Audit {
             is_open: true,
-            timeout: self.timeout,
             last_timeout: Duration::ZERO,
             last_parallel_threshold: 4,
             cpus: geometry
@@ -71,7 +65,6 @@ impl LinkBuilder for AuditBuilder {
 impl Audit {
     pub const fn builder() -> AuditBuilder {
         AuditBuilder {
-            timeout: Duration::ZERO,
             initial_msg_id: None,
             down: false,
         }
@@ -136,10 +129,6 @@ impl Link for Audit {
 
     fn is_open(&self) -> bool {
         self.is_open
-    }
-
-    fn timeout(&self) -> Duration {
-        self.timeout
     }
 
     fn trace(
