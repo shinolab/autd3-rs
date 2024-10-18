@@ -746,7 +746,7 @@ mod tests {
             const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
             let device = create_device(0, NUM_TRANS_IN_UNIT as _);
             let mut tx = vec![0x00u8; FRAME_SIZE];
-            let gain_data: Vec<Vec<Drive>> = vec![vec![Drive::null(); NUM_TRANS_IN_UNIT]; n];
+            let gain_data: Vec<Vec<Drive>> = vec![vec![Drive::NULL; NUM_TRANS_IN_UNIT]; n];
             let mut op = GainSTMOp::new(
                 {
                     let gain_data = gain_data.clone();

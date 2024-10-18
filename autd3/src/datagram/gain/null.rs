@@ -6,7 +6,7 @@ pub struct Null {}
 
 impl GainContext for Null {
     fn calc(&self, _: &Transducer) -> Drive {
-        Drive::null()
+        Drive::NULL
     }
 }
 
@@ -45,7 +45,7 @@ mod tests {
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
-                assert_eq!(Drive::null(), d.calc(tr));
+                assert_eq!(Drive::NULL, d.calc(tr));
             });
         });
 

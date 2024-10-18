@@ -65,7 +65,7 @@ impl<T: IntoDrive + Copy + Send + Sync + 'static> GainContext for HoloContext<T>
                         .convert(x.into_intensity(), self.max_coefficient);
                     Drive::new(phase, intensity)
                 } else {
-                    Drive::null()
+                    Drive::NULL
                 }
             }
             Either::Right(base_idx) => {

@@ -88,7 +88,7 @@ mod tests {
                 if dev_idx == 0 && tr.idx() == test_id {
                     test_drive
                 } else {
-                    Drive::null()
+                    Drive::NULL
                 }
             }
         });
@@ -100,7 +100,7 @@ mod tests {
                 if dev.idx() == 0 && idx == test_id {
                     assert_eq!(test_drive, d.calc(tr));
                 } else {
-                    assert_eq!(Drive::null(), d.calc(tr));
+                    assert_eq!(Drive::NULL, d.calc(tr));
                 }
             });
         });

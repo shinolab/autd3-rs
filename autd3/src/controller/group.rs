@@ -152,12 +152,12 @@ mod tests {
         .await?;
 
         assert_eq!(
-            vec![Drive::null(); autd.geometry[0].num_transducers()],
+            vec![Drive::NULL; autd.geometry[0].num_transducers()],
             autd.link[0].fpga().drives_at(Segment::S0, 0)
         );
 
         assert_eq!(
-            vec![Drive::null(); autd.geometry[1].num_transducers()],
+            vec![Drive::NULL; autd.geometry[1].num_transducers()],
             autd.link[1].fpga().drives_at(Segment::S0, 0)
         );
         assert_eq!(

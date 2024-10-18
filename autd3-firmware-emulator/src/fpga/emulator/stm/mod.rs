@@ -93,7 +93,7 @@ impl FPGAEmulator {
     }
 
     pub fn drives_at(&self, segment: Segment, idx: usize) -> Vec<Drive> {
-        let mut dst = vec![Drive::null(); self.mem.num_transducers];
+        let mut dst = vec![Drive::NULL; self.mem.num_transducers];
         self.drives_at_inplace(segment, idx, &mut dst);
         dst
     }
