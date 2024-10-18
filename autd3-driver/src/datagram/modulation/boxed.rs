@@ -1,14 +1,12 @@
 use std::time::Duration;
 
-use crate::defined::DEFAULT_TIMEOUT;
+use super::{DatagramST, Modulation, ModulationOperationGenerator, ModulationProperty};
 use crate::{
+    defined::DEFAULT_TIMEOUT,
     error::AUTDInternalError,
     firmware::fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
     geometry::Geometry,
 };
-
-use super::DatagramST;
-use super::{Modulation, ModulationOperationGenerator, ModulationProperty};
 
 #[cfg(not(feature = "lightweight"))]
 type BoxedFmt = Box<dyn Fn(&mut std::fmt::Formatter<'_>) -> std::fmt::Result>;
@@ -89,7 +87,7 @@ impl<M: Modulation> IntoBoxedModulation for M
 where
     M: 'static,
 {
-    fn into_boxed<'a>(self) -> BoxedModulation {
+    fn into_boxed(self) -> BoxedModulation {
         let sampling_config = self.sampling_config();
         let loop_behavior = self.loop_behavior();
         let m = std::rc::Rc::new(std::cell::RefCell::new(Some(self)));
@@ -110,7 +108,7 @@ impl<M: Modulation> IntoBoxedModulation for M
 where
     M: Send + Sync + 'static,
 {
-    fn into_boxed<'a>(self) -> BoxedModulation {
+    fn into_boxed(self) -> BoxedModulation {
         let sampling_config = self.sampling_config();
         let loop_behavior = self.loop_behavior();
         let m = std::sync::Arc::new(std::sync::Mutex::new(Some(self)));

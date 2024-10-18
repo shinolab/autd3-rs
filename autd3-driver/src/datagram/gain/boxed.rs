@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use super::{Datagram, DatagramS, Gain, GainContextGenerator, GainOperationGenerator};
 pub use crate::firmware::operation::GainContext;
 use crate::{
     derive::{Geometry, Segment},
@@ -9,9 +10,6 @@ use crate::{
 };
 
 use bit_vec::BitVec;
-
-use super::{Datagram, GainContextGenerator, GainOperationGenerator};
-use super::{DatagramS, Gain};
 
 impl GainContext for Box<dyn GainContext> {
     fn calc(&self, tr: &Transducer) -> Drive {
@@ -108,7 +106,7 @@ impl<G: Gain> IntoBoxedGain for G
 where
     G: 'static,
 {
-    fn into_boxed<'a>(self) -> BoxedGain {
+    fn into_boxed(self) -> BoxedGain {
         let gain = std::rc::Rc::new(std::cell::RefCell::new(Some(self)));
         BoxedGain {
             dbg: Box::new({
@@ -131,9 +129,8 @@ where
 impl<G: Gain> IntoBoxedGain for G
 where
     G: Send + Sync + 'static,
-    G::G: Send + Sync + 'static,
 {
-    fn into_boxed<'a>(self) -> BoxedGain {
+    fn into_boxed(self) -> BoxedGain {
         let gain = std::sync::Arc::new(std::sync::Mutex::new(Some(self)));
         BoxedGain {
             dbg: Box::new({
