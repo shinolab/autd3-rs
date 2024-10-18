@@ -71,16 +71,16 @@ impl GainContext for Context {
 }
 
 pub struct ContextGenerator {
-    g: Vec<Vec<Drive>>,
+    g: HashMap<usize, Vec<Drive>>,
 }
 
 impl GainContextGenerator for ContextGenerator {
     type Context = Context;
 
     fn generate(&mut self, device: &autd3_driver::geometry::Device) -> Self::Context {
-        let mut tmp = vec![];
-        std::mem::swap(&mut tmp, &mut self.g[device.idx()]);
-        Context { g: tmp }
+        Context {
+            g: self.g.remove(&device.idx()).unwrap(),
+        }
     }
 }
 
@@ -123,9 +123,9 @@ impl<D: Directivity> Gain for Greedy<D> {
             indices
         };
 
-        let mut g: Vec<_> = geometry
+        let mut g: HashMap<_, _> = geometry
             .devices()
-            .map(|dev| vec![Drive::null(); dev.num_transducers()])
+            .map(|dev| (dev.idx(), vec![Drive::null(); dev.num_transducers()]))
             .collect();
         let mut cache = vec![Complex::new(0., 0.); self.foci.len()];
         indices.iter().for_each(|&(dev_idx, idx)| {
@@ -154,7 +154,8 @@ impl<D: Directivity> Gain for Greedy<D> {
             cache.iter_mut().zip(tmp.iter()).for_each(|(c, a)| {
                 *c += a * phase;
             });
-            g[dev_idx][idx] = Drive::new(Phase::from(phase), self.constraint.convert(1.0, 1.0));
+            g.get_mut(&dev_idx).unwrap()[idx] =
+                Drive::new(Phase::from(phase), self.constraint.convert(1.0, 1.0));
         });
 
         Ok(ContextGenerator { g })
@@ -192,6 +193,29 @@ mod tests {
     }
 
     #[test]
+    fn test_greedy_all_disabled() -> anyhow::Result<()> {
+        let mut geometry = Geometry::new(vec![
+            AUTD3::new(Vector3::zeros()).into_device(0),
+            AUTD3::new(Vector3::zeros()).into_device(1),
+        ]);
+        geometry[0].enable = false;
+
+        let g = Greedy::<Sphere>::new([(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)]);
+
+        let mut g = g.init(&geometry)?;
+        let f = g.generate(&geometry[1]);
+        assert_eq!(
+            geometry[1]
+                .iter()
+                .filter(|tr| f.calc(tr) != Drive::null())
+                .count(),
+            geometry[1].num_transducers()
+        );
+
+        Ok(())
+    }
+
+    #[test]
     fn test_greedy_filtered() {
         let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
 
@@ -215,5 +239,33 @@ mod tests {
             }),
             Ok(100),
         )
+    }
+
+    #[test]
+    fn test_greedy_filtered_disabled() -> anyhow::Result<()> {
+        let mut geometry = Geometry::new(vec![
+            AUTD3::new(Vector3::zeros()).into_device(0),
+            AUTD3::new(Vector3::zeros()).into_device(1),
+        ]);
+        geometry[0].enable = false;
+
+        let g = Greedy::<Sphere>::new([(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)]);
+
+        let filter = geometry
+            .devices()
+            .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
+            .collect::<HashMap<_, _>>();
+
+        let mut g = g.init_with_filter(&geometry, Some(filter))?;
+        let f = g.generate(&geometry[1]);
+        assert_eq!(
+            geometry[1]
+                .iter()
+                .filter(|tr| f.calc(tr) != Drive::null())
+                .count(),
+            100
+        );
+
+        Ok(())
     }
 }

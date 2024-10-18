@@ -2,6 +2,7 @@
 
 - Improve calculation performance of `Gain`s
 - Remove `Gain::with_transform`
+- Fix [#130](https://github.com/shinolab/autd3-rs/issues/130): `Gain`s in `autd3-gain-holo` cause `index out of bounds` error with disabled device
 
 # 28.1.0
 

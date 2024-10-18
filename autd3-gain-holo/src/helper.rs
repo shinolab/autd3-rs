@@ -90,7 +90,7 @@ pub struct HoloContextGenerator<T: IntoDrive + Copy + Send + Sync + 'static> {
             nalgebra::VecStorage<T, nalgebra::Dyn, nalgebra::U1>,
         >,
     >,
-    map: Either<Vec<Vec<Option<usize>>>, Vec<usize>>,
+    map: Either<HashMap<usize, Vec<Option<usize>>>, HashMap<usize, usize>>,
     max_coefficient: f32,
     constraint: EmissionConstraint,
 }
@@ -100,19 +100,15 @@ impl<T: IntoDrive + Copy + Send + Sync + 'static> GainContextGenerator for HoloC
 
     fn generate(&mut self, device: &autd3_driver::geometry::Device) -> Self::Context {
         match &mut self.map {
-            Either::Left(map) => {
-                let mut tmp = vec![];
-                std::mem::swap(&mut tmp, &mut map[device.idx()]);
-                HoloContext {
-                    q: self.q.clone(),
-                    map: Either::Left(tmp),
-                    max_coefficient: self.max_coefficient,
-                    constraint: self.constraint,
-                }
-            }
+            Either::Left(map) => HoloContext {
+                q: self.q.clone(),
+                map: Either::Left(map.remove(&device.idx()).unwrap()),
+                max_coefficient: self.max_coefficient,
+                constraint: self.constraint,
+            },
             Either::Right(map) => HoloContext {
                 q: self.q.clone(),
-                map: Either::Right(map[device.idx()]),
+                map: Either::Right(map[&device.idx()]),
                 max_coefficient: self.max_coefficient,
                 constraint: self.constraint,
             },
@@ -141,9 +137,10 @@ where
             q,
             map: Either::Left(
                 geometry
-                    .iter()
+                    .devices()
                     .scan(0usize, |state, dev| {
-                        Some(
+                        Some((
+                            dev.idx(),
                             filter
                                 .get(&dev.idx())
                                 .map(|filter| {
@@ -160,9 +157,9 @@ where
                                         .collect::<Vec<_>>()
                                 })
                                 .unwrap_or(vec![None; dev.num_transducers()]),
-                        )
+                        ))
                     })
-                    .collect::<Vec<_>>(),
+                    .collect(),
             ),
             max_coefficient,
             constraint,
@@ -172,13 +169,13 @@ where
             q,
             map: Either::Right(
                 geometry
-                    .iter()
+                    .devices()
                     .scan(0, |state, dev| {
                         let r = *state;
                         *state += dev.num_transducers();
-                        Some(r)
+                        Some((dev.idx(), r))
                     })
-                    .collect::<Vec<_>>(),
+                    .collect(),
             ),
             max_coefficient,
             constraint,
