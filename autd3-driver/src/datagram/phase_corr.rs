@@ -6,18 +6,13 @@ use crate::{
 };
 
 use derive_more::Debug;
+use derive_new::new;
 
-#[derive(Builder, Debug)]
+#[derive(Builder, Debug, new)]
 pub struct PhaseCorrection<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
     #[debug(ignore)]
     #[get(ref)]
     f: F,
-}
-
-impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> PhaseCorrection<FT, F> {
-    pub const fn new(f: F) -> Self {
-        Self { f }
-    }
 }
 
 pub struct PhaseCorrectionOpGenerator<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
@@ -31,7 +26,7 @@ impl<FT: Fn(&Transducer) -> Phase + Send + Sync, F: Fn(&Device) -> FT> Operation
     type O2 = NullOp;
 
     fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
-        (Self::O1::new((self.f)(device)), Self::O2::default())
+        (Self::O1::new((self.f)(device)), Self::O2::new())
     }
 }
 

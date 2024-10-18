@@ -32,6 +32,7 @@ bit-vec = "0.8.0"
 bvh = { version = "0.10.0", default-features = false }
 cc = "1.0.73"
 criterion = "0.5.1"
+derive-new = "0.7.0"
 glob = "0.3.0"
 hound = "3.5.0"
 itertools = "0.13.0"

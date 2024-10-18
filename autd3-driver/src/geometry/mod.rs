@@ -18,25 +18,19 @@ pub use rotation::*;
 pub use transducer::*;
 
 use derive_more::{Deref, IntoIterator};
+use derive_new::new;
 
-#[derive(Deref, Builder, IntoIterator)]
+#[derive(Deref, Builder, IntoIterator, new)]
 pub struct Geometry {
     #[deref]
     #[into_iterator(ref)]
     pub(crate) devices: Vec<Device>,
+    #[new(default)]
     #[get]
     version: usize,
 }
 
 impl Geometry {
-    #[doc(hidden)]
-    pub const fn new(devices: Vec<Device>) -> Geometry {
-        Self {
-            devices,
-            version: 0,
-        }
-    }
-
     pub fn num_devices(&self) -> usize {
         self.devices().count()
     }

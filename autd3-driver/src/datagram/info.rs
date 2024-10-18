@@ -17,7 +17,7 @@ impl OperationGenerator for FetchFirmwareInfoOpGenerator {
     type O2 = NullOp;
 
     fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
-        (Self::O1::new(self.inner), Self::O2::default())
+        (Self::O1::new(self.inner), Self::O2::new())
     }
 }
 

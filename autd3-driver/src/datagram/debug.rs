@@ -5,17 +5,12 @@ use crate::firmware::{
 
 use crate::datagram::*;
 use derive_more::Debug;
+use derive_new::new;
 
-#[derive(Debug)]
+#[derive(Debug, new)]
 pub struct DebugSettings<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> {
     #[debug(ignore)]
     f: F,
-}
-
-impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> DebugSettings<F> {
-    pub const fn new(f: F) -> Self {
-        Self { f }
-    }
 }
 
 pub struct DebugSettingOpGenerator<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> {
@@ -34,7 +29,7 @@ impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> OperationGenerator
                 [GPIOOut::O0, GPIOOut::O1, GPIOOut::O2, GPIOOut::O3]
                     .map(|gpio| (self.f)(device, gpio).into()),
             ),
-            Self::O2::default(),
+            Self::O2::new(),
         )
     }
 }

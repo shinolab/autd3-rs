@@ -222,7 +222,7 @@ impl SOEM {
 
             ec_config_map(result.io_map.lock().unwrap().data() as *mut c_void);
 
-            result.op_state_guard = Some(OpStateGuard::new());
+            result.op_state_guard = Some(OpStateGuard {});
 
             tracing::info!("Checking if all devices are in safe operational state.");
             OpStateGuard::to_safe_op(num_devices)?;
@@ -457,10 +457,6 @@ impl Drop for SOEMDCConfigGuard {
 struct OpStateGuard;
 
 impl OpStateGuard {
-    const fn new() -> Self {
-        Self
-    }
-
     fn to_safe_op(num_devices: usize) -> Result<(), SOEMError> {
         unsafe {
             ec_statecheck(0, ec_state_EC_STATE_SAFE_OP as u16, EC_TIMEOUTSTATE as i32);

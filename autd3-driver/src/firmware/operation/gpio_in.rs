@@ -4,6 +4,8 @@ use crate::{
     geometry::Device,
 };
 
+use derive_new::new;
+
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct GPIOInFlags(u8);
@@ -24,18 +26,12 @@ struct EmulateGPIOIn {
     flag: GPIOInFlags,
 }
 
+#[derive(new)]
+#[new(visibility = "pub(crate)")]
 pub struct EmulateGPIOInOp {
+    #[new(default)]
     is_done: bool,
     value: [bool; 4],
-}
-
-impl EmulateGPIOInOp {
-    pub const fn new(value: [bool; 4]) -> Self {
-        Self {
-            is_done: false,
-            value,
-        }
-    }
 }
 
 impl Operation for EmulateGPIOInOp {

@@ -80,7 +80,7 @@ pub struct GainSTMOp<Context: GainContext> {
 }
 
 impl<Context: GainContext> GainSTMOp<Context> {
-    pub fn new(
+    pub(crate) fn new(
         gains: Vec<Context>,
         mode: GainSTMMode,
         config: SamplingConfig,

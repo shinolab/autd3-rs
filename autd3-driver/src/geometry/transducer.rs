@@ -2,7 +2,10 @@ use autd3_derive::Builder;
 
 use super::{Matrix4, UnitQuaternion, Vector3, Vector4};
 
-#[derive(Clone, Debug, PartialEq, Builder)]
+use derive_new::new;
+
+#[derive(Clone, Debug, PartialEq, Builder, new)]
+#[new(visibility = "pub(crate)")]
 pub struct Transducer {
     idx: u8,
     dev_idx: u16,
@@ -11,14 +14,6 @@ pub struct Transducer {
 }
 
 impl Transducer {
-    pub(crate) const fn new(idx: u8, dev_idx: u16, position: Vector3) -> Self {
-        Self {
-            idx,
-            dev_idx,
-            position,
-        }
-    }
-
     pub const fn idx(&self) -> usize {
         self.idx as _
     }

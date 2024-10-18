@@ -31,14 +31,14 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case::success(vec![
-        RxMessage::new(0, 0),
-        RxMessage::new(1, 0),
-        RxMessage::new(2, 0),
+        RxMessage::new(0,0),
+        RxMessage::new(0,1),
+        RxMessage::new(0,2),
     ], vec![true, true, true])]
     #[case::success(vec![
-        RxMessage::new(1, 0),
-        RxMessage::new(1, 0),
-        RxMessage::new(1, 0),
+        RxMessage::new(0, 1),
+        RxMessage::new(0, 1),
+        RxMessage::new(0, 1),
     ], vec![false, true, false])]
     #[cfg_attr(miri, ignore)]
     fn test_check_if_msg_is_processed(

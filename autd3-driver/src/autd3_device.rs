@@ -4,10 +4,13 @@ use crate::{
     geometry::{Device, IntoDevice, Matrix4, Transducer, UnitQuaternion, Vector3, Vector4},
 };
 
-#[derive(Clone, Copy, Debug, Builder)]
+use derive_new::new;
+
+#[derive(Clone, Copy, Debug, Builder, new)]
 pub struct AUTD3 {
     #[get(ref)]
     position: Vector3,
+    #[new(value = "UnitQuaternion::identity()")]
     #[get(ref)]
     #[set(into)]
     rotation: UnitQuaternion,
@@ -20,13 +23,6 @@ impl AUTD3 {
     pub const TRANS_SPACING: f32 = 10.16 * mm;
     pub const DEVICE_WIDTH: f32 = 192.0 * mm;
     pub const DEVICE_HEIGHT: f32 = 151.4 * mm;
-
-    pub fn new(position: Vector3) -> Self {
-        Self {
-            position,
-            rotation: UnitQuaternion::identity(),
-        }
-    }
 
     fn is_missing_transducer(x: impl TryInto<u8>, y: impl TryInto<u8>) -> bool {
         let x: u8 = match x.try_into() {

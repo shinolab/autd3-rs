@@ -9,20 +9,19 @@ use crate::{
     geometry::{Device, Transducer},
 };
 
+use derive_new::new;
+
 #[repr(C, align(2))]
 struct PhaseCorr {
     tag: TypeTag,
 }
 
+#[derive(new)]
+#[new(visibility = "pub(crate)")]
 pub struct PhaseCorrectionOp<F: Fn(&Transducer) -> Phase> {
+    #[new(default)]
     is_done: bool,
     f: F,
-}
-
-impl<F: Fn(&Transducer) -> Phase> PhaseCorrectionOp<F> {
-    pub const fn new(f: F) -> Self {
-        Self { is_done: false, f }
-    }
 }
 
 impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<F> {
