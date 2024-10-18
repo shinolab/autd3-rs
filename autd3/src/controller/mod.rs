@@ -125,16 +125,16 @@ impl<L: Link> Controller<L> {
                 windows::Win32::Media::timeBeginPeriod(timer_resolution.get());
             }
         }
-        if let Err(e) = self.send(Clear::new().with_timeout(Some(timeout))).await {
+        let timeout = Some(timeout);
+        if let Err(e) = self.send(Clear::new().with_timeout(timeout)).await {
             match e {
                 AUTDError::Internal(AUTDInternalError::ConfirmResponseFailed) => {
-                    self.send(Clear::new().with_timeout(Some(timeout))).await?
+                    self.send(Clear::new().with_timeout(timeout)).await?
                 }
                 _ => return Err(e),
             }
         }
-        self.send(Synchronize::new().with_timeout(Some(timeout)))
-            .await?;
+        self.send(Synchronize::new().with_timeout(timeout)).await?;
         Ok(self)
     }
 
