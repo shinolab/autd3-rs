@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
-use super::{Datagram, DatagramS, Gain, GainContextGenerator, GainOperationGenerator};
+use super::{Gain, GainContextGenerator, GainOperationGenerator};
 pub use crate::firmware::operation::GainContext;
 use crate::{
-    derive::{Geometry, Segment},
+    derive::{DatagramS, Geometry, Segment, TransitionMode},
     error::AUTDInternalError,
     firmware::fpga::Drive,
     geometry::{Device, Transducer},
@@ -75,14 +75,6 @@ impl Gain for BoxedGain {
 }
 
 // GRCOV_EXCL_START
-impl Datagram for BoxedGain {
-    type G = GainOperationGenerator<BoxedGainContextGenerator>;
-
-    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
-        Self::G::new(self, geometry, Segment::S0, true)
-    }
-}
-
 impl DatagramS for BoxedGain {
     type G = GainOperationGenerator<BoxedGainContextGenerator>;
 
@@ -90,9 +82,17 @@ impl DatagramS for BoxedGain {
         self,
         geometry: &Geometry,
         segment: Segment,
-        transition: bool,
+        transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, AUTDInternalError> {
-        Self::G::new(self, geometry, segment, transition)
+        Self::G::new(self, geometry, segment, transition_mode)
+    }
+
+    fn timeout(&self) -> Option<Duration> {
+        None
+    }
+
+    fn parallel_threshold(&self) -> Option<usize> {
+        None
     }
 }
 // GRCOV_EXCL_STOP

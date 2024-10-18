@@ -4,10 +4,9 @@ pub use boxed::{BoxedGain, IntoBoxedGain};
 
 use std::collections::HashMap;
 
-use super::{Datagram, DatagramS};
 pub use crate::firmware::operation::GainContext;
 use crate::{
-    derive::{Geometry, Segment},
+    derive::{Geometry, Segment, TransitionMode},
     error::AUTDInternalError,
     firmware::operation::{GainOp, NullOp, OperationGenerator},
     geometry::Device,
@@ -40,7 +39,7 @@ pub trait Gain: std::fmt::Debug {
 pub struct GainOperationGenerator<G: GainContextGenerator> {
     pub generator: G,
     pub segment: Segment,
-    pub transition: bool,
+    pub transition: Option<TransitionMode>,
 }
 
 impl<G: GainContextGenerator> GainOperationGenerator<G> {
@@ -48,7 +47,7 @@ impl<G: GainContextGenerator> GainOperationGenerator<G> {
         gain: T,
         geometry: &Geometry,
         segment: Segment,
-        transition: bool,
+        transition: Option<TransitionMode>,
     ) -> Result<Self, AUTDInternalError> {
         Ok(Self {
             generator: gain.init(geometry)?,

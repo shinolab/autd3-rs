@@ -108,5 +108,5 @@ message Gain {
 message GainWithSegment {
   Gain gain = 1;
   Segment segment = 2;
-  bool transition = 3;
+  optional TransitionMode transition_mode = 3;
 }

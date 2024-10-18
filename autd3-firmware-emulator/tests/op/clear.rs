@@ -68,7 +68,7 @@ fn send_clear() -> anyhow::Result<()> {
             .into_iter()
             .collect(),
         }
-        .with_segment(Segment::S0, true);
+        .with_segment(Segment::S0, Some(TransitionMode::Immediate));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = FociSTM::new(

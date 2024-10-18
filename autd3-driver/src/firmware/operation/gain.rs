@@ -1,6 +1,7 @@
 use std::mem::size_of;
 
 use crate::{
+    derive::TransitionMode,
     error::AUTDInternalError,
     firmware::{
         fpga::{Drive, Segment},
@@ -36,11 +37,15 @@ pub struct GainOp<Context: GainContext> {
     context: Context,
     is_done: bool,
     segment: Segment,
-    transition: bool,
+    transition: Option<TransitionMode>,
 }
 
 impl<Context: GainContext> GainOp<Context> {
-    pub const fn new(segment: Segment, transition: bool, context: Context) -> Self {
+    pub const fn new(
+        segment: Segment,
+        transition: Option<TransitionMode>,
+        context: Context,
+    ) -> Self {
         Self {
             context,
             is_done: false,
@@ -61,8 +66,12 @@ impl<Context: GainContext> Operation for GainOp<Context> {
                 GainT {
                     tag: TypeTag::Gain,
                     segment: self.segment as u8,
-                    flag: if self.transition {
-                        GainControlFlags::UPDATE
+                    flag: if let Some(mode) = self.transition {
+                        if mode != TransitionMode::Immediate {
+                            return Err(AUTDInternalError::InvalidTransitionMode);
+                        } else {
+                            GainControlFlags::UPDATE
+                        }
                     } else {
                         GainControlFlags::NONE
                     },
@@ -101,6 +110,16 @@ mod tests {
 
     const NUM_TRANS_IN_UNIT: usize = 249;
 
+    struct Context {
+        data: Vec<Drive>,
+    }
+
+    impl GainContext for Context {
+        fn calc(&self, tr: &Transducer) -> Drive {
+            self.data[tr.idx()]
+        }
+    }
+
     #[test]
     fn test() {
         let device = create_device(0, NUM_TRANS_IN_UNIT as _);
@@ -117,17 +136,7 @@ mod tests {
             })
             .collect();
 
-        struct Context {
-            data: Vec<Drive>,
-        }
-
-        impl GainContext for Context {
-            fn calc(&self, tr: &Transducer) -> Drive {
-                self.data[tr.idx()]
-            }
-        }
-
-        let mut op = GainOp::new(Segment::S0, true, {
+        let mut op = GainOp::new(Segment::S0, Some(TransitionMode::Immediate), {
             let data = data.clone();
             Context { data }
         });
@@ -153,5 +162,21 @@ mod tests {
                 assert_eq!(d[0], &g.phase().value());
                 assert_eq!(d[1], &g.intensity().value());
             });
+    }
+
+    #[test]
+    fn invalid_transition_mode() {
+        let device = create_device(0, NUM_TRANS_IN_UNIT as _);
+
+        let mut tx = vec![0x00u8; size_of::<GainT>() + NUM_TRANS_IN_UNIT * size_of::<Drive>()];
+
+        let mut op = GainOp::new(Segment::S0, Some(TransitionMode::Ext), {
+            Context { data: Vec::new() }
+        });
+
+        assert_eq!(
+            Some(AUTDInternalError::InvalidTransitionMode),
+            op.pack(&device, &mut tx).err()
+        );
     }
 }
