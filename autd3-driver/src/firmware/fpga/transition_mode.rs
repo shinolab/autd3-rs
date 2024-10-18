@@ -1,4 +1,4 @@
-use crate::ethercat::{DcSysTime, EC_CYCLE_TIME_BASE_NANO_SEC};
+use crate::ethercat::DcSysTime;
 
 use super::GPIOIn;
 
@@ -34,10 +34,7 @@ impl TransitionMode {
         match self {
             TransitionMode::SyncIdx | TransitionMode::Ext | TransitionMode::Immediate => 0,
             TransitionMode::GPIO(gpio) => *gpio as u64,
-            TransitionMode::SysTime(time) => {
-                (((time.sys_time().max(1) - 1) / EC_CYCLE_TIME_BASE_NANO_SEC) + 1)
-                    * EC_CYCLE_TIME_BASE_NANO_SEC
-            }
+            TransitionMode::SysTime(time) => time.sys_time(),
         }
     }
 }
