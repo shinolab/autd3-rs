@@ -90,8 +90,8 @@ impl CPUEmulator {
         s
     }
 
-    pub const fn rx(&self) -> RxMessage {
-        RxMessage::new(self.ack, self.rx_data)
+    pub fn rx(&self) -> RxMessage {
+        RxMessage::new(self.rx_data, self.ack)
     }
 
     pub fn send(&mut self, tx: &TxDatagram) {

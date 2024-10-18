@@ -4,13 +4,17 @@ use crate::{
     geometry::Device,
 };
 
+use derive_new::new;
+
 #[repr(C, align(2))]
 struct Sync {
     tag: TypeTag,
 }
 
-#[derive(Default)]
+#[derive(new)]
+#[new(visibility = "pub(crate)")]
 pub struct SyncOp {
+    #[new(default)]
     is_done: bool,
 }
 
@@ -49,7 +53,7 @@ mod tests {
 
         let mut tx = [0x00u8; size_of::<Sync>()];
 
-        let mut op = SyncOp::default();
+        let mut op = SyncOp::new();
 
         assert_eq!(op.required_size(&device), size_of::<Sync>());
 

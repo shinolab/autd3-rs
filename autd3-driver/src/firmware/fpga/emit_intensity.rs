@@ -1,7 +1,8 @@
 use autd3_derive::Builder;
 use derive_more::Debug;
+use derive_new::new;
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Builder)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Builder, new)]
 #[debug("{:#04X}", self.value)]
 #[repr(C)]
 pub struct EmitIntensity {
@@ -12,10 +13,6 @@ pub struct EmitIntensity {
 impl EmitIntensity {
     pub const MAX: EmitIntensity = EmitIntensity { value: 255 };
     pub const MIN: EmitIntensity = EmitIntensity { value: 0 };
-
-    pub const fn new(value: u8) -> Self {
-        Self { value }
-    }
 }
 
 impl From<u8> for EmitIntensity {

@@ -12,6 +12,8 @@ use crate::{
 
 use super::{SILENCER_FLAG_PULSE_WIDTH, SILENCER_FLAG_STRICT_MODE};
 
+use derive_new::new;
+
 #[repr(C, align(2))]
 struct SilencerFixedCompletionSteps {
     tag: TypeTag,
@@ -20,29 +22,15 @@ struct SilencerFixedCompletionSteps {
     value_phase: u16,
 }
 
+#[derive(new)]
+#[new(visibility = "pub(crate)")]
 pub struct SilencerFixedCompletionStepsOp {
+    #[new(default)]
     is_done: bool,
-    value_intensity: Duration,
-    value_phase: Duration,
+    intensity: Duration,
+    phase: Duration,
     strict_mode: bool,
     target: SilencerTarget,
-}
-
-impl SilencerFixedCompletionStepsOp {
-    pub const fn new(
-        value_intensity: Duration,
-        value_phase: Duration,
-        strict_mode: bool,
-        target: SilencerTarget,
-    ) -> Self {
-        Self {
-            is_done: false,
-            value_intensity,
-            value_phase,
-            strict_mode,
-            target,
-        }
-    }
 }
 
 impl Operation for SilencerFixedCompletionStepsOp {
@@ -60,8 +48,8 @@ impl Operation for SilencerFixedCompletionStepsOp {
             }
             Ok(v as u16)
         };
-        let step_intensity = validate(self.value_intensity)?;
-        let step_phase = validate(self.value_phase)?;
+        let step_intensity = validate(self.intensity)?;
+        let step_phase = validate(self.phase)?;
 
         unsafe {
             write_to_tx(

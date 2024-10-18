@@ -5,6 +5,7 @@ use crate::{
 };
 
 use super::write_to_tx;
+use derive_new::new;
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
@@ -23,15 +24,12 @@ struct FirmInfo {
     ty: FirmwareVersionType,
 }
 
+#[derive(new)]
+#[new(visibility = "pub(crate)")]
 pub struct FirmInfoOp {
+    #[new(default)]
     is_done: bool,
     ty: FirmwareVersionType,
-}
-
-impl FirmInfoOp {
-    pub(crate) fn new(ty: FirmwareVersionType) -> Self {
-        Self { is_done: false, ty }
-    }
 }
 
 impl Operation for FirmInfoOp {

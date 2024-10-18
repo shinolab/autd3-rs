@@ -6,26 +6,21 @@ use crate::{
     geometry::Device,
 };
 
+use derive_new::new;
+
 #[repr(C, align(2))]
 struct CpuGPIOOut {
     tag: TypeTag,
     pa_podr: u8,
 }
 
+#[derive(new)]
+#[new(visibility = "pub(crate)")]
 pub struct CpuGPIOOutOp {
+    #[new(default)]
     is_done: bool,
     pa5: bool,
     pa7: bool,
-}
-
-impl CpuGPIOOutOp {
-    pub const fn new(pa5: bool, pa7: bool) -> Self {
-        Self {
-            is_done: false,
-            pa5,
-            pa7,
-        }
-    }
 }
 
 impl Operation for CpuGPIOOutOp {

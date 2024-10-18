@@ -14,6 +14,8 @@ use crate::{
     geometry::Device,
 };
 
+use derive_new::new;
+
 #[derive(Clone, Copy, PartialEq, Debug)]
 #[repr(C)]
 pub struct FociSTMControlFlags(u8);
@@ -51,34 +53,18 @@ struct FociSTMSubseq {
     segment: u8,
 }
 
+#[derive(new)]
+#[new(visibility = "pub(crate)")]
 pub struct FociSTMOp<const N: usize> {
     points: Arc<Vec<ControlPoints<N>>>,
+    #[new(default)]
     sent: usize,
+    #[new(default)]
     is_done: bool,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
-}
-
-impl<const N: usize> FociSTMOp<N> {
-    pub const fn new(
-        points: Arc<Vec<ControlPoints<N>>>,
-        config: SamplingConfig,
-        loop_behavior: LoopBehavior,
-        segment: Segment,
-        transition_mode: Option<TransitionMode>,
-    ) -> Self {
-        Self {
-            points,
-            sent: 0,
-            is_done: false,
-            config,
-            loop_behavior,
-            segment,
-            transition_mode,
-        }
-    }
 }
 
 impl<const N: usize> Operation for FociSTMOp<N> {

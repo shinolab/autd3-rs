@@ -220,7 +220,7 @@ mod tests {
 
             self.recv_cnt += 1;
             rx.iter_mut()
-                .for_each(|r| *r = RxMessage::new(self.recv_cnt as u8, r.data()));
+                .for_each(|r| *r = RxMessage::new(r.data(), self.recv_cnt as u8));
 
             Ok(!self.down)
         }

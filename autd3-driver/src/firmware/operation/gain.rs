@@ -10,6 +10,8 @@ use crate::{
     geometry::{Device, Transducer},
 };
 
+use derive_new::new;
+
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct GainControlFlags(u8);
@@ -33,26 +35,14 @@ pub trait GainContext: Send + Sync {
     fn calc(&self, tr: &Transducer) -> Drive;
 }
 
+#[derive(new)]
+#[new(visibility = "pub(crate)")]
 pub struct GainOp<Context: GainContext> {
-    context: Context,
+    #[new(default)]
     is_done: bool,
     segment: Segment,
     transition: Option<TransitionMode>,
-}
-
-impl<Context: GainContext> GainOp<Context> {
-    pub const fn new(
-        segment: Segment,
-        transition: Option<TransitionMode>,
-        context: Context,
-    ) -> Self {
-        Self {
-            context,
-            is_done: false,
-            segment,
-            transition,
-        }
-    }
+    context: Context,
 }
 
 impl<Context: GainContext> Operation for GainOp<Context> {

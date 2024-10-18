@@ -108,7 +108,7 @@ impl Operation for Box<dyn Operation> {
 
 impl Default for Box<dyn Operation> {
     fn default() -> Self {
-        Box::new(NullOp {})
+        Box::new(NullOp::new())
     }
 }
 

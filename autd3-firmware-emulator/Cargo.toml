@@ -15,6 +15,7 @@ autd3-derive = { workspace = true }
 time = { workspace = true, features = ["std"] }
 num-integer = { workspace = true }
 thiserror = { workspace = true }
+derive-new = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }

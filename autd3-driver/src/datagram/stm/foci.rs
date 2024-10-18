@@ -108,7 +108,7 @@ impl<const N: usize> OperationGenerator for FociSTMOperationGenerator<N> {
                 self.segment,
                 self.transition_mode,
             ),
-            Self::O2::default(),
+            Self::O2::new(),
         )
     }
 }

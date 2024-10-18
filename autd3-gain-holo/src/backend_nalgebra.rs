@@ -4,6 +4,7 @@ use std::{
 };
 
 use bit_vec::BitVec;
+use derive_new::new;
 use nalgebra::{ComplexField, Dyn, Normed, VecStorage, U1};
 
 use autd3_driver::{
@@ -17,16 +18,9 @@ use autd3_driver::{
 
 use crate::{error::HoloError, LinAlgBackend, MatrixX, MatrixXc, VectorX, VectorXc};
 
+#[derive(new)]
 pub struct NalgebraBackend<D: Directivity> {
     _phantom: std::marker::PhantomData<D>,
-}
-
-impl<D: Directivity> NalgebraBackend<D> {
-    pub fn new() -> Self {
-        Self {
-            _phantom: Default::default(),
-        }
-    }
 }
 
 impl Default for NalgebraBackend<Sphere> {

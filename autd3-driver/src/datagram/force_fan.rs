@@ -1,18 +1,13 @@
 use crate::{datagram::*, derive::*, firmware::operation::ForceFanOp};
 
 use derive_more::Debug;
+use derive_new::new;
 
-#[derive(Builder, Debug)]
+#[derive(Builder, Debug, new)]
 pub struct ForceFan<F: Fn(&Device) -> bool> {
     #[debug(ignore)]
     #[get(ref)]
     f: F,
-}
-
-impl<F: Fn(&Device) -> bool> ForceFan<F> {
-    pub const fn new(f: F) -> Self {
-        Self { f }
-    }
 }
 
 pub struct ForceFanOpGenerator<F: Fn(&Device) -> bool> {
@@ -24,7 +19,7 @@ impl<F: Fn(&Device) -> bool> OperationGenerator for ForceFanOpGenerator<F> {
     type O2 = NullOp;
 
     fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
-        (Self::O1::new((self.f)(device)), Self::O2::default())
+        (Self::O1::new((self.f)(device)), Self::O2::new())
     }
 }
 
