@@ -4,7 +4,7 @@ pub use boxed::{BoxedModulation, IntoBoxedModulation};
 
 use std::sync::Arc;
 
-use super::{silencer::WithSampling, DatagramST};
+use super::silencer::WithSampling;
 use crate::{
     error::AUTDInternalError,
     firmware::{

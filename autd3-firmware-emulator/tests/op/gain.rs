@@ -102,7 +102,7 @@ fn send_gain() -> anyhow::Result<()> {
                 )
             })
             .collect();
-        let g = TestGain { data: buf.clone() }.with_segment(Segment::S1, false);
+        let g = TestGain { data: buf.clone() }.with_segment(Segment::S1, None);
 
         assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
 
@@ -123,7 +123,7 @@ fn send_gain() -> anyhow::Result<()> {
     }
 
     {
-        let d = SwapSegment::Gain(Segment::S1);
+        let d = SwapSegment::Gain(Segment::S1, TransitionMode::Immediate);
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -172,13 +172,13 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     )?;
 
     {
-        let d = SwapSegment::Gain(Segment::S0);
+        let d = SwapSegment::Gain(Segment::S0, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, d, &geometry, &mut tx)
         );
 
-        let d = SwapSegment::Gain(Segment::S1);
+        let d = SwapSegment::Gain(Segment::S1, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDInternalError::InvalidSegmentTransition),
             send(&mut cpu, d, &geometry, &mut tx)

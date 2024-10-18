@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use autd3_driver::{
-    datagram::{FixedCompletionTime, IntoDatagramWithSegmentTransition, Silencer, SwapSegment},
+    datagram::{FixedCompletionTime, IntoDatagramWithSegment, Silencer, SwapSegment},
     derive::*,
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},

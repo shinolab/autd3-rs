@@ -24,26 +24,11 @@ where
                 datagram: Some(datagram::Datagram::GainWithSegment(GainWithSegment {
                     gain: Some(g),
                     segment: self.segment() as _,
-                    transition: self.transition(),
+                    transition_mode: self.transition_mode().map(|mode| mode.to_msg(geometry)),
                 })),
                 timeout: None,
                 parallel_threshold: None,
             },
-            _ => unreachable!(),
-        }
-    }
-}
-
-impl<T> ToMessage for autd3_driver::datagram::DatagramWithSegmentTransition<T>
-where
-    T: autd3_driver::datagram::DatagramST + ToMessage<Message = Datagram>,
-{
-    type Message = Datagram;
-
-    fn to_msg(&self, geometry: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
-        let datagram = <T as ToMessage>::to_msg(self.deref(), geometry);
-
-        match datagram.datagram {
             Some(datagram::Datagram::Modulation(m)) => Self::Message {
                 datagram: Some(datagram::Datagram::ModulationWithSegment(
                     ModulationWithSegment {

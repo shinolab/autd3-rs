@@ -1,8 +1,9 @@
 use std::time::Duration;
 
-use super::{DatagramST, Modulation, ModulationOperationGenerator, ModulationProperty};
+use super::{Modulation, ModulationOperationGenerator, ModulationProperty};
 use crate::{
     defined::DEFAULT_TIMEOUT,
+    derive::DatagramS,
     error::AUTDInternalError,
     firmware::fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
     geometry::Geometry,
@@ -46,7 +47,7 @@ impl Modulation for BoxedModulation {
 }
 
 // GRCOV_EXCL_START
-impl DatagramST for BoxedModulation {
+impl DatagramS for BoxedModulation {
     type G = ModulationOperationGenerator;
 
     fn operation_generator_with_segment(

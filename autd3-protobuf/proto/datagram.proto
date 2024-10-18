@@ -128,6 +128,7 @@ message FociSTMWithSegment {
 
 message SwapSegmentGain {
     Segment segment = 1;
+    TransitionMode transition_mode = 2;
 }
 
 message SwapSegmentModulation {
