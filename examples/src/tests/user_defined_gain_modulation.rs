@@ -1,4 +1,3 @@
-
 use autd3::{driver::link::Link, prelude::*};
 use autd3_driver::derive::*;
 
