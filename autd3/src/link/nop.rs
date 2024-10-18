@@ -8,15 +8,10 @@ use autd3_firmware_emulator::CPUEmulator;
 pub struct Nop {
     is_open: bool,
     cpus: Vec<CPUEmulator>,
-    timeout: std::time::Duration,
 }
 
 #[derive(Builder)]
-pub struct NopBuilder {
-    #[get]
-    #[set]
-    timeout: std::time::Duration,
-}
+pub struct NopBuilder {}
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
 impl LinkBuilder for NopBuilder {
@@ -30,7 +25,6 @@ impl LinkBuilder for NopBuilder {
                 .enumerate()
                 .map(|(i, dev)| CPUEmulator::new(i, dev.num_transducers()))
                 .collect(),
-            timeout: self.timeout,
         })
     }
 }
@@ -62,16 +56,10 @@ impl Link for Nop {
     fn is_open(&self) -> bool {
         self.is_open
     }
-
-    fn timeout(&self) -> std::time::Duration {
-        self.timeout
-    }
 }
 
 impl Nop {
     pub const fn builder() -> NopBuilder {
-        NopBuilder {
-            timeout: std::time::Duration::ZERO,
-        }
+        NopBuilder {}
     }
 }

@@ -1,7 +1,4 @@
-use std::{
-    ffi::{c_long, CString},
-    time::Duration,
-};
+use std::ffi::{c_long, CString};
 
 use itertools::Itertools;
 
@@ -21,7 +18,6 @@ const PORT: u16 = 301;
 pub struct RemoteTwinCAT {
     port: c_long,
     net_id: AmsNetId,
-    timeout: Duration,
 }
 
 #[derive(Builder, Debug)]
@@ -34,9 +30,6 @@ pub struct RemoteTwinCATBuilder {
     #[get(ref)]
     #[set(into)]
     client_ams_net_id: String,
-    #[get]
-    #[set]
-    timeout: Duration,
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
@@ -51,7 +44,6 @@ impl LinkBuilder for RemoteTwinCATBuilder {
             server_ams_net_id,
             server_ip,
             client_ams_net_id,
-            timeout,
         } = self;
 
         let octets = server_ams_net_id
@@ -116,11 +108,7 @@ impl LinkBuilder for RemoteTwinCATBuilder {
             return Err(AdsError::OpenPort.into());
         }
 
-        Ok(Self::L {
-            port,
-            net_id,
-            timeout,
-        })
+        Ok(Self::L { port, net_id })
     }
 }
 
@@ -130,7 +118,6 @@ impl RemoteTwinCAT {
             server_ams_net_id: server_ams_net_id.into(),
             server_ip: String::new(),
             client_ams_net_id: String::new(),
-            timeout: DEFAULT_TIMEOUT,
         }
     }
 }
@@ -209,9 +196,5 @@ impl Link for RemoteTwinCAT {
 
     fn is_open(&self) -> bool {
         self.port > 0
-    }
-
-    fn timeout(&self) -> Duration {
-        self.timeout
     }
 }

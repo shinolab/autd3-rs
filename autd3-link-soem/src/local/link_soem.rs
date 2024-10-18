@@ -35,7 +35,6 @@ use super::{
 };
 
 pub struct SOEM {
-    timeout: Duration,
     sender: Sender<TxDatagram>,
     is_open: Arc<AtomicBool>,
     ec_send_cycle: Duration,
@@ -80,7 +79,6 @@ impl SOEM {
                 sync_mode,
                 ifname,
                 state_check_interval,
-                timeout,
                 sync0_cycle,
                 send_cycle,
                 thread_priority,
@@ -211,7 +209,6 @@ impl SOEM {
             let _ = th.join();
 
             let mut result = Self {
-                timeout,
                 sender: tx_sender,
                 is_open,
                 ec_send_cycle,
@@ -365,10 +362,6 @@ impl Link for SOEM {
 
     fn is_open(&self) -> bool {
         self.is_open.load(Ordering::Acquire)
-    }
-
-    fn timeout(&self) -> Duration {
-        self.timeout
     }
 }
 

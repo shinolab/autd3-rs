@@ -8,7 +8,7 @@ use derive_more::Deref;
 pub struct DatagramWithParallelThreshold<D: Datagram> {
     #[deref]
     datagram: D,
-    threshold: usize,
+    threshold: Option<usize>,
 }
 
 impl<D: Datagram> Datagram for DatagramWithParallelThreshold<D> {
@@ -23,16 +23,16 @@ impl<D: Datagram> Datagram for DatagramWithParallelThreshold<D> {
     }
 
     fn parallel_threshold(&self) -> Option<usize> {
-        Some(self.threshold)
+        self.threshold
     }
 }
 
 pub trait IntoDatagramWithParallelThreshold<D: Datagram> {
-    fn with_parallel_threshold(self, threshold: usize) -> DatagramWithParallelThreshold<D>;
+    fn with_parallel_threshold(self, threshold: Option<usize>) -> DatagramWithParallelThreshold<D>;
 }
 
 impl<D: Datagram> IntoDatagramWithParallelThreshold<D> for D {
-    fn with_parallel_threshold(self, threshold: usize) -> DatagramWithParallelThreshold<D> {
+    fn with_parallel_threshold(self, threshold: Option<usize>) -> DatagramWithParallelThreshold<D> {
         DatagramWithParallelThreshold {
             datagram: self,
             threshold,
@@ -57,7 +57,7 @@ mod tests {
             timeout: Some(std::time::Duration::from_secs(1)),
             parallel_threshold: None,
         }
-        .with_parallel_threshold(100);
+        .with_parallel_threshold(Some(100));
         assert_eq!(datagram.timeout(), Some(std::time::Duration::from_secs(1)));
         assert_eq!(datagram.parallel_threshold(), Some(100));
         let _: Result<NullOperationGenerator, _> = datagram.operation_generator(&geometry);

@@ -6,9 +6,10 @@ use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
 #[tokio::test]
 async fn audit_test() -> anyhow::Result<()> {
     let mut autd = Controller::builder([AUTD3::new(Vector3::zeros())])
-        .open(Audit::builder().with_timeout(Duration::from_millis(100)))
+        .with_fallback_timeout(Duration::from_millis(100))
+        .open(Audit::builder())
         .await?;
-    assert_eq!(Duration::from_millis(100), autd.link().timeout());
+    assert_eq!(Duration::from_millis(100), autd.fallback_timeout());
     assert_eq!(0, autd.link()[0].idx());
     assert_eq!(DEFAULT_TIMEOUT, autd.link().last_timeout());
     assert_eq!(usize::MAX, autd.link().last_parallel_threshold());
