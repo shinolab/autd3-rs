@@ -74,8 +74,7 @@ impl<S: SamplingMode> Sine<S> {
 
 impl<S: SamplingMode> Modulation for Sine<S> {
     fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
-        self
-            .calc_raw()?
+        self.calc_raw()?
             .map(|v| v.round() as i16)
             .map(|v| {
                 if (u8::MIN as _..=u8::MAX as _).contains(&v) {

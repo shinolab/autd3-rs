@@ -1,4 +1,3 @@
-
 use autd3_driver::{
     datagram::*,
     defined::ControlPoint,

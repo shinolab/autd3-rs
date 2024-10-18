@@ -1,4 +1,3 @@
-
 use autd3_driver::{defined::Freq, derive::*};
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
