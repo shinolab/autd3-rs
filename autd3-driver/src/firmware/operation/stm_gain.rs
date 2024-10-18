@@ -356,8 +356,7 @@ mod tests {
                 tx[offset_of!(GainSTMHead, transition_mode)]
             );
             assert_eq!(
-                ((transition_value / crate::ethercat::EC_CYCLE_TIME_BASE_NANO_SEC) + 1)
-                    * crate::ethercat::EC_CYCLE_TIME_BASE_NANO_SEC,
+                transition_value,
                 parse_tx_as::<u64>(&tx[offset_of!(GainSTMHead, transition_value)..])
             );
 
