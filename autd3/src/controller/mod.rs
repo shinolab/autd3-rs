@@ -37,7 +37,9 @@ pub struct Controller<L: Link> {
     tx_buf: TxDatagram,
     rx_buf: Vec<RxMessage>,
     #[get]
-    parallel_threshold: usize,
+    fallback_parallel_threshold: usize,
+    #[get]
+    fallback_timeout: Duration,
     #[get]
     send_interval: Duration,
     #[get]
@@ -82,8 +84,8 @@ impl<L: Link> Controller<L> {
         timeout: Option<Duration>,
         parallel_threshold: Option<usize>,
     ) -> Result<(), AUTDError> {
-        let parallel_threshold = parallel_threshold.unwrap_or(self.parallel_threshold);
-        let timeout = timeout.unwrap_or(self.link.timeout());
+        let parallel_threshold = parallel_threshold.unwrap_or(self.fallback_parallel_threshold);
+        let timeout = timeout.unwrap_or(self.fallback_timeout);
         let parallel = self.geometry.num_devices() > parallel_threshold;
 
         tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
@@ -123,6 +125,7 @@ impl<L: Link> Controller<L> {
                 windows::Win32::Media::timeBeginPeriod(timer_resolution.get());
             }
         }
+        let timeout = Some(timeout);
         if let Err(e) = self.send(Clear::new().with_timeout(timeout)).await {
             match e {
                 AUTDError::Internal(AUTDInternalError::ConfirmResponseFailed) => {
@@ -216,7 +219,9 @@ impl<L: Link + 'static> Controller<L> {
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
         let tx_buf = unsafe { std::ptr::read(&cnt.tx_buf) };
         let rx_buf = unsafe { std::ptr::read(&cnt.rx_buf) };
-        let parallel_threshold = unsafe { std::ptr::read(&cnt.parallel_threshold) };
+        let fallback_parallel_threshold =
+            unsafe { std::ptr::read(&cnt.fallback_parallel_threshold) };
+        let fallback_timeout = unsafe { std::ptr::read(&cnt.fallback_timeout) };
         let send_interval = unsafe { std::ptr::read(&cnt.send_interval) };
         let receive_interval = unsafe { std::ptr::read(&cnt.receive_interval) };
         #[cfg(target_os = "windows")]
@@ -226,7 +231,8 @@ impl<L: Link + 'static> Controller<L> {
             geometry,
             tx_buf,
             rx_buf,
-            parallel_threshold,
+            fallback_parallel_threshold,
+            fallback_timeout,
             send_interval,
             receive_interval,
             #[cfg(target_os = "windows")]
@@ -240,7 +246,9 @@ impl<L: Link + 'static> Controller<L> {
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
         let tx_buf = unsafe { std::ptr::read(&cnt.tx_buf) };
         let rx_buf = unsafe { std::ptr::read(&cnt.rx_buf) };
-        let parallel_threshold = unsafe { std::ptr::read(&cnt.parallel_threshold) };
+        let fallback_parallel_threshold =
+            unsafe { std::ptr::read(&cnt.fallback_parallel_threshold) };
+        let fallback_timeout = unsafe { std::ptr::read(&cnt.fallback_timeout) };
         let send_interval = unsafe { std::ptr::read(&cnt.send_interval) };
         let receive_interval = unsafe { std::ptr::read(&cnt.receive_interval) };
         #[cfg(target_os = "windows")]
@@ -250,7 +258,8 @@ impl<L: Link + 'static> Controller<L> {
             geometry,
             tx_buf,
             rx_buf,
-            parallel_threshold,
+            fallback_parallel_threshold,
+            fallback_timeout,
             send_interval,
             receive_interval,
             #[cfg(target_os = "windows")]

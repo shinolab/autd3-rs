@@ -17,7 +17,10 @@ pub struct LightweightClientBuilder {
     devices: Vec<Device>,
     #[get]
     #[set]
-    parallel_threshold: usize,
+    fallback_parallel_threshold: usize,
+    #[set]
+    #[get]
+    fallback_timeout: std::time::Duration,
     #[get]
     #[set]
     send_interval: std::time::Duration,
@@ -38,7 +41,8 @@ impl LightweightClientBuilder {
                 .enumerate()
                 .map(|(i, d)| d.into_device(i as _))
                 .collect(),
-            parallel_threshold: 4,
+            fallback_parallel_threshold: 4,
+            fallback_timeout: std::time::Duration::from_millis(20),
             send_interval: std::time::Duration::from_millis(1),
             receive_interval: std::time::Duration::from_millis(1),
             #[cfg(target_os = "windows")]
@@ -70,7 +74,8 @@ impl LightweightClient {
         let res = client
             .open(OpenRequestLightweight {
                 geometry: Some(geometry.to_msg(None)),
-                parallel_threshold: builder.parallel_threshold as _,
+                fallback_parallel_threshold: builder.fallback_parallel_threshold as _,
+                fallback_timeout: builder.fallback_timeout.as_nanos() as _,
                 send_interval: builder.send_interval.as_nanos() as _,
                 receive_interval: builder.receive_interval.as_nanos() as _,
                 #[cfg(target_os = "windows")]

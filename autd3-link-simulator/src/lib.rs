@@ -1,6 +1,6 @@
 use autd3_protobuf::*;
 
-use std::{net::SocketAddr, time::Duration};
+use std::net::SocketAddr;
 
 use autd3_driver::{
     derive::*,
@@ -10,7 +10,6 @@ use autd3_driver::{
 
 pub struct Simulator {
     client: simulator_client::SimulatorClient<tonic::transport::Channel>,
-    timeout: Duration,
     is_open: bool,
     last_geometry_version: usize,
 }
@@ -19,9 +18,6 @@ pub struct Simulator {
 pub struct SimulatorBuilder {
     #[get]
     addr: SocketAddr,
-    #[get]
-    #[set]
-    timeout: Duration,
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
@@ -49,7 +45,6 @@ impl LinkBuilder for SimulatorBuilder {
 
         Ok(Self::L {
             client,
-            timeout: self.timeout,
             is_open: true,
             last_geometry_version: geometry.version(),
         })
@@ -58,10 +53,7 @@ impl LinkBuilder for SimulatorBuilder {
 
 impl Simulator {
     pub const fn builder(addr: SocketAddr) -> SimulatorBuilder {
-        SimulatorBuilder {
-            addr,
-            timeout: DEFAULT_TIMEOUT,
-        }
+        SimulatorBuilder { addr }
     }
 }
 
@@ -127,9 +119,5 @@ impl Link for Simulator {
 
     fn is_open(&self) -> bool {
         self.is_open
-    }
-
-    fn timeout(&self) -> Duration {
-        self.timeout
     }
 }

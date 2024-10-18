@@ -10,7 +10,7 @@ use derive_more::Deref;
 pub struct DatagramWithTimeout<D: Datagram> {
     #[deref]
     datagram: D,
-    timeout: Duration,
+    timeout: Option<Duration>,
 }
 
 impl<D: Datagram> Datagram for DatagramWithTimeout<D> {
@@ -21,7 +21,7 @@ impl<D: Datagram> Datagram for DatagramWithTimeout<D> {
     }
 
     fn timeout(&self) -> Option<Duration> {
-        Some(self.timeout)
+        self.timeout
     }
 
     fn parallel_threshold(&self) -> Option<usize> {
@@ -30,11 +30,11 @@ impl<D: Datagram> Datagram for DatagramWithTimeout<D> {
 }
 
 pub trait IntoDatagramWithTimeout<D: Datagram> {
-    fn with_timeout(self, timeout: Duration) -> DatagramWithTimeout<D>;
+    fn with_timeout(self, timeout: Option<Duration>) -> DatagramWithTimeout<D>;
 }
 
 impl<D: Datagram> IntoDatagramWithTimeout<D> for D {
-    fn with_timeout(self, timeout: Duration) -> DatagramWithTimeout<D> {
+    fn with_timeout(self, timeout: Option<Duration>) -> DatagramWithTimeout<D> {
         DatagramWithTimeout {
             datagram: self,
             timeout,
@@ -59,7 +59,7 @@ mod tests {
             timeout: None,
             parallel_threshold: Some(100),
         }
-        .with_timeout(std::time::Duration::from_secs(1));
+        .with_timeout(Some(std::time::Duration::from_secs(1)));
         assert_eq!(datagram.timeout(), Some(std::time::Duration::from_secs(1)));
         assert_eq!(datagram.parallel_threshold(), Some(100));
         let _: Result<NullOperationGenerator, _> = datagram.operation_generator(&geometry);

@@ -1,6 +1,6 @@
 use libloading as lib;
 
-use std::{ffi::c_void, time::Duration};
+use std::ffi::c_void;
 
 use lib::Library;
 
@@ -32,16 +32,11 @@ const PORT: u16 = 301;
 pub struct TwinCAT {
     port: i32,
     send_addr: AmsAddr,
-    timeout: Duration,
     dll: Library,
 }
 
 #[derive(Builder)]
-pub struct TwinCATBuilder {
-    #[get]
-    #[set]
-    timeout: Duration,
-}
+pub struct TwinCATBuilder {}
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
 impl LinkBuilder for TwinCATBuilder {
@@ -93,7 +88,6 @@ impl LinkBuilder for TwinCATBuilder {
                 net_id: ams_addr.net_id,
                 port: PORT,
             },
-            timeout: self.timeout,
             dll,
         })
     }
@@ -101,9 +95,7 @@ impl LinkBuilder for TwinCATBuilder {
 
 impl TwinCAT {
     pub const fn builder() -> TwinCATBuilder {
-        TwinCATBuilder {
-            timeout: Duration::ZERO,
-        }
+        TwinCATBuilder {}
     }
 }
 
@@ -200,9 +192,5 @@ impl Link for TwinCAT {
 
     fn is_open(&self) -> bool {
         self.port > 0
-    }
-
-    fn timeout(&self) -> Duration {
-        self.timeout
     }
 }

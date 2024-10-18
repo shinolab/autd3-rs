@@ -18,7 +18,10 @@ pub struct ControllerBuilder {
     devices: Vec<Device>,
     #[get]
     #[set]
-    parallel_threshold: usize,
+    fallback_parallel_threshold: usize,
+    #[set]
+    #[get]
+    fallback_timeout: Duration,
     #[get]
     #[set]
     send_interval: Duration,
@@ -40,7 +43,8 @@ impl ControllerBuilder {
                 .enumerate()
                 .map(|(i, d)| d.into_device(i as _))
                 .collect(),
-            parallel_threshold: 4,
+            fallback_parallel_threshold: 4,
+            fallback_timeout: Duration::from_millis(20),
             send_interval: Duration::from_millis(1),
             receive_interval: Duration::from_millis(1),
             #[cfg(target_os = "windows")]
@@ -67,7 +71,8 @@ impl ControllerBuilder {
             tx_buf: TxDatagram::new(geometry.num_devices()),
             rx_buf: vec![RxMessage::new(0, 0); geometry.num_devices()],
             geometry,
-            parallel_threshold: self.parallel_threshold,
+            fallback_parallel_threshold: self.fallback_parallel_threshold,
+            fallback_timeout: self.fallback_timeout,
             send_interval: self.send_interval,
             receive_interval: self.receive_interval,
             #[cfg(target_os = "windows")]

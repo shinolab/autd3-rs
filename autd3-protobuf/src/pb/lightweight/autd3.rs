@@ -1851,12 +1851,14 @@ pub struct OpenRequestLightweight {
     #[prost(message, optional, tag = "1")]
     pub geometry: ::core::option::Option<Geometry>,
     #[prost(uint64, tag = "2")]
-    pub parallel_threshold: u64,
+    pub fallback_parallel_threshold: u64,
     #[prost(uint64, tag = "3")]
-    pub send_interval: u64,
+    pub fallback_timeout: u64,
     #[prost(uint64, tag = "4")]
+    pub send_interval: u64,
+    #[prost(uint64, tag = "5")]
     pub receive_interval: u64,
-    #[prost(uint32, tag = "5")]
+    #[prost(uint32, tag = "6")]
     pub timer_resolution: u32,
 }
 /// Generated client implementations.
