@@ -74,7 +74,7 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
                 acc
             })
             .into_iter()
-            .map(|x| (x * scale + (self.offset as f32) / 2.).round() as isize)
+            .map(|x| (x * scale + self.offset).round() as isize)
             .map(|v| {
                 if (u8::MIN as _..=u8::MAX as _).contains(&v) {
                     Ok(v as _)
