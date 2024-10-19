@@ -1377,8 +1377,8 @@ pub struct SineExact {
     pub config: ::core::option::Option<SamplingConfig>,
     #[prost(uint32, optional, tag = "3")]
     pub intensity: ::core::option::Option<u32>,
-    #[prost(float, optional, tag = "4")]
-    pub offset: ::core::option::Option<f32>,
+    #[prost(uint32, optional, tag = "4")]
+    pub offset: ::core::option::Option<u32>,
     #[prost(message, optional, tag = "5")]
     pub phase: ::core::option::Option<Angle>,
 }
@@ -1390,8 +1390,8 @@ pub struct SineExactFloat {
     pub config: ::core::option::Option<SamplingConfig>,
     #[prost(uint32, optional, tag = "3")]
     pub intensity: ::core::option::Option<u32>,
-    #[prost(float, optional, tag = "4")]
-    pub offset: ::core::option::Option<f32>,
+    #[prost(uint32, optional, tag = "4")]
+    pub offset: ::core::option::Option<u32>,
     #[prost(message, optional, tag = "5")]
     pub phase: ::core::option::Option<Angle>,
 }
@@ -1403,8 +1403,8 @@ pub struct SineNearest {
     pub config: ::core::option::Option<SamplingConfig>,
     #[prost(uint32, optional, tag = "3")]
     pub intensity: ::core::option::Option<u32>,
-    #[prost(float, optional, tag = "4")]
-    pub offset: ::core::option::Option<f32>,
+    #[prost(uint32, optional, tag = "4")]
+    pub offset: ::core::option::Option<u32>,
     #[prost(message, optional, tag = "5")]
     pub phase: ::core::option::Option<Angle>,
 }

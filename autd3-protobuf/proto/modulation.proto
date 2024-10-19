@@ -11,7 +11,7 @@ message SineExact {
   uint32 freq = 1;
   optional SamplingConfig config = 2;
   optional uint32 intensity = 3;
-  optional float offset = 4;
+  optional uint32 offset = 4;
   optional Angle phase = 5;
 }
 
@@ -19,7 +19,7 @@ message SineExactFloat {
   float freq = 1;
   optional SamplingConfig config = 2;
   optional uint32 intensity = 3;
-  optional float offset = 4;
+  optional uint32 offset = 4;
   optional Angle phase = 5;
 }
 
@@ -27,7 +27,7 @@ message SineNearest {
   float freq = 1;
   optional SamplingConfig config = 2;
   optional uint32 intensity = 3;
-  optional float offset = 4;
+  optional uint32 offset = 4;
   optional Angle phase = 5;
 }
 

@@ -16,7 +16,7 @@ pub struct Sine<S: SamplingMode> {
     intensity: u8,
     #[get]
     #[set]
-    offset: f32,
+    offset: u8,
     #[get]
     #[set]
     phase: Angle,
@@ -32,7 +32,7 @@ impl Sine<ExactFreq> {
         Sine {
             freq,
             intensity: u8::MAX,
-            offset: u8::MAX as f32 / 2.,
+            offset: u8::MAX,
             phase: Angle::Rad(0.0),
             clamp: false,
             config: SamplingConfig::FREQ_4K,
@@ -45,7 +45,7 @@ impl Sine<ExactFreq> {
             freq,
             intensity: u8::MAX,
             phase: Angle::Rad(0.0),
-            offset: u8::MAX as f32 / 2.,
+            offset: u8::MAX,
             clamp: false,
             config: SamplingConfig::FREQ_4K,
             loop_behavior: LoopBehavior::infinite(),
@@ -67,7 +67,7 @@ impl<S: SamplingMode> Sine<S> {
         let phase = self.phase.radian();
         Ok((0..n).map(move |i| {
             (intensity as f32 / 2. * (2.0 * PI * (rep * i) as f32 / n as f32 + phase).sin())
-                + offset
+                + (offset as f32) / 2.
         }))
     }
 }
@@ -167,7 +167,7 @@ mod tests {
         let m = Sine::new(freq);
         assert_eq!(freq, m.freq());
         assert_eq!(u8::MAX, m.intensity());
-        assert_eq!(u8::MAX as f32 / 2., m.offset());
+        assert_eq!(u8::MAX, m.offset());
         assert_eq!(Angle::Rad(0.0), m.phase());
         assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
         assert_eq!(expect, m.calc());
@@ -195,7 +195,7 @@ mod tests {
             assert_eq!(freq, m.freq());
         }
         assert_eq!(u8::MAX, m.intensity());
-        assert_eq!(u8::MAX as f32 / 2., m.offset());
+        assert_eq!(u8::MAX, m.offset());
         assert_eq!(Angle::Rad(0.0), m.phase());
         assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
         assert_eq!(expect, m.calc());
@@ -205,11 +205,11 @@ mod tests {
     fn test_sine_with_param() -> anyhow::Result<()> {
         let m = Sine::new(100. * Hz)
             .with_intensity(u8::MAX / 2)
-            .with_offset(u8::MAX as f32 / 4.)
+            .with_offset(u8::MAX / 4)
             .with_phase(PI / 4.0 * rad)
             .with_sampling_config(SamplingConfig::new_nearest(10.1 * kHz))?;
         assert_eq!(u8::MAX / 2, m.intensity);
-        assert_eq!(u8::MAX as f32 / 4., m.offset());
+        assert_eq!(u8::MAX / 4, m.offset);
         assert_eq!(PI / 4.0 * rad, m.phase);
         assert_eq!(SamplingConfig::new_nearest(10.1 * kHz), m.config);
 
@@ -219,18 +219,18 @@ mod tests {
     #[rstest::rstest]
     #[case(
         Err(AUTDInternalError::ModulationError("Sine modulation value (-39) is out of range [0, 255]".to_owned())),
-        0.,
+        0x00,
         false
     )]
     #[case(
         Ok(vec![0, 39, 75, 103, 121, 128, 121, 103, 75, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-        0.,
+        0x00,
         true
     )]
     #[test]
     fn out_of_range(
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
-        #[case] offset: f32,
+        #[case] offset: u8,
         #[case] clamp: bool,
     ) {
         assert_eq!(
