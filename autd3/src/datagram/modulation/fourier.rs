@@ -19,7 +19,7 @@ pub struct Fourier<S: SamplingMode> {
     clamp: bool,
     #[get]
     #[set]
-    offset: u8,
+    offset: f32,
     loop_behavior: LoopBehavior,
 }
 
@@ -50,7 +50,7 @@ impl<S: SamplingMode> Fourier<S> {
             components,
             scale_factor: None,
             clamp: false,
-            offset: 0,
+            offset: 0.,
             loop_behavior: LoopBehavior::infinite(),
         })
     }
@@ -74,7 +74,7 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
                 acc
             })
             .into_iter()
-            .map(|x| (x * scale + (self.offset as f32) / 2.).round() as isize)
+            .map(|x| (x * scale + self.offset).round() as isize)
             .map(|v| {
                 if (u8::MIN as _..=u8::MAX as _).contains(&v) {
                     Ok(v as _)
@@ -174,26 +174,26 @@ mod tests {
     #[rstest::rstest]
     #[case(
         Err(AUTDInternalError::ModulationError("Fourier modulation value (-39) is out of range [0, 255]".to_owned())),
-        0x00,
+        0.,
         false,
         None
     )]
     #[case(
         Ok(vec![0, 39, 75, 103, 121, 128, 121, 103, 75, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-        0x00,
+        0.,
         true,
         None
     )]
     #[case(
         Err(AUTDInternalError::ModulationError("Fourier modulation value (334) is out of range [0, 255]".to_owned())),
-        0xFF,
+        127.5,
         false,
         Some(2.)
     )]
     #[test]
     fn out_of_range(
         #[case] expect: Result<Vec<u8>, AUTDInternalError>,
-        #[case] offset: u8,
+        #[case] offset: f32,
         #[case] clamp: bool,
         #[case] scale: Option<f32>,
     ) {
