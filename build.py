@@ -248,6 +248,8 @@ def rust_test(args):
                 command.append("--exclude")
                 command.append("autd3-derive")
                 command.append("--exclude")
+                command.append("autd3-driver")
+                command.append("--exclude")
                 command.append("autd3-link-simulator")
                 command.append("--exclude")
                 command.append("autd3-link-twincat")

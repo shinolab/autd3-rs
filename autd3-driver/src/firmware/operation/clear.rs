@@ -4,11 +4,11 @@ use crate::{
     geometry::Device,
 };
 
-use super::write_to_tx;
-
 use derive_new::new;
+use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
+#[derive(IntoBytes, Immutable)]
 struct Clear {
     tag: TypeTag,
     __pad: u8,
@@ -23,15 +23,13 @@ pub struct ClearOp {
 
 impl Operation for ClearOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        unsafe {
-            write_to_tx(
-                Clear {
-                    tag: TypeTag::Clear,
-                    __pad: 0,
-                },
-                tx,
-            );
-        }
+        tx[..size_of::<Clear>()].copy_from_slice(
+            Clear {
+                tag: TypeTag::Clear,
+                __pad: 0,
+            }
+            .as_bytes(),
+        );
 
         self.is_done = true;
         Ok(std::mem::size_of::<Clear>())

@@ -47,8 +47,8 @@ mod tests {
         let mut rng = rand::thread_rng();
         let mut tx = autd3_driver::firmware::cpu::TxDatagram::new(10);
         (0..10).for_each(|i| {
-            tx[i].header.msg_id = rng.gen();
-            tx[i].header.slot_2_offset = rng.gen();
+            tx[i].header_mut().msg_id = rng.gen();
+            tx[i].header_mut().slot_2_offset = rng.gen();
         });
         let msg = tx.to_msg(None);
         let tx2 = autd3_driver::firmware::cpu::TxDatagram::from_msg(&msg).unwrap();

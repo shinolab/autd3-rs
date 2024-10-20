@@ -11,14 +11,16 @@ use crate::{
             Drive, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX, STM_BUF_SIZE_MIN,
             TRANSITION_MODE_NONE,
         },
-        operation::{write_to_tx, Operation, TypeTag},
+        operation::{Operation, TypeTag},
     },
     geometry::Device,
 };
 
 use super::GainContext;
 
-#[derive(Clone, Copy)]
+use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout};
+
+#[derive(Clone, Copy, IntoBytes, Immutable)]
 #[repr(C)]
 pub struct GainSTMControlFlags(u8);
 
@@ -34,12 +36,14 @@ bitflags::bitflags! {
     }
 }
 
+#[derive(IntoBytes, Immutable, FromBytes, KnownLayout)]
 struct PhaseFull {
     phase_0: u8,
     phase_1: u8,
 }
 
 #[bitfield_struct::bitfield(u16)]
+#[derive(IntoBytes, Immutable, FromBytes, KnownLayout)]
 struct PhaseHalf {
     #[bits(4)]
     phase_0: u8,
@@ -52,6 +56,7 @@ struct PhaseHalf {
 }
 
 #[repr(C, align(2))]
+#[derive(IntoBytes, Immutable)]
 struct GainSTMHead {
     tag: TypeTag,
     flag: GainSTMControlFlags,
@@ -63,6 +68,7 @@ struct GainSTMHead {
 }
 
 #[repr(C, align(2))]
+#[derive(IntoBytes, Immutable)]
 struct GainSTMSubseq {
     tag: TypeTag,
     flag: GainSTMControlFlags,
@@ -119,31 +125,26 @@ impl<Context: GainContext> Operation for GainSTMOp<Context> {
             size_of::<GainSTMSubseq>()
         };
 
-        let send = unsafe {
+        let send = {
             let mut send = 0;
             match self.mode {
                 GainSTMMode::PhaseIntensityFull => {
                     if let Some(g) = self.gains.next() {
-                        let dst = std::slice::from_raw_parts_mut(
-                            tx[offset..].as_mut_ptr() as *mut Drive,
-                            device.len(),
-                        );
-                        dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                            *d = g.calc(tr);
-                        });
+                        tx[offset..]
+                            .chunks_mut(size_of::<Drive>())
+                            .zip(device.iter())
+                            .for_each(|(dst, tr)| {
+                                dst.copy_from_slice(g.calc(tr).as_bytes());
+                            });
                         send += 1;
                     }
                 }
                 GainSTMMode::PhaseFull => {
-                    let dst = std::slice::from_raw_parts_mut(
-                        tx[offset..].as_mut_ptr() as *mut PhaseFull,
-                        device.len(),
-                    );
                     seq_macro::seq!(N in 0..2 {
                         #(
                             if let Some(g) = self.gains.next() {
-                                dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                                    d.phase_~N = g.calc(tr).phase().value();
+                                tx[offset..].chunks_exact_mut(size_of::<PhaseFull>()).zip(device.iter()).for_each(|(dst, tr)| {
+                                    PhaseFull::mut_from_bytes(dst).unwrap().phase_~N = g.calc(tr).phase().value();
                                 });
                                 send += 1;
                             }
@@ -151,15 +152,11 @@ impl<Context: GainContext> Operation for GainSTMOp<Context> {
                     });
                 }
                 GainSTMMode::PhaseHalf => {
-                    let dst = std::slice::from_raw_parts_mut(
-                        tx[offset..].as_mut_ptr() as *mut PhaseHalf,
-                        device.len(),
-                    );
                     seq_macro::seq!(N in 0..4 {
                         #(
                             if let Some(g) = self.gains.next() {
-                                dst.iter_mut().zip(device.iter()).for_each(|(d, tr)| {
-                                    d.set_phase_~N(g.calc(tr).phase().value() >> 4);
+                                tx[offset..].chunks_exact_mut(size_of::<PhaseHalf>()).zip(device.iter()).for_each(|(dst, tr)| {
+                                    PhaseHalf::mut_from_bytes(dst).unwrap().set_phase_~N(g.calc(tr).phase().value() >> 4);
                                 });
                                 send += 1;
                             }
@@ -202,33 +199,29 @@ impl<Context: GainContext> Operation for GainSTMOp<Context> {
         );
 
         if is_first {
-            unsafe {
-                write_to_tx(
-                    GainSTMHead {
-                        tag: TypeTag::GainSTM,
-                        flag: GainSTMControlFlags::BEGIN | flag,
-                        mode: self.mode,
-                        transition_mode: self
-                            .transition_mode
-                            .map(|m| m.mode())
-                            .unwrap_or(TRANSITION_MODE_NONE),
-                        transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
-                        freq_div: self.config.division(),
-                        rep: self.loop_behavior.rep(),
-                    },
-                    tx,
-                );
-            }
+            tx[..size_of::<GainSTMHead>()].copy_from_slice(
+                GainSTMHead {
+                    tag: TypeTag::GainSTM,
+                    flag: GainSTMControlFlags::BEGIN | flag,
+                    mode: self.mode,
+                    transition_mode: self
+                        .transition_mode
+                        .map(|m| m.mode())
+                        .unwrap_or(TRANSITION_MODE_NONE),
+                    transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
+                    freq_div: self.config.division(),
+                    rep: self.loop_behavior.rep(),
+                }
+                .as_bytes(),
+            );
         } else {
-            unsafe {
-                write_to_tx(
-                    GainSTMSubseq {
-                        tag: TypeTag::GainSTM,
-                        flag,
-                    },
-                    tx,
-                );
-            }
+            tx[..size_of::<GainSTMSubseq>()].copy_from_slice(
+                GainSTMSubseq {
+                    tag: TypeTag::GainSTM,
+                    flag,
+                }
+                .as_bytes(),
+            );
         }
 
         if is_first {
@@ -254,8 +247,8 @@ mod tests {
         derive::Transducer,
         ethercat::DcSysTime,
         firmware::{
+            cpu::TxDatagram,
             fpga::{EmitIntensity, Phase},
-            operation::tests::parse_tx_as,
         },
         geometry::tests::create_device,
     };
@@ -337,29 +330,22 @@ mod tests {
             assert_eq!(op.sent, 1);
 
             assert_eq!(TypeTag::GainSTM as u8, tx[0]);
-            assert_eq!(
-                GainSTMControlFlags::BEGIN.bits(),
-                tx[offset_of!(GainSTMHead, flag)] & 0x3F
-            );
-            assert_eq!(0, tx[offset_of!(GainSTMHead, flag)] >> 6);
-            assert_eq!(
-                GainSTMMode::PhaseIntensityFull as u8,
-                tx[offset_of!(GainSTMHead, mode)]
-            );
-            assert_eq!(
-                freq_div,
-                parse_tx_as::<u16>(&tx[offset_of!(GainSTMHead, freq_div)..])
-            );
-            assert_eq!(rep, parse_tx_as::<u16>(&tx[offset_of!(GainSTMHead, rep)..]));
-            assert_eq!(
-                transition_mode.mode(),
-                tx[offset_of!(GainSTMHead, transition_mode)]
-            );
-            assert_eq!(
-                transition_value,
-                parse_tx_as::<u64>(&tx[offset_of!(GainSTMHead, transition_value)..])
-            );
-
+            assert_eq!(GainSTMControlFlags::BEGIN.bits(), tx[1] & 0x3F);
+            assert_eq!(0, tx[1] >> 6);
+            assert_eq!(GainSTMMode::PhaseIntensityFull as u8, tx[2]);
+            assert_eq!(transition_mode.mode(), tx[3]);
+            assert_eq!(freq_div as u8, tx[4]);
+            assert_eq!((freq_div >> 8) as u8, tx[5]);
+            assert_eq!(rep as u8, tx[6]);
+            assert_eq!((rep >> 8) as u8, tx[7]);
+            assert_eq!(transition_value as u8, tx[8]);
+            assert_eq!((transition_value >> 8) as u8, tx[9]);
+            assert_eq!((transition_value >> 16) as u8, tx[10]);
+            assert_eq!((transition_value >> 24) as u8, tx[11]);
+            assert_eq!((transition_value >> 32) as u8, tx[12]);
+            assert_eq!((transition_value >> 40) as u8, tx[13]);
+            assert_eq!((transition_value >> 48) as u8, tx[14]);
+            assert_eq!((transition_value >> 56) as u8, tx[15]);
             tx[size_of::<GainSTMHead>()..]
                 .chunks(size_of::<Drive>())
                 .zip(gain_data[0].iter())
@@ -567,22 +553,11 @@ mod tests {
     #[test]
     fn test_phase_half() {
         const GAIN_STM_SIZE: usize = 9;
-        const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
         let device = create_device(0, NUM_TRANS_IN_UNIT as _);
 
-        let mut tx = unsafe {
-            let mut aligned: Vec<u16> = vec![0; FRAME_SIZE / 2];
-            let ptr = aligned.as_mut_ptr();
-            let len_units = aligned.len();
-            let cap_units = aligned.capacity();
-            std::mem::forget(aligned);
-            Vec::from_raw_parts(
-                ptr as *mut u8,
-                len_units * std::mem::size_of::<u16>(),
-                cap_units * std::mem::size_of::<u16>(),
-            )
-        };
+        let mut tx = TxDatagram::new(1);
+        let tx = tx[0].payload_mut();
 
         let mut rng = rand::thread_rng();
 
@@ -624,7 +599,7 @@ mod tests {
             );
 
             assert_eq!(
-                op.pack(&device, &mut tx),
+                op.pack(&device, tx),
                 Ok(size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2)
             );
 
@@ -663,7 +638,7 @@ mod tests {
             );
 
             assert_eq!(
-                op.pack(&device, &mut tx),
+                op.pack(&device, tx),
                 Ok(size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2)
             );
 
@@ -697,7 +672,7 @@ mod tests {
             );
 
             assert_eq!(
-                op.pack(&device, &mut tx),
+                op.pack(&device, tx),
                 Ok(size_of::<GainSTMSubseq>() + NUM_TRANS_IN_UNIT * 2)
             );
 
@@ -716,18 +691,6 @@ mod tests {
                     assert_eq!(d[0] & 0x0F, g.phase().value() >> 4);
                 });
         }
-
-        unsafe {
-            let ptr = tx.as_mut_ptr();
-            let len_units = tx.len();
-            let cap_units = tx.capacity();
-            std::mem::forget(tx);
-            let _ = Vec::from_raw_parts(
-                ptr as *mut u16,
-                len_units / std::mem::size_of::<u16>(),
-                cap_units / std::mem::size_of::<u16>(),
-            );
-        }
     }
 
     #[rstest::rstest]
@@ -740,7 +703,6 @@ mod tests {
         Err(AUTDInternalError::GainSTMSizeOutOfRange(GAIN_STM_BUF_SIZE_MAX+1)),
         GAIN_STM_BUF_SIZE_MAX+1
     )]
-    #[cfg_attr(miri, ignore)]
     fn out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] size: usize) {
         let send = |n: usize| {
             const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;

@@ -135,7 +135,8 @@ pub async fn send_receive(
         tx.iter().format_with(", ", |elt, f| {
             f(&format_args!(
                 "({:?}, TAG: {:#04X})",
-                elt.header, elt.payload[0]
+                elt.header(),
+                elt.payload()[0]
             ))
         })
     );
@@ -233,7 +234,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg_attr(miri, ignore)]
     async fn test_close() -> anyhow::Result<()> {
         let mut link = MockLink {
             is_open: true,
@@ -252,7 +252,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg_attr(miri, ignore)]
     async fn test_send_receive() {
         let mut link = MockLink {
             is_open: true,
@@ -317,7 +316,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg_attr(miri, ignore)]
     async fn test_wait_msg_processed() {
         let mut link = MockLink {
             is_open: true,
@@ -327,7 +325,7 @@ mod tests {
         };
 
         let mut tx = TxDatagram::new(1);
-        tx[0].header.msg_id = 2;
+        tx[0].header_mut().msg_id = 2;
         let mut rx = vec![RxMessage::new(0, 0)];
         assert_eq!(
             wait_msg_processed(
@@ -387,7 +385,7 @@ mod tests {
 
         link.down = false;
         link.recv_cnt = 0;
-        tx[0].header.msg_id = 20;
+        tx[0].header_mut().msg_id = 20;
         assert_eq!(
             wait_msg_processed(
                 &mut link,

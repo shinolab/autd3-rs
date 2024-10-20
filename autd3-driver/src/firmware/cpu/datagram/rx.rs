@@ -41,7 +41,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_message_size() {
         assert_eq!(2, size_of::<RxMessage>());
         assert_eq!(0, offset_of!(RxMessage, data));

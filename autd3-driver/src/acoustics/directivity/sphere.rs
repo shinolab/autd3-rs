@@ -21,7 +21,6 @@ mod tests {
     use rand::prelude::*;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_directivity() {
         let mut rng = rand::thread_rng();
         assert_eq!(1.0, Sphere::directivity(rng.gen::<f32>() * rad));
@@ -32,7 +31,6 @@ mod tests {
     #[case::dir_x(1., Vector3::x())]
     #[case::dir_y(1., Vector3::y())]
     #[case::dir_z(1., Vector3::z())]
-    #[cfg_attr(miri, ignore)]
     fn test_directivity_sphere_from_dir(#[case] expected: f32, #[case] target: Vector3) {
         let mut rng = rand::thread_rng();
         let dir = Vector3::new(rng.gen(), rng.gen(), rng.gen());

@@ -35,6 +35,7 @@ pub(crate) use silencer::*;
 pub(crate) use stm_foci::*;
 pub(crate) use stm_gain::*;
 pub(crate) use sync::*;
+use zerocopy::{Immutable, IntoBytes};
 
 use crate::{
     error::AUTDInternalError,
@@ -46,7 +47,7 @@ use super::cpu::TxDatagram;
 
 use rayon::prelude::*;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, IntoBytes, Immutable)]
 #[repr(u8)]
 #[non_exhaustive]
 pub(crate) enum TypeTag {
@@ -69,15 +70,6 @@ pub(crate) enum TypeTag {
     Debug = 0xF0,
     EmulateGPIOIn = 0xF1,
     CpuGPIOOut = 0xF2,
-}
-
-unsafe fn write_to_tx<T>(src: T, dst: &mut [u8]) /* ignore miri */
-{
-    std::ptr::copy_nonoverlapping(
-        &src as *const T as *const u8,
-        dst.as_mut_ptr(),
-        std::mem::size_of::<T>(),
-    );
 }
 
 pub trait Operation: Send + Sync {
@@ -165,10 +157,9 @@ impl OperationHandler {
             (false, true) => Self::pack_op(op1, dev, tx).map(|_| Ok(()))?,
             (false, false) => {
                 let op1_size = Self::pack_op(op1, dev, tx)?;
-                let t = &mut tx.payload;
-                if t.len() - op1_size >= op2.required_size(dev) {
-                    op2.pack(dev, &mut t[op1_size..])?;
-                    tx.header.slot_2_offset = op1_size as u16;
+                if tx.payload().len() - op1_size >= op2.required_size(dev) {
+                    op2.pack(dev, &mut tx.payload_mut()[op1_size..])?;
+                    tx.header_mut().slot_2_offset = op1_size as u16;
                 }
                 Ok(())
             }
@@ -180,11 +171,10 @@ impl OperationHandler {
         dev: &Device,
         tx: &mut TxMessage,
     ) -> Result<usize, AUTDInternalError> {
-        let header = &mut tx.header;
-        header.msg_id += 1;
-        header.msg_id &= MSG_ID_MAX;
-        header.slot_2_offset = 0;
-        op.pack(dev, &mut tx.payload)
+        tx.header_mut().msg_id += 1;
+        tx.header_mut().msg_id &= MSG_ID_MAX;
+        tx.header_mut().slot_2_offset = 0;
+        op.pack(dev, tx.payload_mut())
     }
 }
 
@@ -200,13 +190,6 @@ pub mod tests {
     };
 
     use super::*;
-
-    pub(crate) fn parse_tx_as<T>(tx: &[u8]) -> T {
-        unsafe /* ignore miri */ {
-            let ptr = tx.as_ptr() as *const T;
-            ptr.read_unaligned()
-        }
-    }
 
     struct OperationMock {
         pub pack_size: usize,
@@ -237,7 +220,6 @@ pub mod tests {
     #[test]
     #[case::serial(false)]
     #[case::parallel(true)]
-    #[cfg_attr(miri, ignore)]
     fn test(#[case] parallel: bool) {
         let geometry = Geometry::new(vec![Device::new(
             0,
@@ -288,7 +270,6 @@ pub mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_first() {
         let geometry = Geometry::new(vec![Device::new(
             0,
@@ -324,7 +305,6 @@ pub mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_second() {
         let geometry = Geometry::new(vec![Device::new(
             0,
@@ -360,7 +340,6 @@ pub mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_broken_pack() {
         let geometry = Geometry::new(vec![Device::new(
             0,
@@ -418,7 +397,6 @@ pub mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_finished() {
         let geometry = Geometry::new(vec![Device::new(
             0,
@@ -449,7 +427,6 @@ pub mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn msg_id() {
         let geometry = Geometry::new(vec![Device::new(
             0,
@@ -460,7 +437,7 @@ pub mod tests {
         let mut tx = TxDatagram::new(1);
 
         for i in 0..=MSG_ID_MAX {
-            assert_eq!(i, tx[0].header.msg_id);
+            assert_eq!(i, tx[0].header().msg_id);
             let mut op = vec![(
                 OperationMock {
                     pack_size: 0,
@@ -477,6 +454,6 @@ pub mod tests {
             )];
             assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, false).is_ok());
         }
-        assert_eq!(0, tx[0].header.msg_id);
+        assert_eq!(0, tx[0].header().msg_id);
     }
 }

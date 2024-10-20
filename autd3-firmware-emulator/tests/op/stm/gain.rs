@@ -443,7 +443,7 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
     let generator = d.operation_generator(&geometry)?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, false)?;
-    tx[0].payload[2] = 3;
+    tx[0].payload_mut()[2] = 3;
 
     cpu.send(&tx);
     assert_eq!(

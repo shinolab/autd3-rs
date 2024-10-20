@@ -4,11 +4,11 @@ use crate::{
     geometry::Device,
 };
 
-use super::write_to_tx;
 use derive_new::new;
+use zerocopy::{Immutable, IntoBytes};
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, IntoBytes, Immutable)]
 pub enum FirmwareVersionType {
     CPUMajor = 0x01,
     CPUMinor = 0x02,
@@ -19,6 +19,7 @@ pub enum FirmwareVersionType {
 }
 
 #[repr(C, align(2))]
+#[derive(IntoBytes, Immutable)]
 struct FirmInfo {
     tag: TypeTag,
     ty: FirmwareVersionType,
@@ -34,22 +35,20 @@ pub struct FirmInfoOp {
 
 impl Operation for FirmInfoOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        unsafe {
-            write_to_tx(
-                FirmInfo {
-                    tag: TypeTag::FirmwareVersion,
-                    ty: self.ty,
-                },
-                tx,
-            );
-        }
+        tx[..size_of::<FirmInfo>()].copy_from_slice(
+            FirmInfo {
+                tag: TypeTag::FirmwareVersion,
+                ty: self.ty,
+            }
+            .as_bytes(),
+        );
 
         self.is_done = true;
-        Ok(std::mem::size_of::<FirmInfo>())
+        Ok(size_of::<FirmInfo>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        std::mem::size_of::<FirmInfo>()
+        size_of::<FirmInfo>()
     }
 
     fn is_done(&self) -> bool {
@@ -59,8 +58,6 @@ impl Operation for FirmInfoOp {
 
 #[cfg(test)]
 mod tests {
-    use std::mem::size_of;
-
     use super::*;
     use crate::geometry::tests::create_device;
 

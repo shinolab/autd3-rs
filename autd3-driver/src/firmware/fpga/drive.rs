@@ -3,8 +3,9 @@ use autd3_derive::Builder;
 use super::{EmitIntensity, Phase};
 
 use derive_new::new;
+use zerocopy::{Immutable, IntoBytes};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Builder, new)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Builder, new, IntoBytes, Immutable)]
 #[repr(C)]
 pub struct Drive {
     #[get]
@@ -69,7 +70,6 @@ mod tests {
         EmitIntensity::new(0x01)
     )]
     #[case(Drive::new(Phase::new(0x01), EmitIntensity::MAX), Phase::new(0x01))]
-    #[cfg_attr(miri, ignore)]
     fn from(#[case] expected: Drive, #[case] target: impl Into<Drive>) {
         assert_eq!(expected, target.into());
     }
@@ -88,7 +88,6 @@ mod tests {
         EmitIntensity::new(0xFF),
         Drive::new(Phase::ZERO, EmitIntensity::new(0xFF))
     )]
-    #[cfg_attr(miri, ignore)]
     fn test_intensity(#[case] expected: EmitIntensity, #[case] target: Drive) {
         assert_eq!(expected, target.intensity());
     }
@@ -101,13 +100,11 @@ mod tests {
         Phase::new(0xFF),
         Drive::new(Phase::new(0xFF), EmitIntensity::new(0x00))
     )]
-    #[cfg_attr(miri, ignore)]
     fn test_phase(#[case] expected: Phase, #[case] target: Drive) {
         assert_eq!(expected, target.phase());
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_null() {
         assert_eq!(
             Drive::new(Phase::ZERO, EmitIntensity::new(0x00)),

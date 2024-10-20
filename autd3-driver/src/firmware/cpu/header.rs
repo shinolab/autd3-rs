@@ -2,7 +2,7 @@ pub const MSG_ID_MAX: u8 = 0x7F;
 
 use derive_more::Debug;
 
-#[repr(C)]
+#[repr(C, align(2))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Header {
     pub msg_id: u8,
@@ -19,7 +19,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_size() {
         assert_eq!(4, size_of::<Header>());
         assert_eq!(0, offset_of!(Header, msg_id));

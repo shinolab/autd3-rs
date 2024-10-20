@@ -64,7 +64,7 @@ fn invalid_info_type() -> anyhow::Result<()> {
     let (op, op_null) = d.operation_generator(&geometry)?.generate(&geometry[0]);
 
     OperationHandler::pack(&mut [(op, op_null)], &geometry, &mut tx, false)?;
-    tx[0].payload[1] = 7;
+    tx[0].payload_mut()[1] = 7;
 
     cpu.send(&tx);
     assert_eq!(

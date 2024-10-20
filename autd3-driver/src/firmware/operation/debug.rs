@@ -4,14 +4,16 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::DebugValue,
-        operation::{write_to_tx, Operation, TypeTag},
+        operation::{Operation, TypeTag},
     },
     geometry::Device,
 };
 
 use derive_new::new;
+use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
+#[derive(IntoBytes, Immutable)]
 struct DebugSetting {
     tag: TypeTag,
     __pad: [u8; 7],
@@ -28,16 +30,14 @@ pub struct DebugSettingOp {
 
 impl Operation for DebugSettingOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        unsafe {
-            write_to_tx(
-                DebugSetting {
-                    tag: TypeTag::Debug,
-                    __pad: [0; 7],
-                    value: self.value,
-                },
-                tx,
-            );
-        }
+        tx[..size_of::<DebugSetting>()].copy_from_slice(
+            DebugSetting {
+                tag: TypeTag::Debug,
+                __pad: [0; 7],
+                value: self.value,
+            }
+            .as_bytes(),
+        );
 
         self.is_done = true;
         Ok(size_of::<DebugSetting>())

@@ -1,6 +1,7 @@
 use crate::{defined::ULTRASOUND_PERIOD, ethercat::DcSysTime, geometry::Transducer};
 
 use derive_more::Debug;
+use zerocopy::{Immutable, IntoBytes};
 
 #[non_exhaustive]
 #[derive(Clone, Debug)]
@@ -25,6 +26,7 @@ pub enum DebugType<'a> {
 }
 
 #[bitfield_struct::bitfield(u64)]
+#[derive(IntoBytes, Immutable)]
 pub(crate) struct DebugValue {
     #[bits(56)]
     pub(crate) value: u64,
@@ -85,7 +87,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn display() {
         assert_eq!("None", format!("{:?}", DebugType::None));
         assert_eq!("BaseSignal", format!("{:?}", DebugType::BaseSignal));

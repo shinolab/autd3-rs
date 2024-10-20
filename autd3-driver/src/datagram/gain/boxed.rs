@@ -192,7 +192,6 @@ pub mod tests {
         ].into_iter().collect(),
         vec![true, false],
         2)]
-    #[cfg_attr(miri, ignore)]
     fn boxed_gain(
         #[case] expect: HashMap<usize, Vec<Drive>>,
         #[case] enabled: Vec<bool>,

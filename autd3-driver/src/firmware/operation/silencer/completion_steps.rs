@@ -5,7 +5,7 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::SilencerTarget,
-        operation::{write_to_tx, Operation, TypeTag},
+        operation::{Operation, TypeTag},
     },
     geometry::Device,
 };
@@ -13,8 +13,10 @@ use crate::{
 use super::{SILENCER_FLAG_PULSE_WIDTH, SILENCER_FLAG_STRICT_MODE};
 
 use derive_new::new;
+use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
+#[derive(IntoBytes, Immutable)]
 struct SilencerFixedCompletionSteps {
     tag: TypeTag,
     flag: u8,
@@ -51,24 +53,22 @@ impl Operation for SilencerFixedCompletionStepsOp {
         let step_intensity = validate(self.intensity)?;
         let step_phase = validate(self.phase)?;
 
-        unsafe {
-            write_to_tx(
-                SilencerFixedCompletionSteps {
-                    tag: TypeTag::Silencer,
-                    flag: if self.strict_mode {
-                        SILENCER_FLAG_STRICT_MODE
-                    } else {
-                        0
-                    } | match self.target {
-                        SilencerTarget::Intensity => 0,
-                        SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
-                    },
-                    value_intensity: step_intensity,
-                    value_phase: step_phase,
+        tx[..size_of::<SilencerFixedCompletionSteps>()].copy_from_slice(
+            SilencerFixedCompletionSteps {
+                tag: TypeTag::Silencer,
+                flag: if self.strict_mode {
+                    SILENCER_FLAG_STRICT_MODE
+                } else {
+                    0
+                } | match self.target {
+                    SilencerTarget::Intensity => 0,
+                    SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
                 },
-                tx,
-            );
-        }
+                value_intensity: step_intensity,
+                value_phase: step_phase,
+            }
+            .as_bytes(),
+        );
 
         self.is_done = true;
         Ok(std::mem::size_of::<SilencerFixedCompletionSteps>())
@@ -97,7 +97,6 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(SILENCER_FLAG_STRICT_MODE, true)]
-    #[cfg_attr(miri, ignore)]
     #[case(0x00, false)]
     fn test(#[case] value: u8, #[case] strict_mode: bool) {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
@@ -161,7 +160,6 @@ mod tests {
         Duration::from_micros(25),
         Duration::from_micros(51)
     )]
-    #[cfg_attr(miri, ignore)]
     fn invalid_time(
         #[case] expected: AUTDInternalError,
         #[case] time_intensity: Duration,

@@ -1,12 +1,14 @@
 use crate::{
     error::AUTDInternalError,
-    firmware::operation::{write_to_tx, Operation, TypeTag},
+    firmware::operation::{Operation, TypeTag},
     geometry::Device,
 };
 
 use derive_new::new;
+use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
+#[derive(IntoBytes, Immutable)]
 struct ReadsFPGAState {
     tag: TypeTag,
     value: bool,
@@ -22,15 +24,13 @@ pub struct ReadsFPGAStateOp {
 
 impl Operation for ReadsFPGAStateOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        unsafe {
-            write_to_tx(
-                ReadsFPGAState {
-                    tag: TypeTag::ReadsFPGAState,
-                    value: self.value,
-                },
-                tx,
-            );
-        }
+        tx[..size_of::<ReadsFPGAState>()].copy_from_slice(
+            ReadsFPGAState {
+                tag: TypeTag::ReadsFPGAState,
+                value: self.value,
+            }
+            .as_bytes(),
+        );
 
         self.is_done = true;
         Ok(std::mem::size_of::<ReadsFPGAState>())
@@ -57,7 +57,6 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(0x01, true)]
-    #[cfg_attr(miri, ignore)]
     #[case(0x00, false)]
     fn test(#[case] expected: u8, #[case] value: bool) {
         let device = create_device(0, NUM_TRANS_IN_UNIT);

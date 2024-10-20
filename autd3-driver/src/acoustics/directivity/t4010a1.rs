@@ -92,7 +92,6 @@ mod tests {
     #[case::deg_80(0.19952622, 80.0)]
     #[case::deg_90(0.17783181, 90.0)]
     #[case::deg_100(0.19952622, 100.0)]
-    #[cfg_attr(miri, ignore)]
     fn test_directivity(#[case] expected: f32, #[case] theta_deg: f32) {
         approx::assert_abs_diff_eq!(expected, T4010A1::directivity(theta_deg * deg));
     }
