@@ -12,6 +12,7 @@ use autd3_driver::{
 };
 use bit_vec::BitVec;
 use derive_more::Debug;
+use zerocopy::{FromBytes, IntoBytes};
 
 #[derive(Gain, Builder, Debug)]
 pub struct GSPAT<D: Directivity, B: LinAlgBackend<D>> {
@@ -62,9 +63,9 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for GSPAT<D, B> {
 
         let mut q = self.backend.alloc_zeros_cv(n)?;
 
-        let amps = self.backend.from_slice_cv(unsafe {
-            std::slice::from_raw_parts(self.amps.as_ptr() as *const f32, self.amps.len())
-        })?;
+        let amps = self
+            .backend
+            .from_slice_cv(<[f32]>::ref_from_bytes(self.amps.as_bytes()).unwrap())?;
 
         let b = self.backend.gen_back_prop(n, m, &g)?;
 

@@ -1,9 +1,10 @@
 pub const MSG_ID_MAX: u8 = 0x7F;
 
 use derive_more::Debug;
+use zerocopy::{FromBytes, Immutable, IntoBytes};
 
 #[repr(C, align(2))]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, IntoBytes, Immutable, FromBytes)]
 pub struct Header {
     pub msg_id: u8,
     #[debug(ignore)]

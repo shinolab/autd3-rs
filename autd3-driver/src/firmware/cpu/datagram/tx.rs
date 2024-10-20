@@ -1,12 +1,12 @@
 use crate::{ethercat::EC_OUTPUT_FRAME_SIZE, firmware::cpu::Header};
 
 use derive_more::{Deref, DerefMut};
-use zerocopy::IntoBytes;
+use zerocopy::{FromBytes, Immutable, IntoBytes};
 
 const PAYLOAD_SIZE: usize = EC_OUTPUT_FRAME_SIZE - std::mem::size_of::<Header>();
 
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, IntoBytes, Immutable, FromBytes)]
 pub struct TxMessage {
     header: Header,
     // use u16 for alignment

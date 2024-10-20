@@ -4,20 +4,14 @@ use crate::{
     AUTDProtoBufError,
 };
 
+use zerocopy::{FromBytes, IntoBytes};
+
 impl ToMessage for autd3_driver::firmware::cpu::TxDatagram {
     type Message = TxRawData;
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
-        let mut data = vec![0; self.total_len()];
-        unsafe {
-            std::ptr::copy_nonoverlapping(
-                self.as_ptr() as *const u8,
-                data.as_mut_ptr(),
-                self.total_len(),
-            );
-        }
         Self::Message {
-            data,
+            data: self.as_slice().as_bytes().to_vec(),
             n: self.len() as _,
         }
     }
@@ -26,13 +20,10 @@ impl ToMessage for autd3_driver::firmware::cpu::TxDatagram {
 impl FromMessage<TxRawData> for autd3_driver::firmware::cpu::TxDatagram {
     fn from_msg(msg: &TxRawData) -> Result<Self, AUTDProtoBufError> {
         let mut tx = autd3_driver::firmware::cpu::TxDatagram::new(msg.n as _);
-        unsafe {
-            std::ptr::copy_nonoverlapping(
-                msg.data.as_ptr(),
-                tx.as_mut_ptr() as *mut u8,
-                tx.total_len(),
-            );
-        }
+        tx.as_mut_slice().clone_from_slice(
+            <[autd3_driver::firmware::cpu::TxMessage]>::ref_from_bytes(msg.data.as_bytes())
+                .unwrap(),
+        );
         Ok(tx)
     }
 }

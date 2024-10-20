@@ -220,7 +220,7 @@ impl SOEM {
                 ecat_check_th_guard: None,
             };
 
-            ec_config_map(result.io_map.lock().unwrap().data() as *mut c_void);
+            ec_config_map(result.io_map.lock().unwrap().as_ptr() as *mut c_void);
 
             result.op_state_guard = Some(OpStateGuard {});
 
@@ -352,9 +352,7 @@ impl Link for SOEM {
 
     async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
         match self.io_map.lock() {
-            Ok(io_map) => unsafe {
-                std::ptr::copy_nonoverlapping(io_map.input(), rx.as_mut_ptr(), rx.len());
-            },
+            Ok(io_map) => rx.copy_from_slice(io_map.input()),
             Err(_) => return Err(AUTDInternalError::LinkClosed),
         }
         Ok(true)
