@@ -1,6 +1,6 @@
 use autd3_driver::{
     ethercat::{EC_INPUT_FRAME_SIZE, EC_OUTPUT_FRAME_SIZE},
-    firmware::cpu::{RxMessage, TxDatagram},
+    firmware::cpu::{RxMessage, TxMessage},
 };
 
 use derive_more::Deref;
@@ -26,7 +26,7 @@ impl IOMap {
         <[RxMessage]>::ref_from_bytes(&self.buf[self.num_devices * EC_OUTPUT_FRAME_SIZE..]).unwrap()
     }
 
-    pub fn copy_from(&mut self, tx: &TxDatagram) {
+    pub fn copy_from(&mut self, tx: &[TxMessage]) {
         self.buf[0..tx.as_bytes().len()].copy_from_slice(tx.as_bytes());
     }
 
@@ -37,12 +37,14 @@ impl IOMap {
 
 #[cfg(test)]
 mod tests {
+    use zerocopy::FromZeros;
+
     use super::*;
 
     #[test]
     fn test_iomap() {
         let mut iomap = IOMap::new(1);
-        let mut tx = TxDatagram::new(1);
+        let mut tx = vec![TxMessage::new_zeroed(); 1];
         let payload_size = tx[0].payload().len();
         tx[0].header_mut().msg_id = 0x01;
         tx[0].header_mut().slot_2_offset = 0x0302;

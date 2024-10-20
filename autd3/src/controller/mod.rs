@@ -10,7 +10,7 @@ use autd3_driver::{
     derive::Builder,
     error::AUTDInternalError,
     firmware::{
-        cpu::{check_if_msg_is_processed, RxMessage, TxDatagram},
+        cpu::{check_if_msg_is_processed, RxMessage, TxMessage},
         fpga::FPGAState,
         operation::{FirmwareVersionType, Operation, OperationHandler},
         version::FirmwareVersion,
@@ -34,7 +34,7 @@ pub struct Controller<L: Link> {
     link: L,
     #[get(ref, ref_mut)]
     geometry: Geometry,
-    tx_buf: TxDatagram,
+    tx_buf: Vec<TxMessage>,
     rx_buf: Vec<RxMessage>,
     #[get]
     fallback_parallel_threshold: usize,

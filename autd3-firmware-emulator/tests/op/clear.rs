@@ -1,5 +1,10 @@
 use std::num::NonZeroU16;
 
+use crate::{
+    create_geometry,
+    op::{gain::TestGain, stm::foci::gen_random_foci},
+    send,
+};
 use autd3_derive::Modulation;
 use autd3_driver::{
     autd3_device::AUTD3,
@@ -7,7 +12,7 @@ use autd3_driver::{
     defined::ULTRASOUND_PERIOD,
     derive::*,
     firmware::{
-        cpu::TxDatagram,
+        cpu::TxMessage,
         fpga::{
             Drive, EmitIntensity, Phase, SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT,
@@ -16,11 +21,7 @@ use autd3_driver::{
 };
 use autd3_firmware_emulator::CPUEmulator;
 
-use crate::{
-    create_geometry,
-    op::{gain::TestGain, stm::foci::gen_random_foci},
-    send,
-};
+use zerocopy::FromZeros;
 
 #[derive(Modulation, Debug)]
 struct TestMod {
@@ -38,7 +39,7 @@ impl Modulation for TestMod {
 fn send_clear() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     {
         let d = Silencer::new(FixedCompletionTime {

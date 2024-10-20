@@ -8,7 +8,7 @@ use zerocopy::IntoBytes;
 
 use autd3_driver::{
     derive::*,
-    firmware::cpu::{RxMessage, TxDatagram},
+    firmware::cpu::{RxMessage, TxMessage},
     link::{Link, LinkBuilder},
 };
 
@@ -121,7 +121,7 @@ impl Link for TwinCAT {
         Ok(())
     }
 
-    async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDInternalError> {
         unsafe {
             let n_err = match self.dll.get::<unsafe extern "C" fn(
                 i32,

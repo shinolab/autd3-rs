@@ -241,13 +241,14 @@ mod tests {
     use std::mem::offset_of;
 
     use rand::prelude::*;
+    use zerocopy::FromZeros;
 
     use super::*;
     use crate::{
         derive::Transducer,
         ethercat::DcSysTime,
         firmware::{
-            cpu::TxDatagram,
+            cpu::TxMessage,
             fpga::{EmitIntensity, Phase},
         },
         geometry::tests::create_device,
@@ -556,7 +557,7 @@ mod tests {
 
         let device = create_device(0, NUM_TRANS_IN_UNIT as _);
 
-        let mut tx = TxDatagram::new(1);
+        let mut tx = vec![TxMessage::new_zeroed(); 1];
         let tx = tx[0].payload_mut();
 
         let mut rng = rand::thread_rng();

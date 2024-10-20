@@ -1,7 +1,7 @@
 use autd3_derive::Builder;
 use autd3_driver::{
     ethercat::{DcSysTime, EC_OUTPUT_FRAME_SIZE},
-    firmware::cpu::{Header, RxMessage, TxDatagram, TxMessage},
+    firmware::cpu::{Header, RxMessage, TxMessage},
 };
 
 use crate::fpga::emulator::FPGAEmulator;
@@ -94,7 +94,7 @@ impl CPUEmulator {
         RxMessage::new(self.rx_data, self.ack)
     }
 
-    pub fn send(&mut self, tx: &TxDatagram) {
+    pub fn send(&mut self, tx: &[TxMessage]) {
         self.ecat_recv(&tx[self.idx]);
     }
 

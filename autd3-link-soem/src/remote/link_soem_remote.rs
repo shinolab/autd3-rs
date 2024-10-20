@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use autd3_driver::{
     derive::*,
-    firmware::cpu::{RxMessage, TxDatagram},
+    firmware::cpu::{RxMessage, TxMessage},
     link::{Link, LinkBuilder},
 };
 
@@ -54,7 +54,7 @@ impl Link for RemoteSOEM {
         Ok(())
     }
 
-    async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDInternalError> {
         Ok(self
             .client
             .send_data(tx.to_msg(None))

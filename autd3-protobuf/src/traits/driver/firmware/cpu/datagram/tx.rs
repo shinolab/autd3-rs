@@ -4,24 +4,24 @@ use crate::{
     AUTDProtoBufError,
 };
 
-use zerocopy::{FromBytes, IntoBytes};
+use zerocopy::{FromZeros, IntoBytes, TryFromBytes};
 
-impl ToMessage for autd3_driver::firmware::cpu::TxDatagram {
+impl ToMessage for &[autd3_driver::firmware::cpu::TxMessage] {
     type Message = TxRawData;
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
         Self::Message {
-            data: self.as_slice().as_bytes().to_vec(),
+            data: self.as_bytes().to_vec(),
             n: self.len() as _,
         }
     }
 }
 
-impl FromMessage<TxRawData> for autd3_driver::firmware::cpu::TxDatagram {
+impl FromMessage<TxRawData> for Vec<autd3_driver::firmware::cpu::TxMessage> {
     fn from_msg(msg: &TxRawData) -> Result<Self, AUTDProtoBufError> {
-        let mut tx = autd3_driver::firmware::cpu::TxDatagram::new(msg.n as _);
+        let mut tx = vec![autd3_driver::firmware::cpu::TxMessage::new_zeroed(); msg.n as _];
         tx.as_mut_slice().clone_from_slice(
-            <[autd3_driver::firmware::cpu::TxMessage]>::ref_from_bytes(msg.data.as_bytes())
+            <[autd3_driver::firmware::cpu::TxMessage]>::try_ref_from_bytes(msg.data.as_bytes())
                 .unwrap(),
         );
         Ok(tx)
@@ -36,13 +36,13 @@ mod tests {
     #[test]
     fn test_tx_datagram() {
         let mut rng = rand::thread_rng();
-        let mut tx = autd3_driver::firmware::cpu::TxDatagram::new(10);
+        let mut tx = vec![autd3_driver::firmware::cpu::TxMessage::new_zeroed(); 10];
         (0..10).for_each(|i| {
             tx[i].header_mut().msg_id = rng.gen();
             tx[i].header_mut().slot_2_offset = rng.gen();
         });
-        let msg = tx.to_msg(None);
-        let tx2 = autd3_driver::firmware::cpu::TxDatagram::from_msg(&msg).unwrap();
+        let msg = tx.as_slice().to_msg(None);
+        let tx2 = Vec::<autd3_driver::firmware::cpu::TxMessage>::from_msg(&msg).unwrap();
         assert_eq!(&tx, &tx2);
     }
 }

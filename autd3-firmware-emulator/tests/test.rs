@@ -2,13 +2,14 @@ use autd3_driver::{
     autd3_device::AUTD3,
     datagram::*,
     error::AUTDInternalError,
-    firmware::{cpu::TxDatagram, operation::OperationHandler},
+    firmware::{cpu::TxMessage, operation::OperationHandler},
     geometry::{Geometry, IntoDevice, Vector3},
 };
 use autd3_firmware_emulator::{
     cpu::params::{ERR_BIT, ERR_INVALID_MSG_ID, ERR_NOT_SUPPORTED_TAG},
     CPUEmulator,
 };
+use zerocopy::FromZeros;
 
 mod op;
 
@@ -24,7 +25,7 @@ pub fn send(
     cpu: &mut CPUEmulator,
     d: impl Datagram,
     geometry: &Geometry,
-    tx: &mut TxDatagram,
+    tx: &mut [TxMessage],
 ) -> Result<(), AUTDInternalError> {
     let _timeout = d.timeout();
     let parallel = geometry.num_devices() > d.parallel_threshold().unwrap_or(4);
@@ -49,7 +50,7 @@ pub fn send(
 fn send_invalid_tag() {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     tx[0].header_mut().msg_id = 1;
     tx[0].payload_mut()[0] = 0xFF;
@@ -66,7 +67,7 @@ fn send_invalid_tag() {
 fn send_invalid_msg_id() {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     tx[0].header_mut().msg_id = 0x80;
 
@@ -82,7 +83,7 @@ fn send_invalid_msg_id() {
 fn send_ingore_same_data() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let d = Clear::new();
     let generator = d.operation_generator(&geometry)?;
@@ -108,7 +109,7 @@ fn send_ingore_same_data() -> anyhow::Result<()> {
 fn send_slot_2() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let d = (Clear::new(), Synchronize::new());
     let generator = d.operation_generator(&geometry)?;
@@ -128,7 +129,7 @@ fn send_slot_2() -> anyhow::Result<()> {
 fn send_slot_2_err() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let d = (Clear::new(), Synchronize::new());
     let generator = d.operation_generator(&geometry)?;

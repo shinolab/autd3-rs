@@ -6,7 +6,7 @@ use zerocopy::IntoBytes;
 
 use autd3_driver::{
     derive::*,
-    firmware::cpu::{RxMessage, TxDatagram},
+    firmware::cpu::{RxMessage, TxMessage},
     link::{Link, LinkBuilder},
 };
 
@@ -142,7 +142,7 @@ impl Link for RemoteTwinCAT {
         Ok(())
     }
 
-    async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDInternalError> {
         let addr = AmsAddr {
             net_id: self.net_id,
             port: PORT,
