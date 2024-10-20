@@ -4,6 +4,8 @@ use std::ffi::c_void;
 
 use lib::Library;
 
+use zerocopy::IntoBytes;
+
 use autd3_driver::{
     derive::*,
     firmware::cpu::{RxMessage, TxDatagram},
@@ -135,8 +137,8 @@ impl Link for TwinCAT {
                     &self.send_addr as *const _,
                     INDEX_GROUP,
                     INDEX_OFFSET_BASE,
-                    tx.total_len() as u32,
-                    tx.as_ptr() as *const c_void,
+                    tx.as_bytes().len() as _,
+                    tx.as_ptr() as _,
                 ),
                 Err(_) => {
                     return Err(AUTDInternalError::LinkError(

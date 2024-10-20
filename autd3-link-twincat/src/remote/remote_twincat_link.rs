@@ -2,6 +2,8 @@ use std::ffi::{c_long, CString};
 
 use itertools::Itertools;
 
+use zerocopy::IntoBytes;
+
 use autd3_driver::{
     derive::*,
     firmware::cpu::{RxMessage, TxDatagram},
@@ -152,7 +154,7 @@ impl Link for RemoteTwinCAT {
                 &addr as _,
                 INDEX_GROUP,
                 INDEX_OFFSET_BASE,
-                tx.total_len() as _,
+                tx.as_bytes().len() as _,
                 tx.as_ptr() as _,
             )
         };

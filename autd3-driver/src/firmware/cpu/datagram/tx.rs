@@ -54,8 +54,4 @@ impl TxDatagram {
             ],
         }
     }
-
-    pub fn total_len(&self) -> usize {
-        self.data.len() * std::mem::size_of::<TxMessage>()
-    }
 }
