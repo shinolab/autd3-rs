@@ -2,6 +2,12 @@
 
 - Improve calculation performance of `Gain`s
 - Remove `Gain::with_transform`
+- `Gain::with_segment` and `SwapSegment::Gain` now take `TransitionMode` instead of `bool`
+  - Still, `TransitionMode::Immediate` is only supported
+- Use `Vec<u8>` instead of `Arc<Vec<u8>>` in `Modulation`s
+- Fix `Sine` and `Fourier`'s `offset`
+- Update tracing messages
+- Remove `Drive::null`, add `Drive::NULL` instead
 - Fix [#130](https://github.com/shinolab/autd3-rs/issues/130): `Gain`s in `autd3-gain-holo` cause `index out of bounds` error with disabled device
 
 # 28.1.0
