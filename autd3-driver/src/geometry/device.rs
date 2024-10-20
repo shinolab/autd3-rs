@@ -173,7 +173,6 @@ pub mod tests {
     #[test]
     #[case(0)]
     #[case(1)]
-    #[cfg_attr(miri, ignore)]
     fn idx(#[case] expect: u16) {
         assert_eq!(expect, create_device(expect, 249).idx() as _);
     }
@@ -182,13 +181,11 @@ pub mod tests {
     #[test]
     #[case(1)]
     #[case(249)]
-    #[cfg_attr(miri, ignore)]
     fn num_transducers(#[case] n: u8) {
         assert_eq!(n, create_device(0, n).num_transducers() as _);
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn center() {
         let device = AUTD3::new(Vector3::zeros()).into_device(0);
         let expected = device.iter().map(|t| t.position()).sum::<Vector3>() / device.len() as f32;
@@ -221,7 +218,6 @@ pub mod tests {
         Vector3::new(10., 20., 30.),
         UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.)
     )]
-    #[cfg_attr(miri, ignore)]
     fn to_local(
         #[case] expected: Vector3,
         #[case] target: Vector3,
@@ -233,7 +229,6 @@ pub mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn translate_to() {
         let mut rng = rand::thread_rng();
         let origin = Vector3::new(rng.gen(), rng.gen(), rng.gen());
@@ -253,7 +248,6 @@ pub mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn rotate_to() {
         let mut rng = rand::thread_rng();
         let mut device = AUTD3::new(Vector3::zeros())
@@ -291,7 +285,6 @@ pub mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn translate() {
         let mut rng = rand::thread_rng();
         let origin = Vector3::new(rng.gen(), rng.gen(), rng.gen());
@@ -310,7 +303,6 @@ pub mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn rotate() {
         let mut device = AUTD3::new(Vector3::zeros()).into_device(0);
 
@@ -340,7 +332,6 @@ pub mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn affine() {
         let mut device = AUTD3::new(Vector3::zeros()).into_device(0);
 
@@ -377,7 +368,6 @@ pub mod tests {
     #[case(340.29525e3, 15.)]
     #[case(343.23497e3, 20.)]
     #[case(349.04013e3, 30.)]
-    #[cfg_attr(miri, ignore)]
     fn set_sound_speed_from_temp(#[case] expected: f32, #[case] temp: f32) {
         let mut device = create_device(0, 249);
         device.set_sound_speed_from_temp(temp);
@@ -388,7 +378,6 @@ pub mod tests {
     #[test]
     #[case(8.5, 340e3)]
     #[case(10., 400e3)]
-    #[cfg_attr(miri, ignore)]
     fn wavelength(#[case] expect: f32, #[case] c: f32) {
         let mut device = create_device(0, 249);
         device.sound_speed = c;
@@ -399,7 +388,6 @@ pub mod tests {
     #[test]
     #[case(0.739_198_27, 340e3)]
     #[case(0.628_318_55, 400e3)]
-    #[cfg_attr(miri, ignore)]
     fn wavenumber(#[case] expect: f32, #[case] c: f32) {
         let mut device = create_device(0, 249);
         device.sound_speed = c;

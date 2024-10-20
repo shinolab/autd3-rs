@@ -1,24 +1,24 @@
 use std::mem::size_of;
 
 use crate::{
-    datagram::SwapSegment,
-    derive::TransitionMode,
-    error::AUTDInternalError,
-    firmware::operation::{write_to_tx, TypeTag},
-    geometry::Device,
+    datagram::SwapSegment, derive::TransitionMode, error::AUTDInternalError,
+    firmware::operation::TypeTag, geometry::Device,
 };
 
 use super::Operation;
 
 use derive_new::new;
+use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
+#[derive(IntoBytes, Immutable)]
 struct SwapSegmentT {
     tag: TypeTag,
     segment: u8,
 }
 
 #[repr(C, align(2))]
+#[derive(IntoBytes, Immutable)]
 struct SwapSegmentTWithTransition {
     tag: TypeTag,
     segment: u8,
@@ -46,36 +46,35 @@ impl Operation for SwapSegmentOp {
             SwapSegment::GainSTM(_, _) => TypeTag::GainSTMSwapSegment,
         };
 
-        unsafe {
-            match self.segment {
-                SwapSegment::Gain(segment, transition) => {
-                    if transition != TransitionMode::Immediate {
-                        return Err(AUTDInternalError::InvalidTransitionMode);
+        match self.segment {
+            SwapSegment::Gain(segment, transition) => {
+                if transition != TransitionMode::Immediate {
+                    return Err(AUTDInternalError::InvalidTransitionMode);
+                }
+                tx[..size_of::<SwapSegmentT>()].copy_from_slice(
+                    SwapSegmentT {
+                        tag,
+                        segment: segment as u8,
                     }
-                    write_to_tx(
-                        SwapSegmentT {
-                            tag,
-                            segment: segment as u8,
-                        },
-                        tx,
-                    );
-                    Ok(size_of::<SwapSegmentT>())
-                }
-                SwapSegment::Modulation(segment, transition)
-                | SwapSegment::FociSTM(segment, transition)
-                | SwapSegment::GainSTM(segment, transition) => {
-                    write_to_tx(
-                        SwapSegmentTWithTransition {
-                            tag,
-                            segment: segment as u8,
-                            transition_mode: transition.mode(),
-                            __padding: [0; 5],
-                            transition_value: transition.value(),
-                        },
-                        tx,
-                    );
-                    Ok(size_of::<SwapSegmentTWithTransition>())
-                }
+                    .as_bytes(),
+                );
+
+                Ok(size_of::<SwapSegmentT>())
+            }
+            SwapSegment::Modulation(segment, transition)
+            | SwapSegment::FociSTM(segment, transition)
+            | SwapSegment::GainSTM(segment, transition) => {
+                tx[..size_of::<SwapSegmentTWithTransition>()].copy_from_slice(
+                    SwapSegmentTWithTransition {
+                        tag,
+                        segment: segment as u8,
+                        transition_mode: transition.mode(),
+                        __padding: [0; 5],
+                        transition_value: transition.value(),
+                    }
+                    .as_bytes(),
+                );
+                Ok(size_of::<SwapSegmentTWithTransition>())
             }
         }
     }

@@ -92,7 +92,6 @@ mod tests {
     #[case((8000. * Hz).try_into(), 4000. * Hz, 2)]
     #[case((40000. * Hz).try_into(), 40000. * Hz, 1)]
     #[case((4000.5 * Hz).try_into(), 4000.5 * Hz, 1)]
-    #[cfg_attr(miri, ignore)]
     fn frequency(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] freq: Freq<f32>,
@@ -107,7 +106,6 @@ mod tests {
     #[case(SamplingConfig::FREQ_40K, 2)]
     #[case(SamplingConfig::FREQ_4K, 1)]
     #[case(SamplingConfig::FREQ_4K, 2)]
-    #[cfg_attr(miri, ignore)]
     fn sampling(#[case] config: SamplingConfig, #[case] size: usize) {
         assert_eq!(
             Ok(config),
@@ -137,7 +135,6 @@ mod tests {
         Duration::from_nanos(25001),
         2
     )]
-    #[cfg_attr(miri, ignore)]
     fn period(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] p: Duration,
@@ -152,7 +149,6 @@ mod tests {
     #[case(Ok(SamplingConfig::new_nearest(8000. * Hz)), 4000. * Hz, 2)]
     #[case(Ok(SamplingConfig::new_nearest(4001. * Hz)), 4001. * Hz, 1)]
     #[case(Ok(SamplingConfig::new_nearest(40000. * Hz)), 40000. * Hz, 1)]
-    #[cfg_attr(miri, ignore)]
     fn frequency_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] freq: Freq<f32>,
@@ -183,7 +179,6 @@ mod tests {
         Duration::from_nanos(25001),
         2
     )]
-    #[cfg_attr(miri, ignore)]
     fn period_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] p: Duration,

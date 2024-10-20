@@ -45,7 +45,6 @@ mod tests {
     #[case(PI / 2., 90. * deg)]
     #[case(0., 0. * rad)]
     #[case(PI / 2., PI / 2. * rad)]
-    #[cfg_attr(miri, ignore)]
     fn test_to_radians(#[case] expected: f32, #[case] angle: Angle) {
         approx::assert_abs_diff_eq!(expected, angle.radian());
     }
@@ -57,7 +56,6 @@ mod tests {
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::XYZ(0. * deg, 0. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::XYZ(0. * deg, 90. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::XYZ(90. * deg, 90. * deg, 0. * deg))]
-    #[cfg_attr(miri, ignore)]
     fn test_rotation_xyz(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
         let angle: UnitQuaternion = angle.into();
         assert_approx_eq_quat!(expected, angle);
@@ -70,7 +68,6 @@ mod tests {
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZYZ(0. * deg, 0. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZYZ(0. * deg, 90. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::ZYZ(90. * deg, 90. * deg, 0. * deg))]
-    #[cfg_attr(miri, ignore)]
     fn test_rotation_zyz(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
         let angle: UnitQuaternion = angle.into();
         assert_approx_eq_quat!(expected, angle);

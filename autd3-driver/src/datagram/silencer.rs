@@ -189,7 +189,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn disable() {
         let s = Silencer::disable();
         assert_eq!(ULTRASOUND_PERIOD, s.config().intensity());
@@ -199,7 +198,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn from_update_rate() {
         let s = Silencer::new(FixedUpdateRate {
             intensity: NonZeroU16::new(1).unwrap(),
@@ -211,7 +209,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn from_completion_time() {
         let s = Silencer::new(FixedCompletionTime {
             intensity: Duration::from_secs(1),
@@ -245,7 +242,6 @@ mod tests {
         config: SamplingConfig::FREQ_4K,
         loop_behavior: LoopBehavior::infinite(),
     })]
-    #[cfg_attr(miri, ignore)]
     fn fixed_update_rate_is_valid(#[case] target: impl WithSampling) {
         let s = Silencer::new(FixedUpdateRate {
             intensity: NonZeroU16::new(1).unwrap(),
@@ -271,7 +267,6 @@ mod tests {
     #[case(true, 10, 11, true, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
     #[case(true, 11, 10, false, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
     #[case(true, 10, 11, false, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
-    #[cfg_attr(miri, ignore)]
     fn fixed_completion_time_is_valid(
         #[case] expect: bool,
         #[case] intensity: u32,

@@ -196,7 +196,6 @@ mod tests {
     #[case(Err(AUTDInternalError::SamplingPeriodInvalid(PERIOD_MAX - Duration::from_nanos(1))), PERIOD_MAX - Duration::from_nanos(1))]
     #[case(Err(AUTDInternalError::SamplingPeriodOutOfRange(PERIOD_MIN / 2, PERIOD_MIN, PERIOD_MAX)), PERIOD_MIN / 2)]
     #[case(Err(AUTDInternalError::SamplingPeriodOutOfRange(PERIOD_MAX * 2, PERIOD_MIN, PERIOD_MAX)), PERIOD_MAX * 2)]
-    #[cfg_attr(miri, ignore)]
     fn division(
         #[case] expect: Result<u16, AUTDInternalError>,
         #[case] value: impl IntoSamplingConfig,
@@ -214,7 +213,6 @@ mod tests {
     #[case(Ok(4000. * Hz), 4000. * Hz)]
     #[case(Ok(40000. * Hz), Duration::from_micros(25))]
     #[case(Ok(4000. * Hz), Duration::from_micros(250))]
-    #[cfg_attr(miri, ignore)]
     fn freq(
         #[case] expect: Result<Freq<f32>, AUTDInternalError>,
         #[case] value: impl IntoSamplingConfig,
@@ -232,7 +230,6 @@ mod tests {
     #[case(Ok(Duration::from_micros(250)), 4000. * Hz)]
     #[case(Ok(Duration::from_micros(25)), Duration::from_micros(25))]
     #[case(Ok(Duration::from_micros(250)), Duration::from_micros(250))]
-    #[cfg_attr(miri, ignore)]
     fn period(
         #[case] expect: Result<Duration, AUTDInternalError>,
         #[case] value: impl IntoSamplingConfig,
@@ -247,7 +244,6 @@ mod tests {
     #[case::not_supported_max(1, (ULTRASOUND_FREQ.hz() as f32 - 1.) * Hz)]
     #[case::out_of_range_min(u16::MAX, 0. * Hz)]
     #[case::out_of_range_max(1, 40000. * Hz + 1. * Hz)]
-    #[cfg_attr(miri, ignore)]
     fn from_freq_f32_nearest(#[case] expected: u16, #[case] freq: Freq<f32>) {
         assert_eq!(expected, SamplingConfig::new_nearest(freq).division());
     }
@@ -259,7 +255,6 @@ mod tests {
     #[case::not_supported_max(1, ULTRASOUND_FREQ - 1 * Hz)]
     #[case::out_of_range_min(0xFFFF, 0 * Hz)]
     #[case::out_of_range_max(1, ULTRASOUND_FREQ + 1 * Hz)]
-    #[cfg_attr(miri, ignore)]
     fn from_freq_u32_nearest(#[case] expected: u16, #[case] freq: Freq<u32>) {
         assert_eq!(expected, SamplingConfig::new_nearest(freq).division());
     }
@@ -271,7 +266,6 @@ mod tests {
     #[case::not_supported_max(u16::MAX, PERIOD_MAX - Duration::from_nanos(1))]
     #[case::out_of_range_min(1, PERIOD_MIN / 2)]
     #[case::out_of_range_max(u16::MAX, PERIOD_MAX * 2)]
-    #[cfg_attr(miri, ignore)]
     fn from_period_nearest(#[case] expected: u16, #[case] p: Duration) {
         assert_eq!(expected, SamplingConfig::new_nearest(p).division());
     }

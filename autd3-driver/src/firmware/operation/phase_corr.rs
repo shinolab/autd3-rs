@@ -4,16 +4,19 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::Phase,
-        operation::{write_to_tx, Operation, TypeTag},
+        operation::{Operation, TypeTag},
     },
     geometry::{Device, Transducer},
 };
 
 use derive_new::new;
+use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
+#[derive(IntoBytes, Immutable)]
 struct PhaseCorr {
     tag: TypeTag,
+    __pad: u8,
 }
 
 #[derive(new)]
@@ -26,20 +29,19 @@ pub struct PhaseCorrectionOp<F: Fn(&Transducer) -> Phase> {
 
 impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<F> {
     fn pack(&mut self, dev: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        unsafe {
-            write_to_tx(
-                PhaseCorr {
-                    tag: TypeTag::PhaseCorrection,
-                },
-                tx,
-            );
-        }
+        tx[..size_of::<PhaseCorr>()].copy_from_slice(
+            PhaseCorr {
+                tag: TypeTag::PhaseCorrection,
+                __pad: 0,
+            }
+            .as_bytes(),
+        );
 
         tx[size_of::<PhaseCorr>()..]
-            .iter_mut()
+            .chunks_mut(size_of::<Phase>())
             .zip(dev.iter())
-            .for_each(|(x, tr)| {
-                *x = (self.f)(tr).value();
+            .for_each(|(dst, tr)| {
+                dst.copy_from_slice((self.f)(tr).as_bytes());
             });
 
         self.is_done = true;

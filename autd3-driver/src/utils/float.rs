@@ -15,13 +15,11 @@ mod tests {
     #[case(true, 1.0 - f32::EPSILON)]
     #[case(false, 1.0 + 1e-3)]
     #[case(false, 1.0 - 1e-3)]
-    #[cfg_attr(miri, ignore)]
     fn is_integer(#[case] expected: bool, #[case] a: f32) {
         assert_eq!(super::is_integer(a as f64), expected, "{}", a);
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn is_integer_rand() {
         use rand::{thread_rng, Rng};
 

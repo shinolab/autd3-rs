@@ -93,7 +93,6 @@ mod tests {
         Some(Duration::from_millis(100))
     )]
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn timeout(
         #[case] expect: Option<Duration>,
         #[case] timeout1: Option<Duration>,
@@ -122,7 +121,6 @@ mod tests {
     #[case(Some(100), Some(100), Some(200))]
     #[case(Some(100), Some(200), Some(100))]
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn parallel_threshold(
         #[case] expect: Option<usize>,
         #[case] threshold1: Option<usize>,

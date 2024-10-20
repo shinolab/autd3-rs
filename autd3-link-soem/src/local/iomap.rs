@@ -52,11 +52,11 @@ mod tests {
     fn test_iomap() {
         let mut iomap = IOMap::new(1);
         let mut tx = TxDatagram::new(1);
-        let payload_size = tx[0].payload.len();
-        tx[0].header.msg_id = 0x01;
-        tx[0].header.slot_2_offset = 0x0302;
-        tx[0].payload[0] = 0x04;
-        tx[0].payload[payload_size - 1] = 5;
+        let payload_size = tx[0].payload().len();
+        tx[0].header_mut().msg_id = 0x01;
+        tx[0].header_mut().slot_2_offset = 0x0302;
+        tx[0].payload_mut()[0] = 0x04;
+        tx[0].payload_mut()[payload_size - 1] = 5;
 
         iomap.copy_from(&tx);
 

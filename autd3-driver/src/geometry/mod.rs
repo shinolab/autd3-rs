@@ -128,7 +128,6 @@ pub mod tests {
     #[test]
     #[case(1, vec![create_device(0, 249)])]
     #[case(2, vec![create_device(0, 249), create_device(0, 249)])]
-    #[cfg_attr(miri, ignore)]
     fn test_num_devices(#[case] expected: usize, #[case] devices: Vec<Device>) {
         let geometry = Geometry::new(devices);
         assert_eq!(0, geometry.version());
@@ -140,7 +139,6 @@ pub mod tests {
     #[test]
     #[case(249, vec![create_device(0, 249)])]
     #[case(498, vec![create_device(0, 249), create_device(0, 249)])]
-    #[cfg_attr(miri, ignore)]
     fn test_num_transducers(#[case] expected: usize, #[case] devices: Vec<Device>) {
         let geometry = Geometry::new(devices);
         assert_eq!(0, geometry.version());
@@ -149,7 +147,6 @@ pub mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_center() {
         let geometry = Geometry::new(vec![
             Device::new(
@@ -194,7 +191,6 @@ pub mod tests {
     #[case(340.29525e3, 15.)]
     #[case(343.23497e3, 20.)]
     #[case(349.04013e3, 30.)]
-    #[cfg_attr(miri, ignore)]
     fn test_set_sound_speed_from_temp(#[case] expected: f32, #[case] temp: f32) {
         let mut geometry = Geometry::new(vec![
             Device::new(
@@ -240,7 +236,6 @@ pub mod tests {
     #[case(3.402_952_8e5)]
     #[case(3.432_35e5)]
     #[case(3.490_401_6e5)]
-    #[cfg_attr(miri, ignore)]
     fn test_set_sound_speed(#[case] temp: f32) {
         let mut geometry = Geometry::new(vec![
             Device::new(
@@ -297,7 +292,6 @@ pub mod tests {
     #[case(Aabb{min: Point3::new(10. * mm, 20. * mm, 30. * mm), max: Point3::new(182.72 * mm, 152.08 * mm, 30. * mm)}, vec![AUTD3::new(Vector3::new(10. * mm, 20. * mm, 30. * mm)).into_device(0)])]
     #[case(Aabb{min: Point3::new(-132.08 * mm, 0., 0.), max: Point3::new(0., 172.72 * mm, 0.)}, vec![AUTD3::new(Vector3::zeros()).with_rotation(EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg)).into_device(0)])]
     #[case(Aabb{min: Point3::new(-132.08 * mm, -10. * mm, 0.), max: Point3::new(172.72 * mm, 162.72 * mm, 10. * mm)}, vec![AUTD3::new(Vector3::zeros()).into_device(0), AUTD3::new(Vector3::new(0., -10. * mm, 10. * mm)).with_rotation(EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg)).into_device(1)])]
-    #[cfg_attr(miri, ignore)]
     fn aabb(#[case] expect: Aabb<f32, 3>, #[case] dev: Vec<Device>) {
         let geometry = Geometry::new(dev);
         assert_approx_eq_vec3!(expect.min, geometry.aabb().min);

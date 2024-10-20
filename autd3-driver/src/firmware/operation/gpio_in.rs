@@ -1,12 +1,13 @@
 use crate::{
     error::AUTDInternalError,
-    firmware::operation::{write_to_tx, Operation, TypeTag},
+    firmware::operation::{Operation, TypeTag},
     geometry::Device,
 };
 
 use derive_new::new;
+use zerocopy::{Immutable, IntoBytes};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, IntoBytes, Immutable)]
 #[repr(C)]
 pub struct GPIOInFlags(u8);
 
@@ -21,6 +22,7 @@ bitflags::bitflags! {
 }
 
 #[repr(C, align(2))]
+#[derive(IntoBytes, Immutable)]
 struct EmulateGPIOIn {
     tag: TypeTag,
     flag: GPIOInFlags,
@@ -42,15 +44,13 @@ impl Operation for EmulateGPIOInOp {
         flag.set(GPIOInFlags::GPIO_IN_2, self.value[2]);
         flag.set(GPIOInFlags::GPIO_IN_3, self.value[3]);
 
-        unsafe {
-            write_to_tx(
-                EmulateGPIOIn {
-                    tag: TypeTag::EmulateGPIOIn,
-                    flag,
-                },
-                tx,
-            );
-        }
+        tx[..size_of::<EmulateGPIOIn>()].copy_from_slice(
+            EmulateGPIOIn {
+                tag: TypeTag::EmulateGPIOIn,
+                flag,
+            }
+            .as_bytes(),
+        );
 
         self.is_done = true;
         Ok(std::mem::size_of::<EmulateGPIOIn>())
@@ -77,7 +77,6 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(0b1001, [true, false, false, true])]
-    #[cfg_attr(miri, ignore)]
     #[case(0b0110, [false, true, true, false])]
     fn test(#[case] expected: u8, #[case] value: [bool; 4]) {
         let device = create_device(0, NUM_TRANS_IN_UNIT);

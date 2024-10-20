@@ -4,7 +4,7 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::SilencerTarget,
-        operation::{write_to_tx, Operation, TypeTag},
+        operation::{Operation, TypeTag},
     },
     geometry::Device,
 };
@@ -12,8 +12,10 @@ use crate::{
 use super::{SILENCER_FLAG_FIXED_UPDATE_RATE_MODE, SILENCER_FLAG_PULSE_WIDTH};
 
 use derive_new::new;
+use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
+#[derive(IntoBytes, Immutable)]
 struct SilencerFixedUpdateRate {
     tag: TypeTag,
     flag: u8,
@@ -33,21 +35,19 @@ pub struct SilencerFixedUpdateRateOp {
 
 impl Operation for SilencerFixedUpdateRateOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        unsafe {
-            write_to_tx(
-                SilencerFixedUpdateRate {
-                    tag: TypeTag::Silencer,
-                    flag: SILENCER_FLAG_FIXED_UPDATE_RATE_MODE
-                        | match self.target {
-                            SilencerTarget::Intensity => 0,
-                            SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
-                        },
-                    value_intensity: self.intensity.get(),
-                    value_phase: self.phase.get(),
-                },
-                tx,
-            );
-        }
+        tx[..size_of::<SilencerFixedUpdateRate>()].copy_from_slice(
+            SilencerFixedUpdateRate {
+                tag: TypeTag::Silencer,
+                flag: SILENCER_FLAG_FIXED_UPDATE_RATE_MODE
+                    | match self.target {
+                        SilencerTarget::Intensity => 0,
+                        SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
+                    },
+                value_intensity: self.intensity.get(),
+                value_phase: self.phase.get(),
+            }
+            .as_bytes(),
+        );
 
         self.is_done = true;
         Ok(std::mem::size_of::<SilencerFixedUpdateRate>())
