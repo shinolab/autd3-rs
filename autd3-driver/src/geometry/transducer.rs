@@ -50,7 +50,6 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn affine(mut tr: Transducer) {
         let t = Vector3::new(40., 50., 60.);
         let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)

@@ -89,7 +89,6 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_propagate(tr: Transducer, rot: UnitQuaternion, target: Vector3, sound_speed: f32) {
         let mut device = Device::new(0, rot, vec![tr.clone()]);
         device.sound_speed = sound_speed;

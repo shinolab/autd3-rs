@@ -5,14 +5,15 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::{Drive, Segment},
-        operation::{write_to_tx, Operation, TypeTag},
+        operation::{Operation, TypeTag},
     },
     geometry::{Device, Transducer},
 };
 
 use derive_new::new;
+use zerocopy::{Immutable, IntoBytes};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, IntoBytes, Immutable)]
 #[repr(C)]
 pub struct GainControlFlags(u8);
 
@@ -24,7 +25,8 @@ bitflags::bitflags! {
 }
 
 #[repr(C, align(2))]
-struct GainT {
+#[derive(IntoBytes, Immutable)]
+struct Gain {
     tag: TypeTag,
     segment: u8,
     flag: GainControlFlags,
@@ -47,38 +49,36 @@ pub struct GainOp<Context: GainContext> {
 
 impl<Context: GainContext> Operation for GainOp<Context> {
     fn required_size(&self, device: &Device) -> usize {
-        size_of::<GainT>() + device.num_transducers() * size_of::<Drive>()
+        size_of::<Gain>() + device.num_transducers() * size_of::<Drive>()
     }
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        unsafe {
-            write_to_tx(
-                GainT {
-                    tag: TypeTag::Gain,
-                    segment: self.segment as u8,
-                    flag: if let Some(mode) = self.transition {
-                        if mode != TransitionMode::Immediate {
-                            return Err(AUTDInternalError::InvalidTransitionMode);
-                        } else {
-                            GainControlFlags::UPDATE
-                        }
+        tx[..size_of::<Gain>()].copy_from_slice(
+            Gain {
+                tag: TypeTag::Gain,
+                segment: self.segment as u8,
+                flag: if let Some(mode) = self.transition {
+                    if mode != TransitionMode::Immediate {
+                        return Err(AUTDInternalError::InvalidTransitionMode);
                     } else {
-                        GainControlFlags::NONE
-                    },
-                    __pad: 0,
+                        GainControlFlags::UPDATE
+                    }
+                } else {
+                    GainControlFlags::NONE
                 },
-                tx,
-            );
-            device.iter().enumerate().for_each(|(i, tr)| {
-                write_to_tx(
-                    self.context.calc(tr),
-                    &mut tx[size_of::<GainT>() + i * size_of::<Drive>()..],
-                );
+                __pad: 0,
+            }
+            .as_bytes(),
+        );
+        tx[size_of::<Gain>()..]
+            .chunks_mut(size_of::<Drive>())
+            .zip(device.iter())
+            .for_each(|(dst, tr)| {
+                dst.copy_from_slice(self.context.calc(tr).as_bytes());
             });
-        }
 
         self.is_done = true;
-        Ok(size_of::<GainT>() + device.len() * size_of::<Drive>())
+        Ok(size_of::<Gain>() + device.len() * size_of::<Drive>())
     }
 
     fn is_done(&self) -> bool {
@@ -114,7 +114,7 @@ mod tests {
     fn test() {
         let device = create_device(0, NUM_TRANS_IN_UNIT as _);
 
-        let mut tx = vec![0x00u8; size_of::<GainT>() + NUM_TRANS_IN_UNIT * size_of::<Drive>()];
+        let mut tx = vec![0x00u8; size_of::<Gain>() + NUM_TRANS_IN_UNIT * size_of::<Drive>()];
 
         let mut rng = rand::thread_rng();
         let data: Vec<_> = (0..NUM_TRANS_IN_UNIT)
@@ -133,7 +133,7 @@ mod tests {
 
         assert_eq!(
             op.required_size(&device),
-            size_of::<GainT>() + NUM_TRANS_IN_UNIT * size_of::<Drive>()
+            size_of::<Gain>() + NUM_TRANS_IN_UNIT * size_of::<Drive>()
         );
 
         assert!(!op.is_done());
@@ -144,7 +144,7 @@ mod tests {
 
         assert_eq!(tx[0], TypeTag::Gain as u8);
         tx.iter()
-            .skip(size_of::<GainT>())
+            .skip(size_of::<Gain>())
             .collect::<Vec<_>>()
             .chunks(2)
             .zip(data.iter())
@@ -158,7 +158,7 @@ mod tests {
     fn invalid_transition_mode() {
         let device = create_device(0, NUM_TRANS_IN_UNIT as _);
 
-        let mut tx = vec![0x00u8; size_of::<GainT>() + NUM_TRANS_IN_UNIT * size_of::<Drive>()];
+        let mut tx = vec![0x00u8; size_of::<Gain>() + NUM_TRANS_IN_UNIT * size_of::<Drive>()];
 
         let mut op = GainOp::new(Segment::S0, Some(TransitionMode::Ext), {
             Context { data: Vec::new() }

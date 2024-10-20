@@ -57,7 +57,6 @@ mod tests {
     #[case::infinite(0xFFFF, LoopBehavior::infinite())]
     #[case::finite(0x1233, LoopBehavior::finite(0x1234).unwrap())]
     #[case::once(0x0000, LoopBehavior::once())]
-    #[cfg_attr(miri, ignore)]
     fn loop_behavior(#[case] expect: u16, #[case] target: LoopBehavior) {
         assert_eq!(expect, target.rep());
     }
@@ -67,7 +66,6 @@ mod tests {
     #[case(Some(LoopBehavior{ rep: 0 }), 1)]
     #[case(Some(LoopBehavior{ rep: 0xFFFE }), 0xFFFF)]
     #[case(None, 0)]
-    #[cfg_attr(miri, ignore)]
     fn into_loop_behavior_u16(#[case] expect: Option<LoopBehavior>, #[case] rep: u16) {
         assert_eq!(expect, LoopBehavior::finite(rep));
     }
@@ -76,7 +74,6 @@ mod tests {
     #[test]
     #[case(LoopBehavior{ rep: 0 }, std::num::NonZeroU16::new(1).unwrap())]
     #[case(LoopBehavior{ rep: 0xFFFE }, std::num::NonZeroU16::new(0xFFFF).unwrap())]
-    #[cfg_attr(miri, ignore)]
     fn into_loop_behavior_non_zero_u16(
         #[case] expect: LoopBehavior,
         #[case] rep: std::num::NonZeroU16,
@@ -85,7 +82,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn debug() {
         assert_eq!(format!("{:?}", LoopBehavior::infinite()), "Infinite");
         assert_eq!(format!("{:?}", LoopBehavior::once()), "Once");

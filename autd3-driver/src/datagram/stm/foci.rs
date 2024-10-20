@@ -144,19 +144,6 @@ impl<const N: usize> DatagramS for FociSTM<N> {
     }
 }
 
-// GRCOV_EXCL_START
-impl<const N: usize> FociSTM<N> {
-    #[allow(clippy::missing_safety_doc)]
-    pub unsafe fn uninit() -> Self /* ignore miri */ {
-        Self {
-            control_points: vec![],
-            loop_behavior: LoopBehavior::infinite(),
-            sampling_config: SamplingConfig::FREQ_40K,
-        }
-    }
-}
-// GRCOV_EXCL_STOP
-
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -173,7 +160,6 @@ mod tests {
     #[case((20. * Hz).try_into(), 2.*Hz, 10)]
     #[case((2. * 0.49*Hz).try_into(), 0.49*Hz, 2)]
     #[case(Err(AUTDInternalError::FociSTMPointSizeOutOfRange(0)), 1.*Hz, 0)]
-    #[cfg_attr(miri, ignore)]
     fn from_freq(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] freq: Freq<f32>,
@@ -191,7 +177,6 @@ mod tests {
     #[case(Ok(SamplingConfig::new_nearest(0.98 * Hz)), 0.49*Hz, 2)]
     #[case(Ok(SamplingConfig::new_nearest(10. * Hz)), 1.*Hz, 10)]
     #[case(Ok(SamplingConfig::new_nearest(20. * Hz)), 2.*Hz, 10)]
-    #[cfg_attr(miri, ignore)]
     fn from_freq_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] freq: Freq<f32>,
@@ -222,7 +207,6 @@ mod tests {
         10
     )]
     #[case(Err(AUTDInternalError::STMPeriodInvalid(2, Duration::from_millis(2000) + Duration::from_nanos(1))), Duration::from_millis(2000) + Duration::from_nanos(1), 2)]
-    #[cfg_attr(miri, ignore)]
     fn from_period(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] p: Duration,
@@ -252,7 +236,6 @@ mod tests {
         10
     )]
     #[case(Duration::from_millis(1000).try_into(), Duration::from_millis(2000) + Duration::from_nanos(1), 2)]
-    #[cfg_attr(miri, ignore)]
     fn from_period_nearest(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] p: Duration,
@@ -268,7 +251,6 @@ mod tests {
     #[test]
     #[case((4. * kHz).try_into().unwrap(), 10)]
     #[case((8. * kHz).try_into().unwrap(), 10)]
-    #[cfg_attr(miri, ignore)]
     fn from_sampling_config(#[case] config: SamplingConfig, #[case] n: usize) {
         assert_eq!(
             Ok(config),
@@ -281,7 +263,6 @@ mod tests {
     #[case(Ok(0.5*Hz), 0.5*Hz, 2)]
     #[case(Ok(1.0*Hz), 1.*Hz, 10)]
     #[case(Ok(2.0*Hz), 2.*Hz, 10)]
-    #[cfg_attr(miri, ignore)]
     fn freq(
         #[case] expect: Result<Freq<f32>, AUTDInternalError>,
         #[case] f: Freq<f32>,
@@ -298,7 +279,6 @@ mod tests {
     #[case(Ok(Duration::from_millis(2000)), 0.5*Hz, 2)]
     #[case(Ok(Duration::from_millis(1000)), 1.*Hz, 10)]
     #[case(Ok(Duration::from_millis(500)), 2.*Hz, 10)]
-    #[cfg_attr(miri, ignore)]
     fn period(
         #[case] expect: Result<Duration, AUTDInternalError>,
         #[case] f: Freq<f32>,
@@ -314,7 +294,6 @@ mod tests {
     #[test]
     #[case::infinite(LoopBehavior::infinite())]
     #[case::finite(LoopBehavior::once())]
-    #[cfg_attr(miri, ignore)]
     fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) -> anyhow::Result<()> {
         assert_eq!(
             loop_behavior,
@@ -326,7 +305,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn with_loop_behavior_deafault() -> anyhow::Result<()> {
         let stm = FociSTM::new(1. * Hz, (0..2).map(|_| Vector3::zeros()))?;
         assert_eq!(LoopBehavior::infinite(), stm.loop_behavior());

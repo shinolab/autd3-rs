@@ -1,14 +1,17 @@
 use crate::{
     error::AUTDInternalError,
-    firmware::operation::{write_to_tx, Operation, TypeTag},
+    firmware::operation::{Operation, TypeTag},
     geometry::Device,
 };
 
 use derive_new::new;
+use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
+#[derive(IntoBytes, Immutable)]
 struct Sync {
     tag: TypeTag,
+    __pad: u8,
 }
 
 #[derive(new)]
@@ -20,9 +23,13 @@ pub struct SyncOp {
 
 impl Operation for SyncOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        unsafe {
-            write_to_tx(Sync { tag: TypeTag::Sync }, tx);
-        }
+        tx[..size_of::<Sync>()].copy_from_slice(
+            Sync {
+                tag: TypeTag::Sync,
+                __pad: 0,
+            }
+            .as_bytes(),
+        );
 
         self.is_done = true;
         Ok(std::mem::size_of::<Sync>())

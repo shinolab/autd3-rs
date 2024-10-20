@@ -85,7 +85,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn from_vector3() {
         let v = Vector3::new(1.0, 2.0, 3.0);
         let cp = ControlPoint::from(v);
@@ -93,7 +92,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn from_vector3_ref() {
         let v = Vector3::new(1.0, 2.0, 3.0);
         let cp = ControlPoint::from(&v);
@@ -101,7 +99,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn from_control_point() {
         let v1 = Vector3::new(1.0, 2.0, 3.0);
         let v2 = Vector3::new(4.0, 5.0, 6.0);
@@ -112,7 +109,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn from_control_point_and_intensity() {
         let v1 = Vector3::new(1.0, 2.0, 3.0);
         let v2 = Vector3::new(4.0, 5.0, 6.0);

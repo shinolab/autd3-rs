@@ -84,7 +84,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_new() {
         let dev = AUTD3::new(Vector3::zeros()).into_device(0);
         assert_eq!(249, dev.num_transducers());
@@ -96,14 +95,12 @@ mod tests {
     #[case(1, Vector3::new(AUTD3::TRANS_SPACING, 0., 0.))]
     #[case(18, Vector3::new(0., AUTD3::TRANS_SPACING, 0.))]
     #[case(248, Vector3::new(17. * AUTD3::TRANS_SPACING, 13. * AUTD3::TRANS_SPACING, 0.))]
-    #[cfg_attr(miri, ignore)]
     fn test_position(#[case] idx: usize, #[case] expected: Vector3) {
         let dev = AUTD3::new(Vector3::zeros()).into_device(0);
         assert_eq!(&expected, dev[idx].position());
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_with_rotation() {
         let mut rng = rand::thread_rng();
         let q = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), rng.gen())
@@ -367,13 +364,11 @@ mod tests {
     #[case(15, 13, false)]
     #[case(16, 13, false)]
     #[case(17, 13, false)]
-    #[cfg_attr(miri, ignore)]
     fn test_is_missing_transducer(#[case] x: u8, #[case] y: u8, #[case] expected: bool) {
         assert_eq!(expected, AUTD3::is_missing_transducer(x, y));
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_is_missing_transducer_out_of_range() {
         itertools::iproduct!(18..=256, 0..=256).for_each(|(x, y)| {
             assert!(AUTD3::is_missing_transducer(x, y));
@@ -634,7 +629,6 @@ mod tests {
     #[case(246, (15, 13))]
     #[case(247, (16, 13))]
     #[case(248, (17, 13))]
-    #[cfg_attr(miri, ignore)]
     fn test_grid_id(#[case] idx: usize, #[case] expected: (usize, usize)) {
         assert_eq!(expected, AUTD3::grid_id(idx));
     }

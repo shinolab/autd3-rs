@@ -39,7 +39,7 @@ pub fn send(
         if (cpu.rx().ack() & ERR_BIT) == ERR_BIT {
             return Err(AUTDInternalError::firmware_err(cpu.rx().ack()));
         }
-        assert_eq!(tx[0].header.msg_id, cpu.rx().ack());
+        assert_eq!(tx[0].header().msg_id, cpu.rx().ack());
     }
     Ok(())
 }
@@ -51,8 +51,8 @@ fn send_invalid_tag() {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    tx[0].header.msg_id = 1;
-    tx[0].payload[0] = 0xFF;
+    tx[0].header_mut().msg_id = 1;
+    tx[0].payload_mut()[0] = 0xFF;
 
     cpu.send(&tx);
     assert_eq!(
@@ -68,7 +68,7 @@ fn send_invalid_msg_id() {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = TxDatagram::new(geometry.num_devices());
 
-    tx[0].header.msg_id = 0x80;
+    tx[0].header_mut().msg_id = 0x80;
 
     cpu.send(&tx);
     assert_eq!(
@@ -89,14 +89,14 @@ fn send_ingore_same_data() -> anyhow::Result<()> {
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, false)?;
     cpu.send(&tx);
-    let msg_id = tx[0].header.msg_id;
-    assert_eq!(cpu.rx().ack(), tx[0].header.msg_id);
+    let msg_id = tx[0].header().msg_id;
+    assert_eq!(cpu.rx().ack(), tx[0].header().msg_id);
 
     let d = Synchronize::new();
     let generator = d.operation_generator(&geometry)?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, false)?;
-    tx[0].header.msg_id = msg_id;
+    tx[0].header_mut().msg_id = msg_id;
     assert!(!cpu.synchronized());
     cpu.send(&tx);
     assert!(!cpu.synchronized());
@@ -117,7 +117,7 @@ fn send_slot_2() -> anyhow::Result<()> {
 
     assert!(!cpu.synchronized());
     cpu.send(&tx);
-    assert_eq!(cpu.rx().ack(), tx[0].header.msg_id);
+    assert_eq!(cpu.rx().ack(), tx[0].header().msg_id);
     assert!(cpu.synchronized());
 
     Ok(())
@@ -135,8 +135,8 @@ fn send_slot_2_err() -> anyhow::Result<()> {
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, false)?;
 
-    let slot2_offset = tx[0].header.slot_2_offset as usize;
-    tx[0].payload[slot2_offset] = 0xFF;
+    let slot2_offset = tx[0].header().slot_2_offset as usize;
+    tx[0].payload_mut()[slot2_offset] = 0xFF;
 
     cpu.send(&tx);
     assert_eq!(

@@ -1,12 +1,14 @@
 use crate::{
     error::AUTDInternalError,
-    firmware::operation::{write_to_tx, Operation, TypeTag},
+    firmware::operation::{Operation, TypeTag},
     geometry::Device,
 };
 
 use derive_new::new;
+use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
+#[derive(IntoBytes, Immutable)]
 struct ForceFan {
     tag: TypeTag,
     value: bool,
@@ -22,22 +24,20 @@ pub struct ForceFanOp {
 
 impl Operation for ForceFanOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        unsafe {
-            write_to_tx(
-                ForceFan {
-                    tag: TypeTag::ForceFan,
-                    value: self.value,
-                },
-                tx,
-            );
-        }
+        tx[..size_of::<ForceFan>()].copy_from_slice(
+            ForceFan {
+                tag: TypeTag::ForceFan,
+                value: self.value,
+            }
+            .as_bytes(),
+        );
 
         self.is_done = true;
-        Ok(std::mem::size_of::<ForceFan>())
+        Ok(size_of::<ForceFan>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        std::mem::size_of::<ForceFan>()
+        size_of::<ForceFan>()
     }
 
     fn is_done(&self) -> bool {
@@ -47,7 +47,7 @@ impl Operation for ForceFanOp {
 
 #[cfg(test)]
 mod tests {
-    use std::mem::{offset_of, size_of};
+    use std::mem::offset_of;
 
     use super::*;
     use crate::geometry::tests::create_device;
@@ -57,7 +57,6 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(0x01, true)]
-    #[cfg_attr(miri, ignore)]
     #[case(0x00, false)]
     fn test(#[case] expect: u8, #[case] value: bool) {
         let device = create_device(0, NUM_TRANS_IN_UNIT);

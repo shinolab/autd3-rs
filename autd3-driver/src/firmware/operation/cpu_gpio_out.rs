@@ -2,13 +2,15 @@ use std::mem::size_of;
 
 use crate::{
     error::AUTDInternalError,
-    firmware::operation::{write_to_tx, Operation, TypeTag},
+    firmware::operation::{Operation, TypeTag},
     geometry::Device,
 };
 
 use derive_new::new;
+use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
+#[derive(IntoBytes, Immutable)]
 struct CpuGPIOOut {
     tag: TypeTag,
     pa_podr: u8,
@@ -25,15 +27,13 @@ pub struct CpuGPIOOutOp {
 
 impl Operation for CpuGPIOOutOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        unsafe {
-            write_to_tx(
-                CpuGPIOOut {
-                    tag: TypeTag::CpuGPIOOut,
-                    pa_podr: ((self.pa5 as u8) << 5) | ((self.pa7 as u8) << 7),
-                },
-                tx,
-            );
-        }
+        tx[..size_of::<CpuGPIOOut>()].copy_from_slice(
+            CpuGPIOOut {
+                tag: TypeTag::CpuGPIOOut,
+                pa_podr: ((self.pa5 as u8) << 5) | ((self.pa7 as u8) << 7),
+            }
+            .as_bytes(),
+        );
 
         self.is_done = true;
         Ok(size_of::<CpuGPIOOut>())

@@ -4,16 +4,19 @@ use crate::{
     error::AUTDInternalError,
     firmware::{
         fpga::PWE_BUF_SIZE,
-        operation::{write_to_tx, Operation, TypeTag},
+        operation::{Operation, TypeTag},
     },
     geometry::Device,
 };
 
 use derive_new::new;
+use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
+#[derive(IntoBytes, Immutable)]
 struct Pwe {
     tag: TypeTag,
+    __pad: u8,
 }
 
 #[derive(new)]
@@ -26,17 +29,17 @@ pub struct PulseWidthEncoderOp<F: Fn(u8) -> u8> {
 
 impl<F: Fn(u8) -> u8 + Send + Sync> Operation for PulseWidthEncoderOp<F> {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        unsafe {
-            write_to_tx(
-                Pwe {
-                    tag: TypeTag::ConfigPulseWidthEncoder,
-                },
-                tx,
-            );
-        }
+        tx[..size_of::<Pwe>()].copy_from_slice(
+            Pwe {
+                tag: TypeTag::ConfigPulseWidthEncoder,
+                __pad: 0,
+            }
+            .as_bytes(),
+        );
 
         tx[size_of::<Pwe>()..]
             .iter_mut()
+            .take(256)
             .enumerate()
             .for_each(|(i, x)| {
                 *x = (self.f)(i as u8);
