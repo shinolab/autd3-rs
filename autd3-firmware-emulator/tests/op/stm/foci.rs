@@ -9,7 +9,7 @@ use autd3_driver::{
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::{
-        cpu::TxDatagram,
+        cpu::TxMessage,
         fpga::{
             Drive, Phase, TransitionMode, FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT,
             SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
@@ -19,11 +19,11 @@ use autd3_driver::{
 };
 use autd3_firmware_emulator::{cpu::params::SYS_TIME_TRANSITION_MARGIN, CPUEmulator};
 
+use crate::{create_geometry, op::gain::TestGain, send};
 use num_integer::Roots;
 use rand::*;
 use time::OffsetDateTime;
-
-use crate::{create_geometry, op::gain::TestGain, send};
+use zerocopy::FromZeros;
 
 pub fn gen_random_foci<const N: usize>(num: usize) -> Vec<ControlPoints<N>> {
     let mut rng = rand::thread_rng();
@@ -68,7 +68,7 @@ fn test_send_foci_stm(
     let mut geometry = create_geometry(1);
     geometry.set_sound_speed(400e3);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let phase_corr: Vec<_> = (0..geometry.num_transducers())
         .map(|_| Phase::new(rng.gen()))
@@ -131,7 +131,7 @@ fn test_send_foci_stm(
 fn change_foci_stm_segment() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
@@ -157,7 +157,7 @@ fn change_foci_stm_segment() -> anyhow::Result<()> {
 fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     {
         let stm = FociSTM::new(SamplingConfig::FREQ_40K, gen_random_foci::<1>(2))?
@@ -215,7 +215,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
 fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     // segment 0: Gain
     {
@@ -269,7 +269,7 @@ fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
 fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     // segment 0 to 0
     {
@@ -323,7 +323,7 @@ fn test_miss_transition_time(
 ) -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let transition_mode = TransitionMode::SysTime(DcSysTime::from_utc(transition_time).unwrap());
     let stm = FociSTM::new(
@@ -351,7 +351,7 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
     let mut geometry = create_geometry(1);
     geometry.set_sound_speed(400e3);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     {
         let freq_div = rng.gen_range(

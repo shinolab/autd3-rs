@@ -2,13 +2,15 @@ use autd3_driver::{
     datagram::*,
     ethercat::DcSysTime,
     firmware::{
-        cpu::TxDatagram,
+        cpu::TxMessage,
         fpga::{DebugType, GPIOOut},
     },
 };
 use autd3_firmware_emulator::{fpga::params::*, CPUEmulator};
 
 use crate::{create_geometry, send};
+
+use zerocopy::FromZeros;
 
 #[rstest::rstest]
 #[test]
@@ -23,7 +25,7 @@ fn send_debug_output_idx(
 ) -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let d = DebugSettings::new(|_, gpio| match gpio {
         GPIOOut::O0 => debug_types[0].clone(),
@@ -44,7 +46,7 @@ fn send_debug_output_idx(
 fn send_debug_pwm_out() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let d = DebugSettings::new(|dev, gpio| match gpio {
         GPIOOut::O0 => DebugType::PwmOut(&dev[0]),

@@ -19,7 +19,7 @@ pub use crate::local::builder::SOEMBuilder;
 use autd3_driver::{
     error::AUTDInternalError,
     ethercat::{SyncMode, EC_CYCLE_TIME_BASE_NANO_SEC},
-    firmware::cpu::{RxMessage, TxDatagram},
+    firmware::cpu::{RxMessage, TxMessage},
     link::Link,
 };
 
@@ -35,7 +35,7 @@ use super::{
 };
 
 pub struct SOEM {
-    sender: Sender<TxDatagram>,
+    sender: Sender<Vec<TxMessage>>,
     is_open: Arc<AtomicBool>,
     ec_send_cycle: Duration,
     io_map: Arc<Mutex<IOMap>>,
@@ -220,7 +220,7 @@ impl SOEM {
                 ecat_check_th_guard: None,
             };
 
-            ec_config_map(result.io_map.lock().unwrap().data() as *mut c_void);
+            ec_config_map(result.io_map.lock().unwrap().as_ptr() as *mut c_void);
 
             result.op_state_guard = Some(OpStateGuard {});
 
@@ -343,8 +343,8 @@ impl Link for SOEM {
         Ok(())
     }
 
-    async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
-        match self.sender.send(tx.clone()).await {
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDInternalError> {
+        match self.sender.send(tx.to_vec()).await {
             Err(SendError(..)) => Err(AUTDInternalError::LinkClosed),
             _ => Ok(true),
         }
@@ -352,9 +352,7 @@ impl Link for SOEM {
 
     async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
         match self.io_map.lock() {
-            Ok(io_map) => unsafe {
-                std::ptr::copy_nonoverlapping(io_map.input(), rx.as_mut_ptr(), rx.len());
-            },
+            Ok(io_map) => rx.copy_from_slice(io_map.input()),
             Err(_) => return Err(AUTDInternalError::LinkClosed),
         }
         Ok(true)
@@ -510,7 +508,7 @@ impl SOEMECatThreadGuard {
         is_open: Arc<AtomicBool>,
         wkc: Arc<AtomicI32>,
         io_map: Arc<Mutex<IOMap>>,
-        tx_receiver: Receiver<TxDatagram>,
+        tx_receiver: Receiver<Vec<TxMessage>>,
         timer_strategy: TimerStrategy,
         thread_priority: ThreadPriority,
         #[cfg(target_os = "windows")] process_priority: super::ProcessPriority,
@@ -550,7 +548,7 @@ impl SOEMECatThreadGuard {
         is_open: Arc<AtomicBool>,
         io_map: Arc<Mutex<IOMap>>,
         wkc: Arc<AtomicI32>,
-        receiver: Receiver<TxDatagram>,
+        receiver: Receiver<Vec<TxMessage>>,
         cycle: Duration,
         thread_priority: ThreadPriority,
         #[cfg(target_os = "windows")] process_priority: super::ProcessPriority,

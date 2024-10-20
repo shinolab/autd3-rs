@@ -1,6 +1,7 @@
 use autd3_driver::defined::ABSOLUTE_THRESHOLD_OF_HEARING;
 
 use derive_more::{Display, Div, Mul};
+use zerocopy::{Immutable, IntoBytes};
 
 #[allow(non_camel_case_types)]
 pub struct dB;
@@ -8,7 +9,7 @@ pub struct Pa;
 #[allow(non_camel_case_types)]
 pub struct kPa;
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Div, Mul, Display)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Div, Mul, Display, IntoBytes, Immutable)]
 #[display("{:.2} Pa", value)]
 pub struct Amplitude {
     pub(crate) value: f32,

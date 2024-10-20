@@ -7,7 +7,7 @@ use autd3_driver::{
     defined::ControlPoint,
     derive::*,
     firmware::{
-        cpu::{GainSTMMode, TxDatagram},
+        cpu::{GainSTMMode, TxMessage},
         fpga::{
             Drive, EmitIntensity, GPIOIn, Phase, GAIN_STM_BUF_SIZE_MAX,
             SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
@@ -18,9 +18,10 @@ use autd3_driver::{
 };
 use autd3_firmware_emulator::CPUEmulator;
 
-use rand::*;
-
 use crate::{create_geometry, send};
+
+use rand::*;
+use zerocopy::FromZeros;
 
 use super::super::gain::TestGain;
 
@@ -67,7 +68,7 @@ fn send_gain_stm_phase_intensity_full(
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let phase_corr: Vec<_> = (0..geometry.num_transducers())
         .map(|_| Phase::new(rng.gen()))
@@ -124,7 +125,7 @@ fn send_gain_stm_phase_intensity_full(
 fn send_gain_stm_phase_full(#[case] n: usize) -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let bufs = gen_random_buf(n, &geometry);
     let loop_behavior = LoopBehavior::infinite();
@@ -175,7 +176,7 @@ fn send_gain_stm_phase_full(#[case] n: usize) -> anyhow::Result<()> {
 fn send_gain_stm_phase_half(#[case] n: usize) -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     [
         (Segment::S1, GPIOIn::I0),
@@ -228,7 +229,7 @@ fn send_gain_stm_phase_half(#[case] n: usize) -> anyhow::Result<()> {
 fn change_gain_stm_segment() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
@@ -256,7 +257,7 @@ fn change_gain_stm_segment() -> anyhow::Result<()> {
 fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     {
         let d = GainSTM::new(
@@ -319,7 +320,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
 fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     // segment 0: Gain
     {
@@ -372,7 +373,7 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
 fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     // segment 0 to 0
     {
@@ -431,7 +432,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
 fn invalid_gain_stm_mode() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let bufs = gen_random_buf(2, &geometry);
     let d = GainSTM::new(

@@ -43,8 +43,6 @@ use crate::{
     geometry::{Device, Geometry},
 };
 
-use super::cpu::TxDatagram;
-
 use rayon::prelude::*;
 
 #[derive(PartialEq, Debug, IntoBytes, Immutable)]
@@ -118,7 +116,7 @@ impl OperationHandler {
     pub fn pack(
         operations: &mut [(impl Operation, impl Operation)],
         geometry: &Geometry,
-        tx: &mut TxDatagram,
+        tx: &mut [TxMessage],
         parallel: bool,
     ) -> Result<(), AUTDInternalError> {
         if parallel {
@@ -183,9 +181,11 @@ pub mod tests {
 
     use std::mem::size_of;
 
+    use zerocopy::FromZeros;
+
     use crate::{
         ethercat::EC_OUTPUT_FRAME_SIZE,
-        firmware::cpu::{Header, TxDatagram},
+        firmware::cpu::Header,
         geometry::{Transducer, UnitQuaternion, Vector3},
     };
 
@@ -244,7 +244,7 @@ pub mod tests {
 
         assert!(!OperationHandler::is_done(&op));
 
-        let mut tx = TxDatagram::new(1);
+        let mut tx = vec![TxMessage::new_zeroed(); 1];
 
         assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, parallel).is_ok());
         assert_eq!(op[0].0.num_frames, 2);
@@ -296,7 +296,7 @@ pub mod tests {
         assert!(op[0].1.is_done());
         assert!(!OperationHandler::is_done(&op));
 
-        let mut tx = TxDatagram::new(1);
+        let mut tx = vec![TxMessage::new_zeroed(); 1];
 
         assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, false).is_ok());
         assert!(op[0].0.is_done());
@@ -331,7 +331,7 @@ pub mod tests {
         assert!(!op[0].1.is_done());
         assert!(!OperationHandler::is_done(&op));
 
-        let mut tx = TxDatagram::new(1);
+        let mut tx = vec![TxMessage::new_zeroed(); 1];
 
         assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, false).is_ok());
         assert!(op[0].0.is_done());
@@ -362,7 +362,7 @@ pub mod tests {
             },
         )];
 
-        let mut tx = TxDatagram::new(1);
+        let mut tx = vec![TxMessage::new_zeroed(); 1];
 
         assert_eq!(
             Err(AUTDInternalError::NotSupported("test".to_owned())),
@@ -421,7 +421,7 @@ pub mod tests {
 
         assert!(OperationHandler::is_done(&op));
 
-        let mut tx = TxDatagram::new(1);
+        let mut tx = vec![TxMessage::new_zeroed(); 1];
 
         assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, false).is_ok());
     }
@@ -434,7 +434,7 @@ pub mod tests {
             vec![Transducer::new(0, 0, Vector3::zeros())],
         )]);
 
-        let mut tx = TxDatagram::new(1);
+        let mut tx = vec![TxMessage::new_zeroed(); 1];
 
         for i in 0..=MSG_ID_MAX {
             assert_eq!(i, tx[0].header().msg_id);

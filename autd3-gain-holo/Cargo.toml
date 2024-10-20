@@ -19,6 +19,7 @@ derive_more = { workspace = true }
 rayon = { workspace = true }
 tynm = { workspace = true }
 derive-new = { workspace = true }
+zerocopy = { workspace = true }
 
 [features]
 default = []

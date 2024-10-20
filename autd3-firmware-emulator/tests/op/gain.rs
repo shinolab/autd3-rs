@@ -5,7 +5,7 @@ use autd3_driver::{
     defined::ControlPoint,
     derive::*,
     firmware::{
-        cpu::TxDatagram,
+        cpu::TxMessage,
         fpga::{Drive, EmitIntensity, Phase},
     },
     geometry::Vector3,
@@ -15,6 +15,8 @@ use autd3_firmware_emulator::CPUEmulator;
 use rand::*;
 
 use crate::{create_geometry, send};
+
+use zerocopy::FromZeros;
 
 #[derive(Gain, Debug)]
 pub(crate) struct TestGain {
@@ -59,7 +61,7 @@ fn send_gain() -> anyhow::Result<()> {
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     {
         let buf: HashMap<usize, Vec<Drive>> = geometry
@@ -138,7 +140,7 @@ fn send_gain() -> anyhow::Result<()> {
 fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     // segment 0: FociSTM
     send(

@@ -5,7 +5,7 @@ use autd3_driver::{
     defined::ULTRASOUND_PERIOD,
     derive::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
     error::AUTDInternalError,
-    firmware::{cpu::TxDatagram, fpga::SilencerTarget},
+    firmware::{cpu::TxMessage, fpga::SilencerTarget},
     geometry::Vector3,
 };
 use autd3_firmware_emulator::CPUEmulator;
@@ -14,13 +14,15 @@ use rand::*;
 
 use crate::{create_geometry, send};
 
+use zerocopy::FromZeros;
+
 #[test]
 fn send_silencer_fixed_update_rate() -> anyhow::Result<()> {
     let mut rng = rand::thread_rng();
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     unsafe {
         let config = FixedUpdateRate {
@@ -59,7 +61,7 @@ fn send_silencer_fixed_completion_time() {
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     {
         let config = FixedCompletionTime {
@@ -105,7 +107,7 @@ fn silencer_completetion_steps_too_large_mod(
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let d = Silencer::new(FixedCompletionTime {
         intensity: ULTRASOUND_PERIOD,
@@ -149,7 +151,7 @@ fn silencer_completetion_steps_too_large_stm(
 ) -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let d = Silencer::new(FixedCompletionTime {
         intensity: ULTRASOUND_PERIOD,
@@ -182,7 +184,7 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let config = FixedCompletionTime {
         intensity: ULTRASOUND_PERIOD * rng.gen_range(1..=u8::MAX as u32),
@@ -206,7 +208,7 @@ fn send_silencer_fixed_completion_time_permissive() {
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let config = FixedCompletionTime {
         intensity: rng.gen_range(1..=u8::MAX) as u32 * ULTRASOUND_PERIOD,

@@ -1,6 +1,6 @@
 use autd3_driver::{
     datagram::PhaseCorrection,
-    firmware::{cpu::TxDatagram, fpga::Phase},
+    firmware::{cpu::TxMessage, fpga::Phase},
 };
 use autd3_firmware_emulator::CPUEmulator;
 
@@ -8,13 +8,15 @@ use rand::*;
 
 use crate::{create_geometry, send};
 
+use zerocopy::FromZeros;
+
 #[test]
 fn phase_corr() -> anyhow::Result<()> {
     let mut rng = rand::thread_rng();
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let buf: Vec<_> = (0..geometry.num_transducers())
         .map(|_| Phase::new(rng.gen()))

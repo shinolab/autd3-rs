@@ -2,12 +2,14 @@ use autd3_driver::{
     datagram::*,
     defined::ControlPoint,
     derive::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
-    firmware::{cpu::TxDatagram, fpga::FPGAState},
+    firmware::{cpu::TxMessage, fpga::FPGAState},
     geometry::Vector3,
 };
 use autd3_firmware_emulator::CPUEmulator;
 
 use crate::{create_geometry, op::modulation::TestModulation, send};
+
+use zerocopy::FromZeros;
 
 fn fpga_state(cpu: &CPUEmulator) -> FPGAState {
     unsafe { std::mem::transmute(cpu.rx().data()) }
@@ -17,7 +19,7 @@ fn fpga_state(cpu: &CPUEmulator) -> FPGAState {
 fn send_reads_fpga_state() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     assert!(!cpu.reads_fpga_state());
 

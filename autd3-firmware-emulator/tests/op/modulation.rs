@@ -6,7 +6,7 @@ use autd3_driver::{
     error::AUTDInternalError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::{
-        cpu::TxDatagram,
+        cpu::TxMessage,
         fpga::{
             GPIOIn, TransitionMode, MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN,
             SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
@@ -20,6 +20,8 @@ use time::OffsetDateTime;
 use rand::*;
 
 use crate::{create_geometry, send};
+
+use zerocopy::FromZeros;
 
 #[derive(Modulation, Debug)]
 pub struct TestModulation {
@@ -89,7 +91,7 @@ fn send_mod(
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let m: Vec<_> = (0..n).map(|_| rng.gen()).collect();
     let freq_div = rng.gen_range(
@@ -122,7 +124,7 @@ fn send_mod(
 fn swap_mod_segmemt() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let m: Vec<_> = (0..MOD_BUF_SIZE_MIN).map(|_| 0x00).collect();
     let freq_div = SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16;
@@ -148,7 +150,7 @@ fn swap_mod_segmemt() -> anyhow::Result<()> {
 fn mod_freq_div_too_small() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     {
         let d = TestModulation {
@@ -205,7 +207,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
 fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     // segment 0 to 0
     {
@@ -268,7 +270,7 @@ fn test_miss_transition_time(
 ) -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let transition_mode = TransitionMode::SysTime(DcSysTime::from_utc(transition_time).unwrap());
     let d = TestModulation {
