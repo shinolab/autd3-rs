@@ -4,7 +4,7 @@ use std::net::SocketAddr;
 
 use autd3_driver::{
     derive::*,
-    firmware::cpu::{RxMessage, TxDatagram},
+    firmware::cpu::{RxMessage, TxMessage},
     link::{Link, LinkBuilder},
 };
 
@@ -91,7 +91,7 @@ impl Link for Simulator {
         Ok(())
     }
 
-    async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDInternalError> {
         let res = self
             .client
             .send_data(tx.to_msg(None))

@@ -2,12 +2,13 @@ use std::time::Duration;
 
 use autd3_driver::{
     derive::*,
-    firmware::cpu::{RxMessage, TxDatagram},
+    firmware::cpu::{RxMessage, TxMessage},
     geometry::{Device, Geometry, IntoDevice},
     link::LinkBuilder,
 };
 
 use derive_more::Debug;
+use zerocopy::FromZeros;
 
 use super::Controller;
 use crate::error::AUTDError;
@@ -68,7 +69,7 @@ impl ControllerBuilder {
         let geometry = Geometry::new(self.devices);
         Controller {
             link: link_builder.open(&geometry).await?,
-            tx_buf: TxDatagram::new(geometry.num_devices()),
+            tx_buf: vec![TxMessage::new_zeroed(); geometry.num_devices()],
             rx_buf: vec![RxMessage::new(0, 0); geometry.num_devices()],
             geometry,
             fallback_parallel_threshold: self.fallback_parallel_threshold,

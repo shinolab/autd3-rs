@@ -1,9 +1,11 @@
-use autd3_driver::{datagram::PulseWidthEncoder, firmware::cpu::TxDatagram};
+use autd3_driver::{datagram::PulseWidthEncoder, firmware::cpu::TxMessage};
 use autd3_firmware_emulator::CPUEmulator;
 
 use rand::*;
 
 use crate::{create_geometry, send};
+
+use zerocopy::FromZeros;
 
 #[test]
 fn config_pwe() -> anyhow::Result<()> {
@@ -11,7 +13,7 @@ fn config_pwe() -> anyhow::Result<()> {
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = TxDatagram::new(geometry.num_devices());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     {
         let buf: Vec<_> = (0..256).map(|_| rng.gen()).collect();

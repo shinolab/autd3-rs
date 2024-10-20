@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{
     error::AUTDInternalError,
-    firmware::cpu::{check_if_msg_is_processed, RxMessage, TxDatagram},
+    firmware::cpu::{check_if_msg_is_processed, RxMessage, TxMessage},
     geometry::Geometry,
 };
 
@@ -10,6 +10,8 @@ use itertools::Itertools;
 
 #[cfg(feature = "async-trait")]
 mod internal {
+    use crate::firmware::cpu::TxMessage;
+
     use super::*;
 
     #[async_trait::async_trait]
@@ -20,7 +22,7 @@ mod internal {
             Ok(())
         }
 
-        async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError>;
+        async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDInternalError>;
 
         async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError>;
 
@@ -28,7 +30,7 @@ mod internal {
         fn is_open(&self) -> bool;
 
         #[inline(always)]
-        fn trace(&mut self, _: &TxDatagram, _: &mut [RxMessage], _: Duration, _: usize) {}
+        fn trace(&mut self, _: &[TxMessage], _: &mut [RxMessage], _: Duration, _: usize) {}
     }
 
     #[async_trait::async_trait]
@@ -48,7 +50,7 @@ mod internal {
             self.as_mut().update(geometry).await
         }
 
-        async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
+        async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDInternalError> {
             self.as_mut().send(tx).await
         }
 
@@ -63,7 +65,7 @@ mod internal {
         #[inline(always)]
         fn trace(
             &mut self,
-            tx: &TxDatagram,
+            tx: &[TxMessage],
             rx: &mut [RxMessage],
             timeout: Duration,
             parallel_threshold: usize,
@@ -75,6 +77,8 @@ mod internal {
 
 #[cfg(not(feature = "async-trait"))]
 mod internal {
+    use crate::firmware::cpu::TxMessage;
+
     use super::*;
 
     pub trait Link: Send {
@@ -89,7 +93,7 @@ mod internal {
 
         fn send(
             &mut self,
-            tx: &TxDatagram,
+            tx: &[TxMessage],
         ) -> impl std::future::Future<Output = Result<bool, AUTDInternalError>>;
 
         fn receive(
@@ -101,7 +105,7 @@ mod internal {
         fn is_open(&self) -> bool;
 
         #[inline(always)]
-        fn trace(&mut self, _: &TxDatagram, _: &mut [RxMessage], _: Duration, _: usize) {}
+        fn trace(&mut self, _: &[TxMessage], _: &mut [RxMessage], _: Duration, _: usize) {}
     }
 
     pub trait LinkBuilder {
@@ -120,7 +124,7 @@ pub use internal::LinkBuilder;
 #[tracing::instrument(skip(link, tx, rx))]
 pub async fn send_receive(
     link: &mut impl Link,
-    tx: &TxDatagram,
+    tx: &[TxMessage],
     rx: &mut [RxMessage],
     timeout: Duration,
     receive_interval: Duration,
@@ -150,7 +154,7 @@ pub async fn send_receive(
 
 async fn wait_msg_processed(
     link: &mut impl Link,
-    tx: &TxDatagram,
+    tx: &[TxMessage],
     rx: &mut [RxMessage],
     timeout: Duration,
     receive_interval: Duration,
@@ -193,6 +197,8 @@ async fn wait_msg_processed(
 
 #[cfg(test)]
 mod tests {
+    use zerocopy::FromZeros;
+
     use super::*;
 
     struct MockLink {
@@ -209,7 +215,7 @@ mod tests {
             Ok(())
         }
 
-        async fn send(&mut self, _: &TxDatagram) -> Result<bool, AUTDInternalError> {
+        async fn send(&mut self, _: &[TxMessage]) -> Result<bool, AUTDInternalError> {
             self.send_cnt += 1;
             Ok(!self.down)
         }
@@ -260,7 +266,7 @@ mod tests {
             down: false,
         };
 
-        let tx = TxDatagram::new(0);
+        let tx = vec![];
         let mut rx = Vec::new();
         assert_eq!(
             send_receive(
@@ -324,7 +330,7 @@ mod tests {
             down: false,
         };
 
-        let mut tx = TxDatagram::new(1);
+        let mut tx = vec![TxMessage::new_zeroed(); 1];
         tx[0].header_mut().msg_id = 2;
         let mut rx = vec![RxMessage::new(0, 0)];
         assert_eq!(

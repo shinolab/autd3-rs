@@ -4,7 +4,7 @@ use autd3_driver::{
     defined::rad,
     derive::{Geometry, *},
     firmware::{
-        cpu::TxDatagram,
+        cpu::TxMessage,
         fpga::{EmitIntensity, Phase},
         operation::OperationHandler,
     },
@@ -12,6 +12,7 @@ use autd3_driver::{
 };
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use zerocopy::FromZeros;
 
 pub fn generate_geometry(size: usize) -> Geometry {
     Geometry::new(
@@ -90,7 +91,7 @@ fn focus(c: &mut Criterion) {
             BenchmarkId::new("Gain::Focus", size),
             &generate_geometry(size),
             |b, geometry| {
-                let mut tx = TxDatagram::new(size);
+                let mut tx = vec![TxMessage::new_zeroed(); size];
                 b.iter(|| {
                     let g = Focus::new(Vector3::new(
                         black_box(90.),
@@ -115,7 +116,7 @@ fn focus_parallel(c: &mut Criterion) {
             BenchmarkId::new("Gain::FocusParallel", size),
             &generate_geometry(size),
             |b, geometry| {
-                let mut tx = TxDatagram::new(size);
+                let mut tx = vec![TxMessage::new_zeroed(); size];
                 b.iter(|| {
                     let g = Focus::new(Vector3::new(
                         black_box(90.),
@@ -140,7 +141,7 @@ fn focus_boxed(c: &mut Criterion) {
             BenchmarkId::new("Gain::FocusBoxed", size),
             &generate_geometry(size),
             |b, geometry| {
-                let mut tx = TxDatagram::new(size);
+                let mut tx = vec![TxMessage::new_zeroed(); size];
                 b.iter(|| {
                     let g = Box::new(Focus::new(Vector3::new(
                         black_box(90.),

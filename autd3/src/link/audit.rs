@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use autd3_driver::{
     derive::*,
-    firmware::cpu::{RxMessage, TxDatagram},
+    firmware::cpu::{RxMessage, TxMessage},
     link::{Link, LinkBuilder},
 };
 use autd3_firmware_emulator::CPUEmulator;
@@ -94,7 +94,7 @@ impl Link for Audit {
         Ok(())
     }
 
-    async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDInternalError> {
         if self.broken {
             return Err(AUTDInternalError::LinkError("broken".to_owned()));
         }
@@ -133,7 +133,7 @@ impl Link for Audit {
 
     fn trace(
         &mut self,
-        _: &TxDatagram,
+        _: &[TxMessage],
         _: &mut [RxMessage],
         timeout: Duration,
         parallel_threshold: usize,

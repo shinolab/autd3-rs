@@ -1,11 +1,12 @@
 use crate::{derive::AUTDInternalError, firmware::fpga::FPGAState};
 use autd3_derive::Builder;
 use derive_new::new;
+use zerocopy::{FromBytes, Immutable, IntoBytes};
 
 const READS_FPGA_STATE_ENABLED_BIT: u8 = 7;
 const READS_FPGA_STATE_ENABLED: u8 = 1 << READS_FPGA_STATE_ENABLED_BIT;
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug, new, Builder)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, new, Builder, IntoBytes, Immutable, FromBytes)]
 #[repr(C)]
 pub struct RxMessage {
     #[get]

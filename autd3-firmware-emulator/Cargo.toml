@@ -16,6 +16,7 @@ time = { workspace = true, features = ["std"] }
 num-integer = { workspace = true }
 thiserror = { workspace = true }
 derive-new = { workspace = true }
+zerocopy = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }

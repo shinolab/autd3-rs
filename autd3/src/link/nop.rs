@@ -1,6 +1,6 @@
 use autd3_driver::{
     derive::*,
-    firmware::cpu::{RxMessage, TxDatagram},
+    firmware::cpu::{RxMessage, TxMessage},
     link::{Link, LinkBuilder},
 };
 use autd3_firmware_emulator::CPUEmulator;
@@ -36,7 +36,7 @@ impl Link for Nop {
         Ok(())
     }
 
-    async fn send(&mut self, tx: &TxDatagram) -> Result<bool, AUTDInternalError> {
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDInternalError> {
         self.cpus.iter_mut().for_each(|cpu| {
             cpu.send(tx);
         });

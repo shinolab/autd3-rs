@@ -2,10 +2,10 @@ mod rx;
 mod tx;
 
 pub use rx::RxMessage;
-pub use tx::{TxDatagram, TxMessage};
+pub use tx::TxMessage;
 
 pub fn check_if_msg_is_processed<'a>(
-    tx: &'a TxDatagram,
+    tx: &'a [TxMessage],
     rx: &'a mut [RxMessage],
 ) -> impl Iterator<Item = bool> + 'a {
     tx.iter()
@@ -16,12 +16,13 @@ pub fn check_if_msg_is_processed<'a>(
 #[cfg(test)]
 mod tests {
     use itertools::Itertools;
+    use zerocopy::FromZeros;
 
     use super::*;
 
     #[rstest::fixture]
-    fn tx() -> TxDatagram {
-        let mut tx = TxDatagram::new(3);
+    fn tx() -> Vec<TxMessage> {
+        let mut tx = vec![TxMessage::new_zeroed(); 3];
         tx[0].header_mut().msg_id = 0;
         tx[1].header_mut().msg_id = 1;
         tx[2].header_mut().msg_id = 2;
@@ -43,7 +44,7 @@ mod tests {
     fn test_check_if_msg_is_processed(
         #[case] mut rx: Vec<RxMessage>,
         #[case] expect: Vec<bool>,
-        tx: TxDatagram,
+        tx: Vec<TxMessage>,
     ) {
         assert_eq!(
             expect,

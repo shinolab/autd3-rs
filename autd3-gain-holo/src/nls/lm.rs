@@ -12,6 +12,7 @@ use autd3_driver::{
 };
 use bit_vec::BitVec;
 use derive_more::Debug;
+use zerocopy::{FromBytes, IntoBytes};
 
 #[derive(Gain, Builder, Debug)]
 pub struct LM<D: Directivity, B: LinAlgBackend<D>> {
@@ -143,10 +144,9 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for LM<D, B> {
         let bhb = {
             let mut bhb = self.backend.alloc_zeros_cm(n_param, n_param)?;
 
-            let mut amps = self.backend.from_slice_cv(unsafe {
-                std::slice::from_raw_parts(self.amps.as_ptr() as *const f32, self.amps.len())
-            })?;
-
+            let mut amps = self
+                .backend
+                .from_slice_cv(<[f32]>::ref_from_bytes(self.amps.as_bytes()).unwrap())?;
             let mut p = self.backend.alloc_cm(m, m)?;
             self.backend
                 .scale_assign_cv(Complex::new(-1., 0.), &mut amps)?;
