@@ -74,7 +74,7 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
                 acc
             })
             .into_iter()
-            .map(|x| (x * scale + (self.offset as f32) / 2.).round() as isize)
+            .map(|x| (x * scale + self.offset as f32).floor() as isize)
             .map(|v| {
                 if (u8::MIN as _..=u8::MAX as _).contains(&v) {
                     Ok(v as _)
@@ -140,7 +140,7 @@ mod tests {
                     + f3_buf[i % f3_buf.len()]
                     + f4_buf[i % f4_buf.len()])
                     / 5.)
-                    .round() as u8
+                    .floor() as u8
             );
         });
 
@@ -173,19 +173,19 @@ mod tests {
 
     #[rstest::rstest]
     #[case(
-        Err(AUTDInternalError::ModulationError("Fourier modulation value (-39) is out of range [0, 255]".to_owned())),
+        Err(AUTDInternalError::ModulationError("Fourier modulation value (-1) is out of range [0, 255]".to_owned())),
         0x00,
         false,
         None
     )]
     #[case(
-        Ok(vec![0, 39, 75, 103, 121, 128, 121, 103, 75, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        Ok(vec![0, 39, 74, 103, 121, 127, 121, 103, 74, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         0x00,
         true,
         None
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Fourier modulation value (334) is out of range [0, 255]".to_owned())),
+        Err(AUTDInternalError::ModulationError("Fourier modulation value (510) is out of range [0, 255]".to_owned())),
         0xFF,
         false,
         Some(2.)
