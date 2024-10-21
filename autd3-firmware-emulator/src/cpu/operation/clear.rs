@@ -2,7 +2,7 @@ use autd3_driver::firmware::fpga::PWE_BUF_SIZE;
 
 use crate::{cpu::params::*, CPUEmulator};
 
-static ASIN_TABLE: &'static [u8; PWE_BUF_SIZE] = {
+static ASIN_TABLE: &[u8; PWE_BUF_SIZE] = {
     #[repr(C)]
     pub struct AlignedBytes {
         pub __: [u16; 0],
