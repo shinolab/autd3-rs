@@ -100,14 +100,14 @@ mod tests {
                 .open(crate::link::Nop::builder())
                 .await?;
 
-        assert_eq!(0, autd.geometry()[0].idx());
-        autd.geometry()[0].iter().enumerate().for_each(|(i, tr)| {
+        assert_eq!(0, autd[0].idx());
+        autd[0].iter().enumerate().for_each(|(i, tr)| {
             assert_eq!(i, tr.idx());
             assert_eq!(0, tr.dev_idx());
         });
 
-        assert_eq!(1, autd.geometry()[1].idx());
-        autd.geometry()[1].iter().enumerate().for_each(|(i, tr)| {
+        assert_eq!(1, autd[1].idx());
+        autd[1].iter().enumerate().for_each(|(i, tr)| {
             assert_eq!(i, tr.idx());
             assert_eq!(1, tr.dev_idx());
         });

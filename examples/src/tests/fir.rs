@@ -3,7 +3,7 @@ use autd3::{driver::link::Link, prelude::*};
 pub async fn fir(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     autd.send(Silencer::disable()).await?;
 
-    let center = autd.geometry().center() + Vector3::new(0., 0., 150.0 * mm);
+    let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);
 
     // fs = 20kHz, fc = 200Hz, n_tap = 199
     let filt = vec![

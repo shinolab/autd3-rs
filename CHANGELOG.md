@@ -2,6 +2,8 @@
 
 - Update firmware to v10.0.1
   - phase correction bram and pulse width encoder table reset to default in clear op
+- Remove `Deref<Target = Link>` and `DerefMut` for `Controller`
+  - Impl `Deref<Target = Geometry>` and `DerefMut` for `Controller` instead
 - Improve calculation performance of `Gain`s
 - Remove `Gain::with_transform`
 - `Gain::with_segment` and `SwapSegment::Gain` now take `TransitionMode` instead of `bool`

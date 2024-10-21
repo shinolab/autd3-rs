@@ -7,12 +7,9 @@ async fn only_for_enabled() -> anyhow::Result<()> {
             .open(Audit::builder())
             .await?;
 
-    let check = std::sync::Arc::new(std::sync::Mutex::new(vec![
-        false;
-        autd.geometry().num_devices()
-    ]));
+    let check = std::sync::Arc::new(std::sync::Mutex::new(vec![false; autd.num_devices()]));
 
-    autd.geometry_mut()[0].enable = false;
+    autd[0].enable = false;
 
     autd.send(
         Group::new(|dev| {
@@ -29,12 +26,12 @@ async fn only_for_enabled() -> anyhow::Result<()> {
     assert!(!check.lock().unwrap()[0]);
     assert!(check.lock().unwrap()[1]);
 
-    assert!(autd[0]
+    assert!(autd.link()[0]
         .fpga()
         .drives_at(Segment::S0, 0)
         .into_iter()
         .all(|d| Drive::NULL == d));
-    assert!(autd[1]
+    assert!(autd.link()[1]
         .fpga()
         .drives_at(Segment::S0, 0)
         .into_iter()
