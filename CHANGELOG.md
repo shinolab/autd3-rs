@@ -9,6 +9,7 @@
 - Update tracing messages
 - Remove `Drive::null`, add `Drive::NULL` instead
 - Fix [#130](https://github.com/shinolab/autd3-rs/issues/130): `Gain`s in `autd3-gain-holo` cause `index out of bounds` error with disabled device
+- Fix [#140](https://github.com/shinolab/autd3-rs/issues/140): Clear sometimes fails in `Controller::open`
 
 # 28.1.0
 

@@ -24,6 +24,9 @@ pub struct AuditBuilder {
     initial_msg_id: Option<u8>,
     #[get]
     #[set]
+    initial_phase_corr: Option<u8>,
+    #[get]
+    #[set]
     down: bool,
 }
 
@@ -45,6 +48,12 @@ impl LinkBuilder for AuditBuilder {
                     if let Some(msg_id) = self.initial_msg_id {
                         cpu.set_last_msg_id(msg_id);
                     }
+                    if let Some(initial_phase_corr) = self.initial_phase_corr {
+                        cpu.fpga_mut()
+                            .mem_mut()
+                            .phase_corr_bram_mut()
+                            .fill(u16::from_le_bytes([initial_phase_corr, initial_phase_corr]));
+                    }
                     cpu
                 })
                 .collect(),
@@ -58,6 +67,7 @@ impl Audit {
     pub const fn builder() -> AuditBuilder {
         AuditBuilder {
             initial_msg_id: None,
+            initial_phase_corr: None,
             down: false,
         }
     }

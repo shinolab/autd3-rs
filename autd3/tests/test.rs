@@ -8,9 +8,20 @@ mod datagram;
 mod link;
 
 #[tokio::test]
-async fn initial_msg_id() {
-    assert!(Controller::builder([AUTD3::new(Vector3::zeros())])
-        .open(Audit::builder().with_initial_msg_id(Some(0x01)))
-        .await
-        .is_ok());
+async fn initial_msg_id() -> anyhow::Result<()> {
+    let cnt = Controller::builder([AUTD3::new(Vector3::zeros())])
+        .open(
+            Audit::builder()
+                .with_initial_msg_id(Some(0x01))
+                .with_initial_phase_corr(Some(0xFF)),
+        )
+        .await?;
+
+    assert!(cnt.link()[0]
+        .fpga()
+        .phase_correction()
+        .iter()
+        .all(|v| v.value() == 0x00));
+
+    Ok(())
 }

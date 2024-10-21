@@ -9,7 +9,6 @@ use std::{fmt::Debug, hash::Hash, time::Duration};
 use autd3_driver::{
     datagram::{Clear, Datagram, IntoDatagramWithTimeout, Silencer, Synchronize},
     derive::Builder,
-    error::AUTDInternalError,
     firmware::{
         cpu::{check_if_msg_is_processed, RxMessage, TxMessage},
         fpga::FPGAState,
@@ -109,15 +108,9 @@ impl<L: Link> Controller<L> {
 
     pub(crate) async fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
         let timeout = Some(timeout);
-        if let Err(e) = self.send(Clear::new().with_timeout(timeout)).await {
-            match e {
-                AUTDError::Internal(AUTDInternalError::ConfirmResponseFailed) => {
-                    self.send(Clear::new().with_timeout(timeout)).await?
-                }
-                _ => return Err(e),
-            }
-        }
-        self.send(Synchronize::new().with_timeout(timeout)).await?;
+        let _ = self.send(Clear::new().with_timeout(timeout)).await;
+        self.send((Clear::new(), Synchronize::new()).with_timeout(timeout))
+            .await?;
         Ok(self)
     }
 

@@ -7,6 +7,7 @@ mod silencer;
 mod stm;
 mod swapchain;
 
+use autd3_derive::Builder;
 use autd3_driver::{derive::Segment, ethercat::DcSysTime};
 
 use memory::Memory;
@@ -21,7 +22,9 @@ pub use silencer::SilencerEmulator;
 const CTL_FLAG_MOD_SET: u16 = 1 << CTL_FLAG_MOD_SET_BIT;
 const CTL_FLAG_STM_SET: u16 = 1 << CTL_FLAG_STM_SET_BIT;
 
+#[derive(Builder)]
 pub struct FPGAEmulator {
+    #[get(ref, ref_mut)]
     pub(crate) mem: Memory,
     mod_swapchain: swapchain::Swapchain<CTL_FLAG_MOD_SET>,
     stm_swapchain: swapchain::Swapchain<CTL_FLAG_STM_SET>,
