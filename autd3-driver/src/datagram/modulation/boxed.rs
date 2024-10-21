@@ -1,4 +1,4 @@
-use std::time::Duration;
+use autd3_derive::Modulation;
 
 use super::{Modulation, ModulationOperationGenerator, ModulationProperty};
 use crate::{
@@ -14,13 +14,15 @@ type BoxedFmt = Box<dyn Fn(&mut std::fmt::Formatter<'_>) -> std::fmt::Result>;
 #[cfg(feature = "lightweight")]
 type BoxedFmt = Box<dyn Fn(&mut std::fmt::Formatter<'_>) -> std::fmt::Result + Send + Sync>;
 
+#[derive(Modulation)]
 pub struct BoxedModulation {
     dbg: BoxedFmt,
     #[cfg(not(feature = "lightweight"))]
     gen: Box<dyn FnOnce() -> Result<Vec<u8>, AUTDInternalError>>,
     #[cfg(feature = "lightweight")]
     gen: Box<dyn FnOnce() -> Result<Vec<u8>, AUTDInternalError> + Send + Sync>,
-    sampling_config: SamplingConfig,
+    #[no_change]
+    config: SamplingConfig,
     loop_behavior: LoopBehavior,
 }
 
@@ -30,54 +32,11 @@ impl std::fmt::Debug for BoxedModulation {
     }
 }
 
-impl ModulationProperty for BoxedModulation {
-    fn sampling_config(&self) -> SamplingConfig {
-        self.sampling_config
-    }
-
-    fn loop_behavior(&self) -> LoopBehavior {
-        self.loop_behavior
-    }
-}
-
 impl Modulation for BoxedModulation {
     fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
         (self.gen)()
     }
 }
-
-// GRCOV_EXCL_START
-impl DatagramS for BoxedModulation {
-    type G = ModulationOperationGenerator;
-
-    fn operation_generator_with_segment(
-        self,
-        _: &Geometry,
-        segment: Segment,
-        transition_mode: Option<TransitionMode>,
-    ) -> Result<Self::G, AUTDInternalError> {
-        let config = self.sampling_config();
-        let loop_behavior = self.loop_behavior();
-        let g = self.calc()?;
-        tracing::trace!("Modulation buffer: {:?}", g);
-        Ok(Self::G {
-            g: std::sync::Arc::new(g),
-            config,
-            loop_behavior,
-            segment,
-            transition_mode,
-        })
-    }
-
-    fn timeout(&self) -> Option<Duration> {
-        Some(DEFAULT_TIMEOUT)
-    }
-
-    fn parallel_threshold(&self) -> Option<usize> {
-        Some(usize::MAX)
-    }
-}
-// GRCOV_EXCL_STOP
 
 pub trait IntoBoxedModulation {
     fn into_boxed(self) -> BoxedModulation;
@@ -89,7 +48,7 @@ where
     M: 'static,
 {
     fn into_boxed(self) -> BoxedModulation {
-        let sampling_config = self.sampling_config();
+        let config = self.sampling_config();
         let loop_behavior = self.loop_behavior();
         let m = std::rc::Rc::new(std::cell::RefCell::new(Some(self)));
         BoxedModulation {
@@ -97,7 +56,7 @@ where
                 let m = m.clone();
                 move |f| m.borrow().as_ref().unwrap().fmt(f)
             }),
-            sampling_config,
+            config,
             loop_behavior,
             gen: Box::new(move || m.take().unwrap().calc()),
         }
@@ -110,7 +69,7 @@ where
     M: Send + Sync + 'static,
 {
     fn into_boxed(self) -> BoxedModulation {
-        let sampling_config = self.sampling_config();
+        let config = self.sampling_config();
         let loop_behavior = self.loop_behavior();
         let m = std::sync::Arc::new(std::sync::Mutex::new(Some(self)));
         BoxedModulation {
@@ -118,7 +77,7 @@ where
                 let m = m.clone();
                 move |f| m.lock().unwrap().as_ref().unwrap().fmt(f)
             }),
-            sampling_config,
+            config,
             loop_behavior,
             gen: Box::new(move || m.lock().unwrap().take().unwrap().calc()),
         }

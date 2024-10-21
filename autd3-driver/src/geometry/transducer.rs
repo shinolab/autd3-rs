@@ -1,6 +1,6 @@
 use autd3_derive::Builder;
 
-use super::{Matrix4, UnitQuaternion, Vector3, Vector4};
+use super::{Matrix4, UnitQuaternion, Vector3};
 
 use derive_new::new;
 
@@ -23,9 +23,7 @@ impl Transducer {
     }
 
     pub(super) fn affine(&mut self, t: Vector3, r: UnitQuaternion) {
-        self.position = (Matrix4::from(r).append_translation(&t)
-            * Vector4::new(self.position[0], self.position[1], self.position[2], 1.0))
-        .xyz();
+        self.position = (Matrix4::from(r).append_translation(&t) * self.position.push(1.0)).xyz();
     }
 }
 

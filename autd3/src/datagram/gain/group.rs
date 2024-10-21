@@ -114,7 +114,7 @@ where
     ) -> Result<Self::G, AUTDInternalError> {
         let mut filters = self.get_filters(geometry);
 
-        let g = geometry
+        let mut g = geometry
             .devices()
             .map(|dev| {
                 (
@@ -149,15 +149,11 @@ where
                     geometry.devices().zip(c.iter()).for_each(|(dev, c)| {
                         let f = (f)(dev);
                         let r = g[&dev.idx()].as_ptr() as *mut Drive;
-                        dev.iter().for_each(|tr| {
-                            if let Some(kk) = f(tr) {
-                                if &kk == k {
-                                    unsafe {
-                                        r.add(tr.idx()).write(c.calc(tr));
-                                    }
-                                }
-                            }
-                        })
+                        dev.iter()
+                            .filter(|tr| f(tr).is_some_and(|kk| &kk == k))
+                            .for_each(|tr| unsafe {
+                                r.add(tr.idx()).write(c.calc(tr));
+                            })
                     });
                     Ok(())
                 })?;
@@ -167,16 +163,12 @@ where
                 .try_for_each(|(k, c)| -> Result<(), AUTDInternalError> {
                     geometry.devices().zip(c.iter()).for_each(|(dev, c)| {
                         let f = (f)(dev);
-                        let r = g[&dev.idx()].as_ptr() as *mut Drive;
-                        dev.iter().for_each(|tr| {
-                            if let Some(kk) = f(tr) {
-                                if &kk == k {
-                                    unsafe {
-                                        r.add(tr.idx()).write(c.calc(tr));
-                                    }
-                                }
-                            }
-                        })
+                        let r = g.get_mut(&dev.idx()).unwrap();
+                        dev.iter()
+                            .filter(|tr| f(tr).is_some_and(|kk| &kk == k))
+                            .for_each(|tr| {
+                                r[tr.idx()] = c.calc(tr);
+                            })
                     });
                     Ok(())
                 })?;

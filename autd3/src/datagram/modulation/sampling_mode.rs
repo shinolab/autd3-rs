@@ -77,6 +77,7 @@ impl SamplingMode for ExactFreqFloat {
             )));
         }
         let fd = freq.hz() as f64 * sampling_config.division() as f64;
+
         for n in (ULTRASOUND_FREQ.hz() as f64 / fd).floor() as u32..=MOD_BUF_SIZE_MAX as u32 {
             if !is_integer(fd * n as f64) {
                 continue;

@@ -5,7 +5,7 @@ use zerocopy::{Immutable, IntoBytes};
 
 #[bitfield_struct::bitfield(u64)]
 #[derive(IntoBytes, Immutable)]
-pub struct STMFocus {
+pub(crate) struct STMFocus {
     #[bits(18)]
     pub x: i32,
     #[bits(18)]
@@ -15,7 +15,7 @@ pub struct STMFocus {
     #[bits(8)]
     pub intensity: u8,
     #[bits(2)]
-    pad: u8,
+    __: u8,
 }
 
 impl STMFocus {
@@ -23,7 +23,7 @@ impl STMFocus {
         (x / FOCI_STM_FIXED_NUM_UNIT).round() as i32
     }
 
-    pub fn create(p: &Vector3, intensity_or_offset: u8) -> Result<Self, AUTDInternalError> {
+    pub(crate) fn create(p: &Vector3, intensity_or_offset: u8) -> Result<Self, AUTDInternalError> {
         let ix = Self::to_fixed_num(p.x);
         let iy = Self::to_fixed_num(p.y);
         let iz = Self::to_fixed_num(p.z);

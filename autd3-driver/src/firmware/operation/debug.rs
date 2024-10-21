@@ -16,7 +16,7 @@ use zerocopy::{Immutable, IntoBytes};
 #[derive(IntoBytes, Immutable)]
 struct DebugSetting {
     tag: TypeTag,
-    __pad: [u8; 7],
+    __: [u8; 7],
     value: [DebugValue; 4],
 }
 
@@ -33,7 +33,7 @@ impl Operation for DebugSettingOp {
         tx[..size_of::<DebugSetting>()].copy_from_slice(
             DebugSetting {
                 tag: TypeTag::Debug,
-                __pad: [0; 7],
+                __: [0; 7],
                 value: self.value,
             }
             .as_bytes(),

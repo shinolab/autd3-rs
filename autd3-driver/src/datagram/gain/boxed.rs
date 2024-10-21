@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::Duration};
+use std::collections::HashMap;
 
 use super::{Gain, GainContextGenerator, GainOperationGenerator};
 pub use crate::firmware::operation::GainContext;
@@ -9,6 +9,7 @@ use crate::{
     geometry::{Device, Transducer},
 };
 
+use autd3_derive::Gain;
 use bit_vec::BitVec;
 
 impl GainContext for Box<dyn GainContext> {
@@ -51,6 +52,7 @@ type BoxedGen = Box<
 #[cfg(feature = "lightweight")]
 type BoxedFmt = Box<dyn Fn(&mut std::fmt::Formatter<'_>) -> std::fmt::Result + Send + Sync>;
 
+#[derive(Gain)]
 pub struct BoxedGain {
     dbg: BoxedFmt,
     g: BoxedGen,
@@ -73,29 +75,6 @@ impl Gain for BoxedGain {
         (self.g)(geometry, filter)
     }
 }
-
-// GRCOV_EXCL_START
-impl DatagramS for BoxedGain {
-    type G = GainOperationGenerator<BoxedGainContextGenerator>;
-
-    fn operation_generator_with_segment(
-        self,
-        geometry: &Geometry,
-        segment: Segment,
-        transition_mode: Option<TransitionMode>,
-    ) -> Result<Self::G, AUTDInternalError> {
-        Self::G::new(self, geometry, segment, transition_mode)
-    }
-
-    fn timeout(&self) -> Option<Duration> {
-        None
-    }
-
-    fn parallel_threshold(&self) -> Option<usize> {
-        None
-    }
-}
-// GRCOV_EXCL_STOP
 
 pub trait IntoBoxedGain {
     fn into_boxed(self) -> BoxedGain;

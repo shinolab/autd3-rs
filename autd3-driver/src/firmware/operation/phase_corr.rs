@@ -16,7 +16,7 @@ use zerocopy::{Immutable, IntoBytes};
 #[derive(IntoBytes, Immutable)]
 struct PhaseCorr {
     tag: TypeTag,
-    __pad: u8,
+    __: u8,
 }
 
 #[derive(new)]
@@ -32,7 +32,7 @@ impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<
         tx[..size_of::<PhaseCorr>()].copy_from_slice(
             PhaseCorr {
                 tag: TypeTag::PhaseCorrection,
-                __pad: 0,
+                __: 0,
             }
             .as_bytes(),
         );
