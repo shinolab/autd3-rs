@@ -2,7 +2,18 @@ use autd3_driver::firmware::fpga::PWE_BUF_SIZE;
 
 use crate::{cpu::params::*, CPUEmulator};
 
-static ASIN_TABLE: &[u8; 256] = include_bytes!("asin.dat");
+static ASIN_TABLE: &'static [u8; PWE_BUF_SIZE] = {
+    #[repr(C)]
+    pub struct AlignedBytes {
+        pub __: [u16; 0],
+        pub bytes: [u8; PWE_BUF_SIZE],
+    }
+    static ALIGNED: &AlignedBytes = &AlignedBytes {
+        __: [],
+        bytes: *include_bytes!("asin.dat"),
+    };
+    &ALIGNED.bytes
+};
 
 #[allow(dead_code)]
 #[repr(C, align(2))]
@@ -122,6 +133,7 @@ impl CPUEmulator {
             0,
             (TRANS_NUM + 1) >> 1,
         );
+
         self.bram_cpy(
             BRAM_SELECT_PWE_TABLE,
             0,
