@@ -104,7 +104,7 @@ impl<L: Link> Controller<L> {
                 timeout,
                 parallel,
             )
-            .await
+            .await // GRCOV_EXCL_LINE
     }
 
     pub(crate) async fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
@@ -278,6 +278,19 @@ mod tests {
         )
     }
     // GRCOV_EXCL_STOP
+
+    #[rstest::rstest]
+    #[case(TimerStrategy::Std)]
+    #[case(TimerStrategy::Spin(SpinSleeper::default()))]
+    #[case(TimerStrategy::Async(AsyncSleeper::default()))]
+    #[tokio::test(flavor = "multi_thread")]
+    async fn open_failed_with_timer(#[case] strategy: TimerStrategy) {
+        assert!(Controller::builder([AUTD3::new(Vector3::zeros())])
+            .with_timer_strategy(strategy)
+            .open(Audit::builder())
+            .await
+            .is_ok());
+    }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn open_failed() {

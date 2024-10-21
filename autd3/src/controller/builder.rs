@@ -35,7 +35,7 @@ pub struct ControllerBuilder {
     receive_interval: Duration,
     #[get(ref)]
     #[set]
-    sleep_strategy: TimerStrategy,
+    timer_strategy: TimerStrategy,
 }
 
 impl ControllerBuilder {
@@ -51,7 +51,7 @@ impl ControllerBuilder {
             fallback_timeout: Duration::from_millis(20),
             send_interval: Duration::from_millis(1),
             receive_interval: Duration::from_millis(1),
-            sleep_strategy: TimerStrategy::Spin(SpinSleeper::default()),
+            timer_strategy: TimerStrategy::Spin(SpinSleeper::default()),
         }
     }
 
@@ -79,7 +79,7 @@ impl ControllerBuilder {
             timer: Timer {
                 send_interval: self.send_interval,
                 receive_interval: self.receive_interval,
-                strategy: self.sleep_strategy,
+                strategy: self.timer_strategy,
             },
         }
         .open_impl(timeout)
