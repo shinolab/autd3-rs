@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use autd3::{derive::DEFAULT_TIMEOUT, link::Audit, prelude::*};
+use autd3::{link::Audit, prelude::*};
 use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
 
 #[tokio::test]
@@ -11,21 +11,7 @@ async fn audit_test() -> anyhow::Result<()> {
         .await?;
     assert_eq!(Duration::from_millis(100), autd.fallback_timeout());
     assert_eq!(0, autd.link()[0].idx());
-    assert_eq!(DEFAULT_TIMEOUT, autd.link().last_timeout());
-    assert_eq!(usize::MAX, autd.link().last_parallel_threshold());
 
-    // test last_timeout and last_parallel_threshold
-    {
-        assert!(autd.send(Null::new()).await.is_ok());
-        assert_eq!(Duration::from_millis(100), autd.link().last_timeout());
-        assert_eq!(4, autd.link().last_parallel_threshold());
-
-        assert!(autd.send(Static::new()).await.is_ok());
-        assert_eq!(DEFAULT_TIMEOUT, autd.link().last_timeout());
-        assert_eq!(usize::MAX, autd.link().last_parallel_threshold());
-    }
-
-    // test fpga_state
     {
         assert_eq!(vec![None], autd.fpga_state().await?);
         assert!(autd.send(ReadsFPGAState::new(|_| true)).await.is_ok());

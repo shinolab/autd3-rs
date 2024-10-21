@@ -28,7 +28,7 @@ use super::{
     error_handler::{EcatErrorHandler, ErrHandler},
     ethernet_adapters::EthernetAdapters,
     iomap::IOMap,
-    sleep::{BusyWait, Sleep, StdSleep},
+    sleep::{Sleep, SpinSleep, SpinWait, StdSleep},
     soem_bindings::*,
     state::EcStatus,
     TimerStrategy,
@@ -516,7 +516,19 @@ impl SOEMECatThreadGuard {
     ) -> Result<Self, AUTDInternalError> {
         Ok(Self {
             ecatth_handle: match timer_strategy {
-                TimerStrategy::Sleep => Some(std::thread::spawn(move || {
+                TimerStrategy::SpinSleep => Some(std::thread::spawn(move || {
+                    Self::ecat_run::<SpinSleep>(
+                        is_open,
+                        io_map,
+                        wkc,
+                        tx_receiver,
+                        ec_send_cycle,
+                        thread_priority,
+                        #[cfg(target_os = "windows")]
+                        process_priority,
+                    )
+                })),
+                TimerStrategy::StdSleep => Some(std::thread::spawn(move || {
                     Self::ecat_run::<StdSleep>(
                         is_open,
                         io_map,
@@ -528,8 +540,8 @@ impl SOEMECatThreadGuard {
                         process_priority,
                     )
                 })),
-                TimerStrategy::BusyWait => Some(std::thread::spawn(move || {
-                    Self::ecat_run::<BusyWait>(
+                TimerStrategy::SpinWait => Some(std::thread::spawn(move || {
+                    Self::ecat_run::<SpinWait>(
                         is_open,
                         io_map,
                         wkc,

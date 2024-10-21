@@ -23,6 +23,7 @@ bit-vec = { workspace = true }
 rayon = { workspace = true }
 derive-new = { workspace = true }
 zerocopy = { workspace = true }
+spin_sleep = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58.0", features = ["Win32_Media_Multimedia", "Win32_System_Threading", "Win32_Foundation"] }

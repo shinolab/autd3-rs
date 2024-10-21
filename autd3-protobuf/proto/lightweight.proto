@@ -58,7 +58,6 @@ message OpenRequestLightweight {
   uint64 fallback_timeout = 3;
   uint64 send_interval = 4;
   uint64 receive_interval = 5;
-  uint32 timer_resolution = 6;
 }
 
 service ECATLight {
