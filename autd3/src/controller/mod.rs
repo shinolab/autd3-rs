@@ -104,7 +104,7 @@ impl<L: Link> Controller<L> {
                 timeout,
                 parallel,
             )
-            .await // GRCOV_EXCL_LINE
+            .await
     }
 
     pub(crate) async fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
