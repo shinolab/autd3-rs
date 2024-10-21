@@ -46,6 +46,7 @@ impl Sleeper for AsyncSleeper {
     }
 }
 
+#[cfg_attr(not(target_os = "windows"), allow(clippy::derivable_impls))]
 impl Default for AsyncSleeper {
     fn default() -> Self {
         Self {
