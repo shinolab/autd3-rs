@@ -33,6 +33,7 @@ default = []
 async-trait = ["autd3-driver/async-trait"]
 
 [dev-dependencies]
+approx = { workspace = true }
 rand = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 anyhow = { workspace = true }
