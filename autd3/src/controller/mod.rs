@@ -170,8 +170,8 @@ impl<L: Link> Controller<L> {
                 FirmwareVersion::new(
                     dev.idx(),
                     cpu_major[dev.idx()],
-                    cpu_minor[dev.idx()],
                     fpga_major[dev.idx()],
+                    cpu_minor[dev.idx()],
                     fpga_minor[dev.idx()],
                     fpga_functions[dev.idx()],
                 )
@@ -352,8 +352,8 @@ mod tests {
             vec![FirmwareVersion::new(
                 0,
                 FirmwareVersion::LATEST_VERSION_NUM_MAJOR,
-                FirmwareVersion::LATEST_VERSION_NUM_MINOR,
                 FirmwareVersion::LATEST_VERSION_NUM_MAJOR,
+                FirmwareVersion::LATEST_VERSION_NUM_MINOR,
                 FirmwareVersion::LATEST_VERSION_NUM_MINOR,
                 FirmwareVersion::ENABLED_EMULATOR_BIT
             )],
