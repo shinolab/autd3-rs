@@ -5,16 +5,9 @@ pub async fn foci_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> 
 
     let center = autd.geometry().center() + Vector3::new(0., 0., 150.0 * mm);
 
-    let point_num = 50;
+    let num_points = 50;
     let radius = 30.0 * mm;
-    let stm = FociSTM::new(
-        1.0 * Hz,
-        (0..point_num).map(|i| {
-            let theta = 2.0 * PI * i as f32 / point_num as f32;
-            let p = radius * Vector3::new(theta.cos(), theta.sin(), 0.0);
-            center + p
-        }),
-    )?;
+    let stm = FociSTM::circle(1.0 * Hz, radius, num_points, center)?;
 
     let m = Static::new();
 
@@ -28,16 +21,9 @@ pub async fn gain_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> 
 
     let center = autd.geometry().center() + Vector3::new(0., 0., 150.0 * mm);
 
-    let point_num = 50;
+    let num_points = 50;
     let radius = 30.0 * mm;
-    let stm = GainSTM::new(
-        1.0 * Hz,
-        (0..point_num).map(|i| {
-            let theta = 2.0 * PI * i as f32 / point_num as f32;
-            let p = radius * Vector3::new(theta.cos(), theta.sin(), 0.0);
-            Focus::new(center + p)
-        }),
-    )?;
+    let stm = GainSTM::circle(1.0 * Hz, radius, num_points, center)?;
 
     let m = Static::new();
 

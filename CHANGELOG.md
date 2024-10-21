@@ -6,6 +6,8 @@
   - Still, `TransitionMode::Immediate` is only supported
 - Use `Vec<u8>` instead of `Arc<Vec<u8>>` in `Modulation`s
 - Fix `Sine` and `Fourier`'s `offset`
+- Add `STMExt` trait
+  - Add `line`, `line_nearest`, `circle`, and `circle_nearest` to `FociSTM<1>` and `GainSTM<Focus>`
 - Update tracing messages
 - Remove `Drive::null`, add `Drive::NULL` instead
 - Fix [#130](https://github.com/shinolab/autd3-rs/issues/130): `Gain`s in `autd3-gain-holo` cause `index out of bounds` error with disabled device
