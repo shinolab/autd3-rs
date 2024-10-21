@@ -1,4 +1,8 @@
+use autd3_driver::firmware::fpga::PWE_BUF_SIZE;
+
 use crate::{cpu::params::*, CPUEmulator};
+
+static ASIN_TABLE: &[u8; 256] = include_bytes!("asin.dat");
 
 #[allow(dead_code)]
 #[repr(C, align(2))]
@@ -107,16 +111,22 @@ impl CPUEmulator {
         self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REP1, 0xFFFF);
         self.change_stm_wr_segment(0);
         self.change_stm_wr_page(0);
-        self.bram_set(BRAM_SELECT_STM, 0, 0x0000, TRANS_NUM << 1);
+        self.bram_set(BRAM_SELECT_STM, 0, 0x0000, TRANS_NUM);
         self.change_stm_wr_segment(1);
         self.change_stm_wr_page(0);
-        self.bram_set(BRAM_SELECT_STM, 0, 0x0000, TRANS_NUM << 1);
+        self.bram_set(BRAM_SELECT_STM, 0, 0x0000, TRANS_NUM);
 
         self.bram_set(
             BRAM_SELECT_CONTROLLER,
             (BRAM_CNT_SEL_PHASE_CORR as u16) << 8,
             0,
             (TRANS_NUM + 1) >> 1,
+        );
+        self.bram_cpy(
+            BRAM_SELECT_PWE_TABLE,
+            0,
+            ASIN_TABLE.as_ptr() as *const _,
+            PWE_BUF_SIZE >> 1,
         );
 
         self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE0_0, 0x0000);
