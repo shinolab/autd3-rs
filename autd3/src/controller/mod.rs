@@ -7,7 +7,7 @@ use crate::{error::AUTDError, gain::Null, link::nop::Nop, prelude::Static};
 use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
-    datagram::{Clear, Datagram, IntoDatagramWithTimeout, Silencer, Synchronize},
+    datagram::{Clear, Datagram, ForceFan, IntoDatagramWithTimeout, Silencer, Synchronize},
     derive::Builder,
     firmware::{
         cpu::{check_if_msg_is_processed, RxMessage, TxMessage},
@@ -108,7 +108,13 @@ impl<L: Link> Controller<L> {
 
     pub(crate) async fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
         let timeout = Some(timeout);
-        let _ = self.send(Clear::new().with_timeout(timeout)).await;
+
+        // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
+        // Therefore, send a meaningless data (here, we use `ForceFan` because it is the lightest).
+        let _ = self
+            .send(ForceFan::new(|_| false).with_timeout(timeout))
+            .await;
+
         self.send((Clear::new(), Synchronize::new()).with_timeout(timeout))
             .await?;
         Ok(self)
