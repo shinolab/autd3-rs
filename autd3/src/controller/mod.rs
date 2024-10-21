@@ -284,7 +284,7 @@ mod tests {
     #[case(TimerStrategy::Spin(SpinSleeper::default()))]
     #[case(TimerStrategy::Async(AsyncSleeper::default()))]
     #[tokio::test(flavor = "multi_thread")]
-    async fn open_failed_with_timer(#[case] strategy: TimerStrategy) {
+    async fn open_with_timer(#[case] strategy: TimerStrategy) {
         assert!(Controller::builder([AUTD3::new(Vector3::zeros())])
             .with_timer_strategy(strategy)
             .open(Audit::builder())
