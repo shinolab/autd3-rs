@@ -1,5 +1,5 @@
 pub use crate::{
-    controller::Controller,
+    controller::{AsyncSleeper, Controller, SpinSleeper, TimerStrategy},
     error::AUTDError,
     gain::{Bessel, Focus, Group, IntoGainCache, Null, Plane, Uniform},
     link::Nop,

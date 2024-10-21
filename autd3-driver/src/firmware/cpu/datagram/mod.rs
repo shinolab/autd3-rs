@@ -6,7 +6,7 @@ pub use tx::TxMessage;
 
 pub fn check_if_msg_is_processed<'a>(
     tx: &'a [TxMessage],
-    rx: &'a mut [RxMessage],
+    rx: &'a [RxMessage],
 ) -> impl Iterator<Item = bool> + 'a {
     tx.iter()
         .zip(rx.iter())
@@ -42,13 +42,10 @@ mod tests {
         RxMessage::new(0, 1),
     ], vec![false, true, false])]
     fn test_check_if_msg_is_processed(
-        #[case] mut rx: Vec<RxMessage>,
+        #[case] rx: Vec<RxMessage>,
         #[case] expect: Vec<bool>,
         tx: Vec<TxMessage>,
     ) {
-        assert_eq!(
-            expect,
-            check_if_msg_is_processed(&tx, &mut rx).collect_vec()
-        );
+        assert_eq!(expect, check_if_msg_is_processed(&tx, &rx).collect_vec());
     }
 }

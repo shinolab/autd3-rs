@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use autd3_driver::{
     derive::*,
     firmware::cpu::{RxMessage, TxMessage},
@@ -12,10 +10,6 @@ use derive_more::{Deref, DerefMut};
 #[derive(Deref, DerefMut, Builder)]
 pub struct Audit {
     is_open: bool,
-    #[get]
-    last_timeout: Duration,
-    #[get]
-    last_parallel_threshold: usize,
     #[deref]
     #[deref_mut]
     cpus: Vec<CPUEmulator>,
@@ -43,8 +37,6 @@ impl LinkBuilder for AuditBuilder {
     ) -> Result<Self::L, AUTDInternalError> {
         Ok(Audit {
             is_open: true,
-            last_timeout: Duration::ZERO,
-            last_parallel_threshold: 4,
             cpus: geometry
                 .iter()
                 .enumerate()
@@ -129,16 +121,5 @@ impl Link for Audit {
 
     fn is_open(&self) -> bool {
         self.is_open
-    }
-
-    fn trace(
-        &mut self,
-        _: &[TxMessage],
-        _: &mut [RxMessage],
-        timeout: Duration,
-        parallel_threshold: usize,
-    ) {
-        self.last_timeout = timeout;
-        self.last_parallel_threshold = parallel_threshold;
     }
 }

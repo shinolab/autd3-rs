@@ -62,7 +62,7 @@ impl SOEMBuilder {
     pub fn new() -> Self {
         SOEMBuilder {
             buf_size: NonZeroUsize::new(32).unwrap(),
-            timer_strategy: TimerStrategy::Sleep,
+            timer_strategy: TimerStrategy::SpinSleep,
             sync_mode: SyncMode::DC,
             ifname: String::new(),
             state_check_interval: Duration::from_millis(100),

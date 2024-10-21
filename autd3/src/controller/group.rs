@@ -96,12 +96,15 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
             parallel_threshold,
             ..
         } = self;
-        let mut operations = operations
-            .into_iter()
-            .map(|op| op.unwrap_or_default())
-            .collect::<Vec<_>>();
-        cnt.send_impl(&mut operations, timeout, parallel_threshold)
-            .await
+        cnt.send_impl(
+            operations
+                .into_iter()
+                .map(|op| op.unwrap_or_default())
+                .collect::<Vec<_>>(),
+            timeout,
+            parallel_threshold,
+        )
+        .await
     }
 }
 

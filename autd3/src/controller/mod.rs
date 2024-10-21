@@ -1,5 +1,6 @@
 mod builder;
 mod group;
+mod timer;
 
 use crate::{error::AUTDError, gain::Null, link::nop::Nop, prelude::Static};
 
@@ -16,13 +17,15 @@ use autd3_driver::{
         version::FirmwareVersion,
     },
     geometry::{Device, Geometry, IntoDevice},
-    link::{send_receive, Link},
+    link::Link,
 };
 
+use timer::Timer;
 use tracing;
 
 pub use builder::ControllerBuilder;
 pub use group::GroupGuard;
+pub use timer::{AsyncSleeper, SpinSleeper, TimerStrategy};
 
 use derive_more::{Deref, DerefMut};
 
@@ -40,13 +43,8 @@ pub struct Controller<L: Link> {
     fallback_parallel_threshold: usize,
     #[get]
     fallback_timeout: Duration,
-    #[get]
-    send_interval: Duration,
-    #[get]
-    receive_interval: Duration,
-    #[cfg(target_os = "windows")]
-    #[get]
-    timer_resolution: Option<std::num::NonZeroU32>,
+    #[get(ref)]
+    timer: Timer,
 }
 
 impl Controller<Nop> {
@@ -73,14 +71,17 @@ impl<L: Link> Controller<L> {
         let parallel_threshold = s.parallel_threshold();
 
         let generator = s.operation_generator(&self.geometry)?;
-        let mut operations = OperationHandler::generate(generator, &self.geometry);
-        self.send_impl(&mut operations, timeout, parallel_threshold)
-            .await
+        self.send_impl(
+            OperationHandler::generate(generator, &self.geometry),
+            timeout,
+            parallel_threshold,
+        )
+        .await
     }
 
     pub(crate) async fn send_impl(
         &mut self,
-        operations: &mut [(impl Operation, impl Operation)],
+        operations: Vec<(impl Operation, impl Operation)>,
         timeout: Option<Duration>,
         parallel_threshold: Option<usize>,
     ) -> Result<(), AUTDError> {
@@ -92,39 +93,21 @@ impl<L: Link> Controller<L> {
         tracing::trace!("parallel_threshold: {:?}", parallel_threshold);
 
         self.link.update(&self.geometry).await?;
-        let mut send_timing = tokio::time::Instant::now();
-        loop {
-            OperationHandler::pack(operations, &self.geometry, &mut self.tx_buf, parallel)?;
 
-            self.link
-                .trace(&self.tx_buf, &mut self.rx_buf, timeout, parallel_threshold);
-
-            send_receive(
-                &mut self.link,
-                &self.tx_buf,
+        self.timer
+            .send(
+                &self.geometry,
+                &mut self.tx_buf,
                 &mut self.rx_buf,
+                &mut self.link,
+                operations,
                 timeout,
-                self.receive_interval,
+                parallel,
             )
-            .await?;
-
-            if OperationHandler::is_done(operations) {
-                return Ok(());
-            }
-
-            send_timing += self.send_interval;
-            tokio::time::sleep_until(send_timing).await;
-        }
+            .await
     }
 
     pub(crate) async fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
-        #[cfg(target_os = "windows")]
-        unsafe /*ignore miri*/ {
-            if let Some(timer_resolution) = self.timer_resolution {
-                tracing::info!("Set timer resolution: {:?}", timer_resolution);
-                windows::Win32::Media::timeBeginPeriod(timer_resolution.get());
-            }
-        }
         let timeout = Some(timeout);
         if let Err(e) = self.send(Clear::new().with_timeout(timeout)).await {
             match e {
@@ -166,7 +149,7 @@ impl<L: Link> Controller<L> {
         self.send(ty).await.map_err(|e| {
             tracing::error!("Fetch firmware info failed: {:?}", e);
             AUTDError::ReadFirmwareVersionFailed(
-                check_if_msg_is_processed(&self.tx_buf, &mut self.rx_buf).collect(),
+                check_if_msg_is_processed(&self.tx_buf, &self.rx_buf).collect(),
             )
         })?;
         Ok(self.rx_buf.iter().map(|rx| rx.data()).collect())
@@ -222,10 +205,7 @@ impl<L: Link + 'static> Controller<L> {
         let fallback_parallel_threshold =
             unsafe { std::ptr::read(&cnt.fallback_parallel_threshold) };
         let fallback_timeout = unsafe { std::ptr::read(&cnt.fallback_timeout) };
-        let send_interval = unsafe { std::ptr::read(&cnt.send_interval) };
-        let receive_interval = unsafe { std::ptr::read(&cnt.receive_interval) };
-        #[cfg(target_os = "windows")]
-        let timer_resolution = unsafe { std::ptr::read(&cnt.timer_resolution) };
+        let timer = unsafe { std::ptr::read(&cnt.timer) };
         Controller {
             link: Box::new(link) as _,
             geometry,
@@ -233,10 +213,7 @@ impl<L: Link + 'static> Controller<L> {
             rx_buf,
             fallback_parallel_threshold,
             fallback_timeout,
-            send_interval,
-            receive_interval,
-            #[cfg(target_os = "windows")]
-            timer_resolution,
+            timer,
         }
     }
 
@@ -249,10 +226,7 @@ impl<L: Link + 'static> Controller<L> {
         let fallback_parallel_threshold =
             unsafe { std::ptr::read(&cnt.fallback_parallel_threshold) };
         let fallback_timeout = unsafe { std::ptr::read(&cnt.fallback_timeout) };
-        let send_interval = unsafe { std::ptr::read(&cnt.send_interval) };
-        let receive_interval = unsafe { std::ptr::read(&cnt.receive_interval) };
-        #[cfg(target_os = "windows")]
-        let timer_resolution = unsafe { std::ptr::read(&cnt.timer_resolution) };
+        let timer = unsafe { std::ptr::read(&cnt.timer) };
         Controller {
             link: unsafe { *Box::from_raw(Box::into_raw(link) as *mut L) },
             geometry,
@@ -260,22 +234,13 @@ impl<L: Link + 'static> Controller<L> {
             rx_buf,
             fallback_parallel_threshold,
             fallback_timeout,
-            send_interval,
-            receive_interval,
-            #[cfg(target_os = "windows")]
-            timer_resolution,
+            timer,
         }
     }
 }
 
 impl<L: Link> Drop for Controller<L> {
     fn drop(&mut self) {
-        #[cfg(target_os = "windows")]
-        unsafe /*ignore miri*/ {
-            if let Some(timer_resolution) = self.timer_resolution {
-                windows::Win32::Media::timeEndPeriod(timer_resolution.get());
-            }
-        }
         if !self.link.is_open() {
             return;
         }

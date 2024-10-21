@@ -8,9 +8,13 @@ use autd3_driver::{
 };
 
 use derive_more::Debug;
+use spin_sleep::SpinSleeper;
 use zerocopy::FromZeros;
 
-use super::Controller;
+use super::{
+    timer::{Timer, TimerStrategy},
+    Controller,
+};
 use crate::error::AUTDError;
 
 #[derive(Builder, Debug)]
@@ -29,10 +33,9 @@ pub struct ControllerBuilder {
     #[get]
     #[set]
     receive_interval: Duration,
-    #[cfg(target_os = "windows")]
-    #[get]
+    #[get(ref)]
     #[set]
-    timer_resolution: Option<std::num::NonZeroU32>,
+    sleep_strategy: TimerStrategy,
 }
 
 impl ControllerBuilder {
@@ -48,8 +51,7 @@ impl ControllerBuilder {
             fallback_timeout: Duration::from_millis(20),
             send_interval: Duration::from_millis(1),
             receive_interval: Duration::from_millis(1),
-            #[cfg(target_os = "windows")]
-            timer_resolution: Some(std::num::NonZeroU32::MIN),
+            sleep_strategy: TimerStrategy::Spin(SpinSleeper::default()),
         }
     }
 
@@ -74,10 +76,11 @@ impl ControllerBuilder {
             geometry,
             fallback_parallel_threshold: self.fallback_parallel_threshold,
             fallback_timeout: self.fallback_timeout,
-            send_interval: self.send_interval,
-            receive_interval: self.receive_interval,
-            #[cfg(target_os = "windows")]
-            timer_resolution: self.timer_resolution,
+            timer: Timer {
+                send_interval: self.send_interval,
+                receive_interval: self.receive_interval,
+                strategy: self.sleep_strategy,
+            },
         }
         .open_impl(timeout)
         .await
