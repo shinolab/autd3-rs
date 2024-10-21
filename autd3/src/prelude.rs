@@ -1,9 +1,12 @@
 pub use crate::{
     controller::{AsyncSleeper, Controller, SpinSleeper, TimerStrategy},
+    datagram::{
+        gain::{Bessel, Focus, Group, IntoGainCache, Null, Plane, Uniform},
+        modulation::{IntoFir, IntoModulationCache, IntoRadiationPressure, Sine, Square, Static},
+        stm::STMUtilsExt,
+    },
     error::AUTDError,
-    gain::{Bessel, Focus, Group, IntoGainCache, Null, Plane, Uniform},
     link::Nop,
-    modulation::{IntoFir, IntoModulationCache, IntoRadiationPressure, Sine, Square, Static},
 };
 
 pub use autd3_driver::{

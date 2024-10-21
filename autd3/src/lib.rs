@@ -18,6 +18,15 @@ mod tests {
         geometry::{Geometry, IntoDevice, Vector3},
     };
 
+    #[macro_export]
+    macro_rules! assert_near_vector3 {
+        ($a:expr, $b:expr) => {
+            approx::assert_abs_diff_eq!($a.x, $b.x, epsilon = 1e-3);
+            approx::assert_abs_diff_eq!($a.y, $b.y, epsilon = 1e-3);
+            approx::assert_abs_diff_eq!($a.z, $b.z, epsilon = 1e-3);
+        };
+    }
+
     pub fn random_vector3(
         range_x: std::ops::Range<f32>,
         range_y: std::ops::Range<f32>,
