@@ -31,10 +31,10 @@ use derive_more::{Deref, DerefMut};
 #[derive(Builder, Deref, DerefMut)]
 pub struct Controller<L: Link> {
     #[get(ref, ref_mut)]
-    #[deref]
-    #[deref_mut]
     link: L,
     #[get(ref, ref_mut)]
+    #[deref]
+    #[deref_mut]
     geometry: Geometry,
     tx_buf: Vec<TxMessage>,
     rx_buf: Vec<RxMessage>,
@@ -318,7 +318,7 @@ mod tests {
         ))
         .await?;
 
-        autd.geometry().iter().try_for_each(|dev| {
+        autd.iter().try_for_each(|dev| {
             assert_eq!(
                 *Sine::new(150. * Hz).calc()?,
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
@@ -474,7 +474,7 @@ mod tests {
 
         let autd = Controller::<Audit>::from_boxed_link(autd);
 
-        autd.geometry().iter().try_for_each(|dev| {
+        autd.iter().try_for_each(|dev| {
             assert_eq!(
                 *Sine::new(150. * Hz).calc()?,
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
