@@ -23,7 +23,7 @@ struct SwapSegmentTWithTransition {
     tag: TypeTag,
     segment: u8,
     transition_mode: u8,
-    __padding: [u8; 5],
+    __ding: [u8; 5],
     transition_value: u64,
 }
 
@@ -69,7 +69,7 @@ impl Operation for SwapSegmentOp {
                         tag,
                         segment: segment as u8,
                         transition_mode: transition.mode(),
-                        __padding: [0; 5],
+                        __ding: [0; 5],
                         transition_value: transition.value(),
                     }
                     .as_bytes(),

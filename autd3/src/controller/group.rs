@@ -54,28 +54,22 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
             return Err(AUTDInternalError::UnkownKey(format!("{:?}", k)));
         }
 
-        let timeout = match (timeout, d.timeout()) {
-            (Some(t1), Some(t2)) => Some(t1.max(t2)),
-            (a, b) => a.or(b),
-        };
-        let parallel_threshold = match (parallel_threshold, d.parallel_threshold()) {
-            (Some(t1), Some(t2)) => Some(t1.min(t2)),
-            (a, b) => a.or(b),
-        };
+        let timeout = timeout.into_iter().chain(d.timeout()).max();
+        let parallel_threshold = parallel_threshold
+            .into_iter()
+            .chain(d.parallel_threshold())
+            .min();
 
         let mut generator = d.operation_generator(&cnt.geometry)?;
         operations
             .iter_mut()
             .zip(keys.iter())
             .zip(cnt.geometry.devices())
-            .for_each(|((op, key), dev)| {
-                if let Some(kk) = key {
-                    if kk == &k {
-                        tracing::debug!("Generate operation for device {}", dev.idx());
-                        let (op1, op2) = generator.generate(dev);
-                        *op = Some((Box::new(op1) as Box<_>, Box::new(op2) as Box<_>));
-                    }
-                }
+            .filter(|((_, key), _)| key.as_ref().is_some_and(|kk| kk == &k))
+            .for_each(|((op, _), dev)| {
+                tracing::debug!("Generate operation for device {}", dev.idx());
+                let (op1, op2) = generator.generate(dev);
+                *op = Some((Box::new(op1) as Box<_>, Box::new(op2) as Box<_>));
             });
 
         Ok(Self {
@@ -251,14 +245,23 @@ mod tests {
         let check = std::sync::Arc::new(std::sync::Mutex::new([false; 2]));
         autd.group(|dev| {
             check.lock().unwrap()[dev.idx()] = true;
-            Some(0)
+            Some(dev.idx())
         })
-        .set(0, (Static::new(), Null::new()))?
+        .set(1, Static::with_intensity(0x80))?
         .send()
         .await?;
 
         assert!(!check.lock().unwrap()[0]);
         assert!(check.lock().unwrap()[1]);
+
+        assert_eq!(
+            vec![0xFF, 0xFF],
+            autd.link[0].fpga().modulation_buffer(Segment::S0)
+        );
+        assert_eq!(
+            vec![0x80, 0x80],
+            autd.link[1].fpga().modulation_buffer(Segment::S0)
+        );
 
         Ok(())
     }

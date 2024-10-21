@@ -36,47 +36,39 @@ pub(crate) struct DebugValue {
 
 impl From<DebugType<'_>> for DebugValue {
     fn from(ty: DebugType<'_>) -> Self {
-        Self::new().with_value(ty.value()).with_tag(ty.ty())
-    }
-}
-
-impl DebugType<'_> {
-    pub(crate) const fn ty(&self) -> u8 {
-        match self {
-            DebugType::None => 0x00,
-            DebugType::BaseSignal => 0x01,
-            DebugType::Thermo => 0x02,
-            DebugType::ForceFan => 0x03,
-            DebugType::Sync => 0x10,
-            DebugType::ModSegment => 0x20,
-            DebugType::ModIdx(_) => 0x21,
-            DebugType::StmSegment => 0x50,
-            DebugType::StmIdx(_) => 0x51,
-            DebugType::IsStmMode => 0x52,
-            DebugType::SysTimeEq(_) => 0x60,
-            DebugType::PwmOut(_) => 0xE0,
-            DebugType::Direct(_) => 0xF0,
-        }
-    }
-
-    pub(crate) const fn value(&self) -> u64 {
-        match self {
-            DebugType::None
-            | DebugType::BaseSignal
-            | DebugType::Thermo
-            | DebugType::ForceFan
-            | DebugType::Sync
-            | DebugType::ModSegment
-            | DebugType::StmSegment
-            | DebugType::IsStmMode => 0,
-            DebugType::PwmOut(tr) => tr.idx() as _,
-            DebugType::ModIdx(idx) => *idx as _,
-            DebugType::StmIdx(idx) => *idx as _,
-            DebugType::SysTimeEq(time) => {
-                (time.sys_time() / ULTRASOUND_PERIOD.as_nanos() as u64) << 8
-            }
-            DebugType::Direct(v) => *v as _,
-        }
+        Self::new()
+            .with_value(match &ty {
+                DebugType::None
+                | DebugType::BaseSignal
+                | DebugType::Thermo
+                | DebugType::ForceFan
+                | DebugType::Sync
+                | DebugType::ModSegment
+                | DebugType::StmSegment
+                | DebugType::IsStmMode => 0,
+                DebugType::PwmOut(tr) => tr.idx() as _,
+                DebugType::ModIdx(idx) => *idx as _,
+                DebugType::StmIdx(idx) => *idx as _,
+                DebugType::SysTimeEq(time) => {
+                    (time.sys_time() / ULTRASOUND_PERIOD.as_nanos() as u64) << 8
+                }
+                DebugType::Direct(v) => *v as _,
+            })
+            .with_tag(match &ty {
+                DebugType::None => 0x00,
+                DebugType::BaseSignal => 0x01,
+                DebugType::Thermo => 0x02,
+                DebugType::ForceFan => 0x03,
+                DebugType::Sync => 0x10,
+                DebugType::ModSegment => 0x20,
+                DebugType::ModIdx(_) => 0x21,
+                DebugType::StmSegment => 0x50,
+                DebugType::StmIdx(_) => 0x51,
+                DebugType::IsStmMode => 0x52,
+                DebugType::SysTimeEq(_) => 0x60,
+                DebugType::PwmOut(_) => 0xE0,
+                DebugType::Direct(_) => 0xF0,
+            })
     }
 }
 

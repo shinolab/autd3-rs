@@ -3,7 +3,7 @@ use crate::{cpu::params::*, CPUEmulator};
 #[repr(C, align(2))]
 struct DebugOutIdx {
     tag: u8,
-    __pad: [u8; 7],
+    __: [u8; 7],
     value: [u64; 4],
 }
 

@@ -13,7 +13,6 @@ impl FPGAEmulator {
             match segment {
                 Segment::S0 => ADDR_MOD_FREQ_DIV0,
                 Segment::S1 => ADDR_MOD_FREQ_DIV1,
-                _ => unimplemented!(),
             },
         )
     }
@@ -22,7 +21,6 @@ impl FPGAEmulator {
         self.mem.controller_bram()[match segment {
             Segment::S0 => ADDR_MOD_CYCLE0,
             Segment::S1 => ADDR_MOD_CYCLE1,
-            _ => unimplemented!(),
         }] as usize
             + 1
     }
@@ -33,7 +31,6 @@ impl FPGAEmulator {
             match segment {
                 Segment::S0 => ADDR_MOD_REP0,
                 Segment::S1 => ADDR_MOD_REP1,
-                _ => unimplemented!(),
             },
         ) {
             0xFFFF => LoopBehavior::infinite(),
@@ -49,7 +46,6 @@ impl FPGAEmulator {
         let m = match segment {
             Segment::S0 => &self.mem.modulation_bram_0()[idx >> 1],
             Segment::S1 => &self.mem.modulation_bram_1()[idx >> 1],
-            _ => unimplemented!(),
         };
         let m = if idx % 2 == 0 { m & 0xFF } else { m >> 8 };
         m as u8

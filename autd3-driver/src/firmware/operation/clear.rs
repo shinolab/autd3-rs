@@ -11,7 +11,7 @@ use zerocopy::{Immutable, IntoBytes};
 #[derive(IntoBytes, Immutable)]
 struct Clear {
     tag: TypeTag,
-    __pad: u8,
+    __: u8,
 }
 
 #[derive(new)]
@@ -26,7 +26,7 @@ impl Operation for ClearOp {
         tx[..size_of::<Clear>()].copy_from_slice(
             Clear {
                 tag: TypeTag::Clear,
-                __pad: 0,
+                __: 0,
             }
             .as_bytes(),
         );

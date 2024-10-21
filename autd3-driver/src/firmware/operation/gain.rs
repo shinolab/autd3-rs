@@ -30,7 +30,7 @@ struct Gain {
     tag: TypeTag,
     segment: u8,
     flag: GainControlFlags,
-    __pad: u8,
+    __: u8,
 }
 
 pub trait GainContext: Send + Sync {
@@ -66,7 +66,7 @@ impl<Context: GainContext> Operation for GainOp<Context> {
                 } else {
                     GainControlFlags::NONE
                 },
-                __pad: 0,
+                __: 0,
             }
             .as_bytes(),
         );

@@ -112,7 +112,6 @@ impl<const SET: u16> Swapchain<SET> {
                     self.cur_segment = match self.cur_segment {
                         Segment::S0 => Segment::S1,
                         Segment::S1 => Segment::S0,
-                        _ => unimplemented!(),
                     };
                 }
             }

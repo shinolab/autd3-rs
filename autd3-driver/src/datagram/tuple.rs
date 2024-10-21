@@ -50,17 +50,11 @@ where
     }
 
     fn timeout(&self) -> Option<Duration> {
-        match (self.0.timeout(), self.1.timeout()) {
-            (Some(t1), Some(t2)) => Some(t1.max(t2)),
-            (a, b) => a.or(b),
-        }
+        self.0.timeout().into_iter().chain(self.1.timeout()).max()
     }
 
     fn parallel_threshold(&self) -> Option<usize> {
-        match (self.0.parallel_threshold(), self.1.parallel_threshold()) {
-            (Some(t1), Some(t2)) => Some(t1.min(t2)),
-            (a, b) => a.or(b),
-        }
+        self.0.parallel_threshold().into_iter().chain(self.1.parallel_threshold()).min()
     }
 }
 

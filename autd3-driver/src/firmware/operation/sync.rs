@@ -11,7 +11,7 @@ use zerocopy::{Immutable, IntoBytes};
 #[derive(IntoBytes, Immutable)]
 struct Sync {
     tag: TypeTag,
-    __pad: u8,
+    __: u8,
 }
 
 #[derive(new)]
@@ -26,7 +26,7 @@ impl Operation for SyncOp {
         tx[..size_of::<Sync>()].copy_from_slice(
             Sync {
                 tag: TypeTag::Sync,
-                __pad: 0,
+                __: 0,
             }
             .as_bytes(),
         );
