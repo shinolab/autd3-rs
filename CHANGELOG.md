@@ -1,12 +1,14 @@
 # 29.0.0
 
+- Update firmware to v10.0.1
+  - phase correction bram and pulse width encoder table reset to default in clear op
 - Improve calculation performance of `Gain`s
 - Remove `Gain::with_transform`
 - `Gain::with_segment` and `SwapSegment::Gain` now take `TransitionMode` instead of `bool`
   - Still, `TransitionMode::Immediate` is only supported
 - Use `Vec<u8>` instead of `Arc<Vec<u8>>` in `Modulation`s
 - Fix `Sine` and `Fourier`'s `offset`
-- Add `STMExt` trait
+- Add `STMUtilsExt` trait
   - Add `line`, `line_nearest`, `circle`, and `circle_nearest` to `FociSTM<1>` and `GainSTM<Focus>`
 - Update tracing messages
 - Remove `Drive::null`, add `Drive::NULL` instead
