@@ -186,7 +186,7 @@ impl<L: Link> Controller<L> {
             ));
         }
         if self.link.receive(&mut self.rx_buf).await? {
-            Ok(self.rx_buf.iter().map(Option::<FPGAState>::from).collect())
+            Ok(self.rx_buf.iter().map(Option::from).collect())
         } else {
             Err(AUTDError::ReadFPGAStateFailed)
         }

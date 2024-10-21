@@ -10,7 +10,6 @@ impl FPGAEmulator {
         match segment {
             Segment::S0 => self.mem.stm_bram_0(),
             Segment::S1 => self.mem.stm_bram_1(),
-            _ => unimplemented!(),
         }
         .iter()
         .skip(256 * idx)

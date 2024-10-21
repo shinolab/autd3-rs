@@ -32,7 +32,7 @@ struct ModulationUpdate {
     tag: u8,
     segment: u8,
     transition_mode: u8,
-    __pad: [u8; 5],
+    __: [u8; 5],
     transition_value: u64,
 }
 

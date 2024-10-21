@@ -5,7 +5,7 @@ struct Gain {
     tag: u8,
     segment: u8,
     flag: u8,
-    __pad: u8,
+    __: u8,
 }
 
 #[repr(C, align(2))]

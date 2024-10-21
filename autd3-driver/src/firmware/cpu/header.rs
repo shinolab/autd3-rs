@@ -8,7 +8,7 @@ use zerocopy::{FromZeros, Immutable, IntoBytes};
 pub struct Header {
     pub msg_id: u8,
     #[debug(ignore)]
-    pub(crate) _pad: u8,
+    __: u8,
     pub slot_2_offset: u16,
 }
 

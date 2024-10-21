@@ -42,7 +42,7 @@ struct FociSTMHead {
     sound_speed: u16,
     freq_div: u16,
     rep: u16,
-    __pad: [u8; 4],
+    __: [u8; 4],
     transition_value: u64,
 }
 
@@ -153,7 +153,7 @@ impl<const N: usize> Operation for FociSTMOp<N> {
                     freq_div: self.config.division(),
                     sound_speed: (device.sound_speed / METER * 64.0).round() as u16,
                     rep: self.loop_behavior.rep(),
-                    __pad: [0; 4],
+                    __: [0; 4],
                 }
                 .as_bytes(),
             );

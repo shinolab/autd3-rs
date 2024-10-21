@@ -1,17 +1,30 @@
 use autd3_driver::{
     derive::Segment,
-    firmware::fpga::{Drive, EmitIntensity, Phase, STMFocus},
+    firmware::fpga::{Drive, EmitIntensity, Phase},
 };
 use num_integer::Roots;
 
 use super::super::{super::params::*, FPGAEmulator};
+
+#[bitfield_struct::bitfield(u64)]
+struct STMFocus {
+    #[bits(18)]
+    pub x: i32,
+    #[bits(18)]
+    pub y: i32,
+    #[bits(18)]
+    pub z: i32,
+    #[bits(8)]
+    pub intensity: u8,
+    #[bits(2)]
+    __: u8,
+}
 
 impl FPGAEmulator {
     pub fn sound_speed(&self, segment: Segment) -> u16 {
         self.mem.controller_bram()[match segment {
             Segment::S0 => ADDR_STM_SOUND_SPEED0,
             Segment::S1 => ADDR_STM_SOUND_SPEED1,
-            _ => unimplemented!(),
         }]
     }
 
@@ -19,7 +32,6 @@ impl FPGAEmulator {
         self.mem.controller_bram()[match segment {
             Segment::S0 => ADDR_STM_NUM_FOCI0,
             Segment::S1 => ADDR_STM_NUM_FOCI1,
-            _ => unimplemented!(),
         }] as u8
     }
 
@@ -27,7 +39,6 @@ impl FPGAEmulator {
         let bram = match segment {
             Segment::S0 => self.mem.stm_bram_0(),
             Segment::S1 => self.mem.stm_bram_1(),
-            _ => unimplemented!(),
         };
         let sound_speed = self.sound_speed(segment);
 

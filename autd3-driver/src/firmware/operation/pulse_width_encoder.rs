@@ -16,7 +16,7 @@ use zerocopy::{Immutable, IntoBytes};
 #[derive(IntoBytes, Immutable)]
 struct Pwe {
     tag: TypeTag,
-    __pad: u8,
+    __: u8,
 }
 
 #[derive(new)]
@@ -32,7 +32,7 @@ impl<F: Fn(u8) -> u8 + Send + Sync> Operation for PulseWidthEncoderOp<F> {
         tx[..size_of::<Pwe>()].copy_from_slice(
             Pwe {
                 tag: TypeTag::ConfigPulseWidthEncoder,
-                __pad: 0,
+                __: 0,
             }
             .as_bytes(),
         );

@@ -36,10 +36,10 @@ impl<S: SamplingMode> Fourier<S> {
                 "Components must not be empty".to_string(),
             ))?
             .sampling_config();
-        if !components
+        if components
             .iter()
             .skip(1)
-            .all(|c| c.sampling_config() == config)
+            .any(|c| c.sampling_config() != config)
         {
             return Err(AUTDInternalError::ModulationError(
                 "All components must have the same sampling configuration".to_string(),

@@ -16,7 +16,7 @@ struct FociSTMHead {
     sound_speed: u16,
     freq_div: u16,
     rep: u16,
-    __pad: [u8; 4],
+    __: [u8; 4],
     transition_value: u64,
 }
 
@@ -41,7 +41,7 @@ struct FociSTMUpdate {
     tag: u8,
     segment: u8,
     transition_mode: u8,
-    __pad: [u8; 5],
+    __: [u8; 5],
     transition_value: u64,
 }
 

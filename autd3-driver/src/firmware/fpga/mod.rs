@@ -22,7 +22,7 @@ pub use phase::Phase;
 pub use sampling_config::SamplingConfig;
 pub use segment::Segment;
 pub use silencer_target::SilencerTarget;
-pub use stm_focus::STMFocus;
+pub(crate) use stm_focus::STMFocus;
 pub use transition_mode::*;
 
 use crate::defined::{mm, Freq};
