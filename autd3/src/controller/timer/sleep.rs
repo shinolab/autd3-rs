@@ -36,9 +36,11 @@ impl Sleeper for AsyncSleeper {
     type Instant = tokio::time::Instant;
 
     async fn sleep_until(&self, deadline: Self::Instant) {
+        #[cfg(target_os = "windows")]
         self.timer_resolution
             .map(|timer_resolution| unsafe { timeBeginPeriod(timer_resolution.get()) });
         tokio::time::sleep_until(deadline).await;
+        #[cfg(target_os = "windows")]
         self.timer_resolution
             .map(|timer_resolution| unsafe { timeEndPeriod(timer_resolution.get()) });
     }
