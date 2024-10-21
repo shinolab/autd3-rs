@@ -18,9 +18,11 @@ pub(crate) struct SpinSleep {}
 
 impl Sleep for SpinSleep {
     fn sleep(duration: time::Duration) {
-        spin_sleep::sleep(std::time::Duration::from_nanos(
-            duration.whole_nanoseconds() as _,
-        ));
+        if duration > time::Duration::ZERO {
+            spin_sleep::sleep(std::time::Duration::from_nanos(
+                duration.whole_nanoseconds() as _,
+            ));
+        }
     }
 }
 
