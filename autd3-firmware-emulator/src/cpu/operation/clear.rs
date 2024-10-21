@@ -112,6 +112,13 @@ impl CPUEmulator {
         self.change_stm_wr_page(0);
         self.bram_set(BRAM_SELECT_STM, 0, 0x0000, TRANS_NUM << 1);
 
+        self.bram_set(
+            BRAM_SELECT_CONTROLLER,
+            (BRAM_CNT_SEL_PHASE_CORR as u16) << 8,
+            0,
+            (TRANS_NUM + 1) >> 1,
+        );
+
         self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE0_0, 0x0000);
         self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE0_1, 0x0000);
         self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_DEBUG_VALUE0_2, 0x0000);
