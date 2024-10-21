@@ -190,11 +190,6 @@ where
                 .with_fallback_timeout(std::time::Duration::from_nanos(req.fallback_timeout))
                 .with_send_interval(Duration::from_nanos(req.send_interval))
                 .with_receive_interval(Duration::from_nanos(req.receive_interval));
-                #[cfg(target_os = "windows")]
-                {
-                    builder = builder
-                        .with_timer_resolution(std::num::NonZeroU32::new(req.timer_resolution));
-                }
                 *self.autd.write().await = match builder.open((self.link)()).await {
                     Ok(autd) => Some(autd),
                     Err(e) => {

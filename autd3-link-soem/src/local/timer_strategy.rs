@@ -3,6 +3,7 @@
 #[repr(u8)]
 #[non_exhaustive]
 pub enum TimerStrategy {
-    Sleep = 0,
-    BusyWait = 1,
+    SpinSleep = 0,
+    StdSleep = 1,
+    SpinWait = 2,
 }
