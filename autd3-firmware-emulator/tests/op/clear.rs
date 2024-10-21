@@ -81,6 +81,12 @@ fn send_clear() -> anyhow::Result<()> {
         )?
         .with_segment(Segment::S0, Some(TransitionMode::Ext));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+
+        let d = PhaseCorrection::new(|_| |_| Phase::PI);
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+
+        let d = PulseWidthEncoder::new(|_| |_| 0xFF);
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }
 
     let d = Clear::new();
@@ -134,6 +140,17 @@ fn send_clear() -> anyhow::Result<()> {
     assert_eq!(
         LoopBehavior::infinite(),
         cpu.fpga().stm_loop_behavior(Segment::S1)
+    );
+
+    assert!(cpu
+        .fpga()
+        .phase_correction()
+        .into_iter()
+        .all(|v| v == Phase::ZERO));
+
+    assert_eq!(
+        include_bytes!("asin.dat").to_vec(),
+        cpu.fpga().pulse_width_encoder_table()
     );
 
     assert_eq!([0, 0, 0, 0], cpu.fpga().debug_types());
