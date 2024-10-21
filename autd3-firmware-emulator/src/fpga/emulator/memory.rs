@@ -7,7 +7,7 @@ use crate::FPGAEmulator;
 use super::super::params::*;
 
 #[derive(Builder)]
-pub(crate) struct Memory {
+pub struct Memory {
     pub(crate) num_transducers: usize,
     #[get]
     pub(crate) controller_bram: LazyCell<RefCell<Vec<u16>>>,

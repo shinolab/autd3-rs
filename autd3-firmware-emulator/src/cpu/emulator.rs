@@ -121,6 +121,7 @@ impl CPUEmulator {
 
     pub fn set_last_msg_id(&mut self, msg_id: u8) {
         self.last_msg_id = msg_id;
+        self.ack = msg_id;
     }
 }
 
