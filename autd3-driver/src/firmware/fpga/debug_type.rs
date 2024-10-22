@@ -1,7 +1,9 @@
-use crate::{defined::ULTRASOUND_PERIOD, ethercat::DcSysTime, geometry::Transducer};
+use crate::{ethercat::DcSysTime, geometry::Transducer};
 
 use derive_more::Debug;
 use zerocopy::{Immutable, IntoBytes};
+
+use super::ec_time_to_sys_time;
 
 #[non_exhaustive]
 #[derive(Clone, Debug)]
@@ -49,9 +51,7 @@ impl From<DebugType<'_>> for DebugValue {
                 DebugType::PwmOut(tr) => tr.idx() as _,
                 DebugType::ModIdx(idx) => *idx as _,
                 DebugType::StmIdx(idx) => *idx as _,
-                DebugType::SysTimeEq(time) => {
-                    (time.sys_time() / ULTRASOUND_PERIOD.as_nanos() as u64) << 8
-                }
+                DebugType::SysTimeEq(time) => ec_time_to_sys_time(time),
                 DebugType::Direct(v) => *v as _,
             })
             .with_tag(match &ty {

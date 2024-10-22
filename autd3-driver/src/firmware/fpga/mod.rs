@@ -25,7 +25,10 @@ pub use silencer_target::SilencerTarget;
 pub(crate) use stm_focus::STMFocus;
 pub use transition_mode::*;
 
-use crate::defined::{mm, Freq};
+use crate::{
+    defined::{mm, Freq},
+    ethercat::DcSysTime,
+};
 
 pub const FPGA_MAIN_CLK_FREQ: Freq<u32> = Freq { freq: 10240000 };
 
@@ -54,3 +57,7 @@ pub const FOCI_STM_BUF_SIZE_MAX: usize = 8192;
 pub const GAIN_STM_BUF_SIZE_MAX: usize = 1024;
 
 pub const PWE_BUF_SIZE: usize = 256;
+
+pub(crate) fn ec_time_to_sys_time(time: &DcSysTime) -> u64 {
+    (time.sys_time() / 3125) << 5
+}
