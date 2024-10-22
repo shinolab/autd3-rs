@@ -23,7 +23,7 @@ pub use spin_sleep::SpinSleeper;
 
 use crate::error::AUTDError;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum TimerStrategy {
     Std,
