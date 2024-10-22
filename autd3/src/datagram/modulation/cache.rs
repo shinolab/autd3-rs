@@ -7,7 +7,7 @@ use std::{
 
 use derive_more::Debug;
 
-#[derive(Modulation, Clone, Debug)]
+#[derive(Modulation, Debug)]
 pub struct Cache<M: Modulation> {
     m: Rc<RefCell<Option<M>>>,
     #[debug("{}", !self.cache.borrow().is_empty())]
@@ -15,6 +15,17 @@ pub struct Cache<M: Modulation> {
     #[no_change]
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
+}
+
+impl<M: Modulation> Clone for Cache<M> {
+    fn clone(&self) -> Self {
+        Self {
+            m: self.m.clone(),
+            cache: self.cache.clone(),
+            config: self.config,
+            loop_behavior: self.loop_behavior,
+        }
+    }
 }
 
 pub trait IntoCache<M: Modulation> {
