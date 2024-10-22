@@ -15,11 +15,20 @@ use std::{
 
 use derive_more::Debug;
 
-#[derive(Gain, Clone, Debug)]
+#[derive(Gain, Debug)]
 pub struct Cache<G: Gain> {
     gain: Rc<RefCell<Option<G>>>,
     #[debug("{}", !self.cache.borrow().is_empty())]
     cache: Rc<RefCell<HashMap<usize, Arc<Vec<Drive>>>>>,
+}
+
+impl<G: Gain> Clone for Cache<G> {
+    fn clone(&self) -> Self {
+        Self {
+            gain: self.gain.clone(),
+            cache: self.cache.clone(),
+        }
+    }
 }
 
 pub trait IntoCache<G: Gain> {
