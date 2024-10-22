@@ -3,6 +3,7 @@ use derive_more::Debug;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Builder)]
 #[debug("{}", match self.rep { 0xFFFF => "Infinite".to_string(), 0 => "Once".to_string(), i => format!("Finite({})", i + 1) })]
+#[repr(C)]
 pub struct LoopBehavior {
     #[get]
     pub(crate) rep: u16,
