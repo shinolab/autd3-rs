@@ -90,6 +90,9 @@ mod win {
         handle: windows::Win32::Foundation::HANDLE,
     }
 
+    unsafe impl Send for WaitableSleeper {}
+    unsafe impl Sync for WaitableSleeper {}
+
     impl WaitableSleeper {
         pub fn new() -> windows::core::Result<Self> {
             Ok(Self {
