@@ -18,7 +18,7 @@ pub use crate::local::builder::SOEMBuilder;
 
 use autd3_driver::{
     error::AUTDInternalError,
-    ethercat::{SyncMode, EC_CYCLE_TIME_BASE_NANO_SEC},
+    ethercat::{SyncMode, EC_CYCLE_TIME_BASE},
     firmware::cpu::{RxMessage, TxMessage},
     link::Link,
 };
@@ -89,10 +89,17 @@ impl SOEM {
                 sync_timeout,
             } = builder;
 
+            // ceilling to multiple of EC_CYCLE_TIME_BASE
             let ec_sync0_cycle =
-                Duration::from_nanos(sync0_cycle.get() * EC_CYCLE_TIME_BASE_NANO_SEC);
+                ((sync0_cycle.max(Duration::from_nanos(1)) - Duration::from_nanos(1)).as_nanos()
+                    / EC_CYCLE_TIME_BASE.as_nanos()
+                    + 1) as u32
+                    * EC_CYCLE_TIME_BASE;
             let ec_send_cycle =
-                Duration::from_nanos(send_cycle.get() * EC_CYCLE_TIME_BASE_NANO_SEC);
+                ((send_cycle.max(Duration::from_nanos(1)) - Duration::from_nanos(1)).as_nanos()
+                    / EC_CYCLE_TIME_BASE.as_nanos()
+                    + 1) as u32
+                    * EC_CYCLE_TIME_BASE;
 
             let ifname = if ifname.is_empty() {
                 tracing::info!("No interface name is specified. Looking up AUTD device.");
