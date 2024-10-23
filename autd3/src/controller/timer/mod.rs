@@ -17,8 +17,8 @@ use autd3_driver::{
 use instant::Instant;
 
 use itertools::Itertools;
-use sleep::StdSleeper;
-pub use sleep::{AsyncSleeper, Sleeper};
+use sleep::Sleeper;
+pub use sleep::{AsyncSleeper, StdSleeper};
 pub use spin_sleep::SpinSleeper;
 
 use crate::error::AUTDError;
@@ -26,7 +26,7 @@ use crate::error::AUTDError;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum TimerStrategy {
-    Std,
+    Std(StdSleeper),
     Spin(SpinSleeper),
     Async(AsyncSleeper),
 }
@@ -49,16 +49,9 @@ impl Timer {
         parallel: bool,
     ) -> Result<(), AUTDError> {
         match &self.strategy {
-            TimerStrategy::Std => {
+            TimerStrategy::Std(sleeper) => {
                 self._send(
-                    &StdSleeper {},
-                    geometry,
-                    tx,
-                    rx,
-                    link,
-                    operations,
-                    timeout,
-                    parallel,
+                    sleeper, geometry, tx, rx, link, operations, timeout, parallel,
                 )
                 .await
             }
@@ -241,7 +234,7 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[case(TimerStrategy::Std, StdSleeper {})]
+    #[case(TimerStrategy::Std(StdSleeper::default()), StdSleeper::default())]
     #[case(TimerStrategy::Spin(SpinSleeper::default()), SpinSleeper::default())]
     #[case(TimerStrategy::Async(AsyncSleeper::default()), AsyncSleeper::default())]
     #[tokio::test]
@@ -296,7 +289,7 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[case(TimerStrategy::Std, StdSleeper {})]
+    #[case(TimerStrategy::Std(StdSleeper::default()), StdSleeper::default())]
     #[case(TimerStrategy::Spin(SpinSleeper::default()), SpinSleeper::default())]
     #[case(TimerStrategy::Async(AsyncSleeper::default()), AsyncSleeper::default())]
     #[tokio::test]

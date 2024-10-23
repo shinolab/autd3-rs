@@ -2,19 +2,41 @@ use spin_sleep::SpinSleeper;
 #[cfg(target_os = "windows")]
 use windows::Win32::Media::{timeBeginPeriod, timeEndPeriod};
 
-pub trait Sleeper {
+pub(crate) trait Sleeper {
     type Instant: super::instant::Instant;
 
     fn sleep_until(&self, deadline: Self::Instant) -> impl std::future::Future<Output = ()>;
 }
 
-pub struct StdSleeper {}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct StdSleeper {
+    #[cfg(target_os = "windows")]
+    pub timer_resolution: Option<std::num::NonZeroU32>,
+}
+
+#[cfg_attr(not(target_os = "windows"), allow(clippy::derivable_impls))]
+impl Default for StdSleeper {
+    fn default() -> Self {
+        Self {
+            #[cfg(target_os = "windows")]
+            timer_resolution: Some(std::num::NonZeroU32::MIN),
+        }
+    }
+}
 
 impl Sleeper for StdSleeper {
     type Instant = std::time::Instant;
 
     async fn sleep_until(&self, deadline: Self::Instant) {
+        #[cfg(target_os = "windows")]
+        unsafe {
+            windows::Win32::Media::timeBeginPeriod(1);
+        }
         std::thread::sleep(deadline - std::time::Instant::now());
+        #[cfg(target_os = "windows")]
+        unsafe {
+            windows::Win32::Media::timeEndPeriod(1);
+        }
     }
 }
 
