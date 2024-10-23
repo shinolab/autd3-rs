@@ -1,6 +1,6 @@
 mod builder;
 mod group;
-mod timer;
+pub mod timer;
 
 use crate::{error::AUTDError, gain::Null, link::nop::Nop, prelude::Static};
 
@@ -24,7 +24,6 @@ use tracing;
 
 pub use builder::ControllerBuilder;
 pub use group::GroupGuard;
-pub use timer::{AsyncSleeper, SpinSleeper, TimerStrategy};
 
 use derive_more::{Deref, DerefMut};
 
@@ -279,7 +278,7 @@ mod tests {
     // GRCOV_EXCL_STOP
 
     #[rstest::rstest]
-    #[case(TimerStrategy::Std)]
+    #[case(TimerStrategy::Std(StdSleeper::default()))]
     #[case(TimerStrategy::Spin(SpinSleeper::default()))]
     #[case(TimerStrategy::Async(AsyncSleeper::default()))]
     #[tokio::test(flavor = "multi_thread")]
