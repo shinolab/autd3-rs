@@ -1,7 +1,4 @@
-use std::{
-    num::{NonZeroU64, NonZeroUsize},
-    time::Duration,
-};
+use std::{num::NonZeroUsize, time::Duration};
 
 use super::{
     error_handler::{ErrHandler, Status},
@@ -9,7 +6,7 @@ use super::{
     SyncMode, SOEM,
 };
 
-use autd3_driver::{derive::*, link::LinkBuilder};
+use autd3_driver::{derive::*, ethercat::EC_CYCLE_TIME_BASE, link::LinkBuilder};
 
 use thread_priority::ThreadPriority;
 
@@ -29,13 +26,13 @@ pub struct SOEMBuilder {
     pub(crate) ifname: String,
     #[get]
     #[set]
-    pub(crate) state_check_interval: std::time::Duration,
+    pub(crate) state_check_interval: Duration,
     #[get]
     #[set]
-    pub(crate) sync0_cycle: NonZeroU64,
+    pub(crate) sync0_cycle: Duration,
     #[get]
     #[set]
-    pub(crate) send_cycle: NonZeroU64,
+    pub(crate) send_cycle: Duration,
     #[get]
     #[set]
     pub(crate) thread_priority: ThreadPriority,
@@ -46,10 +43,10 @@ pub struct SOEMBuilder {
     pub(crate) err_handler: Option<ErrHandler>,
     #[get]
     #[set]
-    pub(crate) sync_tolerance: std::time::Duration,
+    pub(crate) sync_tolerance: Duration,
     #[get]
     #[set]
-    pub(crate) sync_timeout: std::time::Duration,
+    pub(crate) sync_timeout: Duration,
 }
 
 impl Default for SOEMBuilder {
@@ -66,8 +63,8 @@ impl SOEMBuilder {
             sync_mode: SyncMode::DC,
             ifname: String::new(),
             state_check_interval: Duration::from_millis(100),
-            sync0_cycle: NonZeroU64::new(2).unwrap(),
-            send_cycle: NonZeroU64::new(2).unwrap(),
+            sync0_cycle: EC_CYCLE_TIME_BASE * 2,
+            send_cycle: EC_CYCLE_TIME_BASE * 2,
             thread_priority: ThreadPriority::Max,
             #[cfg(target_os = "windows")]
             process_priority: super::ProcessPriority::High,
