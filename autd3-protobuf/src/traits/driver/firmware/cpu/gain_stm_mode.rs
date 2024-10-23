@@ -18,7 +18,6 @@ impl From<autd3_driver::firmware::cpu::GainSTMMode> for GainStmMode {
             }
             autd3_driver::firmware::cpu::GainSTMMode::PhaseFull => Self::PhaseFull,
             autd3_driver::firmware::cpu::GainSTMMode::PhaseHalf => Self::PhaseHalf,
-            _ => unimplemented!(),
         }
     }
 }
