@@ -134,7 +134,7 @@ impl Link for TwinCAT {
             {
                 Ok(f) => f(
                     self.port,
-                    &self.send_addr as *const _,
+                    &raw const self.send_addr,
                     INDEX_GROUP,
                     INDEX_OFFSET_BASE,
                     tx.as_bytes().len() as _,
@@ -170,7 +170,7 @@ impl Link for TwinCAT {
             {
                 Ok(f) => f(
                     self.port,
-                    &self.send_addr as *const _,
+                    &raw const self.send_addr,
                     INDEX_GROUP,
                     INDEX_OFFSET_BASE_READ,
                     std::mem::size_of_val(rx) as _,
