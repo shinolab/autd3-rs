@@ -1,16 +1,14 @@
 use crate::derive::*;
 
-use std::{
-    cell::{Ref, RefCell},
-    rc::Rc,
-};
+use std::{cell::RefCell, rc::Rc};
 
 use derive_more::Debug;
 
-#[derive(Modulation, Debug)]
+#[derive(Modulation, Debug, Builder)]
 pub struct Cache<M: Modulation> {
     m: Rc<RefCell<Option<M>>>,
     #[debug("{}", !self.cache.borrow().is_empty())]
+    #[get]
     cache: Rc<RefCell<Vec<u8>>>,
     #[no_change]
     config: SamplingConfig,
@@ -56,15 +54,15 @@ impl<M: Modulation> Cache<M> {
         Ok(())
     }
 
-    pub fn buffer(&self) -> Ref<'_, Vec<u8>> {
-        self.cache.borrow()
+    pub fn count(&self) -> usize {
+        Rc::strong_count(&self.cache)
     }
 }
 
 impl<M: Modulation> Modulation for Cache<M> {
     fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
         self.init()?;
-        let buffer = self.buffer().clone();
+        let buffer = self.cache().clone();
         Ok(buffer)
     }
 }
@@ -88,7 +86,7 @@ mod tests {
         let m = Custom::new([rng.gen::<u8>(), rng.gen::<u8>()], SamplingConfig::FREQ_4K)?;
         let cache = m.clone().with_cache();
 
-        assert!(cache.buffer().is_empty());
+        assert!(cache.cache().is_empty());
 
         assert_eq!(m.calc()?, cache.calc()?);
 
@@ -157,12 +155,21 @@ mod tests {
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_cache();
+        assert_eq!(1, modulation.count());
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
         let m2 = modulation.clone();
+        assert_eq!(2, modulation.count());
+        assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
+
         let _ = m2.clone().calc();
+        assert_eq!(2, modulation.count());
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
 
-        assert_eq!(*modulation.buffer(), *m2.buffer());
+        assert_eq!(*modulation.cache(), *m2.cache());
+
+        let _ = m2.calc();
+        assert_eq!(1, modulation.count());
+        assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
     }
 }

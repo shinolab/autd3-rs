@@ -50,25 +50,38 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
             if let syn::Type::Path(path) = ty {
                 let path = path.path.to_token_stream().to_string();
                 {
-                    let re = regex::Regex::new(r"LazyCell < RefCell < Vec < (?<inner>\w+) > > >")
+                    let re = regex::Regex::new(r"^LazyCell < RefCell < (?<inner>[\w<>\s]+) > >$")
                         .unwrap();
                     if let Some(caps) = re.captures(&path) {
-                        let inner = format_ident!("{}", &caps["inner"]);
+                        let inner: proc_macro2::TokenStream = caps["inner"].parse().unwrap();
                         let mut_name = format_ident!("{}_mut", ident);
                         return quote! {
                             #[must_use]
-                            pub fn #ident(&self) -> std::cell::Ref<'_, Vec<#inner>> {
+                            pub fn #ident(&self) -> std::cell::Ref<'_, #inner> {
                                 self.#ident.borrow()
                             }
                             #[must_use]
-                            pub fn #mut_name(&self) -> std::cell::RefMut<'_, Vec<#inner>> {
+                            pub fn #mut_name(&self) -> std::cell::RefMut<'_, #inner> {
                                 self.#ident.borrow_mut()
                             }
                         };
                     };
                 }
                 {
-                    let re = regex::Regex::new(r"Vec < (?<inner>\w+) >").unwrap();
+                    let re =
+                        regex::Regex::new(r"^Rc < RefCell < (?<inner>[\w<,>\s]+) > >$").unwrap();
+                    if let Some(caps) = re.captures(&path) {
+                        let inner: proc_macro2::TokenStream = caps["inner"].parse().unwrap();
+                        return quote! {
+                            #[must_use]
+                            pub fn #ident(&self) -> std::cell::Ref<'_, #inner> {
+                                self.#ident.borrow()
+                            }
+                        };
+                    };
+                }
+                {
+                    let re = regex::Regex::new(r"^Vec < (?<inner>\w+) >$").unwrap();
                     if let Some(caps) = re.captures(&path) {
                         let inner = format_ident!("{}", &caps["inner"]);
                         return quote! {
