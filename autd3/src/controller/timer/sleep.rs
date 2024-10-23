@@ -29,7 +29,7 @@ impl Sleeper for SpinSleeper {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AsyncSleeper {
     #[cfg(target_os = "windows")]
-    timer_resolution: Option<std::num::NonZeroU32>,
+    pub timer_resolution: Option<std::num::NonZeroU32>,
 }
 
 impl Sleeper for AsyncSleeper {
