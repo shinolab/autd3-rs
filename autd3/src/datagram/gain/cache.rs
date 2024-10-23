@@ -6,19 +6,15 @@ pub use autd3_driver::{
     geometry::Geometry,
 };
 
-use std::{
-    cell::{Ref, RefCell},
-    collections::HashMap,
-    rc::Rc,
-    sync::Arc,
-};
+use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
 
 use derive_more::Debug;
 
-#[derive(Gain, Debug)]
+#[derive(Gain, Debug, Builder)]
 pub struct Cache<G: Gain> {
     gain: Rc<RefCell<Option<G>>>,
     #[debug("{}", !self.cache.borrow().is_empty())]
+    #[get]
     cache: Rc<RefCell<HashMap<usize, Arc<Vec<Drive>>>>>,
 }
 
@@ -74,8 +70,8 @@ impl<G: Gain> Cache<G> {
         Ok(())
     }
 
-    pub fn drives(&self) -> Ref<'_, HashMap<usize, Arc<Vec<Drive>>>> {
-        self.cache.borrow()
+    pub fn count(&self) -> usize {
+        Rc::strong_count(&self.cache)
     }
 }
 
@@ -134,7 +130,7 @@ mod tests {
         let gain = Uniform::new(d);
         let cache = gain.clone().with_cache();
 
-        assert!(cache.drives().is_empty());
+        assert!(cache.cache().is_empty());
         let mut gg = gain.init(&geometry)?;
         let mut gc = cache.init(&geometry)?;
         geometry.devices().try_for_each(|dev| {
@@ -244,15 +240,19 @@ mod tests {
                 calc_cnt: calc_cnt.clone(),
             }
             .with_cache();
+            assert_eq!(1, gain.count());
+            assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
             let g2 = gain.clone();
+            assert_eq!(2, gain.count());
             assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
             let _ = g2.clone().init(&geometry);
+            assert_eq!(2, gain.count());
             assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
-            let _ = gain.init(&geometry);
-            assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
+
             let _ = g2.init(&geometry);
+            assert_eq!(1, gain.count());
             assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
         }
     }
