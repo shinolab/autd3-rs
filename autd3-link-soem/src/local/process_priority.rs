@@ -9,6 +9,7 @@ pub enum ProcessPriority {
     Realtime = 5,
 }
 
+#[cfg(target_os = "windows")]
 impl From<ProcessPriority> for windows::Win32::System::Threading::PROCESS_CREATION_FLAGS {
     fn from(val: ProcessPriority) -> windows::Win32::System::Threading::PROCESS_CREATION_FLAGS {
         match val {
