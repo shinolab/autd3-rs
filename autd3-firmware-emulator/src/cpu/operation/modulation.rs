@@ -52,7 +52,7 @@ impl CPUEmulator {
         self.bram_cpy(
             BRAM_SELECT_CONTROLLER,
             ADDR_MOD_TRANSITION_VALUE_0,
-            &value as *const u64 as _,
+            &raw const value as _,
             std::mem::size_of::<u64>() >> 1,
         );
         self.set_and_wait_update(CTL_FLAG_MOD_SET);

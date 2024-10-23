@@ -12,12 +12,10 @@ impl CPUEmulator {
     pub(crate) unsafe fn phase_corr(&mut self, data: &[u8]) -> u8 {
         let _d = Self::cast::<PhaseCorr>(data);
 
-        let data = data[size_of::<PhaseCorr>()..].as_ptr() as *const u16;
-
         self.bram_cpy(
             BRAM_SELECT_CONTROLLER,
             (BRAM_CNT_SEL_PHASE_CORR as u16) << 8,
-            data,
+            data[size_of::<PhaseCorr>()..].as_ptr() as _,
             (TRANS_NUM + 1) >> 1,
         );
 

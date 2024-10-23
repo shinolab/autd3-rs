@@ -201,10 +201,8 @@ impl CPUEmulator {
         }
     }
 
-    fn ecat_recv(&mut self, data: &TxMessage) {
-        let data = unsafe {
-            std::slice::from_raw_parts(data as *const _ as *const u8, EC_OUTPUT_FRAME_SIZE)
-        };
+    fn ecat_recv(&mut self, data: *const TxMessage) {
+        let data: &[u8] = unsafe { std::slice::from_raw_parts(data as _, EC_OUTPUT_FRAME_SIZE) };
 
         let header = unsafe { &*(data.as_ptr() as *const Header) };
 

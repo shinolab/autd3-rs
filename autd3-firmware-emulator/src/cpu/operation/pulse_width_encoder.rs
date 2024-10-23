@@ -12,9 +12,12 @@ impl CPUEmulator {
     pub(crate) unsafe fn config_pwe(&mut self, data: &[u8]) -> u8 {
         let _d = Self::cast::<Pwe>(data);
 
-        let data = data[size_of::<Pwe>()..].as_ptr() as *const u16;
-
-        self.bram_cpy(BRAM_SELECT_PWE_TABLE, 0, data, (256 >> 1) as usize);
+        self.bram_cpy(
+            BRAM_SELECT_PWE_TABLE,
+            0,
+            data[size_of::<Pwe>()..].as_ptr() as _,
+            (256 >> 1) as usize,
+        );
 
         NO_ERR
     }
