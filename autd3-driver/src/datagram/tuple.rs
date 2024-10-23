@@ -54,7 +54,11 @@ where
     }
 
     fn parallel_threshold(&self) -> Option<usize> {
-        self.0.parallel_threshold().into_iter().chain(self.1.parallel_threshold()).min()
+        self.0
+            .parallel_threshold()
+            .into_iter()
+            .chain(self.1.parallel_threshold())
+            .min()
     }
 }
 
