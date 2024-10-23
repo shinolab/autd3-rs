@@ -18,6 +18,8 @@ use instant::Instant;
 
 use itertools::Itertools;
 use sleep::Sleeper;
+#[cfg(target_os = "windows")]
+pub use sleep::WaitableSleeper;
 pub use sleep::{AsyncSleeper, StdSleeper};
 pub use spin_sleep::SpinSleeper;
 
@@ -27,6 +29,8 @@ use crate::error::AUTDError;
 #[non_exhaustive]
 pub enum TimerStrategy {
     Std(StdSleeper),
+    #[cfg(target_os = "windows")]
+    Waitable(WaitableSleeper),
     Spin(SpinSleeper),
     Async(AsyncSleeper),
 }
@@ -62,6 +66,13 @@ impl Timer {
                 .await
             }
             TimerStrategy::Async(sleeper) => {
+                self._send(
+                    sleeper, geometry, tx, rx, link, operations, timeout, parallel,
+                )
+                .await
+            }
+            #[cfg(target_os = "windows")]
+            TimerStrategy::Waitable(sleeper) => {
                 self._send(
                     sleeper, geometry, tx, rx, link, operations, timeout, parallel,
                 )
@@ -237,6 +248,8 @@ mod tests {
     #[case(TimerStrategy::Std(StdSleeper::default()), StdSleeper::default())]
     #[case(TimerStrategy::Spin(SpinSleeper::default()), SpinSleeper::default())]
     #[case(TimerStrategy::Async(AsyncSleeper::default()), AsyncSleeper::default())]
+    #[cfg(target_os = "windows")]
+    #[case(TimerStrategy::Waitable(WaitableSleeper::new().unwrap()), WaitableSleeper::new().unwrap())]
     #[tokio::test]
     async fn test_send_receive(#[case] strategy: TimerStrategy, #[case] sleeper: impl Sleeper) {
         let mut link = MockLink {
@@ -292,6 +305,8 @@ mod tests {
     #[case(TimerStrategy::Std(StdSleeper::default()), StdSleeper::default())]
     #[case(TimerStrategy::Spin(SpinSleeper::default()), SpinSleeper::default())]
     #[case(TimerStrategy::Async(AsyncSleeper::default()), AsyncSleeper::default())]
+    #[cfg(target_os = "windows")]
+    #[case(TimerStrategy::Waitable(WaitableSleeper::new().unwrap()), WaitableSleeper::new().unwrap())]
     #[tokio::test]
     async fn test_wait_msg_processed(
         #[case] strategy: TimerStrategy,
