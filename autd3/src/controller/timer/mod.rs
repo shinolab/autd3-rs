@@ -248,8 +248,7 @@ mod tests {
     #[case(TimerStrategy::Std(StdSleeper::default()), StdSleeper::default())]
     #[case(TimerStrategy::Spin(SpinSleeper::default()), SpinSleeper::default())]
     #[case(TimerStrategy::Async(AsyncSleeper::default()), AsyncSleeper::default())]
-    #[cfg(target_os = "windows")]
-    #[case(TimerStrategy::Waitable(WaitableSleeper::new().unwrap()), WaitableSleeper::new().unwrap())]
+    #[cfg_attr(target_os = "windows", case(TimerStrategy::Waitable(WaitableSleeper::new().unwrap()), WaitableSleeper::new().unwrap()))]
     #[tokio::test]
     async fn test_send_receive(#[case] strategy: TimerStrategy, #[case] sleeper: impl Sleeper) {
         let mut link = MockLink {
@@ -305,8 +304,7 @@ mod tests {
     #[case(TimerStrategy::Std(StdSleeper::default()), StdSleeper::default())]
     #[case(TimerStrategy::Spin(SpinSleeper::default()), SpinSleeper::default())]
     #[case(TimerStrategy::Async(AsyncSleeper::default()), AsyncSleeper::default())]
-    #[cfg(target_os = "windows")]
-    #[case(TimerStrategy::Waitable(WaitableSleeper::new().unwrap()), WaitableSleeper::new().unwrap())]
+    #[cfg_attr(target_os = "windows", case(TimerStrategy::Waitable(WaitableSleeper::new().unwrap()), WaitableSleeper::new().unwrap()))]
     #[tokio::test]
     async fn test_wait_msg_processed(
         #[case] strategy: TimerStrategy,
