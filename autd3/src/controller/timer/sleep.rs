@@ -119,9 +119,10 @@ mod win {
                     true
                 };
                 if !set_and_wait() {
-                    windows::Win32::Media::timeBeginPeriod(1);
+                    let _timer_guard = super::TimerResolutionGurad::new(Some(
+                        std::num::NonZeroU32::new(1).unwrap(),
+                    ));
                     std::thread::sleep(time);
-                    windows::Win32::Media::timeEndPeriod(1);
                 }
             }
         }
