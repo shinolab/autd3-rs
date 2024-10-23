@@ -1,8 +1,5 @@
 pub use crate::{
-    controller::{
-        timer::{AsyncSleeper, SpinSleeper, StdSleeper, TimerStrategy},
-        Controller,
-    },
+    controller::Controller,
     datagram::{
         gain::{Bessel, Focus, Group, IntoGainCache, Null, Plane, Uniform},
         modulation::{IntoFir, IntoModulationCache, IntoRadiationPressure, Sine, Square, Static},
