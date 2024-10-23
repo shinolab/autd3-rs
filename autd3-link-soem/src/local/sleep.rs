@@ -8,7 +8,15 @@ pub(crate) struct StdSleep {}
 
 impl Sleep for StdSleep {
     fn sleep(duration: Duration) {
-        std::thread::sleep(duration)
+        #[cfg(target_os = "windows")]
+        unsafe {
+            windows::Win32::Media::timeBeginPeriod(1);
+        }
+        std::thread::sleep(duration);
+        #[cfg(target_os = "windows")]
+        unsafe {
+            windows::Win32::Media::timeEndPeriod(1);
+        }
     }
 }
 
