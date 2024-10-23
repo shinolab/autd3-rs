@@ -1,37 +1,31 @@
+use std::time::Duration;
+
 pub(crate) trait Sleep {
-    fn sleep(duration: time::Duration);
+    fn sleep(duration: Duration);
 }
 
 pub(crate) struct StdSleep {}
 
 impl Sleep for StdSleep {
-    fn sleep(duration: time::Duration) {
-        if duration > time::Duration::ZERO {
-            std::thread::sleep(std::time::Duration::from_nanos(
-                duration.whole_nanoseconds() as _,
-            ))
-        }
+    fn sleep(duration: Duration) {
+        std::thread::sleep(duration)
     }
 }
 
 pub(crate) struct SpinSleep {}
 
 impl Sleep for SpinSleep {
-    fn sleep(duration: time::Duration) {
-        if duration > time::Duration::ZERO {
-            spin_sleep::sleep(std::time::Duration::from_nanos(
-                duration.whole_nanoseconds() as _,
-            ));
-        }
+    fn sleep(duration: Duration) {
+        spin_sleep::sleep(duration);
     }
 }
 
 pub(crate) struct SpinWait {}
 
 impl Sleep for SpinWait {
-    fn sleep(duration: time::Duration) {
-        let expired = time::OffsetDateTime::now_utc() + duration;
-        while time::OffsetDateTime::now_utc() < expired {
+    fn sleep(duration: Duration) {
+        let expired = std::time::Instant::now() + duration;
+        while std::time::Instant::now() < expired {
             std::hint::spin_loop();
         }
     }
