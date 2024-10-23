@@ -566,14 +566,6 @@ impl SOEMECatThreadGuard {
         #[cfg(target_os = "windows")] process_priority: super::ProcessPriority,
     ) -> Result<(), SOEMError> {
         unsafe {
-            let mut ts = {
-                let tp = time::OffsetDateTime::now_utc();
-                let tp_unix_ns = tp.unix_timestamp_nanos();
-                let cycle_ns = cycle.as_nanos() as i128;
-                let ts_unix_ns = (tp_unix_ns / cycle_ns + 1) * cycle_ns;
-                time::OffsetDateTime::from_unix_timestamp_nanos(ts_unix_ns).unwrap()
-            };
-
             #[cfg(target_os = "windows")]
             let old_priority = {
                 let old_priority = windows::Win32::System::Threading::GetPriorityClass(
@@ -585,17 +577,36 @@ impl SOEMECatThreadGuard {
                 )?;
                 old_priority
             };
-
             thread_priority.set_for_current()?;
 
+            let mut cnt_miss_deadline = 0;
             let mut toff = time::Duration::ZERO;
             let mut integral = 0;
             ec_send_processdata();
+            let mut ts = {
+                let tp = time::OffsetDateTime::now_utc();
+                let tp_unix_ns = tp.unix_timestamp_nanos();
+                let cycle_ns = cycle.as_nanos() as i128;
+                let ts_unix_ns = (tp_unix_ns / cycle_ns + 1) * cycle_ns;
+                time::OffsetDateTime::from_unix_timestamp_nanos(ts_unix_ns).unwrap()
+            };
             while is_open.load(Ordering::Acquire) {
                 ts += cycle;
                 ts += toff;
 
-                S::sleep(ts - time::OffsetDateTime::now_utc());
+                let duration = ts - time::OffsetDateTime::now_utc();
+                if duration > time::Duration::ZERO {
+                    S::sleep(std::time::Duration::from_nanos(
+                        duration.whole_nanoseconds() as _,
+                    ));
+                    cnt_miss_deadline = 0;
+                } else {
+                    cnt_miss_deadline += 1;
+                    if cnt_miss_deadline == 1000 {
+                        tracing::warn!("Slow network was detected. Increase send_cycle and sync0_cycle and restart the program, or reboot the network adapter and device.");
+                        cnt_miss_deadline = 0;
+                    }
+                }
 
                 wkc.store(
                     ec_receive_processdata(EC_TIMEOUTRET as i32),
