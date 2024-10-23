@@ -1,6 +1,7 @@
+use autd3_driver::utils::timer::TimerResolutionGurad;
 use spin_sleep::SpinSleeper;
-#[cfg(target_os = "windows")]
-use windows::Win32::Media::{timeBeginPeriod, timeEndPeriod};
+
+use derivative::Derivative;
 
 pub(crate) trait Sleeper {
     type Instant: super::instant::Instant;
@@ -8,35 +9,19 @@ pub(crate) trait Sleeper {
     fn sleep_until(&self, deadline: Self::Instant) -> impl std::future::Future<Output = ()>;
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Derivative)]
+#[derivative(Default)]
 pub struct StdSleeper {
-    #[cfg(target_os = "windows")]
+    #[derivative(Default(value = "Some(std::num::NonZeroU32::MIN)"))]
     pub timer_resolution: Option<std::num::NonZeroU32>,
-}
-
-#[cfg_attr(not(target_os = "windows"), allow(clippy::derivable_impls))]
-impl Default for StdSleeper {
-    fn default() -> Self {
-        Self {
-            #[cfg(target_os = "windows")]
-            timer_resolution: Some(std::num::NonZeroU32::MIN),
-        }
-    }
 }
 
 impl Sleeper for StdSleeper {
     type Instant = std::time::Instant;
 
     async fn sleep_until(&self, deadline: Self::Instant) {
-        #[cfg(target_os = "windows")]
-        unsafe {
-            windows::Win32::Media::timeBeginPeriod(1);
-        }
+        let _timer_guard = TimerResolutionGurad::new(self.timer_resolution);
         std::thread::sleep(deadline - std::time::Instant::now());
-        #[cfg(target_os = "windows")]
-        unsafe {
-            windows::Win32::Media::timeEndPeriod(1);
-        }
     }
 }
 
@@ -48,9 +33,10 @@ impl Sleeper for SpinSleeper {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Derivative)]
+#[derivative(Default)]
 pub struct AsyncSleeper {
-    #[cfg(target_os = "windows")]
+    #[derivative(Default(value = "Some(std::num::NonZeroU32::MIN)"))]
     pub timer_resolution: Option<std::num::NonZeroU32>,
 }
 
@@ -58,23 +44,8 @@ impl Sleeper for AsyncSleeper {
     type Instant = tokio::time::Instant;
 
     async fn sleep_until(&self, deadline: Self::Instant) {
-        #[cfg(target_os = "windows")]
-        self.timer_resolution
-            .map(|timer_resolution| unsafe { timeBeginPeriod(timer_resolution.get()) });
+        let _timer_guard = TimerResolutionGurad::new(self.timer_resolution);
         tokio::time::sleep_until(deadline).await;
-        #[cfg(target_os = "windows")]
-        self.timer_resolution
-            .map(|timer_resolution| unsafe { timeEndPeriod(timer_resolution.get()) });
-    }
-}
-
-#[cfg_attr(not(target_os = "windows"), allow(clippy::derivable_impls))]
-impl Default for AsyncSleeper {
-    fn default() -> Self {
-        Self {
-            #[cfg(target_os = "windows")]
-            timer_resolution: Some(std::num::NonZeroU32::MIN),
-        }
     }
 }
 
