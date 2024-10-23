@@ -262,8 +262,9 @@ mod tests {
         derive::{Gain, GainContext, GainContextGenerator, Segment},
         geometry::Vector3,
     };
+
     use spin_sleep::SpinSleeper;
-    use timer::{AsyncSleeper, StdSleeper, TimerStrategy, WaitableSleeper};
+    use timer::*;
 
     use crate::{link::Audit, prelude::*};
 
@@ -283,8 +284,7 @@ mod tests {
     #[case(TimerStrategy::Std(StdSleeper::default()))]
     #[case(TimerStrategy::Spin(SpinSleeper::default()))]
     #[case(TimerStrategy::Async(AsyncSleeper::default()))]
-    #[cfg(target_os = "windows")]
-    #[case(TimerStrategy::Waitable(WaitableSleeper::new().unwrap()))]
+    #[cfg_attr(target_os = "windows", case(TimerStrategy::Waitable(WaitableSleeper::new().unwrap())))]
     #[tokio::test(flavor = "multi_thread")]
     async fn open_with_timer(#[case] strategy: TimerStrategy) {
         assert!(Controller::builder([AUTD3::new(Vector3::zeros())])
