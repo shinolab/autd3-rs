@@ -1,4 +1,6 @@
-use std::time::Duration;
+use std::{num::NonZeroU32, time::Duration};
+
+use autd3_driver::utils::timer::TimerResolutionGurad;
 
 pub(crate) trait Sleep {
     fn sleep(duration: Duration);
@@ -8,15 +10,8 @@ pub(crate) struct StdSleep {}
 
 impl Sleep for StdSleep {
     fn sleep(duration: Duration) {
-        #[cfg(target_os = "windows")]
-        unsafe {
-            windows::Win32::Media::timeBeginPeriod(1);
-        }
+        let _timer_guard = TimerResolutionGurad::new(Some(NonZeroU32::MIN));
         std::thread::sleep(duration);
-        #[cfg(target_os = "windows")]
-        unsafe {
-            windows::Win32::Media::timeEndPeriod(1);
-        }
     }
 }
 
