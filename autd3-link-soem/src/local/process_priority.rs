@@ -1,11 +1,12 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
 pub enum ProcessPriority {
-    Idle,
-    BelowNormal,
-    Normal,
-    AboveNormal,
-    High,
-    Realtime,
+    Idle = 0,
+    BelowNormal = 1,
+    Normal = 2,
+    AboveNormal = 3,
+    High = 4,
+    Realtime = 5,
 }
 
 impl From<ProcessPriority> for windows::Win32::System::Threading::PROCESS_CREATION_FLAGS {
