@@ -70,18 +70,13 @@ impl LightweightClient {
         let mut client =
             crate::pb::ecat_light_client::EcatLightClient::connect(format!("http://{}", addr))
                 .await?;
-        let geometry = Geometry::new(builder.devices);
+        let geometry = Geometry::new(builder.devices, builder.fallback_parallel_threshold as _);
         let res = client
             .open(OpenRequestLightweight {
                 geometry: Some(geometry.to_msg(None)),
-                fallback_parallel_threshold: builder.fallback_parallel_threshold as _,
                 fallback_timeout: builder.fallback_timeout.as_nanos() as _,
                 send_interval: builder.send_interval.as_nanos() as _,
                 receive_interval: builder.receive_interval.as_nanos() as _,
-                #[cfg(target_os = "windows")]
-                timer_resolution: builder.timer_resolution,
-                #[cfg(not(target_os = "windows"))]
-                timer_resolution: 1,
             })
             .await?
             .into_inner();
