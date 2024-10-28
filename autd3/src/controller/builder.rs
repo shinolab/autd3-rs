@@ -20,6 +20,7 @@ use crate::error::AUTDError;
 #[derive(Builder, Debug)]
 pub struct ControllerBuilder {
     #[debug(skip)]
+    #[get]
     devices: Vec<Device>,
     #[get]
     #[set]
