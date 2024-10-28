@@ -39,8 +39,6 @@ pub struct Controller<L: Link> {
     rx_buf: Vec<RxMessage>,
     #[get]
     fallback_parallel_threshold: usize,
-    #[get]
-    fallback_timeout: Duration,
     #[get(ref)]
     timer: Timer,
 }
@@ -84,10 +82,8 @@ impl<L: Link> Controller<L> {
         parallel_threshold: Option<usize>,
     ) -> Result<(), AUTDError> {
         let parallel_threshold = parallel_threshold.unwrap_or(self.fallback_parallel_threshold);
-        let timeout = timeout.unwrap_or(self.fallback_timeout);
         let parallel = self.geometry.num_devices() > parallel_threshold;
 
-        tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
         tracing::trace!("parallel_threshold: {:?}", parallel_threshold);
 
         self.link.update(&self.geometry).await?;

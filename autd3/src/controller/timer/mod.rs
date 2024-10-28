@@ -6,7 +6,7 @@ mod sleep;
 use std::time::Duration;
 
 use autd3_driver::{
-    derive::Geometry,
+    derive::{Builder, Geometry},
     error::AUTDInternalError,
     firmware::{
         cpu::{check_if_msg_is_processed, RxMessage, TxMessage},
@@ -35,10 +35,16 @@ pub enum TimerStrategy {
     Async(AsyncSleeper),
 }
 
-pub(crate) struct Timer {
+#[derive(Builder)]
+pub struct Timer {
+    #[get]
     pub(crate) send_interval: Duration,
+    #[get]
     pub(crate) receive_interval: Duration,
+    #[get]
     pub(crate) strategy: TimerStrategy,
+    #[get]
+    pub(crate) fallback_timeout: Duration,
 }
 
 impl Timer {
@@ -49,9 +55,12 @@ impl Timer {
         rx: &mut [RxMessage],
         link: &mut impl Link,
         operations: Vec<(impl Operation, impl Operation)>,
-        timeout: Duration,
+        timeout: Option<Duration>,
         parallel: bool,
     ) -> Result<(), AUTDError> {
+        let timeout = timeout.unwrap_or(self.fallback_timeout);
+        tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
+
         match &self.strategy {
             TimerStrategy::Std(sleeper) => {
                 self._send(
@@ -265,6 +274,7 @@ mod tests {
             send_interval: Duration::from_millis(1),
             receive_interval: Duration::from_millis(1),
             strategy,
+            fallback_timeout: Duration::ZERO,
         };
 
         assert_eq!(
@@ -325,6 +335,7 @@ mod tests {
             send_interval: Duration::from_millis(1),
             receive_interval: Duration::from_millis(1),
             strategy,
+            fallback_timeout: Duration::ZERO,
         };
 
         assert_eq!(
