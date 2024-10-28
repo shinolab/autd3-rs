@@ -161,20 +161,12 @@ where
 {
     type G = SilencerOpGenerator<T>;
 
-    fn timeout(&self) -> Option<Duration> {
-        Some(DEFAULT_TIMEOUT)
-    }
-
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(Self::G {
             config: self.config,
             strict_mode: self.strict_mode,
             target: self.target,
         })
-    }
-
-    fn parallel_threshold(&self) -> Option<usize> {
-        Some(usize::MAX)
     }
 }
 

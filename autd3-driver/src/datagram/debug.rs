@@ -37,15 +37,7 @@ impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> OperationGenerator
 impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> Datagram for DebugSettings<F> {
     type G = DebugSettingOpGenerator<F>;
 
-    fn timeout(&self) -> Option<Duration> {
-        Some(DEFAULT_TIMEOUT)
-    }
-
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(DebugSettingOpGenerator { f: self.f })
-    }
-
-    fn parallel_threshold(&self) -> Option<usize> {
-        Some(usize::MAX)
     }
 }

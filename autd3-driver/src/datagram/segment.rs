@@ -33,15 +33,7 @@ impl OperationGenerator for SwapSegmentOpGenerator {
 impl Datagram for SwapSegment {
     type G = SwapSegmentOpGenerator;
 
-    fn timeout(&self) -> Option<Duration> {
-        Some(DEFAULT_TIMEOUT)
-    }
-
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(SwapSegmentOpGenerator { segment: self })
-    }
-
-    fn parallel_threshold(&self) -> Option<usize> {
-        Some(usize::MAX)
     }
 }

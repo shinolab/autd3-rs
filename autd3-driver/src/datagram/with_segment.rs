@@ -66,10 +66,12 @@ pub trait DatagramS: std::fmt::Debug {
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, AUTDInternalError>;
 
-    fn timeout(&self) -> Option<Duration>;
+    fn timeout(&self) -> Option<Duration> {
+        Some(DEFAULT_TIMEOUT)
+    }
 
     fn parallel_threshold(&self) -> Option<usize> {
-        None
+        Some(usize::MAX)
     }
 }
 

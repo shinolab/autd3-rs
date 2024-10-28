@@ -26,15 +26,7 @@ impl<F: Fn(&Device) -> bool> OperationGenerator for ReadsFPGAStateOpGenerator<F>
 impl<F: Fn(&Device) -> bool> Datagram for ReadsFPGAState<F> {
     type G = ReadsFPGAStateOpGenerator<F>;
 
-    fn timeout(&self) -> Option<Duration> {
-        Some(DEFAULT_TIMEOUT)
-    }
-
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(ReadsFPGAStateOpGenerator { f: self.f })
-    }
-
-    fn parallel_threshold(&self) -> Option<usize> {
-        Some(usize::MAX)
     }
 }

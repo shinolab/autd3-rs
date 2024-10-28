@@ -20,15 +20,7 @@ impl OperationGenerator for SynchronizeOpGenerator {
 impl Datagram for Synchronize {
     type G = SynchronizeOpGenerator;
 
-    fn timeout(&self) -> Option<Duration> {
-        Some(DEFAULT_TIMEOUT)
-    }
-
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(SynchronizeOpGenerator {})
-    }
-
-    fn parallel_threshold(&self) -> Option<usize> {
-        Some(usize::MAX)
     }
 }

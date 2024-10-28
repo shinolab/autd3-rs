@@ -50,9 +50,11 @@ pub trait Datagram: std::fmt::Debug {
     type G: OperationGenerator;
 
     fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError>;
-    fn timeout(&self) -> Option<Duration>;
+    fn timeout(&self) -> Option<Duration> {
+        Some(DEFAULT_TIMEOUT)
+    }
     fn parallel_threshold(&self) -> Option<usize> {
-        None
+        Some(usize::MAX)
     }
 }
 
