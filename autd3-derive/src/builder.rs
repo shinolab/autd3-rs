@@ -84,13 +84,22 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                     let re = regex::Regex::new(r"^Vec < (?<inner>\w+) >$").unwrap();
                     if let Some(caps) = re.captures(&path) {
                         let inner = format_ident!("{}", &caps["inner"]);
-                        return quote! {
-                            #[must_use]
-                            pub fn #ident(&self) -> &[#inner] {
-                                &self.#ident
-                            }
-                        };
-                    };
+                        if has_attr(field, "take") {
+                            return quote! {
+                                #[must_use]
+                                pub fn #ident(self) -> Vec<#inner> {
+                                    self.#ident
+                                }
+                            };
+                        } else {
+                            return quote! {
+                                #[must_use]
+                                pub fn #ident(&self) -> &[#inner] {
+                                    &self.#ident
+                                }
+                            };
+                        }
+                    }
                 }
             };
             if has_attr(field, "ref") {
