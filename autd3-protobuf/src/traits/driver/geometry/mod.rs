@@ -44,6 +44,7 @@ impl ToMessage for autd3_driver::geometry::Geometry {
                     sound_speed: dev.sound_speed as _,
                 })
                 .collect(),
+            fallback_parallel_threshold: self.fallback_parallel_threshold() as _,
         }
     }
 }
@@ -86,7 +87,7 @@ impl FromMessage<Geometry> for autd3_driver::geometry::Geometry {
                 Ok(dev)
             })
             .collect::<Result<Vec<_>, _>>()
-            .map(Self::new)
+            .map(|devices| Self::new(devices, msg.fallback_parallel_threshold as _))
     }
 }
 
@@ -141,9 +142,13 @@ mod tests {
         let mut rng = rand::thread_rng();
         let mut dev = AUTD3::new(Vector3::new(rng.gen(), rng.gen(), rng.gen())).into_device(0);
         dev.sound_speed = rng.gen();
-        let geometry = Geometry::new(vec![dev]);
+        let geometry = Geometry::new(vec![dev], 4);
         let msg = geometry.to_msg(None);
         let geometry2 = Geometry::from_msg(&msg).unwrap();
+        assert_eq!(
+            geometry.fallback_parallel_threshold(),
+            geometry2.fallback_parallel_threshold()
+        );
         geometry
             .iter()
             .zip(geometry2.iter())

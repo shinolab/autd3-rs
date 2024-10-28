@@ -54,10 +54,9 @@ message CloseRequestLightweight {}
 
 message OpenRequestLightweight {
   Geometry geometry = 1;
-  uint64 fallback_parallel_threshold = 2;
-  uint64 fallback_timeout = 3;
-  uint64 send_interval = 4;
-  uint64 receive_interval = 5;
+  uint64 fallback_timeout = 2;
+  uint64 send_interval = 3;
+  uint64 receive_interval = 4;
 }
 
 service ECATLight {

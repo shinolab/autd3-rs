@@ -110,7 +110,8 @@ mod tests {
 
     #[test]
     fn test_gs_all() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], 4);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = GS::new(
@@ -141,10 +142,13 @@ mod tests {
 
     #[test]
     fn test_gs_filtered() {
-        let geometry: Geometry = Geometry::new(vec![
-            AUTD3::new(Vector3::zeros()).into_device(0),
-            AUTD3::new(Vector3::zeros()).into_device(1),
-        ]);
+        let geometry: Geometry = Geometry::new(
+            vec![
+                AUTD3::new(Vector3::zeros()).into_device(0),
+                AUTD3::new(Vector3::zeros()).into_device(1),
+            ],
+            4,
+        );
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = GS::new(

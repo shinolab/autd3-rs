@@ -28,6 +28,8 @@ pub struct Geometry {
     #[new(default)]
     #[get]
     version: usize,
+    #[get]
+    fallback_parallel_threshold: usize,
 }
 
 impl Geometry {
@@ -67,6 +69,10 @@ impl Geometry {
     pub fn aabb(&self) -> Aabb<f32, 3> {
         self.devices()
             .fold(Aabb::empty(), |aabb, dev| aabb.join(dev.aabb()))
+    }
+
+    pub fn parallel(&self, threshold: Option<usize>) -> bool {
+        self.num_devices() > threshold.unwrap_or(self.fallback_parallel_threshold)
     }
 }
 
@@ -121,6 +127,7 @@ pub mod tests {
             (0..n)
                 .map(|i| create_device(i, num_trans_in_unit))
                 .collect(),
+            4,
         )
     }
 
@@ -129,7 +136,7 @@ pub mod tests {
     #[case(1, vec![create_device(0, 249)])]
     #[case(2, vec![create_device(0, 249), create_device(0, 249)])]
     fn test_num_devices(#[case] expected: usize, #[case] devices: Vec<Device>) {
-        let geometry = Geometry::new(devices);
+        let geometry = Geometry::new(devices, 4);
         assert_eq!(0, geometry.version());
         assert_eq!(expected, geometry.num_devices());
         assert_eq!(0, geometry.version());
@@ -140,7 +147,7 @@ pub mod tests {
     #[case(249, vec![create_device(0, 249)])]
     #[case(498, vec![create_device(0, 249), create_device(0, 249)])]
     fn test_num_transducers(#[case] expected: usize, #[case] devices: Vec<Device>) {
-        let geometry = Geometry::new(devices);
+        let geometry = Geometry::new(devices, 4);
         assert_eq!(0, geometry.version());
         assert_eq!(expected, geometry.num_transducers());
         assert_eq!(0, geometry.version());
@@ -148,37 +155,40 @@ pub mod tests {
 
     #[test]
     fn test_center() {
-        let geometry = Geometry::new(vec![
-            Device::new(
-                0,
-                UnitQuaternion::identity(),
-                itertools::iproduct!(0..18, 0..14)
-                    .enumerate()
-                    .map(|(i, (y, x))| {
-                        Transducer::new(
-                            i as _,
-                            i as _,
-                            10.16 * Vector3::new(x as f32, y as f32, 0.),
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-            ),
-            Device::new(
-                1,
-                UnitQuaternion::identity(),
-                itertools::iproduct!(0..18, 0..14)
-                    .enumerate()
-                    .map(|(i, (y, x))| {
-                        Transducer::new(
-                            i as _,
-                            i as _,
-                            10.16 * Vector3::new(x as f32, y as f32, 0.)
-                                + Vector3::new(10., 20., 30.),
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-            ),
-        ]);
+        let geometry = Geometry::new(
+            vec![
+                Device::new(
+                    0,
+                    UnitQuaternion::identity(),
+                    itertools::iproduct!(0..18, 0..14)
+                        .enumerate()
+                        .map(|(i, (y, x))| {
+                            Transducer::new(
+                                i as _,
+                                i as _,
+                                10.16 * Vector3::new(x as f32, y as f32, 0.),
+                            )
+                        })
+                        .collect::<Vec<_>>(),
+                ),
+                Device::new(
+                    1,
+                    UnitQuaternion::identity(),
+                    itertools::iproduct!(0..18, 0..14)
+                        .enumerate()
+                        .map(|(i, (y, x))| {
+                            Transducer::new(
+                                i as _,
+                                i as _,
+                                10.16 * Vector3::new(x as f32, y as f32, 0.)
+                                    + Vector3::new(10., 20., 30.),
+                            )
+                        })
+                        .collect::<Vec<_>>(),
+                ),
+            ],
+            4,
+        );
         let expect = geometry.iter().map(|dev| dev.center()).sum::<Vector3>()
             / geometry.num_devices() as f32;
         assert_eq!(0, geometry.version());
@@ -192,37 +202,7 @@ pub mod tests {
     #[case(343.23497e3, 20.)]
     #[case(349.04013e3, 30.)]
     fn test_set_sound_speed_from_temp(#[case] expected: f32, #[case] temp: f32) {
-        let mut geometry = Geometry::new(vec![
-            Device::new(
-                0,
-                UnitQuaternion::identity(),
-                itertools::iproduct!(0..18, 0..14)
-                    .enumerate()
-                    .map(|(i, (y, x))| {
-                        Transducer::new(
-                            i as _,
-                            i as _,
-                            10.16 * Vector3::new(x as f32, y as f32, 0.),
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-            ),
-            Device::new(
-                1,
-                UnitQuaternion::identity(),
-                itertools::iproduct!(0..18, 0..14)
-                    .enumerate()
-                    .map(|(i, (y, x))| {
-                        Transducer::new(
-                            i as _,
-                            i as _,
-                            10.16 * Vector3::new(x as f32, y as f32, 0.)
-                                + Vector3::new(10., 20., 30.),
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-            ),
-        ]);
+        let mut geometry = create_geometry(2, 1);
         assert_eq!(0, geometry.version());
         geometry.set_sound_speed_from_temp(temp);
         assert_eq!(1, geometry.version());
@@ -237,37 +217,7 @@ pub mod tests {
     #[case(3.432_35e5)]
     #[case(3.490_401_6e5)]
     fn test_set_sound_speed(#[case] temp: f32) {
-        let mut geometry = Geometry::new(vec![
-            Device::new(
-                0,
-                UnitQuaternion::identity(),
-                itertools::iproduct!(0..18, 0..14)
-                    .enumerate()
-                    .map(|(i, (y, x))| {
-                        Transducer::new(
-                            i as _,
-                            i as _,
-                            10.16 * Vector3::new(x as f32, y as f32, 0.),
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-            ),
-            Device::new(
-                1,
-                UnitQuaternion::identity(),
-                itertools::iproduct!(0..18, 0..14)
-                    .enumerate()
-                    .map(|(i, (y, x))| {
-                        Transducer::new(
-                            i as _,
-                            i as _,
-                            10.16 * Vector3::new(x as f32, y as f32, 0.)
-                                + Vector3::new(10., 20., 30.),
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-            ),
-        ]);
+        let mut geometry = create_geometry(2, 1);
         assert_eq!(0, geometry.version());
         geometry.set_sound_speed(temp * mm);
         assert_eq!(1, geometry.version());
@@ -278,7 +228,7 @@ pub mod tests {
 
     #[test]
     fn into_iter() {
-        let mut geometry = Geometry::new(vec![Device::new(0, UnitQuaternion::identity(), vec![])]);
+        let mut geometry = create_geometry(1, 1);
         assert_eq!(0, geometry.version());
         for dev in &mut geometry {
             dev.enable = true;
@@ -293,7 +243,7 @@ pub mod tests {
     #[case(Aabb{min: Point3::new(-132.08 * mm, 0., 0.), max: Point3::new(0., 172.72 * mm, 0.)}, vec![AUTD3::new(Vector3::zeros()).with_rotation(EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg)).into_device(0)])]
     #[case(Aabb{min: Point3::new(-132.08 * mm, -10. * mm, 0.), max: Point3::new(172.72 * mm, 162.72 * mm, 10. * mm)}, vec![AUTD3::new(Vector3::zeros()).into_device(0), AUTD3::new(Vector3::new(0., -10. * mm, 10. * mm)).with_rotation(EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg)).into_device(1)])]
     fn aabb(#[case] expect: Aabb<f32, 3>, #[case] dev: Vec<Device>) {
-        let geometry = Geometry::new(dev);
+        let geometry = Geometry::new(dev, 4);
         assert_approx_eq_vec3!(expect.min, geometry.aabb().min);
         assert_approx_eq_vec3!(expect.max, geometry.aabb().max);
     }

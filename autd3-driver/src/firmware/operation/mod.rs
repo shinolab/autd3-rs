@@ -221,11 +221,14 @@ pub mod tests {
     #[case::serial(false)]
     #[case::parallel(true)]
     fn test(#[case] parallel: bool) {
-        let geometry = Geometry::new(vec![Device::new(
-            0,
-            UnitQuaternion::identity(),
-            vec![Transducer::new(0, 0, Vector3::zeros())],
-        )]);
+        let geometry = Geometry::new(
+            vec![Device::new(
+                0,
+                UnitQuaternion::identity(),
+                vec![Transducer::new(0, 0, Vector3::zeros())],
+            )],
+            4,
+        );
 
         let mut op = vec![(
             OperationMock {
@@ -271,11 +274,14 @@ pub mod tests {
 
     #[test]
     fn test_first() {
-        let geometry = Geometry::new(vec![Device::new(
-            0,
-            UnitQuaternion::identity(),
-            vec![Transducer::new(0, 0, Vector3::zeros())],
-        )]);
+        let geometry = Geometry::new(
+            vec![Device::new(
+                0,
+                UnitQuaternion::identity(),
+                vec![Transducer::new(0, 0, Vector3::zeros())],
+            )],
+            4,
+        );
 
         let mut op = vec![(
             OperationMock {
@@ -306,11 +312,14 @@ pub mod tests {
 
     #[test]
     fn test_second() {
-        let geometry = Geometry::new(vec![Device::new(
-            0,
-            UnitQuaternion::identity(),
-            vec![Transducer::new(0, 0, Vector3::zeros())],
-        )]);
+        let geometry = Geometry::new(
+            vec![Device::new(
+                0,
+                UnitQuaternion::identity(),
+                vec![Transducer::new(0, 0, Vector3::zeros())],
+            )],
+            4,
+        );
 
         let mut op = vec![(
             OperationMock {
@@ -341,11 +350,14 @@ pub mod tests {
 
     #[test]
     fn test_broken_pack() {
-        let geometry = Geometry::new(vec![Device::new(
-            0,
-            UnitQuaternion::identity(),
-            vec![Transducer::new(0, 0, Vector3::zeros())],
-        )]);
+        let geometry = Geometry::new(
+            vec![Device::new(
+                0,
+                UnitQuaternion::identity(),
+                vec![Transducer::new(0, 0, Vector3::zeros())],
+            )],
+            4,
+        );
 
         let mut op = vec![(
             OperationMock {
@@ -398,11 +410,14 @@ pub mod tests {
 
     #[test]
     fn test_finished() {
-        let geometry = Geometry::new(vec![Device::new(
-            0,
-            UnitQuaternion::identity(),
-            vec![Transducer::new(0, 0, Vector3::zeros())],
-        )]);
+        let geometry = Geometry::new(
+            vec![Device::new(
+                0,
+                UnitQuaternion::identity(),
+                vec![Transducer::new(0, 0, Vector3::zeros())],
+            )],
+            4,
+        );
 
         let mut op = vec![(
             OperationMock {
@@ -428,11 +443,14 @@ pub mod tests {
 
     #[test]
     fn msg_id() {
-        let geometry = Geometry::new(vec![Device::new(
-            0,
-            UnitQuaternion::identity(),
-            vec![Transducer::new(0, 0, Vector3::zeros())],
-        )]);
+        let geometry = Geometry::new(
+            vec![Device::new(
+                0,
+                UnitQuaternion::identity(),
+                vec![Transducer::new(0, 0, Vector3::zeros())],
+            )],
+            4,
+        );
 
         let mut tx = vec![TxMessage::new_zeroed(); 1];
 

@@ -56,9 +56,10 @@ impl Timer {
         link: &mut impl Link,
         operations: Vec<(impl Operation, impl Operation)>,
         timeout: Option<Duration>,
-        parallel: bool,
+        parallel_threshold: Option<usize>,
     ) -> Result<(), AUTDError> {
         let timeout = timeout.unwrap_or(self.fallback_timeout);
+        let parallel = geometry.parallel(parallel_threshold);
         tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
 
         match &self.strategy {
