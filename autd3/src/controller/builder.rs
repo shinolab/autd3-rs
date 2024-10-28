@@ -76,11 +76,11 @@ impl ControllerBuilder {
             rx_buf: vec![RxMessage::new(0, 0); geometry.num_devices()],
             geometry,
             fallback_parallel_threshold: self.fallback_parallel_threshold,
-            fallback_timeout: self.fallback_timeout,
             timer: Timer {
                 send_interval: self.send_interval,
                 receive_interval: self.receive_interval,
                 strategy: self.timer_strategy,
+                fallback_timeout: self.fallback_timeout,
             },
         }
         .open_impl(timeout)

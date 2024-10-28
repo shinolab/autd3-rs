@@ -9,7 +9,7 @@ async fn audit_test() -> anyhow::Result<()> {
         .with_fallback_timeout(Duration::from_millis(100))
         .open(Audit::builder())
         .await?;
-    assert_eq!(Duration::from_millis(100), autd.fallback_timeout());
+    assert_eq!(Duration::from_millis(100), autd.timer().fallback_timeout());
     assert_eq!(0, autd.link()[0].idx());
 
     {
