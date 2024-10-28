@@ -206,17 +206,12 @@ impl<L: Link + 'static> Controller<L> {
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
         let tx_buf = unsafe { std::ptr::read(&cnt.tx_buf) };
         let rx_buf = unsafe { std::ptr::read(&cnt.rx_buf) };
-        let fallback_parallel_threshold =
-            unsafe { std::ptr::read(&cnt.fallback_parallel_threshold) };
-        let fallback_timeout = unsafe { std::ptr::read(&cnt.fallback_timeout) };
         let timer = unsafe { std::ptr::read(&cnt.timer) };
         Controller {
             link: Box::new(link) as _,
             geometry,
             tx_buf,
             rx_buf,
-            fallback_parallel_threshold,
-            fallback_timeout,
             timer,
         }
     }
@@ -227,17 +222,12 @@ impl<L: Link + 'static> Controller<L> {
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
         let tx_buf = unsafe { std::ptr::read(&cnt.tx_buf) };
         let rx_buf = unsafe { std::ptr::read(&cnt.rx_buf) };
-        let fallback_parallel_threshold =
-            unsafe { std::ptr::read(&cnt.fallback_parallel_threshold) };
-        let fallback_timeout = unsafe { std::ptr::read(&cnt.fallback_timeout) };
         let timer = unsafe { std::ptr::read(&cnt.timer) };
         Controller {
             link: unsafe { *Box::from_raw(Box::into_raw(link) as *mut L) },
             geometry,
             tx_buf,
             rx_buf,
-            fallback_parallel_threshold,
-            fallback_timeout,
             timer,
         }
     }
