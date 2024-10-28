@@ -26,10 +26,6 @@ where
     f: F,
     #[new(default)]
     gain_map: HashMap<K, BoxedGain>,
-    #[new(default)]
-    #[get]
-    #[set]
-    parallel: bool,
 }
 
 impl<K, FK, F> Group<K, FK, F>
@@ -142,7 +138,7 @@ where
             .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?;
 
         let f = &self.f;
-        if self.parallel {
+        if geometry.parallel(None) {
             gain_map
                 .par_iter()
                 .try_for_each(|(k, c)| -> Result<(), AUTDInternalError> {
@@ -258,7 +254,7 @@ mod tests {
 
     #[test]
     fn with_parallel() -> anyhow::Result<()> {
-        let geometry = create_geometry(4);
+        let geometry = create_geometry(5);
 
         let mut rng = rand::thread_rng();
 
@@ -278,7 +274,6 @@ mod tests {
                 _ => None,
             }
         })
-        .with_parallel(true)
         .set("test", g1)
         .set("test2", g2);
 
@@ -293,7 +288,7 @@ mod tests {
                 )
             })
             .collect::<HashMap<_, _>>();
-        assert_eq!(4, drives.len());
+        assert_eq!(5, drives.len());
         drives[&0].iter().enumerate().for_each(|(i, &d)| match i {
             i if i <= 99 => {
                 assert_eq!(Drive::NULL, d);
@@ -318,6 +313,9 @@ mod tests {
         });
         drives[&3].iter().for_each(|&d| {
             assert_eq!(d1, d);
+        });
+        drives[&4].iter().for_each(|&d| {
+            assert_eq!(Drive::NULL, d);
         });
 
         Ok(())
