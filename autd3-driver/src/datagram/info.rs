@@ -24,15 +24,7 @@ impl OperationGenerator for FetchFirmwareInfoOpGenerator {
 impl Datagram for FirmwareVersionType {
     type G = FetchFirmwareInfoOpGenerator;
 
-    fn timeout(&self) -> Option<Duration> {
-        Some(DEFAULT_TIMEOUT)
-    }
-
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(Self::G { inner: self })
-    }
-
-    fn parallel_threshold(&self) -> Option<usize> {
-        Some(usize::MAX)
     }
 }

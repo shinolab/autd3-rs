@@ -20,15 +20,7 @@ impl OperationGenerator for ClearOpGenerator {
 impl Datagram for Clear {
     type G = ClearOpGenerator;
 
-    fn timeout(&self) -> Option<Duration> {
-        Some(DEFAULT_TIMEOUT)
-    }
-
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(ClearOpGenerator {})
-    }
-
-    fn parallel_threshold(&self) -> Option<usize> {
-        Some(usize::MAX)
     }
 }
