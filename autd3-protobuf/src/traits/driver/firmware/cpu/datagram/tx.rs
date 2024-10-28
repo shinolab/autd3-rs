@@ -4,7 +4,7 @@ use crate::{
     AUTDProtoBufError,
 };
 
-use zerocopy::{FromZeros, IntoBytes, TryFromBytes};
+use zerocopy::{FromZeros, IntoBytes};
 
 impl ToMessage for &[autd3_driver::firmware::cpu::TxMessage] {
     type Message = TxRawData;
@@ -20,10 +20,9 @@ impl ToMessage for &[autd3_driver::firmware::cpu::TxMessage] {
 impl FromMessage<TxRawData> for Vec<autd3_driver::firmware::cpu::TxMessage> {
     fn from_msg(msg: &TxRawData) -> Result<Self, AUTDProtoBufError> {
         let mut tx = vec![autd3_driver::firmware::cpu::TxMessage::new_zeroed(); msg.n as _];
-        tx.as_mut_slice().clone_from_slice(
-            <[autd3_driver::firmware::cpu::TxMessage]>::try_ref_from_bytes(msg.data.as_bytes())
-                .unwrap(),
-        );
+        unsafe {
+            std::ptr::copy_nonoverlapping(msg.data.as_ptr(), tx.as_mut_ptr() as _, msg.data.len());
+        }
         Ok(tx)
     }
 }
