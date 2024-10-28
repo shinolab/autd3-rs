@@ -28,6 +28,8 @@ pub struct Quaternion {
 pub struct Geometry {
     #[prost(message, repeated, tag = "1")]
     pub devices: ::prost::alloc::vec::Vec<geometry::Autd3>,
+    #[prost(uint32, tag = "2")]
+    pub fallback_parallel_threshold: u32,
 }
 /// Nested message and enum types in `Geometry`.
 pub mod geometry {

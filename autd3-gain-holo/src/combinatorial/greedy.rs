@@ -169,7 +169,8 @@ mod tests {
 
     #[test]
     fn test_greedy_all() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], 4);
 
         let g = Greedy::<Sphere>::new([(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)])
             .with_phase_div(NonZeroU8::MIN);
@@ -194,10 +195,13 @@ mod tests {
 
     #[test]
     fn test_greedy_all_disabled() -> anyhow::Result<()> {
-        let mut geometry = Geometry::new(vec![
-            AUTD3::new(Vector3::zeros()).into_device(0),
-            AUTD3::new(Vector3::zeros()).into_device(1),
-        ]);
+        let mut geometry = Geometry::new(
+            vec![
+                AUTD3::new(Vector3::zeros()).into_device(0),
+                AUTD3::new(Vector3::zeros()).into_device(1),
+            ],
+            4,
+        );
         geometry[0].enable = false;
 
         let g = Greedy::<Sphere>::new([(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)]);
@@ -217,7 +221,8 @@ mod tests {
 
     #[test]
     fn test_greedy_filtered() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], 4);
 
         let g = Greedy::<Sphere>::new([
             (Vector3::new(10., 10., 100.), 5e3 * Pa),
@@ -243,10 +248,13 @@ mod tests {
 
     #[test]
     fn test_greedy_filtered_disabled() -> anyhow::Result<()> {
-        let mut geometry = Geometry::new(vec![
-            AUTD3::new(Vector3::zeros()).into_device(0),
-            AUTD3::new(Vector3::zeros()).into_device(1),
-        ]);
+        let mut geometry = Geometry::new(
+            vec![
+                AUTD3::new(Vector3::zeros()).into_device(0),
+                AUTD3::new(Vector3::zeros()).into_device(1),
+            ],
+            4,
+        );
         geometry[0].enable = false;
 
         let g = Greedy::<Sphere>::new([(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)]);

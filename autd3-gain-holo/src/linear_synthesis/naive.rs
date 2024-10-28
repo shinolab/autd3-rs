@@ -87,7 +87,8 @@ mod tests {
 
     #[test]
     fn test_naive_all() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], 4);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = Naive::new(
@@ -116,10 +117,13 @@ mod tests {
 
     #[test]
     fn test_naive_all_disabled() -> anyhow::Result<()> {
-        let mut geometry = Geometry::new(vec![
-            AUTD3::new(Vector3::zeros()).into_device(0),
-            AUTD3::new(Vector3::zeros()).into_device(1),
-        ]);
+        let mut geometry = Geometry::new(
+            vec![
+                AUTD3::new(Vector3::zeros()).into_device(0),
+                AUTD3::new(Vector3::zeros()).into_device(1),
+            ],
+            4,
+        );
         geometry[0].enable = false;
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
@@ -145,7 +149,8 @@ mod tests {
 
     #[test]
     fn test_naive_filtered() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)]);
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], 4);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = Naive::new(
@@ -175,10 +180,13 @@ mod tests {
 
     #[test]
     fn test_naive_filtered_disabled() -> anyhow::Result<()> {
-        let mut geometry = Geometry::new(vec![
-            AUTD3::new(Vector3::zeros()).into_device(0),
-            AUTD3::new(Vector3::zeros()).into_device(1),
-        ]);
+        let mut geometry = Geometry::new(
+            vec![
+                AUTD3::new(Vector3::zeros()).into_device(0),
+                AUTD3::new(Vector3::zeros()).into_device(1),
+            ],
+            4,
+        );
         geometry[0].enable = false;
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 

@@ -21,6 +21,7 @@ pub fn generate_geometry(size: usize) -> Geometry {
                 AUTD3::new(Vector3::new(i as f32 * AUTD3::DEVICE_WIDTH, 0., 0.)).into_device(i as _)
             })
             .collect(),
+        4,
     )
 }
 
