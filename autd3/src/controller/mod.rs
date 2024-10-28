@@ -192,6 +192,24 @@ impl<L: Link> Controller<L> {
     }
 }
 
+impl<'a, L: Link> IntoIterator for &'a Controller<L> {
+    type Item = &'a Device;
+    type IntoIter = std::slice::Iter<'a, Device>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.geometry.iter()
+    }
+}
+
+impl<'a, L: Link> IntoIterator for &'a mut Controller<L> {
+    type Item = &'a mut Device;
+    type IntoIter = std::slice::IterMut<'a, Device>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.geometry.iter_mut()
+    }
+}
+
 #[cfg(feature = "async-trait")]
 impl<L: Link + 'static> Controller<L> {
     pub fn into_boxed_link(self) -> Controller<Box<dyn Link>> {
@@ -450,6 +468,21 @@ mod tests {
             assert!(states[1]
                 .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
                 .is_thermal_assert());
+        }
+
+        Ok(())
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn into_iter() -> anyhow::Result<()> {
+        let mut autd = create_controller(1).await?;
+
+        for dev in &mut autd {
+            dev.sound_speed = 300e3 * mm;
+        }
+
+        for dev in &autd {
+            assert_eq!(300e3 * mm, dev.sound_speed);
         }
 
         Ok(())
