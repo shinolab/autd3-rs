@@ -1,13 +1,7 @@
 use autd3_derive::Modulation;
 
 use super::{Modulation, ModulationOperationGenerator, ModulationProperty};
-use crate::{
-    defined::DEFAULT_TIMEOUT,
-    derive::DatagramS,
-    error::AUTDInternalError,
-    firmware::fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
-    geometry::Geometry,
-};
+use crate::derive::*;
 
 #[cfg(not(feature = "lightweight"))]
 type BoxedFmt = Box<dyn Fn(&mut std::fmt::Formatter<'_>) -> std::fmt::Result>;
@@ -87,7 +81,7 @@ where
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::{datagram::modulation::tests::TestModulation, derive::*};
+    use crate::datagram::modulation::tests::TestModulation;
 
     #[test]
     fn test() {
