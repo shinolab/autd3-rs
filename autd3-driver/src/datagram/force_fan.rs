@@ -26,15 +26,7 @@ impl<F: Fn(&Device) -> bool> OperationGenerator for ForceFanOpGenerator<F> {
 impl<F: Fn(&Device) -> bool> Datagram for ForceFan<F> {
     type G = ForceFanOpGenerator<F>;
 
-    fn timeout(&self) -> Option<Duration> {
-        Some(DEFAULT_TIMEOUT)
-    }
-
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(ForceFanOpGenerator { f: self.f })
-    }
-
-    fn parallel_threshold(&self) -> Option<usize> {
-        Some(usize::MAX)
     }
 }

@@ -158,8 +158,8 @@ impl<G: Gain> DatagramS for GainSTM<G> {
         )
     }
 
-    fn timeout(&self) -> Option<std::time::Duration> {
-        Some(DEFAULT_TIMEOUT)
+    fn parallel_threshold(&self) -> Option<usize> {
+        None
     }
 }
 

@@ -47,11 +47,11 @@ impl<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
 impl<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> Datagram for PulseWidthEncoder<H, F> {
     type G = PulseWidthEncoderOpGenerator<H, F>;
 
-    fn timeout(&self) -> Option<Duration> {
-        Some(DEFAULT_TIMEOUT)
-    }
-
     fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
         Ok(PulseWidthEncoderOpGenerator { f: self.f })
+    }
+
+    fn parallel_threshold(&self) -> Option<usize> {
+        None
     }
 }

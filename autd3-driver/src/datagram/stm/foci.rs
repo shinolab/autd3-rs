@@ -131,12 +131,8 @@ impl<const N: usize> DatagramS for FociSTM<N> {
         })
     }
 
-    fn timeout(&self) -> Option<std::time::Duration> {
-        Some(DEFAULT_TIMEOUT)
-    }
-
     fn parallel_threshold(&self) -> Option<usize> {
-        if self.control_points.len() > 4000 {
+        if self.control_points.len() * N >= 4000 {
             None
         } else {
             Some(usize::MAX)

@@ -87,14 +87,6 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
                     transition_mode,
                 })
             }
-
-            fn timeout(&self) -> Option<std::time::Duration> {
-                Some(DEFAULT_TIMEOUT)
-            }
-
-            fn parallel_threshold(&self) -> Option<usize> {
-                Some(usize::MAX)
-            }
         }
     };
 
