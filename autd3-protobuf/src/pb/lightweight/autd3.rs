@@ -28,6 +28,8 @@ pub struct Quaternion {
 pub struct Geometry {
     #[prost(message, repeated, tag = "1")]
     pub devices: ::prost::alloc::vec::Vec<geometry::Autd3>,
+    #[prost(uint32, tag = "2")]
+    pub fallback_parallel_threshold: u32,
 }
 /// Nested message and enum types in `Geometry`.
 pub mod geometry {
@@ -1851,15 +1853,11 @@ pub struct OpenRequestLightweight {
     #[prost(message, optional, tag = "1")]
     pub geometry: ::core::option::Option<Geometry>,
     #[prost(uint64, tag = "2")]
-    pub fallback_parallel_threshold: u64,
-    #[prost(uint64, tag = "3")]
     pub fallback_timeout: u64,
-    #[prost(uint64, tag = "4")]
+    #[prost(uint64, tag = "3")]
     pub send_interval: u64,
-    #[prost(uint64, tag = "5")]
+    #[prost(uint64, tag = "4")]
     pub receive_interval: u64,
-    #[prost(uint32, tag = "6")]
-    pub timer_resolution: u32,
 }
 /// Generated client implementations.
 pub mod ecat_light_client {

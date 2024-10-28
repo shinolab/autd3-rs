@@ -69,13 +69,12 @@ impl ControllerBuilder {
         link_builder: B,
         timeout: Duration,
     ) -> Result<Controller<B::L>, AUTDError> {
-        let geometry = Geometry::new(self.devices);
+        let geometry = Geometry::new(self.devices, self.fallback_parallel_threshold);
         Controller {
             link: link_builder.open(&geometry).await?,
             tx_buf: vec![TxMessage::new_zeroed(); geometry.num_devices()],
             rx_buf: vec![RxMessage::new(0, 0); geometry.num_devices()],
             geometry,
-            fallback_parallel_threshold: self.fallback_parallel_threshold,
             timer: Timer {
                 send_interval: self.send_interval,
                 receive_interval: self.receive_interval,

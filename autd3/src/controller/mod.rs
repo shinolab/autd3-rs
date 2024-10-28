@@ -37,8 +37,6 @@ pub struct Controller<L: Link> {
     geometry: Geometry,
     tx_buf: Vec<TxMessage>,
     rx_buf: Vec<RxMessage>,
-    #[get]
-    fallback_parallel_threshold: usize,
     #[get(ref)]
     timer: Timer,
 }
@@ -81,13 +79,7 @@ impl<L: Link> Controller<L> {
         timeout: Option<Duration>,
         parallel_threshold: Option<usize>,
     ) -> Result<(), AUTDError> {
-        let parallel_threshold = parallel_threshold.unwrap_or(self.fallback_parallel_threshold);
-        let parallel = self.geometry.num_devices() > parallel_threshold;
-
-        tracing::trace!("parallel_threshold: {:?}", parallel_threshold);
-
         self.link.update(&self.geometry).await?;
-
         self.timer
             .send(
                 &self.geometry,
@@ -96,7 +88,7 @@ impl<L: Link> Controller<L> {
                 &mut self.link,
                 operations,
                 timeout,
-                parallel,
+                parallel_threshold,
             )
             .await
     }

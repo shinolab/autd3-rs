@@ -18,6 +18,7 @@ pub fn create_geometry(n: usize) -> Geometry {
         (0..n)
             .map(|i| AUTD3::new(Vector3::zeros()).into_device(i as _))
             .collect(),
+        4,
     )
 }
 

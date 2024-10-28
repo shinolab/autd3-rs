@@ -587,6 +587,7 @@ mod tests {
                     })
                 })
                 .collect(),
+            4,
         )
     }
 
