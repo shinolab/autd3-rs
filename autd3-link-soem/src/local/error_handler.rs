@@ -15,11 +15,11 @@ use derive_more::Display;
 #[repr(u8)]
 pub enum Status {
     #[display("slave is in SAFE_OP + ERROR, attempting ack")]
-    Error,
+    Error = 0,
     #[display("slave is lost")]
-    Lost,
+    Lost = 1,
     #[display("slave is in SAFE_OP, change to OPERATIONAL")]
-    StateChanged,
+    StateChanged = 2,
 }
 
 pub type ErrHandler = Box<dyn Fn(usize, Status) + Send + Sync>;
