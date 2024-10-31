@@ -1,12 +1,14 @@
 use crate::{ethercat::EC_OUTPUT_FRAME_SIZE, firmware::cpu::Header};
 
 use autd3_derive::Builder;
+use derive_more::Display;
 use zerocopy::{FromZeros, Immutable, IntoBytes};
 
 const PAYLOAD_SIZE: usize = EC_OUTPUT_FRAME_SIZE - std::mem::size_of::<Header>();
 
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq, Eq, IntoBytes, Immutable, FromZeros, Builder)]
+#[derive(Clone, Debug, PartialEq, Eq, IntoBytes, Immutable, FromZeros, Builder, Display)]
+#[display("({:?}, TAG: {:#04X})", header, (payload[0] & 0xFF) as u8)]
 pub struct TxMessage {
     #[get(ref, ref_mut)]
     header: Header,
