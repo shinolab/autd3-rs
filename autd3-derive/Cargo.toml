@@ -1,8 +1,8 @@
 [package]
 name = "autd3-derive"
-description = "Wav Modulation for AUTD."
+description = "derive macros for autd3"
 readme = "README.md"
-keywords = ["autd"]
+keywords = { workspace = true }
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
@@ -17,6 +17,3 @@ proc-macro2 = { workspace = true }
 quote = { workspace = true }
 regex = { workspace = true }
 syn = { workspace = true, features = ["full"] }
-
-[features]
-default = []

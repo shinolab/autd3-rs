@@ -1,6 +1,6 @@
 # autd3-driver
 
-This crate provides driver of AUTD3.
+This crate provides driver of AUTD3 device.
 
 # Author
 
