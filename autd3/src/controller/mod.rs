@@ -12,7 +12,7 @@ use autd3_driver::{
     firmware::{
         cpu::{check_if_msg_is_processed, RxMessage, TxMessage},
         fpga::FPGAState,
-        operation::{FirmwareVersionType, Operation, OperationHandler},
+        operation::{FirmwareVersionType, OperationHandler},
         version::FirmwareVersion,
     },
     geometry::{Device, Geometry, IntoDevice},
@@ -63,30 +63,14 @@ impl<L: Link> Controller<L> {
     pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDError> {
         let timeout = s.timeout();
         let parallel_threshold = s.parallel_threshold();
-
         let generator = s.operation_generator(&self.geometry)?;
-        self.send_impl(
-            OperationHandler::generate(generator, &self.geometry),
-            timeout,
-            parallel_threshold,
-        )
-        .await
-    }
-
-    pub(crate) async fn send_impl(
-        &mut self,
-        operations: Vec<(impl Operation, impl Operation)>,
-        timeout: Option<Duration>,
-        parallel_threshold: Option<usize>,
-    ) -> Result<(), AUTDError> {
-        self.link.update(&self.geometry).await?;
         self.timer
             .send(
                 &self.geometry,
                 &mut self.tx_buf,
                 &mut self.rx_buf,
                 &mut self.link,
-                operations,
+                OperationHandler::generate(generator, &self.geometry),
                 timeout,
                 parallel_threshold,
             )
