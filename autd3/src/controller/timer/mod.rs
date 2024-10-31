@@ -102,6 +102,8 @@ impl Timer {
         timeout: Duration,
         parallel: bool,
     ) -> Result<(), AUTDError> {
+        link.update(geometry).await?;
+
         let mut send_timing = S::Instant::now();
         loop {
             OperationHandler::pack(&mut operations, geometry, tx, parallel)?;
@@ -129,19 +131,7 @@ impl Timer {
             return Err(AUTDInternalError::LinkClosed);
         }
 
-        // GRCOV_EXCL_START
-        tracing::trace!(
-            "send: {}",
-            tx.iter().format_with(", ", |elt, f| {
-                f(&format_args!(
-                    "({:?}, TAG: {:#04X})",
-                    elt.header(),
-                    elt.payload()[0]
-                ))
-            })
-        );
-        // GRCOV_EXCL_STOP
-
+        tracing::trace!("send: {}", tx.iter().join(", "));
         if !link.send(tx).await? {
             return Err(AUTDInternalError::SendDataFailed);
         }
@@ -164,14 +154,7 @@ impl Timer {
                 return Err(AUTDInternalError::LinkClosed);
             }
             let res = link.receive(rx).await?;
-
-            // GRCOV_EXCL_START
-            tracing::trace!(
-                "receive: {}",
-                rx.iter()
-                    .format_with(", ", |elt, f| f(&format_args!("{:?}", elt)))
-            );
-            // GRCOV_EXCL_STOP
+            tracing::trace!("recv: {}", rx.iter().join(", "));
 
             if res && check_if_msg_is_processed(tx, rx).all(std::convert::identity) {
                 return Ok(());

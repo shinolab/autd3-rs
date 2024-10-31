@@ -90,15 +90,20 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
             parallel_threshold,
             ..
         } = self;
-        cnt.send_impl(
-            operations
-                .into_iter()
-                .map(|op| op.unwrap_or_default())
-                .collect::<Vec<_>>(),
-            timeout,
-            parallel_threshold,
-        )
-        .await
+        cnt.timer
+            .send(
+                &cnt.geometry,
+                &mut cnt.tx_buf,
+                &mut cnt.rx_buf,
+                &mut cnt.link,
+                operations
+                    .into_iter()
+                    .map(|op| op.unwrap_or_default())
+                    .collect::<Vec<_>>(),
+                timeout,
+                parallel_threshold,
+            )
+            .await
     }
 }
 
