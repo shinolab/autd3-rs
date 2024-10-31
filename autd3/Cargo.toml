@@ -2,7 +2,7 @@
 name = "autd3"
 description = "AUTD3 library"
 readme = "README.md"
-keywords = ["autd"]
+keywords = { workspace = true }
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }

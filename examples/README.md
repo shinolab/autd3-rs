@@ -1,11 +1,5 @@
 # autd3-examples
 
-## SOEM
-
-```
-cargo run --release --features soem --bin soem
-```
-
 ## TwinCAT
 
 ```

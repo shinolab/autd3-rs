@@ -1,8 +1,8 @@
 [package]
 name = "autd3-link-simulator"
-description = "Link for autd-simulator"
+description = "autd3 link for simulator"
 readme = "README.md"
-keywords = ["autd"]
+keywords = { workspace = true }
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
