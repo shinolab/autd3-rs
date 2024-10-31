@@ -1,8 +1,8 @@
 [package]
 name = "autd3-protobuf"
-description = "Protocol Buffer"
+description = "gRPC protobuf for autd3"
 readme = "README.md"
-keywords = ["autd"]
+keywords = { workspace = true }
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }

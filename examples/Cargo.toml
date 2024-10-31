@@ -12,16 +12,6 @@ path = "src/nop.rs"
 required-features = []
 
 [[bin]]
-name = "soem"
-path = "src/soem.rs"
-required-features = ["soem"]
-
-[[bin]]
-name = "remote_soem"
-path = "src/remote_soem.rs"
-required-features = ["remote_soem"]
-
-[[bin]]
 name = "twincat"
 path = "src/twincat.rs"
 required-features = ["twincat"]
@@ -52,7 +42,6 @@ autd3 = { workspace = true }
 autd3-driver = { workspace = true }
 autd3-gain-holo = { workspace = true }
 autd3-link-simulator = { workspace = true, optional = true }
-autd3-link-soem = { workspace = true, optional = true }
 autd3-link-twincat = { workspace = true, optional = true }
 autd3-modulation-audio-file = { workspace = true }
 autd3-protobuf = { workspace = true, optional = true }
@@ -67,11 +56,9 @@ tracing = { workspace = true }
 [features]
 default = ["all"]
 simulator = ["autd3-link-simulator"]
-soem = ["autd3-link-soem/local"]
-remote_soem = ["autd3-link-soem/remote"]
 twincat = ["autd3-link-twincat/local"]
 remote_twincat = ["autd3-link-twincat/remote"]
 lightweight = ["autd3-protobuf/lightweight", "autd3-driver/async-trait", "autd3-driver/lightweight"]
-lightweight-server = ["autd3-protobuf/lightweight", "autd3-driver/async-trait", "autd3-link-soem", "autd3-link-soem/async-trait", "ctrlc-async", "tonic"]
-all = ["twincat", "remote_twincat", "soem", "remote_soem", "simulator"]
+lightweight-server = ["autd3-protobuf/lightweight", "autd3-driver/async-trait", "ctrlc-async", "tonic"]
+all = ["twincat", "remote_twincat", "simulator"]
 unity = ["autd3-driver/use_meter", "autd3-driver/left_handed"]

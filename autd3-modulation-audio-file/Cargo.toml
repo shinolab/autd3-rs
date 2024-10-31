@@ -1,8 +1,8 @@
 [package]
 name = "autd3-modulation-audio-file"
-description = "AUTD library for Rust."
+description = "autd3 modulation from audio file"
 readme = "README.md"
-keywords = ["autd"]
+keywords = { workspace = true }
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }

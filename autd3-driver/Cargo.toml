@@ -2,7 +2,7 @@
 name = "autd3-driver"
 description = "AUTD3 driver"
 readme = "README.md"
-keywords = ["autd"]
+keywords = { workspace = true }
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
@@ -24,7 +24,7 @@ rayon = { workspace = true }
 itertools = { workspace = true }
 derive_more = { workspace = true, features = ["add", "deref", "deref_mut", "debug", "display", "mul", "into_iterator"] }
 tracing = { workspace = true }
-seq-macro.workspace = true
+seq-macro = { workspace = true }
 derive-new = { workspace = true }
 zerocopy = { workspace = true }
 

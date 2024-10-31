@@ -1,6 +1,6 @@
 # autd3-derive
 
-This crate provides Gain and Modulation derive macros.
+This crate provides Builder, Gain and Modulation derive macros.
 
 # Author
 
