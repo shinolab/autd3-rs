@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, mem::MaybeUninit};
 
 use super::{Gain, GainContextGenerator, GainOperationGenerator};
 use crate::derive::*;
@@ -13,61 +13,89 @@ impl GainContext for Box<dyn GainContext> {
     }
 }
 
-#[allow(clippy::type_complexity)]
-pub struct BoxedGainContextGenerator {
-    f: Box<dyn FnMut(&Device) -> Box<dyn GainContext>>,
+pub trait DGainContextGenerator {
+    fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainContext>;
 }
 
-impl GainContextGenerator for BoxedGainContextGenerator {
+pub struct DynGainContextGenerator {
+    g: Box<dyn DGainContextGenerator>,
+}
+
+impl GainContextGenerator for DynGainContextGenerator {
     type Context = Box<dyn GainContext>;
 
-    fn generate(&mut self, device: &Device) -> Self::Context {
-        (self.f)(device)
+    fn generate(&mut self, device: &Device) -> Box<dyn GainContext> {
+        self.g.dyn_generate(device)
     }
 }
 
-#[cfg(not(feature = "lightweight"))]
-type BoxedGen = Box<
-    dyn FnOnce(
-        &Geometry,
-        Option<HashMap<usize, BitVec<u32>>>,
-    ) -> Result<BoxedGainContextGenerator, AUTDInternalError>,
->;
-#[cfg(not(feature = "lightweight"))]
-type BoxedFmt = Box<dyn Fn(&mut std::fmt::Formatter<'_>) -> std::fmt::Result>;
-#[cfg(feature = "lightweight")]
-type BoxedGen = Box<
-    dyn FnOnce(
-            &Geometry,
-            Option<HashMap<usize, BitVec<u32>>>,
-        ) -> Result<BoxedGainContextGenerator, AUTDInternalError>
-        + Send
-        + Sync,
->;
-#[cfg(feature = "lightweight")]
-type BoxedFmt = Box<dyn Fn(&mut std::fmt::Formatter<'_>) -> std::fmt::Result + Send + Sync>;
+impl<Context: GainContext + 'static, G: GainContextGenerator<Context = Context>>
+    DGainContextGenerator for G
+{
+    fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainContext> {
+        Box::new(GainContextGenerator::generate(self, device))
+    }
+}
+
+pub trait DGain {
+    fn dyn_init_with_filter(
+        &mut self,
+        geometry: &Geometry,
+        filter: Option<HashMap<usize, BitVec<u32>>>,
+    ) -> Result<Box<dyn DGainContextGenerator>, AUTDInternalError>;
+    fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
+}
+
+impl<
+        G: DGainContextGenerator + 'static,
+        #[cfg(not(feature = "lightweight"))] T: Gain<G = G>,
+        #[cfg(feature = "lightweight")] T: Gain<G = G> + Send + Sync,
+    > DGain for MaybeUninit<T>
+{
+    fn dyn_init_with_filter(
+        &mut self,
+        geometry: &Geometry,
+        filter: Option<HashMap<usize, BitVec<u32>>>,
+    ) -> Result<Box<dyn DGainContextGenerator>, AUTDInternalError> {
+        let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
+        std::mem::swap(&mut tmp, self);
+        let g = unsafe { tmp.assume_init() };
+        Ok(Box::new(g.init_with_filter(geometry, filter)?) as _)
+    }
+
+    fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        unsafe { self.assume_init_ref() }.fmt(f)
+    }
+}
 
 #[derive(Gain)]
 pub struct BoxedGain {
-    dbg: BoxedFmt,
-    g: BoxedGen,
+    g: Box<dyn DGain>,
 }
+
+#[cfg(feature = "lightweight")]
+unsafe impl Send for BoxedGain {}
+#[cfg(feature = "lightweight")]
+unsafe impl Sync for BoxedGain {}
 
 impl std::fmt::Debug for BoxedGain {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        (self.dbg)(f)
+        self.g.as_ref().dyn_fmt(f)
     }
 }
 
 impl Gain for BoxedGain {
-    type G = BoxedGainContextGenerator;
+    type G = DynGainContextGenerator;
 
     fn init_with_filter(
         self,
         geometry: &Geometry,
         filter: Option<HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::G, AUTDInternalError> {
-        (self.g)(geometry, filter)
+        let Self { mut g } = self;
+        Ok(DynGainContextGenerator {
+            g: g.dyn_init_with_filter(geometry, filter)?,
+        })
     }
 }
 
@@ -75,55 +103,14 @@ pub trait IntoBoxedGain {
     fn into_boxed(self) -> BoxedGain;
 }
 
-#[cfg(not(feature = "lightweight"))]
-impl<G: Gain> IntoBoxedGain for G
-where
-    G: 'static,
+impl<
+        #[cfg(not(feature = "lightweight"))] G: Gain + 'static,
+        #[cfg(feature = "lightweight")] G: Gain + Send + Sync + 'static,
+    > IntoBoxedGain for G
 {
     fn into_boxed(self) -> BoxedGain {
-        let gain = std::rc::Rc::new(std::cell::RefCell::new(Some(self)));
         BoxedGain {
-            dbg: Box::new({
-                let gain = gain.clone();
-                move |f| gain.borrow().as_ref().unwrap().fmt(f)
-            }),
-            g: Box::new(
-                move |geometry: &Geometry, filter: Option<HashMap<usize, BitVec<u32>>>| {
-                    let mut f = gain.take().unwrap().init_with_filter(geometry, filter)?;
-                    Ok(BoxedGainContextGenerator {
-                        f: Box::new(move |dev| Box::new(f.generate(dev))),
-                    })
-                },
-            ),
-        }
-    }
-}
-
-#[cfg(feature = "lightweight")]
-impl<G: Gain> IntoBoxedGain for G
-where
-    G: Send + Sync + 'static,
-{
-    fn into_boxed(self) -> BoxedGain {
-        let gain = std::sync::Arc::new(std::sync::Mutex::new(Some(self)));
-        BoxedGain {
-            dbg: Box::new({
-                let gain = gain.clone();
-                move |f| gain.lock().unwrap().as_ref().unwrap().fmt(f)
-            }),
-            g: Box::new(
-                move |geometry: &Geometry, filter: Option<HashMap<usize, BitVec<u32>>>| {
-                    let mut f = gain
-                        .lock()
-                        .unwrap()
-                        .take()
-                        .unwrap()
-                        .init_with_filter(geometry, filter)?;
-                    Ok(BoxedGainContextGenerator {
-                        f: Box::new(move |dev| Box::new(f.generate(dev))),
-                    })
-                },
-            ),
+            g: Box::new(MaybeUninit::new(self)),
         }
     }
 }
@@ -191,7 +178,7 @@ pub mod tests {
             geometry
                 .devices()
                 .map(|dev| {
-                    let f = f.generate(dev);
+                    let f = GainContextGenerator::generate(&mut f, dev);
                     (dev.idx(), dev.iter().map(|tr| f.calc(tr)).collect())
                 })
                 .collect()
