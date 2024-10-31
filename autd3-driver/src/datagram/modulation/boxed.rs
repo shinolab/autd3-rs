@@ -1,34 +1,55 @@
+use std::mem::MaybeUninit;
+
 use autd3_derive::Modulation;
 
 use super::{Modulation, ModulationOperationGenerator, ModulationProperty};
 use crate::derive::*;
 
-#[cfg(not(feature = "lightweight"))]
-type BoxedFmt = Box<dyn Fn(&mut std::fmt::Formatter<'_>) -> std::fmt::Result>;
-#[cfg(feature = "lightweight")]
-type BoxedFmt = Box<dyn Fn(&mut std::fmt::Formatter<'_>) -> std::fmt::Result + Send + Sync>;
+pub trait DModulation {
+    fn dyn_calc(&mut self) -> Result<Vec<u8>, AUTDInternalError>;
+    fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
+}
+
+impl<
+        #[cfg(not(feature = "lightweight"))] T: Modulation,
+        #[cfg(feature = "lightweight")] T: Modulation + Send + Sync,
+    > DModulation for MaybeUninit<T>
+{
+    fn dyn_calc(&mut self) -> Result<Vec<u8>, AUTDInternalError> {
+        let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
+        std::mem::swap(&mut tmp, self);
+        let g = unsafe { tmp.assume_init() };
+        g.calc()
+    }
+
+    fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        unsafe { self.assume_init_ref() }.fmt(f)
+    }
+}
 
 #[derive(Modulation)]
 pub struct BoxedModulation {
-    dbg: BoxedFmt,
-    #[cfg(not(feature = "lightweight"))]
-    gen: Box<dyn FnOnce() -> Result<Vec<u8>, AUTDInternalError>>,
-    #[cfg(feature = "lightweight")]
-    gen: Box<dyn FnOnce() -> Result<Vec<u8>, AUTDInternalError> + Send + Sync>,
+    m: Box<dyn DModulation>,
     #[no_change]
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
 }
 
+#[cfg(feature = "lightweight")]
+unsafe impl Send for BoxedModulation {}
+#[cfg(feature = "lightweight")]
+unsafe impl Sync for BoxedModulation {}
+
 impl std::fmt::Debug for BoxedModulation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        (self.dbg)(f)
+        self.m.as_ref().dyn_fmt(f)
     }
 }
 
 impl Modulation for BoxedModulation {
     fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
-        (self.gen)()
+        let Self { mut m, .. } = self;
+        m.dyn_calc()
     }
 }
 
@@ -36,44 +57,18 @@ pub trait IntoBoxedModulation {
     fn into_boxed(self) -> BoxedModulation;
 }
 
-#[cfg(not(feature = "lightweight"))]
-impl<M: Modulation> IntoBoxedModulation for M
-where
-    M: 'static,
+impl<
+        #[cfg(not(feature = "lightweight"))] M: Modulation + 'static,
+        #[cfg(feature = "lightweight")] M: Modulation + Send + Sync + 'static,
+    > IntoBoxedModulation for M
 {
     fn into_boxed(self) -> BoxedModulation {
         let config = self.sampling_config();
         let loop_behavior = self.loop_behavior();
-        let m = std::rc::Rc::new(std::cell::RefCell::new(Some(self)));
         BoxedModulation {
-            dbg: Box::new({
-                let m = m.clone();
-                move |f| m.borrow().as_ref().unwrap().fmt(f)
-            }),
+            m: Box::new(MaybeUninit::new(self)),
             config,
             loop_behavior,
-            gen: Box::new(move || m.take().unwrap().calc()),
-        }
-    }
-}
-
-#[cfg(feature = "lightweight")]
-impl<M: Modulation> IntoBoxedModulation for M
-where
-    M: Send + Sync + 'static,
-{
-    fn into_boxed(self) -> BoxedModulation {
-        let config = self.sampling_config();
-        let loop_behavior = self.loop_behavior();
-        let m = std::sync::Arc::new(std::sync::Mutex::new(Some(self)));
-        BoxedModulation {
-            dbg: Box::new({
-                let m = m.clone();
-                move |f| m.lock().unwrap().as_ref().unwrap().fmt(f)
-            }),
-            config,
-            loop_behavior,
-            gen: Box::new(move || m.lock().unwrap().take().unwrap().calc()),
         }
     }
 }
