@@ -40,10 +40,6 @@ jobs:
           cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }}
           cd ..
 
-          cd autd3-link-soem
-          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }}
-          cd ..
-
           cd autd3-link-twincat
           cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }}
           cd ..
