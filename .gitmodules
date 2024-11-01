@@ -1,3 +1,6 @@
 [submodule "autd3-link-twincat/3rdparty/ADS"]
 	path = autd3-link-twincat/3rdparty/ADS
 	url = https://github.com/Beckhoff/ADS.git
+[submodule "tools/autd3_build_utils"]
+	path = tools/autd3_build_utils
+	url = https://github.com/shinolab/autd3_build_utils.git
