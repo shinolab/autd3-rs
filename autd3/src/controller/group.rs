@@ -90,6 +90,7 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
             parallel_threshold,
             ..
         } = self;
+        cnt.link.trace(timeout, parallel_threshold);
         cnt.timer
             .send(
                 &cnt.geometry,
