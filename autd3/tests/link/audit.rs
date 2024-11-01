@@ -1,4 +1,4 @@
-use std::{time::Duration, usize};
+use std::time::Duration;
 
 use autd3::{link::Audit, prelude::*};
 use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
