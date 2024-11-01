@@ -14,7 +14,7 @@ autd3-firmware-emulator = { workspace = true }
 autd3-driver = { workspace = true }
 num = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true, features = ["rt-multi-thread"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "time"] }
 derive_more = { workspace = true }
 tynm = { workspace = true }
 itertools = { workspace = true }
