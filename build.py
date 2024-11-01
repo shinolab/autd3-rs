@@ -1,101 +1,38 @@
 #!/usr/bin/env python3
 
 import argparse
-import contextlib
-import glob
 import os
-import platform
 import re
-import shutil
-import subprocess
 import sys
+from pathlib import Path
 from typing import Optional
 
-
-def fetch_submodule():
-    if shutil.which("git") is not None:
-        with working_dir(os.path.dirname(os.path.abspath(__file__))):
-            subprocess.run(
-                ["git", "submodule", "update", "--init", "--recursive"]
-            ).check_returncode()
-    else:
-        err("git is not installed. Skip fetching submodules.")
-
-
-def err(msg: str):
-    print("\033[91mERR \033[0m: " + msg)
+from tools.autd3_build_utils.autd3_build_utils import (
+    BaseConfig,
+    err,
+    fetch_submodule,
+    info,
+    rm_glob_f,
+    run_command,
+    with_env,
+    working_dir,
+)
 
 
-def warn(msg: str):
-    print("\033[93mWARN\033[0m: " + msg)
-
-
-def info(msg: str):
-    print("\033[92mINFO\033[0m: " + msg)
-
-
-def rm_f(path):
-    try:
-        os.remove(path)
-    except FileNotFoundError:
-        pass
-
-
-def glob_norm(path, recursive):
-    return [os.path.normpath(p) for p in glob.glob(path, recursive=recursive)]
-
-
-def rm_glob_f(path, exclude=None, recursive=True):
-    if exclude is not None:
-        for f in list(
-            set(glob_norm(path, recursive=recursive))
-            - set(glob_norm(exclude, recursive=recursive))
-        ):
-            rm_f(f)
-    else:
-        for f in glob.glob(path, recursive=recursive):
-            rm_f(f)
-
-
-@contextlib.contextmanager
-def working_dir(path):
-    cwd = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(cwd)
-
-
-@contextlib.contextmanager
-def with_env(**kwargs):
-    env = os.environ.copy()
-    for key, value in kwargs.items():
-        os.environ[key] = value
-    try:
-        yield
-    finally:
-        os.environ.clear()
-        os.environ.update(env)
-
-
-class Config:
-    _platform: str
+class Config(BaseConfig):
     release: bool
     target: Optional[str]
     no_examples: bool
     channel: Optional[str]
+    features: str
 
-    def __init__(self, args):
-        self._platform = platform.system()
-
-        if not self.is_windows() and not self.is_macos() and not self.is_linux():
-            err(f'platform "{platform.system()}" is not supported.')
-            sys.exit(-1)
+    def __init__(self, args) -> None:
+        super().__init__()
 
         self.release = hasattr(args, "release") and args.release
         self.no_examples = hasattr(args, "no_examples") and args.no_examples
         self.channel = hasattr(args, "channel") and args.channel
+        self.features = args.features if hasattr(args, "features") and args.features else ""
 
         if hasattr(args, "arch") and args.arch is not None:
             if self.is_linux():
@@ -123,7 +60,7 @@ class Config:
         else:
             self.target = None
 
-    def cargo_command_base(self, subcommands):
+    def cargo_command(self, subcommands: list[str]) -> list[str]:
         command = []
         if self.target is None:
             command.append("cargo")
@@ -139,40 +76,10 @@ class Config:
             command.append(self.target)
         if self.release:
             command.append("--release")
-        return command
-
-    def cargo_build_command(self, additional_features: Optional[str] = None):
-        command = self.cargo_command_base(["build"])
-        features = "remote"
-        if additional_features is not None:
-            features += " " + additional_features
+        features = self.features + " remote"
         command.append("--features")
         command.append(features)
         return command
-
-    def is_windows(self):
-        return self._platform == "Windows"
-
-    def is_macos(self):
-        return self._platform == "Darwin"
-
-    def is_linux(self):
-        return self._platform == "Linux"
-
-    def exe_ext(self):
-        return ".exe" if self.is_windows() else ""
-
-    def is_pcap_available(self):
-        if not self.is_windows():
-            return True
-        wpcap_exists = os.path.isfile(
-            "C:\\Windows\\System32\\wpcap.dll"
-        ) and os.path.isfile("C:\\Windows\\System32\\Npcap\\wpcap.dll")
-        packet_exists = os.path.isfile(
-            "C:\\Windows\\System32\\Packet.dll"
-        ) and os.path.isfile("C:\\Windows\\System32\\Npcap\\Packet.dll")
-
-        return wpcap_exists and packet_exists
 
     def setup_linker(self):
         if not self.is_linux() or self.target is None:
@@ -191,79 +98,60 @@ class Config:
 def rust_build(args):
     config = Config(args)
 
-    with working_dir("."):
-        command = config.cargo_build_command(args.features)
-        if config.no_examples:
-            command.append("--workspace")
-            command.append("--exclude")
-            command.append("autd3-examples")
-        subprocess.run(command).check_returncode()
+    command = config.cargo_command(["build"])
+    if config.no_examples:
+        command.append("--workspace")
+        command.append("--exclude")
+        command.append("autd3-examples")
+    run_command(command)
 
 
 def rust_lint(args):
     config = Config(args)
 
-    with working_dir("."):
-        command = config.cargo_build_command(args.features)
-        command[1] = "clippy"
-        command.append("--tests")
-        if config.no_examples:
-            command.append("--workspace")
-            command.append("--exclude")
-            command.append("autd3-examples")
-        command.append("--")
-        command.append("-D")
-        command.append("warnings")
-        subprocess.run(command).check_returncode()
+    command = config.cargo_command(["clippy"])
+    command.append("--tests")
+    if config.no_examples:
+        command.append("--workspace")
+        command.append("--exclude")
+        command.append("autd3-examples")
+    command.append("--")
+    command.append("-D")
+    command.append("warnings")
+    run_command(command)
 
 
 def rust_test(args):
     config = Config(args)
 
-    with working_dir("."):
+    if args.miri:
         with with_env(MIRIFLAGS="-Zmiri-disable-isolation"):
             miri_channel = args.channel if args.channel is not None else "nightly"
-            command = (
-                config.cargo_command_base(
-                    [f"+{miri_channel}", "miri", "nextest", "run"]
-                )
-                if args.miri
-                else config.cargo_command_base(["nextest", "run"])
-            )
-            features = "remote"
-            if args.features is not None:
-                features += " " + args.features
-            command.append("--features")
-            command.append(features)
-            command.append("--workspace")
+            command = config.cargo_command([f"+{miri_channel}", "miri", "nextest", "run"])
             command.append("--exclude")
-            command.append("autd3-examples")
-            if not config.is_pcap_available():
-                command.append("--exclude")
-                command.append("autd3-link-soem")
-
-            if args.miri:
-                command.append("--exclude")
-                command.append("autd3")
-                command.append("--exclude")
-                command.append("autd3-derive")
-                command.append("--exclude")
-                command.append("autd3-driver")
-                command.append("--exclude")
-                command.append("autd3-link-simulator")
-                command.append("--exclude")
-                command.append("autd3-link-twincat")
-                command.append("--exclude")
-                command.append("autd3-modulation-audio-file")
-
-            subprocess.run(command).check_returncode()
+            command.append("autd3")
+            command.append("--exclude")
+            command.append("autd3-derive")
+            command.append("--exclude")
+            command.append("autd3-driver")
+            command.append("--exclude")
+            command.append("autd3-link-simulator")
+            command.append("--exclude")
+            command.append("autd3-link-twincat")
+            command.append("--exclude")
+            command.append("autd3-modulation-audio-file")
+            run_command(command)
+    else:
+        command = config.cargo_command(["nextest", "run"])
+        command.append("--workspace")
+        command.append("--exclude")
+        command.append("autd3-examples")
+        run_command(command)
 
 
 def rust_run(args):
     examples = [
         "nop",
-        "soem",
-        "remote_soem",
         "twincat",
         "remote_twincat",
         "simulator",
@@ -274,14 +162,10 @@ def rust_run(args):
     if args.target not in examples:
         err(f'example "{args.target}" is not found.')
         info(f"Available examples: {examples}")
-        return -1
+        return sys.exit(-1)
 
-    features = ""
+    features: str
     match args.target:
-        case "soem":
-            features = "soem"
-        case "remote_soem":
-            features = "remote_soem"
         case "twincat":
             features = "twincat"
         case "remote_twincat":
@@ -292,9 +176,9 @@ def rust_run(args):
             features = "lightweight"
         case "lightweight_server":
             features = "lightweight-server"
-    features += " " + args.features if args.features is not None else ""
-
-    with working_dir("./examples"):
+    if args.features is not None:
+        features += " " + args.features
+    with working_dir("examples"):
         commands = ["cargo", "run"]
         if args.release:
             commands.append("--release")
@@ -304,112 +188,102 @@ def rust_run(args):
         if features is not None:
             commands.append("--features")
             commands.append(features)
-
-        subprocess.run(commands).check_returncode()
+        run_command(commands)
 
 
 def rust_clear(_):
-    with working_dir("."):
-        subprocess.run(["cargo", "clean"]).check_returncode()
+    run_command(["cargo", "clean"])
 
 
 def rust_coverage(args):
-    with working_dir("."):
-        with with_env(
-            RUSTFLAGS="-C instrument-coverage",
-            LLVM_PROFILE_FILE="%m-%p.profraw",
-        ):
-            features = "remote"
-            command = [
-                "cargo",
-                "build",
-                "--features",
-                features,
-                "--workspace",
-            ]
-            subprocess.run(command).check_returncode()
-            command[1] = "test"
-            subprocess.run(command).check_returncode()
+    config = Config(args)
 
-            command = [
-                "grcov",
-                ".",
-                "-s",
-                ".",
-                "--binary-path",
-                "./target/debug",
-                "--llvm",
-                "--branch",
-                "--ignore-not-existing",
-                "-o",
-                "./coverage",
-                "-t",
-                args.format,
-                "--excl-line",
-                r"GRCOV_EXCL_LINE|^\s*\.await;?$|#\[derive|#\[error|#\[bitfield_struct|unreachable!|unimplemented!|tracing::(debug|trace|info|warn|error)!\([\s\S]*\);",
-                "--keep-only",
-                "autd3/src/**/*.rs",
-                "--keep-only",
-                "autd3-driver/src/**/*.rs",
-                "--keep-only",
-                "autd3-firmware-emulator/src/**/*.rs",
-                "--keep-only",
-                "autd3-gain-holo/src/**/*.rs",
-                "--keep-only",
-                "autd3-modulation-audio-file/src/**/*.rs",
-                "--keep-only",
-                "autd3-protobuf/src/**/*.rs",
-                "--ignore",
-                "autd3-protobuf/src/pb/*.rs",
-                "--excl-start",
-                "GRCOV_EXCL_START",
-                "--excl-stop",
-                "GRCOV_EXCL_STOP",
-            ]
-            subprocess.run(command).check_returncode()
-            rm_glob_f("**/*.profraw")
+    with with_env(
+        RUSTFLAGS="-C instrument-coverage",
+        LLVM_PROFILE_FILE="%m-%p.profraw",
+    ):
+        command = config.cargo_command(["build"])
+        command.append("--workspace")
+
+        run_command(command)
+        command[1] = "test"
+        run_command(command)
+
+        command = [
+            "grcov",
+            ".",
+            "-s",
+            ".",
+            "--binary-path",
+            "./target/debug",
+            "--llvm",
+            "--branch",
+            "--ignore-not-existing",
+            "-o",
+            "./coverage",
+            "-t",
+            args.format,
+            "--excl-line",
+            r"GRCOV_EXCL_LINE|^\s*\.await;?$|#\[derive|#\[error|#\[bitfield_struct|unreachable!|unimplemented!|tracing::(debug|trace|info|warn|error)!\([\s\S]*\);",
+            "--keep-only",
+            "autd3/src/**/*.rs",
+            "--keep-only",
+            "autd3-driver/src/**/*.rs",
+            "--keep-only",
+            "autd3-firmware-emulator/src/**/*.rs",
+            "--keep-only",
+            "autd3-gain-holo/src/**/*.rs",
+            "--keep-only",
+            "autd3-modulation-audio-file/src/**/*.rs",
+            "--keep-only",
+            "autd3-protobuf/src/**/*.rs",
+            "--ignore",
+            "autd3-protobuf/src/pb/*.rs",
+            "--excl-start",
+            "GRCOV_EXCL_START",
+            "--excl-stop",
+            "GRCOV_EXCL_STOP",
+        ]
+        run_command(command)
+        rm_glob_f("**/*.profraw")
 
 
 def util_update_ver(args):
     version = args.version
 
-    with working_dir("."):
-        with open("Cargo.toml", "r") as f:
-            content = f.read()
-            content = re.sub(
-                r'^version = "(.*?)"',
-                f'version = "{version}"',
-                content,
-                flags=re.MULTILINE,
-            )
-            content = re.sub(
-                r'^autd3(.*)version = "(.*?)"',
-                f'autd3\\1version = "{version}"',
-                content,
-                flags=re.MULTILINE,
-            )
-        with open("Cargo.toml", "w") as f:
-            f.write(content)
+    with open("Cargo.toml", "r") as f:
+        content = f.read()
+        content = re.sub(
+            r'^version = "(.*?)"',
+            f'version = "{version}"',
+            content,
+            flags=re.MULTILINE,
+        )
+        content = re.sub(
+            r'^autd3(.*)version = "(.*?)"',
+            f'autd3\\1version = "{version}"',
+            content,
+            flags=re.MULTILINE,
+        )
+    with open("Cargo.toml", "w") as f:
+        f.write(content)
 
 
-def util_glob_unsafe(args):
-    with working_dir("."):
-        files = set(glob.glob("**/*.rs", recursive=True))
-        files -= set(glob.glob("**/tests/**/*.rs", recursive=True))
-        files -= set(glob.glob("autd3/**/*.rs", recursive=True))
-        files -= set(glob.glob("autd3-link-twincat/**/*.rs", recursive=True))
-        files -= set(glob.glob("autd3-link-soem/**/soem_bindings/*.rs", recursive=True))
-        files -= set(glob.glob("autd3-link-soem/**/link_soem.rs", recursive=True))
-        unsafe_files = []
-        for file_path in sorted(files):
-            with open(file_path) as file:
-                for line in file.readlines():
-                    if "unsafe" in line and "ignore miri" not in line:
-                        unsafe_files.append(file_path.replace("\\", "/"))
-                        break
-        with open("filelist-for-miri-test.txt", "w") as f:
-            for file in unsafe_files:
-                f.write(file + "\n")
+def util_glob_unsafe(_):
+    path = Path.cwd()
+    files = set(path.rglob("**/*.rs"))
+    files -= set(path.rglob("**/tests/**/*.rs"))
+    files -= set(path.rglob("autd3/**/*.rs"))
+    files -= set(path.rglob("autd3-link-twincat/**/*.rs"))
+    unsafe_files: list[str] = []
+    for file_path in sorted(files):
+        with open(file_path) as file:
+            for line in file.readlines():
+                if "unsafe" in line and "ignore miri" not in line:
+                    unsafe_files.append(str(file_path.absolute()))
+                    break
+    with open("filelist-for-miri-test.txt", "w") as f:
+        f.write("\n".join(str(file) for file in unsafe_files))
 
 
 def command_help(args):
@@ -425,27 +299,15 @@ if __name__ == "__main__":
 
         # build
         parser_build = subparsers.add_parser("build", help="see `build -h`")
-        parser_build.add_argument(
-            "--release", action="store_true", help="release build"
-        )
-        parser_build.add_argument(
-            "--arch", help="cross-compile for specific architecture (for Linux)"
-        )
-        parser_build.add_argument(
-            "--no-examples", action="store_true", help="skip building examples"
-        )
-        parser_build.add_argument(
-            "--features", help="additional features", default=None
-        )
+        parser_build.add_argument("--release", action="store_true", help="release build")
+        parser_build.add_argument("--arch", help="cross-compile for specific architecture (for Linux)")
+        parser_build.add_argument("--features", help="additional features", default=None)
         parser_build.set_defaults(handler=rust_build)
 
         # lint
         parser_lint = subparsers.add_parser("lint", help="see `lint -h`")
         parser_lint.add_argument("--release", action="store_true", help="release build")
         parser_lint.add_argument("--features", help="additional features", default=None)
-        parser_lint.add_argument(
-            "--no-examples", action="store_true", help="skip examples"
-        )
         parser_lint.set_defaults(handler=rust_lint)
 
         # test
@@ -469,10 +331,7 @@ if __name__ == "__main__":
 
         # coverage
         parser_cov = subparsers.add_parser("cov", help="see `cov -h`")
-        parser_cov.add_argument(
-            "--format", help="output format (lcov|html|markdown)", default="lcov"
-        )
-        parser_cov.add_argument("--open", action="store_true", help="open")
+        parser_cov.add_argument("--format", help="output format (lcov|html|markdown)", default="lcov")
         parser_cov.set_defaults(handler=rust_coverage)
 
         # util
@@ -480,16 +339,12 @@ if __name__ == "__main__":
         subparsers_util = parser_util.add_subparsers()
 
         # util update version
-        parser_util_upver = subparsers_util.add_parser(
-            "upver", help="see `util upver -h`"
-        )
+        parser_util_upver = subparsers_util.add_parser("upver", help="see `util upver -h`")
         parser_util_upver.add_argument("version", help="version")
         parser_util_upver.set_defaults(handler=util_update_ver)
 
         # enumerate file which contains unsafe codes
-        parser_glob_unsafe = subparsers_util.add_parser(
-            "glob_unsafe", help="see `util glob_unsafe -h`"
-        )
+        parser_glob_unsafe = subparsers_util.add_parser("glob_unsafe", help="see `util glob_unsafe -h`")
         parser_glob_unsafe.set_defaults(handler=util_glob_unsafe)
 
         # help
