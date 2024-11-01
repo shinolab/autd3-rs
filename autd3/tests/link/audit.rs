@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{time::Duration, usize};
 
 use autd3::{link::Audit, prelude::*};
 use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
@@ -7,10 +7,28 @@ use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
 async fn audit_test() -> anyhow::Result<()> {
     let mut autd = Controller::builder([AUTD3::new(Vector3::zeros())])
         .with_fallback_timeout(Duration::from_millis(100))
-        .open(Audit::builder())
+        .open_with_timeout(Audit::builder(), Duration::from_millis(10))
         .await?;
+    assert_eq!(Some(Duration::from_millis(10)), autd.link().last_timeout());
+    assert_eq!(Some(usize::MAX), autd.link().last_parallel_threshold());
     assert_eq!(Duration::from_millis(100), autd.timer().fallback_timeout());
     assert_eq!(0, autd.link()[0].idx());
+
+    {
+        autd.send(
+            Null::new()
+                .with_parallel_threshold(Some(1))
+                .with_timeout(Some(Duration::from_millis(20))),
+        )
+        .await?;
+        assert_eq!(Some(Duration::from_millis(20)), autd.link().last_timeout());
+        assert_eq!(Some(1), autd.link().last_parallel_threshold());
+
+        autd.send(Null::new().with_parallel_threshold(None).with_timeout(None))
+            .await?;
+        assert_eq!(None, autd.link().last_timeout());
+        assert_eq!(None, autd.link().last_parallel_threshold());
+    }
 
     {
         assert_eq!(vec![None], autd.fpga_state().await?);

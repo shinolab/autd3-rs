@@ -15,6 +15,10 @@ pub struct Audit {
     cpus: Vec<CPUEmulator>,
     down: bool,
     broken: bool,
+    #[get]
+    last_parallel_threshold: Option<usize>,
+    #[get]
+    last_timeout: Option<std::time::Duration>,
 }
 
 #[derive(Builder)]
@@ -59,6 +63,8 @@ impl LinkBuilder for AuditBuilder {
                 .collect(),
             down: self.down,
             broken: false,
+            last_parallel_threshold: None,
+            last_timeout: None,
         })
     }
 }
@@ -131,5 +137,10 @@ impl Link for Audit {
 
     fn is_open(&self) -> bool {
         self.is_open
+    }
+
+    fn trace(&mut self, timeout: Option<std::time::Duration>, parallel_threshold: Option<usize>) {
+        self.last_timeout = timeout;
+        self.last_parallel_threshold = parallel_threshold;
     }
 }

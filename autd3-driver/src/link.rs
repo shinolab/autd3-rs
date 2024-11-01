@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{
     error::AUTDInternalError,
     firmware::cpu::{RxMessage, TxMessage},
@@ -25,6 +27,8 @@ mod internal {
 
         #[must_use]
         fn is_open(&self) -> bool;
+
+        fn trace(&mut self, _: Option<Duration>, _: Option<usize>) {}
     }
 
     #[async_trait::async_trait]
@@ -55,6 +59,10 @@ mod internal {
         fn is_open(&self) -> bool {
             self.as_ref().is_open()
         }
+
+        fn trace(&mut self, timeout: Option<Duration>, parallel_threshold: Option<usize>) {
+            self.as_mut().trace(timeout, parallel_threshold)
+        }
     }
 }
 
@@ -84,6 +92,8 @@ mod internal {
 
         #[must_use]
         fn is_open(&self) -> bool;
+
+        fn trace(&mut self, _: Option<Duration>, _: Option<usize>) {}
     }
 
     pub trait LinkBuilder {

@@ -63,6 +63,7 @@ impl<L: Link> Controller<L> {
     pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDError> {
         let timeout = s.timeout();
         let parallel_threshold = s.parallel_threshold();
+        self.link.trace(timeout, parallel_threshold);
         let generator = s.operation_generator(&self.geometry)?;
         self.timer
             .send(
