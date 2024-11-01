@@ -74,6 +74,7 @@ class Config(BaseConfig):
                 command.extend(subcommands)
             command.append("--target")
             command.append(self.target)
+        command.append("--workspace")
         if self.release:
             command.append("--release")
         features = self.features + " remote"
@@ -100,7 +101,6 @@ def rust_build(args):
 
     command = config.cargo_command(["build"])
     if config.no_examples:
-        command.append("--workspace")
         command.append("--exclude")
         command.append("autd3-examples")
     run_command(command)
@@ -112,7 +112,6 @@ def rust_lint(args):
     command = config.cargo_command(["clippy"])
     command.append("--tests")
     if config.no_examples:
-        command.append("--workspace")
         command.append("--exclude")
         command.append("autd3-examples")
     command.append("--")
@@ -143,7 +142,6 @@ def rust_test(args):
             run_command(command)
     else:
         command = config.cargo_command(["nextest", "run"])
-        command.append("--workspace")
         command.append("--exclude")
         command.append("autd3-examples")
         run_command(command)
@@ -203,7 +201,6 @@ def rust_coverage(args):
         LLVM_PROFILE_FILE="%m-%p.profraw",
     ):
         command = config.cargo_command(["build"])
-        command.append("--workspace")
 
         run_command(command)
         command[1] = "test"
@@ -302,12 +299,14 @@ if __name__ == "__main__":
         parser_build.add_argument("--release", action="store_true", help="release build")
         parser_build.add_argument("--arch", help="cross-compile for specific architecture (for Linux)")
         parser_build.add_argument("--features", help="additional features", default=None)
+        parser_build.add_argument("--no-examples", action="store_true", help="skip examples")
         parser_build.set_defaults(handler=rust_build)
 
         # lint
         parser_lint = subparsers.add_parser("lint", help="see `lint -h`")
         parser_lint.add_argument("--release", action="store_true", help="release build")
         parser_lint.add_argument("--features", help="additional features", default=None)
+        parser_lint.add_argument("--no-examples", action="store_true", help="skip examples")
         parser_lint.set_defaults(handler=rust_lint)
 
         # test
