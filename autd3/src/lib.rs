@@ -21,9 +21,15 @@ mod tests {
     #[macro_export]
     macro_rules! assert_near_vector3 {
         ($a:expr, $b:expr) => {
-            approx::assert_abs_diff_eq!($a.x, $b.x, epsilon = 1e-3);
-            approx::assert_abs_diff_eq!($a.y, $b.y, epsilon = 1e-3);
-            approx::assert_abs_diff_eq!($a.z, $b.z, epsilon = 1e-3);
+            let x = ($a.x - $b.x).abs() > 1e-3;
+            let y = ($a.y - $b.y).abs() > 1e-3;
+            let z = ($a.z - $b.z).abs() > 1e-3;
+            if x || y || z {
+                panic!(
+                    "assertion failed: `(left ≈ right)`\n  left: `{:?}`,\n right: `{:?}`",
+                    $a, $b
+                );
+            }
         };
     }
 

@@ -3,7 +3,7 @@ pub use crate::{
     datagram::{
         gain::{Bessel, Focus, Group, IntoGainCache, Null, Plane, Uniform},
         modulation::{IntoFir, IntoModulationCache, IntoRadiationPressure, Sine, Square, Static},
-        stm::STMUtilsExt,
+        stm::{Circle, Line},
     },
     error::AUTDError,
     link::Nop,

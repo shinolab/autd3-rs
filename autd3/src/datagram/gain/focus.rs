@@ -1,5 +1,5 @@
 use autd3_driver::{
-    defined::rad,
+    defined::{rad, ControlPoint, ControlPoints},
     derive::*,
     firmware::fpga::{EmitIntensity, Phase},
     geometry::Vector3,
@@ -60,6 +60,13 @@ impl Gain for Focus {
         _filter: Option<HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::G, AUTDInternalError> {
         Ok(self)
+    }
+}
+
+impl From<Focus> for ControlPoints<1> {
+    fn from(value: Focus) -> Self {
+        ControlPoints::new([ControlPoint::new(value.pos).with_phase_offset(value.phase_offset)])
+            .with_intensity(value.intensity)
     }
 }
 
