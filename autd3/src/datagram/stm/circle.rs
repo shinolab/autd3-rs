@@ -115,7 +115,9 @@ mod tests {
             intensity: EmitIntensity::MAX,
         };
 
-        (expect.into_iter().zip(circle)).for_each(|(a, b)| {
+        let points = circle.into_iter().collect::<Vec<_>>();
+        assert_eq!(expect.len(), points.len());
+        (expect.into_iter().zip(points.into_iter())).for_each(|(a, b)| {
             assert_near_vector3!(&a, b.pos());
         });
     }
