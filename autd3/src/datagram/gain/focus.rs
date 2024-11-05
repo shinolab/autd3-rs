@@ -76,7 +76,6 @@ mod tests {
 
     use super::*;
     use rand::Rng;
-
     fn focus_check(
         g: Focus,
         pos: Vector3,
@@ -123,5 +122,24 @@ mod tests {
         focus_check(g, f, intensity, phase_offset, &geometry)?;
 
         Ok(())
+    }
+
+    #[test]
+    fn test_into_control_points() {
+        let mut rng = rand::thread_rng();
+
+        let f = random_vector3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
+        let intensity = EmitIntensity::new(rng.gen());
+        let phase_offset = Phase::new(rng.gen());
+        let g = Focus::new(f)
+            .with_intensity(intensity)
+            .with_phase_offset(phase_offset);
+
+        let p: ControlPoints<1> = g.into();
+
+        assert_eq!(1, p.len());
+        assert_eq!(&f, p[0].point());
+        assert_eq!(intensity, p.intensity());
+        assert_eq!(phase_offset, p[0].phase_offset());
     }
 }
