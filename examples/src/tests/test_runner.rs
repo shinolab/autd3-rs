@@ -1,4 +1,3 @@
-use colored::*;
 use std::io::{self, Write};
 
 use autd3::{driver::link::Link, prelude::*};
@@ -52,7 +51,7 @@ pub async fn run<L: Link>(mut autd: Controller<L>) -> anyhow::Result<()> {
             println!("[{}]: {}", i, name);
         });
         println!("[Others]: Finish");
-        print!("{}", "Choose number: ".green().bold());
+        color_print::cprint!("<green><bold>Choose number: ");
         io::stdout().flush()?;
 
         let mut s = String::new();
