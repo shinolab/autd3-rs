@@ -4,28 +4,29 @@ use thiserror::Error;
 
 use crate::{
     defined::{Freq, ULTRASOUND_FREQ, ULTRASOUND_PERIOD},
-    firmware::{cpu::GainSTMMode, fpga::*},
+    firmware::cpu::GainSTMMode,
+    firmware::fpga::*,
 };
 
 #[derive(Error, Debug, PartialEq, Clone)]
 #[non_exhaustive]
 pub enum AUTDInternalError {
     #[error(
-        "Modulation buffer size ({0}) is out of range ([{}, {}])",
-        MOD_BUF_SIZE_MIN,
-        MOD_BUF_SIZE_MAX
+        "Modulation buffer size ({0}) is out of range ([{min}, {max}])",
+        min = MOD_BUF_SIZE_MIN,
+        max = MOD_BUF_SIZE_MAX
     )]
     ModulationSizeOutOfRange(usize),
 
     #[error(
-        "Silencer completion time ({0:?}) must be a multiple of {:?}",
-        ULTRASOUND_PERIOD
+        "Silencer completion time ({0:?}) must be a multiple of {period:?}",
+        period = ULTRASOUND_PERIOD
     )]
     InvalidSilencerCompletionTime(Duration),
     #[error(
-        "Silencer completion time ({0:?}) is out of range ([{:?}, {:?}])",
-        ULTRASOUND_PERIOD,
-        ULTRASOUND_PERIOD * 256)]
+        "Silencer completion time ({0:?}) is out of range ([{min:?}, {max:?}])",
+        min = ULTRASOUND_PERIOD,
+        max = ULTRASOUND_PERIOD * 256)]
     SilencerCompletionTimeOutOfRange(Duration),
 
     #[error("Unknown group key: {0}")]
@@ -33,13 +34,13 @@ pub enum AUTDInternalError {
 
     #[error("Sampling division ({0}) must not be zero")]
     SamplingDivisionInvalid(u16),
-    #[error("Sampling frequency ({0:?}) must divide {:?}", ULTRASOUND_FREQ)]
+    #[error("Sampling frequency ({0:?}) must divide {period:?}", period = ULTRASOUND_FREQ)]
     SamplingFreqInvalid(Freq<u32>),
-    #[error("Sampling frequency ({0:?}) must divide {:?}", ULTRASOUND_FREQ)]
+    #[error("Sampling frequency ({0:?}) must divide {period:?}", period = ULTRASOUND_FREQ)]
     SamplingFreqInvalidF(Freq<f32>),
     #[error(
-        "Sampling period ({0:?}) must be a multiple of {:?}",
-        ULTRASOUND_PERIOD
+        "Sampling period ({0:?}) must be a multiple of {period:?}",
+        period = ULTRASOUND_PERIOD
     )]
     SamplingPeriodInvalid(Duration),
     #[error("Sampling frequency ({0:?}) is out of range ([{1:?}, {2:?}])")]
@@ -53,31 +54,31 @@ pub enum AUTDInternalError {
     STMPeriodInvalid(usize, Duration),
 
     #[error(
-        "FociSTM size ({0}) is out of range ([{}, {}])",
-        STM_BUF_SIZE_MIN,
-        FOCI_STM_BUF_SIZE_MAX
+        "FociSTM size ({0}) is out of range ([{min}, {max}])",
+        min = STM_BUF_SIZE_MIN,
+        max = FOCI_STM_BUF_SIZE_MAX
     )]
     FociSTMPointSizeOutOfRange(usize),
     #[error(
-        "Number of foci ({0}) is out of range ([{}, {}])",
-        1,
-        FOCI_STM_FOCI_NUM_MAX
+        "Number of foci ({0}) is out of range ([{min}, {max}])",
+        min = 1,
+        max = FOCI_STM_FOCI_NUM_MAX
     )]
     FociSTMNumFociOutOfRange(usize),
     #[error(
-        "Point coordinate ({0}, {1}, {2}) is out of range ([{}, {}], [{}, {}], [{}, {}])",
-        FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_LOWER_X as f32,
-        FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_UPPER_X as f32,
-        FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_LOWER_Y as f32,
-        FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_UPPER_Y as f32,
-        FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_LOWER_Z as f32,
-        FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_UPPER_Z as f32,
+        "Point coordinate ({0}, {1}, {2}) is out of range ([{x_min}, {x_max}], [{y_min}, {y_max}], [{z_min}, {z_max}])",
+        x_min = FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_LOWER_X as f32,
+        x_max = FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_UPPER_X as f32,
+        y_min = FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_LOWER_Y as f32,
+        y_max = FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_UPPER_Y as f32,
+        z_min = FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_LOWER_Z as f32,
+        z_max = FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_UPPER_Z as f32,
     )]
     FociSTMPointOutOfRange(f32, f32, f32),
     #[error(
-        "GainSTM size ({0}) is out of range ([{}, {}])",
-        STM_BUF_SIZE_MIN,
-        GAIN_STM_BUF_SIZE_MAX
+        "GainSTM size ({0}) is out of range ([{min}, {max}])",
+        min = STM_BUF_SIZE_MIN,
+        max = GAIN_STM_BUF_SIZE_MAX
     )]
     GainSTMSizeOutOfRange(usize),
 
