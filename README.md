@@ -8,8 +8,6 @@
 
 * See [examples](./examples)
 
-    * If you are using Linux/macOS, you may need to run as root.
-
 ## LICENSE
 
 * See [LICENSE](./LICENSE)
