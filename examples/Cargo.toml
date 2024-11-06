@@ -46,8 +46,7 @@ autd3-link-twincat = { workspace = true, optional = true }
 autd3-modulation-audio-file = { workspace = true }
 autd3-protobuf = { workspace = true, optional = true }
 colored = "2.0.0"
-tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
-async-std = "1.12.0"
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "io-util", "io-std"] }
 ctrlc-async = { version = "3.2.2", optional = true }
 tonic = { workspace = true, optional = true }
 tracing-subscriber = "0.3.18"
