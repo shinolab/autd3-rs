@@ -1,19 +1,23 @@
 use autd3_driver::utils::timer::TimerResolutionGurad;
 use spin_sleep::SpinSleeper;
 
-use derivative::Derivative;
-
 pub(crate) trait Sleeper {
     type Instant: super::instant::Instant;
 
     fn sleep_until(&self, deadline: Self::Instant) -> impl std::future::Future<Output = ()>;
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Derivative)]
-#[derivative(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StdSleeper {
-    #[derivative(Default(value = "Some(std::num::NonZeroU32::MIN)"))]
     pub timer_resolution: Option<std::num::NonZeroU32>,
+}
+
+impl Default for StdSleeper {
+    fn default() -> Self {
+        Self {
+            timer_resolution: Some(std::num::NonZeroU32::MIN),
+        }
+    }
 }
 
 impl Sleeper for StdSleeper {
@@ -33,11 +37,17 @@ impl Sleeper for SpinSleeper {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Derivative)]
-#[derivative(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AsyncSleeper {
-    #[derivative(Default(value = "Some(std::num::NonZeroU32::MIN)"))]
     pub timer_resolution: Option<std::num::NonZeroU32>,
+}
+
+impl Default for AsyncSleeper {
+    fn default() -> Self {
+        Self {
+            timer_resolution: Some(std::num::NonZeroU32::MIN),
+        }
+    }
 }
 
 impl Sleeper for AsyncSleeper {
