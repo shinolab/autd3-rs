@@ -2,6 +2,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
 };
+use tokio::io::AsyncBufReadExt;
 
 use autd3::{driver::link::Link, prelude::*};
 
@@ -10,7 +11,7 @@ pub async fn flag(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
 
     println!("press any key to force fan...");
     let mut _s = String::new();
-    async_std::io::stdin().read_line(&mut _s).await?;
+    std::io::stdin().read_line(&mut _s)?;
 
     autd.send(ForceFan::new(|_dev| true)).await?;
 
@@ -20,7 +21,9 @@ pub async fn flag(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
         let fin = fin.clone();
         async move {
             let mut _s = String::new();
-            async_std::io::stdin().read_line(&mut _s).await?;
+            tokio::io::BufReader::new(tokio::io::stdin())
+                .read_line(&mut _s)
+                .await?;
             fin.store(true, Ordering::Relaxed);
             std::io::Result::Ok(())
         }
