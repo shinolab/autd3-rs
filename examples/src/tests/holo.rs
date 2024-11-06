@@ -7,7 +7,6 @@ use autd3::{
 };
 use autd3_gain_holo::*;
 
-use colored::*;
 use std::io::{self, Write};
 
 pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
@@ -31,7 +30,7 @@ pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
         println!("[{}]: {}", i, name);
     });
     println!("[Others]: GSPAT");
-    print!("{}", "Choose number: ".green().bold());
+    color_print::cprint!("<green><bold>Choose number: ");
     io::stdout().flush()?;
 
     let mut s = String::new();
