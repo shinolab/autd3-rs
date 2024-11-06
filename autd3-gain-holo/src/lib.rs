@@ -16,5 +16,5 @@ pub use error::HoloError;
 pub use linear_synthesis::*;
 pub use nls::*;
 
-pub use amp::{dB, Amplitude, Pa};
+pub use amp::{dB, kPa, Amplitude, Pa};
 pub use autd3_driver::acoustics::directivity::{Sphere, T4010A1};
