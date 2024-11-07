@@ -19,7 +19,7 @@ impl FPGAEmulator {
         self.mem
             .duty_table_bram()
             .iter()
-            .flat_map(|&d| vec![(d & 0xFF) as u8, (d >> 8) as u8])
+            .flat_map(|&d| [(d & 0xFF) as u8, (d >> 8) as u8])
             .enumerate()
             .for_each(|(i, v)| dst[i] = v);
     }

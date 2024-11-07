@@ -128,8 +128,8 @@ impl<D: Directivity> Gain for Greedy<D> {
             .map(|dev| (dev.idx(), vec![Drive::NULL; dev.num_transducers()]))
             .collect();
         let mut cache = vec![Complex::new(0., 0.); self.foci.len()];
+        let mut tmp = vec![Complex::new(0., 0.); self.foci.len()];
         indices.iter().for_each(|&(dev_idx, idx)| {
-            let mut tmp = vec![Complex::new(0., 0.); self.foci.len()];
             Self::transfer_foci(
                 &geometry[dev_idx][idx],
                 geometry[dev_idx].wavenumber(),
