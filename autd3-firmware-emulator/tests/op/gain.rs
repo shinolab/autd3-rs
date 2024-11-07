@@ -46,7 +46,7 @@ impl GainContextGenerator for TestGain {
 impl Gain for TestGain {
     type G = Self;
 
-    fn init_with_filter(
+    fn init(
         self,
         _geometry: &Geometry,
         _filter: Option<HashMap<usize, BitVec<u32>>>,

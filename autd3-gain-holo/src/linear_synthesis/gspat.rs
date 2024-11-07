@@ -49,7 +49,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> GSPAT<D, B> {
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for GSPAT<D, B> {
     type G = HoloContextGenerator<Complex>;
 
-    fn init_with_filter(
+    fn init(
         self,
         geometry: &Geometry,
         filter: Option<HashMap<usize, BitVec<u32>>>,
@@ -127,7 +127,8 @@ mod tests {
 
     #[test]
     fn test_gspat_all() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)],4);
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], 4);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = GSPAT::new(
@@ -144,7 +145,7 @@ mod tests {
 
         assert_eq!(
             g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
-                .init(&geometry)
+                .init(&geometry, None)
                 .map(|mut res| {
                     let f = res.generate(&geometry[0]);
                     geometry[0]
@@ -158,7 +159,8 @@ mod tests {
 
     #[test]
     fn test_gspat_filtered() {
-        let geometry: Geometry = Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)],4);
+        let geometry: Geometry =
+            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], 4);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = GSPAT::new(
@@ -176,7 +178,7 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
         assert_eq!(
-            g.init_with_filter(&geometry, Some(filter)).map(|mut res| {
+            g.init(&geometry, Some(filter)).map(|mut res| {
                 let f = res.generate(&geometry[0]);
                 geometry[0]
                     .iter()

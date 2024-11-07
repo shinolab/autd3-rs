@@ -75,7 +75,7 @@ impl GainContextGenerator for Focus {
 impl Gain for Focus {
     type G = Focus;
 
-    fn init_with_filter(
+    fn init(
         self,
         _geometry: &Geometry,
         _filter: Option<HashMap<usize, BitVec<u32>>>,

@@ -99,7 +99,7 @@ impl<G: GainContextGenerator> GainSTMOperationGenerator<G> {
         Ok(Self {
             g: gains
                 .into_iter()
-                .map(|gain| gain.init(geometry))
+                .map(|gain| gain.init(geometry, None))
                 .collect::<Result<Vec<_>, AUTDInternalError>>()?,
             mode,
             config,

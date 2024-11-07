@@ -43,7 +43,7 @@ impl<G: Gain> IntoCache<G> for G {
 impl<G: Gain> Cache<G> {
     pub fn init(&self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
         if let Some(gain) = self.gain.take() {
-            let mut f = gain.init(geometry)?;
+            let mut f = gain.init(geometry, None)?;
             geometry
                 .devices()
                 .filter(|dev| !self.cache.borrow().contains_key(&dev.idx()))
@@ -98,7 +98,7 @@ impl<G: Gain> GainContextGenerator for Cache<G> {
 impl<G: Gain> Gain for Cache<G> {
     type G = Self;
 
-    fn init_with_filter(
+    fn init(
         self,
         geometry: &Geometry,
         _filter: Option<HashMap<usize, BitVec<u32>>>,
@@ -131,8 +131,8 @@ mod tests {
         let cache = gain.clone().with_cache();
 
         assert!(cache.cache().is_empty());
-        let mut gg = gain.init(&geometry)?;
-        let mut gc = cache.init(&geometry)?;
+        let mut gg = gain.init(&geometry, None)?;
+        let mut gc = cache.init(&geometry, None)?;
         geometry.devices().try_for_each(|dev| {
             let gf = gg.generate(dev);
             let cf = gc.generate(dev);
@@ -151,7 +151,7 @@ mod tests {
         let gain = Uniform::new(Drive::NULL);
         let cache = gain.with_cache();
 
-        cache.clone().init(&geometry)?;
+        cache.clone().init(&geometry, None)?;
 
         geometry[1].enable = false;
 
@@ -159,7 +159,7 @@ mod tests {
             Some(AUTDInternalError::GainError(
                 "Cache is initialized with different geometry".to_string()
             )),
-            cache.init(&geometry).err()
+            cache.init(&geometry, None).err()
         );
 
         Ok(())
@@ -189,7 +189,7 @@ mod tests {
     impl Gain for CacheTestGain {
         type G = CacheTestGain;
 
-        fn init_with_filter(
+        fn init(
             self,
             _geometry: &Geometry,
             _filter: Option<HashMap<usize, BitVec<u32>>>,
@@ -210,9 +210,9 @@ mod tests {
         .with_cache();
 
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
-        let _ = gain.clone().init(&geometry);
+        let _ = gain.clone().init(&geometry, None);
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
-        let _ = gain.init(&geometry);
+        let _ = gain.init(&geometry, None);
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
     }
 
@@ -228,9 +228,9 @@ mod tests {
 
             assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
-            let _ = gain.clone().init(&geometry);
+            let _ = gain.clone().init(&geometry, None);
             assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
-            let _ = gain.init(&geometry);
+            let _ = gain.init(&geometry, None);
             assert_eq!(2, calc_cnt.load(Ordering::Relaxed));
         }
 
@@ -247,11 +247,11 @@ mod tests {
             assert_eq!(2, gain.count());
             assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
-            let _ = g2.clone().init(&geometry);
+            let _ = g2.clone().init(&geometry, None);
             assert_eq!(2, gain.count());
             assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
 
-            let _ = g2.init(&geometry);
+            let _ = g2.init(&geometry, None);
             assert_eq!(1, gain.count());
             assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
         }

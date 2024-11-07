@@ -127,7 +127,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for LM<D, B> {
     type G = HoloContextGenerator<f32>;
 
-    fn init_with_filter(
+    fn init(
         self,
         geometry: &Geometry,
         filter: Option<HashMap<usize, BitVec<u32>>>,
@@ -303,7 +303,7 @@ mod tests {
 
         assert_eq!(
             g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
-                .init(&geometry)
+                .init(&geometry, None)
                 .map(|mut res| {
                     let f = res.generate(&geometry[0]);
                     geometry[0]
@@ -341,7 +341,7 @@ mod tests {
             .take(1)
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
-        let mut g = g.init_with_filter(&geometry, Some(filter)).unwrap();
+        let mut g = g.init(&geometry, Some(filter)).unwrap();
         assert_eq!(
             {
                 let f = g.generate(&geometry[0]);

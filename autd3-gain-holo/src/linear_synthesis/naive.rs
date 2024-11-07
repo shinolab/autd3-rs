@@ -45,7 +45,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Naive<D, B> {
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {
     type G = HoloContextGenerator<Complex>;
 
-    fn init_with_filter(
+    fn init(
         self,
         geometry: &Geometry,
         filter: Option<HashMap<usize, BitVec<u32>>>,
@@ -103,7 +103,7 @@ mod tests {
 
         assert_eq!(
             g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
-                .init(&geometry)
+                .init(&geometry, None)
                 .map(|mut res| {
                     let f = res.generate(&geometry[0]);
                     geometry[0]
@@ -134,7 +134,7 @@ mod tests {
 
         let mut g = g
             .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
-            .init(&geometry)?;
+            .init(&geometry, None)?;
         let f = g.generate(&geometry[1]);
         assert_eq!(
             geometry[1]
@@ -167,7 +167,7 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect();
         assert_eq!(
-            g.init_with_filter(&geometry, Some(filter)).map(|mut res| {
+            g.init(&geometry, Some(filter)).map(|mut res| {
                 let f = res.generate(&geometry[0]);
                 geometry[0]
                     .iter()
@@ -201,7 +201,7 @@ mod tests {
             .collect();
         let mut g = g
             .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
-            .init_with_filter(&geometry, Some(filter))?;
+            .init(&geometry, Some(filter))?;
         let f = g.generate(&geometry[1]);
         assert_eq!(
             geometry[1]
