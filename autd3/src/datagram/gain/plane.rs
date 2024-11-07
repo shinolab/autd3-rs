@@ -53,7 +53,7 @@ impl GainContextGenerator for Plane {
 impl Gain for Plane {
     type G = Plane;
 
-    fn init_with_filter(
+    fn init(
         self,
         _geometry: &Geometry,
         _filter: Option<HashMap<usize, BitVec<u32>>>,
@@ -81,7 +81,7 @@ mod tests {
         assert_eq!(intensity, g.intensity());
         assert_eq!(phase_offset, g.phase_offset());
 
-        let mut b = g.init(geometry)?;
+        let mut b = g.init(geometry, None)?;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {

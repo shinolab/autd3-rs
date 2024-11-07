@@ -27,7 +27,7 @@ impl GainContextGenerator for MyUniform {
 impl Gain for MyUniform {
     type G = MyUniform;
 
-    fn init_with_filter(
+    fn init(
         self,
         _geometry: &Geometry,
         _filter: Option<HashMap<usize, BitVec<u32>>>,

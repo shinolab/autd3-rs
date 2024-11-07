@@ -25,7 +25,7 @@ impl GainContextGenerator for Uniform {
 impl Gain for Uniform {
     type G = Uniform;
 
-    fn init_with_filter(
+    fn init(
         self,
         _geometry: &Geometry,
         _filter: Option<HashMap<usize, BitVec<u32>>>,
@@ -55,7 +55,7 @@ mod tests {
         assert_eq!(intensity, g.drive().intensity());
         assert_eq!(phase, g.drive().phase());
 
-        let mut b = g.init(&geometry)?;
+        let mut b = g.init(&geometry, None)?;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
