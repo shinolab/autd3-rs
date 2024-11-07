@@ -48,7 +48,7 @@ pub struct HoloContext<T: IntoDrive + Copy + Send + Sync + 'static> {
             nalgebra::VecStorage<T, nalgebra::Dyn, nalgebra::U1>,
         >,
     >,
-    map: Either<Vec<Option<usize>>, usize>,
+    map: Either<Option<Vec<Option<usize>>>, usize>,
     max_coefficient: f32,
     constraint: EmissionConstraint,
 }
@@ -56,18 +56,19 @@ pub struct HoloContext<T: IntoDrive + Copy + Send + Sync + 'static> {
 impl<T: IntoDrive + Copy + Send + Sync + 'static> GainContext for HoloContext<T> {
     fn calc(&self, tr: &Transducer) -> Drive {
         match &self.map {
-            Either::Left(map) => {
-                if let Some(idx) = map[tr.idx()] {
-                    let x = self.q[idx];
-                    let phase = x.into_phase();
-                    let intensity = self
-                        .constraint
-                        .convert(x.into_intensity(), self.max_coefficient);
-                    Drive::new(phase, intensity)
-                } else {
-                    Drive::NULL
-                }
-            }
+            Either::Left(map) => map
+                .as_ref()
+                .and_then(|map| {
+                    map[tr.idx()].map(|idx| {
+                        let x = self.q[idx];
+                        let phase = x.into_phase();
+                        let intensity = self
+                            .constraint
+                            .convert(x.into_intensity(), self.max_coefficient);
+                        Drive::new(phase, intensity)
+                    })
+                })
+                .unwrap_or(Drive::NULL),
             Either::Right(base_idx) => {
                 let x = self.q[base_idx + tr.idx()];
                 let phase = x.into_phase();
@@ -90,7 +91,7 @@ pub struct HoloContextGenerator<T: IntoDrive + Copy + Send + Sync + 'static> {
             nalgebra::VecStorage<T, nalgebra::Dyn, nalgebra::U1>,
         >,
     >,
-    map: Either<HashMap<usize, Vec<Option<usize>>>, HashMap<usize, usize>>,
+    map: Either<HashMap<usize, Option<Vec<Option<usize>>>>, HashMap<usize, usize>>,
     max_coefficient: f32,
     constraint: EmissionConstraint,
 }
@@ -141,22 +142,19 @@ where
                     .scan(0usize, |state, dev| {
                         Some((
                             dev.idx(),
-                            filter
-                                .get(&dev.idx())
-                                .map(|filter| {
-                                    dev.iter()
-                                        .map(|tr| {
-                                            if filter[tr.idx()] {
-                                                let r = *state;
-                                                *state += 1;
-                                                Some(r)
-                                            } else {
-                                                None
-                                            }
-                                        })
-                                        .collect::<Vec<_>>()
-                                })
-                                .unwrap_or(vec![None; dev.num_transducers()]),
+                            filter.get(&dev.idx()).map(|filter| {
+                                dev.iter()
+                                    .map(|tr| {
+                                        if filter[tr.idx()] {
+                                            let r = *state;
+                                            *state += 1;
+                                            Some(r)
+                                        } else {
+                                            None
+                                        }
+                                    })
+                                    .collect::<Vec<_>>()
+                            }),
                         ))
                     })
                     .collect(),
