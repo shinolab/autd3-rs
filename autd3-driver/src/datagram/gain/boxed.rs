@@ -38,7 +38,7 @@ impl<Context: GainContext + 'static, G: GainContextGenerator<Context = Context>>
 }
 
 pub trait DGain {
-    fn dyn_init_with_filter(
+    fn dyn_init(
         &mut self,
         geometry: &Geometry,
         filter: Option<HashMap<usize, BitVec<u32>>>,
@@ -52,7 +52,7 @@ impl<
         #[cfg(feature = "lightweight")] T: Gain<G = G> + Send + Sync,
     > DGain for MaybeUninit<T>
 {
-    fn dyn_init_with_filter(
+    fn dyn_init(
         &mut self,
         geometry: &Geometry,
         filter: Option<HashMap<usize, BitVec<u32>>>,
@@ -60,7 +60,7 @@ impl<
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
         let g = unsafe { tmp.assume_init() };
-        Ok(Box::new(g.init_with_filter(geometry, filter)?) as _)
+        Ok(Box::new(g.init(geometry, filter)?) as _)
     }
 
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -87,14 +87,14 @@ impl std::fmt::Debug for BoxedGain {
 impl Gain for BoxedGain {
     type G = DynGainContextGenerator;
 
-    fn init_with_filter(
+    fn init(
         self,
         geometry: &Geometry,
         filter: Option<HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::G, AUTDInternalError> {
         let Self { mut g } = self;
         Ok(DynGainContextGenerator {
-            g: g.dyn_init_with_filter(geometry, filter)?,
+            g: g.dyn_init(geometry, filter)?,
         })
     }
 }
@@ -172,7 +172,7 @@ pub mod tests {
             &geometry,
         )
         .into_boxed();
-        let mut f = g.init(&geometry)?;
+        let mut f = g.init(&geometry, None)?;
         assert_eq!(
             expect,
             geometry

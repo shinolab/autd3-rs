@@ -87,7 +87,7 @@ impl GainContextGenerator for ContextGenerator {
 impl<D: Directivity> Gain for Greedy<D> {
     type G = ContextGenerator;
 
-    fn init_with_filter(
+    fn init(
         self,
         geometry: &Geometry,
         filter: Option<HashMap<usize, BitVec<u32>>>,
@@ -182,7 +182,7 @@ mod tests {
         );
 
         assert_eq!(
-            g.init(&geometry).map(|mut res| {
+            g.init(&geometry, None).map(|mut res| {
                 let f = res.generate(&geometry[0]);
                 geometry[0]
                     .iter()
@@ -206,7 +206,7 @@ mod tests {
 
         let g = Greedy::<Sphere>::new([(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)]);
 
-        let mut g = g.init(&geometry)?;
+        let mut g = g.init(&geometry, None)?;
         let f = g.generate(&geometry[1]);
         assert_eq!(
             geometry[1]
@@ -235,7 +235,7 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
         assert_eq!(
-            g.init_with_filter(&geometry, Some(filter)).map(|mut res| {
+            g.init(&geometry, Some(filter)).map(|mut res| {
                 let f = res.generate(&geometry[0]);
                 geometry[0]
                     .iter()
@@ -264,7 +264,7 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
 
-        let mut g = g.init_with_filter(&geometry, Some(filter))?;
+        let mut g = g.init(&geometry, Some(filter))?;
         let f = g.generate(&geometry[1]);
         assert_eq!(
             geometry[1]

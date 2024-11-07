@@ -103,7 +103,7 @@ where
 {
     type G = ContextGenerator;
 
-    fn init_with_filter(
+    fn init(
         self,
         geometry: &Geometry,
         _filter: Option<HashMap<usize, BitVec<u32>>>,
@@ -126,7 +126,7 @@ where
                 let filter = filters
                     .remove(&k)
                     .ok_or(AUTDInternalError::UnkownKey(format!("{:?}", k)))?;
-                let mut g = g.init_with_filter(geometry, Some(filter))?;
+                let mut g = g.init(geometry, Some(filter))?;
                 Ok((
                     k.clone(),
                     geometry
@@ -211,7 +211,7 @@ mod tests {
         .set("test", g1)
         .set("test2", g2);
 
-        let mut g = gain.init(&geometry)?;
+        let mut g = gain.init(&geometry, None)?;
         let drives = geometry
             .devices()
             .map(|dev| {
@@ -277,7 +277,7 @@ mod tests {
         .set("test", g1)
         .set("test2", g2);
 
-        let mut g = gain.init(&geometry)?;
+        let mut g = gain.init(&geometry, None)?;
         let drives = geometry
             .devices()
             .map(|dev| {
@@ -336,7 +336,7 @@ mod tests {
 
         assert_eq!(
             Some(AUTDInternalError::UnkownKey("\"test2\"".to_owned())),
-            gain.init(&geometry).err()
+            gain.init(&geometry, None).err()
         );
     }
 }

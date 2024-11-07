@@ -23,13 +23,7 @@ pub trait GainContextGenerator {
 pub trait Gain: std::fmt::Debug {
     type G: GainContextGenerator;
 
-    fn init(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError>
-    where
-        Self: Sized,
-    {
-        self.init_with_filter(geometry, None)
-    }
-    fn init_with_filter(
+    fn init(
         self,
         geometry: &Geometry,
         filter: Option<HashMap<usize, BitVec<u32>>>,
@@ -50,7 +44,7 @@ impl<G: GainContextGenerator> GainOperationGenerator<G> {
         transition: Option<TransitionMode>,
     ) -> Result<Self, AUTDInternalError> {
         Ok(Self {
-            generator: gain.init(geometry)?,
+            generator: gain.init(geometry, None)?,
             segment,
             transition,
         })
@@ -128,7 +122,7 @@ pub mod tests {
     impl Gain for TestGain {
         type G = Self;
 
-        fn init_with_filter(
+        fn init(
             self,
             _geometry: &Geometry,
             _filter: Option<HashMap<usize, BitVec<u32>>>,
@@ -186,7 +180,7 @@ pub mod tests {
             },
             &geometry,
         );
-        let mut f = g.init(&geometry)?;
+        let mut f = g.init(&geometry, None)?;
         assert_eq!(
             expect,
             geometry
