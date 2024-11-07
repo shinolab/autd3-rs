@@ -53,7 +53,7 @@ impl AUTD3 {
 
 impl IntoDevice for AUTD3 {
     fn into_device(self, dev_idx: u16) -> Device {
-        tracing::debug!("[{}]: Configure AUTD3 device {:?}", dev_idx, self);
+        tracing::debug!("Configure device[{}]: {:?}", dev_idx, self);
         let rot_mat: Matrix4 = From::from(self.rotation);
         let trans_mat = rot_mat.append_translation(&self.position);
         Device::new(
