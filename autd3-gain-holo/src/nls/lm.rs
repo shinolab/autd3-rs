@@ -130,11 +130,11 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for LM<D, B> {
     fn init(
         self,
         geometry: &Geometry,
-        filter: Option<HashMap<usize, BitVec<u32>>>,
+        filter: Option<&HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::G, AUTDInternalError> {
         let g = self
             .backend
-            .generate_propagation_matrix(geometry, &self.foci, &filter)?;
+            .generate_propagation_matrix(geometry, &self.foci, filter)?;
 
         let n = self.backend.cols_c(&g)?;
         let m = self.foci.len();
@@ -341,7 +341,7 @@ mod tests {
             .take(1)
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
-        let mut g = g.init(&geometry, Some(filter)).unwrap();
+        let mut g = g.init(&geometry, Some(&filter)).unwrap();
         assert_eq!(
             {
                 let f = g.generate(&geometry[0]);

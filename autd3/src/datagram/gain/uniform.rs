@@ -28,7 +28,7 @@ impl Gain for Uniform {
     fn init(
         self,
         _geometry: &Geometry,
-        _filter: Option<HashMap<usize, BitVec<u32>>>,
+        _filter: Option<&HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::G, AUTDInternalError> {
         Ok(self)
     }

@@ -30,7 +30,7 @@ pub fn gen_random_foci<const N: usize>(num: usize) -> Vec<ControlPoints<N>> {
     (0..num)
         .map(|_| {
             ControlPoints::new([0; N].map(|_| {
-                ControlPoint::new(Vector3::new(
+                ControlPoint::from(Vector3::new(
                     rng.gen_range(-100.0 * mm..100.0 * mm),
                     rng.gen_range(-100.0 * mm..100.0 * mm),
                     rng.gen_range(-100.0 * mm..100.0 * mm),

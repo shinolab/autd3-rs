@@ -1,5 +1,5 @@
 use autd3_driver::{
-    defined::{rad, ControlPoint, ControlPoints},
+    defined::rad,
     derive::*,
     firmware::fpga::{EmitIntensity, Phase},
     geometry::Vector3,
@@ -21,10 +21,10 @@ pub struct Focus {
 }
 
 pub struct Context {
-    pos: Vector3,
-    intensity: EmitIntensity,
-    phase_offset: Phase,
-    wavenumber: f32,
+    pub(crate) pos: Vector3,
+    pub(crate) intensity: EmitIntensity,
+    pub(crate) phase_offset: Phase,
+    pub(crate) wavenumber: f32,
 }
 
 impl GainContext for Context {
@@ -57,16 +57,9 @@ impl Gain for Focus {
     fn init(
         self,
         _geometry: &Geometry,
-        _filter: Option<HashMap<usize, BitVec<u32>>>,
+        _filter: Option<&HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::G, AUTDInternalError> {
         Ok(self)
-    }
-}
-
-impl From<Focus> for ControlPoints<1> {
-    fn from(value: Focus) -> Self {
-        ControlPoints::new([ControlPoint::new(value.pos).with_phase_offset(value.phase_offset)])
-            .with_intensity(value.intensity)
     }
 }
 
@@ -122,24 +115,5 @@ mod tests {
         focus_check(g, f, intensity, phase_offset, &geometry)?;
 
         Ok(())
-    }
-
-    #[test]
-    fn test_into_control_points() {
-        let mut rng = rand::thread_rng();
-
-        let f = random_vector3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
-        let intensity = EmitIntensity::new(rng.gen());
-        let phase_offset = Phase::new(rng.gen());
-        let g = Focus::new(f)
-            .with_intensity(intensity)
-            .with_phase_offset(phase_offset);
-
-        let p: ControlPoints<1> = g.into();
-
-        assert_eq!(1, p.len());
-        assert_eq!(&f, p[0].point());
-        assert_eq!(intensity, p.intensity());
-        assert_eq!(phase_offset, p[0].phase_offset());
     }
 }

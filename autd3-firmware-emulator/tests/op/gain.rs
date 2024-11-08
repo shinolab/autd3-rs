@@ -49,7 +49,7 @@ impl Gain for TestGain {
     fn init(
         self,
         _geometry: &Geometry,
-        _filter: Option<HashMap<usize, BitVec<u32>>>,
+        _filter: Option<&HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::G, AUTDInternalError> {
         Ok(self)
     }
@@ -147,7 +147,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
         &mut cpu,
         FociSTM::new(
             SamplingConfig::FREQ_MIN,
-            (0..2).map(|_| ControlPoint::new(Vector3::zeros())),
+            (0..2).map(|_| ControlPoint::from(Vector3::zeros())),
         )?
         .with_segment(Segment::S0, Some(TransitionMode::Immediate)),
         &geometry,

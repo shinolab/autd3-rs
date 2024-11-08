@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use super::sampling_config::*;
 use crate::{
     datagram::*,
@@ -8,14 +6,69 @@ use crate::{
     firmware::operation::FociSTMOp,
 };
 
+pub use crate::firmware::operation::FociSTMContext;
+
 use derive_more::{Deref, DerefMut};
 use silencer::WithSampling;
 
+#[allow(clippy::len_without_is_empty)]
+pub trait FociSTMContextGenerator<const N: usize>: std::fmt::Debug {
+    type Context: FociSTMContext<N>;
+    fn generate(&mut self, device: &Device) -> Self::Context;
+    fn len(&self) -> usize;
+}
+
+pub struct VecFociSTMContext<const N: usize> {
+    foci: Arc<Vec<ControlPoints<N>>>,
+    i: usize,
+}
+
+impl<const N: usize> FociSTMContext<N> for VecFociSTMContext<N> {
+    fn next(&mut self) -> ControlPoints<N> {
+        let p = self.foci[self.i].clone();
+        self.i += 1;
+        p
+    }
+}
+
+impl<const N: usize> FociSTMContextGenerator<N> for Arc<Vec<ControlPoints<N>>> {
+    type Context = VecFociSTMContext<N>;
+
+    fn generate(&mut self, _: &Device) -> Self::Context {
+        Self::Context {
+            foci: self.clone(),
+            i: 0,
+        }
+    }
+
+    fn len(&self) -> usize {
+        Vec::len(self)
+    }
+}
+
+pub trait FociSTMGenerator<const N: usize> {
+    type G: FociSTMContextGenerator<N>;
+
+    fn into(self) -> Self::G;
+}
+
+impl<const N: usize, C, T> FociSTMGenerator<N> for T
+where
+    T: IntoIterator<Item = C>,
+    ControlPoints<N>: From<C>,
+{
+    type G = Arc<Vec<ControlPoints<N>>>;
+
+    fn into(self) -> Self::G {
+        Arc::new(self.into_iter().map(ControlPoints::from).collect())
+    }
+}
+
 #[derive(Clone, Builder, Deref, DerefMut, Debug)]
-pub struct FociSTM<const N: usize> {
+pub struct FociSTM<const N: usize, G: FociSTMContextGenerator<N>> {
     #[deref]
     #[deref_mut]
-    control_points: Vec<ControlPoints<N>>,
+    gen: G,
     #[get]
     #[set]
     loop_behavior: LoopBehavior,
@@ -23,7 +76,7 @@ pub struct FociSTM<const N: usize> {
     sampling_config: SamplingConfig,
 }
 
-impl<const N: usize> WithSampling for FociSTM<N> {
+impl<const N: usize, G: FociSTMContextGenerator<N>> WithSampling for FociSTM<N, G> {
     fn sampling_config_intensity(&self) -> Option<SamplingConfig> {
         Some(self.sampling_config)
     }
@@ -33,76 +86,64 @@ impl<const N: usize> WithSampling for FociSTM<N> {
     }
 }
 
-impl<const N: usize> FociSTM<N> {
-    pub fn new<C, F: IntoIterator<Item = C>>(
+impl<const N: usize, G: FociSTMContextGenerator<N>> FociSTM<N, G> {
+    pub fn new(
         config: impl Into<STMConfig>,
-        control_points: F,
-    ) -> Result<Self, AUTDInternalError>
-    where
-        ControlPoints<N>: From<C>,
-    {
-        Self::new_from_sampling_config(config.into(), control_points)
+        iter: impl FociSTMGenerator<N, G = G>,
+    ) -> Result<Self, AUTDInternalError> {
+        Self::new_from_sampling_config(config.into(), iter)
     }
 
-    pub fn new_nearest<C, F: IntoIterator<Item = C>>(
+    pub fn new_nearest(
         config: impl Into<STMConfigNearest>,
-        control_points: F,
-    ) -> Result<Self, AUTDInternalError>
-    where
-        ControlPoints<N>: From<C>,
-    {
-        Self::new_from_sampling_config(config.into(), control_points)
+        iter: impl FociSTMGenerator<N, G = G>,
+    ) -> Result<Self, AUTDInternalError> {
+        Self::new_from_sampling_config(config.into(), iter)
     }
 
-    fn new_from_sampling_config<T, C, F: IntoIterator<Item = C>>(
+    fn new_from_sampling_config<T>(
         config: T,
-        control_points: F,
+        iter: impl FociSTMGenerator<N, G = G>,
     ) -> Result<Self, AUTDInternalError>
     where
-        ControlPoints<N>: From<C>,
         SamplingConfig: TryFrom<(T, usize), Error = AUTDInternalError>,
     {
-        let control_points: Vec<_> = control_points
-            .into_iter()
-            .map(ControlPoints::from)
-            .collect();
-        if control_points.is_empty() {
-            return Err(AUTDInternalError::FociSTMPointSizeOutOfRange(
-                control_points.len(),
-            ));
-        }
+        let gen = iter.into();
         Ok(Self {
-            sampling_config: (config, control_points.len()).try_into()?,
-            control_points,
+            sampling_config: (config, gen.len()).try_into()?,
+            gen,
             loop_behavior: LoopBehavior::infinite(),
         })
     }
 
     pub fn freq(&self) -> Freq<f32> {
-        self.sampling_config().freq() / self.control_points.len() as f32
+        self.sampling_config().freq() / self.gen.len() as f32
     }
 
     pub fn period(&self) -> Duration {
-        self.sampling_config().period() * self.control_points.len() as u32
+        self.sampling_config().period() * self.gen.len() as u32
     }
 }
 
-pub struct FociSTMOperationGenerator<const N: usize> {
-    g: Arc<Vec<ControlPoints<N>>>,
+pub struct FociSTMOperationGenerator<const N: usize, G: FociSTMContextGenerator<N>> {
+    gen: G,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
 }
 
-impl<const N: usize> OperationGenerator for FociSTMOperationGenerator<N> {
-    type O1 = FociSTMOp<N>;
+impl<const N: usize, G: FociSTMContextGenerator<N>> OperationGenerator
+    for FociSTMOperationGenerator<N, G>
+{
+    type O1 = FociSTMOp<N, G::Context>;
     type O2 = NullOp;
 
-    fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
+    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
         (
             Self::O1::new(
-                self.g.clone(),
+                self.gen.generate(device),
+                self.gen.len(),
                 self.config,
                 self.loop_behavior,
                 self.segment,
@@ -113,8 +154,8 @@ impl<const N: usize> OperationGenerator for FociSTMOperationGenerator<N> {
     }
 }
 
-impl<const N: usize> DatagramS for FociSTM<N> {
-    type G = FociSTMOperationGenerator<N>;
+impl<const N: usize, G: FociSTMContextGenerator<N>> DatagramS for FociSTM<N, G> {
+    type G = FociSTMOperationGenerator<N, G>;
 
     fn operation_generator_with_segment(
         self,
@@ -123,7 +164,7 @@ impl<const N: usize> DatagramS for FociSTM<N> {
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, AUTDInternalError> {
         Ok(FociSTMOperationGenerator {
-            g: Arc::new(self.control_points),
+            gen: self.gen,
             config: self.sampling_config,
             loop_behavior: self.loop_behavior,
             segment,
@@ -132,7 +173,7 @@ impl<const N: usize> DatagramS for FociSTM<N> {
     }
 
     fn parallel_threshold(&self) -> Option<usize> {
-        if self.control_points.len() * N >= 4000 {
+        if self.gen.len() * N >= 4000 {
             None
         } else {
             Some(usize::MAX)
@@ -155,7 +196,6 @@ mod tests {
     #[case((10. * Hz).try_into(), 1.*Hz, 10)]
     #[case((20. * Hz).try_into(), 2.*Hz, 10)]
     #[case((2. * 0.49*Hz).try_into(), 0.49*Hz, 2)]
-    #[case(Err(AUTDInternalError::FociSTMPointSizeOutOfRange(0)), 1.*Hz, 0)]
     fn from_freq(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] freq: Freq<f32>,

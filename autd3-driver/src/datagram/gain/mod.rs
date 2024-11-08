@@ -26,7 +26,7 @@ pub trait Gain: std::fmt::Debug {
     fn init(
         self,
         geometry: &Geometry,
-        filter: Option<HashMap<usize, BitVec<u32>>>,
+        filter: Option<&HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::G, AUTDInternalError>;
 }
 
@@ -125,7 +125,7 @@ pub mod tests {
         fn init(
             self,
             _geometry: &Geometry,
-            _filter: Option<HashMap<usize, BitVec<u32>>>,
+            _filter: Option<&HashMap<usize, BitVec<u32>>>,
         ) -> Result<Self::G, AUTDInternalError> {
             Ok(self)
         }

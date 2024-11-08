@@ -343,7 +343,7 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
         let transition_mode = TransitionMode::Ext;
         let d = FociSTM::new(
             SamplingConfig::new(freq_div).unwrap(),
-            (0..2).map(|_| ControlPoint::new(Vector3::zeros())),
+            (0..2).map(|_| ControlPoint::from(Vector3::zeros())),
         )?
         .with_loop_behavior(loop_behaviour)
         .with_segment(segment, Some(transition_mode));

@@ -90,14 +90,14 @@ impl<D: Directivity> Gain for Greedy<D> {
     fn init(
         self,
         geometry: &Geometry,
-        filter: Option<HashMap<usize, BitVec<u32>>>,
+        filter: Option<&HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::G, AUTDInternalError> {
         let phase_candidates = (0..self.phase_div.get())
             .map(|i| Complex::new(0., 2.0 * PI * i as f32 / self.phase_div.get() as f32).exp())
             .collect::<Vec<_>>();
 
         let indices = {
-            let mut indices: Vec<_> = if let Some(filter) = &filter {
+            let mut indices: Vec<_> = if let Some(filter) = filter {
                 geometry
                     .devices()
                     .filter_map(|dev| {
@@ -235,7 +235,7 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
         assert_eq!(
-            g.init(&geometry, Some(filter)).map(|mut res| {
+            g.init(&geometry, Some(&filter)).map(|mut res| {
                 let f = res.generate(&geometry[0]);
                 geometry[0]
                     .iter()
@@ -264,7 +264,7 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
 
-        let mut g = g.init(&geometry, Some(filter))?;
+        let mut g = g.init(&geometry, Some(&filter))?;
         let f = g.generate(&geometry[1]);
         assert_eq!(
             geometry[1]

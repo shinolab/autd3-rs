@@ -1,11 +1,11 @@
-mod bessel;
-mod cache;
-mod custom;
-mod focus;
-mod group;
-mod null;
-mod plane;
-mod uniform;
+pub mod bessel;
+pub mod cache;
+pub mod custom;
+pub(crate) mod focus;
+pub mod group;
+pub mod null;
+pub mod plane;
+pub mod uniform;
 
 pub use bessel::Bessel;
 pub use cache::Cache as GainCache;

@@ -1,3 +1,5 @@
+use std::iter::Peekable;
+
 use super::sampling_config::*;
 use crate::{
     datagram::*,
@@ -6,14 +8,97 @@ use crate::{
     firmware::{cpu::GainSTMMode, operation::GainSTMOp},
 };
 
+pub use crate::firmware::operation::GainSTMContext;
+
 use derive_more::{Deref, DerefMut};
 use silencer::WithSampling;
 
-#[derive(Builder, Clone, Deref, DerefMut, Debug)]
-pub struct GainSTM<G: Gain> {
+pub trait GainSTMContextGenerator {
+    type Gain: GainContextGenerator;
+    type Context: GainSTMContext<Context = <Self::Gain as GainContextGenerator>::Context>;
+
+    fn generate(&mut self, device: &Device) -> Self::Context;
+}
+
+pub struct VecGainSTMContext<G: GainContext> {
+    gains: Peekable<std::vec::IntoIter<G>>,
+}
+
+impl<G: GainContext> GainSTMContext for VecGainSTMContext<G> {
+    type Context = G;
+
+    fn next(&mut self) -> Option<Self::Context> {
+        self.gains.next()
+    }
+}
+
+impl<G: GainContextGenerator> GainSTMContextGenerator for Vec<G> {
+    type Gain = G;
+    type Context = VecGainSTMContext<G::Context>;
+
+    fn generate(&mut self, device: &Device) -> Self::Context {
+        Self::Context {
+            gains: self
+                .iter_mut()
+                .map(|g| g.generate(device))
+                .collect::<Vec<_>>()
+                .into_iter()
+                .peekable(),
+        }
+    }
+}
+
+#[allow(clippy::len_without_is_empty)]
+pub trait GainSTMInitializer: std::fmt::Debug {
+    type T: GainSTMContextGenerator;
+
+    fn init(
+        self,
+        geometry: &Geometry,
+        filter: Option<&HashMap<usize, BitVec<u32>>>,
+    ) -> Result<Self::T, AUTDInternalError>;
+    fn len(&self) -> usize;
+}
+
+impl<G: Gain> GainSTMInitializer for Vec<G> {
+    type T = Vec<G::G>;
+
+    fn init(
+        self,
+        geometry: &Geometry,
+        filter: Option<&HashMap<usize, BitVec<u32>>>,
+    ) -> Result<Self::T, AUTDInternalError> {
+        self.into_iter()
+            .map(|g| g.init(geometry, filter))
+            .collect::<Result<Vec<_>, _>>()
+    }
+    fn len(&self) -> usize {
+        self.len()
+    }
+}
+
+pub trait GainSTMGenerator {
+    type I: GainSTMInitializer;
+
+    fn into(self) -> Self::I;
+}
+
+impl<G: Gain, T> GainSTMGenerator for T
+where
+    T: IntoIterator<Item = G>,
+{
+    type I = Vec<G>;
+
+    fn into(self) -> Self::I {
+        self.into_iter().collect()
+    }
+}
+
+#[derive(Builder, Clone, Debug, Deref, DerefMut)]
+pub struct GainSTM<I: GainSTMInitializer> {
     #[deref]
     #[deref_mut]
-    gains: Vec<G>,
+    initializer: I,
     #[get]
     #[set]
     loop_behavior: LoopBehavior,
@@ -22,9 +107,10 @@ pub struct GainSTM<G: Gain> {
     #[get]
     #[set]
     mode: GainSTMMode,
+    size: usize,
 }
 
-impl<G: Gain> WithSampling for GainSTM<G> {
+impl<I: GainSTMInitializer> WithSampling for GainSTM<I> {
     fn sampling_config_intensity(&self) -> Option<SamplingConfig> {
         Some(self.sampling_config)
     }
@@ -34,51 +120,51 @@ impl<G: Gain> WithSampling for GainSTM<G> {
     }
 }
 
-impl<G: Gain> GainSTM<G> {
-    pub fn new<F: IntoIterator<Item = G>>(
+impl<I: GainSTMInitializer> GainSTM<I> {
+    pub fn new<G: GainSTMGenerator<I = I>>(
         config: impl Into<STMConfig>,
-        gains: F,
+        iter: G,
     ) -> Result<Self, AUTDInternalError> {
-        Self::new_from_sampling_config(config.into(), gains)
+        Self::new_from_sampling_config(config.into(), iter)
     }
 
-    pub fn new_nearest<F: IntoIterator<Item = G>>(
+    pub fn new_nearest<G: GainSTMGenerator<I = I>>(
         config: impl Into<STMConfigNearest>,
-        gains: F,
+        iter: G,
     ) -> Result<Self, AUTDInternalError> {
-        Self::new_from_sampling_config(config.into(), gains)
+        Self::new_from_sampling_config(config.into(), iter)
     }
 
-    fn new_from_sampling_config<T, F: IntoIterator<Item = G>>(
-        config: T,
-        gains: F,
+    fn new_from_sampling_config<S, G: GainSTMGenerator<I = I>>(
+        config: S,
+        iter: G,
     ) -> Result<Self, AUTDInternalError>
     where
-        SamplingConfig: TryFrom<(T, usize), Error = AUTDInternalError>,
+        SamplingConfig: TryFrom<(S, usize), Error = AUTDInternalError>,
     {
-        let gains = gains.into_iter().collect::<Vec<_>>();
-        if gains.is_empty() {
-            return Err(AUTDInternalError::GainSTMSizeOutOfRange(gains.len()));
-        }
+        let initializer = iter.into();
+        let size = initializer.len();
         Ok(Self {
-            sampling_config: (config, gains.len()).try_into()?,
-            gains,
+            initializer,
+            sampling_config: (config, size).try_into()?,
             loop_behavior: LoopBehavior::infinite(),
             mode: GainSTMMode::PhaseIntensityFull,
+            size,
         })
     }
 
     pub fn freq(&self) -> Freq<f32> {
-        self.sampling_config().freq() / self.gains.len() as f32
+        self.sampling_config().freq() / self.initializer.len() as f32
     }
 
     pub fn period(&self) -> Duration {
-        self.sampling_config().period() * self.gains.len() as u32
+        self.sampling_config().period() * self.initializer.len() as u32
     }
 }
 
-pub struct GainSTMOperationGenerator<G: GainContextGenerator> {
-    g: Vec<G>,
+pub struct GainSTMOperationGenerator<T: GainSTMContextGenerator> {
+    g: T,
+    size: usize,
     mode: GainSTMMode,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
@@ -86,43 +172,15 @@ pub struct GainSTMOperationGenerator<G: GainContextGenerator> {
     transition_mode: Option<TransitionMode>,
 }
 
-impl<G: GainContextGenerator> GainSTMOperationGenerator<G> {
-    fn new<T: Gain<G = G>>(
-        gains: Vec<T>,
-        geometry: &Geometry,
-        mode: GainSTMMode,
-        config: SamplingConfig,
-        loop_behavior: LoopBehavior,
-        segment: Segment,
-        transition_mode: Option<TransitionMode>,
-    ) -> Result<Self, AUTDInternalError> {
-        Ok(Self {
-            g: gains
-                .into_iter()
-                .map(|gain| gain.init(geometry, None))
-                .collect::<Result<Vec<_>, AUTDInternalError>>()?,
-            mode,
-            config,
-            loop_behavior,
-            segment,
-            transition_mode,
-        })
-    }
-}
-
-impl<G: GainContextGenerator> OperationGenerator for GainSTMOperationGenerator<G> {
-    type O1 = GainSTMOp<G::Context>;
+impl<T: GainSTMContextGenerator> OperationGenerator for GainSTMOperationGenerator<T> {
+    type O1 = GainSTMOp<<T::Gain as GainContextGenerator>::Context, T::Context>;
     type O2 = NullOp;
 
     fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
-        let d = self
-            .g
-            .iter_mut()
-            .map(|g| g.generate(device))
-            .collect::<Vec<_>>();
         (
             Self::O1::new(
-                d,
+                self.g.generate(device),
+                self.size,
                 self.mode,
                 self.config,
                 self.loop_behavior,
@@ -134,8 +192,8 @@ impl<G: GainContextGenerator> OperationGenerator for GainSTMOperationGenerator<G
     }
 }
 
-impl<G: Gain> DatagramS for GainSTM<G> {
-    type G = GainSTMOperationGenerator<G::G>;
+impl<I: GainSTMInitializer> DatagramS for GainSTM<I> {
+    type G = GainSTMOperationGenerator<I::T>;
 
     fn operation_generator_with_segment(
         self,
@@ -143,19 +201,20 @@ impl<G: Gain> DatagramS for GainSTM<G> {
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, AUTDInternalError> {
-        let sampling_config = self.sampling_config;
+        let size = self.size;
+        let config = self.sampling_config;
         let loop_behavior = self.loop_behavior;
         let mode = self.mode;
-        let gains = self.gains;
-        GainSTMOperationGenerator::new(
-            gains,
-            geometry,
+        let initializer = self.initializer;
+        Ok(GainSTMOperationGenerator {
+            g: initializer.init(geometry, None)?,
+            size,
+            config,
             mode,
-            sampling_config,
             loop_behavior,
             segment,
             transition_mode,
-        )
+        })
     }
 
     fn parallel_threshold(&self) -> Option<usize> {
@@ -176,7 +235,6 @@ mod tests {
     #[case((10. * Hz).try_into(), 1.*Hz, 10)]
     #[case((20. * Hz).try_into(), 2.*Hz, 10)]
     #[case((2. * 0.49*Hz).try_into(), 0.49*Hz, 2)]
-    #[case(Err(AUTDInternalError::GainSTMSizeOutOfRange(0)), 1.*Hz, 0)]
     fn from_freq(
         #[case] expect: Result<SamplingConfig, AUTDInternalError>,
         #[case] freq: Freq<f32>,

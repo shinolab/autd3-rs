@@ -41,7 +41,7 @@ pub trait DGain {
     fn dyn_init(
         &mut self,
         geometry: &Geometry,
-        filter: Option<HashMap<usize, BitVec<u32>>>,
+        filter: Option<&HashMap<usize, BitVec<u32>>>,
     ) -> Result<Box<dyn DGainContextGenerator>, AUTDInternalError>;
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
@@ -55,7 +55,7 @@ impl<
     fn dyn_init(
         &mut self,
         geometry: &Geometry,
-        filter: Option<HashMap<usize, BitVec<u32>>>,
+        filter: Option<&HashMap<usize, BitVec<u32>>>,
     ) -> Result<Box<dyn DGainContextGenerator>, AUTDInternalError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
@@ -90,7 +90,7 @@ impl Gain for BoxedGain {
     fn init(
         self,
         geometry: &Geometry,
-        filter: Option<HashMap<usize, BitVec<u32>>>,
+        filter: Option<&HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::G, AUTDInternalError> {
         let Self { mut g } = self;
         Ok(DynGainContextGenerator {

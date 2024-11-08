@@ -127,7 +127,7 @@ pub(crate) fn generate_result<T>(
     >,
     max_coefficient: f32,
     constraint: EmissionConstraint,
-    filter: Option<HashMap<usize, BitVec<u32>>>,
+    filter: Option<&HashMap<usize, BitVec<u32>>>,
 ) -> Result<HoloContextGenerator<T>, AUTDInternalError>
 where
     T: IntoDrive + Copy + Send + Sync + 'static,
