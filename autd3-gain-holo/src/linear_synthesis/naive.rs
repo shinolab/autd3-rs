@@ -48,11 +48,11 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {
     fn init(
         self,
         geometry: &Geometry,
-        filter: Option<HashMap<usize, BitVec<u32>>>,
+        filter: Option<&HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::G, AUTDInternalError> {
         let g = self
             .backend
-            .generate_propagation_matrix(geometry, &self.foci, &filter)?;
+            .generate_propagation_matrix(geometry, &self.foci, filter)?;
 
         let m = self.foci.len();
         let n = self.backend.cols_c(&g)?;
@@ -167,7 +167,7 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect();
         assert_eq!(
-            g.init(&geometry, Some(filter)).map(|mut res| {
+            g.init(&geometry, Some(&filter)).map(|mut res| {
                 let f = res.generate(&geometry[0]);
                 geometry[0]
                     .iter()
@@ -201,7 +201,7 @@ mod tests {
             .collect();
         let mut g = g
             .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
-            .init(&geometry, Some(filter))?;
+            .init(&geometry, Some(&filter))?;
         let f = g.generate(&geometry[1]);
         assert_eq!(
             geometry[1]

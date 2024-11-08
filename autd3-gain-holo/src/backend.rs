@@ -32,7 +32,7 @@ pub trait LinAlgBackend<D: Directivity> {
         &self,
         geometry: &Geometry,
         foci: &[Vector3],
-        filter: &Option<HashMap<usize, BitVec<u32>>>,
+        filter: Option<&HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::MatrixXc, HoloError>;
 
     fn alloc_v(&self, size: usize) -> Result<Self::VectorX, HoloError>;

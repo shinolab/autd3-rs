@@ -24,14 +24,17 @@ pub struct Device {
     y_direction: Vector3,
     #[get(ref)]
     axial_direction: Vector3,
-    inv: nalgebra::Rotation<f32, 3>,
+    #[get(ref)]
+    inv: nalgebra::Isometry3<f32>,
     #[get(ref)]
     aabb: Aabb<f32, 3>,
 }
 
 impl Device {
     fn init(&mut self) {
-        self.inv = self.rotation.inverse().to_rotation_matrix();
+        self.inv = (nalgebra::Translation3::<f32>::from(*self.transducers[0].position())
+            * self.rotation)
+            .inverse();
         self.x_direction = Self::get_direction(Vector3::x(), &self.rotation);
         self.y_direction = Self::get_direction(Vector3::y(), &self.rotation);
         self.axial_direction = if cfg!(feature = "left_handed") {
@@ -57,7 +60,7 @@ impl Device {
             x_direction: Vector3::zeros(),
             y_direction: Vector3::zeros(),
             axial_direction: Vector3::zeros(),
-            inv: nalgebra::Rotation::identity(),
+            inv: nalgebra::Isometry3::identity(),
             aabb: Aabb::empty(),
         };
         dev.init();
@@ -78,10 +81,6 @@ impl Device {
             .map(|tr| tr.position())
             .sum::<Vector3>()
             / self.transducers.len() as f32
-    }
-
-    pub fn to_local(&self, p: &Vector3) -> Vector3 {
-        self.inv * (p - self.transducers[0].position())
     }
 
     pub fn translate_to(&mut self, t: Vector3) {
@@ -143,6 +142,7 @@ impl IntoDevice for Device {
 
 #[cfg(test)]
 pub mod tests {
+    use nalgebra::Point3;
     use rand::Rng;
 
     use super::*;
@@ -218,14 +218,14 @@ pub mod tests {
         Vector3::new(10., 20., 30.),
         UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.)
     )]
-    fn to_local(
+    fn inv(
         #[case] expected: Vector3,
         #[case] target: Vector3,
         #[case] origin: Vector3,
         #[case] rot: UnitQuaternion,
     ) {
         let device = AUTD3::new(origin).with_rotation(rot).into_device(0);
-        assert_approx_eq_vec3!(expected, device.to_local(&target));
+        assert_approx_eq_vec3!(expected, device.inv.transform_point(&Point3::from(target)));
     }
 
     #[test]

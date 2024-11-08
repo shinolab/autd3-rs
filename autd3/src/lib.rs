@@ -21,13 +21,15 @@ mod tests {
     #[macro_export]
     macro_rules! assert_near_vector3 {
         ($a:expr, $b:expr) => {
-            let x = ($a.x - $b.x).abs() > 1e-3;
-            let y = ($a.y - $b.y).abs() > 1e-3;
-            let z = ($a.z - $b.z).abs() > 1e-3;
+            let aa = $a;
+            let bb = $b;
+            let x = (aa.x - bb.x).abs() > 1e-3;
+            let y = (aa.y - bb.y).abs() > 1e-3;
+            let z = (aa.z - bb.z).abs() > 1e-3;
             if x || y || z {
                 panic!(
                     "assertion failed: `(left ≈ right)`\n  left: `{:?}`,\n right: `{:?}`",
-                    $a, $b
+                    aa, bb
                 );
             }
         };

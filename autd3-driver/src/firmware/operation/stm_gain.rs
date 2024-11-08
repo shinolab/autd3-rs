@@ -1,6 +1,6 @@
 #![allow(clippy::type_complexity)]
 
-use std::{iter::Peekable, mem::size_of};
+use std::mem::size_of;
 
 use crate::{
     derive::{LoopBehavior, SamplingConfig},
@@ -74,8 +74,15 @@ struct GainSTMSubseq {
     flag: GainSTMControlFlags,
 }
 
-pub struct GainSTMOp<Context: GainContext> {
-    gains: Peekable<std::vec::IntoIter<Context>>,
+pub trait GainSTMContext: Send + Sync {
+    type Context: GainContext;
+
+    fn next(&mut self) -> Option<Self::Context>;
+}
+
+pub struct GainSTMOp<G: GainContext, Context: GainSTMContext<Context = G>> {
+    context: Context,
+    size: usize,
     sent: usize,
     is_done: bool,
     mode: GainSTMMode,
@@ -85,9 +92,10 @@ pub struct GainSTMOp<Context: GainContext> {
     transition_mode: Option<TransitionMode>,
 }
 
-impl<Context: GainContext> GainSTMOp<Context> {
+impl<G: GainContext, Context: GainSTMContext<Context = G>> GainSTMOp<G, Context> {
     pub(crate) fn new(
-        gains: Vec<Context>,
+        context: Context,
+        size: usize,
         mode: GainSTMMode,
         config: SamplingConfig,
         loop_behavior: LoopBehavior,
@@ -95,7 +103,8 @@ impl<Context: GainContext> GainSTMOp<Context> {
         transition_mode: Option<TransitionMode>,
     ) -> Self {
         Self {
-            gains: gains.into_iter().peekable(),
+            context,
+            size,
             sent: 0,
             is_done: false,
             mode,
@@ -107,7 +116,7 @@ impl<Context: GainContext> GainSTMOp<Context> {
     }
 }
 
-impl<Context: GainContext> Operation for GainSTMOp<Context> {
+impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTMOp<G, Context> {
     fn required_size(&self, device: &Device) -> usize {
         if self.sent == 0 {
             size_of::<GainSTMHead>() + device.num_transducers() * size_of::<Drive>()
@@ -129,7 +138,7 @@ impl<Context: GainContext> Operation for GainSTMOp<Context> {
             let mut send = 0;
             match self.mode {
                 GainSTMMode::PhaseIntensityFull => {
-                    if let Some(g) = self.gains.next() {
+                    if let Some(g) = self.context.next() {
                         tx[offset..]
                             .chunks_mut(size_of::<Drive>())
                             .zip(device.iter())
@@ -142,7 +151,7 @@ impl<Context: GainContext> Operation for GainSTMOp<Context> {
                 GainSTMMode::PhaseFull => {
                     seq_macro::seq!(N in 0..2 {
                         #(
-                            if let Some(g) = self.gains.next() {
+                            if let Some(g) = self.context.next() {
                                 tx[offset..].chunks_exact_mut(size_of::<PhaseFull>()).zip(device.iter()).for_each(|(dst, tr)| {
                                     PhaseFull::mut_from_bytes(dst).unwrap().phase_~N = g.calc(tr).phase().value();
                                 });
@@ -154,7 +163,7 @@ impl<Context: GainContext> Operation for GainSTMOp<Context> {
                 GainSTMMode::PhaseHalf => {
                     seq_macro::seq!(N in 0..4 {
                         #(
-                            if let Some(g) = self.gains.next() {
+                            if let Some(g) = self.context.next() {
                                 tx[offset..].chunks_exact_mut(size_of::<PhaseHalf>()).zip(device.iter()).for_each(|(dst, tr)| {
                                     PhaseHalf::mut_from_bytes(dst).unwrap().set_phase_~N(g.calc(tr).phase().value() >> 4);
                                 });
@@ -168,17 +177,14 @@ impl<Context: GainContext> Operation for GainSTMOp<Context> {
         };
 
         self.sent += send;
-        if self.sent > GAIN_STM_BUF_SIZE_MAX {
-            return Err(AUTDInternalError::GainSTMSizeOutOfRange(self.sent));
-        }
 
         let mut flag = if self.segment == Segment::S1 {
             GainSTMControlFlags::SEGMENT
         } else {
             GainSTMControlFlags::NONE
         };
-        if self.gains.peek().is_none() {
-            if self.sent < STM_BUF_SIZE_MIN {
+        if self.sent == self.size {
+            if !(STM_BUF_SIZE_MIN..=GAIN_STM_BUF_SIZE_MAX).contains(&self.sent) {
                 return Err(AUTDInternalError::GainSTMSizeOutOfRange(self.sent));
             }
             self.is_done = true;
@@ -238,7 +244,7 @@ impl<Context: GainContext> Operation for GainSTMOp<Context> {
 
 #[cfg(test)]
 mod tests {
-    use std::mem::offset_of;
+    use std::{collections::VecDeque, mem::offset_of};
 
     use rand::prelude::*;
     use zerocopy::FromZeros;
@@ -266,6 +272,18 @@ mod tests {
         }
     }
 
+    struct STMContext {
+        data: VecDeque<Vec<Drive>>,
+    }
+
+    impl GainSTMContext for STMContext {
+        type Context = Context;
+
+        fn next(&mut self) -> Option<Context> {
+            self.data.pop_front().map(|g| Context { g })
+        }
+    }
+
     #[test]
     fn test_phase_intensity_full() {
         const GAIN_STM_SIZE: usize = 3;
@@ -277,7 +295,7 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let gain_data: Vec<Vec<Drive>> = (0..GAIN_STM_SIZE)
+        let gain_data: VecDeque<Vec<Drive>> = (0..GAIN_STM_SIZE)
             .map(|_| {
                 (0..NUM_TRANS_IN_UNIT)
                     .map(|_| {
@@ -304,9 +322,11 @@ mod tests {
 
         let mut op = GainSTMOp::new(
             {
-                let gain_data = gain_data.clone();
-                gain_data.into_iter().map(|g| Context { g }).collect()
+                STMContext {
+                    data: gain_data.clone(),
+                }
             },
+            GAIN_STM_SIZE,
             GainSTMMode::PhaseIntensityFull,
             SamplingConfig::new(freq_div).unwrap(),
             LoopBehavior { rep },
@@ -427,7 +447,7 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let gain_data: Vec<Vec<Drive>> = (0..GAIN_STM_SIZE)
+        let gain_data: VecDeque<Vec<Drive>> = (0..GAIN_STM_SIZE)
             .map(|_| {
                 (0..NUM_TRANS_IN_UNIT)
                     .map(|_| {
@@ -444,10 +464,10 @@ mod tests {
         let rep = rng.gen_range(0x0001..=0xFFFF);
         let segment = Segment::S1;
         let mut op = GainSTMOp::new(
-            {
-                let gain_data = gain_data.clone();
-                gain_data.into_iter().map(|g| Context { g }).collect()
+            STMContext {
+                data: gain_data.clone(),
             },
+            GAIN_STM_SIZE,
             GainSTMMode::PhaseFull,
             SamplingConfig::new(freq_div).unwrap(),
             LoopBehavior { rep },
@@ -562,7 +582,7 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let gain_data: Vec<Vec<Drive>> = (0..GAIN_STM_SIZE)
+        let gain_data: VecDeque<Vec<Drive>> = (0..GAIN_STM_SIZE)
             .map(|_| {
                 (0..NUM_TRANS_IN_UNIT)
                     .map(|_| {
@@ -579,10 +599,10 @@ mod tests {
         let rep = rng.gen_range(0x001..=0xFFFF);
         let segment = Segment::S0;
         let mut op = GainSTMOp::new(
-            {
-                let gain_data = gain_data.clone();
-                gain_data.into_iter().map(|g| Context { g }).collect()
+            STMContext {
+                data: gain_data.clone(),
             },
+            GAIN_STM_SIZE,
             GainSTMMode::PhaseHalf,
             SamplingConfig::new(freq_div).unwrap(),
             LoopBehavior { rep },
@@ -709,12 +729,12 @@ mod tests {
             const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
             let device = create_device(0, NUM_TRANS_IN_UNIT as _);
             let mut tx = vec![0x00u8; FRAME_SIZE];
-            let gain_data: Vec<Vec<Drive>> = vec![vec![Drive::NULL; NUM_TRANS_IN_UNIT]; n];
+            let data = (0..n)
+                .map(|_| vec![Drive::NULL; NUM_TRANS_IN_UNIT])
+                .collect();
             let mut op = GainSTMOp::new(
-                {
-                    let gain_data = gain_data.clone();
-                    gain_data.into_iter().map(|g| Context { g }).collect()
-                },
+                STMContext { data },
+                n,
                 GainSTMMode::PhaseIntensityFull,
                 SamplingConfig::FREQ_40K,
                 LoopBehavior::infinite(),

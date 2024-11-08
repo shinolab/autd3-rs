@@ -37,7 +37,7 @@ approx = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
 rstest = { workspace = true }
-criterion.workspace = true
+criterion = { workspace = true }
 
 [features]
 default = ["derive"]

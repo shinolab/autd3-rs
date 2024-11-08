@@ -1,4 +1,4 @@
-use std::{mem::size_of, sync::Arc};
+use std::mem::size_of;
 
 use crate::{
     defined::{ControlPoints, METER},
@@ -55,10 +55,15 @@ struct FociSTMSubseq {
     segment: u8,
 }
 
+pub trait FociSTMContext<const N: usize>: Send + Sync {
+    fn next(&mut self) -> ControlPoints<N>;
+}
+
 #[derive(new)]
 #[new(visibility = "pub(crate)")]
-pub struct FociSTMOp<const N: usize> {
-    points: Arc<Vec<ControlPoints<N>>>,
+pub struct FociSTMOp<const N: usize, Context: FociSTMContext<N>> {
+    context: Context,
+    size: usize,
     #[new(default)]
     sent: usize,
     #[new(default)]
@@ -69,7 +74,7 @@ pub struct FociSTMOp<const N: usize> {
     transition_mode: Option<TransitionMode>,
 }
 
-impl<const N: usize> Operation for FociSTMOp<N> {
+impl<const N: usize, Context: FociSTMContext<N>> Operation for FociSTMOp<N, Context> {
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         if N == 0 || N > FOCI_STM_FOCI_NUM_MAX {
             return Err(AUTDInternalError::FociSTMNumFociOutOfRange(N));
@@ -85,48 +90,38 @@ impl<const N: usize> Operation for FociSTMOp<N> {
 
         let max_send_bytes = tx.len() - offset;
         let max_send_num = max_send_bytes / (size_of::<STMFocus>() * N);
-        let send_num = (self.points.len() - self.sent).min(max_send_num);
+        let send_num = (self.size - self.sent).min(max_send_num);
 
-        self.points[self.sent..]
-            .iter()
-            .take(send_num)
-            .enumerate()
-            .try_for_each(|(i, points)| {
-                let intensity = points.intensity();
-                let base_offset = points[0].phase_offset();
-                tx[offset + i * size_of::<STMFocus>() * N..]
-                    .chunks_mut(size_of::<STMFocus>())
-                    .zip(points.iter())
-                    .enumerate()
-                    .try_for_each(|(j, (dst, p))| -> Result<_, AUTDInternalError> {
-                        let lp = device.to_local(p.point());
-                        dst.copy_from_slice(
-                            STMFocus::create(
-                                &lp,
-                                if j == 0 {
-                                    intensity.value()
-                                } else {
-                                    (p.phase_offset() - base_offset).value()
-                                },
-                            )?
-                            .as_bytes(),
-                        );
-                        Ok(())
-                    })
+        let mut idx = offset;
+        (0..send_num).try_for_each(|_| {
+            let p = self.context.next();
+            let p = p.transform(device.inv());
+            tx[idx..idx + size_of::<STMFocus>()]
+                .copy_from_slice(STMFocus::create(p[0].point(), p.intensity().value())?.as_bytes());
+            idx += size_of::<STMFocus>();
+            (1..N).try_for_each(|i| {
+                tx[idx..idx + size_of::<STMFocus>()].copy_from_slice(
+                    STMFocus::create(
+                        p[i].point(),
+                        (p[i].phase_offset() - p[0].phase_offset()).value(),
+                    )?
+                    .as_bytes(),
+                );
+                idx += size_of::<STMFocus>();
+                Result::<_, AUTDInternalError>::Ok(())
             })?;
+            Result::<_, AUTDInternalError>::Ok(())
+        })?;
 
         self.sent += send_num;
-        if self.sent > FOCI_STM_BUF_SIZE_MAX {
-            return Err(AUTDInternalError::FociSTMPointSizeOutOfRange(self.sent));
-        }
 
         let mut flag = if is_first {
             FociSTMControlFlags::BEGIN
         } else {
             FociSTMControlFlags::NONE
         };
-        if self.points.len() == self.sent {
-            if self.sent < STM_BUF_SIZE_MIN {
+        if self.size == self.sent {
+            if !(STM_BUF_SIZE_MIN..=FOCI_STM_BUF_SIZE_MAX).contains(&self.sent) {
                 return Err(AUTDInternalError::FociSTMPointSizeOutOfRange(self.sent));
             }
             self.is_done = true;
@@ -187,7 +182,10 @@ impl<const N: usize> Operation for FociSTMOp<N> {
 
 #[cfg(test)]
 mod tests {
-    use std::mem::{offset_of, size_of};
+    use std::{
+        collections::VecDeque,
+        mem::{offset_of, size_of},
+    };
 
     use rand::prelude::*;
 
@@ -201,6 +199,16 @@ mod tests {
 
     const NUM_TRANS_IN_UNIT: u8 = 249;
 
+    struct TestContext<const N: usize> {
+        points: VecDeque<ControlPoints<N>>,
+    }
+
+    impl<const N: usize> FociSTMContext<N> for TestContext<N> {
+        fn next(&mut self) -> ControlPoints<N> {
+            self.points.pop_front().unwrap()
+        }
+    }
+
     #[test]
     fn test() {
         const FOCI_STM_SIZE: usize = 100;
@@ -212,10 +220,10 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let points: Vec<ControlPoints<1>> = (0..FOCI_STM_SIZE)
+        let points: VecDeque<ControlPoints<1>> = (0..FOCI_STM_SIZE)
             .map(|_| {
                 (
-                    ControlPoint::new(Vector3::new(
+                    ControlPoint::from(Vector3::new(
                         rng.gen_range(-500.0 * mm..500.0 * mm),
                         rng.gen_range(-500.0 * mm..500.0 * mm),
                         rng.gen_range(0.0 * mm..500.0 * mm),
@@ -238,7 +246,10 @@ mod tests {
         );
 
         let mut op = FociSTMOp::new(
-            Arc::new(points.clone()),
+            TestContext {
+                points: points.clone(),
+            },
+            FOCI_STM_SIZE,
             SamplingConfig::new(freq_div).unwrap(),
             LoopBehavior { rep },
             segment,
@@ -312,11 +323,11 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let points: Vec<ControlPoints<N>> = (0..FOCI_STM_SIZE)
+        let points: VecDeque<ControlPoints<N>> = (0..FOCI_STM_SIZE)
             .map(|_| {
                 (
                     [0; N].map(|_| {
-                        ControlPoint::new(Vector3::new(
+                        ControlPoint::from(Vector3::new(
                             rng.gen_range(-500.0 * mm..500.0 * mm),
                             rng.gen_range(-500.0 * mm..500.0 * mm),
                             rng.gen_range(0.0 * mm..500.0 * mm),
@@ -340,7 +351,10 @@ mod tests {
         );
 
         let mut op = FociSTMOp::new(
-            Arc::new(points.clone()),
+            TestContext {
+                points: points.clone(),
+            },
+            FOCI_STM_SIZE,
             SamplingConfig::new(freq_div).unwrap(),
             LoopBehavior { rep },
             segment,
@@ -423,10 +437,10 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let points: Vec<ControlPoints<1>> = (0..FOCI_STM_SIZE)
+        let points: VecDeque<ControlPoints<1>> = (0..FOCI_STM_SIZE)
             .map(|_| {
                 (
-                    ControlPoint::new(Vector3::new(
+                    ControlPoint::from(Vector3::new(
                         rng.gen_range(-500.0 * mm..500.0 * mm),
                         rng.gen_range(-500.0 * mm..500.0 * mm),
                         rng.gen_range(0.0 * mm..500.0 * mm),
@@ -441,7 +455,10 @@ mod tests {
         let segment = Segment::S1;
 
         let mut op = FociSTMOp::new(
-            Arc::new(points.clone()),
+            TestContext {
+                points: points.clone(),
+            },
+            FOCI_STM_SIZE,
             SamplingConfig::new(freq_div).unwrap(),
             LoopBehavior { rep },
             segment,
@@ -598,11 +615,12 @@ mod tests {
         let x = FOCI_STM_FIXED_NUM_UNIT * (FOCI_STM_FIXED_NUM_UPPER_X as f32 + 1.);
 
         let mut op = FociSTMOp::new(
-            Arc::new(
-                (0..FOCI_STM_SIZE)
+            TestContext {
+                points: (0..FOCI_STM_SIZE)
                     .map(|_| ControlPoint::from(Vector3::new(x, x, x)).into())
-                    .collect::<Vec<_>>(),
-            ),
+                    .collect::<VecDeque<_>>(),
+            },
+            FOCI_STM_SIZE,
             SamplingConfig::FREQ_40K,
             LoopBehavior::infinite(),
             Segment::S0,
@@ -626,11 +644,12 @@ mod tests {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
         let mut op = FociSTMOp::new(
-            Arc::new(
-                (0..n)
-                    .map(|_| ControlPoint::new(Vector3::zeros()).into())
-                    .collect::<Vec<_>>(),
-            ),
+            TestContext {
+                points: (0..n)
+                    .map(|_| ControlPoint::from(Vector3::zeros()).into())
+                    .collect::<VecDeque<_>>(),
+            },
+            n,
             SamplingConfig::FREQ_40K,
             LoopBehavior::infinite(),
             Segment::S0,
@@ -648,11 +667,12 @@ mod tests {
 
         {
             let mut op = FociSTMOp::new(
-                Arc::new(
-                    (0..2)
+                TestContext {
+                    points: (0..2)
                         .map(|_| ControlPoints::<0>::new([]))
-                        .collect::<Vec<_>>(),
-                ),
+                        .collect::<VecDeque<_>>(),
+                },
+                2,
                 SamplingConfig::FREQ_40K,
                 LoopBehavior::infinite(),
                 Segment::S0,
@@ -667,11 +687,12 @@ mod tests {
 
         {
             let mut op = FociSTMOp::new(
-                Arc::new(
-                    (0..2)
-                        .map(|_| [0; 1].map(|_| ControlPoint::new(Vector3::zeros())).into())
-                        .collect::<Vec<_>>(),
-                ),
+                TestContext {
+                    points: (0..2)
+                        .map(|_| [0; 1].map(|_| ControlPoint::from(Vector3::zeros())).into())
+                        .collect::<VecDeque<_>>(),
+                },
+                2,
                 SamplingConfig::FREQ_40K,
                 LoopBehavior::infinite(),
                 Segment::S0,
@@ -683,15 +704,16 @@ mod tests {
 
         {
             let mut op = FociSTMOp::new(
-                Arc::new(
-                    (0..2)
+                TestContext {
+                    points: (0..2)
                         .map(|_| {
                             [0; FOCI_STM_FOCI_NUM_MAX]
-                                .map(|_| ControlPoint::new(Vector3::zeros()))
+                                .map(|_| ControlPoint::from(Vector3::zeros()))
                                 .into()
                         })
-                        .collect::<Vec<_>>(),
-                ),
+                        .collect::<VecDeque<_>>(),
+                },
+                2,
                 SamplingConfig::FREQ_40K,
                 LoopBehavior::infinite(),
                 Segment::S0,
@@ -707,15 +729,16 @@ mod tests {
 
         {
             let mut op = FociSTMOp::new(
-                Arc::new(
-                    (0..2)
+                TestContext {
+                    points: (0..2)
                         .map(|_| {
                             [0; FOCI_STM_FOCI_NUM_MAX + 1]
-                                .map(|_| ControlPoint::new(Vector3::zeros()))
+                                .map(|_| ControlPoint::from(Vector3::zeros()))
                                 .into()
                         })
-                        .collect::<Vec<_>>(),
-                ),
+                        .collect::<VecDeque<_>>(),
+                },
+                2,
                 SamplingConfig::FREQ_40K,
                 LoopBehavior::infinite(),
                 Segment::S0,

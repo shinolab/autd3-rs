@@ -1,4 +1,4 @@
-use crate::{error::AUTDInternalError, geometry::Vector3};
+use crate::{error::AUTDInternalError, geometry::Point3};
 
 use super::*;
 use zerocopy::{Immutable, IntoBytes};
@@ -23,7 +23,7 @@ impl STMFocus {
         (x / FOCI_STM_FIXED_NUM_UNIT).round() as i32
     }
 
-    pub(crate) fn create(p: &Vector3, intensity_or_offset: u8) -> Result<Self, AUTDInternalError> {
+    pub(crate) fn create(p: &Point3, intensity_or_offset: u8) -> Result<Self, AUTDInternalError> {
         let ix = Self::to_fixed_num(p.x);
         let iy = Self::to_fixed_num(p.y);
         let iz = Self::to_fixed_num(p.z);
@@ -128,7 +128,7 @@ mod tests {
         #[case] intensity: u8,
     ) {
         let p = STMFocus::create(
-            &Vector3::new(
+            &Point3::new(
                 x as f32 * FOCI_STM_FIXED_NUM_UNIT,
                 y as f32 * FOCI_STM_FIXED_NUM_UNIT,
                 z as f32 * FOCI_STM_FIXED_NUM_UNIT,

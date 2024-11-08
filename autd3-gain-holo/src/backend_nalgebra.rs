@@ -91,7 +91,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         &self,
         geometry: &Geometry,
         foci: &[autd3_driver::geometry::Vector3],
-        filter: &Option<HashMap<usize, BitVec<u32>>>,
+        filter: Option<&HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::MatrixXc, HoloError> {
         use rayon::prelude::*;
 
@@ -1980,7 +1980,7 @@ mod tests {
         let geometry = generate_geometry(dev_num);
         let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
 
-        let g = backend.generate_propagation_matrix(&geometry, &foci, &None)?;
+        let g = backend.generate_propagation_matrix(&geometry, &foci, None)?;
         let g = backend.to_host_cm(g)?;
         reference(geometry, foci)
             .iter()
@@ -2050,7 +2050,7 @@ mod tests {
         let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
         let filter = filter(&geometry);
 
-        let g = backend.generate_propagation_matrix(&geometry, &foci, &Some(filter))?;
+        let g = backend.generate_propagation_matrix(&geometry, &foci, Some(&filter))?;
         let g = backend.to_host_cm(g)?;
         assert_eq!(g.nrows(), foci.len());
         assert_eq!(
@@ -2083,7 +2083,7 @@ mod tests {
             .sum::<usize>();
         let n = foci.len();
 
-        let g = backend.generate_propagation_matrix(&geometry, &foci, &None)?;
+        let g = backend.generate_propagation_matrix(&geometry, &foci, None)?;
 
         let b = backend.gen_back_prop(m, n, &g)?;
         let g = backend.to_host_cm(g)?;
