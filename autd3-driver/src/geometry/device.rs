@@ -19,6 +19,8 @@ pub struct Device {
     #[get(ref)]
     rotation: UnitQuaternion,
     #[get(ref)]
+    center: Vector3,
+    #[get(ref)]
     x_direction: Vector3,
     #[get(ref)]
     y_direction: Vector3,
@@ -32,9 +34,12 @@ pub struct Device {
 
 impl Device {
     fn init(&mut self) {
-        self.inv = (nalgebra::Translation3::<f32>::from(*self.transducers[0].position())
-            * self.rotation)
-            .inverse();
+        self.center = self
+            .transducers
+            .iter()
+            .map(|tr| tr.position())
+            .sum::<Vector3>()
+            / self.transducers.len() as f32;
         self.x_direction = Self::get_direction(Vector3::x(), &self.rotation);
         self.y_direction = Self::get_direction(Vector3::y(), &self.rotation);
         self.axial_direction = if cfg!(feature = "left_handed") {
@@ -42,6 +47,9 @@ impl Device {
         } else {
             Self::get_direction(Vector3::z(), &self.rotation)
         };
+        self.inv = (nalgebra::Translation3::<f32>::from(*self.transducers[0].position())
+            * self.rotation)
+            .inverse();
         self.aabb = self.transducers.iter().fold(Aabb::empty(), |aabb, tr| {
             aabb.grow(&nalgebra::Point3 {
                 coords: *tr.position(),
@@ -57,6 +65,7 @@ impl Device {
             enable: true,
             sound_speed: 340.0 * METER,
             rotation: rot,
+            center: Vector3::zeros(),
             x_direction: Vector3::zeros(),
             y_direction: Vector3::zeros(),
             axial_direction: Vector3::zeros(),
@@ -73,14 +82,6 @@ impl Device {
 
     pub fn num_transducers(&self) -> usize {
         self.transducers.len()
-    }
-
-    pub fn center(&self) -> Vector3 {
-        self.transducers
-            .iter()
-            .map(|tr| tr.position())
-            .sum::<Vector3>()
-            / self.transducers.len() as f32
     }
 
     pub fn translate_to(&mut self, t: Vector3) {
@@ -407,6 +408,7 @@ pub mod tests {
             enable: expect_enable,
             sound_speed: expect_sound_speed,
             rotation: expect_rotation,
+            center: expect_center,
             x_direction: expect_x_direction,
             y_direction: expect_y_direction,
             axial_direction: expect_axial_direction,
@@ -422,6 +424,7 @@ pub mod tests {
         assert_eq!(expect_enable, dev.enable);
         assert_eq!(expect_sound_speed, dev.sound_speed);
         assert_eq!(expect_rotation, dev.rotation);
+        assert_eq!(expect_center, dev.center);
         assert_eq!(expect_x_direction, dev.x_direction);
         assert_eq!(expect_y_direction, dev.y_direction);
         assert_eq!(expect_axial_direction, dev.axial_direction);
