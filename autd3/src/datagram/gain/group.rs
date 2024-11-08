@@ -106,7 +106,7 @@ where
     fn init(
         self,
         geometry: &Geometry,
-        _filter: Option<HashMap<usize, BitVec<u32>>>,
+        _filter: Option<&HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::G, AUTDInternalError> {
         let mut filters = self.get_filters(geometry);
 
@@ -126,7 +126,7 @@ where
                 let filter = filters
                     .remove(&k)
                     .ok_or(AUTDInternalError::UnkownKey(format!("{:?}", k)))?;
-                let mut g = g.init(geometry, Some(filter))?;
+                let mut g = g.init(geometry, Some(&filter))?;
                 Ok((
                     k.clone(),
                     geometry

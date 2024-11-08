@@ -6,7 +6,7 @@ pub use autd3_driver::{
     geometry::Geometry,
 };
 
-use std::{cell::RefCell, collections::HashMap, rc::Rc, sync::Arc};
+use std::{cell::RefCell, rc::Rc};
 
 use derive_more::Debug;
 
@@ -101,7 +101,7 @@ impl<G: Gain> Gain for Cache<G> {
     fn init(
         self,
         geometry: &Geometry,
-        _filter: Option<HashMap<usize, BitVec<u32>>>,
+        _filter: Option<&HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::G, AUTDInternalError> {
         Cache::init(&self, geometry)?;
         Ok(self)
@@ -192,7 +192,7 @@ mod tests {
         fn init(
             self,
             _geometry: &Geometry,
-            _filter: Option<HashMap<usize, BitVec<u32>>>,
+            _filter: Option<&HashMap<usize, BitVec<u32>>>,
         ) -> Result<Self::G, AUTDInternalError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
             Ok(self)

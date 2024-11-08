@@ -4,6 +4,7 @@ mod transducer;
 
 pub type Vector3 = nalgebra::Vector3<f32>;
 pub type UnitVector3 = nalgebra::UnitVector3<f32>;
+pub type Point3 = nalgebra::Point3<f32>;
 pub type Vector4 = nalgebra::Vector4<f32>;
 pub type Quaternion = nalgebra::Quaternion<f32>;
 pub type UnitQuaternion = nalgebra::UnitQuaternion<f32>;

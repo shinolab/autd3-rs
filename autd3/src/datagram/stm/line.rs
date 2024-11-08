@@ -1,7 +1,16 @@
-use autd3_driver::{derive::EmitIntensity, geometry::Vector3};
+use autd3_driver::{
+    datagram::{
+        FociSTMContext, FociSTMContextGenerator, FociSTMGenerator, GainSTMContext,
+        GainSTMContextGenerator, GainSTMGenerator, GainSTMInitializer,
+    },
+    defined::{ControlPoint, ControlPoints},
+    derive::{EmitIntensity, Phase},
+    geometry::Vector3,
+};
 
 use crate::gain::Focus;
 
+#[derive(Clone, Debug)]
 pub struct Line {
     pub start: Vector3,
     pub end: Vector3,
@@ -9,40 +18,103 @@ pub struct Line {
     pub intensity: EmitIntensity,
 }
 
-pub struct LineIntoIter {
+pub struct LineSTMContext {
     start: Vector3,
     dir: Vector3,
     num_points: usize,
+    wavenumber: f32,
     intensity: EmitIntensity,
     i: usize,
 }
 
-impl Iterator for LineIntoIter {
-    type Item = Focus;
-
-    fn next(&mut self) -> Option<Self::Item> {
+impl LineSTMContext {
+    fn next(&mut self) -> Option<Vector3> {
         if self.i >= self.num_points {
             return None;
         }
-        let f = Focus::new(self.start + self.dir * (self.i as f32 / (self.num_points - 1) as f32))
-            .with_intensity(self.intensity);
+        let f = self.start + self.dir * (self.i as f32 / (self.num_points - 1) as f32);
         self.i += 1;
         Some(f)
     }
 }
 
-impl IntoIterator for Line {
-    type Item = Focus;
-    type IntoIter = LineIntoIter;
+impl FociSTMContext<1> for LineSTMContext {
+    fn next(&mut self) -> ControlPoints<1> {
+        ControlPoints::new([ControlPoint::from(self.next().unwrap())])
+            .with_intensity(self.intensity)
+    }
+}
 
-    fn into_iter(self) -> Self::IntoIter {
-        LineIntoIter {
+impl GainSTMContext for LineSTMContext {
+    type Context = crate::gain::focus::Context;
+
+    fn next(&mut self) -> Option<Self::Context> {
+        Some(Self::Context {
+            pos: self.next()?,
+            intensity: self.intensity,
+            phase_offset: Phase::ZERO,
+            wavenumber: self.wavenumber,
+        })
+    }
+}
+
+impl FociSTMContextGenerator<1> for Line {
+    type Context = LineSTMContext;
+
+    fn generate(&mut self, device: &autd3_driver::derive::Device) -> Self::Context {
+        Self::Context {
             start: self.start,
             dir: self.end - self.start,
             num_points: self.num_points,
+            wavenumber: device.wavenumber(),
             intensity: self.intensity,
             i: 0,
         }
+    }
+
+    fn len(&self) -> usize {
+        self.num_points
+    }
+}
+
+impl GainSTMContextGenerator for Line {
+    type Gain = Focus;
+    type Context = LineSTMContext;
+
+    fn generate(&mut self, device: &autd3_driver::derive::Device) -> Self::Context {
+        FociSTMContextGenerator::<1>::generate(self, device)
+    }
+}
+
+impl GainSTMInitializer for Line {
+    type T = Self;
+
+    fn init(
+        self,
+        _geometry: &autd3_driver::derive::Geometry,
+        _filter: Option<&std::collections::HashMap<usize, bit_vec::BitVec<u32>>>,
+    ) -> Result<Self::T, autd3_driver::error::AUTDInternalError> {
+        Ok(self)
+    }
+
+    fn len(&self) -> usize {
+        self.num_points
+    }
+}
+
+impl FociSTMGenerator<1> for Line {
+    type G = Self;
+
+    fn into(self) -> Self::G {
+        self
+    }
+}
+
+impl GainSTMGenerator for Line {
+    type I = Self;
+
+    fn into(self) -> Self::I {
+        self
     }
 }
 
@@ -56,6 +128,8 @@ mod tests {
 
     #[test]
     fn line() {
+        use autd3_driver::geometry::IntoDevice;
+
         let length = 30.0 * mm;
         let line = Line {
             start: Vector3::new(0., -length / 2., 0.),
@@ -64,10 +138,30 @@ mod tests {
             intensity: EmitIntensity::MAX,
         };
 
-        let points = line.into_iter().collect::<Vec<_>>();
+        let expect = [
+            Vector3::new(0., -length / 2., 0.),
+            Vector3::zeros(),
+            Vector3::new(0., length / 2., 0.),
+        ];
 
-        assert_near_vector3!(&Vector3::new(0., -length / 2., 0.), points[0].pos());
-        assert_near_vector3!(&Vector3::zeros(), points[1].pos());
-        assert_near_vector3!(&Vector3::new(0., length / 2., 0.), points[2].pos());
+        let device = autd3_driver::autd3_device::AUTD3::new(Vector3::zeros()).into_device(0);
+        {
+            let mut context = FociSTMContextGenerator::generate(
+                &mut FociSTMGenerator::into(line.clone()),
+                &device,
+            );
+            expect.iter().for_each(|e| {
+                let f = FociSTMContext::<1>::next(&mut context).points()[0];
+                assert_near_vector3!(e, f.point());
+            });
+        }
+        {
+            let mut context =
+                GainSTMContextGenerator::generate(&mut GainSTMGenerator::into(line), &device);
+            expect.iter().for_each(|e| {
+                let f = GainSTMContext::next(&mut context).unwrap();
+                assert_near_vector3!(e, &f.pos);
+            });
+        }
     }
 }
