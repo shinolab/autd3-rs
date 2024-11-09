@@ -479,14 +479,14 @@ mod tests {
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
             );
             let f = Uniform::new(EmitIntensity::new(0x80))
-                .init(&autd.geometry)?
+                .init(&autd.geometry, None)?
                 .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 0)
             );
             let f = Uniform::new(EmitIntensity::new(0x81))
-                .init(&autd.geometry)?
+                .init(&autd.geometry, None)?
                 .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
