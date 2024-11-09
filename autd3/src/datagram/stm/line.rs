@@ -1,7 +1,7 @@
 use autd3_driver::{
     datagram::{
         FociSTMContext, FociSTMContextGenerator, FociSTMGenerator, GainSTMContext,
-        GainSTMContextGenerator, GainSTMGenerator, GainSTMInitializer,
+        GainSTMContextGenerator, GainSTMGenerator, IntoGainSTMGenerator,
     },
     defined::{ControlPoint, ControlPoints},
     derive::{EmitIntensity, Phase},
@@ -86,7 +86,7 @@ impl GainSTMContextGenerator for Line {
     }
 }
 
-impl GainSTMInitializer for Line {
+impl GainSTMGenerator for Line {
     type T = Self;
 
     fn init(
@@ -110,7 +110,7 @@ impl FociSTMGenerator<1> for Line {
     }
 }
 
-impl GainSTMGenerator for Line {
+impl IntoGainSTMGenerator for Line {
     type I = Self;
 
     fn into(self) -> Self::I {
@@ -157,7 +157,7 @@ mod tests {
         }
         {
             let mut context =
-                GainSTMContextGenerator::generate(&mut GainSTMGenerator::into(line), &device);
+                GainSTMContextGenerator::generate(&mut IntoGainSTMGenerator::into(line), &device);
             expect.iter().for_each(|e| {
                 let f = GainSTMContext::next(&mut context).unwrap();
                 assert_near_vector3!(e, &f.pos);

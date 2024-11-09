@@ -3,7 +3,7 @@ use std::f32::consts::PI;
 use autd3_driver::{
     datagram::{
         FociSTMContext, FociSTMContextGenerator, FociSTMGenerator, GainSTMContext,
-        GainSTMContextGenerator, GainSTMGenerator, GainSTMInitializer,
+        GainSTMContextGenerator, GainSTMGenerator, IntoGainSTMGenerator,
     },
     defined::{ControlPoint, ControlPoints},
     derive::{EmitIntensity, Phase},
@@ -100,7 +100,7 @@ impl GainSTMContextGenerator for Circle {
     }
 }
 
-impl GainSTMInitializer for Circle {
+impl GainSTMGenerator for Circle {
     type T = Self;
 
     fn init(
@@ -124,7 +124,7 @@ impl FociSTMGenerator<1> for Circle {
     }
 }
 
-impl GainSTMGenerator for Circle {
+impl IntoGainSTMGenerator for Circle {
     type I = Self;
 
     fn into(self) -> Self::I {
@@ -196,7 +196,7 @@ mod tests {
         }
         {
             let mut context =
-                GainSTMContextGenerator::generate(&mut GainSTMGenerator::into(circle), &device);
+                GainSTMContextGenerator::generate(&mut IntoGainSTMGenerator::into(circle), &device);
             expect.iter().for_each(|e| {
                 let f = GainSTMContext::next(&mut context).unwrap();
                 assert_near_vector3!(e, &f.pos);
