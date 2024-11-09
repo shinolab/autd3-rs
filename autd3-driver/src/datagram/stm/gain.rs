@@ -49,7 +49,7 @@ impl<G: GainContextGenerator> GainSTMContextGenerator for Vec<G> {
 }
 
 #[allow(clippy::len_without_is_empty)]
-pub trait GainSTMInitializer: std::fmt::Debug {
+pub trait GainSTMGenerator: std::fmt::Debug {
     type T: GainSTMContextGenerator;
 
     fn init(
@@ -60,7 +60,7 @@ pub trait GainSTMInitializer: std::fmt::Debug {
     fn len(&self) -> usize;
 }
 
-impl<G: Gain> GainSTMInitializer for Vec<G> {
+impl<G: Gain> GainSTMGenerator for Vec<G> {
     type T = Vec<G::G>;
 
     fn init(
@@ -77,13 +77,13 @@ impl<G: Gain> GainSTMInitializer for Vec<G> {
     }
 }
 
-pub trait GainSTMGenerator {
-    type I: GainSTMInitializer;
+pub trait IntoGainSTMGenerator {
+    type I: GainSTMGenerator;
 
     fn into(self) -> Self::I;
 }
 
-impl<G: Gain, T> GainSTMGenerator for T
+impl<G: Gain, T> IntoGainSTMGenerator for T
 where
     T: IntoIterator<Item = G>,
 {
@@ -95,7 +95,7 @@ where
 }
 
 #[derive(Builder, Clone, Debug, Deref, DerefMut)]
-pub struct GainSTM<I: GainSTMInitializer> {
+pub struct GainSTM<I: GainSTMGenerator> {
     #[deref]
     #[deref_mut]
     initializer: I,
@@ -110,7 +110,7 @@ pub struct GainSTM<I: GainSTMInitializer> {
     size: usize,
 }
 
-impl<I: GainSTMInitializer> WithSampling for GainSTM<I> {
+impl<I: GainSTMGenerator> WithSampling for GainSTM<I> {
     fn sampling_config_intensity(&self) -> Option<SamplingConfig> {
         Some(self.sampling_config)
     }
@@ -120,22 +120,22 @@ impl<I: GainSTMInitializer> WithSampling for GainSTM<I> {
     }
 }
 
-impl<I: GainSTMInitializer> GainSTM<I> {
-    pub fn new<G: GainSTMGenerator<I = I>>(
+impl<I: GainSTMGenerator> GainSTM<I> {
+    pub fn new<G: IntoGainSTMGenerator<I = I>>(
         config: impl Into<STMConfig>,
         iter: G,
     ) -> Result<Self, AUTDInternalError> {
         Self::new_from_sampling_config(config.into(), iter)
     }
 
-    pub fn new_nearest<G: GainSTMGenerator<I = I>>(
+    pub fn new_nearest<G: IntoGainSTMGenerator<I = I>>(
         config: impl Into<STMConfigNearest>,
         iter: G,
     ) -> Result<Self, AUTDInternalError> {
         Self::new_from_sampling_config(config.into(), iter)
     }
 
-    fn new_from_sampling_config<S, G: GainSTMGenerator<I = I>>(
+    fn new_from_sampling_config<S, G: IntoGainSTMGenerator<I = I>>(
         config: S,
         iter: G,
     ) -> Result<Self, AUTDInternalError>
@@ -192,7 +192,7 @@ impl<T: GainSTMContextGenerator> OperationGenerator for GainSTMOperationGenerato
     }
 }
 
-impl<I: GainSTMInitializer> DatagramS for GainSTM<I> {
+impl<I: GainSTMGenerator> DatagramS for GainSTM<I> {
     type G = GainSTMOperationGenerator<I::T>;
 
     fn operation_generator_with_segment(

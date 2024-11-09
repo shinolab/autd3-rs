@@ -35,7 +35,7 @@ pub use segment::SwapSegment;
 pub use silencer::{FixedCompletionTime, FixedUpdateRate, Silencer, WithSampling};
 pub use stm::{
     FociSTM, FociSTMContext, FociSTMContextGenerator, FociSTMGenerator, GainSTM, GainSTMContext,
-    GainSTMContextGenerator, GainSTMGenerator, GainSTMInitializer, STMConfig, STMConfigNearest,
+    GainSTMContextGenerator, GainSTMGenerator, IntoGainSTMGenerator, STMConfig, STMConfigNearest,
 };
 pub use synchronize::Synchronize;
 pub use with_parallel_threshold::{
