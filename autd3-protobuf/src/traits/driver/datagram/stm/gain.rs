@@ -6,7 +6,7 @@ use crate::{
     AUTDProtoBufError,
 };
 
-impl<G> ToMessage for autd3_driver::datagram::GainSTM<G>
+impl<G> ToMessage for autd3_driver::datagram::GainSTM<Vec<G>>
 where
     G: autd3_driver::datagram::Gain + ToMessage<Message = Datagram>,
 {
@@ -28,7 +28,9 @@ where
     }
 }
 
-impl FromMessage<GainStm> for autd3_driver::datagram::GainSTM<autd3_driver::datagram::BoxedGain> {
+impl FromMessage<GainStm>
+    for autd3_driver::datagram::GainSTM<Vec<autd3_driver::datagram::BoxedGain>>
+{
     fn from_msg(msg: &GainStm) -> Result<Self, AUTDProtoBufError> {
         use autd3_driver::datagram::IntoBoxedGain;
         let mut stm = autd3_driver::datagram::GainSTM::new(

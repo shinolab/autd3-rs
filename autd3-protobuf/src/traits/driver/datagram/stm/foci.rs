@@ -1,10 +1,12 @@
+use std::sync::Arc;
+
 use autd3_driver::derive::SamplingConfig;
 
 use crate::{pb::*, traits::*};
 
 seq_macro::seq!(N in 1..=8 {
     #(
-        impl ToMessage for autd3_driver::datagram::FociSTM<N> {
+        impl ToMessage for autd3_driver::datagram::FociSTM<N, Arc<Vec<autd3_driver::defined::ControlPoints<N>>>> {
             type Message = FociStm~N;
 
             fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
@@ -22,7 +24,7 @@ seq_macro::seq!(N in 1..=8 {
 
 seq_macro::seq!(N in 1..=8 {
     #(
-        impl FromMessage<FociStm~N> for autd3_driver::datagram::FociSTM<N> {
+        impl FromMessage<FociStm~N> for autd3_driver::datagram::FociSTM<N, Arc<Vec<autd3_driver::defined::ControlPoints<N>>>> {
             fn from_msg(msg: &FociStm~N) -> Result<Self, AUTDProtoBufError> {
                 let props = msg
                     .props
