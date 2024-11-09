@@ -15,7 +15,6 @@ use silencer::WithSampling;
 pub trait FociSTMContextGenerator<const N: usize>: std::fmt::Debug {
     type Context: FociSTMContext<N>;
     fn generate(&mut self, device: &Device) -> Self::Context;
-    fn len(&self) -> usize;
 }
 
 pub struct VecFociSTMContext<const N: usize> {
@@ -40,32 +39,48 @@ impl<const N: usize> FociSTMContextGenerator<N> for Arc<Vec<ControlPoints<N>>> {
             i: 0,
         }
     }
+}
+
+#[allow(clippy::len_without_is_empty)]
+pub trait FociSTMGenerator<const N: usize>: std::fmt::Debug {
+    type T: FociSTMContextGenerator<N>;
+
+    fn init(self) -> Result<Self::T, AUTDInternalError>;
+    fn len(&self) -> usize;
+}
+
+impl<const N: usize> FociSTMGenerator<N> for Vec<ControlPoints<N>> {
+    type T = Arc<Vec<ControlPoints<N>>>;
+
+    fn init(self) -> Result<Self::T, AUTDInternalError> {
+        Ok(Arc::new(self))
+    }
 
     fn len(&self) -> usize {
-        Vec::len(self)
+        self.len()
     }
 }
 
-pub trait FociSTMGenerator<const N: usize> {
-    type G: FociSTMContextGenerator<N>;
+pub trait IntoFociSTMGenerator<const N: usize> {
+    type G: FociSTMGenerator<N>;
 
     fn into(self) -> Self::G;
 }
 
-impl<const N: usize, C, T> FociSTMGenerator<N> for T
+impl<const N: usize, C, T> IntoFociSTMGenerator<N> for T
 where
     T: IntoIterator<Item = C>,
     ControlPoints<N>: From<C>,
 {
-    type G = Arc<Vec<ControlPoints<N>>>;
+    type G = Vec<ControlPoints<N>>;
 
     fn into(self) -> Self::G {
-        Arc::new(self.into_iter().map(ControlPoints::from).collect())
+        self.into_iter().map(ControlPoints::from).collect()
     }
 }
 
 #[derive(Clone, Builder, Deref, DerefMut, Debug)]
-pub struct FociSTM<const N: usize, G: FociSTMContextGenerator<N>> {
+pub struct FociSTM<const N: usize, G: FociSTMGenerator<N>> {
     #[deref]
     #[deref_mut]
     gen: G,
@@ -74,9 +89,10 @@ pub struct FociSTM<const N: usize, G: FociSTMContextGenerator<N>> {
     loop_behavior: LoopBehavior,
     #[get]
     sampling_config: SamplingConfig,
+    size: usize,
 }
 
-impl<const N: usize, G: FociSTMContextGenerator<N>> WithSampling for FociSTM<N, G> {
+impl<const N: usize, G: FociSTMGenerator<N>> WithSampling for FociSTM<N, G> {
     fn sampling_config_intensity(&self) -> Option<SamplingConfig> {
         Some(self.sampling_config)
     }
@@ -86,33 +102,35 @@ impl<const N: usize, G: FociSTMContextGenerator<N>> WithSampling for FociSTM<N, 
     }
 }
 
-impl<const N: usize, G: FociSTMContextGenerator<N>> FociSTM<N, G> {
+impl<const N: usize, G: FociSTMGenerator<N>> FociSTM<N, G> {
     pub fn new(
         config: impl Into<STMConfig>,
-        iter: impl FociSTMGenerator<N, G = G>,
+        iter: impl IntoFociSTMGenerator<N, G = G>,
     ) -> Result<Self, AUTDInternalError> {
         Self::new_from_sampling_config(config.into(), iter)
     }
 
     pub fn new_nearest(
         config: impl Into<STMConfigNearest>,
-        iter: impl FociSTMGenerator<N, G = G>,
+        iter: impl IntoFociSTMGenerator<N, G = G>,
     ) -> Result<Self, AUTDInternalError> {
         Self::new_from_sampling_config(config.into(), iter)
     }
 
     fn new_from_sampling_config<T>(
         config: T,
-        iter: impl FociSTMGenerator<N, G = G>,
+        iter: impl IntoFociSTMGenerator<N, G = G>,
     ) -> Result<Self, AUTDInternalError>
     where
         SamplingConfig: TryFrom<(T, usize), Error = AUTDInternalError>,
     {
         let gen = iter.into();
+        let size = gen.len();
         Ok(Self {
-            sampling_config: (config, gen.len()).try_into()?,
+            sampling_config: (config, size).try_into()?,
             gen,
             loop_behavior: LoopBehavior::infinite(),
+            size,
         })
     }
 
@@ -127,6 +145,7 @@ impl<const N: usize, G: FociSTMContextGenerator<N>> FociSTM<N, G> {
 
 pub struct FociSTMOperationGenerator<const N: usize, G: FociSTMContextGenerator<N>> {
     gen: G,
+    size: usize,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
     segment: Segment,
@@ -143,7 +162,7 @@ impl<const N: usize, G: FociSTMContextGenerator<N>> OperationGenerator
         (
             Self::O1::new(
                 self.gen.generate(device),
-                self.gen.len(),
+                self.size,
                 self.config,
                 self.loop_behavior,
                 self.segment,
@@ -154,8 +173,8 @@ impl<const N: usize, G: FociSTMContextGenerator<N>> OperationGenerator
     }
 }
 
-impl<const N: usize, G: FociSTMContextGenerator<N>> DatagramS for FociSTM<N, G> {
-    type G = FociSTMOperationGenerator<N, G>;
+impl<const N: usize, G: FociSTMGenerator<N>> DatagramS for FociSTM<N, G> {
+    type G = FociSTMOperationGenerator<N, G::T>;
 
     fn operation_generator_with_segment(
         self,
@@ -164,7 +183,8 @@ impl<const N: usize, G: FociSTMContextGenerator<N>> DatagramS for FociSTM<N, G> 
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, AUTDInternalError> {
         Ok(FociSTMOperationGenerator {
-            gen: self.gen,
+            gen: self.gen.init()?,
+            size: self.size,
             config: self.sampling_config,
             loop_behavior: self.loop_behavior,
             segment,
