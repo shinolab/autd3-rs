@@ -1,7 +1,7 @@
 use autd3_driver::{
     datagram::{
         FociSTMContext, FociSTMContextGenerator, FociSTMGenerator, GainSTMContext,
-        GainSTMContextGenerator, GainSTMGenerator, IntoGainSTMGenerator,
+        GainSTMContextGenerator, GainSTMGenerator, IntoFociSTMGenerator, IntoGainSTMGenerator,
     },
     defined::{ControlPoint, ControlPoints},
     derive::{EmitIntensity, Phase},
@@ -71,10 +71,6 @@ impl FociSTMContextGenerator<1> for Line {
             i: 0,
         }
     }
-
-    fn len(&self) -> usize {
-        self.num_points
-    }
 }
 
 impl GainSTMContextGenerator for Line {
@@ -86,9 +82,24 @@ impl GainSTMContextGenerator for Line {
     }
 }
 
+impl FociSTMGenerator<1> for Line {
+    type T = Self;
+
+    // GRCOV_EXCL_START
+    fn init(self) -> Result<Self::T, autd3_driver::error::AUTDInternalError> {
+        Ok(self)
+    }
+    // GRCOV_EXCL_STOP
+
+    fn len(&self) -> usize {
+        self.num_points
+    }
+}
+
 impl GainSTMGenerator for Line {
     type T = Self;
 
+    // GRCOV_EXCL_START
     fn init(
         self,
         _geometry: &autd3_driver::derive::Geometry,
@@ -96,13 +107,14 @@ impl GainSTMGenerator for Line {
     ) -> Result<Self::T, autd3_driver::error::AUTDInternalError> {
         Ok(self)
     }
+    // GRCOV_EXCL_STOP
 
     fn len(&self) -> usize {
         self.num_points
     }
 }
 
-impl FociSTMGenerator<1> for Line {
+impl IntoFociSTMGenerator<1> for Line {
     type G = Self;
 
     fn into(self) -> Self::G {
