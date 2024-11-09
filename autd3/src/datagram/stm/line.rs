@@ -120,7 +120,13 @@ impl IntoGainSTMGenerator for Line {
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::defined::mm;
+    use std::ops::DerefMut;
+
+    use autd3_driver::{
+        datagram::{FociSTM, GainSTM},
+        defined::mm,
+        derive::SamplingConfig,
+    };
 
     use crate::assert_near_vector3;
 
@@ -146,22 +152,22 @@ mod tests {
 
         let device = autd3_driver::autd3_device::AUTD3::new(Vector3::zeros()).into_device(0);
         {
-            let mut context = FociSTMContextGenerator::generate(
-                &mut FociSTMGenerator::into(line.clone()),
-                &device,
-            );
+            let mut stm = FociSTM::new(SamplingConfig::FREQ_40K, line.clone()).unwrap();
+            let mut context = FociSTMContextGenerator::generate(stm.deref_mut(), &device);
             expect.iter().for_each(|e| {
                 let f = FociSTMContext::<1>::next(&mut context).points()[0];
                 assert_near_vector3!(e, f.point());
             });
+            assert!(context.next().is_none());
         }
         {
-            let mut context =
-                GainSTMContextGenerator::generate(&mut IntoGainSTMGenerator::into(line), &device);
+            let mut stm = GainSTM::new(SamplingConfig::FREQ_40K, line.clone()).unwrap();
+            let mut context = GainSTMContextGenerator::generate(stm.deref_mut(), &device);
             expect.iter().for_each(|e| {
                 let f = GainSTMContext::next(&mut context).unwrap();
                 assert_near_vector3!(e, &f.pos);
             });
+            assert!(context.next().is_none());
         }
     }
 }
