@@ -5,6 +5,7 @@ use crate::derive::AUTDInternalError;
 use super::ECAT_DC_SYS_TIME_BASE;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(C)]
 pub struct DcSysTime {
     dc_sys_time: u64,
 }
