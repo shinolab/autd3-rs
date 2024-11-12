@@ -89,7 +89,6 @@ pub struct FociSTM<const N: usize, G: FociSTMGenerator<N>> {
     loop_behavior: LoopBehavior,
     #[get]
     sampling_config: SamplingConfig,
-    size: usize,
 }
 
 impl<const N: usize, G: FociSTMGenerator<N>> WithSampling for FociSTM<N, G> {
@@ -125,12 +124,10 @@ impl<const N: usize, G: FociSTMGenerator<N>> FociSTM<N, G> {
         SamplingConfig: TryFrom<(T, usize), Error = AUTDInternalError>,
     {
         let gen = iter.into();
-        let size = gen.len();
         Ok(Self {
-            sampling_config: (config, size).try_into()?,
+            sampling_config: (config, gen.len()).try_into()?,
             gen,
             loop_behavior: LoopBehavior::infinite(),
-            size,
         })
     }
 
@@ -182,9 +179,10 @@ impl<const N: usize, G: FociSTMGenerator<N>> DatagramS for FociSTM<N, G> {
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, AUTDInternalError> {
+        let size = self.gen.len();
         Ok(FociSTMOperationGenerator {
             gen: self.gen.init()?,
-            size: self.size,
+            size,
             config: self.sampling_config,
             loop_behavior: self.loop_behavior,
             segment,
