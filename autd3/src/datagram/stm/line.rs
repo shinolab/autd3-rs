@@ -123,9 +123,9 @@ impl IntoFociSTMGenerator<1> for Line {
 }
 
 impl IntoGainSTMGenerator for Line {
-    type I = Self;
+    type G = Self;
 
-    fn into(self) -> Self::I {
+    fn into(self) -> Self::G {
         self
     }
 }

@@ -137,9 +137,9 @@ impl IntoFociSTMGenerator<1> for Circle {
 }
 
 impl IntoGainSTMGenerator for Circle {
-    type I = Self;
+    type G = Self;
 
-    fn into(self) -> Self::I {
+    fn into(self) -> Self::G {
         self
     }
 }
