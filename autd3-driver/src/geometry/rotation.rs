@@ -2,28 +2,35 @@ use crate::defined::Angle;
 
 use super::{UnitQuaternion, Vector3};
 
-#[non_exhaustive]
-pub enum EulerAngle {
-    XYZ(Angle, Angle, Angle),
-    ZYZ(Angle, Angle, Angle),
-}
+use paste::paste;
 
-impl From<EulerAngle> for UnitQuaternion {
-    fn from(angle: EulerAngle) -> Self {
-        match angle {
-            EulerAngle::XYZ(x, y, z) => {
-                UnitQuaternion::from_axis_angle(&Vector3::x_axis(), x.radian())
-                    * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), y.radian())
-                    * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), z.radian())
+macro_rules! make_euler_angle {
+    ($({$first:ident, $second:ident, $third:ident}),*) => {
+        paste! {
+            pub enum EulerAngle {
+                $(
+                    [<$first:upper $second:upper $third:upper>](Angle, Angle, Angle),
+                )*
             }
-            EulerAngle::ZYZ(z1, y, z2) => {
-                UnitQuaternion::from_axis_angle(&Vector3::z_axis(), z1.radian())
-                    * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), y.radian())
-                    * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), z2.radian())
+
+            impl From<EulerAngle> for UnitQuaternion {
+                fn from(angle: EulerAngle) -> Self {
+                    match angle {
+                        $(
+                            EulerAngle::[<$first:upper $second:upper $third:upper>](first, second, third) => {
+                                UnitQuaternion::from_axis_angle(&Vector3::[<$first _axis>](), first.radian())
+                                    * UnitQuaternion::from_axis_angle(&Vector3::[<$second _axis>](), second.radian())
+                                    * UnitQuaternion::from_axis_angle(&Vector3::[<$third _axis>](), third.radian())
+                            }
+                        )*
+                    }
+                }
             }
         }
     }
 }
+
+make_euler_angle!({x, y, z}, {x, z, y}, {y, x, z}, {y, z, x}, {z, x, y}, {z, y, x}, {x, y, x}, {x, z, x}, {y, x, y}, {y, z, y}, {z, x, z}, {z, y, z});
 
 #[cfg(test)]
 mod tests {
