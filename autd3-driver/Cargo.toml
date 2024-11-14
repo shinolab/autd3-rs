@@ -27,6 +27,7 @@ tracing = { workspace = true }
 seq-macro = { workspace = true }
 derive-new = { workspace = true }
 zerocopy = { workspace = true }
+paste = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 windows = { workspace = true, features = ["Win32_Media_Multimedia", "Win32_System_Threading", "Win32_Foundation"] }
