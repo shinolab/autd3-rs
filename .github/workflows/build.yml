@@ -8,6 +8,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   test:
     name: test-on-${{ matrix.os }}${{ matrix.arch && '-' }}${{ matrix.arch }}${{ matrix.features && '-' }}${{ matrix.features }}
