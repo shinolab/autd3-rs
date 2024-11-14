@@ -45,10 +45,10 @@ autd3-link-simulator = { workspace = true, optional = true }
 autd3-link-twincat = { workspace = true, optional = true }
 autd3-modulation-audio-file = { workspace = true }
 autd3-protobuf = { workspace = true, optional = true }
-color-print = "0.3.6"
+color-print = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "io-util", "io-std"] }
 tonic = { workspace = true, optional = true }
-tracing-subscriber = "0.3.18"
+tracing-subscriber = { workspace = true }
 tracing = { workspace = true }
 
 [features]
