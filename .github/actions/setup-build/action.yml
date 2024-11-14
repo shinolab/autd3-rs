@@ -31,6 +31,11 @@ runs:
         components: ${{ inputs.components }}
         target: ${{ (inputs.os == 'windows-latest' && inputs.arch == 'aarch64') && 'aarch64-pc-windows-msvc' || '' }}
 
+    - name: install llvm-tools-preview
+      if: inputs.os == 'windows-latest'
+      run: |
+        rustup component add llvm-tools-preview
+
     - name: install cross
       shell: bash
       if: inputs.os == 'ubuntu-latest' && inputs.arch
