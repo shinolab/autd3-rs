@@ -8,11 +8,14 @@ on:
         required: true
         default: 'nightly'
 
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+    
 jobs:
   miri:
     name: test-with-miri
