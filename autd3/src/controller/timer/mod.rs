@@ -21,7 +21,7 @@ use sleep::Sleeper;
 #[cfg(target_os = "windows")]
 pub use sleep::WaitableSleeper;
 pub use sleep::{AsyncSleeper, StdSleeper};
-pub use spin_sleep::SpinSleeper;
+pub use spin_sleep::{SpinSleeper, SpinStrategy};
 
 use crate::error::AUTDError;
 
