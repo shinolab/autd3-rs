@@ -14,7 +14,7 @@ autd3-firmware-emulator = { workspace = true }
 autd3-driver = { workspace = true }
 num = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true, features = ["rt-multi-thread", "time"] }
+tokio = { workspace = true, features = ["rt-multi-thread"] }
 derive_more = { workspace = true }
 tynm = { workspace = true }
 itertools = { workspace = true }
@@ -26,15 +26,14 @@ zerocopy = { workspace = true }
 spin_sleep = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
-windows = { workspace = true, features = ["Win32_Media_Multimedia", "Win32_System_Threading", "Win32_Foundation", "Win32_System_Threading", "Win32_Security"] }
+windows = { workspace = true, features = ["Win32_Security"] }
 
 [features]
 default = []
 async-trait = ["autd3-driver/async-trait"]
 
 [dev-dependencies]
-approx = { workspace = true }
 rand = { workspace = true }
-tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tokio = { workspace = true }
 anyhow = { workspace = true }
 rstest = { workspace = true }

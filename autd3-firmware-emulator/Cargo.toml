@@ -15,13 +15,11 @@ autd3-derive = { workspace = true }
 bitfield-struct = { workspace = true }
 time = { workspace = true, features = ["std"] }
 num-integer = { workspace = true }
-thiserror = { workspace = true }
-derive-new = { workspace = true }
 zerocopy = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
-time = { workspace = true, features = ["std", "macros"] }
+time = { workspace = true, features = ["macros"] }
 autd3-derive = { workspace = true }
 itertools = { workspace = true }
 rand = { workspace = true }
