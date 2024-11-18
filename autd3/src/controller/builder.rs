@@ -72,8 +72,8 @@ impl ControllerBuilder {
         let geometry = Geometry::new(self.devices, self.fallback_parallel_threshold);
         Controller {
             link: link_builder.open(&geometry).await?,
-            tx_buf: vec![TxMessage::new_zeroed(); geometry.num_devices()],
-            rx_buf: vec![RxMessage::new(0, 0); geometry.num_devices()],
+            tx_buf: vec![TxMessage::new_zeroed(); geometry.len()],
+            rx_buf: vec![RxMessage::new(0, 0); geometry.len()],
             geometry,
             timer: Timer {
                 send_interval: self.send_interval,
