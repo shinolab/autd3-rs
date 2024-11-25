@@ -1,10 +1,10 @@
+use std::time::Instant;
+
 use autd3_driver::utils::timer::TimerResolutionGurad;
 use spin_sleep::SpinSleeper;
 
 pub(crate) trait Sleeper {
-    type Instant: super::instant::Instant;
-
-    fn sleep_until(&self, deadline: Self::Instant) -> impl std::future::Future<Output = ()>;
+    fn sleep_until(&self, deadline: Instant) -> impl std::future::Future<Output = ()>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -21,19 +21,15 @@ impl Default for StdSleeper {
 }
 
 impl Sleeper for StdSleeper {
-    type Instant = std::time::Instant;
-
-    async fn sleep_until(&self, deadline: Self::Instant) {
+    async fn sleep_until(&self, deadline: Instant) {
         let _timer_guard = TimerResolutionGurad::new(self.timer_resolution);
-        std::thread::sleep(deadline - std::time::Instant::now());
+        std::thread::sleep(deadline - Instant::now());
     }
 }
 
 impl Sleeper for SpinSleeper {
-    type Instant = std::time::Instant;
-
-    async fn sleep_until(&self, deadline: Self::Instant) {
-        self.sleep(deadline - std::time::Instant::now());
+    async fn sleep_until(&self, deadline: Instant) {
+        self.sleep(deadline - Instant::now());
     }
 }
 
@@ -51,11 +47,9 @@ impl Default for AsyncSleeper {
 }
 
 impl Sleeper for AsyncSleeper {
-    type Instant = tokio::time::Instant;
-
-    async fn sleep_until(&self, deadline: Self::Instant) {
+    async fn sleep_until(&self, deadline: Instant) {
         let _timer_guard = TimerResolutionGurad::new(self.timer_resolution);
-        tokio::time::sleep_until(deadline).await;
+        tokio::time::sleep_until(tokio::time::Instant::from_std(deadline)).await;
     }
 }
 
@@ -64,7 +58,7 @@ pub use win::WaitableSleeper;
 
 #[cfg(target_os = "windows")]
 mod win {
-    use super::Sleeper;
+    use super::*;
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct WaitableSleeper {
@@ -90,11 +84,9 @@ mod win {
     }
 
     impl Sleeper for WaitableSleeper {
-        type Instant = std::time::Instant;
-
-        async fn sleep_until(&self, deadline: Self::Instant) {
+        async fn sleep_until(&self, deadline: Instant) {
             unsafe {
-                let time = deadline - std::time::Instant::now();
+                let time = deadline - Instant::now();
                 if time.is_zero() {
                     return;
                 }

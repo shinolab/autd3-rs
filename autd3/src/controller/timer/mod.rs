@@ -1,9 +1,8 @@
 #![allow(clippy::too_many_arguments)]
 
-mod instant;
 mod sleep;
 
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use autd3_driver::{
     derive::{Builder, Geometry},
@@ -14,7 +13,6 @@ use autd3_driver::{
     },
     link::Link,
 };
-use instant::Instant;
 
 use itertools::Itertools;
 use sleep::Sleeper;
@@ -104,7 +102,7 @@ impl Timer {
     ) -> Result<(), AUTDError> {
         link.update(geometry).await?;
 
-        let mut send_timing = S::Instant::now();
+        let mut send_timing = Instant::now();
         loop {
             OperationHandler::pack(&mut operations, geometry, tx, parallel)?;
 
@@ -114,7 +112,7 @@ impl Timer {
                 return Ok(());
             }
 
-            S::Instant::add(&mut send_timing, self.send_interval);
+            send_timing += self.send_interval;
             sleeper.sleep_until(send_timing).await;
         }
     }
@@ -147,7 +145,7 @@ impl Timer {
         link: &mut impl Link,
         timeout: Duration,
     ) -> Result<(), AUTDInternalError> {
-        let start = S::Instant::now();
+        let start = Instant::now();
         let mut receive_timing = start;
         loop {
             if !link.is_open() {
@@ -162,7 +160,7 @@ impl Timer {
             if start.elapsed() > timeout {
                 break;
             }
-            S::Instant::add(&mut receive_timing, self.receive_interval);
+            receive_timing += self.receive_interval;
             sleeper.sleep_until(receive_timing).await;
         }
         rx.iter()
