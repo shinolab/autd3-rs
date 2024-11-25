@@ -11,7 +11,7 @@ repository = { workspace = true }
 
 [dependencies]
 autd3-firmware-emulator = { workspace = true }
-autd3-driver = { workspace = true }
+autd3-driver = { workspace = true, features = ["derive"] }
 num = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
