@@ -137,20 +137,23 @@ impl<D: Directivity> Gain for Greedy<D> {
                 &self.foci,
                 &mut tmp,
             );
-            let (min_idx, _) = phase_candidates.iter().enumerate().fold(
-                (0usize, f32::INFINITY),
-                |acc, (idx, &phase)| {
-                    let v = cache.iter().enumerate().fold(0., |acc, (j, c)| {
-                        acc + (self.amps[j].value - (tmp[j] * phase + c).abs()).abs()
+            let (phase, _) =
+                phase_candidates
+                    .iter()
+                    .fold((Complex::ZERO, f32::INFINITY), |acc, &phase| {
+                        let v = cache
+                            .iter()
+                            .zip(self.amps.iter())
+                            .zip(tmp.iter())
+                            .fold(0., |acc, ((c, a), f)| {
+                                acc + (a.value - (f * phase + c).abs()).abs()
+                            });
+                        if v < acc.1 {
+                            (phase, v)
+                        } else {
+                            acc
+                        }
                     });
-                    if v < acc.1 {
-                        (idx, v)
-                    } else {
-                        acc
-                    }
-                },
-            );
-            let phase = phase_candidates[min_idx];
             cache.iter_mut().zip(tmp.iter()).for_each(|(c, a)| {
                 *c += a * phase;
             });
