@@ -1,20 +1,10 @@
-
 use crate::{
     datagram::*,
-    derive::{AUTDInternalError, Geometry, Segment, TransitionMode},
+    derive::{AUTDInternalError, Geometry},
     firmware::operation::SwapSegmentOp,
 };
 
 use super::OperationGenerator;
-
-#[derive(Debug, Clone, Copy)]
-#[non_exhaustive]
-pub enum SwapSegment {
-    Gain(Segment, TransitionMode),
-    Modulation(Segment, TransitionMode),
-    FociSTM(Segment, TransitionMode),
-    GainSTM(Segment, TransitionMode),
-}
 
 pub struct SwapSegmentOpGenerator {
     segment: SwapSegment,

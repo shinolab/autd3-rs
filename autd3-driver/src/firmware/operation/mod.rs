@@ -30,6 +30,7 @@ pub(crate) use null::*;
 pub(crate) use phase_corr::*;
 pub(crate) use pulse_width_encoder::*;
 pub(crate) use reads_fpga_state::*;
+pub use segment::SwapSegment;
 pub(crate) use segment::*;
 pub(crate) use silencer::*;
 pub use stm_foci::FociSTMContext;

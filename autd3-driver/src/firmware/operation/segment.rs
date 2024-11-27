@@ -1,14 +1,24 @@
 use std::mem::size_of;
 
 use crate::{
-    datagram::SwapSegment, derive::TransitionMode, error::AUTDInternalError,
-    firmware::operation::TypeTag, geometry::Device,
+    derive::{Segment, TransitionMode},
+    error::AUTDInternalError,
+    firmware::operation::TypeTag,
+    geometry::Device,
 };
 
 use super::Operation;
 
 use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
+
+#[derive(Debug, Clone, Copy)]
+pub enum SwapSegment {
+    Gain(Segment, TransitionMode),
+    Modulation(Segment, TransitionMode),
+    FociSTM(Segment, TransitionMode),
+    GainSTM(Segment, TransitionMode),
+}
 
 #[repr(C, align(2))]
 #[derive(IntoBytes, Immutable)]
@@ -23,7 +33,7 @@ struct SwapSegmentTWithTransition {
     tag: TypeTag,
     segment: u8,
     transition_mode: u8,
-    __ding: [u8; 5],
+    __: [u8; 5],
     transition_value: u64,
 }
 
@@ -69,7 +79,7 @@ impl Operation for SwapSegmentOp {
                         tag,
                         segment: segment as u8,
                         transition_mode: transition.mode(),
-                        __ding: [0; 5],
+                        __: [0; 5],
                         transition_value: transition.value(),
                     }
                     .as_bytes(),
