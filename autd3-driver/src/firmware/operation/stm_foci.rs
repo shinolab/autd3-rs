@@ -66,8 +66,6 @@ pub struct FociSTMOp<const N: usize, Context: FociSTMContext<N>> {
     size: usize,
     #[new(default)]
     sent: usize,
-    #[new(default)]
-    is_done: bool,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
     segment: Segment,
@@ -79,64 +77,64 @@ impl<const N: usize, Context: FociSTMContext<N>> Operation for FociSTMOp<N, Cont
         if N == 0 || N > FOCI_STM_FOCI_NUM_MAX {
             return Err(AUTDInternalError::FociSTMNumFociOutOfRange(N));
         }
+        if !(STM_BUF_SIZE_MIN..=FOCI_STM_BUF_SIZE_MAX).contains(&self.size) {
+            return Err(AUTDInternalError::FociSTMPointSizeOutOfRange(self.size));
+        }
 
         let is_first = self.sent == 0;
 
-        let offset = if is_first {
-            size_of::<FociSTMHead>()
-        } else {
-            size_of::<FociSTMSubseq>()
-        };
+        let send_num = {
+            let offset = if is_first {
+                size_of::<FociSTMHead>()
+            } else {
+                size_of::<FociSTMSubseq>()
+            };
 
-        let max_send_bytes = tx.len() - offset;
-        let max_send_num = max_send_bytes / (size_of::<STMFocus>() * N);
-        let send_num = (self.size - self.sent).min(max_send_num);
+            let max_send_bytes = tx.len() - offset;
+            let max_send_num = max_send_bytes / (size_of::<STMFocus>() * N);
+            let send_num = (self.size - self.sent).min(max_send_num);
 
-        let mut idx = offset;
-        (0..send_num).try_for_each(|_| {
-            let p = self.context.next();
-            let p = p.transform(device.inv());
-            tx[idx..idx + size_of::<STMFocus>()]
-                .copy_from_slice(STMFocus::create(p[0].point(), p.intensity().value())?.as_bytes());
-            idx += size_of::<STMFocus>();
-            (1..N).try_for_each(|i| {
+            let mut idx = offset;
+            (0..send_num).try_for_each(|_| {
+                let p = self.context.next();
+                let p = p.transform(device.inv());
                 tx[idx..idx + size_of::<STMFocus>()].copy_from_slice(
-                    STMFocus::create(
-                        p[i].point(),
-                        (p[i].phase_offset() - p[0].phase_offset()).value(),
-                    )?
-                    .as_bytes(),
+                    STMFocus::create(p[0].point(), p.intensity().value())?.as_bytes(),
                 );
                 idx += size_of::<STMFocus>();
-                Result::<_, AUTDInternalError>::Ok(())
+                (1..N).try_for_each(|i| {
+                    tx[idx..idx + size_of::<STMFocus>()].copy_from_slice(
+                        STMFocus::create(
+                            p[i].point(),
+                            (p[i].phase_offset() - p[0].phase_offset()).value(),
+                        )?
+                        .as_bytes(),
+                    );
+                    idx += size_of::<STMFocus>();
+                    Result::<_, AUTDInternalError>::Ok(())
+                })
             })?;
-            Result::<_, AUTDInternalError>::Ok(())
-        })?;
+
+            send_num
+        };
 
         self.sent += send_num;
 
-        let mut flag = if is_first {
-            FociSTMControlFlags::BEGIN
+        let flag = if self.size == self.sent {
+            FociSTMControlFlags::END
+                | if self.transition_mode.is_some() {
+                    FociSTMControlFlags::TRANSITION
+                } else {
+                    FociSTMControlFlags::NONE
+                }
         } else {
             FociSTMControlFlags::NONE
         };
-        if self.size == self.sent {
-            if !(STM_BUF_SIZE_MIN..=FOCI_STM_BUF_SIZE_MAX).contains(&self.sent) {
-                return Err(AUTDInternalError::FociSTMPointSizeOutOfRange(self.sent));
-            }
-            self.is_done = true;
-            flag.set(FociSTMControlFlags::END, true);
-            flag.set(
-                FociSTMControlFlags::TRANSITION,
-                self.transition_mode.is_some(),
-            );
-        }
-
         if is_first {
             tx[..size_of::<FociSTMHead>()].copy_from_slice(
                 FociSTMHead {
                     tag: TypeTag::FociSTM,
-                    flag,
+                    flag: flag | FociSTMControlFlags::BEGIN,
                     segment: self.segment as _,
                     transition_mode: self
                         .transition_mode
@@ -176,7 +174,7 @@ impl<const N: usize, Context: FociSTMContext<N>> Operation for FociSTMOp<N, Cont
     }
 
     fn is_done(&self) -> bool {
-        self.is_done
+        self.size == self.sent
     }
 }
 

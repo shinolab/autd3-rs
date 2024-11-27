@@ -18,6 +18,7 @@ use crate::{
 
 use super::GainContext;
 
+use derive_new::new;
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout};
 
 #[derive(Clone, Copy, IntoBytes, Immutable)]
@@ -80,40 +81,18 @@ pub trait GainSTMContext: Send + Sync {
     fn next(&mut self) -> Option<Self::Context>;
 }
 
+#[derive(new)]
+#[new(visibility = "pub(crate)")]
 pub struct GainSTMOp<G: GainContext, Context: GainSTMContext<Context = G>> {
     context: Context,
     size: usize,
+    #[new(default)]
     sent: usize,
-    is_done: bool,
     mode: GainSTMMode,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
-}
-
-impl<G: GainContext, Context: GainSTMContext<Context = G>> GainSTMOp<G, Context> {
-    pub(crate) fn new(
-        context: Context,
-        size: usize,
-        mode: GainSTMMode,
-        config: SamplingConfig,
-        loop_behavior: LoopBehavior,
-        segment: Segment,
-        transition_mode: Option<TransitionMode>,
-    ) -> Self {
-        Self {
-            context,
-            size,
-            sent: 0,
-            is_done: false,
-            mode,
-            config,
-            loop_behavior,
-            segment,
-            transition_mode,
-        }
-    }
 }
 
 impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTMOp<G, Context> {
@@ -126,15 +105,19 @@ impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTM
     }
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+        if !(STM_BUF_SIZE_MIN..=GAIN_STM_BUF_SIZE_MAX).contains(&self.size) {
+            return Err(AUTDInternalError::GainSTMSizeOutOfRange(self.size));
+        }
+
         let is_first = self.sent == 0;
 
-        let offset = if is_first {
-            size_of::<GainSTMHead>()
-        } else {
-            size_of::<GainSTMSubseq>()
-        };
-
         let send = {
+            let offset = if is_first {
+                size_of::<GainSTMHead>()
+            } else {
+                size_of::<GainSTMSubseq>()
+            };
+
             let mut send = 0;
             match self.mode {
                 GainSTMMode::PhaseIntensityFull => {
@@ -178,23 +161,18 @@ impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTM
 
         self.sent += send;
 
-        let mut flag = if self.segment == Segment::S1 {
-            GainSTMControlFlags::SEGMENT
+        let mut flag = if self.sent == self.size {
+            GainSTMControlFlags::END
+                | if self.transition_mode.is_some() {
+                    GainSTMControlFlags::TRANSITION
+                } else {
+                    GainSTMControlFlags::NONE
+                }
         } else {
             GainSTMControlFlags::NONE
         };
-        if self.sent == self.size {
-            if !(STM_BUF_SIZE_MIN..=GAIN_STM_BUF_SIZE_MAX).contains(&self.sent) {
-                return Err(AUTDInternalError::GainSTMSizeOutOfRange(self.sent));
-            }
-            self.is_done = true;
-            flag.set(GainSTMControlFlags::END, true);
-            flag.set(
-                GainSTMControlFlags::TRANSITION,
-                self.transition_mode.is_some(),
-            );
-        }
 
+        flag.set(GainSTMControlFlags::SEGMENT, self.segment == Segment::S1);
         flag.set(
             GainSTMControlFlags::SEND_BIT0,
             ((send as u8 - 1) & 0x01) != 0,
@@ -238,7 +216,7 @@ impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTM
     }
 
     fn is_done(&self) -> bool {
-        self.is_done
+        self.sent == self.size
     }
 }
 
