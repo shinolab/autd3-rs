@@ -18,6 +18,7 @@ mod with_parallel_threshold;
 mod with_segment;
 mod with_timeout;
 
+pub use super::firmware::operation::SwapSegment;
 pub use clear::Clear;
 pub use cpu_gpio_out::{CpuGPIO, CpuGPIOPort};
 pub use debug::DebugSettings;
@@ -31,7 +32,6 @@ pub use modulation::{
 pub use phase_corr::PhaseCorrection;
 pub use pulse_width_encoder::PulseWidthEncoder;
 pub use reads_fpga_state::ReadsFPGAState;
-pub use segment::SwapSegment;
 pub use silencer::{FixedCompletionTime, FixedUpdateRate, Silencer, WithSampling};
 pub use stm::{
     FociSTM, FociSTMContext, FociSTMContextGenerator, FociSTMGenerator, GainSTM, GainSTMContext,
