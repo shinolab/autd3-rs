@@ -98,17 +98,18 @@ impl<const N: usize, Context: FociSTMContext<N>> Operation for FociSTMOp<N, Cont
             (0..send_num).try_for_each(|_| {
                 let p = self.context.next();
                 let p = p.transform(device.inv());
-                tx[idx..idx + size_of::<STMFocus>()].copy_from_slice(
-                    STMFocus::create(p[0].point(), p.intensity().value())?.as_bytes(),
+                super::write_to_tx(
+                    &mut tx[idx..],
+                    STMFocus::create(p[0].point(), p.intensity().value())?,
                 );
                 idx += size_of::<STMFocus>();
                 (1..N).try_for_each(|i| {
-                    tx[idx..idx + size_of::<STMFocus>()].copy_from_slice(
+                    super::write_to_tx(
+                        &mut tx[idx..],
                         STMFocus::create(
                             p[i].point(),
                             (p[i].phase_offset() - p[0].phase_offset()).value(),
-                        )?
-                        .as_bytes(),
+                        )?,
                     );
                     idx += size_of::<STMFocus>();
                     Result::<_, AUTDInternalError>::Ok(())
@@ -131,7 +132,8 @@ impl<const N: usize, Context: FociSTMContext<N>> Operation for FociSTMOp<N, Cont
             FociSTMControlFlags::NONE
         };
         if is_first {
-            tx[..size_of::<FociSTMHead>()].copy_from_slice(
+            super::write_to_tx(
+                tx,
                 FociSTMHead {
                     tag: TypeTag::FociSTM,
                     flag: flag | FociSTMControlFlags::BEGIN,
@@ -147,19 +149,18 @@ impl<const N: usize, Context: FociSTMContext<N>> Operation for FociSTMOp<N, Cont
                     sound_speed: (device.sound_speed / METER * 64.0).round() as u16,
                     rep: self.loop_behavior.rep(),
                     __: [0; 4],
-                }
-                .as_bytes(),
+                },
             );
             Ok(size_of::<FociSTMHead>() + size_of::<STMFocus>() * send_num * N)
         } else {
-            tx[..size_of::<FociSTMSubseq>()].copy_from_slice(
+            super::write_to_tx(
+                tx,
                 FociSTMSubseq {
                     tag: TypeTag::FociSTM,
                     flag,
                     segment: self.segment as _,
                     send_num: send_num as _,
-                }
-                .as_bytes(),
+                },
             );
             Ok(size_of::<FociSTMSubseq>() + size_of::<STMFocus>() * send_num * N)
         }

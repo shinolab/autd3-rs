@@ -29,19 +29,19 @@ pub struct PhaseCorrectionOp<F: Fn(&Transducer) -> Phase> {
 
 impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<F> {
     fn pack(&mut self, dev: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        tx[..size_of::<PhaseCorr>()].copy_from_slice(
+        super::write_to_tx(
+            tx,
             PhaseCorr {
                 tag: TypeTag::PhaseCorrection,
                 __: 0,
-            }
-            .as_bytes(),
+            },
         );
 
         tx[size_of::<PhaseCorr>()..]
             .chunks_mut(size_of::<Phase>())
             .zip(dev.iter())
             .for_each(|(dst, tr)| {
-                dst.copy_from_slice((self.f)(tr).as_bytes());
+                super::write_to_tx(dst, (self.f)(tr));
             });
 
         self.is_done = true;

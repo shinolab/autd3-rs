@@ -30,13 +30,13 @@ pub struct DebugSettingOp {
 
 impl Operation for DebugSettingOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        tx[..size_of::<DebugSetting>()].copy_from_slice(
+        super::write_to_tx(
+            tx,
             DebugSetting {
                 tag: TypeTag::Debug,
                 __: [0; 7],
                 value: self.value,
-            }
-            .as_bytes(),
+            },
         );
 
         self.is_done = true;

@@ -29,17 +29,17 @@ pub struct PulseWidthEncoderOp<F: Fn(u8) -> u8> {
 
 impl<F: Fn(u8) -> u8 + Send + Sync> Operation for PulseWidthEncoderOp<F> {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        tx[..size_of::<Pwe>()].copy_from_slice(
+        super::write_to_tx(
+            tx,
             Pwe {
                 tag: TypeTag::ConfigPulseWidthEncoder,
                 __: 0,
-            }
-            .as_bytes(),
+            },
         );
 
         tx[size_of::<Pwe>()..]
             .iter_mut()
-            .take(256)
+            .take(PWE_BUF_SIZE)
             .enumerate()
             .for_each(|(i, x)| {
                 *x = (self.f)(i as u8);

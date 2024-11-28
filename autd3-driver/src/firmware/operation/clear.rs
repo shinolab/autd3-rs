@@ -23,12 +23,12 @@ pub struct ClearOp {
 
 impl Operation for ClearOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        tx[..size_of::<Clear>()].copy_from_slice(
+        super::write_to_tx(
+            tx,
             Clear {
                 tag: TypeTag::Clear,
                 __: 0,
-            }
-            .as_bytes(),
+            },
         );
 
         self.is_done = true;

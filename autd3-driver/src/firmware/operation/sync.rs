@@ -23,12 +23,12 @@ pub struct SyncOp {
 
 impl Operation for SyncOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        tx[..size_of::<Sync>()].copy_from_slice(
+        super::write_to_tx(
+            tx,
             Sync {
                 tag: TypeTag::Sync,
                 __: 0,
-            }
-            .as_bytes(),
+            },
         );
 
         self.is_done = true;

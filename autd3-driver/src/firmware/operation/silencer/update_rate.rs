@@ -35,7 +35,8 @@ pub struct SilencerFixedUpdateRateOp {
 
 impl Operation for SilencerFixedUpdateRateOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        tx[..size_of::<SilencerFixedUpdateRate>()].copy_from_slice(
+        super::super::write_to_tx(
+            tx,
             SilencerFixedUpdateRate {
                 tag: TypeTag::Silencer,
                 flag: SilencerControlFlags::FIXED_UPDATE_RATE
@@ -45,8 +46,7 @@ impl Operation for SilencerFixedUpdateRateOp {
                     },
                 value_intensity: self.intensity.get(),
                 value_phase: self.phase.get(),
-            }
-            .as_bytes(),
+            },
         );
 
         self.is_done = true;
