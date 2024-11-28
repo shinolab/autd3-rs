@@ -24,18 +24,18 @@ pub struct ForceFanOp {
 
 impl Operation for ForceFanOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        tx[..size_of::<ForceFan>()].copy_from_slice(
+        super::write_to_tx(
+            tx,
             ForceFan {
                 tag: TypeTag::ForceFan,
                 value: self.value,
-            }
-            .as_bytes(),
+            },
         );
 
         self.is_done = true;
         Ok(size_of::<ForceFan>())
     }
-
+ 
     fn required_size(&self, _: &Device) -> usize {
         size_of::<ForceFan>()
     }

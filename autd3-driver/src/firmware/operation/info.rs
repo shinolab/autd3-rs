@@ -35,14 +35,13 @@ pub struct FirmInfoOp {
 
 impl Operation for FirmInfoOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        tx[..size_of::<FirmInfo>()].copy_from_slice(
+        super::write_to_tx(
+            tx,
             FirmInfo {
                 tag: TypeTag::FirmwareVersion,
                 ty: self.ty,
-            }
-            .as_bytes(),
+            },
         );
-
         self.is_done = true;
         Ok(size_of::<FirmInfo>())
     }

@@ -126,7 +126,7 @@ impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTM
                             .chunks_mut(size_of::<Drive>())
                             .zip(device.iter())
                             .for_each(|(dst, tr)| {
-                                dst.copy_from_slice(g.calc(tr).as_bytes());
+                                super::write_to_tx(dst, g.calc(tr));
                             });
                         send += 1;
                     }
@@ -183,7 +183,8 @@ impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTM
         );
 
         if is_first {
-            tx[..size_of::<GainSTMHead>()].copy_from_slice(
+            super::write_to_tx(
+                tx,
                 GainSTMHead {
                     tag: TypeTag::GainSTM,
                     flag: GainSTMControlFlags::BEGIN | flag,
@@ -195,16 +196,15 @@ impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTM
                     transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
                     freq_div: self.config.division(),
                     rep: self.loop_behavior.rep(),
-                }
-                .as_bytes(),
+                },
             );
         } else {
-            tx[..size_of::<GainSTMSubseq>()].copy_from_slice(
+            super::write_to_tx(
+                tx,
                 GainSTMSubseq {
                     tag: TypeTag::GainSTM,
                     flag,
-                }
-                .as_bytes(),
+                },
             );
         }
 

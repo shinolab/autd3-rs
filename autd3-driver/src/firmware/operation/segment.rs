@@ -61,12 +61,12 @@ impl Operation for SwapSegmentOp {
                 if transition != TransitionMode::Immediate {
                     return Err(AUTDInternalError::InvalidTransitionMode);
                 }
-                tx[..size_of::<SwapSegmentT>()].copy_from_slice(
+                super::write_to_tx(
+                    tx,
                     SwapSegmentT {
                         tag,
                         segment: segment as u8,
-                    }
-                    .as_bytes(),
+                    },
                 );
 
                 Ok(size_of::<SwapSegmentT>())
@@ -74,15 +74,15 @@ impl Operation for SwapSegmentOp {
             SwapSegment::Modulation(segment, transition)
             | SwapSegment::FociSTM(segment, transition)
             | SwapSegment::GainSTM(segment, transition) => {
-                tx[..size_of::<SwapSegmentTWithTransition>()].copy_from_slice(
+                super::write_to_tx(
+                    tx,
                     SwapSegmentTWithTransition {
                         tag,
                         segment: segment as u8,
                         transition_mode: transition.mode(),
                         __: [0; 5],
                         transition_value: transition.value(),
-                    }
-                    .as_bytes(),
+                    },
                 );
                 Ok(size_of::<SwapSegmentTWithTransition>())
             }
