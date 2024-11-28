@@ -53,7 +53,8 @@ impl<Context: GainContext> Operation for GainOp<Context> {
     }
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        tx[..size_of::<Gain>()].copy_from_slice(
+        super::write_to_tx(
+            tx,
             Gain {
                 tag: TypeTag::Gain,
                 segment: self.segment as u8,
@@ -67,14 +68,13 @@ impl<Context: GainContext> Operation for GainOp<Context> {
                     GainControlFlags::NONE
                 },
                 __: 0,
-            }
-            .as_bytes(),
+            },
         );
         tx[size_of::<Gain>()..]
             .chunks_mut(size_of::<Drive>())
             .zip(device.iter())
             .for_each(|(dst, tr)| {
-                dst.copy_from_slice(self.context.calc(tr).as_bytes());
+                super::write_to_tx(dst, self.context.calc(tr));
             });
 
         self.is_done = true;

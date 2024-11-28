@@ -179,6 +179,11 @@ impl OperationHandler {
     }
 }
 
+#[inline(always)]
+pub(crate) fn write_to_tx<T: IntoBytes + Immutable>(tx: &mut [u8], data: T) {
+    tx[..size_of::<T>()].copy_from_slice(data.as_bytes());
+}
+
 #[cfg(test)]
 pub mod tests {
 

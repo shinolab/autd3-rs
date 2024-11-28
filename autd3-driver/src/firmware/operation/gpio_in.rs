@@ -39,17 +39,14 @@ pub struct EmulateGPIOInOp {
 impl Operation for EmulateGPIOInOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
         let mut flag = GPIOInFlags::NONE;
-        flag.set(GPIOInFlags::GPIO_IN_0, self.value[0]);
-        flag.set(GPIOInFlags::GPIO_IN_1, self.value[1]);
-        flag.set(GPIOInFlags::GPIO_IN_2, self.value[2]);
-        flag.set(GPIOInFlags::GPIO_IN_3, self.value[3]);
+        seq_macro::seq!(N in 0..4 {#(flag.set(GPIOInFlags::GPIO_IN_~N, self.value[N]);)*});
 
-        tx[..size_of::<EmulateGPIOIn>()].copy_from_slice(
+        super::write_to_tx(
+            tx,
             EmulateGPIOIn {
                 tag: TypeTag::EmulateGPIOIn,
                 flag,
-            }
-            .as_bytes(),
+            },
         );
 
         self.is_done = true;

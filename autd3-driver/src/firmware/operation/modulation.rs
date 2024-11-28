@@ -105,7 +105,8 @@ impl Operation for ModulationOp {
         }
 
         if is_first {
-            tx[..size_of::<ModulationHead>()].copy_from_slice(
+            super::write_to_tx(
+                tx,
                 ModulationHead {
                     tag: TypeTag::Modulation,
                     flag: ModulationControlFlags::BEGIN | flag,
@@ -117,18 +118,17 @@ impl Operation for ModulationOp {
                         .map(|m| m.mode())
                         .unwrap_or(TRANSITION_MODE_NONE),
                     transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
-                }
-                .as_bytes(),
+                },
             );
             Ok(size_of::<ModulationHead>() + ((send_num + 0x01) & !0x1))
         } else {
-            tx[..size_of::<ModulationSubseq>()].copy_from_slice(
+            super::write_to_tx(
+                tx,
                 ModulationSubseq {
                     tag: TypeTag::Modulation,
                     flag,
                     size: send_num as _,
-                }
-                .as_bytes(),
+                },
             );
             Ok(size_of::<ModulationSubseq>() + ((send_num + 0x01) & !0x1))
         }

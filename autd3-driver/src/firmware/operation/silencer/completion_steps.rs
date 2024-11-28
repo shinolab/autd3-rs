@@ -53,7 +53,8 @@ impl Operation for SilencerFixedCompletionStepsOp {
         let step_intensity = validate(self.intensity)?;
         let step_phase = validate(self.phase)?;
 
-        tx[..size_of::<SilencerFixedCompletionSteps>()].copy_from_slice(
+        super::super::write_to_tx(
+            tx,
             SilencerFixedCompletionSteps {
                 tag: TypeTag::Silencer,
                 flag: if self.strict_mode {
@@ -66,8 +67,7 @@ impl Operation for SilencerFixedCompletionStepsOp {
                 },
                 value_intensity: step_intensity,
                 value_phase: step_phase,
-            }
-            .as_bytes(),
+            },
         );
 
         self.is_done = true;

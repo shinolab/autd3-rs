@@ -24,12 +24,12 @@ pub struct ReadsFPGAStateOp {
 
 impl Operation for ReadsFPGAStateOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
-        tx[..size_of::<ReadsFPGAState>()].copy_from_slice(
+        super::write_to_tx(
+            tx,
             ReadsFPGAState {
                 tag: TypeTag::ReadsFPGAState,
                 value: self.value,
-            }
-            .as_bytes(),
+            },
         );
 
         self.is_done = true;
