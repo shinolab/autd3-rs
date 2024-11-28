@@ -10,7 +10,7 @@ use crate::{
     geometry::Device,
 };
 
-use super::{SILENCER_FLAG_PULSE_WIDTH, SILENCER_FLAG_STRICT_MODE};
+use super::SilencerControlFlags;
 
 use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
@@ -19,7 +19,7 @@ use zerocopy::{Immutable, IntoBytes};
 #[derive(IntoBytes, Immutable)]
 struct SilencerFixedCompletionSteps {
     tag: TypeTag,
-    flag: u8,
+    flag: SilencerControlFlags,
     value_intensity: u16,
     value_phase: u16,
 }
@@ -57,12 +57,12 @@ impl Operation for SilencerFixedCompletionStepsOp {
             SilencerFixedCompletionSteps {
                 tag: TypeTag::Silencer,
                 flag: if self.strict_mode {
-                    SILENCER_FLAG_STRICT_MODE
+                    SilencerControlFlags::STRICT_MODE
                 } else {
-                    0
+                    SilencerControlFlags::NONE
                 } | match self.target {
-                    SilencerTarget::Intensity => 0,
-                    SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
+                    SilencerTarget::Intensity => SilencerControlFlags::NONE,
+                    SilencerTarget::PulseWidth => SilencerControlFlags::PULSE_WIDTH,
                 },
                 value_intensity: step_intensity,
                 value_phase: step_phase,
@@ -96,7 +96,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(SILENCER_FLAG_STRICT_MODE, true)]
+    #[case(SilencerControlFlags::STRICT_MODE.bits(), true)]
     #[case(0x00, false)]
     fn test(#[case] value: u8, #[case] strict_mode: bool) {
         let device = create_device(0, NUM_TRANS_IN_UNIT);

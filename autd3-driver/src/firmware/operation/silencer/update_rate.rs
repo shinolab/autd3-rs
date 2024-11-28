@@ -9,7 +9,7 @@ use crate::{
     geometry::Device,
 };
 
-use super::{SILENCER_FLAG_FIXED_UPDATE_RATE_MODE, SILENCER_FLAG_PULSE_WIDTH};
+use super::SilencerControlFlags;
 
 use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
@@ -18,7 +18,7 @@ use zerocopy::{Immutable, IntoBytes};
 #[derive(IntoBytes, Immutable)]
 struct SilencerFixedUpdateRate {
     tag: TypeTag,
-    flag: u8,
+    flag: SilencerControlFlags,
     value_intensity: u16,
     value_phase: u16,
 }
@@ -38,10 +38,10 @@ impl Operation for SilencerFixedUpdateRateOp {
         tx[..size_of::<SilencerFixedUpdateRate>()].copy_from_slice(
             SilencerFixedUpdateRate {
                 tag: TypeTag::Silencer,
-                flag: SILENCER_FLAG_FIXED_UPDATE_RATE_MODE
+                flag: SilencerControlFlags::FIXED_UPDATE_RATE
                     | match self.target {
-                        SilencerTarget::Intensity => 0,
-                        SilencerTarget::PulseWidth => SILENCER_FLAG_PULSE_WIDTH,
+                        SilencerTarget::Intensity => SilencerControlFlags::NONE,
+                        SilencerTarget::PulseWidth => SilencerControlFlags::PULSE_WIDTH,
                     },
                 value_intensity: self.intensity.get(),
                 value_phase: self.phase.get(),
@@ -94,7 +94,7 @@ mod tests {
         assert!(op.is_done());
 
         assert_eq!(tx[0], TypeTag::Silencer as u8);
-        assert_eq!(tx[1], SILENCER_FLAG_FIXED_UPDATE_RATE_MODE);
+        assert_eq!(tx[1], SilencerControlFlags::FIXED_UPDATE_RATE.bits());
         assert_eq!(tx[2], 0x34);
         assert_eq!(tx[3], 0x12);
         assert_eq!(tx[4], 0x78);
