@@ -31,7 +31,6 @@ impl FPGAEmulator {
 }
 
 #[cfg(test)]
-
 mod tests {
     use super::*;
 
