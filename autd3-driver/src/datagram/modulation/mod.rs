@@ -61,8 +61,10 @@ impl OperationGenerator for ModulationOperationGenerator {
 
 #[cfg(test)]
 pub mod tests {
+    use autd3_derive::Modulation;
+
     use super::*;
-    use crate::derive::*;
+    use crate::{datagram::DatagramS, geometry::Geometry};
 
     #[derive(Modulation, Clone, PartialEq, Debug)]
     pub struct TestModulation {

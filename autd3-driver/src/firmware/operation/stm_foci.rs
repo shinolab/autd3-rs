@@ -2,12 +2,11 @@ use std::mem::size_of;
 
 use crate::{
     defined::{ControlPoints, METER},
-    derive::{LoopBehavior, SamplingConfig},
     error::AUTDInternalError,
     firmware::{
         fpga::{
-            STMFocus, Segment, TransitionMode, FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FOCI_NUM_MAX,
-            STM_BUF_SIZE_MIN, TRANSITION_MODE_NONE,
+            LoopBehavior, STMFocus, SamplingConfig, Segment, TransitionMode, FOCI_STM_BUF_SIZE_MAX,
+            FOCI_STM_FOCI_NUM_MAX, STM_BUF_SIZE_MIN, TRANSITION_MODE_NONE,
         },
         operation::{Operation, TypeTag},
     },

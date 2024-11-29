@@ -1,5 +1,6 @@
-use crate::{datagram::*, derive::*, firmware::operation::ReadsFPGAStateOp};
+use crate::{datagram::*, firmware::operation::ReadsFPGAStateOp};
 
+use autd3_derive::Builder;
 use derive_more::Debug;
 use derive_new::new;
 

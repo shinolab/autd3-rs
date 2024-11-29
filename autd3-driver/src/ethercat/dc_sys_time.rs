@@ -1,6 +1,6 @@
 use time::OffsetDateTime;
 
-use crate::derive::AUTDInternalError;
+use crate::error::AUTDInternalError;
 
 use super::ECAT_DC_SYS_TIME_BASE;
 

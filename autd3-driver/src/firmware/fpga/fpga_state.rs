@@ -1,5 +1,6 @@
-use crate::derive::Builder;
 use crate::firmware::fpga::Segment;
+
+use autd3_derive::Builder;
 
 const THERMAL_ASSERT_BIT: u8 = 1 << 0;
 const CURRENT_MOD_SEGMENT_BIT: u8 = 1 << 1;

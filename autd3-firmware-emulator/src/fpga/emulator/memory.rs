@@ -1,8 +1,8 @@
 use std::cell::{LazyCell, RefCell};
 
-use autd3_derive::Builder;
-
 use crate::FPGAEmulator;
+
+use autd3_driver::derive::Builder;
 
 use super::super::params::*;
 

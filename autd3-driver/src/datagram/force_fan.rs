@@ -1,5 +1,6 @@
-use crate::{datagram::*, derive::*, firmware::operation::ForceFanOp};
+use crate::{datagram::*, firmware::operation::ForceFanOp};
 
+use autd3_derive::Builder;
 use derive_more::Debug;
 use derive_new::new;
 

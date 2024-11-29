@@ -1,16 +1,22 @@
+use std::collections::HashMap;
+
+use autd3_derive::Gain;
 use autd3_driver::{
     autd3_device::AUTD3,
-    datagram::IntoBoxedGain,
+    datagram::{
+        Datagram, DatagramS, Gain, GainContextGenerator, GainOperationGenerator, IntoBoxedGain,
+    },
     defined::rad,
-    derive::{Geometry, *},
+    error::AUTDInternalError,
     firmware::{
         cpu::TxMessage,
-        fpga::{EmitIntensity, Phase},
-        operation::OperationHandler,
+        fpga::{Drive, EmitIntensity, Phase, Segment, TransitionMode},
+        operation::{GainContext, OperationHandler},
     },
-    geometry::{IntoDevice, Vector3},
+    geometry::{Device, Geometry, IntoDevice, Transducer, Vector3},
 };
 
+use bit_vec::BitVec;
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use zerocopy::FromZeros;
 

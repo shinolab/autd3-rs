@@ -1,10 +1,9 @@
 use std::time::Duration;
 
 use crate::{
-    derive::Geometry,
     error::AUTDInternalError,
     firmware::operation::{NullOp, OperationGenerator},
-    geometry::Device,
+    geometry::{Device, Geometry},
 };
 
 use super::Datagram;

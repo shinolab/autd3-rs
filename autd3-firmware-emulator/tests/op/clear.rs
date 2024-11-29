@@ -5,7 +5,6 @@ use crate::{
     op::{gain::TestGain, stm::foci::gen_random_foci},
     send,
 };
-use autd3_derive::Modulation;
 use autd3_driver::{
     autd3_device::AUTD3,
     datagram::*,

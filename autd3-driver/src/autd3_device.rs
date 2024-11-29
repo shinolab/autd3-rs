@@ -1,9 +1,9 @@
 use crate::{
     defined::mm,
-    derive::*,
     geometry::{Device, IntoDevice, Matrix4, Transducer, UnitQuaternion, Vector3, Vector4},
 };
 
+use autd3_derive::Builder;
 use derive_new::new;
 
 #[derive(Clone, Copy, Debug, Builder, new)]

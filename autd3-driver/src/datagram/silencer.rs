@@ -4,15 +4,17 @@ use autd3_derive::Builder;
 
 use crate::{
     defined::ULTRASOUND_PERIOD,
-    derive::{Geometry, SamplingConfig},
     error::AUTDInternalError,
     firmware::{
-        fpga::{SilencerTarget, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
+        fpga::{
+            SamplingConfig, SilencerTarget, SILENCER_STEPS_INTENSITY_DEFAULT,
+            SILENCER_STEPS_PHASE_DEFAULT,
+        },
         operation::{
             NullOp, OperationGenerator, SilencerFixedCompletionStepsOp, SilencerFixedUpdateRateOp,
         },
     },
-    geometry::Device,
+    geometry::{Device, Geometry},
 };
 
 use super::Datagram;
@@ -174,7 +176,7 @@ where
 mod tests {
     use crate::{
         datagram::{gain::tests::TestGain, modulation::tests::TestModulation, FociSTM, GainSTM},
-        derive::{LoopBehavior, SamplingConfig},
+        firmware::fpga::LoopBehavior,
         geometry::Vector3,
     };
 
