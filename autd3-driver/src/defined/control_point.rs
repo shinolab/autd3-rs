@@ -1,9 +1,9 @@
 use crate::{
-    derive::*,
     firmware::fpga::{EmitIntensity, Phase},
     geometry::{Point3, Vector3},
 };
 
+use autd3_derive::Builder;
 use derive_more::{Deref, DerefMut};
 use derive_new::new;
 

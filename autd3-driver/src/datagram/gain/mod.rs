@@ -6,10 +6,10 @@ use std::collections::HashMap;
 
 pub use crate::firmware::operation::GainContext;
 use crate::{
-    derive::{Geometry, Segment, TransitionMode},
     error::AUTDInternalError,
+    firmware::fpga::{Segment, TransitionMode},
     firmware::operation::{GainOp, NullOp, OperationGenerator},
-    geometry::Device,
+    geometry::{Device, Geometry},
 };
 
 use bit_vec::BitVec;
@@ -66,12 +66,14 @@ impl<G: GainContextGenerator> OperationGenerator for GainOperationGenerator<G> {
 
 #[cfg(test)]
 pub mod tests {
+    use autd3_derive::Gain;
+
     use super::*;
 
     use crate::{
-        derive::*,
-        firmware::fpga::{EmitIntensity, Phase},
-        geometry::tests::create_geometry,
+        datagram::DatagramS,
+        firmware::fpga::{Drive, EmitIntensity, Phase},
+        geometry::{tests::create_geometry, Device, Transducer},
     };
 
     #[derive(Gain, Clone, Debug)]

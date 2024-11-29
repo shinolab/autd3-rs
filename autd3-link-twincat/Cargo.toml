@@ -10,7 +10,7 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-autd3-driver = { workspace = true }
+autd3-driver = { workspace = true, features = ["derive"] }
 itertools = { workspace = true, optional = true }
 libloading = { workspace = true, optional = true }
 thiserror = { workspace = true }

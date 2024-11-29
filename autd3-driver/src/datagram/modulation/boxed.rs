@@ -3,7 +3,12 @@ use std::mem::MaybeUninit;
 use autd3_derive::Modulation;
 
 use super::{Modulation, ModulationOperationGenerator, ModulationProperty};
-use crate::derive::*;
+use crate::{
+    datagram::DatagramS,
+    error::AUTDInternalError,
+    firmware::fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
+    geometry::Geometry,
+};
 
 pub trait DModulation {
     fn dyn_calc(&mut self) -> Result<Vec<u8>, AUTDInternalError>;

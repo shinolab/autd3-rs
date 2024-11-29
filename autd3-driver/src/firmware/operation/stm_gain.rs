@@ -3,13 +3,12 @@
 use std::mem::size_of;
 
 use crate::{
-    derive::{LoopBehavior, SamplingConfig},
     error::AUTDInternalError,
     firmware::{
         cpu::GainSTMMode,
         fpga::{
-            Drive, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX, STM_BUF_SIZE_MIN,
-            TRANSITION_MODE_NONE,
+            Drive, LoopBehavior, SamplingConfig, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX,
+            STM_BUF_SIZE_MIN, TRANSITION_MODE_NONE,
         },
         operation::{Operation, TypeTag},
     },
@@ -229,13 +228,12 @@ mod tests {
 
     use super::*;
     use crate::{
-        derive::Transducer,
         ethercat::DcSysTime,
         firmware::{
             cpu::TxMessage,
             fpga::{EmitIntensity, Phase},
         },
-        geometry::tests::create_device,
+        geometry::{tests::create_device, Transducer},
     };
 
     const NUM_TRANS_IN_UNIT: usize = 249;

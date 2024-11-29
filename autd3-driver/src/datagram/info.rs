@@ -1,8 +1,8 @@
-
 use crate::{
     datagram::*,
-    derive::{AUTDInternalError, Geometry},
+    error::AUTDInternalError,
     firmware::operation::{FirmInfoOp, FirmwareVersionType},
+    geometry::Geometry,
 };
 
 use super::OperationGenerator;

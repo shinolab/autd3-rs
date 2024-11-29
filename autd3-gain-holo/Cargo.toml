@@ -10,8 +10,8 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-autd3-driver = { workspace = true }
-nalgebra = { workspace = true}
+autd3-driver = { workspace = true, features = ["derive"] }
+nalgebra = { workspace = true }
 thiserror = { workspace = true }
 rand = { workspace = true }
 bit-vec = { workspace = true }

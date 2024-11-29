@@ -84,7 +84,7 @@ impl From<Duration> for STMConfigNearest {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{defined::Hz, derive::AUTDInternalError, firmware::fpga::SamplingConfig};
+    use crate::{defined::Hz, firmware::fpga::SamplingConfig};
 
     #[rstest::rstest]
     #[test]
