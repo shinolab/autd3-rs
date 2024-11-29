@@ -1,5 +1,5 @@
-use autd3_derive::Builder;
 use autd3_driver::{
+    derive::Builder,
     ethercat::{DcSysTime, EC_OUTPUT_FRAME_SIZE},
     firmware::cpu::{Header, RxMessage, TxMessage},
 };

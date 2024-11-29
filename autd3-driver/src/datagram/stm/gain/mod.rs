@@ -1,15 +1,21 @@
 mod implement;
 
+use std::collections::HashMap;
+
 use super::sampling_config::*;
+pub use crate::firmware::operation::GainSTMContext;
 use crate::{
     datagram::*,
     defined::Freq,
-    derive::*,
-    firmware::{cpu::GainSTMMode, operation::GainSTMOp},
+    firmware::{
+        cpu::GainSTMMode,
+        fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
+        operation::GainSTMOp,
+    },
 };
 
-pub use crate::firmware::operation::GainSTMContext;
-
+use autd3_derive::Builder;
+use bit_vec::BitVec;
 use derive_more::{Deref, DerefMut};
 use silencer::WithSampling;
 

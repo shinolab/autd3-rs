@@ -1,10 +1,12 @@
 use std::sync::Arc;
 
 use crate::{
-    derive::{LoopBehavior, SamplingConfig},
     error::AUTDInternalError,
     firmware::{
-        fpga::{Segment, TransitionMode, MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN, TRANSITION_MODE_NONE},
+        fpga::{
+            LoopBehavior, SamplingConfig, Segment, TransitionMode, MOD_BUF_SIZE_MAX,
+            MOD_BUF_SIZE_MIN, TRANSITION_MODE_NONE,
+        },
         operation::{Operation, TypeTag},
     },
     geometry::Device,
@@ -152,7 +154,7 @@ mod tests {
     use rand::prelude::*;
 
     use super::*;
-    use crate::{derive::LoopBehavior, ethercat::DcSysTime, geometry::tests::create_device};
+    use crate::{ethercat::DcSysTime, geometry::tests::create_device};
 
     const NUM_TRANS_IN_UNIT: usize = 249;
 

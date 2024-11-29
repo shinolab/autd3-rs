@@ -1,4 +1,4 @@
-use crate::{derive::AUTDInternalError, firmware::fpga::FPGAState};
+use crate::{error::AUTDInternalError, firmware::fpga::FPGAState};
 use autd3_derive::Builder;
 use derive_more::Display;
 use derive_new::new;

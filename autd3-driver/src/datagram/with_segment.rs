@@ -2,10 +2,13 @@ use std::time::Duration;
 
 use super::{Datagram, OperationGenerator};
 use crate::{
-    derive::*,
+    defined::DEFAULT_TIMEOUT,
+    error::AUTDInternalError,
     firmware::fpga::{Segment, TransitionMode},
+    geometry::Geometry,
 };
 
+use autd3_derive::Builder;
 use derive_more::Deref;
 
 #[derive(Builder, Clone, Deref, Debug)]

@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::derive::{AUTDInternalError, Geometry};
+use crate::{error::AUTDInternalError, geometry::Geometry};
 
 use super::Datagram;
 

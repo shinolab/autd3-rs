@@ -8,7 +8,7 @@ use crate::{
 };
 
 use super::{
-    Gain, GainContext, GainContextGenerator, GainSTMContext, GainSTMContextGenerator,
+    gain::GainContext, Gain, GainContextGenerator, GainSTMContext, GainSTMContextGenerator,
     GainSTMGenerator, IntoGainSTMGenerator,
 };
 

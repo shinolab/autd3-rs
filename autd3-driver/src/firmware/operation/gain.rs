@@ -1,10 +1,9 @@
 use std::mem::size_of;
 
 use crate::{
-    derive::TransitionMode,
     error::AUTDInternalError,
     firmware::{
-        fpga::{Drive, Segment},
+        fpga::{Drive, Segment, TransitionMode},
         operation::{Operation, TypeTag},
     },
     geometry::{Device, Transducer},

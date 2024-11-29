@@ -1,8 +1,4 @@
-use crate::{
-    datagram::*,
-    derive::{AUTDInternalError, Geometry},
-    firmware::operation::SwapSegmentOp,
-};
+use crate::{datagram::*, firmware::operation::SwapSegmentOp};
 
 use super::OperationGenerator;
 

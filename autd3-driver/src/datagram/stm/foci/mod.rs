@@ -1,10 +1,18 @@
 mod implement;
 
 use super::sampling_config::*;
-use crate::{datagram::*, defined::Freq, derive::*, firmware::operation::FociSTMOp};
+use crate::{
+    datagram::*,
+    defined::Freq,
+    firmware::{
+        fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
+        operation::FociSTMOp,
+    },
+};
 
 pub use crate::firmware::operation::FociSTMContext;
 
+use autd3_derive::Builder;
 use derive_more::{Deref, DerefMut};
 use silencer::WithSampling;
 

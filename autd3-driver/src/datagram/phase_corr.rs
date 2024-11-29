@@ -1,10 +1,10 @@
 use crate::{
     datagram::*,
-    derive::*,
     firmware::{fpga::Phase, operation::PhaseCorrectionOp},
-    geometry::Transducer,
+    geometry::{Device, Transducer},
 };
 
+use autd3_derive::Builder;
 use derive_more::Debug;
 use derive_new::new;
 

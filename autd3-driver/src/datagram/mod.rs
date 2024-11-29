@@ -45,10 +45,14 @@ pub use with_parallel_threshold::{
 pub use with_segment::{DatagramS, DatagramWithSegment, IntoDatagramWithSegment};
 pub use with_timeout::{DatagramWithTimeout, IntoDatagramWithTimeout};
 
-use crate::{defined::DEFAULT_TIMEOUT, firmware::operation::NullOp, geometry::Device};
+use crate::{
+    defined::DEFAULT_TIMEOUT,
+    firmware::operation::NullOp,
+    geometry::{Device, Geometry},
+};
 use std::time::Duration;
 
-use crate::{derive::Geometry, error::AUTDInternalError, firmware::operation::OperationGenerator};
+use crate::{error::AUTDInternalError, firmware::operation::OperationGenerator};
 
 pub trait Datagram: std::fmt::Debug {
     type G: OperationGenerator;
@@ -64,7 +68,7 @@ pub trait Datagram: std::fmt::Debug {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::derive::{Segment, TransitionMode};
+    use crate::firmware::fpga::{Segment, TransitionMode};
 
     use super::*;
 
@@ -92,10 +96,10 @@ pub mod tests {
 
         fn operation_generator_with_segment(
             self,
-            _: &crate::derive::Geometry,
+            _: &Geometry,
             _segment: Segment,
             _transition_mode: Option<TransitionMode>,
-        ) -> Result<Self::G, crate::derive::AUTDInternalError> {
+        ) -> Result<Self::G, AUTDInternalError> {
             Ok(NullOperationGenerator {})
         }
 

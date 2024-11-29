@@ -1,9 +1,11 @@
 use std::mem::size_of;
 
 use crate::{
-    derive::{Segment, TransitionMode},
     error::AUTDInternalError,
-    firmware::operation::TypeTag,
+    firmware::{
+        fpga::{Segment, TransitionMode},
+        operation::TypeTag,
+    },
     geometry::Device,
 };
 
@@ -106,7 +108,6 @@ impl Operation for SwapSegmentOp {
 #[cfg(test)]
 mod tests {
     use crate::{
-        derive::{Segment, TransitionMode},
         ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
         geometry::tests::create_device,
     };

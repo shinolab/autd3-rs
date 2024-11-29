@@ -1,8 +1,16 @@
 use std::{collections::HashMap, mem::MaybeUninit};
 
 use super::{Gain, GainContextGenerator, GainOperationGenerator};
-use crate::derive::*;
-pub use crate::firmware::operation::GainContext;
+
+use crate::error::AUTDInternalError;
+pub use crate::{
+    datagram::DatagramS,
+    firmware::{
+        fpga::{Drive, Segment, TransitionMode},
+        operation::GainContext,
+    },
+    geometry::{Device, Geometry, Transducer},
+};
 
 use autd3_derive::Gain;
 use bit_vec::BitVec;
@@ -120,6 +128,7 @@ pub mod tests {
     use super::*;
     use crate::datagram::gain::tests::TestGain;
 
+    use crate::firmware::fpga::{EmitIntensity, Phase};
     use crate::geometry::tests::create_geometry;
 
     const NUM_TRANSDUCERS: usize = 2;
