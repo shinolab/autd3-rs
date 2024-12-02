@@ -7,8 +7,10 @@ pub(crate) trait Sleeper {
     fn sleep_until(&self, deadline: Instant) -> impl std::future::Future<Output = ()>;
 }
 
+/// See [TimerStrategy](super::TimerStrategy) for more details.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StdSleeper {
+    /// An optional timer resolution in milliseconds for Windows. The default is `Some(1)`.
     pub timer_resolution: Option<std::num::NonZeroU32>,
 }
 
@@ -33,8 +35,10 @@ impl Sleeper for SpinSleeper {
     }
 }
 
+/// See [TimerStrategy](super::TimerStrategy) for more details.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AsyncSleeper {
+    /// An optional timer resolution in milliseconds for Windows. The default is `Some(1)`.
     pub timer_resolution: Option<std::num::NonZeroU32>,
 }
 
@@ -60,6 +64,7 @@ pub use win::WaitableSleeper;
 mod win {
     use super::*;
 
+    /// See [TimerStrategy](super::super::TimerStrategy) for more details.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct WaitableSleeper {
         handle: windows::Win32::Foundation::HANDLE,
@@ -90,6 +95,8 @@ mod win {
                 if time.is_zero() {
                     return;
                 }
+                // The unit of SetWaitableTimer is 100ns and negative value means relative time.
+                // See [SetWaitableTimer](https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-setwaitabletimer) for more details.
                 let duetime = (time.as_nanos() / 100) as i64;
                 let duetime = -duetime;
                 let set_and_wait = || {

@@ -23,25 +23,40 @@ pub use spin_sleep::{SpinSleeper, SpinStrategy};
 
 use crate::error::AUTDError;
 
+/// Enum representing sleeping strategies for the timer.
+///
+/// The `TimerStrategy` enum provides various strategies for implementing a timer
+/// with different sleeping mechanisms. This allows for flexibility in how the timer
+/// behaves depending on the target operating system and specific requirements.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum TimerStrategy {
+    /// Uses `std::thread::sleep`.
     Std(StdSleeper),
+    /// Uses a [waitable timer](https://learn.microsoft.com/en-us/windows/win32/sync/waitable-timer-objects) available only on Windows.
     #[cfg(target_os = "windows")]
     Waitable(WaitableSleeper),
+    /// Uses a [spin_sleep](https://crates.io/crates/spin_sleep).
     Spin(SpinSleeper),
+    /// Uses `tokio::time::sleep_until`.
     Async(AsyncSleeper),
 }
 
+/// A struct managing the timing of sending and receiving operations.
+// Timer can be generic, but in that case, `Controller` must also be generic. To avoid this, `TimerStrategy` is an enum.
 #[derive(Builder)]
 pub struct Timer {
     #[get]
+    /// The duration between sending operations.
     pub(crate) send_interval: Duration,
     #[get]
+    /// The duration between receiving operations.
     pub(crate) receive_interval: Duration,
     #[get]
+    /// The strategy used for timing operations.
     pub(crate) strategy: TimerStrategy,
     #[get]
+    /// The default timeout when no timeout is specified for the [Datagram](crate::driver::datagram::Datagram) to be sent.
     pub(crate) fallback_timeout: Duration,
 }
 
@@ -102,6 +117,8 @@ impl Timer {
     ) -> Result<(), AUTDError> {
         link.update(geometry).await?;
 
+        // We prioritize average behavior for the transmission timing. That is, not the interval from the previous transmission, but ensuring that T/`send_interval` transmissions are performed in a sufficiently long time T.
+        // For example, if the `send_interval` is 1ms and it takes 1.5ms to transmit due to some reason, the next transmission will be performed not 1ms later but 0.5ms later.
         let mut send_timing = Instant::now();
         loop {
             OperationHandler::pack(&mut operations, geometry, tx, parallel)?;
@@ -165,10 +182,11 @@ impl Timer {
         }
         rx.iter()
             .try_fold((), |_, r| Result::<(), AUTDInternalError>::from(r))
-            .and_then(|_| {
+            .and_then(|e| {
                 if timeout == Duration::ZERO {
                     Ok(())
                 } else {
+                    tracing::error!("Failed to confirm the response from the device: {:?}", e);
                     Err(AUTDInternalError::ConfirmResponseFailed)
                 }
             })
