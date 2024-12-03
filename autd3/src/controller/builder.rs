@@ -24,10 +24,10 @@ pub struct ControllerBuilder {
     devices: Vec<Device>,
     #[get]
     #[set]
-    fallback_parallel_threshold: usize,
+    default_parallel_threshold: usize,
     #[set]
     #[get]
-    fallback_timeout: Duration,
+    default_timeout: Duration,
     #[get]
     #[set]
     send_interval: Duration,
@@ -48,8 +48,8 @@ impl ControllerBuilder {
                 .enumerate()
                 .map(|(i, d)| d.into_device(i as _))
                 .collect(),
-            fallback_parallel_threshold: 4,
-            fallback_timeout: Duration::from_millis(20),
+            default_parallel_threshold: 4,
+            default_timeout: Duration::from_millis(20),
             send_interval: Duration::from_millis(1),
             receive_interval: Duration::from_millis(1),
             timer_strategy: TimerStrategy::Spin(SpinSleeper::default()),
@@ -69,7 +69,7 @@ impl ControllerBuilder {
         link_builder: B,
         timeout: Duration,
     ) -> Result<Controller<B::L>, AUTDError> {
-        let geometry = Geometry::new(self.devices, self.fallback_parallel_threshold);
+        let geometry = Geometry::new(self.devices, self.default_parallel_threshold);
         Controller {
             link: link_builder.open(&geometry).await?,
             tx_buf: vec![TxMessage::new_zeroed(); geometry.len()],
@@ -79,7 +79,7 @@ impl ControllerBuilder {
                 send_interval: self.send_interval,
                 receive_interval: self.receive_interval,
                 strategy: self.timer_strategy,
-                fallback_timeout: self.fallback_timeout,
+                default_timeout: self.default_timeout,
             },
         }
         .open_impl(timeout)

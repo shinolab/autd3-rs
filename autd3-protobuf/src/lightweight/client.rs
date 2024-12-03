@@ -17,10 +17,10 @@ pub struct LightweightClientBuilder {
     devices: Vec<Device>,
     #[get]
     #[set]
-    fallback_parallel_threshold: usize,
+    default_parallel_threshold: usize,
     #[set]
     #[get]
-    fallback_timeout: std::time::Duration,
+    default_timeout: std::time::Duration,
     #[get]
     #[set]
     send_interval: std::time::Duration,
@@ -41,8 +41,8 @@ impl LightweightClientBuilder {
                 .enumerate()
                 .map(|(i, d)| d.into_device(i as _))
                 .collect(),
-            fallback_parallel_threshold: 4,
-            fallback_timeout: std::time::Duration::from_millis(20),
+            default_parallel_threshold: 4,
+            default_timeout: std::time::Duration::from_millis(20),
             send_interval: std::time::Duration::from_millis(1),
             receive_interval: std::time::Duration::from_millis(1),
             #[cfg(target_os = "windows")]
@@ -70,11 +70,11 @@ impl LightweightClient {
         let mut client =
             crate::pb::ecat_light_client::EcatLightClient::connect(format!("http://{}", addr))
                 .await?;
-        let geometry = Geometry::new(builder.devices, builder.fallback_parallel_threshold as _);
+        let geometry = Geometry::new(builder.devices, builder.default_parallel_threshold as _);
         let res = client
             .open(OpenRequestLightweight {
                 geometry: Some(geometry.to_msg(None)),
-                fallback_timeout: builder.fallback_timeout.as_nanos() as _,
+                default_timeout: builder.default_timeout.as_nanos() as _,
                 send_interval: builder.send_interval.as_nanos() as _,
                 receive_interval: builder.receive_interval.as_nanos() as _,
             })
