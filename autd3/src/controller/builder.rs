@@ -17,25 +17,32 @@ use super::{
 };
 use crate::error::AUTDError;
 
+/// A builder for creating a `Controller` instance.
 #[derive(Builder, Debug)]
 pub struct ControllerBuilder {
     #[debug(skip)]
     #[get(take)]
+    /// Takes the devices out of the builder.
     devices: Vec<Device>,
     #[get]
     #[set]
+    /// The default parallel threshold when no threshold is specified for the [`Datagram`](crate::driver::datagram::Datagram) to be sent. The default value is 4.
     fallback_parallel_threshold: usize,
     #[set]
     #[get]
+    /// The default timeout when no timeout is specified for the [`Datagram`](crate::driver::datagram::Datagram) to be sent. The default value is 20ms.
     fallback_timeout: Duration,
     #[get]
     #[set]
+    /// The duration between sending operations. The default value is 1ms.
     send_interval: Duration,
     #[get]
     #[set]
+    /// The duration between receiving operations. The default value is 1ms.
     receive_interval: Duration,
     #[get(ref)]
     #[set]
+    /// The strategy used for timing operations. The default value is [`TimerStrategy::Spin`](crate::controller::timer::TimerStrategy::Spin) with the default [`SpinSleeper`](spin_sleep::SpinSleeper).
     timer_strategy: TimerStrategy,
 }
 
@@ -56,6 +63,10 @@ impl ControllerBuilder {
         }
     }
 
+    /// Equivalent to [`open_with_timeout`] with a timeout of [`DEFAULT_TIMEOUT`].
+    ///
+    /// [`open_with_timeout`]: ControllerBuilder::open_with_timeout
+    /// [`DEFAULT_TIMEOUT`]: autd3_driver::defined::DEFAULT_TIMEOUT
     pub async fn open<B: LinkBuilder>(
         self,
         link_builder: B,
@@ -63,6 +74,9 @@ impl ControllerBuilder {
         self.open_with_timeout(link_builder, DEFAULT_TIMEOUT).await
     }
 
+    /// Opens a controller with a timeout.
+    ///
+    /// Opens link, and then initialize and synchronize the devices. The `timeout` is used to send data for initialization and synchronization.
     #[tracing::instrument(level = "debug", skip(link_builder))]
     pub async fn open_with_timeout<B: LinkBuilder>(
         self,
@@ -72,7 +86,7 @@ impl ControllerBuilder {
         let geometry = Geometry::new(self.devices, self.fallback_parallel_threshold);
         Controller {
             link: link_builder.open(&geometry).await?,
-            tx_buf: vec![TxMessage::new_zeroed(); geometry.len()],
+            tx_buf: vec![TxMessage::new_zeroed(); geometry.len()], // Do not use `num_devices` here because the devices may be disabled.
             rx_buf: vec![RxMessage::new(0, 0); geometry.len()],
             geometry,
             timer: Timer {
