@@ -120,6 +120,7 @@ def rust_test(args) -> None:  # noqa: ANN001
             run_command(command)
     else:
         run_command(config.cargo_command(["nextest", "run", "--exclude", "autd3-examples"]))
+        run_command(config.cargo_command(["test", "--doc"]))
 
 
 def rust_run(args) -> None:  # noqa: ANN001
