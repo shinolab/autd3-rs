@@ -31,14 +31,14 @@ use crate::error::AUTDError;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum TimerStrategy {
-    /// Uses `std::thread::sleep`.
+    /// Uses [`std::thread::sleep`].
     Std(StdSleeper),
     /// Uses a [waitable timer](https://learn.microsoft.com/en-us/windows/win32/sync/waitable-timer-objects) available only on Windows.
     #[cfg(target_os = "windows")]
     Waitable(WaitableSleeper),
-    /// Uses a [spin_sleep](https://crates.io/crates/spin_sleep).
+    /// Uses a [spin_sleep](https://crates.io/crates/spin_sleep) crate.
     Spin(SpinSleeper),
-    /// Uses `tokio::time::sleep_until`.
+    /// Uses [`tokio::time::sleep_until`].
     Async(AsyncSleeper),
 }
 
@@ -56,7 +56,7 @@ pub struct Timer {
     /// The strategy used for timing operations.
     pub(crate) strategy: TimerStrategy,
     #[get]
-    /// The default timeout when no timeout is specified for the [Datagram](crate::driver::datagram::Datagram) to be sent.
+    /// The default timeout when no timeout is specified for the [`Datagram`](crate::driver::datagram::Datagram) to be sent.
     pub(crate) fallback_timeout: Duration,
 }
 
