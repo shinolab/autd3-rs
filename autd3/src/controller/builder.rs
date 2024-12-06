@@ -15,9 +15,9 @@ use super::{
     timer::{Timer, TimerStrategy},
     Controller,
 };
-use crate::error::AUTDError;
+use crate::{error::AUTDError, link::Nop};
 
-/// A builder for creating a `Controller` instance.
+/// A builder for creating a [`Controller`] instance.
 #[derive(Builder, Debug)]
 pub struct ControllerBuilder {
     #[debug(skip)]
@@ -98,6 +98,14 @@ impl ControllerBuilder {
         }
         .open_impl(timeout)
         .await
+    }
+}
+
+impl Controller<Nop> {
+    /// Creates a new [`ControllerBuilder`] with the given devices.
+    #[must_use]
+    pub fn builder<D: IntoDevice, F: IntoIterator<Item = D>>(iter: F) -> ControllerBuilder {
+        ControllerBuilder::new(iter)
     }
 }
 

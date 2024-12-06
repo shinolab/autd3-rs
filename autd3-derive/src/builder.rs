@@ -71,7 +71,11 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let getter_fileds = get_fields(input, "get");
 
     let getters = getter_fileds.iter().filter_map(|field| {
-        let doc_comment = {
+        let doc_comment = if has_attr(field, "no_doc") {
+            quote! {
+                #[allow(missing_docs)]
+            }
+        } else {
             let doc_comments = get_doc_comments(field);
             if doc_comments.is_empty() {
                 quote! {}
@@ -235,11 +239,13 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let setters = setter_fileds.iter().filter_map(|field| {
         let ty = &field.ty;
         field.ident.as_ref().map(|ident| {
+            let doc_comment = format!("Set the {} field.", ident);
             let name = format_ident!("with_{}", ident);
             if has_attr(field, "into") {
                 quote! {
                     #[allow(clippy::needless_update)]
                     #[must_use]
+                    #[doc = #doc_comment]
                     pub fn #name(mut self, #ident: impl Into<#ty>) -> Self {
                         self.#ident = #ident.into();
                         self
@@ -254,6 +260,7 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 quote! {
                     #[allow(clippy::needless_update)]
                     #[must_use]
+                    #[doc = #doc_comment]
                     pub #const_attr fn #name(mut self, #ident: #ty) -> Self {
                         self.#ident = #ident;
                         self

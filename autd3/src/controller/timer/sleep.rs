@@ -74,6 +74,13 @@ mod win {
     unsafe impl Sync for WaitableSleeper {}
 
     impl WaitableSleeper {
+        /// Creates a new `WaitableSleeper`.
+        ///
+        /// # Errors
+        ///
+        /// See [`CreateWaitableTimerExW`] for more details.
+        ///
+        /// [`CreateWaitableTimerExW`]: https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-createwaitabletimerexw
         pub fn new() -> windows::core::Result<Self> {
             Ok(Self {
                 handle: unsafe {
