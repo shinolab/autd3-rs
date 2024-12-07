@@ -4,6 +4,7 @@
 
 /// [`Controller`] module.
 pub mod controller;
+/// Primitive `Gain`s, `Modulation`s and utilities for `GainSTM` and `FociSTM`.
 pub mod datagram;
 pub mod error;
 pub mod link;

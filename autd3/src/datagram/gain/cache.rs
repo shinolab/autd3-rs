@@ -10,11 +10,15 @@ use std::{cell::RefCell, rc::Rc};
 
 use derive_more::Debug;
 
+/// Cache for `Gain`s
+///
+/// This `Gain` is used to cache the calculated phases and intensities for each transducer.
 #[derive(Gain, Debug, Builder)]
 pub struct Cache<G: Gain> {
     gain: Rc<RefCell<Option<G>>>,
     #[debug("{}", !self.cache.borrow().is_empty())]
     #[get]
+    /// Cached phases and intensities.
     cache: Rc<RefCell<HashMap<usize, Arc<Vec<Drive>>>>>,
 }
 
@@ -27,7 +31,9 @@ impl<G: Gain> Clone for Cache<G> {
     }
 }
 
+/// Trait to convert `Gain` to [Cache].
 pub trait IntoCache<G: Gain> {
+    /// Convert Gain to [Cache]
     fn with_cache(self) -> Cache<G>;
 }
 
@@ -41,6 +47,13 @@ impl<G: Gain> IntoCache<G> for G {
 }
 
 impl<G: Gain> Cache<G> {
+    /// Initialize cache
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AUTDInternalError::GainError`] if you initialize with some devices disabled and then reinitialize after enabling the devices.
+    ///
+    /// [`AUTDInternalError::GainError`]: autd3_driver::error::AUTDInternalError::GainError
     pub fn init(&self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
         if let Some(gain) = self.gain.take() {
             let mut f = gain.init(geometry, None)?;
@@ -70,6 +83,7 @@ impl<G: Gain> Cache<G> {
         Ok(())
     }
 
+    /// Get the number of references to the cache
     pub fn count(&self) -> usize {
         Rc::strong_count(&self.cache)
     }

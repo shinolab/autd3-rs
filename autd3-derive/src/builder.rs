@@ -239,7 +239,7 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let setters = setter_fileds.iter().filter_map(|field| {
         let ty = &field.ty;
         field.ident.as_ref().map(|ident| {
-            let doc_comment = format!("Set the {} field.", ident);
+            let doc_comment = format!("Set the `{}` field.", ident);
             let name = format_ident!("with_{}", ident);
             if has_attr(field, "into") {
                 quote! {

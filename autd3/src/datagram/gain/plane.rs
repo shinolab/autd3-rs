@@ -6,17 +6,21 @@ use autd3_driver::{
 };
 use derive_new::new;
 
+/// Plane wave
 #[derive(Gain, Clone, PartialEq, Debug, Builder, new)]
 pub struct Plane {
     #[get(ref)]
+    /// The direction of the plane wave.
     dir: UnitVector3,
     #[new(value = "EmitIntensity::MAX")]
     #[get]
     #[set(into)]
+    /// The intensity of the plane wave.
     intensity: EmitIntensity,
     #[new(value = "Phase::ZERO")]
     #[get]
     #[set(into)]
+    /// The phase offset of the plane wave.
     phase_offset: Phase,
 }
 
