@@ -7,27 +7,45 @@ use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInf
 
 use derive_more::Debug;
 
+/// Sine wave modulation
+///
+/// The modulation value is calculated as `⌊intensity / 2 * sin(2 * PI * freq * t + phase) + offset⌋`.
 #[derive(Modulation, Clone, PartialEq, Builder, Debug)]
 pub struct Sine<S: SamplingMode> {
     #[debug("{}({:?})", tynm::type_name::<S>(), self.freq)]
     freq: S::T,
     #[get]
     #[set]
+    /// The intensity of the modulation. The default value is [`u8::MAX`].
     intensity: u8,
     #[get]
     #[set]
+    /// The offset of the modulation. The default value is `0x80`.
     offset: u8,
     #[get]
     #[set]
+    /// The phase of the modulation. The default value is `0 rad`.
     phase: Angle,
     #[get]
     #[set]
+    /// If `true`, the modulation value is clamped to the range of `u8`. If `false`, returns an error if the value is out of range. The default value is `false`.
     clamp: bool,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
 }
 
 impl Sine<ExactFreq> {
+    /// Create new [`Sine`] modulation with exact frequency.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use autd3::prelude::*;
+    ///
+    /// Sine::new(100 * Hz);
+    /// // or
+    /// Sine::new(100. * Hz);
+    /// ```
     pub const fn new<S: SamplingModeInference>(freq: S) -> Sine<S::T> {
         Sine {
             freq,
@@ -40,6 +58,7 @@ impl Sine<ExactFreq> {
         }
     }
 
+    /// Create new [`Sine`] modulation with nearest frequency.
     pub const fn new_nearest(freq: Freq<f32>) -> Sine<NearestFreq> {
         Sine {
             freq,
@@ -54,6 +73,7 @@ impl Sine<ExactFreq> {
 }
 
 impl<S: SamplingMode> Sine<S> {
+    /// The frequency of the modulation.
     pub fn freq(&self) -> S::T {
         S::freq(self.freq, self.config)
     }

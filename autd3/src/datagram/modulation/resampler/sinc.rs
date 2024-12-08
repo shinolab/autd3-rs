@@ -4,8 +4,10 @@ use autd3_driver::utils::float::is_integer;
 
 use super::{window::InterpolationWindow, Blackman, Resampler};
 
+/// Sinc interpolation resampler.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SincInterpolation<T: InterpolationWindow> {
+    /// Window function.
     pub window: T,
 }
 
@@ -98,7 +100,7 @@ impl<T: InterpolationWindow> Resampler for SincInterpolation<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::modulation::resample::{Blackman, Rectangular};
+    use crate::modulation::resampler::{Blackman, Rectangular};
 
     use super::*;
 

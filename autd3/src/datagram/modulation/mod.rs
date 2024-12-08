@@ -3,8 +3,9 @@ mod custom;
 mod fir;
 mod fourier;
 mod radiation_pressure;
-pub mod resample;
-pub mod sampling_mode;
+/// Resampler module.
+pub mod resampler;
+mod sampling_mode;
 mod sine;
 mod square;
 mod r#static;

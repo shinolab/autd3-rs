@@ -1,8 +1,10 @@
 use autd3_driver::derive::*;
 
+/// `Modulation` struct for no modulation
 #[derive(Modulation, Clone, Debug, PartialEq, Builder)]
 pub struct Static {
     #[get]
+    /// The intensity of the modulation. The default value is [`u8::MAX`].
     intensity: u8,
     #[no_change]
     config: SamplingConfig,
@@ -10,10 +12,12 @@ pub struct Static {
 }
 
 impl Static {
+    /// Create new [`Static`] modulation
     pub const fn new() -> Self {
         Self::with_intensity(u8::MAX)
     }
 
+    /// Create new [`Static`] modulation with intensity
     pub const fn with_intensity(intensity: u8) -> Self {
         Self {
             intensity,
@@ -29,6 +33,7 @@ impl Modulation for Static {
         Ok(vec![intensity; 2])
     }
 }
+
 
 impl Default for Static {
     fn default() -> Self {

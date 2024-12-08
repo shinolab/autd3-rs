@@ -1,4 +1,4 @@
-use autd3::modulation::resample::Resampler;
+use autd3::modulation::resampler::Resampler;
 use autd3_driver::{defined::Freq, derive::*};
 
 use std::{
@@ -90,7 +90,7 @@ impl Modulation for Csv {
 
 #[cfg(test)]
 mod tests {
-    use autd3::{modulation::resample::SincInterpolation, prelude::kHz};
+    use autd3::{modulation::resampler::SincInterpolation, prelude::kHz};
     use autd3_driver::defined::{Freq, Hz};
 
     use super::*;

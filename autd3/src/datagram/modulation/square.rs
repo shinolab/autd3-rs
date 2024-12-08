@@ -4,24 +4,39 @@ use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInf
 
 use derive_more::Debug;
 
+/// Square wave modulation
 #[derive(Modulation, Clone, PartialEq, Builder, Debug)]
 pub struct Square<S: SamplingMode> {
     #[debug("{}({:?})", tynm::type_name::<S>(), self.freq)]
     freq: S::T,
     #[get]
     #[set]
+    /// The low value of the modulation. The default value is [`u8::MIN`].
     low: u8,
     #[get]
     #[set]
+    /// The high value of the modulation. The default value is [`u8::MAX`].
     high: u8,
     #[get]
     #[set]
+    /// The duty ratio of the modulation, that is the ratio of high value to the period. The default value is `0.5`.
     duty: f32,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
 }
 
 impl Square<ExactFreq> {
+    /// Create new [`Square`] modulation with exact frequency.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use autd3::prelude::*;
+    ///
+    /// Square::new(100 * Hz);
+    /// // or
+    /// Square::new(100. * Hz);
+    /// ```
     pub const fn new<S: SamplingModeInference>(freq: S) -> Square<S::T> {
         Square {
             freq,
@@ -33,6 +48,7 @@ impl Square<ExactFreq> {
         }
     }
 
+    /// Create new [`Square`] modulation with exact frequency.
     pub const fn new_nearest(freq: Freq<f32>) -> Square<NearestFreq> {
         Square {
             freq,
@@ -46,6 +62,7 @@ impl Square<ExactFreq> {
 }
 
 impl<S: SamplingMode> Square<S> {
+    /// The frequency of the modulation.
     pub fn freq(&self) -> S::T {
         S::freq(self.freq, self.config)
     }
