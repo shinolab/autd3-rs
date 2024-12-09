@@ -30,7 +30,7 @@ pub struct Geometry {
     #[get]
     version: usize,
     #[get]
-    fallback_parallel_threshold: usize,
+    default_parallel_threshold: usize,
 }
 
 impl Geometry {
@@ -73,7 +73,7 @@ impl Geometry {
     }
 
     pub fn parallel(&self, threshold: Option<usize>) -> bool {
-        self.num_devices() > threshold.unwrap_or(self.fallback_parallel_threshold)
+        self.num_devices() > threshold.unwrap_or(self.default_parallel_threshold)
     }
 }
 
