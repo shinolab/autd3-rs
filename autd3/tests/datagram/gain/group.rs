@@ -19,7 +19,7 @@ async fn only_for_enabled() -> anyhow::Result<()> {
         .set(
             0,
             Uniform::new(Drive::new(Phase::new(0x90), EmitIntensity::new(0x80))),
-        ),
+        )?,
     )
     .await?;
 

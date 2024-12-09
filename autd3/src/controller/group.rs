@@ -6,6 +6,7 @@ use autd3_driver::{
     firmware::operation::{Operation, OperationGenerator},
     geometry::Device,
 };
+use itertools::Itertools;
 
 use super::{Controller, Link};
 use crate::prelude::AUTDError;
@@ -17,6 +18,7 @@ use tracing;
 pub struct Group<'a, K: PartialEq + Debug, L: Link> {
     pub(crate) cnt: &'a mut Controller<L>,
     pub(crate) keys: Vec<Option<K>>,
+    pub(crate) done: Vec<bool>,
     pub(crate) timeout: Option<Duration>,
     pub(crate) parallel_threshold: Option<usize>,
     pub(crate) operations: Vec<Option<(Box<dyn Operation>, Box<dyn Operation>)>>,
@@ -25,9 +27,12 @@ pub struct Group<'a, K: PartialEq + Debug, L: Link> {
 impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
     #[must_use]
     pub(crate) fn new(cnt: &'a mut Controller<L>, f: impl Fn(&Device) -> Option<K>) -> Self {
+        let keys = cnt.geometry.devices().map(f).collect::<Vec<_>>();
+        let done = keys.iter().map(Option::is_none).collect();
         Self {
             operations: cnt.geometry.devices().map(|_| None).collect(),
-            keys: cnt.geometry.devices().map(f).collect(),
+            keys,
+            done,
             cnt,
             timeout: None,
             parallel_threshold: None,
@@ -38,9 +43,11 @@ impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
     ///
     /// # Errors
     ///
-    /// Returns [`AUTDInternalError::UnkownKey`] if the `key` is not specified in the [`Controller::group`].
+    /// - Returns [`AUTDInternalError::UnkownKey`] if the `key` is not specified in the [`Controller::group`].
+    /// - Returns [`AUTDInternalError::KeyIsAlreadyUsed`] if the `key` is already used previous [`Group::set`].
     ///
     /// [`AUTDInternalError::UnkownKey`]: autd3_driver::error::AUTDInternalError::UnkownKey
+    /// [`AUTDInternalError::KeyIsAlreadyUsed`]: autd3_driver::error::AUTDInternalError::KeyIsAlreadyUsed
     #[tracing::instrument(level = "debug", skip(self))]
     pub fn set<D: Datagram>(self, key: K, data: D) -> Result<Self, AUTDInternalError>
     where
@@ -49,6 +56,7 @@ impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
     {
         let Self {
             keys,
+            mut done,
             mut operations,
             cnt,
             timeout,
@@ -93,16 +101,23 @@ impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
             .iter_mut()
             .zip(keys.iter())
             .zip(cnt.geometry.devices())
-            .filter(|((_, k), _)| k.as_ref().is_some_and(|kk| kk == &key))
-            .for_each(|((op, _), dev)| {
+            .zip(done.iter_mut())
+            .filter(|(((_, k), _), _)| k.as_ref().is_some_and(|kk| kk == &key))
+            .try_for_each(|(((op, _), dev), done)| {
+                if *done {
+                    return Err(AUTDInternalError::KeyIsAlreadyUsed(format!("{:?}", key)));
+                }
+                *done = true;
                 tracing::debug!("Generate operation for device {}", dev.idx());
                 let (op1, op2) = generator.generate(dev);
                 *op = Some((Box::new(op1) as Box<_>, Box::new(op2) as Box<_>));
-            });
+                Ok(())
+            })?;
 
         Ok(Self {
             cnt,
             keys,
+            done,
             timeout,
             parallel_threshold,
             operations,
@@ -111,16 +126,33 @@ impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
 
     /// Send the data to the devices.
     ///
-    /// If the data is not specified for the key by [`Group::set`], or the key is `None` in [`Controller::group`], nothing is done for the devices corresponding to the key.
+    /// # Errors
+    ///
+    /// Returns [`AUTDInternalError::UnusedKey`] if the data is not specified for the key by [`Group::set`].
+    ///
+    /// [`AUTDInternalError::UnusedKey`]: autd3_driver::error::AUTDInternalError::UnusedKey
     #[tracing::instrument(level = "debug", skip(self))]
     pub async fn send(self) -> Result<(), AUTDError> {
         let Self {
             operations,
             cnt,
+            keys,
+            done,
             timeout,
             parallel_threshold,
             ..
         } = self;
+
+        if !done.iter().all(|&d| d) {
+            return Err(AUTDError::Internal(AUTDInternalError::UnusedKey(
+                keys.into_iter()
+                    .zip(done.into_iter())
+                    .filter(|(_, d)| !*d)
+                    .map(|(k, _)| format!("{:?}", k.unwrap()))
+                    .join(", "),
+            )));
+        }
+
         cnt.link.trace(timeout, parallel_threshold);
         cnt.timer
             .send(
@@ -141,6 +173,8 @@ impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
 
 impl<L: Link> Controller<L> {
     /// Group the devices by given function and send different data to each group.
+    ///
+    /// If the key is `None`, nothing is done for the devices corresponding to the key.
     ///
     /// # Example
     ///
@@ -362,7 +396,7 @@ mod tests {
         let test = Arc::new(Mutex::new(vec![false; 3]));
         autd.group(|dev| match dev.idx() {
             0 | 2 => Some(0),
-            _ => Some(1),
+            _ => None,
         })
         .set(0, TestGain { test: test.clone() })?
         .send()
@@ -384,6 +418,40 @@ mod tests {
             autd.group(|dev| Some(dev.idx()))
                 .set(0, Null::new())?
                 .set(2, Null::new())
+                .err()
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn already_used_key() -> anyhow::Result<()> {
+        let mut autd = create_controller(2).await?;
+
+        assert_eq!(
+            Some(AUTDInternalError::KeyIsAlreadyUsed("1".to_owned())),
+            autd.group(|dev| Some(dev.idx()))
+                .set(0, Null::new())?
+                .set(1, Null::new())?
+                .set(1, Null::new())
+                .err()
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn unused_key() -> anyhow::Result<()> {
+        let mut autd = create_controller(3).await?;
+
+        assert_eq!(
+            Some(AUTDError::Internal(AUTDInternalError::UnusedKey(
+                "0, 2".to_owned()
+            ))),
+            autd.group(|dev| Some(dev.idx()))
+                .set(1, Null::new())?
+                .send()
+                .await
                 .err()
         );
 
