@@ -1,7 +1,22 @@
+#![warn(missing_docs)]
+#![warn(rustdoc::missing_crate_level_docs)]
+#![warn(rustdoc::unescaped_backticks)]
+
+//! # AUTD3: Airborne Ultrasound Tactile Display 3
+//!
+//! Airborne Ultrasound Tactile Display (AUTD) is a midair haptic device that can remotely produce tactile sensation on a human skin surface without wearing devices.
+//! Please see [our laboratory homepage](https://hapislab.org/en/airborne-ultrasound-tactile-display) for more details on AUTD.
+//! This crate is a client library to drive AUTD version 3 devices. This cross-platform library supports Windows, macOS, and Linux (including Single Board Computer such as Raspberry Pi).
+
+/// [`Controller`] module.
 pub mod controller;
+/// Primitive `Gain`s, `Modulation`s and utilities for `GainSTM` and `FociSTM`.
 pub mod datagram;
+/// Error module.
 pub mod error;
+/// Primitive `Link`s.
 pub mod link;
+/// Prelude module.
 pub mod prelude;
 
 pub use autd3_driver as driver;
@@ -19,6 +34,7 @@ mod tests {
     };
 
     #[macro_export]
+    #[doc(hidden)]
     macro_rules! assert_near_vector3 {
         ($a:expr, $b:expr) => {
             let aa = $a;

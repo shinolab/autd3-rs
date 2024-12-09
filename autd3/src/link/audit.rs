@@ -7,6 +7,7 @@ use autd3_firmware_emulator::CPUEmulator;
 
 use derive_more::{Deref, DerefMut};
 
+/// A `Link` for testing.
 #[derive(Deref, DerefMut, Builder)]
 pub struct Audit {
     is_open: bool,
@@ -16,21 +17,27 @@ pub struct Audit {
     down: bool,
     broken: bool,
     #[get]
+    /// The last parallel threshold.
     last_parallel_threshold: Option<usize>,
     #[get]
+    /// The last timeout.
     last_timeout: Option<std::time::Duration>,
 }
 
+/// A builder for [`Audit`].
 #[derive(Builder)]
 pub struct AuditBuilder {
     #[get]
     #[set]
+    /// The initial message ID. The default value is `None`.
     initial_msg_id: Option<u8>,
     #[get]
     #[set]
+    /// The initial phase correction. The default value is `None`.
     initial_phase_corr: Option<u8>,
     #[get]
     #[set]
+    /// The initial state of the link. The default value is `false`.
     down: bool,
 }
 
@@ -70,6 +77,7 @@ impl LinkBuilder for AuditBuilder {
 }
 
 impl Audit {
+    /// Create a new [`AuditBuilder`].
     pub const fn builder() -> AuditBuilder {
         AuditBuilder {
             initial_msg_id: None,
@@ -78,18 +86,30 @@ impl Audit {
         }
     }
 
+    /// Set this link to be down.
+    ///
+    /// After calling this method, [`Link::send`] and [`Link::receive`] will return `false`.
     pub fn down(&mut self) {
         self.down = true;
     }
 
+    /// Set this link to be up.
+    ///
+    /// This methods is used to recover the link from [`Audit::down`].
     pub fn up(&mut self) {
         self.down = false;
     }
 
+    /// Break down this link.
+    ///
+    /// After calling this method, [`Link::send`] and [`Link::receive`] will return an error.
     pub fn break_down(&mut self) {
         self.broken = true;
     }
 
+    /// Repair this link.
+    ///
+    /// This methods is used to recover the link from [`Audit::break_down`].
     pub fn repair(&mut self) {
         self.broken = false;
     }

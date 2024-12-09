@@ -6,17 +6,21 @@ use autd3_driver::{
 };
 use derive_new::new;
 
+/// Single focus
 #[derive(Gain, Clone, PartialEq, Debug, Builder, new)]
 pub struct Focus {
     #[get(ref)]
+    /// The position of the focus
     pos: Vector3,
     #[new(value = "EmitIntensity::MAX")]
     #[get]
     #[set(into)]
+    /// The intensity of the focus
     intensity: EmitIntensity,
     #[new(value = "Phase::ZERO")]
     #[get]
     #[set(into)]
+    /// The phase offset of the focus
     phase_offset: Phase,
 }
 

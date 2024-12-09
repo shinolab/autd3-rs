@@ -2,8 +2,9 @@ use std::borrow::Borrow;
 
 use autd3_driver::{defined::Freq, derive::*};
 
-use super::resample::Resampler;
+use super::resampler::Resampler;
 
+/// `Modulation` to use arbitrary modulation data
 #[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct Custom {
     buffer: Vec<u8>,
@@ -13,6 +14,16 @@ pub struct Custom {
 }
 
 impl Custom {
+    /// Create new [`Custom`] modulation
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use autd3::prelude::*;
+    /// use autd3::modulation::Custom;
+    ///
+    /// Custom::new(&[0x00, 0xFF], 4 * kHz);
+    /// ```
     pub fn new<T: TryInto<SamplingConfig>>(
         buffer: impl IntoIterator<Item = impl Borrow<u8>>,
         config: T,
@@ -24,6 +35,17 @@ impl Custom {
         })
     }
 
+    /// Create new [`Custom`] modulation with resampling
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use autd3::prelude::*;
+    /// use autd3::modulation::Custom;
+    /// use autd3::modulation::resampler::SincInterpolation;
+    ///
+    /// Custom::new_with_resample(&[0x00, 0xFF], 2.0 * kHz, 4 * kHz, SincInterpolation::default());
+    /// ```
     #[tracing::instrument(skip(buffer))]
     pub fn new_with_resample<T: TryInto<SamplingConfig> + std::fmt::Debug>(
         buffer: impl IntoIterator<Item = impl Borrow<u8>>,
@@ -56,7 +78,7 @@ mod tests {
     use autd3_driver::defined::kHz;
     use rand::Rng;
 
-    use crate::modulation::resample::SincInterpolation;
+    use crate::modulation::resampler::SincInterpolation;
 
     use super::*;
 

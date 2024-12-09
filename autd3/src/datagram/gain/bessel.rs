@@ -6,21 +6,29 @@ use autd3_driver::{
 };
 use derive_new::new;
 
+/// Bessel beam
+///
+/// This `Gain` generates a Bessel beam. See [Hasegawa, 2017](https://doi.org/10.1063/1.4985159) for more details.
 #[derive(Gain, Clone, PartialEq, Debug, Builder, new)]
 pub struct Bessel {
     #[get(ref)]
+    /// The vertex of the beam.
     pos: Vector3,
     #[get(ref)]
+    /// The direction of the beam.
     dir: UnitVector3,
     #[get]
+    /// The angle between the plane perpendicular to the beam and the side of the virtual cone that generates the beam.
     theta: Angle,
     #[new(value = "EmitIntensity::MAX")]
     #[get]
     #[set(into)]
+    /// The intensity of the beam.
     intensity: EmitIntensity,
     #[new(value = "Phase::ZERO")]
     #[get]
     #[set(into)]
+    /// The phase offset of the beam.
     phase_offset: Phase,
 }
 

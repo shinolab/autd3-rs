@@ -1,4 +1,4 @@
-use std::{fmt::Debug, time::Duration};
+use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
     datagram::Datagram,
@@ -12,8 +12,9 @@ use crate::prelude::AUTDError;
 
 use tracing;
 
+/// A struct for grouping devices and sending different data to each group. See also [`Controller::group`].
 #[allow(clippy::type_complexity)]
-pub struct GroupGuard<'a, K: PartialEq + Debug, L: Link> {
+pub struct Group<'a, K: PartialEq + Debug, L: Link> {
     pub(crate) cnt: &'a mut Controller<L>,
     pub(crate) keys: Vec<Option<K>>,
     pub(crate) timeout: Option<Duration>,
@@ -21,11 +22,11 @@ pub struct GroupGuard<'a, K: PartialEq + Debug, L: Link> {
     pub(crate) operations: Vec<Option<(Box<dyn Operation>, Box<dyn Operation>)>>,
 }
 
-impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
+impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
     #[must_use]
     pub(crate) fn new(cnt: &'a mut Controller<L>, f: impl Fn(&Device) -> Option<K>) -> Self {
         Self {
-            operations: (0..cnt.geometry.num_devices()).map(|_| None).collect(),
+            operations: cnt.geometry.devices().map(|_| None).collect(),
             keys: cnt.geometry.devices().map(f).collect(),
             cnt,
             timeout: None,
@@ -33,8 +34,15 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
         }
     }
 
+    /// Set the `data` to be sent to the devices corresponding to the `key`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AUTDInternalError::UnkownKey`] if the `key` is not specified in the [`Controller::group`].
+    ///
+    /// [`AUTDInternalError::UnkownKey`]: autd3_driver::error::AUTDInternalError::UnkownKey
     #[tracing::instrument(level = "debug", skip(self))]
-    pub fn set<D: Datagram>(self, k: K, d: D) -> Result<Self, AUTDInternalError>
+    pub fn set<D: Datagram>(self, key: K, data: D) -> Result<Self, AUTDInternalError>
     where
         <<D as Datagram>::G as OperationGenerator>::O1: 'static,
         <<D as Datagram>::G as OperationGenerator>::O2: 'static,
@@ -49,23 +57,23 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
 
         if !keys
             .iter()
-            .any(|key| key.as_ref().map(|kk| kk == &k).unwrap_or(false))
+            .any(|k| k.as_ref().map(|kk| kk == &key).unwrap_or(false))
         {
-            return Err(AUTDInternalError::UnkownKey(format!("{:?}", k)));
+            return Err(AUTDInternalError::UnkownKey(format!("{:?}", key)));
         }
 
-        let timeout = timeout.into_iter().chain(d.timeout()).max();
+        let timeout = timeout.into_iter().chain(data.timeout()).max();
         let parallel_threshold = parallel_threshold
             .into_iter()
-            .chain(d.parallel_threshold())
+            .chain(data.parallel_threshold())
             .min();
 
-        let mut generator = d.operation_generator(&cnt.geometry)?;
+        let mut generator = data.operation_generator(&cnt.geometry)?;
         operations
             .iter_mut()
             .zip(keys.iter())
             .zip(cnt.geometry.devices())
-            .filter(|((_, key), _)| key.as_ref().is_some_and(|kk| kk == &k))
+            .filter(|((_, k), _)| k.as_ref().is_some_and(|kk| kk == &key))
             .for_each(|((op, _), dev)| {
                 tracing::debug!("Generate operation for device {}", dev.idx());
                 let (op1, op2) = generator.generate(dev);
@@ -81,6 +89,9 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
         })
     }
 
+    /// Send the data to the devices.
+    ///
+    /// If the data is not specified for the key by [`Group::set`], or the key is `None` in [`Controller::group`], nothing is done for the devices corresponding to the key.
     #[tracing::instrument(level = "debug", skip(self))]
     pub async fn send(self) -> Result<(), AUTDError> {
         let Self {
@@ -105,6 +116,36 @@ impl<'a, K: PartialEq + Debug, L: Link> GroupGuard<'a, K, L> {
                 parallel_threshold,
             )
             .await
+    }
+}
+
+impl<L: Link> Controller<L> {
+    /// Group the devices by given function and send different data to each group.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autd3::prelude::*;
+    /// # tokio_test::block_on(async {
+    /// let mut autd = Controller::builder((0..3).map(|_| AUTD3::new(Vector3::zeros()))).open(Nop::builder()).await?;
+    ///
+    /// autd.group(|dev| match dev.idx() {
+    ///    0 => Some("static"),
+    ///    2 => Some("sine"),
+    ///   _ => None,
+    /// })
+    /// .set("static", Static::new())?
+    /// .set("sine", Sine::new(150 * Hz))?
+    /// .send().await?;
+    /// # Result::<(), AUTDError>::Ok(())
+    /// # });
+    /// ```
+    #[must_use]
+    pub fn group<K: Hash + Eq + Clone + Debug, F: Fn(&Device) -> Option<K>>(
+        &mut self,
+        f: F,
+    ) -> Group<K, L> {
+        Group::new(self, f)
     }
 }
 
