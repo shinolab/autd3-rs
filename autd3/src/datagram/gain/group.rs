@@ -5,6 +5,7 @@ use autd3_driver::{
     firmware::fpga::Drive,
     geometry::{Device, Transducer},
 };
+use itertools::Itertools;
 use rayon::prelude::*;
 
 use std::{
@@ -22,9 +23,12 @@ use derive_new::new;
 /// ```
 /// use autd3::prelude::*;
 ///
+/// # fn _main() -> Result<(), AUTDInternalError> {
 /// Group::new(|dev| |tr| if tr.idx() < 100 { Some("null") } else { Some("focus") })
-///    .set("null", Null::new())
-///    .set("focus", Focus::new(Vector3::zeros()));
+///    .set("null", Null::new())?
+///    .set("focus", Focus::new(Vector3::zeros()))?;
+/// # Ok(())
+/// # }
 /// ```
 #[derive(Gain, Builder, Debug, new)]
 pub struct Group<K, FK, F>
@@ -46,9 +50,21 @@ where
     F: Fn(&Device) -> FK + Send + Sync,
 {
     /// Set the `Gain` to the transducers corresponding to the `key`.
-    pub fn set(mut self, key: K, gain: impl IntoBoxedGain) -> Self {
-        self.gain_map.insert(key, gain.into_boxed());
-        self
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AUTDInternalError::KeyIsAlreadyUsed`] if the `key` is already used previous [`Group::set`].
+    ///
+    /// [`AUTDInternalError::KeyIsAlreadyUsed`]: autd3_driver::error::AUTDInternalError::KeyIsAlreadyUsed
+    pub fn set(mut self, key: K, gain: impl IntoBoxedGain) -> Result<Self, AUTDInternalError> {
+        if self
+            .gain_map
+            .insert(key.clone(), gain.into_boxed())
+            .is_some()
+        {
+            return Err(AUTDInternalError::KeyIsAlreadyUsed(format!("{:?}", key)));
+        }
+        Ok(self)
     }
 
     fn get_filters(&self, geometry: &Geometry) -> HashMap<K, HashMap<usize, BitVec<u32>>> {
@@ -149,6 +165,12 @@ where
             })
             .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?;
 
+        if !filters.is_empty() {
+            return Err(AUTDInternalError::UnusedKey(
+                filters.keys().map(|k| format!("{:?}", k)).join(", "),
+            ));
+        }
+
         let f = &self.f;
         if geometry.parallel(None) {
             gain_map
@@ -220,8 +242,9 @@ mod tests {
                 _ => None,
             }
         })
-        .set("test", g1)
-        .set("test2", g2);
+        .set("null", Null::new())?
+        .set("test", g1)?
+        .set("test2", g2)?;
 
         let mut g = gain.init(&geometry, None)?;
         let drives = geometry
@@ -286,8 +309,9 @@ mod tests {
                 _ => None,
             }
         })
-        .set("test", g1)
-        .set("test2", g2);
+        .set("null", Null::new())?
+        .set("test", g1)?
+        .set("test2", g2)?;
 
         let mut g = gain.init(&geometry, None)?;
         let drives = geometry
@@ -334,7 +358,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unknown_key() {
+    fn unknown_key() -> anyhow::Result<()> {
         let geometry = create_geometry(2);
 
         let gain = Group::new(|_dev| {
@@ -344,11 +368,47 @@ mod tests {
                 _ => None,
             }
         })
-        .set("test2", Null::new());
+        .set("test2", Null::new())?;
 
         assert_eq!(
             Some(AUTDInternalError::UnkownKey("\"test2\"".to_owned())),
             gain.init(&geometry, None).err()
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn already_used_key() -> anyhow::Result<()> {
+        let gain = Group::new(|_dev| |_tr| Some(0))
+            .set(0, Null::new())?
+            .set(0, Null::new());
+
+        assert_eq!(
+            Some(AUTDInternalError::KeyIsAlreadyUsed("0".to_owned())),
+            gain.err()
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn unused_key() -> anyhow::Result<()> {
+        let geometry = create_geometry(2);
+
+        let gain = Group::new(|_dev| {
+            |tr| match tr.idx() {
+                0..=99 => Some(0),
+                _ => Some(1),
+            }
+        })
+        .set(1, Null::new())?;
+
+        assert_eq!(
+            Some(AUTDInternalError::UnusedKey("0".to_owned())),
+            gain.init(&geometry, None).err()
+        );
+
+        Ok(())
     }
 }
