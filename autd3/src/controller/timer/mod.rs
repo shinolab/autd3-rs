@@ -57,7 +57,7 @@ pub struct Timer {
     pub(crate) strategy: TimerStrategy,
     #[get]
     /// The default timeout when no timeout is specified for the [`Datagram`](crate::driver::datagram::Datagram) to be sent.
-    pub(crate) fallback_timeout: Duration,
+    pub(crate) default_timeout: Duration,
 }
 
 impl Timer {
@@ -71,7 +71,7 @@ impl Timer {
         timeout: Option<Duration>,
         parallel_threshold: Option<usize>,
     ) -> Result<(), AUTDError> {
-        let timeout = timeout.unwrap_or(self.fallback_timeout);
+        let timeout = timeout.unwrap_or(self.default_timeout);
         let parallel = geometry.parallel(parallel_threshold);
         tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
 
@@ -274,7 +274,7 @@ mod tests {
             send_interval: Duration::from_millis(1),
             receive_interval: Duration::from_millis(1),
             strategy,
-            fallback_timeout: Duration::ZERO,
+            default_timeout: Duration::ZERO,
         };
 
         assert_eq!(
@@ -335,7 +335,7 @@ mod tests {
             send_interval: Duration::from_millis(1),
             receive_interval: Duration::from_millis(1),
             strategy,
-            fallback_timeout: Duration::ZERO,
+            default_timeout: Duration::ZERO,
         };
 
         assert_eq!(

@@ -54,7 +54,7 @@ message CloseRequestLightweight {}
 
 message OpenRequestLightweight {
   Geometry geometry = 1;
-  uint64 fallback_timeout = 2;
+  uint64 default_timeout = 2;
   uint64 send_interval = 3;
   uint64 receive_interval = 4;
 }
