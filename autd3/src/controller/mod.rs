@@ -488,7 +488,7 @@ mod tests {
         ))
         .await?;
 
-        let autd = Controller::<Audit>::from_boxed_link(autd);
+        let autd = unsafe { Controller::<Audit>::from_boxed_link(autd) };
 
         autd.iter().try_for_each(|dev| {
             assert_eq!(
