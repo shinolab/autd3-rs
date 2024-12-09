@@ -5,7 +5,6 @@ use super::{Matrix4, UnitQuaternion, Vector3};
 use derive_new::new;
 
 #[derive(Clone, Debug, PartialEq, Builder, new)]
-#[new(visibility = "pub(crate)")]
 pub struct Transducer {
     idx: u8,
     dev_idx: u16,
