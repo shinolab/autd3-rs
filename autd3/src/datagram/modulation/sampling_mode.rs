@@ -8,17 +8,22 @@ use autd3_driver::{
 use num::integer::gcd;
 use std::fmt::Debug;
 
+/// A trait for sampling mode.
 pub trait SamplingMode: Clone + Sync + Debug {
+    /// Frequency type
     type T: Frequency;
+    /// Calculate the frequency to be output.
     fn freq(freq: Self::T, _sampling_config: SamplingConfig) -> Self::T {
         freq
     }
+    /// Validate the frequency.
     fn validate(
         freq: Self::T,
         sampling_config: SamplingConfig,
     ) -> Result<(u64, u64), AUTDInternalError>;
 }
 
+/// Exact frequency sampling mode with integer number.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExactFreq;
 
@@ -49,6 +54,7 @@ impl SamplingMode for ExactFreq {
     }
 }
 
+/// Exact frequency sampling mode with floating point number.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExactFreqFloat;
 
@@ -97,6 +103,7 @@ impl SamplingMode for ExactFreqFloat {
     }
 }
 
+/// Nearest frequency sampling mode.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NearestFreq;
 
@@ -123,7 +130,9 @@ impl SamplingMode for NearestFreq {
     }
 }
 
+/// A trait for sampling mode inference.
 pub trait SamplingModeInference: Copy + Clone + std::fmt::Debug + PartialEq {
+    /// Inferred sampling mode.
     type T: SamplingMode<T = Self>;
 }
 

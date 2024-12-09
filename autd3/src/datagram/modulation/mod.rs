@@ -5,7 +5,8 @@ mod fourier;
 mod radiation_pressure;
 /// Resampler module.
 pub mod resampler;
-mod sampling_mode;
+/// Sampling mode module.
+pub mod sampling_mode;
 mod sine;
 mod square;
 mod r#static;

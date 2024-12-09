@@ -195,6 +195,7 @@ impl<'a, L: Link> IntoIterator for &'a mut Controller<L> {
 
 #[cfg(feature = "async-trait")]
 impl<L: Link + 'static> Controller<L> {
+    /// Converts `Controller<L>` into a `Controller<Box<dyn Link>>`.
     pub fn into_boxed_link(self) -> Controller<Box<dyn Link>> {
         let cnt = std::mem::ManuallyDrop::new(self);
         let link = unsafe { std::ptr::read(&cnt.link) };
@@ -211,7 +212,13 @@ impl<L: Link + 'static> Controller<L> {
         }
     }
 
-    pub fn from_boxed_link(cnt: Controller<Box<dyn Link>>) -> Controller<L> {
+    /// Converts `Controller<Box<dyn Link>>` into a `Controller<L>`.
+    ///
+    /// # Safety
+    ///
+    /// This function must be used only when converting an instance created by [`Controller::into_boxed_link`] back to the original [`Controller<L>`].
+    ///
+    pub unsafe fn from_boxed_link(cnt: Controller<Box<dyn Link>>) -> Controller<L> {
         let cnt = std::mem::ManuallyDrop::new(cnt);
         let link = unsafe { std::ptr::read(&cnt.link) };
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
