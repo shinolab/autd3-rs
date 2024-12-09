@@ -4,16 +4,28 @@
   - phase correction bram and pulse width encoder table reset to default in clear op
 - Remove `Deref<Target = Link>` and `DerefMut` for `Controller`
   - Impl `Deref<Target = Geometry>` and `DerefMut` for `Controller` instead
+- Make `Transducer::new` public
+- Make `autd3_gain_holo::kPa` public
+- Rename from `fallback_timeout` to `default_timeout` and `fallback_parallel_threshold` to `default_parallel_threshold`
+  - Move `default_parallel_threshold` into `Geometry`
+  - Move `default_timeout` into `Timer`
+- Add `AUTDInternalError::KeyIsAlreadyUsed` and `AUTDInternalError::UnusedKey` errors
+  - `controller::Group::set` and `gain::Group::set` now return `AUTDInternalError::KeyIsAlreadyUsed` if the key is already used
+  - `controller::Group::send` and `gain::Group::init` now return `AUTDInternalError::UnusedKey` if the key is not used
+- Add `Circle` and `Line` utilities for `FociSTM` and `GainSTM`
+- Add `timer_strategy` option for `Controller`
+- Impl `IntoIterator` for `&Controller`
 - Improve calculation performance of `Gain`s
+- improve performance of `Geometry::center`
 - Remove `Gain::with_transform`
+- Remove `parallel` option from `gain::Group`
 - `Gain::with_segment` and `SwapSegment::Gain` now take `TransitionMode` instead of `bool`
   - Still, `TransitionMode::Immediate` is only supported
 - Use `Vec<u8>` instead of `Arc<Vec<u8>>` in `Modulation`s
 - Fix `Sine` and `Fourier`'s `offset`
-- Add `STMUtilsExt` trait
-  - Add `line`, `line_nearest`, `circle`, and `circle_nearest` to `FociSTM<1>` and `GainSTM<Focus>`
 - Update tracing messages
 - Remove `Drive::null`, add `Drive::NULL` instead
+- Fix `Controller::group` for `Gain`s which cannot be calculated independently for each device, such as `Gain`s in `autd3-gain-holo`
 - Fix [#130](https://github.com/shinolab/autd3-rs/issues/130): `Gain`s in `autd3-gain-holo` cause `index out of bounds` error with disabled device
 - Fix [#140](https://github.com/shinolab/autd3-rs/issues/140): Clear sometimes fails in `Controller::open`
 
