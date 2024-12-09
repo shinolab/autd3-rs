@@ -68,7 +68,27 @@ impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
             .chain(data.parallel_threshold())
             .min();
 
+        // set enable flag for each device
+        // This is not required for the operation except `Gain`s which cannot be calculated independently for each device, such as `autd3-gain-holo`.
+        let enable_store = cnt
+            .geometry
+            .iter()
+            .map(|dev| dev.enable)
+            .collect::<Vec<_>>();
+        cnt.geometry
+            .devices_mut()
+            .zip(keys.iter())
+            .for_each(|(dev, k)| {
+                dev.enable = k.as_ref().is_some_and(|kk| kk == &key);
+            });
         let mut generator = data.operation_generator(&cnt.geometry)?;
+        cnt.geometry
+            .iter_mut()
+            .zip(enable_store)
+            .for_each(|(dev, enable)| {
+                dev.enable = enable;
+            });
+
         operations
             .iter_mut()
             .zip(keys.iter())
@@ -151,10 +171,12 @@ impl<L: Link> Controller<L> {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Mutex;
+
     use autd3_driver::{
         datagram::{GainSTM, SwapSegment},
         defined::Hz,
-        derive::{Modulation, Segment, TransitionMode},
+        derive::*,
         error::AUTDInternalError,
         firmware::fpga::{Drive, EmitIntensity, Phase},
     };
@@ -289,7 +311,7 @@ mod tests {
 
         autd.geometry[0].enable = false;
 
-        let check = std::sync::Arc::new(std::sync::Mutex::new([false; 2]));
+        let check = Arc::new(Mutex::new([false; 2]));
         autd.group(|dev| {
             check.lock().unwrap()[dev.idx()] = true;
             Some(dev.idx())
@@ -309,6 +331,46 @@ mod tests {
             vec![0x80, 0x80],
             autd.link[1].fpga().modulation_buffer(Segment::S0)
         );
+
+        Ok(())
+    }
+
+    #[derive(Gain, Debug)]
+    pub struct TestGain {
+        test: Arc<Mutex<Vec<bool>>>,
+    }
+
+    impl Gain for TestGain {
+        type G = Null;
+
+        fn init(
+            self,
+            geometry: &Geometry,
+            _filter: Option<&HashMap<usize, BitVec<u32>>>,
+        ) -> Result<Self::G, AUTDInternalError> {
+            geometry.iter().for_each(|dev| {
+                self.test.lock().unwrap()[dev.idx()] = dev.enable;
+            });
+            Ok(Null::new())
+        }
+    }
+
+    #[tokio::test]
+    async fn test_group_only_for_enabled_gain() -> anyhow::Result<()> {
+        let mut autd = create_controller(3).await?;
+
+        let test = Arc::new(Mutex::new(vec![false; 3]));
+        autd.group(|dev| match dev.idx() {
+            0 | 2 => Some(0),
+            _ => Some(1),
+        })
+        .set(0, TestGain { test: test.clone() })?
+        .send()
+        .await?;
+
+        assert!(test.lock().unwrap()[0]);
+        assert!(!test.lock().unwrap()[1]);
+        assert!(test.lock().unwrap()[2]);
 
         Ok(())
     }
