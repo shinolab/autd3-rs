@@ -29,8 +29,8 @@ pub async fn group_by_transducer(autd: &mut Controller<impl Link>) -> anyhow::Re
             }
         }
     })
-    .set("focus", g1)
-    .set("null", g2);
+    .set("focus", g1)?
+    .set("null", g2)?;
 
     let m = Sine::new(150. * Hz);
     autd.send((m, g)).await?;

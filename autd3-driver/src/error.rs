@@ -29,8 +29,12 @@ pub enum AUTDInternalError {
         max = ULTRASOUND_PERIOD * 256)]
     SilencerCompletionTimeOutOfRange(Duration),
 
-    #[error("Unknown group key: {0}")]
+    #[error("Unknown group key({0})")]
     UnkownKey(String),
+    #[error("Key({0}) is already used")]
+    KeyIsAlreadyUsed(String),
+    #[error("Unused group key({0})")]
+    UnusedKey(String),
 
     #[error("Sampling division ({0}) must not be zero")]
     SamplingDivisionInvalid(u16),
