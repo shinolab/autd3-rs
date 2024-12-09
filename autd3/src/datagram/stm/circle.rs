@@ -12,12 +12,35 @@ use autd3_driver::{
 
 use crate::gain::Focus;
 
+/// Utility for generating a circular trajectory STM.
+///
+/// # Examples
+///
+/// ```
+/// use autd3::prelude::*;
+///
+/// FociSTM::new(
+///     1.0 * Hz,
+///     Circle {
+///         center: Vector3::zeros(),
+///         radius: 30.0 * mm,
+///         num_points: 50,
+///         n: Vector3::z_axis(),
+///         intensity: EmitIntensity::MAX,
+///     },
+/// );
+/// ```
 #[derive(Clone, Debug)]
 pub struct Circle {
+    /// The center of the circle.
     pub center: Vector3,
+    /// The radius of the circle.
     pub radius: f32,
+    /// The number of points on the circle.
     pub num_points: usize,
+    /// The normal vector of the circle.
     pub n: UnitVector3,
+    /// The intensity of the emitted ultrasound.
     pub intensity: EmitIntensity,
 }
 

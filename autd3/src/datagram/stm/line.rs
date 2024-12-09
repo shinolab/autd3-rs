@@ -10,11 +10,32 @@ use autd3_driver::{
 
 use crate::gain::Focus;
 
+/// Utility for generating a line STM.
+///
+/// # Examples
+///
+/// ```
+/// use autd3::prelude::*;
+///
+/// FociSTM::new(
+///     1.0 * Hz,
+///     Line {
+///         start: Vector3::new(-15.0 * mm, 0., 0.),
+///         end: Vector3::new(15.0 * mm, 0., 0.),
+///         num_points: 50,
+///         intensity: EmitIntensity::MAX,
+///     },
+/// );
+/// ```
 #[derive(Clone, Debug)]
 pub struct Line {
+    /// The start point of the line.
     pub start: Vector3,
+    /// The end point of the line.
     pub end: Vector3,
+    /// The number of points on the line.
     pub num_points: usize,
+    /// The intensity of the emitted ultrasound.
     pub intensity: EmitIntensity,
 }
 
