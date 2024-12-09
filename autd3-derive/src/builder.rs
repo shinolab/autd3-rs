@@ -197,39 +197,6 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     }
 }
 
-fn impl_getter_as_bytes(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
-    let name = &input.ident;
-    let generics = &input.generics;
-
-    let getter_fileds = get_fields(input, "as_bytes");
-
-    let getters = getter_fileds.iter().filter_map(|field| {
-        field.ident.as_ref().map(|ident| {
-            let mut_name = format_ident!("{}_mut", ident);
-            quote! {
-                #[must_use]
-                pub fn #ident(&self) -> &[u8] {
-                    self.#ident.as_bytes()
-                }
-                #[must_use]
-                pub fn #mut_name(&mut self) -> &mut [u8] {
-                    self.#ident.as_mut_bytes()
-                }
-            }
-        })
-    });
-
-    let linetimes = generics.lifetimes();
-    let type_params = generics.type_params();
-    let const_params = generics.const_params();
-    let (_, ty_generics, where_clause) = generics.split_for_impl();
-    quote! {
-        impl <#(#linetimes,)* #(#type_params,)* #(#const_params,)*> #name #ty_generics #where_clause {
-           #(#getters)*
-        }
-    }
-}
-
 fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let name = &input.ident;
     let generics = &input.generics;
@@ -283,13 +250,10 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
 pub(crate) fn impl_builder_macro(input: syn::DeriveInput) -> TokenStream {
     let getters = impl_getter(&input);
-    let getters_as_bytes = impl_getter_as_bytes(&input);
     let setters = impl_setter(&input);
 
     let generator = quote! {
         #getters
-
-        #getters_as_bytes
 
         #setters
     };
