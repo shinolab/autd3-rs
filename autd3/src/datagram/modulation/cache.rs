@@ -4,11 +4,13 @@ use std::{cell::RefCell, rc::Rc};
 
 use derive_more::Debug;
 
+/// Cache for `Modulation`s
 #[derive(Modulation, Debug, Builder)]
 pub struct Cache<M: Modulation> {
     m: Rc<RefCell<Option<M>>>,
     #[debug("{}", !self.cache.borrow().is_empty())]
     #[get]
+    /// Cached modulation data.
     cache: Rc<RefCell<Vec<u8>>>,
     #[no_change]
     config: SamplingConfig,
@@ -26,7 +28,9 @@ impl<M: Modulation> Clone for Cache<M> {
     }
 }
 
+/// Trait to convert `Modulation` to [`Cache`].
 pub trait IntoCache<M: Modulation> {
+    /// Convert Modulation to [`Cache`]
     fn with_cache(self) -> Cache<M>;
 }
 
@@ -46,6 +50,7 @@ impl<M: Modulation> Cache<M> {
         }
     }
 
+    /// Initialize cache.
     pub fn init(&self) -> Result<(), AUTDInternalError> {
         if let Some(m) = self.m.take() {
             tracing::debug!("Initializing cache");
@@ -54,6 +59,7 @@ impl<M: Modulation> Cache<M> {
         Ok(())
     }
 
+    /// Get the number of references to the cache.
     pub fn count(&self) -> usize {
         Rc::strong_count(&self.cache)
     }

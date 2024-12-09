@@ -5,6 +5,11 @@ use autd3_driver::derive::*;
 use derive_more::Deref;
 use num::integer::lcm;
 
+/// `Moudlation` that is a sum of multiple [`Sine`].
+///
+/// The modulation value is calculated as `⌊offset + scale_factor * (sum of components)⌋`.
+///
+/// [`Sine`]: crate::modulation::Sine
 #[derive(Modulation, Clone, PartialEq, Debug, Deref, Builder)]
 pub struct Fourier<S: SamplingMode> {
     #[deref]
@@ -13,17 +18,21 @@ pub struct Fourier<S: SamplingMode> {
     config: SamplingConfig,
     #[get]
     #[set]
+    /// The scaling factor of the modulation. If `None`, the scaling factor is set to reciprocal of the number of components. The default value is `None`.
     scale_factor: Option<f32>,
     #[get]
     #[set]
+    /// If `true`, the modulation value is clamped to the range of `u8`. If `false`, returns an error if the value is out of range. The default value is `false`.
     clamp: bool,
     #[get]
     #[set]
+    /// The offset of the modulation value. The default value is `0`.
     offset: u8,
     loop_behavior: LoopBehavior,
 }
 
 impl<S: SamplingMode> Fourier<S> {
+    /// Create a new [`Fourier`] modulation.
     pub fn new(componens: impl IntoIterator<Item = Sine<S>>) -> Result<Self, AUTDInternalError> {
         let components = componens
             .into_iter()

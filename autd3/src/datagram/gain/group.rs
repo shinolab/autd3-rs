@@ -15,6 +15,17 @@ use std::{
 use derive_more::Debug;
 use derive_new::new;
 
+/// `Gain` for grouping transducers and sending different `Gain` to each group.
+///
+/// # Examples
+///
+/// ```
+/// use autd3::prelude::*;
+///
+/// Group::new(|dev| |tr| if tr.idx() < 100 { Some("null") } else { Some("focus") })
+///    .set("null", Null::new())
+///    .set("focus", Focus::new(Vector3::zeros()));
+/// ```
 #[derive(Gain, Builder, Debug, new)]
 pub struct Group<K, FK, F>
 where
@@ -34,6 +45,7 @@ where
     FK: Fn(&Transducer) -> Option<K> + Send + Sync,
     F: Fn(&Device) -> FK + Send + Sync,
 {
+    /// Set the `Gain` to the transducers corresponding to the `key`.
     pub fn set(mut self, key: K, gain: impl IntoBoxedGain) -> Self {
         self.gain_map.insert(key, gain.into_boxed());
         self

@@ -2,6 +2,7 @@ use std::borrow::Borrow;
 
 use crate::derive::*;
 
+/// `Modulation` that applies FIR filter to the original `Modulation`.
 #[derive(Modulation, Debug)]
 pub struct Fir<M: Modulation> {
     m: M,
@@ -22,7 +23,9 @@ impl<M: Modulation> Fir<M> {
     }
 }
 
+/// Trait to convert `Modulation` to [`Fir`].
 pub trait IntoFir<M: Modulation> {
+    /// Convert Modulation to [`Fir`]
     fn with_fir(self, filter: impl IntoIterator<Item = impl Borrow<f32>>) -> Fir<M>;
 }
 

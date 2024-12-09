@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use proc_macro::TokenStream;
 use proc_macro2::TokenTree;
 use quote::{format_ident, quote, ToTokens};
@@ -28,6 +29,31 @@ where
     }
 }
 
+fn get_doc_comments(field: &syn::Field) -> Vec<String> {
+    field
+        .attrs
+        .iter()
+        .filter_map(|attr| match &attr.meta {
+            Meta::NameValue(nv) => {
+                if nv.path.is_ident("doc") {
+                    if let syn::Expr::Lit(lit) = &nv.value {
+                        if let syn::Lit::Str(lit) = &lit.lit {
+                            Some(lit.value())
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        })
+        .collect::<Vec<String>>()
+}
+
 fn has_attr(field: &Field, ident: &str) -> bool {
     field.attrs.iter().any(|attr| match &attr.meta {
         Meta::List(list) => list.tokens.clone().into_iter().any(|token| match token {
@@ -45,7 +71,24 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let getter_fileds = get_fields(input, "get");
 
     let getters = getter_fileds.iter().filter_map(|field| {
+        let doc_comment = if has_attr(field, "no_doc") {
+            quote! {
+                #[allow(missing_docs)]
+            }
+        } else {
+            let doc_comments = get_doc_comments(field);
+            if doc_comments.is_empty() {
+                quote! {}
+            } else {
+                let doc_comment = doc_comments.iter().join("\n");
+                quote! {
+                    #[doc = #doc_comment]
+                }
+            }
+        };
+
         let ty = &field.ty;
+
         field.ident.as_ref().map(|ident| {
             if let syn::Type::Path(path) = ty {
                 let path = path.path.to_token_stream().to_string();
@@ -57,10 +100,12 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                         let mut_name = format_ident!("{}_mut", ident);
                         return quote! {
                             #[must_use]
+                            #doc_comment
                             pub fn #ident(&self) -> std::cell::Ref<'_, #inner> {
                                 self.#ident.borrow()
                             }
                             #[must_use]
+                            #doc_comment
                             pub fn #mut_name(&self) -> std::cell::RefMut<'_, #inner> {
                                 self.#ident.borrow_mut()
                             }
@@ -74,6 +119,7 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                         let inner: proc_macro2::TokenStream = caps["inner"].parse().unwrap();
                         return quote! {
                             #[must_use]
+                            #doc_comment
                             pub fn #ident(&self) -> std::cell::Ref<'_, #inner> {
                                 self.#ident.borrow()
                             }
@@ -87,6 +133,7 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                         if has_attr(field, "take") {
                             return quote! {
                                 #[must_use]
+                                #doc_comment
                                 pub fn #ident(self) -> Vec<#inner> {
                                     self.#ident
                                 }
@@ -94,6 +141,7 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                         } else {
                             return quote! {
                                 #[must_use]
+                                #doc_comment
                                 pub fn #ident(&self) -> &[#inner] {
                                     &self.#ident
                                 }
@@ -107,10 +155,12 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                     let mut_name = format_ident!("{}_mut", ident);
                     quote! {
                         #[must_use]
+                        #doc_comment
                         pub const fn #ident(&self) -> &#ty {
                             &self.#ident
                         }
                         #[must_use]
+                        #doc_comment
                         pub fn #mut_name(&mut self) -> &mut #ty {
                             &mut self.#ident
                         }
@@ -118,6 +168,7 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 } else {
                     quote! {
                         #[must_use]
+                        #doc_comment
                         pub const fn #ident(&self) -> &#ty {
                             &self.#ident
                         }
@@ -126,6 +177,7 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
             } else {
                 quote! {
                     #[must_use]
+                    #doc_comment
                     pub const fn #ident(&self) -> #ty {
                         self.#ident
                     }
@@ -187,11 +239,13 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let setters = setter_fileds.iter().filter_map(|field| {
         let ty = &field.ty;
         field.ident.as_ref().map(|ident| {
+            let doc_comment = format!("Set the `{}` field.", ident);
             let name = format_ident!("with_{}", ident);
             if has_attr(field, "into") {
                 quote! {
                     #[allow(clippy::needless_update)]
                     #[must_use]
+                    #[doc = #doc_comment]
                     pub fn #name(mut self, #ident: impl Into<#ty>) -> Self {
                         self.#ident = #ident.into();
                         self
@@ -206,6 +260,7 @@ fn impl_setter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 quote! {
                     #[allow(clippy::needless_update)]
                     #[must_use]
+                    #[doc = #doc_comment]
                     pub #const_attr fn #name(mut self, #ident: #ty) -> Self {
                         self.#ident = #ident;
                         self

@@ -7,6 +7,16 @@ use autd3_driver::{
 use derive_more::Debug;
 use derive_new::new;
 
+/// `Gain` to use arbitrary phases and intensities
+///
+/// # Examples
+///
+/// ```
+/// use autd3::prelude::*;
+/// use autd3::gain::Custom;
+///
+/// Custom::new(|dev| |tr| (Phase::ZERO, EmitIntensity::MAX));
+/// ```
 #[derive(Gain, Debug, new)]
 #[debug("Custom (Gain)")]
 pub struct Custom<

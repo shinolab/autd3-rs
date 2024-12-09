@@ -1,10 +1,11 @@
 mod builder;
 mod group;
+/// Utilities for periodic operations.
 pub mod timer;
 
-use crate::{error::AUTDError, gain::Null, link::nop::Nop, prelude::Static};
+use crate::{error::AUTDError, gain::Null, prelude::Static};
 
-use std::{fmt::Debug, hash::Hash, time::Duration};
+use std::time::Duration;
 
 use autd3_driver::{
     datagram::{Clear, Datagram, ForceFan, IntoDatagramWithTimeout, Silencer, Synchronize},
@@ -15,7 +16,7 @@ use autd3_driver::{
         operation::{FirmwareVersionType, OperationHandler},
         version::FirmwareVersion,
     },
-    geometry::{Device, Geometry, IntoDevice},
+    geometry::{Device, Geometry},
     link::Link,
 };
 
@@ -23,42 +24,29 @@ use timer::Timer;
 use tracing;
 
 pub use builder::ControllerBuilder;
-pub use group::GroupGuard;
+pub use group::Group;
 
 use derive_more::{Deref, DerefMut};
 
+/// A controller for the AUTD devices.
+///
+/// All operations to the devices are done through this struct.
 #[derive(Builder, Deref, DerefMut)]
 pub struct Controller<L: Link> {
-    #[get(ref, ref_mut)]
+    #[get(ref, ref_mut, no_doc)]
     link: L,
-    #[get(ref, ref_mut)]
+    #[get(ref, ref_mut, no_doc)]
     #[deref]
     #[deref_mut]
     geometry: Geometry,
     tx_buf: Vec<TxMessage>,
     rx_buf: Vec<RxMessage>,
-    #[get(ref)]
+    #[get(ref, no_doc)]
     timer: Timer,
 }
 
-impl Controller<Nop> {
-    #[must_use]
-    pub fn builder<D: IntoDevice, F: IntoIterator<Item = D>>(iter: F) -> ControllerBuilder {
-        ControllerBuilder::new(iter)
-    }
-}
-
 impl<L: Link> Controller<L> {
-    #[must_use]
-    pub fn group<K: Hash + Eq + Clone + Debug, F: Fn(&Device) -> Option<K>>(
-        &mut self,
-        f: F,
-    ) -> GroupGuard<K, L> {
-        GroupGuard::new(self, f)
-    }
-}
-
-impl<L: Link> Controller<L> {
+    /// Sends a data to the devices.
     #[tracing::instrument(level = "debug", skip(self))]
     pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDError> {
         let timeout = s.timeout();
@@ -111,6 +99,7 @@ impl<L: Link> Controller<L> {
         .try_fold((), |_, x| x)
     }
 
+    /// Closes the controller.
     #[tracing::instrument(level = "debug", skip(self))]
     pub async fn close(mut self) -> Result<(), AUTDError> {
         self.close_impl().await
@@ -126,6 +115,7 @@ impl<L: Link> Controller<L> {
         Ok(self.rx_buf.iter().map(|rx| rx.data()).collect())
     }
 
+    /// Returns  the firmware version of the devices.
     pub async fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDError> {
         use FirmwareVersionType::*;
         let cpu_major = self.fetch_firminfo(CPUMajor).await?;
@@ -151,6 +141,26 @@ impl<L: Link> Controller<L> {
             .collect())
     }
 
+    /// Returns the FPGA state of the devices.
+    ///
+    /// To get the state of devices, enable reads FPGA state mode by [`ReadsFPGAState`] before calling this method.
+    /// The returned value is [`None`] if the reads FPGA state mode is disabled for the device.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use autd3::prelude::*;
+    /// # tokio_test::block_on(async {
+    /// let mut autd = Controller::builder([AUTD3::new(Vector3::zeros())]).open(Nop::builder()).await?;
+    ///
+    /// autd.send(ReadsFPGAState::new(|_| true)).await?;
+    ///
+    /// let states = autd.fpga_state().await?;
+    /// # Result::<(), AUTDError>::Ok(())
+    /// # });
+    /// ```
+    ///
+    /// [`ReadsFPGAState`]: autd3_driver::datagram::ReadsFPGAState
     pub async fn fpga_state(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDError> {
         if !self.link.is_open() {
             return Err(AUTDError::Internal(
@@ -185,6 +195,7 @@ impl<'a, L: Link> IntoIterator for &'a mut Controller<L> {
 
 #[cfg(feature = "async-trait")]
 impl<L: Link + 'static> Controller<L> {
+    /// Converts `Controller<L>` into a `Controller<Box<dyn Link>>`.
     pub fn into_boxed_link(self) -> Controller<Box<dyn Link>> {
         let cnt = std::mem::ManuallyDrop::new(self);
         let link = unsafe { std::ptr::read(&cnt.link) };
@@ -201,7 +212,13 @@ impl<L: Link + 'static> Controller<L> {
         }
     }
 
-    pub fn from_boxed_link(cnt: Controller<Box<dyn Link>>) -> Controller<L> {
+    /// Converts `Controller<Box<dyn Link>>` into a `Controller<L>`.
+    ///
+    /// # Safety
+    ///
+    /// This function must be used only when converting an instance created by [`Controller::into_boxed_link`] back to the original [`Controller<L>`].
+    ///
+    pub unsafe fn from_boxed_link(cnt: Controller<Box<dyn Link>>) -> Controller<L> {
         let cnt = std::mem::ManuallyDrop::new(cnt);
         let link = unsafe { std::ptr::read(&cnt.link) };
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
@@ -471,7 +488,7 @@ mod tests {
         ))
         .await?;
 
-        let autd = Controller::<Audit>::from_boxed_link(autd);
+        let autd = unsafe { Controller::<Audit>::from_boxed_link(autd) };
 
         autd.iter().try_for_each(|dev| {
             assert_eq!(

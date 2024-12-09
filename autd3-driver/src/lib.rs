@@ -12,6 +12,7 @@ pub mod utils;
 #[cfg(feature = "async-trait")]
 pub use async_trait::async_trait;
 
+/// Utilities for user-defined `Gain` and `Modulation`.
 #[cfg(feature = "derive")]
 pub mod derive {
     pub use crate::{

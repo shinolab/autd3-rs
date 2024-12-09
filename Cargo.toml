@@ -53,6 +53,7 @@ tempfile = "3.14.0"
 thiserror = { version = "2.0.3", default-features = false }
 time = { version = "0.3.36", default-features = false }
 tokio = "1.41.1"
+tokio-test = "0.4.4"
 tonic = { version = "0.12.3", default-features = false }
 tonic-build = { version = "0.12.3", default-features = false }
 rayon = "1.10.0"
