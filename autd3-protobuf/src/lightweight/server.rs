@@ -233,11 +233,11 @@ where
                     firmware_version_list: list
                         .iter()
                         .map(|f| firmware_version_response_lightweight::FirmwareVersion {
-                            cpu_major_version: f.cpu_version_number_major() as _,
-                            cpu_minor_version: f.cpu_version_number_minor() as _,
-                            fpga_major_version: f.fpga_version_number_major() as _,
-                            fpga_minor_version: f.fpga_version_number_minor() as _,
-                            fpga_function_bits: f.fpga_function_bits() as _,
+                            cpu_major_version: f.cpu().major().0 as _,
+                            cpu_minor_version: f.cpu().minor().0 as _,
+                            fpga_major_version: f.fpga().major().0 as _,
+                            fpga_minor_version: f.fpga().minor().0 as _,
+                            fpga_function_bits: f.fpga().function_bits() as _,
                         })
                         .collect(),
                 })),

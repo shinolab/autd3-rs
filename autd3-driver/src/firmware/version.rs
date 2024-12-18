@@ -2,104 +2,84 @@ use autd3_derive::Builder;
 use derive_more::Display;
 use derive_new::new;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
+pub struct Major(pub u8);
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
+pub struct Minor(pub u8);
+
+fn version_map(major: Major, minor: Minor) -> String {
+    let major = major.0;
+    let minor = minor.0;
+    match major {
+        0 => "older than v0.4".to_string(),
+        0x01..=0x06 => format!("v0.{}", major + 3),
+        0x0A..=0x15 => format!("v1.{}", major - 0x0A),
+        0x80..=0x89 => format!("v2.{}.{}", major - 0x80, minor),
+        0x8A..=0x8A => format!("v3.{}.{}", major - 0x8A, minor),
+        0x8B..=0x8C => format!("v4.{}.{}", major - 0x8B, minor),
+        0x8D..=0x8E => format!("v5.{}.{}", major - 0x8D, minor),
+        0x8F..=0x90 => format!("v6.{}.{}", major - 0x8F, minor),
+        0x91..=0x91 => format!("v7.{}.{}", major - 0x91, minor),
+        0x92..=0x92 => format!("v8.{}.{}", major - 0x92, minor),
+        0xA0..=0xA1 => format!("v9.{}.{}", major - 0xA0, minor),
+        0xA2..=0xA2 => format!("v10.{}.{}", major - 0xA2, minor),
+        _ => format!("unknown ({major})"),
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, Builder, new)]
+#[display("{}{}", version_map(self.major, self.minor), if self.is_emulator() {" [Emulator]"} else { "" })]
+pub struct FPGAVersion {
+    #[get]
+    major: Major,
+    #[get]
+    minor: Minor,
+    #[get]
+    function_bits: u8,
+}
+
+impl FPGAVersion {
+    pub const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
+
+    pub const fn is_emulator(&self) -> bool {
+        (self.function_bits & Self::ENABLED_EMULATOR_BIT) == Self::ENABLED_EMULATOR_BIT
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, Builder, new)]
+#[display("{}", version_map(self.major, self.minor))]
+pub struct CPUVersion {
+    #[get]
+    major: Major,
+    #[get]
+    minor: Minor,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display, Builder, new)]
 #[display(
-    "{}: CPU = {}, FPGA = {}{}",
+    "{}: CPU = {}, FPGA = {}",
     idx,
     self.cpu(),
     self.fpga(),
-    if self.is_emulator() {" [Emulator]"} else { "" }
 )]
 pub struct FirmwareVersion {
     idx: usize,
     #[get]
-    cpu_version_number_major: u8,
+    cpu: CPUVersion,
     #[get]
-    fpga_version_number_major: u8,
-    #[get]
-    cpu_version_number_minor: u8,
-    #[get]
-    fpga_version_number_minor: u8,
-    #[get]
-    fpga_function_bits: u8,
+    fpga: FPGAVersion,
 }
 
 impl FirmwareVersion {
-    pub const LATEST_VERSION_NUM_MAJOR: u8 = 0xA2;
-    pub const LATEST_VERSION_NUM_MINOR: u8 = 0x01;
-    pub const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
-
-    pub fn cpu(&self) -> String {
-        Self::version_map(self.cpu_version_number_major, self.cpu_version_number_minor)
-    }
-
-    pub fn fpga(&self) -> String {
-        Self::version_map(
-            self.fpga_version_number_major,
-            self.fpga_version_number_minor,
-        )
-    }
+    pub const LATEST_VERSION_NUM_MAJOR: Major = Major(0xA2);
+    pub const LATEST_VERSION_NUM_MINOR: Minor = Minor(0x01);
 
     pub const fn is_emulator(&self) -> bool {
-        (self.fpga_function_bits & Self::ENABLED_EMULATOR_BIT) == Self::ENABLED_EMULATOR_BIT
-    }
-
-    fn version_map(version_number_major: u8, version_number_minor: u8) -> String {
-        match version_number_major {
-            0 => "older than v0.4".to_string(),
-            0x01..=0x06 => format!("v0.{}", version_number_major + 3),
-            0x0A..=0x15 => format!("v1.{}", version_number_major - 0x0A),
-            0x80..=0x89 => format!(
-                "v2.{}.{}",
-                version_number_major - 0x80,
-                version_number_minor
-            ),
-            0x8A..=0x8A => format!(
-                "v3.{}.{}",
-                version_number_major - 0x8A,
-                version_number_minor
-            ),
-            0x8B..=0x8C => format!(
-                "v4.{}.{}",
-                version_number_major - 0x8B,
-                version_number_minor
-            ),
-            0x8D..=0x8E => format!(
-                "v5.{}.{}",
-                version_number_major - 0x8D,
-                version_number_minor
-            ),
-            0x8F..=0x90 => format!(
-                "v6.{}.{}",
-                version_number_major - 0x8F,
-                version_number_minor
-            ),
-            0x91..=0x91 => format!(
-                "v7.{}.{}",
-                version_number_major - 0x91,
-                version_number_minor
-            ),
-            0x92..=0x92 => format!(
-                "v8.{}.{}",
-                version_number_major - 0x92,
-                version_number_minor
-            ),
-            0xA0..=0xA1 => format!(
-                "v9.{}.{}",
-                version_number_major - 0xA0,
-                version_number_minor
-            ),
-            0xA2..=0xA2 => format!(
-                "v10.{}.{}",
-                version_number_major - 0xA2,
-                version_number_minor
-            ),
-            _ => format!("unknown ({version_number_major})"),
-        }
+        self.fpga.is_emulator()
     }
 
     pub fn latest() -> String {
-        Self::version_map(
+        version_map(
             Self::LATEST_VERSION_NUM_MAJOR,
             Self::LATEST_VERSION_NUM_MINOR,
         )
@@ -158,9 +138,13 @@ mod tests {
     #[case("v10.0.0", 162)]
     #[case("unknown (147)", 147)]
     fn version(#[case] expected: &str, #[case] num: u8) {
-        let info = FirmwareVersion::new(0, num, num, 0, 0, 0);
-        assert_eq!(expected, info.cpu());
-        assert_eq!(expected, info.fpga());
+        let info = FirmwareVersion::new(
+            0,
+            CPUVersion::new(Major(num), Minor(0)),
+            FPGAVersion::new(Major(num), Minor(0), 0),
+        );
+        assert_eq!(expected, info.cpu().to_string());
+        assert_eq!(expected, info.fpga().to_string());
     }
 
     #[test]
@@ -170,29 +154,48 @@ mod tests {
 
     #[test]
     fn is_emulator() {
-        assert!(
-            FirmwareVersion::new(0, 0, 0, 0, 0, FirmwareVersion::ENABLED_EMULATOR_BIT)
-                .is_emulator()
-        );
-        assert!(!FirmwareVersion::new(0, 0, 0, 0, 0, 0).is_emulator());
+        assert!(FirmwareVersion::new(
+            0,
+            CPUVersion::new(Major(0), Minor(0)),
+            FPGAVersion::new(Major(0), Minor(0), FPGAVersion::ENABLED_EMULATOR_BIT)
+        )
+        .is_emulator());
+        assert!(!FirmwareVersion::new(
+            0,
+            CPUVersion::new(Major(0), Minor(0)),
+            FPGAVersion::new(Major(0), Minor(0), 0)
+        )
+        .is_emulator());
     }
 
     #[test]
     fn number() {
-        let info = FirmwareVersion::new(0, 1, 2, 3, 4, 5);
-        assert_eq!(info.cpu_version_number_major(), 1);
-        assert_eq!(info.fpga_version_number_major(), 2);
-        assert_eq!(info.cpu_version_number_minor(), 3);
-        assert_eq!(info.fpga_version_number_minor(), 4);
-        assert_eq!(info.fpga_function_bits(), 5);
+        let info = FirmwareVersion::new(
+            0,
+            CPUVersion::new(Major(1), Minor(3)),
+            FPGAVersion::new(Major(2), Minor(4), 5),
+        );
+        assert_eq!(info.cpu().major().0, 1);
+        assert_eq!(info.fpga().major().0, 2);
+        assert_eq!(info.cpu().minor().0, 3);
+        assert_eq!(info.fpga().minor().0, 4);
+        assert_eq!(info.fpga().function_bits(), 5);
     }
 
     #[test]
     fn display() {
-        let info = FirmwareVersion::new(0, 1, 2, 3, 4, 0);
+        let info = FirmwareVersion::new(
+            0,
+            CPUVersion::new(Major(1), Minor(3)),
+            FPGAVersion::new(Major(2), Minor(4), 0),
+        );
         assert_eq!(format!("{}", info), "0: CPU = v0.4, FPGA = v0.5");
 
-        let info = FirmwareVersion::new(0, 1, 2, 3, 4, FirmwareVersion::ENABLED_EMULATOR_BIT);
+        let info = FirmwareVersion::new(
+            0,
+            CPUVersion::new(Major(1), Minor(3)),
+            FPGAVersion::new(Major(2), Minor(4), FPGAVersion::ENABLED_EMULATOR_BIT),
+        );
         assert_eq!(format!("{}", info), "0: CPU = v0.4, FPGA = v0.5 [Emulator]");
     }
 }
