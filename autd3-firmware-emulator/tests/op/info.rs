@@ -32,18 +32,19 @@ fn send_firminfo() -> anyhow::Result<()> {
     }
 
     send(&mut cpu, CPUMajor, &geometry, &mut tx)?;
-    assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MAJOR, cpu.rx().data());
+    assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MAJOR.0, cpu.rx().data());
     assert!(!cpu.reads_fpga_state());
 
     send(&mut cpu, CPUMinor, &geometry, &mut tx)?;
-    assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MINOR, cpu.rx().data());
+    assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MINOR.0, cpu.rx().data());
     assert!(!cpu.reads_fpga_state());
 
     send(&mut cpu, FPGAMajor, &geometry, &mut tx)?;
+    assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MAJOR.0, cpu.rx().data());
     assert!(!cpu.reads_fpga_state());
 
     send(&mut cpu, FPGAMinor, &geometry, &mut tx)?;
-    assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MINOR, cpu.rx().data());
+    assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MINOR.0, cpu.rx().data());
     assert!(!cpu.reads_fpga_state());
 
     send(&mut cpu, FPGAFunctions, &geometry, &mut tx)?;
