@@ -77,12 +77,12 @@ impl ControllerBuilder {
     /// Opens a controller with a timeout.
     ///
     /// Opens link, and then initialize and synchronize the devices. The `timeout` is used to send data for initialization and synchronization.
-    #[tracing::instrument(level = "debug", skip(link_builder))]
     pub async fn open_with_timeout<B: LinkBuilder>(
         self,
         link_builder: B,
         timeout: Duration,
     ) -> Result<Controller<B::L>, AUTDError> {
+        tracing::debug!("Opening a controller: {:?} (timeout = {:?})", self, timeout);
         let geometry = Geometry::new(self.devices, self.default_parallel_threshold);
         Controller {
             link: link_builder.open(&geometry).await?,
