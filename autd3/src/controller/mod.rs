@@ -117,7 +117,9 @@ impl<L: Link> Controller<L> {
 
     /// Returns  the firmware version of the devices.
     pub async fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDError> {
+        use autd3_driver::firmware::version::{CPUVersion, FPGAVersion, Major, Minor};
         use FirmwareVersionType::*;
+
         let cpu_major = self.fetch_firminfo(CPUMajor).await?;
         let cpu_minor = self.fetch_firminfo(CPUMinor).await?;
         let fpga_major = self.fetch_firminfo(FPGAMajor).await?;
@@ -131,11 +133,12 @@ impl<L: Link> Controller<L> {
             .map(|dev| {
                 FirmwareVersion::new(
                     dev.idx(),
-                    cpu_major[dev.idx()],
-                    fpga_major[dev.idx()],
-                    cpu_minor[dev.idx()],
-                    fpga_minor[dev.idx()],
-                    fpga_functions[dev.idx()],
+                    CPUVersion::new(Major(cpu_major[dev.idx()]), Minor(cpu_minor[dev.idx()])),
+                    FPGAVersion::new(
+                        Major(fpga_major[dev.idx()]),
+                        Minor(fpga_minor[dev.idx()]),
+                        fpga_functions[dev.idx()],
+                    ),
                 )
             })
             .collect())
@@ -348,15 +351,21 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn firmware_version() -> anyhow::Result<()> {
+        use autd3_driver::firmware::version::{CPUVersion, FPGAVersion};
+
         let mut autd = create_controller(1).await?;
         assert_eq!(
             vec![FirmwareVersion::new(
                 0,
-                FirmwareVersion::LATEST_VERSION_NUM_MAJOR,
-                FirmwareVersion::LATEST_VERSION_NUM_MAJOR,
-                FirmwareVersion::LATEST_VERSION_NUM_MINOR,
-                FirmwareVersion::LATEST_VERSION_NUM_MINOR,
-                FirmwareVersion::ENABLED_EMULATOR_BIT
+                CPUVersion::new(
+                    FirmwareVersion::LATEST_VERSION_NUM_MAJOR,
+                    FirmwareVersion::LATEST_VERSION_NUM_MINOR
+                ),
+                FPGAVersion::new(
+                    FirmwareVersion::LATEST_VERSION_NUM_MAJOR,
+                    FirmwareVersion::LATEST_VERSION_NUM_MINOR,
+                    FPGAVersion::ENABLED_EMULATOR_BIT
+                )
             )],
             autd.firmware_version().await?
         );
