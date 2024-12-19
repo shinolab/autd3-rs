@@ -37,8 +37,7 @@ impl ToMessage for autd3_driver::firmware::fpga::TransitionMode {
 
 impl FromMessage<TransitionMode> for autd3_driver::firmware::fpga::TransitionMode {
     fn from_msg(msg: &TransitionMode) -> Result<Self, AUTDProtoBufError> {
-        let mode = msg.mode.as_ref().ok_or(AUTDProtoBufError::DataParseError)?;
-        Ok(match *mode {
+        Ok(match msg.mode.ok_or(AUTDProtoBufError::DataParseError)? {
             transition_mode::Mode::SyncIdx(TransitionModeSyncIdx {}) => {
                 autd3_driver::firmware::fpga::TransitionMode::SyncIdx
             }

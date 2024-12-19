@@ -18,9 +18,9 @@ where
             loop_behavior: Some(self.loop_behavior().to_msg(None)),
             gains: self
                 .iter()
-                .filter_map(|g| match g.to_msg(None).datagram {
-                    Some(datagram::Datagram::Gain(gain)) => Some(gain),
-                    _ => None,
+                .map(|g| match g.to_msg(None).datagram {
+                    Some(datagram::Datagram::Gain(gain)) => gain,
+                    _ => unreachable!(),
                 })
                 .collect(),
             mode: Some(self.mode() as _),

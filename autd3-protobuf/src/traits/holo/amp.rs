@@ -16,10 +16,8 @@ impl ToMessage for autd3_gain_holo::Amplitude {
 
 impl FromMessage<Option<Amplitude>> for autd3_gain_holo::Amplitude {
     fn from_msg(msg: &Option<Amplitude>) -> Result<Self, AUTDProtoBufError> {
-        match msg {
-            Some(msg) => Ok(msg.value * autd3_gain_holo::Pa),
-            None => Err(AUTDProtoBufError::DataParseError),
-        }
+        msg.map(|msg| msg.value * autd3_gain_holo::Pa)
+            .ok_or(AUTDProtoBufError::DataParseError)
     }
 }
 
