@@ -15,7 +15,7 @@ use autd3_driver::{
             SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
         },
     },
-    geometry::Vector3,
+    geometry::Point3,
 };
 use autd3_firmware_emulator::{cpu::params::SYS_TIME_TRANSITION_MARGIN, CPUEmulator};
 
@@ -30,7 +30,7 @@ pub fn gen_random_foci<const N: usize>(num: usize) -> Vec<ControlPoints<N>> {
     (0..num)
         .map(|_| {
             ControlPoints::new([0; N].map(|_| {
-                ControlPoint::from(Vector3::new(
+                ControlPoint::from(Point3::new(
                     rng.gen_range(-100.0 * mm..100.0 * mm),
                     rng.gen_range(-100.0 * mm..100.0 * mm),
                     rng.gen_range(-100.0 * mm..100.0 * mm),

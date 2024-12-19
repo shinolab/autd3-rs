@@ -18,16 +18,16 @@ use proc_macro::TokenStream;
 ///
 /// ```
 /// use autd3_driver::derive::*;
-/// use autd3_driver::geometry::Vector3;
+/// use autd3_driver::geometry::Point3;
 /// use autd3_driver::defined::rad;
 ///
 /// #[derive(Gain, Debug)]
 /// pub struct FocalPoint {
-///     pos: Vector3,
+///     pos: Point3,
 /// }
 ///
 /// pub struct Context {
-///     pos: Vector3,
+///     pos: Point3,
 ///     wavenumber: f32,
 /// }
 ///

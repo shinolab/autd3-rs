@@ -3,7 +3,7 @@ use autd3::{link::Audit, prelude::*};
 #[tokio::test]
 async fn only_for_enabled() -> anyhow::Result<()> {
     let mut autd =
-        Controller::builder([AUTD3::new(Vector3::zeros()), AUTD3::new(Vector3::zeros())])
+        Controller::builder([AUTD3::new(Point3::origin()), AUTD3::new(Point3::origin())])
             .open(Audit::builder())
             .await?;
 

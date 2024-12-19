@@ -26,7 +26,7 @@ use derive_new::new;
 /// # fn _main() -> Result<(), AUTDInternalError> {
 /// Group::new(|dev| |tr| if tr.idx() < 100 { Some("null") } else { Some("focus") })
 ///    .set("null", Null::new())?
-///    .set("focus", Focus::new(Vector3::zeros()))?;
+///    .set("focus", Focus::new(Point3::origin()))?;
 /// # Ok(())
 /// # }
 /// ```

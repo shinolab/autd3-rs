@@ -177,7 +177,7 @@ mod tests {
     use crate::{
         datagram::{gain::tests::TestGain, modulation::tests::TestModulation, FociSTM, GainSTM},
         firmware::fpga::LoopBehavior,
-        geometry::Vector3,
+        geometry::Point3,
     };
 
     use super::*;
@@ -226,7 +226,7 @@ mod tests {
     #[test]
     #[case(FociSTM::new(
         SamplingConfig::FREQ_4K,
-        [Vector3::zeros(), Vector3::zeros()]
+        [Point3::origin(), Point3::origin()]
     ).unwrap())]
     #[case(GainSTM::new(
         SamplingConfig::FREQ_4K,
@@ -246,11 +246,11 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(true, 10, 10, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
-    #[case(false, 11, 10, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
-    #[case(false, 10, 11, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
-    #[case(true, 11, 10, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
-    #[case(true, 10, 11, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Vector3::zeros()]).unwrap())]
+    #[case(true, 10, 10, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
+    #[case(false, 11, 10, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
+    #[case(false, 10, 11, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
+    #[case(true, 11, 10, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
+    #[case(true, 10, 11, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
     #[case(true, 10, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
     #[case(false, 11, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
     #[case(false, 10, 11, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]

@@ -2,7 +2,7 @@ use autd3_driver::{
     defined::rad,
     derive::*,
     firmware::fpga::{EmitIntensity, Phase},
-    geometry::Vector3,
+    geometry::Point3,
 };
 use derive_new::new;
 
@@ -11,7 +11,7 @@ use derive_new::new;
 pub struct Focus {
     #[get(ref)]
     /// The position of the focus
-    pos: Vector3,
+    pos: Point3,
     #[new(value = "EmitIntensity::MAX")]
     #[get]
     #[set(into)]
@@ -25,7 +25,7 @@ pub struct Focus {
 }
 
 pub struct Context {
-    pub(crate) pos: Vector3,
+    pub(crate) pos: Point3,
     pub(crate) intensity: EmitIntensity,
     pub(crate) phase_offset: Phase,
     pub(crate) wavenumber: f32,
@@ -69,13 +69,13 @@ impl Gain for Focus {
 
 #[cfg(test)]
 mod tests {
-    use crate::tests::{create_geometry, random_vector3};
+    use crate::tests::{create_geometry, random_point3};
 
     use super::*;
     use rand::Rng;
     fn focus_check(
         g: Focus,
-        pos: Vector3,
+        pos: Point3,
         intensity: EmitIntensity,
         phase_offset: Phase,
         geometry: &Geometry,
@@ -106,11 +106,11 @@ mod tests {
 
         let geometry = create_geometry(1);
 
-        let f = random_vector3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
+        let f = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
         let g = Focus::new(f);
         focus_check(g, f, EmitIntensity::MAX, Phase::ZERO, &geometry)?;
 
-        let f = random_vector3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
+        let f = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
         let intensity = EmitIntensity::new(rng.gen());
         let phase_offset = Phase::new(rng.gen());
         let g = Focus::new(f)

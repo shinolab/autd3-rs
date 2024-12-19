@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use autd3_driver::{
     acoustics::directivity::Directivity,
-    geometry::{Geometry, Vector3},
+    geometry::{Geometry, Point3},
 };
 use nalgebra::{Dyn, VecStorage, U1};
 
@@ -31,7 +31,7 @@ pub trait LinAlgBackend<D: Directivity> {
     fn generate_propagation_matrix(
         &self,
         geometry: &Geometry,
-        foci: &[Vector3],
+        foci: &[Point3],
         filter: Option<&HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::MatrixXc, HoloError>;
 

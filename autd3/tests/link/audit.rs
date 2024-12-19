@@ -5,7 +5,7 @@ use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
 
 #[tokio::test]
 async fn audit_test() -> anyhow::Result<()> {
-    let mut autd = Controller::builder([AUTD3::new(Vector3::zeros())])
+    let mut autd = Controller::builder([AUTD3::new(Point3::origin())])
         .with_default_timeout(Duration::from_millis(100))
         .open_with_timeout(Audit::builder(), Duration::from_millis(10))
         .await?;

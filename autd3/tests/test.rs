@@ -1,6 +1,6 @@
 use autd3::{
     link::Audit,
-    prelude::{Vector3, AUTD3},
+    prelude::{Point3, AUTD3},
     Controller,
 };
 
@@ -9,7 +9,7 @@ mod link;
 
 #[tokio::test]
 async fn initial_msg_id() -> anyhow::Result<()> {
-    let cnt = Controller::builder([AUTD3::new(Vector3::zeros())])
+    let cnt = Controller::builder([AUTD3::new(Point3::origin())])
         .open(
             Audit::builder()
                 .with_initial_msg_id(Some(0x01))

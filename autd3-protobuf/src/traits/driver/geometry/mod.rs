@@ -18,6 +18,30 @@ impl ToMessage for autd3_driver::geometry::Vector3 {
     }
 }
 
+impl ToMessage for autd3_driver::geometry::UnitVector3 {
+    type Message = UnitVector3;
+
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+        Self::Message {
+            x: self.x as _,
+            y: self.y as _,
+            z: self.z as _,
+        }
+    }
+}
+
+impl ToMessage for autd3_driver::geometry::Point3 {
+    type Message = Point3;
+
+    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+        Self::Message {
+            x: self.x as _,
+            y: self.y as _,
+            z: self.z as _,
+        }
+    }
+}
+
 impl ToMessage for autd3_driver::geometry::Quaternion {
     type Message = Quaternion;
 
@@ -60,6 +84,28 @@ impl FromMessage<Option<Vector3>> for autd3_driver::geometry::Vector3 {
     }
 }
 
+impl FromMessage<Option<UnitVector3>> for autd3_driver::geometry::UnitVector3 {
+    fn from_msg(msg: &Option<UnitVector3>) -> Result<Self, AUTDProtoBufError> {
+        match msg {
+            Some(msg) => Ok(autd3_driver::geometry::UnitVector3::new_unchecked(
+                autd3_driver::geometry::Vector3::new(msg.x as _, msg.y as _, msg.z as _),
+            )),
+            None => Err(AUTDProtoBufError::DataParseError),
+        }
+    }
+}
+
+impl FromMessage<Option<Point3>> for autd3_driver::geometry::Point3 {
+    fn from_msg(msg: &Option<Point3>) -> Result<Self, AUTDProtoBufError> {
+        match msg {
+            Some(msg) => Ok(autd3_driver::geometry::Point3::new(
+                msg.x as _, msg.y as _, msg.z as _,
+            )),
+            None => Err(AUTDProtoBufError::DataParseError),
+        }
+    }
+}
+
 impl FromMessage<Quaternion> for autd3_driver::geometry::UnitQuaternion {
     fn from_msg(msg: &Quaternion) -> Result<Self, AUTDProtoBufError> {
         Ok(autd3_driver::geometry::UnitQuaternion::from_quaternion(
@@ -74,7 +120,7 @@ impl FromMessage<Geometry> for autd3_driver::geometry::Geometry {
             .iter()
             .enumerate()
             .map(|(i, dev_msg)| {
-                let pos = autd3_driver::geometry::Vector3::from_msg(&dev_msg.pos)?;
+                let pos = autd3_driver::geometry::Point3::from_msg(&dev_msg.pos)?;
                 let rot = dev_msg
                     .rot
                     .as_ref()
@@ -96,7 +142,7 @@ mod tests {
     use super::*;
     use autd3_driver::{
         autd3_device::AUTD3,
-        geometry::{Geometry, Quaternion, UnitQuaternion, Vector3},
+        geometry::{Geometry, Point3, Quaternion, UnitQuaternion, Vector3},
     };
     use rand::Rng;
 
@@ -140,7 +186,7 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn geometry() {
         let mut rng = rand::thread_rng();
-        let mut dev = AUTD3::new(Vector3::new(rng.gen(), rng.gen(), rng.gen())).into_device(0);
+        let mut dev = AUTD3::new(Point3::new(rng.gen(), rng.gen(), rng.gen())).into_device(0);
         dev.sound_speed = rng.gen();
         let geometry = Geometry::new(vec![dev], 4);
         let msg = geometry.to_msg(None);

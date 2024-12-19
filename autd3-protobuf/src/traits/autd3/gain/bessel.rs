@@ -27,10 +27,8 @@ impl ToMessage for autd3::gain::Bessel {
 impl FromMessage<Bessel> for autd3::gain::Bessel {
     fn from_msg(msg: &Bessel) -> Result<Self, AUTDProtoBufError> {
         let mut g = Self::new(
-            autd3_driver::geometry::Vector3::from_msg(&msg.pos)?,
-            autd3_driver::geometry::UnitVector3::new_normalize(
-                autd3_driver::geometry::Vector3::from_msg(&msg.dir)?,
-            ),
+            autd3_driver::geometry::Point3::from_msg(&msg.pos)?,
+            autd3_driver::geometry::UnitVector3::from_msg(&msg.dir)?,
             autd3_driver::defined::Angle::from_msg(&msg.theta)?,
         );
         if let Some(intensity) = msg.intensity.as_ref() {
@@ -48,7 +46,11 @@ impl FromMessage<Bessel> for autd3::gain::Bessel {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::{defined::rad, firmware::fpga::EmitIntensity, geometry::Vector3};
+    use autd3_driver::{
+        defined::rad,
+        firmware::fpga::EmitIntensity,
+        geometry::{Point3, Vector3},
+    };
     use rand::Rng;
 
     #[test]
@@ -56,7 +58,7 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let g = autd3::gain::Bessel::new(
-            Vector3::new(rng.gen(), rng.gen(), rng.gen()),
+            Point3::new(rng.gen(), rng.gen(), rng.gen()),
             autd3_driver::geometry::UnitVector3::new_normalize(Vector3::new(
                 rng.gen(),
                 rng.gen(),

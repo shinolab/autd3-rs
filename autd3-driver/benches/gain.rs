@@ -13,7 +13,7 @@ use autd3_driver::{
         fpga::{Drive, EmitIntensity, Phase, Segment, TransitionMode},
         operation::{GainContext, OperationHandler},
     },
-    geometry::{Device, Geometry, IntoDevice, Transducer, Vector3},
+    geometry::{Device, Geometry, IntoDevice, Point3, Transducer},
 };
 
 use bit_vec::BitVec;
@@ -24,7 +24,7 @@ pub fn generate_geometry(size: usize) -> Geometry {
     Geometry::new(
         (0..size)
             .map(move |i| {
-                AUTD3::new(Vector3::new(i as f32 * AUTD3::DEVICE_WIDTH, 0., 0.)).into_device(i as _)
+                AUTD3::new(Point3::new(i as f32 * AUTD3::DEVICE_WIDTH, 0., 0.)).into_device(i as _)
             })
             .collect(),
         4,
@@ -33,13 +33,13 @@ pub fn generate_geometry(size: usize) -> Geometry {
 
 #[derive(Gain, Clone, PartialEq, Debug)]
 struct Focus {
-    pos: Vector3,
+    pos: Point3,
     intensity: EmitIntensity,
     phase_offset: Phase,
 }
 
 impl Focus {
-    pub const fn new(pos: Vector3) -> Self {
+    pub const fn new(pos: Point3) -> Self {
         Self {
             pos,
             intensity: EmitIntensity::MAX,
@@ -49,7 +49,7 @@ impl Focus {
 }
 
 struct FocusContext {
-    pos: Vector3,
+    pos: Point3,
     intensity: EmitIntensity,
     phase_offset: Phase,
     wavenumber: f32,
@@ -100,11 +100,8 @@ fn focus(c: &mut Criterion) {
             |b, geometry| {
                 let mut tx = vec![TxMessage::new_zeroed(); size];
                 b.iter(|| {
-                    let g = Focus::new(Vector3::new(
-                        black_box(90.),
-                        black_box(70.),
-                        black_box(150.),
-                    ));
+                    let g =
+                        Focus::new(Point3::new(black_box(90.), black_box(70.), black_box(150.)));
                     let generator = g.operation_generator(geometry).unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(&mut operations, geometry, &mut tx, false).unwrap();
@@ -125,11 +122,8 @@ fn focus_parallel(c: &mut Criterion) {
             |b, geometry| {
                 let mut tx = vec![TxMessage::new_zeroed(); size];
                 b.iter(|| {
-                    let g = Focus::new(Vector3::new(
-                        black_box(90.),
-                        black_box(70.),
-                        black_box(150.),
-                    ));
+                    let g =
+                        Focus::new(Point3::new(black_box(90.), black_box(70.), black_box(150.)));
                     let generator = g.operation_generator(geometry).unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(&mut operations, geometry, &mut tx, true).unwrap();
@@ -150,7 +144,7 @@ fn focus_boxed(c: &mut Criterion) {
             |b, geometry| {
                 let mut tx = vec![TxMessage::new_zeroed(); size];
                 b.iter(|| {
-                    let g = Box::new(Focus::new(Vector3::new(
+                    let g = Box::new(Focus::new(Point3::new(
                         black_box(90.),
                         black_box(70.),
                         black_box(150.),

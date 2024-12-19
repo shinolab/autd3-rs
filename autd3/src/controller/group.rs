@@ -181,7 +181,7 @@ impl<L: Link> Controller<L> {
     /// ```
     /// # use autd3::prelude::*;
     /// # tokio_test::block_on(async {
-    /// let mut autd = Controller::builder((0..3).map(|_| AUTD3::new(Vector3::zeros()))).open(Nop::builder()).await?;
+    /// let mut autd = Controller::builder((0..3).map(|_| AUTD3::new(Point3::origin()))).open(Nop::builder()).await?;
     ///
     /// autd.group(|dev| match dev.idx() {
     ///    0 => Some("static"),

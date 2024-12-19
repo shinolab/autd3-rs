@@ -1,6 +1,6 @@
 use crate::{
     firmware::fpga::{EmitIntensity, Phase},
-    geometry::{Point3, Vector3},
+    geometry::{Isometry, Point3},
 };
 
 use autd3_derive::Builder;
@@ -20,7 +20,7 @@ pub struct ControlPoint {
 }
 
 impl ControlPoint {
-    pub fn transform(&self, iso: &nalgebra::Isometry3<f32>) -> Self {
+    pub fn transform(&self, iso: &Isometry) -> Self {
         Self {
             point: iso.transform_point(&self.point),
             phase_offset: self.phase_offset(),
@@ -28,15 +28,15 @@ impl ControlPoint {
     }
 }
 
-impl From<Vector3> for ControlPoint {
-    fn from(point: Vector3) -> Self {
-        Self::new(Point3::from(point))
+impl From<Point3> for ControlPoint {
+    fn from(point: Point3) -> Self {
+        Self::new(point)
     }
 }
 
-impl From<&Vector3> for ControlPoint {
-    fn from(point: &Vector3) -> Self {
-        Self::new(Point3::from(*point))
+impl From<&Point3> for ControlPoint {
+    fn from(point: &Point3) -> Self {
+        Self::new(*point)
     }
 }
 
@@ -104,35 +104,35 @@ mod tests {
 
     #[test]
     fn from_vector3() {
-        let v = Vector3::new(1.0, 2.0, 3.0);
+        let v = Point3::new(1.0, 2.0, 3.0);
         let cp = ControlPoint::from(v);
-        assert_eq!(v, cp.point().coords);
+        assert_eq!(&v, cp.point());
     }
 
     #[test]
     fn from_vector3_ref() {
-        let v = Vector3::new(1.0, 2.0, 3.0);
+        let v = Point3::new(1.0, 2.0, 3.0);
         let cp = ControlPoint::from(&v);
-        assert_eq!(v, cp.point().coords);
+        assert_eq!(&v, cp.point());
     }
 
     #[test]
     fn from_control_point() {
-        let v1 = Vector3::new(1.0, 2.0, 3.0);
-        let v2 = Vector3::new(4.0, 5.0, 6.0);
+        let v1 = Point3::new(1.0, 2.0, 3.0);
+        let v2 = Point3::new(4.0, 5.0, 6.0);
         let cp = ControlPoints::from([v1, v2]);
         assert_eq!(EmitIntensity::MAX, cp.intensity());
-        assert_eq!(v1, cp[0].point().coords);
-        assert_eq!(v2, cp[1].point().coords);
+        assert_eq!(&v1, cp[0].point());
+        assert_eq!(&v2, cp[1].point());
     }
 
     #[test]
     fn from_control_point_and_intensity() {
-        let v1 = Vector3::new(1.0, 2.0, 3.0);
-        let v2 = Vector3::new(4.0, 5.0, 6.0);
+        let v1 = Point3::new(1.0, 2.0, 3.0);
+        let v2 = Point3::new(4.0, 5.0, 6.0);
         let cp = ControlPoints::from(([v1, v2], EmitIntensity::MIN));
         assert_eq!(EmitIntensity::MIN, cp.intensity());
-        assert_eq!(v1, cp[0].point().coords);
-        assert_eq!(v2, cp[1].point().coords);
+        assert_eq!(&v1, cp[0].point());
+        assert_eq!(&v2, cp[1].point());
     }
 }
