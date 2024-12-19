@@ -93,8 +93,9 @@ fn impl_getter(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
             if let syn::Type::Path(path) = ty {
                 let path = path.path.to_token_stream().to_string();
                 {
-                    let re = regex::Regex::new(r"^LazyCell < RefCell < (?<inner>[\w<>\s]+) > >$")
-                        .unwrap();
+                    let re =
+                        regex::Regex::new(r"^LazyCell < RefCell < (?<inner>[\d\w<>\s,]+) > >$")
+                            .unwrap();
                     if let Some(caps) = re.captures(&path) {
                         let inner: proc_macro2::TokenStream = caps["inner"].parse().unwrap();
                         let mut_name = format_ident!("{}_mut", ident);

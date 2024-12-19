@@ -43,10 +43,7 @@ impl FPGAEmulator {
     }
 
     pub fn modulation_at(&self, segment: Segment, idx: usize) -> u8 {
-        let m = match segment {
-            Segment::S0 => &self.mem.modulation_bram_0()[idx >> 1],
-            Segment::S1 => &self.mem.modulation_bram_1()[idx >> 1],
-        };
+        let m = &self.mem.modulation_bram()[&segment][idx >> 1];
         let m = if idx % 2 == 0 { m & 0xFF } else { m >> 8 };
         m as u8
     }
@@ -105,8 +102,14 @@ mod tests {
     #[test]
     fn modulation() {
         let fpga = FPGAEmulator::new(249);
-        fpga.mem.modulation_bram_0_mut()[0] = 0x1234;
-        fpga.mem.modulation_bram_0_mut()[1] = 0x5678;
+        fpga.mem
+            .modulation_bram_mut()
+            .get_mut(&Segment::S0)
+            .unwrap()[0] = 0x1234;
+        fpga.mem
+            .modulation_bram_mut()
+            .get_mut(&Segment::S0)
+            .unwrap()[1] = 0x5678;
         fpga.mem.controller_bram_mut()[ADDR_MOD_CYCLE0] = 3 - 1;
         assert_eq!(3, fpga.modulation_cycle(Segment::S0));
         assert_eq!(0x34, fpga.modulation());
