@@ -45,24 +45,13 @@ impl LinkBuilder for TwinCATBuilder {
     type L = TwinCAT;
 
     async fn open(self, _: &Geometry) -> Result<Self::L, AUTDInternalError> {
-        let dll = match unsafe { lib::Library::new("TcAdsDll") } {
-            Ok(dll) => dll,
-            Err(_) => {
-                return Err(AUTDInternalError::LinkError(
-                    "TcAdsDll not found. Please install TwinCAT3".to_owned(),
-                ))
-            }
-        };
-
+        let dll = unsafe { lib::Library::new("TcAdsDll") }.map_err(|_| {
+            AUTDInternalError::LinkError("TcAdsDll not found. Please install TwinCAT3".to_owned())
+        })?;
         let port = unsafe {
-            match dll.get::<unsafe extern "C" fn() -> i32>(b"AdsPortOpenEx") {
-                Ok(f) => f(),
-                Err(_) => {
-                    return Err(AUTDInternalError::LinkError(
-                        "AdsPortOpenEx not found".to_owned(),
-                    ))
-                }
-            }
+            dll.get::<unsafe extern "C" fn() -> i32>(b"AdsPortOpenEx")
+                .map_err(|_| AUTDInternalError::LinkError("AdsPortOpenEx not found".to_owned()))?(
+            )
         };
         if port == 0 {
             return Err(AdsError::OpenPort.into());
@@ -70,15 +59,10 @@ impl LinkBuilder for TwinCATBuilder {
 
         let mut ams_addr: AmsAddr = unsafe { std::mem::zeroed() };
         let n_err = unsafe {
-            match dll.get::<unsafe extern "C" fn(i32, *mut AmsAddr) -> i32>(b"AdsGetLocalAddressEx")
-            {
-                Ok(f) => f(port, &mut ams_addr as *mut _),
-                Err(_) => {
-                    return Err(AUTDInternalError::LinkError(
-                        "AdsGetLocalAddressEx not found".to_owned(),
-                    ))
-                }
-            }
+            dll.get::<unsafe extern "C" fn(i32, *mut AmsAddr) -> i32>(b"AdsGetLocalAddressEx")
+                .map_err(|_| {
+                    AUTDInternalError::LinkError("AdsGetLocalAddressEx not found".to_owned())
+                })?(port, &mut ams_addr as *mut _)
         };
         if n_err != 0 {
             return Err(AdsError::GetLocalAddress(n_err).into());
@@ -105,17 +89,11 @@ impl TwinCAT {
 impl Link for TwinCAT {
     async fn close(&mut self) -> Result<(), AUTDInternalError> {
         unsafe {
-            match self
-                .dll
+            self.dll
                 .get::<unsafe extern "C" fn(i32) -> i32>(b"AdsPortCloseEx")
-            {
-                Ok(f) => f(self.port),
-                Err(_) => {
-                    return Err(AUTDInternalError::LinkError(
-                        "AdsPortCloseEx not found".to_owned(),
-                    ))
-                }
-            };
+                .map_err(|_| AUTDInternalError::LinkError("AdsPortCloseEx not found".to_owned()))?(
+                self.port,
+            );
         }
         self.port = 0;
         Ok(())
@@ -123,29 +101,26 @@ impl Link for TwinCAT {
 
     async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDInternalError> {
         unsafe {
-            let n_err = match self.dll.get::<unsafe extern "C" fn(
+            let n_err = self.dll.get::<unsafe extern "C" fn(
                 i32,
                 *const AmsAddr,
                 u32,
                 u32,
                 u32,
                 *const c_void,
-            ) -> i32>(b"AdsSyncWriteReqEx")
-            {
-                Ok(f) => f(
+            ) -> i32>(b"AdsSyncWriteReqEx").map_err(|_|
+                AUTDInternalError::LinkError(
+                    "AdsSyncWriteReqEx not found".to_owned(),
+                )
+            )?
+            (
                     self.port,
                     &raw const self.send_addr,
                     INDEX_GROUP,
                     INDEX_OFFSET_BASE,
                     tx.as_bytes().len() as _,
                     tx.as_ptr() as _,
-                ),
-                Err(_) => {
-                    return Err(AUTDInternalError::LinkError(
-                        "AdsSyncWriteReqEx not found".to_owned(),
-                    ))
-                }
-            };
+            );
 
             if n_err > 0 {
                 Err(AdsError::SendData(n_err).into())
@@ -158,31 +133,28 @@ impl Link for TwinCAT {
     async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
         let mut read_bytes: u32 = 0;
         unsafe {
-            let n_err = match self.dll.get::<unsafe extern "C" fn(
-                i32,
-                *const AmsAddr,
-                u32,
-                u32,
-                u32,
-                *mut c_void,
-                *mut u32,
-            ) -> i32>(b"AdsSyncReadReqEx2")
-            {
-                Ok(f) => f(
-                    self.port,
-                    &raw const self.send_addr,
-                    INDEX_GROUP,
-                    INDEX_OFFSET_BASE_READ,
-                    std::mem::size_of_val(rx) as _,
-                    rx.as_mut_ptr() as *mut c_void,
-                    &mut read_bytes as *mut u32,
-                ),
-                Err(_) => {
-                    return Err(AUTDInternalError::LinkError(
-                        "AdsSyncReadReqEx2 not found".to_owned(),
-                    ))
-                }
-            };
+            let n_err = self
+                .dll
+                .get::<unsafe extern "C" fn(
+                    i32,
+                    *const AmsAddr,
+                    u32,
+                    u32,
+                    u32,
+                    *mut c_void,
+                    *mut u32,
+                ) -> i32>(b"AdsSyncReadReqEx2")
+                .map_err(|_| {
+                    AUTDInternalError::LinkError("AdsSyncReadReqEx2 not found".to_owned())
+                })?(
+                self.port,
+                &raw const self.send_addr,
+                INDEX_GROUP,
+                INDEX_OFFSET_BASE_READ,
+                std::mem::size_of_val(rx) as _,
+                rx.as_mut_ptr() as *mut c_void,
+                &mut read_bytes as *mut u32,
+            );
 
             if n_err > 0 {
                 Err(AdsError::ReadData(n_err).into())
