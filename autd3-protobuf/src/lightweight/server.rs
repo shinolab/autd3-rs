@@ -91,7 +91,7 @@ where
         let transition_mode = gain
             .transition_mode
             .as_ref()
-            .map(|mode| autd3_driver::firmware::fpga::TransitionMode::from_msg(mode))
+            .map(autd3_driver::firmware::fpga::TransitionMode::from_msg)
             .transpose()?;
         Ok(g.with_segment(segment, transition_mode))
     }
@@ -149,7 +149,7 @@ where
         let transition_mode = modulation
             .transition_mode
             .as_ref()
-            .map(|mode| autd3_driver::firmware::fpga::TransitionMode::from_msg(mode))
+            .map(autd3_driver::firmware::fpga::TransitionMode::from_msg)
             .transpose()?;
         Ok(m.with_segment(segment, transition_mode))
     }
@@ -405,7 +405,7 @@ where
                     let transition_mode = msg
                         .transition_mode
                         .as_ref()
-                        .map(|mode| autd3_driver::firmware::fpga::TransitionMode::from_msg(mode))
+                        .map(autd3_driver::firmware::fpga::TransitionMode::from_msg)
                         .transpose()?;
                     seq_macro::seq!(K in 1..=8 {
                         match inner.inner {
