@@ -47,7 +47,7 @@ message TransitionMode {
 }
 
 message ControlPoint {
-    Vector3 pos = 1;
+    Point3 pos = 1;
     optional Phase offset = 2;
 }
 

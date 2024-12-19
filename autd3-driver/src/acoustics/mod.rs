@@ -2,7 +2,7 @@ pub mod directivity;
 
 use crate::{
     defined::{Complex, PI, T4010A1_AMPLITUDE},
-    geometry::{Transducer, Vector3},
+    geometry::{Point3, Transducer, UnitVector3},
 };
 
 use directivity::Directivity;
@@ -11,8 +11,8 @@ use directivity::Directivity;
 pub fn propagate<D: Directivity>(
     tr: &Transducer,
     wavenumber: f32,
-    dir: &Vector3,
-    target_pos: &Vector3,
+    dir: &UnitVector3,
+    target_pos: &Point3,
 ) -> Complex {
     const P0: f32 = T4010A1_AMPLITUDE / (4. * PI);
     let diff = target_pos - tr.position();
@@ -31,7 +31,7 @@ mod tests {
 
     use crate::{
         defined::mm,
-        geometry::{Device, UnitQuaternion},
+        geometry::{Device, UnitQuaternion, Vector3},
     };
     use directivity::tests::TestDirectivity;
 
@@ -48,7 +48,7 @@ mod tests {
         Transducer::new(
             0,
             0,
-            Vector3::new(
+            Point3::new(
                 rng.gen_range(-100.0..100.0),
                 rng.gen_range(-100.0..100.0),
                 rng.gen_range(-100.0..100.0),
@@ -72,9 +72,9 @@ mod tests {
     }
 
     #[rstest::fixture]
-    fn target() -> Vector3 {
+    fn target() -> Point3 {
         let mut rng = rand::thread_rng();
-        Vector3::new(
+        Point3::new(
             rng.gen_range(-100.0..100.0),
             rng.gen_range(-100.0..100.0),
             rng.gen_range(-100.0..100.0),
@@ -89,7 +89,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_propagate(tr: Transducer, rot: UnitQuaternion, target: Vector3, sound_speed: f32) {
+    fn test_propagate(tr: Transducer, rot: UnitQuaternion, target: Point3, sound_speed: f32) {
         let mut device = Device::new(0, rot, vec![tr.clone()]);
         device.sound_speed = sound_speed;
         let wavenumber = device.wavenumber();

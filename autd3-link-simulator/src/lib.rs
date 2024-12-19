@@ -30,10 +30,12 @@ impl LinkBuilder for SimulatorBuilder {
         geometry: &autd3_driver::geometry::Geometry,
     ) -> Result<Self::L, AUTDInternalError> {
         tracing::info!("Connecting to simulator@{}", self.addr);
-        let mut client =
-            simulator_client::SimulatorClient::connect(format!("http://{}", self.addr))
-                .await
-                .map_err(AUTDProtoBufError::from)?;
+        let conn = tonic::transport::Endpoint::new(format!("http://{}", self.addr))
+            .map_err(AUTDProtoBufError::from)?
+            .connect()
+            .await
+            .map_err(AUTDProtoBufError::from)?;
+        let mut client = simulator_client::SimulatorClient::new(conn);
 
         client
             .config_geomety(geometry.to_msg(None))

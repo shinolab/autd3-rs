@@ -7,8 +7,7 @@ use crate::{
 };
 
 use autd3_driver::{
-    acoustics::directivity::Directivity, derive::*, firmware::fpga::EmitIntensity,
-    geometry::Vector3,
+    acoustics::directivity::Directivity, derive::*, firmware::fpga::EmitIntensity, geometry::Point3,
 };
 use bit_vec::BitVec;
 use derive_more::Debug;
@@ -17,7 +16,7 @@ use zerocopy::{FromBytes, IntoBytes};
 #[derive(Gain, Builder, Debug)]
 pub struct Naive<D: Directivity, B: LinAlgBackend<D>> {
     #[get(ref)]
-    foci: Vec<Vector3>,
+    foci: Vec<Point3>,
     #[get(ref)]
     amps: Vec<Amplitude>,
     #[get]
@@ -30,7 +29,7 @@ pub struct Naive<D: Directivity, B: LinAlgBackend<D>> {
 }
 
 impl<D: Directivity, B: LinAlgBackend<D>> Naive<D, B> {
-    pub fn new(backend: Arc<B>, iter: impl IntoIterator<Item = (Vector3, Amplitude)>) -> Self {
+    pub fn new(backend: Arc<B>, iter: impl IntoIterator<Item = (Point3, Amplitude)>) -> Self {
         let (foci, amps) = iter.into_iter().unzip();
         Self {
             foci,
@@ -88,12 +87,12 @@ mod tests {
     #[test]
     fn test_naive_all() {
         let geometry: Geometry =
-            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], 4);
+            Geometry::new(vec![AUTD3::new(Point3::origin()).into_device(0)], 4);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = Naive::new(
             backend,
-            [(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)],
+            [(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
         );
 
         assert_eq!(
@@ -119,8 +118,8 @@ mod tests {
     fn test_naive_all_disabled() -> anyhow::Result<()> {
         let mut geometry = Geometry::new(
             vec![
-                AUTD3::new(Vector3::zeros()).into_device(0),
-                AUTD3::new(Vector3::zeros()).into_device(1),
+                AUTD3::new(Point3::origin()).into_device(0),
+                AUTD3::new(Point3::origin()).into_device(1),
             ],
             4,
         );
@@ -129,7 +128,7 @@ mod tests {
 
         let g = Naive::new(
             backend,
-            [(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)],
+            [(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
         );
 
         let mut g = g
@@ -150,14 +149,14 @@ mod tests {
     #[test]
     fn test_naive_filtered() {
         let geometry: Geometry =
-            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], 4);
+            Geometry::new(vec![AUTD3::new(Point3::origin()).into_device(0)], 4);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = Naive::new(
             backend,
             [
-                (Vector3::new(10., 10., 100.), 5e3 * Pa),
-                (Vector3::new(-10., 10., 100.), 5e3 * Pa),
+                (Point3::new(10., 10., 100.), 5e3 * Pa),
+                (Point3::new(-10., 10., 100.), 5e3 * Pa),
             ],
         )
         .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)));
@@ -182,8 +181,8 @@ mod tests {
     fn test_naive_filtered_disabled() -> anyhow::Result<()> {
         let mut geometry = Geometry::new(
             vec![
-                AUTD3::new(Vector3::zeros()).into_device(0),
-                AUTD3::new(Vector3::zeros()).into_device(1),
+                AUTD3::new(Point3::origin()).into_device(0),
+                AUTD3::new(Point3::origin()).into_device(1),
             ],
             4,
         );
@@ -192,7 +191,7 @@ mod tests {
 
         let g = Naive::new(
             backend,
-            [(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)],
+            [(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
         );
 
         let filter = geometry

@@ -10,7 +10,7 @@ async fn main() -> Result<()> {
         .with_max_level(tracing::Level::DEBUG)
         .init();
 
-    let autd = Controller::builder([AUTD3::new(Vector3::zeros()), AUTD3::new(Vector3::zeros())])
+    let autd = Controller::builder([AUTD3::new(Point3::origin()), AUTD3::new(Point3::origin())])
         .open(Nop::builder())
         .await?;
 

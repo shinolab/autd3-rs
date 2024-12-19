@@ -42,7 +42,7 @@ impl FromMessage<Naive>
                 .iter()
                 .map(|h| {
                     Ok((
-                        autd3_driver::geometry::Vector3::from_msg(&h.pos)?,
+                        autd3_driver::geometry::Point3::from_msg(&h.pos)?,
                         autd3_gain_holo::Amplitude::from_msg(&h.amp)?,
                     ))
                 })
@@ -58,7 +58,7 @@ impl FromMessage<Naive>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::geometry::Vector3;
+    use autd3_driver::geometry::Point3;
     use rand::Rng;
 
     #[test]
@@ -69,11 +69,11 @@ mod tests {
             std::sync::Arc::new(NalgebraBackend::default()),
             [
                 (
-                    Vector3::new(rng.gen(), rng.gen(), rng.gen()),
+                    Point3::new(rng.gen(), rng.gen(), rng.gen()),
                     rng.gen::<f32>() * autd3_gain_holo::Pa,
                 ),
                 (
-                    Vector3::new(rng.gen(), rng.gen(), rng.gen()),
+                    Point3::new(rng.gen(), rng.gen(), rng.gen()),
                     rng.gen::<f32>() * autd3_gain_holo::Pa,
                 ),
             ],

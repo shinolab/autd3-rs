@@ -34,7 +34,8 @@ pub struct Context {
 impl GainContext for Context {
     fn calc(&self, tr: &Transducer) -> Drive {
         (
-            Phase::from(-self.dir.dot(tr.position()) * self.wavenumber * rad) + self.phase_offset,
+            Phase::from(-self.dir.dot(&tr.position().coords) * self.wavenumber * rad)
+                + self.phase_offset,
             self.intensity,
         )
             .into()
@@ -90,7 +91,8 @@ mod tests {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
                 let expected_phase =
-                    Phase::from(-dir.dot(tr.position()) * dev.wavenumber() * rad) + phase_offset;
+                    Phase::from(-dir.dot(&tr.position().coords) * dev.wavenumber() * rad)
+                        + phase_offset;
                 let d = d.calc(tr);
                 assert_eq!(expected_phase, d.phase());
                 assert_eq!(intensity, d.intensity());

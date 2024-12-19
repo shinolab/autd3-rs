@@ -111,14 +111,14 @@ impl Controller<Nop> {
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::{autd3_device::AUTD3, geometry::Vector3};
+    use autd3_driver::{autd3_device::AUTD3, geometry::Point3};
 
     use super::*;
 
     #[tokio::test]
     async fn geometry() -> anyhow::Result<()> {
         let autd =
-            ControllerBuilder::new([AUTD3::new(Vector3::zeros()), AUTD3::new(Vector3::zeros())])
+            ControllerBuilder::new([AUTD3::new(Point3::origin()), AUTD3::new(Point3::origin())])
                 .open(crate::link::Nop::builder())
                 .await?;
 

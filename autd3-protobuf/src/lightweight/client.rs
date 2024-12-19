@@ -67,9 +67,10 @@ impl LightweightClient {
         builder: LightweightClientBuilder,
         addr: SocketAddr,
     ) -> Result<Self, crate::error::AUTDProtoBufError> {
-        let mut client =
-            crate::pb::ecat_light_client::EcatLightClient::connect(format!("http://{}", addr))
-                .await?;
+        let conn = tonic::transport::Endpoint::new(format!("http://{}", addr))?
+            .connect()
+            .await?;
+        let mut client = crate::pb::ecat_light_client::EcatLightClient::new(conn);
         let geometry = Geometry::new(builder.devices, builder.default_parallel_threshold as _);
         let res = client
             .open(OpenRequestLightweight {

@@ -74,7 +74,7 @@ impl From<DebugType<'_>> for DebugValue {
 
 #[cfg(test)]
 mod tests {
-    use crate::geometry::Vector3;
+    use crate::geometry::Point3;
 
     use super::*;
 
@@ -94,7 +94,7 @@ mod tests {
             "PwmOut(1)",
             format!(
                 "{:?}",
-                DebugType::PwmOut(&Transducer::new(1, 1, Vector3::new(0.0, 0.0, 0.0)))
+                DebugType::PwmOut(&Transducer::new(1, 1, Point3::origin()))
             )
         );
         assert_eq!("Direct(true)", format!("{:?}", DebugType::Direct(true)));

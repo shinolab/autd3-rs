@@ -194,7 +194,7 @@ pub mod tests {
     use crate::{
         ethercat::EC_OUTPUT_FRAME_SIZE,
         firmware::cpu::Header,
-        geometry::{Transducer, UnitQuaternion, Vector3},
+        geometry::{Point3, Transducer, UnitQuaternion},
     };
 
     use super::*;
@@ -229,11 +229,13 @@ pub mod tests {
     #[case::serial(false)]
     #[case::parallel(true)]
     fn test(#[case] parallel: bool) {
+        use crate::geometry::Point3;
+
         let geometry = Geometry::new(
             vec![Device::new(
                 0,
                 UnitQuaternion::identity(),
-                vec![Transducer::new(0, 0, Vector3::zeros())],
+                vec![Transducer::new(0, 0, Point3::origin())],
             )],
             4,
         );
@@ -286,7 +288,7 @@ pub mod tests {
             vec![Device::new(
                 0,
                 UnitQuaternion::identity(),
-                vec![Transducer::new(0, 0, Vector3::zeros())],
+                vec![Transducer::new(0, 0, Point3::origin())],
             )],
             4,
         );
@@ -324,7 +326,7 @@ pub mod tests {
             vec![Device::new(
                 0,
                 UnitQuaternion::identity(),
-                vec![Transducer::new(0, 0, Vector3::zeros())],
+                vec![Transducer::new(0, 0, Point3::origin())],
             )],
             4,
         );
@@ -362,7 +364,7 @@ pub mod tests {
             vec![Device::new(
                 0,
                 UnitQuaternion::identity(),
-                vec![Transducer::new(0, 0, Vector3::zeros())],
+                vec![Transducer::new(0, 0, Point3::origin())],
             )],
             4,
         );
@@ -422,7 +424,7 @@ pub mod tests {
             vec![Device::new(
                 0,
                 UnitQuaternion::identity(),
-                vec![Transducer::new(0, 0, Vector3::zeros())],
+                vec![Transducer::new(0, 0, Point3::origin())],
             )],
             4,
         );
@@ -455,7 +457,7 @@ pub mod tests {
             vec![Device::new(
                 0,
                 UnitQuaternion::identity(),
-                vec![Transducer::new(0, 0, Vector3::zeros())],
+                vec![Transducer::new(0, 0, Point3::origin())],
             )],
             4,
         );

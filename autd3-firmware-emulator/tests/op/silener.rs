@@ -6,7 +6,7 @@ use autd3_driver::{
     derive::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
     error::AUTDInternalError,
     firmware::{cpu::TxMessage, fpga::SilencerTarget},
-    geometry::Vector3,
+    geometry::Point3,
 };
 use autd3_firmware_emulator::CPUEmulator;
 
@@ -161,7 +161,7 @@ fn silencer_completetion_steps_too_large_stm(
 
     // Send FociSTM
     {
-        let d = FociSTM::new(SamplingConfig::FREQ_40K, (0..2).map(|_| Vector3::zeros()))?
+        let d = FociSTM::new(SamplingConfig::FREQ_40K, (0..2).map(|_| Point3::origin()))?
             .with_segment(Segment::S0, Some(TransitionMode::Immediate));
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));

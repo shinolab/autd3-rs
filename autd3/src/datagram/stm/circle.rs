@@ -7,7 +7,7 @@ use autd3_driver::{
     },
     defined::{ControlPoint, ControlPoints},
     derive::{EmitIntensity, Phase},
-    geometry::{UnitVector3, Vector3},
+    geometry::{Point3, UnitVector3, Vector3},
 };
 
 use crate::gain::Focus;
@@ -22,7 +22,7 @@ use crate::gain::Focus;
 /// FociSTM::new(
 ///     1.0 * Hz,
 ///     Circle {
-///         center: Vector3::zeros(),
+///         center: Point3::origin(),
 ///         radius: 30.0 * mm,
 ///         num_points: 50,
 ///         n: Vector3::z_axis(),
@@ -33,7 +33,7 @@ use crate::gain::Focus;
 #[derive(Clone, Debug)]
 pub struct Circle {
     /// The center of the circle.
-    pub center: Vector3,
+    pub center: Point3,
     /// The radius of the circle.
     pub radius: f32,
     /// The number of points on the circle.
@@ -45,7 +45,7 @@ pub struct Circle {
 }
 
 pub struct CircleSTMContext {
-    center: Vector3,
+    center: Point3,
     radius: f32,
     num_points: usize,
     u: Vector3,
@@ -56,7 +56,7 @@ pub struct CircleSTMContext {
 }
 
 impl CircleSTMContext {
-    fn next(&mut self) -> Option<Vector3> {
+    fn next(&mut self) -> Option<Point3> {
         if self.i >= self.num_points {
             return None;
         }
@@ -213,14 +213,14 @@ mod tests {
         use autd3_driver::{datagram::GainSTM, derive::SamplingConfig, geometry::IntoDevice};
 
         let circle = Circle {
-            center: Vector3::zeros(),
+            center: Point3::origin(),
             radius: 30.0 * mm,
             num_points: 4,
             n,
             intensity: EmitIntensity::MAX,
         };
 
-        let device = autd3_driver::autd3_device::AUTD3::new(Vector3::zeros()).into_device(0);
+        let device = autd3_driver::autd3_device::AUTD3::new(Point3::origin()).into_device(0);
         {
             let mut stm = FociSTM::new(SamplingConfig::FREQ_40K, circle.clone()).unwrap();
             let mut context = FociSTMContextGenerator::generate(stm.deref_mut(), &device);

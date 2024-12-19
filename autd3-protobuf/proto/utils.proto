@@ -12,6 +12,18 @@ message Vector3 {
   float z = 3;
 }
 
+message UnitVector3 {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+}
+
+message Point3 {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+}
+
 message Quaternion {
   float w = 1;
   float x = 2;
@@ -21,7 +33,7 @@ message Quaternion {
 
 message Geometry {
   message AUTD3 {
-    Vector3 pos = 1;
+    Point3 pos = 1;
     Quaternion rot = 2;
     float sound_speed = 3;
   }

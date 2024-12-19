@@ -192,7 +192,7 @@ mod tests {
         defined::{mm, ControlPoint},
         ethercat::DcSysTime,
         firmware::fpga::{FOCI_STM_FIXED_NUM_UNIT, FOCI_STM_FIXED_NUM_UPPER_X},
-        geometry::{tests::create_device, Vector3},
+        geometry::{tests::create_device, Point3},
     };
 
     const NUM_TRANS_IN_UNIT: u8 = 249;
@@ -221,7 +221,7 @@ mod tests {
         let points: VecDeque<ControlPoints<1>> = (0..FOCI_STM_SIZE)
             .map(|_| {
                 (
-                    ControlPoint::from(Vector3::new(
+                    ControlPoint::from(Point3::new(
                         rng.gen_range(-500.0 * mm..500.0 * mm),
                         rng.gen_range(-500.0 * mm..500.0 * mm),
                         rng.gen_range(0.0 * mm..500.0 * mm),
@@ -325,7 +325,7 @@ mod tests {
             .map(|_| {
                 (
                     [0; N].map(|_| {
-                        ControlPoint::from(Vector3::new(
+                        ControlPoint::from(Point3::new(
                             rng.gen_range(-500.0 * mm..500.0 * mm),
                             rng.gen_range(-500.0 * mm..500.0 * mm),
                             rng.gen_range(0.0 * mm..500.0 * mm),
@@ -438,7 +438,7 @@ mod tests {
         let points: VecDeque<ControlPoints<1>> = (0..FOCI_STM_SIZE)
             .map(|_| {
                 (
-                    ControlPoint::from(Vector3::new(
+                    ControlPoint::from(Point3::new(
                         rng.gen_range(-500.0 * mm..500.0 * mm),
                         rng.gen_range(-500.0 * mm..500.0 * mm),
                         rng.gen_range(0.0 * mm..500.0 * mm),
@@ -615,7 +615,7 @@ mod tests {
         let mut op = FociSTMOp::new(
             TestContext {
                 points: (0..FOCI_STM_SIZE)
-                    .map(|_| ControlPoint::from(Vector3::new(x, x, x)).into())
+                    .map(|_| ControlPoint::from(Point3::new(x, x, x)).into())
                     .collect::<VecDeque<_>>(),
             },
             FOCI_STM_SIZE,
@@ -644,7 +644,7 @@ mod tests {
         let mut op = FociSTMOp::new(
             TestContext {
                 points: (0..n)
-                    .map(|_| ControlPoint::from(Vector3::zeros()).into())
+                    .map(|_| ControlPoint::from(Point3::origin()).into())
                     .collect::<VecDeque<_>>(),
             },
             n,
@@ -687,7 +687,7 @@ mod tests {
             let mut op = FociSTMOp::new(
                 TestContext {
                     points: (0..2)
-                        .map(|_| [0; 1].map(|_| ControlPoint::from(Vector3::zeros())).into())
+                        .map(|_| [0; 1].map(|_| ControlPoint::from(Point3::origin())).into())
                         .collect::<VecDeque<_>>(),
                 },
                 2,
@@ -706,7 +706,7 @@ mod tests {
                     points: (0..2)
                         .map(|_| {
                             [0; FOCI_STM_FOCI_NUM_MAX]
-                                .map(|_| ControlPoint::from(Vector3::zeros()))
+                                .map(|_| ControlPoint::from(Point3::origin()))
                                 .into()
                         })
                         .collect::<VecDeque<_>>(),
@@ -731,7 +731,7 @@ mod tests {
                     points: (0..2)
                         .map(|_| {
                             [0; FOCI_STM_FOCI_NUM_MAX + 1]
-                                .map(|_| ControlPoint::from(Vector3::zeros()))
+                                .map(|_| ControlPoint::from(Point3::origin()))
                                 .into()
                         })
                         .collect::<VecDeque<_>>(),
