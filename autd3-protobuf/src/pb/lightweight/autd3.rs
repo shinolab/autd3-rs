@@ -5,15 +5,6 @@ pub struct Angle {
     pub rad: f32,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct Vector3 {
-    #[prost(float, tag = "1")]
-    pub x: f32,
-    #[prost(float, tag = "2")]
-    pub y: f32,
-    #[prost(float, tag = "3")]
-    pub z: f32,
-}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct UnitVector3 {
     #[prost(float, tag = "1")]
     pub x: f32,
