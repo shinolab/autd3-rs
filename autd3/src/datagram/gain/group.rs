@@ -33,7 +33,7 @@ use derive_new::new;
 #[derive(Gain, Builder, Debug, new)]
 pub struct Group<K, FK, F>
 where
-    K: Hash + Eq + Clone + Debug + Send + Sync,
+    K: Hash + Eq + Debug + Send + Sync,
     FK: Fn(&Transducer) -> Option<K> + Send + Sync,
     F: Fn(&Device) -> FK + Send + Sync,
 {
@@ -45,7 +45,7 @@ where
 
 impl<K, FK, F> Group<K, FK, F>
 where
-    K: Hash + Eq + Clone + Debug + Send + Sync,
+    K: Hash + Eq + Debug + Send + Sync,
     FK: Fn(&Transducer) -> Option<K> + Send + Sync,
     F: Fn(&Device) -> FK + Send + Sync,
 {
@@ -57,12 +57,10 @@ where
     ///
     /// [`AUTDInternalError::KeyIsAlreadyUsed`]: autd3_driver::error::AUTDInternalError::KeyIsAlreadyUsed
     pub fn set(mut self, key: K, gain: impl IntoBoxedGain) -> Result<Self, AUTDInternalError> {
-        if self
-            .gain_map
-            .insert(key.clone(), gain.into_boxed())
-            .is_some()
-        {
+        if self.gain_map.contains_key(&key) {
             return Err(AUTDInternalError::KeyIsAlreadyUsed(format!("{:?}", key)));
+        } else {
+            self.gain_map.insert(key, gain.into_boxed());
         }
         Ok(self)
     }
@@ -72,25 +70,24 @@ where
         geometry.devices().for_each(|dev| {
             dev.iter().for_each(|tr| {
                 if let Some(key) = (self.f)(dev)(tr) {
-                    match filters.get_mut(&key) {
-                        Some(v) => match v.entry(dev.idx()) {
+                    if let Some(v) = filters.get_mut(&key) {
+                        match v.entry(dev.idx()) {
                             Entry::Occupied(mut e) => {
                                 e.get_mut().set(tr.idx(), true);
                             }
                             Entry::Vacant(e) => {
                                 e.insert(BitVec::from_fn(dev.num_transducers(), |i| i == tr.idx()));
                             }
-                        },
-                        None => {
-                            filters.insert(
-                                key.clone(),
-                                [(
-                                    dev.idx(),
-                                    BitVec::from_fn(dev.num_transducers(), |i| i == tr.idx()),
-                                )]
-                                .into(),
-                            );
                         }
+                    } else {
+                        filters.insert(
+                            key,
+                            [(
+                                dev.idx(),
+                                BitVec::from_fn(dev.num_transducers(), |i| i == tr.idx()),
+                            )]
+                            .into(),
+                        );
                     }
                 }
             })
@@ -125,7 +122,7 @@ impl GainContextGenerator for ContextGenerator {
 
 impl<K, FK, F> Gain for Group<K, FK, F>
 where
-    K: Hash + Eq + Clone + Debug + Send + Sync,
+    K: Hash + Eq + Debug + Send + Sync,
     FK: Fn(&Transducer) -> Option<K> + Send + Sync,
     F: Fn(&Device) -> FK + Send + Sync,
 {
@@ -156,7 +153,7 @@ where
                     .ok_or(AUTDInternalError::UnkownKey(format!("{:?}", k)))?;
                 let mut g = g.init(geometry, Some(&filter))?;
                 Ok((
-                    k.clone(),
+                    k,
                     geometry
                         .devices()
                         .map(|dev| g.generate(dev))
