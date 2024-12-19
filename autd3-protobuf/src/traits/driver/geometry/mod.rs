@@ -6,18 +6,6 @@ use crate::{
     AUTDProtoBufError,
 };
 
-impl ToMessage for autd3_driver::geometry::Vector3 {
-    type Message = Vector3;
-
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
-        Self::Message {
-            x: self.x as _,
-            y: self.y as _,
-            z: self.z as _,
-        }
-    }
-}
-
 impl ToMessage for autd3_driver::geometry::UnitVector3 {
     type Message = UnitVector3;
 
@@ -73,44 +61,37 @@ impl ToMessage for autd3_driver::geometry::Geometry {
     }
 }
 
-impl FromMessage<Option<Vector3>> for autd3_driver::geometry::Vector3 {
-    fn from_msg(msg: &Option<Vector3>) -> Result<Self, AUTDProtoBufError> {
-        match msg {
-            Some(msg) => Ok(autd3_driver::geometry::Vector3::new(
-                msg.x as _, msg.y as _, msg.z as _,
-            )),
-            None => Err(AUTDProtoBufError::DataParseError),
-        }
-    }
-}
-
 impl FromMessage<Option<UnitVector3>> for autd3_driver::geometry::UnitVector3 {
     fn from_msg(msg: &Option<UnitVector3>) -> Result<Self, AUTDProtoBufError> {
-        match msg {
-            Some(msg) => Ok(autd3_driver::geometry::UnitVector3::new_unchecked(
-                autd3_driver::geometry::Vector3::new(msg.x as _, msg.y as _, msg.z as _),
-            )),
-            None => Err(AUTDProtoBufError::DataParseError),
-        }
+        msg.as_ref()
+            .map(|msg| {
+                autd3_driver::geometry::UnitVector3::new_unchecked(
+                    autd3_driver::geometry::Vector3::new(msg.x as _, msg.y as _, msg.z as _),
+                )
+            })
+            .ok_or(AUTDProtoBufError::DataParseError)
     }
 }
 
 impl FromMessage<Option<Point3>> for autd3_driver::geometry::Point3 {
     fn from_msg(msg: &Option<Point3>) -> Result<Self, AUTDProtoBufError> {
-        match msg {
-            Some(msg) => Ok(autd3_driver::geometry::Point3::new(
-                msg.x as _, msg.y as _, msg.z as _,
-            )),
-            None => Err(AUTDProtoBufError::DataParseError),
-        }
+        msg.as_ref()
+            .map(|msg| autd3_driver::geometry::Point3::new(msg.x as _, msg.y as _, msg.z as _))
+            .ok_or(AUTDProtoBufError::DataParseError)
     }
 }
 
-impl FromMessage<Quaternion> for autd3_driver::geometry::UnitQuaternion {
-    fn from_msg(msg: &Quaternion) -> Result<Self, AUTDProtoBufError> {
-        Ok(autd3_driver::geometry::UnitQuaternion::from_quaternion(
-            autd3_driver::geometry::Quaternion::new(msg.w as _, msg.x as _, msg.y as _, msg.z as _),
-        ))
+impl FromMessage<Option<Quaternion>> for autd3_driver::geometry::UnitQuaternion {
+    fn from_msg(msg: &Option<Quaternion>) -> Result<Self, AUTDProtoBufError> {
+        msg.as_ref()
+            .map(|msg| {
+                autd3_driver::geometry::UnitQuaternion::from_quaternion(
+                    autd3_driver::geometry::Quaternion::new(
+                        msg.w as _, msg.x as _, msg.y as _, msg.z as _,
+                    ),
+                )
+            })
+            .ok_or(AUTDProtoBufError::DataParseError)
     }
 }
 
@@ -121,11 +102,7 @@ impl FromMessage<Geometry> for autd3_driver::geometry::Geometry {
             .enumerate()
             .map(|(i, dev_msg)| {
                 let pos = autd3_driver::geometry::Point3::from_msg(&dev_msg.pos)?;
-                let rot = dev_msg
-                    .rot
-                    .as_ref()
-                    .ok_or(AUTDProtoBufError::DataParseError)
-                    .map(autd3_driver::geometry::UnitQuaternion::from_msg)??;
+                let rot = autd3_driver::geometry::UnitQuaternion::from_msg(&dev_msg.rot)?;
                 let mut dev = autd3_driver::autd3_device::AUTD3::new(pos)
                     .with_rotation(rot)
                     .into_device(i as _);
@@ -142,26 +119,36 @@ mod tests {
     use super::*;
     use autd3_driver::{
         autd3_device::AUTD3,
-        geometry::{Geometry, Point3, Quaternion, UnitQuaternion, Vector3},
+        geometry::{Geometry, Point3, Quaternion, UnitQuaternion, UnitVector3, Vector3},
     };
     use rand::Rng;
 
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn vector3() {
+    fn point3() {
         let mut rng = rand::thread_rng();
-        let v = Vector3::new(rng.gen(), rng.gen(), rng.gen());
+        let v = Point3::new(rng.gen(), rng.gen(), rng.gen());
         let msg = v.to_msg(None);
-        let v2 = Vector3::from_msg(&Some(msg)).unwrap();
+        let v2 = Point3::from_msg(&Some(msg)).unwrap();
         approx::assert_abs_diff_eq!(v.x, v2.x);
         approx::assert_abs_diff_eq!(v.y, v2.y);
         approx::assert_abs_diff_eq!(v.z, v2.z);
+
+        assert!(Point3::from_msg(&None).is_err());
     }
 
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn parse_error() {
-        assert!(Vector3::from_msg(&None).is_err());
+    fn unitvector3() {
+        let mut rng = rand::thread_rng();
+        let v = UnitVector3::new_normalize(Vector3::new(rng.gen(), rng.gen(), rng.gen()));
+        let msg = v.to_msg(None);
+        let v2 = UnitVector3::from_msg(&Some(msg)).unwrap();
+        approx::assert_abs_diff_eq!(v.x, v2.x);
+        approx::assert_abs_diff_eq!(v.y, v2.y);
+        approx::assert_abs_diff_eq!(v.z, v2.z);
+
+        assert!(UnitVector3::from_msg(&None).is_err());
     }
 
     #[test]
@@ -175,11 +162,13 @@ mod tests {
             rng.gen(),
         ));
         let msg = q.to_msg(None);
-        let q2 = UnitQuaternion::from_msg(&msg).unwrap();
+        let q2 = UnitQuaternion::from_msg(&Some(msg)).unwrap();
         approx::assert_abs_diff_eq!(q.w, q2.w);
         approx::assert_abs_diff_eq!(q.i, q2.i);
         approx::assert_abs_diff_eq!(q.j, q2.j);
         approx::assert_abs_diff_eq!(q.k, q2.k);
+
+        assert!(UnitQuaternion::from_msg(&None).is_err());
     }
 
     #[test]
