@@ -154,7 +154,7 @@ impl<L: Link> Controller<L> {
     /// ```
     /// # use autd3::prelude::*;
     /// # tokio_test::block_on(async {
-    /// let mut autd = Controller::builder([AUTD3::new(Vector3::zeros())]).open(Nop::builder()).await?;
+    /// let mut autd = Controller::builder([AUTD3::new(Point3::origin())]).open(Nop::builder()).await?;
     ///
     /// autd.send(ReadsFPGAState::new(|_| true)).await?;
     ///
@@ -261,7 +261,7 @@ mod tests {
         autd3_device::AUTD3,
         defined::Hz,
         derive::{Gain, GainContext, GainContextGenerator, Segment},
-        geometry::Vector3,
+        geometry::Point3,
     };
 
     use spin_sleep::SpinSleeper;
@@ -274,7 +274,7 @@ mod tests {
     // GRCOV_EXCL_START
     pub async fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit>> {
         Ok(
-            Controller::builder((0..dev_num).map(|_| AUTD3::new(Vector3::zeros())))
+            Controller::builder((0..dev_num).map(|_| AUTD3::new(Point3::origin())))
                 .open(Audit::builder())
                 .await?,
         )
@@ -288,7 +288,7 @@ mod tests {
     #[cfg_attr(target_os = "windows", case(TimerStrategy::Waitable(WaitableSleeper::new().unwrap())))]
     #[tokio::test(flavor = "multi_thread")]
     async fn open_with_timer(#[case] strategy: TimerStrategy) {
-        assert!(Controller::builder([AUTD3::new(Vector3::zeros())])
+        assert!(Controller::builder([AUTD3::new(Point3::origin())])
             .with_timer_strategy(strategy)
             .open(Audit::builder())
             .await
@@ -299,7 +299,7 @@ mod tests {
     async fn open_failed() {
         assert_eq!(
             Some(AUTDError::Internal(AUTDInternalError::SendDataFailed)),
-            Controller::builder([AUTD3::new(Vector3::zeros())])
+            Controller::builder([AUTD3::new(Point3::origin())])
                 .open(Audit::builder().with_down(true))
                 .await
                 .err()
@@ -417,7 +417,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn fpga_state() -> anyhow::Result<()> {
         let mut autd =
-            Controller::builder([AUTD3::new(Vector3::zeros()), AUTD3::new(Vector3::zeros())])
+            Controller::builder([AUTD3::new(Point3::origin()), AUTD3::new(Point3::origin())])
                 .open(Audit::builder())
                 .await?;
 

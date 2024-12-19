@@ -1,6 +1,6 @@
 use autd3_derive::Builder;
 
-use super::{Matrix4, UnitQuaternion, Vector3};
+use super::{Isometry, Point3};
 
 use derive_new::new;
 
@@ -9,7 +9,7 @@ pub struct Transducer {
     idx: u8,
     dev_idx: u16,
     #[get(ref)]
-    position: Vector3,
+    position: Point3,
 }
 
 impl Transducer {
@@ -21,14 +21,16 @@ impl Transducer {
         self.dev_idx as _
     }
 
-    pub(super) fn affine(&mut self, t: Vector3, r: UnitQuaternion) {
-        self.position = (Matrix4::from(r).append_translation(&t) * self.position.push(1.0)).xyz();
+    pub(super) fn affine(&mut self, isometry: &Isometry) {
+        self.position = isometry * self.position;
     }
 }
 
 #[cfg(test)]
 mod tests {
     use std::f32::consts::PI;
+
+    use crate::geometry::{Translation, UnitQuaternion, Vector3};
 
     use super::*;
 
@@ -42,19 +44,22 @@ mod tests {
 
     #[rstest::fixture]
     fn tr() -> Transducer {
-        Transducer::new(0, 0, Vector3::zeros())
+        Transducer::new(0, 0, Point3::origin())
     }
 
     #[rstest::rstest]
     #[test]
     fn affine(mut tr: Transducer) {
-        let t = Vector3::new(40., 50., 60.);
-        let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)
+        let vector = Vector3::new(40., 50., 60.);
+        let rotation = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)
             * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), 0.)
             * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.);
-        tr.affine(t, rot);
+        tr.affine(&Isometry {
+            translation: Translation { vector },
+            rotation,
+        });
 
-        let expect_pos = Vector3::zeros() + t;
+        let expect_pos = vector;
         assert_vec3_approx_eq!(expect_pos, tr.position());
     }
 }

@@ -24,7 +24,7 @@ impl ToMessage for autd3::gain::Focus {
 
 impl FromMessage<Focus> for autd3::gain::Focus {
     fn from_msg(msg: &Focus) -> Result<Self, AUTDProtoBufError> {
-        let mut g = Self::new(autd3_driver::geometry::Vector3::from_msg(&msg.pos)?);
+        let mut g = Self::new(autd3_driver::geometry::Point3::from_msg(&msg.pos)?);
         if let Some(intensity) = msg.intensity.as_ref() {
             g = g.with_intensity(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
                 intensity,
@@ -40,14 +40,14 @@ impl FromMessage<Focus> for autd3::gain::Focus {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::{firmware::fpga::EmitIntensity, geometry::Vector3};
+    use autd3_driver::{firmware::fpga::EmitIntensity, geometry::Point3};
     use rand::Rng;
 
     #[test]
     fn focus() {
         let mut rng = rand::thread_rng();
 
-        let g = autd3::gain::Focus::new(Vector3::new(rng.gen(), rng.gen(), rng.gen()))
+        let g = autd3::gain::Focus::new(Point3::new(rng.gen(), rng.gen(), rng.gen()))
             .with_intensity(EmitIntensity::new(rng.gen()));
         let msg = g.to_msg(None);
 

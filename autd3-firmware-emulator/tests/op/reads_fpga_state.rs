@@ -3,7 +3,7 @@ use autd3_driver::{
     defined::ControlPoint,
     derive::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
     firmware::{cpu::TxMessage, fpga::FPGAState},
-    geometry::Vector3,
+    geometry::Point3,
 };
 use autd3_firmware_emulator::CPUEmulator;
 
@@ -61,7 +61,7 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
 
         let d = FociSTM::new(
             SamplingConfig::FREQ_MIN,
-            (0..2).map(|_| ControlPoint::from(Vector3::zeros())),
+            (0..2).map(|_| ControlPoint::from(Point3::origin())),
         )?
         .with_segment(Segment::S1, Some(TransitionMode::Immediate));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));

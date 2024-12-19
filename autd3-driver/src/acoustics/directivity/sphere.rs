@@ -9,7 +9,7 @@ impl Directivity for Sphere {
     }
 
     #[inline]
-    fn directivity_from_dir(_: &Vector3, _: &Vector3) -> f32 {
+    fn directivity_from_dir(_: &UnitVector3, _: &Vector3) -> f32 {
         1.
     }
 }
@@ -33,7 +33,7 @@ mod tests {
     #[case::dir_z(1., Vector3::z())]
     fn test_directivity_sphere_from_dir(#[case] expected: f32, #[case] target: Vector3) {
         let mut rng = rand::thread_rng();
-        let dir = Vector3::new(rng.gen(), rng.gen(), rng.gen());
+        let dir = UnitVector3::new_unchecked(Vector3::new(rng.gen(), rng.gen(), rng.gen()));
         assert_eq!(expected, Sphere::directivity_from_dir(&dir, &target));
     }
 }

@@ -90,7 +90,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
     fn generate_propagation_matrix(
         &self,
         geometry: &Geometry,
-        foci: &[autd3_driver::geometry::Vector3],
+        foci: &[autd3_driver::geometry::Point3],
         filter: Option<&HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::MatrixXc, HoloError> {
         use rayon::prelude::*;
@@ -561,7 +561,7 @@ mod tests {
         acoustics::directivity::Sphere,
         autd3_device::AUTD3,
         defined::PI,
-        geometry::{IntoDevice, Vector3},
+        geometry::{IntoDevice, Point3},
     };
 
     use crate::{Amplitude, Pa, Trans};
@@ -578,7 +578,7 @@ mod tests {
             (0..size)
                 .flat_map(|i| {
                     (0..size).map(move |j| {
-                        AUTD3::new(Vector3::new(
+                        AUTD3::new(Point3::new(
                             i as f32 * AUTD3::DEVICE_WIDTH,
                             j as f32 * AUTD3::DEVICE_HEIGHT,
                             0.,
@@ -591,10 +591,10 @@ mod tests {
         )
     }
 
-    fn gen_foci(n: usize) -> impl Iterator<Item = (Vector3, Amplitude)> {
+    fn gen_foci(n: usize) -> impl Iterator<Item = (Point3, Amplitude)> {
         (0..n).map(move |i| {
             (
-                Vector3::new(
+                Point3::new(
                     90. + 10. * (2.0 * PI * i as f32 / n as f32).cos(),
                     70. + 10. * (2.0 * PI * i as f32 / n as f32).sin(),
                     150.,
@@ -1952,7 +1952,7 @@ mod tests {
         #[case] foci_num: usize,
         backend: NalgebraBackend<Sphere>,
     ) -> Result<(), HoloError> {
-        let reference = |geometry: Geometry, foci: Vec<Vector3>| {
+        let reference = |geometry: Geometry, foci: Vec<Point3>| {
             let mut g = MatrixXc::zeros(
                 foci.len(),
                 geometry
@@ -2017,7 +2017,7 @@ mod tests {
                 .collect::<HashMap<_, _>>()
         };
 
-        let reference = |geometry, foci: Vec<Vector3>| {
+        let reference = |geometry, foci: Vec<Point3>| {
             let filter = filter(&geometry);
             let transducers = geometry
                 .iter()

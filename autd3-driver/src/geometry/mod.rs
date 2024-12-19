@@ -11,6 +11,8 @@ pub type UnitQuaternion = nalgebra::UnitQuaternion<f32>;
 pub type Matrix3 = nalgebra::Matrix3<f32>;
 pub type Matrix4 = nalgebra::Matrix4<f32>;
 pub type Affine = nalgebra::Affine3<f32>;
+pub type Translation = nalgebra::Translation3<f32>;
+pub type Isometry = nalgebra::Isometry3<f32>;
 
 use autd3_derive::Builder;
 use bvh::aabb::Aabb;
@@ -42,8 +44,10 @@ impl Geometry {
         self.devices().map(|dev| dev.num_transducers()).sum()
     }
 
-    pub fn center(&self) -> Vector3 {
-        self.devices().map(|d| d.center()).sum::<Vector3>() / self.devices.len() as f32
+    pub fn center(&self) -> Point3 {
+        Point3::from(
+            self.devices().map(|d| d.center().coords).sum::<Vector3>() / self.devices.len() as f32,
+        )
     }
 
     pub fn devices(&self) -> impl Iterator<Item = &Device> {
@@ -96,8 +100,6 @@ impl std::ops::DerefMut for Geometry {
 
 #[cfg(test)]
 pub mod tests {
-    use nalgebra::Point3;
-
     use crate::{
         autd3_device::AUTD3,
         defined::{deg, mm},
@@ -118,7 +120,7 @@ pub mod tests {
             idx,
             UnitQuaternion::identity(),
             (0..n)
-                .map(|i| Transducer::new(i, idx, Vector3::zeros()))
+                .map(|i| Transducer::new(i, idx, Point3::origin()))
                 .collect(),
         )
     }
@@ -167,7 +169,7 @@ pub mod tests {
                             Transducer::new(
                                 i as _,
                                 i as _,
-                                10.16 * Vector3::new(x as f32, y as f32, 0.),
+                                10.16 * Point3::new(x as f32, y as f32, 0.),
                             )
                         })
                         .collect::<Vec<_>>(),
@@ -181,7 +183,7 @@ pub mod tests {
                             Transducer::new(
                                 i as _,
                                 i as _,
-                                10.16 * Vector3::new(x as f32, y as f32, 0.)
+                                10.16 * Point3::new(x as f32, y as f32, 0.)
                                     + Vector3::new(10., 20., 30.),
                             )
                         })
@@ -190,7 +192,10 @@ pub mod tests {
             ],
             4,
         );
-        let expect = geometry.iter().map(|dev| dev.center()).sum::<Vector3>()
+        let expect = geometry
+            .iter()
+            .map(|dev| dev.center().coords)
+            .sum::<Vector3>()
             / geometry.num_devices() as f32;
         assert_eq!(0, geometry.version());
         assert_approx_eq_vec3!(expect, geometry.center());
@@ -239,10 +244,10 @@ pub mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Aabb{min: Point3::origin(), max: Point3::new(172.72 * mm, 132.08 * mm, 0.)}, vec![AUTD3::new(Vector3::zeros()).into_device(0)])]
-    #[case(Aabb{min: Point3::new(10. * mm, 20. * mm, 30. * mm), max: Point3::new(182.72 * mm, 152.08 * mm, 30. * mm)}, vec![AUTD3::new(Vector3::new(10. * mm, 20. * mm, 30. * mm)).into_device(0)])]
-    #[case(Aabb{min: Point3::new(-132.08 * mm, 0., 0.), max: Point3::new(0., 172.72 * mm, 0.)}, vec![AUTD3::new(Vector3::zeros()).with_rotation(EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg)).into_device(0)])]
-    #[case(Aabb{min: Point3::new(-132.08 * mm, -10. * mm, 0.), max: Point3::new(172.72 * mm, 162.72 * mm, 10. * mm)}, vec![AUTD3::new(Vector3::zeros()).into_device(0), AUTD3::new(Vector3::new(0., -10. * mm, 10. * mm)).with_rotation(EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg)).into_device(1)])]
+    #[case(Aabb{min: Point3::origin(), max: Point3::new(172.72 * mm, 132.08 * mm, 0.)}, vec![AUTD3::new(Point3::origin()).into_device(0)])]
+    #[case(Aabb{min: Point3::new(10. * mm, 20. * mm, 30. * mm), max: Point3::new(182.72 * mm, 152.08 * mm, 30. * mm)}, vec![AUTD3::new(Point3::new(10. * mm, 20. * mm, 30. * mm)).into_device(0)])]
+    #[case(Aabb{min: Point3::new(-132.08 * mm, 0., 0.), max: Point3::new(0., 172.72 * mm, 0.)}, vec![AUTD3::new(Point3::origin()).with_rotation(EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg)).into_device(0)])]
+    #[case(Aabb{min: Point3::new(-132.08 * mm, -10. * mm, 0.), max: Point3::new(172.72 * mm, 162.72 * mm, 10. * mm)}, vec![AUTD3::new(Point3::origin()).into_device(0), AUTD3::new(Point3::new(0., -10. * mm, 10. * mm)).with_rotation(EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg)).into_device(1)])]
     fn aabb(#[case] expect: Aabb<f32, 3>, #[case] dev: Vec<Device>) {
         let geometry = Geometry::new(dev, 4);
         assert_approx_eq_vec3!(expect.min, geometry.aabb().min);

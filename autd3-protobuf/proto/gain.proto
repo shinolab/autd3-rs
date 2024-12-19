@@ -6,15 +6,15 @@ import "utils.proto";
 import "utils-lightweight.proto";
 
 message Bessel {
-  Vector3 pos = 1;
-  Vector3 dir = 2;
+  Point3 pos = 1;
+  UnitVector3 dir = 2;
   Angle theta = 3;
   optional EmitIntensity intensity = 4;
   optional Phase phase_offset = 5;
 }
 
 message Focus {
-  Vector3 pos = 1;
+  Point3 pos = 1;
   optional EmitIntensity intensity = 2;
   optional Phase phase_offset = 3;
 }
@@ -22,7 +22,7 @@ message Focus {
 message Null {}
 
 message Plane {
-  Vector3 dir = 1;
+  UnitVector3 dir = 1;
   optional EmitIntensity intensity = 2;
   optional Phase phase_offset = 3;
 }
@@ -37,7 +37,7 @@ message Amplitude {
 }
 
 message Holo {
-  Vector3 pos = 1;
+  Point3 pos = 1;
   Amplitude amp = 2;
 }
 

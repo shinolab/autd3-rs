@@ -30,7 +30,7 @@ pub use controller::Controller;
 mod tests {
     use autd3_driver::{
         autd3_device::AUTD3,
-        geometry::{Geometry, IntoDevice, Vector3},
+        geometry::{Geometry, IntoDevice, Point3, Vector3},
     };
 
     #[macro_export]
@@ -65,10 +65,24 @@ mod tests {
         )
     }
 
+    pub fn random_point3(
+        range_x: std::ops::Range<f32>,
+        range_y: std::ops::Range<f32>,
+        range_z: std::ops::Range<f32>,
+    ) -> Point3 {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        Point3::new(
+            rng.gen_range(range_x),
+            rng.gen_range(range_y),
+            rng.gen_range(range_z),
+        )
+    }
+
     pub fn create_geometry(n: usize) -> Geometry {
         Geometry::new(
             (0..n)
-                .map(|i| AUTD3::new(Vector3::zeros()).into_device(i as _))
+                .map(|i| AUTD3::new(Point3::origin()).into_device(i as _))
                 .collect(),
             4,
         )

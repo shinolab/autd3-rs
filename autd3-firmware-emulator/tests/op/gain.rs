@@ -8,7 +8,7 @@ use autd3_driver::{
         cpu::TxMessage,
         fpga::{Drive, EmitIntensity, Phase},
     },
-    geometry::Vector3,
+    geometry::Point3,
 };
 use autd3_firmware_emulator::CPUEmulator;
 
@@ -147,7 +147,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
         &mut cpu,
         FociSTM::new(
             SamplingConfig::FREQ_MIN,
-            (0..2).map(|_| ControlPoint::from(Vector3::zeros())),
+            (0..2).map(|_| ControlPoint::from(Point3::origin())),
         )?
         .with_segment(Segment::S0, Some(TransitionMode::Immediate)),
         &geometry,

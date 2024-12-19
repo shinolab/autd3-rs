@@ -21,7 +21,7 @@ seq-macro = { workspace = true, optional = true }
 zerocopy = { workspace = true }
 
 [build-dependencies]
-tonic-build = { workspace = true, optional = true }
+tonic-build = { workspace = true, optional = true, features = ["prost"] }
 
 [features]
 default = []

@@ -24,9 +24,7 @@ impl ToMessage for autd3::gain::Plane {
 
 impl FromMessage<Plane> for autd3::gain::Plane {
     fn from_msg(msg: &Plane) -> Result<Self, AUTDProtoBufError> {
-        let mut g = Self::new(autd3_driver::geometry::UnitVector3::new_normalize(
-            autd3_driver::geometry::Vector3::from_msg(&msg.dir)?,
-        ));
+        let mut g = Self::new(autd3_driver::geometry::UnitVector3::from_msg(&msg.dir)?);
         if let Some(intensity) = msg.intensity.as_ref() {
             g = g.with_intensity(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
                 intensity,

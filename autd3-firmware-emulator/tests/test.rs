@@ -3,7 +3,7 @@ use autd3_driver::{
     datagram::*,
     error::AUTDInternalError,
     firmware::{cpu::TxMessage, operation::OperationHandler},
-    geometry::{Geometry, IntoDevice, Vector3},
+    geometry::{Geometry, IntoDevice, Point3},
 };
 use autd3_firmware_emulator::{
     cpu::params::{ERR_BIT, ERR_INVALID_MSG_ID, ERR_NOT_SUPPORTED_TAG},
@@ -16,7 +16,7 @@ mod op;
 pub fn create_geometry(n: usize) -> Geometry {
     Geometry::new(
         (0..n)
-            .map(|i| AUTD3::new(Vector3::zeros()).into_device(i as _))
+            .map(|i| AUTD3::new(Point3::origin()).into_device(i as _))
             .collect(),
         4,
     )

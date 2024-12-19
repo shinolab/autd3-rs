@@ -2,7 +2,7 @@ use autd3::{driver::link::Link, prelude::*};
 
 #[tokio::test]
 async fn nop_test() -> anyhow::Result<()> {
-    let mut autd = Controller::builder([AUTD3::new(Vector3::zeros())])
+    let mut autd = Controller::builder([AUTD3::new(Point3::origin())])
         .open(Nop::builder())
         .await?;
 

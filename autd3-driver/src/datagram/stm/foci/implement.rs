@@ -60,7 +60,7 @@ mod tests {
     use crate::{
         defined::{kHz, Freq, Hz},
         firmware::fpga::{LoopBehavior, SamplingConfig},
-        geometry::Vector3,
+        geometry::Point3,
     };
 
     #[rstest::rstest]
@@ -76,7 +76,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            FociSTM::new(freq, (0..n).map(|_| Vector3::zeros())).map(|f| f.sampling_config())
+            FociSTM::new(freq, (0..n).map(|_| Point3::origin())).map(|f| f.sampling_config())
         );
     }
 
@@ -93,7 +93,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            FociSTM::new_nearest(freq, (0..n).map(|_| Vector3::zeros()))
+            FociSTM::new_nearest(freq, (0..n).map(|_| Point3::origin()))
                 .map(|f| f.sampling_config())
         );
     }
@@ -123,7 +123,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            FociSTM::new(p, (0..n).map(|_| Vector3::zeros())).map(|f| f.sampling_config())
+            FociSTM::new(p, (0..n).map(|_| Point3::origin())).map(|f| f.sampling_config())
         );
     }
 
@@ -152,7 +152,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            FociSTM::new_nearest(p, (0..n).map(|_| Vector3::zeros())).map(|f| f.sampling_config())
+            FociSTM::new_nearest(p, (0..n).map(|_| Point3::origin())).map(|f| f.sampling_config())
         );
     }
 
@@ -163,7 +163,7 @@ mod tests {
     fn from_sampling_config(#[case] config: SamplingConfig, #[case] n: usize) {
         assert_eq!(
             Ok(config),
-            FociSTM::new(config, (0..n).map(|_| Vector3::zeros())).map(|f| f.sampling_config())
+            FociSTM::new(config, (0..n).map(|_| Point3::origin())).map(|f| f.sampling_config())
         );
     }
 
@@ -179,7 +179,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            FociSTM::new(f, (0..n).map(|_| Vector3::zeros())).map(|f| f.freq())
+            FociSTM::new(f, (0..n).map(|_| Point3::origin())).map(|f| f.freq())
         );
     }
 
@@ -195,7 +195,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            FociSTM::new(f, (0..n).map(|_| Vector3::zeros())).map(|f| f.period())
+            FociSTM::new(f, (0..n).map(|_| Point3::origin())).map(|f| f.period())
         );
     }
 
@@ -206,7 +206,7 @@ mod tests {
     fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) -> anyhow::Result<()> {
         assert_eq!(
             loop_behavior,
-            FociSTM::new(1. * Hz, (0..2).map(|_| Vector3::zeros()))?
+            FociSTM::new(1. * Hz, (0..2).map(|_| Point3::origin()))?
                 .with_loop_behavior(loop_behavior)
                 .loop_behavior()
         );
@@ -215,7 +215,7 @@ mod tests {
 
     #[test]
     fn with_loop_behavior_deafault() -> anyhow::Result<()> {
-        let stm = FociSTM::new(1. * Hz, (0..2).map(|_| Vector3::zeros()))?;
+        let stm = FociSTM::new(1. * Hz, (0..2).map(|_| Point3::origin()))?;
         assert_eq!(LoopBehavior::infinite(), stm.loop_behavior());
         Ok(())
     }

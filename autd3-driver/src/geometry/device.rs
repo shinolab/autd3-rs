@@ -6,7 +6,9 @@ use derive_more::{Deref, IntoIterator};
 
 use crate::defined::{METER, ULTRASOUND_FREQ};
 
-use super::{Quaternion, Transducer, UnitQuaternion, Vector3};
+use super::{
+    Isometry, Point3, Quaternion, Transducer, Translation, UnitQuaternion, UnitVector3, Vector3,
+};
 
 #[derive(Builder, Deref, IntoIterator)]
 pub struct Device {
@@ -19,27 +21,28 @@ pub struct Device {
     #[get(ref)]
     rotation: UnitQuaternion,
     #[get(ref)]
-    center: Vector3,
+    center: Point3,
     #[get(ref)]
-    x_direction: Vector3,
+    x_direction: UnitVector3,
     #[get(ref)]
-    y_direction: Vector3,
+    y_direction: UnitVector3,
     #[get(ref)]
-    axial_direction: Vector3,
+    axial_direction: UnitVector3,
     #[get(ref)]
-    inv: nalgebra::Isometry3<f32>,
+    inv: Isometry,
     #[get(ref)]
     aabb: Aabb<f32, 3>,
 }
 
 impl Device {
     fn init(&mut self) {
-        self.center = self
-            .transducers
-            .iter()
-            .map(|tr| tr.position())
-            .sum::<Vector3>()
-            / self.transducers.len() as f32;
+        self.center = Point3::from(
+            self.transducers
+                .iter()
+                .map(|tr| tr.position().coords)
+                .sum::<Vector3>()
+                / self.transducers.len() as f32,
+        );
         self.x_direction = Self::get_direction(Vector3::x(), &self.rotation);
         self.y_direction = Self::get_direction(Vector3::y(), &self.rotation);
         self.axial_direction = if cfg!(feature = "left_handed") {
@@ -50,11 +53,10 @@ impl Device {
         self.inv = (nalgebra::Translation3::<f32>::from(*self.transducers[0].position())
             * self.rotation)
             .inverse();
-        self.aabb = self.transducers.iter().fold(Aabb::empty(), |aabb, tr| {
-            aabb.grow(&nalgebra::Point3 {
-                coords: *tr.position(),
-            })
-        });
+        self.aabb = self
+            .transducers
+            .iter()
+            .fold(Aabb::empty(), |aabb, tr| aabb.grow(tr.position()));
     }
 
     #[doc(hidden)]
@@ -65,10 +67,10 @@ impl Device {
             enable: true,
             sound_speed: 340.0 * METER,
             rotation: rot,
-            center: Vector3::zeros(),
-            x_direction: Vector3::zeros(),
-            y_direction: Vector3::zeros(),
-            axial_direction: Vector3::zeros(),
+            center: Point3::origin(),
+            x_direction: Vector3::x_axis(),
+            y_direction: Vector3::y_axis(),
+            axial_direction: Vector3::z_axis(),
             inv: nalgebra::Isometry3::identity(),
             aabb: Aabb::empty(),
         };
@@ -84,14 +86,12 @@ impl Device {
         self.transducers.len()
     }
 
-    pub fn translate_to(&mut self, t: Vector3) {
-        let cur_pos = self.transducers[0].position();
-        self.translate(t - cur_pos);
+    pub fn translate_to(&mut self, t: Point3) {
+        self.translate(t - self.transducers[0].position());
     }
 
     pub fn rotate_to(&mut self, r: UnitQuaternion) {
-        let cur_rot = self.rotation;
-        self.rotate(r * cur_rot.conjugate());
+        self.rotate(r * self.rotation.conjugate());
     }
 
     pub fn translate(&mut self, t: Vector3) {
@@ -103,7 +103,13 @@ impl Device {
     }
 
     pub fn affine(&mut self, t: Vector3, r: UnitQuaternion) {
-        self.transducers.iter_mut().for_each(|tr| tr.affine(t, r));
+        let isometry = Isometry {
+            translation: Translation::from(t),
+            rotation: r,
+        };
+        self.transducers
+            .iter_mut()
+            .for_each(|tr| tr.affine(&isometry));
         self.rotation = r * self.rotation;
         self.init();
     }
@@ -124,9 +130,9 @@ impl Device {
         2.0 * PI * ULTRASOUND_FREQ.hz() as f32 / self.sound_speed
     }
 
-    fn get_direction(dir: Vector3, rotation: &UnitQuaternion) -> Vector3 {
+    fn get_direction(dir: Vector3, rotation: &UnitQuaternion) -> UnitVector3 {
         let dir: UnitQuaternion = UnitQuaternion::from_quaternion(Quaternion::from_imag(dir));
-        (rotation * dir * rotation.conjugate()).imag().normalize()
+        UnitVector3::new_normalize((rotation * dir * rotation.conjugate()).imag())
     }
 }
 
@@ -143,7 +149,6 @@ impl IntoDevice for Device {
 
 #[cfg(test)]
 pub mod tests {
-    use nalgebra::Point3;
     use rand::Rng;
 
     use super::*;
@@ -188,8 +193,9 @@ pub mod tests {
 
     #[test]
     fn center() {
-        let device = AUTD3::new(Vector3::zeros()).into_device(0);
-        let expected = device.iter().map(|t| t.position()).sum::<Vector3>() / device.len() as f32;
+        let device = AUTD3::new(Point3::origin()).into_device(0);
+        let expected =
+            device.iter().map(|t| t.position().coords).sum::<Vector3>() / device.len() as f32;
         assert_approx_eq_vec3!(expected, device.center());
     }
 
@@ -198,31 +204,31 @@ pub mod tests {
     #[case(
         Vector3::new(10., 20., 30.),
         Vector3::new(10., 20., 30.),
-        Vector3::zeros(),
+        Point3::origin(),
         UnitQuaternion::identity()
     )]
     #[case(
         Vector3::zeros(),
         Vector3::new(10., 20., 30.),
-        Vector3::new(10., 20., 30.),
+        Point3::new(10., 20., 30.),
         UnitQuaternion::identity()
     )]
     #[case(
         Vector3::new(20., -10., 30.),
         Vector3::new(10., 20., 30.),
-        Vector3::zeros(),
+        Point3::origin(),
         UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.)
     )]
     #[case(
         Vector3::new(30., 30., -30.),
         Vector3::new(40., 50., 60.),
-        Vector3::new(10., 20., 30.),
+        Point3::new(10., 20., 30.),
         UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.)
     )]
     fn inv(
         #[case] expected: Vector3,
         #[case] target: Vector3,
-        #[case] origin: Vector3,
+        #[case] origin: Point3,
         #[case] rot: UnitQuaternion,
     ) {
         let device = AUTD3::new(origin).with_rotation(rot).into_device(0);
@@ -232,11 +238,11 @@ pub mod tests {
     #[test]
     fn translate_to() {
         let mut rng = rand::thread_rng();
-        let origin = Vector3::new(rng.gen(), rng.gen(), rng.gen());
+        let origin = Point3::new(rng.gen(), rng.gen(), rng.gen());
 
         let mut device = AUTD3::new(origin).into_device(0);
 
-        let t = Vector3::new(40., 50., 60.);
+        let t = Point3::new(40., 50., 60.);
         device.translate_to(t);
 
         AUTD3::new(t)
@@ -251,7 +257,7 @@ pub mod tests {
     #[test]
     fn rotate_to() {
         let mut rng = rand::thread_rng();
-        let mut device = AUTD3::new(Vector3::zeros())
+        let mut device = AUTD3::new(Point3::origin())
             .with_rotation(
                 UnitQuaternion::from_axis_angle(&Vector3::x_axis(), rng.gen())
                     * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), rng.gen())
@@ -275,7 +281,7 @@ pub mod tests {
         assert_approx_eq_vec3!(expect_x, device.x_direction());
         assert_approx_eq_vec3!(expect_y, device.y_direction());
         assert_approx_eq_vec3!(expect_z, device.axial_direction());
-        AUTD3::new(Vector3::zeros())
+        AUTD3::new(Point3::origin())
             .with_rotation(rot)
             .into_device(0)
             .iter()
@@ -288,7 +294,7 @@ pub mod tests {
     #[test]
     fn translate() {
         let mut rng = rand::thread_rng();
-        let origin = Vector3::new(rng.gen(), rng.gen(), rng.gen());
+        let origin = Point3::new(rng.gen(), rng.gen(), rng.gen());
 
         let mut device = AUTD3::new(origin).into_device(0);
 
@@ -305,7 +311,7 @@ pub mod tests {
 
     #[test]
     fn rotate() {
-        let mut device = AUTD3::new(Vector3::zeros()).into_device(0);
+        let mut device = AUTD3::new(Point3::origin()).into_device(0);
 
         let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)
             * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), 0.)
@@ -322,7 +328,7 @@ pub mod tests {
         assert_approx_eq_vec3!(expect_x, device.x_direction());
         assert_approx_eq_vec3!(expect_y, device.y_direction());
         assert_approx_eq_vec3!(expect_z, device.axial_direction());
-        AUTD3::new(Vector3::zeros())
+        AUTD3::new(Point3::origin())
             .with_rotation(rot)
             .into_device(0)
             .iter()
@@ -334,7 +340,7 @@ pub mod tests {
 
     #[test]
     fn affine() {
-        let mut device = AUTD3::new(Vector3::zeros()).into_device(0);
+        let mut device = AUTD3::new(Point3::origin()).into_device(0);
 
         let t = Vector3::new(40., 50., 60.);
         let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)
@@ -354,7 +360,7 @@ pub mod tests {
         assert_approx_eq_vec3!(expect_y, device.y_direction());
         assert_approx_eq_vec3!(expect_z, device.axial_direction());
 
-        AUTD3::new(t)
+        AUTD3::new(Point3::from(t))
             .with_rotation(rot)
             .into_device(0)
             .iter()
@@ -414,8 +420,10 @@ pub mod tests {
             axial_direction: expect_axial_direction,
             inv: expect_inv,
             aabb: expect_aabb,
-        } = AUTD3::new(t).with_rotation(rot).into_device(0);
-        let dev = AUTD3::new(t)
+        } = AUTD3::new(Point3::from(t))
+            .with_rotation(rot)
+            .into_device(0);
+        let dev = AUTD3::new(Point3::from(t))
             .with_rotation(rot)
             .into_device(0)
             .into_device(1);

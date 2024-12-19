@@ -5,7 +5,7 @@ use autd3_driver::{
     },
     defined::{ControlPoint, ControlPoints},
     derive::{EmitIntensity, Phase},
-    geometry::Vector3,
+    geometry::{Point3, Vector3},
 };
 
 use crate::gain::Focus;
@@ -20,8 +20,8 @@ use crate::gain::Focus;
 /// FociSTM::new(
 ///     1.0 * Hz,
 ///     Line {
-///         start: Vector3::new(-15.0 * mm, 0., 0.),
-///         end: Vector3::new(15.0 * mm, 0., 0.),
+///         start: Point3::new(-15.0 * mm, 0., 0.),
+///         end: Point3::new(15.0 * mm, 0., 0.),
 ///         num_points: 50,
 ///         intensity: EmitIntensity::MAX,
 ///     },
@@ -30,9 +30,9 @@ use crate::gain::Focus;
 #[derive(Clone, Debug)]
 pub struct Line {
     /// The start point of the line.
-    pub start: Vector3,
+    pub start: Point3,
     /// The end point of the line.
-    pub end: Vector3,
+    pub end: Point3,
     /// The number of points on the line.
     pub num_points: usize,
     /// The intensity of the emitted ultrasound.
@@ -40,7 +40,7 @@ pub struct Line {
 }
 
 pub struct LineSTMContext {
-    start: Vector3,
+    start: Point3,
     dir: Vector3,
     num_points: usize,
     wavenumber: f32,
@@ -49,7 +49,7 @@ pub struct LineSTMContext {
 }
 
 impl LineSTMContext {
-    fn next(&mut self) -> Option<Vector3> {
+    fn next(&mut self) -> Option<Point3> {
         if self.i >= self.num_points {
             return None;
         }
@@ -171,19 +171,19 @@ mod tests {
 
         let length = 30.0 * mm;
         let line = Line {
-            start: Vector3::new(0., -length / 2., 0.),
-            end: Vector3::new(0., length / 2., 0.),
+            start: Point3::new(0., -length / 2., 0.),
+            end: Point3::new(0., length / 2., 0.),
             num_points: 3,
             intensity: EmitIntensity::MAX,
         };
 
         let expect = [
-            Vector3::new(0., -length / 2., 0.),
-            Vector3::zeros(),
-            Vector3::new(0., length / 2., 0.),
+            Point3::new(0., -length / 2., 0.),
+            Point3::origin(),
+            Point3::new(0., length / 2., 0.),
         ];
 
-        let device = autd3_driver::autd3_device::AUTD3::new(Vector3::zeros()).into_device(0);
+        let device = autd3_driver::autd3_device::AUTD3::new(Point3::origin()).into_device(0);
         {
             let mut stm = FociSTM::new(SamplingConfig::FREQ_40K, line.clone()).unwrap();
             let mut context = FociSTMContextGenerator::generate(stm.deref_mut(), &device);

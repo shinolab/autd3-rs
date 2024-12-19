@@ -21,6 +21,7 @@
 - Remove `parallel` option from `gain::Group`
 - `Gain::with_segment` and `SwapSegment::Gain` now take `TransitionMode` instead of `bool`
   - Still, `TransitionMode::Immediate` is only supported
+- Use `Point3` instead of `Vector3` for coordinate values
 - Use `Vec<u8>` instead of `Arc<Vec<u8>>` in `Modulation`s
 - Improve calculation performance of `Gain`s
   - Change custom `Gain` APIs

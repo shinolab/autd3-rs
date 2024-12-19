@@ -2,7 +2,7 @@ use autd3_driver::{
     defined::{rad, Angle},
     derive::*,
     firmware::fpga::{EmitIntensity, Phase},
-    geometry::{UnitQuaternion, UnitVector3, Vector3},
+    geometry::{Point3, UnitQuaternion, UnitVector3, Vector3},
 };
 use derive_new::new;
 
@@ -13,7 +13,7 @@ use derive_new::new;
 pub struct Bessel {
     #[get(ref)]
     /// The vertex of the beam.
-    pos: Vector3,
+    pos: Point3,
     #[get(ref)]
     /// The direction of the beam.
     dir: UnitVector3,
@@ -33,7 +33,7 @@ pub struct Bessel {
 }
 
 pub struct Context {
-    pos: Vector3,
+    pos: Point3,
     intensity: EmitIntensity,
     phase_offset: Phase,
     wavenumber: f32,
@@ -96,11 +96,11 @@ mod tests {
 
     use super::*;
 
-    use crate::tests::{create_geometry, random_vector3};
+    use crate::tests::{create_geometry, random_point3, random_vector3};
 
     fn bessel_check(
         g: Bessel,
-        pos: Vector3,
+        pos: Point3,
         dir: UnitVector3,
         theta: Angle,
         intensity: EmitIntensity,
@@ -147,11 +147,11 @@ mod tests {
 
         let geometry = create_geometry(1);
 
-        let g = Bessel::new(Vector3::zeros(), Vector3::z_axis(), 0. * rad);
+        let g = Bessel::new(Point3::origin(), Vector3::z_axis(), 0. * rad);
         assert_eq!(EmitIntensity::MAX, g.intensity());
         assert_eq!(Phase::ZERO, g.phase_offset());
 
-        let f = random_vector3(-500.0..500.0, -500.0..500.0, 50.0..500.0);
+        let f = random_point3(-500.0..500.0, -500.0..500.0, 50.0..500.0);
         let d = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
         let theta = rng.gen_range(-PI..PI);
         let intensity = EmitIntensity::new(rng.gen());

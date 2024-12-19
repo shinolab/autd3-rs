@@ -11,7 +11,7 @@ use autd3_driver::{
         fpga::{Drive, EmitIntensity, Phase},
         operation::GainContext,
     },
-    geometry::{Transducer, Vector3},
+    geometry::{Point3, Transducer, UnitVector3},
 };
 
 use bit_vec::BitVec;
@@ -22,7 +22,7 @@ use rand::seq::SliceRandom;
 #[derive(Gain, Builder, Debug)]
 pub struct Greedy<D: Directivity> {
     #[get(ref)]
-    foci: Vec<Vector3>,
+    foci: Vec<Point3>,
     #[get(ref)]
     amps: Vec<Amplitude>,
     #[get]
@@ -36,7 +36,7 @@ pub struct Greedy<D: Directivity> {
 }
 
 impl<D: Directivity> Greedy<D> {
-    pub fn new(iter: impl IntoIterator<Item = (Vector3, Amplitude)>) -> Self {
+    pub fn new(iter: impl IntoIterator<Item = (Point3, Amplitude)>) -> Self {
         let (foci, amps) = iter.into_iter().unzip();
         Self {
             foci,
@@ -50,8 +50,8 @@ impl<D: Directivity> Greedy<D> {
     fn transfer_foci(
         trans: &Transducer,
         wavenumber: f32,
-        dir: &Vector3,
-        foci: &[Vector3],
+        dir: &UnitVector3,
+        foci: &[Point3],
         res: &mut [Complex],
     ) {
         res.iter_mut().zip(foci.iter()).for_each(|(r, f)| {
@@ -173,9 +173,9 @@ mod tests {
     #[test]
     fn test_greedy_all() {
         let geometry: Geometry =
-            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], 4);
+            Geometry::new(vec![AUTD3::new(Point3::origin()).into_device(0)], 4);
 
-        let g = Greedy::<Sphere>::new([(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)])
+        let g = Greedy::<Sphere>::new([(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)])
             .with_phase_div(NonZeroU8::MIN);
 
         assert_eq!(g.phase_div(), NonZeroU8::MIN);
@@ -200,14 +200,14 @@ mod tests {
     fn test_greedy_all_disabled() -> anyhow::Result<()> {
         let mut geometry = Geometry::new(
             vec![
-                AUTD3::new(Vector3::zeros()).into_device(0),
-                AUTD3::new(Vector3::zeros()).into_device(1),
+                AUTD3::new(Point3::origin()).into_device(0),
+                AUTD3::new(Point3::origin()).into_device(1),
             ],
             4,
         );
         geometry[0].enable = false;
 
-        let g = Greedy::<Sphere>::new([(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)]);
+        let g = Greedy::<Sphere>::new([(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)]);
 
         let mut g = g.init(&geometry, None)?;
         let f = g.generate(&geometry[1]);
@@ -225,11 +225,11 @@ mod tests {
     #[test]
     fn test_greedy_filtered() {
         let geometry: Geometry =
-            Geometry::new(vec![AUTD3::new(Vector3::zeros()).into_device(0)], 4);
+            Geometry::new(vec![AUTD3::new(Point3::origin()).into_device(0)], 4);
 
         let g = Greedy::<Sphere>::new([
-            (Vector3::new(10., 10., 100.), 5e3 * Pa),
-            (Vector3::new(-10., 10., 100.), 5e3 * Pa),
+            (Point3::new(10., 10., 100.), 5e3 * Pa),
+            (Point3::new(-10., 10., 100.), 5e3 * Pa),
         ])
         .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)));
 
@@ -253,14 +253,14 @@ mod tests {
     fn test_greedy_filtered_disabled() -> anyhow::Result<()> {
         let mut geometry = Geometry::new(
             vec![
-                AUTD3::new(Vector3::zeros()).into_device(0),
-                AUTD3::new(Vector3::zeros()).into_device(1),
+                AUTD3::new(Point3::origin()).into_device(0),
+                AUTD3::new(Point3::origin()).into_device(1),
             ],
             4,
         );
         geometry[0].enable = false;
 
-        let g = Greedy::<Sphere>::new([(Vector3::zeros(), 1. * Pa), (Vector3::zeros(), 1. * Pa)]);
+        let g = Greedy::<Sphere>::new([(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)]);
 
         let filter = geometry
             .devices()
