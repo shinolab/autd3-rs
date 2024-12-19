@@ -36,10 +36,7 @@ impl FPGAEmulator {
     }
 
     pub(crate) fn foci_stm_drives_inplace(&self, segment: Segment, idx: usize, dst: &mut [Drive]) {
-        let bram = match segment {
-            Segment::S0 => self.mem.stm_bram_0(),
-            Segment::S1 => self.mem.stm_bram_1(),
-        };
+        let bram = &self.mem.stm_bram()[&segment];
         let sound_speed = self.sound_speed(segment);
 
         self.mem

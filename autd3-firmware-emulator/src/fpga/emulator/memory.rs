@@ -1,8 +1,11 @@
-use std::cell::{LazyCell, RefCell};
+use std::{
+    cell::{LazyCell, RefCell},
+    collections::HashMap,
+};
 
 use crate::FPGAEmulator;
 
-use autd3_driver::derive::Builder;
+use autd3_driver::derive::{Builder, Segment};
 
 use super::super::params::*;
 
@@ -14,13 +17,9 @@ pub struct Memory {
     #[get]
     pub(crate) phase_corr_bram: LazyCell<RefCell<Vec<u16>>>,
     #[get]
-    pub(crate) modulation_bram_0: LazyCell<RefCell<Vec<u16>>>,
+    pub(crate) modulation_bram: LazyCell<RefCell<HashMap<Segment, Vec<u16>>>>,
     #[get]
-    pub(crate) modulation_bram_1: LazyCell<RefCell<Vec<u16>>>,
-    #[get]
-    pub(crate) stm_bram_0: LazyCell<RefCell<Vec<u16>>>,
-    #[get]
-    pub(crate) stm_bram_1: LazyCell<RefCell<Vec<u16>>>,
+    pub(crate) stm_bram: LazyCell<RefCell<HashMap<Segment, Vec<u16>>>>,
     #[get]
     pub(crate) duty_table_bram: LazyCell<RefCell<Vec<u16>>>,
     pub(crate) tr_pos: LazyCell<Vec<u64>>,
@@ -42,11 +41,21 @@ impl Memory {
             phase_corr_bram: LazyCell::new(|| {
                 RefCell::new(vec![0x0000; 256 / std::mem::size_of::<u16>()])
             }),
-            modulation_bram_0: LazyCell::new(|| {
-                RefCell::new(vec![0x0000; 32768 / std::mem::size_of::<u16>()])
-            }),
-            modulation_bram_1: LazyCell::new(|| {
-                RefCell::new(vec![0x0000; 32768 / std::mem::size_of::<u16>()])
+            modulation_bram: LazyCell::new(|| {
+                RefCell::new(
+                    [
+                        (
+                            Segment::S0,
+                            vec![0x0000; 32768 / std::mem::size_of::<u16>()],
+                        ),
+                        (
+                            Segment::S1,
+                            vec![0x0000; 32768 / std::mem::size_of::<u16>()],
+                        ),
+                    ]
+                    .into_iter()
+                    .collect(),
+                )
             }),
             duty_table_bram: LazyCell::new(|| {
                 let mut v = vec![0x0000; 256 / std::mem::size_of::<u16>()];
@@ -60,8 +69,16 @@ impl Memory {
                 }
                 RefCell::new(v)
             }),
-            stm_bram_0: LazyCell::new(|| RefCell::new(vec![0x0000; 1024 * 256])),
-            stm_bram_1: LazyCell::new(|| RefCell::new(vec![0x0000; 1024 * 256])),
+            stm_bram: LazyCell::new(|| {
+                RefCell::new(
+                    [
+                        (Segment::S0, vec![0x0000; 1024 * 256]),
+                        (Segment::S1, vec![0x0000; 1024 * 256]),
+                    ]
+                    .into_iter()
+                    .collect(),
+                )
+            }),
             tr_pos: LazyCell::new(|| {
                 vec![
                     0x00000000, 0x01960000, 0x032d0000, 0x04c30000, 0x065a0000, 0x07f00000,
@@ -127,27 +144,26 @@ impl Memory {
                 BRAM_CNT_SEL_PHASE_CORR => self.phase_corr_bram_mut()[addr & 0xFF] = data,
                 _ => unreachable!(),
             },
-            BRAM_SELECT_MOD => match self.controller_bram()[ADDR_MOD_MEM_WR_SEGMENT] {
-                0 => self.modulation_bram_0_mut()[addr] = data,
-                1 => self.modulation_bram_1_mut()[addr] = data,
-                _ => unreachable!(),
-            },
+            BRAM_SELECT_MOD => {
+                let segment = match self.controller_bram()[ADDR_MOD_MEM_WR_SEGMENT] {
+                    0 => Segment::S0,
+                    1 => Segment::S1,
+                    _ => unreachable!(),
+                };
+                self.modulation_bram_mut().get_mut(&segment).unwrap()[addr] = data;
+            }
             BRAM_SELECT_PWE_TABLE => {
                 self.duty_table_bram_mut()[addr] = data;
             }
-            BRAM_SELECT_STM => match self.controller_bram()[ADDR_STM_MEM_WR_SEGMENT] {
-                0 => {
-                    self.stm_bram_0_mut()
-                        [(self.controller_bram()[ADDR_STM_MEM_WR_PAGE] as usize) << 14 | addr] =
-                        data
-                }
-                1 => {
-                    self.stm_bram_1_mut()
-                        [(self.controller_bram()[ADDR_STM_MEM_WR_PAGE] as usize) << 14 | addr] =
-                        data
-                }
-                _ => unreachable!(),
-            },
+            BRAM_SELECT_STM => {
+                let segment = match self.controller_bram()[ADDR_STM_MEM_WR_SEGMENT] {
+                    0 => Segment::S0,
+                    1 => Segment::S1,
+                    _ => unreachable!(),
+                };
+                self.stm_bram_mut().get_mut(&segment).unwrap()
+                    [(self.controller_bram()[ADDR_STM_MEM_WR_PAGE] as usize) << 14 | addr] = data;
+            }
             _ => unreachable!(),
         }
     }
