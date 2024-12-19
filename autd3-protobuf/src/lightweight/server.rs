@@ -88,12 +88,11 @@ where
                 .ok_or(AUTDProtoBufError::DataParseError)?,
         )?;
         let segment = autd3_driver::firmware::fpga::Segment::from(Segment::try_from(gain.segment)?);
-        let transition_mode = match gain.transition_mode.as_ref() {
-            Some(mode) => Some(autd3_driver::firmware::fpga::TransitionMode::from_msg(
-                mode,
-            )?),
-            None => None,
-        };
+        let transition_mode = gain
+            .transition_mode
+            .as_ref()
+            .map(|mode| autd3_driver::firmware::fpga::TransitionMode::from_msg(mode))
+            .transpose()?;
         Ok(g.with_segment(segment, transition_mode))
     }
 
@@ -147,12 +146,11 @@ where
         )?;
         let segment =
             autd3_driver::firmware::fpga::Segment::from(Segment::try_from(modulation.segment)?);
-        let transition_mode = match modulation.transition_mode.as_ref() {
-            Some(mode) => Some(autd3_driver::firmware::fpga::TransitionMode::from_msg(
-                mode,
-            )?),
-            None => None,
-        };
+        let transition_mode = modulation
+            .transition_mode
+            .as_ref()
+            .map(|mode| autd3_driver::firmware::fpga::TransitionMode::from_msg(mode))
+            .transpose()?;
         Ok(m.with_segment(segment, transition_mode))
     }
 }
@@ -168,15 +166,12 @@ where
         req: Request<OpenRequestLightweight>,
     ) -> Result<Response<SendResponseLightweight>, Status> {
         if let Some(autd) = self.autd.write().await.take() {
-            match autd.close().await {
-                Ok(_) => {}
-                Err(e) => {
-                    return Ok(Response::new(SendResponseLightweight {
-                        success: false,
-                        err: true,
-                        msg: format!("{}", e),
-                    }))
-                }
+            if let Err(e) = autd.close().await {
+                return Ok(Response::new(SendResponseLightweight {
+                    success: false,
+                    err: true,
+                    msg: format!("{}", e),
+                }));
             }
         }
         let req = req.into_inner();
@@ -407,12 +402,11 @@ where
                         Segment::try_from(msg.segment)
                             .map_err(|_| AUTDProtoBufError::DataParseError)?,
                     );
-                    let transition_mode = match msg.transition_mode.as_ref() {
-                        Some(mode) => Some(autd3_driver::firmware::fpga::TransitionMode::from_msg(
-                            mode,
-                        )?),
-                        None => None,
-                    };
+                    let transition_mode = msg
+                        .transition_mode
+                        .as_ref()
+                        .map(|mode| autd3_driver::firmware::fpga::TransitionMode::from_msg(mode))
+                        .transpose()?;
                     seq_macro::seq!(K in 1..=8 {
                         match inner.inner {
                         #(

@@ -41,11 +41,7 @@ impl ToMessage for autd3_driver::datagram::SwapSegment {
 
 impl FromMessage<SwapSegment> for autd3_driver::datagram::SwapSegment {
     fn from_msg(msg: &SwapSegment) -> Result<Self, AUTDProtoBufError> {
-        let inner = msg
-            .inner
-            .as_ref()
-            .ok_or(AUTDProtoBufError::DataParseError)?;
-        Ok(match inner {
+        Ok(match msg.inner.ok_or(AUTDProtoBufError::DataParseError)? {
             swap_segment::Inner::Gain(inner) => {
                 let mode = inner
                     .transition_mode

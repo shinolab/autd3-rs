@@ -84,7 +84,7 @@ mod tests {
     use rand::Rng;
 
     #[test]
-    fn test_holo_sdp() {
+    fn test_holo_lm() {
         let mut rng = rand::thread_rng();
 
         let holo = autd3_gain_holo::LM::new(

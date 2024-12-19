@@ -16,10 +16,8 @@ impl ToMessage for autd3_driver::defined::Angle {
 
 impl FromMessage<Option<Angle>> for autd3_driver::defined::Angle {
     fn from_msg(msg: &Option<Angle>) -> Result<Self, AUTDProtoBufError> {
-        match msg {
-            None => Err(AUTDProtoBufError::DataParseError),
-            Some(msg) => Ok(msg.rad * autd3_driver::defined::rad),
-        }
+        msg.map(|msg| msg.rad * autd3_driver::defined::rad)
+            .ok_or(AUTDProtoBufError::DataParseError)
     }
 }
 
