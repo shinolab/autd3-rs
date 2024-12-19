@@ -56,6 +56,7 @@ where
     /// Returns [`AUTDInternalError::KeyIsAlreadyUsed`] if the `key` is already used previous [`Group::set`].
     ///
     /// [`AUTDInternalError::KeyIsAlreadyUsed`]: autd3_driver::error::AUTDInternalError::KeyIsAlreadyUsed
+    #[allow(clippy::map_entry)] // https://github.com/rust-lang/rust-clippy/issues/9925
     pub fn set(mut self, key: K, gain: impl IntoBoxedGain) -> Result<Self, AUTDInternalError> {
         if self.gain_map.contains_key(&key) {
             return Err(AUTDInternalError::KeyIsAlreadyUsed(format!("{:?}", key)));
