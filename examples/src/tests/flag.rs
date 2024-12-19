@@ -31,17 +31,13 @@ pub async fn flag(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
         let states = autd.fpga_state().await?;
         println!("{} FPGA Status...", prompts[idx / 1000 % prompts.len()]);
         idx += 1;
-        states
-            .iter()
-            .enumerate()
-            .for_each(|(i, state)| match state {
-                Some(state) => {
-                    println!("\x1b[0K[{}]: thermo = {}", i, state.is_thermal_assert())
-                }
-                None => {
-                    println!("\x1b[0K[{}]: -", i);
-                }
-            });
+        states.iter().enumerate().for_each(|(i, state)| {
+            println!(
+                "\x1b[0K[{}]: thermo = {}",
+                i,
+                state.map_or_else(|| "-".to_string(), |s| s.is_thermal_assert().to_string())
+            );
+        });
         print!("\x1b[{}A", states.len() + 1);
     }
     print!("\x1b[1F\x1b[0J");
