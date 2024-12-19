@@ -35,10 +35,12 @@ pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
 
     let mut s = String::new();
     io::stdin().read_line(&mut s)?;
-    let idx = match s.trim().parse::<usize>() {
-        Ok(i) if i < gains.len() => i,
-        _ => 1,
-    };
+    let idx = s
+        .trim()
+        .parse::<usize>()
+        .ok()
+        .filter(|&i| i < gains.len())
+        .unwrap_or(1);
 
     let m = Sine::new(150. * Hz);
     let g = gains.swap_remove(idx).1;
