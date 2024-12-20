@@ -36,7 +36,7 @@ impl<M: Modulation> IntoFir<M> for M {
 }
 
 impl<M: Modulation> Modulation for Fir<M> {
-    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
         let src = self.m.calc()?;
         let src_len = src.len() as isize;
         let filter_len = self.filter.len() as isize;

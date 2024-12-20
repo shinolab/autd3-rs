@@ -123,7 +123,7 @@ impl FociSTMGenerator<1> for Circle {
     type T = Self;
 
     // GRCOV_EXCL_START
-    fn init(self) -> Result<Self::T, autd3_driver::error::AUTDInternalError> {
+    fn init(self) -> Result<Self::T, autd3_driver::error::AUTDDriverError> {
         Ok(self)
     }
     // GRCOV_EXCL_STOP
@@ -141,7 +141,7 @@ impl GainSTMGenerator for Circle {
         self,
         _geometry: &autd3_driver::derive::Geometry,
         _filter: Option<&std::collections::HashMap<usize, bit_vec::BitVec<u32>>>,
-    ) -> Result<Self::T, autd3_driver::error::AUTDInternalError> {
+    ) -> Result<Self::T, autd3_driver::error::AUTDDriverError> {
         Ok(self)
     }
     // GRCOV_EXCL_STOP

@@ -1,7 +1,7 @@
 use autd3_driver::{
     datagram::{BoxedGain, IntoBoxedGain},
     derive::*,
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::fpga::Drive,
     geometry::{Device, Transducer},
 };
@@ -23,7 +23,7 @@ use derive_new::new;
 /// ```
 /// use autd3::prelude::*;
 ///
-/// # fn _main() -> Result<(), AUTDInternalError> {
+/// # fn _main() -> Result<(), AUTDDriverError> {
 /// Group::new(|dev| |tr| if tr.idx() < 100 { Some("null") } else { Some("focus") })
 ///    .set("null", Null::new())?
 ///    .set("focus", Focus::new(Point3::origin()))?;
@@ -53,13 +53,13 @@ where
     ///
     /// # Errors
     ///
-    /// Returns [`AUTDInternalError::KeyIsAlreadyUsed`] if the `key` is already used previous [`Group::set`].
+    /// Returns [`AUTDDriverError::KeyIsAlreadyUsed`] if the `key` is already used previous [`Group::set`].
     ///
-    /// [`AUTDInternalError::KeyIsAlreadyUsed`]: autd3_driver::error::AUTDInternalError::KeyIsAlreadyUsed
+    /// [`AUTDDriverError::KeyIsAlreadyUsed`]: autd3_driver::error::AUTDDriverError::KeyIsAlreadyUsed
     #[allow(clippy::map_entry)] // https://github.com/rust-lang/rust-clippy/issues/9925
-    pub fn set(mut self, key: K, gain: impl IntoBoxedGain) -> Result<Self, AUTDInternalError> {
+    pub fn set(mut self, key: K, gain: impl IntoBoxedGain) -> Result<Self, AUTDDriverError> {
         if self.gain_map.contains_key(&key) {
-            return Err(AUTDInternalError::KeyIsAlreadyUsed(format!("{:?}", key)));
+            return Err(AUTDDriverError::KeyIsAlreadyUsed(format!("{:?}", key)));
         } else {
             self.gain_map.insert(key, gain.into_boxed());
         }
@@ -133,7 +133,7 @@ where
         self,
         geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDInternalError> {
+    ) -> Result<Self::G, AUTDDriverError> {
         let mut filters = self.get_filters(geometry);
 
         let mut g = geometry
@@ -151,7 +151,7 @@ where
             .map(|(k, g)| {
                 let filter = filters
                     .remove(&k)
-                    .ok_or(AUTDInternalError::UnkownKey(format!("{:?}", k)))?;
+                    .ok_or(AUTDDriverError::UnkownKey(format!("{:?}", k)))?;
                 let mut g = g.init(geometry, Some(&filter))?;
                 Ok((
                     k,
@@ -161,10 +161,10 @@ where
                         .collect::<Vec<_>>(),
                 ))
             })
-            .collect::<Result<HashMap<_, _>, AUTDInternalError>>()?;
+            .collect::<Result<HashMap<_, _>, AUTDDriverError>>()?;
 
         if !filters.is_empty() {
-            return Err(AUTDInternalError::UnusedKey(
+            return Err(AUTDDriverError::UnusedKey(
                 filters.keys().map(|k| format!("{:?}", k)).join(", "),
             ));
         }
@@ -173,7 +173,7 @@ where
         if geometry.parallel(None) {
             gain_map
                 .par_iter()
-                .try_for_each(|(k, c)| -> Result<(), AUTDInternalError> {
+                .try_for_each(|(k, c)| -> Result<(), AUTDDriverError> {
                     geometry.devices().zip(c.iter()).for_each(|(dev, c)| {
                         let f = (f)(dev);
                         let r = g[&dev.idx()].as_ptr() as *mut Drive;
@@ -188,7 +188,7 @@ where
         } else {
             gain_map
                 .iter()
-                .try_for_each(|(k, c)| -> Result<(), AUTDInternalError> {
+                .try_for_each(|(k, c)| -> Result<(), AUTDDriverError> {
                     geometry.devices().zip(c.iter()).for_each(|(dev, c)| {
                         let f = (f)(dev);
                         let r = g.get_mut(&dev.idx()).unwrap();
@@ -369,7 +369,7 @@ mod tests {
         .set("test2", Null::new())?;
 
         assert_eq!(
-            Some(AUTDInternalError::UnkownKey("\"test2\"".to_owned())),
+            Some(AUTDDriverError::UnkownKey("\"test2\"".to_owned())),
             gain.init(&geometry, None).err()
         );
 
@@ -383,7 +383,7 @@ mod tests {
             .set(0, Null::new());
 
         assert_eq!(
-            Some(AUTDInternalError::KeyIsAlreadyUsed("0".to_owned())),
+            Some(AUTDDriverError::KeyIsAlreadyUsed("0".to_owned())),
             gain.err()
         );
 
@@ -403,7 +403,7 @@ mod tests {
         .set(1, Null::new())?;
 
         assert_eq!(
-            Some(AUTDInternalError::UnusedKey("0".to_owned())),
+            Some(AUTDDriverError::UnusedKey("0".to_owned())),
             gain.init(&geometry, None).err()
         );
 

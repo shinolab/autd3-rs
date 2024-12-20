@@ -69,9 +69,9 @@ impl<S: SamplingMode> Square<S> {
 }
 
 impl<S: SamplingMode> Modulation for Square<S> {
-    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
         if !(0.0..=1.0).contains(&self.duty) {
-            return Err(AUTDInternalError::ModulationError(
+            return Err(AUTDDriverError::ModulationError(
                 "duty must be in range from 0 to 1".to_string(),
             ));
         }
@@ -138,35 +138,35 @@ mod tests {
         781.25*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (150.01 Hz) cannot be output with the sampling config (SamplingConfig { division: 10 }).".to_owned())),
+        Err(AUTDDriverError::ModulationError("Frequency (150.01 Hz) cannot be output with the sampling config (SamplingConfig { division: 10 }).".to_owned())),
         150.01*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        Err(AUTDDriverError::ModulationError("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
         2000.*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        Err(AUTDDriverError::ModulationError("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
         2000*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        Err(AUTDDriverError::ModulationError("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
         4000.*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        Err(AUTDDriverError::ModulationError("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
         4000*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
+        Err(AUTDDriverError::ModulationError("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
         0*Hz
     )]
     #[case(
-        Err(AUTDInternalError::ModulationError("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
+        Err(AUTDDriverError::ModulationError("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
         0.*Hz
     )]
     fn with_freq_float_exact(
-        #[case] expect: Result<Vec<u8>, AUTDInternalError>,
+        #[case] expect: Result<Vec<u8>, AUTDDriverError>,
         #[case] freq: impl SamplingModeInference,
     ) {
         let m = Square::new(freq);
@@ -191,7 +191,7 @@ mod tests {
         Ok(vec![255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         200.*Hz
     )]
-    fn new_nearest(#[case] expect: Result<Vec<u8>, AUTDInternalError>, #[case] freq: Freq<f32>) {
+    fn new_nearest(#[case] expect: Result<Vec<u8>, AUTDDriverError>, #[case] freq: Freq<f32>) {
         let m = Square::new_nearest(freq);
         assert_eq!(freq, m.freq());
         assert_eq!(u8::MIN, m.low());
@@ -236,14 +236,14 @@ mod tests {
     #[test]
     fn duty_out_of_range() {
         assert_eq!(
-            Some(AUTDInternalError::ModulationError(
+            Some(AUTDDriverError::ModulationError(
                 "duty must be in range from 0 to 1".to_string()
             )),
             Square::new(150. * Hz).with_duty(-0.1).calc().err()
         );
 
         assert_eq!(
-            Some(AUTDInternalError::ModulationError(
+            Some(AUTDDriverError::ModulationError(
                 "duty must be in range from 0 to 1".to_string()
             )),
             Square::new(150. * Hz).with_duty(1.1).calc().err()

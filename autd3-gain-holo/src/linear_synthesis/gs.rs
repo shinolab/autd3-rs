@@ -52,7 +52,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for GS<D, B> {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDInternalError> {
+    ) -> Result<Self::G, AUTDDriverError> {
         let g = self
             .backend
             .generate_propagation_matrix(geometry, &self.foci, filter)?;
@@ -71,7 +71,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for GS<D, B> {
             .backend
             .from_slice_cv(<[f32]>::ref_from_bytes(self.amps.as_bytes()).unwrap())?;
         let mut p = self.backend.alloc_zeros_cv(m)?;
-        (0..self.repeat.get()).try_for_each(|_| -> Result<(), AUTDInternalError> {
+        (0..self.repeat.get()).try_for_each(|_| -> Result<(), AUTDDriverError> {
             self.backend.scaled_to_assign_cv(&q0, &mut q)?;
             self.backend.gemv_c(
                 Trans::NoTrans,

@@ -50,7 +50,7 @@ impl Gain for TestGain {
         self,
         _geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDInternalError> {
+    ) -> Result<Self::G, AUTDDriverError> {
         Ok(self)
     }
 }
@@ -176,13 +176,13 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     {
         let d = SwapSegment::Gain(Segment::S0, TransitionMode::Immediate);
         assert_eq!(
-            Err(AUTDInternalError::InvalidSegmentTransition),
+            Err(AUTDDriverError::InvalidSegmentTransition),
             send(&mut cpu, d, &geometry, &mut tx)
         );
 
         let d = SwapSegment::Gain(Segment::S1, TransitionMode::Immediate);
         assert_eq!(
-            Err(AUTDInternalError::InvalidSegmentTransition),
+            Err(AUTDDriverError::InvalidSegmentTransition),
             send(&mut cpu, d, &geometry, &mut tx)
         );
     }

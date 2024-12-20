@@ -41,7 +41,7 @@ pub(crate) use sync::*;
 use zerocopy::{Immutable, IntoBytes};
 
 use crate::{
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::cpu::{TxMessage, MSG_ID_MAX},
     geometry::{Device, Geometry},
 };
@@ -75,7 +75,7 @@ pub(crate) enum TypeTag {
 
 pub trait Operation: Send + Sync {
     fn required_size(&self, device: &Device) -> usize;
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError>;
+    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError>;
     fn is_done(&self) -> bool;
 }
 
@@ -90,7 +90,7 @@ impl Operation for Box<dyn Operation> {
         self.as_ref().required_size(device)
     }
 
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         self.as_mut().pack(device, tx)
     }
 
@@ -121,7 +121,7 @@ impl OperationHandler {
         geometry: &Geometry,
         tx: &mut [TxMessage],
         parallel: bool,
-    ) -> Result<(), AUTDInternalError> {
+    ) -> Result<(), AUTDDriverError> {
         if parallel {
             geometry
                 .iter()
@@ -151,9 +151,9 @@ impl OperationHandler {
         op2: &mut impl Operation,
         dev: &Device,
         tx: &mut TxMessage,
-    ) -> Result<(), AUTDInternalError> {
+    ) -> Result<(), AUTDDriverError> {
         match (op1.is_done(), op2.is_done()) {
-            (true, true) => Result::<_, AUTDInternalError>::Ok(()),
+            (true, true) => Result::<_, AUTDDriverError>::Ok(()),
             (true, false) => Self::pack_op(op2, dev, tx).map(|_| Ok(()))?,
             (false, true) => Self::pack_op(op1, dev, tx).map(|_| Ok(()))?,
             (false, false) => {
@@ -171,7 +171,7 @@ impl OperationHandler {
         op: &mut impl Operation,
         dev: &Device,
         tx: &mut TxMessage,
-    ) -> Result<usize, AUTDInternalError> {
+    ) -> Result<usize, AUTDDriverError> {
         tx.header_mut().msg_id += 1;
         tx.header_mut().msg_id &= MSG_ID_MAX;
         tx.header_mut().slot_2_offset = 0;
@@ -211,9 +211,9 @@ pub mod tests {
             self.required_size
         }
 
-        fn pack(&mut self, _: &Device, _: &mut [u8]) -> Result<usize, AUTDInternalError> {
+        fn pack(&mut self, _: &Device, _: &mut [u8]) -> Result<usize, AUTDDriverError> {
             if self.broken {
-                return Err(AUTDInternalError::NotSupported("test".to_owned()));
+                return Err(AUTDDriverError::NotSupported("test".to_owned()));
             }
             self.num_frames -= 1;
             Ok(self.pack_size)
@@ -387,7 +387,7 @@ pub mod tests {
         let mut tx = vec![TxMessage::new_zeroed(); 1];
 
         assert_eq!(
-            Err(AUTDInternalError::NotSupported("test".to_owned())),
+            Err(AUTDDriverError::NotSupported("test".to_owned())),
             OperationHandler::pack(&mut op, &geometry, &mut tx, false)
         );
 
@@ -395,14 +395,14 @@ pub mod tests {
         op[0].1.broken = true;
 
         assert_eq!(
-            Err(AUTDInternalError::NotSupported("test".to_owned())),
+            Err(AUTDDriverError::NotSupported("test".to_owned())),
             OperationHandler::pack(&mut op, &geometry, &mut tx, false)
         );
 
         op[0].0.num_frames = 0;
 
         assert_eq!(
-            Err(AUTDInternalError::NotSupported("test".to_owned())),
+            Err(AUTDDriverError::NotSupported("test".to_owned())),
             OperationHandler::pack(&mut op, &geometry, &mut tx, false)
         );
 
@@ -413,7 +413,7 @@ pub mod tests {
         op[0].1.num_frames = 0;
 
         assert_eq!(
-            Err(AUTDInternalError::NotSupported("test".to_owned())),
+            Err(AUTDDriverError::NotSupported("test".to_owned())),
             OperationHandler::pack(&mut op, &geometry, &mut tx, false)
         );
     }

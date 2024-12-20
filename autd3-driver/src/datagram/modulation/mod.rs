@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use super::silencer::WithSampling;
 use crate::{
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::{
         fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
         operation::{ModulationOp, NullOp, OperationGenerator},
@@ -20,7 +20,7 @@ pub trait ModulationProperty {
 }
 
 pub trait Modulation: ModulationProperty + std::fmt::Debug {
-    fn calc(self) -> Result<Vec<u8>, AUTDInternalError>;
+    fn calc(self) -> Result<Vec<u8>, AUTDDriverError>;
 }
 
 impl<M: Modulation> WithSampling for M {
@@ -73,7 +73,7 @@ pub mod tests {
     }
 
     impl Modulation for TestModulation {
-        fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
+        fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
             Ok(vec![0; 2])
         }
     }

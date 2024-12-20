@@ -34,7 +34,7 @@ pub trait GainSTMGenerator: std::fmt::Debug {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::T, AUTDInternalError>;
+    ) -> Result<Self::T, AUTDDriverError>;
     fn len(&self) -> usize;
 }
 pub trait IntoGainSTMGenerator {
@@ -72,23 +72,23 @@ impl<G: GainSTMGenerator> GainSTM<G> {
     pub fn new<T: IntoGainSTMGenerator<G = G>>(
         config: impl Into<STMConfig>,
         iter: T,
-    ) -> Result<Self, AUTDInternalError> {
+    ) -> Result<Self, AUTDDriverError> {
         Self::new_from_sampling_config(config.into(), iter)
     }
 
     pub fn new_nearest<T: IntoGainSTMGenerator<G = G>>(
         config: impl Into<STMConfigNearest>,
         iter: T,
-    ) -> Result<Self, AUTDInternalError> {
+    ) -> Result<Self, AUTDDriverError> {
         Self::new_from_sampling_config(config.into(), iter)
     }
 
     fn new_from_sampling_config<S, T: IntoGainSTMGenerator<G = G>>(
         config: S,
         iter: T,
-    ) -> Result<Self, AUTDInternalError>
+    ) -> Result<Self, AUTDDriverError>
     where
-        SamplingConfig: TryFrom<(S, usize), Error = AUTDInternalError>,
+        SamplingConfig: TryFrom<(S, usize), Error = AUTDDriverError>,
     {
         let gen = iter.into();
         Ok(Self {
@@ -146,7 +146,7 @@ impl<I: GainSTMGenerator> DatagramS for GainSTM<I> {
         geometry: &Geometry,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
-    ) -> Result<Self::G, AUTDInternalError> {
+    ) -> Result<Self::G, AUTDDriverError> {
         let size = self.gen.len();
         let config = self.sampling_config;
         let loop_behavior = self.loop_behavior;

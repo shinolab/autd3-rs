@@ -1,4 +1,4 @@
-use crate::{error::AUTDInternalError, firmware::operation::Operation, geometry::Device};
+use crate::{error::AUTDDriverError, firmware::operation::Operation, geometry::Device};
 
 use derive_new::new;
 
@@ -11,7 +11,7 @@ pub struct NullOp {
 
 impl Operation for NullOp {
     // GRCOV_EXCL_START
-    fn pack(&mut self, _: &Device, _: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, _: &Device, _: &mut [u8]) -> Result<usize, AUTDDriverError> {
         unreachable!()
     }
     // GRCOV_EXCL_STOP

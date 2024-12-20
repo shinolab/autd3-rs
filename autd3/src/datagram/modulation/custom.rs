@@ -68,7 +68,7 @@ impl Custom {
 }
 
 impl Modulation for Custom {
-    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
         Ok(self.buffer.clone())
     }
 }

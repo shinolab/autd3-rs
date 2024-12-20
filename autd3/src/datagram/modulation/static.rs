@@ -28,7 +28,7 @@ impl Static {
 }
 
 impl Modulation for Static {
-    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
         let intensity = self.intensity;
         Ok(vec![intensity; 2])
     }

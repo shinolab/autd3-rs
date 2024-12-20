@@ -28,7 +28,7 @@ impl LinkBuilder for SimulatorBuilder {
     async fn open(
         self,
         geometry: &autd3_driver::geometry::Geometry,
-    ) -> Result<Self::L, AUTDInternalError> {
+    ) -> Result<Self::L, AUTDDriverError> {
         tracing::info!("Connecting to simulator@{}", self.addr);
         let conn = tonic::transport::Endpoint::new(format!("http://{}", self.addr))
             .map_err(AUTDProtoBufError::from)?
@@ -61,7 +61,7 @@ impl Simulator {
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
 impl Link for Simulator {
-    async fn close(&mut self) -> Result<(), AUTDInternalError> {
+    async fn close(&mut self) -> Result<(), AUTDDriverError> {
         if !self.is_open {
             return Ok(());
         }
@@ -78,7 +78,7 @@ impl Link for Simulator {
     async fn update(
         &mut self,
         geometry: &autd3_driver::geometry::Geometry,
-    ) -> Result<(), AUTDInternalError> {
+    ) -> Result<(), AUTDDriverError> {
         if self.last_geometry_version == geometry.version() {
             return Ok(());
         }
@@ -93,7 +93,7 @@ impl Link for Simulator {
         Ok(())
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDInternalError> {
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
         let res = self
             .client
             .send_data(tx.to_msg(None))
@@ -103,7 +103,7 @@ impl Link for Simulator {
         Ok(res.into_inner().success)
     }
 
-    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
         let rx_ = Vec::<RxMessage>::from_msg(
             &self
                 .client

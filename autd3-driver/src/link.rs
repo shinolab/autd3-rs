@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::{
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::cpu::{RxMessage, TxMessage},
     geometry::Geometry,
 };
@@ -15,15 +15,15 @@ mod internal {
 
     #[async_trait::async_trait]
     pub trait Link: Send {
-        async fn close(&mut self) -> Result<(), AUTDInternalError>;
+        async fn close(&mut self) -> Result<(), AUTDDriverError>;
 
-        async fn update(&mut self, _geometry: &Geometry) -> Result<(), AUTDInternalError> {
+        async fn update(&mut self, _geometry: &Geometry) -> Result<(), AUTDDriverError> {
             Ok(())
         }
 
-        async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDInternalError>;
+        async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError>;
 
-        async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError>;
+        async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError>;
 
         #[must_use]
         fn is_open(&self) -> bool;
@@ -35,24 +35,24 @@ mod internal {
     pub trait LinkBuilder: Send + Sync {
         type L: Link;
 
-        async fn open(self, geometry: &Geometry) -> Result<Self::L, AUTDInternalError>;
+        async fn open(self, geometry: &Geometry) -> Result<Self::L, AUTDDriverError>;
     }
 
     #[async_trait::async_trait]
     impl Link for Box<dyn Link> {
-        async fn close(&mut self) -> Result<(), AUTDInternalError> {
+        async fn close(&mut self) -> Result<(), AUTDDriverError> {
             self.as_mut().close().await
         }
 
-        async fn update(&mut self, geometry: &Geometry) -> Result<(), AUTDInternalError> {
+        async fn update(&mut self, geometry: &Geometry) -> Result<(), AUTDDriverError> {
             self.as_mut().update(geometry).await
         }
 
-        async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDInternalError> {
+        async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
             self.as_mut().send(tx).await
         }
 
-        async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
+        async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
             self.as_mut().receive(rx).await
         }
 
@@ -71,24 +71,24 @@ mod internal {
     use super::*;
 
     pub trait Link: Send {
-        fn close(&mut self) -> impl std::future::Future<Output = Result<(), AUTDInternalError>>;
+        fn close(&mut self) -> impl std::future::Future<Output = Result<(), AUTDDriverError>>;
 
         fn update(
             &mut self,
             _geometry: &Geometry,
-        ) -> impl std::future::Future<Output = Result<(), AUTDInternalError>> {
+        ) -> impl std::future::Future<Output = Result<(), AUTDDriverError>> {
             async { Ok(()) }
         }
 
         fn send(
             &mut self,
             tx: &[TxMessage],
-        ) -> impl std::future::Future<Output = Result<bool, AUTDInternalError>>;
+        ) -> impl std::future::Future<Output = Result<bool, AUTDDriverError>>;
 
         fn receive(
             &mut self,
             rx: &mut [RxMessage],
-        ) -> impl std::future::Future<Output = Result<bool, AUTDInternalError>>;
+        ) -> impl std::future::Future<Output = Result<bool, AUTDDriverError>>;
 
         #[must_use]
         fn is_open(&self) -> bool;
@@ -102,6 +102,6 @@ mod internal {
         fn open(
             self,
             geometry: &Geometry,
-        ) -> impl std::future::Future<Output = Result<Self::L, AUTDInternalError>>;
+        ) -> impl std::future::Future<Output = Result<Self::L, AUTDDriverError>>;
     }
 }

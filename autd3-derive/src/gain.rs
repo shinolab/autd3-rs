@@ -13,7 +13,7 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
         {
             type G =  GainOperationGenerator<<Self as Gain>::G>;
 
-            fn operation_generator_with_segment(self, geometry: &Geometry, segment: Segment, transition: Option<TransitionMode>) -> Result<Self::G, AUTDInternalError> {
+            fn operation_generator_with_segment(self, geometry: &Geometry, segment: Segment, transition: Option<TransitionMode>) -> Result<Self::G, AUTDDriverError> {
                 Self::G::new(
                     self,
                     geometry,

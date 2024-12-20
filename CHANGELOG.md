@@ -7,12 +7,13 @@
 - Make `Transducer::new` public
 - Make `autd3_gain_holo::kPa` public
 - Impl `IntoIterator` for `&Controller`
+- Rename from `AUTDInternalError` to `AUTDDriverError`
 - Rename from `fallback_timeout` to `default_timeout` and `fallback_parallel_threshold` to `default_parallel_threshold`
   - Move `default_parallel_threshold` into `Geometry`
   - Move `default_timeout` into `Timer`
-- Add `AUTDInternalError::KeyIsAlreadyUsed` and `AUTDInternalError::UnusedKey` errors
-  - `controller::Group::set` and `gain::Group::set` now return `AUTDInternalError::KeyIsAlreadyUsed` if the key is already used
-  - `controller::Group::send` and `gain::Group::init` now return `AUTDInternalError::UnusedKey` if the key is not used
+- Add `AUTDDriverError::KeyIsAlreadyUsed` and `AUTDDriverError::UnusedKey` errors
+  - `controller::Group::set` and `gain::Group::set` now return `AUTDDriverError::KeyIsAlreadyUsed` if the key is already used
+  - `controller::Group::send` and `gain::Group::init` now return `AUTDDriverError::UnusedKey` if the key is not used
 - Add `Circle` and `Line` utilities for `FociSTM` and `GainSTM`
 - Add `timer_strategy` option for `Controller`
 - Add all euler angle variants to `EulerAngle`

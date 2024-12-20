@@ -4,7 +4,7 @@ use autd3_derive::Builder;
 
 use crate::{
     defined::ULTRASOUND_PERIOD,
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::{
         fpga::{
             SamplingConfig, SilencerTarget, SILENCER_STEPS_INTENSITY_DEFAULT,
@@ -163,7 +163,7 @@ where
 {
     type G = SilencerOpGenerator<T>;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDDriverError> {
         Ok(Self::G {
             config: self.config,
             strict_mode: self.strict_mode,

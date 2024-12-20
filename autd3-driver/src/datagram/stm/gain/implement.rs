@@ -3,7 +3,7 @@ use std::{collections::HashMap, iter::Peekable};
 use bit_vec::BitVec;
 
 use crate::{
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     geometry::{Device, Geometry},
 };
 
@@ -47,7 +47,7 @@ impl<G: Gain> GainSTMGenerator for Vec<G> {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::T, AUTDInternalError> {
+    ) -> Result<Self::T, AUTDDriverError> {
         self.into_iter()
             .map(|g| g.init(geometry, filter))
             .collect::<Result<Vec<_>, _>>()
@@ -89,7 +89,7 @@ mod tests {
     #[case((20. * Hz).try_into(), 2.*Hz, 10)]
     #[case((2. * 0.49*Hz).try_into(), 0.49*Hz, 2)]
     fn from_freq(
-        #[case] expect: Result<SamplingConfig, AUTDInternalError>,
+        #[case] expect: Result<SamplingConfig, AUTDDriverError>,
         #[case] freq: Freq<f32>,
         #[case] n: usize,
     ) {
@@ -106,7 +106,7 @@ mod tests {
     #[case(Ok(SamplingConfig::new_nearest(10. * Hz)), 1.*Hz, 10)]
     #[case(Ok(SamplingConfig::new_nearest(20. * Hz)), 2.*Hz, 10)]
     fn from_freq_nearest(
-        #[case] expect: Result<SamplingConfig, AUTDInternalError>,
+        #[case] expect: Result<SamplingConfig, AUTDDriverError>,
         #[case] freq: Freq<f32>,
         #[case] n: usize,
     ) {
@@ -134,9 +134,9 @@ mod tests {
         Duration::from_millis(500),
         10
     )]
-    #[case(Err(AUTDInternalError::STMPeriodInvalid(2, Duration::from_millis(2000) + Duration::from_nanos(1))), Duration::from_millis(2000) + Duration::from_nanos(1), 2)]
+    #[case(Err(AUTDDriverError::STMPeriodInvalid(2, Duration::from_millis(2000) + Duration::from_nanos(1))), Duration::from_millis(2000) + Duration::from_nanos(1), 2)]
     fn from_period(
-        #[case] expect: Result<SamplingConfig, AUTDInternalError>,
+        #[case] expect: Result<SamplingConfig, AUTDDriverError>,
         #[case] p: Duration,
         #[case] n: usize,
     ) {
@@ -165,7 +165,7 @@ mod tests {
     )]
     #[case(Duration::from_millis(1000).try_into(), Duration::from_millis(2000) + Duration::from_nanos(1), 2)]
     fn from_period_nearest(
-        #[case] expect: Result<SamplingConfig, AUTDInternalError>,
+        #[case] expect: Result<SamplingConfig, AUTDDriverError>,
         #[case] p: Duration,
         #[case] n: usize,
     ) {
@@ -196,7 +196,7 @@ mod tests {
     #[case(Ok(1.0*Hz), 1.*Hz, 10)]
     #[case(Ok(2.0*Hz), 2.*Hz, 10)]
     fn freq(
-        #[case] expect: Result<Freq<f32>, AUTDInternalError>,
+        #[case] expect: Result<Freq<f32>, AUTDDriverError>,
         #[case] f: Freq<f32>,
         #[case] n: usize,
     ) {
@@ -212,7 +212,7 @@ mod tests {
     #[case(Ok(Duration::from_millis(1000)), 1.*Hz, 10)]
     #[case(Ok(Duration::from_millis(500)), 2.*Hz, 10)]
     fn period(
-        #[case] expect: Result<Duration, AUTDInternalError>,
+        #[case] expect: Result<Duration, AUTDDriverError>,
         #[case] f: Freq<f32>,
         #[case] n: usize,
     ) {

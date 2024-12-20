@@ -20,7 +20,7 @@ pub use autd3_driver::{
     defined::{
         deg, kHz, mm, rad, ControlPoint, ControlPoints, Hz, PI, ULTRASOUND_FREQ, ULTRASOUND_PERIOD,
     },
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     ethercat::DcSysTime,
     firmware::{
         cpu::GainSTMMode,

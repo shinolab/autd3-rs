@@ -21,7 +21,7 @@ pub struct NopBuilder {}
 impl LinkBuilder for NopBuilder {
     type L = Nop;
 
-    async fn open(self, geometry: &Geometry) -> Result<Self::L, AUTDInternalError> {
+    async fn open(self, geometry: &Geometry) -> Result<Self::L, AUTDDriverError> {
         Ok(Nop {
             is_open: true,
             cpus: geometry
@@ -35,12 +35,12 @@ impl LinkBuilder for NopBuilder {
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
 impl Link for Nop {
-    async fn close(&mut self) -> Result<(), AUTDInternalError> {
+    async fn close(&mut self) -> Result<(), AUTDDriverError> {
         self.is_open = false;
         Ok(())
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDInternalError> {
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
         self.cpus.iter_mut().for_each(|cpu| {
             cpu.send(tx);
         });
@@ -48,7 +48,7 @@ impl Link for Nop {
         Ok(true)
     }
 
-    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
         self.cpus.iter_mut().for_each(|cpu| {
             cpu.update();
             rx[cpu.idx()] = cpu.rx();

@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{
     defined::{Freq, Hz},
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::fpga::SamplingConfig,
 };
 
@@ -22,7 +22,7 @@ pub enum STMConfigNearest {
 }
 
 impl TryFrom<(STMConfig, usize)> for SamplingConfig {
-    type Error = AUTDInternalError;
+    type Error = AUTDDriverError;
 
     fn try_from(value: (STMConfig, usize)) -> Result<Self, Self::Error> {
         let (config, size) = value;
@@ -30,7 +30,7 @@ impl TryFrom<(STMConfig, usize)> for SamplingConfig {
             STMConfig::Freq(f) => SamplingConfig::new(f * size as f32),
             STMConfig::Period(p) => {
                 if p.as_nanos() % size as u128 != 0 {
-                    return Err(AUTDInternalError::STMPeriodInvalid(size, p));
+                    return Err(AUTDDriverError::STMPeriodInvalid(size, p));
                 }
                 SamplingConfig::new(p / size as u32)
             }
@@ -40,7 +40,7 @@ impl TryFrom<(STMConfig, usize)> for SamplingConfig {
 }
 
 impl TryFrom<(STMConfigNearest, usize)> for SamplingConfig {
-    type Error = AUTDInternalError;
+    type Error = AUTDDriverError;
 
     fn try_from(value: (STMConfigNearest, usize)) -> Result<Self, Self::Error> {
         let (config, size) = value;
@@ -93,7 +93,7 @@ mod tests {
     #[case((40000. * Hz).try_into(), 40000. * Hz, 1)]
     #[case((4000.5 * Hz).try_into(), 4000.5 * Hz, 1)]
     fn frequency(
-        #[case] expect: Result<SamplingConfig, AUTDInternalError>,
+        #[case] expect: Result<SamplingConfig, AUTDDriverError>,
         #[case] freq: Freq<f32>,
         #[case] size: usize,
     ) {
@@ -131,12 +131,12 @@ mod tests {
         1
     )]
     #[case(
-        Err(AUTDInternalError::STMPeriodInvalid(2, Duration::from_nanos(25001))),
+        Err(AUTDDriverError::STMPeriodInvalid(2, Duration::from_nanos(25001))),
         Duration::from_nanos(25001),
         2
     )]
     fn period(
-        #[case] expect: Result<SamplingConfig, AUTDInternalError>,
+        #[case] expect: Result<SamplingConfig, AUTDDriverError>,
         #[case] p: Duration,
         #[case] size: usize,
     ) {
@@ -150,7 +150,7 @@ mod tests {
     #[case(Ok(SamplingConfig::new_nearest(4001. * Hz)), 4001. * Hz, 1)]
     #[case(Ok(SamplingConfig::new_nearest(40000. * Hz)), 40000. * Hz, 1)]
     fn frequency_nearest(
-        #[case] expect: Result<SamplingConfig, AUTDInternalError>,
+        #[case] expect: Result<SamplingConfig, AUTDDriverError>,
         #[case] freq: Freq<f32>,
         #[case] size: usize,
     ) {
@@ -180,7 +180,7 @@ mod tests {
         2
     )]
     fn period_nearest(
-        #[case] expect: Result<SamplingConfig, AUTDInternalError>,
+        #[case] expect: Result<SamplingConfig, AUTDDriverError>,
         #[case] p: Duration,
         #[case] size: usize,
     ) {

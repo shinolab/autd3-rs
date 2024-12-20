@@ -1,6 +1,6 @@
 use time::OffsetDateTime;
 
-use crate::error::AUTDInternalError;
+use crate::error::AUTDDriverError;
 
 use super::ECAT_DC_SYS_TIME_BASE;
 
@@ -21,10 +21,10 @@ impl DcSysTime {
         ECAT_DC_SYS_TIME_BASE + std::time::Duration::from_nanos(self.dc_sys_time)
     }
 
-    pub fn from_utc(utc: OffsetDateTime) -> Result<Self, AUTDInternalError> {
+    pub fn from_utc(utc: OffsetDateTime) -> Result<Self, AUTDDriverError> {
         Ok(Self {
             dc_sys_time: u64::try_from((utc - ECAT_DC_SYS_TIME_BASE).whole_nanoseconds())
-                .map_err(|_| AUTDInternalError::InvalidDateTime)?,
+                .map_err(|_| AUTDDriverError::InvalidDateTime)?,
         })
     }
 
@@ -68,9 +68,9 @@ mod tests {
     #[case(Ok(DcSysTime { dc_sys_time: 0 }), time::macros::datetime!(2000-01-01 0:0:0 UTC))]
     #[case(Ok(DcSysTime { dc_sys_time: 1000000000 }), time::macros::datetime!(2000-01-01 0:0:1 UTC))]
     #[case(Ok(DcSysTime { dc_sys_time: 31622400000000000 }), time::macros::datetime!(2001-01-01 0:0:0 UTC))]
-    #[case(Err(AUTDInternalError::InvalidDateTime), time::macros::datetime!(1999-01-01 0:0:1 UTC))]
-    #[case(Err(AUTDInternalError::InvalidDateTime), time::macros::datetime!(9999-01-01 0:0:1 UTC))]
-    fn from_utc(#[case] expect: Result<DcSysTime, AUTDInternalError>, #[case] utc: OffsetDateTime) {
+    #[case(Err(AUTDDriverError::InvalidDateTime), time::macros::datetime!(1999-01-01 0:0:1 UTC))]
+    #[case(Err(AUTDDriverError::InvalidDateTime), time::macros::datetime!(9999-01-01 0:0:1 UTC))]
+    fn from_utc(#[case] expect: Result<DcSysTime, AUTDDriverError>, #[case] utc: OffsetDateTime) {
         assert_eq!(expect, DcSysTime::from_utc(utc));
     }
 

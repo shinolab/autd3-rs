@@ -1,7 +1,7 @@
 use std::mem::size_of;
 
 use crate::{
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::{
         fpga::Phase,
         operation::{Operation, TypeTag},
@@ -28,7 +28,7 @@ pub struct PhaseCorrectionOp<F: Fn(&Transducer) -> Phase> {
 }
 
 impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<F> {
-    fn pack(&mut self, dev: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, dev: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         super::write_to_tx(
             tx,
             PhaseCorr {

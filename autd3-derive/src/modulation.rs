@@ -76,7 +76,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
         impl <#(#linetimes,)* #(#type_params,)* > DatagramS for #name #ty_generics #where_clause {
             type G =  ModulationOperationGenerator;
 
-            fn operation_generator_with_segment(self, _: &Geometry, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<Self::G, AUTDInternalError> {
+            fn operation_generator_with_segment(self, _: &Geometry, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<Self::G, AUTDDriverError> {
                 let config = self.sampling_config();
                 let loop_behavior = self.loop_behavior();
                 let g = self.calc()?;

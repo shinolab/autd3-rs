@@ -1,5 +1,5 @@
 use crate::{
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::operation::{Operation, TypeTag},
     geometry::Device,
 };
@@ -37,7 +37,7 @@ pub struct EmulateGPIOInOp {
 }
 
 impl Operation for EmulateGPIOInOp {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         let mut flag = GPIOInFlags::NONE;
         seq_macro::seq!(N in 0..4 {#(flag.set(GPIOInFlags::GPIO_IN_~N, self.value[N]);)*});
 

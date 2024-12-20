@@ -1,5 +1,5 @@
 use crate::{
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::operation::{Operation, TypeTag},
     geometry::Device,
 };
@@ -22,7 +22,7 @@ pub struct SyncOp {
 }
 
 impl Operation for SyncOp {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         super::write_to_tx(
             tx,
             Sync {

@@ -5,13 +5,13 @@ use autd3_derive::Modulation;
 use super::{Modulation, ModulationOperationGenerator, ModulationProperty};
 use crate::{
     datagram::DatagramS,
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
     geometry::Geometry,
 };
 
 pub trait DModulation {
-    fn dyn_calc(&mut self) -> Result<Vec<u8>, AUTDInternalError>;
+    fn dyn_calc(&mut self) -> Result<Vec<u8>, AUTDDriverError>;
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
 
@@ -20,7 +20,7 @@ impl<
         #[cfg(feature = "lightweight")] T: Modulation + Send + Sync,
     > DModulation for MaybeUninit<T>
 {
-    fn dyn_calc(&mut self) -> Result<Vec<u8>, AUTDInternalError> {
+    fn dyn_calc(&mut self) -> Result<Vec<u8>, AUTDDriverError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
         let g = unsafe { tmp.assume_init() };
@@ -52,7 +52,7 @@ impl std::fmt::Debug for BoxedModulation {
 }
 
 impl Modulation for BoxedModulation {
-    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
         let Self { mut m, .. } = self;
         m.dyn_calc()
     }
