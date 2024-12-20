@@ -4,6 +4,7 @@ use super::Datagram;
 
 use derive_more::Deref;
 
+/// A wrapper to overwrite parallel threshold of [`Datagram`].
 #[derive(Clone, Deref, Debug)]
 pub struct DatagramWithParallelThreshold<D: Datagram> {
     #[deref]
@@ -27,7 +28,9 @@ impl<D: Datagram> Datagram for DatagramWithParallelThreshold<D> {
     }
 }
 
+/// A trait to convert [`Datagram`] to [`DatagramWithParallelThreshold`].
 pub trait IntoDatagramWithParallelThreshold<D: Datagram> {
+    /// Convert [`Datagram`] to [`DatagramWithParallelThreshold`].
     fn with_parallel_threshold(self, threshold: Option<usize>) -> DatagramWithParallelThreshold<D>;
 }
 

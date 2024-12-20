@@ -48,6 +48,12 @@ pub struct Controller<L: Link> {
 
 impl<L: Link> Controller<L> {
     /// Sends a data to the devices.
+    ///
+    /// If the [`Datagram::timeout`] value is
+    /// - greater than 0, this function waits until the sent data is processed by the device or the specified timeout time elapses. If it cannot be confirmed that the sent data has been processed by the device, [`AUTDDriverError::ConfirmResponseFailed`] is returned.
+    /// - 0, the `send` function does not check whether the sent data has been processed by the device.
+    ///
+    /// The calculation of each [`Datagram`] is executed in parallel for each device if the number of enabled devices is greater than the [`Datagram::parallel_threshold`].
     #[tracing::instrument(level = "debug", skip(self))]
     pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDDriverError> {
         let timeout = s.timeout();

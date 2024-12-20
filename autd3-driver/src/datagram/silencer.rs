@@ -19,48 +19,69 @@ use crate::{
 
 use super::Datagram;
 
-pub trait WithSampling {
-    fn sampling_config_intensity(&self) -> Option<SamplingConfig>;
-    fn sampling_config_phase(&self) -> Option<SamplingConfig>;
+/// Trait to get the sampling from [`Datagram`] with [`SamplingConfig`].
+pub trait HasSamplingConfig {
+    #[doc(hidden)]
+    fn intensity(&self) -> Option<SamplingConfig>;
+    #[doc(hidden)]
+    fn phase(&self) -> Option<SamplingConfig>;
 }
 
 pub trait SilencerConfig: std::fmt::Debug + Clone + Copy {}
 impl SilencerConfig for () {}
 
-#[derive(Debug, Clone, Copy, Builder, PartialEq, Eq)]
+/// To configure the silencer by the completion time.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FixedCompletionTime {
-    #[get]
+    /// The completion time of the intensity change. The value must be multiple of [`ULTRASOUND_PERIOD`].
+    ///
+    /// The larger this value, the more the noise is suppressed.
     pub intensity: Duration,
-    #[get]
+    /// The completion time of the phase change. The value must be multiple of [`ULTRASOUND_PERIOD`].
+    ///
+    /// The larger this value, the more the noise is suppressed.
     pub phase: Duration,
 }
 impl SilencerConfig for FixedCompletionTime {}
 
-#[derive(Debug, Clone, Copy, Builder, PartialEq, Eq)]
+/// To configure the silencer by the update rate.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FixedUpdateRate {
-    #[get]
+    /// The update rate of the intensity change.
+    ///
+    /// The smaller this value, the more the noise is suppressed.
     pub intensity: NonZeroU16,
-    #[get]
+    /// The update rate of the phase change.
+    ///
+    /// The smaller this value, the more the noise is suppressed.
     pub phase: NonZeroU16,
 }
 impl SilencerConfig for FixedUpdateRate {}
 
+/// [`Datagram`] to configure the silencer.
 #[derive(Debug, Clone, Copy, Builder)]
 pub struct Silencer<T: SilencerConfig> {
     #[get]
+    /// Configuration of the silencer.
     config: T,
     strict_mode: bool,
     #[get]
     #[set]
+    /// The target of the silencer.
     target: SilencerTarget,
 }
 
 impl Silencer<()> {
-    pub const DEFAULT_COMPLETION_TIME_INTENSITY: Duration =
-        Duration::from_micros(25 * SILENCER_STEPS_INTENSITY_DEFAULT as u64);
-    pub const DEFAULT_COMPLETION_TIME_PHASE: Duration =
-        Duration::from_micros(25 * SILENCER_STEPS_PHASE_DEFAULT as u64);
+    /// The default completion time of the intensity change.
+    pub const DEFAULT_COMPLETION_TIME_INTENSITY: Duration = Duration::from_micros(
+        ULTRASOUND_PERIOD.as_micros() as u64 * SILENCER_STEPS_INTENSITY_DEFAULT as u64,
+    );
+    /// The default completion time of the phase change.
+    pub const DEFAULT_COMPLETION_TIME_PHASE: Duration = Duration::from_micros(
+        ULTRASOUND_PERIOD.as_micros() as u64 * SILENCER_STEPS_PHASE_DEFAULT as u64,
+    );
 
+    /// Creates a [`Silencer`].
     pub const fn new<T: SilencerConfig>(config: T) -> Silencer<T> {
         Silencer {
             config,
@@ -69,6 +90,7 @@ impl Silencer<()> {
         }
     }
 
+    /// Creates a [`Silencer`] to disable the silencer.
     pub const fn disable() -> Silencer<FixedCompletionTime> {
         Silencer::new(FixedCompletionTime {
             intensity: ULTRASOUND_PERIOD,
@@ -77,39 +99,29 @@ impl Silencer<()> {
     }
 }
 
-impl Silencer<FixedUpdateRate> {
-    pub const fn strict_mode(&self) -> bool {
-        false
-    }
-
-    pub const fn is_valid<T: WithSampling>(&self, _target: &T) -> bool {
-        true
-    }
-}
-
 impl Silencer<FixedCompletionTime> {
+    /// Whether the strict mode is enabled. The default is `true`.
+    ///
+    /// If the strict mode is enabled, an error is returned if the phase/intensity change of [`Modulation`], [`FociSTM`] or [`GainSTM`] cannot be completed within the time specified by the silencer.
     pub const fn strict_mode(&self) -> bool {
         self.strict_mode
     }
 
+    /// Sets the [`strict_mode`].
+    ///
+    /// [`strict_mode`]: Self::strict_mode
     pub const fn with_strict_mode(mut self, strict_mode: bool) -> Self {
         self.strict_mode = strict_mode;
         self
     }
 
-    pub fn is_valid<T: WithSampling>(&self, target: &T) -> bool {
+    /// Validate whether it is safe to use this [`Silencer`] with `target`.
+    pub fn is_valid<T: HasSamplingConfig>(&self, target: &T) -> bool {
         if !self.strict_mode {
             return true;
         }
-
-        let intensity_freq_div = target
-            .sampling_config_intensity()
-            .map_or(Duration::MAX, |c| c.period());
-        let phase_freq_div = target
-            .sampling_config_phase()
-            .map_or(Duration::MAX, |c| c.period());
-
-        self.config.intensity <= intensity_freq_div && self.config.phase <= phase_freq_div
+        self.config.intensity <= target.intensity().map_or(Duration::MAX, |c| c.period())
+            && self.config.phase <= target.phase().map_or(Duration::MAX, |c| c.period())
     }
 }
 
@@ -185,8 +197,8 @@ mod tests {
     #[test]
     fn disable() {
         let s = Silencer::disable();
-        assert_eq!(ULTRASOUND_PERIOD, s.config().intensity());
-        assert_eq!(ULTRASOUND_PERIOD, s.config().phase());
+        assert_eq!(ULTRASOUND_PERIOD, s.config().intensity);
+        assert_eq!(ULTRASOUND_PERIOD, s.config().phase);
         assert!(s.strict_mode());
         assert_eq!(SilencerTarget::Intensity, s.target());
     }
@@ -197,8 +209,8 @@ mod tests {
             intensity: NonZeroU16::new(1).unwrap(),
             phase: NonZeroU16::new(2).unwrap(),
         });
-        assert_eq!(1, s.config().intensity().get());
-        assert_eq!(2, s.config().phase().get());
+        assert_eq!(1, s.config().intensity.get());
+        assert_eq!(2, s.config().phase.get());
         assert_eq!(SilencerTarget::Intensity, s.target());
     }
 
@@ -208,40 +220,9 @@ mod tests {
             intensity: Duration::from_secs(1),
             phase: Duration::from_secs(1),
         });
-        assert_eq!(Duration::from_secs(1), s.config().intensity());
-        assert_eq!(Duration::from_secs(1), s.config().phase());
+        assert_eq!(Duration::from_secs(1), s.config().intensity);
+        assert_eq!(Duration::from_secs(1), s.config().phase);
         assert_eq!(SilencerTarget::Intensity, s.target());
-    }
-
-    #[test]
-    fn fixed_update_rate_strict_mode() {
-        let s = Silencer::new(FixedUpdateRate {
-            intensity: NonZeroU16::new(1).unwrap(),
-            phase: NonZeroU16::new(2).unwrap(),
-        });
-        assert!(!s.strict_mode());
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(FociSTM::new(
-        SamplingConfig::FREQ_4K,
-        [Point3::origin(), Point3::origin()]
-    ).unwrap())]
-    #[case(GainSTM::new(
-        SamplingConfig::FREQ_4K,
-        [TestGain{ data: Default::default() }, TestGain{ data: Default::default() }]
-    ).unwrap())]
-    #[case(TestModulation {
-        config: SamplingConfig::FREQ_4K,
-        loop_behavior: LoopBehavior::infinite(),
-    })]
-    fn fixed_update_rate_is_valid(#[case] target: impl WithSampling) {
-        let s = Silencer::new(FixedUpdateRate {
-            intensity: NonZeroU16::new(1).unwrap(),
-            phase: NonZeroU16::new(2).unwrap(),
-        });
-        assert!(s.is_valid(&target));
     }
 
     #[rstest::rstest]
@@ -266,7 +247,7 @@ mod tests {
         #[case] intensity: u32,
         #[case] phase: u32,
         #[case] strict: bool,
-        #[case] target: impl WithSampling,
+        #[case] target: impl HasSamplingConfig,
     ) {
         let s = Silencer::new(FixedCompletionTime {
             intensity: intensity * ULTRASOUND_PERIOD,

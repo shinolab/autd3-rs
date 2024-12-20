@@ -45,7 +45,8 @@ impl<Context: GainContext + 'static, G: GainContextGenerator<Context = Context>>
     }
 }
 
-pub trait DGain {
+/// A dyn-compatible version of [`Gain`].
+trait DGain {
     fn dyn_init(
         &mut self,
         geometry: &Geometry,
@@ -67,15 +68,21 @@ impl<
     ) -> Result<Box<dyn DGainContextGenerator>, AUTDDriverError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
+        // SAFETY: This function is called only once from `Gain::init`.
         let g = unsafe { tmp.assume_init() };
         Ok(Box::new(g.init(geometry, filter)?) as _)
     }
 
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // SAFETY: This function is never called after `dyn_init`.
         unsafe { self.assume_init_ref() }.fmt(f)
     }
 }
 
+/// Boxed [`Gain`].
+///
+/// Because [`Gain`] traits can have different associated types, it cannot simply be wrapped in a [`Box`] like `Box<dyn Gain>`.
+/// [`BoxedGain`] provides the ability to wrap any [`Gain`] in a common type.
 #[derive(Gain)]
 pub struct BoxedGain {
     g: Box<dyn DGain>,
@@ -107,7 +114,9 @@ impl Gain for BoxedGain {
     }
 }
 
+/// Trait to convert [`Gain`] to [`BoxedGain`].
 pub trait IntoBoxedGain {
+    /// Convert [`Gain`] to [`BoxedGain`].
     fn into_boxed(self) -> BoxedGain;
 }
 

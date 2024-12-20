@@ -101,19 +101,18 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Ok(SamplingConfig::new_nearest(1. * Hz)), 0.5*Hz, 2)]
-    #[case(Ok(SamplingConfig::new_nearest(0.98 * Hz)), 0.49*Hz, 2)]
-    #[case(Ok(SamplingConfig::new_nearest(10. * Hz)), 1.*Hz, 10)]
-    #[case(Ok(SamplingConfig::new_nearest(20. * Hz)), 2.*Hz, 10)]
+    #[case(SamplingConfig::new_nearest(1. * Hz), 0.5*Hz, 2)]
+    #[case(SamplingConfig::new_nearest(0.98 * Hz), 0.49*Hz, 2)]
+    #[case(SamplingConfig::new_nearest(10. * Hz), 1.*Hz, 10)]
+    #[case(SamplingConfig::new_nearest(20. * Hz), 2.*Hz, 10)]
     fn from_freq_nearest(
-        #[case] expect: Result<SamplingConfig, AUTDDriverError>,
+        #[case] expect: SamplingConfig,
         #[case] freq: Freq<f32>,
         #[case] n: usize,
     ) {
         assert_eq!(
             expect,
-            GainSTM::new_nearest(freq, (0..n).map(|_| TestGain::null()))
-                .map(|g| g.sampling_config())
+            GainSTM::new_nearest(freq, (0..n).map(|_| TestGain::null())).sampling_config()
         );
     }
 
@@ -149,29 +148,25 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(
-        Duration::from_millis(1000).try_into(),
+        Duration::from_millis(1000).try_into().unwrap(),
         Duration::from_millis(2000),
         2
     )]
     #[case(
-        Duration::from_millis(100).try_into(),
+        Duration::from_millis(100).try_into().unwrap(),
         Duration::from_millis(1000),
         10
     )]
     #[case(
-        Duration::from_millis(50).try_into(),
+        Duration::from_millis(50).try_into().unwrap(),
         Duration::from_millis(500),
         10
     )]
-    #[case(Duration::from_millis(1000).try_into(), Duration::from_millis(2000) + Duration::from_nanos(1), 2)]
-    fn from_period_nearest(
-        #[case] expect: Result<SamplingConfig, AUTDDriverError>,
-        #[case] p: Duration,
-        #[case] n: usize,
-    ) {
+    #[case(Duration::from_millis(1000).try_into().unwrap(), Duration::from_millis(2000) + Duration::from_nanos(1), 2)]
+    fn from_period_nearest(#[case] expect: SamplingConfig, #[case] p: Duration, #[case] n: usize) {
         assert_eq!(
             expect,
-            GainSTM::new_nearest(p, (0..n).map(|_| TestGain::null())).map(|f| f.sampling_config())
+            GainSTM::new_nearest(p, (0..n).map(|_| TestGain::null())).sampling_config()
         );
     }
 

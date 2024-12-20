@@ -10,11 +10,11 @@ mod modulation;
 
 use proc_macro::TokenStream;
 
-/// A trait to define a custom `Gain`.
+/// A macro to define a custom [`Gain`].
 ///
 /// # Example
 ///
-/// The following example shows how to define a custom `Gain` that generates a single focal point.
+/// The following example shows how to define a custom [`Gain`] that generates a single focal point.
 ///
 /// ```
 /// use autd3_driver::derive::*;
@@ -65,19 +65,20 @@ use proc_macro::TokenStream;
 /// }
 /// ```
 ///
+/// [`Gain`]: https://docs.rs/autd3-driver/latest/autd3_driver/datagram/trait.Gain.html
 #[proc_macro_derive(Gain)]
 pub fn gain_derive(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
     gain::impl_gain_macro(ast)
 }
 
-/// A trait to define a custom `Modulation`.
+/// A macro to define a custom [`Modulation`].
 ///
 /// # Example
 ///
 /// The following example shows how to define a modulation that outputs the maximum value only for a moment.
 ///
-/// `Modulation` structure must have `config: SamplingConfig` and `loop_behavior: LoopBehavior`.
+/// [`Modulation`] struct must have `config: SamplingConfig` and `loop_behavior: LoopBehavior`.
 /// If you add `#[no_change]` attribute to `config`, you can't change the value of `config` except for the constructor.
 ///
 /// ```
@@ -106,6 +107,8 @@ pub fn gain_derive(input: TokenStream) -> TokenStream {
 ///     }
 /// }
 /// ```
+///
+/// [`Modulation`]: https://docs.rs/autd3-driver/latest/autd3_driver/datagram/trait.Modulation.html
 #[proc_macro_derive(Modulation, attributes(no_change))]
 pub fn modulation_derive(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
