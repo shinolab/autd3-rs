@@ -26,7 +26,7 @@ pub trait FociSTMContextGenerator<const N: usize>: std::fmt::Debug {
 pub trait FociSTMGenerator<const N: usize>: std::fmt::Debug {
     type T: FociSTMContextGenerator<N>;
 
-    fn init(self) -> Result<Self::T, AUTDInternalError>;
+    fn init(self) -> Result<Self::T, AUTDDriverError>;
     fn len(&self) -> usize;
 }
 
@@ -62,23 +62,23 @@ impl<const N: usize, G: FociSTMGenerator<N>> FociSTM<N, G> {
     pub fn new(
         config: impl Into<STMConfig>,
         iter: impl IntoFociSTMGenerator<N, G = G>,
-    ) -> Result<Self, AUTDInternalError> {
+    ) -> Result<Self, AUTDDriverError> {
         Self::new_from_sampling_config(config.into(), iter)
     }
 
     pub fn new_nearest(
         config: impl Into<STMConfigNearest>,
         iter: impl IntoFociSTMGenerator<N, G = G>,
-    ) -> Result<Self, AUTDInternalError> {
+    ) -> Result<Self, AUTDDriverError> {
         Self::new_from_sampling_config(config.into(), iter)
     }
 
     fn new_from_sampling_config<T>(
         config: T,
         iter: impl IntoFociSTMGenerator<N, G = G>,
-    ) -> Result<Self, AUTDInternalError>
+    ) -> Result<Self, AUTDDriverError>
     where
-        SamplingConfig: TryFrom<(T, usize), Error = AUTDInternalError>,
+        SamplingConfig: TryFrom<(T, usize), Error = AUTDDriverError>,
     {
         let gen = iter.into();
         Ok(Self {
@@ -135,7 +135,7 @@ impl<const N: usize, G: FociSTMGenerator<N>> DatagramS for FociSTM<N, G> {
         _geometry: &Geometry,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
-    ) -> Result<Self::G, AUTDInternalError> {
+    ) -> Result<Self::G, AUTDDriverError> {
         let size = self.gen.len();
         Ok(FociSTMOperationGenerator {
             gen: self.gen.init()?,

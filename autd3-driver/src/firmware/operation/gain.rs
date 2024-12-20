@@ -1,7 +1,7 @@
 use std::mem::size_of;
 
 use crate::{
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::{
         fpga::{Drive, Segment, TransitionMode},
         operation::{Operation, TypeTag},
@@ -51,7 +51,7 @@ impl<Context: GainContext> Operation for GainOp<Context> {
         size_of::<Gain>() + device.num_transducers() * size_of::<Drive>()
     }
 
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         super::write_to_tx(
             tx,
             Gain {
@@ -59,7 +59,7 @@ impl<Context: GainContext> Operation for GainOp<Context> {
                 segment: self.segment as u8,
                 flag: if let Some(mode) = self.transition {
                     if mode != TransitionMode::Immediate {
-                        return Err(AUTDInternalError::InvalidTransitionMode);
+                        return Err(AUTDDriverError::InvalidTransitionMode);
                     } else {
                         GainControlFlags::UPDATE
                     }
@@ -164,7 +164,7 @@ mod tests {
         });
 
         assert_eq!(
-            Some(AUTDInternalError::InvalidTransitionMode),
+            Some(AUTDDriverError::InvalidTransitionMode),
             op.pack(&device, &mut tx).err()
         );
     }

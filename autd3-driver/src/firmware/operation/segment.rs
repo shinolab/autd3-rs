@@ -1,7 +1,7 @@
 use std::mem::size_of;
 
 use crate::{
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::{
         fpga::{Segment, TransitionMode},
         operation::TypeTag,
@@ -48,7 +48,7 @@ pub struct SwapSegmentOp {
 }
 
 impl Operation for SwapSegmentOp {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         self.is_done = true;
 
         let tag = match self.segment {
@@ -61,7 +61,7 @@ impl Operation for SwapSegmentOp {
         match self.segment {
             SwapSegment::Gain(segment, transition) => {
                 if transition != TransitionMode::Immediate {
-                    return Err(AUTDInternalError::InvalidTransitionMode);
+                    return Err(AUTDDriverError::InvalidTransitionMode);
                 }
                 super::write_to_tx(
                     tx,
@@ -142,7 +142,7 @@ mod tests {
         let mut op = SwapSegmentOp::new(SwapSegment::Gain(Segment::S0, TransitionMode::Ext));
 
         assert_eq!(
-            Some(AUTDInternalError::InvalidTransitionMode),
+            Some(AUTDDriverError::InvalidTransitionMode),
             op.pack(&device, &mut tx).err()
         );
     }

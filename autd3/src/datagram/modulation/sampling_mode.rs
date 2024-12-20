@@ -1,7 +1,7 @@
 use autd3_driver::{
     defined::{Freq, Frequency, Hz, ULTRASOUND_FREQ},
     derive::SamplingConfig,
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::fpga::MOD_BUF_SIZE_MAX,
     utils::float::is_integer,
 };
@@ -20,7 +20,7 @@ pub trait SamplingMode: Clone + Sync + Debug {
     fn validate(
         freq: Self::T,
         sampling_config: SamplingConfig,
-    ) -> Result<(u64, u64), AUTDInternalError>;
+    ) -> Result<(u64, u64), AUTDDriverError>;
 }
 
 /// Exact frequency sampling mode with integer number.
@@ -32,16 +32,16 @@ impl SamplingMode for ExactFreq {
     fn validate(
         freq: Freq<u32>,
         sampling_config: SamplingConfig,
-    ) -> Result<(u64, u64), AUTDInternalError> {
+    ) -> Result<(u64, u64), AUTDDriverError> {
         if freq.hz() as f32 >= sampling_config.freq().hz() / 2. {
-            return Err(AUTDInternalError::ModulationError(format!(
+            return Err(AUTDDriverError::ModulationError(format!(
                 "Frequency ({:?}) is equal to or greater than the Nyquist frequency ({:?})",
                 freq,
                 sampling_config.freq() / 2.
             )));
         }
         if freq.hz() == 0 {
-            return Err(AUTDInternalError::ModulationError(
+            return Err(AUTDDriverError::ModulationError(
                 "Frequency must not be zero. If intentional, Use `Static` instead.".to_string(),
             ));
         }
@@ -63,20 +63,20 @@ impl SamplingMode for ExactFreqFloat {
     fn validate(
         freq: Freq<f32>,
         sampling_config: SamplingConfig,
-    ) -> Result<(u64, u64), AUTDInternalError> {
+    ) -> Result<(u64, u64), AUTDDriverError> {
         if freq.hz() < 0. || freq.hz().is_nan() {
-            return Err(AUTDInternalError::ModulationError(format!(
+            return Err(AUTDDriverError::ModulationError(format!(
                 "Frequency ({:?}) must be valid positive value",
                 freq
             )));
         }
         if freq.hz() == 0. {
-            return Err(AUTDInternalError::ModulationError(
+            return Err(AUTDDriverError::ModulationError(
                 "Frequency must not be zero. If intentional, Use `Static` instead.".to_string(),
             ));
         }
         if freq.hz() >= sampling_config.freq().hz() / 2. {
-            return Err(AUTDInternalError::ModulationError(format!(
+            return Err(AUTDDriverError::ModulationError(format!(
                 "Frequency ({:?}) is equal to or greater than the Nyquist frequency ({:?})",
                 freq,
                 sampling_config.freq() / 2.
@@ -96,7 +96,7 @@ impl SamplingMode for ExactFreqFloat {
             let k = fnd / fs;
             return Ok((n as _, k as _));
         }
-        Err(AUTDInternalError::ModulationError(format!(
+        Err(AUTDDriverError::ModulationError(format!(
             "Frequency ({:?}) cannot be output with the sampling config ({:?}).",
             freq, sampling_config
         )))
@@ -118,10 +118,10 @@ impl SamplingMode for NearestFreq {
     fn validate(
         freq: Freq<f32>,
         sampling_config: SamplingConfig,
-    ) -> Result<(u64, u64), AUTDInternalError> {
+    ) -> Result<(u64, u64), AUTDDriverError> {
         let freq = Self::freq(freq, sampling_config);
         if freq.hz().is_nan() {
-            return Err(AUTDInternalError::ModulationError(format!(
+            return Err(AUTDDriverError::ModulationError(format!(
                 "Frequency ({:?}) must be valid value",
                 freq
             )));

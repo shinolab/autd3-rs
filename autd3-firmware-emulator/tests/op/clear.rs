@@ -29,7 +29,7 @@ struct TestMod {
 }
 
 impl Modulation for TestMod {
-    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
         Ok(vec![u8::MIN; 100])
     }
 }

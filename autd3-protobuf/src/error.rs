@@ -19,7 +19,7 @@ pub enum AUTDProtoBufError {
     #[error("{0}")]
     TokioJoinError(String),
     #[error("{0}")]
-    AUTDInternalError(#[from] autd3_driver::error::AUTDInternalError),
+    AUTDDriverError(#[from] autd3_driver::error::AUTDDriverError),
     #[error("Not supported data")]
     NotSupportedData,
     #[error("Failed to parse data or missing required fields")]
@@ -46,16 +46,16 @@ impl<T> From<std::sync::mpsc::SendError<T>> for AUTDProtoBufError {
     }
 }
 
-impl From<AUTDProtoBufError> for autd3_driver::error::AUTDInternalError {
+impl From<AUTDProtoBufError> for autd3_driver::error::AUTDDriverError {
     fn from(e: AUTDProtoBufError) -> Self {
-        autd3_driver::error::AUTDInternalError::LinkError(e.to_string())
+        autd3_driver::error::AUTDDriverError::LinkError(e.to_string())
     }
 }
 
 #[cfg(feature = "lightweight")]
 impl From<AUTDProtoBufError> for autd3::error::AUTDError {
     fn from(e: AUTDProtoBufError) -> Self {
-        Self::Internal(e.into())
+        Self::Driver(e.into())
     }
 }
 

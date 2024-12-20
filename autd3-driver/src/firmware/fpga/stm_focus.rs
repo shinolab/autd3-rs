@@ -1,4 +1,4 @@
-use crate::{error::AUTDInternalError, geometry::Point3};
+use crate::{error::AUTDDriverError, geometry::Point3};
 
 use super::*;
 use zerocopy::{Immutable, IntoBytes};
@@ -23,7 +23,7 @@ impl STMFocus {
         (x / FOCI_STM_FIXED_NUM_UNIT).round() as i32
     }
 
-    pub(crate) fn create(p: &Point3, intensity_or_offset: u8) -> Result<Self, AUTDInternalError> {
+    pub(crate) fn create(p: &Point3, intensity_or_offset: u8) -> Result<Self, AUTDDriverError> {
         let ix = Self::to_fixed_num(p.x);
         let iy = Self::to_fixed_num(p.y);
         let iz = Self::to_fixed_num(p.z);
@@ -32,7 +32,7 @@ impl STMFocus {
             || !(FOCI_STM_FIXED_NUM_LOWER_Y..=FOCI_STM_FIXED_NUM_UPPER_Y).contains(&iy)
             || !(FOCI_STM_FIXED_NUM_LOWER_Z..=FOCI_STM_FIXED_NUM_UPPER_Z).contains(&iz)
         {
-            return Err(AUTDInternalError::FociSTMPointOutOfRange(p.x, p.y, p.z));
+            return Err(AUTDDriverError::FociSTMPointOutOfRange(p.x, p.y, p.z));
         }
 
         Ok(Self::new()

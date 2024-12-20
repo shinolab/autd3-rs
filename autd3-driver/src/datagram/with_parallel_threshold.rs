@@ -1,4 +1,4 @@
-use crate::{error::AUTDInternalError, geometry::Geometry};
+use crate::{error::AUTDDriverError, geometry::Geometry};
 
 use super::Datagram;
 
@@ -14,7 +14,7 @@ pub struct DatagramWithParallelThreshold<D: Datagram> {
 impl<D: Datagram> Datagram for DatagramWithParallelThreshold<D> {
     type G = D::G;
 
-    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDDriverError> {
         self.datagram.operation_generator(geometry)
     }
 

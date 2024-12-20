@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 pub use crate::firmware::operation::GainContext;
 use crate::{
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::fpga::{Segment, TransitionMode},
     firmware::operation::{GainOp, NullOp, OperationGenerator},
     geometry::{Device, Geometry},
@@ -27,7 +27,7 @@ pub trait Gain: std::fmt::Debug {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDInternalError>;
+    ) -> Result<Self::G, AUTDDriverError>;
 }
 
 pub struct GainOperationGenerator<G: GainContextGenerator> {
@@ -42,7 +42,7 @@ impl<G: GainContextGenerator> GainOperationGenerator<G> {
         geometry: &Geometry,
         segment: Segment,
         transition: Option<TransitionMode>,
-    ) -> Result<Self, AUTDInternalError> {
+    ) -> Result<Self, AUTDDriverError> {
         Ok(Self {
             generator: gain.init(geometry, None)?,
             segment,
@@ -128,7 +128,7 @@ pub mod tests {
             self,
             _geometry: &Geometry,
             _filter: Option<&HashMap<usize, BitVec<u32>>>,
-        ) -> Result<Self::G, AUTDInternalError> {
+        ) -> Result<Self::G, AUTDDriverError> {
             Ok(self)
         }
     }

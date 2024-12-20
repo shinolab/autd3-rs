@@ -1,7 +1,7 @@
 use autd3_driver::{
     autd3_device::AUTD3,
     datagram::*,
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::{cpu::TxMessage, operation::OperationHandler},
     geometry::{Geometry, IntoDevice, Point3},
 };
@@ -27,7 +27,7 @@ pub fn send(
     d: impl Datagram,
     geometry: &Geometry,
     tx: &mut [TxMessage],
-) -> Result<(), AUTDInternalError> {
+) -> Result<(), AUTDDriverError> {
     let _timeout = d.timeout();
     let parallel = geometry.num_devices() > d.parallel_threshold().unwrap_or(4);
     let generator = d.operation_generator(geometry)?;
@@ -39,7 +39,7 @@ pub fn send(
         OperationHandler::pack(&mut op, geometry, tx, parallel)?;
         cpu.send(tx);
         if (cpu.rx().ack() & ERR_BIT) == ERR_BIT {
-            return Err(AUTDInternalError::firmware_err(cpu.rx().ack()));
+            return Err(AUTDDriverError::firmware_err(cpu.rx().ack()));
         }
         assert_eq!(tx[0].header().msg_id, cpu.rx().ack());
     }
@@ -58,8 +58,8 @@ fn send_invalid_tag() {
 
     cpu.send(&tx);
     assert_eq!(
-        Err(AUTDInternalError::firmware_err(ERR_NOT_SUPPORTED_TAG)),
-        Result::<(), AUTDInternalError>::from(&cpu.rx())
+        Err(AUTDDriverError::firmware_err(ERR_NOT_SUPPORTED_TAG)),
+        Result::<(), AUTDDriverError>::from(&cpu.rx())
     );
 }
 
@@ -74,8 +74,8 @@ fn send_invalid_msg_id() {
 
     cpu.send(&tx);
     assert_eq!(
-        Err(AUTDInternalError::firmware_err(ERR_INVALID_MSG_ID)),
-        Result::<(), AUTDInternalError>::from(&cpu.rx())
+        Err(AUTDDriverError::firmware_err(ERR_INVALID_MSG_ID)),
+        Result::<(), AUTDDriverError>::from(&cpu.rx())
     );
 }
 
@@ -142,8 +142,8 @@ fn send_slot_2_err() -> anyhow::Result<()> {
 
     cpu.send(&tx);
     assert_eq!(
-        Err(AUTDInternalError::firmware_err(ERR_NOT_SUPPORTED_TAG)),
-        Result::<(), AUTDInternalError>::from(&cpu.rx())
+        Err(AUTDDriverError::firmware_err(ERR_NOT_SUPPORTED_TAG)),
+        Result::<(), AUTDDriverError>::from(&cpu.rx())
     );
 
     Ok(())

@@ -20,7 +20,7 @@ impl OperationGenerator for SynchronizeOpGenerator {
 impl Datagram for Synchronize {
     type G = SynchronizeOpGenerator;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDDriverError> {
         Ok(SynchronizeOpGenerator {})
     }
 }

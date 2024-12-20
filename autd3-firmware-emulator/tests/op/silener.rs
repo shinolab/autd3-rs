@@ -4,7 +4,7 @@ use autd3_driver::{
     datagram::*,
     defined::ULTRASOUND_PERIOD,
     derive::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::{cpu::TxMessage, fpga::SilencerTarget},
     geometry::Point3,
 };
@@ -97,10 +97,10 @@ fn send_silencer_fixed_completion_time() {
 #[rstest::rstest]
 #[test]
 #[case(Ok(()), 1)]
-#[case(Err(AUTDInternalError::InvalidSilencerSettings), 2)]
+#[case(Err(AUTDDriverError::InvalidSilencerSettings), 2)]
 #[cfg_attr(miri, ignore)]
 fn silencer_completetion_steps_too_large_mod(
-    #[case] expect: Result<(), AUTDInternalError>,
+    #[case] expect: Result<(), AUTDDriverError>,
     #[case] steps_intensity: u32,
 ) -> anyhow::Result<()> {
     use crate::op::modulation::TestModulation;
@@ -141,11 +141,11 @@ fn silencer_completetion_steps_too_large_mod(
 #[rstest::rstest]
 #[test]
 #[case(Ok(()), 1, 1)]
-#[case(Err(AUTDInternalError::InvalidSilencerSettings), 2, 1)]
-#[case(Err(AUTDInternalError::InvalidSilencerSettings), 1, 2)]
+#[case(Err(AUTDDriverError::InvalidSilencerSettings), 2, 1)]
+#[case(Err(AUTDDriverError::InvalidSilencerSettings), 1, 2)]
 #[cfg_attr(miri, ignore)]
 fn silencer_completetion_steps_too_large_stm(
-    #[case] expect: Result<(), AUTDInternalError>,
+    #[case] expect: Result<(), AUTDDriverError>,
     #[case] steps_intensity: u32,
     #[case] steps_phase: u32,
 ) -> anyhow::Result<()> {

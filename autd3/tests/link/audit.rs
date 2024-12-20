@@ -49,7 +49,7 @@ async fn audit_test() -> anyhow::Result<()> {
     {
         autd.link_mut().down();
         assert_eq!(
-            Err(AUTDError::Internal(AUTDInternalError::SendDataFailed)),
+            Err(AUTDDriverError::SendDataFailed),
             autd.send(Static::new()).await
         );
         assert_eq!(Err(AUTDError::ReadFPGAStateFailed), autd.fpga_state().await);
@@ -57,13 +57,11 @@ async fn audit_test() -> anyhow::Result<()> {
         assert!(autd.send(Static::new()).await.is_ok());
         autd.link_mut().break_down();
         assert_eq!(
-            Err(AUTDError::Internal(AUTDInternalError::LinkError(
-                "broken".to_string()
-            ))),
+            Err(AUTDDriverError::LinkError("broken".to_string())),
             autd.send(Static::new()).await
         );
         assert_eq!(
-            Err(AUTDError::Internal(AUTDInternalError::LinkError(
+            Err(AUTDError::Driver(AUTDDriverError::LinkError(
                 "broken".to_string()
             ))),
             autd.fpga_state().await
@@ -76,11 +74,11 @@ async fn audit_test() -> anyhow::Result<()> {
         use autd3_driver::link::Link;
         assert!(autd.link_mut().close().await.is_ok());
         assert_eq!(
-            Err(AUTDError::Internal(AUTDInternalError::LinkClosed)),
+            Err(AUTDDriverError::LinkClosed),
             autd.send(Static::new()).await
         );
         assert_eq!(
-            Err(AUTDError::Internal(AUTDInternalError::LinkClosed)),
+            Err(AUTDError::Driver(AUTDDriverError::LinkClosed)),
             autd.fpga_state().await
         );
     }

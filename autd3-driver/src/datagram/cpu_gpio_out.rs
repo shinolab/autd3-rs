@@ -34,7 +34,7 @@ impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> OperationGenerator for CpuGPIO
 impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> Datagram for CpuGPIO<F> {
     type G = CpuGPIOOutOpGenerator<F>;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDDriverError> {
         Ok(Self::G { f: self.f })
     }
 }

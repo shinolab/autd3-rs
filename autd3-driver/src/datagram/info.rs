@@ -1,6 +1,6 @@
 use crate::{
     datagram::*,
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::operation::{FirmInfoOp, FirmwareVersionType},
     geometry::Geometry,
 };
@@ -23,7 +23,7 @@ impl OperationGenerator for FetchFirmwareInfoOpGenerator {
 impl Datagram for FirmwareVersionType {
     type G = FetchFirmwareInfoOpGenerator;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDDriverError> {
         Ok(Self::G { inner: self })
     }
 }

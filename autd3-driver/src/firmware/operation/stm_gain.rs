@@ -3,7 +3,7 @@
 use std::mem::size_of;
 
 use crate::{
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::{
         cpu::GainSTMMode,
         fpga::{
@@ -103,9 +103,9 @@ impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTM
         }
     }
 
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         if !(STM_BUF_SIZE_MIN..=GAIN_STM_BUF_SIZE_MAX).contains(&self.size) {
-            return Err(AUTDInternalError::GainSTMSizeOutOfRange(self.size));
+            return Err(AUTDDriverError::GainSTMSizeOutOfRange(self.size));
         }
 
         let is_first = self.sent == 0;
@@ -692,15 +692,15 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Err(AUTDInternalError::GainSTMSizeOutOfRange(0)), 0)]
-    #[case(Err(AUTDInternalError::GainSTMSizeOutOfRange(STM_BUF_SIZE_MIN-1)), STM_BUF_SIZE_MIN-1)]
+    #[case(Err(AUTDDriverError::GainSTMSizeOutOfRange(0)), 0)]
+    #[case(Err(AUTDDriverError::GainSTMSizeOutOfRange(STM_BUF_SIZE_MIN-1)), STM_BUF_SIZE_MIN-1)]
     #[case(Ok(()), STM_BUF_SIZE_MIN)]
     #[case(Ok(()), GAIN_STM_BUF_SIZE_MAX)]
     #[case(
-        Err(AUTDInternalError::GainSTMSizeOutOfRange(GAIN_STM_BUF_SIZE_MAX+1)),
+        Err(AUTDDriverError::GainSTMSizeOutOfRange(GAIN_STM_BUF_SIZE_MAX+1)),
         GAIN_STM_BUF_SIZE_MAX+1
     )]
-    fn out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] size: usize) {
+    fn out_of_range(#[case] expected: Result<(), AUTDDriverError>, #[case] size: usize) {
         let send = |n: usize| {
             const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
             let device = create_device(0, NUM_TRANS_IN_UNIT as _);
@@ -723,7 +723,7 @@ mod tests {
                     break;
                 }
             }
-            Result::<(), AUTDInternalError>::Ok(())
+            Result::<(), AUTDDriverError>::Ok(())
         };
         assert_eq!(expected, send(size));
     }

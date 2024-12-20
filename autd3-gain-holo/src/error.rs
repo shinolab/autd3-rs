@@ -1,4 +1,4 @@
-use autd3_driver::error::AUTDInternalError;
+use autd3_driver::error::AUTDDriverError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -14,9 +14,9 @@ pub enum HoloError {
     SVDFailed,
 }
 
-impl From<HoloError> for AUTDInternalError {
+impl From<HoloError> for AUTDDriverError {
     fn from(value: HoloError) -> Self {
-        AUTDInternalError::GainError(value.to_string())
+        AUTDDriverError::GainError(value.to_string())
     }
 }
 
@@ -47,7 +47,7 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn from() {
         let err = HoloError::SolveFailed;
-        let err: AUTDInternalError = err.into();
+        let err: AUTDDriverError = err.into();
         assert_eq!(format!("{}", err), "Failed to solve linear system");
     }
 }

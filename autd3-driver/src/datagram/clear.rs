@@ -20,7 +20,7 @@ impl OperationGenerator for ClearOpGenerator {
 impl Datagram for Clear {
     type G = ClearOpGenerator;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDDriverError> {
         Ok(ClearOpGenerator {})
     }
 }

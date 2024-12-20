@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{
     defined::ULTRASOUND_FREQ,
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::{
         fpga::SilencerTarget,
         operation::{Operation, TypeTag},
@@ -36,17 +36,17 @@ pub struct SilencerFixedCompletionStepsOp {
 }
 
 impl Operation for SilencerFixedCompletionStepsOp {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         let validate = |value: Duration| {
             const NANOSEC: u128 = 1_000_000_000;
             let v = value.as_nanos() * ULTRASOUND_FREQ.hz() as u128;
             let v = if v % NANOSEC == 0 {
                 v / NANOSEC
             } else {
-                return Err(AUTDInternalError::InvalidSilencerCompletionTime(value));
+                return Err(AUTDDriverError::InvalidSilencerCompletionTime(value));
             };
             if v == 0 || v > u16::MAX as _ {
-                return Err(AUTDInternalError::SilencerCompletionTimeOutOfRange(value));
+                return Err(AUTDDriverError::SilencerCompletionTimeOutOfRange(value));
             }
             Ok(v as u16)
         };
@@ -131,37 +131,37 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(
-        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(0)),
+        AUTDDriverError::SilencerCompletionTimeOutOfRange(Duration::from_micros(0)),
         Duration::from_micros(0),
         Duration::from_micros(25)
     )]
     #[case(
-        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(25 * 65536)),
+        AUTDDriverError::SilencerCompletionTimeOutOfRange(Duration::from_micros(25 * 65536)),
         Duration::from_micros(25 * 65536),
         Duration::from_micros(25)
     )]
     #[case(
-        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(0)),
+        AUTDDriverError::SilencerCompletionTimeOutOfRange(Duration::from_micros(0)),
         Duration::from_micros(25),
         Duration::from_micros(0)
     )]
     #[case(
-        AUTDInternalError::SilencerCompletionTimeOutOfRange(Duration::from_micros(25 * 65536)),
+        AUTDDriverError::SilencerCompletionTimeOutOfRange(Duration::from_micros(25 * 65536)),
         Duration::from_micros(25),
         Duration::from_micros(25 * 65536),
     )]
     #[case(
-        AUTDInternalError::InvalidSilencerCompletionTime(Duration::from_micros(26)),
+        AUTDDriverError::InvalidSilencerCompletionTime(Duration::from_micros(26)),
         Duration::from_micros(26),
         Duration::from_micros(50)
     )]
     #[case(
-        AUTDInternalError::InvalidSilencerCompletionTime(Duration::from_micros(51)),
+        AUTDDriverError::InvalidSilencerCompletionTime(Duration::from_micros(51)),
         Duration::from_micros(25),
         Duration::from_micros(51)
     )]
     fn invalid_time(
-        #[case] expected: AUTDInternalError,
+        #[case] expected: AUTDDriverError,
         #[case] time_intensity: Duration,
         #[case] time_phase: Duration,
     ) {

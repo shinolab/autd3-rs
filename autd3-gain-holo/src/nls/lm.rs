@@ -130,7 +130,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for LM<D, B> {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDInternalError> {
+    ) -> Result<Self::G, AUTDDriverError> {
         let g = self
             .backend
             .generate_propagation_matrix(geometry, &self.foci, filter)?;

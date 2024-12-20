@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 
 use autd3_driver::{
     derive::{Builder, Geometry},
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::{
         cpu::{check_if_msg_is_processed, RxMessage, TxMessage},
         operation::{Operation, OperationHandler},
@@ -20,8 +20,6 @@ use sleep::Sleeper;
 pub use sleep::WaitableSleeper;
 pub use sleep::{AsyncSleeper, StdSleeper};
 pub use spin_sleep::{SpinSleeper, SpinStrategy};
-
-use crate::error::AUTDError;
 
 /// Enum representing sleeping strategies for the timer.
 ///
@@ -70,7 +68,7 @@ impl Timer {
         operations: Vec<(impl Operation, impl Operation)>,
         timeout: Option<Duration>,
         parallel_threshold: Option<usize>,
-    ) -> Result<(), AUTDError> {
+    ) -> Result<(), AUTDDriverError> {
         let timeout = timeout.unwrap_or(self.default_timeout);
         let parallel = geometry.parallel(parallel_threshold);
         tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
@@ -114,7 +112,7 @@ impl Timer {
         mut operations: Vec<(impl Operation, impl Operation)>,
         timeout: Duration,
         parallel: bool,
-    ) -> Result<(), AUTDError> {
+    ) -> Result<(), AUTDDriverError> {
         link.update(geometry).await?;
 
         // We prioritize average behavior for the transmission timing. That is, not the interval from the previous transmission, but ensuring that T/`send_interval` transmissions are performed in a sufficiently long time T.
@@ -141,14 +139,14 @@ impl Timer {
         rx: &mut [RxMessage],
         link: &mut impl Link,
         timeout: Duration,
-    ) -> Result<(), AUTDInternalError> {
+    ) -> Result<(), AUTDDriverError> {
         if !link.is_open() {
-            return Err(AUTDInternalError::LinkClosed);
+            return Err(AUTDDriverError::LinkClosed);
         }
 
         tracing::trace!("send: {}", tx.iter().join(", "));
         if !link.send(tx).await? {
-            return Err(AUTDInternalError::SendDataFailed);
+            return Err(AUTDDriverError::SendDataFailed);
         }
         self.wait_msg_processed(sleeper, tx, rx, link, timeout)
             .await
@@ -161,12 +159,12 @@ impl Timer {
         rx: &mut [RxMessage],
         link: &mut impl Link,
         timeout: Duration,
-    ) -> Result<(), AUTDInternalError> {
+    ) -> Result<(), AUTDDriverError> {
         let start = Instant::now();
         let mut receive_timing = start;
         loop {
             if !link.is_open() {
-                return Err(AUTDInternalError::LinkClosed);
+                return Err(AUTDDriverError::LinkClosed);
             }
             let res = link.receive(rx).await?;
             tracing::trace!("recv: {}", rx.iter().join(", "));
@@ -181,13 +179,13 @@ impl Timer {
             sleeper.sleep_until(receive_timing).await;
         }
         rx.iter()
-            .try_fold((), |_, r| Result::<(), AUTDInternalError>::from(r))
+            .try_fold((), |_, r| Result::<(), AUTDDriverError>::from(r))
             .and_then(|e| {
                 if timeout == Duration::ZERO {
                     Ok(())
                 } else {
                     tracing::error!("Failed to confirm the response from the device: {:?}", e);
-                    Err(AUTDInternalError::ConfirmResponseFailed)
+                    Err(AUTDDriverError::ConfirmResponseFailed)
                 }
             })
     }
@@ -208,19 +206,19 @@ mod tests {
 
     #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
     impl Link for MockLink {
-        async fn close(&mut self) -> Result<(), AUTDInternalError> {
+        async fn close(&mut self) -> Result<(), AUTDDriverError> {
             self.is_open = false;
             Ok(())
         }
 
-        async fn send(&mut self, _: &[TxMessage]) -> Result<bool, AUTDInternalError> {
+        async fn send(&mut self, _: &[TxMessage]) -> Result<bool, AUTDDriverError> {
             self.send_cnt += 1;
             Ok(!self.down)
         }
 
-        async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
+        async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
             if self.recv_cnt > 10 {
-                return Err(AUTDInternalError::LinkError("too many".to_owned()));
+                return Err(AUTDDriverError::LinkError("too many".to_owned()));
             }
 
             self.recv_cnt += 1;
@@ -289,7 +287,7 @@ mod tests {
             timer
                 .send_receive(&sleeper, &tx, &mut rx, &mut link, Duration::ZERO)
                 .await,
-            Err(AUTDInternalError::LinkClosed)
+            Err(AUTDDriverError::LinkClosed)
         );
 
         link.is_open = true;
@@ -298,7 +296,7 @@ mod tests {
             timer
                 .send_receive(&sleeper, &tx, &mut rx, &mut link, Duration::ZERO)
                 .await,
-            Err(AUTDInternalError::SendDataFailed)
+            Err(AUTDDriverError::SendDataFailed)
         );
 
         link.down = false;
@@ -348,7 +346,7 @@ mod tests {
         link.recv_cnt = 0;
         link.is_open = false;
         assert_eq!(
-            Err(AUTDInternalError::LinkClosed),
+            Err(AUTDDriverError::LinkClosed),
             timer
                 .wait_msg_processed(&sleeper, &tx, &mut rx, &mut link, Duration::from_millis(10))
                 .await
@@ -358,7 +356,7 @@ mod tests {
         link.is_open = true;
         link.down = true;
         assert_eq!(
-            Err(AUTDInternalError::ConfirmResponseFailed),
+            Err(AUTDDriverError::ConfirmResponseFailed),
             timer
                 .wait_msg_processed(&sleeper, &tx, &mut rx, &mut link, Duration::from_millis(10))
                 .await,
@@ -378,7 +376,7 @@ mod tests {
         link.recv_cnt = 0;
         tx[0].header_mut().msg_id = 20;
         assert_eq!(
-            Err(AUTDInternalError::LinkError("too many".to_owned())),
+            Err(AUTDDriverError::LinkError("too many".to_owned())),
             timer
                 .wait_msg_processed(&sleeper, &tx, &mut rx, &mut link, Duration::from_secs(10))
                 .await

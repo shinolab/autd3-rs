@@ -52,12 +52,12 @@ use crate::{
 };
 use std::time::Duration;
 
-use crate::{error::AUTDInternalError, firmware::operation::OperationGenerator};
+use crate::{error::AUTDDriverError, firmware::operation::OperationGenerator};
 
 pub trait Datagram: std::fmt::Debug {
     type G: OperationGenerator;
 
-    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError>;
+    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDDriverError>;
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)
     }
@@ -99,7 +99,7 @@ pub mod tests {
             _: &Geometry,
             _segment: Segment,
             _transition_mode: Option<TransitionMode>,
-        ) -> Result<Self::G, AUTDInternalError> {
+        ) -> Result<Self::G, AUTDDriverError> {
             Ok(NullOperationGenerator {})
         }
 

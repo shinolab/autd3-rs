@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{error::*, pb::*, traits::*};
 
-use autd3::derive::AUTDInternalError;
+use autd3::derive::AUTDDriverError;
 use autd3_driver::datagram::IntoDatagramWithSegment;
 use tokio::sync::RwLock;
 use tonic::{Request, Response, Status};
@@ -33,7 +33,7 @@ impl<D: autd3_driver::datagram::Datagram> autd3_driver::datagram::Datagram
     fn operation_generator(
         self,
         geometry: &autd3_driver::geometry::Geometry,
-    ) -> Result<Self::G, AUTDInternalError> {
+    ) -> Result<Self::G, AUTDDriverError> {
         self.datagram.operation_generator(geometry)
     }
 

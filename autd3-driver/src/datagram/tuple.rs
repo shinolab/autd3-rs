@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::{
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::operation::{NullOp, OperationGenerator},
     geometry::{Device, Geometry},
 };
@@ -41,7 +41,7 @@ where
 {
     type G = CombinedOperationGenerator<D1::G, D2::G>;
 
-    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDDriverError> {
         Ok(CombinedOperationGenerator {
             o1: self.0.operation_generator(geometry)?,
             o2: self.1.operation_generator(geometry)?,

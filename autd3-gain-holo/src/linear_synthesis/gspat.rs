@@ -52,7 +52,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for GSPAT<D, B> {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDInternalError> {
+    ) -> Result<Self::G, AUTDDriverError> {
         let g = self
             .backend
             .generate_propagation_matrix(geometry, &self.foci, filter)?;
@@ -89,7 +89,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for GSPAT<D, B> {
             Complex::new(0., 0.),
             &mut gamma,
         )?;
-        (0..self.repeat.get()).try_for_each(|_| -> Result<(), AUTDInternalError> {
+        (0..self.repeat.get()).try_for_each(|_| -> Result<(), AUTDDriverError> {
             self.backend.scaled_to_cv(&gamma, &amps, &mut p)?;
             self.backend.gemv_c(
                 Trans::NoTrans,

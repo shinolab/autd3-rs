@@ -31,7 +31,7 @@ impl Gain for Uniform {
         self,
         _geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDInternalError> {
+    ) -> Result<Self::G, AUTDDriverError> {
         Ok(self)
     }
 }

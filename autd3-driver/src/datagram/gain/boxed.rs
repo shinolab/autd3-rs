@@ -2,7 +2,7 @@ use std::{collections::HashMap, mem::MaybeUninit};
 
 use super::{Gain, GainContextGenerator, GainOperationGenerator};
 
-use crate::error::AUTDInternalError;
+use crate::error::AUTDDriverError;
 pub use crate::{
     datagram::DatagramS,
     firmware::{
@@ -50,7 +50,7 @@ pub trait DGain {
         &mut self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Box<dyn DGainContextGenerator>, AUTDInternalError>;
+    ) -> Result<Box<dyn DGainContextGenerator>, AUTDDriverError>;
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
 
@@ -64,7 +64,7 @@ impl<
         &mut self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Box<dyn DGainContextGenerator>, AUTDInternalError> {
+    ) -> Result<Box<dyn DGainContextGenerator>, AUTDDriverError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
         let g = unsafe { tmp.assume_init() };
@@ -99,7 +99,7 @@ impl Gain for BoxedGain {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDInternalError> {
+    ) -> Result<Self::G, AUTDDriverError> {
         let Self { mut g } = self;
         Ok(DynGainContextGenerator {
             g: g.dyn_init(geometry, filter)?,
