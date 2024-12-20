@@ -9,8 +9,16 @@ use crate::{
 pub use sphere::Sphere;
 pub use t4010a1::T4010A1;
 
+/// A trait representing the directivity of ultrasound transducer.
 pub trait Directivity: Send + Sync {
+    /// Calculates the directivity based on the given angle.
+    ///
+    /// # Arguments
+    ///
+    /// * `theta` - The angle between the axial direction and the target direction.
     fn directivity(theta: Angle) -> f32;
+
+    /// Calculates the directivity based on the axial direction and target direction.
     fn directivity_from_dir(axial_direction: &UnitVector3, target: &Vector3) -> f32 {
         Self::directivity(
             (axial_direction.cross(target).norm()).atan2(axial_direction.dot(target)) * rad,
@@ -19,10 +27,10 @@ pub trait Directivity: Send + Sync {
 }
 
 #[cfg(test)]
-pub mod tests {
+pub(crate) mod tests {
     use super::*;
 
-    pub struct TestDirectivity {}
+    pub(crate) struct TestDirectivity {}
 
     impl Directivity for TestDirectivity {
         fn directivity(t: Angle) -> f32 {
