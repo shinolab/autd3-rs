@@ -5,7 +5,7 @@ use autd3_driver::{
 };
 use autd3_firmware_emulator::CPUEmulator;
 
-/// A `Link` that does nothing.
+/// A [`Link`] that does nothing.
 ///
 /// This link is mainly used for explanation.
 pub struct Nop {

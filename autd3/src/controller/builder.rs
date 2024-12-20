@@ -26,11 +26,11 @@ pub struct ControllerBuilder {
     devices: Vec<Device>,
     #[get]
     #[set]
-    /// The default parallel threshold when no threshold is specified for the [`Datagram`](crate::driver::datagram::Datagram) to be sent. The default value is 4.
+    /// The default parallel threshold when no threshold is specified for the [`Datagram`] to be sent. The default value is 4.
     default_parallel_threshold: usize,
     #[set]
     #[get]
-    /// The default timeout when no timeout is specified for the [`Datagram`](crate::driver::datagram::Datagram) to be sent. The default value is 20ms.
+    /// The default timeout when no timeout is specified for the [`Datagram`] to be sent. The default value is 20ms.
     default_timeout: Duration,
     #[get]
     #[set]
@@ -42,7 +42,7 @@ pub struct ControllerBuilder {
     receive_interval: Duration,
     #[get(ref)]
     #[set]
-    /// The strategy used for timing operations. The default value is [`TimerStrategy::Spin`](crate::controller::timer::TimerStrategy::Spin) with the default [`SpinSleeper`](spin_sleep::SpinSleeper).
+    /// The strategy used for timing operations. The default value is [`TimerStrategy::Spin`] with the default [`SpinSleeper`].
     timer_strategy: TimerStrategy,
 }
 
@@ -63,10 +63,7 @@ impl ControllerBuilder {
         }
     }
 
-    /// Equivalent to [`open_with_timeout`] with a timeout of [`DEFAULT_TIMEOUT`].
-    ///
-    /// [`open_with_timeout`]: ControllerBuilder::open_with_timeout
-    /// [`DEFAULT_TIMEOUT`]: autd3_driver::defined::DEFAULT_TIMEOUT
+    /// Equivalent to [`Self::open_with_timeout`] with a timeout of [`DEFAULT_TIMEOUT`].
     pub async fn open<B: LinkBuilder>(
         self,
         link_builder: B,

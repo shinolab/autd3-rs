@@ -7,7 +7,7 @@ use autd3_firmware_emulator::CPUEmulator;
 
 use derive_more::{Deref, DerefMut};
 
-/// A `Link` for testing.
+/// A [`Link`] for testing.
 #[derive(Deref, DerefMut, Builder)]
 pub struct Audit {
     is_open: bool,

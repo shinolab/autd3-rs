@@ -10,11 +10,18 @@
 
 /// [`Controller`] module.
 pub mod controller;
-/// Primitive `Gain`s, `Modulation`s and utilities for `GainSTM` and `FociSTM`.
+/// Primitive [`Gain`], [`Modulation`] and utilities for [`GainSTM`] and [`FociSTM`].
+///
+/// [`Gain`]: autd3_driver::datagram::Gain
+/// [`Modulation`]: autd3_driver::datagram::Modulation
+/// [`GainSTM`]: autd3_driver::datagram::GainSTM
+/// [`FociSTM`]: autd3_driver::datagram::FociSTM
 pub mod datagram;
 /// Error module.
 pub mod error;
-/// Primitive `Link`s.
+/// Primitive [`Link`].
+///
+/// [`Link`]: autd3_driver::link::Link
 pub mod link;
 /// Prelude module.
 pub mod prelude;

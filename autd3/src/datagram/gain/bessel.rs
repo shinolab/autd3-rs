@@ -8,7 +8,7 @@ use derive_new::new;
 
 /// Bessel beam
 ///
-/// This `Gain` generates a Bessel beam. See [Hasegawa, 2017](https://doi.org/10.1063/1.4985159) for more details.
+/// This [`Gain`] generates a Bessel beam. See [Hasegawa, 2017](https://doi.org/10.1063/1.4985159) for more details.
 #[derive(Gain, Clone, PartialEq, Debug, Builder, new)]
 pub struct Bessel {
     #[get(ref)]

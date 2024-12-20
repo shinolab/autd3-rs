@@ -4,7 +4,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use derive_more::Debug;
 
-/// Cache for `Modulation`s
+/// Cache for [`Modulation`]
 #[derive(Modulation, Debug, Builder)]
 pub struct Cache<M: Modulation> {
     m: Rc<RefCell<Option<M>>>,
@@ -28,9 +28,9 @@ impl<M: Modulation> Clone for Cache<M> {
     }
 }
 
-/// Trait to convert `Modulation` to [`Cache`].
+/// Trait to convert [`Modulation`] to [`Cache`].
 pub trait IntoCache<M: Modulation> {
-    /// Convert Modulation to [`Cache`]
+    /// Convert [`Modulation`] to [`Cache`]
     fn with_cache(self) -> Cache<M>;
 }
 

@@ -44,9 +44,6 @@ impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
     ///
     /// - Returns [`AUTDDriverError::UnkownKey`] if the `key` is not specified in the [`Controller::group`].
     /// - Returns [`AUTDDriverError::KeyIsAlreadyUsed`] if the `key` is already used previous [`Group::set`].
-    ///
-    /// [`AUTDDriverError::UnkownKey`]: autd3_driver::error::AUTDDriverError::UnkownKey
-    /// [`AUTDDriverError::KeyIsAlreadyUsed`]: autd3_driver::error::AUTDDriverError::KeyIsAlreadyUsed
     #[tracing::instrument(level = "debug", skip(self))]
     pub fn set<D: Datagram>(self, key: K, data: D) -> Result<Self, AUTDDriverError>
     where
@@ -128,8 +125,6 @@ impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
     /// # Errors
     ///
     /// Returns [`AUTDDriverError::UnusedKey`] if the data is not specified for the key by [`Group::set`].
-    ///
-    /// [`AUTDDriverError::UnusedKey`]: autd3_driver::error::AUTDDriverError::UnusedKey
     #[tracing::instrument(level = "debug", skip(self))]
     pub async fn send(self) -> Result<(), AUTDDriverError> {
         let Self {

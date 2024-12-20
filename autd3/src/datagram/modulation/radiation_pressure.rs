@@ -1,6 +1,6 @@
 use crate::derive::*;
 
-/// `Modulation` for appling modulation to the radiation pressure instead of the acoustic pressure.
+/// [`Modulation`] for appling modulation to the radiation pressure instead of the acoustic pressure.
 #[derive(Modulation, Debug)]
 pub struct RadiationPressure<M: Modulation> {
     m: M,
@@ -19,9 +19,9 @@ impl<M: Modulation> RadiationPressure<M> {
     }
 }
 
-/// Trait to convert `Modulation` to [`RadiationPressure`].
+/// Trait to convert [`Modulation`] to [`RadiationPressure`].
 pub trait IntoRadiationPressure<M: Modulation> {
-    /// Convert Modulation to [`RadiationPressure`]
+    /// Convert [`Modulation`] to [`RadiationPressure`]
     fn with_radiation_pressure(self) -> RadiationPressure<M>;
 }
 

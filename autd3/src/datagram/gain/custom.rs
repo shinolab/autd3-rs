@@ -7,7 +7,7 @@ use autd3_driver::{
 use derive_more::Debug;
 use derive_new::new;
 
-/// `Gain` to use arbitrary phases and intensities
+/// [`Gain`] to use arbitrary phases and intensities
 ///
 /// # Examples
 ///

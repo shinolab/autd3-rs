@@ -7,7 +7,9 @@ pub(crate) trait Sleeper {
     fn sleep_until(&self, deadline: Instant) -> impl std::future::Future<Output = ()>;
 }
 
-/// See [`TimerStrategy`](super::TimerStrategy) for more details.
+/// See [`TimerStrategy`] for more details.
+///
+/// [`TimerStrategy`]: super::TimerStrategy
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StdSleeper {
     /// An optional timer resolution in milliseconds for Windows. The default is `Some(1)`.
@@ -35,7 +37,9 @@ impl Sleeper for SpinSleeper {
     }
 }
 
-/// See [`TimerStrategy`](super::TimerStrategy) for more details.
+/// See [`TimerStrategy`] for more details.
+///
+/// [`TimerStrategy`]: super::TimerStrategy
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AsyncSleeper {
     /// An optional timer resolution in milliseconds for Windows. The default is `Some(1)`.
@@ -64,7 +68,9 @@ pub use win::WaitableSleeper;
 mod win {
     use super::*;
 
-    /// See [`TimerStrategy`](super::super::TimerStrategy) for more details.
+    /// See [`TimerStrategy`] for more details.
+    ///
+    /// [`TimerStrategy`]: super::super::TimerStrategy
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct WaitableSleeper {
         handle: windows::Win32::Foundation::HANDLE,
@@ -74,7 +80,7 @@ mod win {
     unsafe impl Sync for WaitableSleeper {}
 
     impl WaitableSleeper {
-        /// Creates a new `WaitableSleeper`.
+        /// Creates a new [`WaitableSleeper`].
         ///
         /// # Errors
         ///

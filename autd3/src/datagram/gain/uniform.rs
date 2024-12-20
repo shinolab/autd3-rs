@@ -1,7 +1,7 @@
 use autd3_driver::{derive::*, firmware::fpga::Drive};
 use derive_new::new;
 
-/// `Gain` that output uniform phase and intensity
+/// [`Gain`] that output uniform phase and intensity
 #[derive(Gain, Clone, PartialEq, Debug, Builder, new)]
 pub struct Uniform {
     #[get]
