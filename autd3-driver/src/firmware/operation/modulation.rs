@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::{
         fpga::{
             LoopBehavior, SamplingConfig, Segment, TransitionMode, MOD_BUF_SIZE_MAX,
@@ -64,7 +64,7 @@ pub struct ModulationOp {
 }
 
 impl Operation for ModulationOp {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         let is_first = self.sent == 0;
 
         let offset = if is_first {
@@ -85,7 +85,7 @@ impl Operation for ModulationOp {
 
         self.sent += send_num;
         if self.sent > MOD_BUF_SIZE_MAX {
-            return Err(AUTDInternalError::ModulationSizeOutOfRange(self.sent));
+            return Err(AUTDDriverError::ModulationSizeOutOfRange(self.sent));
         }
 
         let mut flag = if self.segment == Segment::S1 {
@@ -96,7 +96,7 @@ impl Operation for ModulationOp {
 
         if self.modulation.len() == self.sent {
             if self.sent < MOD_BUF_SIZE_MIN {
-                return Err(AUTDInternalError::ModulationSizeOutOfRange(self.sent));
+                return Err(AUTDDriverError::ModulationSizeOutOfRange(self.sent));
             }
             self.is_done = true;
             flag.set(ModulationControlFlags::END, true);
@@ -338,15 +338,15 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Err(AUTDInternalError::ModulationSizeOutOfRange(0)), 0)]
-    #[case(Err(AUTDInternalError::ModulationSizeOutOfRange(MOD_BUF_SIZE_MIN-1)), MOD_BUF_SIZE_MIN-1)]
+    #[case(Err(AUTDDriverError::ModulationSizeOutOfRange(0)), 0)]
+    #[case(Err(AUTDDriverError::ModulationSizeOutOfRange(MOD_BUF_SIZE_MIN-1)), MOD_BUF_SIZE_MIN-1)]
     #[case(Ok(()), MOD_BUF_SIZE_MIN)]
     #[case(Ok(()), MOD_BUF_SIZE_MAX)]
     #[case(
-        Err(AUTDInternalError::ModulationSizeOutOfRange(MOD_BUF_SIZE_MAX+1)),
+        Err(AUTDDriverError::ModulationSizeOutOfRange(MOD_BUF_SIZE_MAX+1)),
         MOD_BUF_SIZE_MAX+1
     )]
-    fn out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] size: usize) {
+    fn out_of_range(#[case] expected: Result<(), AUTDDriverError>, #[case] size: usize) {
         let send = |n: usize| {
             const FRAME_SIZE: usize = size_of::<ModulationHead>() + NUM_TRANS_IN_UNIT * 2;
             let device = create_device(0, NUM_TRANS_IN_UNIT as _);
@@ -365,7 +365,7 @@ mod tests {
                     break;
                 }
             }
-            Result::<(), AUTDInternalError>::Ok(())
+            Result::<(), AUTDDriverError>::Ok(())
         };
         assert_eq!(expected, send(size));
     }

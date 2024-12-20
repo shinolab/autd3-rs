@@ -2,14 +2,13 @@ use std::{fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_driver::{
     datagram::Datagram,
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::operation::{Operation, OperationGenerator},
     geometry::Device,
 };
 use itertools::Itertools;
 
 use super::{Controller, Link};
-use crate::prelude::AUTDError;
 
 use tracing;
 
@@ -43,13 +42,13 @@ impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
     ///
     /// # Errors
     ///
-    /// - Returns [`AUTDInternalError::UnkownKey`] if the `key` is not specified in the [`Controller::group`].
-    /// - Returns [`AUTDInternalError::KeyIsAlreadyUsed`] if the `key` is already used previous [`Group::set`].
+    /// - Returns [`AUTDDriverError::UnkownKey`] if the `key` is not specified in the [`Controller::group`].
+    /// - Returns [`AUTDDriverError::KeyIsAlreadyUsed`] if the `key` is already used previous [`Group::set`].
     ///
-    /// [`AUTDInternalError::UnkownKey`]: autd3_driver::error::AUTDInternalError::UnkownKey
-    /// [`AUTDInternalError::KeyIsAlreadyUsed`]: autd3_driver::error::AUTDInternalError::KeyIsAlreadyUsed
+    /// [`AUTDDriverError::UnkownKey`]: autd3_driver::error::AUTDDriverError::UnkownKey
+    /// [`AUTDDriverError::KeyIsAlreadyUsed`]: autd3_driver::error::AUTDDriverError::KeyIsAlreadyUsed
     #[tracing::instrument(level = "debug", skip(self))]
-    pub fn set<D: Datagram>(self, key: K, data: D) -> Result<Self, AUTDInternalError>
+    pub fn set<D: Datagram>(self, key: K, data: D) -> Result<Self, AUTDDriverError>
     where
         <<D as Datagram>::G as OperationGenerator>::O1: 'static,
         <<D as Datagram>::G as OperationGenerator>::O2: 'static,
@@ -67,7 +66,7 @@ impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
             .iter()
             .any(|k| k.as_ref().map(|kk| kk == &key).unwrap_or(false))
         {
-            return Err(AUTDInternalError::UnkownKey(format!("{:?}", key)));
+            return Err(AUTDDriverError::UnkownKey(format!("{:?}", key)));
         }
 
         let timeout = timeout.into_iter().chain(data.timeout()).max();
@@ -105,7 +104,7 @@ impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
             .filter(|(((_, k), _), _)| k.as_ref().is_some_and(|kk| kk == &key))
             .try_for_each(|(((op, _), dev), done)| {
                 if *done {
-                    return Err(AUTDInternalError::KeyIsAlreadyUsed(format!("{:?}", key)));
+                    return Err(AUTDDriverError::KeyIsAlreadyUsed(format!("{:?}", key)));
                 }
                 *done = true;
                 tracing::debug!("Generate operation for device {}", dev.idx());
@@ -128,11 +127,11 @@ impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
     ///
     /// # Errors
     ///
-    /// Returns [`AUTDInternalError::UnusedKey`] if the data is not specified for the key by [`Group::set`].
+    /// Returns [`AUTDDriverError::UnusedKey`] if the data is not specified for the key by [`Group::set`].
     ///
-    /// [`AUTDInternalError::UnusedKey`]: autd3_driver::error::AUTDInternalError::UnusedKey
+    /// [`AUTDDriverError::UnusedKey`]: autd3_driver::error::AUTDDriverError::UnusedKey
     #[tracing::instrument(level = "debug", skip(self))]
-    pub async fn send(self) -> Result<(), AUTDError> {
+    pub async fn send(self) -> Result<(), AUTDDriverError> {
         let Self {
             operations,
             cnt,
@@ -144,13 +143,13 @@ impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
         } = self;
 
         if !done.iter().all(|&d| d) {
-            return Err(AUTDError::Internal(AUTDInternalError::UnusedKey(
+            return Err(AUTDDriverError::UnusedKey(
                 keys.into_iter()
                     .zip(done.into_iter())
                     .filter(|(_, d)| !*d)
                     .map(|(k, _)| format!("{:?}", k.unwrap()))
                     .join(", "),
-            )));
+            ));
         }
 
         cnt.link.trace(timeout, parallel_threshold);
@@ -211,7 +210,7 @@ mod tests {
         datagram::{GainSTM, SwapSegment},
         defined::Hz,
         derive::*,
-        error::AUTDInternalError,
+        error::AUTDDriverError,
         firmware::fpga::{Drive, EmitIntensity, Phase},
     };
 
@@ -219,7 +218,6 @@ mod tests {
         controller::tests::create_controller,
         gain::{Null, Uniform},
         modulation::{Sine, Static},
-        prelude::AUTDError,
     };
 
     #[tokio::test]
@@ -308,7 +306,7 @@ mod tests {
 
         autd.link_mut().down();
         assert_eq!(
-            Err(AUTDError::Internal(AUTDInternalError::SendDataFailed)),
+            Err(AUTDDriverError::SendDataFailed),
             autd.group(|dev| Some(dev.idx()))
                 .set(0, Null::new())?
                 .send()
@@ -323,9 +321,7 @@ mod tests {
         let mut autd = create_controller(2).await?;
 
         assert_eq!(
-            Err(AUTDError::Internal(
-                AUTDInternalError::InvalidSegmentTransition
-            )),
+            Err(AUTDDriverError::InvalidSegmentTransition),
             autd.group(|dev| Some(dev.idx()))
                 .set(0, Null::new())?
                 .set(
@@ -381,7 +377,7 @@ mod tests {
             self,
             geometry: &Geometry,
             _filter: Option<&HashMap<usize, BitVec<u32>>>,
-        ) -> Result<Self::G, AUTDInternalError> {
+        ) -> Result<Self::G, AUTDDriverError> {
             geometry.iter().for_each(|dev| {
                 self.test.lock().unwrap()[dev.idx()] = dev.enable;
             });
@@ -414,7 +410,7 @@ mod tests {
         let mut autd = create_controller(2).await?;
 
         assert_eq!(
-            Some(AUTDInternalError::UnkownKey("2".to_owned())),
+            Some(AUTDDriverError::UnkownKey("2".to_owned())),
             autd.group(|dev| Some(dev.idx()))
                 .set(0, Null::new())?
                 .set(2, Null::new())
@@ -429,7 +425,7 @@ mod tests {
         let mut autd = create_controller(2).await?;
 
         assert_eq!(
-            Some(AUTDInternalError::KeyIsAlreadyUsed("1".to_owned())),
+            Some(AUTDDriverError::KeyIsAlreadyUsed("1".to_owned())),
             autd.group(|dev| Some(dev.idx()))
                 .set(0, Null::new())?
                 .set(1, Null::new())?
@@ -445,9 +441,7 @@ mod tests {
         let mut autd = create_controller(3).await?;
 
         assert_eq!(
-            Some(AUTDError::Internal(AUTDInternalError::UnusedKey(
-                "0, 2".to_owned()
-            ))),
+            Some(AUTDDriverError::UnusedKey("0, 2".to_owned())),
             autd.group(|dev| Some(dev.idx()))
                 .set(1, Null::new())?
                 .send()

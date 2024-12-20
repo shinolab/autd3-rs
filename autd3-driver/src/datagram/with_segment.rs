@@ -3,7 +3,7 @@ use std::time::Duration;
 use super::{Datagram, OperationGenerator};
 use crate::{
     defined::DEFAULT_TIMEOUT,
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::fpga::{Segment, TransitionMode},
     geometry::Geometry,
 };
@@ -25,7 +25,7 @@ pub struct DatagramWithSegment<D: DatagramS> {
 impl<D: DatagramS> Datagram for DatagramWithSegment<D> {
     type G = D::G;
 
-    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDDriverError> {
         self.datagram
             .operation_generator_with_segment(geometry, self.segment, self.transition_mode)
     }
@@ -42,7 +42,7 @@ impl<D: DatagramS> Datagram for DatagramWithSegment<D> {
 impl<D: DatagramS> Datagram for D {
     type G = D::G;
 
-    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDDriverError> {
         self.operation_generator_with_segment(
             geometry,
             Segment::S0,
@@ -67,7 +67,7 @@ pub trait DatagramS: std::fmt::Debug {
         geometry: &Geometry,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
-    ) -> Result<Self::G, AUTDInternalError>;
+    ) -> Result<Self::G, AUTDDriverError>;
 
     fn timeout(&self) -> Option<Duration> {
         Some(DEFAULT_TIMEOUT)

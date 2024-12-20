@@ -1,4 +1,4 @@
-use autd3_driver::error::AUTDInternalError;
+use autd3_driver::error::AUTDDriverError;
 use thiserror::Error;
 
 /// A interface for error handling in autd3.
@@ -11,7 +11,7 @@ pub enum AUTDError {
     /// Failed to read FPGA state.
     #[error("Read FPGA state failed")]
     ReadFPGAStateFailed,
-    /// Internal error.
+    /// Driver error.
     #[error("{0}")]
-    Internal(#[from] AUTDInternalError),
+    Driver(#[from] AUTDDriverError),
 }

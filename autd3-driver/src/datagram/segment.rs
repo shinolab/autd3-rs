@@ -18,7 +18,7 @@ impl OperationGenerator for SwapSegmentOpGenerator {
 impl Datagram for SwapSegment {
     type G = SwapSegmentOpGenerator;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDDriverError> {
         Ok(SwapSegmentOpGenerator { segment: self })
     }
 }

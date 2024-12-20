@@ -2,7 +2,7 @@ use std::mem::size_of;
 
 use crate::{
     defined::{ControlPoints, METER},
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::{
         fpga::{
             LoopBehavior, STMFocus, SamplingConfig, Segment, TransitionMode, FOCI_STM_BUF_SIZE_MAX,
@@ -72,12 +72,12 @@ pub struct FociSTMOp<const N: usize, Context: FociSTMContext<N>> {
 }
 
 impl<const N: usize, Context: FociSTMContext<N>> Operation for FociSTMOp<N, Context> {
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         if N == 0 || N > FOCI_STM_FOCI_NUM_MAX {
-            return Err(AUTDInternalError::FociSTMNumFociOutOfRange(N));
+            return Err(AUTDDriverError::FociSTMNumFociOutOfRange(N));
         }
         if !(STM_BUF_SIZE_MIN..=FOCI_STM_BUF_SIZE_MAX).contains(&self.size) {
-            return Err(AUTDInternalError::FociSTMPointSizeOutOfRange(self.size));
+            return Err(AUTDDriverError::FociSTMPointSizeOutOfRange(self.size));
         }
 
         let is_first = self.sent == 0;
@@ -111,7 +111,7 @@ impl<const N: usize, Context: FociSTMContext<N>> Operation for FociSTMOp<N, Cont
                         )?,
                     );
                     idx += size_of::<STMFocus>();
-                    Result::<_, AUTDInternalError>::Ok(())
+                    Result::<_, AUTDDriverError>::Ok(())
                 })
             })?;
 
@@ -627,18 +627,18 @@ mod tests {
 
         assert_eq!(
             op.pack(&device, &mut tx),
-            Err(AUTDInternalError::FociSTMPointOutOfRange(x, x, x))
+            Err(AUTDDriverError::FociSTMPointOutOfRange(x, x, x))
         );
     }
 
     #[rstest::rstest]
     #[test]
-    #[case(Err(AUTDInternalError::FociSTMPointSizeOutOfRange(0)), 0)]
-    #[case(Err(AUTDInternalError::FociSTMPointSizeOutOfRange(1)), 1)]
+    #[case(Err(AUTDDriverError::FociSTMPointSizeOutOfRange(0)), 0)]
+    #[case(Err(AUTDDriverError::FociSTMPointSizeOutOfRange(1)), 1)]
     #[case(Ok(()), 2)]
     #[case(Ok(()), FOCI_STM_BUF_SIZE_MAX)]
-    #[case(Err(AUTDInternalError::FociSTMPointSizeOutOfRange(FOCI_STM_BUF_SIZE_MAX+1)), FOCI_STM_BUF_SIZE_MAX+1)]
-    fn test_buffer_out_of_range(#[case] expected: Result<(), AUTDInternalError>, #[case] n: usize) {
+    #[case(Err(AUTDDriverError::FociSTMPointSizeOutOfRange(FOCI_STM_BUF_SIZE_MAX+1)), FOCI_STM_BUF_SIZE_MAX+1)]
+    fn test_buffer_out_of_range(#[case] expected: Result<(), AUTDDriverError>, #[case] n: usize) {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
         let mut op = FociSTMOp::new(
@@ -678,7 +678,7 @@ mod tests {
             );
             let mut tx = vec![0x00u8; size_of::<FociSTMHead>()];
             assert_eq!(
-                Err(AUTDInternalError::FociSTMNumFociOutOfRange(0)),
+                Err(AUTDDriverError::FociSTMNumFociOutOfRange(0)),
                 op.pack(&device, &mut tx).map(|_| ())
             );
         }
@@ -748,7 +748,7 @@ mod tests {
                     + 2 * (FOCI_STM_FOCI_NUM_MAX + 1) * size_of::<STMFocus>()
             ];
             assert_eq!(
-                Err(AUTDInternalError::FociSTMNumFociOutOfRange(
+                Err(AUTDDriverError::FociSTMNumFociOutOfRange(
                     FOCI_STM_FOCI_NUM_MAX + 1
                 )),
                 op.pack(&device, &mut tx).map(|_| ())

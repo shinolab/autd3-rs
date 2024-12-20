@@ -1,6 +1,6 @@
 use autd3_driver::{
     datagram::*,
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::{
         cpu::TxMessage,
         operation::{FirmwareVersionType, OperationGenerator, OperationHandler},
@@ -71,8 +71,8 @@ fn invalid_info_type() -> anyhow::Result<()> {
 
     cpu.send(&tx);
     assert_eq!(
-        Err(AUTDInternalError::InvalidInfoType),
-        Result::<(), AUTDInternalError>::from(&cpu.rx())
+        Err(AUTDDriverError::InvalidInfoType),
+        Result::<(), AUTDDriverError>::from(&cpu.rx())
     );
 
     Ok(())

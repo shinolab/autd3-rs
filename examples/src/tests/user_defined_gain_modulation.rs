@@ -31,7 +31,7 @@ impl Gain for MyUniform {
         self,
         _geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDInternalError> {
+    ) -> Result<Self::G, AUTDDriverError> {
         Ok(self)
     }
 }
@@ -52,7 +52,7 @@ impl Burst {
 }
 
 impl Modulation for Burst {
-    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
         Ok((0..4000)
             .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
             .collect())

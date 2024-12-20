@@ -83,7 +83,7 @@ impl Csv {
 }
 
 impl Modulation for Csv {
-    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
         Ok(self.read_buf()?)
     }
 }

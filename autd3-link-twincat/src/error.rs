@@ -1,4 +1,4 @@
-use autd3_driver::error::AUTDInternalError;
+use autd3_driver::error::AUTDDriverError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -24,8 +24,8 @@ pub enum AdsError {
     InvalidIp(String),
 }
 
-impl From<AdsError> for AUTDInternalError {
+impl From<AdsError> for AUTDDriverError {
     fn from(err: AdsError) -> Self {
-        AUTDInternalError::LinkError(err.to_string())
+        AUTDDriverError::LinkError(err.to_string())
     }
 }

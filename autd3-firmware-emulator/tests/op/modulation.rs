@@ -3,7 +3,7 @@ use std::time::Duration;
 use autd3_driver::{
     datagram::{FixedCompletionTime, IntoDatagramWithSegment, Silencer, SwapSegment},
     derive::*,
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::{
         cpu::TxMessage,
@@ -31,7 +31,7 @@ pub struct TestModulation {
 }
 
 impl Modulation for TestModulation {
-    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
         Ok(self.buf.clone())
     }
 }
@@ -161,7 +161,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
 
         assert_eq!(
-            Err(AUTDInternalError::InvalidSilencerSettings),
+            Err(AUTDDriverError::InvalidSilencerSettings),
             send(&mut cpu, d, &geometry, &mut tx)
         )
     }
@@ -194,7 +194,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
 
         let d = SwapSegment::Modulation(Segment::S1, TransitionMode::Immediate);
         assert_eq!(
-            Err(AUTDInternalError::InvalidSilencerSettings),
+            Err(AUTDDriverError::InvalidSilencerSettings),
             send(&mut cpu, d, &geometry, &mut tx)
         );
     }
@@ -218,7 +218,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
         }
         .with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
         assert_eq!(
-            Err(AUTDInternalError::InvalidTransitionMode),
+            Err(AUTDDriverError::InvalidTransitionMode),
             send(&mut cpu, d, &geometry, &mut tx)
         );
     }
@@ -232,7 +232,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
         }
         .with_segment(Segment::S1, Some(TransitionMode::Immediate));
         assert_eq!(
-            Err(AUTDInternalError::InvalidTransitionMode),
+            Err(AUTDDriverError::InvalidTransitionMode),
             send(&mut cpu, d, &geometry, &mut tx)
         );
     }
@@ -249,7 +249,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
 
         let d = SwapSegment::Modulation(Segment::S1, TransitionMode::SyncIdx);
         assert_eq!(
-            Err(AUTDInternalError::InvalidTransitionMode),
+            Err(AUTDDriverError::InvalidTransitionMode),
             send(&mut cpu, d, &geometry, &mut tx)
         );
     }
@@ -260,11 +260,11 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
 #[rstest::rstest]
 #[test]
 #[case(Ok(()), ECAT_DC_SYS_TIME_BASE, ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
-#[case(Err(AUTDInternalError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE, ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN)-autd3_driver::ethercat::EC_CYCLE_TIME_BASE)]
-#[case(Err(AUTDInternalError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(1), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
+#[case(Err(AUTDDriverError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE, ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN)-autd3_driver::ethercat::EC_CYCLE_TIME_BASE)]
+#[case(Err(AUTDDriverError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(1), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
 #[cfg_attr(miri, ignore)]
 fn test_miss_transition_time(
-    #[case] expect: Result<(), AUTDInternalError>,
+    #[case] expect: Result<(), AUTDDriverError>,
     #[case] systime: OffsetDateTime,
     #[case] transition_time: OffsetDateTime,
 ) -> anyhow::Result<()> {

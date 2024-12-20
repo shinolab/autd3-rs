@@ -10,7 +10,7 @@ use crate::{
 
 #[derive(Error, Debug, PartialEq, Clone)]
 #[non_exhaustive]
-pub enum AUTDInternalError {
+pub enum AUTDDriverError {
     #[error(
         "Modulation buffer size ({0}) is out of range ([{min}, {max}])",
         min = MOD_BUF_SIZE_MIN,
@@ -133,18 +133,18 @@ pub enum AUTDInternalError {
     InvalidSilencerSettings,
 }
 
-impl AUTDInternalError {
+impl AUTDDriverError {
     pub const fn firmware_err(ack: u8) -> Self {
         match ack {
-            0x80 => AUTDInternalError::NotSupportedTag,
-            0x81 => AUTDInternalError::InvalidMessageID,
-            0x84 => AUTDInternalError::InvalidInfoType,
-            0x85 => AUTDInternalError::InvalidGainSTMMode,
-            0x88 => AUTDInternalError::InvalidSegmentTransition,
-            0x8B => AUTDInternalError::MissTransitionTime,
-            0x8E => AUTDInternalError::InvalidSilencerSettings,
-            0x8F => AUTDInternalError::InvalidTransitionMode,
-            _ => AUTDInternalError::UnknownFirmwareError(ack),
+            0x80 => AUTDDriverError::NotSupportedTag,
+            0x81 => AUTDDriverError::InvalidMessageID,
+            0x84 => AUTDDriverError::InvalidInfoType,
+            0x85 => AUTDDriverError::InvalidGainSTMMode,
+            0x88 => AUTDDriverError::InvalidSegmentTransition,
+            0x8B => AUTDDriverError::MissTransitionTime,
+            0x8E => AUTDDriverError::InvalidSilencerSettings,
+            0x8F => AUTDDriverError::InvalidTransitionMode,
+            _ => AUTDDriverError::UnknownFirmwareError(ack),
         }
     }
 }
@@ -156,7 +156,7 @@ mod tests {
 
     #[test]
     fn test_unknown_firmware_err() {
-        let err = AUTDInternalError::firmware_err(0xFF);
+        let err = AUTDDriverError::firmware_err(0xFF);
         assert!(err.source().is_none());
         assert_eq!(format!("{}", err), "Unknown firmware error: 255");
         assert_eq!(format!("{:?}", err), "UnknownFirmwareError(255)");

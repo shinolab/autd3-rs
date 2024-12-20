@@ -1,6 +1,6 @@
 use std::num::ParseIntError;
 
-use autd3_driver::error::AUTDInternalError;
+use autd3_driver::error::AUTDDriverError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -15,13 +15,13 @@ pub enum AudioFileError {
     #[error("{0}")]
     Csv(#[from] csv::Error),
     #[error("{0}")]
-    AUTDInternalError(#[from] AUTDInternalError),
+    AUTDDriverError(#[from] AUTDDriverError),
 }
 
 // GRCOV_EXCL_START
-impl From<AudioFileError> for AUTDInternalError {
+impl From<AudioFileError> for AUTDDriverError {
     fn from(value: AudioFileError) -> Self {
-        AUTDInternalError::ModulationError(value.to_string())
+        AUTDDriverError::ModulationError(value.to_string())
     }
 }
 // GRCOV_EXCL_STOP

@@ -7,7 +7,7 @@ use autd3_driver::{
         Datagram, DatagramS, Gain, GainContextGenerator, GainOperationGenerator, IntoBoxedGain,
     },
     defined::rad,
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::{
         cpu::TxMessage,
         fpga::{Drive, EmitIntensity, Phase, Segment, TransitionMode},
@@ -85,7 +85,7 @@ impl Gain for Focus {
         self,
         _geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDInternalError> {
+    ) -> Result<Self::G, AUTDDriverError> {
         Ok(self)
     }
 }

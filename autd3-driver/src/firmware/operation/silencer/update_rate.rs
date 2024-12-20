@@ -1,7 +1,7 @@
 use std::num::NonZeroU16;
 
 use crate::{
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::{
         fpga::SilencerTarget,
         operation::{Operation, TypeTag},
@@ -34,7 +34,7 @@ pub struct SilencerFixedUpdateRateOp {
 }
 
 impl Operation for SilencerFixedUpdateRateOp {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         super::super::write_to_tx(
             tx,
             SilencerFixedUpdateRate {

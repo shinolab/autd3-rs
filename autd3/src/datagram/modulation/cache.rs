@@ -51,7 +51,7 @@ impl<M: Modulation> Cache<M> {
     }
 
     /// Initialize cache.
-    pub fn init(&self) -> Result<(), AUTDInternalError> {
+    pub fn init(&self) -> Result<(), AUTDDriverError> {
         if let Some(m) = self.m.take() {
             tracing::debug!("Initializing cache");
             *self.cache.borrow_mut() = m.calc()?;
@@ -66,7 +66,7 @@ impl<M: Modulation> Cache<M> {
 }
 
 impl<M: Modulation> Modulation for Cache<M> {
-    fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
+    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
         self.init()?;
         let buffer = self.cache().clone();
         Ok(buffer)
@@ -107,7 +107,7 @@ mod tests {
     }
 
     impl Modulation for TestCacheModulation {
-        fn calc(self) -> Result<Vec<u8>, AUTDInternalError> {
+        fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
             Ok(vec![0x00, 0x00])
         }

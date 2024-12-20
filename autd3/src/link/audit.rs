@@ -48,7 +48,7 @@ impl LinkBuilder for AuditBuilder {
     async fn open(
         self,
         geometry: &autd3_driver::geometry::Geometry,
-    ) -> Result<Self::L, AUTDInternalError> {
+    ) -> Result<Self::L, AUTDDriverError> {
         Ok(Audit {
             is_open: true,
             cpus: geometry
@@ -117,14 +117,14 @@ impl Audit {
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
 impl Link for Audit {
-    async fn close(&mut self) -> Result<(), AUTDInternalError> {
+    async fn close(&mut self) -> Result<(), AUTDDriverError> {
         self.is_open = false;
         Ok(())
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDInternalError> {
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
         if self.broken {
-            return Err(AUTDInternalError::LinkError("broken".to_owned()));
+            return Err(AUTDDriverError::LinkError("broken".to_owned()));
         }
 
         if self.down {
@@ -138,9 +138,9 @@ impl Link for Audit {
         Ok(true)
     }
 
-    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDInternalError> {
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
         if self.broken {
-            return Err(AUTDInternalError::LinkError("broken".to_owned()));
+            return Err(AUTDDriverError::LinkError("broken".to_owned()));
         }
 
         if self.down {

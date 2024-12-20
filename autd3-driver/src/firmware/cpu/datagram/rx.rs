@@ -1,4 +1,4 @@
-use crate::{error::AUTDInternalError, firmware::fpga::FPGAState};
+use crate::{error::AUTDDriverError, firmware::fpga::FPGAState};
 use autd3_derive::Builder;
 use derive_more::Display;
 use derive_new::new;
@@ -29,10 +29,10 @@ impl From<&RxMessage> for Option<FPGAState> {
     }
 }
 
-impl From<&RxMessage> for Result<(), AUTDInternalError> {
+impl From<&RxMessage> for Result<(), AUTDDriverError> {
     fn from(msg: &RxMessage) -> Self {
         if msg.ack & 0x80 != 0 {
-            return Err(AUTDInternalError::firmware_err(msg.ack));
+            return Err(AUTDDriverError::firmware_err(msg.ack));
         }
         Ok(())
     }

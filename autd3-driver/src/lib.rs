@@ -21,7 +21,7 @@ pub mod derive {
             ModulationOperationGenerator, ModulationProperty,
         },
         defined::DEFAULT_TIMEOUT,
-        error::AUTDInternalError,
+        error::AUTDDriverError,
         firmware::{
             fpga::{
                 Drive, EmitIntensity, LoopBehavior, Phase, SamplingConfig, Segment, TransitionMode,

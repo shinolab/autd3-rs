@@ -1,7 +1,7 @@
 use std::mem::size_of;
 
 use crate::{
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::{
         fpga::PWE_BUF_SIZE,
         operation::{Operation, TypeTag},
@@ -28,7 +28,7 @@ pub struct PulseWidthEncoderOp<F: Fn(u8) -> u8> {
 }
 
 impl<F: Fn(u8) -> u8 + Send + Sync> Operation for PulseWidthEncoderOp<F> {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         super::write_to_tx(
             tx,
             Pwe {

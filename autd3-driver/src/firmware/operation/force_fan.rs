@@ -1,5 +1,5 @@
 use crate::{
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::operation::{Operation, TypeTag},
     geometry::Device,
 };
@@ -23,7 +23,7 @@ pub struct ForceFanOp {
 }
 
 impl Operation for ForceFanOp {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         super::write_to_tx(
             tx,
             ForceFan {
@@ -35,7 +35,7 @@ impl Operation for ForceFanOp {
         self.is_done = true;
         Ok(size_of::<ForceFan>())
     }
- 
+
     fn required_size(&self, _: &Device) -> usize {
         size_of::<ForceFan>()
     }

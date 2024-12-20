@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use autd3_driver::{
     defined::rad,
     derive::{GainContext, GainContextGenerator, Transducer},
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::fpga::{Drive, Phase},
     geometry::Geometry,
 };
@@ -128,7 +128,7 @@ pub(crate) fn generate_result<T>(
     max_coefficient: f32,
     constraint: EmissionConstraint,
     filter: Option<&HashMap<usize, BitVec<u32>>>,
-) -> Result<HoloContextGenerator<T>, AUTDInternalError>
+) -> Result<HoloContextGenerator<T>, AUTDDriverError>
 where
     T: IntoDrive + Copy + Send + Sync + 'static,
 {

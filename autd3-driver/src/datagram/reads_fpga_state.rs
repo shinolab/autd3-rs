@@ -27,7 +27,7 @@ impl<F: Fn(&Device) -> bool> OperationGenerator for ReadsFPGAStateOpGenerator<F>
 impl<F: Fn(&Device) -> bool> Datagram for ReadsFPGAState<F> {
     type G = ReadsFPGAStateOpGenerator<F>;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDInternalError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDDriverError> {
         Ok(ReadsFPGAStateOpGenerator { f: self.f })
     }
 }

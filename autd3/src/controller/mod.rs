@@ -10,6 +10,7 @@ use std::time::Duration;
 use autd3_driver::{
     datagram::{Clear, Datagram, ForceFan, IntoDatagramWithTimeout, Silencer, Synchronize},
     derive::Builder,
+    error::AUTDDriverError,
     firmware::{
         cpu::{check_if_msg_is_processed, RxMessage, TxMessage},
         fpga::FPGAState,
@@ -48,7 +49,7 @@ pub struct Controller<L: Link> {
 impl<L: Link> Controller<L> {
     /// Sends a data to the devices.
     #[tracing::instrument(level = "debug", skip(self))]
-    pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDError> {
+    pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDDriverError> {
         let timeout = s.timeout();
         let parallel_threshold = s.parallel_threshold();
         self.link.trace(timeout, parallel_threshold);
@@ -80,7 +81,7 @@ impl<L: Link> Controller<L> {
         Ok(self)
     }
 
-    async fn close_impl(&mut self) -> Result<(), AUTDError> {
+    async fn close_impl(&mut self) -> Result<(), AUTDDriverError> {
         tracing::info!("Closing controller");
 
         if !self.link.is_open() {
@@ -93,7 +94,7 @@ impl<L: Link> Controller<L> {
             self.send(Silencer::default().with_strict_mode(false)).await,
             self.send((Static::new(), Null::default())).await,
             self.send(Clear::new()).await,
-            self.link.close().await.map_err(AUTDError::from),
+            self.link.close().await,
         ]
         .into_iter()
         .try_fold((), |_, x| x)
@@ -101,7 +102,7 @@ impl<L: Link> Controller<L> {
 
     /// Closes the controller.
     #[tracing::instrument(level = "debug", skip(self))]
-    pub async fn close(mut self) -> Result<(), AUTDError> {
+    pub async fn close(mut self) -> Result<(), AUTDDriverError> {
         self.close_impl().await
     }
 
@@ -166,8 +167,8 @@ impl<L: Link> Controller<L> {
     /// [`ReadsFPGAState`]: autd3_driver::datagram::ReadsFPGAState
     pub async fn fpga_state(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDError> {
         if !self.link.is_open() {
-            return Err(AUTDError::Internal(
-                autd3_driver::error::AUTDInternalError::LinkClosed,
+            return Err(AUTDError::Driver(
+                autd3_driver::error::AUTDDriverError::LinkClosed,
             ));
         }
         if self.link.receive(&mut self.rx_buf).await? {
@@ -298,7 +299,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn open_failed() {
         assert_eq!(
-            Some(AUTDError::Internal(AUTDInternalError::SendDataFailed)),
+            Some(AUTDError::Driver(AUTDDriverError::SendDataFailed)),
             Controller::builder([AUTD3::new(Point3::origin())])
                 .open(Audit::builder().with_down(true))
                 .await
@@ -395,9 +396,7 @@ mod tests {
             let mut autd = create_controller(1).await?;
             autd.link_mut().break_down();
             assert_eq!(
-                Err(AUTDError::Internal(AUTDInternalError::LinkError(
-                    "broken".to_owned()
-                ))),
+                Err(AUTDDriverError::LinkError("broken".to_owned())),
                 autd.close().await
             );
         }
@@ -405,10 +404,7 @@ mod tests {
         {
             let mut autd = create_controller(1).await?;
             autd.link_mut().down();
-            assert_eq!(
-                Err(AUTDError::Internal(AUTDInternalError::SendDataFailed)),
-                autd.close().await
-            );
+            assert_eq!(Err(AUTDDriverError::SendDataFailed), autd.close().await);
         }
 
         Ok(())

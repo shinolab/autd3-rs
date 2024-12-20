@@ -1,7 +1,7 @@
 use std::mem::size_of;
 
 use crate::{
-    error::AUTDInternalError,
+    error::AUTDDriverError,
     firmware::{
         fpga::DebugValue,
         operation::{Operation, TypeTag},
@@ -29,7 +29,7 @@ pub struct DebugSettingOp {
 }
 
 impl Operation for DebugSettingOp {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDInternalError> {
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         super::write_to_tx(
             tx,
             DebugSetting {
