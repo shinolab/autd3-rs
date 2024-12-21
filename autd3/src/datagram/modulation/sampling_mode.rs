@@ -1,5 +1,5 @@
 use autd3_driver::{
-    defined::{Freq, Frequency, Hz, ULTRASOUND_FREQ},
+    defined::{Freq, Hz, ULTRASOUND_FREQ},
     derive::SamplingConfig,
     error::AUTDDriverError,
     firmware::fpga::MOD_BUF_SIZE_MAX,
@@ -11,7 +11,7 @@ use std::fmt::Debug;
 /// A trait for sampling mode.
 pub trait SamplingMode: Clone + Sync + Debug {
     /// Frequency type
-    type T: Frequency;
+    type T: Clone + Copy + Sync + std::fmt::Debug + PartialEq + PartialOrd;
     /// Calculate the frequency to be output.
     fn freq(freq: Self::T, _sampling_config: SamplingConfig) -> Self::T {
         freq
