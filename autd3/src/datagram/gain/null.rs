@@ -1,7 +1,7 @@
 use autd3_driver::{derive::*, firmware::fpga::Drive};
 use derive_new::new;
 
-/// `Gain` that output nothing
+/// [`Gain`] that output nothing
 #[derive(Gain, Default, Clone, PartialEq, Eq, Debug, new)]
 pub struct Null {}
 

@@ -23,7 +23,7 @@ pub use spin_sleep::{SpinSleeper, SpinStrategy};
 
 /// Enum representing sleeping strategies for the timer.
 ///
-/// The `TimerStrategy` enum provides various strategies for implementing a timer
+/// The [`TimerStrategy`] enum provides various strategies for implementing a timer
 /// with different sleeping mechanisms. This allows for flexibility in how the timer
 /// behaves depending on the target operating system and specific requirements.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -54,7 +54,9 @@ pub struct Timer {
     /// The strategy used for timing operations.
     pub(crate) strategy: TimerStrategy,
     #[get]
-    /// The default timeout when no timeout is specified for the [`Datagram`](crate::driver::datagram::Datagram) to be sent.
+    /// The default timeout when no timeout is specified for the [`Datagram`] to be sent.
+    ///
+    /// [`Datagram`]: autd3_driver::datagram::Datagram
     pub(crate) default_timeout: Duration,
 }
 

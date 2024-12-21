@@ -4,7 +4,7 @@ use autd3_driver::{defined::Freq, derive::*};
 
 use super::resampler::Resampler;
 
-/// `Modulation` to use arbitrary modulation data
+///[`Modulation`] to use arbitrary modulation data
 #[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct Custom {
     buffer: Vec<u8>,
