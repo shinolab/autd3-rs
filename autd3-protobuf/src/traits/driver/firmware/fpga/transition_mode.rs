@@ -1,4 +1,4 @@
-use autd3_driver::ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE};
+use autd3_driver::ethercat::DcSysTime;
 
 use crate::{
     pb::*,
@@ -43,10 +43,7 @@ impl FromMessage<TransitionMode> for autd3_driver::firmware::fpga::TransitionMod
             }
             transition_mode::Mode::SysTime(TransitionModeSysTime { value }) => {
                 autd3_driver::firmware::fpga::TransitionMode::SysTime(
-                    DcSysTime::from_utc(
-                        ECAT_DC_SYS_TIME_BASE + std::time::Duration::from_nanos(value),
-                    )
-                    .unwrap(),
+                    DcSysTime::ZERO + std::time::Duration::from_nanos(value),
                 )
             }
             transition_mode::Mode::Gpio(TransitionModeGpio { value }) => {
@@ -73,7 +70,7 @@ mod tests {
     #[case(autd3_driver::firmware::fpga::TransitionMode::SyncIdx)]
     #[case(
         autd3_driver::firmware::fpga::TransitionMode::SysTime(
-            DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap()
+            DcSysTime::ZERO
                 + std::time::Duration::from_nanos(1)
         ),
     )]

@@ -107,10 +107,7 @@ impl Operation for SwapSegmentOp {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
-        geometry::tests::create_device,
-    };
+    use crate::{ethercat::DcSysTime, geometry::tests::create_device};
 
     use super::*;
 
@@ -154,8 +151,7 @@ mod tests {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let sys_time = DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap()
-            + std::time::Duration::from_nanos(0x0123456789ABCDEF);
+        let sys_time = DcSysTime::ZERO + std::time::Duration::from_nanos(0x0123456789ABCDEF);
         let transition_mode = TransitionMode::SysTime(sys_time);
         let mut op = SwapSegmentOp::new(SwapSegment::Modulation(Segment::S0, transition_mode));
 
@@ -183,8 +179,7 @@ mod tests {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let sys_time = DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap()
-            + std::time::Duration::from_nanos(0x0123456789ABCDEF);
+        let sys_time = DcSysTime::ZERO + std::time::Duration::from_nanos(0x0123456789ABCDEF);
         let transition_mode = TransitionMode::SysTime(sys_time);
         let mut op = SwapSegmentOp::new(SwapSegment::FociSTM(Segment::S0, transition_mode));
 
@@ -212,8 +207,7 @@ mod tests {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let sys_time = DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap()
-            + std::time::Duration::from_nanos(0x0123456789ABCDEF);
+        let sys_time = DcSysTime::ZERO + std::time::Duration::from_nanos(0x0123456789ABCDEF);
         let transition_mode = TransitionMode::SysTime(sys_time);
         let mut op = SwapSegmentOp::new(SwapSegment::GainSTM(Segment::S0, transition_mode));
 
