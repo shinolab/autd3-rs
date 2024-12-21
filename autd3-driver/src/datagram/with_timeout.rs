@@ -6,6 +6,7 @@ use super::Datagram;
 
 use derive_more::Deref;
 
+/// A wrapper to overwrite timeout of [`Datagram`].
 #[derive(Deref, Debug)]
 pub struct DatagramWithTimeout<D: Datagram> {
     #[deref]
@@ -29,7 +30,9 @@ impl<D: Datagram> Datagram for DatagramWithTimeout<D> {
     }
 }
 
+/// A trait to convert [`Datagram`] to [`DatagramWithTimeout`].
 pub trait IntoDatagramWithTimeout<D: Datagram> {
+    /// Convert [`Datagram`] to [`DatagramWithTimeout`].
     fn with_timeout(self, timeout: Option<Duration>) -> DatagramWithTimeout<D>;
 }
 

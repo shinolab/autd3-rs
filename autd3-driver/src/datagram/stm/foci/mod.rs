@@ -14,28 +14,41 @@ pub use crate::firmware::operation::FociSTMContext;
 
 use autd3_derive::Builder;
 use derive_more::{Deref, DerefMut};
-use silencer::WithSampling;
+use silencer::HasSamplingConfig;
 
+/// A trait to generate the [`FociSTMContext`].
 #[allow(clippy::len_without_is_empty)]
 pub trait FociSTMContextGenerator<const N: usize>: std::fmt::Debug {
+    /// [`FociSTMContext`] that generates the sequence of foci.
     type Context: FociSTMContext<N>;
+
+    /// generates the context.
     fn generate(&mut self, device: &Device) -> Self::Context;
 }
 
+/// A trait to generate the [`FociSTMContextGenerator`].
 #[allow(clippy::len_without_is_empty)]
 pub trait FociSTMGenerator<const N: usize>: std::fmt::Debug {
+    /// The type of the context generator.
     type T: FociSTMContextGenerator<N>;
 
+    /// Initializes and returns the context generator.
     fn init(self) -> Result<Self::T, AUTDDriverError>;
+
+    /// Returns the length of the sequence of foci.
     fn len(&self) -> usize;
 }
 
+/// A trait to convert to [`FociSTMGenerator`].
 pub trait IntoFociSTMGenerator<const N: usize> {
+    /// The type of the generator.
     type G: FociSTMGenerator<N>;
 
+    /// Converts to [`FociSTMGenerator`].
     fn into(self) -> Self::G;
 }
 
+/// [`Datagram`] to produce STM by foci.
 #[derive(Clone, Builder, Deref, DerefMut, Debug)]
 pub struct FociSTM<const N: usize, G: FociSTMGenerator<N>> {
     #[deref]
@@ -43,22 +56,19 @@ pub struct FociSTM<const N: usize, G: FociSTMGenerator<N>> {
     gen: G,
     #[get]
     #[set]
+    /// The loop behavior of the STM.
     loop_behavior: LoopBehavior,
     #[get]
+    /// The sampling configuration of the STM.
     sampling_config: SamplingConfig,
 }
 
-impl<const N: usize, G: FociSTMGenerator<N>> WithSampling for FociSTM<N, G> {
-    fn sampling_config_intensity(&self) -> Option<SamplingConfig> {
-        Some(self.sampling_config)
-    }
-
-    fn sampling_config_phase(&self) -> Option<SamplingConfig> {
-        Some(self.sampling_config)
-    }
-}
-
 impl<const N: usize, G: FociSTMGenerator<N>> FociSTM<N, G> {
+    /// Creates a new [`FociSTM`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AUTDDriverError::SamplingFreqOutOfRangeF`], [`AUTDDriverError::SamplingFreqInvalidF`], or [`AUTDDriverError::STMPeriodInvalid`] if the frequency or period cannot be set strictly.
     pub fn new(
         config: impl Into<STMConfig>,
         iter: impl IntoFociSTMGenerator<N, G = G>,
@@ -66,11 +76,12 @@ impl<const N: usize, G: FociSTMGenerator<N>> FociSTM<N, G> {
         Self::new_from_sampling_config(config.into(), iter)
     }
 
+    /// Creates a new [`FociSTM`] with the nearest frequency or period to the specified value.
     pub fn new_nearest(
         config: impl Into<STMConfigNearest>,
         iter: impl IntoFociSTMGenerator<N, G = G>,
-    ) -> Result<Self, AUTDDriverError> {
-        Self::new_from_sampling_config(config.into(), iter)
+    ) -> Self {
+        Self::new_from_sampling_config(config.into(), iter).unwrap()
     }
 
     fn new_from_sampling_config<T>(
@@ -88,12 +99,66 @@ impl<const N: usize, G: FociSTMGenerator<N>> FociSTM<N, G> {
         })
     }
 
+    /// Returns the frequency of the STM.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autd3_driver::datagram::FociSTM;
+    /// # use autd3_driver::defined::Hz;
+    /// # use autd3_driver::firmware::fpga::SamplingConfig;
+    /// # use autd3_driver::geometry::Point3;
+    /// # use autd3_driver::error::AUTDDriverError;
+    /// # fn main() -> Result<(), AUTDDriverError> {
+    /// let stm = FociSTM::new(1.0 * Hz, vec![Point3::origin(), Point3::origin()])?;
+    /// assert_eq!(1.0 * Hz, stm.freq());
+    ///
+    /// let stm = FociSTM::new(std::time::Duration::from_secs(1), vec![Point3::origin(), Point3::origin()])?;
+    /// assert_eq!(1.0 * Hz, stm.freq());
+    ///
+    /// let stm = FociSTM::new(SamplingConfig::new(1.0 * Hz)?, vec![Point3::origin(), Point3::origin()])?;
+    /// assert_eq!(0.5 * Hz, stm.freq());
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn freq(&self) -> Freq<f32> {
         self.sampling_config().freq() / self.gen.len() as f32
     }
 
+    /// Returns the period of the STM.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autd3_driver::datagram::FociSTM;
+    /// # use autd3_driver::defined::Hz;
+    /// # use autd3_driver::firmware::fpga::SamplingConfig;
+    /// # use autd3_driver::geometry::Point3;
+    /// # use autd3_driver::error::AUTDDriverError;
+    /// # fn main() -> Result<(), AUTDDriverError> {
+    /// let stm = FociSTM::new(1.0 * Hz, vec![Point3::origin(), Point3::origin()])?;
+    /// assert_eq!(std::time::Duration::from_secs(1), stm.period());
+    ///
+    /// let stm = FociSTM::new(std::time::Duration::from_secs(1), vec![Point3::origin(), Point3::origin()])?;
+    /// assert_eq!(std::time::Duration::from_secs(1), stm.period());
+    ///
+    /// let stm = FociSTM::new(SamplingConfig::new(1.0 * Hz)?, vec![Point3::origin(), Point3::origin()])?;
+    /// assert_eq!(std::time::Duration::from_secs(2), stm.period());
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn period(&self) -> Duration {
         self.sampling_config().period() * self.gen.len() as u32
+    }
+}
+
+impl<const N: usize, G: FociSTMGenerator<N>> HasSamplingConfig for FociSTM<N, G> {
+    fn intensity(&self) -> Option<SamplingConfig> {
+        Some(self.sampling_config)
+    }
+
+    fn phase(&self) -> Option<SamplingConfig> {
+        Some(self.sampling_config)
     }
 }
 

@@ -3,6 +3,7 @@ use crate::firmware::operation::ClearOp;
 use crate::datagram::*;
 use derive_new::new;
 
+/// [`Datagram`] to clear all data in the devices.
 #[derive(Default, Debug, new)]
 pub struct Clear {}
 

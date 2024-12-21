@@ -4,10 +4,10 @@ use autd3_derive::Builder;
 use derive_more::Debug;
 use derive_new::new;
 
+/// [`Datagram`] to force the fan to run.
 #[derive(Builder, Debug, new)]
 pub struct ForceFan<F: Fn(&Device) -> bool> {
     #[debug(ignore)]
-    #[get(ref)]
     f: F,
 }
 

@@ -6,6 +6,7 @@ use crate::{
 use derive_more::Debug;
 use derive_new::new;
 
+#[doc(hidden)]
 #[derive(Debug, new)]
 pub struct EmulateGPIOIn<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H> {
     #[debug(ignore)]
