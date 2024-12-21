@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use autd3_driver::{
     datagram::{
-        FixedCompletionTime, FociSTM, GainSTM, IntoDatagramWithSegment, Silencer, SwapSegment,
+        ControlPoint, FixedCompletionTime, FociSTM, GainSTM, IntoDatagramWithSegment, Silencer,
+        SwapSegment,
     },
-    defined::ControlPoint,
     derive::*,
     firmware::{
         cpu::{GainSTMMode, TxMessage},
