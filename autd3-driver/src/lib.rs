@@ -1,3 +1,7 @@
+#![warn(missing_docs)]
+#![warn(rustdoc::missing_crate_level_docs)]
+#![warn(rustdoc::unescaped_backticks)]
+
 pub mod acoustics;
 pub mod autd3_device;
 pub mod datagram;

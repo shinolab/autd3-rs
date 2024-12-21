@@ -1,3 +1,4 @@
+/// directivity module
 pub mod directivity;
 
 use crate::{
@@ -7,6 +8,7 @@ use crate::{
 
 use directivity::Directivity;
 
+/// Calculate the pressure at the target position.
 #[inline]
 pub fn propagate<D: Directivity>(
     tr: &Transducer,
