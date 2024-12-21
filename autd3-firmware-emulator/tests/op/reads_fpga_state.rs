@@ -1,6 +1,5 @@
 use autd3_driver::{
     datagram::*,
-    defined::ControlPoint,
     derive::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
     firmware::{cpu::TxMessage, fpga::FPGAState},
     geometry::Point3,

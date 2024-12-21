@@ -10,12 +10,10 @@ use crate::{
             Drive, LoopBehavior, SamplingConfig, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX,
             STM_BUF_SIZE_MIN, TRANSITION_MODE_NONE,
         },
-        operation::{Operation, TypeTag},
+        operation::{write_to_tx, GainContext, Operation, TypeTag},
     },
     geometry::Device,
 };
-
-use super::GainContext;
 
 use derive_new::new;
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout};
@@ -125,7 +123,7 @@ impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTM
                             .chunks_mut(size_of::<Drive>())
                             .zip(device.iter())
                             .for_each(|(dst, tr)| {
-                                super::write_to_tx(dst, g.calc(tr));
+                                write_to_tx(dst, g.calc(tr));
                             });
                         send += 1;
                     }
@@ -182,7 +180,7 @@ impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTM
         );
 
         if is_first {
-            super::write_to_tx(
+            write_to_tx(
                 tx,
                 GainSTMHead {
                     tag: TypeTag::GainSTM,
@@ -198,7 +196,7 @@ impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTM
                 },
             );
         } else {
-            super::write_to_tx(
+            write_to_tx(
                 tx,
                 GainSTMSubseq {
                     tag: TypeTag::GainSTM,

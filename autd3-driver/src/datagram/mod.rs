@@ -19,6 +19,8 @@ mod with_segment;
 mod with_timeout;
 
 pub use super::firmware::operation::SwapSegment;
+#[doc(inline)]
+pub use super::firmware::operation::{ControlPoint, ControlPoints};
 pub use clear::Clear;
 pub use cpu_gpio_out::{CpuGPIO, CpuGPIOPort};
 pub use debug::DebugSettings;

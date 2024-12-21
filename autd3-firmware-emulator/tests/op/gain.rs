@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use autd3_driver::{
     datagram::*,
-    defined::ControlPoint,
     derive::*,
     firmware::{
         cpu::TxMessage,

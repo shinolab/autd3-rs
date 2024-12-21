@@ -4,7 +4,7 @@ use crate::{
     AUTDProtoBufError,
 };
 
-impl ToMessage for autd3_driver::defined::ControlPoint {
+impl ToMessage for autd3_driver::datagram::ControlPoint {
     type Message = ControlPoint;
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
@@ -15,9 +15,9 @@ impl ToMessage for autd3_driver::defined::ControlPoint {
     }
 }
 
-impl FromMessage<ControlPoint> for autd3_driver::defined::ControlPoint {
+impl FromMessage<ControlPoint> for autd3_driver::datagram::ControlPoint {
     fn from_msg(msg: &ControlPoint) -> Result<Self, AUTDProtoBufError> {
-        let mut p = autd3_driver::defined::ControlPoint::from(
+        let mut p = autd3_driver::datagram::ControlPoint::from(
             autd3_driver::geometry::Point3::from_msg(&msg.pos)?,
         );
         if let Some(offset) = msg.offset.as_ref() {
@@ -27,7 +27,7 @@ impl FromMessage<ControlPoint> for autd3_driver::defined::ControlPoint {
     }
 }
 
-impl<const N: usize> ToMessage for autd3_driver::defined::ControlPoints<N> {
+impl<const N: usize> ToMessage for autd3_driver::datagram::ControlPoints<N> {
     type Message = ControlPoints;
 
     fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {

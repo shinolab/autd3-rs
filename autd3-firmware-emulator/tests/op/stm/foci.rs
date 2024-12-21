@@ -2,9 +2,10 @@ use std::{collections::HashMap, time::Duration};
 
 use autd3_driver::{
     datagram::{
-        FixedCompletionTime, FociSTM, GainSTM, IntoDatagramWithSegment, Silencer, SwapSegment,
+        ControlPoint, ControlPoints, FixedCompletionTime, FociSTM, GainSTM,
+        IntoDatagramWithSegment, Silencer, SwapSegment,
     },
-    defined::{mm, ControlPoint, ControlPoints, METER},
+    defined::{mm, METER},
     derive::{LoopBehavior, SamplingConfig, Segment},
     error::AUTDDriverError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
