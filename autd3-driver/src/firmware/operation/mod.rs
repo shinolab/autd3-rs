@@ -12,8 +12,7 @@ mod pulse_width_encoder;
 mod reads_fpga_state;
 mod segment;
 mod silencer;
-mod stm_foci;
-mod stm_gain;
+mod stm;
 mod sync;
 
 pub(crate) use clear::*;
@@ -33,10 +32,8 @@ pub(crate) use reads_fpga_state::*;
 pub use segment::SwapSegment;
 pub(crate) use segment::*;
 pub(crate) use silencer::*;
-pub use stm_foci::FociSTMContext;
-pub(crate) use stm_foci::*;
-pub use stm_gain::GainSTMContext;
-pub(crate) use stm_gain::*;
+pub(crate) use stm::*;
+pub use stm::{ControlPoint, ControlPoints, FociSTMContext, GainSTMContext};
 pub(crate) use sync::*;
 use zerocopy::{Immutable, IntoBytes};
 
@@ -73,12 +70,14 @@ pub(crate) enum TypeTag {
     CpuGPIOOut = 0xF2,
 }
 
+#[doc(hidden)]
 pub trait Operation: Send + Sync {
     fn required_size(&self, device: &Device) -> usize;
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError>;
     fn is_done(&self) -> bool;
 }
 
+#[doc(hidden)]
 pub trait OperationGenerator {
     type O1: Operation;
     type O2: Operation;
@@ -105,6 +104,7 @@ impl Default for Box<dyn Operation> {
     }
 }
 
+#[doc(hidden)]
 pub struct OperationHandler {}
 
 impl OperationHandler {
@@ -185,7 +185,7 @@ pub(crate) fn write_to_tx<T: IntoBytes + Immutable>(tx: &mut [u8], data: T) {
 }
 
 #[cfg(test)]
-pub mod tests {
+pub(crate) mod tests {
 
     use std::mem::size_of;
 

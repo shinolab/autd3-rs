@@ -1,9 +1,9 @@
 use autd3_driver::{
     datagram::{
-        FociSTMContext, FociSTMContextGenerator, FociSTMGenerator, GainSTMContext,
-        GainSTMContextGenerator, GainSTMGenerator, IntoFociSTMGenerator, IntoGainSTMGenerator,
+        ControlPoint, ControlPoints, FociSTMContext, FociSTMContextGenerator, FociSTMGenerator,
+        GainSTMContext, GainSTMContextGenerator, GainSTMGenerator, IntoFociSTMGenerator,
+        IntoGainSTMGenerator,
     },
-    defined::{ControlPoint, ControlPoints},
     derive::{EmitIntensity, Phase},
     geometry::{Point3, Vector3},
 };

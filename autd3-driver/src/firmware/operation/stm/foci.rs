@@ -1,20 +1,22 @@
 use std::mem::size_of;
 
 use crate::{
-    defined::{ControlPoints, METER},
+    defined::METER,
     error::AUTDDriverError,
     firmware::{
         fpga::{
             LoopBehavior, STMFocus, SamplingConfig, Segment, TransitionMode, FOCI_STM_BUF_SIZE_MAX,
             FOCI_STM_FOCI_NUM_MAX, STM_BUF_SIZE_MIN, TRANSITION_MODE_NONE,
         },
-        operation::{Operation, TypeTag},
+        operation::{write_to_tx, Operation, TypeTag},
     },
     geometry::Device,
 };
 
 use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
+
+use super::ControlPoints;
 
 #[derive(Clone, Copy, PartialEq, Debug, IntoBytes, Immutable)]
 #[repr(C)]
@@ -97,13 +99,13 @@ impl<const N: usize, Context: FociSTMContext<N>> Operation for FociSTMOp<N, Cont
             (0..send_num).try_for_each(|_| {
                 let p = self.context.next();
                 let p = p.transform(device.inv());
-                super::write_to_tx(
+                write_to_tx(
                     &mut tx[idx..],
                     STMFocus::create(p[0].point(), p.intensity().value())?,
                 );
                 idx += size_of::<STMFocus>();
                 (1..N).try_for_each(|i| {
-                    super::write_to_tx(
+                    write_to_tx(
                         &mut tx[idx..],
                         STMFocus::create(
                             p[i].point(),
@@ -131,7 +133,7 @@ impl<const N: usize, Context: FociSTMContext<N>> Operation for FociSTMOp<N, Cont
             FociSTMControlFlags::NONE
         };
         if is_first {
-            super::write_to_tx(
+            write_to_tx(
                 tx,
                 FociSTMHead {
                     tag: TypeTag::FociSTM,
@@ -152,7 +154,7 @@ impl<const N: usize, Context: FociSTMContext<N>> Operation for FociSTMOp<N, Cont
             );
             Ok(size_of::<FociSTMHead>() + size_of::<STMFocus>() * send_num * N)
         } else {
-            super::write_to_tx(
+            write_to_tx(
                 tx,
                 FociSTMSubseq {
                     tag: TypeTag::FociSTM,
@@ -189,9 +191,12 @@ mod tests {
 
     use super::*;
     use crate::{
-        defined::{mm, ControlPoint},
+        defined::mm,
         ethercat::DcSysTime,
-        firmware::fpga::{FOCI_STM_FIXED_NUM_UNIT, FOCI_STM_FIXED_NUM_UPPER_X},
+        firmware::{
+            fpga::{FOCI_STM_FIXED_NUM_UNIT, FOCI_STM_FIXED_NUM_UPPER_X},
+            operation::ControlPoint,
+        },
         geometry::{tests::create_device, Point3},
     };
 

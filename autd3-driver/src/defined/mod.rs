@@ -1,5 +1,4 @@
 mod angle;
-mod control_point;
 mod freq;
 
 pub use std::f32::consts::PI;
@@ -16,7 +15,6 @@ mod unit {
 pub use unit::*;
 
 pub use angle::*;
-pub use control_point::*;
 pub use freq::*;
 
 pub const MILLIMETER: f32 = METER / 1000.0;

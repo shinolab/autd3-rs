@@ -1,8 +1,10 @@
 use std::sync::Arc;
 
-use crate::{defined::ControlPoints, error::AUTDDriverError, geometry::Device};
+use crate::{error::AUTDDriverError, geometry::Device};
 
-use super::{FociSTMContext, FociSTMContextGenerator, FociSTMGenerator, IntoFociSTMGenerator};
+use super::{
+    ControlPoints, FociSTMContext, FociSTMContextGenerator, FociSTMGenerator, IntoFociSTMGenerator,
+};
 
 pub struct VecFociSTMContext<const N: usize> {
     foci: Arc<Vec<ControlPoints<N>>>,
