@@ -16,7 +16,7 @@ use zerocopy::FromZeros;
 #[test]
 #[case([DBG_NONE, DBG_BASE_SIG, DBG_THERMO, DBG_FORCE_FAN], [0, 0, 0, 0], [DebugType::None, DebugType::BaseSignal, DebugType::Thermo, DebugType::ForceFan])]
 #[case([DBG_SYNC, DBG_MOD_SEGMENT, DBG_MOD_IDX, DBG_STM_SEGMENT], [0, 0, 0x01, 0], [DebugType::Sync, DebugType::ModSegment, DebugType::ModIdx(0x01), DebugType::StmSegment])]
-#[case([DBG_STM_IDX, DBG_IS_STM_MODE, DBG_SYS_TIME_EQ, DBG_DIRECT], [0x02, 0, 1<<9, 1], [DebugType::StmIdx(0x02), DebugType::IsStmMode, DebugType::SysTimeEq(DcSysTime::from_utc(autd3_driver::ethercat::ECAT_DC_SYS_TIME_BASE + std::time::Duration::from_nanos(50000)).unwrap()), DebugType::Direct(true)])]
+#[case([DBG_STM_IDX, DBG_IS_STM_MODE, DBG_SYS_TIME_EQ, DBG_DIRECT], [0x02, 0, 1<<9, 1], [DebugType::StmIdx(0x02), DebugType::IsStmMode, DebugType::SysTimeEq(DcSysTime::ZERO + std::time::Duration::from_nanos(50000)), DebugType::Direct(true)])]
 #[cfg_attr(miri, ignore)]
 fn send_debug_output_idx(
     #[case] expect_types: [u8; 4],

@@ -192,7 +192,7 @@ impl FPGAEmulator {
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::{ethercat::ECAT_DC_SYS_TIME_BASE, firmware::fpga::GPIOIn};
+    use autd3_driver::firmware::fpga::GPIOIn;
 
     use super::*;
 
@@ -206,7 +206,7 @@ mod tests {
 
         assert_eq!(Segment::S0, fpga.current_mod_segment());
 
-        let sys_time = DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap();
+        let sys_time = DcSysTime::ZERO;
         fpga.mod_swapchain.set(
             sys_time,
             LoopBehavior::once(),
@@ -232,7 +232,7 @@ mod tests {
 
         assert_eq!(Segment::S0, fpga.current_mod_segment());
 
-        let sys_time = DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap();
+        let sys_time = DcSysTime::ZERO;
         fpga.mod_swapchain.set(
             sys_time,
             LoopBehavior::infinite(),
@@ -259,7 +259,7 @@ mod tests {
 
         assert_eq!(Segment::S0, fpga.current_mod_segment());
 
-        let sys_time = DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap();
+        let sys_time = DcSysTime::ZERO;
         fpga.mod_swapchain.set(
             sys_time,
             LoopBehavior::once(),
@@ -286,7 +286,7 @@ mod tests {
         assert_eq!(Segment::S0, fpga.current_mod_segment());
 
         const CYCLE: u32 = 10;
-        let sys_time = DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap() + CYCLE_PERIOD * 5;
+        let sys_time = DcSysTime::ZERO + CYCLE_PERIOD * 5;
         fpga.mod_swapchain.set(
             sys_time,
             LoopBehavior::once(),
@@ -340,7 +340,7 @@ mod tests {
         assert_eq!(Segment::S0, fpga.current_stm_segment());
 
         const CYCLE: u32 = 10;
-        let sys_time = DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap() + CYCLE_PERIOD * 5;
+        let sys_time = DcSysTime::ZERO + CYCLE_PERIOD * 5;
         fpga.stm_swapchain.set(
             sys_time,
             LoopBehavior::once(),
@@ -395,7 +395,7 @@ mod tests {
         assert_eq!(Segment::S0, fpga.current_mod_segment());
 
         const CYCLE: u32 = 10;
-        let sys_time = DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap() + CYCLE_PERIOD * 5;
+        let sys_time = DcSysTime::ZERO + CYCLE_PERIOD * 5;
         fpga.mod_swapchain.set(
             sys_time,
             LoopBehavior::once(),
@@ -455,7 +455,7 @@ mod tests {
         assert_eq!(Segment::S0, fpga.current_mod_segment());
 
         const CYCLE: u32 = 10;
-        let sys_time = DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap() + CYCLE_PERIOD * 5;
+        let sys_time = DcSysTime::ZERO + CYCLE_PERIOD * 5;
         fpga.mod_swapchain.set(
             sys_time,
             LoopBehavior::once(),
@@ -500,7 +500,7 @@ mod tests {
         assert_eq!(Segment::S0, fpga.current_mod_segment());
 
         const CYCLE: u32 = 10;
-        let sys_time = DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap();
+        let sys_time = DcSysTime::ZERO;
         fpga.mod_swapchain.set(
             sys_time,
             LoopBehavior::infinite(),
