@@ -5,8 +5,6 @@ pub struct Hz;
 #[allow(non_camel_case_types)]
 pub struct kHz;
 
-pub trait Frequency: Clone + Copy + Sync + std::fmt::Debug + PartialEq + PartialOrd {}
-
 use derive_more::{Add, Debug, Div, Mul, Sub};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Add, Div, Mul, Sub, Debug)]
