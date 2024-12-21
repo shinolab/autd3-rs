@@ -1,6 +1,6 @@
 use autd3_driver::{
     derive::{LoopBehavior, Segment, TransitionMode},
-    ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
+    ethercat::DcSysTime,
     firmware::fpga::{Drive, GPIOIn},
 };
 
@@ -52,7 +52,7 @@ impl FPGAEmulator {
         match self.mem.controller_bram()[ADDR_STM_TRANSITION_MODE] as u8 {
             TRANSITION_MODE_SYNC_IDX => TransitionMode::SyncIdx,
             TRANSITION_MODE_SYS_TIME => TransitionMode::SysTime(
-                DcSysTime::from_utc(ECAT_DC_SYS_TIME_BASE).unwrap()
+                DcSysTime::ZERO
                     + std::time::Duration::from_nanos(Memory::read_bram_as::<u64>(
                         &self.mem.controller_bram(),
                         ADDR_STM_TRANSITION_VALUE_0,
