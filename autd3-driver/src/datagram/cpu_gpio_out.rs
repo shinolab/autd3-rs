@@ -5,6 +5,7 @@ use crate::datagram::*;
 use derive_more::Debug;
 use derive_new::new;
 
+#[doc(hidden)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, new)]
 pub struct CpuGPIOPort {
     pub pa5: bool,
@@ -12,6 +13,7 @@ pub struct CpuGPIOPort {
 }
 
 #[derive(Debug, new)]
+#[doc(hidden)]
 pub struct CpuGPIO<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> {
     #[debug(ignore)]
     f: F,

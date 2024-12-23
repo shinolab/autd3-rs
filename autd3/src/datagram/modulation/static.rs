@@ -1,6 +1,6 @@
 use autd3_driver::derive::*;
 
-/// `Modulation` struct for no modulation
+/// [`Modulation`] for no modulation
 #[derive(Modulation, Clone, Debug, PartialEq, Builder)]
 pub struct Static {
     #[get]
@@ -33,7 +33,6 @@ impl Modulation for Static {
         Ok(vec![intensity; 2])
     }
 }
-
 
 impl Default for Static {
     fn default() -> Self {

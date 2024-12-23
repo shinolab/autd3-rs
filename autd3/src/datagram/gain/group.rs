@@ -16,7 +16,9 @@ use std::{
 use derive_more::Debug;
 use derive_new::new;
 
-/// `Gain` for grouping transducers and sending different `Gain` to each group.
+/// [`Gain`] for grouping transducers and sending different [`Gain`] to each group.
+///
+/// If grouping by device is sufficient, [`Controller::group`] is recommended.
 ///
 /// # Examples
 ///
@@ -30,6 +32,8 @@ use derive_new::new;
 /// # Ok(())
 /// # }
 /// ```
+///
+/// [`Controller::group`]: crate::controller::Controller::group
 #[derive(Gain, Builder, Debug, new)]
 pub struct Group<K, FK, F>
 where
@@ -49,13 +53,11 @@ where
     FK: Fn(&Transducer) -> Option<K> + Send + Sync,
     F: Fn(&Device) -> FK + Send + Sync,
 {
-    /// Set the `Gain` to the transducers corresponding to the `key`.
+    /// Set the [`Gain`] to the transducers corresponding to the `key`.
     ///
     /// # Errors
     ///
     /// Returns [`AUTDDriverError::KeyIsAlreadyUsed`] if the `key` is already used previous [`Group::set`].
-    ///
-    /// [`AUTDDriverError::KeyIsAlreadyUsed`]: autd3_driver::error::AUTDDriverError::KeyIsAlreadyUsed
     #[allow(clippy::map_entry)] // https://github.com/rust-lang/rust-clippy/issues/9925
     pub fn set(mut self, key: K, gain: impl IntoBoxedGain) -> Result<Self, AUTDDriverError> {
         if self.gain_map.contains_key(&key) {

@@ -11,14 +11,41 @@ use crate::{
 use autd3_derive::Builder;
 use derive_more::Deref;
 
-#[derive(Builder, Clone, Deref, Debug)]
+/// [`DatagramS`] represents a [`Datagram`] that can specify [`Segment`] to write the data.
+pub trait DatagramS: std::fmt::Debug {
+    #[doc(hidden)]
+    type G: OperationGenerator;
 
+    #[doc(hidden)]
+    fn operation_generator_with_segment(
+        self,
+        geometry: &Geometry,
+        segment: Segment,
+        transition_mode: Option<TransitionMode>,
+    ) -> Result<Self::G, AUTDDriverError>;
+
+    /// Returns the timeout duration.
+    fn timeout(&self) -> Option<Duration> {
+        Some(DEFAULT_TIMEOUT)
+    }
+
+    /// Returns the parallel threshold.
+    fn parallel_threshold(&self) -> Option<usize> {
+        Some(usize::MAX)
+    }
+}
+
+/// A wrapper to set [`Segment`] of [`DatagramS`].
+#[derive(Builder, Clone, Deref, Debug)]
 pub struct DatagramWithSegment<D: DatagramS> {
     #[deref]
     datagram: D,
     #[get]
+    /// Segment to write the data.
     segment: Segment,
     #[get]
+    /// Transition mode. If `None`, the data is written to the segment, but the transition does not occur.     
+    /// See [`TransitionMode`] for details.
     transition_mode: Option<TransitionMode>,
 }
 
@@ -59,26 +86,9 @@ impl<D: DatagramS> Datagram for D {
     }
 }
 
-pub trait DatagramS: std::fmt::Debug {
-    type G: OperationGenerator;
-
-    fn operation_generator_with_segment(
-        self,
-        geometry: &Geometry,
-        segment: Segment,
-        transition_mode: Option<TransitionMode>,
-    ) -> Result<Self::G, AUTDDriverError>;
-
-    fn timeout(&self) -> Option<Duration> {
-        Some(DEFAULT_TIMEOUT)
-    }
-
-    fn parallel_threshold(&self) -> Option<usize> {
-        Some(usize::MAX)
-    }
-}
-
+/// A trait to convert [`DatagramS`] to [`DatagramWithSegment`].
 pub trait IntoDatagramWithSegment<D: DatagramS> {
+    /// Convert [`DatagramS`] to [`DatagramWithSegment`].
     fn with_segment(
         self,
         segment: Segment,

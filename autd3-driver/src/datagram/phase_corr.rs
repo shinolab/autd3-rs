@@ -8,10 +8,20 @@ use autd3_derive::Builder;
 use derive_more::Debug;
 use derive_new::new;
 
+/// [`Datagram`] to apply phase correction.
+///
+/// The phase value set here is added to the phase value by [`Gain`], [`FociSTM`], and [`GainSTM`].
+///
+/// # Example
+///
+/// ```
+/// # use autd3_driver::datagram::PhaseCorrection;
+/// # use autd3_driver::derive::Phase;
+/// PhaseCorrection::new(|_dev| |_tr| Phase::PI);
+/// ```
 #[derive(Builder, Debug, new)]
 pub struct PhaseCorrection<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
     #[debug(ignore)]
-    #[get(ref)]
     f: F,
 }
 

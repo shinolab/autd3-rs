@@ -1,5 +1,6 @@
 use super::*;
 
+/// Sphere directivity model.
 pub struct Sphere {}
 
 impl Directivity for Sphere {

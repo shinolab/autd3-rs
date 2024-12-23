@@ -7,7 +7,7 @@ use autd3_driver::{
 use derive_more::Debug;
 use derive_new::new;
 
-/// `Gain` to use arbitrary phases and intensities
+/// [`Gain`] to use arbitrary phases and intensities
 ///
 /// # Examples
 ///
@@ -19,12 +19,12 @@ use derive_new::new;
 /// ```
 #[derive(Gain, Debug, new)]
 #[debug("Custom (Gain)")]
-pub struct Custom<
-    'a,
+pub struct Custom<'a, D, FT, F>
+where
     D: Into<Drive>,
     FT: Fn(&Transducer) -> D + Send + Sync + 'static,
     F: Fn(&Device) -> FT + 'a,
-> {
+{
     f: F,
     _phantom: std::marker::PhantomData<&'a ()>,
 }

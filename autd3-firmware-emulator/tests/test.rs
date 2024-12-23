@@ -5,10 +5,7 @@ use autd3_driver::{
     firmware::{cpu::TxMessage, operation::OperationHandler},
     geometry::{Geometry, IntoDevice, Point3},
 };
-use autd3_firmware_emulator::{
-    cpu::params::{ERR_BIT, ERR_INVALID_MSG_ID, ERR_NOT_SUPPORTED_TAG},
-    CPUEmulator,
-};
+use autd3_firmware_emulator::{cpu::params::ERR_BIT, CPUEmulator};
 use zerocopy::FromZeros;
 
 mod op;
@@ -58,7 +55,7 @@ fn send_invalid_tag() {
 
     cpu.send(&tx);
     assert_eq!(
-        Err(AUTDDriverError::firmware_err(ERR_NOT_SUPPORTED_TAG)),
+        Err(AUTDDriverError::NotSupportedTag),
         Result::<(), AUTDDriverError>::from(&cpu.rx())
     );
 }
@@ -74,7 +71,7 @@ fn send_invalid_msg_id() {
 
     cpu.send(&tx);
     assert_eq!(
-        Err(AUTDDriverError::firmware_err(ERR_INVALID_MSG_ID)),
+        Err(AUTDDriverError::InvalidMessageID),
         Result::<(), AUTDDriverError>::from(&cpu.rx())
     );
 }
@@ -142,7 +139,7 @@ fn send_slot_2_err() -> anyhow::Result<()> {
 
     cpu.send(&tx);
     assert_eq!(
-        Err(AUTDDriverError::firmware_err(ERR_NOT_SUPPORTED_TAG)),
+        Err(AUTDDriverError::NotSupportedTag),
         Result::<(), AUTDDriverError>::from(&cpu.rx())
     );
 

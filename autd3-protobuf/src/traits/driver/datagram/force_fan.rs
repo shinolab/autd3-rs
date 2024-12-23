@@ -13,8 +13,10 @@ impl<F: Fn(&Device) -> bool> ToMessage for autd3_driver::datagram::ForceFan<F> {
         Self::Message {
             datagram: Some(datagram::Datagram::ForceFan(ForceFan {
                 value: geometry
-                    .map(|g| g.iter().map(|d| (self.f())(d)).collect::<Vec<bool>>())
-                    .unwrap_or_default(),
+                    .unwrap()
+                    .iter()
+                    .map(|d| (self.f())(d))
+                    .collect::<Vec<bool>>(),
             })),
             timeout: None,
             parallel_threshold: None,

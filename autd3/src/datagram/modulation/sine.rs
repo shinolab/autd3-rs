@@ -35,7 +35,7 @@ pub struct Sine<S: SamplingMode> {
 }
 
 impl Sine<ExactFreq> {
-    /// Create new [`Sine`] modulation with exact frequency.
+    /// Creates a new [`Sine`] modulation with exact frequency.
     ///
     /// # Examples
     ///
@@ -58,7 +58,7 @@ impl Sine<ExactFreq> {
         }
     }
 
-    /// Create new [`Sine`] modulation with nearest frequency.
+    /// Creates a new [`Sine`] with the nearest frequency to the specified value of the possible values.
     pub const fn new_nearest(freq: Freq<f32>) -> Sine<NearestFreq> {
         Sine {
             freq,

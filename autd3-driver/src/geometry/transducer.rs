@@ -4,19 +4,23 @@ use super::{Isometry, Point3};
 
 use derive_new::new;
 
+/// A ultrasound transducer.
 #[derive(Clone, Debug, PartialEq, Builder, new)]
 pub struct Transducer {
     idx: u8,
     dev_idx: u16,
     #[get(ref)]
+    /// The position of the transducer.
     position: Point3,
 }
 
 impl Transducer {
+    /// Gets the local index of the transducer.
     pub const fn idx(&self) -> usize {
         self.idx as _
     }
 
+    /// Gets the index of the device to which this transducer belongs.
     pub const fn dev_idx(&self) -> usize {
         self.dev_idx as _
     }

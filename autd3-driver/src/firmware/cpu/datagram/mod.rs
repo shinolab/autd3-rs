@@ -4,6 +4,7 @@ mod tx;
 pub use rx::RxMessage;
 pub use tx::TxMessage;
 
+#[doc(hidden)]
 pub fn check_if_msg_is_processed<'a>(
     tx: &'a [TxMessage],
     rx: &'a [RxMessage],

@@ -7,6 +7,7 @@ use zerocopy::{FromBytes, Immutable, IntoBytes};
 const READS_FPGA_STATE_ENABLED_BIT: u8 = 7;
 const READS_FPGA_STATE_ENABLED: u8 = 1 << READS_FPGA_STATE_ENABLED_BIT;
 
+/// PDO input data representation
 #[derive(
     Clone, Copy, PartialEq, Eq, Debug, new, Builder, IntoBytes, Immutable, FromBytes, Display,
 )]
@@ -14,8 +15,10 @@ const READS_FPGA_STATE_ENABLED: u8 = 1 << READS_FPGA_STATE_ENABLED_BIT;
 #[repr(C)]
 pub struct RxMessage {
     #[get]
+    /// Received data
     data: u8,
     #[get]
+    /// Acknowledgement
     ack: u8,
 }
 

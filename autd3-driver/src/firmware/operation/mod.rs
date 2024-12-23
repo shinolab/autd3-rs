@@ -213,7 +213,7 @@ pub(crate) mod tests {
 
         fn pack(&mut self, _: &Device, _: &mut [u8]) -> Result<usize, AUTDDriverError> {
             if self.broken {
-                return Err(AUTDDriverError::NotSupported("test".to_owned()));
+                return Err(AUTDDriverError::LinkError("test".to_owned()));
             }
             self.num_frames -= 1;
             Ok(self.pack_size)
@@ -387,7 +387,7 @@ pub(crate) mod tests {
         let mut tx = vec![TxMessage::new_zeroed(); 1];
 
         assert_eq!(
-            Err(AUTDDriverError::NotSupported("test".to_owned())),
+            Err(AUTDDriverError::LinkError("test".to_owned())),
             OperationHandler::pack(&mut op, &geometry, &mut tx, false)
         );
 
@@ -395,14 +395,14 @@ pub(crate) mod tests {
         op[0].1.broken = true;
 
         assert_eq!(
-            Err(AUTDDriverError::NotSupported("test".to_owned())),
+            Err(AUTDDriverError::LinkError("test".to_owned())),
             OperationHandler::pack(&mut op, &geometry, &mut tx, false)
         );
 
         op[0].0.num_frames = 0;
 
         assert_eq!(
-            Err(AUTDDriverError::NotSupported("test".to_owned())),
+            Err(AUTDDriverError::LinkError("test".to_owned())),
             OperationHandler::pack(&mut op, &geometry, &mut tx, false)
         );
 
@@ -413,7 +413,7 @@ pub(crate) mod tests {
         op[0].1.num_frames = 0;
 
         assert_eq!(
-            Err(AUTDDriverError::NotSupported("test".to_owned())),
+            Err(AUTDDriverError::LinkError("test".to_owned())),
             OperationHandler::pack(&mut op, &geometry, &mut tx, false)
         );
     }

@@ -4,6 +4,7 @@ use derive_more::Debug;
 use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
+/// The intensity of the ultrasound.
 #[derive(
     Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Builder, new, IntoBytes, Immutable,
 )]
@@ -11,11 +12,14 @@ use zerocopy::{Immutable, IntoBytes};
 #[repr(C)]
 pub struct EmitIntensity {
     #[get]
+    /// The value of the intensity.
     value: u8,
 }
 
 impl EmitIntensity {
+    /// Maximum intensity.
     pub const MAX: EmitIntensity = EmitIntensity { value: 255 };
+    /// Minimum intensity.
     pub const MIN: EmitIntensity = EmitIntensity { value: 0 };
 }
 

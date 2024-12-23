@@ -8,10 +8,14 @@ use crate::{
     utils::float::is_integer,
 };
 
+/// The configuration for sampling.
 #[derive(Clone, Copy, Debug, PartialEq, Builder)]
 #[repr(C)]
 pub struct SamplingConfig {
     #[get]
+    /// The division number of the sampling frequency.
+    ///
+    /// The sampling frequency is [`ULTRASOUND_FREQ`] / `division`.
     division: u16,
 }
 
@@ -123,22 +127,29 @@ const PERIOD_MAX: Duration =
     Duration::from_micros(u16::MAX as u64 * ULTRASOUND_PERIOD.as_micros() as u64);
 
 impl SamplingConfig {
+    /// A [`SamplingConfig`] of 40kHz.
     pub const FREQ_40K: SamplingConfig = SamplingConfig { division: 1 };
+    /// A [`SamplingConfig`] of 4kHz.
     pub const FREQ_4K: SamplingConfig = SamplingConfig { division: 10 };
+    /// A [`SamplingConfig`] of the minimum frequency.
     pub const FREQ_MIN: SamplingConfig = SamplingConfig { division: u16::MAX };
 
+    /// Creates a new [`SamplingConfig`].
     pub fn new(value: impl IntoSamplingConfig) -> Result<Self, AUTDDriverError> {
         value.into_sampling_config()
     }
 
+    /// Creates a new [`SamplingConfig`] with the nearest frequency or period value of the possible values.
     pub fn new_nearest(value: impl IntoSamplingConfigNearest) -> Self {
         value.into_sampling_config_nearest()
     }
 
+    /// Gets the sampling frequency.
     pub fn freq(&self) -> Freq<f32> {
         ULTRASOUND_FREQ.hz() as f32 / self.division() as f32 * Hz
     }
 
+    /// Gets the sampling period.
     pub fn period(&self) -> Duration {
         ULTRASOUND_PERIOD * self.division() as u32
     }
