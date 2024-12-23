@@ -7,18 +7,23 @@ use derive_new::new;
 use nalgebra::ComplexField;
 use zerocopy::{Immutable, IntoBytes};
 
+/// The phase of the ultrasound.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Builder, new, IntoBytes, Immutable)]
 #[repr(C)]
 #[debug("{:#04X}", self.value)]
 pub struct Phase {
     #[get]
+    /// The value of the phase.
     value: u8,
 }
 
 impl Phase {
+    /// A phase of zero.
     pub const ZERO: Self = Self { value: 0 };
+    /// A phase of π.
     pub const PI: Self = Self { value: 128 };
 
+    /// Converts the phase into a radian.
     pub fn radian(&self) -> f32 {
         self.value as f32 / 256.0 * 2.0 * PI
     }

@@ -23,8 +23,8 @@ impl ToMessage for autd3_driver::datagram::Silencer<autd3_driver::datagram::Fixe
         Self::Message {
             datagram: Some(datagram::Datagram::Silencer(Silencer {
                 config: Some(silencer::Config::FixedUpdateRate(SilencerFixedUpdateRate {
-                    value_intensity: self.config().intensity().get() as _,
-                    value_phase: self.config().phase().get() as _,
+                    value_intensity: self.config().intensity.get() as _,
+                    value_phase: self.config().phase.get() as _,
                     target: Some(self.target() as u8 as _),
                 })),
             })),
@@ -60,8 +60,8 @@ impl ToMessage for autd3_driver::datagram::Silencer<autd3_driver::datagram::Fixe
             datagram: Some(datagram::Datagram::Silencer(Silencer {
                 config: Some(silencer::Config::FixedCompletionTime(
                     SilencerFixedCompletionTime {
-                        value_intensity: self.config().intensity().as_micros() as _,
-                        value_phase: self.config().phase().as_micros() as _,
+                        value_intensity: self.config().intensity.as_micros() as _,
+                        value_phase: self.config().phase.as_micros() as _,
                         strict_mode: Some(self.strict_mode()),
                         target: Some(self.target() as u8 as _),
                     },
@@ -113,8 +113,8 @@ mod tests {
             })) => {
                 let c2 =
                     autd3_driver::datagram::Silencer::<autd3_driver::datagram::FixedUpdateRate>::from_msg(&config).unwrap();
-                assert_eq!(c2.config().intensity(), c.config().intensity());
-                assert_eq!(c2.config().phase(), c.config().phase());
+                assert_eq!(c2.config().intensity, c.config().intensity);
+                assert_eq!(c2.config().phase, c.config().phase);
             }
             _ => panic!("unexpected datagram type"),
         }

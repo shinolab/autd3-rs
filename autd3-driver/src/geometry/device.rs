@@ -10,27 +10,36 @@ use super::{
     Isometry, Point3, Quaternion, Transducer, Translation, UnitQuaternion, UnitVector3, Vector3,
 };
 
+/// An AUTD device unit.
 #[derive(Builder, Deref, IntoIterator)]
 pub struct Device {
     idx: u16,
     #[deref]
     #[into_iterator(ref)]
     transducers: Vec<Transducer>,
+    /// enable flag
     pub enable: bool,
+    /// speed of sound
     pub sound_speed: f32,
     #[get(ref)]
+    /// The rotation of the device.
     rotation: UnitQuaternion,
     #[get(ref)]
+    /// The center of the device.
     center: Point3,
     #[get(ref)]
+    /// The x-direction of the device.
     x_direction: UnitVector3,
     #[get(ref)]
+    /// The y-direction of the device.
     y_direction: UnitVector3,
     #[get(ref)]
+    /// The axial direction of the device.
     axial_direction: UnitVector3,
-    #[get(ref)]
+    #[get(ref, no_doc)]
     inv: Isometry,
     #[get(ref)]
+    /// The Axis Aligned Bounding Box of the device.
     aabb: Aabb<f32, 3>,
 }
 
@@ -78,30 +87,37 @@ impl Device {
         dev
     }
 
+    /// Gets the index of the device.
     pub const fn idx(&self) -> usize {
         self.idx as _
     }
 
+    /// Gets the number of transducers of the device.
     pub fn num_transducers(&self) -> usize {
         self.transducers.len()
     }
 
+    /// Translates the device to the target position.
     pub fn translate_to(&mut self, t: Point3) {
         self.translate(t - self.transducers[0].position());
     }
 
+    /// Rotates the device to the target rotation.
     pub fn rotate_to(&mut self, r: UnitQuaternion) {
         self.rotate(r * self.rotation.conjugate());
     }
 
+    /// Translates the device.
     pub fn translate(&mut self, t: Vector3) {
         self.affine(t, UnitQuaternion::identity());
     }
 
+    /// Rotates the device.
     pub fn rotate(&mut self, r: UnitQuaternion) {
         self.affine(Vector3::zeros(), r);
     }
 
+    /// Translates and rotates the device.
     pub fn affine(&mut self, t: Vector3, r: UnitQuaternion) {
         let isometry = Isometry {
             translation: Translation::from(t),
@@ -114,18 +130,24 @@ impl Device {
         self.init();
     }
 
+    /// Sets the sound speed of enabled devices from the temperature `t`.
+    ///
+    /// This is equivalent to `Self::set_sound_speed_from_temp_with(t, 1.4, 8.314_463, 28.9647e-3)`.
     pub fn set_sound_speed_from_temp(&mut self, temp: f32) {
         self.set_sound_speed_from_temp_with(temp, 1.4, 8.314_463, 28.9647e-3);
     }
 
+    /// Sets the sound speed of enabled devices from the temperature `t`, heat capacity ratio `k`, gas constant `r`, and molar mass `m` [kg/mol].
     pub fn set_sound_speed_from_temp_with(&mut self, temp: f32, k: f32, r: f32, m: f32) {
         self.sound_speed = (k * r * (273.15 + temp) / m).sqrt() * METER;
     }
 
+    /// Gets the wavelength of the ultrasound.
     pub fn wavelength(&self) -> f32 {
         self.sound_speed / ULTRASOUND_FREQ.hz() as f32
     }
 
+    /// Gets the wavenumber of the ultrasound.
     pub fn wavenumber(&self) -> f32 {
         2.0 * PI * ULTRASOUND_FREQ.hz() as f32 / self.sound_speed
     }
@@ -136,7 +158,9 @@ impl Device {
     }
 }
 
+/// Trait for converting to [`Device`].
 pub trait IntoDevice {
+    /// Converts to [`Device`].
     fn into_device(self, dev_idx: u16) -> Device;
 }
 
@@ -148,7 +172,7 @@ impl IntoDevice for Device {
 }
 
 #[cfg(test)]
-pub mod tests {
+pub(crate) mod tests {
     use rand::Rng;
 
     use super::*;

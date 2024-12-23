@@ -26,7 +26,7 @@ pub struct Square<S: SamplingMode> {
 }
 
 impl Square<ExactFreq> {
-    /// Create new [`Square`] modulation with exact frequency.
+    /// Creates a new [`Square`] modulation with exact frequency.
     ///
     /// # Examples
     ///
@@ -48,7 +48,7 @@ impl Square<ExactFreq> {
         }
     }
 
-    /// Create new [`Square`] modulation with exact frequency.
+    /// Creates a new [`Square`] with the nearest frequency to the specified value of the possible values.
     pub const fn new_nearest(freq: Freq<f32>) -> Square<NearestFreq> {
         Square {
             freq,

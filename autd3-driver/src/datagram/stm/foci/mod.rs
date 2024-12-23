@@ -76,7 +76,7 @@ impl<const N: usize, G: FociSTMGenerator<N>> FociSTM<N, G> {
         Self::new_from_sampling_config(config.into(), iter)
     }
 
-    /// Creates a new [`FociSTM`] with the nearest frequency or period to the specified value.
+    /// Creates a new [`FociSTM`] with the nearest frequency or period to the specified value of the possible values.
     pub fn new_nearest(
         config: impl Into<STMConfigNearest>,
         iter: impl IntoFociSTMGenerator<N, G = G>,

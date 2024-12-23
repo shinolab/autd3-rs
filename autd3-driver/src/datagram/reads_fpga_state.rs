@@ -8,6 +8,7 @@ use derive_new::new;
 #[derive(Builder, Debug, new)]
 pub struct ReadsFPGAState<F: Fn(&Device) -> bool> {
     #[debug(ignore)]
+    #[get(ref, no_doc)]
     f: F,
 }
 

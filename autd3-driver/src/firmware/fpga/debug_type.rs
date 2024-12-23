@@ -5,25 +5,41 @@ use zerocopy::{Immutable, IntoBytes};
 
 use super::ec_time_to_sys_time;
 
+/// Output of the GPIO pin. See also [`DebugSettings`].
+///
+/// [`DebugSettings`]: crate::datagram::DebugSettings
 #[non_exhaustive]
 #[derive(Clone, Debug)]
 pub enum DebugType<'a> {
+    /// Do not output.
     None,
+    /// Base signal (50% duty cycle square wave with the same frequency as ultrasound).
     BaseSignal,
+    /// High if the temperature sensor is asserted.
     Thermo,
+    /// High if the ForceFan flag is asserted.
     ForceFan,
+    /// EtherCAT synchronization signal.
     Sync,
+    /// Modulation segment (High if the segment is 1, Low if the segment is 0).
     ModSegment,
     #[debug("ModIdx({})", _0)]
+    /// High when the Modulation index is the specified value.
     ModIdx(u16),
+    /// STM and Gain segment (High if the segment is 1, Low if the segment is 0).
     StmSegment,
     #[debug("StmIdx({})", _0)]
+    /// High when the STM index is the specified value.
     StmIdx(u16),
+    /// High if FociSTM/GainSTM is used.
     IsStmMode,
+    /// High during the specified system time.
     SysTimeEq(DcSysTime),
     #[debug("PwmOut({})", _0.idx())]
+    /// PWM output of the specified transducer.
     PwmOut(&'a Transducer),
     #[debug("Direct({})", _0)]
+    /// High if `true`.
     Direct(bool),
 }
 

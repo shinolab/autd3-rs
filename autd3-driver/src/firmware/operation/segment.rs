@@ -14,11 +14,24 @@ use super::Operation;
 use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
+/// [`Datagram`] to change the segment.
 #[derive(Debug, Clone, Copy)]
 pub enum SwapSegment {
+    /// Change the [`Gain`] segment.
+    ///
+    /// [`Gain`]: crate::datagram::Gain
     Gain(Segment, TransitionMode),
+    /// Change the [`Modulation`] segment.
+    ///
+    /// [`Modulation`]: crate::datagram::Modulation
     Modulation(Segment, TransitionMode),
+    /// Change the [`FociSTM`] segment.
+    ///
+    /// [`FociSTM`]: crate::datagram::FociSTM
     FociSTM(Segment, TransitionMode),
+    /// Change the [`GainSTM`] segment.
+    ///
+    /// [`GainSTM`]: crate::datagram::GainSTM
     GainSTM(Segment, TransitionMode),
 }
 

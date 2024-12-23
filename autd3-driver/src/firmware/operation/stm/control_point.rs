@@ -7,20 +7,23 @@ use autd3_derive::Builder;
 use derive_more::{Deref, DerefMut};
 use derive_new::new;
 
+/// A pair of a focal point and a phase offset.
 #[derive(Clone, Copy, Builder, PartialEq, Debug, new)]
 #[repr(C)]
 pub struct ControlPoint {
     #[get(ref)]
     #[set]
+    /// The focal point.
     point: Point3,
     #[new(value = "Phase::ZERO")]
     #[get]
     #[set(into)]
+    /// The phase offset of the control point.
     phase_offset: Phase,
 }
 
 impl ControlPoint {
-    pub fn transform(&self, iso: &Isometry) -> Self {
+    pub(crate) fn transform(&self, iso: &Isometry) -> Self {
         Self {
             point: iso.transform_point(&self.point),
             phase_offset: self.phase_offset(),
@@ -40,21 +43,24 @@ impl From<&Point3> for ControlPoint {
     }
 }
 
+/// A collection of control points and the intensity of all control points.
 #[derive(Clone, Builder, PartialEq, Debug, Deref, DerefMut, new)]
 #[repr(C)]
 pub struct ControlPoints<const N: usize> {
     #[deref]
     #[deref_mut]
     #[get]
+    /// The control points.
     points: [ControlPoint; N],
     #[new(value = "EmitIntensity::MAX")]
     #[get]
     #[set(into)]
+    /// The intensity of all control points.
     intensity: EmitIntensity,
 }
 
 impl<const N: usize> ControlPoints<N> {
-    pub fn transform(&self, iso: &nalgebra::Isometry3<f32>) -> Self {
+    pub(crate) fn transform(&self, iso: &nalgebra::Isometry3<f32>) -> Self {
         Self {
             points: self.points.map(|p| p.transform(iso)),
             intensity: self.intensity(),

@@ -70,7 +70,7 @@ pub struct GainSTM<G: GainSTMGenerator> {
     sampling_config: SamplingConfig,
     #[get]
     #[set]
-    /// The mode of the STM.
+    /// The mode of the STM. The default is [`GainSTMMode::PhaseIntensityFull`].
     mode: GainSTMMode,
 }
 
@@ -97,7 +97,7 @@ impl<G: GainSTMGenerator> GainSTM<G> {
         Self::new_from_sampling_config(config.into(), iter)
     }
 
-    /// Creates a new [`GainSTM`] with the nearest frequency or period to the specified value.
+    /// Creates a new [`GainSTM`] with the nearest frequency or period to the specified value of the possible values.
     pub fn new_nearest<T: IntoGainSTMGenerator<G = G>>(
         config: impl Into<STMConfigNearest>,
         iter: T,
@@ -116,7 +116,7 @@ impl<G: GainSTMGenerator> GainSTM<G> {
         Ok(Self {
             sampling_config: (config, gen.len()).try_into()?,
             loop_behavior: LoopBehavior::infinite(),
-            mode: GainSTMMode::PhaseIntensityFull,
+            mode: GainSTMMode::default(),
             gen,
         })
     }

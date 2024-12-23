@@ -1,19 +1,26 @@
+/// \[°\]
 #[allow(non_camel_case_types)]
 pub struct deg;
+
+/// \[rad\]
 #[allow(non_camel_case_types)]
 pub struct rad;
 
 use derive_more::Debug;
 
+/// Angle
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Angle {
-    #[debug("{} deg", _0)]
+    #[doc(hidden)]
+    #[debug("{}°", _0)]
     Deg(f32),
-    #[debug("{} rad", _0)]
+    #[doc(hidden)]
+    #[debug("{}rad", _0)]
     Rad(f32),
 }
 
 impl Angle {
+    /// Returns the angle in radian
     pub fn radian(self) -> f32 {
         match self {
             Self::Deg(a) => a.to_radians(),
@@ -21,6 +28,7 @@ impl Angle {
         }
     }
 
+    /// Returns the angle in degree
     pub fn degree(self) -> f32 {
         match self {
             Self::Deg(a) => a,
@@ -51,7 +59,7 @@ mod tests {
 
     #[test]
     fn dbg() {
-        assert_eq!(format!("{:?}", 90.0 * deg), "90 deg");
-        assert_eq!(format!("{:?}", 1.0 * rad), "1 rad");
+        assert_eq!(format!("{:?}", 90.0 * deg), "90°");
+        assert_eq!(format!("{:?}", 1.0 * rad), "1rad");
     }
 }

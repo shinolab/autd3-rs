@@ -4,6 +4,11 @@ use crate::error::AUTDDriverError;
 
 use super::ECAT_DC_SYS_TIME_BASE;
 
+/// The system time of the Distributed Clock
+///
+/// The system time is the time expressed in 1ns units with 2000-01-01 0:00:00 UTC as the reference.
+/// It is expressed as a 64-bit unsigned integer and can represent about 584 years of time.
+/// See [EtherCAT Distributed Clock](https://infosys.beckhoff.com/english.php?content=../content/1033/ethercatsystem/2469118347.html) for more information.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(C)]
 pub struct DcSysTime {
@@ -11,16 +16,20 @@ pub struct DcSysTime {
 }
 
 impl DcSysTime {
+    /// The zero point of the DcSysTime (2000-01-01 0:00:00 UTC)
     pub const ZERO: Self = Self { dc_sys_time: 0 };
 
+    /// Returns the system time in nanoseconds
     pub const fn sys_time(&self) -> u64 {
         self.dc_sys_time
     }
 
+    /// Converts the system time to the UTC time
     pub fn to_utc(&self) -> OffsetDateTime {
         ECAT_DC_SYS_TIME_BASE + std::time::Duration::from_nanos(self.dc_sys_time)
     }
 
+    /// Creates a new instance from the UTC time
     pub fn from_utc(utc: OffsetDateTime) -> Result<Self, AUTDDriverError> {
         Ok(Self {
             dc_sys_time: u64::try_from((utc - ECAT_DC_SYS_TIME_BASE).whole_nanoseconds())
@@ -28,6 +37,7 @@ impl DcSysTime {
         })
     }
 
+    /// Returns the system time of now
     pub fn now() -> Self {
         Self::from_utc(OffsetDateTime::now_utc()).unwrap()
     }

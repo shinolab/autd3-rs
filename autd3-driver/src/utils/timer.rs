@@ -1,5 +1,7 @@
 use std::num::NonZeroU32;
 
+/// A utility to set the timer resolution on Windows.
+#[doc(hidden)]
 #[cfg_attr(not(target_os = "windows"), allow(dead_code))]
 pub struct TimerResolutionGurad {
     timer_resolution: Option<NonZeroU32>,

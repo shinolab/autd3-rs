@@ -5,16 +5,20 @@ use super::{EmitIntensity, Phase};
 use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
+/// A container for the phase and intensity of the ultrasound.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Builder, new, IntoBytes, Immutable)]
 #[repr(C)]
 pub struct Drive {
     #[get]
+    /// The phase of the ultrasound.
     phase: Phase,
     #[get]
+    /// The intensity of the ultrasound.
     intensity: EmitIntensity,
 }
 
 impl Drive {
+    /// A [`Drive`] with a phase of [`Phase::ZERO`] and an intensity of [`EmitIntensity::MIN`].
     pub const NULL: Self = Self {
         phase: Phase::ZERO,
         intensity: EmitIntensity::MIN,

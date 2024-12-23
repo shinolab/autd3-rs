@@ -2,17 +2,20 @@ pub(crate) mod device;
 mod rotation;
 mod transducer;
 
+/// 3-dimensional column vector.
 pub type Vector3 = nalgebra::Vector3<f32>;
+/// 3-dimensional unit vector.
 pub type UnitVector3 = nalgebra::UnitVector3<f32>;
+/// 3-dimensional point.
 pub type Point3 = nalgebra::Point3<f32>;
+/// 4-dimensional column vector.
 pub type Vector4 = nalgebra::Vector4<f32>;
+/// A quaternion.
 pub type Quaternion = nalgebra::Quaternion<f32>;
+/// A unit quaternion.
 pub type UnitQuaternion = nalgebra::UnitQuaternion<f32>;
-pub type Matrix3 = nalgebra::Matrix3<f32>;
-pub type Matrix4 = nalgebra::Matrix4<f32>;
-pub type Affine = nalgebra::Affine3<f32>;
-pub type Translation = nalgebra::Translation3<f32>;
-pub type Isometry = nalgebra::Isometry3<f32>;
+pub(crate) type Translation = nalgebra::Translation3<f32>;
+pub(crate) type Isometry = nalgebra::Isometry3<f32>;
 
 use autd3_derive::Builder;
 use bvh::aabb::Aabb;
@@ -23,59 +26,72 @@ pub use transducer::*;
 use derive_more::{Deref, IntoIterator};
 use derive_new::new;
 
+/// Geometry of the devices.
 #[derive(Deref, Builder, IntoIterator, new)]
 pub struct Geometry {
     #[deref]
     #[into_iterator(ref)]
     pub(crate) devices: Vec<Device>,
     #[new(default)]
-    #[get]
+    #[get(no_doc)]
     version: usize,
-    #[get]
+    #[get(no_doc)]
     default_parallel_threshold: usize,
 }
 
 impl Geometry {
+    /// Gets the number of enabled devices.
     pub fn num_devices(&self) -> usize {
         self.devices().count()
     }
 
+    /// Gets the number of enabled transducers.
     pub fn num_transducers(&self) -> usize {
         self.devices().map(|dev| dev.num_transducers()).sum()
     }
 
+    /// Gets the center of the enabled transducers.
     pub fn center(&self) -> Point3 {
         Point3::from(
             self.devices().map(|d| d.center().coords).sum::<Vector3>() / self.devices.len() as f32,
         )
     }
 
+    /// Gets the iterator of enabled devices.
     pub fn devices(&self) -> impl Iterator<Item = &Device> {
         self.iter().filter(|dev| dev.enable)
     }
 
+    /// Gets the mutable iterator of enabled devices.
     pub fn devices_mut(&mut self) -> impl Iterator<Item = &mut Device> {
         self.iter_mut().filter(|dev| dev.enable)
     }
 
+    /// Sets the sound speed of enabled devices.
     pub fn set_sound_speed(&mut self, c: f32) {
         self.devices_mut().for_each(|dev| dev.sound_speed = c);
     }
 
-    pub fn set_sound_speed_from_temp(&mut self, temp: f32) {
-        self.set_sound_speed_from_temp_with(temp, 1.4, 8.314_463, 28.9647e-3);
+    /// Sets the sound speed of enabled devices from the temperature `t`.
+    ///
+    /// This is equivalent to `Self::set_sound_speed_from_temp_with(t, 1.4, 8.314_463, 28.9647e-3)`.
+    pub fn set_sound_speed_from_temp(&mut self, t: f32) {
+        self.set_sound_speed_from_temp_with(t, 1.4, 8.314_463, 28.9647e-3);
     }
 
-    pub fn set_sound_speed_from_temp_with(&mut self, temp: f32, k: f32, r: f32, m: f32) {
+    /// Sets the sound speed of enabled devices from the temperature `t`, heat capacity ratio `k`, gas constant `r`, and molar mass `m` [kg/mol].
+    pub fn set_sound_speed_from_temp_with(&mut self, t: f32, k: f32, r: f32, m: f32) {
         self.devices_mut()
-            .for_each(|dev| dev.set_sound_speed_from_temp_with(temp, k, r, m));
+            .for_each(|dev| dev.set_sound_speed_from_temp_with(t, k, r, m));
     }
 
+    /// Axis Aligned Bounding Box of enabled devices.
     pub fn aabb(&self) -> Aabb<f32, 3> {
         self.devices()
             .fold(Aabb::empty(), |aabb, dev| aabb.join(dev.aabb()))
     }
 
+    #[doc(hidden)]
     pub fn parallel(&self, threshold: Option<usize>) -> bool {
         self.num_devices() > threshold.unwrap_or(self.default_parallel_threshold)
     }
@@ -99,7 +115,7 @@ impl std::ops::DerefMut for Geometry {
 }
 
 #[cfg(test)]
-pub mod tests {
+pub(crate) mod tests {
     use crate::{
         autd3_device::AUTD3,
         defined::{deg, mm},
