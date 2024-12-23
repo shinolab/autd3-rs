@@ -72,9 +72,14 @@ struct GainSTMSubseq {
     flag: GainSTMControlFlags,
 }
 
+/// A trait to build a [`GainContext`] for [`GainSTM`].
+///
+/// [`GainSTM`]: crate::datagram::GainSTM
 pub trait GainSTMContext: Send + Sync {
+    /// The [`GainContext`] type.
     type Context: GainContext;
 
+    /// Returns the next [`GainContext`].
     fn next(&mut self) -> Option<Self::Context>;
 }
 

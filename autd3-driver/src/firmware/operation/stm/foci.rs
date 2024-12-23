@@ -56,7 +56,11 @@ struct FociSTMSubseq {
     segment: u8,
 }
 
+/// A trait to generate a [`ControlPoints`] for  [`FociSTM`].
+///
+/// [`FociSTM`]: crate::datagram::FociSTM
 pub trait FociSTMContext<const N: usize>: Send + Sync {
+    /// Returns the next [`ControlPoints`].
     fn next(&mut self) -> ControlPoints<N>;
 }
 

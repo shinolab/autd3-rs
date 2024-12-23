@@ -4,7 +4,7 @@ pub use boxed::{BoxedModulation, IntoBoxedModulation};
 
 use std::sync::Arc;
 
-use super::silencer::WithSampling;
+use super::silencer::HasSamplingConfig;
 use crate::{
     error::AUTDDriverError,
     firmware::{
@@ -14,24 +14,36 @@ use crate::{
     geometry::Device,
 };
 
+/// A trait to get the modulation property. (This trait is automatically implemented by the [`Modulation`] derive macro.)
+///
+/// [`Modulation`]: autd3_derive::Modulation
 pub trait ModulationProperty {
+    /// Get the sampling configuration.
     fn sampling_config(&self) -> SamplingConfig;
+    /// Get the loop behavior.
     fn loop_behavior(&self) -> LoopBehavior;
 }
 
+/// Trait for applying amplitude modulation.
+///
+/// See also [`Modulation`] derive macro.
+///
+/// [`Modulation`]: autd3_derive::Modulation
 pub trait Modulation: ModulationProperty + std::fmt::Debug {
+    /// Calculate the modulation data.
     fn calc(self) -> Result<Vec<u8>, AUTDDriverError>;
 }
 
-impl<M: Modulation> WithSampling for M {
-    fn sampling_config_intensity(&self) -> Option<SamplingConfig> {
+impl<M: Modulation> HasSamplingConfig for M {
+    fn intensity(&self) -> Option<SamplingConfig> {
         Some(self.sampling_config())
     }
-    fn sampling_config_phase(&self) -> Option<SamplingConfig> {
+    fn phase(&self) -> Option<SamplingConfig> {
         None
     }
 }
 
+#[doc(hidden)]
 pub struct ModulationOperationGenerator {
     pub g: Arc<Vec<u8>>,
     pub config: SamplingConfig,

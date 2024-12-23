@@ -2,20 +2,26 @@ use crate::ethercat::DcSysTime;
 
 use super::GPIOIn;
 
-pub const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
-pub const TRANSITION_MODE_SYS_TIME: u8 = 0x01;
-pub const TRANSITION_MODE_GPIO: u8 = 0x02;
-pub const TRANSITION_MODE_EXT: u8 = 0xF0;
-pub const TRANSITION_MODE_NONE: u8 = 0xFE;
-pub const TRANSITION_MODE_IMMEDIATE: u8 = 0xFF;
+pub(crate) const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
+pub(crate) const TRANSITION_MODE_SYS_TIME: u8 = 0x01;
+pub(crate) const TRANSITION_MODE_GPIO: u8 = 0x02;
+pub(crate) const TRANSITION_MODE_EXT: u8 = 0xF0;
+pub(crate) const TRANSITION_MODE_NONE: u8 = 0xFE;
+pub(crate) const TRANSITION_MODE_IMMEDIATE: u8 = 0xFF;
 
+/// Transition mode of segment
 #[non_exhaustive]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum TransitionMode {
+    /// Transites when the sampling index in the destination segment is 0.
     SyncIdx,
+    /// Transites when the system time is the specified time.
     SysTime(DcSysTime),
+    /// Transites when the specified GPIO pin is high.
     GPIO(GPIOIn),
+    /// Transites to the next segment automatically when the data in the current segment is finished.
     Ext,
+    /// Transites immediately.
     Immediate,
 }
 

@@ -17,32 +17,45 @@ use crate::{
 use autd3_derive::Builder;
 use bit_vec::BitVec;
 use derive_more::{Deref, DerefMut};
-use silencer::WithSampling;
+use silencer::HasSamplingConfig;
 
+/// A trait to generate the [`GainSTMContext`].
 pub trait GainSTMContextGenerator {
+    /// The element type of the gain sequence.
     type Gain: GainContextGenerator;
+    /// [`GainSTMContext`] that generates the sequence of [`Gain`].
     type Context: GainSTMContext<Context = <Self::Gain as GainContextGenerator>::Context>;
 
+    /// generates the context.
     fn generate(&mut self, device: &Device) -> Self::Context;
 }
 
+/// A trait to generate the [`GainSTMContextGenerator`].
 #[allow(clippy::len_without_is_empty)]
 pub trait GainSTMGenerator: std::fmt::Debug {
+    /// The type of the context generator.
     type T: GainSTMContextGenerator;
 
+    /// Initializes and returns the context generator.
     fn init(
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec<u32>>>,
     ) -> Result<Self::T, AUTDDriverError>;
+    /// Returns the length of the sequence of gains.
     fn len(&self) -> usize;
 }
+
+/// A trait to convert to [`GainSTMGenerator`].
 pub trait IntoGainSTMGenerator {
+    /// The type of the generator.
     type G: GainSTMGenerator;
 
+    /// Converts to [`GainSTMGenerator`].
     fn into(self) -> Self::G;
 }
 
+/// [`Datagram`] to produce STM by [`Gain`].
 #[derive(Builder, Clone, Debug, Deref, DerefMut)]
 pub struct GainSTM<G: GainSTMGenerator> {
     #[deref]
@@ -50,25 +63,33 @@ pub struct GainSTM<G: GainSTMGenerator> {
     gen: G,
     #[get]
     #[set]
+    /// The loop behavior of the STM.
     loop_behavior: LoopBehavior,
     #[get]
+    /// The sampling configuration of the STM.
     sampling_config: SamplingConfig,
     #[get]
     #[set]
+    /// The mode of the STM. The default is [`GainSTMMode::PhaseIntensityFull`].
     mode: GainSTMMode,
 }
 
-impl<G: GainSTMGenerator> WithSampling for GainSTM<G> {
-    fn sampling_config_intensity(&self) -> Option<SamplingConfig> {
+impl<G: GainSTMGenerator> HasSamplingConfig for GainSTM<G> {
+    fn intensity(&self) -> Option<SamplingConfig> {
         Some(self.sampling_config)
     }
 
-    fn sampling_config_phase(&self) -> Option<SamplingConfig> {
+    fn phase(&self) -> Option<SamplingConfig> {
         Some(self.sampling_config)
     }
 }
 
 impl<G: GainSTMGenerator> GainSTM<G> {
+    /// Creates a new [`GainSTM`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AUTDDriverError::SamplingFreqOutOfRangeF`], [`AUTDDriverError::SamplingFreqInvalidF`], or [`AUTDDriverError::STMPeriodInvalid`] if the frequency or period cannot be set strictly.
     pub fn new<T: IntoGainSTMGenerator<G = G>>(
         config: impl Into<STMConfig>,
         iter: T,
@@ -76,11 +97,12 @@ impl<G: GainSTMGenerator> GainSTM<G> {
         Self::new_from_sampling_config(config.into(), iter)
     }
 
+    /// Creates a new [`GainSTM`] with the nearest frequency or period to the specified value of the possible values.
     pub fn new_nearest<T: IntoGainSTMGenerator<G = G>>(
         config: impl Into<STMConfigNearest>,
         iter: T,
-    ) -> Result<Self, AUTDDriverError> {
-        Self::new_from_sampling_config(config.into(), iter)
+    ) -> Self {
+        Self::new_from_sampling_config(config.into(), iter).unwrap()
     }
 
     fn new_from_sampling_config<S, T: IntoGainSTMGenerator<G = G>>(
@@ -94,15 +116,21 @@ impl<G: GainSTMGenerator> GainSTM<G> {
         Ok(Self {
             sampling_config: (config, gen.len()).try_into()?,
             loop_behavior: LoopBehavior::infinite(),
-            mode: GainSTMMode::PhaseIntensityFull,
+            mode: GainSTMMode::default(),
             gen,
         })
     }
 
+    /// Returns the frequency of the STM. See also [`FociSTM::freq`].
+    ///
+    /// [`FociSTM::freq`]: crate::datagram::FociSTM::freq
     pub fn freq(&self) -> Freq<f32> {
         self.sampling_config().freq() / self.gen.len() as f32
     }
 
+    /// Returns the period of the STM. See also [`FociSTM::period`].
+    ///
+    /// [`FociSTM::period`]: crate::datagram::FociSTM::period
     pub fn period(&self) -> Duration {
         self.sampling_config().period() * self.gen.len() as u32
     }

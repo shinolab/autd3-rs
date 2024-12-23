@@ -7,6 +7,20 @@ use crate::datagram::*;
 use derive_more::Debug;
 use derive_new::new;
 
+/// [`Datagram`] to configure GPIO Out pins for debugging.
+///
+/// # Example
+///
+/// ```
+/// # use autd3_driver::datagram::DebugSettings;
+/// # use autd3_driver::firmware::fpga::{DebugType, GPIOOut};
+/// DebugSettings::new(|dev, gpio| match gpio {
+///     GPIOOut::O0 => DebugType::BaseSignal,
+///     GPIOOut::O1 => DebugType::Sync,
+///     GPIOOut::O2 => DebugType::PwmOut(&dev[0]),
+///     GPIOOut::O3 => DebugType::Direct(true),
+/// });
+/// ```
 #[derive(Debug, new)]
 pub struct DebugSettings<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> {
     #[debug(ignore)]

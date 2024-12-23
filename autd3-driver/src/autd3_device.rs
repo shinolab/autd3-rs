@@ -6,40 +6,39 @@ use crate::{
 use autd3_derive::Builder;
 use derive_new::new;
 
+/// AUTD3 device.
 #[derive(Clone, Copy, Debug, Builder, new)]
 pub struct AUTD3 {
-    #[get(ref)]
+    #[get(ref, no_doc)]
     position: Point3,
     #[new(value = "UnitQuaternion::identity()")]
-    #[get(ref)]
+    #[get(ref, no_doc)]
     #[set(into)]
     rotation: UnitQuaternion,
 }
 
 impl AUTD3 {
+    /// The number of transducers in x-axis.
     pub const NUM_TRANS_X: usize = 18;
+    /// The number of transducers in y-axis.
     pub const NUM_TRANS_Y: usize = 14;
+    /// The number of transducers in a unit.
     pub const NUM_TRANS_IN_UNIT: usize = Self::NUM_TRANS_X * Self::NUM_TRANS_Y - 3;
+    /// The spacing between transducers.
     pub const TRANS_SPACING: f32 = 10.16 * mm;
+    /// The width of the device (including the substrate).
     pub const DEVICE_WIDTH: f32 = 192.0 * mm;
+    /// The height of the device (including the substrate).
     pub const DEVICE_HEIGHT: f32 = 151.4 * mm;
 
-    fn is_missing_transducer(x: impl TryInto<u8>, y: impl TryInto<u8>) -> bool {
-        let x: u8 = match x.try_into() {
-            Ok(v) => v,
-            Err(_) => return true,
-        };
-        let y: u8 = match y.try_into() {
-            Ok(v) => v,
-            Err(_) => return true,
-        };
-        if Self::NUM_TRANS_X as u8 <= x || Self::NUM_TRANS_Y as u8 <= y {
+    fn is_missing_transducer(x: usize, y: usize) -> bool {
+        if Self::NUM_TRANS_X <= x || Self::NUM_TRANS_Y <= y {
             return true;
         }
-
         y == 1 && (x == 1 || x == 2 || x == 16)
     }
 
+    /// Gets the index in x- and y-axis from the transducer index.
     pub const fn grid_id(idx: usize) -> (usize, usize) {
         let local_id = idx % Self::NUM_TRANS_IN_UNIT;
         let uid = match local_id {
@@ -367,7 +366,7 @@ mod tests {
     #[case(15, 13, false)]
     #[case(16, 13, false)]
     #[case(17, 13, false)]
-    fn test_is_missing_transducer(#[case] x: u8, #[case] y: u8, #[case] expected: bool) {
+    fn test_is_missing_transducer(#[case] x: usize, #[case] y: usize, #[case] expected: bool) {
         assert_eq!(expected, AUTD3::is_missing_transducer(x, y));
     }
 

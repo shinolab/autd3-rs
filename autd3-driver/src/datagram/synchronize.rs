@@ -3,6 +3,7 @@ use crate::firmware::operation::SyncOp;
 use crate::datagram::*;
 use derive_new::new;
 
+/// [`Datagram`] to synchronize the devices.
 #[derive(Default, Debug, new)]
 pub struct Synchronize {}
 

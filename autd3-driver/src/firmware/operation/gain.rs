@@ -32,7 +32,11 @@ struct Gain {
     __: u8,
 }
 
+/// A trait to calculate the phase and intensity for [`Gain`].
+///
+/// [`Gain`]: crate::datagram::Gain
 pub trait GainContext: Send + Sync {
+    /// Calculates the phase and intensity for the transducer.
     fn calc(&self, tr: &Transducer) -> Drive;
 }
 

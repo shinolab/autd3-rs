@@ -1,8 +1,9 @@
-pub const MSG_ID_MAX: u8 = 0x7F;
+pub(crate) const MSG_ID_MAX: u8 = 0x7F;
 
 use derive_more::Debug;
 use zerocopy::{FromZeros, Immutable, IntoBytes};
 
+#[doc(hidden)]
 #[repr(C, align(2))]
 #[derive(Clone, Debug, PartialEq, Eq, IntoBytes, Immutable, FromZeros)]
 pub struct Header {

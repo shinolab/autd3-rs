@@ -9,6 +9,7 @@ use zerocopy::{Immutable, IntoBytes};
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, IntoBytes, Immutable)]
+#[doc(hidden)]
 pub enum FirmwareVersionType {
     CPUMajor = 0x01,
     CPUMinor = 0x02,

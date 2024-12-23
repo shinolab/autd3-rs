@@ -12,6 +12,25 @@ fn default_table(i: u8) -> u8 {
     DEFAULT_TABLE[i as usize]
 }
 
+/// [`Datagram`] to configure pulse width encoder table.
+///
+/// The pulse width encoder table is a table to determine the pulse width (or duty ratio) from the instensity.
+/// In the firmware, the intensity (0-255) is used as the index of the table to determine the pulse width (0-255).
+/// The period of the ultrasound is mapped to 256, and therefore, the ultrasound output is the ultrasound is maximum when the pulse width is 128 (50% in duty ratio).
+///
+/// The default table is set by the arcsin function so that [`EmitIntensity`] is linear; that is, `table[i] = round(256*arcsin(i/255)/π)`.
+///
+/// # Example
+///
+/// To set the pulse width encoder table, please specify a function that takes the index of the table as an argument and returns the pulse width for each device.
+///
+/// The following example sets the pulse width to be linearly proportional to the intensity for all devices.
+/// ```
+/// # use autd3_driver::datagram::PulseWidthEncoder;
+/// PulseWidthEncoder::new(|_dev| |i| (i as f32 / 255. * 128.).round() as u8);
+/// ```
+///
+/// [`EmitIntensity`]: crate::firmware::fpga::EmitIntensity
 #[derive(Clone, Debug, new)]
 pub struct PulseWidthEncoder<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> {
     #[debug(ignore)]

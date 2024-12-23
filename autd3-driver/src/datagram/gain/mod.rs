@@ -14,15 +14,28 @@ use crate::{
 
 use bit_vec::BitVec;
 
+/// A trait for generating a context for the gain operation.
 pub trait GainContextGenerator {
+    /// The type of the context that actually performs the calculation.
     type Context: GainContext;
 
+    /// Generate a context for the given device.
     fn generate(&mut self, device: &Device) -> Self::Context;
 }
 
+/// Trait for calculating the phase/amplitude of each transducer.
+///
+/// See also [`Gain`] derive macro.
+///
+/// [`Gain`]: autd3_derive::Gain
 pub trait Gain: std::fmt::Debug {
+    /// The type of the context generator.
     type G: GainContextGenerator;
 
+    /// Initialize the gain and generate the context generator.
+    ///
+    /// `filter` is a hash map that holds a bit vector representing the indices of the enabled transducers for each device index.
+    /// If `filter` is `None`, all transducers are enabled.
     fn init(
         self,
         geometry: &Geometry,
@@ -30,6 +43,7 @@ pub trait Gain: std::fmt::Debug {
     ) -> Result<Self::G, AUTDDriverError>;
 }
 
+#[doc(hidden)]
 pub struct GainOperationGenerator<G: GainContextGenerator> {
     pub generator: G,
     pub segment: Segment,

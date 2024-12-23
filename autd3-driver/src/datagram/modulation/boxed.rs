@@ -10,6 +10,7 @@ use crate::{
     geometry::Geometry,
 };
 
+/// A dyn-compatible version of [`Modulation`].
 pub trait DModulation {
     fn dyn_calc(&mut self) -> Result<Vec<u8>, AUTDDriverError>;
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
@@ -23,15 +24,20 @@ impl<
     fn dyn_calc(&mut self) -> Result<Vec<u8>, AUTDDriverError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
+        // SAFETY: This function is called only once from `Modulation::calc`.
         let g = unsafe { tmp.assume_init() };
         g.calc()
     }
 
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // SAFETY: This function is never called after `dyn_init`.
         unsafe { self.assume_init_ref() }.fmt(f)
     }
 }
 
+/// Boxed [`Modulation`].
+///
+/// This provides the ability to wrap any [`Modulation`] in a common type.
 #[derive(Modulation)]
 pub struct BoxedModulation {
     m: Box<dyn DModulation>,
@@ -58,7 +64,9 @@ impl Modulation for BoxedModulation {
     }
 }
 
+/// Trait to convert [`Modulation`] to [`BoxedModulation`].
 pub trait IntoBoxedModulation {
+    /// Convert [`Modulation`] to [`BoxedModulation`]
     fn into_boxed(self) -> BoxedModulation;
 }
 

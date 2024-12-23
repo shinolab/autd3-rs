@@ -1,11 +1,16 @@
 use autd3_derive::Builder;
 use derive_more::Debug;
 
+/// The behavior of the loop for [`Modulation`], [`FociSTM`], and [`GainSTM`].
+///
+/// [`Modulation`]: crate::datagram::Modulation
+/// [`FociSTM`]: crate::datagram::FociSTM
+/// [`GainSTM`]: crate::datagram::GainSTM
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Builder)]
 #[debug("{}", match self.rep { 0xFFFF => "Infinite".to_string(), 0 => "Once".to_string(), i => format!("Finite({})", i + 1) })]
 #[repr(C)]
 pub struct LoopBehavior {
-    #[get]
+    #[get(no_doc)]
     pub(crate) rep: u16,
 }
 
@@ -35,14 +40,30 @@ impl IntoLoopBehaviorFinite for std::num::NonZeroU16 {
 }
 
 impl LoopBehavior {
+    /// Creates a new [`LoopBehavior`] with an infinite loop.
     pub const fn infinite() -> Self {
         LoopBehavior { rep: 0xFFFF }
     }
 
+    /// Creates a new [`LoopBehavior`] with a finite loop. The value must not be zero.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autd3_driver::firmware::fpga::LoopBehavior;
+    /// # use std::num::NonZeroU16;
+    /// let finite: Option<LoopBehavior> = LoopBehavior::finite(1);
+    /// assert!(finite.is_some());
+    /// let finite: Option<LoopBehavior> = LoopBehavior::finite(0);
+    /// assert!(finite.is_none());
+    /// let finite: LoopBehavior = LoopBehavior::finite(NonZeroU16::new(1).unwrap());
+    /// ```
+    ///
     pub fn finite<T: IntoLoopBehaviorFinite>(repeat: T) -> T::Output {
         repeat.into_loop_behavior()
     }
 
+    /// Creates a new [`LoopBehavior`] with a single loop.
     pub const fn once() -> Self {
         Self { rep: 0 }
     }

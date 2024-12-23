@@ -2,8 +2,11 @@ use autd3_derive::Builder;
 use derive_more::Display;
 use derive_new::new;
 
+/// Major version number.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
 pub struct Major(pub u8);
+
+/// Minor version number.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
 pub struct Minor(pub u8);
 
@@ -27,34 +30,39 @@ fn version_map(major: Major, minor: Minor) -> String {
     }
 }
 
+/// FPGA firmware version.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display, Builder, new)]
 #[display("{}{}", version_map(self.major, self.minor), if self.is_emulator() {" [Emulator]"} else { "" })]
 pub struct FPGAVersion {
-    #[get]
+    #[get(no_doc)]
     major: Major,
-    #[get]
+    #[get(no_doc)]
     minor: Minor,
-    #[get]
+    #[get(no_doc)]
     function_bits: u8,
 }
 
 impl FPGAVersion {
+    #[doc(hidden)]
     pub const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
 
+    #[doc(hidden)]
     pub const fn is_emulator(&self) -> bool {
         (self.function_bits & Self::ENABLED_EMULATOR_BIT) == Self::ENABLED_EMULATOR_BIT
     }
 }
 
+/// CPU firmware version.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display, Builder, new)]
 #[display("{}", version_map(self.major, self.minor))]
 pub struct CPUVersion {
-    #[get]
+    #[get(no_doc)]
     major: Major,
-    #[get]
+    #[get(no_doc)]
     minor: Minor,
 }
 
+/// Firmware version.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display, Builder, new)]
 #[display(
     "{}: CPU = {}, FPGA = {}",
@@ -64,20 +72,24 @@ pub struct CPUVersion {
 )]
 pub struct FirmwareVersion {
     idx: usize,
-    #[get]
+    #[get(no_doc)]
     cpu: CPUVersion,
-    #[get]
+    #[get(no_doc)]
     fpga: FPGAVersion,
 }
 
 impl FirmwareVersion {
+    #[doc(hidden)]
     pub const LATEST_VERSION_NUM_MAJOR: Major = Major(0xA2);
+    #[doc(hidden)]
     pub const LATEST_VERSION_NUM_MINOR: Minor = Minor(0x01);
 
+    #[doc(hidden)]
     pub const fn is_emulator(&self) -> bool {
         self.fpga.is_emulator()
     }
 
+    /// Gets the latest version.
     pub fn latest() -> String {
         version_map(
             Self::LATEST_VERSION_NUM_MAJOR,

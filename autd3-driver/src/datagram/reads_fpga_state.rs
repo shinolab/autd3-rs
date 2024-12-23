@@ -4,10 +4,11 @@ use autd3_derive::Builder;
 use derive_more::Debug;
 use derive_new::new;
 
+/// [`Datagram`] to enable reading the FPGA state.
 #[derive(Builder, Debug, new)]
 pub struct ReadsFPGAState<F: Fn(&Device) -> bool> {
     #[debug(ignore)]
-    #[get(ref)]
+    #[get(ref, no_doc)]
     f: F,
 }
 

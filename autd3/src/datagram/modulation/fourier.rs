@@ -8,8 +8,6 @@ use num::integer::lcm;
 /// `Moudlation` that is a sum of multiple [`Sine`].
 ///
 /// The modulation value is calculated as `⌊offset + scale_factor * (sum of components)⌋`.
-///
-/// [`Sine`]: crate::modulation::Sine
 #[derive(Modulation, Clone, PartialEq, Debug, Deref, Builder)]
 pub struct Fourier<S: SamplingMode> {
     #[deref]

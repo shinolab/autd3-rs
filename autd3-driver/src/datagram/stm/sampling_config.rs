@@ -8,16 +8,23 @@ use crate::{
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[non_exhaustive]
+/// Sampling configuration for STM.
 pub enum STMConfig {
+    #[doc(hidden)]
     Freq(Freq<f32>),
+    #[doc(hidden)]
     Period(Duration),
+    #[doc(hidden)]
     SamplingConfig(SamplingConfig),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+/// Sampling configuration for STM with nearest frequency or period.
 #[non_exhaustive]
 pub enum STMConfigNearest {
+    #[doc(hidden)]
     Freq(Freq<f32>),
+    #[doc(hidden)]
     Period(Duration),
 }
 
