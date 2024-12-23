@@ -26,3 +26,7 @@ remote = ["itertools", "cc", "tracing"]
 default = ["local"]
 all = ["local", "remote"]
 async-trait = ["autd3-driver/async-trait"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
