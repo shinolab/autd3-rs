@@ -15,7 +15,7 @@ autd3 = { workspace = true }
 autd3-driver = { workspace = true }
 thiserror = { workspace = true }
 csv = { workspace = true }
-tracing = { workspace = true }
+tracing = { workspace = true, features = ["attributes"] }
 
 [features]
 default = []
