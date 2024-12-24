@@ -17,20 +17,29 @@ const INDEX_OFFSET_BASE: u32 = 0x8100_0000;
 const INDEX_OFFSET_BASE_READ: u32 = 0x8000_0000;
 const PORT: u16 = 301;
 
+/// A [`Link`] using TwinCAT3.
+///
+/// To use this link, you need to install TwinCAT3 and run [`TwinCATAUTDServer`] on server side.
+///
+/// [`TwinCATAUTDServer`]: https://github.com/shinolab/autd3-server
 pub struct RemoteTwinCAT {
     port: c_long,
     net_id: AmsNetId,
 }
 
+/// A builder for [`RemoteTwinCAT`].
 #[derive(Builder, Debug)]
 pub struct RemoteTwinCATBuilder {
     #[get(ref)]
+    /// The AMS Net ID of the TwinCAT3 server.
     server_ams_net_id: String,
     #[get(ref)]
     #[set(into)]
+    /// The IP address of the TwinCAT3 server. If empty, the first 4 octets of `server_ams_net_id` are used.
     server_ip: String,
     #[get(ref)]
     #[set(into)]
+    /// The AMS Net ID of the client.
     client_ams_net_id: String,
 }
 
@@ -115,6 +124,7 @@ impl LinkBuilder for RemoteTwinCATBuilder {
 }
 
 impl RemoteTwinCAT {
+    /// Creates a new [`RemoteTwinCATBuilder`].
     pub fn builder(server_ams_net_id: impl Into<String>) -> RemoteTwinCATBuilder {
         RemoteTwinCATBuilder {
             server_ams_net_id: server_ams_net_id.into(),

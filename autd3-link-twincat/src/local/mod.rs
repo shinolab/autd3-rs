@@ -31,12 +31,18 @@ const INDEX_OFFSET_BASE: u32 = 0x8100_0000;
 const INDEX_OFFSET_BASE_READ: u32 = 0x8000_0000;
 const PORT: u16 = 301;
 
+/// A [`Link`] using TwinCAT3.
+///
+/// To use this link, you need to install TwinCAT3 and run [`TwinCATAUTDServer`] before.
+///
+/// [`TwinCATAUTDServer`]: https://github.com/shinolab/autd3-server
 pub struct TwinCAT {
     port: i32,
     send_addr: AmsAddr,
     dll: Library,
 }
 
+/// A builder for [`TwinCAT`].
 #[derive(Builder)]
 pub struct TwinCATBuilder {}
 
@@ -80,6 +86,7 @@ impl LinkBuilder for TwinCATBuilder {
 }
 
 impl TwinCAT {
+    /// Creates a new [`TwinCATBuilder`].
     pub const fn builder() -> TwinCATBuilder {
         TwinCATBuilder {}
     }
