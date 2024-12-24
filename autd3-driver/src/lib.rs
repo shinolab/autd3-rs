@@ -30,7 +30,10 @@ pub mod utils;
 #[cfg(feature = "async-trait")]
 pub use async_trait::async_trait;
 
-/// Utilities for user-defined [`Gain`] and `Modulation`.
+/// Utilities for user-defined [`Gain`] and [`Modulation`].
+///
+/// [`Gain`]: crate::datagram::Gain
+/// [`Modulation`]: crate::datagram::Modulation
 #[cfg(feature = "derive")]
 pub mod derive {
     pub use crate::{
