@@ -1,3 +1,11 @@
+#![warn(missing_docs)]
+#![warn(rustdoc::missing_crate_level_docs)]
+#![warn(rustdoc::unescaped_backticks)]
+
+//! This crate provides a link for [`AUTD3 Simulator`].
+//!
+//! [`AUTD3 Simulator`]: https://github.com/shinolab/autd3-server
+
 use autd3_protobuf::*;
 
 use std::net::SocketAddr;
@@ -8,15 +16,20 @@ use autd3_driver::{
     link::{Link, LinkBuilder},
 };
 
+/// A [`Link`] for [`AUTD3 Simulator`].
+///
+/// [`AUTD3 Simulator`]: https://github.com/shinolab/autd3-server
 pub struct Simulator {
     client: simulator_client::SimulatorClient<tonic::transport::Channel>,
     is_open: bool,
     last_geometry_version: usize,
 }
 
+/// A builder for [`Simulator`].
 #[derive(Builder, Debug)]
 pub struct SimulatorBuilder {
     #[get]
+    /// AUTD3 Simulator address.
     addr: SocketAddr,
 }
 
@@ -54,6 +67,7 @@ impl LinkBuilder for SimulatorBuilder {
 }
 
 impl Simulator {
+    /// Creates a new [`SimulatorBuilder`].
     pub const fn builder(addr: SocketAddr) -> SimulatorBuilder {
         SimulatorBuilder { addr }
     }
