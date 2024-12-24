@@ -35,5 +35,5 @@ rand = { workspace = true }
 rstest = { workspace = true }
 
 [package.metadata.docs.rs]
-all-features = true
+features = ["lightweight", "async-trait"]
 rustdoc-args = ["--cfg", "docsrs"]
