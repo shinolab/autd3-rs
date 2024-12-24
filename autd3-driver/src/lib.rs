@@ -1,3 +1,4 @@
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs)]
 #![warn(rustdoc::missing_crate_level_docs)]
 #![warn(rustdoc::unescaped_backticks)]
@@ -27,6 +28,7 @@ pub mod link;
 #[doc(hidden)]
 pub mod utils;
 
+#[cfg_attr(docsrs, doc(cfg(feature = "async-trait")))]
 #[cfg(feature = "async-trait")]
 pub use async_trait::async_trait;
 
@@ -34,6 +36,7 @@ pub use async_trait::async_trait;
 ///
 /// [`Gain`]: crate::datagram::Gain
 /// [`Modulation`]: crate::datagram::Modulation
+#[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
 #[cfg(feature = "derive")]
 pub mod derive {
     pub use crate::{
