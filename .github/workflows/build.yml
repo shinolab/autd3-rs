@@ -75,4 +75,13 @@ jobs:
           toolchain: nightly
       - run: python3 build.py doc
       - uses: dtolnay/install@cargo-docs-rs
-      - run: cargo docs-rs
+      - run: | 
+          cargo +nightly docs-rs -pautd3
+          cargo +nightly docs-rs -pautd3-derive
+          cargo +nightly docs-rs -pautd3-driver
+          cargo +nightly docs-rs -pautd3-firmware-emulator
+          cargo +nightly docs-rs -pautd3-gain-holo
+          cargo +nightly docs-rs -pautd3-link-simulator
+          cargo +nightly docs-rs -pautd3-link-twincat
+          cargo +nightly docs-rs -pautd3-modulation-audio-file
+          cargo +nightly docs-rs -pautd3-protobuf
