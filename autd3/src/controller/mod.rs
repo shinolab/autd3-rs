@@ -203,6 +203,7 @@ impl<'a, L: Link> IntoIterator for &'a mut Controller<L> {
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(feature = "async-trait")))]
 #[cfg(feature = "async-trait")]
 impl<L: Link + 'static> Controller<L> {
     /// Converts `Controller<L>` into a `Controller<Box<dyn Link>>`.

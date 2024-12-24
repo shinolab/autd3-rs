@@ -33,3 +33,7 @@ async-trait = ["autd3-driver/async-trait", "autd3/async-trait", "autd3-gain-holo
 approx = { workspace = true }
 rand = { workspace = true }
 rstest = { workspace = true }
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
