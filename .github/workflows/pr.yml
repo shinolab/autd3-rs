@@ -125,10 +125,37 @@ jobs:
       - run: |
           python3 build.py test --miri
 
+  build-docs:
+    needs: changed-files
+    if: ${{ needs.changed-files.outputs.src == 'true' }}
+    name: build-docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: ./.github/actions/setup-build
+        with:
+          os: ubuntu-latest
+          toolchain: nightly
+      - run: python3 build.py doc
+      - uses: dtolnay/install@cargo-docs-rs
+      - run: | 
+          cargo +nightly docs-rs -pautd3
+          cargo +nightly docs-rs -pautd3-derive
+          cargo +nightly docs-rs -pautd3-driver
+          cargo +nightly docs-rs -pautd3-firmware-emulator
+          cargo +nightly docs-rs -pautd3-gain-holo
+          cargo +nightly docs-rs -pautd3-link-simulator
+          cargo +nightly docs-rs -pautd3-link-twincat
+          cargo +nightly docs-rs -pautd3-modulation-audio-file
+          cargo +nightly docs-rs -pautd3-protobuf
+
   auto-merge:
     needs:
       - all-tests-passed
       - miri
+      - build-docs
     permissions:
       pull-requests: write
       contents: write

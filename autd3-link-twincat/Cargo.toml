@@ -14,7 +14,7 @@ autd3-driver = { workspace = true, features = ["derive"] }
 itertools = { workspace = true, optional = true }
 libloading = { workspace = true, optional = true }
 thiserror = { workspace = true }
-tracing = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true, features = ["attributes"] }
 zerocopy = { workspace = true }
 
 [build-dependencies]
@@ -26,3 +26,7 @@ remote = ["itertools", "cc", "tracing"]
 default = ["local"]
 all = ["local", "remote"]
 async-trait = ["autd3-driver/async-trait"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

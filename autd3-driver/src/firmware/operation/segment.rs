@@ -15,6 +15,8 @@ use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
 /// [`Datagram`] to change the segment.
+///
+/// [`Datagram`]: crate::datagram::Datagram
 #[derive(Debug, Clone, Copy)]
 pub enum SwapSegment {
     /// Change the [`Gain`] segment.

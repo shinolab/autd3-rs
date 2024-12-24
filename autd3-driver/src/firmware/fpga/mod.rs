@@ -34,6 +34,8 @@ use crate::{
 pub const FPGA_MAIN_CLK_FREQ: Freq<u32> = Freq { freq: 10240000 };
 
 /// The unit of the fixed-point number used in the [`FociSTM`].
+///
+/// [`FociSTM`]: crate::datagram::FociSTM
 pub const FOCI_STM_FIXED_NUM_UNIT: f32 = 0.025 * mm;
 const FOCI_STM_FIXED_NUM_WIDTH: usize = 18;
 const FOCI_STM_FIXED_NUM_UPPER: i32 = (1 << (FOCI_STM_FIXED_NUM_WIDTH - 1)) - 1;
