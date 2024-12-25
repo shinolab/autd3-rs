@@ -9,6 +9,7 @@ use std::{
 
 use crate::error::AudioFileError;
 
+/// [`Modulation`] from raw PCM data.
 #[derive(Modulation, Debug)]
 pub struct RawPCM {
     path: PathBuf,
@@ -19,6 +20,7 @@ pub struct RawPCM {
 }
 
 impl RawPCM {
+    /// Create a new instance of [`RawPCM`].
     pub fn new<T: TryInto<SamplingConfig>>(
         path: impl AsRef<Path>,
         sampling_config: T,
@@ -31,6 +33,18 @@ impl RawPCM {
         })
     }
 
+    /// Create a new instance of [`RawPCM`] with resampling.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use autd3::prelude::*;
+    /// use autd3::modulation::resampler::SincInterpolation;
+    /// use autd3_modulation_audio_file::RawPCM;
+    ///
+    /// let path = "path/to/file.dat";
+    /// RawPCM::new_with_resample(&path, 2.0 * kHz, 4 * kHz, SincInterpolation::default());
+    /// ```
     pub fn new_with_resample<T: TryInto<SamplingConfig>>(
         path: impl AsRef<Path>,
         source: Freq<f32>,

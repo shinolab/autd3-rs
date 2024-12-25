@@ -8,11 +8,13 @@ use std::{
 
 use crate::error::AudioFileError;
 
+/// [`Modulation`] from CSV data.
 #[derive(Modulation, Builder, Debug)]
 pub struct Csv {
     path: PathBuf,
     #[get]
     #[set]
+    /// The deliminator of CSV file.
     deliminator: u8,
     #[no_change]
     config: SamplingConfig,
@@ -21,6 +23,7 @@ pub struct Csv {
 }
 
 impl Csv {
+    /// Create a new instance of [`Csv`].
     pub fn new<T: TryInto<SamplingConfig>>(
         path: impl AsRef<Path>,
         sampling_config: T,
@@ -34,6 +37,18 @@ impl Csv {
         })
     }
 
+    /// Create a new instance of [`Csv`] with resampling.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use autd3::prelude::*;
+    /// use autd3::modulation::resampler::SincInterpolation;
+    /// use autd3_modulation_audio_file::Csv;
+    ///
+    /// let path = "path/to/file.csv";
+    /// Csv::new_with_resample(&path, 2.0 * kHz, 4 * kHz, SincInterpolation::default());
+    /// ```
     pub fn new_with_resample<T: TryInto<SamplingConfig>>(
         path: impl AsRef<Path>,
         source: Freq<f32>,

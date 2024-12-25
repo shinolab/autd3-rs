@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 
 use crate::error::AudioFileError;
 
+/// [`Modulation`] from WAV data.
 #[derive(Modulation, Debug)]
 pub struct Wav {
     path: PathBuf,
@@ -16,6 +17,7 @@ pub struct Wav {
 }
 
 impl Wav {
+    /// Create a new instance of [`Wav`].
     pub fn new(path: impl AsRef<Path>) -> Result<Self, AudioFileError> {
         let path = path.as_ref().to_path_buf();
         let reader = hound::WavReader::open(&path)?;
@@ -28,6 +30,18 @@ impl Wav {
         })
     }
 
+    /// Create a new instance of [`Wav`] with resampling.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use autd3::prelude::*;
+    /// use autd3::modulation::resampler::SincInterpolation;
+    /// use autd3_modulation_audio_file::Wav;
+    ///
+    /// let path = "path/to/file.wav";
+    /// Wav::new_with_resample(&path, 4 * kHz, SincInterpolation::default());
+    /// ```
     pub fn new_with_resample<T: TryInto<SamplingConfig>>(
         path: impl AsRef<Path>,
         target: T,
