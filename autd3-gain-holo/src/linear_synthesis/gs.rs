@@ -13,17 +13,24 @@ use bit_vec::BitVec;
 use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
+/// Gerchberg-Saxton algorithm
+///
+/// See [Marzo, et al., 2019](https://www.pnas.org/doi/full/10.1073/pnas.1813047115) for more details.
 #[derive(Gain, Builder, Debug)]
 pub struct GS<D: Directivity, B: LinAlgBackend<D>> {
     #[get(ref)]
+    /// The focal positions.
     foci: Vec<Point3>,
     #[get(ref)]
+    /// The focal amplitudes.
     amps: Vec<Amplitude>,
     #[get]
     #[set]
+    /// The number of iterations.
     repeat: NonZeroUsize,
     #[get]
     #[set]
+    /// The transducers' emission constraint.
     constraint: EmissionConstraint,
     #[debug("{}", tynm::type_name::<B>())]
     backend: Arc<B>,
@@ -32,6 +39,7 @@ pub struct GS<D: Directivity, B: LinAlgBackend<D>> {
 }
 
 impl<D: Directivity, B: LinAlgBackend<D>> GS<D, B> {
+    /// Creates a new [`GS`].
     pub fn new(backend: Arc<B>, iter: impl IntoIterator<Item = (Point3, Amplitude)>) -> Self {
         let (foci, amps) = iter.into_iter().unzip();
         Self {

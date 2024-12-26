@@ -1,15 +1,21 @@
 use autd3_driver::firmware::fpga::EmitIntensity;
 
+/// Emission constraint of transducers.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[non_exhaustive]
 pub enum EmissionConstraint {
+    /// Normalize the value.
     Normalize,
+    /// Normalize the value and then multiply by the given value.
     Multiply(f32),
+    /// Ignore the value calculated and use the given value.
     Uniform(EmitIntensity),
+    /// Clamp the value between the given values.
     Clamp(EmitIntensity, EmitIntensity),
 }
 
 impl EmissionConstraint {
+    #[doc(hidden)]
     pub fn convert(&self, value: f32, max_value: f32) -> EmitIntensity {
         match self {
             EmissionConstraint::Normalize => {

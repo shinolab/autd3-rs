@@ -1,3 +1,12 @@
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![warn(missing_docs)]
+#![warn(rustdoc::missing_crate_level_docs)]
+#![warn(rustdoc::unescaped_backticks)]
+
+//! This crate provides [`Gain`] that produces multiple focal points.
+//!
+//! [`Gain`]: autd3_driver::datagram::Gain
+
 mod amp;
 mod backend;
 mod backend_nalgebra;
