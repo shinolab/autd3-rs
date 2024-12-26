@@ -13,29 +13,45 @@ use bit_vec::BitVec;
 use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
+/// Levenberg-Marquardt algorithm
+///
+/// See [^Levenberg, 1944] and [^Marquardt, 1963] for more details. The implementation is based on [^Madsen, et al., 2004].
+///
+/// [^Levenberg, 1944]: Levenberg, Kenneth. "A method for the solution of certain non-linear problems in least squares." Quarterly of applied mathematics 2.2 (1944): 164-168.
+/// [^Marquardt, 1963]: Marquardt, Donald W. "An algorithm for least-squares estimation of nonlinear parameters." Journal of the society for Industrial and Applied Mathematics 11.2 (1963): 431-441.
+/// [^Madsen, et al., 2004]: Madsen, Kaj, Hans Bruun Nielsen, and Ole Tingleff. "Methods for non-linear least squares problems." (2004).
 #[derive(Gain, Builder, Debug)]
 pub struct LM<D: Directivity, B: LinAlgBackend<D>> {
     #[get(ref)]
+    /// The focal positions.
     foci: Vec<Point3>,
     #[get(ref)]
+    /// The focal amplitudes.
     amps: Vec<Amplitude>,
     #[get]
     #[set]
+    /// The stopping criteria.
     eps_1: f32,
     #[get]
     #[set]
+    /// The relative step size.
     eps_2: f32,
     #[get]
     #[set]
+    /// The damping parameter.
     tau: f32,
     #[get]
     #[set]
+    /// The maximum number of iterations.
     k_max: NonZeroUsize,
     #[get(ref)]
     #[set(no_const)]
+    /// Initial values of the transducers' amplitudes.
     initial: Vec<f32>,
     #[get]
     #[set]
+    #[set]
+    /// The transducers' emission constraint.
     constraint: EmissionConstraint,
     #[debug("{}", tynm::type_name::<B>())]
     backend: Arc<B>,
@@ -44,6 +60,7 @@ pub struct LM<D: Directivity, B: LinAlgBackend<D>> {
 }
 
 impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
+    /// Creates a new [`LM`].
     pub fn new(backend: Arc<B>, iter: impl IntoIterator<Item = (Point3, Amplitude)>) -> Self {
         let (foci, amps) = iter.into_iter().unzip();
         Self {

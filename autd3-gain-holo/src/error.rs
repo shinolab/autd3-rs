@@ -1,17 +1,19 @@
 use autd3_driver::error::AUTDDriverError;
 use thiserror::Error;
 
+/// A interface for error handling in autd3-gain-holo.
 #[derive(Error, Debug)]
 #[non_exhaustive]
 pub enum HoloError {
     #[error("Failed to solve linear system")]
+    /// Failed to solve linear system.
     SolveFailed,
     #[error("{0}")]
+    /// Backend error.
     BackendError(String),
     #[error("Invalid operation")]
+    /// Invalid operation.
     InvalidOperation,
-    #[error("Failed to compute SVD")]
-    SVDFailed,
 }
 
 impl From<HoloError> for AUTDDriverError {

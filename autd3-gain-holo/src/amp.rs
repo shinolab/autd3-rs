@@ -3,12 +3,18 @@ use autd3_driver::defined::ABSOLUTE_THRESHOLD_OF_HEARING;
 use derive_more::{Display, Div, Mul};
 use zerocopy::{Immutable, IntoBytes};
 
+/// \[dB\]
 #[allow(non_camel_case_types)]
 pub struct dB;
+
+/// \[Pa\]
 pub struct Pa;
+
+/// \[kPa\]
 #[allow(non_camel_case_types)]
 pub struct kPa;
 
+/// Amplitude
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Div, Mul, Display, IntoBytes, Immutable)]
 #[display("{:.2} Pa", value)]
 pub struct Amplitude {
@@ -16,10 +22,12 @@ pub struct Amplitude {
 }
 
 impl Amplitude {
+    /// Converts to value in Pa.
     pub const fn pascal(&self) -> f32 {
         self.value
     }
 
+    /// Converts to sound pressure level in dB.
     pub fn spl(&self) -> f32 {
         20.0 * f32::log10(self.value / ABSOLUTE_THRESHOLD_OF_HEARING)
     }
