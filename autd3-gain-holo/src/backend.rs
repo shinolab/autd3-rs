@@ -9,19 +9,30 @@ use nalgebra::{Dyn, VecStorage, U1};
 use crate::error::HoloError;
 use bit_vec::BitVec;
 
+/// Complex number
 pub type Complex = nalgebra::Complex<f32>;
 
+/// Complex matrix
 pub type MatrixXc = nalgebra::Matrix<Complex, Dyn, Dyn, VecStorage<Complex, Dyn, Dyn>>;
+/// Real matrix
 pub type MatrixX = nalgebra::Matrix<f32, Dyn, Dyn, VecStorage<f32, Dyn, Dyn>>;
+/// Complex vector
 pub type VectorXc = nalgebra::Matrix<Complex, Dyn, U1, VecStorage<Complex, Dyn, U1>>;
+/// Real vector
 pub type VectorX = nalgebra::Matrix<f32, Dyn, U1, VecStorage<f32, Dyn, U1>>;
 
+/// Transpose
 pub enum Trans {
+    /// No transpose
     NoTrans,
+    /// Transpose
     Trans,
+    /// Conjugate transpose
     ConjTrans,
 }
 
+/// Linear algebra backend
+#[allow(missing_docs)]
 pub trait LinAlgBackend<D: Directivity> {
     type MatrixXc;
     type MatrixX;

@@ -13,14 +13,18 @@ use bit_vec::BitVec;
 use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
+/// Naive linear synthesis of simple focal solutions
 #[derive(Gain, Builder, Debug)]
 pub struct Naive<D: Directivity, B: LinAlgBackend<D>> {
     #[get(ref)]
+    /// The focal positions.
     foci: Vec<Point3>,
     #[get(ref)]
+    /// The focal amplitudes.
     amps: Vec<Amplitude>,
     #[get]
     #[set]
+    /// The transducers' emission constraint.
     constraint: EmissionConstraint,
     #[debug("{}", tynm::type_name::<B>())]
     backend: Arc<B>,
@@ -29,6 +33,7 @@ pub struct Naive<D: Directivity, B: LinAlgBackend<D>> {
 }
 
 impl<D: Directivity, B: LinAlgBackend<D>> Naive<D, B> {
+    /// Creates a new [`Naive`].
     pub fn new(backend: Arc<B>, iter: impl IntoIterator<Item = (Point3, Amplitude)>) -> Self {
         let (foci, amps) = iter.into_iter().unzip();
         Self {

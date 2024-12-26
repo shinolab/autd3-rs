@@ -19,23 +19,32 @@ use derive_more::Debug;
 use nalgebra::ComplexField;
 use rand::seq::SliceRandom;
 
+/// Greedy algorithm and Brute-force search
+///
+/// [`Greedy`] is based on the method of optimizing by brute-force search and greedy algorithm by discretizing the phase.
+/// See [Suzuki, et al., 2021](https://ieeexplore.ieee.org/document/9419757) for more details.
 #[derive(Gain, Builder, Debug)]
 pub struct Greedy<D: Directivity> {
     #[get(ref)]
+    /// The focal positions.
     foci: Vec<Point3>,
     #[get(ref)]
+    /// The focal amplitudes.
     amps: Vec<Amplitude>,
     #[get]
     #[set]
+    /// The number of phase divisions.
     phase_div: NonZeroU8,
     #[get]
     #[set]
+    /// The transducers' emission constraint.
     constraint: EmissionConstraint,
     #[debug(ignore)]
     _phantom: std::marker::PhantomData<D>,
 }
 
 impl<D: Directivity> Greedy<D> {
+    /// Creates a new [`Greedy`].
     pub fn new(iter: impl IntoIterator<Item = (Point3, Amplitude)>) -> Self {
         let (foci, amps) = iter.into_iter().unzip();
         Self {

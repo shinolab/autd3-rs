@@ -13,17 +13,24 @@ use bit_vec::BitVec;
 use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
+/// Gershberg-Saxon for Phased Arrays of Transducers
+///
+/// See [Plasencia, et al., 2020](https://dl.acm.org/doi/10.1145/3386569.3392492) for more details.
 #[derive(Gain, Builder, Debug)]
 pub struct GSPAT<D: Directivity, B: LinAlgBackend<D>> {
     #[get(ref)]
+    /// The focal positions.
     foci: Vec<Point3>,
+    /// The focal amplitudes.
     #[get(ref)]
     amps: Vec<Amplitude>,
     #[get]
     #[set]
+    /// The number of iterations.
     repeat: NonZeroUsize,
     #[get]
     #[set]
+    /// The transducers' emission constraint.
     constraint: EmissionConstraint,
     #[debug("{}", tynm::type_name::<B>())]
     backend: Arc<B>,
@@ -32,6 +39,7 @@ pub struct GSPAT<D: Directivity, B: LinAlgBackend<D>> {
 }
 
 impl<D: Directivity, B: LinAlgBackend<D>> GSPAT<D, B> {
+    /// Creates a new [`GSPAT`].
     pub fn new(backend: Arc<B>, iter: impl IntoIterator<Item = (Point3, Amplitude)>) -> Self {
         let (foci, amps) = iter.into_iter().unzip();
         Self {

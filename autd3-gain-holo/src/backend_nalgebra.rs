@@ -18,6 +18,9 @@ use autd3_driver::{
 
 use crate::{error::HoloError, LinAlgBackend, MatrixX, MatrixXc, VectorX, VectorXc};
 
+/// [`LinAlgBackend`] using [`nalgebra`].
+///
+/// [`nalgebra`]: https://docs.rs/nalgebra/latest/nalgebra/
 #[derive(new)]
 pub struct NalgebraBackend<D: Directivity> {
     _phantom: std::marker::PhantomData<D>,
