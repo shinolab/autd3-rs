@@ -43,6 +43,9 @@ jobs:
           - os: ubuntu-latest
             features: "lightweight async-trait"
             lint: true
+          - os: ubuntu-latest
+            features: "dynamic_freq"
+            lint: true
     steps:
       - uses: actions/checkout@v4
         with:

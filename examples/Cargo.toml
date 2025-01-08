@@ -60,3 +60,4 @@ lightweight = ["autd3-protobuf/lightweight", "autd3-driver/async-trait", "autd3-
 lightweight-server = ["autd3-protobuf/lightweight", "autd3-link-twincat/local", "autd3-link-twincat/async-trait", "autd3-driver/async-trait", "autd3-driver/lightweight", "tonic", "tokio/signal"]
 all = ["twincat", "remote_twincat", "simulator"]
 unity = ["autd3-driver/use_meter", "autd3-driver/left_handed"]
+dynamic_freq = ["autd3-driver/dynamic_freq"]

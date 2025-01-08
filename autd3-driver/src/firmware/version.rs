@@ -1,6 +1,7 @@
 use autd3_derive::Builder;
 use derive_more::Display;
 use derive_new::new;
+use itertools::Itertools;
 
 /// Major version number.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
@@ -31,8 +32,7 @@ fn version_map(major: Major, minor: Minor) -> String {
 }
 
 /// FPGA firmware version.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, Builder, new)]
-#[display("{}{}", version_map(self.major, self.minor), if self.is_emulator() {" [Emulator]"} else { "" })]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Builder, new)]
 pub struct FPGAVersion {
     #[get(no_doc)]
     major: Major,
@@ -44,11 +44,35 @@ pub struct FPGAVersion {
 
 impl FPGAVersion {
     #[doc(hidden)]
+    pub const DYNAMIC_FREQ_BIT: u8 = 1 << 1;
+    #[doc(hidden)]
     pub const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
+
+    #[doc(hidden)]
+    pub const fn dynamic_freq_enabled(&self) -> bool {
+        (self.function_bits & Self::DYNAMIC_FREQ_BIT) == Self::DYNAMIC_FREQ_BIT
+    }
 
     #[doc(hidden)]
     pub const fn is_emulator(&self) -> bool {
         (self.function_bits & Self::ENABLED_EMULATOR_BIT) == Self::ENABLED_EMULATOR_BIT
+    }
+}
+
+impl std::fmt::Display for FPGAVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", version_map(self.major, self.minor))?;
+        let features = [
+            self.is_emulator().then_some("Emulator"),
+            self.dynamic_freq_enabled().then_some("DynamicFreq"),
+        ]
+        .iter()
+        .filter_map(Option::as_ref)
+        .join(", ");
+        if !features.is_empty() {
+            write!(f, " [{}]", features)?;
+        }
+        Ok(())
     }
 }
 
@@ -194,20 +218,41 @@ mod tests {
         assert_eq!(info.fpga().function_bits(), 5);
     }
 
+    #[rstest::rstest]
     #[test]
-    fn display() {
-        let info = FirmwareVersion::new(
+    #[case(
+        "0: CPU = v0.4, FPGA = v0.5",
+        FirmwareVersion::new(
             0,
             CPUVersion::new(Major(1), Minor(3)),
             FPGAVersion::new(Major(2), Minor(4), 0),
-        );
-        assert_eq!(format!("{}", info), "0: CPU = v0.4, FPGA = v0.5");
-
-        let info = FirmwareVersion::new(
+        )
+    )]
+    #[case(
+        "0: CPU = v0.4, FPGA = v0.5 [Emulator]",
+        FirmwareVersion::new(
             0,
             CPUVersion::new(Major(1), Minor(3)),
             FPGAVersion::new(Major(2), Minor(4), FPGAVersion::ENABLED_EMULATOR_BIT),
-        );
-        assert_eq!(format!("{}", info), "0: CPU = v0.4, FPGA = v0.5 [Emulator]");
+        )
+    )]
+    #[case(
+        "0: CPU = v0.4, FPGA = v0.5 [DynamicFreq]",
+        FirmwareVersion::new(
+            0,
+            CPUVersion::new(Major(1), Minor(3)),
+            FPGAVersion::new(Major(2), Minor(4), FPGAVersion::DYNAMIC_FREQ_BIT),
+        )
+    )]
+    #[case(
+        "0: CPU = v0.4, FPGA = v0.5 [Emulator, DynamicFreq]",
+        FirmwareVersion::new(
+            0,
+            CPUVersion::new(Major(1), Minor(3)),
+            FPGAVersion::new(Major(2), Minor(4), FPGAVersion::ENABLED_EMULATOR_BIT | FPGAVersion::DYNAMIC_FREQ_BIT),
+        )
+    )]
+    fn display(#[case] expected: &str, #[case] info: FirmwareVersion) {
+        assert_eq!(expected, format!("{}", info));
     }
 }

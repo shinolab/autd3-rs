@@ -1,4 +1,6 @@
 mod clear;
+#[cfg(feature = "dynamic_freq")]
+mod clock;
 mod cpu_gpio_out;
 mod debug;
 mod force_fan;
@@ -16,6 +18,8 @@ mod stm;
 mod sync;
 
 pub(crate) use clear::*;
+#[cfg(feature = "dynamic_freq")]
+pub(crate) use clock::*;
 pub(crate) use cpu_gpio_out::*;
 pub(crate) use debug::*;
 pub(crate) use force_fan::*;
@@ -52,6 +56,8 @@ pub(crate) enum TypeTag {
     Clear = 0x01,
     Sync = 0x02,
     FirmwareVersion = 0x03,
+    #[cfg(feature = "dynamic_freq")]
+    ConfigFPGAClock = 0x04,
     Modulation = 0x10,
     ModulationSwapSegment = 0x11,
     Silencer = 0x21,

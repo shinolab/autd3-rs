@@ -7,6 +7,8 @@ use super::params::{
 };
 
 mod clear;
+#[cfg(feature = "dynamic_freq")]
+mod clock;
 mod cpu_gpio_out;
 mod debug;
 mod force_fan;

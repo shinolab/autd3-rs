@@ -2,11 +2,7 @@ use std::time::Duration;
 
 use thiserror::Error;
 
-use crate::{
-    defined::{Freq, ULTRASOUND_FREQ, ULTRASOUND_PERIOD},
-    firmware::cpu::GainSTMMode,
-    firmware::fpga::*,
-};
+use crate::{defined::Freq, firmware::cpu::GainSTMMode, firmware::fpga::*};
 
 /// A interface for error handling in autd3-driver.
 #[derive(Error, Debug, PartialEq, Clone)]
@@ -21,16 +17,10 @@ pub enum AUTDDriverError {
     ModulationSizeOutOfRange(usize),
 
     /// Invalid silencer completion time.
-    #[error(
-        "Silencer completion time ({0:?}) must be a multiple of {period:?}",
-        period = ULTRASOUND_PERIOD
-    )]
+    #[error("Silencer completion time ({0:?}) must be a multiple of the ultrasound period")]
     InvalidSilencerCompletionTime(Duration),
     /// Silencer completion time is out of range.
-    #[error(
-        "Silencer completion time ({0:?}) is out of range ([{min:?}, {max:?}])",
-        min = ULTRASOUND_PERIOD,
-        max = ULTRASOUND_PERIOD * 256)]
+    #[error("Silencer completion time ({0:?}) is out of range")]
     SilencerCompletionTimeOutOfRange(Duration),
 
     /// Unknown group key.
@@ -47,16 +37,13 @@ pub enum AUTDDriverError {
     #[error("Sampling division ({0}) must not be zero")]
     SamplingDivisionInvalid(u16),
     /// Invalid sampling frequency.
-    #[error("Sampling frequency ({0:?}) must divide {period:?}", period = ULTRASOUND_FREQ)]
+    #[error("Sampling frequency ({0:?}) must divide theultrasound frequency")]
     SamplingFreqInvalid(Freq<u32>),
     /// Invalid sampling frequency.
-    #[error("Sampling frequency ({0:?}) must divide {period:?}", period = ULTRASOUND_FREQ)]
+    #[error("Sampling frequency ({0:?}) must divide the ultrasound frequency")]
     SamplingFreqInvalidF(Freq<f32>),
     /// Invalid sampling period.
-    #[error(
-        "Sampling period ({0:?}) must be a multiple of {period:?}",
-        period = ULTRASOUND_PERIOD
-    )]
+    #[error("Sampling period ({0:?}) must be a multiple of the ultrasound period")]
     SamplingPeriodInvalid(Duration),
     /// Sampling frequency is out of range.
     #[error("Sampling frequency ({0:?}) is out of range ([{1:?}, {2:?}])")]
@@ -136,6 +123,11 @@ pub enum AUTDDriverError {
     #[cfg(target_os = "windows")]
     #[error("{0}")]
     WindowsError(#[from] windows::core::Error),
+
+    #[cfg(feature = "dynamic_freq")]
+    #[error("Ultrasound frequency ({0:?}) is not supported")]
+    /// Invalid ultrasound frequency.
+    InvalidFrequency(Freq<u32>),
 
     /// Not supported tag.
     ///

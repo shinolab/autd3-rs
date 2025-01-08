@@ -1,8 +1,8 @@
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, num::NonZeroU16, time::Duration};
 
 use autd3_driver::{
     datagram::{
-        ControlPoint, ControlPoints, FixedCompletionTime, FociSTM, GainSTM,
+        ControlPoint, ControlPoints, FixedCompletionSteps, FociSTM, GainSTM,
         IntoDatagramWithSegment, Silencer, SwapSegment,
     },
     defined::{mm, METER},
@@ -180,14 +180,12 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
         };
         assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
 
-        let d = Silencer::<FixedCompletionTime>::default();
+        let d = Silencer::<FixedCompletionSteps>::default();
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let stm = FociSTM::new(
-            SamplingConfig::new(
-                SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16,
-            )
-            .unwrap(),
+            SamplingConfig::new(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT))
+                .unwrap(),
             gen_random_foci::<1>(2),
         )?
         .with_loop_behavior(LoopBehavior::infinite())
@@ -195,9 +193,9 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
 
         assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
 
-        let d = Silencer::new(FixedCompletionTime {
-            intensity: Silencer::DEFAULT_COMPLETION_TIME_INTENSITY,
-            phase: Silencer::DEFAULT_COMPLETION_TIME_PHASE * 2,
+        let d = Silencer::new(FixedCompletionSteps {
+            intensity: NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT).unwrap(),
+            phase: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT * 2).unwrap(),
         });
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 

@@ -50,9 +50,9 @@ pub(crate) const FOCI_STM_FIXED_NUM_UPPER_Z: i32 = FOCI_STM_FIXED_NUM_UPPER;
 pub(crate) const FOCI_STM_FIXED_NUM_LOWER_Z: i32 = FOCI_STM_FIXED_NUM_LOWER;
 
 #[doc(hidden)]
-pub const SILENCER_STEPS_INTENSITY_DEFAULT: u32 = 10;
+pub const SILENCER_STEPS_INTENSITY_DEFAULT: u16 = 10;
 #[doc(hidden)]
-pub const SILENCER_STEPS_PHASE_DEFAULT: u32 = 40;
+pub const SILENCER_STEPS_PHASE_DEFAULT: u16 = 40;
 
 /// The minimum buffer size of [`Modulation`].
 ///

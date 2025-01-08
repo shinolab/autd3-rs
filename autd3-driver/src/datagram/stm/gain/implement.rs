@@ -70,6 +70,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(feature = "dynamic_freq"))]
     use std::time::Duration;
 
     use super::{super::GainSTM, *};
@@ -116,6 +117,7 @@ mod tests {
         );
     }
 
+    #[cfg(not(feature = "dynamic_freq"))]
     #[rstest::rstest]
     #[test]
     #[case(
@@ -145,6 +147,7 @@ mod tests {
         );
     }
 
+    #[cfg(not(feature = "dynamic_freq"))]
     #[rstest::rstest]
     #[test]
     #[case(
@@ -201,6 +204,7 @@ mod tests {
         );
     }
 
+    #[cfg(not(feature = "dynamic_freq"))]
     #[rstest::rstest]
     #[test]
     #[case(Ok(Duration::from_millis(2000)), 0.5*Hz, 2)]

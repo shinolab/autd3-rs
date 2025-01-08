@@ -16,6 +16,9 @@ pub struct Memory {
     pub(crate) controller_bram: LazyCell<RefCell<Vec<u16>>>,
     #[get]
     pub(crate) phase_corr_bram: LazyCell<RefCell<Vec<u16>>>,
+    #[cfg(feature = "dynamic_freq")]
+    #[get]
+    pub(crate) drp_bram: LazyCell<RefCell<Vec<u16>>>,
     #[get]
     pub(crate) modulation_bram: LazyCell<RefCell<HashMap<Segment, Vec<u16>>>>,
     #[get]
@@ -41,6 +44,8 @@ impl Memory {
             phase_corr_bram: LazyCell::new(|| {
                 RefCell::new(vec![0x0000; 256 / std::mem::size_of::<u16>()])
             }),
+            #[cfg(feature = "dynamic_freq")]
+            drp_bram: LazyCell::new(|| RefCell::new(vec![0x0000; 32 * std::mem::size_of::<u64>()])),
             modulation_bram: LazyCell::new(|| {
                 RefCell::new(
                     [
@@ -142,6 +147,8 @@ impl Memory {
             BRAM_SELECT_CONTROLLER => match addr >> 8 {
                 BRAM_CNT_SEL_MAIN => self.controller_bram_mut()[addr] = data,
                 BRAM_CNT_SEL_PHASE_CORR => self.phase_corr_bram_mut()[addr & 0xFF] = data,
+                #[cfg(feature = "dynamic_freq")]
+                BRAM_CNT_SEL_CLOCK => self.drp_bram_mut()[addr & 0xFF] = data,
                 _ => unreachable!(),
             },
             BRAM_SELECT_MOD => {

@@ -1,4 +1,6 @@
 mod clear;
+#[cfg(feature = "dynamic_freq")]
+mod clock;
 mod cpu_gpio_out;
 mod debug;
 mod force_fan;
@@ -23,6 +25,8 @@ pub use super::firmware::operation::SwapSegment;
 #[doc(inline)]
 pub use super::firmware::operation::{ControlPoint, ControlPoints};
 pub use clear::Clear;
+#[cfg(feature = "dynamic_freq")]
+pub use clock::ConfigureFPGAClock;
 #[doc(hidden)]
 pub use cpu_gpio_out::{CpuGPIO, CpuGPIOPort};
 pub use debug::DebugSettings;
@@ -37,7 +41,9 @@ pub use modulation::{
 pub use phase_corr::PhaseCorrection;
 pub use pulse_width_encoder::PulseWidthEncoder;
 pub use reads_fpga_state::ReadsFPGAState;
-pub use silencer::{FixedCompletionTime, FixedUpdateRate, HasSamplingConfig, Silencer};
+#[cfg(not(feature = "dynamic_freq"))]
+pub use silencer::FixedCompletionTime;
+pub use silencer::{FixedCompletionSteps, FixedUpdateRate, HasSamplingConfig, Silencer};
 pub use stm::{
     FociSTM, FociSTMContext, FociSTMContextGenerator, FociSTMGenerator, GainSTM, GainSTMContext,
     GainSTMContextGenerator, GainSTMGenerator, IntoFociSTMGenerator, IntoGainSTMGenerator,
