@@ -54,8 +54,64 @@ fn send_silencer_fixed_update_rate() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[cfg(not(feature = "dynamic_freq"))]
 #[test]
 fn send_silencer_fixed_completion_time() {
+    use autd3_driver::defined::ultrasound_period;
+
+    let mut rng = rand::thread_rng();
+
+    let geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
+
+    {
+        let config = FixedCompletionTime {
+            intensity: ultrasound_period() * rng.gen_range(1..=10),
+            phase: ultrasound_period() * rng.gen_range(1..=u8::MAX) as u32,
+        };
+        let d = Silencer::new(config);
+
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+
+        assert_eq!(
+            (config.intensity.as_nanos() / ultrasound_period().as_nanos()) as u16,
+            cpu.fpga().silencer_completion_steps().intensity.get()
+        );
+        assert_eq!(
+            (config.phase.as_nanos() / ultrasound_period().as_nanos()) as u16,
+            cpu.fpga().silencer_completion_steps().phase.get()
+        );
+        assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
+        assert!(cpu.silencer_strict_mode());
+        assert_eq!(SilencerTarget::Intensity, cpu.fpga().silencer_target());
+    }
+
+    {
+        let config = FixedCompletionTime {
+            intensity: ultrasound_period() * rng.gen_range(1..=10),
+            phase: ultrasound_period() * rng.gen_range(1..=u8::MAX) as u32,
+        };
+        let d = Silencer::new(config).with_target(SilencerTarget::PulseWidth);
+
+        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+
+        assert_eq!(
+            (config.intensity.as_nanos() / ultrasound_period().as_nanos()) as u16,
+            cpu.fpga().silencer_completion_steps().intensity.get()
+        );
+        assert_eq!(
+            (config.phase.as_nanos() / ultrasound_period().as_nanos()) as u16,
+            cpu.fpga().silencer_completion_steps().phase.get()
+        );
+        assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
+        assert!(cpu.silencer_strict_mode());
+        assert_eq!(SilencerTarget::PulseWidth, cpu.fpga().silencer_target());
+    }
+}
+
+#[test]
+fn send_silencer_fixed_completion_steps() {
     let mut rng = rand::thread_rng();
 
     let geometry = create_geometry(1);
