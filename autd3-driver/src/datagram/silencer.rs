@@ -33,11 +33,11 @@ impl SilencerConfig for () {}
 /// To configure the silencer by the completion time.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FixedCompletionTime {
-    /// The completion time of the intensity change. The value must be multiple of [`ULTRASOUND_PERIOD`].
+    /// The completion time of the intensity change. The value must be multiple of the ultrasound period.
     ///
     /// The larger this value, the more the noise is suppressed.
     pub intensity: std::time::Duration,
-    /// The completion time of the phase change. The value must be multiple of [`ULTRASOUND_PERIOD`].
+    /// The completion time of the phase change. The value must be multiple of the ultrasound period.
     ///
     /// The larger this value, the more the noise is suppressed.
     pub phase: std::time::Duration,
