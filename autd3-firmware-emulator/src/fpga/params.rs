@@ -8,6 +8,7 @@ pub const BRAM_SELECT_STM: u8 = 0x3;
 
 pub const BRAM_CNT_SEL_MAIN: usize = 0x00;
 pub const BRAM_CNT_SEL_PHASE_CORR: usize = 0x01;
+pub const BRAM_CNT_SEL_CLOCK: usize = 0x02;
 
 pub const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
 pub const TRANSITION_MODE_SYS_TIME: u8 = 0x01;

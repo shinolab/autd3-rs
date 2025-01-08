@@ -131,6 +131,7 @@ impl<G: GainSTMGenerator> GainSTM<G> {
     /// Returns the period of the STM. See also [`FociSTM::period`].
     ///
     /// [`FociSTM::period`]: crate::datagram::FociSTM::period
+    #[cfg(not(feature = "dynamic_freq"))]
     pub fn period(&self) -> Duration {
         self.sampling_config().period() * self.gen.len() as u32
     }

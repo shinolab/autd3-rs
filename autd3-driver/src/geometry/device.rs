@@ -4,7 +4,7 @@ use autd3_derive::Builder;
 use bvh::aabb::Aabb;
 use derive_more::{Deref, IntoIterator};
 
-use crate::defined::{METER, ULTRASOUND_FREQ};
+use crate::defined::{ultrasound_freq, METER};
 
 use super::{
     Isometry, Point3, Quaternion, Transducer, Translation, UnitQuaternion, UnitVector3, Vector3,
@@ -144,12 +144,12 @@ impl Device {
 
     /// Gets the wavelength of the ultrasound.
     pub fn wavelength(&self) -> f32 {
-        self.sound_speed / ULTRASOUND_FREQ.hz() as f32
+        self.sound_speed / ultrasound_freq().hz() as f32
     }
 
     /// Gets the wavenumber of the ultrasound.
     pub fn wavenumber(&self) -> f32 {
-        2.0 * PI * ULTRASOUND_FREQ.hz() as f32 / self.sound_speed
+        2.0 * PI * ultrasound_freq().hz() as f32 / self.sound_speed
     }
 
     fn get_direction(dir: Vector3, rotation: &UnitQuaternion) -> UnitVector3 {
@@ -204,7 +204,7 @@ pub(crate) mod tests {
     #[case(0)]
     #[case(1)]
     fn idx(#[case] expect: u16) {
-        assert_eq!(expect, create_device(expect, 249).idx() as _);
+        assert_eq!(expect, create_device(expect, 249).idx() as u16);
     }
 
     #[rstest::rstest]
@@ -212,7 +212,7 @@ pub(crate) mod tests {
     #[case(1)]
     #[case(249)]
     fn num_transducers(#[case] n: u8) {
-        assert_eq!(n, create_device(0, n).num_transducers() as _);
+        assert_eq!(n, create_device(0, n).num_transducers() as u8);
     }
 
     #[test]

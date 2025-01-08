@@ -113,9 +113,6 @@ impl<const N: usize, G: FociSTMGenerator<N>> FociSTM<N, G> {
     /// let stm = FociSTM::new(1.0 * Hz, vec![Point3::origin(), Point3::origin()])?;
     /// assert_eq!(1.0 * Hz, stm.freq());
     ///
-    /// let stm = FociSTM::new(std::time::Duration::from_secs(1), vec![Point3::origin(), Point3::origin()])?;
-    /// assert_eq!(1.0 * Hz, stm.freq());
-    ///
     /// let stm = FociSTM::new(SamplingConfig::new(1.0 * Hz)?, vec![Point3::origin(), Point3::origin()])?;
     /// assert_eq!(0.5 * Hz, stm.freq());
     /// # Ok(())
@@ -147,6 +144,7 @@ impl<const N: usize, G: FociSTMGenerator<N>> FociSTM<N, G> {
     /// # Ok(())
     /// # }
     /// ```
+    #[cfg(not(feature = "dynamic_freq"))]
     pub fn period(&self) -> Duration {
         self.sampling_config().period() * self.gen.len() as u32
     }

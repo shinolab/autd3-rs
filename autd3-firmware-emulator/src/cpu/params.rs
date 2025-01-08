@@ -15,6 +15,7 @@ pub const BRAM_SELECT_STM: u8 = 0x3;
 
 pub const BRAM_CNT_SEL_MAIN: u8 = 0x00;
 pub const BRAM_CNT_SEL_PHASE_CORR: u8 = 0x01;
+pub const BRAM_CNT_SELECT_CLOCK: u8 = 0x02;
 
 pub const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
 pub const TRANSITION_MODE_SYS_TIME: u8 = 0x01;
@@ -123,6 +124,7 @@ pub const SILENCER_FLAG_STRICT_MODE: u8 = 1 << 2;
 pub const TAG_CLEAR: u8 = 0x01;
 pub const TAG_SYNC: u8 = 0x02;
 pub const TAG_FIRM_INFO: u8 = 0x03;
+pub const TAG_CONFIG_FPGA_CLK: u8 = 0x04;
 pub const TAG_MODULATION: u8 = 0x10;
 pub const TAG_MODULATION_CHANGE_SEGMENT: u8 = 0x11;
 pub const TAG_SILENCER: u8 = 0x21;
@@ -167,6 +169,9 @@ pub const GAIN_STM_MODE_INTENSITY_PHASE_FULL: u8 = 0;
 pub const GAIN_STM_MODE_PHASE_FULL: u8 = 1;
 pub const GAIN_STM_MODE_PHASE_HALF: u8 = 2;
 
+pub const CLK_FLAG_BEGIN: u8 = 1 << 0;
+pub const CLK_FLAG_END: u8 = 1 << 1;
+
 pub const GPIO_IN_FLAG_0: u8 = 1 << 0;
 pub const GPIO_IN_FLAG_1: u8 = 1 << 1;
 pub const GPIO_IN_FLAG_2: u8 = 1 << 2;
@@ -183,5 +188,6 @@ pub const ERR_INVALID_MODE: u8 = ERR_BIT | 0x07;
 pub const ERR_INVALID_SEGMENT_TRANSITION: u8 = ERR_BIT | 0x08;
 pub const ERR_INVALID_PWE_DATA_SIZE: u8 = ERR_BIT | 0x09;
 pub const ERR_MISS_TRANSITION_TIME: u8 = ERR_BIT | 0x0B;
+pub const ERR_CLK_INCOMPLETE_DATA: u8 = ERR_BIT | 0x0D;
 pub const ERR_INVALID_SILENCER_SETTING: u8 = ERR_BIT | 0x0E;
 pub const ERR_INVALID_TRANSITION_MODE: u8 = ERR_BIT | 0x0F;

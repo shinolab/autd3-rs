@@ -1,3 +1,4 @@
+#[cfg(not(feature = "dynamic_freq"))]
 use std::time::Duration;
 
 use crate::{
@@ -12,6 +13,7 @@ use crate::{
 pub enum STMConfig {
     #[doc(hidden)]
     Freq(Freq<f32>),
+    #[cfg(not(feature = "dynamic_freq"))]
     #[doc(hidden)]
     Period(Duration),
     #[doc(hidden)]
@@ -24,6 +26,7 @@ pub enum STMConfig {
 pub enum STMConfigNearest {
     #[doc(hidden)]
     Freq(Freq<f32>),
+    #[cfg(not(feature = "dynamic_freq"))]
     #[doc(hidden)]
     Period(Duration),
 }
@@ -35,6 +38,7 @@ impl TryFrom<(STMConfig, usize)> for SamplingConfig {
         let (config, size) = value;
         match config {
             STMConfig::Freq(f) => SamplingConfig::new(f * size as f32),
+            #[cfg(not(feature = "dynamic_freq"))]
             STMConfig::Period(p) => {
                 if p.as_nanos() % size as u128 != 0 {
                     return Err(AUTDDriverError::STMPeriodInvalid(size, p));
@@ -53,6 +57,7 @@ impl TryFrom<(STMConfigNearest, usize)> for SamplingConfig {
         let (config, size) = value;
         match config {
             STMConfigNearest::Freq(f) => Ok(SamplingConfig::new_nearest(f.hz() * size as f32 * Hz)),
+            #[cfg(not(feature = "dynamic_freq"))]
             STMConfigNearest::Period(p) => Ok(SamplingConfig::new_nearest(p / size as u32)),
         }
     }
@@ -64,6 +69,7 @@ impl From<Freq<f32>> for STMConfig {
     }
 }
 
+#[cfg(not(feature = "dynamic_freq"))]
 impl From<Duration> for STMConfig {
     fn from(p: Duration) -> Self {
         Self::Period(p)
@@ -82,6 +88,7 @@ impl From<Freq<f32>> for STMConfigNearest {
     }
 }
 
+#[cfg(not(feature = "dynamic_freq"))]
 impl From<Duration> for STMConfigNearest {
     fn from(p: Duration) -> Self {
         Self::Period(p)
@@ -120,6 +127,7 @@ mod tests {
         );
     }
 
+    #[cfg(not(feature = "dynamic_freq"))]
     #[rstest::rstest]
     #[test]
     #[case(
@@ -164,6 +172,7 @@ mod tests {
         assert_eq!(expect, (STMConfigNearest::Freq(freq), size).try_into());
     }
 
+    #[cfg(not(feature = "dynamic_freq"))]
     #[rstest::rstest]
     #[test]
     #[case(

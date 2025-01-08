@@ -76,6 +76,16 @@ impl<L: Link> Controller<L> {
     pub(crate) async fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
         let timeout = Some(timeout);
 
+        #[cfg(feature = "dynamic_freq")]
+        {
+            tracing::debug!(
+                "Configuring ultrasound frequency to {:?}",
+                autd3_driver::defined::ultrasound_freq()
+            );
+            self.send(autd3_driver::datagram::ConfigureFPGAClock::new().with_timeout(timeout))
+                .await?;
+        }
+
         // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
         // Therefore, send a meaningless data (here, we use `ForceFan` because it is the lightest).
         let _ = self

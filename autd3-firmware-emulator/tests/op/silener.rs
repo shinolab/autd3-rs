@@ -2,7 +2,6 @@ use std::num::NonZeroU16;
 
 use autd3_driver::{
     datagram::*,
-    defined::ULTRASOUND_PERIOD,
     derive::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
     error::AUTDDriverError,
     firmware::{cpu::TxMessage, fpga::SilencerTarget},
@@ -64,9 +63,9 @@ fn send_silencer_fixed_completion_time() {
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     {
-        let config = FixedCompletionTime {
-            intensity: rng.gen_range(1..=10) * ULTRASOUND_PERIOD,
-            phase: rng.gen_range(1..=u8::MAX) as u32 * ULTRASOUND_PERIOD,
+        let config = FixedCompletionSteps {
+            intensity: NonZeroU16::new(rng.gen_range(1..=10)).unwrap(),
+            phase: NonZeroU16::new(rng.gen_range(1..=u8::MAX) as u16).unwrap(),
         };
         let d = Silencer::new(config);
 
@@ -79,9 +78,9 @@ fn send_silencer_fixed_completion_time() {
     }
 
     {
-        let config = FixedCompletionTime {
-            intensity: rng.gen_range(1..=10) * ULTRASOUND_PERIOD,
-            phase: rng.gen_range(1..=u8::MAX) as u32 * ULTRASOUND_PERIOD,
+        let config = FixedCompletionSteps {
+            intensity: NonZeroU16::new(rng.gen_range(1..=10)).unwrap(),
+            phase: NonZeroU16::new(rng.gen_range(1..=u8::MAX) as u16).unwrap(),
         };
         let d = Silencer::new(config).with_target(SilencerTarget::PulseWidth);
 
@@ -101,7 +100,7 @@ fn send_silencer_fixed_completion_time() {
 #[cfg_attr(miri, ignore)]
 fn silencer_completetion_steps_too_large_mod(
     #[case] expect: Result<(), AUTDDriverError>,
-    #[case] steps_intensity: u32,
+    #[case] steps_intensity: u16,
 ) -> anyhow::Result<()> {
     use crate::op::modulation::TestModulation;
 
@@ -109,9 +108,9 @@ fn silencer_completetion_steps_too_large_mod(
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
-    let d = Silencer::new(FixedCompletionTime {
-        intensity: ULTRASOUND_PERIOD,
-        phase: ULTRASOUND_PERIOD,
+    let d = Silencer::new(FixedCompletionSteps {
+        intensity: NonZeroU16::MIN,
+        phase: NonZeroU16::MIN,
     });
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -128,9 +127,9 @@ fn silencer_completetion_steps_too_large_mod(
     }
 
     let steps_phase = 1;
-    let d = Silencer::new(FixedCompletionTime {
-        intensity: ULTRASOUND_PERIOD * steps_intensity,
-        phase: ULTRASOUND_PERIOD * steps_phase,
+    let d = Silencer::new(FixedCompletionSteps {
+        intensity: NonZeroU16::new(steps_intensity).unwrap(),
+        phase: NonZeroU16::new(steps_phase).unwrap(),
     });
 
     assert_eq!(expect, send(&mut cpu, d, &geometry, &mut tx));
@@ -146,16 +145,16 @@ fn silencer_completetion_steps_too_large_mod(
 #[cfg_attr(miri, ignore)]
 fn silencer_completetion_steps_too_large_stm(
     #[case] expect: Result<(), AUTDDriverError>,
-    #[case] steps_intensity: u32,
-    #[case] steps_phase: u32,
+    #[case] steps_intensity: u16,
+    #[case] steps_phase: u16,
 ) -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
-    let d = Silencer::new(FixedCompletionTime {
-        intensity: ULTRASOUND_PERIOD,
-        phase: ULTRASOUND_PERIOD,
+    let d = Silencer::new(FixedCompletionSteps {
+        intensity: NonZeroU16::MIN,
+        phase: NonZeroU16::MIN,
     });
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -167,9 +166,9 @@ fn silencer_completetion_steps_too_large_stm(
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }
 
-    let d = Silencer::new(FixedCompletionTime {
-        intensity: ULTRASOUND_PERIOD * steps_intensity,
-        phase: ULTRASOUND_PERIOD * steps_phase,
+    let d = Silencer::new(FixedCompletionSteps {
+        intensity: NonZeroU16::new(steps_intensity).unwrap(),
+        phase: NonZeroU16::new(steps_phase).unwrap(),
     });
 
     assert_eq!(expect, send(&mut cpu, d, &geometry, &mut tx));
@@ -186,9 +185,9 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
-    let config = FixedCompletionTime {
-        intensity: ULTRASOUND_PERIOD * rng.gen_range(1..=u8::MAX as u32),
-        phase: ULTRASOUND_PERIOD * rng.gen_range(1..=u8::MAX as u32),
+    let config = FixedCompletionSteps {
+        intensity: NonZeroU16::new(rng.gen_range(1..=u16::MAX)).unwrap(),
+        phase: NonZeroU16::new(rng.gen_range(1..=u16::MAX)).unwrap(),
     };
     let d = Silencer::new(config).with_strict_mode(false);
 
@@ -210,9 +209,9 @@ fn send_silencer_fixed_completion_time_permissive() {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
-    let config = FixedCompletionTime {
-        intensity: rng.gen_range(1..=u8::MAX) as u32 * ULTRASOUND_PERIOD,
-        phase: rng.gen_range(1..=u8::MAX) as u32 * ULTRASOUND_PERIOD,
+    let config = FixedCompletionSteps {
+        intensity: NonZeroU16::new(rng.gen_range(1..=u16::MAX)).unwrap(),
+        phase: NonZeroU16::new(rng.gen_range(1..=u16::MAX)).unwrap(),
     };
     let d = Silencer::new(config).with_strict_mode(false);
 

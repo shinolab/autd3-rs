@@ -12,12 +12,12 @@ pub use crate::{
 pub use autd3_driver::{
     autd3_device::AUTD3,
     datagram::{
-        Clear, ControlPoint, ControlPoints, DebugSettings, FixedCompletionTime, FixedUpdateRate,
-        FociSTM, ForceFan, GainSTM, IntoDatagramWithParallelThreshold, IntoDatagramWithSegment,
+        Clear, ControlPoint, ControlPoints, DebugSettings, FixedUpdateRate, FociSTM, ForceFan,
+        GainSTM, IntoDatagramWithParallelThreshold, IntoDatagramWithSegment,
         IntoDatagramWithTimeout, Modulation, ModulationProperty, PhaseCorrection,
         PulseWidthEncoder, ReadsFPGAState, Silencer, SwapSegment,
     },
-    defined::{deg, kHz, mm, rad, Hz, PI, ULTRASOUND_FREQ, ULTRASOUND_PERIOD},
+    defined::{deg, kHz, mm, rad, ultrasound_freq, Hz, PI},
     error::AUTDDriverError,
     ethercat::DcSysTime,
     firmware::{
@@ -29,3 +29,6 @@ pub use autd3_driver::{
     },
     geometry::{EulerAngle, Geometry, Point3, Quaternion, UnitQuaternion, UnitVector3, Vector3},
 };
+
+#[cfg(not(feature = "dynamic_freq"))]
+pub use autd3_driver::datagram::FixedCompletionTime;
