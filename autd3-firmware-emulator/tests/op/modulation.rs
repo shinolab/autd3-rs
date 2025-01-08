@@ -1,7 +1,7 @@
-use std::time::Duration;
+use std::{num::NonZeroU16, time::Duration};
 
 use autd3_driver::{
-    datagram::{FixedCompletionTime, IntoDatagramWithSegment, Silencer, SwapSegment},
+    datagram::{FixedCompletionSteps, IntoDatagramWithSegment, Silencer, SwapSegment},
     derive::*,
     error::AUTDDriverError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
@@ -94,9 +94,8 @@ fn send_mod(
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let m: Vec<_> = (0..n).map(|_| rng.gen()).collect();
-    let freq_div = rng.gen_range(
-        SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16..=u16::MAX,
-    );
+    let freq_div = rng
+        .gen_range(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=u16::MAX);
     let d = TestModulation {
         buf: m.clone(),
         config: SamplingConfig::new(freq_div).unwrap(),
@@ -127,7 +126,7 @@ fn swap_mod_segmemt() -> anyhow::Result<()> {
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let m: Vec<_> = (0..MOD_BUF_SIZE_MIN).map(|_| 0x00).collect();
-    let freq_div = SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16;
+    let freq_div = SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT);
     let d = TestModulation {
         buf: m.clone(),
         config: SamplingConfig::new(freq_div).unwrap(),
@@ -175,20 +174,20 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         .with_segment(Segment::S0, Some(TransitionMode::Immediate));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::<FixedCompletionTime>::default();
+        let d = Silencer::<FixedCompletionSteps>::default();
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::new(SILENCER_STEPS_PHASE_DEFAULT as u16).unwrap(),
+            config: SamplingConfig::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
             loop_behavior: LoopBehavior::infinite(),
         }
         .with_segment(Segment::S1, None);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::new(FixedCompletionTime {
-            intensity: Silencer::DEFAULT_COMPLETION_TIME_PHASE * 2,
-            phase: Silencer::DEFAULT_COMPLETION_TIME_PHASE,
+        let d = Silencer::new(FixedCompletionSteps {
+            intensity: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT * 2).unwrap(),
+            phase: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
         });
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 

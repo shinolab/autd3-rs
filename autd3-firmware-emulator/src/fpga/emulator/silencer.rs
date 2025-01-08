@@ -1,8 +1,7 @@
 use std::num::NonZeroU16;
 
 use autd3_driver::{
-    datagram::{FixedCompletionTime, FixedUpdateRate},
-    defined::ULTRASOUND_PERIOD,
+    datagram::{FixedCompletionSteps, FixedUpdateRate},
     firmware::fpga::{EmitIntensity, Phase, SilencerTarget},
 };
 
@@ -161,12 +160,16 @@ impl FPGAEmulator {
         }
     }
 
-    pub fn silencer_completion_steps(&self) -> FixedCompletionTime {
-        FixedCompletionTime {
-            intensity: self.mem.controller_bram()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] as u32
-                * ULTRASOUND_PERIOD,
-            phase: self.mem.controller_bram()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] as u32
-                * ULTRASOUND_PERIOD,
+    pub fn silencer_completion_steps(&self) -> FixedCompletionSteps {
+        FixedCompletionSteps {
+            intensity: NonZeroU16::new(
+                self.mem.controller_bram()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY],
+            )
+            .unwrap(),
+            phase: NonZeroU16::new(
+                self.mem.controller_bram()[ADDR_SILENCER_COMPLETION_STEPS_PHASE],
+            )
+            .unwrap(),
         }
     }
 
@@ -196,8 +199,7 @@ impl FPGAEmulator {
             value: if self.silencer_fixed_update_rate_mode() {
                 self.silencer_update_rate().phase.get()
             } else {
-                (self.silencer_completion_steps().phase.as_micros() / ULTRASOUND_PERIOD.as_micros())
-                    as u16
+                self.silencer_completion_steps().phase.get()
             },
             current_target: initial,
             diff_mem: 0,
@@ -226,8 +228,7 @@ impl FPGAEmulator {
             value: if self.silencer_fixed_update_rate_mode() {
                 self.silencer_update_rate().phase.get()
             } else {
-                (self.silencer_completion_steps().phase.as_micros() / ULTRASOUND_PERIOD.as_micros())
-                    as u16
+                self.silencer_completion_steps().phase.get()
             },
             current_target,
             diff_mem,
@@ -243,8 +244,7 @@ impl FPGAEmulator {
             value: if self.silencer_fixed_update_rate_mode() {
                 self.silencer_update_rate().intensity.get()
             } else {
-                (self.silencer_completion_steps().intensity.as_micros()
-                    / ULTRASOUND_PERIOD.as_micros()) as u16
+                self.silencer_completion_steps().intensity.get()
             },
             current_target: initial,
             diff_mem: 0,
@@ -273,8 +273,7 @@ impl FPGAEmulator {
             value: if self.silencer_fixed_update_rate_mode() {
                 self.silencer_update_rate().intensity.get()
             } else {
-                (self.silencer_completion_steps().intensity.as_micros()
-                    / ULTRASOUND_PERIOD.as_micros()) as u16
+                self.silencer_completion_steps().intensity.get()
             },
             current_target,
             diff_mem,

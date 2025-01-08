@@ -8,7 +8,6 @@ use crate::{
 use autd3_driver::{
     autd3_device::AUTD3,
     datagram::*,
-    defined::ULTRASOUND_PERIOD,
     derive::*,
     firmware::{
         cpu::TxMessage,
@@ -41,9 +40,9 @@ fn send_clear() -> anyhow::Result<()> {
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     {
-        let d = Silencer::new(FixedCompletionTime {
-            intensity: ULTRASOUND_PERIOD,
-            phase: ULTRASOUND_PERIOD,
+        let d = Silencer::new(FixedCompletionSteps {
+            intensity: NonZeroU16::MIN,
+            phase: NonZeroU16::MIN,
         });
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -72,10 +71,8 @@ fn send_clear() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = FociSTM::new(
-            SamplingConfig::new(
-                SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as u16,
-            )
-            .unwrap(),
+            SamplingConfig::new(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT))
+                .unwrap(),
             gen_random_foci::<1>(2),
         )?
         .with_segment(Segment::S0, Some(TransitionMode::Ext));
@@ -101,9 +98,9 @@ fn send_clear() -> anyhow::Result<()> {
         cpu.fpga().silencer_update_rate()
     );
     assert_eq!(
-        FixedCompletionTime {
-            intensity: SILENCER_STEPS_INTENSITY_DEFAULT * ULTRASOUND_PERIOD,
-            phase: SILENCER_STEPS_PHASE_DEFAULT * ULTRASOUND_PERIOD,
+        FixedCompletionSteps {
+            intensity: NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT).unwrap(),
+            phase: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
         },
         cpu.fpga().silencer_completion_steps()
     );

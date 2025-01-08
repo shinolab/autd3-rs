@@ -31,6 +31,7 @@ windows = { workspace = true, features = ["Win32_Security"] }
 [features]
 default = []
 async-trait = ["autd3-driver/async-trait"]
+dynamic_freq = ["autd3-driver/dynamic_freq", "autd3-firmware-emulator/dynamic_freq"]
 
 [dev-dependencies]
 rand = { workspace = true }
@@ -40,5 +41,5 @@ rstest = { workspace = true }
 tokio-test = { workspace = true }
 
 [package.metadata.docs.rs]
-all-features = true
+features = ["async-trait"]
 rustdoc-args = ["--cfg", "docsrs"]

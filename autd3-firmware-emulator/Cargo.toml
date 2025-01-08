@@ -26,3 +26,4 @@ rstest = { workspace = true }
 [features]
 default = []
 async-trait = ["autd3-driver/async-trait"]
+dynamic_freq = ["autd3-driver/dynamic_freq"]
