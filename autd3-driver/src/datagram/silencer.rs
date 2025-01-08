@@ -291,6 +291,7 @@ mod tests {
         assert_eq!(Duration::from_secs(1), s.config().intensity);
         assert_eq!(Duration::from_secs(1), s.config().phase);
         assert_eq!(SilencerTarget::Intensity, s.target());
+        assert!(s.strict_mode());
     }
 
     #[test]
@@ -302,6 +303,7 @@ mod tests {
         assert_eq!(2, s.config().intensity.get());
         assert_eq!(3, s.config().phase.get());
         assert_eq!(SilencerTarget::Intensity, s.target());
+        assert!(s.strict_mode());
     }
 
     #[rstest::rstest]
