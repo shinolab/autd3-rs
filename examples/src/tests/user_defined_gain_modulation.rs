@@ -1,4 +1,4 @@
-use autd3::{driver::link::Link, prelude::*};
+use autd3::{driver::link::AsyncLink, prelude::*};
 use autd3_driver::derive::*;
 
 #[derive(Gain, Clone, Copy, Debug)]
@@ -59,7 +59,7 @@ impl Modulation for Burst {
     }
 }
 
-pub async fn user_defined(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+pub async fn user_defined(autd: &mut Controller<impl AsyncLink>) -> anyhow::Result<bool> {
     autd.send(Silencer::disable()).await?;
 
     let g = MyUniform::new();

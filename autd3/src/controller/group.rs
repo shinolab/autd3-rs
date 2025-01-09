@@ -8,13 +8,13 @@ use autd3_driver::{
 };
 use itertools::Itertools;
 
-use super::{Controller, Link};
+use super::{AsyncLink, Controller};
 
 use tracing;
 
 /// A struct for grouping devices and sending different data to each group. See also [`Controller::group`].
 #[allow(clippy::type_complexity)]
-pub struct Group<'a, K: PartialEq + Debug, L: Link> {
+pub struct Group<'a, K: PartialEq + Debug, L: AsyncLink> {
     pub(crate) cnt: &'a mut Controller<L>,
     pub(crate) keys: Vec<Option<K>>,
     pub(crate) done: Vec<bool>,
@@ -23,7 +23,7 @@ pub struct Group<'a, K: PartialEq + Debug, L: Link> {
     pub(crate) operations: Vec<Option<(Box<dyn Operation>, Box<dyn Operation>)>>,
 }
 
-impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
+impl<'a, K: PartialEq + Debug, L: AsyncLink> Group<'a, K, L> {
     #[must_use]
     pub(crate) fn new(cnt: &'a mut Controller<L>, f: impl Fn(&Device) -> Option<K>) -> Self {
         let keys = cnt.geometry.devices().map(f).collect::<Vec<_>>();
@@ -165,7 +165,7 @@ impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
     }
 }
 
-impl<L: Link> Controller<L> {
+impl<L: AsyncLink> Controller<L> {
     /// Group the devices by given function and send different data to each group.
     ///
     /// If the key is `None`, nothing is done for the devices corresponding to the key.

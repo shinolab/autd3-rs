@@ -9,7 +9,7 @@ use zerocopy::IntoBytes;
 use autd3_driver::{
     derive::*,
     firmware::cpu::{RxMessage, TxMessage},
-    link::{Link, LinkBuilder},
+    link::{AsyncLink, AsyncLinkBuilder},
 };
 
 #[repr(C)]
@@ -47,7 +47,7 @@ pub struct TwinCAT {
 pub struct TwinCATBuilder {}
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
-impl LinkBuilder for TwinCATBuilder {
+impl AsyncLinkBuilder for TwinCATBuilder {
     type L = TwinCAT;
 
     async fn open(self, _: &Geometry) -> Result<Self::L, AUTDDriverError> {
@@ -93,7 +93,7 @@ impl TwinCAT {
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
-impl Link for TwinCAT {
+impl AsyncLink for TwinCAT {
     async fn close(&mut self) -> Result<(), AUTDDriverError> {
         unsafe {
             self.dll

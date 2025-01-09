@@ -18,7 +18,7 @@ use autd3_driver::{
         version::FirmwareVersion,
     },
     geometry::{Device, Geometry},
-    link::Link,
+    link::AsyncLink,
 };
 
 use timer::Timer;
@@ -33,7 +33,7 @@ use derive_more::{Deref, DerefMut};
 ///
 /// All operations to the devices are done through this struct.
 #[derive(Builder, Deref, DerefMut)]
-pub struct Controller<L: Link> {
+pub struct Controller<L: AsyncLink> {
     #[get(ref, ref_mut, no_doc)]
     link: L,
     #[get(ref, ref_mut, no_doc)]
@@ -46,7 +46,7 @@ pub struct Controller<L: Link> {
     timer: Timer,
 }
 
-impl<L: Link> Controller<L> {
+impl<L: AsyncLink> Controller<L> {
     /// Sends a data to the devices.
     ///
     /// If the [`Datagram::timeout`] value is
@@ -195,7 +195,7 @@ impl<L: Link> Controller<L> {
     }
 }
 
-impl<'a, L: Link> IntoIterator for &'a Controller<L> {
+impl<'a, L: AsyncLink> IntoIterator for &'a Controller<L> {
     type Item = &'a Device;
     type IntoIter = std::slice::Iter<'a, Device>;
 
@@ -204,7 +204,7 @@ impl<'a, L: Link> IntoIterator for &'a Controller<L> {
     }
 }
 
-impl<'a, L: Link> IntoIterator for &'a mut Controller<L> {
+impl<'a, L: AsyncLink> IntoIterator for &'a mut Controller<L> {
     type Item = &'a mut Device;
     type IntoIter = std::slice::IterMut<'a, Device>;
 
@@ -215,9 +215,9 @@ impl<'a, L: Link> IntoIterator for &'a mut Controller<L> {
 
 #[cfg_attr(docsrs, doc(cfg(feature = "async-trait")))]
 #[cfg(feature = "async-trait")]
-impl<L: Link + 'static> Controller<L> {
+impl<L: AsyncLink + 'static> Controller<L> {
     /// Converts `Controller<L>` into a `Controller<Box<dyn Link>>`.
-    pub fn into_boxed_link(self) -> Controller<Box<dyn Link>> {
+    pub fn into_boxed_link(self) -> Controller<Box<dyn AsyncLink>> {
         let cnt = std::mem::ManuallyDrop::new(self);
         let link = unsafe { std::ptr::read(&cnt.link) };
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
@@ -239,7 +239,7 @@ impl<L: Link + 'static> Controller<L> {
     ///
     /// This function must be used only when converting an instance created by [`Controller::into_boxed_link`] back to the original [`Controller<L>`].
     ///
-    pub unsafe fn from_boxed_link(cnt: Controller<Box<dyn Link>>) -> Controller<L> {
+    pub unsafe fn from_boxed_link(cnt: Controller<Box<dyn AsyncLink>>) -> Controller<L> {
         let cnt = std::mem::ManuallyDrop::new(cnt);
         let link = unsafe { std::ptr::read(&cnt.link) };
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
@@ -256,7 +256,7 @@ impl<L: Link + 'static> Controller<L> {
     }
 }
 
-impl<L: Link> Drop for Controller<L> {
+impl<L: AsyncLink> Drop for Controller<L> {
     fn drop(&mut self) {
         if !self.link.is_open() {
             return;

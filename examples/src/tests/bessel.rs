@@ -1,6 +1,6 @@
-use autd3::{driver::link::Link, prelude::*};
+use autd3::{driver::link::AsyncLink, prelude::*};
 
-pub async fn bessel(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+pub async fn bessel(autd: &mut Controller<impl AsyncLink>) -> anyhow::Result<bool> {
     autd.send(Silencer::default()).await?;
 
     let center = autd.center();

@@ -1,6 +1,6 @@
-use autd3::{driver::link::Link, prelude::*};
+use autd3::{driver::link::AsyncLink, prelude::*};
 
-pub async fn audio_file(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+pub async fn audio_file(autd: &mut Controller<impl AsyncLink>) -> anyhow::Result<bool> {
     autd.send(Silencer::default()).await?;
 
     let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);

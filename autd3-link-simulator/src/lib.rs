@@ -13,7 +13,7 @@ use std::net::SocketAddr;
 use autd3_driver::{
     derive::*,
     firmware::cpu::{RxMessage, TxMessage},
-    link::{Link, LinkBuilder},
+    link::{AsyncLink, AsyncLinkBuilder},
 };
 
 /// A [`Link`] for [`AUTD3 Simulator`].
@@ -34,7 +34,7 @@ pub struct SimulatorBuilder {
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
-impl LinkBuilder for SimulatorBuilder {
+impl AsyncLinkBuilder for SimulatorBuilder {
     type L = Simulator;
 
     #[tracing::instrument(level = "debug", skip(geometry))]
@@ -74,7 +74,7 @@ impl Simulator {
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
-impl Link for Simulator {
+impl AsyncLink for Simulator {
     async fn close(&mut self) -> Result<(), AUTDDriverError> {
         if !self.is_open {
             return Ok(());

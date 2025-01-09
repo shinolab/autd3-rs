@@ -1,7 +1,7 @@
 use autd3_driver::{
     derive::*,
     firmware::cpu::{RxMessage, TxMessage},
-    link::{Link, LinkBuilder},
+    link::{AsyncLink, AsyncLinkBuilder},
 };
 use autd3_firmware_emulator::CPUEmulator;
 
@@ -42,7 +42,7 @@ pub struct AuditBuilder {
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
-impl LinkBuilder for AuditBuilder {
+impl AsyncLinkBuilder for AuditBuilder {
     type L = Audit;
 
     async fn open(
@@ -116,7 +116,7 @@ impl Audit {
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
-impl Link for Audit {
+impl AsyncLink for Audit {
     async fn close(&mut self) -> Result<(), AUTDDriverError> {
         self.is_open = false;
         Ok(())

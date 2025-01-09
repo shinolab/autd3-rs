@@ -7,7 +7,7 @@ use zerocopy::IntoBytes;
 use autd3_driver::{
     derive::*,
     firmware::cpu::{RxMessage, TxMessage},
-    link::{Link, LinkBuilder},
+    link::{AsyncLink, AsyncLinkBuilder},
 };
 
 use crate::{error::AdsError, remote::native_methods::*};
@@ -44,7 +44,7 @@ pub struct RemoteTwinCATBuilder {
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
-impl LinkBuilder for RemoteTwinCATBuilder {
+impl AsyncLinkBuilder for RemoteTwinCATBuilder {
     type L = RemoteTwinCAT;
 
     #[tracing::instrument(level = "debug", skip(_geometry))]
@@ -135,7 +135,7 @@ impl RemoteTwinCAT {
 }
 
 #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
-impl Link for RemoteTwinCAT {
+impl AsyncLink for RemoteTwinCAT {
     async fn close(&mut self) -> Result<(), AUTDDriverError> {
         if self.port == 0 {
             return Ok(());

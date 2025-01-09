@@ -1,13 +1,13 @@
 use std::io::{self, Write};
 
-use autd3::{driver::link::Link, prelude::*};
+use autd3::{driver::link::AsyncLink, prelude::*};
 
 use super::{
     audio_file::*, bessel::*, custom::*, fir::*, flag::*, focus::*, group::*, holo::*, plane::*,
     stm::*, user_defined_gain_modulation::*,
 };
 
-pub async fn run<L: Link>(mut autd: Controller<L>) -> anyhow::Result<()> {
+pub async fn run<L: AsyncLink>(mut autd: Controller<L>) -> anyhow::Result<()> {
     type Test<L> = (
         &'static str,
         fn(

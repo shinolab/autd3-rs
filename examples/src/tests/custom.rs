@@ -1,6 +1,6 @@
-use autd3::{driver::link::Link, prelude::*};
+use autd3::{driver::link::AsyncLink, prelude::*};
 
-pub async fn custom(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+pub async fn custom(autd: &mut Controller<impl AsyncLink>) -> anyhow::Result<bool> {
     autd.send(Silencer::disable()).await?;
 
     let m = autd3::modulation::Custom::new([0, 255], 4 * kHz)?;

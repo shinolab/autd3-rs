@@ -11,7 +11,7 @@ use autd3_driver::{
         cpu::{check_if_msg_is_processed, RxMessage, TxMessage},
         operation::{Operation, OperationHandler},
     },
-    link::Link,
+    link::AsyncLink,
 };
 
 use itertools::Itertools;
@@ -66,7 +66,7 @@ impl Timer {
         geometry: &Geometry,
         tx: &mut [TxMessage],
         rx: &mut [RxMessage],
-        link: &mut impl Link,
+        link: &mut impl AsyncLink,
         operations: Vec<(impl Operation, impl Operation)>,
         timeout: Option<Duration>,
         parallel_threshold: Option<usize>,
@@ -110,7 +110,7 @@ impl Timer {
         geometry: &Geometry,
         tx: &mut [TxMessage],
         rx: &mut [RxMessage],
-        link: &mut impl Link,
+        link: &mut impl AsyncLink,
         mut operations: Vec<(impl Operation, impl Operation)>,
         timeout: Duration,
         parallel: bool,
@@ -139,7 +139,7 @@ impl Timer {
         sleeper: &impl Sleeper,
         tx: &[TxMessage],
         rx: &mut [RxMessage],
-        link: &mut impl Link,
+        link: &mut impl AsyncLink,
         timeout: Duration,
     ) -> Result<(), AUTDDriverError> {
         if !link.is_open() {
@@ -159,7 +159,7 @@ impl Timer {
         sleeper: &S,
         tx: &[TxMessage],
         rx: &mut [RxMessage],
-        link: &mut impl Link,
+        link: &mut impl AsyncLink,
         timeout: Duration,
     ) -> Result<(), AUTDDriverError> {
         let start = Instant::now();
@@ -207,7 +207,7 @@ mod tests {
     }
 
     #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
-    impl Link for MockLink {
+    impl AsyncLink for MockLink {
         async fn close(&mut self) -> Result<(), AUTDDriverError> {
             self.is_open = false;
             Ok(())

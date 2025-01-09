@@ -1,8 +1,8 @@
 use tokio::io::AsyncBufReadExt;
 
-use autd3::{driver::link::Link, prelude::*};
+use autd3::{driver::link::AsyncLink, prelude::*};
 
-pub async fn flag(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+pub async fn flag(autd: &mut Controller<impl AsyncLink>) -> anyhow::Result<bool> {
     autd.send(ReadsFPGAState::new(|_dev| true)).await?;
 
     println!("press any key to force fan...");

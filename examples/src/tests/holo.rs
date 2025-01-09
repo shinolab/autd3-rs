@@ -1,7 +1,7 @@
 use autd3::{
     driver::{
         datagram::{BoxedGain, IntoBoxedGain},
-        link::Link,
+        link::AsyncLink,
     },
     prelude::*,
 };
@@ -9,7 +9,7 @@ use autd3_gain_holo::*;
 
 use std::io::{self, Write};
 
-pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+pub async fn holo(autd: &mut Controller<impl AsyncLink>) -> anyhow::Result<bool> {
     autd.send(Silencer::default()).await?;
 
     let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);

@@ -1,6 +1,6 @@
-use autd3::{driver::link::Link, prelude::*};
+use autd3::{driver::link::AsyncLink, prelude::*};
 
-pub async fn plane(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+pub async fn plane(autd: &mut Controller<impl AsyncLink>) -> anyhow::Result<bool> {
     autd.send(Silencer::default()).await?;
 
     let dir = Vector3::z_axis();

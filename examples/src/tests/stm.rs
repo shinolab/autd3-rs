@@ -1,6 +1,6 @@
-use autd3::{driver::link::Link, prelude::*};
+use autd3::{driver::link::AsyncLink, prelude::*};
 
-pub async fn foci_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+pub async fn foci_stm(autd: &mut Controller<impl AsyncLink>) -> anyhow::Result<bool> {
     autd.send(Silencer::disable()).await?;
 
     let stm = FociSTM::new(
@@ -21,7 +21,7 @@ pub async fn foci_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> 
     Ok(true)
 }
 
-pub async fn gain_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+pub async fn gain_stm(autd: &mut Controller<impl AsyncLink>) -> anyhow::Result<bool> {
     autd.send(Silencer::disable()).await?;
 
     let stm = GainSTM::new(

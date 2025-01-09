@@ -6,8 +6,7 @@ use crate::{
     geometry::Geometry,
 };
 
-pub use internal::Link;
-pub use internal::LinkBuilder;
+pub use internal::{AsyncLink, AsyncLinkBuilder};
 
 #[cfg(feature = "async-trait")]
 mod internal {
@@ -15,7 +14,7 @@ mod internal {
 
     /// A trait that provides the interface with the device.
     #[async_trait::async_trait]
-    pub trait Link: Send {
+    pub trait AsyncLink: Send {
         /// Closes the link.
         async fn close(&mut self) -> Result<(), AUTDDriverError>;
 
@@ -40,16 +39,16 @@ mod internal {
 
     /// A trait to build a link.
     #[async_trait::async_trait]
-    pub trait LinkBuilder: Send + Sync {
+    pub trait AsyncLinkBuilder: Send + Sync {
         /// The link type.
-        type L: Link;
+        type L: AsyncLink;
 
         /// Opens a link.
         async fn open(self, geometry: &Geometry) -> Result<Self::L, AUTDDriverError>;
     }
 
     #[async_trait::async_trait]
-    impl Link for Box<dyn Link> {
+    impl AsyncLink for Box<dyn AsyncLink> {
         async fn close(&mut self) -> Result<(), AUTDDriverError> {
             self.as_mut().close().await
         }
@@ -81,7 +80,7 @@ mod internal {
     use super::*;
 
     /// A trait that provides the interface with the device.
-    pub trait Link: Send {
+    pub trait AsyncLink: Send {
         /// Closes the link.
         fn close(&mut self) -> impl std::future::Future<Output = Result<(), AUTDDriverError>>;
 
@@ -114,9 +113,9 @@ mod internal {
     }
 
     /// A trait to build a link.
-    pub trait LinkBuilder {
+    pub trait AsyncLinkBuilder {
         /// The link type.
-        type L: Link;
+        type L: AsyncLink;
 
         /// Opens a link.
         fn open(

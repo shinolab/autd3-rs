@@ -4,7 +4,7 @@ use autd3_driver::{
     derive::*,
     firmware::cpu::{RxMessage, TxMessage},
     geometry::{Device, Geometry, IntoDevice},
-    link::LinkBuilder,
+    link::AsyncLinkBuilder,
 };
 
 use derive_more::Debug;
@@ -64,7 +64,7 @@ impl ControllerBuilder {
     }
 
     /// Equivalent to [`Self::open_with_timeout`] with a timeout of [`DEFAULT_TIMEOUT`].
-    pub async fn open<B: LinkBuilder>(
+    pub async fn open<B: AsyncLinkBuilder>(
         self,
         link_builder: B,
     ) -> Result<Controller<B::L>, AUTDError> {
@@ -74,7 +74,7 @@ impl ControllerBuilder {
     /// Opens a controller with a timeout.
     ///
     /// Opens link, and then initialize and synchronize the devices. The `timeout` is used to send data for initialization and synchronization.
-    pub async fn open_with_timeout<B: LinkBuilder>(
+    pub async fn open_with_timeout<B: AsyncLinkBuilder>(
         self,
         link_builder: B,
         timeout: Duration,

@@ -1,6 +1,6 @@
-use autd3::{driver::link::Link, prelude::*};
+use autd3::{driver::link::AsyncLink, prelude::*};
 
-pub async fn group_by_device(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+pub async fn group_by_device(autd: &mut Controller<impl AsyncLink>) -> anyhow::Result<bool> {
     let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);
 
     autd.group(|dev| match dev.idx() {
@@ -16,7 +16,7 @@ pub async fn group_by_device(autd: &mut Controller<impl Link>) -> anyhow::Result
     Ok(true)
 }
 
-pub async fn group_by_transducer(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+pub async fn group_by_transducer(autd: &mut Controller<impl AsyncLink>) -> anyhow::Result<bool> {
     let cx = autd.center().x;
     let g1 = Focus::new(autd[0].center() + Vector3::new(0., 0., 150.0 * mm));
     let g2 = Null::new();
