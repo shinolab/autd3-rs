@@ -4,4 +4,4 @@ This crate provides `Wav`, `RawPCM`, and `Csv` modulation.
 
 # Author
 
-Shun Suzuki, 2022-2024
+Shun Suzuki, 2022-2025
