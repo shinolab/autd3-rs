@@ -170,6 +170,7 @@ impl<L: AsyncLink> Controller<L> {
     ///
     /// ```
     /// # use autd3::prelude::*;
+    /// # use autd3::r#async::controller::Controller;
     /// # tokio_test::block_on(async {
     /// let mut autd = Controller::builder([AUTD3::new(Point3::origin())]).open(Nop::builder()).await?;
     ///

@@ -172,7 +172,7 @@ impl<L: Link> Controller<L> {
     ///
     /// ```
     /// # use autd3::prelude::*;
-    /// # tokio_test::block_on(async {
+    /// # fn main() -> Result<(), AUTDError> {
     /// let mut autd = Controller::builder((0..3).map(|_| AUTD3::new(Point3::origin()))).open(Nop::builder())?;
     ///
     /// autd.group(|dev| match dev.idx() {
@@ -183,8 +183,8 @@ impl<L: Link> Controller<L> {
     /// .set("static", Static::new())?
     /// .set("sine", Sine::new(150 * Hz))?
     /// .send()?;
-    /// # Result::<(), AUTDError>::Ok(())
-    /// # });
+    /// # Ok(())
+    /// # }
     /// ```
     #[must_use]
     pub fn group<K: Hash + Eq + Clone + Debug, F: Fn(&Device) -> Option<K>>(

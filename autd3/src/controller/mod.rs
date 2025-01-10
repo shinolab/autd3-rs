@@ -164,14 +164,14 @@ impl<L: Link> Controller<L> {
     ///
     /// ```
     /// # use autd3::prelude::*;
-    /// # tokio_test::block_on(async {
+    /// # fn main() -> Result<(), AUTDError> {
     /// let mut autd = Controller::builder([AUTD3::new(Point3::origin())]).open(Nop::builder())?;
     ///
     /// autd.send(ReadsFPGAState::new(|_| true))?;
     ///
     /// let states = autd.fpga_state()?;
-    /// # Result::<(), AUTDError>::Ok(())
-    /// # });
+    /// Ok(())
+    /// # }
     /// ```
     ///
     /// [`ReadsFPGAState`]: autd3_driver::datagram::ReadsFPGAState
