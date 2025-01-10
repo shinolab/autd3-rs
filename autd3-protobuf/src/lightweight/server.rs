@@ -14,7 +14,7 @@ pub struct LightweightServer<
 > where
     L::L: Sync,
 {
-    autd: RwLock<Option<autd3::Controller<L::L>>>,
+    autd: RwLock<Option<autd3::r#async::Controller<L::L>>>,
     link: F,
 }
 
@@ -178,7 +178,7 @@ where
         if let Some(ref geometry) = req.geometry {
             if let Ok(geometry) = autd3_driver::geometry::Geometry::from_msg(geometry) {
                 #[allow(unused_mut)]
-                let mut builder = autd3::Controller::builder(geometry.iter().map(|d| {
+                let mut builder = autd3::r#async::Controller::builder(geometry.iter().map(|d| {
                     autd3::prelude::AUTD3::new(*d[0].position()).with_rotation(*d.rotation())
                 }))
                 .with_default_parallel_threshold(geometry.default_parallel_threshold() as _)
