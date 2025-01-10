@@ -74,6 +74,8 @@ class Config(BaseConfig):
         features = self.features
         if additional_features is not None:
             features += " " + additional_features
+        if "async" not in features:
+            command.extend(["--exclude", "autd3-protobuf", "--exclude", "autd3-link-simulator"])
         command.extend(["--features", features])
         return command
 
