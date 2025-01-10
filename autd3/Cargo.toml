@@ -36,7 +36,7 @@ dynamic_freq = ["autd3-driver/dynamic_freq", "autd3-firmware-emulator/dynamic_fr
 
 [dev-dependencies]
 rand = { workspace = true }
-tokio = { workspace = true, features = ["rt", "macros"] }
+tokio = { workspace = true, features = ["macros", "rt"] }
 anyhow = { workspace = true }
 rstest = { workspace = true }
 tokio-test = { workspace = true }
