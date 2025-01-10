@@ -180,8 +180,8 @@ def rust_coverage(args) -> None:  # noqa: ANN001
         RUSTFLAGS="-C instrument-coverage",
         LLVM_PROFILE_FILE="%m-%p.profraw",
     ):
-        run_command(config.cargo_command(["build"]))
-        run_command(config.cargo_command(["test"]))
+        run_command(config.cargo_command(["build"], additional_features="remote async"))
+        run_command(config.cargo_command(["test"], additional_features="remote async"))
         exclude_patterns = [
             "GRCOV_EXCL_LINE",
             r"^\s*\.await\??[,;]?$",
