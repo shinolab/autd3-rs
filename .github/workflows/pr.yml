@@ -56,10 +56,16 @@ jobs:
       matrix:
         include:
           - os: windows-latest
+            no-example: true
+            lint: true
+          - os: windows-latest
+            arch: aarch64
+            no-example: true
+            no-test: true
+          - os: macos-latest
+            no-example: true
             lint: true
           - os: ubuntu-latest
-            lint: true
-          - os: macos-latest
             lint: true
           - os: ubuntu-latest
             arch: arm32
@@ -69,11 +75,11 @@ jobs:
             arch: aarch64
             no-example: true
             no-test: true
-          - os: windows-latest
-            arch: aarch64
-            no-test: true
           - os: ubuntu-latest
             features: "use_meter left_handed"
+            lint: true
+          - os: ubuntu-latest
+            features: "async"
             lint: true
           - os: ubuntu-latest
             features: "lightweight async-trait"

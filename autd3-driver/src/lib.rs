@@ -28,7 +28,6 @@ pub mod link;
 #[doc(hidden)]
 pub mod utils;
 
-#[cfg_attr(docsrs, doc(cfg(feature = "async-trait")))]
 #[cfg(feature = "async-trait")]
 pub use async_trait::async_trait;
 

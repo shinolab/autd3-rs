@@ -1,7 +1,7 @@
 use autd3::{driver::link::Link, prelude::*};
 
-pub async fn fir(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
-    autd.send(Silencer::disable()).await?;
+pub fn fir(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+    autd.send(Silencer::disable())?;
 
     let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);
 
@@ -37,7 +37,7 @@ pub async fn fir(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
         .with_sampling_config(20 * kHz)?
         .with_fir(filt);
 
-    autd.send((m, g)).await?;
+    autd.send((m, g))?;
 
     Ok(true)
 }

@@ -9,8 +9,8 @@ use autd3_gain_holo::*;
 
 use std::io::{self, Write};
 
-pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
-    autd.send(Silencer::default()).await?;
+pub fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+    autd.send(Silencer::default())?;
 
     let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);
     let p = Vector3::new(30. * mm, 0., 0.);
@@ -44,7 +44,7 @@ pub async fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
 
     let m = Sine::new(150. * Hz);
     let g = gains.swap_remove(idx).1;
-    autd.send((m, g)).await?;
+    autd.send((m, g))?;
 
     Ok(true)
 }

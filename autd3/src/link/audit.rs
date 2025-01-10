@@ -41,14 +41,10 @@ pub struct AuditBuilder {
     down: bool,
 }
 
-#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
 impl LinkBuilder for AuditBuilder {
     type L = Audit;
 
-    async fn open(
-        self,
-        geometry: &autd3_driver::geometry::Geometry,
-    ) -> Result<Self::L, AUTDDriverError> {
+    fn open(self, geometry: &autd3_driver::geometry::Geometry) -> Result<Self::L, AUTDDriverError> {
         Ok(Audit {
             is_open: true,
             cpus: geometry
@@ -115,14 +111,13 @@ impl Audit {
     }
 }
 
-#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
 impl Link for Audit {
-    async fn close(&mut self) -> Result<(), AUTDDriverError> {
+    fn close(&mut self) -> Result<(), AUTDDriverError> {
         self.is_open = false;
         Ok(())
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
+    fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
         if self.broken {
             return Err(AUTDDriverError::LinkError("broken".to_owned()));
         }
@@ -138,7 +133,7 @@ impl Link for Audit {
         Ok(true)
     }
 
-    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
+    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
         if self.broken {
             return Err(AUTDDriverError::LinkError("broken".to_owned()));
         }
@@ -162,5 +157,44 @@ impl Link for Audit {
     fn trace(&mut self, timeout: Option<std::time::Duration>, parallel_threshold: Option<usize>) {
         self.last_timeout = timeout;
         self.last_parallel_threshold = parallel_threshold;
+    }
+}
+
+#[cfg(feature = "async")]
+use autd3_driver::link::{AsyncLink, AsyncLinkBuilder};
+
+#[cfg(feature = "async")]
+#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+impl AsyncLinkBuilder for AuditBuilder {
+    type L = Audit;
+
+    async fn open(self, geometry: &Geometry) -> Result<Self::L, AUTDDriverError> {
+        <Self as LinkBuilder>::open(self, geometry)
+    }
+}
+
+#[cfg(feature = "async")]
+#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+impl AsyncLink for Audit {
+    async fn close(&mut self) -> Result<(), AUTDDriverError> {
+        <Self as Link>::close(self)
+    }
+
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
+        <Self as Link>::send(self, tx)
+    }
+
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
+        <Self as Link>::receive(self, rx)
+    }
+
+    fn is_open(&self) -> bool {
+        <Self as Link>::is_open(self)
+    }
+
+    fn trace(&mut self, timeout: Option<std::time::Duration>, parallel_threshold: Option<usize>) {
+        <Self as Link>::trace(self, timeout, parallel_threshold)
     }
 }

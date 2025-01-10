@@ -1,7 +1,7 @@
 use autd3::{driver::link::Link, prelude::*};
 
-pub async fn foci_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
-    autd.send(Silencer::disable()).await?;
+pub fn foci_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+    autd.send(Silencer::disable())?;
 
     let stm = FociSTM::new(
         1.0 * Hz,
@@ -16,13 +16,13 @@ pub async fn foci_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> 
 
     let m = Static::new();
 
-    autd.send((m, stm)).await?;
+    autd.send((m, stm))?;
 
     Ok(true)
 }
 
-pub async fn gain_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
-    autd.send(Silencer::disable()).await?;
+pub fn gain_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+    autd.send(Silencer::disable())?;
 
     let stm = GainSTM::new(
         1.0 * Hz,
@@ -37,7 +37,7 @@ pub async fn gain_stm(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> 
 
     let m = Static::new();
 
-    autd.send((m, stm)).await?;
+    autd.send((m, stm))?;
 
     Ok(true)
 }

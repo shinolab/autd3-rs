@@ -3,6 +3,7 @@
 - Update firmware to v10.0.1
   - phase correction bram and pulse width encoder table reset to default in clear op
   - support for `dynamic_freq` version
+- Make `async` optional
 - Remove `Deref<Target = Link>` and `DerefMut` for `Controller`
   - Impl `Deref<Target = Geometry>` and `DerefMut` for `Controller` instead
 - Make `Transducer::new` public

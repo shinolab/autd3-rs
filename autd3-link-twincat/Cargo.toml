@@ -24,9 +24,10 @@ cc = { workspace = true, optional = true }
 local = ["libloading"]
 remote = ["itertools", "cc", "tracing"]
 default = ["local"]
+async = ["autd3-driver/async"]
+async-trait = ["async", "autd3-driver/async-trait"]
 all = ["local", "remote"]
-async-trait = ["autd3-driver/async-trait"]
 
 [package.metadata.docs.rs]
-all-features = true
+features = ["local", "remote", "async"]
 rustdoc-args = ["--cfg", "docsrs"]

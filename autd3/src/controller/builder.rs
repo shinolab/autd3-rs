@@ -64,17 +64,14 @@ impl ControllerBuilder {
     }
 
     /// Equivalent to [`Self::open_with_timeout`] with a timeout of [`DEFAULT_TIMEOUT`].
-    pub async fn open<B: LinkBuilder>(
-        self,
-        link_builder: B,
-    ) -> Result<Controller<B::L>, AUTDError> {
-        self.open_with_timeout(link_builder, DEFAULT_TIMEOUT).await
+    pub fn open<B: LinkBuilder>(self, link_builder: B) -> Result<Controller<B::L>, AUTDError> {
+        self.open_with_timeout(link_builder, DEFAULT_TIMEOUT)
     }
 
     /// Opens a controller with a timeout.
     ///
     /// Opens link, and then initialize and synchronize the devices. The `timeout` is used to send data for initialization and synchronization.
-    pub async fn open_with_timeout<B: LinkBuilder>(
+    pub fn open_with_timeout<B: LinkBuilder>(
         self,
         link_builder: B,
         timeout: Duration,
@@ -82,7 +79,7 @@ impl ControllerBuilder {
         tracing::debug!("Opening a controller: {:?} (timeout = {:?})", self, timeout);
         let geometry = Geometry::new(self.devices, self.default_parallel_threshold);
         Controller {
-            link: link_builder.open(&geometry).await?,
+            link: link_builder.open(&geometry)?,
             tx_buf: vec![TxMessage::new_zeroed(); geometry.len()], // Do not use `num_devices` here because the devices may be disabled.
             rx_buf: vec![RxMessage::new(0, 0); geometry.len()],
             geometry,
@@ -94,7 +91,6 @@ impl ControllerBuilder {
             },
         }
         .open_impl(timeout)
-        .await
     }
 }
 
@@ -112,12 +108,11 @@ mod tests {
 
     use super::*;
 
-    #[tokio::test]
-    async fn geometry() -> anyhow::Result<()> {
+    #[test]
+    fn geometry() -> anyhow::Result<()> {
         let autd =
             ControllerBuilder::new([AUTD3::new(Point3::origin()), AUTD3::new(Point3::origin())])
-                .open(crate::link::Nop::builder())
-                .await?;
+                .open(crate::link::Nop::builder())?;
 
         assert_eq!(0, autd[0].idx());
         autd[0].iter().enumerate().for_each(|(i, tr)| {

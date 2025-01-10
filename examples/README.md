@@ -14,4 +14,4 @@ cargo run --release --features simulator --bin simulator
 
 # Author
 
-Shun Suzuki, 2022-2024
+Shun Suzuki, 2022-2025

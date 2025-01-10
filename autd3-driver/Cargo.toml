@@ -42,6 +42,7 @@ criterion = { workspace = true }
 
 [features]
 default = ["derive"]
+async = []
 lightweight = []
 async-trait = ["dep:async-trait"]
 use_meter = []
@@ -59,5 +60,5 @@ path = "benches/gain.rs"
 harness = false
 
 [package.metadata.docs.rs]
-features = ["lightweight", "async-trait", "serde", "derive"]
+features = ["lightweight", "async", "serde", "derive"]
 rustdoc-args = ["--cfg", "docsrs"]
