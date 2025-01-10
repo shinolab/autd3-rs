@@ -238,7 +238,7 @@ mod tests {
                     .into_iter(),
                 )?,
             ),
-        )?
+        )? // GRCOV_EXCL_LINE
         .send()?;
 
         assert_eq!(
