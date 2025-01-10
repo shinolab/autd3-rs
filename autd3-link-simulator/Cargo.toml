@@ -11,10 +11,10 @@ repository = { workspace = true }
 
 [dependencies]
 autd3-protobuf = { workspace = true }
-autd3-driver = { workspace = true, features = ["derive", "async"] }
+autd3-driver = { workspace = true, features = ["async", "derive"] }
 tonic = { workspace = true }
 tracing = { workspace = true }
-tokio = { workspace = true, features = ["rt", "rt-multi-thread"], optional = true }
+tokio = { workspace = true, features = ["rt-multi-thread"], optional = true }
 
 [features]
 default = []
