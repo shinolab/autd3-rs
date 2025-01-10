@@ -1,4 +1,4 @@
-use autd3::{driver::link::AsyncLink, prelude::*};
+use autd3::{driver::link::AsyncLink, prelude::*, r#async::Controller};
 
 #[tokio::test]
 async fn nop_test() -> anyhow::Result<()> {

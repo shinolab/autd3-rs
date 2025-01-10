@@ -1,3 +1,4 @@
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs)]
 #![warn(rustdoc::missing_crate_level_docs)]
 #![warn(rustdoc::unescaped_backticks)]
@@ -16,7 +17,7 @@ use autd3_driver::{
     link::{AsyncLink, AsyncLinkBuilder},
 };
 
-/// A [`Link`] for [`AUTD3 Simulator`].
+/// A [`AsyncLink`] for [`AUTD3 Simulator`].
 ///
 /// [`AUTD3 Simulator`]: https://github.com/shinolab/autd3-server
 pub struct Simulator {
@@ -135,5 +136,63 @@ impl AsyncLink for Simulator {
 
     fn is_open(&self) -> bool {
         self.is_open
+    }
+}
+
+#[cfg(feature = "blocking")]
+use autd3_driver::link::{Link, LinkBuilder};
+
+/// A [`Link`] for [`AUTD3 Simulator`].
+///
+/// [`AUTD3 Simulator`]: https://github.com/shinolab/autd3-server
+#[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
+#[cfg(feature = "blocking")]
+pub struct SimulatorBlocking {
+    runtime: tokio::runtime::Runtime,
+    inner: Simulator,
+}
+
+#[cfg(feature = "blocking")]
+impl Link for SimulatorBlocking {
+    fn close(&mut self) -> Result<(), AUTDDriverError> {
+        self.runtime.block_on(self.inner.close())
+    }
+
+    fn update(
+        &mut self,
+        geometry: &autd3_driver::geometry::Geometry,
+    ) -> Result<(), AUTDDriverError> {
+        self.runtime.block_on(self.inner.update(geometry))
+    }
+
+    fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
+        self.runtime.block_on(self.inner.send(tx))
+    }
+
+    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
+        self.runtime.block_on(self.inner.receive(rx))
+    }
+
+    fn is_open(&self) -> bool {
+        self.inner.is_open()
+    }
+
+    fn trace(&mut self, timeout: Option<std::time::Duration>, parallel_threshold: Option<usize>) {
+        self.inner.trace(timeout, parallel_threshold)
+    }
+}
+
+#[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
+#[cfg(feature = "blocking")]
+impl LinkBuilder for SimulatorBuilder {
+    type L = SimulatorBlocking;
+
+    fn open(self, geometry: &autd3_driver::geometry::Geometry) -> Result<Self::L, AUTDDriverError> {
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .expect("Failed to create runtime");
+        let inner = runtime.block_on(<Self as AsyncLinkBuilder>::open(self, geometry))?;
+        Ok(Self::L { runtime, inner })
     }
 }

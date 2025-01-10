@@ -1,7 +1,7 @@
 use autd3_driver::{
     derive::*,
     firmware::cpu::{RxMessage, TxMessage},
-    link::{AsyncLink, AsyncLinkBuilder},
+    link::{Link, LinkBuilder},
 };
 use autd3_firmware_emulator::CPUEmulator;
 
@@ -17,11 +17,10 @@ pub struct Nop {
 #[derive(Builder)]
 pub struct NopBuilder {}
 
-#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
-impl AsyncLinkBuilder for NopBuilder {
+impl LinkBuilder for NopBuilder {
     type L = Nop;
 
-    async fn open(self, geometry: &Geometry) -> Result<Self::L, AUTDDriverError> {
+    fn open(self, geometry: &Geometry) -> Result<Self::L, AUTDDriverError> {
         Ok(Nop {
             is_open: true,
             cpus: geometry
@@ -33,14 +32,13 @@ impl AsyncLinkBuilder for NopBuilder {
     }
 }
 
-#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
-impl AsyncLink for Nop {
-    async fn close(&mut self) -> Result<(), AUTDDriverError> {
+impl Link for Nop {
+    fn close(&mut self) -> Result<(), AUTDDriverError> {
         self.is_open = false;
         Ok(())
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
+    fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
         self.cpus.iter_mut().for_each(|cpu| {
             cpu.send(tx);
         });
@@ -48,7 +46,7 @@ impl AsyncLink for Nop {
         Ok(true)
     }
 
-    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
+    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
         self.cpus.iter_mut().for_each(|cpu| {
             cpu.update();
             rx[cpu.idx()] = cpu.rx();
@@ -59,6 +57,41 @@ impl AsyncLink for Nop {
 
     fn is_open(&self) -> bool {
         self.is_open
+    }
+}
+
+#[cfg(feature = "async")]
+use autd3_driver::link::{AsyncLink, AsyncLinkBuilder};
+
+#[cfg(feature = "async")]
+#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+impl AsyncLinkBuilder for NopBuilder {
+    type L = Nop;
+
+    async fn open(self, geometry: &Geometry) -> Result<Self::L, AUTDDriverError> {
+        <Self as LinkBuilder>::open(self, geometry)
+    }
+}
+
+#[cfg(feature = "async")]
+#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+impl AsyncLink for Nop {
+    async fn close(&mut self) -> Result<(), AUTDDriverError> {
+        <Self as Link>::close(self)
+    }
+
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
+        <Self as Link>::send(self, tx)
+    }
+
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
+        <Self as Link>::receive(self, rx)
+    }
+
+    fn is_open(&self) -> bool {
+        <Self as Link>::is_open(self)
     }
 }
 

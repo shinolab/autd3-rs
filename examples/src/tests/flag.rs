@@ -1,25 +1,21 @@
-use tokio::io::AsyncBufReadExt;
+use autd3::{driver::link::Link, prelude::*};
 
-use autd3::{driver::link::AsyncLink, prelude::*};
-
-pub async fn flag(autd: &mut Controller<impl AsyncLink>) -> anyhow::Result<bool> {
-    autd.send(ReadsFPGAState::new(|_dev| true)).await?;
+pub fn flag(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+    autd.send(ReadsFPGAState::new(|_dev| true))?;
 
     println!("press any key to force fan...");
     let mut _s = String::new();
     std::io::stdin().read_line(&mut _s)?;
 
-    autd.send(ForceFan::new(|_dev| true)).await?;
+    autd.send(ForceFan::new(|_dev| true))?;
 
-    let (tx, mut rx) = tokio::sync::oneshot::channel();
+    let (tx, rx) = std::sync::mpsc::channel();
     println!("press any key to stop checking FPGA status...");
-    let fin_signal = tokio::spawn(async move {
+    let fin_signal = std::thread::spawn(move || {
         let mut _s = String::new();
-        tokio::io::BufReader::new(tokio::io::stdin())
-            .read_line(&mut _s)
-            .await?;
+        std::io::stdin().read_line(&mut _s)?;
         _ = tx.send(());
-        tokio::io::Result::Ok(())
+        std::io::Result::Ok(())
     });
 
     let prompts = ['-', '/', '|', '\\'];
@@ -28,7 +24,7 @@ pub async fn flag(autd: &mut Controller<impl AsyncLink>) -> anyhow::Result<bool>
         if rx.try_recv().is_ok() {
             break;
         }
-        let states = autd.fpga_state().await?;
+        let states = autd.fpga_state()?;
         println!("{} FPGA Status...", prompts[idx / 1000 % prompts.len()]);
         idx += 1;
         states.iter().enumerate().for_each(|(i, state)| {
@@ -42,13 +38,12 @@ pub async fn flag(autd: &mut Controller<impl AsyncLink>) -> anyhow::Result<bool>
     }
     print!("\x1b[1F\x1b[0J");
 
-    fin_signal.await??;
+    let _ = fin_signal.join();
 
     autd.send((
         ForceFan::new(|_dev| false),
         ReadsFPGAState::new(|_dev| false),
-    ))
-    .await?;
+    ))?;
 
     Ok(true)
 }

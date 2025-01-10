@@ -9,7 +9,7 @@ use zerocopy::IntoBytes;
 use autd3_driver::{
     derive::*,
     firmware::cpu::{RxMessage, TxMessage},
-    link::{AsyncLink, AsyncLinkBuilder},
+    link::{Link, LinkBuilder},
 };
 
 #[repr(C)]
@@ -46,11 +46,10 @@ pub struct TwinCAT {
 #[derive(Builder)]
 pub struct TwinCATBuilder {}
 
-#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
-impl AsyncLinkBuilder for TwinCATBuilder {
+impl LinkBuilder for TwinCATBuilder {
     type L = TwinCAT;
 
-    async fn open(self, _: &Geometry) -> Result<Self::L, AUTDDriverError> {
+    fn open(self, _: &Geometry) -> Result<Self::L, AUTDDriverError> {
         let dll = unsafe { lib::Library::new("TcAdsDll") }.map_err(|_| {
             AUTDDriverError::LinkError("TcAdsDll not found. Please install TwinCAT3".to_owned())
         })?;
@@ -92,9 +91,8 @@ impl TwinCAT {
     }
 }
 
-#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
-impl AsyncLink for TwinCAT {
-    async fn close(&mut self) -> Result<(), AUTDDriverError> {
+impl Link for TwinCAT {
+    fn close(&mut self) -> Result<(), AUTDDriverError> {
         unsafe {
             self.dll
                 .get::<unsafe extern "C" fn(i32) -> i32>(b"AdsPortCloseEx")
@@ -106,7 +104,7 @@ impl AsyncLink for TwinCAT {
         Ok(())
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
+    fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
         unsafe {
             let n_err = self.dll.get::<unsafe extern "C" fn(
                 i32,
@@ -137,7 +135,7 @@ impl AsyncLink for TwinCAT {
         }
     }
 
-    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
+    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
         let mut read_bytes: u32 = 0;
         unsafe {
             let n_err = self
@@ -173,5 +171,40 @@ impl AsyncLink for TwinCAT {
 
     fn is_open(&self) -> bool {
         self.port > 0
+    }
+}
+
+#[cfg(feature = "async")]
+use autd3_driver::link::{AsyncLink, AsyncLinkBuilder};
+
+#[cfg(feature = "async")]
+#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+impl AsyncLinkBuilder for TwinCATBuilder {
+    type L = TwinCAT;
+
+    async fn open(self, geometry: &Geometry) -> Result<Self::L, AUTDDriverError> {
+        <Self as LinkBuilder>::open(self, geometry)
+    }
+}
+
+#[cfg(feature = "async")]
+#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+impl AsyncLink for TwinCAT {
+    async fn close(&mut self) -> Result<(), AUTDDriverError> {
+        <Self as Link>::close(self)
+    }
+
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
+        <Self as Link>::send(self, tx)
+    }
+
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
+        <Self as Link>::receive(self, rx)
+    }
+
+    fn is_open(&self) -> bool {
+        <Self as Link>::is_open(self)
     }
 }

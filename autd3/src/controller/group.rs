@@ -8,13 +8,13 @@ use autd3_driver::{
 };
 use itertools::Itertools;
 
-use super::{AsyncLink, Controller};
+use super::{Controller, Link};
 
 use tracing;
 
 /// A struct for grouping devices and sending different data to each group. See also [`Controller::group`].
 #[allow(clippy::type_complexity)]
-pub struct Group<'a, K: PartialEq + Debug, L: AsyncLink> {
+pub struct Group<'a, K: PartialEq + Debug, L: Link> {
     pub(crate) cnt: &'a mut Controller<L>,
     pub(crate) keys: Vec<Option<K>>,
     pub(crate) done: Vec<bool>,
@@ -23,7 +23,7 @@ pub struct Group<'a, K: PartialEq + Debug, L: AsyncLink> {
     pub(crate) operations: Vec<Option<(Box<dyn Operation>, Box<dyn Operation>)>>,
 }
 
-impl<'a, K: PartialEq + Debug, L: AsyncLink> Group<'a, K, L> {
+impl<'a, K: PartialEq + Debug, L: Link> Group<'a, K, L> {
     #[must_use]
     pub(crate) fn new(cnt: &'a mut Controller<L>, f: impl Fn(&Device) -> Option<K>) -> Self {
         let keys = cnt.geometry.devices().map(f).collect::<Vec<_>>();
@@ -126,7 +126,7 @@ impl<'a, K: PartialEq + Debug, L: AsyncLink> Group<'a, K, L> {
     ///
     /// Returns [`AUTDDriverError::UnusedKey`] if the data is not specified for the key by [`Group::set`].
     #[tracing::instrument(level = "debug", skip(self))]
-    pub async fn send(self) -> Result<(), AUTDDriverError> {
+    pub fn send(self) -> Result<(), AUTDDriverError> {
         let Self {
             operations,
             cnt,
@@ -148,24 +148,22 @@ impl<'a, K: PartialEq + Debug, L: AsyncLink> Group<'a, K, L> {
         }
 
         cnt.link.trace(timeout, parallel_threshold);
-        cnt.timer
-            .send(
-                &cnt.geometry,
-                &mut cnt.tx_buf,
-                &mut cnt.rx_buf,
-                &mut cnt.link,
-                operations
-                    .into_iter()
-                    .map(|op| op.unwrap_or_default())
-                    .collect::<Vec<_>>(),
-                timeout,
-                parallel_threshold,
-            )
-            .await
+        cnt.timer.send(
+            &cnt.geometry,
+            &mut cnt.tx_buf,
+            &mut cnt.rx_buf,
+            &mut cnt.link,
+            operations
+                .into_iter()
+                .map(|op| op.unwrap_or_default())
+                .collect::<Vec<_>>(),
+            timeout,
+            parallel_threshold,
+        )
     }
 }
 
-impl<L: AsyncLink> Controller<L> {
+impl<L: Link> Controller<L> {
     /// Group the devices by given function and send different data to each group.
     ///
     /// If the key is `None`, nothing is done for the devices corresponding to the key.
@@ -175,7 +173,7 @@ impl<L: AsyncLink> Controller<L> {
     /// ```
     /// # use autd3::prelude::*;
     /// # tokio_test::block_on(async {
-    /// let mut autd = Controller::builder((0..3).map(|_| AUTD3::new(Point3::origin()))).open(Nop::builder()).await?;
+    /// let mut autd = Controller::builder((0..3).map(|_| AUTD3::new(Point3::origin()))).open(Nop::builder())?;
     ///
     /// autd.group(|dev| match dev.idx() {
     ///    0 => Some("static"),
@@ -184,7 +182,7 @@ impl<L: AsyncLink> Controller<L> {
     /// })
     /// .set("static", Static::new())?
     /// .set("sine", Sine::new(150 * Hz))?
-    /// .send().await?;
+    /// .send()?;
     /// # Result::<(), AUTDError>::Ok(())
     /// # });
     /// ```
@@ -215,11 +213,11 @@ mod tests {
         modulation::{Sine, Static},
     };
 
-    #[tokio::test]
-    async fn test_group() -> anyhow::Result<()> {
-        let mut autd = create_controller(4).await?;
+    #[test]
+    fn test_group() -> anyhow::Result<()> {
+        let mut autd = create_controller(4)?;
 
-        autd.send(Uniform::new(EmitIntensity::new(0xFF))).await?;
+        autd.send(Uniform::new(EmitIntensity::new(0xFF)))?;
 
         autd.group(|dev| match dev.idx() {
             0 | 1 | 3 => Some(dev.idx()),
@@ -241,8 +239,7 @@ mod tests {
                 )?,
             ),
         )?
-        .send()
-        .await?;
+        .send()?;
 
         assert_eq!(
             vec![Drive::NULL; autd.geometry[0].num_transducers()],
@@ -288,15 +285,14 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn test_send_failed() -> anyhow::Result<()> {
-        let mut autd = create_controller(1).await?;
+    #[test]
+    fn test_send_failed() -> anyhow::Result<()> {
+        let mut autd = create_controller(1)?;
         assert_eq!(
             Ok(()),
             autd.group(|dev| Some(dev.idx()))
                 .set(0, Null::new())?
                 .send()
-                .await
         );
 
         autd.link_mut().down();
@@ -305,15 +301,14 @@ mod tests {
             autd.group(|dev| Some(dev.idx()))
                 .set(0, Null::new())?
                 .send()
-                .await
         );
 
         Ok(())
     }
 
-    #[tokio::test]
-    async fn test_send_err() -> anyhow::Result<()> {
-        let mut autd = create_controller(2).await?;
+    #[test]
+    fn test_send_err() -> anyhow::Result<()> {
+        let mut autd = create_controller(2)?;
 
         assert_eq!(
             Err(AUTDDriverError::InvalidSegmentTransition),
@@ -324,15 +319,14 @@ mod tests {
                     SwapSegment::FociSTM(Segment::S1, TransitionMode::SyncIdx),
                 )?
                 .send()
-                .await
         );
 
         Ok(())
     }
 
-    #[tokio::test]
-    async fn test_group_only_for_enabled() -> anyhow::Result<()> {
-        let mut autd = create_controller(2).await?;
+    #[test]
+    fn test_group_only_for_enabled() -> anyhow::Result<()> {
+        let mut autd = create_controller(2)?;
 
         autd.geometry[0].enable = false;
 
@@ -342,8 +336,7 @@ mod tests {
             Some(dev.idx())
         })
         .set(1, Static::with_intensity(0x80))?
-        .send()
-        .await?;
+        .send()?;
 
         assert!(!check.lock().unwrap()[0]);
         assert!(check.lock().unwrap()[1]);
@@ -380,9 +373,9 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_group_only_for_enabled_gain() -> anyhow::Result<()> {
-        let mut autd = create_controller(3).await?;
+    #[test]
+    fn test_group_only_for_enabled_gain() -> anyhow::Result<()> {
+        let mut autd = create_controller(3)?;
 
         let test = Arc::new(Mutex::new(vec![false; 3]));
         autd.group(|dev| match dev.idx() {
@@ -390,8 +383,7 @@ mod tests {
             _ => None,
         })
         .set(0, TestGain { test: test.clone() })?
-        .send()
-        .await?;
+        .send()?;
 
         assert!(test.lock().unwrap()[0]);
         assert!(!test.lock().unwrap()[1]);
@@ -400,9 +392,9 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn unknown_key() -> anyhow::Result<()> {
-        let mut autd = create_controller(2).await?;
+    #[test]
+    fn unknown_key() -> anyhow::Result<()> {
+        let mut autd = create_controller(2)?;
 
         assert_eq!(
             Some(AUTDDriverError::UnkownKey("2".to_owned())),
@@ -415,9 +407,9 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn already_used_key() -> anyhow::Result<()> {
-        let mut autd = create_controller(2).await?;
+    #[test]
+    fn already_used_key() -> anyhow::Result<()> {
+        let mut autd = create_controller(2)?;
 
         assert_eq!(
             Some(AUTDDriverError::KeyIsAlreadyUsed("1".to_owned())),
@@ -431,16 +423,15 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn unused_key() -> anyhow::Result<()> {
-        let mut autd = create_controller(3).await?;
+    #[test]
+    fn unused_key() -> anyhow::Result<()> {
+        let mut autd = create_controller(3)?;
 
         assert_eq!(
             Some(AUTDDriverError::UnusedKey("0, 2".to_owned())),
             autd.group(|dev| Some(dev.idx()))
                 .set(1, Null::new())?
                 .send()
-                .await
                 .err()
         );
 

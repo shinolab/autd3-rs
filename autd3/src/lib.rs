@@ -27,6 +27,11 @@ pub mod link;
 /// Prelude module.
 pub mod prelude;
 
+/// Asynchronous module.
+#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+#[cfg(feature = "async")]
+pub mod r#async;
+
 pub use autd3_driver as driver;
 pub use autd3_driver::derive;
 pub use datagram::gain;

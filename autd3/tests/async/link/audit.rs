@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use autd3::{link::Audit, prelude::*};
+use autd3::{link::Audit, prelude::*, r#async::Controller};
 use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
 
 #[tokio::test]

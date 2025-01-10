@@ -4,4 +4,4 @@ This crate provides a link for [AUTD3 Simulator](https://github.com/shinolab/aut
 
 # Author
 
-Shun Suzuki, 2022-2024
+Shun Suzuki, 2022-2025

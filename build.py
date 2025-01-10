@@ -130,6 +130,7 @@ def rust_test(args) -> None:  # noqa: ANN001
 
 def rust_run(args) -> None:  # noqa: ANN001
     examples = [
+        "async",
         "nop",
         "twincat",
         "remote_twincat",
@@ -143,6 +144,8 @@ def rust_run(args) -> None:  # noqa: ANN001
         return sys.exit(-1)
     features: str
     match args.target:
+        case "async":
+            features = "async"
         case "twincat":
             features = "twincat"
         case "remote_twincat":
