@@ -481,7 +481,7 @@ mod tests {
                 ]
                 .into_iter(),
             )?,
-        ))?;
+        ))?; // GRCOV_EXCL_LINE
 
         let autd = unsafe { Controller::<Audit>::from_boxed_link(autd) };
 
