@@ -119,11 +119,6 @@ pub enum AUTDDriverError {
     #[error("The input data is invalid.")]
     InvalidDateTime,
 
-    /// Error from Windows OS.
-    #[cfg(target_os = "windows")]
-    #[error("{0}")]
-    WindowsError(#[from] windows::core::Error),
-
     #[cfg(feature = "dynamic_freq")]
     #[error("Ultrasound frequency ({0:?}) is not supported")]
     /// Invalid ultrasound frequency.
