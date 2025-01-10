@@ -1,7 +1,7 @@
 use autd3::{driver::link::Link, prelude::*};
 
-pub async fn custom(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
-    autd.send(Silencer::disable()).await?;
+pub fn custom(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+    autd.send(Silencer::disable())?;
 
     let m = autd3::modulation::Custom::new([0, 255], 4 * kHz)?;
     let g = autd3::gain::Custom::new(|dev| {
@@ -12,7 +12,7 @@ pub async fn custom(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
         }
     });
 
-    autd.send((m, g)).await?;
+    autd.send((m, g))?;
 
     Ok(true)
 }

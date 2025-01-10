@@ -55,25 +55,23 @@ impl<L: Link> Controller<L> {
     ///
     /// The calculation of each [`Datagram`] is executed in parallel for each device if the number of enabled devices is greater than the [`Datagram::parallel_threshold`].
     #[tracing::instrument(level = "debug", skip(self))]
-    pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDDriverError> {
+    pub fn send(&mut self, s: impl Datagram) -> Result<(), AUTDDriverError> {
         let timeout = s.timeout();
         let parallel_threshold = s.parallel_threshold();
         self.link.trace(timeout, parallel_threshold);
         let generator = s.operation_generator(&self.geometry)?;
-        self.timer
-            .send(
-                &self.geometry,
-                &mut self.tx_buf,
-                &mut self.rx_buf,
-                &mut self.link,
-                OperationHandler::generate(generator, &self.geometry),
-                timeout,
-                parallel_threshold,
-            )
-            .await
+        self.timer.send(
+            &self.geometry,
+            &mut self.tx_buf,
+            &mut self.rx_buf,
+            &mut self.link,
+            OperationHandler::generate(generator, &self.geometry),
+            timeout,
+            parallel_threshold,
+        )
     }
 
-    pub(crate) async fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
+    pub(crate) fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
         let timeout = Some(timeout);
 
         #[cfg(feature = "dynamic_freq")]
@@ -82,22 +80,18 @@ impl<L: Link> Controller<L> {
                 "Configuring ultrasound frequency to {:?}",
                 autd3_driver::defined::ultrasound_freq()
             );
-            self.send(autd3_driver::datagram::ConfigureFPGAClock::new().with_timeout(timeout))
-                .await?;
+            self.send(autd3_driver::datagram::ConfigureFPGAClock::new().with_timeout(timeout))?;
         }
 
         // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
         // Therefore, send a meaningless data (here, we use `ForceFan` because it is the lightest).
-        let _ = self
-            .send(ForceFan::new(|_| false).with_timeout(timeout))
-            .await;
+        let _ = self.send(ForceFan::new(|_| false).with_timeout(timeout));
 
-        self.send((Clear::new(), Synchronize::new()).with_timeout(timeout))
-            .await?;
+        self.send((Clear::new(), Synchronize::new()).with_timeout(timeout))?;
         Ok(self)
     }
 
-    async fn close_impl(&mut self) -> Result<(), AUTDDriverError> {
+    fn close_impl(&mut self) -> Result<(), AUTDDriverError> {
         tracing::info!("Closing controller");
 
         if !self.link.is_open() {
@@ -107,10 +101,10 @@ impl<L: Link> Controller<L> {
 
         self.geometry.iter_mut().for_each(|dev| dev.enable = true);
         [
-            self.send(Silencer::default().with_strict_mode(false)).await,
-            self.send((Static::new(), Null::default())).await,
-            self.send(Clear::new()).await,
-            self.link.close().await,
+            self.send(Silencer::default().with_strict_mode(false)),
+            self.send((Static::new(), Null::default())),
+            self.send(Clear::new()),
+            self.link.close(),
         ]
         .into_iter()
         .try_fold((), |_, x| x)
@@ -118,12 +112,12 @@ impl<L: Link> Controller<L> {
 
     /// Closes the controller.
     #[tracing::instrument(level = "debug", skip(self))]
-    pub async fn close(mut self) -> Result<(), AUTDDriverError> {
-        self.close_impl().await
+    pub fn close(mut self) -> Result<(), AUTDDriverError> {
+        self.close_impl()
     }
 
-    async fn fetch_firminfo(&mut self, ty: FirmwareVersionType) -> Result<Vec<u8>, AUTDError> {
-        self.send(ty).await.map_err(|e| {
+    fn fetch_firminfo(&mut self, ty: FirmwareVersionType) -> Result<Vec<u8>, AUTDError> {
+        self.send(ty).map_err(|e| {
             tracing::error!("Fetch firmware info failed: {:?}", e);
             AUTDError::ReadFirmwareVersionFailed(
                 check_if_msg_is_processed(&self.tx_buf, &self.rx_buf).collect(),
@@ -133,16 +127,16 @@ impl<L: Link> Controller<L> {
     }
 
     /// Returns  the firmware version of the devices.
-    pub async fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDError> {
+    pub fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDError> {
         use autd3_driver::firmware::version::{CPUVersion, FPGAVersion, Major, Minor};
         use FirmwareVersionType::*;
 
-        let cpu_major = self.fetch_firminfo(CPUMajor).await?;
-        let cpu_minor = self.fetch_firminfo(CPUMinor).await?;
-        let fpga_major = self.fetch_firminfo(FPGAMajor).await?;
-        let fpga_minor = self.fetch_firminfo(FPGAMinor).await?;
-        let fpga_functions = self.fetch_firminfo(FPGAFunctions).await?;
-        self.fetch_firminfo(Clear).await?;
+        let cpu_major = self.fetch_firminfo(CPUMajor)?;
+        let cpu_minor = self.fetch_firminfo(CPUMinor)?;
+        let fpga_major = self.fetch_firminfo(FPGAMajor)?;
+        let fpga_minor = self.fetch_firminfo(FPGAMinor)?;
+        let fpga_functions = self.fetch_firminfo(FPGAFunctions)?;
+        self.fetch_firminfo(Clear)?;
 
         Ok(self
             .geometry
@@ -170,24 +164,24 @@ impl<L: Link> Controller<L> {
     ///
     /// ```
     /// # use autd3::prelude::*;
-    /// # tokio_test::block_on(async {
-    /// let mut autd = Controller::builder([AUTD3::new(Point3::origin())]).open(Nop::builder()).await?;
+    /// # fn main() -> Result<(), AUTDError> {
+    /// let mut autd = Controller::builder([AUTD3::new(Point3::origin())]).open(Nop::builder())?;
     ///
-    /// autd.send(ReadsFPGAState::new(|_| true)).await?;
+    /// autd.send(ReadsFPGAState::new(|_| true))?;
     ///
-    /// let states = autd.fpga_state().await?;
-    /// # Result::<(), AUTDError>::Ok(())
-    /// # });
+    /// let states = autd.fpga_state()?;
+    /// Ok(())
+    /// # }
     /// ```
     ///
     /// [`ReadsFPGAState`]: autd3_driver::datagram::ReadsFPGAState
-    pub async fn fpga_state(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDError> {
+    pub fn fpga_state(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDError> {
         if !self.link.is_open() {
             return Err(AUTDError::Driver(
                 autd3_driver::error::AUTDDriverError::LinkClosed,
             ));
         }
-        if self.link.receive(&mut self.rx_buf).await? {
+        if self.link.receive(&mut self.rx_buf)? {
             Ok(self.rx_buf.iter().map(Option::from).collect())
         } else {
             Err(AUTDError::ReadFPGAStateFailed)
@@ -213,8 +207,6 @@ impl<'a, L: Link> IntoIterator for &'a mut Controller<L> {
     }
 }
 
-#[cfg_attr(docsrs, doc(cfg(feature = "async-trait")))]
-#[cfg(feature = "async-trait")]
 impl<L: Link + 'static> Controller<L> {
     /// Converts `Controller<L>` into a `Controller<Box<dyn Link>>`.
     pub fn into_boxed_link(self) -> Controller<Box<dyn Link>> {
@@ -261,15 +253,7 @@ impl<L: Link> Drop for Controller<L> {
         if !self.link.is_open() {
             return;
         }
-        match tokio::runtime::Handle::current().runtime_flavor() {
-            tokio::runtime::RuntimeFlavor::CurrentThread => {}
-            tokio::runtime::RuntimeFlavor::MultiThread => tokio::task::block_in_place(|| {
-                tokio::runtime::Handle::current().block_on(async {
-                    let _ = self.close_impl().await;
-                });
-            }),
-            _ => unimplemented!(),
-        }
+        let _ = self.close_impl();
     }
 }
 
@@ -282,19 +266,15 @@ mod tests {
         geometry::Point3,
     };
 
-    use spin_sleep::SpinSleeper;
-    use timer::*;
-
-    use crate::{link::Audit, prelude::*};
+    use crate::{controller::timer::*, link::Audit, prelude::*};
 
     use super::*;
 
     // GRCOV_EXCL_START
-    pub async fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit>> {
+    pub fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit>> {
         Ok(
             Controller::builder((0..dev_num).map(|_| AUTD3::new(Point3::origin())))
-                .open(Audit::builder())
-                .await?,
+                .open(Audit::builder())?,
         )
     }
     // GRCOV_EXCL_STOP
@@ -302,31 +282,28 @@ mod tests {
     #[rstest::rstest]
     #[case(TimerStrategy::Std(StdSleeper::default()))]
     #[case(TimerStrategy::Spin(SpinSleeper::default()))]
-    #[case(TimerStrategy::Async(AsyncSleeper::default()))]
     #[cfg_attr(target_os = "windows", case(TimerStrategy::Waitable(WaitableSleeper::new().unwrap())))]
-    #[tokio::test(flavor = "multi_thread")]
-    async fn open_with_timer(#[case] strategy: TimerStrategy) {
+    #[test]
+    fn open_with_timer(#[case] strategy: TimerStrategy) {
         assert!(Controller::builder([AUTD3::new(Point3::origin())])
             .with_timer_strategy(strategy)
             .open(Audit::builder())
-            .await
             .is_ok());
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn open_failed() {
+    #[test]
+    fn open_failed() {
         assert_eq!(
             Some(AUTDError::Driver(AUTDDriverError::SendDataFailed)),
             Controller::builder([AUTD3::new(Point3::origin())])
                 .open(Audit::builder().with_down(true))
-                .await
                 .err()
         );
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn send() -> anyhow::Result<()> {
-        let mut autd = create_controller(1).await?;
+    #[test]
+    fn send() -> anyhow::Result<()> {
+        let mut autd = create_controller(1)?;
         autd.send((
             Sine::new(150. * Hz),
             GainSTM::new(
@@ -337,8 +314,7 @@ mod tests {
                 ]
                 .into_iter(),
             )?,
-        ))
-        .await?;
+        ))?; // GRCOV_EXCL_LINE
 
         autd.iter().try_for_each(|dev| {
             assert_eq!(
@@ -362,16 +338,16 @@ mod tests {
             anyhow::Ok(())
         })?;
 
-        autd.close().await?;
+        autd.close()?;
 
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn firmware_version() -> anyhow::Result<()> {
+    #[test]
+    fn firmware_version() -> anyhow::Result<()> {
         use autd3_driver::firmware::version::{CPUVersion, FPGAVersion};
 
-        let mut autd = create_controller(1).await?;
+        let mut autd = create_controller(1)?;
         assert_eq!(
             vec![FirmwareVersion::new(
                 0,
@@ -385,60 +361,59 @@ mod tests {
                     FPGAVersion::ENABLED_EMULATOR_BIT
                 )
             )],
-            autd.firmware_version().await?
+            autd.firmware_version()?
         );
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn firmware_version_err() -> anyhow::Result<()> {
-        let mut autd = create_controller(2).await?;
+    #[test]
+    fn firmware_version_err() -> anyhow::Result<()> {
+        let mut autd = create_controller(2)?;
         autd.link_mut().break_down();
         assert_eq!(
             Err(AUTDError::ReadFirmwareVersionFailed(vec![false, false])),
-            autd.firmware_version().await
+            autd.firmware_version()
         );
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn close() -> anyhow::Result<()> {
+    #[test]
+    fn close() -> anyhow::Result<()> {
         {
-            let mut autd = create_controller(1).await?;
-            autd.close_impl().await?;
-            autd.close().await?;
+            let mut autd = create_controller(1)?;
+            autd.close_impl()?;
+            autd.close()?;
         }
 
         {
-            let mut autd = create_controller(1).await?;
+            let mut autd = create_controller(1)?;
             autd.link_mut().break_down();
             assert_eq!(
                 Err(AUTDDriverError::LinkError("broken".to_owned())),
-                autd.close().await
+                autd.close()
             );
         }
 
         {
-            let mut autd = create_controller(1).await?;
+            let mut autd = create_controller(1)?;
             autd.link_mut().down();
-            assert_eq!(Err(AUTDDriverError::SendDataFailed), autd.close().await);
+            assert_eq!(Err(AUTDDriverError::SendDataFailed), autd.close());
         }
 
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn fpga_state() -> anyhow::Result<()> {
+    #[test]
+    fn fpga_state() -> anyhow::Result<()> {
         let mut autd =
             Controller::builder([AUTD3::new(Point3::origin()), AUTD3::new(Point3::origin())])
-                .open(Audit::builder())
-                .await?;
+                .open(Audit::builder())?;
 
-        autd.send(ReadsFPGAState::new(|_| true)).await?;
+        autd.send(ReadsFPGAState::new(|_| true))?;
         {
             autd.link_mut()[0].fpga_mut().assert_thermal_sensor();
 
-            let states = autd.fpga_state().await?;
+            let states = autd.fpga_state()?;
             assert_eq!(2, states.len());
             assert!(states[0]
                 .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
@@ -452,7 +427,7 @@ mod tests {
             autd.link_mut()[0].fpga_mut().deassert_thermal_sensor();
             autd.link_mut()[1].fpga_mut().assert_thermal_sensor();
 
-            let states = autd.fpga_state().await?;
+            let states = autd.fpga_state()?;
             assert_eq!(2, states.len());
             assert!(!states[0]
                 .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
@@ -462,9 +437,9 @@ mod tests {
                 .is_thermal_assert());
         }
 
-        autd.send(ReadsFPGAState::new(|dev| dev.idx() == 1)).await?;
+        autd.send(ReadsFPGAState::new(|dev| dev.idx() == 1))?;
         {
-            let states = autd.fpga_state().await?;
+            let states = autd.fpga_state()?;
             assert_eq!(2, states.len());
             assert!(states[0].is_none());
             assert!(states[1]
@@ -475,9 +450,9 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn into_iter() -> anyhow::Result<()> {
-        let mut autd = create_controller(1).await?;
+    #[test]
+    fn into_iter() -> anyhow::Result<()> {
+        let mut autd = create_controller(1)?;
 
         for dev in &mut autd {
             dev.sound_speed = 300e3 * mm;
@@ -490,10 +465,9 @@ mod tests {
         Ok(())
     }
 
-    #[cfg(feature = "async-trait")]
-    #[tokio::test(flavor = "multi_thread")]
-    async fn into_boxed_link() -> anyhow::Result<()> {
-        let autd = create_controller(1).await?;
+    #[test]
+    fn into_boxed_link() -> anyhow::Result<()> {
+        let autd = create_controller(1)?;
 
         let mut autd = autd.into_boxed_link();
 
@@ -507,8 +481,7 @@ mod tests {
                 ]
                 .into_iter(),
             )?,
-        ))
-        .await?;
+        ))?; // GRCOV_EXCL_LINE
 
         let autd = unsafe { Controller::<Audit>::from_boxed_link(autd) };
 
@@ -534,7 +507,17 @@ mod tests {
             anyhow::Ok(())
         })?;
 
-        autd.close().await?;
+        autd.close()?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn into_boxed_link_close() -> anyhow::Result<()> {
+        let autd = create_controller(1)?;
+        let autd = autd.into_boxed_link();
+
+        autd.close()?;
 
         Ok(())
     }

@@ -1,4 +1,4 @@
-use autd3::{link::Audit, prelude::*};
+use autd3::{link::Audit, prelude::*, r#async::Controller};
 
 #[tokio::test]
 async fn only_for_enabled() -> anyhow::Result<()> {

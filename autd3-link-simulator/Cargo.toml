@@ -11,10 +11,16 @@ repository = { workspace = true }
 
 [dependencies]
 autd3-protobuf = { workspace = true }
-autd3-driver = { workspace = true, features = ["derive"] }
+autd3-driver = { workspace = true, features = ["derive", "async"] }
 tonic = { workspace = true }
 tracing = { workspace = true }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread"], optional = true }
 
 [features]
 default = []
+blocking = ["tokio"]
 async-trait = ["autd3-driver/async-trait", "autd3-protobuf/async-trait"]
+
+[package.metadata.docs.rs]
+features = ["blocking"]
+rustdoc-args = ["--cfg", "docsrs"]

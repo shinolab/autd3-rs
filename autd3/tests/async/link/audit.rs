@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use autd3::{link::Audit, prelude::*};
+use autd3::{link::Audit, prelude::*, r#async::Controller};
 use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
 
 #[tokio::test]
@@ -71,7 +71,7 @@ async fn audit_test() -> anyhow::Result<()> {
     }
 
     {
-        use autd3_driver::link::Link;
+        use autd3_driver::link::AsyncLink;
         assert!(autd.link_mut().close().await.is_ok());
         assert_eq!(
             Err(AUTDDriverError::LinkClosed),

@@ -14,7 +14,7 @@ autd3-firmware-emulator = { workspace = true }
 autd3-driver = { workspace = true, features = ["derive"] }
 num = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true, features = ["rt-multi-thread", "time"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "time"], optional = true }
 derive_more = { workspace = true }
 tynm = { workspace = true }
 itertools = { workspace = true }
@@ -30,7 +30,8 @@ windows = { workspace = true, features = ["Win32_Security"] }
 
 [features]
 default = []
-async-trait = ["autd3-driver/async-trait"]
+async = ["tokio", "autd3-driver/async"]
+async-trait = ["async", "autd3-driver/async-trait"]
 dynamic_freq = ["autd3-driver/dynamic_freq", "autd3-firmware-emulator/dynamic_freq"]
 
 [dev-dependencies]
@@ -41,5 +42,5 @@ rstest = { workspace = true }
 tokio-test = { workspace = true }
 
 [package.metadata.docs.rs]
-features = ["async-trait"]
+features = ["async"]
 rustdoc-args = ["--cfg", "docsrs"]

@@ -74,6 +74,8 @@ class Config(BaseConfig):
         features = self.features
         if additional_features is not None:
             features += " " + additional_features
+        if "async" not in features:
+            command.extend(["--exclude", "autd3-protobuf", "--exclude", "autd3-link-simulator"])
         command.extend(["--features", features])
         return command
 
@@ -130,6 +132,7 @@ def rust_test(args) -> None:  # noqa: ANN001
 
 def rust_run(args) -> None:  # noqa: ANN001
     examples = [
+        "async",
         "nop",
         "twincat",
         "remote_twincat",
@@ -143,6 +146,8 @@ def rust_run(args) -> None:  # noqa: ANN001
         return sys.exit(-1)
     features: str
     match args.target:
+        case "async":
+            features = "async"
         case "twincat":
             features = "twincat"
         case "remote_twincat":

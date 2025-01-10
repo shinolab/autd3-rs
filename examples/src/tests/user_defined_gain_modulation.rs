@@ -59,13 +59,13 @@ impl Modulation for Burst {
     }
 }
 
-pub async fn user_defined(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
-    autd.send(Silencer::disable()).await?;
+pub fn user_defined(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+    autd.send(Silencer::disable())?;
 
     let g = MyUniform::new();
     let m = Burst::new();
 
-    autd.send((m, g)).await?;
+    autd.send((m, g))?;
 
     Ok(true)
 }

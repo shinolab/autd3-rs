@@ -1,10 +1,10 @@
 use std::time::Instant;
 
 use autd3_driver::utils::timer::TimerResolutionGurad;
-use spin_sleep::SpinSleeper;
+pub use spin_sleep::SpinSleeper;
 
 pub(crate) trait Sleeper {
-    fn sleep_until(&self, deadline: Instant) -> impl std::future::Future<Output = ()>;
+    fn sleep_until(&self, deadline: Instant);
 }
 
 /// See [`TimerStrategy`] for more details.
@@ -25,39 +25,15 @@ impl Default for StdSleeper {
 }
 
 impl Sleeper for StdSleeper {
-    async fn sleep_until(&self, deadline: Instant) {
+    fn sleep_until(&self, deadline: Instant) {
         let _timer_guard = TimerResolutionGurad::new(self.timer_resolution);
         std::thread::sleep(deadline - Instant::now());
     }
 }
 
 impl Sleeper for SpinSleeper {
-    async fn sleep_until(&self, deadline: Instant) {
+    fn sleep_until(&self, deadline: Instant) {
         self.sleep(deadline - Instant::now());
-    }
-}
-
-/// See [`TimerStrategy`] for more details.
-///
-/// [`TimerStrategy`]: super::TimerStrategy
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct AsyncSleeper {
-    /// An optional timer resolution in milliseconds for Windows. The default is `Some(1)`.
-    pub timer_resolution: Option<std::num::NonZeroU32>,
-}
-
-impl Default for AsyncSleeper {
-    fn default() -> Self {
-        Self {
-            timer_resolution: Some(std::num::NonZeroU32::MIN),
-        }
-    }
-}
-
-impl Sleeper for AsyncSleeper {
-    async fn sleep_until(&self, deadline: Instant) {
-        let _timer_guard = TimerResolutionGurad::new(self.timer_resolution);
-        tokio::time::sleep_until(tokio::time::Instant::from_std(deadline)).await;
     }
 }
 
@@ -102,7 +78,7 @@ mod win {
     }
 
     impl Sleeper for WaitableSleeper {
-        async fn sleep_until(&self, deadline: Instant) {
+        fn sleep_until(&self, deadline: Instant) {
             unsafe {
                 let time = deadline - Instant::now();
                 if time.is_zero() {

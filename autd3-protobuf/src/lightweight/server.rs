@@ -9,12 +9,12 @@ use tonic::{Request, Response, Status};
 
 #[doc(hidden)]
 pub struct LightweightServer<
-    L: autd3_driver::link::LinkBuilder + 'static,
+    L: autd3_driver::link::AsyncLinkBuilder + 'static,
     F: Fn() -> L + Send + Sync + 'static,
 > where
     L::L: Sync,
 {
-    autd: RwLock<Option<autd3::Controller<L::L>>>,
+    autd: RwLock<Option<autd3::r#async::Controller<L::L>>>,
     link: F,
 }
 
@@ -47,7 +47,7 @@ impl<D: autd3_driver::datagram::Datagram> autd3_driver::datagram::Datagram
     }
 }
 
-impl<L: autd3_driver::link::LinkBuilder + 'static, F: Fn() -> L + Send + Sync + 'static>
+impl<L: autd3_driver::link::AsyncLinkBuilder + 'static, F: Fn() -> L + Send + Sync + 'static>
     LightweightServer<L, F>
 where
     L::L: Sync,
@@ -156,7 +156,7 @@ where
 }
 
 #[tonic::async_trait]
-impl<L: autd3_driver::link::LinkBuilder + 'static, F: Fn() -> L + Send + Sync + 'static>
+impl<L: autd3_driver::link::AsyncLinkBuilder + 'static, F: Fn() -> L + Send + Sync + 'static>
     ecat_light_server::EcatLight for LightweightServer<L, F>
 where
     L::L: Sync,
@@ -178,7 +178,7 @@ where
         if let Some(ref geometry) = req.geometry {
             if let Ok(geometry) = autd3_driver::geometry::Geometry::from_msg(geometry) {
                 #[allow(unused_mut)]
-                let mut builder = autd3::Controller::builder(geometry.iter().map(|d| {
+                let mut builder = autd3::r#async::Controller::builder(geometry.iter().map(|d| {
                     autd3::prelude::AUTD3::new(*d[0].position()).with_rotation(*d.rotation())
                 }))
                 .with_default_parallel_threshold(geometry.default_parallel_threshold() as _)
