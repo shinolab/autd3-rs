@@ -314,7 +314,7 @@ mod tests {
                 ]
                 .into_iter(),
             )?,
-        ))?;
+        ))?; // GRCOV_EXCL_LINE
 
         autd.iter().try_for_each(|dev| {
             assert_eq!(
@@ -506,6 +506,16 @@ mod tests {
             );
             anyhow::Ok(())
         })?;
+
+        autd.close()?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn into_boxed_link_close() -> anyhow::Result<()> {
+        let autd = create_controller(1)?;
+        let autd = autd.into_boxed_link();
 
         autd.close()?;
 
