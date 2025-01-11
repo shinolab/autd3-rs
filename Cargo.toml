@@ -39,7 +39,6 @@ itertools = { version = "0.14.0", features = ["use_alloc"], default-features = f
 libloading = "0.8.6"
 nalgebra = { version = "0.33.2", default-features = false }
 num = { version = "0.4.3", default-features = false }
-num-integer = { version = "0.1.46", default-features = false }
 paste = "1.0.15"
 proc-macro2 = { version = "1.0.89", default-features = false }
 prost = { version = "0.13.4", features = ["derive"], default-features = false }

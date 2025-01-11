@@ -6,7 +6,6 @@ use autd3_driver::{
     ethercat::DcSysTime,
     firmware::fpga::FPGA_MAIN_CLK_FREQ,
 };
-use num_integer::Integer;
 
 use super::FPGAEmulator;
 
@@ -167,8 +166,11 @@ impl<const SET: u16> Swapchain<SET> {
     }
 
     fn lap_and_idx(&self, segment: Segment, sys_time: DcSysTime) -> (usize, usize) {
-        (((self.fpga_sys_time(sys_time) >> 8) / self.freq_div[&segment] as u64) as usize)
-            .div_rem(&self.cycle[&segment])
+        let a = ((self.fpga_sys_time(sys_time) >> 8) / self.freq_div[&segment] as u64) as usize;
+        let b = self.cycle[&segment];
+        let lap = a / b;
+        let idx = a % b;
+        (lap, idx)
     }
 }
 

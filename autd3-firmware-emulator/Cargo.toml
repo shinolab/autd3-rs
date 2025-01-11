@@ -13,7 +13,6 @@ repository = { workspace = true }
 autd3-driver = { workspace = true, features = ["derive"] }
 bitfield-struct = { workspace = true }
 time = { workspace = true, features = ["std"] }
-num-integer = { workspace = true }
 zerocopy = { workspace = true }
 
 [dev-dependencies]
