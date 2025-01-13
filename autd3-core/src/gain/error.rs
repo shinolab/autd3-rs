@@ -1,4 +1,4 @@
-use derive_more::derive::Display;
+use derive_more::Display;
 use thiserror::Error;
 
 #[derive(Error, Debug, Display, PartialEq, Clone)]

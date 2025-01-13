@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use derive_more::derive::Display;
+use derive_more::Display;
 use thiserror::Error;
 
 use crate::defined::Freq;

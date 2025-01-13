@@ -22,3 +22,6 @@ pub mod modulation;
 #[cfg(any(feature = "utils", feature = "modulation"))]
 #[doc(hidden)]
 pub mod utils;
+
+#[cfg(feature = "async-trait")]
+pub use async_trait::async_trait;

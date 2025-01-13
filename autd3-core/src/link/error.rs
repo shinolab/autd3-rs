@@ -1,13 +1,9 @@
+use derive_more::Display;
+use derive_new::new;
 use thiserror::Error;
 
-#[derive(Error, Debug, PartialEq, Clone)]
-pub enum LinkError {
-    #[error("Failed to open the link")]
-    Open,
-    #[error("Failed to send the data")]
-    Send,
-    #[error("Failed to receive the data")]
-    Receive,
-    #[error("Failed to close the link")]
-    Close,
+#[derive(new, Error, Debug, Display, PartialEq, Clone)]
+#[display("{}", msg)]
+pub struct LinkError {
+    msg: String,
 }
