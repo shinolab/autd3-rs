@@ -1,0 +1,46 @@
+[package]
+name = "autd3-core"
+description = "AUTD3 core traits and types"
+readme = "README.md"
+keywords = { workspace = true }
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
+
+[dependencies]
+async-trait = { workspace = true, optional = true }
+autd3-derive = { workspace = true }
+bit-vec = { workspace = true }
+bvh = { workspace = true }
+derive_more = { workspace = true, features = ["add", "debug", "deref", "deref_mut", "display", "into_iterator", "mul"] }
+derive-new = { workspace = true }
+nalgebra = { workspace = true }
+paste = { workspace = true }
+thiserror = { workspace = true, default-features = false }
+zerocopy = { workspace = true }
+
+[dev-dependencies]
+anyhow = { workspace = true }
+approx = { workspace = true }
+itertools = { workspace = true }
+rand = { workspace = true }
+rstest = { workspace = true }
+
+[features]
+default = ["derive"]
+async = []
+async-trait = ["dep:async-trait"]
+derive = []
+defined = []
+dynamic_freq = []
+ethercat = []
+gain = []
+geometry = []
+left_handed = []
+lightweight = []
+link = []
+modulation = []
+use_meter = []
+utils = []
