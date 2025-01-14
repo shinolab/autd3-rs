@@ -50,7 +50,7 @@ impl LoopBehavior {
     /// # Example
     ///
     /// ```
-    /// # use autd3_driver::firmware::fpga::LoopBehavior;
+    /// # use autd3_core::modulation::LoopBehavior;
     /// # use std::num::NonZeroU16;
     /// let finite: Option<LoopBehavior> = LoopBehavior::finite(1);
     /// assert!(finite.is_some());

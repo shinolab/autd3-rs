@@ -5,13 +5,17 @@ mod phase;
 
 use std::collections::HashMap;
 
-pub use bit_vec::BitVec;
+pub type BitVec = bit_vec::BitVec<u32>;
+
 pub use drive::Drive;
 pub use emit_intensity::EmitIntensity;
 pub use error::GainError;
 pub use phase::Phase;
 
-use crate::geometry::{Device, Geometry, Transducer};
+use crate::{
+    datagram::{Segment, TransitionMode},
+    geometry::{Device, Geometry, Transducer},
+};
 
 /// A trait to calculate the phase and intensity for [`Gain`].
 ///
@@ -52,6 +56,29 @@ pub trait Gain: std::fmt::Debug {
     fn init(
         self,
         geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec<u32>>>,
+        filter: Option<&HashMap<usize, BitVec>>,
     ) -> Result<Self::G, GainError>;
 }
+
+#[doc(hidden)]
+pub struct GainOperationGenerator<G: GainContextGenerator> {
+    pub generator: G,
+    pub segment: Segment,
+    pub transition: Option<TransitionMode>,
+}
+
+impl<G: GainContextGenerator> GainOperationGenerator<G> {
+    pub fn new<T: Gain<G = G>>(
+        gain: T,
+        geometry: &Geometry,
+        segment: Segment,
+        transition: Option<TransitionMode>,
+    ) -> Result<Self, GainError> {
+        Ok(Self {
+            generator: gain.init(geometry, None)?,
+            segment,
+            transition,
+        })
+    }
+}
+

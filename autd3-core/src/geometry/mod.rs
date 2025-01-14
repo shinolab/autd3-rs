@@ -2,6 +2,8 @@ pub(crate) mod device;
 mod rotation;
 mod transducer;
 
+/// a complex number
+pub type Complex = nalgebra::Complex<f32>;
 /// 3-dimensional column vector.
 pub type Vector3 = nalgebra::Vector3<f32>;
 /// 3-dimensional unit vector.
@@ -138,15 +140,20 @@ pub(crate) mod tests {
         }
 
         pub fn new_autd3_with_rot(pos: Point3, rot: impl Into<UnitQuaternion>) -> Self {
+            let rotation = rot.into();
+            let isometry = Isometry {
+                rotation,
+                translation: Translation::from(pos),
+            };
             Self {
-                rotation: rot.into(),
-                transducers: itertools::iproduct!(0..18, 0..14)
+                rotation,
+                transducers: itertools::iproduct!(0..14, 0..18)
                     .enumerate()
                     .map(|(i, (y, x))| {
                         Transducer::new(
                             i as _,
                             i as _,
-                            pos + 10.16 * Vector3::new(x as f32, y as f32, 0.),
+                            (isometry * (10.16 * mm * Point3::new(x as f32, y as f32, 0.))).xyz(),
                         )
                     })
                     .collect(),
@@ -263,11 +270,11 @@ pub(crate) mod tests {
     #[rstest::rstest]
     #[test]
     #[case(Aabb{min: Point3::origin(), max: Point3::new(172.72 * mm, 132.08 * mm, 0.)}, vec![TestDevice::new_autd3(Point3::origin())])]
-    #[case(Aabb{min: Point3::new(10. * mm, 20. * mm, 30. * mm), max: Point3::new(182.72 * mm, 152.08 * mm, 30. * mm)}, vec![TestDevice::new_autd3(Point3::new(10., 20., 30.))])]
+    #[case(Aabb{min: Point3::new(10. * mm, 20. * mm, 30. * mm), max: Point3::new(182.72 * mm, 152.08 * mm, 30. * mm)}, vec![TestDevice::new_autd3(Point3::new(10. * mm, 20. * mm, 30. * mm))])]
     #[case(Aabb{min: Point3::new(-132.08 * mm, 0., 0.), max: Point3::new(0., 172.72 * mm, 0.)}, vec![TestDevice::new_autd3_with_rot(Point3::origin(), EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg))])]
     #[case(Aabb{min: Point3::new(-132.08 * mm, -10. * mm, 0.), max: Point3::new(172.72 * mm, 162.72 * mm, 10. * mm)}, vec![
         TestDevice::new_autd3(Point3::origin()),
-        TestDevice::new_autd3_with_rot(Point3::new(10., 20., 30.), EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg))
+        TestDevice::new_autd3_with_rot(Point3::new(0., -10. * mm, 10. * mm), EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg))
     ])]
     fn aabb(#[case] expect: Aabb<f32, 3>, #[case] dev: Vec<TestDevice>) {
         let geometry = Geometry::new(

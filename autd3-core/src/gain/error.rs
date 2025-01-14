@@ -1,7 +1,8 @@
 use derive_more::Display;
+use derive_new::new;
 use thiserror::Error;
 
-#[derive(Error, Debug, Display, PartialEq, Clone)]
+#[derive(new, Error, Debug, Display, PartialEq, Clone)]
 #[display("{}", msg)]
 pub struct GainError {
     msg: String,

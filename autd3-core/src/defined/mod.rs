@@ -21,9 +21,6 @@ pub use freq::*;
 /// millimeter
 pub const MILLIMETER: f32 = METER / 1000.0;
 
-/// a complex number
-pub type Complex = nalgebra::Complex<f32>;
-
 /// The absolute threshold of hearing in \[㎩\]
 pub const ABSOLUTE_THRESHOLD_OF_HEARING: f32 = 20e-6;
 

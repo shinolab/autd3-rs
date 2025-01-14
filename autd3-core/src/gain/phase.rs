@@ -1,4 +1,9 @@
-use crate::defined::{rad, Angle, Complex, PI};
+use std::f32::consts::PI;
+
+use crate::{
+    defined::{rad, Angle},
+    geometry::Complex,
+};
 
 use autd3_derive::Builder;
 

@@ -1,11 +1,12 @@
 use std::time::Duration;
 
 use derive_more::Display;
+use derive_new::new;
 use thiserror::Error;
 
 use crate::defined::Freq;
 
-#[derive(Error, Debug, Display, PartialEq, Clone)]
+#[derive(new, Error, Debug, Display, PartialEq, Clone)]
 #[display("{}", msg)]
 pub struct ModulationError {
     msg: String,
