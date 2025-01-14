@@ -160,6 +160,7 @@ impl AUTDDriverError {
     }
 }
 
+// GRCOV_EXCL_START
 impl From<Infallible> for AUTDDriverError {
     fn from(_: Infallible) -> Self {
         unreachable!()
@@ -179,6 +180,7 @@ where
         }
     }
 }
+// GRCOV_EXCL_STOP
 
 #[cfg(test)]
 mod tests {
