@@ -1,4 +1,4 @@
-use autd3_driver::firmware::fpga::EmitIntensity;
+use autd3_core::gain::EmitIntensity;
 
 /// Emission constraint of transducers.
 #[derive(Clone, Copy, Debug, PartialEq)]

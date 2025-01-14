@@ -10,22 +10,20 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-autd3-driver = { workspace = true, features = ["derive"] }
+autd3-core = { workspace = true, features = ["acoustics", "gain"] }
+autd3-derive = { workspace = true }
 nalgebra = { workspace = true }
 thiserror = { workspace = true }
 rand = { workspace = true }
-bit-vec = { workspace = true }
 derive_more = { workspace = true }
 rayon = { workspace = true }
 tynm = { workspace = true }
 derive-new = { workspace = true }
 zerocopy = { workspace = true }
 
-[features]
-default = []
-async-trait = ["autd3-driver/async-trait"]
-
 [dev-dependencies]
+autd3-driver = { workspace = true }
 anyhow = { workspace = true }
 rstest = { workspace = true }
 approx = { workspace = true }
+itertools.workspace = true

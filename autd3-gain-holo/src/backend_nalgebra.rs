@@ -3,18 +3,16 @@ use std::{
     mem::{ManuallyDrop, MaybeUninit},
 };
 
-use bit_vec::BitVec;
-use derive_new::new;
-use nalgebra::{ComplexField, Dyn, Normed, VecStorage, U1};
-
-use autd3_driver::{
+use autd3_core::{
     acoustics::{
         directivity::{Directivity, Sphere},
         propagate,
     },
-    defined::Complex,
-    geometry::Geometry,
+    gain::BitVec,
+    geometry::{Complex, Geometry, Point3},
 };
+use derive_new::new;
+use nalgebra::{ComplexField, Dyn, Normed, VecStorage, U1};
 
 use crate::{error::HoloError, LinAlgBackend, MatrixX, MatrixXc, VectorX, VectorXc};
 
@@ -93,8 +91,8 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
     fn generate_propagation_matrix(
         &self,
         geometry: &Geometry,
-        foci: &[autd3_driver::geometry::Point3],
-        filter: Option<&HashMap<usize, BitVec<u32>>>,
+        foci: &[Point3],
+        filter: Option<&HashMap<usize, BitVec>>,
     ) -> Result<Self::MatrixXc, HoloError> {
         use rayon::prelude::*;
 
@@ -560,14 +558,9 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::{
-        acoustics::directivity::Sphere,
-        autd3_device::AUTD3,
-        defined::PI,
-        geometry::{IntoDevice, Point3},
-    };
+    use std::f32::consts::PI;
 
-    use crate::{Amplitude, Pa, Trans};
+    use crate::{tests::create_geometry, Amplitude, Pa, Trans};
 
     use super::*;
 
@@ -575,24 +568,6 @@ mod tests {
 
     const N: usize = 10;
     const EPS: f32 = 1e-3;
-
-    fn generate_geometry(size: usize) -> Geometry {
-        Geometry::new(
-            (0..size)
-                .flat_map(|i| {
-                    (0..size).map(move |j| {
-                        AUTD3::new(Point3::new(
-                            i as f32 * AUTD3::DEVICE_WIDTH,
-                            j as f32 * AUTD3::DEVICE_HEIGHT,
-                            0.,
-                        ))
-                        .into_device((j + i * size) as _)
-                    })
-                })
-                .collect(),
-            4,
-        )
-    }
 
     fn gen_foci(n: usize) -> impl Iterator<Item = (Point3, Amplitude)> {
         (0..n).map(move |i| {
@@ -1980,7 +1955,7 @@ mod tests {
             g
         };
 
-        let geometry = generate_geometry(dev_num);
+        let geometry = create_geometry(dev_num, dev_num);
         let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
 
         let g = backend.generate_propagation_matrix(&geometry, &foci, None)?;
@@ -2011,7 +1986,7 @@ mod tests {
             geometry
                 .iter()
                 .map(|dev| {
-                    let mut filter = bit_vec::BitVec::new();
+                    let mut filter = BitVec::new();
                     dev.iter().for_each(|tr| {
                         filter.push(tr.idx() > dev.num_transducers() / 2);
                     });
@@ -2049,7 +2024,7 @@ mod tests {
             g
         };
 
-        let geometry = generate_geometry(dev_num);
+        let geometry = create_geometry(dev_num, dev_num);
         let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
         let filter = filter(&geometry);
 
@@ -2077,7 +2052,7 @@ mod tests {
     #[rstest::rstest]
     #[test]
     fn test_gen_back_prop(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
-        let geometry = generate_geometry(1);
+        let geometry = create_geometry(1, 1);
         let foci = gen_foci(1).map(|(p, _)| p).collect::<Vec<_>>();
 
         let m = geometry
