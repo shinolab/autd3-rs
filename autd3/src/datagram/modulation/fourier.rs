@@ -1,6 +1,7 @@
 use super::{sampling_mode::SamplingMode, sine::Sine};
 
-use autd3_driver::derive::*;
+use autd3_core::derive::*;
+use autd3_derive::Builder;
 
 use derive_more::Deref;
 use num::integer::lcm;
@@ -31,7 +32,7 @@ pub struct Fourier<S: SamplingMode> {
 
 impl<S: SamplingMode> Fourier<S> {
     /// Create a new [`Fourier`] modulation.
-    pub fn new(componens: impl IntoIterator<Item = Sine<S>>) -> Result<Self, AUTDDriverError> {
+    pub fn new(componens: impl IntoIterator<Item = Sine<S>>) -> Result<Self, ModulationError> {
         let components = componens
             .into_iter()
             .map(|s| s.with_clamp(false))
@@ -39,7 +40,7 @@ impl<S: SamplingMode> Fourier<S> {
         tracing::trace!("Fourier components: {:?}", components);
         let config = components
             .first()
-            .ok_or(AUTDDriverError::ModulationError(
+            .ok_or(ModulationError::new(
                 "Components must not be empty".to_string(),
             ))?
             .sampling_config();
@@ -48,7 +49,7 @@ impl<S: SamplingMode> Fourier<S> {
             .skip(1)
             .any(|c| c.sampling_config() != config)
         {
-            return Err(AUTDDriverError::ModulationError(
+            return Err(ModulationError::new(
                 "All components must have the same sampling configuration".to_string(),
             ));
         }
@@ -64,12 +65,12 @@ impl<S: SamplingMode> Fourier<S> {
 }
 
 impl<S: SamplingMode> Modulation for Fourier<S> {
-    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         let buffers = self
             .components
             .iter()
             .map(|c| Ok(c.calc_raw()?.collect::<Vec<_>>()))
-            .collect::<Result<Vec<_>, AUTDDriverError>>()?;
+            .collect::<Result<Vec<_>, ModulationError>>()?;
         let scale = self.scale_factor.unwrap_or(1. / buffers.len() as f32);
         let res = vec![0f32; buffers.iter().fold(1, |acc, x| lcm(acc, x.len()))];
         buffers
@@ -88,7 +89,7 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
                 } else if self.clamp {
                     Ok(v.clamp(u8::MIN as _, u8::MAX as _) as _)
                 } else {
-                    Err(AUTDDriverError::ModulationError(format!(
+                    Err(ModulationError::new(format!(
                         "Fourier modulation value ({}) is out of range [{}, {}]",
                         v,
                         u8::MIN,
@@ -96,7 +97,7 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
                     )))?
                 }
             })
-            .collect::<Result<Vec<_>, AUTDDriverError>>()
+            .collect::<Result<Vec<_>, ModulationError>>()
     }
 }
 
@@ -157,7 +158,7 @@ mod tests {
     #[test]
     fn mismatch_sampling_config() -> anyhow::Result<()> {
         assert_eq!(
-            Err(AUTDDriverError::ModulationError(
+            Err(ModulationError::new(
                 "All components must have the same sampling configuration".to_string()
             )),
             Fourier::new([
@@ -171,7 +172,7 @@ mod tests {
     #[test]
     fn empty_components() {
         assert_eq!(
-            Err(AUTDDriverError::ModulationError(
+            Err(ModulationError::new(
                 "Components must not be empty".to_string()
             )),
             Fourier::<ExactFreq>::new(vec![])
@@ -180,7 +181,7 @@ mod tests {
 
     #[rstest::rstest]
     #[case(
-        Err(AUTDDriverError::ModulationError("Fourier modulation value (-1) is out of range [0, 255]".to_owned())),
+        Err(ModulationError::new("Fourier modulation value (-1) is out of range [0, 255]".to_owned())),
         0x00,
         false,
         None
@@ -192,14 +193,14 @@ mod tests {
         None
     )]
     #[case(
-        Err(AUTDDriverError::ModulationError("Fourier modulation value (510) is out of range [0, 255]".to_owned())),
+        Err(ModulationError::new("Fourier modulation value (510) is out of range [0, 255]".to_owned())),
         0xFF,
         false,
         Some(2.)
     )]
     #[test]
     fn out_of_range(
-        #[case] expect: Result<Vec<u8>, AUTDDriverError>,
+        #[case] expect: Result<Vec<u8>, ModulationError>,
         #[case] offset: u8,
         #[case] clamp: bool,
         #[case] scale: Option<f32>,

@@ -1,3 +1,4 @@
+use autd3_core::link::LinkError;
 use autd3_driver::error::AUTDDriverError;
 use thiserror::Error;
 
@@ -14,4 +15,10 @@ pub enum AUTDError {
     /// Driver error.
     #[error("{0}")]
     Driver(#[from] AUTDDriverError),
+}
+
+impl From<LinkError> for AUTDError {
+    fn from(e: LinkError) -> Self {
+        AUTDError::Driver(AUTDDriverError::Link(e))
+    }
 }

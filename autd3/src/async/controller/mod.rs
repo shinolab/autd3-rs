@@ -7,18 +7,18 @@ use crate::{error::AUTDError, gain::Null, prelude::Static};
 
 use std::time::Duration;
 
+use autd3_core::link::AsyncLink;
+use autd3_derive::Builder;
 use autd3_driver::{
     datagram::{Clear, Datagram, ForceFan, IntoDatagramWithTimeout, Silencer, Synchronize},
-    derive::Builder,
     error::AUTDDriverError,
     firmware::{
         cpu::{check_if_msg_is_processed, RxMessage, TxMessage},
         fpga::FPGAState,
-        operation::{FirmwareVersionType, OperationHandler},
+        operation::{FirmwareVersionType, Operation, OperationGenerator, OperationHandler},
         version::FirmwareVersion,
     },
     geometry::{Device, Geometry},
-    link::AsyncLink,
 };
 
 use timer::Timer;
@@ -55,7 +55,13 @@ impl<L: AsyncLink> Controller<L> {
     ///
     /// The calculation of each [`Datagram`] is executed in parallel for each device if the number of enabled devices is greater than the [`Datagram::parallel_threshold`].
     #[tracing::instrument(level = "debug", skip(self))]
-    pub async fn send(&mut self, s: impl Datagram) -> Result<(), AUTDDriverError> {
+    pub async fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
+    where
+        AUTDDriverError: From<D::Error>,
+        D::G: OperationGenerator,
+        AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
+            + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
+    {
         let timeout = s.timeout();
         let parallel_threshold = s.parallel_threshold();
         self.link.trace(timeout, parallel_threshold);
@@ -110,7 +116,7 @@ impl<L: AsyncLink> Controller<L> {
             self.send(Silencer::default().with_strict_mode(false)).await,
             self.send((Static::new(), Null::default())).await,
             self.send(Clear::new()).await,
-            self.link.close().await,
+            Ok(self.link.close().await?),
         ]
         .into_iter()
         .try_fold((), |_, x| x)
@@ -189,7 +195,7 @@ impl<L: AsyncLink> Controller<L> {
             ));
         }
         if self.link.receive(&mut self.rx_buf).await? {
-            Ok(self.rx_buf.iter().map(Option::from).collect())
+            Ok(self.rx_buf.iter().map(FPGAState::from_rx).collect())
         } else {
             Err(AUTDError::ReadFPGAStateFailed)
         }
@@ -275,11 +281,16 @@ impl<L: AsyncLink> Drop for Controller<L> {
 
 #[cfg(test)]
 mod tests {
+    use autd3_core::{
+        datagram::Segment,
+        derive::Modulation,
+        gain::{EmitIntensity, Gain, GainContext, GainContextGenerator},
+        link::LinkError,
+    };
     use autd3_driver::{
         autd3_device::AUTD3,
         datagram::{GainSTM, ReadsFPGAState},
         defined::{mm, Hz},
-        derive::{EmitIntensity, Gain, GainContext, GainContextGenerator, Modulation, Segment},
         geometry::Point3,
     };
 
@@ -414,7 +425,7 @@ mod tests {
             let mut autd = create_controller(1).await?;
             autd.link_mut().break_down();
             assert_eq!(
-                Err(AUTDDriverError::LinkError("broken".to_owned())),
+                Err(AUTDDriverError::Link(LinkError::new("broken".to_owned()))),
                 autd.close().await
             );
         }

@@ -1,4 +1,6 @@
-use autd3_driver::{derive::*, firmware::fpga::Drive};
+use autd3_core::derive::*;
+use autd3_derive::Builder;
+use autd3_driver::firmware::fpga::Drive;
 use derive_new::new;
 
 /// [`Gain`] that output uniform phase and intensity
@@ -30,8 +32,8 @@ impl Gain for Uniform {
     fn init(
         self,
         _geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDDriverError> {
+        _filter: Option<&HashMap<usize, BitVec>>,
+    ) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }

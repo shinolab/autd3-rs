@@ -32,8 +32,8 @@ pub mod prelude;
 #[cfg(feature = "async")]
 pub mod r#async;
 
+pub use autd3_core as core;
 pub use autd3_driver as driver;
-pub use autd3_driver::derive;
 pub use datagram::gain;
 pub use datagram::modulation;
 

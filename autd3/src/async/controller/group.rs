@@ -1,14 +1,15 @@
 use std::{fmt::Debug, hash::Hash, time::Duration};
 
+use autd3_core::link::AsyncLink;
 use autd3_driver::{
     datagram::Datagram,
     error::AUTDDriverError,
-    firmware::operation::{Operation, OperationGenerator},
+    firmware::operation::{BoxedOperation, Operation, OperationGenerator},
     geometry::Device,
 };
 use itertools::Itertools;
 
-use super::{AsyncLink, Controller};
+use super::Controller;
 
 use tracing;
 
@@ -20,7 +21,7 @@ pub struct Group<'a, K: PartialEq + Debug, L: AsyncLink> {
     pub(crate) done: Vec<bool>,
     pub(crate) timeout: Option<Duration>,
     pub(crate) parallel_threshold: Option<usize>,
-    pub(crate) operations: Vec<Option<(Box<dyn Operation>, Box<dyn Operation>)>>,
+    pub(crate) operations: Vec<Option<(BoxedOperation, BoxedOperation)>>,
 }
 
 impl<'a, K: PartialEq + Debug, L: AsyncLink> Group<'a, K, L> {
@@ -47,8 +48,12 @@ impl<'a, K: PartialEq + Debug, L: AsyncLink> Group<'a, K, L> {
     #[tracing::instrument(level = "debug", skip(self))]
     pub fn set<D: Datagram>(self, key: K, data: D) -> Result<Self, AUTDDriverError>
     where
+        AUTDDriverError: From<D::Error>,
+        D::G: OperationGenerator,
         <<D as Datagram>::G as OperationGenerator>::O1: 'static,
         <<D as Datagram>::G as OperationGenerator>::O2: 'static,
+        AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
+            + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
     {
         let Self {
             keys,
@@ -106,7 +111,7 @@ impl<'a, K: PartialEq + Debug, L: AsyncLink> Group<'a, K, L> {
                 *done = true;
                 tracing::debug!("Generate operation for device {}", dev.idx());
                 let (op1, op2) = generator.generate(dev);
-                *op = Some((Box::new(op1) as Box<_>, Box::new(op2) as Box<_>));
+                *op = Some((BoxedOperation::new(op1), BoxedOperation::new(op2)));
                 Ok(())
             })?;
 
@@ -202,10 +207,10 @@ impl<L: AsyncLink> Controller<L> {
 mod tests {
     use std::sync::Mutex;
 
+    use autd3_core::derive::*;
     use autd3_driver::{
         datagram::{GainSTM, SwapSegment},
         defined::Hz,
-        derive::*,
         error::AUTDDriverError,
         firmware::fpga::{Drive, EmitIntensity, Phase},
     };
@@ -372,8 +377,8 @@ mod tests {
         fn init(
             self,
             geometry: &Geometry,
-            _filter: Option<&HashMap<usize, BitVec<u32>>>,
-        ) -> Result<Self::G, AUTDDriverError> {
+            _filter: Option<&HashMap<usize, BitVec>>,
+        ) -> Result<Self::G, GainError> {
             geometry.iter().for_each(|dev| {
                 self.test.lock().unwrap()[dev.idx()] = dev.enable;
             });

@@ -1,4 +1,4 @@
-use crate::derive::*;
+use autd3_core::derive::*;
 
 /// [`Modulation`] for appling modulation to the radiation pressure instead of the acoustic pressure.
 #[derive(Modulation, Debug)]
@@ -32,7 +32,7 @@ impl<M: Modulation> IntoRadiationPressure<M> for M {
 }
 
 impl<M: Modulation> Modulation for RadiationPressure<M> {
-    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError>  {
         let src = self.m.calc()?;
         Ok(src
             .iter()

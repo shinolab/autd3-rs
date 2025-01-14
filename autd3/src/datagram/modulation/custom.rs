@@ -1,8 +1,6 @@
 use std::borrow::Borrow;
 
-use autd3_driver::{defined::Freq, derive::*};
-
-use super::resampler::Resampler;
+use autd3_core::{defined::Freq, derive::*, resampler::Resampler};
 
 ///[`Modulation`] to use arbitrary modulation data
 #[derive(Modulation, Clone, PartialEq, Debug)]
@@ -42,7 +40,7 @@ impl Custom {
     /// ```
     /// use autd3::prelude::*;
     /// use autd3::modulation::Custom;
-    /// use autd3::modulation::resampler::SincInterpolation;
+    /// use autd3::core::resampler::SincInterpolation;
     ///
     /// Custom::new_with_resample(&[0x00, 0xFF], 2.0 * kHz, 4 * kHz, SincInterpolation::default());
     /// ```
@@ -68,7 +66,7 @@ impl Custom {
 }
 
 impl Modulation for Custom {
-    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         Ok(self.buffer.clone())
     }
 }
@@ -78,7 +76,7 @@ mod tests {
     use autd3_driver::defined::kHz;
     use rand::Rng;
 
-    use crate::modulation::resampler::SincInterpolation;
+    use autd3_core::resampler::SincInterpolation;
 
     use super::*;
 
