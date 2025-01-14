@@ -1,5 +1,4 @@
-use autd3::modulation::resampler::Resampler;
-use autd3_driver::{defined::Freq, derive::*};
+use autd3_core::{defined::Freq, derive::*, resampler::Resampler};
 
 use std::{
     fs::File,
@@ -38,8 +37,7 @@ impl RawPCM {
     /// # Examples
     ///
     /// ```
-    /// use autd3::prelude::*;
-    /// use autd3::modulation::resampler::SincInterpolation;
+    /// use autd3_core::{resampler::SincInterpolation, defined::kHz};
     /// use autd3_modulation_audio_file::RawPCM;
     ///
     /// let path = "path/to/file.dat";
@@ -76,15 +74,17 @@ impl RawPCM {
 }
 
 impl Modulation for RawPCM {
-    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         Ok(self.read_buf()?)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use autd3::{modulation::resampler::SincInterpolation, prelude::kHz};
-    use autd3_driver::defined::{Freq, Hz};
+    use autd3_core::{
+        defined::{kHz, Freq, Hz},
+        resampler::SincInterpolation,
+    };
 
     use super::*;
     use std::io::Write;
@@ -99,7 +99,7 @@ mod tests {
     #[test]
     #[case(Ok(vec![0xFF, 0x7F, 0x00]), vec![0xFF, 0x7F, 0x00], 4000 * Hz)]
     fn new(
-        #[case] expect: Result<Vec<u8>, AUTDDriverError>,
+        #[case] expect: Result<Vec<u8>, ModulationError>,
         #[case] data: Vec<u8>,
         #[case] sample_rate: Freq<u32>,
     ) -> anyhow::Result<()> {

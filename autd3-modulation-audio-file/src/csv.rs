@@ -1,5 +1,5 @@
-use autd3::modulation::resampler::Resampler;
-use autd3_driver::{defined::Freq, derive::*};
+use autd3_core::{defined::Freq, derive::*, resampler::Resampler};
+use autd3_derive::Builder;
 
 use std::{
     fs::File,
@@ -42,8 +42,7 @@ impl Csv {
     /// # Examples
     ///
     /// ```
-    /// use autd3::prelude::*;
-    /// use autd3::modulation::resampler::SincInterpolation;
+    /// use autd3_core::{resampler::SincInterpolation, defined::kHz};
     /// use autd3_modulation_audio_file::Csv;
     ///
     /// let path = "path/to/file.csv";
@@ -98,15 +97,17 @@ impl Csv {
 }
 
 impl Modulation for Csv {
-    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         Ok(self.read_buf()?)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use autd3::{modulation::resampler::SincInterpolation, prelude::kHz};
-    use autd3_driver::defined::{Freq, Hz};
+    use autd3_core::{
+        defined::{kHz, Freq, Hz},
+        resampler::SincInterpolation,
+    };
 
     use super::*;
     use std::io::Write;
