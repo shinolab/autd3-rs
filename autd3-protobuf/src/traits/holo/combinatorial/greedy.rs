@@ -7,10 +7,10 @@ use crate::{
     AUTDProtoBufError,
 };
 
-impl ToMessage for autd3_gain_holo::Greedy<autd3_driver::acoustics::directivity::Sphere> {
+impl ToMessage for autd3_gain_holo::Greedy<autd3_core::acoustics::directivity::Sphere> {
     type Message = Datagram;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Greedy(Greedy {
@@ -25,14 +25,14 @@ impl ToMessage for autd3_gain_holo::Greedy<autd3_driver::acoustics::directivity:
     }
 }
 
-impl FromMessage<Greedy> for autd3_gain_holo::Greedy<autd3_driver::acoustics::directivity::Sphere> {
+impl FromMessage<Greedy> for autd3_gain_holo::Greedy<autd3_core::acoustics::directivity::Sphere> {
     fn from_msg(msg: &Greedy) -> Result<Self, AUTDProtoBufError> {
         let mut g = Self::new(
             msg.holo
                 .iter()
                 .map(|h| {
                     Ok((
-                        autd3_driver::geometry::Point3::from_msg(&h.pos)?,
+                        autd3_core::geometry::Point3::from_msg(&h.pos)?,
                         autd3_gain_holo::Amplitude::from_msg(&h.amp)?,
                     ))
                 })
@@ -53,7 +53,7 @@ impl FromMessage<Greedy> for autd3_gain_holo::Greedy<autd3_driver::acoustics::di
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::geometry::Point3;
+    use autd3_core::geometry::Point3;
     use rand::Rng;
 
     #[test]

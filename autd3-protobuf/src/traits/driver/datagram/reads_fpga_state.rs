@@ -1,4 +1,4 @@
-use autd3_driver::geometry::Device;
+use autd3_core::geometry::Device;
 
 use crate::{
     pb::*,
@@ -9,7 +9,7 @@ use crate::{
 impl<F: Fn(&Device) -> bool> ToMessage for autd3_driver::datagram::ReadsFPGAState<F> {
     type Message = Datagram;
 
-    fn to_msg(&self, geometry: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, geometry: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram::Datagram::ReadsFpgaState(ReadsFpgaState {
                 value: geometry

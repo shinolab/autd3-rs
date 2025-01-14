@@ -9,24 +9,24 @@ use crate::{
 impl ToMessage for autd3_driver::firmware::fpga::TransitionMode {
     type Message = TransitionMode;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             mode: Some(match *self {
-                autd3::derive::TransitionMode::SyncIdx => {
+                autd3_driver::firmware::fpga::TransitionMode::SyncIdx => {
                     transition_mode::Mode::SyncIdx(TransitionModeSyncIdx {})
                 }
-                autd3::derive::TransitionMode::SysTime(value) => {
+                autd3_driver::firmware::fpga::TransitionMode::SysTime(value) => {
                     transition_mode::Mode::SysTime(TransitionModeSysTime {
                         value: value.sys_time(),
                     })
                 }
-                autd3::derive::TransitionMode::GPIO(value) => {
+                autd3_driver::firmware::fpga::TransitionMode::GPIO(value) => {
                     transition_mode::Mode::Gpio(TransitionModeGpio { value: value as _ })
                 }
-                autd3::derive::TransitionMode::Ext => {
+                autd3_driver::firmware::fpga::TransitionMode::Ext => {
                     transition_mode::Mode::Ext(TransitionModeExt {})
                 }
-                autd3::derive::TransitionMode::Immediate => {
+                autd3_driver::firmware::fpga::TransitionMode::Immediate => {
                     transition_mode::Mode::Immediate(TransitionModeImmediate {})
                 }
                 _ => unimplemented!(),

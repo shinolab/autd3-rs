@@ -1,4 +1,4 @@
-use autd3_driver::derive::ModulationProperty;
+use autd3_core::modulation::ModulationProperty;
 
 use crate::{
     pb::*,
@@ -9,7 +9,7 @@ use crate::{
 impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreq> {
     type Message = Datagram;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SquareExact(SquareExact {
@@ -31,7 +31,7 @@ impl FromMessage<SquareExact>
     for autd3::modulation::Square<autd3::modulation::sampling_mode::ExactFreq>
 {
     fn from_msg(msg: &SquareExact) -> Result<Self, AUTDProtoBufError> {
-        let mut square = autd3::modulation::Square::new(msg.freq * autd3_driver::defined::Hz);
+        let mut square = autd3::modulation::Square::new(msg.freq * autd3_core::defined::Hz);
         if let Some(high) = msg.high {
             square = square.with_high(high as _);
         }
@@ -54,7 +54,7 @@ impl FromMessage<SquareExact>
 mod tests {
     use super::*;
     use autd3::modulation::sampling_mode::ExactFreq;
-    use autd3_driver::defined::Hz;
+    use autd3_core::defined::Hz;
     use rand::Rng;
 
     #[test]

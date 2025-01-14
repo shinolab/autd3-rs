@@ -7,7 +7,7 @@ use crate::{
 impl ToMessage for autd3_driver::datagram::Clear {
     type Message = Datagram;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram::Datagram::Clear(Clear {})),
             parallel_threshold: None,

@@ -8,7 +8,7 @@ use autd3_driver::firmware::fpga::EmitIntensity;
 impl ToMessage for autd3_gain_holo::EmissionConstraint {
     type Message = EmissionConstraint;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         match self {
             autd3_gain_holo::EmissionConstraint::Normalize => Self::Message {
                 constraint: Some(emission_constraint::Constraint::Normalize(

@@ -7,7 +7,7 @@ use crate::{
 impl ToMessage for autd3_driver::firmware::fpga::EmitIntensity {
     type Message = EmitIntensity;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             value: self.value() as _,
         }
