@@ -1,13 +1,14 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    defined::Freq,
-    derive::{LoopBehavior, Segment, TransitionMode},
+    defined::{Freq, Hz},
     ethercat::DcSysTime,
-    firmware::fpga::FPGA_MAIN_CLK_FREQ,
+    firmware::fpga::{LoopBehavior, Segment, TransitionMode},
 };
 
 use super::FPGAEmulator;
+
+const FPGA_MAIN_CLK_FREQ: u32 = 10240000;
 
 pub(crate) struct Swapchain<const SET: u16> {
     sys_time: DcSysTime,
@@ -38,7 +39,7 @@ impl<const SET: u16> Swapchain<SET> {
     pub fn new() -> Self {
         Self {
             sys_time: DcSysTime::now(),
-            fpga_clk_freq: FPGA_MAIN_CLK_FREQ,
+            fpga_clk_freq: FPGA_MAIN_CLK_FREQ * Hz,
             rep: 0,
             freq_div: [(Segment::S0, 10u16), (Segment::S1, 10u16)]
                 .into_iter()

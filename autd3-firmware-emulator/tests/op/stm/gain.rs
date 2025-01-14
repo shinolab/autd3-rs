@@ -1,20 +1,22 @@
 use std::{collections::HashMap, num::NonZeroU16};
 
+use autd3_core::datagram::Datagram;
 use autd3_driver::{
     datagram::{
         ControlPoint, FixedCompletionSteps, FociSTM, GainSTM, IntoDatagramWithSegment, Silencer,
         SwapSegment,
     },
-    derive::*,
+    error::AUTDDriverError,
     firmware::{
         cpu::{GainSTMMode, TxMessage},
         fpga::{
-            Drive, EmitIntensity, GPIOIn, Phase, GAIN_STM_BUF_SIZE_MAX,
-            SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
+            Drive, EmitIntensity, GPIOIn, LoopBehavior, Phase, SamplingConfig, Segment,
+            TransitionMode, GAIN_STM_BUF_SIZE_MAX, SILENCER_STEPS_INTENSITY_DEFAULT,
+            SILENCER_STEPS_PHASE_DEFAULT,
         },
         operation::OperationHandler,
     },
-    geometry::Point3,
+    geometry::{Geometry, Point3},
 };
 use autd3_firmware_emulator::CPUEmulator;
 
@@ -443,7 +445,7 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
     cpu.send(&tx);
     assert_eq!(
         Err(AUTDDriverError::InvalidGainSTMMode),
-        Result::<(), AUTDDriverError>::from(&cpu.rx())
+        autd3_driver::firmware::cpu::check_firmware_err(&cpu.rx())
     );
 
     Ok(())

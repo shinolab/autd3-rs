@@ -72,7 +72,7 @@ fn invalid_info_type() -> anyhow::Result<()> {
     cpu.send(&tx);
     assert_eq!(
         Err(AUTDDriverError::InvalidInfoType),
-        Result::<(), AUTDDriverError>::from(&cpu.rx())
+        autd3_driver::firmware::cpu::check_firmware_err(&cpu.rx())
     );
 
     Ok(())

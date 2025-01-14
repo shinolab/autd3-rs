@@ -5,10 +5,10 @@ use crate::{
     op::{gain::TestGain, stm::foci::gen_random_foci},
     send,
 };
+use autd3_core::derive::*;
 use autd3_driver::{
     autd3_device::AUTD3,
     datagram::*,
-    derive::*,
     firmware::{
         cpu::TxMessage,
         fpga::{
@@ -28,7 +28,7 @@ struct TestMod {
 }
 
 impl Modulation for TestMod {
-    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         Ok(vec![u8::MIN; 100])
     }
 }

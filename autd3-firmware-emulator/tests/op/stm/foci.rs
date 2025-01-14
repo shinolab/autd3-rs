@@ -6,14 +6,14 @@ use autd3_driver::{
         IntoDatagramWithSegment, Silencer, SwapSegment,
     },
     defined::{mm, METER},
-    derive::{LoopBehavior, SamplingConfig, Segment},
     error::AUTDDriverError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::{
         cpu::TxMessage,
         fpga::{
-            Drive, Phase, TransitionMode, FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT,
-            SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
+            Drive, LoopBehavior, Phase, SamplingConfig, Segment, TransitionMode,
+            FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT, SILENCER_STEPS_INTENSITY_DEFAULT,
+            SILENCER_STEPS_PHASE_DEFAULT,
         },
     },
     geometry::Point3,
