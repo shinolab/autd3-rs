@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use autd3::{driver::link::Link, prelude::*};
+use autd3::{core::link::Link, prelude::*};
 
 use super::{
     audio_file::*, bessel::*, custom::*, fir::*, flag::*, focus::*, group::*, holo::*, plane::*,
