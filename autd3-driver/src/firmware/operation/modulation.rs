@@ -64,6 +64,8 @@ pub struct ModulationOp {
 }
 
 impl Operation for ModulationOp {
+    type Error = AUTDDriverError;
+
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         let is_first = self.sent == 0;
 
@@ -154,7 +156,7 @@ mod tests {
     use rand::prelude::*;
 
     use super::*;
-    use crate::{ethercat::DcSysTime, geometry::tests::create_device};
+    use crate::{ethercat::DcSysTime, firmware::operation::tests::create_device};
 
     const NUM_TRANS_IN_UNIT: usize = 249;
 
@@ -171,7 +173,7 @@ mod tests {
         let buf: Vec<u8> = (0..MOD_SIZE).map(|_| rng.gen()).collect();
         let freq_div = rng.gen_range(0x0001..=0xFFFF);
         let loop_behavior = LoopBehavior::infinite();
-        let rep = loop_behavior.rep;
+        let rep = loop_behavior.rep();
         let segment = Segment::S0;
         let transition_mode = TransitionMode::SysTime(
             DcSysTime::from_utc(
@@ -184,7 +186,7 @@ mod tests {
         let mut op = ModulationOp::new(
             Arc::new(buf.clone()),
             SamplingConfig::new(freq_div).unwrap(),
-            LoopBehavior { rep },
+            loop_behavior,
             segment,
             Some(transition_mode),
         );

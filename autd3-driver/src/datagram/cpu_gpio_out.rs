@@ -1,3 +1,5 @@
+use std::convert::Infallible;
+
 use crate::firmware::operation::CpuGPIOOutOp;
 
 use crate::datagram::*;
@@ -29,14 +31,15 @@ impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> OperationGenerator for CpuGPIO
 
     fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
         let port = (self.f)(device);
-        (CpuGPIOOutOp::new(port.pa5, port.pa7), Self::O2::new())
+        (CpuGPIOOutOp::new(port.pa5, port.pa7), Self::O2 {})
     }
 }
 
 impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> Datagram for CpuGPIO<F> {
     type G = CpuGPIOOutOpGenerator<F>;
+    type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDDriverError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
         Ok(Self::G { f: self.f })
     }
 }

@@ -14,8 +14,11 @@ use crate::{
     },
 };
 
+use autd3_core::{
+    derive::DatagramS,
+    gain::{BitVec, GainContextGenerator, GainError},
+};
 use autd3_derive::Builder;
-use bit_vec::BitVec;
 use derive_more::{Deref, DerefMut};
 use silencer::HasSamplingConfig;
 
@@ -40,8 +43,8 @@ pub trait GainSTMGenerator: std::fmt::Debug {
     fn init(
         self,
         geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::T, AUTDDriverError>;
+        filter: Option<&HashMap<usize, BitVec>>,
+    ) -> Result<Self::T, GainError>;
     /// Returns the length of the sequence of gains.
     fn len(&self) -> usize;
 }
@@ -105,16 +108,13 @@ impl<G: GainSTMGenerator> GainSTM<G> {
         Self::new_from_sampling_config(config.into(), iter).unwrap()
     }
 
-    fn new_from_sampling_config<S, T: IntoGainSTMGenerator<G = G>>(
-        config: S,
+    fn new_from_sampling_config<T: IntoGainSTMGenerator<G = G>>(
+        config: impl IntoSamplingConfigSTM,
         iter: T,
-    ) -> Result<Self, AUTDDriverError>
-    where
-        SamplingConfig: TryFrom<(S, usize), Error = AUTDDriverError>,
-    {
+    ) -> Result<Self, AUTDDriverError> {
         let gen = iter.into();
         Ok(Self {
-            sampling_config: (config, gen.len()).try_into()?,
+            sampling_config: config.into_sampling_config(gen.len())?,
             loop_behavior: LoopBehavior::infinite(),
             mode: GainSTMMode::default(),
             gen,
@@ -132,7 +132,7 @@ impl<G: GainSTMGenerator> GainSTM<G> {
     ///
     /// [`FociSTM::period`]: crate::datagram::FociSTM::period
     #[cfg(not(feature = "dynamic_freq"))]
-    pub fn period(&self) -> Duration {
+    pub fn period(&self) -> std::time::Duration {
         self.sampling_config().period() * self.gen.len() as u32
     }
 }
@@ -162,20 +162,21 @@ impl<T: GainSTMContextGenerator> OperationGenerator for GainSTMOperationGenerato
                 self.segment,
                 self.transition_mode,
             ),
-            Self::O2::new(),
+            Self::O2 {},
         )
     }
 }
 
 impl<I: GainSTMGenerator> DatagramS for GainSTM<I> {
     type G = GainSTMOperationGenerator<I::T>;
+    type Error = AUTDDriverError;
 
     fn operation_generator_with_segment(
         self,
         geometry: &Geometry,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
-    ) -> Result<Self::G, AUTDDriverError> {
+    ) -> Result<Self::G, Self::Error> {
         let size = self.gen.len();
         let config = self.sampling_config;
         let loop_behavior = self.loop_behavior;

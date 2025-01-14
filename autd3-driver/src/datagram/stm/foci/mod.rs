@@ -12,6 +12,7 @@ use crate::{
 
 pub use crate::firmware::operation::FociSTMContext;
 
+use autd3_core::datagram::DatagramS;
 use autd3_derive::Builder;
 use derive_more::{Deref, DerefMut};
 use silencer::HasSamplingConfig;
@@ -84,16 +85,13 @@ impl<const N: usize, G: FociSTMGenerator<N>> FociSTM<N, G> {
         Self::new_from_sampling_config(config.into(), iter).unwrap()
     }
 
-    fn new_from_sampling_config<T>(
-        config: T,
+    fn new_from_sampling_config(
+        config: impl IntoSamplingConfigSTM,
         iter: impl IntoFociSTMGenerator<N, G = G>,
-    ) -> Result<Self, AUTDDriverError>
-    where
-        SamplingConfig: TryFrom<(T, usize), Error = AUTDDriverError>,
-    {
+    ) -> Result<Self, AUTDDriverError> {
         let gen = iter.into();
         Ok(Self {
-            sampling_config: (config, gen.len()).try_into()?,
+            sampling_config: config.into_sampling_config(gen.len())?,
             gen,
             loop_behavior: LoopBehavior::infinite(),
         })
@@ -145,7 +143,7 @@ impl<const N: usize, G: FociSTMGenerator<N>> FociSTM<N, G> {
     /// # }
     /// ```
     #[cfg(not(feature = "dynamic_freq"))]
-    pub fn period(&self) -> Duration {
+    pub fn period(&self) -> std::time::Duration {
         self.sampling_config().period() * self.gen.len() as u32
     }
 }
@@ -185,20 +183,21 @@ impl<const N: usize, G: FociSTMContextGenerator<N>> OperationGenerator
                 self.segment,
                 self.transition_mode,
             ),
-            Self::O2::new(),
+            Self::O2 {},
         )
     }
 }
 
 impl<const N: usize, G: FociSTMGenerator<N>> DatagramS for FociSTM<N, G> {
     type G = FociSTMOperationGenerator<N, G::T>;
+    type Error = AUTDDriverError;
 
     fn operation_generator_with_segment(
         self,
         _geometry: &Geometry,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
-    ) -> Result<Self::G, AUTDDriverError> {
+    ) -> Result<Self::G, Self::Error> {
         let size = self.gen.len();
         Ok(FociSTMOperationGenerator {
             gen: self.gen.init()?,

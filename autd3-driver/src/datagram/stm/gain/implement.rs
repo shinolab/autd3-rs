@@ -1,16 +1,10 @@
 use std::{collections::HashMap, iter::Peekable};
 
-use bit_vec::BitVec;
+use autd3_core::gain::{BitVec, Gain, GainContext, GainContextGenerator, GainError};
 
-use crate::{
-    error::AUTDDriverError,
-    geometry::{Device, Geometry},
-};
+use crate::geometry::{Device, Geometry};
 
-use super::{
-    gain::GainContext, Gain, GainContextGenerator, GainSTMContext, GainSTMContextGenerator,
-    GainSTMGenerator, IntoGainSTMGenerator,
-};
+use super::{GainSTMContext, GainSTMContextGenerator, GainSTMGenerator, IntoGainSTMGenerator};
 
 pub struct VecGainSTMContext<G: GainContext> {
     gains: Peekable<std::vec::IntoIter<G>>,
@@ -46,8 +40,8 @@ impl<G: Gain> GainSTMGenerator for Vec<G> {
     fn init(
         self,
         geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::T, AUTDDriverError> {
+        filter: Option<&HashMap<usize, BitVec>>,
+    ) -> Result<Self::T, GainError> {
         self.into_iter()
             .map(|g| g.init(geometry, filter))
             .collect::<Result<Vec<_>, _>>()
@@ -70,13 +64,17 @@ where
 
 #[cfg(test)]
 mod tests {
+
     #[cfg(not(feature = "dynamic_freq"))]
     use std::time::Duration;
 
-    use super::{super::GainSTM, *};
+    use autd3_core::modulation::SamplingConfigError;
+
+    use super::super::GainSTM;
     use crate::{
         datagram::gain::tests::TestGain,
         defined::{kHz, Freq, Hz},
+        error::AUTDDriverError,
         firmware::{
             cpu::GainSTMMode,
             fpga::{LoopBehavior, SamplingConfig},
@@ -90,12 +88,12 @@ mod tests {
     #[case((20. * Hz).try_into(), 2.*Hz, 10)]
     #[case((2. * 0.49*Hz).try_into(), 0.49*Hz, 2)]
     fn from_freq(
-        #[case] expect: Result<SamplingConfig, AUTDDriverError>,
+        #[case] expect: Result<SamplingConfig, SamplingConfigError>,
         #[case] freq: Freq<f32>,
         #[case] n: usize,
     ) {
         assert_eq!(
-            expect,
+            expect.map_err(AUTDDriverError::from),
             GainSTM::new(freq, (0..n).map(|_| TestGain::null())).map(|g| g.sampling_config())
         );
     }
@@ -121,17 +119,17 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(
-        Duration::from_millis(1000).try_into(),
+        Duration::from_millis(1000).try_into().map_err(AUTDDriverError::from),
         Duration::from_millis(2000),
         2
     )]
     #[case(
-        Duration::from_millis(100).try_into(),
+        Duration::from_millis(100).try_into().map_err(AUTDDriverError::from),
         Duration::from_millis(1000),
         10
     )]
     #[case(
-        Duration::from_millis(50).try_into(),
+        Duration::from_millis(50).try_into().map_err(AUTDDriverError::from),
         Duration::from_millis(500),
         10
     )]

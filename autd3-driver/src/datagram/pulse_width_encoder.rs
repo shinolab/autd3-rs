@@ -1,3 +1,5 @@
+use std::convert::Infallible;
+
 use crate::{
     datagram::*,
     firmware::{fpga::PWE_BUF_SIZE, operation::PulseWidthEncoderOp},
@@ -59,14 +61,15 @@ impl<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
     type O2 = NullOp;
 
     fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
-        (Self::O1::new((self.f)(device)), Self::O2::new())
+        (Self::O1::new((self.f)(device)), Self::O2 {})
     }
 }
 
 impl<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> Datagram for PulseWidthEncoder<H, F> {
     type G = PulseWidthEncoderOpGenerator<H, F>;
+    type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDDriverError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
         Ok(PulseWidthEncoderOpGenerator { f: self.f })
     }
 

@@ -63,7 +63,9 @@ pub struct SwapSegmentOp {
 }
 
 impl Operation for SwapSegmentOp {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
+    type Error = AUTDDriverError;
+
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         self.is_done = true;
 
         let tag = match self.segment {
@@ -122,7 +124,7 @@ impl Operation for SwapSegmentOp {
 
 #[cfg(test)]
 mod tests {
-    use crate::{ethercat::DcSysTime, geometry::tests::create_device};
+    use crate::{ethercat::DcSysTime, firmware::operation::tests::create_device};
 
     use super::*;
 

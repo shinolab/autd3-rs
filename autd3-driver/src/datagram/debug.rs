@@ -1,3 +1,5 @@
+use std::convert::Infallible;
+
 use crate::firmware::{
     fpga::{DebugType, GPIOOut},
     operation::DebugSettingOp,
@@ -43,15 +45,16 @@ impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> OperationGenerator
                 [GPIOOut::O0, GPIOOut::O1, GPIOOut::O2, GPIOOut::O3]
                     .map(|gpio| (self.f)(device, gpio).into()),
             ),
-            Self::O2::new(),
+            Self::O2 {},
         )
     }
 }
 
 impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> Datagram for DebugSettings<F> {
     type G = DebugSettingOpGenerator<F>;
+    type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDDriverError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
         Ok(DebugSettingOpGenerator { f: self.f })
     }
 }

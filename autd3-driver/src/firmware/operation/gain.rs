@@ -6,9 +6,10 @@ use crate::{
         fpga::{Drive, Segment, TransitionMode},
         operation::{Operation, TypeTag},
     },
-    geometry::{Device, Transducer},
+    geometry::Device,
 };
 
+use autd3_core::gain::GainContext;
 use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
@@ -32,14 +33,6 @@ struct Gain {
     __: u8,
 }
 
-/// A trait to calculate the phase and intensity for [`Gain`].
-///
-/// [`Gain`]: crate::datagram::Gain
-pub trait GainContext: Send + Sync {
-    /// Calculates the phase and intensity for the transducer.
-    fn calc(&self, tr: &Transducer) -> Drive;
-}
-
 #[derive(new)]
 #[new(visibility = "pub(crate)")]
 pub struct GainOp<Context: GainContext> {
@@ -51,11 +44,13 @@ pub struct GainOp<Context: GainContext> {
 }
 
 impl<Context: GainContext> Operation for GainOp<Context> {
+    type Error = AUTDDriverError;
+
     fn required_size(&self, device: &Device) -> usize {
         size_of::<Gain>() + device.num_transducers() * size_of::<Drive>()
     }
 
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
+    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         super::write_to_tx(
             tx,
             Gain {
@@ -91,14 +86,14 @@ impl<Context: GainContext> Operation for GainOp<Context> {
 
 #[cfg(test)]
 mod tests {
-    use size_of;
+    use autd3_core::geometry::Transducer;
 
     use rand::prelude::*;
 
     use super::*;
     use crate::{
         firmware::fpga::{EmitIntensity, Phase},
-        geometry::tests::create_device,
+        firmware::operation::tests::create_device,
     };
 
     const NUM_TRANS_IN_UNIT: usize = 249;

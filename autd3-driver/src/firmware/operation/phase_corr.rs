@@ -1,7 +1,6 @@
-use std::mem::size_of;
+use std::{convert::Infallible, mem::size_of};
 
 use crate::{
-    error::AUTDDriverError,
     firmware::{
         fpga::Phase,
         operation::{Operation, TypeTag},
@@ -28,7 +27,9 @@ pub struct PhaseCorrectionOp<F: Fn(&Transducer) -> Phase> {
 }
 
 impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<F> {
-    fn pack(&mut self, dev: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
+    type Error = Infallible;
+
+    fn pack(&mut self, dev: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         super::write_to_tx(
             tx,
             PhaseCorr {
@@ -63,7 +64,7 @@ mod tests {
     use std::mem::size_of;
 
     use super::*;
-    use crate::geometry::tests::create_device;
+    use crate::firmware::operation::tests::create_device;
 
     const NUM_TRANS_IN_UNIT: u8 = 249;
 

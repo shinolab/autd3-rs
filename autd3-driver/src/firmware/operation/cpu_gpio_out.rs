@@ -1,7 +1,6 @@
-use std::mem::size_of;
+use std::{convert::Infallible, mem::size_of};
 
 use crate::{
-    error::AUTDDriverError,
     firmware::operation::{Operation, TypeTag},
     geometry::Device,
 };
@@ -26,7 +25,9 @@ pub struct CpuGPIOOutOp {
 }
 
 impl Operation for CpuGPIOOutOp {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
+    type Error = Infallible;
+
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         super::write_to_tx(
             tx,
             CpuGPIOOut {
@@ -50,7 +51,7 @@ impl Operation for CpuGPIOOutOp {
 
 #[cfg(test)]
 mod tests {
-    use crate::geometry::tests::create_device;
+    use crate::firmware::operation::tests::create_device;
 
     use super::*;
 
