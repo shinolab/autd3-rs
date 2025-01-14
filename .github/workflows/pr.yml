@@ -151,6 +151,7 @@ jobs:
       - uses: dtolnay/install@cargo-docs-rs
       - run: | 
           cargo +nightly docs-rs -pautd3
+          cargo +nightly docs-rs -pautd3-core
           cargo +nightly docs-rs -pautd3-derive
           cargo +nightly docs-rs -pautd3-driver
           cargo +nightly docs-rs -pautd3-firmware-emulator
