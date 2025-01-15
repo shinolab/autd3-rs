@@ -15,7 +15,5 @@ pub mod datagram;
 pub mod error;
 /// A module for working with firmware.
 pub mod firmware;
-#[doc(hidden)]
-pub mod utils;
 
 pub use autd3_core::{defined, ethercat, geometry};

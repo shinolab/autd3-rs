@@ -27,9 +27,6 @@ derive-new = { workspace = true }
 zerocopy = { workspace = true }
 paste = { workspace = true }
 
-[target.'cfg(windows)'.dependencies]
-windows = { workspace = true, features = ["Win32_Media", "Win32_System_Threading"] }
-
 [dev-dependencies]
 rand = { workspace = true }
 approx = { workspace = true }
