@@ -20,15 +20,15 @@ jobs:
         with:
           feature-group: default-features
       - run: |
+          cd autd3-derive
+          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }}
+          cd .. && sleep 15
+          
           cd autd3-core
           cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }}
           cd .. && sleep 15
 
           cd autd3-driver
-          cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }}
-          cd .. && sleep 15
-
-          cd autd3-derive
           cargo publish --no-verify --token ${{ secrets.CRATEIO_TOKEN }}
           cd .. && sleep 15
 
