@@ -23,6 +23,9 @@ thiserror = { workspace = true, default-features = false, optional = true }
 tracing = { workspace = true, default-features = false, optional = true }
 zerocopy = { workspace = true, default-features = false, features = ["derive"], optional = true }
 
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = ["Win32_Media", "Win32_System_Threading"], optional = true }
+
 [dev-dependencies]
 anyhow = { workspace = true }
 approx = { workspace = true }
@@ -59,7 +62,7 @@ link = ["zerocopy", "autd3-derive", "ethercat", "geometry", "derive_more", "deri
 modulation = ["autd3-derive", "utils", "defined", "datagram", "derive_more", "derive_more/display"]
 resampler = ["modulation", "defined", "tracing", "utils"]
 use_meter = []
-utils = []
+utils = ["windows"]
 
 [package.metadata.docs.rs]
 all-features = true

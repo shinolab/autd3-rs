@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use autd3_driver::utils::timer::TimerResolutionGurad;
+use autd3_core::utils::timer::TimerResolutionGurad;
 pub use spin_sleep::SpinSleeper;
 
 pub(crate) trait Sleeper {
