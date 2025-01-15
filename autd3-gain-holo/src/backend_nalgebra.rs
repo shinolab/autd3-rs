@@ -98,19 +98,23 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
 
         let num_transducers = [0]
             .into_iter()
-            .chain(geometry.devices().scan(0, |state, dev| {
-                *state += filter
-                    .as_ref()
-                    .map(|f| {
-                        f.get(&dev.idx())
-                            .map(|f| f.count_ones() as usize)
-                            .unwrap_or(0)
-                    })
-                    .unwrap_or(dev.num_transducers());
+            .chain(geometry.iter().scan(0, |state, dev| {
+                *state += if dev.enable {
+                    filter
+                        .as_ref()
+                        .map(|f| {
+                            f.get(&dev.idx())
+                                .map(|f| f.count_ones() as usize)
+                                .unwrap_or(0)
+                        })
+                        .unwrap_or(dev.num_transducers())
+                } else {
+                    0
+                };
                 Some(*state)
             }))
             .collect::<Vec<_>>();
-        let n = num_transducers[geometry.num_devices()];
+        let n = num_transducers.last().copied().unwrap();
 
         if let Some(filter) = filter {
             if geometry.num_devices() < foci.len() {
@@ -1973,6 +1977,57 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
+    #[case(3, 1)]
+    #[case(3, 3)]
+    fn test_generate_propagation_matrix_with_disabled_device(
+        #[case] dev_num: usize,
+        #[case] foci_num: usize,
+        backend: NalgebraBackend<Sphere>,
+    ) -> Result<(), HoloError> {
+        let reference = |geometry: Geometry, foci: Vec<Point3>| {
+            let mut g = MatrixXc::zeros(
+                foci.len(),
+                geometry
+                    .devices()
+                    .map(|dev| dev.num_transducers())
+                    .sum::<usize>(),
+            );
+            let transducers = geometry
+                .devices()
+                .flat_map(|dev| dev.iter().map(|tr| (dev.idx(), tr)))
+                .collect::<Vec<_>>();
+            (0..foci.len()).for_each(|i| {
+                (0..transducers.len()).for_each(|j| {
+                    g[(i, j)] = propagate::<Sphere>(
+                        transducers[j].1,
+                        geometry[transducers[j].0].wavenumber(),
+                        geometry[transducers[j].0].axial_direction(),
+                        &foci[i],
+                    )
+                })
+            });
+            g
+        };
+
+        let mut geometry = create_geometry(dev_num, dev_num);
+        geometry[0].enable = false;
+        let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
+
+        let g = backend.generate_propagation_matrix(&geometry, &foci, None)?;
+        let g = backend.to_host_cm(g)?;
+        reference(geometry, foci)
+            .iter()
+            .zip(g.iter())
+            .for_each(|(r, g)| {
+                approx::assert_abs_diff_eq!(r.re, g.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(r.im, g.im, epsilon = EPS);
+            });
+
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
     #[case(1, 2)]
     #[case(2, 1)]
     fn test_generate_propagation_matrix_with_filter(
@@ -2035,6 +2090,85 @@ mod tests {
             g.ncols(),
             geometry
                 .iter()
+                .map(|dev| dev.num_transducers() / 2)
+                .sum::<usize>()
+        );
+        reference(geometry, foci)
+            .iter()
+            .zip(g.iter())
+            .for_each(|(r, g)| {
+                approx::assert_abs_diff_eq!(r.re, g.re, epsilon = EPS);
+                approx::assert_abs_diff_eq!(r.im, g.im, epsilon = EPS);
+            });
+
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case(3, 1)]
+    #[case(3, 3)]
+    fn test_generate_propagation_matrix_with_filter_with_disabled_devices(
+        #[case] dev_num: usize,
+        #[case] foci_num: usize,
+        backend: NalgebraBackend<Sphere>,
+    ) -> Result<(), HoloError> {
+        use std::collections::HashMap;
+
+        let filter = |geometry: &Geometry| {
+            geometry
+                .iter()
+                .map(|dev| {
+                    let mut filter = BitVec::new();
+                    dev.iter().for_each(|tr| {
+                        filter.push(tr.idx() > dev.num_transducers() / 2);
+                    });
+                    (dev.idx(), filter)
+                })
+                .collect::<HashMap<_, _>>()
+        };
+
+        let reference = |geometry, foci: Vec<Point3>| {
+            let filter = filter(&geometry);
+            let transducers = geometry
+                .devices()
+                .flat_map(|dev| {
+                    dev.iter().filter_map(|tr| {
+                        if filter[&dev.idx()][tr.idx()] {
+                            Some((dev.idx(), tr))
+                        } else {
+                            None
+                        }
+                    })
+                })
+                .collect::<Vec<_>>();
+
+            let mut g = MatrixXc::zeros(foci.len(), transducers.len());
+            (0..foci.len()).for_each(|i| {
+                (0..transducers.len()).for_each(|j| {
+                    g[(i, j)] = propagate::<Sphere>(
+                        transducers[j].1,
+                        geometry[transducers[j].0].wavenumber(),
+                        geometry[transducers[j].0].axial_direction(),
+                        &foci[i],
+                    )
+                })
+            });
+            g
+        };
+
+        let mut geometry = create_geometry(dev_num, dev_num);
+        geometry[0].enable = false;
+        let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
+        let filter = filter(&geometry);
+
+        let g = backend.generate_propagation_matrix(&geometry, &foci, Some(&filter))?;
+        let g = backend.to_host_cm(g)?;
+        assert_eq!(g.nrows(), foci.len());
+        assert_eq!(
+            g.ncols(),
+            geometry
+                .devices()
                 .map(|dev| dev.num_transducers() / 2)
                 .sum::<usize>()
         );
