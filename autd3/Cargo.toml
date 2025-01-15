@@ -16,11 +16,11 @@ autd3-driver = { workspace = true }
 autd3-derive = { workspace = true }
 num = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true, features = ["rt-multi-thread", "time"], optional = true }
+tokio = { workspace = true, features = ["time", "rt-multi-thread"], optional = true }
 derive_more = { workspace = true }
 tynm = { workspace = true }
 itertools = { workspace = true }
-tracing = { workspace = true, features = ["attributes"] }
+tracing = { workspace = true }
 bit-vec = { workspace = true }
 rayon = { workspace = true }
 derive-new = { workspace = true }
