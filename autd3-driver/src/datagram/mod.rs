@@ -44,7 +44,7 @@ pub use silencer::{FixedCompletionSteps, FixedUpdateRate, HasSamplingConfig, Sil
 pub use stm::{
     FociSTM, FociSTMContext, FociSTMContextGenerator, FociSTMGenerator, GainSTM, GainSTMContext,
     GainSTMContextGenerator, GainSTMGenerator, IntoFociSTMGenerator, IntoGainSTMGenerator,
-    STMConfig, STMConfigNearest,
+    IntoSamplingConfigSTM, STMConfig, STMConfigNearest,
 };
 pub use synchronize::Synchronize;
 pub use with_parallel_threshold::{

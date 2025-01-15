@@ -8,4 +8,4 @@ pub use foci::{
 pub use gain::{
     GainSTM, GainSTMContext, GainSTMContextGenerator, GainSTMGenerator, IntoGainSTMGenerator,
 };
-pub use sampling_config::{STMConfig, STMConfigNearest};
+pub use sampling_config::{IntoSamplingConfigSTM, STMConfig, STMConfigNearest};
