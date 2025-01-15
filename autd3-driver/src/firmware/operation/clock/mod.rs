@@ -75,6 +75,8 @@ impl ConfigureClockOp {
 }
 
 impl Operation for ConfigureClockOp {
+    type Error = AUTDDriverError;
+
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         let sent = DRP_ROM_SIZE - self.remains;
 
@@ -199,7 +201,7 @@ mod tests {
 
     use crate::{
         defined::{Freq, Hz},
-        geometry::tests::create_device,
+        firmware::operation::tests::create_device,
     };
 
     use super::*;

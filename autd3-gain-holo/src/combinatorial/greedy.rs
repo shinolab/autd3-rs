@@ -2,19 +2,14 @@ use std::{collections::HashMap, num::NonZeroU8};
 
 use crate::{constraint::EmissionConstraint, Amplitude, Complex};
 
-use autd3_driver::{
+use autd3_core::{
     acoustics::{directivity::Directivity, propagate},
-    datagram::GainContextGenerator,
     defined::PI,
     derive::*,
-    firmware::{
-        fpga::{Drive, EmitIntensity, Phase},
-        operation::GainContext,
-    },
-    geometry::{Point3, Transducer, UnitVector3},
+    geometry::{Point3, UnitVector3},
 };
 
-use bit_vec::BitVec;
+use autd3_derive::Builder;
 use derive_more::Debug;
 use nalgebra::ComplexField;
 use rand::seq::SliceRandom;
@@ -86,7 +81,7 @@ pub struct ContextGenerator {
 impl GainContextGenerator for ContextGenerator {
     type Context = Context;
 
-    fn generate(&mut self, device: &autd3_driver::geometry::Device) -> Self::Context {
+    fn generate(&mut self, device: &Device) -> Self::Context {
         Context {
             g: self.g.remove(&device.idx()).unwrap(),
         }
@@ -99,8 +94,8 @@ impl<D: Directivity> Gain for Greedy<D> {
     fn init(
         self,
         geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDDriverError> {
+        filter: Option<&HashMap<usize, BitVec>>,
+    ) -> Result<Self::G, GainError> {
         let phase_candidates = (0..self.phase_div.get())
             .map(|i| Complex::new(0., 2.0 * PI * i as f32 / self.phase_div.get() as f32).exp())
             .collect::<Vec<_>>();
@@ -176,13 +171,14 @@ impl<D: Directivity> Gain for Greedy<D> {
 
 #[cfg(test)]
 mod tests {
+    use crate::tests::create_geometry;
+
     use super::{super::super::Pa, *};
-    use autd3_driver::{acoustics::directivity::Sphere, autd3_device::AUTD3, geometry::IntoDevice};
+    use autd3_core::acoustics::directivity::Sphere;
 
     #[test]
     fn test_greedy_all() {
-        let geometry: Geometry =
-            Geometry::new(vec![AUTD3::new(Point3::origin()).into_device(0)], 4);
+        let geometry = create_geometry(1, 1);
 
         let g = Greedy::<Sphere>::new([(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)])
             .with_phase_div(NonZeroU8::MIN);
@@ -207,13 +203,7 @@ mod tests {
 
     #[test]
     fn test_greedy_all_disabled() -> anyhow::Result<()> {
-        let mut geometry = Geometry::new(
-            vec![
-                AUTD3::new(Point3::origin()).into_device(0),
-                AUTD3::new(Point3::origin()).into_device(1),
-            ],
-            4,
-        );
+        let mut geometry = create_geometry(2, 1);
         geometry[0].enable = false;
 
         let g = Greedy::<Sphere>::new([(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)]);
@@ -233,8 +223,7 @@ mod tests {
 
     #[test]
     fn test_greedy_filtered() {
-        let geometry: Geometry =
-            Geometry::new(vec![AUTD3::new(Point3::origin()).into_device(0)], 4);
+        let geometry = create_geometry(1, 1);
 
         let g = Greedy::<Sphere>::new([
             (Point3::new(10., 10., 100.), 5e3 * Pa),
@@ -260,13 +249,7 @@ mod tests {
 
     #[test]
     fn test_greedy_filtered_disabled() -> anyhow::Result<()> {
-        let mut geometry = Geometry::new(
-            vec![
-                AUTD3::new(Point3::origin()).into_device(0),
-                AUTD3::new(Point3::origin()).into_device(1),
-            ],
-            4,
-        );
+        let mut geometry = create_geometry(2, 1);
         geometry[0].enable = false;
 
         let g = Greedy::<Sphere>::new([(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)]);

@@ -2,9 +2,11 @@ use std::num::NonZeroU16;
 
 use autd3_driver::{
     datagram::*,
-    derive::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
     error::AUTDDriverError,
-    firmware::{cpu::TxMessage, fpga::SilencerTarget},
+    firmware::{
+        cpu::TxMessage,
+        fpga::{LoopBehavior, SamplingConfig, Segment, SilencerTarget, TransitionMode},
+    },
     geometry::Point3,
 };
 use autd3_firmware_emulator::CPUEmulator;

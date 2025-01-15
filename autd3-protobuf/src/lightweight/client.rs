@@ -1,9 +1,7 @@
 use std::net::SocketAddr;
 
-use autd3_driver::{
-    derive::*,
-    geometry::{Device, Geometry, IntoDevice},
-};
+use autd3_core::geometry::{Device, Geometry, IntoDevice};
+use autd3_derive::Builder;
 
 use crate::{traits::*, OpenRequestLightweight};
 

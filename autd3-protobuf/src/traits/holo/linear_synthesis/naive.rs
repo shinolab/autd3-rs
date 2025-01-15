@@ -9,13 +9,13 @@ use crate::{
 
 impl ToMessage
     for autd3_gain_holo::Naive<
-        autd3_driver::acoustics::directivity::Sphere,
-        NalgebraBackend<autd3_driver::acoustics::directivity::Sphere>,
+        autd3_core::acoustics::directivity::Sphere,
+        NalgebraBackend<autd3_core::acoustics::directivity::Sphere>,
     >
 {
     type Message = Datagram;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Naive(Naive {
@@ -31,8 +31,8 @@ impl ToMessage
 
 impl FromMessage<Naive>
     for autd3_gain_holo::Naive<
-        autd3_driver::acoustics::directivity::Sphere,
-        NalgebraBackend<autd3_driver::acoustics::directivity::Sphere>,
+        autd3_core::acoustics::directivity::Sphere,
+        NalgebraBackend<autd3_core::acoustics::directivity::Sphere>,
     >
 {
     fn from_msg(msg: &Naive) -> Result<Self, AUTDProtoBufError> {
@@ -42,7 +42,7 @@ impl FromMessage<Naive>
                 .iter()
                 .map(|h| {
                     Ok((
-                        autd3_driver::geometry::Point3::from_msg(&h.pos)?,
+                        autd3_core::geometry::Point3::from_msg(&h.pos)?,
                         autd3_gain_holo::Amplitude::from_msg(&h.amp)?,
                     ))
                 })
@@ -58,7 +58,7 @@ impl FromMessage<Naive>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::geometry::Point3;
+    use autd3_core::geometry::Point3;
     use rand::Rng;
 
     #[test]

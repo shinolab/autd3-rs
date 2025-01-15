@@ -2,14 +2,13 @@ use std::time::Duration;
 
 use crate::{error::*, pb::*, traits::*};
 
-use autd3::derive::AUTDDriverError;
 use autd3_driver::datagram::IntoDatagramWithSegment;
 use tokio::sync::RwLock;
 use tonic::{Request, Response, Status};
 
 #[doc(hidden)]
 pub struct LightweightServer<
-    L: autd3_driver::link::AsyncLinkBuilder + 'static,
+    L: autd3_core::link::AsyncLinkBuilder + 'static,
     F: Fn() -> L + Send + Sync + 'static,
 > where
     L::L: Sync,
@@ -29,11 +28,12 @@ impl<D: autd3_driver::datagram::Datagram> autd3_driver::datagram::Datagram
     for DatagramWithTimeoutAndParallelThreshold<D>
 {
     type G = D::G;
+    type Error = D::Error;
 
     fn operation_generator(
         self,
-        geometry: &autd3_driver::geometry::Geometry,
-    ) -> Result<Self::G, AUTDDriverError> {
+        geometry: &autd3_core::geometry::Geometry,
+    ) -> Result<Self::G, Self::Error> {
         self.datagram.operation_generator(geometry)
     }
 
@@ -47,7 +47,7 @@ impl<D: autd3_driver::datagram::Datagram> autd3_driver::datagram::Datagram
     }
 }
 
-impl<L: autd3_driver::link::AsyncLinkBuilder + 'static, F: Fn() -> L + Send + Sync + 'static>
+impl<L: autd3_core::link::AsyncLinkBuilder + 'static, F: Fn() -> L + Send + Sync + 'static>
     LightweightServer<L, F>
 where
     L::L: Sync,
@@ -156,7 +156,7 @@ where
 }
 
 #[tonic::async_trait]
-impl<L: autd3_driver::link::AsyncLinkBuilder + 'static, F: Fn() -> L + Send + Sync + 'static>
+impl<L: autd3_core::link::AsyncLinkBuilder + 'static, F: Fn() -> L + Send + Sync + 'static>
     ecat_light_server::EcatLight for LightweightServer<L, F>
 where
     L::L: Sync,
@@ -176,7 +176,7 @@ where
         }
         let req = req.into_inner();
         if let Some(ref geometry) = req.geometry {
-            if let Ok(geometry) = autd3_driver::geometry::Geometry::from_msg(geometry) {
+            if let Ok(geometry) = autd3_core::geometry::Geometry::from_msg(geometry) {
                 #[allow(unused_mut)]
                 let mut builder = autd3::r#async::Controller::builder(geometry.iter().map(|d| {
                     autd3::prelude::AUTD3::new(*d[0].position()).with_rotation(*d.rotation())

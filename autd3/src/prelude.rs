@@ -9,13 +9,15 @@ pub use crate::{
     link::Nop,
 };
 
+pub use autd3_core::modulation::{Modulation, ModulationProperty};
+
 pub use autd3_driver::{
     autd3_device::AUTD3,
     datagram::{
         Clear, ControlPoint, ControlPoints, DebugSettings, FixedUpdateRate, FociSTM, ForceFan,
         GainSTM, IntoDatagramWithParallelThreshold, IntoDatagramWithSegment,
-        IntoDatagramWithTimeout, Modulation, ModulationProperty, PhaseCorrection,
-        PulseWidthEncoder, ReadsFPGAState, Silencer, SwapSegment,
+        IntoDatagramWithTimeout, PhaseCorrection, PulseWidthEncoder, ReadsFPGAState, Silencer,
+        SwapSegment,
     },
     defined::{deg, kHz, mm, rad, ultrasound_freq, Hz, PI},
     error::AUTDDriverError,

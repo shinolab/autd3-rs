@@ -1,7 +1,10 @@
-use autd3_driver::{
-    defined::{Angle, Freq, PI},
+use std::f32::consts::PI;
+
+use autd3_core::{
+    defined::{Angle, Freq},
     derive::*,
 };
+use autd3_derive::Builder;
 
 use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
 
@@ -80,7 +83,7 @@ impl<S: SamplingMode> Sine<S> {
 }
 
 impl<S: SamplingMode> Sine<S> {
-    pub(super) fn calc_raw(&self) -> Result<impl Iterator<Item = f32>, AUTDDriverError> {
+    pub(super) fn calc_raw(&self) -> Result<impl Iterator<Item = f32>, ModulationError> {
         let (n, rep) = S::validate(self.freq, self.config)?;
         let intensity = self.intensity;
         let offset = self.offset;
@@ -93,7 +96,7 @@ impl<S: SamplingMode> Sine<S> {
 }
 
 impl<S: SamplingMode> Modulation for Sine<S> {
-    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         self.calc_raw()?
             .map(|v| v.floor() as i16)
             .map(|v| {
@@ -102,7 +105,7 @@ impl<S: SamplingMode> Modulation for Sine<S> {
                 } else if self.clamp {
                     Ok(v.clamp(u8::MIN as _, u8::MAX as _) as _)
                 } else {
-                    Err(AUTDDriverError::ModulationError(format!(
+                    Err(ModulationError::new(format!(
                         "Sine modulation value ({}) is out of range [{}, {}]",
                         v,
                         u8::MIN,
@@ -110,7 +113,7 @@ impl<S: SamplingMode> Modulation for Sine<S> {
                     )))?
                 }
             })
-            .collect::<Result<Vec<_>, AUTDDriverError>>()
+            .collect::<Result<Vec<_>, ModulationError>>()
     }
 }
 
@@ -149,39 +152,39 @@ mod tests {
         781.25*Hz
     )]
     #[case(
-        Err(AUTDDriverError::ModulationError("Frequency (150.01 Hz) cannot be output with the sampling config (SamplingConfig { division: 10 }).".to_owned())),
+        Err(ModulationError::new("Frequency (150.01 Hz) cannot be output with the sampling config (SamplingConfig { division: 10 }).".to_owned())),
         150.01*Hz
     )]
     #[case(
-        Err(AUTDDriverError::ModulationError("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        Err(ModulationError::new("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
         2000.*Hz
     )]
     #[case(
-        Err(AUTDDriverError::ModulationError("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        Err(ModulationError::new("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
         2000*Hz
     )]
     #[case(
-        Err(AUTDDriverError::ModulationError("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        Err(ModulationError::new("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
         4000.*Hz
     )]
     #[case(
-        Err(AUTDDriverError::ModulationError("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        Err(ModulationError::new("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
         4000*Hz
     )]
     #[case(
-        Err(AUTDDriverError::ModulationError("Frequency (-0.1 Hz) must be valid positive value".to_owned())),
+        Err(ModulationError::new("Frequency (-0.1 Hz) must be valid positive value".to_owned())),
         -0.1*Hz
     )]
     #[case(
-        Err(AUTDDriverError::ModulationError("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
+        Err(ModulationError::new("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
         0*Hz
     )]
     #[case(
-        Err(AUTDDriverError::ModulationError("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
+        Err(ModulationError::new("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
         0.*Hz
     )]
     fn new(
-        #[case] expect: Result<Vec<u8>, AUTDDriverError>,
+        #[case] expect: Result<Vec<u8>, ModulationError>,
         #[case] freq: impl SamplingModeInference,
     ) {
         let m = Sine::new(freq);
@@ -206,10 +209,10 @@ mod tests {
         200.*Hz
     )]
     #[case(
-        Err(AUTDDriverError::ModulationError("Frequency (NaN Hz) must be valid value".to_owned())),
+        Err(ModulationError::new("Frequency (NaN Hz) must be valid value".to_owned())),
         f32::NAN * Hz
     )]
-    fn new_nearest(#[case] expect: Result<Vec<u8>, AUTDDriverError>, #[case] freq: Freq<f32>) {
+    fn new_nearest(#[case] expect: Result<Vec<u8>, ModulationError>, #[case] freq: Freq<f32>) {
         let m = Sine::new_nearest(freq);
         if !freq.hz().is_nan() {
             assert_eq!(freq, m.freq());
@@ -238,7 +241,7 @@ mod tests {
 
     #[rstest::rstest]
     #[case(
-        Err(AUTDDriverError::ModulationError("Sine modulation value (-1) is out of range [0, 255]".to_owned())),
+        Err(ModulationError::new("Sine modulation value (-1) is out of range [0, 255]".to_owned())),
         0x00,
         false
     )]
@@ -249,7 +252,7 @@ mod tests {
     )]
     #[test]
     fn out_of_range(
-        #[case] expect: Result<Vec<u8>, AUTDDriverError>,
+        #[case] expect: Result<Vec<u8>, ModulationError>,
         #[case] offset: u8,
         #[case] clamp: bool,
     ) {

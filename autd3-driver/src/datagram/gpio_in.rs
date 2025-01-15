@@ -1,3 +1,5 @@
+use std::convert::Infallible;
+
 use crate::{
     datagram::*,
     firmware::{fpga::GPIOIn, operation::EmulateGPIOInOp},
@@ -27,15 +29,16 @@ impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> OperationGenerato
         let h = (self.f)(device);
         (
             Self::O1::new([h(GPIOIn::I0), h(GPIOIn::I1), h(GPIOIn::I2), h(GPIOIn::I3)]),
-            Self::O2::new(),
+            Self::O2 {},
         )
     }
 }
 
 impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> Datagram for EmulateGPIOIn<H, F> {
     type G = EmulateGPIOInOpGenerator<H, F>;
+    type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDDriverError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
         Ok(EmulateGPIOInOpGenerator { f: self.f })
     }
 }

@@ -9,7 +9,7 @@ use zerocopy::{FromZeros, IntoBytes};
 impl ToMessage for &[autd3_driver::firmware::cpu::TxMessage] {
     type Message = TxRawData;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             data: self.as_bytes().to_vec(),
             n: self.len() as _,

@@ -1,8 +1,8 @@
 use std::{num::NonZeroU16, time::Duration};
 
+use autd3_core::derive::*;
 use autd3_driver::{
     datagram::{FixedCompletionSteps, IntoDatagramWithSegment, Silencer, SwapSegment},
-    derive::*,
     error::AUTDDriverError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::{
@@ -31,7 +31,7 @@ pub struct TestModulation {
 }
 
 impl Modulation for TestModulation {
-    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         Ok(self.buf.clone())
     }
 }

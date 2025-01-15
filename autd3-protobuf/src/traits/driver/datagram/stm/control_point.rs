@@ -7,7 +7,7 @@ use crate::{
 impl ToMessage for autd3_driver::datagram::ControlPoint {
     type Message = ControlPoint;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             pos: Some(self.point().to_msg(None)),
             offset: Some(self.phase_offset().to_msg(None)),
@@ -18,7 +18,7 @@ impl ToMessage for autd3_driver::datagram::ControlPoint {
 impl FromMessage<ControlPoint> for autd3_driver::datagram::ControlPoint {
     fn from_msg(msg: &ControlPoint) -> Result<Self, AUTDProtoBufError> {
         let mut p = autd3_driver::datagram::ControlPoint::from(
-            autd3_driver::geometry::Point3::from_msg(&msg.pos)?,
+            autd3_core::geometry::Point3::from_msg(&msg.pos)?,
         );
         if let Some(offset) = msg.offset.as_ref() {
             p = p.with_phase_offset(autd3_driver::firmware::fpga::Phase::from_msg(offset)?);
@@ -30,7 +30,7 @@ impl FromMessage<ControlPoint> for autd3_driver::datagram::ControlPoint {
 impl<const N: usize> ToMessage for autd3_driver::datagram::ControlPoints<N> {
     type Message = ControlPoints;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             points: self.iter().map(|p| p.to_msg(None)).collect(),
             intensity: Some(self.intensity().to_msg(None)),

@@ -1,8 +1,6 @@
 use autd3::{
-    driver::{
-        datagram::{BoxedGain, IntoBoxedGain},
-        link::Link,
-    },
+    core::link::Link,
+    driver::datagram::{BoxedGain, IntoBoxedGain},
     prelude::*,
 };
 use autd3_gain_holo::*;

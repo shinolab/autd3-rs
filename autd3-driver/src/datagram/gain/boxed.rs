@@ -1,25 +1,10 @@
 use std::{collections::HashMap, mem::MaybeUninit};
 
-use super::{Gain, GainContextGenerator, GainOperationGenerator};
+use super::{Gain, GainContextGenerator};
 
-use crate::error::AUTDDriverError;
-pub use crate::{
-    datagram::DatagramS,
-    firmware::{
-        fpga::{Drive, Segment, TransitionMode},
-        operation::GainContext,
-    },
-    geometry::{Device, Geometry, Transducer},
-};
+pub use crate::geometry::{Device, Geometry};
 
-use autd3_derive::Gain;
-use bit_vec::BitVec;
-
-impl GainContext for Box<dyn GainContext> {
-    fn calc(&self, tr: &Transducer) -> Drive {
-        self.as_ref().calc(tr)
-    }
-}
+use autd3_core::derive::*;
 
 pub trait DGainContextGenerator {
     fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainContext>;
@@ -50,8 +35,8 @@ trait DGain {
     fn dyn_init(
         &mut self,
         geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Box<dyn DGainContextGenerator>, AUTDDriverError>;
+        filter: Option<&HashMap<usize, BitVec>>,
+    ) -> Result<Box<dyn DGainContextGenerator>, GainError>;
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
 
@@ -64,8 +49,8 @@ impl<
     fn dyn_init(
         &mut self,
         geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Box<dyn DGainContextGenerator>, AUTDDriverError> {
+        filter: Option<&HashMap<usize, BitVec>>,
+    ) -> Result<Box<dyn DGainContextGenerator>, GainError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
         // SAFETY: This function is called only once from `Gain::init`.
@@ -105,8 +90,8 @@ impl Gain for BoxedGain {
     fn init(
         self,
         geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDDriverError> {
+        filter: Option<&HashMap<usize, BitVec>>,
+    ) -> Result<Self::G, GainError> {
         let Self { mut g } = self;
         Ok(DynGainContextGenerator {
             g: g.dyn_init(geometry, filter)?,
@@ -134,11 +119,12 @@ impl<
 
 #[cfg(test)]
 pub mod tests {
+    use autd3_core::gain::Drive;
+
     use super::*;
     use crate::datagram::gain::tests::TestGain;
 
     use crate::firmware::fpga::{EmitIntensity, Phase};
-    use crate::geometry::tests::create_geometry;
 
     const NUM_TRANSDUCERS: usize = 2;
 
@@ -172,6 +158,8 @@ pub mod tests {
         #[case] enabled: Vec<bool>,
         #[case] n: u16,
     ) -> anyhow::Result<()> {
+        use crate::datagram::tests::create_geometry;
+
         let mut geometry = create_geometry(n, NUM_TRANSDUCERS as _);
         geometry
             .iter_mut()

@@ -13,8 +13,8 @@
 pub mod controller;
 /// Primitive [`Gain`], [`Modulation`] and utilities for [`GainSTM`] and [`FociSTM`].
 ///
-/// [`Gain`]: autd3_driver::datagram::Gain
-/// [`Modulation`]: autd3_driver::datagram::Modulation
+/// [`Gain`]: autd3_core::gain::Gain
+/// [`Modulation`]: autd3_core::modulation::Modulation
 /// [`GainSTM`]: autd3_driver::datagram::GainSTM
 /// [`FociSTM`]: autd3_driver::datagram::FociSTM
 pub mod datagram;
@@ -22,7 +22,7 @@ pub mod datagram;
 pub mod error;
 /// Primitive [`Link`].
 ///
-/// [`Link`]: autd3_driver::link::Link
+/// [`Link`]: autd3_core::link::Link
 pub mod link;
 /// Prelude module.
 pub mod prelude;
@@ -32,8 +32,8 @@ pub mod prelude;
 #[cfg(feature = "async")]
 pub mod r#async;
 
+pub use autd3_core as core;
 pub use autd3_driver as driver;
-pub use autd3_driver::derive;
 pub use datagram::gain;
 pub use datagram::modulation;
 

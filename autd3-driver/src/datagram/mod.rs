@@ -31,13 +31,10 @@ pub use clock::ConfigureFPGAClock;
 pub use cpu_gpio_out::{CpuGPIO, CpuGPIOPort};
 pub use debug::DebugSettings;
 pub use force_fan::ForceFan;
-pub use gain::{BoxedGain, Gain, GainContextGenerator, GainOperationGenerator, IntoBoxedGain};
+pub use gain::{BoxedGain, IntoBoxedGain};
 #[doc(hidden)]
 pub use gpio_in::EmulateGPIOIn;
-pub use modulation::{
-    BoxedModulation, IntoBoxedModulation, Modulation, ModulationOperationGenerator,
-    ModulationProperty,
-};
+pub use modulation::{BoxedModulation, IntoBoxedModulation};
 pub use phase_corr::PhaseCorrection;
 pub use pulse_width_encoder::PulseWidthEncoder;
 pub use reads_fpga_state::ReadsFPGAState;
@@ -53,42 +50,39 @@ pub use synchronize::Synchronize;
 pub use with_parallel_threshold::{
     DatagramWithParallelThreshold, IntoDatagramWithParallelThreshold,
 };
-pub use with_segment::{DatagramS, DatagramWithSegment, IntoDatagramWithSegment};
+pub use with_segment::{DatagramWithSegment, IntoDatagramWithSegment};
 pub use with_timeout::{DatagramWithTimeout, IntoDatagramWithTimeout};
 
+pub use autd3_core::datagram::Datagram;
+
 use crate::{
-    defined::DEFAULT_TIMEOUT,
     firmware::operation::NullOp,
     geometry::{Device, Geometry},
 };
-use std::time::Duration;
 
 use crate::{error::AUTDDriverError, firmware::operation::OperationGenerator};
 
-/// [`Datagram`] represents the data sent to the device.
-pub trait Datagram: std::fmt::Debug {
-    #[doc(hidden)]
-    type G: OperationGenerator;
-
-    #[doc(hidden)]
-    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDDriverError>;
-
-    /// Returns the timeout duration.
-    fn timeout(&self) -> Option<Duration> {
-        Some(DEFAULT_TIMEOUT)
-    }
-
-    /// Returns the parallel threshold.
-    fn parallel_threshold(&self) -> Option<usize> {
-        Some(usize::MAX)
-    }
-}
-
 #[cfg(test)]
 pub(crate) mod tests {
-    use crate::firmware::fpga::{Segment, TransitionMode};
+    use std::time::Duration;
+
+    use autd3_core::datagram::DatagramS;
+
+    use crate::firmware::{
+        fpga::{Segment, TransitionMode},
+        operation::tests::create_device,
+    };
 
     use super::*;
+
+    pub fn create_geometry(n: u16, num_trans_in_unit: u8) -> Geometry {
+        Geometry::new(
+            (0..n)
+                .map(|i| create_device(i, num_trans_in_unit))
+                .collect(),
+            4,
+        )
+    }
 
     #[derive(Debug)]
     pub struct NullDatagram {
@@ -104,13 +98,14 @@ pub(crate) mod tests {
 
         // GRCOV_EXCL_START
         fn generate(&mut self, _device: &Device) -> (Self::O1, Self::O2) {
-            (Self::O1::new(), Self::O2::new())
+            (Self::O1 {}, Self::O2 {})
         }
         // GRCOV_EXCL_STOP
     }
 
     impl DatagramS for NullDatagram {
         type G = NullOperationGenerator;
+        type Error = AUTDDriverError;
 
         fn operation_generator_with_segment(
             self,

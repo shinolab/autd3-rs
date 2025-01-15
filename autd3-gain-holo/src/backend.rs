@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-use autd3_driver::{
+use autd3_core::{
     acoustics::directivity::Directivity,
+    gain::BitVec,
     geometry::{Geometry, Point3},
 };
 use nalgebra::{Dyn, VecStorage, U1};
 
 use crate::error::HoloError;
-use bit_vec::BitVec;
 
 /// Complex number
 pub type Complex = nalgebra::Complex<f32>;
@@ -43,7 +43,7 @@ pub trait LinAlgBackend<D: Directivity> {
         &self,
         geometry: &Geometry,
         foci: &[Point3],
-        filter: Option<&HashMap<usize, BitVec<u32>>>,
+        filter: Option<&HashMap<usize, BitVec>>,
     ) -> Result<Self::MatrixXc, HoloError>;
 
     fn alloc_v(&self, size: usize) -> Result<Self::VectorX, HoloError>;

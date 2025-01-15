@@ -1,10 +1,10 @@
 use std::time::Duration;
 
+use autd3_core::{defined::DEFAULT_TIMEOUT, link::AsyncLinkBuilder};
+use autd3_derive::Builder;
 use autd3_driver::{
-    derive::*,
     firmware::cpu::{RxMessage, TxMessage},
     geometry::{Device, Geometry, IntoDevice},
-    link::AsyncLinkBuilder,
 };
 
 use derive_more::Debug;

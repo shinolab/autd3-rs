@@ -1,7 +1,6 @@
-pub use autd3_driver::derive::Gain;
-pub use autd3_driver::{
-    derive::*,
-    error::AUTDDriverError,
+use autd3_core::derive::*;
+use autd3_derive::Builder;
+use autd3_driver::{
     firmware::fpga::{Drive, Segment},
     geometry::Geometry,
 };
@@ -51,8 +50,8 @@ impl<G: Gain> Cache<G> {
     ///
     /// # Errors
     ///
-    /// Returns [`AUTDDriverError::GainError`] if you initialize with some devices disabled and then reinitialize after enabling the devices.
-    pub fn init(&self, geometry: &Geometry) -> Result<(), AUTDDriverError> {
+    /// Returns [`GainError`] if you initialize with some devices disabled and then reinitialize after enabling the devices.
+    pub fn init(&self, geometry: &Geometry) -> Result<(), GainError> {
         if let Some(gain) = self.gain.take() {
             let mut f = gain.init(geometry, None)?;
             geometry
@@ -73,7 +72,7 @@ impl<G: Gain> Cache<G> {
                 .devices()
                 .any(|dev| !self.cache.borrow().contains_key(&dev.idx()))
         {
-            return Err(AUTDDriverError::GainError(
+            return Err(GainError::new(
                 "Cache is initialized with different geometry".to_string(),
             ));
         }
@@ -113,8 +112,8 @@ impl<G: Gain> Gain for Cache<G> {
     fn init(
         self,
         geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDDriverError> {
+        _filter: Option<&HashMap<usize, BitVec>>,
+    ) -> Result<Self::G, GainError> {
         Cache::init(&self, geometry)?;
         Ok(self)
     }
@@ -150,7 +149,7 @@ mod tests {
             let cf = gc.generate(dev);
             dev.iter().try_for_each(|tr| {
                 assert_eq!(gf.calc(tr), cf.calc(tr));
-                Result::<(), AUTDDriverError>::Ok(())
+                Result::<(), GainError>::Ok(())
             })
         })?;
         Ok(())
@@ -168,7 +167,7 @@ mod tests {
         geometry[1].enable = false;
 
         assert_eq!(
-            Some(AUTDDriverError::GainError(
+            Some(GainError::new(
                 "Cache is initialized with different geometry".to_string()
             )),
             cache.init(&geometry, None).err()
@@ -204,8 +203,8 @@ mod tests {
         fn init(
             self,
             _geometry: &Geometry,
-            _filter: Option<&HashMap<usize, BitVec<u32>>>,
-        ) -> Result<Self::G, AUTDDriverError> {
+            _filter: Option<&HashMap<usize, BitVec>>,
+        ) -> Result<Self::G, GainError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
             Ok(self)
         }

@@ -1,6 +1,7 @@
+use autd3_core::derive::*;
+use autd3_derive::Builder;
 use autd3_driver::{
     datagram::{BoxedGain, IntoBoxedGain},
-    derive::*,
     error::AUTDDriverError,
     firmware::fpga::Drive,
     geometry::{Device, Transducer},
@@ -68,8 +69,8 @@ where
         Ok(self)
     }
 
-    fn get_filters(&self, geometry: &Geometry) -> HashMap<K, HashMap<usize, BitVec<u32>>> {
-        let mut filters: HashMap<K, HashMap<usize, BitVec<u32>>> = HashMap::new();
+    fn get_filters(&self, geometry: &Geometry) -> HashMap<K, HashMap<usize, BitVec>> {
+        let mut filters: HashMap<K, HashMap<usize, BitVec>> = HashMap::new();
         geometry.devices().for_each(|dev| {
             dev.iter().for_each(|tr| {
                 if let Some(key) = (self.f)(dev)(tr) {
@@ -134,8 +135,8 @@ where
     fn init(
         self,
         geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDDriverError> {
+        _filter: Option<&HashMap<usize, BitVec>>,
+    ) -> Result<Self::G, GainError> {
         let mut filters = self.get_filters(geometry);
 
         let mut g = geometry
@@ -153,7 +154,7 @@ where
             .map(|(k, g)| {
                 let filter = filters
                     .remove(&k)
-                    .ok_or(AUTDDriverError::UnkownKey(format!("{:?}", k)))?;
+                    .ok_or(GainError::new(format!("Unknown group key({:?})", k)))?;
                 let mut g = g.init(geometry, Some(&filter))?;
                 Ok((
                     k,
@@ -163,19 +164,20 @@ where
                         .collect::<Vec<_>>(),
                 ))
             })
-            .collect::<Result<HashMap<_, _>, AUTDDriverError>>()?;
+            .collect::<Result<HashMap<_, _>, GainError>>()?;
 
         if !filters.is_empty() {
-            return Err(AUTDDriverError::UnusedKey(
+            return Err(GainError::new(format!(
+                "Unused group keys: {}",
                 filters.keys().map(|k| format!("{:?}", k)).join(", "),
-            ));
+            )));
         }
 
         let f = &self.f;
         if geometry.parallel(None) {
             gain_map
                 .par_iter()
-                .try_for_each(|(k, c)| -> Result<(), AUTDDriverError> {
+                .try_for_each(|(k, c)| -> Result<(), GainError> {
                     geometry.devices().zip(c.iter()).for_each(|(dev, c)| {
                         let f = (f)(dev);
                         let r = g[&dev.idx()].as_ptr() as *mut Drive;
@@ -190,7 +192,7 @@ where
         } else {
             gain_map
                 .iter()
-                .try_for_each(|(k, c)| -> Result<(), AUTDDriverError> {
+                .try_for_each(|(k, c)| -> Result<(), GainError> {
                     geometry.devices().zip(c.iter()).for_each(|(dev, c)| {
                         let f = (f)(dev);
                         let r = g.get_mut(&dev.idx()).unwrap();
@@ -371,7 +373,7 @@ mod tests {
         .set("test2", Null::new())?;
 
         assert_eq!(
-            Some(AUTDDriverError::UnkownKey("\"test2\"".to_owned())),
+            Some(GainError::new("Unknown group key(\"test2\")".to_owned())),
             gain.init(&geometry, None).err()
         );
 
@@ -405,7 +407,7 @@ mod tests {
         .set(1, Null::new())?;
 
         assert_eq!(
-            Some(AUTDDriverError::UnusedKey("0".to_owned())),
+            Some(GainError::new("Unused group keys: 0".to_owned())),
             gain.init(&geometry, None).err()
         );
 

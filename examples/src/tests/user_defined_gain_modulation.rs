@@ -1,5 +1,7 @@
-use autd3::{driver::link::Link, prelude::*};
-use autd3_driver::derive::*;
+use autd3::{
+    core::{derive::*, link::Link},
+    prelude::*,
+};
 
 #[derive(Gain, Clone, Copy, Debug)]
 pub struct MyUniform {}
@@ -30,8 +32,8 @@ impl Gain for MyUniform {
     fn init(
         self,
         _geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDDriverError> {
+        _filter: Option<&HashMap<usize, BitVec>>,
+    ) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -52,7 +54,7 @@ impl Burst {
 }
 
 impl Modulation for Burst {
-    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         Ok((0..4000)
             .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
             .collect())

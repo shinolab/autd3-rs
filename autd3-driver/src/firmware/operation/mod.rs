@@ -1,3 +1,4 @@
+mod boxed;
 mod clear;
 #[cfg(feature = "dynamic_freq")]
 mod clock;
@@ -8,7 +9,6 @@ mod gain;
 mod gpio_in;
 mod info;
 mod modulation;
-mod null;
 mod phase_corr;
 mod pulse_width_encoder;
 mod reads_fpga_state;
@@ -17,19 +17,19 @@ mod silencer;
 mod stm;
 mod sync;
 
+pub(crate) use autd3_core::datagram::NullOp;
+pub use boxed::BoxedOperation;
 pub(crate) use clear::*;
 #[cfg(feature = "dynamic_freq")]
 pub(crate) use clock::*;
 pub(crate) use cpu_gpio_out::*;
 pub(crate) use debug::*;
 pub(crate) use force_fan::*;
-pub use gain::GainContext;
 pub(crate) use gain::*;
 pub(crate) use gpio_in::*;
 pub use info::FirmwareVersionType;
 pub(crate) use info::*;
 pub(crate) use modulation::*;
-pub(crate) use null::*;
 pub(crate) use phase_corr::*;
 pub(crate) use pulse_width_encoder::*;
 pub(crate) use reads_fpga_state::*;
@@ -76,38 +76,13 @@ pub(crate) enum TypeTag {
     CpuGPIOOut = 0xF2,
 }
 
-#[doc(hidden)]
-pub trait Operation: Send + Sync {
-    fn required_size(&self, device: &Device) -> usize;
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError>;
-    fn is_done(&self) -> bool;
-}
+pub use autd3_core::datagram::Operation;
 
 #[doc(hidden)]
 pub trait OperationGenerator {
     type O1: Operation;
     type O2: Operation;
     fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2);
-}
-
-impl Operation for Box<dyn Operation> {
-    fn required_size(&self, device: &Device) -> usize {
-        self.as_ref().required_size(device)
-    }
-
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
-        self.as_mut().pack(device, tx)
-    }
-
-    fn is_done(&self) -> bool {
-        self.as_ref().is_done()
-    }
-}
-
-impl Default for Box<dyn Operation> {
-    fn default() -> Self {
-        Box::new(NullOp::new())
-    }
 }
 
 #[doc(hidden)]
@@ -122,12 +97,17 @@ impl OperationHandler {
         operations.iter().all(|op| op.0.is_done() && op.1.is_done())
     }
 
-    pub fn pack(
-        operations: &mut [(impl Operation, impl Operation)],
+    pub fn pack<O1, O2>(
+        operations: &mut [(O1, O2)],
         geometry: &Geometry,
         tx: &mut [TxMessage],
         parallel: bool,
-    ) -> Result<(), AUTDDriverError> {
+    ) -> Result<(), AUTDDriverError>
+    where
+        O1: Operation,
+        O2: Operation,
+        AUTDDriverError: From<O1::Error> + From<O2::Error>,
+    {
         if parallel {
             geometry
                 .iter()
@@ -152,12 +132,17 @@ impl OperationHandler {
         }
     }
 
-    fn pack_op2(
-        op1: &mut impl Operation,
-        op2: &mut impl Operation,
+    fn pack_op2<O1, O2>(
+        op1: &mut O1,
+        op2: &mut O2,
         dev: &Device,
         tx: &mut TxMessage,
-    ) -> Result<(), AUTDDriverError> {
+    ) -> Result<(), AUTDDriverError>
+    where
+        O1: Operation,
+        O2: Operation,
+        AUTDDriverError: From<O1::Error> + From<O2::Error>,
+    {
         match (op1.is_done(), op2.is_done()) {
             (true, true) => Result::<_, AUTDDriverError>::Ok(()),
             (true, false) => Self::pack_op(op2, dev, tx).map(|_| Ok(()))?,
@@ -173,15 +158,15 @@ impl OperationHandler {
         }
     }
 
-    fn pack_op(
-        op: &mut impl Operation,
-        dev: &Device,
-        tx: &mut TxMessage,
-    ) -> Result<usize, AUTDDriverError> {
+    fn pack_op<O>(op: &mut O, dev: &Device, tx: &mut TxMessage) -> Result<usize, AUTDDriverError>
+    where
+        O: Operation,
+        AUTDDriverError: From<O::Error>,
+    {
         tx.header_mut().msg_id += 1;
         tx.header_mut().msg_id &= MSG_ID_MAX;
         tx.header_mut().slot_2_offset = 0;
-        op.pack(dev, tx.payload_mut())
+        Ok(op.pack(dev, tx.payload_mut())?)
     }
 }
 
@@ -205,6 +190,16 @@ pub(crate) mod tests {
 
     use super::*;
 
+    pub fn create_device(idx: u16, n: u8) -> Device {
+        Device::new(
+            idx,
+            UnitQuaternion::identity(),
+            (0..n)
+                .map(|i| Transducer::new(i, idx, Point3::origin()))
+                .collect(),
+        )
+    }
+
     struct OperationMock {
         pub pack_size: usize,
         pub required_size: usize,
@@ -213,13 +208,15 @@ pub(crate) mod tests {
     }
 
     impl Operation for OperationMock {
+        type Error = AUTDDriverError;
+
         fn required_size(&self, _: &Device) -> usize {
             self.required_size
         }
 
         fn pack(&mut self, _: &Device, _: &mut [u8]) -> Result<usize, AUTDDriverError> {
             if self.broken {
-                return Err(AUTDDriverError::LinkError("test".to_owned()));
+                return Err(AUTDDriverError::NotSupportedTag);
             }
             self.num_frames -= 1;
             Ok(self.pack_size)
@@ -393,7 +390,7 @@ pub(crate) mod tests {
         let mut tx = vec![TxMessage::new_zeroed(); 1];
 
         assert_eq!(
-            Err(AUTDDriverError::LinkError("test".to_owned())),
+            Err(AUTDDriverError::NotSupportedTag),
             OperationHandler::pack(&mut op, &geometry, &mut tx, false)
         );
 
@@ -401,14 +398,14 @@ pub(crate) mod tests {
         op[0].1.broken = true;
 
         assert_eq!(
-            Err(AUTDDriverError::LinkError("test".to_owned())),
+            Err(AUTDDriverError::NotSupportedTag),
             OperationHandler::pack(&mut op, &geometry, &mut tx, false)
         );
 
         op[0].0.num_frames = 0;
 
         assert_eq!(
-            Err(AUTDDriverError::LinkError("test".to_owned())),
+            Err(AUTDDriverError::NotSupportedTag),
             OperationHandler::pack(&mut op, &geometry, &mut tx, false)
         );
 
@@ -419,7 +416,7 @@ pub(crate) mod tests {
         op[0].1.num_frames = 0;
 
         assert_eq!(
-            Err(AUTDDriverError::LinkError("test".to_owned())),
+            Err(AUTDDriverError::NotSupportedTag),
             OperationHandler::pack(&mut op, &geometry, &mut tx, false)
         );
     }

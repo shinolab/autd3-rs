@@ -1,8 +1,14 @@
-use std::time::Duration;
+use std::{convert::Infallible, time::Duration};
 
+use autd3_core::{
+    datagram::CombinedError,
+    gain::GainError,
+    link::LinkError,
+    modulation::{ModulationError, SamplingConfigError},
+};
 use thiserror::Error;
 
-use crate::{defined::Freq, firmware::cpu::GainSTMMode, firmware::fpga::*};
+use crate::{firmware::cpu::GainSTMMode, firmware::fpga::*};
 
 /// A interface for error handling in autd3-driver.
 #[derive(Error, Debug, PartialEq, Clone)]
@@ -33,27 +39,9 @@ pub enum AUTDDriverError {
     #[error("Unused group key({0})")]
     UnusedKey(String),
 
-    /// Invalid sampling division.
-    #[error("Sampling division ({0}) must not be zero")]
-    SamplingDivisionInvalid(u16),
-    /// Invalid sampling frequency.
-    #[error("Sampling frequency ({0:?}) must divide theultrasound frequency")]
-    SamplingFreqInvalid(Freq<u32>),
-    /// Invalid sampling frequency.
-    #[error("Sampling frequency ({0:?}) must divide the ultrasound frequency")]
-    SamplingFreqInvalidF(Freq<f32>),
-    /// Invalid sampling period.
-    #[error("Sampling period ({0:?}) must be a multiple of the ultrasound period")]
-    SamplingPeriodInvalid(Duration),
-    /// Sampling frequency is out of range.
-    #[error("Sampling frequency ({0:?}) is out of range ([{1:?}, {2:?}])")]
-    SamplingFreqOutOfRange(Freq<u32>, Freq<u32>, Freq<u32>),
-    /// Sampling frequency is out of range.
-    #[error("Sampling frequency ({0:?}) is out of range ([{1:?}, {2:?}])")]
-    SamplingFreqOutOfRangeF(Freq<f32>, Freq<f32>, Freq<f32>),
-    /// Sampling period is out of range.
-    #[error("Sampling period ({0:?}) is out of range ([{1:?}, {2:?}])")]
-    SamplingPeriodOutOfRange(Duration, Duration, Duration),
+    /// Sampling config error
+    #[error("{0}")]
+    SamplingConfig(#[from] SamplingConfigError),
 
     /// Invalid STM period.
     #[error("STM sampling period ({1:?}/{0}) must be integer")]
@@ -97,13 +85,13 @@ pub enum AUTDDriverError {
 
     /// Error in the modulation.
     #[error("{0}")]
-    ModulationError(String),
+    Modulation(#[from] ModulationError),
     /// Error in the gain.
     #[error("{0}")]
-    GainError(String),
+    Gain(#[from] GainError),
     /// Error in the Link.
     #[error("{0}")]
-    LinkError(String),
+    Link(#[from] LinkError),
 
     /// Link is closed.
     #[error("Link is closed")]
@@ -122,7 +110,7 @@ pub enum AUTDDriverError {
     #[cfg(feature = "dynamic_freq")]
     #[error("Ultrasound frequency ({0:?}) is not supported")]
     /// Invalid ultrasound frequency.
-    InvalidFrequency(Freq<u32>),
+    InvalidFrequency(autd3_core::defined::Freq<u32>),
 
     /// Not supported tag.
     ///
@@ -171,6 +159,28 @@ impl AUTDDriverError {
         }
     }
 }
+
+// GRCOV_EXCL_START
+impl From<Infallible> for AUTDDriverError {
+    fn from(_: Infallible) -> Self {
+        unreachable!()
+    }
+}
+
+impl<E1, E2> From<CombinedError<E1, E2>> for AUTDDriverError
+where
+    E1: std::error::Error,
+    E2: std::error::Error,
+    AUTDDriverError: From<E1> + From<E2>,
+{
+    fn from(err: CombinedError<E1, E2>) -> Self {
+        match err {
+            CombinedError::E1(e) => AUTDDriverError::from(e),
+            CombinedError::E2(e) => AUTDDriverError::from(e),
+        }
+    }
+}
+// GRCOV_EXCL_STOP
 
 #[cfg(test)]
 mod tests {

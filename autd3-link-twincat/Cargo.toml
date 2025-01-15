@@ -10,7 +10,8 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-autd3-driver = { workspace = true, features = ["derive"] }
+autd3-core = { workspace = true, features = ["link"] }
+autd3-derive = { workspace = true }
 itertools = { workspace = true, optional = true }
 libloading = { workspace = true, optional = true }
 thiserror = { workspace = true }
@@ -24,8 +25,8 @@ cc = { workspace = true, optional = true }
 local = ["libloading"]
 remote = ["itertools", "cc", "tracing"]
 default = ["local"]
-async = ["autd3-driver/async"]
-async-trait = ["async", "autd3-driver/async-trait"]
+async = ["autd3-core/async"]
+async-trait = ["async", "autd3-core/async-trait"]
 all = ["local", "remote"]
 
 [package.metadata.docs.rs]

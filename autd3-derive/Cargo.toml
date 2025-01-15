@@ -13,11 +13,11 @@ repository = { workspace = true }
 proc-macro = true
 
 [dependencies]
-proc-macro2 = { workspace = true }
-quote = { workspace = true }
-regex = { workspace = true }
-syn = { workspace = true, features = ["derive"] }
-itertools = { workspace = true }
+proc-macro2 = { workspace = true, features = ["proc-macro"] }
+quote = { workspace = true, features = ["proc-macro"] }
+syn = { workspace = true, features = ["clone-impls", "printing", "derive", "parsing", "proc-macro"] }
+regex = { workspace = true, features = ["unicode"] }
+itertools = { workspace = true, features = ["use_std"] }
 
 [dev-dependencies]
-autd3-driver = { workspace = true, features = ["derive"] }
+autd3-core = { workspace = true, features = ["derive", "gain", "modulation"] }

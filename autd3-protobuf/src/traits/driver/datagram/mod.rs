@@ -12,11 +12,11 @@ use crate::{pb::*, traits::ToMessage};
 
 impl<T> ToMessage for autd3_driver::datagram::DatagramWithSegment<T>
 where
-    T: autd3_driver::datagram::DatagramS + ToMessage<Message = Datagram>,
+    T: autd3_core::datagram::DatagramS + ToMessage<Message = Datagram>,
 {
     type Message = Datagram;
 
-    fn to_msg(&self, geometry: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, geometry: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         let datagram = <T as ToMessage>::to_msg(self.deref(), geometry);
 
         match datagram.datagram {

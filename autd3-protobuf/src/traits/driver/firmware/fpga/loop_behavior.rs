@@ -7,7 +7,7 @@ use crate::{
 impl ToMessage for autd3_driver::firmware::fpga::LoopBehavior {
     type Message = LoopBehavior;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             rep: self.rep() as _,
         }
@@ -26,7 +26,7 @@ impl FromMessage<LoopBehavior> for autd3_driver::firmware::fpga::LoopBehavior {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::derive::LoopBehavior;
+    use autd3_driver::firmware::fpga::LoopBehavior;
     use rand::Rng;
 
     #[test]

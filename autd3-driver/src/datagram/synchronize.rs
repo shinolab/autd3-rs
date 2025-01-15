@@ -1,3 +1,5 @@
+use std::convert::Infallible;
+
 use crate::firmware::operation::SyncOp;
 
 use crate::datagram::*;
@@ -14,14 +16,15 @@ impl OperationGenerator for SynchronizeOpGenerator {
     type O2 = NullOp;
 
     fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
-        (Self::O1::new(), Self::O2::new())
+        (Self::O1::new(), Self::O2 {})
     }
 }
 
 impl Datagram for Synchronize {
     type G = SynchronizeOpGenerator;
+    type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDDriverError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
         Ok(SynchronizeOpGenerator {})
     }
 }

@@ -6,10 +6,8 @@ use crate::{
     Amplitude, Complex, LinAlgBackend, Trans,
 };
 
-use autd3_driver::{
-    acoustics::directivity::Directivity, derive::*, firmware::fpga::EmitIntensity, geometry::Point3,
-};
-use bit_vec::BitVec;
+use autd3_core::{acoustics::directivity::Directivity, derive::*, geometry::Point3};
+use autd3_derive::Builder;
 use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
@@ -59,8 +57,8 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for GS<D, B> {
     fn init(
         self,
         geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDDriverError> {
+        filter: Option<&HashMap<usize, BitVec>>,
+    ) -> Result<Self::G, GainError> {
         let g = self
             .backend
             .generate_propagation_matrix(geometry, &self.foci, filter)?;
@@ -79,7 +77,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for GS<D, B> {
             .backend
             .from_slice_cv(<[f32]>::ref_from_bytes(self.amps.as_bytes()).unwrap())?;
         let mut p = self.backend.alloc_zeros_cv(m)?;
-        (0..self.repeat.get()).try_for_each(|_| -> Result<(), AUTDDriverError> {
+        (0..self.repeat.get()).try_for_each(|_| -> Result<(), GainError> {
             self.backend.scaled_to_assign_cv(&q0, &mut q)?;
             self.backend.gemv_c(
                 Trans::NoTrans,
@@ -112,13 +110,15 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for GS<D, B> {
 
 #[cfg(test)]
 mod tests {
+    use autd3_core::gain::{Drive, GainContext, GainContextGenerator};
+
+    use crate::tests::create_geometry;
+
     use super::{super::super::NalgebraBackend, super::super::Pa, *};
-    use autd3_driver::{autd3_device::AUTD3, firmware::fpga::Drive, geometry::IntoDevice};
 
     #[test]
     fn test_gs_all() {
-        let geometry: Geometry =
-            Geometry::new(vec![AUTD3::new(Point3::origin()).into_device(0)], 4);
+        let geometry = create_geometry(1, 1);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = GS::new(
@@ -149,13 +149,7 @@ mod tests {
 
     #[test]
     fn test_gs_filtered() {
-        let geometry: Geometry = Geometry::new(
-            vec![
-                AUTD3::new(Point3::origin()).into_device(0),
-                AUTD3::new(Point3::origin()).into_device(1),
-            ],
-            4,
-        );
+        let geometry = create_geometry(2, 1);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = GS::new(

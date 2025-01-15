@@ -7,7 +7,7 @@ use crate::{
 impl ToMessage for autd3::gain::Focus {
     type Message = Datagram;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Focus(Focus {
@@ -24,7 +24,7 @@ impl ToMessage for autd3::gain::Focus {
 
 impl FromMessage<Focus> for autd3::gain::Focus {
     fn from_msg(msg: &Focus) -> Result<Self, AUTDProtoBufError> {
-        let mut g = Self::new(autd3_driver::geometry::Point3::from_msg(&msg.pos)?);
+        let mut g = Self::new(autd3_core::geometry::Point3::from_msg(&msg.pos)?);
         if let Some(intensity) = msg.intensity.as_ref() {
             g = g.with_intensity(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
                 intensity,

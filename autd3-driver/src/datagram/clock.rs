@@ -1,6 +1,6 @@
-use crate::{defined::ultrasound_freq, firmware::operation::ConfigureClockOp};
+use std::convert::Infallible;
 
-use crate::datagram::*;
+use crate::{datagram::*, defined::ultrasound_freq, firmware::operation::ConfigureClockOp};
 
 #[derive(Default, Debug)]
 #[doc(hidden)]
@@ -19,14 +19,15 @@ impl OperationGenerator for ConfigureClockOpGenerator {
     type O2 = NullOp;
 
     fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
-        (Self::O1::new(ultrasound_freq()), Self::O2::new())
+        (Self::O1::new(ultrasound_freq()), Self::O2 {})
     }
 }
 
 impl Datagram for ConfigureFPGAClock {
     type G = ConfigureClockOpGenerator;
+    type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDDriverError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
         Ok(ConfigureClockOpGenerator {})
     }
 }

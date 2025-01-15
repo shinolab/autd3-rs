@@ -7,10 +7,8 @@ mod silencer;
 mod stm;
 mod swapchain;
 
-use autd3_driver::{
-    derive::{Builder, Segment},
-    ethercat::DcSysTime,
-};
+use autd3_derive::Builder;
+use autd3_driver::{ethercat::DcSysTime, firmware::fpga::Segment};
 
 use memory::Memory;
 

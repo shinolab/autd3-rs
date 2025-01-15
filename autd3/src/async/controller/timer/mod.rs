@@ -9,14 +9,14 @@ pub use sleep::{AsyncSleeper, SpinSleeper, StdSleeper};
 
 use std::time::{Duration, Instant};
 
+use autd3_core::{derive::*, link::AsyncLink};
+use autd3_derive::Builder;
 use autd3_driver::{
-    derive::{Builder, Geometry},
     error::AUTDDriverError,
     firmware::{
         cpu::{check_if_msg_is_processed, RxMessage, TxMessage},
         operation::{Operation, OperationHandler},
     },
-    link::AsyncLink,
 };
 
 use itertools::Itertools;
@@ -61,16 +61,21 @@ pub struct Timer {
 }
 
 impl Timer {
-    pub(crate) async fn send(
+    pub(crate) async fn send<O1, O2>(
         &self,
         geometry: &Geometry,
         tx: &mut [TxMessage],
         rx: &mut [RxMessage],
         link: &mut impl AsyncLink,
-        operations: Vec<(impl Operation, impl Operation)>,
+        operations: Vec<(O1, O2)>,
         timeout: Option<Duration>,
         parallel_threshold: Option<usize>,
-    ) -> Result<(), AUTDDriverError> {
+    ) -> Result<(), AUTDDriverError>
+    where
+        O1: Operation,
+        O2: Operation,
+        AUTDDriverError: From<O1::Error> + From<O2::Error>,
+    {
         let timeout = timeout.unwrap_or(self.default_timeout);
         let parallel = geometry.parallel(parallel_threshold);
         tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
@@ -104,17 +109,22 @@ impl Timer {
         }
     }
 
-    async fn _send<S: Sleeper>(
+    async fn _send<O1, O2, S: Sleeper>(
         &self,
         sleeper: &S,
         geometry: &Geometry,
         tx: &mut [TxMessage],
         rx: &mut [RxMessage],
         link: &mut impl AsyncLink,
-        mut operations: Vec<(impl Operation, impl Operation)>,
+        mut operations: Vec<(O1, O2)>,
         timeout: Duration,
         parallel: bool,
-    ) -> Result<(), AUTDDriverError> {
+    ) -> Result<(), AUTDDriverError>
+    where
+        O1: Operation,
+        O2: Operation,
+        AUTDDriverError: From<O1::Error> + From<O2::Error>,
+    {
         link.update(geometry).await?;
 
         // We prioritize average behavior for the transmission timing. That is, not the interval from the previous transmission, but ensuring that T/`send_interval` transmissions are performed in a sufficiently long time T.
@@ -181,7 +191,9 @@ impl Timer {
             sleeper.sleep_until(receive_timing).await;
         }
         rx.iter()
-            .try_fold((), |_, r| Result::<(), AUTDDriverError>::from(r))
+            .try_fold((), |_, r| {
+                autd3_driver::firmware::cpu::check_firmware_err(r)
+            })
             .and_then(|e| {
                 if timeout == Duration::ZERO {
                     Ok(())
@@ -195,6 +207,7 @@ impl Timer {
 
 #[cfg(test)]
 mod tests {
+    use autd3_core::link::LinkError;
     use zerocopy::FromZeros;
 
     use super::*;
@@ -206,21 +219,21 @@ mod tests {
         pub down: bool,
     }
 
-    #[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+    #[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
     impl AsyncLink for MockLink {
-        async fn close(&mut self) -> Result<(), AUTDDriverError> {
+        async fn close(&mut self) -> Result<(), LinkError> {
             self.is_open = false;
             Ok(())
         }
 
-        async fn send(&mut self, _: &[TxMessage]) -> Result<bool, AUTDDriverError> {
+        async fn send(&mut self, _: &[TxMessage]) -> Result<bool, LinkError> {
             self.send_cnt += 1;
             Ok(!self.down)
         }
 
-        async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
+        async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
             if self.recv_cnt > 10 {
-                return Err(AUTDDriverError::LinkError("too many".to_owned()));
+                return Err(LinkError::new("too many".to_owned()));
             }
 
             self.recv_cnt += 1;
@@ -378,7 +391,7 @@ mod tests {
         link.recv_cnt = 0;
         tx[0].header_mut().msg_id = 20;
         assert_eq!(
-            Err(AUTDDriverError::LinkError("too many".to_owned())),
+            Err(AUTDDriverError::Link(LinkError::new("too many".to_owned()))),
             timer
                 .wait_msg_processed(&sleeper, &tx, &mut rx, &mut link, Duration::from_secs(10))
                 .await

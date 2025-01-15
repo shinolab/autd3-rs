@@ -10,14 +10,15 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-autd3-driver = { workspace = true, features = ["derive"] }
+autd3-derive = { workspace = true }
+autd3-driver = { workspace = true }
 bitfield-struct = { workspace = true }
 time = { workspace = true, features = ["std"] }
-num-integer = { workspace = true }
 zerocopy = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
+autd3-core = { workspace = true, features = ["derive"] }
 time = { workspace = true, features = ["macros"] }
 itertools = { workspace = true }
 rand = { workspace = true }
@@ -25,5 +26,4 @@ rstest = { workspace = true }
 
 [features]
 default = []
-async-trait = ["autd3-driver/async-trait"]
 dynamic_freq = ["autd3-driver/dynamic_freq"]

@@ -78,6 +78,8 @@ pub struct FociSTMOp<const N: usize, Context: FociSTMContext<N>> {
 }
 
 impl<const N: usize, Context: FociSTMContext<N>> Operation for FociSTMOp<N, Context> {
+    type Error = AUTDDriverError;
+
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         if N == 0 || N > FOCI_STM_FOCI_NUM_MAX {
             return Err(AUTDDriverError::FociSTMNumFociOutOfRange(N));
@@ -199,9 +201,9 @@ mod tests {
         ethercat::DcSysTime,
         firmware::{
             fpga::{FOCI_STM_FIXED_NUM_UNIT, FOCI_STM_FIXED_NUM_UPPER_X},
-            operation::ControlPoint,
+            operation::{tests::create_device, ControlPoint},
         },
-        geometry::{tests::create_device, Point3},
+        geometry::Point3,
     };
 
     const NUM_TRANS_IN_UNIT: u8 = 249;
@@ -258,7 +260,7 @@ mod tests {
             },
             FOCI_STM_SIZE,
             SamplingConfig::new(freq_div).unwrap(),
-            LoopBehavior { rep },
+            LoopBehavior::infinite(),
             segment,
             Some(transition_mode),
         );
@@ -363,7 +365,7 @@ mod tests {
             },
             FOCI_STM_SIZE,
             SamplingConfig::new(freq_div).unwrap(),
-            LoopBehavior { rep },
+            LoopBehavior::infinite(),
             segment,
             Some(transition_mode),
         );
@@ -457,7 +459,7 @@ mod tests {
                     .into()
             })
             .collect();
-        let freq_div = rng.gen_range(0x0001..=0xFFFF);
+        let freq_div = rng.gen_range(0x0001..0xFFFF);
         let rep = rng.gen_range(0x0001..=0xFFFF);
         let segment = Segment::S1;
 
@@ -467,7 +469,7 @@ mod tests {
             },
             FOCI_STM_SIZE,
             SamplingConfig::new(freq_div).unwrap(),
-            LoopBehavior { rep },
+            LoopBehavior::finite(rep + 1).unwrap(),
             segment,
             None,
         );

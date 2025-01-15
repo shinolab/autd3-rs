@@ -1,4 +1,4 @@
-use autd3_driver::error::AUTDDriverError;
+use autd3_core::gain::GainError;
 use thiserror::Error;
 
 /// A interface for error handling in autd3-gain-holo.
@@ -16,9 +16,9 @@ pub enum HoloError {
     InvalidOperation,
 }
 
-impl From<HoloError> for AUTDDriverError {
+impl From<HoloError> for GainError {
     fn from(value: HoloError) -> Self {
-        AUTDDriverError::GainError(value.to_string())
+        GainError::new(value.to_string())
     }
 }
 
@@ -49,7 +49,7 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn from() {
         let err = HoloError::SolveFailed;
-        let err: AUTDDriverError = err.into();
+        let err: GainError = err.into();
         assert_eq!(format!("{}", err), "Failed to solve linear system");
     }
 }

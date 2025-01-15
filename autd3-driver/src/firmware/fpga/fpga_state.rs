@@ -1,5 +1,6 @@
 use crate::firmware::fpga::Segment;
 
+use autd3_core::link::RxMessage;
 use autd3_derive::Builder;
 
 const THERMAL_ASSERT_BIT: u8 = 1 << 0;
@@ -7,6 +8,7 @@ const CURRENT_MOD_SEGMENT_BIT: u8 = 1 << 1;
 const CURRENT_STM_SEGMENT_BIT: u8 = 1 << 2;
 const CURRENT_GAIN_SEGMENT_BIT: u8 = 1 << 2;
 const IS_GAIN_MODE_BIT: u8 = 1 << 3;
+const READS_FPGA_STATE_ENABLED: u8 = 1 << 7;
 
 /// FPGA state.
 #[repr(C)]
@@ -60,6 +62,15 @@ impl FPGAState {
     /// `true` if the current mode is STM.
     pub const fn is_stm_mode(&self) -> bool {
         !self.is_gain_mode()
+    }
+
+    #[doc(hidden)]
+    pub fn from_rx(msg: &RxMessage) -> Option<Self> {
+        if msg.data() & READS_FPGA_STATE_ENABLED != 0 {
+            Some(FPGAState { state: msg.data() })
+        } else {
+            None
+        }
     }
 }
 

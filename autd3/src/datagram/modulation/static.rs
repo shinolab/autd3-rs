@@ -1,4 +1,5 @@
-use autd3_driver::derive::*;
+use autd3_core::derive::*;
+use autd3_derive::Builder;
 
 /// [`Modulation`] for no modulation
 #[derive(Modulation, Clone, Debug, PartialEq, Builder)]
@@ -28,7 +29,7 @@ impl Static {
 }
 
 impl Modulation for Static {
-    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         let intensity = self.intensity;
         Ok(vec![intensity; 2])
     }

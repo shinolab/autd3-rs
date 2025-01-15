@@ -17,9 +17,9 @@ use proc_macro::TokenStream;
 /// The following example shows how to define a custom [`Gain`] that generates a single focal point.
 ///
 /// ```
-/// use autd3_driver::derive::*;
-/// use autd3_driver::geometry::Point3;
-/// use autd3_driver::defined::rad;
+/// use autd3_core::derive::*;
+/// use autd3_core::geometry::Point3;
+/// use autd3_core::defined::rad;
 ///
 /// #[derive(Gain, Debug)]
 /// pub struct FocalPoint {
@@ -58,14 +58,14 @@ use proc_macro::TokenStream;
 ///     fn init(
 ///         self,
 ///         _geometry: &Geometry,
-///         _filter: Option<&HashMap<usize, BitVec<u32>>>,
-///     ) -> Result<Self::G, AUTDDriverError> {
+///         _filter: Option<&HashMap<usize, BitVec>>,
+///     ) -> Result<Self::G, GainError> {
 ///         Ok(self)
 ///     }
 /// }
 /// ```
 ///
-/// [`Gain`]: https://docs.rs/autd3-driver/latest/autd3_driver/datagram/trait.Gain.html
+/// [`Gain`]: https://docs.rs/autd3-core/latest/autd3_core/gain/trait.Gain.html
 #[proc_macro_derive(Gain)]
 pub fn gain_derive(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
@@ -82,7 +82,7 @@ pub fn gain_derive(input: TokenStream) -> TokenStream {
 /// If you add `#[no_change]` attribute to `config`, you can't change the value of `config` except for the constructor.
 ///
 /// ```
-/// use autd3_driver::derive::*;
+/// use autd3_core::derive::*;
 ///
 /// #[derive(Modulation, Debug)]
 /// pub struct Burst {
@@ -100,7 +100,7 @@ pub fn gain_derive(input: TokenStream) -> TokenStream {
 /// }
 ///
 /// impl Modulation for Burst {
-///     fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
+///     fn calc(self) -> Result<Vec<u8>, ModulationError>  {
 ///         Ok((0..4000)
 ///             .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
 ///             .collect())
@@ -108,7 +108,7 @@ pub fn gain_derive(input: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
-/// [`Modulation`]: https://docs.rs/autd3-driver/latest/autd3_driver/datagram/trait.Modulation.html
+/// [`Modulation`]: https://docs.rs/autd3-core/latest/autd3_core/gain/trait.Modulation.html
 #[proc_macro_derive(Modulation, attributes(no_change))]
 pub fn modulation_derive(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
@@ -123,7 +123,7 @@ pub fn modulation_derive(input: TokenStream) -> TokenStream {
 /// ## getter
 ///
 /// ```
-/// use autd3_driver::derive::*;
+/// use autd3_derive::Builder;
 ///
 /// #[derive(Builder)]
 /// struct Foo {
@@ -146,7 +146,7 @@ pub fn modulation_derive(input: TokenStream) -> TokenStream {
 /// If you use `get(ref)` and `get(ref_mut)`, you can get the reference of the field.
 ///
 /// ```
-/// use autd3_driver::derive::*;
+/// use autd3_derive::Builder;
 ///
 /// #[derive(Builder)]
 /// struct Foo {
@@ -173,7 +173,7 @@ pub fn modulation_derive(input: TokenStream) -> TokenStream {
 /// ## setter
 ///
 /// ```
-/// use autd3_driver::derive::*;
+/// use autd3_derive::Builder;
 ///
 /// #[derive(Builder)]
 /// struct Foo {
@@ -198,7 +198,7 @@ pub fn modulation_derive(input: TokenStream) -> TokenStream {
 /// If you use `set(into)`, you can use `Into` trait for the setter.
 ///
 /// ```
-/// use autd3_driver::derive::*;
+/// use autd3_derive::Builder;
 ///
 /// #[derive(Builder)]
 /// struct Foo {

@@ -10,18 +10,16 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
+autd3-core = { workspace = true, features = ["gain", "geometry", "derive", "link", "ethercat", "modulation"] }
+autd3-derive = { workspace = true }
 serde = { workspace = true, optional = true }
 bitflags = { workspace = true }
-bvh = { workspace = true }
 thiserror = { workspace = true }
 nalgebra = { workspace = true }
-bit-vec = { workspace = true }
 time = { workspace = true, features = ["macros", "std"] }
-autd3-derive = { workspace = true }
-async-trait = { workspace = true, optional = true }
 bitfield-struct = { workspace = true }
 rayon = { workspace = true }
-itertools = { workspace = true }
+itertools = { workspace = true, features = ["use_std"] }
 derive_more = { workspace = true, features = ["add", "debug", "deref", "deref_mut", "display", "into_iterator", "mul"] }
 tracing = { workspace = true }
 seq-macro = { workspace = true }
@@ -41,15 +39,10 @@ rstest = { workspace = true }
 criterion = { workspace = true }
 
 [features]
-default = ["derive"]
-async = []
+default = []
 lightweight = []
-async-trait = ["dep:async-trait"]
-use_meter = []
-left_handed = []
 serde = ["dep:serde"]
-derive = []
-dynamic_freq = []
+dynamic_freq = ["autd3-core/dynamic_freq"]
 
 [lib]
 bench = false
@@ -60,5 +53,5 @@ path = "benches/gain.rs"
 harness = false
 
 [package.metadata.docs.rs]
-features = ["lightweight", "async", "serde", "derive"]
+features = ["serde"]
 rustdoc-args = ["--cfg", "docsrs"]

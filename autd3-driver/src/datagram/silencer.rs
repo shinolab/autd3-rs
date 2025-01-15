@@ -1,9 +1,8 @@
-use std::num::NonZeroU16;
+use std::{convert::Infallible, num::NonZeroU16};
 
 use autd3_derive::Builder;
 
 use crate::{
-    error::AUTDDriverError,
     firmware::{
         fpga::{
             SamplingConfig, SilencerTarget, SILENCER_STEPS_INTENSITY_DEFAULT,
@@ -111,7 +110,7 @@ impl Silencer<FixedCompletionTime> {
     ///
     /// If the strict mode is enabled, an error is returned if the phase/intensity change of [`Modulation`], [`FociSTM`] or [`GainSTM`] cannot be completed within the time specified by the silencer.
     ///
-    /// [`Modulation`]: crate::datagram::Modulation
+    /// [`Modulation`]: autd3_core::modulation::Modulation
     /// [`FociSTM`]: crate::datagram::FociSTM
     /// [`GainSTM`]: crate::datagram::GainSTM
     pub const fn strict_mode(&self) -> bool {
@@ -147,7 +146,7 @@ impl Silencer<FixedCompletionSteps> {
     ///
     /// If the strict mode is enabled, an error is returned if the phase/intensity change of [`Modulation`], [`FociSTM`] or [`GainSTM`] cannot be completed within the time specified by the silencer.
     ///
-    /// [`Modulation`]: crate::datagram::Modulation
+    /// [`Modulation`]: autd3_core::modulation::Modulation
     /// [`FociSTM`]: crate::datagram::FociSTM
     /// [`GainSTM`]: crate::datagram::GainSTM
     pub const fn strict_mode(&self) -> bool {
@@ -194,7 +193,7 @@ impl OperationGenerator for SilencerOpGenerator<FixedUpdateRate> {
     fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
         (
             Self::O1::new(self.config.intensity, self.config.phase, self.target),
-            Self::O2::new(),
+            Self::O2 {},
         )
     }
 }
@@ -212,7 +211,7 @@ impl OperationGenerator for SilencerOpGenerator<FixedCompletionTime> {
                 self.strict_mode,
                 self.target,
             ),
-            Self::O2::new(),
+            Self::O2 {},
         )
     }
 }
@@ -229,7 +228,7 @@ impl OperationGenerator for SilencerOpGenerator<FixedCompletionSteps> {
                 self.strict_mode,
                 self.target,
             ),
-            Self::O2::new(),
+            Self::O2 {},
         )
     }
 }
@@ -239,8 +238,9 @@ where
     SilencerOpGenerator<T>: OperationGenerator,
 {
     type G = SilencerOpGenerator<T>;
+    type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDDriverError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
         Ok(Self::G {
             config: self.config,
             strict_mode: self.strict_mode,

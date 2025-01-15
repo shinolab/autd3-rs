@@ -1,4 +1,4 @@
-use autd3::{driver::link::Link, prelude::*};
+use autd3::{core::link::Link, prelude::*};
 
 pub fn focus(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     autd.send(Silencer::default())?;

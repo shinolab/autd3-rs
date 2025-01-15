@@ -1,12 +1,16 @@
-use std::f32::consts::PI;
+use std::{collections::HashMap, f32::consts::PI};
 
+use autd3_core::{
+    derive::{Device, Geometry},
+    gain::{BitVec, EmitIntensity, GainError, Phase},
+};
 use autd3_driver::{
     datagram::{
         ControlPoint, ControlPoints, FociSTMContext, FociSTMContextGenerator, FociSTMGenerator,
         GainSTMContext, GainSTMContextGenerator, GainSTMGenerator, IntoFociSTMGenerator,
         IntoGainSTMGenerator,
     },
-    derive::{EmitIntensity, Phase},
+    error::AUTDDriverError,
     geometry::{Point3, UnitVector3, Vector3},
 };
 
@@ -89,7 +93,7 @@ impl GainSTMContext for CircleSTMContext {
 impl FociSTMContextGenerator<1> for Circle {
     type Context = CircleSTMContext;
 
-    fn generate(&mut self, device: &autd3_driver::derive::Device) -> Self::Context {
+    fn generate(&mut self, device: &Device) -> Self::Context {
         let v = if self.n.dot(&Vector3::z()).abs() < 0.9 {
             Vector3::z()
         } else {
@@ -114,7 +118,7 @@ impl GainSTMContextGenerator for Circle {
     type Gain = Focus;
     type Context = CircleSTMContext;
 
-    fn generate(&mut self, device: &autd3_driver::derive::Device) -> Self::Context {
+    fn generate(&mut self, device: &Device) -> Self::Context {
         FociSTMContextGenerator::<1>::generate(self, device)
     }
 }
@@ -123,7 +127,7 @@ impl FociSTMGenerator<1> for Circle {
     type T = Self;
 
     // GRCOV_EXCL_START
-    fn init(self) -> Result<Self::T, autd3_driver::error::AUTDDriverError> {
+    fn init(self) -> Result<Self::T, AUTDDriverError> {
         Ok(self)
     }
     // GRCOV_EXCL_STOP
@@ -139,9 +143,9 @@ impl GainSTMGenerator for Circle {
     // GRCOV_EXCL_START
     fn init(
         self,
-        _geometry: &autd3_driver::derive::Geometry,
-        _filter: Option<&std::collections::HashMap<usize, bit_vec::BitVec<u32>>>,
-    ) -> Result<Self::T, autd3_driver::error::AUTDDriverError> {
+        _geometry: &Geometry,
+        _filter: Option<&HashMap<usize, BitVec>>,
+    ) -> Result<Self::T, GainError> {
         Ok(self)
     }
     // GRCOV_EXCL_STOP
@@ -171,7 +175,12 @@ impl IntoGainSTMGenerator for Circle {
 mod tests {
     use std::ops::DerefMut;
 
-    use autd3_driver::{datagram::FociSTM, defined::mm};
+    use autd3_core::modulation::SamplingConfig;
+    use autd3_driver::{
+        datagram::{FociSTM, GainSTM},
+        defined::mm,
+        geometry::IntoDevice,
+    };
 
     use crate::assert_near_vector3;
 
@@ -210,8 +219,6 @@ mod tests {
     )]
     #[test]
     fn circle(#[case] expect: Vec<Vector3>, #[case] n: UnitVector3) {
-        use autd3_driver::{datagram::GainSTM, derive::SamplingConfig, geometry::IntoDevice};
-
         let circle = Circle {
             center: Point3::origin(),
             radius: 30.0 * mm,

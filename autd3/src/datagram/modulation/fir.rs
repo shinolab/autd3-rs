@@ -1,6 +1,6 @@
 use std::borrow::Borrow;
 
-use crate::derive::*;
+use autd3_core::derive::*;
 
 /// [`Modulation`] that applies FIR filter to the original [`Modulation`].
 #[derive(Modulation, Debug)]
@@ -36,7 +36,7 @@ impl<M: Modulation> IntoFir<M> for M {
 }
 
 impl<M: Modulation> Modulation for Fir<M> {
-    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError>  {
         let src = self.m.calc()?;
         let src_len = src.len() as isize;
         let filter_len = self.filter.len() as isize;

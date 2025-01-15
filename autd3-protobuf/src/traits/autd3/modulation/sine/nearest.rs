@@ -1,4 +1,4 @@
-use autd3_driver::derive::ModulationProperty;
+use autd3_core::modulation::ModulationProperty;
 
 use crate::{
     pb::*,
@@ -9,7 +9,7 @@ use crate::{
 impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::NearestFreq> {
     type Message = Datagram;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SineNearest(SineNearest {
@@ -31,7 +31,7 @@ impl FromMessage<SineNearest>
     for autd3::modulation::Sine<autd3::modulation::sampling_mode::NearestFreq>
 {
     fn from_msg(msg: &SineNearest) -> Result<Self, AUTDProtoBufError> {
-        let mut sine = autd3::modulation::Sine::new_nearest(msg.freq * autd3_driver::defined::Hz);
+        let mut sine = autd3::modulation::Sine::new_nearest(msg.freq * autd3_core::defined::Hz);
         if let Some(intensity) = msg.intensity {
             sine = sine.with_intensity(intensity as _);
         }
@@ -39,7 +39,7 @@ impl FromMessage<SineNearest>
             sine = sine.with_offset(offset as _);
         }
         if msg.phase.is_some() {
-            sine = sine.with_phase(autd3_driver::defined::Angle::from_msg(&msg.phase)?);
+            sine = sine.with_phase(autd3_core::defined::Angle::from_msg(&msg.phase)?);
         }
         if let Some(config) = msg.config.as_ref() {
             sine = sine.with_sampling_config(
@@ -54,7 +54,7 @@ impl FromMessage<SineNearest>
 mod tests {
     use super::*;
     use autd3::modulation::sampling_mode::NearestFreq;
-    use autd3_driver::defined::{rad, Hz};
+    use autd3_core::defined::{rad, Hz};
     use rand::Rng;
 
     #[test]

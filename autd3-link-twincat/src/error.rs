@@ -1,9 +1,13 @@
-use autd3_driver::error::AUTDDriverError;
+use autd3_core::link::LinkError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 #[non_exhaustive]
 pub enum AdsError {
+    #[error("TcAdsDll not found. Please install TwinCAT3.")]
+    DllNotFound,
+    #[error("Function {0} not found in TcAdsDll")]
+    FunctionNotFound(String),
     #[error("Failed to open port")]
     OpenPort,
     #[error("Failed to close port")]
@@ -24,8 +28,8 @@ pub enum AdsError {
     InvalidIp(String),
 }
 
-impl From<AdsError> for AUTDDriverError {
+impl From<AdsError> for LinkError {
     fn from(err: AdsError) -> Self {
-        AUTDDriverError::LinkError(err.to_string())
+        LinkError::new(err.to_string())
     }
 }

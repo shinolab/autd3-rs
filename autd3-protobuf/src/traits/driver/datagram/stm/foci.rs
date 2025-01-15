@@ -1,4 +1,4 @@
-use autd3_driver::derive::SamplingConfig;
+use autd3_driver::firmware::fpga::SamplingConfig;
 
 use crate::{pb::*, traits::*};
 
@@ -7,7 +7,7 @@ seq_macro::seq!(N in 1..=8 {
         impl ToMessage for autd3_driver::datagram::FociSTM<N, Vec<autd3_driver::datagram::ControlPoints<N>>> {
             type Message = FociStm~N;
 
-            fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+            fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
                 Self::Message {
                     props: Some(FociStmProps {
                         config: Some(self.sampling_config().to_msg(None)),

@@ -1,3 +1,4 @@
+use autd3_core::link::LinkError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -46,16 +47,9 @@ impl<T> From<std::sync::mpsc::SendError<T>> for AUTDProtoBufError {
     }
 }
 
-impl From<AUTDProtoBufError> for autd3_driver::error::AUTDDriverError {
+impl From<AUTDProtoBufError> for autd3_core::link::LinkError {
     fn from(e: AUTDProtoBufError) -> Self {
-        autd3_driver::error::AUTDDriverError::LinkError(e.to_string())
-    }
-}
-
-#[cfg(feature = "lightweight")]
-impl From<AUTDProtoBufError> for autd3::error::AUTDError {
-    fn from(e: AUTDProtoBufError) -> Self {
-        Self::Driver(e.into())
+        LinkError::new(e.to_string())
     }
 }
 

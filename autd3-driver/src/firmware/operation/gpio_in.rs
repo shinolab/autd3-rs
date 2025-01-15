@@ -1,5 +1,6 @@
+use std::convert::Infallible;
+
 use crate::{
-    error::AUTDDriverError,
     firmware::operation::{Operation, TypeTag},
     geometry::Device,
 };
@@ -37,7 +38,9 @@ pub struct EmulateGPIOInOp {
 }
 
 impl Operation for EmulateGPIOInOp {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
+    type Error = Infallible;
+
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         let mut flag = GPIOInFlags::NONE;
         seq_macro::seq!(N in 0..4 {#(flag.set(GPIOInFlags::GPIO_IN_~N, self.value[N]);)*});
 
@@ -67,7 +70,7 @@ mod tests {
     use std::mem::{offset_of, size_of};
 
     use super::*;
-    use crate::geometry::tests::create_device;
+    use crate::firmware::operation::tests::create_device;
 
     const NUM_TRANS_IN_UNIT: u8 = 249;
 
