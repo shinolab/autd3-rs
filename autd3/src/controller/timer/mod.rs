@@ -8,6 +8,7 @@ use sleep::Sleeper;
 #[cfg(target_os = "windows")]
 pub use sleep::WaitableSleeper;
 pub use sleep::{SpinSleeper, StdSleeper};
+pub use spin_sleep::SpinStrategy;
 
 use std::time::{Duration, Instant};
 
