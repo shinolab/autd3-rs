@@ -65,7 +65,7 @@ use proc_macro::TokenStream;
 /// }
 /// ```
 ///
-/// [`Gain`]: https://docs.rs/autd3-driver/latest/autd3_driver/datagram/trait.Gain.html
+/// [`Gain`]: https://docs.rs/autd3-core/latest/autd3_core/gain/trait.Gain.html
 #[proc_macro_derive(Gain)]
 pub fn gain_derive(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();
@@ -108,7 +108,7 @@ pub fn gain_derive(input: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
-/// [`Modulation`]: https://docs.rs/autd3-driver/latest/autd3_driver/datagram/trait.Modulation.html
+/// [`Modulation`]: https://docs.rs/autd3-core/latest/autd3_core/gain/trait.Modulation.html
 #[proc_macro_derive(Modulation, attributes(no_change))]
 pub fn modulation_derive(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();

@@ -8,11 +8,13 @@ use crate::defined::Freq;
 
 #[derive(new, Error, Debug, Display, PartialEq, Clone)]
 #[display("{}", msg)]
+/// An error occurred during modulation calculation.
 pub struct ModulationError {
     msg: String,
 }
 
 #[derive(Error, Debug, PartialEq, Clone)]
+/// An error produced by the sampling configuration.
 pub enum SamplingConfigError {
     /// Invalid sampling division.
     #[error("Sampling division ({0}) must not be zero")]

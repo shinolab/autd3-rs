@@ -6,6 +6,7 @@ pub(crate) const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
 pub(crate) const TRANSITION_MODE_SYS_TIME: u8 = 0x01;
 pub(crate) const TRANSITION_MODE_GPIO: u8 = 0x02;
 pub(crate) const TRANSITION_MODE_EXT: u8 = 0xF0;
+#[doc(hidden)]
 pub const TRANSITION_MODE_NONE: u8 = 0xFE;
 pub(crate) const TRANSITION_MODE_IMMEDIATE: u8 = 0xFF;
 
@@ -26,6 +27,7 @@ pub enum TransitionMode {
 }
 
 impl TransitionMode {
+    #[doc(hidden)]
     pub const fn mode(&self) -> u8 {
         match self {
             TransitionMode::SyncIdx => TRANSITION_MODE_SYNC_IDX,
@@ -36,6 +38,7 @@ impl TransitionMode {
         }
     }
 
+    #[doc(hidden)]
     pub const fn value(&self) -> u64 {
         match self {
             TransitionMode::SyncIdx | TransitionMode::Ext | TransitionMode::Immediate => 0,

@@ -69,7 +69,7 @@ impl<const N: usize, G: FociSTMGenerator<N>> FociSTM<N, G> {
     ///
     /// # Errors
     ///
-    /// Returns [`AUTDDriverError::SamplingFreqOutOfRangeF`], [`AUTDDriverError::SamplingFreqInvalidF`], or [`AUTDDriverError::STMPeriodInvalid`] if the frequency or period cannot be set strictly.
+    /// Returns [`AUTDDriverError::SamplingConfig`] or [`AUTDDriverError::STMPeriodInvalid`] if the frequency or period cannot be set strictly.
     pub fn new(
         config: impl Into<STMConfig>,
         iter: impl IntoFociSTMGenerator<N, G = G>,

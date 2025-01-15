@@ -40,11 +40,11 @@ pub const SILENCER_STEPS_PHASE_DEFAULT: u16 = 40;
 
 /// The minimum buffer size of [`Modulation`].
 ///
-/// [`Modulation`]: crate::datagram::Modulation
+/// [`Modulation`]: autd3_core::modulation::Modulation
 pub const MOD_BUF_SIZE_MIN: usize = 2;
 /// The maximum buffer size of [`Modulation`].
 ///
-/// [`Modulation`]: crate::datagram::Modulation
+/// [`Modulation`]: autd3_core::modulation::Modulation
 pub const MOD_BUF_SIZE_MAX: usize = 32768;
 
 /// The minimum buffer size of [`FociSTM`] and [`GainSTM`].

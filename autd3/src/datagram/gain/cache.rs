@@ -50,7 +50,7 @@ impl<G: Gain> Cache<G> {
     ///
     /// # Errors
     ///
-    /// Returns [`AUTDDriverError::GainError`] if you initialize with some devices disabled and then reinitialize after enabling the devices.
+    /// Returns [`GainError`] if you initialize with some devices disabled and then reinitialize after enabling the devices.
     pub fn init(&self, geometry: &Geometry) -> Result<(), GainError> {
         if let Some(gain) = self.gain.take() {
             let mut f = gain.init(geometry, None)?;

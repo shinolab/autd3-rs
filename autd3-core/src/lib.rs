@@ -1,14 +1,24 @@
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![warn(missing_docs)]
+#![warn(rustdoc::missing_crate_level_docs)]
+#![warn(rustdoc::unescaped_backticks)]
+
+//! Core traits and types for AUTD3.
+
 #[cfg(feature = "acoustics")]
 /// Utilities for acoustics.
 pub mod acoustics;
 #[cfg(feature = "datagram")]
+/// Core traits for Datagram.
 pub mod datagram;
 #[cfg(feature = "defined")]
 /// Common constants and types.
 pub mod defined;
 #[cfg(feature = "ethercat")]
+/// Definitions for EtherCAT.
 pub mod ethercat;
 #[cfg(feature = "gain")]
+/// Core traits for Gain.
 pub mod gain;
 #[cfg(feature = "geometry")]
 /// Geometry related modules.
@@ -17,6 +27,7 @@ pub mod geometry;
 /// A interface to the device.
 pub mod link;
 #[cfg(feature = "modulation")]
+/// Core traits for Modulation.
 pub mod modulation;
 #[cfg(feature = "resampler")]
 /// Resampler module.
@@ -30,8 +41,8 @@ pub use async_trait::async_trait;
 
 /// Utilities for user-defined [`Gain`] and [`Modulation`].
 ///
-/// [`Gain`]: crate::datagram::Gain
-/// [`Modulation`]: crate::datagram::Modulation
+/// [`Gain`]: crate::gain::Gain
+/// [`Modulation`]: crate::modulation::Modulation
 #[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
 #[cfg(feature = "derive")]
 pub mod derive {

@@ -5,7 +5,7 @@
 
 //! This crate provides [`Gain`] that produces multiple focal points.
 //!
-//! [`Gain`]: autd3_driver::datagram::Gain
+//! [`Gain`]: autd3_core::gain::Gain
 
 mod amp;
 mod backend;

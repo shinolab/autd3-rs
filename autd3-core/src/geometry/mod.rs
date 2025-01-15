@@ -14,7 +14,9 @@ pub type Point3 = nalgebra::Point3<f32>;
 pub type Quaternion = nalgebra::Quaternion<f32>;
 /// A unit quaternion.
 pub type UnitQuaternion = nalgebra::UnitQuaternion<f32>;
+/// A 3-dimensional translation.
 pub type Translation = nalgebra::Translation3<f32>;
+/// A 3-dimensional isometry.
 pub type Isometry = nalgebra::Isometry3<f32>;
 
 pub use bvh::aabb::Aabb;

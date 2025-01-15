@@ -21,11 +21,11 @@ use zerocopy::{Immutable, IntoBytes};
 pub enum SwapSegment {
     /// Change the [`Gain`] segment.
     ///
-    /// [`Gain`]: crate::datagram::Gain
+    /// [`Gain`]: autd3_core::gain::Gain
     Gain(Segment, TransitionMode),
     /// Change the [`Modulation`] segment.
     ///
-    /// [`Modulation`]: crate::datagram::Modulation
+    /// [`Modulation`]: autd3_core::modulation::Modulation
     Modulation(Segment, TransitionMode),
     /// Change the [`FociSTM`] segment.
     ///

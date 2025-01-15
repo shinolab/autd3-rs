@@ -5,6 +5,7 @@ mod phase;
 
 use std::collections::HashMap;
 
+/// A bit vector type.
 pub type BitVec = bit_vec::BitVec<u32>;
 
 pub use drive::Drive;
@@ -19,7 +20,7 @@ use crate::{
 
 /// A trait to calculate the phase and intensity for [`Gain`].
 ///
-/// [`Gain`]: crate::datagram::Gain
+/// [`Gain`]: crate::gain::Gain
 pub trait GainContext: Send + Sync {
     /// Calculates the phase and intensity for the transducer.
     fn calc(&self, tr: &Transducer) -> Drive;
@@ -81,4 +82,3 @@ impl<G: GainContextGenerator> GainOperationGenerator<G> {
         })
     }
 }
-

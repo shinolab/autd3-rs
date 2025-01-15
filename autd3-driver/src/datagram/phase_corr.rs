@@ -21,6 +21,8 @@ use derive_new::new;
 /// # use autd3_driver::firmware::fpga::Phase;
 /// PhaseCorrection::new(|_dev| |_tr| Phase::PI);
 /// ```
+///
+/// [`Gain`]: autd3_core::gain::Gain
 #[derive(Builder, Debug, new)]
 pub struct PhaseCorrection<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
     #[debug(ignore)]

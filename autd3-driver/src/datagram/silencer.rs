@@ -110,7 +110,7 @@ impl Silencer<FixedCompletionTime> {
     ///
     /// If the strict mode is enabled, an error is returned if the phase/intensity change of [`Modulation`], [`FociSTM`] or [`GainSTM`] cannot be completed within the time specified by the silencer.
     ///
-    /// [`Modulation`]: crate::datagram::Modulation
+    /// [`Modulation`]: autd3_core::modulation::Modulation
     /// [`FociSTM`]: crate::datagram::FociSTM
     /// [`GainSTM`]: crate::datagram::GainSTM
     pub const fn strict_mode(&self) -> bool {
@@ -146,7 +146,7 @@ impl Silencer<FixedCompletionSteps> {
     ///
     /// If the strict mode is enabled, an error is returned if the phase/intensity change of [`Modulation`], [`FociSTM`] or [`GainSTM`] cannot be completed within the time specified by the silencer.
     ///
-    /// [`Modulation`]: crate::datagram::Modulation
+    /// [`Modulation`]: autd3_core::modulation::Modulation
     /// [`FociSTM`]: crate::datagram::FociSTM
     /// [`GainSTM`]: crate::datagram::GainSTM
     pub const fn strict_mode(&self) -> bool {

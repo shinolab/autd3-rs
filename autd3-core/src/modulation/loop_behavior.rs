@@ -1,11 +1,7 @@
 use autd3_derive::Builder;
 use derive_more::Debug;
 
-/// The behavior of the loop for [`Modulation`], [`FociSTM`], and [`GainSTM`].
-///
-/// [`Modulation`]: crate::datagram::Modulation
-/// [`FociSTM`]: crate::datagram::FociSTM
-/// [`GainSTM`]: crate::datagram::GainSTM
+/// The behavior of the loop.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Builder)]
 #[debug("{}", match self.rep { 0xFFFF => "Infinite".to_string(), 0 => "Once".to_string(), i => format!("Finite({})", i + 1) })]
 #[repr(C)]

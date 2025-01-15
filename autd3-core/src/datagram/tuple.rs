@@ -6,12 +6,14 @@ use crate::geometry::Geometry;
 
 use super::Datagram;
 
+#[doc(hidden)]
 pub struct CombinedOperationGenerator<O1, O2> {
     pub o1: O1,
     pub o2: O2,
 }
 
 #[derive(Error, Debug, PartialEq)]
+#[doc(hidden)]
 pub enum CombinedError<E1, E2>
 where
     E1: std::error::Error,

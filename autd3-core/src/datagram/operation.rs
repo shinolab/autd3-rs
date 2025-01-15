@@ -9,6 +9,7 @@ pub trait Operation: Send + Sync {
     fn is_done(&self) -> bool;
 }
 
+#[doc(hidden)]
 pub struct NullOp;
 
 impl Operation for NullOp {

@@ -27,6 +27,8 @@ pub trait GainSTMContextGenerator {
     /// The element type of the gain sequence.
     type Gain: GainContextGenerator;
     /// [`GainSTMContext`] that generates the sequence of [`Gain`].
+    ///
+    /// [`Gain`]: autd3_core::gain::Gain
     type Context: GainSTMContext<Context = <Self::Gain as GainContextGenerator>::Context>;
 
     /// generates the context.
@@ -59,6 +61,8 @@ pub trait IntoGainSTMGenerator {
 }
 
 /// [`Datagram`] to produce STM by [`Gain`].
+///
+/// [`Gain`]: autd3_core::gain::Gain
 #[derive(Builder, Clone, Debug, Deref, DerefMut)]
 pub struct GainSTM<G: GainSTMGenerator> {
     #[deref]
@@ -92,7 +96,7 @@ impl<G: GainSTMGenerator> GainSTM<G> {
     ///
     /// # Errors
     ///
-    /// Returns [`AUTDDriverError::SamplingFreqOutOfRangeF`], [`AUTDDriverError::SamplingFreqInvalidF`], or [`AUTDDriverError::STMPeriodInvalid`] if the frequency or period cannot be set strictly.
+    /// Returns [`AUTDDriverError::SamplingConfig`] or [`AUTDDriverError::STMPeriodInvalid`] if the frequency or period cannot be set strictly.
     pub fn new<T: IntoGainSTMGenerator<G = G>>(
         config: impl Into<STMConfig>,
         iter: T,
