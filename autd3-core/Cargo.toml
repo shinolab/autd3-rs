@@ -60,3 +60,7 @@ modulation = ["autd3-derive", "utils", "defined", "datagram", "derive_more", "de
 resampler = ["modulation", "defined", "tracing", "utils"]
 use_meter = []
 utils = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

@@ -5,37 +5,48 @@
 
 //! Core traits and types for AUTD3.
 
+#[cfg_attr(docsrs, doc(cfg(feature = "acoustics")))]
 #[cfg(feature = "acoustics")]
 /// Utilities for acoustics.
 pub mod acoustics;
+#[cfg_attr(docsrs, doc(cfg(feature = "datagram")))]
 #[cfg(feature = "datagram")]
 /// Core traits for Datagram.
 pub mod datagram;
+#[cfg_attr(docsrs, doc(cfg(feature = "defined")))]
 #[cfg(feature = "defined")]
 /// Common constants and types.
 pub mod defined;
+#[cfg_attr(docsrs, doc(cfg(feature = "ethercat")))]
 #[cfg(feature = "ethercat")]
 /// Definitions for EtherCAT.
 pub mod ethercat;
+#[cfg_attr(docsrs, doc(cfg(feature = "gain")))]
 #[cfg(feature = "gain")]
 /// Core traits for Gain.
 pub mod gain;
+#[cfg_attr(docsrs, doc(cfg(feature = "geometry")))]
 #[cfg(feature = "geometry")]
 /// Geometry related modules.
 pub mod geometry;
+#[cfg_attr(docsrs, doc(cfg(feature = "link")))]
 #[cfg(feature = "link")]
 /// A interface to the device.
 pub mod link;
+#[cfg_attr(docsrs, doc(cfg(feature = "modulation")))]
 #[cfg(feature = "modulation")]
 /// Core traits for Modulation.
 pub mod modulation;
+#[cfg_attr(docsrs, doc(cfg(feature = "resampler")))]
 #[cfg(feature = "resampler")]
 /// Resampler module.
 pub mod resampler;
+#[cfg_attr(docsrs, doc(cfg(feature = "utils")))]
 #[cfg(feature = "utils")]
 #[doc(hidden)]
 pub mod utils;
 
+#[cfg_attr(docsrs, doc(cfg(feature = "async-trait")))]
 #[cfg(feature = "async-trait")]
 pub use async_trait::async_trait;
 
