@@ -10,21 +10,21 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-async-trait = { workspace = true, default-features = false, optional = true }
-autd3-derive = { workspace = true, default-features = false, optional = true }
-bit-vec = { workspace = true, default-features = false, optional = true }
-bvh = { workspace = true, default-features = false, optional = true }
-derive_more = { workspace = true, default-features = false, optional = true }
-derive-new = { workspace = true, default-features = false, optional = true }
-nalgebra = { workspace = true, default-features = false, optional = true }
-paste = { workspace = true, default-features = false, optional = true }
-time = { workspace = true, default-features = false, features = ["macros", "std"], optional = true }
-thiserror = { workspace = true, default-features = false, optional = true }
-tracing = { workspace = true, default-features = false, optional = true }
-zerocopy = { workspace = true, default-features = false, features = ["derive"], optional = true }
+async-trait = { workspace = true, optional = true }
+autd3-derive = { workspace = true, optional = true }
+bit-vec = { workspace = true, optional = true }
+bvh = { workspace = true, optional = true }
+derive_more = { workspace = true, optional = true }
+derive-new = { workspace = true, optional = true }
+nalgebra = { workspace = true, optional = true }
+paste = { workspace = true, optional = true }
+time = { workspace = true, optional = true, features = ["macros", "std"] }
+thiserror = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
+zerocopy = { workspace = true, optional = true, features = ["derive"] }
 
 [target.'cfg(windows)'.dependencies]
-windows = { workspace = true, features = ["Win32_Media", "Win32_System_Threading"], optional = true }
+windows = { workspace = true, optional = true, features = ["Win32_Media", "Win32_System_Threading"] }
 
 [dev-dependencies]
 anyhow = { workspace = true }
