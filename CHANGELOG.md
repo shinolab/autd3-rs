@@ -34,6 +34,7 @@
 - Fix `Controller::group` for `Gain`s which cannot be calculated independently for each device, such as `Gain`s in `autd3-gain-holo`
 - Fix [#130](https://github.com/shinolab/autd3-rs/issues/130): `Gain`s in `autd3-gain-holo` cause `index out of bounds` error with disabled device
 - Fix [#140](https://github.com/shinolab/autd3-rs/issues/140): Clear sometimes fails in `Controller::open`
+- Fix [#197](https://github.com/shinolab/autd3-rs/issues/197): `Controller::group` causes access violation with `Naive` gain
 
 # 28.1.0
 
