@@ -13,11 +13,9 @@ pub mod autd3_device;
 pub mod datagram;
 /// Error module.
 pub mod error;
-/// Definitions for EtherCAT.
-pub mod ethercat;
 /// A module for working with firmware.
 pub mod firmware;
 #[doc(hidden)]
 pub mod utils;
 
-pub use autd3_core::{defined, geometry};
+pub use autd3_core::{defined, ethercat, geometry};
