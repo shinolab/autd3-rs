@@ -52,6 +52,91 @@ pub use async_trait::async_trait;
 
 /// Utilities for user-defined [`Gain`] and [`Modulation`].
 ///
+/// # Example
+///
+/// The following example shows how to define a custom [`Gain`] that generates a single focal point.
+///
+/// ```
+/// use autd3_core::derive::*;
+/// use autd3_core::geometry::Point3;
+/// use autd3_core::defined::rad;
+///
+/// #[derive(Gain, Debug)]
+/// pub struct FocalPoint {
+///     pos: Point3,
+/// }
+///
+/// pub struct Context {
+///     pos: Point3,
+///     wavenumber: f32,
+/// }
+///
+/// impl GainContext for Context {
+///     fn calc(&self, tr: &Transducer) -> Drive {
+///         (
+///             Phase::from(-(self.pos - tr.position()).norm() * self.wavenumber * rad),
+///             EmitIntensity::MAX,
+///         )
+///             .into()
+///     }
+/// }
+///
+/// impl GainContextGenerator for FocalPoint {
+///     type Context = Context;
+///
+///     fn generate(&mut self, device: &Device) -> Self::Context {
+///         Context {
+///             pos: self.pos,
+///             wavenumber: device.wavenumber(),
+///         }
+///     }
+/// }
+///
+/// impl Gain for FocalPoint {
+///     type G = FocalPoint;
+///
+///     fn init(
+///         self,
+///         _geometry: &Geometry,
+///         _filter: Option<&HashMap<usize, BitVec>>,
+///     ) -> Result<Self::G, GainError> {
+///         Ok(self)
+///     }
+/// }
+/// ```
+///
+/// The following example shows how to define a modulation that outputs the maximum value only for a moment.
+///
+/// [`Modulation`] struct must have `config: SamplingConfig` and `loop_behavior: LoopBehavior`.
+/// If you add `#[no_change]` attribute to `config`, you can't change the value of `config` except for the constructor.
+///
+/// ```
+/// use autd3_core::derive::*;
+///
+/// #[derive(Modulation, Debug)]
+/// pub struct Burst {
+///     config: SamplingConfig,
+///     loop_behavior: LoopBehavior,
+/// }
+///
+/// impl Burst {
+///     pub fn new() -> Self {
+///         Self {
+///             config: SamplingConfig::FREQ_4K,
+///             loop_behavior: LoopBehavior::infinite(),
+///         }
+///     }
+/// }
+///
+/// impl Modulation for Burst {
+///     fn calc(self) -> Result<Vec<u8>, ModulationError>  {
+///         Ok((0..4000)
+///             .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
+///             .collect())
+///     }
+/// }
+/// ```
+/// 
 /// [`Gain`]: crate::gain::Gain
 /// [`Modulation`]: crate::modulation::Modulation
 #[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
