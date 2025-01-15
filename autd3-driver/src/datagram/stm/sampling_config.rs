@@ -31,7 +31,9 @@ pub enum STMConfigNearest {
     Period(Duration),
 }
 
-pub(crate) trait IntoSamplingConfigSTM {
+// This traits must be public for capi.
+#[doc(hidden)]
+pub trait IntoSamplingConfigSTM {
     fn into_sampling_config(self, size: usize) -> Result<SamplingConfig, AUTDDriverError>;
 }
 
