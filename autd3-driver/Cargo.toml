@@ -12,25 +12,22 @@ repository = { workspace = true }
 [dependencies]
 autd3-core = { workspace = true, features = ["gain", "geometry", "derive", "link", "ethercat", "modulation"] }
 autd3-derive = { workspace = true }
-serde = { workspace = true, optional = true }
 bitflags = { workspace = true }
 thiserror = { workspace = true }
 nalgebra = { workspace = true }
 time = { workspace = true, features = ["macros", "std"] }
 bitfield-struct = { workspace = true }
 rayon = { workspace = true }
-itertools = { workspace = true, features = ["use_std"] }
-derive_more = { workspace = true, features = ["add", "debug", "deref", "deref_mut", "display", "into_iterator", "mul"] }
-tracing = { workspace = true }
+itertools = { workspace = true, features = ["use_alloc"] }
+derive_more = { workspace = true, features = ["deref_mut"] }
+tracing = { workspace = true, features = ["attributes"] }
 seq-macro = { workspace = true }
 derive-new = { workspace = true }
 zerocopy = { workspace = true }
-paste = { workspace = true }
 
 [dev-dependencies]
 rand = { workspace = true }
 approx = { workspace = true }
-serde_json = { workspace = true }
 anyhow = { workspace = true }
 rstest = { workspace = true }
 criterion = { workspace = true }
@@ -38,7 +35,6 @@ criterion = { workspace = true }
 [features]
 default = []
 lightweight = []
-serde = ["dep:serde"]
 dynamic_freq = ["autd3-core/dynamic_freq"]
 
 [lib]
@@ -50,5 +46,5 @@ path = "benches/gain.rs"
 harness = false
 
 [package.metadata.docs.rs]
-features = ["serde"]
+features = []
 rustdoc-args = ["--cfg", "docsrs"]

@@ -26,4 +26,4 @@ autd3-driver = { workspace = true }
 anyhow = { workspace = true }
 rstest = { workspace = true }
 approx = { workspace = true }
-itertools.workspace = true
+itertools = { workspace = true }
