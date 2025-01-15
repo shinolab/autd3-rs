@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use autd3::{link::Audit, prelude::*, r#async::Controller};
+use autd3_core::link::LinkError;
 use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
 
 #[tokio::test]
@@ -35,13 +36,13 @@ async fn audit_test() -> anyhow::Result<()> {
         assert!(autd.send(ReadsFPGAState::new(|_| true)).await.is_ok());
         autd.link_mut()[0].update();
         assert_eq!(
-            vec![Option::<FPGAState>::from(&RxMessage::new(0x88, 0x00))],
+            vec![FPGAState::from_rx(&RxMessage::new(0x88, 0x00))],
             autd.fpga_state().await?
         );
         autd.link_mut()[0].fpga_mut().assert_thermal_sensor();
         autd.link_mut()[0].update();
         assert_eq!(
-            vec![Option::<FPGAState>::from(&RxMessage::new(0x89, 0x00))],
+            vec![FPGAState::from_rx(&RxMessage::new(0x89, 0x00))],
             autd.fpga_state().await?
         );
     }
@@ -57,13 +58,13 @@ async fn audit_test() -> anyhow::Result<()> {
         assert!(autd.send(Static::new()).await.is_ok());
         autd.link_mut().break_down();
         assert_eq!(
-            Err(AUTDDriverError::LinkError("broken".to_string())),
+            Err(AUTDDriverError::Link(LinkError::new("broken".to_string()))),
             autd.send(Static::new()).await
         );
         assert_eq!(
-            Err(AUTDError::Driver(AUTDDriverError::LinkError(
+            Err(AUTDError::Driver(AUTDDriverError::Link(LinkError::new(
                 "broken".to_string()
-            ))),
+            )))),
             autd.fpga_state().await
         );
         autd.link_mut().repair();
@@ -71,7 +72,7 @@ async fn audit_test() -> anyhow::Result<()> {
     }
 
     {
-        use autd3_driver::link::AsyncLink;
+        use autd3_core::link::AsyncLink;
         assert!(autd.link_mut().close().await.is_ok());
         assert_eq!(
             Err(AUTDDriverError::LinkClosed),

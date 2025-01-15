@@ -36,6 +36,8 @@ pub struct SilencerFixedCompletionTimeOp {
 }
 
 impl Operation for SilencerFixedCompletionTimeOp {
+    type Error = AUTDDriverError;
+
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         let validate = |value: Duration| {
             const NANOSEC: u128 = 1_000_000_000;
@@ -89,7 +91,8 @@ mod tests {
 
     use super::*;
     use crate::{
-        defined::ultrasound_period, firmware::fpga::SilencerTarget, geometry::tests::create_device,
+        defined::ultrasound_period, firmware::fpga::SilencerTarget,
+        firmware::operation::tests::create_device,
     };
 
     const NUM_TRANS_IN_UNIT: u8 = 249;

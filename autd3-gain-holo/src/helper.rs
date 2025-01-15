@@ -1,13 +1,10 @@
 use std::{collections::HashMap, sync::Arc};
 
-use autd3_driver::{
+use autd3_core::{
     defined::rad,
-    derive::{GainContext, GainContextGenerator, Transducer},
-    error::AUTDDriverError,
-    firmware::fpga::{Drive, Phase},
-    geometry::Geometry,
+    gain::{BitVec, Drive, GainContext, GainContextGenerator, GainError, Phase},
+    geometry::{Device, Geometry, Transducer},
 };
-use bit_vec::BitVec;
 use nalgebra::ComplexField;
 use rayon::iter::Either;
 
@@ -99,7 +96,7 @@ pub struct HoloContextGenerator<T: IntoDrive + Copy + Send + Sync + 'static> {
 impl<T: IntoDrive + Copy + Send + Sync + 'static> GainContextGenerator for HoloContextGenerator<T> {
     type Context = HoloContext<T>;
 
-    fn generate(&mut self, device: &autd3_driver::geometry::Device) -> Self::Context {
+    fn generate(&mut self, device: &Device) -> Self::Context {
         match &mut self.map {
             Either::Left(map) => HoloContext {
                 q: self.q.clone(),
@@ -127,8 +124,8 @@ pub(crate) fn generate_result<T>(
     >,
     max_coefficient: f32,
     constraint: EmissionConstraint,
-    filter: Option<&HashMap<usize, BitVec<u32>>>,
-) -> Result<HoloContextGenerator<T>, AUTDDriverError>
+    filter: Option<&HashMap<usize, BitVec>>,
+) -> Result<HoloContextGenerator<T>, GainError>
 where
     T: IntoDrive + Copy + Send + Sync + 'static,
 {

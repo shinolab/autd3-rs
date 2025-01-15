@@ -1,8 +1,12 @@
+use autd3_core::datagram::Operation;
 use autd3_driver::{
     autd3_device::AUTD3,
     datagram::*,
     error::AUTDDriverError,
-    firmware::{cpu::TxMessage, operation::OperationHandler},
+    firmware::{
+        cpu::TxMessage,
+        operation::{OperationGenerator, OperationHandler},
+    },
     geometry::{Geometry, IntoDevice, Point3},
 };
 use autd3_firmware_emulator::{cpu::params::ERR_BIT, CPUEmulator};
@@ -19,12 +23,19 @@ pub fn create_geometry(n: usize) -> Geometry {
     )
 }
 
-pub fn send(
+pub fn send<D>(
     cpu: &mut CPUEmulator,
-    d: impl Datagram,
+    d: D,
     geometry: &Geometry,
     tx: &mut [TxMessage],
-) -> Result<(), AUTDDriverError> {
+) -> Result<(), AUTDDriverError>
+where
+    D: Datagram,
+    AUTDDriverError: From<D::Error>,
+    D::G: OperationGenerator,
+    AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
+        + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
+{
     let _timeout = d.timeout();
     let parallel = geometry.num_devices() > d.parallel_threshold().unwrap_or(4);
     let generator = d.operation_generator(geometry)?;
@@ -56,7 +67,7 @@ fn send_invalid_tag() {
     cpu.send(&tx);
     assert_eq!(
         Err(AUTDDriverError::NotSupportedTag),
-        Result::<(), AUTDDriverError>::from(&cpu.rx())
+        autd3_driver::firmware::cpu::check_firmware_err(&cpu.rx())
     );
 }
 
@@ -72,7 +83,7 @@ fn send_invalid_msg_id() {
     cpu.send(&tx);
     assert_eq!(
         Err(AUTDDriverError::InvalidMessageID),
-        Result::<(), AUTDDriverError>::from(&cpu.rx())
+        autd3_driver::firmware::cpu::check_firmware_err(&cpu.rx())
     );
 }
 
@@ -140,7 +151,7 @@ fn send_slot_2_err() -> anyhow::Result<()> {
     cpu.send(&tx);
     assert_eq!(
         Err(AUTDDriverError::NotSupportedTag),
-        Result::<(), AUTDDriverError>::from(&cpu.rx())
+        autd3_driver::firmware::cpu::check_firmware_err(&cpu.rx())
     );
 
     Ok(())

@@ -4,19 +4,19 @@ use crate::{
     AUTDProtoBufError,
 };
 
-impl ToMessage for autd3_driver::defined::Angle {
+impl ToMessage for autd3_core::defined::Angle {
     type Message = Angle;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             rad: self.radian() as _,
         }
     }
 }
 
-impl FromMessage<Option<Angle>> for autd3_driver::defined::Angle {
+impl FromMessage<Option<Angle>> for autd3_core::defined::Angle {
     fn from_msg(msg: &Option<Angle>) -> Result<Self, AUTDProtoBufError> {
-        msg.map(|msg| msg.rad * autd3_driver::defined::rad)
+        msg.map(|msg| msg.rad * autd3_core::defined::rad)
             .ok_or(AUTDProtoBufError::DataParseError)
     }
 }
@@ -24,7 +24,7 @@ impl FromMessage<Option<Angle>> for autd3_driver::defined::Angle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::defined::{rad, Angle};
+    use autd3_core::defined::{rad, Angle};
     use rand::Rng;
 
     #[test]

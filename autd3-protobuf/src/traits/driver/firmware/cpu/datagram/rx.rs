@@ -9,7 +9,7 @@ use zerocopy::{FromBytes, IntoBytes};
 impl ToMessage for Vec<autd3_driver::firmware::cpu::RxMessage> {
     type Message = RxMessage;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             data: self.as_bytes().to_vec(),
         }

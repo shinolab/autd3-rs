@@ -1,6 +1,7 @@
+use autd3_core::derive::*;
+use autd3_derive::Builder;
 use autd3_driver::{
     defined::rad,
-    derive::*,
     firmware::fpga::{EmitIntensity, Phase},
     geometry::UnitVector3,
 };
@@ -61,8 +62,8 @@ impl Gain for Plane {
     fn init(
         self,
         _geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDDriverError> {
+        _filter: Option<&HashMap<usize, BitVec>>,
+    ) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }

@@ -11,7 +11,8 @@ repository = { workspace = true }
 
 [dependencies]
 autd3-protobuf = { workspace = true }
-autd3-driver = { workspace = true, features = ["async", "derive"] }
+autd3-core = { workspace = true, features = ["link", "async", "derive"] }
+autd3-derive = { workspace = true }
 tonic = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"], optional = true }
@@ -19,7 +20,7 @@ tokio = { workspace = true, features = ["rt-multi-thread"], optional = true }
 [features]
 default = []
 blocking = ["tokio"]
-async-trait = ["autd3-driver/async-trait", "autd3-protobuf/async-trait"]
+async-trait = ["autd3-core/async-trait", "autd3-protobuf/async-trait"]
 
 [package.metadata.docs.rs]
 features = ["blocking"]

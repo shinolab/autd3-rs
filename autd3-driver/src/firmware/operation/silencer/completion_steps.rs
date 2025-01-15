@@ -1,7 +1,6 @@
-use std::num::NonZeroU16;
+use std::{convert::Infallible, num::NonZeroU16};
 
 use crate::{
-    error::AUTDDriverError,
     firmware::{
         fpga::SilencerTarget,
         operation::{Operation, TypeTag},
@@ -35,7 +34,9 @@ pub struct SilencerFixedCompletionStepsOp {
 }
 
 impl Operation for SilencerFixedCompletionStepsOp {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
+    type Error = Infallible;
+
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         super::super::write_to_tx(
             tx,
             SilencerFixedCompletionSteps {
@@ -71,7 +72,7 @@ mod tests {
     use std::mem::size_of;
 
     use super::*;
-    use crate::{firmware::fpga::SilencerTarget, geometry::tests::create_device};
+    use crate::{firmware::fpga::SilencerTarget, firmware::operation::tests::create_device};
 
     const NUM_TRANS_IN_UNIT: u8 = 249;
 

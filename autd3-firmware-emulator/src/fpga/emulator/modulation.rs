@@ -1,7 +1,6 @@
 use autd3_driver::{
-    derive::{LoopBehavior, Segment, TransitionMode},
     ethercat::DcSysTime,
-    firmware::fpga::GPIOIn,
+    firmware::fpga::{GPIOIn, LoopBehavior, Segment, TransitionMode},
 };
 
 use super::{super::params::*, memory::Memory, FPGAEmulator};

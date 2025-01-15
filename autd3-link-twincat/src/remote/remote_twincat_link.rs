@@ -1,13 +1,13 @@
 use std::ffi::{c_long, CString};
 
+use autd3_derive::Builder;
 use itertools::Itertools;
 
 use zerocopy::IntoBytes;
 
-use autd3_driver::{
-    derive::*,
-    firmware::cpu::{RxMessage, TxMessage},
-    link::{Link, LinkBuilder},
+use autd3_core::{
+    geometry::Geometry,
+    link::{Link, LinkBuilder, LinkError, RxMessage, TxMessage},
 };
 
 use crate::{error::AdsError, remote::native_methods::*};
@@ -47,7 +47,7 @@ impl LinkBuilder for RemoteTwinCATBuilder {
     type L = RemoteTwinCAT;
 
     #[tracing::instrument(level = "debug", skip(_geometry))]
-    fn open(self, _geometry: &Geometry) -> Result<Self::L, AUTDDriverError> {
+    fn open(self, _geometry: &Geometry) -> Result<Self::L, LinkError> {
         tracing::info!("Connecting to TwinCAT3");
 
         let RemoteTwinCATBuilder {
@@ -134,7 +134,7 @@ impl RemoteTwinCAT {
 }
 
 impl Link for RemoteTwinCAT {
-    fn close(&mut self) -> Result<(), AUTDDriverError> {
+    fn close(&mut self) -> Result<(), LinkError> {
         if self.port == 0 {
             return Ok(());
         }
@@ -150,7 +150,7 @@ impl Link for RemoteTwinCAT {
         Ok(())
     }
 
-    fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
+    fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
         let addr = AmsAddr {
             net_id: self.net_id,
             port: PORT,
@@ -178,7 +178,7 @@ impl Link for RemoteTwinCAT {
         Err(AdsError::SendData(res as _).into())
     }
 
-    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
+    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
         let addr = AmsAddr {
             net_id: self.net_id,
             port: PORT,
@@ -210,32 +210,32 @@ impl Link for RemoteTwinCAT {
 }
 
 #[cfg(feature = "async")]
-use autd3_driver::link::{AsyncLink, AsyncLinkBuilder};
+use autd3_core::link::{AsyncLink, AsyncLinkBuilder};
 
 #[cfg(feature = "async")]
 #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
-#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl AsyncLinkBuilder for RemoteTwinCATBuilder {
     type L = RemoteTwinCAT;
 
-    async fn open(self, geometry: &Geometry) -> Result<Self::L, AUTDDriverError> {
+    async fn open(self, geometry: &Geometry) -> Result<Self::L, LinkError> {
         <Self as LinkBuilder>::open(self, geometry)
     }
 }
 
 #[cfg(feature = "async")]
 #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
-#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl AsyncLink for RemoteTwinCAT {
-    async fn close(&mut self) -> Result<(), AUTDDriverError> {
+    async fn close(&mut self) -> Result<(), LinkError> {
         <Self as Link>::close(self)
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
         <Self as Link>::send(self, tx)
     }
 
-    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
         <Self as Link>::receive(self, rx)
     }
 

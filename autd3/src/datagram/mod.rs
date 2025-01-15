@@ -1,11 +1,11 @@
 /// Primitive [`Gain`]
 ///
-/// [`Gain`]: autd3_driver::datagram::Gain
+/// [`Gain`]: autd3_core::gain::Gain
 pub mod gain;
 
 /// Primitive [`Modulation`]
 ///
-/// [`Modulation`]: autd3_driver::datagram::Modulation
+/// [`Modulation`]: autd3_core::modulation::Modulation
 pub mod modulation;
 
 /// Utilities for [`GainSTM`] and [`FociSTM`]

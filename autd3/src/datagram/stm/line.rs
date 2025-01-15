@@ -1,10 +1,14 @@
+use autd3_core::{
+    derive::{Device, Geometry},
+    gain::{EmitIntensity, GainError, Phase},
+};
 use autd3_driver::{
     datagram::{
         ControlPoint, ControlPoints, FociSTMContext, FociSTMContextGenerator, FociSTMGenerator,
         GainSTMContext, GainSTMContextGenerator, GainSTMGenerator, IntoFociSTMGenerator,
         IntoGainSTMGenerator,
     },
-    derive::{EmitIntensity, Phase},
+    error::AUTDDriverError,
     geometry::{Point3, Vector3},
 };
 
@@ -82,7 +86,7 @@ impl GainSTMContext for LineSTMContext {
 impl FociSTMContextGenerator<1> for Line {
     type Context = LineSTMContext;
 
-    fn generate(&mut self, device: &autd3_driver::derive::Device) -> Self::Context {
+    fn generate(&mut self, device: &Device) -> Self::Context {
         Self::Context {
             start: self.start,
             dir: self.end - self.start,
@@ -98,7 +102,7 @@ impl GainSTMContextGenerator for Line {
     type Gain = Focus;
     type Context = LineSTMContext;
 
-    fn generate(&mut self, device: &autd3_driver::derive::Device) -> Self::Context {
+    fn generate(&mut self, device: &Device) -> Self::Context {
         FociSTMContextGenerator::<1>::generate(self, device)
     }
 }
@@ -107,7 +111,7 @@ impl FociSTMGenerator<1> for Line {
     type T = Self;
 
     // GRCOV_EXCL_START
-    fn init(self) -> Result<Self::T, autd3_driver::error::AUTDDriverError> {
+    fn init(self) -> Result<Self::T, AUTDDriverError> {
         Ok(self)
     }
     // GRCOV_EXCL_STOP
@@ -123,9 +127,9 @@ impl GainSTMGenerator for Line {
     // GRCOV_EXCL_START
     fn init(
         self,
-        _geometry: &autd3_driver::derive::Geometry,
-        _filter: Option<&std::collections::HashMap<usize, bit_vec::BitVec<u32>>>,
-    ) -> Result<Self::T, autd3_driver::error::AUTDDriverError> {
+        _geometry: &Geometry,
+        _filter: Option<&std::collections::HashMap<usize, bit_vec::BitVec>>,
+    ) -> Result<Self::T, GainError> {
         Ok(self)
     }
     // GRCOV_EXCL_STOP
@@ -155,10 +159,10 @@ impl IntoGainSTMGenerator for Line {
 mod tests {
     use std::ops::DerefMut;
 
+    use autd3_core::modulation::SamplingConfig;
     use autd3_driver::{
         datagram::{FociSTM, GainSTM},
         defined::mm,
-        derive::SamplingConfig,
     };
 
     use crate::assert_near_vector3;

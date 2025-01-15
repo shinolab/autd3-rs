@@ -5,7 +5,8 @@ use std::{
 
 use crate::FPGAEmulator;
 
-use autd3_driver::derive::{Builder, Segment};
+use autd3_derive::Builder;
+use autd3_driver::firmware::fpga::Segment;
 
 use super::super::params::*;
 

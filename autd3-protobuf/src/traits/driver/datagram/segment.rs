@@ -7,7 +7,7 @@ use crate::{
 impl ToMessage for autd3_driver::datagram::SwapSegment {
     type Message = SwapSegment;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             inner: Some(match self {
                 autd3_driver::datagram::SwapSegment::Gain(segment, transition) => {

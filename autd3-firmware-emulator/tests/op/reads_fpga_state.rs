@@ -1,7 +1,9 @@
 use autd3_driver::{
     datagram::*,
-    derive::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
-    firmware::{cpu::TxMessage, fpga::FPGAState},
+    firmware::{
+        cpu::TxMessage,
+        fpga::{FPGAState, LoopBehavior, SamplingConfig, Segment, TransitionMode},
+    },
     geometry::Point3,
 };
 use autd3_firmware_emulator::CPUEmulator;

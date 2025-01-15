@@ -1,5 +1,5 @@
+use autd3_core::derive::*;
 use autd3_driver::{
-    derive::*,
     firmware::fpga::Drive,
     geometry::{Device, Transducer},
 };
@@ -69,8 +69,8 @@ impl<
     fn init(
         self,
         _geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDDriverError> {
+        _filter: Option<&HashMap<usize, BitVec>>,
+    ) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }

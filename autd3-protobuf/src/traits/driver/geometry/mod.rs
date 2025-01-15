@@ -1,4 +1,4 @@
-use autd3_driver::geometry::IntoDevice;
+use autd3_core::geometry::IntoDevice;
 
 use crate::{
     pb::*,
@@ -6,10 +6,10 @@ use crate::{
     AUTDProtoBufError,
 };
 
-impl ToMessage for autd3_driver::geometry::UnitVector3 {
+impl ToMessage for autd3_core::geometry::UnitVector3 {
     type Message = UnitVector3;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             x: self.x as _,
             y: self.y as _,
@@ -18,10 +18,10 @@ impl ToMessage for autd3_driver::geometry::UnitVector3 {
     }
 }
 
-impl ToMessage for autd3_driver::geometry::Point3 {
+impl ToMessage for autd3_core::geometry::Point3 {
     type Message = Point3;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             x: self.x as _,
             y: self.y as _,
@@ -30,10 +30,10 @@ impl ToMessage for autd3_driver::geometry::Point3 {
     }
 }
 
-impl ToMessage for autd3_driver::geometry::Quaternion {
+impl ToMessage for autd3_core::geometry::Quaternion {
     type Message = Quaternion;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             w: self.w as _,
             x: self.coords.x as _,
@@ -43,10 +43,10 @@ impl ToMessage for autd3_driver::geometry::Quaternion {
     }
 }
 
-impl ToMessage for autd3_driver::geometry::Geometry {
+impl ToMessage for autd3_core::geometry::Geometry {
     type Message = Geometry;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             devices: self
                 .iter()
@@ -61,32 +61,32 @@ impl ToMessage for autd3_driver::geometry::Geometry {
     }
 }
 
-impl FromMessage<Option<UnitVector3>> for autd3_driver::geometry::UnitVector3 {
+impl FromMessage<Option<UnitVector3>> for autd3_core::geometry::UnitVector3 {
     fn from_msg(msg: &Option<UnitVector3>) -> Result<Self, AUTDProtoBufError> {
         msg.as_ref()
             .map(|msg| {
-                autd3_driver::geometry::UnitVector3::new_unchecked(
-                    autd3_driver::geometry::Vector3::new(msg.x as _, msg.y as _, msg.z as _),
+                autd3_core::geometry::UnitVector3::new_unchecked(
+                    autd3_core::geometry::Vector3::new(msg.x as _, msg.y as _, msg.z as _),
                 )
             })
             .ok_or(AUTDProtoBufError::DataParseError)
     }
 }
 
-impl FromMessage<Option<Point3>> for autd3_driver::geometry::Point3 {
+impl FromMessage<Option<Point3>> for autd3_core::geometry::Point3 {
     fn from_msg(msg: &Option<Point3>) -> Result<Self, AUTDProtoBufError> {
         msg.as_ref()
-            .map(|msg| autd3_driver::geometry::Point3::new(msg.x as _, msg.y as _, msg.z as _))
+            .map(|msg| autd3_core::geometry::Point3::new(msg.x as _, msg.y as _, msg.z as _))
             .ok_or(AUTDProtoBufError::DataParseError)
     }
 }
 
-impl FromMessage<Option<Quaternion>> for autd3_driver::geometry::UnitQuaternion {
+impl FromMessage<Option<Quaternion>> for autd3_core::geometry::UnitQuaternion {
     fn from_msg(msg: &Option<Quaternion>) -> Result<Self, AUTDProtoBufError> {
         msg.as_ref()
             .map(|msg| {
-                autd3_driver::geometry::UnitQuaternion::from_quaternion(
-                    autd3_driver::geometry::Quaternion::new(
+                autd3_core::geometry::UnitQuaternion::from_quaternion(
+                    autd3_core::geometry::Quaternion::new(
                         msg.w as _, msg.x as _, msg.y as _, msg.z as _,
                     ),
                 )
@@ -95,14 +95,14 @@ impl FromMessage<Option<Quaternion>> for autd3_driver::geometry::UnitQuaternion 
     }
 }
 
-impl FromMessage<Geometry> for autd3_driver::geometry::Geometry {
+impl FromMessage<Geometry> for autd3_core::geometry::Geometry {
     fn from_msg(msg: &Geometry) -> Result<Self, AUTDProtoBufError> {
         msg.devices
             .iter()
             .enumerate()
             .map(|(i, dev_msg)| {
-                let pos = autd3_driver::geometry::Point3::from_msg(&dev_msg.pos)?;
-                let rot = autd3_driver::geometry::UnitQuaternion::from_msg(&dev_msg.rot)?;
+                let pos = autd3_core::geometry::Point3::from_msg(&dev_msg.pos)?;
+                let rot = autd3_core::geometry::UnitQuaternion::from_msg(&dev_msg.rot)?;
                 let mut dev = autd3_driver::autd3_device::AUTD3::new(pos)
                     .with_rotation(rot)
                     .into_device(i as _);

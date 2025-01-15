@@ -1,8 +1,4 @@
-use autd3_driver::{
-    derive::Segment,
-    firmware::fpga::{Drive, EmitIntensity, Phase},
-};
-use num_integer::Roots;
+use autd3_driver::firmware::fpga::{Drive, EmitIntensity, Phase, Segment};
 
 use super::super::{super::params::*, FPGAEmulator};
 
@@ -67,7 +63,7 @@ impl FPGAEmulator {
 
                     let d2 =
                         (x - tr_x) * (x - tr_x) + (y - tr_y) * (y - tr_y) + (z - tr_z) * (z - tr_z);
-                    let dist = d2.sqrt() as u32;
+                    let dist = d2.isqrt() as u32;
                     let q = ((dist << 14) / sound_speed as u32) as usize;
                     let q = q + offset as usize;
                     (

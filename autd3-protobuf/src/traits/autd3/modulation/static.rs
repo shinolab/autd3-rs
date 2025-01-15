@@ -1,4 +1,4 @@
-use autd3_driver::derive::ModulationProperty;
+use autd3_core::modulation::ModulationProperty;
 
 use crate::{
     pb::*,
@@ -9,7 +9,7 @@ use crate::{
 impl ToMessage for autd3::modulation::Static {
     type Message = Datagram;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::Static(Static {

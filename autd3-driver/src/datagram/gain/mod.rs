@@ -1,69 +1,12 @@
 mod boxed;
 
+use autd3_core::gain::{Gain, GainContextGenerator, GainOperationGenerator};
 pub use boxed::{BoxedGain, IntoBoxedGain};
 
-use std::collections::HashMap;
-
-pub use crate::firmware::operation::GainContext;
 use crate::{
-    error::AUTDDriverError,
-    firmware::fpga::{Segment, TransitionMode},
     firmware::operation::{GainOp, NullOp, OperationGenerator},
-    geometry::{Device, Geometry},
+    geometry::Device,
 };
-
-use bit_vec::BitVec;
-
-/// A trait for generating a context for the gain operation.
-pub trait GainContextGenerator {
-    /// The type of the context that actually performs the calculation.
-    type Context: GainContext;
-
-    /// Generate a context for the given device.
-    fn generate(&mut self, device: &Device) -> Self::Context;
-}
-
-/// Trait for calculating the phase/amplitude of each transducer.
-///
-/// See also [`Gain`] derive macro.
-///
-/// [`Gain`]: autd3_derive::Gain
-pub trait Gain: std::fmt::Debug {
-    /// The type of the context generator.
-    type G: GainContextGenerator;
-
-    /// Initialize the gain and generate the context generator.
-    ///
-    /// `filter` is a hash map that holds a bit vector representing the indices of the enabled transducers for each device index.
-    /// If `filter` is `None`, all transducers are enabled.
-    fn init(
-        self,
-        geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDDriverError>;
-}
-
-#[doc(hidden)]
-pub struct GainOperationGenerator<G: GainContextGenerator> {
-    pub generator: G,
-    pub segment: Segment,
-    pub transition: Option<TransitionMode>,
-}
-
-impl<G: GainContextGenerator> GainOperationGenerator<G> {
-    pub fn new<T: Gain<G = G>>(
-        gain: T,
-        geometry: &Geometry,
-        segment: Segment,
-        transition: Option<TransitionMode>,
-    ) -> Result<Self, AUTDDriverError> {
-        Ok(Self {
-            generator: gain.init(geometry, None)?,
-            segment,
-            transition,
-        })
-    }
-}
 
 impl<G: GainContextGenerator> OperationGenerator for GainOperationGenerator<G> {
     type O1 = GainOp<G::Context>;
@@ -73,24 +16,25 @@ impl<G: GainContextGenerator> OperationGenerator for GainOperationGenerator<G> {
         let context = self.generator.generate(device);
         (
             Self::O1::new(self.segment, self.transition, context),
-            Self::O2::new(),
+            Self::O2 {},
         )
     }
 }
 
 #[cfg(test)]
 pub mod tests {
-    use autd3_derive::Gain;
+    use std::collections::HashMap;
+
+    use autd3_core::{
+        gain::{BitVec, GainContext, GainError},
+        geometry::{Geometry, Transducer},
+    };
 
     use super::*;
 
-    use crate::{
-        datagram::DatagramS,
-        firmware::fpga::{Drive, EmitIntensity, Phase},
-        geometry::{tests::create_geometry, Device, Transducer},
-    };
+    use crate::firmware::fpga::{Drive, EmitIntensity, Phase};
 
-    #[derive(Gain, Clone, Debug)]
+    #[derive(Clone, Debug)]
     pub struct TestGain {
         pub data: HashMap<usize, Vec<Drive>>,
     }
@@ -141,8 +85,8 @@ pub mod tests {
         fn init(
             self,
             _geometry: &Geometry,
-            _filter: Option<&HashMap<usize, BitVec<u32>>>,
-        ) -> Result<Self::G, AUTDDriverError> {
+            _filter: Option<&HashMap<usize, BitVec>>,
+        ) -> Result<Self::G, GainError> {
             Ok(self)
         }
     }
@@ -179,6 +123,8 @@ pub mod tests {
         #[case] enabled: Vec<bool>,
         #[case] n: u16,
     ) -> anyhow::Result<()> {
+        use crate::datagram::tests::create_geometry;
+
         let mut geometry = create_geometry(n, NUM_TRANSDUCERS as _);
         geometry
             .iter_mut()

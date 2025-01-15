@@ -21,11 +21,11 @@ use zerocopy::{Immutable, IntoBytes};
 pub enum SwapSegment {
     /// Change the [`Gain`] segment.
     ///
-    /// [`Gain`]: crate::datagram::Gain
+    /// [`Gain`]: autd3_core::gain::Gain
     Gain(Segment, TransitionMode),
     /// Change the [`Modulation`] segment.
     ///
-    /// [`Modulation`]: crate::datagram::Modulation
+    /// [`Modulation`]: autd3_core::modulation::Modulation
     Modulation(Segment, TransitionMode),
     /// Change the [`FociSTM`] segment.
     ///
@@ -63,7 +63,9 @@ pub struct SwapSegmentOp {
 }
 
 impl Operation for SwapSegmentOp {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
+    type Error = AUTDDriverError;
+
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         self.is_done = true;
 
         let tag = match self.segment {
@@ -122,7 +124,7 @@ impl Operation for SwapSegmentOp {
 
 #[cfg(test)]
 mod tests {
-    use crate::{ethercat::DcSysTime, geometry::tests::create_device};
+    use crate::{ethercat::DcSysTime, firmware::operation::tests::create_device};
 
     use super::*;
 

@@ -53,7 +53,7 @@ autd3-protobuf = { workspace = true, optional = true }
 color-print = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"], optional = true }
 tonic = { workspace = true, optional = true }
-tracing-subscriber = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["fmt"] }
 tracing = { workspace = true }
 
 [features]
@@ -62,8 +62,7 @@ async = ["autd3/async", "tokio"]
 simulator = ["autd3-link-simulator"]
 twincat = ["autd3-link-twincat/local"]
 remote_twincat = ["autd3-link-twincat/remote"]
-lightweight = ["autd3-protobuf/lightweight", "autd3-driver/async-trait", "autd3-driver/lightweight"]
-lightweight-server = ["autd3-protobuf/lightweight", "autd3-link-twincat/local", "autd3-link-twincat/async-trait", "autd3-driver/async-trait", "autd3-driver/lightweight", "tonic", "tokio/signal"]
+lightweight = ["autd3-protobuf/lightweight", "autd3-protobuf/async-trait", "autd3-driver/lightweight"]
+lightweight-server = ["autd3-protobuf/lightweight", "autd3-link-twincat/local", "autd3-link-twincat/async-trait", "autd3-protobuf/async-trait", "autd3-driver/lightweight", "tonic", "tokio/signal"]
 all = ["async", "twincat", "remote_twincat", "simulator"]
-unity = ["autd3-driver/use_meter", "autd3-driver/left_handed"]
 dynamic_freq = ["autd3-driver/dynamic_freq"]

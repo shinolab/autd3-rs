@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{error::AUTDDriverError, geometry::Geometry};
+use crate::geometry::Geometry;
 
 use super::Datagram;
 
@@ -16,8 +16,9 @@ pub struct DatagramWithTimeout<D: Datagram> {
 
 impl<D: Datagram> Datagram for DatagramWithTimeout<D> {
     type G = D::G;
+    type Error = D::Error;
 
-    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, AUTDDriverError> {
+    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, Self::Error> {
         self.datagram.operation_generator(geometry)
     }
 
@@ -49,10 +50,7 @@ impl<D: Datagram> IntoDatagramWithTimeout<D> for D {
 mod tests {
     use super::*;
 
-    use crate::{
-        datagram::tests::{NullDatagram, NullOperationGenerator},
-        geometry::tests::create_geometry,
-    };
+    use crate::datagram::tests::{create_geometry, NullDatagram, NullOperationGenerator};
 
     #[test]
     fn with_timeout() {

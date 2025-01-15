@@ -1,4 +1,4 @@
-use autd3_driver::derive::SamplingConfig;
+use autd3_driver::firmware::fpga::SamplingConfig;
 
 use crate::{
     pb::*,
@@ -8,11 +8,11 @@ use crate::{
 
 impl<G> ToMessage for autd3_driver::datagram::GainSTM<Vec<G>>
 where
-    G: autd3_driver::datagram::Gain + ToMessage<Message = Datagram>,
+    G: autd3_core::gain::Gain + ToMessage<Message = Datagram>,
 {
     type Message = GainStm;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             config: Some(self.sampling_config().to_msg(None)),
             loop_behavior: Some(self.loop_behavior().to_msg(None)),

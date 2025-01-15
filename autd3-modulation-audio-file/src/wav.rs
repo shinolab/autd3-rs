@@ -1,5 +1,4 @@
-use autd3::modulation::resampler::Resampler;
-use autd3_driver::{defined::Hz, derive::*};
+use autd3_core::{defined::Hz, derive::*, resampler::Resampler};
 use hound::SampleFormat;
 
 use std::path::{Path, PathBuf};
@@ -35,8 +34,7 @@ impl Wav {
     /// # Examples
     ///
     /// ```
-    /// use autd3::prelude::*;
-    /// use autd3::modulation::resampler::SincInterpolation;
+    /// use autd3_core::{resampler::SincInterpolation, defined::kHz};
     /// use autd3_modulation_audio_file::Wav;
     ///
     /// let path = "path/to/file.wav";
@@ -108,15 +106,17 @@ impl Wav {
 }
 
 impl Modulation for Wav {
-    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         Ok(self.read_buf()?)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use autd3::{modulation::resampler::SincInterpolation, prelude::kHz};
-    use autd3_driver::defined::Freq;
+    use autd3_core::{
+        defined::{kHz, Freq},
+        resampler::SincInterpolation,
+    };
 
     use super::*;
 

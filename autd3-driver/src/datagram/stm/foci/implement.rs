@@ -59,6 +59,8 @@ mod tests {
     #[cfg(not(feature = "dynamic_freq"))]
     use std::time::Duration;
 
+    use autd3_core::modulation::SamplingConfigError;
+
     use super::{super::FociSTM, *};
     use crate::{
         defined::{kHz, Freq, Hz},
@@ -73,12 +75,12 @@ mod tests {
     #[case((20. * Hz).try_into(), 2.*Hz, 10)]
     #[case((2. * 0.49*Hz).try_into(), 0.49*Hz, 2)]
     fn from_freq(
-        #[case] expect: Result<SamplingConfig, AUTDDriverError>,
+        #[case] expect: Result<SamplingConfig, SamplingConfigError>,
         #[case] freq: Freq<f32>,
         #[case] n: usize,
     ) {
         assert_eq!(
-            expect,
+            expect.map_err(AUTDDriverError::from),
             FociSTM::new(freq, (0..n).map(|_| Point3::origin())).map(|f| f.sampling_config())
         );
     }
@@ -104,17 +106,17 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(
-        Duration::from_millis(1000).try_into(),
+        Duration::from_millis(1000).try_into().map_err(AUTDDriverError::from),
         Duration::from_millis(2000),
         2
     )]
     #[case(
-        Duration::from_millis(100).try_into(),
+        Duration::from_millis(100).try_into().map_err(AUTDDriverError::from),
         Duration::from_millis(1000),
         10
     )]
     #[case(
-        Duration::from_millis(50).try_into(),
+        Duration::from_millis(50).try_into().map_err(AUTDDriverError::from),
         Duration::from_millis(500),
         10
     )]

@@ -7,7 +7,7 @@ use crate::{
 impl ToMessage for autd3::gain::Bessel {
     type Message = Datagram;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Bessel(Bessel {
@@ -27,9 +27,9 @@ impl ToMessage for autd3::gain::Bessel {
 impl FromMessage<Bessel> for autd3::gain::Bessel {
     fn from_msg(msg: &Bessel) -> Result<Self, AUTDProtoBufError> {
         let mut g = Self::new(
-            autd3_driver::geometry::Point3::from_msg(&msg.pos)?,
-            autd3_driver::geometry::UnitVector3::from_msg(&msg.dir)?,
-            autd3_driver::defined::Angle::from_msg(&msg.theta)?,
+            autd3_core::geometry::Point3::from_msg(&msg.pos)?,
+            autd3_core::geometry::UnitVector3::from_msg(&msg.dir)?,
+            autd3_core::defined::Angle::from_msg(&msg.theta)?,
         );
         if let Some(intensity) = msg.intensity.as_ref() {
             g = g.with_intensity(autd3_driver::firmware::fpga::EmitIntensity::from_msg(
@@ -59,7 +59,7 @@ mod tests {
 
         let g = autd3::gain::Bessel::new(
             Point3::new(rng.gen(), rng.gen(), rng.gen()),
-            autd3_driver::geometry::UnitVector3::new_normalize(Vector3::new(
+            autd3_core::geometry::UnitVector3::new_normalize(Vector3::new(
                 rng.gen(),
                 rng.gen(),
                 rng.gen(),

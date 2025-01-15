@@ -1,7 +1,6 @@
-use std::mem::size_of;
+use std::{convert::Infallible, mem::size_of};
 
 use crate::{
-    error::AUTDDriverError,
     firmware::{
         fpga::DebugValue,
         operation::{Operation, TypeTag},
@@ -29,7 +28,9 @@ pub struct DebugSettingOp {
 }
 
 impl Operation for DebugSettingOp {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
+    type Error = Infallible;
+
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         super::write_to_tx(
             tx,
             DebugSetting {
@@ -54,7 +55,7 @@ impl Operation for DebugSettingOp {
 
 #[cfg(test)]
 mod tests {
-    use crate::geometry::tests::create_device;
+    use crate::firmware::operation::tests::create_device;
 
     use super::*;
 

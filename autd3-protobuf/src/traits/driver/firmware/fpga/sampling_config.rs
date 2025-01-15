@@ -7,7 +7,7 @@ use crate::{
 impl ToMessage for autd3_driver::firmware::fpga::SamplingConfig {
     type Message = SamplingConfig;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             div: self.division() as _,
         }
@@ -23,7 +23,7 @@ impl FromMessage<SamplingConfig> for autd3_driver::firmware::fpga::SamplingConfi
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_driver::derive::SamplingConfig;
+    use autd3_driver::firmware::fpga::SamplingConfig;
     use rand::Rng;
 
     #[test]

@@ -1,0 +1,27 @@
+use derive_more::Debug;
+use zerocopy::{FromZeros, Immutable, IntoBytes};
+
+#[doc(hidden)]
+#[repr(C, align(2))]
+#[derive(Clone, Debug, PartialEq, Eq, IntoBytes, Immutable, FromZeros)]
+pub struct Header {
+    pub msg_id: u8,
+    #[debug(ignore)]
+    __: u8,
+    pub slot_2_offset: u16,
+}
+
+#[cfg(test)]
+mod tests {
+    use std::mem::offset_of;
+    use std::mem::size_of;
+
+    use super::*;
+
+    #[test]
+    fn test_size() {
+        assert_eq!(4, size_of::<Header>());
+        assert_eq!(0, offset_of!(Header, msg_id));
+        assert_eq!(2, offset_of!(Header, slot_2_offset));
+    }
+}

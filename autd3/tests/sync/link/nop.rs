@@ -1,4 +1,5 @@
-use autd3::{driver::link::Link, prelude::*};
+use autd3::prelude::*;
+use autd3_core::link::Link;
 
 #[test]
 fn nop_test() -> anyhow::Result<()> {

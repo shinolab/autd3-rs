@@ -11,15 +11,15 @@ repository = { workspace = true }
 
 [dependencies]
 hound = { workspace = true }
-autd3 = { workspace = true }
-autd3-driver = { workspace = true }
+autd3-core = { workspace = true, features = ["derive", "modulation", "resampler"] }
+autd3-derive = { workspace = true }
 thiserror = { workspace = true }
 csv = { workspace = true }
 tracing = { workspace = true, features = ["attributes"] }
 
 [features]
 default = []
-async-trait = ["autd3-driver/async-trait"]
+async-trait = ["autd3-core/async-trait"]
 
 [dev-dependencies]
 anyhow = { workspace = true }

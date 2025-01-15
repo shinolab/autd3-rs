@@ -1,3 +1,5 @@
+use std::convert::Infallible;
+
 use crate::{
     datagram::*,
     firmware::{fpga::Phase, operation::PhaseCorrectionOp},
@@ -16,9 +18,11 @@ use derive_new::new;
 ///
 /// ```
 /// # use autd3_driver::datagram::PhaseCorrection;
-/// # use autd3_driver::derive::Phase;
+/// # use autd3_driver::firmware::fpga::Phase;
 /// PhaseCorrection::new(|_dev| |_tr| Phase::PI);
 /// ```
+///
+/// [`Gain`]: autd3_core::gain::Gain
 #[derive(Builder, Debug, new)]
 pub struct PhaseCorrection<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
     #[debug(ignore)]
@@ -36,7 +40,7 @@ impl<FT: Fn(&Transducer) -> Phase + Send + Sync, F: Fn(&Device) -> FT> Operation
     type O2 = NullOp;
 
     fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
-        (Self::O1::new((self.f)(device)), Self::O2::new())
+        (Self::O1::new((self.f)(device)), Self::O2 {})
     }
 }
 
@@ -44,8 +48,9 @@ impl<FT: Fn(&Transducer) -> Phase + Send + Sync, F: Fn(&Device) -> FT> Datagram
     for PhaseCorrection<FT, F>
 {
     type G = PhaseCorrectionOpGenerator<FT, F>;
+    type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, AUTDDriverError> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
         Ok(Self::G { f: self.f })
     }
 }

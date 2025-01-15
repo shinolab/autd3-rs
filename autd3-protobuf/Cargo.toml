@@ -10,9 +10,11 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-prost = { workspace = true }
+prost = { workspace = true, features = ["derive"] }
 tonic = { workspace = true, features = ["channel", "codegen", "prost", "server"] }
+autd3-core = { workspace = true, features = ["geometry"] }
 autd3-driver = { workspace = true }
+autd3-derive = { workspace = true, optional = true }
 autd3 = { workspace = true, optional = true }
 autd3-gain-holo = { workspace = true, optional = true }
 thiserror = { workspace = true }
@@ -26,8 +28,8 @@ tonic-build = { workspace = true, optional = true, features = ["prost"] }
 [features]
 default = []
 tonic-build = ["dep:tonic-build"]
-lightweight = ["tokio", "seq-macro", "autd3", "autd3-gain-holo", "autd3-driver/derive", "autd3-driver/lightweight", "async-trait"]
-async-trait = ["autd3-driver/async-trait", "autd3/async-trait", "autd3-gain-holo/async-trait"]
+lightweight = ["tokio", "seq-macro", "autd3", "autd3-derive", "autd3-gain-holo", "autd3-driver/lightweight", "async-trait"]
+async-trait = ["autd3-core/async-trait", "autd3/async-trait"]
 
 [dev-dependencies]
 approx = { workspace = true }

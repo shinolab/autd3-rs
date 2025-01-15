@@ -1,37 +1,21 @@
 mod debug_type;
-mod drive;
-mod emit_intensity;
 mod fpga_state;
-mod gpio;
-mod loop_behavior;
-mod phase;
-mod sampling_config;
-mod segment;
 mod silencer_target;
 mod stm_focus;
-mod transition_mode;
+
+pub use autd3_core::{
+    datagram::{GPIOIn, GPIOOut, Segment, TransitionMode, TRANSITION_MODE_NONE},
+    gain::{Drive, EmitIntensity, Phase},
+    modulation::{LoopBehavior, SamplingConfig},
+};
 
 pub use debug_type::DebugType;
 pub(crate) use debug_type::DebugValue;
-pub use drive::Drive;
-pub use emit_intensity::EmitIntensity;
 pub use fpga_state::FPGAState;
-pub use gpio::*;
-pub use loop_behavior::LoopBehavior;
-pub use phase::Phase;
-pub use sampling_config::SamplingConfig;
-pub use segment::Segment;
 pub use silencer_target::SilencerTarget;
 pub(crate) use stm_focus::STMFocus;
-pub use transition_mode::*;
 
-use crate::{
-    defined::{mm, Freq},
-    ethercat::DcSysTime,
-};
-
-/// FPGA main clock frequency.
-pub const FPGA_MAIN_CLK_FREQ: Freq<u32> = Freq { freq: 10240000 };
+use crate::{defined::mm, ethercat::DcSysTime};
 
 /// The unit of the fixed-point number used in the [`FociSTM`].
 ///
@@ -56,11 +40,11 @@ pub const SILENCER_STEPS_PHASE_DEFAULT: u16 = 40;
 
 /// The minimum buffer size of [`Modulation`].
 ///
-/// [`Modulation`]: crate::datagram::Modulation
+/// [`Modulation`]: autd3_core::modulation::Modulation
 pub const MOD_BUF_SIZE_MIN: usize = 2;
 /// The maximum buffer size of [`Modulation`].
 ///
-/// [`Modulation`]: crate::datagram::Modulation
+/// [`Modulation`]: autd3_core::modulation::Modulation
 pub const MOD_BUF_SIZE_MAX: usize = 32768;
 
 /// The minimum buffer size of [`FociSTM`] and [`GainSTM`].

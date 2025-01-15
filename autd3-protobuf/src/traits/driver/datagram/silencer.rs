@@ -19,7 +19,7 @@ fn silencer_target_to(v: i32) -> Result<autd3::prelude::SilencerTarget, AUTDProt
 impl ToMessage for autd3_driver::datagram::Silencer<autd3_driver::datagram::FixedUpdateRate> {
     type Message = Datagram;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram::Datagram::Silencer(Silencer {
                 config: Some(silencer::Config::FixedUpdateRate(SilencerFixedUpdateRate {
@@ -55,7 +55,7 @@ impl FromMessage<SilencerFixedUpdateRate>
 impl ToMessage for autd3_driver::datagram::Silencer<autd3_driver::datagram::FixedCompletionTime> {
     type Message = Datagram;
 
-    fn to_msg(&self, _: Option<&autd3_driver::geometry::Geometry>) -> Self::Message {
+    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
         Self::Message {
             datagram: Some(datagram::Datagram::Silencer(Silencer {
                 config: Some(silencer::Config::FixedCompletionTime(

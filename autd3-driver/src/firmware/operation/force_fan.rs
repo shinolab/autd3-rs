@@ -1,5 +1,6 @@
+use std::convert::Infallible;
+
 use crate::{
-    error::AUTDDriverError,
     firmware::operation::{Operation, TypeTag},
     geometry::Device,
 };
@@ -23,7 +24,9 @@ pub struct ForceFanOp {
 }
 
 impl Operation for ForceFanOp {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
+    type Error = Infallible;
+
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         super::write_to_tx(
             tx,
             ForceFan {
@@ -50,7 +53,7 @@ mod tests {
     use std::mem::offset_of;
 
     use super::*;
-    use crate::geometry::tests::create_device;
+    use crate::firmware::operation::tests::create_device;
 
     const NUM_TRANS_IN_UNIT: u8 = 249;
 

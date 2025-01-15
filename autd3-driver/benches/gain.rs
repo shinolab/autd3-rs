@@ -1,22 +1,18 @@
 use std::collections::HashMap;
 
-use autd3_derive::Gain;
+use autd3_core::derive::*;
 use autd3_driver::{
     autd3_device::AUTD3,
-    datagram::{
-        Datagram, DatagramS, Gain, GainContextGenerator, GainOperationGenerator, IntoBoxedGain,
-    },
+    datagram::{Datagram, IntoBoxedGain},
     defined::rad,
-    error::AUTDDriverError,
     firmware::{
         cpu::TxMessage,
-        fpga::{Drive, EmitIntensity, Phase, Segment, TransitionMode},
-        operation::{GainContext, OperationHandler},
+        fpga::{Drive, EmitIntensity, Phase},
+        operation::OperationHandler,
     },
     geometry::{Device, Geometry, IntoDevice, Point3, Transducer},
 };
 
-use bit_vec::BitVec;
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use zerocopy::FromZeros;
 
@@ -84,8 +80,8 @@ impl Gain for Focus {
     fn init(
         self,
         _geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec<u32>>>,
-    ) -> Result<Self::G, AUTDDriverError> {
+        _filter: Option<&HashMap<usize, BitVec>>,
+    ) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }

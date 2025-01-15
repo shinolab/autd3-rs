@@ -1,18 +1,10 @@
 use std::mem::MaybeUninit;
 
-use autd3_derive::Modulation;
-
-use super::{Modulation, ModulationOperationGenerator, ModulationProperty};
-use crate::{
-    datagram::DatagramS,
-    error::AUTDDriverError,
-    firmware::fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
-    geometry::Geometry,
-};
+use autd3_core::derive::*;
 
 /// A dyn-compatible version of [`Modulation`].
 pub trait DModulation {
-    fn dyn_calc(&mut self) -> Result<Vec<u8>, AUTDDriverError>;
+    fn dyn_calc(&mut self) -> Result<Vec<u8>, ModulationError>;
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
 
@@ -21,7 +13,7 @@ impl<
         #[cfg(feature = "lightweight")] T: Modulation + Send + Sync,
     > DModulation for MaybeUninit<T>
 {
-    fn dyn_calc(&mut self) -> Result<Vec<u8>, AUTDDriverError> {
+    fn dyn_calc(&mut self) -> Result<Vec<u8>, ModulationError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
         // SAFETY: This function is called only once from `Modulation::calc`.
@@ -58,7 +50,7 @@ impl std::fmt::Debug for BoxedModulation {
 }
 
 impl Modulation for BoxedModulation {
-    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         let Self { mut m, .. } = self;
         m.dyn_calc()
     }

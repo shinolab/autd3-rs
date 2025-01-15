@@ -6,14 +6,14 @@ use autd3_driver::{
         IntoDatagramWithSegment, Silencer, SwapSegment,
     },
     defined::{mm, METER},
-    derive::{LoopBehavior, SamplingConfig, Segment},
     error::AUTDDriverError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::{
         cpu::TxMessage,
         fpga::{
-            Drive, Phase, TransitionMode, FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT,
-            SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
+            Drive, LoopBehavior, Phase, SamplingConfig, Segment, TransitionMode,
+            FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT, SILENCER_STEPS_INTENSITY_DEFAULT,
+            SILENCER_STEPS_PHASE_DEFAULT,
         },
     },
     geometry::Point3,
@@ -21,7 +21,6 @@ use autd3_driver::{
 use autd3_firmware_emulator::{cpu::params::SYS_TIME_TRANSITION_MARGIN, CPUEmulator};
 
 use crate::{create_geometry, op::gain::TestGain, send};
-use num_integer::Roots;
 use rand::*;
 use time::OffsetDateTime;
 use zerocopy::FromZeros;
@@ -115,7 +114,7 @@ fn test_send_foci_stm(
             let fx = (focus[0].point().x / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
             let fy = (focus[0].point().y / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
             let fz = (focus[0].point().z / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
-            let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
+            let d = ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).isqrt() as u32;
             let q = (d << 14) / cpu.fpga().sound_speed(segment) as u32;
             let sin = (sin_table[q as usize % 256] >> 1) as usize;
             let cos = (sin_table[(q as usize + 64) % 256] >> 1) as usize;
@@ -393,7 +392,7 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
                         let fy = (f.point().y / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
                         let fz = (f.point().z / FOCI_STM_FIXED_NUM_UNIT).round() as i32;
                         let d =
-                            ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).sqrt() as u32;
+                            ((tx - fx).pow(2) + (ty - fy).pow(2) + (tz - fz).pow(2)).isqrt() as u32;
                         let q = (d << 14) / cpu.fpga().sound_speed(Segment::S0) as u32
                             + (f.phase_offset() - base_offset).value() as u32;
                         let sin = sin_table[q as usize % 256] as usize;

@@ -10,11 +10,12 @@ use crate::{
             Drive, LoopBehavior, SamplingConfig, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX,
             STM_BUF_SIZE_MIN, TRANSITION_MODE_NONE,
         },
-        operation::{write_to_tx, GainContext, Operation, TypeTag},
+        operation::{write_to_tx, Operation, TypeTag},
     },
     geometry::Device,
 };
 
+use autd3_core::gain::GainContext;
 use derive_new::new;
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout};
 
@@ -98,6 +99,8 @@ pub struct GainSTMOp<G: GainContext, Context: GainSTMContext<Context = G>> {
 }
 
 impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTMOp<G, Context> {
+    type Error = AUTDDriverError;
+
     fn required_size(&self, device: &Device) -> usize {
         if self.sent == 0 {
             size_of::<GainSTMHead>() + device.num_transducers() * size_of::<Drive>()
@@ -235,8 +238,9 @@ mod tests {
         firmware::{
             cpu::TxMessage,
             fpga::{EmitIntensity, Phase},
+            operation::tests::create_device,
         },
-        geometry::{tests::create_device, Transducer},
+        geometry::Transducer,
     };
 
     const NUM_TRANS_IN_UNIT: usize = 249;
@@ -288,7 +292,7 @@ mod tests {
             .collect();
 
         let freq_div = rng.gen_range(0x0001..=0xFFFF);
-        let rep = rng.gen_range(0x000..=0xFFFF);
+        let rep = rng.gen_range(0x0001..0xFFFF);
         let segment = Segment::S0;
         let transition_value = 0x0123456789ABCDEF;
         let transition_mode = TransitionMode::SysTime(
@@ -308,7 +312,7 @@ mod tests {
             GAIN_STM_SIZE,
             GainSTMMode::PhaseIntensityFull,
             SamplingConfig::new(freq_div).unwrap(),
-            LoopBehavior { rep },
+            LoopBehavior::finite(rep + 1).unwrap(),
             segment,
             Some(transition_mode),
         );
@@ -449,7 +453,7 @@ mod tests {
             GAIN_STM_SIZE,
             GainSTMMode::PhaseFull,
             SamplingConfig::new(freq_div).unwrap(),
-            LoopBehavior { rep },
+            LoopBehavior::finite(rep).unwrap(),
             segment,
             None,
         );
@@ -575,7 +579,7 @@ mod tests {
             .collect();
 
         let freq_div = rng.gen_range(0x0001..=0xFFFF);
-        let rep = rng.gen_range(0x001..=0xFFFF);
+        let rep = rng.gen_range(0x0001..=0xFFFF);
         let segment = Segment::S0;
         let mut op = GainSTMOp::new(
             STMContext {
@@ -584,7 +588,7 @@ mod tests {
             GAIN_STM_SIZE,
             GainSTMMode::PhaseHalf,
             SamplingConfig::new(freq_div).unwrap(),
-            LoopBehavior { rep },
+            LoopBehavior::finite(rep).unwrap(),
             segment,
             Some(TransitionMode::SyncIdx),
         );

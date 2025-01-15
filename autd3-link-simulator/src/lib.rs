@@ -7,15 +7,11 @@
 //!
 //! [`AUTD3 Simulator`]: https://github.com/shinolab/autd3-server
 
+use autd3_core::link::{AsyncLink, AsyncLinkBuilder, LinkError, RxMessage, TxMessage};
+use autd3_derive::Builder;
 use autd3_protobuf::*;
 
 use std::net::SocketAddr;
-
-use autd3_driver::{
-    derive::*,
-    firmware::cpu::{RxMessage, TxMessage},
-    link::{AsyncLink, AsyncLinkBuilder},
-};
 
 /// A [`AsyncLink`] for [`AUTD3 Simulator`].
 ///
@@ -34,15 +30,12 @@ pub struct SimulatorBuilder {
     addr: SocketAddr,
 }
 
-#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl AsyncLinkBuilder for SimulatorBuilder {
     type L = Simulator;
 
     #[tracing::instrument(level = "debug", skip(geometry))]
-    async fn open(
-        self,
-        geometry: &autd3_driver::geometry::Geometry,
-    ) -> Result<Self::L, AUTDDriverError> {
+    async fn open(self, geometry: &autd3_core::geometry::Geometry) -> Result<Self::L, LinkError> {
         tracing::info!("Connecting to simulator@{}", self.addr);
         let conn = tonic::transport::Endpoint::new(format!("http://{}", self.addr))
             .map_err(AUTDProtoBufError::from)?
@@ -74,9 +67,9 @@ impl Simulator {
     }
 }
 
-#[cfg_attr(feature = "async-trait", autd3_driver::async_trait)]
+#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl AsyncLink for Simulator {
-    async fn close(&mut self) -> Result<(), AUTDDriverError> {
+    async fn close(&mut self) -> Result<(), LinkError> {
         if !self.is_open {
             return Ok(());
         }
@@ -90,10 +83,7 @@ impl AsyncLink for Simulator {
         Ok(())
     }
 
-    async fn update(
-        &mut self,
-        geometry: &autd3_driver::geometry::Geometry,
-    ) -> Result<(), AUTDDriverError> {
+    async fn update(&mut self, geometry: &autd3_core::geometry::Geometry) -> Result<(), LinkError> {
         if self.last_geometry_version == geometry.version() {
             return Ok(());
         }
@@ -108,7 +98,7 @@ impl AsyncLink for Simulator {
         Ok(())
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
         let res = self
             .client
             .send_data(tx.to_msg(None))
@@ -118,7 +108,7 @@ impl AsyncLink for Simulator {
         Ok(res.into_inner().success)
     }
 
-    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
         let rx_ = Vec::<RxMessage>::from_msg(
             &self
                 .client
@@ -140,7 +130,7 @@ impl AsyncLink for Simulator {
 }
 
 #[cfg(feature = "blocking")]
-use autd3_driver::link::{Link, LinkBuilder};
+use autd3_core::link::{Link, LinkBuilder};
 
 /// A [`Link`] for [`AUTD3 Simulator`].
 ///
@@ -154,22 +144,19 @@ pub struct SimulatorBlocking {
 
 #[cfg(feature = "blocking")]
 impl Link for SimulatorBlocking {
-    fn close(&mut self) -> Result<(), AUTDDriverError> {
+    fn close(&mut self) -> Result<(), LinkError> {
         self.runtime.block_on(self.inner.close())
     }
 
-    fn update(
-        &mut self,
-        geometry: &autd3_driver::geometry::Geometry,
-    ) -> Result<(), AUTDDriverError> {
+    fn update(&mut self, geometry: &autd3_core::geometry::Geometry) -> Result<(), LinkError> {
         self.runtime.block_on(self.inner.update(geometry))
     }
 
-    fn send(&mut self, tx: &[TxMessage]) -> Result<bool, AUTDDriverError> {
+    fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
         self.runtime.block_on(self.inner.send(tx))
     }
 
-    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, AUTDDriverError> {
+    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
         self.runtime.block_on(self.inner.receive(rx))
     }
 
@@ -187,7 +174,7 @@ impl Link for SimulatorBlocking {
 impl LinkBuilder for SimulatorBuilder {
     type L = SimulatorBlocking;
 
-    fn open(self, geometry: &autd3_driver::geometry::Geometry) -> Result<Self::L, AUTDDriverError> {
+    fn open(self, geometry: &autd3_core::geometry::Geometry) -> Result<Self::L, LinkError> {
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()

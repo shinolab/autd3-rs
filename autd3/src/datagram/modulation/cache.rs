@@ -1,4 +1,5 @@
-use crate::derive::*;
+use autd3_core::derive::*;
+use autd3_derive::Builder;
 
 use std::{cell::RefCell, rc::Rc};
 
@@ -51,7 +52,7 @@ impl<M: Modulation> Cache<M> {
     }
 
     /// Initialize cache.
-    pub fn init(&self) -> Result<(), AUTDDriverError> {
+    pub fn init(&self) -> Result<(), ModulationError> {
         if let Some(m) = self.m.take() {
             tracing::debug!("Initializing cache");
             *self.cache.borrow_mut() = m.calc()?;
@@ -66,7 +67,7 @@ impl<M: Modulation> Cache<M> {
 }
 
 impl<M: Modulation> Modulation for Cache<M> {
-    fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         self.init()?;
         let buffer = self.cache().clone();
         Ok(buffer)
@@ -107,7 +108,7 @@ mod tests {
     }
 
     impl Modulation for TestCacheModulation {
-        fn calc(self) -> Result<Vec<u8>, AUTDDriverError> {
+        fn calc(self) -> Result<Vec<u8>, ModulationError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
             Ok(vec![0x00, 0x00])
         }

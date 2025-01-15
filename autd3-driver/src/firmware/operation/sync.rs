@@ -1,6 +1,7 @@
+use std::convert::Infallible;
+
 use crate::{
     defined::ultrasound_freq,
-    error::AUTDDriverError,
     firmware::operation::{Operation, TypeTag},
     geometry::Device,
 };
@@ -25,7 +26,9 @@ pub struct SyncOp {
 }
 
 impl Operation for SyncOp {
-    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
+    type Error = Infallible;
+
+    fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         let ultrasound_freq = ultrasound_freq().hz();
         let mult = ultrasound_freq / 125;
         let base_cnt = (ultrasound_freq as u64 * 256 * 500) / 1000000;
@@ -59,7 +62,7 @@ mod tests {
     use std::mem::size_of;
 
     use super::*;
-    use crate::geometry::tests::create_device;
+    use crate::firmware::operation::tests::create_device;
 
     const NUM_TRANS_IN_UNIT: u8 = 249;
 
