@@ -18,6 +18,3 @@ quote = { workspace = true, features = ["proc-macro"] }
 syn = { workspace = true, features = ["clone-impls", "printing", "derive", "parsing", "proc-macro"] }
 regex = { workspace = true, features = ["unicode"] }
 itertools = { workspace = true, features = ["use_std"] }
-
-[dev-dependencies]
-autd3-core = { workspace = true, features = ["derive", "gain", "modulation"] }
