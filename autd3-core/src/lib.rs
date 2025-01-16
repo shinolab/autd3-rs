@@ -73,11 +73,10 @@ pub use async_trait::async_trait;
 ///
 /// impl GainContext for Context {
 ///     fn calc(&self, tr: &Transducer) -> Drive {
-///         (
-///             Phase::from(-(self.pos - tr.position()).norm() * self.wavenumber * rad),
-///             EmitIntensity::MAX,
-///         )
-///             .into()
+///         Drive {
+///             phase: Phase::from(-(self.pos - tr.position()).norm() * self.wavenumber * rad),
+///             intensity: EmitIntensity::MAX,
+///         }
 ///     }
 /// }
 ///
@@ -111,6 +110,7 @@ pub use async_trait::async_trait;
 /// If you add `#[no_change]` attribute to `config`, you can't change the value of `config` except for the constructor.
 ///
 /// ```
+/// use autd3_core::defined::kHz;
 /// use autd3_core::derive::*;
 ///
 /// #[derive(Modulation, Debug)]
@@ -122,8 +122,8 @@ pub use async_trait::async_trait;
 /// impl Burst {
 ///     pub fn new() -> Self {
 ///         Self {
-///             config: SamplingConfig::FREQ_4K,
-///             loop_behavior: LoopBehavior::infinite(),
+///             config: SamplingConfig::new(4 * kHz).unwrap(),
+///             loop_behavior: LoopBehavior::Infinite,
 ///         }
 ///     }
 /// }
@@ -136,7 +136,7 @@ pub use async_trait::async_trait;
 ///     }
 /// }
 /// ```
-/// 
+///
 /// [`Gain`]: crate::gain::Gain
 /// [`Modulation`]: crate::modulation::Modulation
 #[cfg_attr(docsrs, doc(cfg(feature = "derive")))]

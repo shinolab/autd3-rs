@@ -1,15 +1,15 @@
-use autd3_derive::Builder;
+use getset::Getters;
 
 use super::{Isometry, Point3};
 
 use derive_new::new;
 
 /// A ultrasound transducer.
-#[derive(Clone, Debug, PartialEq, Builder, new)]
+#[derive(Clone, Debug, PartialEq, Getters, new)]
 pub struct Transducer {
     idx: u8,
     dev_idx: u16,
-    #[get(ref)]
+    #[getset(get = "pub")]
     /// The position of the transducer.
     position: Point3,
 }

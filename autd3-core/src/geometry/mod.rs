@@ -20,9 +20,8 @@ pub type Translation = nalgebra::Translation3<f32>;
 pub type Isometry = nalgebra::Isometry3<f32>;
 
 pub use bvh::aabb::Aabb;
-
-use autd3_derive::Builder;
 pub use device::*;
+use getset::CopyGetters;
 pub use rotation::*;
 pub use transducer::*;
 
@@ -30,15 +29,17 @@ use derive_more::{Deref, IntoIterator};
 use derive_new::new;
 
 /// Geometry of the devices.
-#[derive(Deref, Builder, IntoIterator, new)]
+#[derive(Deref, CopyGetters, IntoIterator, new)]
 pub struct Geometry {
     #[deref]
     #[into_iterator(ref)]
     pub(crate) devices: Vec<Device>,
+    #[doc(hidden)]
     #[new(default)]
-    #[get(no_doc)]
+    #[getset(get_copy = "pub")]
     version: usize,
-    #[get(no_doc)]
+    #[doc(hidden)]
+    #[getset(get_copy = "pub")]
     default_parallel_threshold: usize,
 }
 

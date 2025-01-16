@@ -17,8 +17,8 @@ pub struct ModulationError {
 /// An error produced by the sampling configuration.
 pub enum SamplingConfigError {
     /// Invalid sampling division.
-    #[error("Sampling division ({0}) must not be zero")]
-    SamplingDivisionInvalid(u16),
+    #[error("Sampling division must not be zero")]
+    SamplingDivisionInvalid,
     /// Invalid sampling frequency.
     #[error("Sampling frequency ({0:?}) must divide the ultrasound frequency")]
     SamplingFreqInvalid(Freq<u32>),
