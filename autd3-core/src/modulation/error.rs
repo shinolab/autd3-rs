@@ -20,7 +20,7 @@ pub enum SamplingConfigError {
     #[error("Sampling division ({0}) must not be zero")]
     SamplingDivisionInvalid(u16),
     /// Invalid sampling frequency.
-    #[error("Sampling frequency ({0:?}) must divide theultrasound frequency")]
+    #[error("Sampling frequency ({0:?}) must divide the ultrasound frequency")]
     SamplingFreqInvalid(Freq<u32>),
     /// Invalid sampling frequency.
     #[error("Sampling frequency ({0:?}) must divide the ultrasound frequency")]
