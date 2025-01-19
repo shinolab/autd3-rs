@@ -18,6 +18,20 @@ use crate::{
     geometry::{Device, Geometry, Transducer},
 };
 
+/// A trait for the option of the gain.
+pub trait GainOption {
+    /// The segment to write the data.
+    fn segment(&self) -> Segment;
+    /// The mode when switching the segment.
+    fn transition_mode(&self) -> Option<TransitionMode>;
+}
+
+/// A trait for the option of the gain.
+pub trait GetGainOption: Gain {
+    /// The option of the gain.
+    fn option(&self) -> &<Self as Gain>::Option;
+}
+
 /// A trait to calculate the phase and intensity for [`Gain`].
 ///
 /// [`Gain`]: crate::gain::Gain
@@ -49,6 +63,8 @@ pub trait GainContextGenerator {
 pub trait Gain: std::fmt::Debug {
     /// The type of the context generator.
     type G: GainContextGenerator;
+    /// The option type for the gain.
+    type Option: GainOption;
 
     /// Initialize the gain and generate the context generator.
     ///

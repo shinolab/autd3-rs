@@ -144,7 +144,7 @@ pub use async_trait::async_trait;
 pub mod derive {
     #[cfg(any(feature = "gain", feature = "modulation"))]
     mod common {
-        pub use crate::datagram::{DatagramS, Segment, TransitionMode};
+        pub use crate::datagram::{Datagram, Segment, TransitionMode};
         pub use crate::{defined::DEFAULT_TIMEOUT, geometry::Geometry};
         pub use tracing;
     }
@@ -155,10 +155,10 @@ pub mod derive {
     mod gain {
         pub use crate::gain::{
             BitVec, Drive, EmitIntensity, Gain, GainContext, GainContextGenerator, GainError,
-            GainOperationGenerator, Phase,
+            GainOperationGenerator, GainOption, GetGainOption, Phase,
         };
         pub use crate::geometry::{Device, Transducer};
-        pub use autd3_derive::Gain;
+        pub use autd3_derive::{Gain, GainOption};
     }
     #[cfg(feature = "gain")]
     pub use gain::*;
@@ -166,10 +166,10 @@ pub mod derive {
     #[cfg(feature = "modulation")]
     mod modulation {
         pub use crate::modulation::{
-            LoopBehavior, Modulation, ModulationError, ModulationOperationGenerator,
-            ModulationProperty, SamplingConfig,
+            GetModulationOption, LoopBehavior, Modulation, ModulationError,
+            ModulationOperationGenerator, ModulationOption, SamplingConfig,
         };
-        pub use autd3_derive::Modulation;
+        pub use autd3_derive::{Modulation, ModulationOption};
         pub use std::{collections::HashMap, sync::Arc};
     }
     #[cfg(feature = "modulation")]
