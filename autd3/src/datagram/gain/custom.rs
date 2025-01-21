@@ -25,7 +25,7 @@ where
     FT: Fn(&Transducer) -> D + Send + Sync + 'static,
     F: Fn(&Device) -> FT + 'a,
 {
-    f: F,
+    pub f: F,
     _phantom: std::marker::PhantomData<&'a ()>,
 }
 
@@ -70,6 +70,7 @@ impl<
         self,
         _geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,
+        _option: &DatagramOption,
     ) -> Result<Self::G, GainError> {
         Ok(self)
     }
@@ -91,7 +92,10 @@ mod tests {
         let geometry = create_geometry(2);
 
         let test_id = rng.gen_range(0..geometry[0].num_transducers());
-        let test_drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
+        let test_drive = Drive {
+            phase: Phase(rng.gen()),
+            intensity: EmitIntensity(rng.gen()),
+        };
         let transducer_test = Custom::new(move |dev| {
             let dev_idx = dev.idx();
             move |tr| {
@@ -103,7 +107,7 @@ mod tests {
             }
         });
 
-        let mut d = transducer_test.init(&geometry, None)?;
+        let mut d = transducer_test.init(&geometry, None, &DatagramOption::default())?;
         geometry.iter().for_each(|dev| {
             let d = d.generate(dev);
             dev.iter().enumerate().for_each(|(idx, tr)| {

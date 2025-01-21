@@ -10,7 +10,7 @@ pub use sleep::{AsyncSleeper, SpinSleeper, StdSleeper};
 use std::time::{Duration, Instant};
 
 use autd3_core::{derive::*, link::AsyncLink};
-use autd3_derive::Builder;
+
 use autd3_driver::{
     error::AUTDDriverError,
     firmware::{
@@ -341,7 +341,7 @@ mod tests {
         };
 
         let mut tx = vec![TxMessage::new_zeroed(); 1];
-        tx[0].header_mut().msg_id = 2;
+        tx[0].header.msg_id = 2;
         let mut rx = vec![RxMessage::new(0, 0)];
 
         let timer = Timer {
@@ -389,7 +389,7 @@ mod tests {
 
         link.down = false;
         link.recv_cnt = 0;
-        tx[0].header_mut().msg_id = 20;
+        tx[0].header.msg_id = 20;
         assert_eq!(
             Err(AUTDDriverError::Link(LinkError::new("too many".to_owned()))),
             timer

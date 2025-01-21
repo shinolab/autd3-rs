@@ -1,52 +1,102 @@
-mod builder;
 mod group;
-/// Utilities for periodic operations.
-pub mod timer;
+mod sender;
 
 use crate::{error::AUTDError, gain::Null, prelude::Static};
 
 use std::time::Duration;
 
-use autd3_core::link::Link;
-use autd3_derive::Builder;
+use autd3_core::{
+    defined::DEFAULT_TIMEOUT,
+    geometry::IntoDevice,
+    link::{Link, LinkBuilder},
+};
+
 use autd3_driver::{
-    datagram::{Clear, Datagram, ForceFan, IntoDatagramWithTimeout, Silencer, Synchronize},
+    datagram::{Clear, Datagram, FixedCompletionSteps, ForceFan, Silencer, Synchronize},
     error::AUTDDriverError,
     firmware::{
         cpu::{check_if_msg_is_processed, RxMessage, TxMessage},
         fpga::FPGAState,
-        operation::{FirmwareVersionType, Operation, OperationGenerator, OperationHandler},
+        operation::{FirmwareVersionType, Operation, OperationGenerator},
         version::FirmwareVersion,
     },
     geometry::{Device, Geometry},
 };
 
-use timer::Timer;
-use tracing;
-
-pub use builder::ControllerBuilder;
 pub use group::Group;
+pub use sender::{SenderOption, SpinSleeper, SpinStrategy, StdSleeper, WaitableSleeper};
 
 use derive_more::{Deref, DerefMut};
+use getset::{Getters, MutGetters};
+use sender::{sleep::Sleeper, Sender};
+use tracing;
+use zerocopy::FromZeros;
 
 /// A controller for the AUTD devices.
 ///
 /// All operations to the devices are done through this struct.
-#[derive(Builder, Deref, DerefMut)]
+#[derive(Deref, DerefMut, Getters, MutGetters)]
 pub struct Controller<L: Link> {
-    #[get(ref, ref_mut, no_doc)]
+    #[getset(get = "pub", get_mut = "pub")]
     link: L,
-    #[get(ref, ref_mut, no_doc)]
+    #[getset(get = "pub", get_mut = "pub")]
     #[deref]
     #[deref_mut]
     geometry: Geometry,
     tx_buf: Vec<TxMessage>,
     rx_buf: Vec<RxMessage>,
-    #[get(ref, no_doc)]
-    timer: Timer,
 }
 
 impl<L: Link> Controller<L> {
+    /// Equivalent to [`Self::open_with_timeout`] with a timeout of [`DEFAULT_TIMEOUT`].
+    pub fn open<D: IntoDevice, F: IntoIterator<Item = D>, B: LinkBuilder<L = L>>(
+        devices: F,
+        link_builder: B,
+    ) -> Result<Controller<B::L>, AUTDError> {
+        Self::open_with_timeout(devices, link_builder, DEFAULT_TIMEOUT)
+    }
+
+    /// Opens a controller with a timeout.
+    ///
+    /// Opens link, and then initialize and synchronize the devices. The `timeout` is used to send data for initialization and synchronization.
+    pub fn open_with_timeout<D: IntoDevice, F: IntoIterator<Item = D>, B: LinkBuilder<L = L>>(
+        devices: F,
+        link_builder: B,
+        timeout: Duration,
+    ) -> Result<Controller<B::L>, AUTDError> {
+        tracing::debug!("Opening a controller with timeout {:?})", timeout);
+
+        let devices = devices
+            .into_iter()
+            .enumerate()
+            .map(|(i, d)| d.into_device(i as _))
+            .collect();
+
+        let geometry = Geometry::new(devices);
+        Controller {
+            link: link_builder.open(&geometry)?,
+            tx_buf: vec![TxMessage::new_zeroed(); geometry.len()], // Do not use `num_devices` here because the devices may be disabled.
+            rx_buf: vec![RxMessage::new(0, 0); geometry.len()],
+            geometry,
+        }
+        .open_impl(timeout)
+    }
+
+    pub fn sender<'a, S: Sleeper>(
+        &'a mut self,
+        sleeper: S,
+        option: SenderOption,
+    ) -> Sender<'a, L, S> {
+        Sender {
+            link: &mut self.link,
+            geometry: &mut self.geometry,
+            tx: &mut self.tx_buf,
+            rx: &mut self.rx_buf,
+            sleeper,
+            option,
+        }
+    }
+
     /// Sends a data to the devices.
     ///
     /// If the [`Datagram::timeout`] value is
@@ -62,23 +112,24 @@ impl<L: Link> Controller<L> {
         AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
             + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
     {
-        let timeout = s.timeout();
-        let parallel_threshold = s.parallel_threshold();
-        self.link.trace(timeout, parallel_threshold);
-        let generator = s.operation_generator(&self.geometry)?;
-        self.timer.send(
-            &self.geometry,
-            &mut self.tx_buf,
-            &mut self.rx_buf,
-            &mut self.link,
-            OperationHandler::generate(generator, &self.geometry),
-            timeout,
-            parallel_threshold,
-        )
+        self.sender(SpinSleeper::default(), SenderOption::default())
+            .send(s)
     }
 
     pub(crate) fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
         let timeout = Some(timeout);
+
+        // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
+        // Therefore, send a meaningless data (here, we use `ForceFan` because it is the lightest).
+        let _ = self.send(ForceFan::new(|_| false));
+
+        let mut sender = self.sender(
+            SpinSleeper::default(),
+            SenderOption {
+                timeout,
+                ..Default::default()
+            },
+        );
 
         #[cfg(feature = "dynamic_freq")]
         {
@@ -86,14 +137,10 @@ impl<L: Link> Controller<L> {
                 "Configuring ultrasound frequency to {:?}",
                 autd3_driver::defined::ultrasound_freq()
             );
-            self.send(autd3_driver::datagram::ConfigureFPGAClock::new().with_timeout(timeout))?;
+            sender.send(autd3_driver::datagram::ConfigureFPGAClock::new())?;
         }
 
-        // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
-        // Therefore, send a meaningless data (here, we use `ForceFan` because it is the lightest).
-        let _ = self.send(ForceFan::new(|_| false).with_timeout(timeout));
-
-        self.send((Clear::new(), Synchronize::new()).with_timeout(timeout))?;
+        sender.send((Clear::new(), Synchronize::new()))?;
         Ok(self)
     }
 
@@ -107,9 +154,15 @@ impl<L: Link> Controller<L> {
 
         self.geometry.iter_mut().for_each(|dev| dev.enable = true);
         [
-            self.send(Silencer::default().with_strict_mode(false)),
-            self.send((Static::new(), Null::default())),
-            self.send(Clear::new()),
+            self.send(Silencer {
+                config: FixedCompletionSteps {
+                    strict_mode: false,
+                    ..Default::default()
+                },
+                target: autd3_driver::firmware::fpga::SilencerTarget::Intensity,
+            }),
+            self.send((Static::default(), Null::default())),
+            self.send(Clear {}),
             Ok(self.link.close()?),
         ]
         .into_iter()
@@ -147,16 +200,17 @@ impl<L: Link> Controller<L> {
         Ok(self
             .geometry
             .devices()
-            .map(|dev| {
-                FirmwareVersion::new(
-                    dev.idx(),
-                    CPUVersion::new(Major(cpu_major[dev.idx()]), Minor(cpu_minor[dev.idx()])),
-                    FPGAVersion::new(
-                        Major(fpga_major[dev.idx()]),
-                        Minor(fpga_minor[dev.idx()]),
-                        fpga_functions[dev.idx()],
-                    ),
-                )
+            .map(|dev| FirmwareVersion {
+                idx: dev.idx(),
+                cpu: CPUVersion {
+                    major: Major(cpu_major[dev.idx()]),
+                    minor: Minor(cpu_minor[dev.idx()]),
+                },
+                fpga: FPGAVersion {
+                    major: Major(fpga_major[dev.idx()]),
+                    minor: Minor(fpga_minor[dev.idx()]),
+                    function_bits: fpga_functions[dev.idx()],
+                },
             })
             .collect())
     }
@@ -171,7 +225,7 @@ impl<L: Link> Controller<L> {
     /// ```
     /// # use autd3::prelude::*;
     /// # fn main() -> Result<(), AUTDError> {
-    /// let mut autd = Controller::builder([AUTD3::new(Point3::origin())]).open(Nop::builder())?;
+    /// let mut autd = Controller::builder([AUTD3::default()]).open(Nop::builder())?;
     ///
     /// autd.send(ReadsFPGAState::new(|_| true))?;
     ///
@@ -221,13 +275,11 @@ impl<L: Link + 'static> Controller<L> {
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
         let tx_buf = unsafe { std::ptr::read(&cnt.tx_buf) };
         let rx_buf = unsafe { std::ptr::read(&cnt.rx_buf) };
-        let timer = unsafe { std::ptr::read(&cnt.timer) };
         Controller {
             link: Box::new(link) as _,
             geometry,
             tx_buf,
             rx_buf,
-            timer,
         }
     }
 
@@ -243,13 +295,11 @@ impl<L: Link + 'static> Controller<L> {
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
         let tx_buf = unsafe { std::ptr::read(&cnt.tx_buf) };
         let rx_buf = unsafe { std::ptr::read(&cnt.rx_buf) };
-        let timer = unsafe { std::ptr::read(&cnt.timer) };
         Controller {
             link: unsafe { *Box::from_raw(Box::into_raw(link) as *mut L) },
             geometry,
             tx_buf,
             rx_buf,
-            timer,
         }
     }
 }
@@ -266,43 +316,40 @@ impl<L: Link> Drop for Controller<L> {
 #[cfg(test)]
 mod tests {
     use autd3_core::{
+        derive::DatagramOption,
         gain::{Gain, GainContext, GainContextGenerator},
         link::LinkError,
     };
-    use autd3_driver::{autd3_device::AUTD3, defined::Hz, geometry::Point3};
+    use autd3_driver::{autd3_device::AUTD3, defined::Hz};
 
-    use crate::{controller::timer::*, link::Audit, prelude::*};
+    use crate::{
+        link::{Audit, AuditOption},
+        prelude::*,
+    };
 
     use super::*;
 
     // GRCOV_EXCL_START
     pub fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit>> {
-        Ok(
-            Controller::builder((0..dev_num).map(|_| AUTD3::new(Point3::origin())))
-                .open(Audit::builder())?,
-        )
+        Ok(Controller::open(
+            (0..dev_num).map(|_| AUTD3::default()),
+            Audit::builder(AuditOption::default()),
+        )?)
     }
     // GRCOV_EXCL_STOP
-
-    #[rstest::rstest]
-    #[case(TimerStrategy::Std(StdSleeper::default()))]
-    #[case(TimerStrategy::Spin(SpinSleeper::default()))]
-    #[cfg_attr(target_os = "windows", case(TimerStrategy::Waitable(WaitableSleeper::new().unwrap())))]
-    #[test]
-    fn open_with_timer(#[case] strategy: TimerStrategy) {
-        assert!(Controller::builder([AUTD3::new(Point3::origin())])
-            .with_timer_strategy(strategy)
-            .open(Audit::builder())
-            .is_ok());
-    }
 
     #[test]
     fn open_failed() {
         assert_eq!(
             Some(AUTDError::Driver(AUTDDriverError::SendDataFailed)),
-            Controller::builder([AUTD3::new(Point3::origin())])
-                .open(Audit::builder().with_down(true))
-                .err()
+            Controller::open(
+                [AUTD3::default()],
+                Audit::builder(AuditOption {
+                    down: true,
+                    ..Default::default()
+                })
+            )
+            .err()
         );
     }
 
@@ -310,32 +357,59 @@ mod tests {
     fn send() -> anyhow::Result<()> {
         let mut autd = create_controller(1)?;
         autd.send((
-            Sine::new(150. * Hz),
-            GainSTM::new(
-                1. * Hz,
-                [
-                    Uniform::new(EmitIntensity::new(0x80)),
-                    Uniform::new(EmitIntensity::new(0x81)),
-                ]
-                .into_iter(),
-            )?,
+            Sine {
+                freq: 150. * Hz,
+                option: Default::default(),
+            },
+            GainSTM {
+                gains: vec![
+                    Uniform {
+                        drive: Drive {
+                            intensity: EmitIntensity(0x80),
+                            phase: Phase::ZERO,
+                        },
+                    },
+                    Uniform {
+                        drive: Drive {
+                            intensity: EmitIntensity(0x81),
+                            phase: Phase::ZERO,
+                        },
+                    },
+                ],
+                config: 1. * Hz,
+                option: Default::default(),
+            },
         ))?; // GRCOV_EXCL_LINE
 
         autd.iter().try_for_each(|dev| {
             assert_eq!(
-                *Sine::new(150. * Hz).calc()?,
+                *Sine {
+                    freq: 150. * Hz,
+                    option: Default::default(),
+                }
+                .calc()?,
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
             );
-            let f = Uniform::new(EmitIntensity::new(0x80))
-                .init(&autd.geometry, None)?
-                .generate(dev);
+            let f = Uniform {
+                drive: Drive {
+                    intensity: EmitIntensity(0x80),
+                    phase: Phase::ZERO,
+                },
+            }
+            .init(&autd.geometry, None, &DatagramOption::default())?
+            .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 0)
             );
-            let f = Uniform::new(EmitIntensity::new(0x81))
-                .init(&autd.geometry, None)?
-                .generate(dev);
+            let f = Uniform {
+                drive: Drive {
+                    intensity: EmitIntensity(0x81),
+                    phase: Phase::ZERO,
+                },
+            }
+            .init(&autd.geometry, None, &DatagramOption::default())?
+            .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 1)
@@ -354,18 +428,18 @@ mod tests {
 
         let mut autd = create_controller(1)?;
         assert_eq!(
-            vec![FirmwareVersion::new(
-                0,
-                CPUVersion::new(
-                    FirmwareVersion::LATEST_VERSION_NUM_MAJOR,
-                    FirmwareVersion::LATEST_VERSION_NUM_MINOR
-                ),
-                FPGAVersion::new(
-                    FirmwareVersion::LATEST_VERSION_NUM_MAJOR,
-                    FirmwareVersion::LATEST_VERSION_NUM_MINOR,
-                    FPGAVersion::ENABLED_EMULATOR_BIT
-                )
-            )],
+            vec![FirmwareVersion {
+                idx: 0,
+                cpu: CPUVersion {
+                    major: FirmwareVersion::LATEST_VERSION_NUM_MAJOR,
+                    minor: FirmwareVersion::LATEST_VERSION_NUM_MINOR
+                },
+                fpga: FPGAVersion {
+                    major: FirmwareVersion::LATEST_VERSION_NUM_MAJOR,
+                    minor: FirmwareVersion::LATEST_VERSION_NUM_MINOR,
+                    function_bits: FPGAVersion::ENABLED_EMULATOR_BIT
+                }
+            }],
             autd.firmware_version()?
         );
         Ok(())
@@ -410,9 +484,10 @@ mod tests {
 
     #[test]
     fn fpga_state() -> anyhow::Result<()> {
-        let mut autd =
-            Controller::builder([AUTD3::new(Point3::origin()), AUTD3::new(Point3::origin())])
-                .open(Audit::builder())?;
+        let mut autd = Controller::open(
+            [AUTD3::default(), AUTD3::default()],
+            Audit::builder(AuditOption::default()),
+        )?;
 
         autd.send(ReadsFPGAState::new(|_| true))?;
         {
@@ -477,34 +552,61 @@ mod tests {
         let mut autd = autd.into_boxed_link();
 
         autd.send((
-            Sine::new(150. * Hz),
-            GainSTM::new(
-                1. * Hz,
-                [
-                    Uniform::new(EmitIntensity::new(0x80)),
-                    Uniform::new(EmitIntensity::new(0x81)),
-                ]
-                .into_iter(),
-            )?,
+            Sine {
+                freq: 150. * Hz,
+                option: Default::default(),
+            },
+            GainSTM {
+                gains: vec![
+                    Uniform {
+                        drive: Drive {
+                            intensity: EmitIntensity(0x80),
+                            phase: Phase::ZERO,
+                        },
+                    },
+                    Uniform {
+                        drive: Drive {
+                            intensity: EmitIntensity(0x81),
+                            phase: Phase::ZERO,
+                        },
+                    },
+                ],
+                config: 1. * Hz,
+                option: Default::default(),
+            },
         ))?; // GRCOV_EXCL_LINE
 
         let autd = unsafe { Controller::<Audit>::from_boxed_link(autd) };
 
         autd.iter().try_for_each(|dev| {
             assert_eq!(
-                *Sine::new(150. * Hz).calc()?,
+                *Sine {
+                    freq: 150. * Hz,
+                    option: Default::default(),
+                }
+                .calc()?,
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
             );
-            let f = Uniform::new(EmitIntensity::new(0x80))
-                .init(&autd.geometry, None)?
-                .generate(dev);
+            let f = Uniform {
+                drive: Drive {
+                    intensity: EmitIntensity(0x80),
+                    phase: Phase::ZERO,
+                },
+            }
+            .init(&autd.geometry, None, &DatagramOption::default())?
+            .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 0)
             );
-            let f = Uniform::new(EmitIntensity::new(0x81))
-                .init(&autd.geometry, None)?
-                .generate(dev);
+            let f = Uniform {
+                drive: Drive {
+                    intensity: EmitIntensity(0x81),
+                    phase: Phase::ZERO,
+                },
+            }
+            .init(&autd.geometry, None, &DatagramOption::default())?
+            .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 1)

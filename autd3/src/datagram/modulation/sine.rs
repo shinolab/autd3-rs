@@ -1,93 +1,64 @@
 use std::f32::consts::PI;
 
 use autd3_core::{
-    defined::{Angle, Freq},
+    defined::{rad, Angle, Freq},
     derive::*,
 };
-use autd3_derive::Builder;
 
-use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
+use super::sampling_mode::SamplingMode;
 
 use derive_more::Debug;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SineOption {
+    /// The intensity of the modulation. The default value is [`u8::MAX`].
+    pub intensity: u8,
+    /// The offset of the modulation. The default value is `0x80`.
+    pub offset: u8,
+    /// The phase of the modulation. The default value is `0 rad`.
+    pub phase: Angle,
+    /// If `true`, the modulation value is clamped to the range of `u8`. If `false`, returns an error if the value is out of range. The default value is `false`.
+    pub clamp: bool,
+    pub sampling_config: SamplingConfig,
+}
+
+impl Default for SineOption {
+    fn default() -> Self {
+        Self {
+            intensity: u8::MAX,
+            offset: 0x80,
+            phase: 0. * rad,
+            clamp: false,
+            sampling_config: SamplingConfig::FREQ_4K,
+        }
+    }
+}
 
 /// Sine wave modulation
 ///
 /// The modulation value is calculated as `⌊intensity / 2 * sin(2 * PI * freq * t + phase) + offset⌋`.
-#[derive(Modulation, Clone, PartialEq, Builder, Debug)]
-pub struct Sine<S: SamplingMode> {
-    #[debug("{}({:?})", tynm::type_name::<S>(), self.freq)]
-    freq: S::T,
-    #[get]
-    #[set]
-    /// The intensity of the modulation. The default value is [`u8::MAX`].
-    intensity: u8,
-    #[get]
-    #[set]
-    /// The offset of the modulation. The default value is `0x80`.
-    offset: u8,
-    #[get]
-    #[set]
-    /// The phase of the modulation. The default value is `0 rad`.
-    phase: Angle,
-    #[get]
-    #[set]
-    /// If `true`, the modulation value is clamped to the range of `u8`. If `false`, returns an error if the value is out of range. The default value is `false`.
-    clamp: bool,
-    config: SamplingConfig,
-    loop_behavior: LoopBehavior,
+#[derive(Modulation, Clone, PartialEq, Debug)]
+pub struct Sine<S: Into<SamplingMode> + Clone + Debug> {
+    pub freq: S,
+    pub option: SineOption,
 }
 
-impl Sine<ExactFreq> {
-    /// Creates a new [`Sine`] modulation with exact frequency.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use autd3::prelude::*;
-    ///
-    /// Sine::new(100 * Hz);
-    /// // or
-    /// Sine::new(100. * Hz);
-    /// ```
-    pub const fn new<S: SamplingModeInference>(freq: S) -> Sine<S::T> {
+impl Sine<Freq<f32>> {
+    pub fn into_nearest(self) -> Sine<SamplingMode> {
         Sine {
-            freq,
-            intensity: u8::MAX,
-            offset: 0x80,
-            phase: Angle::Rad(0.0),
-            clamp: false,
-            config: SamplingConfig::FREQ_4K,
-            loop_behavior: LoopBehavior::infinite(),
-        }
-    }
-
-    /// Creates a new [`Sine`] with the nearest frequency to the specified value of the possible values.
-    pub const fn new_nearest(freq: Freq<f32>) -> Sine<NearestFreq> {
-        Sine {
-            freq,
-            intensity: u8::MAX,
-            phase: Angle::Rad(0.0),
-            offset: 0x80,
-            clamp: false,
-            config: SamplingConfig::FREQ_4K,
-            loop_behavior: LoopBehavior::infinite(),
+            freq: SamplingMode::NearestFreq(self.freq),
+            option: self.option,
         }
     }
 }
 
-impl<S: SamplingMode> Sine<S> {
-    /// The frequency of the modulation.
-    pub fn freq(&self) -> S::T {
-        S::freq(self.freq, self.config)
-    }
-}
-
-impl<S: SamplingMode> Sine<S> {
+impl<S: Into<SamplingMode> + Clone + Debug> Sine<S> {
     pub(super) fn calc_raw(&self) -> Result<impl Iterator<Item = f32>, ModulationError> {
-        let (n, rep) = S::validate(self.freq, self.config)?;
-        let intensity = self.intensity;
-        let offset = self.offset;
-        let phase = self.phase.radian();
+        let sampling_mode: SamplingMode = self.freq.clone().into();
+        let (n, rep) = sampling_mode.validate(self.option.sampling_config)?;
+        let intensity = self.option.intensity;
+        let offset = self.option.offset;
+        let phase = self.option.phase.radian();
         Ok((0..n).map(move |i| {
             (intensity as f32 / 2. * (2.0 * PI * (rep * i) as f32 / n as f32 + phase).sin())
                 + offset as f32
@@ -95,14 +66,14 @@ impl<S: SamplingMode> Sine<S> {
     }
 }
 
-impl<S: SamplingMode> Modulation for Sine<S> {
+impl<S: Into<SamplingMode> + Clone + Debug> Modulation for Sine<S> {
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
         self.calc_raw()?
             .map(|v| v.floor() as i16)
             .map(|v| {
                 if (u8::MIN as _..=u8::MAX as _).contains(&v) {
                     Ok(v as _)
-                } else if self.clamp {
+                } else if self.option.clamp {
                     Ok(v.clamp(u8::MIN as _, u8::MAX as _) as _)
                 } else {
                     Err(ModulationError::new(format!(
@@ -115,11 +86,15 @@ impl<S: SamplingMode> Modulation for Sine<S> {
             })
             .collect::<Result<Vec<_>, ModulationError>>()
     }
+
+    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
+        Ok(self.option.sampling_config)
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::defined::{kHz, rad, Hz};
+    use autd3_driver::defined::{rad, Hz};
 
     use super::*;
 
@@ -185,14 +160,16 @@ mod tests {
     )]
     fn new(
         #[case] expect: Result<Vec<u8>, ModulationError>,
-        #[case] freq: impl SamplingModeInference,
+        #[case] freq: impl Into<SamplingMode> + Clone + Debug,
     ) {
-        let m = Sine::new(freq);
-        assert_eq!(freq, m.freq());
-        assert_eq!(u8::MAX, m.intensity());
-        assert_eq!(0x80, m.offset());
-        assert_eq!(Angle::Rad(0.0), m.phase());
-        assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
+        let m = Sine {
+            freq,
+            option: SineOption::default(),
+        };
+        assert_eq!(u8::MAX, m.option.intensity);
+        assert_eq!(0x80, m.option.offset);
+        assert_eq!(0. * rad, m.option.phase);
+        assert_eq!(SamplingConfig::FREQ_4K, m.option.sampling_config);
         assert_eq!(expect, m.calc());
     }
 
@@ -213,30 +190,16 @@ mod tests {
         f32::NAN * Hz
     )]
     fn new_nearest(#[case] expect: Result<Vec<u8>, ModulationError>, #[case] freq: Freq<f32>) {
-        let m = Sine::new_nearest(freq);
-        if !freq.hz().is_nan() {
-            assert_eq!(freq, m.freq());
+        let m = Sine {
+            freq: freq,
+            option: SineOption::default(),
         }
-        assert_eq!(u8::MAX, m.intensity());
-        assert_eq!(0x80, m.offset());
-        assert_eq!(Angle::Rad(0.0), m.phase());
-        assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
+        .into_nearest();
+        assert_eq!(u8::MAX, m.option.intensity);
+        assert_eq!(0x80, m.option.offset);
+        assert_eq!(0. * rad, m.option.phase);
+        assert_eq!(SamplingConfig::FREQ_4K, m.option.sampling_config);
         assert_eq!(expect, m.calc());
-    }
-
-    #[test]
-    fn test_sine_with_param() -> anyhow::Result<()> {
-        let m = Sine::new(100. * Hz)
-            .with_intensity(0x80)
-            .with_offset(0x40)
-            .with_phase(PI / 4.0 * rad)
-            .with_sampling_config(SamplingConfig::new_nearest(10.1 * kHz))?;
-        assert_eq!(0x80, m.intensity);
-        assert_eq!(0x40, m.offset);
-        assert_eq!(PI / 4.0 * rad, m.phase);
-        assert_eq!(SamplingConfig::new_nearest(10.1 * kHz), m.config);
-
-        Ok(())
     }
 
     #[rstest::rstest]
@@ -258,10 +221,15 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            Sine::new(200 * Hz)
-                .with_offset(offset)
-                .with_clamp(clamp)
-                .calc()
+            Sine {
+                freq: 200 * Hz,
+                option: SineOption {
+                    offset,
+                    clamp,
+                    ..Default::default()
+                }
+            }
+            .calc()
         );
     }
 }

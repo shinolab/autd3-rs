@@ -1,42 +1,28 @@
 use autd3_core::derive::*;
-use autd3_derive::Builder;
 
 use std::{cell::RefCell, rc::Rc};
 
 use derive_more::Debug;
+use getset::Getters;
 
 /// Cache for [`Modulation`]
-#[derive(Modulation, Debug, Builder)]
+#[derive(Modulation, Debug, Clone, Getters)]
 pub struct Cache<M: Modulation> {
     m: Rc<RefCell<Option<M>>>,
+    #[getset(get = "pub")]
     #[debug("{}", !self.cache.borrow().is_empty())]
-    #[get]
     /// Cached modulation data.
     cache: Rc<RefCell<Vec<u8>>>,
-    #[no_change]
-    config: SamplingConfig,
-    loop_behavior: LoopBehavior,
-}
-
-impl<M: Modulation> Clone for Cache<M> {
-    fn clone(&self) -> Self {
-        Self {
-            m: self.m.clone(),
-            cache: self.cache.clone(),
-            config: self.config,
-            loop_behavior: self.loop_behavior,
-        }
-    }
 }
 
 /// Trait to convert [`Modulation`] to [`Cache`].
 pub trait IntoCache<M: Modulation> {
     /// Convert [`Modulation`] to [`Cache`]
-    fn with_cache(self) -> Cache<M>;
+    fn into_cached(self) -> Cache<M>;
 }
 
 impl<M: Modulation> IntoCache<M> for M {
-    fn with_cache(self) -> Cache<M> {
+    fn into_cached(self) -> Cache<M> {
         Cache::new(self)
     }
 }
@@ -44,8 +30,6 @@ impl<M: Modulation> IntoCache<M> for M {
 impl<M: Modulation> Cache<M> {
     fn new(m: M) -> Self {
         Self {
-            config: m.sampling_config(),
-            loop_behavior: m.loop_behavior(),
             m: Rc::new(RefCell::new(Some(m))),
             cache: Rc::default(),
         }
@@ -67,50 +51,65 @@ impl<M: Modulation> Cache<M> {
 }
 
 impl<M: Modulation> Modulation for Cache<M> {
+    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
+        self.m.borrow().as_ref().unwrap().sampling_config()
+    }
+
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
         self.init()?;
-        let buffer = self.cache().clone();
+        let buffer = self.cache.borrow().clone();
         Ok(buffer)
     }
 }
 
 #[cfg(test)]
 mod tests {
+
     use crate::modulation::Custom;
 
     use super::*;
 
     use rand::Rng;
-    use std::sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc,
+    use std::{
+        fmt::Debug,
+        sync::{
+            atomic::{AtomicUsize, Ordering},
+            Arc,
+        },
     };
 
     #[test]
     fn test() -> anyhow::Result<()> {
         let mut rng = rand::thread_rng();
 
-        let m = Custom::new([rng.gen::<u8>(), rng.gen::<u8>()], SamplingConfig::FREQ_4K)?;
-        let cache = m.clone().with_cache();
+        let m = Custom {
+            buffer: vec![rng.gen(), rng.gen()],
+            sampling_config: SamplingConfig::FREQ_4K,
+            option: Default::default(),
+        };
+        let cache = m.clone().into_cached();
 
-        assert!(cache.cache().is_empty());
+        assert!(cache.cache().borrow().is_empty());
 
         assert_eq!(m.calc()?, cache.calc()?);
 
         Ok(())
     }
 
-    #[derive(Modulation, Clone, self::Debug)]
+    #[derive(Modulation, Clone, Debug)]
     struct TestCacheModulation {
         pub calc_cnt: Arc<AtomicUsize>,
         pub config: SamplingConfig,
-        pub loop_behavior: LoopBehavior,
     }
 
     impl Modulation for TestCacheModulation {
         fn calc(self) -> Result<Vec<u8>, ModulationError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
             Ok(vec![0x00, 0x00])
+        }
+
+        fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
+            Ok(self.config)
         }
     }
 
@@ -122,7 +121,6 @@ mod tests {
             let modulation = TestCacheModulation {
                 calc_cnt: calc_cnt.clone(),
                 config: SamplingConfig::FREQ_4K,
-                loop_behavior: LoopBehavior::infinite(),
             };
             assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
@@ -139,9 +137,8 @@ mod tests {
             let modulation = TestCacheModulation {
                 calc_cnt: calc_cnt.clone(),
                 config: SamplingConfig::FREQ_4K,
-                loop_behavior: LoopBehavior::infinite(),
             }
-            .with_cache();
+            .into_cached();
             assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
             let _ = modulation.clone().calc();
@@ -159,9 +156,8 @@ mod tests {
         let modulation = TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
             config: SamplingConfig::FREQ_4K,
-            loop_behavior: LoopBehavior::infinite(),
         }
-        .with_cache();
+        .into_cached();
         assert_eq!(1, modulation.count());
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 

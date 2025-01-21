@@ -1,86 +1,61 @@
 use autd3_core::{defined::Freq, derive::*};
-use autd3_derive::Builder;
 
-use super::sampling_mode::{ExactFreq, NearestFreq, SamplingMode, SamplingModeInference};
+use super::sampling_mode::SamplingMode;
 
 use derive_more::Debug;
 
-/// Square wave modulation
-#[derive(Modulation, Clone, PartialEq, Builder, Debug)]
-pub struct Square<S: SamplingMode> {
-    #[debug("{}({:?})", tynm::type_name::<S>(), self.freq)]
-    freq: S::T,
-    #[get]
-    #[set]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SquareOption {
     /// The low value of the modulation. The default value is [`u8::MIN`].
-    low: u8,
-    #[get]
-    #[set]
+    pub low: u8,
     /// The high value of the modulation. The default value is [`u8::MAX`].
-    high: u8,
-    #[get]
-    #[set]
+    pub high: u8,
     /// The duty ratio of the modulation, that is the ratio of high value to the period. The default value is `0.5`.
-    duty: f32,
-    config: SamplingConfig,
-    loop_behavior: LoopBehavior,
+    pub duty: f32,
+    pub sampling_config: SamplingConfig,
 }
 
-impl Square<ExactFreq> {
-    /// Creates a new [`Square`] modulation with exact frequency.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use autd3::prelude::*;
-    ///
-    /// Square::new(100 * Hz);
-    /// // or
-    /// Square::new(100. * Hz);
-    /// ```
-    pub const fn new<S: SamplingModeInference>(freq: S) -> Square<S::T> {
-        Square {
-            freq,
+impl Default for SquareOption {
+    fn default() -> Self {
+        Self {
             low: u8::MIN,
             high: u8::MAX,
             duty: 0.5,
-            config: SamplingConfig::FREQ_4K,
-            loop_behavior: LoopBehavior::infinite(),
-        }
-    }
-
-    /// Creates a new [`Square`] with the nearest frequency to the specified value of the possible values.
-    pub const fn new_nearest(freq: Freq<f32>) -> Square<NearestFreq> {
-        Square {
-            freq,
-            low: u8::MIN,
-            high: u8::MAX,
-            duty: 0.5,
-            config: SamplingConfig::FREQ_4K,
-            loop_behavior: LoopBehavior::infinite(),
+            sampling_config: SamplingConfig::FREQ_4K,
         }
     }
 }
 
-impl<S: SamplingMode> Square<S> {
-    /// The frequency of the modulation.
-    pub fn freq(&self) -> S::T {
-        S::freq(self.freq, self.config)
+/// Square wave modulation
+#[derive(Modulation, Clone, PartialEq, Debug)]
+pub struct Square<S: Into<SamplingMode> + Debug> {
+    pub freq: S,
+    /// The option of the modulation.
+    pub option: SquareOption,
+}
+
+impl Square<Freq<f32>> {
+    pub fn into_nearest(self) -> Square<SamplingMode> {
+        Square {
+            freq: SamplingMode::NearestFreq(self.freq),
+            option: self.option,
+        }
     }
 }
 
-impl<S: SamplingMode> Modulation for Square<S> {
+impl<S: Into<SamplingMode> + Debug> Modulation for Square<S> {
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
-        if !(0.0..=1.0).contains(&self.duty) {
+        if !(0.0..=1.0).contains(&self.option.duty) {
             return Err(ModulationError::new(
                 "duty must be in range from 0 to 1".to_string(),
             ));
         }
 
-        let (n, rep) = S::validate(self.freq, self.config)?;
-        let high = self.high;
-        let low = self.low;
-        let duty = self.duty;
+        let sampling_mode: SamplingMode = self.freq.into();
+        let (n, rep) = sampling_mode.validate(self.option.sampling_config)?;
+        let high = self.option.high;
+        let low = self.option.low;
+        let duty = self.option.duty;
         Ok((0..rep)
             .map(|i| (n + i) / rep)
             .flat_map(|size| {
@@ -90,6 +65,10 @@ impl<S: SamplingMode> Modulation for Square<S> {
                     .chain(vec![low; size as usize - n_high])
             })
             .collect())
+    }
+
+    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
+        Ok(self.option.sampling_config)
     }
 }
 
@@ -168,14 +147,16 @@ mod tests {
     )]
     fn with_freq_float_exact(
         #[case] expect: Result<Vec<u8>, ModulationError>,
-        #[case] freq: impl SamplingModeInference,
+        #[case] freq: impl Into<SamplingMode> + Debug,
     ) {
-        let m = Square::new(freq);
-        assert_eq!(freq, m.freq());
-        assert_eq!(u8::MIN, m.low());
-        assert_eq!(u8::MAX, m.high());
-        assert_eq!(0.5, m.duty());
-        assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
+        let m = Square {
+            freq,
+            option: SquareOption::default(),
+        };
+        assert_eq!(u8::MIN, m.option.low);
+        assert_eq!(u8::MAX, m.option.high);
+        assert_eq!(0.5, m.option.duty);
+        assert_eq!(SamplingConfig::FREQ_4K, m.option.sampling_config);
         assert_eq!(expect, m.calc());
     }
 
@@ -193,20 +174,28 @@ mod tests {
         200.*Hz
     )]
     fn new_nearest(#[case] expect: Result<Vec<u8>, ModulationError>, #[case] freq: Freq<f32>) {
-        let m = Square::new_nearest(freq);
-        assert_eq!(freq, m.freq());
-        assert_eq!(u8::MIN, m.low());
-        assert_eq!(u8::MAX, m.high());
-        assert_eq!(0.5, m.duty());
-        assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
+        let m = Square {
+            freq: freq,
+            option: SquareOption::default(),
+        }
+        .into_nearest();
+        assert_eq!(u8::MIN, m.option.low);
+        assert_eq!(u8::MAX, m.option.high);
+        assert_eq!(0.5, m.option.duty);
+        assert_eq!(SamplingConfig::FREQ_4K, m.option.sampling_config);
 
         assert_eq!(expect, m.calc());
     }
 
     #[test]
     fn with_low() -> anyhow::Result<()> {
-        let m = Square::new(150. * Hz).with_low(u8::MAX);
-        assert_eq!(u8::MAX, m.low());
+        let m = Square {
+            freq: 150. * Hz,
+            option: SquareOption {
+                low: u8::MAX,
+                ..Default::default()
+            },
+        };
         assert!(m.calc()?.iter().all(|&x| x == u8::MAX));
 
         Ok(())
@@ -214,40 +203,51 @@ mod tests {
 
     #[test]
     fn with_high() -> anyhow::Result<()> {
-        let m = Square::new(150. * Hz).with_high(u8::MIN);
-        assert_eq!(u8::MIN, m.high());
+        let m = Square {
+            freq: 150. * Hz,
+            option: SquareOption {
+                high: u8::MIN,
+                ..Default::default()
+            },
+        };
         assert!(m.calc()?.iter().all(|&x| x == u8::MIN));
 
         Ok(())
     }
 
+    #[rstest::rstest]
+    #[case(u8::MIN, 0.0)]
+    #[case(u8::MAX, 1.0)]
     #[test]
-    fn with_duty() -> anyhow::Result<()> {
-        let m = Square::new(150. * Hz).with_duty(0.0);
-        assert_eq!(m.duty(), 0.0);
-        assert!(m.calc()?.iter().all(|&x| x == u8::MIN));
-
-        let m = Square::new(150. * Hz).with_duty(1.0);
-        assert_eq!(m.duty(), 1.0);
-        assert!(m.calc()?.iter().all(|&x| x == u8::MAX));
+    fn with_duty(#[case] expect: u8, #[case] duty: f32) -> anyhow::Result<()> {
+        let m = Square {
+            freq: 150. * Hz,
+            option: SquareOption {
+                duty,
+                ..Default::default()
+            },
+        };
+        assert!(m.calc()?.iter().all(|&x| x == expect));
 
         Ok(())
     }
 
+    #[rstest::rstest]
+    #[case("duty must be in range from 0 to 1", -0.1)]
+    #[case("duty must be in range from 0 to 1", 1.1)]
     #[test]
-    fn duty_out_of_range() {
+    fn duty_out_of_range(#[case] expect: &str, #[case] duty: f32) {
         assert_eq!(
-            Some(ModulationError::new(
-                "duty must be in range from 0 to 1".to_string()
-            )),
-            Square::new(150. * Hz).with_duty(-0.1).calc().err()
-        );
-
-        assert_eq!(
-            Some(ModulationError::new(
-                "duty must be in range from 0 to 1".to_string()
-            )),
-            Square::new(150. * Hz).with_duty(1.1).calc().err()
+            Some(ModulationError::new(expect.to_string())),
+            Square {
+                freq: 150. * Hz,
+                option: SquareOption {
+                    duty,
+                    ..Default::default()
+                },
+            }
+            .calc()
+            .err()
         );
     }
 }

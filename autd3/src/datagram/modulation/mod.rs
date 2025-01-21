@@ -12,7 +12,7 @@ mod r#static;
 pub use cache::Cache as ModulationCache;
 pub use cache::IntoCache as IntoModulationCache;
 pub use custom::Custom;
-pub use fir::{Fir, IntoFir};
+pub use fir::{Fir, WithFir};
 pub use fourier::Fourier;
 pub use r#static::Static;
 pub use radiation_pressure::IntoRadiationPressure;

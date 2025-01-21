@@ -181,14 +181,14 @@ impl<L: AsyncLink> Controller<L> {
     /// # use autd3::prelude::*;
     /// # use autd3::r#async::controller::Controller;
     /// # tokio_test::block_on(async {
-    /// let mut autd = Controller::builder((0..3).map(|_| AUTD3::new(Point3::origin()))).open(Nop::builder()).await?;
+    /// let mut autd = Controller::builder((0..3).map(|_| AUTD3::default())).open(Nop::builder()).await?;
     ///
     /// autd.group(|dev| match dev.idx() {
     ///    0 => Some("static"),
     ///    2 => Some("sine"),
     ///   _ => None,
     /// })
-    /// .set("static", Static::new())?
+    /// .set("static", Static::default())?
     /// .set("sine", Sine::new(150 * Hz))?
     /// .send().await?;
     /// # Result::<(), AUTDError>::Ok(())
@@ -225,14 +225,14 @@ mod tests {
     async fn test_group() -> anyhow::Result<()> {
         let mut autd = create_controller(4).await?;
 
-        autd.send(Uniform::new(EmitIntensity::new(0xFF))).await?;
+        autd.send(Uniform::new(EmitIntensity(0xFF))).await?;
 
         autd.group(|dev| match dev.idx() {
             0 | 1 | 3 => Some(dev.idx()),
             _ => None,
         })
-        .set(0, Null::new())?
-        .set(1, (Static::with_intensity(0x80), Null::new()))?
+        .set(0, Null {})?
+        .set(1, (Static::with_intensity(0x80), Null {}))?
         .set(
             3,
             (
@@ -240,8 +240,8 @@ mod tests {
                 GainSTM::new(
                     1. * Hz,
                     [
-                        Uniform::new(EmitIntensity::new(0x80)),
-                        Uniform::new(EmitIntensity::new(0x81)),
+                        Uniform::new(EmitIntensity(0x80)),
+                        Uniform::new(EmitIntensity(0x81)),
                     ]
                     .into_iter(),
                 )?,
@@ -266,7 +266,10 @@ mod tests {
 
         assert_eq!(
             vec![
-                Drive::new(Phase::ZERO, EmitIntensity::new(0xFF));
+                Drive {
+                    phase: Phase::ZERO,
+                    intensity: EmitIntensity(0xFF)
+                };
                 autd.geometry[2].num_transducers()
             ],
             autd.link[2].fpga().drives_at(Segment::S0, 0)
@@ -278,14 +281,20 @@ mod tests {
         );
         assert_eq!(
             vec![
-                Drive::new(Phase::ZERO, EmitIntensity::new(0x80));
+                Drive {
+                    phase: Phase::ZERO,
+                    intensity: EmitIntensity(0x80)
+                };
                 autd.geometry[3].num_transducers()
             ],
             autd.link[3].fpga().drives_at(Segment::S0, 0)
         );
         assert_eq!(
             vec![
-                Drive::new(Phase::ZERO, EmitIntensity::new(0x81));
+                Drive {
+                    phase: Phase::ZERO,
+                    intensity: EmitIntensity(0x81)
+                };
                 autd.geometry[3].num_transducers()
             ],
             autd.link[3].fpga().drives_at(Segment::S0, 1)
@@ -300,7 +309,7 @@ mod tests {
         assert_eq!(
             Ok(()),
             autd.group(|dev| Some(dev.idx()))
-                .set(0, Null::new())?
+                .set(0, Null {})?
                 .send()
                 .await
         );
@@ -309,7 +318,7 @@ mod tests {
         assert_eq!(
             Err(AUTDDriverError::SendDataFailed),
             autd.group(|dev| Some(dev.idx()))
-                .set(0, Null::new())?
+                .set(0, Null {})?
                 .send()
                 .await
         );
@@ -324,7 +333,7 @@ mod tests {
         assert_eq!(
             Err(AUTDDriverError::InvalidSegmentTransition),
             autd.group(|dev| Some(dev.idx()))
-                .set(0, Null::new())?
+                .set(0, Null {})?
                 .set(
                     1,
                     SwapSegment::FociSTM(Segment::S1, TransitionMode::SyncIdx),
@@ -382,7 +391,7 @@ mod tests {
             geometry.iter().for_each(|dev| {
                 self.test.lock().unwrap()[dev.idx()] = dev.enable;
             });
-            Ok(Null::new())
+            Ok(Null {})
         }
     }
 
@@ -413,8 +422,8 @@ mod tests {
         assert_eq!(
             Some(AUTDDriverError::UnkownKey("2".to_owned())),
             autd.group(|dev| Some(dev.idx()))
-                .set(0, Null::new())?
-                .set(2, Null::new())
+                .set(0, Null {})?
+                .set(2, Null {})
                 .err()
         );
 
@@ -428,9 +437,9 @@ mod tests {
         assert_eq!(
             Some(AUTDDriverError::KeyIsAlreadyUsed("1".to_owned())),
             autd.group(|dev| Some(dev.idx()))
-                .set(0, Null::new())?
-                .set(1, Null::new())?
-                .set(1, Null::new())
+                .set(0, Null {})?
+                .set(1, Null {})?
+                .set(1, Null {})
                 .err()
         );
 
@@ -444,7 +453,7 @@ mod tests {
         assert_eq!(
             Some(AUTDDriverError::UnusedKey("0, 2".to_owned())),
             autd.group(|dev| Some(dev.idx()))
-                .set(1, Null::new())?
+                .set(1, Null {})?
                 .send()
                 .await
                 .err()

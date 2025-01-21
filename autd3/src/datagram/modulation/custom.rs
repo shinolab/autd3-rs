@@ -1,38 +1,32 @@
-use std::borrow::Borrow;
+use std::{fmt::Debug, rc::Rc};
 
 use autd3_core::{defined::Freq, derive::*, resampler::Resampler};
 
-///[`Modulation`] to use arbitrary modulation data
-#[derive(Modulation, Clone, PartialEq, Debug)]
-pub struct Custom {
-    buffer: Vec<u8>,
-    #[no_change]
-    config: SamplingConfig,
-    loop_behavior: LoopBehavior,
+#[derive(Clone, Debug)]
+pub struct CustomOption {
+    resampler: Option<(Freq<f32>, Rc<dyn Resampler>)>,
 }
 
-impl Custom {
-    /// Create new [`Custom`] modulation
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use autd3::prelude::*;
-    /// use autd3::modulation::Custom;
-    ///
-    /// Custom::new(&[0x00, 0xFF], 4 * kHz);
-    /// ```
-    pub fn new<T: TryInto<SamplingConfig>>(
-        buffer: impl IntoIterator<Item = impl Borrow<u8>>,
-        config: T,
-    ) -> Result<Self, T::Error> {
-        Ok(Self {
-            buffer: buffer.into_iter().map(|b| *b.borrow()).collect(),
-            config: config.try_into()?,
-            loop_behavior: LoopBehavior::infinite(),
-        })
+impl Default for CustomOption {
+    fn default() -> Self {
+        Self { resampler: None }
     }
+}
 
+///[`Modulation`] to use arbitrary modulation data
+#[derive(Modulation, Clone, Debug)]
+pub struct Custom<Config, E>
+where
+    E: Debug,
+    SamplingConfigError: From<E>,
+    Config: TryInto<SamplingConfig, Error = E> + Debug + Copy,
+{
+    pub buffer: Vec<u8>,
+    pub sampling_config: Config,
+    pub option: CustomOption,
+}
+
+impl Custom<Freq<f32>, SamplingConfigError> {
     /// Create new [`Custom`] modulation with resampling
     ///
     /// # Examples
@@ -44,30 +38,49 @@ impl Custom {
     ///
     /// Custom::new_with_resample(&[0x00, 0xFF], 2.0 * kHz, 4 * kHz, SincInterpolation::default());
     /// ```
-    #[tracing::instrument(skip(buffer))]
-    pub fn new_with_resample<T: TryInto<SamplingConfig> + std::fmt::Debug>(
-        buffer: impl IntoIterator<Item = impl Borrow<u8>>,
-        source: Freq<f32>,
-        target: T,
-        resampler: impl Resampler,
-    ) -> Result<Self, T::Error> {
-        let target = target.try_into()?;
-        let buffer = resampler.resample(
-            &buffer.into_iter().map(|b| *b.borrow()).collect::<Vec<_>>(),
-            source,
-            target,
-        );
-        Ok(Self {
-            buffer,
-            config: target,
-            loop_behavior: LoopBehavior::infinite(),
-        })
+    pub fn with_resample<T, E>(self, target: T, resampler: impl Resampler + 'static) -> Custom<T, E>
+    where
+        E: Debug,
+        SamplingConfigError: From<E>,
+        T: TryInto<SamplingConfig, Error = E> + Debug + Copy,
+    {
+        let source = self.sampling_config;
+        Custom {
+            buffer: self.buffer,
+            sampling_config: target,
+            option: CustomOption {
+                resampler: Some((source, Rc::new(resampler))),
+                ..self.option
+            },
+        }
     }
 }
 
-impl Modulation for Custom {
+impl<Config, E> Modulation for Custom<Config, E>
+where
+    E: Debug,
+    SamplingConfigError: From<E>,
+    Config: TryInto<SamplingConfig, Error = E> + Debug + Copy,
+{
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
-        Ok(self.buffer.clone())
+        Ok(if let Some((source, resampler)) = self.option.resampler {
+            resampler.resample(
+                &self.buffer,
+                source,
+                self.sampling_config
+                    .try_into()
+                    .map_err(SamplingConfigError::from)?,
+            )
+        } else {
+            self.buffer
+        })
+    }
+
+    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
+        Ok(self
+            .sampling_config
+            .try_into()
+            .map_err(SamplingConfigError::from)?)
     }
 }
 
@@ -85,9 +98,11 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let test_buf = (0..2).map(|_| rng.gen()).collect::<Vec<_>>();
-        let custom = Custom::new(&test_buf, 4 * kHz)?;
-
-        assert_eq!(4. * kHz, custom.sampling_config().freq());
+        let custom = Custom {
+            buffer: test_buf.clone(),
+            sampling_config: 4. * kHz,
+            option: CustomOption::default(),
+        };
 
         let d = custom.calc()?;
         assert_eq!(test_buf, *d);
@@ -104,10 +119,14 @@ mod tests {
         #[case] buffer: Vec<u8>,
         #[case] source: Freq<f32>,
         #[case] target: Freq<f32>,
-        #[case] resampler: impl Resampler,
+        #[case] resampler: impl Resampler + 'static,
     ) -> anyhow::Result<()> {
-        let custom = Custom::new_with_resample(&buffer, source, target, resampler)?;
-        assert_eq!(target, custom.sampling_config().freq());
+        let custom = Custom {
+            buffer: buffer,
+            sampling_config: source,
+            option: CustomOption::default(),
+        }
+        .with_resample(target, resampler);
         assert_eq!(expected, *custom.calc()?);
         Ok(())
     }

@@ -8,7 +8,7 @@ use crate::{error::AUTDError, gain::Null, prelude::Static};
 use std::time::Duration;
 
 use autd3_core::link::AsyncLink;
-use autd3_derive::Builder;
+
 use autd3_driver::{
     datagram::{Clear, Datagram, ForceFan, IntoDatagramWithTimeout, Silencer, Synchronize},
     error::AUTDDriverError,
@@ -114,7 +114,7 @@ impl<L: AsyncLink> Controller<L> {
         self.geometry.iter_mut().for_each(|dev| dev.enable = true);
         [
             self.send(Silencer::default().with_strict_mode(false)).await,
-            self.send((Static::new(), Null::default())).await,
+            self.send((Static::default(), Null::default())).await,
             self.send(Clear::new()).await,
             Ok(self.link.close().await?),
         ]
@@ -178,7 +178,7 @@ impl<L: AsyncLink> Controller<L> {
     /// # use autd3::prelude::*;
     /// # use autd3::r#async::controller::Controller;
     /// # tokio_test::block_on(async {
-    /// let mut autd = Controller::builder([AUTD3::new(Point3::origin())]).open(Nop::builder()).await?;
+    /// let mut autd = Controller::builder([AUTD3::default()]).open(Nop::builder()).await?;
     ///
     /// autd.send(ReadsFPGAState::new(|_| true)).await?;
     ///
@@ -303,11 +303,9 @@ mod tests {
 
     // GRCOV_EXCL_START
     pub async fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit>> {
-        Ok(
-            Controller::builder((0..dev_num).map(|_| AUTD3::new(Point3::origin())))
-                .open(Audit::builder())
-                .await?,
-        )
+        Ok(Controller::builder((0..dev_num).map(|_| AUTD3::default()))
+            .open(Audit::builder(AuditOption::default()))
+            .await?)
     }
     // GRCOV_EXCL_STOP
 
@@ -318,9 +316,9 @@ mod tests {
     #[cfg_attr(target_os = "windows", case(TimerStrategy::Waitable(WaitableSleeper::new().unwrap())))]
     #[tokio::test(flavor = "multi_thread")]
     async fn open_with_timer(#[case] strategy: TimerStrategy) {
-        assert!(Controller::builder([AUTD3::new(Point3::origin())])
+        assert!(Controller::builder([AUTD3::default()])
             .with_timer_strategy(strategy)
-            .open(Audit::builder())
+            .open(Audit::builder(AuditOption::default()))
             .await
             .is_ok());
     }
@@ -329,8 +327,8 @@ mod tests {
     async fn open_failed() {
         assert_eq!(
             Some(AUTDError::Driver(AUTDDriverError::SendDataFailed)),
-            Controller::builder([AUTD3::new(Point3::origin())])
-                .open(Audit::builder().with_down(true))
+            Controller::builder([AUTD3::default()])
+                .open(Audit::builder(AuditOption::default()).with_down(true))
                 .await
                 .err()
         );
@@ -344,8 +342,8 @@ mod tests {
             GainSTM::new(
                 1. * Hz,
                 [
-                    Uniform::new(EmitIntensity::new(0x80)),
-                    Uniform::new(EmitIntensity::new(0x81)),
+                    Uniform::new(EmitIntensity(0x80)),
+                    Uniform::new(EmitIntensity(0x81)),
                 ]
                 .into_iter(),
             )?,
@@ -357,14 +355,14 @@ mod tests {
                 *Sine::new(150. * Hz).calc()?,
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
             );
-            let f = Uniform::new(EmitIntensity::new(0x80))
+            let f = Uniform::new(EmitIntensity(0x80))
                 .init(&autd.geometry, None)?
                 .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 0)
             );
-            let f = Uniform::new(EmitIntensity::new(0x81))
+            let f = Uniform::new(EmitIntensity(0x81))
                 .init(&autd.geometry, None)?
                 .generate(dev);
             assert_eq!(
@@ -441,10 +439,9 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn fpga_state() -> anyhow::Result<()> {
-        let mut autd =
-            Controller::builder([AUTD3::new(Point3::origin()), AUTD3::new(Point3::origin())])
-                .open(Audit::builder())
-                .await?;
+        let mut autd = Controller::builder([AUTD3::default(), AUTD3::default()])
+            .open(Audit::builder(AuditOption::default()))
+            .await?;
 
         autd.send(ReadsFPGAState::new(|_| true)).await?;
         {
@@ -514,8 +511,8 @@ mod tests {
             GainSTM::new(
                 1. * Hz,
                 [
-                    Uniform::new(EmitIntensity::new(0x80)),
-                    Uniform::new(EmitIntensity::new(0x81)),
+                    Uniform::new(EmitIntensity(0x80)),
+                    Uniform::new(EmitIntensity(0x81)),
                 ]
                 .into_iter(),
             )?,
@@ -529,14 +526,14 @@ mod tests {
                 *Sine::new(150. * Hz).calc()?,
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
             );
-            let f = Uniform::new(EmitIntensity::new(0x80))
+            let f = Uniform::new(EmitIntensity(0x80))
                 .init(&autd.geometry, None)?
                 .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 0)
             );
-            let f = Uniform::new(EmitIntensity::new(0x81))
+            let f = Uniform::new(EmitIntensity(0x81))
                 .init(&autd.geometry, None)?
                 .generate(dev);
             assert_eq!(

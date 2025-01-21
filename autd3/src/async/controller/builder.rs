@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use autd3_core::{defined::DEFAULT_TIMEOUT, link::AsyncLinkBuilder};
-use autd3_derive::Builder;
+
 use autd3_driver::{
     firmware::cpu::{RxMessage, TxMessage},
     geometry::{Device, Geometry, IntoDevice},
@@ -114,10 +114,9 @@ mod tests {
 
     #[tokio::test]
     async fn geometry() -> anyhow::Result<()> {
-        let autd =
-            ControllerBuilder::new([AUTD3::new(Point3::origin()), AUTD3::new(Point3::origin())])
-                .open(crate::link::Nop::builder())
-                .await?;
+        let autd = ControllerBuilder::new([AUTD3::default(), AUTD3::default()])
+            .open(crate::link::Nop::builder())
+            .await?;
 
         assert_eq!(0, autd[0].idx());
         autd[0].iter().enumerate().for_each(|(i, tr)| {

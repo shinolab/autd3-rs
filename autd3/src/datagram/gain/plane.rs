@@ -1,28 +1,35 @@
 use autd3_core::derive::*;
-use autd3_derive::Builder;
+
 use autd3_driver::{
     defined::rad,
     firmware::fpga::{EmitIntensity, Phase},
     geometry::UnitVector3,
 };
-use derive_new::new;
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PlaneOption {
+    /// The intensity of the beam.
+    pub intensity: EmitIntensity,
+    /// The phase offset of the beam.
+    pub phase_offset: Phase,
+}
+
+impl Default for PlaneOption {
+    fn default() -> Self {
+        Self {
+            intensity: EmitIntensity::MAX,
+            phase_offset: Phase::ZERO,
+        }
+    }
+}
 
 /// Plane wave
-#[derive(Gain, Clone, PartialEq, Debug, Builder, new)]
+#[derive(Gain, Clone, PartialEq, Debug)]
 pub struct Plane {
-    #[get(ref)]
     /// The direction of the plane wave.
-    dir: UnitVector3,
-    #[new(value = "EmitIntensity::MAX")]
-    #[get]
-    #[set(into)]
-    /// The intensity of the plane wave.
-    intensity: EmitIntensity,
-    #[new(value = "Phase::ZERO")]
-    #[get]
-    #[set(into)]
-    /// The phase offset of the plane wave.
-    phase_offset: Phase,
+    pub dir: UnitVector3,
+    /// The option of the gain.
+    pub option: PlaneOption,
 }
 
 pub struct Context {
@@ -34,12 +41,11 @@ pub struct Context {
 
 impl GainContext for Context {
     fn calc(&self, tr: &Transducer) -> Drive {
-        (
-            Phase::from(-self.dir.dot(&tr.position().coords) * self.wavenumber * rad)
+        Drive {
+            phase: Phase::from(-self.dir.dot(&tr.position().coords) * self.wavenumber * rad)
                 + self.phase_offset,
-            self.intensity,
-        )
-            .into()
+            intensity: self.intensity,
+        }
     }
 }
 
@@ -49,8 +55,8 @@ impl GainContextGenerator for Plane {
     fn generate(&mut self, device: &Device) -> Self::Context {
         Context {
             dir: self.dir,
-            intensity: self.intensity,
-            phase_offset: self.phase_offset,
+            intensity: self.option.intensity,
+            phase_offset: self.option.phase_offset,
             wavenumber: device.wavenumber(),
         }
     }
@@ -63,6 +69,7 @@ impl Gain for Plane {
         self,
         _geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,
+        _option: &DatagramOption,
     ) -> Result<Self::G, GainError> {
         Ok(self)
     }
@@ -83,11 +90,7 @@ mod tests {
         phase_offset: Phase,
         geometry: &Geometry,
     ) -> anyhow::Result<()> {
-        assert_eq!(&dir, g.dir());
-        assert_eq!(intensity, g.intensity());
-        assert_eq!(phase_offset, g.phase_offset());
-
-        let mut b = g.init(geometry, None)?;
+        let mut b = g.init(geometry, None, &DatagramOption::default())?;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
@@ -95,8 +98,8 @@ mod tests {
                     Phase::from(-dir.dot(&tr.position().coords) * dev.wavenumber() * rad)
                         + phase_offset;
                 let d = d.calc(tr);
-                assert_eq!(expected_phase, d.phase());
-                assert_eq!(intensity, d.intensity());
+                assert_eq!(expected_phase, d.phase);
+                assert_eq!(intensity, d.intensity);
             });
         });
 
@@ -109,17 +112,25 @@ mod tests {
 
         let geometry = create_geometry(1);
 
-        let d = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
-        let g = Plane::new(d);
-        plane_check(g, d, EmitIntensity::MAX, Phase::ZERO, &geometry)?;
+        let dir = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
+        let g = Plane {
+            dir,
+            option: PlaneOption::default(),
+        };
+        plane_check(g, dir, EmitIntensity::MAX, Phase::ZERO, &geometry)?;
 
-        let d = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
-        let intensity = EmitIntensity::new(rng.gen());
-        let phase_offset = Phase::new(rng.gen());
-        let g = Plane::new(d)
-            .with_intensity(intensity)
-            .with_phase_offset(phase_offset);
-        plane_check(g, d, intensity, phase_offset, &geometry)?;
+        let dir = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
+        let intensity = EmitIntensity(rng.gen());
+        let phase_offset = Phase(rng.gen());
+        let g = Plane {
+            dir,
+            option: PlaneOption {
+                intensity,
+                phase_offset,
+                ..PlaneOption::default()
+            },
+        };
+        plane_check(g, dir, intensity, phase_offset, &geometry)?;
 
         Ok(())
     }

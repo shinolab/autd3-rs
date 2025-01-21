@@ -1,28 +1,35 @@
 use autd3_core::derive::*;
-use autd3_derive::Builder;
+
 use autd3_driver::{
     defined::rad,
     firmware::fpga::{EmitIntensity, Phase},
     geometry::Point3,
 };
-use derive_new::new;
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct FocusOption {
+    /// The intensity of the beam.
+    pub intensity: EmitIntensity,
+    /// The phase offset of the beam.
+    pub phase_offset: Phase,
+}
+
+impl Default for FocusOption {
+    fn default() -> Self {
+        Self {
+            intensity: EmitIntensity::MAX,
+            phase_offset: Phase::ZERO,
+        }
+    }
+}
 
 /// Single focus
-#[derive(Gain, Clone, PartialEq, Debug, Builder, new)]
+#[derive(Gain, Clone, PartialEq, Debug)]
 pub struct Focus {
-    #[get(ref)]
     /// The position of the focus
-    pos: Point3,
-    #[new(value = "EmitIntensity::MAX")]
-    #[get]
-    #[set(into)]
-    /// The intensity of the focus
-    intensity: EmitIntensity,
-    #[new(value = "Phase::ZERO")]
-    #[get]
-    #[set(into)]
-    /// The phase offset of the focus
-    phase_offset: Phase,
+    pub pos: Point3,
+    /// The option of the gain.
+    pub option: FocusOption,
 }
 
 pub struct Context {
@@ -34,12 +41,11 @@ pub struct Context {
 
 impl GainContext for Context {
     fn calc(&self, tr: &Transducer) -> Drive {
-        (
-            Phase::from(-(self.pos - tr.position()).norm() * self.wavenumber * rad)
+        Drive {
+            phase: Phase::from(-(self.pos - tr.position()).norm() * self.wavenumber * rad)
                 + self.phase_offset,
-            self.intensity,
-        )
-            .into()
+            intensity: self.intensity,
+        }
     }
 }
 
@@ -49,8 +55,8 @@ impl GainContextGenerator for Focus {
     fn generate(&mut self, device: &Device) -> Self::Context {
         Context {
             pos: self.pos,
-            intensity: self.intensity,
-            phase_offset: self.phase_offset,
+            intensity: self.option.intensity,
+            phase_offset: self.option.phase_offset,
             wavenumber: device.wavenumber(),
         }
     }
@@ -63,6 +69,7 @@ impl Gain for Focus {
         self,
         _geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,
+        _option: &DatagramOption,
     ) -> Result<Self::G, GainError> {
         Ok(self)
     }
@@ -81,11 +88,7 @@ mod tests {
         phase_offset: Phase,
         geometry: &Geometry,
     ) -> anyhow::Result<()> {
-        assert_eq!(&pos, g.pos());
-        assert_eq!(intensity, g.intensity());
-        assert_eq!(phase_offset, g.phase_offset());
-
-        let mut b = g.init(geometry, None)?;
+        let mut b = g.init(geometry, None, &DatagramOption::default())?;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
@@ -93,8 +96,8 @@ mod tests {
                     Phase::from(-(tr.position() - pos).norm() * dev.wavenumber() * rad)
                         + phase_offset;
                 let d = d.calc(tr);
-                assert_eq!(expected_phase, d.phase());
-                assert_eq!(intensity, d.intensity());
+                assert_eq!(expected_phase, d.phase);
+                assert_eq!(intensity, d.intensity);
             });
         });
 
@@ -107,17 +110,25 @@ mod tests {
 
         let geometry = create_geometry(1);
 
-        let f = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
-        let g = Focus::new(f);
-        focus_check(g, f, EmitIntensity::MAX, Phase::ZERO, &geometry)?;
+        let pos = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
+        let g = Focus {
+            pos,
+            option: Default::default(),
+        };
+        focus_check(g, pos, EmitIntensity::MAX, Phase::ZERO, &geometry)?;
 
-        let f = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
-        let intensity = EmitIntensity::new(rng.gen());
-        let phase_offset = Phase::new(rng.gen());
-        let g = Focus::new(f)
-            .with_intensity(intensity)
-            .with_phase_offset(phase_offset);
-        focus_check(g, f, intensity, phase_offset, &geometry)?;
+        let pos = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
+        let intensity = EmitIntensity(rng.gen());
+        let phase_offset = Phase(rng.gen());
+        let g = Focus {
+            pos,
+            option: FocusOption {
+                intensity,
+                phase_offset,
+                ..Default::default()
+            },
+        };
+        focus_check(g, pos, intensity, phase_offset, &geometry)?;
 
         Ok(())
     }

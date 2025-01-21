@@ -1,9 +1,8 @@
 use autd3_core::derive::*;
 use autd3_driver::firmware::fpga::Drive;
-use derive_new::new;
 
 /// [`Gain`] that output nothing
-#[derive(Gain, Default, Clone, PartialEq, Eq, Debug, new)]
+#[derive(Gain, Default, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Null {}
 
 impl GainContext for Null {
@@ -27,6 +26,7 @@ impl Gain for Null {
         self,
         _geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,
+        _option: &DatagramOption,
     ) -> Result<Self::G, GainError> {
         Ok(self)
     }
@@ -42,8 +42,8 @@ mod tests {
     fn test_null() -> anyhow::Result<()> {
         let geometry = create_geometry(1);
 
-        let g = Null::new();
-        let mut b = g.init(&geometry, None)?;
+        let g = Null::default();
+        let mut b = g.init(&geometry, None, &DatagramOption::default())?;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {

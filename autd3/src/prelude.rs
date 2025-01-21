@@ -2,22 +2,20 @@ pub use crate::{
     controller::Controller,
     datagram::{
         gain::{Bessel, Focus, Group, IntoGainCache, Null, Plane, Uniform},
-        modulation::{IntoFir, IntoModulationCache, IntoRadiationPressure, Sine, Square, Static},
+        modulation::{IntoModulationCache, IntoRadiationPressure, Sine, Square, Static, WithFir},
         stm::{Circle, Line},
     },
     error::AUTDError,
     link::Nop,
 };
 
-pub use autd3_core::modulation::{Modulation, ModulationProperty};
+pub use autd3_core::modulation::Modulation;
 
 pub use autd3_driver::{
     autd3_device::AUTD3,
     datagram::{
         Clear, ControlPoint, ControlPoints, DebugSettings, FixedUpdateRate, FociSTM, ForceFan,
-        GainSTM, IntoDatagramWithParallelThreshold, IntoDatagramWithSegment,
-        IntoDatagramWithTimeout, PhaseCorrection, PulseWidthEncoder, ReadsFPGAState, Silencer,
-        SwapSegment,
+        GainSTM, PhaseCorrection, PulseWidthEncoder, ReadsFPGAState, Silencer, SwapSegment,
     },
     defined::{deg, kHz, mm, rad, ultrasound_freq, Hz, PI},
     error::AUTDDriverError,

@@ -1,15 +1,17 @@
 use autd3_core::{
+    derive::DatagramOption,
     geometry::Geometry,
     link::{Link, LinkBuilder, LinkError},
 };
-use autd3_derive::Builder;
+
 use autd3_driver::firmware::cpu::{RxMessage, TxMessage};
 use autd3_firmware_emulator::CPUEmulator;
 
 use derive_more::{Deref, DerefMut};
+use getset::{CopyGetters, Getters};
 
 /// A [`Link`] for testing.
-#[derive(Deref, DerefMut, Builder)]
+#[derive(Deref, DerefMut, CopyGetters, Getters)]
 pub struct Audit {
     is_open: bool,
     #[deref]
@@ -17,29 +19,28 @@ pub struct Audit {
     cpus: Vec<CPUEmulator>,
     down: bool,
     broken: bool,
-    #[get]
     /// The last parallel threshold.
+    #[getset(get_copy = "pub")]
     last_parallel_threshold: Option<usize>,
-    #[get]
     /// The last timeout.
+    #[getset(get_copy = "pub")]
     last_timeout: Option<std::time::Duration>,
 }
 
-/// A builder for [`Audit`].
-#[derive(Builder)]
-pub struct AuditBuilder {
-    #[get]
-    #[set]
+#[derive(Default)]
+pub struct AuditOption {
     /// The initial message ID. The default value is `None`.
-    initial_msg_id: Option<u8>,
-    #[get]
-    #[set]
+    pub initial_msg_id: Option<u8>,
     /// The initial phase correction. The default value is `None`.
-    initial_phase_corr: Option<u8>,
-    #[get]
-    #[set]
+    pub initial_phase_corr: Option<u8>,
     /// The initial state of the link. The default value is `false`.
-    down: bool,
+    pub down: bool,
+}
+
+#[derive(Default)]
+/// A builder for [`Audit`].
+pub struct AuditBuilder {
+    option: AuditOption,
 }
 
 impl LinkBuilder for AuditBuilder {
@@ -53,19 +54,20 @@ impl LinkBuilder for AuditBuilder {
                 .enumerate()
                 .map(|(i, dev)| {
                     let mut cpu = CPUEmulator::new(i, dev.num_transducers());
-                    if let Some(msg_id) = self.initial_msg_id {
+                    if let Some(msg_id) = self.option.initial_msg_id {
                         cpu.set_last_msg_id(msg_id);
                     }
-                    if let Some(initial_phase_corr) = self.initial_phase_corr {
+                    if let Some(initial_phase_corr) = self.option.initial_phase_corr {
                         cpu.fpga_mut()
                             .mem_mut()
                             .phase_corr_bram_mut()
+                            .borrow_mut()
                             .fill(u16::from_le_bytes([initial_phase_corr, initial_phase_corr]));
                     }
                     cpu
                 })
                 .collect(),
-            down: self.down,
+            down: self.option.down,
             broken: false,
             last_parallel_threshold: None,
             last_timeout: None,
@@ -74,13 +76,8 @@ impl LinkBuilder for AuditBuilder {
 }
 
 impl Audit {
-    /// Create a new [`AuditBuilder`].
-    pub const fn builder() -> AuditBuilder {
-        AuditBuilder {
-            initial_msg_id: None,
-            initial_phase_corr: None,
-            down: false,
-        }
+    pub fn builder(option: AuditOption) -> AuditBuilder {
+        AuditBuilder { option }
     }
 
     /// Set this link to be down.
@@ -155,9 +152,9 @@ impl Link for Audit {
         self.is_open
     }
 
-    fn trace(&mut self, timeout: Option<std::time::Duration>, parallel_threshold: Option<usize>) {
-        self.last_timeout = timeout;
-        self.last_parallel_threshold = parallel_threshold;
+    fn trace(&mut self, option: &DatagramOption) {
+        self.last_timeout = Some(option.timeout);
+        self.last_parallel_threshold = Some(option.parallel_threshold);
     }
 }
 
@@ -195,7 +192,7 @@ impl AsyncLink for Audit {
         <Self as Link>::is_open(self)
     }
 
-    fn trace(&mut self, timeout: Option<std::time::Duration>, parallel_threshold: Option<usize>) {
-        <Self as Link>::trace(self, timeout, parallel_threshold)
+    fn trace(&mut self, option: &DatagramOption) {
+        <Self as Link>::trace(self, option)
     }
 }

@@ -9,9 +9,9 @@ mod link;
 
 #[tokio::test]
 async fn initial_msg_id() -> anyhow::Result<()> {
-    let cnt = Controller::builder([AUTD3::new(Point3::origin())])
+    let cnt = Controller::builder([AUTD3::default()])
         .open(
-            Audit::builder()
+            Audit::builder(AuditOption::default())
                 .with_initial_msg_id(Some(0x01))
                 .with_initial_phase_corr(Some(0xFF)),
         )
@@ -21,7 +21,7 @@ async fn initial_msg_id() -> anyhow::Result<()> {
         .fpga()
         .phase_correction()
         .iter()
-        .all(|v| v.value() == 0x00));
+        .all(|v| v.0 == 0x00));
 
     Ok(())
 }
