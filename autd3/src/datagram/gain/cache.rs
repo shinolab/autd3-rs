@@ -38,9 +38,14 @@ impl<G: Gain> Cache<G> {
     /// # Errors
     ///
     /// Returns [`GainError`] if you initialize with some devices disabled and then reinitialize after enabling the devices.
-    pub fn init(&self, geometry: &Geometry, option: &DatagramOption) -> Result<(), GainError> {
+    pub fn init(
+        &self,
+        geometry: &Geometry,
+        filter: Option<&HashMap<usize, BitVec>>,
+        option: &DatagramOption,
+    ) -> Result<(), GainError> {
         if let Some(gain) = self.gain.take() {
-            let mut f = gain.init(geometry, None, option)?;
+            let mut f = gain.init_full(geometry, filter, option)?;
             geometry
                 .devices()
                 .filter(|dev| !self.cache.borrow().contains_key(&dev.idx()))
@@ -96,13 +101,17 @@ impl<G: Gain> GainContextGenerator for Cache<G> {
 impl<G: Gain> Gain for Cache<G> {
     type G = Self;
 
-    fn init(
+    fn init(self) -> Result<Self::G, GainError> {
+        unimplemented!()
+    }
+
+    fn init_full(
         self,
         geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec>>,
+        filter: Option<&HashMap<usize, BitVec>>,
         option: &DatagramOption,
     ) -> Result<Self::G, GainError> {
-        Cache::init(&self, geometry, option)?;
+        Cache::init(&self, geometry, filter, option)?;
         Ok(self)
     }
 }
@@ -139,8 +148,8 @@ mod tests {
         let cache = gain.clone().into_cached();
 
         assert!(cache.cache().borrow().is_empty());
-        let mut gg = gain.init(&geometry, None, &DatagramOption::default())?;
-        let mut gc = cache.init(&geometry, None, &DatagramOption::default())?;
+        let mut gg = gain.init()?;
+        let mut gc = cache.init_full(&geometry, None, &DatagramOption::default())?;
         geometry.devices().try_for_each(|dev| {
             let gf = gg.generate(dev);
             let cf = gc.generate(dev);
@@ -164,7 +173,7 @@ mod tests {
 
         cache
             .clone()
-            .init(&geometry, None, &DatagramOption::default())?;
+            .init_full(&geometry, None, &DatagramOption::default())?;
 
         geometry[1].enable = false;
 
@@ -173,7 +182,7 @@ mod tests {
                 "Cache is initialized with different geometry".to_string()
             )),
             cache
-                .init(&geometry, None, &DatagramOption::default())
+                .init_full(&geometry, None, &DatagramOption::default())
                 .err()
         );
 
@@ -204,12 +213,7 @@ mod tests {
     impl Gain for CacheTestGain {
         type G = CacheTestGain;
 
-        fn init(
-            self,
-            _geometry: &Geometry,
-            _filter: Option<&HashMap<usize, BitVec>>,
-            _option: &DatagramOption,
-        ) -> Result<Self::G, GainError> {
+        fn init(self) -> Result<Self::G, GainError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
             Ok(self)
         }
@@ -228,9 +232,9 @@ mod tests {
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
         let _ = gain
             .clone()
-            .init(&geometry, None, &DatagramOption::default());
+            .init_full(&geometry, None, &DatagramOption::default());
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
-        let _ = gain.init(&geometry, None, &DatagramOption::default());
+        let _ = gain.init_full(&geometry, None, &DatagramOption::default());
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
     }
 
@@ -246,11 +250,9 @@ mod tests {
 
             assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
-            let _ = gain
-                .clone()
-                .init(&geometry, None, &DatagramOption::default());
+            let _ = gain.clone().init();
             assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
-            let _ = gain.init(&geometry, None, &DatagramOption::default());
+            let _ = gain.init();
             assert_eq!(2, calc_cnt.load(Ordering::Relaxed));
         }
 
@@ -267,11 +269,13 @@ mod tests {
             assert_eq!(2, gain.count());
             assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
-            let _ = g2.clone().init(&geometry, None, &DatagramOption::default());
+            let _ = g2
+                .clone()
+                .init_full(&geometry, None, &DatagramOption::default());
             assert_eq!(2, gain.count());
             assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
 
-            let _ = g2.init(&geometry, None, &DatagramOption::default());
+            let _ = g2.init_full(&geometry, None, &DatagramOption::default());
             assert_eq!(1, gain.count());
             assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
         }

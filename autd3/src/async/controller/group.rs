@@ -275,6 +275,7 @@ mod tests {
     };
 
     use crate::{
+        controller::tests::TestGain,
         gain::{Null, Uniform},
         modulation::{Sine, Static},
         r#async::controller::tests::create_controller,
@@ -449,27 +450,6 @@ mod tests {
         );
 
         Ok(())
-    }
-
-    #[derive(Gain, Debug)]
-    pub struct TestGain {
-        test: Arc<Mutex<Vec<bool>>>,
-    }
-
-    impl Gain for TestGain {
-        type G = Null;
-
-        fn init(
-            self,
-            geometry: &Geometry,
-            _filter: Option<&HashMap<usize, BitVec>>,
-            _option: &DatagramOption,
-        ) -> Result<Self::G, GainError> {
-            geometry.iter().for_each(|dev| {
-                self.test.lock().unwrap()[dev.idx()] = dev.enable;
-            });
-            Ok(Null {})
-        }
     }
 
     #[tokio::test]

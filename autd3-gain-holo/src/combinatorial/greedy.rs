@@ -91,7 +91,11 @@ impl GainContextGenerator for ContextGenerator {
 impl<D: Directivity> Gain for Greedy<D> {
     type G = ContextGenerator;
 
-    fn init(
+    fn init(self) -> Result<Self::G, GainError> {
+        unimplemented!()
+    }
+
+    fn init_full(
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
@@ -193,7 +197,7 @@ mod tests {
             option: GreedyOption::default(),
         };
         assert_eq!(
-            g.init(&geometry, None, &DatagramOption::default())
+            g.init_full(&geometry, None, &DatagramOption::default())
                 .map(|mut res| {
                     let f = res.generate(&geometry[0]);
                     geometry[0]
@@ -215,7 +219,7 @@ mod tests {
             option: GreedyOption::default(),
         };
 
-        let mut g = g.init(&geometry, None, &DatagramOption::default())?;
+        let mut g = g.init_full(&geometry, None, &DatagramOption::default())?;
         let f = g.generate(&geometry[1]);
         assert_eq!(
             geometry[1]
@@ -242,7 +246,7 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
         assert_eq!(
-            g.init(&geometry, Some(&filter), &DatagramOption::default())
+            g.init_full(&geometry, Some(&filter), &DatagramOption::default())
                 .map(|mut res| {
                     let f = res.generate(&geometry[0]);
                     geometry[0]
@@ -269,7 +273,7 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
 
-        let mut g = g.init(&geometry, Some(&filter), &DatagramOption::default())?;
+        let mut g = g.init_full(&geometry, Some(&filter), &DatagramOption::default())?;
         let f = g.generate(&geometry[1]);
         assert_eq!(
             geometry[1]

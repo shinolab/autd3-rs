@@ -46,7 +46,11 @@ impl GainContextGenerator for TestGain {
 impl Gain for TestGain {
     type G = Self;
 
-    fn init(
+    fn init(self) -> Result<Self::G, GainError> {
+        unimplemented!()
+    }
+
+    fn init_full(
         self,
         _geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,

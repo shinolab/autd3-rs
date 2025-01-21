@@ -47,7 +47,7 @@ impl<G: Gain> GainSTMGenerator for Vec<G> {
         option: &DatagramOption,
     ) -> Result<Self::T, GainError> {
         self.into_iter()
-            .map(|g| g.init(geometry, filter, option))
+            .map(|g| g.init_full(geometry, filter, option))
             .collect::<Result<Vec<_>, _>>()
     }
     fn len(&self) -> usize {

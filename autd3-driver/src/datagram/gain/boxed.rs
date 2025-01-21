@@ -57,7 +57,7 @@ impl<
         std::mem::swap(&mut tmp, self);
         // SAFETY: This function is called only once from `Gain::init`.
         let g = unsafe { tmp.assume_init() };
-        Ok(Box::new(g.init(geometry, filter, option)?) as _)
+        Ok(Box::new(g.init_full(geometry, filter, option)?) as _)
     }
 
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -89,7 +89,7 @@ impl std::fmt::Debug for BoxedGain {
 impl Gain for BoxedGain {
     type G = DynGainContextGenerator;
 
-    fn init(
+    fn init_full(
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
@@ -99,6 +99,10 @@ impl Gain for BoxedGain {
         Ok(DynGainContextGenerator {
             g: g.dyn_init(geometry, filter, option)?,
         })
+    }
+
+    fn init(self) -> Result<Self::G, GainError> {
+        unimplemented!()
     }
 }
 
@@ -180,7 +184,7 @@ pub mod tests {
         )
         .into_boxed();
 
-        let mut f = g.init(&geometry, None, &DatagramOption::default())?;
+        let mut f = g.init_full(&geometry, None, &DatagramOption::default())?;
         assert_eq!(
             expect,
             geometry

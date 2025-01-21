@@ -314,9 +314,11 @@ impl<L: Link> Drop for Controller<L> {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
+    use std::sync::Mutex;
+
     use autd3_core::{
-        derive::DatagramOption,
+        derive::*,
         gain::{Gain, GainContext, GainContextGenerator},
         link::LinkError,
     };
@@ -337,6 +339,31 @@ mod tests {
         )?)
     }
     // GRCOV_EXCL_STOP
+
+    #[derive(Gain, Debug)]
+    pub struct TestGain {
+        pub test: Arc<Mutex<Vec<bool>>>,
+    }
+
+    impl Gain for TestGain {
+        type G = Null;
+
+        fn init(self) -> Result<Self::G, GainError> {
+            unimplemented!()
+        }
+
+        fn init_full(
+            self,
+            geometry: &Geometry,
+            _filter: Option<&HashMap<usize, BitVec>>,
+            _option: &DatagramOption,
+        ) -> Result<Self::G, GainError> {
+            geometry.iter().for_each(|dev| {
+                self.test.lock().unwrap()[dev.idx()] = dev.enable;
+            });
+            Ok(Null {})
+        }
+    }
 
     #[test]
     fn open_failed() {
@@ -390,7 +417,7 @@ mod tests {
                 intensity: EmitIntensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None, &DatagramOption::default())?
+            .init()?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -400,7 +427,7 @@ mod tests {
                 intensity: EmitIntensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None, &DatagramOption::default())?
+            .init()?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -579,7 +606,7 @@ mod tests {
                 intensity: EmitIntensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None, &DatagramOption::default())?
+            .init()?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -589,7 +616,7 @@ mod tests {
                 intensity: EmitIntensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None, &DatagramOption::default())?
+            .init()?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),

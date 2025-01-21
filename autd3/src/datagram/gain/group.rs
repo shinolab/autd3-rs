@@ -132,7 +132,11 @@ where
 {
     type G = ContextGenerator;
 
-    fn init(
+    fn init(self) -> Result<Self::G, GainError> {
+        unimplemented!()
+    }
+
+    fn init_full(
         self,
         geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,
@@ -156,7 +160,7 @@ where
                 let filter = filters
                     .remove(&k)
                     .ok_or(GainError::new(format!("Unknown group key({:?})", k)))?;
-                let mut g = g.init(geometry, Some(&filter), option)?;
+                let mut g = g.init_full(geometry, Some(&filter), option)?;
                 Ok((
                     k,
                     geometry
@@ -215,7 +219,10 @@ where
 mod tests {
     use super::*;
 
-    use autd3_driver::firmware::fpga::{EmitIntensity, Phase};
+    use autd3_driver::{
+        datagram::IntoBoxedGain,
+        firmware::fpga::{EmitIntensity, Phase},
+    };
     use rand::Rng;
 
     use crate::{
@@ -261,7 +268,7 @@ mod tests {
         .set("test", g1.into_boxed())?
         .set("test2", g2.into_boxed())?;
 
-        let mut g = gain.init(&geometry, None, &DatagramOption::default())?;
+        let mut g = gain.init_full(&geometry, None, &DatagramOption::default())?;
         let drives = geometry
             .devices()
             .map(|dev| {
@@ -340,7 +347,7 @@ mod tests {
         .set("test", g1.into_boxed())?
         .set("test2", g2.into_boxed())?;
 
-        let mut g = gain.init(&geometry, None, &DatagramOption::default())?;
+        let mut g = gain.init_full(&geometry, None, &DatagramOption::default())?;
         let drives = geometry
             .devices()
             .map(|dev| {
@@ -386,8 +393,6 @@ mod tests {
 
     #[test]
     fn unknown_key() -> anyhow::Result<()> {
-        let geometry = create_geometry(2);
-
         let gain = Group::new(|_dev| {
             |tr| match tr.idx() {
                 0..=99 => Some("test"),
@@ -397,9 +402,11 @@ mod tests {
         })
         .set("test2", Null {})?;
 
+        let geometry = create_geometry(1);
         assert_eq!(
             Some(GainError::new("Unknown group key(\"test2\")".to_owned())),
-            gain.init(&geometry, None, &DatagramOption::default()).err()
+            gain.init_full(&geometry, None, &DatagramOption::default())
+                .err()
         );
 
         Ok(())
@@ -421,8 +428,6 @@ mod tests {
 
     #[test]
     fn unused_key() -> anyhow::Result<()> {
-        let geometry = create_geometry(2);
-
         let gain = Group::new(|_dev| {
             |tr| match tr.idx() {
                 0..=99 => Some(0),
@@ -431,9 +436,11 @@ mod tests {
         })
         .set(1, Null {})?;
 
+        let geometry = create_geometry(1);
         assert_eq!(
             Some(GainError::new("Unused group keys: 0".to_owned())),
-            gain.init(&geometry, None, &DatagramOption::default()).err()
+            gain.init_full(&geometry, None, &DatagramOption::default())
+                .err()
         );
 
         Ok(())

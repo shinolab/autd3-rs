@@ -29,11 +29,7 @@ impl GainContextGenerator for MyUniform {
 impl Gain for MyUniform {
     type G = MyUniform;
 
-    fn init(
-        self,
-        _geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec>>,
-    ) -> Result<Self::G, GainError> {
+    fn init(self) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }

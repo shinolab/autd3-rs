@@ -87,12 +87,7 @@ impl GainContextGenerator for Focus {
 impl Gain for Focus {
     type G = Focus;
 
-    fn init(
-        self,
-        _geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec>>,
-        _option: &DatagramOption,
-    ) -> Result<Self::G, GainError> {
+    fn init(self) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }

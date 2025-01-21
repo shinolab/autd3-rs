@@ -22,12 +22,7 @@ impl GainContextGenerator for Null {
 impl Gain for Null {
     type G = Null;
 
-    fn init(
-        self,
-        _geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec>>,
-        _option: &DatagramOption,
-    ) -> Result<Self::G, GainError> {
+    fn init(self) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -43,7 +38,7 @@ mod tests {
         let geometry = create_geometry(1);
 
         let g = Null::default();
-        let mut b = g.init(&geometry, None, &DatagramOption::default())?;
+        let mut b = g.init()?;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {

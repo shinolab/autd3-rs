@@ -66,12 +66,7 @@ impl<
 {
     type G = Custom<'a, D, FT, F>;
 
-    fn init(
-        self,
-        _geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec>>,
-        _option: &DatagramOption,
-    ) -> Result<Self::G, GainError> {
+    fn init(self) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -107,7 +102,7 @@ mod tests {
             }
         });
 
-        let mut d = transducer_test.init(&geometry, None, &DatagramOption::default())?;
+        let mut d = transducer_test.init()?;
         geometry.iter().for_each(|dev| {
             let d = d.generate(dev);
             dev.iter().enumerate().for_each(|(idx, tr)| {

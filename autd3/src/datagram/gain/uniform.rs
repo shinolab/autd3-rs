@@ -31,12 +31,7 @@ impl GainContextGenerator for Uniform {
 impl Gain for Uniform {
     type G = Uniform;
 
-    fn init(
-        self,
-        _geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec>>,
-        _option: &DatagramOption,
-    ) -> Result<Self::G, GainError> {
+    fn init(self) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -59,7 +54,7 @@ mod tests {
         let phase = Phase(rng.gen());
         let g = Uniform { intensity, phase };
 
-        let mut b = g.init(&geometry, None, &DatagramOption::default())?;
+        let mut b = g.init()?;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {

@@ -335,7 +335,7 @@ impl<L: AsyncLink> Drop for Controller<L> {
 mod tests {
     use autd3_core::{
         defined::mm,
-        derive::{DatagramOption, Modulation, Segment},
+        derive::{Modulation, Segment},
         gain::{EmitIntensity, Gain, GainContext, GainContextGenerator, Phase},
         link::LinkError,
     };
@@ -417,7 +417,7 @@ mod tests {
                 intensity: EmitIntensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None, &DatagramOption::default())?
+            .init()?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -427,7 +427,7 @@ mod tests {
                 intensity: EmitIntensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None, &DatagramOption::default())?
+            .init()?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -609,7 +609,7 @@ mod tests {
                 intensity: EmitIntensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None, &DatagramOption::default())?
+            .init()?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -619,7 +619,7 @@ mod tests {
                 intensity: EmitIntensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None, &DatagramOption::default())?
+            .init()?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),

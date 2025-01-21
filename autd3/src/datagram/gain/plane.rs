@@ -65,12 +65,7 @@ impl GainContextGenerator for Plane {
 impl Gain for Plane {
     type G = Plane;
 
-    fn init(
-        self,
-        _geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec>>,
-        _option: &DatagramOption,
-    ) -> Result<Self::G, GainError> {
+    fn init(self) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -90,7 +85,7 @@ mod tests {
         phase_offset: Phase,
         geometry: &Geometry,
     ) -> anyhow::Result<()> {
-        let mut b = g.init(geometry, None, &DatagramOption::default())?;
+        let mut b = g.init()?;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
