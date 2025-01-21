@@ -2,8 +2,11 @@ use autd3_core::datagram::{
     Datagram, DatagramL, DatagramOption, LoopBehavior, Segment, TransitionMode,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+use derive_more::Deref;
+
+#[derive(Deref, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct WithLoopBehavior<D: DatagramL> {
+    #[deref]
     pub inner: D,
     pub loop_behavior: LoopBehavior,
     pub segment: Segment,

@@ -1,7 +1,10 @@
 use autd3_core::datagram::{Datagram, DatagramOption, DatagramS, Segment, TransitionMode};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+use derive_more::Deref;
+
+#[derive(Deref, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct WithSegment<D: DatagramS> {
+    #[deref]
     pub inner: D,
     pub segment: Segment,
     pub transition_mode: Option<TransitionMode>,
