@@ -1,3 +1,5 @@
+use std::num::NonZeroU16;
+
 use autd3_driver::{
     ethercat::DcSysTime,
     firmware::fpga::{Drive, GPIOIn, LoopBehavior, Segment, TransitionMode},
@@ -11,14 +13,14 @@ mod gain;
 impl FPGAEmulator {
     pub fn is_stm_gain_mode(&self, segment: Segment) -> bool {
         match segment {
-            Segment::S0 => self.mem.controller_bram()[ADDR_STM_MODE0] == STM_MODE_GAIN,
-            Segment::S1 => self.mem.controller_bram()[ADDR_STM_MODE1] == STM_MODE_GAIN,
+            Segment::S0 => self.mem.controller_bram.borrow()[ADDR_STM_MODE0] == STM_MODE_GAIN,
+            Segment::S1 => self.mem.controller_bram.borrow()[ADDR_STM_MODE1] == STM_MODE_GAIN,
         }
     }
 
     pub fn stm_freq_division(&self, segment: Segment) -> u16 {
         Memory::read_bram_as::<u16>(
-            &self.mem.controller_bram(),
+            &self.mem.controller_bram.borrow(),
             match segment {
                 Segment::S0 => ADDR_STM_FREQ_DIV0,
                 Segment::S1 => ADDR_STM_FREQ_DIV1,
@@ -27,7 +29,7 @@ impl FPGAEmulator {
     }
 
     pub fn stm_cycle(&self, segment: Segment) -> usize {
-        self.mem.controller_bram()[match segment {
+        self.mem.controller_bram.borrow()[match segment {
             Segment::S0 => ADDR_STM_CYCLE0,
             Segment::S1 => ADDR_STM_CYCLE1,
         }] as usize
@@ -36,30 +38,30 @@ impl FPGAEmulator {
 
     pub fn stm_loop_behavior(&self, segment: Segment) -> LoopBehavior {
         match Memory::read_bram_as::<u16>(
-            &self.mem.controller_bram(),
+            &self.mem.controller_bram.borrow(),
             match segment {
                 Segment::S0 => ADDR_STM_REP0,
                 Segment::S1 => ADDR_STM_REP1,
             },
         ) {
-            0xFFFF => LoopBehavior::infinite(),
-            v => LoopBehavior::finite(v + 1).unwrap(),
+            0xFFFF => LoopBehavior::Infinite,
+            v => LoopBehavior::Finite(NonZeroU16::new(v + 1).unwrap()),
         }
     }
 
     pub fn stm_transition_mode(&self) -> TransitionMode {
-        match self.mem.controller_bram()[ADDR_STM_TRANSITION_MODE] as u8 {
+        match self.mem.controller_bram.borrow()[ADDR_STM_TRANSITION_MODE] as u8 {
             TRANSITION_MODE_SYNC_IDX => TransitionMode::SyncIdx,
             TRANSITION_MODE_SYS_TIME => TransitionMode::SysTime(
                 DcSysTime::ZERO
                     + std::time::Duration::from_nanos(Memory::read_bram_as::<u64>(
-                        &self.mem.controller_bram(),
+                        &self.mem.controller_bram.borrow(),
                         ADDR_STM_TRANSITION_VALUE_0,
                     )),
             ),
             TRANSITION_MODE_GPIO => TransitionMode::GPIO(
                 match Memory::read_bram_as::<u64>(
-                    &self.mem.controller_bram(),
+                    &self.mem.controller_bram.borrow(),
                     ADDR_STM_TRANSITION_VALUE_0,
                 ) {
                     0 => GPIOIn::I0,
@@ -76,7 +78,7 @@ impl FPGAEmulator {
     }
 
     pub fn req_stm_segment(&self) -> Segment {
-        match self.mem.controller_bram()[ADDR_STM_REQ_RD_SEGMENT] {
+        match self.mem.controller_bram.borrow()[ADDR_STM_REQ_RD_SEGMENT] {
             0 => Segment::S0,
             1 => Segment::S1,
             _ => unreachable!(),

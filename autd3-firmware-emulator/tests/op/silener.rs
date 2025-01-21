@@ -5,7 +5,7 @@ use autd3_driver::{
     error::AUTDDriverError,
     firmware::{
         cpu::TxMessage,
-        fpga::{LoopBehavior, SamplingConfig, Segment, SilencerTarget, TransitionMode},
+        fpga::{SamplingConfig, SilencerTarget},
     },
     geometry::Point3,
 };
@@ -30,7 +30,10 @@ fn send_silencer_fixed_update_rate() -> anyhow::Result<()> {
             intensity: NonZeroU16::new_unchecked(rng.gen_range(1..=u16::MAX)),
             phase: NonZeroU16::new_unchecked(rng.gen_range(1..=u16::MAX)),
         };
-        let d = Silencer::new(config);
+        let d = Silencer {
+            config,
+            target: SilencerTarget::Intensity,
+        };
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -44,7 +47,10 @@ fn send_silencer_fixed_update_rate() -> anyhow::Result<()> {
             intensity: NonZeroU16::new_unchecked(rng.gen_range(1..=u16::MAX)),
             phase: NonZeroU16::new_unchecked(rng.gen_range(1..=u16::MAX)),
         };
-        let d = Silencer::new(config).with_target(SilencerTarget::PulseWidth);
+        let d = Silencer {
+            config,
+            target: SilencerTarget::PulseWidth,
+        };
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -71,8 +77,12 @@ fn send_silencer_fixed_completion_time() {
         let config = FixedCompletionTime {
             intensity: ultrasound_period() * rng.gen_range(1..=10),
             phase: ultrasound_period() * rng.gen_range(1..=u8::MAX) as u32,
+            strict_mode: true,
         };
-        let d = Silencer::new(config);
+        let d = Silencer {
+            config,
+            target: SilencerTarget::Intensity,
+        };
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -93,9 +103,12 @@ fn send_silencer_fixed_completion_time() {
         let config = FixedCompletionTime {
             intensity: ultrasound_period() * rng.gen_range(1..=10),
             phase: ultrasound_period() * rng.gen_range(1..=u8::MAX) as u32,
+            strict_mode: true,
         };
-        let d = Silencer::new(config).with_target(SilencerTarget::PulseWidth);
-
+        let d = Silencer {
+            config,
+            target: SilencerTarget::PulseWidth,
+        };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(
@@ -124,8 +137,12 @@ fn send_silencer_fixed_completion_steps() {
         let config = FixedCompletionSteps {
             intensity: NonZeroU16::new(rng.gen_range(1..=10)).unwrap(),
             phase: NonZeroU16::new(rng.gen_range(1..=u8::MAX) as u16).unwrap(),
+            strict_mode: true,
         };
-        let d = Silencer::new(config);
+        let d = Silencer {
+            config,
+            target: SilencerTarget::Intensity,
+        };
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -139,9 +156,12 @@ fn send_silencer_fixed_completion_steps() {
         let config = FixedCompletionSteps {
             intensity: NonZeroU16::new(rng.gen_range(1..=10)).unwrap(),
             phase: NonZeroU16::new(rng.gen_range(1..=u8::MAX) as u16).unwrap(),
+            strict_mode: true,
         };
-        let d = Silencer::new(config).with_target(SilencerTarget::PulseWidth);
-
+        let d = Silencer {
+            config,
+            target: SilencerTarget::PulseWidth,
+        };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(config, cpu.fpga().silencer_completion_steps());
@@ -166,29 +186,35 @@ fn silencer_completetion_steps_too_large_mod(
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
-    let d = Silencer::new(FixedCompletionSteps {
-        intensity: NonZeroU16::MIN,
-        phase: NonZeroU16::MIN,
-    });
+    let d = Silencer {
+        config: FixedCompletionSteps {
+            intensity: NonZeroU16::MIN,
+            phase: NonZeroU16::MIN,
+            strict_mode: true,
+        },
+        target: SilencerTarget::Intensity,
+    };
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     // Send modulation
     {
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::FREQ_40K,
-            loop_behavior: LoopBehavior::infinite(),
-        }
-        .with_segment(Segment::S0, Some(TransitionMode::Immediate));
+            sampling_config: SamplingConfig::FREQ_40K,
+        };
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }
 
     let steps_phase = 1;
-    let d = Silencer::new(FixedCompletionSteps {
-        intensity: NonZeroU16::new(steps_intensity).unwrap(),
-        phase: NonZeroU16::new(steps_phase).unwrap(),
-    });
+    let d = Silencer {
+        config: FixedCompletionSteps {
+            intensity: NonZeroU16::new(steps_intensity).unwrap(),
+            phase: NonZeroU16::new(steps_phase).unwrap(),
+            strict_mode: true,
+        },
+        target: SilencerTarget::Intensity,
+    };
 
     assert_eq!(expect, send(&mut cpu, d, &geometry, &mut tx));
 
@@ -210,24 +236,34 @@ fn silencer_completetion_steps_too_large_stm(
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
-    let d = Silencer::new(FixedCompletionSteps {
-        intensity: NonZeroU16::MIN,
-        phase: NonZeroU16::MIN,
-    });
+    let d = Silencer {
+        config: FixedCompletionSteps {
+            intensity: NonZeroU16::MIN,
+            phase: NonZeroU16::MIN,
+            strict_mode: true,
+        },
+        target: SilencerTarget::Intensity,
+    };
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     // Send FociSTM
     {
-        let d = FociSTM::new(SamplingConfig::FREQ_40K, (0..2).map(|_| Point3::origin()))?
-            .with_segment(Segment::S0, Some(TransitionMode::Immediate));
+        let d = FociSTM {
+            foci: (0..2).map(|_| Point3::origin()).collect::<Vec<_>>(),
+            config: SamplingConfig::FREQ_40K,
+        };
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }
 
-    let d = Silencer::new(FixedCompletionSteps {
-        intensity: NonZeroU16::new(steps_intensity).unwrap(),
-        phase: NonZeroU16::new(steps_phase).unwrap(),
-    });
+    let d = Silencer {
+        config: FixedCompletionSteps {
+            intensity: NonZeroU16::new(steps_intensity).unwrap(),
+            phase: NonZeroU16::new(steps_phase).unwrap(),
+            strict_mode: true,
+        },
+        target: SilencerTarget::Intensity,
+    };
 
     assert_eq!(expect, send(&mut cpu, d, &geometry, &mut tx));
 
@@ -246,12 +282,20 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
     let config = FixedCompletionSteps {
         intensity: NonZeroU16::new(rng.gen_range(1..=u16::MAX)).unwrap(),
         phase: NonZeroU16::new(rng.gen_range(1..=u16::MAX)).unwrap(),
+        strict_mode: false,
     };
-    let d = Silencer::new(config).with_strict_mode(false);
+    let d = Silencer {
+        config,
+        target: SilencerTarget::Intensity,
+    };
 
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-    assert_eq!(config, cpu.fpga().silencer_completion_steps());
+    assert_eq!(
+        config.intensity,
+        cpu.fpga().silencer_completion_steps().intensity
+    );
+    assert_eq!(config.phase, cpu.fpga().silencer_completion_steps().phase);
     assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
     assert!(!cpu.silencer_strict_mode());
 
@@ -270,12 +314,20 @@ fn send_silencer_fixed_completion_time_permissive() {
     let config = FixedCompletionSteps {
         intensity: NonZeroU16::new(rng.gen_range(1..=u16::MAX)).unwrap(),
         phase: NonZeroU16::new(rng.gen_range(1..=u16::MAX)).unwrap(),
+        strict_mode: false,
     };
-    let d = Silencer::new(config).with_strict_mode(false);
+    let d = Silencer {
+        config,
+        target: SilencerTarget::Intensity,
+    };
 
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-    assert_eq!(config, cpu.fpga().silencer_completion_steps(),);
+    assert_eq!(
+        config.intensity,
+        cpu.fpga().silencer_completion_steps().intensity
+    );
+    assert_eq!(config.phase, cpu.fpga().silencer_completion_steps().phase);
     assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
     assert!(!cpu.silencer_strict_mode());
 }

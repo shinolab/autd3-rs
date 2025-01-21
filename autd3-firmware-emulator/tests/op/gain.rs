@@ -50,6 +50,7 @@ impl Gain for TestGain {
         self,
         _geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,
+        _option: &DatagramOption,
     ) -> Result<Self::G, GainError> {
         Ok(self)
     }
@@ -70,7 +71,10 @@ fn send_gain() -> anyhow::Result<()> {
                 (
                     dev.idx(),
                     dev.iter()
-                        .map(|_| Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen())))
+                        .map(|_| Drive {
+                            phase: Phase(rng.gen()),
+                            intensity: EmitIntensity(rng.gen()),
+                        })
                         .collect(),
                 )
             })
@@ -84,7 +88,7 @@ fn send_gain() -> anyhow::Result<()> {
         assert_eq!(1, cpu.fpga().stm_cycle(Segment::S0));
         assert_eq!(0xFFFF, cpu.fpga().stm_freq_division(Segment::S0));
         assert_eq!(
-            LoopBehavior::infinite(),
+            LoopBehavior::Infinite,
             cpu.fpga().stm_loop_behavior(Segment::S0)
         );
         buf[&0].iter().zip(cpu.fpga().drives()).for_each(|(&a, b)| {
@@ -99,12 +103,19 @@ fn send_gain() -> anyhow::Result<()> {
                 (
                     dev.idx(),
                     dev.iter()
-                        .map(|_| Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen())))
+                        .map(|_| Drive {
+                            phase: Phase(rng.gen()),
+                            intensity: EmitIntensity(rng.gen()),
+                        })
                         .collect(),
                 )
             })
             .collect();
-        let g = TestGain { data: buf.clone() }.with_segment(Segment::S1, None);
+        let g = WithSegment {
+            inner: TestGain { data: buf.clone() },
+            segment: Segment::S1,
+            transition_mode: None,
+        };
 
         assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
 
@@ -113,7 +124,7 @@ fn send_gain() -> anyhow::Result<()> {
         assert_eq!(1, cpu.fpga().stm_cycle(Segment::S1));
         assert_eq!(0xFFFF, cpu.fpga().stm_freq_division(Segment::S1));
         assert_eq!(
-            LoopBehavior::infinite(),
+            LoopBehavior::Infinite,
             cpu.fpga().stm_loop_behavior(Segment::S1)
         );
         buf[&0]
@@ -145,11 +156,16 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     // segment 0: FociSTM
     send(
         &mut cpu,
-        FociSTM::new(
-            SamplingConfig::FREQ_MIN,
-            (0..2).map(|_| ControlPoint::from(Point3::origin())),
-        )?
-        .with_segment(Segment::S0, Some(TransitionMode::Immediate)),
+        WithSegment {
+            inner: FociSTM {
+                config: SamplingConfig::FREQ_MIN,
+                foci: (0..2)
+                    .map(|_| ControlPoint::from(Point3::origin()))
+                    .collect::<Vec<_>>(),
+            },
+            segment: Segment::S0,
+            transition_mode: Some(TransitionMode::Immediate),
+        },
         &geometry,
         &mut tx,
     )?;
@@ -157,18 +173,23 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     // segment 1: GainSTM
     send(
         &mut cpu,
-        GainSTM::new(
-            SamplingConfig::FREQ_MIN,
-            (0..2)
-                .map(|_| {
-                    geometry
-                        .iter()
-                        .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::NULL).collect()))
-                        .collect()
-                })
-                .map(|buf: HashMap<usize, Vec<Drive>>| TestGain { data: buf.clone() }),
-        )?
-        .with_segment(Segment::S1, Some(TransitionMode::Immediate)),
+        WithSegment {
+            inner: GainSTM {
+                config: SamplingConfig::FREQ_MIN,
+                gains: (0..2)
+                    .map(|_| {
+                        geometry
+                            .iter()
+                            .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::NULL).collect()))
+                            .collect()
+                    })
+                    .map(|buf: HashMap<usize, Vec<Drive>>| TestGain { data: buf.clone() })
+                    .collect::<Vec<_>>(),
+                option: GainSTMOption::default(),
+            },
+            segment: Segment::S1,
+            transition_mode: Some(TransitionMode::Immediate),
+        },
         &geometry,
         &mut tx,
     )?;

@@ -2,7 +2,7 @@ use std::num::NonZeroU16;
 
 use crate::{
     create_geometry,
-    op::{gain::TestGain, stm::foci::gen_random_foci},
+    op::{gain::TestGain, modulation::TestModulation, stm::foci::gen_random_foci},
     send,
 };
 use autd3_core::derive::*;
@@ -12,7 +12,7 @@ use autd3_driver::{
     firmware::{
         cpu::TxMessage,
         fpga::{
-            Drive, EmitIntensity, Phase, SILENCER_STEPS_INTENSITY_DEFAULT,
+            Drive, EmitIntensity, Phase, SilencerTarget, SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT,
         },
     },
@@ -21,18 +21,6 @@ use autd3_firmware_emulator::CPUEmulator;
 
 use zerocopy::FromZeros;
 
-#[derive(Modulation, Debug)]
-struct TestMod {
-    config: SamplingConfig,
-    loop_behavior: LoopBehavior,
-}
-
-impl Modulation for TestMod {
-    fn calc(self) -> Result<Vec<u8>, ModulationError> {
-        Ok(vec![u8::MIN; 100])
-    }
-}
-
 #[test]
 fn send_clear() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
@@ -40,42 +28,58 @@ fn send_clear() -> anyhow::Result<()> {
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     {
-        let d = Silencer::new(FixedCompletionSteps {
-            intensity: NonZeroU16::MIN,
-            phase: NonZeroU16::MIN,
-        });
+        let d = Silencer {
+            config: FixedCompletionSteps {
+                intensity: NonZeroU16::MIN,
+                phase: NonZeroU16::MIN,
+                strict_mode: true,
+            },
+            target: SilencerTarget::Intensity,
+        };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::new(FixedUpdateRate {
-            intensity: NonZeroU16::new(1).unwrap(),
-            phase: NonZeroU16::new(1).unwrap(),
-        });
+        let d = Silencer {
+            config: FixedUpdateRate {
+                intensity: NonZeroU16::new(1).unwrap(),
+                phase: NonZeroU16::new(1).unwrap(),
+            },
+            target: SilencerTarget::Intensity,
+        };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = TestMod {
-            config: SamplingConfig::FREQ_4K,
-            loop_behavior: LoopBehavior::infinite(),
-        }
-        .with_segment(Segment::S0, Some(TransitionMode::Immediate));
+        let d = TestModulation {
+            buf: (0..2).map(|_| u8::MAX).collect(),
+            sampling_config: SamplingConfig::FREQ_MIN,
+        };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = TestGain {
             data: [(
                 0,
-                vec![Drive::new(Phase::new(0xFF), EmitIntensity::MAX); AUTD3::NUM_TRANS_IN_UNIT],
+                vec![
+                    Drive {
+                        phase: Phase(0xFF),
+                        intensity: EmitIntensity::MAX
+                    };
+                    AUTD3::NUM_TRANS_IN_UNIT
+                ],
             )]
             .into_iter()
             .collect(),
-        }
-        .with_segment(Segment::S0, Some(TransitionMode::Immediate));
+        };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = FociSTM::new(
-            SamplingConfig::new(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT))
+        let d = WithSegment {
+            inner: FociSTM {
+                foci: gen_random_foci::<1>(2),
+                config: SamplingConfig::new(
+                    SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT),
+                )
                 .unwrap(),
-            gen_random_foci::<1>(2),
-        )?
-        .with_segment(Segment::S0, Some(TransitionMode::Ext));
+            },
+            segment: Segment::S0,
+            transition_mode: Some(TransitionMode::Ext),
+        };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = PhaseCorrection::new(|_| |_| Phase::PI);
@@ -98,11 +102,12 @@ fn send_clear() -> anyhow::Result<()> {
         cpu.fpga().silencer_update_rate()
     );
     assert_eq!(
-        FixedCompletionSteps {
-            intensity: NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT).unwrap(),
-            phase: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
-        },
-        cpu.fpga().silencer_completion_steps()
+        NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT).unwrap(),
+        cpu.fpga().silencer_completion_steps().intensity
+    );
+    assert_eq!(
+        NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
+        cpu.fpga().silencer_completion_steps().phase
     );
     assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
 
@@ -111,11 +116,11 @@ fn send_clear() -> anyhow::Result<()> {
     assert_eq!(0xFFFF, cpu.fpga().modulation_freq_division(Segment::S0));
     assert_eq!(0xFFFF, cpu.fpga().modulation_freq_division(Segment::S1));
     assert_eq!(
-        LoopBehavior::infinite(),
+        LoopBehavior::Infinite,
         cpu.fpga().modulation_loop_behavior(Segment::S0)
     );
     assert_eq!(
-        LoopBehavior::infinite(),
+        LoopBehavior::Infinite,
         cpu.fpga().modulation_loop_behavior(Segment::S1)
     );
     assert_eq!(vec![u8::MAX; 2], cpu.fpga().modulation_buffer(Segment::S0));
@@ -130,11 +135,11 @@ fn send_clear() -> anyhow::Result<()> {
     assert_eq!(0xFFFF, cpu.fpga().stm_freq_division(Segment::S0));
     assert_eq!(0xFFFF, cpu.fpga().stm_freq_division(Segment::S1));
     assert_eq!(
-        LoopBehavior::infinite(),
+        LoopBehavior::Infinite,
         cpu.fpga().stm_loop_behavior(Segment::S0)
     );
     assert_eq!(
-        LoopBehavior::infinite(),
+        LoopBehavior::Infinite,
         cpu.fpga().stm_loop_behavior(Segment::S1)
     );
 

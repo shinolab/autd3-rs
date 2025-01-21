@@ -2,13 +2,13 @@ use std::{num::NonZeroU16, time::Duration};
 
 use autd3_core::derive::*;
 use autd3_driver::{
-    datagram::{FixedCompletionSteps, IntoDatagramWithSegment, Silencer, SwapSegment},
+    datagram::{FixedCompletionSteps, Silencer, SwapSegment, WithLoopBehavior, WithSegment},
     error::AUTDDriverError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::{
         cpu::TxMessage,
         fpga::{
-            GPIOIn, TransitionMode, MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN,
+            GPIOIn, SilencerTarget, TransitionMode, MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN,
             SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
         },
     },
@@ -26,13 +26,16 @@ use zerocopy::FromZeros;
 #[derive(Modulation, Debug)]
 pub struct TestModulation {
     pub buf: Vec<u8>,
-    pub config: SamplingConfig,
-    pub loop_behavior: LoopBehavior,
+    pub sampling_config: SamplingConfig,
 }
 
 impl Modulation for TestModulation {
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
         Ok(self.buf.clone())
+    }
+
+    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
+        Ok(self.sampling_config)
     }
 }
 
@@ -41,46 +44,46 @@ impl Modulation for TestModulation {
 #[cfg_attr(miri, ignore)]
 #[case(
     MOD_BUF_SIZE_MAX,
-    LoopBehavior::infinite(),
+    LoopBehavior::Infinite,
     Segment::S0,
     Some(TransitionMode::Immediate)
 )]
 #[cfg_attr(miri, ignore)]
 #[case(
     MOD_BUF_SIZE_MIN,
-    LoopBehavior::infinite(),
+    LoopBehavior::Infinite,
     Segment::S0,
     Some(TransitionMode::Ext)
 )]
 #[cfg_attr(miri, ignore)]
 #[case(
     MOD_BUF_SIZE_MIN,
-    LoopBehavior::once(),
+    LoopBehavior::ONCE,
     Segment::S1,
     Some(TransitionMode::GPIO(GPIOIn::I0))
 )]
 #[cfg_attr(miri, ignore)]
 #[case(
     MOD_BUF_SIZE_MIN,
-    LoopBehavior::once(),
+    LoopBehavior::ONCE,
     Segment::S1,
     Some(TransitionMode::GPIO(GPIOIn::I1))
 )]
 #[cfg_attr(miri, ignore)]
 #[case(
     MOD_BUF_SIZE_MIN,
-    LoopBehavior::once(),
+    LoopBehavior::ONCE,
     Segment::S1,
     Some(TransitionMode::GPIO(GPIOIn::I2))
 )]
 #[cfg_attr(miri, ignore)]
 #[case(
     MOD_BUF_SIZE_MIN,
-    LoopBehavior::once(),
+    LoopBehavior::ONCE,
     Segment::S1,
     Some(TransitionMode::GPIO(GPIOIn::I3))
 )]
-#[case(MOD_BUF_SIZE_MIN, LoopBehavior::once(), Segment::S1, None)]
+#[case(MOD_BUF_SIZE_MIN, LoopBehavior::ONCE, Segment::S1, None)]
 fn send_mod(
     #[case] n: usize,
     #[case] loop_behavior: LoopBehavior,
@@ -96,12 +99,15 @@ fn send_mod(
     let m: Vec<_> = (0..n).map(|_| rng.gen()).collect();
     let freq_div = rng
         .gen_range(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=u16::MAX);
-    let d = TestModulation {
-        buf: m.clone(),
-        config: SamplingConfig::new(freq_div).unwrap(),
+    let d = WithLoopBehavior {
+        inner: TestModulation {
+            buf: m.clone(),
+            sampling_config: SamplingConfig::new(freq_div).unwrap(),
+        },
+        segment,
+        transition_mode,
         loop_behavior,
-    }
-    .with_segment(segment, transition_mode);
+    };
 
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -127,12 +133,15 @@ fn swap_mod_segmemt() -> anyhow::Result<()> {
 
     let m: Vec<_> = (0..MOD_BUF_SIZE_MIN).map(|_| 0x00).collect();
     let freq_div = SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT);
-    let d = TestModulation {
-        buf: m.clone(),
-        config: SamplingConfig::new(freq_div).unwrap(),
-        loop_behavior: LoopBehavior::infinite(),
-    }
-    .with_segment(Segment::S1, None);
+    let d = WithLoopBehavior {
+        inner: TestModulation {
+            buf: m.clone(),
+            sampling_config: SamplingConfig::new(freq_div).unwrap(),
+        },
+        segment: Segment::S1,
+        transition_mode: None,
+        loop_behavior: LoopBehavior::Infinite,
+    };
 
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     assert_eq!(Segment::S0, cpu.fpga().req_modulation_segment());
@@ -153,12 +162,9 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
 
     {
         let d = TestModulation {
-            buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::FREQ_40K,
-            loop_behavior: LoopBehavior::infinite(),
-        }
-        .with_segment(Segment::S0, Some(TransitionMode::Immediate));
-
+            buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
+            sampling_config: SamplingConfig::FREQ_40K,
+        };
         assert_eq!(
             Err(AUTDDriverError::InvalidSilencerSettings),
             send(&mut cpu, d, &geometry, &mut tx)
@@ -167,28 +173,32 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
 
     {
         let d = TestModulation {
-            buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::FREQ_MIN,
-            loop_behavior: LoopBehavior::infinite(),
-        }
-        .with_segment(Segment::S0, Some(TransitionMode::Immediate));
+            buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
+            sampling_config: SamplingConfig::FREQ_MIN,
+        };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = Silencer::<FixedCompletionSteps>::default();
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = TestModulation {
-            buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
-            loop_behavior: LoopBehavior::infinite(),
-        }
-        .with_segment(Segment::S1, None);
+        let d = WithSegment {
+            inner: TestModulation {
+                buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
+                sampling_config: SamplingConfig::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
+            },
+            segment: Segment::S1,
+            transition_mode: None,
+        };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = Silencer::new(FixedCompletionSteps {
-            intensity: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT * 2).unwrap(),
-            phase: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
-        });
+        let d = Silencer {
+            config: FixedCompletionSteps {
+                intensity: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT * 2).unwrap(),
+                phase: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
+                strict_mode: true,
+            },
+            target: SilencerTarget::Intensity,
+        };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = SwapSegment::Modulation(Segment::S1, TransitionMode::Immediate);
@@ -210,12 +220,14 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
 
     // segment 0 to 0
     {
-        let d = TestModulation {
-            buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::FREQ_4K,
-            loop_behavior: LoopBehavior::infinite(),
-        }
-        .with_segment(Segment::S0, Some(TransitionMode::SyncIdx));
+        let d = WithSegment {
+            inner: TestModulation {
+                buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
+                sampling_config: SamplingConfig::FREQ_4K,
+            },
+            segment: Segment::S0,
+            transition_mode: Some(TransitionMode::SyncIdx),
+        };
         assert_eq!(
             Err(AUTDDriverError::InvalidTransitionMode),
             send(&mut cpu, d, &geometry, &mut tx)
@@ -224,12 +236,15 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
 
     // segment 0 to 1 immidiate
     {
-        let d = TestModulation {
-            buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::FREQ_4K,
-            loop_behavior: LoopBehavior::once(),
-        }
-        .with_segment(Segment::S1, Some(TransitionMode::Immediate));
+        let d = WithLoopBehavior {
+            inner: TestModulation {
+                buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
+                sampling_config: SamplingConfig::FREQ_4K,
+            },
+            segment: Segment::S1,
+            transition_mode: Some(TransitionMode::Immediate),
+            loop_behavior: LoopBehavior::ONCE,
+        };
         assert_eq!(
             Err(AUTDDriverError::InvalidTransitionMode),
             send(&mut cpu, d, &geometry, &mut tx)
@@ -238,12 +253,14 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
 
     // Infinite but SyncIdx
     {
-        let d = TestModulation {
-            buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::FREQ_4K,
-            loop_behavior: LoopBehavior::infinite(),
-        }
-        .with_segment(Segment::S1, None);
+        let d = WithSegment {
+            inner: TestModulation {
+                buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
+                sampling_config: SamplingConfig::FREQ_4K,
+            },
+            segment: Segment::S1,
+            transition_mode: None,
+        };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         let d = SwapSegment::Modulation(Segment::S1, TransitionMode::SyncIdx);
@@ -272,12 +289,16 @@ fn test_miss_transition_time(
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let transition_mode = TransitionMode::SysTime(DcSysTime::from_utc(transition_time).unwrap());
-    let d = TestModulation {
-        buf: (0..2).map(|_| u8::MAX).collect(),
-        config: SamplingConfig::FREQ_4K,
-        loop_behavior: LoopBehavior::once(),
-    }
-    .with_segment(Segment::S1, Some(transition_mode));
+
+    let d = WithLoopBehavior {
+        inner: TestModulation {
+            buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
+            sampling_config: SamplingConfig::FREQ_4K,
+        },
+        segment: Segment::S1,
+        transition_mode: Some(transition_mode),
+        loop_behavior: LoopBehavior::ONCE,
+    };
 
     cpu.update_with_sys_time(DcSysTime::from_utc(systime).unwrap());
     assert_eq!(expect, send(&mut cpu, d, &geometry, &mut tx));

@@ -7,9 +7,9 @@ mod silencer;
 mod stm;
 mod swapchain;
 
-use autd3_derive::Builder;
 use autd3_driver::{ethercat::DcSysTime, firmware::fpga::Segment};
 
+use getset::{Getters, MutGetters};
 use memory::Memory;
 
 use super::params::{
@@ -22,9 +22,9 @@ pub use silencer::SilencerEmulator;
 const CTL_FLAG_MOD_SET: u16 = 1 << CTL_FLAG_MOD_SET_BIT;
 const CTL_FLAG_STM_SET: u16 = 1 << CTL_FLAG_STM_SET_BIT;
 
-#[derive(Builder)]
+#[derive(Getters, MutGetters)]
 pub struct FPGAEmulator {
-    #[get(ref, ref_mut)]
+    #[getset(get = "pub", get_mut = "pub")]
     pub(crate) mem: Memory,
     mod_swapchain: swapchain::Swapchain<CTL_FLAG_MOD_SET>,
     stm_swapchain: swapchain::Swapchain<CTL_FLAG_STM_SET>,
@@ -103,23 +103,23 @@ impl FPGAEmulator {
     }
 
     pub fn fpga_state(&self) -> u16 {
-        self.mem.controller_bram()[ADDR_FPGA_STATE]
+        self.mem.controller_bram.borrow()[ADDR_FPGA_STATE]
     }
 
     pub fn assert_thermal_sensor(&mut self) {
-        self.mem.controller_bram_mut()[ADDR_FPGA_STATE] |= 1 << 0;
+        self.mem.controller_bram.borrow_mut()[ADDR_FPGA_STATE] |= 1 << 0;
     }
 
     pub fn deassert_thermal_sensor(&mut self) {
-        self.mem.controller_bram_mut()[ADDR_FPGA_STATE] &= !(1 << 0);
+        self.mem.controller_bram.borrow_mut()[ADDR_FPGA_STATE] &= !(1 << 0);
     }
 
     pub fn is_thermo_asserted(&self) -> bool {
-        (self.mem.controller_bram()[ADDR_FPGA_STATE] & (1 << 0)) != 0
+        (self.mem.controller_bram.borrow()[ADDR_FPGA_STATE] & (1 << 0)) != 0
     }
 
     pub fn is_force_fan(&self) -> bool {
-        (self.mem.controller_bram()[ADDR_CTL_FLAG] & (1 << CTL_FLAG_FORCE_FAN_BIT)) != 0
+        (self.mem.controller_bram.borrow()[ADDR_CTL_FLAG] & (1 << CTL_FLAG_FORCE_FAN_BIT)) != 0
     }
 }
 

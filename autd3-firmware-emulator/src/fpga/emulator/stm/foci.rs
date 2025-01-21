@@ -18,21 +18,21 @@ struct STMFocus {
 
 impl FPGAEmulator {
     pub fn sound_speed(&self, segment: Segment) -> u16 {
-        self.mem.controller_bram()[match segment {
+        self.mem.controller_bram.borrow()[match segment {
             Segment::S0 => ADDR_STM_SOUND_SPEED0,
             Segment::S1 => ADDR_STM_SOUND_SPEED1,
         }]
     }
 
     pub fn num_foci(&self, segment: Segment) -> u8 {
-        self.mem.controller_bram()[match segment {
+        self.mem.controller_bram.borrow()[match segment {
             Segment::S0 => ADDR_STM_NUM_FOCI0,
             Segment::S1 => ADDR_STM_NUM_FOCI1,
         }] as u8
     }
 
     pub(crate) fn foci_stm_drives_inplace(&self, segment: Segment, idx: usize, dst: &mut [Drive]) {
-        let bram = &self.mem.stm_bram()[&segment];
+        let bram = &self.mem.stm_bram.borrow()[&segment];
         let sound_speed = self.sound_speed(segment);
 
         self.mem
@@ -74,7 +74,10 @@ impl FPGAEmulator {
                 let sin = ((sin / self.num_foci(segment) as u16) >> 1) as usize;
                 let cos = ((cos / self.num_foci(segment) as u16) >> 1) as usize;
                 let phase = self.mem.atan_table[(sin << 7) | cos];
-                dst[i] = Drive::new(Phase::new(phase) + p, EmitIntensity::new(intensity));
+                dst[i] = Drive {
+                    phase: Phase(phase) + p,
+                    intensity: EmitIntensity(intensity),
+                };
             });
     }
 
