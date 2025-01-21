@@ -1,11 +1,16 @@
-use autd3::{link::Audit, prelude::*, r#async::Controller};
+use autd3::{
+    link::{Audit, AuditOption},
+    prelude::*,
+    r#async::Controller,
+};
 
 #[tokio::test]
 async fn only_for_enabled() -> anyhow::Result<()> {
-    let mut autd =
-        Controller::builder([AUTD3::default(), AUTD3::default()])
-            .open(Audit::builder(AuditOption::default()))
-            .await?;
+    let mut autd = Controller::open(
+        [AUTD3::default(), AUTD3::default()],
+        Audit::builder(AuditOption::default()),
+    )
+    .await?;
 
     let check = std::sync::Arc::new(std::sync::Mutex::new(vec![false; autd.num_devices()]));
 
@@ -18,7 +23,12 @@ async fn only_for_enabled() -> anyhow::Result<()> {
         })
         .set(
             0,
-            Uniform::new(Drive { phase: Phase(0x90), intensity: EmitIntensity(0x80)) },
+            Uniform {
+                drive: Drive {
+                    phase: Phase(0x90),
+                    intensity: EmitIntensity(0x80),
+                },
+            },
         )?,
     )
     .await?;
@@ -35,7 +45,10 @@ async fn only_for_enabled() -> anyhow::Result<()> {
         .fpga()
         .drives_at(Segment::S0, 0)
         .into_iter()
-        .all(|d| Drive { phase: Phase(0x90), intensity: EmitIntensity(0x80)) == d) };
+        .all(|d| Drive {
+            phase: Phase(0x90),
+            intensity: EmitIntensity(0x80)
+        } == d));
 
     Ok(())
 }

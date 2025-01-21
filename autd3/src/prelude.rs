@@ -1,5 +1,5 @@
 pub use crate::{
-    controller::Controller,
+    controller::{Controller, SenderOption},
     datagram::{
         gain::{Bessel, Focus, Group, IntoGainCache, Null, Plane, Uniform},
         modulation::{IntoModulationCache, IntoRadiationPressure, Sine, Square, Static, WithFir},

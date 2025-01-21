@@ -12,13 +12,13 @@ use spin_sleep::SpinSleeper;
 
 use super::{
     sender::{Sender, SenderOption},
-    Controller, Sleeper,
+    Controller, Sleep,
 };
 
 /// A struct for grouping devices and sending different data to each group. See also [`Sender::group`].
 pub struct Group<
     'a,
-    S: Sleeper + 'a,
+    S: Sleep + 'a,
     L: Link + 'a,
     T: BorrowMut<Sender<'a, L, S>>,
     K: PartialEq + Debug,
@@ -31,7 +31,7 @@ pub struct Group<
     _phantom: std::marker::PhantomData<&'a (S, L)>,
 }
 
-impl<'a, S: Sleeper, L: Link, T: BorrowMut<Sender<'a, L, S>>, K: PartialEq + Debug>
+impl<'a, S: Sleep, L: Link, T: BorrowMut<Sender<'a, L, S>>, K: PartialEq + Debug>
     Group<'a, S, L, T, K>
 {
     #[must_use]
@@ -191,7 +191,7 @@ impl<'a, S: Sleeper, L: Link, T: BorrowMut<Sender<'a, L, S>>, K: PartialEq + Deb
     }
 }
 
-impl<'a, L: Link, S: Sleeper> Sender<'a, L, S> {
+impl<'a, L: Link, S: Sleep> Sender<'a, L, S> {
     /// Group the devices by given function and send different data to each group.
     ///
     /// If the key is `None`, nothing is done for the devices corresponding to the key.

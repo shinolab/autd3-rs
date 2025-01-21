@@ -28,7 +28,7 @@ pub use sender::{SenderOption, SpinSleeper, SpinStrategy, StdSleeper, WaitableSl
 
 use derive_more::{Deref, DerefMut};
 use getset::{Getters, MutGetters};
-use sender::{sleep::Sleeper, Sender};
+use sender::{sleep::Sleep, Sender};
 use tracing;
 use zerocopy::FromZeros;
 
@@ -52,7 +52,7 @@ impl<L: Link> Controller<L> {
     pub fn open<D: IntoDevice, F: IntoIterator<Item = D>, B: LinkBuilder<L = L>>(
         devices: F,
         link_builder: B,
-    ) -> Result<Controller<B::L>, AUTDError> {
+    ) -> Result<Self, AUTDError> {
         Self::open_with_timeout(devices, link_builder, DEFAULT_TIMEOUT)
     }
 
@@ -63,7 +63,7 @@ impl<L: Link> Controller<L> {
         devices: F,
         link_builder: B,
         timeout: Duration,
-    ) -> Result<Controller<B::L>, AUTDError> {
+    ) -> Result<Self, AUTDError> {
         tracing::debug!("Opening a controller with timeout {:?})", timeout);
 
         let devices = devices
@@ -82,7 +82,7 @@ impl<L: Link> Controller<L> {
         .open_impl(timeout)
     }
 
-    pub fn sender<'a, S: Sleeper>(
+    pub fn sender<'a, S: Sleep>(
         &'a mut self,
         sleeper: S,
         option: SenderOption,

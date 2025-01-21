@@ -3,7 +3,7 @@ use std::time::Instant;
 use autd3_core::utils::timer::TimerResolutionGurad;
 pub use spin_sleep::SpinSleeper;
 
-pub(crate) trait Sleeper {
+pub(crate) trait Sleep {
     fn sleep_until(&self, deadline: Instant);
 }
 
@@ -24,14 +24,14 @@ impl Default for StdSleeper {
     }
 }
 
-impl Sleeper for StdSleeper {
+impl Sleep for StdSleeper {
     fn sleep_until(&self, deadline: Instant) {
         let _timer_guard = TimerResolutionGurad::new(self.timer_resolution);
         std::thread::sleep(deadline - Instant::now());
     }
 }
 
-impl Sleeper for SpinSleeper {
+impl Sleep for SpinSleeper {
     fn sleep_until(&self, deadline: Instant) {
         self.sleep(deadline - Instant::now());
     }
@@ -49,7 +49,7 @@ mod win {
     /// [`TimerStrategy`]: super::super::TimerStrategy
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct WaitableSleeper {
-        handle: windows::Win32::Foundation::HANDLE,
+        pub(crate) handle: windows::Win32::Foundation::HANDLE,
     }
 
     unsafe impl Send for WaitableSleeper {}
@@ -77,7 +77,7 @@ mod win {
         }
     }
 
-    impl Sleeper for WaitableSleeper {
+    impl Sleep for WaitableSleeper {
         fn sleep_until(&self, deadline: Instant) {
             unsafe {
                 let time = deadline - Instant::now();

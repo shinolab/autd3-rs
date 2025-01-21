@@ -1,34 +1,38 @@
 use std::time::Duration;
 
-use autd3::{link::Audit, prelude::*, r#async::Controller};
+use autd3::{
+    link::{Audit, AuditOption},
+    prelude::*,
+    r#async::{AsyncSleeper, Controller},
+};
 use autd3_core::link::LinkError;
 use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
 
 #[tokio::test]
 async fn audit_test() -> anyhow::Result<()> {
-    let mut autd = Controller::builder([AUTD3::default()])
-        .with_default_timeout(Duration::from_millis(100))
-        .open_with_timeout(Audit::builder(AuditOption::default()), Duration::from_millis(10))
-        .await?;
+    let mut autd = Controller::open_with_timeout(
+        [AUTD3::default()],
+        Audit::builder(AuditOption::default()),
+        Duration::from_millis(10),
+    )
+    .await?;
     assert_eq!(Some(Duration::from_millis(10)), autd.link().last_timeout());
     assert_eq!(Some(usize::MAX), autd.link().last_parallel_threshold());
-    assert_eq!(Duration::from_millis(100), autd.timer().default_timeout());
     assert_eq!(0, autd.link()[0].idx());
 
     {
-        autd.send(
-            Null {}
-                .with_parallel_threshold(Some(1))
-                .with_timeout(Some(Duration::from_millis(20))),
+        autd.sender(
+            AsyncSleeper::default(),
+            SenderOption {
+                parallel_threshold: Some(1),
+                timeout: Some(Duration::from_millis(20)),
+                ..Default::default()
+            },
         )
+        .send(Null {})
         .await?;
         assert_eq!(Some(Duration::from_millis(20)), autd.link().last_timeout());
         assert_eq!(Some(1), autd.link().last_parallel_threshold());
-
-        autd.send(Null {}.with_parallel_threshold(None).with_timeout(None))
-            .await?;
-        assert_eq!(None, autd.link().last_timeout());
-        assert_eq!(None, autd.link().last_parallel_threshold());
     }
 
     {

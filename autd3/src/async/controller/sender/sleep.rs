@@ -3,35 +3,20 @@ use std::time::Instant;
 use autd3_core::utils::timer::TimerResolutionGurad;
 pub use spin_sleep::SpinSleeper;
 
-pub(crate) trait Sleeper {
+use crate::controller::StdSleeper;
+
+pub(crate) trait AsyncSleep {
     fn sleep_until(&self, deadline: Instant) -> impl std::future::Future<Output = ()>;
 }
 
-/// See [`TimerStrategy`] for more details.
-///
-/// [`TimerStrategy`]: super::TimerStrategy
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct StdSleeper {
-    /// An optional timer resolution in milliseconds for Windows. The default is `Some(1)`.
-    pub timer_resolution: Option<std::num::NonZeroU32>,
-}
-
-impl Default for StdSleeper {
-    fn default() -> Self {
-        Self {
-            timer_resolution: Some(std::num::NonZeroU32::MIN),
-        }
-    }
-}
-
-impl Sleeper for StdSleeper {
+impl AsyncSleep for StdSleeper {
     async fn sleep_until(&self, deadline: Instant) {
         let _timer_guard = TimerResolutionGurad::new(self.timer_resolution);
         std::thread::sleep(deadline - Instant::now());
     }
 }
 
-impl Sleeper for SpinSleeper {
+impl AsyncSleep for SpinSleeper {
     async fn sleep_until(&self, deadline: Instant) {
         self.sleep(deadline - Instant::now());
     }
@@ -54,7 +39,7 @@ impl Default for AsyncSleeper {
     }
 }
 
-impl Sleeper for AsyncSleeper {
+impl AsyncSleep for AsyncSleeper {
     async fn sleep_until(&self, deadline: Instant) {
         let _timer_guard = TimerResolutionGurad::new(self.timer_resolution);
         tokio::time::sleep_until(tokio::time::Instant::from_std(deadline)).await;
@@ -62,46 +47,12 @@ impl Sleeper for AsyncSleeper {
 }
 
 #[cfg(target_os = "windows")]
-pub use win::WaitableSleeper;
-
-#[cfg(target_os = "windows")]
 mod win {
+    use crate::controller::WaitableSleeper;
+
     use super::*;
 
-    /// See [`TimerStrategy`] for more details.
-    ///
-    /// [`TimerStrategy`]: super::super::TimerStrategy
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct WaitableSleeper {
-        handle: windows::Win32::Foundation::HANDLE,
-    }
-
-    unsafe impl Send for WaitableSleeper {}
-    unsafe impl Sync for WaitableSleeper {}
-
-    impl WaitableSleeper {
-        /// Creates a new [`WaitableSleeper`].
-        ///
-        /// # Errors
-        ///
-        /// See [`CreateWaitableTimerExW`] for more details.
-        ///
-        /// [`CreateWaitableTimerExW`]: https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-createwaitabletimerexw
-        pub fn new() -> windows::core::Result<Self> {
-            Ok(Self {
-                handle: unsafe {
-                    windows::Win32::System::Threading::CreateWaitableTimerExW(
-                        None,
-                        None,
-                        windows::Win32::System::Threading::CREATE_WAITABLE_TIMER_HIGH_RESOLUTION,
-                        windows::Win32::System::Threading::TIMER_ALL_ACCESS.0,
-                    )?
-                },
-            })
-        }
-    }
-
-    impl Sleeper for WaitableSleeper {
+    impl AsyncSleep for WaitableSleeper {
         async fn sleep_until(&self, deadline: Instant) {
             unsafe {
                 let time = deadline - Instant::now();
