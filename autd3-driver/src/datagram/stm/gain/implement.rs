@@ -1,10 +1,13 @@
 use std::{collections::HashMap, iter::Peekable};
 
-use autd3_core::gain::{BitVec, Gain, GainContext, GainContextGenerator, GainError};
+use autd3_core::{
+    derive::DatagramOption,
+    gain::{BitVec, Gain, GainContext, GainContextGenerator, GainError},
+};
 
 use crate::geometry::{Device, Geometry};
 
-use super::{GainSTMContext, GainSTMContextGenerator, GainSTMGenerator, IntoGainSTMGenerator};
+use super::{GainSTMContext, GainSTMContextGenerator, GainSTMGenerator};
 
 pub struct VecGainSTMContext<G: GainContext> {
     gains: Peekable<std::vec::IntoIter<G>>,
@@ -41,24 +44,14 @@ impl<G: Gain> GainSTMGenerator for Vec<G> {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
+        option: &DatagramOption,
     ) -> Result<Self::T, GainError> {
         self.into_iter()
-            .map(|g| g.init(geometry, filter))
+            .map(|g| g.init(geometry, filter, option))
             .collect::<Result<Vec<_>, _>>()
     }
     fn len(&self) -> usize {
         self.len()
-    }
-}
-
-impl<G: Gain, T> IntoGainSTMGenerator for T
-where
-    T: IntoIterator<Item = G>,
-{
-    type G = Vec<G>;
-
-    fn into(self) -> Self::G {
-        self.into_iter().collect()
     }
 }
 
@@ -72,13 +65,10 @@ mod tests {
 
     use super::super::GainSTM;
     use crate::{
-        datagram::gain::tests::TestGain,
+        datagram::{gain::tests::TestGain, GainSTMOption},
         defined::{kHz, Freq, Hz},
         error::AUTDDriverError,
-        firmware::{
-            cpu::GainSTMMode,
-            fpga::{LoopBehavior, SamplingConfig},
-        },
+        firmware::fpga::SamplingConfig,
     };
 
     #[rstest::rstest]
@@ -94,7 +84,12 @@ mod tests {
     ) {
         assert_eq!(
             expect.map_err(AUTDDriverError::from),
-            GainSTM::new(freq, (0..n).map(|_| TestGain::null())).map(|g| g.sampling_config())
+            GainSTM {
+                gains: (0..n).map(|_| TestGain::null()).collect::<Vec<_>>(),
+                config: freq,
+                option: GainSTMOption::default()
+            }
+            .sampling_config()
         );
     }
 
@@ -110,8 +105,14 @@ mod tests {
         #[case] n: usize,
     ) {
         assert_eq!(
-            expect,
-            GainSTM::new_nearest(freq, (0..n).map(|_| TestGain::null())).sampling_config()
+            Ok(expect),
+            GainSTM {
+                gains: (0..n).map(|_| TestGain::null()).collect::<Vec<_>>(),
+                config: freq,
+                option: GainSTMOption::default()
+            }
+            .into_nearest()
+            .sampling_config()
         );
     }
 
@@ -141,7 +142,12 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            GainSTM::new(p, (0..n).map(|_| TestGain::null())).map(|f| f.sampling_config())
+            GainSTM {
+                gains: (0..n).map(|_| TestGain::null()).collect::<Vec<_>>(),
+                config: p,
+                option: GainSTMOption::default()
+            }
+            .sampling_config()
         );
     }
 
@@ -166,8 +172,14 @@ mod tests {
     #[case(Duration::from_millis(1000).try_into().unwrap(), Duration::from_millis(2000) + Duration::from_nanos(1), 2)]
     fn from_period_nearest(#[case] expect: SamplingConfig, #[case] p: Duration, #[case] n: usize) {
         assert_eq!(
-            expect,
-            GainSTM::new_nearest(p, (0..n).map(|_| TestGain::null())).sampling_config()
+            Ok(expect),
+            GainSTM {
+                gains: (0..n).map(|_| TestGain::null()).collect::<Vec<_>>(),
+                config: p,
+                option: GainSTMOption::default()
+            }
+            .into_nearest()
+            .sampling_config()
         );
     }
 
@@ -181,81 +193,13 @@ mod tests {
     ) -> anyhow::Result<()> {
         assert_eq!(
             Ok(config),
-            GainSTM::new(config, (0..n).map(|_| TestGain::null())).map(|f| f.sampling_config())
+            GainSTM {
+                gains: (0..n).map(|_| TestGain::null()).collect::<Vec<_>>(),
+                config,
+                option: GainSTMOption::default()
+            }
+            .sampling_config()
         );
         Ok(())
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(Ok(0.5*Hz), 0.5*Hz, 2)]
-    #[case(Ok(1.0*Hz), 1.*Hz, 10)]
-    #[case(Ok(2.0*Hz), 2.*Hz, 10)]
-    fn freq(
-        #[case] expect: Result<Freq<f32>, AUTDDriverError>,
-        #[case] f: Freq<f32>,
-        #[case] n: usize,
-    ) {
-        assert_eq!(
-            expect,
-            GainSTM::new(f, (0..n).map(|_| TestGain::null())).map(|f| f.freq())
-        );
-    }
-
-    #[cfg(not(feature = "dynamic_freq"))]
-    #[rstest::rstest]
-    #[test]
-    #[case(Ok(Duration::from_millis(2000)), 0.5*Hz, 2)]
-    #[case(Ok(Duration::from_millis(1000)), 1.*Hz, 10)]
-    #[case(Ok(Duration::from_millis(500)), 2.*Hz, 10)]
-    fn period(
-        #[case] expect: Result<Duration, AUTDDriverError>,
-        #[case] f: Freq<f32>,
-        #[case] n: usize,
-    ) {
-        assert_eq!(
-            expect,
-            GainSTM::new(f, (0..n).map(|_| TestGain::null())).map(|f| f.period())
-        );
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case::phase_intensity_full(GainSTMMode::PhaseIntensityFull)]
-    #[case::phase_full(GainSTMMode::PhaseFull)]
-    #[case::phase_half(GainSTMMode::PhaseHalf)]
-    fn with_mode(#[case] mode: GainSTMMode) {
-        assert_eq!(
-            mode,
-            GainSTM::new(SamplingConfig::FREQ_40K, (0..2).map(|_| TestGain::null()))
-                .unwrap()
-                .with_mode(mode)
-                .mode()
-        );
-    }
-
-    #[rstest::rstest]
-    #[test]
-    fn with_mode_default() {
-        assert_eq!(
-            GainSTMMode::PhaseIntensityFull,
-            GainSTM::new(SamplingConfig::FREQ_40K, (0..2).map(|_| TestGain::null()))
-                .unwrap()
-                .mode()
-        );
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case::infinite(LoopBehavior::infinite())]
-    #[case::finite(LoopBehavior::once())]
-    fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) {
-        assert_eq!(
-            loop_behavior,
-            GainSTM::new(SamplingConfig::FREQ_40K, (0..2).map(|_| TestGain::null()))
-                .unwrap()
-                .with_loop_behavior(loop_behavior)
-                .loop_behavior()
-        );
     }
 }

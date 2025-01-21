@@ -1,6 +1,7 @@
 use std::mem::MaybeUninit;
 
 use autd3_core::derive::*;
+use autd3_derive::Modulation;
 
 /// A dyn-compatible version of [`Modulation`].
 pub trait DModulation {
@@ -33,9 +34,7 @@ impl<
 #[derive(Modulation)]
 pub struct BoxedModulation {
     m: Box<dyn DModulation>,
-    #[no_change]
-    config: SamplingConfig,
-    loop_behavior: LoopBehavior,
+    sampling_config: Result<SamplingConfig, ModulationError>,
 }
 
 #[cfg(feature = "lightweight")]
@@ -54,6 +53,10 @@ impl Modulation for BoxedModulation {
         let Self { mut m, .. } = self;
         m.dyn_calc()
     }
+
+    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
+        self.sampling_config.clone()
+    }
 }
 
 /// Trait to convert [`Modulation`] to [`BoxedModulation`].
@@ -68,12 +71,10 @@ impl<
     > IntoBoxedModulation for M
 {
     fn into_boxed(self) -> BoxedModulation {
-        let config = self.sampling_config();
-        let loop_behavior = self.loop_behavior();
+        let sampling_config = self.sampling_config();
         BoxedModulation {
             m: Box::new(MaybeUninit::new(self)),
-            config,
-            loop_behavior,
+            sampling_config,
         }
     }
 }
@@ -86,15 +87,13 @@ pub mod tests {
     #[test]
     fn test() {
         let m = TestModulation {
-            config: SamplingConfig::FREQ_4K,
-            loop_behavior: LoopBehavior::infinite(),
+            sampling_config: SamplingConfig::FREQ_4K,
         };
 
         let mb = m.clone().into_boxed();
 
         assert_eq!(format!("{:?}", m), format!("{:?}", mb));
-        assert_eq!(SamplingConfig::FREQ_4K, mb.sampling_config());
-        assert_eq!(LoopBehavior::infinite(), mb.loop_behavior());
+        assert_eq!(Ok(SamplingConfig::FREQ_4K), mb.sampling_config());
         assert_eq!(Ok(vec![0; 2]), mb.calc());
     }
 }

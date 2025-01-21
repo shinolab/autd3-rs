@@ -6,6 +6,7 @@ use crate::firmware::{
 };
 
 use crate::datagram::*;
+use autd3_core::datagram::DatagramOption;
 use derive_more::Debug;
 use derive_new::new;
 
@@ -54,7 +55,7 @@ impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> Datagram for DebugSetti
     type G = DebugSettingOpGenerator<F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: &DatagramOption) -> Result<Self::G, Self::Error> {
         Ok(DebugSettingOpGenerator { f: self.f })
     }
 }

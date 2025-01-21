@@ -116,11 +116,9 @@ mod tests {
 
         let mut rng = rand::thread_rng();
         let data: Vec<_> = (0..NUM_TRANS_IN_UNIT)
-            .map(|_| {
-                Drive::new(
-                    Phase::new(rng.gen_range(0x00..=0xFF)),
-                    EmitIntensity::new(rng.gen_range(0..=0xFF)),
-                )
+            .map(|_| Drive {
+                phase: Phase(rng.gen_range(0x00..=0xFF)),
+                intensity: EmitIntensity(rng.gen_range(0..=0xFF)),
             })
             .collect();
 
@@ -147,8 +145,8 @@ mod tests {
             .chunks(2)
             .zip(data.iter())
             .for_each(|(d, g)| {
-                assert_eq!(d[0], &g.phase().value());
-                assert_eq!(d[1], &g.intensity().value());
+                assert_eq!(d[0], &g.phase.0);
+                assert_eq!(d[1], &g.intensity.0);
             });
     }
 

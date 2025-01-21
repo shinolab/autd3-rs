@@ -27,7 +27,7 @@ impl Datagram for ConfigureFPGAClock {
     type G = ConfigureClockOpGenerator;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: &DatagramOption) -> Result<Self::G, Self::Error> {
         Ok(ConfigureClockOpGenerator {})
     }
 }

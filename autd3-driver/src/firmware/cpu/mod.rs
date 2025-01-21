@@ -22,7 +22,7 @@ pub fn check_if_msg_is_processed<'a>(
 ) -> impl Iterator<Item = bool> + 'a {
     tx.iter()
         .zip(rx.iter())
-        .map(|(tx, r)| tx.header().msg_id == r.ack())
+        .map(|(tx, r)| tx.header.msg_id == r.ack())
 }
 
 #[cfg(test)]
@@ -35,9 +35,9 @@ mod tests {
     #[rstest::fixture]
     fn tx() -> Vec<TxMessage> {
         let mut tx = vec![TxMessage::new_zeroed(); 3];
-        tx[0].header_mut().msg_id = 0;
-        tx[1].header_mut().msg_id = 1;
-        tx[2].header_mut().msg_id = 2;
+        tx[0].header.msg_id = 0;
+        tx[1].header.msg_id = 1;
+        tx[2].header.msg_id = 2;
         tx
     }
 
