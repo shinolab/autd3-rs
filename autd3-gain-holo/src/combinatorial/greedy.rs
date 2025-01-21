@@ -9,48 +9,48 @@ use autd3_core::{
     geometry::{Point3, UnitVector3},
 };
 
-use autd3_derive::Builder;
 use derive_more::Debug;
 use nalgebra::ComplexField;
 use rand::seq::SliceRandom;
+
+#[derive(Debug)]
+pub struct GreedyOption<D: Directivity> {
+    /// The number of phase divisions.
+    pub phase_div: NonZeroU8,
+    /// The transducers' emission constraint.
+    pub constraint: EmissionConstraint,
+    /// The segment to write the data.
+    pub segment: Segment,
+    /// The mode when switching the segment.
+    pub transition_mode: Option<TransitionMode>,
+    _phantom: std::marker::PhantomData<D>,
+}
+
+impl<D: Directivity> Default for GreedyOption<D> {
+    fn default() -> Self {
+        Self {
+            phase_div: NonZeroU8::new(16).unwrap(),
+            constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
+            segment: Segment::S0,
+            transition_mode: Some(TransitionMode::Immediate),
+            _phantom: std::marker::PhantomData,
+        }
+    }
+}
 
 /// Greedy algorithm and Brute-force search
 ///
 /// [`Greedy`] is based on the method of optimizing by brute-force search and greedy algorithm by discretizing the phase.
 /// See [Suzuki, et al., 2021](https://ieeexplore.ieee.org/document/9419757) for more details.
-#[derive(Gain, Builder, Debug)]
+#[derive(Gain, Debug)]
 pub struct Greedy<D: Directivity> {
-    #[get(ref)]
-    /// The focal positions.
-    foci: Vec<Point3>,
-    #[get(ref)]
-    /// The focal amplitudes.
-    amps: Vec<Amplitude>,
-    #[get]
-    #[set]
-    /// The number of phase divisions.
-    phase_div: NonZeroU8,
-    #[get]
-    #[set]
-    /// The transducers' emission constraint.
-    constraint: EmissionConstraint,
-    #[debug(ignore)]
-    _phantom: std::marker::PhantomData<D>,
+    /// The focal positions and amplitudes.
+    foci: Vec<(Point3, Amplitude)>,
+    /// The opinion of the Gain.
+    option: GreedyOption<D>,
 }
 
 impl<D: Directivity> Greedy<D> {
-    /// Creates a new [`Greedy`].
-    pub fn new(iter: impl IntoIterator<Item = (Point3, Amplitude)>) -> Self {
-        let (foci, amps) = iter.into_iter().unzip();
-        Self {
-            foci,
-            amps,
-            phase_div: NonZeroU8::new(16).unwrap(),
-            constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
-            _phantom: std::marker::PhantomData,
-        }
-    }
-
     fn transfer_foci(
         trans: &Transducer,
         wavenumber: f32,
@@ -95,9 +95,14 @@ impl<D: Directivity> Gain for Greedy<D> {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
+        _option: &DatagramOption,
     ) -> Result<Self::G, GainError> {
-        let phase_candidates = (0..self.phase_div.get())
-            .map(|i| Complex::new(0., 2.0 * PI * i as f32 / self.phase_div.get() as f32).exp())
+        let (foci, amps): (Vec<_>, Vec<_>) = self.foci.into_iter().unzip();
+
+        let phase_candidates = (0..self.option.phase_div.get())
+            .map(|i| {
+                Complex::new(0., 2.0 * PI * i as f32 / self.option.phase_div.get() as f32).exp()
+            })
             .collect::<Vec<_>>();
 
         let indices = {
@@ -131,14 +136,14 @@ impl<D: Directivity> Gain for Greedy<D> {
             .devices()
             .map(|dev| (dev.idx(), vec![Drive::NULL; dev.num_transducers()]))
             .collect();
-        let mut cache = vec![Complex::new(0., 0.); self.foci.len()];
-        let mut tmp = vec![Complex::new(0., 0.); self.foci.len()];
+        let mut cache = vec![Complex::new(0., 0.); foci.len()];
+        let mut tmp = vec![Complex::new(0., 0.); foci.len()];
         indices.iter().for_each(|&(dev_idx, idx)| {
             Self::transfer_foci(
                 &geometry[dev_idx][idx],
                 geometry[dev_idx].wavenumber(),
                 geometry[dev_idx].axial_direction(),
-                &self.foci,
+                &foci,
                 &mut tmp,
             );
             let (phase, _) =
@@ -147,7 +152,7 @@ impl<D: Directivity> Gain for Greedy<D> {
                     .fold((Complex::ZERO, f32::INFINITY), |acc, &phase| {
                         let v = cache
                             .iter()
-                            .zip(self.amps.iter())
+                            .zip(amps.iter())
                             .zip(tmp.iter())
                             .fold(0., |acc, ((c, a), f)| {
                                 acc + (a.value - (f * phase + c).abs()).abs()
@@ -161,8 +166,10 @@ impl<D: Directivity> Gain for Greedy<D> {
             cache.iter_mut().zip(tmp.iter()).for_each(|(c, a)| {
                 *c += a * phase;
             });
-            g.get_mut(&dev_idx).unwrap()[idx] =
-                Drive::new(Phase::from(phase), self.constraint.convert(1.0, 1.0));
+            g.get_mut(&dev_idx).unwrap()[idx] = Drive {
+                phase: Phase::from(phase),
+                intensity: self.option.constraint.convert(1.0, 1.0),
+            };
         });
 
         Ok(ContextGenerator { g })
@@ -171,32 +178,29 @@ impl<D: Directivity> Gain for Greedy<D> {
 
 #[cfg(test)]
 mod tests {
+    use autd3_core::acoustics::directivity::Sphere;
+
     use crate::tests::create_geometry;
 
     use super::{super::super::Pa, *};
-    use autd3_core::acoustics::directivity::Sphere;
 
     #[test]
     fn test_greedy_all() {
         let geometry = create_geometry(1, 1);
 
-        let g = Greedy::<Sphere>::new([(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)])
-            .with_phase_div(NonZeroU8::MIN);
-
-        assert_eq!(g.phase_div(), NonZeroU8::MIN);
+        let g = Greedy::<Sphere> {
+            foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
+            option: GreedyOption::default(),
+        };
         assert_eq!(
-            g.constraint(),
-            EmissionConstraint::Uniform(EmitIntensity::MAX)
-        );
-
-        assert_eq!(
-            g.init(&geometry, None).map(|mut res| {
-                let f = res.generate(&geometry[0]);
-                geometry[0]
-                    .iter()
-                    .filter(|tr| f.calc(tr) != Drive::NULL)
-                    .count()
-            }),
+            g.init(&geometry, None, &DatagramOption::default())
+                .map(|mut res| {
+                    let f = res.generate(&geometry[0]);
+                    geometry[0]
+                        .iter()
+                        .filter(|tr| f.calc(tr) != Drive::NULL)
+                        .count()
+                }),
             Ok(geometry.num_transducers()),
         );
     }
@@ -206,9 +210,12 @@ mod tests {
         let mut geometry = create_geometry(2, 1);
         geometry[0].enable = false;
 
-        let g = Greedy::<Sphere>::new([(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)]);
+        let g = Greedy::<Sphere> {
+            foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
+            option: GreedyOption::default(),
+        };
 
-        let mut g = g.init(&geometry, None)?;
+        let mut g = g.init(&geometry, None, &DatagramOption::default())?;
         let f = g.generate(&geometry[1]);
         assert_eq!(
             geometry[1]
@@ -225,24 +232,24 @@ mod tests {
     fn test_greedy_filtered() {
         let geometry = create_geometry(1, 1);
 
-        let g = Greedy::<Sphere>::new([
-            (Point3::new(10., 10., 100.), 5e3 * Pa),
-            (Point3::new(-10., 10., 100.), 5e3 * Pa),
-        ])
-        .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)));
+        let g = Greedy::<Sphere> {
+            foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
+            option: GreedyOption::default(),
+        };
 
         let filter = geometry
             .iter()
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
         assert_eq!(
-            g.init(&geometry, Some(&filter)).map(|mut res| {
-                let f = res.generate(&geometry[0]);
-                geometry[0]
-                    .iter()
-                    .filter(|tr| f.calc(tr) != Drive::NULL)
-                    .count()
-            }),
+            g.init(&geometry, Some(&filter), &DatagramOption::default())
+                .map(|mut res| {
+                    let f = res.generate(&geometry[0]);
+                    geometry[0]
+                        .iter()
+                        .filter(|tr| f.calc(tr) != Drive::NULL)
+                        .count()
+                }),
             Ok(100),
         )
     }
@@ -252,14 +259,17 @@ mod tests {
         let mut geometry = create_geometry(2, 1);
         geometry[0].enable = false;
 
-        let g = Greedy::<Sphere>::new([(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)]);
+        let g = Greedy::<Sphere> {
+            foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
+            option: GreedyOption::default(),
+        };
 
         let filter = geometry
             .devices()
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
 
-        let mut g = g.init(&geometry, Some(&filter))?;
+        let mut g = g.init(&geometry, Some(&filter), &DatagramOption::default())?;
         let f = g.generate(&geometry[1]);
         assert_eq!(
             geometry[1]

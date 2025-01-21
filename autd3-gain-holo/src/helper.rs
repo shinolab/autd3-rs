@@ -62,7 +62,10 @@ impl<T: IntoDrive + Copy + Send + Sync + 'static> GainContext for HoloContext<T>
                         let intensity = self
                             .constraint
                             .convert(x.into_intensity(), self.max_coefficient);
-                        Drive::new(phase, intensity)
+                        Drive {
+                            phase: phase,
+                            intensity: intensity,
+                        }
                     })
                 })
                 .unwrap_or(Drive::NULL),
@@ -72,7 +75,10 @@ impl<T: IntoDrive + Copy + Send + Sync + 'static> GainContext for HoloContext<T>
                 let intensity = self
                     .constraint
                     .convert(x.into_intensity(), self.max_coefficient);
-                Drive::new(phase, intensity)
+                Drive {
+                    phase: phase,
+                    intensity: intensity,
+                }
             }
         }
     }
