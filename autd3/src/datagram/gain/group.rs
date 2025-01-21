@@ -238,8 +238,14 @@ mod tests {
             intensity: EmitIntensity(rng.gen()),
         };
 
-        let g1 = Uniform { drive: d1 };
-        let g2 = Uniform { drive: d2 };
+        let g1 = Uniform {
+            intensity: d1.intensity,
+            phase: d1.phase,
+        };
+        let g2 = Uniform {
+            intensity: d2.intensity,
+            phase: d2.phase,
+        };
 
         let gain = Group::new(|dev| {
             let dev_idx = dev.idx();
@@ -311,8 +317,14 @@ mod tests {
             intensity: EmitIntensity(rng.gen()),
         };
 
-        let g1 = Uniform { drive: d1 };
-        let g2 = Uniform { drive: d2 };
+        let g1 = Uniform {
+            intensity: d1.intensity,
+            phase: d1.phase,
+        };
+        let g2 = Uniform {
+            intensity: d2.intensity,
+            phase: d2.phase,
+        };
 
         let gain = Group::new(|dev| {
             let dev_idx = dev.idx();

@@ -285,10 +285,8 @@ mod tests {
         let mut autd = create_controller(4).await?;
 
         autd.send(Uniform {
-            drive: Drive {
-                intensity: EmitIntensity(0xFF),
-                phase: Phase::ZERO,
-            },
+            intensity: EmitIntensity(0xFF),
+            phase: Phase::ZERO,
         })
         .await?;
 
@@ -308,16 +306,12 @@ mod tests {
                 GainSTM {
                     gains: vec![
                         Uniform {
-                            drive: Drive {
-                                intensity: EmitIntensity(0x80),
-                                phase: Phase::ZERO,
-                            },
+                            intensity: EmitIntensity(0x80),
+                            phase: Phase::ZERO,
                         },
                         Uniform {
-                            drive: Drive {
-                                intensity: EmitIntensity(0x81),
-                                phase: Phase::ZERO,
-                            },
+                            intensity: EmitIntensity(0x81),
+                            phase: Phase::ZERO,
                         },
                     ],
                     config: 1. * Hz,

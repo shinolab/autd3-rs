@@ -11,10 +11,6 @@ pub struct BesselOption {
     pub intensity: EmitIntensity,
     /// The phase offset of the beam.
     pub phase_offset: Phase,
-    /// The segment to write the data.
-    pub segment: Segment,
-    /// The mode when switching the segment.
-    pub transition_mode: Option<TransitionMode>,
 }
 
 impl Default for BesselOption {
@@ -22,8 +18,6 @@ impl Default for BesselOption {
         Self {
             intensity: EmitIntensity::MAX,
             phase_offset: Phase::ZERO,
-            segment: Segment::S0,
-            transition_mode: Some(TransitionMode::Immediate),
         }
     }
 }

@@ -132,7 +132,10 @@ mod tests {
             phase: Phase(rng.gen()),
             intensity: EmitIntensity(rng.gen()),
         };
-        let gain = Uniform { drive: d };
+        let gain = Uniform {
+            intensity: d.intensity,
+            phase: d.phase,
+        };
         let cache = gain.clone().into_cached();
 
         assert!(cache.cache().borrow().is_empty());
@@ -153,7 +156,10 @@ mod tests {
     fn different_geometry() -> anyhow::Result<()> {
         let mut geometry = create_geometry(2);
 
-        let gain = Uniform { drive: Drive::NULL };
+        let gain = Uniform {
+            intensity: EmitIntensity::MIN,
+            phase: Phase::ZERO,
+        };
         let cache = gain.into_cached();
 
         cache

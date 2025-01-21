@@ -5,13 +5,18 @@ use autd3_driver::firmware::fpga::Drive;
 /// [`Gain`] that output uniform phase and intensity
 #[derive(Gain, Clone, PartialEq, Debug)]
 pub struct Uniform {
-    /// The drive of all transducers
-    pub drive: Drive,
+    /// The intensity of the gain.
+    pub intensity: EmitIntensity,
+    /// The phase of the gain.
+    pub phase: Phase,
 }
 
 impl GainContext for Uniform {
     fn calc(&self, _: &Transducer) -> Drive {
-        self.drive
+        Drive {
+            intensity: self.intensity,
+            phase: self.phase,
+        }
     }
 }
 
@@ -52,11 +57,9 @@ mod tests {
 
         let intensity = EmitIntensity(rng.gen());
         let phase = Phase(rng.gen());
-        let g = Uniform {
-            drive: Drive { intensity, phase },
-        };
+        let g = Uniform { intensity, phase };
 
-        let mut b = g.init(&geometry, None,&DatagramOption::default())?;
+        let mut b = g.init(&geometry, None, &DatagramOption::default())?;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {

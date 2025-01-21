@@ -364,16 +364,12 @@ mod tests {
             GainSTM {
                 gains: vec![
                     Uniform {
-                        drive: Drive {
-                            intensity: EmitIntensity(0x80),
-                            phase: Phase::ZERO,
-                        },
+                        intensity: EmitIntensity(0x80),
+                        phase: Phase::ZERO,
                     },
                     Uniform {
-                        drive: Drive {
-                            intensity: EmitIntensity(0x81),
-                            phase: Phase::ZERO,
-                        },
+                        intensity: EmitIntensity(0x81),
+                        phase: Phase::ZERO,
                     },
                 ],
                 config: 1. * Hz,
@@ -391,10 +387,8 @@ mod tests {
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
             );
             let f = Uniform {
-                drive: Drive {
-                    intensity: EmitIntensity(0x80),
-                    phase: Phase::ZERO,
-                },
+                intensity: EmitIntensity(0x80),
+                phase: Phase::ZERO,
             }
             .init(&autd.geometry, None, &DatagramOption::default())?
             .generate(dev);
@@ -403,10 +397,8 @@ mod tests {
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 0)
             );
             let f = Uniform {
-                drive: Drive {
-                    intensity: EmitIntensity(0x81),
-                    phase: Phase::ZERO,
-                },
+                intensity: EmitIntensity(0x81),
+                phase: Phase::ZERO,
             }
             .init(&autd.geometry, None, &DatagramOption::default())?
             .generate(dev);
@@ -559,16 +551,12 @@ mod tests {
             GainSTM {
                 gains: vec![
                     Uniform {
-                        drive: Drive {
-                            intensity: EmitIntensity(0x80),
-                            phase: Phase::ZERO,
-                        },
+                        intensity: EmitIntensity(0x80),
+                        phase: Phase::ZERO,
                     },
                     Uniform {
-                        drive: Drive {
-                            intensity: EmitIntensity(0x81),
-                            phase: Phase::ZERO,
-                        },
+                        intensity: EmitIntensity(0x81),
+                        phase: Phase::ZERO,
                     },
                 ],
                 config: 1. * Hz,
@@ -588,10 +576,8 @@ mod tests {
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
             );
             let f = Uniform {
-                drive: Drive {
-                    intensity: EmitIntensity(0x80),
-                    phase: Phase::ZERO,
-                },
+                intensity: EmitIntensity(0x80),
+                phase: Phase::ZERO,
             }
             .init(&autd.geometry, None, &DatagramOption::default())?
             .generate(dev);
@@ -600,10 +586,8 @@ mod tests {
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 0)
             );
             let f = Uniform {
-                drive: Drive {
-                    intensity: EmitIntensity(0x81),
-                    phase: Phase::ZERO,
-                },
+                intensity: EmitIntensity(0x81),
+                phase: Phase::ZERO,
             }
             .init(&autd.geometry, None, &DatagramOption::default())?
             .generate(dev);

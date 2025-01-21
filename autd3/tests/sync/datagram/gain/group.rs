@@ -22,10 +22,8 @@ fn only_for_enabled() -> anyhow::Result<()> {
         .set(
             0,
             Uniform {
-                drive: Drive {
-                    phase: Phase(0x90),
-                    intensity: EmitIntensity(0x80),
-                },
+                phase: Phase(0x90),
+                intensity: EmitIntensity(0x80),
             },
         )?,
     )?;
