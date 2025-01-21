@@ -8,7 +8,7 @@
 //! [`AUTD3 Simulator`]: https://github.com/shinolab/autd3-server
 
 use autd3_core::link::{AsyncLink, AsyncLinkBuilder, LinkError, RxMessage, TxMessage};
-use autd3_derive::Builder;
+
 use autd3_protobuf::*;
 
 use std::net::SocketAddr;
