@@ -1,5 +1,5 @@
 /// GPIO output pin.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u8)]
 pub enum GPIOOut {
     /// Output 0
@@ -13,7 +13,7 @@ pub enum GPIOOut {
 }
 
 /// GPIO input pin.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u8)]
 pub enum GPIOIn {
     /// Input 0

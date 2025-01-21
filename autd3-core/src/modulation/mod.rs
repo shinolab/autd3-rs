@@ -1,34 +1,12 @@
 mod error;
-mod loop_behavior;
 mod sampling_config;
 
 use std::sync::Arc;
 
 pub use error::{ModulationError, SamplingConfigError};
-pub use loop_behavior::LoopBehavior;
 pub use sampling_config::SamplingConfig;
 
-use crate::datagram::{Segment, TransitionMode};
-
-/// A trait to get the modulation property. (This trait is automatically implemented by the [`Modulation`] derive macro.)
-///
-/// [`Modulation`]: autd3_derive::Modulation
-pub trait ModulationOption {
-    /// Get the sampling configuration.
-    fn sampling_config(&self) -> SamplingConfig;
-    /// Get the loop behavior.
-    fn loop_behavior(&self) -> LoopBehavior;
-    /// The segment to write the data.
-    fn segment(&self) -> Segment;
-    /// The mode when switching the segment.
-    fn transition_mode(&self) -> Option<TransitionMode>;
-}
-
-/// A trait for the option of the gain.
-pub trait GetModulationOption: Modulation {
-    /// The option of the gain.
-    fn option(&self) -> &<Self as Modulation>::Option;
-}
+use crate::datagram::{LoopBehavior, Segment, TransitionMode};
 
 /// Trait for applying amplitude modulation.
 ///
@@ -36,11 +14,11 @@ pub trait GetModulationOption: Modulation {
 ///
 /// [`Modulation`]: autd3_derive::Modulation
 pub trait Modulation: std::fmt::Debug {
-    /// The option type for the modulation.
-    type Option: ModulationOption;
-
     /// Calculate the modulation data.
     fn calc(self) -> Result<Vec<u8>, ModulationError>;
+
+    /// The sampling configuration.
+    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError>;
 }
 
 #[doc(hidden)]

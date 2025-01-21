@@ -15,22 +15,9 @@ pub use phase::Phase;
 
 use crate::{
     datagram::{Segment, TransitionMode},
+    derive::DatagramOption,
     geometry::{Device, Geometry, Transducer},
 };
-
-/// A trait for the option of the gain.
-pub trait GainOption {
-    /// The segment to write the data.
-    fn segment(&self) -> Segment;
-    /// The mode when switching the segment.
-    fn transition_mode(&self) -> Option<TransitionMode>;
-}
-
-/// A trait for the option of the gain.
-pub trait GetGainOption: Gain {
-    /// The option of the gain.
-    fn option(&self) -> &<Self as Gain>::Option;
-}
 
 /// A trait to calculate the phase and intensity for [`Gain`].
 ///
@@ -63,8 +50,6 @@ pub trait GainContextGenerator {
 pub trait Gain: std::fmt::Debug {
     /// The type of the context generator.
     type G: GainContextGenerator;
-    /// The option type for the gain.
-    type Option: GainOption;
 
     /// Initialize the gain and generate the context generator.
     ///
@@ -74,6 +59,7 @@ pub trait Gain: std::fmt::Debug {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
+        option: &DatagramOption,
     ) -> Result<Self::G, GainError>;
 }
 
@@ -90,9 +76,10 @@ impl<G: GainContextGenerator> GainOperationGenerator<G> {
         geometry: &Geometry,
         segment: Segment,
         transition: Option<TransitionMode>,
+        option: &DatagramOption,
     ) -> Result<Self, GainError> {
         Ok(Self {
-            generator: gain.init(geometry, None)?,
+            generator: gain.init(geometry, None, option)?,
             segment,
             transition,
         })

@@ -1,6 +1,4 @@
-use std::time::Duration;
-
-use crate::geometry::Geometry;
+use crate::{derive::DatagramOption, geometry::Geometry};
 
 use super::{error::LinkError, RxMessage, TxMessage};
 
@@ -25,7 +23,7 @@ pub trait Link: Send {
     fn is_open(&self) -> bool;
 
     #[doc(hidden)]
-    fn trace(&mut self, _: Option<Duration>, _: Option<usize>) {}
+    fn trace(&mut self, _: &DatagramOption) {}
 }
 
 /// A trait to build a link.
@@ -58,7 +56,7 @@ impl Link for Box<dyn Link> {
         self.as_ref().is_open()
     }
 
-    fn trace(&mut self, timeout: Option<Duration>, parallel_threshold: Option<usize>) {
-        self.as_mut().trace(timeout, parallel_threshold)
+    fn trace(&mut self, option: &DatagramOption) {
+        self.as_mut().trace(option)
     }
 }

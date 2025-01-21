@@ -13,7 +13,7 @@ use super::ECAT_DC_SYS_TIME_BASE;
 /// The system time is the time expressed in 1ns units with 2000-01-01 0:00:00 UTC as the reference.
 /// It is expressed as a 64-bit unsigned integer and can represent about 584 years of time.
 /// See [EtherCAT Distributed Clock](https://infosys.beckhoff.com/english.php?content=../content/1033/ethercatsystem/2469118347.html) for more information.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub struct DcSysTime {
     dc_sys_time: u64,

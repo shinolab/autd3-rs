@@ -215,6 +215,14 @@ impl TryInto<SamplingConfig> for std::time::Duration {
         SamplingConfig::new(self)
     }
 }
+
+impl TryInto<SamplingConfig> for Result<SamplingConfig, SamplingConfigError> {
+    type Error = SamplingConfigError;
+
+    fn try_into(self) -> Result<SamplingConfig, Self::Error> {
+        self
+    }
+}
 // GRCOV_EXCL_STOP
 
 #[cfg(test)]
