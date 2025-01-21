@@ -1,42 +1,39 @@
 use autd3_core::{defined::Freq, derive::*, resampler::Resampler};
-use autd3_derive::Builder;
 
-use std::{
-    fs::File,
-    path::{Path, PathBuf},
-};
+use std::{fmt::Debug, fs::File, path::Path, rc::Rc};
 
 use crate::error::AudioFileError;
 
-/// [`Modulation`] from CSV data.
-#[derive(Modulation, Builder, Debug)]
-pub struct Csv {
-    path: PathBuf,
-    #[get]
-    #[set]
+#[derive(Debug, Clone)]
+pub struct CsvOption {
     /// The deliminator of CSV file.
-    deliminator: u8,
-    #[no_change]
-    config: SamplingConfig,
-    loop_behavior: LoopBehavior,
-    resampler: Option<(Freq<f32>, Box<dyn Resampler>)>,
+    pub deliminator: u8,
+    resampler: Option<(Freq<f32>, Rc<dyn Resampler>)>,
 }
 
-impl Csv {
-    /// Create a new instance of [`Csv`].
-    pub fn new<T: TryInto<SamplingConfig>>(
-        path: impl AsRef<Path>,
-        sampling_config: T,
-    ) -> Result<Self, T::Error> {
-        Ok(Self {
-            path: path.as_ref().to_path_buf(),
-            config: sampling_config.try_into()?,
-            loop_behavior: LoopBehavior::infinite(),
+impl Default for CsvOption {
+    fn default() -> Self {
+        Self {
             deliminator: b',',
             resampler: None,
-        })
+        }
     }
+}
 
+/// [`Modulation`] from CSV data.
+#[derive(Modulation, Debug)]
+pub struct Csv<'a, Config, E>
+where
+    E: Debug,
+    SamplingConfigError: From<E>,
+    Config: TryInto<SamplingConfig, Error = E> + Debug + Copy,
+{
+    path: &'a Path,
+    sampling_config: Config,
+    option: CsvOption,
+}
+
+impl<'a> Csv<'a, Freq<f32>, SamplingConfigError> {
     /// Create a new instance of [`Csv`] with resampling.
     ///
     /// # Examples
@@ -48,30 +45,42 @@ impl Csv {
     /// let path = "path/to/file.csv";
     /// Csv::new_with_resample(&path, 2.0 * kHz, 4 * kHz, SincInterpolation::default());
     /// ```
-    pub fn new_with_resample<T: TryInto<SamplingConfig>>(
-        path: impl AsRef<Path>,
-        source: Freq<f32>,
+    pub fn with_resample<T, E>(
+        self,
         target: T,
         resampler: impl Resampler + 'static,
-    ) -> Result<Self, T::Error> {
-        let target = target.try_into()?;
-        Ok(Self {
-            path: path.as_ref().to_path_buf(),
-            config: target,
-            loop_behavior: LoopBehavior::infinite(),
-            deliminator: b',',
-            resampler: Some((source, Box::new(resampler))),
-        })
+    ) -> Csv<'a, T, E>
+    where
+        E: Debug,
+        SamplingConfigError: From<E>,
+        T: TryInto<SamplingConfig, Error = E> + Debug + Copy,
+    {
+        let source = self.sampling_config;
+        Csv {
+            path: self.path,
+            sampling_config: target,
+            option: CsvOption {
+                resampler: Some((source, Rc::new(resampler))),
+                ..self.option
+            },
+        }
     }
+}
 
+impl<'a, Config, E> Csv<'a, Config, E>
+where
+    E: Debug,
+    SamplingConfigError: From<E>,
+    Config: TryInto<SamplingConfig, Error = E> + Debug + Copy,
+{
     #[tracing::instrument]
     fn read_buf(&self) -> Result<Vec<u8>, AudioFileError> {
         let f = File::open(&self.path)?;
         let mut rdr = csv::ReaderBuilder::new()
             .has_headers(false)
-            .delimiter(self.deliminator)
+            .delimiter(self.option.deliminator)
             .from_reader(f);
-        let buffer = rdr
+        Ok(rdr
             .records()
             .map(|r| {
                 let record = r?;
@@ -86,19 +95,32 @@ impl Csv {
             .into_iter()
             .flatten()
             .map(|s| s.parse::<u8>())
-            .collect::<Result<Vec<u8>, _>>()?;
+            .collect::<Result<Vec<u8>, _>>()?)
+    }
+}
+
+impl<'a, Config, E> Modulation for Csv<'a, Config, E>
+where
+    E: Debug,
+    SamplingConfigError: From<E>,
+    Config: TryInto<SamplingConfig, Error = E> + Debug + Copy,
+{
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
+        let buffer = self.read_buf()?;
         tracing::debug!("Read buffer: {:?}", buffer);
-        Ok(if let Some((source, resampler)) = &self.resampler {
-            resampler.resample(&buffer, *source, self.config)
+        let target = self.sampling_config()?;
+        Ok(if let Some((source, resampler)) = self.option.resampler {
+            resampler.resample(&buffer, source, target)
         } else {
             buffer
         })
     }
-}
 
-impl Modulation for Csv {
-    fn calc(self) -> Result<Vec<u8>, ModulationError> {
-        Ok(self.read_buf()?)
+    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
+        Ok(self
+            .sampling_config
+            .try_into()
+            .map_err(SamplingConfigError::from)?)
     }
 }
 
@@ -126,7 +148,11 @@ mod tests {
         let path = dir.path().join("tmp.csv");
         create_csv(&path, &data)?;
 
-        let m = Csv::new(&path, sample_rate)?;
+        let m = Csv {
+            path: path.as_path(),
+            sampling_config: sample_rate,
+            option: CsvOption::default(),
+        };
         assert_eq!(data, *m.calc()?);
 
         Ok(())
@@ -147,7 +173,13 @@ mod tests {
         let path = dir.path().join("tmp.csv");
         create_csv(&path, &buffer)?;
 
-        let m = Csv::new_with_resample(&path, source, target, resampler)?;
+        let m = Csv {
+            path: path.as_path(),
+            sampling_config: source,
+            option: CsvOption::default(),
+        }
+        .with_resample(target, resampler);
+
         assert_eq!(expected, *m.calc()?);
 
         Ok(())
@@ -155,7 +187,11 @@ mod tests {
 
     #[test]
     fn not_exisit() -> anyhow::Result<()> {
-        let m = Csv::new("not_exists.csv", 4000 * Hz)?;
+        let m = Csv {
+            path: Path::new("not_exists.csv"),
+            sampling_config: 4000 * Hz,
+            option: CsvOption::default(),
+        };
         assert!(m.calc().is_err());
         Ok(())
     }
