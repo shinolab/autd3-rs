@@ -167,6 +167,10 @@ impl SamplingConfig {
     pub const FREQ_MIN: SamplingConfig = SamplingConfig {
         division: NonZeroU16::MAX,
     };
+    /// A [`SamplingConfig`] of ultrasound frequency divided by 10.
+    pub const DIV_10: SamplingConfig = SamplingConfig {
+        division: NonZeroU16::new(10).unwrap(),
+    };
 
     /// Creates a new [`SamplingConfig`].
     pub fn new<T: IntoSamplingConfig>(value: T) -> Result<Self, T::Error> {
