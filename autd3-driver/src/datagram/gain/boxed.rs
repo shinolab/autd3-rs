@@ -6,7 +6,12 @@ pub use crate::geometry::{Device, Geometry};
 
 use autd3_core::derive::*;
 
+#[cfg(not(feature = "lightweight"))]
 pub trait DGainContextGenerator {
+    fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainContext>;
+}
+#[cfg(feature = "lightweight")]
+pub trait DGainContextGenerator: Send + Sync {
     fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainContext>;
 }
 
@@ -22,8 +27,11 @@ impl GainContextGenerator for DynGainContextGenerator {
     }
 }
 
-impl<Context: GainContext + 'static, G: GainContextGenerator<Context = Context>>
-    DGainContextGenerator for G
+impl<
+        Context: GainContext + 'static,
+        #[cfg(not(feature = "lightweight"))] G: GainContextGenerator<Context = Context>,
+        #[cfg(feature = "lightweight")] G: GainContextGenerator<Context = Context> + Send + Sync,
+    > DGainContextGenerator for G
 {
     fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainContext> {
         Box::new(GainContextGenerator::generate(self, device))
@@ -113,8 +121,9 @@ pub trait IntoBoxedGain {
 }
 
 impl<
+        #[cfg(feature = "lightweight")] GG: GainContextGenerator + Send + Sync + 'static,
         #[cfg(not(feature = "lightweight"))] G: Gain + 'static,
-        #[cfg(feature = "lightweight")] G: Gain + Send + Sync + 'static,
+        #[cfg(feature = "lightweight")] G: Gain<G = GG> + Send + Sync + 'static,
     > IntoBoxedGain for G
 {
     fn into_boxed(self) -> BoxedGain {

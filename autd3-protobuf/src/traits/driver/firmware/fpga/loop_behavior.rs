@@ -25,7 +25,7 @@ impl FromMessage<LoopBehavior> for autd3_driver::firmware::fpga::LoopBehavior {
             0xFFFF => autd3_driver::firmware::fpga::LoopBehavior::Infinite,
             v => u16::try_from(v)
                 .map(|v| NonZeroU16::new(v + 1).unwrap())
-                .map(|v| autd3_driver::firmware::fpga::LoopBehavior::Finite(v))?,
+                .map(autd3_driver::firmware::fpga::LoopBehavior::Finite)?,
         })
     }
 }

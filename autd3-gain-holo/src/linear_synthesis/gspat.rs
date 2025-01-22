@@ -19,7 +19,7 @@ pub struct GSPATOption<D: Directivity> {
     pub constraint: EmissionConstraint,
     #[doc(hidden)]
     #[debug(ignore)]
-    __phantom: std::marker::PhantomData<D>,
+    pub __phantom: std::marker::PhantomData<D>,
 }
 
 impl<D: Directivity> Default for GSPATOption<D> {
