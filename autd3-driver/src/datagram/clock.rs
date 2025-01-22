@@ -1,6 +1,7 @@
 use std::convert::Infallible;
 
 use crate::{datagram::*, defined::ultrasound_freq, firmware::operation::ConfigureClockOp};
+use autd3_core::derive::DatagramOption;
 
 #[derive(Default, Debug)]
 #[doc(hidden)]

@@ -1,6 +1,6 @@
 use std::{convert::Infallible, num::NonZeroU16};
 
-use autd3_core::{defined::ultrasound_period, derive::DatagramOption};
+use autd3_core::datagram::DatagramOption;
 
 use crate::{
     firmware::{
@@ -45,8 +45,9 @@ impl SilencerConfig for FixedCompletionTime {}
 impl Default for FixedCompletionTime {
     fn default() -> Self {
         FixedCompletionTime {
-            intensity: SILENCER_STEPS_INTENSITY_DEFAULT as u32 * ultrasound_period(),
-            phase: SILENCER_STEPS_PHASE_DEFAULT as u32 * ultrasound_period(),
+            intensity: SILENCER_STEPS_INTENSITY_DEFAULT as u32
+                * autd3_core::defined::ultrasound_period(),
+            phase: SILENCER_STEPS_PHASE_DEFAULT as u32 * autd3_core::defined::ultrasound_period(),
             strict_mode: true,
         }
     }
