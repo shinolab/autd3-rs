@@ -254,10 +254,7 @@ impl<L: AsyncLink> Controller<L> {
         &mut self,
         f: F,
     ) -> Group<'_, AsyncSleeper, L, Sender<'_, L, AsyncSleeper>, K> {
-        Group::new(
-            self.sender(AsyncSleeper::default(), SenderOption::default()),
-            f,
-        )
+        Group::new(self.sender(SenderOption::<AsyncSleeper>::default()), f)
     }
 }
 
@@ -277,6 +274,7 @@ mod tests {
         controller::tests::TestGain,
         gain::{Null, Uniform},
         modulation::{Sine, Static},
+        prelude::SenderOption,
         r#async::{controller::tests::create_controller, AsyncSleeper},
     };
 
@@ -383,7 +381,7 @@ mod tests {
     async fn test_group_sender() -> anyhow::Result<()> {
         let mut autd = create_controller(4).await?;
 
-        let mut sender = autd.sender(AsyncSleeper::default(), Default::default());
+        let mut sender = autd.sender(SenderOption::<AsyncSleeper>::default());
 
         sender
             .send(Uniform {

@@ -250,10 +250,7 @@ impl<L: Link> Controller<L> {
         &mut self,
         f: F,
     ) -> Group<'_, SpinSleeper, L, Sender<'_, L, SpinSleeper>, K> {
-        Group::new(
-            self.sender(SpinSleeper::default(), SenderOption::default()),
-            f,
-        )
+        Group::new(self.sender(SenderOption::<SpinSleeper>::default()), f)
     }
 }
 
@@ -273,6 +270,7 @@ mod tests {
         controller::tests::{create_controller, TestGain},
         gain::{Null, Uniform},
         modulation::{Sine, Static},
+        prelude::SenderOption,
     };
 
     #[test]
@@ -376,7 +374,7 @@ mod tests {
     fn test_group_sender() -> anyhow::Result<()> {
         let mut autd = create_controller(4)?;
 
-        let mut sender = autd.sender(spin_sleep::SpinSleeper::default(), Default::default());
+        let mut sender = autd.sender(SenderOption::<spin_sleep::SpinSleeper>::default());
 
         sender.send(Uniform {
             intensity: EmitIntensity(0xFF),

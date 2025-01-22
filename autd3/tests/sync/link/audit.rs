@@ -21,14 +21,11 @@ fn audit_test() -> anyhow::Result<()> {
     assert_eq!(0, autd.link()[0].idx());
 
     {
-        autd.sender(
-            SpinSleeper::default(),
-            SenderOption {
-                parallel_threshold: Some(1),
-                timeout: Some(Duration::from_millis(20)),
-                ..Default::default()
-            },
-        )
+        autd.sender(SenderOption::<SpinSleeper> {
+            parallel_threshold: Some(1),
+            timeout: Some(Duration::from_millis(20)),
+            ..Default::default()
+        })
         .send(Null {})?;
         assert_eq!(Some(Duration::from_millis(20)), autd.link().last_timeout());
         assert_eq!(Some(1), autd.link().last_parallel_threshold());

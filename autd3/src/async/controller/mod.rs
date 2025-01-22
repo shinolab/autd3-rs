@@ -90,13 +90,12 @@ impl<L: AsyncLink> Controller<L> {
     }
 
     /// Returns the [`Sender`] to send data to the devices.
-    pub fn sender<S: AsyncSleep>(&mut self, sleeper: S, option: SenderOption) -> Sender<'_, L, S> {
+    pub fn sender<S: AsyncSleep>(&mut self, option: SenderOption<S>) -> Sender<'_, L, S> {
         Sender {
             link: &mut self.link,
             geometry: &mut self.geometry,
             tx: &mut self.tx_buf,
             rx: &mut self.rx_buf,
-            sleeper,
             option,
         }
     }
@@ -110,7 +109,7 @@ impl<L: AsyncLink> Controller<L> {
         AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
             + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
     {
-        self.sender(AsyncSleeper::default(), SenderOption::default())
+        self.sender(SenderOption::<AsyncSleeper>::default())
             .send(s)
             .await
     }
@@ -122,13 +121,10 @@ impl<L: AsyncLink> Controller<L> {
         // Therefore, send a meaningless data (here, we use `ForceFan` because it is the lightest).
         let _ = self.send(ForceFan::new(|_| false)).await;
 
-        let mut sender = self.sender(
-            AsyncSleeper::default(),
-            SenderOption {
-                timeout,
-                ..Default::default()
-            },
-        );
+        let mut sender = self.sender(SenderOption::<AsyncSleeper> {
+            timeout,
+            ..Default::default()
+        });
 
         #[cfg(feature = "dynamic_freq")]
         {
