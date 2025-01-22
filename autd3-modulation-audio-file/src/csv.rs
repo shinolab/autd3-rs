@@ -4,6 +4,7 @@ use std::{fmt::Debug, fs::File, path::Path, rc::Rc};
 
 use crate::error::AudioFileError;
 
+/// The option of [`Csv`].
 #[derive(Debug, Clone)]
 pub struct CsvOption {
     /// The deliminator of CSV file.
@@ -28,8 +29,11 @@ where
     SamplingConfigError: From<E>,
     Config: TryInto<SamplingConfig, Error = E> + Debug + Copy,
 {
+    /// The path to the CSV file.
     pub path: &'a Path,
+    /// The sampling configuration of the CSV file.
     pub sampling_config: Config,
+    /// The option of [`Csv`].
     pub option: CsvOption,
 }
 

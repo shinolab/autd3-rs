@@ -1,5 +1,5 @@
 use crate::{
-    derive::DatagramOption,
+    datagram::DatagramOption,
     geometry::Geometry,
     link::{LinkError, RxMessage, TxMessage},
 };

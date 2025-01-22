@@ -5,6 +5,7 @@ use autd3_driver::{
     geometry::{Point3, UnitQuaternion, UnitVector3, Vector3},
 };
 
+/// The option of [`Bessel`].
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BesselOption {
     /// The intensity of the beam.

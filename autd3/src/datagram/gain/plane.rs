@@ -6,6 +6,7 @@ use autd3_driver::{
     geometry::UnitVector3,
 };
 
+/// The option of [`Plane`].
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PlaneOption {
     /// The intensity of the beam.

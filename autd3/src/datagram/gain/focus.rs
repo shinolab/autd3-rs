@@ -6,6 +6,7 @@ use autd3_driver::{
     geometry::Point3,
 };
 
+/// The option of [`Focus`].
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FocusOption {
     /// The intensity of the beam.

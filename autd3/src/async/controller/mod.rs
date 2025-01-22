@@ -24,21 +24,23 @@ use autd3_driver::{
 };
 
 pub use group::Group;
-pub use sender::AsyncSleeper;
+pub use sender::{AsyncSleeper, Sender};
 
 use derive_more::{Deref, DerefMut};
 use getset::{Getters, MutGetters};
-use sender::{sleep::AsyncSleep, Sender};
+use sender::sleep::AsyncSleep;
 use tracing;
 use zerocopy::FromZeros;
 
-/// A controller for the AUTD devices.
+/// An asynchronous controller for the AUTD devices.
 ///
 /// All operations to the devices are done through this struct.
 #[derive(Deref, DerefMut, Getters, MutGetters)]
 pub struct Controller<L: AsyncLink> {
+    /// The link to the devices.
     #[getset(get = "pub", get_mut = "pub")]
     link: L,
+    /// The geometry of the devices.
     #[getset(get = "pub", get_mut = "pub")]
     #[deref]
     #[deref_mut]
@@ -87,6 +89,7 @@ impl<L: AsyncLink> Controller<L> {
         .await
     }
 
+    /// Returns the [`Sender`] to send data to the devices.
     pub fn sender<'a, S: AsyncSleep>(
         &'a mut self,
         sleeper: S,
@@ -102,13 +105,7 @@ impl<L: AsyncLink> Controller<L> {
         }
     }
 
-    /// Sends a data to the devices.
-    ///
-    /// If the [`Datagram::timeout`] value is
-    /// - greater than 0, this function waits until the sent data is processed by the device or the specified timeout time elapses. If it cannot be confirmed that the sent data has been processed by the device, [`AUTDDriverError::ConfirmResponseFailed`] is returned.
-    /// - 0, the `send` function does not check whether the sent data has been processed by the device.
-    ///
-    /// The calculation of each [`Datagram`] is executed in parallel for each device if the number of enabled devices is greater than the [`Datagram::parallel_threshold`].
+    /// Sends a data to the devices. This is a shortcut for [`Sender::send`].
     #[tracing::instrument(level = "debug", skip(self))]
     pub async fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
     where

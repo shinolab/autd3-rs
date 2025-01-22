@@ -10,7 +10,7 @@ use autd3_firmware_emulator::CPUEmulator;
 use derive_more::{Deref, DerefMut};
 use getset::{CopyGetters, Getters};
 
-/// A [`Link`] for testing.
+#[doc(hidden)]
 #[derive(Deref, DerefMut, CopyGetters, Getters)]
 pub struct Audit {
     is_open: bool,
@@ -28,17 +28,15 @@ pub struct Audit {
 }
 
 #[derive(Default)]
+#[doc(hidden)]
 pub struct AuditOption {
-    /// The initial message ID. The default value is `None`.
     pub initial_msg_id: Option<u8>,
-    /// The initial phase correction. The default value is `None`.
     pub initial_phase_corr: Option<u8>,
-    /// The initial state of the link. The default value is `false`.
     pub down: bool,
 }
 
 #[derive(Default)]
-/// A builder for [`Audit`].
+#[doc(hidden)]
 pub struct AuditBuilder {
     option: AuditOption,
 }
@@ -80,30 +78,18 @@ impl Audit {
         AuditBuilder { option }
     }
 
-    /// Set this link to be down.
-    ///
-    /// After calling this method, [`Link::send`] and [`Link::receive`] will return `false`.
     pub fn down(&mut self) {
         self.down = true;
     }
 
-    /// Set this link to be up.
-    ///
-    /// This methods is used to recover the link from [`Audit::down`].
     pub fn up(&mut self) {
         self.down = false;
     }
 
-    /// Break down this link.
-    ///
-    /// After calling this method, [`Link::send`] and [`Link::receive`] will return an error.
     pub fn break_down(&mut self) {
         self.broken = true;
     }
 
-    /// Repair this link.
-    ///
-    /// This methods is used to recover the link from [`Audit::break_down`].
     pub fn repair(&mut self) {
         self.broken = false;
     }

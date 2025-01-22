@@ -6,6 +6,7 @@ use std::{fmt::Debug, path::Path, rc::Rc};
 
 use crate::error::AudioFileError;
 
+/// The option of [`Wav`].
 #[derive(Clone, Debug)]
 pub struct WavOption {
     resampler: Option<(SamplingConfig, Rc<dyn Resampler>)>,
@@ -17,10 +18,12 @@ impl Default for WavOption {
     }
 }
 
-/// [`Modulation`] from WAV data.
+/// [`Modulation`] from Wav data.
 #[derive(Modulation, Debug)]
 pub struct Wav<'a> {
+    /// The path to the Wav file.
     pub path: &'a Path,
+    /// The option of [`Wav`].
     pub option: WavOption,
 }
 

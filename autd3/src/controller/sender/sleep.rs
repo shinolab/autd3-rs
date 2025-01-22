@@ -3,13 +3,11 @@ use std::time::Instant;
 use autd3_core::utils::timer::TimerResolutionGurad;
 pub use spin_sleep::SpinSleeper;
 
-pub(crate) trait Sleep {
+pub trait Sleep {
     fn sleep_until(&self, deadline: Instant);
 }
 
-/// See [`TimerStrategy`] for more details.
-///
-/// [`TimerStrategy`]: super::TimerStrategy
+/// A sleeper that uses [`std::thread::sleep`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StdSleeper {
     /// An optional timer resolution in milliseconds for Windows. The default is `Some(1)`.
@@ -44,9 +42,7 @@ pub use win::WaitableSleeper;
 mod win {
     use super::*;
 
-    /// See [`TimerStrategy`] for more details.
-    ///
-    /// [`TimerStrategy`]: super::super::TimerStrategy
+    /// A sleeper that uses [waitable timer](https://learn.microsoft.com/en-us/windows/win32/sync/waitable-timer-objects) available only on Windows.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct WaitableSleeper {
         pub(crate) handle: windows::Win32::Foundation::HANDLE,

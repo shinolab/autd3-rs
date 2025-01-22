@@ -4,6 +4,7 @@ use super::sampling_mode::{Nearest, SamplingMode};
 
 use derive_more::Debug;
 
+/// The option of [`Square`].
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SquareOption {
     /// The low value of the modulation. The default value is [`u8::MIN`].
@@ -12,6 +13,7 @@ pub struct SquareOption {
     pub high: u8,
     /// The duty ratio of the modulation, that is the ratio of high value to the period. The default value is `0.5`.
     pub duty: f32,
+    /// The sampling configuration of the modulation. The default value is [`SamplingConfig::DIV_10`].
     pub sampling_config: SamplingConfig,
 }
 
@@ -29,12 +31,24 @@ impl Default for SquareOption {
 /// Square wave modulation
 #[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct Square<S: Into<SamplingMode> + Debug> {
+    /// The frequency of the square wave.
     pub freq: S,
     /// The option of the modulation.
     pub option: SquareOption,
 }
 
 impl Square<Freq<f32>> {
+    /// Converts to the nearest frequency that can be output.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use autd3::prelude::*;
+    /// Square {
+    ///     freq: 150.0 * Hz,
+    ///     option: Default::default(),
+    /// }.into_nearest();
+    /// ```
     pub fn into_nearest(self) -> Square<Nearest> {
         Square {
             freq: Nearest(self.freq),

@@ -9,6 +9,7 @@ use autd3_core::derive::*;
 use derive_more::Deref;
 use num::integer::lcm;
 
+/// The option of [`Fourier`].
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct FourierOption {
     /// The scaling factor of the modulation. If `None`, the scaling factor is set to reciprocal of the number of components. The default value is `None`.
@@ -31,11 +32,13 @@ impl Default for FourierOption {
 
 /// `Moudlation` that is a sum of multiple [`Sine`].
 ///
-/// The modulation value is calculated as `⌊offset + scale_factor * (sum of components)⌋`.
+/// The modulation value is calculated as `⌊offset + scale_factor * (sum of components)⌋`, where `offset` and `scale_factor` can be set by the [`FourierOption`].
 #[derive(Modulation, Clone, PartialEq, Debug, Deref)]
 pub struct Fourier<S: Into<SamplingMode> + Clone + Debug> {
     #[deref]
+    /// The [`Sine`] components of the Fourier modulation.
     pub components: Vec<Sine<S>>,
+    /// The option of the modulation.
     pub option: FourierOption,
 }
 

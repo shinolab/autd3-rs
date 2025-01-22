@@ -9,14 +9,18 @@ use autd3_driver::{
 use num::integer::gcd;
 use std::fmt::Debug;
 
+/// Nearest frequency type.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Nearest(pub Freq<f32>);
 
-/// A trait for sampling mode.
+/// A enum for sampling mode.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum SamplingMode {
+    /// Exact frequency sampling mode with integer number.
     ExactFreq(Freq<u32>),
+    /// Exact frequency sampling mode with floating point number.
     ExactFreqFloat(Freq<f32>),
+    /// Nearest frequency sampling mode.
     NearestFreq(Freq<f32>),
 }
 

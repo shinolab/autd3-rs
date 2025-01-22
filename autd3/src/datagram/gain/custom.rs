@@ -25,6 +25,7 @@ where
     FT: Fn(&Transducer) -> D + Send + Sync + 'static,
     F: Fn(&Device) -> FT + 'a,
 {
+    /// The function to calculate the phase and intensity
     pub f: F,
     _phantom: std::marker::PhantomData<&'a ()>,
 }

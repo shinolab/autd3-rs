@@ -2,6 +2,7 @@ use std::{fmt::Debug, rc::Rc};
 
 use autd3_core::{defined::Freq, derive::*, resampler::Resampler};
 
+/// The option of [`Custom`].
 #[derive(Clone, Debug)]
 pub struct CustomOption {
     resampler: Option<(Freq<f32>, Rc<dyn Resampler>)>,
@@ -21,8 +22,11 @@ where
     SamplingConfigError: From<E>,
     Config: TryInto<SamplingConfig, Error = E> + Debug + Copy,
 {
+    /// The modulation data.
     pub buffer: Vec<u8>,
+    /// The sampling configuration of the modulation data.
     pub sampling_config: Config,
+    /// The option of [`Custom`].
     pub option: CustomOption,
 }
 

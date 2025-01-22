@@ -1,4 +1,4 @@
-use crate::{derive::DatagramOption, geometry::Geometry};
+use crate::{datagram::DatagramOption, geometry::Geometry};
 
 use super::{error::LinkError, RxMessage, TxMessage};
 

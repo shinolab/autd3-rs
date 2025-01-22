@@ -5,7 +5,7 @@ pub use spin_sleep::SpinSleeper;
 
 use crate::controller::StdSleeper;
 
-pub(crate) trait AsyncSleep {
+pub trait AsyncSleep {
     fn sleep_until(&self, deadline: Instant) -> impl std::future::Future<Output = ()>;
 }
 
@@ -22,9 +22,7 @@ impl AsyncSleep for SpinSleeper {
     }
 }
 
-/// See [`TimerStrategy`] for more details.
-///
-/// [`TimerStrategy`]: super::TimerStrategy
+/// A sleeper that uses [`tokio::time::sleep_until`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AsyncSleeper {
     /// An optional timer resolution in milliseconds for Windows. The default is `Some(1)`.

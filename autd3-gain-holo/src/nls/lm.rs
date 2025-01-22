@@ -11,6 +11,7 @@ use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
 #[derive(Debug)]
+/// The option of [`LM`].
 pub struct LMOption<D: Directivity> {
     /// The stopping criteria.
     pub eps_1: f32,
@@ -57,6 +58,7 @@ pub struct LM<D: Directivity, B: LinAlgBackend<D>> {
     /// The opinion of the Gain.
     pub option: LMOption<D>,
     #[debug("{}", tynm::type_name::<B>())]
+    /// The backend of linear algebra calculation.
     pub backend: Arc<B>,
 }
 

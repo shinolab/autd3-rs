@@ -13,6 +13,7 @@ use derive_more::Debug;
 use nalgebra::ComplexField;
 use rand::seq::SliceRandom;
 
+/// The option of [`Greedy`].
 #[derive(Debug)]
 pub struct GreedyOption<D: Directivity> {
     /// The number of phase divisions.

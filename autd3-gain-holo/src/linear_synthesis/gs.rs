@@ -11,6 +11,7 @@ use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
 #[derive(Debug)]
+/// The option of [`GS`].
 pub struct GSOption<D: Directivity> {
     /// The number of iterations.
     pub repeat: NonZeroUsize,

@@ -19,17 +19,18 @@ use autd3_driver::{
 
 use itertools::Itertools;
 
+/// The option of [`Sender`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SenderOption {
     /// The duration between sending operations.
     pub send_interval: Duration,
     /// The duration between receiving operations.
     pub receive_interval: Duration,
-    /// If `None`, [`Datagram::timeout`] is used.
+    /// If `None`, [`Datagram::option`] is used.
     ///
     /// [`Datagram`]: autd3_driver::datagram::Datagram
     pub timeout: Option<Duration>,
-    /// If `None`, [`Datagram::parallel_threshold`] is used.
+    /// If `None`, [`Datagram::option`] is used.
     ///
     /// [`Datagram`]: autd3_driver::datagram::Datagram
     pub parallel_threshold: Option<usize>,
@@ -46,7 +47,7 @@ impl Default for SenderOption {
     }
 }
 
-/// A struct managing the timing of sending and receiving operations.
+/// A struct to send the [`Datagram`] to the devices.
 pub struct Sender<'a, L: Link, S: Sleep> {
     pub(crate) link: &'a mut L,
     pub(crate) geometry: &'a mut Geometry,
@@ -57,6 +58,13 @@ pub struct Sender<'a, L: Link, S: Sleep> {
 }
 
 impl<'a, L: Link, S: Sleep> Sender<'a, L, S> {
+    /// Send the [`Datagram`] to the devices.
+    ///
+    /// If the `timeout` value is
+    /// - greater than 0, this function waits until the sent data is processed by the device or the specified timeout time elapses. If it cannot be confirmed that the sent data has been processed by the device, [`AUTDDriverError::ConfirmResponseFailed`] is returned.
+    /// - 0, this function does not check whether the sent data has been processed by the device.
+    ///
+    /// The calculation of each [`Datagram`] is executed in parallel for each device if the number of enabled devices is greater than the `parallel_threshold`.
     #[tracing::instrument(level = "debug", skip(self))]
     pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
     where

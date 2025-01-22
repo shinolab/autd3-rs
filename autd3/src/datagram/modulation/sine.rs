@@ -9,6 +9,7 @@ use super::sampling_mode::{Nearest, SamplingMode};
 
 use derive_more::Debug;
 
+/// The option of [`Sine`].
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SineOption {
     /// The intensity of the modulation. The default value is [`u8::MAX`].
@@ -19,6 +20,7 @@ pub struct SineOption {
     pub phase: Angle,
     /// If `true`, the modulation value is clamped to the range of `u8`. If `false`, returns an error if the value is out of range. The default value is `false`.
     pub clamp: bool,
+    /// The sampling configuration of the modulation. The default value is [`SamplingConfig::DIV_10`].
     pub sampling_config: SamplingConfig,
 }
 
@@ -36,14 +38,27 @@ impl Default for SineOption {
 
 /// Sine wave modulation
 ///
-/// The modulation value is calculated as `⌊intensity / 2 * sin(2 * PI * freq * t + phase) + offset⌋`.
+/// The modulation value is calculated as `⌊intensity / 2 * sin(2 * PI * freq * t + phase) + offset⌋`, where `t` is time, and `intensity`, `offset`, and `phase` can be set by the [`SineOption`].
 #[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct Sine<S: Into<SamplingMode> + Clone + Debug> {
+    /// The frequency of the sine wave.
     pub freq: S,
+    /// The option of the modulation.
     pub option: SineOption,
 }
 
 impl Sine<Freq<f32>> {
+    /// Converts to the nearest frequency that can be output.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use autd3::prelude::*;
+    /// Sine {
+    ///     freq: 150.0 * Hz,
+    ///     option: Default::default(),
+    /// }.into_nearest();
+    /// ```
     pub fn into_nearest(self) -> Sine<Nearest> {
         Sine {
             freq: Nearest(self.freq),

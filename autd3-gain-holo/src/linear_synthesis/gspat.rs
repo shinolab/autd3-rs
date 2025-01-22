@@ -10,6 +10,7 @@ use autd3_core::{acoustics::directivity::Directivity, derive::*, geometry::Point
 use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
+/// The option of [`GSPAT`].
 #[derive(Debug)]
 pub struct GSPATOption<D: Directivity> {
     /// The number of iterations.
@@ -40,7 +41,7 @@ pub struct GSPAT<D: Directivity, B: LinAlgBackend<D>> {
     pub foci: Vec<(Point3, Amplitude)>,
     /// The opinion of the Gain.
     pub option: GSPATOption<D>,
-    /// The backend of calculation.
+    /// The backend of linear algebra calculation.
     #[debug("{}", tynm::type_name::<B>())]
     pub backend: Arc<B>,
 }

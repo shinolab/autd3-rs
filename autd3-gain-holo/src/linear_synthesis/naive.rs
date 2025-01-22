@@ -10,6 +10,7 @@ use autd3_core::{acoustics::directivity::Directivity, derive::*, geometry::Point
 use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
+/// The option of [`Naive`].
 #[derive(Debug)]
 pub struct NaiveOption<D: Directivity> {
     /// The transducers' emission constraint.
