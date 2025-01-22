@@ -2,11 +2,15 @@ use autd3_core::datagram::{Datagram, DatagramOption, DatagramS, Segment, Transit
 
 use derive_more::Deref;
 
+/// A wrapper of [`DatagramS`] to specify the segment to write the data.
 #[derive(Deref, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct WithSegment<D: DatagramS> {
     #[deref]
+    /// The original [`DatagramS`]
     pub inner: D,
+    /// The segment to write the data
     pub segment: Segment,
+    /// The behavior when switching segments
     pub transition_mode: Option<TransitionMode>,
 }
 

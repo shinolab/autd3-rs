@@ -1,4 +1,3 @@
-#[cfg(not(feature = "dynamic_freq"))]
 use std::time::Duration;
 
 use crate::{defined::Freq, error::AUTDDriverError, firmware::fpga::SamplingConfig};
