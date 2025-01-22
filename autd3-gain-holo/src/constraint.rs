@@ -19,17 +19,15 @@ impl EmissionConstraint {
     pub fn convert(&self, value: f32, max_value: f32) -> EmitIntensity {
         match self {
             EmissionConstraint::Normalize => {
-                EmitIntensity::new((value / max_value * 255.).round() as u8)
+                EmitIntensity((value / max_value * 255.).round() as u8)
             }
             EmissionConstraint::Multiply(v) => {
-                EmitIntensity::new((value / max_value * 255. * v).round().clamp(0., 255.) as u8)
+                EmitIntensity((value / max_value * 255. * v).round().clamp(0., 255.) as u8)
             }
             EmissionConstraint::Uniform(v) => *v,
-            EmissionConstraint::Clamp(min, max) => EmitIntensity::new(
-                (value * 255.)
-                    .round()
-                    .clamp(min.value() as f32, max.value() as f32) as u8,
-            ),
+            EmissionConstraint::Clamp(min, max) => {
+                EmitIntensity((value * 255.).round().clamp(min.0 as f32, max.0 as f32) as u8)
+            }
         }
     }
 }
@@ -41,9 +39,9 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(EmitIntensity::MIN, 0.0, 1.0)]
-    #[case(EmitIntensity::new(128), 0.5, 1.0)]
-    #[case(EmitIntensity::new(128), 1.0, 2.0)]
-    #[case(EmitIntensity::new(191), 1.5, 2.0)]
+    #[case(EmitIntensity(128), 0.5, 1.0)]
+    #[case(EmitIntensity(128), 1.0, 2.0)]
+    #[case(EmitIntensity(191), 1.5, 2.0)]
     #[cfg_attr(miri, ignore)]
     fn normalize(#[case] expect: EmitIntensity, #[case] value: f32, #[case] max_value: f32) {
         assert_eq!(
@@ -55,9 +53,9 @@ mod tests {
     #[rstest::rstest]
     #[test]
     #[case(EmitIntensity::MIN, 0.0, 1.0, 0.5)]
-    #[case(EmitIntensity::new(64), 0.5, 1.0, 0.5)]
-    #[case(EmitIntensity::new(64), 1.0, 2.0, 0.5)]
-    #[case(EmitIntensity::new(96), 1.5, 2.0, 0.5)]
+    #[case(EmitIntensity(64), 0.5, 1.0, 0.5)]
+    #[case(EmitIntensity(64), 1.0, 2.0, 0.5)]
+    #[case(EmitIntensity(96), 1.5, 2.0, 0.5)]
     #[cfg_attr(miri, ignore)]
     fn multiply(
         #[case] expect: EmitIntensity,
@@ -91,34 +89,10 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(
-        EmitIntensity::new(64),
-        0.0,
-        1.0,
-        EmitIntensity::new(64),
-        EmitIntensity::new(192)
-    )]
-    #[case(
-        EmitIntensity::new(128),
-        0.5,
-        1.0,
-        EmitIntensity::new(64),
-        EmitIntensity::new(192)
-    )]
-    #[case(
-        EmitIntensity::new(192),
-        1.0,
-        1.0,
-        EmitIntensity::new(64),
-        EmitIntensity::new(192)
-    )]
-    #[case(
-        EmitIntensity::new(192),
-        1.5,
-        1.0,
-        EmitIntensity::new(64),
-        EmitIntensity::new(192)
-    )]
+    #[case(EmitIntensity(64), 0.0, 1.0, EmitIntensity(64), EmitIntensity(192))]
+    #[case(EmitIntensity(128), 0.5, 1.0, EmitIntensity(64), EmitIntensity(192))]
+    #[case(EmitIntensity(192), 1.0, 1.0, EmitIntensity(64), EmitIntensity(192))]
+    #[case(EmitIntensity(192), 1.5, 1.0, EmitIntensity(64), EmitIntensity(192))]
     #[cfg_attr(miri, ignore)]
     fn clamp(
         #[case] expect: EmitIntensity,

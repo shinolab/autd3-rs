@@ -3,13 +3,11 @@ use std::time::Instant;
 use autd3_core::utils::timer::TimerResolutionGurad;
 pub use spin_sleep::SpinSleeper;
 
-pub(crate) trait Sleeper {
+pub trait Sleep {
     fn sleep_until(&self, deadline: Instant);
 }
 
-/// See [`TimerStrategy`] for more details.
-///
-/// [`TimerStrategy`]: super::TimerStrategy
+/// A sleeper that uses [`std::thread::sleep`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StdSleeper {
     /// An optional timer resolution in milliseconds for Windows. The default is `Some(1)`.
@@ -24,14 +22,14 @@ impl Default for StdSleeper {
     }
 }
 
-impl Sleeper for StdSleeper {
+impl Sleep for StdSleeper {
     fn sleep_until(&self, deadline: Instant) {
         let _timer_guard = TimerResolutionGurad::new(self.timer_resolution);
         std::thread::sleep(deadline - Instant::now());
     }
 }
 
-impl Sleeper for SpinSleeper {
+impl Sleep for SpinSleeper {
     fn sleep_until(&self, deadline: Instant) {
         self.sleep(deadline - Instant::now());
     }
@@ -44,12 +42,10 @@ pub use win::WaitableSleeper;
 mod win {
     use super::*;
 
-    /// See [`TimerStrategy`] for more details.
-    ///
-    /// [`TimerStrategy`]: super::super::TimerStrategy
+    /// A sleeper that uses [waitable timer](https://learn.microsoft.com/en-us/windows/win32/sync/waitable-timer-objects) available only on Windows.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct WaitableSleeper {
-        handle: windows::Win32::Foundation::HANDLE,
+        pub(crate) handle: windows::Win32::Foundation::HANDLE,
     }
 
     unsafe impl Send for WaitableSleeper {}
@@ -77,7 +73,8 @@ mod win {
         }
     }
 
-    impl Sleeper for WaitableSleeper {
+    impl Sleep for WaitableSleeper {
+        // GRCOV_EXCL_START
         fn sleep_until(&self, deadline: Instant) {
             unsafe {
                 let time = deadline - Instant::now();
@@ -124,5 +121,6 @@ mod win {
                 }
             }
         }
+        // GRCOV_EXCL_STOP
     }
 }

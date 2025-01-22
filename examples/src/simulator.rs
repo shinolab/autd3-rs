@@ -6,11 +6,19 @@ use autd3::prelude::*;
 use autd3_link_simulator::Simulator;
 
 fn main() -> Result<()> {
-    let autd = Controller::builder([
-        AUTD3::new(Point3::origin()),
-        AUTD3::new(Point3::new(AUTD3::DEVICE_WIDTH, 0.0, 0.0)),
-    ])
-    .open(Simulator::builder("127.0.0.1:8080".parse()?))?;
+    let autd = Controller::open(
+        [
+            AUTD3 {
+                pos: Point3::origin(),
+                rot: UnitQuaternion::identity(),
+            },
+            AUTD3 {
+                pos: Point3::new(AUTD3::DEVICE_WIDTH, 0.0, 0.0),
+                rot: UnitQuaternion::identity(),
+            },
+        ],
+        Simulator::builder("127.0.0.1:8080".parse()?),
+    )?;
 
     tests::run(autd)
 }

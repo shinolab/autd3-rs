@@ -1,6 +1,6 @@
 mod implement;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Debug, time::Duration};
 
 use super::sampling_config::*;
 pub use crate::firmware::operation::GainSTMContext;
@@ -15,12 +15,11 @@ use crate::{
 };
 
 use autd3_core::{
-    derive::DatagramS,
+    defined::DEFAULT_TIMEOUT,
+    derive::{DatagramL, DatagramOption},
     gain::{BitVec, GainContextGenerator, GainError},
 };
-use autd3_derive::Builder;
 use derive_more::{Deref, DerefMut};
-use silencer::HasSamplingConfig;
 
 /// A trait to generate the [`GainSTMContext`].
 pub trait GainSTMContextGenerator {
@@ -46,98 +45,72 @@ pub trait GainSTMGenerator: std::fmt::Debug {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
+        option: &DatagramOption,
     ) -> Result<Self::T, GainError>;
     /// Returns the length of the sequence of gains.
     fn len(&self) -> usize;
 }
 
-/// A trait to convert to [`GainSTMGenerator`].
-pub trait IntoGainSTMGenerator {
-    /// The type of the generator.
-    type G: GainSTMGenerator;
+/// The option for the [`GainSTM`].
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct GainSTMOption {
+    /// The mode of the STM. The default is [`GainSTMMode::PhaseIntensityFull`].
+    pub mode: GainSTMMode,
+}
 
-    /// Converts to [`GainSTMGenerator`].
-    fn into(self) -> Self::G;
+impl Default for GainSTMOption {
+    fn default() -> Self {
+        Self {
+            mode: GainSTMMode::PhaseIntensityFull,
+        }
+    }
 }
 
 /// [`Datagram`] to produce STM by [`Gain`].
 ///
 /// [`Gain`]: autd3_core::gain::Gain
-#[derive(Builder, Clone, Debug, Deref, DerefMut)]
-pub struct GainSTM<G: GainSTMGenerator> {
+#[derive(Clone, Debug, Deref, DerefMut)]
+pub struct GainSTM<T: GainSTMGenerator, C> {
     #[deref]
     #[deref_mut]
-    gen: G,
-    #[get]
-    #[set]
-    /// The loop behavior of the STM.
-    loop_behavior: LoopBehavior,
-    #[get]
+    /// The sequence of [`Gain`]s.
+    ///
+    /// [`Gain`]: autd3_core::gain::Gain
+    pub gains: T,
+    /// The STM configuration.
+    pub config: C,
+    /// The STM option.
+    pub option: GainSTMOption,
+}
+
+impl<T: GainSTMGenerator> GainSTM<T, Freq<f32>> {
+    /// Convert to STM with the closest frequency among the possible frequencies.
+    pub fn into_nearest(self) -> GainSTM<T, FreqNearest> {
+        GainSTM {
+            gains: self.gains,
+            config: FreqNearest(self.config),
+            option: self.option,
+        }
+    }
+}
+
+impl<T: GainSTMGenerator> GainSTM<T, Duration> {
+    /// Convert to STM with the closest frequency among the possible period.
+    pub fn into_nearest(self) -> GainSTM<T, PeriodNearest> {
+        GainSTM {
+            gains: self.gains,
+            config: PeriodNearest(self.config),
+            option: self.option,
+        }
+    }
+}
+
+impl<T: GainSTMGenerator, C: Into<STMConfig> + Copy> GainSTM<T, C> {
     /// The sampling configuration of the STM.
-    sampling_config: SamplingConfig,
-    #[get]
-    #[set]
-    /// The mode of the STM. The default is [`GainSTMMode::PhaseIntensityFull`].
-    mode: GainSTMMode,
-}
-
-impl<G: GainSTMGenerator> HasSamplingConfig for GainSTM<G> {
-    fn intensity(&self) -> Option<SamplingConfig> {
-        Some(self.sampling_config)
-    }
-
-    fn phase(&self) -> Option<SamplingConfig> {
-        Some(self.sampling_config)
-    }
-}
-
-impl<G: GainSTMGenerator> GainSTM<G> {
-    /// Creates a new [`GainSTM`].
-    ///
-    /// # Errors
-    ///
-    /// Returns [`AUTDDriverError::SamplingConfig`] or [`AUTDDriverError::STMPeriodInvalid`] if the frequency or period cannot be set strictly.
-    pub fn new<T: IntoGainSTMGenerator<G = G>>(
-        config: impl Into<STMConfig>,
-        iter: T,
-    ) -> Result<Self, AUTDDriverError> {
-        Self::new_from_sampling_config(config.into(), iter)
-    }
-
-    /// Creates a new [`GainSTM`] with the nearest frequency or period to the specified value of the possible values.
-    pub fn new_nearest<T: IntoGainSTMGenerator<G = G>>(
-        config: impl Into<STMConfigNearest>,
-        iter: T,
-    ) -> Self {
-        Self::new_from_sampling_config(config.into(), iter).unwrap()
-    }
-
-    fn new_from_sampling_config<T: IntoGainSTMGenerator<G = G>>(
-        config: impl IntoSamplingConfigSTM,
-        iter: T,
-    ) -> Result<Self, AUTDDriverError> {
-        let gen = iter.into();
-        Ok(Self {
-            sampling_config: config.into_sampling_config(gen.len())?,
-            loop_behavior: LoopBehavior::infinite(),
-            mode: GainSTMMode::default(),
-            gen,
-        })
-    }
-
-    /// Returns the frequency of the STM. See also [`FociSTM::freq`].
-    ///
-    /// [`FociSTM::freq`]: crate::datagram::FociSTM::freq
-    pub fn freq(&self) -> Freq<f32> {
-        self.sampling_config().freq() / self.gen.len() as f32
-    }
-
-    /// Returns the period of the STM. See also [`FociSTM::period`].
-    ///
-    /// [`FociSTM::period`]: crate::datagram::FociSTM::period
-    #[cfg(not(feature = "dynamic_freq"))]
-    pub fn period(&self) -> std::time::Duration {
-        self.sampling_config().period() * self.gen.len() as u32
+    pub fn sampling_config(&self) -> Result<SamplingConfig, AUTDDriverError> {
+        let size = self.gains.len();
+        let stm_config: STMConfig = self.config.into();
+        stm_config.into_sampling_config(size)
     }
 }
 
@@ -145,7 +118,7 @@ pub struct GainSTMOperationGenerator<T: GainSTMContextGenerator> {
     g: T,
     size: usize,
     mode: GainSTMMode,
-    config: SamplingConfig,
+    sampling_config: SamplingConfig,
     loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
@@ -161,7 +134,7 @@ impl<T: GainSTMContextGenerator> OperationGenerator for GainSTMOperationGenerato
                 self.g.generate(device),
                 self.size,
                 self.mode,
-                self.config,
+                self.sampling_config,
                 self.loop_behavior,
                 self.segment,
                 self.transition_mode,
@@ -171,25 +144,27 @@ impl<T: GainSTMContextGenerator> OperationGenerator for GainSTMOperationGenerato
     }
 }
 
-impl<I: GainSTMGenerator> DatagramS for GainSTM<I> {
-    type G = GainSTMOperationGenerator<I::T>;
+impl<T: GainSTMGenerator, C: Into<STMConfig> + Debug> DatagramL for GainSTM<T, C> {
+    type G = GainSTMOperationGenerator<T::T>;
     type Error = AUTDDriverError;
 
-    fn operation_generator_with_segment(
+    fn operation_generator_with_loop_behavior(
         self,
         geometry: &Geometry,
+        option: &DatagramOption,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
+        loop_behavior: LoopBehavior,
     ) -> Result<Self::G, Self::Error> {
-        let size = self.gen.len();
-        let config = self.sampling_config;
-        let loop_behavior = self.loop_behavior;
-        let mode = self.mode;
-        let initializer = self.gen;
+        let size = self.gains.len();
+        let stm_config: STMConfig = self.config.into();
+        let sampling_config = stm_config.into_sampling_config(size)?;
+        let GainSTMOption { mode } = self.option;
+        let gains = self.gains;
         Ok(GainSTMOperationGenerator {
-            g: initializer.init(geometry, None)?,
+            g: gains.init(geometry, None, option)?,
             size,
-            config,
+            sampling_config,
             mode,
             loop_behavior,
             segment,
@@ -197,7 +172,10 @@ impl<I: GainSTMGenerator> DatagramS for GainSTM<I> {
         })
     }
 
-    fn parallel_threshold(&self) -> Option<usize> {
-        None
+    fn option(&self) -> DatagramOption {
+        DatagramOption {
+            parallel_threshold: 4,
+            timeout: DEFAULT_TIMEOUT,
+        }
     }
 }

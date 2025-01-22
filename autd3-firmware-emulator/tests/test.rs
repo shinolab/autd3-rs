@@ -1,4 +1,4 @@
-use autd3_core::datagram::Operation;
+use autd3_core::{datagram::Operation, derive::DatagramOption};
 use autd3_driver::{
     autd3_device::AUTD3,
     datagram::*,
@@ -17,9 +17,14 @@ mod op;
 pub fn create_geometry(n: usize) -> Geometry {
     Geometry::new(
         (0..n)
-            .map(|i| AUTD3::new(Point3::origin()).into_device(i as _))
+            .map(|i| {
+                AUTD3 {
+                    pos: Point3::origin(),
+                    ..Default::default()
+                }
+                .into_device(i as _)
+            })
             .collect(),
-        4,
     )
 }
 
@@ -36,9 +41,9 @@ where
     AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
         + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
 {
-    let _timeout = d.timeout();
-    let parallel = geometry.num_devices() > d.parallel_threshold().unwrap_or(4);
-    let generator = d.operation_generator(geometry)?;
+    let option = d.option();
+    let parallel = geometry.num_devices() > option.parallel_threshold;
+    let generator = d.operation_generator(geometry, &option)?;
     let mut op = OperationHandler::generate(generator, geometry);
     loop {
         if OperationHandler::is_done(&op) {
@@ -49,7 +54,7 @@ where
         if (cpu.rx().ack() & ERR_BIT) == ERR_BIT {
             return Err(AUTDDriverError::firmware_err(cpu.rx().ack()));
         }
-        assert_eq!(tx[0].header().msg_id, cpu.rx().ack());
+        assert_eq!(tx[0].header.msg_id, cpu.rx().ack());
     }
     Ok(())
 }
@@ -61,7 +66,7 @@ fn send_invalid_tag() {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
-    tx[0].header_mut().msg_id = 1;
+    tx[0].header.msg_id = 1;
     tx[0].payload_mut()[0] = 0xFF;
 
     cpu.send(&tx);
@@ -78,7 +83,7 @@ fn send_invalid_msg_id() {
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
-    tx[0].header_mut().msg_id = 0x80;
+    tx[0].header.msg_id = 0x80;
 
     cpu.send(&tx);
     assert_eq!(
@@ -95,18 +100,18 @@ fn send_ingore_same_data() -> anyhow::Result<()> {
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let d = Clear::new();
-    let generator = d.operation_generator(&geometry)?;
+    let generator = d.operation_generator(&geometry, &DatagramOption::default())?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, false)?;
     cpu.send(&tx);
-    let msg_id = tx[0].header().msg_id;
-    assert_eq!(cpu.rx().ack(), tx[0].header().msg_id);
+    let msg_id = tx[0].header.msg_id;
+    assert_eq!(cpu.rx().ack(), tx[0].header.msg_id);
 
     let d = Synchronize::new();
-    let generator = d.operation_generator(&geometry)?;
+    let generator = d.operation_generator(&geometry, &DatagramOption::default())?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, false)?;
-    tx[0].header_mut().msg_id = msg_id;
+    tx[0].header.msg_id = msg_id;
     assert!(!cpu.synchronized());
     cpu.send(&tx);
     assert!(!cpu.synchronized());
@@ -121,13 +126,13 @@ fn send_slot_2() -> anyhow::Result<()> {
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let d = (Clear::new(), Synchronize::new());
-    let generator = d.operation_generator(&geometry)?;
+    let generator = d.operation_generator(&geometry, &DatagramOption::default())?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, false)?;
 
     assert!(!cpu.synchronized());
     cpu.send(&tx);
-    assert_eq!(cpu.rx().ack(), tx[0].header().msg_id);
+    assert_eq!(cpu.rx().ack(), tx[0].header.msg_id);
     assert!(cpu.synchronized());
 
     Ok(())
@@ -141,11 +146,11 @@ fn send_slot_2_err() -> anyhow::Result<()> {
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let d = (Clear::new(), Synchronize::new());
-    let generator = d.operation_generator(&geometry)?;
+    let generator = d.operation_generator(&geometry, &DatagramOption::default())?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, false)?;
 
-    let slot2_offset = tx[0].header().slot_2_offset as usize;
+    let slot2_offset = tx[0].header.slot_2_offset as usize;
     tx[0].payload_mut()[slot2_offset] = 0xFF;
 
     cpu.send(&tx);

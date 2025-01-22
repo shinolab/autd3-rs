@@ -1,14 +1,13 @@
 use std::{collections::HashMap, f32::consts::PI};
 
 use autd3_core::{
-    derive::{Device, Geometry},
+    derive::{DatagramOption, Device, Geometry},
     gain::{BitVec, EmitIntensity, GainError, Phase},
 };
 use autd3_driver::{
     datagram::{
         ControlPoint, ControlPoints, FociSTMContext, FociSTMContextGenerator, FociSTMGenerator,
-        GainSTMContext, GainSTMContextGenerator, GainSTMGenerator, IntoFociSTMGenerator,
-        IntoGainSTMGenerator,
+        GainSTMContext, GainSTMContextGenerator, GainSTMGenerator,
     },
     error::AUTDDriverError,
     geometry::{Point3, UnitVector3, Vector3},
@@ -23,16 +22,16 @@ use crate::gain::Focus;
 /// ```
 /// use autd3::prelude::*;
 ///
-/// FociSTM::new(
-///     1.0 * Hz,
-///     Circle {
+/// FociSTM {
+///     config: 1.0 * Hz,
+///     foci: Circle {
 ///         center: Point3::origin(),
 ///         radius: 30.0 * mm,
 ///         num_points: 50,
 ///         n: Vector3::z_axis(),
 ///         intensity: EmitIntensity::MAX,
 ///     },
-/// );
+/// };
 /// ```
 #[derive(Clone, Debug)]
 pub struct Circle {
@@ -72,8 +71,10 @@ impl CircleSTMContext {
 
 impl FociSTMContext<1> for CircleSTMContext {
     fn next(&mut self) -> ControlPoints<1> {
-        ControlPoints::new([ControlPoint::from(self.next().unwrap())])
-            .with_intensity(self.intensity)
+        ControlPoints {
+            points: [ControlPoint::from(self.next().unwrap())],
+            intensity: self.intensity,
+        }
     }
 }
 
@@ -145,6 +146,7 @@ impl GainSTMGenerator for Circle {
         self,
         _geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,
+        _option: &DatagramOption,
     ) -> Result<Self::T, GainError> {
         Ok(self)
     }
@@ -152,22 +154,6 @@ impl GainSTMGenerator for Circle {
 
     fn len(&self) -> usize {
         self.num_points
-    }
-}
-
-impl IntoFociSTMGenerator<1> for Circle {
-    type G = Self;
-
-    fn into(self) -> Self::G {
-        self
-    }
-}
-
-impl IntoGainSTMGenerator for Circle {
-    type G = Self;
-
-    fn into(self) -> Self::G {
-        self
     }
 }
 
@@ -219,6 +205,8 @@ mod tests {
     )]
     #[test]
     fn circle(#[case] expect: Vec<Vector3>, #[case] n: UnitVector3) {
+        use autd3_driver::datagram::GainSTMOption;
+
         let circle = Circle {
             center: Point3::origin(),
             radius: 30.0 * mm,
@@ -226,19 +214,28 @@ mod tests {
             n,
             intensity: EmitIntensity::MAX,
         };
+        assert_eq!(4, FociSTMGenerator::len(&circle));
+        assert_eq!(4, GainSTMGenerator::len(&circle));
 
-        let device = autd3_driver::autd3_device::AUTD3::new(Point3::origin()).into_device(0);
+        let device = autd3_driver::autd3_device::AUTD3::default().into_device(0);
         {
-            let mut stm = FociSTM::new(SamplingConfig::FREQ_40K, circle.clone()).unwrap();
+            let mut stm = FociSTM {
+                foci: circle.clone(),
+                config: SamplingConfig::DIV_10,
+            };
             let mut context = FociSTMContextGenerator::generate(stm.deref_mut(), &device);
             expect.iter().for_each(|e| {
-                let f = FociSTMContext::<1>::next(&mut context).points()[0];
-                assert_near_vector3!(e, f.point());
+                let f = FociSTMContext::<1>::next(&mut context).points[0];
+                assert_near_vector3!(e, f.point);
             });
             assert!(context.next().is_none());
         }
         {
-            let mut stm = GainSTM::new(SamplingConfig::FREQ_40K, circle.clone()).unwrap();
+            let mut stm = GainSTM {
+                gains: circle.clone(),
+                config: SamplingConfig::DIV_10,
+                option: GainSTMOption::default(),
+            };
             let mut context = GainSTMContextGenerator::generate(stm.deref_mut(), &device);
             expect.iter().for_each(|e| {
                 let f = GainSTMContext::next(&mut context).unwrap();

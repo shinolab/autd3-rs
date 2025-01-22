@@ -2,25 +2,35 @@ use std::sync::Arc;
 
 use crate::{error::AUTDDriverError, geometry::Device};
 
-use super::{
-    ControlPoints, FociSTMContext, FociSTMContextGenerator, FociSTMGenerator, IntoFociSTMGenerator,
-};
+use super::{ControlPoints, FociSTMContext, FociSTMContextGenerator, FociSTMGenerator};
 
-pub struct VecFociSTMContext<const N: usize> {
-    foci: Arc<Vec<ControlPoints<N>>>,
+pub struct VecFociSTMContext<const N: usize, C>
+where
+    C: Send + Sync,
+    ControlPoints<N>: From<C>,
+{
+    foci: Arc<Vec<C>>,
     i: usize,
 }
 
-impl<const N: usize> FociSTMContext<N> for VecFociSTMContext<N> {
+impl<const N: usize, C> FociSTMContext<N> for VecFociSTMContext<N, C>
+where
+    C: Clone + Send + Sync,
+    ControlPoints<N>: From<C>,
+{
     fn next(&mut self) -> ControlPoints<N> {
-        let p = self.foci[self.i].clone();
+        let p = self.foci[self.i].clone().into();
         self.i += 1;
         p
     }
 }
 
-impl<const N: usize> FociSTMContextGenerator<N> for Arc<Vec<ControlPoints<N>>> {
-    type Context = VecFociSTMContext<N>;
+impl<const N: usize, C> FociSTMContextGenerator<N> for Arc<Vec<C>>
+where
+    C: Clone + Send + Sync + std::fmt::Debug,
+    ControlPoints<N>: From<C>,
+{
+    type Context = VecFociSTMContext<N, C>;
 
     fn generate(&mut self, _: &Device) -> Self::Context {
         Self::Context {
@@ -30,8 +40,12 @@ impl<const N: usize> FociSTMContextGenerator<N> for Arc<Vec<ControlPoints<N>>> {
     }
 }
 
-impl<const N: usize> FociSTMGenerator<N> for Vec<ControlPoints<N>> {
-    type T = Arc<Vec<ControlPoints<N>>>;
+impl<const N: usize, C> FociSTMGenerator<N> for Vec<C>
+where
+    C: Clone + Send + Sync + std::fmt::Debug,
+    ControlPoints<N>: From<C>,
+{
+    type T = Arc<Vec<C>>;
 
     fn init(self) -> Result<Self::T, AUTDDriverError> {
         Ok(Arc::new(self))
@@ -39,18 +53,6 @@ impl<const N: usize> FociSTMGenerator<N> for Vec<ControlPoints<N>> {
 
     fn len(&self) -> usize {
         self.len()
-    }
-}
-
-impl<const N: usize, C, T> IntoFociSTMGenerator<N> for T
-where
-    T: IntoIterator<Item = C>,
-    ControlPoints<N>: From<C>,
-{
-    type G = Vec<ControlPoints<N>>;
-
-    fn into(self) -> Self::G {
-        self.into_iter().map(ControlPoints::from).collect()
     }
 }
 
@@ -64,7 +66,7 @@ mod tests {
     use super::{super::FociSTM, *};
     use crate::{
         defined::{kHz, Freq, Hz},
-        firmware::fpga::{LoopBehavior, SamplingConfig},
+        firmware::fpga::SamplingConfig,
         geometry::Point3,
     };
 
@@ -81,7 +83,11 @@ mod tests {
     ) {
         assert_eq!(
             expect.map_err(AUTDDriverError::from),
-            FociSTM::new(freq, (0..n).map(|_| Point3::origin())).map(|f| f.sampling_config())
+            FociSTM {
+                foci: (0..n).map(|_| Point3::origin()).collect::<Vec<_>>(),
+                config: freq,
+            }
+            .sampling_config()
         );
     }
 
@@ -97,8 +103,13 @@ mod tests {
         #[case] n: usize,
     ) {
         assert_eq!(
-            expect,
-            FociSTM::new_nearest(freq, (0..n).map(|_| Point3::origin())).sampling_config()
+            Ok(expect),
+            FociSTM {
+                foci: (0..n).map(|_| Point3::origin()).collect::<Vec<_>>(),
+                config: freq,
+            }
+            .into_nearest()
+            .sampling_config()
         );
     }
 
@@ -128,7 +139,11 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            FociSTM::new(p, (0..n).map(|_| Point3::origin())).map(|f| f.sampling_config())
+            FociSTM {
+                foci: (0..n).map(|_| Point3::origin()).collect::<Vec<_>>(),
+                config: p,
+            }
+            .sampling_config()
         );
     }
 
@@ -153,8 +168,13 @@ mod tests {
     #[case(Duration::from_millis(1000).try_into().unwrap(), Duration::from_millis(2000) + Duration::from_nanos(1), 2)]
     fn from_period_nearest(#[case] expect: SamplingConfig, #[case] p: Duration, #[case] n: usize) {
         assert_eq!(
-            expect,
-            FociSTM::new_nearest(p, (0..n).map(|_| Point3::origin())).sampling_config()
+            Ok(expect),
+            FociSTM {
+                foci: (0..n).map(|_| Point3::origin()).collect::<Vec<_>>(),
+                config: p,
+            }
+            .into_nearest()
+            .sampling_config()
         );
     }
 
@@ -165,61 +185,11 @@ mod tests {
     fn from_sampling_config(#[case] config: SamplingConfig, #[case] n: usize) {
         assert_eq!(
             Ok(config),
-            FociSTM::new(config, (0..n).map(|_| Point3::origin())).map(|f| f.sampling_config())
+            FociSTM {
+                foci: (0..n).map(|_| Point3::origin()).collect::<Vec<_>>(),
+                config,
+            }
+            .sampling_config()
         );
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(Ok(0.5*Hz), 0.5*Hz, 2)]
-    #[case(Ok(1.0*Hz), 1.*Hz, 10)]
-    #[case(Ok(2.0*Hz), 2.*Hz, 10)]
-    fn freq(
-        #[case] expect: Result<Freq<f32>, AUTDDriverError>,
-        #[case] f: Freq<f32>,
-        #[case] n: usize,
-    ) {
-        assert_eq!(
-            expect,
-            FociSTM::new(f, (0..n).map(|_| Point3::origin())).map(|f| f.freq())
-        );
-    }
-
-    #[cfg(not(feature = "dynamic_freq"))]
-    #[rstest::rstest]
-    #[test]
-    #[case(Ok(Duration::from_millis(2000)), 0.5*Hz, 2)]
-    #[case(Ok(Duration::from_millis(1000)), 1.*Hz, 10)]
-    #[case(Ok(Duration::from_millis(500)), 2.*Hz, 10)]
-    fn period(
-        #[case] expect: Result<Duration, AUTDDriverError>,
-        #[case] f: Freq<f32>,
-        #[case] n: usize,
-    ) {
-        assert_eq!(
-            expect,
-            FociSTM::new(f, (0..n).map(|_| Point3::origin())).map(|f| f.period())
-        );
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case::infinite(LoopBehavior::infinite())]
-    #[case::finite(LoopBehavior::once())]
-    fn with_loop_behavior(#[case] loop_behavior: LoopBehavior) -> anyhow::Result<()> {
-        assert_eq!(
-            loop_behavior,
-            FociSTM::new(1. * Hz, (0..2).map(|_| Point3::origin()))?
-                .with_loop_behavior(loop_behavior)
-                .loop_behavior()
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn with_loop_behavior_deafault() -> anyhow::Result<()> {
-        let stm = FociSTM::new(1. * Hz, (0..2).map(|_| Point3::origin()))?;
-        assert_eq!(LoopBehavior::infinite(), stm.loop_behavior());
-        Ok(())
     }
 }

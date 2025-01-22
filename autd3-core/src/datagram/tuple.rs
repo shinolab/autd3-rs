@@ -1,10 +1,8 @@
-use std::time::Duration;
-
 use thiserror::Error;
 
 use crate::geometry::Geometry;
 
-use super::Datagram;
+use super::{Datagram, DatagramOption};
 
 #[doc(hidden)]
 pub struct CombinedOperationGenerator<O1, O2> {
@@ -35,10 +33,14 @@ where
     type G = CombinedOperationGenerator<D1::G, D2::G>;
     type Error = CombinedError<E1, E2>;
 
-    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(
+        self,
+        geometry: &Geometry,
+        option: &DatagramOption,
+    ) -> Result<Self::G, Self::Error> {
         match (
-            self.0.operation_generator(geometry),
-            self.1.operation_generator(geometry),
+            self.0.operation_generator(geometry, option),
+            self.1.operation_generator(geometry, option),
         ) {
             (Ok(g1), Ok(g2)) => Ok(CombinedOperationGenerator { o1: g1, o2: g2 }),
             (Err(e1), _) => Err(Self::Error::E1(e1)),
@@ -46,16 +48,15 @@ where
         }
     }
 
-    fn timeout(&self) -> Option<Duration> {
-        self.0.timeout().into_iter().chain(self.1.timeout()).max()
-    }
-
-    fn parallel_threshold(&self) -> Option<usize> {
-        self.0
-            .parallel_threshold()
-            .into_iter()
-            .chain(self.1.parallel_threshold())
-            .min()
+    fn option(&self) -> DatagramOption {
+        DatagramOption {
+            timeout: self.0.option().timeout.max(self.1.option().timeout),
+            parallel_threshold: self
+                .0
+                .option()
+                .parallel_threshold
+                .min(self.1.option().parallel_threshold),
+        }
     }
 }
 
@@ -63,98 +64,91 @@ where
 mod tests {
     use super::*;
 
+    use std::time::Duration;
+
     #[derive(Debug)]
     pub struct NullDatagram {
-        pub timeout: Option<Duration>,
-        pub parallel_threshold: Option<usize>,
+        pub option: DatagramOption,
     }
 
     impl Datagram for NullDatagram {
         type G = ();
         type Error = std::convert::Infallible;
 
-        fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
+        fn operation_generator(
+            self,
+            _: &Geometry,
+            _: &DatagramOption,
+        ) -> Result<Self::G, Self::Error> {
             Ok(())
         }
 
-        fn timeout(&self) -> Option<Duration> {
-            self.timeout
-        }
-
-        fn parallel_threshold(&self) -> Option<usize> {
-            self.parallel_threshold
+        fn option(&self) -> DatagramOption {
+            self.option
         }
     }
 
     #[rstest::rstest]
-    #[case(None, None, None)]
     #[case(
-        Some(Duration::from_millis(100)),
-        Some(Duration::from_millis(100)),
-        None
+        Duration::from_millis(200),
+        Duration::from_millis(100),
+        Duration::from_millis(200)
     )]
     #[case(
-        Some(Duration::from_millis(100)),
-        None,
-        Some(Duration::from_millis(100))
-    )]
-    #[case(
-        Some(Duration::from_millis(200)),
-        Some(Duration::from_millis(100)),
-        Some(Duration::from_millis(200))
-    )]
-    #[case(
-        Some(Duration::from_millis(200)),
-        Some(Duration::from_millis(200)),
-        Some(Duration::from_millis(100))
+        Duration::from_millis(200),
+        Duration::from_millis(200),
+        Duration::from_millis(100)
     )]
     #[test]
-    fn timeout(
-        #[case] expect: Option<Duration>,
-        #[case] timeout1: Option<Duration>,
-        #[case] timeout2: Option<Duration>,
-    ) {
+    fn timeout(#[case] expect: Duration, #[case] timeout1: Duration, #[case] timeout2: Duration) {
         assert_eq!(
             expect,
             (
                 NullDatagram {
-                    timeout: timeout1,
-                    parallel_threshold: None,
+                    option: DatagramOption {
+                        timeout: timeout1,
+                        parallel_threshold: 0,
+                    },
                 },
                 NullDatagram {
-                    timeout: timeout2,
-                    parallel_threshold: None,
+                    option: DatagramOption {
+                        timeout: timeout2,
+                        parallel_threshold: 0,
+                    },
                 }
             )
-                .timeout()
+                .option()
+                .timeout
         );
     }
 
     #[rstest::rstest]
-    #[case(None, None, None)]
-    #[case(Some(100), Some(100), None)]
-    #[case(Some(100), None, Some(100))]
-    #[case(Some(100), Some(100), Some(200))]
-    #[case(Some(100), Some(200), Some(100))]
+    #[case(100, 100, 200)]
+    #[case(100, 200, 100)]
     #[test]
     fn parallel_threshold(
-        #[case] expect: Option<usize>,
-        #[case] threshold1: Option<usize>,
-        #[case] threshold2: Option<usize>,
+        #[case] expect: usize,
+        #[case] threshold1: usize,
+        #[case] threshold2: usize,
     ) {
         assert_eq!(
             expect,
             (
                 NullDatagram {
-                    timeout: None,
-                    parallel_threshold: threshold1,
+                    option: DatagramOption {
+                        timeout: Duration::ZERO,
+                        parallel_threshold: threshold1,
+                    },
                 },
                 NullDatagram {
-                    timeout: None,
-                    parallel_threshold: threshold2,
+                    option: DatagramOption {
+                        timeout: Duration::ZERO,
+                        parallel_threshold: threshold2,
+                    },
                 }
             )
-                .parallel_threshold()
+                .option()
+                .parallel_threshold
         );
     }
 }

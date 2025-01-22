@@ -1,43 +1,30 @@
 use autd3_core::derive::*;
-use autd3_derive::Builder;
-use autd3_driver::{
-    firmware::fpga::{Drive, Segment},
-    geometry::Geometry,
-};
 
 use std::{cell::RefCell, rc::Rc};
 
 use derive_more::Debug;
+use getset::Getters;
 
 /// Cache for [`Gain`]
 ///
 /// This [`Gain`] is used to cache the calculated phases and intensities for each transducer.
-#[derive(Gain, Debug, Builder)]
+#[derive(Gain, Debug, Clone, Getters)]
 pub struct Cache<G: Gain> {
     gain: Rc<RefCell<Option<G>>>,
+    #[getset(get = "pub")]
     #[debug("{}", !self.cache.borrow().is_empty())]
-    #[get]
     /// Cached phases and intensities.
     cache: Rc<RefCell<HashMap<usize, Arc<Vec<Drive>>>>>,
-}
-
-impl<G: Gain> Clone for Cache<G> {
-    fn clone(&self) -> Self {
-        Self {
-            gain: self.gain.clone(),
-            cache: self.cache.clone(),
-        }
-    }
 }
 
 /// Trait to convert [`Gain`] to [`Cache`].
 pub trait IntoCache<G: Gain> {
     /// Convert [`Gain`] to [`Cache`]
-    fn with_cache(self) -> Cache<G>;
+    fn into_cached(self) -> Cache<G>;
 }
 
 impl<G: Gain> IntoCache<G> for G {
-    fn with_cache(self) -> Cache<G> {
+    fn into_cached(self) -> Cache<G> {
         Cache {
             gain: Rc::new(RefCell::new(Some(self))),
             cache: Default::default(),
@@ -51,9 +38,14 @@ impl<G: Gain> Cache<G> {
     /// # Errors
     ///
     /// Returns [`GainError`] if you initialize with some devices disabled and then reinitialize after enabling the devices.
-    pub fn init(&self, geometry: &Geometry) -> Result<(), GainError> {
+    pub fn init(
+        &self,
+        geometry: &Geometry,
+        filter: Option<&HashMap<usize, BitVec>>,
+        option: &DatagramOption,
+    ) -> Result<(), GainError> {
         if let Some(gain) = self.gain.take() {
-            let mut f = gain.init(geometry, None)?;
+            let mut f = gain.init_full(geometry, filter, option)?;
             geometry
                 .devices()
                 .filter(|dev| !self.cache.borrow().contains_key(&dev.idx()))
@@ -109,12 +101,19 @@ impl<G: Gain> GainContextGenerator for Cache<G> {
 impl<G: Gain> Gain for Cache<G> {
     type G = Self;
 
-    fn init(
+    // GRCOV_EXCL_START
+    fn init(self) -> Result<Self::G, GainError> {
+        unimplemented!()
+    }
+    // GRCOV_EXCL_STOP
+
+    fn init_full(
         self,
         geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec>>,
+        filter: Option<&HashMap<usize, BitVec>>,
+        option: &DatagramOption,
     ) -> Result<Self::G, GainError> {
-        Cache::init(&self, geometry)?;
+        Cache::init(&self, geometry, filter, option)?;
         Ok(self)
     }
 }
@@ -127,9 +126,12 @@ mod tests {
 
     use autd3_driver::firmware::fpga::{EmitIntensity, Phase};
     use rand::Rng;
-    use std::sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc,
+    use std::{
+        fmt::Debug,
+        sync::{
+            atomic::{AtomicUsize, Ordering},
+            Arc,
+        },
     };
 
     #[test]
@@ -137,13 +139,19 @@ mod tests {
         let geometry = create_geometry(1);
 
         let mut rng = rand::thread_rng();
-        let d = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
-        let gain = Uniform::new(d);
-        let cache = gain.clone().with_cache();
+        let d = Drive {
+            phase: Phase(rng.gen()),
+            intensity: EmitIntensity(rng.gen()),
+        };
+        let gain = Uniform {
+            intensity: d.intensity,
+            phase: d.phase,
+        };
+        let cache = gain.clone().into_cached();
 
-        assert!(cache.cache().is_empty());
-        let mut gg = gain.init(&geometry, None)?;
-        let mut gc = cache.init(&geometry, None)?;
+        assert!(cache.cache().borrow().is_empty());
+        let mut gg = gain.init()?;
+        let mut gc = cache.init_full(&geometry, None, &DatagramOption::default())?;
         geometry.devices().try_for_each(|dev| {
             let gf = gg.generate(dev);
             let cf = gc.generate(dev);
@@ -159,10 +167,15 @@ mod tests {
     fn different_geometry() -> anyhow::Result<()> {
         let mut geometry = create_geometry(2);
 
-        let gain = Uniform::new(Drive::NULL);
-        let cache = gain.with_cache();
+        let gain = Uniform {
+            intensity: EmitIntensity::MIN,
+            phase: Phase::ZERO,
+        };
+        let cache = gain.into_cached();
 
-        cache.clone().init(&geometry, None)?;
+        cache
+            .clone()
+            .init_full(&geometry, None, &DatagramOption::default())?;
 
         geometry[1].enable = false;
 
@@ -170,7 +183,9 @@ mod tests {
             Some(GainError::new(
                 "Cache is initialized with different geometry".to_string()
             )),
-            cache.init(&geometry, None).err()
+            cache
+                .init_full(&geometry, None, &DatagramOption::default())
+                .err()
         );
 
         Ok(())
@@ -200,11 +215,7 @@ mod tests {
     impl Gain for CacheTestGain {
         type G = CacheTestGain;
 
-        fn init(
-            self,
-            _geometry: &Geometry,
-            _filter: Option<&HashMap<usize, BitVec>>,
-        ) -> Result<Self::G, GainError> {
+        fn init(self) -> Result<Self::G, GainError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
             Ok(self)
         }
@@ -218,12 +229,14 @@ mod tests {
         let gain = CacheTestGain {
             calc_cnt: calc_cnt.clone(),
         }
-        .with_cache();
+        .into_cached();
 
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
-        let _ = gain.clone().init(&geometry, None);
+        let _ = gain
+            .clone()
+            .init_full(&geometry, None, &DatagramOption::default());
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
-        let _ = gain.init(&geometry, None);
+        let _ = gain.init_full(&geometry, None, &DatagramOption::default());
         assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
     }
 
@@ -239,9 +252,9 @@ mod tests {
 
             assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
-            let _ = gain.clone().init(&geometry, None);
+            let _ = gain.clone().init();
             assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
-            let _ = gain.init(&geometry, None);
+            let _ = gain.init();
             assert_eq!(2, calc_cnt.load(Ordering::Relaxed));
         }
 
@@ -250,7 +263,7 @@ mod tests {
             let gain = CacheTestGain {
                 calc_cnt: calc_cnt.clone(),
             }
-            .with_cache();
+            .into_cached();
             assert_eq!(1, gain.count());
             assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
@@ -258,11 +271,13 @@ mod tests {
             assert_eq!(2, gain.count());
             assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
-            let _ = g2.clone().init(&geometry, None);
+            let _ = g2
+                .clone()
+                .init_full(&geometry, None, &DatagramOption::default());
             assert_eq!(2, gain.count());
             assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
 
-            let _ = g2.init(&geometry, None);
+            let _ = g2.init_full(&geometry, None, &DatagramOption::default());
             assert_eq!(1, gain.count());
             assert_eq!(1, calc_cnt.load(Ordering::Relaxed));
         }

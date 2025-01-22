@@ -1,6 +1,7 @@
 use std::convert::Infallible;
 
 use crate::{datagram::*, defined::ultrasound_freq, firmware::operation::ConfigureClockOp};
+use autd3_core::derive::DatagramOption;
 
 #[derive(Default, Debug)]
 #[doc(hidden)]
@@ -27,7 +28,7 @@ impl Datagram for ConfigureFPGAClock {
     type G = ConfigureClockOpGenerator;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: &DatagramOption) -> Result<Self::G, Self::Error> {
         Ok(ConfigureClockOpGenerator {})
     }
 }

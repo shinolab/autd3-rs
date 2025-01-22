@@ -5,8 +5,14 @@ pub fn focus(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
 
     let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);
 
-    let g = Focus::new(center);
-    let m = Sine::new(150. * Hz);
+    let g = Focus {
+        pos: center,
+        option: Default::default(),
+    };
+    let m = Sine {
+        freq: 150. * Hz,
+        option: Default::default(),
+    };
 
     autd.send((m, g))?;
 

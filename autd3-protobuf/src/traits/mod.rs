@@ -9,7 +9,10 @@ mod holo;
 pub trait ToMessage {
     type Message: prost::Message;
 
-    fn to_msg(&self, geometry: Option<&autd3_core::geometry::Geometry>) -> Self::Message;
+    fn to_msg(
+        &self,
+        geometry: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError>;
 }
 
 pub trait FromMessage<T>

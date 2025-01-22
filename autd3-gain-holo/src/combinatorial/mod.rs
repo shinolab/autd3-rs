@@ -1,3 +1,3 @@
 mod greedy;
 
-pub use greedy::Greedy;
+pub use greedy::{Greedy, GreedyOption};

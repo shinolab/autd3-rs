@@ -20,9 +20,8 @@ pub type Translation = nalgebra::Translation3<f32>;
 pub type Isometry = nalgebra::Isometry3<f32>;
 
 pub use bvh::aabb::Aabb;
-
-use autd3_derive::Builder;
 pub use device::*;
+use getset::CopyGetters;
 pub use rotation::*;
 pub use transducer::*;
 
@@ -30,16 +29,15 @@ use derive_more::{Deref, IntoIterator};
 use derive_new::new;
 
 /// Geometry of the devices.
-#[derive(Deref, Builder, IntoIterator, new)]
+#[derive(Deref, CopyGetters, IntoIterator, new)]
 pub struct Geometry {
     #[deref]
     #[into_iterator(ref)]
     pub(crate) devices: Vec<Device>,
+    #[doc(hidden)]
     #[new(default)]
-    #[get(no_doc)]
+    #[getset(get_copy = "pub")]
     version: usize,
-    #[get(no_doc)]
-    default_parallel_threshold: usize,
 }
 
 impl Geometry {
@@ -92,11 +90,6 @@ impl Geometry {
     pub fn aabb(&self) -> Aabb<f32, 3> {
         self.devices()
             .fold(Aabb::empty(), |aabb, dev| aabb.join(dev.aabb()))
-    }
-
-    #[doc(hidden)]
-    pub fn parallel(&self, threshold: Option<usize>) -> bool {
-        self.num_devices() > threshold.unwrap_or(self.default_parallel_threshold)
     }
 }
 
@@ -184,7 +177,6 @@ pub(crate) mod tests {
             (0..n)
                 .map(|i| create_device(i, num_trans_in_unit))
                 .collect(),
-            4,
         )
     }
 
@@ -193,7 +185,7 @@ pub(crate) mod tests {
     #[case(1, vec![create_device(0, 249)])]
     #[case(2, vec![create_device(0, 249), create_device(0, 249)])]
     fn test_num_devices(#[case] expected: usize, #[case] devices: Vec<Device>) {
-        let geometry = Geometry::new(devices, 4);
+        let geometry = Geometry::new(devices);
         assert_eq!(0, geometry.version());
         assert_eq!(expected, geometry.num_devices());
         assert_eq!(0, geometry.version());
@@ -204,7 +196,7 @@ pub(crate) mod tests {
     #[case(249, vec![create_device(0, 249)])]
     #[case(498, vec![create_device(0, 249), create_device(0, 249)])]
     fn test_num_transducers(#[case] expected: usize, #[case] devices: Vec<Device>) {
-        let geometry = Geometry::new(devices, 4);
+        let geometry = Geometry::new(devices);
         assert_eq!(0, geometry.version());
         assert_eq!(expected, geometry.num_transducers());
         assert_eq!(0, geometry.version());
@@ -212,13 +204,10 @@ pub(crate) mod tests {
 
     #[test]
     fn test_center() {
-        let geometry = Geometry::new(
-            vec![
-                TestDevice::new_autd3(Point3::origin()).into_device(0),
-                TestDevice::new_autd3(Point3::new(10., 20., 30.)).into_device(1),
-            ],
-            4,
-        );
+        let geometry = Geometry::new(vec![
+            TestDevice::new_autd3(Point3::origin()).into_device(0),
+            TestDevice::new_autd3(Point3::new(10., 20., 30.)).into_device(1),
+        ]);
         let expect = geometry
             .iter()
             .map(|dev| dev.center().coords)
@@ -284,7 +273,6 @@ pub(crate) mod tests {
                 .enumerate()
                 .map(|(idx, d)| d.into_device(idx as _))
                 .collect(),
-            4,
         );
         assert_approx_eq_vec3!(expect.min, geometry.aabb().min);
         assert_approx_eq_vec3!(expect.max, geometry.aabb().max);

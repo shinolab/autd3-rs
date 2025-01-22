@@ -1,7 +1,6 @@
 use std::net::SocketAddr;
 
 use autd3_core::geometry::{Device, Geometry, IntoDevice};
-use autd3_derive::Builder;
 
 use crate::{traits::*, OpenRequestLightweight};
 
@@ -10,72 +9,34 @@ pub struct LightweightClient {
     geometry: Geometry,
 }
 
-#[derive(Builder)]
-pub struct LightweightClientBuilder {
-    devices: Vec<Device>,
-    #[get]
-    #[set]
-    default_parallel_threshold: usize,
-    #[set]
-    #[get]
-    default_timeout: std::time::Duration,
-    #[get]
-    #[set]
-    send_interval: std::time::Duration,
-    #[get]
-    #[set]
-    receive_interval: std::time::Duration,
-    #[cfg(target_os = "windows")]
-    #[get]
-    #[set]
-    timer_resolution: u32,
-}
-
-impl LightweightClientBuilder {
-    fn new<D: IntoDevice, F: IntoIterator<Item = D>>(iter: F) -> Self {
-        Self {
-            devices: iter
+impl LightweightClient {
+    pub async fn open<D: IntoDevice, F: IntoIterator<Item = D>>(
+        devices: F,
+        addr: SocketAddr,
+    ) -> Result<Self, crate::error::AUTDProtoBufError> {
+        LightweightClient::open_impl(
+            devices
                 .into_iter()
                 .enumerate()
                 .map(|(i, d)| d.into_device(i as _))
                 .collect(),
-            default_parallel_threshold: 4,
-            default_timeout: std::time::Duration::from_millis(20),
-            send_interval: std::time::Duration::from_millis(1),
-            receive_interval: std::time::Duration::from_millis(1),
-            #[cfg(target_os = "windows")]
-            timer_resolution: 1,
-        }
-    }
-
-    pub async fn open(
-        self,
-        addr: SocketAddr,
-    ) -> Result<LightweightClient, crate::error::AUTDProtoBufError> {
-        LightweightClient::open_impl(self, addr).await
-    }
-}
-
-impl LightweightClient {
-    pub fn builder<D: IntoDevice, F: IntoIterator<Item = D>>(iter: F) -> LightweightClientBuilder {
-        LightweightClientBuilder::new(iter)
+            addr,
+        )
+        .await
     }
 
     async fn open_impl(
-        builder: LightweightClientBuilder,
+        devices: Vec<Device>,
         addr: SocketAddr,
     ) -> Result<Self, crate::error::AUTDProtoBufError> {
         let conn = tonic::transport::Endpoint::new(format!("http://{}", addr))?
             .connect()
             .await?;
         let mut client = crate::pb::ecat_light_client::EcatLightClient::new(conn);
-        let geometry = Geometry::new(builder.devices, builder.default_parallel_threshold as _);
+        let geometry = Geometry::new(devices);
         let res = client
             .open(OpenRequestLightweight {
-                geometry: Some(geometry.to_msg(None)),
-                default_timeout: builder.default_timeout.as_nanos() as _,
-                send_interval: builder.send_interval.as_nanos() as _,
-                receive_interval: builder.receive_interval.as_nanos() as _,
+                geometry: Some(geometry.to_msg(None)?),
             })
             .await?
             .into_inner();
@@ -110,7 +71,7 @@ impl LightweightClient {
     ) -> Result<bool, crate::error::AUTDProtoBufError> {
         let res = self
             .client
-            .send(tonic::Request::new(datagram.to_msg(Some(&self.geometry))))
+            .send(tonic::Request::new(datagram.to_msg(Some(&self.geometry))?))
             .await?
             .into_inner();
         if res.err {

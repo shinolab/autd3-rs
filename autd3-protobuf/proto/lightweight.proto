@@ -18,16 +18,14 @@ message Datagram {
     Silencer silencer = 5;
     SwapSegment swap_segment = 6;
     Modulation modulation = 10;
-    ModulationWithSegment modulation_with_segment = 11;
+    ModulationWithLoopBehavior modulation_with_segment = 11;
     Gain gain = 30;
     GainWithSegment gain_with_segment = 31;
     FociSTM foci_stm = 40;
-    FociSTMWithSegment foci_stm_with_segment = 41;
+    FociSTMWithLoopBehavior foci_stm_with_loop_behavior = 41;
     GainSTM gain_stm = 50;
-    GainSTMWithSegment gain_stm_with_segment = 51;
+    GainSTMWithLoopBehavior gain_stm_with_loop_behavior = 51;
   }
-  optional uint64 timeout = 1001;
-  optional uint64 parallel_threshold = 1002;
 }
 
 message SendResponseLightweight {
@@ -54,9 +52,6 @@ message CloseRequestLightweight {}
 
 message OpenRequestLightweight {
   Geometry geometry = 1;
-  uint64 default_timeout = 2;
-  uint64 send_interval = 3;
-  uint64 receive_interval = 4;
 }
 
 service ECATLight {

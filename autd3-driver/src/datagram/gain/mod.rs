@@ -25,16 +25,11 @@ impl<G: GainContextGenerator> OperationGenerator for GainOperationGenerator<G> {
 pub mod tests {
     use std::collections::HashMap;
 
-    use autd3_core::{
-        gain::{BitVec, GainContext, GainError},
-        geometry::{Geometry, Transducer},
-    };
-
-    use super::*;
+    use autd3_core::derive::*;
 
     use crate::firmware::fpga::{Drive, EmitIntensity, Phase};
 
-    #[derive(Clone, Debug)]
+    #[derive(Gain, Clone, Debug)]
     pub struct TestGain {
         pub data: HashMap<usize, Vec<Drive>>,
     }
@@ -82,11 +77,7 @@ pub mod tests {
     impl Gain for TestGain {
         type G = Self;
 
-        fn init(
-            self,
-            _geometry: &Geometry,
-            _filter: Option<&HashMap<usize, BitVec>>,
-        ) -> Result<Self::G, GainError> {
+        fn init(self) -> Result<Self::G, GainError> {
             Ok(self)
         }
     }
@@ -97,24 +88,24 @@ pub mod tests {
     #[test]
     #[case::serial(
         [
-            (0, vec![Drive::new(Phase::new(0x01), EmitIntensity::new(0x01)); NUM_TRANSDUCERS]),
-            (1, vec![Drive::new(Phase::new(0x02), EmitIntensity::new(0x02)); NUM_TRANSDUCERS])
+            (0, vec![Drive { phase: Phase(0x01), intensity: EmitIntensity(0x01) }; NUM_TRANSDUCERS]),
+            (1, vec![Drive { phase: Phase(0x02), intensity: EmitIntensity(0x02) }; NUM_TRANSDUCERS])
         ].into_iter().collect(),
         vec![true; 2],
         2)]
     #[case::parallel(
         [
-            (0, vec![Drive::new(Phase::new(0x01), EmitIntensity::new(0x01)); NUM_TRANSDUCERS]),
-            (1, vec![Drive::new(Phase::new(0x02), EmitIntensity::new(0x02)); NUM_TRANSDUCERS]),
-            (2, vec![Drive::new(Phase::new(0x03), EmitIntensity::new(0x03)); NUM_TRANSDUCERS]),
-            (3, vec![Drive::new(Phase::new(0x04), EmitIntensity::new(0x04)); NUM_TRANSDUCERS]),
-            (4, vec![Drive::new(Phase::new(0x05), EmitIntensity::new(0x05)); NUM_TRANSDUCERS]),
+            (0, vec![Drive { phase: Phase(0x01), intensity: EmitIntensity(0x01) }; NUM_TRANSDUCERS]),
+            (1, vec![Drive { phase: Phase(0x02), intensity: EmitIntensity(0x02) }; NUM_TRANSDUCERS]),
+            (2, vec![Drive { phase: Phase(0x03), intensity: EmitIntensity(0x03) }; NUM_TRANSDUCERS]),
+            (3, vec![Drive { phase: Phase(0x04), intensity: EmitIntensity(0x04) }; NUM_TRANSDUCERS]),
+            (4, vec![Drive { phase: Phase(0x05), intensity: EmitIntensity(0x05) }; NUM_TRANSDUCERS]),
         ].into_iter().collect(),
         vec![true; 5],
         5)]
     #[case::enabled(
         [
-            (0, vec![Drive::new(Phase::new(0x01), EmitIntensity::new(0x01)); NUM_TRANSDUCERS]),
+            (0, vec![Drive { phase: Phase(0x01), intensity: EmitIntensity(0x01) }; NUM_TRANSDUCERS]),
         ].into_iter().collect(),
         vec![true, false],
         2)]
@@ -133,16 +124,14 @@ pub mod tests {
         let g = TestGain::new(
             |dev| {
                 let dev_idx = dev.idx();
-                move |_| {
-                    Drive::new(
-                        Phase::new(dev_idx as u8 + 1),
-                        EmitIntensity::new(dev_idx as u8 + 1),
-                    )
+                move |_| Drive {
+                    phase: Phase(dev_idx as u8 + 1),
+                    intensity: EmitIntensity(dev_idx as u8 + 1),
                 }
             },
             &geometry,
         );
-        let mut f = g.init(&geometry, None)?;
+        let mut f = g.init()?;
         assert_eq!(
             expect,
             geometry

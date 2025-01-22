@@ -9,11 +9,14 @@ use zerocopy::{FromZeros, IntoBytes};
 impl ToMessage for &[autd3_driver::firmware::cpu::TxMessage] {
     type Message = TxRawData;
 
-    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
-        Self::Message {
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
             data: self.as_bytes().to_vec(),
             n: self.len() as _,
-        }
+        })
     }
 }
 
@@ -37,10 +40,10 @@ mod tests {
         let mut rng = rand::thread_rng();
         let mut tx = vec![autd3_driver::firmware::cpu::TxMessage::new_zeroed(); 10];
         (0..10).for_each(|i| {
-            tx[i].header_mut().msg_id = rng.gen();
-            tx[i].header_mut().slot_2_offset = rng.gen();
+            tx[i].header.msg_id = rng.gen();
+            tx[i].header.slot_2_offset = rng.gen();
         });
-        let msg = tx.as_slice().to_msg(None);
+        let msg = tx.as_slice().to_msg(None).unwrap();
         let tx2 = Vec::<autd3_driver::firmware::cpu::TxMessage>::from_msg(&msg).unwrap();
         assert_eq!(&tx, &tx2);
     }

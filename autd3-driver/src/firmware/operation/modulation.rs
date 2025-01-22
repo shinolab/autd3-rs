@@ -115,13 +115,13 @@ impl Operation for ModulationOp {
                     tag: TypeTag::Modulation,
                     flag: ModulationControlFlags::BEGIN | flag,
                     size: send_num as _,
-                    freq_div: self.config.division(),
+                    freq_div: self.config.division.get(),
                     rep: self.loop_behavior.rep(),
                     transition_mode: self
                         .transition_mode
                         .map(|m| m.mode())
                         .unwrap_or(TRANSITION_MODE_NONE),
-                    transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
+                    transition_value: self.transition_mode.map(TransitionMode::value).unwrap_or(0),
                 },
             );
             Ok(size_of::<ModulationHead>() + ((send_num + 0x01) & !0x1))
@@ -153,6 +153,8 @@ impl Operation for ModulationOp {
 
 #[cfg(test)]
 mod tests {
+    use std::num::NonZeroU16;
+
     use rand::prelude::*;
 
     use super::*;
@@ -172,7 +174,7 @@ mod tests {
 
         let buf: Vec<u8> = (0..MOD_SIZE).map(|_| rng.gen()).collect();
         let freq_div = rng.gen_range(0x0001..=0xFFFF);
-        let loop_behavior = LoopBehavior::infinite();
+        let loop_behavior = LoopBehavior::Infinite;
         let rep = loop_behavior.rep();
         let segment = Segment::S0;
         let transition_mode = TransitionMode::SysTime(
@@ -185,7 +187,7 @@ mod tests {
 
         let mut op = ModulationOp::new(
             Arc::new(buf.clone()),
-            SamplingConfig::new(freq_div).unwrap(),
+            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()).unwrap(),
             loop_behavior,
             segment,
             Some(transition_mode),
@@ -248,8 +250,8 @@ mod tests {
 
         let mut op = ModulationOp::new(
             Arc::new(buf.clone()),
-            SamplingConfig::FREQ_40K,
-            LoopBehavior::infinite(),
+            SamplingConfig::FREQ_MAX,
+            LoopBehavior::Infinite,
             Segment::S0,
             Some(TransitionMode::SyncIdx),
         );
@@ -356,8 +358,8 @@ mod tests {
             let buf = Arc::new(vec![0x00; n]);
             let mut op = ModulationOp::new(
                 buf.clone(),
-                SamplingConfig::FREQ_40K,
-                LoopBehavior::infinite(),
+                SamplingConfig::FREQ_MAX,
+                LoopBehavior::Infinite,
                 Segment::S0,
                 None,
             );
@@ -388,8 +390,8 @@ mod tests {
 
         let mut op = ModulationOp::new(
             Arc::new(buf.clone()),
-            SamplingConfig::FREQ_40K,
-            LoopBehavior::infinite(),
+            SamplingConfig::FREQ_MAX,
+            LoopBehavior::Infinite,
             Segment::S0,
             Some(TransitionMode::SyncIdx),
         );

@@ -9,28 +9,36 @@ use autd3_driver::{
 use num::integer::gcd;
 use std::fmt::Debug;
 
-/// A trait for sampling mode.
-pub trait SamplingMode: Clone + Sync + Debug {
-    /// Frequency type
-    type T: Clone + Copy + Sync + std::fmt::Debug + PartialEq + PartialOrd;
-    /// Calculate the frequency to be output.
-    fn freq(freq: Self::T, _sampling_config: SamplingConfig) -> Self::T {
-        freq
-    }
-    /// Validate the frequency.
-    fn validate(
-        freq: Self::T,
-        sampling_config: SamplingConfig,
-    ) -> Result<(u64, u64), ModulationError>;
+/// Nearest frequency type.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Nearest(pub Freq<f32>);
+
+/// A enum for sampling mode.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum SamplingMode {
+    /// Exact frequency sampling mode with integer number.
+    ExactFreq(Freq<u32>),
+    /// Exact frequency sampling mode with floating point number.
+    ExactFreqFloat(Freq<f32>),
+    /// Nearest frequency sampling mode.
+    NearestFreq(Freq<f32>),
 }
 
-/// Exact frequency sampling mode with integer number.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ExactFreq;
+impl SamplingMode {
+    pub(crate) fn validate(
+        self,
+        sampling_config: SamplingConfig,
+    ) -> Result<(u64, u64), ModulationError> {
+        match self {
+            SamplingMode::ExactFreq(freq) => Self::validate_exact(freq, sampling_config),
+            SamplingMode::ExactFreqFloat(freq) => Self::validate_exact_f(freq, sampling_config),
+            SamplingMode::NearestFreq(freq) => Self::validate_nearest(freq, sampling_config),
+        }
+    }
+}
 
-impl SamplingMode for ExactFreq {
-    type T = Freq<u32>;
-    fn validate(
+impl SamplingMode {
+    fn validate_exact(
         freq: Freq<u32>,
         sampling_config: SamplingConfig,
     ) -> Result<(u64, u64), ModulationError> {
@@ -47,7 +55,7 @@ impl SamplingMode for ExactFreq {
             ));
         }
 
-        let fd = freq.hz() as u64 * sampling_config.division() as u64;
+        let fd = freq.hz() as u64 * sampling_config.division.get() as u64;
         let fs = ultrasound_freq().hz() as u64;
 
         let k = gcd(fs, fd);
@@ -55,13 +63,8 @@ impl SamplingMode for ExactFreq {
     }
 }
 
-/// Exact frequency sampling mode with floating point number.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ExactFreqFloat;
-
-impl SamplingMode for ExactFreqFloat {
-    type T = Freq<f32>;
-    fn validate(
+impl SamplingMode {
+    fn validate_exact_f(
         freq: Freq<f32>,
         sampling_config: SamplingConfig,
     ) -> Result<(u64, u64), ModulationError> {
@@ -83,7 +86,7 @@ impl SamplingMode for ExactFreqFloat {
                 sampling_config.freq() / 2.
             )));
         }
-        let fd = freq.hz() as f64 * sampling_config.division() as f64;
+        let fd = freq.hz() as f64 * sampling_config.division.get() as f64;
 
         for n in (ultrasound_freq().hz() as f64 / fd).floor() as u32..=MOD_BUF_SIZE_MAX as u32 {
             if !is_integer(fd * n as f64) {
@@ -104,23 +107,18 @@ impl SamplingMode for ExactFreqFloat {
     }
 }
 
-/// Nearest frequency sampling mode.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct NearestFreq;
-
-impl SamplingMode for NearestFreq {
-    type T = Freq<f32>;
-    fn freq(freq: Self::T, sampling_config: SamplingConfig) -> Self::T {
+impl SamplingMode {
+    fn freq_nearest(freq: Freq<f32>, sampling_config: SamplingConfig) -> Freq<f32> {
         let freq_min = sampling_config.freq().hz() / MOD_BUF_SIZE_MAX as f32;
         let freq_max = sampling_config.freq().hz() / 2.;
         freq.hz().clamp(freq_min, freq_max) * Hz
     }
 
-    fn validate(
+    fn validate_nearest(
         freq: Freq<f32>,
         sampling_config: SamplingConfig,
     ) -> Result<(u64, u64), ModulationError> {
-        let freq = Self::freq(freq, sampling_config);
+        let freq = Self::freq_nearest(freq, sampling_config);
         if freq.hz().is_nan() {
             return Err(ModulationError::new(format!(
                 "Frequency ({:?}) must be valid value",
@@ -131,18 +129,22 @@ impl SamplingMode for NearestFreq {
     }
 }
 
-/// A trait for sampling mode inference.
-pub trait SamplingModeInference: Copy + Clone + std::fmt::Debug + PartialEq {
-    /// Inferred sampling mode.
-    type T: SamplingMode<T = Self>;
+impl From<Freq<u32>> for SamplingMode {
+    fn from(val: Freq<u32>) -> Self {
+        SamplingMode::ExactFreq(val)
+    }
 }
 
-impl SamplingModeInference for Freq<u32> {
-    type T = ExactFreq;
+impl From<Freq<f32>> for SamplingMode {
+    fn from(val: Freq<f32>) -> Self {
+        SamplingMode::ExactFreqFloat(val)
+    }
 }
 
-impl SamplingModeInference for Freq<f32> {
-    type T = ExactFreqFloat;
+impl From<Nearest> for SamplingMode {
+    fn from(val: Nearest) -> Self {
+        SamplingMode::NearestFreq(val.0)
+    }
 }
 
 #[cfg(test)]
@@ -154,15 +156,15 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(1.2207031 * Hz, 1. * Hz, SamplingConfig::FREQ_40K)]
-    #[case(1.2207031 * Hz, 1.2207031 * Hz, SamplingConfig::FREQ_40K)]
-    #[case(20000. * Hz, 20000. * Hz, SamplingConfig::FREQ_40K)]
-    #[case(20000. * Hz, 40000. * Hz, SamplingConfig::FREQ_40K)]
+    #[case(1.2207031 * Hz, 1. * Hz, SamplingConfig::FREQ_MAX)]
+    #[case(1.2207031 * Hz, 1.2207031 * Hz, SamplingConfig::FREQ_MAX)]
+    #[case(20000. * Hz, 20000. * Hz, SamplingConfig::FREQ_MAX)]
+    #[case(20000. * Hz, 40000. * Hz, SamplingConfig::FREQ_MAX)]
     fn nearest_freq_clamp(
         #[case] expect: Freq<f32>,
         #[case] freq: Freq<f32>,
         #[case] sampling_config: SamplingConfig,
     ) {
-        assert_eq!(expect, NearestFreq::freq(freq, sampling_config));
+        assert_eq!(expect, SamplingMode::freq_nearest(freq, sampling_config));
     }
 }

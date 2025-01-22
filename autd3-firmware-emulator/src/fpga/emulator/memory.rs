@@ -5,26 +5,21 @@ use std::{
 
 use crate::FPGAEmulator;
 
-use autd3_derive::Builder;
 use autd3_driver::firmware::fpga::Segment;
+use getset::{Getters, MutGetters};
 
 use super::super::params::*;
 
-#[derive(Builder)]
+#[derive(Getters, MutGetters)]
 pub struct Memory {
     pub(crate) num_transducers: usize,
-    #[get]
     pub(crate) controller_bram: LazyCell<RefCell<Vec<u16>>>,
-    #[get]
+    #[getset(get = "pub", get_mut = "pub")]
     pub(crate) phase_corr_bram: LazyCell<RefCell<Vec<u16>>>,
     #[cfg(feature = "dynamic_freq")]
-    #[get]
     pub(crate) drp_bram: LazyCell<RefCell<Vec<u16>>>,
-    #[get]
     pub(crate) modulation_bram: LazyCell<RefCell<HashMap<Segment, Vec<u16>>>>,
-    #[get]
     pub(crate) stm_bram: LazyCell<RefCell<HashMap<Segment, Vec<u16>>>>,
-    #[get]
     pub(crate) duty_table_bram: LazyCell<RefCell<Vec<u16>>>,
     pub(crate) tr_pos: LazyCell<Vec<u64>>,
     pub(crate) sin_table: LazyCell<Vec<u8>>,
@@ -146,38 +141,39 @@ impl Memory {
         let addr = (addr & 0x3FFF) as usize;
         match select {
             BRAM_SELECT_CONTROLLER => match addr >> 8 {
-                BRAM_CNT_SEL_MAIN => self.controller_bram_mut()[addr] = data,
-                BRAM_CNT_SEL_PHASE_CORR => self.phase_corr_bram_mut()[addr & 0xFF] = data,
+                BRAM_CNT_SEL_MAIN => self.controller_bram.borrow_mut()[addr] = data,
+                BRAM_CNT_SEL_PHASE_CORR => self.phase_corr_bram.borrow_mut()[addr & 0xFF] = data,
                 #[cfg(feature = "dynamic_freq")]
-                BRAM_CNT_SEL_CLOCK => self.drp_bram_mut()[addr & 0xFF] = data,
+                BRAM_CNT_SEL_CLOCK => self.drp_bram.borrow_mut()[addr & 0xFF] = data,
                 _ => unreachable!(),
             },
             BRAM_SELECT_MOD => {
-                let segment = match self.controller_bram()[ADDR_MOD_MEM_WR_SEGMENT] {
+                let segment = match self.controller_bram.borrow()[ADDR_MOD_MEM_WR_SEGMENT] {
                     0 => Segment::S0,
                     1 => Segment::S1,
                     _ => unreachable!(),
                 };
-                self.modulation_bram_mut().get_mut(&segment).unwrap()[addr] = data;
+                self.modulation_bram.borrow_mut().get_mut(&segment).unwrap()[addr] = data;
             }
             BRAM_SELECT_PWE_TABLE => {
-                self.duty_table_bram_mut()[addr] = data;
+                self.duty_table_bram.borrow_mut()[addr] = data;
             }
             BRAM_SELECT_STM => {
-                let segment = match self.controller_bram()[ADDR_STM_MEM_WR_SEGMENT] {
+                let segment = match self.controller_bram.borrow()[ADDR_STM_MEM_WR_SEGMENT] {
                     0 => Segment::S0,
                     1 => Segment::S1,
                     _ => unreachable!(),
                 };
-                self.stm_bram_mut().get_mut(&segment).unwrap()
-                    [(self.controller_bram()[ADDR_STM_MEM_WR_PAGE] as usize) << 14 | addr] = data;
+                self.stm_bram.borrow_mut().get_mut(&segment).unwrap()
+                    [(self.controller_bram.borrow()[ADDR_STM_MEM_WR_PAGE] as usize) << 14 | addr] =
+                    data;
             }
             _ => unreachable!(),
         }
     }
 
     pub fn update(&mut self, fpga_state: u16) {
-        self.controller_bram_mut()[ADDR_FPGA_STATE] = fpga_state;
+        self.controller_bram.borrow_mut()[ADDR_FPGA_STATE] = fpga_state;
     }
 }
 
@@ -186,7 +182,7 @@ impl FPGAEmulator {
         let select = ((addr >> 14) & 0x0003) as u8;
         let addr = (addr & 0x3FFF) as usize;
         match select {
-            BRAM_SELECT_CONTROLLER => self.mem.controller_bram()[addr],
+            BRAM_SELECT_CONTROLLER => self.mem.controller_bram.borrow()[addr],
             _ => unreachable!(),
         }
     }

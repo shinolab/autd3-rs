@@ -4,9 +4,7 @@ use autd3_protobuf::lightweight::LightweightClient;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let mut client = LightweightClient::builder([AUTD3::new(Point3::origin())])
-        .open("127.0.0.1:8080".parse()?)
-        .await?;
+    let mut client = LightweightClient::open([AUTD3::default()], "127.0.0.1:8080".parse()?).await?;
 
     println!("======== AUTD3 firmware information ========");
     client
@@ -18,8 +16,18 @@ async fn main() -> anyhow::Result<()> {
         });
     println!("============================================");
 
-    client.send(Sine::new(150. * Hz)).await?;
-    client.send(Focus::new(Point3::new(90., 70., 150.))).await?;
+    client
+        .send(Sine {
+            freq: 150. * Hz,
+            option: Default::default(),
+        })
+        .await?;
+    client
+        .send(Focus {
+            pos: Point3::new(90., 70., 150.),
+            option: Default::default(),
+        })
+        .await?;
 
     println!("Press enter to exit...");
     let mut _s = String::new();

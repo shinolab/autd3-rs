@@ -1,13 +1,10 @@
 use std::{convert::Infallible, num::NonZeroU16};
 
-use autd3_derive::Builder;
+use autd3_core::datagram::DatagramOption;
 
 use crate::{
     firmware::{
-        fpga::{
-            SamplingConfig, SilencerTarget, SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT,
-        },
+        fpga::{SilencerTarget, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
         operation::{
             NullOp, OperationGenerator, SilencerFixedCompletionStepsOp, SilencerFixedUpdateRateOp,
         },
@@ -16,14 +13,6 @@ use crate::{
 };
 
 use super::Datagram;
-
-/// Trait to get the sampling from [`Datagram`] with [`SamplingConfig`].
-pub trait HasSamplingConfig {
-    #[doc(hidden)]
-    fn intensity(&self) -> Option<SamplingConfig>;
-    #[doc(hidden)]
-    fn phase(&self) -> Option<SamplingConfig>;
-}
 
 pub trait SilencerConfig: std::fmt::Debug + Clone + Copy {}
 impl SilencerConfig for () {}
@@ -40,9 +29,29 @@ pub struct FixedCompletionTime {
     ///
     /// The larger this value, the more the noise is suppressed.
     pub phase: std::time::Duration,
+    /// Whether the strict mode is enabled. The default is `true`.
+    ///
+    /// If the strict mode is enabled, an error is returned if the phase/intensity change of [`Modulation`], [`FociSTM`] or [`GainSTM`] cannot be completed within the time specified by the silencer.
+    ///
+    /// [`Modulation`]: autd3_core::modulation::Modulation
+    /// [`FociSTM`]: crate::datagram::FociSTM
+    /// [`GainSTM`]: crate::datagram::GainSTM
+    pub strict_mode: bool,
 }
 #[cfg(not(feature = "dynamic_freq"))]
 impl SilencerConfig for FixedCompletionTime {}
+
+#[cfg(not(feature = "dynamic_freq"))]
+impl Default for FixedCompletionTime {
+    fn default() -> Self {
+        FixedCompletionTime {
+            intensity: SILENCER_STEPS_INTENSITY_DEFAULT as u32
+                * autd3_core::defined::ultrasound_period(),
+            phase: SILENCER_STEPS_PHASE_DEFAULT as u32 * autd3_core::defined::ultrasound_period(),
+            strict_mode: true,
+        }
+    }
+}
 
 /// To configure the silencer by the completion steps.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -55,8 +64,26 @@ pub struct FixedCompletionSteps {
     ///
     /// The larger this value, the more the noise is suppressed.
     pub phase: NonZeroU16,
+    /// Whether the strict mode is enabled. The default is `true`.
+    ///
+    /// If the strict mode is enabled, an error is returned if the phase/intensity change of [`Modulation`], [`FociSTM`] or [`GainSTM`] cannot be completed within the time specified by the silencer.
+    ///
+    /// [`Modulation`]: autd3_core::modulation::Modulation
+    /// [`FociSTM`]: crate::datagram::FociSTM
+    /// [`GainSTM`]: crate::datagram::GainSTM
+    pub strict_mode: bool,
 }
 impl SilencerConfig for FixedCompletionSteps {}
+
+impl Default for FixedCompletionSteps {
+    fn default() -> Self {
+        FixedCompletionSteps {
+            intensity: NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT).unwrap(),
+            phase: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
+            strict_mode: true,
+        }
+    }
+}
 
 /// To configure the silencer by the update rate.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -73,116 +100,39 @@ pub struct FixedUpdateRate {
 impl SilencerConfig for FixedUpdateRate {}
 
 /// [`Datagram`] to configure the silencer.
-#[derive(Debug, Clone, Copy, Builder)]
+#[derive(Debug, Clone, Copy)]
 pub struct Silencer<T: SilencerConfig> {
-    #[get]
     /// Configuration of the silencer.
-    config: T,
-    strict_mode: bool,
-    #[get]
-    #[set]
+    pub config: T,
     /// The target of the silencer.
-    target: SilencerTarget,
+    pub target: SilencerTarget,
 }
 
 impl Silencer<()> {
-    /// Creates a [`Silencer`].
-    pub const fn new<T: SilencerConfig>(config: T) -> Silencer<T> {
-        Silencer {
-            config,
-            strict_mode: true,
-            target: SilencerTarget::Intensity,
-        }
-    }
-
     /// Creates a [`Silencer`] to disable the silencer.
     pub const fn disable() -> Silencer<FixedCompletionSteps> {
-        Silencer::new(FixedCompletionSteps {
-            intensity: NonZeroU16::MIN,
-            phase: NonZeroU16::MIN,
-        })
-    }
-}
-
-#[cfg(not(feature = "dynamic_freq"))]
-impl Silencer<FixedCompletionTime> {
-    /// Whether the strict mode is enabled. The default is `true`.
-    ///
-    /// If the strict mode is enabled, an error is returned if the phase/intensity change of [`Modulation`], [`FociSTM`] or [`GainSTM`] cannot be completed within the time specified by the silencer.
-    ///
-    /// [`Modulation`]: autd3_core::modulation::Modulation
-    /// [`FociSTM`]: crate::datagram::FociSTM
-    /// [`GainSTM`]: crate::datagram::GainSTM
-    pub const fn strict_mode(&self) -> bool {
-        self.strict_mode
-    }
-
-    /// Sets the [`strict_mode`].
-    ///
-    /// [`strict_mode`]: Self::strict_mode
-    pub const fn with_strict_mode(mut self, strict_mode: bool) -> Self {
-        self.strict_mode = strict_mode;
-        self
-    }
-
-    /// Validate whether it is safe to use this [`Silencer`] with `target`.
-    pub fn is_valid<T: HasSamplingConfig>(&self, target: &T) -> bool {
-        if !self.strict_mode {
-            return true;
+        Silencer {
+            config: FixedCompletionSteps {
+                intensity: NonZeroU16::MIN,
+                phase: NonZeroU16::MIN,
+                strict_mode: true,
+            },
+            target: SilencerTarget::Intensity,
         }
-        self.config.intensity
-            <= target
-                .intensity()
-                .map_or(std::time::Duration::MAX, |c| c.period())
-            && self.config.phase
-                <= target
-                    .phase()
-                    .map_or(std::time::Duration::MAX, |c| c.period())
-    }
-}
-
-impl Silencer<FixedCompletionSteps> {
-    /// Whether the strict mode is enabled. The default is `true`.
-    ///
-    /// If the strict mode is enabled, an error is returned if the phase/intensity change of [`Modulation`], [`FociSTM`] or [`GainSTM`] cannot be completed within the time specified by the silencer.
-    ///
-    /// [`Modulation`]: autd3_core::modulation::Modulation
-    /// [`FociSTM`]: crate::datagram::FociSTM
-    /// [`GainSTM`]: crate::datagram::GainSTM
-    pub const fn strict_mode(&self) -> bool {
-        self.strict_mode
-    }
-
-    /// Sets the [`strict_mode`].
-    ///
-    /// [`strict_mode`]: Self::strict_mode
-    pub const fn with_strict_mode(mut self, strict_mode: bool) -> Self {
-        self.strict_mode = strict_mode;
-        self
-    }
-
-    /// Validate whether it is safe to use this [`Silencer`] with `target`.
-    pub fn is_valid<T: HasSamplingConfig>(&self, target: &T) -> bool {
-        if !self.strict_mode {
-            return true;
-        }
-        self.config.intensity.get() <= target.intensity().map_or(u16::MAX, |c| c.division())
-            && self.config.phase.get() <= target.phase().map_or(u16::MAX, |c| c.division())
     }
 }
 
 impl Default for Silencer<FixedCompletionSteps> {
     fn default() -> Self {
-        Silencer::new(FixedCompletionSteps {
-            intensity: NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT).unwrap(),
-            phase: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
-        })
+        Silencer {
+            config: Default::default(),
+            target: Default::default(),
+        }
     }
 }
 
 pub struct SilencerOpGenerator<T: SilencerConfig> {
     config: T,
-    strict_mode: bool,
     target: SilencerTarget,
 }
 
@@ -208,7 +158,7 @@ impl OperationGenerator for SilencerOpGenerator<FixedCompletionTime> {
             Self::O1::new(
                 self.config.intensity,
                 self.config.phase,
-                self.strict_mode,
+                self.config.strict_mode,
                 self.target,
             ),
             Self::O2 {},
@@ -225,7 +175,7 @@ impl OperationGenerator for SilencerOpGenerator<FixedCompletionSteps> {
             Self::O1::new(
                 self.config.intensity,
                 self.config.phase,
-                self.strict_mode,
+                self.config.strict_mode,
                 self.target,
             ),
             Self::O2 {},
@@ -240,10 +190,9 @@ where
     type G = SilencerOpGenerator<T>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: &DatagramOption) -> Result<Self::G, Self::Error> {
         Ok(Self::G {
             config: self.config,
-            strict_mode: self.strict_mode,
             target: self.target,
         })
     }
@@ -251,125 +200,36 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        datagram::{gain::tests::TestGain, modulation::tests::TestModulation, FociSTM, GainSTM},
-        firmware::fpga::LoopBehavior,
-        geometry::Point3,
-    };
-
     use super::*;
 
     #[test]
     fn disable() {
         let s = Silencer::disable();
-        assert_eq!(1, s.config().intensity.get());
-        assert_eq!(1, s.config().phase.get());
-        assert!(s.strict_mode());
-        assert_eq!(SilencerTarget::Intensity, s.target());
+        assert_eq!(1, s.config.intensity.get());
+        assert_eq!(1, s.config.phase.get());
+        assert!(s.config.strict_mode);
+        assert_eq!(SilencerTarget::Intensity, s.target);
     }
 
     #[test]
-    fn from_update_rate() {
-        let s = Silencer::new(FixedUpdateRate {
-            intensity: NonZeroU16::new(1).unwrap(),
-            phase: NonZeroU16::new(2).unwrap(),
-        });
-        assert_eq!(1, s.config().intensity.get());
-        assert_eq!(2, s.config().phase.get());
-        assert_eq!(SilencerTarget::Intensity, s.target());
+    fn fixed_completion_steps_default() {
+        let s: Silencer<FixedCompletionSteps> = Silencer::default();
+        assert_eq!(10, s.config.intensity.get());
+        assert_eq!(40, s.config.phase.get());
+        assert!(s.config.strict_mode);
+        assert_eq!(SilencerTarget::Intensity, s.target);
     }
 
+    #[test]
     #[cfg(not(feature = "dynamic_freq"))]
-    #[test]
-    fn from_completion_time() {
-        use std::time::Duration;
-
-        let s = Silencer::new(FixedCompletionTime {
-            intensity: Duration::from_secs(1),
-            phase: Duration::from_secs(1),
-        });
-        assert_eq!(Duration::from_secs(1), s.config().intensity);
-        assert_eq!(Duration::from_secs(1), s.config().phase);
-        assert_eq!(SilencerTarget::Intensity, s.target());
-        assert!(s.strict_mode());
-    }
-
-    #[test]
-    fn from_completion_steps() {
-        let s = Silencer::new(FixedCompletionSteps {
-            intensity: NonZeroU16::new(2).unwrap(),
-            phase: NonZeroU16::new(3).unwrap(),
-        });
-        assert_eq!(2, s.config().intensity.get());
-        assert_eq!(3, s.config().phase.get());
-        assert_eq!(SilencerTarget::Intensity, s.target());
-        assert!(s.strict_mode());
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(true, 10, 10, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-    #[case(false, 11, 10, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-    #[case(false, 10, 11, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-    #[case(true, 11, 10, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-    #[case(true, 10, 11, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-    #[case(true, 10, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-    #[case(false, 11, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-    #[case(false, 10, 11, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-    #[case(true, 11, 10, false, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-    #[case(true, 10, 11, false, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-    #[case(true, 10, 10, true, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
-    #[case(false, 11, 10, true, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
-    #[case(true, 10, 11, true, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
-    #[case(true, 11, 10, false, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
-    #[case(true, 10, 11, false, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
-    fn fixed_completion_steps_is_valid(
-        #[case] expect: bool,
-        #[case] intensity: u16,
-        #[case] phase: u16,
-        #[case] strict: bool,
-        #[case] target: impl HasSamplingConfig,
-    ) {
-        let s = Silencer::new(FixedCompletionSteps {
-            intensity: NonZeroU16::new(intensity).unwrap(),
-            phase: NonZeroU16::new(phase).unwrap(),
-        })
-        .with_strict_mode(strict);
-        assert_eq!(expect, s.is_valid(&target));
-    }
-
-    #[cfg(not(feature = "dynamic_freq"))]
-    #[rstest::rstest]
-    #[test]
-    #[case(true, 10, 10, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-    #[case(false, 11, 10, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-    #[case(false, 10, 11, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-    #[case(true, 11, 10, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-    #[case(true, 10, 11, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-    #[case(true, 10, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-    #[case(false, 11, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-    #[case(false, 10, 11, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-    #[case(true, 11, 10, false, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-    #[case(true, 10, 11, false, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-    #[case(true, 10, 10, true, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
-    #[case(false, 11, 10, true, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
-    #[case(true, 10, 11, true, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
-    #[case(true, 11, 10, false, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
-    #[case(true, 10, 11, false, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::infinite() })]
-    fn fixed_completion_time_is_valid(
-        #[case] expect: bool,
-        #[case] intensity: u32,
-        #[case] phase: u32,
-        #[case] strict: bool,
-        #[case] target: impl HasSamplingConfig,
-    ) {
-        use crate::defined::ultrasound_period;
-
-        let s = Silencer::new(FixedCompletionTime {
-            intensity: intensity * ultrasound_period(),
-            phase: phase * ultrasound_period(),
-        })
-        .with_strict_mode(strict);
-        assert_eq!(expect, s.is_valid(&target));
+    fn fixed_completion_time_default() {
+        let s: Silencer<FixedCompletionTime> = Silencer {
+            config: Default::default(),
+            target: Default::default(),
+        };
+        assert_eq!(std::time::Duration::from_micros(250), s.config.intensity);
+        assert_eq!(std::time::Duration::from_micros(1000), s.config.phase);
+        assert!(s.config.strict_mode);
+        assert_eq!(SilencerTarget::Intensity, s.target);
     }
 }

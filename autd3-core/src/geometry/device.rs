@@ -1,8 +1,8 @@
 use std::f32::consts::PI;
 
-use autd3_derive::Builder;
 use bvh::aabb::Aabb;
 use derive_more::{Deref, IntoIterator};
+use getset::Getters;
 
 use crate::defined::{ultrasound_freq, METER};
 
@@ -11,7 +11,7 @@ use super::{
 };
 
 /// An AUTD device unit.
-#[derive(Builder, Deref, IntoIterator)]
+#[derive(Getters, Deref, IntoIterator)]
 pub struct Device {
     idx: u16,
     #[deref]
@@ -21,24 +21,25 @@ pub struct Device {
     pub enable: bool,
     /// speed of sound
     pub sound_speed: f32,
-    #[get(ref)]
+    #[getset(get = "pub")]
     /// The rotation of the device.
     rotation: UnitQuaternion,
-    #[get(ref)]
+    #[getset(get = "pub")]
     /// The center of the device.
     center: Point3,
-    #[get(ref)]
+    #[getset(get = "pub")]
     /// The x-direction of the device.
     x_direction: UnitVector3,
-    #[get(ref)]
+    #[getset(get = "pub")]
     /// The y-direction of the device.
     y_direction: UnitVector3,
-    #[get(ref)]
+    #[getset(get = "pub")]
     /// The axial direction of the device.
     axial_direction: UnitVector3,
-    #[get(ref, no_doc)]
+    #[doc(hidden)]
+    #[getset(get = "pub")]
     inv: Isometry,
-    #[get(ref)]
+    #[getset(get = "pub")]
     /// The Axis Aligned Bounding Box of the device.
     aabb: Aabb<f32, 3>,
 }

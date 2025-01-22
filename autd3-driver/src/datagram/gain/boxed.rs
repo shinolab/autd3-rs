@@ -6,7 +6,12 @@ pub use crate::geometry::{Device, Geometry};
 
 use autd3_core::derive::*;
 
+#[cfg(not(feature = "lightweight"))]
 pub trait DGainContextGenerator {
+    fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainContext>;
+}
+#[cfg(feature = "lightweight")]
+pub trait DGainContextGenerator: Send + Sync {
     fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainContext>;
 }
 
@@ -22,8 +27,11 @@ impl GainContextGenerator for DynGainContextGenerator {
     }
 }
 
-impl<Context: GainContext + 'static, G: GainContextGenerator<Context = Context>>
-    DGainContextGenerator for G
+impl<
+        Context: GainContext + 'static,
+        #[cfg(not(feature = "lightweight"))] G: GainContextGenerator<Context = Context>,
+        #[cfg(feature = "lightweight")] G: GainContextGenerator<Context = Context> + Send + Sync,
+    > DGainContextGenerator for G
 {
     fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainContext> {
         Box::new(GainContextGenerator::generate(self, device))
@@ -36,6 +44,7 @@ trait DGain {
         &mut self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
+        option: &DatagramOption,
     ) -> Result<Box<dyn DGainContextGenerator>, GainError>;
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
@@ -50,12 +59,13 @@ impl<
         &mut self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
+        option: &DatagramOption,
     ) -> Result<Box<dyn DGainContextGenerator>, GainError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
         // SAFETY: This function is called only once from `Gain::init`.
         let g = unsafe { tmp.assume_init() };
-        Ok(Box::new(g.init(geometry, filter)?) as _)
+        Ok(Box::new(g.init_full(geometry, filter, option)?) as _)
     }
 
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -87,16 +97,23 @@ impl std::fmt::Debug for BoxedGain {
 impl Gain for BoxedGain {
     type G = DynGainContextGenerator;
 
-    fn init(
+    fn init_full(
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
+        option: &DatagramOption,
     ) -> Result<Self::G, GainError> {
-        let Self { mut g } = self;
+        let Self { mut g, .. } = self;
         Ok(DynGainContextGenerator {
-            g: g.dyn_init(geometry, filter)?,
+            g: g.dyn_init(geometry, filter, option)?,
         })
     }
+
+    // GRCOV_EXCL_START
+    fn init(self) -> Result<Self::G, GainError> {
+        unimplemented!()
+    }
+    // GRCOV_EXCL_STOP
 }
 
 /// Trait to convert [`Gain`] to [`BoxedGain`].
@@ -106,8 +123,9 @@ pub trait IntoBoxedGain {
 }
 
 impl<
+        #[cfg(feature = "lightweight")] GG: GainContextGenerator + Send + Sync + 'static,
         #[cfg(not(feature = "lightweight"))] G: Gain + 'static,
-        #[cfg(feature = "lightweight")] G: Gain + Send + Sync + 'static,
+        #[cfg(feature = "lightweight")] G: Gain<G = GG> + Send + Sync + 'static,
     > IntoBoxedGain for G
 {
     fn into_boxed(self) -> BoxedGain {
@@ -132,24 +150,24 @@ pub mod tests {
     #[test]
     #[case::serial(
         [
-            (0, vec![Drive::new(Phase::new(0x01), EmitIntensity::new(0x01)); NUM_TRANSDUCERS]),
-            (1, vec![Drive::new(Phase::new(0x02), EmitIntensity::new(0x02)); NUM_TRANSDUCERS])
+            (0, vec![Drive { phase: Phase(0x01), intensity: EmitIntensity(0x01) }; NUM_TRANSDUCERS]),
+            (1, vec![Drive { phase: Phase(0x02), intensity: EmitIntensity(0x02) }; NUM_TRANSDUCERS])
         ].into_iter().collect(),
         vec![true; 2],
         2)]
     #[case::parallel(
         [
-            (0, vec![Drive::new(Phase::new(0x01), EmitIntensity::new(0x01)); NUM_TRANSDUCERS]),
-            (1, vec![Drive::new(Phase::new(0x02), EmitIntensity::new(0x02)); NUM_TRANSDUCERS]),
-            (2, vec![Drive::new(Phase::new(0x03), EmitIntensity::new(0x03)); NUM_TRANSDUCERS]),
-            (3, vec![Drive::new(Phase::new(0x04), EmitIntensity::new(0x04)); NUM_TRANSDUCERS]),
-            (4, vec![Drive::new(Phase::new(0x05), EmitIntensity::new(0x05)); NUM_TRANSDUCERS]),
+            (0, vec![Drive { phase: Phase(0x01), intensity: EmitIntensity(0x01) }; NUM_TRANSDUCERS]),
+            (1, vec![Drive { phase: Phase(0x02), intensity: EmitIntensity(0x02) }; NUM_TRANSDUCERS]),
+            (2, vec![Drive { phase: Phase(0x03), intensity: EmitIntensity(0x03) }; NUM_TRANSDUCERS]),
+            (3, vec![Drive { phase: Phase(0x04), intensity: EmitIntensity(0x04) }; NUM_TRANSDUCERS]),
+            (4, vec![Drive { phase: Phase(0x05), intensity: EmitIntensity(0x05) }; NUM_TRANSDUCERS]),
         ].into_iter().collect(),
         vec![true; 5],
         5)]
     #[case::enabled(
         [
-            (0, vec![Drive::new(Phase::new(0x01), EmitIntensity::new(0x01)); NUM_TRANSDUCERS]),
+            (0, vec![Drive { phase: Phase(0x01), intensity: EmitIntensity(0x01) }; NUM_TRANSDUCERS]),
         ].into_iter().collect(),
         vec![true, false],
         2)]
@@ -168,17 +186,16 @@ pub mod tests {
         let g = TestGain::new(
             |dev| {
                 let dev_idx = dev.idx();
-                move |_| {
-                    Drive::new(
-                        Phase::new(dev_idx as u8 + 1),
-                        EmitIntensity::new(dev_idx as u8 + 1),
-                    )
+                move |_| Drive {
+                    phase: Phase(dev_idx as u8 + 1),
+                    intensity: EmitIntensity(dev_idx as u8 + 1),
                 }
             },
             &geometry,
         )
         .into_boxed();
-        let mut f = g.init(&geometry, None)?;
+
+        let mut f = g.init_full(&geometry, None, &DatagramOption::default())?;
         assert_eq!(
             expect,
             geometry

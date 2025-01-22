@@ -11,11 +11,11 @@ mod r#static;
 
 pub use cache::Cache as ModulationCache;
 pub use cache::IntoCache as IntoModulationCache;
-pub use custom::Custom;
-pub use fir::{Fir, IntoFir};
-pub use fourier::Fourier;
+pub use custom::{Custom, CustomOption};
+pub use fir::{Fir, WithFir};
+pub use fourier::{Fourier, FourierOption};
 pub use r#static::Static;
 pub use radiation_pressure::IntoRadiationPressure;
 pub use radiation_pressure::RadiationPressure;
-pub use sine::Sine;
-pub use square::Square;
+pub use sine::{Sine, SineOption};
+pub use square::{Square, SquareOption};

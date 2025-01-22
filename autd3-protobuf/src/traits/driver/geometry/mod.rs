@@ -9,55 +9,68 @@ use crate::{
 impl ToMessage for autd3_core::geometry::UnitVector3 {
     type Message = UnitVector3;
 
-    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
-        Self::Message {
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
             x: self.x as _,
             y: self.y as _,
             z: self.z as _,
-        }
+        })
     }
 }
 
 impl ToMessage for autd3_core::geometry::Point3 {
     type Message = Point3;
 
-    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
-        Self::Message {
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
             x: self.x as _,
             y: self.y as _,
             z: self.z as _,
-        }
+        })
     }
 }
 
 impl ToMessage for autd3_core::geometry::Quaternion {
     type Message = Quaternion;
 
-    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
-        Self::Message {
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
             w: self.w as _,
             x: self.coords.x as _,
             y: self.coords.y as _,
             z: self.coords.z as _,
-        }
+        })
     }
 }
 
 impl ToMessage for autd3_core::geometry::Geometry {
     type Message = Geometry;
 
-    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
-        Self::Message {
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
             devices: self
                 .iter()
-                .map(|dev| geometry::Autd3 {
-                    pos: Some(dev[0].position().to_msg(None)),
-                    rot: Some(dev.rotation().to_msg(None)),
-                    sound_speed: dev.sound_speed as _,
+                .map(|dev| {
+                    Ok(geometry::Autd3 {
+                        pos: Some(dev[0].position().to_msg(None)?),
+                        rot: Some(dev.rotation().to_msg(None)?),
+                        sound_speed: dev.sound_speed as _,
+                    })
                 })
-                .collect(),
-            default_parallel_threshold: self.default_parallel_threshold() as _,
-        }
+                .collect::<Result<Vec<_>, AUTDProtoBufError>>()?,
+        })
     }
 }
 
@@ -97,20 +110,20 @@ impl FromMessage<Option<Quaternion>> for autd3_core::geometry::UnitQuaternion {
 
 impl FromMessage<Geometry> for autd3_core::geometry::Geometry {
     fn from_msg(msg: &Geometry) -> Result<Self, AUTDProtoBufError> {
-        msg.devices
-            .iter()
-            .enumerate()
-            .map(|(i, dev_msg)| {
-                let pos = autd3_core::geometry::Point3::from_msg(&dev_msg.pos)?;
-                let rot = autd3_core::geometry::UnitQuaternion::from_msg(&dev_msg.rot)?;
-                let mut dev = autd3_driver::autd3_device::AUTD3::new(pos)
-                    .with_rotation(rot)
-                    .into_device(i as _);
-                dev.sound_speed = dev_msg.sound_speed as _;
-                Ok(dev)
-            })
-            .collect::<Result<Vec<_>, _>>()
-            .map(|devices| Self::new(devices, msg.default_parallel_threshold as _))
+        Ok(autd3_core::geometry::Geometry::new(
+            msg.devices
+                .iter()
+                .enumerate()
+                .map(|(i, dev_msg)| {
+                    let pos = autd3_core::geometry::Point3::from_msg(&dev_msg.pos)?;
+                    let rot = autd3_core::geometry::UnitQuaternion::from_msg(&dev_msg.rot)?;
+                    let mut dev =
+                        autd3_driver::autd3_device::AUTD3 { pos, rot }.into_device(i as _);
+                    dev.sound_speed = dev_msg.sound_speed as _;
+                    Ok(dev)
+                })
+                .collect::<Result<Vec<_>, AUTDProtoBufError>>()?,
+        ))
     }
 }
 
@@ -128,7 +141,7 @@ mod tests {
     fn point3() {
         let mut rng = rand::thread_rng();
         let v = Point3::new(rng.gen(), rng.gen(), rng.gen());
-        let msg = v.to_msg(None);
+        let msg = v.to_msg(None).unwrap();
         let v2 = Point3::from_msg(&Some(msg)).unwrap();
         approx::assert_abs_diff_eq!(v.x, v2.x);
         approx::assert_abs_diff_eq!(v.y, v2.y);
@@ -142,7 +155,7 @@ mod tests {
     fn unitvector3() {
         let mut rng = rand::thread_rng();
         let v = UnitVector3::new_normalize(Vector3::new(rng.gen(), rng.gen(), rng.gen()));
-        let msg = v.to_msg(None);
+        let msg = v.to_msg(None).unwrap();
         let v2 = UnitVector3::from_msg(&Some(msg)).unwrap();
         approx::assert_abs_diff_eq!(v.x, v2.x);
         approx::assert_abs_diff_eq!(v.y, v2.y);
@@ -161,7 +174,7 @@ mod tests {
             rng.gen(),
             rng.gen(),
         ));
-        let msg = q.to_msg(None);
+        let msg = q.to_msg(None).unwrap();
         let q2 = UnitQuaternion::from_msg(&Some(msg)).unwrap();
         approx::assert_abs_diff_eq!(q.w, q2.w);
         approx::assert_abs_diff_eq!(q.i, q2.i);
@@ -175,15 +188,15 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn geometry() {
         let mut rng = rand::thread_rng();
-        let mut dev = AUTD3::new(Point3::new(rng.gen(), rng.gen(), rng.gen())).into_device(0);
+        let mut dev = AUTD3 {
+            pos: Point3::new(rng.gen(), rng.gen(), rng.gen()),
+            rot: UnitQuaternion::identity(),
+        }
+        .into_device(0);
         dev.sound_speed = rng.gen();
-        let geometry = Geometry::new(vec![dev], 4);
-        let msg = geometry.to_msg(None);
+        let geometry = Geometry::new(vec![dev]);
+        let msg = geometry.to_msg(None).unwrap();
         let geometry2 = Geometry::from_msg(&msg).unwrap();
-        assert_eq!(
-            geometry.default_parallel_threshold(),
-            geometry2.default_parallel_threshold()
-        );
         geometry
             .iter()
             .zip(geometry2.iter())

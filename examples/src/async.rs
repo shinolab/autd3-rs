@@ -9,10 +9,14 @@ async fn main() -> Result<()> {
         .with_max_level(tracing::Level::DEBUG)
         .init();
 
-    let mut autd =
-        Controller::builder([AUTD3::new(Point3::origin()), AUTD3::new(Point3::origin())])
-            .open(Nop::builder())
-            .await?;
+    let mut autd = Controller::open(
+        [AUTD3 {
+            pos: Point3::origin(),
+            rot: UnitQuaternion::identity(),
+        }; 2],
+        Nop::builder(),
+    )
+    .await?;
 
     println!("======== AUTD3 firmware information ========");
     autd.firmware_version().await?.iter().for_each(|firm_info| {
@@ -21,8 +25,14 @@ async fn main() -> Result<()> {
     println!("============================================");
 
     autd.send((
-        Sine::new(150. * Hz),
-        Focus::new(Point3::new(90., 70., 150.)),
+        Sine {
+            freq: 150. * Hz,
+            option: Default::default(),
+        },
+        Focus {
+            pos: Point3::new(90., 70., 150.),
+            option: Default::default(),
+        },
     ))
     .await?;
 

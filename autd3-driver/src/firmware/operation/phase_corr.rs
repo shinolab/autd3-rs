@@ -74,7 +74,7 @@ mod tests {
 
         let mut tx = [0x00u8; 2 * (size_of::<PhaseCorr>() + 250)];
 
-        let mut op = PhaseCorrectionOp::new(|tr| Phase::new(tr.idx() as _));
+        let mut op = PhaseCorrectionOp::new(|tr| Phase(tr.idx() as _));
 
         assert_eq!(size_of::<PhaseCorr>() + 250, op.required_size(&device));
 

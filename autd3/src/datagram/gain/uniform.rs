@@ -1,20 +1,22 @@
 use autd3_core::derive::*;
-use autd3_derive::Builder;
+
 use autd3_driver::firmware::fpga::Drive;
-use derive_new::new;
 
 /// [`Gain`] that output uniform phase and intensity
-#[derive(Gain, Clone, PartialEq, Debug, Builder, new)]
+#[derive(Gain, Clone, PartialEq, Debug)]
 pub struct Uniform {
-    #[get]
-    #[new(into)]
-    /// The drive of all transducers
-    drive: Drive,
+    /// The intensity of the gain.
+    pub intensity: EmitIntensity,
+    /// The phase of the gain.
+    pub phase: Phase,
 }
 
 impl GainContext for Uniform {
     fn calc(&self, _: &Transducer) -> Drive {
-        self.drive
+        Drive {
+            intensity: self.intensity,
+            phase: self.phase,
+        }
     }
 }
 
@@ -29,11 +31,7 @@ impl GainContextGenerator for Uniform {
 impl Gain for Uniform {
     type G = Uniform;
 
-    fn init(
-        self,
-        _geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec>>,
-    ) -> Result<Self::G, GainError> {
+    fn init(self) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -52,20 +50,17 @@ mod tests {
 
         let geometry = create_geometry(1);
 
-        let intensity = EmitIntensity::new(rng.gen());
-        let phase = Phase::new(rng.gen());
-        let g = Uniform::new((intensity, phase));
+        let intensity = EmitIntensity(rng.gen());
+        let phase = Phase(rng.gen());
+        let g = Uniform { intensity, phase };
 
-        assert_eq!(intensity, g.drive().intensity());
-        assert_eq!(phase, g.drive().phase());
-
-        let mut b = g.init(&geometry, None)?;
+        let mut b = g.init()?;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
                 let d = d.calc(tr);
-                assert_eq!(phase, d.phase());
-                assert_eq!(intensity, d.intensity());
+                assert_eq!(phase, d.phase);
+                assert_eq!(intensity, d.intensity);
             });
         });
         Ok(())

@@ -1,21 +1,22 @@
-use autd3_derive::Builder;
 use autd3_driver::{
     ethercat::{DcSysTime, EC_OUTPUT_FRAME_SIZE},
     firmware::cpu::{Header, RxMessage, TxMessage},
 };
 
+use getset::{CopyGetters, Getters, MutGetters};
+
 use crate::fpga::emulator::FPGAEmulator;
 
 use super::params::*;
 
-#[derive(Builder)]
+#[derive(CopyGetters, Getters, MutGetters)]
 pub struct CPUEmulator {
-    #[get]
+    #[getset(get_copy = "pub")]
     pub(crate) idx: usize,
     pub(crate) ack: u8,
     pub(crate) last_msg_id: u8,
     pub(crate) rx_data: u8,
-    #[get]
+    #[getset(get_copy = "pub")]
     pub(crate) reads_fpga_state: bool,
     pub(crate) reads_fpga_state_store: bool,
     pub(crate) mod_cycle: u16,
@@ -33,23 +34,23 @@ pub struct CPUEmulator {
     pub(crate) mod_transition_mode: u8,
     pub(crate) mod_transition_value: u64,
     pub(crate) gain_stm_mode: u8,
-    #[get(ref, ref_mut)]
+    #[getset(get = "pub", get_mut = "pub")]
     pub(crate) fpga: FPGAEmulator,
-    #[get]
+    #[getset(get_copy = "pub")]
     pub(crate) synchronized: bool,
-    #[get]
+    #[getset(get_copy = "pub")]
     pub(crate) num_transducers: usize,
     pub(crate) fpga_flags_internal: u16,
-    #[get]
+    #[getset(get_copy = "pub")]
     pub(crate) silencer_strict_mode: bool,
     pub(crate) min_freq_div_intensity: u16,
     pub(crate) min_freq_div_phase: u16,
     #[cfg(feature = "dynamic_freq")]
     pub(crate) clk_write: u16,
     pub(crate) is_rx_data_used: bool,
-    #[get]
+    #[getset(get_copy = "pub")]
     pub(crate) dc_sys_time: DcSysTime,
-    #[get]
+    #[getset(get_copy = "pub")]
     pub(crate) port_a_podr: u8,
 }
 

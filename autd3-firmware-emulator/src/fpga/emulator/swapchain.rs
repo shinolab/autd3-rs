@@ -212,7 +212,7 @@ mod tests {
         let sys_time = DcSysTime::ZERO;
         fpga.mod_swapchain.set(
             sys_time,
-            LoopBehavior::once(),
+            LoopBehavior::ONCE,
             FREQ_DIV,
             1,
             Segment::S0,
@@ -238,7 +238,7 @@ mod tests {
         let sys_time = DcSysTime::ZERO;
         fpga.mod_swapchain.set(
             sys_time,
-            LoopBehavior::infinite(),
+            LoopBehavior::Infinite,
             FREQ_DIV,
             1,
             Segment::S1,
@@ -265,7 +265,7 @@ mod tests {
         let sys_time = DcSysTime::ZERO;
         fpga.mod_swapchain.set(
             sys_time,
-            LoopBehavior::once(),
+            LoopBehavior::ONCE,
             FREQ_DIV,
             1,
             Segment::S1,
@@ -292,7 +292,7 @@ mod tests {
         let sys_time = DcSysTime::ZERO + CYCLE_PERIOD * 5;
         fpga.mod_swapchain.set(
             sys_time,
-            LoopBehavior::once(),
+            LoopBehavior::ONCE,
             FREQ_DIV,
             CYCLE as _,
             Segment::S1,
@@ -346,7 +346,7 @@ mod tests {
         let sys_time = DcSysTime::ZERO + CYCLE_PERIOD * 5;
         fpga.stm_swapchain.set(
             sys_time,
-            LoopBehavior::once(),
+            LoopBehavior::ONCE,
             FREQ_DIV,
             CYCLE as _,
             Segment::S1,
@@ -401,7 +401,7 @@ mod tests {
         let sys_time = DcSysTime::ZERO + CYCLE_PERIOD * 5;
         fpga.mod_swapchain.set(
             sys_time,
-            LoopBehavior::once(),
+            LoopBehavior::ONCE,
             FREQ_DIV,
             CYCLE as _,
             Segment::S1,
@@ -461,7 +461,7 @@ mod tests {
         let sys_time = DcSysTime::ZERO + CYCLE_PERIOD * 5;
         fpga.mod_swapchain.set(
             sys_time,
-            LoopBehavior::once(),
+            LoopBehavior::ONCE,
             FREQ_DIV,
             CYCLE as _,
             Segment::S1,
@@ -506,7 +506,7 @@ mod tests {
         let sys_time = DcSysTime::ZERO;
         fpga.mod_swapchain.set(
             sys_time,
-            LoopBehavior::infinite(),
+            LoopBehavior::Infinite,
             FREQ_DIV,
             CYCLE as _,
             Segment::S0,
@@ -514,7 +514,7 @@ mod tests {
         );
         fpga.mod_swapchain.set(
             sys_time,
-            LoopBehavior::infinite(),
+            LoopBehavior::Infinite,
             FREQ_DIV,
             CYCLE as _,
             Segment::S1,

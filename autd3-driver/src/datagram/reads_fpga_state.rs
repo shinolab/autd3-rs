@@ -2,16 +2,16 @@ use std::convert::Infallible;
 
 use crate::{datagram::*, firmware::operation::ReadsFPGAStateOp};
 
-use autd3_derive::Builder;
+use autd3_core::datagram::DatagramOption;
 use derive_more::Debug;
 use derive_new::new;
 
 /// [`Datagram`] to enable reading the FPGA state.
-#[derive(Builder, Debug, new)]
+#[derive(Debug, new)]
 pub struct ReadsFPGAState<F: Fn(&Device) -> bool> {
     #[debug(ignore)]
-    #[get(ref, no_doc)]
-    f: F,
+    #[doc(hidden)]
+    pub f: F,
 }
 
 pub struct ReadsFPGAStateOpGenerator<F: Fn(&Device) -> bool> {
@@ -31,7 +31,7 @@ impl<F: Fn(&Device) -> bool> Datagram for ReadsFPGAState<F> {
     type G = ReadsFPGAStateOpGenerator<F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: &DatagramOption) -> Result<Self::G, Self::Error> {
         Ok(ReadsFPGAStateOpGenerator { f: self.f })
     }
 }

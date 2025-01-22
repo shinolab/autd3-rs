@@ -4,9 +4,9 @@ use super::FPGAEmulator;
 
 impl FPGAEmulator {
     fn _phase_corr(&self, idx: usize) -> Phase {
-        let p = &self.mem.phase_corr_bram()[idx >> 1];
+        let p = &self.mem.phase_corr_bram.borrow()[idx >> 1];
         let p = if idx % 2 == 0 { p & 0xFF } else { p >> 8 };
-        Phase::new(p as _)
+        Phase(p as _)
     }
 
     pub fn phase_correction(&self) -> Vec<Phase> {
@@ -27,13 +27,13 @@ mod tests {
     #[test]
     fn phase_correction() {
         let fpga = FPGAEmulator::new(249);
-        fpga.mem.phase_corr_bram_mut()[0] = 0x1234;
-        fpga.mem.phase_corr_bram_mut()[124] = 0x5678;
+        fpga.mem.phase_corr_bram.borrow_mut()[0] = 0x1234;
+        fpga.mem.phase_corr_bram.borrow_mut()[124] = 0x5678;
         assert_eq!(
             [
-                vec![Phase::new(0x34), Phase::new(0x12)],
+                vec![Phase(0x34), Phase(0x12)],
                 vec![Phase::ZERO; 246],
-                vec![Phase::new(0x78)]
+                vec![Phase(0x78)]
             ]
             .concat(),
             fpga.phase_correction()

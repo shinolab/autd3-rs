@@ -31,6 +31,9 @@ pub enum AUTDProtoBufError {
     #[cfg(feature = "lightweight")]
     #[error("{0}")]
     Infallible(#[from] std::convert::Infallible),
+    #[cfg(feature = "lightweight")]
+    #[error("{0}")]
+    TryFromInt(#[from] std::num::TryFromIntError),
 }
 
 // GRCOV_EXCL_START

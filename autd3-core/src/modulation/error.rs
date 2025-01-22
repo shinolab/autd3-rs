@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{convert::Infallible, time::Duration};
 
 use derive_more::Display;
 use derive_new::new;
@@ -13,12 +13,12 @@ pub struct ModulationError {
     msg: String,
 }
 
-#[derive(Error, Debug, PartialEq, Clone)]
+#[derive(Error, Debug, PartialEq, Copy, Clone)]
 /// An error produced by the sampling configuration.
 pub enum SamplingConfigError {
     /// Invalid sampling division.
-    #[error("Sampling division ({0}) must not be zero")]
-    SamplingDivisionInvalid(u16),
+    #[error("Sampling division must not be zero")]
+    SamplingDivisionInvalid,
     /// Invalid sampling frequency.
     #[error("Sampling frequency ({0:?}) must divide the ultrasound frequency")]
     SamplingFreqInvalid(Freq<u32>),
@@ -37,4 +37,22 @@ pub enum SamplingConfigError {
     /// Sampling period is out of range.
     #[error("Sampling period ({0:?}) is out of range ([{1:?}, {2:?}])")]
     SamplingPeriodOutOfRange(Duration, Duration, Duration),
+}
+
+impl From<Infallible> for SamplingConfigError {
+    fn from(_: Infallible) -> Self {
+        unreachable!()
+    }
+}
+
+impl From<Infallible> for ModulationError {
+    fn from(_: Infallible) -> Self {
+        unreachable!()
+    }
+}
+
+impl From<SamplingConfigError> for ModulationError {
+    fn from(e: SamplingConfigError) -> Self {
+        Self::new(e.to_string())
+    }
 }

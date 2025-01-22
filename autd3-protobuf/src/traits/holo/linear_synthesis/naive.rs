@@ -15,17 +15,18 @@ impl ToMessage
 {
     type Message = Datagram;
 
-    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
-        Self::Message {
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
             datagram: Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Naive(Naive {
                     holo: to_holo!(self),
-                    constraint: Some(self.constraint().to_msg(None)),
+                    constraint: Some(self.option.constraint.to_msg(None)?),
                 })),
             })),
-            parallel_threshold: None,
-            timeout: None,
-        }
+        })
     }
 }
 
@@ -36,9 +37,9 @@ impl FromMessage<Naive>
     >
 {
     fn from_msg(msg: &Naive) -> Result<Self, AUTDProtoBufError> {
-        let mut g = Self::new(
-            std::sync::Arc::new(NalgebraBackend::default()),
-            msg.holo
+        Ok(Self {
+            foci: msg
+                .holo
                 .iter()
                 .map(|h| {
                     Ok((
@@ -47,11 +48,22 @@ impl FromMessage<Naive>
                     ))
                 })
                 .collect::<Result<Vec<_>, AUTDProtoBufError>>()?,
-        );
-        if let Some(constraint) = msg.constraint.as_ref() {
-            g = g.with_constraint(autd3_gain_holo::EmissionConstraint::from_msg(constraint)?);
-        }
-        Ok(g)
+            option: autd3_gain_holo::NaiveOption {
+                constraint:
+                    msg.constraint
+                        .as_ref()
+                        .map(autd3_gain_holo::EmissionConstraint::from_msg)
+                        .transpose()?
+                        .unwrap_or(
+                            autd3_gain_holo::NaiveOption::<
+                                autd3_core::acoustics::directivity::Sphere,
+                            >::default()
+                            .constraint,
+                        ),
+                ..Default::default()
+            },
+            backend: std::sync::Arc::new(NalgebraBackend::default()),
+        })
     }
 }
 
@@ -65,9 +77,8 @@ mod tests {
     fn test_holo_naive() {
         let mut rng = rand::thread_rng();
 
-        let holo = autd3_gain_holo::Naive::new(
-            std::sync::Arc::new(NalgebraBackend::default()),
-            [
+        let holo = autd3_gain_holo::Naive {
+            foci: vec![
                 (
                     Point3::new(rng.gen(), rng.gen(), rng.gen()),
                     rng.gen::<f32>() * autd3_gain_holo::Pa,
@@ -77,29 +88,27 @@ mod tests {
                     rng.gen::<f32>() * autd3_gain_holo::Pa,
                 ),
             ],
-        );
-        let msg = holo.to_msg(None);
-
+            option: autd3_gain_holo::NaiveOption {
+                ..Default::default()
+            },
+            backend: std::sync::Arc::new(NalgebraBackend::default()),
+        };
+        let msg = holo.to_msg(None).unwrap();
         match msg.datagram {
             Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Naive(g)),
                 ..
             })) => {
                 let holo2 = autd3_gain_holo::Naive::from_msg(&g).unwrap();
-                assert_eq!(holo.constraint(), holo2.constraint());
-                holo.foci()
+                assert_eq!(holo.option.constraint, holo2.option.constraint);
+                holo.foci
                     .iter()
-                    .zip(holo2.foci().iter())
+                    .zip(holo2.foci.iter())
                     .for_each(|(f1, f2)| {
-                        approx::assert_abs_diff_eq!(f1.x, f2.x);
-                        approx::assert_abs_diff_eq!(f1.y, f2.y);
-                        approx::assert_abs_diff_eq!(f1.z, f2.z);
-                    });
-                holo.amps()
-                    .iter()
-                    .zip(holo2.amps().iter())
-                    .for_each(|(f1, f2)| {
-                        approx::assert_abs_diff_eq!(f1.pascal(), f2.pascal());
+                        approx::assert_abs_diff_eq!(f1.1.pascal(), f2.1.pascal());
+                        approx::assert_abs_diff_eq!(f1.0.x, f2.0.x);
+                        approx::assert_abs_diff_eq!(f1.0.y, f2.0.y);
+                        approx::assert_abs_diff_eq!(f1.0.z, f2.0.z);
                     });
             }
             _ => panic!("unexpected datagram type"),

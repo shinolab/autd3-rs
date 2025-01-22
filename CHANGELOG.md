@@ -19,6 +19,8 @@
 - Add `Circle` and `Line` utilities for `FociSTM` and `GainSTM`
 - Add `timer_strategy` option for `Controller`
 - Add all euler angle variants to `EulerAngle`
+- Remove `RawPCM` modulation
+- Remove `Silencer::is_valid`
 - Remove `Drive::null`, add `Drive::NULL` instead
 - Remove `Gain::with_transform`
 - Remove `parallel` option from `gain::Group`

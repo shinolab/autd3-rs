@@ -1,77 +1,79 @@
+use std::fmt::Debug;
+
+use crate::modulation::sine::SineOption;
+
 use super::{sampling_mode::SamplingMode, sine::Sine};
 
 use autd3_core::derive::*;
-use autd3_derive::Builder;
 
 use derive_more::Deref;
 use num::integer::lcm;
 
-/// `Moudlation` that is a sum of multiple [`Sine`].
-///
-/// The modulation value is calculated as `⌊offset + scale_factor * (sum of components)⌋`.
-#[derive(Modulation, Clone, PartialEq, Debug, Deref, Builder)]
-pub struct Fourier<S: SamplingMode> {
-    #[deref]
-    components: Vec<Sine<S>>,
-    #[no_change]
-    config: SamplingConfig,
-    #[get]
-    #[set]
+/// The option of [`Fourier`].
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
+pub struct FourierOption {
     /// The scaling factor of the modulation. If `None`, the scaling factor is set to reciprocal of the number of components. The default value is `None`.
-    scale_factor: Option<f32>,
-    #[get]
-    #[set]
+    pub scale_factor: Option<f32>,
     /// If `true`, the modulation value is clamped to the range of `u8`. If `false`, returns an error if the value is out of range. The default value is `false`.
-    clamp: bool,
-    #[get]
-    #[set]
+    pub clamp: bool,
     /// The offset of the modulation value. The default value is `0`.
-    offset: u8,
-    loop_behavior: LoopBehavior,
+    pub offset: u8,
 }
 
-impl<S: SamplingMode> Fourier<S> {
-    /// Create a new [`Fourier`] modulation.
-    pub fn new(componens: impl IntoIterator<Item = Sine<S>>) -> Result<Self, ModulationError> {
-        let components = componens
-            .into_iter()
-            .map(|s| s.with_clamp(false))
-            .collect::<Vec<_>>();
-        tracing::trace!("Fourier components: {:?}", components);
-        let config = components
+/// `Moudlation` that is a sum of multiple [`Sine`].
+///
+/// The modulation value is calculated as `⌊offset + scale_factor * (sum of components)⌋`, where `offset` and `scale_factor` can be set by the [`FourierOption`].
+#[derive(Modulation, Clone, PartialEq, Debug, Deref)]
+pub struct Fourier<S: Into<SamplingMode> + Clone + Debug> {
+    #[deref]
+    /// The [`Sine`] components of the Fourier modulation.
+    pub components: Vec<Sine<S>>,
+    /// The option of the modulation.
+    pub option: FourierOption,
+}
+
+impl<S: Into<SamplingMode> + Clone + Debug> Modulation for Fourier<S> {
+    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
+        self.components
             .first()
             .ok_or(ModulationError::new(
                 "Components must not be empty".to_string(),
             ))?
-            .sampling_config();
+            .sampling_config()
+    }
+
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
+        let sampling_config = self.sampling_config()?;
+        let components = self
+            .components
+            .into_iter()
+            .map(|s| Sine {
+                freq: s.freq,
+                option: SineOption {
+                    clamp: false,
+                    ..s.option
+                },
+            })
+            .collect::<Vec<_>>();
+        tracing::trace!("Fourier components: {:?}", components);
         if components
             .iter()
             .skip(1)
-            .any(|c| c.sampling_config() != config)
+            .any(|c| c.sampling_config() != Ok(sampling_config))
         {
             return Err(ModulationError::new(
                 "All components must have the same sampling configuration".to_string(),
             ));
         }
-        Ok(Self {
-            config,
-            components,
-            scale_factor: None,
-            clamp: false,
-            offset: 0,
-            loop_behavior: LoopBehavior::infinite(),
-        })
-    }
-}
 
-impl<S: SamplingMode> Modulation for Fourier<S> {
-    fn calc(self) -> Result<Vec<u8>, ModulationError> {
-        let buffers = self
-            .components
+        let buffers = components
             .iter()
             .map(|c| Ok(c.calc_raw()?.collect::<Vec<_>>()))
             .collect::<Result<Vec<_>, ModulationError>>()?;
-        let scale = self.scale_factor.unwrap_or(1. / buffers.len() as f32);
+        let scale = self
+            .option
+            .scale_factor
+            .unwrap_or(1. / buffers.len() as f32);
         let res = vec![0f32; buffers.iter().fold(1, |acc, x| lcm(acc, x.len()))];
         buffers
             .into_iter()
@@ -82,11 +84,11 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
                 acc
             })
             .into_iter()
-            .map(|x| (x * scale + self.offset as f32).floor() as isize)
+            .map(|x| (x * scale + self.option.offset as f32).floor() as isize)
             .map(|v| {
                 if (u8::MIN as _..=u8::MAX as _).contains(&v) {
                     Ok(v as _)
-                } else if self.clamp {
+                } else if self.option.clamp {
                     Ok(v.clamp(u8::MIN as _, u8::MAX as _) as _)
                 } else {
                     Err(ModulationError::new(format!(
@@ -103,19 +105,42 @@ impl<S: SamplingMode> Modulation for Fourier<S> {
 
 #[cfg(test)]
 mod tests {
-    use crate::modulation::sampling_mode::ExactFreq;
-
     use super::*;
 
+    use autd3_core::defined::Freq;
     use autd3_driver::defined::{rad, Hz, PI};
 
     #[test]
     fn test_fourier() -> anyhow::Result<()> {
-        let f0 = Sine::new(50. * Hz).with_phase(PI / 2.0 * rad);
-        let f1 = Sine::new(100. * Hz).with_phase(PI / 3.0 * rad);
-        let f2 = Sine::new(150. * Hz).with_phase(PI / 4.0 * rad);
-        let f3 = Sine::new(200. * Hz);
-        let f4 = Sine::new(250. * Hz);
+        let f0 = Sine {
+            freq: 50. * Hz,
+            option: SineOption {
+                phase: PI / 2.0 * rad,
+                ..SineOption::default()
+            },
+        };
+        let f1 = Sine {
+            freq: 100. * Hz,
+            option: SineOption {
+                phase: PI / 3.0 * rad,
+                ..SineOption::default()
+            },
+        };
+        let f2 = Sine {
+            freq: 150. * Hz,
+            option: SineOption {
+                phase: PI / 4.0 * rad,
+                ..SineOption::default()
+            },
+        };
+        let f3 = Sine {
+            freq: 200. * Hz,
+            option: SineOption::default(),
+        };
+        let f4 = Sine {
+            freq: 250. * Hz,
+            option: SineOption::default(),
+        };
 
         let f0_buf = f0.calc_raw()?.collect::<Vec<_>>();
         let f1_buf = f1.calc_raw()?.collect::<Vec<_>>();
@@ -123,19 +148,10 @@ mod tests {
         let f3_buf = f3.calc_raw()?.collect::<Vec<_>>();
         let f4_buf = f4.calc_raw()?.collect::<Vec<_>>();
 
-        let f = Fourier::new([f0, f1, f2, f3, f4])?;
-
-        assert_eq!(f.sampling_config(), SamplingConfig::FREQ_4K);
-        assert_eq!(f[0].freq(), 50. * Hz);
-        assert_eq!(f[0].phase(), PI / 2.0 * rad);
-        assert_eq!(f[1].freq(), 100. * Hz);
-        assert_eq!(f[1].phase(), PI / 3.0 * rad);
-        assert_eq!(f[2].freq(), 150. * Hz);
-        assert_eq!(f[2].phase(), PI / 4.0 * rad);
-        assert_eq!(f[3].freq(), 200. * Hz);
-        assert_eq!(f[3].phase(), 0.0 * rad);
-        assert_eq!(f[4].freq(), 250. * Hz);
-        assert_eq!(f[4].phase(), 0.0 * rad);
+        let f = Fourier {
+            components: vec![f0, f1, f2, f3, f4],
+            option: FourierOption::default(),
+        };
 
         let buf = &f.calc()?;
 
@@ -161,10 +177,26 @@ mod tests {
             Err(ModulationError::new(
                 "All components must have the same sampling configuration".to_string()
             )),
-            Fourier::new([
-                Sine::new(50. * Hz),
-                Sine::new(50. * Hz).with_sampling_config(SamplingConfig::FREQ_40K)?,
-            ])
+            Fourier {
+                components: vec![
+                    Sine {
+                        freq: 50. * Hz,
+                        option: SineOption {
+                            sampling_config: SamplingConfig::DIV_10,
+                            ..Default::default()
+                        }
+                    },
+                    Sine {
+                        freq: 50. * Hz,
+                        option: SineOption {
+                            sampling_config: SamplingConfig::FREQ_MAX,
+                            ..Default::default()
+                        }
+                    },
+                ],
+                option: FourierOption::default(),
+            }
+            .calc()
         );
         Ok(())
     }
@@ -175,7 +207,11 @@ mod tests {
             Err(ModulationError::new(
                 "Components must not be empty".to_string()
             )),
-            Fourier::<ExactFreq>::new(vec![])
+            Fourier::<Freq<u32>> {
+                components: vec![],
+                option: FourierOption::default(),
+            }
+            .calc()
         );
     }
 
@@ -203,15 +239,25 @@ mod tests {
         #[case] expect: Result<Vec<u8>, ModulationError>,
         #[case] offset: u8,
         #[case] clamp: bool,
-        #[case] scale: Option<f32>,
+        #[case] scale_factor: Option<f32>,
     ) {
         assert_eq!(
             expect,
-            Fourier::new([Sine::new(200 * Hz).with_offset(offset)])
-                .unwrap()
-                .with_clamp(clamp)
-                .with_scale_factor(scale)
-                .calc()
+            Fourier {
+                components: vec![Sine {
+                    freq: 200 * Hz,
+                    option: SineOption {
+                        offset,
+                        ..Default::default()
+                    },
+                }],
+                option: FourierOption {
+                    clamp,
+                    scale_factor,
+                    ..Default::default()
+                },
+            }
+            .calc()
         );
     }
 }
