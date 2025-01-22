@@ -184,7 +184,7 @@ mod tests {
         assert_eq!(u8::MAX, m.option.intensity);
         assert_eq!(0x80, m.option.offset);
         assert_eq!(0. * rad, m.option.phase);
-        assert_eq!(SamplingConfig::FREQ_4K, m.option.sampling_config);
+        assert_eq!(SamplingConfig::DIV_10, m.option.sampling_config);
         assert_eq!(expect, m.calc());
     }
 
@@ -213,7 +213,7 @@ mod tests {
         assert_eq!(u8::MAX, m.option.intensity);
         assert_eq!(0x80, m.option.offset);
         assert_eq!(0. * rad, m.option.phase);
-        assert_eq!(SamplingConfig::FREQ_4K, m.option.sampling_config);
+        assert_eq!(SamplingConfig::DIV_10, m.option.sampling_config);
         assert_eq!(expect, m.calc());
     }
 

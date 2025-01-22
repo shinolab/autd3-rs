@@ -296,7 +296,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
                 .into_iter()
                 .map(|buf| TestGain { data: buf.clone() })
                 .collect::<Vec<_>>(),
-            config: SamplingConfig::FREQ_40K,
+            config: SamplingConfig::FREQ_MAX,
             option: GainSTMOption::default(),
         };
 

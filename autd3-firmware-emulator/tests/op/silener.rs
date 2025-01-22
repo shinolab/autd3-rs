@@ -200,7 +200,7 @@ fn silencer_completetion_steps_too_large_mod(
     {
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            sampling_config: SamplingConfig::FREQ_40K,
+            sampling_config: SamplingConfig::FREQ_MAX,
         };
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
@@ -250,7 +250,7 @@ fn silencer_completetion_steps_too_large_stm(
     {
         let d = FociSTM {
             foci: (0..2).map(|_| Point3::origin()).collect::<Vec<_>>(),
-            config: SamplingConfig::FREQ_40K,
+            config: SamplingConfig::FREQ_MAX,
         };
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));

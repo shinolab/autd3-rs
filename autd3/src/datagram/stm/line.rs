@@ -177,7 +177,7 @@ mod tests {
         {
             let mut stm = FociSTM {
                 foci: line.clone(),
-                config: SamplingConfig::FREQ_40K,
+                config: SamplingConfig::DIV_10,
             };
             let mut context = FociSTMContextGenerator::generate(stm.deref_mut(), &device);
             expect.iter().for_each(|e| {
@@ -189,7 +189,7 @@ mod tests {
         {
             let mut stm = GainSTM {
                 gains: line.clone(),
-                config: SamplingConfig::FREQ_40K,
+                config: SamplingConfig::DIV_10,
                 option: GainSTMOption::default(),
             };
             let mut context = GainSTMContextGenerator::generate(stm.deref_mut(), &device);

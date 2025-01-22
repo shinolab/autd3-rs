@@ -87,13 +87,13 @@ pub mod tests {
     #[test]
     fn test() {
         let m = TestModulation {
-            sampling_config: SamplingConfig::FREQ_4K,
+            sampling_config: SamplingConfig::DIV_10,
         };
 
         let mb = m.clone().into_boxed();
 
         assert_eq!(format!("{:?}", m), format!("{:?}", mb));
-        assert_eq!(Ok(SamplingConfig::FREQ_4K), mb.sampling_config());
+        assert_eq!(Ok(SamplingConfig::DIV_10), mb.sampling_config());
         assert_eq!(Ok(vec![0; 2]), mb.calc());
     }
 }

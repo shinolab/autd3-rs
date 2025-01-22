@@ -156,10 +156,10 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(1.2207031 * Hz, 1. * Hz, SamplingConfig::FREQ_40K)]
-    #[case(1.2207031 * Hz, 1.2207031 * Hz, SamplingConfig::FREQ_40K)]
-    #[case(20000. * Hz, 20000. * Hz, SamplingConfig::FREQ_40K)]
-    #[case(20000. * Hz, 40000. * Hz, SamplingConfig::FREQ_40K)]
+    #[case(1.2207031 * Hz, 1. * Hz, SamplingConfig::FREQ_MAX)]
+    #[case(1.2207031 * Hz, 1.2207031 * Hz, SamplingConfig::FREQ_MAX)]
+    #[case(20000. * Hz, 20000. * Hz, SamplingConfig::FREQ_MAX)]
+    #[case(20000. * Hz, 40000. * Hz, SamplingConfig::FREQ_MAX)]
     fn nearest_freq_clamp(
         #[case] expect: Freq<f32>,
         #[case] freq: Freq<f32>,

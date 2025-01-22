@@ -713,7 +713,7 @@ mod tests {
                 STMContext { data },
                 n,
                 GainSTMMode::PhaseIntensityFull,
-                SamplingConfig::FREQ_40K,
+                SamplingConfig::FREQ_MAX,
                 LoopBehavior::Infinite,
                 Segment::S0,
                 None,

@@ -182,14 +182,14 @@ mod tests {
                     Sine {
                         freq: 50. * Hz,
                         option: SineOption {
-                            sampling_config: SamplingConfig::FREQ_4K,
+                            sampling_config: SamplingConfig::DIV_10,
                             ..Default::default()
                         }
                     },
                     Sine {
                         freq: 50. * Hz,
                         option: SineOption {
-                            sampling_config: SamplingConfig::FREQ_40K,
+                            sampling_config: SamplingConfig::FREQ_MAX,
                             ..Default::default()
                         }
                     },

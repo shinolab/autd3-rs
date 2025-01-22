@@ -107,10 +107,10 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(SamplingConfig::FREQ_40K, 1)]
-    #[case(SamplingConfig::FREQ_40K, 2)]
-    #[case(SamplingConfig::FREQ_4K, 1)]
-    #[case(SamplingConfig::FREQ_4K, 2)]
+    #[case(SamplingConfig::FREQ_MAX, 1)]
+    #[case(SamplingConfig::FREQ_MAX, 2)]
+    #[case(SamplingConfig::DIV_10, 1)]
+    #[case(SamplingConfig::DIV_10, 2)]
     fn sampling(#[case] config: SamplingConfig, #[case] size: usize) {
         assert_eq!(
             Ok(config),

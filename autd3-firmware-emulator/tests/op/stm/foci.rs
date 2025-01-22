@@ -174,7 +174,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
     {
         let stm = FociSTM {
             foci: gen_random_foci::<1>(2),
-            config: SamplingConfig::FREQ_40K,
+            config: SamplingConfig::DIV_10,
         };
 
         assert_eq!(

@@ -170,7 +170,7 @@ mod tests {
         assert_eq!(u8::MIN, m.option.low);
         assert_eq!(u8::MAX, m.option.high);
         assert_eq!(0.5, m.option.duty);
-        assert_eq!(SamplingConfig::FREQ_4K, m.option.sampling_config);
+        assert_eq!(SamplingConfig::DIV_10, m.option.sampling_config);
         assert_eq!(expect, m.calc());
     }
 
@@ -196,7 +196,7 @@ mod tests {
         assert_eq!(u8::MIN, m.option.low);
         assert_eq!(u8::MAX, m.option.high);
         assert_eq!(0.5, m.option.duty);
-        assert_eq!(SamplingConfig::FREQ_4K, m.option.sampling_config);
+        assert_eq!(SamplingConfig::DIV_10, m.option.sampling_config);
 
         assert_eq!(expect, m.calc());
     }

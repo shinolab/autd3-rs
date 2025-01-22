@@ -156,7 +156,7 @@ impl SamplingConfig {
     /// A [`SamplingConfig`] of 40kHz.
     #[cfg(not(feature = "dynamic_freq"))]
     pub const FREQ_40K: SamplingConfig = SamplingConfig {
-        division: NonZeroU16::new(1).unwrap(),
+        division: NonZeroU16::MIN,
     };
     /// A [`SamplingConfig`] of 4kHz.
     #[cfg(not(feature = "dynamic_freq"))]
@@ -166,6 +166,10 @@ impl SamplingConfig {
     /// A [`SamplingConfig`] of the minimum frequency.
     pub const FREQ_MIN: SamplingConfig = SamplingConfig {
         division: NonZeroU16::MAX,
+    };
+    /// A [`SamplingConfig`] of the maximum frequency, that is the ultrasound frequency.
+    pub const FREQ_MAX: SamplingConfig = SamplingConfig {
+        division: NonZeroU16::MIN,
     };
     /// A [`SamplingConfig`] of ultrasound frequency divided by 10.
     pub const DIV_10: SamplingConfig = SamplingConfig {

@@ -45,7 +45,7 @@ pub struct Burst {
 impl Burst {
     pub fn new() -> Self {
         Self {
-            config: SamplingConfig::FREQ_4K,
+            config: SamplingConfig::DIV_10,
         }
     }
 }

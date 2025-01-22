@@ -163,7 +163,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
     {
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
-            sampling_config: SamplingConfig::FREQ_40K,
+            sampling_config: SamplingConfig::FREQ_MAX,
         };
         assert_eq!(
             Err(AUTDDriverError::InvalidSilencerSettings),
@@ -223,7 +223,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
         let d = WithSegment {
             inner: TestModulation {
                 buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
-                sampling_config: SamplingConfig::FREQ_4K,
+                sampling_config: SamplingConfig::DIV_10,
             },
             segment: Segment::S0,
             transition_mode: Some(TransitionMode::SyncIdx),
@@ -239,7 +239,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
         let d = WithLoopBehavior {
             inner: TestModulation {
                 buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
-                sampling_config: SamplingConfig::FREQ_4K,
+                sampling_config: SamplingConfig::DIV_10,
             },
             segment: Segment::S1,
             transition_mode: Some(TransitionMode::Immediate),
@@ -256,7 +256,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
         let d = WithSegment {
             inner: TestModulation {
                 buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
-                sampling_config: SamplingConfig::FREQ_4K,
+                sampling_config: SamplingConfig::DIV_10,
             },
             segment: Segment::S1,
             transition_mode: None,
@@ -293,7 +293,7 @@ fn test_miss_transition_time(
     let d = WithLoopBehavior {
         inner: TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
-            sampling_config: SamplingConfig::FREQ_4K,
+            sampling_config: SamplingConfig::DIV_10,
         },
         segment: Segment::S1,
         transition_mode: Some(transition_mode),

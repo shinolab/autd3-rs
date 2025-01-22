@@ -250,7 +250,7 @@ mod tests {
 
         let mut op = ModulationOp::new(
             Arc::new(buf.clone()),
-            SamplingConfig::FREQ_40K,
+            SamplingConfig::FREQ_MAX,
             LoopBehavior::Infinite,
             Segment::S0,
             Some(TransitionMode::SyncIdx),
@@ -358,7 +358,7 @@ mod tests {
             let buf = Arc::new(vec![0x00; n]);
             let mut op = ModulationOp::new(
                 buf.clone(),
-                SamplingConfig::FREQ_40K,
+                SamplingConfig::FREQ_MAX,
                 LoopBehavior::Infinite,
                 Segment::S0,
                 None,
@@ -390,7 +390,7 @@ mod tests {
 
         let mut op = ModulationOp::new(
             Arc::new(buf.clone()),
-            SamplingConfig::FREQ_40K,
+            SamplingConfig::FREQ_MAX,
             LoopBehavior::Infinite,
             Segment::S0,
             Some(TransitionMode::SyncIdx),

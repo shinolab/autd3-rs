@@ -84,7 +84,7 @@ mod tests {
 
         let m = Custom {
             buffer: vec![rng.gen(), rng.gen()],
-            sampling_config: SamplingConfig::FREQ_4K,
+            sampling_config: SamplingConfig::DIV_10,
             option: Default::default(),
         };
         let cache = m.clone().into_cached();
@@ -120,7 +120,7 @@ mod tests {
 
             let modulation = TestCacheModulation {
                 calc_cnt: calc_cnt.clone(),
-                config: SamplingConfig::FREQ_4K,
+                config: SamplingConfig::DIV_10,
             };
             assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
@@ -136,7 +136,7 @@ mod tests {
 
             let modulation = TestCacheModulation {
                 calc_cnt: calc_cnt.clone(),
-                config: SamplingConfig::FREQ_4K,
+                config: SamplingConfig::DIV_10,
             }
             .into_cached();
             assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
@@ -155,7 +155,7 @@ mod tests {
 
         let modulation = TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
-            config: SamplingConfig::FREQ_4K,
+            config: SamplingConfig::DIV_10,
         }
         .into_cached();
         assert_eq!(1, modulation.count());
