@@ -277,7 +277,6 @@ mod tests {
         controller::tests::TestGain,
         gain::{Null, Uniform},
         modulation::{Sine, Static},
-        prelude::SenderOption,
         r#async::{controller::tests::create_controller, AsyncSleeper},
     };
 
@@ -384,13 +383,16 @@ mod tests {
     async fn test_group_sender() -> anyhow::Result<()> {
         let mut autd = create_controller(4).await?;
 
-        autd.send(Uniform {
-            intensity: EmitIntensity(0xFF),
-            phase: Phase::ZERO,
-        })
-        .await?;
+        let mut sender = autd.sender(AsyncSleeper::default(), Default::default());
 
-        autd.sender(AsyncSleeper::default(), SenderOption::default())
+        sender
+            .send(Uniform {
+                intensity: EmitIntensity(0xFF),
+                phase: Phase::ZERO,
+            })
+            .await?;
+
+        sender
             .group(|dev| match dev.idx() {
                 0 | 1 | 3 => Some(dev.idx()),
                 _ => None,

@@ -51,6 +51,7 @@ mod win {
     use super::*;
 
     impl AsyncSleep for WaitableSleeper {
+        // GRCOV_EXCL_START
         async fn sleep_until(&self, deadline: Instant) {
             unsafe {
                 let time = deadline - Instant::now();
@@ -97,5 +98,6 @@ mod win {
                 }
             }
         }
+        // GRCOV_EXCL_STOP
     }
 }

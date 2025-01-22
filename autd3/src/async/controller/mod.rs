@@ -491,6 +491,10 @@ mod tests {
             assert_eq!(Err(AUTDDriverError::SendDataFailed), autd.close().await);
         }
 
+        {
+            _ = create_controller(1).await?;
+        }
+
         Ok(())
     }
 

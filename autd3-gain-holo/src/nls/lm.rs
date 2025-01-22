@@ -125,9 +125,11 @@ impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for LM<D, B> {
     type G = HoloContextGenerator<f32>;
 
+    // GRCOV_EXCL_START
     fn init(self) -> Result<Self::G, GainError> {
         unimplemented!()
     }
+    // GRCOV_EXCL_STOP
 
     fn init_full(
         self,
@@ -321,7 +323,10 @@ mod tests {
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = LM {
-            foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
+            foci: vec![
+                (Point3::new(10., 10., 100.), 5e3 * Pa),
+                (Point3::new(-10., 10., 100.), 5e3 * Pa),
+            ],
             backend,
             option: LMOption {
                 k_max: NonZeroUsize::new(2).unwrap(),
