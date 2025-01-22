@@ -19,11 +19,8 @@ pub struct GreedyOption<D: Directivity> {
     pub phase_div: NonZeroU8,
     /// The transducers' emission constraint.
     pub constraint: EmissionConstraint,
-    /// The segment to write the data.
-    pub segment: Segment,
-    /// The mode when switching the segment.
-    pub transition_mode: Option<TransitionMode>,
-    _phantom: std::marker::PhantomData<D>,
+    #[doc(hidden)]
+    pub __phantom: std::marker::PhantomData<D>,
 }
 
 impl<D: Directivity> Default for GreedyOption<D> {
@@ -31,9 +28,7 @@ impl<D: Directivity> Default for GreedyOption<D> {
         Self {
             phase_div: NonZeroU8::new(16).unwrap(),
             constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
-            segment: Segment::S0,
-            transition_mode: Some(TransitionMode::Immediate),
-            _phantom: std::marker::PhantomData,
+            __phantom: std::marker::PhantomData,
         }
     }
 }
@@ -45,9 +40,9 @@ impl<D: Directivity> Default for GreedyOption<D> {
 #[derive(Gain, Debug)]
 pub struct Greedy<D: Directivity> {
     /// The focal positions and amplitudes.
-    foci: Vec<(Point3, Amplitude)>,
+    pub foci: Vec<(Point3, Amplitude)>,
     /// The opinion of the Gain.
-    option: GreedyOption<D>,
+    pub option: GreedyOption<D>,
 }
 
 impl<D: Directivity> Greedy<D> {

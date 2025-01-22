@@ -14,21 +14,16 @@ use zerocopy::{FromBytes, IntoBytes};
 pub struct NaiveOption<D: Directivity> {
     /// The transducers' emission constraint.
     pub constraint: EmissionConstraint,
-    /// The segment to write the data.
-    pub segment: Segment,
-    /// The mode when switching the segment.
-    pub transition_mode: Option<TransitionMode>,
+    #[doc(hidden)]
     #[debug(ignore)]
-    _phantom: std::marker::PhantomData<D>,
+    pub __phantom: std::marker::PhantomData<D>,
 }
 
 impl<D: Directivity> Default for NaiveOption<D> {
     fn default() -> Self {
         Self {
             constraint: EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX),
-            segment: Segment::S0,
-            transition_mode: Some(TransitionMode::Immediate),
-            _phantom: std::marker::PhantomData,
+            __phantom: std::marker::PhantomData,
         }
     }
 }
@@ -37,12 +32,12 @@ impl<D: Directivity> Default for NaiveOption<D> {
 #[derive(Gain, Debug)]
 pub struct Naive<D: Directivity, B: LinAlgBackend<D>> {
     /// The focal positions and amplitudes.
-    foci: Vec<(Point3, Amplitude)>,
+    pub foci: Vec<(Point3, Amplitude)>,
     /// The opinion of the Gain.
-    option: NaiveOption<D>,
+    pub option: NaiveOption<D>,
     /// The backend of calculation.
     #[debug("{}", tynm::type_name::<B>())]
-    backend: Arc<B>,
+    pub backend: Arc<B>,
 }
 
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {

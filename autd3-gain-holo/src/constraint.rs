@@ -25,11 +25,9 @@ impl EmissionConstraint {
                 EmitIntensity((value / max_value * 255. * v).round().clamp(0., 255.) as u8)
             }
             EmissionConstraint::Uniform(v) => *v,
-            EmissionConstraint::Clamp(min, max) => EmitIntensity(
-                (value * 255.)
-                    .round()
-                    .clamp(min.0 as f32, max.0 as f32) as u8,
-            ),
+            EmissionConstraint::Clamp(min, max) => {
+                EmitIntensity((value * 255.).round().clamp(min.0 as f32, max.0 as f32) as u8)
+            }
         }
     }
 }
@@ -91,34 +89,10 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(
-        EmitIntensity(64),
-        0.0,
-        1.0,
-        EmitIntensity(64),
-        EmitIntensity(192)
-    )]
-    #[case(
-        EmitIntensity(128),
-        0.5,
-        1.0,
-        EmitIntensity(64),
-        EmitIntensity(192)
-    )]
-    #[case(
-        EmitIntensity(192),
-        1.0,
-        1.0,
-        EmitIntensity(64),
-        EmitIntensity(192)
-    )]
-    #[case(
-        EmitIntensity(192),
-        1.5,
-        1.0,
-        EmitIntensity(64),
-        EmitIntensity(192)
-    )]
+    #[case(EmitIntensity(64), 0.0, 1.0, EmitIntensity(64), EmitIntensity(192))]
+    #[case(EmitIntensity(128), 0.5, 1.0, EmitIntensity(64), EmitIntensity(192))]
+    #[case(EmitIntensity(192), 1.0, 1.0, EmitIntensity(64), EmitIntensity(192))]
+    #[case(EmitIntensity(192), 1.5, 1.0, EmitIntensity(64), EmitIntensity(192))]
     #[cfg_attr(miri, ignore)]
     fn clamp(
         #[case] expect: EmitIntensity,

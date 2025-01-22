@@ -16,12 +16,9 @@ pub struct GSPATOption<D: Directivity> {
     pub repeat: NonZeroUsize,
     /// The transducers' emission constraint.
     pub constraint: EmissionConstraint,
-    /// The segment to write the data.
-    pub segment: Segment,
-    /// The mode when switching the segment.
-    pub transition_mode: Option<TransitionMode>,
+    #[doc(hidden)]
     #[debug(ignore)]
-    _phantom: std::marker::PhantomData<D>,
+    __phantom: std::marker::PhantomData<D>,
 }
 
 impl<D: Directivity> Default for GSPATOption<D> {
@@ -29,9 +26,7 @@ impl<D: Directivity> Default for GSPATOption<D> {
         Self {
             repeat: NonZeroUsize::new(100).unwrap(),
             constraint: EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX),
-            segment: Segment::S0,
-            transition_mode: Some(TransitionMode::Immediate),
-            _phantom: std::marker::PhantomData,
+            __phantom: std::marker::PhantomData,
         }
     }
 }
@@ -42,12 +37,12 @@ impl<D: Directivity> Default for GSPATOption<D> {
 #[derive(Gain, Debug)]
 pub struct GSPAT<D: Directivity, B: LinAlgBackend<D>> {
     /// The focal positions and amplitudes.
-    foci: Vec<(Point3, Amplitude)>,
+    pub foci: Vec<(Point3, Amplitude)>,
     /// The opinion of the Gain.
-    option: GSPATOption<D>,
+    pub option: GSPATOption<D>,
     /// The backend of calculation.
     #[debug("{}", tynm::type_name::<B>())]
-    backend: Arc<B>,
+    pub backend: Arc<B>,
 }
 
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for GSPAT<D, B> {
