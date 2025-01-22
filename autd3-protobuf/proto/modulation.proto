@@ -7,52 +7,49 @@ import "utils-lightweight.proto";
 
 message Static { optional uint32 intensity = 1; }
 
+message SineOption {  
+  optional SamplingConfig config = 1;
+  optional uint32 intensity = 2;
+  optional uint32 offset = 3;
+  optional Angle phase = 4;
+  optional bool clamp = 5;
+}
+
 message SineExact {
   uint32 freq = 1;
-  optional SamplingConfig config = 2;
-  optional uint32 intensity = 3;
-  optional uint32 offset = 4;
-  optional Angle phase = 5;
+  optional SineOption option = 2;
 }
 
 message SineExactFloat {
   float freq = 1;
-  optional SamplingConfig config = 2;
-  optional uint32 intensity = 3;
-  optional uint32 offset = 4;
-  optional Angle phase = 5;
+  optional SineOption option = 2;
 }
 
 message SineNearest {
   float freq = 1;
-  optional SamplingConfig config = 2;
-  optional uint32 intensity = 3;
-  optional uint32 offset = 4;
-  optional Angle phase = 5;
+  optional SineOption option = 2;
+}
+
+message SquareOption {
+  optional SamplingConfig config = 1;
+  optional uint32 low = 2;
+  optional uint32 high = 3;
+  optional float duty = 4;
 }
 
 message SquareExact {
   uint32 freq = 1;
-  optional SamplingConfig config = 2;
-  optional uint32 low = 3;
-  optional uint32 high = 4;
-  optional float duty = 5;
+  optional SquareOption option = 2;
 }
 
 message SquareExactFloat {
   float freq = 1;
-  optional SamplingConfig config = 2;
-  optional uint32 low = 3;
-  optional uint32 high = 4;
-  optional float duty = 5;
+  optional SquareOption option = 2;
 }
 
 message SquareNearest {
   float freq = 1;
-  optional SamplingConfig config = 2;
-  optional uint32 low = 3;
-  optional uint32 high = 4;
-  optional float duty = 5;
+  optional SquareOption option = 2;
 }
 
 message Modulation {
@@ -65,11 +62,11 @@ message Modulation {
     SquareExactFloat square_exact_float = 21;
     SquareNearest square_nearest = 22;
   }
-  optional LoopBehavior loop_behavior = 1000;
 }
 
-message ModulationWithSegment {
+message ModulationWithLoopBehavior {
   Modulation modulation = 1;
-  Segment segment = 2;
-  optional TransitionMode transition_mode = 3;
+  optional LoopBehavior loop_behavior = 2;
+  optional Segment segment = 3;
+  optional TransitionMode transition_mode = 4;
 }

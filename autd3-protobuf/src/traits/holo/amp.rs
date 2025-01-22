@@ -7,10 +7,13 @@ use crate::{
 impl ToMessage for autd3_gain_holo::Amplitude {
     type Message = Amplitude;
 
-    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
-        Self::Message {
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
             value: self.pascal() as _,
-        }
+        })
     }
 }
 
@@ -31,7 +34,7 @@ mod tests {
     fn test_amp() {
         let mut rng = rand::thread_rng();
         let v = rng.gen::<f32>() * Pa;
-        let msg = v.to_msg(None);
+        let msg = v.to_msg(None).unwrap();
         let v2 = autd3_gain_holo::Amplitude::from_msg(&Some(msg)).unwrap();
         approx::assert_abs_diff_eq!(v.pascal(), v2.pascal());
     }

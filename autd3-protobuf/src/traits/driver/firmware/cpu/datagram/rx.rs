@@ -9,10 +9,13 @@ use zerocopy::{FromBytes, IntoBytes};
 impl ToMessage for Vec<autd3_driver::firmware::cpu::RxMessage> {
     type Message = RxMessage;
 
-    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
-        Self::Message {
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
             data: self.as_bytes().to_vec(),
-        }
+        })
     }
 }
 
@@ -35,7 +38,7 @@ mod tests {
         let rx = (0..10)
             .map(|i| autd3_driver::firmware::cpu::RxMessage::new(i, i))
             .collect::<Vec<_>>();
-        let msg = rx.to_msg(None);
+        let msg = rx.to_msg(None).unwrap();
         assert_eq!(
             10 * std::mem::size_of::<autd3_driver::firmware::cpu::RxMessage>(),
             msg.data.len()

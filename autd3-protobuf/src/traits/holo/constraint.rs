@@ -8,8 +8,11 @@ use autd3_driver::firmware::fpga::EmitIntensity;
 impl ToMessage for autd3_gain_holo::EmissionConstraint {
     type Message = EmissionConstraint;
 
-    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
-        match self {
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(match self {
             autd3_gain_holo::EmissionConstraint::Normalize => Self::Message {
                 constraint: Some(emission_constraint::Constraint::Normalize(
                     NormalizeConstraint {},
@@ -23,18 +26,18 @@ impl ToMessage for autd3_gain_holo::EmissionConstraint {
             autd3_gain_holo::EmissionConstraint::Uniform(value) => Self::Message {
                 constraint: Some(emission_constraint::Constraint::Uniform(
                     UniformConstraint {
-                        value: Some(value.to_msg(None)),
+                        value: Some(value.to_msg(None)?),
                     },
                 )),
             },
             autd3_gain_holo::EmissionConstraint::Clamp(min, max) => Self::Message {
                 constraint: Some(emission_constraint::Constraint::Clamp(ClampConstraint {
-                    min: Some(min.to_msg(None)),
-                    max: Some(max.to_msg(None)),
+                    min: Some(min.to_msg(None)?),
+                    max: Some(max.to_msg(None)?),
                 })),
             },
             _ => unimplemented!(),
-        }
+        })
     }
 }
 
@@ -76,7 +79,7 @@ mod tests {
     #[test]
     fn test_emission_constraint_normalize() {
         let v = autd3_gain_holo::EmissionConstraint::Normalize;
-        let msg = v.to_msg(None);
+        let msg = v.to_msg(None).unwrap();
         let v2 = autd3_gain_holo::EmissionConstraint::from_msg(&msg).unwrap();
         assert_eq!(v, v2);
     }
@@ -84,8 +87,8 @@ mod tests {
     #[test]
     fn test_emission_constraint_uniform() {
         let mut rng = rand::thread_rng();
-        let v = autd3_gain_holo::EmissionConstraint::Uniform(EmitIntensity::new(rng.gen()));
-        let msg = v.to_msg(None);
+        let v = autd3_gain_holo::EmissionConstraint::Uniform(EmitIntensity(rng.gen()));
+        let msg = v.to_msg(None).unwrap();
         let v2 = autd3_gain_holo::EmissionConstraint::from_msg(&msg).unwrap();
         assert_eq!(v, v2);
     }
@@ -94,10 +97,10 @@ mod tests {
     fn test_emission_constraint_clamp() {
         let mut rng = rand::thread_rng();
         let v = autd3_gain_holo::EmissionConstraint::Clamp(
-            EmitIntensity::new(rng.gen()),
-            EmitIntensity::new(rng.gen()),
+            EmitIntensity(rng.gen()),
+            EmitIntensity(rng.gen()),
         );
-        let msg = v.to_msg(None);
+        let msg = v.to_msg(None).unwrap();
         let v2 = autd3_gain_holo::EmissionConstraint::from_msg(&msg).unwrap();
         assert_eq!(v, v2);
     }

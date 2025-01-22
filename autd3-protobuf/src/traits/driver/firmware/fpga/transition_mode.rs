@@ -9,8 +9,11 @@ use crate::{
 impl ToMessage for autd3_driver::firmware::fpga::TransitionMode {
     type Message = TransitionMode;
 
-    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
-        Self::Message {
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
             mode: Some(match *self {
                 autd3_driver::firmware::fpga::TransitionMode::SyncIdx => {
                     transition_mode::Mode::SyncIdx(TransitionModeSyncIdx {})
@@ -31,7 +34,7 @@ impl ToMessage for autd3_driver::firmware::fpga::TransitionMode {
                 }
                 _ => unimplemented!(),
             }),
-        }
+        })
     }
 }
 
@@ -79,7 +82,7 @@ mod tests {
     ))]
     #[case(autd3_driver::firmware::fpga::TransitionMode::Ext)]
     fn test_transition_mode(#[case] expect: autd3_driver::firmware::fpga::TransitionMode) {
-        let msg = expect.to_msg(None);
+        let msg = expect.to_msg(None).unwrap();
         assert_eq!(
             expect,
             autd3_driver::firmware::fpga::TransitionMode::from_msg(&msg).unwrap()

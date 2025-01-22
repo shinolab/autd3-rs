@@ -17,18 +17,19 @@ impl ToMessage
 {
     type Message = Datagram;
 
-    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
-        Self::Message {
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
             datagram: Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Gspat(Gspat {
                     holo: to_holo!(self),
-                    repeat: Some(self.repeat().get() as _),
-                    constraint: Some(self.constraint().to_msg(None)),
+                    repeat: Some(self.option.repeat.get() as _),
+                    constraint: Some(self.option.constraint.to_msg(None)?),
                 })),
             })),
-            parallel_threshold: None,
-            timeout: None,
-        }
+        })
     }
 }
 
@@ -39,9 +40,9 @@ impl FromMessage<Gspat>
     >
 {
     fn from_msg(msg: &Gspat) -> Result<Self, AUTDProtoBufError> {
-        let mut g = Self::new(
-            std::sync::Arc::new(NalgebraBackend::default()),
-            msg.holo
+        Ok(Self {
+            foci: msg
+                .holo
                 .iter()
                 .map(|h| {
                     Ok((
@@ -50,16 +51,34 @@ impl FromMessage<Gspat>
                     ))
                 })
                 .collect::<Result<Vec<_>, AUTDProtoBufError>>()?,
-        );
-        if let Some(repeat) = msg.repeat {
-            g = g.with_repeat(
-                NonZeroUsize::new(repeat as _).ok_or(AUTDProtoBufError::DataParseError)?,
-            );
-        }
-        if let Some(constraint) = msg.constraint.as_ref() {
-            g = g.with_constraint(autd3_gain_holo::EmissionConstraint::from_msg(constraint)?);
-        }
-        Ok(g)
+            option: autd3_gain_holo::GSPATOption {
+                repeat:
+                    msg.repeat
+                        .map(usize::try_from)
+                        .transpose()?
+                        .map(|x| NonZeroUsize::new(x).ok_or(AUTDProtoBufError::DataParseError))
+                        .transpose()?
+                        .unwrap_or(
+                            autd3_gain_holo::GSPATOption::<
+                                autd3_core::acoustics::directivity::Sphere,
+                            >::default()
+                            .repeat,
+                        ),
+                constraint:
+                    msg.constraint
+                        .as_ref()
+                        .map(autd3_gain_holo::EmissionConstraint::from_msg)
+                        .transpose()?
+                        .unwrap_or(
+                            autd3_gain_holo::GSPATOption::<
+                                autd3_core::acoustics::directivity::Sphere,
+                            >::default()
+                            .constraint,
+                        ),
+                ..Default::default()
+            },
+            backend: std::sync::Arc::new(NalgebraBackend::default()),
+        })
     }
 }
 
@@ -73,9 +92,8 @@ mod tests {
     fn test_holo_gspat() {
         let mut rng = rand::thread_rng();
 
-        let holo = autd3_gain_holo::GSPAT::new(
-            std::sync::Arc::new(NalgebraBackend::default()),
-            [
+        let holo = autd3_gain_holo::GSPAT {
+            foci: vec![
                 (
                     Point3::new(rng.gen(), rng.gen(), rng.gen()),
                     rng.gen::<f32>() * autd3_gain_holo::Pa,
@@ -85,31 +103,29 @@ mod tests {
                     rng.gen::<f32>() * autd3_gain_holo::Pa,
                 ),
             ],
-        )
-        .with_repeat(rng.gen());
-        let msg = holo.to_msg(None);
-
+            option: autd3_gain_holo::GSPATOption {
+                repeat: NonZeroUsize::new(rng.gen()).unwrap(),
+                ..Default::default()
+            },
+            backend: std::sync::Arc::new(NalgebraBackend::default()),
+        };
+        let msg = holo.to_msg(None).unwrap();
         match msg.datagram {
             Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Gspat(g)),
                 ..
             })) => {
                 let holo2 = autd3_gain_holo::GSPAT::from_msg(&g).unwrap();
-                assert_eq!(holo.repeat(), holo2.repeat());
-                assert_eq!(holo.constraint(), holo2.constraint());
-                holo.foci()
+                assert_eq!(holo.option.repeat, holo2.option.repeat);
+                assert_eq!(holo.option.constraint, holo2.option.constraint);
+                holo.foci
                     .iter()
-                    .zip(holo2.foci().iter())
+                    .zip(holo2.foci.iter())
                     .for_each(|(f1, f2)| {
-                        approx::assert_abs_diff_eq!(f1.x, f2.x);
-                        approx::assert_abs_diff_eq!(f1.y, f2.y);
-                        approx::assert_abs_diff_eq!(f1.z, f2.z);
-                    });
-                holo.amps()
-                    .iter()
-                    .zip(holo2.amps().iter())
-                    .for_each(|(f1, f2)| {
-                        approx::assert_abs_diff_eq!(f1.pascal(), f2.pascal());
+                        approx::assert_abs_diff_eq!(f1.1.pascal(), f2.1.pascal());
+                        approx::assert_abs_diff_eq!(f1.0.x, f2.0.x);
+                        approx::assert_abs_diff_eq!(f1.0.y, f2.0.y);
+                        approx::assert_abs_diff_eq!(f1.0.z, f2.0.z);
                     });
             }
             _ => panic!("unexpected datagram type"),

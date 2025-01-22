@@ -7,12 +7,13 @@ use crate::{
 impl ToMessage for autd3_driver::datagram::Synchronize {
     type Message = Datagram;
 
-    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
-        Self::Message {
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
             datagram: Some(datagram::Datagram::Synchronize(Synchronize {})),
-            parallel_threshold: None,
-            timeout: None,
-        }
+        })
     }
 }
 
