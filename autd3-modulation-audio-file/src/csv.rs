@@ -28,13 +28,13 @@ where
     SamplingConfigError: From<E>,
     Config: TryInto<SamplingConfig, Error = E> + Debug + Copy,
 {
-    path: &'a Path,
-    sampling_config: Config,
-    option: CsvOption,
+    pub path: &'a Path,
+    pub sampling_config: Config,
+    pub option: CsvOption,
 }
 
 impl<'a> Csv<'a, Freq<f32>, SamplingConfigError> {
-    /// Create a new instance of [`Csv`] with resampling.
+    /// Resample the csv data to the target frequency.
     ///
     /// # Examples
     ///
@@ -43,7 +43,11 @@ impl<'a> Csv<'a, Freq<f32>, SamplingConfigError> {
     /// use autd3_modulation_audio_file::Csv;
     ///
     /// let path = "path/to/file.csv";
-    /// Csv::new_with_resample(&path, 2.0 * kHz, 4 * kHz, SincInterpolation::default());
+    /// Csv {
+    ///     path: std::path::Path::new(path),
+    ///     sampling_config: 2.0 * kHz,
+    ///     option: Default::default(),
+    /// }.with_resample(4 * kHz, SincInterpolation::default());
     /// ```
     pub fn with_resample<T, E>(
         self,

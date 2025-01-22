@@ -9,5 +9,5 @@ mod csv;
 mod error;
 mod wav;
 
-pub use csv::Csv;
-pub use wav::Wav;
+pub use csv::{Csv, CsvOption};
+pub use wav::{Wav, WavOption};

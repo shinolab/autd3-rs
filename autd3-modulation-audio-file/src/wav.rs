@@ -20,21 +20,24 @@ impl Default for WavOption {
 /// [`Modulation`] from WAV data.
 #[derive(Modulation, Debug)]
 pub struct Wav<'a> {
-    path: &'a Path,
-    option: WavOption,
+    pub path: &'a Path,
+    pub option: WavOption,
 }
 
 impl<'a> Wav<'a> {
-    /// Create a new instance of [`Csv`] with resampling.
+    /// Resample the wav data to the target frequency.
     ///
     /// # Examples
     ///
     /// ```
     /// use autd3_core::{resampler::SincInterpolation, defined::kHz};
-    /// use autd3_modulation_audio_file::Csv;
+    /// use autd3_modulation_audio_file::Wav;
     ///
     /// let path = "path/to/file.csv";
-    /// Csv::new_with_resample(&path, 2.0 * kHz, 4 * kHz, SincInterpolation::default());
+    /// Wav {
+    ///     path: std::path::Path::new(path),
+    ///     option: Default::default(),
+    /// }.with_resample(4 * kHz, SincInterpolation::default());
     /// ```
     pub fn with_resample<T>(
         self,
