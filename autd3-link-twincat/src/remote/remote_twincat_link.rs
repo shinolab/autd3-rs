@@ -246,8 +246,4 @@ impl AsyncLink for RemoteTwinCAT {
     fn is_open(&self) -> bool {
         <Self as Link>::is_open(self)
     }
-
-    fn trace(&mut self, timeout: Option<std::time::Duration>, parallel_threshold: Option<usize>) {
-        <Self as Link>::trace(self, timeout, parallel_threshold)
-    }
 }
