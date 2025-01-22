@@ -87,13 +87,12 @@ impl<L: Link> Controller<L> {
     }
 
     /// Returns the [`Sender`] to send data to the devices.
-    pub fn sender<S: Sleep>(&mut self, sleeper: S, option: SenderOption) -> Sender<'_, L, S> {
+    pub fn sender<S: Sleep>(&mut self, option: SenderOption<S>) -> Sender<'_, L, S> {
         Sender {
             link: &mut self.link,
             geometry: &mut self.geometry,
             tx: &mut self.tx_buf,
             rx: &mut self.rx_buf,
-            sleeper,
             option,
         }
     }
@@ -107,8 +106,7 @@ impl<L: Link> Controller<L> {
         AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
             + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
     {
-        self.sender(SpinSleeper::default(), SenderOption::default())
-            .send(s)
+        self.sender(SenderOption::<SpinSleeper>::default()).send(s)
     }
 
     pub(crate) fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
@@ -118,13 +116,10 @@ impl<L: Link> Controller<L> {
         // Therefore, send a meaningless data (here, we use `ForceFan` because it is the lightest).
         let _ = self.send(ForceFan::new(|_| false));
 
-        let mut sender = self.sender(
-            SpinSleeper::default(),
-            SenderOption {
-                timeout,
-                ..Default::default()
-            },
-        );
+        let mut sender = self.sender(SenderOption::<SpinSleeper> {
+            timeout,
+            ..Default::default()
+        });
 
         #[cfg(feature = "dynamic_freq")]
         {
