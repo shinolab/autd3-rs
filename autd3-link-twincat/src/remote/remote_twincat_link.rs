@@ -1,6 +1,5 @@
 use std::ffi::{c_long, CString};
 
-use autd3_derive::Builder;
 use itertools::Itertools;
 
 use zerocopy::IntoBytes;
@@ -28,19 +27,14 @@ pub struct RemoteTwinCAT {
 }
 
 /// A builder for [`RemoteTwinCAT`].
-#[derive(Builder, Debug)]
+#[derive(Debug, Default)]
 pub struct RemoteTwinCATBuilder {
-    #[get(ref)]
     /// The AMS Net ID of the TwinCAT3 server.
-    server_ams_net_id: String,
-    #[get(ref)]
-    #[set(into)]
+    pub server_ams_net_id: String,
     /// The IP address of the TwinCAT3 server. If empty, the first 4 octets of `server_ams_net_id` are used.
-    server_ip: String,
-    #[get(ref)]
-    #[set(into)]
+    pub server_ip: String,
     /// The AMS Net ID of the client.
-    client_ams_net_id: String,
+    pub client_ams_net_id: String,
 }
 
 impl LinkBuilder for RemoteTwinCATBuilder {
@@ -241,9 +235,5 @@ impl AsyncLink for RemoteTwinCAT {
 
     fn is_open(&self) -> bool {
         <Self as Link>::is_open(self)
-    }
-
-    fn trace(&mut self, timeout: Option<std::time::Duration>, parallel_threshold: Option<usize>) {
-        <Self as Link>::trace(self, timeout, parallel_threshold)
     }
 }

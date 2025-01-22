@@ -19,7 +19,7 @@ fn phase_corr() -> anyhow::Result<()> {
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let buf: Vec<_> = (0..geometry.num_transducers())
-        .map(|_| Phase::new(rng.gen()))
+        .map(|_| Phase(rng.gen()))
         .collect();
 
     let d = PhaseCorrection::new(|_| |tr| buf[tr.idx()]);
@@ -32,7 +32,7 @@ fn phase_corr() -> anyhow::Result<()> {
         cpu.fpga()
             .drives()
             .into_iter()
-            .map(|d| d.phase())
+            .map(|d| d.phase)
             .collect::<Vec<_>>()
     );
 

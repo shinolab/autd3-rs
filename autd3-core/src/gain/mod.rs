@@ -15,6 +15,7 @@ pub use phase::Phase;
 
 use crate::{
     datagram::{Segment, TransitionMode},
+    derive::DatagramOption,
     geometry::{Device, Geometry, Transducer},
 };
 
@@ -46,19 +47,25 @@ pub trait GainContextGenerator {
 /// See also [`Gain`] derive macro.
 ///
 /// [`Gain`]: autd3_derive::Gain
-pub trait Gain: std::fmt::Debug {
+pub trait Gain: std::fmt::Debug + Sized {
     /// The type of the context generator.
     type G: GainContextGenerator;
+
+    /// Initialize the gain and generate the context generator.
+    fn init(self) -> Result<Self::G, GainError>;
 
     /// Initialize the gain and generate the context generator.
     ///
     /// `filter` is a hash map that holds a bit vector representing the indices of the enabled transducers for each device index.
     /// If `filter` is `None`, all transducers are enabled.
-    fn init(
+    fn init_full(
         self,
-        geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec>>,
-    ) -> Result<Self::G, GainError>;
+        _geometry: &Geometry,
+        _filter: Option<&HashMap<usize, BitVec>>,
+        _option: &DatagramOption,
+    ) -> Result<Self::G, GainError> {
+        self.init()
+    }
 }
 
 #[doc(hidden)]
@@ -74,9 +81,10 @@ impl<G: GainContextGenerator> GainOperationGenerator<G> {
         geometry: &Geometry,
         segment: Segment,
         transition: Option<TransitionMode>,
+        option: &DatagramOption,
     ) -> Result<Self, GainError> {
         Ok(Self {
-            generator: gain.init(geometry, None)?,
+            generator: gain.init_full(geometry, None, option)?,
             segment,
             transition,
         })

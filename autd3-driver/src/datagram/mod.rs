@@ -16,9 +16,8 @@ mod silencer;
 mod stm;
 mod synchronize;
 mod tuple;
-mod with_parallel_threshold;
+mod with_loop_behavior;
 mod with_segment;
-mod with_timeout;
 
 #[doc(inline)]
 pub use super::firmware::operation::SwapSegment;
@@ -40,18 +39,15 @@ pub use pulse_width_encoder::PulseWidthEncoder;
 pub use reads_fpga_state::ReadsFPGAState;
 #[cfg(not(feature = "dynamic_freq"))]
 pub use silencer::FixedCompletionTime;
-pub use silencer::{FixedCompletionSteps, FixedUpdateRate, HasSamplingConfig, Silencer};
+pub use silencer::{FixedCompletionSteps, FixedUpdateRate, Silencer};
 pub use stm::{
     FociSTM, FociSTMContext, FociSTMContextGenerator, FociSTMGenerator, GainSTM, GainSTMContext,
-    GainSTMContextGenerator, GainSTMGenerator, IntoFociSTMGenerator, IntoGainSTMGenerator,
-    IntoSamplingConfigSTM, STMConfig, STMConfigNearest,
+    GainSTMContextGenerator, GainSTMGenerator, GainSTMOption, STMConfig,
 };
+pub use with_loop_behavior::WithLoopBehavior;
+pub use with_segment::WithSegment;
+
 pub use synchronize::Synchronize;
-pub use with_parallel_threshold::{
-    DatagramWithParallelThreshold, IntoDatagramWithParallelThreshold,
-};
-pub use with_segment::{DatagramWithSegment, IntoDatagramWithSegment};
-pub use with_timeout::{DatagramWithTimeout, IntoDatagramWithTimeout};
 
 pub use autd3_core::datagram::Datagram;
 
@@ -64,14 +60,7 @@ use crate::{error::AUTDDriverError, firmware::operation::OperationGenerator};
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use std::time::Duration;
-
-    use autd3_core::datagram::DatagramS;
-
-    use crate::firmware::{
-        fpga::{Segment, TransitionMode},
-        operation::tests::create_device,
-    };
+    use crate::firmware::operation::tests::create_device;
 
     use super::*;
 
@@ -80,48 +69,6 @@ pub(crate) mod tests {
             (0..n)
                 .map(|i| create_device(i, num_trans_in_unit))
                 .collect(),
-            4,
         )
-    }
-
-    #[derive(Debug)]
-    pub struct NullDatagram {
-        pub timeout: Option<Duration>,
-        pub parallel_threshold: Option<usize>,
-    }
-
-    pub struct NullOperationGenerator {}
-
-    impl OperationGenerator for NullOperationGenerator {
-        type O1 = crate::firmware::operation::NullOp;
-        type O2 = crate::firmware::operation::NullOp;
-
-        // GRCOV_EXCL_START
-        fn generate(&mut self, _device: &Device) -> (Self::O1, Self::O2) {
-            (Self::O1 {}, Self::O2 {})
-        }
-        // GRCOV_EXCL_STOP
-    }
-
-    impl DatagramS for NullDatagram {
-        type G = NullOperationGenerator;
-        type Error = AUTDDriverError;
-
-        fn operation_generator_with_segment(
-            self,
-            _: &Geometry,
-            _segment: Segment,
-            _transition_mode: Option<TransitionMode>,
-        ) -> Result<Self::G, AUTDDriverError> {
-            Ok(NullOperationGenerator {})
-        }
-
-        fn timeout(&self) -> Option<Duration> {
-            self.timeout
-        }
-
-        fn parallel_threshold(&self) -> Option<usize> {
-            self.parallel_threshold
-        }
     }
 }

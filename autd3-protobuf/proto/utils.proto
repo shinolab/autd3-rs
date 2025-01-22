@@ -32,5 +32,4 @@ message Geometry {
     float sound_speed = 3;
   }
   repeated AUTD3 devices = 1;
-  uint32 default_parallel_threshold = 2;
 }

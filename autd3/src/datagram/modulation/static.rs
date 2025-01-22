@@ -1,31 +1,11 @@
 use autd3_core::derive::*;
-use autd3_derive::Builder;
+use autd3_derive::Modulation;
 
 /// [`Modulation`] for no modulation
-#[derive(Modulation, Clone, Debug, PartialEq, Builder)]
+#[derive(Modulation, Clone, Copy, Debug, PartialEq)]
 pub struct Static {
-    #[get]
     /// The intensity of the modulation. The default value is [`u8::MAX`].
-    intensity: u8,
-    #[no_change]
-    config: SamplingConfig,
-    loop_behavior: LoopBehavior,
-}
-
-impl Static {
-    /// Create new [`Static`] modulation
-    pub const fn new() -> Self {
-        Self::with_intensity(u8::MAX)
-    }
-
-    /// Create new [`Static`] modulation with intensity
-    pub const fn with_intensity(intensity: u8) -> Self {
-        Self {
-            intensity,
-            config: SamplingConfig::FREQ_MIN,
-            loop_behavior: LoopBehavior::infinite(),
-        }
-    }
+    pub intensity: u8,
 }
 
 impl Modulation for Static {
@@ -33,11 +13,15 @@ impl Modulation for Static {
         let intensity = self.intensity;
         Ok(vec![intensity; 2])
     }
+
+    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
+        Ok(SamplingConfig::FREQ_MIN)
+    }
 }
 
 impl Default for Static {
     fn default() -> Self {
-        Self::new()
+        Self { intensity: u8::MAX }
     }
 }
 
@@ -48,16 +32,8 @@ mod tests {
     #[test]
     fn test_static_default() {
         let m = Static::default();
-        assert_eq!(u8::MAX, m.intensity());
-        assert_eq!(SamplingConfig::FREQ_MIN, m.sampling_config());
+        assert_eq!(u8::MAX, m.intensity);
+        assert_eq!(Ok(SamplingConfig::FREQ_MIN), m.sampling_config());
         assert_eq!(Ok(vec![u8::MAX, u8::MAX]), m.calc());
-    }
-
-    #[test]
-    fn test_static_with_intensity() {
-        let m = Static::with_intensity(0x1F);
-        assert_eq!(0x1F, m.intensity());
-        assert_eq!(SamplingConfig::FREQ_MIN, m.sampling_config());
-        assert_eq!(Ok(vec![0x1F, 0x1F]), m.calc());
     }
 }

@@ -5,6 +5,7 @@ use crate::{
     firmware::{fpga::PWE_BUF_SIZE, operation::PulseWidthEncoderOp},
 };
 
+use autd3_core::{defined::DEFAULT_TIMEOUT, derive::DatagramOption};
 use derive_more::Debug;
 use derive_new::new;
 
@@ -69,11 +70,14 @@ impl<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> Datagram for PulseWidth
     type G = PulseWidthEncoderOpGenerator<H, F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: &DatagramOption) -> Result<Self::G, Self::Error> {
         Ok(PulseWidthEncoderOpGenerator { f: self.f })
     }
 
-    fn parallel_threshold(&self) -> Option<usize> {
-        None
+    fn option(&self) -> DatagramOption {
+        DatagramOption {
+            timeout: DEFAULT_TIMEOUT,
+            parallel_threshold: 4,
+        }
     }
 }

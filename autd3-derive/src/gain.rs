@@ -5,30 +5,30 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let generics = &ast.generics;
 
-    let linetimes = generics.lifetimes();
+    let lifetimes = generics.lifetimes();
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let type_params = generics.type_params();
     let datagram = quote! {
-        impl <#(#linetimes,)* #(#type_params,)*> DatagramS for #name #ty_generics #where_clause
+        impl <#(#lifetimes,)* #(#type_params,)*> DatagramS for #name #ty_generics #where_clause
         {
             type G = GainOperationGenerator<<Self as Gain>::G>;
             type Error = GainError;
 
-            fn operation_generator_with_segment(self, geometry: &Geometry, segment: Segment, transition: Option<TransitionMode>) -> Result<Self::G, Self::Error> {
+            fn operation_generator_with_segment(self, geometry: &Geometry, option: &DatagramOption, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<Self::G, Self::Error> {
                 Self::G::new(
                     self,
                     geometry,
                     segment,
-                    transition,
+                    transition_mode,
+                    option
                 )
             }
 
-            fn timeout(&self) -> Option<std::time::Duration> {
-                None
-            }
-
-            fn parallel_threshold(&self) -> Option<usize> {
-                None
+            fn option(&self) -> DatagramOption {
+                DatagramOption {
+                    timeout: std::time::Duration::from_millis(20),
+                    parallel_threshold: 4,
+                }
             }
         }
     };

@@ -4,7 +4,7 @@ use super::FPGAEmulator;
 
 impl FPGAEmulator {
     pub fn pulse_width_encoder_table_at(&self, idx: usize) -> u8 {
-        let v = self.mem.duty_table_bram()[idx >> 1];
+        let v = self.mem.duty_table_bram.borrow()[idx >> 1];
         let v = if idx % 2 == 0 { v & 0xFF } else { v >> 8 };
         v as u8
     }
@@ -17,7 +17,8 @@ impl FPGAEmulator {
 
     pub fn pulse_width_encoder_table_inplace(&self, dst: &mut [u8]) {
         self.mem
-            .duty_table_bram()
+            .duty_table_bram
+            .borrow()
             .iter()
             .flat_map(|&d| [(d & 0xFF) as u8, (d >> 8) as u8])
             .enumerate()
@@ -25,7 +26,7 @@ impl FPGAEmulator {
     }
 
     pub fn to_pulse_width(&self, a: EmitIntensity, b: u8) -> u8 {
-        let key = (a.value() as usize * b as usize) / 255;
+        let key = (a.0 as usize * b as usize) / 255;
         self.pulse_width_encoder_table_at(key)
     }
 }

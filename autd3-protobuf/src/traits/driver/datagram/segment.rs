@@ -7,35 +7,38 @@ use crate::{
 impl ToMessage for autd3_driver::datagram::SwapSegment {
     type Message = SwapSegment;
 
-    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
-        Self::Message {
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
             inner: Some(match self {
                 autd3_driver::datagram::SwapSegment::Gain(segment, transition) => {
                     swap_segment::Inner::Gain(SwapSegmentGain {
                         segment: *segment as _,
-                        transition_mode: Some(transition.to_msg(None)),
+                        transition_mode: Some(transition.to_msg(None)?),
                     })
                 }
                 autd3_driver::datagram::SwapSegment::Modulation(segment, transition) => {
                     swap_segment::Inner::Modulation(SwapSegmentModulation {
                         segment: *segment as _,
-                        transition_mode: Some(transition.to_msg(None)),
+                        transition_mode: Some(transition.to_msg(None)?),
                     })
                 }
                 autd3_driver::datagram::SwapSegment::FociSTM(segment, transition) => {
                     swap_segment::Inner::FociStm(SwapSegmentFociStm {
                         segment: *segment as _,
-                        transition_mode: Some(transition.to_msg(None)),
+                        transition_mode: Some(transition.to_msg(None)?),
                     })
                 }
                 autd3_driver::datagram::SwapSegment::GainSTM(segment, transition) => {
                     swap_segment::Inner::GainStm(SwapSegmentGainStm {
                         segment: *segment as _,
-                        transition_mode: Some(transition.to_msg(None)),
+                        transition_mode: Some(transition.to_msg(None)?),
                     })
                 }
             }),
-        }
+        })
     }
 }
 

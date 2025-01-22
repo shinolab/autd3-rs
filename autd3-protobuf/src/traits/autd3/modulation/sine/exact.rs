@@ -1,4 +1,4 @@
-use autd3_core::modulation::ModulationProperty;
+use autd3_core::defined::Freq;
 
 use crate::{
     pb::*,
@@ -6,77 +6,57 @@ use crate::{
     AUTDProtoBufError,
 };
 
-impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFreq> {
+impl ToMessage for autd3::modulation::Sine<Freq<u32>> {
     type Message = Datagram;
 
-    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
-        Self::Message {
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
             datagram: Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SineExact(SineExact {
-                    config: Some(self.sampling_config().to_msg(None)),
-                    freq: self.freq().hz() as _,
-                    intensity: Some(self.intensity() as _),
-                    offset: Some(self.offset() as _),
-                    phase: Some(self.phase().to_msg(None)),
+                    freq: self.freq.hz() as _,
+                    option: Some(self.option.to_msg(None)?),
                 })),
-                loop_behavior: Some(self.loop_behavior().to_msg(None)),
             })),
-            timeout: None,
-            parallel_threshold: None,
-        }
+        })
     }
 }
 
-impl FromMessage<SineExact>
-    for autd3::modulation::Sine<autd3::modulation::sampling_mode::ExactFreq>
-{
+impl FromMessage<SineExact> for autd3::modulation::Sine<Freq<u32>> {
     fn from_msg(msg: &SineExact) -> Result<Self, AUTDProtoBufError> {
-        let mut sine = autd3::modulation::Sine::new(msg.freq * autd3_core::defined::Hz);
-        if let Some(intensity) = msg.intensity {
-            sine = sine.with_intensity(intensity as _);
-        }
-        if let Some(offset) = msg.offset {
-            sine = sine.with_offset(offset as _);
-        }
-        if msg.phase.is_some() {
-            sine = sine.with_phase(autd3_core::defined::Angle::from_msg(&msg.phase)?);
-        }
-        if let Some(config) = msg.config.as_ref() {
-            sine = sine.with_sampling_config(
-                autd3_driver::firmware::fpga::SamplingConfig::from_msg(config)?,
-            )?;
-        }
-        Ok(sine)
+        Ok(autd3::modulation::Sine {
+            freq: msg.freq * autd3_core::defined::Hz,
+            option: msg
+                .option
+                .as_ref()
+                .map(autd3::modulation::SineOption::from_msg)
+                .transpose()?
+                .unwrap_or_default(),
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3::modulation::sampling_mode::ExactFreq;
-    use autd3_core::defined::{rad, Hz};
-    use rand::Rng;
+    use autd3_core::defined::Hz;
 
     #[test]
     fn test_sine() {
-        let mut rng = rand::thread_rng();
-
-        let m = autd3::modulation::Sine::new(rng.gen::<u32>() * Hz)
-            .with_intensity(rng.gen())
-            .with_offset(rng.gen())
-            .with_phase(rng.gen::<f32>() * rad);
-        let msg = m.to_msg(None);
-
+        let m = autd3::modulation::Sine {
+            freq: 1 * Hz,
+            option: Default::default(),
+        };
+        let msg = m.to_msg(None).unwrap();
         match msg.datagram {
             Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SineExact(modulation)),
                 ..
             })) => {
-                let m2 = autd3::modulation::Sine::<ExactFreq>::from_msg(&modulation).unwrap();
-                assert_eq!(m.freq().hz(), m2.freq().hz());
-                assert_eq!(m.intensity(), m2.intensity());
-                assert_eq!(m.offset(), m2.offset());
-                assert_eq!(m.phase(), m2.phase());
+                let m2 = autd3::modulation::Sine::<Freq<u32>>::from_msg(&modulation).unwrap();
+                assert_eq!(m.freq, m2.freq);
             }
             _ => panic!("unexpected datagram type"),
         }

@@ -17,22 +17,23 @@ impl ToMessage
 {
     type Message = Datagram;
 
-    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
-        Self::Message {
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
             datagram: Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Lm(Lm {
                     holo: to_holo!(self),
-                    eps_1: Some(self.eps_1() as _),
-                    eps_2: Some(self.eps_2() as _),
-                    tau: Some(self.tau() as _),
-                    k_max: Some(self.k_max().get() as _),
-                    initial: self.initial().iter().map(|&v| v as _).collect(),
-                    constraint: Some(self.constraint().to_msg(None)),
+                    eps_1: Some(self.option.eps_1 as _),
+                    eps_2: Some(self.option.eps_2 as _),
+                    tau: Some(self.option.tau as _),
+                    k_max: Some(self.option.k_max.get() as _),
+                    initial: self.option.initial.iter().map(|&v| v as _).collect(),
+                    constraint: Some(self.option.constraint.to_msg(None)?),
                 })),
             })),
-            timeout: None,
-            parallel_threshold: None,
-        }
+        })
     }
 }
 
@@ -43,37 +44,70 @@ impl FromMessage<Lm>
     >
 {
     fn from_msg(msg: &Lm) -> Result<Self, AUTDProtoBufError> {
-        let mut g = Self::new(
-            std::sync::Arc::new(NalgebraBackend::default()),
-            msg.holo
-                .iter()
-                .map(|h| {
-                    Ok((
-                        autd3_core::geometry::Point3::from_msg(&h.pos)?,
-                        autd3_gain_holo::Amplitude::from_msg(&h.amp)?,
-                    ))
-                })
-                .collect::<Result<Vec<_>, AUTDProtoBufError>>()?,
+        Ok(
+            Self {
+                foci: msg
+                    .holo
+                    .iter()
+                    .map(|h| {
+                        Ok((
+                            autd3_core::geometry::Point3::from_msg(&h.pos)?,
+                            autd3_gain_holo::Amplitude::from_msg(&h.amp)?,
+                        ))
+                    })
+                    .collect::<Result<Vec<_>, AUTDProtoBufError>>()?,
+                option:
+                    autd3_gain_holo::LMOption {
+                        eps_1:
+                            msg.eps_1.unwrap_or(
+                                autd3_gain_holo::LMOption::<
+                                    autd3_core::acoustics::directivity::Sphere,
+                                >::default()
+                                .eps_1,
+                            ),
+                        eps_2:
+                            msg.eps_2.unwrap_or(
+                                autd3_gain_holo::LMOption::<
+                                    autd3_core::acoustics::directivity::Sphere,
+                                >::default()
+                                .eps_2,
+                            ),
+                        tau:
+                            msg.tau.unwrap_or(
+                                autd3_gain_holo::LMOption::<
+                                    autd3_core::acoustics::directivity::Sphere,
+                                >::default()
+                                .tau,
+                            ),
+                        k_max: msg
+                            .k_max
+                            .map(usize::try_from)
+                            .transpose()?
+                            .map(|x| NonZeroUsize::new(x).ok_or(AUTDProtoBufError::DataParseError))
+                            .transpose()?
+                            .unwrap_or(
+                                autd3_gain_holo::LMOption::<
+                                    autd3_core::acoustics::directivity::Sphere,
+                                >::default()
+                                .k_max,
+                            ),
+                        initial: msg.initial.clone(),
+                        constraint: msg
+                            .constraint
+                            .as_ref()
+                            .map(autd3_gain_holo::EmissionConstraint::from_msg)
+                            .transpose()?
+                            .unwrap_or(
+                                autd3_gain_holo::LMOption::<
+                                    autd3_core::acoustics::directivity::Sphere,
+                                >::default()
+                                .constraint,
+                            ),
+                        ..Default::default()
+                    },
+                backend: std::sync::Arc::new(NalgebraBackend::default()),
+            },
         )
-        .with_initial(msg.initial.clone());
-        if let Some(eps_1) = msg.eps_1 {
-            g = g.with_eps_1(eps_1 as _);
-        }
-        if let Some(eps_2) = msg.eps_2 {
-            g = g.with_eps_2(eps_2 as _);
-        }
-        if let Some(tau) = msg.tau {
-            g = g.with_tau(tau as _);
-        }
-        if let Some(k_max) = msg.k_max {
-            g = g.with_k_max(
-                NonZeroUsize::new(k_max as _).ok_or(AUTDProtoBufError::DataParseError)?,
-            );
-        }
-        if let Some(constraint) = msg.constraint.as_ref() {
-            g = g.with_constraint(autd3_gain_holo::EmissionConstraint::from_msg(constraint)?);
-        }
-        Ok(g)
     }
 }
 
@@ -87,9 +121,8 @@ mod tests {
     fn test_holo_lm() {
         let mut rng = rand::thread_rng();
 
-        let holo = autd3_gain_holo::LM::new(
-            std::sync::Arc::new(NalgebraBackend::default()),
-            [
+        let holo = autd3_gain_holo::LM {
+            foci: vec![
                 (
                     Point3::new(rng.gen(), rng.gen(), rng.gen()),
                     rng.gen::<f32>() * autd3_gain_holo::Pa,
@@ -99,44 +132,37 @@ mod tests {
                     rng.gen::<f32>() * autd3_gain_holo::Pa,
                 ),
             ],
-        )
-        .with_eps_1(rng.gen())
-        .with_eps_2(rng.gen())
-        .with_tau(rng.gen())
-        .with_k_max(rng.gen())
-        .with_initial(vec![rng.gen(), rng.gen(), rng.gen()]);
-        let msg = holo.to_msg(None);
-
+            option: autd3_gain_holo::LMOption {
+                eps_1: rng.gen::<f32>(),
+                eps_2: rng.gen::<f32>(),
+                tau: rng.gen::<f32>(),
+                k_max: NonZeroUsize::new(rng.gen_range(1..10)).unwrap(),
+                initial: vec![rng.gen::<f32>(), rng.gen::<f32>()],
+                ..Default::default()
+            },
+            backend: std::sync::Arc::new(NalgebraBackend::default()),
+        };
+        let msg = holo.to_msg(None).unwrap();
         match msg.datagram {
             Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Lm(g)),
                 ..
             })) => {
                 let holo2 = autd3_gain_holo::LM::from_msg(&g).unwrap();
-                approx::assert_abs_diff_eq!(holo.eps_1(), holo2.eps_1());
-                approx::assert_abs_diff_eq!(holo.eps_2(), holo2.eps_2());
-                approx::assert_abs_diff_eq!(holo.tau(), holo2.tau());
-                assert_eq!(holo.k_max(), holo2.k_max());
-                holo.initial()
+                assert_eq!(holo.option.eps_1, holo2.option.eps_1);
+                assert_eq!(holo.option.eps_2, holo2.option.eps_2);
+                assert_eq!(holo.option.tau, holo2.option.tau);
+                assert_eq!(holo.option.k_max, holo2.option.k_max);
+                assert_eq!(holo.option.initial, holo2.option.initial);
+                assert_eq!(holo.option.constraint, holo2.option.constraint);
+                holo.foci
                     .iter()
-                    .zip(holo2.initial().iter())
-                    .for_each(|(v1, v2)| {
-                        approx::assert_abs_diff_eq!(v1, v2);
-                    });
-                assert_eq!(holo.constraint(), holo2.constraint());
-                holo.foci()
-                    .iter()
-                    .zip(holo2.foci().iter())
+                    .zip(holo2.foci.iter())
                     .for_each(|(f1, f2)| {
-                        approx::assert_abs_diff_eq!(f1.x, f2.x);
-                        approx::assert_abs_diff_eq!(f1.y, f2.y);
-                        approx::assert_abs_diff_eq!(f1.z, f2.z);
-                    });
-                holo.amps()
-                    .iter()
-                    .zip(holo2.amps().iter())
-                    .for_each(|(f1, f2)| {
-                        approx::assert_abs_diff_eq!(f1.pascal(), f2.pascal());
+                        approx::assert_abs_diff_eq!(f1.1.pascal(), f2.1.pascal());
+                        approx::assert_abs_diff_eq!(f1.0.x, f2.0.x);
+                        approx::assert_abs_diff_eq!(f1.0.y, f2.0.y);
+                        approx::assert_abs_diff_eq!(f1.0.z, f2.0.z);
                     });
             }
             _ => panic!("unexpected datagram type"),

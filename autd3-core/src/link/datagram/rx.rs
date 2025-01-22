@@ -1,19 +1,19 @@
-use autd3_derive::Builder;
 use derive_more::Display;
 use derive_new::new;
+use getset::CopyGetters;
 use zerocopy::{FromBytes, Immutable, IntoBytes};
 
 /// PDO input data representation
 #[derive(
-    Clone, Copy, PartialEq, Eq, Debug, new, Builder, IntoBytes, Immutable, FromBytes, Display,
+    Clone, Copy, PartialEq, Eq, Debug, new, CopyGetters, IntoBytes, Immutable, FromBytes, Display,
 )]
 #[display("{:?}", self)]
 #[repr(C)]
 pub struct RxMessage {
-    #[get]
+    #[getset(get_copy = "pub")]
     /// Received data
     data: u8,
-    #[get]
+    #[getset(get_copy = "pub")]
     /// Acknowledgement
     ack: u8,
 }

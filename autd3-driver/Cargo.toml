@@ -10,19 +10,20 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-autd3-core = { workspace = true, features = ["gain", "geometry", "derive", "link", "ethercat", "modulation"] }
+autd3-core = { workspace = true, features = ["gain", "defined", "geometry", "derive", "link", "ethercat", "modulation"] }
 autd3-derive = { workspace = true }
-bitflags = { workspace = true }
-thiserror = { workspace = true }
-nalgebra = { workspace = true }
-time = { workspace = true, features = ["macros", "std"] }
 bitfield-struct = { workspace = true }
-rayon = { workspace = true }
-itertools = { workspace = true, features = ["use_alloc"] }
+bitflags = { workspace = true }
 derive_more = { workspace = true, features = ["deref_mut"] }
-tracing = { workspace = true, features = ["attributes"] }
-seq-macro = { workspace = true }
 derive-new = { workspace = true }
+getset = { workspace = true }
+itertools = { workspace = true, features = ["use_alloc"] }
+nalgebra = { workspace = true }
+rayon = { workspace = true }
+seq-macro = { workspace = true }
+thiserror = { workspace = true }
+time = { workspace = true, features = ["macros", "std"] }
+tracing = { workspace = true, features = ["attributes"] }
 zerocopy = { workspace = true }
 
 [dev-dependencies]

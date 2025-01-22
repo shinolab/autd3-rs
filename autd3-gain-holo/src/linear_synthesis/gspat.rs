@@ -7,70 +7,74 @@ use crate::{
 };
 
 use autd3_core::{acoustics::directivity::Directivity, derive::*, geometry::Point3};
-use autd3_derive::Builder;
 use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
+
+/// The option of [`GSPAT`].
+#[derive(Debug)]
+pub struct GSPATOption<D: Directivity> {
+    /// The number of iterations.
+    pub repeat: NonZeroUsize,
+    /// The transducers' emission constraint.
+    pub constraint: EmissionConstraint,
+    #[doc(hidden)]
+    #[debug(ignore)]
+    pub __phantom: std::marker::PhantomData<D>,
+}
+
+impl<D: Directivity> Default for GSPATOption<D> {
+    fn default() -> Self {
+        Self {
+            repeat: NonZeroUsize::new(100).unwrap(),
+            constraint: EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX),
+            __phantom: std::marker::PhantomData,
+        }
+    }
+}
 
 /// Gershberg-Saxon for Phased Arrays of Transducers
 ///
 /// See [Plasencia, et al., 2020](https://dl.acm.org/doi/10.1145/3386569.3392492) for more details.
-#[derive(Gain, Builder, Debug)]
+#[derive(Gain, Debug)]
 pub struct GSPAT<D: Directivity, B: LinAlgBackend<D>> {
-    #[get(ref)]
-    /// The focal positions.
-    foci: Vec<Point3>,
-    /// The focal amplitudes.
-    #[get(ref)]
-    amps: Vec<Amplitude>,
-    #[get]
-    #[set]
-    /// The number of iterations.
-    repeat: NonZeroUsize,
-    #[get]
-    #[set]
-    /// The transducers' emission constraint.
-    constraint: EmissionConstraint,
+    /// The focal positions and amplitudes.
+    pub foci: Vec<(Point3, Amplitude)>,
+    /// The opinion of the Gain.
+    pub option: GSPATOption<D>,
+    /// The backend of linear algebra calculation.
     #[debug("{}", tynm::type_name::<B>())]
-    backend: Arc<B>,
-    #[debug(ignore)]
-    _phantom: std::marker::PhantomData<D>,
-}
-
-impl<D: Directivity, B: LinAlgBackend<D>> GSPAT<D, B> {
-    /// Creates a new [`GSPAT`].
-    pub fn new(backend: Arc<B>, iter: impl IntoIterator<Item = (Point3, Amplitude)>) -> Self {
-        let (foci, amps) = iter.into_iter().unzip();
-        Self {
-            foci,
-            amps,
-            repeat: NonZeroUsize::new(100).unwrap(),
-            backend,
-            constraint: EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX),
-            _phantom: std::marker::PhantomData,
-        }
-    }
+    pub backend: Arc<B>,
 }
 
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for GSPAT<D, B> {
     type G = HoloContextGenerator<Complex>;
 
-    fn init(
+    // GRCOV_EXCL_START
+    fn init(self) -> Result<Self::G, GainError> {
+        unimplemented!()
+    }
+    // GRCOV_EXCL_STOP
+
+    fn init_full(
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
+        _option: &DatagramOption,
     ) -> Result<Self::G, GainError> {
+        let (foci, amps): (Vec<_>, Vec<_>) = self.foci.into_iter().unzip();
+
         let g = self
             .backend
-            .generate_propagation_matrix(geometry, &self.foci, filter)?;
+            .generate_propagation_matrix(geometry, &foci, filter)?;
 
-        let m = self.foci.len();
+        let m = foci.len();
         let n = self.backend.cols_c(&g)?;
 
         let mut q = self.backend.alloc_zeros_cv(n)?;
 
         let amps = self
             .backend
-            .from_slice_cv(<[f32]>::ref_from_bytes(self.amps.as_bytes()).unwrap())?;
+            .from_slice_cv(<[f32]>::ref_from_bytes(amps.as_bytes()).unwrap())?;
 
         let b = self.backend.gen_back_prop(n, m, &g)?;
 
@@ -95,7 +99,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for GSPAT<D, B> {
             Complex::new(0., 0.),
             &mut gamma,
         )?;
-        (0..self.repeat.get()).try_for_each(|_| -> Result<(), GainError> {
+        (0..self.option.repeat.get()).try_for_each(|_| -> Result<(), GainError> {
             self.backend.scaled_to_cv(&gamma, &amps, &mut p)?;
             self.backend.gemv_c(
                 Trans::NoTrans,
@@ -121,7 +125,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for GSPAT<D, B> {
         self.backend.norm_squared_cv(&q, &mut abs)?;
         let max_coefficient = self.backend.max_v(&abs)?.sqrt();
         let q = self.backend.to_host_cv(q)?;
-        generate_result(geometry, q, max_coefficient, self.constraint, filter)
+        generate_result(geometry, q, max_coefficient, self.option.constraint, filter)
     }
 }
 
@@ -138,21 +142,18 @@ mod tests {
         let geometry = create_geometry(1, 1);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
-        let g = GSPAT::new(
+        let g = GSPAT {
+            foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             backend,
-            [(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
-        )
-        .with_repeat(NonZeroUsize::new(5).unwrap());
-
-        assert_eq!(g.repeat().get(), 5);
-        assert_eq!(
-            g.constraint(),
-            EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX)
-        );
+            option: GSPATOption {
+                repeat: NonZeroUsize::new(5).unwrap(),
+                constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
+                ..Default::default()
+            },
+        };
 
         assert_eq!(
-            g.with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)))
-                .init(&geometry, None)
+            g.init_full(&geometry, None, &DatagramOption::default())
                 .map(|mut res| {
                     let f = res.generate(&geometry[0]);
                     geometry[0]
@@ -169,28 +170,29 @@ mod tests {
         let geometry = create_geometry(1, 1);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
-        let g = GSPAT::new(
+        let g = GSPAT {
+            foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             backend,
-            [
-                (Point3::new(10., 10., 100.), 5e3 * Pa),
-                (Point3::new(-10., 10., 100.), 5e3 * Pa),
-            ],
-        )
-        .with_repeat(NonZeroUsize::new(5).unwrap())
-        .with_constraint(EmissionConstraint::Uniform(EmitIntensity::new(0xFF)));
+            option: GSPATOption {
+                repeat: NonZeroUsize::new(5).unwrap(),
+                constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
+                ..Default::default()
+            },
+        };
 
         let filter = geometry
             .iter()
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
         assert_eq!(
-            g.init(&geometry, Some(&filter)).map(|mut res| {
-                let f = res.generate(&geometry[0]);
-                geometry[0]
-                    .iter()
-                    .filter(|tr| f.calc(tr) != Drive::NULL)
-                    .count()
-            }),
+            g.init_full(&geometry, Some(&filter), &DatagramOption::default())
+                .map(|mut res| {
+                    let f = res.generate(&geometry[0]);
+                    geometry[0]
+                        .iter()
+                        .filter(|tr| f.calc(tr) != Drive::NULL)
+                        .count()
+                }),
             Ok(100),
         )
     }

@@ -2,7 +2,7 @@ use autd3_driver::{
     datagram::*,
     firmware::{
         cpu::TxMessage,
-        fpga::{FPGAState, LoopBehavior, SamplingConfig, Segment, TransitionMode},
+        fpga::{FPGAState, SamplingConfig, Segment, TransitionMode},
     },
     geometry::Point3,
 };
@@ -52,19 +52,26 @@ fn send_reads_fpga_state() -> anyhow::Result<()> {
     assert_eq!(Segment::S0, state.current_mod_segment());
 
     {
-        let d = TestModulation {
-            buf: (0..2).map(|_| u8::MAX).collect(),
-            config: SamplingConfig::FREQ_4K,
-            loop_behavior: LoopBehavior::infinite(),
-        }
-        .with_segment(Segment::S1, Some(TransitionMode::Immediate));
+        let d = WithSegment {
+            inner: TestModulation {
+                buf: (0..2).map(|_| u8::MAX).collect(),
+                sampling_config: SamplingConfig::FREQ_MIN,
+            },
+            segment: Segment::S1,
+            transition_mode: Some(TransitionMode::Immediate),
+        };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = FociSTM::new(
-            SamplingConfig::FREQ_MIN,
-            (0..2).map(|_| ControlPoint::from(Point3::origin())),
-        )?
-        .with_segment(Segment::S1, Some(TransitionMode::Immediate));
+        let d = WithSegment {
+            inner: FociSTM {
+                foci: (0..2)
+                    .map(|_| ControlPoint::from(Point3::origin()))
+                    .collect::<Vec<_>>(),
+                config: SamplingConfig::FREQ_MIN,
+            },
+            segment: Segment::S1,
+            transition_mode: Some(TransitionMode::Immediate),
+        };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }
     cpu.update();

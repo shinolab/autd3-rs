@@ -1,12 +1,11 @@
 use autd3_core::{
-    derive::{Device, Geometry},
+    derive::{DatagramOption, Device, Geometry},
     gain::{EmitIntensity, GainError, Phase},
 };
 use autd3_driver::{
     datagram::{
         ControlPoint, ControlPoints, FociSTMContext, FociSTMContextGenerator, FociSTMGenerator,
-        GainSTMContext, GainSTMContextGenerator, GainSTMGenerator, IntoFociSTMGenerator,
-        IntoGainSTMGenerator,
+        GainSTMContext, GainSTMContextGenerator, GainSTMGenerator,
     },
     error::AUTDDriverError,
     geometry::{Point3, Vector3},
@@ -21,15 +20,15 @@ use crate::gain::Focus;
 /// ```
 /// use autd3::prelude::*;
 ///
-/// FociSTM::new(
-///     1.0 * Hz,
-///     Line {
+/// FociSTM {
+///     config: 1.0 * Hz,
+///     foci: Line {
 ///         start: Point3::new(-15.0 * mm, 0., 0.),
 ///         end: Point3::new(15.0 * mm, 0., 0.),
 ///         num_points: 50,
 ///         intensity: EmitIntensity::MAX,
 ///     },
-/// );
+/// };
 /// ```
 #[derive(Clone, Debug)]
 pub struct Line {
@@ -65,8 +64,10 @@ impl LineSTMContext {
 
 impl FociSTMContext<1> for LineSTMContext {
     fn next(&mut self) -> ControlPoints<1> {
-        ControlPoints::new([ControlPoint::from(self.next().unwrap())])
-            .with_intensity(self.intensity)
+        ControlPoints {
+            points: [ControlPoint::from(self.next().unwrap())],
+            intensity: self.intensity,
+        }
     }
 }
 
@@ -129,6 +130,7 @@ impl GainSTMGenerator for Line {
         self,
         _geometry: &Geometry,
         _filter: Option<&std::collections::HashMap<usize, bit_vec::BitVec>>,
+        _option: &DatagramOption,
     ) -> Result<Self::T, GainError> {
         Ok(self)
     }
@@ -139,29 +141,13 @@ impl GainSTMGenerator for Line {
     }
 }
 
-impl IntoFociSTMGenerator<1> for Line {
-    type G = Self;
-
-    fn into(self) -> Self::G {
-        self
-    }
-}
-
-impl IntoGainSTMGenerator for Line {
-    type G = Self;
-
-    fn into(self) -> Self::G {
-        self
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::ops::DerefMut;
 
     use autd3_core::modulation::SamplingConfig;
     use autd3_driver::{
-        datagram::{FociSTM, GainSTM},
+        datagram::{FociSTM, GainSTM, GainSTMOption},
         defined::mm,
     };
 
@@ -180,6 +166,8 @@ mod tests {
             num_points: 3,
             intensity: EmitIntensity::MAX,
         };
+        assert_eq!(3, FociSTMGenerator::len(&line));
+        assert_eq!(3, GainSTMGenerator::len(&line));
 
         let expect = [
             Point3::new(0., -length / 2., 0.),
@@ -187,18 +175,25 @@ mod tests {
             Point3::new(0., length / 2., 0.),
         ];
 
-        let device = autd3_driver::autd3_device::AUTD3::new(Point3::origin()).into_device(0);
+        let device = autd3_driver::autd3_device::AUTD3::default().into_device(0);
         {
-            let mut stm = FociSTM::new(SamplingConfig::FREQ_40K, line.clone()).unwrap();
+            let mut stm = FociSTM {
+                foci: line.clone(),
+                config: SamplingConfig::DIV_10,
+            };
             let mut context = FociSTMContextGenerator::generate(stm.deref_mut(), &device);
             expect.iter().for_each(|e| {
-                let f = FociSTMContext::<1>::next(&mut context).points()[0];
-                assert_near_vector3!(e, f.point());
+                let f = FociSTMContext::<1>::next(&mut context).points[0];
+                assert_near_vector3!(e, f.point);
             });
             assert!(context.next().is_none());
         }
         {
-            let mut stm = GainSTM::new(SamplingConfig::FREQ_40K, line.clone()).unwrap();
+            let mut stm = GainSTM {
+                gains: line.clone(),
+                config: SamplingConfig::DIV_10,
+                option: GainSTMOption::default(),
+            };
             let mut context = GainSTMContextGenerator::generate(stm.deref_mut(), &device);
             expect.iter().for_each(|e| {
                 let f = GainSTMContext::next(&mut context).unwrap();

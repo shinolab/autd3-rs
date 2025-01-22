@@ -38,12 +38,14 @@ pub(crate) mod tests {
             (0..col)
                 .flat_map(|i| {
                     (0..row).map(move |j| {
-                        AUTD3::new(Point3::new(i as f32 * 192., j as f32 * 151.4, 0.))
-                            .into_device((j + i * row) as _)
+                        AUTD3 {
+                            pos: Point3::new(i as f32 * 192., j as f32 * 151.4, 0.),
+                            ..Default::default()
+                        }
+                        .into_device((j + i * row) as _)
                     })
                 })
                 .collect(),
-            4,
         )
     }
 }

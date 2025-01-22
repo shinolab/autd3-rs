@@ -19,17 +19,25 @@ message SilencerFixedUpdateRate {
       optional SilencerTarget target = 3;
 }
 
-message SilencerFixedCompletionTime {
-      uint32 value_intensity = 1;
-      uint32 value_phase = 2;
-      optional SilencerTarget target = 4;
+message SilencerFixedCompletionSteps {
+      optional uint32 value_intensity = 1;
+      optional uint32 value_phase = 2;
       optional bool strict_mode = 3;
+      optional SilencerTarget target = 4;
+}
+
+message SilencerFixedCompletionTime {
+      optional uint32 value_intensity = 1;
+      optional uint32 value_phase = 2;
+      optional bool strict_mode = 3;
+      optional SilencerTarget target = 4;
 }
 
 message Silencer {
     oneof config {
         SilencerFixedUpdateRate fixed_update_rate = 1;
         SilencerFixedCompletionTime fixed_completion_time = 2;
+        SilencerFixedCompletionSteps fixed_completion_steps = 3;
     }
 }
 
@@ -49,22 +57,25 @@ enum GainSTMMode {
   PhaseHalf = 2;
 }
 
-message GainSTM {
-    SamplingConfig config = 1;
-    repeated Gain gains = 2;
-    optional LoopBehavior loop_behavior = 3;
-    optional GainSTMMode mode = 4;
+message GainSTMProps {
+    SamplingConfig sampling_config = 1;
+    optional GainSTMMode mode = 2;
 }
 
-message GainSTMWithSegment {
+message GainSTM {
+    GainSTMProps props = 1;
+    repeated Gain gains = 2;
+}
+
+message GainSTMWithLoopBehavior {
   GainSTM gain_stm = 1;
-  Segment segment = 2;
-  optional TransitionMode transition_mode = 3;
+  optional LoopBehavior loop_behavior = 2;
+  optional Segment segment = 3;
+  optional TransitionMode transition_mode = 4;
 }
 
 message FociSTMProps {
-    SamplingConfig config = 1;
-    optional LoopBehavior loop_behavior = 2;
+    SamplingConfig sampling_config = 1;
 }
 
 message FociSTM1 {
@@ -120,10 +131,11 @@ message FociSTM {
   }
 }
 
-message FociSTMWithSegment {
+message FociSTMWithLoopBehavior {
   FociSTM foci_stm = 1;
-  Segment segment = 2;
-  optional TransitionMode transition_mode = 3;
+  optional LoopBehavior loop_behavior = 2;
+  optional Segment segment = 3;
+  optional TransitionMode transition_mode = 4;
 }
 
 message SwapSegmentGain {

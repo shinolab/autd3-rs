@@ -2,19 +2,24 @@ use crate::{
     defined::mm,
     geometry::{Device, IntoDevice, Isometry, Point3, Transducer, Translation, UnitQuaternion},
 };
-
-use autd3_derive::Builder;
-use derive_new::new;
+use getset::Getters;
 
 /// AUTD3 device.
-#[derive(Clone, Copy, Debug, Builder, new)]
+#[derive(Clone, Copy, Debug, Getters)]
 pub struct AUTD3 {
-    #[get(ref, no_doc)]
-    position: Point3,
-    #[new(value = "UnitQuaternion::identity()")]
-    #[get(ref, no_doc)]
-    #[set(into)]
-    rotation: UnitQuaternion,
+    /// The position of the AUTD3 device.
+    pub pos: Point3,
+    /// The rotation of the AUTD3 device.
+    pub rot: UnitQuaternion,
+}
+
+impl Default for AUTD3 {
+    fn default() -> Self {
+        Self {
+            pos: Point3::origin(),
+            rot: UnitQuaternion::identity(),
+        }
+    }
 }
 
 impl AUTD3 {
@@ -54,12 +59,12 @@ impl IntoDevice for AUTD3 {
     fn into_device(self, dev_idx: u16) -> Device {
         tracing::debug!("Configure device[{}]: {:?}", dev_idx, self);
         let isometry = Isometry {
-            rotation: self.rotation,
-            translation: Translation::from(self.position),
+            rotation: self.rot,
+            translation: Translation::from(self.pos),
         };
         Device::new(
             dev_idx,
-            self.rotation,
+            self.rot,
             itertools::iproduct!(0..Self::NUM_TRANS_Y, 0..Self::NUM_TRANS_X)
                 .filter(|&(y, x)| !Self::is_missing_transducer(x, y))
                 .map(|(y, x)| {
@@ -79,16 +84,12 @@ impl IntoDevice for AUTD3 {
 
 #[cfg(test)]
 mod tests {
-    use rand::Rng;
-
-    use crate::geometry::Vector3;
-
     use super::*;
 
     #[test]
-    fn test_new() {
-        let dev = AUTD3::new(Point3::origin()).into_device(0);
-        assert_eq!(249, dev.num_transducers());
+    fn test_num_devices() {
+        let dev = AUTD3::default().into_device(0);
+        assert_eq!(AUTD3::NUM_TRANS_IN_UNIT, dev.num_transducers());
     }
 
     #[rstest::rstest]
@@ -98,18 +99,8 @@ mod tests {
     #[case(18, Point3::new(0., AUTD3::TRANS_SPACING, 0.))]
     #[case(248, Point3::new(17. * AUTD3::TRANS_SPACING, 13. * AUTD3::TRANS_SPACING, 0.))]
     fn test_position(#[case] idx: usize, #[case] expected: Point3) {
-        let dev = AUTD3::new(Point3::origin()).into_device(0);
+        let dev = AUTD3::default().into_device(0);
         assert_eq!(&expected, dev[idx].position());
-    }
-
-    #[test]
-    fn test_with_rotation() {
-        let mut rng = rand::thread_rng();
-        let q = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), rng.gen())
-            * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), rng.gen())
-            * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), rng.gen());
-        let dev = AUTD3::new(Point3::origin()).with_rotation(q);
-        assert_eq!(q, dev.rotation);
     }
 
     #[rstest::rstest]

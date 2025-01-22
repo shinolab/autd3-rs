@@ -5,6 +5,7 @@ use crate::{
     firmware::{fpga::GPIOIn, operation::EmulateGPIOInOp},
 };
 
+use autd3_core::datagram::DatagramOption;
 use derive_more::Debug;
 use derive_new::new;
 
@@ -38,7 +39,7 @@ impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> Datagram for Emul
     type G = EmulateGPIOInOpGenerator<H, F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: &DatagramOption) -> Result<Self::G, Self::Error> {
         Ok(EmulateGPIOInOpGenerator { f: self.f })
     }
 }

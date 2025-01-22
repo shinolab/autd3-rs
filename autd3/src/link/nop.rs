@@ -2,7 +2,7 @@ use autd3_core::{
     derive::*,
     link::{Link, LinkBuilder, LinkError},
 };
-use autd3_derive::Builder;
+
 use autd3_driver::firmware::cpu::{RxMessage, TxMessage};
 use autd3_firmware_emulator::CPUEmulator;
 
@@ -15,7 +15,6 @@ pub struct Nop {
 }
 
 /// A builder for [`Nop`].
-#[derive(Builder)]
 pub struct NopBuilder {}
 
 impl LinkBuilder for NopBuilder {

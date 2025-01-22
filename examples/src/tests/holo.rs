@@ -17,11 +17,50 @@ pub fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     let foci = [(center + p, target_amp), (center - p, target_amp)];
 
     let mut gains: Vec<(&str, BoxedGain)> = vec![
-        ("GS", GS::new(backend.clone(), foci).into_boxed()),
-        ("GSPAT", GSPAT::new(backend.clone(), foci).into_boxed()),
-        ("Naive", Naive::new(backend.clone(), foci).into_boxed()),
-        ("LM", LM::new(backend.clone(), foci).into_boxed()),
-        ("Greedy", Greedy::<Sphere>::new(foci).into_boxed()),
+        (
+            "GS",
+            GS {
+                foci: foci.to_vec(),
+                option: Default::default(),
+                backend: backend.clone(),
+            }
+            .into_boxed(),
+        ),
+        (
+            "GSPAT",
+            GSPAT {
+                foci: foci.to_vec(),
+                option: Default::default(),
+                backend: backend.clone(),
+            }
+            .into_boxed(),
+        ),
+        (
+            "Naive",
+            Naive {
+                foci: foci.to_vec(),
+                option: Default::default(),
+                backend: backend.clone(),
+            }
+            .into_boxed(),
+        ),
+        (
+            "LM",
+            LM {
+                foci: foci.to_vec(),
+                option: Default::default(),
+                backend: backend.clone(),
+            }
+            .into_boxed(),
+        ),
+        (
+            "Greedy",
+            Greedy::<Sphere> {
+                foci: foci.to_vec(),
+                option: Default::default(),
+            }
+            .into_boxed(),
+        ),
     ];
 
     gains.iter().enumerate().for_each(|(i, (name, _))| {
@@ -40,7 +79,10 @@ pub fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
         .filter(|&i| i < gains.len())
         .unwrap_or(1);
 
-    let m = Sine::new(150. * Hz);
+    let m = Sine {
+        freq: 150. * Hz,
+        option: Default::default(),
+    };
     let g = gains.swap_remove(idx).1;
     autd.send((m, g))?;
 

@@ -141,7 +141,7 @@ impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTM
                         #(
                             if let Some(g) = self.context.next() {
                                 tx[offset..].chunks_exact_mut(size_of::<PhaseFull>()).zip(device.iter()).for_each(|(dst, tr)| {
-                                    PhaseFull::mut_from_bytes(dst).unwrap().phase_~N = g.calc(tr).phase().value();
+                                    PhaseFull::mut_from_bytes(dst).unwrap().phase_~N = g.calc(tr).phase.0;
                                 });
                                 send += 1;
                             }
@@ -153,7 +153,7 @@ impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTM
                         #(
                             if let Some(g) = self.context.next() {
                                 tx[offset..].chunks_exact_mut(size_of::<PhaseHalf>()).zip(device.iter()).for_each(|(dst, tr)| {
-                                    PhaseHalf::mut_from_bytes(dst).unwrap().set_phase_~N(g.calc(tr).phase().value() >> 4);
+                                    PhaseHalf::mut_from_bytes(dst).unwrap().set_phase_~N(g.calc(tr).phase.0 >> 4);
                                 });
                                 send += 1;
                             }
@@ -198,8 +198,8 @@ impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTM
                         .transition_mode
                         .map(|m| m.mode())
                         .unwrap_or(TRANSITION_MODE_NONE),
-                    transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
-                    freq_div: self.config.division(),
+                    transition_value: self.transition_mode.map(TransitionMode::value).unwrap_or(0),
+                    freq_div: self.config.division.get(),
                     rep: self.loop_behavior.rep(),
                 },
             );
@@ -227,7 +227,7 @@ impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTM
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::VecDeque, mem::offset_of};
+    use std::{collections::VecDeque, mem::offset_of, num::NonZeroU16};
 
     use rand::prelude::*;
     use zerocopy::FromZeros;
@@ -281,11 +281,9 @@ mod tests {
         let gain_data: VecDeque<Vec<Drive>> = (0..GAIN_STM_SIZE)
             .map(|_| {
                 (0..NUM_TRANS_IN_UNIT)
-                    .map(|_| {
-                        Drive::new(
-                            Phase::new(rng.gen_range(0x00..=0xFF)),
-                            EmitIntensity::new(rng.gen_range(0..=0xFF)),
-                        )
+                    .map(|_| Drive {
+                        phase: Phase(rng.gen_range(0x00..=0xFF)),
+                        intensity: EmitIntensity(rng.gen_range(0..=0xFF)),
                     })
                     .collect()
             })
@@ -312,7 +310,7 @@ mod tests {
             GAIN_STM_SIZE,
             GainSTMMode::PhaseIntensityFull,
             SamplingConfig::new(freq_div).unwrap(),
-            LoopBehavior::finite(rep + 1).unwrap(),
+            LoopBehavior::Finite(NonZeroU16::new(rep + 1).unwrap()),
             segment,
             Some(transition_mode),
         );
@@ -354,8 +352,8 @@ mod tests {
                 .chunks(size_of::<Drive>())
                 .zip(gain_data[0].iter())
                 .for_each(|(d, g)| {
-                    assert_eq!(d[0], g.phase().value());
-                    assert_eq!(d[1], g.intensity().value());
+                    assert_eq!(d[0], g.phase.0);
+                    assert_eq!(d[1], g.intensity.0);
                 })
         }
 
@@ -384,8 +382,8 @@ mod tests {
                 .chunks(size_of::<Drive>())
                 .zip(gain_data[1].iter())
                 .for_each(|(d, g)| {
-                    assert_eq!(d[0], g.phase().value());
-                    assert_eq!(d[1], g.intensity().value());
+                    assert_eq!(d[0], g.phase.0);
+                    assert_eq!(d[1], g.intensity.0);
                 })
         }
 
@@ -413,8 +411,8 @@ mod tests {
                 .chunks(size_of::<Drive>())
                 .zip(gain_data[2].iter())
                 .for_each(|(d, g)| {
-                    assert_eq!(d[0], g.phase().value());
-                    assert_eq!(d[1], g.intensity().value());
+                    assert_eq!(d[0], g.phase.0);
+                    assert_eq!(d[1], g.intensity.0);
                 })
         }
     }
@@ -433,11 +431,9 @@ mod tests {
         let gain_data: VecDeque<Vec<Drive>> = (0..GAIN_STM_SIZE)
             .map(|_| {
                 (0..NUM_TRANS_IN_UNIT)
-                    .map(|_| {
-                        Drive::new(
-                            Phase::new(rng.gen_range(0x00..=0xFF)),
-                            EmitIntensity::new(rng.gen_range(0..=0xFF)),
-                        )
+                    .map(|_| Drive {
+                        phase: Phase(rng.gen_range(0x00..=0xFF)),
+                        intensity: EmitIntensity(rng.gen_range(0..=0xFF)),
                     })
                     .collect()
             })
@@ -453,7 +449,7 @@ mod tests {
             GAIN_STM_SIZE,
             GainSTMMode::PhaseFull,
             SamplingConfig::new(freq_div).unwrap(),
-            LoopBehavior::finite(rep).unwrap(),
+            LoopBehavior::Finite(NonZeroU16::new(rep).unwrap()),
             segment,
             None,
         );
@@ -490,8 +486,8 @@ mod tests {
                 .zip(gain_data[0].iter())
                 .zip(gain_data[1].iter())
                 .for_each(|((d, g0), g1)| {
-                    assert_eq!(d[0], g0.phase().value());
-                    assert_eq!(d[1], g1.phase().value());
+                    assert_eq!(d[0], g0.phase.0);
+                    assert_eq!(d[1], g1.phase.0);
                 });
         }
 
@@ -520,8 +516,8 @@ mod tests {
                 .zip(gain_data[2].iter())
                 .zip(gain_data[3].iter())
                 .for_each(|((d, g0), g1)| {
-                    assert_eq!(d[0], g0.phase().value());
-                    assert_eq!(d[1], g1.phase().value());
+                    assert_eq!(d[0], g0.phase.0);
+                    assert_eq!(d[1], g1.phase.0);
                 });
         }
 
@@ -549,7 +545,7 @@ mod tests {
                 .chunks(size_of::<Drive>())
                 .zip(gain_data[4].iter())
                 .for_each(|(d, g)| {
-                    assert_eq!(d[0], g.phase().value());
+                    assert_eq!(d[0], g.phase.0);
                 })
         }
     }
@@ -568,11 +564,9 @@ mod tests {
         let gain_data: VecDeque<Vec<Drive>> = (0..GAIN_STM_SIZE)
             .map(|_| {
                 (0..NUM_TRANS_IN_UNIT)
-                    .map(|_| {
-                        Drive::new(
-                            Phase::new(rng.gen_range(0x00..=0xFF)),
-                            EmitIntensity::new(rng.gen_range(0..=0xFF)),
-                        )
+                    .map(|_| Drive {
+                        phase: Phase(rng.gen_range(0x00..=0xFF)),
+                        intensity: EmitIntensity(rng.gen_range(0..=0xFF)),
                     })
                     .collect()
             })
@@ -588,7 +582,7 @@ mod tests {
             GAIN_STM_SIZE,
             GainSTMMode::PhaseHalf,
             SamplingConfig::new(freq_div).unwrap(),
-            LoopBehavior::finite(rep).unwrap(),
+            LoopBehavior::Finite(NonZeroU16::new(rep).unwrap()),
             segment,
             Some(TransitionMode::SyncIdx),
         );
@@ -627,10 +621,10 @@ mod tests {
                 .zip(gain_data[2].iter())
                 .zip(gain_data[3].iter())
                 .for_each(|((((d, g0), g1), g2), g3)| {
-                    assert_eq!(d[0] & 0x0F, g0.phase().value() >> 4);
-                    assert_eq!(d[0] >> 4, g1.phase().value() >> 4);
-                    assert_eq!(d[1] & 0x0F, g2.phase().value() >> 4);
-                    assert_eq!(d[1] >> 4, g3.phase().value() >> 4);
+                    assert_eq!(d[0] & 0x0F, g0.phase.0 >> 4);
+                    assert_eq!(d[0] >> 4, g1.phase.0 >> 4);
+                    assert_eq!(d[1] & 0x0F, g2.phase.0 >> 4);
+                    assert_eq!(d[1] >> 4, g3.phase.0 >> 4);
                 });
         }
 
@@ -661,10 +655,10 @@ mod tests {
                 .zip(gain_data[6].iter())
                 .zip(gain_data[7].iter())
                 .for_each(|((((d, g0), g1), g2), g3)| {
-                    assert_eq!(d[0] & 0x0F, g0.phase().value() >> 4);
-                    assert_eq!(d[0] >> 4, g1.phase().value() >> 4);
-                    assert_eq!(d[1] & 0x0F, g2.phase().value() >> 4);
-                    assert_eq!(d[1] >> 4, g3.phase().value() >> 4);
+                    assert_eq!(d[0] & 0x0F, g0.phase.0 >> 4);
+                    assert_eq!(d[0] >> 4, g1.phase.0 >> 4);
+                    assert_eq!(d[1] & 0x0F, g2.phase.0 >> 4);
+                    assert_eq!(d[1] >> 4, g3.phase.0 >> 4);
                 });
         }
 
@@ -692,7 +686,7 @@ mod tests {
                 .chunks(size_of::<Drive>())
                 .zip(gain_data[8].iter())
                 .for_each(|(d, g)| {
-                    assert_eq!(d[0] & 0x0F, g.phase().value() >> 4);
+                    assert_eq!(d[0] & 0x0F, g.phase.0 >> 4);
                 });
         }
     }
@@ -719,8 +713,8 @@ mod tests {
                 STMContext { data },
                 n,
                 GainSTMMode::PhaseIntensityFull,
-                SamplingConfig::FREQ_40K,
-                LoopBehavior::infinite(),
+                SamplingConfig::FREQ_MAX,
+                LoopBehavior::Infinite,
                 Segment::S0,
                 None,
             );

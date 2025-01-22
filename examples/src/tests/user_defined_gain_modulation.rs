@@ -14,7 +14,10 @@ impl MyUniform {
 
 impl GainContext for MyUniform {
     fn calc(&self, _: &Transducer) -> Drive {
-        EmitIntensity::MAX.into()
+        Drive {
+            intensity: EmitIntensity::MAX,
+            phase: Phase::ZERO,
+        }
     }
 }
 
@@ -29,11 +32,7 @@ impl GainContextGenerator for MyUniform {
 impl Gain for MyUniform {
     type G = MyUniform;
 
-    fn init(
-        self,
-        _geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec>>,
-    ) -> Result<Self::G, GainError> {
+    fn init(self) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -41,14 +40,12 @@ impl Gain for MyUniform {
 #[derive(Modulation, Clone, Copy, Debug)]
 pub struct Burst {
     config: SamplingConfig,
-    loop_behavior: LoopBehavior,
 }
 
 impl Burst {
     pub fn new() -> Self {
         Self {
-            config: SamplingConfig::FREQ_4K,
-            loop_behavior: LoopBehavior::infinite(),
+            config: SamplingConfig::DIV_10,
         }
     }
 }
@@ -58,6 +55,10 @@ impl Modulation for Burst {
         Ok((0..4000)
             .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
             .collect())
+    }
+
+    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
+        Ok(self.config)
     }
 }
 

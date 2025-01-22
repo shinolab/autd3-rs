@@ -6,37 +6,32 @@ use autd3_core::derive::*;
 #[derive(Modulation, Debug)]
 pub struct Fir<M: Modulation> {
     m: M,
-    #[no_change]
-    config: SamplingConfig,
-    loop_behavior: LoopBehavior,
     filter: Vec<f32>,
 }
 
 impl<M: Modulation> Fir<M> {
     fn new(m: M, filter: impl IntoIterator<Item = impl Borrow<f32>>) -> Self {
         Self {
-            config: m.sampling_config(),
-            loop_behavior: m.loop_behavior(),
-            m,
             filter: filter.into_iter().map(|f| *f.borrow()).collect(),
+            m,
         }
     }
 }
 
 /// Trait to convert [`Modulation`] to [`Fir`].
-pub trait IntoFir<M: Modulation> {
+pub trait WithFir<M: Modulation> {
     /// Convert [`Modulation`] to [`Fir`]
     fn with_fir(self, filter: impl IntoIterator<Item = impl Borrow<f32>>) -> Fir<M>;
 }
 
-impl<M: Modulation> IntoFir<M> for M {
+impl<M: Modulation> WithFir<M> for M {
     fn with_fir(self, filter: impl IntoIterator<Item = impl Borrow<f32>>) -> Fir<M> {
         Fir::new(self, filter)
     }
 }
 
 impl<M: Modulation> Modulation for Fir<M> {
-    fn calc(self) -> Result<Vec<u8>, ModulationError>  {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         let src = self.m.calc()?;
         let src_len = src.len() as isize;
         let filter_len = self.filter.len() as isize;
@@ -50,6 +45,10 @@ impl<M: Modulation> Modulation for Fir<M> {
                     .sum::<f32>() as u8
             })
             .collect())
+    }
+
+    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
+        self.m.sampling_config()
     }
 }
 
@@ -69,11 +68,14 @@ mod tests {
     #[case::freq_8k(SamplingConfig::new_nearest(8. * kHz))]
     fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
-            config,
-            Custom::new([u8::MIN; 2], config)
-                .unwrap()
-                .with_fir([1.0])
-                .sampling_config()
+            Ok(config),
+            Custom {
+                buffer: [u8::MIN; 2].to_vec(),
+                sampling_config: config,
+                option: Default::default(),
+            }
+            .with_fir([1.0])
+            .sampling_config()
         );
     }
 
@@ -189,9 +191,21 @@ mod tests {
                 89, 86, 83, 80, 77, 75, 73, 72, 70, 70, 69, 69, 69, 70, 70, 72, 73, 75, 77, 80, 83,
                 86, 89, 93, 96, 100, 105, 109, 113, 118, 122
             ],
-            *Fourier::new([Sine::new(50 * Hz), Sine::new(1000 * Hz)])?
-                .with_fir(lpf)
-                .calc()?
+            *Fourier {
+                components: vec![
+                    Sine {
+                        freq: 50 * Hz,
+                        option: Default::default(),
+                    },
+                    Sine {
+                        freq: 1000 * Hz,
+                        option: Default::default(),
+                    }
+                ],
+                option: Default::default()
+            }
+            .with_fir(lpf)
+            .calc()?
         );
 
         Ok(())

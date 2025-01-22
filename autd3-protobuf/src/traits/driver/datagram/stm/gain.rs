@@ -1,4 +1,4 @@
-use autd3_driver::firmware::fpga::SamplingConfig;
+use autd3_driver::{datagram::STMConfig, firmware::fpga::SamplingConfig};
 
 use crate::{
     pb::*,
@@ -6,40 +6,40 @@ use crate::{
     AUTDProtoBufError,
 };
 
-impl<G> ToMessage for autd3_driver::datagram::GainSTM<Vec<G>>
+impl<G, C: Into<STMConfig> + Copy> ToMessage for autd3_driver::datagram::GainSTM<Vec<G>, C>
 where
     G: autd3_core::gain::Gain + ToMessage<Message = Datagram>,
 {
     type Message = GainStm;
 
-    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
-        Self::Message {
-            config: Some(self.sampling_config().to_msg(None)),
-            loop_behavior: Some(self.loop_behavior().to_msg(None)),
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
+            props: Some(GainStmProps {
+                mode: Some(self.option.mode as _),
+                sampling_config: Some(self.sampling_config()?.to_msg(None)?),
+            }),
             gains: self
                 .iter()
-                .map(|g| match g.to_msg(None).datagram {
-                    Some(datagram::Datagram::Gain(gain)) => gain,
+                .map(|g| match g.to_msg(None)?.datagram {
+                    Some(datagram::Datagram::Gain(gain)) => Ok(gain),
                     _ => unreachable!(),
                 })
-                .collect(),
-            mode: Some(self.mode() as _),
-        }
+                .collect::<Result<_, AUTDProtoBufError>>()?,
+        })
     }
 }
 
 impl FromMessage<GainStm>
-    for autd3_driver::datagram::GainSTM<Vec<autd3_driver::datagram::BoxedGain>>
+    for autd3_driver::datagram::GainSTM<Vec<autd3_driver::datagram::BoxedGain>, SamplingConfig>
 {
     fn from_msg(msg: &GainStm) -> Result<Self, AUTDProtoBufError> {
         use autd3_driver::datagram::IntoBoxedGain;
-        let mut stm = autd3_driver::datagram::GainSTM::new(
-            SamplingConfig::from_msg(
-                msg.config
-                    .as_ref()
-                    .ok_or(AUTDProtoBufError::DataParseError)?,
-            )?,
-            msg.gains
+        Ok(autd3_driver::datagram::GainSTM {
+            gains: msg
+                .gains
                 .iter()
                 .map(|gain| match &gain.gain {
                     Some(gain::Gain::Focus(msg)) => {
@@ -75,17 +75,25 @@ impl FromMessage<GainStm>
                     None => Err(AUTDProtoBufError::DataParseError),
                 })
                 .collect::<Result<Vec<_>, _>>()?,
-        )?;
-        if let Some(loop_behavior) = msg.loop_behavior.as_ref() {
-            stm = stm.with_loop_behavior(autd3_driver::firmware::fpga::LoopBehavior::from_msg(
-                loop_behavior,
-            )?);
-        }
-        if let Some(mode) = msg.mode {
-            stm = stm.with_mode(autd3_driver::firmware::cpu::GainSTMMode::from(
-                GainStmMode::try_from(mode)?,
-            ));
-        }
-        Ok(stm)
+            config: SamplingConfig::from_msg(
+                msg.props
+                    .as_ref()
+                    .ok_or(AUTDProtoBufError::DataParseError)?
+                    .sampling_config
+                    .as_ref()
+                    .ok_or(AUTDProtoBufError::DataParseError)?,
+            )?,
+            option: autd3_driver::datagram::GainSTMOption {
+                mode: autd3_driver::firmware::cpu::GainSTMMode::from(
+                    msg.props
+                        .as_ref()
+                        .ok_or(AUTDProtoBufError::DataParseError)?
+                        .mode
+                        .map(GainStmMode::try_from)
+                        .transpose()?
+                        .unwrap_or(GainStmMode::PhaseIntensityFull),
+                ),
+            },
+        })
     }
 }

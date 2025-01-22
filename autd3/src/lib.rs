@@ -95,9 +95,14 @@ mod tests {
     pub fn create_geometry(n: usize) -> Geometry {
         Geometry::new(
             (0..n)
-                .map(|i| AUTD3::new(Point3::origin()).into_device(i as _))
+                .map(|i| {
+                    AUTD3 {
+                        pos: Point3::origin(),
+                        ..Default::default()
+                    }
+                    .into_device(i as _)
+                })
                 .collect(),
-            4,
         )
     }
 }

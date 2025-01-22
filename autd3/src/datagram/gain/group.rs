@@ -1,7 +1,6 @@
 use autd3_core::derive::*;
-use autd3_derive::Builder;
+
 use autd3_driver::{
-    datagram::{BoxedGain, IntoBoxedGain},
     error::AUTDDriverError,
     firmware::fpga::Drive,
     geometry::{Device, Transducer},
@@ -28,15 +27,15 @@ use derive_new::new;
 ///
 /// # fn _main() -> Result<(), AUTDDriverError> {
 /// Group::new(|dev| |tr| if tr.idx() < 100 { Some("null") } else { Some("focus") })
-///    .set("null", Null::new())?
-///    .set("focus", Focus::new(Point3::origin()))?;
+///    .set("null", Null {}.into_boxed())?
+///    .set("focus", Focus { pos: Point3::origin(), option: Default::default() }.into_boxed())?;
 /// # Ok(())
 /// # }
 /// ```
 ///
 /// [`Controller::group`]: crate::controller::Controller::group
-#[derive(Gain, Builder, Debug, new)]
-pub struct Group<K, FK, F>
+#[derive(Gain, Debug, new)]
+pub struct Group<K, FK, F, G: Gain>
 where
     K: Hash + Eq + Debug + Send + Sync,
     FK: Fn(&Transducer) -> Option<K> + Send + Sync,
@@ -45,10 +44,10 @@ where
     #[debug(ignore)]
     f: F,
     #[new(default)]
-    gain_map: HashMap<K, BoxedGain>,
+    gain_map: HashMap<K, G>,
 }
 
-impl<K, FK, F> Group<K, FK, F>
+impl<K, FK, F, G: Gain> Group<K, FK, F, G>
 where
     K: Hash + Eq + Debug + Send + Sync,
     FK: Fn(&Transducer) -> Option<K> + Send + Sync,
@@ -60,11 +59,11 @@ where
     ///
     /// Returns [`AUTDDriverError::KeyIsAlreadyUsed`] if the `key` is already used previous [`Group::set`].
     #[allow(clippy::map_entry)] // https://github.com/rust-lang/rust-clippy/issues/9925
-    pub fn set(mut self, key: K, gain: impl IntoBoxedGain) -> Result<Self, AUTDDriverError> {
+    pub fn set(mut self, key: K, gain: G) -> Result<Self, AUTDDriverError> {
         if self.gain_map.contains_key(&key) {
             return Err(AUTDDriverError::KeyIsAlreadyUsed(format!("{:?}", key)));
         } else {
-            self.gain_map.insert(key, gain.into_boxed());
+            self.gain_map.insert(key, gain);
         }
         Ok(self)
     }
@@ -124,7 +123,7 @@ impl GainContextGenerator for ContextGenerator {
     }
 }
 
-impl<K, FK, F> Gain for Group<K, FK, F>
+impl<K, FK, F, G: Gain> Gain for Group<K, FK, F, G>
 where
     K: Hash + Eq + Debug + Send + Sync,
     FK: Fn(&Transducer) -> Option<K> + Send + Sync,
@@ -132,10 +131,17 @@ where
 {
     type G = ContextGenerator;
 
-    fn init(
+    // GRCOV_EXCL_START
+    fn init(self) -> Result<Self::G, GainError> {
+        unimplemented!()
+    }
+    // GRCOV_EXCL_STOP
+
+    fn init_full(
         self,
         geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,
+        option: &DatagramOption,
     ) -> Result<Self::G, GainError> {
         let mut filters = self.get_filters(geometry);
 
@@ -155,7 +161,7 @@ where
                 let filter = filters
                     .remove(&k)
                     .ok_or(GainError::new(format!("Unknown group key({:?})", k)))?;
-                let mut g = g.init(geometry, Some(&filter))?;
+                let mut g = g.init_full(geometry, Some(&filter), option)?;
                 Ok((
                     k,
                     geometry
@@ -174,7 +180,7 @@ where
         }
 
         let f = &self.f;
-        if geometry.parallel(None) {
+        if geometry.num_devices() > option.parallel_threshold {
             gain_map
                 .par_iter()
                 .try_for_each(|(k, c)| -> Result<(), GainError> {
@@ -214,7 +220,10 @@ where
 mod tests {
     use super::*;
 
-    use autd3_driver::firmware::fpga::{EmitIntensity, Phase};
+    use autd3_driver::{
+        datagram::IntoBoxedGain,
+        firmware::fpga::{EmitIntensity, Phase},
+    };
     use rand::Rng;
 
     use crate::{
@@ -228,11 +237,23 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let d1 = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
-        let d2 = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
+        let d1 = Drive {
+            phase: Phase(rng.gen()),
+            intensity: EmitIntensity(rng.gen()),
+        };
+        let d2 = Drive {
+            phase: Phase(rng.gen()),
+            intensity: EmitIntensity(rng.gen()),
+        };
 
-        let g1 = Uniform::new(d1);
-        let g2 = Uniform::new(d2);
+        let g1 = Uniform {
+            intensity: d1.intensity,
+            phase: d1.phase,
+        };
+        let g2 = Uniform {
+            intensity: d2.intensity,
+            phase: d2.phase,
+        };
 
         let gain = Group::new(|dev| {
             let dev_idx = dev.idx();
@@ -244,11 +265,11 @@ mod tests {
                 _ => None,
             }
         })
-        .set("null", Null::new())?
-        .set("test", g1)?
-        .set("test2", g2)?;
+        .set("null", Null {}.into_boxed())?
+        .set("test", g1.into_boxed())?
+        .set("test2", g2.into_boxed())?;
 
-        let mut g = gain.init(&geometry, None)?;
+        let mut g = gain.init_full(&geometry, None, &DatagramOption::default())?;
         let drives = geometry
             .devices()
             .map(|dev| {
@@ -295,11 +316,23 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let d1 = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
-        let d2 = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
+        let d1 = Drive {
+            phase: Phase(rng.gen()),
+            intensity: EmitIntensity(rng.gen()),
+        };
+        let d2 = Drive {
+            phase: Phase(rng.gen()),
+            intensity: EmitIntensity(rng.gen()),
+        };
 
-        let g1 = Uniform::new(d1);
-        let g2 = Uniform::new(d2);
+        let g1 = Uniform {
+            intensity: d1.intensity,
+            phase: d1.phase,
+        };
+        let g2 = Uniform {
+            intensity: d2.intensity,
+            phase: d2.phase,
+        };
 
         let gain = Group::new(|dev| {
             let dev_idx = dev.idx();
@@ -311,11 +344,18 @@ mod tests {
                 _ => None,
             }
         })
-        .set("null", Null::new())?
-        .set("test", g1)?
-        .set("test2", g2)?;
+        .set("null", Null {}.into_boxed())?
+        .set("test", g1.into_boxed())?
+        .set("test2", g2.into_boxed())?;
 
-        let mut g = gain.init(&geometry, None)?;
+        let mut g = gain.init_full(
+            &geometry,
+            None,
+            &DatagramOption {
+                parallel_threshold: 4,
+                ..Default::default()
+            },
+        )?;
         let drives = geometry
             .devices()
             .map(|dev| {
@@ -361,8 +401,6 @@ mod tests {
 
     #[test]
     fn unknown_key() -> anyhow::Result<()> {
-        let geometry = create_geometry(2);
-
         let gain = Group::new(|_dev| {
             |tr| match tr.idx() {
                 0..=99 => Some("test"),
@@ -370,11 +408,13 @@ mod tests {
                 _ => None,
             }
         })
-        .set("test2", Null::new())?;
+        .set("test2", Null {})?;
 
+        let geometry = create_geometry(1);
         assert_eq!(
             Some(GainError::new("Unknown group key(\"test2\")".to_owned())),
-            gain.init(&geometry, None).err()
+            gain.init_full(&geometry, None, &DatagramOption::default())
+                .err()
         );
 
         Ok(())
@@ -383,8 +423,8 @@ mod tests {
     #[test]
     fn already_used_key() -> anyhow::Result<()> {
         let gain = Group::new(|_dev| |_tr| Some(0))
-            .set(0, Null::new())?
-            .set(0, Null::new());
+            .set(0, Null {})?
+            .set(0, Null {});
 
         assert_eq!(
             Some(AUTDDriverError::KeyIsAlreadyUsed("0".to_owned())),
@@ -396,19 +436,19 @@ mod tests {
 
     #[test]
     fn unused_key() -> anyhow::Result<()> {
-        let geometry = create_geometry(2);
-
         let gain = Group::new(|_dev| {
             |tr| match tr.idx() {
                 0..=99 => Some(0),
                 _ => Some(1),
             }
         })
-        .set(1, Null::new())?;
+        .set(1, Null {})?;
 
+        let geometry = create_geometry(1);
         assert_eq!(
             Some(GainError::new("Unused group keys: 0".to_owned())),
-            gain.init(&geometry, None).err()
+            gain.init_full(&geometry, None, &DatagramOption::default())
+                .err()
         );
 
         Ok(())

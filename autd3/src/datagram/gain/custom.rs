@@ -15,7 +15,7 @@ use derive_new::new;
 /// use autd3::prelude::*;
 /// use autd3::gain::Custom;
 ///
-/// Custom::new(|dev| |tr| (Phase::ZERO, EmitIntensity::MAX));
+/// Custom::new(|dev| |tr| Drive { phase: Phase::ZERO, intensity: EmitIntensity::MAX });
 /// ```
 #[derive(Gain, Debug, new)]
 #[debug("Custom (Gain)")]
@@ -25,7 +25,8 @@ where
     FT: Fn(&Transducer) -> D + Send + Sync + 'static,
     F: Fn(&Device) -> FT + 'a,
 {
-    f: F,
+    /// The function to calculate the phase and intensity
+    pub f: F,
     _phantom: std::marker::PhantomData<&'a ()>,
 }
 
@@ -66,11 +67,7 @@ impl<
 {
     type G = Custom<'a, D, FT, F>;
 
-    fn init(
-        self,
-        _geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec>>,
-    ) -> Result<Self::G, GainError> {
+    fn init(self) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -91,7 +88,10 @@ mod tests {
         let geometry = create_geometry(2);
 
         let test_id = rng.gen_range(0..geometry[0].num_transducers());
-        let test_drive = Drive::new(Phase::new(rng.gen()), EmitIntensity::new(rng.gen()));
+        let test_drive = Drive {
+            phase: Phase(rng.gen()),
+            intensity: EmitIntensity(rng.gen()),
+        };
         let transducer_test = Custom::new(move |dev| {
             let dev_idx = dev.idx();
             move |tr| {
@@ -103,7 +103,7 @@ mod tests {
             }
         });
 
-        let mut d = transducer_test.init(&geometry, None)?;
+        let mut d = transducer_test.init()?;
         geometry.iter().for_each(|dev| {
             let d = d.generate(dev);
             dev.iter().enumerate().for_each(|(idx, tr)| {

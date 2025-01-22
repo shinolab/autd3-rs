@@ -18,7 +18,6 @@ num = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["time", "rt-multi-thread"], optional = true }
 derive_more = { workspace = true }
-tynm = { workspace = true }
 itertools = { workspace = true }
 tracing = { workspace = true }
 bit-vec = { workspace = true }
@@ -26,6 +25,7 @@ rayon = { workspace = true }
 derive-new = { workspace = true }
 zerocopy = { workspace = true }
 spin_sleep = { workspace = true }
+getset = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 windows = { workspace = true, features = ["Win32_Security"] }

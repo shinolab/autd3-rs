@@ -73,11 +73,10 @@ pub use async_trait::async_trait;
 ///
 /// impl GainContext for Context {
 ///     fn calc(&self, tr: &Transducer) -> Drive {
-///         (
-///             Phase::from(-(self.pos - tr.position()).norm() * self.wavenumber * rad),
-///             EmitIntensity::MAX,
-///         )
-///             .into()
+///         Drive {
+///             phase: Phase::from(-(self.pos - tr.position()).norm() * self.wavenumber * rad),
+///             intensity: EmitIntensity::MAX,
+///         }
 ///     }
 /// }
 ///
@@ -95,11 +94,7 @@ pub use async_trait::async_trait;
 /// impl Gain for FocalPoint {
 ///     type G = FocalPoint;
 ///
-///     fn init(
-///         self,
-///         _geometry: &Geometry,
-///         _filter: Option<&HashMap<usize, BitVec>>,
-///     ) -> Result<Self::G, GainError> {
+///     fn init(self) -> Result<Self::G, GainError> {
 ///         Ok(self)
 ///     }
 /// }
@@ -107,24 +102,17 @@ pub use async_trait::async_trait;
 ///
 /// The following example shows how to define a modulation that outputs the maximum value only for a moment.
 ///
-/// [`Modulation`] struct must have `config: SamplingConfig` and `loop_behavior: LoopBehavior`.
-/// If you add `#[no_change]` attribute to `config`, you can't change the value of `config` except for the constructor.
-///
 /// ```
+/// use autd3_core::defined::kHz;
 /// use autd3_core::derive::*;
 ///
 /// #[derive(Modulation, Debug)]
 /// pub struct Burst {
-///     config: SamplingConfig,
-///     loop_behavior: LoopBehavior,
 /// }
 ///
 /// impl Burst {
 ///     pub fn new() -> Self {
-///         Self {
-///             config: SamplingConfig::FREQ_4K,
-///             loop_behavior: LoopBehavior::infinite(),
-///         }
+///         Self {}
 ///     }
 /// }
 ///
@@ -134,9 +122,13 @@ pub use async_trait::async_trait;
 ///             .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
 ///             .collect())
 ///     }
+///
+///     fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
+///         Ok(SamplingConfig::new(4 * kHz)?)    
+///     }
 /// }
 /// ```
-/// 
+///
 /// [`Gain`]: crate::gain::Gain
 /// [`Modulation`]: crate::modulation::Modulation
 #[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
@@ -144,8 +136,10 @@ pub use async_trait::async_trait;
 pub mod derive {
     #[cfg(any(feature = "gain", feature = "modulation"))]
     mod common {
-        pub use crate::datagram::{DatagramS, Segment, TransitionMode};
-        pub use crate::{defined::DEFAULT_TIMEOUT, geometry::Geometry};
+        pub use crate::{
+            datagram::{DatagramOption, Segment, TransitionMode},
+            geometry::Geometry,
+        };
         pub use tracing;
     }
     #[cfg(any(feature = "gain", feature = "modulation"))]
@@ -153,11 +147,14 @@ pub mod derive {
 
     #[cfg(feature = "gain")]
     mod gain {
-        pub use crate::gain::{
-            BitVec, Drive, EmitIntensity, Gain, GainContext, GainContextGenerator, GainError,
-            GainOperationGenerator, Phase,
+        pub use crate::{
+            datagram::DatagramS,
+            gain::{
+                BitVec, Drive, EmitIntensity, Gain, GainContext, GainContextGenerator, GainError,
+                GainOperationGenerator, Phase,
+            },
+            geometry::{Device, Transducer},
         };
-        pub use crate::geometry::{Device, Transducer};
         pub use autd3_derive::Gain;
     }
     #[cfg(feature = "gain")]
@@ -165,9 +162,10 @@ pub mod derive {
 
     #[cfg(feature = "modulation")]
     mod modulation {
+        pub use crate::datagram::{DatagramL, LoopBehavior};
         pub use crate::modulation::{
-            LoopBehavior, Modulation, ModulationError, ModulationOperationGenerator,
-            ModulationProperty, SamplingConfig,
+            Modulation, ModulationError, ModulationOperationGenerator, SamplingConfig,
+            SamplingConfigError,
         };
         pub use autd3_derive::Modulation;
         pub use std::{collections::HashMap, sync::Arc};

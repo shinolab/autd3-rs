@@ -7,10 +7,13 @@ use crate::{
 impl ToMessage for autd3_core::defined::Angle {
     type Message = Angle;
 
-    fn to_msg(&self, _: Option<&autd3_core::geometry::Geometry>) -> Self::Message {
-        Self::Message {
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
             rad: self.radian() as _,
-        }
+        })
     }
 }
 
@@ -32,7 +35,7 @@ mod tests {
     fn angle() {
         let mut rng = rand::thread_rng();
         let v = rng.gen::<f32>() * rad;
-        let msg = v.to_msg(None);
+        let msg = v.to_msg(None).unwrap();
         let v2 = Angle::from_msg(&Some(msg)).unwrap();
         approx::assert_abs_diff_eq!(v.radian(), v2.radian());
     }

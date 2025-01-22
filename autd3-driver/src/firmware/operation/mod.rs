@@ -151,7 +151,7 @@ impl OperationHandler {
                 let op1_size = Self::pack_op(op1, dev, tx)?;
                 if tx.payload().len() - op1_size >= op2.required_size(dev) {
                     op2.pack(dev, &mut tx.payload_mut()[op1_size..])?;
-                    tx.header_mut().slot_2_offset = op1_size as u16;
+                    tx.header.slot_2_offset = op1_size as u16;
                 }
                 Ok(())
             }
@@ -163,9 +163,9 @@ impl OperationHandler {
         O: Operation,
         AUTDDriverError: From<O::Error>,
     {
-        tx.header_mut().msg_id += 1;
-        tx.header_mut().msg_id &= MSG_ID_MAX;
-        tx.header_mut().slot_2_offset = 0;
+        tx.header.msg_id += 1;
+        tx.header.msg_id &= MSG_ID_MAX;
+        tx.header.slot_2_offset = 0;
         Ok(op.pack(dev, tx.payload_mut())?)
     }
 }
@@ -234,14 +234,11 @@ pub(crate) mod tests {
     fn test(#[case] parallel: bool) {
         use crate::geometry::Point3;
 
-        let geometry = Geometry::new(
-            vec![Device::new(
-                0,
-                UnitQuaternion::identity(),
-                vec![Transducer::new(0, 0, Point3::origin())],
-            )],
-            4,
-        );
+        let geometry = Geometry::new(vec![Device::new(
+            0,
+            UnitQuaternion::identity(),
+            vec![Transducer::new(0, 0, Point3::origin())],
+        )]);
 
         let mut op = vec![(
             OperationMock {
@@ -287,14 +284,11 @@ pub(crate) mod tests {
 
     #[test]
     fn test_first() {
-        let geometry = Geometry::new(
-            vec![Device::new(
-                0,
-                UnitQuaternion::identity(),
-                vec![Transducer::new(0, 0, Point3::origin())],
-            )],
-            4,
-        );
+        let geometry = Geometry::new(vec![Device::new(
+            0,
+            UnitQuaternion::identity(),
+            vec![Transducer::new(0, 0, Point3::origin())],
+        )]);
 
         let mut op = vec![(
             OperationMock {
@@ -325,14 +319,11 @@ pub(crate) mod tests {
 
     #[test]
     fn test_second() {
-        let geometry = Geometry::new(
-            vec![Device::new(
-                0,
-                UnitQuaternion::identity(),
-                vec![Transducer::new(0, 0, Point3::origin())],
-            )],
-            4,
-        );
+        let geometry = Geometry::new(vec![Device::new(
+            0,
+            UnitQuaternion::identity(),
+            vec![Transducer::new(0, 0, Point3::origin())],
+        )]);
 
         let mut op = vec![(
             OperationMock {
@@ -363,14 +354,11 @@ pub(crate) mod tests {
 
     #[test]
     fn test_broken_pack() {
-        let geometry = Geometry::new(
-            vec![Device::new(
-                0,
-                UnitQuaternion::identity(),
-                vec![Transducer::new(0, 0, Point3::origin())],
-            )],
-            4,
-        );
+        let geometry = Geometry::new(vec![Device::new(
+            0,
+            UnitQuaternion::identity(),
+            vec![Transducer::new(0, 0, Point3::origin())],
+        )]);
 
         let mut op = vec![(
             OperationMock {
@@ -423,14 +411,11 @@ pub(crate) mod tests {
 
     #[test]
     fn test_finished() {
-        let geometry = Geometry::new(
-            vec![Device::new(
-                0,
-                UnitQuaternion::identity(),
-                vec![Transducer::new(0, 0, Point3::origin())],
-            )],
-            4,
-        );
+        let geometry = Geometry::new(vec![Device::new(
+            0,
+            UnitQuaternion::identity(),
+            vec![Transducer::new(0, 0, Point3::origin())],
+        )]);
 
         let mut op = vec![(
             OperationMock {
@@ -456,19 +441,16 @@ pub(crate) mod tests {
 
     #[test]
     fn msg_id() {
-        let geometry = Geometry::new(
-            vec![Device::new(
-                0,
-                UnitQuaternion::identity(),
-                vec![Transducer::new(0, 0, Point3::origin())],
-            )],
-            4,
-        );
+        let geometry = Geometry::new(vec![Device::new(
+            0,
+            UnitQuaternion::identity(),
+            vec![Transducer::new(0, 0, Point3::origin())],
+        )]);
 
         let mut tx = vec![TxMessage::new_zeroed(); 1];
 
         for i in 0..=MSG_ID_MAX {
-            assert_eq!(i, tx[0].header().msg_id);
+            assert_eq!(i, tx[0].header.msg_id);
             let mut op = vec![(
                 OperationMock {
                     pack_size: 0,
@@ -485,6 +467,6 @@ pub(crate) mod tests {
             )];
             assert!(OperationHandler::pack(&mut op, &geometry, &mut tx, false).is_ok());
         }
-        assert_eq!(0, tx[0].header().msg_id);
+        assert_eq!(0, tx[0].header.msg_id);
     }
 }

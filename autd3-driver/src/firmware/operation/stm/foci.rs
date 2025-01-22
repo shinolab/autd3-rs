@@ -107,16 +107,13 @@ impl<const N: usize, Context: FociSTMContext<N>> Operation for FociSTMOp<N, Cont
                 let p = p.transform(device.inv());
                 write_to_tx(
                     &mut tx[idx..],
-                    STMFocus::create(p[0].point(), p.intensity().value())?,
+                    STMFocus::create(&p[0].point, p.intensity.0)?,
                 );
                 idx += size_of::<STMFocus>();
                 (1..N).try_for_each(|i| {
                     write_to_tx(
                         &mut tx[idx..],
-                        STMFocus::create(
-                            p[i].point(),
-                            (p[i].phase_offset() - p[0].phase_offset()).value(),
-                        )?,
+                        STMFocus::create(&p[i].point, (p[i].phase_offset - p[0].phase_offset).0)?,
                     );
                     idx += size_of::<STMFocus>();
                     Result::<_, AUTDDriverError>::Ok(())
@@ -149,10 +146,10 @@ impl<const N: usize, Context: FociSTMContext<N>> Operation for FociSTMOp<N, Cont
                         .transition_mode
                         .map(|m| m.mode())
                         .unwrap_or(TRANSITION_MODE_NONE),
-                    transition_value: self.transition_mode.map(|m| m.value()).unwrap_or(0),
+                    transition_value: self.transition_mode.map(TransitionMode::value).unwrap_or(0),
                     send_num: send_num as _,
                     num_foci: N as u8,
-                    freq_div: self.config.division(),
+                    freq_div: self.config.division.get(),
                     sound_speed: (device.sound_speed / METER * 64.0).round() as u16,
                     rep: self.loop_behavior.rep(),
                     __: [0; 4],
@@ -191,6 +188,7 @@ mod tests {
     use std::{
         collections::VecDeque,
         mem::{offset_of, size_of},
+        num::NonZeroU16,
     };
 
     use rand::prelude::*;
@@ -260,7 +258,7 @@ mod tests {
             },
             FOCI_STM_SIZE,
             SamplingConfig::new(freq_div).unwrap(),
-            LoopBehavior::infinite(),
+            LoopBehavior::Infinite,
             segment,
             Some(transition_mode),
         );
@@ -312,7 +310,7 @@ mod tests {
             .for_each(|(d, p)| {
                 assert_eq!(
                     d,
-                    STMFocus::create(p[0].point(), p.intensity().value())
+                    STMFocus::create(&p[0].point, p.intensity.0)
                         .unwrap()
                         .as_bytes()
                 );
@@ -365,7 +363,7 @@ mod tests {
             },
             FOCI_STM_SIZE,
             SamplingConfig::new(freq_div).unwrap(),
-            LoopBehavior::infinite(),
+            LoopBehavior::Infinite,
             segment,
             Some(transition_mode),
         );
@@ -412,16 +410,16 @@ mod tests {
             .chunks(size_of::<STMFocus>() * N)
             .zip(points.iter())
             .for_each(|(d, p)| {
-                let base_offset = p[0].phase_offset();
+                let base_offset = p[0].phase_offset;
                 (0..N).for_each(|i| {
                     let mut buf = [0x00u8; 8];
                     buf.copy_from_slice(
                         STMFocus::create(
-                            p[i].point(),
+                            &p[i].point,
                             if i == 0 {
-                                p.intensity().value()
+                                p.intensity.0
                             } else {
-                                (p[i].phase_offset() - base_offset).value()
+                                (p[i].phase_offset - base_offset).0
                             },
                         )
                         .unwrap()
@@ -469,7 +467,7 @@ mod tests {
             },
             FOCI_STM_SIZE,
             SamplingConfig::new(freq_div).unwrap(),
-            LoopBehavior::finite(rep + 1).unwrap(),
+            LoopBehavior::Finite(NonZeroU16::new(rep + 1).unwrap()),
             segment,
             None,
         );
@@ -518,7 +516,7 @@ mod tests {
                 .for_each(|(d, p)| {
                     assert_eq!(
                         d,
-                        STMFocus::create(p[0].point(), p.intensity().value())
+                        STMFocus::create(&p[0].point, p.intensity.0)
                             .unwrap()
                             .as_bytes()
                     );
@@ -558,7 +556,7 @@ mod tests {
                 .for_each(|(d, p)| {
                     assert_eq!(
                         d,
-                        STMFocus::create(p[0].point(), p.intensity().value())
+                        STMFocus::create(&p[0].point, p.intensity.0)
                             .unwrap()
                             .as_bytes()
                     );
@@ -604,7 +602,7 @@ mod tests {
                 .for_each(|(d, p)| {
                     assert_eq!(
                         d,
-                        STMFocus::create(p[0].point(), p.intensity().value())
+                        STMFocus::create(&p[0].point, p.intensity.0)
                             .unwrap()
                             .as_bytes()
                     );
@@ -630,8 +628,8 @@ mod tests {
                     .collect::<VecDeque<_>>(),
             },
             FOCI_STM_SIZE,
-            SamplingConfig::FREQ_40K,
-            LoopBehavior::infinite(),
+            SamplingConfig::FREQ_MAX,
+            LoopBehavior::Infinite,
             Segment::S0,
             Some(TransitionMode::SyncIdx),
         );
@@ -659,8 +657,8 @@ mod tests {
                     .collect::<VecDeque<_>>(),
             },
             n,
-            SamplingConfig::FREQ_40K,
-            LoopBehavior::infinite(),
+            SamplingConfig::FREQ_MAX,
+            LoopBehavior::Infinite,
             Segment::S0,
             Some(TransitionMode::SyncIdx),
         );
@@ -678,12 +676,12 @@ mod tests {
             let mut op = FociSTMOp::new(
                 TestContext {
                     points: (0..2)
-                        .map(|_| ControlPoints::<0>::new([]))
+                        .map(|_| ControlPoints::<0>::default())
                         .collect::<VecDeque<_>>(),
                 },
                 2,
-                SamplingConfig::FREQ_40K,
-                LoopBehavior::infinite(),
+                SamplingConfig::FREQ_MAX,
+                LoopBehavior::Infinite,
                 Segment::S0,
                 Some(TransitionMode::SyncIdx),
             );
@@ -702,8 +700,8 @@ mod tests {
                         .collect::<VecDeque<_>>(),
                 },
                 2,
-                SamplingConfig::FREQ_40K,
-                LoopBehavior::infinite(),
+                SamplingConfig::FREQ_MAX,
+                LoopBehavior::Infinite,
                 Segment::S0,
                 Some(TransitionMode::SyncIdx),
             );
@@ -723,8 +721,8 @@ mod tests {
                         .collect::<VecDeque<_>>(),
                 },
                 2,
-                SamplingConfig::FREQ_40K,
-                LoopBehavior::infinite(),
+                SamplingConfig::FREQ_MAX,
+                LoopBehavior::Infinite,
                 Segment::S0,
                 Some(TransitionMode::SyncIdx),
             );
@@ -748,8 +746,8 @@ mod tests {
                         .collect::<VecDeque<_>>(),
                 },
                 2,
-                SamplingConfig::FREQ_40K,
-                LoopBehavior::infinite(),
+                SamplingConfig::FREQ_MAX,
+                LoopBehavior::Infinite,
                 Segment::S0,
                 Some(TransitionMode::SyncIdx),
             );

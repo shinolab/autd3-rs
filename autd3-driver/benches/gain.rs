@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use autd3_core::derive::*;
 use autd3_driver::{
     autd3_device::AUTD3,
@@ -20,26 +18,36 @@ pub fn generate_geometry(size: usize) -> Geometry {
     Geometry::new(
         (0..size)
             .map(move |i| {
-                AUTD3::new(Point3::new(i as f32 * AUTD3::DEVICE_WIDTH, 0., 0.)).into_device(i as _)
+                AUTD3 {
+                    pos: Point3::new(i as f32 * AUTD3::DEVICE_WIDTH, 0., 0.),
+                    ..Default::default()
+                }
+                .into_device(i as _)
             })
             .collect(),
-        4,
     )
+}
+
+#[derive(Clone, PartialEq, Debug)]
+struct FocusOption {
+    intensity: EmitIntensity,
+    phase_offset: Phase,
 }
 
 #[derive(Gain, Clone, PartialEq, Debug)]
 struct Focus {
     pos: Point3,
-    intensity: EmitIntensity,
-    phase_offset: Phase,
+    option: FocusOption,
 }
 
 impl Focus {
     pub const fn new(pos: Point3) -> Self {
         Self {
             pos,
-            intensity: EmitIntensity::MAX,
-            phase_offset: Phase::ZERO,
+            option: FocusOption {
+                intensity: EmitIntensity::MAX,
+                phase_offset: Phase::ZERO,
+            },
         }
     }
 }
@@ -53,11 +61,11 @@ struct FocusContext {
 
 impl GainContext for FocusContext {
     fn calc(&self, tr: &Transducer) -> Drive {
-        Drive::new(
-            Phase::from(-(self.pos - tr.position()).norm() * self.wavenumber * rad)
+        Drive {
+            phase: Phase::from(-(self.pos - tr.position()).norm() * self.wavenumber * rad)
                 + self.phase_offset,
-            self.intensity,
-        )
+            intensity: self.intensity,
+        }
     }
 }
 
@@ -67,8 +75,8 @@ impl GainContextGenerator for Focus {
     fn generate(&mut self, device: &Device) -> Self::Context {
         FocusContext {
             pos: self.pos,
-            intensity: self.intensity,
-            phase_offset: self.phase_offset,
+            intensity: self.option.intensity,
+            phase_offset: self.option.phase_offset,
             wavenumber: device.wavenumber(),
         }
     }
@@ -77,11 +85,7 @@ impl GainContextGenerator for Focus {
 impl Gain for Focus {
     type G = Focus;
 
-    fn init(
-        self,
-        _geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec>>,
-    ) -> Result<Self::G, GainError> {
+    fn init(self) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -98,7 +102,9 @@ fn focus(c: &mut Criterion) {
                 b.iter(|| {
                     let g =
                         Focus::new(Point3::new(black_box(90.), black_box(70.), black_box(150.)));
-                    let generator = g.operation_generator(geometry).unwrap();
+                    let generator = g
+                        .operation_generator(geometry, &DatagramOption::default())
+                        .unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(&mut operations, geometry, &mut tx, false).unwrap();
                 })
@@ -120,7 +126,9 @@ fn focus_parallel(c: &mut Criterion) {
                 b.iter(|| {
                     let g =
                         Focus::new(Point3::new(black_box(90.), black_box(70.), black_box(150.)));
-                    let generator = g.operation_generator(geometry).unwrap();
+                    let generator = g
+                        .operation_generator(geometry, &DatagramOption::default())
+                        .unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(&mut operations, geometry, &mut tx, true).unwrap();
                 })
@@ -146,7 +154,9 @@ fn focus_boxed(c: &mut Criterion) {
                         black_box(150.),
                     )))
                     .into_boxed();
-                    let generator = g.operation_generator(geometry).unwrap();
+                    let generator = g
+                        .operation_generator(geometry, &DatagramOption::default())
+                        .unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(&mut operations, geometry, &mut tx, false).unwrap();
                 })

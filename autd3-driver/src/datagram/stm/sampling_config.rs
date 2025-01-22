@@ -1,11 +1,6 @@
-#[cfg(not(feature = "dynamic_freq"))]
 use std::time::Duration;
 
-use crate::{
-    defined::{Freq, Hz},
-    error::AUTDDriverError,
-    firmware::fpga::SamplingConfig,
-};
+use crate::{defined::Freq, error::AUTDDriverError, firmware::fpga::SamplingConfig};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[non_exhaustive]
@@ -18,27 +13,18 @@ pub enum STMConfig {
     Period(Duration),
     #[doc(hidden)]
     SamplingConfig(SamplingConfig),
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-/// Sampling configuration for STM with nearest frequency or period.
-#[non_exhaustive]
-pub enum STMConfigNearest {
     #[doc(hidden)]
-    Freq(Freq<f32>),
+    FreqNearest(Freq<f32>),
     #[cfg(not(feature = "dynamic_freq"))]
     #[doc(hidden)]
-    Period(Duration),
+    PeriodNearest(Duration),
 }
 
-// This traits must be public for capi.
-#[doc(hidden)]
-pub trait IntoSamplingConfigSTM {
-    fn into_sampling_config(self, size: usize) -> Result<SamplingConfig, AUTDDriverError>;
-}
-
-impl IntoSamplingConfigSTM for STMConfig {
-    fn into_sampling_config(self, size: usize) -> Result<SamplingConfig, AUTDDriverError> {
+impl STMConfig {
+    pub(crate) fn into_sampling_config(
+        self,
+        size: usize,
+    ) -> Result<SamplingConfig, AUTDDriverError> {
         match self {
             STMConfig::Freq(f) => Ok(SamplingConfig::new(f * size as f32)?),
             #[cfg(not(feature = "dynamic_freq"))]
@@ -49,16 +35,11 @@ impl IntoSamplingConfigSTM for STMConfig {
                 Ok(SamplingConfig::new(p / size as u32)?)
             }
             STMConfig::SamplingConfig(s) => Ok(s),
-        }
-    }
-}
-
-impl IntoSamplingConfigSTM for STMConfigNearest {
-    fn into_sampling_config(self, size: usize) -> Result<SamplingConfig, AUTDDriverError> {
-        match self {
-            STMConfigNearest::Freq(f) => Ok(SamplingConfig::new_nearest(f.hz() * size as f32 * Hz)),
+            STMConfig::FreqNearest(freq) => Ok(SamplingConfig::new_nearest(freq * size as f32)),
             #[cfg(not(feature = "dynamic_freq"))]
-            STMConfigNearest::Period(p) => Ok(SamplingConfig::new_nearest(p / size as u32)),
+            STMConfig::PeriodNearest(duration) => {
+                Ok(SamplingConfig::new_nearest(duration / size as u32))
+            }
         }
     }
 }
@@ -82,16 +63,21 @@ impl From<SamplingConfig> for STMConfig {
     }
 }
 
-impl From<Freq<f32>> for STMConfigNearest {
-    fn from(freq: Freq<f32>) -> Self {
-        Self::Freq(freq)
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct FreqNearest(pub Freq<f32>);
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct PeriodNearest(pub Duration);
+
+impl From<FreqNearest> for STMConfig {
+    fn from(f: FreqNearest) -> Self {
+        STMConfig::FreqNearest(f.0)
     }
 }
 
 #[cfg(not(feature = "dynamic_freq"))]
-impl From<Duration> for STMConfigNearest {
-    fn from(p: Duration) -> Self {
-        Self::Period(p)
+impl From<PeriodNearest> for STMConfig {
+    fn from(p: PeriodNearest) -> Self {
+        STMConfig::PeriodNearest(p.0)
     }
 }
 
@@ -121,10 +107,10 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(SamplingConfig::FREQ_40K, 1)]
-    #[case(SamplingConfig::FREQ_40K, 2)]
-    #[case(SamplingConfig::FREQ_4K, 1)]
-    #[case(SamplingConfig::FREQ_4K, 2)]
+    #[case(SamplingConfig::FREQ_MAX, 1)]
+    #[case(SamplingConfig::FREQ_MAX, 2)]
+    #[case(SamplingConfig::DIV_10, 1)]
+    #[case(SamplingConfig::DIV_10, 2)]
     fn sampling(#[case] config: SamplingConfig, #[case] size: usize) {
         assert_eq!(
             Ok(config),
@@ -176,7 +162,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            STMConfigNearest::Freq(freq).into_sampling_config(size)
+            STMConfig::FreqNearest(freq).into_sampling_config(size)
         );
     }
 
@@ -210,7 +196,7 @@ mod tests {
     ) {
         assert_eq!(
             expect,
-            STMConfigNearest::Period(p).into_sampling_config(size)
+            STMConfig::PeriodNearest(p).into_sampling_config(size)
         );
     }
 }

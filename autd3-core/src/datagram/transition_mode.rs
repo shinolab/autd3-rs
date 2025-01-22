@@ -12,7 +12,7 @@ pub(crate) const TRANSITION_MODE_IMMEDIATE: u8 = 0xFF;
 
 /// Transition mode of segment
 #[non_exhaustive]
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub enum TransitionMode {
     /// Transites when the sampling index in the destination segment is 0.
     SyncIdx,
@@ -28,7 +28,7 @@ pub enum TransitionMode {
 
 impl TransitionMode {
     #[doc(hidden)]
-    pub const fn mode(&self) -> u8 {
+    pub const fn mode(self) -> u8 {
         match self {
             TransitionMode::SyncIdx => TRANSITION_MODE_SYNC_IDX,
             TransitionMode::SysTime(_) => TRANSITION_MODE_SYS_TIME,
@@ -39,10 +39,10 @@ impl TransitionMode {
     }
 
     #[doc(hidden)]
-    pub const fn value(&self) -> u64 {
+    pub const fn value(self) -> u64 {
         match self {
             TransitionMode::SyncIdx | TransitionMode::Ext | TransitionMode::Immediate => 0,
-            TransitionMode::GPIO(gpio) => *gpio as u64,
+            TransitionMode::GPIO(gpio) => gpio as u64,
             TransitionMode::SysTime(time) => time.sys_time(),
         }
     }
