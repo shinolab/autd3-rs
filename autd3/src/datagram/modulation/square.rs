@@ -189,7 +189,7 @@ mod tests {
     )]
     fn new_nearest(#[case] expect: Result<Vec<u8>, ModulationError>, #[case] freq: Freq<f32>) {
         let m = Square {
-            freq: freq,
+            freq,
             option: SquareOption::default(),
         }
         .into_nearest();

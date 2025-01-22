@@ -7,15 +7,9 @@ use std::{fmt::Debug, path::Path, rc::Rc};
 use crate::error::AudioFileError;
 
 /// The option of [`Wav`].
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct WavOption {
     resampler: Option<(SamplingConfig, Rc<dyn Resampler>)>,
-}
-
-impl Default for WavOption {
-    fn default() -> Self {
-        Self { resampler: None }
-    }
 }
 
 /// [`Modulation`] from Wav data.
@@ -54,16 +48,15 @@ impl<'a> Wav<'a> {
             path: self.path,
             option: WavOption {
                 resampler: Some((target.try_into()?, Rc::new(resampler))),
-                ..self.option
             },
         })
     }
 }
 
-impl<'a> Wav<'a> {
+impl Wav<'_> {
     #[tracing::instrument]
     fn read_buf(&self) -> Result<(Vec<u8>, u32), AudioFileError> {
-        let mut reader = hound::WavReader::open(&self.path)?;
+        let mut reader = hound::WavReader::open(self.path)?;
         let spec = reader.spec();
         tracing::debug!("wav spec: {:?}", spec);
         if spec.channels != 1 {
@@ -111,7 +104,7 @@ impl<'a> Wav<'a> {
     }
 }
 
-impl<'a> Modulation for Wav<'a> {
+impl Modulation for Wav<'_> {
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
         let (buffer, sample_rate) = self.read_buf()?;
         tracing::debug!("Read buffer: {:?}", buffer);
@@ -126,7 +119,7 @@ impl<'a> Modulation for Wav<'a> {
         if let Some((config, _)) = &self.option.resampler {
             Ok(*config)
         } else {
-            let reader = hound::WavReader::open(&self.path).map_err(AudioFileError::from)?;
+            let reader = hound::WavReader::open(self.path).map_err(AudioFileError::from)?;
             let spec = reader.spec();
             Ok((spec.sample_rate * Hz).try_into()?)
         }

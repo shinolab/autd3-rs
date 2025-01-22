@@ -117,8 +117,7 @@ impl<'a, S: Sleep, L: Link, T: BorrowMut<Sender<'a, L, S>>, K: PartialEq + Debug
             .for_each(|(dev, k)| {
                 dev.enable = k.as_ref().is_some_and(|kk| kk == &key);
             });
-        let mut generator =
-            data.operation_generator(&sender.borrow().geometry, &datagram_option)?;
+        let mut generator = data.operation_generator(sender.borrow().geometry, &datagram_option)?;
         sender
             .borrow_mut()
             .geometry
@@ -247,10 +246,10 @@ impl<L: Link> Controller<L> {
     /// # }
     /// ```
     #[must_use]
-    pub fn group<'a, K: Hash + Eq + Clone + Debug, F: Fn(&Device) -> Option<K>>(
-        &'a mut self,
+    pub fn group<K: Hash + Eq + Clone + Debug, F: Fn(&Device) -> Option<K>>(
+        &mut self,
         f: F,
-    ) -> Group<'a, SpinSleeper, L, Sender<'a, L, SpinSleeper>, K> {
+    ) -> Group<'_, SpinSleeper, L, Sender<'_, L, SpinSleeper>, K> {
         Group::new(
             self.sender(SpinSleeper::default(), SenderOption::default()),
             f,

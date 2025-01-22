@@ -129,21 +129,21 @@ impl SamplingMode {
     }
 }
 
-impl Into<SamplingMode> for Freq<u32> {
-    fn into(self) -> SamplingMode {
-        SamplingMode::ExactFreq(self)
+impl From<Freq<u32>> for SamplingMode {
+    fn from(val: Freq<u32>) -> Self {
+        SamplingMode::ExactFreq(val)
     }
 }
 
-impl Into<SamplingMode> for Freq<f32> {
-    fn into(self) -> SamplingMode {
-        SamplingMode::ExactFreqFloat(self)
+impl From<Freq<f32>> for SamplingMode {
+    fn from(val: Freq<f32>) -> Self {
+        SamplingMode::ExactFreqFloat(val)
     }
 }
 
-impl Into<SamplingMode> for Nearest {
-    fn into(self) -> SamplingMode {
-        SamplingMode::NearestFreq(self.0)
+impl From<Nearest> for SamplingMode {
+    fn from(val: Nearest) -> Self {
+        SamplingMode::NearestFreq(val.0)
     }
 }
 

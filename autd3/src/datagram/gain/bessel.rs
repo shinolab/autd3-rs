@@ -163,7 +163,6 @@ mod tests {
             option: BesselOption {
                 intensity,
                 phase_offset,
-                ..BesselOption::default()
             },
         };
         bessel_check(g, pos, dir, theta, intensity, phase_offset, &geometry)?;

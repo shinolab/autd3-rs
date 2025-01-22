@@ -75,7 +75,7 @@ impl<'a> Csv<'a, Freq<f32>, SamplingConfigError> {
     }
 }
 
-impl<'a, Config, E> Csv<'a, Config, E>
+impl<Config, E> Csv<'_, Config, E>
 where
     E: Debug,
     SamplingConfigError: From<E>,
@@ -83,7 +83,7 @@ where
 {
     #[tracing::instrument]
     fn read_buf(&self) -> Result<Vec<u8>, AudioFileError> {
-        let f = File::open(&self.path)?;
+        let f = File::open(self.path)?;
         let mut rdr = csv::ReaderBuilder::new()
             .has_headers(false)
             .delimiter(self.option.deliminator)
@@ -107,7 +107,7 @@ where
     }
 }
 
-impl<'a, Config, E> Modulation for Csv<'a, Config, E>
+impl<Config, E> Modulation for Csv<'_, Config, E>
 where
     E: Debug,
     SamplingConfigError: From<E>,

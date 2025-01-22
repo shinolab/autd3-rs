@@ -27,7 +27,7 @@ pub struct RemoteTwinCAT {
 }
 
 /// A builder for [`RemoteTwinCAT`].
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct RemoteTwinCATBuilder {
     /// The AMS Net ID of the TwinCAT3 server.
     pub server_ams_net_id: String,
@@ -35,16 +35,6 @@ pub struct RemoteTwinCATBuilder {
     pub server_ip: String,
     /// The AMS Net ID of the client.
     pub client_ams_net_id: String,
-}
-
-impl Default for RemoteTwinCATBuilder {
-    fn default() -> Self {
-        Self {
-            server_ams_net_id: String::new(),
-            server_ip: String::new(),
-            client_ams_net_id: String::new(),
-        }
-    }
 }
 
 impl LinkBuilder for RemoteTwinCATBuilder {

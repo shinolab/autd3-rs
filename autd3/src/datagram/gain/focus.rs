@@ -121,7 +121,6 @@ mod tests {
             option: FocusOption {
                 intensity,
                 phase_offset,
-                ..Default::default()
             },
         };
         focus_check(g, pos, intensity, phase_offset, &geometry)?;

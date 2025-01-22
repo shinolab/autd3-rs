@@ -10,7 +10,7 @@ use derive_more::Deref;
 use num::integer::lcm;
 
 /// The option of [`Fourier`].
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct FourierOption {
     /// The scaling factor of the modulation. If `None`, the scaling factor is set to reciprocal of the number of components. The default value is `None`.
     pub scale_factor: Option<f32>,
@@ -18,16 +18,6 @@ pub struct FourierOption {
     pub clamp: bool,
     /// The offset of the modulation value. The default value is `0`.
     pub offset: u8,
-}
-
-impl Default for FourierOption {
-    fn default() -> Self {
-        Self {
-            scale_factor: None,
-            clamp: false,
-            offset: 0,
-        }
-    }
 }
 
 /// `Moudlation` that is a sum of multiple [`Sine`].
@@ -44,7 +34,7 @@ pub struct Fourier<S: Into<SamplingMode> + Clone + Debug> {
 
 impl<S: Into<SamplingMode> + Clone + Debug> Modulation for Fourier<S> {
     fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-        Ok(self.components[0].sampling_config()?)
+        self.components[0].sampling_config()
     }
 
     fn calc(self) -> Result<Vec<u8>, ModulationError> {

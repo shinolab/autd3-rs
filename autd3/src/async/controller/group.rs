@@ -118,8 +118,7 @@ impl<'a, S: AsyncSleep, L: AsyncLink, T: BorrowMut<Sender<'a, L, S>>, K: Partial
             .for_each(|(dev, k)| {
                 dev.enable = k.as_ref().is_some_and(|kk| kk == &key);
             });
-        let mut generator =
-            data.operation_generator(&sender.borrow().geometry, &datagram_option)?;
+        let mut generator = data.operation_generator(sender.borrow().geometry, &datagram_option)?;
         sender
             .borrow_mut()
             .geometry
@@ -251,10 +250,10 @@ impl<L: AsyncLink> Controller<L> {
     /// # }
     /// ```
     #[must_use]
-    pub fn group<'a, K: Hash + Eq + Clone + Debug, F: Fn(&Device) -> Option<K>>(
-        &'a mut self,
+    pub fn group<K: Hash + Eq + Clone + Debug, F: Fn(&Device) -> Option<K>>(
+        &mut self,
         f: F,
-    ) -> Group<'a, AsyncSleeper, L, Sender<'a, L, AsyncSleeper>, K> {
+    ) -> Group<'_, AsyncSleeper, L, Sender<'_, L, AsyncSleeper>, K> {
         Group::new(
             self.sender(AsyncSleeper::default(), SenderOption::default()),
             f,

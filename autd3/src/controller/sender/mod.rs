@@ -57,7 +57,7 @@ pub struct Sender<'a, L: Link, S: Sleep> {
     pub(crate) option: SenderOption,
 }
 
-impl<'a, L: Link, S: Sleep> Sender<'a, L, S> {
+impl<L: Link, S: Sleep> Sender<'_, L, S> {
     /// Send the [`Datagram`] to the devices.
     ///
     /// If the `timeout` value is
@@ -84,8 +84,8 @@ impl<'a, L: Link, S: Sleep> Sender<'a, L, S> {
         };
         self.send_impl(
             OperationHandler::generate(
-                s.operation_generator(&self.geometry, &datagram_option)?,
-                &self.geometry,
+                s.operation_generator(self.geometry, &datagram_option)?,
+                self.geometry,
             ),
             &datagram_option,
         )
@@ -106,7 +106,7 @@ impl<'a, L: Link, S: Sleep> Sender<'a, L, S> {
 
         let parallel = self.geometry.num_devices() > parallel_threshold;
 
-        self.link.trace(&option);
+        self.link.trace(option);
         tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
 
         self.link.update(self.geometry)?;

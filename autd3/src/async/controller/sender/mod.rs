@@ -28,7 +28,7 @@ pub struct Sender<'a, L: AsyncLink, S: AsyncSleep> {
     pub(crate) option: SenderOption,
 }
 
-impl<'a, L: AsyncLink, S: AsyncSleep> Sender<'a, L, S> {
+impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
     /// Send the [`Datagram`] to the devices.
     ///
     /// If the `timeout` value is
@@ -55,8 +55,8 @@ impl<'a, L: AsyncLink, S: AsyncSleep> Sender<'a, L, S> {
         };
         self.send_impl(
             OperationHandler::generate(
-                s.operation_generator(&self.geometry, &datagram_option)?,
-                &self.geometry,
+                s.operation_generator(self.geometry, &datagram_option)?,
+                self.geometry,
             ),
             &datagram_option,
         )
@@ -78,7 +78,7 @@ impl<'a, L: AsyncLink, S: AsyncSleep> Sender<'a, L, S> {
 
         let parallel = self.geometry.num_devices() > parallel_threshold;
 
-        self.link.trace(&option);
+        self.link.trace(option);
         tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
 
         self.link.update(self.geometry).await?;

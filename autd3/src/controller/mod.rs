@@ -85,11 +85,7 @@ impl<L: Link> Controller<L> {
     }
 
     /// Returns the [`Sender`] to send data to the devices.
-    pub fn sender<'a, S: Sleep>(
-        &'a mut self,
-        sleeper: S,
-        option: SenderOption,
-    ) -> Sender<'a, L, S> {
+    pub fn sender<S: Sleep>(&mut self, sleeper: S, option: SenderOption) -> Sender<'_, L, S> {
         Sender {
             link: &mut self.link,
             geometry: &mut self.geometry,

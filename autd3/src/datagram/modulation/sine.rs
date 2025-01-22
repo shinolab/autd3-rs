@@ -206,7 +206,7 @@ mod tests {
     )]
     fn new_nearest(#[case] expect: Result<Vec<u8>, ModulationError>, #[case] freq: Freq<f32>) {
         let m = Sine {
-            freq: freq,
+            freq,
             option: SineOption::default(),
         }
         .into_nearest();

@@ -3,15 +3,9 @@ use std::{fmt::Debug, rc::Rc};
 use autd3_core::{defined::Freq, derive::*, resampler::Resampler};
 
 /// The option of [`Custom`].
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct CustomOption {
     resampler: Option<(Freq<f32>, Rc<dyn Resampler>)>,
-}
-
-impl Default for CustomOption {
-    fn default() -> Self {
-        Self { resampler: None }
-    }
 }
 
 ///[`Modulation`] to use arbitrary modulation data
@@ -58,7 +52,6 @@ impl Custom<Freq<f32>, SamplingConfigError> {
             sampling_config: target,
             option: CustomOption {
                 resampler: Some((source, Rc::new(resampler))),
-                ..self.option
             },
         }
     }
@@ -130,7 +123,7 @@ mod tests {
         #[case] resampler: impl Resampler + 'static,
     ) -> anyhow::Result<()> {
         let custom = Custom {
-            buffer: buffer,
+            buffer,
             sampling_config: source,
             option: CustomOption::default(),
         }

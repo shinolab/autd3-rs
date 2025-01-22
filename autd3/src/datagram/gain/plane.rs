@@ -123,7 +123,6 @@ mod tests {
             option: PlaneOption {
                 intensity,
                 phase_offset,
-                ..PlaneOption::default()
             },
         };
         plane_check(g, dir, intensity, phase_offset, &geometry)?;
