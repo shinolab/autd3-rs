@@ -94,11 +94,7 @@ pub use async_trait::async_trait;
 /// impl Gain for FocalPoint {
 ///     type G = FocalPoint;
 ///
-///     fn init(
-///         self,
-///         _geometry: &Geometry,
-///         _filter: Option<&HashMap<usize, BitVec>>,
-///     ) -> Result<Self::G, GainError> {
+///     fn init(self) -> Result<Self::G, GainError> {
 ///         Ok(self)
 ///     }
 /// }
@@ -106,25 +102,17 @@ pub use async_trait::async_trait;
 ///
 /// The following example shows how to define a modulation that outputs the maximum value only for a moment.
 ///
-/// [`Modulation`] struct must have `config: SamplingConfig` and `loop_behavior: LoopBehavior`.
-/// If you add `#[no_change]` attribute to `config`, you can't change the value of `config` except for the constructor.
-///
 /// ```
 /// use autd3_core::defined::kHz;
 /// use autd3_core::derive::*;
 ///
 /// #[derive(Modulation, Debug)]
 /// pub struct Burst {
-///     config: SamplingConfig,
-///     loop_behavior: LoopBehavior,
 /// }
 ///
 /// impl Burst {
 ///     pub fn new() -> Self {
-///         Self {
-///             config: SamplingConfig::new(4 * kHz).unwrap(),
-///             loop_behavior: LoopBehavior::Infinite,
-///         }
+///         Self {}
 ///     }
 /// }
 ///
@@ -133,6 +121,10 @@ pub use async_trait::async_trait;
 ///         Ok((0..4000)
 ///             .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
 ///             .collect())
+///     }
+///
+///     fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
+///         Ok(SamplingConfig::new(4 * kHz)?)    
 ///     }
 /// }
 /// ```

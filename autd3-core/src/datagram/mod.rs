@@ -16,9 +16,12 @@ use std::time::Duration;
 
 use crate::{defined::DEFAULT_TIMEOUT, geometry::Geometry};
 
+/// The option of the datagram.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DatagramOption {
+    /// The default timeout of the datagram.
     pub timeout: Duration,
+    /// The default threshold of the parallel processing.
     pub parallel_threshold: usize,
 }
 
@@ -31,7 +34,7 @@ impl Default for DatagramOption {
     }
 }
 
-/// [`DatagramL`] represents the data sent to the device.
+/// [`DatagramL`] is a [`Datagram`] with [`LoopBehavior`].
 pub trait DatagramL: std::fmt::Debug {
     #[doc(hidden)]
     type G;
@@ -54,7 +57,7 @@ pub trait DatagramL: std::fmt::Debug {
     }
 }
 
-/// [`DatagramS`] represents the data sent to the device.
+/// [`DatagramS`] is a [`Datagram`] with [`Segment`].
 pub trait DatagramS: std::fmt::Debug {
     #[doc(hidden)]
     type G;
