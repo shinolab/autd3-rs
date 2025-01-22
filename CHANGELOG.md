@@ -4,34 +4,33 @@
   - phase correction bram and pulse width encoder table reset to default in clear op
   - support for `dynamic_freq` version
 - Make `async` optional
-- Remove `Deref<Target = Link>` and `DerefMut` for `Controller`
-  - Impl `Deref<Target = Geometry>` and `DerefMut` for `Controller` instead
 - Make `Transducer::new` public
 - Make `autd3_gain_holo::kPa` public
-- Impl `IntoIterator` for `&Controller`
 - Rename from `AUTDInternalError` to `AUTDDriverError`
-- Rename from `fallback_timeout` to `default_timeout` and `fallback_parallel_threshold` to `default_parallel_threshold`
-  - Move `default_parallel_threshold` into `Geometry`
-  - Move `default_timeout` into `Timer`
-- Add `AUTDDriverError::KeyIsAlreadyUsed` and `AUTDDriverError::UnusedKey` errors
-  - `controller::Group::set` and `gain::Group::set` now return `AUTDDriverError::KeyIsAlreadyUsed` if the key is already used
-  - `controller::Group::send` and `gain::Group::init` now return `AUTDDriverError::UnusedKey` if the key is not used
-- Add `Circle` and `Line` utilities for `FociSTM` and `GainSTM`
-- Add `timer_strategy` option for `Controller`
-- Add all euler angle variants to `EulerAngle`
-- Remove `RawPCM` modulation
-- Remove `Silencer::is_valid`
-- Remove `Drive::null`, add `Drive::NULL` instead
-- Remove `Gain::with_transform`
-- Remove `parallel` option from `gain::Group`
-- `Gain::with_segment` and `SwapSegment::Gain` now take `TransitionMode` instead of `bool`
-  - Still, `TransitionMode::Immediate` is only supported
 - Use `Point3` instead of `Vector3` for coordinate values
 - Use `Vec<u8>` instead of `Arc<Vec<u8>>` in `Modulation`s
+- `SwapSegment::Gain` now take `TransitionMode` instead of `bool`
+  - Still, `TransitionMode::Immediate` is only supported
+- Impl `IntoIterator` for `&Controller`
 - Improve calculation performance of `Gain`s
   - Change custom `Gain` APIs
 - Improve performance of `Geometry::center`
 - Update tracing messages
+- Add `Sender`
+  - Move `send_interval`, `receive_interval`, `timeout`, and `parallel_threshold` options to `Sender`
+- Add `Circle` and `Line` utilities for `FociSTM` and `GainSTM`
+- Add all euler angle variants to `EulerAngle`
+- Add `AUTDDriverError::KeyIsAlreadyUsed` and `AUTDDriverError::UnusedKey` errors
+  - `controller::Group::set` and `gain::Group::set` now return `AUTDDriverError::KeyIsAlreadyUsed` if the key is already used
+  - `controller::Group::send` and `gain::Group::init` now return `AUTDDriverError::UnusedKey` if the key is not used
+- Remove `with_xxx` methods to set option value, add option struct instead
+- Remove `Deref<Target = Link>` and `DerefMut` for `Controller`
+  - Impl `Deref<Target = Geometry>` and `DerefMut` for `Controller` instead
+- Remove `Gain::with_transform`
+- Remove `parallel` option from `gain::Group`
+- Remove `Drive::null`, add `Drive::NULL` instead
+- Remove `Silencer::is_valid`
+- Remove `RawPCM` modulation
 - Fix `Sine` and `Fourier`'s `offset`
 - Fix `Controller::group` for `Gain`s which cannot be calculated independently for each device, such as `Gain`s in `autd3-gain-holo`
 - Fix [#130](https://github.com/shinolab/autd3-rs/issues/130): `Gain`s in `autd3-gain-holo` cause `index out of bounds` error with disabled device
