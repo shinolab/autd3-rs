@@ -144,7 +144,7 @@ impl Memory {
                 BRAM_CNT_SEL_MAIN => self.controller_bram.borrow_mut()[addr] = data,
                 BRAM_CNT_SEL_PHASE_CORR => self.phase_corr_bram.borrow_mut()[addr & 0xFF] = data,
                 #[cfg(feature = "dynamic_freq")]
-                BRAM_CNT_SEL_CLOCK => self.drp_bram_mut()[addr & 0xFF] = data,
+                BRAM_CNT_SEL_CLOCK => self.drp_bram.borrow_mut()[addr & 0xFF] = data,
                 _ => unreachable!(),
             },
             BRAM_SELECT_MOD => {
