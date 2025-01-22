@@ -200,9 +200,6 @@ where
 
 #[cfg(test)]
 mod tests {
-
-    use std::time::Duration;
-
     use super::*;
 
     #[test]
@@ -224,13 +221,14 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(feature = "dynamic_freq"))]
     fn fixed_completion_time_default() {
         let s: Silencer<FixedCompletionTime> = Silencer {
             config: Default::default(),
             target: Default::default(),
         };
-        assert_eq!(Duration::from_micros(250), s.config.intensity);
-        assert_eq!(Duration::from_micros(1000), s.config.phase);
+        assert_eq!(std::time::Duration::from_micros(250), s.config.intensity);
+        assert_eq!(std::time::Duration::from_micros(1000), s.config.phase);
         assert!(s.config.strict_mode);
         assert_eq!(SilencerTarget::Intensity, s.target);
     }
