@@ -23,9 +23,8 @@ pub struct Simulator {
 }
 
 /// A builder for [`Simulator`].
-#[derive(Builder, Debug)]
+#[derive(Debug)]
 pub struct SimulatorBuilder {
-    #[get]
     /// AUTD3 Simulator address.
     addr: SocketAddr,
 }
@@ -45,7 +44,7 @@ impl AsyncLinkBuilder for SimulatorBuilder {
         let mut client = simulator_client::SimulatorClient::new(conn);
 
         client
-            .config_geomety(geometry.to_msg(None))
+            .config_geomety(geometry.to_msg(None)?)
             .await
             .map_err(|e| {
                 tracing::error!("Failed to configure simulator geometry: {}", e);
@@ -89,7 +88,7 @@ impl AsyncLink for Simulator {
         }
         self.last_geometry_version = geometry.version();
         self.client
-            .update_geomety(geometry.to_msg(None))
+            .update_geomety(geometry.to_msg(None)?)
             .await
             .map_err(|e| {
                 tracing::error!("Failed to update geometry: {}", e);
@@ -101,7 +100,7 @@ impl AsyncLink for Simulator {
     async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
         let res = self
             .client
-            .send_data(tx.to_msg(None))
+            .send_data(tx.to_msg(None)?)
             .await
             .map_err(AUTDProtoBufError::from)?;
 
@@ -162,10 +161,6 @@ impl Link for SimulatorBlocking {
 
     fn is_open(&self) -> bool {
         self.inner.is_open()
-    }
-
-    fn trace(&mut self, timeout: Option<std::time::Duration>, parallel_threshold: Option<usize>) {
-        self.inner.trace(timeout, parallel_threshold)
     }
 }
 
