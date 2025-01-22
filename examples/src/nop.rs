@@ -9,8 +9,13 @@ fn main() -> Result<()> {
         .with_max_level(tracing::Level::DEBUG)
         .init();
 
-    let autd = Controller::builder([AUTD3::new(Point3::origin()), AUTD3::new(Point3::origin())])
-        .open(Nop::builder())?;
+    let autd = Controller::open(
+        [AUTD3 {
+            pos: Point3::origin(),
+            rot: UnitQuaternion::identity(),
+        }; 2],
+        Nop::builder(),
+    )?;
 
     tests::run(autd)
 }

@@ -5,8 +5,14 @@ pub fn plane(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
 
     let dir = Vector3::z_axis();
 
-    let m = Sine::new(150. * Hz);
-    let g = Plane::new(dir);
+    let m = Sine {
+        freq: 150. * Hz,
+        option: Default::default(),
+    };
+    let g = Plane {
+        dir,
+        option: Default::default(),
+    };
 
     autd.send((m, g))?;
 

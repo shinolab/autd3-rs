@@ -32,10 +32,18 @@ pub fn fir(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
         -0.000042, -0.000036, -0.000030, -0.000025, -0.000021, -0.000016, -0.000013, -0.000009,
     ];
 
-    let g = Focus::new(center);
-    let m = Sine::new(150. * Hz)
-        .with_sampling_config(20 * kHz)?
-        .with_fir(filt);
+    let g = Focus {
+        pos: center,
+        option: Default::default(),
+    };
+    let m = Sine {
+        freq: 150. * Hz,
+        option: SineOption {
+            sampling_config: SamplingConfig::new(20 * kHz)?,
+            ..Default::default()
+        },
+    }
+    .with_fir(filt);
 
     autd.send((m, g))?;
 
