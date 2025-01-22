@@ -21,14 +21,11 @@ async fn audit_test() -> anyhow::Result<()> {
     assert_eq!(0, autd.link()[0].idx());
 
     {
-        autd.sender(
-            AsyncSleeper::default(),
-            SenderOption {
-                parallel_threshold: Some(1),
-                timeout: Some(Duration::from_millis(20)),
-                ..Default::default()
-            },
-        )
+        autd.sender(SenderOption::<AsyncSleeper> {
+            parallel_threshold: Some(1),
+            timeout: Some(Duration::from_millis(20)),
+            ..Default::default()
+        })
         .send(Null {})
         .await?;
         assert_eq!(Some(Duration::from_millis(20)), autd.link().last_timeout());

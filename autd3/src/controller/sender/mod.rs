@@ -21,7 +21,7 @@ use itertools::Itertools;
 
 /// The option of [`Sender`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct SenderOption {
+pub struct SenderOption<S> {
     /// The duration between sending operations.
     pub send_interval: Duration,
     /// The duration between receiving operations.
@@ -34,15 +34,18 @@ pub struct SenderOption {
     ///
     /// [`Datagram`]: autd3_driver::datagram::Datagram
     pub parallel_threshold: Option<usize>,
+    /// The sleeper to manage the sending/receiving timing.
+    pub sleeper: S,
 }
 
-impl Default for SenderOption {
+impl<S: Default> Default for SenderOption<S> {
     fn default() -> Self {
         Self {
             send_interval: Duration::from_millis(1),
             receive_interval: Duration::from_millis(1),
             timeout: None,
             parallel_threshold: None,
+            sleeper: S::default(),
         }
     }
 }
@@ -53,8 +56,7 @@ pub struct Sender<'a, L: Link, S: Sleep> {
     pub(crate) geometry: &'a mut Geometry,
     pub(crate) tx: &'a mut [TxMessage],
     pub(crate) rx: &'a mut [RxMessage],
-    pub(crate) sleeper: S,
-    pub(crate) option: SenderOption,
+    pub(crate) option: SenderOption<S>,
 }
 
 impl<L: Link, S: Sleep> Sender<'_, L, S> {
@@ -124,7 +126,7 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
             }
 
             send_timing += self.option.send_interval;
-            self.sleeper.sleep_until(send_timing);
+            self.option.sleeper.sleep_until(send_timing);
         }
     }
 
@@ -157,7 +159,7 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
                 break;
             }
             receive_timing += self.option.receive_interval;
-            self.sleeper.sleep_until(receive_timing);
+            self.option.sleeper.sleep_until(receive_timing);
         }
         self.rx
             .iter()
@@ -268,8 +270,8 @@ mod tests {
                 receive_interval: Duration::from_millis(1),
                 timeout: None,
                 parallel_threshold: None,
+                sleeper,
             },
-            sleeper,
         };
 
         assert_eq!(sender.send_receive(Duration::ZERO), Ok(()));
@@ -313,12 +315,12 @@ mod tests {
             geometry: &mut geometry,
             tx: &mut tx,
             rx: &mut rx,
-            sleeper,
             option: SenderOption {
                 send_interval: Duration::from_millis(1),
                 receive_interval: Duration::from_millis(1),
                 timeout: None,
                 parallel_threshold: None,
+                sleeper,
             },
         };
 
