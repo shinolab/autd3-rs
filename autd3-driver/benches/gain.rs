@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use autd3_core::derive::*;
 use autd3_driver::{
     autd3_device::AUTD3,
