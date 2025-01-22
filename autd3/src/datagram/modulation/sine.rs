@@ -5,7 +5,7 @@ use autd3_core::{
     derive::*,
 };
 
-use super::sampling_mode::SamplingMode;
+use super::sampling_mode::{Nearest, SamplingMode};
 
 use derive_more::Debug;
 
@@ -29,7 +29,7 @@ impl Default for SineOption {
             offset: 0x80,
             phase: 0. * rad,
             clamp: false,
-            sampling_config: SamplingConfig::FREQ_4K,
+            sampling_config: SamplingConfig::DIV_10,
         }
     }
 }
@@ -44,9 +44,9 @@ pub struct Sine<S: Into<SamplingMode> + Clone + Debug> {
 }
 
 impl Sine<Freq<f32>> {
-    pub fn into_nearest(self) -> Sine<SamplingMode> {
+    pub fn into_nearest(self) -> Sine<Nearest> {
         Sine {
-            freq: SamplingMode::NearestFreq(self.freq),
+            freq: Nearest(self.freq),
             option: self.option,
         }
     }

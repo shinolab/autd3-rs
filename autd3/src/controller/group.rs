@@ -201,7 +201,7 @@ impl<'a, L: Link, S: Sleep> Sender<'a, L, S> {
     /// ```
     /// # use autd3::prelude::*;
     /// # fn main() -> Result<(), AUTDError> {
-    /// let mut autd = Controller::builder((0..3).map(|_| AUTD3::default())).open(Nop::builder())?;
+    /// let mut autd = Controller::open((0..3).map(|_| AUTD3::default()), Nop::builder())?;
     ///
     /// autd.group(|dev| match dev.idx() {
     ///    0 => Some("static"),
@@ -209,7 +209,7 @@ impl<'a, L: Link, S: Sleep> Sender<'a, L, S> {
     ///   _ => None,
     /// })
     /// .set("static", Static::default())?
-    /// .set("sine", Sine::new(150 * Hz))?
+    /// .set("sine", Sine { freq: 150 * Hz, option: Default::default() })?
     /// .send()?;
     /// # Ok(())
     /// # }
@@ -233,7 +233,7 @@ impl<L: Link> Controller<L> {
     /// ```
     /// # use autd3::prelude::*;
     /// # fn main() -> Result<(), AUTDError> {
-    /// let mut autd = Controller::builder((0..3).map(|_| AUTD3::default())).open(Nop::builder())?;
+    /// let mut autd = Controller::open((0..3).map(|_| AUTD3::default()), Nop::builder())?;
     ///
     /// autd.group(|dev| match dev.idx() {
     ///    0 => Some("static"),
@@ -241,7 +241,7 @@ impl<L: Link> Controller<L> {
     ///   _ => None,
     /// })
     /// .set("static", Static::default())?
-    /// .set("sine", Sine::new(150 * Hz))?
+    /// .set("sine", Sine { freq: 150 * Hz, option: Default::default() })?
     /// .send()?;
     /// # Ok(())
     /// # }

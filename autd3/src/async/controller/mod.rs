@@ -234,7 +234,7 @@ impl<L: AsyncLink> Controller<L> {
     /// ```
     /// # use autd3::prelude::*;
     /// # fn main() -> Result<(), AUTDError> {
-    /// let mut autd = Controller::builder([AUTD3::default()]).open(Nop::builder())?;
+    /// let mut autd = Controller::open([AUTD3::default()], Nop::builder())?;
     ///
     /// autd.send(ReadsFPGAState::new(|_| true))?;
     ///

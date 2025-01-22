@@ -5,7 +5,10 @@ pub use crate::{
             Bessel, BesselOption, Focus, FocusOption, Group, IntoGainCache, Null, Plane,
             PlaneOption, Uniform,
         },
-        modulation::{IntoModulationCache, IntoRadiationPressure, Sine, Square, Static, WithFir},
+        modulation::{
+            FourierOption, IntoModulationCache, IntoRadiationPressure, Sine, SineOption, Square,
+            SquareOption, Static, WithFir,
+        },
         stm::{Circle, Line},
     },
     error::AUTDError,
@@ -18,7 +21,8 @@ pub use autd3_driver::{
     autd3_device::AUTD3,
     datagram::{
         Clear, ControlPoint, ControlPoints, DebugSettings, FixedUpdateRate, FociSTM, ForceFan,
-        GainSTM, PhaseCorrection, PulseWidthEncoder, ReadsFPGAState, Silencer, SwapSegment,
+        GainSTM, GainSTMOption, IntoBoxedGain, IntoBoxedModulation, PhaseCorrection,
+        PulseWidthEncoder, ReadsFPGAState, Silencer, SwapSegment,
     },
     defined::{deg, kHz, mm, rad, ultrasound_freq, Hz, PI},
     error::AUTDDriverError,

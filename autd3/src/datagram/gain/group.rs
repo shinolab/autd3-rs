@@ -1,7 +1,6 @@
 use autd3_core::derive::*;
 
 use autd3_driver::{
-    datagram::{BoxedGain, IntoBoxedGain},
     error::AUTDDriverError,
     firmware::fpga::Drive,
     geometry::{Device, Transducer},
@@ -28,8 +27,8 @@ use derive_new::new;
 ///
 /// # fn _main() -> Result<(), AUTDDriverError> {
 /// Group::new(|dev| |tr| if tr.idx() < 100 { Some("null") } else { Some("focus") })
-///    .set("null", Null {})?
-///    .set("focus", Focus::new(Point3::origin()))?;
+///    .set("null", Null {}.into_boxed())?
+///    .set("focus", Focus { pos: Point3::origin(), option: Default::default() }.into_boxed())?;
 /// # Ok(())
 /// # }
 /// ```

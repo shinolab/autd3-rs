@@ -15,7 +15,7 @@ use derive_new::new;
 /// use autd3::prelude::*;
 /// use autd3::gain::Custom;
 ///
-/// Custom::new(|dev| |tr| (Phase::ZERO, EmitIntensity::MAX));
+/// Custom::new(|dev| |tr| Drive { phase: Phase::ZERO, intensity: EmitIntensity::MAX });
 /// ```
 #[derive(Gain, Debug, new)]
 #[debug("Custom (Gain)")]

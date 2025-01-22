@@ -36,7 +36,11 @@ impl Custom<Freq<f32>, SamplingConfigError> {
     /// use autd3::modulation::Custom;
     /// use autd3::core::resampler::SincInterpolation;
     ///
-    /// Custom::new_with_resample(&[0x00, 0xFF], 2.0 * kHz, 4 * kHz, SincInterpolation::default());
+    /// Custom {
+    ///     buffer: vec![0x00, 0xFF],
+    ///     sampling_config: 2.0 * kHz,
+    ///     option: Default::default(),
+    /// }.with_resample(4 * kHz, SincInterpolation::default());
     /// ```
     pub fn with_resample<T, E>(self, target: T, resampler: impl Resampler + 'static) -> Custom<T, E>
     where

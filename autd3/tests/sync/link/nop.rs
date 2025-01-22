@@ -9,7 +9,10 @@ fn nop_test() -> anyhow::Result<()> {
 
     assert!(autd.link_mut().close().is_ok());
 
-    assert_eq!(Err(AUTDDriverError::LinkClosed), autd.send(Static::default()));
+    assert_eq!(
+        Err(AUTDDriverError::LinkClosed),
+        autd.send(Static::default())
+    );
 
     Ok(())
 }

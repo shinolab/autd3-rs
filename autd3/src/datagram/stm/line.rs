@@ -20,15 +20,15 @@ use crate::gain::Focus;
 /// ```
 /// use autd3::prelude::*;
 ///
-/// FociSTM::new(
-///     1.0 * Hz,
-///     Line {
+/// FociSTM {
+///     config: 1.0 * Hz,
+///     foci: Line {
 ///         start: Point3::new(-15.0 * mm, 0., 0.),
 ///         end: Point3::new(15.0 * mm, 0., 0.),
 ///         num_points: 50,
 ///         intensity: EmitIntensity::MAX,
 ///     },
-/// );
+/// };
 /// ```
 #[derive(Clone, Debug)]
 pub struct Line {

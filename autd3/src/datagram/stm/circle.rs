@@ -22,16 +22,16 @@ use crate::gain::Focus;
 /// ```
 /// use autd3::prelude::*;
 ///
-/// FociSTM::new(
-///     1.0 * Hz,
-///     Circle {
+/// FociSTM {
+///     config: 1.0 * Hz,
+///     foci: Circle {
 ///         center: Point3::origin(),
 ///         radius: 30.0 * mm,
 ///         num_points: 50,
 ///         n: Vector3::z_axis(),
 ///         intensity: EmitIntensity::MAX,
 ///     },
-/// );
+/// };
 /// ```
 #[derive(Clone, Debug)]
 pub struct Circle {

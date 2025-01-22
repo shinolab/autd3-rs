@@ -9,6 +9,9 @@ use autd3_driver::{
 use num::integer::gcd;
 use std::fmt::Debug;
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct Nearest(pub Freq<f32>);
+
 /// A trait for sampling mode.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum SamplingMode {
@@ -131,6 +134,12 @@ impl Into<SamplingMode> for Freq<u32> {
 impl Into<SamplingMode> for Freq<f32> {
     fn into(self) -> SamplingMode {
         SamplingMode::ExactFreqFloat(self)
+    }
+}
+
+impl Into<SamplingMode> for Nearest {
+    fn into(self) -> SamplingMode {
+        SamplingMode::NearestFreq(self.0)
     }
 }
 

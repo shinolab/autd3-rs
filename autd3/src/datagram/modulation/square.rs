@@ -1,6 +1,6 @@
 use autd3_core::{defined::Freq, derive::*};
 
-use super::sampling_mode::SamplingMode;
+use super::sampling_mode::{Nearest, SamplingMode};
 
 use derive_more::Debug;
 
@@ -21,7 +21,7 @@ impl Default for SquareOption {
             low: u8::MIN,
             high: u8::MAX,
             duty: 0.5,
-            sampling_config: SamplingConfig::FREQ_4K,
+            sampling_config: SamplingConfig::DIV_10,
         }
     }
 }
@@ -35,9 +35,9 @@ pub struct Square<S: Into<SamplingMode> + Debug> {
 }
 
 impl Square<Freq<f32>> {
-    pub fn into_nearest(self) -> Square<SamplingMode> {
+    pub fn into_nearest(self) -> Square<Nearest> {
         Square {
-            freq: SamplingMode::NearestFreq(self.freq),
+            freq: Nearest(self.freq),
             option: self.option,
         }
     }
