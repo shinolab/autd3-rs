@@ -468,7 +468,7 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn close() -> anyhow::Result<()> {
         {
             let mut autd = create_controller(1).await?;

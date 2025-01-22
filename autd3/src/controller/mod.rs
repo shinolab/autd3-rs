@@ -343,9 +343,11 @@ pub(crate) mod tests {
     impl Gain for TestGain {
         type G = Null;
 
+        // GRCOV_EXCL_START
         fn init(self) -> Result<Self::G, GainError> {
             unimplemented!()
         }
+        // GRCOV_EXCL_STOP
 
         fn init_full(
             self,

@@ -170,7 +170,7 @@ mod tests {
         assert_eq!(u8::MIN, m.option.low);
         assert_eq!(u8::MAX, m.option.high);
         assert_eq!(0.5, m.option.duty);
-        assert_eq!(SamplingConfig::DIV_10, m.option.sampling_config);
+        assert_eq!(Ok(SamplingConfig::DIV_10), m.sampling_config());
         assert_eq!(expect, m.calc());
     }
 
@@ -187,7 +187,7 @@ mod tests {
         Ok(vec![255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         200.*Hz
     )]
-    fn new_nearest(#[case] expect: Result<Vec<u8>, ModulationError>, #[case] freq: Freq<f32>) {
+    fn into_nearest(#[case] expect: Result<Vec<u8>, ModulationError>, #[case] freq: Freq<f32>) {
         let m = Square {
             freq,
             option: SquareOption::default(),
@@ -196,8 +196,7 @@ mod tests {
         assert_eq!(u8::MIN, m.option.low);
         assert_eq!(u8::MAX, m.option.high);
         assert_eq!(0.5, m.option.duty);
-        assert_eq!(SamplingConfig::DIV_10, m.option.sampling_config);
-
+        assert_eq!(Ok(SamplingConfig::DIV_10), m.sampling_config());
         assert_eq!(expect, m.calc());
     }
 

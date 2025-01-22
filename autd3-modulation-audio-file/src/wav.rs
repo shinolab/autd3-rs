@@ -230,6 +230,7 @@ mod tests {
             path: path.as_path(),
             option: WavOption::default(),
         };
+        assert_eq!(spec.sample_rate, m.sampling_config()?.freq().hz() as u32);
         assert_eq!(Ok(expect), m.calc());
 
         Ok(())
@@ -265,6 +266,7 @@ mod tests {
         }
         .with_resample(target, resampler)?;
 
+        assert_eq!(target, m.sampling_config()?.freq());
         assert_eq!(expected, *m.calc()?);
 
         Ok(())

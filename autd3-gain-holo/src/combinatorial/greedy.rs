@@ -87,9 +87,11 @@ impl GainContextGenerator for ContextGenerator {
 impl<D: Directivity> Gain for Greedy<D> {
     type G = ContextGenerator;
 
+    // GRCOV_EXCL_START
     fn init(self) -> Result<Self::G, GainError> {
         unimplemented!()
     }
+    // GRCOV_EXCL_STOP
 
     fn init_full(
         self,

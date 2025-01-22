@@ -101,9 +101,11 @@ impl<G: Gain> GainContextGenerator for Cache<G> {
 impl<G: Gain> Gain for Cache<G> {
     type G = Self;
 
+    // GRCOV_EXCL_START
     fn init(self) -> Result<Self::G, GainError> {
         unimplemented!()
     }
+    // GRCOV_EXCL_STOP
 
     fn init_full(
         self,

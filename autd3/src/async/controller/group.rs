@@ -277,7 +277,8 @@ mod tests {
         controller::tests::TestGain,
         gain::{Null, Uniform},
         modulation::{Sine, Static},
-        r#async::controller::tests::create_controller,
+        prelude::SenderOption,
+        r#async::{controller::tests::create_controller, AsyncSleeper},
     };
 
     #[tokio::test]
@@ -321,6 +322,106 @@ mod tests {
         )?
         .send()
         .await?;
+
+        assert_eq!(
+            vec![Drive::NULL; autd.geometry[0].num_transducers()],
+            autd.link[0].fpga().drives_at(Segment::S0, 0)
+        );
+
+        assert_eq!(
+            vec![Drive::NULL; autd.geometry[1].num_transducers()],
+            autd.link[1].fpga().drives_at(Segment::S0, 0)
+        );
+        assert_eq!(
+            vec![0x80, 0x80],
+            autd.link[1].fpga().modulation_buffer(Segment::S0)
+        );
+
+        assert_eq!(
+            vec![
+                Drive {
+                    phase: Phase::ZERO,
+                    intensity: EmitIntensity(0xFF)
+                };
+                autd.geometry[2].num_transducers()
+            ],
+            autd.link[2].fpga().drives_at(Segment::S0, 0)
+        );
+
+        assert_eq!(
+            *Sine {
+                freq: 150. * Hz,
+                option: Default::default(),
+            }
+            .calc()?,
+            autd.link[3].fpga().modulation_buffer(Segment::S0)
+        );
+        assert_eq!(
+            vec![
+                Drive {
+                    phase: Phase::ZERO,
+                    intensity: EmitIntensity(0x80)
+                };
+                autd.geometry[3].num_transducers()
+            ],
+            autd.link[3].fpga().drives_at(Segment::S0, 0)
+        );
+        assert_eq!(
+            vec![
+                Drive {
+                    phase: Phase::ZERO,
+                    intensity: EmitIntensity(0x81)
+                };
+                autd.geometry[3].num_transducers()
+            ],
+            autd.link[3].fpga().drives_at(Segment::S0, 1)
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_group_sender() -> anyhow::Result<()> {
+        let mut autd = create_controller(4).await?;
+
+        autd.send(Uniform {
+            intensity: EmitIntensity(0xFF),
+            phase: Phase::ZERO,
+        })
+        .await?;
+
+        autd.sender(AsyncSleeper::default(), SenderOption::default())
+            .group(|dev| match dev.idx() {
+                0 | 1 | 3 => Some(dev.idx()),
+                _ => None,
+            })
+            .set(0, Null {})?
+            .set(1, (Static { intensity: 0x80 }, Null {}))?
+            .set(
+                3,
+                (
+                    Sine {
+                        freq: 150. * Hz,
+                        option: Default::default(),
+                    },
+                    GainSTM {
+                        gains: vec![
+                            Uniform {
+                                intensity: EmitIntensity(0x80),
+                                phase: Phase::ZERO,
+                            },
+                            Uniform {
+                                intensity: EmitIntensity(0x81),
+                                phase: Phase::ZERO,
+                            },
+                        ],
+                        config: 1. * Hz,
+                        option: Default::default(),
+                    },
+                ),
+            )?
+            .send()
+            .await?;
 
         assert_eq!(
             vec![Drive::NULL; autd.geometry[0].num_transducers()],

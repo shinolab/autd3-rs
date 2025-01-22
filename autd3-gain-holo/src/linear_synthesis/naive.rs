@@ -44,9 +44,11 @@ pub struct Naive<D: Directivity, B: LinAlgBackend<D>> {
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {
     type G = HoloContextGenerator<Complex>;
 
+    // GRCOV_EXCL_START
     fn init(self) -> Result<Self::G, GainError> {
         unimplemented!()
     }
+    // GRCOV_EXCL_STOP
 
     fn init_full(
         self,

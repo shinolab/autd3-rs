@@ -198,91 +198,40 @@ where
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use crate::{datagram::FociSTM, firmware::fpga::LoopBehavior, geometry::Point3};
+#[cfg(test)]
+mod tests {
 
-//     use super::*;
+    use std::time::Duration;
 
-//     #[test]
-//     fn disable() {
-//         let s = Silencer::disable();
-//         assert_eq!(1, s.config.intensity.get());
-//         assert_eq!(1, s.config.phase.get());
-//         assert!(s.config.strict_mode);
-//         assert_eq!(SilencerTarget::Intensity, s.target);
-//     }
+    use super::*;
 
-//     #[rstest::rstest]
-//     #[test]
-//     // #[case(true, 10, 10, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-//     // #[case(false, 11, 10, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-//     // #[case(false, 10, 11, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-//     // #[case(true, 11, 10, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-//     // #[case(true, 10, 11, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-//     // #[case(true, 10, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-//     // #[case(false, 11, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-//     // #[case(false, 10, 11, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-//     // #[case(true, 11, 10, false, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-//     // #[case(true, 10, 11, false, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-//     // #[case(true, 10, 10, true, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::Infinite })]
-//     // #[case(false, 11, 10, true, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::Infinite })]
-//     // #[case(true, 10, 11, true, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::Infinite })]
-//     // #[case(true, 11, 10, false, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::Infinite })]
-//     // #[case(true, 10, 11, false, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::Infinite })]
-//     fn fixed_completion_steps_is_valid(
-//         #[case] expect: bool,
-//         #[case] intensity: u16,
-//         #[case] phase: u16,
-//         #[case] strict_mode: bool,
-//         #[case] target: impl HasSamplingConfig,
-//     ) {
-//         let s = Silencer {
-//             config: FixedCompletionSteps {
-//                 intensity: NonZeroU16::new(intensity).unwrap(),
-//                 phase: NonZeroU16::new(phase).unwrap(),
-//                 strict_mode,
-//             },
-//             target: SilencerTarget::Intensity,
-//         };
-//         assert_eq!(expect, s.is_valid(&target));
-//     }
+    #[test]
+    fn disable() {
+        let s = Silencer::disable();
+        assert_eq!(1, s.config.intensity.get());
+        assert_eq!(1, s.config.phase.get());
+        assert!(s.config.strict_mode);
+        assert_eq!(SilencerTarget::Intensity, s.target);
+    }
 
-//     #[cfg(not(feature = "dynamic_freq"))]
-//     #[rstest::rstest]
-//     #[test]
-//     // #[case(true, 10, 10, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-//     // #[case(false, 11, 10, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-//     // #[case(false, 10, 11, true, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-//     // #[case(true, 11, 10, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-//     // #[case(true, 10, 11, false, FociSTM::new(SamplingConfig::new(10).unwrap(), [Point3::origin()]).unwrap())]
-//     // #[case(true, 10, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-//     // #[case(false, 11, 10, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-//     // #[case(false, 10, 11, true, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-//     // #[case(true, 11, 10, false, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-//     // #[case(true, 10, 11, false, GainSTM::new(SamplingConfig::new(10).unwrap(), [TestGain{ data: Default::default() }]).unwrap())]
-//     // #[case(true, 10, 10, true, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::Infinite })]
-//     // #[case(false, 11, 10, true, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::Infinite })]
-//     // #[case(true, 10, 11, true, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::Infinite })]
-//     // #[case(true, 11, 10, false, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::Infinite })]
-//     // #[case(true, 10, 11, false, TestModulation { config: SamplingConfig::new(10).unwrap(), loop_behavior: LoopBehavior::Infinite })]
-//     // fn fixed_completion_time_is_valid(
-//     //     #[case] expect: bool,
-//     //     #[case] intensity: u32,
-//     //     #[case] phase: u32,
-//     //     #[case] strict_mode: bool,
-//     //     #[case] target: impl HasSamplingConfig,
-//     // ) {
-//     //     use crate::defined::ultrasound_period;
+    #[test]
+    fn fixed_completion_steps_default() {
+        let s: Silencer<FixedCompletionSteps> = Silencer::default();
+        assert_eq!(10, s.config.intensity.get());
+        assert_eq!(40, s.config.phase.get());
+        assert!(s.config.strict_mode);
+        assert_eq!(SilencerTarget::Intensity, s.target);
+    }
 
-//     //     let s = Silencer {
-//     //         config: FixedCompletionTime {
-//     //             intensity: intensity * ultrasound_period(),
-//     //             phase: phase * ultrasound_period(),
-//     //             strict_mode,
-//     //         },
-//     //         target: SilencerTarget::Intensity,
-//     //     };
-//     //     assert_eq!(expect, s.is_valid(&target));
-//     // }
-// }
+    #[test]
+    fn fixed_completion_time_default() {
+        let s: Silencer<FixedCompletionTime> = Silencer {
+            config: Default::default(),
+            target: Default::default(),
+        };
+        assert_eq!(Duration::from_micros(250), s.config.intensity);
+        assert_eq!(Duration::from_micros(1000), s.config.phase);
+        assert!(s.config.strict_mode);
+        assert_eq!(SilencerTarget::Intensity, s.target);
+    }
+}

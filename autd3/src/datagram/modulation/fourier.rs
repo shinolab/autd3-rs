@@ -34,10 +34,16 @@ pub struct Fourier<S: Into<SamplingMode> + Clone + Debug> {
 
 impl<S: Into<SamplingMode> + Clone + Debug> Modulation for Fourier<S> {
     fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-        self.components[0].sampling_config()
+        self.components
+            .first()
+            .ok_or(ModulationError::new(
+                "Components must not be empty".to_string(),
+            ))?
+            .sampling_config()
     }
 
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
+        let sampling_config = self.sampling_config()?;
         let components = self
             .components
             .into_iter()
@@ -50,16 +56,10 @@ impl<S: Into<SamplingMode> + Clone + Debug> Modulation for Fourier<S> {
             })
             .collect::<Vec<_>>();
         tracing::trace!("Fourier components: {:?}", components);
-        let config = components
-            .first()
-            .ok_or(ModulationError::new(
-                "Components must not be empty".to_string(),
-            ))?
-            .sampling_config();
         if components
             .iter()
             .skip(1)
-            .any(|c| c.sampling_config() != config)
+            .any(|c| c.sampling_config() != Ok(sampling_config))
         {
             return Err(ModulationError::new(
                 "All components must have the same sampling configuration".to_string(),

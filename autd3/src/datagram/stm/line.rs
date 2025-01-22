@@ -166,6 +166,8 @@ mod tests {
             num_points: 3,
             intensity: EmitIntensity::MAX,
         };
+        assert_eq!(3, FociSTMGenerator::len(&line));
+        assert_eq!(3, GainSTMGenerator::len(&line));
 
         let expect = [
             Point3::new(0., -length / 2., 0.),

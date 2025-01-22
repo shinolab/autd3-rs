@@ -60,8 +60,6 @@ use crate::{error::AUTDDriverError, firmware::operation::OperationGenerator};
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use autd3_core::datagram::DatagramOption;
-
     use crate::firmware::operation::tests::create_device;
 
     use super::*;
@@ -72,40 +70,5 @@ pub(crate) mod tests {
                 .map(|i| create_device(i, num_trans_in_unit))
                 .collect(),
         )
-    }
-
-    #[derive(Debug)]
-    pub struct NullDatagram {
-        pub option: DatagramOption,
-    }
-
-    pub struct NullOperationGenerator {}
-
-    impl OperationGenerator for NullOperationGenerator {
-        type O1 = crate::firmware::operation::NullOp;
-        type O2 = crate::firmware::operation::NullOp;
-
-        // GRCOV_EXCL_START
-        fn generate(&mut self, _device: &Device) -> (Self::O1, Self::O2) {
-            (Self::O1 {}, Self::O2 {})
-        }
-        // GRCOV_EXCL_STOP
-    }
-
-    impl Datagram for NullDatagram {
-        type G = NullOperationGenerator;
-        type Error = AUTDDriverError;
-
-        fn operation_generator(
-            self,
-            _: &Geometry,
-            _: &DatagramOption,
-        ) -> Result<Self::G, AUTDDriverError> {
-            Ok(NullOperationGenerator {})
-        }
-
-        fn option(&self) -> DatagramOption {
-            self.option
-        }
     }
 }

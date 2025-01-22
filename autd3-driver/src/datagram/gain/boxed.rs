@@ -109,9 +109,11 @@ impl Gain for BoxedGain {
         })
     }
 
+    // GRCOV_EXCL_START
     fn init(self) -> Result<Self::G, GainError> {
         unimplemented!()
     }
+    // GRCOV_EXCL_STOP
 }
 
 /// Trait to convert [`Gain`] to [`BoxedGain`].

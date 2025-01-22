@@ -91,6 +91,7 @@ mod tests {
 
         assert!(cache.cache().borrow().is_empty());
 
+        assert_eq!(m.sampling_config(), cache.sampling_config());
         assert_eq!(m.calc()?, cache.calc()?);
 
         Ok(())
@@ -99,7 +100,6 @@ mod tests {
     #[derive(Modulation, Clone, Debug)]
     struct TestCacheModulation {
         pub calc_cnt: Arc<AtomicUsize>,
-        pub config: SamplingConfig,
     }
 
     impl Modulation for TestCacheModulation {
@@ -108,9 +108,11 @@ mod tests {
             Ok(vec![0x00, 0x00])
         }
 
+        // GRCOV_EXCL_START
         fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-            Ok(self.config)
+            unimplemented!()
         }
+        // GRCOV_EXCL_STOP
     }
 
     #[test]
@@ -120,7 +122,6 @@ mod tests {
 
             let modulation = TestCacheModulation {
                 calc_cnt: calc_cnt.clone(),
-                config: SamplingConfig::DIV_10,
             };
             assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
@@ -136,7 +137,6 @@ mod tests {
 
             let modulation = TestCacheModulation {
                 calc_cnt: calc_cnt.clone(),
-                config: SamplingConfig::DIV_10,
             }
             .into_cached();
             assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
@@ -155,7 +155,6 @@ mod tests {
 
         let modulation = TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
-            config: SamplingConfig::DIV_10,
         }
         .into_cached();
         assert_eq!(1, modulation.count());

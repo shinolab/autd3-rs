@@ -131,9 +131,11 @@ where
 {
     type G = ContextGenerator;
 
+    // GRCOV_EXCL_START
     fn init(self) -> Result<Self::G, GainError> {
         unimplemented!()
     }
+    // GRCOV_EXCL_STOP
 
     fn init_full(
         self,
@@ -346,7 +348,14 @@ mod tests {
         .set("test", g1.into_boxed())?
         .set("test2", g2.into_boxed())?;
 
-        let mut g = gain.init_full(&geometry, None, &DatagramOption::default())?;
+        let mut g = gain.init_full(
+            &geometry,
+            None,
+            &DatagramOption {
+                parallel_threshold: 4,
+                ..Default::default()
+            },
+        )?;
         let drives = geometry
             .devices()
             .map(|dev| {
