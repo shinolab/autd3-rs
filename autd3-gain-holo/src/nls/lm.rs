@@ -10,8 +10,8 @@ use autd3_core::{acoustics::directivity::Directivity, derive::*, geometry::Point
 use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
-#[derive(Debug)]
 /// The option of [`LM`].
+#[derive(Debug, Clone, PartialEq)]
 pub struct LMOption<D: Directivity> {
     /// The stopping criteria.
     pub eps_1: f32,

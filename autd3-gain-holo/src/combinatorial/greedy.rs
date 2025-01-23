@@ -14,7 +14,7 @@ use nalgebra::ComplexField;
 use rand::seq::SliceRandom;
 
 /// The option of [`Greedy`].
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GreedyOption<D: Directivity> {
     /// The number of phase divisions.
     pub phase_div: NonZeroU8,

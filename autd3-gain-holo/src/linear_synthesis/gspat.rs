@@ -11,7 +11,7 @@ use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
 /// The option of [`GSPAT`].
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GSPATOption<D: Directivity> {
     /// The number of iterations.
     pub repeat: NonZeroUsize,

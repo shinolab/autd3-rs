@@ -1,6 +1,7 @@
 use super::*;
 
 /// Sphere directivity model.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Sphere {}
 
 impl Directivity for Sphere {
