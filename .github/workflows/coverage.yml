@@ -27,7 +27,6 @@ jobs:
           submodules: true
       - uses: ./.github/actions/setup-build
         with:
-          os: ubuntu-latest
           components: llvm-tools
       - run: cargo install grcov
       - run: |
