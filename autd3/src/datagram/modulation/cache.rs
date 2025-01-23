@@ -111,7 +111,7 @@ mod tests {
 
         // GRCOV_EXCL_START
         fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-            unimplemented!()
+            Ok(SamplingConfig::FREQ_MIN)
         }
         // GRCOV_EXCL_STOP
     }
