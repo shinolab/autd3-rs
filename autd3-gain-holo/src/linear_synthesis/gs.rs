@@ -10,8 +10,8 @@ use autd3_core::{acoustics::directivity::Directivity, derive::*, geometry::Point
 use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
-#[derive(Debug)]
 /// The option of [`GS`].
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GSOption<D: Directivity> {
     /// The number of iterations.
     pub repeat: NonZeroUsize,

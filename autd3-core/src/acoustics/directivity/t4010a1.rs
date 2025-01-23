@@ -53,6 +53,7 @@ static DIR_COEF_D: &[f32] = &[
 ];
 
 /// [T4010A1/B4](https://www.nicera.co.jp/en/products/ultrasonic-sensor/open-aperture-type) directivity model.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct T4010A1 {}
 
 impl Directivity for T4010A1 {
