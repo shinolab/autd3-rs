@@ -64,7 +64,7 @@ pub fn run<L: Link>(mut autd: Controller<L>) -> anyhow::Result<()> {
         let mut _s = String::new();
         io::stdin().read_line(&mut _s)?;
 
-        autd.send((Static::default(), Null::default()))?;
+        autd.send((Static::default(), Null))?;
         autd.send(Silencer::default())?;
     }
 

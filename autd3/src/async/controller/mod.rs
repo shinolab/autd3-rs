@@ -164,7 +164,7 @@ impl<L: AsyncLink> Controller<L> {
                 target: autd3_driver::firmware::fpga::SilencerTarget::Intensity,
             })
             .await,
-            self.send((Static::default(), Null::default())).await,
+            self.send((Static::default(), Null)).await,
             self.send(Clear {}).await,
             Ok(self.link.close().await?),
         ]

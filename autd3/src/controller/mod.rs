@@ -161,7 +161,7 @@ impl<L: Link> Controller<L> {
                 },
                 target: autd3_driver::firmware::fpga::SilencerTarget::Intensity,
             }),
-            sender.send((Static::default(), Null::default())),
+            sender.send((Static::default(), Null)),
             sender.send(Clear {}),
             Ok(self.link.close()?),
         ]
