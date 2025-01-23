@@ -9,11 +9,13 @@ pub trait Sleep: std::fmt::Debug {
     fn sleep_until(&self, deadline: Instant);
 }
 
+// GRCOV_EXCL_START
 impl Sleep for Box<dyn Sleep> {
     fn sleep_until(&self, deadline: Instant) {
         self.as_ref().sleep_until(deadline);
     }
 }
+// GRCOV_EXCL_STOP
 
 /// A sleeper that uses [`std::thread::sleep`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
