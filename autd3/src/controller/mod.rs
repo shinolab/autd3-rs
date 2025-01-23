@@ -1,14 +1,13 @@
 mod group;
 mod sender;
 
-use crate::{error::AUTDError, gain::Null, prelude::Static};
+use crate::{error::AUTDError, gain::Null, modulation::Static};
 
 use autd3_core::{
     defined::DEFAULT_TIMEOUT,
     geometry::IntoDevice,
     link::{Link, LinkBuilder},
 };
-
 use autd3_driver::{
     datagram::{Clear, Datagram, FixedCompletionSteps, ForceFan, Silencer, Synchronize},
     error::AUTDDriverError,
@@ -318,16 +317,21 @@ impl<L: Link> Drop for Controller<L> {
 pub(crate) mod tests {
     use std::sync::Mutex;
 
-    use autd3_core::{
-        derive::*,
-        gain::{Gain, GainContext, GainContextGenerator},
-        link::LinkError,
-    };
-    use autd3_driver::{autd3_device::AUTD3, defined::Hz};
-
     use crate::{
+        core::{
+            defined::mm,
+            derive::*,
+            gain::{Gain, GainContext, GainContextGenerator},
+            link::LinkError,
+        },
+        driver::{
+            autd3_device::AUTD3,
+            datagram::{GainSTM, ReadsFPGAState},
+            defined::Hz,
+        },
+        gain::Uniform,
         link::{Audit, AuditOption},
-        prelude::*,
+        modulation::Sine,
     };
 
     use super::*;
