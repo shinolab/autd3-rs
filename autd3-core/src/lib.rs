@@ -37,10 +37,6 @@ pub mod link;
 #[cfg(feature = "modulation")]
 /// Core traits for Modulation.
 pub mod modulation;
-#[cfg_attr(docsrs, doc(cfg(feature = "resampler")))]
-#[cfg(feature = "resampler")]
-/// Resampler module.
-pub mod resampler;
 #[cfg_attr(docsrs, doc(cfg(feature = "utils")))]
 #[cfg(feature = "utils")]
 #[doc(hidden)]

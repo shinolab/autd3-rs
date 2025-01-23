@@ -52,7 +52,6 @@ mod tests {
                 target: Custom {
                     buffer: [u8::MIN; 2].to_vec(),
                     sampling_config: config,
-                    option: Default::default(),
                 },
                 coef: vec![1.0]
             }

@@ -10,4 +10,4 @@ mod error;
 mod wav;
 
 pub use csv::{Csv, CsvOption};
-pub use wav::{Wav, WavOption};
+pub use wav::Wav;

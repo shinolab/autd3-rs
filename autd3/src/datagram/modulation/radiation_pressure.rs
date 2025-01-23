@@ -39,7 +39,6 @@ mod tests {
             RadiationPressure::new(Custom {
                 buffer: vec![u8::MIN; 2],
                 sampling_config: config,
-                option: Default::default(),
             })
             .sampling_config()
         );
@@ -57,7 +56,6 @@ mod tests {
             *RadiationPressure::new(Custom {
                 buffer: buf.clone(),
                 sampling_config: 4. * kHz,
-                option: Default::default(),
             })
             .calc()?
         );

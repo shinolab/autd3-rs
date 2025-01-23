@@ -6,7 +6,6 @@ pub fn custom(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     let m = autd3::modulation::Custom {
         buffer: vec![0, 255],
         sampling_config: 4 * kHz,
-        option: Default::default(),
     };
     let g = autd3::gain::Custom::new(|dev| {
         let dev_idx = dev.idx();
