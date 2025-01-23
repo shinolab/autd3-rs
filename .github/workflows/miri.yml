@@ -31,6 +31,6 @@ jobs:
           components: miri
       - uses: taiki-e/install-action@v2
         with:
-          tool: nextest
+          tool: cargo-nextest
       - run: |
-          python3 build.py test --miri --channel ${{ inputs.channel }}
+          cargo make -e CARGO_TOOLCHAIN=${{ inputs.channel }} miri

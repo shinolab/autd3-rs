@@ -14,61 +14,32 @@ defaults:
 
 jobs:
   test:
-    name: test-on-${{ matrix.os }}${{ matrix.arch && '-' }}${{ matrix.arch }}${{ matrix.features && '-' }}${{ matrix.features }}
+    name: test-on-${{ matrix.os }}${{ matrix.features && '-' }}${{ matrix.features }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: windows-latest
-            no-example: true
-            lint: true
-          - os: windows-latest
-            arch: aarch64
-            no-example: true
-            no-test: true
           - os: macos-latest
-            no-example: true
-            lint: true
           - os: ubuntu-latest
-            lint: true
-          - os: ubuntu-latest
-            arch: arm32
-            no-example: true
-            no-test: true
-          - os: ubuntu-latest
-            arch: aarch64
-            no-example: true
-            no-test: true
           - os: ubuntu-latest
             features: "use_meter left_handed"
-            lint: true
           - os: ubuntu-latest
             features: "async"
-            lint: true
           - os: ubuntu-latest
             features: "lightweight async-trait"
-            lint: true
           - os: ubuntu-latest
             features: "dynamic_freq"
-            lint: true
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
       - uses: ./.github/actions/setup-build
-        with:
-          os: ${{ matrix.os }}
-          arch: ${{ matrix.arch }}
       - uses: taiki-e/install-action@v2
         with:
-          tool: nextest
-        if: ${{ matrix.no-test != true }}
-      - run: python3 build.py build --arch "${{ matrix.arch }}" --features "${{ matrix.features }}" ${{ matrix.no-example && '--no-example' }}
-      - run: python3 build.py test --features "${{ matrix.features }}"
-        if: ${{ matrix.no-test != true }}
-      - run: python3 build.py lint --features "${{ matrix.features }}" ${{ matrix.no-example && '--no-example' }}
-        if: ${{ matrix.lint == true }}
+          tool: cargo-nextest
+      - run: cargo make check --features "${{ matrix.features }}"
 
 
   build-docs:
@@ -82,7 +53,7 @@ jobs:
         with:
           os: ubuntu-latest
           toolchain: nightly
-      - run: python3 build.py doc
+      - run: cargo make doc
       - uses: dtolnay/install@cargo-docs-rs
       - run: | 
           cargo +nightly docs-rs -pautd3
