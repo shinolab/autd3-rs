@@ -4,6 +4,7 @@ use crate::geometry::Geometry;
 
 use super::{Datagram, DatagramOption};
 
+#[derive(Debug, PartialEq)]
 #[doc(hidden)]
 pub struct CombinedOperationGenerator<O1, O2> {
     pub o1: O1,
@@ -12,11 +13,7 @@ pub struct CombinedOperationGenerator<O1, O2> {
 
 #[derive(Error, Debug, PartialEq)]
 #[doc(hidden)]
-pub enum CombinedError<E1, E2>
-where
-    E1: std::error::Error,
-    E2: std::error::Error,
-{
+pub enum CombinedError<E1, E2> {
     #[error("{0}")]
     E1(E1),
     #[error("{0}")]
@@ -27,8 +24,6 @@ impl<G1, G2, D1, D2, E1, E2> Datagram for (D1, D2)
 where
     D1: Datagram<G = G1, Error = E1>,
     D2: Datagram<G = G2, Error = E2>,
-    E1: std::error::Error,
-    E2: std::error::Error,
 {
     type G = CombinedOperationGenerator<D1::G, D2::G>;
     type Error = CombinedError<E1, E2>;
@@ -67,25 +62,55 @@ mod tests {
     use std::time::Duration;
 
     #[derive(Debug)]
-    pub struct NullDatagram {
+    pub struct TestDatagram {
         pub option: DatagramOption,
+        pub result: Result<(), ()>,
     }
 
-    impl Datagram for NullDatagram {
+    impl Datagram for TestDatagram {
         type G = ();
-        type Error = std::convert::Infallible;
+        type Error = ();
 
         fn operation_generator(
             self,
             _: &Geometry,
             _: &DatagramOption,
         ) -> Result<Self::G, Self::Error> {
-            Ok(())
+            self.result
         }
 
         fn option(&self) -> DatagramOption {
             self.option
         }
+    }
+
+    #[rstest::rstest]
+    #[case(Ok(CombinedOperationGenerator { o1: (), o2: () }), Ok(()), Ok(()))]
+    #[case(Err(CombinedError::E1(())), Err(()), Ok(()))]
+    #[case(Err(CombinedError::E2(())), Ok(()), Err(()))]
+    #[test]
+    fn operation_generator(
+        #[case] expect: Result<CombinedOperationGenerator<(), ()>, CombinedError<(), ()>>,
+        #[case] result1: Result<(), ()>,
+        #[case] result2: Result<(), ()>,
+    ) {
+        assert_eq!(
+            expect,
+            (
+                TestDatagram {
+                    option: DatagramOption::default(),
+                    result: result1,
+                },
+                TestDatagram {
+                    option: DatagramOption::default(),
+                    result: result2,
+                }
+            )
+                .operation_generator(
+                    &Geometry::new(Default::default()),
+                    &DatagramOption::default()
+                )
+        );
     }
 
     #[rstest::rstest]
@@ -104,17 +129,19 @@ mod tests {
         assert_eq!(
             expect,
             (
-                NullDatagram {
+                TestDatagram {
                     option: DatagramOption {
                         timeout: timeout1,
                         parallel_threshold: 0,
                     },
+                    result: Ok(()),
                 },
-                NullDatagram {
+                TestDatagram {
                     option: DatagramOption {
                         timeout: timeout2,
                         parallel_threshold: 0,
                     },
+                    result: Ok(()),
                 }
             )
                 .option()
@@ -134,17 +161,19 @@ mod tests {
         assert_eq!(
             expect,
             (
-                NullDatagram {
+                TestDatagram {
                     option: DatagramOption {
                         timeout: Duration::ZERO,
                         parallel_threshold: threshold1,
                     },
+                    result: Ok(()),
                 },
-                NullDatagram {
+                TestDatagram {
                     option: DatagramOption {
                         timeout: Duration::ZERO,
                         parallel_threshold: threshold2,
                     },
+                    result: Ok(()),
                 }
             )
                 .option()

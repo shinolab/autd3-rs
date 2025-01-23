@@ -252,6 +252,7 @@ mod tests {
     #[case(Ok(10), 4000 * Hz)]
     #[case(Ok(1), 40000. * Hz)]
     #[case(Ok(10), 4000. * Hz)]
+    #[case(Err(SamplingConfigError::SamplingDivisionInvalid), 0)]
     #[case(Err(SamplingConfigError::SamplingFreqInvalid(ultrasound_freq() - 1 * Hz)), ultrasound_freq() - 1 * Hz)]
     #[case(Err(SamplingConfigError::SamplingFreqOutOfRange(0 * Hz, 1 * Hz, ultrasound_freq())), 0 * Hz)]
     #[case(Err(SamplingConfigError::SamplingFreqOutOfRange(ultrasound_freq() + 1 * Hz, 1 * Hz, ultrasound_freq())), ultrasound_freq() + 1 * Hz)]

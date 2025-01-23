@@ -25,6 +25,10 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
                     transition_mode,
                 })
             }
+
+            fn option(&self) -> DatagramOption {
+                DatagramOption::default()
+            }
         }
     };
 

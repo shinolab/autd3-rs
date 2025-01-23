@@ -46,14 +46,18 @@ mod tests {
         };
     }
 
-    #[rstest::fixture]
-    fn tr() -> Transducer {
-        Transducer::new(0, 0, Point3::origin())
+    #[test]
+    fn idx() {
+        let tr = Transducer::new(1, 2, Point3::origin());
+        assert_eq!(1, tr.idx());
+        assert_eq!(2, tr.dev_idx());
     }
 
     #[rstest::rstest]
     #[test]
-    fn affine(mut tr: Transducer) {
+    fn affine() {
+        let mut tr = Transducer::new(0, 0, Point3::origin());
+
         let vector = Vector3::new(40., 50., 60.);
         let rotation = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)
             * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), 0.)

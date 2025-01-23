@@ -39,6 +39,7 @@ pub enum SamplingConfigError {
     SamplingPeriodOutOfRange(Duration, Duration, Duration),
 }
 
+// GRCOV_EXCL_START
 impl From<Infallible> for SamplingConfigError {
     fn from(_: Infallible) -> Self {
         unreachable!()
@@ -56,3 +57,4 @@ impl From<SamplingConfigError> for ModulationError {
         Self::new(e.to_string())
     }
 }
+// GRCOV_EXCL_STOP
