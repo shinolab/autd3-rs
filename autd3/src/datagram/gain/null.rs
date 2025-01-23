@@ -37,7 +37,7 @@ mod tests {
     fn test_null() -> anyhow::Result<()> {
         let geometry = create_geometry(1);
 
-        let g = Null::default();
+        let g = Null;
         let mut b = g.init()?;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
