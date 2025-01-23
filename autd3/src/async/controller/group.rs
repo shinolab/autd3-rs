@@ -179,8 +179,6 @@ impl<'a, S: AsyncSleep, L: AsyncLink, T: BorrowMut<Sender<'a, L, S>>, K: Partial
             ));
         }
 
-        sender.borrow_mut().link.trace(&datagram_option);
-
         let timeout = sender
             .borrow()
             .option

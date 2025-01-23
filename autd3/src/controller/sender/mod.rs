@@ -101,8 +101,6 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
         AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
             + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
     {
-        self.link.trace(&s.option());
-
         let timeout = self.option.timeout.unwrap_or(s.option().timeout);
         let parallel = self
             .option
