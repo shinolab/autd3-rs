@@ -59,7 +59,7 @@ fn gen_random_buf(n: usize, geometry: &Geometry) -> Vec<HashMap<usize, Vec<Drive
     Some(TransitionMode::Immediate)
 )]
 #[case(2, LoopBehavior::ONCE, Segment::S1, None)]
-fn send_gain_stm_phase_intensity_full(
+fn send_gain_stm_phase_intensity_full_unsafe(
     #[case] n: usize,
     #[case] loop_behavior: LoopBehavior,
     #[case] segment: Segment,
@@ -132,7 +132,7 @@ fn send_gain_stm_phase_intensity_full(
 #[case(3)]
 #[cfg_attr(miri, ignore)]
 #[case(GAIN_STM_BUF_SIZE_MAX)]
-fn send_gain_stm_phase_full(#[case] n: usize) -> anyhow::Result<()> {
+fn send_gain_stm_phase_full_unsafe(#[case] n: usize) -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
@@ -191,7 +191,7 @@ fn send_gain_stm_phase_full(#[case] n: usize) -> anyhow::Result<()> {
 #[cfg_attr(miri, ignore)]
 #[case(GAIN_STM_BUF_SIZE_MAX)]
 
-fn send_gain_stm_phase_half(#[case] n: usize) -> anyhow::Result<()> {
+fn send_gain_stm_phase_half_unsafe(#[case] n: usize) -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
@@ -249,7 +249,7 @@ fn send_gain_stm_phase_half(#[case] n: usize) -> anyhow::Result<()> {
 }
 
 #[test]
-fn change_gain_stm_segment() -> anyhow::Result<()> {
+fn change_gain_stm_segment_unsafe() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
@@ -284,7 +284,6 @@ fn change_gain_stm_segment() -> anyhow::Result<()> {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -357,7 +356,6 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -413,7 +411,6 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -489,7 +486,6 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn invalid_gain_stm_mode() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());

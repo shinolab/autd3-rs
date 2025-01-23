@@ -6,7 +6,10 @@ pub use sleep::WaitableSleeper;
 pub use sleep::{SpinSleeper, StdSleeper};
 pub use spin_sleep::SpinStrategy;
 
-use std::time::{Duration, Instant};
+use std::{
+    fmt::Debug,
+    time::{Duration, Instant},
+};
 
 use autd3_core::{datagram::Datagram, derive::DatagramOption, geometry::Geometry, link::Link};
 use autd3_driver::{
@@ -21,7 +24,7 @@ use itertools::Itertools;
 
 /// The option of [`Sender`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct SenderOption<S> {
+pub struct SenderOption<S: Debug> {
     /// The duration between sending operations.
     pub send_interval: Duration,
     /// The duration between receiving operations.
@@ -38,7 +41,7 @@ pub struct SenderOption<S> {
     pub sleeper: S,
 }
 
-impl<S: Default> Default for SenderOption<S> {
+impl<S: Default + Debug> Default for SenderOption<S> {
     fn default() -> Self {
         Self {
             send_interval: Duration::from_millis(1),

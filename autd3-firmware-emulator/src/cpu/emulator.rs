@@ -256,7 +256,6 @@ mod tests {
     use rand::Rng;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn cpu_idx() {
         let mut rng = rand::thread_rng();
         let idx = rng.gen();
@@ -265,7 +264,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn num_transducers() {
         let cpu = CPUEmulator::new(0, 249);
         assert_eq!(249, cpu.num_transducers());
@@ -281,7 +279,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn should_update() {
         let mut cpu = CPUEmulator::new(0, 249);
         assert!(!cpu.should_update());

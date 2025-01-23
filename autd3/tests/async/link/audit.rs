@@ -10,10 +10,13 @@ use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
 
 #[tokio::test]
 async fn audit_test() -> anyhow::Result<()> {
-    let mut autd = Controller::open_with_timeout(
+    let mut autd = Controller::open_with_option(
         [AUTD3::default()],
         Audit::builder(AuditOption::default()),
-        Duration::from_millis(10),
+        SenderOption::<AsyncSleeper> {
+            timeout: Some(Duration::from_millis(10)),
+            ..Default::default()
+        },
     )
     .await?;
     assert_eq!(Some(Duration::from_millis(10)), autd.link().last_timeout());

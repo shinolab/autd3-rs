@@ -3,7 +3,7 @@ use std::time::Instant;
 use autd3_core::utils::timer::TimerResolutionGurad;
 pub use spin_sleep::SpinSleeper;
 
-pub trait Sleep {
+pub trait Sleep: std::fmt::Debug {
     fn sleep_until(&self, deadline: Instant);
 }
 

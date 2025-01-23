@@ -288,7 +288,6 @@ mod tests {
     use super::{super::super::NalgebraBackend, super::super::Pa, *};
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_lm_all() {
         let geometry = create_geometry(1, 1);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
@@ -317,7 +316,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_lm_filtered() {
         let geometry = create_geometry(2, 1);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
