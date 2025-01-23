@@ -12,6 +12,7 @@ pub trait Operation: Send + Sync {
 #[doc(hidden)]
 pub struct NullOp;
 
+// GRCOV_EXCL_START
 impl Operation for NullOp {
     type Error = std::convert::Infallible;
 
@@ -33,3 +34,4 @@ impl Default for Box<dyn Operation<Error = std::convert::Infallible>> {
         Box::new(NullOp)
     }
 }
+// GRCOV_EXCL_STOP

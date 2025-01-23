@@ -27,12 +27,6 @@ impl Phase {
     }
 }
 
-impl From<u8> for Phase {
-    fn from(v: u8) -> Self {
-        Self(v)
-    }
-}
-
 impl From<Angle> for Phase {
     fn from(v: Angle) -> Self {
         Self((((v.radian() / (2.0 * PI) * 256.0).round() as i32) & 0xFF) as _)
