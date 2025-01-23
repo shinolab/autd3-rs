@@ -26,15 +26,22 @@ pub struct RemoteTwinCAT {
     net_id: AmsNetId,
 }
 
+/// The option of [`RemoteTwinCAT`].
+#[derive(Debug, Default)]
+pub struct RemoteTwinCATOption {
+    /// The IP address of the TwinCAT3 server. If empty, the first 4 octets of `server_ams_net_id` are used.
+    pub server_ip: String,
+    /// The AMS Net ID of the client.
+    pub client_ams_net_id: String,
+}
+
 /// A builder for [`RemoteTwinCAT`].
 #[derive(Debug, Default)]
 pub struct RemoteTwinCATBuilder {
     /// The AMS Net ID of the TwinCAT3 server.
     pub server_ams_net_id: String,
-    /// The IP address of the TwinCAT3 server. If empty, the first 4 octets of `server_ams_net_id` are used.
-    pub server_ip: String,
-    /// The AMS Net ID of the client.
-    pub client_ams_net_id: String,
+    /// The option of [`RemoteTwinCAT`].
+    pub option: RemoteTwinCATOption,
 }
 
 impl LinkBuilder for RemoteTwinCATBuilder {
@@ -46,8 +53,11 @@ impl LinkBuilder for RemoteTwinCATBuilder {
 
         let RemoteTwinCATBuilder {
             server_ams_net_id,
-            server_ip,
-            client_ams_net_id,
+            option:
+                RemoteTwinCATOption {
+                    server_ip,
+                    client_ams_net_id,
+                },
         } = self;
 
         let octets = server_ams_net_id
@@ -118,11 +128,13 @@ impl LinkBuilder for RemoteTwinCATBuilder {
 
 impl RemoteTwinCAT {
     /// Creates a new [`RemoteTwinCATBuilder`].
-    pub fn builder(server_ams_net_id: impl Into<String>) -> RemoteTwinCATBuilder {
+    pub fn builder(
+        server_ams_net_id: impl Into<String>,
+        option: RemoteTwinCATOption,
+    ) -> RemoteTwinCATBuilder {
         RemoteTwinCATBuilder {
             server_ams_net_id: server_ams_net_id.into(),
-            server_ip: String::new(),
-            client_ams_net_id: String::new(),
+            option,
         }
     }
 }
