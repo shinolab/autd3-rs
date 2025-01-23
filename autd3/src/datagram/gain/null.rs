@@ -3,7 +3,7 @@ use autd3_driver::firmware::fpga::Drive;
 
 /// [`Gain`] that output nothing
 #[derive(Gain, Default, Clone, Copy, PartialEq, Eq, Debug)]
-pub struct Null {}
+pub struct Null;
 
 impl GainContext for Null {
     fn calc(&self, _: &Transducer) -> Drive {

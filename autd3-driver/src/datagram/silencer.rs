@@ -55,6 +55,7 @@ impl Default for FixedCompletionTime {
 
 /// To configure the silencer by the completion steps.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(C)]
 pub struct FixedCompletionSteps {
     /// The completion steps of the intensity change.
     ///
@@ -87,6 +88,7 @@ impl Default for FixedCompletionSteps {
 
 /// To configure the silencer by the update rate.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(C)]
 pub struct FixedUpdateRate {
     /// The update rate of the intensity change.
     ///
@@ -100,7 +102,7 @@ pub struct FixedUpdateRate {
 impl SilencerConfig for FixedUpdateRate {}
 
 /// [`Datagram`] to configure the silencer.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Silencer<T: SilencerConfig> {
     /// Configuration of the silencer.
     pub config: T,

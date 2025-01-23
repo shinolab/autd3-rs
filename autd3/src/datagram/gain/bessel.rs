@@ -7,6 +7,7 @@ use autd3_driver::{
 
 /// The option of [`Bessel`].
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(C)]
 pub struct BesselOption {
     /// The intensity of the beam.
     pub intensity: EmitIntensity,
