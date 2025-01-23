@@ -1,5 +1,4 @@
 use crate::{
-    datagram::DatagramOption,
     geometry::Geometry,
     link::{LinkError, RxMessage, TxMessage},
 };
@@ -31,9 +30,6 @@ mod internal {
         /// Checks if the link is open.
         #[must_use]
         fn is_open(&self) -> bool;
-
-        #[doc(hidden)]
-        fn trace(&mut self, _: &DatagramOption) {}
     }
 
     /// A trait to build a link.
@@ -66,10 +62,6 @@ mod internal {
 
         fn is_open(&self) -> bool {
             self.as_ref().is_open()
-        }
-
-        fn trace(&mut self, option: &DatagramOption) {
-            self.as_mut().trace(option)
         }
     }
 }
@@ -106,9 +98,6 @@ mod internal {
         /// Checks if the link is open.
         #[must_use]
         fn is_open(&self) -> bool;
-
-        #[doc(hidden)]
-        fn trace(&mut self, _: &DatagramOption) {}
     }
 
     /// A trait to build a link.
