@@ -14,12 +14,6 @@ impl EmitIntensity {
     pub const MIN: EmitIntensity = EmitIntensity(0x00);
 }
 
-impl From<u8> for EmitIntensity {
-    fn from(v: u8) -> Self {
-        Self(v)
-    }
-}
-
 impl std::ops::Div<u8> for EmitIntensity {
     type Output = Self;
 
