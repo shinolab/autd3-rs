@@ -21,10 +21,9 @@ pub enum STMConfig {
 }
 
 impl STMConfig {
-    pub(crate) fn into_sampling_config(
-        self,
-        size: usize,
-    ) -> Result<SamplingConfig, AUTDDriverError> {
+    // must be public for capi
+    #[doc(hidden)]
+    pub fn into_sampling_config(self, size: usize) -> Result<SamplingConfig, AUTDDriverError> {
         match self {
             STMConfig::Freq(f) => Ok(SamplingConfig::new(f * size as f32)?),
             #[cfg(not(feature = "dynamic_freq"))]
