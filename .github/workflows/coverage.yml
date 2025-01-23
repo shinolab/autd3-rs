@@ -31,7 +31,7 @@ jobs:
           components: llvm-tools
       - run: cargo install grcov
       - run: |
-          python3 build.py cov
+          cargo make cov lcov
       - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
