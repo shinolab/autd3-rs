@@ -6,19 +6,32 @@ use derive_more::Debug;
 use getset::Getters;
 
 /// Cache for [`Modulation`]
-#[derive(Modulation, Debug, Clone, Getters)]
+#[derive(Modulation, Debug, Getters)]
 pub struct Cache<M: Modulation> {
     m: Rc<RefCell<Option<M>>>,
+    #[debug(skip)]
+    sampling_config: Result<SamplingConfig, ModulationError>,
     #[getset(get = "pub")]
     #[debug("{}", !self.cache.borrow().is_empty())]
     /// Cached modulation data.
     cache: Rc<RefCell<Vec<u8>>>,
 }
 
+impl<M: Modulation> Clone for Cache<M> {
+    fn clone(&self) -> Self {
+        Self {
+            m: self.m.clone(),
+            sampling_config: self.sampling_config.clone(),
+            cache: self.cache.clone(),
+        }
+    }
+}
+
 impl<M: Modulation> Cache<M> {
     /// Create a new cached [`Modulation`].
     pub fn new(m: M) -> Self {
         Self {
+            sampling_config: m.sampling_config(),
             m: Rc::new(RefCell::new(Some(m))),
             cache: Rc::default(),
         }
@@ -41,7 +54,7 @@ impl<M: Modulation> Cache<M> {
 
 impl<M: Modulation> Modulation for Cache<M> {
     fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-        self.m.borrow().as_ref().unwrap().sampling_config()
+        self.sampling_config.clone()
     }
 
     fn calc(self) -> Result<Vec<u8>, ModulationError> {

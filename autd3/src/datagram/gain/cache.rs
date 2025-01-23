@@ -8,13 +8,22 @@ use getset::Getters;
 /// Cache for [`Gain`]
 ///
 /// This [`Gain`] is used to cache the calculated phases and intensities for each transducer.
-#[derive(Gain, Debug, Clone, Getters)]
+#[derive(Gain, Debug, Getters)]
 pub struct Cache<G: Gain> {
     gain: Rc<RefCell<Option<G>>>,
     #[getset(get = "pub")]
     #[debug("{}", !self.cache.borrow().is_empty())]
     /// Cached phases and intensities.
     cache: Rc<RefCell<HashMap<usize, Arc<Vec<Drive>>>>>,
+}
+
+impl<G: Gain> Clone for Cache<G> {
+    fn clone(&self) -> Self {
+        Self {
+            gain: self.gain.clone(),
+            cache: self.cache.clone(),
+        }
+    }
 }
 
 impl<G: Gain> Cache<G> {
