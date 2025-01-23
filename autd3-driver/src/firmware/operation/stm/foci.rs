@@ -191,6 +191,7 @@ mod tests {
         num::NonZeroU16,
     };
 
+    use autd3_core::gain::EmitIntensity;
     use rand::prelude::*;
 
     use super::*;
@@ -228,16 +229,13 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let points: VecDeque<ControlPoints<1>> = (0..FOCI_STM_SIZE)
-            .map(|_| {
-                (
-                    ControlPoint::from(Point3::new(
-                        rng.gen_range(-500.0 * mm..500.0 * mm),
-                        rng.gen_range(-500.0 * mm..500.0 * mm),
-                        rng.gen_range(0.0 * mm..500.0 * mm),
-                    )),
-                    rng.gen::<u8>(),
-                )
-                    .into()
+            .map(|_| ControlPoints {
+                points: [ControlPoint::from(Point3::new(
+                    rng.gen_range(-500.0 * mm..500.0 * mm),
+                    rng.gen_range(-500.0 * mm..500.0 * mm),
+                    rng.gen_range(0.0 * mm..500.0 * mm),
+                ))],
+                intensity: EmitIntensity(rng.gen::<u8>()),
             })
             .collect();
         let rep = 0xFFFF;
@@ -331,18 +329,15 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let points: VecDeque<ControlPoints<N>> = (0..FOCI_STM_SIZE)
-            .map(|_| {
-                (
-                    [0; N].map(|_| {
-                        ControlPoint::from(Point3::new(
-                            rng.gen_range(-500.0 * mm..500.0 * mm),
-                            rng.gen_range(-500.0 * mm..500.0 * mm),
-                            rng.gen_range(0.0 * mm..500.0 * mm),
-                        ))
-                    }),
-                    rng.gen::<u8>(),
-                )
-                    .into()
+            .map(|_| ControlPoints {
+                points: [0; N].map(|_| {
+                    ControlPoint::from(Point3::new(
+                        rng.gen_range(-500.0 * mm..500.0 * mm),
+                        rng.gen_range(-500.0 * mm..500.0 * mm),
+                        rng.gen_range(0.0 * mm..500.0 * mm),
+                    ))
+                }),
+                intensity: EmitIntensity(rng.gen::<u8>()),
             })
             .collect();
         let rep = 0xFFFF;
@@ -445,16 +440,13 @@ mod tests {
         let mut rng = rand::thread_rng();
 
         let points: VecDeque<ControlPoints<1>> = (0..FOCI_STM_SIZE)
-            .map(|_| {
-                (
-                    ControlPoint::from(Point3::new(
-                        rng.gen_range(-500.0 * mm..500.0 * mm),
-                        rng.gen_range(-500.0 * mm..500.0 * mm),
-                        rng.gen_range(0.0 * mm..500.0 * mm),
-                    )),
-                    rng.gen::<u8>(),
-                )
-                    .into()
+            .map(|_| ControlPoints {
+                points: [ControlPoint::from(Point3::new(
+                    rng.gen_range(-500.0 * mm..500.0 * mm),
+                    rng.gen_range(-500.0 * mm..500.0 * mm),
+                    rng.gen_range(0.0 * mm..500.0 * mm),
+                ))],
+                intensity: EmitIntensity(rng.gen::<u8>()),
             })
             .collect();
         let freq_div = rng.gen_range(0x0001..0xFFFF);
