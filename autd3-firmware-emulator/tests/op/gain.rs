@@ -61,7 +61,7 @@ impl Gain for TestGain {
 }
 
 #[test]
-fn send_gain() -> anyhow::Result<()> {
+fn send_gain_unsafe() -> anyhow::Result<()> {
     let mut rng = rand::thread_rng();
 
     let geometry = create_geometry(1);
@@ -151,7 +151,6 @@ fn send_gain() -> anyhow::Result<()> {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());

@@ -84,7 +84,7 @@ impl Modulation for TestModulation {
     Some(TransitionMode::GPIO(GPIOIn::I3))
 )]
 #[case(MOD_BUF_SIZE_MIN, LoopBehavior::ONCE, Segment::S1, None)]
-fn send_mod(
+fn send_mod_unsafe(
     #[case] n: usize,
     #[case] loop_behavior: LoopBehavior,
     #[case] segment: Segment,
@@ -126,7 +126,7 @@ fn send_mod(
 }
 
 #[test]
-fn swap_mod_segmemt() -> anyhow::Result<()> {
+fn swap_mod_segmemt_unsafe() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
@@ -154,7 +154,6 @@ fn swap_mod_segmemt() -> anyhow::Result<()> {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn mod_freq_div_too_small() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -212,7 +211,6 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -278,7 +276,6 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
 #[case(Ok(()), ECAT_DC_SYS_TIME_BASE, ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
 #[case(Err(AUTDDriverError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE, ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN)-autd3_driver::ethercat::EC_CYCLE_TIME_BASE)]
 #[case(Err(AUTDDriverError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(1), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
-#[cfg_attr(miri, ignore)]
 fn test_miss_transition_time(
     #[case] expect: Result<(), AUTDDriverError>,
     #[case] systime: OffsetDateTime,

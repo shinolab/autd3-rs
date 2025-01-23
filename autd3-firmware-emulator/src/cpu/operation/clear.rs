@@ -172,7 +172,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn clear_memory_layout() {
         assert_eq!(2, std::mem::size_of::<Clear>());
         assert_eq!(0, std::mem::offset_of!(Clear, tag));

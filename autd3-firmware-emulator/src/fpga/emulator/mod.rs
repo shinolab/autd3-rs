@@ -128,7 +128,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn thermo() {
         let mut fpga = FPGAEmulator::new(249);
         assert!(!fpga.is_thermo_asserted());

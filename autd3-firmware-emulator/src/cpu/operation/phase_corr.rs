@@ -28,7 +28,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn pwe_memory_layout() {
         assert_eq!(2, std::mem::size_of::<PhaseCorr>());
         assert_eq!(0, std::mem::offset_of!(PhaseCorr, tag));

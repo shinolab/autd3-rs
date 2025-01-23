@@ -3,8 +3,6 @@ mod sender;
 
 use crate::{controller::SenderOption, error::AUTDError, gain::Null, prelude::Static};
 
-use std::time::Duration;
-
 use autd3_core::{
     defined::DEFAULT_TIMEOUT,
     geometry::IntoDevice,
@@ -50,27 +48,36 @@ pub struct Controller<L: AsyncLink> {
 }
 
 impl<L: AsyncLink> Controller<L> {
-    /// Equivalent to [`Self::open_with_timeout`] with a timeout of [`DEFAULT_TIMEOUT`].
+    /// Equivalent to [`Self::open_with_option`] with a timeout of [`DEFAULT_TIMEOUT`].
     pub async fn open<D: IntoDevice, F: IntoIterator<Item = D>, B: AsyncLinkBuilder<L = L>>(
         devices: F,
         link_builder: B,
     ) -> Result<Controller<B::L>, AUTDError> {
-        Self::open_with_timeout(devices, link_builder, DEFAULT_TIMEOUT).await
+        Self::open_with_option(
+            devices,
+            link_builder,
+            SenderOption::<AsyncSleeper> {
+                timeout: Some(DEFAULT_TIMEOUT),
+                ..Default::default()
+            },
+        )
+        .await
     }
 
     /// Opens a controller with a timeout.
     ///
     /// Opens link, and then initialize and synchronize the devices. The `timeout` is used to send data for initialization and synchronization.
-    pub async fn open_with_timeout<
+    pub async fn open_with_option<
         D: IntoDevice,
         F: IntoIterator<Item = D>,
         B: AsyncLinkBuilder<L = L>,
+        S: AsyncSleep,
     >(
         devices: F,
         link_builder: B,
-        timeout: Duration,
+        option: SenderOption<S>,
     ) -> Result<Self, AUTDError> {
-        tracing::debug!("Opening a controller with timeout {:?})", timeout);
+        tracing::debug!("Opening a controller with option {:?})", option);
 
         let devices = devices
             .into_iter()
@@ -85,7 +92,7 @@ impl<L: AsyncLink> Controller<L> {
             rx_buf: vec![RxMessage::new(0, 0); geometry.len()],
             geometry,
         }
-        .open_impl(timeout)
+        .open_impl(option)
         .await
     }
 
@@ -114,17 +121,15 @@ impl<L: AsyncLink> Controller<L> {
             .await
     }
 
-    pub(crate) async fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
-        let timeout = Some(timeout);
+    pub(crate) async fn open_impl<S: AsyncSleep>(
+        mut self,
+        option: SenderOption<S>,
+    ) -> Result<Self, AUTDError> {
+        let mut sender = self.sender(option);
 
         // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
         // Therefore, send a meaningless data (here, we use `ForceFan` because it is the lightest).
-        let _ = self.send(ForceFan::new(|_| false)).await;
-
-        let mut sender = self.sender(SenderOption::<AsyncSleeper> {
-            timeout,
-            ..Default::default()
-        });
+        let _ = sender.send(ForceFan::new(|_| false)).await;
 
         #[cfg(feature = "dynamic_freq")]
         {
@@ -287,7 +292,6 @@ impl<L: AsyncLink + 'static> Controller<L> {
     /// # Safety
     ///
     /// This function must be used only when converting an instance created by [`Controller::into_boxed_link`] back to the original [`Controller<L>`].
-    ///
     pub unsafe fn from_boxed_link(cnt: Controller<Box<dyn AsyncLink>>) -> Controller<L> {
         let cnt = std::mem::ManuallyDrop::new(cnt);
         let link = unsafe { std::ptr::read(&cnt.link) };

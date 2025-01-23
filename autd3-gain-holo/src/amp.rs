@@ -74,7 +74,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_db() {
         let amp = 121.5 * dB;
 
@@ -83,7 +82,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_pascal() {
         let amp = 23.77 * Pa;
 
@@ -97,7 +95,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn test_kilo_pascal() {
         let amp = 23.77e-3 * kPa;
 
@@ -111,7 +108,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn display() {
         let amp = 23.77 * Pa;
         assert_eq!(amp.to_string(), "23.77 Pa");

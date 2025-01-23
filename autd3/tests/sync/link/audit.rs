@@ -11,10 +11,13 @@ use spin_sleep::SpinSleeper;
 
 #[test]
 fn audit_test() -> anyhow::Result<()> {
-    let mut autd = Controller::open_with_timeout(
+    let mut autd = Controller::open_with_option(
         [AUTD3::default()],
         Audit::builder(AuditOption::default()),
-        Duration::from_millis(10),
+        SenderOption::<SpinSleeper> {
+            timeout: Some(Duration::from_millis(10)),
+            ..Default::default()
+        },
     )?;
     assert_eq!(Some(Duration::from_millis(10)), autd.link().last_timeout());
     assert_eq!(Some(usize::MAX), autd.link().last_parallel_threshold());

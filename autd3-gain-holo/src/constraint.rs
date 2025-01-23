@@ -42,7 +42,6 @@ mod tests {
     #[case(EmitIntensity(128), 0.5, 1.0)]
     #[case(EmitIntensity(128), 1.0, 2.0)]
     #[case(EmitIntensity(191), 1.5, 2.0)]
-    #[cfg_attr(miri, ignore)]
     fn normalize(#[case] expect: EmitIntensity, #[case] value: f32, #[case] max_value: f32) {
         assert_eq!(
             expect,
@@ -56,7 +55,6 @@ mod tests {
     #[case(EmitIntensity(64), 0.5, 1.0, 0.5)]
     #[case(EmitIntensity(64), 1.0, 2.0, 0.5)]
     #[case(EmitIntensity(96), 1.5, 2.0, 0.5)]
-    #[cfg_attr(miri, ignore)]
     fn multiply(
         #[case] expect: EmitIntensity,
         #[case] value: f32,
@@ -79,7 +77,6 @@ mod tests {
     #[case(EmitIntensity::MAX, 1.0, 2.0)]
     #[case(EmitIntensity::MIN, 1.5, 2.0)]
     #[case(EmitIntensity::MAX, 1.5, 2.0)]
-    #[cfg_attr(miri, ignore)]
     fn uniform(#[case] expect: EmitIntensity, #[case] value: f32, #[case] max_value: f32) {
         assert_eq!(
             expect,
@@ -93,7 +90,6 @@ mod tests {
     #[case(EmitIntensity(128), 0.5, 1.0, EmitIntensity(64), EmitIntensity(192))]
     #[case(EmitIntensity(192), 1.0, 1.0, EmitIntensity(64), EmitIntensity(192))]
     #[case(EmitIntensity(192), 1.5, 1.0, EmitIntensity(64), EmitIntensity(192))]
-    #[cfg_attr(miri, ignore)]
     fn clamp(
         #[case] expect: EmitIntensity,
         #[case] value: f32,

@@ -53,7 +53,7 @@ pub fn gen_random_foci<const N: usize>(num: usize) -> Vec<ControlPoints<N>> {
     Some(TransitionMode::Immediate)
 )]
 #[case(2, LoopBehavior::ONCE, Segment::S1, None)]
-fn test_send_foci_stm(
+fn test_send_foci_stm_unsafe(
     #[case] n: usize,
     #[case] loop_behavior: LoopBehavior,
     #[case] segment: Segment,
@@ -135,7 +135,7 @@ fn test_send_foci_stm(
 }
 
 #[test]
-fn change_foci_stm_segment() -> anyhow::Result<()> {
+fn change_foci_stm_segment_unsafe() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
@@ -165,7 +165,6 @@ fn change_foci_stm_segment() -> anyhow::Result<()> {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -230,7 +229,6 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -291,7 +289,6 @@ fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -358,7 +355,6 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
 #[case(Ok(()), ECAT_DC_SYS_TIME_BASE, ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
 #[case(Err(AUTDDriverError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE, ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN)-autd3_driver::ethercat::EC_CYCLE_TIME_BASE)]
 #[case(Err(AUTDDriverError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(1), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
-#[cfg_attr(miri, ignore)]
 fn test_miss_transition_time(
     #[case] expect: Result<(), AUTDDriverError>,
     #[case] systime: OffsetDateTime,
@@ -466,43 +462,36 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn test_send_foci_stm_2() -> anyhow::Result<()> {
     test_send_foci_stm_n::<2>()
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn test_send_foci_stm_3() -> anyhow::Result<()> {
     test_send_foci_stm_n::<3>()
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn test_send_foci_stm_4() -> anyhow::Result<()> {
     test_send_foci_stm_n::<4>()
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn test_send_foci_stm_5() -> anyhow::Result<()> {
     test_send_foci_stm_n::<5>()
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn test_send_foci_stm_6() -> anyhow::Result<()> {
     test_send_foci_stm_n::<6>()
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn test_send_foci_stm_7() -> anyhow::Result<()> {
     test_send_foci_stm_n::<7>()
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn test_send_foci_stm_8() -> anyhow::Result<()> {
     test_send_foci_stm_n::<8>()
 }

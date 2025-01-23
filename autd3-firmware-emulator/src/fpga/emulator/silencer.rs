@@ -148,7 +148,7 @@ impl SilencerEmulator<EmitIntensity> {
 
 impl FPGAEmulator {
     pub fn silencer_update_rate(&self) -> FixedUpdateRate {
-        unsafe /* ignore miri */ {
+        unsafe {
             FixedUpdateRate {
                 intensity: NonZeroU16::new_unchecked(
                     self.mem.controller_bram.borrow()[ADDR_SILENCER_UPDATE_RATE_INTENSITY],
@@ -299,7 +299,6 @@ mod tests {
     #[case(vec![255; 256], 256, true, 0, vec![255; 256])]
     #[case([(0..=254).rev().collect::<Vec<_>>(), vec![0]].concat(), 256, false, 255, vec![0; 256])]
     #[case(vec![0; 256], 256, true, 255, vec![0; 256])]
-    #[cfg_attr(miri, ignore)]
     fn apply_silencer_fixed_update_rate(
         #[case] expect: Vec<u8>,
         #[case] value: u16,
@@ -359,7 +358,6 @@ mod tests {
     #[case::phase_11(vec![187, 195, 202, 210, 218, 225, 233, 240, 248, 0, 0], 10, true, 180, vec![0; 11])]
     #[case::intensity_12(vec![0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5], 10, false, 0, vec![5; 11])]
     #[case::phase_12(vec![0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5], 10, true, 0, vec![5; 11])]
-    #[cfg_attr(miri, ignore)]
     fn apply_silencer_fixed_completion_steps(
         #[case] expect: Vec<u8>,
         #[case] value: u8,

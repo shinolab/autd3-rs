@@ -203,7 +203,6 @@ mod tests {
     const FREQ_DIV: u16 = 1;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn transition_same_segment() {
         let mut fpga = FPGAEmulator::new(249);
 
@@ -229,7 +228,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn transition_infinite() {
         let mut fpga = FPGAEmulator::new(249);
 
@@ -256,7 +254,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn transition_finite() {
         let mut fpga = FPGAEmulator::new(249);
 
@@ -282,7 +279,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn transition_sync_idx() {
         let mut fpga = FPGAEmulator::new(249);
 
@@ -336,7 +332,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn transition_sys_time() {
         let mut fpga = FPGAEmulator::new(249);
 
@@ -391,7 +386,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn transition_gpio() {
         let mut fpga = FPGAEmulator::new(249);
 
@@ -451,7 +445,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn transition_gpio_over() {
         let mut fpga = FPGAEmulator::new(249);
 
@@ -496,7 +489,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn transition_ext() {
         let mut fpga = FPGAEmulator::new(249);
 

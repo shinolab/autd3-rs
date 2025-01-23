@@ -85,7 +85,7 @@ pub mod tests {
     use crate::datagram::modulation::tests::TestModulation;
 
     #[test]
-    fn test() {
+    fn boxed_modulation_unsafe() {
         let m = TestModulation {
             sampling_config: SamplingConfig::DIV_10,
         };
