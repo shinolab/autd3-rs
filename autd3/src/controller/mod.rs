@@ -24,11 +24,10 @@ use autd3_driver::{
 pub use group::Group;
 #[cfg(target_os = "windows")]
 pub use sender::WaitableSleeper;
-pub use sender::{Sender, SenderOption, SpinSleeper, SpinStrategy, StdSleeper};
+pub use sender::{sleep::Sleep, Sender, SenderOption, SpinSleeper, SpinStrategy, StdSleeper};
 
 use derive_more::{Deref, DerefMut};
 use getset::{Getters, MutGetters};
-use sender::sleep::Sleep;
 use tracing;
 use zerocopy::FromZeros;
 

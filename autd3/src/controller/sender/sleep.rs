@@ -3,8 +3,16 @@ use std::time::Instant;
 use autd3_core::utils::timer::TimerResolutionGurad;
 pub use spin_sleep::SpinSleeper;
 
+/// A trait for sleep operations.
 pub trait Sleep: std::fmt::Debug {
+    /// Sleep until the specified deadline.
     fn sleep_until(&self, deadline: Instant);
+}
+
+impl Sleep for Box<dyn Sleep> {
+    fn sleep_until(&self, deadline: Instant) {
+        self.as_ref().sleep_until(deadline);
+    }
 }
 
 /// A sleeper that uses [`std::thread::sleep`].
