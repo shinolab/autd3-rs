@@ -53,6 +53,7 @@ pub trait GainSTMGenerator: std::fmt::Debug {
 
 /// The option for the [`GainSTM`].
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct GainSTMOption {
     /// The mode of the STM. The default is [`GainSTMMode::PhaseIntensityFull`].
     pub mode: GainSTMMode,
