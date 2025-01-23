@@ -39,7 +39,7 @@ pub trait DatagramL: std::fmt::Debug {
     #[doc(hidden)]
     type G;
     #[doc(hidden)]
-    type Error: std::error::Error;
+    type Error;
 
     #[doc(hidden)]
     fn operation_generator_with_loop_behavior(
@@ -52,9 +52,7 @@ pub trait DatagramL: std::fmt::Debug {
     ) -> Result<Self::G, Self::Error>;
 
     /// Returns the option of the datagram.
-    fn option(&self) -> DatagramOption {
-        DatagramOption::default()
-    }
+    fn option(&self) -> DatagramOption;
 }
 
 /// [`DatagramS`] is a [`Datagram`] with [`Segment`].
@@ -62,7 +60,7 @@ pub trait DatagramS: std::fmt::Debug {
     #[doc(hidden)]
     type G;
     #[doc(hidden)]
-    type Error: std::error::Error;
+    type Error;
 
     #[doc(hidden)]
     fn operation_generator_with_segment(
@@ -74,9 +72,7 @@ pub trait DatagramS: std::fmt::Debug {
     ) -> Result<Self::G, Self::Error>;
 
     /// Returns the option of the datagram.
-    fn option(&self) -> DatagramOption {
-        DatagramOption::default()
-    }
+    fn option(&self) -> DatagramOption;
 }
 
 impl<D: DatagramL> DatagramS for D {
@@ -109,7 +105,7 @@ pub trait Datagram: std::fmt::Debug {
     #[doc(hidden)]
     type G;
     #[doc(hidden)]
-    type Error: std::error::Error;
+    type Error;
 
     #[doc(hidden)]
     fn operation_generator(
