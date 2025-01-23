@@ -10,7 +10,7 @@ mod square;
 mod r#static;
 
 pub use cache::Cache as ModulationCache;
-pub use custom::{Custom, CustomOption};
+pub use custom::Custom;
 pub use fir::Fir;
 pub use fourier::{Fourier, FourierOption};
 pub use r#static::Static;

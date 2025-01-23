@@ -1,138 +1,80 @@
-use autd3_core::{defined::Hz, derive::*, resampler::Resampler};
+use autd3_core::{defined::Hz, derive::*};
 use autd3_derive::Modulation;
 use hound::SampleFormat;
 
-use std::{fmt::Debug, path::Path, rc::Rc};
+use std::{fmt::Debug, path::Path};
 
 use crate::error::AudioFileError;
 
-/// The option of [`Wav`].
-#[derive(Clone, Debug, Default)]
-pub struct WavOption {
-    resampler: Option<(SamplingConfig, Rc<dyn Resampler>)>,
-}
-
 /// [`Modulation`] from Wav data.
 #[derive(Modulation, Debug)]
-pub struct Wav<'a> {
+pub struct Wav<P: AsRef<Path> + Debug> {
     /// The path to the Wav file.
-    pub path: &'a Path,
-    /// The option of [`Wav`].
-    pub option: WavOption,
+    pub path: P,
 }
 
-impl<'a> Wav<'a> {
-    /// Resample the wav data to the target frequency.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use autd3_core::{resampler::SincInterpolation, defined::kHz};
-    /// use autd3_modulation_audio_file::Wav;
-    ///
-    /// let path = "path/to/file.csv";
-    /// Wav {
-    ///     path: std::path::Path::new(path),
-    ///     option: Default::default(),
-    /// }.with_resample(4 * kHz, SincInterpolation::default());
-    /// ```
-    pub fn with_resample<T>(
-        self,
-        target: T,
-        resampler: impl Resampler + 'static,
-    ) -> Result<Wav<'a>, T::Error>
-    where
-        T: TryInto<SamplingConfig>,
-    {
-        Ok(Wav {
-            path: self.path,
-            option: WavOption {
-                resampler: Some((target.try_into()?, Rc::new(resampler))),
-            },
-        })
-    }
-}
-
-impl Wav<'_> {
+impl<P: AsRef<Path> + Debug> Wav<P> {
     #[tracing::instrument]
-    fn read_buf(&self) -> Result<(Vec<u8>, u32), AudioFileError> {
-        let mut reader = hound::WavReader::open(self.path)?;
+    fn read_buf(&self) -> Result<Vec<u8>, AudioFileError> {
+        let mut reader = hound::WavReader::open(&self.path)?;
         let spec = reader.spec();
         tracing::debug!("wav spec: {:?}", spec);
         if spec.channels != 1 {
             return Err(AudioFileError::Wav(hound::Error::Unsupported));
         }
-        Ok((
-            match spec.sample_format {
-                SampleFormat::Int => {
-                    let raw_buffer = reader.samples::<i32>().collect::<Result<Vec<_>, _>>()?;
-                    match spec.bits_per_sample {
-                        8 => raw_buffer
-                            .iter()
-                            .map(|i| (i - i8::MIN as i32) as _)
-                            .collect(),
-                        16 => raw_buffer
-                            .iter()
-                            .map(|i| ((i - i16::MIN as i32) as f32 / 257.).round() as _)
-                            .collect(),
-                        24 => raw_buffer
-                            .iter()
-                            .map(|i| ((i + 8388608i32) as f32 / 65793.).round() as _)
-                            .collect(),
-                        32 => raw_buffer
-                            .iter()
-                            .map(|&i| {
-                                ((i as i64 - i32::MIN as i64) as f32 / 16843009.).round() as _
-                            })
-                            .collect(),
-                        _ => return Err(AudioFileError::Wav(hound::Error::Unsupported)), // GRCOV_EXCL_LINE
-                    }
+        Ok(match spec.sample_format {
+            SampleFormat::Int => {
+                let raw_buffer = reader.samples::<i32>().collect::<Result<Vec<_>, _>>()?;
+                match spec.bits_per_sample {
+                    8 => raw_buffer
+                        .iter()
+                        .map(|i| (i - i8::MIN as i32) as _)
+                        .collect(),
+                    16 => raw_buffer
+                        .iter()
+                        .map(|i| ((i - i16::MIN as i32) as f32 / 257.).round() as _)
+                        .collect(),
+                    24 => raw_buffer
+                        .iter()
+                        .map(|i| ((i + 8388608i32) as f32 / 65793.).round() as _)
+                        .collect(),
+                    32 => raw_buffer
+                        .iter()
+                        .map(|&i| ((i as i64 - i32::MIN as i64) as f32 / 16843009.).round() as _)
+                        .collect(),
+                    _ => return Err(AudioFileError::Wav(hound::Error::Unsupported)), // GRCOV_EXCL_LINE
                 }
-                SampleFormat::Float => {
-                    let raw_buffer = reader.samples::<f32>().collect::<Result<Vec<_>, _>>()?;
-                    match spec.bits_per_sample {
-                        32 => raw_buffer
-                            .iter()
-                            .map(|&i| ((i + 1.0) / 2. * 255.).round() as _)
-                            .collect(),
-                        _ => return Err(AudioFileError::Wav(hound::Error::Unsupported)), // GRCOV_EXCL_LINE
-                    }
+            }
+            SampleFormat::Float => {
+                let raw_buffer = reader.samples::<f32>().collect::<Result<Vec<_>, _>>()?;
+                match spec.bits_per_sample {
+                    32 => raw_buffer
+                        .iter()
+                        .map(|&i| ((i + 1.0) / 2. * 255.).round() as _)
+                        .collect(),
+                    _ => return Err(AudioFileError::Wav(hound::Error::Unsupported)), // GRCOV_EXCL_LINE
                 }
-            },
-            spec.sample_rate,
-        ))
+            }
+        })
     }
 }
 
-impl Modulation for Wav<'_> {
+impl<P: AsRef<Path> + Debug> Modulation for Wav<P> {
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
-        let (buffer, sample_rate) = self.read_buf()?;
+        let buffer = self.read_buf()?;
         tracing::debug!("Read buffer: {:?}", buffer);
-        Ok(if let Some((target, resampler)) = self.option.resampler {
-            resampler.resample(&buffer, sample_rate as f32 * Hz, target)
-        } else {
-            buffer
-        })
+        Ok(buffer)
     }
 
     fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-        if let Some((config, _)) = &self.option.resampler {
-            Ok(*config)
-        } else {
-            let reader = hound::WavReader::open(self.path).map_err(AudioFileError::from)?;
-            let spec = reader.spec();
-            Ok((spec.sample_rate * Hz).try_into()?)
-        }
+        let reader = hound::WavReader::open(&self.path).map_err(AudioFileError::from)?;
+        let spec = reader.spec();
+        Ok((spec.sample_rate * Hz).try_into()?)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use autd3_core::{
-        defined::{kHz, Freq},
-        resampler::SincInterpolation,
-    };
-
     use super::*;
 
     fn create_wav(
@@ -226,48 +168,9 @@ mod tests {
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("tmp.wav");
         create_wav(&path, spec, data)?;
-        let m = Wav {
-            path: path.as_path(),
-            option: WavOption::default(),
-        };
+        let m = Wav { path };
         assert_eq!(spec.sample_rate, m.sampling_config()?.freq().hz() as u32);
         assert_eq!(Ok(expect), m.calc());
-
-        Ok(())
-    }
-
-    #[rstest::rstest]
-    #[case(vec![127, 217, 255, 217, 127, 37, 0, 37], vec![-1, 127, -1, -128], 2000, 4.0 * kHz, SincInterpolation::default())]
-    #[case(vec![127, 255, 127, 0], vec![-1, 89, 127, 89, -1, -91, -128, -91], 8000, 4.0 * kHz, SincInterpolation::default())]
-    #[test]
-    fn new_with_resample(
-        #[case] expected: Vec<u8>,
-        #[case] buffer: Vec<i8>,
-        #[case] sample_rate: u32,
-        #[case] target: Freq<f32>,
-        #[case] resampler: impl Resampler + 'static,
-    ) -> anyhow::Result<()> {
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("tmp.csv");
-        create_wav(
-            &path,
-            hound::WavSpec {
-                channels: 1,
-                sample_rate,
-                bits_per_sample: 8,
-                sample_format: hound::SampleFormat::Int,
-            },
-            &buffer,
-        )?;
-
-        let m = Wav {
-            path: path.as_path(),
-            option: WavOption::default(),
-        }
-        .with_resample(target, resampler)?;
-
-        assert_eq!(target, m.sampling_config()?.freq());
-        assert_eq!(expected, *m.calc()?);
 
         Ok(())
     }
@@ -288,7 +191,6 @@ mod tests {
         )?;
         assert!(Wav {
             path: path.as_path(),
-            option: WavOption::default(),
         }
         .calc()
         .is_err());

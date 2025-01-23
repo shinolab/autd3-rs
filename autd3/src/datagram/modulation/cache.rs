@@ -87,7 +87,6 @@ mod tests {
         let m = Custom {
             buffer: vec![rng.gen(), rng.gen()],
             sampling_config: SamplingConfig::DIV_10,
-            option: Default::default(),
         };
         let cache = Cache::new(m.clone());
 
