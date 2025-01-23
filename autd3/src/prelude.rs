@@ -1,5 +1,5 @@
 pub use crate::{
-    controller::{Controller, SenderOption},
+    controller::{Controller, ParallelMode, SenderOption},
     datagram::{
         gain::{
             Bessel, BesselOption, Focus, FocusOption, Group, Null, Plane, PlaneOption, Uniform,

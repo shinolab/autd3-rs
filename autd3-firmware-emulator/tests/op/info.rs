@@ -1,4 +1,3 @@
-use autd3_core::derive::DatagramOption;
 use autd3_driver::{
     datagram::*,
     error::AUTDDriverError,
@@ -66,7 +65,7 @@ fn invalid_info_type() -> anyhow::Result<()> {
 
     let d = FirmwareVersionType::CPUMajor;
     let (op, op_null) = d
-        .operation_generator(&geometry, &DatagramOption::default())?
+        .operation_generator(&geometry, false)?
         .generate(&geometry[0]);
 
     OperationHandler::pack(&mut [(op, op_null)], &geometry, &mut tx, false)?;

@@ -1,7 +1,5 @@
 use std::{convert::Infallible, num::NonZeroU16};
 
-use autd3_core::datagram::DatagramOption;
-
 use crate::{
     firmware::{
         fpga::{SilencerTarget, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
@@ -192,7 +190,7 @@ where
     type G = SilencerOpGenerator<T>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DatagramOption) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
         Ok(Self::G {
             config: self.config,
             target: self.target,

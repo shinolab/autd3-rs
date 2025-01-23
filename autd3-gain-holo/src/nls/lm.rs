@@ -135,7 +135,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for LM<D, B> {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
-        _option: &DatagramOption,
+        _: bool,
     ) -> Result<Self::G, GainError> {
         let (foci, amps): (Vec<_>, Vec<_>) = self.foci.into_iter().unzip();
 
@@ -303,14 +303,13 @@ mod tests {
         };
 
         assert_eq!(
-            g.init_full(&geometry, None, &DatagramOption::default())
-                .map(|mut res| {
-                    let f = res.generate(&geometry[0]);
-                    geometry[0]
-                        .iter()
-                        .filter(|tr| f.calc(tr) != Drive::NULL)
-                        .count()
-                }),
+            g.init_full(&geometry, None, false).map(|mut res| {
+                let f = res.generate(&geometry[0]);
+                geometry[0]
+                    .iter()
+                    .filter(|tr| f.calc(tr) != Drive::NULL)
+                    .count()
+            }),
             Ok(geometry.num_transducers()),
         );
     }
@@ -338,9 +337,7 @@ mod tests {
             .take(1)
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
-        let mut g = g
-            .init_full(&geometry, Some(&filter), &DatagramOption::default())
-            .unwrap();
+        let mut g = g.init_full(&geometry, Some(&filter), false).unwrap();
         assert_eq!(
             {
                 let f = g.generate(&geometry[0]);

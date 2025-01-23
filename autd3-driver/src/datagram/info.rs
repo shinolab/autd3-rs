@@ -1,7 +1,5 @@
 use std::convert::Infallible;
 
-use autd3_core::datagram::DatagramOption;
-
 use crate::{
     datagram::*,
     firmware::operation::{FirmInfoOp, FirmwareVersionType},
@@ -27,7 +25,7 @@ impl Datagram for FirmwareVersionType {
     type G = FetchFirmwareInfoOpGenerator;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DatagramOption) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
         Ok(Self::G { inner: self })
     }
 }

@@ -24,7 +24,9 @@ use autd3_driver::{
 pub use group::Group;
 #[cfg(target_os = "windows")]
 pub use sender::WaitableSleeper;
-pub use sender::{sleep::Sleep, Sender, SenderOption, SpinSleeper, SpinStrategy, StdSleeper};
+pub use sender::{
+    sleep::Sleep, ParallelMode, Sender, SenderOption, SpinSleeper, SpinStrategy, StdSleeper,
+};
 
 use derive_more::{Deref, DerefMut};
 use getset::{Getters, MutGetters};
@@ -357,7 +359,7 @@ pub(crate) mod tests {
             self,
             geometry: &Geometry,
             _filter: Option<&HashMap<usize, BitVec>>,
-            _option: &DatagramOption,
+            _: bool,
         ) -> Result<Self::G, GainError> {
             geometry.iter().for_each(|dev| {
                 self.test.lock().unwrap()[dev.idx()] = dev.enable;

@@ -3,7 +3,6 @@ use std::convert::Infallible;
 use crate::firmware::operation::SyncOp;
 
 use crate::datagram::*;
-use autd3_core::datagram::DatagramOption;
 use derive_new::new;
 
 /// [`Datagram`] to synchronize the devices.
@@ -25,7 +24,7 @@ impl Datagram for Synchronize {
     type G = SynchronizeOpGenerator;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DatagramOption) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
         Ok(SynchronizeOpGenerator {})
     }
 }

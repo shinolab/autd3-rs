@@ -90,17 +90,15 @@ impl<'a, S: AsyncSleep, L: AsyncLink, T: BorrowMut<Sender<'a, L, S>>, K: Partial
         }
 
         let datagram_option = DatagramOption {
-            timeout: sender
-                .borrow()
-                .option
-                .timeout
-                .unwrap_or(datagram_option.timeout.max(data.option().timeout)),
-            parallel_threshold: sender.borrow().option.parallel_threshold.unwrap_or(
-                datagram_option
-                    .parallel_threshold
-                    .min(data.option().parallel_threshold),
-            ),
+            timeout: datagram_option.timeout.max(data.option().timeout),
+            parallel_threshold: datagram_option
+                .parallel_threshold
+                .min(data.option().parallel_threshold),
         };
+        let parallel = sender.borrow().option.parallel.is_parallel(
+            sender.borrow().geometry.num_devices(),
+            datagram_option.parallel_threshold,
+        );
 
         // set enable flag for each device
         // This is not required for the operation except `Gain`s which cannot be calculated independently for each device, such as `autd3-gain-holo`.
@@ -118,7 +116,7 @@ impl<'a, S: AsyncSleep, L: AsyncLink, T: BorrowMut<Sender<'a, L, S>>, K: Partial
             .for_each(|(dev, k)| {
                 dev.enable = k.as_ref().is_some_and(|kk| kk == &key);
             });
-        let mut generator = data.operation_generator(sender.borrow().geometry, &datagram_option)?;
+        let mut generator = data.operation_generator(sender.borrow().geometry, parallel)?;
         sender
             .borrow_mut()
             .geometry
@@ -181,6 +179,18 @@ impl<'a, S: AsyncSleep, L: AsyncLink, T: BorrowMut<Sender<'a, L, S>>, K: Partial
             ));
         }
 
+        sender.borrow_mut().link.trace(&datagram_option);
+
+        let timeout = sender
+            .borrow()
+            .option
+            .timeout
+            .unwrap_or(datagram_option.timeout);
+        let parallel = sender.borrow().option.parallel.is_parallel(
+            sender.borrow().geometry.num_devices(),
+            datagram_option.parallel_threshold,
+        );
+        tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
         sender
             .borrow_mut()
             .send_impl(
@@ -188,7 +198,8 @@ impl<'a, S: AsyncSleep, L: AsyncLink, T: BorrowMut<Sender<'a, L, S>>, K: Partial
                     .into_iter()
                     .map(|op| op.unwrap_or_default())
                     .collect::<Vec<_>>(),
-                &datagram_option,
+                timeout,
+                parallel,
             )
             .await
     }

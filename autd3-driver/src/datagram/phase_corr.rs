@@ -6,7 +6,6 @@ use crate::{
     geometry::{Device, Transducer},
 };
 
-use autd3_core::datagram::DatagramOption;
 use derive_more::Debug;
 use derive_new::new;
 
@@ -51,7 +50,7 @@ impl<FT: Fn(&Transducer) -> Phase + Send + Sync, F: Fn(&Device) -> FT> Datagram
     type G = PhaseCorrectionOpGenerator<FT, F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DatagramOption) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
         Ok(Self::G { f: self.f })
     }
 }
