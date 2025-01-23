@@ -114,6 +114,7 @@ mod tests {
             sampling_config: sample_rate,
             option: CsvOption::default(),
         };
+        assert_eq!(sample_rate.hz(), m.sampling_config()?.freq().hz() as u32);
         assert_eq!(data, *m.calc()?);
 
         Ok(())
