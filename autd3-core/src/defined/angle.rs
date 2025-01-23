@@ -9,31 +9,22 @@ pub struct rad;
 use derive_more::Debug;
 
 /// Angle
+#[repr(C)]
 #[derive(Clone, Copy, PartialEq, Debug)]
-pub enum Angle {
-    #[doc(hidden)]
-    #[debug("{}°", _0)]
-    Deg(f32),
-    #[doc(hidden)]
-    #[debug("{}rad", _0)]
-    Rad(f32),
+#[debug("{}rad", radian)]
+pub struct Angle {
+    radian: f32,
 }
 
 impl Angle {
     /// Returns the angle in radian
     pub fn radian(self) -> f32 {
-        match self {
-            Self::Deg(a) => a.to_radians(),
-            Self::Rad(a) => a,
-        }
+        self.radian
     }
 
     /// Returns the angle in degree
     pub fn degree(self) -> f32 {
-        match self {
-            Self::Deg(a) => a,
-            Self::Rad(a) => a.to_degrees(),
-        }
+        self.radian.to_degrees()
     }
 }
 
@@ -41,7 +32,9 @@ impl std::ops::Mul<deg> for f32 {
     type Output = Angle;
 
     fn mul(self, _rhs: deg) -> Self::Output {
-        Self::Output::Deg(self)
+        Self::Output {
+            radian: self.to_radians(),
+        }
     }
 }
 
@@ -49,7 +42,7 @@ impl std::ops::Mul<rad> for f32 {
     type Output = Angle;
 
     fn mul(self, _rhs: rad) -> Self::Output {
-        Self::Output::Rad(self)
+        Self::Output { radian: self }
     }
 }
 
@@ -59,7 +52,6 @@ mod tests {
 
     #[test]
     fn dbg() {
-        assert_eq!(format!("{:?}", 90.0 * deg), "90°");
         assert_eq!(format!("{:?}", 1.0 * rad), "1rad");
     }
 }
