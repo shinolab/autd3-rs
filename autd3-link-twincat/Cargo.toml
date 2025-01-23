@@ -11,7 +11,6 @@ repository = { workspace = true }
 
 [dependencies]
 autd3-core = { workspace = true, features = ["link"] }
-autd3-derive = { workspace = true }
 itertools = { workspace = true, optional = true }
 libloading = { workspace = true, optional = true }
 thiserror = { workspace = true }
