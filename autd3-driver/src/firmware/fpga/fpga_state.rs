@@ -1,6 +1,7 @@
 use crate::firmware::fpga::Segment;
 
 use autd3_core::link::RxMessage;
+use getset::CopyGetters;
 
 const THERMAL_ASSERT_BIT: u8 = 1 << 0;
 const CURRENT_MOD_SEGMENT_BIT: u8 = 1 << 1;
@@ -11,8 +12,10 @@ const READS_FPGA_STATE_ENABLED: u8 = 1 << 7;
 
 /// FPGA state.
 #[repr(C)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, CopyGetters)]
 pub struct FPGAState {
+    #[doc(hidden)]
+    #[getset(get_copy = "pub")]
     pub(crate) state: u8,
 }
 
