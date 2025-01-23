@@ -102,9 +102,7 @@ fn focus(c: &mut Criterion) {
                 b.iter(|| {
                     let g =
                         Focus::new(Point3::new(black_box(90.), black_box(70.), black_box(150.)));
-                    let generator = g
-                        .operation_generator(geometry, &DatagramOption::default())
-                        .unwrap();
+                    let generator = g.operation_generator(geometry, false).unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(&mut operations, geometry, &mut tx, false).unwrap();
                 })
@@ -126,9 +124,7 @@ fn focus_parallel(c: &mut Criterion) {
                 b.iter(|| {
                     let g =
                         Focus::new(Point3::new(black_box(90.), black_box(70.), black_box(150.)));
-                    let generator = g
-                        .operation_generator(geometry, &DatagramOption::default())
-                        .unwrap();
+                    let generator = g.operation_generator(geometry, true).unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(&mut operations, geometry, &mut tx, true).unwrap();
                 })
@@ -154,9 +150,7 @@ fn focus_boxed(c: &mut Criterion) {
                         black_box(150.),
                     )))
                     .into_boxed();
-                    let generator = g
-                        .operation_generator(geometry, &DatagramOption::default())
-                        .unwrap();
+                    let generator = g.operation_generator(geometry, false).unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(&mut operations, geometry, &mut tx, false).unwrap();
                 })

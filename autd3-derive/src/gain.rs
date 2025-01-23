@@ -14,13 +14,13 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
             type G = GainOperationGenerator<<Self as Gain>::G>;
             type Error = GainError;
 
-            fn operation_generator_with_segment(self, geometry: &Geometry, option: &DatagramOption, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<Self::G, Self::Error> {
+            fn operation_generator_with_segment(self, geometry: &Geometry, parallel: bool, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<Self::G, Self::Error> {
                 Self::G::new(
                     self,
                     geometry,
                     segment,
                     transition_mode,
-                    option
+                    parallel
                 )
             }
 

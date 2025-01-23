@@ -5,7 +5,7 @@ pub use sleep::AsyncSleeper;
 
 use std::time::{Duration, Instant};
 
-use autd3_core::{datagram::Datagram, derive::DatagramOption, geometry::Geometry, link::AsyncLink};
+use autd3_core::{datagram::Datagram, geometry::Geometry, link::AsyncLink};
 use autd3_driver::{
     error::AUTDDriverError,
     firmware::{
@@ -43,21 +43,22 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
         AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
             + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
     {
+        self.link.trace(&s.option());
+
         let timeout = self.option.timeout.unwrap_or(s.option().timeout);
-        let parallel_threshold = self
+        let parallel = self
             .option
-            .parallel_threshold
-            .unwrap_or(s.option().parallel_threshold);
-        let datagram_option = DatagramOption {
-            timeout,
-            parallel_threshold,
-        };
+            .parallel
+            .is_parallel(self.geometry.num_devices(), s.option().parallel_threshold);
+        tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
+
         self.send_impl(
             OperationHandler::generate(
-                s.operation_generator(self.geometry, &datagram_option)?,
+                s.operation_generator(self.geometry, parallel)?,
                 self.geometry,
             ),
-            &datagram_option,
+            timeout,
+            parallel,
         )
         .await
     }
@@ -65,21 +66,14 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
     pub(crate) async fn send_impl<O1, O2>(
         &mut self,
         mut operations: Vec<(O1, O2)>,
-        option: &DatagramOption,
+        timeout: Duration,
+        parallel: bool,
     ) -> Result<(), AUTDDriverError>
     where
         O1: Operation,
         O2: Operation,
         AUTDDriverError: From<O1::Error> + From<O2::Error>,
     {
-        let timeout = option.timeout;
-        let parallel_threshold = option.parallel_threshold;
-
-        let parallel = self.geometry.num_devices() > parallel_threshold;
-
-        self.link.trace(option);
-        tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
-
         self.link.update(self.geometry).await?;
 
         // We prioritize average behavior for the transmission timing. That is, not the interval from the previous transmission, but ensuring that T/`send_interval` transmissions are performed in a sufficiently long time T.
@@ -154,7 +148,10 @@ mod tests {
 
     #[cfg(target_os = "windows")]
     use crate::controller::WaitableSleeper;
-    use crate::{controller::StdSleeper, tests::create_geometry};
+    use crate::{
+        controller::{ParallelMode, StdSleeper},
+        tests::create_geometry,
+    };
 
     use super::*;
 
@@ -238,7 +235,7 @@ mod tests {
                 send_interval: Duration::from_millis(1),
                 receive_interval: Duration::from_millis(1),
                 timeout: None,
-                parallel_threshold: None,
+                parallel: ParallelMode::Auto,
                 sleeper,
             },
         };
@@ -289,7 +286,7 @@ mod tests {
                 send_interval: Duration::from_millis(1),
                 receive_interval: Duration::from_millis(1),
                 timeout: None,
-                parallel_threshold: None,
+                parallel: ParallelMode::Auto,
                 sleeper,
             },
         };

@@ -59,7 +59,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for GSPAT<D, B> {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
-        _option: &DatagramOption,
+        _: bool,
     ) -> Result<Self::G, GainError> {
         let (foci, amps): (Vec<_>, Vec<_>) = self.foci.into_iter().unzip();
 
@@ -153,14 +153,13 @@ mod tests {
         };
 
         assert_eq!(
-            g.init_full(&geometry, None, &DatagramOption::default())
-                .map(|mut res| {
-                    let f = res.generate(&geometry[0]);
-                    geometry[0]
-                        .iter()
-                        .filter(|tr| f.calc(tr) != Drive::NULL)
-                        .count()
-                }),
+            g.init_full(&geometry, None, false).map(|mut res| {
+                let f = res.generate(&geometry[0]);
+                geometry[0]
+                    .iter()
+                    .filter(|tr| f.calc(tr) != Drive::NULL)
+                    .count()
+            }),
             Ok(geometry.num_transducers()),
         );
     }
@@ -185,14 +184,13 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
         assert_eq!(
-            g.init_full(&geometry, Some(&filter), &DatagramOption::default())
-                .map(|mut res| {
-                    let f = res.generate(&geometry[0]);
-                    geometry[0]
-                        .iter()
-                        .filter(|tr| f.calc(tr) != Drive::NULL)
-                        .count()
-                }),
+            g.init_full(&geometry, Some(&filter), false).map(|mut res| {
+                let f = res.generate(&geometry[0]);
+                geometry[0]
+                    .iter()
+                    .filter(|tr| f.calc(tr) != Drive::NULL)
+                    .count()
+            }),
             Ok(100),
         )
     }

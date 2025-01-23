@@ -141,7 +141,7 @@ where
         self,
         geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,
-        option: &DatagramOption,
+        parallel: bool,
     ) -> Result<Self::G, GainError> {
         let mut filters = self.get_filters(geometry);
 
@@ -161,7 +161,7 @@ where
                 let filter = filters
                     .remove(&k)
                     .ok_or(GainError::new(format!("Unknown group key({:?})", k)))?;
-                let mut g = g.init_full(geometry, Some(&filter), option)?;
+                let mut g = g.init_full(geometry, Some(&filter), parallel)?;
                 Ok((
                     k,
                     geometry
@@ -180,7 +180,7 @@ where
         }
 
         let f = &self.f;
-        if geometry.num_devices() > option.parallel_threshold {
+        if parallel {
             macro_rules! par_try_for_each {
                 ($iter:expr, $f:expr) => {
                     if cfg!(miri) {
@@ -276,7 +276,7 @@ mod tests {
         .set("test", g1.into_boxed())?
         .set("test2", g2.into_boxed())?;
 
-        let mut g = gain.init_full(&geometry, None, &DatagramOption::default())?;
+        let mut g = gain.init_full(&geometry, None, false)?;
         let drives = geometry
             .devices()
             .map(|dev| {
@@ -355,14 +355,7 @@ mod tests {
         .set("test", g1.into_boxed())?
         .set("test2", g2.into_boxed())?;
 
-        let mut g = gain.init_full(
-            &geometry,
-            None,
-            &DatagramOption {
-                parallel_threshold: 4,
-                ..Default::default()
-            },
-        )?;
+        let mut g = gain.init_full(&geometry, None, true)?;
         let drives = geometry
             .devices()
             .map(|dev| {
@@ -420,8 +413,7 @@ mod tests {
         let geometry = create_geometry(1);
         assert_eq!(
             Some(GainError::new("Unknown group key(\"test2\")".to_owned())),
-            gain.init_full(&geometry, None, &DatagramOption::default())
-                .err()
+            gain.init_full(&geometry, None, false).err()
         );
 
         Ok(())
@@ -454,8 +446,7 @@ mod tests {
         let geometry = create_geometry(1);
         assert_eq!(
             Some(GainError::new("Unused group keys: 0".to_owned())),
-            gain.init_full(&geometry, None, &DatagramOption::default())
-                .err()
+            gain.init_full(&geometry, None, false).err()
         );
 
         Ok(())

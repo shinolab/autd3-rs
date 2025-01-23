@@ -1,7 +1,5 @@
 use std::convert::Infallible;
 
-use autd3_core::datagram::DatagramOption;
-
 use crate::{datagram::*, firmware::operation::SwapSegmentOp};
 
 use super::OperationGenerator;
@@ -23,7 +21,7 @@ impl Datagram for SwapSegment {
     type G = SwapSegmentOpGenerator;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DatagramOption) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
         Ok(SwapSegmentOpGenerator { segment: self })
     }
 }
