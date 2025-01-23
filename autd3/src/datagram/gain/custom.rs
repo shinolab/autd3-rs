@@ -35,7 +35,7 @@ pub struct Context<FT: Fn(&Transducer) -> Drive + Send + Sync + 'static> {
 
 impl<FT: Fn(&Transducer) -> Drive + Send + Sync + 'static> GainContext for Context<FT> {
     fn calc(&self, tr: &Transducer) -> Drive {
-        (self.f)(tr).into()
+        (self.f)(tr)
     }
 }
 
