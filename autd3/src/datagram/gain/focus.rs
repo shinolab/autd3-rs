@@ -8,6 +8,7 @@ use autd3_driver::{
 
 /// The option of [`Focus`].
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(C)]
 pub struct FocusOption {
     /// The intensity of the beam.
     pub intensity: EmitIntensity,
