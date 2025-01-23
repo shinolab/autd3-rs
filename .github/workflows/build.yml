@@ -51,7 +51,6 @@ jobs:
           submodules: true
       - uses: ./.github/actions/setup-build
         with:
-          os: ubuntu-latest
           toolchain: nightly
       - run: cargo make doc
       - uses: dtolnay/install@cargo-docs-rs
