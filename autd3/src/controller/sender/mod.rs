@@ -209,6 +209,26 @@ mod tests {
 
     use super::*;
 
+    #[rstest::rstest]
+    #[case(true, ParallelMode::On, 1, 1)]
+    #[case(true, ParallelMode::On, 2, 1)]
+    #[case(true, ParallelMode::On, 1, 2)]
+    #[case(false, ParallelMode::Off, 1, 1)]
+    #[case(false, ParallelMode::Off, 2, 1)]
+    #[case(false, ParallelMode::Off, 1, 2)]
+    #[case(false, ParallelMode::Auto, 1, 1)]
+    #[case(true, ParallelMode::Auto, 2, 1)]
+    #[case(false, ParallelMode::Auto, 1, 2)]
+    #[test]
+    fn parallel_mode(
+        #[case] expect: bool,
+        #[case] mode: ParallelMode,
+        #[case] num_devices: usize,
+        #[case] threshold: usize,
+    ) {
+        assert_eq!(expect, mode.is_parallel(num_devices, threshold));
+    }
+
     struct MockLink {
         pub is_open: bool,
         pub send_cnt: usize,
