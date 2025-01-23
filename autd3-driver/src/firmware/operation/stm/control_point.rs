@@ -84,18 +84,6 @@ where
     }
 }
 
-impl<C, I: Into<EmitIntensity>> From<(C, I)> for ControlPoints<1>
-where
-    ControlPoint: From<C>,
-{
-    fn from(point: (C, I)) -> Self {
-        Self {
-            points: [point.0.into()],
-            intensity: point.1.into(),
-        }
-    }
-}
-
 impl<C, const N: usize> From<[C; N]> for ControlPoints<N>
 where
     ControlPoint: From<C>,
@@ -104,18 +92,6 @@ where
         Self {
             points: points.map(ControlPoint::from),
             ..Default::default()
-        }
-    }
-}
-
-impl<C, I: Into<EmitIntensity>, const N: usize> From<([C; N], I)> for ControlPoints<N>
-where
-    ControlPoint: From<C>,
-{
-    fn from(points: ([C; N], I)) -> Self {
-        Self {
-            points: points.0.map(ControlPoint::from),
-            intensity: points.1.into(),
         }
     }
 }
@@ -144,16 +120,6 @@ mod tests {
         let v2 = Point3::new(4.0, 5.0, 6.0);
         let cp = ControlPoints::from([v1, v2]);
         assert_eq!(EmitIntensity::MAX, cp.intensity);
-        assert_eq!(v1, cp[0].point);
-        assert_eq!(v2, cp[1].point);
-    }
-
-    #[test]
-    fn from_control_point_and_intensity() {
-        let v1 = Point3::new(1.0, 2.0, 3.0);
-        let v2 = Point3::new(4.0, 5.0, 6.0);
-        let cp = ControlPoints::from(([v1, v2], EmitIntensity::MIN));
-        assert_eq!(EmitIntensity::MIN, cp.intensity);
         assert_eq!(v1, cp[0].point);
         assert_eq!(v2, cp[1].point);
     }
