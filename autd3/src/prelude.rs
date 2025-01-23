@@ -2,13 +2,9 @@ pub use crate::{
     controller::{Controller, SenderOption},
     datagram::{
         gain::{
-            Bessel, BesselOption, Focus, FocusOption, Group, IntoGainCache, Null, Plane,
-            PlaneOption, Uniform,
+            Bessel, BesselOption, Focus, FocusOption, Group, Null, Plane, PlaneOption, Uniform,
         },
-        modulation::{
-            FourierOption, IntoModulationCache, IntoRadiationPressure, Sine, SineOption, Square,
-            SquareOption, Static, WithFir,
-        },
+        modulation::{FourierOption, Sine, SineOption, Square, SquareOption, Static},
         stm::{Circle, Line},
     },
     error::AUTDError,

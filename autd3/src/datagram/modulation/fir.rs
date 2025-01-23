@@ -1,46 +1,25 @@
-use std::borrow::Borrow;
-
 use autd3_core::derive::*;
 
 /// [`Modulation`] that applies FIR filter to the original [`Modulation`].
 #[derive(Modulation, Debug)]
 pub struct Fir<M: Modulation> {
-    m: M,
-    filter: Vec<f32>,
-}
-
-impl<M: Modulation> Fir<M> {
-    fn new(m: M, filter: impl IntoIterator<Item = impl Borrow<f32>>) -> Self {
-        Self {
-            filter: filter.into_iter().map(|f| *f.borrow()).collect(),
-            m,
-        }
-    }
-}
-
-/// Trait to convert [`Modulation`] to [`Fir`].
-pub trait WithFir<M: Modulation> {
-    /// Convert [`Modulation`] to [`Fir`]
-    fn with_fir(self, filter: impl IntoIterator<Item = impl Borrow<f32>>) -> Fir<M>;
-}
-
-impl<M: Modulation> WithFir<M> for M {
-    fn with_fir(self, filter: impl IntoIterator<Item = impl Borrow<f32>>) -> Fir<M> {
-        Fir::new(self, filter)
-    }
+    /// The target [`Modulation`] to apply FIR filter.
+    pub target: M,
+    /// The coefficients of the FIR filter.
+    pub coef: Vec<f32>,
 }
 
 impl<M: Modulation> Modulation for Fir<M> {
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
-        let src = self.m.calc()?;
+        let src = self.target.calc()?;
         let src_len = src.len() as isize;
-        let filter_len = self.filter.len() as isize;
+        let filter_len = self.coef.len() as isize;
         Ok((0..src_len)
             .map(|i| {
                 (0..filter_len)
                     .map(|j| {
                         src[(i + j - filter_len / 2).rem_euclid(src_len) as usize] as f32
-                            * self.filter[j as usize]
+                            * self.coef[j as usize]
                     })
                     .sum::<f32>() as u8
             })
@@ -48,7 +27,7 @@ impl<M: Modulation> Modulation for Fir<M> {
     }
 
     fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-        self.m.sampling_config()
+        self.target.sampling_config()
     }
 }
 
@@ -69,19 +48,21 @@ mod tests {
     fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
             Ok(config),
-            Custom {
-                buffer: [u8::MIN; 2].to_vec(),
-                sampling_config: config,
-                option: Default::default(),
+            Fir {
+                target: Custom {
+                    buffer: [u8::MIN; 2].to_vec(),
+                    sampling_config: config,
+                    option: Default::default(),
+                },
+                coef: vec![1.0]
             }
-            .with_fir([1.0])
             .sampling_config()
         );
     }
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let lpf = [
+        let coef = vec![
             0.,
             2.336_732_5E-6,
             8.982_681E-6,
@@ -191,20 +172,22 @@ mod tests {
                 89, 86, 83, 80, 77, 75, 73, 72, 70, 70, 69, 69, 69, 70, 70, 72, 73, 75, 77, 80, 83,
                 86, 89, 93, 96, 100, 105, 109, 113, 118, 122
             ],
-            *Fourier {
-                components: vec![
-                    Sine {
-                        freq: 50 * Hz,
-                        option: Default::default(),
-                    },
-                    Sine {
-                        freq: 1000 * Hz,
-                        option: Default::default(),
-                    }
-                ],
-                option: Default::default()
+            *Fir {
+                target: Fourier {
+                    components: vec![
+                        Sine {
+                            freq: 50 * Hz,
+                            option: Default::default(),
+                        },
+                        Sine {
+                            freq: 1000 * Hz,
+                            option: Default::default(),
+                        }
+                    ],
+                    option: Default::default()
+                },
+                coef
             }
-            .with_fir(lpf)
             .calc()?
         );
 
