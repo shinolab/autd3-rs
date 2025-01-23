@@ -18,7 +18,7 @@ use crate::{create_geometry, send};
 use zerocopy::FromZeros;
 
 #[test]
-fn send_silencer_fixed_update_rate() -> anyhow::Result<()> {
+fn send_silencer_fixed_update_rate_unsafe() -> anyhow::Result<()> {
     let mut rng = rand::thread_rng();
 
     let geometry = create_geometry(1);
@@ -64,7 +64,7 @@ fn send_silencer_fixed_update_rate() -> anyhow::Result<()> {
 
 #[cfg(not(feature = "dynamic_freq"))]
 #[test]
-fn send_silencer_fixed_completion_time() {
+fn send_silencer_fixed_completion_time_unsafe() {
     use autd3_driver::defined::ultrasound_period;
 
     let mut rng = rand::thread_rng();
@@ -126,7 +126,7 @@ fn send_silencer_fixed_completion_time() {
 }
 
 #[test]
-fn send_silencer_fixed_completion_steps() {
+fn send_silencer_fixed_completion_steps_unsafe() {
     let mut rng = rand::thread_rng();
 
     let geometry = create_geometry(1);
@@ -175,7 +175,6 @@ fn send_silencer_fixed_completion_steps() {
 #[test]
 #[case(Ok(()), 1)]
 #[case(Err(AUTDDriverError::InvalidSilencerSettings), 2)]
-#[cfg_attr(miri, ignore)]
 fn silencer_completetion_steps_too_large_mod(
     #[case] expect: Result<(), AUTDDriverError>,
     #[case] steps_intensity: u16,
@@ -226,7 +225,6 @@ fn silencer_completetion_steps_too_large_mod(
 #[case(Ok(()), 1, 1)]
 #[case(Err(AUTDDriverError::InvalidSilencerSettings), 2, 1)]
 #[case(Err(AUTDDriverError::InvalidSilencerSettings), 1, 2)]
-#[cfg_attr(miri, ignore)]
 fn silencer_completetion_steps_too_large_stm(
     #[case] expect: Result<(), AUTDDriverError>,
     #[case] steps_intensity: u16,
@@ -271,7 +269,6 @@ fn silencer_completetion_steps_too_large_stm(
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
     let mut rng = rand::thread_rng();
 
@@ -303,7 +300,6 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
 fn send_silencer_fixed_completion_time_permissive() {
     let mut rng = rand::thread_rng();
 

@@ -11,7 +11,6 @@ use zerocopy::FromZeros;
 #[case(0b00100000, true, false)]
 #[case(0b10000000, false, true)]
 #[case(0b00000000, false, false)]
-#[cfg_attr(miri, ignore)]
 fn send_cpu_gpio_out(
     #[case] expect: u8,
     #[case] pa5: bool,

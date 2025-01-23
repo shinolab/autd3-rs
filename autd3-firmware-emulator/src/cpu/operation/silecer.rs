@@ -80,7 +80,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn silencer_memory_layout() {
         assert_eq!(6, std::mem::size_of::<ConfigSilencer>());
         assert_eq!(0, std::mem::offset_of!(ConfigSilencer, tag));

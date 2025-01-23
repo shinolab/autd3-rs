@@ -194,7 +194,6 @@ mod tests {
 
     #[test]
     #[should_panic]
-    #[cfg_attr(miri, ignore)]
     fn read_panic() {
         let fpga = FPGAEmulator::new(249);
         let addr = (BRAM_SELECT_MOD as u16) << 14;

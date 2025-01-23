@@ -36,7 +36,7 @@ mod tests {
     use rand::Rng;
 
     #[test]
-    fn test_tx_datagram() {
+    fn test_tx_datagram_unsafe() {
         let mut rng = rand::thread_rng();
         let mut tx = vec![autd3_driver::firmware::cpu::TxMessage::new_zeroed(); 10];
         (0..10).for_each(|i| {

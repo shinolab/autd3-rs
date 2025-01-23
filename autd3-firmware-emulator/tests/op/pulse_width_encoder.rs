@@ -8,7 +8,7 @@ use crate::{create_geometry, send};
 use zerocopy::FromZeros;
 
 #[test]
-fn config_pwe() -> anyhow::Result<()> {
+fn config_pwe_unsafe() -> anyhow::Result<()> {
     let mut rng = rand::thread_rng();
 
     let geometry = create_geometry(1);

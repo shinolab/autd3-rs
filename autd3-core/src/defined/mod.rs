@@ -53,41 +53,38 @@ mod inner {
 
 #[cfg(feature = "dynamic_freq")]
 mod inner {
-    use std::sync::Once;
+    use std::sync::LazyLock;
 
     use super::Freq;
     use crate::defined::Hz;
 
-    static mut VAL: Freq<u32> = Freq { freq: 40000 };
-    static FREQ: Once = Once::new();
+    static LAZY_FREQ: LazyLock<Freq<u32>> =
+        LazyLock::new(|| match std::env::var("AUTD3_ULTRASOUND_FREQ") {
+            Ok(freq) => match freq.parse::<u32>() {
+                Ok(freq) => {
+                    tracing::info!("Set ultrasound frequency to {} Hz.", freq);
+                    freq * Hz
+                }
+                Err(_) => {
+                    tracing::error!(
+                        "Invalid ultrasound frequency ({} Hz), fallback to 40 kHz.",
+                        freq
+                    );
+                    Freq { freq: 40000 }
+                }
+            },
+            Err(_) => {
+                tracing::warn!(
+                    "Environment variable AUTD3_ULTRASOUND_FREQ is not set, fallback to 40 kHz."
+                );
+                Freq { freq: 40000 }
+            }
+        });
 
     #[inline]
     /// The frequency of ultrasound
     pub fn ultrasound_freq() -> Freq<u32> {
-        unsafe {
-            FREQ.call_once(|| {
-                VAL = match std::env::var("AUTD3_ULTRASOUND_FREQ") {
-                    Ok(freq) => match freq.parse::<u32>() {
-                        Ok(freq) => {
-                            tracing::info!("Set ultrasound frequency to {} Hz.", freq);
-                            freq * Hz
-                        }
-                        Err(_) => {
-                            tracing::error!(
-                                "Invalid ultrasound frequency ({} Hz), fallback to 40 kHz.",
-                                freq
-                            );
-                            Freq { freq: 40000 }
-                        }
-                    },
-                    Err(_) => {
-                        tracing::warn!("Environment variable AUTD3_ULTRASOUND_FREQ is not set, fallback to 40 kHz.");
-                        Freq { freq: 40000 }
-                    }
-                };
-            });
-            VAL
-        }
+        *LAZY_FREQ
     }
 
     #[doc(hidden)]

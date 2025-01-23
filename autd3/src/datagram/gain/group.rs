@@ -181,29 +181,36 @@ where
 
         let f = &self.f;
         if geometry.num_devices() > option.parallel_threshold {
-            gain_map
-                .par_iter()
-                .try_for_each(|(k, c)| -> Result<(), GainError> {
-                    geometry.devices().zip(c.iter()).for_each(|(dev, c)| {
-                        let f = (f)(dev);
-                        let r = g[&dev.idx()].as_ptr() as *mut Drive;
-                        dev.iter()
-                            .filter(|tr| f(tr).is_some_and(|kk| &kk == k))
-                            .for_each(|tr| unsafe {
-                                r.add(tr.idx()).write(c.calc(tr));
-                            })
-                    });
-                    Ok(())
-                })?;
+            macro_rules! par_try_for_each {
+                ($iter:expr, $f:expr) => {
+                    if cfg!(miri) {
+                        $iter.into_iter().try_for_each($f)
+                    } else {
+                        $iter.into_par_iter().try_for_each($f)
+                    }
+                };
+            }
+            par_try_for_each!(gain_map, |(k, c)| -> Result<(), GainError> {
+                geometry.devices().zip(c.iter()).for_each(|(dev, c)| {
+                    let f = (f)(dev);
+                    let r = g[&dev.idx()].as_ptr() as *mut Drive;
+                    dev.iter()
+                        .filter(|tr| f(tr).is_some_and(|kk| kk == k))
+                        .for_each(|tr| unsafe {
+                            r.add(tr.idx()).write(c.calc(tr));
+                        })
+                });
+                Ok(())
+            })?
         } else {
             gain_map
-                .iter()
+                .into_iter()
                 .try_for_each(|(k, c)| -> Result<(), GainError> {
                     geometry.devices().zip(c.iter()).for_each(|(dev, c)| {
                         let f = (f)(dev);
                         let r = g.get_mut(&dev.idx()).unwrap();
                         dev.iter()
-                            .filter(|tr| f(tr).is_some_and(|kk| &kk == k))
+                            .filter(|tr| f(tr).is_some_and(|kk| kk == k))
                             .for_each(|tr| {
                                 r[tr.idx()] = c.calc(tr);
                             })
@@ -311,7 +318,7 @@ mod tests {
     }
 
     #[test]
-    fn with_parallel() -> anyhow::Result<()> {
+    fn with_parallel_unsafe() -> anyhow::Result<()> {
         let geometry = create_geometry(5);
 
         let mut rng = rand::thread_rng();

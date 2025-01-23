@@ -3,8 +3,6 @@ mod sender;
 
 use crate::{error::AUTDError, gain::Null, prelude::Static};
 
-use std::time::Duration;
-
 use autd3_core::{
     defined::DEFAULT_TIMEOUT,
     geometry::IntoDevice,
@@ -52,23 +50,35 @@ pub struct Controller<L: Link> {
 }
 
 impl<L: Link> Controller<L> {
-    /// Equivalent to [`Self::open_with_timeout`] with a timeout of [`DEFAULT_TIMEOUT`].
+    /// Equivalent to [`Self::open_with_option`] with a timeout of [`DEFAULT_TIMEOUT`].
     pub fn open<D: IntoDevice, F: IntoIterator<Item = D>, B: LinkBuilder<L = L>>(
         devices: F,
         link_builder: B,
     ) -> Result<Self, AUTDError> {
-        Self::open_with_timeout(devices, link_builder, DEFAULT_TIMEOUT)
+        Self::open_with_option(
+            devices,
+            link_builder,
+            SenderOption::<SpinSleeper> {
+                timeout: Some(DEFAULT_TIMEOUT),
+                ..Default::default()
+            },
+        )
     }
 
-    /// Opens a controller with a timeout.
+    /// Opens a controller with a [`SenderOption`].
     ///
     /// Opens link, and then initialize and synchronize the devices. The `timeout` is used to send data for initialization and synchronization.
-    pub fn open_with_timeout<D: IntoDevice, F: IntoIterator<Item = D>, B: LinkBuilder<L = L>>(
+    pub fn open_with_option<
+        D: IntoDevice,
+        F: IntoIterator<Item = D>,
+        B: LinkBuilder<L = L>,
+        S: Sleep,
+    >(
         devices: F,
         link_builder: B,
-        timeout: Duration,
+        option: SenderOption<S>,
     ) -> Result<Self, AUTDError> {
-        tracing::debug!("Opening a controller with timeout {:?})", timeout);
+        tracing::debug!("Opening a controller with option {:?})", option);
 
         let devices = devices
             .into_iter()
@@ -83,7 +93,7 @@ impl<L: Link> Controller<L> {
             rx_buf: vec![RxMessage::new(0, 0); geometry.len()],
             geometry,
         }
-        .open_impl(timeout)
+        .open_impl(option)
     }
 
     /// Returns the [`Sender`] to send data to the devices.
@@ -109,17 +119,15 @@ impl<L: Link> Controller<L> {
         self.sender(SenderOption::<SpinSleeper>::default()).send(s)
     }
 
-    pub(crate) fn open_impl(mut self, timeout: Duration) -> Result<Self, AUTDError> {
-        let timeout = Some(timeout);
+    pub(crate) fn open_impl<S: Sleep>(
+        mut self,
+        option: SenderOption<S>,
+    ) -> Result<Self, AUTDError> {
+        let mut sender = self.sender(option);
 
         // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
         // Therefore, send a meaningless data (here, we use `ForceFan` because it is the lightest).
-        let _ = self.send(ForceFan::new(|_| false));
-
-        let mut sender = self.sender(SenderOption::<SpinSleeper> {
-            timeout,
-            ..Default::default()
-        });
+        let _ = sender.send(ForceFan::new(|_| false));
 
         #[cfg(feature = "dynamic_freq")]
         {
@@ -134,7 +142,7 @@ impl<L: Link> Controller<L> {
         Ok(self)
     }
 
-    fn close_impl(&mut self) -> Result<(), AUTDDriverError> {
+    fn close_impl<S: Sleep>(&mut self, option: SenderOption<S>) -> Result<(), AUTDDriverError> {
         tracing::info!("Closing controller");
 
         if !self.link.is_open() {
@@ -143,16 +151,19 @@ impl<L: Link> Controller<L> {
         }
 
         self.geometry.iter_mut().for_each(|dev| dev.enable = true);
+
+        let mut sender = self.sender(option);
+
         [
-            self.send(Silencer {
+            sender.send(Silencer {
                 config: FixedCompletionSteps {
                     strict_mode: false,
                     ..Default::default()
                 },
                 target: autd3_driver::firmware::fpga::SilencerTarget::Intensity,
             }),
-            self.send((Static::default(), Null::default())),
-            self.send(Clear {}),
+            sender.send((Static::default(), Null::default())),
+            sender.send(Clear {}),
             Ok(self.link.close()?),
         ]
         .into_iter()
@@ -162,7 +173,7 @@ impl<L: Link> Controller<L> {
     /// Closes the controller.
     #[tracing::instrument(level = "debug", skip(self))]
     pub fn close(mut self) -> Result<(), AUTDDriverError> {
-        self.close_impl()
+        self.close_impl(SenderOption::<SpinSleeper>::default())
     }
 
     fn fetch_firminfo(&mut self, ty: FirmwareVersionType) -> Result<Vec<u8>, AUTDError> {
@@ -278,7 +289,6 @@ impl<L: Link + 'static> Controller<L> {
     /// # Safety
     ///
     /// This function must be used only when converting an instance created by [`Controller::into_boxed_link`] back to the original [`Controller<L>`].
-    ///
     pub unsafe fn from_boxed_link(cnt: Controller<Box<dyn Link>>) -> Controller<L> {
         let cnt = std::mem::ManuallyDrop::new(cnt);
         let link = unsafe { std::ptr::read(&cnt.link) };
@@ -299,7 +309,7 @@ impl<L: Link> Drop for Controller<L> {
         if !self.link.is_open() {
             return;
         }
-        let _ = self.close_impl();
+        let _ = self.close_impl(SenderOption::<SpinSleeper>::default());
     }
 }
 
@@ -471,7 +481,7 @@ pub(crate) mod tests {
     fn close() -> anyhow::Result<()> {
         {
             let mut autd = create_controller(1)?;
-            autd.close_impl()?;
+            autd.close_impl(SenderOption::<SpinSleeper>::default())?;
             autd.close()?;
         }
 
@@ -557,12 +567,22 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn into_boxed_link() -> anyhow::Result<()> {
-        let autd = create_controller(1)?;
+    fn into_boxed_link_unsafe() -> anyhow::Result<()> {
+        let option = SenderOption {
+            sleeper: StdSleeper {
+                timer_resolution: None,
+            },
+            ..Default::default()
+        };
+        let autd = Controller::open_with_option(
+            [AUTD3::default()],
+            Audit::builder(AuditOption::default()),
+            option,
+        )?;
 
         let mut autd = autd.into_boxed_link();
 
-        autd.send((
+        autd.sender(option).send((
             Sine {
                 freq: 150. * Hz,
                 option: Default::default(),
@@ -583,7 +603,7 @@ pub(crate) mod tests {
             },
         ))?; // GRCOV_EXCL_LINE
 
-        let autd = unsafe { Controller::<Audit>::from_boxed_link(autd) };
+        let mut autd = unsafe { Controller::<Audit>::from_boxed_link(autd) };
 
         autd.iter().try_for_each(|dev| {
             assert_eq!(
@@ -617,7 +637,7 @@ pub(crate) mod tests {
             anyhow::Ok(())
         })?;
 
-        autd.close()?;
+        autd.close_impl(option)?;
 
         Ok(())
     }

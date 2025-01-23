@@ -21,7 +21,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn configure_reads_fpga_state_memory_layout() {
         assert_eq!(2, std::mem::size_of::<ReadsFPGAState>());
         assert_eq!(0, std::mem::offset_of!(ReadsFPGAState, tag));

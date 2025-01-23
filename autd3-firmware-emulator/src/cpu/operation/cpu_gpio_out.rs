@@ -21,7 +21,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn debug_out_idx_memory_layout() {
         assert_eq!(2, std::mem::size_of::<CpuGPIOOut>());
         assert_eq!(0, std::mem::offset_of!(CpuGPIOOut, tag));

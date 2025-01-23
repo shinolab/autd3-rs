@@ -171,7 +171,7 @@ pub mod tests {
         ].into_iter().collect(),
         vec![true, false],
         2)]
-    fn boxed_gain(
+    fn boxed_gain_unsafe(
         #[case] expect: HashMap<usize, Vec<Drive>>,
         #[case] enabled: Vec<bool>,
         #[case] n: u16,
@@ -211,7 +211,7 @@ pub mod tests {
     }
 
     #[test]
-    fn boxed_gain_dbg() {
+    fn boxed_gain_dbg_unsafe() {
         let g = TestGain::null();
         assert_eq!(format!("{:?}", g), format!("{:?}", g.into_boxed()));
     }

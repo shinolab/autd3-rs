@@ -137,7 +137,6 @@ mod tests {
     use rand::Rng;
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn point3() {
         let mut rng = rand::thread_rng();
         let v = Point3::new(rng.gen(), rng.gen(), rng.gen());
@@ -151,7 +150,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn unitvector3() {
         let mut rng = rand::thread_rng();
         let v = UnitVector3::new_normalize(Vector3::new(rng.gen(), rng.gen(), rng.gen()));
@@ -165,7 +163,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn quaternion() {
         let mut rng = rand::thread_rng();
         let q = UnitQuaternion::from_quaternion(Quaternion::new(
@@ -185,7 +182,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
     fn geometry() {
         let mut rng = rand::thread_rng();
         let mut dev = AUTD3 {
