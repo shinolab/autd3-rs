@@ -13,8 +13,5 @@ repository = { workspace = true }
 proc-macro = true
 
 [dependencies]
-proc-macro2 = { workspace = true, features = ["proc-macro"] }
 quote = { workspace = true, features = ["proc-macro"] }
 syn = { workspace = true, features = ["clone-impls", "printing", "derive", "parsing", "proc-macro"] }
-regex = { workspace = true, features = ["unicode"] }
-itertools = { workspace = true, features = ["use_std"] }
