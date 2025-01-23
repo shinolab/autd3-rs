@@ -280,10 +280,9 @@ mod tests {
     };
 
     use crate::{
-        controller::tests::TestGain,
+        controller::{tests::TestGain, SenderOption},
         gain::{Null, Uniform},
         modulation::{Sine, Static},
-        prelude::SenderOption,
         r#async::{controller::tests::create_controller, AsyncSleeper},
     };
 

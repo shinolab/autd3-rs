@@ -276,10 +276,12 @@ mod tests {
     };
 
     use crate::{
-        controller::tests::{create_controller, TestGain},
+        controller::{
+            tests::{create_controller, TestGain},
+            SenderOption,
+        },
         gain::{Null, Uniform},
         modulation::{Sine, Static},
-        prelude::SenderOption,
     };
 
     #[test]

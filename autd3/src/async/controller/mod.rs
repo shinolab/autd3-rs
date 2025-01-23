@@ -1,7 +1,7 @@
 mod group;
 mod sender;
 
-use crate::{controller::SenderOption, error::AUTDError, gain::Null, prelude::Static};
+use crate::{controller::SenderOption, error::AUTDError, gain::Null, modulation::Static};
 
 use autd3_core::{
     defined::DEFAULT_TIMEOUT,
@@ -341,7 +341,7 @@ mod tests {
     use crate::{
         gain::Uniform,
         link::{Audit, AuditOption},
-        prelude::Sine,
+        modulation::Sine,
     };
 
     use super::*;
