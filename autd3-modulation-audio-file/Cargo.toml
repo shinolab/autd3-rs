@@ -11,7 +11,7 @@ repository = { workspace = true }
 
 [dependencies]
 hound = { workspace = true }
-autd3-core = { workspace = true, features = ["derive", "modulation", "resampler"] }
+autd3-core = { workspace = true, features = ["derive", "modulation"] }
 autd3-derive = { workspace = true }
 thiserror = { workspace = true }
 csv = { workspace = true }

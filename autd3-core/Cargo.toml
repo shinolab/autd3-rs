@@ -48,7 +48,6 @@ geometry = ["nalgebra", "bvh", "paste", "getset", "defined", "derive-new", "deri
 left_handed = []
 link = ["zerocopy", "getset", "ethercat", "datagram", "geometry", "derive_more", "derive_more/display"]
 modulation = ["getset", "utils", "defined", "datagram", "derive_more", "derive_more/display"]
-resampler = ["modulation", "defined", "tracing", "utils"]
 use_meter = []
 utils = ["windows"]
 
