@@ -1,6 +1,6 @@
 use std::{collections::HashMap, num::NonZeroU16};
 
-use autd3_core::{datagram::Datagram, derive::DatagramOption};
+use autd3_core::datagram::Datagram;
 use autd3_driver::{
     datagram::{
         ControlPoint, FixedCompletionSteps, FociSTM, GainSTM, GainSTMOption, Silencer, SwapSegment,
@@ -501,7 +501,7 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
         option: GainSTMOption::default(),
     };
 
-    let generator = d.operation_generator(&geometry, &DatagramOption::default())?;
+    let generator = d.operation_generator(&geometry, false)?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, false)?;
     tx[0].payload_mut()[2] = 3;

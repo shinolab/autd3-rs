@@ -1,5 +1,5 @@
 use autd3_core::{
-    derive::{DatagramOption, Device, Geometry},
+    derive::{Device, Geometry},
     gain::{EmitIntensity, GainError, Phase},
 };
 use autd3_driver::{
@@ -128,9 +128,9 @@ impl GainSTMGenerator for Line {
     // GRCOV_EXCL_START
     fn init(
         self,
-        _geometry: &Geometry,
+        _: &Geometry,
         _filter: Option<&std::collections::HashMap<usize, bit_vec::BitVec>>,
-        _option: &DatagramOption,
+        _: bool,
     ) -> Result<Self::T, GainError> {
         Ok(self)
     }

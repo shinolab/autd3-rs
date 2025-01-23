@@ -45,7 +45,7 @@ pub trait DatagramL: std::fmt::Debug {
     fn operation_generator_with_loop_behavior(
         self,
         geometry: &Geometry,
-        option: &DatagramOption,
+        parallel: bool,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
         loop_behavior: LoopBehavior,
@@ -66,7 +66,7 @@ pub trait DatagramS: std::fmt::Debug {
     fn operation_generator_with_segment(
         self,
         geometry: &Geometry,
-        option: &DatagramOption,
+        parallel: bool,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, Self::Error>;
@@ -82,13 +82,13 @@ impl<D: DatagramL> DatagramS for D {
     fn operation_generator_with_segment(
         self,
         geometry: &Geometry,
-        option: &DatagramOption,
+        parallel: bool,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, Self::Error> {
         self.operation_generator_with_loop_behavior(
             geometry,
-            option,
+            parallel,
             segment,
             transition_mode,
             LoopBehavior::Infinite,
@@ -111,7 +111,7 @@ pub trait Datagram: std::fmt::Debug {
     fn operation_generator(
         self,
         geometry: &Geometry,
-        option: &DatagramOption,
+        parallel: bool,
     ) -> Result<Self::G, Self::Error>;
 
     /// Returns the option of the datagram.
@@ -127,11 +127,11 @@ impl<D: DatagramS> Datagram for D {
     fn operation_generator(
         self,
         geometry: &Geometry,
-        option: &DatagramOption,
+        parallel: bool,
     ) -> Result<Self::G, Self::Error> {
         self.operation_generator_with_segment(
             geometry,
-            option,
+            parallel,
             Segment::S0,
             Some(TransitionMode::Immediate),
         )

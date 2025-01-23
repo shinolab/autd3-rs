@@ -11,7 +11,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use autd3_core::{datagram::Datagram, derive::DatagramOption, geometry::Geometry, link::Link};
+use autd3_core::{datagram::Datagram, geometry::Geometry, link::Link};
 use autd3_driver::{
     error::AUTDDriverError,
     firmware::{
@@ -21,6 +21,29 @@ use autd3_driver::{
 };
 
 use itertools::Itertools;
+
+/// The parallel processing mode.
+#[repr(u8)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ParallelMode {
+    /// Automatically select the processing mode. If the number of devices is greater than the parallel threshold of the [`Datagram::option`], the parallel processing is used.
+    #[default]
+    Auto = 0,
+    /// Force to use the parallel processing.
+    On = 1,
+    /// Force to use the serial processing.
+    Off = 2,
+}
+
+impl ParallelMode {
+    pub(crate) fn is_parallel(self, num_devices: usize, parallel_threshold: usize) -> bool {
+        match self {
+            ParallelMode::On => true,
+            ParallelMode::Off => false,
+            ParallelMode::Auto => num_devices > parallel_threshold,
+        }
+    }
+}
 
 /// The option of [`Sender`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -33,10 +56,10 @@ pub struct SenderOption<S: Debug> {
     ///
     /// [`Datagram`]: autd3_driver::datagram::Datagram
     pub timeout: Option<Duration>,
-    /// If `None`, [`Datagram::option`] is used.
+    /// The parallel processing mode.
     ///
     /// [`Datagram`]: autd3_driver::datagram::Datagram
-    pub parallel_threshold: Option<usize>,
+    pub parallel: ParallelMode,
     /// The sleeper to manage the sending/receiving timing.
     pub sleeper: S,
 }
@@ -47,7 +70,7 @@ impl<S: Default + Debug> Default for SenderOption<S> {
             send_interval: Duration::from_millis(1),
             receive_interval: Duration::from_millis(1),
             timeout: None,
-            parallel_threshold: None,
+            parallel: ParallelMode::Auto,
             sleeper: S::default(),
         }
     }
@@ -78,42 +101,36 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
         AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
             + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
     {
+        self.link.trace(&s.option());
+
         let timeout = self.option.timeout.unwrap_or(s.option().timeout);
-        let parallel_threshold = self
+        let parallel = self
             .option
-            .parallel_threshold
-            .unwrap_or(s.option().parallel_threshold);
-        let datagram_option = DatagramOption {
-            timeout,
-            parallel_threshold,
-        };
+            .parallel
+            .is_parallel(self.geometry.num_devices(), s.option().parallel_threshold);
+        tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
+
         self.send_impl(
             OperationHandler::generate(
-                s.operation_generator(self.geometry, &datagram_option)?,
+                s.operation_generator(self.geometry, parallel)?,
                 self.geometry,
             ),
-            &datagram_option,
+            timeout,
+            parallel,
         )
     }
 
     pub(crate) fn send_impl<O1, O2>(
         &mut self,
         mut operations: Vec<(O1, O2)>,
-        option: &DatagramOption,
+        timeout: Duration,
+        parallel: bool,
     ) -> Result<(), AUTDDriverError>
     where
         O1: Operation,
         O2: Operation,
         AUTDDriverError: From<O1::Error> + From<O2::Error>,
     {
-        let timeout = option.timeout;
-        let parallel_threshold = option.parallel_threshold;
-
-        let parallel = self.geometry.num_devices() > parallel_threshold;
-
-        self.link.trace(option);
-        tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
-
         self.link.update(self.geometry)?;
 
         // We prioritize average behavior for the transmission timing. That is, not the interval from the previous transmission, but ensuring that T/`send_interval` transmissions are performed in a sufficiently long time T.
@@ -272,7 +289,7 @@ mod tests {
                 send_interval: Duration::from_millis(1),
                 receive_interval: Duration::from_millis(1),
                 timeout: None,
-                parallel_threshold: None,
+                parallel: ParallelMode::Auto,
                 sleeper,
             },
         };
@@ -322,7 +339,7 @@ mod tests {
                 send_interval: Duration::from_millis(1),
                 receive_interval: Duration::from_millis(1),
                 timeout: None,
-                parallel_threshold: None,
+                parallel: ParallelMode::Auto,
                 sleeper,
             },
         };

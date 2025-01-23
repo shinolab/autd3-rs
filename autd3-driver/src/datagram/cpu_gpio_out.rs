@@ -4,7 +4,6 @@ use crate::firmware::operation::CpuGPIOOutOp;
 
 use crate::datagram::*;
 
-use autd3_core::datagram::DatagramOption;
 use derive_more::Debug;
 use derive_new::new;
 
@@ -40,7 +39,7 @@ impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> Datagram for CpuGPIO<F> {
     type G = CpuGPIOOutOpGenerator<F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DatagramOption) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
         Ok(Self::G { f: self.f })
     }
 }

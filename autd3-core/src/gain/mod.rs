@@ -15,7 +15,6 @@ pub use phase::Phase;
 
 use crate::{
     datagram::{Segment, TransitionMode},
-    derive::DatagramOption,
     geometry::{Device, Geometry, Transducer},
 };
 
@@ -60,9 +59,9 @@ pub trait Gain: std::fmt::Debug + Sized {
     /// If `filter` is `None`, all transducers are enabled.
     fn init_full(
         self,
-        _geometry: &Geometry,
+        _: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,
-        _option: &DatagramOption,
+        _parallel: bool,
     ) -> Result<Self::G, GainError> {
         self.init()
     }
@@ -81,10 +80,10 @@ impl<G: GainContextGenerator> GainOperationGenerator<G> {
         geometry: &Geometry,
         segment: Segment,
         transition: Option<TransitionMode>,
-        option: &DatagramOption,
+        parallel: bool,
     ) -> Result<Self, GainError> {
         Ok(Self {
-            generator: gain.init_full(geometry, None, option)?,
+            generator: gain.init_full(geometry, None, parallel)?,
             segment,
             transition,
         })

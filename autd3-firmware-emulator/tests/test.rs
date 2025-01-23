@@ -1,4 +1,4 @@
-use autd3_core::{datagram::Operation, derive::DatagramOption};
+use autd3_core::datagram::Operation;
 use autd3_driver::{
     autd3_device::AUTD3,
     datagram::*,
@@ -43,7 +43,7 @@ where
 {
     let option = d.option();
     let parallel = geometry.num_devices() > option.parallel_threshold;
-    let generator = d.operation_generator(geometry, &option)?;
+    let generator = d.operation_generator(geometry, parallel)?;
     let mut op = OperationHandler::generate(generator, geometry);
     loop {
         if OperationHandler::is_done(&op) {
@@ -97,7 +97,7 @@ fn send_ingore_same_data() -> anyhow::Result<()> {
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let d = Clear::new();
-    let generator = d.operation_generator(&geometry, &DatagramOption::default())?;
+    let generator = d.operation_generator(&geometry, false)?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, false)?;
     cpu.send(&tx);
@@ -105,7 +105,7 @@ fn send_ingore_same_data() -> anyhow::Result<()> {
     assert_eq!(cpu.rx().ack(), tx[0].header.msg_id);
 
     let d = Synchronize::new();
-    let generator = d.operation_generator(&geometry, &DatagramOption::default())?;
+    let generator = d.operation_generator(&geometry, false)?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, false)?;
     tx[0].header.msg_id = msg_id;
@@ -123,7 +123,7 @@ fn send_slot_2_unsafe() -> anyhow::Result<()> {
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let d = (Clear::new(), Synchronize::new());
-    let generator = d.operation_generator(&geometry, &DatagramOption::default())?;
+    let generator = d.operation_generator(&geometry, false)?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, false)?;
 
@@ -142,7 +142,7 @@ fn send_slot_2_err() -> anyhow::Result<()> {
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let d = (Clear::new(), Synchronize::new());
-    let generator = d.operation_generator(&geometry, &DatagramOption::default())?;
+    let generator = d.operation_generator(&geometry, false)?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(&mut op, &geometry, &mut tx, false)?;
 

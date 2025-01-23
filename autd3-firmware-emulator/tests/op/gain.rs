@@ -52,9 +52,9 @@ impl Gain for TestGain {
 
     fn init_full(
         self,
-        _geometry: &Geometry,
+        _: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,
-        _option: &DatagramOption,
+        _: bool,
     ) -> Result<Self::G, GainError> {
         Ok(self)
     }

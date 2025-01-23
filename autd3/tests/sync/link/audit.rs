@@ -25,7 +25,6 @@ fn audit_test() -> anyhow::Result<()> {
 
     {
         autd.sender(SenderOption::<SpinSleeper> {
-            parallel_threshold: Some(1),
             timeout: Some(Duration::from_millis(20)),
             ..Default::default()
         })

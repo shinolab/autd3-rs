@@ -18,7 +18,7 @@ mod internal {
         async fn close(&mut self) -> Result<(), LinkError>;
 
         #[doc(hidden)]
-        async fn update(&mut self, _geometry: &Geometry) -> Result<(), LinkError> {
+        async fn update(&mut self, _: &Geometry) -> Result<(), LinkError> {
             Ok(())
         }
 
@@ -86,7 +86,7 @@ mod internal {
         #[doc(hidden)]
         fn update(
             &mut self,
-            _geometry: &Geometry,
+            _: &Geometry,
         ) -> impl std::future::Future<Output = Result<(), LinkError>> {
             async { Ok(()) }
         }

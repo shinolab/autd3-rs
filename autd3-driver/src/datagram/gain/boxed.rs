@@ -44,7 +44,7 @@ trait DGain {
         &mut self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
-        option: &DatagramOption,
+        parallel: bool,
     ) -> Result<Box<dyn DGainContextGenerator>, GainError>;
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
@@ -59,13 +59,13 @@ impl<
         &mut self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
-        option: &DatagramOption,
+        parallel: bool,
     ) -> Result<Box<dyn DGainContextGenerator>, GainError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
         // SAFETY: This function is called only once from `Gain::init`.
         let g = unsafe { tmp.assume_init() };
-        Ok(Box::new(g.init_full(geometry, filter, option)?) as _)
+        Ok(Box::new(g.init_full(geometry, filter, parallel)?) as _)
     }
 
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -101,11 +101,11 @@ impl Gain for BoxedGain {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
-        option: &DatagramOption,
+        parallel: bool,
     ) -> Result<Self::G, GainError> {
         let Self { mut g, .. } = self;
         Ok(DynGainContextGenerator {
-            g: g.dyn_init(geometry, filter, option)?,
+            g: g.dyn_init(geometry, filter, parallel)?,
         })
     }
 
@@ -195,7 +195,7 @@ pub mod tests {
         )
         .into_boxed();
 
-        let mut f = g.init_full(&geometry, None, &DatagramOption::default())?;
+        let mut f = g.init_full(&geometry, None, false)?;
         assert_eq!(
             expect,
             geometry

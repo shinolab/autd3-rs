@@ -3,7 +3,6 @@ use std::convert::Infallible;
 use crate::firmware::operation::ClearOp;
 
 use crate::datagram::*;
-use autd3_core::datagram::DatagramOption;
 use derive_new::new;
 
 /// [`Datagram`] to clear all data in the devices.
@@ -25,7 +24,7 @@ impl Datagram for Clear {
     type G = ClearOpGenerator;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DatagramOption) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
         Ok(ClearOpGenerator {})
     }
 }

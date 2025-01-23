@@ -8,7 +8,7 @@ pub trait Link: Send {
     fn close(&mut self) -> Result<(), LinkError>;
 
     #[doc(hidden)]
-    fn update(&mut self, _geometry: &Geometry) -> Result<(), LinkError> {
+    fn update(&mut self, _: &Geometry) -> Result<(), LinkError> {
         Ok(())
     }
 

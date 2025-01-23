@@ -1,9 +1,6 @@
 use std::{collections::HashMap, iter::Peekable};
 
-use autd3_core::{
-    derive::DatagramOption,
-    gain::{BitVec, Gain, GainContext, GainContextGenerator, GainError},
-};
+use autd3_core::gain::{BitVec, Gain, GainContext, GainContextGenerator, GainError};
 
 use crate::geometry::{Device, Geometry};
 
@@ -44,10 +41,10 @@ impl<G: Gain> GainSTMGenerator for Vec<G> {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
-        option: &DatagramOption,
+        parallel: bool,
     ) -> Result<Self::T, GainError> {
         self.into_iter()
-            .map(|g| g.init_full(geometry, filter, option))
+            .map(|g| g.init_full(geometry, filter, parallel))
             .collect::<Result<Vec<_>, _>>()
     }
     fn len(&self) -> usize {
