@@ -9,7 +9,6 @@ mod uniform;
 
 pub use bessel::{Bessel, BesselOption};
 pub use cache::Cache as GainCache;
-pub use cache::IntoCache as IntoGainCache;
 pub use custom::Custom;
 pub use focus::{Focus, FocusOption};
 pub use group::Group;

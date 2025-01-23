@@ -15,20 +15,9 @@ pub struct Cache<M: Modulation> {
     cache: Rc<RefCell<Vec<u8>>>,
 }
 
-/// Trait to convert [`Modulation`] to [`Cache`].
-pub trait IntoCache<M: Modulation> {
-    /// Convert [`Modulation`] to [`Cache`]
-    fn into_cached(self) -> Cache<M>;
-}
-
-impl<M: Modulation> IntoCache<M> for M {
-    fn into_cached(self) -> Cache<M> {
-        Cache::new(self)
-    }
-}
-
 impl<M: Modulation> Cache<M> {
-    fn new(m: M) -> Self {
+    /// Create a new cached [`Modulation`].
+    pub fn new(m: M) -> Self {
         Self {
             m: Rc::new(RefCell::new(Some(m))),
             cache: Rc::default(),
@@ -87,7 +76,7 @@ mod tests {
             sampling_config: SamplingConfig::DIV_10,
             option: Default::default(),
         };
-        let cache = m.clone().into_cached();
+        let cache = Cache::new(m.clone());
 
         assert!(cache.cache().borrow().is_empty());
 
@@ -135,10 +124,9 @@ mod tests {
         {
             let calc_cnt = Arc::new(AtomicUsize::new(0));
 
-            let modulation = TestCacheModulation {
+            let modulation = Cache::new(TestCacheModulation {
                 calc_cnt: calc_cnt.clone(),
-            }
-            .into_cached();
+            });
             assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
             let _ = modulation.clone().calc();
@@ -153,10 +141,9 @@ mod tests {
     fn test_calc_clone() {
         let calc_cnt = Arc::new(AtomicUsize::new(0));
 
-        let modulation = TestCacheModulation {
+        let modulation = Cache::new(TestCacheModulation {
             calc_cnt: calc_cnt.clone(),
-        }
-        .into_cached();
+        });
         assert_eq!(1, modulation.count());
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 

@@ -1,27 +1,10 @@
 use autd3_core::derive::*;
+use derive_new::new;
 
 /// [`Modulation`] for appling modulation to the radiation pressure instead of the acoustic pressure.
-#[derive(Modulation, Debug)]
+#[derive(Modulation, Debug, new)]
 pub struct RadiationPressure<M: Modulation> {
     m: M,
-}
-
-impl<M: Modulation> RadiationPressure<M> {
-    fn new(m: M) -> Self {
-        Self { m }
-    }
-}
-
-/// Trait to convert [`Modulation`] to [`RadiationPressure`].
-pub trait IntoRadiationPressure<M: Modulation> {
-    /// Convert [`Modulation`] to [`RadiationPressure`]
-    fn into_radiation_pressure(self) -> RadiationPressure<M>;
-}
-
-impl<M: Modulation> IntoRadiationPressure<M> for M {
-    fn into_radiation_pressure(self) -> RadiationPressure<M> {
-        RadiationPressure::new(self)
-    }
 }
 
 impl<M: Modulation> Modulation for RadiationPressure<M> {
@@ -53,12 +36,11 @@ mod tests {
     fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
             Ok(config),
-            Custom {
+            RadiationPressure::new(Custom {
                 buffer: vec![u8::MIN; 2],
                 sampling_config: config,
                 option: Default::default(),
-            }
-            .into_radiation_pressure()
+            })
             .sampling_config()
         );
     }
@@ -72,12 +54,11 @@ mod tests {
             buf.iter()
                 .map(|&x| ((x as f32 / 255.).sqrt() * 255.).round() as u8)
                 .collect::<Vec<_>>(),
-            *Custom {
+            *RadiationPressure::new(Custom {
                 buffer: buf.clone(),
                 sampling_config: 4. * kHz,
                 option: Default::default(),
-            }
-            .into_radiation_pressure()
+            })
             .calc()?
         );
 
