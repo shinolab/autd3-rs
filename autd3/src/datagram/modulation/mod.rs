@@ -10,12 +10,10 @@ mod square;
 mod r#static;
 
 pub use cache::Cache as ModulationCache;
-pub use cache::IntoCache as IntoModulationCache;
 pub use custom::{Custom, CustomOption};
-pub use fir::{Fir, WithFir};
+pub use fir::Fir;
 pub use fourier::{Fourier, FourierOption};
 pub use r#static::Static;
-pub use radiation_pressure::IntoRadiationPressure;
 pub use radiation_pressure::RadiationPressure;
 pub use sine::{Sine, SineOption};
 pub use square::{Square, SquareOption};

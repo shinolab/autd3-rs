@@ -24,6 +24,7 @@
   - `controller::Group::set` and `gain::Group::set` now return `AUTDDriverError::KeyIsAlreadyUsed` if the key is already used
   - `controller::Group::send` and `gain::Group::init` now return `AUTDDriverError::UnusedKey` if the key is not used
 - Remove `with_xxx` methods to set option value, add option struct instead
+- Remove `IntoCache`, `IntoFir`, and `IntoRadiationPressure` traits
 - Remove `Deref<Target = Link>` and `DerefMut` for `Controller`
   - Impl `Deref<Target = Geometry>` and `DerefMut` for `Controller` instead
 - Remove `Gain::with_transform`

@@ -17,22 +17,15 @@ pub struct Cache<G: Gain> {
     cache: Rc<RefCell<HashMap<usize, Arc<Vec<Drive>>>>>,
 }
 
-/// Trait to convert [`Gain`] to [`Cache`].
-pub trait IntoCache<G: Gain> {
-    /// Convert [`Gain`] to [`Cache`]
-    fn into_cached(self) -> Cache<G>;
-}
-
-impl<G: Gain> IntoCache<G> for G {
-    fn into_cached(self) -> Cache<G> {
-        Cache {
-            gain: Rc::new(RefCell::new(Some(self))),
+impl<G: Gain> Cache<G> {
+    /// Create a new cached [`Gain`].
+    pub fn new(gain: G) -> Self {
+        Self {
+            gain: Rc::new(RefCell::new(Some(gain))),
             cache: Default::default(),
         }
     }
-}
 
-impl<G: Gain> Cache<G> {
     /// Initialize cache
     ///
     /// # Errors
@@ -147,7 +140,7 @@ mod tests {
             intensity: d.intensity,
             phase: d.phase,
         };
-        let cache = gain.clone().into_cached();
+        let cache = Cache::new(gain.clone());
 
         assert!(cache.cache().borrow().is_empty());
         let mut gg = gain.init()?;
@@ -171,7 +164,7 @@ mod tests {
             intensity: EmitIntensity::MIN,
             phase: Phase::ZERO,
         };
-        let cache = gain.into_cached();
+        let cache = Cache::new(gain);
 
         cache
             .clone()
@@ -226,10 +219,9 @@ mod tests {
         let geometry = create_geometry(1);
 
         let calc_cnt = Arc::new(AtomicUsize::new(0));
-        let gain = CacheTestGain {
+        let gain = Cache::new(CacheTestGain {
             calc_cnt: calc_cnt.clone(),
-        }
-        .into_cached();
+        });
 
         assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
         let _ = gain
@@ -260,10 +252,9 @@ mod tests {
 
         {
             let calc_cnt = Arc::new(AtomicUsize::new(0));
-            let gain = CacheTestGain {
+            let gain = Cache::new(CacheTestGain {
                 calc_cnt: calc_cnt.clone(),
-            }
-            .into_cached();
+            });
             assert_eq!(1, gain.count());
             assert_eq!(0, calc_cnt.load(Ordering::Relaxed));
 
