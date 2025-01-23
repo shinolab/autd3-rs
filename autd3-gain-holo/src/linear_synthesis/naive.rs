@@ -11,7 +11,7 @@ use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
 /// The option of [`Naive`].
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NaiveOption<D: Directivity> {
     /// The transducers' emission constraint.
     pub constraint: EmissionConstraint,
