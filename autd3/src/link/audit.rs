@@ -1,5 +1,4 @@
 use autd3_core::{
-    derive::DatagramOption,
     geometry::Geometry,
     link::{Link, LinkBuilder, LinkError},
 };
@@ -8,10 +7,9 @@ use autd3_driver::firmware::cpu::{RxMessage, TxMessage};
 use autd3_firmware_emulator::CPUEmulator;
 
 use derive_more::{Deref, DerefMut};
-use getset::{CopyGetters, Getters};
 
 #[doc(hidden)]
-#[derive(Deref, DerefMut, CopyGetters, Getters)]
+#[derive(Deref, DerefMut)]
 pub struct Audit {
     is_open: bool,
     #[deref]
@@ -19,12 +17,6 @@ pub struct Audit {
     cpus: Vec<CPUEmulator>,
     down: bool,
     broken: bool,
-    /// The last parallel threshold.
-    #[getset(get_copy = "pub")]
-    last_parallel_threshold: Option<usize>,
-    /// The last timeout.
-    #[getset(get_copy = "pub")]
-    last_timeout: Option<std::time::Duration>,
 }
 
 #[derive(Default)]
@@ -67,8 +59,6 @@ impl LinkBuilder for AuditBuilder {
                 .collect(),
             down: self.option.down,
             broken: false,
-            last_parallel_threshold: None,
-            last_timeout: None,
         })
     }
 }
@@ -137,11 +127,6 @@ impl Link for Audit {
     fn is_open(&self) -> bool {
         self.is_open
     }
-
-    fn trace(&mut self, option: &DatagramOption) {
-        self.last_timeout = Some(option.timeout);
-        self.last_parallel_threshold = Some(option.parallel_threshold);
-    }
 }
 
 #[cfg(feature = "async")]
@@ -176,9 +161,5 @@ impl AsyncLink for Audit {
 
     fn is_open(&self) -> bool {
         <Self as Link>::is_open(self)
-    }
-
-    fn trace(&mut self, option: &DatagramOption) {
-        <Self as Link>::trace(self, option)
     }
 }

@@ -19,8 +19,6 @@ async fn audit_test() -> anyhow::Result<()> {
         },
     )
     .await?;
-    assert_eq!(Some(Duration::from_millis(10)), autd.link().last_timeout());
-    assert_eq!(Some(usize::MAX), autd.link().last_parallel_threshold());
     assert_eq!(0, autd.link()[0].idx());
 
     {
@@ -30,8 +28,6 @@ async fn audit_test() -> anyhow::Result<()> {
         })
         .send(Null {})
         .await?;
-        assert_eq!(Some(Duration::from_millis(20)), autd.link().last_timeout());
-        assert_eq!(Some(1), autd.link().last_parallel_threshold());
     }
 
     {

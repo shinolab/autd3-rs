@@ -178,8 +178,6 @@ impl<'a, S: Sleep, L: Link, T: BorrowMut<Sender<'a, L, S>>, K: PartialEq + Debug
             ));
         }
 
-        sender.borrow_mut().link.trace(&datagram_option);
-
         let timeout = sender
             .borrow()
             .option
