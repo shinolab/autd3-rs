@@ -19,10 +19,9 @@ use derive_new::new;
 /// ```
 #[derive(Gain, Debug, new)]
 #[debug("Custom (Gain)")]
-pub struct Custom<'a, D, FT, F>
+pub struct Custom<'a, FT, F>
 where
-    D: Into<Drive>,
-    FT: Fn(&Transducer) -> D + Send + Sync + 'static,
+    FT: Fn(&Transducer) -> Drive + Send + Sync + 'static,
     F: Fn(&Device) -> FT + 'a,
 {
     /// The function to calculate the phase and intensity
@@ -30,26 +29,20 @@ where
     _phantom: std::marker::PhantomData<&'a ()>,
 }
 
-pub struct Context<D: Into<Drive>, FT: Fn(&Transducer) -> D + Send + Sync + 'static> {
+pub struct Context<FT: Fn(&Transducer) -> Drive + Send + Sync + 'static> {
     f: FT,
 }
 
-impl<D: Into<Drive>, FT: Fn(&Transducer) -> D + Send + Sync + 'static> GainContext
-    for Context<D, FT>
-{
+impl<FT: Fn(&Transducer) -> Drive + Send + Sync + 'static> GainContext for Context<FT> {
     fn calc(&self, tr: &Transducer) -> Drive {
         (self.f)(tr).into()
     }
 }
 
-impl<
-        'a,
-        D: Into<Drive>,
-        FT: Fn(&Transducer) -> D + Send + Sync + 'static,
-        F: Fn(&Device) -> FT + 'a,
-    > GainContextGenerator for Custom<'a, D, FT, F>
+impl<'a, FT: Fn(&Transducer) -> Drive + Send + Sync + 'static, F: Fn(&Device) -> FT + 'a>
+    GainContextGenerator for Custom<'a, FT, F>
 {
-    type Context = Context<D, FT>;
+    type Context = Context<FT>;
 
     fn generate(&mut self, device: &Device) -> Self::Context {
         Context {
@@ -58,14 +51,10 @@ impl<
     }
 }
 
-impl<
-        'a,
-        D: Into<Drive>,
-        FT: Fn(&Transducer) -> D + Send + Sync + 'static,
-        F: Fn(&Device) -> FT + 'a,
-    > Gain for Custom<'a, D, FT, F>
+impl<'a, FT: Fn(&Transducer) -> Drive + Send + Sync + 'static, F: Fn(&Device) -> FT + 'a> Gain
+    for Custom<'a, FT, F>
 {
-    type G = Custom<'a, D, FT, F>;
+    type G = Custom<'a, FT, F>;
 
     fn init(self) -> Result<Self::G, GainError> {
         Ok(self)
