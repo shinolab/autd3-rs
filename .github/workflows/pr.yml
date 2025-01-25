@@ -67,6 +67,23 @@ jobs:
       - if: ${{ needs.test.result == 'failure' || needs.test.result == 'cancelled' }}
         run: exit 1
 
+  miri:
+    needs: changed-files
+    if: ${{ needs.changed-files.outputs.src == 'true' }}
+    name: test-with-miri
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: ./.github/actions/setup-build
+        with:
+          components: miri
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+      - run: cargo make miri
+
   build-docs:
     needs: changed-files
     if: ${{ needs.changed-files.outputs.src == 'true' }}
@@ -96,6 +113,7 @@ jobs:
   auto-merge:
     needs:
       - all-tests-passed
+      - miri
       - build-docs
     permissions:
       pull-requests: write
