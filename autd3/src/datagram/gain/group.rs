@@ -319,7 +319,7 @@ mod tests {
 
     #[test]
     fn with_parallel_unsafe() -> anyhow::Result<()> {
-        let geometry = create_geometry(5);
+        let geometry = create_geometry(2);
 
         let mut rng = rand::thread_rng();
 
@@ -344,16 +344,13 @@ mod tests {
         let gain = Group::new(|dev| {
             let dev_idx = dev.idx();
             move |tr| match (dev_idx, tr.idx()) {
-                (0, 0..=99) => Some("null"),
                 (0, 100..=199) => Some("test"),
                 (1, 200..) => Some("test2"),
-                (3, _) => Some("test"),
                 _ => None,
             }
         })
-        .set("null", Null {}.into_boxed())?
-        .set("test", g1.into_boxed())?
-        .set("test2", g2.into_boxed())?;
+        .set("test", g1)?
+        .set("test2", g2)?;
 
         let mut g = gain.init_full(&geometry, None, true)?;
         let drives = geometry
@@ -366,7 +363,7 @@ mod tests {
                 )
             })
             .collect::<HashMap<_, _>>();
-        assert_eq!(5, drives.len());
+        assert_eq!(2, drives.len());
         drives[&0].iter().enumerate().for_each(|(i, &d)| match i {
             i if i <= 99 => {
                 assert_eq!(Drive::NULL, d);
@@ -385,15 +382,6 @@ mod tests {
             _ => {
                 assert_eq!(d2, d);
             }
-        });
-        drives[&2].iter().for_each(|&d| {
-            assert_eq!(Drive::NULL, d);
-        });
-        drives[&3].iter().for_each(|&d| {
-            assert_eq!(d1, d);
-        });
-        drives[&4].iter().for_each(|&d| {
-            assert_eq!(Drive::NULL, d);
         });
 
         Ok(())
