@@ -67,6 +67,24 @@ jobs:
       - if: ${{ needs.test.result == 'failure' || needs.test.result == 'cancelled' }}
         run: exit 1
 
+  miri:
+    needs: changed-files
+    if: ${{ needs.changed-files.outputs.src == 'true' }}
+    name: test-with-miri
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: ./.github/actions/setup-build
+        with:
+          toolchain: nightly
+          components: miri
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+      - run: cargo make miri
+
   build-docs:
     needs: changed-files
     if: ${{ needs.changed-files.outputs.src == 'true' }}
@@ -93,10 +111,33 @@ jobs:
           cargo +nightly docs-rs -pautd3-modulation-audio-file
           cargo +nightly docs-rs -pautd3-protobuf
 
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: ./.github/actions/setup-build
+        with:
+          components: llvm-tools
+      - uses: SierraSoftworks/setup-grcov@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          version: latest
+      - run: cargo make cov lcov
+      - uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage
+          disable_search: true
+          fail_ci_if_error: true
+
   auto-merge:
     needs:
       - all-tests-passed
+      - miri
       - build-docs
+      - coverage
     permissions:
       pull-requests: write
       contents: write
