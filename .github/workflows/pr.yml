@@ -78,6 +78,7 @@ jobs:
           submodules: true
       - uses: ./.github/actions/setup-build
         with:
+          toolchain: nightly
           components: miri
       - uses: taiki-e/install-action@v2
         with:

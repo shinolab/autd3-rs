@@ -15,7 +15,24 @@ defaults:
     shell: bash
 
 jobs:
+  changed-files:
+    name: changed-files
+    runs-on: ubuntu-latest
+    outputs:
+      src: ${{ steps.changed-files-yaml.outputs.src_any_changed }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: changed-files-yaml
+        uses: tj-actions/changed-files@v45
+        with:
+          files_yaml: |
+            src:
+              - '**/*.rs'
+              - '**/Cargo.toml'
+
   coverage:
+    needs: changed-files
+    if: github.event_name != 'pull_request' || ${{ needs.changed-files.outputs.src == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
