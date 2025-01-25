@@ -41,6 +41,21 @@ jobs:
           tool: cargo-nextest
       - run: cargo make check --features "${{ matrix.features }}"
 
+  miri:
+    name: test-with-miri
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: ./.github/actions/setup-build
+        with:
+          toolchain: nightly
+          components: miri
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+      - run: cargo make miri
 
   build-docs:
     name: build-docs
@@ -65,3 +80,24 @@ jobs:
           cargo +nightly docs-rs -pautd3-link-twincat
           cargo +nightly docs-rs -pautd3-modulation-audio-file
           cargo +nightly docs-rs -pautd3-protobuf
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: ./.github/actions/setup-build
+        with:
+          components: llvm-tools
+      - uses: SierraSoftworks/setup-grcov@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          version: latest
+      - run: cargo make cov lcov
+      - uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage
+          disable_search: true
+          fail_ci_if_error: true
