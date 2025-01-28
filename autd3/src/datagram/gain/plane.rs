@@ -6,6 +6,8 @@ use autd3_driver::{
     geometry::UnitVector3,
 };
 
+use derive_new::new;
+
 /// The option of [`Plane`].
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(C)]
@@ -26,7 +28,7 @@ impl Default for PlaneOption {
 }
 
 /// Plane wave
-#[derive(Gain, Clone, PartialEq, Debug)]
+#[derive(Gain, Clone, PartialEq, Debug, new)]
 pub struct Plane {
     /// The direction of the plane wave.
     pub dir: UnitVector3,

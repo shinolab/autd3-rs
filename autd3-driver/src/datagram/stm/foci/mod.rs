@@ -19,6 +19,7 @@ use autd3_core::{
     derive::{DatagramL, DatagramOption},
 };
 use derive_more::{Deref, DerefMut};
+use derive_new::new;
 
 /// A trait to generate the [`FociSTMContext`].
 #[allow(clippy::len_without_is_empty)]
@@ -44,7 +45,7 @@ pub trait FociSTMGenerator<const N: usize>: std::fmt::Debug {
 }
 
 /// [`Datagram`] to produce STM by foci.
-#[derive(Clone, Deref, DerefMut, Debug, PartialEq)]
+#[derive(Clone, Deref, DerefMut, Debug, PartialEq, new)]
 pub struct FociSTM<const N: usize, T: FociSTMGenerator<N>, C> {
     #[deref]
     #[deref_mut]

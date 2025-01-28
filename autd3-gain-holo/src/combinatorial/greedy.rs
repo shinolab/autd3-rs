@@ -10,6 +10,7 @@ use autd3_core::{
 };
 
 use derive_more::Debug;
+use derive_new::new;
 use nalgebra::ComplexField;
 use rand::prelude::*;
 
@@ -38,7 +39,7 @@ impl<D: Directivity> Default for GreedyOption<D> {
 ///
 /// [`Greedy`] is based on the method of optimizing by brute-force search and greedy algorithm by discretizing the phase.
 /// See [Suzuki, et al., 2021](https://ieeexplore.ieee.org/document/9419757) for more details.
-#[derive(Gain, Debug)]
+#[derive(Gain, Debug, new)]
 pub struct Greedy<D: Directivity> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,

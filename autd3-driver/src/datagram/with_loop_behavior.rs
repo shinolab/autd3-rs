@@ -3,11 +3,12 @@ use autd3_core::datagram::{
 };
 
 use derive_more::Deref;
+use derive_new::new;
 
 /// A wrapper of [`DatagramL`] to specify the loop behavior.
 ///
 /// Note that the loop behavior only affects when switching segments.
-#[derive(Deref, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Deref, Debug, Clone, Copy, PartialEq, Eq, Hash, new)]
 pub struct WithLoopBehavior<D: DatagramL> {
     #[deref]
     /// The original [`DatagramL`]

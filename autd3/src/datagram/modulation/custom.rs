@@ -1,9 +1,10 @@
 use std::fmt::Debug;
 
 use autd3_core::derive::*;
+use derive_new::new;
 
 ///[`Modulation`] to use arbitrary modulation data
-#[derive(Modulation, Clone, Debug)]
+#[derive(Modulation, Clone, Debug, new)]
 pub struct Custom<Config, E>
 where
     E: Debug,

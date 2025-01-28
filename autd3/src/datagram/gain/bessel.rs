@@ -5,6 +5,8 @@ use autd3_driver::{
     geometry::{Point3, UnitQuaternion, UnitVector3, Vector3},
 };
 
+use derive_new::new;
+
 /// The option of [`Bessel`].
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(C)]
@@ -27,7 +29,7 @@ impl Default for BesselOption {
 /// Bessel beam
 ///
 /// This [`Gain`] generates a Bessel beam. See [Hasegawa, 2017](https://doi.org/10.1063/1.4985159) for more details.
-#[derive(Gain, Clone, PartialEq, Debug)]
+#[derive(Gain, Clone, PartialEq, Debug, new)]
 pub struct Bessel {
     /// The vertex of the beam.
     pub pos: Point3,

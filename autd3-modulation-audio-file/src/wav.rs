@@ -1,5 +1,6 @@
 use autd3_core::{defined::Hz, derive::*};
 use autd3_derive::Modulation;
+use derive_new::new;
 use hound::SampleFormat;
 
 use std::{fmt::Debug, path::Path};
@@ -7,7 +8,7 @@ use std::{fmt::Debug, path::Path};
 use crate::error::AudioFileError;
 
 /// [`Modulation`] from Wav data.
-#[derive(Modulation, Debug)]
+#[derive(Modulation, Debug, new)]
 pub struct Wav<P: AsRef<Path> + Debug> {
     /// The path to the Wav file.
     pub path: P,
