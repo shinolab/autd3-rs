@@ -1,8 +1,9 @@
 use autd3_core::derive::*;
 use autd3_driver::firmware::fpga::Drive;
+use derive_new::new;
 
 /// [`Gain`] that output nothing
-#[derive(Gain, Default, Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Gain, Default, Clone, Copy, PartialEq, Eq, Debug, new)]
 pub struct Null;
 
 impl GainContext for Null {

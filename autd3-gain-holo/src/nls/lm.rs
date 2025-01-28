@@ -8,6 +8,7 @@ use crate::{
 
 use autd3_core::{acoustics::directivity::Directivity, derive::*, geometry::Point3};
 use derive_more::Debug;
+use derive_new::new;
 use zerocopy::{FromBytes, IntoBytes};
 
 /// The option of [`LM`].
@@ -51,7 +52,7 @@ impl<D: Directivity> Default for LMOption<D> {
 /// [^Levenberg, 1944]: Levenberg, Kenneth. "A method for the solution of certain non-linear problems in least squares." Quarterly of applied mathematics 2.2 (1944): 164-168.
 /// [^Marquardt, 1963]: Marquardt, Donald W. "An algorithm for least-squares estimation of nonlinear parameters." Journal of the society for Industrial and Applied Mathematics 11.2 (1963): 431-441.
 /// [^Madsen, et al., 2004]: Madsen, Kaj, Hans Bruun Nielsen, and Ole Tingleff. "Methods for non-linear least squares problems." (2004).
-#[derive(Gain, Debug)]
+#[derive(Gain, Debug, new)]
 pub struct LM<D: Directivity, B: LinAlgBackend<D>> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,

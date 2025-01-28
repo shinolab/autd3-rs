@@ -1,7 +1,8 @@
 use autd3_core::derive::*;
+use derive_new::new;
 
 /// [`Modulation`] that applies FIR filter to the original [`Modulation`].
-#[derive(Modulation, Debug)]
+#[derive(Modulation, Debug, new)]
 pub struct Fir<M: Modulation> {
     /// The target [`Modulation`] to apply FIR filter.
     pub target: M,

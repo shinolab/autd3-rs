@@ -20,6 +20,7 @@ use autd3_core::{
     gain::{BitVec, GainContextGenerator, GainError},
 };
 use derive_more::{Deref, DerefMut};
+use derive_new::new;
 
 /// A trait to generate the [`GainSTMContext`].
 pub trait GainSTMContextGenerator {
@@ -70,7 +71,7 @@ impl Default for GainSTMOption {
 /// [`Datagram`] to produce STM by [`Gain`].
 ///
 /// [`Gain`]: autd3_core::gain::Gain
-#[derive(Clone, Debug, Deref, DerefMut)]
+#[derive(Clone, Debug, Deref, DerefMut, new)]
 pub struct GainSTM<T: GainSTMGenerator, C> {
     #[deref]
     #[deref_mut]

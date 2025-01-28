@@ -1,7 +1,8 @@
 use autd3_core::derive::*;
+use derive_new::new;
 
 /// [`Modulation`] for appling modulation to the radiation pressure instead of the acoustic pressure.
-#[derive(Modulation, Debug)]
+#[derive(Modulation, Debug, new)]
 pub struct RadiationPressure<M: Modulation> {
     /// The target [`Modulation`].
     pub target: M,
