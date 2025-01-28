@@ -41,6 +41,8 @@ jobs:
           - os: macos-latest
           - os: ubuntu-latest
           - os: ubuntu-latest
+            features: "remote"
+          - os: ubuntu-latest
             features: "use_meter left_handed"
           - os: ubuntu-latest
             features: "async"
