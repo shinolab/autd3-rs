@@ -1,15 +1,15 @@
 use autd3_core::derive::*;
-use derive_new::new;
 
 /// [`Modulation`] for appling modulation to the radiation pressure instead of the acoustic pressure.
-#[derive(Modulation, Debug, new)]
+#[derive(Modulation, Debug)]
 pub struct RadiationPressure<M: Modulation> {
-    m: M,
+    /// The target [`Modulation`].
+    pub target: M,
 }
 
 impl<M: Modulation> Modulation for RadiationPressure<M> {
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
-        let src = self.m.calc()?;
+        let src = self.target.calc()?;
         Ok(src
             .iter()
             .map(|v| ((*v as f32 / 255.).sqrt() * 255.).round() as u8)
@@ -17,7 +17,7 @@ impl<M: Modulation> Modulation for RadiationPressure<M> {
     }
 
     fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-        self.m.sampling_config()
+        self.target.sampling_config()
     }
 }
 
@@ -36,10 +36,12 @@ mod tests {
     fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
             Ok(config),
-            RadiationPressure::new(Custom {
-                buffer: vec![u8::MIN; 2],
-                sampling_config: config,
-            })
+            RadiationPressure {
+                target: Custom {
+                    buffer: vec![u8::MIN; 2],
+                    sampling_config: config,
+                }
+            }
             .sampling_config()
         );
     }
@@ -53,10 +55,12 @@ mod tests {
             buf.iter()
                 .map(|&x| ((x as f32 / 255.).sqrt() * 255.).round() as u8)
                 .collect::<Vec<_>>(),
-            *RadiationPressure::new(Custom {
-                buffer: buf.clone(),
-                sampling_config: 4. * kHz,
-            })
+            *RadiationPressure {
+                target: Custom {
+                    buffer: buf.clone(),
+                    sampling_config: 4. * kHz,
+                }
+            }
             .calc()?
         );
 
