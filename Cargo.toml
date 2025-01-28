@@ -47,7 +47,7 @@ paste = { version = "1.0.15", default-features = false }
 proc-macro2 = { version = "1.0.93", default-features = false }
 prost = { version = "0.13.4", default-features = false }
 quote = { version = "1.0.38", default-features = false }
-rand = { version = "0.8.5", default-features = false }
+rand = { version = "0.9.0", default-features = false }
 rstest = { version = "0.24.0", default-features = false }
 serde = { version = "1.0.217", default-features = false }
 serde_json = { version = "1.0.137", default-features = false }
