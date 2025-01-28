@@ -46,12 +46,12 @@ mod tests {
 
     #[test]
     fn test_uniform() -> anyhow::Result<()> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let geometry = create_geometry(1);
 
-        let intensity = EmitIntensity(rng.gen());
-        let phase = Phase(rng.gen());
+        let intensity = EmitIntensity(rng.random());
+        let phase = Phase(rng.random());
         let g = Uniform { intensity, phase };
 
         let mut b = g.init()?;

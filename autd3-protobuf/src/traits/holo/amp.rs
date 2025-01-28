@@ -32,8 +32,8 @@ mod tests {
 
     #[test]
     fn test_amp() {
-        let mut rng = rand::thread_rng();
-        let v = rng.gen::<f32>() * Pa;
+        let mut rng = rand::rng();
+        let v = rng.random::<f32>() * Pa;
         let msg = v.to_msg(None).unwrap();
         let v2 = autd3_gain_holo::Amplitude::from_msg(&Some(msg)).unwrap();
         approx::assert_abs_diff_eq!(v.pascal(), v2.pascal());

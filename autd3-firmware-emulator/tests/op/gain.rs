@@ -62,7 +62,7 @@ impl Gain for TestGain {
 
 #[test]
 fn send_gain_unsafe() -> anyhow::Result<()> {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -76,8 +76,8 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
                     dev.idx(),
                     dev.iter()
                         .map(|_| Drive {
-                            phase: Phase(rng.gen()),
-                            intensity: EmitIntensity(rng.gen()),
+                            phase: Phase(rng.random()),
+                            intensity: EmitIntensity(rng.random()),
                         })
                         .collect(),
                 )
@@ -108,8 +108,8 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
                     dev.idx(),
                     dev.iter()
                         .map(|_| Drive {
-                            phase: Phase(rng.gen()),
-                            intensity: EmitIntensity(rng.gen()),
+                            phase: Phase(rng.random()),
+                            intensity: EmitIntensity(rng.random()),
                         })
                         .collect(),
                 )

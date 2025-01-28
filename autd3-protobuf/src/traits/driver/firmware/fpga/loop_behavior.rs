@@ -39,8 +39,8 @@ mod tests {
     #[test]
     fn test_loop_behavior() {
         {
-            let mut rng = rand::thread_rng();
-            let v = LoopBehavior::Finite(NonZeroU16::new(rng.gen_range(1..=0xFFFF)).unwrap());
+            let mut rng = rand::rng();
+            let v = LoopBehavior::Finite(NonZeroU16::new(rng.random_range(1..=0xFFFF)).unwrap());
             let msg = v.to_msg(None).unwrap();
             let v2 = LoopBehavior::from_msg(&msg).unwrap();
             assert_eq!(v, v2);

@@ -31,7 +31,7 @@ windows = { workspace = true, optional = true, features = ["Win32_Media", "Win32
 anyhow = { workspace = true }
 approx = { workspace = true }
 itertools = { workspace = true }
-rand = { workspace = true }
+rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }
 
 [features]

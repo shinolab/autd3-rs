@@ -11,7 +11,7 @@ use autd3_core::{
 
 use derive_more::Debug;
 use nalgebra::ComplexField;
-use rand::seq::SliceRandom;
+use rand::prelude::*;
 
 /// The option of [`Greedy`].
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -130,7 +130,7 @@ impl<D: Directivity> Gain for Greedy<D> {
                     .flat_map(|dev| dev.iter().map(|tr| (dev.idx(), tr.idx())))
                     .collect()
             };
-            indices.shuffle(&mut rand::thread_rng());
+            indices.shuffle(&mut rand::rng());
             indices
         };
 

@@ -37,11 +37,11 @@ mod tests {
 
     #[test]
     fn test_tx_datagram_unsafe() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut tx = vec![autd3_driver::firmware::cpu::TxMessage::new_zeroed(); 10];
         (0..10).for_each(|i| {
-            tx[i].header.msg_id = rng.gen();
-            tx[i].header.slot_2_offset = rng.gen();
+            tx[i].header.msg_id = rng.random();
+            tx[i].header.slot_2_offset = rng.random();
         });
         let msg = tx.as_slice().to_msg(None).unwrap();
         let tx2 = Vec::<autd3_driver::firmware::cpu::TxMessage>::from_msg(&msg).unwrap();

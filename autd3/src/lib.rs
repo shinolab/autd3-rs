@@ -70,11 +70,11 @@ mod tests {
         range_z: std::ops::Range<f32>,
     ) -> Vector3 {
         use rand::Rng;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         Vector3::new(
-            rng.gen_range(range_x),
-            rng.gen_range(range_y),
-            rng.gen_range(range_z),
+            rng.random_range(range_x),
+            rng.random_range(range_y),
+            rng.random_range(range_z),
         )
     }
 
@@ -84,11 +84,11 @@ mod tests {
         range_z: std::ops::Range<f32>,
     ) -> Point3 {
         use rand::Rng;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         Point3::new(
-            rng.gen_range(range_x),
-            rng.gen_range(range_y),
-            rng.gen_range(range_z),
+            rng.random_range(range_x),
+            rng.random_range(range_y),
+            rng.random_range(range_z),
         )
     }
 

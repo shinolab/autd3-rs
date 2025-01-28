@@ -90,21 +90,21 @@ mod tests {
 
     #[test]
     fn test_holo_gspat() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let holo = autd3_gain_holo::GSPAT {
             foci: vec![
                 (
-                    Point3::new(rng.gen(), rng.gen(), rng.gen()),
-                    rng.gen::<f32>() * autd3_gain_holo::Pa,
+                    Point3::new(rng.random(), rng.random(), rng.random()),
+                    rng.random::<f32>() * autd3_gain_holo::Pa,
                 ),
                 (
-                    Point3::new(rng.gen(), rng.gen(), rng.gen()),
-                    rng.gen::<f32>() * autd3_gain_holo::Pa,
+                    Point3::new(rng.random(), rng.random(), rng.random()),
+                    rng.random::<f32>() * autd3_gain_holo::Pa,
                 ),
             ],
             option: autd3_gain_holo::GSPATOption {
-                repeat: NonZeroUsize::new(rng.gen()).unwrap(),
+                repeat: NonZeroUsize::new(rng.random::<u32>() as _).unwrap(),
                 ..Default::default()
             },
             backend: std::sync::Arc::new(NalgebraBackend::default()),

@@ -119,25 +119,25 @@ mod tests {
 
     #[test]
     fn test_holo_lm() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let holo = autd3_gain_holo::LM {
             foci: vec![
                 (
-                    Point3::new(rng.gen(), rng.gen(), rng.gen()),
-                    rng.gen::<f32>() * autd3_gain_holo::Pa,
+                    Point3::new(rng.random(), rng.random(), rng.random()),
+                    rng.random::<f32>() * autd3_gain_holo::Pa,
                 ),
                 (
-                    Point3::new(rng.gen(), rng.gen(), rng.gen()),
-                    rng.gen::<f32>() * autd3_gain_holo::Pa,
+                    Point3::new(rng.random(), rng.random(), rng.random()),
+                    rng.random::<f32>() * autd3_gain_holo::Pa,
                 ),
             ],
             option: autd3_gain_holo::LMOption {
-                eps_1: rng.gen::<f32>(),
-                eps_2: rng.gen::<f32>(),
-                tau: rng.gen::<f32>(),
-                k_max: NonZeroUsize::new(rng.gen_range(1..10)).unwrap(),
-                initial: vec![rng.gen::<f32>(), rng.gen::<f32>()],
+                eps_1: rng.random::<f32>(),
+                eps_2: rng.random::<f32>(),
+                tau: rng.random::<f32>(),
+                k_max: NonZeroUsize::new(rng.random_range(1..10)).unwrap(),
+                initial: vec![rng.random::<f32>(), rng.random::<f32>()],
                 ..Default::default()
             },
             backend: std::sync::Arc::new(NalgebraBackend::default()),

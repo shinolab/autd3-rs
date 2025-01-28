@@ -261,8 +261,8 @@ pub(crate) mod tests {
 
     #[test]
     fn translate_to() {
-        let mut rng = rand::thread_rng();
-        let origin = Point3::new(rng.gen(), rng.gen(), rng.gen());
+        let mut rng = rand::rng();
+        let origin = Point3::new(rng.random(), rng.random(), rng.random());
 
         let mut device = TestDevice::new_autd3(origin).into_device(0);
 
@@ -280,12 +280,12 @@ pub(crate) mod tests {
 
     #[test]
     fn rotate_to() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut device = TestDevice::new_autd3_with_rot(
             Point3::origin(),
-            UnitQuaternion::from_axis_angle(&Vector3::x_axis(), rng.gen())
-                * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), rng.gen())
-                * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), rng.gen()),
+            UnitQuaternion::from_axis_angle(&Vector3::x_axis(), rng.random())
+                * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), rng.random())
+                * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), rng.random()),
         )
         .into_device(0);
 
@@ -316,8 +316,8 @@ pub(crate) mod tests {
 
     #[test]
     fn translate() {
-        let mut rng = rand::thread_rng();
-        let origin = Point3::new(rng.gen(), rng.gen(), rng.gen());
+        let mut rng = rand::rng();
+        let origin = Point3::new(rng.random(), rng.random(), rng.random());
 
         let mut device = TestDevice::new_autd3(origin).into_device(0);
 
@@ -424,11 +424,11 @@ pub(crate) mod tests {
 
     #[test]
     fn into_device() {
-        let mut rng = rand::thread_rng();
-        let t = Vector3::new(rng.gen(), rng.gen(), rng.gen());
-        let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), rng.gen())
-            * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), rng.gen())
-            * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), rng.gen());
+        let mut rng = rand::rng();
+        let t = Vector3::new(rng.random(), rng.random(), rng.random());
+        let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), rng.random())
+            * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), rng.random())
+            * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), rng.random());
         let Device {
             idx: _idx,
             transducers: expect_transducers,

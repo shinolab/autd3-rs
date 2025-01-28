@@ -31,8 +31,8 @@ mod tests {
 
     #[test]
     fn test_sampling_config() {
-        let mut rng = rand::thread_rng();
-        let v = SamplingConfig::new(rng.gen_range(0x0001..=0xFFFF)).unwrap();
+        let mut rng = rand::rng();
+        let v = SamplingConfig::new(rng.random_range(0x0001..=0xFFFF)).unwrap();
         let msg = v.to_msg(None).unwrap();
         let v2 = SamplingConfig::from_msg(&msg).unwrap();
         assert_eq!(v, v2);

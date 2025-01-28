@@ -12,14 +12,14 @@ use zerocopy::FromZeros;
 
 #[test]
 fn phase_corr_unsafe() -> anyhow::Result<()> {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let buf: Vec<_> = (0..geometry.num_transducers())
-        .map(|_| Phase(rng.gen()))
+        .map(|_| Phase(rng.random()))
         .collect();
 
     let d = PhaseCorrection::new(|_| |tr| buf[tr.idx()]);

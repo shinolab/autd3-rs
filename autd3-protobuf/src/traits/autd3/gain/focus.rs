@@ -54,13 +54,13 @@ mod tests {
 
     #[test]
     fn focus() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let g = autd3::gain::Focus {
-            pos: Point3::new(rng.gen(), rng.gen(), rng.gen()),
+            pos: Point3::new(rng.random(), rng.random(), rng.random()),
             option: autd3::gain::FocusOption {
-                intensity: EmitIntensity(rng.gen()),
-                phase_offset: Phase(rng.gen()),
+                intensity: EmitIntensity(rng.random()),
+                phase_offset: Phase(rng.random()),
             },
         };
         let msg = g.to_msg(None).unwrap();
