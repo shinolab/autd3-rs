@@ -4,6 +4,8 @@ use std::{fmt::Debug, fs::File, path::Path};
 
 use crate::error::AudioFileError;
 
+use derive_new::new;
+
 /// The option of [`Csv`].
 #[derive(Debug, Clone)]
 pub struct CsvOption {
@@ -18,7 +20,7 @@ impl Default for CsvOption {
 }
 
 /// [`Modulation`] from CSV data.
-#[derive(Modulation, Debug)]
+#[derive(Modulation, Debug, new)]
 pub struct Csv<P, Config, E>
 where
     P: AsRef<Path> + Debug,

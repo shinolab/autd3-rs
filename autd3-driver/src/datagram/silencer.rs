@@ -1,3 +1,4 @@
+use derive_new::new;
 use std::{convert::Infallible, num::NonZeroU16};
 
 use crate::{
@@ -100,7 +101,7 @@ pub struct FixedUpdateRate {
 impl SilencerConfig for FixedUpdateRate {}
 
 /// [`Datagram`] to configure the silencer.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, new)]
 pub struct Silencer<T: SilencerConfig> {
     /// Configuration of the silencer.
     pub config: T,

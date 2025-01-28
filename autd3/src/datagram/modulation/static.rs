@@ -1,8 +1,9 @@
 use autd3_core::derive::*;
 use autd3_derive::Modulation;
+use derive_new::new;
 
 /// [`Modulation`] for no modulation
-#[derive(Modulation, Clone, Copy, Debug, PartialEq)]
+#[derive(Modulation, Clone, Copy, Debug, PartialEq, new)]
 pub struct Static {
     /// The intensity of the modulation. The default value is [`u8::MAX`].
     pub intensity: u8,

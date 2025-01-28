@@ -6,6 +6,8 @@ use autd3_driver::{
     geometry::Point3,
 };
 
+use derive_new::new;
+
 /// The option of [`Focus`].
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(C)]
@@ -26,7 +28,7 @@ impl Default for FocusOption {
 }
 
 /// Single focus
-#[derive(Gain, Clone, PartialEq, Debug)]
+#[derive(Gain, Clone, PartialEq, Debug, new)]
 pub struct Focus {
     /// The position of the focus
     pub pos: Point3,

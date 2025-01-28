@@ -3,6 +3,7 @@ use autd3_core::{defined::Freq, derive::*};
 use super::sampling_mode::{Nearest, SamplingMode};
 
 use derive_more::Debug;
+use derive_new::new;
 
 /// The option of [`Square`].
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -30,7 +31,7 @@ impl Default for SquareOption {
 }
 
 /// Square wave modulation
-#[derive(Modulation, Clone, PartialEq, Debug)]
+#[derive(Modulation, Clone, PartialEq, Debug, new)]
 pub struct Square<S: Into<SamplingMode> + Debug> {
     /// The frequency of the square wave.
     pub freq: S,

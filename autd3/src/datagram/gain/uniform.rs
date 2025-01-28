@@ -1,9 +1,10 @@
 use autd3_core::derive::*;
 
 use autd3_driver::firmware::fpga::Drive;
+use derive_new::new;
 
 /// [`Gain`] that output uniform phase and intensity
-#[derive(Gain, Clone, PartialEq, Debug)]
+#[derive(Gain, Clone, PartialEq, Debug, new)]
 pub struct Uniform {
     /// The intensity of the gain.
     pub intensity: EmitIntensity,
