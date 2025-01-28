@@ -103,7 +103,7 @@ mod tests {
 
     #[test]
     fn test_focus() -> anyhow::Result<()> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let geometry = create_geometry(1);
 
@@ -115,8 +115,8 @@ mod tests {
         focus_check(g, pos, EmitIntensity::MAX, Phase::ZERO, &geometry)?;
 
         let pos = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
-        let intensity = EmitIntensity(rng.gen());
-        let phase_offset = Phase(rng.gen());
+        let intensity = EmitIntensity(rng.random());
+        let phase_offset = Phase(rng.random());
         let g = Focus {
             pos,
             option: FocusOption {

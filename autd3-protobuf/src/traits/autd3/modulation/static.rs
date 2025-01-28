@@ -40,10 +40,10 @@ mod tests {
 
     #[test]
     fn test_sine() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let m = autd3::modulation::Static {
-            intensity: rng.gen::<u8>(),
+            intensity: rng.random::<u8>(),
         };
         let msg = m.to_msg(None).unwrap();
         match msg.datagram {

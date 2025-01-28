@@ -43,9 +43,9 @@ mod tests {
 
     #[test]
     fn new() -> anyhow::Result<()> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
-        let test_buf = (0..2).map(|_| rng.gen()).collect::<Vec<_>>();
+        let test_buf = (0..2).map(|_| rng.random()).collect::<Vec<_>>();
         let custom = Custom {
             buffer: test_buf.clone(),
             sampling_config: 4. * kHz,

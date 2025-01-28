@@ -140,10 +140,10 @@ mod tests {
     fn test() -> anyhow::Result<()> {
         let geometry = create_geometry(1);
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let d = Drive {
-            phase: Phase(rng.gen()),
-            intensity: EmitIntensity(rng.gen()),
+            phase: Phase(rng.random()),
+            intensity: EmitIntensity(rng.random()),
         };
         let gain = Uniform {
             intensity: d.intensity,

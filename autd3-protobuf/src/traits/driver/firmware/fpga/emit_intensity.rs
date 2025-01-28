@@ -31,8 +31,8 @@ mod tests {
 
     #[test]
     fn test_emit_intensity() {
-        let mut rng = rand::thread_rng();
-        let v = EmitIntensity(rng.gen());
+        let mut rng = rand::rng();
+        let v = EmitIntensity(rng.random());
         let msg = v.to_msg(None).unwrap();
         let v2 = EmitIntensity::from_msg(&msg).unwrap();
         assert_eq!(v, v2);

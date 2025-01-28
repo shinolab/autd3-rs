@@ -37,7 +37,7 @@ async-trait = ["async", "autd3-core/async-trait"]
 dynamic_freq = ["autd3-driver/dynamic_freq", "autd3-firmware-emulator/dynamic_freq"]
 
 [dev-dependencies]
-rand = { workspace = true }
+rand = { workspace = true, features = ["thread_rng"] }
 tokio = { workspace = true, features = ["macros", "rt"] }
 anyhow = { workspace = true }
 rstest = { workspace = true }

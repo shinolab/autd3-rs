@@ -22,15 +22,15 @@ mod tests {
 
     #[test]
     fn is_integer_rand() {
-        use rand::{thread_rng, Rng};
+        use rand::Rng;
 
         const N: usize = 100000;
 
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
 
         (0..N).for_each(|_| {
-            let a: u32 = rng.gen_range(1..40000);
-            let m: u32 = rng.gen_range(512..=0xFFFFFFFF);
+            let a: u32 = rng.random_range(1..40000);
+            let m: u32 = rng.random_range(512..=0xFFFFFFFF);
             let b = a as f64 / m as f64;
             assert!(super::is_integer(b * m as f64));
         });

@@ -77,21 +77,21 @@ mod tests {
 
     #[test]
     fn test_holo_greedy() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let holo = autd3_gain_holo::Greedy {
             foci: vec![
                 (
-                    Point3::new(rng.gen(), rng.gen(), rng.gen()),
-                    rng.gen::<f32>() * autd3_gain_holo::Pa,
+                    Point3::new(rng.random(), rng.random(), rng.random()),
+                    rng.random::<f32>() * autd3_gain_holo::Pa,
                 ),
                 (
-                    Point3::new(rng.gen(), rng.gen(), rng.gen()),
-                    rng.gen::<f32>() * autd3_gain_holo::Pa,
+                    Point3::new(rng.random(), rng.random(), rng.random()),
+                    rng.random::<f32>() * autd3_gain_holo::Pa,
                 ),
             ],
             option: autd3_gain_holo::GreedyOption {
-                phase_div: NonZeroU8::new(rng.gen()).unwrap(),
+                phase_div: NonZeroU8::new(rng.random()).unwrap(),
                 ..Default::default()
             },
         };

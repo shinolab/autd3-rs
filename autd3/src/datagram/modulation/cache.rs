@@ -82,10 +82,10 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let m = Custom {
-            buffer: vec![rng.gen(), rng.gen()],
+            buffer: vec![rng.random(), rng.random()],
             sampling_config: SamplingConfig::DIV_10,
         };
         let cache = Cache::new(m.clone());

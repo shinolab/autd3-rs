@@ -72,14 +72,14 @@ mod tests {
 
     #[test]
     fn test_custom() -> anyhow::Result<()> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let geometry = create_geometry(2);
 
-        let test_id = rng.gen_range(0..geometry[0].num_transducers());
+        let test_id = rng.random_range(0..geometry[0].num_transducers());
         let test_drive = Drive {
-            phase: Phase(rng.gen()),
-            intensity: EmitIntensity(rng.gen()),
+            phase: Phase(rng.random()),
+            intensity: EmitIntensity(rng.random()),
         };
         let transducer_test = Custom::new(move |dev| {
             let dev_idx = dev.idx();

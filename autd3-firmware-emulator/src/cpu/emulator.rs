@@ -257,10 +257,10 @@ mod tests {
 
     #[test]
     fn cpu_idx() {
-        let mut rng = rand::thread_rng();
-        let idx = rng.gen();
-        let cpu = CPUEmulator::new(idx, 249);
-        assert_eq!(idx, cpu.idx());
+        let mut rng = rand::rng();
+        let idx: u16 = rng.random();
+        let cpu = CPUEmulator::new(idx as _, 249);
+        assert_eq!(idx as usize, cpu.idx());
     }
 
     #[test]

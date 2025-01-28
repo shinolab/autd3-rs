@@ -47,11 +47,11 @@ mod tests {
 
     #[test]
     fn test_phase() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let g = autd3::gain::Uniform {
-            intensity: EmitIntensity(rng.gen()),
-            phase: Phase(rng.gen()),
+            intensity: EmitIntensity(rng.random()),
+            phase: Phase(rng.random()),
         };
         let msg = g.to_msg(None).unwrap();
         match msg.datagram {

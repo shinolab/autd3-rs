@@ -9,14 +9,14 @@ use zerocopy::FromZeros;
 
 #[test]
 fn config_pwe_unsafe() -> anyhow::Result<()> {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     {
-        let buf: Vec<_> = (0..256).map(|_| rng.gen()).collect();
+        let buf: Vec<_> = (0..256).map(|_| rng.random()).collect();
 
         let d = PulseWidthEncoder::new(|_| |i| buf[i as usize]);
 

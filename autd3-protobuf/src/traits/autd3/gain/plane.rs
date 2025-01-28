@@ -56,13 +56,13 @@ mod tests {
 
     #[test]
     fn test_phase() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let g = autd3::gain::Plane {
-            dir: UnitVector3::new_normalize(Vector3::new(rng.gen(), rng.gen(), rng.gen())),
+            dir: UnitVector3::new_normalize(Vector3::new(rng.random(), rng.random(), rng.random())),
             option: autd3::gain::PlaneOption {
-                intensity: EmitIntensity(rng.gen()),
-                phase_offset: Phase(rng.gen()),
+                intensity: EmitIntensity(rng.random()),
+                phase_offset: Phase(rng.random()),
             },
         };
         let msg = g.to_msg(None).unwrap();

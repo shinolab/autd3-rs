@@ -170,10 +170,10 @@ mod tests {
 
         let mut tx = vec![0x00u8; size_of::<ModulationHead>() + MOD_SIZE];
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
-        let buf: Vec<u8> = (0..MOD_SIZE).map(|_| rng.gen()).collect();
-        let freq_div = rng.gen_range(0x0001..=0xFFFF);
+        let buf: Vec<u8> = (0..MOD_SIZE).map(|_| rng.random()).collect();
+        let freq_div = rng.random_range(0x0001..=0xFFFF);
         let loop_behavior = LoopBehavior::Infinite;
         let rep = loop_behavior.rep();
         let segment = Segment::S0;
@@ -244,9 +244,9 @@ mod tests {
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
-        let buf: Vec<u8> = (0..MOD_SIZE).map(|_| rng.gen()).collect();
+        let buf: Vec<u8> = (0..MOD_SIZE).map(|_| rng.random()).collect();
 
         let mut op = ModulationOp::new(
             Arc::new(buf.clone()),
@@ -384,9 +384,9 @@ mod tests {
 
         let mut tx = vec![0x00u8; NUM_TRANS_IN_UNIT * 2];
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
-        let buf: Vec<u8> = (0..size).map(|_| rng.gen()).collect();
+        let buf: Vec<u8> = (0..size).map(|_| rng.random()).collect();
 
         let mut op = ModulationOp::new(
             Arc::new(buf.clone()),

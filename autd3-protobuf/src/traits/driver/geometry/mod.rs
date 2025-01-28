@@ -138,8 +138,8 @@ mod tests {
 
     #[test]
     fn point3() {
-        let mut rng = rand::thread_rng();
-        let v = Point3::new(rng.gen(), rng.gen(), rng.gen());
+        let mut rng = rand::rng();
+        let v = Point3::new(rng.random(), rng.random(), rng.random());
         let msg = v.to_msg(None).unwrap();
         let v2 = Point3::from_msg(&Some(msg)).unwrap();
         approx::assert_abs_diff_eq!(v.x, v2.x);
@@ -151,8 +151,8 @@ mod tests {
 
     #[test]
     fn unitvector3() {
-        let mut rng = rand::thread_rng();
-        let v = UnitVector3::new_normalize(Vector3::new(rng.gen(), rng.gen(), rng.gen()));
+        let mut rng = rand::rng();
+        let v = UnitVector3::new_normalize(Vector3::new(rng.random(), rng.random(), rng.random()));
         let msg = v.to_msg(None).unwrap();
         let v2 = UnitVector3::from_msg(&Some(msg)).unwrap();
         approx::assert_abs_diff_eq!(v.x, v2.x);
@@ -164,12 +164,12 @@ mod tests {
 
     #[test]
     fn quaternion() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let q = UnitQuaternion::from_quaternion(Quaternion::new(
-            rng.gen(),
-            rng.gen(),
-            rng.gen(),
-            rng.gen(),
+            rng.random(),
+            rng.random(),
+            rng.random(),
+            rng.random(),
         ));
         let msg = q.to_msg(None).unwrap();
         let q2 = UnitQuaternion::from_msg(&Some(msg)).unwrap();
@@ -183,13 +183,13 @@ mod tests {
 
     #[test]
     fn geometry() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut dev = AUTD3 {
-            pos: Point3::new(rng.gen(), rng.gen(), rng.gen()),
+            pos: Point3::new(rng.random(), rng.random(), rng.random()),
             rot: UnitQuaternion::identity(),
         }
         .into_device(0);
-        dev.sound_speed = rng.gen();
+        dev.sound_speed = rng.random();
         let geometry = Geometry::new(vec![dev]);
         let msg = geometry.to_msg(None).unwrap();
         let geometry2 = Geometry::from_msg(&msg).unwrap();

@@ -32,8 +32,8 @@ mod tests {
 
     #[test]
     fn angle() {
-        let mut rng = rand::thread_rng();
-        let v = rng.gen::<f32>() * rad;
+        let mut rng = rand::rng();
+        let v = rng.random::<f32>() * rad;
         let msg = v.to_msg(None).unwrap();
         let v2 = Angle::from_msg(&Some(msg)).unwrap();
         approx::assert_abs_diff_eq!(v.radian(), v2.radian());

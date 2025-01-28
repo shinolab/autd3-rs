@@ -587,9 +587,9 @@ mod tests {
     }
 
     fn make_random_v(backend: &NalgebraBackend<Sphere>, size: usize) -> Result<VectorX, HoloError> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let v: Vec<f32> = (&mut rng)
-            .sample_iter(rand::distributions::Standard)
+            .sample_iter(rand::distr::StandardUniform)
             .take(size)
             .collect();
         backend.from_slice_v(&v)
@@ -600,9 +600,9 @@ mod tests {
         rows: usize,
         cols: usize,
     ) -> Result<MatrixX, HoloError> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let v: Vec<f32> = (&mut rng)
-            .sample_iter(rand::distributions::Standard)
+            .sample_iter(rand::distr::StandardUniform)
             .take(rows * cols)
             .collect();
         backend.from_slice_m(rows, cols, &v)
@@ -612,13 +612,13 @@ mod tests {
         backend: &NalgebraBackend<Sphere>,
         size: usize,
     ) -> Result<VectorXc, HoloError> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let real: Vec<f32> = (&mut rng)
-            .sample_iter(rand::distributions::Standard)
+            .sample_iter(rand::distr::StandardUniform)
             .take(size)
             .collect();
         let imag: Vec<f32> = (&mut rng)
-            .sample_iter(rand::distributions::Standard)
+            .sample_iter(rand::distr::StandardUniform)
             .take(size)
             .collect();
         backend.from_slice2_cv(&real, &imag)
@@ -629,13 +629,13 @@ mod tests {
         rows: usize,
         cols: usize,
     ) -> Result<MatrixXc, HoloError> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let real: Vec<f32> = (&mut rng)
-            .sample_iter(rand::distributions::Standard)
+            .sample_iter(rand::distr::StandardUniform)
             .take(rows * cols)
             .collect();
         let imag: Vec<f32> = (&mut rng)
-            .sample_iter(rand::distributions::Standard)
+            .sample_iter(rand::distr::StandardUniform)
             .take(rows * cols)
             .collect();
         backend.from_slice2_cm(rows, cols, &real, &imag)
@@ -737,10 +737,10 @@ mod tests {
     #[rstest::rstest]
     #[test]
     fn test_from_slice_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
-        let rng = rand::thread_rng();
+        let rng = rand::rng();
 
         let v: Vec<f32> = rng
-            .sample_iter(rand::distributions::Standard)
+            .sample_iter(rand::distr::StandardUniform)
             .take(N)
             .collect();
 
@@ -757,10 +757,10 @@ mod tests {
     #[rstest::rstest]
     #[test]
     fn test_from_slice_m(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
-        let rng = rand::thread_rng();
+        let rng = rand::rng();
 
         let v: Vec<f32> = rng
-            .sample_iter(rand::distributions::Standard)
+            .sample_iter(rand::distr::StandardUniform)
             .take(N * 2 * N)
             .collect();
 
@@ -780,10 +780,10 @@ mod tests {
     #[rstest::rstest]
     #[test]
     fn test_from_slice_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
-        let rng = rand::thread_rng();
+        let rng = rand::rng();
 
         let real: Vec<f32> = rng
-            .sample_iter(rand::distributions::Standard)
+            .sample_iter(rand::distr::StandardUniform)
             .take(N)
             .collect();
 
@@ -801,14 +801,14 @@ mod tests {
     #[rstest::rstest]
     #[test]
     fn test_from_slice2_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let real: Vec<f32> = (&mut rng)
-            .sample_iter(rand::distributions::Standard)
+            .sample_iter(rand::distr::StandardUniform)
             .take(N)
             .collect();
         let imag: Vec<f32> = (&mut rng)
-            .sample_iter(rand::distributions::Standard)
+            .sample_iter(rand::distr::StandardUniform)
             .take(N)
             .collect();
 
@@ -829,14 +829,14 @@ mod tests {
     #[rstest::rstest]
     #[test]
     fn test_from_slice2_cm(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let real: Vec<f32> = (&mut rng)
-            .sample_iter(rand::distributions::Standard)
+            .sample_iter(rand::distr::StandardUniform)
             .take(N * 2 * N)
             .collect();
         let imag: Vec<f32> = (&mut rng)
-            .sample_iter(rand::distributions::Standard)
+            .sample_iter(rand::distr::StandardUniform)
             .take(N * 2 * N)
             .collect();
 
@@ -859,9 +859,9 @@ mod tests {
     fn test_copy_from_slice_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
         {
             let mut a = backend.alloc_zeros_v(N)?;
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             let v = (&mut rng)
-                .sample_iter(rand::distributions::Standard)
+                .sample_iter(rand::distr::StandardUniform)
                 .take(N / 2)
                 .collect::<Vec<f32>>();
 
@@ -1128,8 +1128,8 @@ mod tests {
     fn test_scale_assign_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
         let mut v = make_random_cv(&backend, N)?;
         let vc = backend.clone_cv(&v)?;
-        let mut rng = rand::thread_rng();
-        let scale = Complex::new(rng.gen(), rng.gen());
+        let mut rng = rand::rng();
+        let scale = Complex::new(rng.random(), rng.random());
 
         backend.scale_assign_cv(scale, &mut v)?;
 
@@ -1274,8 +1274,8 @@ mod tests {
         let mut b = make_random_v(&backend, N)?;
         let bc = backend.clone_v(&b)?;
 
-        let mut rng = rand::thread_rng();
-        let alpha = rng.gen();
+        let mut rng = rand::rng();
+        let alpha = rng.random();
 
         backend.add_v(alpha, &a, &mut b)?;
 
@@ -1298,8 +1298,8 @@ mod tests {
         let mut b = make_random_m(&backend, N, N)?;
         let bc = backend.clone_m(&b)?;
 
-        let mut rng = rand::thread_rng();
-        let alpha = rng.gen();
+        let mut rng = rand::rng();
+        let alpha = rng.random();
 
         backend.add_m(alpha, &a, &mut b)?;
 
@@ -1318,15 +1318,15 @@ mod tests {
     #[rstest::rstest]
     #[test]
     fn test_gevv_c(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         {
             let a = make_random_cv(&backend, N)?;
             let b = make_random_cv(&backend, N)?;
             let mut c = make_random_cm(&backend, N, N)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             assert!(backend
                 .gevv_c(Trans::NoTrans, Trans::NoTrans, alpha, &a, &b, beta, &mut c)
                 .is_err());
@@ -1338,8 +1338,8 @@ mod tests {
             let mut c = make_random_cm(&backend, N, N)?;
             let cc = backend.clone_cm(&c)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             backend.gevv_c(Trans::NoTrans, Trans::Trans, alpha, &a, &b, beta, &mut c)?;
 
             let a = backend.to_host_cv(a)?;
@@ -1359,8 +1359,8 @@ mod tests {
             let mut c = make_random_cm(&backend, N, N)?;
             let cc = backend.clone_cm(&c)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             backend.gevv_c(
                 Trans::NoTrans,
                 Trans::ConjTrans,
@@ -1388,8 +1388,8 @@ mod tests {
             let mut c = make_random_cm(&backend, 1, 1)?;
             let cc = backend.clone_cm(&c)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             backend.gevv_c(Trans::Trans, Trans::NoTrans, alpha, &a, &b, beta, &mut c)?;
 
             let a = backend.to_host_cv(a)?;
@@ -1408,8 +1408,8 @@ mod tests {
             let b = make_random_cv(&backend, N)?;
             let mut c = make_random_cm(&backend, N, N)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             assert!(backend
                 .gevv_c(Trans::Trans, Trans::Trans, alpha, &a, &b, beta, &mut c)
                 .is_err());
@@ -1420,8 +1420,8 @@ mod tests {
             let b = make_random_cv(&backend, N)?;
             let mut c = make_random_cm(&backend, N, N)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             assert!(backend
                 .gevv_c(Trans::Trans, Trans::ConjTrans, alpha, &a, &b, beta, &mut c)
                 .is_err());
@@ -1433,8 +1433,8 @@ mod tests {
             let mut c = make_random_cm(&backend, 1, 1)?;
             let cc = backend.clone_cm(&c)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             backend.gevv_c(
                 Trans::ConjTrans,
                 Trans::NoTrans,
@@ -1461,8 +1461,8 @@ mod tests {
             let b = make_random_cv(&backend, N)?;
             let mut c = make_random_cm(&backend, N, N)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             assert!(backend
                 .gevv_c(Trans::ConjTrans, Trans::Trans, alpha, &a, &b, beta, &mut c)
                 .is_err());
@@ -1473,8 +1473,8 @@ mod tests {
             let b = make_random_cv(&backend, N)?;
             let mut c = make_random_cm(&backend, N, N)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             assert!(backend
                 .gevv_c(
                     Trans::ConjTrans,
@@ -1497,7 +1497,7 @@ mod tests {
         let m = N;
         let n = 2 * N;
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         {
             let a = make_random_cm(&backend, m, n)?;
@@ -1505,8 +1505,8 @@ mod tests {
             let mut c = make_random_cv(&backend, m)?;
             let cc = backend.clone_cv(&c)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             backend.gemv_c(Trans::NoTrans, alpha, &a, &b, beta, &mut c)?;
 
             let a = backend.to_host_cm(a)?;
@@ -1526,8 +1526,8 @@ mod tests {
             let mut c = make_random_cv(&backend, m)?;
             let cc = backend.clone_cv(&c)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             backend.gemv_c(Trans::Trans, alpha, &a, &b, beta, &mut c)?;
 
             let a = backend.to_host_cm(a)?;
@@ -1547,8 +1547,8 @@ mod tests {
             let mut c = make_random_cv(&backend, m)?;
             let cc = backend.clone_cv(&c)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             backend.gemv_c(Trans::ConjTrans, alpha, &a, &b, beta, &mut c)?;
 
             let a = backend.to_host_cm(a)?;
@@ -1571,7 +1571,7 @@ mod tests {
         let n = 2 * N;
         let k = 3 * N;
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         {
             let a = make_random_cm(&backend, m, k)?;
@@ -1579,8 +1579,8 @@ mod tests {
             let mut c = make_random_cm(&backend, m, n)?;
             let cc = backend.clone_cm(&c)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             backend.gemm_c(Trans::NoTrans, Trans::NoTrans, alpha, &a, &b, beta, &mut c)?;
 
             let a = backend.to_host_cm(a)?;
@@ -1600,8 +1600,8 @@ mod tests {
             let mut c = make_random_cm(&backend, m, n)?;
             let cc = backend.clone_cm(&c)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             backend.gemm_c(Trans::NoTrans, Trans::Trans, alpha, &a, &b, beta, &mut c)?;
 
             let a = backend.to_host_cm(a)?;
@@ -1621,8 +1621,8 @@ mod tests {
             let mut c = make_random_cm(&backend, m, n)?;
             let cc = backend.clone_cm(&c)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             backend.gemm_c(
                 Trans::NoTrans,
                 Trans::ConjTrans,
@@ -1650,8 +1650,8 @@ mod tests {
             let mut c = make_random_cm(&backend, m, n)?;
             let cc = backend.clone_cm(&c)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             backend.gemm_c(Trans::Trans, Trans::NoTrans, alpha, &a, &b, beta, &mut c)?;
 
             let a = backend.to_host_cm(a)?;
@@ -1671,8 +1671,8 @@ mod tests {
             let mut c = make_random_cm(&backend, m, n)?;
             let cc = backend.clone_cm(&c)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             backend.gemm_c(Trans::Trans, Trans::Trans, alpha, &a, &b, beta, &mut c)?;
 
             let a = backend.to_host_cm(a)?;
@@ -1692,8 +1692,8 @@ mod tests {
             let mut c = make_random_cm(&backend, m, n)?;
             let cc = backend.clone_cm(&c)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             backend.gemm_c(Trans::Trans, Trans::ConjTrans, alpha, &a, &b, beta, &mut c)?;
 
             let a = backend.to_host_cm(a)?;
@@ -1713,8 +1713,8 @@ mod tests {
             let mut c = make_random_cm(&backend, m, n)?;
             let cc = backend.clone_cm(&c)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             backend.gemm_c(
                 Trans::ConjTrans,
                 Trans::NoTrans,
@@ -1742,8 +1742,8 @@ mod tests {
             let mut c = make_random_cm(&backend, m, n)?;
             let cc = backend.clone_cm(&c)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             backend.gemm_c(Trans::ConjTrans, Trans::Trans, alpha, &a, &b, beta, &mut c)?;
 
             let a = backend.to_host_cm(a)?;
@@ -1763,8 +1763,8 @@ mod tests {
             let mut c = make_random_cm(&backend, m, n)?;
             let cc = backend.clone_cm(&c)?;
 
-            let alpha = Complex::new(rng.gen(), rng.gen());
-            let beta = Complex::new(rng.gen(), rng.gen());
+            let alpha = Complex::new(rng.random(), rng.random());
+            let beta = Complex::new(rng.random(), rng.random());
             backend.gemm_c(
                 Trans::ConjTrans,
                 Trans::ConjTrans,
@@ -1797,8 +1797,8 @@ mod tests {
 
             let a = &tmp * tmp.adjoint();
 
-            let mut rng = rand::thread_rng();
-            let x = VectorX::from_iterator(N, (0..N).map(|_| rng.gen()));
+            let mut rng = rand::rng();
+            let x = VectorX::from_iterator(N, (0..N).map(|_| rng.random()));
 
             let b = &a * &x;
 
