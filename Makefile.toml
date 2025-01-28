@@ -15,11 +15,11 @@ dependencies = ["format", "build", "test", "lint"]
 
 [tasks.build]
 command = "cargo"
-args = ["build", "--workspace", "--features", "remote", "${@}"]
+args = ["build", "--workspace", "${@}"]
 
 [tasks.lint]
 command = "cargo"
-args = ["clippy", "--tests", "--workspace", "--features", "remote", "${@}", "--", "-D", "warnings"]
+args = ["clippy", "--tests", "--workspace", "${@}", "--", "-D", "warnings"]
 
 [tasks.doc]
 env = { RUSTDOCFLAGS = "--cfg docsrs -D warnings" }
@@ -32,11 +32,11 @@ dependencies = ["test-lib", "test-doc"]
 
 [tasks.test-lib]
 command = "cargo"
-args = ["nextest", "run", "--workspace", "--exclude", "autd3-examples", "--features", "remote", "${@}"]
+args = ["nextest", "run", "--workspace", "--exclude", "autd3-examples", "${@}"]
 
 [tasks.test-doc]
 command = "cargo"
-args = ["test", "--doc", "--workspace", "--exclude", "autd3-examples", "--features", "remote", "${@}"]
+args = ["test", "--doc", "--workspace", "--exclude", "autd3-examples", "${@}"]
 
 [tasks.miri]
 env = { MIRIFLAGS = "-Zmiri-disable-isolation", CARGO_TOOLCHAIN = { value = "nightly", condition = { env_not_set = ["CARGO_TOOLCHAIN"] } } }
