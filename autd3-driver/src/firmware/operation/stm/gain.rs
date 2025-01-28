@@ -276,21 +276,21 @@ mod tests {
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let gain_data: VecDeque<Vec<Drive>> = (0..GAIN_STM_SIZE)
             .map(|_| {
                 (0..NUM_TRANS_IN_UNIT)
                     .map(|_| Drive {
-                        phase: Phase(rng.gen_range(0x00..=0xFF)),
-                        intensity: EmitIntensity(rng.gen_range(0..=0xFF)),
+                        phase: Phase(rng.random_range(0x00..=0xFF)),
+                        intensity: EmitIntensity(rng.random_range(0..=0xFF)),
                     })
                     .collect()
             })
             .collect();
 
-        let freq_div = rng.gen_range(0x0001..=0xFFFF);
-        let rep = rng.gen_range(0x0001..0xFFFF);
+        let freq_div = rng.random_range(0x0001..=0xFFFF);
+        let rep = rng.random_range(0x0001..0xFFFF);
         let segment = Segment::S0;
         let transition_value = 0x0123456789ABCDEF;
         let transition_mode = TransitionMode::SysTime(
@@ -426,21 +426,21 @@ mod tests {
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let gain_data: VecDeque<Vec<Drive>> = (0..GAIN_STM_SIZE)
             .map(|_| {
                 (0..NUM_TRANS_IN_UNIT)
                     .map(|_| Drive {
-                        phase: Phase(rng.gen_range(0x00..=0xFF)),
-                        intensity: EmitIntensity(rng.gen_range(0..=0xFF)),
+                        phase: Phase(rng.random_range(0x00..=0xFF)),
+                        intensity: EmitIntensity(rng.random_range(0..=0xFF)),
                     })
                     .collect()
             })
             .collect();
 
-        let freq_div = rng.gen_range(0x0001..=0xFFFF);
-        let rep = rng.gen_range(0x0001..=0xFFFF);
+        let freq_div = rng.random_range(0x0001..=0xFFFF);
+        let rep = rng.random_range(0x0001..=0xFFFF);
         let segment = Segment::S1;
         let mut op = GainSTMOp::new(
             STMContext {
@@ -559,21 +559,21 @@ mod tests {
         let mut tx = vec![TxMessage::new_zeroed(); 1];
         let tx = tx[0].payload_mut();
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let gain_data: VecDeque<Vec<Drive>> = (0..GAIN_STM_SIZE)
             .map(|_| {
                 (0..NUM_TRANS_IN_UNIT)
                     .map(|_| Drive {
-                        phase: Phase(rng.gen_range(0x00..=0xFF)),
-                        intensity: EmitIntensity(rng.gen_range(0..=0xFF)),
+                        phase: Phase(rng.random_range(0x00..=0xFF)),
+                        intensity: EmitIntensity(rng.random_range(0..=0xFF)),
                     })
                     .collect()
             })
             .collect();
 
-        let freq_div = rng.gen_range(0x0001..=0xFFFF);
-        let rep = rng.gen_range(0x0001..=0xFFFF);
+        let freq_div = rng.random_range(0x0001..=0xFFFF);
+        let rep = rng.random_range(0x0001..=0xFFFF);
         let segment = Segment::S0;
         let mut op = GainSTMOp::new(
             STMContext {

@@ -86,8 +86,8 @@ mod tests {
 
     #[test]
     fn test_emission_constraint_uniform() {
-        let mut rng = rand::thread_rng();
-        let v = autd3_gain_holo::EmissionConstraint::Uniform(EmitIntensity(rng.gen()));
+        let mut rng = rand::rng();
+        let v = autd3_gain_holo::EmissionConstraint::Uniform(EmitIntensity(rng.random()));
         let msg = v.to_msg(None).unwrap();
         let v2 = autd3_gain_holo::EmissionConstraint::from_msg(&msg).unwrap();
         assert_eq!(v, v2);
@@ -95,10 +95,10 @@ mod tests {
 
     #[test]
     fn test_emission_constraint_clamp() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let v = autd3_gain_holo::EmissionConstraint::Clamp(
-            EmitIntensity(rng.gen()),
-            EmitIntensity(rng.gen()),
+            EmitIntensity(rng.random()),
+            EmitIntensity(rng.random()),
         );
         let msg = v.to_msg(None).unwrap();
         let v2 = autd3_gain_holo::EmissionConstraint::from_msg(&msg).unwrap();

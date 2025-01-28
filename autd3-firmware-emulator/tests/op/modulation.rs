@@ -90,15 +90,16 @@ fn send_mod_unsafe(
     #[case] segment: Segment,
     #[case] transition_mode: Option<TransitionMode>,
 ) -> anyhow::Result<()> {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
-    let m: Vec<_> = (0..n).map(|_| rng.gen()).collect();
-    let freq_div = rng
-        .gen_range(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=u16::MAX);
+    let m: Vec<_> = (0..n).map(|_| rng.random()).collect();
+    let freq_div = rng.random_range(
+        SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=u16::MAX,
+    );
     let d = WithLoopBehavior {
         inner: TestModulation {
             buf: m.clone(),

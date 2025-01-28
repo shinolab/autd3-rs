@@ -31,8 +31,8 @@ mod tests {
 
     #[test]
     fn test_phase() {
-        let mut rng = rand::thread_rng();
-        let v = Phase(rng.gen());
+        let mut rng = rand::rng();
+        let v = Phase(rng.random());
         let msg = v.to_msg(None).unwrap();
         let v2 = Phase::from_msg(&msg).unwrap();
         assert_eq!(v, v2);

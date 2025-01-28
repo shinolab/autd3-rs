@@ -242,15 +242,15 @@ mod tests {
     fn test() -> anyhow::Result<()> {
         let geometry = create_geometry(4);
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let d1 = Drive {
-            phase: Phase(rng.gen()),
-            intensity: EmitIntensity(rng.gen()),
+            phase: Phase(rng.random()),
+            intensity: EmitIntensity(rng.random()),
         };
         let d2 = Drive {
-            phase: Phase(rng.gen()),
-            intensity: EmitIntensity(rng.gen()),
+            phase: Phase(rng.random()),
+            intensity: EmitIntensity(rng.random()),
         };
 
         let g1 = Uniform {
@@ -321,15 +321,15 @@ mod tests {
     fn with_parallel_unsafe() -> anyhow::Result<()> {
         let geometry = create_geometry(2);
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let d1 = Drive {
-            phase: Phase(rng.gen()),
-            intensity: EmitIntensity(rng.gen()),
+            phase: Phase(rng.random()),
+            intensity: EmitIntensity(rng.random()),
         };
         let d2 = Drive {
-            phase: Phase(rng.gen()),
-            intensity: EmitIntensity(rng.gen()),
+            phase: Phase(rng.random()),
+            intensity: EmitIntensity(rng.random()),
         };
 
         let g1 = Uniform {

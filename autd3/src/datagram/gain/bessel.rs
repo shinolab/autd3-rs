@@ -139,7 +139,7 @@ mod tests {
 
     #[test]
     fn test_bessel() -> anyhow::Result<()> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let geometry = create_geometry(1);
 
@@ -154,9 +154,9 @@ mod tests {
 
         let pos = random_point3(-500.0..500.0, -500.0..500.0, 50.0..500.0);
         let dir = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
-        let theta = rng.gen_range(-PI..PI) * rad;
-        let intensity = EmitIntensity(rng.gen());
-        let phase_offset = Phase(rng.gen());
+        let theta = rng.random_range(-PI..PI) * rad;
+        let intensity = EmitIntensity(rng.random());
+        let phase_offset = Phase(rng.random());
         let g = Bessel {
             pos,
             dir,

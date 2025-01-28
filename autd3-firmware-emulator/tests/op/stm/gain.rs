@@ -28,7 +28,7 @@ use zerocopy::FromZeros;
 use super::super::gain::TestGain;
 
 fn gen_random_buf(n: usize, geometry: &Geometry) -> Vec<HashMap<usize, Vec<Drive>>> {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     (0..n)
         .map(|_| {
             geometry
@@ -38,8 +38,8 @@ fn gen_random_buf(n: usize, geometry: &Geometry) -> Vec<HashMap<usize, Vec<Drive
                         dev.idx(),
                         dev.iter()
                             .map(|_| Drive {
-                                phase: Phase(rng.gen()),
-                                intensity: EmitIntensity(rng.gen()),
+                                phase: Phase(rng.random()),
+                                intensity: EmitIntensity(rng.random()),
                             })
                             .collect(),
                     )
@@ -67,14 +67,14 @@ fn send_gain_stm_phase_intensity_full_unsafe(
 ) -> anyhow::Result<()> {
     use autd3_driver::datagram::PhaseCorrection;
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let phase_corr: Vec<_> = (0..geometry.num_transducers())
-        .map(|_| Phase(rng.gen()))
+        .map(|_| Phase(rng.random()))
         .collect();
     {
         let d = PhaseCorrection::new(|_| |tr| phase_corr[tr.idx()]);
@@ -82,7 +82,7 @@ fn send_gain_stm_phase_intensity_full_unsafe(
     }
 
     let bufs = gen_random_buf(n, &geometry);
-    let freq_div = rng.gen_range(
+    let freq_div = rng.random_range(
         SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _..=u16::MAX,
     );
     let d = WithLoopBehavior {

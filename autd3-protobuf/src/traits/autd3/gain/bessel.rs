@@ -62,19 +62,19 @@ mod tests {
 
     #[test]
     fn bessel() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let g = autd3::gain::Bessel {
-            pos: Point3::new(rng.gen(), rng.gen(), rng.gen()),
+            pos: Point3::new(rng.random(), rng.random(), rng.random()),
             dir: autd3_core::geometry::UnitVector3::new_normalize(Vector3::new(
-                rng.gen(),
-                rng.gen(),
-                rng.gen(),
+                rng.random(),
+                rng.random(),
+                rng.random(),
             )),
-            theta: rng.gen::<f32>() * rad,
+            theta: rng.random::<f32>() * rad,
             option: autd3::gain::BesselOption {
-                intensity: EmitIntensity(rng.gen()),
-                phase_offset: Phase(rng.gen()),
+                intensity: EmitIntensity(rng.random()),
+                phase_offset: Phase(rng.random()),
             },
         };
         let msg = g.to_msg(None).unwrap();

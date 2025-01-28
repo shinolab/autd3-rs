@@ -27,7 +27,7 @@ tracing = { workspace = true, features = ["attributes"] }
 zerocopy = { workspace = true }
 
 [dev-dependencies]
-rand = { workspace = true }
+rand = { workspace = true, features = ["thread_rng"] }
 approx = { workspace = true }
 anyhow = { workspace = true }
 rstest = { workspace = true }

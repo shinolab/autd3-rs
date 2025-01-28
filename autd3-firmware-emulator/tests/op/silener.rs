@@ -19,7 +19,7 @@ use zerocopy::FromZeros;
 
 #[test]
 fn send_silencer_fixed_update_rate_unsafe() -> anyhow::Result<()> {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -27,8 +27,8 @@ fn send_silencer_fixed_update_rate_unsafe() -> anyhow::Result<()> {
 
     unsafe {
         let config = FixedUpdateRate {
-            intensity: NonZeroU16::new_unchecked(rng.gen_range(1..=u16::MAX)),
-            phase: NonZeroU16::new_unchecked(rng.gen_range(1..=u16::MAX)),
+            intensity: NonZeroU16::new_unchecked(rng.random_range(1..=u16::MAX)),
+            phase: NonZeroU16::new_unchecked(rng.random_range(1..=u16::MAX)),
         };
         let d = Silencer {
             config,
@@ -44,8 +44,8 @@ fn send_silencer_fixed_update_rate_unsafe() -> anyhow::Result<()> {
 
     unsafe {
         let config = FixedUpdateRate {
-            intensity: NonZeroU16::new_unchecked(rng.gen_range(1..=u16::MAX)),
-            phase: NonZeroU16::new_unchecked(rng.gen_range(1..=u16::MAX)),
+            intensity: NonZeroU16::new_unchecked(rng.random_range(1..=u16::MAX)),
+            phase: NonZeroU16::new_unchecked(rng.random_range(1..=u16::MAX)),
         };
         let d = Silencer {
             config,
@@ -67,7 +67,7 @@ fn send_silencer_fixed_update_rate_unsafe() -> anyhow::Result<()> {
 fn send_silencer_fixed_completion_time_unsafe() {
     use autd3_driver::defined::ultrasound_period;
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -75,8 +75,8 @@ fn send_silencer_fixed_completion_time_unsafe() {
 
     {
         let config = FixedCompletionTime {
-            intensity: ultrasound_period() * rng.gen_range(1..=10),
-            phase: ultrasound_period() * rng.gen_range(1..=u8::MAX) as u32,
+            intensity: ultrasound_period() * rng.random_range(1..=10),
+            phase: ultrasound_period() * rng.random_range(1..=u8::MAX) as u32,
             strict_mode: true,
         };
         let d = Silencer {
@@ -101,8 +101,8 @@ fn send_silencer_fixed_completion_time_unsafe() {
 
     {
         let config = FixedCompletionTime {
-            intensity: ultrasound_period() * rng.gen_range(1..=10),
-            phase: ultrasound_period() * rng.gen_range(1..=u8::MAX) as u32,
+            intensity: ultrasound_period() * rng.random_range(1..=10),
+            phase: ultrasound_period() * rng.random_range(1..=u8::MAX) as u32,
             strict_mode: true,
         };
         let d = Silencer {
@@ -127,7 +127,7 @@ fn send_silencer_fixed_completion_time_unsafe() {
 
 #[test]
 fn send_silencer_fixed_completion_steps_unsafe() {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
@@ -135,8 +135,8 @@ fn send_silencer_fixed_completion_steps_unsafe() {
 
     {
         let config = FixedCompletionSteps {
-            intensity: NonZeroU16::new(rng.gen_range(1..=10)).unwrap(),
-            phase: NonZeroU16::new(rng.gen_range(1..=u8::MAX) as u16).unwrap(),
+            intensity: NonZeroU16::new(rng.random_range(1..=10)).unwrap(),
+            phase: NonZeroU16::new(rng.random_range(1..=u8::MAX) as u16).unwrap(),
             strict_mode: true,
         };
         let d = Silencer {
@@ -154,8 +154,8 @@ fn send_silencer_fixed_completion_steps_unsafe() {
 
     {
         let config = FixedCompletionSteps {
-            intensity: NonZeroU16::new(rng.gen_range(1..=10)).unwrap(),
-            phase: NonZeroU16::new(rng.gen_range(1..=u8::MAX) as u16).unwrap(),
+            intensity: NonZeroU16::new(rng.random_range(1..=10)).unwrap(),
+            phase: NonZeroU16::new(rng.random_range(1..=u8::MAX) as u16).unwrap(),
             strict_mode: true,
         };
         let d = Silencer {
@@ -270,15 +270,15 @@ fn silencer_completetion_steps_too_large_stm(
 
 #[test]
 fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let config = FixedCompletionSteps {
-        intensity: NonZeroU16::new(rng.gen_range(1..=u16::MAX)).unwrap(),
-        phase: NonZeroU16::new(rng.gen_range(1..=u16::MAX)).unwrap(),
+        intensity: NonZeroU16::new(rng.random_range(1..=u16::MAX)).unwrap(),
+        phase: NonZeroU16::new(rng.random_range(1..=u16::MAX)).unwrap(),
         strict_mode: false,
     };
     let d = Silencer {
@@ -301,15 +301,15 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
 
 #[test]
 fn send_silencer_fixed_completion_time_permissive() {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let config = FixedCompletionSteps {
-        intensity: NonZeroU16::new(rng.gen_range(1..=u16::MAX)).unwrap(),
-        phase: NonZeroU16::new(rng.gen_range(1..=u16::MAX)).unwrap(),
+        intensity: NonZeroU16::new(rng.random_range(1..=u16::MAX)).unwrap(),
+        phase: NonZeroU16::new(rng.random_range(1..=u16::MAX)).unwrap(),
         strict_mode: false,
     };
     let d = Silencer {

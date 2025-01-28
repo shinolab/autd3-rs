@@ -48,47 +48,47 @@ mod tests {
 
     #[rstest::fixture]
     fn tr() -> Transducer {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         Transducer::new(
             0,
             0,
             Point3::new(
-                rng.gen_range(-100.0..100.0),
-                rng.gen_range(-100.0..100.0),
-                rng.gen_range(-100.0..100.0),
+                rng.random_range(-100.0..100.0),
+                rng.random_range(-100.0..100.0),
+                rng.random_range(-100.0..100.0),
             ),
         )
     }
 
     #[rstest::fixture]
     fn rot() -> UnitQuaternion {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         UnitQuaternion::from_axis_angle(
             &Vector3::x_axis(),
-            rng.gen_range::<f32, _>(-180.0..180.0).to_radians(),
+            rng.random_range::<f32, _>(-180.0..180.0).to_radians(),
         ) * UnitQuaternion::from_axis_angle(
             &Vector3::y_axis(),
-            rng.gen_range::<f32, _>(-180.0..180.0).to_radians(),
+            rng.random_range::<f32, _>(-180.0..180.0).to_radians(),
         ) * UnitQuaternion::from_axis_angle(
             &Vector3::z_axis(),
-            rng.gen_range::<f32, _>(-180.0..180.0).to_radians(),
+            rng.random_range::<f32, _>(-180.0..180.0).to_radians(),
         )
     }
 
     #[rstest::fixture]
     fn target() -> Point3 {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         Point3::new(
-            rng.gen_range(-100.0..100.0),
-            rng.gen_range(-100.0..100.0),
-            rng.gen_range(-100.0..100.0),
+            rng.random_range(-100.0..100.0),
+            rng.random_range(-100.0..100.0),
+            rng.random_range(-100.0..100.0),
         )
     }
 
     #[rstest::fixture]
     fn sound_speed() -> f32 {
-        let mut rng = rand::thread_rng();
-        rng.gen_range(300e3..400e3)
+        let mut rng = rand::rng();
+        rng.random_range(300e3..400e3)
     }
 
     #[rstest::rstest]

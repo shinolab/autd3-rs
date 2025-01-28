@@ -27,18 +27,18 @@ use time::OffsetDateTime;
 use zerocopy::FromZeros;
 
 pub fn gen_random_foci<const N: usize>(num: usize) -> Vec<ControlPoints<N>> {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     (0..num)
         .map(|_| ControlPoints {
             points: [0; N].map(|_| ControlPoint {
                 point: Point3::new(
-                    rng.gen_range(-100.0 * mm..100.0 * mm),
-                    rng.gen_range(-100.0 * mm..100.0 * mm),
-                    rng.gen_range(-100.0 * mm..100.0 * mm),
+                    rng.random_range(-100.0 * mm..100.0 * mm),
+                    rng.random_range(-100.0 * mm..100.0 * mm),
+                    rng.random_range(-100.0 * mm..100.0 * mm),
                 ),
-                phase_offset: Phase(rng.gen()),
+                phase_offset: Phase(rng.random()),
             }),
-            intensity: EmitIntensity(rng.gen()),
+            intensity: EmitIntensity(rng.random()),
         })
         .collect()
 }
@@ -64,7 +64,7 @@ fn test_send_foci_stm_unsafe(
     let sin_table = include_bytes!("sin.dat");
     let atan_table = include_bytes!("atan.dat");
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);
     geometry.set_sound_speed(400e3);
@@ -72,14 +72,14 @@ fn test_send_foci_stm_unsafe(
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     let phase_corr: Vec<_> = (0..geometry.num_transducers())
-        .map(|_| Phase(rng.gen()))
+        .map(|_| Phase(rng.random()))
         .collect();
     {
         let d = PhaseCorrection::new(|_| |tr| phase_corr[tr.idx()]);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }
 
-    let freq_div = rng.gen_range(
+    let freq_div = rng.random_range(
         SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _..=u16::MAX,
     );
     let foci = gen_random_foci::<1>(n);
@@ -389,7 +389,7 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
     let sin_table = include_bytes!("sin.dat");
     let atan_table = include_bytes!("atan.dat");
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);
     geometry.set_sound_speed(400e3);
@@ -397,7 +397,7 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     {
-        let freq_div = rng.gen_range(
+        let freq_div = rng.random_range(
             SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _..=u16::MAX,
         );
         let foci = gen_random_foci::<N>(1000);

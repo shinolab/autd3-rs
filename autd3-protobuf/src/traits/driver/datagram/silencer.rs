@@ -147,12 +147,12 @@ mod tests {
 
     #[test]
     fn test_silencer_fixed_update_rate() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let c = autd3_driver::datagram::Silencer {
             config: autd3_driver::datagram::FixedUpdateRate {
-                intensity: NonZeroU16::new(rng.gen_range(1..=u16::MAX)).unwrap(),
-                phase: NonZeroU16::new(rng.gen_range(1..=u16::MAX)).unwrap(),
+                intensity: NonZeroU16::new(rng.random_range(1..=u16::MAX)).unwrap(),
+                phase: NonZeroU16::new(rng.random_range(1..=u16::MAX)).unwrap(),
             },
             target: autd3::prelude::SilencerTarget::Intensity,
         };

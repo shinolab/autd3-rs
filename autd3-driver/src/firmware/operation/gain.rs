@@ -114,11 +114,11 @@ mod tests {
 
         let mut tx = vec![0x00u8; size_of::<Gain>() + NUM_TRANS_IN_UNIT * size_of::<Drive>()];
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let data: Vec<_> = (0..NUM_TRANS_IN_UNIT)
             .map(|_| Drive {
-                phase: Phase(rng.gen_range(0x00..=0xFF)),
-                intensity: EmitIntensity(rng.gen_range(0..=0xFF)),
+                phase: Phase(rng.random_range(0x00..=0xFF)),
+                intensity: EmitIntensity(rng.random_range(0..=0xFF)),
             })
             .collect();
 

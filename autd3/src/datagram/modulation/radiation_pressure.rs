@@ -48,9 +48,9 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
-        let buf = vec![rng.gen(), rng.gen()];
+        let buf = vec![rng.random(), rng.random()];
         assert_eq!(
             buf.iter()
                 .map(|&x| ((x as f32 / 255.).sqrt() * 255.).round() as u8)

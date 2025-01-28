@@ -24,8 +24,8 @@ mod tests {
 
     #[test]
     fn test_directivity() {
-        let mut rng = rand::thread_rng();
-        assert_eq!(1.0, Sphere::directivity(rng.gen::<f32>() * rad));
+        let mut rng = rand::rng();
+        assert_eq!(1.0, Sphere::directivity(rng.random::<f32>() * rad));
     }
 
     #[rstest::rstest]
@@ -34,8 +34,9 @@ mod tests {
     #[case::dir_y(1., Vector3::y())]
     #[case::dir_z(1., Vector3::z())]
     fn test_directivity_sphere_from_dir(#[case] expected: f32, #[case] target: Vector3) {
-        let mut rng = rand::thread_rng();
-        let dir = UnitVector3::new_unchecked(Vector3::new(rng.gen(), rng.gen(), rng.gen()));
+        let mut rng = rand::rng();
+        let dir =
+            UnitVector3::new_unchecked(Vector3::new(rng.random(), rng.random(), rng.random()));
         assert_eq!(expected, Sphere::directivity_from_dir(&dir, &target));
     }
 }

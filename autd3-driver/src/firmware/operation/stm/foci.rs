@@ -226,21 +226,21 @@ mod tests {
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let points: VecDeque<ControlPoints<1>> = (0..FOCI_STM_SIZE)
             .map(|_| ControlPoints {
                 points: [ControlPoint::from(Point3::new(
-                    rng.gen_range(-500.0 * mm..500.0 * mm),
-                    rng.gen_range(-500.0 * mm..500.0 * mm),
-                    rng.gen_range(0.0 * mm..500.0 * mm),
+                    rng.random_range(-500.0 * mm..500.0 * mm),
+                    rng.random_range(-500.0 * mm..500.0 * mm),
+                    rng.random_range(0.0 * mm..500.0 * mm),
                 ))],
-                intensity: EmitIntensity(rng.gen::<u8>()),
+                intensity: EmitIntensity(rng.random::<u8>()),
             })
             .collect();
         let rep = 0xFFFF;
         let segment = Segment::S0;
-        let freq_div = rng.gen_range(0x0001..=0xFFFF);
+        let freq_div = rng.random_range(0x0001..=0xFFFF);
         let transition_value = 0x0123456789ABCDEF;
         let transition_mode = TransitionMode::SysTime(
             DcSysTime::from_utc(
@@ -326,23 +326,23 @@ mod tests {
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let points: VecDeque<ControlPoints<N>> = (0..FOCI_STM_SIZE)
             .map(|_| ControlPoints {
                 points: [0; N].map(|_| {
                     ControlPoint::from(Point3::new(
-                        rng.gen_range(-500.0 * mm..500.0 * mm),
-                        rng.gen_range(-500.0 * mm..500.0 * mm),
-                        rng.gen_range(0.0 * mm..500.0 * mm),
+                        rng.random_range(-500.0 * mm..500.0 * mm),
+                        rng.random_range(-500.0 * mm..500.0 * mm),
+                        rng.random_range(0.0 * mm..500.0 * mm),
                     ))
                 }),
-                intensity: EmitIntensity(rng.gen::<u8>()),
+                intensity: EmitIntensity(rng.random::<u8>()),
             })
             .collect();
         let rep = 0xFFFF;
         let segment = Segment::S0;
-        let freq_div = rng.gen_range(0x0001..=0xFFFF);
+        let freq_div = rng.random_range(0x0001..=0xFFFF);
         let transition_value = 0x0123456789ABCDEF;
         let transition_mode = TransitionMode::SysTime(
             DcSysTime::from_utc(
@@ -437,20 +437,20 @@ mod tests {
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let points: VecDeque<ControlPoints<1>> = (0..FOCI_STM_SIZE)
             .map(|_| ControlPoints {
                 points: [ControlPoint::from(Point3::new(
-                    rng.gen_range(-500.0 * mm..500.0 * mm),
-                    rng.gen_range(-500.0 * mm..500.0 * mm),
-                    rng.gen_range(0.0 * mm..500.0 * mm),
+                    rng.random_range(-500.0 * mm..500.0 * mm),
+                    rng.random_range(-500.0 * mm..500.0 * mm),
+                    rng.random_range(0.0 * mm..500.0 * mm),
                 ))],
-                intensity: EmitIntensity(rng.gen::<u8>()),
+                intensity: EmitIntensity(rng.random::<u8>()),
             })
             .collect();
-        let freq_div = rng.gen_range(0x0001..0xFFFF);
-        let rep = rng.gen_range(0x0001..=0xFFFF);
+        let freq_div = rng.random_range(0x0001..0xFFFF);
+        let rep = rng.random_range(0x0001..=0xFFFF);
         let segment = Segment::S1;
 
         let mut op = FociSTMOp::new(
