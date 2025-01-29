@@ -1,23 +1,12 @@
 use autd3_core::{
     geometry::Geometry,
-    link::{Link, LinkBuilder, LinkError},
+    link::{Link, LinkError},
 };
 
 use autd3_driver::firmware::cpu::{RxMessage, TxMessage};
 use autd3_firmware_emulator::CPUEmulator;
 
 use derive_more::{Deref, DerefMut};
-
-#[doc(hidden)]
-#[derive(Deref, DerefMut)]
-pub struct Audit {
-    is_open: bool,
-    #[deref]
-    #[deref_mut]
-    cpus: Vec<CPUEmulator>,
-    down: bool,
-    broken: bool,
-}
 
 #[derive(Default)]
 #[doc(hidden)]
@@ -27,45 +16,27 @@ pub struct AuditOption {
     pub down: bool,
 }
 
-#[derive(Default)]
 #[doc(hidden)]
-pub struct AuditBuilder {
+#[derive(Deref, DerefMut)]
+pub struct Audit {
     option: AuditOption,
-}
-
-impl LinkBuilder for AuditBuilder {
-    type L = Audit;
-
-    fn open(self, geometry: &Geometry) -> Result<Self::L, LinkError> {
-        Ok(Audit {
-            is_open: true,
-            cpus: geometry
-                .iter()
-                .enumerate()
-                .map(|(i, dev)| {
-                    let mut cpu = CPUEmulator::new(i, dev.num_transducers());
-                    if let Some(msg_id) = self.option.initial_msg_id {
-                        cpu.set_last_msg_id(msg_id);
-                    }
-                    if let Some(initial_phase_corr) = self.option.initial_phase_corr {
-                        cpu.fpga_mut()
-                            .mem_mut()
-                            .phase_corr_bram_mut()
-                            .borrow_mut()
-                            .fill(u16::from_le_bytes([initial_phase_corr, initial_phase_corr]));
-                    }
-                    cpu
-                })
-                .collect(),
-            down: self.option.down,
-            broken: false,
-        })
-    }
+    is_open: bool,
+    #[deref]
+    #[deref_mut]
+    cpus: Vec<CPUEmulator>,
+    down: bool,
+    broken: bool,
 }
 
 impl Audit {
-    pub fn builder(option: AuditOption) -> AuditBuilder {
-        AuditBuilder { option }
+    pub fn new(option: AuditOption) -> Self {
+        Self {
+            option,
+            is_open: false,
+            cpus: Vec::new(),
+            down: false,
+            broken: false,
+        }
     }
 
     pub fn down(&mut self) {
@@ -86,6 +57,31 @@ impl Audit {
 }
 
 impl Link for Audit {
+    fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
+        self.is_open = true;
+        self.cpus = geometry
+            .iter()
+            .enumerate()
+            .map(|(i, dev)| {
+                let mut cpu = CPUEmulator::new(i, dev.num_transducers());
+                if let Some(msg_id) = self.option.initial_msg_id {
+                    cpu.set_last_msg_id(msg_id);
+                }
+                if let Some(initial_phase_corr) = self.option.initial_phase_corr {
+                    cpu.fpga_mut()
+                        .mem_mut()
+                        .phase_corr_bram_mut()
+                        .borrow_mut()
+                        .fill(u16::from_le_bytes([initial_phase_corr, initial_phase_corr]));
+                }
+                cpu
+            })
+            .collect();
+        self.down = self.option.down;
+        self.broken = false;
+        Ok(())
+    }
+
     fn close(&mut self) -> Result<(), LinkError> {
         self.is_open = false;
         Ok(())
@@ -130,23 +126,16 @@ impl Link for Audit {
 }
 
 #[cfg(feature = "async")]
-use autd3_core::link::{AsyncLink, AsyncLinkBuilder};
-
-#[cfg(feature = "async")]
-#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
-impl AsyncLinkBuilder for AuditBuilder {
-    type L = Audit;
-
-    async fn open(self, geometry: &Geometry) -> Result<Self::L, LinkError> {
-        <Self as LinkBuilder>::open(self, geometry)
-    }
-}
+use autd3_core::link::AsyncLink;
 
 #[cfg(feature = "async")]
 #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
 #[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl AsyncLink for Audit {
+    async fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
+        <Self as Link>::open(self, geometry)
+    }
+
     async fn close(&mut self) -> Result<(), LinkError> {
         <Self as Link>::close(self)
     }

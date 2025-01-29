@@ -12,7 +12,7 @@ use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
 async fn audit_test() -> anyhow::Result<()> {
     let mut autd = Controller::open_with_option(
         [AUTD3::default()],
-        Audit::builder(AuditOption::default()),
+        Audit::new(AuditOption::default()),
         SenderOption::<AsyncSleeper> {
             timeout: Some(Duration::from_millis(10)),
             ..Default::default()

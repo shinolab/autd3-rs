@@ -3,7 +3,7 @@ use crate::{
     link::{LinkError, RxMessage, TxMessage},
 };
 
-pub use internal::{AsyncLink, AsyncLinkBuilder};
+pub use internal::AsyncLink;
 
 #[cfg(feature = "async-trait")]
 mod internal {
@@ -13,6 +13,9 @@ mod internal {
     /// A trait that provides the interface with the device.
     #[async_trait::async_trait]
     pub trait AsyncLink: Send {
+        /// Opens the link.
+        async fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError>;
+
         /// Closes the link.
         async fn close(&mut self) -> Result<(), LinkError>;
 
@@ -32,18 +35,12 @@ mod internal {
         fn is_open(&self) -> bool;
     }
 
-    /// A trait to build a link.
-    #[async_trait::async_trait]
-    pub trait AsyncLinkBuilder: Send + Sync {
-        /// The link type.
-        type L: AsyncLink;
-
-        /// Opens a link.
-        async fn open(self, geometry: &Geometry) -> Result<Self::L, LinkError>;
-    }
-
     #[async_trait::async_trait]
     impl AsyncLink for Box<dyn AsyncLink> {
+        async fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
+            self.as_mut().open(geometry).await
+        }
+
         async fn close(&mut self) -> Result<(), LinkError> {
             self.as_mut().close().await
         }
@@ -72,6 +69,12 @@ mod internal {
 
     /// A trait that provides the interface with the device.
     pub trait AsyncLink: Send {
+        /// Opens the link.
+        fn open(
+            &mut self,
+            geometry: &Geometry,
+        ) -> impl std::future::Future<Output = Result<(), LinkError>>;
+
         /// Closes the link.
         fn close(&mut self) -> impl std::future::Future<Output = Result<(), LinkError>>;
 
@@ -98,17 +101,5 @@ mod internal {
         /// Checks if the link is open.
         #[must_use]
         fn is_open(&self) -> bool;
-    }
-
-    /// A trait to build a link.
-    pub trait AsyncLinkBuilder {
-        /// The link type.
-        type L: AsyncLink;
-
-        /// Opens a link.
-        fn open(
-            self,
-            geometry: &Geometry,
-        ) -> impl std::future::Future<Output = Result<Self::L, LinkError>>;
     }
 }

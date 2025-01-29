@@ -17,7 +17,7 @@ fn main() -> Result<()> {
                 rot: UnitQuaternion::identity(),
             },
         ],
-        Simulator::builder("127.0.0.1:8080".parse()?),
+        Simulator::new("127.0.0.1:8080".parse()?),
     )?;
 
     tests::run(autd)

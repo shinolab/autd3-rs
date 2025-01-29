@@ -7,36 +7,24 @@
 //!
 //! [`AUTD3 Simulator`]: https://github.com/shinolab/autd3-server
 
-use autd3_core::link::{AsyncLink, AsyncLinkBuilder, LinkError, RxMessage, TxMessage};
+use autd3_core::link::{AsyncLink, LinkError, RxMessage, TxMessage};
 
 use autd3_protobuf::*;
 
 use std::net::SocketAddr;
 
-/// A [`AsyncLink`] for [`AUTD3 Simulator`].
-///
-/// [`AUTD3 Simulator`]: https://github.com/shinolab/autd3-server
-pub struct Simulator {
+struct SimulatorInner {
     client: simulator_client::SimulatorClient<tonic::transport::Channel>,
-    is_open: bool,
     last_geometry_version: usize,
 }
 
-/// A builder for [`Simulator`].
-#[derive(Debug)]
-pub struct SimulatorBuilder {
-    /// AUTD3 Simulator address.
-    addr: SocketAddr,
-}
-
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
-impl AsyncLinkBuilder for SimulatorBuilder {
-    type L = Simulator;
-
-    #[tracing::instrument(level = "debug", skip(geometry))]
-    async fn open(self, geometry: &autd3_core::geometry::Geometry) -> Result<Self::L, LinkError> {
-        tracing::info!("Connecting to simulator@{}", self.addr);
-        let conn = tonic::transport::Endpoint::new(format!("http://{}", self.addr))
+impl SimulatorInner {
+    async fn open(
+        addr: &SocketAddr,
+        geometry: &autd3_core::geometry::Geometry,
+    ) -> Result<SimulatorInner, LinkError> {
+        tracing::info!("Connecting to simulator@{}", addr);
+        let conn = tonic::transport::Endpoint::new(format!("http://{}", addr))
             .map_err(AUTDProtoBufError::from)?
             .connect()
             .await
@@ -51,29 +39,13 @@ impl AsyncLinkBuilder for SimulatorBuilder {
                 AUTDProtoBufError::SendError("Failed to initialize simulator".to_string())
             })?;
 
-        Ok(Self::L {
+        Ok(Self {
             client,
-            is_open: true,
             last_geometry_version: geometry.version(),
         })
     }
-}
 
-impl Simulator {
-    /// Creates a new [`SimulatorBuilder`].
-    pub const fn builder(addr: SocketAddr) -> SimulatorBuilder {
-        SimulatorBuilder { addr }
-    }
-}
-
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
-impl AsyncLink for Simulator {
     async fn close(&mut self) -> Result<(), LinkError> {
-        if !self.is_open {
-            return Ok(());
-        }
-        self.is_open = false;
-
         self.client
             .close(CloseRequest {})
             .await
@@ -98,13 +70,13 @@ impl AsyncLink for Simulator {
     }
 
     async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
-        let res = self
+        Ok(self
             .client
             .send_data(tx.to_msg(None)?)
             .await
-            .map_err(AUTDProtoBufError::from)?;
-
-        Ok(res.into_inner().success)
+            .map_err(AUTDProtoBufError::from)?
+            .into_inner()
+            .success)
     }
 
     async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
@@ -118,63 +90,146 @@ impl AsyncLink for Simulator {
         )?;
         if rx.len() == rx_.len() {
             rx.copy_from_slice(&rx_);
+            Ok(true)
+        } else {
+            Ok(false)
         }
-
-        Ok(true)
-    }
-
-    fn is_open(&self) -> bool {
-        self.is_open
     }
 }
 
-#[cfg(feature = "blocking")]
-use autd3_core::link::{Link, LinkBuilder};
-
-/// A [`Link`] for [`AUTD3 Simulator`].
+/// A [`AsyncLink`] for [`AUTD3 Simulator`].
 ///
 /// [`AUTD3 Simulator`]: https://github.com/shinolab/autd3-server
-#[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
-#[cfg(feature = "blocking")]
-pub struct SimulatorBlocking {
-    runtime: tokio::runtime::Runtime,
-    inner: Simulator,
+pub struct Simulator {
+    addr: SocketAddr,
+    inner: Option<SimulatorInner>,
+    #[cfg(feature = "blocking")]
+    runtime: Option<tokio::runtime::Runtime>,
 }
 
-#[cfg(feature = "blocking")]
-impl Link for SimulatorBlocking {
-    fn close(&mut self) -> Result<(), LinkError> {
-        self.runtime.block_on(self.inner.close())
+impl Simulator {
+    /// Creates a new [`SimulatorBuilder`].
+    pub const fn new(addr: SocketAddr) -> Simulator {
+        Simulator {
+            addr,
+            inner: None,
+            #[cfg(feature = "blocking")]
+            runtime: None,
+        }
+    }
+}
+
+#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
+impl AsyncLink for Simulator {
+    async fn open(&mut self, geometry: &autd3_core::geometry::Geometry) -> Result<(), LinkError> {
+        self.inner = Some(SimulatorInner::open(&self.addr, geometry).await?);
+        Ok(())
     }
 
-    fn update(&mut self, geometry: &autd3_core::geometry::Geometry) -> Result<(), LinkError> {
-        self.runtime.block_on(self.inner.update(geometry))
+    async fn close(&mut self) -> Result<(), LinkError> {
+        if let Some(mut inner) = self.inner.take() {
+            inner.close().await?;
+        }
+        Ok(())
     }
 
-    fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
-        self.runtime.block_on(self.inner.send(tx))
+    async fn update(&mut self, geometry: &autd3_core::geometry::Geometry) -> Result<(), LinkError> {
+        if let Some(inner) = self.inner.as_mut() {
+            inner.update(geometry).await?;
+        }
+        Ok(())
     }
 
-    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
-        self.runtime.block_on(self.inner.receive(rx))
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
+        if let Some(inner) = self.inner.as_mut() {
+            inner.send(tx).await
+        } else {
+            Ok(false)
+        }
+    }
+
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
+        if let Some(inner) = self.inner.as_mut() {
+            inner.receive(rx).await
+        } else {
+            Ok(false)
+        }
     }
 
     fn is_open(&self) -> bool {
-        self.inner.is_open()
+        self.inner.is_some()
     }
 }
 
+#[cfg(feature = "blocking")]
+use autd3_core::link::Link;
+
 #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
 #[cfg(feature = "blocking")]
-impl LinkBuilder for SimulatorBuilder {
-    type L = SimulatorBlocking;
-
-    fn open(self, geometry: &autd3_core::geometry::Geometry) -> Result<Self::L, LinkError> {
+impl Link for Simulator {
+    fn open(&mut self, geometry: &autd3_core::derive::Geometry) -> Result<(), LinkError> {
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .expect("Failed to create runtime");
-        let inner = runtime.block_on(<Self as AsyncLinkBuilder>::open(self, geometry))?;
-        Ok(Self::L { runtime, inner })
+        runtime.block_on(<Self as AsyncLink>::open(self, geometry))?;
+        self.runtime = Some(runtime);
+        Ok(())
+    }
+
+    fn close(&mut self) -> Result<(), LinkError> {
+        if let Some(runtime) = self.runtime.as_ref() {
+            runtime.block_on(async {
+                if let Some(mut inner) = self.inner.take() {
+                    inner.close().await?;
+                }
+                Result::<_, LinkError>::Ok(())
+            })?;
+        }
+        Ok(())
+    }
+
+    fn update(&mut self, geometry: &autd3_core::geometry::Geometry) -> Result<(), LinkError> {
+        if let Some(runtime) = self.runtime.as_ref() {
+            runtime.block_on(async {
+                if let Some(inner) = self.inner.as_mut() {
+                    inner.update(geometry).await?;
+                }
+                Result::<_, LinkError>::Ok(())
+            })?;
+        }
+        Ok(())
+    }
+
+    fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
+        if let Some(runtime) = self.runtime.as_ref() {
+            runtime.block_on(async {
+                if let Some(inner) = self.inner.as_mut() {
+                    inner.send(tx).await
+                } else {
+                    Result::<_, LinkError>::Ok(false)
+                }
+            })
+        } else {
+            Ok(false)
+        }
+    }
+
+    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
+        if let Some(runtime) = self.runtime.as_ref() {
+            runtime.block_on(async {
+                if let Some(inner) = self.inner.as_mut() {
+                    inner.receive(rx).await
+                } else {
+                    Result::<_, LinkError>::Ok(false)
+                }
+            })
+        } else {
+            Ok(false)
+        }
+    }
+
+    fn is_open(&self) -> bool {
+        self.runtime.is_some() && self.inner.is_some()
     }
 }

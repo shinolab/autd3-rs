@@ -3,11 +3,7 @@ mod sender;
 
 use crate::{controller::SenderOption, error::AUTDError, gain::Null, modulation::Static};
 
-use autd3_core::{
-    defined::DEFAULT_TIMEOUT,
-    geometry::IntoDevice,
-    link::{AsyncLink, AsyncLinkBuilder},
-};
+use autd3_core::{defined::DEFAULT_TIMEOUT, geometry::IntoDevice, link::AsyncLink};
 
 use autd3_driver::{
     datagram::{Clear, Datagram, FixedCompletionSteps, ForceFan, Silencer, Synchronize},
@@ -49,14 +45,14 @@ pub struct Controller<L: AsyncLink> {
 
 impl<L: AsyncLink> Controller<L> {
     /// Equivalent to [`Self::open_with_option`] with a timeout of [`DEFAULT_TIMEOUT`].
-    pub async fn open<D: IntoDevice, F: IntoIterator<Item = D>, B: AsyncLinkBuilder<L = L>>(
+    pub async fn open<D: IntoDevice, F: IntoIterator<Item = D>>(
         devices: F,
-        link_builder: B,
-    ) -> Result<Controller<B::L>, AUTDError> {
-        Self::open_with_option(
+        link: L,
+    ) -> Result<Controller<L>, AUTDError> {
+        Self::open_with_option::<D, F, AsyncSleeper>(
             devices,
-            link_builder,
-            SenderOption::<AsyncSleeper> {
+            link,
+            SenderOption {
                 timeout: Some(DEFAULT_TIMEOUT),
                 ..Default::default()
             },
@@ -67,14 +63,9 @@ impl<L: AsyncLink> Controller<L> {
     /// Opens a controller with a timeout.
     ///
     /// Opens link, and then initialize and synchronize the devices. The `timeout` is used to send data for initialization and synchronization.
-    pub async fn open_with_option<
-        D: IntoDevice,
-        F: IntoIterator<Item = D>,
-        B: AsyncLinkBuilder<L = L>,
-        S: AsyncSleep,
-    >(
+    pub async fn open_with_option<D: IntoDevice, F: IntoIterator<Item = D>, S: AsyncSleep>(
         devices: F,
-        link_builder: B,
+        mut link: L,
         option: SenderOption<S>,
     ) -> Result<Self, AUTDError> {
         tracing::debug!("Opening a controller with option {:?})", option);
@@ -86,8 +77,9 @@ impl<L: AsyncLink> Controller<L> {
             .collect();
 
         let geometry = Geometry::new(devices);
+        link.open(&geometry).await?;
         Controller {
-            link: link_builder.open(&geometry).await?,
+            link,
             tx_buf: vec![TxMessage::new_zeroed(); geometry.len()], // Do not use `num_devices` here because the devices may be disabled.
             rx_buf: vec![RxMessage::new(0, 0); geometry.len()],
             geometry,
@@ -228,7 +220,7 @@ impl<L: AsyncLink> Controller<L> {
     /// ```
     /// # use autd3::prelude::*;
     /// # fn main() -> Result<(), AUTDError> {
-    /// let mut autd = Controller::open([AUTD3::default()], Nop::builder())?;
+    /// let mut autd = Controller::open([AUTD3::default()], Nop::new())?;
     ///
     /// autd.send(ReadsFPGAState::new(|_| true))?;
     ///
@@ -350,7 +342,7 @@ mod tests {
     pub async fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit>> {
         Ok(Controller::open(
             (0..dev_num).map(|_| AUTD3::default()),
-            Audit::builder(AuditOption::default()),
+            Audit::new(AuditOption::default()),
         )
         .await?)
     }
@@ -362,7 +354,7 @@ mod tests {
             Some(AUTDError::Driver(AUTDDriverError::SendDataFailed)),
             Controller::open(
                 [AUTD3::default()],
-                Audit::builder(AuditOption {
+                Audit::new(AuditOption {
                     down: true,
                     ..Default::default()
                 })
@@ -502,7 +494,7 @@ mod tests {
     async fn fpga_state() -> anyhow::Result<()> {
         let mut autd = Controller::open(
             [AUTD3::default(), AUTD3::default()],
-            Audit::builder(AuditOption::default()),
+            Audit::new(AuditOption::default()),
         )
         .await?;
 

@@ -6,7 +6,7 @@ use zerocopy::IntoBytes;
 
 use autd3_core::{
     geometry::Geometry,
-    link::{Link, LinkBuilder, LinkError, RxMessage, TxMessage},
+    link::{Link, LinkError, RxMessage, TxMessage},
 };
 
 use crate::{error::AdsError, remote::native_methods::*};
@@ -22,6 +22,8 @@ const PORT: u16 = 301;
 ///
 /// [`TwinCATAUTDServer`]: https://github.com/shinolab/autd3-server
 pub struct RemoteTwinCAT {
+    server_ams_net_id: String,
+    option: RemoteTwinCATOption,
     port: c_long,
     net_id: AmsNetId,
 }
@@ -35,32 +37,29 @@ pub struct RemoteTwinCATOption {
     pub client_ams_net_id: String,
 }
 
-/// A builder for [`RemoteTwinCAT`].
-#[derive(Debug, Default)]
-pub struct RemoteTwinCATBuilder {
-    /// The AMS Net ID of the TwinCAT3 server.
-    pub server_ams_net_id: String,
-    /// The option of [`RemoteTwinCAT`].
-    pub option: RemoteTwinCATOption,
+impl RemoteTwinCAT {
+    /// Creates a new [`RemoteTwinCATBuilder`].
+    pub fn new(server_ams_net_id: impl Into<String>, option: RemoteTwinCATOption) -> RemoteTwinCAT {
+        RemoteTwinCAT {
+            server_ams_net_id: server_ams_net_id.into(),
+            option,
+            port: 0,
+            net_id: AmsNetId { b: [0; 6] },
+        }
+    }
 }
 
-impl LinkBuilder for RemoteTwinCATBuilder {
-    type L = RemoteTwinCAT;
-
-    #[tracing::instrument(level = "debug", skip(_geometry))]
-    fn open(self, _geometry: &Geometry) -> Result<Self::L, LinkError> {
+impl Link for RemoteTwinCAT {
+    fn open(&mut self, _: &Geometry) -> Result<(), LinkError> {
         tracing::info!("Connecting to TwinCAT3");
 
-        let RemoteTwinCATBuilder {
-            server_ams_net_id,
-            option:
-                RemoteTwinCATOption {
-                    server_ip,
-                    client_ams_net_id,
-                },
-        } = self;
+        let RemoteTwinCATOption {
+            server_ip,
+            client_ams_net_id,
+        } = &self.option;
 
-        let octets = server_ams_net_id
+        let octets = self
+            .server_ams_net_id
             .split('.')
             .map(|octet| octet.parse::<u8>())
             .collect::<Result<Vec<_>, _>>()
@@ -73,7 +72,7 @@ impl LinkBuilder for RemoteTwinCATBuilder {
         let ip = if server_ip.is_empty() {
             octets[0..4].iter().map(|v| v.to_string()).join(".")
         } else {
-            server_ip
+            server_ip.to_owned()
         };
         tracing::info!("Server IP: {}", ip);
 
@@ -122,24 +121,12 @@ impl LinkBuilder for RemoteTwinCATBuilder {
             return Err(AdsError::OpenPort.into());
         }
 
-        Ok(Self::L { port, net_id })
-    }
-}
+        self.port = port;
+        self.net_id = net_id;
 
-impl RemoteTwinCAT {
-    /// Creates a new [`RemoteTwinCATBuilder`].
-    pub fn builder(
-        server_ams_net_id: impl Into<String>,
-        option: RemoteTwinCATOption,
-    ) -> RemoteTwinCATBuilder {
-        RemoteTwinCATBuilder {
-            server_ams_net_id: server_ams_net_id.into(),
-            option,
-        }
+        Ok(())
     }
-}
 
-impl Link for RemoteTwinCAT {
     fn close(&mut self) -> Result<(), LinkError> {
         if self.port == 0 {
             return Ok(());
@@ -216,23 +203,16 @@ impl Link for RemoteTwinCAT {
 }
 
 #[cfg(feature = "async")]
-use autd3_core::link::{AsyncLink, AsyncLinkBuilder};
-
-#[cfg(feature = "async")]
-#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
-impl AsyncLinkBuilder for RemoteTwinCATBuilder {
-    type L = RemoteTwinCAT;
-
-    async fn open(self, geometry: &Geometry) -> Result<Self::L, LinkError> {
-        <Self as LinkBuilder>::open(self, geometry)
-    }
-}
+use autd3_core::link::AsyncLink;
 
 #[cfg(feature = "async")]
 #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
 #[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl AsyncLink for RemoteTwinCAT {
+    async fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
+        <Self as Link>::open(self, geometry)
+    }
+
     async fn close(&mut self) -> Result<(), LinkError> {
         <Self as Link>::close(self)
     }

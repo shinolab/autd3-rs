@@ -14,7 +14,7 @@ fn main() -> Result<()> {
             pos: Point3::origin(),
             rot: UnitQuaternion::identity(),
         }; 2],
-        Nop::builder(),
+        Nop::new(),
     )?;
 
     tests::run(autd)

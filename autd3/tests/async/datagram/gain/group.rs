@@ -8,7 +8,7 @@ use autd3::{
 async fn only_for_enabled() -> anyhow::Result<()> {
     let mut autd = Controller::open(
         [AUTD3::default(), AUTD3::default()],
-        Audit::builder(AuditOption::default()),
+        Audit::new(AuditOption::default()),
     )
     .await?;
 
