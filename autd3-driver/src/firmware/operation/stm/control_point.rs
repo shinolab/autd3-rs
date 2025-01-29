@@ -4,9 +4,10 @@ use crate::{
 };
 
 use derive_more::{Deref, DerefMut};
+use derive_new::new;
 
 /// A pair of a focal point and a phase offset.
-#[derive(Clone, Copy, PartialEq, Debug, Default)]
+#[derive(Clone, Copy, PartialEq, Debug, Default, new)]
 #[repr(C)]
 pub struct ControlPoint {
     /// The focal point.
@@ -43,7 +44,7 @@ impl From<&Point3> for ControlPoint {
 }
 
 /// A collection of control points and the intensity of all control points.
-#[derive(Clone, PartialEq, Debug, Deref, DerefMut)]
+#[derive(Clone, PartialEq, Debug, Deref, DerefMut, new)]
 #[repr(C)]
 pub struct ControlPoints<const N: usize> {
     #[deref]
