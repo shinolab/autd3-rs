@@ -3,6 +3,7 @@ default_to_workspace = false
 skip_core_tasks = true
 
 [tasks.format]
+ignore_errors = true
 command = "cargo"
 args = ["fmt"]
 
@@ -32,11 +33,11 @@ dependencies = ["test-lib", "test-doc"]
 
 [tasks.test-lib]
 command = "cargo"
-args = ["nextest", "run", "--workspace", "--exclude", "autd3-examples", "${@}"]
+args = ["nextest", "run", "--workspace", "${@}"]
 
 [tasks.test-doc]
 command = "cargo"
-args = ["test", "--doc", "--workspace", "--exclude", "autd3-examples", "${@}"]
+args = ["test", "--doc", "--workspace", "${@}"]
 
 [tasks.miri]
 env = { MIRIFLAGS = "-Zmiri-disable-isolation", CARGO_TOOLCHAIN = { value = "nightly", condition = { env_not_set = ["CARGO_TOOLCHAIN"] } } }

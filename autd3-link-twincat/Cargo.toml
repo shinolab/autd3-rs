@@ -21,9 +21,9 @@ zerocopy = { workspace = true }
 cc = { workspace = true, optional = true }
 
 [features]
+default = ["local"]
 local = ["libloading"]
 remote = ["itertools", "cc", "tracing"]
-default = ["local"]
 async = ["autd3-core/async"]
 async-trait = ["async", "autd3-core/async-trait"]
 all = ["local", "remote"]

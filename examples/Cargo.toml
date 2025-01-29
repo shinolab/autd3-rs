@@ -56,7 +56,7 @@ tracing-subscriber = { workspace = true, features = ["fmt"] }
 tracing = { workspace = true }
 
 [features]
-default = ["all"]
+default = ["nop"]
 nop = []
 async = ["autd3/async", "tokio"]
 simulator = ["autd3-link-simulator"]
