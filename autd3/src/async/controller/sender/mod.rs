@@ -162,6 +162,14 @@ mod tests {
 
     #[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
     impl AsyncLink for MockAsyncLink {
+        async fn open(&mut self, _: &Geometry) -> Result<(), LinkError> {
+            self.is_open = true;
+            self.send_cnt = 0;
+            self.recv_cnt = 0;
+            self.down = false;
+            Ok(())
+        }
+
         async fn close(&mut self) -> Result<(), LinkError> {
             self.is_open = false;
             Ok(())

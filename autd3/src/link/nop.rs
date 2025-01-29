@@ -1,6 +1,6 @@
 use autd3_core::{
     derive::*,
-    link::{Link, LinkBuilder, LinkError},
+    link::{Link, LinkError},
 };
 
 use autd3_driver::firmware::cpu::{RxMessage, TxMessage};
@@ -9,30 +9,30 @@ use autd3_firmware_emulator::CPUEmulator;
 /// A [`Link`] that does nothing.
 ///
 /// This link is mainly used for explanation.
+#[derive(Default)]
 pub struct Nop {
     is_open: bool,
     cpus: Vec<CPUEmulator>,
 }
 
-/// A builder for [`Nop`].
-pub struct NopBuilder {}
-
-impl LinkBuilder for NopBuilder {
-    type L = Nop;
-
-    fn open(self, geometry: &Geometry) -> Result<Self::L, LinkError> {
-        Ok(Nop {
-            is_open: true,
-            cpus: geometry
-                .iter()
-                .enumerate()
-                .map(|(i, dev)| CPUEmulator::new(i, dev.num_transducers()))
-                .collect(),
-        })
+impl Nop {
+    /// Creates a new [`Nop`].
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 
 impl Link for Nop {
+    fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
+        self.is_open = true;
+        self.cpus = geometry
+            .iter()
+            .enumerate()
+            .map(|(i, dev)| CPUEmulator::new(i, dev.num_transducers()))
+            .collect();
+        Ok(())
+    }
+
     fn close(&mut self) -> Result<(), LinkError> {
         self.is_open = false;
         Ok(())
@@ -61,23 +61,16 @@ impl Link for Nop {
 }
 
 #[cfg(feature = "async")]
-use autd3_core::link::{AsyncLink, AsyncLinkBuilder};
-
-#[cfg(feature = "async")]
-#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
-impl AsyncLinkBuilder for NopBuilder {
-    type L = Nop;
-
-    async fn open(self, geometry: &Geometry) -> Result<Self::L, LinkError> {
-        <Self as LinkBuilder>::open(self, geometry)
-    }
-}
+use autd3_core::link::AsyncLink;
 
 #[cfg(feature = "async")]
 #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
 #[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl AsyncLink for Nop {
+    async fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
+        <Self as Link>::open(self, geometry)
+    }
+
     async fn close(&mut self) -> Result<(), LinkError> {
         <Self as Link>::close(self)
     }
@@ -92,12 +85,5 @@ impl AsyncLink for Nop {
 
     fn is_open(&self) -> bool {
         <Self as Link>::is_open(self)
-    }
-}
-
-impl Nop {
-    /// Create a new [`NopBuilder`].
-    pub const fn builder() -> NopBuilder {
-        NopBuilder {}
     }
 }

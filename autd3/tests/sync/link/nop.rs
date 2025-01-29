@@ -3,7 +3,7 @@ use autd3_core::link::Link;
 
 #[test]
 fn nop_test() -> anyhow::Result<()> {
-    let mut autd = Controller::open([AUTD3::default()], Nop::builder())?;
+    let mut autd = Controller::open([AUTD3::default()], Nop::new())?;
 
     assert!(autd.send(Static::default()).is_ok());
 

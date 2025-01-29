@@ -11,7 +11,7 @@ fn main() -> Result<()> {
             pos: Point3::origin(),
             rot: UnitQuaternion::identity(),
         }],
-        RemoteTwinCAT::builder("0.0.0.0.0.0", Default::default()),
+        RemoteTwinCAT::new("0.0.0.0.0.0", Default::default()),
     )?;
 
     tests::run(autd)

@@ -209,7 +209,7 @@ impl<'a, L: Link, S: Sleep> Sender<'a, L, S> {
     /// ```
     /// # use autd3::prelude::*;
     /// # fn main() -> Result<(), AUTDError> {
-    /// let mut autd = Controller::open((0..3).map(|_| AUTD3::default()), Nop::builder())?;
+    /// let mut autd = Controller::open((0..3).map(|_| AUTD3::default()), Nop::new())?;
     ///
     /// autd.group(|dev| match dev.idx() {
     ///    0 => Some("static"),
@@ -241,7 +241,7 @@ impl<L: Link> Controller<L> {
     /// ```
     /// # use autd3::prelude::*;
     /// # fn main() -> Result<(), AUTDError> {
-    /// let mut autd = Controller::open((0..3).map(|_| AUTD3::default()), Nop::builder())?;
+    /// let mut autd = Controller::open((0..3).map(|_| AUTD3::default()), Nop::new())?;
     ///
     /// autd.group(|dev| match dev.idx() {
     ///    0 => Some("static"),
