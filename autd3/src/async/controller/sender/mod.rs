@@ -153,6 +153,7 @@ mod tests {
 
     use super::*;
 
+    #[derive(Default)]
     struct MockAsyncLink {
         pub is_open: bool,
         pub send_cnt: usize,
@@ -199,12 +200,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_close() -> anyhow::Result<()> {
-        let mut link = MockAsyncLink {
-            is_open: true,
-            send_cnt: 0,
-            recv_cnt: 0,
-            down: false,
-        };
+        let mut link = MockAsyncLink::default();
+        link.open(&Geometry::new(Vec::new())).await?;
 
         assert!(link.is_open());
 
@@ -222,16 +219,12 @@ mod tests {
     #[cfg_attr(target_os = "windows", case(WaitableSleeper::new().unwrap()))]
     #[tokio::test]
     async fn test_send_receive(#[case] sleeper: impl AsyncSleep) {
-        let mut link = MockAsyncLink {
-            is_open: true,
-            send_cnt: 0,
-            recv_cnt: 0,
-            down: false,
-        };
+        let mut link = MockAsyncLink::default();
         let mut geometry = create_geometry(1);
         let mut tx = vec![];
         let mut rx = Vec::new();
 
+        assert!(link.open(&geometry).await.is_ok());
         let mut sender = Sender {
             link: &mut link,
             geometry: &mut geometry,
@@ -272,17 +265,13 @@ mod tests {
     #[cfg_attr(target_os = "windows", case(WaitableSleeper::new().unwrap()))]
     #[tokio::test]
     async fn test_wait_msg_processed(#[case] sleeper: impl AsyncSleep) {
-        let mut link = MockAsyncLink {
-            is_open: true,
-            send_cnt: 0,
-            recv_cnt: 0,
-            down: false,
-        };
+        let mut link = MockAsyncLink::default();
         let mut geometry = create_geometry(1);
         let mut tx = vec![TxMessage::new_zeroed(); 1];
         tx[0].header.msg_id = 2;
         let mut rx = vec![RxMessage::new(0, 0)];
 
+        assert!(link.open(&geometry).await.is_ok());
         let mut sender = Sender {
             link: &mut link,
             geometry: &mut geometry,
