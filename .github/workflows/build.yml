@@ -27,7 +27,7 @@ jobs:
           - os: ubuntu-latest
             features: "use_meter left_handed"
           - os: ubuntu-latest
-            features: "lightweight async-trait"
+            features: "lightweight async-trait lightweight_server"
           - os: ubuntu-latest
             features: "dynamic_freq"
     steps:

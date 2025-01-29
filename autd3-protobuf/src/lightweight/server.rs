@@ -1,25 +1,27 @@
 use crate::{error::*, pb::*, traits::*};
 
-use autd3_core::defined::Freq;
+use autd3_core::{defined::Freq, link::LinkError};
 use autd3_driver::datagram::WithLoopBehavior;
 use tokio::sync::RwLock;
 use tonic::{Request, Response, Status};
 
 #[doc(hidden)]
 pub struct LightweightServer<
-    L: autd3_core::link::AsyncLinkBuilder + 'static,
-    F: Fn() -> L + Send + Sync + 'static,
+    L: autd3_core::link::AsyncLink + 'static,
+    F: Fn() -> Result<L, LinkError> + Send + Sync + 'static,
 > where
-    L::L: Sync,
+    L: Sync,
 {
-    autd: RwLock<Option<autd3::r#async::Controller<L::L>>>,
+    autd: RwLock<Option<autd3::r#async::Controller<L>>>,
     link: F,
 }
 
-impl<L: autd3_core::link::AsyncLinkBuilder + 'static, F: Fn() -> L + Send + Sync + 'static>
-    LightweightServer<L, F>
+impl<
+        L: autd3_core::link::AsyncLink + 'static,
+        F: Fn() -> Result<L, LinkError> + Send + Sync + 'static,
+    > LightweightServer<L, F>
 where
-    L::L: Sync,
+    L: Sync,
 {
     pub fn new(f: F) -> Self {
         LightweightServer {
@@ -145,10 +147,12 @@ where
 }
 
 #[tonic::async_trait]
-impl<L: autd3_core::link::AsyncLinkBuilder + 'static, F: Fn() -> L + Send + Sync + 'static>
-    ecat_light_server::EcatLight for LightweightServer<L, F>
+impl<
+        L: autd3_core::link::AsyncLink + 'static,
+        F: Fn() -> Result<L, LinkError> + Send + Sync + 'static,
+    > ecat_light_server::EcatLight for LightweightServer<L, F>
 where
-    L::L: Sync,
+    L: Sync,
 {
     async fn open(
         &self,
@@ -171,7 +175,16 @@ where
                         pos: *d[0].position(),
                         rot: *d.rotation(),
                     }),
-                    (self.link)(),
+                    match (self.link)() {
+                        Ok(link) => link,
+                        Err(e) => {
+                            return Ok(Response::new(SendResponseLightweight {
+                                success: false,
+                                err: true,
+                                msg: format!("Failed to open link: {}", e),
+                            }))
+                        }
+                    },
                 )
                 .await
                 {

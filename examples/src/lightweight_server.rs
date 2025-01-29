@@ -38,7 +38,7 @@ async fn main() -> anyhow::Result<()> {
         .with_max_level(tracing::Level::INFO)
         .init();
 
-    let server = LightweightServer::new(|| TwinCAT::builder());
+    let server = LightweightServer::new(TwinCAT::new);
 
     println!("Starting server...");
     println!("Wainting client to connect...");
