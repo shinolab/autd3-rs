@@ -2,10 +2,11 @@ use crate::{
     defined::mm,
     geometry::{Device, IntoDevice, Isometry, Point3, Transducer, Translation, UnitQuaternion},
 };
+use derive_new::new;
 use getset::Getters;
 
 /// AUTD3 device.
-#[derive(Clone, Copy, Debug, Getters)]
+#[derive(Clone, Copy, Debug, Getters, new)]
 pub struct AUTD3 {
     /// The position of the AUTD3 device.
     pub pos: Point3,
