@@ -42,7 +42,7 @@ pub struct TwinCAT {
 }
 
 impl TwinCAT {
-    /// Creates a new [`TwinCATBuilder`].
+    /// Creates a new [`TwinCAT`].
     pub fn new() -> Result<TwinCAT, LinkError> {
         Ok(TwinCAT {
             port: 0,
