@@ -178,55 +178,51 @@ impl Link for Simulator {
     }
 
     fn close(&mut self) -> Result<(), LinkError> {
-        if let Some(runtime) = self.runtime.as_ref() {
+        self.runtime.as_ref().map_or(Ok(()), |runtime| {
             runtime.block_on(async {
                 if let Some(mut inner) = self.inner.take() {
                     inner.close().await?;
                 }
-                Result::<_, LinkError>::Ok(())
-            })?;
-        }
-        Ok(())
+                Ok(())
+            })
+        })
     }
 
     fn update(&mut self, geometry: &autd3_core::geometry::Geometry) -> Result<(), LinkError> {
-        if let Some(runtime) = self.runtime.as_ref() {
+        self.runtime.as_ref().map_or(Ok(()), |runtime| {
             runtime.block_on(async {
                 if let Some(inner) = self.inner.as_mut() {
                     inner.update(geometry).await?;
                 }
-                Result::<_, LinkError>::Ok(())
-            })?;
-        }
-        Ok(())
+                Ok(())
+            })
+        })
     }
 
     fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
-        if let Some(runtime) = self.runtime.as_ref() {
+        self.runtime.as_ref().map_or(Ok(false), |runtime| {
             runtime.block_on(async {
                 if let Some(inner) = self.inner.as_mut() {
-                    inner.send(tx).await
+                    inner.send(tx).await?;
+                    Ok(true)
                 } else {
-                    Result::<_, LinkError>::Ok(false)
+                    Ok(false)
                 }
             })
-        } else {
-            Ok(false)
-        }
+        })
     }
 
     fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
-        if let Some(runtime) = self.runtime.as_ref() {
+        self.runtime.as_ref().map_or(Ok(false), |runtime| {
             runtime.block_on(async {
                 if let Some(inner) = self.inner.as_mut() {
-                    inner.receive(rx).await
+                    inner.receive(rx).await?;
+                    Ok(true)
                 } else {
-                    Result::<_, LinkError>::Ok(false)
+                    Ok(false)
                 }
             })
-        } else {
-            Ok(false)
-        }
+        })
     }
 
     fn is_open(&self) -> bool {
