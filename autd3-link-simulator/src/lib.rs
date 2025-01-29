@@ -108,7 +108,7 @@ pub struct Simulator {
 }
 
 impl Simulator {
-    /// Creates a new [`SimulatorBuilder`].
+    /// Creates a new [`Simulator`].
     pub const fn new(addr: SocketAddr) -> Simulator {
         Simulator {
             addr,
