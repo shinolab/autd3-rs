@@ -11,7 +11,7 @@ mod link;
 fn initial_msg_id() -> anyhow::Result<()> {
     let cnt = Controller::open(
         [AUTD3::default()],
-        Audit::builder(AuditOption {
+        Audit::new(AuditOption {
             initial_msg_id: Some(0x01),
             initial_phase_corr: Some(0xFF),
             ..Default::default()

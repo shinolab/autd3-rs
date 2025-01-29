@@ -237,6 +237,11 @@ mod tests {
     }
 
     impl Link for MockLink {
+        fn open(&mut self, _: &Geometry) -> Result<(), LinkError> {
+            self.is_open = true;
+            Ok(())
+        }
+
         fn close(&mut self) -> Result<(), LinkError> {
             self.is_open = false;
             Ok(())

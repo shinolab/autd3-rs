@@ -23,6 +23,7 @@
 - Add `AUTDDriverError::KeyIsAlreadyUsed` and `AUTDDriverError::UnusedKey` errors
   - `controller::Group::set` and `gain::Group::set` now return `AUTDDriverError::KeyIsAlreadyUsed` if the key is already used
   - `controller::Group::send` and `gain::Group::init` now return `AUTDDriverError::UnusedKey` if the key is not used
+- Remove `LinkBuilder`, use `Link::new` instead
 - Remove `with_xxx` methods to set option value, add option struct instead
 - Remove resampler
 - Remove `IntoCache`, `IntoFir`, and `IntoRadiationPressure` traits

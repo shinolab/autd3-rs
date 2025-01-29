@@ -13,7 +13,7 @@ use spin_sleep::SpinSleeper;
 fn audit_test() -> anyhow::Result<()> {
     let mut autd = Controller::open_with_option(
         [AUTD3::default()],
-        Audit::builder(AuditOption::default()),
+        Audit::new(AuditOption::default()),
         SenderOption::<SpinSleeper> {
             timeout: Some(Duration::from_millis(10)),
             ..Default::default()

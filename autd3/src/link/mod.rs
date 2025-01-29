@@ -1,5 +1,5 @@
 mod audit;
 mod nop;
 
-pub use audit::{Audit, AuditBuilder, AuditOption};
-pub use nop::{Nop, NopBuilder};
+pub use audit::{Audit, AuditOption};
+pub use nop::Nop;

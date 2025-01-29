@@ -4,6 +4,9 @@ use super::{error::LinkError, RxMessage, TxMessage};
 
 /// A trait that provides the interface with the device.
 pub trait Link: Send {
+    /// Opens the link.
+    fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError>;
+
     /// Closes the link.
     fn close(&mut self) -> Result<(), LinkError>;
 
@@ -23,16 +26,11 @@ pub trait Link: Send {
     fn is_open(&self) -> bool;
 }
 
-/// A trait to build a link.
-pub trait LinkBuilder: Send + Sync {
-    /// The link type.
-    type L: Link;
-
-    /// Opens a link.
-    fn open(self, geometry: &Geometry) -> Result<Self::L, LinkError>;
-}
-
 impl Link for Box<dyn Link> {
+    fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
+        self.as_mut().open(geometry)
+    }
+
     fn close(&mut self) -> Result<(), LinkError> {
         self.as_mut().close()
     }

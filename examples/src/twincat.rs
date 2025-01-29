@@ -11,7 +11,7 @@ fn main() -> Result<()> {
             pos: Point3::origin(),
             rot: UnitQuaternion::identity(),
         }],
-        TwinCAT::builder(),
+        TwinCAT::new()?,
     )?;
 
     tests::run(autd)

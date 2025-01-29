@@ -8,7 +8,7 @@ use zerocopy::IntoBytes;
 
 use autd3_core::{
     geometry::Geometry,
-    link::{Link, LinkBuilder, LinkError, RxMessage, TxMessage},
+    link::{Link, LinkError, RxMessage, TxMessage},
 };
 
 #[repr(C)]
@@ -41,16 +41,25 @@ pub struct TwinCAT {
     dll: Library,
 }
 
-/// A builder for [`TwinCAT`].
-pub struct TwinCATBuilder {}
+impl TwinCAT {
+    /// Creates a new [`TwinCATBuilder`].
+    pub fn new() -> Result<TwinCAT, AdsError> {
+        Ok(TwinCAT {
+            port: 0,
+            send_addr: AmsAddr {
+                net_id: AmsNetId { b: [0; 6] },
+                port: 0,
+            },
+            dll: unsafe { lib::Library::new("TcAdsDll") }.map_err(|_| AdsError::DllNotFound)?,
+        })
+    }
+}
 
-impl LinkBuilder for TwinCATBuilder {
-    type L = TwinCAT;
-
-    fn open(self, _: &Geometry) -> Result<Self::L, LinkError> {
-        let dll = unsafe { lib::Library::new("TcAdsDll") }.map_err(|_| AdsError::DllNotFound)?;
+impl Link for TwinCAT {
+    fn open(&mut self, _: &Geometry) -> Result<(), LinkError> {
         let port = unsafe {
-            dll.get::<unsafe extern "C" fn() -> i32>(b"AdsPortOpenEx")
+            self.dll
+                .get::<unsafe extern "C" fn() -> i32>(b"AdsPortOpenEx")
                 .map_err(|_| AdsError::FunctionNotFound("AdsPortOpenEx".to_owned()))?()
         };
         if port == 0 {
@@ -59,7 +68,8 @@ impl LinkBuilder for TwinCATBuilder {
 
         let mut ams_addr: AmsAddr = unsafe { std::mem::zeroed() };
         let n_err = unsafe {
-            dll.get::<unsafe extern "C" fn(i32, *mut AmsAddr) -> i32>(b"AdsGetLocalAddressEx")
+            self.dll
+                .get::<unsafe extern "C" fn(i32, *mut AmsAddr) -> i32>(b"AdsGetLocalAddressEx")
                 .map_err(|_| AdsError::FunctionNotFound("AdsGetLocalAddressEx".to_owned()))?(
                 port,
                 &mut ams_addr as *mut _,
@@ -69,25 +79,14 @@ impl LinkBuilder for TwinCATBuilder {
             return Err(AdsError::GetLocalAddress(n_err).into());
         }
 
-        Ok(Self::L {
-            port,
-            send_addr: AmsAddr {
-                net_id: ams_addr.net_id,
-                port: PORT,
-            },
-            dll,
-        })
+        self.port = port;
+        self.send_addr = AmsAddr {
+            net_id: ams_addr.net_id,
+            port: PORT,
+        };
+        Ok(())
     }
-}
 
-impl TwinCAT {
-    /// Creates a new [`TwinCATBuilder`].
-    pub const fn builder() -> TwinCATBuilder {
-        TwinCATBuilder {}
-    }
-}
-
-impl Link for TwinCAT {
     fn close(&mut self) -> Result<(), LinkError> {
         unsafe {
             self.dll
@@ -169,23 +168,16 @@ impl Link for TwinCAT {
 }
 
 #[cfg(feature = "async")]
-use autd3_core::link::{AsyncLink, AsyncLinkBuilder};
-
-#[cfg(feature = "async")]
-#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
-impl AsyncLinkBuilder for TwinCATBuilder {
-    type L = TwinCAT;
-
-    async fn open(self, geometry: &Geometry) -> Result<Self::L, LinkError> {
-        <Self as LinkBuilder>::open(self, geometry)
-    }
-}
+use autd3_core::link::AsyncLink;
 
 #[cfg(feature = "async")]
 #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
 #[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl AsyncLink for TwinCAT {
+    async fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
+        <Self as Link>::open(self, geometry)
+    }
+
     async fn close(&mut self) -> Result<(), LinkError> {
         <Self as Link>::close(self)
     }
