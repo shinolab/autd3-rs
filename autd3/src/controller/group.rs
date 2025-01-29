@@ -321,7 +321,7 @@ mod tests {
                     option: Default::default(),
                 },
             ),
-        )? // GRCOV_EXCL_LINE
+        )?
         .send()?;
 
         assert_eq!(
@@ -421,7 +421,7 @@ mod tests {
                         option: Default::default(),
                     },
                 ),
-            )? // GRCOV_EXCL_LINE
+            )?
             .send()?;
 
         assert_eq!(

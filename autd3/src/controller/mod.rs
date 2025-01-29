@@ -401,7 +401,7 @@ pub(crate) mod tests {
                 config: 1. * Hz,
                 option: Default::default(),
             },
-        ))?; // GRCOV_EXCL_LINE
+        ))?;
 
         autd.iter().try_for_each(|dev| {
             assert_eq!(
@@ -564,6 +564,21 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn with_boxed_link() -> anyhow::Result<()> {
+        let link: Box<dyn Link> = Box::new(Audit::new(AuditOption::default()));
+        let mut autd = Controller::open([AUTD3::default()], link)?;
+
+        autd.send(Sine {
+            freq: 150. * Hz,
+            option: Default::default(),
+        })?;
+
+        autd.close()?;
+
+        Ok(())
+    }
+
+    #[test]
     fn into_boxed_link_unsafe() -> anyhow::Result<()> {
         let option = SenderOption {
             sleeper: StdSleeper {
@@ -598,7 +613,7 @@ pub(crate) mod tests {
                 config: 1. * Hz,
                 option: Default::default(),
             },
-        ))?; // GRCOV_EXCL_LINE
+        ))?;
 
         let mut autd = unsafe { Controller::<Audit>::from_boxed_link(autd) };
 
