@@ -1,265 +1,184 @@
-use std::{borrow::BorrowMut, fmt::Debug, hash::Hash, time::Duration};
+use std::{collections::HashMap, fmt::Debug, hash::Hash, time::Duration};
 
 use autd3_core::{derive::DatagramOption, link::Link};
 use autd3_driver::{
     datagram::Datagram,
     error::AUTDDriverError,
-    firmware::operation::{BoxedOperation, Operation, OperationGenerator},
+    firmware::operation::{Operation, OperationGenerator},
     geometry::Device,
 };
+use bit_vec::BitVec;
 use itertools::Itertools;
 use spin_sleep::SpinSleeper;
+
+use crate::error::AUTDError;
 
 use super::{
     sender::{Sender, SenderOption},
     Controller, Sleep,
 };
 
-/// A struct for grouping devices and sending different data to each group. See also [`Sender::group`].
-pub struct Group<
-    'a,
-    S: Sleep + 'a,
-    L: Link + 'a,
-    T: BorrowMut<Sender<'a, L, S>>,
-    K: PartialEq + Debug,
-> {
-    pub(crate) sender: T,
-    pub(crate) keys: Vec<Option<K>>,
-    pub(crate) done: Vec<bool>,
-    pub(crate) datagram_option: DatagramOption,
-    pub(crate) operations: Vec<Option<(BoxedOperation, BoxedOperation)>>,
-    _phantom: std::marker::PhantomData<&'a (S, L)>,
-}
-
-impl<'a, S: Sleep, L: Link, T: BorrowMut<Sender<'a, L, S>>, K: PartialEq + Debug>
-    Group<'a, S, L, T, K>
-{
-    #[must_use]
-    pub(crate) fn new(sender: T, f: impl Fn(&Device) -> Option<K>) -> Self {
-        let keys = sender
-            .borrow()
-            .geometry
-            .devices()
-            .map(f)
-            .collect::<Vec<_>>();
-        let done = keys.iter().map(Option::is_none).collect();
-        Self {
-            operations: sender.borrow().geometry.devices().map(|_| None).collect(),
-            keys,
-            done,
-            sender,
-            datagram_option: DatagramOption {
-                timeout: Duration::ZERO,
-                parallel_threshold: usize::MAX,
-            },
-            _phantom: std::marker::PhantomData,
-        }
-    }
-
-    /// Set the `data` to be sent to the devices corresponding to the `key`.
-    ///
-    /// # Errors
-    ///
-    /// - Returns [`AUTDDriverError::UnkownKey`] if the `key` is not specified in the [`Controller::group`].
-    /// - Returns [`AUTDDriverError::KeyIsAlreadyUsed`] if the `key` is already used previous [`Group::set`].
-    #[tracing::instrument(level = "debug", skip(self))]
-    pub fn set<D: Datagram>(self, key: K, data: D) -> Result<Self, AUTDDriverError>
+impl<L: Link> Controller<L> {
+    /// Groups the devices by given function and send different data to each group. This is a shortcut for [`Sender::group_send`].
+    pub fn group_send<K, D, F>(
+        &mut self,
+        key_map: F,
+        datagram_map: HashMap<K, D>,
+    ) -> Result<(), AUTDError>
     where
+        K: Hash + Eq + Debug,
+        D: Datagram,
+        F: Fn(&Device) -> Option<K>,
         AUTDDriverError: From<D::Error>,
         D::G: OperationGenerator,
-        <<D as Datagram>::G as OperationGenerator>::O1: 'static,
-        <<D as Datagram>::G as OperationGenerator>::O2: 'static,
         AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
             + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
     {
-        let Self {
-            keys,
-            mut done,
-            mut operations,
-            mut sender,
-            datagram_option,
-            ..
-        } = self;
+        self.sender(SenderOption::<SpinSleeper>::default())
+            .group_send(key_map, datagram_map)
+    }
+}
 
-        if !keys
-            .iter()
-            .any(|k| k.as_ref().map(|kk| kk == &key).unwrap_or(false))
-        {
-            return Err(AUTDDriverError::UnkownKey(format!("{:?}", key)));
-        }
+impl<L: Link, S: Sleep> Sender<'_, L, S> {
+    /// Groups the devices by given function and send different data to each group.
+    ///
+    /// If the key is `None`, nothing is done for the devices corresponding to the key.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use std::collections::HashMap;
+    /// # use autd3::prelude::*;
+    /// use autd3::datagram::IntoBoxedDatagram;
+    ///
+    /// # fn main() -> Result<(), AUTDError> {
+    /// let mut autd = Controller::open((0..3).map(|_| AUTD3::default()), Nop::new())?;
+    ///
+    /// autd.sender(SenderOption::<SpinSleeper>::default())
+    /// .group_send(
+    ///     |dev| match dev.idx() {
+    ///         0 => Some("static"),
+    ///         2 => Some("sine"),
+    ///         _ => None,
+    ///     },
+    ///     HashMap::from([
+    ///         ("static", Static::default().into_boxed()),
+    ///         (
+    ///             "sine",
+    ///             Sine {
+    ///                 freq: 150 * Hz,
+    ///                 option: Default::default(),
+    ///             }
+    ///             .into_boxed(),
+    ///         ),
+    ///     ]),
+    /// )?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn group_send<K, D, F>(
+        &mut self,
+        key_map: F,
+        datagram_map: HashMap<K, D>,
+    ) -> Result<(), AUTDError>
+    where
+        K: Hash + Eq + Debug,
+        D: Datagram,
+        F: Fn(&Device) -> Option<K>,
+        AUTDDriverError: From<D::Error>,
+        D::G: OperationGenerator,
+        AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
+            + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
+    {
+        let mut datagram_map = datagram_map;
 
-        let datagram_option = DatagramOption {
-            timeout: datagram_option.timeout.max(data.option().timeout),
-            parallel_threshold: datagram_option
-                .parallel_threshold
-                .min(data.option().parallel_threshold),
+        let filters = {
+            let num_devices = self.geometry.iter().len();
+            let mut filters: HashMap<K, BitVec> = HashMap::new();
+            self.geometry.devices().for_each(|dev| {
+                if let Some(key) = key_map(dev) {
+                    if let Some(v) = filters.get_mut(&key) {
+                        v.set(dev.idx(), true);
+                    } else {
+                        filters.insert(key, BitVec::from_fn(num_devices, |i| i == dev.idx()));
+                    }
+                }
+            });
+            filters
         };
-        let parallel = sender.borrow().option.parallel.is_parallel(
-            sender.borrow().geometry.num_devices(),
-            datagram_option.parallel_threshold,
-        );
 
-        // set enable flag for each device
-        // This is not required for the operation except `Gain`s which cannot be calculated independently for each device, such as `autd3-gain-holo`.
-        let enable_store = sender
-            .borrow()
+        let enable_store = self
             .geometry
             .iter()
             .map(|dev| dev.enable)
             .collect::<Vec<_>>();
-        sender
-            .borrow_mut()
-            .geometry
-            .devices_mut()
-            .zip(keys.iter())
-            .for_each(|(dev, k)| {
-                dev.enable = k.as_ref().is_some_and(|kk| kk == &key);
-            });
-        let mut generator = data.operation_generator(sender.borrow().geometry, parallel)?;
-        sender
-            .borrow_mut()
-            .geometry
-            .iter_mut()
-            .zip(enable_store)
-            .for_each(|(dev, enable)| {
-                dev.enable = enable;
-            });
 
-        operations
-            .iter_mut()
-            .zip(keys.iter())
-            .zip(sender.borrow().geometry.devices())
-            .zip(done.iter_mut())
-            .filter(|(((_, k), _), _)| k.as_ref().is_some_and(|kk| kk == &key))
-            .try_for_each(|(((op, _), dev), done)| {
-                if *done {
-                    return Err(AUTDDriverError::KeyIsAlreadyUsed(format!("{:?}", key)));
+        let mut operations: Vec<_> = self.geometry.devices().map(|_| None).collect();
+        let mut datagram_option = DatagramOption {
+            timeout: Duration::ZERO,
+            parallel_threshold: usize::MAX,
+        };
+        filters
+            .into_iter()
+            .try_for_each(|(k, filter)| -> Result<(), AUTDError> {
+                {
+                    // set enable flag for each device
+                    // This is not required for the operation except `Gain`s which cannot be calculated independently for each device, such as `autd3-gain-holo`.
+                    self.geometry.devices_mut().for_each(|dev| {
+                        dev.enable = filter[dev.idx()];
+                    });
+
+                    let datagram = datagram_map
+                        .remove(&k)
+                        .ok_or(AUTDError::UnkownKey(format!("{:?}", k)))?;
+                    datagram_option = DatagramOption {
+                        timeout: datagram_option.timeout.max(datagram.option().timeout),
+                        parallel_threshold: datagram_option
+                            .parallel_threshold
+                            .min(datagram.option().parallel_threshold),
+                    };
+                    let parallel = self.option.parallel.is_parallel(
+                        self.geometry.num_devices(),
+                        datagram.option().parallel_threshold,
+                    );
+                    let mut generator = datagram
+                        .operation_generator(self.geometry, parallel)
+                        .map_err(AUTDDriverError::from)?;
+
+                    // restore enable flag
+                    self.geometry
+                        .iter_mut()
+                        .zip(enable_store.iter())
+                        .for_each(|(dev, &enable)| {
+                            dev.enable = enable;
+                        });
+
+                    operations
+                        .iter_mut()
+                        .zip(self.geometry.devices())
+                        .filter(|(_, dev)| filter[dev.idx()])
+                        .for_each(|(op, dev)| {
+                            tracing::debug!("Generate operation for device {}", dev.idx());
+                            let (op1, op2) = generator.generate(dev);
+                            *op = Some((op1, op2));
+                        });
+                    Ok(())
                 }
-                *done = true;
-                tracing::debug!("Generate operation for device {}", dev.idx());
-                let (op1, op2) = generator.generate(dev);
-                *op = Some((BoxedOperation::new(op1), BoxedOperation::new(op2)));
-                Ok(())
             })?;
 
-        Ok(Self {
-            sender,
-            keys,
-            done,
-            datagram_option,
-            operations,
-            _phantom: std::marker::PhantomData,
-        })
-    }
-
-    /// Send the data to the devices.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`AUTDDriverError::UnusedKey`] if the data is not specified for the key by [`Group::set`].
-    #[tracing::instrument(level = "debug", skip(self))]
-    pub fn send(self) -> Result<(), AUTDDriverError> {
-        let Self {
-            operations,
-            mut sender,
-            keys,
-            done,
-            datagram_option,
-            ..
-        } = self;
-
-        if !done.iter().all(|&d| d) {
-            return Err(AUTDDriverError::UnusedKey(
-                keys.into_iter()
-                    .zip(done.into_iter())
-                    .filter(|(_, d)| !*d)
-                    .map(|(k, _)| format!("{:?}", k.unwrap()))
-                    .join(", "),
+        if !datagram_map.is_empty() {
+            return Err(AUTDError::UnusedKey(
+                datagram_map.keys().map(|k| format!("{:?}", k)).join(", "),
             ));
         }
 
-        let timeout = sender
-            .borrow()
-            .option
-            .timeout
-            .unwrap_or(datagram_option.timeout);
-        let parallel = sender.borrow().option.parallel.is_parallel(
-            sender.borrow().geometry.num_devices(),
+        let timeout = self.option.timeout.unwrap_or(datagram_option.timeout);
+        let parallel = self.option.parallel.is_parallel(
+            self.geometry.num_devices(),
             datagram_option.parallel_threshold,
         );
         tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
-        sender.borrow_mut().send_impl(
-            operations
-                .into_iter()
-                .map(|op| op.unwrap_or_default())
-                .collect::<Vec<_>>(),
-            timeout,
-            parallel,
-        )
-    }
-}
-
-impl<'a, L: Link, S: Sleep> Sender<'a, L, S> {
-    /// Group the devices by given function and send different data to each group.
-    ///
-    /// If the key is `None`, nothing is done for the devices corresponding to the key.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use autd3::prelude::*;
-    /// # fn main() -> Result<(), AUTDError> {
-    /// let mut autd = Controller::open((0..3).map(|_| AUTD3::default()), Nop::new())?;
-    ///
-    /// autd.group(|dev| match dev.idx() {
-    ///    0 => Some("static"),
-    ///    2 => Some("sine"),
-    ///   _ => None,
-    /// })
-    /// .set("static", Static::default())?
-    /// .set("sine", Sine { freq: 150 * Hz, option: Default::default() })?
-    /// .send()?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    #[must_use]
-    pub fn group<K: Hash + Eq + Clone + Debug, F: Fn(&Device) -> Option<K>>(
-        &'a mut self,
-        f: F,
-    ) -> Group<'a, S, L, &'a mut Self, K> {
-        Group::new(self, f)
-    }
-}
-
-impl<L: Link> Controller<L> {
-    /// Group the devices by given function and send different data to each group.
-    ///
-    /// If the key is `None`, nothing is done for the devices corresponding to the key.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use autd3::prelude::*;
-    /// # fn main() -> Result<(), AUTDError> {
-    /// let mut autd = Controller::open((0..3).map(|_| AUTD3::default()), Nop::new())?;
-    ///
-    /// autd.group(|dev| match dev.idx() {
-    ///    0 => Some("static"),
-    ///    2 => Some("sine"),
-    ///   _ => None,
-    /// })
-    /// .set("static", Static::default())?
-    /// .set("sine", Sine { freq: 150 * Hz, option: Default::default() })?
-    /// .send()?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    #[must_use]
-    pub fn group<K: Hash + Eq + Clone + Debug, F: Fn(&Device) -> Option<K>>(
-        &mut self,
-        f: F,
-    ) -> Group<'_, SpinSleeper, L, Sender<'_, L, SpinSleeper>, K> {
-        Group::new(self.sender(SenderOption::<SpinSleeper>::default()), f)
+        Ok(self.send_impl(operations, timeout, parallel)?)
     }
 }
 
@@ -269,23 +188,28 @@ mod tests {
 
     use autd3_core::derive::*;
     use autd3_driver::{
-        datagram::{GainSTM, SwapSegment},
+        datagram::{GainSTM, IntoBoxedDatagram, SwapSegment},
         defined::Hz,
         error::AUTDDriverError,
         firmware::fpga::{Drive, EmitIntensity, Phase},
     };
+    use spin_sleep::SpinSleeper;
 
     use crate::{
         controller::{
             tests::{create_controller, TestGain},
-            SenderOption,
+            ParallelMode, SenderOption,
         },
+        error::AUTDError,
         gain::{Null, Uniform},
         modulation::{Sine, Static},
     };
 
+    #[rstest::rstest]
+    #[case(ParallelMode::On)]
+    #[case(ParallelMode::Off)]
     #[test]
-    fn test_group() -> anyhow::Result<()> {
+    fn test_group(#[case] parallel: ParallelMode) -> anyhow::Result<()> {
         let mut autd = create_controller(4)?;
 
         autd.send(Uniform {
@@ -293,136 +217,44 @@ mod tests {
             phase: Phase::ZERO,
         })?;
 
-        autd.group(|dev| match dev.idx() {
-            0 | 1 | 3 => Some(dev.idx()),
-            _ => None,
+        autd.sender(SenderOption::<SpinSleeper> {
+            parallel,
+            ..Default::default()
         })
-        .set(0, Null {})?
-        .set(1, (Static { intensity: 0x80 }, Null {}))?
-        .set(
-            3,
-            (
-                Sine {
-                    freq: 150. * Hz,
-                    option: Default::default(),
-                },
-                GainSTM {
-                    gains: vec![
-                        Uniform {
-                            intensity: EmitIntensity(0x80),
-                            phase: Phase::ZERO,
-                        },
-                        Uniform {
-                            intensity: EmitIntensity(0x81),
-                            phase: Phase::ZERO,
-                        },
-                    ],
-                    config: 1. * Hz,
-                    option: Default::default(),
-                },
-            ),
-        )?
-        .send()?;
-
-        assert_eq!(
-            vec![Drive::NULL; autd.geometry[0].num_transducers()],
-            autd.link[0].fpga().drives_at(Segment::S0, 0)
-        );
-
-        assert_eq!(
-            vec![Drive::NULL; autd.geometry[1].num_transducers()],
-            autd.link[1].fpga().drives_at(Segment::S0, 0)
-        );
-        assert_eq!(
-            vec![0x80, 0x80],
-            autd.link[1].fpga().modulation_buffer(Segment::S0)
-        );
-
-        assert_eq!(
-            vec![
-                Drive {
-                    phase: Phase::ZERO,
-                    intensity: EmitIntensity(0xFF)
-                };
-                autd.geometry[2].num_transducers()
-            ],
-            autd.link[2].fpga().drives_at(Segment::S0, 0)
-        );
-
-        assert_eq!(
-            *Sine {
-                freq: 150. * Hz,
-                option: Default::default(),
-            }
-            .calc()?,
-            autd.link[3].fpga().modulation_buffer(Segment::S0)
-        );
-        assert_eq!(
-            vec![
-                Drive {
-                    phase: Phase::ZERO,
-                    intensity: EmitIntensity(0x80)
-                };
-                autd.geometry[3].num_transducers()
-            ],
-            autd.link[3].fpga().drives_at(Segment::S0, 0)
-        );
-        assert_eq!(
-            vec![
-                Drive {
-                    phase: Phase::ZERO,
-                    intensity: EmitIntensity(0x81)
-                };
-                autd.geometry[3].num_transducers()
-            ],
-            autd.link[3].fpga().drives_at(Segment::S0, 1)
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_group_sender() -> anyhow::Result<()> {
-        let mut autd = create_controller(4)?;
-
-        let mut sender = autd.sender(SenderOption::<spin_sleep::SpinSleeper>::default());
-
-        sender.send(Uniform {
-            intensity: EmitIntensity(0xFF),
-            phase: Phase::ZERO,
-        })?;
-
-        sender
-            .group(|dev| match dev.idx() {
+        .group_send(
+            |dev| match dev.idx() {
                 0 | 1 | 3 => Some(dev.idx()),
                 _ => None,
-            })
-            .set(0, Null {})?
-            .set(1, (Static { intensity: 0x80 }, Null {}))?
-            .set(
-                3,
+            },
+            HashMap::from([
+                (0, Null {}.into_boxed()),
+                (1, (Static { intensity: 0x80 }, Null {}).into_boxed()),
                 (
-                    Sine {
-                        freq: 150. * Hz,
-                        option: Default::default(),
-                    },
-                    GainSTM {
-                        gains: vec![
-                            Uniform {
-                                intensity: EmitIntensity(0x80),
-                                phase: Phase::ZERO,
-                            },
-                            Uniform {
-                                intensity: EmitIntensity(0x81),
-                                phase: Phase::ZERO,
-                            },
-                        ],
-                        config: 1. * Hz,
-                        option: Default::default(),
-                    },
+                    3,
+                    (
+                        Sine {
+                            freq: 150. * Hz,
+                            option: Default::default(),
+                        },
+                        GainSTM {
+                            gains: vec![
+                                Uniform {
+                                    intensity: EmitIntensity(0x80),
+                                    phase: Phase::ZERO,
+                                },
+                                Uniform {
+                                    intensity: EmitIntensity(0x81),
+                                    phase: Phase::ZERO,
+                                },
+                            ],
+                            config: 1. * Hz,
+                            option: Default::default(),
+                        },
+                    )
+                        .into_boxed(),
                 ),
-            )?
-            .send()?;
+            ]),
+        )?;
 
         assert_eq!(
             vec![Drive::NULL; autd.geometry[0].num_transducers()],
@@ -486,13 +318,13 @@ mod tests {
         let mut autd = create_controller(1)?;
         assert_eq!(
             Ok(()),
-            autd.group(|dev| Some(dev.idx())).set(0, Null {})?.send()
+            autd.group_send(|_| Some(()), HashMap::from([((), Null {})]))
         );
 
         autd.link_mut().down();
         assert_eq!(
-            Err(AUTDDriverError::SendDataFailed),
-            autd.group(|dev| Some(dev.idx())).set(0, Null {})?.send()
+            Err(AUTDError::Driver(AUTDDriverError::SendDataFailed)),
+            autd.group_send(|_| Some(()), HashMap::from([((), Null {})]))
         );
 
         Ok(())
@@ -503,14 +335,17 @@ mod tests {
         let mut autd = create_controller(2)?;
 
         assert_eq!(
-            Err(AUTDDriverError::InvalidSegmentTransition),
-            autd.group(|dev| Some(dev.idx()))
-                .set(0, Null {})?
-                .set(
-                    1,
-                    SwapSegment::FociSTM(Segment::S1, TransitionMode::SyncIdx),
-                )?
-                .send()
+            Err(AUTDError::Driver(AUTDDriverError::InvalidSegmentTransition)),
+            autd.group_send(
+                |dev| Some(dev.idx()),
+                HashMap::from([
+                    (0, Null {}.into_boxed(),),
+                    (
+                        1,
+                        SwapSegment::FociSTM(Segment::S1, TransitionMode::SyncIdx).into_boxed()
+                    )
+                ])
+            )
         );
 
         Ok(())
@@ -523,12 +358,13 @@ mod tests {
         autd.geometry[0].enable = false;
 
         let check = Arc::new(Mutex::new([false; 2]));
-        autd.group(|dev| {
-            check.lock().unwrap()[dev.idx()] = true;
-            Some(dev.idx())
-        })
-        .set(1, Static { intensity: 0x80 })?
-        .send()?;
+        autd.group_send(
+            |dev| {
+                check.lock().unwrap()[dev.idx()] = true;
+                Some(())
+            },
+            HashMap::from([((), Static { intensity: 0x80 })]),
+        )?;
 
         assert!(!check.lock().unwrap()[0]);
         assert!(check.lock().unwrap()[1]);
@@ -550,12 +386,13 @@ mod tests {
         let mut autd = create_controller(3)?;
 
         let test = Arc::new(Mutex::new(vec![false; 3]));
-        autd.group(|dev| match dev.idx() {
-            0 | 2 => Some(0),
-            _ => None,
-        })
-        .set(0, TestGain { test: test.clone() })?
-        .send()?;
+        autd.group_send(
+            |dev| match dev.idx() {
+                0 | 2 => Some(()),
+                _ => None,
+            },
+            HashMap::from([((), TestGain { test: test.clone() })]),
+        )?;
 
         assert!(test.lock().unwrap()[0]);
         assert!(!test.lock().unwrap()[1]);
@@ -569,26 +406,8 @@ mod tests {
         let mut autd = create_controller(2)?;
 
         assert_eq!(
-            Some(AUTDDriverError::UnkownKey("2".to_owned())),
-            autd.group(|dev| Some(dev.idx()))
-                .set(0, Null {})?
-                .set(2, Null {})
-                .err()
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn already_used_key() -> anyhow::Result<()> {
-        let mut autd = create_controller(2)?;
-
-        assert_eq!(
-            Some(AUTDDriverError::KeyIsAlreadyUsed("1".to_owned())),
-            autd.group(|dev| Some(dev.idx()))
-                .set(0, Null {})?
-                .set(1, Null {})?
-                .set(1, Null {})
+            Some(AUTDError::UnkownKey("1".to_owned())),
+            autd.group_send(|dev| Some(dev.idx()), HashMap::from([(0, Null {})]))
                 .err()
         );
 
@@ -597,14 +416,15 @@ mod tests {
 
     #[test]
     fn unused_key() -> anyhow::Result<()> {
-        let mut autd = create_controller(3)?;
+        let mut autd = create_controller(2)?;
 
         assert_eq!(
-            Some(AUTDDriverError::UnusedKey("0, 2".to_owned())),
-            autd.group(|dev| Some(dev.idx()))
-                .set(1, Null {})?
-                .send()
-                .err()
+            Some(AUTDError::UnusedKey("2".to_owned())),
+            autd.group_send(
+                |dev| Some(dev.idx()),
+                HashMap::from([(0, Null {}), (1, Null {}), (2, Null {})])
+            )
+            .err()
         );
 
         Ok(())

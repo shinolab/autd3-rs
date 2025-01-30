@@ -1,3 +1,4 @@
+mod boxed;
 mod clear;
 #[cfg(feature = "dynamic_freq")]
 mod clock;
@@ -23,6 +24,7 @@ mod with_segment;
 pub use super::firmware::operation::SwapSegment;
 #[doc(inline)]
 pub use super::firmware::operation::{ControlPoint, ControlPoints};
+pub use boxed::{BoxedDatagram, IntoBoxedDatagram};
 pub use clear::Clear;
 #[cfg(feature = "dynamic_freq")]
 pub use clock::ConfigureFPGAClock;

@@ -1,12 +1,10 @@
 use autd3_core::derive::*;
 
 use autd3_driver::{
-    error::AUTDDriverError,
     firmware::fpga::Drive,
     geometry::{Device, Transducer},
 };
 use itertools::Itertools;
-use rayon::prelude::*;
 
 use std::{
     collections::{hash_map::Entry, HashMap},
@@ -23,56 +21,61 @@ use derive_new::new;
 /// # Examples
 ///
 /// ```
+/// # use std::collections::HashMap;
 /// use autd3::prelude::*;
+/// use autd3::gain::IntoBoxedGain;
 ///
-/// # fn _main() -> Result<(), AUTDDriverError> {
-/// Group::new(|dev| |tr| if tr.idx() < 100 { Some("null") } else { Some("focus") })
-///    .set("null", Null {}.into_boxed())?
-///    .set("focus", Focus { pos: Point3::origin(), option: Default::default() }.into_boxed())?;
-/// # Ok(())
-/// # }
+/// Group {
+///     key_map: |dev| {
+///         |tr| {
+///             if tr.idx() < 100 {
+///                 Some("null")
+///             } else {
+///                 Some("focus")
+///             }
+///         }
+///     },
+///     gain_map: HashMap::from([
+///         ("null", Null {}.into_boxed()),
+///         (
+///             "focus",
+///             Focus {
+///                 pos: Point3::origin(),
+///                 option: Default::default(),
+///             }
+///             .into_boxed(),
+///         ),
+///     ]),
+/// };
 /// ```
 ///
 /// [`Controller::group`]: crate::controller::Controller::group
 #[derive(Gain, Debug, new)]
 pub struct Group<K, FK, F, G: Gain>
 where
-    K: Hash + Eq + Debug + Send + Sync,
-    FK: Fn(&Transducer) -> Option<K> + Send + Sync,
-    F: Fn(&Device) -> FK + Send + Sync,
+    K: Hash + Eq + Debug,
+    FK: Fn(&Transducer) -> Option<K>,
+    F: Fn(&Device) -> FK,
 {
+    /// Mapping function from transducer to group key.
     #[debug(ignore)]
-    f: F,
-    #[new(default)]
-    gain_map: HashMap<K, G>,
+    pub key_map: F,
+    /// Map from group key to [`Gain`].
+    #[debug(ignore)]
+    pub gain_map: HashMap<K, G>,
 }
 
 impl<K, FK, F, G: Gain> Group<K, FK, F, G>
 where
-    K: Hash + Eq + Debug + Send + Sync,
-    FK: Fn(&Transducer) -> Option<K> + Send + Sync,
-    F: Fn(&Device) -> FK + Send + Sync,
+    K: Hash + Eq + Debug,
+    FK: Fn(&Transducer) -> Option<K>,
+    F: Fn(&Device) -> FK,
 {
-    /// Set the [`Gain`] to the transducers corresponding to the `key`.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`AUTDDriverError::KeyIsAlreadyUsed`] if the `key` is already used previous [`Group::set`].
-    #[allow(clippy::map_entry)] // https://github.com/rust-lang/rust-clippy/issues/9925
-    pub fn set(mut self, key: K, gain: G) -> Result<Self, AUTDDriverError> {
-        if self.gain_map.contains_key(&key) {
-            return Err(AUTDDriverError::KeyIsAlreadyUsed(format!("{:?}", key)));
-        } else {
-            self.gain_map.insert(key, gain);
-        }
-        Ok(self)
-    }
-
     fn get_filters(&self, geometry: &Geometry) -> HashMap<K, HashMap<usize, BitVec>> {
         let mut filters: HashMap<K, HashMap<usize, BitVec>> = HashMap::new();
         geometry.devices().for_each(|dev| {
             dev.iter().for_each(|tr| {
-                if let Some(key) = (self.f)(dev)(tr) {
+                if let Some(key) = (self.key_map)(dev)(tr) {
                     if let Some(v) = filters.get_mut(&key) {
                         match v.entry(dev.idx()) {
                             Entry::Occupied(mut e) => {
@@ -125,9 +128,9 @@ impl GainContextGenerator for ContextGenerator {
 
 impl<K, FK, F, G: Gain> Gain for Group<K, FK, F, G>
 where
-    K: Hash + Eq + Debug + Send + Sync,
-    FK: Fn(&Transducer) -> Option<K> + Send + Sync,
-    F: Fn(&Device) -> FK + Send + Sync,
+    K: Hash + Eq + Debug,
+    FK: Fn(&Transducer) -> Option<K>,
+    F: Fn(&Device) -> FK,
 {
     type G = ContextGenerator;
 
@@ -143,83 +146,54 @@ where
         _filter: Option<&HashMap<usize, BitVec>>,
         parallel: bool,
     ) -> Result<Self::G, GainError> {
-        let mut filters = self.get_filters(geometry);
+        let filters = self.get_filters(geometry);
 
-        let mut g = geometry
-            .devices()
-            .map(|dev| {
-                (
-                    dev.idx(),
-                    dev.iter().map(|_| Drive::NULL).collect::<Vec<_>>(),
-                )
-            })
-            .collect::<HashMap<_, Vec<_>>>();
-        let gain_map = self
-            .gain_map
+        let mut gain_map = self.gain_map;
+        let gain_contexts = filters
             .into_iter()
-            .map(|(k, g)| {
-                let filter = filters
+            .map(|(k, filter)| {
+                let g = gain_map
                     .remove(&k)
-                    .ok_or(GainError::new(format!("Unknown group key({:?})", k)))?;
+                    .ok_or(GainError::new(format!("Unknown group key: {:?}", k)))?;
                 let mut g = g.init_full(geometry, Some(&filter), parallel)?;
                 Ok((
                     k,
                     geometry
-                        .devices()
+                        .iter()
                         .map(|dev| g.generate(dev))
                         .collect::<Vec<_>>(),
                 ))
             })
             .collect::<Result<HashMap<_, _>, GainError>>()?;
 
-        if !filters.is_empty() {
+        if !gain_map.is_empty() {
             return Err(GainError::new(format!(
                 "Unused group keys: {}",
-                filters.keys().map(|k| format!("{:?}", k)).join(", "),
+                gain_map.keys().map(|k| format!("{:?}", k)).join(", "),
             )));
         }
 
-        let f = &self.f;
-        if parallel {
-            macro_rules! par_try_for_each {
-                ($iter:expr, $f:expr) => {
-                    if cfg!(miri) {
-                        $iter.into_iter().try_for_each($f)
-                    } else {
-                        $iter.into_par_iter().try_for_each($f)
-                    }
-                };
-            }
-            par_try_for_each!(gain_map, |(k, c)| -> Result<(), GainError> {
-                geometry.devices().zip(c.iter()).for_each(|(dev, c)| {
+        let f = &self.key_map;
+        Ok(Self::G {
+            g: geometry
+                .devices()
+                .map(|dev| {
                     let f = (f)(dev);
-                    let r = g[&dev.idx()].as_ptr() as *mut Drive;
-                    dev.iter()
-                        .filter(|tr| f(tr).is_some_and(|kk| kk == k))
-                        .for_each(|tr| unsafe {
-                            r.add(tr.idx()).write(c.calc(tr));
-                        })
-                });
-                Ok(())
-            })?
-        } else {
-            gain_map
-                .into_iter()
-                .try_for_each(|(k, c)| -> Result<(), GainError> {
-                    geometry.devices().zip(c.iter()).for_each(|(dev, c)| {
-                        let f = (f)(dev);
-                        let r = g.get_mut(&dev.idx()).unwrap();
+                    (
+                        dev.idx(),
                         dev.iter()
-                            .filter(|tr| f(tr).is_some_and(|kk| kk == k))
-                            .for_each(|tr| {
-                                r[tr.idx()] = c.calc(tr);
+                            .map(|tr| {
+                                if let Some(key) = f(tr) {
+                                    gain_contexts[&key][dev.idx()].calc(tr)
+                                } else {
+                                    Drive::NULL
+                                }
                             })
-                    });
-                    Ok(())
-                })?;
-        }
-
-        Ok(Self::G { g })
+                            .collect(),
+                    )
+                })
+                .collect(),
+        })
     }
 }
 
@@ -253,28 +227,37 @@ mod tests {
             intensity: EmitIntensity(rng.random()),
         };
 
-        let g1 = Uniform {
-            intensity: d1.intensity,
-            phase: d1.phase,
+        let gain = Group {
+            key_map: |dev| {
+                let dev_idx = dev.idx();
+                move |tr| match (dev_idx, tr.idx()) {
+                    (0, 0..=99) => Some("null"),
+                    (0, 100..=199) => Some("test"),
+                    (1, 200..) => Some("test2"),
+                    (3, _) => Some("test"),
+                    _ => None,
+                }
+            },
+            gain_map: HashMap::from([
+                ("null", Null {}.into_boxed()),
+                (
+                    "test",
+                    Uniform {
+                        intensity: d1.intensity,
+                        phase: d1.phase,
+                    }
+                    .into_boxed(),
+                ),
+                (
+                    "test2",
+                    Uniform {
+                        intensity: d2.intensity,
+                        phase: d2.phase,
+                    }
+                    .into_boxed(),
+                ),
+            ]),
         };
-        let g2 = Uniform {
-            intensity: d2.intensity,
-            phase: d2.phase,
-        };
-
-        let gain = Group::new(|dev| {
-            let dev_idx = dev.idx();
-            move |tr| match (dev_idx, tr.idx()) {
-                (0, 0..=99) => Some("null"),
-                (0, 100..=199) => Some("test"),
-                (1, 200..) => Some("test2"),
-                (3, _) => Some("test"),
-                _ => None,
-            }
-        })
-        .set("null", Null {}.into_boxed())?
-        .set("test", g1.into_boxed())?
-        .set("test2", g2.into_boxed())?;
 
         let mut g = gain.init_full(&geometry, None, false)?;
         let drives = geometry
@@ -318,89 +301,14 @@ mod tests {
     }
 
     #[test]
-    fn with_parallel_unsafe() -> anyhow::Result<()> {
-        let geometry = create_geometry(2);
-
-        let mut rng = rand::rng();
-
-        let d1 = Drive {
-            phase: Phase(rng.random()),
-            intensity: EmitIntensity(rng.random()),
-        };
-        let d2 = Drive {
-            phase: Phase(rng.random()),
-            intensity: EmitIntensity(rng.random()),
-        };
-
-        let g1 = Uniform {
-            intensity: d1.intensity,
-            phase: d1.phase,
-        };
-        let g2 = Uniform {
-            intensity: d2.intensity,
-            phase: d2.phase,
-        };
-
-        let gain = Group::new(|dev| {
-            let dev_idx = dev.idx();
-            move |tr| match (dev_idx, tr.idx()) {
-                (0, 100..=199) => Some("test"),
-                (1, 200..) => Some("test2"),
-                _ => None,
-            }
-        })
-        .set("test", g1)?
-        .set("test2", g2)?;
-
-        let mut g = gain.init_full(&geometry, None, true)?;
-        let drives = geometry
-            .devices()
-            .map(|dev| {
-                let f = g.generate(dev);
-                (
-                    dev.idx(),
-                    dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
-                )
-            })
-            .collect::<HashMap<_, _>>();
-        assert_eq!(2, drives.len());
-        drives[&0].iter().enumerate().for_each(|(i, &d)| match i {
-            i if i <= 99 => {
-                assert_eq!(Drive::NULL, d);
-            }
-            i if i <= 199 => {
-                assert_eq!(d1, d);
-            }
-            _ => {
-                assert_eq!(Drive::NULL, d);
-            }
-        });
-        drives[&1].iter().enumerate().for_each(|(i, &d)| match i {
-            i if i <= 199 => {
-                assert_eq!(Drive::NULL, d);
-            }
-            _ => {
-                assert_eq!(d2, d);
-            }
-        });
-
-        Ok(())
-    }
-
-    #[test]
     fn unknown_key() -> anyhow::Result<()> {
-        let gain = Group::new(|_dev| {
-            |tr| match tr.idx() {
-                0..=99 => Some("test"),
-                100..=199 => Some("null"),
-                _ => None,
-            }
-        })
-        .set("test2", Null {})?;
-
+        let gain = Group {
+            key_map: |_dev| |_tr| Some("test"),
+            gain_map: HashMap::<_, Null>::new(),
+        };
         let geometry = create_geometry(1);
         assert_eq!(
-            Some(GainError::new("Unknown group key(\"test2\")".to_owned())),
+            Some(GainError::new("Unknown group key: \"test\"".to_owned())),
             gain.init_full(&geometry, None, false).err()
         );
 
@@ -408,32 +316,15 @@ mod tests {
     }
 
     #[test]
-    fn already_used_key() -> anyhow::Result<()> {
-        let gain = Group::new(|_dev| |_tr| Some(0))
-            .set(0, Null {})?
-            .set(0, Null {});
-
-        assert_eq!(
-            Some(AUTDDriverError::KeyIsAlreadyUsed("0".to_owned())),
-            gain.err()
-        );
-
-        Ok(())
-    }
-
-    #[test]
     fn unused_key() -> anyhow::Result<()> {
-        let gain = Group::new(|_dev| {
-            |tr| match tr.idx() {
-                0..=99 => Some(0),
-                _ => Some(1),
-            }
-        })
-        .set(1, Null {})?;
+        let gain = Group {
+            key_map: |_dev| |_tr| Some(1),
+            gain_map: HashMap::from([(1, Null {}), (2, Null {})]),
+        };
 
         let geometry = create_geometry(1);
         assert_eq!(
-            Some(GainError::new("Unused group keys: 0".to_owned())),
+            Some(GainError::new("Unused group keys: 2".to_owned())),
             gain.init_full(&geometry, None, false).err()
         );
 

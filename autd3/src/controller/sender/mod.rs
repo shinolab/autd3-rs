@@ -120,7 +120,7 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
 
     pub(crate) fn send_impl<O1, O2>(
         &mut self,
-        mut operations: Vec<(O1, O2)>,
+        mut operations: Vec<Option<(O1, O2)>>,
         timeout: Duration,
         parallel: bool,
     ) -> Result<(), AUTDDriverError>
