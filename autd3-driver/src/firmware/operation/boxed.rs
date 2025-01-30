@@ -1,7 +1,4 @@
-use autd3_core::{
-    datagram::{NullOp, Operation},
-    geometry::Device,
-};
+use autd3_core::{datagram::Operation, geometry::Device};
 
 use crate::error::AUTDDriverError;
 
@@ -57,11 +54,5 @@ impl Operation for BoxedOperation {
 
     fn is_done(&self) -> bool {
         self.inner.is_done()
-    }
-}
-
-impl Default for BoxedOperation {
-    fn default() -> Self {
-        Self::new(NullOp {})
     }
 }

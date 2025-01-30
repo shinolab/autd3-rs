@@ -16,7 +16,6 @@ use autd3_driver::{
     geometry::{Device, Geometry},
 };
 
-pub use group::Group;
 #[cfg(target_os = "windows")]
 pub use sender::WaitableSleeper;
 pub use sender::{

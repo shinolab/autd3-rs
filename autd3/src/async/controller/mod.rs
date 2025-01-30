@@ -17,7 +17,6 @@ use autd3_driver::{
     geometry::{Device, Geometry},
 };
 
-pub use group::Group;
 pub use sender::{AsyncSleeper, Sender};
 
 use derive_more::{Deref, DerefMut};

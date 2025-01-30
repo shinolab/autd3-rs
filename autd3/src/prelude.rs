@@ -1,5 +1,5 @@
 pub use crate::{
-    controller::{Controller, ParallelMode, SenderOption},
+    controller::{Controller, ParallelMode, SenderOption, SpinSleeper},
     datagram::{
         gain::{
             Bessel, BesselOption, Focus, FocusOption, Group, Null, Plane, PlaneOption, Uniform,
@@ -17,8 +17,8 @@ pub use autd3_driver::{
     autd3_device::AUTD3,
     datagram::{
         Clear, ControlPoint, ControlPoints, DebugSettings, FixedUpdateRate, FociSTM, ForceFan,
-        GainSTM, GainSTMOption, IntoBoxedGain, IntoBoxedModulation, PhaseCorrection,
-        PulseWidthEncoder, ReadsFPGAState, Silencer, SwapSegment,
+        GainSTM, GainSTMOption, PhaseCorrection, PulseWidthEncoder, ReadsFPGAState, Silencer,
+        SwapSegment,
     },
     defined::{deg, kHz, mm, rad, ultrasound_freq, Hz, PI},
     error::AUTDDriverError,

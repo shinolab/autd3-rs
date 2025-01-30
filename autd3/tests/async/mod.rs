@@ -4,7 +4,6 @@ use autd3::{
     r#async::Controller,
 };
 
-mod datagram;
 mod link;
 
 #[tokio::test]

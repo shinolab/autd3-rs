@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use autd3::{
     link::{Audit, AuditOption},
     prelude::*,
@@ -14,19 +16,19 @@ fn only_for_enabled() -> anyhow::Result<()> {
 
     autd[0].enable = false;
 
-    autd.send(
-        Group::new(|dev| {
+    autd.send(Group {
+        key_map: |dev| {
             check.lock().unwrap()[dev.idx()] = true;
             move |_| Some(0)
-        })
-        .set(
+        },
+        gain_map: HashMap::from([(
             0,
             Uniform {
                 phase: Phase(0x90),
                 intensity: EmitIntensity(0x80),
             },
-        )?,
-    )?;
+        )]),
+    })?;
 
     assert!(!check.lock().unwrap()[0]);
     assert!(check.lock().unwrap()[1]);
