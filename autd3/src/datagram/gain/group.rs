@@ -16,7 +16,7 @@ use derive_new::new;
 
 /// [`Gain`] for grouping transducers and sending different [`Gain`] to each group.
 ///
-/// If grouping by device is sufficient, [`Controller::group`] is recommended.
+/// If grouping by device is sufficient, [`Controller::group_send`] is recommended.
 ///
 /// # Examples
 ///
@@ -49,7 +49,7 @@ use derive_new::new;
 /// };
 /// ```
 ///
-/// [`Controller::group`]: crate::controller::Controller::group
+/// [`Controller::group_send`]: crate::controller::Controller::group_send
 #[derive(Gain, Debug, new)]
 pub struct Group<K, FK, F, G: Gain>
 where
