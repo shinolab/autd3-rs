@@ -21,7 +21,6 @@ derive_more = { workspace = true }
 itertools = { workspace = true }
 tracing = { workspace = true }
 bit-vec = { workspace = true }
-rayon = { workspace = true }
 derive-new = { workspace = true }
 zerocopy = { workspace = true }
 spin_sleep = { workspace = true }
@@ -31,7 +30,7 @@ getset = { workspace = true }
 windows = { workspace = true, features = ["Win32_Security"] }
 
 [features]
-default = []
+default = ["async"]
 async = ["tokio", "autd3-core/async"]
 async-trait = ["async", "autd3-core/async-trait"]
 dynamic_freq = ["autd3-driver/dynamic_freq", "autd3-firmware-emulator/dynamic_freq"]

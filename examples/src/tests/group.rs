@@ -1,50 +1,62 @@
-use autd3::{core::link::Link, driver::datagram::IntoBoxedGain, prelude::*};
+use std::collections::HashMap;
+
+use autd3::{core::link::Link, prelude::*};
 
 pub fn group_by_device(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+    use autd3::datagram::IntoBoxedDatagram;
+
     let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);
 
-    autd.group(|dev| match dev.idx() {
-        0 => Some("null"),
-        1 => Some("focus"),
-        _ => None,
-    })
-    .set("null", (Static::default(), Null {}))?
-    .set(
-        "focus",
-        (
-            Sine {
-                freq: 150. * Hz,
-                option: Default::default(),
-            },
-            Focus {
-                pos: center,
-                option: Default::default(),
-            },
-        ),
-    )?
-    .send()?;
+    autd.group_send(
+        |dev| match dev.idx() {
+            0 => Some("null"),
+            1 => Some("focus"),
+            _ => None,
+        },
+        HashMap::from([
+            ("null", Null {}.into_boxed()),
+            (
+                "focus",
+                Focus {
+                    pos: center,
+                    option: Default::default(),
+                }
+                .into_boxed(),
+            ),
+        ]),
+    )?;
 
     Ok(true)
 }
 
 pub fn group_by_transducer(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+    use autd3::gain::IntoBoxedGain;
+
     let cx = autd.center().x;
-    let g1 = Focus {
-        pos: autd[0].center() + Vector3::new(0., 0., 150.0 * mm),
-        option: Default::default(),
-    };
-    let g2 = Null {};
-    let g = Group::new(move |_dev| {
-        move |tr| {
-            if tr.position().x < cx {
-                Some("focus")
-            } else {
-                Some("null")
+    let pos = autd[0].center() + Vector3::new(0., 0., 150.0 * mm);
+
+    let g = Group {
+        key_map: move |_dev| {
+            move |tr| {
+                if tr.position().x < cx {
+                    Some("focus")
+                } else {
+                    Some("null")
+                }
             }
-        }
-    })
-    .set("focus", g1.into_boxed())?
-    .set("null", g2.into_boxed())?;
+        },
+        gain_map: HashMap::from([
+            (
+                "focus",
+                Focus {
+                    pos,
+                    option: Default::default(),
+                }
+                .into_boxed(),
+            ),
+            ("null", Null {}.into_boxed()),
+        ]),
+    };
 
     let m = Sine {
         freq: 150. * Hz,

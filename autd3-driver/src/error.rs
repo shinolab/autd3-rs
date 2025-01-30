@@ -29,16 +29,6 @@ pub enum AUTDDriverError {
     #[error("Silencer completion time ({0:?}) is out of range")]
     SilencerCompletionTimeOutOfRange(Duration),
 
-    /// Unknown group key.
-    #[error("Unknown group key({0})")]
-    UnkownKey(String),
-    /// Key is already used.
-    #[error("Key({0}) is already used")]
-    KeyIsAlreadyUsed(String),
-    /// Unused group key.
-    #[error("Unused group key({0})")]
-    UnusedKey(String),
-
     /// Sampling config error
     #[error("{0}")]
     SamplingConfig(#[from] SamplingConfigError),

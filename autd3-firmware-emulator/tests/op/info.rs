@@ -68,7 +68,7 @@ fn invalid_info_type() -> anyhow::Result<()> {
         .operation_generator(&geometry, false)?
         .generate(&geometry[0]);
 
-    OperationHandler::pack(&mut [(op, op_null)], &geometry, &mut tx, false)?;
+    OperationHandler::pack(&mut [Some((op, op_null))], &geometry, &mut tx, false)?;
     tx[0].payload_mut()[1] = 7;
 
     cpu.send(&tx);

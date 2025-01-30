@@ -20,9 +20,9 @@
   - Move `send_interval`, `receive_interval`, `timeout`, and `parallel_threshold` options to `Sender`
 - Add `Circle` and `Line` utilities for `FociSTM` and `GainSTM`
 - Add all euler angle variants to `EulerAngle`
-- Add `AUTDDriverError::KeyIsAlreadyUsed` and `AUTDDriverError::UnusedKey` errors
-  - `controller::Group::set` and `gain::Group::set` now return `AUTDDriverError::KeyIsAlreadyUsed` if the key is already used
-  - `controller::Group::send` and `gain::Group::init` now return `AUTDDriverError::UnusedKey` if the key is not used
+- Add `AUTDDriverError::UnusedKey` errors
+  - `Controller::group_send` and `gain::Group::init` now return `AUTDDriverError::UnusedKey` if the key is not used
+- Remove `Controller::group`, use `Controller::group_send` instead
 - Remove `LinkBuilder`, use `Link::new` instead
 - Remove `with_xxx` methods to set option value, add option struct instead
 - Remove resampler
