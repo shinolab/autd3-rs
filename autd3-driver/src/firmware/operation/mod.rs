@@ -37,7 +37,7 @@ pub use segment::SwapSegment;
 pub(crate) use segment::*;
 pub(crate) use silencer::*;
 pub(crate) use stm::*;
-pub use stm::{ControlPoint, ControlPoints, FociSTMContext, GainSTMContext};
+pub use stm::{ControlPoint, ControlPoints, FociSTMIterator, GainSTMIterator};
 pub(crate) use sync::*;
 use zerocopy::{Immutable, IntoBytes};
 

@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     constraint::EmissionConstraint,
-    helper::{generate_result, HoloContextGenerator},
+    helper::{generate_result, HoloCalculatorGenerator},
     Amplitude, Complex, LinAlgBackend, Trans,
 };
 
@@ -43,7 +43,7 @@ pub struct Naive<D: Directivity, B: LinAlgBackend<D>> {
 }
 
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {
-    type G = HoloContextGenerator<Complex>;
+    type G = HoloCalculatorGenerator<Complex>;
 
     // GRCOV_EXCL_START
     fn init(self) -> Result<Self::G, GainError> {
@@ -91,7 +91,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {
 
 #[cfg(test)]
 mod tests {
-    use autd3_core::gain::{Drive, GainContext, GainContextGenerator};
+    use autd3_core::gain::{Drive, GainCalculator, GainCalculatorGenerator};
 
     use crate::tests::create_geometry;
 

@@ -12,7 +12,7 @@ impl MyUniform {
     }
 }
 
-impl GainContext for MyUniform {
+impl GainCalculator for MyUniform {
     fn calc(&self, _: &Transducer) -> Drive {
         Drive {
             intensity: EmitIntensity::MAX,
@@ -21,10 +21,10 @@ impl GainContext for MyUniform {
     }
 }
 
-impl GainContextGenerator for MyUniform {
-    type Context = MyUniform;
+impl GainCalculatorGenerator for MyUniform {
+    type Calculator = MyUniform;
 
-    fn generate(&mut self, _device: &Device) -> Self::Context {
+    fn generate(&mut self, _device: &Device) -> Self::Calculator {
         MyUniform {}
     }
 }

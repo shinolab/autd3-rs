@@ -29,23 +29,23 @@ where
     _phantom: std::marker::PhantomData<&'a ()>,
 }
 
-pub struct Context<FT: Fn(&Transducer) -> Drive + Send + Sync + 'static> {
+pub struct Impl<FT: Fn(&Transducer) -> Drive + Send + Sync + 'static> {
     f: FT,
 }
 
-impl<FT: Fn(&Transducer) -> Drive + Send + Sync + 'static> GainContext for Context<FT> {
+impl<FT: Fn(&Transducer) -> Drive + Send + Sync + 'static> GainCalculator for Impl<FT> {
     fn calc(&self, tr: &Transducer) -> Drive {
         (self.f)(tr)
     }
 }
 
 impl<'a, FT: Fn(&Transducer) -> Drive + Send + Sync + 'static, F: Fn(&Device) -> FT + 'a>
-    GainContextGenerator for Custom<'a, FT, F>
+    GainCalculatorGenerator for Custom<'a, FT, F>
 {
-    type Context = Context<FT>;
+    type Calculator = Impl<FT>;
 
-    fn generate(&mut self, device: &Device) -> Self::Context {
-        Context {
+    fn generate(&mut self, device: &Device) -> Self::Calculator {
+        Impl {
             f: (self.f)(device),
         }
     }

@@ -2,7 +2,7 @@ use std::{collections::HashMap, num::NonZeroUsize, sync::Arc};
 
 use crate::{
     constraint::EmissionConstraint,
-    helper::{generate_result, HoloContextGenerator},
+    helper::{generate_result, HoloCalculatorGenerator},
     Amplitude, Complex, HoloError, LinAlgBackend, Trans,
 };
 
@@ -124,7 +124,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
 }
 
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for LM<D, B> {
-    type G = HoloContextGenerator<f32>;
+    type G = HoloCalculatorGenerator<f32>;
 
     // GRCOV_EXCL_START
     fn init(self) -> Result<Self::G, GainError> {
@@ -282,7 +282,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for LM<D, B> {
 
 #[cfg(test)]
 mod tests {
-    use autd3_core::gain::{Drive, GainContext, GainContextGenerator};
+    use autd3_core::gain::{Drive, GainCalculator, GainCalculatorGenerator};
 
     use crate::tests::create_geometry;
 

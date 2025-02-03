@@ -1,29 +1,29 @@
 use std::{collections::HashMap, iter::Peekable};
 
-use autd3_core::gain::{BitVec, Gain, GainContext, GainContextGenerator, GainError};
+use autd3_core::gain::{BitVec, Gain, GainCalculator, GainCalculatorGenerator, GainError};
 
 use crate::geometry::{Device, Geometry};
 
-use super::{GainSTMContext, GainSTMContextGenerator, GainSTMGenerator};
+use super::{GainSTMGenerator, GainSTMIterator, GainSTMIteratorGenerator};
 
-pub struct VecGainSTMContext<G: GainContext> {
+pub struct VecGainSTMIterator<G: GainCalculator> {
     gains: Peekable<std::vec::IntoIter<G>>,
 }
 
-impl<G: GainContext> GainSTMContext for VecGainSTMContext<G> {
-    type Context = G;
+impl<G: GainCalculator> GainSTMIterator for VecGainSTMIterator<G> {
+    type Calculator = G;
 
-    fn next(&mut self) -> Option<Self::Context> {
+    fn next(&mut self) -> Option<Self::Calculator> {
         self.gains.next()
     }
 }
 
-impl<G: GainContextGenerator> GainSTMContextGenerator for Vec<G> {
+impl<G: GainCalculatorGenerator> GainSTMIteratorGenerator for Vec<G> {
     type Gain = G;
-    type Context = VecGainSTMContext<G::Context>;
+    type Iterator = VecGainSTMIterator<G::Calculator>;
 
-    fn generate(&mut self, device: &Device) -> Self::Context {
-        Self::Context {
+    fn generate(&mut self, device: &Device) -> Self::Iterator {
+        Self::Iterator {
             gains: self
                 .iter_mut()
                 .map(|g| g.generate(device))

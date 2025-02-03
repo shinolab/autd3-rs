@@ -36,14 +36,14 @@ pub struct Plane {
     pub option: PlaneOption,
 }
 
-pub struct Context {
+pub struct Impl {
     dir: UnitVector3,
     intensity: EmitIntensity,
     phase_offset: Phase,
     wavenumber: f32,
 }
 
-impl GainContext for Context {
+impl GainCalculator for Impl {
     fn calc(&self, tr: &Transducer) -> Drive {
         Drive {
             phase: Phase::from(-self.dir.dot(&tr.position().coords) * self.wavenumber * rad)
@@ -53,11 +53,11 @@ impl GainContext for Context {
     }
 }
 
-impl GainContextGenerator for Plane {
-    type Context = Context;
+impl GainCalculatorGenerator for Plane {
+    type Calculator = Impl;
 
-    fn generate(&mut self, device: &Device) -> Self::Context {
-        Context {
+    fn generate(&mut self, device: &Device) -> Self::Calculator {
+        Impl {
             dir: self.dir,
             intensity: self.option.intensity,
             phase_offset: self.option.phase_offset,

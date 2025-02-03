@@ -43,8 +43,8 @@ pub use reads_fpga_state::ReadsFPGAState;
 pub use silencer::FixedCompletionTime;
 pub use silencer::{FixedCompletionSteps, FixedUpdateRate, Silencer};
 pub use stm::{
-    FociSTM, FociSTMContext, FociSTMContextGenerator, FociSTMGenerator, GainSTM, GainSTMContext,
-    GainSTMContextGenerator, GainSTMGenerator, GainSTMOption, STMConfig,
+    FociSTM, FociSTMGenerator, FociSTMIterator, FociSTMIteratorGenerator, GainSTM,
+    GainSTMGenerator, GainSTMIterator, GainSTMIteratorGenerator, GainSTMOption, STMConfig,
 };
 pub use with_loop_behavior::WithLoopBehavior;
 pub use with_segment::WithSegment;

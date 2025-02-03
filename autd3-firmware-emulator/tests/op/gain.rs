@@ -23,21 +23,21 @@ pub(crate) struct TestGain {
     pub(crate) data: HashMap<usize, Vec<Drive>>,
 }
 
-pub struct Context {
+pub struct Impl {
     data: Vec<Drive>,
 }
 
-impl GainContext for Context {
+impl GainCalculator for Impl {
     fn calc(&self, tr: &Transducer) -> Drive {
         self.data[tr.idx()]
     }
 }
 
-impl GainContextGenerator for TestGain {
-    type Context = Context;
+impl GainCalculatorGenerator for TestGain {
+    type Calculator = Impl;
 
-    fn generate(&mut self, device: &Device) -> Self::Context {
-        Context {
+    fn generate(&mut self, device: &Device) -> Self::Calculator {
+        Impl {
             data: self.data.remove(&device.idx()).unwrap(),
         }
     }

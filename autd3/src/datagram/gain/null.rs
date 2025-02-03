@@ -6,16 +6,16 @@ use derive_new::new;
 #[derive(Gain, Default, Clone, Copy, PartialEq, Eq, Debug, new)]
 pub struct Null;
 
-impl GainContext for Null {
+impl GainCalculator for Null {
     fn calc(&self, _: &Transducer) -> Drive {
         Drive::NULL
     }
 }
 
-impl GainContextGenerator for Null {
-    type Context = Null;
+impl GainCalculatorGenerator for Null {
+    type Calculator = Null;
 
-    fn generate(&mut self, _: &Device) -> Self::Context {
+    fn generate(&mut self, _: &Device) -> Self::Calculator {
         Null {}
     }
 }

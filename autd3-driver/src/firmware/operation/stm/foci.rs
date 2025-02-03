@@ -59,15 +59,15 @@ struct FociSTMSubseq {
 /// A trait to generate a [`ControlPoints`] for  [`FociSTM`].
 ///
 /// [`FociSTM`]: crate::datagram::FociSTM
-pub trait FociSTMContext<const N: usize>: Send + Sync {
+pub trait FociSTMIterator<const N: usize>: Send + Sync {
     /// Returns the next [`ControlPoints`].
     fn next(&mut self) -> ControlPoints<N>;
 }
 
 #[derive(new)]
 #[new(visibility = "pub(crate)")]
-pub struct FociSTMOp<const N: usize, Context: FociSTMContext<N>> {
-    context: Context,
+pub struct FociSTMOp<const N: usize, Iterator: FociSTMIterator<N>> {
+    iter: Iterator,
     size: usize,
     #[new(default)]
     sent: usize,
@@ -77,7 +77,7 @@ pub struct FociSTMOp<const N: usize, Context: FociSTMContext<N>> {
     transition_mode: Option<TransitionMode>,
 }
 
-impl<const N: usize, Context: FociSTMContext<N>> Operation for FociSTMOp<N, Context> {
+impl<const N: usize, Iterator: FociSTMIterator<N>> Operation for FociSTMOp<N, Iterator> {
     type Error = AUTDDriverError;
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
@@ -103,7 +103,7 @@ impl<const N: usize, Context: FociSTMContext<N>> Operation for FociSTMOp<N, Cont
 
             let mut idx = offset;
             (0..send_num).try_for_each(|_| {
-                let p = self.context.next();
+                let p = self.iter.next();
                 let p = p.transform(device.inv());
                 write_to_tx(
                     &mut tx[idx..],
@@ -207,11 +207,11 @@ mod tests {
 
     const NUM_TRANS_IN_UNIT: u8 = 249;
 
-    struct TestContext<const N: usize> {
+    struct TestIterator<const N: usize> {
         points: VecDeque<ControlPoints<N>>,
     }
 
-    impl<const N: usize> FociSTMContext<N> for TestContext<N> {
+    impl<const N: usize> FociSTMIterator<N> for TestIterator<N> {
         fn next(&mut self) -> ControlPoints<N> {
             self.points.pop_front().unwrap()
         }
@@ -251,7 +251,7 @@ mod tests {
         );
 
         let mut op = FociSTMOp::new(
-            TestContext {
+            TestIterator {
                 points: points.clone(),
             },
             FOCI_STM_SIZE,
@@ -353,7 +353,7 @@ mod tests {
         );
 
         let mut op = FociSTMOp::new(
-            TestContext {
+            TestIterator {
                 points: points.clone(),
             },
             FOCI_STM_SIZE,
@@ -454,7 +454,7 @@ mod tests {
         let segment = Segment::S1;
 
         let mut op = FociSTMOp::new(
-            TestContext {
+            TestIterator {
                 points: points.clone(),
             },
             FOCI_STM_SIZE,
@@ -614,7 +614,7 @@ mod tests {
         let x = FOCI_STM_FIXED_NUM_UNIT * (FOCI_STM_FIXED_NUM_UPPER_X as f32 + 1.);
 
         let mut op = FociSTMOp::new(
-            TestContext {
+            TestIterator {
                 points: (0..FOCI_STM_SIZE)
                     .map(|_| ControlPoint::from(Point3::new(x, x, x)).into())
                     .collect::<VecDeque<_>>(),
@@ -643,7 +643,7 @@ mod tests {
         let device = create_device(0, NUM_TRANS_IN_UNIT);
 
         let mut op = FociSTMOp::new(
-            TestContext {
+            TestIterator {
                 points: (0..n)
                     .map(|_| ControlPoint::from(Point3::origin()).into())
                     .collect::<VecDeque<_>>(),
@@ -666,7 +666,7 @@ mod tests {
 
         {
             let mut op = FociSTMOp::new(
-                TestContext {
+                TestIterator {
                     points: (0..2)
                         .map(|_| ControlPoints::<0>::default())
                         .collect::<VecDeque<_>>(),
@@ -686,7 +686,7 @@ mod tests {
 
         {
             let mut op = FociSTMOp::new(
-                TestContext {
+                TestIterator {
                     points: (0..2)
                         .map(|_| [0; 1].map(|_| ControlPoint::from(Point3::origin())).into())
                         .collect::<VecDeque<_>>(),
@@ -703,7 +703,7 @@ mod tests {
 
         {
             let mut op = FociSTMOp::new(
-                TestContext {
+                TestIterator {
                     points: (0..2)
                         .map(|_| {
                             [0; FOCI_STM_FOCI_NUM_MAX]
@@ -728,7 +728,7 @@ mod tests {
 
         {
             let mut op = FociSTMOp::new(
-                TestContext {
+                TestIterator {
                     points: (0..2)
                         .map(|_| {
                             [0; FOCI_STM_FOCI_NUM_MAX + 1]

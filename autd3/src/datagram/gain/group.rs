@@ -102,25 +102,25 @@ where
     }
 }
 
-pub struct Context {
+pub struct Impl {
     g: Vec<Drive>,
 }
 
-impl GainContext for Context {
+impl GainCalculator for Impl {
     fn calc(&self, tr: &Transducer) -> Drive {
         self.g[tr.idx()]
     }
 }
 
-pub struct ContextGenerator {
+pub struct Generator {
     g: HashMap<usize, Vec<Drive>>,
 }
 
-impl GainContextGenerator for ContextGenerator {
-    type Context = Context;
+impl GainCalculatorGenerator for Generator {
+    type Calculator = Impl;
 
-    fn generate(&mut self, device: &Device) -> Self::Context {
-        Context {
+    fn generate(&mut self, device: &Device) -> Self::Calculator {
+        Impl {
             g: self.g.remove(&device.idx()).unwrap(),
         }
     }
@@ -132,7 +132,7 @@ where
     FK: Fn(&Transducer) -> Option<K>,
     F: Fn(&Device) -> FK,
 {
-    type G = ContextGenerator;
+    type G = Generator;
 
     // GRCOV_EXCL_START
     fn init(self) -> Result<Self::G, GainError> {
@@ -149,7 +149,7 @@ where
         let filters = self.get_filters(geometry);
 
         let mut gain_map = self.gain_map;
-        let gain_contexts = filters
+        let gain_calcs = filters
             .into_iter()
             .map(|(k, filter)| {
                 let g = gain_map
@@ -184,7 +184,7 @@ where
                         dev.iter()
                             .map(|tr| {
                                 if let Some(key) = f(tr) {
-                                    gain_contexts[&key][dev.idx()].calc(tr)
+                                    gain_calcs[&key][dev.idx()].calc(tr)
                                 } else {
                                     Drive::NULL
                                 }
