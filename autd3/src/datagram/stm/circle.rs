@@ -6,8 +6,8 @@ use autd3_core::{
 };
 use autd3_driver::{
     datagram::{
-        ControlPoint, ControlPoints, FociSTMContext, FociSTMContextGenerator, FociSTMGenerator,
-        GainSTMContext, GainSTMContextGenerator, GainSTMGenerator,
+        ControlPoint, ControlPoints, FociSTMGenerator, FociSTMIterator, FociSTMIteratorGenerator,
+        GainSTMGenerator, GainSTMIterator, GainSTMIteratorGenerator,
     },
     error::AUTDDriverError,
     geometry::{Point3, UnitVector3, Vector3},
@@ -47,7 +47,7 @@ pub struct Circle {
     pub intensity: EmitIntensity,
 }
 
-pub struct CircleSTMContext {
+pub struct CircleSTMIterator {
     center: Point3,
     radius: f32,
     num_points: usize,
@@ -58,7 +58,7 @@ pub struct CircleSTMContext {
     i: usize,
 }
 
-impl CircleSTMContext {
+impl CircleSTMIterator {
     fn next(&mut self) -> Option<Point3> {
         if self.i >= self.num_points {
             return None;
@@ -69,7 +69,7 @@ impl CircleSTMContext {
     }
 }
 
-impl FociSTMContext<1> for CircleSTMContext {
+impl FociSTMIterator<1> for CircleSTMIterator {
     fn next(&mut self) -> ControlPoints<1> {
         ControlPoints {
             points: [ControlPoint::from(self.next().unwrap())],
@@ -78,11 +78,11 @@ impl FociSTMContext<1> for CircleSTMContext {
     }
 }
 
-impl GainSTMContext for CircleSTMContext {
-    type Context = crate::gain::focus::Context;
+impl GainSTMIterator for CircleSTMIterator {
+    type Calculator = crate::gain::focus::Impl;
 
-    fn next(&mut self) -> Option<Self::Context> {
-        Some(Self::Context {
+    fn next(&mut self) -> Option<Self::Calculator> {
+        Some(Self::Calculator {
             pos: self.next()?,
             intensity: self.intensity,
             phase_offset: Phase::ZERO,
@@ -91,10 +91,10 @@ impl GainSTMContext for CircleSTMContext {
     }
 }
 
-impl FociSTMContextGenerator<1> for Circle {
-    type Context = CircleSTMContext;
+impl FociSTMIteratorGenerator<1> for Circle {
+    type Iterator = CircleSTMIterator;
 
-    fn generate(&mut self, device: &Device) -> Self::Context {
+    fn generate(&mut self, device: &Device) -> Self::Iterator {
         let v = if self.n.dot(&Vector3::z()).abs() < 0.9 {
             Vector3::z()
         } else {
@@ -102,7 +102,7 @@ impl FociSTMContextGenerator<1> for Circle {
         };
         let u = self.n.cross(&v).normalize();
         let v = self.n.cross(&u).normalize();
-        Self::Context {
+        Self::Iterator {
             center: self.center,
             radius: self.radius,
             num_points: self.num_points,
@@ -115,12 +115,12 @@ impl FociSTMContextGenerator<1> for Circle {
     }
 }
 
-impl GainSTMContextGenerator for Circle {
+impl GainSTMIteratorGenerator for Circle {
     type Gain = Focus;
-    type Context = CircleSTMContext;
+    type Iterator = CircleSTMIterator;
 
-    fn generate(&mut self, device: &Device) -> Self::Context {
-        FociSTMContextGenerator::<1>::generate(self, device)
+    fn generate(&mut self, device: &Device) -> Self::Iterator {
+        FociSTMIteratorGenerator::<1>::generate(self, device)
     }
 }
 
@@ -223,12 +223,12 @@ mod tests {
                 foci: circle.clone(),
                 config: SamplingConfig::DIV_10,
             };
-            let mut context = FociSTMContextGenerator::generate(stm.deref_mut(), &device);
+            let mut iterator = FociSTMIteratorGenerator::generate(stm.deref_mut(), &device);
             expect.iter().for_each(|e| {
-                let f = FociSTMContext::<1>::next(&mut context).points[0];
+                let f = FociSTMIterator::<1>::next(&mut iterator).points[0];
                 assert_near_vector3!(e, f.point);
             });
-            assert!(context.next().is_none());
+            assert!(iterator.next().is_none());
         }
         {
             let mut stm = GainSTM {
@@ -236,12 +236,12 @@ mod tests {
                 config: SamplingConfig::DIV_10,
                 option: GainSTMOption::default(),
             };
-            let mut context = GainSTMContextGenerator::generate(stm.deref_mut(), &device);
+            let mut iterator = GainSTMIteratorGenerator::generate(stm.deref_mut(), &device);
             expect.iter().for_each(|e| {
-                let f = GainSTMContext::next(&mut context).unwrap();
+                let f = GainSTMIterator::next(&mut iterator).unwrap();
                 assert_near_vector3!(e, &f.pos);
             });
-            assert!(context.next().is_none());
+            assert!(iterator.next().is_none());
         }
     }
 }

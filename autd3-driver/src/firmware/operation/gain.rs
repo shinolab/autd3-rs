@@ -9,7 +9,7 @@ use crate::{
     geometry::Device,
 };
 
-use autd3_core::gain::GainContext;
+use autd3_core::gain::GainCalculator;
 use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
@@ -35,15 +35,15 @@ struct Gain {
 
 #[derive(new)]
 #[new(visibility = "pub(crate)")]
-pub struct GainOp<Context: GainContext> {
+pub struct GainOp<Calculator: GainCalculator> {
     #[new(default)]
     is_done: bool,
     segment: Segment,
     transition: Option<TransitionMode>,
-    context: Context,
+    calculator: Calculator,
 }
 
-impl<Context: GainContext> Operation for GainOp<Context> {
+impl<Calculator: GainCalculator> Operation for GainOp<Calculator> {
     type Error = AUTDDriverError;
 
     fn required_size(&self, device: &Device) -> usize {
@@ -72,7 +72,7 @@ impl<Context: GainContext> Operation for GainOp<Context> {
             .chunks_mut(size_of::<Drive>())
             .zip(device.iter())
             .for_each(|(dst, tr)| {
-                super::write_to_tx(dst, self.context.calc(tr));
+                super::write_to_tx(dst, self.calculator.calc(tr));
             });
 
         self.is_done = true;
@@ -98,11 +98,11 @@ mod tests {
 
     const NUM_TRANS_IN_UNIT: usize = 249;
 
-    struct Context {
+    struct Impl {
         data: Vec<Drive>,
     }
 
-    impl GainContext for Context {
+    impl GainCalculator for Impl {
         fn calc(&self, tr: &Transducer) -> Drive {
             self.data[tr.idx()]
         }
@@ -124,7 +124,7 @@ mod tests {
 
         let mut op = GainOp::new(Segment::S0, Some(TransitionMode::Immediate), {
             let data = data.clone();
-            Context { data }
+            Impl { data }
         });
 
         assert_eq!(
@@ -157,7 +157,7 @@ mod tests {
         let mut tx = vec![0x00u8; size_of::<Gain>() + NUM_TRANS_IN_UNIT * size_of::<Drive>()];
 
         let mut op = GainOp::new(Segment::S0, Some(TransitionMode::Ext), {
-            Context { data: Vec::new() }
+            Impl { data: Vec::new() }
         });
 
         assert_eq!(

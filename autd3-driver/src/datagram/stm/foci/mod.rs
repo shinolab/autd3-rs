@@ -12,7 +12,7 @@ use crate::{
     },
 };
 
-pub use crate::firmware::operation::FociSTMContext;
+pub use crate::firmware::operation::FociSTMIterator;
 
 use autd3_core::{
     defined::DEFAULT_TIMEOUT,
@@ -21,23 +21,23 @@ use autd3_core::{
 use derive_more::{Deref, DerefMut};
 use derive_new::new;
 
-/// A trait to generate the [`FociSTMContext`].
+/// A trait to generate the [`FociSTMIterator`].
 #[allow(clippy::len_without_is_empty)]
-pub trait FociSTMContextGenerator<const N: usize>: std::fmt::Debug {
-    /// [`FociSTMContext`] that generates the sequence of foci.
-    type Context: FociSTMContext<N>;
+pub trait FociSTMIteratorGenerator<const N: usize>: std::fmt::Debug {
+    /// [`FociSTMIterator`] that generates the sequence of foci.
+    type Iterator: FociSTMIterator<N>;
 
-    /// generates the context.
-    fn generate(&mut self, device: &Device) -> Self::Context;
+    /// generates the iterator.
+    fn generate(&mut self, device: &Device) -> Self::Iterator;
 }
 
-/// A trait to generate the [`FociSTMContextGenerator`].
+/// A trait to generate the [`FociSTMIteratorGenerator`].
 #[allow(clippy::len_without_is_empty)]
 pub trait FociSTMGenerator<const N: usize>: std::fmt::Debug {
-    /// The type of the context generator.
-    type T: FociSTMContextGenerator<N>;
+    /// The type of the iterator generator.
+    type T: FociSTMIteratorGenerator<N>;
 
-    /// Initializes and returns the context generator.
+    /// Initializes and returns the iterator generator.
     fn init(self) -> Result<Self::T, AUTDDriverError>;
 
     /// Returns the length of the sequence of foci.
@@ -84,7 +84,7 @@ impl<const N: usize, T: FociSTMGenerator<N>, C: Into<STMConfig> + Copy> FociSTM<
     }
 }
 
-pub struct FociSTMOperationGenerator<const N: usize, G: FociSTMContextGenerator<N>> {
+pub struct FociSTMOperationGenerator<const N: usize, G: FociSTMIteratorGenerator<N>> {
     gen: G,
     size: usize,
     config: SamplingConfig,
@@ -93,10 +93,10 @@ pub struct FociSTMOperationGenerator<const N: usize, G: FociSTMContextGenerator<
     transition_mode: Option<TransitionMode>,
 }
 
-impl<const N: usize, G: FociSTMContextGenerator<N>> OperationGenerator
+impl<const N: usize, G: FociSTMIteratorGenerator<N>> OperationGenerator
     for FociSTMOperationGenerator<N, G>
 {
-    type O1 = FociSTMOp<N, G::Context>;
+    type O1 = FociSTMOp<N, G::Iterator>;
     type O2 = NullOp;
 
     fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {

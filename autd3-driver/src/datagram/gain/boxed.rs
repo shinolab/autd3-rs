@@ -1,40 +1,40 @@
 use std::{collections::HashMap, mem::MaybeUninit};
 
-use super::{Gain, GainContextGenerator};
+use super::{Gain, GainCalculatorGenerator};
 
 pub use crate::geometry::{Device, Geometry};
 
 use autd3_core::derive::*;
 
 #[cfg(not(feature = "lightweight"))]
-pub trait DGainContextGenerator {
-    fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainContext>;
+pub trait DGainCalculatorGenerator {
+    fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainCalculator>;
 }
 #[cfg(feature = "lightweight")]
-pub trait DGainContextGenerator: Send + Sync {
-    fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainContext>;
+pub trait DGainCalculatorGenerator: Send + Sync {
+    fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainCalculator>;
 }
 
-pub struct DynGainContextGenerator {
-    g: Box<dyn DGainContextGenerator>,
+pub struct DynGainCalculatorGenerator {
+    g: Box<dyn DGainCalculatorGenerator>,
 }
 
-impl GainContextGenerator for DynGainContextGenerator {
-    type Context = Box<dyn GainContext>;
+impl GainCalculatorGenerator for DynGainCalculatorGenerator {
+    type Calculator = Box<dyn GainCalculator>;
 
-    fn generate(&mut self, device: &Device) -> Box<dyn GainContext> {
+    fn generate(&mut self, device: &Device) -> Box<dyn GainCalculator> {
         self.g.dyn_generate(device)
     }
 }
 
 impl<
-        Context: GainContext + 'static,
-        #[cfg(not(feature = "lightweight"))] G: GainContextGenerator<Context = Context>,
-        #[cfg(feature = "lightweight")] G: GainContextGenerator<Context = Context> + Send + Sync,
-    > DGainContextGenerator for G
+        Calculator: GainCalculator + 'static,
+        #[cfg(not(feature = "lightweight"))] G: GainCalculatorGenerator<Calculator = Calculator>,
+        #[cfg(feature = "lightweight")] G: GainCalculatorGenerator<Calculator = Calculator> + Send + Sync,
+    > DGainCalculatorGenerator for G
 {
-    fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainContext> {
-        Box::new(GainContextGenerator::generate(self, device))
+    fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainCalculator> {
+        Box::new(GainCalculatorGenerator::generate(self, device))
     }
 }
 
@@ -45,12 +45,12 @@ trait DGain {
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
         parallel: bool,
-    ) -> Result<Box<dyn DGainContextGenerator>, GainError>;
+    ) -> Result<Box<dyn DGainCalculatorGenerator>, GainError>;
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
 
 impl<
-        G: DGainContextGenerator + 'static,
+        G: DGainCalculatorGenerator + 'static,
         #[cfg(not(feature = "lightweight"))] T: Gain<G = G>,
         #[cfg(feature = "lightweight")] T: Gain<G = G> + Send + Sync,
     > DGain for MaybeUninit<T>
@@ -60,7 +60,7 @@ impl<
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
         parallel: bool,
-    ) -> Result<Box<dyn DGainContextGenerator>, GainError> {
+    ) -> Result<Box<dyn DGainCalculatorGenerator>, GainError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
         // SAFETY: This function is called only once from `Gain::init`.
@@ -95,7 +95,7 @@ impl std::fmt::Debug for BoxedGain {
 }
 
 impl Gain for BoxedGain {
-    type G = DynGainContextGenerator;
+    type G = DynGainCalculatorGenerator;
 
     fn init_full(
         self,
@@ -104,7 +104,7 @@ impl Gain for BoxedGain {
         parallel: bool,
     ) -> Result<Self::G, GainError> {
         let Self { mut g, .. } = self;
-        Ok(DynGainContextGenerator {
+        Ok(DynGainCalculatorGenerator {
             g: g.dyn_init(geometry, filter, parallel)?,
         })
     }
@@ -123,7 +123,7 @@ pub trait IntoBoxedGain {
 }
 
 impl<
-        #[cfg(feature = "lightweight")] GG: GainContextGenerator + Send + Sync + 'static,
+        #[cfg(feature = "lightweight")] GG: GainCalculatorGenerator + Send + Sync + 'static,
         #[cfg(not(feature = "lightweight"))] G: Gain + 'static,
         #[cfg(feature = "lightweight")] G: Gain<G = GG> + Send + Sync + 'static,
     > IntoBoxedGain for G
@@ -201,7 +201,7 @@ pub mod tests {
             geometry
                 .devices()
                 .map(|dev| {
-                    let f = GainContextGenerator::generate(&mut f, dev);
+                    let f = GainCalculatorGenerator::generate(&mut f, dev);
                     (dev.idx(), dev.iter().map(|tr| f.calc(tr)).collect())
                 })
                 .collect()

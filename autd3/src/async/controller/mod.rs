@@ -320,7 +320,7 @@ mod tests {
     use autd3_core::{
         defined::mm,
         derive::{Modulation, Segment},
-        gain::{EmitIntensity, Gain, GainContext, GainContextGenerator, Phase},
+        gain::{EmitIntensity, Gain, GainCalculator, GainCalculatorGenerator, Phase},
         link::LinkError,
     };
     use autd3_driver::{

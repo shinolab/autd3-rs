@@ -36,14 +36,14 @@ pub struct Focus {
     pub option: FocusOption,
 }
 
-pub struct Context {
+pub struct Impl {
     pub(crate) pos: Point3,
     pub(crate) intensity: EmitIntensity,
     pub(crate) phase_offset: Phase,
     pub(crate) wavenumber: f32,
 }
 
-impl GainContext for Context {
+impl GainCalculator for Impl {
     fn calc(&self, tr: &Transducer) -> Drive {
         Drive {
             phase: Phase::from(-(self.pos - tr.position()).norm() * self.wavenumber * rad)
@@ -53,11 +53,11 @@ impl GainContext for Context {
     }
 }
 
-impl GainContextGenerator for Focus {
-    type Context = Context;
+impl GainCalculatorGenerator for Focus {
+    type Calculator = Impl;
 
-    fn generate(&mut self, device: &Device) -> Self::Context {
-        Context {
+    fn generate(&mut self, device: &Device) -> Self::Calculator {
+        Impl {
             pos: self.pos,
             intensity: self.option.intensity,
             phase_offset: self.option.phase_offset,

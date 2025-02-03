@@ -61,32 +61,32 @@ impl<D: Directivity> Greedy<D> {
     }
 }
 
-pub struct Context {
+pub struct Impl {
     g: Vec<Drive>,
 }
 
-impl GainContext for Context {
+impl GainCalculator for Impl {
     fn calc(&self, tr: &Transducer) -> Drive {
         self.g[tr.idx()]
     }
 }
 
-pub struct ContextGenerator {
+pub struct Generator {
     g: HashMap<usize, Vec<Drive>>,
 }
 
-impl GainContextGenerator for ContextGenerator {
-    type Context = Context;
+impl GainCalculatorGenerator for Generator {
+    type Calculator = Impl;
 
-    fn generate(&mut self, device: &Device) -> Self::Context {
-        Context {
+    fn generate(&mut self, device: &Device) -> Self::Calculator {
+        Impl {
             g: self.g.remove(&device.idx()).unwrap(),
         }
     }
 }
 
 impl<D: Directivity> Gain for Greedy<D> {
-    type G = ContextGenerator;
+    type G = Generator;
 
     // GRCOV_EXCL_START
     fn init(self) -> Result<Self::G, GainError> {
@@ -175,7 +175,7 @@ impl<D: Directivity> Gain for Greedy<D> {
             };
         });
 
-        Ok(ContextGenerator { g })
+        Ok(Generator { g })
     }
 }
 

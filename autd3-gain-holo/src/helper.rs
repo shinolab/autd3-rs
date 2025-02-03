@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use autd3_core::{
     defined::rad,
-    gain::{BitVec, Drive, GainContext, GainContextGenerator, GainError, Phase},
+    gain::{BitVec, Drive, GainCalculator, GainCalculatorGenerator, GainError, Phase},
     geometry::{Device, Geometry, Transducer},
 };
 use nalgebra::ComplexField;
@@ -36,7 +36,7 @@ impl IntoDrive for crate::Complex {
 }
 
 #[allow(clippy::type_complexity)]
-pub struct HoloContext<T: IntoDrive + Copy + Send + Sync + 'static> {
+pub struct HoloCalculator<T: IntoDrive + Copy + Send + Sync + 'static> {
     q: Arc<
         nalgebra::Matrix<
             T,
@@ -50,7 +50,7 @@ pub struct HoloContext<T: IntoDrive + Copy + Send + Sync + 'static> {
     constraint: EmissionConstraint,
 }
 
-impl<T: IntoDrive + Copy + Send + Sync + 'static> GainContext for HoloContext<T> {
+impl<T: IntoDrive + Copy + Send + Sync + 'static> GainCalculator for HoloCalculator<T> {
     fn calc(&self, tr: &Transducer) -> Drive {
         match &self.map {
             Either::Left(map) => map
@@ -79,7 +79,7 @@ impl<T: IntoDrive + Copy + Send + Sync + 'static> GainContext for HoloContext<T>
 }
 
 #[allow(clippy::type_complexity)]
-pub struct HoloContextGenerator<T: IntoDrive + Copy + Send + Sync + 'static> {
+pub struct HoloCalculatorGenerator<T: IntoDrive + Copy + Send + Sync + 'static> {
     q: Arc<
         nalgebra::Matrix<
             T,
@@ -93,18 +93,20 @@ pub struct HoloContextGenerator<T: IntoDrive + Copy + Send + Sync + 'static> {
     constraint: EmissionConstraint,
 }
 
-impl<T: IntoDrive + Copy + Send + Sync + 'static> GainContextGenerator for HoloContextGenerator<T> {
-    type Context = HoloContext<T>;
+impl<T: IntoDrive + Copy + Send + Sync + 'static> GainCalculatorGenerator
+    for HoloCalculatorGenerator<T>
+{
+    type Calculator = HoloCalculator<T>;
 
-    fn generate(&mut self, device: &Device) -> Self::Context {
+    fn generate(&mut self, device: &Device) -> Self::Calculator {
         match &mut self.map {
-            Either::Left(map) => HoloContext {
+            Either::Left(map) => HoloCalculator {
                 q: self.q.clone(),
                 map: Either::Left(map.remove(&device.idx()).unwrap()),
                 max_coefficient: self.max_coefficient,
                 constraint: self.constraint,
             },
-            Either::Right(map) => HoloContext {
+            Either::Right(map) => HoloCalculator {
                 q: self.q.clone(),
                 map: Either::Right(map[&device.idx()]),
                 max_coefficient: self.max_coefficient,
@@ -125,13 +127,13 @@ pub(crate) fn generate_result<T>(
     max_coefficient: f32,
     constraint: EmissionConstraint,
     filter: Option<&HashMap<usize, BitVec>>,
-) -> Result<HoloContextGenerator<T>, GainError>
+) -> Result<HoloCalculatorGenerator<T>, GainError>
 where
     T: IntoDrive + Copy + Send + Sync + 'static,
 {
     let q = std::sync::Arc::new(q);
     if let Some(filter) = filter {
-        Ok(HoloContextGenerator {
+        Ok(HoloCalculatorGenerator {
             q,
             map: Either::Left(
                 geometry
@@ -160,7 +162,7 @@ where
             constraint,
         })
     } else {
-        Ok(HoloContextGenerator {
+        Ok(HoloCalculatorGenerator {
             q,
             map: Either::Right(
                 geometry

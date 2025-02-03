@@ -312,7 +312,7 @@ pub(crate) mod tests {
         core::{
             defined::mm,
             derive::*,
-            gain::{Gain, GainContext, GainContextGenerator},
+            gain::{Gain, GainCalculator, GainCalculatorGenerator},
             link::LinkError,
         },
         driver::{

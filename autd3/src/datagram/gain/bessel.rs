@@ -41,7 +41,7 @@ pub struct Bessel {
     pub option: BesselOption,
 }
 
-pub struct Context {
+pub struct Impl {
     pos: Point3,
     intensity: EmitIntensity,
     phase_offset: Phase,
@@ -50,7 +50,7 @@ pub struct Context {
     theta: f32,
 }
 
-impl GainContext for Context {
+impl GainCalculator for Impl {
     fn calc(&self, tr: &Transducer) -> Drive {
         let r = self.rot * (tr.position() - self.pos);
         let dist = self.theta.sin() * r.xy().norm() - self.theta.cos() * r.z;
@@ -61,11 +61,11 @@ impl GainContext for Context {
     }
 }
 
-impl GainContextGenerator for Bessel {
-    type Context = Context;
+impl GainCalculatorGenerator for Bessel {
+    type Calculator = Impl;
 
-    fn generate(&mut self, device: &Device) -> Self::Context {
-        Context {
+    fn generate(&mut self, device: &Device) -> Self::Calculator {
+        Impl {
             pos: self.pos,
             intensity: self.option.intensity,
             phase_offset: self.option.phase_offset,
