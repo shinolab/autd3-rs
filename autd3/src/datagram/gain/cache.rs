@@ -80,21 +80,21 @@ impl<G: Gain> Cache<G> {
     }
 }
 
-pub struct Context {
+pub struct Impl {
     g: Arc<Vec<Drive>>,
 }
 
-impl GainContext for Context {
+impl GainCalculator for Impl {
     fn calc(&self, tr: &Transducer) -> Drive {
         self.g[tr.idx()]
     }
 }
 
-impl<G: Gain> GainContextGenerator for Cache<G> {
-    type Context = Context;
+impl<G: Gain> GainCalculatorGenerator for Cache<G> {
+    type Calculator = Impl;
 
-    fn generate(&mut self, device: &Device) -> Self::Context {
-        Context {
+    fn generate(&mut self, device: &Device) -> Self::Calculator {
+        Impl {
             g: self.cache.borrow()[&device.idx()].clone(),
         }
     }
@@ -194,19 +194,19 @@ mod tests {
         pub calc_cnt: Arc<AtomicUsize>,
     }
 
-    struct CacheTestGainContext {}
+    struct CacheTestGainCalculator {}
 
-    impl GainContext for CacheTestGainContext {
+    impl GainCalculator for CacheTestGainCalculator {
         fn calc(&self, _: &Transducer) -> Drive {
             Drive::NULL
         }
     }
 
-    impl GainContextGenerator for CacheTestGain {
-        type Context = CacheTestGainContext;
+    impl GainCalculatorGenerator for CacheTestGain {
+        type Calculator = CacheTestGainCalculator;
 
-        fn generate(&mut self, _: &Device) -> Self::Context {
-            CacheTestGainContext {}
+        fn generate(&mut self, _: &Device) -> Self::Calculator {
+            CacheTestGainCalculator {}
         }
     }
 

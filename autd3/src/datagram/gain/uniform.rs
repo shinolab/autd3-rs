@@ -12,7 +12,7 @@ pub struct Uniform {
     pub phase: Phase,
 }
 
-impl GainContext for Uniform {
+impl GainCalculator for Uniform {
     fn calc(&self, _: &Transducer) -> Drive {
         Drive {
             intensity: self.intensity,
@@ -21,10 +21,10 @@ impl GainContext for Uniform {
     }
 }
 
-impl GainContextGenerator for Uniform {
-    type Context = Uniform;
+impl GainCalculatorGenerator for Uniform {
+    type Calculator = Uniform;
 
-    fn generate(&mut self, _: &Device) -> Self::Context {
+    fn generate(&mut self, _: &Device) -> Self::Calculator {
         self.clone()
     }
 }

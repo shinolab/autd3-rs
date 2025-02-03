@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use crate::{error::AUTDDriverError, geometry::Device};
 
-use super::{ControlPoints, FociSTMContext, FociSTMContextGenerator, FociSTMGenerator};
+use super::{ControlPoints, FociSTMGenerator, FociSTMIterator, FociSTMIteratorGenerator};
 
-pub struct VecFociSTMContext<const N: usize, C>
+pub struct VecFociSTMIterator<const N: usize, C>
 where
     C: Send + Sync,
     ControlPoints<N>: From<C>,
@@ -13,7 +13,7 @@ where
     i: usize,
 }
 
-impl<const N: usize, C> FociSTMContext<N> for VecFociSTMContext<N, C>
+impl<const N: usize, C> FociSTMIterator<N> for VecFociSTMIterator<N, C>
 where
     C: Clone + Send + Sync,
     ControlPoints<N>: From<C>,
@@ -25,15 +25,15 @@ where
     }
 }
 
-impl<const N: usize, C> FociSTMContextGenerator<N> for Arc<Vec<C>>
+impl<const N: usize, C> FociSTMIteratorGenerator<N> for Arc<Vec<C>>
 where
     C: Clone + Send + Sync + std::fmt::Debug,
     ControlPoints<N>: From<C>,
 {
-    type Context = VecFociSTMContext<N, C>;
+    type Iterator = VecFociSTMIterator<N, C>;
 
-    fn generate(&mut self, _: &Device) -> Self::Context {
-        Self::Context {
+    fn generate(&mut self, _: &Device) -> Self::Iterator {
+        Self::Iterator {
             foci: self.clone(),
             i: 0,
         }

@@ -15,7 +15,7 @@ use crate::{
     geometry::Device,
 };
 
-use autd3_core::gain::GainContext;
+use autd3_core::gain::GainCalculator;
 use derive_new::new;
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout};
 
@@ -73,21 +73,21 @@ struct GainSTMSubseq {
     flag: GainSTMControlFlags,
 }
 
-/// A trait to build a [`GainContext`] for [`GainSTM`].
+/// A trait to iterate a [`GainCalculator`] for [`GainSTM`].
 ///
 /// [`GainSTM`]: crate::datagram::GainSTM
-pub trait GainSTMContext: Send + Sync {
-    /// The [`GainContext`] type.
-    type Context: GainContext;
+pub trait GainSTMIterator: Send + Sync {
+    /// The output [`GainCalculator`] type.
+    type Calculator: GainCalculator;
 
-    /// Returns the next [`GainContext`].
-    fn next(&mut self) -> Option<Self::Context>;
+    /// Returns the next [`GainCalculator`].
+    fn next(&mut self) -> Option<Self::Calculator>;
 }
 
 #[derive(new)]
 #[new(visibility = "pub(crate)")]
-pub struct GainSTMOp<G: GainContext, Context: GainSTMContext<Context = G>> {
-    context: Context,
+pub struct GainSTMOp<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> {
+    iter: Iterator,
     size: usize,
     #[new(default)]
     sent: usize,
@@ -98,7 +98,9 @@ pub struct GainSTMOp<G: GainContext, Context: GainSTMContext<Context = G>> {
     transition_mode: Option<TransitionMode>,
 }
 
-impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTMOp<G, Context> {
+impl<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> Operation
+    for GainSTMOp<G, Iterator>
+{
     type Error = AUTDDriverError;
 
     fn required_size(&self, device: &Device) -> usize {
@@ -126,7 +128,7 @@ impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTM
             let mut send = 0;
             match self.mode {
                 GainSTMMode::PhaseIntensityFull => {
-                    if let Some(g) = self.context.next() {
+                    if let Some(g) = self.iter.next() {
                         tx[offset..]
                             .chunks_mut(size_of::<Drive>())
                             .zip(device.iter())
@@ -139,7 +141,7 @@ impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTM
                 GainSTMMode::PhaseFull => {
                     seq_macro::seq!(N in 0..2 {
                         #(
-                            if let Some(g) = self.context.next() {
+                            if let Some(g) = self.iter.next() {
                                 tx[offset..].chunks_exact_mut(size_of::<PhaseFull>()).zip(device.iter()).for_each(|(dst, tr)| {
                                     PhaseFull::mut_from_bytes(dst).unwrap().phase_~N = g.calc(tr).phase.0;
                                 });
@@ -151,7 +153,7 @@ impl<G: GainContext, Context: GainSTMContext<Context = G>> Operation for GainSTM
                 GainSTMMode::PhaseHalf => {
                     seq_macro::seq!(N in 0..4 {
                         #(
-                            if let Some(g) = self.context.next() {
+                            if let Some(g) = self.iter.next() {
                                 tx[offset..].chunks_exact_mut(size_of::<PhaseHalf>()).zip(device.iter()).for_each(|(dst, tr)| {
                                     PhaseHalf::mut_from_bytes(dst).unwrap().set_phase_~N(g.calc(tr).phase.0 >> 4);
                                 });
@@ -245,25 +247,25 @@ mod tests {
 
     const NUM_TRANS_IN_UNIT: usize = 249;
 
-    struct Context {
+    struct Impl {
         g: Vec<Drive>,
     }
 
-    impl GainContext for Context {
+    impl GainCalculator for Impl {
         fn calc(&self, tr: &Transducer) -> Drive {
             self.g[tr.idx()]
         }
     }
 
-    struct STMContext {
+    struct STMIterator {
         data: VecDeque<Vec<Drive>>,
     }
 
-    impl GainSTMContext for STMContext {
-        type Context = Context;
+    impl GainSTMIterator for STMIterator {
+        type Calculator = Impl;
 
-        fn next(&mut self) -> Option<Context> {
-            self.data.pop_front().map(|g| Context { g })
+        fn next(&mut self) -> Option<Impl> {
+            self.data.pop_front().map(|g| Impl { g })
         }
     }
 
@@ -303,7 +305,7 @@ mod tests {
 
         let mut op = GainSTMOp::new(
             {
-                STMContext {
+                STMIterator {
                     data: gain_data.clone(),
                 }
             },
@@ -443,7 +445,7 @@ mod tests {
         let rep = rng.random_range(0x0001..=0xFFFF);
         let segment = Segment::S1;
         let mut op = GainSTMOp::new(
-            STMContext {
+            STMIterator {
                 data: gain_data.clone(),
             },
             GAIN_STM_SIZE,
@@ -576,7 +578,7 @@ mod tests {
         let rep = rng.random_range(0x0001..=0xFFFF);
         let segment = Segment::S0;
         let mut op = GainSTMOp::new(
-            STMContext {
+            STMIterator {
                 data: gain_data.clone(),
             },
             GAIN_STM_SIZE,
@@ -710,7 +712,7 @@ mod tests {
                 .map(|_| vec![Drive::NULL; NUM_TRANS_IN_UNIT])
                 .collect();
             let mut op = GainSTMOp::new(
-                STMContext { data },
+                STMIterator { data },
                 n,
                 GainSTMMode::PhaseIntensityFull,
                 SamplingConfig::FREQ_MAX,

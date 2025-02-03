@@ -4,8 +4,8 @@ use autd3_core::{
 };
 use autd3_driver::{
     datagram::{
-        ControlPoint, ControlPoints, FociSTMContext, FociSTMContextGenerator, FociSTMGenerator,
-        GainSTMContext, GainSTMContextGenerator, GainSTMGenerator,
+        ControlPoint, ControlPoints, FociSTMGenerator, FociSTMIterator, FociSTMIteratorGenerator,
+        GainSTMGenerator, GainSTMIterator, GainSTMIteratorGenerator,
     },
     error::AUTDDriverError,
     geometry::{Point3, Vector3},
@@ -42,7 +42,7 @@ pub struct Line {
     pub intensity: EmitIntensity,
 }
 
-pub struct LineSTMContext {
+pub struct LineSTMIterator {
     start: Point3,
     dir: Vector3,
     num_points: usize,
@@ -51,7 +51,7 @@ pub struct LineSTMContext {
     i: usize,
 }
 
-impl LineSTMContext {
+impl LineSTMIterator {
     fn next(&mut self) -> Option<Point3> {
         if self.i >= self.num_points {
             return None;
@@ -62,7 +62,7 @@ impl LineSTMContext {
     }
 }
 
-impl FociSTMContext<1> for LineSTMContext {
+impl FociSTMIterator<1> for LineSTMIterator {
     fn next(&mut self) -> ControlPoints<1> {
         ControlPoints {
             points: [ControlPoint::from(self.next().unwrap())],
@@ -71,11 +71,11 @@ impl FociSTMContext<1> for LineSTMContext {
     }
 }
 
-impl GainSTMContext for LineSTMContext {
-    type Context = crate::gain::focus::Context;
+impl GainSTMIterator for LineSTMIterator {
+    type Calculator = crate::gain::focus::Impl;
 
-    fn next(&mut self) -> Option<Self::Context> {
-        Some(Self::Context {
+    fn next(&mut self) -> Option<Self::Calculator> {
+        Some(Self::Calculator {
             pos: self.next()?,
             intensity: self.intensity,
             phase_offset: Phase::ZERO,
@@ -84,11 +84,11 @@ impl GainSTMContext for LineSTMContext {
     }
 }
 
-impl FociSTMContextGenerator<1> for Line {
-    type Context = LineSTMContext;
+impl FociSTMIteratorGenerator<1> for Line {
+    type Iterator = LineSTMIterator;
 
-    fn generate(&mut self, device: &Device) -> Self::Context {
-        Self::Context {
+    fn generate(&mut self, device: &Device) -> Self::Iterator {
+        Self::Iterator {
             start: self.start,
             dir: self.end - self.start,
             num_points: self.num_points,
@@ -99,12 +99,12 @@ impl FociSTMContextGenerator<1> for Line {
     }
 }
 
-impl GainSTMContextGenerator for Line {
+impl GainSTMIteratorGenerator for Line {
     type Gain = Focus;
-    type Context = LineSTMContext;
+    type Iterator = LineSTMIterator;
 
-    fn generate(&mut self, device: &Device) -> Self::Context {
-        FociSTMContextGenerator::<1>::generate(self, device)
+    fn generate(&mut self, device: &Device) -> Self::Iterator {
+        FociSTMIteratorGenerator::<1>::generate(self, device)
     }
 }
 
@@ -181,12 +181,12 @@ mod tests {
                 foci: line.clone(),
                 config: SamplingConfig::DIV_10,
             };
-            let mut context = FociSTMContextGenerator::generate(stm.deref_mut(), &device);
+            let mut iterator = FociSTMIteratorGenerator::generate(stm.deref_mut(), &device);
             expect.iter().for_each(|e| {
-                let f = FociSTMContext::<1>::next(&mut context).points[0];
+                let f = FociSTMIterator::<1>::next(&mut iterator).points[0];
                 assert_near_vector3!(e, f.point);
             });
-            assert!(context.next().is_none());
+            assert!(iterator.next().is_none());
         }
         {
             let mut stm = GainSTM {
@@ -194,12 +194,12 @@ mod tests {
                 config: SamplingConfig::DIV_10,
                 option: GainSTMOption::default(),
             };
-            let mut context = GainSTMContextGenerator::generate(stm.deref_mut(), &device);
+            let mut iterator = GainSTMIteratorGenerator::generate(stm.deref_mut(), &device);
             expect.iter().for_each(|e| {
-                let f = GainSTMContext::next(&mut context).unwrap();
+                let f = GainSTMIterator::next(&mut iterator).unwrap();
                 assert_near_vector3!(e, &f.pos);
             });
-            assert!(context.next().is_none());
+            assert!(iterator.next().is_none());
         }
     }
 }

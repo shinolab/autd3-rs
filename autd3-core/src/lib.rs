@@ -62,12 +62,12 @@ pub use async_trait::async_trait;
 ///     pos: Point3,
 /// }
 ///
-/// pub struct Context {
+/// pub struct Impl {
 ///     pos: Point3,
 ///     wavenumber: f32,
 /// }
 ///
-/// impl GainContext for Context {
+/// impl GainCalculator for Impl {
 ///     fn calc(&self, tr: &Transducer) -> Drive {
 ///         Drive {
 ///             phase: Phase::from(-(self.pos - tr.position()).norm() * self.wavenumber * rad),
@@ -76,11 +76,11 @@ pub use async_trait::async_trait;
 ///     }
 /// }
 ///
-/// impl GainContextGenerator for FocalPoint {
-///     type Context = Context;
+/// impl GainCalculatorGenerator for FocalPoint {
+///     type Calculator = Impl;
 ///
-///     fn generate(&mut self, device: &Device) -> Self::Context {
-///         Context {
+///     fn generate(&mut self, device: &Device) -> Self::Calculator {
+///         Impl {
 ///             pos: self.pos,
 ///             wavenumber: device.wavenumber(),
 ///         }
@@ -146,8 +146,8 @@ pub mod derive {
         pub use crate::{
             datagram::DatagramS,
             gain::{
-                BitVec, Drive, EmitIntensity, Gain, GainContext, GainContextGenerator, GainError,
-                GainOperationGenerator, Phase,
+                BitVec, Drive, EmitIntensity, Gain, GainCalculator, GainCalculatorGenerator,
+                GainError, GainOperationGenerator, Phase,
             },
             geometry::{Device, Transducer},
         };

@@ -3,7 +3,7 @@ mod implement;
 use std::{collections::HashMap, fmt::Debug, time::Duration};
 
 use super::sampling_config::*;
-pub use crate::firmware::operation::GainSTMContext;
+pub use crate::firmware::operation::GainSTMIterator;
 use crate::{
     datagram::*,
     defined::Freq,
@@ -17,31 +17,31 @@ use crate::{
 use autd3_core::{
     defined::DEFAULT_TIMEOUT,
     derive::{DatagramL, DatagramOption},
-    gain::{BitVec, GainContextGenerator, GainError},
+    gain::{BitVec, GainCalculatorGenerator, GainError},
 };
 use derive_more::{Deref, DerefMut};
 use derive_new::new;
 
-/// A trait to generate the [`GainSTMContext`].
-pub trait GainSTMContextGenerator {
+/// A trait to generate the [`GainSTMIterator`].
+pub trait GainSTMIteratorGenerator {
     /// The element type of the gain sequence.
-    type Gain: GainContextGenerator;
-    /// [`GainSTMContext`] that generates the sequence of [`Gain`].
+    type Gain: GainCalculatorGenerator;
+    /// [`GainSTMIterator`] that generates the sequence of [`Gain`].
     ///
     /// [`Gain`]: autd3_core::gain::Gain
-    type Context: GainSTMContext<Context = <Self::Gain as GainContextGenerator>::Context>;
+    type Iterator: GainSTMIterator<Calculator = <Self::Gain as GainCalculatorGenerator>::Calculator>;
 
-    /// generates the context.
-    fn generate(&mut self, device: &Device) -> Self::Context;
+    /// generates the iterator.
+    fn generate(&mut self, device: &Device) -> Self::Iterator;
 }
 
-/// A trait to generate the [`GainSTMContextGenerator`].
+/// A trait to generate the [`GainSTMIteratorGenerator`].
 #[allow(clippy::len_without_is_empty)]
 pub trait GainSTMGenerator: std::fmt::Debug {
-    /// The type of the context generator.
-    type T: GainSTMContextGenerator;
+    /// The type of the iterator generator.
+    type T: GainSTMIteratorGenerator;
 
-    /// Initializes and returns the context generator.
+    /// Initializes and returns the iterator generator.
     fn init(
         self,
         geometry: &Geometry,
@@ -116,7 +116,7 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Copy> GainSTM<T, C> {
     }
 }
 
-pub struct GainSTMOperationGenerator<T: GainSTMContextGenerator> {
+pub struct GainSTMOperationGenerator<T: GainSTMIteratorGenerator> {
     g: T,
     size: usize,
     mode: GainSTMMode,
@@ -126,8 +126,8 @@ pub struct GainSTMOperationGenerator<T: GainSTMContextGenerator> {
     transition_mode: Option<TransitionMode>,
 }
 
-impl<T: GainSTMContextGenerator> OperationGenerator for GainSTMOperationGenerator<T> {
-    type O1 = GainSTMOp<<T::Gain as GainContextGenerator>::Context, T::Context>;
+impl<T: GainSTMIteratorGenerator> OperationGenerator for GainSTMOperationGenerator<T> {
+    type O1 = GainSTMOp<<T::Gain as GainCalculatorGenerator>::Calculator, T::Iterator>;
     type O2 = NullOp;
 
     fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {

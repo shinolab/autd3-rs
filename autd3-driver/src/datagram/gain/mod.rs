@@ -1,6 +1,6 @@
 mod boxed;
 
-use autd3_core::gain::{Gain, GainContextGenerator, GainOperationGenerator};
+use autd3_core::gain::{Gain, GainCalculatorGenerator, GainOperationGenerator};
 pub use boxed::{BoxedGain, IntoBoxedGain};
 
 use crate::{
@@ -8,16 +8,13 @@ use crate::{
     geometry::Device,
 };
 
-impl<G: GainContextGenerator> OperationGenerator for GainOperationGenerator<G> {
-    type O1 = GainOp<G::Context>;
+impl<G: GainCalculatorGenerator> OperationGenerator for GainOperationGenerator<G> {
+    type O1 = GainOp<G::Calculator>;
     type O2 = NullOp;
 
     fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
-        let context = self.generator.generate(device);
-        (
-            Self::O1::new(self.segment, self.transition, context),
-            Self::O2 {},
-        )
+        let c = self.generator.generate(device);
+        (Self::O1::new(self.segment, self.transition, c), Self::O2 {})
     }
 }
 
@@ -54,21 +51,21 @@ pub mod tests {
         }
     }
 
-    pub struct Context {
+    pub struct Impl {
         data: Vec<Drive>,
     }
 
-    impl GainContext for Context {
+    impl GainCalculator for Impl {
         fn calc(&self, tr: &Transducer) -> Drive {
             self.data[tr.idx()]
         }
     }
 
-    impl GainContextGenerator for TestGain {
-        type Context = Context;
+    impl GainCalculatorGenerator for TestGain {
+        type Calculator = Impl;
 
-        fn generate(&mut self, device: &Device) -> Self::Context {
-            Context {
+        fn generate(&mut self, device: &Device) -> Self::Calculator {
+            Impl {
                 data: self.data.remove(&device.idx()).unwrap(),
             }
         }
