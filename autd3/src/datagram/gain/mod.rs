@@ -9,7 +9,7 @@ mod uniform;
 
 pub use autd3_driver::datagram::IntoBoxedGain;
 pub use bessel::{Bessel, BesselOption};
-pub use cache::Cache as GainCache;
+pub use cache::Cache;
 pub use custom::Custom;
 pub use focus::{Focus, FocusOption};
 pub use group::Group;
