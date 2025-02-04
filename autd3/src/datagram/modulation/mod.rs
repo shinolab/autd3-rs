@@ -10,7 +10,7 @@ mod square;
 mod r#static;
 
 pub use autd3_driver::datagram::IntoBoxedModulation;
-pub use cache::Cache as ModulationCache;
+pub use cache::Cache;
 pub use custom::Custom;
 pub use fir::Fir;
 pub use fourier::{Fourier, FourierOption};
