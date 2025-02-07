@@ -53,7 +53,7 @@ use derive_new::new;
 #[derive(Gain, Debug, new)]
 pub struct Group<K, FK, F, G: Gain>
 where
-    K: Hash + Eq + Debug,
+    K: Hash + Eq + std::fmt::Debug,
     FK: Fn(&Transducer) -> Option<K>,
     F: Fn(&Device) -> FK,
 {
@@ -67,7 +67,7 @@ where
 
 impl<K, FK, F, G: Gain> Group<K, FK, F, G>
 where
-    K: Hash + Eq + Debug,
+    K: Hash + Eq + std::fmt::Debug,
     FK: Fn(&Transducer) -> Option<K>,
     F: Fn(&Device) -> FK,
 {
@@ -128,7 +128,7 @@ impl GainCalculatorGenerator for Generator {
 
 impl<K, FK, F, G: Gain> Gain for Group<K, FK, F, G>
 where
-    K: Hash + Eq + Debug,
+    K: Hash + Eq + std::fmt::Debug,
     FK: Fn(&Transducer) -> Option<K>,
     F: Fn(&Device) -> FK,
 {
