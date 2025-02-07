@@ -42,7 +42,7 @@ impl Default for SineOption {
 ///
 /// The modulation value is calculated as `⌊intensity / 2 * sin(2 * PI * freq * t + phase) + offset⌋`, where `t` is time, and `intensity`, `offset`, and `phase` can be set by the [`SineOption`].
 #[derive(Modulation, Clone, PartialEq, Debug, new)]
-pub struct Sine<S: Into<SamplingMode> + Clone + Debug> {
+pub struct Sine<S: Into<SamplingMode> + Clone + std::fmt::Debug> {
     /// The frequency of the sine wave.
     pub freq: S,
     /// The option of the modulation.
@@ -69,7 +69,7 @@ impl Sine<Freq<f32>> {
     }
 }
 
-impl<S: Into<SamplingMode> + Clone + Debug> Sine<S> {
+impl<S: Into<SamplingMode> + Clone + std::fmt::Debug> Sine<S> {
     pub(super) fn calc_raw(&self) -> Result<impl Iterator<Item = f32>, ModulationError> {
         let sampling_mode: SamplingMode = self.freq.clone().into();
         let (n, rep) = sampling_mode.validate(self.option.sampling_config)?;
@@ -83,7 +83,7 @@ impl<S: Into<SamplingMode> + Clone + Debug> Sine<S> {
     }
 }
 
-impl<S: Into<SamplingMode> + Clone + Debug> Modulation for Sine<S> {
+impl<S: Into<SamplingMode> + Clone + std::fmt::Debug> Modulation for Sine<S> {
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
         self.calc_raw()?
             .map(|v| v.floor() as i16)
@@ -177,7 +177,7 @@ mod tests {
     )]
     fn new(
         #[case] expect: Result<Vec<u8>, ModulationError>,
-        #[case] freq: impl Into<SamplingMode> + Clone + Debug,
+        #[case] freq: impl Into<SamplingMode> + Clone + std::fmt::Debug,
     ) {
         let m = Sine {
             freq,
