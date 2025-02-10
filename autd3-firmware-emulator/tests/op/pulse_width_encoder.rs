@@ -18,7 +18,7 @@ fn config_pwe_unsafe() -> anyhow::Result<()> {
     {
         let buf: Vec<_> = (0..256).map(|_| rng.random()).collect();
 
-        let d = PulseWidthEncoder::new(|_| |i| buf[i as usize]);
+        let d = PulseWidthEncoder::new(|_| |i| buf[i.0 as usize]);
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
