@@ -8,6 +8,7 @@ use crate::{
     geometry::Device,
 };
 
+use autd3_core::gain::EmitIntensity;
 use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
@@ -20,13 +21,13 @@ struct Pwe {
 
 #[derive(new)]
 #[new(visibility = "pub(crate)")]
-pub struct PulseWidthEncoderOp<F: Fn(u8) -> u8> {
+pub struct PulseWidthEncoderOp<F: Fn(EmitIntensity) -> u8> {
     #[new(default)]
     is_done: bool,
     f: F,
 }
 
-impl<F: Fn(u8) -> u8 + Send + Sync> Operation for PulseWidthEncoderOp<F> {
+impl<F: Fn(EmitIntensity) -> u8 + Send + Sync> Operation for PulseWidthEncoderOp<F> {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -43,7 +44,7 @@ impl<F: Fn(u8) -> u8 + Send + Sync> Operation for PulseWidthEncoderOp<F> {
             .take(PWE_BUF_SIZE)
             .enumerate()
             .for_each(|(i, x)| {
-                *x = (self.f)(i as u8);
+                *x = (self.f)(EmitIntensity(i as u8));
             });
 
         self.is_done = true;
@@ -75,7 +76,7 @@ mod tests {
 
         let mut tx = [0x00u8; 2 * (size_of::<Pwe>() + PWE_BUF_SIZE)];
 
-        let mut op = PulseWidthEncoderOp::new(|i| i);
+        let mut op = PulseWidthEncoderOp::new(|i| i.0);
 
         assert_eq!(size_of::<Pwe>() + PWE_BUF_SIZE, op.required_size(&device));
 
