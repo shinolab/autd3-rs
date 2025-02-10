@@ -5,14 +5,14 @@ use crate::{
     firmware::{fpga::PWE_BUF_SIZE, operation::PulseWidthEncoderOp},
 };
 
-use autd3_core::{defined::DEFAULT_TIMEOUT, derive::DatagramOption};
+use autd3_core::{defined::DEFAULT_TIMEOUT, derive::DatagramOption, gain::EmitIntensity};
 use derive_more::Debug;
 use derive_new::new;
 
 const DEFAULT_TABLE: &[u8; PWE_BUF_SIZE] = include_bytes!("asin.dat");
 
-fn default_table(i: u8) -> u8 {
-    DEFAULT_TABLE[i as usize]
+fn default_table(i: EmitIntensity) -> u8 {
+    DEFAULT_TABLE[i.0 as usize]
 }
 
 /// [`Datagram`] to configure pulse width encoder table.
@@ -30,20 +30,20 @@ fn default_table(i: u8) -> u8 {
 /// The following example sets the pulse width to be linearly proportional to the intensity for all devices.
 /// ```
 /// # use autd3_driver::datagram::PulseWidthEncoder;
-/// PulseWidthEncoder::new(|_dev| |i| (i as f32 / 255. * 128.).round() as u8);
+/// PulseWidthEncoder::new(|_dev| |i| (i.0 as f32 / 255. * 128.).round() as u8);
 /// ```
 ///
 /// [`EmitIntensity`]: crate::firmware::fpga::EmitIntensity
 #[derive(Clone, Debug, new)]
-pub struct PulseWidthEncoder<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> {
+pub struct PulseWidthEncoder<H: Fn(EmitIntensity) -> u8 + Send + Sync, F: Fn(&Device) -> H> {
     #[debug(ignore)]
     f: F,
 }
 
 impl Default
     for PulseWidthEncoder<
-        Box<dyn Fn(u8) -> u8 + Send + Sync>,
-        Box<dyn Fn(&Device) -> Box<dyn Fn(u8) -> u8 + Send + Sync>>,
+        Box<dyn Fn(EmitIntensity) -> u8 + Send + Sync>,
+        Box<dyn Fn(&Device) -> Box<dyn Fn(EmitIntensity) -> u8 + Send + Sync>>,
     >
 {
     fn default() -> Self {
@@ -51,11 +51,14 @@ impl Default
     }
 }
 
-pub struct PulseWidthEncoderOpGenerator<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> {
+pub struct PulseWidthEncoderOpGenerator<
+    H: Fn(EmitIntensity) -> u8 + Send + Sync,
+    F: Fn(&Device) -> H,
+> {
     f: F,
 }
 
-impl<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
+impl<H: Fn(EmitIntensity) -> u8 + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
     for PulseWidthEncoderOpGenerator<H, F>
 {
     type O1 = PulseWidthEncoderOp<H>;
@@ -66,7 +69,9 @@ impl<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
     }
 }
 
-impl<H: Fn(u8) -> u8 + Send + Sync, F: Fn(&Device) -> H> Datagram for PulseWidthEncoder<H, F> {
+impl<H: Fn(EmitIntensity) -> u8 + Send + Sync, F: Fn(&Device) -> H> Datagram
+    for PulseWidthEncoder<H, F>
+{
     type G = PulseWidthEncoderOpGenerator<H, F>;
     type Error = Infallible;
 
