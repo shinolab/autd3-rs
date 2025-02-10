@@ -9,13 +9,13 @@ use derive_new::new;
 /// The option of [`Csv`].
 #[derive(Debug, Clone)]
 pub struct CsvOption {
-    /// The deliminator of CSV file.
-    pub deliminator: u8,
+    /// The delimiter of CSV file.
+    pub delimiter: u8,
 }
 
 impl Default for CsvOption {
     fn default() -> Self {
-        Self { deliminator: b',' }
+        Self { delimiter: b',' }
     }
 }
 
@@ -48,7 +48,7 @@ where
         let f = File::open(&self.path)?;
         let mut rdr = csv::ReaderBuilder::new()
             .has_headers(false)
-            .delimiter(self.option.deliminator)
+            .delimiter(self.option.delimiter)
             .from_reader(f);
         Ok(rdr
             .records()
