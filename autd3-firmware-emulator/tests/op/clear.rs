@@ -49,7 +49,7 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
 
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
-            sampling_config: SamplingConfig::FREQ_MIN,
+            sampling_config: SamplingConfig::new(NonZeroU16::MAX),
         };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -73,9 +73,11 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
             inner: FociSTM {
                 foci: gen_random_foci::<1>(2),
                 config: SamplingConfig::new(
-                    SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT),
-                )
-                .unwrap(),
+                    NonZeroU16::new(
+                        SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT),
+                    )
+                    .unwrap(),
+                ),
             },
             segment: Segment::S0,
             transition_mode: Some(TransitionMode::Ext),

@@ -1,6 +1,5 @@
 use autd3_core::{defined::Hz, derive::*};
 use autd3_derive::Modulation;
-use derive_new::new;
 use hound::SampleFormat;
 
 use std::{fmt::Debug, path::Path};
@@ -8,22 +7,23 @@ use std::{fmt::Debug, path::Path};
 use crate::error::AudioFileError;
 
 /// [`Modulation`] from Wav data.
-#[derive(Modulation, Debug, new)]
-pub struct Wav<P: AsRef<Path> + Debug> {
-    /// The path to the Wav file.
-    pub path: P,
+#[derive(Modulation, Debug)]
+pub struct Wav {
+    spec: hound::WavSpec,
+    buffer: Vec<u8>,
 }
 
-impl<P: AsRef<Path> + Debug> Wav<P> {
-    #[tracing::instrument]
-    fn read_buf(&self) -> Result<Vec<u8>, AudioFileError> {
-        let mut reader = hound::WavReader::open(&self.path)?;
+impl Wav {
+    /// Create a new [`Wav`].
+    pub fn new<P: AsRef<Path>>(path: P) -> Result<Self, AudioFileError> {
+        let path = path.as_ref().to_path_buf();
+        let mut reader = hound::WavReader::open(&path)?;
         let spec = reader.spec();
         tracing::debug!("wav spec: {:?}", spec);
         if spec.channels != 1 {
             return Err(AudioFileError::Wav(hound::Error::Unsupported));
         }
-        Ok(match spec.sample_format {
+        let buffer = match spec.sample_format {
             SampleFormat::Int => {
                 let raw_buffer = reader.samples::<i32>().collect::<Result<Vec<_>, _>>()?;
                 match spec.bits_per_sample {
@@ -56,21 +56,19 @@ impl<P: AsRef<Path> + Debug> Wav<P> {
                     _ => return Err(AudioFileError::Wav(hound::Error::Unsupported)), // GRCOV_EXCL_LINE
                 }
             }
-        })
+        };
+
+        Ok(Self { spec, buffer })
     }
 }
 
-impl<P: AsRef<Path> + Debug> Modulation for Wav<P> {
+impl Modulation for Wav {
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
-        let buffer = self.read_buf()?;
-        tracing::debug!("Read buffer: {:?}", buffer);
-        Ok(buffer)
+        Ok(self.buffer)
     }
 
-    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-        let reader = hound::WavReader::open(&self.path).map_err(AudioFileError::from)?;
-        let spec = reader.spec();
-        Ok((spec.sample_rate * Hz).try_into()?)
+    fn sampling_config(&self) -> SamplingConfig {
+        SamplingConfig::new(self.spec.sample_rate as f32 * Hz)
     }
 }
 
@@ -169,8 +167,8 @@ mod tests {
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("tmp.wav");
         create_wav(&path, spec, data)?;
-        let m = Wav { path };
-        assert_eq!(spec.sample_rate, m.sampling_config()?.freq().hz() as u32);
+        let m = Wav::new(path)?;
+        assert_eq!(spec.sample_rate, m.sampling_config().freq()?.hz() as u32);
         assert_eq!(Ok(expect), m.calc());
 
         Ok(())
@@ -190,11 +188,7 @@ mod tests {
             },
             &[0, 0],
         )?;
-        assert!(Wav {
-            path: path.as_path(),
-        }
-        .calc()
-        .is_err());
+        assert!(Wav::new(path).is_err());
         Ok(())
     }
 }

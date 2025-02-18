@@ -55,7 +55,7 @@ fn send_reads_fpga_state_unsafe() -> anyhow::Result<()> {
         let d = WithSegment {
             inner: TestModulation {
                 buf: (0..2).map(|_| u8::MAX).collect(),
-                sampling_config: SamplingConfig::FREQ_MIN,
+                sampling_config: SamplingConfig::new(std::num::NonZeroU16::MAX),
             },
             segment: Segment::S1,
             transition_mode: Some(TransitionMode::Immediate),
@@ -67,7 +67,7 @@ fn send_reads_fpga_state_unsafe() -> anyhow::Result<()> {
                 foci: (0..2)
                     .map(|_| ControlPoint::from(Point3::origin()))
                     .collect::<Vec<_>>(),
-                config: SamplingConfig::FREQ_MIN,
+                config: SamplingConfig::new(std::num::NonZeroU16::MAX),
             },
             segment: Segment::S1,
             transition_mode: Some(TransitionMode::Immediate),

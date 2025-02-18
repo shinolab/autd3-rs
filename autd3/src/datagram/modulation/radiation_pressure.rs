@@ -17,7 +17,7 @@ impl<M: Modulation> Modulation for RadiationPressure<M> {
             .collect())
     }
 
-    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
+    fn sampling_config(&self) -> SamplingConfig {
         self.target.sampling_config()
     }
 }
@@ -32,11 +32,11 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case::freq_4k(SamplingConfig::new_nearest(4. * kHz))]
-    #[case::freq_8k(SamplingConfig::new_nearest(8. * kHz))]
+    #[case::freq_4k(SamplingConfig::new(4. * kHz))]
+    #[case::freq_8k(SamplingConfig::new(8. * kHz))]
     fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
-            Ok(config),
+            config,
             RadiationPressure {
                 target: Custom {
                     buffer: vec![u8::MIN; 2],

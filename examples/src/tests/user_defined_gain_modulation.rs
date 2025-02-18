@@ -45,7 +45,7 @@ pub struct Burst {
 impl Burst {
     pub fn new() -> Self {
         Self {
-            config: SamplingConfig::DIV_10,
+            config: SamplingConfig::FREQ_4K,
         }
     }
 }
@@ -57,8 +57,8 @@ impl Modulation for Burst {
             .collect())
     }
 
-    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-        Ok(self.config)
+    fn sampling_config(&self) -> SamplingConfig {
+        self.config
     }
 }
 

@@ -221,7 +221,7 @@ mod tests {
         {
             let mut stm = FociSTM {
                 foci: circle.clone(),
-                config: SamplingConfig::DIV_10,
+                config: SamplingConfig::FREQ_4K,
             };
             let mut iterator = FociSTMIteratorGenerator::generate(stm.deref_mut(), &device);
             expect.iter().for_each(|e| {
@@ -233,7 +233,7 @@ mod tests {
         {
             let mut stm = GainSTM {
                 gains: circle.clone(),
-                config: SamplingConfig::DIV_10,
+                config: SamplingConfig::FREQ_4K,
                 option: GainSTMOption::default(),
             };
             let mut iterator = GainSTMIteratorGenerator::generate(stm.deref_mut(), &device);
