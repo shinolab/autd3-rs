@@ -247,4 +247,48 @@ mod tests {
             SamplingConfig::new(p).into_nearest().division()
         );
     }
+
+    #[rstest::rstest]
+    #[case(
+        SamplingConfig::Division(NonZeroU16::MIN),
+        SamplingConfig::Division(NonZeroU16::MIN)
+    )]
+    #[case(SamplingConfig::FreqNearest(Nearest(1. * Hz)), SamplingConfig::Freq(1. * Hz))]
+    #[cfg(not(feature = "dynamic_freq"))]
+    #[case(
+        SamplingConfig::PeriodNearest(Nearest(Duration::from_micros(1))),
+        SamplingConfig::Period(Duration::from_micros(1))
+    )]
+    #[case(SamplingConfig::FreqNearest(Nearest(1. * Hz)), SamplingConfig::FreqNearest(Nearest(1. * Hz)))]
+    #[cfg(not(feature = "dynamic_freq"))]
+    #[case(
+        SamplingConfig::PeriodNearest(Nearest(Duration::from_micros(1))),
+        SamplingConfig::PeriodNearest(Nearest(Duration::from_micros(1)))
+    )]
+    #[test]
+    fn into_nearest(#[case] expect: SamplingConfig, #[case] config: SamplingConfig) {
+        assert_eq!(expect, config.into_nearest());
+    }
+
+    #[rstest::rstest]
+    #[case(
+        "SamplingConfig::Division(1)",
+        SamplingConfig::Division(NonZeroU16::MIN)
+    )]
+    #[case("SamplingConfig::Freq(1 Hz)", SamplingConfig::Freq(1. * Hz))]
+    #[cfg(not(feature = "dynamic_freq"))]
+    #[case(
+        "SamplingConfig::Period(1µs)",
+        SamplingConfig::Period(Duration::from_micros(1))
+    )]
+    #[case("SamplingConfig::FreqNearest(Nearest(1 Hz))", SamplingConfig::FreqNearest(Nearest(1. * Hz)))]
+    #[cfg(not(feature = "dynamic_freq"))]
+    #[case(
+        "SamplingConfig::PeriodNearest(Nearest(1µs))",
+        SamplingConfig::PeriodNearest(Nearest(Duration::from_micros(1)))
+    )]
+    #[test]
+    fn debug(#[case] expect: &str, #[case] config: SamplingConfig) {
+        assert_eq!(expect, format!("{:?}", config));
+    }
 }
