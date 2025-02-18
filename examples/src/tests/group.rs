@@ -32,11 +32,11 @@ pub fn group_by_device(autd: &mut Controller<impl Link>) -> anyhow::Result<bool>
 pub fn group_by_transducer(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     use autd3::gain::IntoBoxedGain;
 
-    let cx = autd.center().x;
-    let pos = autd[0].center() + Vector3::new(0., 0., 150.0 * mm);
+    let pos = autd.center() + Vector3::new(0., 0., 150.0 * mm);
 
     let g = Group {
-        key_map: move |_dev| {
+        key_map: move |dev| {
+            let cx = dev.center().x;
             move |tr| {
                 if tr.position().x < cx {
                     Some("focus")
