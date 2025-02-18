@@ -1,12 +1,12 @@
 mod error;
-mod sampling_config;
 
 use std::sync::Arc;
 
-pub use error::{ModulationError, SamplingConfigError};
-pub use sampling_config::SamplingConfig;
-
-use crate::datagram::{LoopBehavior, Segment, TransitionMode};
+use crate::{
+    datagram::{LoopBehavior, Segment, TransitionMode},
+    sampling_config::SamplingConfig,
+};
+pub use error::ModulationError;
 
 /// Trait for applying amplitude modulation.
 ///

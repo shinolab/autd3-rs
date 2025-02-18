@@ -10,7 +10,7 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-autd3-core = { workspace = true, features = ["gain", "defined", "geometry", "derive", "link", "ethercat", "modulation"] }
+autd3-core = { workspace = true, features = ["gain", "defined", "geometry", "derive", "link", "ethercat", "modulation", "sampling_config"] }
 autd3-derive = { workspace = true }
 bitfield-struct = { workspace = true }
 bitflags = { workspace = true }

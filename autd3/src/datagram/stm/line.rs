@@ -145,7 +145,7 @@ impl GainSTMGenerator for Line {
 mod tests {
     use std::ops::DerefMut;
 
-    use autd3_core::modulation::SamplingConfig;
+    use autd3_core::sampling_config::SamplingConfig;
     use autd3_driver::{
         datagram::{FociSTM, GainSTM, GainSTMOption},
         defined::mm,

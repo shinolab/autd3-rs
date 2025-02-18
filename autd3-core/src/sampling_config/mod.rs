@@ -1,3 +1,5 @@
+mod error;
+
 use std::{fmt::Debug, num::NonZeroU16};
 
 use crate::{
@@ -5,7 +7,7 @@ use crate::{
     utils::float::is_integer,
 };
 
-use super::error::SamplingConfigError;
+pub use error::SamplingConfigError;
 
 /// Nearest type.
 #[derive(Copy, Clone, Debug, PartialEq)]
