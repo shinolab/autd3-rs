@@ -37,6 +37,10 @@ pub mod link;
 #[cfg(feature = "modulation")]
 /// Core traits for Modulation.
 pub mod modulation;
+#[cfg_attr(docsrs, doc(cfg(feature = "sampling_config")))]
+#[cfg(feature = "sampling_config")]
+#[doc(hidden)]
+pub mod sampling_config;
 #[cfg_attr(docsrs, doc(cfg(feature = "utils")))]
 #[cfg(feature = "utils")]
 #[doc(hidden)]
@@ -159,10 +163,8 @@ pub mod derive {
     #[cfg(feature = "modulation")]
     mod modulation {
         pub use crate::datagram::{DatagramL, LoopBehavior};
-        pub use crate::modulation::{
-            Modulation, ModulationError, ModulationOperationGenerator, SamplingConfig,
-            SamplingConfigError,
-        };
+        pub use crate::modulation::{Modulation, ModulationError, ModulationOperationGenerator};
+        pub use crate::sampling_config::{SamplingConfig, SamplingConfigError};
         pub use autd3_derive::Modulation;
         pub use std::{collections::HashMap, sync::Arc};
     }

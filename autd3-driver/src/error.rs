@@ -1,10 +1,8 @@
 use std::{convert::Infallible, time::Duration};
 
 use autd3_core::{
-    datagram::CombinedError,
-    gain::GainError,
-    link::LinkError,
-    modulation::{ModulationError, SamplingConfigError},
+    datagram::CombinedError, derive::SamplingConfigError, gain::GainError, link::LinkError,
+    modulation::ModulationError,
 };
 use thiserror::Error;
 
