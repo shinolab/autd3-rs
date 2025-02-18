@@ -115,7 +115,7 @@ impl Operation for ModulationOp {
                     tag: TypeTag::Modulation,
                     flag: ModulationControlFlags::BEGIN | flag,
                     size: send_num as _,
-                    freq_div: self.config.division.get(),
+                    freq_div: self.config.division()?,
                     rep: self.loop_behavior.rep(),
                     transition_mode: self
                         .transition_mode
@@ -187,7 +187,7 @@ mod tests {
 
         let mut op = ModulationOp::new(
             Arc::new(buf.clone()),
-            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()).unwrap(),
+            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             loop_behavior,
             segment,
             Some(transition_mode),
@@ -250,7 +250,7 @@ mod tests {
 
         let mut op = ModulationOp::new(
             Arc::new(buf.clone()),
-            SamplingConfig::FREQ_MAX,
+            SamplingConfig::FREQ_40K,
             LoopBehavior::Infinite,
             Segment::S0,
             Some(TransitionMode::SyncIdx),
@@ -358,7 +358,7 @@ mod tests {
             let buf = Arc::new(vec![0x00; n]);
             let mut op = ModulationOp::new(
                 buf.clone(),
-                SamplingConfig::FREQ_MAX,
+                SamplingConfig::FREQ_40K,
                 LoopBehavior::Infinite,
                 Segment::S0,
                 None,
@@ -390,7 +390,7 @@ mod tests {
 
         let mut op = ModulationOp::new(
             Arc::new(buf.clone()),
-            SamplingConfig::FREQ_MAX,
+            SamplingConfig::FREQ_40K,
             LoopBehavior::Infinite,
             Segment::S0,
             Some(TransitionMode::SyncIdx),

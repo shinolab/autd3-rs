@@ -42,11 +42,11 @@ impl SamplingMode {
         freq: Freq<u32>,
         sampling_config: SamplingConfig,
     ) -> Result<(u64, u64), ModulationError> {
-        if freq.hz() as f32 >= sampling_config.freq().hz() / 2. {
+        if freq.hz() as f32 >= sampling_config.freq()?.hz() / 2. {
             return Err(ModulationError::new(format!(
                 "Frequency ({:?}) is equal to or greater than the Nyquist frequency ({:?})",
                 freq,
-                sampling_config.freq() / 2.
+                sampling_config.freq()? / 2.
             )));
         }
         if freq.hz() == 0 {
@@ -55,7 +55,7 @@ impl SamplingMode {
             ));
         }
 
-        let fd = freq.hz() as u64 * sampling_config.division.get() as u64;
+        let fd = freq.hz() as u64 * sampling_config.division()? as u64;
         let fs = ultrasound_freq().hz() as u64;
 
         let k = gcd(fs, fd);
@@ -79,14 +79,14 @@ impl SamplingMode {
                 "Frequency must not be zero. If intentional, Use `Static` instead.".to_string(),
             ));
         }
-        if freq.hz() >= sampling_config.freq().hz() / 2. {
+        if freq.hz() >= sampling_config.freq()?.hz() / 2. {
             return Err(ModulationError::new(format!(
                 "Frequency ({:?}) is equal to or greater than the Nyquist frequency ({:?})",
                 freq,
-                sampling_config.freq() / 2.
+                sampling_config.freq()? / 2.
             )));
         }
-        let fd = freq.hz() as f64 * sampling_config.division.get() as f64;
+        let fd = freq.hz() as f64 * sampling_config.division()? as f64;
 
         for n in (ultrasound_freq().hz() as f64 / fd).floor() as u32..=MOD_BUF_SIZE_MAX as u32 {
             if !is_integer(fd * n as f64) {
@@ -108,24 +108,27 @@ impl SamplingMode {
 }
 
 impl SamplingMode {
-    fn freq_nearest(freq: Freq<f32>, sampling_config: SamplingConfig) -> Freq<f32> {
-        let freq_min = sampling_config.freq().hz() / MOD_BUF_SIZE_MAX as f32;
-        let freq_max = sampling_config.freq().hz() / 2.;
-        freq.hz().clamp(freq_min, freq_max) * Hz
+    fn freq_nearest(
+        freq: Freq<f32>,
+        sampling_config: SamplingConfig,
+    ) -> Result<Freq<f32>, ModulationError> {
+        let freq_min = sampling_config.freq()?.hz() / MOD_BUF_SIZE_MAX as f32;
+        let freq_max = sampling_config.freq()?.hz() / 2.;
+        Ok(freq.hz().clamp(freq_min, freq_max) * Hz)
     }
 
     fn validate_nearest(
         freq: Freq<f32>,
         sampling_config: SamplingConfig,
     ) -> Result<(u64, u64), ModulationError> {
-        let freq = Self::freq_nearest(freq, sampling_config);
+        let freq = Self::freq_nearest(freq, sampling_config)?;
         if freq.hz().is_nan() {
             return Err(ModulationError::new(format!(
                 "Frequency ({:?}) must be valid value",
                 freq
             )));
         }
-        Ok(((sampling_config.freq().hz() / freq.hz()).round() as u64, 1))
+        Ok(((sampling_config.freq()?.hz() / freq.hz()).round() as u64, 1))
     }
 }
 
@@ -156,15 +159,18 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(1.2207031 * Hz, 1. * Hz, SamplingConfig::FREQ_MAX)]
-    #[case(1.2207031 * Hz, 1.2207031 * Hz, SamplingConfig::FREQ_MAX)]
-    #[case(20000. * Hz, 20000. * Hz, SamplingConfig::FREQ_MAX)]
-    #[case(20000. * Hz, 40000. * Hz, SamplingConfig::FREQ_MAX)]
+    #[case(1.2207031 * Hz, 1. * Hz, SamplingConfig::FREQ_40K)]
+    #[case(1.2207031 * Hz, 1.2207031 * Hz, SamplingConfig::FREQ_40K)]
+    #[case(20000. * Hz, 20000. * Hz, SamplingConfig::FREQ_40K)]
+    #[case(20000. * Hz, 40000. * Hz, SamplingConfig::FREQ_40K)]
     fn nearest_freq_clamp(
         #[case] expect: Freq<f32>,
         #[case] freq: Freq<f32>,
         #[case] sampling_config: SamplingConfig,
     ) {
-        assert_eq!(expect, SamplingMode::freq_nearest(freq, sampling_config));
+        assert_eq!(
+            Ok(expect),
+            SamplingMode::freq_nearest(freq, sampling_config)
+        );
     }
 }

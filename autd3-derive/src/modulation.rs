@@ -14,7 +14,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
             type Error = ModulationError;
 
             fn operation_generator_with_loop_behavior(self, _: &Geometry, _: bool, segment: Segment, transition_mode: Option<TransitionMode>, loop_behavior: LoopBehavior) -> Result<Self::G, Self::Error> {
-                let config = <Self as Modulation>::sampling_config(&self)?;
+                let config = <Self as Modulation>::sampling_config(&self);
                 let g = self.calc()?;
                 tracing::trace!("Modulation buffer: {:?}", g);
                 Ok(Self::G {

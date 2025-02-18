@@ -1,3 +1,5 @@
+use std::num::NonZeroU16;
+
 use autd3_core::derive::*;
 use autd3_derive::Modulation;
 use derive_new::new;
@@ -15,8 +17,8 @@ impl Modulation for Static {
         Ok(vec![intensity; 2])
     }
 
-    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-        Ok(SamplingConfig::FREQ_MIN)
+    fn sampling_config(&self) -> SamplingConfig {
+        SamplingConfig::Division(NonZeroU16::MAX)
     }
 }
 
@@ -34,7 +36,10 @@ mod tests {
     fn test_static_default() {
         let m = Static::default();
         assert_eq!(u8::MAX, m.intensity);
-        assert_eq!(Ok(SamplingConfig::FREQ_MIN), m.sampling_config());
+        assert_eq!(
+            SamplingConfig::Division(NonZeroU16::MAX),
+            m.sampling_config()
+        );
         assert_eq!(Ok(vec![u8::MAX, u8::MAX]), m.calc());
     }
 }

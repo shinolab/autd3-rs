@@ -119,8 +119,8 @@ pub use async_trait::async_trait;
 ///             .collect())
 ///     }
 ///
-///     fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-///         Ok(SamplingConfig::new(4 * kHz)?)    
+///     fn sampling_config(&self) -> SamplingConfig {
+///         SamplingConfig::new(4. * kHz)
 ///     }
 /// }
 /// ```

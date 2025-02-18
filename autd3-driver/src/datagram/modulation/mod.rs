@@ -41,8 +41,8 @@ pub mod tests {
             Ok(vec![0; 2])
         }
 
-        fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-            Ok(self.sampling_config)
+        fn sampling_config(&self) -> SamplingConfig {
+            self.sampling_config
         }
     }
 }

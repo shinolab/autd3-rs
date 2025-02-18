@@ -161,7 +161,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
         &mut cpu,
         WithSegment {
             inner: FociSTM {
-                config: SamplingConfig::FREQ_MIN,
+                config: SamplingConfig::new(std::num::NonZeroU16::MAX),
                 foci: (0..2)
                     .map(|_| ControlPoint::from(Point3::origin()))
                     .collect::<Vec<_>>(),
@@ -178,7 +178,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
         &mut cpu,
         WithSegment {
             inner: GainSTM {
-                config: SamplingConfig::FREQ_MIN,
+                config: SamplingConfig::new(std::num::NonZeroU16::MAX),
                 gains: (0..2)
                     .map(|_| {
                         geometry

@@ -5,11 +5,9 @@ use derive_new::new;
 
 ///[`Modulation`] to use arbitrary modulation data
 #[derive(Modulation, Clone, Debug, new)]
-pub struct Custom<Config, E>
+pub struct Custom<Config>
 where
-    E: Debug,
-    SamplingConfigError: From<E>,
-    Config: TryInto<SamplingConfig, Error = E> + Debug + Copy,
+    Config: Into<SamplingConfig> + Debug + Copy,
 {
     /// The modulation data.
     pub buffer: Vec<u8>,
@@ -17,21 +15,16 @@ where
     pub sampling_config: Config,
 }
 
-impl<Config, E> Modulation for Custom<Config, E>
+impl<Config> Modulation for Custom<Config>
 where
-    E: Debug,
-    SamplingConfigError: From<E>,
-    Config: TryInto<SamplingConfig, Error = E> + Debug + Copy,
+    Config: Into<SamplingConfig> + Debug + Copy,
 {
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
         Ok(self.buffer)
     }
 
-    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-        Ok(self
-            .sampling_config
-            .try_into()
-            .map_err(SamplingConfigError::from)?)
+    fn sampling_config(&self) -> SamplingConfig {
+        self.sampling_config.into()
     }
 }
 

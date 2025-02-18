@@ -87,7 +87,7 @@ fn send_gain_stm_phase_intensity_full_unsafe(
     );
     let d = WithLoopBehavior {
         inner: GainSTM {
-            config: SamplingConfig::new(freq_div).unwrap(),
+            config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             gains: bufs
                 .iter()
                 .map(|buf| TestGain { data: buf.clone() })
@@ -144,9 +144,9 @@ fn send_gain_stm_phase_full_unsafe(#[case] n: usize) -> anyhow::Result<()> {
     let d = WithLoopBehavior {
         inner: GainSTM {
             config: SamplingConfig::new(
-                SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT),
-            )
-            .unwrap(),
+                NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT))
+                    .unwrap(),
+            ),
             gains: bufs
                 .iter()
                 .map(|buf| TestGain { data: buf.clone() })
@@ -211,9 +211,11 @@ fn send_gain_stm_phase_half_unsafe(#[case] n: usize) -> anyhow::Result<()> {
         let d = WithLoopBehavior {
             inner: GainSTM {
                 config: SamplingConfig::new(
-                    SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT),
-                )
-                .unwrap(),
+                    NonZeroU16::new(
+                        SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT),
+                    )
+                    .unwrap(),
+                ),
                 gains: bufs
                     .iter()
                     .map(|buf| TestGain { data: buf.clone() })
@@ -259,9 +261,9 @@ fn change_gain_stm_segment_unsafe() -> anyhow::Result<()> {
     let d = WithSegment {
         inner: GainSTM {
             config: SamplingConfig::new(
-                SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT),
-            )
-            .unwrap(),
+                NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT))
+                    .unwrap(),
+            ),
             gains: gen_random_buf(2, &geometry)
                 .into_iter()
                 .map(|buf| TestGain { data: buf.clone() })
@@ -295,7 +297,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
                 .into_iter()
                 .map(|buf| TestGain { data: buf.clone() })
                 .collect::<Vec<_>>(),
-            config: SamplingConfig::FREQ_MAX,
+            config: SamplingConfig::FREQ_40K,
             option: GainSTMOption::default(),
         };
 
@@ -324,9 +326,11 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
                     .map(|buf| TestGain { data: buf.clone() })
                     .collect::<Vec<_>>(),
                 config: SamplingConfig::new(
-                    SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT),
-                )
-                .unwrap(),
+                    NonZeroU16::new(
+                        SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT),
+                    )
+                    .unwrap(),
+                ),
                 option: GainSTMOption::default(),
             },
             segment: Segment::S1,
@@ -384,7 +388,7 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
                 foci: (0..2)
                     .map(|_| ControlPoint::from(Point3::origin()))
                     .collect::<Vec<_>>(),
-                config: SamplingConfig::new(freq_div).unwrap(),
+                config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             },
             segment,
             transition_mode: Some(transition_mode),
@@ -424,7 +428,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
                     .into_iter()
                     .map(|buf| TestGain { data: buf.clone() })
                     .collect::<Vec<_>>(),
-                config: SamplingConfig::FREQ_MIN,
+                config: SamplingConfig::new(NonZeroU16::MAX),
                 option: GainSTMOption::default(),
             },
             segment: Segment::S0,
@@ -444,7 +448,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
                     .into_iter()
                     .map(|buf| TestGain { data: buf.clone() })
                     .collect::<Vec<_>>(),
-                config: SamplingConfig::FREQ_MIN,
+                config: SamplingConfig::new(NonZeroU16::MAX),
                 option: GainSTMOption::default(),
             },
             segment: Segment::S1,
@@ -465,7 +469,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
                     .into_iter()
                     .map(|buf| TestGain { data: buf.clone() })
                     .collect::<Vec<_>>(),
-                config: SamplingConfig::FREQ_MIN,
+                config: SamplingConfig::new(NonZeroU16::MAX),
                 option: GainSTMOption::default(),
             },
 
@@ -497,7 +501,7 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
             .iter()
             .map(|buf| TestGain { data: buf.clone() })
             .collect::<Vec<_>>(),
-        config: SamplingConfig::FREQ_MIN,
+        config: SamplingConfig::new(NonZeroU16::MAX),
         option: GainSTMOption::default(),
     };
 
