@@ -161,7 +161,7 @@ impl GainSTMGenerator for Circle {
 mod tests {
     use std::ops::DerefMut;
 
-    use autd3_core::modulation::SamplingConfig;
+    use autd3_core::sampling_config::SamplingConfig;
     use autd3_driver::{
         datagram::{FociSTM, GainSTM},
         defined::mm,

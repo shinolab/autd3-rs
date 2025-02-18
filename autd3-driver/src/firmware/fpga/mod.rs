@@ -6,7 +6,7 @@ mod stm_focus;
 pub use autd3_core::{
     datagram::{GPIOIn, GPIOOut, LoopBehavior, Segment, TransitionMode, TRANSITION_MODE_NONE},
     gain::{Drive, EmitIntensity, Phase},
-    modulation::SamplingConfig,
+    sampling_config::SamplingConfig,
 };
 
 pub use debug_type::DebugType;
