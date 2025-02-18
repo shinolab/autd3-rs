@@ -22,7 +22,7 @@ pub struct SineOption {
     pub phase: Angle,
     /// If `true`, the modulation value is clamped to the range of `u8`. If `false`, returns an error if the value is out of range. The default value is `false`.
     pub clamp: bool,
-    /// The sampling configuration of the modulation. The default value is [`SamplingConfig::DIV_10`].
+    /// The sampling configuration of the modulation. The default value is [`SamplingConfig::FREQ_4K`].
     pub sampling_config: SamplingConfig,
 }
 
@@ -33,7 +33,7 @@ impl Default for SineOption {
             offset: 0x80,
             phase: 0. * rad,
             clamp: false,
-            sampling_config: SamplingConfig::DIV_10,
+            sampling_config: SamplingConfig::FREQ_4K,
         }
     }
 }
@@ -104,8 +104,8 @@ impl<S: Into<SamplingMode> + Clone + std::fmt::Debug> Modulation for Sine<S> {
             .collect::<Result<Vec<_>, ModulationError>>()
     }
 
-    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-        Ok(self.option.sampling_config)
+    fn sampling_config(&self) -> SamplingConfig {
+        self.option.sampling_config
     }
 }
 
@@ -144,7 +144,7 @@ mod tests {
         781.25*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency (150.01 Hz) cannot be output with the sampling config (SamplingConfig { division: 10 }).".to_owned())),
+        Err(ModulationError::new("Frequency (150.01 Hz) cannot be output with the sampling config (SamplingConfig::Freq(4000 Hz)).".to_owned())),
         150.01*Hz
     )]
     #[case(
@@ -186,7 +186,7 @@ mod tests {
         assert_eq!(u8::MAX, m.option.intensity);
         assert_eq!(0x80, m.option.offset);
         assert_eq!(0. * rad, m.option.phase);
-        assert_eq!(Ok(SamplingConfig::DIV_10), m.sampling_config());
+        assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
         assert_eq!(expect, m.calc());
     }
 
@@ -215,7 +215,7 @@ mod tests {
         assert_eq!(u8::MAX, m.option.intensity);
         assert_eq!(0x80, m.option.offset);
         assert_eq!(0. * rad, m.option.phase);
-        assert_eq!(Ok(SamplingConfig::DIV_10), m.sampling_config());
+        assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
         assert_eq!(expect, m.calc());
     }
 

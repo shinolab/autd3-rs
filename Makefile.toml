@@ -12,7 +12,7 @@ command = "cargo"
 args = ["clean"]
 
 [tasks.check]
-dependencies = ["format", "build", "test", "lint"]
+dependencies = ["format", "lint", "build", "test"]
 
 [tasks.build]
 command = "cargo"

@@ -34,17 +34,20 @@ pub struct Fourier<S: Into<SamplingMode> + Clone + Debug> {
 }
 
 impl<S: Into<SamplingMode> + Clone + Debug> Modulation for Fourier<S> {
-    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
+    fn sampling_config(&self) -> SamplingConfig {
         self.components
             .first()
-            .ok_or(ModulationError::new(
-                "Components must not be empty".to_string(),
-            ))?
-            .sampling_config()
+            .map(|m| m.sampling_config())
+            .unwrap_or(SamplingConfig::FREQ_40K)
     }
 
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
-        let sampling_config = self.sampling_config()?;
+        if self.components.is_empty() {
+            return Err(ModulationError::new(
+                "Components must not be empty".to_string(),
+            ));
+        }
+        let sampling_config = self.sampling_config();
         let components = self
             .components
             .into_iter()
@@ -60,7 +63,7 @@ impl<S: Into<SamplingMode> + Clone + Debug> Modulation for Fourier<S> {
         if components
             .iter()
             .skip(1)
-            .any(|c| c.sampling_config() != Ok(sampling_config))
+            .any(|c| c.sampling_config() != sampling_config)
         {
             return Err(ModulationError::new(
                 "All components must have the same sampling configuration".to_string(),
@@ -183,14 +186,14 @@ mod tests {
                     Sine {
                         freq: 50. * Hz,
                         option: SineOption {
-                            sampling_config: SamplingConfig::DIV_10,
+                            sampling_config: SamplingConfig::FREQ_4K,
                             ..Default::default()
                         }
                     },
                     Sine {
                         freq: 50. * Hz,
                         option: SineOption {
-                            sampling_config: SamplingConfig::FREQ_MAX,
+                            sampling_config: SamplingConfig::FREQ_40K,
                             ..Default::default()
                         }
                     },

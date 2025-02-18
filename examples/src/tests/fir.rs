@@ -40,7 +40,7 @@ pub fn fir(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
         target: Sine {
             freq: 150. * Hz,
             option: SineOption {
-                sampling_config: SamplingConfig::new(20 * kHz)?,
+                sampling_config: SamplingConfig::new(20. * kHz),
                 ..Default::default()
             },
         },

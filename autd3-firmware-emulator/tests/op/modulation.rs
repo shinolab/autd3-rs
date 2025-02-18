@@ -34,8 +34,8 @@ impl Modulation for TestModulation {
         Ok(self.buf.clone())
     }
 
-    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-        Ok(self.sampling_config)
+    fn sampling_config(&self) -> SamplingConfig {
+        self.sampling_config
     }
 }
 
@@ -103,7 +103,7 @@ fn send_mod_unsafe(
     let d = WithLoopBehavior {
         inner: TestModulation {
             buf: m.clone(),
-            sampling_config: SamplingConfig::new(freq_div).unwrap(),
+            sampling_config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
         },
         segment,
         transition_mode,
@@ -137,7 +137,7 @@ fn swap_mod_segmemt_unsafe() -> anyhow::Result<()> {
     let d = WithLoopBehavior {
         inner: TestModulation {
             buf: m.clone(),
-            sampling_config: SamplingConfig::new(freq_div).unwrap(),
+            sampling_config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
         },
         segment: Segment::S1,
         transition_mode: None,
@@ -163,7 +163,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
     {
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
-            sampling_config: SamplingConfig::FREQ_MAX,
+            sampling_config: SamplingConfig::FREQ_40K,
         };
         assert_eq!(
             Err(AUTDDriverError::InvalidSilencerSettings),
@@ -174,7 +174,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
     {
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
-            sampling_config: SamplingConfig::FREQ_MIN,
+            sampling_config: SamplingConfig::new(NonZeroU16::MAX),
         };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -184,7 +184,9 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         let d = WithSegment {
             inner: TestModulation {
                 buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
-                sampling_config: SamplingConfig::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
+                sampling_config: SamplingConfig::new(
+                    NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
+                ),
             },
             segment: Segment::S1,
             transition_mode: None,
@@ -222,7 +224,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
         let d = WithSegment {
             inner: TestModulation {
                 buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
-                sampling_config: SamplingConfig::DIV_10,
+                sampling_config: SamplingConfig::FREQ_4K,
             },
             segment: Segment::S0,
             transition_mode: Some(TransitionMode::SyncIdx),
@@ -238,7 +240,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
         let d = WithLoopBehavior {
             inner: TestModulation {
                 buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
-                sampling_config: SamplingConfig::DIV_10,
+                sampling_config: SamplingConfig::FREQ_4K,
             },
             segment: Segment::S1,
             transition_mode: Some(TransitionMode::Immediate),
@@ -255,7 +257,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
         let d = WithSegment {
             inner: TestModulation {
                 buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
-                sampling_config: SamplingConfig::DIV_10,
+                sampling_config: SamplingConfig::FREQ_4K,
             },
             segment: Segment::S1,
             transition_mode: None,
@@ -291,7 +293,7 @@ fn test_miss_transition_time(
     let d = WithLoopBehavior {
         inner: TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
-            sampling_config: SamplingConfig::DIV_10,
+            sampling_config: SamplingConfig::FREQ_4K,
         },
         segment: Segment::S1,
         transition_mode: Some(transition_mode),

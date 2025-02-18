@@ -1,3 +1,7 @@
+# 30.0.0
+
+- `Modulation::sampling_config` now returns `SamplingConfig` instead of `Result<SamplingConfig, ModulationError>`
+
 # 29.0.0
 
 - Update firmware to v10.0.1

@@ -34,7 +34,7 @@ impl<
 #[derive(Modulation)]
 pub struct BoxedModulation {
     m: Box<dyn DModulation>,
-    sampling_config: Result<SamplingConfig, ModulationError>,
+    sampling_config: SamplingConfig,
 }
 
 #[cfg(feature = "lightweight")]
@@ -54,8 +54,8 @@ impl Modulation for BoxedModulation {
         m.dyn_calc()
     }
 
-    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-        self.sampling_config.clone()
+    fn sampling_config(&self) -> SamplingConfig {
+        self.sampling_config
     }
 }
 
@@ -87,13 +87,13 @@ pub mod tests {
     #[test]
     fn boxed_modulation_unsafe() {
         let m = TestModulation {
-            sampling_config: SamplingConfig::DIV_10,
+            sampling_config: SamplingConfig::FREQ_4K,
         };
 
         let mb = m.clone().into_boxed();
 
         assert_eq!(format!("{:?}", m), format!("{:?}", mb));
-        assert_eq!(Ok(SamplingConfig::DIV_10), mb.sampling_config());
+        assert_eq!(SamplingConfig::FREQ_4K, mb.sampling_config());
         assert_eq!(Ok(vec![0; 2]), mb.calc());
     }
 }

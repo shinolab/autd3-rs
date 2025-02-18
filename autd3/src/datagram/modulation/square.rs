@@ -15,7 +15,7 @@ pub struct SquareOption {
     pub high: u8,
     /// The duty ratio of the modulation, that is the ratio of high value to the period. The default value is `0.5`.
     pub duty: f32,
-    /// The sampling configuration of the modulation. The default value is [`SamplingConfig::DIV_10`].
+    /// The sampling configuration of the modulation. The default value is [`SamplingConfig::FREQ_4K`].
     pub sampling_config: SamplingConfig,
 }
 
@@ -25,7 +25,7 @@ impl Default for SquareOption {
             low: u8::MIN,
             high: u8::MAX,
             duty: 0.5,
-            sampling_config: SamplingConfig::DIV_10,
+            sampling_config: SamplingConfig::FREQ_4K,
         }
     }
 }
@@ -83,8 +83,8 @@ impl<S: Into<SamplingMode> + std::fmt::Debug> Modulation for Square<S> {
             .collect())
     }
 
-    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-        Ok(self.option.sampling_config)
+    fn sampling_config(&self) -> SamplingConfig {
+        self.option.sampling_config
     }
 }
 
@@ -134,7 +134,7 @@ mod tests {
         781.25*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency (150.01 Hz) cannot be output with the sampling config (SamplingConfig { division: 10 }).".to_owned())),
+        Err(ModulationError::new("Frequency (150.01 Hz) cannot be output with the sampling config (SamplingConfig::Freq(4000 Hz)).".to_owned())),
         150.01*Hz
     )]
     #[case(
@@ -172,7 +172,7 @@ mod tests {
         assert_eq!(u8::MIN, m.option.low);
         assert_eq!(u8::MAX, m.option.high);
         assert_eq!(0.5, m.option.duty);
-        assert_eq!(Ok(SamplingConfig::DIV_10), m.sampling_config());
+        assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
         assert_eq!(expect, m.calc());
     }
 
@@ -198,7 +198,7 @@ mod tests {
         assert_eq!(u8::MIN, m.option.low);
         assert_eq!(u8::MAX, m.option.high);
         assert_eq!(0.5, m.option.duty);
-        assert_eq!(Ok(SamplingConfig::DIV_10), m.sampling_config());
+        assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
         assert_eq!(expect, m.calc());
     }
 

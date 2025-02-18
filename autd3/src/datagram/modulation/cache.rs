@@ -10,7 +10,7 @@ use getset::Getters;
 pub struct Cache<M: Modulation> {
     m: Rc<RefCell<Option<M>>>,
     #[debug(skip)]
-    sampling_config: Result<SamplingConfig, ModulationError>,
+    sampling_config: SamplingConfig,
     #[getset(get = "pub")]
     #[debug("{}", !self.cache.borrow().is_empty())]
     /// Cached modulation data.
@@ -21,7 +21,7 @@ impl<M: Modulation> Clone for Cache<M> {
     fn clone(&self) -> Self {
         Self {
             m: self.m.clone(),
-            sampling_config: self.sampling_config.clone(),
+            sampling_config: self.sampling_config,
             cache: self.cache.clone(),
         }
     }
@@ -53,8 +53,8 @@ impl<M: Modulation> Cache<M> {
 }
 
 impl<M: Modulation> Modulation for Cache<M> {
-    fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-        self.sampling_config.clone()
+    fn sampling_config(&self) -> SamplingConfig {
+        self.sampling_config
     }
 
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
@@ -86,7 +86,7 @@ mod tests {
 
         let m = Custom {
             buffer: vec![rng.random(), rng.random()],
-            sampling_config: SamplingConfig::DIV_10,
+            sampling_config: SamplingConfig::FREQ_4K,
         };
         let cache = Cache::new(m.clone());
 
@@ -110,8 +110,8 @@ mod tests {
         }
 
         // GRCOV_EXCL_START
-        fn sampling_config(&self) -> Result<SamplingConfig, ModulationError> {
-            Ok(SamplingConfig::FREQ_MIN)
+        fn sampling_config(&self) -> SamplingConfig {
+            SamplingConfig::FREQ_4K
         }
         // GRCOV_EXCL_STOP
     }

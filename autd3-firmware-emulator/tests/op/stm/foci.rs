@@ -87,7 +87,7 @@ fn test_send_foci_stm_unsafe(
     let stm = WithLoopBehavior {
         inner: FociSTM {
             foci: foci.clone(),
-            config: SamplingConfig::new(freq_div).unwrap(),
+            config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
         },
         loop_behavior,
         segment,
@@ -146,7 +146,7 @@ fn change_foci_stm_segment_unsafe() -> anyhow::Result<()> {
     let stm = WithSegment {
         inner: FociSTM {
             foci: gen_random_foci::<1>(2),
-            config: SamplingConfig::FREQ_MIN,
+            config: SamplingConfig::new(NonZeroU16::MAX),
         },
         segment: Segment::S1,
         transition_mode: None,
@@ -173,7 +173,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
     {
         let stm = FociSTM {
             foci: gen_random_foci::<1>(2),
-            config: SamplingConfig::DIV_10,
+            config: SamplingConfig::FREQ_4K,
         };
 
         assert_eq!(
@@ -198,9 +198,11 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
             inner: FociSTM {
                 foci: gen_random_foci::<1>(2),
                 config: SamplingConfig::new(
-                    SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT),
-                )
-                .unwrap(),
+                    NonZeroU16::new(
+                        SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT),
+                    )
+                    .unwrap(),
+                ),
             },
             segment: Segment::S1,
             transition_mode: None,
@@ -261,7 +263,7 @@ fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
                     .iter()
                     .map(|buf| TestGain { data: buf.clone() })
                     .collect::<Vec<_>>(),
-                config: SamplingConfig::FREQ_MIN,
+                config: SamplingConfig::new(NonZeroU16::MAX),
                 option: GainSTMOption::default(),
             },
             segment: Segment::S1,
@@ -299,7 +301,7 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
         let stm = WithSegment {
             inner: FociSTM {
                 foci: gen_random_foci::<1>(2),
-                config: SamplingConfig::FREQ_MIN,
+                config: SamplingConfig::new(NonZeroU16::MAX),
             },
             segment: Segment::S0,
             transition_mode: Some(TransitionMode::SyncIdx),
@@ -315,7 +317,7 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
         let stm = WithLoopBehavior {
             inner: FociSTM {
                 foci: gen_random_foci::<1>(2),
-                config: SamplingConfig::FREQ_MIN,
+                config: SamplingConfig::new(NonZeroU16::MAX),
             },
             segment: Segment::S1,
             transition_mode: Some(TransitionMode::Immediate),
@@ -332,7 +334,7 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
         let stm = WithSegment {
             inner: FociSTM {
                 foci: gen_random_foci::<1>(2),
-                config: SamplingConfig::FREQ_MIN,
+                config: SamplingConfig::new(NonZeroU16::MAX),
             },
             segment: Segment::S1,
             transition_mode: None,
@@ -369,7 +371,7 @@ fn test_miss_transition_time(
     let stm = WithLoopBehavior {
         inner: FociSTM {
             foci: gen_random_foci::<1>(2),
-            config: SamplingConfig::FREQ_MIN,
+            config: SamplingConfig::new(NonZeroU16::MAX),
         },
         segment: Segment::S1,
         transition_mode: Some(transition_mode),
@@ -408,7 +410,7 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
         let stm = WithLoopBehavior {
             inner: FociSTM {
                 foci: foci.clone(),
-                config: SamplingConfig::new(freq_div).unwrap(),
+                config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             },
             loop_behavior,
             segment,

@@ -10,9 +10,7 @@ pub fn audio_file(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
         option: Default::default(),
     };
     const WAV_FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/resources/sin150.wav");
-    let m = autd3_modulation_audio_file::Wav {
-        path: std::path::Path::new(WAV_FILE),
-    };
+    let m = autd3_modulation_audio_file::Wav::new(WAV_FILE)?;
 
     autd.send((m, g))?;
 
