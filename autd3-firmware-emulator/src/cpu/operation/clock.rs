@@ -20,7 +20,7 @@ impl CPUEmulator {
 
         self.bram_cpy(
             BRAM_SELECT_CONTROLLER,
-            (BRAM_CNT_SELECT_CLOCK as u16) << 8 | (self.clk_write << 2),
+            ((BRAM_CNT_SELECT_CLOCK as u16) << 8) | (self.clk_write << 2),
             data[std::mem::size_of::<Clk>()..].as_ptr() as *const u16,
             (size << 2) as usize,
         );
