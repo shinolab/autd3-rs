@@ -27,7 +27,7 @@ message Geometry {
   message AUTD3 {
     Point3 pos = 1;
     Quaternion rot = 2;
-    float sound_speed = 3;
+    optional float sound_speed = 3;
   }
   repeated AUTD3 devices = 1;
 }

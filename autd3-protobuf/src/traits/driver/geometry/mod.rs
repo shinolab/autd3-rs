@@ -66,7 +66,7 @@ impl ToMessage for autd3_core::geometry::Geometry {
                     Ok(geometry::Autd3 {
                         pos: Some(dev[0].position().to_msg(None)?),
                         rot: Some(dev.rotation().to_msg(None)?),
-                        sound_speed: dev.sound_speed as _,
+                        sound_speed: Some(dev.sound_speed as _),
                     })
                 })
                 .collect::<Result<Vec<_>, AUTDProtoBufError>>()?,
@@ -117,7 +117,9 @@ impl FromMessage<Geometry> for autd3_core::geometry::Geometry {
                         .unwrap_or(autd3_core::geometry::UnitQuaternion::identity());
                     let mut dev =
                         autd3_driver::autd3_device::AUTD3 { pos, rot }.into_device(i as _);
-                    dev.sound_speed = dev_msg.sound_speed as _;
+                    if let Some(sound_speed) = dev_msg.sound_speed {
+                        dev.sound_speed = sound_speed;
+                    }
                     Ok(dev)
                 })
                 .collect::<Result<Vec<_>, AUTDProtoBufError>>()?,
