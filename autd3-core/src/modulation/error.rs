@@ -30,7 +30,7 @@ impl From<Infallible> for ModulationError {
 
 impl From<SamplingConfigError> for ModulationError {
     fn from(e: SamplingConfigError) -> Self {
-        Self::new(e.to_string())
+        Self::new(e)
     }
 }
 // GRCOV_EXCL_STOP

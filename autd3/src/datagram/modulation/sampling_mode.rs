@@ -51,7 +51,7 @@ impl SamplingMode {
         }
         if freq.hz() == 0 {
             return Err(ModulationError::new(
-                "Frequency must not be zero. If intentional, Use `Static` instead.".to_string(),
+                "Frequency must not be zero. If intentional, Use `Static` instead.",
             ));
         }
 
@@ -76,7 +76,7 @@ impl SamplingMode {
         }
         if freq.hz() == 0. {
             return Err(ModulationError::new(
-                "Frequency must not be zero. If intentional, Use `Static` instead.".to_string(),
+                "Frequency must not be zero. If intentional, Use `Static` instead.",
             ));
         }
         if freq.hz() >= sampling_config.freq()?.hz() / 2. {

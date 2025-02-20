@@ -62,9 +62,7 @@ impl Square<Freq<f32>> {
 impl<S: Into<SamplingMode> + std::fmt::Debug> Modulation for Square<S> {
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
         if !(0.0..=1.0).contains(&self.option.duty) {
-            return Err(ModulationError::new(
-                "duty must be in range from 0 to 1".to_string(),
-            ));
+            return Err(ModulationError::new("duty must be in range from 0 to 1"));
         }
 
         let sampling_mode: SamplingMode = self.freq.into();
@@ -253,7 +251,7 @@ mod tests {
     #[test]
     fn duty_out_of_range(#[case] expect: &str, #[case] duty: f32) {
         assert_eq!(
-            Some(ModulationError::new(expect.to_string())),
+            Some(ModulationError::new(expect)),
             Square {
                 freq: 150. * Hz,
                 option: SquareOption {
