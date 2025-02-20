@@ -143,7 +143,7 @@ impl Link for RemoteTwinCAT {
         Ok(())
     }
 
-    fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
+    fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
         let addr = AmsAddr {
             net_id: self.net_id,
             port: PORT,
@@ -161,17 +161,15 @@ impl Link for RemoteTwinCAT {
         };
 
         if res == 0 {
-            return Ok(true);
+            return Ok(());
         }
-
         if res == ADSERR_DEVICE_INVALIDSIZE {
             return Err(AdsError::DeviceInvalidSize.into());
         }
-
         Err(AdsError::SendData(res as _).into())
     }
 
-    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
+    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
         let addr = AmsAddr {
             net_id: self.net_id,
             port: PORT,
@@ -191,9 +189,8 @@ impl Link for RemoteTwinCAT {
         };
 
         if res == 0 {
-            return Ok(true);
+            return Ok(());
         }
-
         Err(AdsError::ReadData(res as _).into())
     }
 
@@ -217,11 +214,11 @@ impl AsyncLink for RemoteTwinCAT {
         <Self as Link>::close(self)
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
         <Self as Link>::send(self, tx)
     }
 
-    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
         <Self as Link>::receive(self, rx)
     }
 

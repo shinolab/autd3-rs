@@ -87,9 +87,6 @@ pub enum AUTDDriverError {
     /// Failed to confirm the response from the device.
     #[error("Failed to confirm the response from the device")]
     ConfirmResponseFailed,
-    /// Failed to send data.
-    #[error("Failed to send data")]
-    SendDataFailed,
 
     /// Invalid date time.
     #[error("The input data is invalid.")]

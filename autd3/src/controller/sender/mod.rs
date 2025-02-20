@@ -154,9 +154,7 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
         }
 
         tracing::trace!("send: {}", self.tx.iter().join(", "));
-        if !self.link.send(self.tx)? {
-            return Err(AUTDDriverError::SendDataFailed);
-        }
+        self.link.send(self.tx)?;
         self.wait_msg_processed(timeout)
     }
 
@@ -167,10 +165,10 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
             if !self.link.is_open() {
                 return Err(AUTDDriverError::LinkClosed);
             }
-            let res = self.link.receive(self.rx)?;
+            self.link.receive(self.rx)?;
             tracing::trace!("recv: {}", self.rx.iter().join(", "));
 
-            if res && check_if_msg_is_processed(self.tx, self.rx).all(std::convert::identity) {
+            if check_if_msg_is_processed(self.tx, self.rx).all(std::convert::identity) {
                 return Ok(());
             }
             if start.elapsed() > timeout {
@@ -248,21 +246,25 @@ mod tests {
             Ok(())
         }
 
-        fn send(&mut self, _: &[TxMessage]) -> Result<bool, LinkError> {
-            self.send_cnt += 1;
-            Ok(!self.down)
+        fn send(&mut self, _: &[TxMessage]) -> Result<(), LinkError> {
+            if !self.down {
+                self.send_cnt += 1;
+            }
+            Ok(())
         }
 
-        fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
+        fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
             if self.recv_cnt > 10 {
-                return Err(LinkError::new("too many".to_owned()));
+                return Err(LinkError::new("too many"));
             }
 
-            self.recv_cnt += 1;
+            if !self.down {
+                self.recv_cnt += 1;
+            }
             rx.iter_mut()
                 .for_each(|r| *r = RxMessage::new(r.data(), self.recv_cnt as u8));
 
-            Ok(!self.down)
+            Ok(())
         }
 
         fn is_open(&self) -> bool {
@@ -310,23 +312,14 @@ mod tests {
             },
         };
 
-        assert_eq!(sender.send_receive(Duration::ZERO), Ok(()));
+        assert_eq!(Ok(()), sender.send_receive(Duration::ZERO));
+        assert_eq!(Ok(()), sender.send_receive(Duration::from_millis(1)));
 
         sender.link.is_open = false;
         assert_eq!(
             sender.send_receive(Duration::ZERO),
             Err(AUTDDriverError::LinkClosed)
         );
-
-        sender.link.is_open = true;
-        sender.link.down = true;
-        assert_eq!(
-            sender.send_receive(Duration::ZERO),
-            Err(AUTDDriverError::SendDataFailed)
-        );
-
-        sender.link.down = false;
-        assert_eq!(sender.send_receive(Duration::from_millis(1)), Ok(()));
     }
 
     #[rstest::rstest]
@@ -356,7 +349,7 @@ mod tests {
             },
         };
 
-        assert_eq!(sender.wait_msg_processed(Duration::from_millis(10)), Ok(()));
+        assert_eq!(Ok(()), sender.wait_msg_processed(Duration::from_millis(10)));
 
         sender.link.recv_cnt = 0;
         sender.link.is_open = false;
@@ -376,13 +369,13 @@ mod tests {
         sender.link.recv_cnt = 0;
         sender.link.is_open = true;
         sender.link.down = true;
-        assert_eq!(Ok(()), sender.wait_msg_processed(Duration::ZERO),);
+        assert_eq!(Ok(()), sender.wait_msg_processed(Duration::ZERO));
 
         sender.link.down = false;
         sender.link.recv_cnt = 0;
         sender.tx[0].header.msg_id = 20;
         assert_eq!(
-            Err(AUTDDriverError::Link(LinkError::new("too many".to_owned()))),
+            Err(AUTDDriverError::Link(LinkError::new("too many"))),
             sender.wait_msg_processed(Duration::from_secs(10))
         );
     }

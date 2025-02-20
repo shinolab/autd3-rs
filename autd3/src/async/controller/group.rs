@@ -148,7 +148,7 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
 mod tests {
     use std::sync::Mutex;
 
-    use autd3_core::derive::*;
+    use autd3_core::{derive::*, link::LinkError};
     use autd3_driver::{
         datagram::{GainSTM, IntoBoxedDatagram, SwapSegment},
         defined::Hz,
@@ -276,9 +276,9 @@ mod tests {
                 .await
         );
 
-        autd.link_mut().down();
+        autd.link_mut().break_down();
         assert_eq!(
-            Err(AUTDError::Driver(AUTDDriverError::SendDataFailed)),
+            Err(AUTDError::Driver(LinkError::new("broken").into())),
             autd.group_send(|_| Some(()), HashMap::from([((), Null {})]))
                 .await
         );

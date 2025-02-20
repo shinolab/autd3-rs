@@ -16,10 +16,10 @@ pub trait Link: Send {
     }
 
     /// Sends a message to the device.
-    fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError>;
+    fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError>;
 
     /// Receives a message from the device.
-    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError>;
+    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError>;
 
     /// Checks if the link is open.
     #[must_use]
@@ -39,11 +39,11 @@ impl Link for Box<dyn Link> {
         self.as_mut().update(geometry)
     }
 
-    fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
+    fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
         self.as_mut().send(tx)
     }
 
-    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
+    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
         self.as_mut().receive(rx)
     }
 
