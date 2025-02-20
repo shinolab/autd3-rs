@@ -1,6 +1,8 @@
 # 30.0.0
 
 - `Modulation::sampling_config` now returns `SamplingConfig` instead of `Result<SamplingConfig, ModulationError>`
+- Remove `SamplingConfig::new_nearest`, add `SamplingConfig::into_nearest` instead
+- Update Protocol Buffers definitions
 
 # 29.0.0
 
