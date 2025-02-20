@@ -18,20 +18,17 @@ message Datagram {
     Silencer silencer = 5;
     SwapSegment swap_segment = 6;
     Modulation modulation = 10;
-    ModulationWithLoopBehavior modulation_with_segment = 11;
     Gain gain = 30;
-    GainWithSegment gain_with_segment = 31;
     FociSTM foci_stm = 40;
-    FociSTMWithLoopBehavior foci_stm_with_loop_behavior = 41;
     GainSTM gain_stm = 50;
-    GainSTMWithLoopBehavior gain_stm_with_loop_behavior = 51;
+    WithSegment with_segment = 60;
+    WithLoopBehavior with_loop_behavior = 61;
   }
 }
 
 message SendResponseLightweight {
-  bool success = 1;
-  bool err = 2;
-  string msg = 3;
+  bool err = 1;
+  string msg = 2;
 }
 
 message FirmwareVersionRequestLightweight {}
@@ -43,20 +40,19 @@ message FirmwareVersionResponseLightweight {
     uint32 cpu_minor_version = 4;
     uint32 fpga_function_bits = 5;
   }
-  bool success = 1;
+  bool err = 1;
   string msg = 2;
   repeated FirmwareVersion firmware_version_list = 3;
 }
 
 message CloseRequestLightweight {}
 
-message OpenRequestLightweight {
-  Geometry geometry = 1;
-}
+message OpenRequestLightweight { Geometry geometry = 1; }
 
 service ECATLight {
   rpc Open(OpenRequestLightweight) returns (SendResponseLightweight) {}
-  rpc FirmwareVersion(FirmwareVersionRequestLightweight) returns (FirmwareVersionResponseLightweight) {}
+  rpc FirmwareVersion(FirmwareVersionRequestLightweight)
+      returns (FirmwareVersionResponseLightweight) {}
   rpc Send(Datagram) returns (SendResponseLightweight) {}
   rpc Close(CloseRequestLightweight) returns (SendResponseLightweight) {}
 }

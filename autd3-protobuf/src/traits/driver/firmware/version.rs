@@ -3,7 +3,7 @@ use crate::{pb::*, traits::FromMessage, AUTDProtoBufError};
 impl FromMessage<FirmwareVersionResponseLightweight>
     for Vec<autd3_driver::firmware::version::FirmwareVersion>
 {
-    fn from_msg(msg: &FirmwareVersionResponseLightweight) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: FirmwareVersionResponseLightweight) -> Result<Self, AUTDProtoBufError> {
         Ok(msg
             .firmware_version_list
             .iter()
@@ -43,7 +43,7 @@ mod tests {
             },
         }];
         let response = FirmwareVersionResponseLightweight {
-            success: true,
+            err: false,
             msg: String::new(),
             firmware_version_list: firmware_versions
                 .iter()
@@ -58,7 +58,7 @@ mod tests {
         };
         assert_eq!(
             firmware_versions,
-            Vec::<autd3_driver::firmware::version::FirmwareVersion>::from_msg(&response).unwrap()
+            Vec::<autd3_driver::firmware::version::FirmwareVersion>::from_msg(response).unwrap()
         );
     }
 }

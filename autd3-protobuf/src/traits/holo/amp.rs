@@ -17,10 +17,9 @@ impl ToMessage for autd3_gain_holo::Amplitude {
     }
 }
 
-impl FromMessage<Option<Amplitude>> for autd3_gain_holo::Amplitude {
-    fn from_msg(msg: &Option<Amplitude>) -> Result<Self, AUTDProtoBufError> {
-        msg.map(|msg| msg.value * autd3_gain_holo::Pa)
-            .ok_or(AUTDProtoBufError::DataParseError)
+impl FromMessage<Amplitude> for autd3_gain_holo::Amplitude {
+    fn from_msg(msg: Amplitude) -> Result<Self, AUTDProtoBufError> {
+        Ok(msg.value * autd3_gain_holo::Pa)
     }
 }
 
@@ -35,7 +34,7 @@ mod tests {
         let mut rng = rand::rng();
         let v = rng.random::<f32>() * Pa;
         let msg = v.to_msg(None).unwrap();
-        let v2 = autd3_gain_holo::Amplitude::from_msg(&Some(msg)).unwrap();
+        let v2 = autd3_gain_holo::Amplitude::from_msg(msg).unwrap();
         approx::assert_abs_diff_eq!(v.pascal(), v2.pascal());
     }
 }

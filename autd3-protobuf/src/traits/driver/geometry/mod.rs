@@ -74,49 +74,43 @@ impl ToMessage for autd3_core::geometry::Geometry {
     }
 }
 
-impl FromMessage<Option<UnitVector3>> for autd3_core::geometry::UnitVector3 {
-    fn from_msg(msg: &Option<UnitVector3>) -> Result<Self, AUTDProtoBufError> {
-        msg.as_ref()
-            .map(|msg| {
-                autd3_core::geometry::UnitVector3::new_unchecked(
-                    autd3_core::geometry::Vector3::new(msg.x as _, msg.y as _, msg.z as _),
-                )
-            })
-            .ok_or(AUTDProtoBufError::DataParseError)
+impl FromMessage<UnitVector3> for autd3_core::geometry::UnitVector3 {
+    fn from_msg(msg: UnitVector3) -> Result<Self, AUTDProtoBufError> {
+        Ok(autd3_core::geometry::UnitVector3::new_normalize(
+            autd3_core::geometry::Vector3::new(msg.x as _, msg.y as _, msg.z as _),
+        ))
     }
 }
 
-impl FromMessage<Option<Point3>> for autd3_core::geometry::Point3 {
-    fn from_msg(msg: &Option<Point3>) -> Result<Self, AUTDProtoBufError> {
-        msg.as_ref()
-            .map(|msg| autd3_core::geometry::Point3::new(msg.x as _, msg.y as _, msg.z as _))
-            .ok_or(AUTDProtoBufError::DataParseError)
+impl FromMessage<Point3> for autd3_core::geometry::Point3 {
+    fn from_msg(msg: Point3) -> Result<Self, AUTDProtoBufError> {
+        Ok(autd3_core::geometry::Point3::new(
+            msg.x as _, msg.y as _, msg.z as _,
+        ))
     }
 }
 
-impl FromMessage<Option<Quaternion>> for autd3_core::geometry::UnitQuaternion {
-    fn from_msg(msg: &Option<Quaternion>) -> Result<Self, AUTDProtoBufError> {
-        msg.as_ref()
-            .map(|msg| {
-                autd3_core::geometry::UnitQuaternion::from_quaternion(
-                    autd3_core::geometry::Quaternion::new(
-                        msg.w as _, msg.x as _, msg.y as _, msg.z as _,
-                    ),
-                )
-            })
-            .ok_or(AUTDProtoBufError::DataParseError)
+impl FromMessage<Quaternion> for autd3_core::geometry::UnitQuaternion {
+    fn from_msg(msg: Quaternion) -> Result<Self, AUTDProtoBufError> {
+        Ok(autd3_core::geometry::UnitQuaternion::from_quaternion(
+            autd3_core::geometry::Quaternion::new(msg.w as _, msg.x as _, msg.y as _, msg.z as _),
+        ))
     }
 }
 
 impl FromMessage<Geometry> for autd3_core::geometry::Geometry {
-    fn from_msg(msg: &Geometry) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: Geometry) -> Result<Self, AUTDProtoBufError> {
         Ok(autd3_core::geometry::Geometry::new(
             msg.devices
-                .iter()
+                .into_iter()
                 .enumerate()
                 .map(|(i, dev_msg)| {
-                    let pos = autd3_core::geometry::Point3::from_msg(&dev_msg.pos)?;
-                    let rot = autd3_core::geometry::UnitQuaternion::from_msg(&dev_msg.rot)?;
+                    let pos = autd3_core::geometry::Point3::from_msg(
+                        dev_msg.pos.ok_or(AUTDProtoBufError::DataParseError)?,
+                    )?;
+                    let rot = autd3_core::geometry::UnitQuaternion::from_msg(
+                        dev_msg.rot.ok_or(AUTDProtoBufError::DataParseError)?,
+                    )?;
                     let mut dev =
                         autd3_driver::autd3_device::AUTD3 { pos, rot }.into_device(i as _);
                     dev.sound_speed = dev_msg.sound_speed as _;
@@ -141,12 +135,10 @@ mod tests {
         let mut rng = rand::rng();
         let v = Point3::new(rng.random(), rng.random(), rng.random());
         let msg = v.to_msg(None).unwrap();
-        let v2 = Point3::from_msg(&Some(msg)).unwrap();
+        let v2 = Point3::from_msg(msg).unwrap();
         approx::assert_abs_diff_eq!(v.x, v2.x);
         approx::assert_abs_diff_eq!(v.y, v2.y);
         approx::assert_abs_diff_eq!(v.z, v2.z);
-
-        assert!(Point3::from_msg(&None).is_err());
     }
 
     #[test]
@@ -154,12 +146,10 @@ mod tests {
         let mut rng = rand::rng();
         let v = UnitVector3::new_normalize(Vector3::new(rng.random(), rng.random(), rng.random()));
         let msg = v.to_msg(None).unwrap();
-        let v2 = UnitVector3::from_msg(&Some(msg)).unwrap();
+        let v2 = UnitVector3::from_msg(msg).unwrap();
         approx::assert_abs_diff_eq!(v.x, v2.x);
         approx::assert_abs_diff_eq!(v.y, v2.y);
         approx::assert_abs_diff_eq!(v.z, v2.z);
-
-        assert!(UnitVector3::from_msg(&None).is_err());
     }
 
     #[test]
@@ -172,13 +162,11 @@ mod tests {
             rng.random(),
         ));
         let msg = q.to_msg(None).unwrap();
-        let q2 = UnitQuaternion::from_msg(&Some(msg)).unwrap();
+        let q2 = UnitQuaternion::from_msg(msg).unwrap();
         approx::assert_abs_diff_eq!(q.w, q2.w);
         approx::assert_abs_diff_eq!(q.i, q2.i);
         approx::assert_abs_diff_eq!(q.j, q2.j);
         approx::assert_abs_diff_eq!(q.k, q2.k);
-
-        assert!(UnitQuaternion::from_msg(&None).is_err());
     }
 
     #[test]
@@ -192,7 +180,7 @@ mod tests {
         dev.sound_speed = rng.random();
         let geometry = Geometry::new(vec![dev]);
         let msg = geometry.to_msg(None).unwrap();
-        let geometry2 = Geometry::from_msg(&msg).unwrap();
+        let geometry2 = Geometry::from_msg(msg).unwrap();
         geometry
             .iter()
             .zip(geometry2.iter())

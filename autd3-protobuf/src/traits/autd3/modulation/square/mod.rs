@@ -21,27 +21,25 @@ impl ToMessage for autd3::modulation::SquareOption {
 }
 
 impl FromMessage<SquareOption> for autd3::modulation::SquareOption {
-    fn from_msg(msg: &SquareOption) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: SquareOption) -> Result<Self, AUTDProtoBufError> {
+        let default = autd3::modulation::SquareOption::default();
         Ok(autd3::modulation::SquareOption {
             low: msg
                 .low
                 .map(u8::try_from)
                 .transpose()?
-                .unwrap_or(autd3::modulation::SquareOption::default().low),
+                .unwrap_or(default.low),
             high: msg
                 .high
                 .map(u8::try_from)
                 .transpose()?
-                .unwrap_or(autd3::modulation::SquareOption::default().high),
-            duty: msg
-                .duty
-                .unwrap_or(autd3::modulation::SquareOption::default().duty),
+                .unwrap_or(default.high),
+            duty: msg.duty.unwrap_or(default.duty),
             sampling_config: msg
                 .config
-                .as_ref()
                 .map(autd3_driver::firmware::fpga::SamplingConfig::from_msg)
                 .transpose()?
-                .unwrap_or(autd3::modulation::SquareOption::default().sampling_config),
+                .unwrap_or(default.sampling_config),
         })
     }
 }

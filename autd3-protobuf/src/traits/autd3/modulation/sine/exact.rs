@@ -25,15 +25,12 @@ impl ToMessage for autd3::modulation::Sine<Freq<u32>> {
 }
 
 impl FromMessage<SineExact> for autd3::modulation::Sine<Freq<u32>> {
-    fn from_msg(msg: &SineExact) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: SineExact) -> Result<Self, AUTDProtoBufError> {
         Ok(autd3::modulation::Sine {
             freq: msg.freq * autd3_core::defined::Hz,
-            option: msg
-                .option
-                .as_ref()
-                .map(autd3::modulation::SineOption::from_msg)
-                .transpose()?
-                .unwrap_or_default(),
+            option: autd3::modulation::SineOption::from_msg(
+                msg.option.ok_or(AUTDProtoBufError::DataParseError)?,
+            )?,
         })
     }
 }
@@ -55,7 +52,7 @@ mod tests {
                 modulation: Some(modulation::Modulation::SineExact(modulation)),
                 ..
             })) => {
-                let m2 = autd3::modulation::Sine::<Freq<u32>>::from_msg(&modulation).unwrap();
+                let m2 = autd3::modulation::Sine::<Freq<u32>>::from_msg(modulation).unwrap();
                 assert_eq!(m.freq, m2.freq);
             }
             _ => panic!("unexpected datagram type"),

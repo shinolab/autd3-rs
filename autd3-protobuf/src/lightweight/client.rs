@@ -40,7 +40,7 @@ impl LightweightClient {
             })
             .await?
             .into_inner();
-        if !res.success {
+        if res.err {
             return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
         }
         Ok(Self { client, geometry })
@@ -59,16 +59,16 @@ impl LightweightClient {
             ))
             .await?
             .into_inner();
-        if !res.success {
+        if res.err {
             return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
         }
-        Vec::from_msg(&res)
+        Vec::from_msg(res)
     }
 
     pub async fn send(
         &mut self,
         datagram: impl ToMessage<Message = crate::pb::Datagram>,
-    ) -> Result<bool, crate::error::AUTDProtoBufError> {
+    ) -> Result<(), crate::error::AUTDProtoBufError> {
         let res = self
             .client
             .send(tonic::Request::new(datagram.to_msg(Some(&self.geometry))?))
@@ -77,7 +77,7 @@ impl LightweightClient {
         if res.err {
             return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
         }
-        Ok(res.success)
+        Ok(())
     }
 
     pub async fn close(mut self) -> Result<(), crate::error::AUTDProtoBufError> {
@@ -86,7 +86,7 @@ impl LightweightClient {
             .close(crate::pb::CloseRequestLightweight {})
             .await?
             .into_inner();
-        if !res.success {
+        if res.err {
             return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
         }
         Ok(())

@@ -22,26 +22,30 @@ impl ToMessage for autd3::modulation::SineOption {
 }
 
 impl FromMessage<SineOption> for autd3::modulation::SineOption {
-    fn from_msg(msg: &SineOption) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: SineOption) -> Result<Self, AUTDProtoBufError> {
+        let default = autd3::modulation::SineOption::default();
         Ok(autd3::modulation::SineOption {
             intensity: msg
                 .intensity
                 .map(u8::try_from)
                 .transpose()?
-                .unwrap_or(autd3::modulation::SineOption::default().intensity),
+                .unwrap_or(default.intensity),
             offset: msg
                 .offset
                 .map(u8::try_from)
                 .transpose()?
-                .unwrap_or(autd3::modulation::SineOption::default().offset),
-            phase: autd3_core::defined::Angle::from_msg(&msg.phase)?,
+                .unwrap_or(default.offset),
+            phase: msg
+                .phase
+                .map(autd3_core::defined::Angle::from_msg)
+                .transpose()?
+                .unwrap_or(default.phase),
             clamp: msg.clamp.unwrap_or(false),
             sampling_config: msg
                 .config
-                .as_ref()
                 .map(autd3_driver::firmware::fpga::SamplingConfig::from_msg)
                 .transpose()?
-                .unwrap_or(autd3::modulation::SineOption::default().sampling_config),
+                .unwrap_or(default.sampling_config),
         })
     }
 }

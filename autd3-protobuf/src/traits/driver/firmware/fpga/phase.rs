@@ -16,7 +16,7 @@ impl ToMessage for autd3_driver::firmware::fpga::Phase {
 }
 
 impl FromMessage<Phase> for autd3_driver::firmware::fpga::Phase {
-    fn from_msg(msg: &Phase) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: Phase) -> Result<Self, AUTDProtoBufError> {
         Ok(autd3_driver::firmware::fpga::Phase(u8::try_from(
             msg.value,
         )?))
@@ -34,7 +34,7 @@ mod tests {
         let mut rng = rand::rng();
         let v = Phase(rng.random());
         let msg = v.to_msg(None).unwrap();
-        let v2 = Phase::from_msg(&msg).unwrap();
+        let v2 = Phase::from_msg(msg).unwrap();
         assert_eq!(v, v2);
     }
 }

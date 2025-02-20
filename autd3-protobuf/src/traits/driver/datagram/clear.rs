@@ -18,7 +18,7 @@ impl ToMessage for autd3_driver::datagram::Clear {
 }
 
 impl FromMessage<Clear> for autd3_driver::datagram::Clear {
-    fn from_msg(_: &Clear) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(_: Clear) -> Result<Self, AUTDProtoBufError> {
         Ok(autd3_driver::datagram::Clear::new())
     }
 }

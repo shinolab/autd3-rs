@@ -1,10 +1,10 @@
-use crate::pb::*;
+use crate::{pb::*, FromMessage};
 
 impl From<Segment> for autd3_driver::firmware::fpga::Segment {
     fn from(value: Segment) -> Self {
         match value {
-            Segment::S0 => Self::S0,
-            Segment::S1 => Self::S1,
+            Segment::S0 => autd3_driver::firmware::fpga::Segment::S0,
+            Segment::S1 => autd3_driver::firmware::fpga::Segment::S1,
         }
     }
 }
@@ -15,6 +15,12 @@ impl From<autd3_driver::firmware::fpga::Segment> for Segment {
             autd3_driver::firmware::fpga::Segment::S0 => Self::S0,
             autd3_driver::firmware::fpga::Segment::S1 => Self::S1,
         }
+    }
+}
+
+impl FromMessage<i32> for autd3_driver::firmware::fpga::Segment {
+    fn from_msg(msg: i32) -> Result<Self, crate::AUTDProtoBufError> {
+        Ok(Segment::try_from(msg)?.into())
     }
 }
 

@@ -11,7 +11,6 @@ pub const TRANSITION_MODE_NONE: u8 = 0xFE;
 pub(crate) const TRANSITION_MODE_IMMEDIATE: u8 = 0xFF;
 
 /// Transition mode of segment
-#[non_exhaustive]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub enum TransitionMode {
     /// Transites when the sampling index in the destination segment is 0.

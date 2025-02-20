@@ -16,48 +16,47 @@ impl ToMessage for autd3_driver::firmware::fpga::TransitionMode {
         Ok(Self::Message {
             mode: Some(match *self {
                 autd3_driver::firmware::fpga::TransitionMode::SyncIdx => {
-                    transition_mode::Mode::SyncIdx(TransitionModeSyncIdx {})
+                    transition_mode::Mode::SyncIdx(transition_mode::SyncIdx {})
                 }
                 autd3_driver::firmware::fpga::TransitionMode::SysTime(value) => {
-                    transition_mode::Mode::SysTime(TransitionModeSysTime {
+                    transition_mode::Mode::SysTime(transition_mode::SysTime {
                         value: value.sys_time(),
                     })
                 }
                 autd3_driver::firmware::fpga::TransitionMode::GPIO(value) => {
-                    transition_mode::Mode::Gpio(TransitionModeGpio { value: value as _ })
+                    transition_mode::Mode::Gpio(transition_mode::Gpio { value: value as _ })
                 }
                 autd3_driver::firmware::fpga::TransitionMode::Ext => {
-                    transition_mode::Mode::Ext(TransitionModeExt {})
+                    transition_mode::Mode::Ext(transition_mode::Ext {})
                 }
                 autd3_driver::firmware::fpga::TransitionMode::Immediate => {
-                    transition_mode::Mode::Immediate(TransitionModeImmediate {})
+                    transition_mode::Mode::Immediate(transition_mode::Immediate {})
                 }
-                _ => unimplemented!(),
             }),
         })
     }
 }
 
 impl FromMessage<TransitionMode> for autd3_driver::firmware::fpga::TransitionMode {
-    fn from_msg(msg: &TransitionMode) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: TransitionMode) -> Result<Self, AUTDProtoBufError> {
         Ok(match msg.mode.ok_or(AUTDProtoBufError::DataParseError)? {
-            transition_mode::Mode::SyncIdx(TransitionModeSyncIdx {}) => {
+            transition_mode::Mode::SyncIdx(transition_mode::SyncIdx {}) => {
                 autd3_driver::firmware::fpga::TransitionMode::SyncIdx
             }
-            transition_mode::Mode::SysTime(TransitionModeSysTime { value }) => {
+            transition_mode::Mode::SysTime(transition_mode::SysTime { value }) => {
                 autd3_driver::firmware::fpga::TransitionMode::SysTime(
                     DcSysTime::ZERO + std::time::Duration::from_nanos(value),
                 )
             }
-            transition_mode::Mode::Gpio(TransitionModeGpio { value }) => {
+            transition_mode::Mode::Gpio(transition_mode::Gpio { value }) => {
                 autd3_driver::firmware::fpga::TransitionMode::GPIO(
                     autd3_driver::firmware::fpga::GPIOIn::from(GpioIn::try_from(value)?),
                 )
             }
-            transition_mode::Mode::Ext(TransitionModeExt {}) => {
+            transition_mode::Mode::Ext(transition_mode::Ext {}) => {
                 autd3_driver::firmware::fpga::TransitionMode::Ext
             }
-            transition_mode::Mode::Immediate(TransitionModeImmediate {}) => {
+            transition_mode::Mode::Immediate(transition_mode::Immediate {}) => {
                 autd3_driver::firmware::fpga::TransitionMode::Immediate
             }
         })
@@ -85,7 +84,7 @@ mod tests {
         let msg = expect.to_msg(None).unwrap();
         assert_eq!(
             expect,
-            autd3_driver::firmware::fpga::TransitionMode::from_msg(&msg).unwrap()
+            autd3_driver::firmware::fpga::TransitionMode::from_msg(msg).unwrap()
         );
     }
 }
