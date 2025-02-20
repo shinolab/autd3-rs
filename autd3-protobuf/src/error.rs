@@ -52,7 +52,7 @@ impl<T> From<std::sync::mpsc::SendError<T>> for AUTDProtoBufError {
 
 impl From<AUTDProtoBufError> for autd3_core::link::LinkError {
     fn from(e: AUTDProtoBufError) -> Self {
-        LinkError::new(e.to_string())
+        LinkError::new(e)
     }
 }
 

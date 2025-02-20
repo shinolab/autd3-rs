@@ -54,7 +54,7 @@ async fn audit_test() -> anyhow::Result<()> {
         );
         assert_eq!(
             Err(AUTDError::Driver(AUTDDriverError::Link(LinkError::new(
-                "broken".to_string()
+                "broken"
             )))),
             autd.fpga_state().await
         );

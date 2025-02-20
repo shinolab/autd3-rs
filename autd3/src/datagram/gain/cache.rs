@@ -67,7 +67,7 @@ impl<G: Gain> Cache<G> {
                 .any(|dev| !self.cache.borrow().contains_key(&dev.idx()))
         {
             return Err(GainError::new(
-                "Cache is initialized with different geometry".to_string(),
+                "Cache is initialized with different geometry",
             ));
         }
 
@@ -181,7 +181,7 @@ mod tests {
 
         assert_eq!(
             Some(GainError::new(
-                "Cache is initialized with different geometry".to_string()
+                "Cache is initialized with different geometry"
             )),
             cache.init_full(&geometry, None, false).err()
         );
