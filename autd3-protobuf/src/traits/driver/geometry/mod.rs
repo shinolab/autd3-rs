@@ -105,12 +105,16 @@ impl FromMessage<Geometry> for autd3_core::geometry::Geometry {
                 .into_iter()
                 .enumerate()
                 .map(|(i, dev_msg)| {
-                    let pos = autd3_core::geometry::Point3::from_msg(
-                        dev_msg.pos.ok_or(AUTDProtoBufError::DataParseError)?,
-                    )?;
-                    let rot = autd3_core::geometry::UnitQuaternion::from_msg(
-                        dev_msg.rot.ok_or(AUTDProtoBufError::DataParseError)?,
-                    )?;
+                    let pos = dev_msg
+                        .pos
+                        .map(autd3_core::geometry::Point3::from_msg)
+                        .transpose()?
+                        .unwrap_or(autd3_core::geometry::Point3::origin());
+                    let rot = dev_msg
+                        .rot
+                        .map(autd3_core::geometry::UnitQuaternion::from_msg)
+                        .transpose()?
+                        .unwrap_or(autd3_core::geometry::UnitQuaternion::identity());
                     let mut dev =
                         autd3_driver::autd3_device::AUTD3 { pos, rot }.into_device(i as _);
                     dev.sound_speed = dev_msg.sound_speed as _;
