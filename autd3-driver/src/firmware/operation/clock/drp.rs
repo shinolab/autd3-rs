@@ -245,13 +245,14 @@ pub(crate) fn mmcm_frac_count_calc(divide: u64, frac: u64) -> u64 {
     let pm_fall_frac_filtered = pm_fall + pm_rise_frac - (pm_fall_frac & 0b11111000);
 
     let drp_regshared: u64 =
-        0b110000 | (pm_fall_frac_filtered & 0b111) << 1 | (wf_fall_frac as u64);
+        0b110000 | ((pm_fall_frac_filtered & 0b111) << 1) | (wf_fall_frac as u64);
     let drp_reg2: u64 = 0b0000_1000_0000_0000
-        | (clkout0_divide_frac & 0b111) << 12
-        | (wf_rise_frac as u64) << 10
+        | ((clkout0_divide_frac & 0b111) << 12)
+        | ((wf_rise_frac as u64) << 10)
         | (dt & 0b111111);
-    let drp_reg1: u64 =
-        (pm_rise_frac_filtered & 0b111) << 13 | (ht_frac & 0b111111) << 6 | (lt_frac & 0b111111);
+    let drp_reg1: u64 = ((pm_rise_frac_filtered & 0b111) << 13)
+        | ((ht_frac & 0b111111) << 6)
+        | (lt_frac & 0b111111);
     (drp_regshared << 32) | (drp_reg2 << 16) | drp_reg1
 }
 // GRCOV_EXCL_STOP

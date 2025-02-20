@@ -100,52 +100,52 @@ impl Operation for ConfigureClockOp {
 
             rom[0] = 0x28_0000_FFFF;
 
-            rom[1] = 0x09_8000_0000 | (clkout0_frac & 0xFFFF0000) >> 16;
+            rom[1] = 0x09_8000_0000 | ((clkout0_frac & 0xFFFF0000) >> 16);
             rom[2] = 0x08_1000_0000 | (clkout0_frac & 0xFFFF);
 
             rom[3] = 0x0A_1000_0000 | (clkout_unused & 0xFFFF);
-            rom[4] = 0x0B_FC00_0000 | (clkout_unused & 0xFFFF0000) >> 16;
+            rom[4] = 0x0B_FC00_0000 | ((clkout_unused & 0xFFFF0000) >> 16);
 
             rom[5] = 0x0C_1000_0000 | (clkout_unused & 0xFFFF);
-            rom[6] = 0x0D_FC00_0000 | (clkout_unused & 0xFFFF0000) >> 16;
+            rom[6] = 0x0D_FC00_0000 | ((clkout_unused & 0xFFFF0000) >> 16);
 
             rom[7] = 0x0E_1000_0000 | (clkout_unused & 0xFFFF);
-            rom[8] = 0x0F_FC00_0000 | (clkout_unused & 0xFFFF0000) >> 16;
+            rom[8] = 0x0F_FC00_0000 | ((clkout_unused & 0xFFFF0000) >> 16);
 
             rom[9] = 0x10_1000_0000 | (clkout_unused & 0xFFFF);
-            rom[10] = 0x11_FC00_0000 | (clkout_unused & 0xFFFF0000) >> 16;
+            rom[10] = 0x11_FC00_0000 | ((clkout_unused & 0xFFFF0000) >> 16);
 
             rom[11] = 0x06_1000_0000 | (clkout_unused & 0xFFFF);
             rom[12] = 0x07_C000_0000
-                | (clkout_unused & 0xC0000000) >> 16
-                | (clkout0_frac & 0xF00000000) >> 22
-                | (clkout_unused & 0x3FF0000) >> 16;
+                | ((clkout_unused & 0xC0000000) >> 16)
+                | ((clkout0_frac & 0xF00000000) >> 22)
+                | ((clkout_unused & 0x3FF0000) >> 16);
 
             rom[13] = 0x12_1000_0000;
             rom[14] = 0x13_C000_0000
-                | (clkout_unused & 0xC0000000) >> 16
-                | (clkfbout_frac & 0xF00000000) >> 22
-                | (clkout_unused & 0x3FF0000) >> 16;
+                | ((clkout_unused & 0xC0000000) >> 16)
+                | ((clkfbout_frac & 0xF00000000) >> 22)
+                | ((clkout_unused & 0x3FF0000) >> 16);
 
-            rom[15] = 0x16_C000_0000 | (divclk & 0xC00000) >> 10 | (divclk & 0xFFF);
+            rom[15] = 0x16_C000_0000 | ((divclk & 0xC00000) >> 10) | (divclk & 0xFFF);
 
             rom[16] = 0x14_1000_0000 | (clkfbout_frac & 0xFFFF);
-            rom[17] = 0x15_8000_0000 | (clkfbout_frac & 0xFFFF0000) >> 16;
+            rom[17] = 0x15_8000_0000 | ((clkfbout_frac & 0xFFFF0000) >> 16);
 
-            rom[18] = 0x18_FC00_0000 | (lock & 0x3FF00000) >> 20;
-            rom[19] = 0x19_8000_0000 | (lock & 0x7C0000000) >> 20 | (lock & 0x3FF);
-            rom[20] = 0x1A_8000_0000 | (lock & 0xF800000000) >> 25 | (lock & 0xFFC00) >> 10;
+            rom[18] = 0x18_FC00_0000 | ((lock & 0x3FF00000) >> 20);
+            rom[19] = 0x19_8000_0000 | ((lock & 0x7C0000000) >> 20) | (lock & 0x3FF);
+            rom[20] = 0x1A_8000_0000 | ((lock & 0xF800000000) >> 25) | ((lock & 0xFFC00) >> 10);
 
             rom[21] = 0x4E_66FF_0000
-                | (digital_filt & 0b1000000000) << 6
-                | (digital_filt & 0b0110000000) << 4
-                | (digital_filt & 0b0001000000) << 2;
+                | ((digital_filt & 0b1000000000) << 6)
+                | ((digital_filt & 0b0110000000) << 4)
+                | ((digital_filt & 0b0001000000) << 2);
 
             rom[22] = 0x4F_666F_0000
-                | (digital_filt & 0b0000100000) << 10
-                | (digital_filt & 0b0000011000) << 8
-                | (digital_filt & 0b0000000110) << 6
-                | (digital_filt & 0b0000000001) << 4;
+                | ((digital_filt & 0b0000100000) << 10)
+                | ((digital_filt & 0b0000011000) << 8)
+                | ((digital_filt & 0b0000000110) << 6)
+                | ((digital_filt & 0b0000000001) << 4);
 
             rom[31] = 1;
 
