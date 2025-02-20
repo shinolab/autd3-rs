@@ -221,7 +221,7 @@ mod tests {
 
     #[rstest::rstest]
     #[case(
-        Err(ModulationError::new("Fourier modulation value (-1) is out of range [0, 255]".to_owned())),
+        Err(ModulationError::new("Fourier modulation value (-1) is out of range [0, 255]")),
         0x00,
         false,
         None
@@ -233,7 +233,7 @@ mod tests {
         None
     )]
     #[case(
-        Err(ModulationError::new("Fourier modulation value (510) is out of range [0, 255]".to_owned())),
+        Err(ModulationError::new("Fourier modulation value (510) is out of range [0, 255]")),
         0xFF,
         false,
         Some(2.)
