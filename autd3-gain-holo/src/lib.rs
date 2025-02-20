@@ -25,7 +25,7 @@ pub use error::HoloError;
 pub use linear_synthesis::*;
 pub use nls::*;
 
-pub use amp::{dB, kPa, Amplitude, Pa};
+pub use amp::{Amplitude, Pa, dB, kPa};
 pub use autd3_core::acoustics::directivity::{Sphere, T4010A1};
 
 #[cfg(test)]

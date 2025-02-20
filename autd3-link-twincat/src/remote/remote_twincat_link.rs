@@ -1,4 +1,4 @@
-use std::ffi::{c_long, CString};
+use std::ffi::{CString, c_long};
 
 use itertools::Itertools;
 

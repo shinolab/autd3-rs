@@ -16,9 +16,9 @@ pub struct LightweightServer<
 }
 
 impl<
-        L: autd3_core::link::AsyncLink + 'static,
-        F: Fn() -> Result<L, LinkError> + Send + Sync + 'static,
-    > LightweightServer<L, F>
+    L: autd3_core::link::AsyncLink + 'static,
+    F: Fn() -> Result<L, LinkError> + Send + Sync + 'static,
+> LightweightServer<L, F>
 where
     L: Sync,
 {
@@ -559,9 +559,9 @@ where
 
 #[tonic::async_trait]
 impl<
-        L: autd3_core::link::AsyncLink + 'static,
-        F: Fn() -> Result<L, LinkError> + Send + Sync + 'static,
-    > ecat_light_server::EcatLight for LightweightServer<L, F>
+    L: autd3_core::link::AsyncLink + 'static,
+    F: Fn() -> Result<L, LinkError> + Send + Sync + 'static,
+> ecat_light_server::EcatLight for LightweightServer<L, F>
 where
     L: Sync,
 {
@@ -591,7 +591,7 @@ where
                             return Ok(Response::new(SendResponseLightweight {
                                 err: true,
                                 msg: format!("Failed to open link: {}", e),
-                            }))
+                            }));
                         }
                     },
                 )
@@ -602,7 +602,7 @@ where
                         return Ok(Response::new(SendResponseLightweight {
                             err: true,
                             msg: format!("{}", e),
-                        }))
+                        }));
                     }
                 };
                 Ok(Response::new(SendResponseLightweight {
@@ -648,7 +648,7 @@ where
                         err: true,
                         msg: format!("{}", e),
                         firmware_version_list: Vec::new(),
-                    }))
+                    }));
                 }
             }
         } else {

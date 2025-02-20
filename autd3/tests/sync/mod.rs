@@ -1,7 +1,7 @@
 use autd3::{
+    Controller,
     link::{Audit, AuditOption},
     prelude::AUTD3,
-    Controller,
 };
 
 mod datagram;
@@ -18,11 +18,13 @@ fn initial_msg_id() -> anyhow::Result<()> {
         }),
     )?;
 
-    assert!(cnt.link()[0]
-        .fpga()
-        .phase_correction()
-        .iter()
-        .all(|v| v.0 == 0x00));
+    assert!(
+        cnt.link()[0]
+            .fpga()
+            .phase_correction()
+            .iter()
+            .all(|v| v.0 == 0x00)
+    );
 
     Ok(())
 }

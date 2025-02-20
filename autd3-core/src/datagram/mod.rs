@@ -9,7 +9,7 @@ pub use gpio::{GPIOIn, GPIOOut};
 pub use loop_behavior::LoopBehavior;
 pub use operation::{NullOp, Operation};
 pub use segment::Segment;
-pub use transition_mode::{TransitionMode, TRANSITION_MODE_NONE};
+pub use transition_mode::{TRANSITION_MODE_NONE, TransitionMode};
 pub use tuple::{CombinedError, CombinedOperationGenerator};
 
 use std::time::Duration;

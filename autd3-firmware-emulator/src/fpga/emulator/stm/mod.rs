@@ -5,7 +5,7 @@ use autd3_driver::{
     firmware::fpga::{Drive, GPIOIn, LoopBehavior, Segment, TransitionMode},
 };
 
-use super::{super::params::*, memory::Memory, FPGAEmulator};
+use super::{super::params::*, FPGAEmulator, memory::Memory};
 
 mod foci;
 mod gain;

@@ -4,8 +4,8 @@ use crate::{
     error::AUTDDriverError,
     firmware::{
         fpga::{
-            LoopBehavior, SamplingConfig, Segment, TransitionMode, MOD_BUF_SIZE_MAX,
-            MOD_BUF_SIZE_MIN, TRANSITION_MODE_NONE,
+            LoopBehavior, MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN, SamplingConfig, Segment,
+            TRANSITION_MODE_NONE, TransitionMode,
         },
         operation::{Operation, TypeTag},
     },

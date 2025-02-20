@@ -110,7 +110,7 @@ mod tests {
     use super::*;
 
     use autd3_core::defined::Freq;
-    use autd3_driver::defined::{rad, Hz, PI};
+    use autd3_driver::defined::{Hz, PI, rad};
 
     #[test]
     fn test_fourier() -> anyhow::Result<()> {

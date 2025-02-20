@@ -15,7 +15,7 @@ use autd3_core::{datagram::Datagram, geometry::Geometry, link::Link};
 use autd3_driver::{
     error::AUTDDriverError,
     firmware::{
-        cpu::{check_if_msg_is_processed, RxMessage, TxMessage},
+        cpu::{RxMessage, TxMessage, check_if_msg_is_processed},
         operation::{Operation, OperationGenerator, OperationHandler},
     },
 };

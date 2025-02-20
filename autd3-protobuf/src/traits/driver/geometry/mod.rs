@@ -1,9 +1,9 @@
 use autd3_core::geometry::IntoDevice;
 
 use crate::{
+    AUTDProtoBufError,
     pb::*,
     traits::{FromMessage, ToMessage},
-    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3_core::geometry::UnitVector3 {

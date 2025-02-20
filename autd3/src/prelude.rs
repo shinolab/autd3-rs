@@ -24,7 +24,7 @@ pub use autd3_driver::{
         GainSTM, GainSTMOption, PhaseCorrection, PulseWidthEncoder, ReadsFPGAState, Silencer,
         SwapSegment, WithLoopBehavior, WithSegment,
     },
-    defined::{deg, kHz, mm, rad, ultrasound_freq, Hz, PI},
+    defined::{Hz, PI, deg, kHz, mm, rad, ultrasound_freq},
     error::AUTDDriverError,
     ethercat::DcSysTime,
     firmware::{

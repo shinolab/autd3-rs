@@ -12,7 +12,7 @@ use itertools::Itertools;
 
 use crate::{error::AUTDError, prelude::SenderOption};
 
-use super::{sender::Sender, AsyncSleep, AsyncSleeper, Controller};
+use super::{AsyncSleep, AsyncSleeper, Controller, sender::Sender};
 
 impl<L: AsyncLink> Controller<L> {
     /// Please see [`crate::controller::Sender::group_send`].
@@ -157,11 +157,11 @@ mod tests {
     };
 
     use crate::{
+        r#async::controller::tests::create_controller,
         controller::tests::TestGain,
         error::AUTDError,
         gain::{Null, Uniform},
         modulation::{Sine, Static},
-        r#async::controller::tests::create_controller,
     };
 
     #[tokio::test]

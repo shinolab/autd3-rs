@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use autd3_core::{
-    defined::{rad, Angle, Freq},
+    defined::{Angle, Freq, rad},
     derive::*,
 };
 
@@ -111,7 +111,7 @@ impl<S: Into<SamplingMode> + Clone + std::fmt::Debug> Modulation for Sine<S> {
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::defined::{rad, Hz};
+    use autd3_driver::defined::{Hz, rad};
 
     use super::*;
 

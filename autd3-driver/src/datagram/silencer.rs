@@ -3,7 +3,7 @@ use std::{convert::Infallible, num::NonZeroU16};
 
 use crate::{
     firmware::{
-        fpga::{SilencerTarget, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
+        fpga::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, SilencerTarget},
         operation::{
             NullOp, OperationGenerator, SilencerFixedCompletionStepsOp, SilencerFixedUpdateRateOp,
         },

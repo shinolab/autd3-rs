@@ -5,7 +5,7 @@ use autd3_driver::{
     firmware::fpga::{GPIOIn, LoopBehavior, Segment, TransitionMode},
 };
 
-use super::{super::params::*, memory::Memory, FPGAEmulator};
+use super::{super::params::*, FPGAEmulator, memory::Memory};
 
 impl FPGAEmulator {
     pub fn modulation_freq_division(&self, segment: Segment) -> u16 {

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, num::NonZeroU8};
 
-use crate::{constraint::EmissionConstraint, Amplitude, Complex};
+use crate::{Amplitude, Complex, constraint::EmissionConstraint};
 
 use autd3_core::{
     acoustics::{directivity::Directivity, propagate},
@@ -160,11 +160,7 @@ impl<D: Directivity> Gain for Greedy<D> {
                             .fold(0., |acc, ((c, a), f)| {
                                 acc + (a.value - (f * phase + c).abs()).abs()
                             });
-                        if v < acc.1 {
-                            (phase, v)
-                        } else {
-                            acc
-                        }
+                        if v < acc.1 { (phase, v) } else { acc }
                     });
             cache.iter_mut().zip(tmp.iter()).for_each(|(c, a)| {
                 *c += a * phase;

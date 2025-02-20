@@ -1,6 +1,6 @@
 use crate::geometry::Geometry;
 
-use super::{error::LinkError, RxMessage, TxMessage};
+use super::{RxMessage, TxMessage, error::LinkError};
 
 /// A trait that provides the interface with the device.
 pub trait Link: Send {

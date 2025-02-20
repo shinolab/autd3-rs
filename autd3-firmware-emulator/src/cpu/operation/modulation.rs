@@ -1,4 +1,4 @@
-use crate::{cpu::params::*, CPUEmulator};
+use crate::{CPUEmulator, cpu::params::*};
 
 #[repr(C, align(2))]
 #[derive(Clone, Copy)]
@@ -65,125 +65,137 @@ impl CPUEmulator {
     }
 
     pub(crate) unsafe fn write_mod(&mut self, data: &[u8]) -> u8 {
-        let d = Self::cast::<Modulation>(data);
+        unsafe {
+            let d = Self::cast::<Modulation>(data);
 
-        let segment = if (d.head.flag & MODULATION_FLAG_SEGMENT) != 0 {
-            1
-        } else {
-            0
-        };
+            let segment = if (d.head.flag & MODULATION_FLAG_SEGMENT) != 0 {
+                1
+            } else {
+                0
+            };
 
-        let write;
-        let data = if (d.subseq.flag & MODULATION_FLAG_BEGIN) == MODULATION_FLAG_BEGIN {
-            self.mod_cycle = 0;
+            let write;
+            let data = if (d.subseq.flag & MODULATION_FLAG_BEGIN) == MODULATION_FLAG_BEGIN {
+                self.mod_cycle = 0;
 
-            write = d.head.size as u16;
+                write = d.head.size as u16;
+
+                if Self::validate_transition_mode(
+                    self.mod_segment,
+                    segment,
+                    d.head.rep,
+                    d.head.transition_mode,
+                ) {
+                    return ERR_INVALID_TRANSITION_MODE;
+                }
+
+                if self.validate_silencer_settings(
+                    self.stm_freq_div[self.stm_segment as usize],
+                    d.head.freq_div,
+                ) {
+                    return ERR_INVALID_SILENCER_SETTING;
+                }
+
+                if d.head.transition_mode != TRANSITION_MODE_NONE {
+                    self.mod_segment = segment;
+                }
+                self.mod_rep[segment as usize] = d.head.rep;
+                self.mod_freq_div[segment as usize] = d.head.freq_div;
+                self.mod_transition_mode = d.head.transition_mode;
+                self.mod_transition_value = d.head.transition_value;
+
+                match segment {
+                    0 => {
+                        self.bram_write(
+                            BRAM_SELECT_CONTROLLER,
+                            ADDR_MOD_FREQ_DIV0,
+                            d.head.freq_div,
+                        );
+                        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_REP0, d.head.rep);
+                    }
+                    1 => {
+                        self.bram_write(
+                            BRAM_SELECT_CONTROLLER,
+                            ADDR_MOD_FREQ_DIV1,
+                            d.head.freq_div,
+                        );
+                        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_REP1, d.head.rep);
+                    }
+                    _ => unreachable!(),
+                }
+
+                self.change_mod_wr_segment(segment as _);
+
+                data[std::mem::size_of::<ModulationHead>()..].as_ptr() as *const u16
+            } else {
+                write = d.subseq.size;
+
+                data[std::mem::size_of::<ModulationSubseq>()..].as_ptr() as *const u16
+            };
+
+            self.bram_cpy(
+                BRAM_SELECT_MOD,
+                self.mod_cycle >> 1,
+                data,
+                ((write + 1) >> 1) as usize,
+            );
+            self.mod_cycle += write;
+
+            if (d.subseq.flag & MODULATION_FLAG_END) == MODULATION_FLAG_END {
+                match segment {
+                    0 => {
+                        self.bram_write(
+                            BRAM_SELECT_CONTROLLER,
+                            ADDR_MOD_CYCLE0,
+                            (self.mod_cycle.max(1) - 1) as _,
+                        );
+                    }
+                    1 => {
+                        self.bram_write(
+                            BRAM_SELECT_CONTROLLER,
+                            ADDR_MOD_CYCLE1,
+                            (self.mod_cycle.max(1) - 1) as _,
+                        );
+                    }
+                    _ => unreachable!(),
+                }
+
+                if (d.subseq.flag & MODULATION_FLAG_UPDATE) == MODULATION_FLAG_UPDATE {
+                    return self.mod_segment_update(
+                        segment,
+                        self.mod_transition_mode,
+                        self.mod_transition_value,
+                    );
+                }
+            }
+
+            NO_ERR
+        }
+    }
+
+    pub(crate) unsafe fn change_mod_segment(&mut self, data: &[u8]) -> u8 {
+        unsafe {
+            let d = Self::cast::<ModulationUpdate>(data);
 
             if Self::validate_transition_mode(
                 self.mod_segment,
-                segment,
-                d.head.rep,
-                d.head.transition_mode,
+                d.segment,
+                self.mod_rep[d.segment as usize],
+                d.transition_mode,
             ) {
                 return ERR_INVALID_TRANSITION_MODE;
             }
 
             if self.validate_silencer_settings(
                 self.stm_freq_div[self.stm_segment as usize],
-                d.head.freq_div,
+                self.mod_freq_div[d.segment as usize],
             ) {
                 return ERR_INVALID_SILENCER_SETTING;
             }
 
-            if d.head.transition_mode != TRANSITION_MODE_NONE {
-                self.mod_segment = segment;
-            }
-            self.mod_rep[segment as usize] = d.head.rep;
-            self.mod_freq_div[segment as usize] = d.head.freq_div;
-            self.mod_transition_mode = d.head.transition_mode;
-            self.mod_transition_value = d.head.transition_value;
-
-            match segment {
-                0 => {
-                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_FREQ_DIV0, d.head.freq_div);
-                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_REP0, d.head.rep);
-                }
-                1 => {
-                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_FREQ_DIV1, d.head.freq_div);
-                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_REP1, d.head.rep);
-                }
-                _ => unreachable!(),
-            }
-
-            self.change_mod_wr_segment(segment as _);
-
-            data[std::mem::size_of::<ModulationHead>()..].as_ptr() as *const u16
-        } else {
-            write = d.subseq.size;
-
-            data[std::mem::size_of::<ModulationSubseq>()..].as_ptr() as *const u16
-        };
-
-        self.bram_cpy(
-            BRAM_SELECT_MOD,
-            self.mod_cycle >> 1,
-            data,
-            ((write + 1) >> 1) as usize,
-        );
-        self.mod_cycle += write;
-
-        if (d.subseq.flag & MODULATION_FLAG_END) == MODULATION_FLAG_END {
-            match segment {
-                0 => {
-                    self.bram_write(
-                        BRAM_SELECT_CONTROLLER,
-                        ADDR_MOD_CYCLE0,
-                        (self.mod_cycle.max(1) - 1) as _,
-                    );
-                }
-                1 => {
-                    self.bram_write(
-                        BRAM_SELECT_CONTROLLER,
-                        ADDR_MOD_CYCLE1,
-                        (self.mod_cycle.max(1) - 1) as _,
-                    );
-                }
-                _ => unreachable!(),
-            }
-
-            if (d.subseq.flag & MODULATION_FLAG_UPDATE) == MODULATION_FLAG_UPDATE {
-                return self.mod_segment_update(
-                    segment,
-                    self.mod_transition_mode,
-                    self.mod_transition_value,
-                );
-            }
+            self.mod_segment = d.segment;
+            self.mod_segment_update(d.segment, d.transition_mode, d.transition_value)
         }
-
-        NO_ERR
-    }
-
-    pub(crate) unsafe fn change_mod_segment(&mut self, data: &[u8]) -> u8 {
-        let d = Self::cast::<ModulationUpdate>(data);
-
-        if Self::validate_transition_mode(
-            self.mod_segment,
-            d.segment,
-            self.mod_rep[d.segment as usize],
-            d.transition_mode,
-        ) {
-            return ERR_INVALID_TRANSITION_MODE;
-        }
-
-        if self.validate_silencer_settings(
-            self.stm_freq_div[self.stm_segment as usize],
-            self.mod_freq_div[d.segment as usize],
-        ) {
-            return ERR_INVALID_SILENCER_SETTING;
-        }
-
-        self.mod_segment = d.segment;
-        self.mod_segment_update(d.segment, d.transition_mode, d.transition_value)
     }
 }
 

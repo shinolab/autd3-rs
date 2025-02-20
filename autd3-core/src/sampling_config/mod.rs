@@ -3,7 +3,7 @@ mod error;
 use std::{fmt::Debug, num::NonZeroU16};
 
 use crate::{
-    defined::{ultrasound_freq, Freq, Hz},
+    defined::{Freq, Hz, ultrasound_freq},
     utils::float::is_integer,
 };
 

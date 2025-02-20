@@ -1,4 +1,4 @@
-use crate::{cpu::params::*, CPUEmulator};
+use crate::{CPUEmulator, cpu::params::*};
 
 const INFO_TYPE_CPU_VERSION_MAJOR: u8 = 0x01;
 const INFO_TYPE_CPU_VERSION_MINOR: u8 = 0x02;

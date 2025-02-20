@@ -1,10 +1,10 @@
 use autd3_gain_holo::NalgebraBackend;
 
 use crate::{
+    AUTDProtoBufError,
     pb::*,
     to_holo,
     traits::{FromMessage, ToMessage},
-    AUTDProtoBufError,
 };
 use autd3_core::acoustics::directivity::Sphere;
 
