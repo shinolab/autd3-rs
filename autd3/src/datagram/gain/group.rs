@@ -308,7 +308,7 @@ mod tests {
         };
         let geometry = create_geometry(1);
         assert_eq!(
-            Some(GainError::new("Unknown group key: \"test\"".to_owned())),
+            Some(GainError::new("Unknown group key: \"test\"")),
             gain.init_full(&geometry, None, false).err()
         );
 
@@ -324,7 +324,7 @@ mod tests {
 
         let geometry = create_geometry(1);
         assert_eq!(
-            Some(GainError::new("Unused group keys: 2".to_owned())),
+            Some(GainError::new("Unused group keys: 2")),
             gain.init_full(&geometry, None, false).err()
         );
 

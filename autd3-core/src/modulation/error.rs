@@ -1,16 +1,24 @@
 use std::convert::Infallible;
 
 use derive_more::Display;
-use derive_new::new;
 use thiserror::Error;
 
 use crate::sampling_config::SamplingConfigError;
 
-#[derive(new, Error, Debug, Display, PartialEq, Clone)]
+#[derive(Error, Debug, Display, PartialEq, Clone)]
 #[display("{}", msg)]
 /// An error occurred during modulation calculation.
 pub struct ModulationError {
     msg: String,
+}
+
+impl ModulationError {
+    /// Creates a new [`ModulationError`].
+    pub fn new(msg: impl ToString) -> Self {
+        Self {
+            msg: msg.to_string(),
+        }
+    }
 }
 
 // GRCOV_EXCL_START

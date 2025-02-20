@@ -144,35 +144,35 @@ mod tests {
         781.25*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency (150.01 Hz) cannot be output with the sampling config (SamplingConfig::Freq(4000 Hz)).".to_owned())),
+        Err(ModulationError::new("Frequency (150.01 Hz) cannot be output with the sampling config (SamplingConfig::Freq(4000 Hz)).")),
         150.01*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        Err(ModulationError::new("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)")),
         2000.*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        Err(ModulationError::new("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)")),
         2000*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        Err(ModulationError::new("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)")),
         4000.*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        Err(ModulationError::new("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)")),
         4000*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency (-0.1 Hz) must be valid positive value".to_owned())),
+        Err(ModulationError::new("Frequency (-0.1 Hz) must be valid positive value")),
         -0.1*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
+        Err(ModulationError::new("Frequency must not be zero. If intentional, Use `Static` instead.")),
         0*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
+        Err(ModulationError::new("Frequency must not be zero. If intentional, Use `Static` instead.")),
         0.*Hz
     )]
     fn new(
@@ -203,7 +203,7 @@ mod tests {
         200.*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency (NaN Hz) must be valid value".to_owned())),
+        Err(ModulationError::new("Frequency (NaN Hz) must be valid value")),
         f32::NAN * Hz
     )]
     fn new_nearest(#[case] expect: Result<Vec<u8>, ModulationError>, #[case] freq: Freq<f32>) {
@@ -221,7 +221,7 @@ mod tests {
 
     #[rstest::rstest]
     #[case(
-        Err(ModulationError::new("Sine modulation value (-1) is out of range [0, 255]".to_owned())),
+        Err(ModulationError::new("Sine modulation value (-1) is out of range [0, 255]")),
         0x00,
         false
     )]

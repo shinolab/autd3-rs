@@ -134,31 +134,31 @@ mod tests {
         781.25*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency (150.01 Hz) cannot be output with the sampling config (SamplingConfig::Freq(4000 Hz)).".to_owned())),
+        Err(ModulationError::new("Frequency (150.01 Hz) cannot be output with the sampling config (SamplingConfig::Freq(4000 Hz)).")),
         150.01*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        Err(ModulationError::new("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)")),
         2000.*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        Err(ModulationError::new("Frequency (2000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)")),
         2000*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        Err(ModulationError::new("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)")),
         4000.*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)".to_owned())),
+        Err(ModulationError::new("Frequency (4000 Hz) is equal to or greater than the Nyquist frequency (2000 Hz)")),
         4000*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
+        Err(ModulationError::new("Frequency must not be zero. If intentional, Use `Static` instead.")),
         0*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency must not be zero. If intentional, Use `Static` instead.".to_owned())),
+        Err(ModulationError::new("Frequency must not be zero. If intentional, Use `Static` instead.")),
         0.*Hz
     )]
     fn with_freq_float_exact(
