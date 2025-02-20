@@ -18,7 +18,7 @@ pub enum HoloError {
 
 impl From<HoloError> for GainError {
     fn from(value: HoloError) -> Self {
-        GainError::new(value.to_string())
+        GainError::new(value)
     }
 }
 

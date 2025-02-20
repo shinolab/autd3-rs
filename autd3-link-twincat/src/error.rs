@@ -30,6 +30,6 @@ pub enum AdsError {
 
 impl From<AdsError> for LinkError {
     fn from(err: AdsError) -> Self {
-        LinkError::new(err.to_string())
+        LinkError::new(err)
     }
 }

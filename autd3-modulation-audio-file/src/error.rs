@@ -21,7 +21,7 @@ pub enum AudioFileError {
 // GRCOV_EXCL_START
 impl From<AudioFileError> for ModulationError {
     fn from(value: AudioFileError) -> Self {
-        ModulationError::new(value.to_string())
+        ModulationError::new(value)
     }
 }
 // GRCOV_EXCL_STOP

@@ -43,9 +43,7 @@ impl<S: Into<SamplingMode> + Clone + Debug> Modulation for Fourier<S> {
 
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
         if self.components.is_empty() {
-            return Err(ModulationError::new(
-                "Components must not be empty".to_string(),
-            ));
+            return Err(ModulationError::new("Components must not be empty"));
         }
         let sampling_config = self.sampling_config();
         let components = self
@@ -66,7 +64,7 @@ impl<S: Into<SamplingMode> + Clone + Debug> Modulation for Fourier<S> {
             .any(|c| c.sampling_config() != sampling_config)
         {
             return Err(ModulationError::new(
-                "All components must have the same sampling configuration".to_string(),
+                "All components must have the same sampling configuration",
             ));
         }
 
@@ -179,7 +177,7 @@ mod tests {
     fn mismatch_sampling_config() -> anyhow::Result<()> {
         assert_eq!(
             Err(ModulationError::new(
-                "All components must have the same sampling configuration".to_string()
+                "All components must have the same sampling configuration"
             )),
             Fourier {
                 components: vec![
@@ -208,9 +206,7 @@ mod tests {
     #[test]
     fn empty_components() {
         assert_eq!(
-            Err(ModulationError::new(
-                "Components must not be empty".to_string()
-            )),
+            Err(ModulationError::new("Components must not be empty")),
             Fourier::<Freq<u32>> {
                 components: vec![],
                 option: FourierOption::default(),
