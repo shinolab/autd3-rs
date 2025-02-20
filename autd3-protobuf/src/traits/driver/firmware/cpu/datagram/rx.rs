@@ -20,7 +20,7 @@ impl ToMessage for Vec<autd3_driver::firmware::cpu::RxMessage> {
 }
 
 impl FromMessage<RxMessage> for Vec<autd3_driver::firmware::cpu::RxMessage> {
-    fn from_msg(msg: &RxMessage) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: RxMessage) -> Result<Self, AUTDProtoBufError> {
         Ok(
             <[autd3_driver::firmware::cpu::RxMessage]>::ref_from_bytes(msg.data.as_bytes())
                 .unwrap()
@@ -45,7 +45,7 @@ mod tests {
         );
         assert_eq!(
             rx,
-            Vec::<autd3_driver::firmware::cpu::RxMessage>::from_msg(&msg).unwrap()
+            Vec::<autd3_driver::firmware::cpu::RxMessage>::from_msg(msg).unwrap()
         )
     }
 }

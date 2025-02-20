@@ -5,26 +5,38 @@ package autd3;
 import "utils.proto";
 import "utils-lightweight.proto";
 
+message BesselOption {
+  optional EmitIntensity intensity = 1;
+  optional Phase phase_offset = 2;
+}
+
 message Bessel {
   Point3 pos = 1;
   UnitVector3 dir = 2;
   Angle theta = 3;
-  optional EmitIntensity intensity = 4;
-  optional Phase phase_offset = 5;
+  BesselOption option = 4;
+}
+
+message FocusOption {
+  optional EmitIntensity intensity = 1;
+  optional Phase phase_offset = 2;
 }
 
 message Focus {
   Point3 pos = 1;
-  optional EmitIntensity intensity = 2;
-  optional Phase phase_offset = 3;
+  FocusOption option = 2;
 }
 
 message Null {}
 
+message PlaneOption {
+  optional EmitIntensity intensity = 1;
+  optional Phase phase_offset = 2;
+}
+
 message Plane {
   UnitVector3 dir = 1;
-  optional EmitIntensity intensity = 2;
-  optional Phase phase_offset = 3;
+  PlaneOption option = 2;
 }
 
 message Uniform {
@@ -32,62 +44,78 @@ message Uniform {
   Phase phase = 2;
 }
 
-message Amplitude {
-  float value = 1;
-}
+message Amplitude { float value = 1; }
 
 message Holo {
   Point3 pos = 1;
   Amplitude amp = 2;
 }
 
-message NormalizeConstraint {}
-message MultiplyConstraint { float value = 1; }
-message UniformConstraint { EmitIntensity value = 1; }
-message ClampConstraint {
-  EmitIntensity min = 1;
-  EmitIntensity max = 2;
-}
 message EmissionConstraint {
-  oneof constraint {
-    NormalizeConstraint normalize = 1;
-    UniformConstraint uniform = 2;
-    ClampConstraint clamp = 3;
-    MultiplyConstraint multiply = 4;
+  message Normalize {}
+  message Multiply { float value = 1; }
+  message Uniform { EmitIntensity value = 1; }
+  message Clamp {
+    EmitIntensity min = 1;
+    EmitIntensity max = 2;
+  }
+  oneof variant {
+    Normalize normalize = 1;
+    Uniform uniform = 2;
+    Clamp clamp = 3;
+    Multiply multiply = 4;
   }
 }
 
+message NaiveOption { optional EmissionConstraint constraint = 1; }
+
 message Naive {
   repeated Holo holo = 1;
-  optional EmissionConstraint constraint = 2;
+  NaiveOption option = 2;
+}
+
+message GSOption {
+  optional EmissionConstraint constraint = 1;
+  optional uint64 repeat = 2;
 }
 
 message GS {
   repeated Holo holo = 1;
-  optional EmissionConstraint constraint = 2;
-  optional uint64 repeat = 3;
+  GSOption option = 2;
+}
+
+message GSPATOption {
+  optional EmissionConstraint constraint = 1;
+  optional uint64 repeat = 2;
 }
 
 message GSPAT {
   repeated Holo holo = 1;
-  optional EmissionConstraint constraint = 2;
-  optional uint64 repeat = 3;
+  GSPATOption option = 2;
+}
+
+message LMOption {
+  optional EmissionConstraint constraint = 1;
+  optional float eps_1 = 2;
+  optional float eps_2 = 3;
+  optional float tau = 4;
+  optional uint64 k_max = 5;
+  repeated float initial = 6;
 }
 
 message LM {
   repeated Holo holo = 1;
-  EmissionConstraint constraint = 2;
-  optional float eps_1 = 3;
-  optional float eps_2 = 4;
-  optional float tau = 5;
-  optional uint64 k_max = 6;
-  repeated float initial = 7;
+  LMOption option = 2;
+}
+
+message GreedyOption {
+  optional EmissionConstraint constraint = 1;
+  optional uint32 phase_div = 2;
 }
 
 message Greedy {
   repeated Holo holo = 1;
-  optional EmissionConstraint constraint = 2;
-  optional uint32 phase_div = 3;
+  GreedyOption option = 2;
 }
 
 message Gain {
@@ -103,10 +131,4 @@ message Gain {
     LM lm = 104;
     Greedy greedy = 105;
   }
-}
-
-message GainWithSegment {
-  Gain gain = 1;
-  optional Segment segment = 2;
-  optional TransitionMode transition_mode = 3;
 }

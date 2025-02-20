@@ -58,10 +58,7 @@ pub struct TxRawData {
     pub n: u32,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct SendResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-}
+pub struct SendResponse {}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RxMessage {
     #[prost(bytes = "vec", tag = "1")]
@@ -72,10 +69,7 @@ pub struct ReadRequest {}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CloseRequest {}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct CloseResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-}
+pub struct CloseResponse {}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct GeometryResponse {}
 /// Generated client implementations.
@@ -937,30 +931,74 @@ pub struct Phase {
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct SamplingConfig {
-    #[prost(uint32, tag = "1")]
-    pub div: u32,
+    #[prost(oneof = "sampling_config::Variant", tags = "1, 2, 3, 4, 5")]
+    pub variant: ::core::option::Option<sampling_config::Variant>,
+}
+/// Nested message and enum types in `SamplingConfig`.
+pub mod sampling_config {
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct Division {
+        #[prost(uint32, tag = "1")]
+        pub div: u32,
+    }
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct Freq {
+        #[prost(float, tag = "1")]
+        pub freq: f32,
+    }
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct FreqNearest {
+        #[prost(float, tag = "1")]
+        pub freq: f32,
+    }
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct Period {
+        #[prost(uint64, tag = "1")]
+        pub ns: u64,
+    }
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct PeriodNearest {
+        #[prost(uint64, tag = "1")]
+        pub ns: u64,
+    }
+    #[non_exhaustive]
+    #[derive(Clone, Copy, PartialEq, ::prost::Oneof)]
+    pub enum Variant {
+        #[prost(message, tag = "1")]
+        Division(Division),
+        #[prost(message, tag = "2")]
+        Freq(Freq),
+        #[prost(message, tag = "3")]
+        FreqNearest(FreqNearest),
+        #[prost(message, tag = "4")]
+        Period(Period),
+        #[prost(message, tag = "5")]
+        PeriodNearest(PeriodNearest),
+    }
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct LoopBehavior {
-    #[prost(uint32, tag = "1")]
-    pub rep: u32,
+    #[prost(oneof = "loop_behavior::Variant", tags = "1, 2")]
+    pub variant: ::core::option::Option<loop_behavior::Variant>,
 }
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct TransitionModeSyncIdx {}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct TransitionModeSysTime {
-    #[prost(uint64, tag = "1")]
-    pub value: u64,
+/// Nested message and enum types in `LoopBehavior`.
+pub mod loop_behavior {
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct Infinite {}
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct Finite {
+        #[prost(uint32, tag = "1")]
+        pub rep: u32,
+    }
+    #[non_exhaustive]
+    #[derive(Clone, Copy, PartialEq, ::prost::Oneof)]
+    pub enum Variant {
+        #[prost(message, tag = "1")]
+        Infinite(Infinite),
+        #[prost(message, tag = "2")]
+        Finite(Finite),
+    }
 }
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct TransitionModeGpio {
-    #[prost(enumeration = "GpioIn", tag = "1")]
-    pub value: i32,
-}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct TransitionModeExt {}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct TransitionModeImmediate {}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct TransitionMode {
     #[prost(oneof = "transition_mode::Mode", tags = "1, 2, 3, 4, 5")]
@@ -968,19 +1006,35 @@ pub struct TransitionMode {
 }
 /// Nested message and enum types in `TransitionMode`.
 pub mod transition_mode {
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct SyncIdx {}
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct SysTime {
+        #[prost(uint64, tag = "1")]
+        pub value: u64,
+    }
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct Gpio {
+        #[prost(enumeration = "super::GpioIn", tag = "1")]
+        pub value: i32,
+    }
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct Ext {}
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct Immediate {}
     #[non_exhaustive]
     #[derive(Clone, Copy, PartialEq, ::prost::Oneof)]
     pub enum Mode {
         #[prost(message, tag = "1")]
-        SyncIdx(super::TransitionModeSyncIdx),
+        SyncIdx(SyncIdx),
         #[prost(message, tag = "2")]
-        SysTime(super::TransitionModeSysTime),
+        SysTime(SysTime),
         #[prost(message, tag = "3")]
-        Gpio(super::TransitionModeGpio),
+        Gpio(Gpio),
         #[prost(message, tag = "4")]
-        Ext(super::TransitionModeExt),
+        Ext(Ext),
         #[prost(message, tag = "5")]
-        Immediate(super::TransitionModeImmediate),
+        Immediate(Immediate),
     }
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
@@ -1058,6 +1112,13 @@ impl GpioIn {
     }
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct BesselOption {
+    #[prost(message, optional, tag = "1")]
+    pub intensity: ::core::option::Option<EmitIntensity>,
+    #[prost(message, optional, tag = "2")]
+    pub phase_offset: ::core::option::Option<Phase>,
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct Bessel {
     #[prost(message, optional, tag = "1")]
     pub pos: ::core::option::Option<Point3>,
@@ -1066,8 +1127,13 @@ pub struct Bessel {
     #[prost(message, optional, tag = "3")]
     pub theta: ::core::option::Option<Angle>,
     #[prost(message, optional, tag = "4")]
+    pub option: ::core::option::Option<BesselOption>,
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct FocusOption {
+    #[prost(message, optional, tag = "1")]
     pub intensity: ::core::option::Option<EmitIntensity>,
-    #[prost(message, optional, tag = "5")]
+    #[prost(message, optional, tag = "2")]
     pub phase_offset: ::core::option::Option<Phase>,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
@@ -1075,20 +1141,23 @@ pub struct Focus {
     #[prost(message, optional, tag = "1")]
     pub pos: ::core::option::Option<Point3>,
     #[prost(message, optional, tag = "2")]
-    pub intensity: ::core::option::Option<EmitIntensity>,
-    #[prost(message, optional, tag = "3")]
-    pub phase_offset: ::core::option::Option<Phase>,
+    pub option: ::core::option::Option<FocusOption>,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct Null {}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct PlaneOption {
+    #[prost(message, optional, tag = "1")]
+    pub intensity: ::core::option::Option<EmitIntensity>,
+    #[prost(message, optional, tag = "2")]
+    pub phase_offset: ::core::option::Option<Phase>,
+}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct Plane {
     #[prost(message, optional, tag = "1")]
     pub dir: ::core::option::Option<UnitVector3>,
     #[prost(message, optional, tag = "2")]
-    pub intensity: ::core::option::Option<EmitIntensity>,
-    #[prost(message, optional, tag = "3")]
-    pub phase_offset: ::core::option::Option<Phase>,
+    pub option: ::core::option::Option<PlaneOption>,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct Uniform {
@@ -1110,58 +1179,75 @@ pub struct Holo {
     pub amp: ::core::option::Option<Amplitude>,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct NormalizeConstraint {}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct MultiplyConstraint {
-    #[prost(float, tag = "1")]
-    pub value: f32,
-}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct UniformConstraint {
-    #[prost(message, optional, tag = "1")]
-    pub value: ::core::option::Option<EmitIntensity>,
-}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct ClampConstraint {
-    #[prost(message, optional, tag = "1")]
-    pub min: ::core::option::Option<EmitIntensity>,
-    #[prost(message, optional, tag = "2")]
-    pub max: ::core::option::Option<EmitIntensity>,
-}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct EmissionConstraint {
-    #[prost(oneof = "emission_constraint::Constraint", tags = "1, 2, 3, 4")]
-    pub constraint: ::core::option::Option<emission_constraint::Constraint>,
+    #[prost(oneof = "emission_constraint::Variant", tags = "1, 2, 3, 4")]
+    pub variant: ::core::option::Option<emission_constraint::Variant>,
 }
 /// Nested message and enum types in `EmissionConstraint`.
 pub mod emission_constraint {
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct Normalize {}
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct Multiply {
+        #[prost(float, tag = "1")]
+        pub value: f32,
+    }
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct Uniform {
+        #[prost(message, optional, tag = "1")]
+        pub value: ::core::option::Option<super::EmitIntensity>,
+    }
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct Clamp {
+        #[prost(message, optional, tag = "1")]
+        pub min: ::core::option::Option<super::EmitIntensity>,
+        #[prost(message, optional, tag = "2")]
+        pub max: ::core::option::Option<super::EmitIntensity>,
+    }
     #[non_exhaustive]
     #[derive(Clone, Copy, PartialEq, ::prost::Oneof)]
-    pub enum Constraint {
+    pub enum Variant {
         #[prost(message, tag = "1")]
-        Normalize(super::NormalizeConstraint),
+        Normalize(Normalize),
         #[prost(message, tag = "2")]
-        Uniform(super::UniformConstraint),
+        Uniform(Uniform),
         #[prost(message, tag = "3")]
-        Clamp(super::ClampConstraint),
+        Clamp(Clamp),
         #[prost(message, tag = "4")]
-        Multiply(super::MultiplyConstraint),
+        Multiply(Multiply),
     }
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct NaiveOption {
+    #[prost(message, optional, tag = "1")]
+    pub constraint: ::core::option::Option<EmissionConstraint>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Naive {
     #[prost(message, repeated, tag = "1")]
     pub holo: ::prost::alloc::vec::Vec<Holo>,
     #[prost(message, optional, tag = "2")]
+    pub option: ::core::option::Option<NaiveOption>,
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct GsOption {
+    #[prost(message, optional, tag = "1")]
     pub constraint: ::core::option::Option<EmissionConstraint>,
+    #[prost(uint64, optional, tag = "2")]
+    pub repeat: ::core::option::Option<u64>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Gs {
     #[prost(message, repeated, tag = "1")]
     pub holo: ::prost::alloc::vec::Vec<Holo>,
     #[prost(message, optional, tag = "2")]
+    pub option: ::core::option::Option<GsOption>,
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct GspatOption {
+    #[prost(message, optional, tag = "1")]
     pub constraint: ::core::option::Option<EmissionConstraint>,
-    #[prost(uint64, optional, tag = "3")]
+    #[prost(uint64, optional, tag = "2")]
     pub repeat: ::core::option::Option<u64>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -1169,35 +1255,43 @@ pub struct Gspat {
     #[prost(message, repeated, tag = "1")]
     pub holo: ::prost::alloc::vec::Vec<Holo>,
     #[prost(message, optional, tag = "2")]
+    pub option: ::core::option::Option<GspatOption>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct LmOption {
+    #[prost(message, optional, tag = "1")]
     pub constraint: ::core::option::Option<EmissionConstraint>,
-    #[prost(uint64, optional, tag = "3")]
-    pub repeat: ::core::option::Option<u64>,
+    #[prost(float, optional, tag = "2")]
+    pub eps_1: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "3")]
+    pub eps_2: ::core::option::Option<f32>,
+    #[prost(float, optional, tag = "4")]
+    pub tau: ::core::option::Option<f32>,
+    #[prost(uint64, optional, tag = "5")]
+    pub k_max: ::core::option::Option<u64>,
+    #[prost(float, repeated, tag = "6")]
+    pub initial: ::prost::alloc::vec::Vec<f32>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Lm {
     #[prost(message, repeated, tag = "1")]
     pub holo: ::prost::alloc::vec::Vec<Holo>,
     #[prost(message, optional, tag = "2")]
+    pub option: ::core::option::Option<LmOption>,
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct GreedyOption {
+    #[prost(message, optional, tag = "1")]
     pub constraint: ::core::option::Option<EmissionConstraint>,
-    #[prost(float, optional, tag = "3")]
-    pub eps_1: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "4")]
-    pub eps_2: ::core::option::Option<f32>,
-    #[prost(float, optional, tag = "5")]
-    pub tau: ::core::option::Option<f32>,
-    #[prost(uint64, optional, tag = "6")]
-    pub k_max: ::core::option::Option<u64>,
-    #[prost(float, repeated, tag = "7")]
-    pub initial: ::prost::alloc::vec::Vec<f32>,
+    #[prost(uint32, optional, tag = "2")]
+    pub phase_div: ::core::option::Option<u32>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Greedy {
     #[prost(message, repeated, tag = "1")]
     pub holo: ::prost::alloc::vec::Vec<Holo>,
     #[prost(message, optional, tag = "2")]
-    pub constraint: ::core::option::Option<EmissionConstraint>,
-    #[prost(uint32, optional, tag = "3")]
-    pub phase_div: ::core::option::Option<u32>,
+    pub option: ::core::option::Option<GreedyOption>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Gain {
@@ -1230,15 +1324,6 @@ pub mod gain {
         #[prost(message, tag = "105")]
         Greedy(super::Greedy),
     }
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GainWithSegment {
-    #[prost(message, optional, tag = "1")]
-    pub gain: ::core::option::Option<Gain>,
-    #[prost(enumeration = "Segment", optional, tag = "2")]
-    pub segment: ::core::option::Option<i32>,
-    #[prost(message, optional, tag = "3")]
-    pub transition_mode: ::core::option::Option<TransitionMode>,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct Static {
@@ -1338,65 +1423,50 @@ pub mod modulation {
     }
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct ModulationWithLoopBehavior {
-    #[prost(message, optional, tag = "1")]
-    pub modulation: ::core::option::Option<Modulation>,
-    #[prost(message, optional, tag = "2")]
-    pub loop_behavior: ::core::option::Option<LoopBehavior>,
-    #[prost(enumeration = "Segment", optional, tag = "3")]
-    pub segment: ::core::option::Option<i32>,
-    #[prost(message, optional, tag = "4")]
-    pub transition_mode: ::core::option::Option<TransitionMode>,
-}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct Clear {}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct SilencerFixedUpdateRate {
-    #[prost(uint32, tag = "1")]
-    pub value_intensity: u32,
-    #[prost(uint32, tag = "2")]
-    pub value_phase: u32,
-    #[prost(enumeration = "SilencerTarget", optional, tag = "3")]
-    pub target: ::core::option::Option<i32>,
-}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct SilencerFixedCompletionSteps {
-    #[prost(uint32, optional, tag = "1")]
-    pub value_intensity: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "2")]
-    pub value_phase: ::core::option::Option<u32>,
-    #[prost(bool, optional, tag = "3")]
-    pub strict_mode: ::core::option::Option<bool>,
-    #[prost(enumeration = "SilencerTarget", optional, tag = "4")]
-    pub target: ::core::option::Option<i32>,
-}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct SilencerFixedCompletionTime {
-    #[prost(uint32, optional, tag = "1")]
-    pub value_intensity: ::core::option::Option<u32>,
-    #[prost(uint32, optional, tag = "2")]
-    pub value_phase: ::core::option::Option<u32>,
-    #[prost(bool, optional, tag = "3")]
-    pub strict_mode: ::core::option::Option<bool>,
-    #[prost(enumeration = "SilencerTarget", optional, tag = "4")]
-    pub target: ::core::option::Option<i32>,
-}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct Silencer {
+    #[prost(enumeration = "SilencerTarget", tag = "4")]
+    pub target: i32,
     #[prost(oneof = "silencer::Config", tags = "1, 2, 3")]
     pub config: ::core::option::Option<silencer::Config>,
 }
 /// Nested message and enum types in `Silencer`.
 pub mod silencer {
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct FixedUpdateRate {
+        #[prost(uint32, tag = "1")]
+        pub value_intensity: u32,
+        #[prost(uint32, tag = "2")]
+        pub value_phase: u32,
+    }
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct FixedCompletionSteps {
+        #[prost(uint32, optional, tag = "1")]
+        pub value_intensity: ::core::option::Option<u32>,
+        #[prost(uint32, optional, tag = "2")]
+        pub value_phase: ::core::option::Option<u32>,
+        #[prost(bool, optional, tag = "3")]
+        pub strict_mode: ::core::option::Option<bool>,
+    }
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct FixedCompletionTime {
+        #[prost(uint32, optional, tag = "1")]
+        pub value_intensity: ::core::option::Option<u32>,
+        #[prost(uint32, optional, tag = "2")]
+        pub value_phase: ::core::option::Option<u32>,
+        #[prost(bool, optional, tag = "3")]
+        pub strict_mode: ::core::option::Option<bool>,
+    }
     #[non_exhaustive]
     #[derive(Clone, Copy, PartialEq, ::prost::Oneof)]
     pub enum Config {
         #[prost(message, tag = "1")]
-        FixedUpdateRate(super::SilencerFixedUpdateRate),
+        FixedUpdateRate(FixedUpdateRate),
         #[prost(message, tag = "2")]
-        FixedCompletionTime(super::SilencerFixedCompletionTime),
+        FixedCompletionTime(FixedCompletionTime),
         #[prost(message, tag = "3")]
-        FixedCompletionSteps(super::SilencerFixedCompletionSteps),
+        FixedCompletionSteps(FixedCompletionSteps),
     }
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
@@ -1412,176 +1482,120 @@ pub struct ReadsFpgaState {
     pub value: ::prost::alloc::vec::Vec<bool>,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct GainStmProps {
-    #[prost(message, optional, tag = "1")]
-    pub sampling_config: ::core::option::Option<SamplingConfig>,
-    #[prost(enumeration = "GainStmMode", optional, tag = "2")]
+pub struct GainStmOption {
+    #[prost(enumeration = "GainStmMode", optional, tag = "1")]
     pub mode: ::core::option::Option<i32>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct GainStm {
-    #[prost(message, optional, tag = "1")]
-    pub props: ::core::option::Option<GainStmProps>,
-    #[prost(message, repeated, tag = "2")]
+    #[prost(message, repeated, tag = "1")]
     pub gains: ::prost::alloc::vec::Vec<Gain>,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct GainStmWithLoopBehavior {
-    #[prost(message, optional, tag = "1")]
-    pub gain_stm: ::core::option::Option<GainStm>,
     #[prost(message, optional, tag = "2")]
-    pub loop_behavior: ::core::option::Option<LoopBehavior>,
-    #[prost(enumeration = "Segment", optional, tag = "3")]
-    pub segment: ::core::option::Option<i32>,
-    #[prost(message, optional, tag = "4")]
-    pub transition_mode: ::core::option::Option<TransitionMode>,
-}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct FociStmProps {
-    #[prost(message, optional, tag = "1")]
     pub sampling_config: ::core::option::Option<SamplingConfig>,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct FociStm1 {
-    #[prost(message, optional, tag = "1")]
-    pub props: ::core::option::Option<FociStmProps>,
-    #[prost(message, repeated, tag = "2")]
-    pub foci: ::prost::alloc::vec::Vec<ControlPoints>,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct FociStm2 {
-    #[prost(message, optional, tag = "1")]
-    pub props: ::core::option::Option<FociStmProps>,
-    #[prost(message, repeated, tag = "2")]
-    pub foci: ::prost::alloc::vec::Vec<ControlPoints>,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct FociStm3 {
-    #[prost(message, optional, tag = "1")]
-    pub props: ::core::option::Option<FociStmProps>,
-    #[prost(message, repeated, tag = "2")]
-    pub foci: ::prost::alloc::vec::Vec<ControlPoints>,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct FociStm4 {
-    #[prost(message, optional, tag = "1")]
-    pub props: ::core::option::Option<FociStmProps>,
-    #[prost(message, repeated, tag = "2")]
-    pub foci: ::prost::alloc::vec::Vec<ControlPoints>,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct FociStm5 {
-    #[prost(message, optional, tag = "1")]
-    pub props: ::core::option::Option<FociStmProps>,
-    #[prost(message, repeated, tag = "2")]
-    pub foci: ::prost::alloc::vec::Vec<ControlPoints>,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct FociStm6 {
-    #[prost(message, optional, tag = "1")]
-    pub props: ::core::option::Option<FociStmProps>,
-    #[prost(message, repeated, tag = "2")]
-    pub foci: ::prost::alloc::vec::Vec<ControlPoints>,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct FociStm7 {
-    #[prost(message, optional, tag = "1")]
-    pub props: ::core::option::Option<FociStmProps>,
-    #[prost(message, repeated, tag = "2")]
-    pub foci: ::prost::alloc::vec::Vec<ControlPoints>,
-}
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct FociStm8 {
-    #[prost(message, optional, tag = "1")]
-    pub props: ::core::option::Option<FociStmProps>,
-    #[prost(message, repeated, tag = "2")]
-    pub foci: ::prost::alloc::vec::Vec<ControlPoints>,
+    #[prost(message, optional, tag = "3")]
+    pub option: ::core::option::Option<GainStmOption>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct FociStm {
-    #[prost(oneof = "foci_stm::Inner", tags = "1, 2, 3, 4, 5, 6, 7, 8")]
-    pub inner: ::core::option::Option<foci_stm::Inner>,
+    #[prost(message, repeated, tag = "1")]
+    pub foci: ::prost::alloc::vec::Vec<ControlPoints>,
+    #[prost(message, optional, tag = "2")]
+    pub sampling_config: ::core::option::Option<SamplingConfig>,
 }
-/// Nested message and enum types in `FociSTM`.
-pub mod foci_stm {
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct WithSegment {
+    #[prost(enumeration = "Segment", tag = "5")]
+    pub segment: i32,
+    #[prost(message, optional, tag = "6")]
+    pub transition_mode: ::core::option::Option<TransitionMode>,
+    #[prost(oneof = "with_segment::Inner", tags = "1, 2, 3, 4")]
+    pub inner: ::core::option::Option<with_segment::Inner>,
+}
+/// Nested message and enum types in `WithSegment`.
+pub mod with_segment {
     #[non_exhaustive]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Inner {
         #[prost(message, tag = "1")]
-        N1(super::FociStm1),
+        Gain(super::Gain),
         #[prost(message, tag = "2")]
-        N2(super::FociStm2),
+        Modulation(super::Modulation),
         #[prost(message, tag = "3")]
-        N3(super::FociStm3),
+        FociStm(super::FociStm),
         #[prost(message, tag = "4")]
-        N4(super::FociStm4),
-        #[prost(message, tag = "5")]
-        N5(super::FociStm5),
-        #[prost(message, tag = "6")]
-        N6(super::FociStm6),
-        #[prost(message, tag = "7")]
-        N7(super::FociStm7),
-        #[prost(message, tag = "8")]
-        N8(super::FociStm8),
+        GainStm(super::GainStm),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct FociStmWithLoopBehavior {
-    #[prost(message, optional, tag = "1")]
-    pub foci_stm: ::core::option::Option<FociStm>,
-    #[prost(message, optional, tag = "2")]
-    pub loop_behavior: ::core::option::Option<LoopBehavior>,
-    #[prost(enumeration = "Segment", optional, tag = "3")]
-    pub segment: ::core::option::Option<i32>,
+pub struct WithLoopBehavior {
     #[prost(message, optional, tag = "4")]
-    pub transition_mode: ::core::option::Option<TransitionMode>,
-}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct SwapSegmentGain {
-    #[prost(enumeration = "Segment", tag = "1")]
+    pub loop_behavior: ::core::option::Option<LoopBehavior>,
+    #[prost(enumeration = "Segment", tag = "5")]
     pub segment: i32,
-    #[prost(message, optional, tag = "2")]
+    #[prost(message, optional, tag = "6")]
     pub transition_mode: ::core::option::Option<TransitionMode>,
+    #[prost(oneof = "with_loop_behavior::Inner", tags = "1, 2, 3")]
+    pub inner: ::core::option::Option<with_loop_behavior::Inner>,
 }
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct SwapSegmentModulation {
-    #[prost(enumeration = "Segment", tag = "1")]
-    pub segment: i32,
-    #[prost(message, optional, tag = "2")]
-    pub transition_mode: ::core::option::Option<TransitionMode>,
-}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct SwapSegmentFociStm {
-    #[prost(enumeration = "Segment", tag = "1")]
-    pub segment: i32,
-    #[prost(message, optional, tag = "2")]
-    pub transition_mode: ::core::option::Option<TransitionMode>,
-}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct SwapSegmentGainStm {
-    #[prost(enumeration = "Segment", tag = "1")]
-    pub segment: i32,
-    #[prost(message, optional, tag = "2")]
-    pub transition_mode: ::core::option::Option<TransitionMode>,
+/// Nested message and enum types in `WithLoopBehavior`.
+pub mod with_loop_behavior {
+    #[non_exhaustive]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Inner {
+        #[prost(message, tag = "1")]
+        Modulation(super::Modulation),
+        #[prost(message, tag = "2")]
+        FociStm(super::FociStm),
+        #[prost(message, tag = "3")]
+        GainStm(super::GainStm),
+    }
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct SwapSegment {
-    #[prost(oneof = "swap_segment::Inner", tags = "1, 2, 3, 4")]
-    pub inner: ::core::option::Option<swap_segment::Inner>,
+    #[prost(oneof = "swap_segment::Variant", tags = "1, 2, 3, 4")]
+    pub variant: ::core::option::Option<swap_segment::Variant>,
 }
 /// Nested message and enum types in `SwapSegment`.
 pub mod swap_segment {
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct Gain {
+        #[prost(enumeration = "super::Segment", tag = "1")]
+        pub segment: i32,
+        #[prost(message, optional, tag = "2")]
+        pub transition_mode: ::core::option::Option<super::TransitionMode>,
+    }
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct Modulation {
+        #[prost(enumeration = "super::Segment", tag = "1")]
+        pub segment: i32,
+        #[prost(message, optional, tag = "2")]
+        pub transition_mode: ::core::option::Option<super::TransitionMode>,
+    }
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct FociStm {
+        #[prost(enumeration = "super::Segment", tag = "1")]
+        pub segment: i32,
+        #[prost(message, optional, tag = "2")]
+        pub transition_mode: ::core::option::Option<super::TransitionMode>,
+    }
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct GainStm {
+        #[prost(enumeration = "super::Segment", tag = "1")]
+        pub segment: i32,
+        #[prost(message, optional, tag = "2")]
+        pub transition_mode: ::core::option::Option<super::TransitionMode>,
+    }
     #[non_exhaustive]
     #[derive(Clone, Copy, PartialEq, ::prost::Oneof)]
-    pub enum Inner {
+    pub enum Variant {
         #[prost(message, tag = "1")]
-        Gain(super::SwapSegmentGain),
+        Gain(Gain),
         #[prost(message, tag = "2")]
-        Modulation(super::SwapSegmentModulation),
+        Modulation(Modulation),
         #[prost(message, tag = "3")]
-        FociStm(super::SwapSegmentFociStm),
+        FociStm(FociStm),
         #[prost(message, tag = "4")]
-        GainStm(super::SwapSegmentGainStm),
+        GainStm(GainStm),
     }
 }
 #[non_exhaustive]
@@ -1645,7 +1659,7 @@ impl GainStmMode {
 pub struct Datagram {
     #[prost(
         oneof = "datagram::Datagram",
-        tags = "1, 2, 3, 4, 5, 6, 10, 11, 30, 31, 40, 41, 50, 51"
+        tags = "1, 2, 3, 4, 5, 6, 10, 30, 40, 50, 60, 61"
     )]
     pub datagram: ::core::option::Option<datagram::Datagram>,
 }
@@ -1668,29 +1682,23 @@ pub mod datagram {
         SwapSegment(super::SwapSegment),
         #[prost(message, tag = "10")]
         Modulation(super::Modulation),
-        #[prost(message, tag = "11")]
-        ModulationWithSegment(super::ModulationWithLoopBehavior),
         #[prost(message, tag = "30")]
         Gain(super::Gain),
-        #[prost(message, tag = "31")]
-        GainWithSegment(super::GainWithSegment),
         #[prost(message, tag = "40")]
         FociStm(super::FociStm),
-        #[prost(message, tag = "41")]
-        FociStmWithLoopBehavior(super::FociStmWithLoopBehavior),
         #[prost(message, tag = "50")]
         GainStm(super::GainStm),
-        #[prost(message, tag = "51")]
-        GainStmWithLoopBehavior(super::GainStmWithLoopBehavior),
+        #[prost(message, tag = "60")]
+        WithSegment(super::WithSegment),
+        #[prost(message, tag = "61")]
+        WithLoopBehavior(super::WithLoopBehavior),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SendResponseLightweight {
     #[prost(bool, tag = "1")]
-    pub success: bool,
-    #[prost(bool, tag = "2")]
     pub err: bool,
-    #[prost(string, tag = "3")]
+    #[prost(string, tag = "2")]
     pub msg: ::prost::alloc::string::String,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
@@ -1698,7 +1706,7 @@ pub struct FirmwareVersionRequestLightweight {}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct FirmwareVersionResponseLightweight {
     #[prost(bool, tag = "1")]
-    pub success: bool,
+    pub err: bool,
     #[prost(string, tag = "2")]
     pub msg: ::prost::alloc::string::String,
     #[prost(message, repeated, tag = "3")]

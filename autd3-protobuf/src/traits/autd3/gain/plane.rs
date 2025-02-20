@@ -4,6 +4,38 @@ use crate::{
     AUTDProtoBufError,
 };
 
+impl ToMessage for autd3::gain::PlaneOption {
+    type Message = PlaneOption;
+
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
+            intensity: Some(self.intensity.to_msg(None)?),
+            phase_offset: Some(self.phase_offset.to_msg(None)?),
+        })
+    }
+}
+
+impl FromMessage<PlaneOption> for autd3::gain::PlaneOption {
+    fn from_msg(msg: PlaneOption) -> Result<Self, AUTDProtoBufError> {
+        let default = autd3::gain::PlaneOption::default();
+        Ok(Self {
+            intensity: msg
+                .intensity
+                .map(autd3_driver::firmware::fpga::EmitIntensity::from_msg)
+                .transpose()?
+                .unwrap_or(default.intensity),
+            phase_offset: msg
+                .phase_offset
+                .map(autd3_driver::firmware::fpga::Phase::from_msg)
+                .transpose()?
+                .unwrap_or(default.phase_offset),
+        })
+    }
+}
+
 impl ToMessage for autd3::gain::Plane {
     type Message = Datagram;
 
@@ -15,8 +47,7 @@ impl ToMessage for autd3::gain::Plane {
             datagram: Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Plane(Plane {
                     dir: Some(self.dir.to_msg(None)?),
-                    intensity: Some(self.option.intensity.to_msg(None)?),
-                    phase_offset: Some(self.option.phase_offset.to_msg(None)?),
+                    option: Some(self.option.to_msg(None)?),
                 })),
             })),
         })
@@ -24,23 +55,14 @@ impl ToMessage for autd3::gain::Plane {
 }
 
 impl FromMessage<Plane> for autd3::gain::Plane {
-    fn from_msg(msg: &Plane) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: Plane) -> Result<Self, AUTDProtoBufError> {
         Ok(Self {
-            dir: autd3_core::geometry::UnitVector3::from_msg(&msg.dir)?,
-            option: autd3::gain::PlaneOption {
-                intensity: msg
-                    .intensity
-                    .as_ref()
-                    .map(autd3_driver::firmware::fpga::EmitIntensity::from_msg)
-                    .transpose()?
-                    .unwrap_or(autd3::gain::PlaneOption::default().intensity),
-                phase_offset: msg
-                    .phase_offset
-                    .as_ref()
-                    .map(autd3_driver::firmware::fpga::Phase::from_msg)
-                    .transpose()?
-                    .unwrap_or(autd3::gain::PlaneOption::default().phase_offset),
-            },
+            dir: autd3_core::geometry::UnitVector3::from_msg(
+                msg.dir.ok_or(AUTDProtoBufError::DataParseError)?,
+            )?,
+            option: autd3::gain::PlaneOption::from_msg(
+                msg.option.ok_or(AUTDProtoBufError::DataParseError)?,
+            )?,
         })
     }
 }
@@ -71,10 +93,10 @@ mod tests {
                 gain: Some(gain::Gain::Plane(gain)),
                 ..
             })) => {
-                let g2 = autd3::gain::Plane::from_msg(&gain).unwrap();
-                assert_eq!(g.dir.x, g2.dir.x);
-                assert_eq!(g.dir.y, g2.dir.y);
-                assert_eq!(g.dir.z, g2.dir.z);
+                let g2 = autd3::gain::Plane::from_msg(gain).unwrap();
+                approx::assert_abs_diff_eq!(g.dir.x, g2.dir.x);
+                approx::assert_abs_diff_eq!(g.dir.y, g2.dir.y);
+                approx::assert_abs_diff_eq!(g.dir.z, g2.dir.z);
                 assert_eq!(g.option.intensity, g2.option.intensity);
                 assert_eq!(g.option.phase_offset, g2.option.phase_offset);
             }

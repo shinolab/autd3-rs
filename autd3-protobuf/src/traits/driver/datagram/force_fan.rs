@@ -28,7 +28,7 @@ impl<F: Fn(&Device) -> bool> ToMessage for autd3_driver::datagram::ForceFan<F> {
 impl FromMessage<ForceFan>
     for autd3_driver::datagram::ForceFan<Box<dyn Fn(&Device) -> bool + Send + Sync + 'static>>
 {
-    fn from_msg(msg: &ForceFan) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: ForceFan) -> Result<Self, AUTDProtoBufError> {
         let map = msg.value.clone();
         Ok(autd3_driver::datagram::ForceFan::new(Box::new(
             move |dev| map[dev.idx()],

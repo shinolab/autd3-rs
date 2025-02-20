@@ -18,7 +18,7 @@ impl ToMessage for autd3_driver::datagram::Synchronize {
 }
 
 impl FromMessage<Synchronize> for autd3_driver::datagram::Synchronize {
-    fn from_msg(_: &Synchronize) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(_: Synchronize) -> Result<Self, AUTDProtoBufError> {
         Ok(autd3_driver::datagram::Synchronize::new())
     }
 }

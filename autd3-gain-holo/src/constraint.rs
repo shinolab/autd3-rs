@@ -2,7 +2,6 @@ use autd3_core::gain::EmitIntensity;
 
 /// Emission constraint of transducers.
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[non_exhaustive]
 pub enum EmissionConstraint {
     /// Normalize the value.
     Normalize,

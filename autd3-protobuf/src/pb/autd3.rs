@@ -58,10 +58,7 @@ pub struct TxRawData {
     pub n: u32,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct SendResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-}
+pub struct SendResponse {}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RxMessage {
     #[prost(bytes = "vec", tag = "1")]
@@ -72,10 +69,7 @@ pub struct ReadRequest {}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CloseRequest {}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct CloseResponse {
-    #[prost(bool, tag = "1")]
-    pub success: bool,
-}
+pub struct CloseResponse {}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct GeometryResponse {}
 /// Generated client implementations.

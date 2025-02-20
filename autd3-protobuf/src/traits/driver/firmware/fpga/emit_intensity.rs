@@ -16,7 +16,7 @@ impl ToMessage for autd3_driver::firmware::fpga::EmitIntensity {
 }
 
 impl FromMessage<EmitIntensity> for autd3_driver::firmware::fpga::EmitIntensity {
-    fn from_msg(msg: &EmitIntensity) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: EmitIntensity) -> Result<Self, AUTDProtoBufError> {
         Ok(autd3_driver::firmware::fpga::EmitIntensity(u8::try_from(
             msg.value,
         )?))
@@ -34,7 +34,7 @@ mod tests {
         let mut rng = rand::rng();
         let v = EmitIntensity(rng.random());
         let msg = v.to_msg(None).unwrap();
-        let v2 = EmitIntensity::from_msg(&msg).unwrap();
+        let v2 = EmitIntensity::from_msg(msg).unwrap();
         assert_eq!(v, v2);
     }
 }

@@ -23,17 +23,13 @@ impl ToMessage for autd3::gain::Uniform {
 }
 
 impl FromMessage<Uniform> for autd3::gain::Uniform {
-    fn from_msg(msg: &Uniform) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: Uniform) -> Result<Self, AUTDProtoBufError> {
         Ok(Self {
             phase: autd3_driver::firmware::fpga::Phase::from_msg(
-                msg.phase
-                    .as_ref()
-                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                msg.phase.ok_or(AUTDProtoBufError::DataParseError)?,
             )?,
             intensity: autd3_driver::firmware::fpga::EmitIntensity::from_msg(
-                msg.intensity
-                    .as_ref()
-                    .ok_or(AUTDProtoBufError::DataParseError)?,
+                msg.intensity.ok_or(AUTDProtoBufError::DataParseError)?,
             )?,
         })
     }
@@ -59,7 +55,7 @@ mod tests {
                 gain: Some(gain::Gain::Uniform(gain)),
                 ..
             })) => {
-                let g2 = autd3::gain::Uniform::from_msg(&gain).unwrap();
+                let g2 = autd3::gain::Uniform::from_msg(gain).unwrap();
                 assert_eq!(g.intensity, g2.intensity);
                 assert_eq!(g.phase, g2.phase);
             }

@@ -2,9 +2,7 @@ syntax = "proto3";
 
 package autd3;
 
-message Angle {
-  float rad = 1;
-}
+message Angle { float rad = 1; }
 
 message UnitVector3 {
   float x = 1;

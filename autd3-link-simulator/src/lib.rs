@@ -69,20 +69,17 @@ impl SimulatorInner {
         Ok(())
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
-        Ok(self
-            .client
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
+        self.client
             .send_data(tx.to_msg(None)?)
             .await
-            .map_err(AUTDProtoBufError::from)?
-            .into_inner()
-            .success)
+            .map_err(AUTDProtoBufError::from)?;
+        Ok(())
     }
 
     async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
         let rx_ = Vec::<RxMessage>::from_msg(
-            &self
-                .client
+            self.client
                 .read_data(ReadRequest {})
                 .await
                 .map_err(AUTDProtoBufError::from)?
@@ -142,7 +139,8 @@ impl AsyncLink for Simulator {
 
     async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
         if let Some(inner) = self.inner.as_mut() {
-            inner.send(tx).await
+            inner.send(tx).await?;
+            Ok(true)
         } else {
             Ok(false)
         }
@@ -150,7 +148,8 @@ impl AsyncLink for Simulator {
 
     async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
         if let Some(inner) = self.inner.as_mut() {
-            inner.receive(rx).await
+            inner.receive(rx).await?;
+            Ok(true)
         } else {
             Ok(false)
         }

@@ -8,6 +8,50 @@ use crate::{
     traits::{FromMessage, ToMessage},
     AUTDProtoBufError,
 };
+use autd3_core::acoustics::directivity::Sphere;
+
+impl ToMessage for autd3_gain_holo::LMOption<Sphere> {
+    type Message = LmOption;
+
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
+            eps_1: Some(self.eps_1 as _),
+            eps_2: Some(self.eps_2 as _),
+            tau: Some(self.tau as _),
+            k_max: Some(self.k_max.get() as _),
+            initial: self.initial.to_vec(),
+            constraint: Some(self.constraint.to_msg(None)?),
+        })
+    }
+}
+
+impl FromMessage<LmOption> for autd3_gain_holo::LMOption<Sphere> {
+    fn from_msg(msg: LmOption) -> Result<Self, AUTDProtoBufError> {
+        let default = autd3_gain_holo::LMOption::<Sphere>::default();
+        Ok(Self {
+            eps_1: msg.eps_1.unwrap_or(default.eps_1),
+            eps_2: msg.eps_2.unwrap_or(default.eps_2),
+            tau: msg.tau.unwrap_or(default.tau),
+            k_max: msg
+                .k_max
+                .map(usize::try_from)
+                .transpose()?
+                .map(NonZeroUsize::try_from)
+                .transpose()?
+                .unwrap_or(default.k_max),
+            constraint: msg
+                .constraint
+                .map(autd3_gain_holo::EmissionConstraint::from_msg)
+                .transpose()?
+                .unwrap_or(default.constraint),
+            initial: msg.initial,
+            __phantom: std::marker::PhantomData,
+        })
+    }
+}
 
 impl ToMessage
     for autd3_gain_holo::LM<
@@ -25,12 +69,7 @@ impl ToMessage
             datagram: Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Lm(Lm {
                     holo: to_holo!(self),
-                    eps_1: Some(self.option.eps_1 as _),
-                    eps_2: Some(self.option.eps_2 as _),
-                    tau: Some(self.option.tau as _),
-                    k_max: Some(self.option.k_max.get() as _),
-                    initial: self.option.initial.iter().map(|&v| v as _).collect(),
-                    constraint: Some(self.option.constraint.to_msg(None)?),
+                    option: Some(self.option.to_msg(None)?),
                 })),
             })),
         })
@@ -43,71 +82,27 @@ impl FromMessage<Lm>
         NalgebraBackend<autd3_core::acoustics::directivity::Sphere>,
     >
 {
-    fn from_msg(msg: &Lm) -> Result<Self, AUTDProtoBufError> {
-        Ok(
-            Self {
-                foci: msg
-                    .holo
-                    .iter()
-                    .map(|h| {
-                        Ok((
-                            autd3_core::geometry::Point3::from_msg(&h.pos)?,
-                            autd3_gain_holo::Amplitude::from_msg(&h.amp)?,
-                        ))
-                    })
-                    .collect::<Result<Vec<_>, AUTDProtoBufError>>()?,
-                option:
-                    autd3_gain_holo::LMOption {
-                        eps_1:
-                            msg.eps_1.unwrap_or(
-                                autd3_gain_holo::LMOption::<
-                                    autd3_core::acoustics::directivity::Sphere,
-                                >::default()
-                                .eps_1,
-                            ),
-                        eps_2:
-                            msg.eps_2.unwrap_or(
-                                autd3_gain_holo::LMOption::<
-                                    autd3_core::acoustics::directivity::Sphere,
-                                >::default()
-                                .eps_2,
-                            ),
-                        tau:
-                            msg.tau.unwrap_or(
-                                autd3_gain_holo::LMOption::<
-                                    autd3_core::acoustics::directivity::Sphere,
-                                >::default()
-                                .tau,
-                            ),
-                        k_max: msg
-                            .k_max
-                            .map(usize::try_from)
-                            .transpose()?
-                            .map(|x| NonZeroUsize::new(x).ok_or(AUTDProtoBufError::DataParseError))
-                            .transpose()?
-                            .unwrap_or(
-                                autd3_gain_holo::LMOption::<
-                                    autd3_core::acoustics::directivity::Sphere,
-                                >::default()
-                                .k_max,
-                            ),
-                        initial: msg.initial.clone(),
-                        constraint: msg
-                            .constraint
-                            .as_ref()
-                            .map(autd3_gain_holo::EmissionConstraint::from_msg)
-                            .transpose()?
-                            .unwrap_or(
-                                autd3_gain_holo::LMOption::<
-                                    autd3_core::acoustics::directivity::Sphere,
-                                >::default()
-                                .constraint,
-                            ),
-                        ..Default::default()
-                    },
-                backend: std::sync::Arc::new(NalgebraBackend::default()),
-            },
-        )
+    fn from_msg(msg: Lm) -> Result<Self, AUTDProtoBufError> {
+        Ok(Self {
+            foci: msg
+                .holo
+                .into_iter()
+                .map(|h| {
+                    Ok((
+                        autd3_core::geometry::Point3::from_msg(
+                            h.pos.ok_or(AUTDProtoBufError::DataParseError)?,
+                        )?,
+                        autd3_gain_holo::Amplitude::from_msg(
+                            h.amp.ok_or(AUTDProtoBufError::DataParseError)?,
+                        )?,
+                    ))
+                })
+                .collect::<Result<Vec<_>, AUTDProtoBufError>>()?,
+            option: autd3_gain_holo::LMOption::from_msg(
+                msg.option.ok_or(AUTDProtoBufError::DataParseError)?,
+            )?,
+            backend: std::sync::Arc::new(NalgebraBackend::default()),
+        })
     }
 }
 
@@ -148,7 +143,7 @@ mod tests {
                 gain: Some(gain::Gain::Lm(g)),
                 ..
             })) => {
-                let holo2 = autd3_gain_holo::LM::from_msg(&g).unwrap();
+                let holo2 = autd3_gain_holo::LM::from_msg(g).unwrap();
                 assert_eq!(holo.option.eps_1, holo2.option.eps_1);
                 assert_eq!(holo.option.eps_2, holo2.option.eps_2);
                 assert_eq!(holo.option.tau, holo2.option.tau);

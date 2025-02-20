@@ -7,7 +7,7 @@ import "utils-lightweight.proto";
 
 message Static { optional uint32 intensity = 1; }
 
-message SineOption {  
+message SineOption {
   optional SamplingConfig config = 1;
   optional uint32 intensity = 2;
   optional uint32 offset = 3;
@@ -17,17 +17,17 @@ message SineOption {
 
 message SineExact {
   uint32 freq = 1;
-  optional SineOption option = 2;
+  SineOption option = 2;
 }
 
 message SineExactFloat {
   float freq = 1;
-  optional SineOption option = 2;
+  SineOption option = 2;
 }
 
 message SineNearest {
   float freq = 1;
-  optional SineOption option = 2;
+  SineOption option = 2;
 }
 
 message SquareOption {
@@ -39,17 +39,17 @@ message SquareOption {
 
 message SquareExact {
   uint32 freq = 1;
-  optional SquareOption option = 2;
+  SquareOption option = 2;
 }
 
 message SquareExactFloat {
   float freq = 1;
-  optional SquareOption option = 2;
+  SquareOption option = 2;
 }
 
 message SquareNearest {
   float freq = 1;
-  optional SquareOption option = 2;
+  SquareOption option = 2;
 }
 
 message Modulation {
@@ -62,11 +62,4 @@ message Modulation {
     SquareExactFloat square_exact_float = 21;
     SquareNearest square_nearest = 22;
   }
-}
-
-message ModulationWithLoopBehavior {
-  Modulation modulation = 1;
-  optional LoopBehavior loop_behavior = 2;
-  optional Segment segment = 3;
-  optional TransitionMode transition_mode = 4;
 }
