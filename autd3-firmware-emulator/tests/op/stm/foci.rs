@@ -6,20 +6,20 @@ use autd3_driver::{
         ControlPoint, ControlPoints, FixedCompletionSteps, FociSTM, GainSTM, GainSTMOption,
         Silencer, SwapSegment, WithLoopBehavior, WithSegment,
     },
-    defined::{mm, METER},
+    defined::{METER, mm},
     error::AUTDDriverError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::{
         cpu::TxMessage,
         fpga::{
-            Drive, LoopBehavior, Phase, SamplingConfig, Segment, SilencerTarget, TransitionMode,
-            FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT, SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT,
+            Drive, FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT, LoopBehavior, Phase,
+            SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, SamplingConfig,
+            Segment, SilencerTarget, TransitionMode,
         },
     },
     geometry::Point3,
 };
-use autd3_firmware_emulator::{cpu::params::SYS_TIME_TRANSITION_MARGIN, CPUEmulator};
+use autd3_firmware_emulator::{CPUEmulator, cpu::params::SYS_TIME_TRANSITION_MARGIN};
 
 use crate::{create_geometry, op::gain::TestGain, send};
 use rand::*;

@@ -1,9 +1,9 @@
 use autd3_core::defined::Freq;
 
 use crate::{
+    AUTDProtoBufError,
     pb::*,
     traits::{FromMessage, ToMessage},
-    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3::modulation::Sine<Freq<f32>> {

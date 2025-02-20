@@ -71,7 +71,7 @@ pub type EulerAngle = EulerAngleIntrinsic;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::defined::{deg, rad, PI};
+    use crate::defined::{PI, deg, rad};
 
     macro_rules! assert_approx_eq_quat {
         ($a:expr, $b:expr) => {

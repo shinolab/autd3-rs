@@ -1,9 +1,9 @@
 use autd3_driver::{datagram::STMConfig, firmware::fpga::SamplingConfig};
 
 use crate::{
+    AUTDProtoBufError,
     pb::*,
     traits::{FromMessage, ToMessage},
-    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3_driver::datagram::GainSTMOption {

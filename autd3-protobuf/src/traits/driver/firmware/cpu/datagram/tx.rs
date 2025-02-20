@@ -1,7 +1,7 @@
 use crate::{
+    AUTDProtoBufError,
     pb::*,
     traits::{FromMessage, ToMessage},
-    AUTDProtoBufError,
 };
 
 use zerocopy::{FromZeros, IntoBytes};

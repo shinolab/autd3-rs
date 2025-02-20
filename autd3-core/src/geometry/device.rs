@@ -4,7 +4,7 @@ use bvh::aabb::Aabb;
 use derive_more::{Deref, IntoIterator};
 use getset::Getters;
 
-use crate::defined::{ultrasound_freq, METER};
+use crate::defined::{METER, ultrasound_freq};
 
 use super::{
     Isometry, Point3, Quaternion, Transducer, Translation, UnitQuaternion, UnitVector3, Vector3,
@@ -178,8 +178,8 @@ pub(crate) mod tests {
 
     use super::*;
     use crate::{
-        defined::{mm, PI},
-        geometry::tests::{create_device, TestDevice},
+        defined::{PI, mm},
+        geometry::tests::{TestDevice, create_device},
     };
 
     macro_rules! assert_approx_eq_vec3 {

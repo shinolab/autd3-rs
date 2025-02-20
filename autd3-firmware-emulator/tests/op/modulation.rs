@@ -8,12 +8,12 @@ use autd3_driver::{
     firmware::{
         cpu::TxMessage,
         fpga::{
-            GPIOIn, SilencerTarget, TransitionMode, MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN,
-            SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT,
+            GPIOIn, MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN, SILENCER_STEPS_INTENSITY_DEFAULT,
+            SILENCER_STEPS_PHASE_DEFAULT, SilencerTarget, TransitionMode,
         },
     },
 };
-use autd3_firmware_emulator::{cpu::params::SYS_TIME_TRANSITION_MARGIN, CPUEmulator};
+use autd3_firmware_emulator::{CPUEmulator, cpu::params::SYS_TIME_TRANSITION_MARGIN};
 
 use time::OffsetDateTime;
 

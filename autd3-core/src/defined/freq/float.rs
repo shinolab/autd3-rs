@@ -1,4 +1,4 @@
-use super::{kHz, Freq, Hz};
+use super::{Freq, Hz, kHz};
 
 impl std::ops::Mul<Hz> for f32 {
     type Output = Freq<f32>;

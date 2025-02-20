@@ -131,11 +131,11 @@ pub trait IntoBoxedDatagram {
 }
 
 impl<
-        E,
-        G: OperationGenerator + 'static,
-        #[cfg(not(feature = "lightweight"))] D: Datagram<Error = E, G = G> + 'static,
-        #[cfg(feature = "lightweight")] D: Datagram<Error = E, G = G> + Send + Sync + 'static,
-    > IntoBoxedDatagram for D
+    E,
+    G: OperationGenerator + 'static,
+    #[cfg(not(feature = "lightweight"))] D: Datagram<Error = E, G = G> + 'static,
+    #[cfg(feature = "lightweight")] D: Datagram<Error = E, G = G> + Send + Sync + 'static,
+> IntoBoxedDatagram for D
 where
     AUTDDriverError: From<E>,
     AUTDDriverError: From<<G::O1 as Operation>::Error> + From<<G::O2 as Operation>::Error>,

@@ -33,7 +33,7 @@ impl Memory {
             controller_bram: LazyCell::new(|| {
                 let mut v = vec![0x0000; 256];
                 v[ADDR_VERSION_NUM_MAJOR] =
-                    (ENABLED_FEATURES_BITS as u16) << 8 | VERSION_NUM_MAJOR as u16;
+                    ((ENABLED_FEATURES_BITS as u16) << 8) | VERSION_NUM_MAJOR as u16;
                 v[ADDR_VERSION_NUM_MINOR] = VERSION_NUM_MINOR as u16;
                 RefCell::new(v)
             }),
@@ -164,9 +164,12 @@ impl Memory {
                     1 => Segment::S1,
                     _ => unreachable!(),
                 };
-                self.stm_bram.borrow_mut().get_mut(&segment).unwrap()
-                    [(self.controller_bram.borrow()[ADDR_STM_MEM_WR_PAGE] as usize) << 14 | addr] =
-                    data;
+                self.stm_bram.borrow_mut().get_mut(&segment).unwrap()[((self
+                    .controller_bram
+                    .borrow()[ADDR_STM_MEM_WR_PAGE]
+                    as usize)
+                    << 14)
+                    | addr] = data;
             }
             _ => unreachable!(),
         }

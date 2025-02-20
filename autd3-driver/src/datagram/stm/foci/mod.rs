@@ -85,7 +85,7 @@ impl<const N: usize, T: FociSTMGenerator<N>, C: Into<STMConfig> + Copy> FociSTM<
 }
 
 pub struct FociSTMOperationGenerator<const N: usize, G: FociSTMIteratorGenerator<N>> {
-    gen: G,
+    generator: G,
     size: usize,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
@@ -102,7 +102,7 @@ impl<const N: usize, G: FociSTMIteratorGenerator<N>> OperationGenerator
     fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
         (
             Self::O1::new(
-                self.gen.generate(device),
+                self.generator.generate(device),
                 self.size,
                 self.config,
                 self.loop_behavior,
@@ -132,7 +132,7 @@ impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + Debug> Datagra
         let stm_config: STMConfig = self.config.into();
         let sampling_config = stm_config.into_sampling_config(size)?;
         Ok(FociSTMOperationGenerator {
-            gen: self.foci.init()?,
+            generator: self.foci.init()?,
             size,
             config: sampling_config,
             loop_behavior,

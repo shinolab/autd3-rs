@@ -2,7 +2,7 @@ mod sphere;
 mod t4010a1;
 
 use crate::{
-    defined::{rad, Angle},
+    defined::{Angle, rad},
     geometry::{UnitVector3, Vector3},
 };
 

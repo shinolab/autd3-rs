@@ -60,8 +60,8 @@ mod tests {
 
     use super::super::GainSTM;
     use crate::{
-        datagram::{gain::tests::TestGain, GainSTMOption},
-        defined::{kHz, Freq, Hz},
+        datagram::{GainSTMOption, gain::tests::TestGain},
+        defined::{Freq, Hz, kHz},
         firmware::fpga::SamplingConfig,
     };
 

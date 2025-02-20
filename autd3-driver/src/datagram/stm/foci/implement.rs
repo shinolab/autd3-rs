@@ -63,7 +63,7 @@ mod tests {
 
     use super::super::FociSTM;
     use crate::{
-        defined::{kHz, Freq, Hz},
+        defined::{Freq, Hz, kHz},
         firmware::fpga::SamplingConfig,
         geometry::Point3,
     };

@@ -9,7 +9,7 @@ use autd3_driver::{
     },
     geometry::{Geometry, IntoDevice, Point3},
 };
-use autd3_firmware_emulator::{cpu::params::ERR_BIT, CPUEmulator};
+use autd3_firmware_emulator::{CPUEmulator, cpu::params::ERR_BIT};
 use zerocopy::FromZeros;
 
 mod op;

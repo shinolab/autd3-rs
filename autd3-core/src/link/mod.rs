@@ -5,10 +5,10 @@ mod datagram;
 mod error;
 mod sync;
 
-pub use datagram::*;
-pub use error::LinkError;
 #[cfg(feature = "async")]
 #[doc(inline)]
 pub use r#async::*;
+pub use datagram::*;
+pub use error::LinkError;
 #[doc(inline)]
 pub use sync::*;

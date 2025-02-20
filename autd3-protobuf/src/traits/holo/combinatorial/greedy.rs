@@ -1,10 +1,10 @@
 use std::num::NonZeroU8;
 
 use crate::{
+    AUTDProtoBufError,
     pb::*,
     to_holo,
     traits::{FromMessage, ToMessage},
-    AUTDProtoBufError,
 };
 use autd3_core::acoustics::directivity::Sphere;
 

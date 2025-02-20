@@ -62,17 +62,9 @@ impl SilencerEmulator<Phase> {
         let update_rate = self.update_rate(input) as i32;
         let step = ((input as i32) << 8) - self.current;
         let step = if step < 0 {
-            if -32768 <= step {
-                step
-            } else {
-                step + 65536
-            }
+            if -32768 <= step { step } else { step + 65536 }
         } else {
-            if step <= 32768 {
-                step
-            } else {
-                step - 65536
-            }
+            if step <= 32768 { step } else { step - 65536 }
         };
         if step < 0 {
             if -update_rate <= step {

@@ -1,9 +1,9 @@
 use std::num::NonZeroU16;
 
 use crate::{
+    AUTDProtoBufError,
     pb::*,
     traits::{FromMessage, ToMessage},
-    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3_driver::firmware::fpga::LoopBehavior {

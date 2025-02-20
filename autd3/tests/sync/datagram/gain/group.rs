@@ -33,19 +33,23 @@ fn only_for_enabled() -> anyhow::Result<()> {
     assert!(!check.lock().unwrap()[0]);
     assert!(check.lock().unwrap()[1]);
 
-    assert!(autd.link()[0]
-        .fpga()
-        .drives_at(Segment::S0, 0)
-        .into_iter()
-        .all(|d| Drive::NULL == d));
-    assert!(autd.link()[1]
-        .fpga()
-        .drives_at(Segment::S0, 0)
-        .into_iter()
-        .all(|d| Drive {
-            phase: Phase(0x90),
-            intensity: EmitIntensity(0x80)
-        } == d));
+    assert!(
+        autd.link()[0]
+            .fpga()
+            .drives_at(Segment::S0, 0)
+            .into_iter()
+            .all(|d| Drive::NULL == d)
+    );
+    assert!(
+        autd.link()[1]
+            .fpga()
+            .drives_at(Segment::S0, 0)
+            .into_iter()
+            .all(|d| Drive {
+                phase: Phase(0x90),
+                intensity: EmitIntensity(0x80)
+            } == d)
+    );
 
     Ok(())
 }

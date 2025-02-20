@@ -3,7 +3,7 @@ mod drp;
 use zerocopy::{Immutable, IntoBytes};
 
 use crate::{
-    defined::{Freq, DRP_ROM_SIZE, ULTRASOUND_PERIOD_COUNT},
+    defined::{DRP_ROM_SIZE, Freq, ULTRASOUND_PERIOD_COUNT},
     error::AUTDDriverError,
     firmware::operation::{Operation, TypeTag},
     geometry::Device,

@@ -1,7 +1,7 @@
 use crate::{
+    AUTDProtoBufError,
     pb::*,
     traits::{FromMessage, ToMessage},
-    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3_core::defined::Angle {
@@ -26,7 +26,7 @@ impl FromMessage<Angle> for autd3_core::defined::Angle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_core::defined::{rad, Angle};
+    use autd3_core::defined::{Angle, rad};
     use rand::Rng;
 
     #[test]

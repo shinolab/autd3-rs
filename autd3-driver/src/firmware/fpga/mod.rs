@@ -4,7 +4,7 @@ mod silencer_target;
 mod stm_focus;
 
 pub use autd3_core::{
-    datagram::{GPIOIn, GPIOOut, LoopBehavior, Segment, TransitionMode, TRANSITION_MODE_NONE},
+    datagram::{GPIOIn, GPIOOut, LoopBehavior, Segment, TRANSITION_MODE_NONE, TransitionMode},
     gain::{Drive, EmitIntensity, Phase},
     sampling_config::SamplingConfig,
 };

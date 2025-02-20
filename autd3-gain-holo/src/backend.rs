@@ -5,7 +5,7 @@ use autd3_core::{
     gain::BitVec,
     geometry::{Geometry, Point3},
 };
-use nalgebra::{Dyn, VecStorage, U1};
+use nalgebra::{Dyn, U1, VecStorage};
 
 use crate::error::HoloError;
 
@@ -65,7 +65,7 @@ pub trait LinAlgBackend<D: Directivity> {
     fn from_slice_v(&self, v: &[f32]) -> Result<Self::VectorX, HoloError>;
     #[allow(clippy::wrong_self_convention)]
     fn from_slice_m(&self, rows: usize, cols: usize, v: &[f32])
-        -> Result<Self::MatrixX, HoloError>;
+    -> Result<Self::MatrixX, HoloError>;
     #[allow(clippy::wrong_self_convention)]
     fn from_slice_cv(&self, v: &[f32]) -> Result<Self::VectorXc, HoloError>;
     #[allow(clippy::wrong_self_convention)]

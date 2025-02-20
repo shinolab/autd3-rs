@@ -28,10 +28,10 @@ impl GainCalculatorGenerator for DynGainCalculatorGenerator {
 }
 
 impl<
-        Calculator: GainCalculator + 'static,
-        #[cfg(not(feature = "lightweight"))] G: GainCalculatorGenerator<Calculator = Calculator>,
-        #[cfg(feature = "lightweight")] G: GainCalculatorGenerator<Calculator = Calculator> + Send + Sync,
-    > DGainCalculatorGenerator for G
+    Calculator: GainCalculator + 'static,
+    #[cfg(not(feature = "lightweight"))] G: GainCalculatorGenerator<Calculator = Calculator>,
+    #[cfg(feature = "lightweight")] G: GainCalculatorGenerator<Calculator = Calculator> + Send + Sync,
+> DGainCalculatorGenerator for G
 {
     fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainCalculator> {
         Box::new(GainCalculatorGenerator::generate(self, device))
@@ -50,10 +50,10 @@ trait DGain {
 }
 
 impl<
-        G: DGainCalculatorGenerator + 'static,
-        #[cfg(not(feature = "lightweight"))] T: Gain<G = G>,
-        #[cfg(feature = "lightweight")] T: Gain<G = G> + Send + Sync,
-    > DGain for MaybeUninit<T>
+    G: DGainCalculatorGenerator + 'static,
+    #[cfg(not(feature = "lightweight"))] T: Gain<G = G>,
+    #[cfg(feature = "lightweight")] T: Gain<G = G> + Send + Sync,
+> DGain for MaybeUninit<T>
 {
     fn dyn_init(
         &mut self,
@@ -123,10 +123,10 @@ pub trait IntoBoxedGain {
 }
 
 impl<
-        #[cfg(feature = "lightweight")] GG: GainCalculatorGenerator + Send + Sync + 'static,
-        #[cfg(not(feature = "lightweight"))] G: Gain + 'static,
-        #[cfg(feature = "lightweight")] G: Gain<G = GG> + Send + Sync + 'static,
-    > IntoBoxedGain for G
+    #[cfg(feature = "lightweight")] GG: GainCalculatorGenerator + Send + Sync + 'static,
+    #[cfg(not(feature = "lightweight"))] G: Gain + 'static,
+    #[cfg(feature = "lightweight")] G: Gain<G = GG> + Send + Sync + 'static,
+> IntoBoxedGain for G
 {
     fn into_boxed(self) -> BoxedGain {
         BoxedGain {

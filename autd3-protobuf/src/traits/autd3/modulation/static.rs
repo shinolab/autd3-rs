@@ -1,7 +1,7 @@
 use crate::{
+    AUTDProtoBufError,
     pb::*,
     traits::{FromMessage, ToMessage},
-    AUTDProtoBufError,
 };
 
 impl ToMessage for autd3::modulation::Static {

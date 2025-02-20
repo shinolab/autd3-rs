@@ -14,8 +14,8 @@ use spin_sleep::SpinSleeper;
 use crate::error::AUTDError;
 
 use super::{
-    sender::{Sender, SenderOption},
     Controller, Sleep,
+    sender::{Sender, SenderOption},
 };
 
 impl<L: Link> Controller<L> {
@@ -197,8 +197,8 @@ mod tests {
 
     use crate::{
         controller::{
-            tests::{create_controller, TestGain},
             ParallelMode, SenderOption,
+            tests::{TestGain, create_controller},
         },
         error::AUTDError,
         gain::{Null, Uniform},

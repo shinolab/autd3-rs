@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use crate::{
-    defined::{rad, Angle},
+    defined::{Angle, rad},
     geometry::Complex,
 };
 

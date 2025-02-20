@@ -35,7 +35,7 @@ impl<M: Modulation> Modulation for Fir<M> {
 #[cfg(test)]
 mod tests {
     use crate::modulation::{Custom, Fourier, Sine};
-    use autd3_driver::defined::{kHz, Hz};
+    use autd3_driver::defined::{Hz, kHz};
 
     use super::*;
 
