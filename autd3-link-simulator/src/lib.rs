@@ -219,7 +219,7 @@ impl Link for Simulator {
             })
     }
 
-    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
+    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
         self.runtime
             .as_ref()
             .map_or(Err(LinkError::new("Link is closed")), |runtime| {
