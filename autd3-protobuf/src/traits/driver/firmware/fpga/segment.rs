@@ -1,4 +1,4 @@
-use crate::{pb::*, FromMessage};
+use crate::{FromMessage, pb::*};
 
 impl From<Segment> for autd3_driver::firmware::fpga::Segment {
     fn from(value: Segment) -> Self {

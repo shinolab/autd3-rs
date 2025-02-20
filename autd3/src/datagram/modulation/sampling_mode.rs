@@ -3,7 +3,7 @@ use autd3_core::{
     utils::float::is_integer,
 };
 use autd3_driver::{
-    defined::{ultrasound_freq, Freq, Hz},
+    defined::{Freq, Hz, ultrasound_freq},
     firmware::fpga::MOD_BUF_SIZE_MAX,
 };
 use num::integer::gcd;

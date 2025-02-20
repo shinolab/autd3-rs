@@ -1,9 +1,9 @@
 use autd3::driver::defined::Hz;
 
 use crate::{
+    AUTDProtoBufError,
     pb::*,
     traits::{FromMessage, ToMessage},
-    AUTDProtoBufError,
 };
 use std::{num::NonZeroU16, time::Duration};
 

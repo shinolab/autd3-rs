@@ -1,4 +1,4 @@
-use crate::{pb::*, traits::FromMessage, AUTDProtoBufError};
+use crate::{AUTDProtoBufError, pb::*, traits::FromMessage};
 
 impl FromMessage<FirmwareVersionResponseLightweight>
     for Vec<autd3_driver::firmware::version::FirmwareVersion>

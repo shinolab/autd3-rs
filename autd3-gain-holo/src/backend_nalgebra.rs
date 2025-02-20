@@ -12,9 +12,9 @@ use autd3_core::{
     geometry::{Complex, Geometry, Point3},
 };
 use derive_new::new;
-use nalgebra::{ComplexField, Dyn, Normed, VecStorage, U1};
+use nalgebra::{ComplexField, Dyn, Normed, U1, VecStorage};
 
-use crate::{error::HoloError, LinAlgBackend, MatrixX, MatrixXc, VectorX, VectorXc};
+use crate::{LinAlgBackend, MatrixX, MatrixXc, VectorX, VectorXc, error::HoloError};
 
 /// [`LinAlgBackend`] using [`nalgebra`].
 ///
@@ -564,7 +564,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
 mod tests {
     use std::f32::consts::PI;
 
-    use crate::{tests::create_geometry, Amplitude, Pa, Trans};
+    use crate::{Amplitude, Pa, Trans, tests::create_geometry};
 
     use super::*;
 
@@ -1327,9 +1327,11 @@ mod tests {
 
             let alpha = Complex::new(rng.random(), rng.random());
             let beta = Complex::new(rng.random(), rng.random());
-            assert!(backend
-                .gevv_c(Trans::NoTrans, Trans::NoTrans, alpha, &a, &b, beta, &mut c)
-                .is_err());
+            assert!(
+                backend
+                    .gevv_c(Trans::NoTrans, Trans::NoTrans, alpha, &a, &b, beta, &mut c)
+                    .is_err()
+            );
         }
 
         {
@@ -1410,9 +1412,11 @@ mod tests {
 
             let alpha = Complex::new(rng.random(), rng.random());
             let beta = Complex::new(rng.random(), rng.random());
-            assert!(backend
-                .gevv_c(Trans::Trans, Trans::Trans, alpha, &a, &b, beta, &mut c)
-                .is_err());
+            assert!(
+                backend
+                    .gevv_c(Trans::Trans, Trans::Trans, alpha, &a, &b, beta, &mut c)
+                    .is_err()
+            );
         }
 
         {
@@ -1422,9 +1426,11 @@ mod tests {
 
             let alpha = Complex::new(rng.random(), rng.random());
             let beta = Complex::new(rng.random(), rng.random());
-            assert!(backend
-                .gevv_c(Trans::Trans, Trans::ConjTrans, alpha, &a, &b, beta, &mut c)
-                .is_err());
+            assert!(
+                backend
+                    .gevv_c(Trans::Trans, Trans::ConjTrans, alpha, &a, &b, beta, &mut c)
+                    .is_err()
+            );
         }
 
         {
@@ -1463,9 +1469,11 @@ mod tests {
 
             let alpha = Complex::new(rng.random(), rng.random());
             let beta = Complex::new(rng.random(), rng.random());
-            assert!(backend
-                .gevv_c(Trans::ConjTrans, Trans::Trans, alpha, &a, &b, beta, &mut c)
-                .is_err());
+            assert!(
+                backend
+                    .gevv_c(Trans::ConjTrans, Trans::Trans, alpha, &a, &b, beta, &mut c)
+                    .is_err()
+            );
         }
 
         {
@@ -1475,17 +1483,19 @@ mod tests {
 
             let alpha = Complex::new(rng.random(), rng.random());
             let beta = Complex::new(rng.random(), rng.random());
-            assert!(backend
-                .gevv_c(
-                    Trans::ConjTrans,
-                    Trans::ConjTrans,
-                    alpha,
-                    &a,
-                    &b,
-                    beta,
-                    &mut c,
-                )
-                .is_err());
+            assert!(
+                backend
+                    .gevv_c(
+                        Trans::ConjTrans,
+                        Trans::ConjTrans,
+                        alpha,
+                        &a,
+                        &b,
+                        beta,
+                        &mut c,
+                    )
+                    .is_err()
+            );
         }
 
         Ok(())

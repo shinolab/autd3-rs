@@ -6,7 +6,7 @@ use autd3_driver::{
         fpga::{DebugType, GPIOOut},
     },
 };
-use autd3_firmware_emulator::{fpga::params::*, CPUEmulator};
+use autd3_firmware_emulator::{CPUEmulator, fpga::params::*};
 
 use crate::{create_geometry, send};
 

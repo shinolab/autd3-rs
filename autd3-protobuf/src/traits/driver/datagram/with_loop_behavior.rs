@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use crate::{pb::*, traits::ToMessage, AUTDProtoBufError};
+use crate::{AUTDProtoBufError, pb::*, traits::ToMessage};
 
 impl<T> ToMessage for autd3_driver::datagram::WithLoopBehavior<T>
 where

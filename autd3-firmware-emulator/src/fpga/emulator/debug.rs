@@ -1,4 +1,4 @@
-use super::{super::params::*, memory::Memory, FPGAEmulator};
+use super::{super::params::*, FPGAEmulator, memory::Memory};
 
 impl FPGAEmulator {
     pub fn gpio_in(&self) -> [bool; 4] {

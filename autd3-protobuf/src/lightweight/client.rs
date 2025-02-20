@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use autd3_core::geometry::{Device, Geometry, IntoDevice};
 
-use crate::{traits::*, OpenRequestLightweight};
+use crate::{OpenRequestLightweight, traits::*};
 
 pub struct LightweightClient {
     client: crate::pb::ecat_light_client::EcatLightClient<tonic::transport::Channel>,

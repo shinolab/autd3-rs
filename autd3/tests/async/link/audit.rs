@@ -1,9 +1,9 @@
 use std::time::Duration;
 
 use autd3::{
+    r#async::{AsyncSleeper, Controller},
     link::{Audit, AuditOption},
     prelude::*,
-    r#async::{AsyncSleeper, Controller},
 };
 use autd3_core::link::LinkError;
 use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};

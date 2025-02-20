@@ -1,7 +1,7 @@
 use anyhow::Result;
 
-use autd3::prelude::*;
 use autd3::r#async::Controller;
+use autd3::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<()> {

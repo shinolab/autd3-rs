@@ -43,7 +43,7 @@ use zerocopy::{Immutable, IntoBytes};
 
 use crate::{
     error::AUTDDriverError,
-    firmware::cpu::{TxMessage, MSG_ID_MAX},
+    firmware::cpu::{MSG_ID_MAX, TxMessage},
     geometry::{Device, Geometry},
 };
 
@@ -90,12 +90,12 @@ pub struct OperationHandler {}
 
 impl OperationHandler {
     pub fn generate<G: OperationGenerator>(
-        mut gen: G,
+        mut generator: G,
         geometry: &Geometry,
     ) -> Vec<Option<(G::O1, G::O2)>> {
         geometry
             .devices()
-            .map(|dev| Some(gen.generate(dev)))
+            .map(|dev| Some(generator.generate(dev)))
             .collect()
     }
 

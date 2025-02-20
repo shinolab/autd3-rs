@@ -1,9 +1,9 @@
 use std::{collections::HashMap, num::NonZeroUsize, sync::Arc};
 
 use crate::{
-    constraint::EmissionConstraint,
-    helper::{generate_result, HoloCalculatorGenerator},
     Amplitude, Complex, HoloError, LinAlgBackend, Trans,
+    constraint::EmissionConstraint,
+    helper::{HoloCalculatorGenerator, generate_result},
 };
 
 use autd3_core::{acoustics::directivity::Directivity, derive::*, geometry::Point3};

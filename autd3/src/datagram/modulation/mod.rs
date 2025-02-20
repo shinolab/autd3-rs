@@ -14,7 +14,7 @@ pub use cache::Cache;
 pub use custom::Custom;
 pub use fir::Fir;
 pub use fourier::{Fourier, FourierOption};
-pub use r#static::Static;
 pub use radiation_pressure::RadiationPressure;
 pub use sine::{Sine, SineOption};
 pub use square::{Square, SquareOption};
+pub use r#static::Static;

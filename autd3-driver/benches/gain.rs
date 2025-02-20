@@ -11,7 +11,7 @@ use autd3_driver::{
     geometry::{Device, Geometry, IntoDevice, Point3, Transducer},
 };
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use zerocopy::FromZeros;
 
 pub fn generate_geometry(size: usize) -> Geometry {

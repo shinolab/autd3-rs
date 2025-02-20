@@ -1,9 +1,9 @@
 use autd3_core::geometry::Device;
 
 use crate::{
+    AUTDProtoBufError,
     pb::*,
     traits::{FromMessage, ToMessage},
-    AUTDProtoBufError,
 };
 
 impl<F: Fn(&Device) -> bool> ToMessage for autd3_driver::datagram::ReadsFPGAState<F> {

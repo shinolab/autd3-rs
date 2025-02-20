@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use crate::{cpu::params::*, CPUEmulator};
+use crate::{CPUEmulator, cpu::params::*};
 
 #[repr(C, align(2))]
 #[derive(Clone, Copy)]

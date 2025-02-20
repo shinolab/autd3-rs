@@ -16,7 +16,7 @@ const ERR_ADSERRS: c_long = 0x0700;
 pub const ADSERR_DEVICE_INVALIDSIZE: c_long = 0x05 + ERR_ADSERRS;
 
 #[link(name = "ads", kind = "static")]
-extern "C" {
+unsafe extern "C" {
     pub fn AdsCSetLocalAddress(ams: AmsNetId);
     pub fn AdsCAddRoute(ams: AmsNetId, ip: *const c_char) -> c_long;
     pub fn AdsCPortOpenEx() -> c_long;

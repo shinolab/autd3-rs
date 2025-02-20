@@ -9,7 +9,7 @@ use autd3_driver::{
     datagram::{Clear, Datagram, FixedCompletionSteps, ForceFan, Silencer, Synchronize},
     error::AUTDDriverError,
     firmware::{
-        cpu::{check_if_msg_is_processed, RxMessage, TxMessage},
+        cpu::{RxMessage, TxMessage, check_if_msg_is_processed},
         fpga::FPGAState,
         operation::{FirmwareVersionType, Operation, OperationGenerator},
         version::FirmwareVersion,
@@ -181,8 +181,8 @@ impl<L: AsyncLink> Controller<L> {
 
     /// Returns  the firmware version of the devices.
     pub async fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDError> {
-        use autd3_driver::firmware::version::{CPUVersion, FPGAVersion, Major, Minor};
         use FirmwareVersionType::*;
+        use autd3_driver::firmware::version::{CPUVersion, FPGAVersion, Major, Minor};
 
         let cpu_major = self.fetch_firminfo(CPUMajor).await?;
         let cpu_minor = self.fetch_firminfo(CPUMinor).await?;
@@ -494,12 +494,16 @@ mod tests {
 
             let states = autd.fpga_state().await?;
             assert_eq!(2, states.len());
-            assert!(states[0]
-                .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
-                .is_thermal_assert());
-            assert!(!states[1]
-                .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
-                .is_thermal_assert());
+            assert!(
+                states[0]
+                    .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
+                    .is_thermal_assert()
+            );
+            assert!(
+                !states[1]
+                    .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
+                    .is_thermal_assert()
+            );
         }
 
         {
@@ -508,12 +512,16 @@ mod tests {
 
             let states = autd.fpga_state().await?;
             assert_eq!(2, states.len());
-            assert!(!states[0]
-                .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
-                .is_thermal_assert());
-            assert!(states[1]
-                .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
-                .is_thermal_assert());
+            assert!(
+                !states[0]
+                    .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
+                    .is_thermal_assert()
+            );
+            assert!(
+                states[1]
+                    .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
+                    .is_thermal_assert()
+            );
         }
 
         autd.send(ReadsFPGAState::new(|dev| dev.idx() == 1)).await?;
@@ -521,9 +529,11 @@ mod tests {
             let states = autd.fpga_state().await?;
             assert_eq!(2, states.len());
             assert!(states[0].is_none());
-            assert!(states[1]
-                .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
-                .is_thermal_assert());
+            assert!(
+                states[1]
+                    .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
+                    .is_thermal_assert()
+            );
         }
 
         Ok(())

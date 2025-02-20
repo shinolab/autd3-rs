@@ -1,4 +1,4 @@
-use autd3::{core::link::AsyncLink, prelude::*, r#async::Controller};
+use autd3::{r#async::Controller, core::link::AsyncLink, prelude::*};
 
 #[tokio::test]
 async fn nop_test() -> anyhow::Result<()> {

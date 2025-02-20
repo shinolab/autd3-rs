@@ -10,9 +10,9 @@ pub trait DModulation {
 }
 
 impl<
-        #[cfg(not(feature = "lightweight"))] T: Modulation,
-        #[cfg(feature = "lightweight")] T: Modulation + Send + Sync,
-    > DModulation for MaybeUninit<T>
+    #[cfg(not(feature = "lightweight"))] T: Modulation,
+    #[cfg(feature = "lightweight")] T: Modulation + Send + Sync,
+> DModulation for MaybeUninit<T>
 {
     fn dyn_calc(&mut self) -> Result<Vec<u8>, ModulationError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
@@ -66,9 +66,9 @@ pub trait IntoBoxedModulation {
 }
 
 impl<
-        #[cfg(not(feature = "lightweight"))] M: Modulation + 'static,
-        #[cfg(feature = "lightweight")] M: Modulation + Send + Sync + 'static,
-    > IntoBoxedModulation for M
+    #[cfg(not(feature = "lightweight"))] M: Modulation + 'static,
+    #[cfg(feature = "lightweight")] M: Modulation + Send + Sync + 'static,
+> IntoBoxedModulation for M
 {
     fn into_boxed(self) -> BoxedModulation {
         let sampling_config = self.sampling_config();

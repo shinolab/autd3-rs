@@ -12,8 +12,8 @@ use autd3_driver::{
     firmware::{
         cpu::TxMessage,
         fpga::{
-            Drive, EmitIntensity, Phase, SilencerTarget, SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT,
+            Drive, EmitIntensity, Phase, SILENCER_STEPS_INTENSITY_DEFAULT,
+            SILENCER_STEPS_PHASE_DEFAULT, SilencerTarget,
         },
     },
 };
@@ -145,11 +145,12 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
         cpu.fpga().stm_loop_behavior(Segment::S1)
     );
 
-    assert!(cpu
-        .fpga()
-        .phase_correction()
-        .into_iter()
-        .all(|v| v == Phase::ZERO));
+    assert!(
+        cpu.fpga()
+            .phase_correction()
+            .into_iter()
+            .all(|v| v == Phase::ZERO)
+    );
 
     assert_eq!(
         include_bytes!("asin.dat").to_vec(),

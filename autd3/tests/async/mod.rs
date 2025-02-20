@@ -1,7 +1,7 @@
 use autd3::{
+    r#async::Controller,
     link::{Audit, AuditOption},
     prelude::AUTD3,
-    r#async::Controller,
 };
 
 mod link;
@@ -18,11 +18,13 @@ async fn initial_msg_id() -> anyhow::Result<()> {
     )
     .await?;
 
-    assert!(cnt.link()[0]
-        .fpga()
-        .phase_correction()
-        .iter()
-        .all(|v| v.0 == 0x00));
+    assert!(
+        cnt.link()[0]
+            .fpga()
+            .phase_correction()
+            .iter()
+            .all(|v| v.0 == 0x00)
+    );
 
     Ok(())
 }

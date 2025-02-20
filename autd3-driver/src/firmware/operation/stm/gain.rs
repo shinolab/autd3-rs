@@ -7,10 +7,10 @@ use crate::{
     firmware::{
         cpu::GainSTMMode,
         fpga::{
-            Drive, LoopBehavior, SamplingConfig, Segment, TransitionMode, GAIN_STM_BUF_SIZE_MAX,
-            STM_BUF_SIZE_MIN, TRANSITION_MODE_NONE,
+            Drive, GAIN_STM_BUF_SIZE_MAX, LoopBehavior, STM_BUF_SIZE_MIN, SamplingConfig, Segment,
+            TRANSITION_MODE_NONE, TransitionMode,
         },
-        operation::{write_to_tx, Operation, TypeTag},
+        operation::{Operation, TypeTag, write_to_tx},
     },
     geometry::Device,
 };

@@ -75,8 +75,8 @@ mod tests {
     use std::{
         fmt::Debug,
         sync::{
-            atomic::{AtomicUsize, Ordering},
             Arc,
+            atomic::{AtomicUsize, Ordering},
         },
     };
 
