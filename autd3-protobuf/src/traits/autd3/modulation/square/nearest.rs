@@ -25,15 +25,12 @@ impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::N
 impl FromMessage<SquareNearest>
     for autd3::modulation::Square<autd3::modulation::sampling_mode::Nearest>
 {
-    fn from_msg(msg: &SquareNearest) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: SquareNearest) -> Result<Self, AUTDProtoBufError> {
         Ok(autd3::modulation::Square {
             freq: msg.freq * autd3_core::defined::Hz,
-            option: msg
-                .option
-                .as_ref()
-                .map(autd3::modulation::SquareOption::from_msg)
-                .transpose()?
-                .unwrap_or_default(),
+            option: autd3::modulation::SquareOption::from_msg(
+                msg.option.ok_or(AUTDProtoBufError::DataParseError)?,
+            )?,
         }
         .into_nearest())
     }
@@ -59,7 +56,7 @@ mod tests {
             })) => {
                 let m2 =
                     autd3::modulation::Square::<autd3::modulation::sampling_mode::Nearest>::from_msg(
-                        &modulation,
+                        modulation,
                     )
                     .unwrap();
                 assert_eq!(m.freq, m2.freq);

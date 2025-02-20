@@ -20,7 +20,7 @@ impl ToMessage for autd3::gain::Null {
 }
 
 impl FromMessage<Null> for autd3::gain::Null {
-    fn from_msg(_msg: &Null) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(_msg: Null) -> Result<Self, AUTDProtoBufError> {
         Ok(Self {})
     }
 }
@@ -38,7 +38,7 @@ mod tests {
                 gain: Some(gain::Gain::Null(gain)),
                 ..
             })) => {
-                let _ = autd3::gain::Null::from_msg(&gain).unwrap();
+                let _ = autd3::gain::Null::from_msg(gain).unwrap();
             }
             _ => panic!("unexpected datagram type"),
         }

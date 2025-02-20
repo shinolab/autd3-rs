@@ -6,6 +6,48 @@ use crate::{
     AUTDProtoBufError,
 };
 
+impl ToMessage for autd3_driver::datagram::GainSTMOption {
+    type Message = GainStmOption;
+
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
+            mode: Some(self.mode as u8 as _),
+        })
+    }
+}
+
+impl ToMessage for autd3_driver::firmware::cpu::GainSTMMode {
+    type Message = i32;
+
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(GainStmMode::from(*self) as _)
+    }
+}
+
+impl FromMessage<i32> for autd3_driver::firmware::cpu::GainSTMMode {
+    fn from_msg(msg: i32) -> Result<Self, AUTDProtoBufError> {
+        Ok(GainStmMode::try_from(msg)?.into())
+    }
+}
+
+impl FromMessage<GainStmOption> for autd3_driver::datagram::GainSTMOption {
+    fn from_msg(msg: GainStmOption) -> Result<Self, AUTDProtoBufError> {
+        Ok(autd3_driver::datagram::GainSTMOption {
+            mode: msg
+                .mode
+                .map(autd3_driver::firmware::cpu::GainSTMMode::from_msg)
+                .transpose()?
+                .unwrap_or(autd3_driver::datagram::GainSTMOption::default().mode),
+        })
+    }
+}
+
 impl<G, C: Into<STMConfig> + Copy> ToMessage for autd3_driver::datagram::GainSTM<Vec<G>, C>
 where
     G: autd3_core::gain::Gain + ToMessage<Message = Datagram>,
@@ -17,10 +59,6 @@ where
         _: Option<&autd3_core::geometry::Geometry>,
     ) -> Result<Self::Message, AUTDProtoBufError> {
         Ok(Self::Message {
-            props: Some(GainStmProps {
-                mode: Some(self.option.mode as _),
-                sampling_config: Some(self.sampling_config()?.to_msg(None)?),
-            }),
             gains: self
                 .iter()
                 .map(|g| match g.to_msg(None)?.datagram {
@@ -28,6 +66,8 @@ where
                     _ => unreachable!(),
                 })
                 .collect::<Result<_, AUTDProtoBufError>>()?,
+            sampling_config: Some(self.sampling_config()?.to_msg(None)?),
+            option: Some(self.option.to_msg(None)?),
         })
     }
 }
@@ -35,13 +75,13 @@ where
 impl FromMessage<GainStm>
     for autd3_driver::datagram::GainSTM<Vec<autd3_driver::datagram::BoxedGain>, SamplingConfig>
 {
-    fn from_msg(msg: &GainStm) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: GainStm) -> Result<Self, AUTDProtoBufError> {
         use autd3_driver::datagram::IntoBoxedGain;
         Ok(autd3_driver::datagram::GainSTM {
             gains: msg
                 .gains
-                .iter()
-                .map(|gain| match &gain.gain {
+                .into_iter()
+                .map(|gain| match gain.gain {
                     Some(gain::Gain::Focus(msg)) => {
                         autd3::prelude::Focus::from_msg(msg).map(|g| g.into_boxed())
                     }
@@ -76,24 +116,12 @@ impl FromMessage<GainStm>
                 })
                 .collect::<Result<Vec<_>, _>>()?,
             config: SamplingConfig::from_msg(
-                msg.props
-                    .as_ref()
-                    .ok_or(AUTDProtoBufError::DataParseError)?
-                    .sampling_config
-                    .as_ref()
+                msg.sampling_config
                     .ok_or(AUTDProtoBufError::DataParseError)?,
             )?,
-            option: autd3_driver::datagram::GainSTMOption {
-                mode: autd3_driver::firmware::cpu::GainSTMMode::from(
-                    msg.props
-                        .as_ref()
-                        .ok_or(AUTDProtoBufError::DataParseError)?
-                        .mode
-                        .map(GainStmMode::try_from)
-                        .transpose()?
-                        .unwrap_or(GainStmMode::PhaseIntensityFull),
-                ),
-            },
+            option: autd3_driver::datagram::GainSTMOption::from_msg(
+                msg.option.ok_or(AUTDProtoBufError::DataParseError)?,
+            )?,
         })
     }
 }

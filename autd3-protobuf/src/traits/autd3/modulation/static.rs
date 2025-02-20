@@ -22,7 +22,7 @@ impl ToMessage for autd3::modulation::Static {
 }
 
 impl FromMessage<Static> for autd3::modulation::Static {
-    fn from_msg(msg: &Static) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: Static) -> Result<Self, AUTDProtoBufError> {
         Ok(Self {
             intensity: msg
                 .intensity
@@ -51,7 +51,7 @@ mod tests {
                 modulation: Some(modulation::Modulation::Static(modulation)),
                 ..
             })) => {
-                let m2 = autd3::modulation::Static::from_msg(&modulation).unwrap();
+                let m2 = autd3::modulation::Static::from_msg(modulation).unwrap();
                 assert_eq!(m.intensity, m2.intensity);
             }
             _ => panic!("unexpected datagram type"),

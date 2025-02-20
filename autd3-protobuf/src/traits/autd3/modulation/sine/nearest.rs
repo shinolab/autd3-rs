@@ -25,15 +25,12 @@ impl ToMessage for autd3::modulation::Sine<autd3::modulation::sampling_mode::Nea
 impl FromMessage<SineNearest>
     for autd3::modulation::Sine<autd3::modulation::sampling_mode::Nearest>
 {
-    fn from_msg(msg: &SineNearest) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: SineNearest) -> Result<Self, AUTDProtoBufError> {
         Ok(autd3::modulation::Sine {
             freq: msg.freq * autd3_core::defined::Hz,
-            option: msg
-                .option
-                .as_ref()
-                .map(autd3::modulation::SineOption::from_msg)
-                .transpose()?
-                .unwrap_or_default(),
+            option: autd3::modulation::SineOption::from_msg(
+                msg.option.ok_or(AUTDProtoBufError::DataParseError)?,
+            )?,
         }
         .into_nearest())
     }
@@ -59,7 +56,7 @@ mod tests {
             })) => {
                 let m2 =
                     autd3::modulation::Sine::<autd3::modulation::sampling_mode::Nearest>::from_msg(
-                        &modulation,
+                        modulation,
                     )
                     .unwrap();
                 assert_eq!(m.freq, m2.freq);

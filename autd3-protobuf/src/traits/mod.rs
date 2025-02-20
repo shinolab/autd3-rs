@@ -19,5 +19,5 @@ pub trait FromMessage<T>
 where
     Self: Sized,
 {
-    fn from_msg(msg: &T) -> Result<Self, AUTDProtoBufError>;
+    fn from_msg(msg: T) -> Result<Self, AUTDProtoBufError>;
 }

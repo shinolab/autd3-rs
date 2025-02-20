@@ -4,18 +4,32 @@ package autd3;
 
 import "utils.proto";
 
-message EmitIntensity {
-  uint32 value = 1;
-}
+message EmitIntensity { uint32 value = 1; }
 
-message Phase {
-  uint32 value = 1;
-}
+message Phase { uint32 value = 1; }
 
-message SamplingConfig { uint32 div = 1; }
+message SamplingConfig {
+  message Division { uint32 div = 1; }
+  message Freq { float freq = 1; }
+  message FreqNearest { float freq = 1; }
+  message Period { uint64 ns = 1; }
+  message PeriodNearest { uint64 ns = 1; }
+  oneof variant {
+    Division division = 1;
+    Freq freq = 2;
+    FreqNearest freq_nearest = 3;
+    Period period = 4;
+    PeriodNearest period_nearest = 5;
+  }
+}
 
 message LoopBehavior {
-  uint32 rep = 1;
+  message Infinite {}
+  message Finite { uint32 rep = 1; }
+  oneof variant {
+    Infinite infinite = 1;
+    Finite finite = 2;
+  }
 }
 
 enum Segment {
@@ -30,28 +44,27 @@ enum GPIOIn {
   I3 = 3;
 }
 
-message TransitionModeSyncIdx { }
-message TransitionModeSysTime { uint64 value = 1; }
-message TransitionModeGPIO { GPIOIn value = 1; }
-message TransitionModeExt { }
-message TransitionModeImmediate { }
-
 message TransitionMode {
+  message SyncIdx {}
+  message SysTime { uint64 value = 1; }
+  message GPIO { GPIOIn value = 1; }
+  message Ext {}
+  message Immediate {}
   oneof mode {
-    TransitionModeSyncIdx sync_idx = 1;
-    TransitionModeSysTime sys_time = 2;
-    TransitionModeGPIO gpio = 3;
-    TransitionModeExt ext = 4;
-    TransitionModeImmediate immediate = 5;
+    SyncIdx sync_idx = 1;
+    SysTime sys_time = 2;
+    GPIO gpio = 3;
+    Ext ext = 4;
+    Immediate immediate = 5;
   }
 }
 
 message ControlPoint {
-    Point3 pos = 1;
-    optional Phase offset = 2;
+  Point3 pos = 1;
+  optional Phase offset = 2;
 }
 
 message ControlPoints {
-    repeated ControlPoint points = 1;
-    optional EmitIntensity intensity = 2;
+  repeated ControlPoint points = 1;
+  optional EmitIntensity intensity = 2;
 }

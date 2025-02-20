@@ -4,6 +4,38 @@ use crate::{
     AUTDProtoBufError,
 };
 
+impl ToMessage for autd3::gain::FocusOption {
+    type Message = FocusOption;
+
+    fn to_msg(
+        &self,
+        _: Option<&autd3_core::geometry::Geometry>,
+    ) -> Result<Self::Message, AUTDProtoBufError> {
+        Ok(Self::Message {
+            intensity: Some(self.intensity.to_msg(None)?),
+            phase_offset: Some(self.phase_offset.to_msg(None)?),
+        })
+    }
+}
+
+impl FromMessage<FocusOption> for autd3::gain::FocusOption {
+    fn from_msg(msg: FocusOption) -> Result<Self, AUTDProtoBufError> {
+        let default = autd3::gain::FocusOption::default();
+        Ok(Self {
+            intensity: msg
+                .intensity
+                .map(autd3_driver::firmware::fpga::EmitIntensity::from_msg)
+                .transpose()?
+                .unwrap_or(default.intensity),
+            phase_offset: msg
+                .phase_offset
+                .map(autd3_driver::firmware::fpga::Phase::from_msg)
+                .transpose()?
+                .unwrap_or(default.phase_offset),
+        })
+    }
+}
+
 impl ToMessage for autd3::gain::Focus {
     type Message = Datagram;
 
@@ -15,8 +47,7 @@ impl ToMessage for autd3::gain::Focus {
             datagram: Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Focus(Focus {
                     pos: Some(self.pos.to_msg(None)?),
-                    intensity: Some(self.option.intensity.to_msg(None)?),
-                    phase_offset: Some(self.option.phase_offset.to_msg(None)?),
+                    option: Some(self.option.to_msg(None)?),
                 })),
             })),
         })
@@ -24,23 +55,14 @@ impl ToMessage for autd3::gain::Focus {
 }
 
 impl FromMessage<Focus> for autd3::gain::Focus {
-    fn from_msg(msg: &Focus) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: Focus) -> Result<Self, AUTDProtoBufError> {
         Ok(Self {
-            pos: autd3_core::geometry::Point3::from_msg(&msg.pos)?,
-            option: autd3::gain::FocusOption {
-                intensity: msg
-                    .intensity
-                    .as_ref()
-                    .map(autd3_driver::firmware::fpga::EmitIntensity::from_msg)
-                    .transpose()?
-                    .unwrap_or(autd3::gain::FocusOption::default().intensity),
-                phase_offset: msg
-                    .phase_offset
-                    .as_ref()
-                    .map(autd3_driver::firmware::fpga::Phase::from_msg)
-                    .transpose()?
-                    .unwrap_or(autd3::gain::FocusOption::default().phase_offset),
-            },
+            pos: autd3_core::geometry::Point3::from_msg(
+                msg.pos.ok_or(AUTDProtoBufError::DataParseError)?,
+            )?,
+            option: autd3::gain::FocusOption::from_msg(
+                msg.option.ok_or(AUTDProtoBufError::DataParseError)?,
+            )?,
         })
     }
 }
@@ -70,7 +92,7 @@ mod tests {
                 gain: Some(gain::Gain::Focus(gain)),
                 ..
             })) => {
-                let g2 = autd3::gain::Focus::from_msg(&gain).unwrap();
+                let g2 = autd3::gain::Focus::from_msg(gain).unwrap();
                 assert_eq!(g.pos.x, g2.pos.x);
                 assert_eq!(g.pos.y, g2.pos.y);
                 assert_eq!(g.pos.z, g2.pos.z);

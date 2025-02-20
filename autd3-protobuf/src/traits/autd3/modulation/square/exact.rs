@@ -25,15 +25,12 @@ impl ToMessage for autd3::modulation::Square<Freq<u32>> {
 }
 
 impl FromMessage<SquareExact> for autd3::modulation::Square<Freq<u32>> {
-    fn from_msg(msg: &SquareExact) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: SquareExact) -> Result<Self, AUTDProtoBufError> {
         Ok(autd3::modulation::Square {
             freq: msg.freq * autd3_core::defined::Hz,
-            option: msg
-                .option
-                .as_ref()
-                .map(autd3::modulation::SquareOption::from_msg)
-                .transpose()?
-                .unwrap_or_default(),
+            option: autd3::modulation::SquareOption::from_msg(
+                msg.option.ok_or(AUTDProtoBufError::DataParseError)?,
+            )?,
         })
     }
 }
@@ -55,7 +52,7 @@ mod tests {
                 modulation: Some(modulation::Modulation::SquareExact(modulation)),
                 ..
             })) => {
-                let m2 = autd3::modulation::Square::<Freq<u32>>::from_msg(&modulation).unwrap();
+                let m2 = autd3::modulation::Square::<Freq<u32>>::from_msg(modulation).unwrap();
                 assert_eq!(m.freq, m2.freq);
             }
             _ => panic!("unexpected datagram type"),

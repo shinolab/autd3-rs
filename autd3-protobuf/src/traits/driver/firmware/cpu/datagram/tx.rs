@@ -21,7 +21,7 @@ impl ToMessage for &[autd3_driver::firmware::cpu::TxMessage] {
 }
 
 impl FromMessage<TxRawData> for Vec<autd3_driver::firmware::cpu::TxMessage> {
-    fn from_msg(msg: &TxRawData) -> Result<Self, AUTDProtoBufError> {
+    fn from_msg(msg: TxRawData) -> Result<Self, AUTDProtoBufError> {
         let mut tx = vec![autd3_driver::firmware::cpu::TxMessage::new_zeroed(); msg.n as _];
         unsafe {
             std::ptr::copy_nonoverlapping(msg.data.as_ptr(), tx.as_mut_ptr() as _, msg.data.len());
@@ -44,7 +44,7 @@ mod tests {
             tx[i].header.slot_2_offset = rng.random();
         });
         let msg = tx.as_slice().to_msg(None).unwrap();
-        let tx2 = Vec::<autd3_driver::firmware::cpu::TxMessage>::from_msg(&msg).unwrap();
+        let tx2 = Vec::<autd3_driver::firmware::cpu::TxMessage>::from_msg(msg).unwrap();
         assert_eq!(&tx, &tx2);
     }
 }

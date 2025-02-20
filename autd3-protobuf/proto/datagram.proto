@@ -3,53 +3,48 @@ syntax = "proto3";
 package autd3;
 
 import "gain.proto";
+import "modulation.proto";
 import "utils.proto";
 import "utils-lightweight.proto";
 
 message Clear {}
 
-enum SilencerTarget{
+enum SilencerTarget {
   Intensity = 0;
   PulseWidth = 1;
 }
 
-message SilencerFixedUpdateRate {
-      uint32 value_intensity = 1;
-      uint32 value_phase = 2;
-      optional SilencerTarget target = 3;
-}
-
-message SilencerFixedCompletionSteps {
-      optional uint32 value_intensity = 1;
-      optional uint32 value_phase = 2;
-      optional bool strict_mode = 3;
-      optional SilencerTarget target = 4;
-}
-
-message SilencerFixedCompletionTime {
-      optional uint32 value_intensity = 1;
-      optional uint32 value_phase = 2;
-      optional bool strict_mode = 3;
-      optional SilencerTarget target = 4;
-}
-
 message Silencer {
-    oneof config {
-        SilencerFixedUpdateRate fixed_update_rate = 1;
-        SilencerFixedCompletionTime fixed_completion_time = 2;
-        SilencerFixedCompletionSteps fixed_completion_steps = 3;
-    }
+  message FixedUpdateRate {
+    uint32 value_intensity = 1;
+    uint32 value_phase = 2;
+  }
+
+  message FixedCompletionSteps {
+    optional uint32 value_intensity = 1;
+    optional uint32 value_phase = 2;
+    optional bool strict_mode = 3;
+  }
+
+  message FixedCompletionTime {
+    optional uint32 value_intensity = 1;
+    optional uint32 value_phase = 2;
+    optional bool strict_mode = 3;
+  }
+
+  oneof config {
+    FixedUpdateRate fixed_update_rate = 1;
+    FixedCompletionTime fixed_completion_time = 2;
+    FixedCompletionSteps fixed_completion_steps = 3;
+  }
+  SilencerTarget target = 4;
 }
 
 message Synchronize {}
 
-message ForceFan {
-    repeated bool value = 1;
-}
+message ForceFan { repeated bool value = 1; }
 
-message ReadsFPGAState {
-    repeated bool value = 1;
-}
+message ReadsFPGAState { repeated bool value = 1; }
 
 enum GainSTMMode {
   PhaseIntensityFull = 0;
@@ -57,112 +52,65 @@ enum GainSTMMode {
   PhaseHalf = 2;
 }
 
-message GainSTMProps {
-    SamplingConfig sampling_config = 1;
-    optional GainSTMMode mode = 2;
-}
+message GainSTMOption { optional GainSTMMode mode = 1; }
 
 message GainSTM {
-    GainSTMProps props = 1;
-    repeated Gain gains = 2;
-}
-
-message GainSTMWithLoopBehavior {
-  GainSTM gain_stm = 1;
-  optional LoopBehavior loop_behavior = 2;
-  optional Segment segment = 3;
-  optional TransitionMode transition_mode = 4;
-}
-
-message FociSTMProps {
-    SamplingConfig sampling_config = 1;
-}
-
-message FociSTM1 {
-    FociSTMProps props = 1;
-    repeated ControlPoints foci = 2;
-}
-
-message FociSTM2 {
-    FociSTMProps props = 1;
-    repeated ControlPoints foci = 2;
-}
-
-message FociSTM3 {
-    FociSTMProps props = 1;
-    repeated ControlPoints foci = 2;
-}
-
-message FociSTM4 {
-    FociSTMProps props = 1;
-    repeated ControlPoints foci = 2;
-}
-
-message FociSTM5 {
-    FociSTMProps props = 1;
-    repeated ControlPoints foci = 2;
-}
-
-message FociSTM6 {
-    FociSTMProps props = 1;
-    repeated ControlPoints foci = 2;
-}
-
-message FociSTM7 {
-    FociSTMProps props = 1;
-    repeated ControlPoints foci = 2;
-}
-
-message FociSTM8 {
-    FociSTMProps props = 1;
-    repeated ControlPoints foci = 2;
+  repeated Gain gains = 1;
+  SamplingConfig sampling_config = 2;
+  GainSTMOption option = 3;
 }
 
 message FociSTM {
+  repeated ControlPoints foci = 1;
+  SamplingConfig sampling_config = 2;
+}
+
+message WithSegment {
   oneof inner {
-    FociSTM1 n1 = 1;
-    FociSTM2 n2 = 2;
-    FociSTM3 n3 = 3;
-    FociSTM4 n4 = 4;
-    FociSTM5 n5 = 5;
-    FociSTM6 n6 = 6;
-    FociSTM7 n7 = 7;
-    FociSTM8 n8 = 8;
+    Gain gain = 1;
+    Modulation modulation = 2;
+    FociSTM foci_stm = 3;
+    GainSTM gain_stm = 4;
   }
+  Segment segment = 5;
+  TransitionMode transition_mode = 6;
 }
 
-message FociSTMWithLoopBehavior {
-  FociSTM foci_stm = 1;
-  optional LoopBehavior loop_behavior = 2;
-  optional Segment segment = 3;
-  optional TransitionMode transition_mode = 4;
-}
-
-message SwapSegmentGain {
-    Segment segment = 1;
-    TransitionMode transition_mode = 2;
-}
-
-message SwapSegmentModulation {
-    Segment segment = 1;
-    TransitionMode transition_mode = 2;
-}
-
-message SwapSegmentFociSTM {
-    Segment segment = 1;
-    TransitionMode transition_mode = 2;
-}
-
-message SwapSegmentGainSTM {
-    Segment segment = 1;
-    TransitionMode transition_mode = 2;
+message WithLoopBehavior {
+  oneof inner {
+    Modulation modulation = 1;
+    FociSTM foci_stm = 2;
+    GainSTM gain_stm = 3;
+  }
+  LoopBehavior loop_behavior = 4;
+  Segment segment = 5;
+  TransitionMode transition_mode = 6;
 }
 
 message SwapSegment {
-  oneof inner {
-    SwapSegmentGain gain = 1;
-    SwapSegmentModulation modulation = 2;
-    SwapSegmentFociSTM foci_stm = 3;
-    SwapSegmentGainSTM gain_stm = 4;
+  message Gain {
+    Segment segment = 1;
+    TransitionMode transition_mode = 2;
+  }
+
+  message Modulation {
+    Segment segment = 1;
+    TransitionMode transition_mode = 2;
+  }
+
+  message FociSTM {
+    Segment segment = 1;
+    TransitionMode transition_mode = 2;
+  }
+
+  message GainSTM {
+    Segment segment = 1;
+    TransitionMode transition_mode = 2;
+  }
+  oneof variant {
+    Gain gain = 1;
+    Modulation modulation = 2;
+    FociSTM foci_stm = 3;
+    GainSTM gain_stm = 4;
   }
 }
