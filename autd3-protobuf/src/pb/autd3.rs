@@ -46,8 +46,8 @@ pub mod geometry {
         pub pos: ::core::option::Option<super::Point3>,
         #[prost(message, optional, tag = "2")]
         pub rot: ::core::option::Option<super::Quaternion>,
-        #[prost(float, tag = "3")]
-        pub sound_speed: f32,
+        #[prost(float, optional, tag = "3")]
+        pub sound_speed: ::core::option::Option<f32>,
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
