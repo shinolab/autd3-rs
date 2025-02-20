@@ -47,17 +47,9 @@ async fn audit_test() -> anyhow::Result<()> {
     }
 
     {
-        autd.link_mut().down();
-        assert_eq!(
-            Err(AUTDDriverError::SendDataFailed),
-            autd.send(Static::default()).await
-        );
-        assert_eq!(Err(AUTDError::ReadFPGAStateFailed), autd.fpga_state().await);
-        autd.link_mut().up();
-        assert!(autd.send(Static::default()).await.is_ok());
         autd.link_mut().break_down();
         assert_eq!(
-            Err(AUTDDriverError::Link(LinkError::new("broken".to_string()))),
+            Err(AUTDDriverError::Link(LinkError::new("broken"))),
             autd.send(Static::default()).await
         );
         assert_eq!(

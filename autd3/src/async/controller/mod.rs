@@ -235,11 +235,8 @@ impl<L: AsyncLink> Controller<L> {
                 autd3_driver::error::AUTDDriverError::LinkClosed,
             ));
         }
-        if self.link.receive(&mut self.rx_buf).await? {
-            Ok(self.rx_buf.iter().map(FPGAState::from_rx).collect())
-        } else {
-            Err(AUTDError::ReadFPGAStateFailed)
-        }
+        self.link.receive(&mut self.rx_buf).await?;
+        Ok(self.rx_buf.iter().map(FPGAState::from_rx).collect())
     }
 }
 
@@ -350,11 +347,11 @@ mod tests {
     #[tokio::test]
     async fn open_failed() {
         assert_eq!(
-            Some(AUTDError::Driver(AUTDDriverError::SendDataFailed)),
+            Some(AUTDError::Driver(LinkError::new("broken").into())),
             Controller::open(
                 [AUTD3::default()],
                 Audit::new(AuditOption {
-                    down: true,
+                    broken: true,
                     ..Default::default()
                 })
             )
@@ -471,15 +468,9 @@ mod tests {
             let mut autd = create_controller(1).await?;
             autd.link_mut().break_down();
             assert_eq!(
-                Err(AUTDDriverError::Link(LinkError::new("broken".to_owned()))),
+                Err(AUTDDriverError::Link(LinkError::new("broken"))),
                 autd.close().await
             );
-        }
-
-        {
-            let mut autd = create_controller(1).await?;
-            autd.link_mut().down();
-            assert_eq!(Err(AUTDDriverError::SendDataFailed), autd.close().await);
         }
 
         {

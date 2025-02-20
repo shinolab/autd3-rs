@@ -25,10 +25,10 @@ mod internal {
         }
 
         /// Sends a message to the device.
-        async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError>;
+        async fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError>;
 
         /// Receives a message from the device.
-        async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError>;
+        async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError>;
 
         /// Checks if the link is open.
         #[must_use]
@@ -49,11 +49,11 @@ mod internal {
             self.as_mut().update(geometry).await
         }
 
-        async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
+        async fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
             self.as_mut().send(tx).await
         }
 
-        async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
+        async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
             self.as_mut().receive(rx).await
         }
 
@@ -90,13 +90,13 @@ mod internal {
         fn send(
             &mut self,
             tx: &[TxMessage],
-        ) -> impl std::future::Future<Output = Result<bool, LinkError>>;
+        ) -> impl std::future::Future<Output = Result<(), LinkError>>;
 
         /// Receives a message from the device.
         fn receive(
             &mut self,
             rx: &mut [RxMessage],
-        ) -> impl std::future::Future<Output = Result<bool, LinkError>>;
+        ) -> impl std::future::Future<Output = Result<(), LinkError>>;
 
         /// Checks if the link is open.
         #[must_use]

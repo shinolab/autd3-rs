@@ -133,25 +133,27 @@ impl AsyncLink for Simulator {
     async fn update(&mut self, geometry: &autd3_core::geometry::Geometry) -> Result<(), LinkError> {
         if let Some(inner) = self.inner.as_mut() {
             inner.update(geometry).await?;
+            Ok(())
+        } else {
+            Err(LinkError::new("Link is closed"))
         }
-        Ok(())
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
         if let Some(inner) = self.inner.as_mut() {
             inner.send(tx).await?;
-            Ok(true)
+            Ok(())
         } else {
-            Ok(false)
+            Err(LinkError::new("Link is closed"))
         }
     }
 
-    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
         if let Some(inner) = self.inner.as_mut() {
             inner.receive(rx).await?;
-            Ok(true)
+            Ok(())
         } else {
-            Ok(false)
+            Err(LinkError::new("Link is closed"))
         }
     }
 
@@ -177,51 +179,59 @@ impl Link for Simulator {
     }
 
     fn close(&mut self) -> Result<(), LinkError> {
-        self.runtime.as_ref().map_or(Ok(()), |runtime| {
-            runtime.block_on(async {
-                if let Some(mut inner) = self.inner.take() {
-                    inner.close().await?;
-                }
-                Ok(())
+        self.runtime
+            .as_ref()
+            .map_or(Err(LinkError::new("Link is closed")), |runtime| {
+                runtime.block_on(async {
+                    if let Some(mut inner) = self.inner.take() {
+                        inner.close().await?;
+                    }
+                    Ok(())
+                })
             })
-        })
     }
 
     fn update(&mut self, geometry: &autd3_core::geometry::Geometry) -> Result<(), LinkError> {
-        self.runtime.as_ref().map_or(Ok(()), |runtime| {
-            runtime.block_on(async {
-                if let Some(inner) = self.inner.as_mut() {
-                    inner.update(geometry).await?;
-                }
-                Ok(())
+        self.runtime
+            .as_ref()
+            .map_or(Err(LinkError::new("Link is closed")), |runtime| {
+                runtime.block_on(async {
+                    if let Some(inner) = self.inner.as_mut() {
+                        inner.update(geometry).await?;
+                    }
+                    Ok(())
+                })
             })
-        })
     }
 
-    fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
-        self.runtime.as_ref().map_or(Ok(false), |runtime| {
-            runtime.block_on(async {
-                if let Some(inner) = self.inner.as_mut() {
-                    inner.send(tx).await?;
-                    Ok(true)
-                } else {
-                    Ok(false)
-                }
+    fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
+        self.runtime
+            .as_ref()
+            .map_or(Err(LinkError::new("Link is closed")), |runtime| {
+                runtime.block_on(async {
+                    if let Some(inner) = self.inner.as_mut() {
+                        inner.send(tx).await?;
+                        Ok(())
+                    } else {
+                        Err(LinkError::new("Link is closed"))
+                    }
+                })
             })
-        })
     }
 
     fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
-        self.runtime.as_ref().map_or(Ok(false), |runtime| {
-            runtime.block_on(async {
-                if let Some(inner) = self.inner.as_mut() {
-                    inner.receive(rx).await?;
-                    Ok(true)
-                } else {
-                    Ok(false)
-                }
+        self.runtime
+            .as_ref()
+            .map_or(Err(LinkError::new("Link is closed")), |runtime| {
+                runtime.block_on(async {
+                    if let Some(inner) = self.inner.as_mut() {
+                        inner.receive(rx).await?;
+                        Ok(())
+                    } else {
+                        Err(LinkError::new("Link is closed"))
+                    }
+                })
             })
-        })
     }
 
     fn is_open(&self) -> bool {
