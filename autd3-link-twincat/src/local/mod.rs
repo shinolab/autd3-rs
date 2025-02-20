@@ -99,7 +99,7 @@ impl Link for TwinCAT {
         Ok(())
     }
 
-    fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
+    fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
         unsafe {
             let n_err = self.dll.get::<unsafe extern "C" fn(
                 i32,
@@ -125,12 +125,12 @@ impl Link for TwinCAT {
             if n_err > 0 {
                 Err(AdsError::SendData(n_err).into())
             } else {
-                Ok(true)
+                Ok(())
             }
         }
     }
 
-    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
+    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
         let mut read_bytes: u32 = 0;
         unsafe {
             let n_err = self
@@ -157,7 +157,7 @@ impl Link for TwinCAT {
             if n_err > 0 {
                 Err(AdsError::ReadData(n_err).into())
             } else {
-                Ok(true)
+                Ok(())
             }
         }
     }
@@ -182,11 +182,11 @@ impl AsyncLink for TwinCAT {
         <Self as Link>::close(self)
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
         <Self as Link>::send(self, tx)
     }
 
-    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
         <Self as Link>::receive(self, rx)
     }
 

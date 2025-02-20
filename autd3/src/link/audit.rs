@@ -13,7 +13,7 @@ use derive_more::{Deref, DerefMut};
 pub struct AuditOption {
     pub initial_msg_id: Option<u8>,
     pub initial_phase_corr: Option<u8>,
-    pub down: bool,
+    pub broken: bool,
 }
 
 #[doc(hidden)]
@@ -24,7 +24,6 @@ pub struct Audit {
     #[deref]
     #[deref_mut]
     cpus: Vec<CPUEmulator>,
-    down: bool,
     broken: bool,
 }
 
@@ -34,17 +33,8 @@ impl Audit {
             option,
             is_open: false,
             cpus: Vec::new(),
-            down: false,
             broken: false,
         }
-    }
-
-    pub fn down(&mut self) {
-        self.down = true;
-    }
-
-    pub fn up(&mut self) {
-        self.down = false;
     }
 
     pub fn break_down(&mut self) {
@@ -77,8 +67,7 @@ impl Link for Audit {
                 cpu
             })
             .collect();
-        self.down = self.option.down;
-        self.broken = false;
+        self.broken = self.option.broken;
         Ok(())
     }
 
@@ -87,37 +76,26 @@ impl Link for Audit {
         Ok(())
     }
 
-    fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
+    fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
         if self.broken {
-            return Err(LinkError::new("broken".to_owned()));
+            return Err(LinkError::new("broken"));
         }
-
-        if self.down {
-            return Ok(false);
-        }
-
         self.cpus.iter_mut().for_each(|cpu| {
             cpu.send(tx);
         });
-
-        Ok(true)
+        Ok(())
     }
 
-    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
+    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
         if self.broken {
-            return Err(LinkError::new("broken".to_owned()));
+            return Err(LinkError::new("broken"));
         }
-
-        if self.down {
-            return Ok(false);
-        }
-
         self.cpus.iter_mut().for_each(|cpu| {
             cpu.update();
             rx[cpu.idx()] = cpu.rx();
         });
 
-        Ok(true)
+        Ok(())
     }
 
     fn is_open(&self) -> bool {
@@ -140,11 +118,11 @@ impl AsyncLink for Audit {
         <Self as Link>::close(self)
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<bool, LinkError> {
+    async fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
         <Self as Link>::send(self, tx)
     }
 
-    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
         <Self as Link>::receive(self, rx)
     }
 
