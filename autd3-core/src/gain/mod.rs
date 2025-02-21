@@ -28,7 +28,6 @@ pub trait GainCalculator: Send + Sync {
 }
 
 impl GainCalculator for Box<dyn GainCalculator> {
-    #[must_use]
     fn calc(&self, tr: &Transducer) -> Drive {
         self.as_ref().calc(tr)
     }
