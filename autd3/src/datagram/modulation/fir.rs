@@ -12,8 +12,11 @@ pub struct Fir<M: Modulation> {
 impl<M: Modulation> Fir<M> {
     /// Create a new [`Fir`].
     #[must_use]
-    pub const fn new(target: M, coef: Vec<f32>) -> Self {
-        Self { target, coef }
+    pub fn new(target: M, coef: impl IntoIterator<Item = impl std::borrow::Borrow<f32>>) -> Self {
+        Self {
+            target,
+            coef: coef.into_iter().map(|v| *v.borrow()).collect(),
+        }
     }
 }
 

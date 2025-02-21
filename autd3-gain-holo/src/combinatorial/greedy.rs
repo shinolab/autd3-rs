@@ -49,8 +49,14 @@ pub struct Greedy<D: Directivity> {
 impl<D: Directivity> Greedy<D> {
     /// Create a new [`Greedy`].
     #[must_use]
-    pub const fn new(foci: Vec<(Point3, Amplitude)>, option: GreedyOption<D>) -> Self {
-        Self { foci, option }
+    pub fn new(
+        foci: impl IntoIterator<Item = (Point3, Amplitude)>,
+        option: GreedyOption<D>,
+    ) -> Self {
+        Self {
+            foci: foci.into_iter().collect(),
+            option,
+        }
     }
 }
 

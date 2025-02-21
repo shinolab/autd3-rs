@@ -20,9 +20,12 @@ where
 {
     /// Create a new [`Custom`].
     #[must_use]
-    pub const fn new(buffer: Vec<u8>, sampling_config: Config) -> Self {
+    pub fn new(
+        buffer: impl IntoIterator<Item = impl std::borrow::Borrow<u8>>,
+        sampling_config: Config,
+    ) -> Self {
         Self {
-            buffer,
+            buffer: buffer.into_iter().map(|v| *v.borrow()).collect(),
             sampling_config,
         }
     }
