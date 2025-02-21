@@ -8,6 +8,7 @@ pub struct TimerResolutionGurad {
 }
 
 impl TimerResolutionGurad {
+    #[must_use]
     pub fn new(timer_resolution: Option<NonZeroU32>) -> Self {
         #[cfg(target_os = "windows")]
         timer_resolution.map(|timer_resolution| unsafe {

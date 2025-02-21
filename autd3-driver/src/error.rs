@@ -132,6 +132,7 @@ pub enum AUTDDriverError {
 
 impl AUTDDriverError {
     #[doc(hidden)]
+    #[must_use]
     pub const fn firmware_err(ack: u8) -> Self {
         match ack {
             0x80 => AUTDDriverError::NotSupportedTag,

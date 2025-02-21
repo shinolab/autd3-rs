@@ -8,6 +8,7 @@ use autd3_driver::{
 use super::{super::params::*, FPGAEmulator, memory::Memory};
 
 impl FPGAEmulator {
+    #[must_use]
     pub fn modulation_freq_division(&self, segment: Segment) -> u16 {
         Memory::read_bram_as::<u16>(
             &self.mem.controller_bram.borrow(),
@@ -18,6 +19,7 @@ impl FPGAEmulator {
         )
     }
 
+    #[must_use]
     pub fn modulation_cycle(&self, segment: Segment) -> usize {
         self.mem.controller_bram.borrow()[match segment {
             Segment::S0 => ADDR_MOD_CYCLE0,
@@ -26,6 +28,7 @@ impl FPGAEmulator {
             + 1
     }
 
+    #[must_use]
     pub fn modulation_loop_behavior(&self, segment: Segment) -> LoopBehavior {
         match Memory::read_bram_as::<u16>(
             &self.mem.controller_bram.borrow(),
@@ -39,16 +42,19 @@ impl FPGAEmulator {
         }
     }
 
+    #[must_use]
     pub fn modulation(&self) -> u8 {
         self.modulation_at(self.current_mod_segment(), self.current_mod_idx())
     }
 
+    #[must_use]
     pub fn modulation_at(&self, segment: Segment, idx: usize) -> u8 {
         let m = &self.mem.modulation_bram.borrow()[&segment][idx >> 1];
         let m = if idx % 2 == 0 { m & 0xFF } else { m >> 8 };
         m as u8
     }
 
+    #[must_use]
     pub fn modulation_buffer(&self, segment: Segment) -> Vec<u8> {
         let mut dst = vec![0; self.modulation_cycle(segment)];
         self.modulation_buffer_inplace(segment, &mut dst);
@@ -59,6 +65,7 @@ impl FPGAEmulator {
         (0..self.modulation_cycle(segment)).for_each(|i| dst[i] = self.modulation_at(segment, i));
     }
 
+    #[must_use]
     pub fn modulation_transition_mode(&self) -> TransitionMode {
         match self.mem.controller_bram.borrow()[ADDR_MOD_TRANSITION_MODE] as u8 {
             TRANSITION_MODE_SYNC_IDX => TransitionMode::SyncIdx,
@@ -87,6 +94,7 @@ impl FPGAEmulator {
         }
     }
 
+    #[must_use]
     pub fn req_modulation_segment(&self) -> Segment {
         match self.mem.controller_bram.borrow()[ADDR_MOD_REQ_RD_SEGMENT] {
             0 => Segment::S0,

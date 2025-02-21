@@ -28,6 +28,7 @@ impl<G: Gain> Clone for Cache<G> {
 
 impl<G: Gain> Cache<G> {
     /// Create a new cached [`Gain`].
+    #[must_use]
     pub fn new(gain: G) -> Self {
         Self {
             gain: Rc::new(RefCell::new(Some(gain))),
@@ -75,6 +76,7 @@ impl<G: Gain> Cache<G> {
     }
 
     /// Get the number of references to the cache
+    #[must_use]
     pub fn count(&self) -> usize {
         Rc::strong_count(&self.cache)
     }

@@ -7,7 +7,6 @@ use super::{sampling_mode::SamplingMode, sine::Sine};
 use autd3_core::derive::*;
 
 use derive_more::Deref;
-use derive_new::new;
 use num::integer::lcm;
 
 /// The option of [`Fourier`].
@@ -24,13 +23,21 @@ pub struct FourierOption {
 /// `Moudlation` that is a sum of multiple [`Sine`].
 ///
 /// The modulation value is calculated as `⌊offset + scale_factor * (sum of components)⌋`, where `offset` and `scale_factor` can be set by the [`FourierOption`].
-#[derive(Modulation, Clone, PartialEq, Debug, Deref, new)]
+#[derive(Modulation, Clone, PartialEq, Debug, Deref)]
 pub struct Fourier<S: Into<SamplingMode> + Clone + Debug> {
     #[deref]
     /// The [`Sine`] components of the Fourier modulation.
     pub components: Vec<Sine<S>>,
     /// The option of the modulation.
     pub option: FourierOption,
+}
+
+impl<S: Into<SamplingMode> + Clone + Debug> Fourier<S> {
+    /// Create a new [`Fourier`].
+    #[must_use]
+    pub const fn new(components: Vec<Sine<S>>, option: FourierOption) -> Self {
+        Self { components, option }
+    }
 }
 
 impl<S: Into<SamplingMode> + Clone + Debug> Modulation for Fourier<S> {

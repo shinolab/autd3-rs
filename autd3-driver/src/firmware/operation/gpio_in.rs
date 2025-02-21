@@ -5,7 +5,6 @@ use crate::{
     geometry::Device,
 };
 
-use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
 #[derive(Clone, Copy, IntoBytes, Immutable)]
@@ -29,12 +28,18 @@ struct EmulateGPIOIn {
     flag: GPIOInFlags,
 }
 
-#[derive(new)]
-#[new(visibility = "pub(crate)")]
 pub struct EmulateGPIOInOp {
-    #[new(default)]
     is_done: bool,
     value: [bool; 4],
+}
+
+impl EmulateGPIOInOp {
+    pub(crate) const fn new(value: [bool; 4]) -> Self {
+        Self {
+            is_done: false,
+            value,
+        }
+    }
 }
 
 impl Operation for EmulateGPIOInOp {

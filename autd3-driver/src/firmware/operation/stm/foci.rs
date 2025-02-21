@@ -13,7 +13,6 @@ use crate::{
     geometry::Device,
 };
 
-use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
 use super::ControlPoints;
@@ -64,17 +63,35 @@ pub trait FociSTMIterator<const N: usize>: Send + Sync {
     fn next(&mut self) -> ControlPoints<N>;
 }
 
-#[derive(new)]
-#[new(visibility = "pub(crate)")]
 pub struct FociSTMOp<const N: usize, Iterator: FociSTMIterator<N>> {
     iter: Iterator,
     size: usize,
-    #[new(default)]
     sent: usize,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
+}
+
+impl<const N: usize, Iterator: FociSTMIterator<N>> FociSTMOp<N, Iterator> {
+    pub(crate) const fn new(
+        iter: Iterator,
+        size: usize,
+        config: SamplingConfig,
+        loop_behavior: LoopBehavior,
+        segment: Segment,
+        transition_mode: Option<TransitionMode>,
+    ) -> Self {
+        Self {
+            iter,
+            size,
+            sent: 0,
+            config,
+            loop_behavior,
+            segment,
+            transition_mode,
+        }
+    }
 }
 
 impl<const N: usize, Iterator: FociSTMIterator<N>> Operation for FociSTMOp<N, Iterator> {

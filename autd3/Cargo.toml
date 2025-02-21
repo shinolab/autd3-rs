@@ -21,7 +21,6 @@ derive_more = { workspace = true }
 itertools = { workspace = true }
 tracing = { workspace = true }
 bit-vec = { workspace = true }
-derive-new = { workspace = true }
 zerocopy = { workspace = true }
 spin_sleep = { workspace = true }
 getset = { workspace = true }

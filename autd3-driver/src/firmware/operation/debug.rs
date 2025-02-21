@@ -8,7 +8,6 @@ use crate::{
     geometry::Device,
 };
 
-use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
@@ -19,12 +18,18 @@ struct DebugSetting {
     value: [DebugValue; 4],
 }
 
-#[derive(new)]
-#[new(visibility = "pub(crate)")]
 pub struct DebugSettingOp {
-    #[new(default)]
     is_done: bool,
     value: [DebugValue; 4],
+}
+
+impl DebugSettingOp {
+    pub(crate) const fn new(value: [DebugValue; 4]) -> Self {
+        Self {
+            is_done: false,
+            value,
+        }
+    }
 }
 
 impl Operation for DebugSettingOp {

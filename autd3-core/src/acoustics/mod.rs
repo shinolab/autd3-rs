@@ -12,6 +12,7 @@ use directivity::Directivity;
 
 /// Calculate the pressure at the target position.
 #[inline]
+#[must_use]
 pub fn propagate<D: Directivity>(
     tr: &Transducer,
     wavenumber: f32,

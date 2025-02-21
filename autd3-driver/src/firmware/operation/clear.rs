@@ -5,7 +5,6 @@ use crate::{
     geometry::Device,
 };
 
-use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
@@ -15,11 +14,14 @@ struct Clear {
     __: u8,
 }
 
-#[derive(new)]
-#[new(visibility = "pub(crate)")]
 pub struct ClearOp {
-    #[new(default)]
     is_done: bool,
+}
+
+impl ClearOp {
+    pub(crate) const fn new() -> Self {
+        Self { is_done: false }
+    }
 }
 
 impl Operation for ClearOp {

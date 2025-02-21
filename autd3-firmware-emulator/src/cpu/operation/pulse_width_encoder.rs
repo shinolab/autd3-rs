@@ -9,6 +9,7 @@ struct Pwe {
 }
 
 impl CPUEmulator {
+    #[must_use]
     pub(crate) unsafe fn config_pwe(&mut self, data: &[u8]) -> u8 {
         let _d = Self::cast::<Pwe>(data);
 

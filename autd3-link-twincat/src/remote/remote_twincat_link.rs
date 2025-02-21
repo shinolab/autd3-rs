@@ -39,6 +39,7 @@ pub struct RemoteTwinCATOption {
 
 impl RemoteTwinCAT {
     /// Creates a new [`RemoteTwinCAT`].
+    #[must_use]
     pub fn new(server_ams_net_id: impl Into<String>, option: RemoteTwinCATOption) -> RemoteTwinCAT {
         RemoteTwinCAT {
             server_ams_net_id: server_ams_net_id.into(),

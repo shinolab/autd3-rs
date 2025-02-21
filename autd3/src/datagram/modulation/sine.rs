@@ -6,7 +6,6 @@ use autd3_core::{
 };
 
 use super::sampling_mode::{Nearest, SamplingMode};
-use derive_new::new;
 
 use derive_more::Debug;
 
@@ -41,12 +40,20 @@ impl Default for SineOption {
 /// Sine wave modulation
 ///
 /// The modulation value is calculated as `⌊intensity / 2 * sin(2 * PI * freq * t + phase) + offset⌋`, where `t` is time, and `intensity`, `offset`, and `phase` can be set by the [`SineOption`].
-#[derive(Modulation, Clone, PartialEq, Debug, new)]
+#[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct Sine<S: Into<SamplingMode> + Clone + std::fmt::Debug> {
     /// The frequency of the sine wave.
     pub freq: S,
     /// The option of the modulation.
     pub option: SineOption,
+}
+
+impl<S: Into<SamplingMode> + Clone + std::fmt::Debug> Sine<S> {
+    /// Create a new [`Sine`].
+    #[must_use]
+    pub const fn new(freq: S, option: SineOption) -> Self {
+        Self { freq, option }
+    }
 }
 
 impl Sine<Freq<f32>> {
@@ -61,7 +68,8 @@ impl Sine<Freq<f32>> {
     ///     option: Default::default(),
     /// }.into_nearest();
     /// ```
-    pub fn into_nearest(self) -> Sine<Nearest> {
+    #[must_use]
+    pub const fn into_nearest(self) -> Sine<Nearest> {
         Sine {
             freq: Nearest(self.freq),
             option: self.option,

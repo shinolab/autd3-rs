@@ -5,7 +5,6 @@ use autd3_driver::{
 };
 
 use derive_more::Debug;
-use derive_new::new;
 
 /// [`Gain`] to use arbitrary phases and intensities
 ///
@@ -17,7 +16,7 @@ use derive_new::new;
 ///
 /// Custom::new(|dev| |tr| Drive { phase: Phase::ZERO, intensity: EmitIntensity::MAX });
 /// ```
-#[derive(Gain, Debug, new)]
+#[derive(Gain, Debug)]
 #[debug("Custom (Gain)")]
 pub struct Custom<'a, FT, F>
 where
@@ -27,6 +26,19 @@ where
     /// The function to calculate the phase and intensity
     pub f: F,
     _phantom: std::marker::PhantomData<&'a ()>,
+}
+
+impl<'a, FT: Fn(&Transducer) -> Drive + Send + Sync + 'static, F: Fn(&Device) -> FT + 'a>
+    Custom<'a, FT, F>
+{
+    /// Create a new [`Custom`]
+    #[must_use]
+    pub const fn new(f: F) -> Self {
+        Self {
+            f,
+            _phantom: std::marker::PhantomData,
+        }
+    }
 }
 
 pub struct Impl<FT: Fn(&Transducer) -> Drive + Send + Sync + 'static> {

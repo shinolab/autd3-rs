@@ -16,7 +16,6 @@ use crate::{
 };
 
 use autd3_core::gain::GainCalculator;
-use derive_new::new;
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout};
 
 #[derive(Clone, Copy, IntoBytes, Immutable)]
@@ -84,18 +83,38 @@ pub trait GainSTMIterator: Send + Sync {
     fn next(&mut self) -> Option<Self::Calculator>;
 }
 
-#[derive(new)]
-#[new(visibility = "pub(crate)")]
 pub struct GainSTMOp<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> {
     iter: Iterator,
     size: usize,
-    #[new(default)]
     sent: usize,
     mode: GainSTMMode,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
+}
+
+impl<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> GainSTMOp<G, Iterator> {
+    pub(crate) const fn new(
+        iter: Iterator,
+        size: usize,
+        mode: GainSTMMode,
+        config: SamplingConfig,
+        loop_behavior: LoopBehavior,
+        segment: Segment,
+        transition_mode: Option<TransitionMode>,
+    ) -> Self {
+        Self {
+            iter,
+            size,
+            sent: 0,
+            mode,
+            config,
+            loop_behavior,
+            segment,
+            transition_mode,
+        }
+    }
 }
 
 impl<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> Operation

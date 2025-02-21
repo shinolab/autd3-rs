@@ -62,6 +62,7 @@ impl Modulation for BoxedModulation {
 /// Trait to convert [`Modulation`] to [`BoxedModulation`].
 pub trait IntoBoxedModulation {
     /// Convert [`Modulation`] to [`BoxedModulation`]
+    #[must_use]
     fn into_boxed(self) -> BoxedModulation;
 }
 

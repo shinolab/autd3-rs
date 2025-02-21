@@ -7,7 +7,6 @@ use crate::{
 };
 
 use derive_more::Debug;
-use derive_new::new;
 
 /// [`Datagram`] to apply phase correction.
 ///
@@ -22,11 +21,19 @@ use derive_new::new;
 /// ```
 ///
 /// [`Gain`]: autd3_core::gain::Gain
-#[derive(Debug, new)]
+#[derive(Debug)]
 pub struct PhaseCorrection<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
     #[debug(ignore)]
     #[doc(hidden)]
     pub f: F,
+}
+
+impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> PhaseCorrection<FT, F> {
+    /// Creates a new [`PhaseCorrection`].
+    #[must_use]
+    pub const fn new(f: F) -> Self {
+        Self { f }
+    }
 }
 
 pub struct PhaseCorrectionOpGenerator<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {

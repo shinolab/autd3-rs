@@ -2,13 +2,20 @@ use std::num::NonZeroU16;
 
 use autd3_core::derive::*;
 use autd3_derive::Modulation;
-use derive_new::new;
 
 /// [`Modulation`] for no modulation
-#[derive(Modulation, Clone, Copy, Debug, PartialEq, new)]
+#[derive(Modulation, Clone, Copy, Debug, PartialEq)]
 pub struct Static {
     /// The intensity of the modulation. The default value is [`u8::MAX`].
     pub intensity: u8,
+}
+
+impl Static {
+    /// Create a new [`Static`].
+    #[must_use]
+    pub const fn new(intensity: u8) -> Self {
+        Self { intensity }
+    }
 }
 
 impl Modulation for Static {

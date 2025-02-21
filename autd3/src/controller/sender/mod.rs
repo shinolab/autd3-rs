@@ -36,7 +36,8 @@ pub enum ParallelMode {
 }
 
 impl ParallelMode {
-    pub(crate) fn is_parallel(self, num_devices: usize, parallel_threshold: usize) -> bool {
+    #[must_use]
+    pub(crate) const fn is_parallel(self, num_devices: usize, parallel_threshold: usize) -> bool {
         match self {
             ParallelMode::On => true,
             ParallelMode::Off => false,

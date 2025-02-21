@@ -7,6 +7,7 @@ struct CpuGPIOOut {
 }
 
 impl CPUEmulator {
+    #[must_use]
     pub(crate) fn cpu_gpio_out(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<CpuGPIOOut>(data);
 

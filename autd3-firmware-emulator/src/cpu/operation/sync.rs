@@ -6,6 +6,7 @@ struct Sync {
 }
 
 impl CPUEmulator {
+    #[must_use]
     pub(crate) fn synchronize(&mut self, data: &[u8]) -> u8 {
         let _d = Self::cast::<Sync>(data);
 

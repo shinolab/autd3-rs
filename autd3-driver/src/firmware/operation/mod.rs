@@ -82,6 +82,7 @@ pub use autd3_core::datagram::Operation;
 pub trait OperationGenerator {
     type O1: Operation;
     type O2: Operation;
+    #[must_use]
     fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2);
 }
 
@@ -89,6 +90,7 @@ pub trait OperationGenerator {
 pub struct OperationHandler {}
 
 impl OperationHandler {
+    #[must_use]
     pub fn generate<G: OperationGenerator>(
         mut generator: G,
         geometry: &Geometry,
@@ -99,6 +101,7 @@ impl OperationHandler {
             .collect()
     }
 
+    #[must_use]
     pub fn is_done<O1, O2>(operations: &[Option<(O1, O2)>]) -> bool
     where
         O1: Operation,

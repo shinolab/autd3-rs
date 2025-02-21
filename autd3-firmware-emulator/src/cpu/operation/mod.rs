@@ -24,6 +24,7 @@ mod stm;
 mod sync;
 
 impl CPUEmulator {
+    #[must_use]
     pub(crate) fn validate_transition_mode(
         current_segment: u8,
         segment: u8,

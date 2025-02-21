@@ -21,11 +21,13 @@ pub struct FPGAState {
 
 impl FPGAState {
     /// `true` if the thermal sensor is asserted.
+    #[must_use]
     pub const fn is_thermal_assert(&self) -> bool {
         (self.state & THERMAL_ASSERT_BIT) != 0
     }
 
     /// The current Modulation segment.
+    #[must_use]
     pub const fn current_mod_segment(&self) -> Segment {
         match self.state & CURRENT_MOD_SEGMENT_BIT {
             0 => Segment::S0,
@@ -34,6 +36,7 @@ impl FPGAState {
     }
 
     /// The current STM segment. `None` if the current mode is not STM.
+    #[must_use]
     pub const fn current_stm_segment(&self) -> Option<Segment> {
         if !self.is_stm_mode() {
             return None;
@@ -45,6 +48,7 @@ impl FPGAState {
     }
 
     /// The current Gain segment. `None` if the current mode is not Gain.
+    #[must_use]
     pub const fn current_gain_segment(&self) -> Option<Segment> {
         if !self.is_gain_mode() {
             return None;
@@ -56,16 +60,19 @@ impl FPGAState {
     }
 
     /// `true` if the current mode is Gain.
+    #[must_use]
     pub const fn is_gain_mode(&self) -> bool {
         (self.state & IS_GAIN_MODE_BIT) != 0
     }
 
     /// `true` if the current mode is STM.
+    #[must_use]
     pub const fn is_stm_mode(&self) -> bool {
         !self.is_gain_mode()
     }
 
     #[doc(hidden)]
+    #[must_use]
     pub fn from_rx(msg: &RxMessage) -> Option<Self> {
         if msg.data() & READS_FPGA_STATE_ENABLED != 0 {
             Some(FPGAState { state: msg.data() })

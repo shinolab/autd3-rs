@@ -1,13 +1,20 @@
 use autd3_core::derive::*;
-use derive_new::new;
 
 /// [`Modulation`] that applies FIR filter to the original [`Modulation`].
-#[derive(Modulation, Debug, new)]
+#[derive(Modulation, Debug)]
 pub struct Fir<M: Modulation> {
     /// The target [`Modulation`] to apply FIR filter.
     pub target: M,
     /// The coefficients of the FIR filter.
     pub coef: Vec<f32>,
+}
+
+impl<M: Modulation> Fir<M> {
+    /// Create a new [`Fir`].
+    #[must_use]
+    pub const fn new(target: M, coef: Vec<f32>) -> Self {
+        Self { target, coef }
+    }
 }
 
 impl<M: Modulation> Modulation for Fir<M> {

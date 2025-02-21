@@ -1,4 +1,5 @@
 // GRCOV_EXCL_START
+#[must_use]
 pub(crate) const fn round_frac(decimal: u64, precision: u64) -> u64 {
     if decimal & (1 << (10 - precision)) != 0 {
         decimal + (1 << (10 - precision))
@@ -7,7 +8,8 @@ pub(crate) const fn round_frac(decimal: u64, precision: u64) -> u64 {
     }
 }
 
-pub(crate) fn mmcm_divider(divide: u64) -> u64 {
+#[must_use]
+pub(crate) const fn mmcm_divider(divide: u64) -> u64 {
     let mut duty_cycle = 50000;
     if divide >= 64 {
         let duty_cycle_min = ((divide - 64) * 100_000) / divide;
@@ -54,7 +56,8 @@ pub(crate) fn mmcm_divider(divide: u64) -> u64 {
     (w_edge << 13) | (no_count << 12) | ((high_time & 0b111111) << 6) | (low_time & 0b111111)
 }
 
-pub(crate) fn mmcm_count_calc(divide: u64) -> u64 {
+#[must_use]
+pub(crate) const fn mmcm_count_calc(divide: u64) -> u64 {
     let div_calc = mmcm_divider(divide);
     let phase_calc = 0;
 
@@ -65,6 +68,7 @@ pub(crate) fn mmcm_count_calc(divide: u64) -> u64 {
         | (div_calc & 0b111111111111)
 }
 
+#[must_use]
 pub(crate) const fn mmcm_lock_lookup(divide: u64) -> u64 {
     let lookup: [u64; 64] = [
         0b0011_0001_1011_1110_1000_1111_1010_0100_0000_0001,
@@ -135,6 +139,7 @@ pub(crate) const fn mmcm_lock_lookup(divide: u64) -> u64 {
     lookup[divide as usize - 1]
 }
 
+#[must_use]
 pub(crate) const fn mmcm_filter_lookup(divide: u64) -> u64 {
     let lookup_optimized: [u64; 64] = [
         0b00_1011_1100,
@@ -205,6 +210,7 @@ pub(crate) const fn mmcm_filter_lookup(divide: u64) -> u64 {
     lookup_optimized[divide as usize - 1]
 }
 
+#[must_use]
 pub(crate) fn mmcm_frac_count_calc(divide: u64, frac: u64) -> u64 {
     let clkout0_divide_frac: u64 = frac / 125;
     let clkout0_divide_int: u64 = divide;

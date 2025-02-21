@@ -8,6 +8,7 @@ struct DebugOutIdx {
 }
 
 impl CPUEmulator {
+    #[must_use]
     pub(crate) fn config_debug(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<DebugOutIdx>(data);
         self.bram_cpy(

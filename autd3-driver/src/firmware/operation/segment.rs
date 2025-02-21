@@ -11,7 +11,6 @@ use crate::{
 
 use super::Operation;
 
-use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
 /// [`Datagram`] to change the segment.
@@ -54,12 +53,18 @@ struct SwapSegmentTWithTransition {
     transition_value: u64,
 }
 
-#[derive(new)]
-#[new(visibility = "pub(crate)")]
 pub struct SwapSegmentOp {
-    #[new(default)]
     is_done: bool,
     segment: SwapSegment,
+}
+
+impl SwapSegmentOp {
+    pub(crate) fn new(segment: SwapSegment) -> Self {
+        Self {
+            is_done: false,
+            segment,
+        }
+    }
 }
 
 impl Operation for SwapSegmentOp {

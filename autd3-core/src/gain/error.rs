@@ -10,6 +10,7 @@ pub struct GainError {
 
 impl GainError {
     /// Creates a new [`GainError`].
+    #[must_use]
     pub fn new(msg: impl ToString) -> Self {
         Self {
             msg: msg.to_string(),

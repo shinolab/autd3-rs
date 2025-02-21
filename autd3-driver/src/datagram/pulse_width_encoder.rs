@@ -7,7 +7,6 @@ use crate::{
 
 use autd3_core::{defined::DEFAULT_TIMEOUT, derive::DatagramOption, gain::EmitIntensity};
 use derive_more::Debug;
-use derive_new::new;
 
 const DEFAULT_TABLE: &[u8; PWE_BUF_SIZE] = include_bytes!("asin.dat");
 
@@ -34,10 +33,18 @@ fn default_table(i: EmitIntensity) -> u8 {
 /// ```
 ///
 /// [`EmitIntensity`]: crate::firmware::fpga::EmitIntensity
-#[derive(Clone, Debug, new)]
+#[derive(Clone, Debug)]
 pub struct PulseWidthEncoder<H: Fn(EmitIntensity) -> u8 + Send + Sync, F: Fn(&Device) -> H> {
     #[debug(ignore)]
     f: F,
+}
+
+impl<H: Fn(EmitIntensity) -> u8 + Send + Sync, F: Fn(&Device) -> H> PulseWidthEncoder<H, F> {
+    /// Creates a new [`PulseWidthEncoder`].
+    #[must_use]
+    pub const fn new(f: F) -> Self {
+        Self { f }
+    }
 }
 
 impl Default

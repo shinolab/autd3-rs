@@ -64,6 +64,7 @@ mod tests {
         };
     }
 
+    #[must_use]
     pub fn random_vector3(
         range_x: std::ops::Range<f32>,
         range_y: std::ops::Range<f32>,
@@ -78,6 +79,7 @@ mod tests {
         )
     }
 
+    #[must_use]
     pub fn random_point3(
         range_x: std::ops::Range<f32>,
         range_y: std::ops::Range<f32>,
@@ -92,6 +94,7 @@ mod tests {
         )
     }
 
+    #[must_use]
     pub fn create_geometry(n: usize) -> Geometry {
         Geometry::new(
             (0..n)

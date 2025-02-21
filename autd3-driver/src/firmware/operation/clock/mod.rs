@@ -46,6 +46,7 @@ pub struct ConfigureClockOp {
     remains: usize,
 }
 
+#[must_use]
 fn calculate_mult_div(frequency: u32) -> Option<(u64, u64, u64)> {
     const FPGA_BASE_CLK_FREQ: u64 = 25600000;
 
@@ -65,6 +66,7 @@ fn calculate_mult_div(frequency: u32) -> Option<(u64, u64, u64)> {
 }
 
 impl ConfigureClockOp {
+    #[doc(hidden)]
     pub const fn new(ultrasound_freq: Freq<u32>) -> Self {
         Self {
             ultrasound_freq,

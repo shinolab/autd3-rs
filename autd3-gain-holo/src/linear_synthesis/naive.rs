@@ -8,7 +8,6 @@ use crate::{
 
 use autd3_core::{acoustics::directivity::Directivity, derive::*, geometry::Point3};
 use derive_more::Debug;
-use derive_new::new;
 use zerocopy::{FromBytes, IntoBytes};
 
 /// The option of [`Naive`].
@@ -31,7 +30,7 @@ impl<D: Directivity> Default for NaiveOption<D> {
 }
 
 /// Naive linear synthesis of simple focal solutions
-#[derive(Gain, Debug, new)]
+#[derive(Gain, Debug)]
 pub struct Naive<D: Directivity, B: LinAlgBackend<D>> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,
@@ -40,6 +39,22 @@ pub struct Naive<D: Directivity, B: LinAlgBackend<D>> {
     /// The backend of calculation.
     #[debug("{}", tynm::type_name::<B>())]
     pub backend: Arc<B>,
+}
+
+impl<D: Directivity, B: LinAlgBackend<D>> Naive<D, B> {
+    /// Create a new [`Naive`].
+    #[must_use]
+    pub const fn new(
+        foci: Vec<(Point3, Amplitude)>,
+        option: NaiveOption<D>,
+        backend: Arc<B>,
+    ) -> Self {
+        Self {
+            foci,
+            option,
+            backend,
+        }
+    }
 }
 
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {

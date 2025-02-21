@@ -7,7 +7,6 @@ use crate::firmware::{
 
 use crate::datagram::*;
 use derive_more::Debug;
-use derive_new::new;
 
 /// [`Datagram`] to configure GPIO Out pins for debugging.
 ///
@@ -23,10 +22,18 @@ use derive_new::new;
 ///     GPIOOut::O3 => DebugType::Direct(true),
 /// });
 /// ```
-#[derive(Debug, new)]
+#[derive(Debug)]
 pub struct DebugSettings<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> {
     #[debug(ignore)]
     f: F,
+}
+
+impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> DebugSettings<F> {
+    /// Creates a new [`DebugSettings`].
+    #[must_use]
+    pub const fn new(f: F) -> Self {
+        Self { f }
+    }
 }
 
 pub struct DebugSettingOpGenerator<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> {

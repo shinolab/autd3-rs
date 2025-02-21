@@ -10,7 +10,6 @@ use crate::{
 
 use super::SilencerControlFlags;
 
-use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
@@ -22,14 +21,26 @@ struct SilencerFixedUpdateRate {
     value_phase: u16,
 }
 
-#[derive(new)]
-#[new(visibility = "pub(crate)")]
 pub struct SilencerFixedUpdateRateOp {
-    #[new(default)]
     is_done: bool,
     intensity: NonZeroU16,
     phase: NonZeroU16,
     target: SilencerTarget,
+}
+
+impl SilencerFixedUpdateRateOp {
+    pub(crate) const fn new(
+        intensity: NonZeroU16,
+        phase: NonZeroU16,
+        target: SilencerTarget,
+    ) -> Self {
+        Self {
+            is_done: false,
+            intensity,
+            phase,
+            target,
+        }
+    }
 }
 
 impl Operation for SilencerFixedUpdateRateOp {

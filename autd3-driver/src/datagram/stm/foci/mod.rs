@@ -19,15 +19,14 @@ use autd3_core::{
     derive::{DatagramL, DatagramOption},
 };
 use derive_more::{Deref, DerefMut};
-use derive_new::new;
 
 /// A trait to generate the [`FociSTMIterator`].
-#[allow(clippy::len_without_is_empty)]
 pub trait FociSTMIteratorGenerator<const N: usize>: std::fmt::Debug {
     /// [`FociSTMIterator`] that generates the sequence of foci.
     type Iterator: FociSTMIterator<N>;
 
     /// generates the iterator.
+    #[must_use]
     fn generate(&mut self, device: &Device) -> Self::Iterator;
 }
 
@@ -41,11 +40,12 @@ pub trait FociSTMGenerator<const N: usize>: std::fmt::Debug {
     fn init(self) -> Result<Self::T, AUTDDriverError>;
 
     /// Returns the length of the sequence of foci.
+    #[must_use]
     fn len(&self) -> usize;
 }
 
 /// [`Datagram`] to produce STM by foci.
-#[derive(Clone, Deref, DerefMut, Debug, PartialEq, new)]
+#[derive(Clone, Deref, DerefMut, Debug, PartialEq)]
 pub struct FociSTM<const N: usize, T: FociSTMGenerator<N>, C> {
     #[deref]
     #[deref_mut]
@@ -55,8 +55,17 @@ pub struct FociSTM<const N: usize, T: FociSTMGenerator<N>, C> {
     pub config: C,
 }
 
+impl<const N: usize, T: FociSTMGenerator<N>, C> FociSTM<N, T, C> {
+    /// Create a new FociSTM.
+    #[must_use]
+    pub const fn new(foci: T, config: C) -> Self {
+        Self { foci, config }
+    }
+}
+
 impl<const N: usize, T: FociSTMGenerator<N>> FociSTM<N, T, Freq<f32>> {
     /// Convert to STM with the closest frequency among the possible frequencies.
+    #[must_use]
     pub fn into_nearest(self) -> FociSTM<N, T, FreqNearest> {
         FociSTM {
             foci: self.foci,
@@ -67,6 +76,7 @@ impl<const N: usize, T: FociSTMGenerator<N>> FociSTM<N, T, Freq<f32>> {
 
 impl<const N: usize, T: FociSTMGenerator<N>> FociSTM<N, T, Duration> {
     /// Convert to STM with the closest frequency among the possible period.
+    #[must_use]
     pub fn into_nearest(self) -> FociSTM<N, T, PeriodNearest> {
         FociSTM {
             foci: self.foci,

@@ -26,7 +26,8 @@ impl LoopBehavior {
 
 impl LoopBehavior {
     #[doc(hidden)]
-    pub fn rep(&self) -> u16 {
+    #[must_use]
+    pub const fn rep(&self) -> u16 {
         match self {
             LoopBehavior::Infinite => 0xFFFF,
             LoopBehavior::Finite(rep) => rep.get() - 1,
