@@ -49,9 +49,13 @@ pub struct GS<D: Directivity, B: LinAlgBackend<D>> {
 impl<D: Directivity, B: LinAlgBackend<D>> GS<D, B> {
     /// Create a new [`GS`].
     #[must_use]
-    pub const fn new(foci: Vec<(Point3, Amplitude)>, option: GSOption<D>, backend: Arc<B>) -> Self {
+    pub fn new(
+        foci: impl IntoIterator<Item = (Point3, Amplitude)>,
+        option: GSOption<D>,
+        backend: Arc<B>,
+    ) -> Self {
         Self {
-            foci,
+            foci: foci.into_iter().collect(),
             option,
             backend,
         }
