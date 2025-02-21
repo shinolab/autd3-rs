@@ -1,6 +1,7 @@
 const EPSILON: f64 = 1e-6;
 
 #[doc(hidden)]
+#[must_use]
 pub fn is_integer(a: f64) -> bool {
     0.5 - (a.fract() - 0.5).abs() < EPSILON
 }

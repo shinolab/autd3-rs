@@ -9,7 +9,12 @@ struct ConfigSilencer {
 }
 
 impl CPUEmulator {
-    pub(crate) fn validate_silencer_settings(&self, stm_freq_div: u16, mod_freq_div: u16) -> bool {
+    #[must_use]
+    pub(crate) const fn validate_silencer_settings(
+        &self,
+        stm_freq_div: u16,
+        mod_freq_div: u16,
+    ) -> bool {
         if self.silencer_strict_mode
             && (mod_freq_div < self.min_freq_div_intensity
                 || stm_freq_div < self.min_freq_div_intensity
@@ -20,6 +25,7 @@ impl CPUEmulator {
         false
     }
 
+    #[must_use]
     pub(crate) fn config_silencer(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<ConfigSilencer>(data);
 

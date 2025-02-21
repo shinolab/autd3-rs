@@ -17,8 +17,11 @@ pub struct Nop {
 
 impl Nop {
     /// Creates a new [`Nop`].
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self {
+            is_open: false,
+            cpus: Vec::new(),
+        }
     }
 }
 

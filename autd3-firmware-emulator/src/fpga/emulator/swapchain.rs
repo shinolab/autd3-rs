@@ -36,6 +36,7 @@ enum State {
 }
 
 impl<const SET: u16> Swapchain<SET> {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             sys_time: DcSysTime::now(),
@@ -162,10 +163,12 @@ impl<const SET: u16> Swapchain<SET> {
         self.transition_mode = transition_mode;
     }
 
+    #[must_use]
     const fn fpga_sys_time(&self, dc_sys_time: DcSysTime) -> u64 {
         ((dc_sys_time.sys_time() as u128 * self.fpga_clk_freq.hz() as u128) / 1000000000) as _
     }
 
+    #[must_use]
     fn lap_and_idx(&self, segment: Segment, sys_time: DcSysTime) -> (usize, usize) {
         let a = ((self.fpga_sys_time(sys_time) >> 8) / self.freq_div[&segment] as u64) as usize;
         let b = self.cycle[&segment];
@@ -176,18 +179,22 @@ impl<const SET: u16> Swapchain<SET> {
 }
 
 impl FPGAEmulator {
+    #[must_use]
     pub const fn current_mod_segment(&self) -> Segment {
         self.mod_swapchain.cur_segment
     }
 
+    #[must_use]
     pub const fn current_stm_segment(&self) -> Segment {
         self.stm_swapchain.cur_segment
     }
 
+    #[must_use]
     pub const fn current_mod_idx(&self) -> usize {
         self.mod_swapchain.cur_idx
     }
 
+    #[must_use]
     pub const fn current_stm_idx(&self) -> usize {
         self.stm_swapchain.cur_idx
     }

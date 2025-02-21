@@ -1,11 +1,10 @@
 use derive_more::Display;
-use derive_new::new;
 use getset::CopyGetters;
 use zerocopy::{FromBytes, Immutable, IntoBytes};
 
 /// PDO input data representation
 #[derive(
-    Clone, Copy, PartialEq, Eq, Debug, new, CopyGetters, IntoBytes, Immutable, FromBytes, Display,
+    Clone, Copy, PartialEq, Eq, Debug, CopyGetters, IntoBytes, Immutable, FromBytes, Display,
 )]
 #[display("{:?}", self)]
 #[repr(C)]
@@ -16,6 +15,14 @@ pub struct RxMessage {
     #[getset(get_copy = "pub")]
     /// Acknowledgement
     ack: u8,
+}
+
+impl RxMessage {
+    /// Creates a new [`RxMessage`].
+    #[must_use]
+    pub const fn new(data: u8, ack: u8) -> Self {
+        Self { data, ack }
+    }
 }
 
 #[cfg(test)]

@@ -52,6 +52,7 @@ pub trait DatagramL: std::fmt::Debug {
     ) -> Result<Self::G, Self::Error>;
 
     /// Returns the option of the datagram.
+    #[must_use]
     fn option(&self) -> DatagramOption;
 }
 
@@ -72,6 +73,7 @@ pub trait DatagramS: std::fmt::Debug {
     ) -> Result<Self::G, Self::Error>;
 
     /// Returns the option of the datagram.
+    #[must_use]
     fn option(&self) -> DatagramOption;
 }
 
@@ -115,6 +117,7 @@ pub trait Datagram: std::fmt::Debug {
     ) -> Result<Self::G, Self::Error>;
 
     /// Returns the option of the datagram.
+    #[must_use]
     fn option(&self) -> DatagramOption {
         DatagramOption::default()
     }

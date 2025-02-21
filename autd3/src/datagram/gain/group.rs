@@ -12,7 +12,6 @@ use std::{
 };
 
 use derive_more::Debug;
-use derive_new::new;
 
 /// [`Gain`] for grouping transducers and sending different [`Gain`] to each group.
 ///
@@ -50,7 +49,7 @@ use derive_new::new;
 /// ```
 ///
 /// [`Controller::group_send`]: crate::controller::Controller::group_send
-#[derive(Gain, Debug, new)]
+#[derive(Gain, Debug)]
 pub struct Group<K, FK, F, G: Gain>
 where
     K: Hash + Eq + std::fmt::Debug,
@@ -71,6 +70,13 @@ where
     FK: Fn(&Transducer) -> Option<K>,
     F: Fn(&Device) -> FK,
 {
+    /// Create a new [`Group`]
+    #[must_use]
+    pub const fn new(key_map: F, gain_map: HashMap<K, G>) -> Self {
+        Self { key_map, gain_map }
+    }
+
+    #[must_use]
     fn get_filters(&self, geometry: &Geometry) -> HashMap<K, HashMap<usize, BitVec>> {
         let mut filters: HashMap<K, HashMap<usize, BitVec>> = HashMap::new();
         geometry.devices().for_each(|dev| {

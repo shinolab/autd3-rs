@@ -22,6 +22,7 @@ impl<
 where
     L: Sync,
 {
+    #[must_use]
     pub fn new(f: F) -> Self {
         LightweightServer {
             autd: RwLock::new(None),

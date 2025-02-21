@@ -6,7 +6,6 @@ use crate::{
     geometry::Device,
 };
 
-use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
@@ -18,11 +17,14 @@ struct Sync {
     base_cnt: u16,
 }
 
-#[derive(new)]
-#[new(visibility = "pub(crate)")]
 pub struct SyncOp {
-    #[new(default)]
     is_done: bool,
+}
+
+impl SyncOp {
+    pub(crate) const fn new() -> Self {
+        Self { is_done: false }
+    }
 }
 
 impl Operation for SyncOp {

@@ -4,8 +4,10 @@ use crate::geometry::Device;
 pub trait Operation: Send + Sync {
     type Error: std::error::Error;
 
+    #[must_use]
     fn required_size(&self, device: &Device) -> usize;
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error>;
+    #[must_use]
     fn is_done(&self) -> bool;
 }
 

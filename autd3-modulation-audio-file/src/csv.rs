@@ -4,8 +4,6 @@ use std::{fmt::Debug, fs::File, path::Path};
 
 use crate::error::AudioFileError;
 
-use derive_new::new;
-
 /// The option of [`Csv`].
 #[derive(Debug, Clone)]
 pub struct CsvOption {
@@ -20,7 +18,7 @@ impl Default for CsvOption {
 }
 
 /// [`Modulation`] from CSV data.
-#[derive(Modulation, Debug, new)]
+#[derive(Modulation, Debug)]
 pub struct Csv<P, Config>
 where
     P: AsRef<Path> + Debug,
@@ -39,6 +37,16 @@ where
     P: AsRef<Path> + Debug,
     Config: Into<SamplingConfig> + Debug + Copy,
 {
+    /// Create a new [`Csv`].
+    #[must_use]
+    pub const fn new(path: P, sampling_config: Config, option: CsvOption) -> Self {
+        Self {
+            path,
+            sampling_config,
+            option,
+        }
+    }
+
     #[tracing::instrument]
     fn read_buf(&self) -> Result<Vec<u8>, AudioFileError> {
         let f = File::open(&self.path)?;

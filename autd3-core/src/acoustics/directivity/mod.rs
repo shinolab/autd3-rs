@@ -16,9 +16,11 @@ pub trait Directivity: Send + Sync {
     /// # Arguments
     ///
     /// * `theta` - The angle between the axial direction and the target direction.
+    #[must_use]
     fn directivity(theta: Angle) -> f32;
 
     /// Calculates the directivity based on the axial direction and target direction.
+    #[must_use]
     fn directivity_from_dir(axial_direction: &UnitVector3, target: &Vector3) -> f32 {
         Self::directivity(
             (axial_direction.cross(target).norm()).atan2(axial_direction.dot(target)) * rad,

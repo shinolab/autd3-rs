@@ -27,6 +27,7 @@ pub struct Memory {
 }
 
 impl Memory {
+    #[must_use]
     pub fn new(num_transducers: usize) -> Self {
         Self {
             num_transducers,
@@ -132,6 +133,7 @@ impl Memory {
         }
     }
 
+    #[must_use]
     pub fn read_bram_as<T>(bram: &[u16], addr: usize) -> T {
         unsafe { (bram.as_ptr().add(addr) as *const T).read_unaligned() }
     }
@@ -181,6 +183,7 @@ impl Memory {
 }
 
 impl FPGAEmulator {
+    #[must_use]
     pub(crate) fn read(&self, addr: u16) -> u16 {
         let select = ((addr >> 14) & 0x0003) as u8;
         let addr = (addr & 0x3FFF) as usize;
@@ -200,6 +203,6 @@ mod tests {
     fn read_panic() {
         let fpga = FPGAEmulator::new(249);
         let addr = (BRAM_SELECT_MOD as u16) << 14;
-        fpga.read(addr as _);
+        _ = fpga.read(addr as _);
     }
 }

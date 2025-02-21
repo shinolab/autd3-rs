@@ -22,6 +22,7 @@ struct Clear {
 }
 
 impl CPUEmulator {
+    #[must_use]
     pub(crate) unsafe fn clear(&mut self, _data: &[u8]) -> u8 {
         unsafe {
             // let _d = Self::cast::<Clear>(data);

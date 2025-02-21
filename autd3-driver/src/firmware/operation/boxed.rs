@@ -3,8 +3,10 @@ use autd3_core::{datagram::Operation, geometry::Device};
 use crate::error::AUTDDriverError;
 
 trait DOperation: Send + Sync {
+    #[must_use]
     fn required_size(&self, device: &Device) -> usize;
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError>;
+    #[must_use]
     fn is_done(&self) -> bool;
 }
 
@@ -31,6 +33,7 @@ pub struct BoxedOperation {
 }
 
 impl BoxedOperation {
+    #[must_use]
     pub fn new<E, O: Operation<Error = E> + 'static>(op: O) -> Self
     where
         AUTDDriverError: From<E>,

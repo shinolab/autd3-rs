@@ -28,7 +28,7 @@ pub struct Audit {
 }
 
 impl Audit {
-    pub fn new(option: AuditOption) -> Self {
+    pub const fn new(option: AuditOption) -> Self {
         Self {
             option,
             is_open: false,
@@ -37,11 +37,11 @@ impl Audit {
         }
     }
 
-    pub fn break_down(&mut self) {
+    pub const fn break_down(&mut self) {
         self.broken = true;
     }
 
-    pub fn repair(&mut self) {
+    pub const fn repair(&mut self) {
         self.broken = false;
     }
 }

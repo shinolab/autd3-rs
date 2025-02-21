@@ -4,10 +4,9 @@ use crate::{
 };
 
 use derive_more::{Deref, DerefMut};
-use derive_new::new;
 
 /// A pair of a focal point and a phase offset.
-#[derive(Clone, Copy, PartialEq, Debug, Default, new)]
+#[derive(Clone, Copy, PartialEq, Debug, Default)]
 #[repr(C)]
 pub struct ControlPoint {
     /// The focal point.
@@ -17,6 +16,14 @@ pub struct ControlPoint {
 }
 
 impl ControlPoint {
+    /// Create a new [`ControlPoint`].
+    pub const fn new(point: Point3, phase_offset: Phase) -> Self {
+        Self {
+            point,
+            phase_offset,
+        }
+    }
+
     pub(crate) fn transform(&self, iso: &Isometry) -> Self {
         Self {
             point: iso.transform_point(&self.point),
@@ -44,7 +51,7 @@ impl From<&Point3> for ControlPoint {
 }
 
 /// A collection of control points and the intensity of all control points.
-#[derive(Clone, PartialEq, Debug, Deref, DerefMut, new)]
+#[derive(Clone, PartialEq, Debug, Deref, DerefMut)]
 #[repr(C)]
 pub struct ControlPoints<const N: usize> {
     #[deref]
@@ -65,6 +72,11 @@ impl<const N: usize> Default for ControlPoints<N> {
 }
 
 impl<const N: usize> ControlPoints<N> {
+    /// Create a new [`ControlPoints`].
+    pub const fn new(points: [ControlPoint; N], intensity: EmitIntensity) -> Self {
+        Self { points, intensity }
+    }
+
     pub(crate) fn transform(&self, iso: &nalgebra::Isometry3<f32>) -> Self {
         Self {
             points: self.points.map(|p| p.transform(iso)),

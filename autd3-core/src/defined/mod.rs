@@ -39,12 +39,14 @@ mod inner {
     use std::time::Duration;
 
     #[inline(always)]
+    #[must_use]
     /// The frequency of ultrasound
     pub const fn ultrasound_freq() -> Freq<u32> {
         Freq { freq: 40000 }
     }
 
     #[inline(always)]
+    #[must_use]
     /// The period of ultrasound
     pub const fn ultrasound_period() -> Duration {
         Duration::from_micros(25)
@@ -82,6 +84,7 @@ mod inner {
         });
 
     #[inline]
+    #[must_use]
     /// The frequency of ultrasound
     pub fn ultrasound_freq() -> Freq<u32> {
         *LAZY_FREQ

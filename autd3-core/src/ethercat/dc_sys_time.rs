@@ -24,11 +24,13 @@ impl DcSysTime {
     pub const ZERO: Self = Self { dc_sys_time: 0 };
 
     /// Returns the system time in nanoseconds
+    #[must_use]
     pub const fn sys_time(&self) -> u64 {
         self.dc_sys_time
     }
 
     /// Converts the system time to the UTC time
+    #[must_use]
     pub fn to_utc(&self) -> OffsetDateTime {
         ECAT_DC_SYS_TIME_BASE + std::time::Duration::from_nanos(self.dc_sys_time)
     }
@@ -42,6 +44,7 @@ impl DcSysTime {
     }
 
     /// Returns the system time of now
+    #[must_use]
     pub fn now() -> Self {
         Self::from_utc(OffsetDateTime::now_utc()).unwrap()
     }

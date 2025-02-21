@@ -23,11 +23,13 @@ pub struct Amplitude {
 
 impl Amplitude {
     /// Converts to value in Pa.
+    #[must_use]
     pub const fn pascal(&self) -> f32 {
         self.value
     }
 
     /// Converts to sound pressure level in dB.
+    #[must_use]
     pub fn spl(&self) -> f32 {
         20.0 * f32::log10(self.value / ABSOLUTE_THRESHOLD_OF_HEARING)
     }

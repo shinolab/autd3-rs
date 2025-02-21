@@ -7,6 +7,7 @@ struct ForceFan {
 }
 
 impl CPUEmulator {
+    #[must_use]
     pub(crate) fn configure_force_fan(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<ForceFan>(data);
         if d.value != 0x00 {

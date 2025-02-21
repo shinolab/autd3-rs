@@ -18,6 +18,7 @@ pub trait Modulation: std::fmt::Debug {
     fn calc(self) -> Result<Vec<u8>, ModulationError>;
 
     /// The sampling configuration.
+    #[must_use]
     fn sampling_config(&self) -> SamplingConfig;
 }
 

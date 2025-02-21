@@ -11,6 +11,7 @@ use autd3_core::{
 };
 
 pub trait DOperationGenerator {
+    #[must_use]
     fn dyn_generate(&mut self, device: &Device) -> (BoxedOperation, BoxedOperation);
 }
 
@@ -45,6 +46,7 @@ pub trait DDatagram: std::fmt::Debug {
         geometry: &Geometry,
         parallel: bool,
     ) -> Result<Box<dyn DOperationGenerator>, AUTDDriverError>;
+    #[must_use]
     fn dyn_option(&self) -> DatagramOption;
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
@@ -127,6 +129,7 @@ impl Datagram for BoxedDatagram {
 /// Trait to convert [`Datagram`] to [`BoxedDatagram`].
 pub trait IntoBoxedDatagram {
     /// Convert [`Datagram`] to [`BoxedDatagram`]
+    #[must_use]
     fn into_boxed(self) -> BoxedDatagram;
 }
 

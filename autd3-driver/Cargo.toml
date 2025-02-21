@@ -15,7 +15,6 @@ autd3-derive = { workspace = true }
 bitfield-struct = { workspace = true }
 bitflags = { workspace = true }
 derive_more = { workspace = true, features = ["deref_mut"] }
-derive-new = { workspace = true }
 getset = { workspace = true }
 itertools = { workspace = true, features = ["use_alloc"] }
 nalgebra = { workspace = true }

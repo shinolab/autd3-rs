@@ -5,20 +5,35 @@ use crate::firmware::operation::CpuGPIOOutOp;
 use crate::datagram::*;
 
 use derive_more::Debug;
-use derive_new::new;
 
 #[doc(hidden)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, new)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CpuGPIOPort {
     pub pa5: bool,
     pub pa7: bool,
 }
 
-#[derive(Debug, new)]
+impl CpuGPIOPort {
+    /// Creates a new [`CpuGPIOPort`].
+    #[must_use]
+    pub const fn new(pa5: bool, pa7: bool) -> Self {
+        Self { pa5, pa7 }
+    }
+}
+
+#[derive(Debug)]
 #[doc(hidden)]
 pub struct CpuGPIO<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> {
     #[debug(ignore)]
     f: F,
+}
+
+impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> CpuGPIO<F> {
+    /// Creates a new [`CpuGPIO`].
+    #[must_use]
+    pub const fn new(f: F) -> Self {
+        Self { f }
+    }
 }
 
 pub struct CpuGPIOOutOpGenerator<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> {

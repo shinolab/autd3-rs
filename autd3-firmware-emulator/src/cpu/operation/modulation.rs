@@ -37,6 +37,7 @@ struct ModulationUpdate {
 }
 
 impl CPUEmulator {
+    #[must_use]
     pub(crate) unsafe fn mod_segment_update(&mut self, segment: u8, mode: u8, value: u64) -> u8 {
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
@@ -64,6 +65,7 @@ impl CPUEmulator {
         self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_MEM_WR_SEGMENT, segment);
     }
 
+    #[must_use]
     pub(crate) unsafe fn write_mod(&mut self, data: &[u8]) -> u8 {
         unsafe {
             let d = Self::cast::<Modulation>(data);
@@ -173,6 +175,7 @@ impl CPUEmulator {
         }
     }
 
+    #[must_use]
     pub(crate) unsafe fn change_mod_segment(&mut self, data: &[u8]) -> u8 {
         unsafe {
             let d = Self::cast::<ModulationUpdate>(data);

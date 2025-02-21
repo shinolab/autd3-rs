@@ -2,11 +2,10 @@ use crate::{
     defined::mm,
     geometry::{Device, IntoDevice, Isometry, Point3, Transducer, Translation, UnitQuaternion},
 };
-use derive_new::new;
 use getset::Getters;
 
 /// AUTD3 device.
-#[derive(Clone, Copy, Debug, Getters, new)]
+#[derive(Clone, Copy, Debug, Getters)]
 pub struct AUTD3 {
     /// The position of the AUTD3 device.
     pub pos: Point3,
@@ -37,7 +36,14 @@ impl AUTD3 {
     /// The height of the device (including the substrate).
     pub const DEVICE_HEIGHT: f32 = 151.4 * mm;
 
-    fn is_missing_transducer(x: usize, y: usize) -> bool {
+    /// Create a new AUTD3 device.
+    #[must_use]
+    pub const fn new(pos: Point3, rot: UnitQuaternion) -> Self {
+        Self { pos, rot }
+    }
+
+    #[must_use]
+    const fn is_missing_transducer(x: usize, y: usize) -> bool {
         if Self::NUM_TRANS_X <= x || Self::NUM_TRANS_Y <= y {
             return true;
         }
@@ -45,6 +51,7 @@ impl AUTD3 {
     }
 
     /// Gets the index in x- and y-axis from the transducer index.
+    #[must_use]
     pub const fn grid_id(idx: usize) -> (usize, usize) {
         let local_id = idx % Self::NUM_TRANS_IN_UNIT;
         let uid = match local_id {

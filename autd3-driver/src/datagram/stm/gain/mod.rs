@@ -20,7 +20,6 @@ use autd3_core::{
     gain::{BitVec, GainCalculatorGenerator, GainError},
 };
 use derive_more::{Deref, DerefMut};
-use derive_new::new;
 
 /// A trait to generate the [`GainSTMIterator`].
 pub trait GainSTMIteratorGenerator {
@@ -32,6 +31,7 @@ pub trait GainSTMIteratorGenerator {
     type Iterator: GainSTMIterator<Calculator = <Self::Gain as GainCalculatorGenerator>::Calculator>;
 
     /// generates the iterator.
+    #[must_use]
     fn generate(&mut self, device: &Device) -> Self::Iterator;
 }
 
@@ -49,6 +49,7 @@ pub trait GainSTMGenerator: std::fmt::Debug {
         parallel: bool,
     ) -> Result<Self::T, GainError>;
     /// Returns the length of the sequence of gains.
+    #[must_use]
     fn len(&self) -> usize;
 }
 
@@ -71,7 +72,7 @@ impl Default for GainSTMOption {
 /// [`Datagram`] to produce STM by [`Gain`].
 ///
 /// [`Gain`]: autd3_core::gain::Gain
-#[derive(Clone, Debug, Deref, DerefMut, new)]
+#[derive(Clone, Debug, Deref, DerefMut)]
 pub struct GainSTM<T: GainSTMGenerator, C> {
     #[deref]
     #[deref_mut]
@@ -85,8 +86,21 @@ pub struct GainSTM<T: GainSTMGenerator, C> {
     pub option: GainSTMOption,
 }
 
+impl<T: GainSTMGenerator, C> GainSTM<T, C> {
+    /// Create a new [`GainSTM`].
+    #[must_use]
+    pub const fn new(gains: T, config: C, option: GainSTMOption) -> Self {
+        Self {
+            gains,
+            config,
+            option,
+        }
+    }
+}
+
 impl<T: GainSTMGenerator> GainSTM<T, Freq<f32>> {
     /// Convert to STM with the closest frequency among the possible frequencies.
+    #[must_use]
     pub fn into_nearest(self) -> GainSTM<T, FreqNearest> {
         GainSTM {
             gains: self.gains,
@@ -98,6 +112,7 @@ impl<T: GainSTMGenerator> GainSTM<T, Freq<f32>> {
 
 impl<T: GainSTMGenerator> GainSTM<T, Duration> {
     /// Convert to STM with the closest frequency among the possible period.
+    #[must_use]
     pub fn into_nearest(self) -> GainSTM<T, PeriodNearest> {
         GainSTM {
             gains: self.gains,

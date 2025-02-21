@@ -14,22 +14,27 @@ struct FirmInfo {
 }
 
 impl CPUEmulator {
+    #[must_use]
     const fn get_cpu(&self) -> u16 {
         CPU_VERSION_MAJOR
     }
 
+    #[must_use]
     const fn get_cpu_version_minor(&self) -> u16 {
         CPU_VERSION_MINOR
     }
 
+    #[must_use]
     fn get_fpga(&self) -> u16 {
         self.bram_read(BRAM_SELECT_CONTROLLER, ADDR_VERSION_NUM_MAJOR)
     }
 
+    #[must_use]
     fn get_fpga_version_minor(&self) -> u16 {
         self.bram_read(BRAM_SELECT_CONTROLLER, ADDR_VERSION_NUM_MINOR)
     }
 
+    #[must_use]
     pub(crate) fn firm_info(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<FirmInfo>(data);
 

@@ -40,6 +40,7 @@ struct GainSTMUpdate {
 }
 
 impl CPUEmulator {
+    #[must_use]
     pub(crate) unsafe fn write_gain_stm(&mut self, data: &[u8]) -> u8 {
         unsafe {
             let d = Self::cast::<GainSTM>(data);
@@ -236,6 +237,7 @@ impl CPUEmulator {
         }
     }
 
+    #[must_use]
     pub(crate) unsafe fn change_gain_stm_segment(&mut self, data: &[u8]) -> u8 {
         unsafe {
             let d = Self::cast::<GainSTMUpdate>(data);

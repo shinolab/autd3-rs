@@ -8,7 +8,6 @@ use crate::{
     geometry::{Device, Transducer},
 };
 
-use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
@@ -18,12 +17,15 @@ struct PhaseCorr {
     __: u8,
 }
 
-#[derive(new)]
-#[new(visibility = "pub(crate)")]
 pub struct PhaseCorrectionOp<F: Fn(&Transducer) -> Phase> {
-    #[new(default)]
     is_done: bool,
     f: F,
+}
+
+impl<F: Fn(&Transducer) -> Phase> PhaseCorrectionOp<F> {
+    pub(crate) const fn new(f: F) -> Self {
+        Self { is_done: false, f }
+    }
 }
 
 impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<F> {

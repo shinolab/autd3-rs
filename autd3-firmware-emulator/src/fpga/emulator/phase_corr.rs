@@ -3,12 +3,14 @@ use autd3_driver::firmware::fpga::Phase;
 use super::FPGAEmulator;
 
 impl FPGAEmulator {
+    #[must_use]
     fn _phase_corr(&self, idx: usize) -> Phase {
         let p = &self.mem.phase_corr_bram.borrow()[idx >> 1];
         let p = if idx % 2 == 0 { p & 0xFF } else { p >> 8 };
         Phase(p as _)
     }
 
+    #[must_use]
     pub fn phase_correction(&self) -> Vec<Phase> {
         let mut dst = vec![Phase::ZERO; self.mem.num_transducers];
         self.phase_correction_inplace(&mut dst);

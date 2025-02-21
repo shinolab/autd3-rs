@@ -11,7 +11,9 @@ use rayon::iter::Either;
 use crate::EmissionConstraint;
 
 pub trait IntoDrive {
+    #[must_use]
     fn into_phase(self) -> Phase;
+    #[must_use]
     fn into_intensity(self) -> f32;
 }
 

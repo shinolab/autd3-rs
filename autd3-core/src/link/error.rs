@@ -10,6 +10,7 @@ pub struct LinkError {
 
 impl LinkError {
     /// Creates a new [`LinkError`].
+    #[must_use]
     pub fn new(msg: impl ToString) -> LinkError {
         LinkError {
             msg: msg.to_string(),

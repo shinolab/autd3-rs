@@ -11,7 +11,6 @@ use autd3_core::{
     gain::BitVec,
     geometry::{Complex, Geometry, Point3},
 };
-use derive_new::new;
 use nalgebra::{ComplexField, Dyn, Normed, U1, VecStorage};
 
 use crate::{LinAlgBackend, MatrixX, MatrixXc, VectorX, VectorXc, error::HoloError};
@@ -19,9 +18,18 @@ use crate::{LinAlgBackend, MatrixX, MatrixXc, VectorX, VectorXc, error::HoloErro
 /// [`LinAlgBackend`] using [`nalgebra`].
 ///
 /// [`nalgebra`]: https://docs.rs/nalgebra/latest/nalgebra/
-#[derive(new)]
 pub struct NalgebraBackend<D: Directivity> {
     _phantom: std::marker::PhantomData<D>,
+}
+
+impl<D: Directivity> NalgebraBackend<D> {
+    /// Create a new [`NalgebraBackend`].
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
+            _phantom: std::marker::PhantomData,
+        }
+    }
 }
 
 impl Default for NalgebraBackend<Sphere> {

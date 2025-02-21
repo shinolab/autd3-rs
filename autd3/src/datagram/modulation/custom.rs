@@ -1,10 +1,9 @@
 use std::fmt::Debug;
 
 use autd3_core::derive::*;
-use derive_new::new;
 
 ///[`Modulation`] to use arbitrary modulation data
-#[derive(Modulation, Clone, Debug, new)]
+#[derive(Modulation, Clone, Debug)]
 pub struct Custom<Config>
 where
     Config: Into<SamplingConfig> + Debug + Copy,
@@ -13,6 +12,20 @@ where
     pub buffer: Vec<u8>,
     /// The sampling configuration of the modulation data.
     pub sampling_config: Config,
+}
+
+impl<Config> Custom<Config>
+where
+    Config: Into<SamplingConfig> + Debug + Copy,
+{
+    /// Create a new [`Custom`].
+    #[must_use]
+    pub const fn new(buffer: Vec<u8>, sampling_config: Config) -> Self {
+        Self {
+            buffer,
+            sampling_config,
+        }
+    }
 }
 
 impl<Config> Modulation for Custom<Config>

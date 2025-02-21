@@ -3,14 +3,21 @@ use std::convert::Infallible;
 use crate::{datagram::*, firmware::operation::ForceFanOp};
 
 use derive_more::Debug;
-use derive_new::new;
 
 /// [`Datagram`] to force the fan to run.
-#[derive(Debug, new)]
+#[derive(Debug)]
 pub struct ForceFan<F: Fn(&Device) -> bool> {
     #[debug(ignore)]
     #[doc(hidden)]
     pub f: F,
+}
+
+impl<F: Fn(&Device) -> bool> ForceFan<F> {
+    /// Creates a new [`ForceFan`].
+    #[must_use]
+    pub const fn new(f: F) -> Self {
+        Self { f }
+    }
 }
 
 pub struct ForceFanOpGenerator<F: Fn(&Device) -> bool> {

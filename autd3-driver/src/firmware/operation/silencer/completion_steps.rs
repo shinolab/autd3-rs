@@ -10,7 +10,6 @@ use crate::{
 
 use super::SilencerControlFlags;
 
-use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
@@ -22,15 +21,29 @@ struct SilencerFixedCompletionSteps {
     value_phase: u16,
 }
 
-#[derive(new)]
-#[new(visibility = "pub(crate)")]
 pub struct SilencerFixedCompletionStepsOp {
-    #[new(default)]
     is_done: bool,
     intensity: NonZeroU16,
     phase: NonZeroU16,
     strict_mode: bool,
     target: SilencerTarget,
+}
+
+impl SilencerFixedCompletionStepsOp {
+    pub(crate) const fn new(
+        intensity: NonZeroU16,
+        phase: NonZeroU16,
+        strict_mode: bool,
+        target: SilencerTarget,
+    ) -> Self {
+        Self {
+            is_done: false,
+            intensity,
+            phase,
+            strict_mode,
+            target,
+        }
+    }
 }
 
 impl Operation for SilencerFixedCompletionStepsOp {

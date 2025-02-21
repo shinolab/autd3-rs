@@ -26,32 +26,42 @@ pub use rotation::*;
 pub use transducer::*;
 
 use derive_more::{Deref, IntoIterator};
-use derive_new::new;
 
 /// Geometry of the devices.
-#[derive(Deref, CopyGetters, IntoIterator, new)]
+#[derive(Deref, CopyGetters, IntoIterator)]
 pub struct Geometry {
     #[deref]
     #[into_iterator(ref)]
     pub(crate) devices: Vec<Device>,
     #[doc(hidden)]
-    #[new(default)]
     #[getset(get_copy = "pub")]
     version: usize,
 }
 
 impl Geometry {
+    /// Creates a new [`Geometry`].
+    #[must_use]
+    pub fn new(devices: Vec<Device>) -> Self {
+        Self {
+            devices,
+            version: 0,
+        }
+    }
+
     /// Gets the number of enabled devices.
+    #[must_use]
     pub fn num_devices(&self) -> usize {
         self.devices().count()
     }
 
     /// Gets the number of enabled transducers.
+    #[must_use]
     pub fn num_transducers(&self) -> usize {
         self.devices().map(|dev| dev.num_transducers()).sum()
     }
 
     /// Gets the center of the enabled transducers.
+    #[must_use]
     pub fn center(&self) -> Point3 {
         Point3::from(
             self.devices().map(|d| d.center().coords).sum::<Vector3>() / self.devices.len() as f32,
@@ -87,6 +97,7 @@ impl Geometry {
     }
 
     /// Axis Aligned Bounding Box of enabled devices.
+    #[must_use]
     pub fn aabb(&self) -> Aabb<f32, 3> {
         self.devices()
             .fold(Aabb::empty(), |aabb, dev| aabb.join(dev.aabb()))

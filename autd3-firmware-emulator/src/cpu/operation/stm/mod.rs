@@ -4,6 +4,7 @@ mod foci;
 mod gain;
 
 impl CPUEmulator {
+    #[must_use]
     pub(crate) unsafe fn stm_segment_update(&mut self, segment: u8, mode: u8, value: u64) -> u8 {
         self.bram_write(
             BRAM_SELECT_CONTROLLER,
