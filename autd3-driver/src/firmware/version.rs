@@ -1,4 +1,4 @@
-use derive_more::Display;
+use derive_more::{Debug, Display};
 use itertools::Itertools;
 
 /// Major version number.
@@ -95,6 +95,7 @@ pub struct CPUVersion {
     self.cpu,
     self.fpga,
 )]
+#[debug("{}", self)]
 pub struct FirmwareVersion {
     #[doc(hidden)]
     pub idx: usize,
@@ -286,5 +287,6 @@ mod tests {
     )]
     fn display(#[case] expected: &str, #[case] info: FirmwareVersion) {
         assert_eq!(expected, format!("{}", info));
+        assert_eq!(expected, format!("{:?}", info));
     }
 }
