@@ -160,10 +160,7 @@ mod tests {
         let f3_buf = f3.calc_raw()?.collect::<Vec<_>>();
         let f4_buf = f4.calc_raw()?.collect::<Vec<_>>();
 
-        let f = Fourier {
-            components: vec![f0, f1, f2, f3, f4],
-            option: FourierOption::default(),
-        };
+        let f = Fourier::new([f0, f1, f2, f3, f4], FourierOption::default());
 
         let buf = &f.calc()?;
 

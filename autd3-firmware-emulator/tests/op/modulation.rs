@@ -100,15 +100,15 @@ fn send_mod_unsafe(
     let freq_div = rng.random_range(
         SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=u16::MAX,
     );
-    let d = WithLoopBehavior {
-        inner: TestModulation {
+    let d = WithLoopBehavior::new(
+        TestModulation {
             buf: m.clone(),
             sampling_config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
         },
+        loop_behavior,
         segment,
         transition_mode,
-        loop_behavior,
-    };
+    );
 
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 

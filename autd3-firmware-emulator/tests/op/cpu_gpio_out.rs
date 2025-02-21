@@ -20,7 +20,7 @@ fn send_cpu_gpio_out(
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
-    let d = CpuGPIO::new(|_| CpuGPIOPort { pa5, pa7 });
+    let d = CpuGPIO::new(|_| CpuGPIOPort::new(pa5, pa7));
 
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 

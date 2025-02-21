@@ -29,16 +29,20 @@ use zerocopy::FromZeros;
 pub fn gen_random_foci<const N: usize>(num: usize) -> Vec<ControlPoints<N>> {
     let mut rng = rand::rng();
     (0..num)
-        .map(|_| ControlPoints {
-            points: [0; N].map(|_| ControlPoint {
-                point: Point3::new(
-                    rng.random_range(-100.0 * mm..100.0 * mm),
-                    rng.random_range(-100.0 * mm..100.0 * mm),
-                    rng.random_range(-100.0 * mm..100.0 * mm),
-                ),
-                phase_offset: Phase(rng.random()),
-            }),
-            intensity: EmitIntensity(rng.random()),
+        .map(|_| {
+            ControlPoints::new(
+                [0; N].map(|_| {
+                    ControlPoint::new(
+                        Point3::new(
+                            rng.random_range(-100.0 * mm..100.0 * mm),
+                            rng.random_range(-100.0 * mm..100.0 * mm),
+                            rng.random_range(-100.0 * mm..100.0 * mm),
+                        ),
+                        Phase(rng.random()),
+                    )
+                }),
+                EmitIntensity(rng.random()),
+            )
         })
         .collect()
 }
@@ -85,10 +89,10 @@ fn test_send_foci_stm_unsafe(
     let foci = gen_random_foci::<1>(n);
 
     let stm = WithLoopBehavior {
-        inner: FociSTM {
-            foci: foci.clone(),
-            config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
-        },
+        inner: FociSTM::new(
+            foci.clone(),
+            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+        ),
         loop_behavior,
         segment,
         transition_mode,

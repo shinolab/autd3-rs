@@ -56,13 +56,13 @@ mod tests {
     fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
             config,
-            Fir {
-                target: Custom {
+            Fir::new(
+                Custom {
                     buffer: [u8::MIN; 2].to_vec(),
                     sampling_config: config,
                 },
-                coef: vec![1.0]
-            }
+                vec![1.0]
+            )
             .sampling_config()
         );
     }

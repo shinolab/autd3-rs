@@ -158,15 +158,15 @@ mod tests {
         let geometry = create_geometry(1, 1);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
-        let g = GSPAT {
-            foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
-            backend,
-            option: GSPATOption {
+        let g = GSPAT::new(
+            vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
+            GSPATOption {
                 repeat: NonZeroUsize::new(5).unwrap(),
                 constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
                 ..Default::default()
             },
-        };
+            backend,
+        );
 
         assert_eq!(
             g.init_full(&geometry, None, false).map(|mut res| {

@@ -55,11 +55,8 @@ mod tests {
     fn new() -> anyhow::Result<()> {
         let mut rng = rand::rng();
 
-        let test_buf = (0..2).map(|_| rng.random()).collect::<Vec<_>>();
-        let custom = Custom {
-            buffer: test_buf.clone(),
-            sampling_config: 4. * kHz,
-        };
+        let test_buf = (0..2).map(|_| rng.random()).collect::<Vec<u8>>();
+        let custom = Custom::new(test_buf.clone(), 4. * kHz);
 
         let d = custom.calc()?;
         assert_eq!(test_buf, *d);

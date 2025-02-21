@@ -233,8 +233,8 @@ mod tests {
             intensity: EmitIntensity(rng.random()),
         };
 
-        let gain = Group {
-            key_map: |dev| {
+        let gain = Group::new(
+            |dev| {
                 let dev_idx = dev.idx();
                 move |tr| match (dev_idx, tr.idx()) {
                     (0, 0..=99) => Some("null"),
@@ -244,7 +244,7 @@ mod tests {
                     _ => None,
                 }
             },
-            gain_map: HashMap::from([
+            HashMap::from([
                 ("null", Null {}.into_boxed()),
                 (
                     "test",
@@ -263,7 +263,7 @@ mod tests {
                     .into_boxed(),
                 ),
             ]),
-        };
+        );
 
         let mut g = gain.init_full(&geometry, None, false)?;
         let drives = geometry
